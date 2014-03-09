@@ -1,0 +1,7 @@
+
+
+1/ Si continuation, faire un transcode.process jusqu'a qu'on ait les bons octets
+2/ Sinon faire un seek, flusher tout ce qu'on a ecrit
+ -> se servir des octets demandépar le client HTTp uniquement pour faire du seek, ne pas stockergrand chose ? Utiliser une queue ?
+3/ Desactiver le seek dans le memiocontext ?
+

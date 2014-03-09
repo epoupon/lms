@@ -1,0 +1,143 @@
+/* additional style rules for ie */
+
+/*
+ * WCalendar
+ */
+
+.Wt-cal td div {
+    zoom: 1;
+}
+
+.Wt-dialogcover {
+    filter: alpha(opacity=50);
+}
+
+/*
+ * WItemDelegate
+ */
+.Wt-delegate-edit input {
+    font-size: 9pt;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+/*
+ * WSuggestionPopup
+ */
+.Wt-suggest .content {
+    overflow-x: hidden;
+}
+
+/*
+ * WTableView
+ */
+.Wt-tableview div {
+    white-space: nowrap;
+}
+
+.Wt-tabs {
+    padding-bottom: 2px; /* should be 1px when we have close icons ... */
+}
+
+.Wt-tabs li a, .Wt-tabs li button {
+    color: white;
+}
+
+.Wt-tabs li .citemselected a {
+    color: black;
+}
+
+.Wt-tabs .Wt-closeicon, .Wt-tabs span.citemselected .Wt-closeicon {
+    background-position: right 1px;
+    zoom: 1;
+}
+
+.Wt-tabs .Wt-closeicon:hover, .Wt-tabs span.citemselected .Wt-closeicon:hover {
+    background-position: right -12px;
+}
+
+/*
+ * WTree
+ */
+.Wt-tree div, .Wt-tree span {
+    white-space: nowrap;   
+}
+
+.Wt-tree .Wt-item {
+    zoom: 1;
+}
+
+/*
+ * WAbstractItemView
+ */
+.Wt-itemview .Wt-header .Wt-label {
+    zoom: 1;
+}
+
+/*
+ * WTreeView
+ */
+
+/* IE ignores white-space on a table or td */
+.Wt-treeview div, .Wt-treeview span {
+    white-space: nowrap;
+}
+
+.Wt-treeview .Wt-item {
+    zoom: 1;
+}
+
+body.Wt-ltr .Wt-treeview .Wt-header .Wt-tv-c {
+    margin: 0px;
+    padding: 0px 0px 0px 7px;
+}
+
+body.Wt-rtl .Wt-treeview .Wt-header .Wt-tv-c {
+    margin: 0px;
+    padding: 0px 7px 0px 0px;
+}
+
+.Wt-treeview .Wt-scroll {
+    position: absolute;
+    overflow-x: auto;
+    overflow-y: hidden;
+} 
+
+/* nodes */
+.Wt-treeview .Wt-expand {
+    background: url(nav-plus.gif) no-repeat 0 center;
+}
+
+body.Wt-rtl .Wt-treeview .Wt-expand {
+    background: url(nav-plus-rtl.gif) no-repeat 0 center;
+}
+
+.Wt-treeview .Wt-collapse {
+    background: url(nav-minus.gif) no-repeat 0 center;
+}
+
+body.Wt-rtl .Wt-treeview .Wt-collapse {
+    background: url(nav-minus-rtl.gif) no-repeat 0 center;
+}
+
+.Wt-hrh {
+    line-height: 0px;
+}
+
+.Wt-tabs .Wt-closeicon, .Wt-tabs span.citemselected .Wt-closeicon {
+    background: transparent url(closeicons-tab.png) no-repeat scroll right top;
+    background-position: right 3px;
+    border-width: 3px 0px 0px 0px;
+    padding: 0px 6px 0px 7px;
+    cursor: default;
+    margin-left: 3px;
+    vertical-align: top;
+}
+
+.Wt-tabs .Wt-closeicon:hover, .Wt-tabs span.citemselected .Wt-closeicon:hover {
+    background-position: right -10px;
+}
+
+.Wt-tabs {
+    zoom: 1;
+}

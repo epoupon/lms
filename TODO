@@ -1,0 +1,13 @@
+Features
+
+[Database]
+- When removing a track, make sure to remove genre/artist/release if last!
+- Properly scan Videos
+
+[Audio]
+- TableViewFilter: <All> -> Track count
+- MediaPlayer: move slider using js
+- TrackView : handle original release date
+- TrackView : handle duration > 1 hour
+- TrackView : select only relevant columns to speed up queries (do not get eveything!)
+- OGG metadata -> nested in the audio stream !

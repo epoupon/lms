@@ -1,0 +1,9 @@
+Starting test!
+Cannot create tables: Sqlite3: create table "genre" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null
+)
+: table "genre" already exists
+Found 7751 tracks!
+database: ./DatabaseTest.cpp:26: int main(): Assertion `0' failed.
