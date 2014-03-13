@@ -2,6 +2,9 @@
 
 #include <boost/array.hpp>
 
+namespace Av
+{
+
 std::string
 AvError::to_str(void) const
 {
@@ -27,3 +30,5 @@ void AvInit()
 	av_register_all();
 	std::cout << "AVCDOEC VERSION = " << avcodec_version() << std::endl;
 }
+
+} // namespace Av

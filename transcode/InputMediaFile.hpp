@@ -32,6 +32,9 @@ class InputMediaFile
 		boost::filesystem::path			getPath(void) const		{return _path;}
 		boost::posix_time::time_duration	getDuration(void) const		{return _duration;}
 
+		// Pictures
+		const std::vector< std::vector<unsigned char> >&	getCoverPictures(void) const { return _coverPictures; }
+
 		// Stream handling
 		std::vector<Stream>			getStreams(Stream::Type type) const;
 		const std::map<Stream::Type, Stream::Id>& getBestStreams(void) const	{return _bestStreams;}
@@ -43,6 +46,8 @@ class InputMediaFile
 
 		std::vector<Stream>			_streams;
 		std::map<Stream::Type, Stream::Id>	_bestStreams;
+
+		std::vector< std::vector<unsigned char> > _coverPictures;
 };
 
 

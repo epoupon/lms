@@ -17,6 +17,9 @@ extern "C" {
 
 #include <string>
 
+namespace Av
+{
+
 
 void AvInit();
 
@@ -40,5 +43,6 @@ class AvError
 		int _errnum;
 };
 
+} // namespace Av
 
 #endif

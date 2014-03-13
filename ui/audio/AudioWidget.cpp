@@ -49,15 +49,13 @@ AudioWidget::playTrack(boost::filesystem::path p)
 
 		// Refresh cover
 		{
-			MetaData::Extractor parser;
-			MetaData::GenericData cover;
-			if (parser.parseCover( p, cover)) {
-				std::cout << "Cover parsed!" << std::endl;
-				std::cout << "mime type = " << cover.mimeType << ", size = " << cover.data.size();
+			const std::vector< std::vector<unsigned char> >& pictures = inputFile.getCoverPictures();
 
-				_imgResource->setMimeType(cover.mimeType);
-				_imgResource->setData(cover.data);
-
+			if (!pictures.empty())
+			{
+				std::cout << "Cover found!" << std::endl;
+//				_imgResource->setMimeType(cover.mimeType);
+				_imgResource->setData(pictures.front());
 			}
 			else {
 				std::cout << "No cover found!" << std::endl;

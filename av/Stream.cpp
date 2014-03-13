@@ -23,4 +23,10 @@ Stream::getMetadata(void)
 	return Dictionary(_stream->metadata);
 }
 
+bool
+Stream::hasAttachedPic(void) const
+{
+	return (_stream->disposition & AV_DISPOSITION_ATTACHED_PIC);
+}
+
 } // namespace Av

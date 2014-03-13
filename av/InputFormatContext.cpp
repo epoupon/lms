@@ -96,4 +96,22 @@ InputFormatContext::getMetadata(void)
 
 }
 
+void
+InputFormatContext::getPictures(std::vector< std::vector<unsigned char> >& pictures) const
+{
+	for (std::size_t i = 0; i < native()->nb_streams; ++i)
+	{
+		if (native()->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
+		{
+			std::cout << "Found album art..." << std::endl;
+			AVPacket pkt = native()->streams[i]->attached_pic;
+
+			std::vector<unsigned char> data;
+			std::copy(pkt.data, pkt.data + pkt.size, std::back_inserter(data));
+
+			pictures.push_back( data );
+		}
+	}
+}
+
 } //namespace Av

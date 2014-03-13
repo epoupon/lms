@@ -33,28 +33,37 @@ InputMediaFile::InputMediaFile(const boost::filesystem::path& p)
 		_duration	= boost::posix_time::seconds(input.getDurationSecs() + 1);
 
 	// Get input streams
-	std::vector<Av::Stream> streams = input.getStreams();
+	std::vector<Av::Stream> avStreams = input.getStreams();
 
-	std::list<enum AVMediaType> types;
-	for (std::size_t streamId = 0; streamId < streams.size(); ++streamId)
+	std::list<enum AVMediaType> avMediaTypes;	// List of encountered streams
+	for (std::size_t avStreamId = 0; avStreamId < avStreams.size(); ++avStreamId)
 	{
-		Stream::Type type;
+		Av::Stream&	avStream(avStreams[avStreamId]);
+		Stream::Type	type;
 
-		if (getStreamType(streams[streamId].getCodecContext().getType(), type))
+		if (getStreamType(avStream.getCodecContext().getType(), type))
 		{
-			types.push_back(streams[streamId].getCodecContext().getType());
+			// Reject Video stream hat are in fact cover arts
+			if (avStream.hasAttachedPic())
+			{
+				std::cout << "Rejecting stream since it is an attached picture!" << std::endl;
+				continue;
+			}
 
-			_streams.push_back( Stream(streamId,
+
+			avMediaTypes.push_back(avStream.getCodecContext().getType());
+
+			_streams.push_back( Stream(avStreamId,
 						type,
-						streams[streamId].getMetadata().get("language"),	// TODO define somewhere else?
-						streams[streamId].getCodecContext().getCodecDesc()
+						avStream.getMetadata().get("language"),	// TODO define somewhere else?
+						avStream.getCodecContext().getCodecDesc()
 						));
 		}
 	}
 
-	types.unique();
+	avMediaTypes.unique();
 	// Scan for best streams
-	BOOST_FOREACH(enum AVMediaType type, types)
+	BOOST_FOREACH(enum AVMediaType type, avMediaTypes)
 	{
 		Av::Stream::Idx index;
 
@@ -68,6 +77,7 @@ InputMediaFile::InputMediaFile(const boost::filesystem::path& p)
 			std::cerr << "Cannot find best stream for type " << type << std::endl;
 	}
 
+	input.getPictures( _coverPictures );
 }
 
 std::vector<Stream>
@@ -81,7 +91,6 @@ InputMediaFile::getStreams(Stream::Type type) const
 	}
 	return res;
 }
-
 
 } // namespace Transcode
 

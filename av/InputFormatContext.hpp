@@ -25,11 +25,15 @@ class InputFormatContext : public FormatContext
 		// Scan file
 		void findStreamInfo();
 
-		std::vector<Stream> getStreams(void);
 
-		bool getBestStreamIdx(enum AVMediaType type, Stream::Idx& idx);
+		// Get attached pictures
+		void			getPictures(std::vector< std::vector<unsigned char> >& pictures) const;
 
-		std::size_t getDurationSecs() const;
+		// Get the streams
+		std::vector<Stream>	getStreams(void);
+
+		bool 			getBestStreamIdx(enum AVMediaType type, Stream::Idx& idx);
+		std::size_t		getDurationSecs() const;
 
 	private:
 		boost::filesystem::path _path;

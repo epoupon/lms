@@ -49,7 +49,8 @@ AvConvTranscoder::AvConvTranscoder(const Parameters& parameters)
 	oss << "avconv";
 
 	// input Offset
-	oss << " -ss " << _parameters.getOffset().total_seconds();		// to be placed before '-i' to speed up seeking
+	if (_parameters.getOffset().total_seconds() > 0)
+		oss << " -ss " << _parameters.getOffset().total_seconds();		// to be placed before '-i' to speed up seeking
 
 	// Input file
 	oss << " -i \"" << _parameters.getInputMediaFile().getPath().string() << "\"";

@@ -21,6 +21,7 @@ class Stream
 
 //	 	Idx getIdx() const { return _stream->index; }
 
+		bool		hasAttachedPic(void) const;
 		Dictionary	getMetadata(void);
 		CodecContext	getCodecContext(void);
 
