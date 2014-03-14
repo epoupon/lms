@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 //	database.watchDirectory( WatchedDirectory("/storage/common/Media/Video/Series", WatchedDirectory::Video) );
 
 	std::cout << "Starting refresh..." << std::endl;
-	boost::thread refreshThread(boost::bind(&Database::refresh, &database));
+//	boost::thread refreshThread(boost::bind(&Database::refresh, &database));
 
 
 	return Wt::WRun(argc, argv, &createApplication);

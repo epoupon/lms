@@ -75,7 +75,7 @@ AudioWidget::playTrack(boost::filesystem::path p)
 AudioWidget::handleTrackEnded(void)
 {
 	std::cout << "Track playback ended!" << std::endl;
-	_audioDbWidget->selectNextTrack();
+//	_audioDbWidget->selectNextTrack();
 }
 
 
