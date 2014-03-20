@@ -1,7 +1,23 @@
 
+I) DEPENCIES
 
-1/ Si continuation, faire un transcode.process jusqu'a qu'on ait les bons octets
-2/ Sinon faire un seek, flusher tout ce qu'on a ecrit
- -> se servir des octets demandépar le client HTTp uniquement pour faire du seek, ne pas stockergrand chose ? Utiliser une queue ?
-3/ Desactiver le seek dans le memiocontext ?
+libboost-dev libextractor-dev libavcodec-dev libwt-dev
+
+Warning: your distrib may provide an outdated wt library. Latest Wt highly recommended (http://www.webtoolkit.eu/wt)
+
+
+II) BUILD
+
+mkdir build
+cd build
+../configure
+
+(configure will complain if a mandatory library is missing)
+
+make -j 4
+
+
+III) RUNNING
+
+./lms --docroot=../ --http-port=8080 --http-address=0.0.0.0
 
