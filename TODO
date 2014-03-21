@@ -10,6 +10,7 @@
 - Use Inotify like system to watch modified/added files
 - Implement a video database cleanup
 - User access for Video/Pictures  (really needed for Audio?)
+- Create a new type: "share", that handles every other types in a directory based share?
 
 [Audio]
 - TableViewFilter: <All> -> Track count for this speccial category
