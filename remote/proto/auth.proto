@@ -1,0 +1,13 @@
+import "common.proto";
+
+message AuthRequest
+{
+	required	string	user_name	= 1;
+	required	string	user_password	= 2;
+}
+
+message AuthResponse
+{
+	required Error	error	= 1;
+}
+

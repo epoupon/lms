@@ -1,0 +1,155 @@
+import "common.proto";
+
+message CollectionRequest
+{
+
+	message GetGenreList
+	{
+		optional string	filter_name		= 1;	// Genre that contains 'filterName' in its name
+
+		optional uint32 preferred_batch_size	= 2;
+	}
+
+	message GetArtistList
+	{
+		// Search Filters
+		optional string	filter_name		= 1;	// Artist that contains 'filterName' in its name
+		repeated string filter_genre		= 2;	// Artist that has at least a track of the genre
+
+		optional uint32 preferred_batch_size	= 3;
+	}
+
+	message GetReleaseList
+	{
+		// Search filters
+		optional string	filter_name		= 1;	// Release that contains 'filterName' in its name
+		repeated string	artist_name		= 2;	// Release that contains at least a track of this artist
+		repeated string filter_genre		= 3;	// Release that has at least a track of the genre
+
+		optional bool	get_cover		= 4;	// Request cover art for each release
+		optional uint32 preferred_batch_size	= 5;
+	}
+
+	message GetTrackList
+	{
+		// Search filters
+		optional string	filter_name		= 1;	// Track that contains 'filterName' in its name
+		repeated string	release_name		= 2;	// Track that is part of the release
+		repeated string	artist_name		= 3;	// Track made by this artist
+		repeated string filter_genre		= 4;	// Track that has at least a track of the genre
+		optional uint32 disc_number		= 5;	// Track number
+		optional uint32 track_number		= 6;	// Disc number
+
+		optional bool	get_cover		= 7;	// Request cover art for each track
+		optional uint32 preferred_batch_size	= 8;
+	}
+
+
+	enum Type
+	{
+		TypeGetArtistList	= 0;
+		TypeGetReleaseList	= 1;
+		TypeGetTrackList	= 2;
+	}
+
+	required Type	type			= 1;
+
+	optional GetArtistList	get_artists	= 2;
+	optional GetReleaseList	get_releases	= 3;
+	optional GetTrackList	get_tracks	= 4;
+}
+
+
+message CollectionResponse
+{
+	enum Type {
+		TypeGenreList	= 1;
+		TypeArtistList	= 2;
+		TypeReleaseList	= 3;
+		TypeTrackList	= 4;
+	}
+
+	required Error	error	= 1;
+
+	required Type	type	= 2;
+
+	optional GenreList	genre_list	= 3;
+	optional ArtistList	artist_list	= 4;
+	optional ReleaseList	release_list	= 5;
+	optional TrackList	track_list	= 6;
+}
+
+message GenreList
+{
+	required bool	last	= 1;
+	repeated Genre	genres	= 2;
+}
+
+message ArtistList
+{
+	required bool	last	= 1;
+	repeated Artist	artists	= 2;
+}
+
+message ReleaseList
+{
+	required bool		last	= 1;
+	repeated Release	releases = 2;
+}
+
+message TrackList
+{
+	required bool	last	= 1;
+	repeated Track	tracks	= 2;
+}
+
+message Genre
+{
+	required string name	= 1;
+}
+
+message CoverArt
+{
+	optional string	mime_type	= 1;
+	repeated bytes data		= 2;
+}
+
+message Artist
+{
+	required string name		= 1;
+	required uint32 nb_releases	= 2;
+}
+
+message Release
+{
+	required string name			= 1;
+
+	required uint32 nb_tracks		= 2;
+	required uint32 duration_secs		= 3;
+
+	optional CoverArt coverArt	= 4;
+}
+
+message Track
+{
+	required int64	media_id	= 1;
+	optional uint32 disc_number	= 2;
+	optional uint32 track_number	= 3;
+
+	optional string	artist			= 4;
+	optional string	release			= 5;
+
+	required string	name			= 6;
+
+	required uint32	duration_secs		= 7;
+
+	optional string	release_date	= 8;
+	optional string	original_release_date	= 9;
+
+	repeated string genres		= 10;
+
+	optional bytes	coverArt	= 11;
+}
+
+
+

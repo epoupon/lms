@@ -1,0 +1,73 @@
+import "common.proto";
+
+enum CodecType
+{
+	CodecTypeOGG	= 1;
+}
+
+
+message MediaRequest
+{
+
+	message Prepare
+	{
+		required int64		id			= 1;	// Id if the media
+
+		required uint32		offset_secs		= 2;	// Offset in seconds
+		optional CodecType	codec_type		= 3;	// Codec of the media
+
+		optional uint32		audio_bitrate		= 4;
+
+		// Video specifics
+		optional uint32	video_bitrate		= 5;
+		optional uint32 audio_stream_idx	= 6;
+		optional uint32 video_stream_idx	= 7;
+		optional uint32 subtitle_stream_idx	= 8;
+	}
+
+	message GetPart
+	{
+		required uint32		requested_data_size	= 1;	// Amount of data requested. May receive more or less
+
+	}
+
+	message Terminate
+	{
+
+	}
+
+	enum Type
+	{
+		TypeMediaPrepare	= 1;
+		TypeMediaGet		= 2;
+		TypeMediaTerminate	= 3;
+	}
+
+	required Type	request_type		= 1;
+
+	optional Prepare	prepare		= 2;
+	optional GetPart	get_part	= 3;
+	optional Terminate	terminate	= 4;
+
+} // MediaRequest
+
+message MediaResponse
+{
+	message MediaPart
+	{
+		required uint64	byte_offset	= 1;
+		repeated bytes	data		= 2;
+	}
+
+	enum Type
+	{
+		TypeMediaPart		= 1;
+	}
+
+	required Error	error		= 1;
+
+	required Type	response_type	= 2;
+
+	optional MediaPart	part		= 3;
+}
+
