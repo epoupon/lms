@@ -76,8 +76,9 @@ void protobuf_AssignDesc_collection_2eproto() {
       "collection.proto");
   GOOGLE_CHECK(file != NULL);
   CollectionRequest_descriptor_ = file->message_type(0);
-  static const int CollectionRequest_offsets_[4] = {
+  static const int CollectionRequest_offsets_[5] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(CollectionRequest, type_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(CollectionRequest, get_genres_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(CollectionRequest, get_artists_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(CollectionRequest, get_releases_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(CollectionRequest, get_tracks_),
@@ -430,51 +431,52 @@ void protobuf_AddDesc_collection_2eproto() {
 
   ::protobuf_AddDesc_common_2eproto();
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\020collection.proto\032\014common.proto\"\220\006\n\021Col"
+    "\n\020collection.proto\032\014common.proto\"\305\006\n\021Col"
     "lectionRequest\022%\n\004type\030\001 \002(\0162\027.Collectio"
-    "nRequest.Type\0225\n\013get_artists\030\002 \001(\0132 .Col"
-    "lectionRequest.GetArtistList\0227\n\014get_rele"
-    "ases\030\003 \001(\0132!.CollectionRequest.GetReleas"
-    "eList\0223\n\nget_tracks\030\004 \001(\0132\037.CollectionRe"
-    "quest.GetTrackList\032A\n\014GetGenreList\022\023\n\013fi"
-    "lter_name\030\001 \001(\t\022\034\n\024preferred_batch_size\030"
-    "\002 \001(\r\032X\n\rGetArtistList\022\023\n\013filter_name\030\001 "
-    "\001(\t\022\024\n\014filter_genre\030\002 \003(\t\022\034\n\024preferred_b"
-    "atch_size\030\003 \001(\r\032\201\001\n\016GetReleaseList\022\023\n\013fi"
-    "lter_name\030\001 \001(\t\022\023\n\013artist_name\030\002 \003(\t\022\024\n\014"
-    "filter_genre\030\003 \003(\t\022\021\n\tget_cover\030\004 \001(\010\022\034\n"
-    "\024preferred_batch_size\030\005 \001(\r\032\300\001\n\014GetTrack"
-    "List\022\023\n\013filter_name\030\001 \001(\t\022\024\n\014release_nam"
-    "e\030\002 \003(\t\022\023\n\013artist_name\030\003 \003(\t\022\024\n\014filter_g"
-    "enre\030\004 \003(\t\022\023\n\013disc_number\030\005 \001(\r\022\024\n\014track"
-    "_number\030\006 \001(\r\022\021\n\tget_cover\030\007 \001(\010\022\034\n\024pref"
-    "erred_batch_size\030\010 \001(\r\"K\n\004Type\022\025\n\021TypeGe"
-    "tArtistList\020\000\022\026\n\022TypeGetReleaseList\020\001\022\024\n"
-    "\020TypeGetTrackList\020\002\"\260\002\n\022CollectionRespon"
-    "se\022\025\n\005error\030\001 \002(\0132\006.Error\022&\n\004type\030\002 \002(\0162"
-    "\030.CollectionResponse.Type\022\036\n\ngenre_list\030"
-    "\003 \001(\0132\n.GenreList\022 \n\013artist_list\030\004 \001(\0132\013"
-    ".ArtistList\022\"\n\014release_list\030\005 \001(\0132\014.Rele"
-    "aseList\022\036\n\ntrack_list\030\006 \001(\0132\n.TrackList\""
-    "U\n\004Type\022\021\n\rTypeGenreList\020\001\022\022\n\016TypeArtist"
-    "List\020\002\022\023\n\017TypeReleaseList\020\003\022\021\n\rTypeTrack"
-    "List\020\004\"1\n\tGenreList\022\014\n\004last\030\001 \002(\010\022\026\n\006gen"
-    "res\030\002 \003(\0132\006.Genre\"4\n\nArtistList\022\014\n\004last\030"
-    "\001 \002(\010\022\030\n\007artists\030\002 \003(\0132\007.Artist\"7\n\013Relea"
-    "seList\022\014\n\004last\030\001 \002(\010\022\032\n\010releases\030\002 \003(\0132\010"
-    ".Release\"1\n\tTrackList\022\014\n\004last\030\001 \002(\010\022\026\n\006t"
-    "racks\030\002 \003(\0132\006.Track\"\025\n\005Genre\022\014\n\004name\030\001 \002"
-    "(\t\"+\n\010CoverArt\022\021\n\tmime_type\030\001 \001(\t\022\014\n\004dat"
-    "a\030\002 \003(\014\"+\n\006Artist\022\014\n\004name\030\001 \002(\t\022\023\n\013nb_re"
-    "leases\030\002 \002(\r\"^\n\007Release\022\014\n\004name\030\001 \002(\t\022\021\n"
-    "\tnb_tracks\030\002 \002(\r\022\025\n\rduration_secs\030\003 \002(\r\022"
-    "\033\n\010coverArt\030\004 \001(\0132\t.CoverArt\"\341\001\n\005Track\022\020"
-    "\n\010media_id\030\001 \002(\003\022\023\n\013disc_number\030\002 \001(\r\022\024\n"
-    "\014track_number\030\003 \001(\r\022\016\n\006artist\030\004 \001(\t\022\017\n\007r"
-    "elease\030\005 \001(\t\022\014\n\004name\030\006 \002(\t\022\025\n\rduration_s"
-    "ecs\030\007 \002(\r\022\024\n\014release_date\030\010 \001(\t\022\035\n\025origi"
-    "nal_release_date\030\t \001(\t\022\016\n\006genres\030\n \003(\t\022\020"
-    "\n\010coverArt\030\013 \001(\014", 1776);
+    "nRequest.Type\0223\n\nget_genres\030\002 \001(\0132\037.Coll"
+    "ectionRequest.GetGenreList\0225\n\013get_artist"
+    "s\030\003 \001(\0132 .CollectionRequest.GetArtistLis"
+    "t\0227\n\014get_releases\030\004 \001(\0132!.CollectionRequ"
+    "est.GetReleaseList\0223\n\nget_tracks\030\005 \001(\0132\037"
+    ".CollectionRequest.GetTrackList\032A\n\014GetGe"
+    "nreList\022\023\n\013filter_name\030\001 \001(\t\022\034\n\024preferre"
+    "d_batch_size\030\002 \001(\r\032X\n\rGetArtistList\022\023\n\013f"
+    "ilter_name\030\001 \001(\t\022\024\n\014filter_genre\030\002 \003(\t\022\034"
+    "\n\024preferred_batch_size\030\003 \001(\r\032\201\001\n\016GetRele"
+    "aseList\022\023\n\013filter_name\030\001 \001(\t\022\023\n\013artist_n"
+    "ame\030\002 \003(\t\022\024\n\014filter_genre\030\003 \003(\t\022\021\n\tget_c"
+    "over\030\004 \001(\010\022\034\n\024preferred_batch_size\030\005 \001(\r"
+    "\032\300\001\n\014GetTrackList\022\023\n\013filter_name\030\001 \001(\t\022\024"
+    "\n\014release_name\030\002 \003(\t\022\023\n\013artist_name\030\003 \003("
+    "\t\022\024\n\014filter_genre\030\004 \003(\t\022\023\n\013disc_number\030\005"
+    " \001(\r\022\024\n\014track_number\030\006 \001(\r\022\021\n\tget_cover\030"
+    "\007 \001(\010\022\034\n\024preferred_batch_size\030\010 \001(\r\"K\n\004T"
+    "ype\022\025\n\021TypeGetArtistList\020\000\022\026\n\022TypeGetRel"
+    "easeList\020\001\022\024\n\020TypeGetTrackList\020\002\"\260\002\n\022Col"
+    "lectionResponse\022\025\n\005error\030\001 \002(\0132\006.Error\022&"
+    "\n\004type\030\002 \001(\0162\030.CollectionResponse.Type\022\036"
+    "\n\ngenre_list\030\003 \001(\0132\n.GenreList\022 \n\013artist"
+    "_list\030\004 \001(\0132\013.ArtistList\022\"\n\014release_list"
+    "\030\005 \001(\0132\014.ReleaseList\022\036\n\ntrack_list\030\006 \001(\013"
+    "2\n.TrackList\"U\n\004Type\022\021\n\rTypeGenreList\020\001\022"
+    "\022\n\016TypeArtistList\020\002\022\023\n\017TypeReleaseList\020\003"
+    "\022\021\n\rTypeTrackList\020\004\"1\n\tGenreList\022\014\n\004last"
+    "\030\001 \002(\010\022\026\n\006genres\030\002 \003(\0132\006.Genre\"4\n\nArtist"
+    "List\022\014\n\004last\030\001 \002(\010\022\030\n\007artists\030\002 \003(\0132\007.Ar"
+    "tist\"7\n\013ReleaseList\022\014\n\004last\030\001 \002(\010\022\032\n\010rel"
+    "eases\030\002 \003(\0132\010.Release\"1\n\tTrackList\022\014\n\004la"
+    "st\030\001 \002(\010\022\026\n\006tracks\030\002 \003(\0132\006.Track\"\025\n\005Genr"
+    "e\022\014\n\004name\030\001 \002(\t\"+\n\010CoverArt\022\021\n\tmime_type"
+    "\030\001 \001(\t\022\014\n\004data\030\002 \003(\014\"+\n\006Artist\022\014\n\004name\030\001"
+    " \002(\t\022\023\n\013nb_releases\030\002 \002(\r\"^\n\007Release\022\014\n\004"
+    "name\030\001 \002(\t\022\021\n\tnb_tracks\030\002 \002(\r\022\025\n\rduratio"
+    "n_secs\030\003 \002(\r\022\033\n\010coverArt\030\004 \001(\0132\t.CoverAr"
+    "t\"\341\001\n\005Track\022\020\n\010media_id\030\001 \002(\003\022\023\n\013disc_nu"
+    "mber\030\002 \001(\r\022\024\n\014track_number\030\003 \001(\r\022\016\n\006arti"
+    "st\030\004 \001(\t\022\017\n\007release\030\005 \001(\t\022\014\n\004name\030\006 \002(\t\022"
+    "\025\n\rduration_secs\030\007 \002(\r\022\024\n\014release_date\030\010"
+    " \001(\t\022\035\n\025original_release_date\030\t \001(\t\022\016\n\006g"
+    "enres\030\n \003(\t\022\020\n\010coverArt\030\013 \001(\014", 1829);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "collection.proto", &protobuf_RegisterTypes);
   CollectionRequest::default_instance_ = new CollectionRequest();
@@ -2048,6 +2050,7 @@ void CollectionRequest_GetTrackList::Swap(CollectionRequest_GetTrackList* other)
 
 #ifndef _MSC_VER
 const int CollectionRequest::kTypeFieldNumber;
+const int CollectionRequest::kGetGenresFieldNumber;
 const int CollectionRequest::kGetArtistsFieldNumber;
 const int CollectionRequest::kGetReleasesFieldNumber;
 const int CollectionRequest::kGetTracksFieldNumber;
@@ -2059,6 +2062,7 @@ CollectionRequest::CollectionRequest()
 }
 
 void CollectionRequest::InitAsDefaultInstance() {
+  get_genres_ = const_cast< ::CollectionRequest_GetGenreList*>(&::CollectionRequest_GetGenreList::default_instance());
   get_artists_ = const_cast< ::CollectionRequest_GetArtistList*>(&::CollectionRequest_GetArtistList::default_instance());
   get_releases_ = const_cast< ::CollectionRequest_GetReleaseList*>(&::CollectionRequest_GetReleaseList::default_instance());
   get_tracks_ = const_cast< ::CollectionRequest_GetTrackList*>(&::CollectionRequest_GetTrackList::default_instance());
@@ -2073,6 +2077,7 @@ CollectionRequest::CollectionRequest(const CollectionRequest& from)
 void CollectionRequest::SharedCtor() {
   _cached_size_ = 0;
   type_ = 0;
+  get_genres_ = NULL;
   get_artists_ = NULL;
   get_releases_ = NULL;
   get_tracks_ = NULL;
@@ -2085,6 +2090,7 @@ CollectionRequest::~CollectionRequest() {
 
 void CollectionRequest::SharedDtor() {
   if (this != default_instance_) {
+    delete get_genres_;
     delete get_artists_;
     delete get_releases_;
     delete get_tracks_;
@@ -2115,6 +2121,9 @@ CollectionRequest* CollectionRequest::New() const {
 void CollectionRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     type_ = 0;
+    if (has_get_genres()) {
+      if (get_genres_ != NULL) get_genres_->::CollectionRequest_GetGenreList::Clear();
+    }
     if (has_get_artists()) {
       if (get_artists_ != NULL) get_artists_->::CollectionRequest_GetArtistList::Clear();
     }
@@ -2151,12 +2160,26 @@ bool CollectionRequest::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(18)) goto parse_get_artists;
+        if (input->ExpectTag(18)) goto parse_get_genres;
         break;
       }
 
-      // optional .CollectionRequest.GetArtistList get_artists = 2;
+      // optional .CollectionRequest.GetGenreList get_genres = 2;
       case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_get_genres:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_get_genres()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(26)) goto parse_get_artists;
+        break;
+      }
+
+      // optional .CollectionRequest.GetArtistList get_artists = 3;
+      case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_get_artists:
@@ -2165,12 +2188,12 @@ bool CollectionRequest::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(26)) goto parse_get_releases;
+        if (input->ExpectTag(34)) goto parse_get_releases;
         break;
       }
 
-      // optional .CollectionRequest.GetReleaseList get_releases = 3;
-      case 3: {
+      // optional .CollectionRequest.GetReleaseList get_releases = 4;
+      case 4: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_get_releases:
@@ -2179,12 +2202,12 @@ bool CollectionRequest::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(34)) goto parse_get_tracks;
+        if (input->ExpectTag(42)) goto parse_get_tracks;
         break;
       }
 
-      // optional .CollectionRequest.GetTrackList get_tracks = 4;
-      case 4: {
+      // optional .CollectionRequest.GetTrackList get_tracks = 5;
+      case 5: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_get_tracks:
@@ -2221,22 +2244,28 @@ void CollectionRequest::SerializeWithCachedSizes(
       1, this->type(), output);
   }
 
-  // optional .CollectionRequest.GetArtistList get_artists = 2;
+  // optional .CollectionRequest.GetGenreList get_genres = 2;
+  if (has_get_genres()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      2, this->get_genres(), output);
+  }
+
+  // optional .CollectionRequest.GetArtistList get_artists = 3;
   if (has_get_artists()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      2, this->get_artists(), output);
+      3, this->get_artists(), output);
   }
 
-  // optional .CollectionRequest.GetReleaseList get_releases = 3;
+  // optional .CollectionRequest.GetReleaseList get_releases = 4;
   if (has_get_releases()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      3, this->get_releases(), output);
+      4, this->get_releases(), output);
   }
 
-  // optional .CollectionRequest.GetTrackList get_tracks = 4;
+  // optional .CollectionRequest.GetTrackList get_tracks = 5;
   if (has_get_tracks()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      4, this->get_tracks(), output);
+      5, this->get_tracks(), output);
   }
 
   if (!unknown_fields().empty()) {
@@ -2253,25 +2282,32 @@ void CollectionRequest::SerializeWithCachedSizes(
       1, this->type(), target);
   }
 
-  // optional .CollectionRequest.GetArtistList get_artists = 2;
+  // optional .CollectionRequest.GetGenreList get_genres = 2;
+  if (has_get_genres()) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        2, this->get_genres(), target);
+  }
+
+  // optional .CollectionRequest.GetArtistList get_artists = 3;
   if (has_get_artists()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        2, this->get_artists(), target);
+        3, this->get_artists(), target);
   }
 
-  // optional .CollectionRequest.GetReleaseList get_releases = 3;
+  // optional .CollectionRequest.GetReleaseList get_releases = 4;
   if (has_get_releases()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        3, this->get_releases(), target);
+        4, this->get_releases(), target);
   }
 
-  // optional .CollectionRequest.GetTrackList get_tracks = 4;
+  // optional .CollectionRequest.GetTrackList get_tracks = 5;
   if (has_get_tracks()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        4, this->get_tracks(), target);
+        5, this->get_tracks(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -2291,21 +2327,28 @@ int CollectionRequest::ByteSize() const {
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
     }
 
-    // optional .CollectionRequest.GetArtistList get_artists = 2;
+    // optional .CollectionRequest.GetGenreList get_genres = 2;
+    if (has_get_genres()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+          this->get_genres());
+    }
+
+    // optional .CollectionRequest.GetArtistList get_artists = 3;
     if (has_get_artists()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->get_artists());
     }
 
-    // optional .CollectionRequest.GetReleaseList get_releases = 3;
+    // optional .CollectionRequest.GetReleaseList get_releases = 4;
     if (has_get_releases()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->get_releases());
     }
 
-    // optional .CollectionRequest.GetTrackList get_tracks = 4;
+    // optional .CollectionRequest.GetTrackList get_tracks = 5;
     if (has_get_tracks()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -2342,6 +2385,9 @@ void CollectionRequest::MergeFrom(const CollectionRequest& from) {
     if (from.has_type()) {
       set_type(from.type());
     }
+    if (from.has_get_genres()) {
+      mutable_get_genres()->::CollectionRequest_GetGenreList::MergeFrom(from.get_genres());
+    }
     if (from.has_get_artists()) {
       mutable_get_artists()->::CollectionRequest_GetArtistList::MergeFrom(from.get_artists());
     }
@@ -2376,6 +2422,7 @@ bool CollectionRequest::IsInitialized() const {
 void CollectionRequest::Swap(CollectionRequest* other) {
   if (other != this) {
     std::swap(type_, other->type_);
+    std::swap(get_genres_, other->get_genres_);
     std::swap(get_artists_, other->get_artists_);
     std::swap(get_releases_, other->get_releases_);
     std::swap(get_tracks_, other->get_tracks_);
@@ -2537,7 +2584,7 @@ bool CollectionResponse::MergePartialFromCodedStream(
         break;
       }
 
-      // required .CollectionResponse.Type type = 2;
+      // optional .CollectionResponse.Type type = 2;
       case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
@@ -2638,7 +2685,7 @@ void CollectionResponse::SerializeWithCachedSizes(
       1, this->error(), output);
   }
 
-  // required .CollectionResponse.Type type = 2;
+  // optional .CollectionResponse.Type type = 2;
   if (has_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       2, this->type(), output);
@@ -2683,7 +2730,7 @@ void CollectionResponse::SerializeWithCachedSizes(
         1, this->error(), target);
   }
 
-  // required .CollectionResponse.Type type = 2;
+  // optional .CollectionResponse.Type type = 2;
   if (has_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       2, this->type(), target);
@@ -2735,7 +2782,7 @@ int CollectionResponse::ByteSize() const {
           this->error());
     }
 
-    // required .CollectionResponse.Type type = 2;
+    // optional .CollectionResponse.Type type = 2;
     if (has_type()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
@@ -2831,7 +2878,7 @@ void CollectionResponse::CopyFrom(const CollectionResponse& from) {
 }
 
 bool CollectionResponse::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
 
   if (has_error()) {
     if (!this->error().IsInitialized()) return false;

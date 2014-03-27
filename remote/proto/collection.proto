@@ -54,9 +54,10 @@ message CollectionRequest
 
 	required Type	type			= 1;
 
-	optional GetArtistList	get_artists	= 2;
-	optional GetReleaseList	get_releases	= 3;
-	optional GetTrackList	get_tracks	= 4;
+	optional GetGenreList	get_genres	= 2;
+	optional GetArtistList	get_artists	= 3;
+	optional GetReleaseList	get_releases	= 4;
+	optional GetTrackList	get_tracks	= 5;
 }
 
 
@@ -71,7 +72,7 @@ message CollectionResponse
 
 	required Error	error	= 1;
 
-	required Type	type	= 2;
+	optional Type	type	= 2;
 
 	optional GenreList	genre_list	= 3;
 	optional ArtistList	artist_list	= 4;
@@ -81,25 +82,25 @@ message CollectionResponse
 
 message GenreList
 {
-	required bool	last	= 1;
+	required bool	last	= 1;	// More messages follow if last = 0
 	repeated Genre	genres	= 2;
 }
 
 message ArtistList
 {
-	required bool	last	= 1;
+	required bool	last	= 1;	// More messages follow if last = 0
 	repeated Artist	artists	= 2;
 }
 
 message ReleaseList
 {
-	required bool		last	= 1;
+	required bool		last	= 1;	// More messages follow if last = 0
 	repeated Release	releases = 2;
 }
 
 message TrackList
 {
-	required bool	last	= 1;
+	required bool	last	= 1;	// More messages follow if last = 0
 	repeated Track	tracks	= 2;
 }
 

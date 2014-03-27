@@ -713,28 +713,37 @@ class CollectionRequest : public ::google::protobuf::Message {
   inline ::CollectionRequest_Type type() const;
   inline void set_type(::CollectionRequest_Type value);
 
-  // optional .CollectionRequest.GetArtistList get_artists = 2;
+  // optional .CollectionRequest.GetGenreList get_genres = 2;
+  inline bool has_get_genres() const;
+  inline void clear_get_genres();
+  static const int kGetGenresFieldNumber = 2;
+  inline const ::CollectionRequest_GetGenreList& get_genres() const;
+  inline ::CollectionRequest_GetGenreList* mutable_get_genres();
+  inline ::CollectionRequest_GetGenreList* release_get_genres();
+  inline void set_allocated_get_genres(::CollectionRequest_GetGenreList* get_genres);
+
+  // optional .CollectionRequest.GetArtistList get_artists = 3;
   inline bool has_get_artists() const;
   inline void clear_get_artists();
-  static const int kGetArtistsFieldNumber = 2;
+  static const int kGetArtistsFieldNumber = 3;
   inline const ::CollectionRequest_GetArtistList& get_artists() const;
   inline ::CollectionRequest_GetArtistList* mutable_get_artists();
   inline ::CollectionRequest_GetArtistList* release_get_artists();
   inline void set_allocated_get_artists(::CollectionRequest_GetArtistList* get_artists);
 
-  // optional .CollectionRequest.GetReleaseList get_releases = 3;
+  // optional .CollectionRequest.GetReleaseList get_releases = 4;
   inline bool has_get_releases() const;
   inline void clear_get_releases();
-  static const int kGetReleasesFieldNumber = 3;
+  static const int kGetReleasesFieldNumber = 4;
   inline const ::CollectionRequest_GetReleaseList& get_releases() const;
   inline ::CollectionRequest_GetReleaseList* mutable_get_releases();
   inline ::CollectionRequest_GetReleaseList* release_get_releases();
   inline void set_allocated_get_releases(::CollectionRequest_GetReleaseList* get_releases);
 
-  // optional .CollectionRequest.GetTrackList get_tracks = 4;
+  // optional .CollectionRequest.GetTrackList get_tracks = 5;
   inline bool has_get_tracks() const;
   inline void clear_get_tracks();
-  static const int kGetTracksFieldNumber = 4;
+  static const int kGetTracksFieldNumber = 5;
   inline const ::CollectionRequest_GetTrackList& get_tracks() const;
   inline ::CollectionRequest_GetTrackList* mutable_get_tracks();
   inline ::CollectionRequest_GetTrackList* release_get_tracks();
@@ -744,6 +753,8 @@ class CollectionRequest : public ::google::protobuf::Message {
  private:
   inline void set_has_type();
   inline void clear_has_type();
+  inline void set_has_get_genres();
+  inline void clear_has_get_genres();
   inline void set_has_get_artists();
   inline void clear_has_get_artists();
   inline void set_has_get_releases();
@@ -753,13 +764,14 @@ class CollectionRequest : public ::google::protobuf::Message {
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
+  ::CollectionRequest_GetGenreList* get_genres_;
   ::CollectionRequest_GetArtistList* get_artists_;
   ::CollectionRequest_GetReleaseList* get_releases_;
   ::CollectionRequest_GetTrackList* get_tracks_;
   int type_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(5 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -859,7 +871,7 @@ class CollectionResponse : public ::google::protobuf::Message {
   inline ::Error* release_error();
   inline void set_allocated_error(::Error* error);
 
-  // required .CollectionResponse.Type type = 2;
+  // optional .CollectionResponse.Type type = 2;
   inline bool has_type() const;
   inline void clear_type();
   static const int kTypeFieldNumber = 2;
@@ -2708,15 +2720,53 @@ inline void CollectionRequest::set_type(::CollectionRequest_Type value) {
   type_ = value;
 }
 
-// optional .CollectionRequest.GetArtistList get_artists = 2;
-inline bool CollectionRequest::has_get_artists() const {
+// optional .CollectionRequest.GetGenreList get_genres = 2;
+inline bool CollectionRequest::has_get_genres() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void CollectionRequest::set_has_get_artists() {
+inline void CollectionRequest::set_has_get_genres() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void CollectionRequest::clear_has_get_artists() {
+inline void CollectionRequest::clear_has_get_genres() {
   _has_bits_[0] &= ~0x00000002u;
+}
+inline void CollectionRequest::clear_get_genres() {
+  if (get_genres_ != NULL) get_genres_->::CollectionRequest_GetGenreList::Clear();
+  clear_has_get_genres();
+}
+inline const ::CollectionRequest_GetGenreList& CollectionRequest::get_genres() const {
+  return get_genres_ != NULL ? *get_genres_ : *default_instance_->get_genres_;
+}
+inline ::CollectionRequest_GetGenreList* CollectionRequest::mutable_get_genres() {
+  set_has_get_genres();
+  if (get_genres_ == NULL) get_genres_ = new ::CollectionRequest_GetGenreList;
+  return get_genres_;
+}
+inline ::CollectionRequest_GetGenreList* CollectionRequest::release_get_genres() {
+  clear_has_get_genres();
+  ::CollectionRequest_GetGenreList* temp = get_genres_;
+  get_genres_ = NULL;
+  return temp;
+}
+inline void CollectionRequest::set_allocated_get_genres(::CollectionRequest_GetGenreList* get_genres) {
+  delete get_genres_;
+  get_genres_ = get_genres;
+  if (get_genres) {
+    set_has_get_genres();
+  } else {
+    clear_has_get_genres();
+  }
+}
+
+// optional .CollectionRequest.GetArtistList get_artists = 3;
+inline bool CollectionRequest::has_get_artists() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void CollectionRequest::set_has_get_artists() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void CollectionRequest::clear_has_get_artists() {
+  _has_bits_[0] &= ~0x00000004u;
 }
 inline void CollectionRequest::clear_get_artists() {
   if (get_artists_ != NULL) get_artists_->::CollectionRequest_GetArtistList::Clear();
@@ -2746,15 +2796,15 @@ inline void CollectionRequest::set_allocated_get_artists(::CollectionRequest_Get
   }
 }
 
-// optional .CollectionRequest.GetReleaseList get_releases = 3;
+// optional .CollectionRequest.GetReleaseList get_releases = 4;
 inline bool CollectionRequest::has_get_releases() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
+  return (_has_bits_[0] & 0x00000008u) != 0;
 }
 inline void CollectionRequest::set_has_get_releases() {
-  _has_bits_[0] |= 0x00000004u;
+  _has_bits_[0] |= 0x00000008u;
 }
 inline void CollectionRequest::clear_has_get_releases() {
-  _has_bits_[0] &= ~0x00000004u;
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void CollectionRequest::clear_get_releases() {
   if (get_releases_ != NULL) get_releases_->::CollectionRequest_GetReleaseList::Clear();
@@ -2784,15 +2834,15 @@ inline void CollectionRequest::set_allocated_get_releases(::CollectionRequest_Ge
   }
 }
 
-// optional .CollectionRequest.GetTrackList get_tracks = 4;
+// optional .CollectionRequest.GetTrackList get_tracks = 5;
 inline bool CollectionRequest::has_get_tracks() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
+  return (_has_bits_[0] & 0x00000010u) != 0;
 }
 inline void CollectionRequest::set_has_get_tracks() {
-  _has_bits_[0] |= 0x00000008u;
+  _has_bits_[0] |= 0x00000010u;
 }
 inline void CollectionRequest::clear_has_get_tracks() {
-  _has_bits_[0] &= ~0x00000008u;
+  _has_bits_[0] &= ~0x00000010u;
 }
 inline void CollectionRequest::clear_get_tracks() {
   if (get_tracks_ != NULL) get_tracks_->::CollectionRequest_GetTrackList::Clear();
@@ -2864,7 +2914,7 @@ inline void CollectionResponse::set_allocated_error(::Error* error) {
   }
 }
 
-// required .CollectionResponse.Type type = 2;
+// optional .CollectionResponse.Type type = 2;
 inline bool CollectionResponse::has_type() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
