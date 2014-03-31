@@ -8,6 +8,7 @@ Warning: your distrib may provide an outdated wt library. Latest Wt highly recom
 
 II) BUILD
 
+autoreconf -vfi
 mkdir build
 cd build
 ../configure
