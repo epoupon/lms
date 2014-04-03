@@ -2,15 +2,14 @@
 [Users]
 - Do the feature
 
-[Pictures]
-- Do the feature (merge the Video/Pictures feature? i.e. for personal holiday data sharing...)
-
 [Database]
 - When removing a track, make sure to remove genre/artist/release if last
 - Use Inotify like system to watch modified/added files
 - Implement a video database cleanup
 - User access for Video/Pictures  (really needed for Audio?)
 - Create a new type: "share", that handles every other types in a directory based share?
+- Group video in "video groups". Each video may has sub groups (current "Path" class)
+- Simplify database and remove the Path class
 
 [Audio]
 - TableViewFilter: <All> -> Track count for this speccial category
@@ -20,9 +19,15 @@
 - TrackView : select only relevant columns to speed up queries (do not get eveything)
 - OGG metadata -> properly handle metadata nested in the audio stream
 
+[Video]
+- View the Videos in a WtTableView ?
+
 [Remote API]
-- Think about a remote API to get/retrieve transcoded files (i.e. for mobile apps)?
+- Think about a remote API to get/retrieve media (i.e. for mobile apps)
 
 [Layout]
 - Make it mobile browser compatible
 - Style eveything nicely...
+
+[Logs]
+- Use a logging facility

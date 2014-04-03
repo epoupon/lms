@@ -1,33 +1,33 @@
 #ifndef REMOTE_CONNECTION_HPP
 #define REMOTE_CONNECTION_HPP
 
+#include <array>
 #include <memory>
-#include <array.hpp>
 
 #include <boost/asio.hpp>
-#include <boost/noncopyable.hpp>
 
-#include <boost/enable_shared_from_this.hpp>
-
-#include "reply.hpp"
-#include "request.hpp"
 #include "RequestHandler.hpp"
-#include "request_parser.hpp"
 
-namespace http {
-namespace server {
+#include "messages/Header.hpp"
+
+namespace Remote {
+
+namespace Server {
 
 class ConnectionManager;
 
 /// Represents a single connection from a client.
-class Connection : public boost::enable_shared_from_this<Connection>, boost::noncopyable
+class Connection : public std::enable_shared_from_this<Connection>
 {
 	public:
 
-		typedef std::shared_ptr<connection> pointer;
+		Connection(const Connection&) = delete;
+		Connection& operator=(const Connection&) = delete;
+
+		typedef std::shared_ptr<Connection> pointer;
 
 		/// Construct a connection with the given io_service.
-		Connection(boost::asio::io_service& io_service,
+		explicit Connection(boost::asio::ip::tcp::socket socket,
 				ConnectionManager& manager, RequestHandler& handler);
 
 		boost::asio::ip::tcp::socket& socket();
@@ -50,10 +50,10 @@ class Connection : public boost::enable_shared_from_this<Connection>, boost::non
 		boost::asio::ip::tcp::socket _socket;
 
 		/// The manager for this connection.
-		ConnectionManager& _ConnectionManager;
+		ConnectionManager& _connectionManager;
 
 		/// The handler used to process the incoming requests.
-		RequestHandler& _RequestHandler;
+		RequestHandler& _requestHandler;
 
 		// TODO use streambuffers
 
@@ -70,9 +70,10 @@ class Connection : public boost::enable_shared_from_this<Connection>, boost::non
 };
 
 
-} // namespace server
-} // namespace http
+} // namespace Server
 
-#endif // HTTP_CONNECTION_HPP
+} // namespace Remote
+
+#endif
 
 

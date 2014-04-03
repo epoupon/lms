@@ -1,6 +1,6 @@
-
 #include <algorithm>
-#include <boost/bind.hpp>
+
+#include <boost/foreach.hpp>
 
 #include "ConnectionManager.hpp"
 
@@ -8,24 +8,29 @@ namespace Remote {
 
 namespace Server {
 
+ConnectionManager::ConnectionManager()
+{
+}
+
+
 void
-ConnectionManager::start(connection::pointer c)
+ConnectionManager::start(Connection::pointer c)
 {
 	_connections.insert(c);
 	c->start();
 }
 
 void
-ConnectionManager::stop(connection::pointer c)
+ConnectionManager::stop(Connection::pointer c)
 {
 	_connections.erase(c);
 	c->stop();
 }
 
 void
-ConnectionManager::stop_all()
+ConnectionManager::stopAll()
 {
-	BOOST_FOREACH(connection::pointer c, _connections)
+	BOOST_FOREACH(Connection::pointer c, _connections)
 	{
 		c->stop();
 	}

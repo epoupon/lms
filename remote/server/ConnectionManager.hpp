@@ -3,9 +3,7 @@
 
 #include <set>
 
-#include <boost/noncopyable.hpp>
-
-#include "connection.hpp"
+#include "Connection.hpp"
 
 namespace Remote {
 
@@ -14,21 +12,26 @@ namespace Server {
 /// Manages open connections so that they may be cleanly stopped when the server
 /// needs to shut down.
 
-class ConnectionManager : boost::noncopyable
+class ConnectionManager
 {
 	public:
+		ConnectionManager(const ConnectionManager&) = delete;
+		ConnectionManager& operator=(const ConnectionManager&) = delete;
+
+		ConnectionManager();
+
 		/// Add the specified connection to the manager and start it.
-		void start(connection::pointer c);
+		void start(Connection::pointer c);
 
 		/// Stop the specified connection.
-		void stop(connection::pointer c);
+		void stop(Connection::pointer c);
 
 		/// Stop all connections.
-		void stop_all();
+		void stopAll();
 
 	private:
 		/// The managed connections.
-		std::set<connection::pointer> _connections;
+		std::set<Connection::pointer> _connections;
 };
 
 } // namespace Server

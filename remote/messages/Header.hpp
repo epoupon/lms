@@ -7,10 +7,10 @@ namespace Remote
 
 class Header
 {
-	static const std::size_t size = 8;
+	public:
+		static const std::size_t size = 8;
 
-}
-
+};
 
 
 

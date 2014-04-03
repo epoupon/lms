@@ -3,8 +3,6 @@
 
 #include <boost/asio.hpp>
 
-#include <string>
-
 #include "Connection.hpp"
 #include "ConnectionManager.hpp"
 
@@ -18,11 +16,13 @@ class Server
 {
 	public:
 
-		typedef std::string	endpoint_type;
+		Server(const Server&) = delete;
+		Server& operator=(const Server&) = delete;
+
+		typedef boost::asio::ip::tcp::endpoint 	endpoint_type;
 
 		// Serve up data from the given database
-		Server(boost::asio::io_service& ioService,
-				const endpoint_type& endpoint);
+		Server(const endpoint_type& endpoint);
 
 		// Run the server's io_service loop.
 		void run();
@@ -34,13 +34,13 @@ class Server
 		void asyncAccept();
 		void handleAccept(boost::system::error_code ec);
 
-		boost::asio::io_service& _ioService;
+		boost::asio::io_service _ioService;
 
 		/// Acceptor used to listen for incoming connections.
 		boost::asio::ip::tcp::acceptor _acceptor;
 
 		/// The connection manager which owns all live connections.
-		connection_manager _connectionManager;
+		ConnectionManager _connectionManager;
 
 		/// The next socket to be accepted.
 		boost::asio::ip::tcp::socket _socket;

@@ -16,6 +16,11 @@ AC_CHECK_HEADERS([Wt/WApplication extractor.h],
 #                 [],
 #                 [AC_MSG_ERROR([Header not found or unusable !])])
 
+AC_CHECK_LIB([pthread],
+	     [pthread_create],
+	     ,
+	     [AC_MSG_ERROR([libpthread not found!])])
+
 AC_CHECK_LIB([avutil],
 	     [av_free],
 	     ,

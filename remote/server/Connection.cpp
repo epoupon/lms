@@ -1,4 +1,5 @@
 
+#include <utility>
 #include <vector>
 #include <boost/bind.hpp>
 
@@ -10,10 +11,12 @@
 namespace Remote {
 namespace Server {
 
-Connection::Connection(boost::asio::io_service& ioService, Connection_manager& manager, RequestHandler& handler)
-: _socket(ioService),
+Connection::Connection(boost::asio::ip::tcp::socket socket,
+			ConnectionManager& manager,
+			RequestHandler& handler)
+: _socket(std::move(socket)),
 _connectionManager(manager),
-request_handler_(handler)
+_requestHandler(handler)
 {
 
 }
@@ -58,16 +61,16 @@ Connection::handleRead(const boost::system::error_code& error, std::size_t bytes
 	}
 }
 
-void Connection::handleWrite(const boost::system::error_code& e)
+void Connection::handleWrite(const boost::system::error_code& error)
 {
-	if (!e)
+	if (!error)
 	{
 		// Initiate graceful Connection closure.
 		boost::system::error_code ignored_ec;
 		_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
 	}
 
-	if (e != boost::asio::error::operation_aborted)
+	if (error != boost::asio::error::operation_aborted)
 	{
 		std::cerr << "Connection::handleWrite: " << error.message() << std::endl;
 		_connectionManager.stop(shared_from_this());

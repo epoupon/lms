@@ -9,18 +9,17 @@ namespace Remote {
 
 namespace Server {
 
-server::server(boost::asio::io_service& ioService, const endpoint_type& endpoint)
-: _ioService(ioService),
+Server::Server(const endpoint_type& endpoint)
+:
 _acceptor(_ioService),
 _connectionManager(),
-_socket(io_service_),
-_requestHandler(doc_root)
+_socket(_ioService)
 {
 	// Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
 	boost::asio::ip::tcp::resolver resolver(_ioService);
-	boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(endpoint);
+	boost::asio::ip::tcp::endpoint resolvedEndpoint = *resolver.resolve(endpoint);
 
-	_acceptor.open(endpoint.protocol());
+	_acceptor.open(resolvedEndpoint.protocol());
 	_acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
 	_acceptor.bind(endpoint);
 	_acceptor.listen();
@@ -33,11 +32,11 @@ Server::run()
 	// While the server is running, there is always at least one
 	// asynchronous operation outstanding: the asynchronous accept call waiting
 	// for new incoming connections.
-	async_accept();
+	asyncAccept();
 }
 
 void
-Server::async_accept()
+Server::asyncAccept()
 {
 	_acceptor.async_accept(_socket, boost::bind(&Server::handleAccept, this, boost::asio::placeholders::error));
 }
@@ -54,9 +53,9 @@ Server::handleAccept(boost::system::error_code ec)
 
 	if (!ec)
 	{
-		_connectionManager.start(std::make_shared<connection>(std::move(_socket), _connectionManager, _requestHandler));
+		_connectionManager.start(std::make_shared<Connection>(std::move(_socket), _connectionManager, _requestHandler));
 
-		async_accept();
+		asyncAccept();
 	}
 	else
 		std::cerr << "handleAccept: " << ec.message() << std::endl;
@@ -69,7 +68,7 @@ Server::stop()
 	// The server is stopped by cancelling all outstanding asynchronous
 	// operations.
 	_acceptor.close();
-	_connectionManager.stop_all();
+	_connectionManager.stopAll();
 }
 
 } // namespace Server
