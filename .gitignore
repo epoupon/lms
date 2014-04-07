@@ -6,4 +6,4 @@ configure
 depcomp
 install-sh
 missing
-
+include/config.h.in
