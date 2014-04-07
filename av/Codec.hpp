@@ -15,7 +15,7 @@ class Codec : boost::noncopyable
 
 	public:
 
-		typedef enum CodecID Id;
+		typedef enum AVCodecID Id;
 		enum Type {
 			Encoder,
 			Decoder,
