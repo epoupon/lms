@@ -9,7 +9,7 @@ RemoteServerService::RemoteServerService(const Remote::Server::Server::endpoint_
 void
 RemoteServerService::start(void)
 {
-	std::cout << "émoteServerService::start, starting..." << std::endl;
+	std::cout << "RemoteServerService::start, starting..." << std::endl;
 	_server.run();
 }
 
@@ -17,12 +17,12 @@ RemoteServerService::start(void)
 void
 RemoteServerService::stop(void)
 {
-	std::cout << "émoteServerService::stop, stopping..." << std::endl;
+	std::cout << "RemoteServerService::stop, stopping..." << std::endl;
 	_server.stop();
 }
 
 void
 RemoteServerService::restart(void)
 {
-	std::cout << "émoteServerService::restart, not implemented!" << std::endl;
+	std::cout << "RemoteServerService::restart, not implemented!" << std::endl;
 }

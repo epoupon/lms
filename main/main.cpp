@@ -9,6 +9,8 @@
 #include "WebServerService.hpp"
 #include "RemoteServerService.hpp"
 
+void toto(int argc, char* argv[]);
+
 int main(int argc, char* argv[])
 {
 
@@ -22,9 +24,9 @@ int main(int argc, char* argv[])
 		Av::AvInit();
 		Transcode::AvConvTranscoder::init();
 
-		serviceManager.startService( std::make_shared<DatabaseRefreshService>( "test.db" ) );
+//		serviceManager.startService( std::make_shared<DatabaseRefreshService>( "test.db" ) );
 		serviceManager.startService( std::make_shared<WebServerService>(argc, argv) );
-		serviceManager.startService( std::make_shared<RemoteServerService>( Remote::Server::Server::endpoint_type() ) );
+//		serviceManager.startService( std::make_shared<RemoteServerService>( Remote::Server::Server::endpoint_type() ) );
 
 		serviceManager.run();
 
