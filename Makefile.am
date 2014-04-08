@@ -9,7 +9,6 @@ lms_SOURCES = \
 	$(top_srcdir)/main/main.cpp		\
 	$(top_srcdir)/main/ServiceManager.cpp	\
 	$(top_srcdir)/main/DatabaseRefreshService.cpp	\
-	$(top_srcdir)/main/RemoteServerService.cpp	\
 	$(top_srcdir)/main/WebServerService.cpp	\
 	$(top_srcdir)/av/CodecContext.cpp	\
 	$(top_srcdir)/av/Common.cpp		\
@@ -39,16 +38,17 @@ lms_SOURCES = \
 	$(top_srcdir)/database/SqlQuery.cpp		\
 	$(top_srcdir)/database/Path.cpp			\
 	$(top_srcdir)/database/Video.cpp		\
-	$(top_srcdir)/remote/server/Connection.cpp	\
-	$(top_srcdir)/remote/server/ConnectionManager.cpp		\
-	$(top_srcdir)/remote/server/Server.cpp		\
 	$(top_srcdir)/transcode/AvConvTranscoder.cpp	\
 	$(top_srcdir)/transcode/Format.cpp		\
 	$(top_srcdir)/transcode/Parameters.cpp		\
 	$(top_srcdir)/transcode/InputMediaFile.cpp	\
 	$(top_srcdir)/metadata/AvFormat.cpp		\
-	$(top_srcdir)/metadata/Extractor.cpp		\
 	$(top_srcdir)/metadata/Utils.cpp
+
+#$(top_srcdir)/main/RemoteServerService.cpp
+#$(top_srcdir)/remote/server/Connection.cpp
+#$(top_srcdir)/remote/server/ConnectionManager.cpp
+#$(top_srcdir)/remote/server/Server.cpp
 
 lms_CXXFLAGS=-std=c++11 -Wall -I$(top_srcdir)/boost/ -I$(top_srcdir)/ui -I$(top_srcdir)/remote
 

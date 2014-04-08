@@ -5,7 +5,7 @@
 #include "ui/LmsApplication.hpp"
 
 
-Wt::WApplication *createApplication(const Wt::WEnvironment& env)
+static Wt::WApplication *createApplication(const Wt::WEnvironment& env)
 {
 	/*
 	 * You could read information from the environment to decide whether
@@ -19,7 +19,7 @@ WebServerService::WebServerService( int argc, char* argv[])
 : _server(argv[0], "")
 {
 
-	std::cout << "Constructing server... argc = " << argc << std::endl;
+	std::cout << "Constructing server... argv[0] = '" << argv[0] << "' argc = " << argc << std::endl;
 
 	// TODO configure server
 	_server.setServerConfiguration (argc, argv, WTHTTP_CONFIGURATION);

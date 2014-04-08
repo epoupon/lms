@@ -74,6 +74,7 @@
 @media (max-width: 979px) {
     .nav-collapse .dropdown-menu {
        display: block !important;
+       position: static !important;
     }
 
     .nav-collapse .dropdown-menu li > a:hover {
@@ -501,7 +502,10 @@
     white-space: nowrap;
     background: white;
     border: 1px solid @tableBorder;
-    overflow: auto;
+
+    &.Wt-itemview-paged {
+       overflow: auto;
+    }
 
     .Wt-spacer {
 	background: url(../../../loading.png);
@@ -668,6 +672,11 @@ body.Wt-rtl {
 
     .Wt-tv-contents .Wt-tv-c, .Wt-plaintable td, .Wt-plaintable th {
 	border-right: 1px solid @tableBorder;
+	border-top: 1px solid @tableBorder;
+	margin-top: -1px;
+    }
+
+    .Wt-spacer {
 	border-bottom: 1px solid @tableBorder;
     }
 
