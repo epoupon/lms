@@ -8,6 +8,8 @@
 #include "FilterWidget.hpp"
 #include "database/DatabaseHandler.hpp"
 
+namespace UserInterface {
+
 class TableFilterWidget : public FilterWidget
 {
 
@@ -32,7 +34,7 @@ class TableFilterWidget : public FilterWidget
 		Wt::WTableView*				_tableView;
 };
 
-
+} // namespace UserInterface
 
 #endif
 

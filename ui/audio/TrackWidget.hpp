@@ -9,6 +9,7 @@
 
 #include "FilterWidget.hpp"
 
+namespace UserInterface {
 
 class TrackWidget : public FilterWidget
 {
@@ -44,6 +45,8 @@ class TrackWidget : public FilterWidget
 		Wt::WText*	_trackStats;
 
 };
+
+} // namespace UserInterface
 
 #endif
 

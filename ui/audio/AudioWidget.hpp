@@ -11,12 +11,14 @@
 #include "audio/AudioMediaPlayerWidget.hpp"
 #include "audio/AudioDatabaseWidget.hpp"
 
+namespace UserInterface {
+
 class AudioWidget : public Wt::WContainerWidget
 {
 
 	public:
 
-		AudioWidget(Wt::WContainerWidget* parent = 0);
+		AudioWidget(SessionData& sessionData, Wt::WContainerWidget* parent = 0);
 
 		void search(const std::string& searchText);
 
@@ -25,6 +27,8 @@ class AudioWidget : public Wt::WContainerWidget
 		void playTrack(boost::filesystem::path p);
 
 		void handleTrackEnded(void);
+
+		SessionData&		_sessionData;
 
 		AudioDatabaseWidget*	_audioDbWidget;
 
@@ -38,6 +42,8 @@ class AudioWidget : public Wt::WContainerWidget
 
 
 };
+
+} // namespace UserInterface
 
 #endif
 

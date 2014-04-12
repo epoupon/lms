@@ -11,6 +11,8 @@
 
 #include "transcode/Parameters.hpp"
 
+namespace UserInterface {
+
 class VideoParametersDialog : public Wt::WDialog
 {
 	public:
@@ -42,6 +44,8 @@ class VideoParametersDialog : public Wt::WDialog
 
 		std::map<Transcode::Stream::Type, std::pair<Wt::WComboBox*, Wt::WStringListModel* > >	_streamSelection;
 };
+
+} // namespace UserInterface
 
 #endif
 

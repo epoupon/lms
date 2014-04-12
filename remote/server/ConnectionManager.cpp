@@ -5,7 +5,6 @@
 #include "ConnectionManager.hpp"
 
 namespace Remote {
-
 namespace Server {
 
 ConnectionManager::ConnectionManager()
@@ -39,7 +38,6 @@ ConnectionManager::stopAll()
 
 
 } // namespace Server
-
 } // namespace Remote
 
 

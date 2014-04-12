@@ -1,14 +1,16 @@
 #ifndef WEB_SERVER_SERVICE_HPP
 #define WEB_SERVER_SERVICE_HPP
 
+#include <boost/filesystem.hpp>
+
 #include <Wt/WServer>
 
 #include "Service.hpp"
 
-class WebServerService : public Service
+class UserInterfaceService : public Service
 {
 	public:
-		WebServerService( int argc, char* argv[]);
+		UserInterfaceService( int argc, char* argv[], boost::filesystem::path dbPath);
 
 		void start(void);
 		void stop(void);

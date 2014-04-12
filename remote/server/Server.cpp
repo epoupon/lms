@@ -6,14 +6,14 @@
 #include "Server.hpp"
 
 namespace Remote {
-
 namespace Server {
 
-Server::Server(const endpoint_type& endpoint)
+Server::Server(const endpoint_type& endpoint, boost::filesystem::path dbPath)
 :
 _acceptor(_ioService),
 _connectionManager(),
-_socket(_ioService)
+_socket(_ioService),
+_requestHandler(dbPath)
 {
 	// Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
 	boost::asio::ip::tcp::resolver resolver(_ioService);
@@ -72,5 +72,4 @@ Server::stop()
 }
 
 } // namespace Server
-
 } // namespace Remote

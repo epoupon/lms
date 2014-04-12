@@ -1,6 +1,7 @@
 #ifndef REMOTE_SERVER_SERVICE_HPP
 #define REMOTE_SERVER_SERVICE_HPP
 
+#include <boost/filesystem.hpp>
 
 #include "Service.hpp"
 
@@ -10,7 +11,7 @@ class RemoteServerService : public Service
 {
 	public:
 
-		RemoteServerService(const Remote::Server::Server::endpoint_type& endpoint);
+		RemoteServerService(const Remote::Server::Server::endpoint_type& endpoint, boost::filesystem::path dbPath);
 
 		void start(void);
 		void stop(void);

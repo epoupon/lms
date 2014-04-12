@@ -11,10 +11,11 @@
 
 #include "VideoDatabaseWidget.hpp"
 
+namespace UserInterface {
 
-VideoDatabaseWidget::VideoDatabaseWidget( Wt::WContainerWidget *parent)
+VideoDatabaseWidget::VideoDatabaseWidget(DatabaseHandler& db,  Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent),
- _db("test.db") // TODO
+ _db(db)
 {
 	_table = new Wt::WTable( this );
 	_table->setHeaderCount(1);
@@ -136,4 +137,6 @@ VideoDatabaseWidget::handlePlayVideo(const boost::filesystem::path& videoFilePat
 	playVideo().emit(videoFilePath);
 
 }
+
+} // namespace UserInterface
 

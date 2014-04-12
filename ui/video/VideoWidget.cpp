@@ -3,12 +3,14 @@
 
 #include "VideoWidget.hpp"
 
+namespace UserInterface {
 
-VideoWidget::VideoWidget(Wt::WContainerWidget* parent )
-: Wt::WContainerWidget(parent)
+VideoWidget::VideoWidget(SessionData& sessionData, Wt::WContainerWidget* parent )
+: Wt::WContainerWidget(parent),
+_sessionData(sessionData)
 {
 
-	_videoDbWidget = new VideoDatabaseWidget(this);
+	_videoDbWidget = new VideoDatabaseWidget(_sessionData.getDatabaseHandler(), this);
 
 	_videoDbWidget->playVideo().connect(this, &VideoWidget::playVideo);
 
@@ -60,4 +62,6 @@ VideoWidget::playVideo(boost::filesystem::path p)
 		std::cerr <<"Caught exception while loading '" << p << "': " << e.what() << std::endl;
 	}
 }
+
+} // namespace UserInterface
 

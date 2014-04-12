@@ -1,15 +1,15 @@
 #ifndef AVCONV_TRANSCODE_STREAM_RESOURCE_HPP
 #define AVCONV_TRANSCODE_STREAM_RESOURCE_HPP
 
-#include <deque>
 #include <iostream>
 #include <memory>
-
-#include <boost/filesystem.hpp>
 
 #include <Wt/WResource>
 
 #include "transcode/AvConvTranscoder.hpp"
+#include "transcode/Parameters.hpp"
+
+namespace UserInterface {
 
 class AvConvTranscodeStreamResource : public Wt::WResource
 {
@@ -28,7 +28,7 @@ class AvConvTranscodeStreamResource : public Wt::WResource
 		static const std::size_t	_bufferSize = 8192*16;
 };
 
-
+} // namespace UserInterface
 
 #endif
 

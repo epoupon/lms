@@ -10,6 +10,8 @@
 
 #include "database/SqlQuery.hpp"
 
+namespace UserInterface {
+
 class FilterWidget : public Wt::WContainerWidget {
 
 	public:
@@ -39,8 +41,6 @@ class FilterWidget : public Wt::WContainerWidget {
 		Wt::Signal<void> _update;
 };
 
-
-
-
+} // namespace UserInterface
 
 #endif

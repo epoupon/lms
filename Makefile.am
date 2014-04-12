@@ -5,11 +5,13 @@ SUBDIRS = test .
 
 bin_PROGRAMS = lms
 
+lms2_CXXFLAGS=-std=c++11 -Wall -I$(top_srcdir)/boost/ -I$(top_srcdir)/ui -I$(top_srcdir)/remote
+
 lms_SOURCES = \
-	$(top_srcdir)/main/main.cpp		\
-	$(top_srcdir)/main/ServiceManager.cpp	\
+	$(top_srcdir)/main/main.cpp			\
+	$(top_srcdir)/main/ServiceManager.cpp		\
 	$(top_srcdir)/main/DatabaseRefreshService.cpp	\
-	$(top_srcdir)/main/WebServerService.cpp	\
+	$(top_srcdir)/main/UserInterfaceService.cpp		\
 	$(top_srcdir)/av/CodecContext.cpp	\
 	$(top_srcdir)/av/Common.cpp		\
 	$(top_srcdir)/av/Dictionary.cpp		\
@@ -23,6 +25,7 @@ lms_SOURCES = \
 	$(top_srcdir)/ui/audio/SearchFilterWidget.cpp		\
 	$(top_srcdir)/ui/audio/TableFilterWidget.cpp		\
 	$(top_srcdir)/ui/audio/TrackWidget.cpp			\
+	$(top_srcdir)/ui/common/SessionData.cpp			\
 	$(top_srcdir)/ui/resource/AvConvTranscodeStreamResource.cpp	\
 	$(top_srcdir)/ui/video/VideoWidget.cpp			\
 	$(top_srcdir)/ui/video/VideoDatabaseWidget.cpp		\
@@ -43,12 +46,13 @@ lms_SOURCES = \
 	$(top_srcdir)/transcode/Parameters.cpp		\
 	$(top_srcdir)/transcode/InputMediaFile.cpp	\
 	$(top_srcdir)/metadata/AvFormat.cpp		\
+	$(top_srcdir)/main/RemoteServerService.cpp	\
+	$(top_srcdir)/remote/server/Connection.cpp		\
+	$(top_srcdir)/remote/server/ConnectionManager.cpp	\
+	$(top_srcdir)/remote/server/RequestHandler.cpp		\
+	$(top_srcdir)/remote/server/Server.cpp		\
 	$(top_srcdir)/metadata/Utils.cpp
 
-#$(top_srcdir)/main/RemoteServerService.cpp
-#$(top_srcdir)/remote/server/Connection.cpp
-#$(top_srcdir)/remote/server/ConnectionManager.cpp
-#$(top_srcdir)/remote/server/Server.cpp
 
 lms_CXXFLAGS=-std=c++11 -Wall -I$(top_srcdir)/boost/ -I$(top_srcdir)/ui -I$(top_srcdir)/remote
 

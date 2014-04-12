@@ -7,6 +7,7 @@
 
 #include "VideoMediaPlayerWidget.hpp"
 
+namespace UserInterface {
 
 Wt::WMediaPlayer::Encoding
 convert(Transcode::Format format)
@@ -178,3 +179,5 @@ VideoMediaPlayerWidget::handleParametersDone(Wt::WDialog::DialogCode code)
 	}
 
 }
+
+} // namespace UserInterface

@@ -6,6 +6,8 @@
 
 #include "TrackWidget.hpp"
 
+namespace UserInterface {
+
 TrackWidget::TrackWidget( DatabaseHandler& db, Wt::WContainerWidget* parent)
 : FilterWidget( parent ),
 _db(db),
@@ -131,4 +133,6 @@ TrackWidget::selectNextTrack(void)
 		}
 	}
 }
+
+} // namespace UserInterface
 

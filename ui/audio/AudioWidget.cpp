@@ -4,15 +4,17 @@
 
 #include "metadata/Extractor.hpp"
 
+namespace UserInterface {
 
-AudioWidget::AudioWidget(Wt::WContainerWidget* parent)
+AudioWidget::AudioWidget(SessionData& sessionData, Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent),
+_sessionData(sessionData),
 _audioDbWidget(nullptr),
 _mediaPlayer(nullptr),
 _imgResource(nullptr),
 _img(nullptr)
 {
-	_audioDbWidget = new AudioDatabaseWidget(this);
+	_audioDbWidget = new AudioDatabaseWidget(sessionData.getDatabaseHandler(), this);
 
 	_audioDbWidget->trackSelected().connect(this, &AudioWidget::playTrack);
 
@@ -78,4 +80,5 @@ AudioWidget::handleTrackEnded(void)
 	_audioDbWidget->selectNextTrack();
 }
 
+} // namespace UserInterface
 

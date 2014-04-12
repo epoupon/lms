@@ -12,6 +12,8 @@
 #include "transcode/Parameters.hpp"
 #include "resource/AvConvTranscodeStreamResource.hpp"
 
+namespace UserInterface {
+
 class VideoMediaPlayerWidget : public Wt::WContainerWidget
 {
 	public:
@@ -58,6 +60,7 @@ class VideoMediaPlayerWidget : public Wt::WContainerWidget
 		VideoParametersDialog*	_dialog;
 };
 
+} // namespace UserInterface
 
 #endif
 

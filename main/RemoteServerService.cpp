@@ -1,8 +1,8 @@
 
 #include "RemoteServerService.hpp"
 
-RemoteServerService::RemoteServerService(const Remote::Server::Server::endpoint_type& endpoint)
-: _server(endpoint)
+RemoteServerService::RemoteServerService(const Remote::Server::Server::endpoint_type& endpoint, boost::filesystem::path dbPath)
+: _server(endpoint, dbPath)
 {
 }
 

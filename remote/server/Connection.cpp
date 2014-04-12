@@ -78,5 +78,4 @@ void Connection::handleWrite(const boost::system::error_code& error)
 }
 
 } // namespace Server
-
 } // namespace Remote

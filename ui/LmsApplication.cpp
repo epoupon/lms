@@ -11,6 +11,18 @@
 
 #include "LmsApplication.hpp"
 
+namespace UserInterface {
+
+Wt::WApplication*
+LmsApplication::create(const Wt::WEnvironment& env, boost::filesystem::path dbPath)
+{
+	/*
+	 * You could read information from the environment to decide whether
+	 * the user has permission to start a new application
+	 */
+	std::cout << "Creating new Application" << std::endl;
+	return new LmsApplication(env, dbPath);
+}
 
 /*
  * The env argument contains information about the new session, and
@@ -18,8 +30,9 @@
  * constructor so it is typically also an argument for your custom
  * application constructor.
 */
-LmsApplication::LmsApplication(const Wt::WEnvironment& env)
-: Wt::WApplication(env)
+LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::path dbPath)
+: Wt::WApplication(env),
+ _sessionData(dbPath)
 {
 
 	setTheme(new Wt::WBootstrapTheme());
@@ -40,8 +53,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env)
 	Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack, container);
 	navigation->addMenu(leftMenu);
 
-	_audioWidget = new AudioWidget();
-	_videoWidget = new VideoWidget();
+	_audioWidget = new AudioWidget(_sessionData);
+	_videoWidget = new VideoWidget(_sessionData);
 
 	leftMenu->addItem("Audio", _audioWidget);
 	leftMenu->addItem("Video", _videoWidget);
@@ -78,4 +91,6 @@ LmsApplication::handleSearch(void)
 	// Check currently selected menu item and search it
 	_audioWidget->search( _searchEdit->text().toUTF8() );
 }
+
+} // namespace DatabaseHandler
 

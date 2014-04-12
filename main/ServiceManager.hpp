@@ -31,7 +31,7 @@ class ServiceManager
 		boost::asio::io_service	_ioService;
 
 		// Listen for interesting signals
-//		boost::asio::signal_set	_signalSet;
+		boost::asio::signal_set	_signalSet;
 
 		std::set<Service::pointer>	_services;
 };

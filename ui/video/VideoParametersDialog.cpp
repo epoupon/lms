@@ -8,6 +8,8 @@
 
 using namespace Transcode;
 
+namespace UserInterface {
+
 static const std::list<Stream::Type> streamTypes = {Stream::Video, Stream::Audio, Stream::Subtitle};
 
 VideoParametersDialog::VideoParametersDialog(const Wt::WString &windowTitle, Wt::WDialog* parent)
@@ -165,4 +167,5 @@ VideoParametersDialog::save(Transcode::Parameters& parameters)
 	}
 }
 
+} // namespace UserInterface
 

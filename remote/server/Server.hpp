@@ -2,6 +2,7 @@
 #define REMOTE_SERVER_HPP
 
 #include <boost/asio.hpp>
+#include <boost/filesystem.hpp>
 
 #include "Connection.hpp"
 #include "ConnectionManager.hpp"
@@ -9,7 +10,6 @@
 #include "RequestHandler.hpp"
 
 namespace Remote {
-
 namespace Server {
 
 class Server
@@ -22,7 +22,7 @@ class Server
 		typedef boost::asio::ip::tcp::endpoint 	endpoint_type;
 
 		// Serve up data from the given database
-		Server(const endpoint_type& endpoint);
+		Server(const endpoint_type& endpoint, boost::filesystem::path dbPath);
 
 		// Run the server's io_service loop.
 		void run();
@@ -50,7 +50,6 @@ class Server
 };
 
 } // namespace Server
-
 } // namespace Remote
 
 #endif

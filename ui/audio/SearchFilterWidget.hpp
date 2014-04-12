@@ -5,6 +5,8 @@
 
 #include "FilterWidget.hpp"
 
+namespace UserInterface {
+
 class SearchFilterWidget : public FilterWidget {
 	public:
 		SearchFilterWidget(Wt::WContainerWidget* parent = 0);
@@ -24,9 +26,7 @@ class SearchFilterWidget : public FilterWidget {
 		std::string	 _lastEmittedText;
 };
 
-
-
-
+} // namespace UserInterface
 
 #endif
 

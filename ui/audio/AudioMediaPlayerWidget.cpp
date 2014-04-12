@@ -4,6 +4,7 @@
 
 #include "AudioMediaPlayerWidget.hpp"
 
+namespace UserInterface {
 
 AudioMediaPlayerWidget::AudioMediaPlayerWidget( Wt::WContainerWidget *parent)
 	: Wt::WContainerWidget(parent),
@@ -155,3 +156,5 @@ AudioMediaPlayerWidget::handleVolumeSliderMoved(int value)
 {
 	_mediaPlayer->setVolume( value / 100. );
 }
+
+} // namespace UserInterface

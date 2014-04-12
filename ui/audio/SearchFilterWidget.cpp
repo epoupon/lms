@@ -2,6 +2,7 @@
 
 #include "SearchFilterWidget.hpp"
 
+namespace UserInterface {
 
 SearchFilterWidget::SearchFilterWidget(Wt::WContainerWidget* parent)
 : FilterWidget( parent )
@@ -30,4 +31,5 @@ SearchFilterWidget::getConstraint(Constraint& constraint)
 	// else no constraint!
 }
 
+} // namespace UserInterface
 

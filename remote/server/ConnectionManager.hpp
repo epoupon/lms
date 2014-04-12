@@ -6,7 +6,6 @@
 #include "Connection.hpp"
 
 namespace Remote {
-
 namespace Server {
 
 /// Manages open connections so that they may be cleanly stopped when the server
@@ -35,7 +34,6 @@ class ConnectionManager
 };
 
 } // namespace Server
-
 } // namespace Remote
 
 #endif

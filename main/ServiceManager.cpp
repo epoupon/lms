@@ -1,5 +1,5 @@
 
-#include <csignal>
+//#include <csignal>
 
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
@@ -7,15 +7,15 @@
 #include "ServiceManager.hpp"
 
 ServiceManager::ServiceManager()
-/*: _signalSet(_ioService) */
+: _signalSet(_ioService)
 {
-/*	_signalSet.add(SIGINT);
+	_signalSet.add(SIGINT);
 	_signalSet.add(SIGTERM);
 #if defined(SIGQUIT)
 	_signalSet.add(SIGQUIT);
 #endif // defined(SIGQUIT)
 
-	_signalSet.add(SIGHUP);*/
+	_signalSet.add(SIGHUP);
 }
 
 void
@@ -27,15 +27,16 @@ ServiceManager::run()
 	// Wait for events
 	_ioService.run();
 
+	std::cout << "ServiceManager::run complete!" << std::endl;
 }
 
 void
 ServiceManager::asyncWaitSignals(void)
 {
-/*	_signalSet.async_wait(boost::bind(&ServiceManager::handleSignal,
+	_signalSet.async_wait(boost::bind(&ServiceManager::handleSignal,
 				this,
 				boost::asio::placeholders::error,
-				boost::asio::placeholders::signal_number));*/
+				boost::asio::placeholders::signal_number));
 }
 
 void

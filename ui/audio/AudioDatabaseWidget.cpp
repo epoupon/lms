@@ -9,9 +9,10 @@
 #include "SearchFilterWidget.hpp"
 #include "TrackWidget.hpp"
 
-AudioDatabaseWidget::AudioDatabaseWidget( Wt::WContainerWidget *parent)
+namespace UserInterface {
+
+AudioDatabaseWidget::AudioDatabaseWidget( DatabaseHandler& db, Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent),
- _db("test.db"),	// TODO
 _refreshingFilters(false)
 {
 	std::size_t idFilter (0);
@@ -22,23 +23,23 @@ _refreshingFilters(false)
 	}
 
 	{
-		TableFilterWidget* filterTable = new TableFilterWidget(_db, "genre", "name", this);
+		TableFilterWidget* filterTable = new TableFilterWidget(db, "genre", "name", this);
 		_filters.push_back( filterTable );
 		filterTable->update().connect( boost::bind(&AudioDatabaseWidget::handleFilterUpdated, this, idFilter++) );
 	}
 	{
-		TableFilterWidget* filterTable = new TableFilterWidget(_db, "artist", "name", this);
+		TableFilterWidget* filterTable = new TableFilterWidget(db, "artist", "name", this);
 		_filters.push_back( filterTable );
 		filterTable->update().connect( boost::bind(&AudioDatabaseWidget::handleFilterUpdated, this, idFilter++) );
 	}
 	{
-		TableFilterWidget* filterTable = new TableFilterWidget(_db, "release", "name", this);
+		TableFilterWidget* filterTable = new TableFilterWidget(db, "release", "name", this);
 		_filters.push_back( filterTable );
 		filterTable->update().connect( boost::bind(&AudioDatabaseWidget::handleFilterUpdated, this, idFilter++) );
 	}
 
 	{
-		TrackWidget* track = new TrackWidget(_db, this);
+		TrackWidget* track = new TrackWidget(db, this);
 		_filters.push_back( track );
 		track->trackSelected().connect(this, &AudioDatabaseWidget::handleTrackSelected);
 	}
@@ -104,5 +105,6 @@ AudioDatabaseWidget::selectNextTrack(void)
 	trackWidget->selectNextTrack();
 }
 
+} // namespace UserInterface
 
 

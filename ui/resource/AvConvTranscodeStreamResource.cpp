@@ -3,6 +3,8 @@
 #include <Wt/Http/Response>
 #include "AvConvTranscodeStreamResource.hpp"
 
+namespace UserInterface {
+
 AvConvTranscodeStreamResource::AvConvTranscodeStreamResource(const Transcode::Parameters& parameters, Wt::WObject *parent)
 : Wt::WResource(parent),
 	_parameters( parameters )
@@ -71,6 +73,6 @@ AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 		std::cout << "No more data!" << std::endl;
 }
 
-
+} // namespace UserInterface
 
 

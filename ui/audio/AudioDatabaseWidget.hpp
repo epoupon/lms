@@ -6,14 +6,16 @@
 #include <Wt/WContainerWidget>
 #include <Wt/WSignal>
 
-#include "database/DatabaseHandler.hpp"
+#include "common/SessionData.hpp"
 
 #include "FilterWidget.hpp"
+
+namespace UserInterface {
 
 class AudioDatabaseWidget : public Wt::WContainerWidget
 {
 	public:
-		AudioDatabaseWidget( Wt::WContainerWidget *parent = 0);
+		AudioDatabaseWidget( DatabaseHandler& db, Wt::WContainerWidget *parent = 0);
 
 		void search(const std::string& text);
 
@@ -23,8 +25,6 @@ class AudioDatabaseWidget : public Wt::WContainerWidget
 		Wt::Signal< boost::filesystem::path >& trackSelected() { return _trackSelected; }
 
 	private:
-
-		DatabaseHandler	_db;
 
 		Wt::Signal< boost::filesystem::path > _trackSelected;
 
@@ -37,6 +37,7 @@ class AudioDatabaseWidget : public Wt::WContainerWidget
 
 };
 
+} // namespace UserInterface
 
 #endif
 

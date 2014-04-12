@@ -4,13 +4,15 @@
 #include <Wt/WTable>
 #include <Wt/WContainerWidget>
 
-#include "database/DatabaseHandler.hpp"
+#include "common/SessionData.hpp"
 #include "database/FileTypes.hpp"
+
+namespace UserInterface {
 
 class VideoDatabaseWidget : public Wt::WContainerWidget
 {
 	public:
-		VideoDatabaseWidget( Wt::WContainerWidget *parent = 0);
+		VideoDatabaseWidget( DatabaseHandler& db, Wt::WContainerWidget *parent = 0);
 
 		// Signals
 		Wt::Signal< boost::filesystem::path >&	playVideo() { return _playVideo; }
@@ -26,13 +28,14 @@ class VideoDatabaseWidget : public Wt::WContainerWidget
 		void addDirectory(const std::string& name, const boost::filesystem::path& path);
 		void addVideo(const std::string& name, const boost::posix_time::time_duration& duration, const boost::filesystem::path& path);
 
-		Wt::Signal< boost::filesystem::path > _playVideo;
+		DatabaseHandler&	_db;
 
-		DatabaseHandler	_db;
+		Wt::Signal< boost::filesystem::path > _playVideo;
 
 		Wt::WTable*	_table;
 };
 
+} // namespace UserInterface
 
 #endif
 

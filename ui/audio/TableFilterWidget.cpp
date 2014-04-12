@@ -2,6 +2,8 @@
 
 #include "TableFilterWidget.hpp"
 
+namespace UserInterface {
+
 TableFilterWidget::TableFilterWidget(DatabaseHandler& db, std::string table, std::string field, Wt::WContainerWidget* parent)
 : FilterWidget( parent ),
 _db(db),
@@ -87,4 +89,6 @@ TableFilterWidget::getConstraint(Constraint& constraint)
 	// Adding our WHERE clause
 	constraint.where.And( clause );
 }
+
+} // namespace UserInterface
 

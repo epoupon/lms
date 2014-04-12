@@ -11,7 +11,6 @@
 #include "messages/Header.hpp"
 
 namespace Remote {
-
 namespace Server {
 
 class ConnectionManager;
@@ -71,7 +70,6 @@ class Connection : public std::enable_shared_from_this<Connection>
 
 
 } // namespace Server
-
 } // namespace Remote
 
 #endif

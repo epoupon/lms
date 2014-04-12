@@ -10,9 +10,10 @@
 #include <Wt/WLink>
 #include <Wt/WText>
 
-
 #include "transcode/Parameters.hpp"
 #include "resource/AvConvTranscodeStreamResource.hpp"
+
+namespace UserInterface {
 
 class AudioMediaPlayerWidget : public Wt::WContainerWidget
 {
@@ -63,6 +64,7 @@ class AudioMediaPlayerWidget : public Wt::WContainerWidget
 
 };
 
+} // namespace UserInterface
 
 #endif
 
