@@ -1,3 +1,4 @@
+*.sw?
 build/
 Makefile.in
 aclocal.m4
