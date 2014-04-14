@@ -5,7 +5,9 @@
 
 
 DatabaseHandler::DatabaseHandler(boost::filesystem::path db)
-: _dbBackend( db.string() )
+:
+_path(db),
+_dbBackend( db.string() )
 {
 	_session.setConnection(_dbBackend);
 	_session.mapClass<Genre>("genre");

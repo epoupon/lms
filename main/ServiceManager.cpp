@@ -24,6 +24,7 @@ ServiceManager::run()
 
 	asyncWaitSignals();
 
+	std::cout << "ServiceManager::run Waiting for events..." << std::endl;
 	// Wait for events
 	_ioService.run();
 
@@ -42,8 +43,10 @@ ServiceManager::asyncWaitSignals(void)
 void
 ServiceManager::startService(Service::pointer service)
 {
+	std::cout << "ServiceManager::startService" << std::endl;
 	_services.insert(service);
 	service->start();
+	std::cout << "ServiceManager::startService done" << std::endl;
 }
 
 void

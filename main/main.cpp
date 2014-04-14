@@ -24,14 +24,19 @@ int main(int argc, char* argv[])
 
 		// TODO Retreive the database path in some config file
 		const boost::filesystem::path dbPath("test.db");
+		Remote::Server::Server::endpoint_type remoteListenEndpoint( boost::asio::ip::address::from_string("0.0.0.0"), 5080);
 
 		// lib init
 		Av::AvInit();
 		Transcode::AvConvTranscoder::init();
 
-		serviceManager.startService( std::make_shared<DatabaseRefreshService>( dbPath) );
+		std::cout << "Starting services..." << std::endl;
+
+		serviceManager.startService( std::make_shared<DatabaseRefreshService>( serviceManager.getIoService(), dbPath) );
+		serviceManager.startService( std::make_shared<RemoteServerService>( serviceManager.getIoService(), remoteListenEndpoint, dbPath) );
 		serviceManager.startService( std::make_shared<UserInterfaceService>(argc, argv, dbPath) );
-		serviceManager.startService( std::make_shared<RemoteServerService>( Remote::Server::Server::endpoint_type(), dbPath) );
+
+		std::cout << "Running..." << std::endl;
 
 		serviceManager.run();
 

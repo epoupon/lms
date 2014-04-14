@@ -19,6 +19,9 @@ class ServiceManager
 		// Return in case of failure/stop by user
 		void run();
 
+		boost::asio::io_service&	getIoService() {return _ioService;}
+		const boost::asio::io_service&	getIoService() const {return _ioService;}
+
 	private:
 
 		void restartServices(void);

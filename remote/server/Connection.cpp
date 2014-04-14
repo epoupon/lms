@@ -18,7 +18,6 @@ Connection::Connection(boost::asio::ip::tcp::socket socket,
 _connectionManager(manager),
 _requestHandler(handler)
 {
-
 }
 
 boost::asio::ip::tcp::socket&

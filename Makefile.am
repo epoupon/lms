@@ -5,8 +5,6 @@ SUBDIRS = test .
 
 bin_PROGRAMS = lms
 
-lms2_CXXFLAGS=-std=c++11 -Wall -I$(top_srcdir)/boost/ -I$(top_srcdir)/ui -I$(top_srcdir)/remote
-
 lms_SOURCES = \
 	$(top_srcdir)/main/main.cpp			\
 	$(top_srcdir)/main/ServiceManager.cpp		\

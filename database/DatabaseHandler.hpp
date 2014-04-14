@@ -14,10 +14,14 @@ class DatabaseHandler
 
 		Wt::Dbo::Session& getSession() { return _session; }
 
+		boost::filesystem::path getPath() const { return _path; }
+
+
 	private:
 
-		Wt::Dbo::backend::Sqlite3 _dbBackend;
-		Wt::Dbo::Session _session;
+		boost::filesystem::path		_path;
+		Wt::Dbo::backend::Sqlite3	_dbBackend;
+		Wt::Dbo::Session		_session;
 
 };
 

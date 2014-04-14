@@ -76,9 +76,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 TESTS = database-integrity$(EXEEXT) sql-query$(EXEEXT) \
-	database-basics$(EXEEXT)
+	database-basics$(EXEEXT) remote$(EXEEXT)
 check_PROGRAMS = database-integrity$(EXEEXT) sql-query$(EXEEXT) \
-	database-basics$(EXEEXT)
+	database-basics$(EXEEXT) remote$(EXEEXT)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp $(top_srcdir)/test-driver
@@ -117,6 +117,18 @@ database_integrity_OBJECTS = $(am_database_integrity_OBJECTS)
 database_integrity_LDADD = $(LDADD)
 database_integrity_LINK = $(CXXLD) $(database_integrity_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_remote_OBJECTS = remote-RemoteClientServer.$(OBJEXT) \
+	remote-TestDatabase.$(OBJEXT) remote-Server.$(OBJEXT) \
+	remote-RequestHandler.$(OBJEXT) \
+	remote-ConnectionManager.$(OBJEXT) remote-Connection.$(OBJEXT) \
+	remote-Artist.$(OBJEXT) remote-Genre.$(OBJEXT) \
+	remote-Release.$(OBJEXT) remote-Track.$(OBJEXT) \
+	remote-DatabaseHandler.$(OBJEXT) remote-Path.$(OBJEXT) \
+	remote-Video.$(OBJEXT) remote-Checksum.$(OBJEXT)
+remote_OBJECTS = $(am_remote_OBJECTS)
+remote_LDADD = $(LDADD)
+remote_LINK = $(CXXLD) $(remote_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_sql_query_OBJECTS = sql_query-CheckSqlQuery.$(OBJEXT) \
 	sql_query-SqlQuery.$(OBJEXT)
 sql_query_OBJECTS = $(am_sql_query_OBJECTS)
@@ -157,9 +169,10 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(database_basics_SOURCES) $(database_integrity_SOURCES) \
-	$(sql_query_SOURCES)
+	$(remote_SOURCES) $(sql_query_SOURCES)
 DIST_SOURCES = $(database_basics_SOURCES) \
-	$(database_integrity_SOURCES) $(sql_query_SOURCES)
+	$(database_integrity_SOURCES) $(remote_SOURCES) \
+	$(sql_query_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -476,6 +489,23 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+remote_SOURCES = \
+	$(srcdir)/RemoteClientServer.cpp			\
+	$(srcdir)/TestDatabase.cpp				\
+	$(top_srcdir)/remote/server/Server.cpp			\
+	$(top_srcdir)/remote/server/RequestHandler.cpp		\
+	$(top_srcdir)/remote/server/ConnectionManager.cpp	\
+	$(top_srcdir)/remote/server/Connection.cpp		\
+	$(top_srcdir)/database/Artist.cpp			\
+	$(top_srcdir)/database/Genre.cpp			\
+	$(top_srcdir)/database/Release.cpp			\
+	$(top_srcdir)/database/Track.cpp			\
+	$(top_srcdir)/database/DatabaseHandler.cpp		\
+	$(top_srcdir)/database/Path.cpp				\
+	$(top_srcdir)/database/Video.cpp			\
+	$(top_srcdir)/database/Checksum.cpp
+
+remote_CXXFLAGS = -std=c++11 -Wall -Wextra -I$(top_srcdir) -I$(top_srcdir)/remote
 database_integrity_SOURCES = \
 	$(srcdir)/DatabaseIntegrity.cpp		\
 	$(top_srcdir)/database/Artist.cpp	\
@@ -551,6 +581,10 @@ database-integrity$(EXEEXT): $(database_integrity_OBJECTS) $(database_integrity_
 	@rm -f database-integrity$(EXEEXT)
 	$(AM_V_CXXLD)$(database_integrity_LINK) $(database_integrity_OBJECTS) $(database_integrity_LDADD) $(LIBS)
 
+remote$(EXEEXT): $(remote_OBJECTS) $(remote_DEPENDENCIES) $(EXTRA_remote_DEPENDENCIES) 
+	@rm -f remote$(EXEEXT)
+	$(AM_V_CXXLD)$(remote_LINK) $(remote_OBJECTS) $(remote_LDADD) $(LIBS)
+
 sql-query$(EXEEXT): $(sql_query_OBJECTS) $(sql_query_DEPENDENCIES) $(EXTRA_sql_query_DEPENDENCIES) 
 	@rm -f sql-query$(EXEEXT)
 	$(AM_V_CXXLD)$(sql_query_LINK) $(sql_query_OBJECTS) $(sql_query_LDADD) $(LIBS)
@@ -579,6 +613,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-Release.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-Track.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-Video.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Artist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Checksum.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Connection.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-ConnectionManager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-DatabaseHandler.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Genre.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Path.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Release.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-RemoteClientServer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-RequestHandler.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Server.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-TestDatabase.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Track.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Video.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sql_query-CheckSqlQuery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sql_query-SqlQuery.Po@am__quote@
 
@@ -848,6 +896,202 @@ database_integrity-Checksum.obj: $(top_srcdir)/database/Checksum.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_integrity_CXXFLAGS) $(CXXFLAGS) -c -o database_integrity-Checksum.obj `if test -f '$(top_srcdir)/database/Checksum.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Checksum.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Checksum.cpp'; fi`
 
+remote-RemoteClientServer.o: $(srcdir)/RemoteClientServer.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-RemoteClientServer.o -MD -MP -MF $(DEPDIR)/remote-RemoteClientServer.Tpo -c -o remote-RemoteClientServer.o `test -f '$(srcdir)/RemoteClientServer.cpp' || echo '$(srcdir)/'`$(srcdir)/RemoteClientServer.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-RemoteClientServer.Tpo $(DEPDIR)/remote-RemoteClientServer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(srcdir)/RemoteClientServer.cpp' object='remote-RemoteClientServer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-RemoteClientServer.o `test -f '$(srcdir)/RemoteClientServer.cpp' || echo '$(srcdir)/'`$(srcdir)/RemoteClientServer.cpp
+
+remote-RemoteClientServer.obj: $(srcdir)/RemoteClientServer.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-RemoteClientServer.obj -MD -MP -MF $(DEPDIR)/remote-RemoteClientServer.Tpo -c -o remote-RemoteClientServer.obj `if test -f '$(srcdir)/RemoteClientServer.cpp'; then $(CYGPATH_W) '$(srcdir)/RemoteClientServer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RemoteClientServer.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-RemoteClientServer.Tpo $(DEPDIR)/remote-RemoteClientServer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(srcdir)/RemoteClientServer.cpp' object='remote-RemoteClientServer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-RemoteClientServer.obj `if test -f '$(srcdir)/RemoteClientServer.cpp'; then $(CYGPATH_W) '$(srcdir)/RemoteClientServer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RemoteClientServer.cpp'; fi`
+
+remote-TestDatabase.o: $(srcdir)/TestDatabase.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-TestDatabase.o -MD -MP -MF $(DEPDIR)/remote-TestDatabase.Tpo -c -o remote-TestDatabase.o `test -f '$(srcdir)/TestDatabase.cpp' || echo '$(srcdir)/'`$(srcdir)/TestDatabase.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-TestDatabase.Tpo $(DEPDIR)/remote-TestDatabase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(srcdir)/TestDatabase.cpp' object='remote-TestDatabase.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-TestDatabase.o `test -f '$(srcdir)/TestDatabase.cpp' || echo '$(srcdir)/'`$(srcdir)/TestDatabase.cpp
+
+remote-TestDatabase.obj: $(srcdir)/TestDatabase.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-TestDatabase.obj -MD -MP -MF $(DEPDIR)/remote-TestDatabase.Tpo -c -o remote-TestDatabase.obj `if test -f '$(srcdir)/TestDatabase.cpp'; then $(CYGPATH_W) '$(srcdir)/TestDatabase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestDatabase.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-TestDatabase.Tpo $(DEPDIR)/remote-TestDatabase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(srcdir)/TestDatabase.cpp' object='remote-TestDatabase.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-TestDatabase.obj `if test -f '$(srcdir)/TestDatabase.cpp'; then $(CYGPATH_W) '$(srcdir)/TestDatabase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestDatabase.cpp'; fi`
+
+remote-Server.o: $(top_srcdir)/remote/server/Server.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Server.o -MD -MP -MF $(DEPDIR)/remote-Server.Tpo -c -o remote-Server.o `test -f '$(top_srcdir)/remote/server/Server.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/Server.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Server.Tpo $(DEPDIR)/remote-Server.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/Server.cpp' object='remote-Server.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Server.o `test -f '$(top_srcdir)/remote/server/Server.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/Server.cpp
+
+remote-Server.obj: $(top_srcdir)/remote/server/Server.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Server.obj -MD -MP -MF $(DEPDIR)/remote-Server.Tpo -c -o remote-Server.obj `if test -f '$(top_srcdir)/remote/server/Server.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/Server.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/Server.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Server.Tpo $(DEPDIR)/remote-Server.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/Server.cpp' object='remote-Server.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Server.obj `if test -f '$(top_srcdir)/remote/server/Server.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/Server.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/Server.cpp'; fi`
+
+remote-RequestHandler.o: $(top_srcdir)/remote/server/RequestHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-RequestHandler.o -MD -MP -MF $(DEPDIR)/remote-RequestHandler.Tpo -c -o remote-RequestHandler.o `test -f '$(top_srcdir)/remote/server/RequestHandler.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/RequestHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-RequestHandler.Tpo $(DEPDIR)/remote-RequestHandler.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/RequestHandler.cpp' object='remote-RequestHandler.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-RequestHandler.o `test -f '$(top_srcdir)/remote/server/RequestHandler.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/RequestHandler.cpp
+
+remote-RequestHandler.obj: $(top_srcdir)/remote/server/RequestHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-RequestHandler.obj -MD -MP -MF $(DEPDIR)/remote-RequestHandler.Tpo -c -o remote-RequestHandler.obj `if test -f '$(top_srcdir)/remote/server/RequestHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/RequestHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/RequestHandler.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-RequestHandler.Tpo $(DEPDIR)/remote-RequestHandler.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/RequestHandler.cpp' object='remote-RequestHandler.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-RequestHandler.obj `if test -f '$(top_srcdir)/remote/server/RequestHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/RequestHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/RequestHandler.cpp'; fi`
+
+remote-ConnectionManager.o: $(top_srcdir)/remote/server/ConnectionManager.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-ConnectionManager.o -MD -MP -MF $(DEPDIR)/remote-ConnectionManager.Tpo -c -o remote-ConnectionManager.o `test -f '$(top_srcdir)/remote/server/ConnectionManager.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/ConnectionManager.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-ConnectionManager.Tpo $(DEPDIR)/remote-ConnectionManager.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/ConnectionManager.cpp' object='remote-ConnectionManager.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-ConnectionManager.o `test -f '$(top_srcdir)/remote/server/ConnectionManager.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/ConnectionManager.cpp
+
+remote-ConnectionManager.obj: $(top_srcdir)/remote/server/ConnectionManager.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-ConnectionManager.obj -MD -MP -MF $(DEPDIR)/remote-ConnectionManager.Tpo -c -o remote-ConnectionManager.obj `if test -f '$(top_srcdir)/remote/server/ConnectionManager.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/ConnectionManager.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/ConnectionManager.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-ConnectionManager.Tpo $(DEPDIR)/remote-ConnectionManager.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/ConnectionManager.cpp' object='remote-ConnectionManager.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-ConnectionManager.obj `if test -f '$(top_srcdir)/remote/server/ConnectionManager.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/ConnectionManager.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/ConnectionManager.cpp'; fi`
+
+remote-Connection.o: $(top_srcdir)/remote/server/Connection.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Connection.o -MD -MP -MF $(DEPDIR)/remote-Connection.Tpo -c -o remote-Connection.o `test -f '$(top_srcdir)/remote/server/Connection.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/Connection.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Connection.Tpo $(DEPDIR)/remote-Connection.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/Connection.cpp' object='remote-Connection.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Connection.o `test -f '$(top_srcdir)/remote/server/Connection.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/Connection.cpp
+
+remote-Connection.obj: $(top_srcdir)/remote/server/Connection.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Connection.obj -MD -MP -MF $(DEPDIR)/remote-Connection.Tpo -c -o remote-Connection.obj `if test -f '$(top_srcdir)/remote/server/Connection.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/Connection.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/Connection.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Connection.Tpo $(DEPDIR)/remote-Connection.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/Connection.cpp' object='remote-Connection.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Connection.obj `if test -f '$(top_srcdir)/remote/server/Connection.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/Connection.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/Connection.cpp'; fi`
+
+remote-Artist.o: $(top_srcdir)/database/Artist.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Artist.o -MD -MP -MF $(DEPDIR)/remote-Artist.Tpo -c -o remote-Artist.o `test -f '$(top_srcdir)/database/Artist.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Artist.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Artist.Tpo $(DEPDIR)/remote-Artist.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Artist.cpp' object='remote-Artist.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Artist.o `test -f '$(top_srcdir)/database/Artist.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Artist.cpp
+
+remote-Artist.obj: $(top_srcdir)/database/Artist.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Artist.obj -MD -MP -MF $(DEPDIR)/remote-Artist.Tpo -c -o remote-Artist.obj `if test -f '$(top_srcdir)/database/Artist.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Artist.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Artist.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Artist.Tpo $(DEPDIR)/remote-Artist.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Artist.cpp' object='remote-Artist.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Artist.obj `if test -f '$(top_srcdir)/database/Artist.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Artist.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Artist.cpp'; fi`
+
+remote-Genre.o: $(top_srcdir)/database/Genre.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Genre.o -MD -MP -MF $(DEPDIR)/remote-Genre.Tpo -c -o remote-Genre.o `test -f '$(top_srcdir)/database/Genre.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Genre.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Genre.Tpo $(DEPDIR)/remote-Genre.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Genre.cpp' object='remote-Genre.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Genre.o `test -f '$(top_srcdir)/database/Genre.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Genre.cpp
+
+remote-Genre.obj: $(top_srcdir)/database/Genre.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Genre.obj -MD -MP -MF $(DEPDIR)/remote-Genre.Tpo -c -o remote-Genre.obj `if test -f '$(top_srcdir)/database/Genre.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Genre.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Genre.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Genre.Tpo $(DEPDIR)/remote-Genre.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Genre.cpp' object='remote-Genre.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Genre.obj `if test -f '$(top_srcdir)/database/Genre.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Genre.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Genre.cpp'; fi`
+
+remote-Release.o: $(top_srcdir)/database/Release.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Release.o -MD -MP -MF $(DEPDIR)/remote-Release.Tpo -c -o remote-Release.o `test -f '$(top_srcdir)/database/Release.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Release.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Release.Tpo $(DEPDIR)/remote-Release.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Release.cpp' object='remote-Release.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Release.o `test -f '$(top_srcdir)/database/Release.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Release.cpp
+
+remote-Release.obj: $(top_srcdir)/database/Release.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Release.obj -MD -MP -MF $(DEPDIR)/remote-Release.Tpo -c -o remote-Release.obj `if test -f '$(top_srcdir)/database/Release.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Release.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Release.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Release.Tpo $(DEPDIR)/remote-Release.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Release.cpp' object='remote-Release.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Release.obj `if test -f '$(top_srcdir)/database/Release.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Release.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Release.cpp'; fi`
+
+remote-Track.o: $(top_srcdir)/database/Track.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Track.o -MD -MP -MF $(DEPDIR)/remote-Track.Tpo -c -o remote-Track.o `test -f '$(top_srcdir)/database/Track.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Track.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Track.Tpo $(DEPDIR)/remote-Track.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Track.cpp' object='remote-Track.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Track.o `test -f '$(top_srcdir)/database/Track.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Track.cpp
+
+remote-Track.obj: $(top_srcdir)/database/Track.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Track.obj -MD -MP -MF $(DEPDIR)/remote-Track.Tpo -c -o remote-Track.obj `if test -f '$(top_srcdir)/database/Track.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Track.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Track.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Track.Tpo $(DEPDIR)/remote-Track.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Track.cpp' object='remote-Track.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Track.obj `if test -f '$(top_srcdir)/database/Track.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Track.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Track.cpp'; fi`
+
+remote-DatabaseHandler.o: $(top_srcdir)/database/DatabaseHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-DatabaseHandler.o -MD -MP -MF $(DEPDIR)/remote-DatabaseHandler.Tpo -c -o remote-DatabaseHandler.o `test -f '$(top_srcdir)/database/DatabaseHandler.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/DatabaseHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-DatabaseHandler.Tpo $(DEPDIR)/remote-DatabaseHandler.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/DatabaseHandler.cpp' object='remote-DatabaseHandler.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-DatabaseHandler.o `test -f '$(top_srcdir)/database/DatabaseHandler.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/DatabaseHandler.cpp
+
+remote-DatabaseHandler.obj: $(top_srcdir)/database/DatabaseHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-DatabaseHandler.obj -MD -MP -MF $(DEPDIR)/remote-DatabaseHandler.Tpo -c -o remote-DatabaseHandler.obj `if test -f '$(top_srcdir)/database/DatabaseHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/DatabaseHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/DatabaseHandler.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-DatabaseHandler.Tpo $(DEPDIR)/remote-DatabaseHandler.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/DatabaseHandler.cpp' object='remote-DatabaseHandler.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-DatabaseHandler.obj `if test -f '$(top_srcdir)/database/DatabaseHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/DatabaseHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/DatabaseHandler.cpp'; fi`
+
+remote-Path.o: $(top_srcdir)/database/Path.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Path.o -MD -MP -MF $(DEPDIR)/remote-Path.Tpo -c -o remote-Path.o `test -f '$(top_srcdir)/database/Path.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Path.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Path.Tpo $(DEPDIR)/remote-Path.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Path.cpp' object='remote-Path.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Path.o `test -f '$(top_srcdir)/database/Path.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Path.cpp
+
+remote-Path.obj: $(top_srcdir)/database/Path.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Path.obj -MD -MP -MF $(DEPDIR)/remote-Path.Tpo -c -o remote-Path.obj `if test -f '$(top_srcdir)/database/Path.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Path.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Path.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Path.Tpo $(DEPDIR)/remote-Path.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Path.cpp' object='remote-Path.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Path.obj `if test -f '$(top_srcdir)/database/Path.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Path.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Path.cpp'; fi`
+
+remote-Video.o: $(top_srcdir)/database/Video.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Video.o -MD -MP -MF $(DEPDIR)/remote-Video.Tpo -c -o remote-Video.o `test -f '$(top_srcdir)/database/Video.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Video.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Video.Tpo $(DEPDIR)/remote-Video.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Video.cpp' object='remote-Video.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Video.o `test -f '$(top_srcdir)/database/Video.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Video.cpp
+
+remote-Video.obj: $(top_srcdir)/database/Video.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Video.obj -MD -MP -MF $(DEPDIR)/remote-Video.Tpo -c -o remote-Video.obj `if test -f '$(top_srcdir)/database/Video.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Video.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Video.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Video.Tpo $(DEPDIR)/remote-Video.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Video.cpp' object='remote-Video.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Video.obj `if test -f '$(top_srcdir)/database/Video.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Video.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Video.cpp'; fi`
+
+remote-Checksum.o: $(top_srcdir)/database/Checksum.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Checksum.o -MD -MP -MF $(DEPDIR)/remote-Checksum.Tpo -c -o remote-Checksum.o `test -f '$(top_srcdir)/database/Checksum.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Checksum.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Checksum.Tpo $(DEPDIR)/remote-Checksum.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Checksum.cpp' object='remote-Checksum.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Checksum.o `test -f '$(top_srcdir)/database/Checksum.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Checksum.cpp
+
+remote-Checksum.obj: $(top_srcdir)/database/Checksum.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Checksum.obj -MD -MP -MF $(DEPDIR)/remote-Checksum.Tpo -c -o remote-Checksum.obj `if test -f '$(top_srcdir)/database/Checksum.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Checksum.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Checksum.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Checksum.Tpo $(DEPDIR)/remote-Checksum.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/Checksum.cpp' object='remote-Checksum.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Checksum.obj `if test -f '$(top_srcdir)/database/Checksum.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/Checksum.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/Checksum.cpp'; fi`
+
 sql_query-CheckSqlQuery.o: $(srcdir)/CheckSqlQuery.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sql_query_CXXFLAGS) $(CXXFLAGS) -MT sql_query-CheckSqlQuery.o -MD -MP -MF $(DEPDIR)/sql_query-CheckSqlQuery.Tpo -c -o sql_query-CheckSqlQuery.o `test -f '$(srcdir)/CheckSqlQuery.cpp' || echo '$(srcdir)/'`$(srcdir)/CheckSqlQuery.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sql_query-CheckSqlQuery.Tpo $(DEPDIR)/sql_query-CheckSqlQuery.Po
@@ -1086,6 +1330,13 @@ sql-query.log: sql-query$(EXEEXT)
 database-basics.log: database-basics$(EXEEXT)
 	@p='database-basics$(EXEEXT)'; \
 	b='database-basics'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+remote.log: remote$(EXEEXT)
+	@p='remote$(EXEEXT)'; \
+	b='remote'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

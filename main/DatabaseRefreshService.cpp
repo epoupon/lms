@@ -1,7 +1,7 @@
 
 #include "DatabaseRefreshService.hpp"
 
-DatabaseRefreshService::DatabaseRefreshService(const boost::filesystem::path& p)
+DatabaseRefreshService::DatabaseRefreshService(boost::asio::io_service& ioService, const boost::filesystem::path& p)
 : _metadataParser(),
  _database( p, _metadataParser)
 {

@@ -43,7 +43,7 @@ AC_CHECK_LIB(	[boost_filesystem],
 		[AC_MSG_ERROR([libboost_filesystem not found!])])
 
 #AC_CHECK_LIB(	[boost_thread],
-#		[main],
+# 		[main],
 #		,
 #		[AC_MSG_ERROR([libboost_thread not found!])])
 

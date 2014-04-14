@@ -8,22 +8,14 @@
 namespace Remote {
 namespace Server {
 
-Server::Server(const endpoint_type& endpoint, boost::filesystem::path dbPath)
+Server::Server(boost::asio::io_service& ioService, const endpoint_type& bindEndpoint, boost::filesystem::path dbPath)
 :
-_acceptor(_ioService),
+_ioService(ioService),
+_acceptor(_ioService, bindEndpoint, true /*SO_REUSEADDR*/),
 _connectionManager(),
 _socket(_ioService),
 _requestHandler(dbPath)
 {
-	// Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
-	boost::asio::ip::tcp::resolver resolver(_ioService);
-	boost::asio::ip::tcp::endpoint resolvedEndpoint = *resolver.resolve(endpoint);
-
-	_acceptor.open(resolvedEndpoint.protocol());
-	_acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-	_acceptor.bind(endpoint);
-	_acceptor.listen();
-
 }
 
 void
