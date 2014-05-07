@@ -28,6 +28,8 @@
 #include "common.pb.h"
 // @@protoc_insertion_point(includes)
 
+namespace Remote {
+
 // Internal implementation detail -- do not call these.
 void  protobuf_AddDesc_media_2eproto();
 void protobuf_AssignDesc_media_2eproto();
@@ -166,12 +168,12 @@ class MediaRequest_Prepare : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 offset_secs() const;
   inline void set_offset_secs(::google::protobuf::uint32 value);
 
-  // optional .CodecType codec_type = 3;
+  // optional .Remote.CodecType codec_type = 3;
   inline bool has_codec_type() const;
   inline void clear_codec_type();
   static const int kCodecTypeFieldNumber = 3;
-  inline ::CodecType codec_type() const;
-  inline void set_codec_type(::CodecType value);
+  inline ::Remote::CodecType codec_type() const;
+  inline void set_codec_type(::Remote::CodecType value);
 
   // optional uint32 audio_bitrate = 4;
   inline bool has_audio_bitrate() const;
@@ -208,7 +210,7 @@ class MediaRequest_Prepare : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 subtitle_stream_idx() const;
   inline void set_subtitle_stream_idx(::google::protobuf::uint32 value);
 
-  // @@protoc_insertion_point(class_scope:MediaRequest.Prepare)
+  // @@protoc_insertion_point(class_scope:Remote.MediaRequest.Prepare)
  private:
   inline void set_has_id();
   inline void clear_has_id();
@@ -311,7 +313,7 @@ class MediaRequest_GetPart : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 requested_data_size() const;
   inline void set_requested_data_size(::google::protobuf::uint32 value);
 
-  // @@protoc_insertion_point(class_scope:MediaRequest.GetPart)
+  // @@protoc_insertion_point(class_scope:Remote.MediaRequest.GetPart)
  private:
   inline void set_has_requested_data_size();
   inline void clear_has_requested_data_size();
@@ -386,7 +388,7 @@ class MediaRequest_Terminate : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // @@protoc_insertion_point(class_scope:MediaRequest.Terminate)
+  // @@protoc_insertion_point(class_scope:Remote.MediaRequest.Terminate)
  private:
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
@@ -487,41 +489,41 @@ class MediaRequest : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required .MediaRequest.Type request_type = 1;
+  // required .Remote.MediaRequest.Type request_type = 1;
   inline bool has_request_type() const;
   inline void clear_request_type();
   static const int kRequestTypeFieldNumber = 1;
-  inline ::MediaRequest_Type request_type() const;
-  inline void set_request_type(::MediaRequest_Type value);
+  inline ::Remote::MediaRequest_Type request_type() const;
+  inline void set_request_type(::Remote::MediaRequest_Type value);
 
-  // optional .MediaRequest.Prepare prepare = 2;
+  // optional .Remote.MediaRequest.Prepare prepare = 2;
   inline bool has_prepare() const;
   inline void clear_prepare();
   static const int kPrepareFieldNumber = 2;
-  inline const ::MediaRequest_Prepare& prepare() const;
-  inline ::MediaRequest_Prepare* mutable_prepare();
-  inline ::MediaRequest_Prepare* release_prepare();
-  inline void set_allocated_prepare(::MediaRequest_Prepare* prepare);
+  inline const ::Remote::MediaRequest_Prepare& prepare() const;
+  inline ::Remote::MediaRequest_Prepare* mutable_prepare();
+  inline ::Remote::MediaRequest_Prepare* release_prepare();
+  inline void set_allocated_prepare(::Remote::MediaRequest_Prepare* prepare);
 
-  // optional .MediaRequest.GetPart get_part = 3;
+  // optional .Remote.MediaRequest.GetPart get_part = 3;
   inline bool has_get_part() const;
   inline void clear_get_part();
   static const int kGetPartFieldNumber = 3;
-  inline const ::MediaRequest_GetPart& get_part() const;
-  inline ::MediaRequest_GetPart* mutable_get_part();
-  inline ::MediaRequest_GetPart* release_get_part();
-  inline void set_allocated_get_part(::MediaRequest_GetPart* get_part);
+  inline const ::Remote::MediaRequest_GetPart& get_part() const;
+  inline ::Remote::MediaRequest_GetPart* mutable_get_part();
+  inline ::Remote::MediaRequest_GetPart* release_get_part();
+  inline void set_allocated_get_part(::Remote::MediaRequest_GetPart* get_part);
 
-  // optional .MediaRequest.Terminate terminate = 4;
+  // optional .Remote.MediaRequest.Terminate terminate = 4;
   inline bool has_terminate() const;
   inline void clear_terminate();
   static const int kTerminateFieldNumber = 4;
-  inline const ::MediaRequest_Terminate& terminate() const;
-  inline ::MediaRequest_Terminate* mutable_terminate();
-  inline ::MediaRequest_Terminate* release_terminate();
-  inline void set_allocated_terminate(::MediaRequest_Terminate* terminate);
+  inline const ::Remote::MediaRequest_Terminate& terminate() const;
+  inline ::Remote::MediaRequest_Terminate* mutable_terminate();
+  inline ::Remote::MediaRequest_Terminate* release_terminate();
+  inline void set_allocated_terminate(::Remote::MediaRequest_Terminate* terminate);
 
-  // @@protoc_insertion_point(class_scope:MediaRequest)
+  // @@protoc_insertion_point(class_scope:Remote.MediaRequest)
  private:
   inline void set_has_request_type();
   inline void clear_has_request_type();
@@ -534,9 +536,9 @@ class MediaRequest : public ::google::protobuf::Message {
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::MediaRequest_Prepare* prepare_;
-  ::MediaRequest_GetPart* get_part_;
-  ::MediaRequest_Terminate* terminate_;
+  ::Remote::MediaRequest_Prepare* prepare_;
+  ::Remote::MediaRequest_GetPart* get_part_;
+  ::Remote::MediaRequest_Terminate* terminate_;
   int request_type_;
 
   mutable int _cached_size_;
@@ -628,7 +630,7 @@ class MediaResponse_MediaPart : public ::google::protobuf::Message {
   inline const ::google::protobuf::RepeatedPtrField< ::std::string>& data() const;
   inline ::google::protobuf::RepeatedPtrField< ::std::string>* mutable_data();
 
-  // @@protoc_insertion_point(class_scope:MediaResponse.MediaPart)
+  // @@protoc_insertion_point(class_scope:Remote.MediaResponse.MediaPart)
  private:
   inline void set_has_byte_offset();
   inline void clear_has_byte_offset();
@@ -729,32 +731,32 @@ class MediaResponse : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required .Error error = 1;
+  // required .Remote.Error error = 1;
   inline bool has_error() const;
   inline void clear_error();
   static const int kErrorFieldNumber = 1;
-  inline const ::Error& error() const;
-  inline ::Error* mutable_error();
-  inline ::Error* release_error();
-  inline void set_allocated_error(::Error* error);
+  inline const ::Remote::Error& error() const;
+  inline ::Remote::Error* mutable_error();
+  inline ::Remote::Error* release_error();
+  inline void set_allocated_error(::Remote::Error* error);
 
-  // required .MediaResponse.Type response_type = 2;
+  // required .Remote.MediaResponse.Type response_type = 2;
   inline bool has_response_type() const;
   inline void clear_response_type();
   static const int kResponseTypeFieldNumber = 2;
-  inline ::MediaResponse_Type response_type() const;
-  inline void set_response_type(::MediaResponse_Type value);
+  inline ::Remote::MediaResponse_Type response_type() const;
+  inline void set_response_type(::Remote::MediaResponse_Type value);
 
-  // optional .MediaResponse.MediaPart part = 3;
+  // optional .Remote.MediaResponse.MediaPart part = 3;
   inline bool has_part() const;
   inline void clear_part();
   static const int kPartFieldNumber = 3;
-  inline const ::MediaResponse_MediaPart& part() const;
-  inline ::MediaResponse_MediaPart* mutable_part();
-  inline ::MediaResponse_MediaPart* release_part();
-  inline void set_allocated_part(::MediaResponse_MediaPart* part);
+  inline const ::Remote::MediaResponse_MediaPart& part() const;
+  inline ::Remote::MediaResponse_MediaPart* mutable_part();
+  inline ::Remote::MediaResponse_MediaPart* release_part();
+  inline void set_allocated_part(::Remote::MediaResponse_MediaPart* part);
 
-  // @@protoc_insertion_point(class_scope:MediaResponse)
+  // @@protoc_insertion_point(class_scope:Remote.MediaResponse)
  private:
   inline void set_has_error();
   inline void clear_has_error();
@@ -765,8 +767,8 @@ class MediaResponse : public ::google::protobuf::Message {
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::Error* error_;
-  ::MediaResponse_MediaPart* part_;
+  ::Remote::Error* error_;
+  ::Remote::MediaResponse_MediaPart* part_;
   int response_type_;
 
   mutable int _cached_size_;
@@ -830,7 +832,7 @@ inline void MediaRequest_Prepare::set_offset_secs(::google::protobuf::uint32 val
   offset_secs_ = value;
 }
 
-// optional .CodecType codec_type = 3;
+// optional .Remote.CodecType codec_type = 3;
 inline bool MediaRequest_Prepare::has_codec_type() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
@@ -844,11 +846,11 @@ inline void MediaRequest_Prepare::clear_codec_type() {
   codec_type_ = 1;
   clear_has_codec_type();
 }
-inline ::CodecType MediaRequest_Prepare::codec_type() const {
-  return static_cast< ::CodecType >(codec_type_);
+inline ::Remote::CodecType MediaRequest_Prepare::codec_type() const {
+  return static_cast< ::Remote::CodecType >(codec_type_);
 }
-inline void MediaRequest_Prepare::set_codec_type(::CodecType value) {
-  assert(::CodecType_IsValid(value));
+inline void MediaRequest_Prepare::set_codec_type(::Remote::CodecType value) {
+  assert(::Remote::CodecType_IsValid(value));
   set_has_codec_type();
   codec_type_ = value;
 }
@@ -997,7 +999,7 @@ inline void MediaRequest_GetPart::set_requested_data_size(::google::protobuf::ui
 
 // MediaRequest
 
-// required .MediaRequest.Type request_type = 1;
+// required .Remote.MediaRequest.Type request_type = 1;
 inline bool MediaRequest::has_request_type() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -1011,16 +1013,16 @@ inline void MediaRequest::clear_request_type() {
   request_type_ = 1;
   clear_has_request_type();
 }
-inline ::MediaRequest_Type MediaRequest::request_type() const {
-  return static_cast< ::MediaRequest_Type >(request_type_);
+inline ::Remote::MediaRequest_Type MediaRequest::request_type() const {
+  return static_cast< ::Remote::MediaRequest_Type >(request_type_);
 }
-inline void MediaRequest::set_request_type(::MediaRequest_Type value) {
-  assert(::MediaRequest_Type_IsValid(value));
+inline void MediaRequest::set_request_type(::Remote::MediaRequest_Type value) {
+  assert(::Remote::MediaRequest_Type_IsValid(value));
   set_has_request_type();
   request_type_ = value;
 }
 
-// optional .MediaRequest.Prepare prepare = 2;
+// optional .Remote.MediaRequest.Prepare prepare = 2;
 inline bool MediaRequest::has_prepare() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
@@ -1031,24 +1033,24 @@ inline void MediaRequest::clear_has_prepare() {
   _has_bits_[0] &= ~0x00000002u;
 }
 inline void MediaRequest::clear_prepare() {
-  if (prepare_ != NULL) prepare_->::MediaRequest_Prepare::Clear();
+  if (prepare_ != NULL) prepare_->::Remote::MediaRequest_Prepare::Clear();
   clear_has_prepare();
 }
-inline const ::MediaRequest_Prepare& MediaRequest::prepare() const {
+inline const ::Remote::MediaRequest_Prepare& MediaRequest::prepare() const {
   return prepare_ != NULL ? *prepare_ : *default_instance_->prepare_;
 }
-inline ::MediaRequest_Prepare* MediaRequest::mutable_prepare() {
+inline ::Remote::MediaRequest_Prepare* MediaRequest::mutable_prepare() {
   set_has_prepare();
-  if (prepare_ == NULL) prepare_ = new ::MediaRequest_Prepare;
+  if (prepare_ == NULL) prepare_ = new ::Remote::MediaRequest_Prepare;
   return prepare_;
 }
-inline ::MediaRequest_Prepare* MediaRequest::release_prepare() {
+inline ::Remote::MediaRequest_Prepare* MediaRequest::release_prepare() {
   clear_has_prepare();
-  ::MediaRequest_Prepare* temp = prepare_;
+  ::Remote::MediaRequest_Prepare* temp = prepare_;
   prepare_ = NULL;
   return temp;
 }
-inline void MediaRequest::set_allocated_prepare(::MediaRequest_Prepare* prepare) {
+inline void MediaRequest::set_allocated_prepare(::Remote::MediaRequest_Prepare* prepare) {
   delete prepare_;
   prepare_ = prepare;
   if (prepare) {
@@ -1058,7 +1060,7 @@ inline void MediaRequest::set_allocated_prepare(::MediaRequest_Prepare* prepare)
   }
 }
 
-// optional .MediaRequest.GetPart get_part = 3;
+// optional .Remote.MediaRequest.GetPart get_part = 3;
 inline bool MediaRequest::has_get_part() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
@@ -1069,24 +1071,24 @@ inline void MediaRequest::clear_has_get_part() {
   _has_bits_[0] &= ~0x00000004u;
 }
 inline void MediaRequest::clear_get_part() {
-  if (get_part_ != NULL) get_part_->::MediaRequest_GetPart::Clear();
+  if (get_part_ != NULL) get_part_->::Remote::MediaRequest_GetPart::Clear();
   clear_has_get_part();
 }
-inline const ::MediaRequest_GetPart& MediaRequest::get_part() const {
+inline const ::Remote::MediaRequest_GetPart& MediaRequest::get_part() const {
   return get_part_ != NULL ? *get_part_ : *default_instance_->get_part_;
 }
-inline ::MediaRequest_GetPart* MediaRequest::mutable_get_part() {
+inline ::Remote::MediaRequest_GetPart* MediaRequest::mutable_get_part() {
   set_has_get_part();
-  if (get_part_ == NULL) get_part_ = new ::MediaRequest_GetPart;
+  if (get_part_ == NULL) get_part_ = new ::Remote::MediaRequest_GetPart;
   return get_part_;
 }
-inline ::MediaRequest_GetPart* MediaRequest::release_get_part() {
+inline ::Remote::MediaRequest_GetPart* MediaRequest::release_get_part() {
   clear_has_get_part();
-  ::MediaRequest_GetPart* temp = get_part_;
+  ::Remote::MediaRequest_GetPart* temp = get_part_;
   get_part_ = NULL;
   return temp;
 }
-inline void MediaRequest::set_allocated_get_part(::MediaRequest_GetPart* get_part) {
+inline void MediaRequest::set_allocated_get_part(::Remote::MediaRequest_GetPart* get_part) {
   delete get_part_;
   get_part_ = get_part;
   if (get_part) {
@@ -1096,7 +1098,7 @@ inline void MediaRequest::set_allocated_get_part(::MediaRequest_GetPart* get_par
   }
 }
 
-// optional .MediaRequest.Terminate terminate = 4;
+// optional .Remote.MediaRequest.Terminate terminate = 4;
 inline bool MediaRequest::has_terminate() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
@@ -1107,24 +1109,24 @@ inline void MediaRequest::clear_has_terminate() {
   _has_bits_[0] &= ~0x00000008u;
 }
 inline void MediaRequest::clear_terminate() {
-  if (terminate_ != NULL) terminate_->::MediaRequest_Terminate::Clear();
+  if (terminate_ != NULL) terminate_->::Remote::MediaRequest_Terminate::Clear();
   clear_has_terminate();
 }
-inline const ::MediaRequest_Terminate& MediaRequest::terminate() const {
+inline const ::Remote::MediaRequest_Terminate& MediaRequest::terminate() const {
   return terminate_ != NULL ? *terminate_ : *default_instance_->terminate_;
 }
-inline ::MediaRequest_Terminate* MediaRequest::mutable_terminate() {
+inline ::Remote::MediaRequest_Terminate* MediaRequest::mutable_terminate() {
   set_has_terminate();
-  if (terminate_ == NULL) terminate_ = new ::MediaRequest_Terminate;
+  if (terminate_ == NULL) terminate_ = new ::Remote::MediaRequest_Terminate;
   return terminate_;
 }
-inline ::MediaRequest_Terminate* MediaRequest::release_terminate() {
+inline ::Remote::MediaRequest_Terminate* MediaRequest::release_terminate() {
   clear_has_terminate();
-  ::MediaRequest_Terminate* temp = terminate_;
+  ::Remote::MediaRequest_Terminate* temp = terminate_;
   terminate_ = NULL;
   return temp;
 }
-inline void MediaRequest::set_allocated_terminate(::MediaRequest_Terminate* terminate) {
+inline void MediaRequest::set_allocated_terminate(::Remote::MediaRequest_Terminate* terminate) {
   delete terminate_;
   terminate_ = terminate;
   if (terminate) {
@@ -1208,7 +1210,7 @@ MediaResponse_MediaPart::mutable_data() {
 
 // MediaResponse
 
-// required .Error error = 1;
+// required .Remote.Error error = 1;
 inline bool MediaResponse::has_error() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -1219,24 +1221,24 @@ inline void MediaResponse::clear_has_error() {
   _has_bits_[0] &= ~0x00000001u;
 }
 inline void MediaResponse::clear_error() {
-  if (error_ != NULL) error_->::Error::Clear();
+  if (error_ != NULL) error_->::Remote::Error::Clear();
   clear_has_error();
 }
-inline const ::Error& MediaResponse::error() const {
+inline const ::Remote::Error& MediaResponse::error() const {
   return error_ != NULL ? *error_ : *default_instance_->error_;
 }
-inline ::Error* MediaResponse::mutable_error() {
+inline ::Remote::Error* MediaResponse::mutable_error() {
   set_has_error();
-  if (error_ == NULL) error_ = new ::Error;
+  if (error_ == NULL) error_ = new ::Remote::Error;
   return error_;
 }
-inline ::Error* MediaResponse::release_error() {
+inline ::Remote::Error* MediaResponse::release_error() {
   clear_has_error();
-  ::Error* temp = error_;
+  ::Remote::Error* temp = error_;
   error_ = NULL;
   return temp;
 }
-inline void MediaResponse::set_allocated_error(::Error* error) {
+inline void MediaResponse::set_allocated_error(::Remote::Error* error) {
   delete error_;
   error_ = error;
   if (error) {
@@ -1246,7 +1248,7 @@ inline void MediaResponse::set_allocated_error(::Error* error) {
   }
 }
 
-// required .MediaResponse.Type response_type = 2;
+// required .Remote.MediaResponse.Type response_type = 2;
 inline bool MediaResponse::has_response_type() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
@@ -1260,16 +1262,16 @@ inline void MediaResponse::clear_response_type() {
   response_type_ = 1;
   clear_has_response_type();
 }
-inline ::MediaResponse_Type MediaResponse::response_type() const {
-  return static_cast< ::MediaResponse_Type >(response_type_);
+inline ::Remote::MediaResponse_Type MediaResponse::response_type() const {
+  return static_cast< ::Remote::MediaResponse_Type >(response_type_);
 }
-inline void MediaResponse::set_response_type(::MediaResponse_Type value) {
-  assert(::MediaResponse_Type_IsValid(value));
+inline void MediaResponse::set_response_type(::Remote::MediaResponse_Type value) {
+  assert(::Remote::MediaResponse_Type_IsValid(value));
   set_has_response_type();
   response_type_ = value;
 }
 
-// optional .MediaResponse.MediaPart part = 3;
+// optional .Remote.MediaResponse.MediaPart part = 3;
 inline bool MediaResponse::has_part() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
@@ -1280,24 +1282,24 @@ inline void MediaResponse::clear_has_part() {
   _has_bits_[0] &= ~0x00000004u;
 }
 inline void MediaResponse::clear_part() {
-  if (part_ != NULL) part_->::MediaResponse_MediaPart::Clear();
+  if (part_ != NULL) part_->::Remote::MediaResponse_MediaPart::Clear();
   clear_has_part();
 }
-inline const ::MediaResponse_MediaPart& MediaResponse::part() const {
+inline const ::Remote::MediaResponse_MediaPart& MediaResponse::part() const {
   return part_ != NULL ? *part_ : *default_instance_->part_;
 }
-inline ::MediaResponse_MediaPart* MediaResponse::mutable_part() {
+inline ::Remote::MediaResponse_MediaPart* MediaResponse::mutable_part() {
   set_has_part();
-  if (part_ == NULL) part_ = new ::MediaResponse_MediaPart;
+  if (part_ == NULL) part_ = new ::Remote::MediaResponse_MediaPart;
   return part_;
 }
-inline ::MediaResponse_MediaPart* MediaResponse::release_part() {
+inline ::Remote::MediaResponse_MediaPart* MediaResponse::release_part() {
   clear_has_part();
-  ::MediaResponse_MediaPart* temp = part_;
+  ::Remote::MediaResponse_MediaPart* temp = part_;
   part_ = NULL;
   return temp;
 }
-inline void MediaResponse::set_allocated_part(::MediaResponse_MediaPart* part) {
+inline void MediaResponse::set_allocated_part(::Remote::MediaResponse_MediaPart* part) {
   delete part_;
   part_ = part;
   if (part) {
@@ -1310,21 +1312,23 @@ inline void MediaResponse::set_allocated_part(::MediaResponse_MediaPart* part) {
 
 // @@protoc_insertion_point(namespace_scope)
 
+}  // namespace Remote
+
 #ifndef SWIG
 namespace google {
 namespace protobuf {
 
 template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::MediaRequest_Type>() {
-  return ::MediaRequest_Type_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor< ::Remote::MediaRequest_Type>() {
+  return ::Remote::MediaRequest_Type_descriptor();
 }
 template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::MediaResponse_Type>() {
-  return ::MediaResponse_Type_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor< ::Remote::MediaResponse_Type>() {
+  return ::Remote::MediaResponse_Type_descriptor();
 }
 template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::CodecType>() {
-  return ::CodecType_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor< ::Remote::CodecType>() {
+  return ::Remote::CodecType_descriptor();
 }
 
 }  // namespace google

@@ -1,4 +1,6 @@
 
+package Remote;
+
 message Error
 {
 	required bool	error	= 1;

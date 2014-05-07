@@ -1,5 +1,7 @@
 import "common.proto";
 
+package Remote;
+
 message AuthRequest
 {
 	required	string	user_name	= 1;

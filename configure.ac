@@ -62,6 +62,11 @@ AC_CHECK_LIB(	[boost_iostreams],
 		,
 		[AC_MSG_ERROR([libboost_iostreams not found!])])
 
+AC_CHECK_LIB(	[protobuf],
+	     	[main],
+		,
+		[AC_MSG_ERROR([libprotobuf not found!])])
+
 # TODO -> PARAMETRIZE THIS
 AC_CHECK_LIB([wthttp],
 	     [main],

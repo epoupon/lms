@@ -31,6 +31,8 @@
 #include "media.pb.h"
 // @@protoc_insertion_point(includes)
 
+namespace Remote {
+
 // Internal implementation detail -- do not call these.
 void  protobuf_AddDesc_messages_2eproto();
 void protobuf_AssignDesc_messages_2eproto();
@@ -41,7 +43,7 @@ class ServerMessage;
 
 enum ClientMessage_Type {
   ClientMessage_Type_AuthRequest = 1,
-  ClientMessage_Type_CollectionRequest = 2,
+  ClientMessage_Type_AudioCollectionRequest = 2,
   ClientMessage_Type_MediaRequest = 3
 };
 bool ClientMessage_Type_IsValid(int value);
@@ -61,7 +63,7 @@ inline bool ClientMessage_Type_Parse(
 }
 enum ServerMessage_Type {
   ServerMessage_Type_AuthResponse = 1,
-  ServerMessage_Type_CollectionResponse = 2,
+  ServerMessage_Type_AduioCollectionResponse = 2,
   ServerMessage_Type_MediaResponse = 3
 };
 bool ServerMessage_Type_IsValid(int value);
@@ -135,7 +137,7 @@ class ClientMessage : public ::google::protobuf::Message {
 
   typedef ClientMessage_Type Type;
   static const Type AuthRequest = ClientMessage_Type_AuthRequest;
-  static const Type CollectionRequest = ClientMessage_Type_CollectionRequest;
+  static const Type AudioCollectionRequest = ClientMessage_Type_AudioCollectionRequest;
   static const Type MediaRequest = ClientMessage_Type_MediaRequest;
   static inline bool Type_IsValid(int value) {
     return ClientMessage_Type_IsValid(value);
@@ -160,56 +162,56 @@ class ClientMessage : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required .ClientMessage.Type type = 1;
+  // required .Remote.ClientMessage.Type type = 1;
   inline bool has_type() const;
   inline void clear_type();
   static const int kTypeFieldNumber = 1;
-  inline ::ClientMessage_Type type() const;
-  inline void set_type(::ClientMessage_Type value);
+  inline ::Remote::ClientMessage_Type type() const;
+  inline void set_type(::Remote::ClientMessage_Type value);
 
-  // optional .AuthRequest auth_request = 2;
+  // optional .Remote.AuthRequest auth_request = 2;
   inline bool has_auth_request() const;
   inline void clear_auth_request();
   static const int kAuthRequestFieldNumber = 2;
-  inline const ::AuthRequest& auth_request() const;
-  inline ::AuthRequest* mutable_auth_request();
-  inline ::AuthRequest* release_auth_request();
-  inline void set_allocated_auth_request(::AuthRequest* auth_request);
+  inline const ::Remote::AuthRequest& auth_request() const;
+  inline ::Remote::AuthRequest* mutable_auth_request();
+  inline ::Remote::AuthRequest* release_auth_request();
+  inline void set_allocated_auth_request(::Remote::AuthRequest* auth_request);
 
-  // optional .CollectionRequest collection_request = 3;
-  inline bool has_collection_request() const;
-  inline void clear_collection_request();
-  static const int kCollectionRequestFieldNumber = 3;
-  inline const ::CollectionRequest& collection_request() const;
-  inline ::CollectionRequest* mutable_collection_request();
-  inline ::CollectionRequest* release_collection_request();
-  inline void set_allocated_collection_request(::CollectionRequest* collection_request);
+  // optional .Remote.AudioCollectionRequest audio_collection_request = 3;
+  inline bool has_audio_collection_request() const;
+  inline void clear_audio_collection_request();
+  static const int kAudioCollectionRequestFieldNumber = 3;
+  inline const ::Remote::AudioCollectionRequest& audio_collection_request() const;
+  inline ::Remote::AudioCollectionRequest* mutable_audio_collection_request();
+  inline ::Remote::AudioCollectionRequest* release_audio_collection_request();
+  inline void set_allocated_audio_collection_request(::Remote::AudioCollectionRequest* audio_collection_request);
 
-  // optional .MediaRequest media_request = 4;
+  // optional .Remote.MediaRequest media_request = 4;
   inline bool has_media_request() const;
   inline void clear_media_request();
   static const int kMediaRequestFieldNumber = 4;
-  inline const ::MediaRequest& media_request() const;
-  inline ::MediaRequest* mutable_media_request();
-  inline ::MediaRequest* release_media_request();
-  inline void set_allocated_media_request(::MediaRequest* media_request);
+  inline const ::Remote::MediaRequest& media_request() const;
+  inline ::Remote::MediaRequest* mutable_media_request();
+  inline ::Remote::MediaRequest* release_media_request();
+  inline void set_allocated_media_request(::Remote::MediaRequest* media_request);
 
-  // @@protoc_insertion_point(class_scope:ClientMessage)
+  // @@protoc_insertion_point(class_scope:Remote.ClientMessage)
  private:
   inline void set_has_type();
   inline void clear_has_type();
   inline void set_has_auth_request();
   inline void clear_has_auth_request();
-  inline void set_has_collection_request();
-  inline void clear_has_collection_request();
+  inline void set_has_audio_collection_request();
+  inline void clear_has_audio_collection_request();
   inline void set_has_media_request();
   inline void clear_has_media_request();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::AuthRequest* auth_request_;
-  ::CollectionRequest* collection_request_;
-  ::MediaRequest* media_request_;
+  ::Remote::AuthRequest* auth_request_;
+  ::Remote::AudioCollectionRequest* audio_collection_request_;
+  ::Remote::MediaRequest* media_request_;
   int type_;
 
   mutable int _cached_size_;
@@ -278,7 +280,7 @@ class ServerMessage : public ::google::protobuf::Message {
 
   typedef ServerMessage_Type Type;
   static const Type AuthResponse = ServerMessage_Type_AuthResponse;
-  static const Type CollectionResponse = ServerMessage_Type_CollectionResponse;
+  static const Type AduioCollectionResponse = ServerMessage_Type_AduioCollectionResponse;
   static const Type MediaResponse = ServerMessage_Type_MediaResponse;
   static inline bool Type_IsValid(int value) {
     return ServerMessage_Type_IsValid(value);
@@ -303,56 +305,56 @@ class ServerMessage : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required .ServerMessage.Type type = 1;
+  // required .Remote.ServerMessage.Type type = 1;
   inline bool has_type() const;
   inline void clear_type();
   static const int kTypeFieldNumber = 1;
-  inline ::ServerMessage_Type type() const;
-  inline void set_type(::ServerMessage_Type value);
+  inline ::Remote::ServerMessage_Type type() const;
+  inline void set_type(::Remote::ServerMessage_Type value);
 
-  // optional .AuthResponse auth_response = 2;
+  // optional .Remote.AuthResponse auth_response = 2;
   inline bool has_auth_response() const;
   inline void clear_auth_response();
   static const int kAuthResponseFieldNumber = 2;
-  inline const ::AuthResponse& auth_response() const;
-  inline ::AuthResponse* mutable_auth_response();
-  inline ::AuthResponse* release_auth_response();
-  inline void set_allocated_auth_response(::AuthResponse* auth_response);
+  inline const ::Remote::AuthResponse& auth_response() const;
+  inline ::Remote::AuthResponse* mutable_auth_response();
+  inline ::Remote::AuthResponse* release_auth_response();
+  inline void set_allocated_auth_response(::Remote::AuthResponse* auth_response);
 
-  // optional .CollectionResponse collection_response = 3;
-  inline bool has_collection_response() const;
-  inline void clear_collection_response();
-  static const int kCollectionResponseFieldNumber = 3;
-  inline const ::CollectionResponse& collection_response() const;
-  inline ::CollectionResponse* mutable_collection_response();
-  inline ::CollectionResponse* release_collection_response();
-  inline void set_allocated_collection_response(::CollectionResponse* collection_response);
+  // optional .Remote.AudioCollectionResponse audio_collection_response = 3;
+  inline bool has_audio_collection_response() const;
+  inline void clear_audio_collection_response();
+  static const int kAudioCollectionResponseFieldNumber = 3;
+  inline const ::Remote::AudioCollectionResponse& audio_collection_response() const;
+  inline ::Remote::AudioCollectionResponse* mutable_audio_collection_response();
+  inline ::Remote::AudioCollectionResponse* release_audio_collection_response();
+  inline void set_allocated_audio_collection_response(::Remote::AudioCollectionResponse* audio_collection_response);
 
-  // optional .MediaResponse media_response = 4;
+  // optional .Remote.MediaResponse media_response = 4;
   inline bool has_media_response() const;
   inline void clear_media_response();
   static const int kMediaResponseFieldNumber = 4;
-  inline const ::MediaResponse& media_response() const;
-  inline ::MediaResponse* mutable_media_response();
-  inline ::MediaResponse* release_media_response();
-  inline void set_allocated_media_response(::MediaResponse* media_response);
+  inline const ::Remote::MediaResponse& media_response() const;
+  inline ::Remote::MediaResponse* mutable_media_response();
+  inline ::Remote::MediaResponse* release_media_response();
+  inline void set_allocated_media_response(::Remote::MediaResponse* media_response);
 
-  // @@protoc_insertion_point(class_scope:ServerMessage)
+  // @@protoc_insertion_point(class_scope:Remote.ServerMessage)
  private:
   inline void set_has_type();
   inline void clear_has_type();
   inline void set_has_auth_response();
   inline void clear_has_auth_response();
-  inline void set_has_collection_response();
-  inline void clear_has_collection_response();
+  inline void set_has_audio_collection_response();
+  inline void clear_has_audio_collection_response();
   inline void set_has_media_response();
   inline void clear_has_media_response();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::AuthResponse* auth_response_;
-  ::CollectionResponse* collection_response_;
-  ::MediaResponse* media_response_;
+  ::Remote::AuthResponse* auth_response_;
+  ::Remote::AudioCollectionResponse* audio_collection_response_;
+  ::Remote::MediaResponse* media_response_;
   int type_;
 
   mutable int _cached_size_;
@@ -372,7 +374,7 @@ class ServerMessage : public ::google::protobuf::Message {
 
 // ClientMessage
 
-// required .ClientMessage.Type type = 1;
+// required .Remote.ClientMessage.Type type = 1;
 inline bool ClientMessage::has_type() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -386,16 +388,16 @@ inline void ClientMessage::clear_type() {
   type_ = 1;
   clear_has_type();
 }
-inline ::ClientMessage_Type ClientMessage::type() const {
-  return static_cast< ::ClientMessage_Type >(type_);
+inline ::Remote::ClientMessage_Type ClientMessage::type() const {
+  return static_cast< ::Remote::ClientMessage_Type >(type_);
 }
-inline void ClientMessage::set_type(::ClientMessage_Type value) {
-  assert(::ClientMessage_Type_IsValid(value));
+inline void ClientMessage::set_type(::Remote::ClientMessage_Type value) {
+  assert(::Remote::ClientMessage_Type_IsValid(value));
   set_has_type();
   type_ = value;
 }
 
-// optional .AuthRequest auth_request = 2;
+// optional .Remote.AuthRequest auth_request = 2;
 inline bool ClientMessage::has_auth_request() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
@@ -406,24 +408,24 @@ inline void ClientMessage::clear_has_auth_request() {
   _has_bits_[0] &= ~0x00000002u;
 }
 inline void ClientMessage::clear_auth_request() {
-  if (auth_request_ != NULL) auth_request_->::AuthRequest::Clear();
+  if (auth_request_ != NULL) auth_request_->::Remote::AuthRequest::Clear();
   clear_has_auth_request();
 }
-inline const ::AuthRequest& ClientMessage::auth_request() const {
+inline const ::Remote::AuthRequest& ClientMessage::auth_request() const {
   return auth_request_ != NULL ? *auth_request_ : *default_instance_->auth_request_;
 }
-inline ::AuthRequest* ClientMessage::mutable_auth_request() {
+inline ::Remote::AuthRequest* ClientMessage::mutable_auth_request() {
   set_has_auth_request();
-  if (auth_request_ == NULL) auth_request_ = new ::AuthRequest;
+  if (auth_request_ == NULL) auth_request_ = new ::Remote::AuthRequest;
   return auth_request_;
 }
-inline ::AuthRequest* ClientMessage::release_auth_request() {
+inline ::Remote::AuthRequest* ClientMessage::release_auth_request() {
   clear_has_auth_request();
-  ::AuthRequest* temp = auth_request_;
+  ::Remote::AuthRequest* temp = auth_request_;
   auth_request_ = NULL;
   return temp;
 }
-inline void ClientMessage::set_allocated_auth_request(::AuthRequest* auth_request) {
+inline void ClientMessage::set_allocated_auth_request(::Remote::AuthRequest* auth_request) {
   delete auth_request_;
   auth_request_ = auth_request;
   if (auth_request) {
@@ -433,45 +435,45 @@ inline void ClientMessage::set_allocated_auth_request(::AuthRequest* auth_reques
   }
 }
 
-// optional .CollectionRequest collection_request = 3;
-inline bool ClientMessage::has_collection_request() const {
+// optional .Remote.AudioCollectionRequest audio_collection_request = 3;
+inline bool ClientMessage::has_audio_collection_request() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
-inline void ClientMessage::set_has_collection_request() {
+inline void ClientMessage::set_has_audio_collection_request() {
   _has_bits_[0] |= 0x00000004u;
 }
-inline void ClientMessage::clear_has_collection_request() {
+inline void ClientMessage::clear_has_audio_collection_request() {
   _has_bits_[0] &= ~0x00000004u;
 }
-inline void ClientMessage::clear_collection_request() {
-  if (collection_request_ != NULL) collection_request_->::CollectionRequest::Clear();
-  clear_has_collection_request();
+inline void ClientMessage::clear_audio_collection_request() {
+  if (audio_collection_request_ != NULL) audio_collection_request_->::Remote::AudioCollectionRequest::Clear();
+  clear_has_audio_collection_request();
 }
-inline const ::CollectionRequest& ClientMessage::collection_request() const {
-  return collection_request_ != NULL ? *collection_request_ : *default_instance_->collection_request_;
+inline const ::Remote::AudioCollectionRequest& ClientMessage::audio_collection_request() const {
+  return audio_collection_request_ != NULL ? *audio_collection_request_ : *default_instance_->audio_collection_request_;
 }
-inline ::CollectionRequest* ClientMessage::mutable_collection_request() {
-  set_has_collection_request();
-  if (collection_request_ == NULL) collection_request_ = new ::CollectionRequest;
-  return collection_request_;
+inline ::Remote::AudioCollectionRequest* ClientMessage::mutable_audio_collection_request() {
+  set_has_audio_collection_request();
+  if (audio_collection_request_ == NULL) audio_collection_request_ = new ::Remote::AudioCollectionRequest;
+  return audio_collection_request_;
 }
-inline ::CollectionRequest* ClientMessage::release_collection_request() {
-  clear_has_collection_request();
-  ::CollectionRequest* temp = collection_request_;
-  collection_request_ = NULL;
+inline ::Remote::AudioCollectionRequest* ClientMessage::release_audio_collection_request() {
+  clear_has_audio_collection_request();
+  ::Remote::AudioCollectionRequest* temp = audio_collection_request_;
+  audio_collection_request_ = NULL;
   return temp;
 }
-inline void ClientMessage::set_allocated_collection_request(::CollectionRequest* collection_request) {
-  delete collection_request_;
-  collection_request_ = collection_request;
-  if (collection_request) {
-    set_has_collection_request();
+inline void ClientMessage::set_allocated_audio_collection_request(::Remote::AudioCollectionRequest* audio_collection_request) {
+  delete audio_collection_request_;
+  audio_collection_request_ = audio_collection_request;
+  if (audio_collection_request) {
+    set_has_audio_collection_request();
   } else {
-    clear_has_collection_request();
+    clear_has_audio_collection_request();
   }
 }
 
-// optional .MediaRequest media_request = 4;
+// optional .Remote.MediaRequest media_request = 4;
 inline bool ClientMessage::has_media_request() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
@@ -482,24 +484,24 @@ inline void ClientMessage::clear_has_media_request() {
   _has_bits_[0] &= ~0x00000008u;
 }
 inline void ClientMessage::clear_media_request() {
-  if (media_request_ != NULL) media_request_->::MediaRequest::Clear();
+  if (media_request_ != NULL) media_request_->::Remote::MediaRequest::Clear();
   clear_has_media_request();
 }
-inline const ::MediaRequest& ClientMessage::media_request() const {
+inline const ::Remote::MediaRequest& ClientMessage::media_request() const {
   return media_request_ != NULL ? *media_request_ : *default_instance_->media_request_;
 }
-inline ::MediaRequest* ClientMessage::mutable_media_request() {
+inline ::Remote::MediaRequest* ClientMessage::mutable_media_request() {
   set_has_media_request();
-  if (media_request_ == NULL) media_request_ = new ::MediaRequest;
+  if (media_request_ == NULL) media_request_ = new ::Remote::MediaRequest;
   return media_request_;
 }
-inline ::MediaRequest* ClientMessage::release_media_request() {
+inline ::Remote::MediaRequest* ClientMessage::release_media_request() {
   clear_has_media_request();
-  ::MediaRequest* temp = media_request_;
+  ::Remote::MediaRequest* temp = media_request_;
   media_request_ = NULL;
   return temp;
 }
-inline void ClientMessage::set_allocated_media_request(::MediaRequest* media_request) {
+inline void ClientMessage::set_allocated_media_request(::Remote::MediaRequest* media_request) {
   delete media_request_;
   media_request_ = media_request;
   if (media_request) {
@@ -513,7 +515,7 @@ inline void ClientMessage::set_allocated_media_request(::MediaRequest* media_req
 
 // ServerMessage
 
-// required .ServerMessage.Type type = 1;
+// required .Remote.ServerMessage.Type type = 1;
 inline bool ServerMessage::has_type() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -527,16 +529,16 @@ inline void ServerMessage::clear_type() {
   type_ = 1;
   clear_has_type();
 }
-inline ::ServerMessage_Type ServerMessage::type() const {
-  return static_cast< ::ServerMessage_Type >(type_);
+inline ::Remote::ServerMessage_Type ServerMessage::type() const {
+  return static_cast< ::Remote::ServerMessage_Type >(type_);
 }
-inline void ServerMessage::set_type(::ServerMessage_Type value) {
-  assert(::ServerMessage_Type_IsValid(value));
+inline void ServerMessage::set_type(::Remote::ServerMessage_Type value) {
+  assert(::Remote::ServerMessage_Type_IsValid(value));
   set_has_type();
   type_ = value;
 }
 
-// optional .AuthResponse auth_response = 2;
+// optional .Remote.AuthResponse auth_response = 2;
 inline bool ServerMessage::has_auth_response() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
@@ -547,24 +549,24 @@ inline void ServerMessage::clear_has_auth_response() {
   _has_bits_[0] &= ~0x00000002u;
 }
 inline void ServerMessage::clear_auth_response() {
-  if (auth_response_ != NULL) auth_response_->::AuthResponse::Clear();
+  if (auth_response_ != NULL) auth_response_->::Remote::AuthResponse::Clear();
   clear_has_auth_response();
 }
-inline const ::AuthResponse& ServerMessage::auth_response() const {
+inline const ::Remote::AuthResponse& ServerMessage::auth_response() const {
   return auth_response_ != NULL ? *auth_response_ : *default_instance_->auth_response_;
 }
-inline ::AuthResponse* ServerMessage::mutable_auth_response() {
+inline ::Remote::AuthResponse* ServerMessage::mutable_auth_response() {
   set_has_auth_response();
-  if (auth_response_ == NULL) auth_response_ = new ::AuthResponse;
+  if (auth_response_ == NULL) auth_response_ = new ::Remote::AuthResponse;
   return auth_response_;
 }
-inline ::AuthResponse* ServerMessage::release_auth_response() {
+inline ::Remote::AuthResponse* ServerMessage::release_auth_response() {
   clear_has_auth_response();
-  ::AuthResponse* temp = auth_response_;
+  ::Remote::AuthResponse* temp = auth_response_;
   auth_response_ = NULL;
   return temp;
 }
-inline void ServerMessage::set_allocated_auth_response(::AuthResponse* auth_response) {
+inline void ServerMessage::set_allocated_auth_response(::Remote::AuthResponse* auth_response) {
   delete auth_response_;
   auth_response_ = auth_response;
   if (auth_response) {
@@ -574,45 +576,45 @@ inline void ServerMessage::set_allocated_auth_response(::AuthResponse* auth_resp
   }
 }
 
-// optional .CollectionResponse collection_response = 3;
-inline bool ServerMessage::has_collection_response() const {
+// optional .Remote.AudioCollectionResponse audio_collection_response = 3;
+inline bool ServerMessage::has_audio_collection_response() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
-inline void ServerMessage::set_has_collection_response() {
+inline void ServerMessage::set_has_audio_collection_response() {
   _has_bits_[0] |= 0x00000004u;
 }
-inline void ServerMessage::clear_has_collection_response() {
+inline void ServerMessage::clear_has_audio_collection_response() {
   _has_bits_[0] &= ~0x00000004u;
 }
-inline void ServerMessage::clear_collection_response() {
-  if (collection_response_ != NULL) collection_response_->::CollectionResponse::Clear();
-  clear_has_collection_response();
+inline void ServerMessage::clear_audio_collection_response() {
+  if (audio_collection_response_ != NULL) audio_collection_response_->::Remote::AudioCollectionResponse::Clear();
+  clear_has_audio_collection_response();
 }
-inline const ::CollectionResponse& ServerMessage::collection_response() const {
-  return collection_response_ != NULL ? *collection_response_ : *default_instance_->collection_response_;
+inline const ::Remote::AudioCollectionResponse& ServerMessage::audio_collection_response() const {
+  return audio_collection_response_ != NULL ? *audio_collection_response_ : *default_instance_->audio_collection_response_;
 }
-inline ::CollectionResponse* ServerMessage::mutable_collection_response() {
-  set_has_collection_response();
-  if (collection_response_ == NULL) collection_response_ = new ::CollectionResponse;
-  return collection_response_;
+inline ::Remote::AudioCollectionResponse* ServerMessage::mutable_audio_collection_response() {
+  set_has_audio_collection_response();
+  if (audio_collection_response_ == NULL) audio_collection_response_ = new ::Remote::AudioCollectionResponse;
+  return audio_collection_response_;
 }
-inline ::CollectionResponse* ServerMessage::release_collection_response() {
-  clear_has_collection_response();
-  ::CollectionResponse* temp = collection_response_;
-  collection_response_ = NULL;
+inline ::Remote::AudioCollectionResponse* ServerMessage::release_audio_collection_response() {
+  clear_has_audio_collection_response();
+  ::Remote::AudioCollectionResponse* temp = audio_collection_response_;
+  audio_collection_response_ = NULL;
   return temp;
 }
-inline void ServerMessage::set_allocated_collection_response(::CollectionResponse* collection_response) {
-  delete collection_response_;
-  collection_response_ = collection_response;
-  if (collection_response) {
-    set_has_collection_response();
+inline void ServerMessage::set_allocated_audio_collection_response(::Remote::AudioCollectionResponse* audio_collection_response) {
+  delete audio_collection_response_;
+  audio_collection_response_ = audio_collection_response;
+  if (audio_collection_response) {
+    set_has_audio_collection_response();
   } else {
-    clear_has_collection_response();
+    clear_has_audio_collection_response();
   }
 }
 
-// optional .MediaResponse media_response = 4;
+// optional .Remote.MediaResponse media_response = 4;
 inline bool ServerMessage::has_media_response() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
@@ -623,24 +625,24 @@ inline void ServerMessage::clear_has_media_response() {
   _has_bits_[0] &= ~0x00000008u;
 }
 inline void ServerMessage::clear_media_response() {
-  if (media_response_ != NULL) media_response_->::MediaResponse::Clear();
+  if (media_response_ != NULL) media_response_->::Remote::MediaResponse::Clear();
   clear_has_media_response();
 }
-inline const ::MediaResponse& ServerMessage::media_response() const {
+inline const ::Remote::MediaResponse& ServerMessage::media_response() const {
   return media_response_ != NULL ? *media_response_ : *default_instance_->media_response_;
 }
-inline ::MediaResponse* ServerMessage::mutable_media_response() {
+inline ::Remote::MediaResponse* ServerMessage::mutable_media_response() {
   set_has_media_response();
-  if (media_response_ == NULL) media_response_ = new ::MediaResponse;
+  if (media_response_ == NULL) media_response_ = new ::Remote::MediaResponse;
   return media_response_;
 }
-inline ::MediaResponse* ServerMessage::release_media_response() {
+inline ::Remote::MediaResponse* ServerMessage::release_media_response() {
   clear_has_media_response();
-  ::MediaResponse* temp = media_response_;
+  ::Remote::MediaResponse* temp = media_response_;
   media_response_ = NULL;
   return temp;
 }
-inline void ServerMessage::set_allocated_media_response(::MediaResponse* media_response) {
+inline void ServerMessage::set_allocated_media_response(::Remote::MediaResponse* media_response) {
   delete media_response_;
   media_response_ = media_response;
   if (media_response) {
@@ -653,17 +655,19 @@ inline void ServerMessage::set_allocated_media_response(::MediaResponse* media_r
 
 // @@protoc_insertion_point(namespace_scope)
 
+}  // namespace Remote
+
 #ifndef SWIG
 namespace google {
 namespace protobuf {
 
 template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::ClientMessage_Type>() {
-  return ::ClientMessage_Type_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor< ::Remote::ClientMessage_Type>() {
+  return ::Remote::ClientMessage_Type_descriptor();
 }
 template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::ServerMessage_Type>() {
-  return ::ServerMessage_Type_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor< ::Remote::ServerMessage_Type>() {
+  return ::Remote::ServerMessage_Type_descriptor();
 }
 
 }  // namespace google

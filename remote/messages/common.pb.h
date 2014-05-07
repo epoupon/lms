@@ -26,6 +26,8 @@
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
 
+namespace Remote {
+
 // Internal implementation detail -- do not call these.
 void  protobuf_AddDesc_common_2eproto();
 void protobuf_AssignDesc_common_2eproto();
@@ -108,7 +110,7 @@ class Error : public ::google::protobuf::Message {
   inline ::std::string* release_message();
   inline void set_allocated_message(::std::string* message);
 
-  // @@protoc_insertion_point(class_scope:Error)
+  // @@protoc_insertion_point(class_scope:Remote.Error)
  private:
   inline void set_has_error();
   inline void clear_has_error();
@@ -231,6 +233,8 @@ inline void Error::set_allocated_message(::std::string* message) {
 
 
 // @@protoc_insertion_point(namespace_scope)
+
+}  // namespace Remote
 
 #ifndef SWIG
 namespace google {

@@ -3,20 +3,22 @@ import "auth.proto";
 import "collection.proto";
 import "media.proto";
 
+package Remote;
+
 message ClientMessage
 {
 	enum Type
 	{
 		AuthRequest		= 1;
-		CollectionRequest	= 2;
+		AudioCollectionRequest	= 2;
 		MediaRequest		= 3;
 	}
 
 	required Type	type	= 1;
 
-	optional AuthRequest		auth_request		= 2;
-	optional CollectionRequest	collection_request	= 3;
-	optional MediaRequest		media_request		= 4;
+	optional AuthRequest		auth_request			= 2;
+	optional AudioCollectionRequest	audio_collection_request	= 3;
+	optional MediaRequest		media_request			= 4;
 }
 
 
@@ -25,15 +27,15 @@ message ServerMessage
 	enum Type
 	{
 		AuthResponse		= 1;
-		CollectionResponse	= 2;
+		AduioCollectionResponse	= 2;
 		MediaResponse		= 3;
 	}
 
 	required Type	type	= 1;
 
-	optional AuthResponse		auth_response		= 2;
-	optional CollectionResponse	collection_response	= 3;
-	optional MediaResponse		media_response		= 4;
+	optional AuthResponse			auth_response			= 2;
+	optional AudioCollectionResponse	audio_collection_response	= 3;
+	optional MediaResponse			media_response			= 4;
 }
 
 

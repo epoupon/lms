@@ -16,6 +16,8 @@
 #include <google/protobuf/wire_format.h>
 // @@protoc_insertion_point(includes)
 
+namespace Remote {
+
 namespace {
 
 const ::google::protobuf::Descriptor* Error_descriptor_ = NULL;
@@ -77,8 +79,8 @@ void protobuf_AddDesc_common_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\014common.proto\"\'\n\005Error\022\r\n\005error\030\001 \002(\010\022\017"
-    "\n\007message\030\002 \001(\t", 55);
+    "\n\014common.proto\022\006Remote\"\'\n\005Error\022\r\n\005error"
+    "\030\001 \002(\010\022\017\n\007message\030\002 \001(\t", 63);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "common.proto", &protobuf_RegisterTypes);
   Error::default_instance_ = new Error();
@@ -358,5 +360,7 @@ void Error::Swap(Error* other) {
 
 
 // @@protoc_insertion_point(namespace_scope)
+
+}  // namespace Remote
 
 // @@protoc_insertion_point(global_scope)

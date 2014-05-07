@@ -121,10 +121,13 @@ am_remote_OBJECTS = remote-RemoteClientServer.$(OBJEXT) \
 	remote-TestDatabase.$(OBJEXT) remote-Server.$(OBJEXT) \
 	remote-RequestHandler.$(OBJEXT) \
 	remote-ConnectionManager.$(OBJEXT) remote-Connection.$(OBJEXT) \
-	remote-Artist.$(OBJEXT) remote-Genre.$(OBJEXT) \
-	remote-Release.$(OBJEXT) remote-Track.$(OBJEXT) \
-	remote-DatabaseHandler.$(OBJEXT) remote-Path.$(OBJEXT) \
-	remote-Video.$(OBJEXT) remote-Checksum.$(OBJEXT)
+	remote-auth.pb.$(OBJEXT) remote-collection.pb.$(OBJEXT) \
+	remote-common.pb.$(OBJEXT) remote-media.pb.$(OBJEXT) \
+	remote-messages.pb.$(OBJEXT) remote-Artist.$(OBJEXT) \
+	remote-Genre.$(OBJEXT) remote-Release.$(OBJEXT) \
+	remote-Track.$(OBJEXT) remote-DatabaseHandler.$(OBJEXT) \
+	remote-Path.$(OBJEXT) remote-Video.$(OBJEXT) \
+	remote-Checksum.$(OBJEXT)
 remote_OBJECTS = $(am_remote_OBJECTS)
 remote_LDADD = $(LDADD)
 remote_LINK = $(CXXLD) $(remote_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
@@ -496,6 +499,11 @@ remote_SOURCES = \
 	$(top_srcdir)/remote/server/RequestHandler.cpp		\
 	$(top_srcdir)/remote/server/ConnectionManager.cpp	\
 	$(top_srcdir)/remote/server/Connection.cpp		\
+	$(top_srcdir)/remote/messages/auth.pb.cc		\
+	$(top_srcdir)/remote/messages/collection.pb.cc		\
+	$(top_srcdir)/remote/messages/common.pb.cc		\
+	$(top_srcdir)/remote/messages/media.pb.cc		\
+	$(top_srcdir)/remote/messages/messages.pb.cc		\
 	$(top_srcdir)/database/Artist.cpp			\
 	$(top_srcdir)/database/Genre.cpp			\
 	$(top_srcdir)/database/Release.cpp			\
@@ -538,7 +546,7 @@ sql_query_CXXFLAGS = -std=c++11 -Wall -Wextra -I$(top_srcdir)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .log .o .obj .test .test$(EXEEXT) .trs
+.SUFFIXES: .cc .cpp .log .o .obj .test .test$(EXEEXT) .trs
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -627,17 +635,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-TestDatabase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Track.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Video.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-auth.pb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-collection.pb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-common.pb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-media.pb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-messages.pb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sql_query-CheckSqlQuery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sql_query-SqlQuery.Po@am__quote@
 
-.cpp.o:
+.cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
 
-.cpp.obj:
+.cc.obj:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
@@ -980,6 +993,76 @@ remote-Connection.obj: $(top_srcdir)/remote/server/Connection.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Connection.obj `if test -f '$(top_srcdir)/remote/server/Connection.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/Connection.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/Connection.cpp'; fi`
 
+remote-auth.pb.o: $(top_srcdir)/remote/messages/auth.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-auth.pb.o -MD -MP -MF $(DEPDIR)/remote-auth.pb.Tpo -c -o remote-auth.pb.o `test -f '$(top_srcdir)/remote/messages/auth.pb.cc' || echo '$(srcdir)/'`$(top_srcdir)/remote/messages/auth.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-auth.pb.Tpo $(DEPDIR)/remote-auth.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/messages/auth.pb.cc' object='remote-auth.pb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-auth.pb.o `test -f '$(top_srcdir)/remote/messages/auth.pb.cc' || echo '$(srcdir)/'`$(top_srcdir)/remote/messages/auth.pb.cc
+
+remote-auth.pb.obj: $(top_srcdir)/remote/messages/auth.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-auth.pb.obj -MD -MP -MF $(DEPDIR)/remote-auth.pb.Tpo -c -o remote-auth.pb.obj `if test -f '$(top_srcdir)/remote/messages/auth.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/remote/messages/auth.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/messages/auth.pb.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-auth.pb.Tpo $(DEPDIR)/remote-auth.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/messages/auth.pb.cc' object='remote-auth.pb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-auth.pb.obj `if test -f '$(top_srcdir)/remote/messages/auth.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/remote/messages/auth.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/messages/auth.pb.cc'; fi`
+
+remote-collection.pb.o: $(top_srcdir)/remote/messages/collection.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-collection.pb.o -MD -MP -MF $(DEPDIR)/remote-collection.pb.Tpo -c -o remote-collection.pb.o `test -f '$(top_srcdir)/remote/messages/collection.pb.cc' || echo '$(srcdir)/'`$(top_srcdir)/remote/messages/collection.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-collection.pb.Tpo $(DEPDIR)/remote-collection.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/messages/collection.pb.cc' object='remote-collection.pb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-collection.pb.o `test -f '$(top_srcdir)/remote/messages/collection.pb.cc' || echo '$(srcdir)/'`$(top_srcdir)/remote/messages/collection.pb.cc
+
+remote-collection.pb.obj: $(top_srcdir)/remote/messages/collection.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-collection.pb.obj -MD -MP -MF $(DEPDIR)/remote-collection.pb.Tpo -c -o remote-collection.pb.obj `if test -f '$(top_srcdir)/remote/messages/collection.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/remote/messages/collection.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/messages/collection.pb.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-collection.pb.Tpo $(DEPDIR)/remote-collection.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/messages/collection.pb.cc' object='remote-collection.pb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-collection.pb.obj `if test -f '$(top_srcdir)/remote/messages/collection.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/remote/messages/collection.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/messages/collection.pb.cc'; fi`
+
+remote-common.pb.o: $(top_srcdir)/remote/messages/common.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-common.pb.o -MD -MP -MF $(DEPDIR)/remote-common.pb.Tpo -c -o remote-common.pb.o `test -f '$(top_srcdir)/remote/messages/common.pb.cc' || echo '$(srcdir)/'`$(top_srcdir)/remote/messages/common.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-common.pb.Tpo $(DEPDIR)/remote-common.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/messages/common.pb.cc' object='remote-common.pb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-common.pb.o `test -f '$(top_srcdir)/remote/messages/common.pb.cc' || echo '$(srcdir)/'`$(top_srcdir)/remote/messages/common.pb.cc
+
+remote-common.pb.obj: $(top_srcdir)/remote/messages/common.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-common.pb.obj -MD -MP -MF $(DEPDIR)/remote-common.pb.Tpo -c -o remote-common.pb.obj `if test -f '$(top_srcdir)/remote/messages/common.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/remote/messages/common.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/messages/common.pb.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-common.pb.Tpo $(DEPDIR)/remote-common.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/messages/common.pb.cc' object='remote-common.pb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-common.pb.obj `if test -f '$(top_srcdir)/remote/messages/common.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/remote/messages/common.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/messages/common.pb.cc'; fi`
+
+remote-media.pb.o: $(top_srcdir)/remote/messages/media.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-media.pb.o -MD -MP -MF $(DEPDIR)/remote-media.pb.Tpo -c -o remote-media.pb.o `test -f '$(top_srcdir)/remote/messages/media.pb.cc' || echo '$(srcdir)/'`$(top_srcdir)/remote/messages/media.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-media.pb.Tpo $(DEPDIR)/remote-media.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/messages/media.pb.cc' object='remote-media.pb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-media.pb.o `test -f '$(top_srcdir)/remote/messages/media.pb.cc' || echo '$(srcdir)/'`$(top_srcdir)/remote/messages/media.pb.cc
+
+remote-media.pb.obj: $(top_srcdir)/remote/messages/media.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-media.pb.obj -MD -MP -MF $(DEPDIR)/remote-media.pb.Tpo -c -o remote-media.pb.obj `if test -f '$(top_srcdir)/remote/messages/media.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/remote/messages/media.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/messages/media.pb.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-media.pb.Tpo $(DEPDIR)/remote-media.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/messages/media.pb.cc' object='remote-media.pb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-media.pb.obj `if test -f '$(top_srcdir)/remote/messages/media.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/remote/messages/media.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/messages/media.pb.cc'; fi`
+
+remote-messages.pb.o: $(top_srcdir)/remote/messages/messages.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-messages.pb.o -MD -MP -MF $(DEPDIR)/remote-messages.pb.Tpo -c -o remote-messages.pb.o `test -f '$(top_srcdir)/remote/messages/messages.pb.cc' || echo '$(srcdir)/'`$(top_srcdir)/remote/messages/messages.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-messages.pb.Tpo $(DEPDIR)/remote-messages.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/messages/messages.pb.cc' object='remote-messages.pb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-messages.pb.o `test -f '$(top_srcdir)/remote/messages/messages.pb.cc' || echo '$(srcdir)/'`$(top_srcdir)/remote/messages/messages.pb.cc
+
+remote-messages.pb.obj: $(top_srcdir)/remote/messages/messages.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-messages.pb.obj -MD -MP -MF $(DEPDIR)/remote-messages.pb.Tpo -c -o remote-messages.pb.obj `if test -f '$(top_srcdir)/remote/messages/messages.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/remote/messages/messages.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/messages/messages.pb.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-messages.pb.Tpo $(DEPDIR)/remote-messages.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/messages/messages.pb.cc' object='remote-messages.pb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-messages.pb.obj `if test -f '$(top_srcdir)/remote/messages/messages.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/remote/messages/messages.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/messages/messages.pb.cc'; fi`
+
 remote-Artist.o: $(top_srcdir)/database/Artist.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Artist.o -MD -MP -MF $(DEPDIR)/remote-Artist.Tpo -c -o remote-Artist.o `test -f '$(top_srcdir)/database/Artist.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Artist.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Artist.Tpo $(DEPDIR)/remote-Artist.Po
@@ -1119,6 +1202,20 @@ sql_query-SqlQuery.obj: $(top_srcdir)/database/SqlQuery.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/SqlQuery.cpp' object='sql_query-SqlQuery.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(sql_query_CXXFLAGS) $(CXXFLAGS) -c -o sql_query-SqlQuery.obj `if test -f '$(top_srcdir)/database/SqlQuery.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/SqlQuery.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/SqlQuery.cpp'; fi`
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

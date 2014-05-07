@@ -16,6 +16,8 @@
 #include <google/protobuf/wire_format.h>
 // @@protoc_insertion_point(includes)
 
+namespace Remote {
+
 namespace {
 
 const ::google::protobuf::Descriptor* MediaRequest_descriptor_ = NULL;
@@ -203,28 +205,29 @@ void protobuf_AddDesc_media_2eproto() {
   already_here = true;
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  ::protobuf_AddDesc_common_2eproto();
+  ::Remote::protobuf_AddDesc_common_2eproto();
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\013media.proto\032\014common.proto\"\376\003\n\014MediaReq"
-    "uest\022(\n\014request_type\030\001 \002(\0162\022.MediaReques"
-    "t.Type\022&\n\007prepare\030\002 \001(\0132\025.MediaRequest.P"
-    "repare\022\'\n\010get_part\030\003 \001(\0132\025.MediaRequest."
-    "GetPart\022*\n\tterminate\030\004 \001(\0132\027.MediaReques"
-    "t.Terminate\032\311\001\n\007Prepare\022\n\n\002id\030\001 \002(\003\022\023\n\013o"
-    "ffset_secs\030\002 \002(\r\022\036\n\ncodec_type\030\003 \001(\0162\n.C"
-    "odecType\022\025\n\raudio_bitrate\030\004 \001(\r\022\025\n\rvideo"
-    "_bitrate\030\005 \001(\r\022\030\n\020audio_stream_idx\030\006 \001(\r"
-    "\022\030\n\020video_stream_idx\030\007 \001(\r\022\033\n\023subtitle_s"
-    "tream_idx\030\010 \001(\r\032&\n\007GetPart\022\033\n\023requested_"
-    "data_size\030\001 \002(\r\032\013\n\tTerminate\"F\n\004Type\022\024\n\020"
-    "TypeMediaPrepare\020\001\022\020\n\014TypeMediaGet\020\002\022\026\n\022"
-    "TypeMediaTerminate\020\003\"\305\001\n\rMediaResponse\022\025"
-    "\n\005error\030\001 \002(\0132\006.Error\022*\n\rresponse_type\030\002"
-    " \002(\0162\023.MediaResponse.Type\022&\n\004part\030\003 \001(\0132"
-    "\030.MediaResponse.MediaPart\032.\n\tMediaPart\022\023"
-    "\n\013byte_offset\030\001 \002(\004\022\014\n\004data\030\002 \003(\014\"\031\n\004Typ"
-    "e\022\021\n\rTypeMediaPart\020\001*\035\n\tCodecType\022\020\n\014Cod"
-    "ecTypeOGG\020\001", 771);
+    "\n\013media.proto\022\006Remote\032\014common.proto\"\241\004\n\014"
+    "MediaRequest\022/\n\014request_type\030\001 \002(\0162\031.Rem"
+    "ote.MediaRequest.Type\022-\n\007prepare\030\002 \001(\0132\034"
+    ".Remote.MediaRequest.Prepare\022.\n\010get_part"
+    "\030\003 \001(\0132\034.Remote.MediaRequest.GetPart\0221\n\t"
+    "terminate\030\004 \001(\0132\036.Remote.MediaRequest.Te"
+    "rminate\032\320\001\n\007Prepare\022\n\n\002id\030\001 \002(\003\022\023\n\013offse"
+    "t_secs\030\002 \002(\r\022%\n\ncodec_type\030\003 \001(\0162\021.Remot"
+    "e.CodecType\022\025\n\raudio_bitrate\030\004 \001(\r\022\025\n\rvi"
+    "deo_bitrate\030\005 \001(\r\022\030\n\020audio_stream_idx\030\006 "
+    "\001(\r\022\030\n\020video_stream_idx\030\007 \001(\r\022\033\n\023subtitl"
+    "e_stream_idx\030\010 \001(\r\032&\n\007GetPart\022\033\n\023request"
+    "ed_data_size\030\001 \002(\r\032\013\n\tTerminate\"F\n\004Type\022"
+    "\024\n\020TypeMediaPrepare\020\001\022\020\n\014TypeMediaGet\020\002\022"
+    "\026\n\022TypeMediaTerminate\020\003\"\332\001\n\rMediaRespons"
+    "e\022\034\n\005error\030\001 \002(\0132\r.Remote.Error\0221\n\rrespo"
+    "nse_type\030\002 \002(\0162\032.Remote.MediaResponse.Ty"
+    "pe\022-\n\004part\030\003 \001(\0132\037.Remote.MediaResponse."
+    "MediaPart\032.\n\tMediaPart\022\023\n\013byte_offset\030\001 "
+    "\002(\004\022\014\n\004data\030\002 \003(\014\"\031\n\004Type\022\021\n\rTypeMediaPa"
+    "rt\020\001*\035\n\tCodecType\022\020\n\014CodecTypeOGG\020\001", 835);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "media.proto", &protobuf_RegisterTypes);
   MediaRequest::default_instance_ = new MediaRequest();
@@ -407,7 +410,7 @@ bool MediaRequest_Prepare::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .CodecType codec_type = 3;
+      // optional .Remote.CodecType codec_type = 3;
       case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
@@ -416,8 +419,8 @@ bool MediaRequest_Prepare::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
                  input, &value)));
-          if (::CodecType_IsValid(value)) {
-            set_codec_type(static_cast< ::CodecType >(value));
+          if (::Remote::CodecType_IsValid(value)) {
+            set_codec_type(static_cast< ::Remote::CodecType >(value));
           } else {
             mutable_unknown_fields()->AddVarint(3, value);
           }
@@ -536,7 +539,7 @@ void MediaRequest_Prepare::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteUInt32(2, this->offset_secs(), output);
   }
 
-  // optional .CodecType codec_type = 3;
+  // optional .Remote.CodecType codec_type = 3;
   if (has_codec_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       3, this->codec_type(), output);
@@ -585,7 +588,7 @@ void MediaRequest_Prepare::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(2, this->offset_secs(), target);
   }
 
-  // optional .CodecType codec_type = 3;
+  // optional .Remote.CodecType codec_type = 3;
   if (has_codec_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       3, this->codec_type(), target);
@@ -641,7 +644,7 @@ int MediaRequest_Prepare::ByteSize() const {
           this->offset_secs());
     }
 
-    // optional .CodecType codec_type = 3;
+    // optional .Remote.CodecType codec_type = 3;
     if (has_codec_type()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->codec_type());
@@ -1160,9 +1163,9 @@ MediaRequest::MediaRequest()
 }
 
 void MediaRequest::InitAsDefaultInstance() {
-  prepare_ = const_cast< ::MediaRequest_Prepare*>(&::MediaRequest_Prepare::default_instance());
-  get_part_ = const_cast< ::MediaRequest_GetPart*>(&::MediaRequest_GetPart::default_instance());
-  terminate_ = const_cast< ::MediaRequest_Terminate*>(&::MediaRequest_Terminate::default_instance());
+  prepare_ = const_cast< ::Remote::MediaRequest_Prepare*>(&::Remote::MediaRequest_Prepare::default_instance());
+  get_part_ = const_cast< ::Remote::MediaRequest_GetPart*>(&::Remote::MediaRequest_GetPart::default_instance());
+  terminate_ = const_cast< ::Remote::MediaRequest_Terminate*>(&::Remote::MediaRequest_Terminate::default_instance());
 }
 
 MediaRequest::MediaRequest(const MediaRequest& from)
@@ -1217,13 +1220,13 @@ void MediaRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     request_type_ = 1;
     if (has_prepare()) {
-      if (prepare_ != NULL) prepare_->::MediaRequest_Prepare::Clear();
+      if (prepare_ != NULL) prepare_->::Remote::MediaRequest_Prepare::Clear();
     }
     if (has_get_part()) {
-      if (get_part_ != NULL) get_part_->::MediaRequest_GetPart::Clear();
+      if (get_part_ != NULL) get_part_->::Remote::MediaRequest_GetPart::Clear();
     }
     if (has_terminate()) {
-      if (terminate_ != NULL) terminate_->::MediaRequest_Terminate::Clear();
+      if (terminate_ != NULL) terminate_->::Remote::MediaRequest_Terminate::Clear();
     }
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -1236,7 +1239,7 @@ bool MediaRequest::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .MediaRequest.Type request_type = 1;
+      // required .Remote.MediaRequest.Type request_type = 1;
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
@@ -1244,8 +1247,8 @@ bool MediaRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
                  input, &value)));
-          if (::MediaRequest_Type_IsValid(value)) {
-            set_request_type(static_cast< ::MediaRequest_Type >(value));
+          if (::Remote::MediaRequest_Type_IsValid(value)) {
+            set_request_type(static_cast< ::Remote::MediaRequest_Type >(value));
           } else {
             mutable_unknown_fields()->AddVarint(1, value);
           }
@@ -1256,7 +1259,7 @@ bool MediaRequest::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .MediaRequest.Prepare prepare = 2;
+      // optional .Remote.MediaRequest.Prepare prepare = 2;
       case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -1270,7 +1273,7 @@ bool MediaRequest::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .MediaRequest.GetPart get_part = 3;
+      // optional .Remote.MediaRequest.GetPart get_part = 3;
       case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -1284,7 +1287,7 @@ bool MediaRequest::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .MediaRequest.Terminate terminate = 4;
+      // optional .Remote.MediaRequest.Terminate terminate = 4;
       case 4: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -1316,25 +1319,25 @@ bool MediaRequest::MergePartialFromCodedStream(
 
 void MediaRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // required .MediaRequest.Type request_type = 1;
+  // required .Remote.MediaRequest.Type request_type = 1;
   if (has_request_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->request_type(), output);
   }
 
-  // optional .MediaRequest.Prepare prepare = 2;
+  // optional .Remote.MediaRequest.Prepare prepare = 2;
   if (has_prepare()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->prepare(), output);
   }
 
-  // optional .MediaRequest.GetPart get_part = 3;
+  // optional .Remote.MediaRequest.GetPart get_part = 3;
   if (has_get_part()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       3, this->get_part(), output);
   }
 
-  // optional .MediaRequest.Terminate terminate = 4;
+  // optional .Remote.MediaRequest.Terminate terminate = 4;
   if (has_terminate()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       4, this->terminate(), output);
@@ -1348,27 +1351,27 @@ void MediaRequest::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* MediaRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // required .MediaRequest.Type request_type = 1;
+  // required .Remote.MediaRequest.Type request_type = 1;
   if (has_request_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       1, this->request_type(), target);
   }
 
-  // optional .MediaRequest.Prepare prepare = 2;
+  // optional .Remote.MediaRequest.Prepare prepare = 2;
   if (has_prepare()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         2, this->prepare(), target);
   }
 
-  // optional .MediaRequest.GetPart get_part = 3;
+  // optional .Remote.MediaRequest.GetPart get_part = 3;
   if (has_get_part()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         3, this->get_part(), target);
   }
 
-  // optional .MediaRequest.Terminate terminate = 4;
+  // optional .Remote.MediaRequest.Terminate terminate = 4;
   if (has_terminate()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
@@ -1386,27 +1389,27 @@ int MediaRequest::ByteSize() const {
   int total_size = 0;
 
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required .MediaRequest.Type request_type = 1;
+    // required .Remote.MediaRequest.Type request_type = 1;
     if (has_request_type()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->request_type());
     }
 
-    // optional .MediaRequest.Prepare prepare = 2;
+    // optional .Remote.MediaRequest.Prepare prepare = 2;
     if (has_prepare()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->prepare());
     }
 
-    // optional .MediaRequest.GetPart get_part = 3;
+    // optional .Remote.MediaRequest.GetPart get_part = 3;
     if (has_get_part()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->get_part());
     }
 
-    // optional .MediaRequest.Terminate terminate = 4;
+    // optional .Remote.MediaRequest.Terminate terminate = 4;
     if (has_terminate()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -1444,13 +1447,13 @@ void MediaRequest::MergeFrom(const MediaRequest& from) {
       set_request_type(from.request_type());
     }
     if (from.has_prepare()) {
-      mutable_prepare()->::MediaRequest_Prepare::MergeFrom(from.prepare());
+      mutable_prepare()->::Remote::MediaRequest_Prepare::MergeFrom(from.prepare());
     }
     if (from.has_get_part()) {
-      mutable_get_part()->::MediaRequest_GetPart::MergeFrom(from.get_part());
+      mutable_get_part()->::Remote::MediaRequest_GetPart::MergeFrom(from.get_part());
     }
     if (from.has_terminate()) {
-      mutable_terminate()->::MediaRequest_Terminate::MergeFrom(from.terminate());
+      mutable_terminate()->::Remote::MediaRequest_Terminate::MergeFrom(from.terminate());
     }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -1781,8 +1784,8 @@ MediaResponse::MediaResponse()
 }
 
 void MediaResponse::InitAsDefaultInstance() {
-  error_ = const_cast< ::Error*>(&::Error::default_instance());
-  part_ = const_cast< ::MediaResponse_MediaPart*>(&::MediaResponse_MediaPart::default_instance());
+  error_ = const_cast< ::Remote::Error*>(&::Remote::Error::default_instance());
+  part_ = const_cast< ::Remote::MediaResponse_MediaPart*>(&::Remote::MediaResponse_MediaPart::default_instance());
 }
 
 MediaResponse::MediaResponse(const MediaResponse& from)
@@ -1834,11 +1837,11 @@ MediaResponse* MediaResponse::New() const {
 void MediaResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (has_error()) {
-      if (error_ != NULL) error_->::Error::Clear();
+      if (error_ != NULL) error_->::Remote::Error::Clear();
     }
     response_type_ = 1;
     if (has_part()) {
-      if (part_ != NULL) part_->::MediaResponse_MediaPart::Clear();
+      if (part_ != NULL) part_->::Remote::MediaResponse_MediaPart::Clear();
     }
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -1851,7 +1854,7 @@ bool MediaResponse::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .Error error = 1;
+      // required .Remote.Error error = 1;
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -1864,7 +1867,7 @@ bool MediaResponse::MergePartialFromCodedStream(
         break;
       }
 
-      // required .MediaResponse.Type response_type = 2;
+      // required .Remote.MediaResponse.Type response_type = 2;
       case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
@@ -1873,8 +1876,8 @@ bool MediaResponse::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
                  input, &value)));
-          if (::MediaResponse_Type_IsValid(value)) {
-            set_response_type(static_cast< ::MediaResponse_Type >(value));
+          if (::Remote::MediaResponse_Type_IsValid(value)) {
+            set_response_type(static_cast< ::Remote::MediaResponse_Type >(value));
           } else {
             mutable_unknown_fields()->AddVarint(2, value);
           }
@@ -1885,7 +1888,7 @@ bool MediaResponse::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .MediaResponse.MediaPart part = 3;
+      // optional .Remote.MediaResponse.MediaPart part = 3;
       case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -1917,19 +1920,19 @@ bool MediaResponse::MergePartialFromCodedStream(
 
 void MediaResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // required .Error error = 1;
+  // required .Remote.Error error = 1;
   if (has_error()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       1, this->error(), output);
   }
 
-  // required .MediaResponse.Type response_type = 2;
+  // required .Remote.MediaResponse.Type response_type = 2;
   if (has_response_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       2, this->response_type(), output);
   }
 
-  // optional .MediaResponse.MediaPart part = 3;
+  // optional .Remote.MediaResponse.MediaPart part = 3;
   if (has_part()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       3, this->part(), output);
@@ -1943,20 +1946,20 @@ void MediaResponse::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* MediaResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // required .Error error = 1;
+  // required .Remote.Error error = 1;
   if (has_error()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         1, this->error(), target);
   }
 
-  // required .MediaResponse.Type response_type = 2;
+  // required .Remote.MediaResponse.Type response_type = 2;
   if (has_response_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       2, this->response_type(), target);
   }
 
-  // optional .MediaResponse.MediaPart part = 3;
+  // optional .Remote.MediaResponse.MediaPart part = 3;
   if (has_part()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
@@ -1974,20 +1977,20 @@ int MediaResponse::ByteSize() const {
   int total_size = 0;
 
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required .Error error = 1;
+    // required .Remote.Error error = 1;
     if (has_error()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->error());
     }
 
-    // required .MediaResponse.Type response_type = 2;
+    // required .Remote.MediaResponse.Type response_type = 2;
     if (has_response_type()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->response_type());
     }
 
-    // optional .MediaResponse.MediaPart part = 3;
+    // optional .Remote.MediaResponse.MediaPart part = 3;
     if (has_part()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -2022,13 +2025,13 @@ void MediaResponse::MergeFrom(const MediaResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (from.has_error()) {
-      mutable_error()->::Error::MergeFrom(from.error());
+      mutable_error()->::Remote::Error::MergeFrom(from.error());
     }
     if (from.has_response_type()) {
       set_response_type(from.response_type());
     }
     if (from.has_part()) {
-      mutable_part()->::MediaResponse_MediaPart::MergeFrom(from.part());
+      mutable_part()->::Remote::MediaResponse_MediaPart::MergeFrom(from.part());
     }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -2079,5 +2082,7 @@ void MediaResponse::Swap(MediaResponse* other) {
 
 
 // @@protoc_insertion_point(namespace_scope)
+
+}  // namespace Remote
 
 // @@protoc_insertion_point(global_scope)

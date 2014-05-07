@@ -27,6 +27,8 @@
 #include "common.pb.h"
 // @@protoc_insertion_point(includes)
 
+namespace Remote {
+
 // Internal implementation detail -- do not call these.
 void  protobuf_AddDesc_auth_2eproto();
 void protobuf_AssignDesc_auth_2eproto();
@@ -115,7 +117,7 @@ class AuthRequest : public ::google::protobuf::Message {
   inline ::std::string* release_user_password();
   inline void set_allocated_user_password(::std::string* user_password);
 
-  // @@protoc_insertion_point(class_scope:AuthRequest)
+  // @@protoc_insertion_point(class_scope:Remote.AuthRequest)
  private:
   inline void set_has_user_name();
   inline void clear_has_user_name();
@@ -193,23 +195,23 @@ class AuthResponse : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required .Error error = 1;
+  // required .Remote.Error error = 1;
   inline bool has_error() const;
   inline void clear_error();
   static const int kErrorFieldNumber = 1;
-  inline const ::Error& error() const;
-  inline ::Error* mutable_error();
-  inline ::Error* release_error();
-  inline void set_allocated_error(::Error* error);
+  inline const ::Remote::Error& error() const;
+  inline ::Remote::Error* mutable_error();
+  inline ::Remote::Error* release_error();
+  inline void set_allocated_error(::Remote::Error* error);
 
-  // @@protoc_insertion_point(class_scope:AuthResponse)
+  // @@protoc_insertion_point(class_scope:Remote.AuthResponse)
  private:
   inline void set_has_error();
   inline void clear_has_error();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::Error* error_;
+  ::Remote::Error* error_;
 
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
@@ -372,7 +374,7 @@ inline void AuthRequest::set_allocated_user_password(::std::string* user_passwor
 
 // AuthResponse
 
-// required .Error error = 1;
+// required .Remote.Error error = 1;
 inline bool AuthResponse::has_error() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -383,24 +385,24 @@ inline void AuthResponse::clear_has_error() {
   _has_bits_[0] &= ~0x00000001u;
 }
 inline void AuthResponse::clear_error() {
-  if (error_ != NULL) error_->::Error::Clear();
+  if (error_ != NULL) error_->::Remote::Error::Clear();
   clear_has_error();
 }
-inline const ::Error& AuthResponse::error() const {
+inline const ::Remote::Error& AuthResponse::error() const {
   return error_ != NULL ? *error_ : *default_instance_->error_;
 }
-inline ::Error* AuthResponse::mutable_error() {
+inline ::Remote::Error* AuthResponse::mutable_error() {
   set_has_error();
-  if (error_ == NULL) error_ = new ::Error;
+  if (error_ == NULL) error_ = new ::Remote::Error;
   return error_;
 }
-inline ::Error* AuthResponse::release_error() {
+inline ::Remote::Error* AuthResponse::release_error() {
   clear_has_error();
-  ::Error* temp = error_;
+  ::Remote::Error* temp = error_;
   error_ = NULL;
   return temp;
 }
-inline void AuthResponse::set_allocated_error(::Error* error) {
+inline void AuthResponse::set_allocated_error(::Remote::Error* error) {
   delete error_;
   error_ = error;
   if (error) {
@@ -412,6 +414,8 @@ inline void AuthResponse::set_allocated_error(::Error* error) {
 
 
 // @@protoc_insertion_point(namespace_scope)
+
+}  // namespace Remote
 
 #ifndef SWIG
 namespace google {

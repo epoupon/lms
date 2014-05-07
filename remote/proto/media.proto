@@ -1,5 +1,7 @@
 import "common.proto";
 
+package Remote;
+
 enum CodecType
 {
 	CodecTypeOGG	= 1;

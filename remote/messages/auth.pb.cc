@@ -16,6 +16,8 @@
 #include <google/protobuf/wire_format.h>
 // @@protoc_insertion_point(includes)
 
+namespace Remote {
+
 namespace {
 
 const ::google::protobuf::Descriptor* AuthRequest_descriptor_ = NULL;
@@ -98,12 +100,12 @@ void protobuf_AddDesc_auth_2eproto() {
   already_here = true;
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  ::protobuf_AddDesc_common_2eproto();
+  ::Remote::protobuf_AddDesc_common_2eproto();
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\nauth.proto\032\014common.proto\"7\n\013AuthReques"
-    "t\022\021\n\tuser_name\030\001 \002(\t\022\025\n\ruser_password\030\002 "
-    "\002(\t\"%\n\014AuthResponse\022\025\n\005error\030\001 \002(\0132\006.Err"
-    "or", 122);
+    "\n\nauth.proto\022\006Remote\032\014common.proto\"7\n\013Au"
+    "thRequest\022\021\n\tuser_name\030\001 \002(\t\022\025\n\ruser_pas"
+    "sword\030\002 \002(\t\",\n\014AuthResponse\022\034\n\005error\030\001 \002"
+    "(\0132\r.Remote.Error", 137);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "auth.proto", &protobuf_RegisterTypes);
   AuthRequest::default_instance_ = new AuthRequest();
@@ -415,7 +417,7 @@ AuthResponse::AuthResponse()
 }
 
 void AuthResponse::InitAsDefaultInstance() {
-  error_ = const_cast< ::Error*>(&::Error::default_instance());
+  error_ = const_cast< ::Remote::Error*>(&::Remote::Error::default_instance());
 }
 
 AuthResponse::AuthResponse(const AuthResponse& from)
@@ -464,7 +466,7 @@ AuthResponse* AuthResponse::New() const {
 void AuthResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (has_error()) {
-      if (error_ != NULL) error_->::Error::Clear();
+      if (error_ != NULL) error_->::Remote::Error::Clear();
     }
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -477,7 +479,7 @@ bool AuthResponse::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .Error error = 1;
+      // required .Remote.Error error = 1;
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -508,7 +510,7 @@ bool AuthResponse::MergePartialFromCodedStream(
 
 void AuthResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // required .Error error = 1;
+  // required .Remote.Error error = 1;
   if (has_error()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       1, this->error(), output);
@@ -522,7 +524,7 @@ void AuthResponse::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* AuthResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // required .Error error = 1;
+  // required .Remote.Error error = 1;
   if (has_error()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
@@ -540,7 +542,7 @@ int AuthResponse::ByteSize() const {
   int total_size = 0;
 
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required .Error error = 1;
+    // required .Remote.Error error = 1;
     if (has_error()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -575,7 +577,7 @@ void AuthResponse::MergeFrom(const AuthResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (from.has_error()) {
-      mutable_error()->::Error::MergeFrom(from.error());
+      mutable_error()->::Remote::Error::MergeFrom(from.error());
     }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -621,5 +623,7 @@ void AuthResponse::Swap(AuthResponse* other) {
 
 
 // @@protoc_insertion_point(namespace_scope)
+
+}  // namespace Remote
 
 // @@protoc_insertion_point(global_scope)

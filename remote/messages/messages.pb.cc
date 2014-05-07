@@ -16,6 +16,8 @@
 #include <google/protobuf/wire_format.h>
 // @@protoc_insertion_point(includes)
 
+namespace Remote {
+
 namespace {
 
 const ::google::protobuf::Descriptor* ClientMessage_descriptor_ = NULL;
@@ -40,7 +42,7 @@ void protobuf_AssignDesc_messages_2eproto() {
   static const int ClientMessage_offsets_[4] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClientMessage, type_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClientMessage, auth_request_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClientMessage, collection_request_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClientMessage, audio_collection_request_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClientMessage, media_request_),
   };
   ClientMessage_reflection_ =
@@ -59,7 +61,7 @@ void protobuf_AssignDesc_messages_2eproto() {
   static const int ServerMessage_offsets_[4] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ServerMessage, type_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ServerMessage, auth_response_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ServerMessage, collection_response_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ServerMessage, audio_collection_response_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ServerMessage, media_response_),
   };
   ServerMessage_reflection_ =
@@ -107,26 +109,28 @@ void protobuf_AddDesc_messages_2eproto() {
   already_here = true;
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  ::protobuf_AddDesc_common_2eproto();
-  ::protobuf_AddDesc_auth_2eproto();
-  ::protobuf_AddDesc_collection_2eproto();
-  ::protobuf_AddDesc_media_2eproto();
+  ::Remote::protobuf_AddDesc_common_2eproto();
+  ::Remote::protobuf_AddDesc_auth_2eproto();
+  ::Remote::protobuf_AddDesc_collection_2eproto();
+  ::Remote::protobuf_AddDesc_media_2eproto();
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\016messages.proto\032\014common.proto\032\nauth.pro"
-    "to\032\020collection.proto\032\013media.proto\"\356\001\n\rCl"
-    "ientMessage\022!\n\004type\030\001 \002(\0162\023.ClientMessag"
-    "e.Type\022\"\n\014auth_request\030\002 \001(\0132\014.AuthReque"
-    "st\022.\n\022collection_request\030\003 \001(\0132\022.Collect"
-    "ionRequest\022$\n\rmedia_request\030\004 \001(\0132\r.Medi"
-    "aRequest\"@\n\004Type\022\017\n\013AuthRequest\020\001\022\025\n\021Col"
-    "lectionRequest\020\002\022\020\n\014MediaRequest\020\003\"\367\001\n\rS"
-    "erverMessage\022!\n\004type\030\001 \002(\0162\023.ServerMessa"
-    "ge.Type\022$\n\rauth_response\030\002 \001(\0132\r.AuthRes"
-    "ponse\0220\n\023collection_response\030\003 \001(\0132\023.Col"
-    "lectionResponse\022&\n\016media_response\030\004 \001(\0132"
-    "\016.MediaResponse\"C\n\004Type\022\020\n\014AuthResponse\020"
-    "\001\022\026\n\022CollectionResponse\020\002\022\021\n\rMediaRespon"
-    "se\020\003", 564);
+    "\n\016messages.proto\022\006Remote\032\014common.proto\032\n"
+    "auth.proto\032\020collection.proto\032\013media.prot"
+    "o\"\232\002\n\rClientMessage\022(\n\004type\030\001 \002(\0162\032.Remo"
+    "te.ClientMessage.Type\022)\n\014auth_request\030\002 "
+    "\001(\0132\023.Remote.AuthRequest\022@\n\030audio_collec"
+    "tion_request\030\003 \001(\0132\036.Remote.AudioCollect"
+    "ionRequest\022+\n\rmedia_request\030\004 \001(\0132\024.Remo"
+    "te.MediaRequest\"E\n\004Type\022\017\n\013AuthRequest\020\001"
+    "\022\032\n\026AudioCollectionRequest\020\002\022\020\n\014MediaReq"
+    "uest\020\003\"\243\002\n\rServerMessage\022(\n\004type\030\001 \002(\0162\032"
+    ".Remote.ServerMessage.Type\022+\n\rauth_respo"
+    "nse\030\002 \001(\0132\024.Remote.AuthResponse\022B\n\031audio"
+    "_collection_response\030\003 \001(\0132\037.Remote.Audi"
+    "oCollectionResponse\022-\n\016media_response\030\004 "
+    "\001(\0132\025.Remote.MediaResponse\"H\n\004Type\022\020\n\014Au"
+    "thResponse\020\001\022\033\n\027AduioCollectionResponse\020"
+    "\002\022\021\n\rMediaResponse\020\003", 660);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "messages.proto", &protobuf_RegisterTypes);
   ClientMessage::default_instance_ = new ClientMessage();
@@ -162,7 +166,7 @@ bool ClientMessage_Type_IsValid(int value) {
 
 #ifndef _MSC_VER
 const ClientMessage_Type ClientMessage::AuthRequest;
-const ClientMessage_Type ClientMessage::CollectionRequest;
+const ClientMessage_Type ClientMessage::AudioCollectionRequest;
 const ClientMessage_Type ClientMessage::MediaRequest;
 const ClientMessage_Type ClientMessage::Type_MIN;
 const ClientMessage_Type ClientMessage::Type_MAX;
@@ -171,7 +175,7 @@ const int ClientMessage::Type_ARRAYSIZE;
 #ifndef _MSC_VER
 const int ClientMessage::kTypeFieldNumber;
 const int ClientMessage::kAuthRequestFieldNumber;
-const int ClientMessage::kCollectionRequestFieldNumber;
+const int ClientMessage::kAudioCollectionRequestFieldNumber;
 const int ClientMessage::kMediaRequestFieldNumber;
 #endif  // !_MSC_VER
 
@@ -181,9 +185,9 @@ ClientMessage::ClientMessage()
 }
 
 void ClientMessage::InitAsDefaultInstance() {
-  auth_request_ = const_cast< ::AuthRequest*>(&::AuthRequest::default_instance());
-  collection_request_ = const_cast< ::CollectionRequest*>(&::CollectionRequest::default_instance());
-  media_request_ = const_cast< ::MediaRequest*>(&::MediaRequest::default_instance());
+  auth_request_ = const_cast< ::Remote::AuthRequest*>(&::Remote::AuthRequest::default_instance());
+  audio_collection_request_ = const_cast< ::Remote::AudioCollectionRequest*>(&::Remote::AudioCollectionRequest::default_instance());
+  media_request_ = const_cast< ::Remote::MediaRequest*>(&::Remote::MediaRequest::default_instance());
 }
 
 ClientMessage::ClientMessage(const ClientMessage& from)
@@ -196,7 +200,7 @@ void ClientMessage::SharedCtor() {
   _cached_size_ = 0;
   type_ = 1;
   auth_request_ = NULL;
-  collection_request_ = NULL;
+  audio_collection_request_ = NULL;
   media_request_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -208,7 +212,7 @@ ClientMessage::~ClientMessage() {
 void ClientMessage::SharedDtor() {
   if (this != default_instance_) {
     delete auth_request_;
-    delete collection_request_;
+    delete audio_collection_request_;
     delete media_request_;
   }
 }
@@ -238,13 +242,13 @@ void ClientMessage::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     type_ = 1;
     if (has_auth_request()) {
-      if (auth_request_ != NULL) auth_request_->::AuthRequest::Clear();
+      if (auth_request_ != NULL) auth_request_->::Remote::AuthRequest::Clear();
     }
-    if (has_collection_request()) {
-      if (collection_request_ != NULL) collection_request_->::CollectionRequest::Clear();
+    if (has_audio_collection_request()) {
+      if (audio_collection_request_ != NULL) audio_collection_request_->::Remote::AudioCollectionRequest::Clear();
     }
     if (has_media_request()) {
-      if (media_request_ != NULL) media_request_->::MediaRequest::Clear();
+      if (media_request_ != NULL) media_request_->::Remote::MediaRequest::Clear();
     }
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -257,7 +261,7 @@ bool ClientMessage::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .ClientMessage.Type type = 1;
+      // required .Remote.ClientMessage.Type type = 1;
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
@@ -265,8 +269,8 @@ bool ClientMessage::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
                  input, &value)));
-          if (::ClientMessage_Type_IsValid(value)) {
-            set_type(static_cast< ::ClientMessage_Type >(value));
+          if (::Remote::ClientMessage_Type_IsValid(value)) {
+            set_type(static_cast< ::Remote::ClientMessage_Type >(value));
           } else {
             mutable_unknown_fields()->AddVarint(1, value);
           }
@@ -277,7 +281,7 @@ bool ClientMessage::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .AuthRequest auth_request = 2;
+      // optional .Remote.AuthRequest auth_request = 2;
       case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -287,17 +291,17 @@ bool ClientMessage::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(26)) goto parse_collection_request;
+        if (input->ExpectTag(26)) goto parse_audio_collection_request;
         break;
       }
 
-      // optional .CollectionRequest collection_request = 3;
+      // optional .Remote.AudioCollectionRequest audio_collection_request = 3;
       case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_collection_request:
+         parse_audio_collection_request:
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_collection_request()));
+               input, mutable_audio_collection_request()));
         } else {
           goto handle_uninterpreted;
         }
@@ -305,7 +309,7 @@ bool ClientMessage::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .MediaRequest media_request = 4;
+      // optional .Remote.MediaRequest media_request = 4;
       case 4: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -337,25 +341,25 @@ bool ClientMessage::MergePartialFromCodedStream(
 
 void ClientMessage::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // required .ClientMessage.Type type = 1;
+  // required .Remote.ClientMessage.Type type = 1;
   if (has_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->type(), output);
   }
 
-  // optional .AuthRequest auth_request = 2;
+  // optional .Remote.AuthRequest auth_request = 2;
   if (has_auth_request()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->auth_request(), output);
   }
 
-  // optional .CollectionRequest collection_request = 3;
-  if (has_collection_request()) {
+  // optional .Remote.AudioCollectionRequest audio_collection_request = 3;
+  if (has_audio_collection_request()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      3, this->collection_request(), output);
+      3, this->audio_collection_request(), output);
   }
 
-  // optional .MediaRequest media_request = 4;
+  // optional .Remote.MediaRequest media_request = 4;
   if (has_media_request()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       4, this->media_request(), output);
@@ -369,27 +373,27 @@ void ClientMessage::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* ClientMessage::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // required .ClientMessage.Type type = 1;
+  // required .Remote.ClientMessage.Type type = 1;
   if (has_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       1, this->type(), target);
   }
 
-  // optional .AuthRequest auth_request = 2;
+  // optional .Remote.AuthRequest auth_request = 2;
   if (has_auth_request()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         2, this->auth_request(), target);
   }
 
-  // optional .CollectionRequest collection_request = 3;
-  if (has_collection_request()) {
+  // optional .Remote.AudioCollectionRequest audio_collection_request = 3;
+  if (has_audio_collection_request()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        3, this->collection_request(), target);
+        3, this->audio_collection_request(), target);
   }
 
-  // optional .MediaRequest media_request = 4;
+  // optional .Remote.MediaRequest media_request = 4;
   if (has_media_request()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
@@ -407,27 +411,27 @@ int ClientMessage::ByteSize() const {
   int total_size = 0;
 
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required .ClientMessage.Type type = 1;
+    // required .Remote.ClientMessage.Type type = 1;
     if (has_type()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
     }
 
-    // optional .AuthRequest auth_request = 2;
+    // optional .Remote.AuthRequest auth_request = 2;
     if (has_auth_request()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->auth_request());
     }
 
-    // optional .CollectionRequest collection_request = 3;
-    if (has_collection_request()) {
+    // optional .Remote.AudioCollectionRequest audio_collection_request = 3;
+    if (has_audio_collection_request()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->collection_request());
+          this->audio_collection_request());
     }
 
-    // optional .MediaRequest media_request = 4;
+    // optional .Remote.MediaRequest media_request = 4;
     if (has_media_request()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -465,13 +469,13 @@ void ClientMessage::MergeFrom(const ClientMessage& from) {
       set_type(from.type());
     }
     if (from.has_auth_request()) {
-      mutable_auth_request()->::AuthRequest::MergeFrom(from.auth_request());
+      mutable_auth_request()->::Remote::AuthRequest::MergeFrom(from.auth_request());
     }
-    if (from.has_collection_request()) {
-      mutable_collection_request()->::CollectionRequest::MergeFrom(from.collection_request());
+    if (from.has_audio_collection_request()) {
+      mutable_audio_collection_request()->::Remote::AudioCollectionRequest::MergeFrom(from.audio_collection_request());
     }
     if (from.has_media_request()) {
-      mutable_media_request()->::MediaRequest::MergeFrom(from.media_request());
+      mutable_media_request()->::Remote::MediaRequest::MergeFrom(from.media_request());
     }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -495,8 +499,8 @@ bool ClientMessage::IsInitialized() const {
   if (has_auth_request()) {
     if (!this->auth_request().IsInitialized()) return false;
   }
-  if (has_collection_request()) {
-    if (!this->collection_request().IsInitialized()) return false;
+  if (has_audio_collection_request()) {
+    if (!this->audio_collection_request().IsInitialized()) return false;
   }
   if (has_media_request()) {
     if (!this->media_request().IsInitialized()) return false;
@@ -508,7 +512,7 @@ void ClientMessage::Swap(ClientMessage* other) {
   if (other != this) {
     std::swap(type_, other->type_);
     std::swap(auth_request_, other->auth_request_);
-    std::swap(collection_request_, other->collection_request_);
+    std::swap(audio_collection_request_, other->audio_collection_request_);
     std::swap(media_request_, other->media_request_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
@@ -544,7 +548,7 @@ bool ServerMessage_Type_IsValid(int value) {
 
 #ifndef _MSC_VER
 const ServerMessage_Type ServerMessage::AuthResponse;
-const ServerMessage_Type ServerMessage::CollectionResponse;
+const ServerMessage_Type ServerMessage::AduioCollectionResponse;
 const ServerMessage_Type ServerMessage::MediaResponse;
 const ServerMessage_Type ServerMessage::Type_MIN;
 const ServerMessage_Type ServerMessage::Type_MAX;
@@ -553,7 +557,7 @@ const int ServerMessage::Type_ARRAYSIZE;
 #ifndef _MSC_VER
 const int ServerMessage::kTypeFieldNumber;
 const int ServerMessage::kAuthResponseFieldNumber;
-const int ServerMessage::kCollectionResponseFieldNumber;
+const int ServerMessage::kAudioCollectionResponseFieldNumber;
 const int ServerMessage::kMediaResponseFieldNumber;
 #endif  // !_MSC_VER
 
@@ -563,9 +567,9 @@ ServerMessage::ServerMessage()
 }
 
 void ServerMessage::InitAsDefaultInstance() {
-  auth_response_ = const_cast< ::AuthResponse*>(&::AuthResponse::default_instance());
-  collection_response_ = const_cast< ::CollectionResponse*>(&::CollectionResponse::default_instance());
-  media_response_ = const_cast< ::MediaResponse*>(&::MediaResponse::default_instance());
+  auth_response_ = const_cast< ::Remote::AuthResponse*>(&::Remote::AuthResponse::default_instance());
+  audio_collection_response_ = const_cast< ::Remote::AudioCollectionResponse*>(&::Remote::AudioCollectionResponse::default_instance());
+  media_response_ = const_cast< ::Remote::MediaResponse*>(&::Remote::MediaResponse::default_instance());
 }
 
 ServerMessage::ServerMessage(const ServerMessage& from)
@@ -578,7 +582,7 @@ void ServerMessage::SharedCtor() {
   _cached_size_ = 0;
   type_ = 1;
   auth_response_ = NULL;
-  collection_response_ = NULL;
+  audio_collection_response_ = NULL;
   media_response_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -590,7 +594,7 @@ ServerMessage::~ServerMessage() {
 void ServerMessage::SharedDtor() {
   if (this != default_instance_) {
     delete auth_response_;
-    delete collection_response_;
+    delete audio_collection_response_;
     delete media_response_;
   }
 }
@@ -620,13 +624,13 @@ void ServerMessage::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     type_ = 1;
     if (has_auth_response()) {
-      if (auth_response_ != NULL) auth_response_->::AuthResponse::Clear();
+      if (auth_response_ != NULL) auth_response_->::Remote::AuthResponse::Clear();
     }
-    if (has_collection_response()) {
-      if (collection_response_ != NULL) collection_response_->::CollectionResponse::Clear();
+    if (has_audio_collection_response()) {
+      if (audio_collection_response_ != NULL) audio_collection_response_->::Remote::AudioCollectionResponse::Clear();
     }
     if (has_media_response()) {
-      if (media_response_ != NULL) media_response_->::MediaResponse::Clear();
+      if (media_response_ != NULL) media_response_->::Remote::MediaResponse::Clear();
     }
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -639,7 +643,7 @@ bool ServerMessage::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .ServerMessage.Type type = 1;
+      // required .Remote.ServerMessage.Type type = 1;
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
@@ -647,8 +651,8 @@ bool ServerMessage::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
                  input, &value)));
-          if (::ServerMessage_Type_IsValid(value)) {
-            set_type(static_cast< ::ServerMessage_Type >(value));
+          if (::Remote::ServerMessage_Type_IsValid(value)) {
+            set_type(static_cast< ::Remote::ServerMessage_Type >(value));
           } else {
             mutable_unknown_fields()->AddVarint(1, value);
           }
@@ -659,7 +663,7 @@ bool ServerMessage::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .AuthResponse auth_response = 2;
+      // optional .Remote.AuthResponse auth_response = 2;
       case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -669,17 +673,17 @@ bool ServerMessage::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(26)) goto parse_collection_response;
+        if (input->ExpectTag(26)) goto parse_audio_collection_response;
         break;
       }
 
-      // optional .CollectionResponse collection_response = 3;
+      // optional .Remote.AudioCollectionResponse audio_collection_response = 3;
       case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_collection_response:
+         parse_audio_collection_response:
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_collection_response()));
+               input, mutable_audio_collection_response()));
         } else {
           goto handle_uninterpreted;
         }
@@ -687,7 +691,7 @@ bool ServerMessage::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .MediaResponse media_response = 4;
+      // optional .Remote.MediaResponse media_response = 4;
       case 4: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -719,25 +723,25 @@ bool ServerMessage::MergePartialFromCodedStream(
 
 void ServerMessage::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // required .ServerMessage.Type type = 1;
+  // required .Remote.ServerMessage.Type type = 1;
   if (has_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->type(), output);
   }
 
-  // optional .AuthResponse auth_response = 2;
+  // optional .Remote.AuthResponse auth_response = 2;
   if (has_auth_response()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->auth_response(), output);
   }
 
-  // optional .CollectionResponse collection_response = 3;
-  if (has_collection_response()) {
+  // optional .Remote.AudioCollectionResponse audio_collection_response = 3;
+  if (has_audio_collection_response()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      3, this->collection_response(), output);
+      3, this->audio_collection_response(), output);
   }
 
-  // optional .MediaResponse media_response = 4;
+  // optional .Remote.MediaResponse media_response = 4;
   if (has_media_response()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       4, this->media_response(), output);
@@ -751,27 +755,27 @@ void ServerMessage::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* ServerMessage::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // required .ServerMessage.Type type = 1;
+  // required .Remote.ServerMessage.Type type = 1;
   if (has_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       1, this->type(), target);
   }
 
-  // optional .AuthResponse auth_response = 2;
+  // optional .Remote.AuthResponse auth_response = 2;
   if (has_auth_response()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         2, this->auth_response(), target);
   }
 
-  // optional .CollectionResponse collection_response = 3;
-  if (has_collection_response()) {
+  // optional .Remote.AudioCollectionResponse audio_collection_response = 3;
+  if (has_audio_collection_response()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        3, this->collection_response(), target);
+        3, this->audio_collection_response(), target);
   }
 
-  // optional .MediaResponse media_response = 4;
+  // optional .Remote.MediaResponse media_response = 4;
   if (has_media_response()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
@@ -789,27 +793,27 @@ int ServerMessage::ByteSize() const {
   int total_size = 0;
 
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required .ServerMessage.Type type = 1;
+    // required .Remote.ServerMessage.Type type = 1;
     if (has_type()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
     }
 
-    // optional .AuthResponse auth_response = 2;
+    // optional .Remote.AuthResponse auth_response = 2;
     if (has_auth_response()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->auth_response());
     }
 
-    // optional .CollectionResponse collection_response = 3;
-    if (has_collection_response()) {
+    // optional .Remote.AudioCollectionResponse audio_collection_response = 3;
+    if (has_audio_collection_response()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->collection_response());
+          this->audio_collection_response());
     }
 
-    // optional .MediaResponse media_response = 4;
+    // optional .Remote.MediaResponse media_response = 4;
     if (has_media_response()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -847,13 +851,13 @@ void ServerMessage::MergeFrom(const ServerMessage& from) {
       set_type(from.type());
     }
     if (from.has_auth_response()) {
-      mutable_auth_response()->::AuthResponse::MergeFrom(from.auth_response());
+      mutable_auth_response()->::Remote::AuthResponse::MergeFrom(from.auth_response());
     }
-    if (from.has_collection_response()) {
-      mutable_collection_response()->::CollectionResponse::MergeFrom(from.collection_response());
+    if (from.has_audio_collection_response()) {
+      mutable_audio_collection_response()->::Remote::AudioCollectionResponse::MergeFrom(from.audio_collection_response());
     }
     if (from.has_media_response()) {
-      mutable_media_response()->::MediaResponse::MergeFrom(from.media_response());
+      mutable_media_response()->::Remote::MediaResponse::MergeFrom(from.media_response());
     }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -877,8 +881,8 @@ bool ServerMessage::IsInitialized() const {
   if (has_auth_response()) {
     if (!this->auth_response().IsInitialized()) return false;
   }
-  if (has_collection_response()) {
-    if (!this->collection_response().IsInitialized()) return false;
+  if (has_audio_collection_response()) {
+    if (!this->audio_collection_response().IsInitialized()) return false;
   }
   if (has_media_response()) {
     if (!this->media_response().IsInitialized()) return false;
@@ -890,7 +894,7 @@ void ServerMessage::Swap(ServerMessage* other) {
   if (other != this) {
     std::swap(type_, other->type_);
     std::swap(auth_response_, other->auth_response_);
-    std::swap(collection_response_, other->collection_response_);
+    std::swap(audio_collection_response_, other->audio_collection_response_);
     std::swap(media_response_, other->media_response_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
@@ -908,5 +912,7 @@ void ServerMessage::Swap(ServerMessage* other) {
 
 
 // @@protoc_insertion_point(namespace_scope)
+
+}  // namespace Remote
 
 // @@protoc_insertion_point(global_scope)

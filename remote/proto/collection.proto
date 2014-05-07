@@ -1,6 +1,8 @@
 import "common.proto";
 
-message CollectionRequest
+package Remote;
+
+message AudioCollectionRequest
 {
 
 	message GetGenreList
@@ -61,8 +63,80 @@ message CollectionRequest
 }
 
 
-message CollectionResponse
+message AudioCollectionResponse
 {
+	message GenreList
+	{
+		required bool	last	= 1;	// More messages follow if last = 0
+		repeated Genre	genres	= 2;
+	}
+
+	message ArtistList
+	{
+		required bool	last	= 1;	// More messages follow if last = 0
+		repeated Artist	artists	= 2;
+	}
+
+	message ReleaseList
+	{
+		required bool		last	= 1;	// More messages follow if last = 0
+		repeated Release	releases = 2;
+	}
+
+	message TrackList
+	{
+		required bool	last	= 1;	// More messages follow if last = 0
+		repeated Track	tracks	= 2;
+	}
+
+	message Genre
+	{
+		required string name	= 1;
+	}
+
+	message CoverArt
+	{
+		optional string	mime_type	= 1;
+		repeated bytes data		= 2;
+	}
+
+	message Artist
+	{
+		required string name		= 1;
+		required uint32 nb_releases	= 2;
+	}
+
+	message Release
+	{
+		required string name			= 1;
+
+		required uint32 nb_tracks		= 2;
+		required uint32 duration_secs		= 3;
+
+		optional CoverArt coverArt	= 4;
+	}
+
+	message Track
+	{
+		required int64	media_id	= 1;
+		optional uint32 disc_number	= 2;
+		optional uint32 track_number	= 3;
+
+		optional string	artist			= 4;
+		optional string	release			= 5;
+
+		required string	name			= 6;
+
+		required uint32	duration_secs		= 7;
+
+		optional string	release_date	= 8;
+		optional string	original_release_date	= 9;
+
+		repeated string genres		= 10;
+
+		optional bytes	coverArt	= 11;
+	}
+
 	enum Type {
 		TypeGenreList	= 1;
 		TypeArtistList	= 2;
@@ -80,77 +154,6 @@ message CollectionResponse
 	optional TrackList	track_list	= 6;
 }
 
-message GenreList
-{
-	required bool	last	= 1;	// More messages follow if last = 0
-	repeated Genre	genres	= 2;
-}
-
-message ArtistList
-{
-	required bool	last	= 1;	// More messages follow if last = 0
-	repeated Artist	artists	= 2;
-}
-
-message ReleaseList
-{
-	required bool		last	= 1;	// More messages follow if last = 0
-	repeated Release	releases = 2;
-}
-
-message TrackList
-{
-	required bool	last	= 1;	// More messages follow if last = 0
-	repeated Track	tracks	= 2;
-}
-
-message Genre
-{
-	required string name	= 1;
-}
-
-message CoverArt
-{
-	optional string	mime_type	= 1;
-	repeated bytes data		= 2;
-}
-
-message Artist
-{
-	required string name		= 1;
-	required uint32 nb_releases	= 2;
-}
-
-message Release
-{
-	required string name			= 1;
-
-	required uint32 nb_tracks		= 2;
-	required uint32 duration_secs		= 3;
-
-	optional CoverArt coverArt	= 4;
-}
-
-message Track
-{
-	required int64	media_id	= 1;
-	optional uint32 disc_number	= 2;
-	optional uint32 track_number	= 3;
-
-	optional string	artist			= 4;
-	optional string	release			= 5;
-
-	required string	name			= 6;
-
-	required uint32	duration_secs		= 7;
-
-	optional string	release_date	= 8;
-	optional string	original_release_date	= 9;
-
-	repeated string genres		= 10;
-
-	optional bytes	coverArt	= 11;
-}
 
 
 
