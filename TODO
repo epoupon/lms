@@ -1,26 +1,30 @@
 
 [Users]
 - Do the feature
+	- Admin account to add/remove users, add path to watch for Audio/Video
 
 [Database]
-- When removing a track, make sure to remove genre/artist/release if last
+- When removing a track, make sure to remove genre/artist/release if last of it
 - Use Inotify like system to watch modified/added files
 - Implement a video database cleanup
 - User access for Video/Pictures  (really needed for Audio?)
 - Create a new type: "share", that handles every other types in a directory based share?
 - Group video in "video groups". Each video may has sub groups (current "Path" class)
-- Simplify database and remove the Path class
+	- Simplify database and remove the Path class
 
 [Audio]
-- TableViewFilter: <All> -> Track count for this speccial category
-- MediaPlayer: move slider using js
+- ReleaseView/ArtistView/GenreView: <All> -> Track count for this special category. Easier: add a special entry '<All>' that contains everything?
+- MediaPlayer: move slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478)
 - TrackView : handle original release date
 - TrackView : handle duration > 1 hour
 - TrackView : select only relevant columns to speed up queries (do not get eveything)
+- TrackView : Reselect the current playing song when displaying the updated search results
+- ReleaseView: display the release's publication year
 - OGG metadata -> properly handle metadata nested in the audio stream
 
 [Video]
 - View the Videos in a WtTableView ?
+	- Use Groups/SubGroups to organize videos (WTreeView?)
 
 [Remote API]
 - Think about a remote API to get/retrieve media (i.e. for mobile apps)
