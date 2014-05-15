@@ -120,6 +120,7 @@ database_integrity_LINK = $(CXXLD) $(database_integrity_CXXFLAGS) \
 am_remote_OBJECTS = remote-RemoteClientServer.$(OBJEXT) \
 	remote-TestDatabase.$(OBJEXT) remote-Server.$(OBJEXT) \
 	remote-RequestHandler.$(OBJEXT) \
+	remote-AudioCollectionRequestHandler.$(OBJEXT) \
 	remote-ConnectionManager.$(OBJEXT) remote-Connection.$(OBJEXT) \
 	remote-auth.pb.$(OBJEXT) remote-collection.pb.$(OBJEXT) \
 	remote-common.pb.$(OBJEXT) remote-media.pb.$(OBJEXT) \
@@ -497,6 +498,7 @@ remote_SOURCES = \
 	$(srcdir)/TestDatabase.cpp				\
 	$(top_srcdir)/remote/server/Server.cpp			\
 	$(top_srcdir)/remote/server/RequestHandler.cpp		\
+	$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp		\
 	$(top_srcdir)/remote/server/ConnectionManager.cpp	\
 	$(top_srcdir)/remote/server/Connection.cpp		\
 	$(top_srcdir)/remote/messages/auth.pb.cc		\
@@ -622,6 +624,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-Track.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-Video.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Artist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-AudioCollectionRequestHandler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Checksum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Connection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-ConnectionManager.Po@am__quote@
@@ -964,6 +967,20 @@ remote-RequestHandler.obj: $(top_srcdir)/remote/server/RequestHandler.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/RequestHandler.cpp' object='remote-RequestHandler.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-RequestHandler.obj `if test -f '$(top_srcdir)/remote/server/RequestHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/RequestHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/RequestHandler.cpp'; fi`
+
+remote-AudioCollectionRequestHandler.o: $(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-AudioCollectionRequestHandler.o -MD -MP -MF $(DEPDIR)/remote-AudioCollectionRequestHandler.Tpo -c -o remote-AudioCollectionRequestHandler.o `test -f '$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-AudioCollectionRequestHandler.Tpo $(DEPDIR)/remote-AudioCollectionRequestHandler.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp' object='remote-AudioCollectionRequestHandler.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-AudioCollectionRequestHandler.o `test -f '$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp
+
+remote-AudioCollectionRequestHandler.obj: $(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-AudioCollectionRequestHandler.obj -MD -MP -MF $(DEPDIR)/remote-AudioCollectionRequestHandler.Tpo -c -o remote-AudioCollectionRequestHandler.obj `if test -f '$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-AudioCollectionRequestHandler.Tpo $(DEPDIR)/remote-AudioCollectionRequestHandler.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp' object='remote-AudioCollectionRequestHandler.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-AudioCollectionRequestHandler.obj `if test -f '$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp'; fi`
 
 remote-ConnectionManager.o: $(top_srcdir)/remote/server/ConnectionManager.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-ConnectionManager.o -MD -MP -MF $(DEPDIR)/remote-ConnectionManager.Tpo -c -o remote-ConnectionManager.o `test -f '$(top_srcdir)/remote/server/ConnectionManager.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/ConnectionManager.cpp

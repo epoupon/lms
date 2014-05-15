@@ -45,8 +45,14 @@ lms_SOURCES = \
 	$(top_srcdir)/transcode/InputMediaFile.cpp	\
 	$(top_srcdir)/metadata/AvFormat.cpp		\
 	$(top_srcdir)/main/RemoteServerService.cpp	\
+	$(top_srcdir)/remote/messages/auth.pb.cc		\
+	$(top_srcdir)/remote/messages/collection.pb.cc		\
+	$(top_srcdir)/remote/messages/common.pb.cc		\
+	$(top_srcdir)/remote/messages/media.pb.cc		\
+	$(top_srcdir)/remote/messages/messages.pb.cc		\
 	$(top_srcdir)/remote/server/Connection.cpp		\
 	$(top_srcdir)/remote/server/ConnectionManager.cpp	\
+	$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp		\
 	$(top_srcdir)/remote/server/RequestHandler.cpp		\
 	$(top_srcdir)/remote/server/Server.cpp		\
 	$(top_srcdir)/metadata/Utils.cpp

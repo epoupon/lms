@@ -9,7 +9,7 @@ DatabaseHandler* create()
 	boost::filesystem::path p ("test_db");
 
 	// Remove previous db
-	boost::filesystem::remove(p);
+//	boost::filesystem::remove(p);
 
 	DatabaseHandler* db = new DatabaseHandler(p);
 

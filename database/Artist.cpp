@@ -29,3 +29,9 @@ Artist::getNone(Wt::Dbo::Session& session)
 
 	return res;
 }
+
+Wt::Dbo::collection<Artist::pointer>
+Artist::getAll(Wt::Dbo::Session& session)
+{
+	return session.find<Artist>();
+}

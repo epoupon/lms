@@ -44,7 +44,6 @@ class TestServer
 
 };
 
-
 class TestClient
 {
 	public:
@@ -56,7 +55,21 @@ class TestClient
 
 		void getArtists(std::vector<std::string>& artists)
 		{
+			// Send request
+			Remote::ClientMessage msg;
 
+			msg.set_type( Remote::ClientMessage_Type_AudioCollectionRequest );
+
+			msg.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetArtistList);
+			msg.mutable_audio_collection_request()->mutable_get_artists()->set_preferred_batch_size(64);
+
+			sendMsg(msg);
+
+			// Receive responses
+			Remote::ServerMessage response;
+			recvMsg(response);
+
+			// 
 
 		}
 
@@ -66,10 +79,10 @@ class TestClient
 
 		void sendMsg(const ::google::protobuf::Message& message)
 		{
+			std::ostream os(&_outputStreamBuf);
 
 			// Serialize message
-			std::string outputStr;
-			if (message.SerializeToString(&outputStr))
+			if (message.SerializeToOstream(&os))
 			{
 				// Send message header
 				std::array<unsigned char, Remote::Header::size> headerBuffer;
@@ -77,14 +90,21 @@ class TestClient
 				// Generate header content
 				{
 					Remote::Header header;
-					header.setSize(outputStr.size());
+					header.setSize(_outputStreamBuf.size());
 					header.to_buffer(headerBuffer);
 				}
 
 				boost::asio::write(_socket, boost::asio::buffer(headerBuffer));
 
 				// Send serialized message
-				boost::asio::write(_socket, boost::asio::buffer(outputStr));
+				std::size_t n = boost::asio::write(_socket,
+									_outputStreamBuf.data(),
+									boost::asio::transfer_exactly(_outputStreamBuf.size()));
+				assert(n == _outputStreamBuf.size());
+
+				_outputStreamBuf.consume(n);
+
+				std::cout << "Client: Message sent!" << std::endl;
 			}
 			else
 			{
@@ -96,40 +116,53 @@ class TestClient
 
 		void recvMsg(::google::protobuf::Message& message)
 		{
-			boost::asio::streambuf messageStreamBuffer;
-			std::istream	responseStream(&response);
+			std::istream is(&_inputStreamBuf);
 
-			boost::asio::read(_socket,
-					messageStreamBuffer,
-					boost::asio::transfer_exactly(Remote::Header::size));
+			{
+				// reserve bytes in output sequence
+				boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(Remote::Header::size);
 
-			bool error;
-			Remote::Header header (Remote::Header::from_buffer(headerBuffer, error));
-			if (error)
+				std::cout << "Client: waiting for header message!" << std::endl;
+				std::size_t n = boost::asio::read(_socket,
+									bufs,
+									boost::asio::transfer_exactly(Remote::Header::size));
+
+				assert(n == Remote::Header::size);
+				_inputStreamBuf.commit(n);
+
+				std::cout << "Client: Header message received!" << std::endl;
+			}
+
+			Remote::Header header;
+			if (!header.from_istream(is))
 				throw std::runtime_error("Cannot read header from buffer!");
-
-			if (header.getSize() > _inputBuffer.size())
-				throw std::runtime_error("Input buffer too small!");
 
 			// Read in a stream buffer
 			{
-				boost::asio::streambuf response;
-				boost::asio::read(_socket,
-						response,
-						boost::asio::transfer_exactly(header.getSize()));
+				// reserve bytes in output sequence
+				boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(header.getSize());
 
+				std::cout << "Client: waiting for message!" << std::endl;
+				std::size_t n = boost::asio::read(_socket,
+									bufs,
+									boost::asio::transfer_exactly(header.getSize()));
 
-				if (!message.ParseFromIstream(&responseStream))
+				assert(n == header.getSize());
+				_inputStreamBuf.commit(n);
+
+				std::cout << "Client: message received!" << std::endl;
+
+				if (!message.ParseFromIstream(&is))
 					throw std::runtime_error("message.ParseFromIstream failed!");
+
 			}
 		}
 
 		boost::asio::io_service		_ioService;
 		boost::asio::ip::tcp::socket	_socket;
 
-		boost::streambuf		_inputStreamBuf;
-
-		std::array<unsigned char, 65536> _inputBuffer;
+		boost::asio::streambuf _inputStreamBuf;
+		boost::asio::streambuf _outputStreamBuf;
 
 };
 

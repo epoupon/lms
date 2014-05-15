@@ -16,22 +16,38 @@ class Header
 		void setSize(std::size_t size)	{ _size = size; }
 		std::size_t getSize(void) const	{return _size;}
 
-		static Header from_buffer(const std::array<unsigned char, size>& buffer, bool& error)
+
+		bool from_istream(std::istream &is)
 		{
-			Header res;
+			std::array<unsigned char, size>	buffer;
 
-			if (decode32(&buffer[0]) != _magic)
-				error = true;
+			bool res = is.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
+
+			if (res && is.gcount() == buffer.size())
+				return from_buffer(buffer);
 			else
-			{
-				res._size = decode32(&buffer[4]);
-				error = false;
-			}
-
-			return res;
+				return false;
 		}
 
-		void to_buffer(std::array<unsigned char, size>& buffer)
+		bool from_buffer(const std::array<unsigned char, size>& buffer)
+		{
+			if (decode32(&buffer[0]) != _magic)
+				return false;
+			else
+			{
+				_size = decode32(&buffer[4]);
+
+				return _size < _maxSize;
+			}
+		}
+
+		void to_ostream(std::ostream& os)
+		{
+
+
+		}
+
+		void to_buffer(std::array<unsigned char, size>& buffer) const
 		{
 			encode32(_magic, &buffer[0]);
 			encode32(_size, &buffer[4]);
@@ -55,6 +71,7 @@ class Header
 		}
 
 		static const uint32_t _magic = 0xbeef;
+		static const uint32_t _maxSize = 65536;
 
 		uint32_t	_size;
 };

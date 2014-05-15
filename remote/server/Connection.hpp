@@ -39,11 +39,11 @@ class Connection : public std::enable_shared_from_this<Connection>
 
 	private:
 		/// Handle completion of a read operation.
-		void handleRead(const boost::system::error_code& e,
-				std::size_t bytes_transferred);
+		void handleReadHeader(const boost::system::error_code& e,
+					std::size_t bytes_transferred);
 
-		/// Handle completion of a write operation.
-		void handleWrite(const boost::system::error_code& e);
+		void handleReadMsg(const boost::system::error_code& e,
+					std::size_t bytes_transferred);
 
 		/// Socket for the connection.
 		boost::asio::ip::tcp::socket _socket;
@@ -54,18 +54,8 @@ class Connection : public std::enable_shared_from_this<Connection>
 		/// The handler used to process the incoming requests.
 		RequestHandler& _requestHandler;
 
-		// TODO use streambuffers
-
-		/// The incoming request.
-//		request request_;
-
-		/// The parser for the incoming request.
-//		request_parser request_parser_;
-
-		/// The reply to be sent back to the client.
-//		reply reply_;
-
-		std::array<unsigned char, Header::size>	_headerBuffer;
+		boost::asio::streambuf _inputStreamBuf;
+		boost::asio::streambuf _outputStreamBuf;
 };
 
 

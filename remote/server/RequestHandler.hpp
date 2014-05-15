@@ -3,9 +3,11 @@
 
 #include <boost/filesystem.hpp>
 
+#include "messages/messages.pb.h"
+
 #include "database/DatabaseHandler.hpp"
 
-// #include "remote/messages/
+#include "AudioCollectionRequestHandler.hpp"
 
 namespace Remote {
 namespace Server {
@@ -16,10 +18,15 @@ class RequestHandler
 
 		RequestHandler(boost::filesystem::path dbPath);
 
+		bool process(const ClientMessage& request, std::vector<ServerMessage> responses);
+
+		bool processAudioCollectionRequest(const AudioCollectionRequest& request, std::vector<ServerMessage> responses);
 
 	private:
 
 		DatabaseHandler _db;
+
+		AudioCollectionRequestHandler _audioCollectionRequestHandler;
 
 };
 
