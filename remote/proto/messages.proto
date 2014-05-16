@@ -27,7 +27,7 @@ message ServerMessage
 	enum Type
 	{
 		AuthResponse		= 1;
-		AduioCollectionResponse	= 2;
+		AudioCollectionResponse	= 2;
 		MediaResponse		= 3;
 	}
 

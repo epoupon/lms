@@ -11,14 +11,21 @@ AudioCollectionRequestHandler::AudioCollectionRequestHandler(DatabaseHandler& db
 
 
 bool
-AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, std::vector<ServerMessage> responses)
+AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, AudioCollectionResponse& response)
 {
+
+	bool res = false;
 
 	switch (request.type())
 	{
 		case AudioCollectionRequest_Type_TypeGetArtistList:
 			if (request.has_get_artists())
-				return processGetArtists(request.get_artists(), responses);
+			{
+				res = processGetArtists(request.get_artists(), *response.mutable_artist_list());
+				if (res)
+					response.set_type(AudioCollectionResponse_Type_TypeArtistList);
+
+			}
 			else
 				std::cerr << "Bad AudioCollectionRequest_Type_TypeGetArtistList: message!" << std::endl;
 			break;
@@ -33,14 +40,30 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, st
 			std::cerr << "Unhandled AudioCollectionRequest_Type = " << request.type() << std::endl;
 	}
 
-	return false;
+	return res;
 }
 
 bool
-AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::GetArtistList& request, std::vector<ServerMessage> responses)
+AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::GetArtistList& request, AudioCollectionResponse::ArtistList& response)
 {
 
 	// sanity checks
+	if (!request.has_batch_parameter())
+	{
+		std::cerr << "No batch parameters found!" << std::endl;
+		return false;
+	}
+
+	if (!request.batch_parameter().has_size()
+			|| !request.batch_parameter().has_offset())
+	{
+		std::cerr << "Missing batch parameter details" << std::endl;
+		return false;
+	}
+
+	std::cout << "Offset = " << request.batch_parameter().offset() << std::endl;
+	std::cout << "Size = " << request.batch_parameter().size() << std::endl;
+
 	if (request.has_filter_name())
 		std::cout << "Filter name = " << request.filter_name() << std::endl;
 
@@ -49,9 +72,6 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 		std::cout << "Filter genre " << id << " = '" << request.filter_genre(id) << "'" << std::endl;
 	}
 
-	if (request.has_preferred_batch_size())
-		std::cout << "Requested batch size = " << request.preferred_batch_size() << std::endl;
-
 
 	// Now fetch requested data...
 
@@ -59,7 +79,7 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Wt::Dbo::collection<Artist::pointer> artists = Artist::getAll( _db.getSession() );
+	Wt::Dbo::collection<Artist::pointer> artists = Artist::getAll( _db.getSession(), request.batch_parameter().offset(), request.batch_parameter().size() );
 
 	std::cout << "size = " << artists.size() << std::endl;
 
@@ -67,12 +87,15 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 
 	for (Artists::iterator it = artists.begin(); it != artists.end(); ++it)
 	{
-		std::cout << "Spotted artist = " << (*it)->getName() << std::endl;
+		AudioCollectionResponse_Artist* artist = response.add_artists();
+
+		artist->set_name((*it)->getName());
+		artist->set_nb_releases(0);	// TODO
 	}
 
 	std::cout << "Getting artists DONE" << std::endl;
 
-	return false;
+	return true;
 }
 
 } // namespace Remote

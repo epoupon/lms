@@ -129,7 +129,7 @@ void protobuf_AddDesc_messages_2eproto() {
     "_collection_response\030\003 \001(\0132\037.Remote.Audi"
     "oCollectionResponse\022-\n\016media_response\030\004 "
     "\001(\0132\025.Remote.MediaResponse\"H\n\004Type\022\020\n\014Au"
-    "thResponse\020\001\022\033\n\027AduioCollectionResponse\020"
+    "thResponse\020\001\022\033\n\027AudioCollectionResponse\020"
     "\002\022\021\n\rMediaResponse\020\003", 660);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "messages.proto", &protobuf_RegisterTypes);
@@ -548,7 +548,7 @@ bool ServerMessage_Type_IsValid(int value) {
 
 #ifndef _MSC_VER
 const ServerMessage_Type ServerMessage::AuthResponse;
-const ServerMessage_Type ServerMessage::AduioCollectionResponse;
+const ServerMessage_Type ServerMessage::AudioCollectionResponse;
 const ServerMessage_Type ServerMessage::MediaResponse;
 const ServerMessage_Type ServerMessage::Type_MIN;
 const ServerMessage_Type ServerMessage::Type_MAX;

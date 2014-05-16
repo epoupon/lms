@@ -63,7 +63,7 @@ inline bool ClientMessage_Type_Parse(
 }
 enum ServerMessage_Type {
   ServerMessage_Type_AuthResponse = 1,
-  ServerMessage_Type_AduioCollectionResponse = 2,
+  ServerMessage_Type_AudioCollectionResponse = 2,
   ServerMessage_Type_MediaResponse = 3
 };
 bool ServerMessage_Type_IsValid(int value);
@@ -280,7 +280,7 @@ class ServerMessage : public ::google::protobuf::Message {
 
   typedef ServerMessage_Type Type;
   static const Type AuthResponse = ServerMessage_Type_AuthResponse;
-  static const Type AduioCollectionResponse = ServerMessage_Type_AduioCollectionResponse;
+  static const Type AudioCollectionResponse = ServerMessage_Type_AudioCollectionResponse;
   static const Type MediaResponse = ServerMessage_Type_MediaResponse;
   static inline bool Type_IsValid(int value) {
     return ServerMessage_Type_IsValid(value);

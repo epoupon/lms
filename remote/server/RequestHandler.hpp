@@ -18,9 +18,9 @@ class RequestHandler
 
 		RequestHandler(boost::filesystem::path dbPath);
 
-		bool process(const ClientMessage& request, std::vector<ServerMessage> responses);
+		bool process(const ClientMessage& request, ServerMessage& response);
 
-		bool processAudioCollectionRequest(const AudioCollectionRequest& request, std::vector<ServerMessage> responses);
+		bool processAudioCollectionRequest(const AudioCollectionRequest& request, ServerMessage& response);
 
 	private:
 

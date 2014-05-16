@@ -11,9 +11,9 @@ _audioCollectionRequestHandler(_db)
 }
 
 bool
-RequestHandler::process(const ClientMessage& request, std::vector<ServerMessage> responses)
+RequestHandler::process(const ClientMessage& request, ServerMessage& response)
 {
-	std::cout << "TODO: process request!" << std::endl;
+	bool res = false;
 
 	switch(request.type())
 	{
@@ -23,7 +23,11 @@ RequestHandler::process(const ClientMessage& request, std::vector<ServerMessage>
 			break;
 		case ClientMessage_Type_AudioCollectionRequest:
 			if (request.has_audio_collection_request())
-				return _audioCollectionRequestHandler.process(request.audio_collection_request(), responses);
+			{
+				res = _audioCollectionRequestHandler.process(request.audio_collection_request(), *response.mutable_audio_collection_response());
+				if (res)
+					response.set_type( ServerMessage_Type_AudioCollectionResponse);
+			}
 			else
 				std::cerr << "Malformed AudioCollectionRequest message!" << std::endl;
 			break;
@@ -35,7 +39,7 @@ RequestHandler::process(const ClientMessage& request, std::vector<ServerMessage>
 			std::cerr << "Unhandled message type = " << request.type() << std::endl;
 	}
 
-	return false;
+	return res;
 }
 
 

@@ -105,7 +105,7 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 		std::istream is(&_inputStreamBuf);
 		std::ostream os(&_outputStreamBuf);
 
-		std::vector<Remote::ServerMessage> responses;
+		Remote::ServerMessage response;
 		Remote::ClientMessage request;
 
 		if (!request.ParseFromIstream(&is))
@@ -115,14 +115,13 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 			return;
 		}
 
-		if (!_requestHandler.process(request, responses))
+		if (!_requestHandler.process(request, response))
 		{
 			std::cerr << "Cannot process request!" << std::endl;
 			_connectionManager.stop(shared_from_this());
 			return;
 		}
 
-		BOOST_FOREACH(const Remote::ServerMessage& response, responses)
 		{
 			boost::system::error_code	ec;
 
@@ -156,8 +155,9 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 					boost::asio::transfer_exactly(_outputStreamBuf.size()),
 					ec);
 
-			_outputStreamBuf.consume(n);
 			assert(n == _outputStreamBuf.size());
+
+			_outputStreamBuf.consume(n);
 
 			if (ec)
 			{

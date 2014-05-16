@@ -5,6 +5,12 @@ package Remote;
 message AudioCollectionRequest
 {
 
+	message BatchParameter
+	{
+		required uint32 offset			= 1;	// First element requested
+		required uint32	size			= 2;	// Number of elements requested. Server may not honor this size if too big
+	}
+
 	message GetGenreList
 	{
 		optional string	filter_name		= 1;	// Genre that contains 'filterName' in its name
@@ -18,7 +24,7 @@ message AudioCollectionRequest
 		optional string	filter_name		= 1;	// Artist that contains 'filterName' in its name
 		repeated string filter_genre		= 2;	// Artist that has at least a track of the genre
 
-		optional uint32 preferred_batch_size	= 3;
+		required BatchParameter batch_parameter = 3;
 	}
 
 	message GetReleaseList
@@ -29,7 +35,8 @@ message AudioCollectionRequest
 		repeated string filter_genre		= 3;	// Release that has at least a track of the genre
 
 		optional bool	get_cover		= 4;	// Request cover art for each release
-		optional uint32 preferred_batch_size	= 5;
+
+		required BatchParameter batch_parameter = 5;
 	}
 
 	message GetTrackList
@@ -43,15 +50,17 @@ message AudioCollectionRequest
 		optional uint32 track_number		= 6;	// Disc number
 
 		optional bool	get_cover		= 7;	// Request cover art for each track
-		optional uint32 preferred_batch_size	= 8;
+
+		required BatchParameter batch_parameter = 8;
 	}
 
 
 	enum Type
 	{
-		TypeGetArtistList	= 0;
-		TypeGetReleaseList	= 1;
-		TypeGetTrackList	= 2;
+		TypeGetGenreList	= 0;
+		TypeGetArtistList	= 1;
+		TypeGetReleaseList	= 2;
+		TypeGetTrackList	= 3;
 	}
 
 	required Type	type			= 1;
@@ -67,25 +76,21 @@ message AudioCollectionResponse
 {
 	message GenreList
 	{
-		required bool	last	= 1;	// More messages follow if last = 0
 		repeated Genre	genres	= 2;
 	}
 
 	message ArtistList
 	{
-		required bool	last	= 1;	// More messages follow if last = 0
 		repeated Artist	artists	= 2;
 	}
 
 	message ReleaseList
 	{
-		required bool		last	= 1;	// More messages follow if last = 0
 		repeated Release	releases = 2;
 	}
 
 	message TrackList
 	{
-		required bool	last	= 1;	// More messages follow if last = 0
 		repeated Track	tracks	= 2;
 	}
 
@@ -138,16 +143,17 @@ message AudioCollectionResponse
 	}
 
 	enum Type {
-		TypeGenreList	= 1;
-		TypeArtistList	= 2;
-		TypeReleaseList	= 3;
-		TypeTrackList	= 4;
+		TypeError	= 1;
+		TypeGenreList	= 2;
+		TypeArtistList	= 3;
+		TypeReleaseList	= 4;
+		TypeTrackList	= 5;
 	}
 
-	required Error	error	= 1;
 
-	optional Type	type	= 2;
+	optional Type	type	= 1;
 
+	optional Error		error		= 2;
 	optional GenreList	genre_list	= 3;
 	optional ArtistList	artist_list	= 4;
 	optional ReleaseList	release_list	= 5;

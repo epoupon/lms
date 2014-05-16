@@ -27,7 +27,7 @@ class Artist
 		// Accessors
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getNone(Wt::Dbo::Session& session);
-		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session);
+		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, std::size_t offset, std::size_t size);
 
 		const std::string& getName(void) const { return _name; }
 

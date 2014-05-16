@@ -56,20 +56,34 @@ class TestClient
 		void getArtists(std::vector<std::string>& artists)
 		{
 			// Send request
-			Remote::ClientMessage msg;
+			Remote::ClientMessage request;
 
-			msg.set_type( Remote::ClientMessage_Type_AudioCollectionRequest );
+			request.set_type( Remote::ClientMessage_Type_AudioCollectionRequest );
 
-			msg.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetArtistList);
-			msg.mutable_audio_collection_request()->mutable_get_artists()->set_preferred_batch_size(64);
+			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetArtistList);
+			request.mutable_audio_collection_request()->mutable_get_artists()->mutable_batch_parameter()->set_size(64);
+			request.mutable_audio_collection_request()->mutable_get_artists()->mutable_batch_parameter()->set_offset(0);
 
-			sendMsg(msg);
+			sendMsg(request);
 
 			// Receive responses
 			Remote::ServerMessage response;
 			recvMsg(response);
 
-			// 
+			// Process message
+			if (!response.has_audio_collection_response())
+				throw std::runtime_error("not an audio_collection_response!");
+
+			if (!response.audio_collection_response().has_artist_list())
+				throw std::runtime_error("not an artist_list!");
+
+			for (int i = 0; i < response.audio_collection_response().artist_list().artists_size(); ++i)
+			{
+				if (!response.audio_collection_response().artist_list().artists(i).has_name())
+					throw std::runtime_error("no artist name!");
+
+				artists.push_back( response.audio_collection_response().artist_list().artists(i).name() );
+			}
 
 		}
 
@@ -167,7 +181,7 @@ class TestClient
 };
 
 
-int main(int argc, char* argv[])
+int main()
 {
 	try {
 

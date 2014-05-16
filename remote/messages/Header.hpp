@@ -41,11 +41,11 @@ class Header
 			}
 		}
 
-		void to_ostream(std::ostream& os)
+/*		void to_ostream(std::ostream& os)
 		{
 
 
-		}
+		}*/
 
 		void to_buffer(std::array<unsigned char, size>& buffer) const
 		{

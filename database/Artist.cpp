@@ -31,7 +31,7 @@ Artist::getNone(Wt::Dbo::Session& session)
 }
 
 Wt::Dbo::collection<Artist::pointer>
-Artist::getAll(Wt::Dbo::Session& session)
+Artist::getAll(Wt::Dbo::Session& session, std::size_t offset, std::size_t size)
 {
-	return session.find<Artist>();
+	return session.find<Artist>().offset(offset).limit(size);
 }

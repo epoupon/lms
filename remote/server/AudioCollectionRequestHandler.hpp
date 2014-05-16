@@ -13,11 +13,11 @@ class AudioCollectionRequestHandler
 	public:
 		AudioCollectionRequestHandler(DatabaseHandler& db);
 
-		bool process(const AudioCollectionRequest& request, std::vector<ServerMessage> responses);
+		bool process(const AudioCollectionRequest& request, AudioCollectionResponse& response);
 
 	private:
 
-		bool processGetArtists(const AudioCollectionRequest::GetArtistList& request, std::vector<ServerMessage> responses);
+		bool processGetArtists(const AudioCollectionRequest::GetArtistList& request, AudioCollectionResponse::ArtistList& response);
 
 		DatabaseHandler& _db;
 
