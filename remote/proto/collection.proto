@@ -15,7 +15,7 @@ message AudioCollectionRequest
 	{
 		optional string	filter_name		= 1;	// Genre that contains 'filterName' in its name
 
-		optional uint32 preferred_batch_size	= 2;
+		required BatchParameter batch_parameter = 2;
 	}
 
 	message GetArtistList
@@ -57,10 +57,10 @@ message AudioCollectionRequest
 
 	enum Type
 	{
-		TypeGetGenreList	= 0;
-		TypeGetArtistList	= 1;
-		TypeGetReleaseList	= 2;
-		TypeGetTrackList	= 3;
+		TypeGetGenreList	= 1;
+		TypeGetArtistList	= 2;
+		TypeGetReleaseList	= 3;
+		TypeGetTrackList	= 4;
 	}
 
 	required Type	type			= 1;

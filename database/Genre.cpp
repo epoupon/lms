@@ -39,3 +39,8 @@ Genre::create(Wt::Dbo::Session& session, const std::string& name)
 	return session.add(new Genre(name));
 }
 
+Wt::Dbo::collection<Genre::pointer>
+Genre::getAll(Wt::Dbo::Session& session, std::size_t offset, std::size_t size)
+{
+	return session.find<Genre>().offset(offset).limit(size);
+}

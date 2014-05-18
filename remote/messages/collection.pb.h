@@ -53,10 +53,10 @@ class AudioCollectionResponse_Release;
 class AudioCollectionResponse_Track;
 
 enum AudioCollectionRequest_Type {
-  AudioCollectionRequest_Type_TypeGetGenreList = 0,
-  AudioCollectionRequest_Type_TypeGetArtistList = 1,
-  AudioCollectionRequest_Type_TypeGetReleaseList = 2,
-  AudioCollectionRequest_Type_TypeGetTrackList = 3
+  AudioCollectionRequest_Type_TypeGetGenreList = 1,
+  AudioCollectionRequest_Type_TypeGetArtistList = 2,
+  AudioCollectionRequest_Type_TypeGetReleaseList = 3,
+  AudioCollectionRequest_Type_TypeGetTrackList = 4
 };
 bool AudioCollectionRequest_Type_IsValid(int value);
 const AudioCollectionRequest_Type AudioCollectionRequest_Type_Type_MIN = AudioCollectionRequest_Type_TypeGetGenreList;
@@ -255,24 +255,26 @@ class AudioCollectionRequest_GetGenreList : public ::google::protobuf::Message {
   inline ::std::string* release_filter_name();
   inline void set_allocated_filter_name(::std::string* filter_name);
 
-  // optional uint32 preferred_batch_size = 2;
-  inline bool has_preferred_batch_size() const;
-  inline void clear_preferred_batch_size();
-  static const int kPreferredBatchSizeFieldNumber = 2;
-  inline ::google::protobuf::uint32 preferred_batch_size() const;
-  inline void set_preferred_batch_size(::google::protobuf::uint32 value);
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 2;
+  inline bool has_batch_parameter() const;
+  inline void clear_batch_parameter();
+  static const int kBatchParameterFieldNumber = 2;
+  inline const ::Remote::AudioCollectionRequest_BatchParameter& batch_parameter() const;
+  inline ::Remote::AudioCollectionRequest_BatchParameter* mutable_batch_parameter();
+  inline ::Remote::AudioCollectionRequest_BatchParameter* release_batch_parameter();
+  inline void set_allocated_batch_parameter(::Remote::AudioCollectionRequest_BatchParameter* batch_parameter);
 
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionRequest.GetGenreList)
  private:
   inline void set_has_filter_name();
   inline void clear_has_filter_name();
-  inline void set_has_preferred_batch_size();
-  inline void clear_has_preferred_batch_size();
+  inline void set_has_batch_parameter();
+  inline void clear_has_batch_parameter();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::std::string* filter_name_;
-  ::google::protobuf::uint32 preferred_batch_size_;
+  ::Remote::AudioCollectionRequest_BatchParameter* batch_parameter_;
 
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
@@ -2155,26 +2157,42 @@ inline void AudioCollectionRequest_GetGenreList::set_allocated_filter_name(::std
   }
 }
 
-// optional uint32 preferred_batch_size = 2;
-inline bool AudioCollectionRequest_GetGenreList::has_preferred_batch_size() const {
+// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 2;
+inline bool AudioCollectionRequest_GetGenreList::has_batch_parameter() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void AudioCollectionRequest_GetGenreList::set_has_preferred_batch_size() {
+inline void AudioCollectionRequest_GetGenreList::set_has_batch_parameter() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void AudioCollectionRequest_GetGenreList::clear_has_preferred_batch_size() {
+inline void AudioCollectionRequest_GetGenreList::clear_has_batch_parameter() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void AudioCollectionRequest_GetGenreList::clear_preferred_batch_size() {
-  preferred_batch_size_ = 0u;
-  clear_has_preferred_batch_size();
+inline void AudioCollectionRequest_GetGenreList::clear_batch_parameter() {
+  if (batch_parameter_ != NULL) batch_parameter_->::Remote::AudioCollectionRequest_BatchParameter::Clear();
+  clear_has_batch_parameter();
 }
-inline ::google::protobuf::uint32 AudioCollectionRequest_GetGenreList::preferred_batch_size() const {
-  return preferred_batch_size_;
+inline const ::Remote::AudioCollectionRequest_BatchParameter& AudioCollectionRequest_GetGenreList::batch_parameter() const {
+  return batch_parameter_ != NULL ? *batch_parameter_ : *default_instance_->batch_parameter_;
 }
-inline void AudioCollectionRequest_GetGenreList::set_preferred_batch_size(::google::protobuf::uint32 value) {
-  set_has_preferred_batch_size();
-  preferred_batch_size_ = value;
+inline ::Remote::AudioCollectionRequest_BatchParameter* AudioCollectionRequest_GetGenreList::mutable_batch_parameter() {
+  set_has_batch_parameter();
+  if (batch_parameter_ == NULL) batch_parameter_ = new ::Remote::AudioCollectionRequest_BatchParameter;
+  return batch_parameter_;
+}
+inline ::Remote::AudioCollectionRequest_BatchParameter* AudioCollectionRequest_GetGenreList::release_batch_parameter() {
+  clear_has_batch_parameter();
+  ::Remote::AudioCollectionRequest_BatchParameter* temp = batch_parameter_;
+  batch_parameter_ = NULL;
+  return temp;
+}
+inline void AudioCollectionRequest_GetGenreList::set_allocated_batch_parameter(::Remote::AudioCollectionRequest_BatchParameter* batch_parameter) {
+  delete batch_parameter_;
+  batch_parameter_ = batch_parameter;
+  if (batch_parameter) {
+    set_has_batch_parameter();
+  } else {
+    clear_has_batch_parameter();
+  }
 }
 
 // -------------------------------------------------------------------
@@ -2880,7 +2898,7 @@ inline void AudioCollectionRequest::clear_has_type() {
   _has_bits_[0] &= ~0x00000001u;
 }
 inline void AudioCollectionRequest::clear_type() {
-  type_ = 0;
+  type_ = 1;
   clear_has_type();
 }
 inline ::Remote::AudioCollectionRequest_Type AudioCollectionRequest::type() const {

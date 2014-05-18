@@ -1,3 +1,5 @@
+#include <algorithm>    // std::max
+
 #include "AudioCollectionRequestHandler.hpp"
 
 #include "database/AudioTypes.hpp"
@@ -18,6 +20,17 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 
 	switch (request.type())
 	{
+		case AudioCollectionRequest_Type_TypeGetGenreList:
+			if (request.has_get_genres())
+			{
+				res = processGetGenres(request.get_genres(), *response.mutable_genre_list());
+				if (res)
+					response.set_type(AudioCollectionResponse_Type_TypeArtistList);
+			}
+			else
+				std::cerr << "Bad AudioCollectionRequest_Type_TypeGetGenreList" << std::endl;
+			break;
+
 		case AudioCollectionRequest_Type_TypeGetArtistList:
 			if (request.has_get_artists())
 			{
@@ -27,7 +40,7 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 
 			}
 			else
-				std::cerr << "Bad AudioCollectionRequest_Type_TypeGetArtistList: message!" << std::endl;
+				std::cerr << "Bad AudioCollectionRequest_Type_TypeGetArtistList" << std::endl;
 			break;
 
 		case AudioCollectionRequest_Type_TypeGetReleaseList:
@@ -43,6 +56,39 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 	return res;
 }
 
+
+bool
+AudioCollectionRequestHandler::processGetGenres(const AudioCollectionRequest::GetGenreList& request, AudioCollectionResponse::GenreList& response)
+{
+	// sanity checks
+	if (!request.has_batch_parameter())
+	{
+		std::cerr << "No batch parameters found!" << std::endl;
+		return false;
+	}
+
+	std::cout << "Offset = " << request.batch_parameter().offset() << std::endl;
+	std::cout << "Size = " << request.batch_parameter().size() << std::endl;
+
+	if (request.has_filter_name())
+		std::cout << "Filter name = " << request.filter_name() << std::endl;
+
+	Wt::Dbo::Transaction transaction( _db.getSession() );
+
+	Wt::Dbo::collection<Genre::pointer> genres = Genre::getAll( _db.getSession(), request.batch_parameter().offset(), std::max(static_cast<std::size_t>(request.batch_parameter().size()), _maxListGenres) );
+
+	typedef Wt::Dbo::collection< Genre::pointer > Genres;
+
+	for (Genres::iterator it = genres.begin(); it != genres.end(); ++it)
+	{
+		AudioCollectionResponse_Genre* genre = response.add_genres();
+
+		genre->set_name((*it)->getName());
+	}
+
+	return true;
+}
+
 bool
 AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::GetArtistList& request, AudioCollectionResponse::ArtistList& response)
 {
@@ -54,15 +100,11 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 		return false;
 	}
 
-	if (!request.batch_parameter().has_size()
-			|| !request.batch_parameter().has_offset())
-	{
-		std::cerr << "Missing batch parameter details" << std::endl;
-		return false;
-	}
-
 	std::cout << "Offset = " << request.batch_parameter().offset() << std::endl;
 	std::cout << "Size = " << request.batch_parameter().size() << std::endl;
+	if (request.batch_parameter().size() > _maxListArtists)
+		std::cerr << "Warning: batch parameter size too high (" << request.batch_parameter().size() << ")" << std::endl;
+
 
 	if (request.has_filter_name())
 		std::cout << "Filter name = " << request.filter_name() << std::endl;
@@ -79,7 +121,7 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Wt::Dbo::collection<Artist::pointer> artists = Artist::getAll( _db.getSession(), request.batch_parameter().offset(), request.batch_parameter().size() );
+	Wt::Dbo::collection<Artist::pointer> artists = Artist::getAll( _db.getSession(), request.batch_parameter().offset(), std::max(static_cast<std::size_t>(request.batch_parameter().size()), _maxListArtists) );
 
 	std::cout << "size = " << artists.size() << std::endl;
 
@@ -90,7 +132,7 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 		AudioCollectionResponse_Artist* artist = response.add_artists();
 
 		artist->set_name((*it)->getName());
-		artist->set_nb_releases(0);	// TODO
+		artist->set_nb_releases(0);		// TODO
 	}
 
 	std::cout << "Getting artists DONE" << std::endl;

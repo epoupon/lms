@@ -4,6 +4,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/asio.hpp>
+#include <boost/foreach.hpp>
 
 #include "remote/server/Server.hpp"
 #include "remote/messages/Header.hpp"
@@ -55,14 +56,29 @@ class TestClient
 
 		void getArtists(std::vector<std::string>& artists)
 		{
+
+			const std::size_t requestedBatchSize = 32;
+			std::size_t offset = 0;
+			std::size_t res = 0;
+
+
+			while ((res = getArtists(artists, offset, requestedBatchSize) ) > 0)
+				offset += res;
+
+		}
+
+		std::size_t getArtists(std::vector<std::string>& artists, std::size_t offset, std::size_t size)
+		{
+			std::size_t nbArtists = 0;
+
 			// Send request
 			Remote::ClientMessage request;
 
 			request.set_type( Remote::ClientMessage_Type_AudioCollectionRequest );
 
 			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetArtistList);
-			request.mutable_audio_collection_request()->mutable_get_artists()->mutable_batch_parameter()->set_size(64);
-			request.mutable_audio_collection_request()->mutable_get_artists()->mutable_batch_parameter()->set_offset(0);
+			request.mutable_audio_collection_request()->mutable_get_artists()->mutable_batch_parameter()->set_size(size);
+			request.mutable_audio_collection_request()->mutable_get_artists()->mutable_batch_parameter()->set_offset(offset);
 
 			sendMsg(request);
 
@@ -83,10 +99,62 @@ class TestClient
 					throw std::runtime_error("no artist name!");
 
 				artists.push_back( response.audio_collection_response().artist_list().artists(i).name() );
+				nbArtists++;
 			}
+
+			return nbArtists;
+		}
+
+		void getGenres(std::vector<std::string>& genres)
+		{
+
+			const std::size_t requestedBatchSize = 8;
+			std::size_t offset = 0;
+			std::size_t res = 0;
+
+			while ((res = getGenres(genres, offset, requestedBatchSize) ) > 0)
+				offset += res;
 
 		}
 
+		std::size_t getGenres(std::vector<std::string>& genres, std::size_t offset, std::size_t size)
+		{
+			std::size_t nbAdded = 0;
+
+			// Send request
+			Remote::ClientMessage request;
+
+			request.set_type( Remote::ClientMessage_Type_AudioCollectionRequest );
+
+			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetGenreList);
+			request.mutable_audio_collection_request()->mutable_get_genres()->mutable_batch_parameter()->set_size(size);
+			request.mutable_audio_collection_request()->mutable_get_genres()->mutable_batch_parameter()->set_offset(offset);
+
+			sendMsg(request);
+
+			// Receive responses
+			Remote::ServerMessage response;
+			recvMsg(response);
+
+			// Process message
+			if (!response.has_audio_collection_response())
+				throw std::runtime_error("not an audio_collection_response!");
+
+			if (!response.audio_collection_response().has_genre_list())
+				throw std::runtime_error("not an genre_list!");
+
+			for (int i = 0; i < response.audio_collection_response().genre_list().genres_size(); ++i)
+			{
+				if (!response.audio_collection_response().genre_list().genres(i).has_name())
+					throw std::runtime_error("no genre name!");
+
+				genres.push_back( response.audio_collection_response().genre_list().genres(i).name() );
+				nbAdded++;
+			}
+
+
+			return nbAdded;
+		}
 
 
 	private:
@@ -193,9 +261,23 @@ int main()
 		// connect to loopback
 		TestClient	client( boost::asio::ip::tcp::endpoint( boost::asio::ip::address_v4::loopback(), 5080));
 
-		// TODO get some data
+		// Get Artists
 		std::vector<std::string>	artists;
 		client.getArtists(artists);
+
+		// Dump artists
+		std::cout << "Got " << artists.size() << " artists!" << std::endl;
+		BOOST_FOREACH(const std::string& artist, artists)
+			std::cout << "Artist: " << artist << std::endl;
+
+		// Get genres
+		std::vector<std::string>	genres;
+		client.getGenres(genres);
+
+		// Dum genres
+		std::cout << "Got " << genres.size() << " genres!" << std::endl;
+		BOOST_FOREACH(const std::string& genre, genres)
+			std::cout << "Genre: " << genre << std::endl;
 
 		testServer.stop();
 
