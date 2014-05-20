@@ -305,7 +305,7 @@ int main()
 		std::vector<GenreInfo>	genres;
 		client.getGenres(genres);
 
-		// Dum genres
+		// Dump genres
 		std::cout << "Got " << genres.size() << " genres!" << std::endl;
 		BOOST_FOREACH(const GenreInfo& genre, genres)
 			std::cout << "Genre: '" << genre << "'" << std::endl;

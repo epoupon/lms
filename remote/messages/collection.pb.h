@@ -424,10 +424,10 @@ class AudioCollectionRequest_GetReleaseList : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
 
-  // repeated uint64 artist_id = 2;
+  // repeated uint64 artist_id = 1;
   inline int artist_id_size() const;
   inline void clear_artist_id();
-  static const int kArtistIdFieldNumber = 2;
+  static const int kArtistIdFieldNumber = 1;
   inline ::google::protobuf::uint64 artist_id(int index) const;
   inline void set_artist_id(int index, ::google::protobuf::uint64 value);
   inline void add_artist_id(::google::protobuf::uint64 value);
@@ -436,10 +436,10 @@ class AudioCollectionRequest_GetReleaseList : public ::google::protobuf::Message
   inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
       mutable_artist_id();
 
-  // repeated uint64 filter_genre = 3;
+  // repeated uint64 filter_genre = 2;
   inline int filter_genre_size() const;
   inline void clear_filter_genre();
-  static const int kFilterGenreFieldNumber = 3;
+  static const int kFilterGenreFieldNumber = 2;
   inline ::google::protobuf::uint64 filter_genre(int index) const;
   inline void set_filter_genre(int index, ::google::protobuf::uint64 value);
   inline void add_filter_genre(::google::protobuf::uint64 value);
@@ -448,17 +448,17 @@ class AudioCollectionRequest_GetReleaseList : public ::google::protobuf::Message
   inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
       mutable_filter_genre();
 
-  // optional bool get_cover = 4;
+  // optional bool get_cover = 3;
   inline bool has_get_cover() const;
   inline void clear_get_cover();
-  static const int kGetCoverFieldNumber = 4;
+  static const int kGetCoverFieldNumber = 3;
   inline bool get_cover() const;
   inline void set_get_cover(bool value);
 
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 5;
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 4;
   inline bool has_batch_parameter() const;
   inline void clear_batch_parameter();
-  static const int kBatchParameterFieldNumber = 5;
+  static const int kBatchParameterFieldNumber = 4;
   inline const ::Remote::AudioCollectionRequest_BatchParameter& batch_parameter() const;
   inline ::Remote::AudioCollectionRequest_BatchParameter* mutable_batch_parameter();
   inline ::Remote::AudioCollectionRequest_BatchParameter* release_batch_parameter();
@@ -544,22 +544,10 @@ class AudioCollectionRequest_GetTrackList : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // optional string filter_name = 1;
-  inline bool has_filter_name() const;
-  inline void clear_filter_name();
-  static const int kFilterNameFieldNumber = 1;
-  inline const ::std::string& filter_name() const;
-  inline void set_filter_name(const ::std::string& value);
-  inline void set_filter_name(const char* value);
-  inline void set_filter_name(const char* value, size_t size);
-  inline ::std::string* mutable_filter_name();
-  inline ::std::string* release_filter_name();
-  inline void set_allocated_filter_name(::std::string* filter_name);
-
-  // repeated uint64 artist_id = 2;
+  // repeated uint64 artist_id = 1;
   inline int artist_id_size() const;
   inline void clear_artist_id();
-  static const int kArtistIdFieldNumber = 2;
+  static const int kArtistIdFieldNumber = 1;
   inline ::google::protobuf::uint64 artist_id(int index) const;
   inline void set_artist_id(int index, ::google::protobuf::uint64 value);
   inline void add_artist_id(::google::protobuf::uint64 value);
@@ -568,10 +556,10 @@ class AudioCollectionRequest_GetTrackList : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
       mutable_artist_id();
 
-  // repeated uint64 release_id = 3;
+  // repeated uint64 release_id = 2;
   inline int release_id_size() const;
   inline void clear_release_id();
-  static const int kReleaseIdFieldNumber = 3;
+  static const int kReleaseIdFieldNumber = 2;
   inline ::google::protobuf::uint64 release_id(int index) const;
   inline void set_release_id(int index, ::google::protobuf::uint64 value);
   inline void add_release_id(::google::protobuf::uint64 value);
@@ -580,10 +568,10 @@ class AudioCollectionRequest_GetTrackList : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
       mutable_release_id();
 
-  // repeated uint64 genre_id = 4;
+  // repeated uint64 genre_id = 3;
   inline int genre_id_size() const;
   inline void clear_genre_id();
-  static const int kGenreIdFieldNumber = 4;
+  static const int kGenreIdFieldNumber = 3;
   inline ::google::protobuf::uint64 genre_id(int index) const;
   inline void set_genre_id(int index, ::google::protobuf::uint64 value);
   inline void add_genre_id(::google::protobuf::uint64 value);
@@ -592,17 +580,17 @@ class AudioCollectionRequest_GetTrackList : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
       mutable_genre_id();
 
-  // optional bool get_cover = 5;
+  // optional bool get_cover = 4;
   inline bool has_get_cover() const;
   inline void clear_get_cover();
-  static const int kGetCoverFieldNumber = 5;
+  static const int kGetCoverFieldNumber = 4;
   inline bool get_cover() const;
   inline void set_get_cover(bool value);
 
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 6;
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 5;
   inline bool has_batch_parameter() const;
   inline void clear_batch_parameter();
-  static const int kBatchParameterFieldNumber = 6;
+  static const int kBatchParameterFieldNumber = 5;
   inline const ::Remote::AudioCollectionRequest_BatchParameter& batch_parameter() const;
   inline ::Remote::AudioCollectionRequest_BatchParameter* mutable_batch_parameter();
   inline ::Remote::AudioCollectionRequest_BatchParameter* release_batch_parameter();
@@ -610,8 +598,6 @@ class AudioCollectionRequest_GetTrackList : public ::google::protobuf::Message {
 
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionRequest.GetTrackList)
  private:
-  inline void set_has_filter_name();
-  inline void clear_has_filter_name();
   inline void set_has_get_cover();
   inline void clear_has_get_cover();
   inline void set_has_batch_parameter();
@@ -619,7 +605,6 @@ class AudioCollectionRequest_GetTrackList : public ::google::protobuf::Message {
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::std::string* filter_name_;
   ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > artist_id_;
   ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > release_id_;
   ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > genre_id_;
@@ -627,7 +612,7 @@ class AudioCollectionRequest_GetTrackList : public ::google::protobuf::Message {
   bool get_cover_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(5 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -2152,7 +2137,7 @@ inline void AudioCollectionRequest_GetArtistList::set_allocated_batch_parameter(
 
 // AudioCollectionRequest_GetReleaseList
 
-// repeated uint64 artist_id = 2;
+// repeated uint64 artist_id = 1;
 inline int AudioCollectionRequest_GetReleaseList::artist_id_size() const {
   return artist_id_.size();
 }
@@ -2177,7 +2162,7 @@ AudioCollectionRequest_GetReleaseList::mutable_artist_id() {
   return &artist_id_;
 }
 
-// repeated uint64 filter_genre = 3;
+// repeated uint64 filter_genre = 2;
 inline int AudioCollectionRequest_GetReleaseList::filter_genre_size() const {
   return filter_genre_.size();
 }
@@ -2202,7 +2187,7 @@ AudioCollectionRequest_GetReleaseList::mutable_filter_genre() {
   return &filter_genre_;
 }
 
-// optional bool get_cover = 4;
+// optional bool get_cover = 3;
 inline bool AudioCollectionRequest_GetReleaseList::has_get_cover() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
@@ -2224,7 +2209,7 @@ inline void AudioCollectionRequest_GetReleaseList::set_get_cover(bool value) {
   get_cover_ = value;
 }
 
-// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 5;
+// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 4;
 inline bool AudioCollectionRequest_GetReleaseList::has_batch_parameter() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
@@ -2266,77 +2251,7 @@ inline void AudioCollectionRequest_GetReleaseList::set_allocated_batch_parameter
 
 // AudioCollectionRequest_GetTrackList
 
-// optional string filter_name = 1;
-inline bool AudioCollectionRequest_GetTrackList::has_filter_name() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void AudioCollectionRequest_GetTrackList::set_has_filter_name() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void AudioCollectionRequest_GetTrackList::clear_has_filter_name() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void AudioCollectionRequest_GetTrackList::clear_filter_name() {
-  if (filter_name_ != &::google::protobuf::internal::kEmptyString) {
-    filter_name_->clear();
-  }
-  clear_has_filter_name();
-}
-inline const ::std::string& AudioCollectionRequest_GetTrackList::filter_name() const {
-  return *filter_name_;
-}
-inline void AudioCollectionRequest_GetTrackList::set_filter_name(const ::std::string& value) {
-  set_has_filter_name();
-  if (filter_name_ == &::google::protobuf::internal::kEmptyString) {
-    filter_name_ = new ::std::string;
-  }
-  filter_name_->assign(value);
-}
-inline void AudioCollectionRequest_GetTrackList::set_filter_name(const char* value) {
-  set_has_filter_name();
-  if (filter_name_ == &::google::protobuf::internal::kEmptyString) {
-    filter_name_ = new ::std::string;
-  }
-  filter_name_->assign(value);
-}
-inline void AudioCollectionRequest_GetTrackList::set_filter_name(const char* value, size_t size) {
-  set_has_filter_name();
-  if (filter_name_ == &::google::protobuf::internal::kEmptyString) {
-    filter_name_ = new ::std::string;
-  }
-  filter_name_->assign(reinterpret_cast<const char*>(value), size);
-}
-inline ::std::string* AudioCollectionRequest_GetTrackList::mutable_filter_name() {
-  set_has_filter_name();
-  if (filter_name_ == &::google::protobuf::internal::kEmptyString) {
-    filter_name_ = new ::std::string;
-  }
-  return filter_name_;
-}
-inline ::std::string* AudioCollectionRequest_GetTrackList::release_filter_name() {
-  clear_has_filter_name();
-  if (filter_name_ == &::google::protobuf::internal::kEmptyString) {
-    return NULL;
-  } else {
-    ::std::string* temp = filter_name_;
-    filter_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-    return temp;
-  }
-}
-inline void AudioCollectionRequest_GetTrackList::set_allocated_filter_name(::std::string* filter_name) {
-  if (filter_name_ != &::google::protobuf::internal::kEmptyString) {
-    delete filter_name_;
-  }
-  if (filter_name) {
-    set_has_filter_name();
-    filter_name_ = filter_name;
-  } else {
-    clear_has_filter_name();
-    filter_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  }
-}
-
-// repeated uint64 artist_id = 2;
+// repeated uint64 artist_id = 1;
 inline int AudioCollectionRequest_GetTrackList::artist_id_size() const {
   return artist_id_.size();
 }
@@ -2361,7 +2276,7 @@ AudioCollectionRequest_GetTrackList::mutable_artist_id() {
   return &artist_id_;
 }
 
-// repeated uint64 release_id = 3;
+// repeated uint64 release_id = 2;
 inline int AudioCollectionRequest_GetTrackList::release_id_size() const {
   return release_id_.size();
 }
@@ -2386,7 +2301,7 @@ AudioCollectionRequest_GetTrackList::mutable_release_id() {
   return &release_id_;
 }
 
-// repeated uint64 genre_id = 4;
+// repeated uint64 genre_id = 3;
 inline int AudioCollectionRequest_GetTrackList::genre_id_size() const {
   return genre_id_.size();
 }
@@ -2411,15 +2326,15 @@ AudioCollectionRequest_GetTrackList::mutable_genre_id() {
   return &genre_id_;
 }
 
-// optional bool get_cover = 5;
+// optional bool get_cover = 4;
 inline bool AudioCollectionRequest_GetTrackList::has_get_cover() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
+  return (_has_bits_[0] & 0x00000008u) != 0;
 }
 inline void AudioCollectionRequest_GetTrackList::set_has_get_cover() {
-  _has_bits_[0] |= 0x00000010u;
+  _has_bits_[0] |= 0x00000008u;
 }
 inline void AudioCollectionRequest_GetTrackList::clear_has_get_cover() {
-  _has_bits_[0] &= ~0x00000010u;
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void AudioCollectionRequest_GetTrackList::clear_get_cover() {
   get_cover_ = false;
@@ -2433,15 +2348,15 @@ inline void AudioCollectionRequest_GetTrackList::set_get_cover(bool value) {
   get_cover_ = value;
 }
 
-// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 6;
+// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 5;
 inline bool AudioCollectionRequest_GetTrackList::has_batch_parameter() const {
-  return (_has_bits_[0] & 0x00000020u) != 0;
+  return (_has_bits_[0] & 0x00000010u) != 0;
 }
 inline void AudioCollectionRequest_GetTrackList::set_has_batch_parameter() {
-  _has_bits_[0] |= 0x00000020u;
+  _has_bits_[0] |= 0x00000010u;
 }
 inline void AudioCollectionRequest_GetTrackList::clear_has_batch_parameter() {
-  _has_bits_[0] &= ~0x00000020u;
+  _has_bits_[0] &= ~0x00000010u;
 }
 inline void AudioCollectionRequest_GetTrackList::clear_batch_parameter() {
   if (batch_parameter_ != NULL) batch_parameter_->::Remote::AudioCollectionRequest_BatchParameter::Clear();

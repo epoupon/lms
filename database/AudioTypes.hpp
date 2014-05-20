@@ -20,14 +20,15 @@ class Artist
 	public:
 
 		typedef Wt::Dbo::ptr<Artist> pointer;
-
+		typedef Wt::Dbo::dbo_traits<Artist>::IdType id_type;
+ 
 		Artist() {}
 		Artist(const std::string& p_name);
 
 		// Accessors
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getNone(Wt::Dbo::Session& session);
-		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, std::size_t offset, std::size_t size);
+		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, int offset = -1, int size = -1);
 
 		const std::string& getName(void) const { return _name; }
 
@@ -65,6 +66,8 @@ class Release
 		// Accessors
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getNone(Wt::Dbo::Session& session);
+
+		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, Artist::id_type id, int offset = -1, int size = -1);
 
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name);

@@ -27,3 +27,9 @@ Release::create(Wt::Dbo::Session& session, const std::string& name)
 	return session.add(new Release(name));
 }
 
+Wt::Dbo::collection<Release::pointer>
+Release::getAll(Wt::Dbo::Session& session, Artist::id_type id, int offset, int size)
+{
+	return session.query<Release::pointer>("select * from Release INNER JOIN Release.id = Artist.id").where("artist.id = ?").bind(id);
+}
+

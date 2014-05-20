@@ -26,26 +26,24 @@ message AudioCollectionRequest
 	message GetReleaseList
 	{
 		// Search filters
-		repeated uint64	artist_id		= 2;	// Release that contains at least a track of this artist
-		repeated uint64	filter_genre		= 3;	// Release that has at least a track of the genre
+		repeated uint64	artist_id		= 1;	// Release that contains at least a track of this artist
+		repeated uint64	filter_genre		= 2;	// Release that has at least a track of the genre
 
-		optional bool	get_cover		= 4;	// Request cover art for each release
+		optional bool	get_cover		= 3;	// Request cover art for each release
 
-		required BatchParameter batch_parameter = 5;
+		required BatchParameter batch_parameter = 4;
 	}
 
 	message GetTrackList
 	{
 		// Search filters
-		optional string	filter_name		= 1;	// Track that contains 'filterName' in its name
+		repeated uint64	artist_id		= 1;	// Track that belongs to these artists
+		repeated uint64	release_id		= 2;	// Track that is part of these releases
+		repeated uint64	genre_id		= 3;    // Track that has at least a track of the genre
 
-		repeated uint64	artist_id		= 2;	// Track that belongs to these artists
-		repeated uint64	release_id		= 3;	// Track that is part of these releases
-		repeated uint64	genre_id		= 4;    // Track that has at least a track of the genre
+		optional bool	get_cover		= 4;	// Request cover art for each track
 
-		optional bool	get_cover		= 5;	// Request cover art for each track
-
-		required BatchParameter batch_parameter = 6;
+		required BatchParameter batch_parameter = 5;
 	}
 
 
