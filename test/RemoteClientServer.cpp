@@ -1,4 +1,4 @@
-
+#include <iostream>
 #include <stdexcept>
 #include <thread>
 
@@ -12,6 +12,29 @@
 
 #include "TestDatabase.hpp"
 
+struct GenreInfo
+{
+	uint64_t	id;
+	std::string	name;
+};
+
+std::ostream& operator<<(std::ostream& os, const GenreInfo& info)
+{
+	os << "id = " << info.id << ", name = '" << info.name << "'" << std::endl;
+	return os;
+}
+
+struct ArtistInfo
+{
+	uint64_t	id;
+	std::string	name;
+};
+
+std::ostream& operator<<(std::ostream& os, const ArtistInfo& info)
+{
+	os << "id = " << info.id << ", name = '" << info.name << "'" << std::endl;
+	return os;
+}
 
 // Ugly class for testing purposes
 class TestServer
@@ -54,7 +77,7 @@ class TestClient
 			_socket.connect(endpoint);
 		}
 
-		void getArtists(std::vector<std::string>& artists)
+		void getArtists(std::vector<ArtistInfo>& artists)
 		{
 
 			const std::size_t requestedBatchSize = 32;
@@ -67,7 +90,7 @@ class TestClient
 
 		}
 
-		std::size_t getArtists(std::vector<std::string>& artists, std::size_t offset, std::size_t size)
+		std::size_t getArtists(std::vector<ArtistInfo>& artists, std::size_t offset, std::size_t size)
 		{
 			std::size_t nbArtists = 0;
 
@@ -98,14 +121,18 @@ class TestClient
 				if (!response.audio_collection_response().artist_list().artists(i).has_name())
 					throw std::runtime_error("no artist name!");
 
-				artists.push_back( response.audio_collection_response().artist_list().artists(i).name() );
+				ArtistInfo artist;
+				artist.id = response.audio_collection_response().artist_list().artists(i).id();
+				artist.name = response.audio_collection_response().artist_list().artists(i).name();
+
+				artists.push_back( artist );
 				nbArtists++;
 			}
 
 			return nbArtists;
 		}
 
-		void getGenres(std::vector<std::string>& genres)
+		void getGenres(std::vector<GenreInfo>& genres)
 		{
 
 			const std::size_t requestedBatchSize = 8;
@@ -117,7 +144,7 @@ class TestClient
 
 		}
 
-		std::size_t getGenres(std::vector<std::string>& genres, std::size_t offset, std::size_t size)
+		std::size_t getGenres(std::vector<GenreInfo>& genres, std::size_t offset, std::size_t size)
 		{
 			std::size_t nbAdded = 0;
 
@@ -148,7 +175,11 @@ class TestClient
 				if (!response.audio_collection_response().genre_list().genres(i).has_name())
 					throw std::runtime_error("no genre name!");
 
-				genres.push_back( response.audio_collection_response().genre_list().genres(i).name() );
+				GenreInfo genre;
+				genre.id = response.audio_collection_response().genre_list().genres(i).id();
+				genre.name = response.audio_collection_response().genre_list().genres(i).name();
+
+				genres.push_back( genre );
 				nbAdded++;
 			}
 
@@ -262,22 +293,22 @@ int main()
 		TestClient	client( boost::asio::ip::tcp::endpoint( boost::asio::ip::address_v4::loopback(), 5080));
 
 		// Get Artists
-		std::vector<std::string>	artists;
+		std::vector<ArtistInfo>	artists;
 		client.getArtists(artists);
 
 		// Dump artists
 		std::cout << "Got " << artists.size() << " artists!" << std::endl;
-		BOOST_FOREACH(const std::string& artist, artists)
-			std::cout << "Artist: " << artist << std::endl;
+		BOOST_FOREACH(const ArtistInfo& artist, artists)
+			std::cout << "Artist: '" << artist << "'" << std::endl;
 
 		// Get genres
-		std::vector<std::string>	genres;
+		std::vector<GenreInfo>	genres;
 		client.getGenres(genres);
 
 		// Dum genres
 		std::cout << "Got " << genres.size() << " genres!" << std::endl;
-		BOOST_FOREACH(const std::string& genre, genres)
-			std::cout << "Genre: " << genre << std::endl;
+		BOOST_FOREACH(const GenreInfo& genre, genres)
+			std::cout << "Genre: '" << genre << "'" << std::endl;
 
 		testServer.stop();
 

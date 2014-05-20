@@ -70,9 +70,6 @@ AudioCollectionRequestHandler::processGetGenres(const AudioCollectionRequest::Ge
 	std::cout << "Offset = " << request.batch_parameter().offset() << std::endl;
 	std::cout << "Size = " << request.batch_parameter().size() << std::endl;
 
-	if (request.has_filter_name())
-		std::cout << "Filter name = " << request.filter_name() << std::endl;
-
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
 	Wt::Dbo::collection<Genre::pointer> genres = Genre::getAll( _db.getSession(), request.batch_parameter().offset(), std::max(static_cast<std::size_t>(request.batch_parameter().size()), _maxListGenres) );
@@ -84,6 +81,7 @@ AudioCollectionRequestHandler::processGetGenres(const AudioCollectionRequest::Ge
 		AudioCollectionResponse_Genre* genre = response.add_genres();
 
 		genre->set_name((*it)->getName());
+		genre->set_id(it->id());
 	}
 
 	return true;
@@ -106,12 +104,9 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 		std::cerr << "Warning: batch parameter size too high (" << request.batch_parameter().size() << ")" << std::endl;
 
 
-	if (request.has_filter_name())
-		std::cout << "Filter name = " << request.filter_name() << std::endl;
-
-	for (int id = 0; id < request.filter_genre_size(); ++id)
+	for (int id = 0; id < request.genre_id_size(); ++id)
 	{
-		std::cout << "Filter genre " << id << " = '" << request.filter_genre(id) << "'" << std::endl;
+		std::cout << "Genre id " << id << " = '" << request.genre_id(id) << "'" << std::endl;
 	}
 
 
@@ -133,6 +128,7 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 
 		artist->set_name((*it)->getName());
 		artist->set_nb_releases(0);		// TODO
+		artist->set_id(it->id());
 	}
 
 	std::cout << "Getting artists DONE" << std::endl;

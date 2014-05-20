@@ -13,16 +13,12 @@ message AudioCollectionRequest
 
 	message GetGenreList
 	{
-		optional string	filter_name		= 1;	// Genre that contains 'filterName' in its name
-
 		required BatchParameter batch_parameter = 2;
 	}
 
 	message GetArtistList
 	{
-		// Search Filters
-		optional string	filter_name		= 1;	// Artist that contains 'filterName' in its name
-		repeated string filter_genre		= 2;	// Artist that has at least a track of the genre
+		repeated uint64	genre_id		= 2;	// Artist that has at least a track of the genre
 
 		required BatchParameter batch_parameter = 3;
 	}
@@ -30,9 +26,8 @@ message AudioCollectionRequest
 	message GetReleaseList
 	{
 		// Search filters
-		optional string	filter_name		= 1;	// Release that contains 'filterName' in its name
-		repeated string	artist_name		= 2;	// Release that contains at least a track of this artist
-		repeated string filter_genre		= 3;	// Release that has at least a track of the genre
+		repeated uint64	artist_id		= 2;	// Release that contains at least a track of this artist
+		repeated uint64	filter_genre		= 3;	// Release that has at least a track of the genre
 
 		optional bool	get_cover		= 4;	// Request cover art for each release
 
@@ -43,15 +38,14 @@ message AudioCollectionRequest
 	{
 		// Search filters
 		optional string	filter_name		= 1;	// Track that contains 'filterName' in its name
-		repeated string	release_name		= 2;	// Track that is part of the release
-		repeated string	artist_name		= 3;	// Track made by this artist
-		repeated string filter_genre		= 4;	// Track that has at least a track of the genre
-		optional uint32 disc_number		= 5;	// Track number
-		optional uint32 track_number		= 6;	// Disc number
 
-		optional bool	get_cover		= 7;	// Request cover art for each track
+		repeated uint64	artist_id		= 2;	// Track that belongs to these artists
+		repeated uint64	release_id		= 3;	// Track that is part of these releases
+		repeated uint64	genre_id		= 4;    // Track that has at least a track of the genre
 
-		required BatchParameter batch_parameter = 8;
+		optional bool	get_cover		= 5;	// Request cover art for each track
+
+		required BatchParameter batch_parameter = 6;
 	}
 
 
@@ -94,45 +88,55 @@ message AudioCollectionResponse
 		repeated Track	tracks	= 2;
 	}
 
-	message Genre
-	{
-		required string name	= 1;
-	}
-
 	message CoverArt
 	{
 		optional string	mime_type	= 1;
+
 		repeated bytes data		= 2;
+	}
+
+	message Genre
+	{
+		required uint64	id		= 1;
+
+		required string name		= 2;
 	}
 
 	message Artist
 	{
-		required string name		= 1;
-		required uint32 nb_releases	= 2;
+		required uint64	id		= 1;
+
+		required string name		= 2;
+		required uint32 nb_releases	= 3;
 	}
 
 	message Release
 	{
-		required string name			= 1;
+		required uint64	id		= 1;
 
-		required uint32 nb_tracks		= 2;
-		required uint32 duration_secs		= 3;
+		required string name		= 2;
 
-		optional CoverArt coverArt	= 4;
+		required uint32 nb_tracks	= 3;
+		required uint32 duration_secs	= 4;
+
+		optional string	release_date	= 5;
+
+		optional CoverArt coverArt	= 6;
 	}
 
 	message Track
 	{
-		required int64	media_id	= 1;
+		required uint64	id		= 1;
+
 		optional uint32 disc_number	= 2;
 		optional uint32 track_number	= 3;
 
-		optional string	artist			= 4;
-		optional string	release			= 5;
+		optional string	artist		= 4;
+		optional string	release		= 5;
 
-		required string	name			= 6;
+		required string	name		= 6;
 
-		required uint32	duration_secs		= 7;
+		required uint32	duration_secs	= 7;
 
 		optional string	release_date	= 8;
 		optional string	original_release_date	= 9;
