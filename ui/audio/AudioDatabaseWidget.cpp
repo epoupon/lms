@@ -1,6 +1,6 @@
 #include <boost/foreach.hpp>
 
-#include <Wt/WModelIndex>
+#include <Wt/WTable>	// TODO
 #include <Wt/WBreak>	// TODO
 
 #include "AudioDatabaseWidget.hpp"
@@ -22,18 +22,20 @@ _refreshingFilters(false)
 		search->update().connect( boost::bind(&AudioDatabaseWidget::handleFilterUpdated, this, idFilter++) );
 	}
 
+	Wt::WTable* table = new Wt::WTable(this);
+
 	{
-		TableFilterWidget* filterTable = new TableFilterWidget(db, "genre", "name", this);
+		TableFilterWidget* filterTable = new TableFilterWidget(db, "genre", "name", table->elementAt(0,0));
 		_filters.push_back( filterTable );
 		filterTable->update().connect( boost::bind(&AudioDatabaseWidget::handleFilterUpdated, this, idFilter++) );
 	}
 	{
-		TableFilterWidget* filterTable = new TableFilterWidget(db, "artist", "name", this);
+		TableFilterWidget* filterTable = new TableFilterWidget(db, "artist", "name", table->elementAt(0,1));
 		_filters.push_back( filterTable );
 		filterTable->update().connect( boost::bind(&AudioDatabaseWidget::handleFilterUpdated, this, idFilter++) );
 	}
 	{
-		TableFilterWidget* filterTable = new TableFilterWidget(db, "release", "name", this);
+		TableFilterWidget* filterTable = new TableFilterWidget(db, "release", "name", table->elementAt(0,2));
 		_filters.push_back( filterTable );
 		filterTable->update().connect( boost::bind(&AudioDatabaseWidget::handleFilterUpdated, this, idFilter++) );
 	}
