@@ -75,8 +75,6 @@ Connection::handleReadHeader(const boost::system::error_code& error, std::size_t
 			return;
 		}
 
-		std::cout << "Header received. Size = " << header.getSize() << std::endl;
-
 		// Now read the real message
 		boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(header.getSize());
 

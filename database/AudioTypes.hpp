@@ -21,7 +21,7 @@ class Artist
 
 		typedef Wt::Dbo::ptr<Artist> pointer;
 		typedef Wt::Dbo::dbo_traits<Artist>::IdType id_type;
- 
+
 		Artist() {}
 		Artist(const std::string& p_name);
 
@@ -59,6 +59,7 @@ class Release
 	public:
 
 		typedef Wt::Dbo::ptr<Release> pointer;
+		typedef Wt::Dbo::dbo_traits<Release>::IdType id_type;
 
 		Release() {}
 		Release(const std::string& name);
@@ -67,13 +68,15 @@ class Release
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getNone(Wt::Dbo::Session& session);
 
-		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, Artist::id_type id, int offset = -1, int size = -1);
+		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, std::vector<Artist::id_type> artistIds, int offset = -1, int size = -1);
 
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name);
 
-		std::string	getName() const;
+		std::string	getName() const	{ return _name; }
 		bool		isNone(void) const;
+		Wt::Dbo::collection<Wt::Dbo::ptr<Track> > getTracks(void) const	{ return _tracks;}
+		boost::posix_time::time_duration getDuration(void) const;
 
 		template<class Action>
 			void persist(Action& a)
@@ -95,6 +98,7 @@ class Genre
 	public:
 
 		typedef Wt::Dbo::ptr<Genre> pointer;
+		typedef Wt::Dbo::dbo_traits<Genre>::IdType id_type;
 
 		Genre();
 		Genre(const std::string& name);
@@ -129,6 +133,7 @@ class Track
 	public:
 
 		typedef Wt::Dbo::ptr<Track> pointer;
+		typedef Wt::Dbo::dbo_traits<Track>::IdType id_type;
 
 		Track() {}
 		Track(const boost::filesystem::path& p, Artist::pointer artist, Release::pointer release);
@@ -136,6 +141,11 @@ class Track
 		// Find utilities
 		static pointer getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
+		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session,
+				const std::vector<Artist::id_type>& artistIds,
+				const std::vector<Release::id_type>& releaseIds,
+				const std::vector<Genre::id_type>& genreIds,
+				int offset = -1, int size = -1);
 
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p, Artist::pointer artist, Release::pointer release);
@@ -153,15 +163,19 @@ class Track
 		void setArtist(Artist::pointer artist)				{ _artist = artist; }
 		void setRelease(Release::pointer release)			{ _release = release; }
 
-		std::string 		getName(void) const			{ return _name; }
-		const std::string&	getPath(void) const			{ return _filePath; }
-		boost::posix_time::time_duration	getDuration(void) const	{ return _duration; }
-		boost::posix_time::ptime	getLastWriteTime(void) const	{ return _fileLastWrite; }
-		const std::vector<unsigned char>& getChecksum(void) const	{ return _fileChecksum; }
-		Artist::pointer getArtist(void)	const				{ return _artist; }
-		Release::pointer getRelease(void) const				{ return _release; }
-		bool hasGenre(Genre::pointer genre) const			{ return _genres.count(genre); }
-		std::vector< Genre::pointer > getGenres(void) const;
+		int				getTrackNumber(void) const		{ return _trackNumber; }
+		int				getDiscNumber(void) const		{ return _discNumber; }
+		std::string 			getName(void) const			{ return _name; }
+		const std::string&		getPath(void) const			{ return _filePath; }
+		boost::posix_time::time_duration	getDuration(void) const		{ return _duration; }
+		boost::posix_time::ptime	getCreationTime(void) const		{ return _creationTime; }
+		Artist::pointer			getArtist(void)	const			{ return _artist; }
+		Release::pointer		getRelease(void) const			{ return _release; }
+		bool				hasGenre(Genre::pointer genre) const	{ return _genres.count(genre); }
+		std::vector< Genre::pointer >	getGenres(void) const;
+
+		boost::posix_time::ptime	getLastWriteTime(void) const		{ return _fileLastWrite; }
+		const std::vector<unsigned char>& getChecksum(void) const		{ return _fileChecksum; }
 
 		template<class Action>
 			void persist(Action& a)

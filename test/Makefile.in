@@ -97,6 +97,7 @@ am_database_basics_OBJECTS =  \
 	database_basics-Release.$(OBJEXT) \
 	database_basics-Track.$(OBJEXT) \
 	database_basics-DatabaseHandler.$(OBJEXT) \
+	database_basics-SqlQuery.$(OBJEXT) \
 	database_basics-Path.$(OBJEXT) database_basics-Video.$(OBJEXT) \
 	database_basics-Checksum.$(OBJEXT)
 database_basics_OBJECTS = $(am_database_basics_OBJECTS)
@@ -110,6 +111,7 @@ am_database_integrity_OBJECTS =  \
 	database_integrity-Release.$(OBJEXT) \
 	database_integrity-Track.$(OBJEXT) \
 	database_integrity-DatabaseHandler.$(OBJEXT) \
+	database_integrity-SqlQuery.$(OBJEXT) \
 	database_integrity-Path.$(OBJEXT) \
 	database_integrity-Video.$(OBJEXT) \
 	database_integrity-Checksum.$(OBJEXT)
@@ -127,8 +129,8 @@ am_remote_OBJECTS = remote-RemoteClientServer.$(OBJEXT) \
 	remote-messages.pb.$(OBJEXT) remote-Artist.$(OBJEXT) \
 	remote-Genre.$(OBJEXT) remote-Release.$(OBJEXT) \
 	remote-Track.$(OBJEXT) remote-DatabaseHandler.$(OBJEXT) \
-	remote-Path.$(OBJEXT) remote-Video.$(OBJEXT) \
-	remote-Checksum.$(OBJEXT)
+	remote-SqlQuery.$(OBJEXT) remote-Path.$(OBJEXT) \
+	remote-Video.$(OBJEXT) remote-Checksum.$(OBJEXT)
 remote_OBJECTS = $(am_remote_OBJECTS)
 remote_LDADD = $(LDADD)
 remote_LINK = $(CXXLD) $(remote_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
@@ -511,6 +513,7 @@ remote_SOURCES = \
 	$(top_srcdir)/database/Release.cpp			\
 	$(top_srcdir)/database/Track.cpp			\
 	$(top_srcdir)/database/DatabaseHandler.cpp		\
+	$(top_srcdir)/database/SqlQuery.cpp		\
 	$(top_srcdir)/database/Path.cpp				\
 	$(top_srcdir)/database/Video.cpp			\
 	$(top_srcdir)/database/Checksum.cpp
@@ -523,6 +526,7 @@ database_integrity_SOURCES = \
 	$(top_srcdir)/database/Release.cpp	\
 	$(top_srcdir)/database/Track.cpp	\
 	$(top_srcdir)/database/DatabaseHandler.cpp	\
+	$(top_srcdir)/database/SqlQuery.cpp		\
 	$(top_srcdir)/database/Path.cpp			\
 	$(top_srcdir)/database/Video.cpp			\
 	$(top_srcdir)/database/Checksum.cpp
@@ -535,6 +539,7 @@ database_basics_SOURCES = \
 	$(top_srcdir)/database/Release.cpp	\
 	$(top_srcdir)/database/Track.cpp	\
 	$(top_srcdir)/database/DatabaseHandler.cpp	\
+	$(top_srcdir)/database/SqlQuery.cpp		\
 	$(top_srcdir)/database/Path.cpp			\
 	$(top_srcdir)/database/Video.cpp			\
 	$(top_srcdir)/database/Checksum.cpp
@@ -612,6 +617,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_basics-Genre.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_basics-Path.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_basics-Release.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_basics-SqlQuery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_basics-Track.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_basics-Video.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-Artist.Po@am__quote@
@@ -621,6 +627,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-Genre.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-Path.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-Release.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-SqlQuery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-Track.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-Video.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Artist.Po@am__quote@
@@ -635,6 +642,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-RemoteClientServer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-RequestHandler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Server.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-SqlQuery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-TestDatabase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Track.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Video.Po@am__quote@
@@ -743,6 +751,20 @@ database_basics-DatabaseHandler.obj: $(top_srcdir)/database/DatabaseHandler.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/DatabaseHandler.cpp' object='database_basics-DatabaseHandler.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_basics_CXXFLAGS) $(CXXFLAGS) -c -o database_basics-DatabaseHandler.obj `if test -f '$(top_srcdir)/database/DatabaseHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/DatabaseHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/DatabaseHandler.cpp'; fi`
+
+database_basics-SqlQuery.o: $(top_srcdir)/database/SqlQuery.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_basics_CXXFLAGS) $(CXXFLAGS) -MT database_basics-SqlQuery.o -MD -MP -MF $(DEPDIR)/database_basics-SqlQuery.Tpo -c -o database_basics-SqlQuery.o `test -f '$(top_srcdir)/database/SqlQuery.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/SqlQuery.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/database_basics-SqlQuery.Tpo $(DEPDIR)/database_basics-SqlQuery.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/SqlQuery.cpp' object='database_basics-SqlQuery.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_basics_CXXFLAGS) $(CXXFLAGS) -c -o database_basics-SqlQuery.o `test -f '$(top_srcdir)/database/SqlQuery.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/SqlQuery.cpp
+
+database_basics-SqlQuery.obj: $(top_srcdir)/database/SqlQuery.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_basics_CXXFLAGS) $(CXXFLAGS) -MT database_basics-SqlQuery.obj -MD -MP -MF $(DEPDIR)/database_basics-SqlQuery.Tpo -c -o database_basics-SqlQuery.obj `if test -f '$(top_srcdir)/database/SqlQuery.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/SqlQuery.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/SqlQuery.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/database_basics-SqlQuery.Tpo $(DEPDIR)/database_basics-SqlQuery.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/SqlQuery.cpp' object='database_basics-SqlQuery.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_basics_CXXFLAGS) $(CXXFLAGS) -c -o database_basics-SqlQuery.obj `if test -f '$(top_srcdir)/database/SqlQuery.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/SqlQuery.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/SqlQuery.cpp'; fi`
 
 database_basics-Path.o: $(top_srcdir)/database/Path.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_basics_CXXFLAGS) $(CXXFLAGS) -MT database_basics-Path.o -MD -MP -MF $(DEPDIR)/database_basics-Path.Tpo -c -o database_basics-Path.o `test -f '$(top_srcdir)/database/Path.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Path.cpp
@@ -869,6 +891,20 @@ database_integrity-DatabaseHandler.obj: $(top_srcdir)/database/DatabaseHandler.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/DatabaseHandler.cpp' object='database_integrity-DatabaseHandler.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_integrity_CXXFLAGS) $(CXXFLAGS) -c -o database_integrity-DatabaseHandler.obj `if test -f '$(top_srcdir)/database/DatabaseHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/DatabaseHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/DatabaseHandler.cpp'; fi`
+
+database_integrity-SqlQuery.o: $(top_srcdir)/database/SqlQuery.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_integrity_CXXFLAGS) $(CXXFLAGS) -MT database_integrity-SqlQuery.o -MD -MP -MF $(DEPDIR)/database_integrity-SqlQuery.Tpo -c -o database_integrity-SqlQuery.o `test -f '$(top_srcdir)/database/SqlQuery.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/SqlQuery.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/database_integrity-SqlQuery.Tpo $(DEPDIR)/database_integrity-SqlQuery.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/SqlQuery.cpp' object='database_integrity-SqlQuery.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_integrity_CXXFLAGS) $(CXXFLAGS) -c -o database_integrity-SqlQuery.o `test -f '$(top_srcdir)/database/SqlQuery.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/SqlQuery.cpp
+
+database_integrity-SqlQuery.obj: $(top_srcdir)/database/SqlQuery.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_integrity_CXXFLAGS) $(CXXFLAGS) -MT database_integrity-SqlQuery.obj -MD -MP -MF $(DEPDIR)/database_integrity-SqlQuery.Tpo -c -o database_integrity-SqlQuery.obj `if test -f '$(top_srcdir)/database/SqlQuery.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/SqlQuery.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/SqlQuery.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/database_integrity-SqlQuery.Tpo $(DEPDIR)/database_integrity-SqlQuery.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/SqlQuery.cpp' object='database_integrity-SqlQuery.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_integrity_CXXFLAGS) $(CXXFLAGS) -c -o database_integrity-SqlQuery.obj `if test -f '$(top_srcdir)/database/SqlQuery.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/SqlQuery.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/SqlQuery.cpp'; fi`
 
 database_integrity-Path.o: $(top_srcdir)/database/Path.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(database_integrity_CXXFLAGS) $(CXXFLAGS) -MT database_integrity-Path.o -MD -MP -MF $(DEPDIR)/database_integrity-Path.Tpo -c -o database_integrity-Path.o `test -f '$(top_srcdir)/database/Path.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Path.cpp
@@ -1149,6 +1185,20 @@ remote-DatabaseHandler.obj: $(top_srcdir)/database/DatabaseHandler.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/DatabaseHandler.cpp' object='remote-DatabaseHandler.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-DatabaseHandler.obj `if test -f '$(top_srcdir)/database/DatabaseHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/DatabaseHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/DatabaseHandler.cpp'; fi`
+
+remote-SqlQuery.o: $(top_srcdir)/database/SqlQuery.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-SqlQuery.o -MD -MP -MF $(DEPDIR)/remote-SqlQuery.Tpo -c -o remote-SqlQuery.o `test -f '$(top_srcdir)/database/SqlQuery.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/SqlQuery.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-SqlQuery.Tpo $(DEPDIR)/remote-SqlQuery.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/SqlQuery.cpp' object='remote-SqlQuery.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-SqlQuery.o `test -f '$(top_srcdir)/database/SqlQuery.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/SqlQuery.cpp
+
+remote-SqlQuery.obj: $(top_srcdir)/database/SqlQuery.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-SqlQuery.obj -MD -MP -MF $(DEPDIR)/remote-SqlQuery.Tpo -c -o remote-SqlQuery.obj `if test -f '$(top_srcdir)/database/SqlQuery.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/SqlQuery.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/SqlQuery.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-SqlQuery.Tpo $(DEPDIR)/remote-SqlQuery.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/database/SqlQuery.cpp' object='remote-SqlQuery.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-SqlQuery.obj `if test -f '$(top_srcdir)/database/SqlQuery.cpp'; then $(CYGPATH_W) '$(top_srcdir)/database/SqlQuery.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/database/SqlQuery.cpp'; fi`
 
 remote-Path.o: $(top_srcdir)/database/Path.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Path.o -MD -MP -MF $(DEPDIR)/remote-Path.Tpo -c -o remote-Path.o `test -f '$(top_srcdir)/database/Path.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Path.cpp

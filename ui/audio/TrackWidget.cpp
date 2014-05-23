@@ -72,7 +72,7 @@ TrackWidget::refresh(const Constraint& constraint)
 
 	SqlQuery sqlQuery;
 
-	sqlQuery.select().And( SelectStatement( "track,release,artist" ) );
+	sqlQuery.select( "track,release,artist" );
 	sqlQuery.from().And( FromClause("artist,release,track,genre,track_genre"));
 	sqlQuery.where().And(constraint.where);
 

@@ -21,6 +21,8 @@
 - TrackView : Reselect the current playing song when displaying the updated search results
 - ReleaseView: display the release's publication year
 - OGG metadata -> properly handle metadata nested in the audio stream
+- TrackView : when udating the view, reselect the current playing track
+- Filters: use directly the id as constraint, instead of the name?
 
 [Video]
 - View the Videos in a WtTableView ?

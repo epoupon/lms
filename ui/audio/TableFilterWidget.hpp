@@ -28,6 +28,7 @@ class TableFilterWidget : public FilterWidget
 		const std::string			_table;
 		const std::string			_field;
 
+		// Name, track count, special value that means 'all' if set to 1
 		typedef boost::tuple<std::string, int, int>  ResultType;
 		Wt::Dbo::QueryModel< ResultType >	_queryModel;
 

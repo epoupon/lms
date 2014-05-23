@@ -126,21 +126,16 @@ message AudioCollectionResponse
 	{
 		required uint64	id		= 1;
 
-		optional uint32 disc_number	= 2;
-		optional uint32 track_number	= 3;
+		required uint64	artist_id	= 2;
+		required uint64	release_id	= 3;
+		repeated uint64	genre_id	= 4;
 
-		optional string	artist		= 4;
-		optional string	release		= 5;
-
-		required string	name		= 6;
-
-		required uint32	duration_secs	= 7;
-
-		optional string	release_date	= 8;
-		optional string	original_release_date	= 9;
-
-		repeated string genres		= 10;
-
+		optional uint32 disc_number	= 5;
+		optional uint32 track_number	= 6;
+		required string	name		= 7;
+		required uint32	duration_secs	= 8;
+		optional string	release_date	= 9;
+		optional string	original_release_date	= 10;
 		optional bytes	coverArt	= 11;
 	}
 

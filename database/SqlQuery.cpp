@@ -59,23 +59,53 @@ WhereClause::bind(const std::string& bindArg)
 	return *this;
 }
 
-
-SelectStatement&
-SelectStatement::And(const SelectStatement& statement)
+InnerJoinClause::InnerJoinClause(const std::string& clause)
+:_clause(clause)
 {
-	if( _statement.empty() && !statement._statement.empty())
-		_statement = "SELECT ";
-	else if (!_statement.empty() && !statement._statement.empty())
-		_statement += ",";
+}
 
-	_statement += statement._statement;
+InnerJoinClause&
+InnerJoinClause::And(const InnerJoinClause& clause)
+{
+	if (!_clause.empty())
+		_clause += " ";
+
+	_clause += clause._clause;
+
 	return *this;
 }
 
-FromClause::FromClause(const std::string& clause)
+SelectStatement::SelectStatement(const std::string& statement)
 {
-	_clause.push_back(clause);
+	And(statement);
 }
+
+SelectStatement&
+SelectStatement::And(const std::string& statement)
+{
+	_statement.push_back(statement);
+
+	_statement.sort();
+	_statement.unique();
+
+	return *this;
+}
+
+std::string
+SelectStatement::get() const
+{
+	std::string res = "SELECT ";
+
+	for (std::list<std::string>::const_iterator it = _statement.begin(); it != _statement.end(); ++it)
+	{
+		if (it != _statement.begin())
+			res += ",";
+		res += *it;
+	}
+
+	return res;
+}
+
 
 
 GroupByStatement&
@@ -90,6 +120,10 @@ GroupByStatement::And(const GroupByStatement& statement)
 	return *this;
 }
 
+FromClause::FromClause(const std::string& clause)
+{
+	_clause.push_back(clause);
+}
 
 FromClause&
 FromClause::And(const FromClause& clause)
@@ -132,6 +166,9 @@ SqlQuery::get(void) const
 
 	if (!_fromClause.get().empty())
 		oss << " " << _fromClause.get();
+
+	if (!_innerJoinClause.get().empty())
+		oss << " " << _innerJoinClause.get();
 
 	if (!_whereClause.get().empty())
 		oss << " " << _whereClause.get();

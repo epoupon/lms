@@ -23,7 +23,6 @@ _tableView(nullptr)
 	_tableView->setModel(&_queryModel);
 
 	_tableView->selectionChanged().connect(this, &TableFilterWidget::emitUpdate);
-	_tableView->selectionChanged().connect(this, &TableFilterWidget::emitUpdate);
 
 	_queryModel.setBatchSize(100);
 }
@@ -34,13 +33,13 @@ TableFilterWidget::refresh(const Constraint& constraint)
 {
 	SqlQuery sqlQuery;
 
-	sqlQuery.select().And( _table + "." + _field + ",count(DISTINCT track.id),0 as ORDERBY");
+	sqlQuery.select(_table + "." + _field + ",count(DISTINCT track.id),0 as ORDERBY");
 	sqlQuery.from().And( FromClause("artist,release,track,genre,track_genre")) ;
 	sqlQuery.where().And(constraint.where);	// Add constraint made by other filters
 	sqlQuery.groupBy().And( _table + "." + _field);	// Add constraint made by other filters
 
 	SqlQuery AllSqlQuery;
-	AllSqlQuery.select().And( SelectStatement("'<All>',0,1 AS ORDERBY") );
+	AllSqlQuery.select("'<All>',0,1 AS ORDERBY");
 
 	std::cout << _table << ", generated query = '" << sqlQuery.get() + " UNION " + AllSqlQuery.get() << "'" << std::endl;
 

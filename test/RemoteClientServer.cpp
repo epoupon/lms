@@ -20,7 +20,7 @@ struct GenreInfo
 
 std::ostream& operator<<(std::ostream& os, const GenreInfo& info)
 {
-	os << "id = " << info.id << ", name = '" << info.name << "'" << std::endl;
+	os << "id = " << info.id << ", name = '" << info.name << "'";
 	return os;
 }
 
@@ -32,9 +32,46 @@ struct ArtistInfo
 
 std::ostream& operator<<(std::ostream& os, const ArtistInfo& info)
 {
-	os << "id = " << info.id << ", name = '" << info.name << "'" << std::endl;
+	os << "id = " << info.id << ", name = '" << info.name << "'";
 	return os;
 }
+
+struct ReleaseInfo
+{
+	uint64_t        id;
+	std::string	name;
+	std::size_t	nbTracks;
+	boost::posix_time::time_duration duration;
+};
+
+std::ostream& operator<<(std::ostream& os, const ReleaseInfo& info)
+{
+	os << "id = " << info.id << ", name = '" << info.name << "', tracks = " << info.nbTracks << ", duration = " << info.duration;
+	return os;
+}
+
+struct TrackInfo
+{
+	uint64_t        id;
+
+	uint64_t        release_id;
+	uint64_t	artist_id;
+	std::vector<uint64_t>	genre_id;
+
+	uint32_t	disc_number;
+	uint32_t	track_number;
+
+	std::string	name;
+
+	boost::posix_time::time_duration duration;
+};
+
+std::ostream& operator<<(std::ostream& os, const TrackInfo& info)
+{
+	os << "id = " << info.id << ", name = '" << info.name << "', track_number = " << info.track_number << ", duration = " << info.duration;
+	return os;
+}
+
 
 // Ugly class for testing purposes
 class TestServer
@@ -80,7 +117,7 @@ class TestClient
 		void getArtists(std::vector<ArtistInfo>& artists)
 		{
 
-			const std::size_t requestedBatchSize = 32;
+			const std::size_t requestedBatchSize = 128;
 			std::size_t offset = 0;
 			std::size_t res = 0;
 
@@ -135,7 +172,7 @@ class TestClient
 		void getGenres(std::vector<GenreInfo>& genres)
 		{
 
-			const std::size_t requestedBatchSize = 8;
+			const std::size_t requestedBatchSize = 128;
 			std::size_t offset = 0;
 			std::size_t res = 0;
 
@@ -182,11 +219,128 @@ class TestClient
 				genres.push_back( genre );
 				nbAdded++;
 			}
-
-
 			return nbAdded;
 		}
 
+		void getReleases(std::vector<ReleaseInfo>& releases, const std::vector<uint64_t> artistIds)
+		{
+
+			const std::size_t requestedBatchSize = 128;
+			std::size_t offset = 0;
+			std::size_t res = 0;
+
+			while ((res = getReleases(releases, artistIds, offset, requestedBatchSize) ) > 0)
+				offset += res;
+
+		}
+
+		std::size_t getReleases(std::vector<ReleaseInfo>& releases, const std::vector<uint64_t> artistIds, std::size_t offset, std::size_t size)
+		{
+			std::size_t nbAdded = 0;
+
+			// Send request
+			Remote::ClientMessage request;
+
+			request.set_type( Remote::ClientMessage_Type_AudioCollectionRequest );
+
+			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetReleaseList);
+			request.mutable_audio_collection_request()->mutable_get_releases()->mutable_batch_parameter()->set_size(size);
+			request.mutable_audio_collection_request()->mutable_get_releases()->mutable_batch_parameter()->set_offset(offset);
+			BOOST_FOREACH(uint64_t artistId, artistIds)
+				request.mutable_audio_collection_request()->mutable_get_releases()->add_artist_id(artistId);
+
+			sendMsg(request);
+
+			// Receive responses
+			Remote::ServerMessage response;
+			recvMsg(response);
+
+			// Process message
+			if (!response.has_audio_collection_response())
+				throw std::runtime_error("not an audio_collection_response!");
+
+			if (!response.audio_collection_response().has_release_list())
+				throw std::runtime_error("not an release list!");
+
+			for (int i = 0; i < response.audio_collection_response().release_list().releases_size(); ++i)
+			{
+				if (!response.audio_collection_response().release_list().releases(i).has_name())
+					throw std::runtime_error("no release name!");
+
+				ReleaseInfo release;
+				release.id = response.audio_collection_response().release_list().releases(i).id();
+				release.name = response.audio_collection_response().release_list().releases(i).name();
+				release.duration = boost::posix_time::seconds(response.audio_collection_response().release_list().releases(i).duration_secs());
+				release.nbTracks = response.audio_collection_response().release_list().releases(i).nb_tracks();
+
+				releases.push_back( release );
+				nbAdded++;
+			}
+			return nbAdded;
+		}
+
+		void getTracks(std::vector<TrackInfo>& tracks, const std::vector<uint64_t> artistIds, const std::vector<uint64_t> releaseIds, const std::vector<uint64_t> genreIds)
+		{
+			const std::size_t requestedBatchSize = 256;
+			std::size_t offset = 0;
+			std::size_t res = 0;
+
+			while ((res = getTracks(tracks, artistIds, releaseIds, genreIds, offset, requestedBatchSize) ) > 0)
+				offset += res;
+		}
+
+		std::size_t getTracks(std::vector<TrackInfo>& tracks,
+				const std::vector<uint64_t> artistIds,
+				const std::vector<uint64_t> releaseIds,
+				const std::vector<uint64_t> genreIds,
+				std::size_t offset,
+				std::size_t size)
+		{
+			std::size_t nbAdded = 0;
+
+			// Send request
+			Remote::ClientMessage request;
+
+			request.set_type( Remote::ClientMessage_Type_AudioCollectionRequest );
+
+			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetTrackList);
+			request.mutable_audio_collection_request()->mutable_get_tracks()->mutable_batch_parameter()->set_size(size);
+			request.mutable_audio_collection_request()->mutable_get_tracks()->mutable_batch_parameter()->set_offset(offset);
+
+			BOOST_FOREACH(uint64_t artistId, artistIds)
+				request.mutable_audio_collection_request()->mutable_get_tracks()->add_artist_id(artistId);
+			BOOST_FOREACH(uint64_t releaseId, releaseIds)
+				request.mutable_audio_collection_request()->mutable_get_tracks()->add_release_id(releaseId);
+			BOOST_FOREACH(uint64_t genreId, genreIds)
+				request.mutable_audio_collection_request()->mutable_get_tracks()->add_genre_id(genreId);
+
+			sendMsg(request);
+
+			// Receive responses
+			Remote::ServerMessage response;
+			recvMsg(response);
+
+			// Process message
+			if (!response.has_audio_collection_response())
+				throw std::runtime_error("not an audio_collection_response!");
+
+			if (!response.audio_collection_response().has_track_list())
+				throw std::runtime_error("not an track list!");
+
+			for (int i = 0; i < response.audio_collection_response().track_list().tracks_size(); ++i)
+			{
+
+				TrackInfo track;
+				track.id = response.audio_collection_response().track_list().tracks(i).id();
+				track.name = response.audio_collection_response().track_list().tracks(i).name();
+				track.duration = boost::posix_time::seconds(response.audio_collection_response().track_list().tracks(i).duration_secs());
+
+				tracks.push_back( track );
+				nbAdded++;
+			}
+
+			return nbAdded;
+		}
 
 	private:
 
@@ -217,7 +371,6 @@ class TestClient
 
 				_outputStreamBuf.consume(n);
 
-				std::cout << "Client: Message sent!" << std::endl;
 			}
 			else
 			{
@@ -235,7 +388,6 @@ class TestClient
 				// reserve bytes in output sequence
 				boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(Remote::Header::size);
 
-				std::cout << "Client: waiting for header message!" << std::endl;
 				std::size_t n = boost::asio::read(_socket,
 									bufs,
 									boost::asio::transfer_exactly(Remote::Header::size));
@@ -243,7 +395,6 @@ class TestClient
 				assert(n == Remote::Header::size);
 				_inputStreamBuf.commit(n);
 
-				std::cout << "Client: Header message received!" << std::endl;
 			}
 
 			Remote::Header header;
@@ -255,15 +406,12 @@ class TestClient
 				// reserve bytes in output sequence
 				boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(header.getSize());
 
-				std::cout << "Client: waiting for message!" << std::endl;
 				std::size_t n = boost::asio::read(_socket,
 									bufs,
 									boost::asio::transfer_exactly(header.getSize()));
 
 				assert(n == header.getSize());
 				_inputStreamBuf.commit(n);
-
-				std::cout << "Client: message received!" << std::endl;
 
 				if (!message.ParseFromIstream(&is))
 					throw std::runtime_error("message.ParseFromIstream failed!");
@@ -310,8 +458,32 @@ int main()
 		BOOST_FOREACH(const GenreInfo& genre, genres)
 			std::cout << "Genre: '" << genre << "'" << std::endl;
 
-		testServer.stop();
+		// **** Releases ******
+		std::vector<ReleaseInfo> releases;
+		client.getReleases(releases, std::vector<uint64_t>(1, 1162));
+		BOOST_FOREACH(const ReleaseInfo& release, releases)
+			std::cout << "Release: '" << release << "'" << std::endl;
 
+		// **** Tracks ******
+/*		{
+			std::vector<TrackInfo> tracks;
+			client.getTracks(tracks, std::vector<uint64_t>(), std::vector<uint64_t>(), std::vector<uint64_t>());
+			BOOST_FOREACH(const TrackInfo& track, tracks)
+				std::cout << "Track: '" << track << "'" << std::endl;
+		}*/
+
+		BOOST_FOREACH(const ArtistInfo& artist, artists)
+		{
+			// Get the tracks for each artist
+			std::vector<TrackInfo> tracks;
+			client.getTracks(tracks, std::vector<uint64_t>(1, artist.id), std::vector<uint64_t>(), std::vector<uint64_t>());
+
+			std::cout << "Artist '" << artist.name << "', nb tracks = " << tracks.size() << std::endl;
+			BOOST_FOREACH(const TrackInfo& track, tracks)
+				std::cout << "Track: '" << track << "'" << std::endl;
+		}
+
+		testServer.stop();
 	}
 	catch(std::exception& e)
 	{

@@ -21,6 +21,7 @@ remote_SOURCES = \
 	$(top_srcdir)/database/Release.cpp			\
 	$(top_srcdir)/database/Track.cpp			\
 	$(top_srcdir)/database/DatabaseHandler.cpp		\
+	$(top_srcdir)/database/SqlQuery.cpp		\
 	$(top_srcdir)/database/Path.cpp				\
 	$(top_srcdir)/database/Video.cpp			\
 	$(top_srcdir)/database/Checksum.cpp
@@ -34,6 +35,7 @@ database_integrity_SOURCES = \
 	$(top_srcdir)/database/Release.cpp	\
 	$(top_srcdir)/database/Track.cpp	\
 	$(top_srcdir)/database/DatabaseHandler.cpp	\
+	$(top_srcdir)/database/SqlQuery.cpp		\
 	$(top_srcdir)/database/Path.cpp			\
 	$(top_srcdir)/database/Video.cpp			\
 	$(top_srcdir)/database/Checksum.cpp
@@ -47,6 +49,7 @@ database_basics_SOURCES = \
 	$(top_srcdir)/database/Release.cpp	\
 	$(top_srcdir)/database/Track.cpp	\
 	$(top_srcdir)/database/DatabaseHandler.cpp	\
+	$(top_srcdir)/database/SqlQuery.cpp		\
 	$(top_srcdir)/database/Path.cpp			\
 	$(top_srcdir)/database/Video.cpp			\
 	$(top_srcdir)/database/Checksum.cpp

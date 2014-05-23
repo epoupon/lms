@@ -12,7 +12,7 @@ int main(void)
 		SqlQuery query;
 
 
-		query.select().And( SelectStatement("artist.name")).And( SelectStatement("track.name"));
+		query.select("artist.name").And("track.name");
 		query.from().And( FromClause("artist") ).And( FromClause("track"));
 		query.where().And( WhereClause("artist.id = track.artist_id") );
 
