@@ -37,14 +37,35 @@ void protobuf_ShutdownFile_media_2eproto();
 
 class MediaRequest;
 class MediaRequest_Prepare;
+class MediaRequest_Prepare_Audio;
+class MediaRequest_Prepare_Video;
 class MediaRequest_GetPart;
 class MediaRequest_Terminate;
 class MediaResponse;
-class MediaResponse_MediaPart;
+class MediaResponse_Part;
 
+enum MediaRequest_Prepare_Type {
+  MediaRequest_Prepare_Type_AudioRequest = 1,
+  MediaRequest_Prepare_Type_VideoRequest = 2
+};
+bool MediaRequest_Prepare_Type_IsValid(int value);
+const MediaRequest_Prepare_Type MediaRequest_Prepare_Type_Type_MIN = MediaRequest_Prepare_Type_AudioRequest;
+const MediaRequest_Prepare_Type MediaRequest_Prepare_Type_Type_MAX = MediaRequest_Prepare_Type_VideoRequest;
+const int MediaRequest_Prepare_Type_Type_ARRAYSIZE = MediaRequest_Prepare_Type_Type_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* MediaRequest_Prepare_Type_descriptor();
+inline const ::std::string& MediaRequest_Prepare_Type_Name(MediaRequest_Prepare_Type value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    MediaRequest_Prepare_Type_descriptor(), value);
+}
+inline bool MediaRequest_Prepare_Type_Parse(
+    const ::std::string& name, MediaRequest_Prepare_Type* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<MediaRequest_Prepare_Type>(
+    MediaRequest_Prepare_Type_descriptor(), name, value);
+}
 enum MediaRequest_Type {
   MediaRequest_Type_TypeMediaPrepare = 1,
-  MediaRequest_Type_TypeMediaGet = 2,
+  MediaRequest_Type_TypeMediaGetPart = 2,
   MediaRequest_Type_TypeMediaTerminate = 3
 };
 bool MediaRequest_Type_IsValid(int value);
@@ -63,11 +84,12 @@ inline bool MediaRequest_Type_Parse(
     MediaRequest_Type_descriptor(), name, value);
 }
 enum MediaResponse_Type {
-  MediaResponse_Type_TypeMediaPart = 1
+  MediaResponse_Type_TypeError = 1,
+  MediaResponse_Type_TypePart = 2
 };
 bool MediaResponse_Type_IsValid(int value);
-const MediaResponse_Type MediaResponse_Type_Type_MIN = MediaResponse_Type_TypeMediaPart;
-const MediaResponse_Type MediaResponse_Type_Type_MAX = MediaResponse_Type_TypeMediaPart;
+const MediaResponse_Type MediaResponse_Type_Type_MIN = MediaResponse_Type_TypeError;
+const MediaResponse_Type MediaResponse_Type_Type_MAX = MediaResponse_Type_TypePart;
 const int MediaResponse_Type_Type_ARRAYSIZE = MediaResponse_Type_Type_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* MediaResponse_Type_descriptor();
@@ -80,25 +102,307 @@ inline bool MediaResponse_Type_Parse(
   return ::google::protobuf::internal::ParseNamedEnum<MediaResponse_Type>(
     MediaResponse_Type_descriptor(), name, value);
 }
-enum CodecType {
-  CodecTypeOGG = 1
+enum AudioCodecType {
+  CodecTypeOGA = 1
 };
-bool CodecType_IsValid(int value);
-const CodecType CodecType_MIN = CodecTypeOGG;
-const CodecType CodecType_MAX = CodecTypeOGG;
-const int CodecType_ARRAYSIZE = CodecType_MAX + 1;
+bool AudioCodecType_IsValid(int value);
+const AudioCodecType AudioCodecType_MIN = CodecTypeOGA;
+const AudioCodecType AudioCodecType_MAX = CodecTypeOGA;
+const int AudioCodecType_ARRAYSIZE = AudioCodecType_MAX + 1;
 
-const ::google::protobuf::EnumDescriptor* CodecType_descriptor();
-inline const ::std::string& CodecType_Name(CodecType value) {
+const ::google::protobuf::EnumDescriptor* AudioCodecType_descriptor();
+inline const ::std::string& AudioCodecType_Name(AudioCodecType value) {
   return ::google::protobuf::internal::NameOfEnum(
-    CodecType_descriptor(), value);
+    AudioCodecType_descriptor(), value);
 }
-inline bool CodecType_Parse(
-    const ::std::string& name, CodecType* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<CodecType>(
-    CodecType_descriptor(), name, value);
+inline bool AudioCodecType_Parse(
+    const ::std::string& name, AudioCodecType* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<AudioCodecType>(
+    AudioCodecType_descriptor(), name, value);
+}
+enum VideoCodecType {
+  CodecTypeOGV = 1
+};
+bool VideoCodecType_IsValid(int value);
+const VideoCodecType VideoCodecType_MIN = CodecTypeOGV;
+const VideoCodecType VideoCodecType_MAX = CodecTypeOGV;
+const int VideoCodecType_ARRAYSIZE = VideoCodecType_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* VideoCodecType_descriptor();
+inline const ::std::string& VideoCodecType_Name(VideoCodecType value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    VideoCodecType_descriptor(), value);
+}
+inline bool VideoCodecType_Parse(
+    const ::std::string& name, VideoCodecType* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<VideoCodecType>(
+    VideoCodecType_descriptor(), name, value);
 }
 // ===================================================================
+
+class MediaRequest_Prepare_Audio : public ::google::protobuf::Message {
+ public:
+  MediaRequest_Prepare_Audio();
+  virtual ~MediaRequest_Prepare_Audio();
+
+  MediaRequest_Prepare_Audio(const MediaRequest_Prepare_Audio& from);
+
+  inline MediaRequest_Prepare_Audio& operator=(const MediaRequest_Prepare_Audio& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const MediaRequest_Prepare_Audio& default_instance();
+
+  void Swap(MediaRequest_Prepare_Audio* other);
+
+  // implements Message ----------------------------------------------
+
+  MediaRequest_Prepare_Audio* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const MediaRequest_Prepare_Audio& from);
+  void MergeFrom(const MediaRequest_Prepare_Audio& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required int64 track_id = 1;
+  inline bool has_track_id() const;
+  inline void clear_track_id();
+  static const int kTrackIdFieldNumber = 1;
+  inline ::google::protobuf::int64 track_id() const;
+  inline void set_track_id(::google::protobuf::int64 value);
+
+  // optional .Remote.AudioCodecType codec_type = 2;
+  inline bool has_codec_type() const;
+  inline void clear_codec_type();
+  static const int kCodecTypeFieldNumber = 2;
+  inline ::Remote::AudioCodecType codec_type() const;
+  inline void set_codec_type(::Remote::AudioCodecType value);
+
+  // optional uint32 bitrate = 3;
+  inline bool has_bitrate() const;
+  inline void clear_bitrate();
+  static const int kBitrateFieldNumber = 3;
+  inline ::google::protobuf::uint32 bitrate() const;
+  inline void set_bitrate(::google::protobuf::uint32 value);
+
+  // optional uint32 stream_idx = 4;
+  inline bool has_stream_idx() const;
+  inline void clear_stream_idx();
+  static const int kStreamIdxFieldNumber = 4;
+  inline ::google::protobuf::uint32 stream_idx() const;
+  inline void set_stream_idx(::google::protobuf::uint32 value);
+
+  // optional uint32 offset_secs = 5;
+  inline bool has_offset_secs() const;
+  inline void clear_offset_secs();
+  static const int kOffsetSecsFieldNumber = 5;
+  inline ::google::protobuf::uint32 offset_secs() const;
+  inline void set_offset_secs(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:Remote.MediaRequest.Prepare.Audio)
+ private:
+  inline void set_has_track_id();
+  inline void clear_has_track_id();
+  inline void set_has_codec_type();
+  inline void clear_has_codec_type();
+  inline void set_has_bitrate();
+  inline void clear_has_bitrate();
+  inline void set_has_stream_idx();
+  inline void clear_has_stream_idx();
+  inline void set_has_offset_secs();
+  inline void clear_has_offset_secs();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::google::protobuf::int64 track_id_;
+  int codec_type_;
+  ::google::protobuf::uint32 bitrate_;
+  ::google::protobuf::uint32 stream_idx_;
+  ::google::protobuf::uint32 offset_secs_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(5 + 31) / 32];
+
+  friend void  protobuf_AddDesc_media_2eproto();
+  friend void protobuf_AssignDesc_media_2eproto();
+  friend void protobuf_ShutdownFile_media_2eproto();
+
+  void InitAsDefaultInstance();
+  static MediaRequest_Prepare_Audio* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class MediaRequest_Prepare_Video : public ::google::protobuf::Message {
+ public:
+  MediaRequest_Prepare_Video();
+  virtual ~MediaRequest_Prepare_Video();
+
+  MediaRequest_Prepare_Video(const MediaRequest_Prepare_Video& from);
+
+  inline MediaRequest_Prepare_Video& operator=(const MediaRequest_Prepare_Video& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const MediaRequest_Prepare_Video& default_instance();
+
+  void Swap(MediaRequest_Prepare_Video* other);
+
+  // implements Message ----------------------------------------------
+
+  MediaRequest_Prepare_Video* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const MediaRequest_Prepare_Video& from);
+  void MergeFrom(const MediaRequest_Prepare_Video& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required int64 video_id = 1;
+  inline bool has_video_id() const;
+  inline void clear_video_id();
+  static const int kVideoIdFieldNumber = 1;
+  inline ::google::protobuf::int64 video_id() const;
+  inline void set_video_id(::google::protobuf::int64 value);
+
+  // optional .Remote.VideoCodecType codec_type = 2;
+  inline bool has_codec_type() const;
+  inline void clear_codec_type();
+  static const int kCodecTypeFieldNumber = 2;
+  inline ::Remote::VideoCodecType codec_type() const;
+  inline void set_codec_type(::Remote::VideoCodecType value);
+
+  // optional uint32 bitrate = 3;
+  inline bool has_bitrate() const;
+  inline void clear_bitrate();
+  static const int kBitrateFieldNumber = 3;
+  inline ::google::protobuf::uint32 bitrate() const;
+  inline void set_bitrate(::google::protobuf::uint32 value);
+
+  // optional uint32 offset_secs = 4;
+  inline bool has_offset_secs() const;
+  inline void clear_offset_secs();
+  static const int kOffsetSecsFieldNumber = 4;
+  inline ::google::protobuf::uint32 offset_secs() const;
+  inline void set_offset_secs(::google::protobuf::uint32 value);
+
+  // optional uint32 audio_stream_idx = 5;
+  inline bool has_audio_stream_idx() const;
+  inline void clear_audio_stream_idx();
+  static const int kAudioStreamIdxFieldNumber = 5;
+  inline ::google::protobuf::uint32 audio_stream_idx() const;
+  inline void set_audio_stream_idx(::google::protobuf::uint32 value);
+
+  // optional uint32 video_stream_idx = 6;
+  inline bool has_video_stream_idx() const;
+  inline void clear_video_stream_idx();
+  static const int kVideoStreamIdxFieldNumber = 6;
+  inline ::google::protobuf::uint32 video_stream_idx() const;
+  inline void set_video_stream_idx(::google::protobuf::uint32 value);
+
+  // optional uint32 subtitle_stream_idx = 7;
+  inline bool has_subtitle_stream_idx() const;
+  inline void clear_subtitle_stream_idx();
+  static const int kSubtitleStreamIdxFieldNumber = 7;
+  inline ::google::protobuf::uint32 subtitle_stream_idx() const;
+  inline void set_subtitle_stream_idx(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:Remote.MediaRequest.Prepare.Video)
+ private:
+  inline void set_has_video_id();
+  inline void clear_has_video_id();
+  inline void set_has_codec_type();
+  inline void clear_has_codec_type();
+  inline void set_has_bitrate();
+  inline void clear_has_bitrate();
+  inline void set_has_offset_secs();
+  inline void clear_has_offset_secs();
+  inline void set_has_audio_stream_idx();
+  inline void clear_has_audio_stream_idx();
+  inline void set_has_video_stream_idx();
+  inline void clear_has_video_stream_idx();
+  inline void set_has_subtitle_stream_idx();
+  inline void clear_has_subtitle_stream_idx();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::google::protobuf::int64 video_id_;
+  int codec_type_;
+  ::google::protobuf::uint32 bitrate_;
+  ::google::protobuf::uint32 offset_secs_;
+  ::google::protobuf::uint32 audio_stream_idx_;
+  ::google::protobuf::uint32 video_stream_idx_;
+  ::google::protobuf::uint32 subtitle_stream_idx_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(7 + 31) / 32];
+
+  friend void  protobuf_AddDesc_media_2eproto();
+  friend void protobuf_AssignDesc_media_2eproto();
+  friend void protobuf_ShutdownFile_media_2eproto();
+
+  void InitAsDefaultInstance();
+  static MediaRequest_Prepare_Video* default_instance_;
+};
+// -------------------------------------------------------------------
 
 class MediaRequest_Prepare : public ::google::protobuf::Message {
  public:
@@ -152,96 +456,77 @@ class MediaRequest_Prepare : public ::google::protobuf::Message {
 
   // nested types ----------------------------------------------------
 
+  typedef MediaRequest_Prepare_Audio Audio;
+  typedef MediaRequest_Prepare_Video Video;
+
+  typedef MediaRequest_Prepare_Type Type;
+  static const Type AudioRequest = MediaRequest_Prepare_Type_AudioRequest;
+  static const Type VideoRequest = MediaRequest_Prepare_Type_VideoRequest;
+  static inline bool Type_IsValid(int value) {
+    return MediaRequest_Prepare_Type_IsValid(value);
+  }
+  static const Type Type_MIN =
+    MediaRequest_Prepare_Type_Type_MIN;
+  static const Type Type_MAX =
+    MediaRequest_Prepare_Type_Type_MAX;
+  static const int Type_ARRAYSIZE =
+    MediaRequest_Prepare_Type_Type_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor*
+  Type_descriptor() {
+    return MediaRequest_Prepare_Type_descriptor();
+  }
+  static inline const ::std::string& Type_Name(Type value) {
+    return MediaRequest_Prepare_Type_Name(value);
+  }
+  static inline bool Type_Parse(const ::std::string& name,
+      Type* value) {
+    return MediaRequest_Prepare_Type_Parse(name, value);
+  }
+
   // accessors -------------------------------------------------------
 
-  // required int64 id = 1;
-  inline bool has_id() const;
-  inline void clear_id();
-  static const int kIdFieldNumber = 1;
-  inline ::google::protobuf::int64 id() const;
-  inline void set_id(::google::protobuf::int64 value);
+  // required .Remote.MediaRequest.Prepare.Type type = 1;
+  inline bool has_type() const;
+  inline void clear_type();
+  static const int kTypeFieldNumber = 1;
+  inline ::Remote::MediaRequest_Prepare_Type type() const;
+  inline void set_type(::Remote::MediaRequest_Prepare_Type value);
 
-  // required uint32 offset_secs = 2;
-  inline bool has_offset_secs() const;
-  inline void clear_offset_secs();
-  static const int kOffsetSecsFieldNumber = 2;
-  inline ::google::protobuf::uint32 offset_secs() const;
-  inline void set_offset_secs(::google::protobuf::uint32 value);
+  // optional .Remote.MediaRequest.Prepare.Audio audio = 2;
+  inline bool has_audio() const;
+  inline void clear_audio();
+  static const int kAudioFieldNumber = 2;
+  inline const ::Remote::MediaRequest_Prepare_Audio& audio() const;
+  inline ::Remote::MediaRequest_Prepare_Audio* mutable_audio();
+  inline ::Remote::MediaRequest_Prepare_Audio* release_audio();
+  inline void set_allocated_audio(::Remote::MediaRequest_Prepare_Audio* audio);
 
-  // optional .Remote.CodecType codec_type = 3;
-  inline bool has_codec_type() const;
-  inline void clear_codec_type();
-  static const int kCodecTypeFieldNumber = 3;
-  inline ::Remote::CodecType codec_type() const;
-  inline void set_codec_type(::Remote::CodecType value);
-
-  // optional uint32 audio_bitrate = 4;
-  inline bool has_audio_bitrate() const;
-  inline void clear_audio_bitrate();
-  static const int kAudioBitrateFieldNumber = 4;
-  inline ::google::protobuf::uint32 audio_bitrate() const;
-  inline void set_audio_bitrate(::google::protobuf::uint32 value);
-
-  // optional uint32 video_bitrate = 5;
-  inline bool has_video_bitrate() const;
-  inline void clear_video_bitrate();
-  static const int kVideoBitrateFieldNumber = 5;
-  inline ::google::protobuf::uint32 video_bitrate() const;
-  inline void set_video_bitrate(::google::protobuf::uint32 value);
-
-  // optional uint32 audio_stream_idx = 6;
-  inline bool has_audio_stream_idx() const;
-  inline void clear_audio_stream_idx();
-  static const int kAudioStreamIdxFieldNumber = 6;
-  inline ::google::protobuf::uint32 audio_stream_idx() const;
-  inline void set_audio_stream_idx(::google::protobuf::uint32 value);
-
-  // optional uint32 video_stream_idx = 7;
-  inline bool has_video_stream_idx() const;
-  inline void clear_video_stream_idx();
-  static const int kVideoStreamIdxFieldNumber = 7;
-  inline ::google::protobuf::uint32 video_stream_idx() const;
-  inline void set_video_stream_idx(::google::protobuf::uint32 value);
-
-  // optional uint32 subtitle_stream_idx = 8;
-  inline bool has_subtitle_stream_idx() const;
-  inline void clear_subtitle_stream_idx();
-  static const int kSubtitleStreamIdxFieldNumber = 8;
-  inline ::google::protobuf::uint32 subtitle_stream_idx() const;
-  inline void set_subtitle_stream_idx(::google::protobuf::uint32 value);
+  // optional .Remote.MediaRequest.Prepare.Video video = 3;
+  inline bool has_video() const;
+  inline void clear_video();
+  static const int kVideoFieldNumber = 3;
+  inline const ::Remote::MediaRequest_Prepare_Video& video() const;
+  inline ::Remote::MediaRequest_Prepare_Video* mutable_video();
+  inline ::Remote::MediaRequest_Prepare_Video* release_video();
+  inline void set_allocated_video(::Remote::MediaRequest_Prepare_Video* video);
 
   // @@protoc_insertion_point(class_scope:Remote.MediaRequest.Prepare)
  private:
-  inline void set_has_id();
-  inline void clear_has_id();
-  inline void set_has_offset_secs();
-  inline void clear_has_offset_secs();
-  inline void set_has_codec_type();
-  inline void clear_has_codec_type();
-  inline void set_has_audio_bitrate();
-  inline void clear_has_audio_bitrate();
-  inline void set_has_video_bitrate();
-  inline void clear_has_video_bitrate();
-  inline void set_has_audio_stream_idx();
-  inline void clear_has_audio_stream_idx();
-  inline void set_has_video_stream_idx();
-  inline void clear_has_video_stream_idx();
-  inline void set_has_subtitle_stream_idx();
-  inline void clear_has_subtitle_stream_idx();
+  inline void set_has_type();
+  inline void clear_has_type();
+  inline void set_has_audio();
+  inline void clear_has_audio();
+  inline void set_has_video();
+  inline void clear_has_video();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::google::protobuf::int64 id_;
-  ::google::protobuf::uint32 offset_secs_;
-  int codec_type_;
-  ::google::protobuf::uint32 audio_bitrate_;
-  ::google::protobuf::uint32 video_bitrate_;
-  ::google::protobuf::uint32 audio_stream_idx_;
-  ::google::protobuf::uint32 video_stream_idx_;
-  ::google::protobuf::uint32 subtitle_stream_idx_;
+  ::Remote::MediaRequest_Prepare_Audio* audio_;
+  ::Remote::MediaRequest_Prepare_Video* video_;
+  int type_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(8 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
 
   friend void  protobuf_AddDesc_media_2eproto();
   friend void protobuf_AssignDesc_media_2eproto();
@@ -464,7 +749,7 @@ class MediaRequest : public ::google::protobuf::Message {
 
   typedef MediaRequest_Type Type;
   static const Type TypeMediaPrepare = MediaRequest_Type_TypeMediaPrepare;
-  static const Type TypeMediaGet = MediaRequest_Type_TypeMediaGet;
+  static const Type TypeMediaGetPart = MediaRequest_Type_TypeMediaGetPart;
   static const Type TypeMediaTerminate = MediaRequest_Type_TypeMediaTerminate;
   static inline bool Type_IsValid(int value) {
     return MediaRequest_Type_IsValid(value);
@@ -489,12 +774,12 @@ class MediaRequest : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required .Remote.MediaRequest.Type request_type = 1;
-  inline bool has_request_type() const;
-  inline void clear_request_type();
-  static const int kRequestTypeFieldNumber = 1;
-  inline ::Remote::MediaRequest_Type request_type() const;
-  inline void set_request_type(::Remote::MediaRequest_Type value);
+  // required .Remote.MediaRequest.Type type = 1;
+  inline bool has_type() const;
+  inline void clear_type();
+  static const int kTypeFieldNumber = 1;
+  inline ::Remote::MediaRequest_Type type() const;
+  inline void set_type(::Remote::MediaRequest_Type value);
 
   // optional .Remote.MediaRequest.Prepare prepare = 2;
   inline bool has_prepare() const;
@@ -525,8 +810,8 @@ class MediaRequest : public ::google::protobuf::Message {
 
   // @@protoc_insertion_point(class_scope:Remote.MediaRequest)
  private:
-  inline void set_has_request_type();
-  inline void clear_has_request_type();
+  inline void set_has_type();
+  inline void clear_has_type();
   inline void set_has_prepare();
   inline void clear_has_prepare();
   inline void set_has_get_part();
@@ -539,7 +824,7 @@ class MediaRequest : public ::google::protobuf::Message {
   ::Remote::MediaRequest_Prepare* prepare_;
   ::Remote::MediaRequest_GetPart* get_part_;
   ::Remote::MediaRequest_Terminate* terminate_;
-  int request_type_;
+  int type_;
 
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
@@ -553,14 +838,14 @@ class MediaRequest : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class MediaResponse_MediaPart : public ::google::protobuf::Message {
+class MediaResponse_Part : public ::google::protobuf::Message {
  public:
-  MediaResponse_MediaPart();
-  virtual ~MediaResponse_MediaPart();
+  MediaResponse_Part();
+  virtual ~MediaResponse_Part();
 
-  MediaResponse_MediaPart(const MediaResponse_MediaPart& from);
+  MediaResponse_Part(const MediaResponse_Part& from);
 
-  inline MediaResponse_MediaPart& operator=(const MediaResponse_MediaPart& from) {
+  inline MediaResponse_Part& operator=(const MediaResponse_Part& from) {
     CopyFrom(from);
     return *this;
   }
@@ -574,17 +859,17 @@ class MediaResponse_MediaPart : public ::google::protobuf::Message {
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const MediaResponse_MediaPart& default_instance();
+  static const MediaResponse_Part& default_instance();
 
-  void Swap(MediaResponse_MediaPart* other);
+  void Swap(MediaResponse_Part* other);
 
   // implements Message ----------------------------------------------
 
-  MediaResponse_MediaPart* New() const;
+  MediaResponse_Part* New() const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const MediaResponse_MediaPart& from);
-  void MergeFrom(const MediaResponse_MediaPart& from);
+  void CopyFrom(const MediaResponse_Part& from);
+  void MergeFrom(const MediaResponse_Part& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -607,48 +892,36 @@ class MediaResponse_MediaPart : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required uint64 byte_offset = 1;
-  inline bool has_byte_offset() const;
-  inline void clear_byte_offset();
-  static const int kByteOffsetFieldNumber = 1;
-  inline ::google::protobuf::uint64 byte_offset() const;
-  inline void set_byte_offset(::google::protobuf::uint64 value);
-
-  // repeated bytes data = 2;
-  inline int data_size() const;
+  // required bytes data = 1;
+  inline bool has_data() const;
   inline void clear_data();
-  static const int kDataFieldNumber = 2;
-  inline const ::std::string& data(int index) const;
-  inline ::std::string* mutable_data(int index);
-  inline void set_data(int index, const ::std::string& value);
-  inline void set_data(int index, const char* value);
-  inline void set_data(int index, const void* value, size_t size);
-  inline ::std::string* add_data();
-  inline void add_data(const ::std::string& value);
-  inline void add_data(const char* value);
-  inline void add_data(const void* value, size_t size);
-  inline const ::google::protobuf::RepeatedPtrField< ::std::string>& data() const;
-  inline ::google::protobuf::RepeatedPtrField< ::std::string>* mutable_data();
+  static const int kDataFieldNumber = 1;
+  inline const ::std::string& data() const;
+  inline void set_data(const ::std::string& value);
+  inline void set_data(const char* value);
+  inline void set_data(const void* value, size_t size);
+  inline ::std::string* mutable_data();
+  inline ::std::string* release_data();
+  inline void set_allocated_data(::std::string* data);
 
-  // @@protoc_insertion_point(class_scope:Remote.MediaResponse.MediaPart)
+  // @@protoc_insertion_point(class_scope:Remote.MediaResponse.Part)
  private:
-  inline void set_has_byte_offset();
-  inline void clear_has_byte_offset();
+  inline void set_has_data();
+  inline void clear_has_data();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::google::protobuf::uint64 byte_offset_;
-  ::google::protobuf::RepeatedPtrField< ::std::string> data_;
+  ::std::string* data_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
 
   friend void  protobuf_AddDesc_media_2eproto();
   friend void protobuf_AssignDesc_media_2eproto();
   friend void protobuf_ShutdownFile_media_2eproto();
 
   void InitAsDefaultInstance();
-  static MediaResponse_MediaPart* default_instance_;
+  static MediaResponse_Part* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -704,10 +977,11 @@ class MediaResponse : public ::google::protobuf::Message {
 
   // nested types ----------------------------------------------------
 
-  typedef MediaResponse_MediaPart MediaPart;
+  typedef MediaResponse_Part Part;
 
   typedef MediaResponse_Type Type;
-  static const Type TypeMediaPart = MediaResponse_Type_TypeMediaPart;
+  static const Type TypeError = MediaResponse_Type_TypeError;
+  static const Type TypePart = MediaResponse_Type_TypePart;
   static inline bool Type_IsValid(int value) {
     return MediaResponse_Type_IsValid(value);
   }
@@ -731,45 +1005,45 @@ class MediaResponse : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required .Remote.Error error = 1;
+  // required .Remote.MediaResponse.Type type = 1;
+  inline bool has_type() const;
+  inline void clear_type();
+  static const int kTypeFieldNumber = 1;
+  inline ::Remote::MediaResponse_Type type() const;
+  inline void set_type(::Remote::MediaResponse_Type value);
+
+  // optional .Remote.Error error = 2;
   inline bool has_error() const;
   inline void clear_error();
-  static const int kErrorFieldNumber = 1;
+  static const int kErrorFieldNumber = 2;
   inline const ::Remote::Error& error() const;
   inline ::Remote::Error* mutable_error();
   inline ::Remote::Error* release_error();
   inline void set_allocated_error(::Remote::Error* error);
 
-  // required .Remote.MediaResponse.Type response_type = 2;
-  inline bool has_response_type() const;
-  inline void clear_response_type();
-  static const int kResponseTypeFieldNumber = 2;
-  inline ::Remote::MediaResponse_Type response_type() const;
-  inline void set_response_type(::Remote::MediaResponse_Type value);
-
-  // optional .Remote.MediaResponse.MediaPart part = 3;
+  // optional .Remote.MediaResponse.Part part = 3;
   inline bool has_part() const;
   inline void clear_part();
   static const int kPartFieldNumber = 3;
-  inline const ::Remote::MediaResponse_MediaPart& part() const;
-  inline ::Remote::MediaResponse_MediaPart* mutable_part();
-  inline ::Remote::MediaResponse_MediaPart* release_part();
-  inline void set_allocated_part(::Remote::MediaResponse_MediaPart* part);
+  inline const ::Remote::MediaResponse_Part& part() const;
+  inline ::Remote::MediaResponse_Part* mutable_part();
+  inline ::Remote::MediaResponse_Part* release_part();
+  inline void set_allocated_part(::Remote::MediaResponse_Part* part);
 
   // @@protoc_insertion_point(class_scope:Remote.MediaResponse)
  private:
+  inline void set_has_type();
+  inline void clear_has_type();
   inline void set_has_error();
   inline void clear_has_error();
-  inline void set_has_response_type();
-  inline void clear_has_response_type();
   inline void set_has_part();
   inline void clear_has_part();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::Remote::Error* error_;
-  ::Remote::MediaResponse_MediaPart* part_;
-  int response_type_;
+  ::Remote::MediaResponse_Part* part_;
+  int type_;
 
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
@@ -786,183 +1060,379 @@ class MediaResponse : public ::google::protobuf::Message {
 
 // ===================================================================
 
-// MediaRequest_Prepare
+// MediaRequest_Prepare_Audio
 
-// required int64 id = 1;
-inline bool MediaRequest_Prepare::has_id() const {
+// required int64 track_id = 1;
+inline bool MediaRequest_Prepare_Audio::has_track_id() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void MediaRequest_Prepare::set_has_id() {
+inline void MediaRequest_Prepare_Audio::set_has_track_id() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void MediaRequest_Prepare::clear_has_id() {
+inline void MediaRequest_Prepare_Audio::clear_has_track_id() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void MediaRequest_Prepare::clear_id() {
-  id_ = GOOGLE_LONGLONG(0);
-  clear_has_id();
+inline void MediaRequest_Prepare_Audio::clear_track_id() {
+  track_id_ = GOOGLE_LONGLONG(0);
+  clear_has_track_id();
 }
-inline ::google::protobuf::int64 MediaRequest_Prepare::id() const {
-  return id_;
+inline ::google::protobuf::int64 MediaRequest_Prepare_Audio::track_id() const {
+  return track_id_;
 }
-inline void MediaRequest_Prepare::set_id(::google::protobuf::int64 value) {
-  set_has_id();
-  id_ = value;
+inline void MediaRequest_Prepare_Audio::set_track_id(::google::protobuf::int64 value) {
+  set_has_track_id();
+  track_id_ = value;
 }
 
-// required uint32 offset_secs = 2;
-inline bool MediaRequest_Prepare::has_offset_secs() const {
+// optional .Remote.AudioCodecType codec_type = 2;
+inline bool MediaRequest_Prepare_Audio::has_codec_type() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void MediaRequest_Prepare::set_has_offset_secs() {
+inline void MediaRequest_Prepare_Audio::set_has_codec_type() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void MediaRequest_Prepare::clear_has_offset_secs() {
+inline void MediaRequest_Prepare_Audio::clear_has_codec_type() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void MediaRequest_Prepare::clear_offset_secs() {
-  offset_secs_ = 0u;
-  clear_has_offset_secs();
-}
-inline ::google::protobuf::uint32 MediaRequest_Prepare::offset_secs() const {
-  return offset_secs_;
-}
-inline void MediaRequest_Prepare::set_offset_secs(::google::protobuf::uint32 value) {
-  set_has_offset_secs();
-  offset_secs_ = value;
-}
-
-// optional .Remote.CodecType codec_type = 3;
-inline bool MediaRequest_Prepare::has_codec_type() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
-}
-inline void MediaRequest_Prepare::set_has_codec_type() {
-  _has_bits_[0] |= 0x00000004u;
-}
-inline void MediaRequest_Prepare::clear_has_codec_type() {
-  _has_bits_[0] &= ~0x00000004u;
-}
-inline void MediaRequest_Prepare::clear_codec_type() {
+inline void MediaRequest_Prepare_Audio::clear_codec_type() {
   codec_type_ = 1;
   clear_has_codec_type();
 }
-inline ::Remote::CodecType MediaRequest_Prepare::codec_type() const {
-  return static_cast< ::Remote::CodecType >(codec_type_);
+inline ::Remote::AudioCodecType MediaRequest_Prepare_Audio::codec_type() const {
+  return static_cast< ::Remote::AudioCodecType >(codec_type_);
 }
-inline void MediaRequest_Prepare::set_codec_type(::Remote::CodecType value) {
-  assert(::Remote::CodecType_IsValid(value));
+inline void MediaRequest_Prepare_Audio::set_codec_type(::Remote::AudioCodecType value) {
+  assert(::Remote::AudioCodecType_IsValid(value));
   set_has_codec_type();
   codec_type_ = value;
 }
 
-// optional uint32 audio_bitrate = 4;
-inline bool MediaRequest_Prepare::has_audio_bitrate() const {
+// optional uint32 bitrate = 3;
+inline bool MediaRequest_Prepare_Audio::has_bitrate() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void MediaRequest_Prepare_Audio::set_has_bitrate() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void MediaRequest_Prepare_Audio::clear_has_bitrate() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void MediaRequest_Prepare_Audio::clear_bitrate() {
+  bitrate_ = 0u;
+  clear_has_bitrate();
+}
+inline ::google::protobuf::uint32 MediaRequest_Prepare_Audio::bitrate() const {
+  return bitrate_;
+}
+inline void MediaRequest_Prepare_Audio::set_bitrate(::google::protobuf::uint32 value) {
+  set_has_bitrate();
+  bitrate_ = value;
+}
+
+// optional uint32 stream_idx = 4;
+inline bool MediaRequest_Prepare_Audio::has_stream_idx() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
-inline void MediaRequest_Prepare::set_has_audio_bitrate() {
+inline void MediaRequest_Prepare_Audio::set_has_stream_idx() {
   _has_bits_[0] |= 0x00000008u;
 }
-inline void MediaRequest_Prepare::clear_has_audio_bitrate() {
+inline void MediaRequest_Prepare_Audio::clear_has_stream_idx() {
   _has_bits_[0] &= ~0x00000008u;
 }
-inline void MediaRequest_Prepare::clear_audio_bitrate() {
-  audio_bitrate_ = 0u;
-  clear_has_audio_bitrate();
+inline void MediaRequest_Prepare_Audio::clear_stream_idx() {
+  stream_idx_ = 0u;
+  clear_has_stream_idx();
 }
-inline ::google::protobuf::uint32 MediaRequest_Prepare::audio_bitrate() const {
-  return audio_bitrate_;
+inline ::google::protobuf::uint32 MediaRequest_Prepare_Audio::stream_idx() const {
+  return stream_idx_;
 }
-inline void MediaRequest_Prepare::set_audio_bitrate(::google::protobuf::uint32 value) {
-  set_has_audio_bitrate();
-  audio_bitrate_ = value;
+inline void MediaRequest_Prepare_Audio::set_stream_idx(::google::protobuf::uint32 value) {
+  set_has_stream_idx();
+  stream_idx_ = value;
 }
 
-// optional uint32 video_bitrate = 5;
-inline bool MediaRequest_Prepare::has_video_bitrate() const {
+// optional uint32 offset_secs = 5;
+inline bool MediaRequest_Prepare_Audio::has_offset_secs() const {
   return (_has_bits_[0] & 0x00000010u) != 0;
 }
-inline void MediaRequest_Prepare::set_has_video_bitrate() {
+inline void MediaRequest_Prepare_Audio::set_has_offset_secs() {
   _has_bits_[0] |= 0x00000010u;
 }
-inline void MediaRequest_Prepare::clear_has_video_bitrate() {
+inline void MediaRequest_Prepare_Audio::clear_has_offset_secs() {
   _has_bits_[0] &= ~0x00000010u;
 }
-inline void MediaRequest_Prepare::clear_video_bitrate() {
-  video_bitrate_ = 0u;
-  clear_has_video_bitrate();
+inline void MediaRequest_Prepare_Audio::clear_offset_secs() {
+  offset_secs_ = 0u;
+  clear_has_offset_secs();
 }
-inline ::google::protobuf::uint32 MediaRequest_Prepare::video_bitrate() const {
-  return video_bitrate_;
+inline ::google::protobuf::uint32 MediaRequest_Prepare_Audio::offset_secs() const {
+  return offset_secs_;
 }
-inline void MediaRequest_Prepare::set_video_bitrate(::google::protobuf::uint32 value) {
-  set_has_video_bitrate();
-  video_bitrate_ = value;
+inline void MediaRequest_Prepare_Audio::set_offset_secs(::google::protobuf::uint32 value) {
+  set_has_offset_secs();
+  offset_secs_ = value;
 }
 
-// optional uint32 audio_stream_idx = 6;
-inline bool MediaRequest_Prepare::has_audio_stream_idx() const {
-  return (_has_bits_[0] & 0x00000020u) != 0;
+// -------------------------------------------------------------------
+
+// MediaRequest_Prepare_Video
+
+// required int64 video_id = 1;
+inline bool MediaRequest_Prepare_Video::has_video_id() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void MediaRequest_Prepare::set_has_audio_stream_idx() {
-  _has_bits_[0] |= 0x00000020u;
+inline void MediaRequest_Prepare_Video::set_has_video_id() {
+  _has_bits_[0] |= 0x00000001u;
 }
-inline void MediaRequest_Prepare::clear_has_audio_stream_idx() {
-  _has_bits_[0] &= ~0x00000020u;
+inline void MediaRequest_Prepare_Video::clear_has_video_id() {
+  _has_bits_[0] &= ~0x00000001u;
 }
-inline void MediaRequest_Prepare::clear_audio_stream_idx() {
+inline void MediaRequest_Prepare_Video::clear_video_id() {
+  video_id_ = GOOGLE_LONGLONG(0);
+  clear_has_video_id();
+}
+inline ::google::protobuf::int64 MediaRequest_Prepare_Video::video_id() const {
+  return video_id_;
+}
+inline void MediaRequest_Prepare_Video::set_video_id(::google::protobuf::int64 value) {
+  set_has_video_id();
+  video_id_ = value;
+}
+
+// optional .Remote.VideoCodecType codec_type = 2;
+inline bool MediaRequest_Prepare_Video::has_codec_type() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void MediaRequest_Prepare_Video::set_has_codec_type() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void MediaRequest_Prepare_Video::clear_has_codec_type() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void MediaRequest_Prepare_Video::clear_codec_type() {
+  codec_type_ = 1;
+  clear_has_codec_type();
+}
+inline ::Remote::VideoCodecType MediaRequest_Prepare_Video::codec_type() const {
+  return static_cast< ::Remote::VideoCodecType >(codec_type_);
+}
+inline void MediaRequest_Prepare_Video::set_codec_type(::Remote::VideoCodecType value) {
+  assert(::Remote::VideoCodecType_IsValid(value));
+  set_has_codec_type();
+  codec_type_ = value;
+}
+
+// optional uint32 bitrate = 3;
+inline bool MediaRequest_Prepare_Video::has_bitrate() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void MediaRequest_Prepare_Video::set_has_bitrate() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void MediaRequest_Prepare_Video::clear_has_bitrate() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void MediaRequest_Prepare_Video::clear_bitrate() {
+  bitrate_ = 0u;
+  clear_has_bitrate();
+}
+inline ::google::protobuf::uint32 MediaRequest_Prepare_Video::bitrate() const {
+  return bitrate_;
+}
+inline void MediaRequest_Prepare_Video::set_bitrate(::google::protobuf::uint32 value) {
+  set_has_bitrate();
+  bitrate_ = value;
+}
+
+// optional uint32 offset_secs = 4;
+inline bool MediaRequest_Prepare_Video::has_offset_secs() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void MediaRequest_Prepare_Video::set_has_offset_secs() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void MediaRequest_Prepare_Video::clear_has_offset_secs() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void MediaRequest_Prepare_Video::clear_offset_secs() {
+  offset_secs_ = 0u;
+  clear_has_offset_secs();
+}
+inline ::google::protobuf::uint32 MediaRequest_Prepare_Video::offset_secs() const {
+  return offset_secs_;
+}
+inline void MediaRequest_Prepare_Video::set_offset_secs(::google::protobuf::uint32 value) {
+  set_has_offset_secs();
+  offset_secs_ = value;
+}
+
+// optional uint32 audio_stream_idx = 5;
+inline bool MediaRequest_Prepare_Video::has_audio_stream_idx() const {
+  return (_has_bits_[0] & 0x00000010u) != 0;
+}
+inline void MediaRequest_Prepare_Video::set_has_audio_stream_idx() {
+  _has_bits_[0] |= 0x00000010u;
+}
+inline void MediaRequest_Prepare_Video::clear_has_audio_stream_idx() {
+  _has_bits_[0] &= ~0x00000010u;
+}
+inline void MediaRequest_Prepare_Video::clear_audio_stream_idx() {
   audio_stream_idx_ = 0u;
   clear_has_audio_stream_idx();
 }
-inline ::google::protobuf::uint32 MediaRequest_Prepare::audio_stream_idx() const {
+inline ::google::protobuf::uint32 MediaRequest_Prepare_Video::audio_stream_idx() const {
   return audio_stream_idx_;
 }
-inline void MediaRequest_Prepare::set_audio_stream_idx(::google::protobuf::uint32 value) {
+inline void MediaRequest_Prepare_Video::set_audio_stream_idx(::google::protobuf::uint32 value) {
   set_has_audio_stream_idx();
   audio_stream_idx_ = value;
 }
 
-// optional uint32 video_stream_idx = 7;
-inline bool MediaRequest_Prepare::has_video_stream_idx() const {
-  return (_has_bits_[0] & 0x00000040u) != 0;
+// optional uint32 video_stream_idx = 6;
+inline bool MediaRequest_Prepare_Video::has_video_stream_idx() const {
+  return (_has_bits_[0] & 0x00000020u) != 0;
 }
-inline void MediaRequest_Prepare::set_has_video_stream_idx() {
-  _has_bits_[0] |= 0x00000040u;
+inline void MediaRequest_Prepare_Video::set_has_video_stream_idx() {
+  _has_bits_[0] |= 0x00000020u;
 }
-inline void MediaRequest_Prepare::clear_has_video_stream_idx() {
-  _has_bits_[0] &= ~0x00000040u;
+inline void MediaRequest_Prepare_Video::clear_has_video_stream_idx() {
+  _has_bits_[0] &= ~0x00000020u;
 }
-inline void MediaRequest_Prepare::clear_video_stream_idx() {
+inline void MediaRequest_Prepare_Video::clear_video_stream_idx() {
   video_stream_idx_ = 0u;
   clear_has_video_stream_idx();
 }
-inline ::google::protobuf::uint32 MediaRequest_Prepare::video_stream_idx() const {
+inline ::google::protobuf::uint32 MediaRequest_Prepare_Video::video_stream_idx() const {
   return video_stream_idx_;
 }
-inline void MediaRequest_Prepare::set_video_stream_idx(::google::protobuf::uint32 value) {
+inline void MediaRequest_Prepare_Video::set_video_stream_idx(::google::protobuf::uint32 value) {
   set_has_video_stream_idx();
   video_stream_idx_ = value;
 }
 
-// optional uint32 subtitle_stream_idx = 8;
-inline bool MediaRequest_Prepare::has_subtitle_stream_idx() const {
-  return (_has_bits_[0] & 0x00000080u) != 0;
+// optional uint32 subtitle_stream_idx = 7;
+inline bool MediaRequest_Prepare_Video::has_subtitle_stream_idx() const {
+  return (_has_bits_[0] & 0x00000040u) != 0;
 }
-inline void MediaRequest_Prepare::set_has_subtitle_stream_idx() {
-  _has_bits_[0] |= 0x00000080u;
+inline void MediaRequest_Prepare_Video::set_has_subtitle_stream_idx() {
+  _has_bits_[0] |= 0x00000040u;
 }
-inline void MediaRequest_Prepare::clear_has_subtitle_stream_idx() {
-  _has_bits_[0] &= ~0x00000080u;
+inline void MediaRequest_Prepare_Video::clear_has_subtitle_stream_idx() {
+  _has_bits_[0] &= ~0x00000040u;
 }
-inline void MediaRequest_Prepare::clear_subtitle_stream_idx() {
+inline void MediaRequest_Prepare_Video::clear_subtitle_stream_idx() {
   subtitle_stream_idx_ = 0u;
   clear_has_subtitle_stream_idx();
 }
-inline ::google::protobuf::uint32 MediaRequest_Prepare::subtitle_stream_idx() const {
+inline ::google::protobuf::uint32 MediaRequest_Prepare_Video::subtitle_stream_idx() const {
   return subtitle_stream_idx_;
 }
-inline void MediaRequest_Prepare::set_subtitle_stream_idx(::google::protobuf::uint32 value) {
+inline void MediaRequest_Prepare_Video::set_subtitle_stream_idx(::google::protobuf::uint32 value) {
   set_has_subtitle_stream_idx();
   subtitle_stream_idx_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// MediaRequest_Prepare
+
+// required .Remote.MediaRequest.Prepare.Type type = 1;
+inline bool MediaRequest_Prepare::has_type() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void MediaRequest_Prepare::set_has_type() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void MediaRequest_Prepare::clear_has_type() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void MediaRequest_Prepare::clear_type() {
+  type_ = 1;
+  clear_has_type();
+}
+inline ::Remote::MediaRequest_Prepare_Type MediaRequest_Prepare::type() const {
+  return static_cast< ::Remote::MediaRequest_Prepare_Type >(type_);
+}
+inline void MediaRequest_Prepare::set_type(::Remote::MediaRequest_Prepare_Type value) {
+  assert(::Remote::MediaRequest_Prepare_Type_IsValid(value));
+  set_has_type();
+  type_ = value;
+}
+
+// optional .Remote.MediaRequest.Prepare.Audio audio = 2;
+inline bool MediaRequest_Prepare::has_audio() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void MediaRequest_Prepare::set_has_audio() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void MediaRequest_Prepare::clear_has_audio() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void MediaRequest_Prepare::clear_audio() {
+  if (audio_ != NULL) audio_->::Remote::MediaRequest_Prepare_Audio::Clear();
+  clear_has_audio();
+}
+inline const ::Remote::MediaRequest_Prepare_Audio& MediaRequest_Prepare::audio() const {
+  return audio_ != NULL ? *audio_ : *default_instance_->audio_;
+}
+inline ::Remote::MediaRequest_Prepare_Audio* MediaRequest_Prepare::mutable_audio() {
+  set_has_audio();
+  if (audio_ == NULL) audio_ = new ::Remote::MediaRequest_Prepare_Audio;
+  return audio_;
+}
+inline ::Remote::MediaRequest_Prepare_Audio* MediaRequest_Prepare::release_audio() {
+  clear_has_audio();
+  ::Remote::MediaRequest_Prepare_Audio* temp = audio_;
+  audio_ = NULL;
+  return temp;
+}
+inline void MediaRequest_Prepare::set_allocated_audio(::Remote::MediaRequest_Prepare_Audio* audio) {
+  delete audio_;
+  audio_ = audio;
+  if (audio) {
+    set_has_audio();
+  } else {
+    clear_has_audio();
+  }
+}
+
+// optional .Remote.MediaRequest.Prepare.Video video = 3;
+inline bool MediaRequest_Prepare::has_video() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void MediaRequest_Prepare::set_has_video() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void MediaRequest_Prepare::clear_has_video() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void MediaRequest_Prepare::clear_video() {
+  if (video_ != NULL) video_->::Remote::MediaRequest_Prepare_Video::Clear();
+  clear_has_video();
+}
+inline const ::Remote::MediaRequest_Prepare_Video& MediaRequest_Prepare::video() const {
+  return video_ != NULL ? *video_ : *default_instance_->video_;
+}
+inline ::Remote::MediaRequest_Prepare_Video* MediaRequest_Prepare::mutable_video() {
+  set_has_video();
+  if (video_ == NULL) video_ = new ::Remote::MediaRequest_Prepare_Video;
+  return video_;
+}
+inline ::Remote::MediaRequest_Prepare_Video* MediaRequest_Prepare::release_video() {
+  clear_has_video();
+  ::Remote::MediaRequest_Prepare_Video* temp = video_;
+  video_ = NULL;
+  return temp;
+}
+inline void MediaRequest_Prepare::set_allocated_video(::Remote::MediaRequest_Prepare_Video* video) {
+  delete video_;
+  video_ = video;
+  if (video) {
+    set_has_video();
+  } else {
+    clear_has_video();
+  }
 }
 
 // -------------------------------------------------------------------
@@ -999,27 +1469,27 @@ inline void MediaRequest_GetPart::set_requested_data_size(::google::protobuf::ui
 
 // MediaRequest
 
-// required .Remote.MediaRequest.Type request_type = 1;
-inline bool MediaRequest::has_request_type() const {
+// required .Remote.MediaRequest.Type type = 1;
+inline bool MediaRequest::has_type() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void MediaRequest::set_has_request_type() {
+inline void MediaRequest::set_has_type() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void MediaRequest::clear_has_request_type() {
+inline void MediaRequest::clear_has_type() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void MediaRequest::clear_request_type() {
-  request_type_ = 1;
-  clear_has_request_type();
+inline void MediaRequest::clear_type() {
+  type_ = 1;
+  clear_has_type();
 }
-inline ::Remote::MediaRequest_Type MediaRequest::request_type() const {
-  return static_cast< ::Remote::MediaRequest_Type >(request_type_);
+inline ::Remote::MediaRequest_Type MediaRequest::type() const {
+  return static_cast< ::Remote::MediaRequest_Type >(type_);
 }
-inline void MediaRequest::set_request_type(::Remote::MediaRequest_Type value) {
+inline void MediaRequest::set_type(::Remote::MediaRequest_Type value) {
   assert(::Remote::MediaRequest_Type_IsValid(value));
-  set_has_request_type();
-  request_type_ = value;
+  set_has_type();
+  type_ = value;
 }
 
 // optional .Remote.MediaRequest.Prepare prepare = 2;
@@ -1138,87 +1608,114 @@ inline void MediaRequest::set_allocated_terminate(::Remote::MediaRequest_Termina
 
 // -------------------------------------------------------------------
 
-// MediaResponse_MediaPart
+// MediaResponse_Part
 
-// required uint64 byte_offset = 1;
-inline bool MediaResponse_MediaPart::has_byte_offset() const {
+// required bytes data = 1;
+inline bool MediaResponse_Part::has_data() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void MediaResponse_MediaPart::set_has_byte_offset() {
+inline void MediaResponse_Part::set_has_data() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void MediaResponse_MediaPart::clear_has_byte_offset() {
+inline void MediaResponse_Part::clear_has_data() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void MediaResponse_MediaPart::clear_byte_offset() {
-  byte_offset_ = GOOGLE_ULONGLONG(0);
-  clear_has_byte_offset();
+inline void MediaResponse_Part::clear_data() {
+  if (data_ != &::google::protobuf::internal::kEmptyString) {
+    data_->clear();
+  }
+  clear_has_data();
 }
-inline ::google::protobuf::uint64 MediaResponse_MediaPart::byte_offset() const {
-  return byte_offset_;
+inline const ::std::string& MediaResponse_Part::data() const {
+  return *data_;
 }
-inline void MediaResponse_MediaPart::set_byte_offset(::google::protobuf::uint64 value) {
-  set_has_byte_offset();
-  byte_offset_ = value;
+inline void MediaResponse_Part::set_data(const ::std::string& value) {
+  set_has_data();
+  if (data_ == &::google::protobuf::internal::kEmptyString) {
+    data_ = new ::std::string;
+  }
+  data_->assign(value);
 }
-
-// repeated bytes data = 2;
-inline int MediaResponse_MediaPart::data_size() const {
-  return data_.size();
+inline void MediaResponse_Part::set_data(const char* value) {
+  set_has_data();
+  if (data_ == &::google::protobuf::internal::kEmptyString) {
+    data_ = new ::std::string;
+  }
+  data_->assign(value);
 }
-inline void MediaResponse_MediaPart::clear_data() {
-  data_.Clear();
+inline void MediaResponse_Part::set_data(const void* value, size_t size) {
+  set_has_data();
+  if (data_ == &::google::protobuf::internal::kEmptyString) {
+    data_ = new ::std::string;
+  }
+  data_->assign(reinterpret_cast<const char*>(value), size);
 }
-inline const ::std::string& MediaResponse_MediaPart::data(int index) const {
-  return data_.Get(index);
-}
-inline ::std::string* MediaResponse_MediaPart::mutable_data(int index) {
-  return data_.Mutable(index);
-}
-inline void MediaResponse_MediaPart::set_data(int index, const ::std::string& value) {
-  data_.Mutable(index)->assign(value);
-}
-inline void MediaResponse_MediaPart::set_data(int index, const char* value) {
-  data_.Mutable(index)->assign(value);
-}
-inline void MediaResponse_MediaPart::set_data(int index, const void* value, size_t size) {
-  data_.Mutable(index)->assign(
-    reinterpret_cast<const char*>(value), size);
-}
-inline ::std::string* MediaResponse_MediaPart::add_data() {
-  return data_.Add();
-}
-inline void MediaResponse_MediaPart::add_data(const ::std::string& value) {
-  data_.Add()->assign(value);
-}
-inline void MediaResponse_MediaPart::add_data(const char* value) {
-  data_.Add()->assign(value);
-}
-inline void MediaResponse_MediaPart::add_data(const void* value, size_t size) {
-  data_.Add()->assign(reinterpret_cast<const char*>(value), size);
-}
-inline const ::google::protobuf::RepeatedPtrField< ::std::string>&
-MediaResponse_MediaPart::data() const {
+inline ::std::string* MediaResponse_Part::mutable_data() {
+  set_has_data();
+  if (data_ == &::google::protobuf::internal::kEmptyString) {
+    data_ = new ::std::string;
+  }
   return data_;
 }
-inline ::google::protobuf::RepeatedPtrField< ::std::string>*
-MediaResponse_MediaPart::mutable_data() {
-  return &data_;
+inline ::std::string* MediaResponse_Part::release_data() {
+  clear_has_data();
+  if (data_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = data_;
+    data_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void MediaResponse_Part::set_allocated_data(::std::string* data) {
+  if (data_ != &::google::protobuf::internal::kEmptyString) {
+    delete data_;
+  }
+  if (data) {
+    set_has_data();
+    data_ = data;
+  } else {
+    clear_has_data();
+    data_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
 }
 
 // -------------------------------------------------------------------
 
 // MediaResponse
 
-// required .Remote.Error error = 1;
-inline bool MediaResponse::has_error() const {
+// required .Remote.MediaResponse.Type type = 1;
+inline bool MediaResponse::has_type() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void MediaResponse::set_has_error() {
+inline void MediaResponse::set_has_type() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void MediaResponse::clear_has_error() {
+inline void MediaResponse::clear_has_type() {
   _has_bits_[0] &= ~0x00000001u;
+}
+inline void MediaResponse::clear_type() {
+  type_ = 1;
+  clear_has_type();
+}
+inline ::Remote::MediaResponse_Type MediaResponse::type() const {
+  return static_cast< ::Remote::MediaResponse_Type >(type_);
+}
+inline void MediaResponse::set_type(::Remote::MediaResponse_Type value) {
+  assert(::Remote::MediaResponse_Type_IsValid(value));
+  set_has_type();
+  type_ = value;
+}
+
+// optional .Remote.Error error = 2;
+inline bool MediaResponse::has_error() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void MediaResponse::set_has_error() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void MediaResponse::clear_has_error() {
+  _has_bits_[0] &= ~0x00000002u;
 }
 inline void MediaResponse::clear_error() {
   if (error_ != NULL) error_->::Remote::Error::Clear();
@@ -1248,30 +1745,7 @@ inline void MediaResponse::set_allocated_error(::Remote::Error* error) {
   }
 }
 
-// required .Remote.MediaResponse.Type response_type = 2;
-inline bool MediaResponse::has_response_type() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void MediaResponse::set_has_response_type() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void MediaResponse::clear_has_response_type() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void MediaResponse::clear_response_type() {
-  response_type_ = 1;
-  clear_has_response_type();
-}
-inline ::Remote::MediaResponse_Type MediaResponse::response_type() const {
-  return static_cast< ::Remote::MediaResponse_Type >(response_type_);
-}
-inline void MediaResponse::set_response_type(::Remote::MediaResponse_Type value) {
-  assert(::Remote::MediaResponse_Type_IsValid(value));
-  set_has_response_type();
-  response_type_ = value;
-}
-
-// optional .Remote.MediaResponse.MediaPart part = 3;
+// optional .Remote.MediaResponse.Part part = 3;
 inline bool MediaResponse::has_part() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
@@ -1282,24 +1756,24 @@ inline void MediaResponse::clear_has_part() {
   _has_bits_[0] &= ~0x00000004u;
 }
 inline void MediaResponse::clear_part() {
-  if (part_ != NULL) part_->::Remote::MediaResponse_MediaPart::Clear();
+  if (part_ != NULL) part_->::Remote::MediaResponse_Part::Clear();
   clear_has_part();
 }
-inline const ::Remote::MediaResponse_MediaPart& MediaResponse::part() const {
+inline const ::Remote::MediaResponse_Part& MediaResponse::part() const {
   return part_ != NULL ? *part_ : *default_instance_->part_;
 }
-inline ::Remote::MediaResponse_MediaPart* MediaResponse::mutable_part() {
+inline ::Remote::MediaResponse_Part* MediaResponse::mutable_part() {
   set_has_part();
-  if (part_ == NULL) part_ = new ::Remote::MediaResponse_MediaPart;
+  if (part_ == NULL) part_ = new ::Remote::MediaResponse_Part;
   return part_;
 }
-inline ::Remote::MediaResponse_MediaPart* MediaResponse::release_part() {
+inline ::Remote::MediaResponse_Part* MediaResponse::release_part() {
   clear_has_part();
-  ::Remote::MediaResponse_MediaPart* temp = part_;
+  ::Remote::MediaResponse_Part* temp = part_;
   part_ = NULL;
   return temp;
 }
-inline void MediaResponse::set_allocated_part(::Remote::MediaResponse_MediaPart* part) {
+inline void MediaResponse::set_allocated_part(::Remote::MediaResponse_Part* part) {
   delete part_;
   part_ = part;
   if (part) {
@@ -1319,6 +1793,10 @@ namespace google {
 namespace protobuf {
 
 template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::Remote::MediaRequest_Prepare_Type>() {
+  return ::Remote::MediaRequest_Prepare_Type_descriptor();
+}
+template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::Remote::MediaRequest_Type>() {
   return ::Remote::MediaRequest_Type_descriptor();
 }
@@ -1327,8 +1805,12 @@ inline const EnumDescriptor* GetEnumDescriptor< ::Remote::MediaResponse_Type>() 
   return ::Remote::MediaResponse_Type_descriptor();
 }
 template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::Remote::CodecType>() {
-  return ::Remote::CodecType_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor< ::Remote::AudioCodecType>() {
+  return ::Remote::AudioCodecType_descriptor();
+}
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::Remote::VideoCodecType>() {
+  return ::Remote::VideoCodecType_descriptor();
 }
 
 }  // namespace google

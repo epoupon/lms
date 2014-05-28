@@ -120,13 +120,19 @@ database_integrity_LDADD = $(LDADD)
 database_integrity_LINK = $(CXXLD) $(database_integrity_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_remote_OBJECTS = remote-RemoteClientServer.$(OBJEXT) \
-	remote-TestDatabase.$(OBJEXT) remote-Server.$(OBJEXT) \
-	remote-RequestHandler.$(OBJEXT) \
+	remote-TestDatabase.$(OBJEXT) remote-CodecContext.$(OBJEXT) \
+	remote-Common.$(OBJEXT) remote-Dictionary.$(OBJEXT) \
+	remote-FormatContext.$(OBJEXT) \
+	remote-InputFormatContext.$(OBJEXT) remote-Stream.$(OBJEXT) \
+	remote-Server.$(OBJEXT) remote-RequestHandler.$(OBJEXT) \
 	remote-AudioCollectionRequestHandler.$(OBJEXT) \
+	remote-MediaRequestHandler.$(OBJEXT) \
 	remote-ConnectionManager.$(OBJEXT) remote-Connection.$(OBJEXT) \
 	remote-auth.pb.$(OBJEXT) remote-collection.pb.$(OBJEXT) \
 	remote-common.pb.$(OBJEXT) remote-media.pb.$(OBJEXT) \
-	remote-messages.pb.$(OBJEXT) remote-Artist.$(OBJEXT) \
+	remote-messages.pb.$(OBJEXT) remote-AvConvTranscoder.$(OBJEXT) \
+	remote-Format.$(OBJEXT) remote-Parameters.$(OBJEXT) \
+	remote-InputMediaFile.$(OBJEXT) remote-Artist.$(OBJEXT) \
 	remote-Genre.$(OBJEXT) remote-Release.$(OBJEXT) \
 	remote-Track.$(OBJEXT) remote-DatabaseHandler.$(OBJEXT) \
 	remote-SqlQuery.$(OBJEXT) remote-Path.$(OBJEXT) \
@@ -498,9 +504,16 @@ top_srcdir = @top_srcdir@
 remote_SOURCES = \
 	$(srcdir)/RemoteClientServer.cpp			\
 	$(srcdir)/TestDatabase.cpp				\
+	$(top_srcdir)/av/CodecContext.cpp			\
+	$(top_srcdir)/av/Common.cpp				\
+	$(top_srcdir)/av/Dictionary.cpp				\
+	$(top_srcdir)/av/FormatContext.cpp			\
+	$(top_srcdir)/av/InputFormatContext.cpp			\
+	$(top_srcdir)/av/Stream.cpp				\
 	$(top_srcdir)/remote/server/Server.cpp			\
 	$(top_srcdir)/remote/server/RequestHandler.cpp		\
 	$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp		\
+	$(top_srcdir)/remote/server/MediaRequestHandler.cpp	\
 	$(top_srcdir)/remote/server/ConnectionManager.cpp	\
 	$(top_srcdir)/remote/server/Connection.cpp		\
 	$(top_srcdir)/remote/messages/auth.pb.cc		\
@@ -508,6 +521,10 @@ remote_SOURCES = \
 	$(top_srcdir)/remote/messages/common.pb.cc		\
 	$(top_srcdir)/remote/messages/media.pb.cc		\
 	$(top_srcdir)/remote/messages/messages.pb.cc		\
+	$(top_srcdir)/transcode/AvConvTranscoder.cpp		\
+	$(top_srcdir)/transcode/Format.cpp			\
+	$(top_srcdir)/transcode/Parameters.cpp			\
+	$(top_srcdir)/transcode/InputMediaFile.cpp		\
 	$(top_srcdir)/database/Artist.cpp			\
 	$(top_srcdir)/database/Genre.cpp			\
 	$(top_srcdir)/database/Release.cpp			\
@@ -632,17 +649,28 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/database_integrity-Video.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Artist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-AudioCollectionRequestHandler.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-AvConvTranscoder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Checksum.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-CodecContext.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Connection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-ConnectionManager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-DatabaseHandler.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Dictionary.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Format.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-FormatContext.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Genre.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-InputFormatContext.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-InputMediaFile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-MediaRequestHandler.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Parameters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Path.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Release.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-RemoteClientServer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-RequestHandler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Server.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-SqlQuery.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Stream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-TestDatabase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Track.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Video.Po@am__quote@
@@ -976,6 +1004,90 @@ remote-TestDatabase.obj: $(srcdir)/TestDatabase.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-TestDatabase.obj `if test -f '$(srcdir)/TestDatabase.cpp'; then $(CYGPATH_W) '$(srcdir)/TestDatabase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestDatabase.cpp'; fi`
 
+remote-CodecContext.o: $(top_srcdir)/av/CodecContext.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-CodecContext.o -MD -MP -MF $(DEPDIR)/remote-CodecContext.Tpo -c -o remote-CodecContext.o `test -f '$(top_srcdir)/av/CodecContext.cpp' || echo '$(srcdir)/'`$(top_srcdir)/av/CodecContext.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-CodecContext.Tpo $(DEPDIR)/remote-CodecContext.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/CodecContext.cpp' object='remote-CodecContext.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-CodecContext.o `test -f '$(top_srcdir)/av/CodecContext.cpp' || echo '$(srcdir)/'`$(top_srcdir)/av/CodecContext.cpp
+
+remote-CodecContext.obj: $(top_srcdir)/av/CodecContext.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-CodecContext.obj -MD -MP -MF $(DEPDIR)/remote-CodecContext.Tpo -c -o remote-CodecContext.obj `if test -f '$(top_srcdir)/av/CodecContext.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/CodecContext.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/CodecContext.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-CodecContext.Tpo $(DEPDIR)/remote-CodecContext.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/CodecContext.cpp' object='remote-CodecContext.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-CodecContext.obj `if test -f '$(top_srcdir)/av/CodecContext.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/CodecContext.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/CodecContext.cpp'; fi`
+
+remote-Common.o: $(top_srcdir)/av/Common.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Common.o -MD -MP -MF $(DEPDIR)/remote-Common.Tpo -c -o remote-Common.o `test -f '$(top_srcdir)/av/Common.cpp' || echo '$(srcdir)/'`$(top_srcdir)/av/Common.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Common.Tpo $(DEPDIR)/remote-Common.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/Common.cpp' object='remote-Common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Common.o `test -f '$(top_srcdir)/av/Common.cpp' || echo '$(srcdir)/'`$(top_srcdir)/av/Common.cpp
+
+remote-Common.obj: $(top_srcdir)/av/Common.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Common.obj -MD -MP -MF $(DEPDIR)/remote-Common.Tpo -c -o remote-Common.obj `if test -f '$(top_srcdir)/av/Common.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/Common.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/Common.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Common.Tpo $(DEPDIR)/remote-Common.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/Common.cpp' object='remote-Common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Common.obj `if test -f '$(top_srcdir)/av/Common.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/Common.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/Common.cpp'; fi`
+
+remote-Dictionary.o: $(top_srcdir)/av/Dictionary.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Dictionary.o -MD -MP -MF $(DEPDIR)/remote-Dictionary.Tpo -c -o remote-Dictionary.o `test -f '$(top_srcdir)/av/Dictionary.cpp' || echo '$(srcdir)/'`$(top_srcdir)/av/Dictionary.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Dictionary.Tpo $(DEPDIR)/remote-Dictionary.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/Dictionary.cpp' object='remote-Dictionary.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Dictionary.o `test -f '$(top_srcdir)/av/Dictionary.cpp' || echo '$(srcdir)/'`$(top_srcdir)/av/Dictionary.cpp
+
+remote-Dictionary.obj: $(top_srcdir)/av/Dictionary.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Dictionary.obj -MD -MP -MF $(DEPDIR)/remote-Dictionary.Tpo -c -o remote-Dictionary.obj `if test -f '$(top_srcdir)/av/Dictionary.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/Dictionary.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/Dictionary.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Dictionary.Tpo $(DEPDIR)/remote-Dictionary.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/Dictionary.cpp' object='remote-Dictionary.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Dictionary.obj `if test -f '$(top_srcdir)/av/Dictionary.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/Dictionary.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/Dictionary.cpp'; fi`
+
+remote-FormatContext.o: $(top_srcdir)/av/FormatContext.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-FormatContext.o -MD -MP -MF $(DEPDIR)/remote-FormatContext.Tpo -c -o remote-FormatContext.o `test -f '$(top_srcdir)/av/FormatContext.cpp' || echo '$(srcdir)/'`$(top_srcdir)/av/FormatContext.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-FormatContext.Tpo $(DEPDIR)/remote-FormatContext.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/FormatContext.cpp' object='remote-FormatContext.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-FormatContext.o `test -f '$(top_srcdir)/av/FormatContext.cpp' || echo '$(srcdir)/'`$(top_srcdir)/av/FormatContext.cpp
+
+remote-FormatContext.obj: $(top_srcdir)/av/FormatContext.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-FormatContext.obj -MD -MP -MF $(DEPDIR)/remote-FormatContext.Tpo -c -o remote-FormatContext.obj `if test -f '$(top_srcdir)/av/FormatContext.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/FormatContext.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/FormatContext.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-FormatContext.Tpo $(DEPDIR)/remote-FormatContext.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/FormatContext.cpp' object='remote-FormatContext.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-FormatContext.obj `if test -f '$(top_srcdir)/av/FormatContext.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/FormatContext.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/FormatContext.cpp'; fi`
+
+remote-InputFormatContext.o: $(top_srcdir)/av/InputFormatContext.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-InputFormatContext.o -MD -MP -MF $(DEPDIR)/remote-InputFormatContext.Tpo -c -o remote-InputFormatContext.o `test -f '$(top_srcdir)/av/InputFormatContext.cpp' || echo '$(srcdir)/'`$(top_srcdir)/av/InputFormatContext.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-InputFormatContext.Tpo $(DEPDIR)/remote-InputFormatContext.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/InputFormatContext.cpp' object='remote-InputFormatContext.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-InputFormatContext.o `test -f '$(top_srcdir)/av/InputFormatContext.cpp' || echo '$(srcdir)/'`$(top_srcdir)/av/InputFormatContext.cpp
+
+remote-InputFormatContext.obj: $(top_srcdir)/av/InputFormatContext.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-InputFormatContext.obj -MD -MP -MF $(DEPDIR)/remote-InputFormatContext.Tpo -c -o remote-InputFormatContext.obj `if test -f '$(top_srcdir)/av/InputFormatContext.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/InputFormatContext.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/InputFormatContext.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-InputFormatContext.Tpo $(DEPDIR)/remote-InputFormatContext.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/InputFormatContext.cpp' object='remote-InputFormatContext.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-InputFormatContext.obj `if test -f '$(top_srcdir)/av/InputFormatContext.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/InputFormatContext.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/InputFormatContext.cpp'; fi`
+
+remote-Stream.o: $(top_srcdir)/av/Stream.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Stream.o -MD -MP -MF $(DEPDIR)/remote-Stream.Tpo -c -o remote-Stream.o `test -f '$(top_srcdir)/av/Stream.cpp' || echo '$(srcdir)/'`$(top_srcdir)/av/Stream.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Stream.Tpo $(DEPDIR)/remote-Stream.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/Stream.cpp' object='remote-Stream.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Stream.o `test -f '$(top_srcdir)/av/Stream.cpp' || echo '$(srcdir)/'`$(top_srcdir)/av/Stream.cpp
+
+remote-Stream.obj: $(top_srcdir)/av/Stream.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Stream.obj -MD -MP -MF $(DEPDIR)/remote-Stream.Tpo -c -o remote-Stream.obj `if test -f '$(top_srcdir)/av/Stream.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/Stream.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/Stream.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Stream.Tpo $(DEPDIR)/remote-Stream.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/Stream.cpp' object='remote-Stream.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Stream.obj `if test -f '$(top_srcdir)/av/Stream.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/Stream.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/Stream.cpp'; fi`
+
 remote-Server.o: $(top_srcdir)/remote/server/Server.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Server.o -MD -MP -MF $(DEPDIR)/remote-Server.Tpo -c -o remote-Server.o `test -f '$(top_srcdir)/remote/server/Server.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/Server.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Server.Tpo $(DEPDIR)/remote-Server.Po
@@ -1017,6 +1129,20 @@ remote-AudioCollectionRequestHandler.obj: $(top_srcdir)/remote/server/AudioColle
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp' object='remote-AudioCollectionRequestHandler.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-AudioCollectionRequestHandler.obj `if test -f '$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp'; fi`
+
+remote-MediaRequestHandler.o: $(top_srcdir)/remote/server/MediaRequestHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-MediaRequestHandler.o -MD -MP -MF $(DEPDIR)/remote-MediaRequestHandler.Tpo -c -o remote-MediaRequestHandler.o `test -f '$(top_srcdir)/remote/server/MediaRequestHandler.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/MediaRequestHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-MediaRequestHandler.Tpo $(DEPDIR)/remote-MediaRequestHandler.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/MediaRequestHandler.cpp' object='remote-MediaRequestHandler.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-MediaRequestHandler.o `test -f '$(top_srcdir)/remote/server/MediaRequestHandler.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/MediaRequestHandler.cpp
+
+remote-MediaRequestHandler.obj: $(top_srcdir)/remote/server/MediaRequestHandler.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-MediaRequestHandler.obj -MD -MP -MF $(DEPDIR)/remote-MediaRequestHandler.Tpo -c -o remote-MediaRequestHandler.obj `if test -f '$(top_srcdir)/remote/server/MediaRequestHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/MediaRequestHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/MediaRequestHandler.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-MediaRequestHandler.Tpo $(DEPDIR)/remote-MediaRequestHandler.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/server/MediaRequestHandler.cpp' object='remote-MediaRequestHandler.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-MediaRequestHandler.obj `if test -f '$(top_srcdir)/remote/server/MediaRequestHandler.cpp'; then $(CYGPATH_W) '$(top_srcdir)/remote/server/MediaRequestHandler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/server/MediaRequestHandler.cpp'; fi`
 
 remote-ConnectionManager.o: $(top_srcdir)/remote/server/ConnectionManager.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-ConnectionManager.o -MD -MP -MF $(DEPDIR)/remote-ConnectionManager.Tpo -c -o remote-ConnectionManager.o `test -f '$(top_srcdir)/remote/server/ConnectionManager.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/ConnectionManager.cpp
@@ -1115,6 +1241,62 @@ remote-messages.pb.obj: $(top_srcdir)/remote/messages/messages.pb.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/remote/messages/messages.pb.cc' object='remote-messages.pb.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-messages.pb.obj `if test -f '$(top_srcdir)/remote/messages/messages.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/remote/messages/messages.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/remote/messages/messages.pb.cc'; fi`
+
+remote-AvConvTranscoder.o: $(top_srcdir)/transcode/AvConvTranscoder.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-AvConvTranscoder.o -MD -MP -MF $(DEPDIR)/remote-AvConvTranscoder.Tpo -c -o remote-AvConvTranscoder.o `test -f '$(top_srcdir)/transcode/AvConvTranscoder.cpp' || echo '$(srcdir)/'`$(top_srcdir)/transcode/AvConvTranscoder.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-AvConvTranscoder.Tpo $(DEPDIR)/remote-AvConvTranscoder.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/transcode/AvConvTranscoder.cpp' object='remote-AvConvTranscoder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-AvConvTranscoder.o `test -f '$(top_srcdir)/transcode/AvConvTranscoder.cpp' || echo '$(srcdir)/'`$(top_srcdir)/transcode/AvConvTranscoder.cpp
+
+remote-AvConvTranscoder.obj: $(top_srcdir)/transcode/AvConvTranscoder.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-AvConvTranscoder.obj -MD -MP -MF $(DEPDIR)/remote-AvConvTranscoder.Tpo -c -o remote-AvConvTranscoder.obj `if test -f '$(top_srcdir)/transcode/AvConvTranscoder.cpp'; then $(CYGPATH_W) '$(top_srcdir)/transcode/AvConvTranscoder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/transcode/AvConvTranscoder.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-AvConvTranscoder.Tpo $(DEPDIR)/remote-AvConvTranscoder.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/transcode/AvConvTranscoder.cpp' object='remote-AvConvTranscoder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-AvConvTranscoder.obj `if test -f '$(top_srcdir)/transcode/AvConvTranscoder.cpp'; then $(CYGPATH_W) '$(top_srcdir)/transcode/AvConvTranscoder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/transcode/AvConvTranscoder.cpp'; fi`
+
+remote-Format.o: $(top_srcdir)/transcode/Format.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Format.o -MD -MP -MF $(DEPDIR)/remote-Format.Tpo -c -o remote-Format.o `test -f '$(top_srcdir)/transcode/Format.cpp' || echo '$(srcdir)/'`$(top_srcdir)/transcode/Format.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Format.Tpo $(DEPDIR)/remote-Format.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/transcode/Format.cpp' object='remote-Format.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Format.o `test -f '$(top_srcdir)/transcode/Format.cpp' || echo '$(srcdir)/'`$(top_srcdir)/transcode/Format.cpp
+
+remote-Format.obj: $(top_srcdir)/transcode/Format.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Format.obj -MD -MP -MF $(DEPDIR)/remote-Format.Tpo -c -o remote-Format.obj `if test -f '$(top_srcdir)/transcode/Format.cpp'; then $(CYGPATH_W) '$(top_srcdir)/transcode/Format.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/transcode/Format.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Format.Tpo $(DEPDIR)/remote-Format.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/transcode/Format.cpp' object='remote-Format.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Format.obj `if test -f '$(top_srcdir)/transcode/Format.cpp'; then $(CYGPATH_W) '$(top_srcdir)/transcode/Format.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/transcode/Format.cpp'; fi`
+
+remote-Parameters.o: $(top_srcdir)/transcode/Parameters.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Parameters.o -MD -MP -MF $(DEPDIR)/remote-Parameters.Tpo -c -o remote-Parameters.o `test -f '$(top_srcdir)/transcode/Parameters.cpp' || echo '$(srcdir)/'`$(top_srcdir)/transcode/Parameters.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Parameters.Tpo $(DEPDIR)/remote-Parameters.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/transcode/Parameters.cpp' object='remote-Parameters.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Parameters.o `test -f '$(top_srcdir)/transcode/Parameters.cpp' || echo '$(srcdir)/'`$(top_srcdir)/transcode/Parameters.cpp
+
+remote-Parameters.obj: $(top_srcdir)/transcode/Parameters.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Parameters.obj -MD -MP -MF $(DEPDIR)/remote-Parameters.Tpo -c -o remote-Parameters.obj `if test -f '$(top_srcdir)/transcode/Parameters.cpp'; then $(CYGPATH_W) '$(top_srcdir)/transcode/Parameters.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/transcode/Parameters.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-Parameters.Tpo $(DEPDIR)/remote-Parameters.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/transcode/Parameters.cpp' object='remote-Parameters.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Parameters.obj `if test -f '$(top_srcdir)/transcode/Parameters.cpp'; then $(CYGPATH_W) '$(top_srcdir)/transcode/Parameters.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/transcode/Parameters.cpp'; fi`
+
+remote-InputMediaFile.o: $(top_srcdir)/transcode/InputMediaFile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-InputMediaFile.o -MD -MP -MF $(DEPDIR)/remote-InputMediaFile.Tpo -c -o remote-InputMediaFile.o `test -f '$(top_srcdir)/transcode/InputMediaFile.cpp' || echo '$(srcdir)/'`$(top_srcdir)/transcode/InputMediaFile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-InputMediaFile.Tpo $(DEPDIR)/remote-InputMediaFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/transcode/InputMediaFile.cpp' object='remote-InputMediaFile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-InputMediaFile.o `test -f '$(top_srcdir)/transcode/InputMediaFile.cpp' || echo '$(srcdir)/'`$(top_srcdir)/transcode/InputMediaFile.cpp
+
+remote-InputMediaFile.obj: $(top_srcdir)/transcode/InputMediaFile.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-InputMediaFile.obj -MD -MP -MF $(DEPDIR)/remote-InputMediaFile.Tpo -c -o remote-InputMediaFile.obj `if test -f '$(top_srcdir)/transcode/InputMediaFile.cpp'; then $(CYGPATH_W) '$(top_srcdir)/transcode/InputMediaFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/transcode/InputMediaFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-InputMediaFile.Tpo $(DEPDIR)/remote-InputMediaFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/transcode/InputMediaFile.cpp' object='remote-InputMediaFile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-InputMediaFile.obj `if test -f '$(top_srcdir)/transcode/InputMediaFile.cpp'; then $(CYGPATH_W) '$(top_srcdir)/transcode/InputMediaFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/transcode/InputMediaFile.cpp'; fi`
 
 remote-Artist.o: $(top_srcdir)/database/Artist.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Artist.o -MD -MP -MF $(DEPDIR)/remote-Artist.Tpo -c -o remote-Artist.o `test -f '$(top_srcdir)/database/Artist.cpp' || echo '$(srcdir)/'`$(top_srcdir)/database/Artist.cpp

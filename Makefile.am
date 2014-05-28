@@ -53,6 +53,7 @@ lms_SOURCES = \
 	$(top_srcdir)/remote/server/Connection.cpp		\
 	$(top_srcdir)/remote/server/ConnectionManager.cpp	\
 	$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp		\
+	$(top_srcdir)/remote/server/MediaRequestHandler.cpp	\
 	$(top_srcdir)/remote/server/RequestHandler.cpp		\
 	$(top_srcdir)/remote/server/Server.cpp		\
 	$(top_srcdir)/metadata/Utils.cpp

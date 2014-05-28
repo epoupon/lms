@@ -18,7 +18,8 @@ namespace Server {
 Connection::Connection(boost::asio::ip::tcp::socket socket,
 			ConnectionManager& manager,
 			RequestHandler& handler)
-: _socket(std::move(socket)),
+: _closing(false),
+_socket(std::move(socket)),
 _connectionManager(manager),
 _requestHandler(handler)
 {
@@ -47,8 +48,15 @@ Connection::start()
 void
 Connection::stop()
 {
-	std::cout << "Server::Connection::stop, Stopping connection" << std::endl;
-	_socket.close();
+	if (!_closing)
+	{
+		_closing = true;
+		std::cout << "Server::Connection::stop, Stopping connection " << this << std::endl;
+		_socket.close();
+		std::cout << "Server::Connection::stop, connection stopped " << this << std::endl;
+	}
+	else
+		std::cout << "Close in progress..." << std::endl;
 }
 
 void
@@ -88,7 +96,7 @@ Connection::handleReadHeader(const boost::system::error_code& error, std::size_t
 	}
 	else if (error != boost::asio::error::operation_aborted)
 	{
-		std::cerr << "Connection::handleRead: " << error.message() << std::endl;
+		std::cerr << "Connection::handleReadHeader: " << error.message() << std::endl;
 		_connectionManager.stop(shared_from_this());
 	}
 }

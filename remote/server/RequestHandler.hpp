@@ -8,6 +8,7 @@
 #include "database/DatabaseHandler.hpp"
 
 #include "AudioCollectionRequestHandler.hpp"
+#include "MediaRequestHandler.hpp"
 
 namespace Remote {
 namespace Server {
@@ -26,8 +27,8 @@ class RequestHandler
 
 		DatabaseHandler _db;
 
-		AudioCollectionRequestHandler _audioCollectionRequestHandler;
-
+		AudioCollectionRequestHandler	_audioCollectionRequestHandler;
+		MediaRequestHandler		_mediaRequestHandler;
 };
 
 } // namespace Server

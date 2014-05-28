@@ -121,7 +121,7 @@ AvConvTranscoder::AvConvTranscoder(const Parameters& parameters)
 
 }
 
-	void
+void
 AvConvTranscoder::process(void)
 {
 	std::size_t readDatasSize = 1024; // TODO parametrize elsewhere?

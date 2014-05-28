@@ -27,7 +27,7 @@ class AudioCollectionRequestHandler
 		static const std::size_t _maxListArtists = 256;
 		static const std::size_t _maxListGenres = 256;
 		static const std::size_t _maxListReleases = 256;
-		static const std::size_t _maxListTracks = 256;
+		static const std::size_t _maxListTracks = 1024;
 };
 
 } // namespace Remote

@@ -2,9 +2,14 @@ import "common.proto";
 
 package Remote;
 
-enum CodecType
+enum AudioCodecType
 {
-	CodecTypeOGG	= 1;
+	CodecTypeOGA	= 1;
+}
+
+enum VideoCodecType
+{
+	CodecTypeOGV	= 1;
 }
 
 
@@ -13,24 +18,41 @@ message MediaRequest
 
 	message Prepare
 	{
-		required int64		id			= 1;	// Id if the media
 
-		required uint32		offset_secs		= 2;	// Offset in seconds
-		optional CodecType	codec_type		= 3;	// Codec of the media
+		message Audio
+		{
+			required int64		track_id		= 1;	// Id if the media
+			optional AudioCodecType	codec_type              = 2;
+			optional uint32		bitrate			= 3;
+			optional uint32		stream_idx		= 4;
+			optional uint32		offset_secs		= 5;
+		}
 
-		optional uint32		audio_bitrate		= 4;
+		message Video
+		{
+			required int64		video_id		= 1;	// Id if the media
+			optional VideoCodecType	codec_type              = 2;
+			optional uint32		bitrate			= 3;
+			optional uint32		offset_secs		= 4;
+			optional uint32		audio_stream_idx	= 5;
+			optional uint32		video_stream_idx	= 6;
+			optional uint32		subtitle_stream_idx	= 7;
+		}
 
-		// Video specifics
-		optional uint32	video_bitrate		= 5;
-		optional uint32 audio_stream_idx	= 6;
-		optional uint32 video_stream_idx	= 7;
-		optional uint32 subtitle_stream_idx	= 8;
+		enum Type {
+			AudioRequest	= 1;
+			VideoRequest	= 2;
+		}
+
+		required Type		type	= 1;
+
+		optional Audio		audio	= 2;
+		optional Video		video	= 3;
 	}
 
 	message GetPart
 	{
-		required uint32		requested_data_size	= 1;	// Amount of data requested. May receive more or less
-
+		required uint32		requested_data_size	= 1;	// Amount of data requested. May receive more or less. May receive 0 byte if complete
 	}
 
 	message Terminate
@@ -41,11 +63,11 @@ message MediaRequest
 	enum Type
 	{
 		TypeMediaPrepare	= 1;
-		TypeMediaGet		= 2;
+		TypeMediaGetPart	= 2;
 		TypeMediaTerminate	= 3;
 	}
 
-	required Type	request_type		= 1;
+	required Type		type	= 1;
 
 	optional Prepare	prepare		= 2;
 	optional GetPart	get_part	= 3;
@@ -55,21 +77,20 @@ message MediaRequest
 
 message MediaResponse
 {
-	message MediaPart
+	message Part
 	{
-		required uint64	byte_offset	= 1;
-		repeated bytes	data		= 2;
+		required bytes	data		= 1;
 	}
 
 	enum Type
 	{
-		TypeMediaPart		= 1;
+		TypeError			= 1;
+		TypePart			= 2;
 	}
 
-	required Error	error		= 1;
+	required Type		type		= 1;
 
-	required Type	response_type	= 2;
-
-	optional MediaPart	part		= 3;
+	optional Error		error		= 2;
+	optional Part		part		= 3;
 }
 

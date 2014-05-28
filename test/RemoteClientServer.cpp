@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <thread>
+#include <fstream>
 
 #include <boost/filesystem.hpp>
 #include <boost/asio.hpp>
@@ -9,6 +10,8 @@
 #include "remote/server/Server.hpp"
 #include "remote/messages/Header.hpp"
 #include "remote/messages/messages.pb.h"
+
+#include "av/Common.hpp"
 
 #include "TestDatabase.hpp"
 
@@ -85,9 +88,9 @@ class TestServer
 			_server.run();
 		}
 
-		void stop()
+		~TestServer()
 		{
-			_ioService.stop();
+			_server.stop();
 			_thread.join();
 		}
 
@@ -172,7 +175,7 @@ class TestClient
 		void getGenres(std::vector<GenreInfo>& genres)
 		{
 
-			const std::size_t requestedBatchSize = 128;
+			const std::size_t requestedBatchSize = 8;
 			std::size_t offset = 0;
 			std::size_t res = 0;
 
@@ -225,7 +228,7 @@ class TestClient
 		void getReleases(std::vector<ReleaseInfo>& releases, const std::vector<uint64_t> artistIds)
 		{
 
-			const std::size_t requestedBatchSize = 128;
+			const std::size_t requestedBatchSize = 256;
 			std::size_t offset = 0;
 			std::size_t res = 0;
 
@@ -281,7 +284,7 @@ class TestClient
 
 		void getTracks(std::vector<TrackInfo>& tracks, const std::vector<uint64_t> artistIds, const std::vector<uint64_t> releaseIds, const std::vector<uint64_t> genreIds)
 		{
-			const std::size_t requestedBatchSize = 256;
+			const std::size_t requestedBatchSize = 0;
 			std::size_t offset = 0;
 			std::size_t res = 0;
 
@@ -342,7 +345,153 @@ class TestClient
 			return nbAdded;
 		}
 
+
+		void getMediaAudio(uint64_t audioId, std::vector<unsigned char>& data)
+		{
+
+			// Prepare
+			mediaAudioPrepare( audioId );
+
+			// Get while available
+			mediaGet( data );
+
+			// Terminate
+			mediaTerminate();
+		}
+
+
 	private:
+
+		void mediaAudioPrepare(uint64_t audioId)
+		{
+
+			// Send request
+			Remote::ClientMessage request;
+
+			request.set_type( Remote::ClientMessage_Type_MediaRequest);
+
+			request.mutable_media_request()->set_type( Remote::MediaRequest_Type_TypeMediaPrepare);
+			request.mutable_media_request()->mutable_prepare()->set_type(Remote::MediaRequest_Prepare_Type_AudioRequest);
+
+			// Set fields
+			request.mutable_media_request()->mutable_prepare()->mutable_audio()->set_track_id( audioId );
+
+			std::cout << "Sending prepare request" << std::endl;
+			sendMsg(request);
+
+			std::cout << "Waiting for response" << std::endl;
+			// Receive response
+			Remote::ServerMessage response;
+			recvMsg(response);
+
+			std::cout << "Got a response" << std::endl;
+
+			// Process message
+			if (!response.has_media_response())
+				throw std::runtime_error("Preapre: not an media reponse!");
+
+			if (!response.media_response().has_error())
+				throw std::runtime_error("Prepare: not an error msg!");
+
+			if (response.media_response().error().error())
+				throw std::runtime_error("Prepare failed: '" + response.media_response().error().message() + "'");
+
+		}
+
+		void mediaGet(std::vector<unsigned char>& data)
+		{
+			while (mediaGetPart(data) > 0)
+				;
+		}
+
+
+		std::size_t mediaGetPart(std::vector<unsigned char>& data)
+		{
+			// Send request
+			Remote::ClientMessage request;
+
+			request.set_type( Remote::ClientMessage::MediaRequest);
+
+			request.mutable_media_request()->set_type( Remote::MediaRequest::TypeMediaGetPart);
+			request.mutable_media_request()->mutable_get_part()->set_requested_data_size(65536);
+
+			std::cout << "Sending GetPart request" << std::endl;
+			sendMsg(request);
+
+			std::cout << "Waiting for response" << std::endl;
+			// Receive response
+			Remote::ServerMessage response;
+			recvMsg(response);
+
+			std::cout << "Got a response" << std::endl;
+
+			if (!response.has_media_response())
+				throw std::runtime_error("not an media response");
+
+			// Process message
+			switch( response.media_response().type())
+			{
+				case Remote::MediaResponse::TypeError:
+					{
+						std::string msg;
+						if (response.media_response().has_error())
+						{
+							if (response.media_response().error().has_message())
+								throw std::runtime_error("Error spotted: '" + response.media_response().error().message()+ "'");
+							else
+								throw std::runtime_error("Error spotted, no msg");
+						}
+						else
+							throw std::runtime_error("Error spotted but no error message");
+					}
+					break;
+
+				case Remote::MediaResponse::TypePart:
+					if (!response.media_response().has_part())
+						throw std::runtime_error("not an media part");
+
+					std::copy(response.media_response().part().data().begin(), response.media_response().part().data().end(), std::back_inserter(data));
+
+					return response.media_response().part().data().size();
+					break;
+
+				default:
+					throw std::runtime_error("Unhandled response.media_response().type()!");
+			}
+
+			return 0;
+		}
+
+		void mediaTerminate(void)
+		{
+			// Send request
+			Remote::ClientMessage request;
+
+			request.set_type( Remote::ClientMessage::MediaRequest);
+
+			request.mutable_media_request()->set_type( Remote::MediaRequest::TypeMediaTerminate);
+			request.mutable_media_request()->mutable_terminate();
+
+
+			sendMsg(request);
+
+			// Receive response
+			Remote::ServerMessage response;
+			recvMsg(response);
+
+
+			// Process message
+			if (!response.has_media_response())
+				throw std::runtime_error("Terminate: not an media response");
+
+			if (!response.media_response().has_error())
+				throw std::runtime_error("Terminate: not an error msg!");
+
+			if (response.media_response().error().error())
+				throw std::runtime_error("Terminate failed: '" + response.media_response().error().message() + "'");
+
+		}
+
 
 		void sendMsg(const ::google::protobuf::Message& message)
 		{
@@ -431,6 +580,11 @@ class TestClient
 int main()
 {
 	try {
+		// lib init
+		Av::AvInit();
+		Transcode::AvConvTranscoder::init();
+
+		bool extendedTests = false;
 
 		// Runs in its own thread
 		// Listen on any
@@ -440,20 +594,18 @@ int main()
 		// connect to loopback
 		TestClient	client( boost::asio::ip::tcp::endpoint( boost::asio::ip::address_v4::loopback(), 5080));
 
-		// Get Artists
+		// ****** Artists *********
 		std::vector<ArtistInfo>	artists;
 		client.getArtists(artists);
 
-		// Dump artists
 		std::cout << "Got " << artists.size() << " artists!" << std::endl;
 		BOOST_FOREACH(const ArtistInfo& artist, artists)
 			std::cout << "Artist: '" << artist << "'" << std::endl;
 
-		// Get genres
+		// ***** Genres *********
 		std::vector<GenreInfo>	genres;
 		client.getGenres(genres);
 
-		// Dump genres
 		std::cout << "Got " << genres.size() << " genres!" << std::endl;
 		BOOST_FOREACH(const GenreInfo& genre, genres)
 			std::cout << "Genre: '" << genre << "'" << std::endl;
@@ -465,25 +617,44 @@ int main()
 			std::cout << "Release: '" << release << "'" << std::endl;
 
 		// **** Tracks ******
-/*		{
+		{
 			std::vector<TrackInfo> tracks;
 			client.getTracks(tracks, std::vector<uint64_t>(), std::vector<uint64_t>(), std::vector<uint64_t>());
 			BOOST_FOREACH(const TrackInfo& track, tracks)
 				std::cout << "Track: '" << track << "'" << std::endl;
-		}*/
-
-		BOOST_FOREACH(const ArtistInfo& artist, artists)
-		{
-			// Get the tracks for each artist
-			std::vector<TrackInfo> tracks;
-			client.getTracks(tracks, std::vector<uint64_t>(1, artist.id), std::vector<uint64_t>(), std::vector<uint64_t>());
-
-			std::cout << "Artist '" << artist.name << "', nb tracks = " << tracks.size() << std::endl;
-			BOOST_FOREACH(const TrackInfo& track, tracks)
-				std::cout << "Track: '" << track << "'" << std::endl;
 		}
 
-		testServer.stop();
+		// Caution: long test!
+		if (extendedTests)
+		{
+			BOOST_FOREACH(const ArtistInfo& artist, artists)
+			{
+				// Get the tracks for each artist
+				std::vector<TrackInfo> tracks;
+				client.getTracks(tracks, std::vector<uint64_t>(1, artist.id), std::vector<uint64_t>(), std::vector<uint64_t>());
+
+				std::cout << "Artist '" << artist.name << "', nb tracks = " << tracks.size() << std::endl;
+				BOOST_FOREACH(const TrackInfo& track, tracks)
+					std::cout << "Track: '" << track << "'" << std::endl;
+			}
+		}
+
+		// ****** Transcode test ********
+		{
+			std::vector<unsigned char> data;
+			client.getMediaAudio(1, data);
+
+			std::cout << "Media size = " << data.size() << std::endl;
+		}
+		{
+			std::vector<unsigned char> data;
+			client.getMediaAudio(100, data);
+
+			std::cout << "Media size = " << data.size() << std::endl;
+		}
+
+
+		std::cout << "End of tests!" << std::endl;
 	}
 	catch(std::exception& e)
 	{
@@ -491,6 +662,7 @@ int main()
 		return EXIT_FAILURE;
 	}
 
+	std::cout << "Normal quit..." << std::endl;
 	return EXIT_SUCCESS;
 }
 

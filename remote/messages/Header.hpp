@@ -31,13 +31,18 @@ class Header
 
 		bool from_buffer(const std::array<unsigned char, size>& buffer)
 		{
-			if (decode32(&buffer[0]) != _magic)
+			if (decode32(&buffer[0]) != _magic) {
+				std::cerr << "Header: bad magic" << std::endl;
 				return false;
+			}
 			else
 			{
 				_size = decode32(&buffer[4]);
 
-				return _size < _maxSize;
+				if (_size > _maxSize)
+					std::cerr << "Header: msg too big (" << _size << ")!" << std::endl;
+
+				return _size <= _maxSize;
 			}
 		}
 

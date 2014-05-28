@@ -140,6 +140,7 @@ class Track
 
 		// Find utilities
 		static pointer getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
+		static pointer getById(Wt::Dbo::Session& session, id_type id);
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session,
 				const std::vector<Artist::id_type>& artistIds,

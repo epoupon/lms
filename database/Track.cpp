@@ -30,9 +30,13 @@ Track::setGenres(std::vector<Genre::pointer> genres)
 Track::pointer
 Track::getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p)
 {
-	Wt::Dbo::Transaction transaction(session);
-
 	return session.find<Track>().where("path = ?").bind(p.string());
+}
+
+Track::pointer
+Track::getById(Wt::Dbo::Session& session, id_type id)
+{
+	return session.find<Track>().where("id = ?").bind(id);
 }
 
 

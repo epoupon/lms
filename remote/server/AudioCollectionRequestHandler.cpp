@@ -22,47 +22,47 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 
 	switch (request.type())
 	{
-		case AudioCollectionRequest_Type_TypeGetGenreList:
+		case AudioCollectionRequest::TypeGetGenreList:
 			if (request.has_get_genres())
 			{
 				res = processGetGenres(request.get_genres(), *response.mutable_genre_list());
 				if (res)
-					response.set_type(AudioCollectionResponse_Type_TypeArtistList);
+					response.set_type(AudioCollectionResponse::TypeArtistList);
 			}
 			else
 				std::cerr << "Bad AudioCollectionRequest_Type_TypeGetGenreList" << std::endl;
 			break;
 
-		case AudioCollectionRequest_Type_TypeGetArtistList:
+		case AudioCollectionRequest::TypeGetArtistList:
 			if (request.has_get_artists())
 			{
 				res = processGetArtists(request.get_artists(), *response.mutable_artist_list());
 				if (res)
-					response.set_type(AudioCollectionResponse_Type_TypeArtistList);
+					response.set_type(AudioCollectionResponse::TypeArtistList);
 
 			}
 			else
 				std::cerr << "Bad AudioCollectionRequest_Type_TypeGetArtistList" << std::endl;
 			break;
 
-		case AudioCollectionRequest_Type_TypeGetReleaseList:
+		case AudioCollectionRequest::TypeGetReleaseList:
 			if (request.has_get_releases())
 			{
 				res = processGetReleases(request.get_releases(), *response.mutable_release_list());
 				if (res)
-					response.set_type(AudioCollectionResponse_Type_TypeReleaseList);
+					response.set_type(AudioCollectionResponse::TypeReleaseList);
 
 			}
 			else
 				std::cerr << "Bad AudioCollectionRequest_Type_TypeGetReleaseList" << std::endl;
 			break;
 
-		case AudioCollectionRequest_Type_TypeGetTrackList:
+		case AudioCollectionRequest::TypeGetTrackList:
 			if (request.has_get_tracks())
 			{
 				res = processGetTracks(request.get_tracks(), *response.mutable_track_list());
 				if (res)
-					response.set_type(AudioCollectionResponse_Type_TypeTrackList);
+					response.set_type(AudioCollectionResponse::TypeTrackList);
 
 			}
 			else

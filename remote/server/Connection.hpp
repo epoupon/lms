@@ -38,6 +38,8 @@ class Connection : public std::enable_shared_from_this<Connection>
 		void stop();
 
 	private:
+		bool _closing;
+
 		/// Handle completion of a read operation.
 		void handleReadHeader(const boost::system::error_code& e,
 					std::size_t bytes_transferred);
