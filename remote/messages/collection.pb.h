@@ -41,6 +41,7 @@ class AudioCollectionRequest_GetGenreList;
 class AudioCollectionRequest_GetArtistList;
 class AudioCollectionRequest_GetReleaseList;
 class AudioCollectionRequest_GetTrackList;
+class AudioCollectionRequest_GetCoverArt;
 class AudioCollectionResponse;
 class AudioCollectionResponse_GenreList;
 class AudioCollectionResponse_ArtistList;
@@ -52,15 +53,35 @@ class AudioCollectionResponse_Artist;
 class AudioCollectionResponse_Release;
 class AudioCollectionResponse_Track;
 
+enum AudioCollectionRequest_GetCoverArt_Type {
+  AudioCollectionRequest_GetCoverArt_Type_TypeGetCoverArtRelease = 1,
+  AudioCollectionRequest_GetCoverArt_Type_TypeGetCoverArtTrack = 2
+};
+bool AudioCollectionRequest_GetCoverArt_Type_IsValid(int value);
+const AudioCollectionRequest_GetCoverArt_Type AudioCollectionRequest_GetCoverArt_Type_Type_MIN = AudioCollectionRequest_GetCoverArt_Type_TypeGetCoverArtRelease;
+const AudioCollectionRequest_GetCoverArt_Type AudioCollectionRequest_GetCoverArt_Type_Type_MAX = AudioCollectionRequest_GetCoverArt_Type_TypeGetCoverArtTrack;
+const int AudioCollectionRequest_GetCoverArt_Type_Type_ARRAYSIZE = AudioCollectionRequest_GetCoverArt_Type_Type_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* AudioCollectionRequest_GetCoverArt_Type_descriptor();
+inline const ::std::string& AudioCollectionRequest_GetCoverArt_Type_Name(AudioCollectionRequest_GetCoverArt_Type value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    AudioCollectionRequest_GetCoverArt_Type_descriptor(), value);
+}
+inline bool AudioCollectionRequest_GetCoverArt_Type_Parse(
+    const ::std::string& name, AudioCollectionRequest_GetCoverArt_Type* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<AudioCollectionRequest_GetCoverArt_Type>(
+    AudioCollectionRequest_GetCoverArt_Type_descriptor(), name, value);
+}
 enum AudioCollectionRequest_Type {
   AudioCollectionRequest_Type_TypeGetGenreList = 1,
   AudioCollectionRequest_Type_TypeGetArtistList = 2,
   AudioCollectionRequest_Type_TypeGetReleaseList = 3,
-  AudioCollectionRequest_Type_TypeGetTrackList = 4
+  AudioCollectionRequest_Type_TypeGetTrackList = 4,
+  AudioCollectionRequest_Type_TypeGetCoverArt = 5
 };
 bool AudioCollectionRequest_Type_IsValid(int value);
 const AudioCollectionRequest_Type AudioCollectionRequest_Type_Type_MIN = AudioCollectionRequest_Type_TypeGetGenreList;
-const AudioCollectionRequest_Type AudioCollectionRequest_Type_Type_MAX = AudioCollectionRequest_Type_TypeGetTrackList;
+const AudioCollectionRequest_Type AudioCollectionRequest_Type_Type_MAX = AudioCollectionRequest_Type_TypeGetCoverArt;
 const int AudioCollectionRequest_Type_Type_ARRAYSIZE = AudioCollectionRequest_Type_Type_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* AudioCollectionRequest_Type_descriptor();
@@ -78,11 +99,12 @@ enum AudioCollectionResponse_Type {
   AudioCollectionResponse_Type_TypeGenreList = 2,
   AudioCollectionResponse_Type_TypeArtistList = 3,
   AudioCollectionResponse_Type_TypeReleaseList = 4,
-  AudioCollectionResponse_Type_TypeTrackList = 5
+  AudioCollectionResponse_Type_TypeTrackList = 5,
+  AudioCollectionResponse_Type_TypeCoverArt = 6
 };
 bool AudioCollectionResponse_Type_IsValid(int value);
 const AudioCollectionResponse_Type AudioCollectionResponse_Type_Type_MIN = AudioCollectionResponse_Type_TypeError;
-const AudioCollectionResponse_Type AudioCollectionResponse_Type_Type_MAX = AudioCollectionResponse_Type_TypeTrackList;
+const AudioCollectionResponse_Type AudioCollectionResponse_Type_Type_MAX = AudioCollectionResponse_Type_TypeCoverArt;
 const int AudioCollectionResponse_Type_Type_ARRAYSIZE = AudioCollectionResponse_Type_Type_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* AudioCollectionResponse_Type_descriptor();
@@ -243,10 +265,10 @@ class AudioCollectionRequest_GetGenreList : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 2;
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
   inline bool has_batch_parameter() const;
   inline void clear_batch_parameter();
-  static const int kBatchParameterFieldNumber = 2;
+  static const int kBatchParameterFieldNumber = 1;
   inline const ::Remote::AudioCollectionRequest_BatchParameter& batch_parameter() const;
   inline ::Remote::AudioCollectionRequest_BatchParameter* mutable_batch_parameter();
   inline ::Remote::AudioCollectionRequest_BatchParameter* release_batch_parameter();
@@ -327,6 +349,15 @@ class AudioCollectionRequest_GetArtistList : public ::google::protobuf::Message 
 
   // accessors -------------------------------------------------------
 
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
+  inline bool has_batch_parameter() const;
+  inline void clear_batch_parameter();
+  static const int kBatchParameterFieldNumber = 1;
+  inline const ::Remote::AudioCollectionRequest_BatchParameter& batch_parameter() const;
+  inline ::Remote::AudioCollectionRequest_BatchParameter* mutable_batch_parameter();
+  inline ::Remote::AudioCollectionRequest_BatchParameter* release_batch_parameter();
+  inline void set_allocated_batch_parameter(::Remote::AudioCollectionRequest_BatchParameter* batch_parameter);
+
   // repeated uint64 genre_id = 2;
   inline int genre_id_size() const;
   inline void clear_genre_id();
@@ -339,15 +370,6 @@ class AudioCollectionRequest_GetArtistList : public ::google::protobuf::Message 
   inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
       mutable_genre_id();
 
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 3;
-  inline bool has_batch_parameter() const;
-  inline void clear_batch_parameter();
-  static const int kBatchParameterFieldNumber = 3;
-  inline const ::Remote::AudioCollectionRequest_BatchParameter& batch_parameter() const;
-  inline ::Remote::AudioCollectionRequest_BatchParameter* mutable_batch_parameter();
-  inline ::Remote::AudioCollectionRequest_BatchParameter* release_batch_parameter();
-  inline void set_allocated_batch_parameter(::Remote::AudioCollectionRequest_BatchParameter* batch_parameter);
-
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionRequest.GetArtistList)
  private:
   inline void set_has_batch_parameter();
@@ -355,8 +377,8 @@ class AudioCollectionRequest_GetArtistList : public ::google::protobuf::Message 
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > genre_id_;
   ::Remote::AudioCollectionRequest_BatchParameter* batch_parameter_;
+  ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > genre_id_;
 
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
@@ -424,10 +446,19 @@ class AudioCollectionRequest_GetReleaseList : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
 
-  // repeated uint64 artist_id = 1;
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
+  inline bool has_batch_parameter() const;
+  inline void clear_batch_parameter();
+  static const int kBatchParameterFieldNumber = 1;
+  inline const ::Remote::AudioCollectionRequest_BatchParameter& batch_parameter() const;
+  inline ::Remote::AudioCollectionRequest_BatchParameter* mutable_batch_parameter();
+  inline ::Remote::AudioCollectionRequest_BatchParameter* release_batch_parameter();
+  inline void set_allocated_batch_parameter(::Remote::AudioCollectionRequest_BatchParameter* batch_parameter);
+
+  // repeated uint64 artist_id = 2;
   inline int artist_id_size() const;
   inline void clear_artist_id();
-  static const int kArtistIdFieldNumber = 1;
+  static const int kArtistIdFieldNumber = 2;
   inline ::google::protobuf::uint64 artist_id(int index) const;
   inline void set_artist_id(int index, ::google::protobuf::uint64 value);
   inline void add_artist_id(::google::protobuf::uint64 value);
@@ -436,10 +467,10 @@ class AudioCollectionRequest_GetReleaseList : public ::google::protobuf::Message
   inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
       mutable_artist_id();
 
-  // repeated uint64 filter_genre = 2;
+  // repeated uint64 filter_genre = 3;
   inline int filter_genre_size() const;
   inline void clear_filter_genre();
-  static const int kFilterGenreFieldNumber = 2;
+  static const int kFilterGenreFieldNumber = 3;
   inline ::google::protobuf::uint64 filter_genre(int index) const;
   inline void set_filter_genre(int index, ::google::protobuf::uint64 value);
   inline void add_filter_genre(::google::protobuf::uint64 value);
@@ -448,38 +479,19 @@ class AudioCollectionRequest_GetReleaseList : public ::google::protobuf::Message
   inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
       mutable_filter_genre();
 
-  // optional bool get_cover = 3;
-  inline bool has_get_cover() const;
-  inline void clear_get_cover();
-  static const int kGetCoverFieldNumber = 3;
-  inline bool get_cover() const;
-  inline void set_get_cover(bool value);
-
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 4;
-  inline bool has_batch_parameter() const;
-  inline void clear_batch_parameter();
-  static const int kBatchParameterFieldNumber = 4;
-  inline const ::Remote::AudioCollectionRequest_BatchParameter& batch_parameter() const;
-  inline ::Remote::AudioCollectionRequest_BatchParameter* mutable_batch_parameter();
-  inline ::Remote::AudioCollectionRequest_BatchParameter* release_batch_parameter();
-  inline void set_allocated_batch_parameter(::Remote::AudioCollectionRequest_BatchParameter* batch_parameter);
-
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionRequest.GetReleaseList)
  private:
-  inline void set_has_get_cover();
-  inline void clear_has_get_cover();
   inline void set_has_batch_parameter();
   inline void clear_has_batch_parameter();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
+  ::Remote::AudioCollectionRequest_BatchParameter* batch_parameter_;
   ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > artist_id_;
   ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > filter_genre_;
-  ::Remote::AudioCollectionRequest_BatchParameter* batch_parameter_;
-  bool get_cover_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -544,10 +556,19 @@ class AudioCollectionRequest_GetTrackList : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // repeated uint64 artist_id = 1;
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
+  inline bool has_batch_parameter() const;
+  inline void clear_batch_parameter();
+  static const int kBatchParameterFieldNumber = 1;
+  inline const ::Remote::AudioCollectionRequest_BatchParameter& batch_parameter() const;
+  inline ::Remote::AudioCollectionRequest_BatchParameter* mutable_batch_parameter();
+  inline ::Remote::AudioCollectionRequest_BatchParameter* release_batch_parameter();
+  inline void set_allocated_batch_parameter(::Remote::AudioCollectionRequest_BatchParameter* batch_parameter);
+
+  // repeated uint64 artist_id = 2;
   inline int artist_id_size() const;
   inline void clear_artist_id();
-  static const int kArtistIdFieldNumber = 1;
+  static const int kArtistIdFieldNumber = 2;
   inline ::google::protobuf::uint64 artist_id(int index) const;
   inline void set_artist_id(int index, ::google::protobuf::uint64 value);
   inline void add_artist_id(::google::protobuf::uint64 value);
@@ -556,10 +577,10 @@ class AudioCollectionRequest_GetTrackList : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
       mutable_artist_id();
 
-  // repeated uint64 release_id = 2;
+  // repeated uint64 release_id = 3;
   inline int release_id_size() const;
   inline void clear_release_id();
-  static const int kReleaseIdFieldNumber = 2;
+  static const int kReleaseIdFieldNumber = 3;
   inline ::google::protobuf::uint64 release_id(int index) const;
   inline void set_release_id(int index, ::google::protobuf::uint64 value);
   inline void add_release_id(::google::protobuf::uint64 value);
@@ -568,10 +589,10 @@ class AudioCollectionRequest_GetTrackList : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
       mutable_release_id();
 
-  // repeated uint64 genre_id = 3;
+  // repeated uint64 genre_id = 4;
   inline int genre_id_size() const;
   inline void clear_genre_id();
-  static const int kGenreIdFieldNumber = 3;
+  static const int kGenreIdFieldNumber = 4;
   inline ::google::protobuf::uint64 genre_id(int index) const;
   inline void set_genre_id(int index, ::google::protobuf::uint64 value);
   inline void add_genre_id(::google::protobuf::uint64 value);
@@ -580,39 +601,20 @@ class AudioCollectionRequest_GetTrackList : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
       mutable_genre_id();
 
-  // optional bool get_cover = 4;
-  inline bool has_get_cover() const;
-  inline void clear_get_cover();
-  static const int kGetCoverFieldNumber = 4;
-  inline bool get_cover() const;
-  inline void set_get_cover(bool value);
-
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 5;
-  inline bool has_batch_parameter() const;
-  inline void clear_batch_parameter();
-  static const int kBatchParameterFieldNumber = 5;
-  inline const ::Remote::AudioCollectionRequest_BatchParameter& batch_parameter() const;
-  inline ::Remote::AudioCollectionRequest_BatchParameter* mutable_batch_parameter();
-  inline ::Remote::AudioCollectionRequest_BatchParameter* release_batch_parameter();
-  inline void set_allocated_batch_parameter(::Remote::AudioCollectionRequest_BatchParameter* batch_parameter);
-
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionRequest.GetTrackList)
  private:
-  inline void set_has_get_cover();
-  inline void clear_has_get_cover();
   inline void set_has_batch_parameter();
   inline void clear_has_batch_parameter();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
+  ::Remote::AudioCollectionRequest_BatchParameter* batch_parameter_;
   ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > artist_id_;
   ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > release_id_;
   ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > genre_id_;
-  ::Remote::AudioCollectionRequest_BatchParameter* batch_parameter_;
-  bool get_cover_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(5 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -620,6 +622,132 @@ class AudioCollectionRequest_GetTrackList : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static AudioCollectionRequest_GetTrackList* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class AudioCollectionRequest_GetCoverArt : public ::google::protobuf::Message {
+ public:
+  AudioCollectionRequest_GetCoverArt();
+  virtual ~AudioCollectionRequest_GetCoverArt();
+
+  AudioCollectionRequest_GetCoverArt(const AudioCollectionRequest_GetCoverArt& from);
+
+  inline AudioCollectionRequest_GetCoverArt& operator=(const AudioCollectionRequest_GetCoverArt& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const AudioCollectionRequest_GetCoverArt& default_instance();
+
+  void Swap(AudioCollectionRequest_GetCoverArt* other);
+
+  // implements Message ----------------------------------------------
+
+  AudioCollectionRequest_GetCoverArt* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const AudioCollectionRequest_GetCoverArt& from);
+  void MergeFrom(const AudioCollectionRequest_GetCoverArt& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  typedef AudioCollectionRequest_GetCoverArt_Type Type;
+  static const Type TypeGetCoverArtRelease = AudioCollectionRequest_GetCoverArt_Type_TypeGetCoverArtRelease;
+  static const Type TypeGetCoverArtTrack = AudioCollectionRequest_GetCoverArt_Type_TypeGetCoverArtTrack;
+  static inline bool Type_IsValid(int value) {
+    return AudioCollectionRequest_GetCoverArt_Type_IsValid(value);
+  }
+  static const Type Type_MIN =
+    AudioCollectionRequest_GetCoverArt_Type_Type_MIN;
+  static const Type Type_MAX =
+    AudioCollectionRequest_GetCoverArt_Type_Type_MAX;
+  static const int Type_ARRAYSIZE =
+    AudioCollectionRequest_GetCoverArt_Type_Type_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor*
+  Type_descriptor() {
+    return AudioCollectionRequest_GetCoverArt_Type_descriptor();
+  }
+  static inline const ::std::string& Type_Name(Type value) {
+    return AudioCollectionRequest_GetCoverArt_Type_Name(value);
+  }
+  static inline bool Type_Parse(const ::std::string& name,
+      Type* value) {
+    return AudioCollectionRequest_GetCoverArt_Type_Parse(name, value);
+  }
+
+  // accessors -------------------------------------------------------
+
+  // required .Remote.AudioCollectionRequest.GetCoverArt.Type type = 1;
+  inline bool has_type() const;
+  inline void clear_type();
+  static const int kTypeFieldNumber = 1;
+  inline ::Remote::AudioCollectionRequest_GetCoverArt_Type type() const;
+  inline void set_type(::Remote::AudioCollectionRequest_GetCoverArt_Type value);
+
+  // optional uint64 release_id = 2;
+  inline bool has_release_id() const;
+  inline void clear_release_id();
+  static const int kReleaseIdFieldNumber = 2;
+  inline ::google::protobuf::uint64 release_id() const;
+  inline void set_release_id(::google::protobuf::uint64 value);
+
+  // optional uint64 track_id = 3;
+  inline bool has_track_id() const;
+  inline void clear_track_id();
+  static const int kTrackIdFieldNumber = 3;
+  inline ::google::protobuf::uint64 track_id() const;
+  inline void set_track_id(::google::protobuf::uint64 value);
+
+  // @@protoc_insertion_point(class_scope:Remote.AudioCollectionRequest.GetCoverArt)
+ private:
+  inline void set_has_type();
+  inline void clear_has_type();
+  inline void set_has_release_id();
+  inline void clear_has_release_id();
+  inline void set_has_track_id();
+  inline void clear_has_track_id();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::google::protobuf::uint64 release_id_;
+  ::google::protobuf::uint64 track_id_;
+  int type_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+
+  friend void  protobuf_AddDesc_collection_2eproto();
+  friend void protobuf_AssignDesc_collection_2eproto();
+  friend void protobuf_ShutdownFile_collection_2eproto();
+
+  void InitAsDefaultInstance();
+  static AudioCollectionRequest_GetCoverArt* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -680,12 +808,14 @@ class AudioCollectionRequest : public ::google::protobuf::Message {
   typedef AudioCollectionRequest_GetArtistList GetArtistList;
   typedef AudioCollectionRequest_GetReleaseList GetReleaseList;
   typedef AudioCollectionRequest_GetTrackList GetTrackList;
+  typedef AudioCollectionRequest_GetCoverArt GetCoverArt;
 
   typedef AudioCollectionRequest_Type Type;
   static const Type TypeGetGenreList = AudioCollectionRequest_Type_TypeGetGenreList;
   static const Type TypeGetArtistList = AudioCollectionRequest_Type_TypeGetArtistList;
   static const Type TypeGetReleaseList = AudioCollectionRequest_Type_TypeGetReleaseList;
   static const Type TypeGetTrackList = AudioCollectionRequest_Type_TypeGetTrackList;
+  static const Type TypeGetCoverArt = AudioCollectionRequest_Type_TypeGetCoverArt;
   static inline bool Type_IsValid(int value) {
     return AudioCollectionRequest_Type_IsValid(value);
   }
@@ -752,6 +882,15 @@ class AudioCollectionRequest : public ::google::protobuf::Message {
   inline ::Remote::AudioCollectionRequest_GetTrackList* release_get_tracks();
   inline void set_allocated_get_tracks(::Remote::AudioCollectionRequest_GetTrackList* get_tracks);
 
+  // optional .Remote.AudioCollectionRequest.GetCoverArt get_cover_art = 6;
+  inline bool has_get_cover_art() const;
+  inline void clear_get_cover_art();
+  static const int kGetCoverArtFieldNumber = 6;
+  inline const ::Remote::AudioCollectionRequest_GetCoverArt& get_cover_art() const;
+  inline ::Remote::AudioCollectionRequest_GetCoverArt* mutable_get_cover_art();
+  inline ::Remote::AudioCollectionRequest_GetCoverArt* release_get_cover_art();
+  inline void set_allocated_get_cover_art(::Remote::AudioCollectionRequest_GetCoverArt* get_cover_art);
+
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionRequest)
  private:
   inline void set_has_type();
@@ -764,6 +903,8 @@ class AudioCollectionRequest : public ::google::protobuf::Message {
   inline void clear_has_get_releases();
   inline void set_has_get_tracks();
   inline void clear_has_get_tracks();
+  inline void set_has_get_cover_art();
+  inline void clear_has_get_cover_art();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -771,10 +912,11 @@ class AudioCollectionRequest : public ::google::protobuf::Message {
   ::Remote::AudioCollectionRequest_GetArtistList* get_artists_;
   ::Remote::AudioCollectionRequest_GetReleaseList* get_releases_;
   ::Remote::AudioCollectionRequest_GetTrackList* get_tracks_;
+  ::Remote::AudioCollectionRequest_GetCoverArt* get_cover_art_;
   int type_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(5 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -1191,31 +1333,29 @@ class AudioCollectionResponse_CoverArt : public ::google::protobuf::Message {
   inline ::std::string* release_mime_type();
   inline void set_allocated_mime_type(::std::string* mime_type);
 
-  // repeated bytes data = 2;
-  inline int data_size() const;
+  // required bytes data = 2;
+  inline bool has_data() const;
   inline void clear_data();
   static const int kDataFieldNumber = 2;
-  inline const ::std::string& data(int index) const;
-  inline ::std::string* mutable_data(int index);
-  inline void set_data(int index, const ::std::string& value);
-  inline void set_data(int index, const char* value);
-  inline void set_data(int index, const void* value, size_t size);
-  inline ::std::string* add_data();
-  inline void add_data(const ::std::string& value);
-  inline void add_data(const char* value);
-  inline void add_data(const void* value, size_t size);
-  inline const ::google::protobuf::RepeatedPtrField< ::std::string>& data() const;
-  inline ::google::protobuf::RepeatedPtrField< ::std::string>* mutable_data();
+  inline const ::std::string& data() const;
+  inline void set_data(const ::std::string& value);
+  inline void set_data(const char* value);
+  inline void set_data(const void* value, size_t size);
+  inline ::std::string* mutable_data();
+  inline ::std::string* release_data();
+  inline void set_allocated_data(::std::string* data);
 
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionResponse.CoverArt)
  private:
   inline void set_has_mime_type();
   inline void clear_has_mime_type();
+  inline void set_has_data();
+  inline void clear_has_data();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::std::string* mime_type_;
-  ::google::protobuf::RepeatedPtrField< ::std::string> data_;
+  ::std::string* data_;
 
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
@@ -1532,15 +1672,6 @@ class AudioCollectionResponse_Release : public ::google::protobuf::Message {
   inline ::std::string* release_release_date();
   inline void set_allocated_release_date(::std::string* release_date);
 
-  // optional .Remote.AudioCollectionResponse.CoverArt coverArt = 6;
-  inline bool has_coverart() const;
-  inline void clear_coverart();
-  static const int kCoverArtFieldNumber = 6;
-  inline const ::Remote::AudioCollectionResponse_CoverArt& coverart() const;
-  inline ::Remote::AudioCollectionResponse_CoverArt* mutable_coverart();
-  inline ::Remote::AudioCollectionResponse_CoverArt* release_coverart();
-  inline void set_allocated_coverart(::Remote::AudioCollectionResponse_CoverArt* coverart);
-
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionResponse.Release)
  private:
   inline void set_has_id();
@@ -1553,8 +1684,6 @@ class AudioCollectionResponse_Release : public ::google::protobuf::Message {
   inline void clear_has_duration_secs();
   inline void set_has_release_date();
   inline void clear_has_release_date();
-  inline void set_has_coverart();
-  inline void clear_has_coverart();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -1563,10 +1692,9 @@ class AudioCollectionResponse_Release : public ::google::protobuf::Message {
   ::google::protobuf::uint32 nb_tracks_;
   ::google::protobuf::uint32 duration_secs_;
   ::std::string* release_date_;
-  ::Remote::AudioCollectionResponse_CoverArt* coverart_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(5 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -1721,18 +1849,6 @@ class AudioCollectionResponse_Track : public ::google::protobuf::Message {
   inline ::std::string* release_original_release_date();
   inline void set_allocated_original_release_date(::std::string* original_release_date);
 
-  // optional bytes coverArt = 11;
-  inline bool has_coverart() const;
-  inline void clear_coverart();
-  static const int kCoverArtFieldNumber = 11;
-  inline const ::std::string& coverart() const;
-  inline void set_coverart(const ::std::string& value);
-  inline void set_coverart(const char* value);
-  inline void set_coverart(const void* value, size_t size);
-  inline ::std::string* mutable_coverart();
-  inline ::std::string* release_coverart();
-  inline void set_allocated_coverart(::std::string* coverart);
-
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionResponse.Track)
  private:
   inline void set_has_id();
@@ -1753,8 +1869,6 @@ class AudioCollectionResponse_Track : public ::google::protobuf::Message {
   inline void clear_has_release_date();
   inline void set_has_original_release_date();
   inline void clear_has_original_release_date();
-  inline void set_has_coverart();
-  inline void clear_has_coverart();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -1767,11 +1881,10 @@ class AudioCollectionResponse_Track : public ::google::protobuf::Message {
   ::std::string* name_;
   ::std::string* release_date_;
   ::std::string* original_release_date_;
-  ::std::string* coverart_;
   ::google::protobuf::uint32 duration_secs_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(11 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(10 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -1850,6 +1963,7 @@ class AudioCollectionResponse : public ::google::protobuf::Message {
   static const Type TypeArtistList = AudioCollectionResponse_Type_TypeArtistList;
   static const Type TypeReleaseList = AudioCollectionResponse_Type_TypeReleaseList;
   static const Type TypeTrackList = AudioCollectionResponse_Type_TypeTrackList;
+  static const Type TypeCoverArt = AudioCollectionResponse_Type_TypeCoverArt;
   static inline bool Type_IsValid(int value) {
     return AudioCollectionResponse_Type_IsValid(value);
   }
@@ -1925,6 +2039,18 @@ class AudioCollectionResponse : public ::google::protobuf::Message {
   inline ::Remote::AudioCollectionResponse_TrackList* release_track_list();
   inline void set_allocated_track_list(::Remote::AudioCollectionResponse_TrackList* track_list);
 
+  // repeated .Remote.AudioCollectionResponse.CoverArt cover_art = 7;
+  inline int cover_art_size() const;
+  inline void clear_cover_art();
+  static const int kCoverArtFieldNumber = 7;
+  inline const ::Remote::AudioCollectionResponse_CoverArt& cover_art(int index) const;
+  inline ::Remote::AudioCollectionResponse_CoverArt* mutable_cover_art(int index);
+  inline ::Remote::AudioCollectionResponse_CoverArt* add_cover_art();
+  inline const ::google::protobuf::RepeatedPtrField< ::Remote::AudioCollectionResponse_CoverArt >&
+      cover_art() const;
+  inline ::google::protobuf::RepeatedPtrField< ::Remote::AudioCollectionResponse_CoverArt >*
+      mutable_cover_art();
+
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionResponse)
  private:
   inline void set_has_type();
@@ -1947,10 +2073,11 @@ class AudioCollectionResponse : public ::google::protobuf::Message {
   ::Remote::AudioCollectionResponse_ArtistList* artist_list_;
   ::Remote::AudioCollectionResponse_ReleaseList* release_list_;
   ::Remote::AudioCollectionResponse_TrackList* track_list_;
+  ::google::protobuf::RepeatedPtrField< ::Remote::AudioCollectionResponse_CoverArt > cover_art_;
   int type_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(7 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -2014,7 +2141,7 @@ inline void AudioCollectionRequest_BatchParameter::set_size(::google::protobuf::
 
 // AudioCollectionRequest_GetGenreList
 
-// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 2;
+// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
 inline bool AudioCollectionRequest_GetGenreList::has_batch_parameter() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -2056,40 +2183,15 @@ inline void AudioCollectionRequest_GetGenreList::set_allocated_batch_parameter(:
 
 // AudioCollectionRequest_GetArtistList
 
-// repeated uint64 genre_id = 2;
-inline int AudioCollectionRequest_GetArtistList::genre_id_size() const {
-  return genre_id_.size();
-}
-inline void AudioCollectionRequest_GetArtistList::clear_genre_id() {
-  genre_id_.Clear();
-}
-inline ::google::protobuf::uint64 AudioCollectionRequest_GetArtistList::genre_id(int index) const {
-  return genre_id_.Get(index);
-}
-inline void AudioCollectionRequest_GetArtistList::set_genre_id(int index, ::google::protobuf::uint64 value) {
-  genre_id_.Set(index, value);
-}
-inline void AudioCollectionRequest_GetArtistList::add_genre_id(::google::protobuf::uint64 value) {
-  genre_id_.Add(value);
-}
-inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
-AudioCollectionRequest_GetArtistList::genre_id() const {
-  return genre_id_;
-}
-inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
-AudioCollectionRequest_GetArtistList::mutable_genre_id() {
-  return &genre_id_;
-}
-
-// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 3;
+// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
 inline bool AudioCollectionRequest_GetArtistList::has_batch_parameter() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
+  return (_has_bits_[0] & 0x00000001u) != 0;
 }
 inline void AudioCollectionRequest_GetArtistList::set_has_batch_parameter() {
-  _has_bits_[0] |= 0x00000002u;
+  _has_bits_[0] |= 0x00000001u;
 }
 inline void AudioCollectionRequest_GetArtistList::clear_has_batch_parameter() {
-  _has_bits_[0] &= ~0x00000002u;
+  _has_bits_[0] &= ~0x00000001u;
 }
 inline void AudioCollectionRequest_GetArtistList::clear_batch_parameter() {
   if (batch_parameter_ != NULL) batch_parameter_->::Remote::AudioCollectionRequest_BatchParameter::Clear();
@@ -2119,91 +2221,44 @@ inline void AudioCollectionRequest_GetArtistList::set_allocated_batch_parameter(
   }
 }
 
+// repeated uint64 genre_id = 2;
+inline int AudioCollectionRequest_GetArtistList::genre_id_size() const {
+  return genre_id_.size();
+}
+inline void AudioCollectionRequest_GetArtistList::clear_genre_id() {
+  genre_id_.Clear();
+}
+inline ::google::protobuf::uint64 AudioCollectionRequest_GetArtistList::genre_id(int index) const {
+  return genre_id_.Get(index);
+}
+inline void AudioCollectionRequest_GetArtistList::set_genre_id(int index, ::google::protobuf::uint64 value) {
+  genre_id_.Set(index, value);
+}
+inline void AudioCollectionRequest_GetArtistList::add_genre_id(::google::protobuf::uint64 value) {
+  genre_id_.Add(value);
+}
+inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
+AudioCollectionRequest_GetArtistList::genre_id() const {
+  return genre_id_;
+}
+inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
+AudioCollectionRequest_GetArtistList::mutable_genre_id() {
+  return &genre_id_;
+}
+
 // -------------------------------------------------------------------
 
 // AudioCollectionRequest_GetReleaseList
 
-// repeated uint64 artist_id = 1;
-inline int AudioCollectionRequest_GetReleaseList::artist_id_size() const {
-  return artist_id_.size();
-}
-inline void AudioCollectionRequest_GetReleaseList::clear_artist_id() {
-  artist_id_.Clear();
-}
-inline ::google::protobuf::uint64 AudioCollectionRequest_GetReleaseList::artist_id(int index) const {
-  return artist_id_.Get(index);
-}
-inline void AudioCollectionRequest_GetReleaseList::set_artist_id(int index, ::google::protobuf::uint64 value) {
-  artist_id_.Set(index, value);
-}
-inline void AudioCollectionRequest_GetReleaseList::add_artist_id(::google::protobuf::uint64 value) {
-  artist_id_.Add(value);
-}
-inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
-AudioCollectionRequest_GetReleaseList::artist_id() const {
-  return artist_id_;
-}
-inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
-AudioCollectionRequest_GetReleaseList::mutable_artist_id() {
-  return &artist_id_;
-}
-
-// repeated uint64 filter_genre = 2;
-inline int AudioCollectionRequest_GetReleaseList::filter_genre_size() const {
-  return filter_genre_.size();
-}
-inline void AudioCollectionRequest_GetReleaseList::clear_filter_genre() {
-  filter_genre_.Clear();
-}
-inline ::google::protobuf::uint64 AudioCollectionRequest_GetReleaseList::filter_genre(int index) const {
-  return filter_genre_.Get(index);
-}
-inline void AudioCollectionRequest_GetReleaseList::set_filter_genre(int index, ::google::protobuf::uint64 value) {
-  filter_genre_.Set(index, value);
-}
-inline void AudioCollectionRequest_GetReleaseList::add_filter_genre(::google::protobuf::uint64 value) {
-  filter_genre_.Add(value);
-}
-inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
-AudioCollectionRequest_GetReleaseList::filter_genre() const {
-  return filter_genre_;
-}
-inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
-AudioCollectionRequest_GetReleaseList::mutable_filter_genre() {
-  return &filter_genre_;
-}
-
-// optional bool get_cover = 3;
-inline bool AudioCollectionRequest_GetReleaseList::has_get_cover() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
-}
-inline void AudioCollectionRequest_GetReleaseList::set_has_get_cover() {
-  _has_bits_[0] |= 0x00000004u;
-}
-inline void AudioCollectionRequest_GetReleaseList::clear_has_get_cover() {
-  _has_bits_[0] &= ~0x00000004u;
-}
-inline void AudioCollectionRequest_GetReleaseList::clear_get_cover() {
-  get_cover_ = false;
-  clear_has_get_cover();
-}
-inline bool AudioCollectionRequest_GetReleaseList::get_cover() const {
-  return get_cover_;
-}
-inline void AudioCollectionRequest_GetReleaseList::set_get_cover(bool value) {
-  set_has_get_cover();
-  get_cover_ = value;
-}
-
-// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 4;
+// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
 inline bool AudioCollectionRequest_GetReleaseList::has_batch_parameter() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
+  return (_has_bits_[0] & 0x00000001u) != 0;
 }
 inline void AudioCollectionRequest_GetReleaseList::set_has_batch_parameter() {
-  _has_bits_[0] |= 0x00000008u;
+  _has_bits_[0] |= 0x00000001u;
 }
 inline void AudioCollectionRequest_GetReleaseList::clear_has_batch_parameter() {
-  _has_bits_[0] &= ~0x00000008u;
+  _has_bits_[0] &= ~0x00000001u;
 }
 inline void AudioCollectionRequest_GetReleaseList::clear_batch_parameter() {
   if (batch_parameter_ != NULL) batch_parameter_->::Remote::AudioCollectionRequest_BatchParameter::Clear();
@@ -2233,116 +2288,69 @@ inline void AudioCollectionRequest_GetReleaseList::set_allocated_batch_parameter
   }
 }
 
+// repeated uint64 artist_id = 2;
+inline int AudioCollectionRequest_GetReleaseList::artist_id_size() const {
+  return artist_id_.size();
+}
+inline void AudioCollectionRequest_GetReleaseList::clear_artist_id() {
+  artist_id_.Clear();
+}
+inline ::google::protobuf::uint64 AudioCollectionRequest_GetReleaseList::artist_id(int index) const {
+  return artist_id_.Get(index);
+}
+inline void AudioCollectionRequest_GetReleaseList::set_artist_id(int index, ::google::protobuf::uint64 value) {
+  artist_id_.Set(index, value);
+}
+inline void AudioCollectionRequest_GetReleaseList::add_artist_id(::google::protobuf::uint64 value) {
+  artist_id_.Add(value);
+}
+inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
+AudioCollectionRequest_GetReleaseList::artist_id() const {
+  return artist_id_;
+}
+inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
+AudioCollectionRequest_GetReleaseList::mutable_artist_id() {
+  return &artist_id_;
+}
+
+// repeated uint64 filter_genre = 3;
+inline int AudioCollectionRequest_GetReleaseList::filter_genre_size() const {
+  return filter_genre_.size();
+}
+inline void AudioCollectionRequest_GetReleaseList::clear_filter_genre() {
+  filter_genre_.Clear();
+}
+inline ::google::protobuf::uint64 AudioCollectionRequest_GetReleaseList::filter_genre(int index) const {
+  return filter_genre_.Get(index);
+}
+inline void AudioCollectionRequest_GetReleaseList::set_filter_genre(int index, ::google::protobuf::uint64 value) {
+  filter_genre_.Set(index, value);
+}
+inline void AudioCollectionRequest_GetReleaseList::add_filter_genre(::google::protobuf::uint64 value) {
+  filter_genre_.Add(value);
+}
+inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
+AudioCollectionRequest_GetReleaseList::filter_genre() const {
+  return filter_genre_;
+}
+inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
+AudioCollectionRequest_GetReleaseList::mutable_filter_genre() {
+  return &filter_genre_;
+}
+
 // -------------------------------------------------------------------
 
 // AudioCollectionRequest_GetTrackList
 
-// repeated uint64 artist_id = 1;
-inline int AudioCollectionRequest_GetTrackList::artist_id_size() const {
-  return artist_id_.size();
-}
-inline void AudioCollectionRequest_GetTrackList::clear_artist_id() {
-  artist_id_.Clear();
-}
-inline ::google::protobuf::uint64 AudioCollectionRequest_GetTrackList::artist_id(int index) const {
-  return artist_id_.Get(index);
-}
-inline void AudioCollectionRequest_GetTrackList::set_artist_id(int index, ::google::protobuf::uint64 value) {
-  artist_id_.Set(index, value);
-}
-inline void AudioCollectionRequest_GetTrackList::add_artist_id(::google::protobuf::uint64 value) {
-  artist_id_.Add(value);
-}
-inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
-AudioCollectionRequest_GetTrackList::artist_id() const {
-  return artist_id_;
-}
-inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
-AudioCollectionRequest_GetTrackList::mutable_artist_id() {
-  return &artist_id_;
-}
-
-// repeated uint64 release_id = 2;
-inline int AudioCollectionRequest_GetTrackList::release_id_size() const {
-  return release_id_.size();
-}
-inline void AudioCollectionRequest_GetTrackList::clear_release_id() {
-  release_id_.Clear();
-}
-inline ::google::protobuf::uint64 AudioCollectionRequest_GetTrackList::release_id(int index) const {
-  return release_id_.Get(index);
-}
-inline void AudioCollectionRequest_GetTrackList::set_release_id(int index, ::google::protobuf::uint64 value) {
-  release_id_.Set(index, value);
-}
-inline void AudioCollectionRequest_GetTrackList::add_release_id(::google::protobuf::uint64 value) {
-  release_id_.Add(value);
-}
-inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
-AudioCollectionRequest_GetTrackList::release_id() const {
-  return release_id_;
-}
-inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
-AudioCollectionRequest_GetTrackList::mutable_release_id() {
-  return &release_id_;
-}
-
-// repeated uint64 genre_id = 3;
-inline int AudioCollectionRequest_GetTrackList::genre_id_size() const {
-  return genre_id_.size();
-}
-inline void AudioCollectionRequest_GetTrackList::clear_genre_id() {
-  genre_id_.Clear();
-}
-inline ::google::protobuf::uint64 AudioCollectionRequest_GetTrackList::genre_id(int index) const {
-  return genre_id_.Get(index);
-}
-inline void AudioCollectionRequest_GetTrackList::set_genre_id(int index, ::google::protobuf::uint64 value) {
-  genre_id_.Set(index, value);
-}
-inline void AudioCollectionRequest_GetTrackList::add_genre_id(::google::protobuf::uint64 value) {
-  genre_id_.Add(value);
-}
-inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
-AudioCollectionRequest_GetTrackList::genre_id() const {
-  return genre_id_;
-}
-inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
-AudioCollectionRequest_GetTrackList::mutable_genre_id() {
-  return &genre_id_;
-}
-
-// optional bool get_cover = 4;
-inline bool AudioCollectionRequest_GetTrackList::has_get_cover() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
-}
-inline void AudioCollectionRequest_GetTrackList::set_has_get_cover() {
-  _has_bits_[0] |= 0x00000008u;
-}
-inline void AudioCollectionRequest_GetTrackList::clear_has_get_cover() {
-  _has_bits_[0] &= ~0x00000008u;
-}
-inline void AudioCollectionRequest_GetTrackList::clear_get_cover() {
-  get_cover_ = false;
-  clear_has_get_cover();
-}
-inline bool AudioCollectionRequest_GetTrackList::get_cover() const {
-  return get_cover_;
-}
-inline void AudioCollectionRequest_GetTrackList::set_get_cover(bool value) {
-  set_has_get_cover();
-  get_cover_ = value;
-}
-
-// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 5;
+// required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
 inline bool AudioCollectionRequest_GetTrackList::has_batch_parameter() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
+  return (_has_bits_[0] & 0x00000001u) != 0;
 }
 inline void AudioCollectionRequest_GetTrackList::set_has_batch_parameter() {
-  _has_bits_[0] |= 0x00000010u;
+  _has_bits_[0] |= 0x00000001u;
 }
 inline void AudioCollectionRequest_GetTrackList::clear_has_batch_parameter() {
-  _has_bits_[0] &= ~0x00000010u;
+  _has_bits_[0] &= ~0x00000001u;
 }
 inline void AudioCollectionRequest_GetTrackList::clear_batch_parameter() {
   if (batch_parameter_ != NULL) batch_parameter_->::Remote::AudioCollectionRequest_BatchParameter::Clear();
@@ -2370,6 +2378,152 @@ inline void AudioCollectionRequest_GetTrackList::set_allocated_batch_parameter(:
   } else {
     clear_has_batch_parameter();
   }
+}
+
+// repeated uint64 artist_id = 2;
+inline int AudioCollectionRequest_GetTrackList::artist_id_size() const {
+  return artist_id_.size();
+}
+inline void AudioCollectionRequest_GetTrackList::clear_artist_id() {
+  artist_id_.Clear();
+}
+inline ::google::protobuf::uint64 AudioCollectionRequest_GetTrackList::artist_id(int index) const {
+  return artist_id_.Get(index);
+}
+inline void AudioCollectionRequest_GetTrackList::set_artist_id(int index, ::google::protobuf::uint64 value) {
+  artist_id_.Set(index, value);
+}
+inline void AudioCollectionRequest_GetTrackList::add_artist_id(::google::protobuf::uint64 value) {
+  artist_id_.Add(value);
+}
+inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
+AudioCollectionRequest_GetTrackList::artist_id() const {
+  return artist_id_;
+}
+inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
+AudioCollectionRequest_GetTrackList::mutable_artist_id() {
+  return &artist_id_;
+}
+
+// repeated uint64 release_id = 3;
+inline int AudioCollectionRequest_GetTrackList::release_id_size() const {
+  return release_id_.size();
+}
+inline void AudioCollectionRequest_GetTrackList::clear_release_id() {
+  release_id_.Clear();
+}
+inline ::google::protobuf::uint64 AudioCollectionRequest_GetTrackList::release_id(int index) const {
+  return release_id_.Get(index);
+}
+inline void AudioCollectionRequest_GetTrackList::set_release_id(int index, ::google::protobuf::uint64 value) {
+  release_id_.Set(index, value);
+}
+inline void AudioCollectionRequest_GetTrackList::add_release_id(::google::protobuf::uint64 value) {
+  release_id_.Add(value);
+}
+inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
+AudioCollectionRequest_GetTrackList::release_id() const {
+  return release_id_;
+}
+inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
+AudioCollectionRequest_GetTrackList::mutable_release_id() {
+  return &release_id_;
+}
+
+// repeated uint64 genre_id = 4;
+inline int AudioCollectionRequest_GetTrackList::genre_id_size() const {
+  return genre_id_.size();
+}
+inline void AudioCollectionRequest_GetTrackList::clear_genre_id() {
+  genre_id_.Clear();
+}
+inline ::google::protobuf::uint64 AudioCollectionRequest_GetTrackList::genre_id(int index) const {
+  return genre_id_.Get(index);
+}
+inline void AudioCollectionRequest_GetTrackList::set_genre_id(int index, ::google::protobuf::uint64 value) {
+  genre_id_.Set(index, value);
+}
+inline void AudioCollectionRequest_GetTrackList::add_genre_id(::google::protobuf::uint64 value) {
+  genre_id_.Add(value);
+}
+inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
+AudioCollectionRequest_GetTrackList::genre_id() const {
+  return genre_id_;
+}
+inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
+AudioCollectionRequest_GetTrackList::mutable_genre_id() {
+  return &genre_id_;
+}
+
+// -------------------------------------------------------------------
+
+// AudioCollectionRequest_GetCoverArt
+
+// required .Remote.AudioCollectionRequest.GetCoverArt.Type type = 1;
+inline bool AudioCollectionRequest_GetCoverArt::has_type() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void AudioCollectionRequest_GetCoverArt::set_has_type() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void AudioCollectionRequest_GetCoverArt::clear_has_type() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void AudioCollectionRequest_GetCoverArt::clear_type() {
+  type_ = 1;
+  clear_has_type();
+}
+inline ::Remote::AudioCollectionRequest_GetCoverArt_Type AudioCollectionRequest_GetCoverArt::type() const {
+  return static_cast< ::Remote::AudioCollectionRequest_GetCoverArt_Type >(type_);
+}
+inline void AudioCollectionRequest_GetCoverArt::set_type(::Remote::AudioCollectionRequest_GetCoverArt_Type value) {
+  assert(::Remote::AudioCollectionRequest_GetCoverArt_Type_IsValid(value));
+  set_has_type();
+  type_ = value;
+}
+
+// optional uint64 release_id = 2;
+inline bool AudioCollectionRequest_GetCoverArt::has_release_id() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void AudioCollectionRequest_GetCoverArt::set_has_release_id() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void AudioCollectionRequest_GetCoverArt::clear_has_release_id() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void AudioCollectionRequest_GetCoverArt::clear_release_id() {
+  release_id_ = GOOGLE_ULONGLONG(0);
+  clear_has_release_id();
+}
+inline ::google::protobuf::uint64 AudioCollectionRequest_GetCoverArt::release_id() const {
+  return release_id_;
+}
+inline void AudioCollectionRequest_GetCoverArt::set_release_id(::google::protobuf::uint64 value) {
+  set_has_release_id();
+  release_id_ = value;
+}
+
+// optional uint64 track_id = 3;
+inline bool AudioCollectionRequest_GetCoverArt::has_track_id() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void AudioCollectionRequest_GetCoverArt::set_has_track_id() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void AudioCollectionRequest_GetCoverArt::clear_has_track_id() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void AudioCollectionRequest_GetCoverArt::clear_track_id() {
+  track_id_ = GOOGLE_ULONGLONG(0);
+  clear_has_track_id();
+}
+inline ::google::protobuf::uint64 AudioCollectionRequest_GetCoverArt::track_id() const {
+  return track_id_;
+}
+inline void AudioCollectionRequest_GetCoverArt::set_track_id(::google::protobuf::uint64 value) {
+  set_has_track_id();
+  track_id_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -2548,6 +2702,44 @@ inline void AudioCollectionRequest::set_allocated_get_tracks(::Remote::AudioColl
     set_has_get_tracks();
   } else {
     clear_has_get_tracks();
+  }
+}
+
+// optional .Remote.AudioCollectionRequest.GetCoverArt get_cover_art = 6;
+inline bool AudioCollectionRequest::has_get_cover_art() const {
+  return (_has_bits_[0] & 0x00000020u) != 0;
+}
+inline void AudioCollectionRequest::set_has_get_cover_art() {
+  _has_bits_[0] |= 0x00000020u;
+}
+inline void AudioCollectionRequest::clear_has_get_cover_art() {
+  _has_bits_[0] &= ~0x00000020u;
+}
+inline void AudioCollectionRequest::clear_get_cover_art() {
+  if (get_cover_art_ != NULL) get_cover_art_->::Remote::AudioCollectionRequest_GetCoverArt::Clear();
+  clear_has_get_cover_art();
+}
+inline const ::Remote::AudioCollectionRequest_GetCoverArt& AudioCollectionRequest::get_cover_art() const {
+  return get_cover_art_ != NULL ? *get_cover_art_ : *default_instance_->get_cover_art_;
+}
+inline ::Remote::AudioCollectionRequest_GetCoverArt* AudioCollectionRequest::mutable_get_cover_art() {
+  set_has_get_cover_art();
+  if (get_cover_art_ == NULL) get_cover_art_ = new ::Remote::AudioCollectionRequest_GetCoverArt;
+  return get_cover_art_;
+}
+inline ::Remote::AudioCollectionRequest_GetCoverArt* AudioCollectionRequest::release_get_cover_art() {
+  clear_has_get_cover_art();
+  ::Remote::AudioCollectionRequest_GetCoverArt* temp = get_cover_art_;
+  get_cover_art_ = NULL;
+  return temp;
+}
+inline void AudioCollectionRequest::set_allocated_get_cover_art(::Remote::AudioCollectionRequest_GetCoverArt* get_cover_art) {
+  delete get_cover_art_;
+  get_cover_art_ = get_cover_art;
+  if (get_cover_art) {
+    set_has_get_cover_art();
+  } else {
+    clear_has_get_cover_art();
   }
 }
 
@@ -2741,48 +2933,74 @@ inline void AudioCollectionResponse_CoverArt::set_allocated_mime_type(::std::str
   }
 }
 
-// repeated bytes data = 2;
-inline int AudioCollectionResponse_CoverArt::data_size() const {
-  return data_.size();
+// required bytes data = 2;
+inline bool AudioCollectionResponse_CoverArt::has_data() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void AudioCollectionResponse_CoverArt::set_has_data() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void AudioCollectionResponse_CoverArt::clear_has_data() {
+  _has_bits_[0] &= ~0x00000002u;
 }
 inline void AudioCollectionResponse_CoverArt::clear_data() {
-  data_.Clear();
+  if (data_ != &::google::protobuf::internal::kEmptyString) {
+    data_->clear();
+  }
+  clear_has_data();
 }
-inline const ::std::string& AudioCollectionResponse_CoverArt::data(int index) const {
-  return data_.Get(index);
+inline const ::std::string& AudioCollectionResponse_CoverArt::data() const {
+  return *data_;
 }
-inline ::std::string* AudioCollectionResponse_CoverArt::mutable_data(int index) {
-  return data_.Mutable(index);
+inline void AudioCollectionResponse_CoverArt::set_data(const ::std::string& value) {
+  set_has_data();
+  if (data_ == &::google::protobuf::internal::kEmptyString) {
+    data_ = new ::std::string;
+  }
+  data_->assign(value);
 }
-inline void AudioCollectionResponse_CoverArt::set_data(int index, const ::std::string& value) {
-  data_.Mutable(index)->assign(value);
+inline void AudioCollectionResponse_CoverArt::set_data(const char* value) {
+  set_has_data();
+  if (data_ == &::google::protobuf::internal::kEmptyString) {
+    data_ = new ::std::string;
+  }
+  data_->assign(value);
 }
-inline void AudioCollectionResponse_CoverArt::set_data(int index, const char* value) {
-  data_.Mutable(index)->assign(value);
+inline void AudioCollectionResponse_CoverArt::set_data(const void* value, size_t size) {
+  set_has_data();
+  if (data_ == &::google::protobuf::internal::kEmptyString) {
+    data_ = new ::std::string;
+  }
+  data_->assign(reinterpret_cast<const char*>(value), size);
 }
-inline void AudioCollectionResponse_CoverArt::set_data(int index, const void* value, size_t size) {
-  data_.Mutable(index)->assign(
-    reinterpret_cast<const char*>(value), size);
-}
-inline ::std::string* AudioCollectionResponse_CoverArt::add_data() {
-  return data_.Add();
-}
-inline void AudioCollectionResponse_CoverArt::add_data(const ::std::string& value) {
-  data_.Add()->assign(value);
-}
-inline void AudioCollectionResponse_CoverArt::add_data(const char* value) {
-  data_.Add()->assign(value);
-}
-inline void AudioCollectionResponse_CoverArt::add_data(const void* value, size_t size) {
-  data_.Add()->assign(reinterpret_cast<const char*>(value), size);
-}
-inline const ::google::protobuf::RepeatedPtrField< ::std::string>&
-AudioCollectionResponse_CoverArt::data() const {
+inline ::std::string* AudioCollectionResponse_CoverArt::mutable_data() {
+  set_has_data();
+  if (data_ == &::google::protobuf::internal::kEmptyString) {
+    data_ = new ::std::string;
+  }
   return data_;
 }
-inline ::google::protobuf::RepeatedPtrField< ::std::string>*
-AudioCollectionResponse_CoverArt::mutable_data() {
-  return &data_;
+inline ::std::string* AudioCollectionResponse_CoverArt::release_data() {
+  clear_has_data();
+  if (data_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = data_;
+    data_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void AudioCollectionResponse_CoverArt::set_allocated_data(::std::string* data) {
+  if (data_ != &::google::protobuf::internal::kEmptyString) {
+    delete data_;
+  }
+  if (data) {
+    set_has_data();
+    data_ = data;
+  } else {
+    clear_has_data();
+    data_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
 }
 
 // -------------------------------------------------------------------
@@ -3209,44 +3427,6 @@ inline void AudioCollectionResponse_Release::set_allocated_release_date(::std::s
   }
 }
 
-// optional .Remote.AudioCollectionResponse.CoverArt coverArt = 6;
-inline bool AudioCollectionResponse_Release::has_coverart() const {
-  return (_has_bits_[0] & 0x00000020u) != 0;
-}
-inline void AudioCollectionResponse_Release::set_has_coverart() {
-  _has_bits_[0] |= 0x00000020u;
-}
-inline void AudioCollectionResponse_Release::clear_has_coverart() {
-  _has_bits_[0] &= ~0x00000020u;
-}
-inline void AudioCollectionResponse_Release::clear_coverart() {
-  if (coverart_ != NULL) coverart_->::Remote::AudioCollectionResponse_CoverArt::Clear();
-  clear_has_coverart();
-}
-inline const ::Remote::AudioCollectionResponse_CoverArt& AudioCollectionResponse_Release::coverart() const {
-  return coverart_ != NULL ? *coverart_ : *default_instance_->coverart_;
-}
-inline ::Remote::AudioCollectionResponse_CoverArt* AudioCollectionResponse_Release::mutable_coverart() {
-  set_has_coverart();
-  if (coverart_ == NULL) coverart_ = new ::Remote::AudioCollectionResponse_CoverArt;
-  return coverart_;
-}
-inline ::Remote::AudioCollectionResponse_CoverArt* AudioCollectionResponse_Release::release_coverart() {
-  clear_has_coverart();
-  ::Remote::AudioCollectionResponse_CoverArt* temp = coverart_;
-  coverart_ = NULL;
-  return temp;
-}
-inline void AudioCollectionResponse_Release::set_allocated_coverart(::Remote::AudioCollectionResponse_CoverArt* coverart) {
-  delete coverart_;
-  coverart_ = coverart;
-  if (coverart) {
-    set_has_coverart();
-  } else {
-    clear_has_coverart();
-  }
-}
-
 // -------------------------------------------------------------------
 
 // AudioCollectionResponse_Track
@@ -3618,76 +3798,6 @@ inline void AudioCollectionResponse_Track::set_allocated_original_release_date(:
   }
 }
 
-// optional bytes coverArt = 11;
-inline bool AudioCollectionResponse_Track::has_coverart() const {
-  return (_has_bits_[0] & 0x00000400u) != 0;
-}
-inline void AudioCollectionResponse_Track::set_has_coverart() {
-  _has_bits_[0] |= 0x00000400u;
-}
-inline void AudioCollectionResponse_Track::clear_has_coverart() {
-  _has_bits_[0] &= ~0x00000400u;
-}
-inline void AudioCollectionResponse_Track::clear_coverart() {
-  if (coverart_ != &::google::protobuf::internal::kEmptyString) {
-    coverart_->clear();
-  }
-  clear_has_coverart();
-}
-inline const ::std::string& AudioCollectionResponse_Track::coverart() const {
-  return *coverart_;
-}
-inline void AudioCollectionResponse_Track::set_coverart(const ::std::string& value) {
-  set_has_coverart();
-  if (coverart_ == &::google::protobuf::internal::kEmptyString) {
-    coverart_ = new ::std::string;
-  }
-  coverart_->assign(value);
-}
-inline void AudioCollectionResponse_Track::set_coverart(const char* value) {
-  set_has_coverart();
-  if (coverart_ == &::google::protobuf::internal::kEmptyString) {
-    coverart_ = new ::std::string;
-  }
-  coverart_->assign(value);
-}
-inline void AudioCollectionResponse_Track::set_coverart(const void* value, size_t size) {
-  set_has_coverart();
-  if (coverart_ == &::google::protobuf::internal::kEmptyString) {
-    coverart_ = new ::std::string;
-  }
-  coverart_->assign(reinterpret_cast<const char*>(value), size);
-}
-inline ::std::string* AudioCollectionResponse_Track::mutable_coverart() {
-  set_has_coverart();
-  if (coverart_ == &::google::protobuf::internal::kEmptyString) {
-    coverart_ = new ::std::string;
-  }
-  return coverart_;
-}
-inline ::std::string* AudioCollectionResponse_Track::release_coverart() {
-  clear_has_coverart();
-  if (coverart_ == &::google::protobuf::internal::kEmptyString) {
-    return NULL;
-  } else {
-    ::std::string* temp = coverart_;
-    coverart_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-    return temp;
-  }
-}
-inline void AudioCollectionResponse_Track::set_allocated_coverart(::std::string* coverart) {
-  if (coverart_ != &::google::protobuf::internal::kEmptyString) {
-    delete coverart_;
-  }
-  if (coverart) {
-    set_has_coverart();
-    coverart_ = coverart;
-  } else {
-    clear_has_coverart();
-    coverart_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  }
-}
-
 // -------------------------------------------------------------------
 
 // AudioCollectionResponse
@@ -3905,6 +4015,31 @@ inline void AudioCollectionResponse::set_allocated_track_list(::Remote::AudioCol
   }
 }
 
+// repeated .Remote.AudioCollectionResponse.CoverArt cover_art = 7;
+inline int AudioCollectionResponse::cover_art_size() const {
+  return cover_art_.size();
+}
+inline void AudioCollectionResponse::clear_cover_art() {
+  cover_art_.Clear();
+}
+inline const ::Remote::AudioCollectionResponse_CoverArt& AudioCollectionResponse::cover_art(int index) const {
+  return cover_art_.Get(index);
+}
+inline ::Remote::AudioCollectionResponse_CoverArt* AudioCollectionResponse::mutable_cover_art(int index) {
+  return cover_art_.Mutable(index);
+}
+inline ::Remote::AudioCollectionResponse_CoverArt* AudioCollectionResponse::add_cover_art() {
+  return cover_art_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::Remote::AudioCollectionResponse_CoverArt >&
+AudioCollectionResponse::cover_art() const {
+  return cover_art_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::Remote::AudioCollectionResponse_CoverArt >*
+AudioCollectionResponse::mutable_cover_art() {
+  return &cover_art_;
+}
+
 
 // @@protoc_insertion_point(namespace_scope)
 
@@ -3914,6 +4049,10 @@ inline void AudioCollectionResponse::set_allocated_track_list(::Remote::AudioCol
 namespace google {
 namespace protobuf {
 
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::Remote::AudioCollectionRequest_GetCoverArt_Type>() {
+  return ::Remote::AudioCollectionRequest_GetCoverArt_Type_descriptor();
+}
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::Remote::AudioCollectionRequest_Type>() {
   return ::Remote::AudioCollectionRequest_Type_descriptor();

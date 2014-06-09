@@ -4,7 +4,6 @@
 
 #include "AudioTypes.hpp"
 
-
 Release::Release(const std::string& name)
 : _name(name)
 {
@@ -14,6 +13,12 @@ Release::pointer
 Release::getByName(Wt::Dbo::Session& session, const std::string& name)
 {
 	return session.find<Release>().where("name = ?").bind( name );
+}
+
+Release::pointer
+Release::getById(Wt::Dbo::Session& session, id_type id)
+{
+	return session.find<Release>().where("id = ?").bind(id);
 }
 
 Release::pointer
@@ -65,4 +70,5 @@ Release::getDuration(void) const
 
 	return res;
 }
+
 

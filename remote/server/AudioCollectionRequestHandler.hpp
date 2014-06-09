@@ -21,13 +21,14 @@ class AudioCollectionRequestHandler
 		bool processGetGenres(const AudioCollectionRequest::GetGenreList& request, AudioCollectionResponse::GenreList& response);
 		bool processGetReleases(const AudioCollectionRequest::GetReleaseList& request, AudioCollectionResponse::ReleaseList& response);
 		bool processGetTracks(const AudioCollectionRequest::GetTrackList& request, AudioCollectionResponse::TrackList& response);
+		bool processGetCoverArt(const AudioCollectionRequest::GetCoverArt& request, AudioCollectionResponse& response);
 
 		DatabaseHandler& _db;
 
 		static const std::size_t _maxListArtists = 256;
 		static const std::size_t _maxListGenres = 256;
-		static const std::size_t _maxListReleases = 256;
-		static const std::size_t _maxListTracks = 1024;
+		static const std::size_t _maxListReleases = 128;
+		static const std::size_t _maxListTracks = 128;
 };
 
 } // namespace Remote

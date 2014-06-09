@@ -5,6 +5,7 @@
 #include "AudioCollectionRequestHandler.hpp"
 
 #include "database/AudioTypes.hpp"
+#include "cover/CoverArtGrabber.hpp"
 
 namespace Remote {
 namespace Server {
@@ -30,7 +31,7 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 					response.set_type(AudioCollectionResponse::TypeArtistList);
 			}
 			else
-				std::cerr << "Bad AudioCollectionRequest_Type_TypeGetGenreList" << std::endl;
+				std::cerr << "Bad AudioCollectionRequest::TypeGetGenreList" << std::endl;
 			break;
 
 		case AudioCollectionRequest::TypeGetArtistList:
@@ -42,7 +43,7 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 
 			}
 			else
-				std::cerr << "Bad AudioCollectionRequest_Type_TypeGetArtistList" << std::endl;
+				std::cerr << "Bad AudioCollectionRequest::TypeGetArtistList message!" << std::endl;
 			break;
 
 		case AudioCollectionRequest::TypeGetReleaseList:
@@ -54,7 +55,7 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 
 			}
 			else
-				std::cerr << "Bad AudioCollectionRequest_Type_TypeGetReleaseList" << std::endl;
+				std::cerr << "Bad AudioCollectionRequest::TypeGetReleaseList message!" << std::endl;
 			break;
 
 		case AudioCollectionRequest::TypeGetTrackList:
@@ -66,11 +67,19 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 
 			}
 			else
-				std::cerr << "Bad AudioCollectionRequest_Type_TypeGetTrackList" << std::endl;
+				std::cerr << "Bad AudioCollectionRequest::TypeGetTrackList message!" << std::endl;
+			break;
+
+		case AudioCollectionRequest::TypeGetCoverArt:
+			if (request.has_get_cover_art())
+				res = processGetCoverArt(request.get_cover_art(), response);
+			else
+				std::cerr << "Bad AudioCollectionRequest::TypeGetCoverArt message!" << std::endl;
 			break;
 
 		default:
 			std::cerr << "Unhandled AudioCollectionRequest_Type = " << request.type() << std::endl;
+
 	}
 
 	return res;
@@ -119,6 +128,8 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 		return false;
 	}
 
+	std::cout << "Batch offset = " << request.batch_parameter().offset() << ", batch size = " << request.batch_parameter().size() << std::endl;
+
 	std::size_t  size = request.batch_parameter().size();
 	if (!size)
 		size = _maxListArtists;
@@ -139,6 +150,7 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 		artist->set_name((*it)->getName());
 		artist->set_nb_releases(0);		// TODO
 		artist->set_id(it->id());
+		std::cout << "Adding artist '" << artist->name() << "'" << std::endl;
 	}
 
 	return true;
@@ -175,9 +187,11 @@ AudioCollectionRequestHandler::processGetReleases(const AudioCollectionRequest::
 
 		release->set_name((*it)->getName());
 		release->set_id(it->id());
-		// WARNING: next two lines are very time consuming!
+
+		// WARNING: next lines are very time consuming!
 		release->set_nb_tracks( (*it)->getTracks().size() );
 		release->set_duration_secs( (*it)->getDuration().total_seconds() );
+
 	}
 
 	return true;
@@ -243,6 +257,47 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 
 	return true;
 }
+
+bool
+AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::GetCoverArt& request, AudioCollectionResponse& response)
+{
+	bool res = false;
+
+	response.set_type(AudioCollectionResponse::TypeCoverArt);
+
+	switch(request.type())
+	{
+		case AudioCollectionRequest::GetCoverArt::TypeGetCoverArtRelease:
+
+			if (request.has_release_id())
+			{
+				Wt::Dbo::Transaction transaction( _db.getSession() );
+
+				// Get the request release
+				Release::pointer release = Release::getById( _db.getSession(), request.release_id());
+
+				std::vector<CoverArt::CoverArt> coverArts = CoverArt::Grabber::getFromRelease(release);
+
+				BOOST_FOREACH(const CoverArt::CoverArt& coverArt, coverArts)
+				{
+					AudioCollectionResponse_CoverArt* cover_art = response.add_cover_art();
+
+					cover_art->set_mime_type(coverArt.getMimeType());
+					cover_art->set_data( std::string( coverArt.getData().begin(), coverArt.getData().end()) );
+				}
+			}
+			break;
+
+		case AudioCollectionRequest::GetCoverArt::TypeGetCoverArtTrack:
+			std::cerr << "TODO AudioCollectionRequest::GetCoverArt::TypeGetCoverArtTrack" <<std::endl;
+			break;
+
+	}
+
+	return res;
+}
+
+
 
 } // namespace Remote
 } // namespace Server

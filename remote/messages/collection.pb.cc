@@ -38,6 +38,10 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
 const ::google::protobuf::Descriptor* AudioCollectionRequest_GetTrackList_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   AudioCollectionRequest_GetTrackList_reflection_ = NULL;
+const ::google::protobuf::Descriptor* AudioCollectionRequest_GetCoverArt_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  AudioCollectionRequest_GetCoverArt_reflection_ = NULL;
+const ::google::protobuf::EnumDescriptor* AudioCollectionRequest_GetCoverArt_Type_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* AudioCollectionRequest_Type_descriptor_ = NULL;
 const ::google::protobuf::Descriptor* AudioCollectionResponse_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
@@ -81,12 +85,13 @@ void protobuf_AssignDesc_collection_2eproto() {
       "collection.proto");
   GOOGLE_CHECK(file != NULL);
   AudioCollectionRequest_descriptor_ = file->message_type(0);
-  static const int AudioCollectionRequest_offsets_[5] = {
+  static const int AudioCollectionRequest_offsets_[6] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest, type_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest, get_genres_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest, get_artists_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest, get_releases_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest, get_tracks_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest, get_cover_art_),
   };
   AudioCollectionRequest_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -132,8 +137,8 @@ void protobuf_AssignDesc_collection_2eproto() {
       sizeof(AudioCollectionRequest_GetGenreList));
   AudioCollectionRequest_GetArtistList_descriptor_ = AudioCollectionRequest_descriptor_->nested_type(2);
   static const int AudioCollectionRequest_GetArtistList_offsets_[2] = {
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetArtistList, genre_id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetArtistList, batch_parameter_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetArtistList, genre_id_),
   };
   AudioCollectionRequest_GetArtistList_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -147,11 +152,10 @@ void protobuf_AssignDesc_collection_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(AudioCollectionRequest_GetArtistList));
   AudioCollectionRequest_GetReleaseList_descriptor_ = AudioCollectionRequest_descriptor_->nested_type(3);
-  static const int AudioCollectionRequest_GetReleaseList_offsets_[4] = {
+  static const int AudioCollectionRequest_GetReleaseList_offsets_[3] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetReleaseList, batch_parameter_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetReleaseList, artist_id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetReleaseList, filter_genre_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetReleaseList, get_cover_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetReleaseList, batch_parameter_),
   };
   AudioCollectionRequest_GetReleaseList_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -165,12 +169,11 @@ void protobuf_AssignDesc_collection_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(AudioCollectionRequest_GetReleaseList));
   AudioCollectionRequest_GetTrackList_descriptor_ = AudioCollectionRequest_descriptor_->nested_type(4);
-  static const int AudioCollectionRequest_GetTrackList_offsets_[5] = {
+  static const int AudioCollectionRequest_GetTrackList_offsets_[4] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetTrackList, batch_parameter_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetTrackList, artist_id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetTrackList, release_id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetTrackList, genre_id_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetTrackList, get_cover_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetTrackList, batch_parameter_),
   };
   AudioCollectionRequest_GetTrackList_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -183,15 +186,34 @@ void protobuf_AssignDesc_collection_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(AudioCollectionRequest_GetTrackList));
+  AudioCollectionRequest_GetCoverArt_descriptor_ = AudioCollectionRequest_descriptor_->nested_type(5);
+  static const int AudioCollectionRequest_GetCoverArt_offsets_[3] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetCoverArt, type_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetCoverArt, release_id_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetCoverArt, track_id_),
+  };
+  AudioCollectionRequest_GetCoverArt_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      AudioCollectionRequest_GetCoverArt_descriptor_,
+      AudioCollectionRequest_GetCoverArt::default_instance_,
+      AudioCollectionRequest_GetCoverArt_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetCoverArt, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionRequest_GetCoverArt, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(AudioCollectionRequest_GetCoverArt));
+  AudioCollectionRequest_GetCoverArt_Type_descriptor_ = AudioCollectionRequest_GetCoverArt_descriptor_->enum_type(0);
   AudioCollectionRequest_Type_descriptor_ = AudioCollectionRequest_descriptor_->enum_type(0);
   AudioCollectionResponse_descriptor_ = file->message_type(1);
-  static const int AudioCollectionResponse_offsets_[6] = {
+  static const int AudioCollectionResponse_offsets_[7] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse, type_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse, error_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse, genre_list_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse, artist_list_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse, release_list_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse, track_list_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse, cover_art_),
   };
   AudioCollectionResponse_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -314,13 +336,12 @@ void protobuf_AssignDesc_collection_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(AudioCollectionResponse_Artist));
   AudioCollectionResponse_Release_descriptor_ = AudioCollectionResponse_descriptor_->nested_type(7);
-  static const int AudioCollectionResponse_Release_offsets_[6] = {
+  static const int AudioCollectionResponse_Release_offsets_[5] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Release, id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Release, name_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Release, nb_tracks_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Release, duration_secs_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Release, release_date_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Release, coverart_),
   };
   AudioCollectionResponse_Release_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -334,7 +355,7 @@ void protobuf_AssignDesc_collection_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(AudioCollectionResponse_Release));
   AudioCollectionResponse_Track_descriptor_ = AudioCollectionResponse_descriptor_->nested_type(8);
-  static const int AudioCollectionResponse_Track_offsets_[11] = {
+  static const int AudioCollectionResponse_Track_offsets_[10] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Track, id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Track, artist_id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Track, release_id_),
@@ -345,7 +366,6 @@ void protobuf_AssignDesc_collection_2eproto() {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Track, duration_secs_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Track, release_date_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Track, original_release_date_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AudioCollectionResponse_Track, coverart_),
   };
   AudioCollectionResponse_Track_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -384,6 +404,8 @@ void protobuf_RegisterTypes(const ::std::string&) {
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     AudioCollectionRequest_GetTrackList_descriptor_, &AudioCollectionRequest_GetTrackList::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    AudioCollectionRequest_GetCoverArt_descriptor_, &AudioCollectionRequest_GetCoverArt::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     AudioCollectionResponse_descriptor_, &AudioCollectionResponse::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     AudioCollectionResponse_GenreList_descriptor_, &AudioCollectionResponse_GenreList::default_instance());
@@ -420,6 +442,8 @@ void protobuf_ShutdownFile_collection_2eproto() {
   delete AudioCollectionRequest_GetReleaseList_reflection_;
   delete AudioCollectionRequest_GetTrackList::default_instance_;
   delete AudioCollectionRequest_GetTrackList_reflection_;
+  delete AudioCollectionRequest_GetCoverArt::default_instance_;
+  delete AudioCollectionRequest_GetCoverArt_reflection_;
   delete AudioCollectionResponse::default_instance_;
   delete AudioCollectionResponse_reflection_;
   delete AudioCollectionResponse_GenreList::default_instance_;
@@ -451,7 +475,7 @@ void protobuf_AddDesc_collection_2eproto() {
   ::Remote::protobuf_AddDesc_common_2eproto();
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\020collection.proto\022\006Remote\032\014common.proto"
-    "\"\347\007\n\026AudioCollectionRequest\0221\n\004type\030\001 \002("
+    "\"\314\t\n\026AudioCollectionRequest\0221\n\004type\030\001 \002("
     "\0162#.Remote.AudioCollectionRequest.Type\022\?"
     "\n\nget_genres\030\002 \001(\0132+.Remote.AudioCollect"
     "ionRequest.GetGenreList\022A\n\013get_artists\030\003"
@@ -459,56 +483,61 @@ void protobuf_AddDesc_collection_2eproto() {
     "ArtistList\022C\n\014get_releases\030\004 \001(\0132-.Remot"
     "e.AudioCollectionRequest.GetReleaseList\022"
     "\?\n\nget_tracks\030\005 \001(\0132+.Remote.AudioCollec"
-    "tionRequest.GetTrackList\032.\n\016BatchParamet"
-    "er\022\016\n\006offset\030\001 \002(\r\022\014\n\004size\030\002 \002(\r\032V\n\014GetG"
-    "enreList\022F\n\017batch_parameter\030\002 \002(\0132-.Remo"
-    "te.AudioCollectionRequest.BatchParameter"
-    "\032i\n\rGetArtistList\022\020\n\010genre_id\030\002 \003(\004\022F\n\017b"
-    "atch_parameter\030\003 \002(\0132-.Remote.AudioColle"
-    "ctionRequest.BatchParameter\032\224\001\n\016GetRelea"
-    "seList\022\021\n\tartist_id\030\001 \003(\004\022\024\n\014filter_genr"
-    "e\030\002 \003(\004\022\021\n\tget_cover\030\003 \001(\010\022F\n\017batch_para"
-    "meter\030\004 \002(\0132-.Remote.AudioCollectionRequ"
-    "est.BatchParameter\032\242\001\n\014GetTrackList\022\021\n\ta"
-    "rtist_id\030\001 \003(\004\022\022\n\nrelease_id\030\002 \003(\004\022\020\n\010ge"
-    "nre_id\030\003 \003(\004\022\021\n\tget_cover\030\004 \001(\010\022F\n\017batch"
-    "_parameter\030\005 \002(\0132-.Remote.AudioCollectio"
-    "nRequest.BatchParameter\"a\n\004Type\022\024\n\020TypeG"
-    "etGenreList\020\001\022\025\n\021TypeGetArtistList\020\002\022\026\n\022"
-    "TypeGetReleaseList\020\003\022\024\n\020TypeGetTrackList"
-    "\020\004\"\375\t\n\027AudioCollectionResponse\0222\n\004type\030\001"
-    " \001(\0162$.Remote.AudioCollectionResponse.Ty"
-    "pe\022\034\n\005error\030\002 \001(\0132\r.Remote.Error\022=\n\ngenr"
-    "e_list\030\003 \001(\0132).Remote.AudioCollectionRes"
-    "ponse.GenreList\022\?\n\013artist_list\030\004 \001(\0132*.R"
-    "emote.AudioCollectionResponse.ArtistList"
-    "\022A\n\014release_list\030\005 \001(\0132+.Remote.AudioCol"
-    "lectionResponse.ReleaseList\022=\n\ntrack_lis"
-    "t\030\006 \001(\0132).Remote.AudioCollectionResponse"
-    ".TrackList\032B\n\tGenreList\0225\n\006genres\030\002 \003(\0132"
-    "%.Remote.AudioCollectionResponse.Genre\032E"
-    "\n\nArtistList\0227\n\007artists\030\002 \003(\0132&.Remote.A"
-    "udioCollectionResponse.Artist\032H\n\013Release"
-    "List\0229\n\010releases\030\002 \003(\0132\'.Remote.AudioCol"
-    "lectionResponse.Release\032B\n\tTrackList\0225\n\006"
-    "tracks\030\002 \003(\0132%.Remote.AudioCollectionRes"
-    "ponse.Track\032+\n\010CoverArt\022\021\n\tmime_type\030\001 \001"
-    "(\t\022\014\n\004data\030\002 \003(\014\032!\n\005Genre\022\n\n\002id\030\001 \002(\004\022\014\n"
-    "\004name\030\002 \002(\t\0327\n\006Artist\022\n\n\002id\030\001 \002(\004\022\014\n\004nam"
-    "e\030\002 \002(\t\022\023\n\013nb_releases\030\003 \002(\r\032\237\001\n\007Release"
-    "\022\n\n\002id\030\001 \002(\004\022\014\n\004name\030\002 \002(\t\022\021\n\tnb_tracks\030"
-    "\003 \002(\r\022\025\n\rduration_secs\030\004 \002(\r\022\024\n\014release_"
-    "date\030\005 \001(\t\022:\n\010coverArt\030\006 \001(\0132(.Remote.Au"
-    "dioCollectionResponse.CoverArt\032\343\001\n\005Track"
-    "\022\n\n\002id\030\001 \002(\004\022\021\n\tartist_id\030\002 \002(\004\022\022\n\nrelea"
-    "se_id\030\003 \002(\004\022\020\n\010genre_id\030\004 \003(\004\022\023\n\013disc_nu"
-    "mber\030\005 \001(\r\022\024\n\014track_number\030\006 \001(\r\022\014\n\004name"
-    "\030\007 \002(\t\022\025\n\rduration_secs\030\010 \002(\r\022\024\n\014release"
-    "_date\030\t \001(\t\022\035\n\025original_release_date\030\n \001"
-    "(\t\022\020\n\010coverArt\030\013 \001(\014\"d\n\004Type\022\r\n\tTypeErro"
-    "r\020\001\022\021\n\rTypeGenreList\020\002\022\022\n\016TypeArtistList"
-    "\020\003\022\023\n\017TypeReleaseList\020\004\022\021\n\rTypeTrackList"
-    "\020\005", 2322);
+    "tionRequest.GetTrackList\022A\n\rget_cover_ar"
+    "t\030\006 \001(\0132*.Remote.AudioCollectionRequest."
+    "GetCoverArt\032.\n\016BatchParameter\022\016\n\006offset\030"
+    "\001 \002(\r\022\014\n\004size\030\002 \002(\r\032V\n\014GetGenreList\022F\n\017b"
+    "atch_parameter\030\001 \002(\0132-.Remote.AudioColle"
+    "ctionRequest.BatchParameter\032i\n\rGetArtist"
+    "List\022F\n\017batch_parameter\030\001 \002(\0132-.Remote.A"
+    "udioCollectionRequest.BatchParameter\022\020\n\010"
+    "genre_id\030\002 \003(\004\032\201\001\n\016GetReleaseList\022F\n\017bat"
+    "ch_parameter\030\001 \002(\0132-.Remote.AudioCollect"
+    "ionRequest.BatchParameter\022\021\n\tartist_id\030\002"
+    " \003(\004\022\024\n\014filter_genre\030\003 \003(\004\032\217\001\n\014GetTrackL"
+    "ist\022F\n\017batch_parameter\030\001 \002(\0132-.Remote.Au"
+    "dioCollectionRequest.BatchParameter\022\021\n\ta"
+    "rtist_id\030\002 \003(\004\022\022\n\nrelease_id\030\003 \003(\004\022\020\n\010ge"
+    "nre_id\030\004 \003(\004\032\260\001\n\013GetCoverArt\022=\n\004type\030\001 \002"
+    "(\0162/.Remote.AudioCollectionRequest.GetCo"
+    "verArt.Type\022\022\n\nrelease_id\030\002 \001(\004\022\020\n\010track"
+    "_id\030\003 \001(\004\"<\n\004Type\022\032\n\026TypeGetCoverArtRele"
+    "ase\020\001\022\030\n\024TypeGetCoverArtTrack\020\002\"v\n\004Type\022"
+    "\024\n\020TypeGetGenreList\020\001\022\025\n\021TypeGetArtistLi"
+    "st\020\002\022\026\n\022TypeGetReleaseList\020\003\022\024\n\020TypeGetT"
+    "rackList\020\004\022\023\n\017TypeGetCoverArt\020\005\"\375\t\n\027Audi"
+    "oCollectionResponse\0222\n\004type\030\001 \001(\0162$.Remo"
+    "te.AudioCollectionResponse.Type\022\034\n\005error"
+    "\030\002 \001(\0132\r.Remote.Error\022=\n\ngenre_list\030\003 \001("
+    "\0132).Remote.AudioCollectionResponse.Genre"
+    "List\022\?\n\013artist_list\030\004 \001(\0132*.Remote.Audio"
+    "CollectionResponse.ArtistList\022A\n\014release"
+    "_list\030\005 \001(\0132+.Remote.AudioCollectionResp"
+    "onse.ReleaseList\022=\n\ntrack_list\030\006 \001(\0132).R"
+    "emote.AudioCollectionResponse.TrackList\022"
+    ";\n\tcover_art\030\007 \003(\0132(.Remote.AudioCollect"
+    "ionResponse.CoverArt\032B\n\tGenreList\0225\n\006gen"
+    "res\030\002 \003(\0132%.Remote.AudioCollectionRespon"
+    "se.Genre\032E\n\nArtistList\0227\n\007artists\030\002 \003(\0132"
+    "&.Remote.AudioCollectionResponse.Artist\032"
+    "H\n\013ReleaseList\0229\n\010releases\030\002 \003(\0132\'.Remot"
+    "e.AudioCollectionResponse.Release\032B\n\tTra"
+    "ckList\0225\n\006tracks\030\002 \003(\0132%.Remote.AudioCol"
+    "lectionResponse.Track\032+\n\010CoverArt\022\021\n\tmim"
+    "e_type\030\001 \001(\t\022\014\n\004data\030\002 \002(\014\032!\n\005Genre\022\n\n\002i"
+    "d\030\001 \002(\004\022\014\n\004name\030\002 \002(\t\0327\n\006Artist\022\n\n\002id\030\001 "
+    "\002(\004\022\014\n\004name\030\002 \002(\t\022\023\n\013nb_releases\030\003 \002(\r\032c"
+    "\n\007Release\022\n\n\002id\030\001 \002(\004\022\014\n\004name\030\002 \002(\t\022\021\n\tn"
+    "b_tracks\030\003 \002(\r\022\025\n\rduration_secs\030\004 \002(\r\022\024\n"
+    "\014release_date\030\005 \001(\t\032\321\001\n\005Track\022\n\n\002id\030\001 \002("
+    "\004\022\021\n\tartist_id\030\002 \002(\004\022\022\n\nrelease_id\030\003 \002(\004"
+    "\022\020\n\010genre_id\030\004 \003(\004\022\023\n\013disc_number\030\005 \001(\r\022"
+    "\024\n\014track_number\030\006 \001(\r\022\014\n\004name\030\007 \002(\t\022\025\n\rd"
+    "uration_secs\030\010 \002(\r\022\024\n\014release_date\030\t \001(\t"
+    "\022\035\n\025original_release_date\030\n \001(\t\"v\n\004Type\022"
+    "\r\n\tTypeError\020\001\022\021\n\rTypeGenreList\020\002\022\022\n\016Typ"
+    "eArtistList\020\003\022\023\n\017TypeReleaseList\020\004\022\021\n\rTy"
+    "peTrackList\020\005\022\020\n\014TypeCoverArt\020\006", 2551);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "collection.proto", &protobuf_RegisterTypes);
   AudioCollectionRequest::default_instance_ = new AudioCollectionRequest();
@@ -517,6 +546,7 @@ void protobuf_AddDesc_collection_2eproto() {
   AudioCollectionRequest_GetArtistList::default_instance_ = new AudioCollectionRequest_GetArtistList();
   AudioCollectionRequest_GetReleaseList::default_instance_ = new AudioCollectionRequest_GetReleaseList();
   AudioCollectionRequest_GetTrackList::default_instance_ = new AudioCollectionRequest_GetTrackList();
+  AudioCollectionRequest_GetCoverArt::default_instance_ = new AudioCollectionRequest_GetCoverArt();
   AudioCollectionResponse::default_instance_ = new AudioCollectionResponse();
   AudioCollectionResponse_GenreList::default_instance_ = new AudioCollectionResponse_GenreList();
   AudioCollectionResponse_ArtistList::default_instance_ = new AudioCollectionResponse_ArtistList();
@@ -533,6 +563,7 @@ void protobuf_AddDesc_collection_2eproto() {
   AudioCollectionRequest_GetArtistList::default_instance_->InitAsDefaultInstance();
   AudioCollectionRequest_GetReleaseList::default_instance_->InitAsDefaultInstance();
   AudioCollectionRequest_GetTrackList::default_instance_->InitAsDefaultInstance();
+  AudioCollectionRequest_GetCoverArt::default_instance_->InitAsDefaultInstance();
   AudioCollectionResponse::default_instance_->InitAsDefaultInstance();
   AudioCollectionResponse_GenreList::default_instance_->InitAsDefaultInstance();
   AudioCollectionResponse_ArtistList::default_instance_->InitAsDefaultInstance();
@@ -565,6 +596,7 @@ bool AudioCollectionRequest_Type_IsValid(int value) {
     case 2:
     case 3:
     case 4:
+    case 5:
       return true;
     default:
       return false;
@@ -576,6 +608,7 @@ const AudioCollectionRequest_Type AudioCollectionRequest::TypeGetGenreList;
 const AudioCollectionRequest_Type AudioCollectionRequest::TypeGetArtistList;
 const AudioCollectionRequest_Type AudioCollectionRequest::TypeGetReleaseList;
 const AudioCollectionRequest_Type AudioCollectionRequest::TypeGetTrackList;
+const AudioCollectionRequest_Type AudioCollectionRequest::TypeGetCoverArt;
 const AudioCollectionRequest_Type AudioCollectionRequest::Type_MIN;
 const AudioCollectionRequest_Type AudioCollectionRequest::Type_MAX;
 const int AudioCollectionRequest::Type_ARRAYSIZE;
@@ -901,8 +934,8 @@ bool AudioCollectionRequest_GetGenreList::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 2;
-      case 2: {
+      // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
+      case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
@@ -932,10 +965,10 @@ bool AudioCollectionRequest_GetGenreList::MergePartialFromCodedStream(
 
 void AudioCollectionRequest_GetGenreList::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 2;
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
   if (has_batch_parameter()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      2, this->batch_parameter(), output);
+      1, this->batch_parameter(), output);
   }
 
   if (!unknown_fields().empty()) {
@@ -946,11 +979,11 @@ void AudioCollectionRequest_GetGenreList::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* AudioCollectionRequest_GetGenreList::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 2;
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
   if (has_batch_parameter()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        2, this->batch_parameter(), target);
+        1, this->batch_parameter(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -964,7 +997,7 @@ int AudioCollectionRequest_GetGenreList::ByteSize() const {
   int total_size = 0;
 
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 2;
+    // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
     if (has_batch_parameter()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -1047,8 +1080,8 @@ void AudioCollectionRequest_GetGenreList::Swap(AudioCollectionRequest_GetGenreLi
 // -------------------------------------------------------------------
 
 #ifndef _MSC_VER
-const int AudioCollectionRequest_GetArtistList::kGenreIdFieldNumber;
 const int AudioCollectionRequest_GetArtistList::kBatchParameterFieldNumber;
+const int AudioCollectionRequest_GetArtistList::kGenreIdFieldNumber;
 #endif  // !_MSC_VER
 
 AudioCollectionRequest_GetArtistList::AudioCollectionRequest_GetArtistList()
@@ -1104,7 +1137,7 @@ AudioCollectionRequest_GetArtistList* AudioCollectionRequest_GetArtistList::New(
 }
 
 void AudioCollectionRequest_GetArtistList::Clear() {
-  if (_has_bits_[1 / 32] & (0xffu << (1 % 32))) {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (has_batch_parameter()) {
       if (batch_parameter_ != NULL) batch_parameter_->::Remote::AudioCollectionRequest_BatchParameter::Clear();
     }
@@ -1120,6 +1153,19 @@ bool AudioCollectionRequest_GetArtistList::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_batch_parameter()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(16)) goto parse_genre_id;
+        break;
+      }
+
       // repeated uint64 genre_id = 2;
       case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
@@ -1138,20 +1184,6 @@ bool AudioCollectionRequest_GetArtistList::MergePartialFromCodedStream(
           goto handle_uninterpreted;
         }
         if (input->ExpectTag(16)) goto parse_genre_id;
-        if (input->ExpectTag(26)) goto parse_batch_parameter;
-        break;
-      }
-
-      // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 3;
-      case 3: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_batch_parameter:
-          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_batch_parameter()));
-        } else {
-          goto handle_uninterpreted;
-        }
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -1174,16 +1206,16 @@ bool AudioCollectionRequest_GetArtistList::MergePartialFromCodedStream(
 
 void AudioCollectionRequest_GetArtistList::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
+  if (has_batch_parameter()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      1, this->batch_parameter(), output);
+  }
+
   // repeated uint64 genre_id = 2;
   for (int i = 0; i < this->genre_id_size(); i++) {
     ::google::protobuf::internal::WireFormatLite::WriteUInt64(
       2, this->genre_id(i), output);
-  }
-
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 3;
-  if (has_batch_parameter()) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      3, this->batch_parameter(), output);
   }
 
   if (!unknown_fields().empty()) {
@@ -1194,17 +1226,17 @@ void AudioCollectionRequest_GetArtistList::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* AudioCollectionRequest_GetArtistList::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
+  if (has_batch_parameter()) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        1, this->batch_parameter(), target);
+  }
+
   // repeated uint64 genre_id = 2;
   for (int i = 0; i < this->genre_id_size(); i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteUInt64ToArray(2, this->genre_id(i), target);
-  }
-
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 3;
-  if (has_batch_parameter()) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteMessageNoVirtualToArray(
-        3, this->batch_parameter(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -1217,8 +1249,8 @@ void AudioCollectionRequest_GetArtistList::SerializeWithCachedSizes(
 int AudioCollectionRequest_GetArtistList::ByteSize() const {
   int total_size = 0;
 
-  if (_has_bits_[1 / 32] & (0xffu << (1 % 32))) {
-    // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 3;
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
     if (has_batch_parameter()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -1262,7 +1294,7 @@ void AudioCollectionRequest_GetArtistList::MergeFrom(const ::google::protobuf::M
 void AudioCollectionRequest_GetArtistList::MergeFrom(const AudioCollectionRequest_GetArtistList& from) {
   GOOGLE_CHECK_NE(&from, this);
   genre_id_.MergeFrom(from.genre_id_);
-  if (from._has_bits_[1 / 32] & (0xffu << (1 % 32))) {
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (from.has_batch_parameter()) {
       mutable_batch_parameter()->::Remote::AudioCollectionRequest_BatchParameter::MergeFrom(from.batch_parameter());
     }
@@ -1283,7 +1315,7 @@ void AudioCollectionRequest_GetArtistList::CopyFrom(const AudioCollectionRequest
 }
 
 bool AudioCollectionRequest_GetArtistList::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000002) != 0x00000002) return false;
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
 
   if (has_batch_parameter()) {
     if (!this->batch_parameter().IsInitialized()) return false;
@@ -1293,8 +1325,8 @@ bool AudioCollectionRequest_GetArtistList::IsInitialized() const {
 
 void AudioCollectionRequest_GetArtistList::Swap(AudioCollectionRequest_GetArtistList* other) {
   if (other != this) {
-    genre_id_.Swap(&other->genre_id_);
     std::swap(batch_parameter_, other->batch_parameter_);
+    genre_id_.Swap(&other->genre_id_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -1313,10 +1345,9 @@ void AudioCollectionRequest_GetArtistList::Swap(AudioCollectionRequest_GetArtist
 // -------------------------------------------------------------------
 
 #ifndef _MSC_VER
+const int AudioCollectionRequest_GetReleaseList::kBatchParameterFieldNumber;
 const int AudioCollectionRequest_GetReleaseList::kArtistIdFieldNumber;
 const int AudioCollectionRequest_GetReleaseList::kFilterGenreFieldNumber;
-const int AudioCollectionRequest_GetReleaseList::kGetCoverFieldNumber;
-const int AudioCollectionRequest_GetReleaseList::kBatchParameterFieldNumber;
 #endif  // !_MSC_VER
 
 AudioCollectionRequest_GetReleaseList::AudioCollectionRequest_GetReleaseList()
@@ -1336,7 +1367,6 @@ AudioCollectionRequest_GetReleaseList::AudioCollectionRequest_GetReleaseList(con
 
 void AudioCollectionRequest_GetReleaseList::SharedCtor() {
   _cached_size_ = 0;
-  get_cover_ = false;
   batch_parameter_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -1373,8 +1403,7 @@ AudioCollectionRequest_GetReleaseList* AudioCollectionRequest_GetReleaseList::Ne
 }
 
 void AudioCollectionRequest_GetReleaseList::Clear() {
-  if (_has_bits_[2 / 32] & (0xffu << (2 % 32))) {
-    get_cover_ = false;
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (has_batch_parameter()) {
       if (batch_parameter_ != NULL) batch_parameter_->::Remote::AudioCollectionRequest_BatchParameter::Clear();
     }
@@ -1391,14 +1420,27 @@ bool AudioCollectionRequest_GetReleaseList::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // repeated uint64 artist_id = 1;
+      // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
       case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_batch_parameter()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(16)) goto parse_artist_id;
+        break;
+      }
+
+      // repeated uint64 artist_id = 2;
+      case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
          parse_artist_id:
           DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_UINT64>(
-                 1, 8, input, this->mutable_artist_id())));
+                 1, 16, input, this->mutable_artist_id())));
         } else if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag)
                    == ::google::protobuf::internal::WireFormatLite::
                       WIRETYPE_LENGTH_DELIMITED) {
@@ -1408,19 +1450,19 @@ bool AudioCollectionRequest_GetReleaseList::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(8)) goto parse_artist_id;
-        if (input->ExpectTag(16)) goto parse_filter_genre;
+        if (input->ExpectTag(16)) goto parse_artist_id;
+        if (input->ExpectTag(24)) goto parse_filter_genre;
         break;
       }
 
-      // repeated uint64 filter_genre = 2;
-      case 2: {
+      // repeated uint64 filter_genre = 3;
+      case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
          parse_filter_genre:
           DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_UINT64>(
-                 1, 16, input, this->mutable_filter_genre())));
+                 1, 24, input, this->mutable_filter_genre())));
         } else if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag)
                    == ::google::protobuf::internal::WireFormatLite::
                       WIRETYPE_LENGTH_DELIMITED) {
@@ -1430,37 +1472,7 @@ bool AudioCollectionRequest_GetReleaseList::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(16)) goto parse_filter_genre;
-        if (input->ExpectTag(24)) goto parse_get_cover;
-        break;
-      }
-
-      // optional bool get_cover = 3;
-      case 3: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
-         parse_get_cover:
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
-                 input, &get_cover_)));
-          set_has_get_cover();
-        } else {
-          goto handle_uninterpreted;
-        }
-        if (input->ExpectTag(34)) goto parse_batch_parameter;
-        break;
-      }
-
-      // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 4;
-      case 4: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_batch_parameter:
-          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_batch_parameter()));
-        } else {
-          goto handle_uninterpreted;
-        }
+        if (input->ExpectTag(24)) goto parse_filter_genre;
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -1483,27 +1495,22 @@ bool AudioCollectionRequest_GetReleaseList::MergePartialFromCodedStream(
 
 void AudioCollectionRequest_GetReleaseList::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // repeated uint64 artist_id = 1;
-  for (int i = 0; i < this->artist_id_size(); i++) {
-    ::google::protobuf::internal::WireFormatLite::WriteUInt64(
-      1, this->artist_id(i), output);
-  }
-
-  // repeated uint64 filter_genre = 2;
-  for (int i = 0; i < this->filter_genre_size(); i++) {
-    ::google::protobuf::internal::WireFormatLite::WriteUInt64(
-      2, this->filter_genre(i), output);
-  }
-
-  // optional bool get_cover = 3;
-  if (has_get_cover()) {
-    ::google::protobuf::internal::WireFormatLite::WriteBool(3, this->get_cover(), output);
-  }
-
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 4;
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
   if (has_batch_parameter()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      4, this->batch_parameter(), output);
+      1, this->batch_parameter(), output);
+  }
+
+  // repeated uint64 artist_id = 2;
+  for (int i = 0; i < this->artist_id_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteUInt64(
+      2, this->artist_id(i), output);
+  }
+
+  // repeated uint64 filter_genre = 3;
+  for (int i = 0; i < this->filter_genre_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteUInt64(
+      3, this->filter_genre(i), output);
   }
 
   if (!unknown_fields().empty()) {
@@ -1514,28 +1521,23 @@ void AudioCollectionRequest_GetReleaseList::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* AudioCollectionRequest_GetReleaseList::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // repeated uint64 artist_id = 1;
-  for (int i = 0; i < this->artist_id_size(); i++) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteUInt64ToArray(1, this->artist_id(i), target);
-  }
-
-  // repeated uint64 filter_genre = 2;
-  for (int i = 0; i < this->filter_genre_size(); i++) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteUInt64ToArray(2, this->filter_genre(i), target);
-  }
-
-  // optional bool get_cover = 3;
-  if (has_get_cover()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(3, this->get_cover(), target);
-  }
-
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 4;
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
   if (has_batch_parameter()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        4, this->batch_parameter(), target);
+        1, this->batch_parameter(), target);
+  }
+
+  // repeated uint64 artist_id = 2;
+  for (int i = 0; i < this->artist_id_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteUInt64ToArray(2, this->artist_id(i), target);
+  }
+
+  // repeated uint64 filter_genre = 3;
+  for (int i = 0; i < this->filter_genre_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteUInt64ToArray(3, this->filter_genre(i), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -1548,13 +1550,8 @@ void AudioCollectionRequest_GetReleaseList::SerializeWithCachedSizes(
 int AudioCollectionRequest_GetReleaseList::ByteSize() const {
   int total_size = 0;
 
-  if (_has_bits_[2 / 32] & (0xffu << (2 % 32))) {
-    // optional bool get_cover = 3;
-    if (has_get_cover()) {
-      total_size += 1 + 1;
-    }
-
-    // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 4;
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
     if (has_batch_parameter()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -1562,7 +1559,7 @@ int AudioCollectionRequest_GetReleaseList::ByteSize() const {
     }
 
   }
-  // repeated uint64 artist_id = 1;
+  // repeated uint64 artist_id = 2;
   {
     int data_size = 0;
     for (int i = 0; i < this->artist_id_size(); i++) {
@@ -1572,7 +1569,7 @@ int AudioCollectionRequest_GetReleaseList::ByteSize() const {
     total_size += 1 * this->artist_id_size() + data_size;
   }
 
-  // repeated uint64 filter_genre = 2;
+  // repeated uint64 filter_genre = 3;
   {
     int data_size = 0;
     for (int i = 0; i < this->filter_genre_size(); i++) {
@@ -1609,10 +1606,7 @@ void AudioCollectionRequest_GetReleaseList::MergeFrom(const AudioCollectionReque
   GOOGLE_CHECK_NE(&from, this);
   artist_id_.MergeFrom(from.artist_id_);
   filter_genre_.MergeFrom(from.filter_genre_);
-  if (from._has_bits_[2 / 32] & (0xffu << (2 % 32))) {
-    if (from.has_get_cover()) {
-      set_get_cover(from.get_cover());
-    }
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (from.has_batch_parameter()) {
       mutable_batch_parameter()->::Remote::AudioCollectionRequest_BatchParameter::MergeFrom(from.batch_parameter());
     }
@@ -1633,7 +1627,7 @@ void AudioCollectionRequest_GetReleaseList::CopyFrom(const AudioCollectionReques
 }
 
 bool AudioCollectionRequest_GetReleaseList::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000008) != 0x00000008) return false;
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
 
   if (has_batch_parameter()) {
     if (!this->batch_parameter().IsInitialized()) return false;
@@ -1643,10 +1637,9 @@ bool AudioCollectionRequest_GetReleaseList::IsInitialized() const {
 
 void AudioCollectionRequest_GetReleaseList::Swap(AudioCollectionRequest_GetReleaseList* other) {
   if (other != this) {
+    std::swap(batch_parameter_, other->batch_parameter_);
     artist_id_.Swap(&other->artist_id_);
     filter_genre_.Swap(&other->filter_genre_);
-    std::swap(get_cover_, other->get_cover_);
-    std::swap(batch_parameter_, other->batch_parameter_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -1665,11 +1658,10 @@ void AudioCollectionRequest_GetReleaseList::Swap(AudioCollectionRequest_GetRelea
 // -------------------------------------------------------------------
 
 #ifndef _MSC_VER
+const int AudioCollectionRequest_GetTrackList::kBatchParameterFieldNumber;
 const int AudioCollectionRequest_GetTrackList::kArtistIdFieldNumber;
 const int AudioCollectionRequest_GetTrackList::kReleaseIdFieldNumber;
 const int AudioCollectionRequest_GetTrackList::kGenreIdFieldNumber;
-const int AudioCollectionRequest_GetTrackList::kGetCoverFieldNumber;
-const int AudioCollectionRequest_GetTrackList::kBatchParameterFieldNumber;
 #endif  // !_MSC_VER
 
 AudioCollectionRequest_GetTrackList::AudioCollectionRequest_GetTrackList()
@@ -1689,7 +1681,6 @@ AudioCollectionRequest_GetTrackList::AudioCollectionRequest_GetTrackList(const A
 
 void AudioCollectionRequest_GetTrackList::SharedCtor() {
   _cached_size_ = 0;
-  get_cover_ = false;
   batch_parameter_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -1726,8 +1717,7 @@ AudioCollectionRequest_GetTrackList* AudioCollectionRequest_GetTrackList::New() 
 }
 
 void AudioCollectionRequest_GetTrackList::Clear() {
-  if (_has_bits_[3 / 32] & (0xffu << (3 % 32))) {
-    get_cover_ = false;
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (has_batch_parameter()) {
       if (batch_parameter_ != NULL) batch_parameter_->::Remote::AudioCollectionRequest_BatchParameter::Clear();
     }
@@ -1745,14 +1735,27 @@ bool AudioCollectionRequest_GetTrackList::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // repeated uint64 artist_id = 1;
+      // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
       case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_batch_parameter()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(16)) goto parse_artist_id;
+        break;
+      }
+
+      // repeated uint64 artist_id = 2;
+      case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
          parse_artist_id:
           DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_UINT64>(
-                 1, 8, input, this->mutable_artist_id())));
+                 1, 16, input, this->mutable_artist_id())));
         } else if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag)
                    == ::google::protobuf::internal::WireFormatLite::
                       WIRETYPE_LENGTH_DELIMITED) {
@@ -1762,19 +1765,19 @@ bool AudioCollectionRequest_GetTrackList::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(8)) goto parse_artist_id;
-        if (input->ExpectTag(16)) goto parse_release_id;
+        if (input->ExpectTag(16)) goto parse_artist_id;
+        if (input->ExpectTag(24)) goto parse_release_id;
         break;
       }
 
-      // repeated uint64 release_id = 2;
-      case 2: {
+      // repeated uint64 release_id = 3;
+      case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
          parse_release_id:
           DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_UINT64>(
-                 1, 16, input, this->mutable_release_id())));
+                 1, 24, input, this->mutable_release_id())));
         } else if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag)
                    == ::google::protobuf::internal::WireFormatLite::
                       WIRETYPE_LENGTH_DELIMITED) {
@@ -1784,19 +1787,19 @@ bool AudioCollectionRequest_GetTrackList::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(16)) goto parse_release_id;
-        if (input->ExpectTag(24)) goto parse_genre_id;
+        if (input->ExpectTag(24)) goto parse_release_id;
+        if (input->ExpectTag(32)) goto parse_genre_id;
         break;
       }
 
-      // repeated uint64 genre_id = 3;
-      case 3: {
+      // repeated uint64 genre_id = 4;
+      case 4: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
          parse_genre_id:
           DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_UINT64>(
-                 1, 24, input, this->mutable_genre_id())));
+                 1, 32, input, this->mutable_genre_id())));
         } else if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag)
                    == ::google::protobuf::internal::WireFormatLite::
                       WIRETYPE_LENGTH_DELIMITED) {
@@ -1806,37 +1809,7 @@ bool AudioCollectionRequest_GetTrackList::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(24)) goto parse_genre_id;
-        if (input->ExpectTag(32)) goto parse_get_cover;
-        break;
-      }
-
-      // optional bool get_cover = 4;
-      case 4: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
-         parse_get_cover:
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
-                 input, &get_cover_)));
-          set_has_get_cover();
-        } else {
-          goto handle_uninterpreted;
-        }
-        if (input->ExpectTag(42)) goto parse_batch_parameter;
-        break;
-      }
-
-      // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 5;
-      case 5: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_batch_parameter:
-          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_batch_parameter()));
-        } else {
-          goto handle_uninterpreted;
-        }
+        if (input->ExpectTag(32)) goto parse_genre_id;
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -1859,33 +1832,28 @@ bool AudioCollectionRequest_GetTrackList::MergePartialFromCodedStream(
 
 void AudioCollectionRequest_GetTrackList::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // repeated uint64 artist_id = 1;
-  for (int i = 0; i < this->artist_id_size(); i++) {
-    ::google::protobuf::internal::WireFormatLite::WriteUInt64(
-      1, this->artist_id(i), output);
-  }
-
-  // repeated uint64 release_id = 2;
-  for (int i = 0; i < this->release_id_size(); i++) {
-    ::google::protobuf::internal::WireFormatLite::WriteUInt64(
-      2, this->release_id(i), output);
-  }
-
-  // repeated uint64 genre_id = 3;
-  for (int i = 0; i < this->genre_id_size(); i++) {
-    ::google::protobuf::internal::WireFormatLite::WriteUInt64(
-      3, this->genre_id(i), output);
-  }
-
-  // optional bool get_cover = 4;
-  if (has_get_cover()) {
-    ::google::protobuf::internal::WireFormatLite::WriteBool(4, this->get_cover(), output);
-  }
-
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 5;
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
   if (has_batch_parameter()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      5, this->batch_parameter(), output);
+      1, this->batch_parameter(), output);
+  }
+
+  // repeated uint64 artist_id = 2;
+  for (int i = 0; i < this->artist_id_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteUInt64(
+      2, this->artist_id(i), output);
+  }
+
+  // repeated uint64 release_id = 3;
+  for (int i = 0; i < this->release_id_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteUInt64(
+      3, this->release_id(i), output);
+  }
+
+  // repeated uint64 genre_id = 4;
+  for (int i = 0; i < this->genre_id_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteUInt64(
+      4, this->genre_id(i), output);
   }
 
   if (!unknown_fields().empty()) {
@@ -1896,34 +1864,29 @@ void AudioCollectionRequest_GetTrackList::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* AudioCollectionRequest_GetTrackList::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // repeated uint64 artist_id = 1;
-  for (int i = 0; i < this->artist_id_size(); i++) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteUInt64ToArray(1, this->artist_id(i), target);
-  }
-
-  // repeated uint64 release_id = 2;
-  for (int i = 0; i < this->release_id_size(); i++) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteUInt64ToArray(2, this->release_id(i), target);
-  }
-
-  // repeated uint64 genre_id = 3;
-  for (int i = 0; i < this->genre_id_size(); i++) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteUInt64ToArray(3, this->genre_id(i), target);
-  }
-
-  // optional bool get_cover = 4;
-  if (has_get_cover()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(4, this->get_cover(), target);
-  }
-
-  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 5;
+  // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
   if (has_batch_parameter()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        5, this->batch_parameter(), target);
+        1, this->batch_parameter(), target);
+  }
+
+  // repeated uint64 artist_id = 2;
+  for (int i = 0; i < this->artist_id_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteUInt64ToArray(2, this->artist_id(i), target);
+  }
+
+  // repeated uint64 release_id = 3;
+  for (int i = 0; i < this->release_id_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteUInt64ToArray(3, this->release_id(i), target);
+  }
+
+  // repeated uint64 genre_id = 4;
+  for (int i = 0; i < this->genre_id_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteUInt64ToArray(4, this->genre_id(i), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -1936,13 +1899,8 @@ void AudioCollectionRequest_GetTrackList::SerializeWithCachedSizes(
 int AudioCollectionRequest_GetTrackList::ByteSize() const {
   int total_size = 0;
 
-  if (_has_bits_[3 / 32] & (0xffu << (3 % 32))) {
-    // optional bool get_cover = 4;
-    if (has_get_cover()) {
-      total_size += 1 + 1;
-    }
-
-    // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 5;
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
     if (has_batch_parameter()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -1950,7 +1908,7 @@ int AudioCollectionRequest_GetTrackList::ByteSize() const {
     }
 
   }
-  // repeated uint64 artist_id = 1;
+  // repeated uint64 artist_id = 2;
   {
     int data_size = 0;
     for (int i = 0; i < this->artist_id_size(); i++) {
@@ -1960,7 +1918,7 @@ int AudioCollectionRequest_GetTrackList::ByteSize() const {
     total_size += 1 * this->artist_id_size() + data_size;
   }
 
-  // repeated uint64 release_id = 2;
+  // repeated uint64 release_id = 3;
   {
     int data_size = 0;
     for (int i = 0; i < this->release_id_size(); i++) {
@@ -1970,7 +1928,7 @@ int AudioCollectionRequest_GetTrackList::ByteSize() const {
     total_size += 1 * this->release_id_size() + data_size;
   }
 
-  // repeated uint64 genre_id = 3;
+  // repeated uint64 genre_id = 4;
   {
     int data_size = 0;
     for (int i = 0; i < this->genre_id_size(); i++) {
@@ -2008,10 +1966,7 @@ void AudioCollectionRequest_GetTrackList::MergeFrom(const AudioCollectionRequest
   artist_id_.MergeFrom(from.artist_id_);
   release_id_.MergeFrom(from.release_id_);
   genre_id_.MergeFrom(from.genre_id_);
-  if (from._has_bits_[3 / 32] & (0xffu << (3 % 32))) {
-    if (from.has_get_cover()) {
-      set_get_cover(from.get_cover());
-    }
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (from.has_batch_parameter()) {
       mutable_batch_parameter()->::Remote::AudioCollectionRequest_BatchParameter::MergeFrom(from.batch_parameter());
     }
@@ -2032,7 +1987,7 @@ void AudioCollectionRequest_GetTrackList::CopyFrom(const AudioCollectionRequest_
 }
 
 bool AudioCollectionRequest_GetTrackList::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000010) != 0x00000010) return false;
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
 
   if (has_batch_parameter()) {
     if (!this->batch_parameter().IsInitialized()) return false;
@@ -2042,11 +1997,10 @@ bool AudioCollectionRequest_GetTrackList::IsInitialized() const {
 
 void AudioCollectionRequest_GetTrackList::Swap(AudioCollectionRequest_GetTrackList* other) {
   if (other != this) {
+    std::swap(batch_parameter_, other->batch_parameter_);
     artist_id_.Swap(&other->artist_id_);
     release_id_.Swap(&other->release_id_);
     genre_id_.Swap(&other->genre_id_);
-    std::swap(get_cover_, other->get_cover_);
-    std::swap(batch_parameter_, other->batch_parameter_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -2064,12 +2018,329 @@ void AudioCollectionRequest_GetTrackList::Swap(AudioCollectionRequest_GetTrackLi
 
 // -------------------------------------------------------------------
 
+const ::google::protobuf::EnumDescriptor* AudioCollectionRequest_GetCoverArt_Type_descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return AudioCollectionRequest_GetCoverArt_Type_descriptor_;
+}
+bool AudioCollectionRequest_GetCoverArt_Type_IsValid(int value) {
+  switch(value) {
+    case 1:
+    case 2:
+      return true;
+    default:
+      return false;
+  }
+}
+
+#ifndef _MSC_VER
+const AudioCollectionRequest_GetCoverArt_Type AudioCollectionRequest_GetCoverArt::TypeGetCoverArtRelease;
+const AudioCollectionRequest_GetCoverArt_Type AudioCollectionRequest_GetCoverArt::TypeGetCoverArtTrack;
+const AudioCollectionRequest_GetCoverArt_Type AudioCollectionRequest_GetCoverArt::Type_MIN;
+const AudioCollectionRequest_GetCoverArt_Type AudioCollectionRequest_GetCoverArt::Type_MAX;
+const int AudioCollectionRequest_GetCoverArt::Type_ARRAYSIZE;
+#endif  // _MSC_VER
+#ifndef _MSC_VER
+const int AudioCollectionRequest_GetCoverArt::kTypeFieldNumber;
+const int AudioCollectionRequest_GetCoverArt::kReleaseIdFieldNumber;
+const int AudioCollectionRequest_GetCoverArt::kTrackIdFieldNumber;
+#endif  // !_MSC_VER
+
+AudioCollectionRequest_GetCoverArt::AudioCollectionRequest_GetCoverArt()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void AudioCollectionRequest_GetCoverArt::InitAsDefaultInstance() {
+}
+
+AudioCollectionRequest_GetCoverArt::AudioCollectionRequest_GetCoverArt(const AudioCollectionRequest_GetCoverArt& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void AudioCollectionRequest_GetCoverArt::SharedCtor() {
+  _cached_size_ = 0;
+  type_ = 1;
+  release_id_ = GOOGLE_ULONGLONG(0);
+  track_id_ = GOOGLE_ULONGLONG(0);
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+AudioCollectionRequest_GetCoverArt::~AudioCollectionRequest_GetCoverArt() {
+  SharedDtor();
+}
+
+void AudioCollectionRequest_GetCoverArt::SharedDtor() {
+  if (this != default_instance_) {
+  }
+}
+
+void AudioCollectionRequest_GetCoverArt::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* AudioCollectionRequest_GetCoverArt::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return AudioCollectionRequest_GetCoverArt_descriptor_;
+}
+
+const AudioCollectionRequest_GetCoverArt& AudioCollectionRequest_GetCoverArt::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_collection_2eproto();
+  return *default_instance_;
+}
+
+AudioCollectionRequest_GetCoverArt* AudioCollectionRequest_GetCoverArt::default_instance_ = NULL;
+
+AudioCollectionRequest_GetCoverArt* AudioCollectionRequest_GetCoverArt::New() const {
+  return new AudioCollectionRequest_GetCoverArt;
+}
+
+void AudioCollectionRequest_GetCoverArt::Clear() {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    type_ = 1;
+    release_id_ = GOOGLE_ULONGLONG(0);
+    track_id_ = GOOGLE_ULONGLONG(0);
+  }
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool AudioCollectionRequest_GetCoverArt::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required .Remote.AudioCollectionRequest.GetCoverArt.Type type = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+                 input, &value)));
+          if (::Remote::AudioCollectionRequest_GetCoverArt_Type_IsValid(value)) {
+            set_type(static_cast< ::Remote::AudioCollectionRequest_GetCoverArt_Type >(value));
+          } else {
+            mutable_unknown_fields()->AddVarint(1, value);
+          }
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(16)) goto parse_release_id;
+        break;
+      }
+
+      // optional uint64 release_id = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+         parse_release_id:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_UINT64>(
+                 input, &release_id_)));
+          set_has_release_id();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(24)) goto parse_track_id;
+        break;
+      }
+
+      // optional uint64 track_id = 3;
+      case 3: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+         parse_track_id:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_UINT64>(
+                 input, &track_id_)));
+          set_has_track_id();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void AudioCollectionRequest_GetCoverArt::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // required .Remote.AudioCollectionRequest.GetCoverArt.Type type = 1;
+  if (has_type()) {
+    ::google::protobuf::internal::WireFormatLite::WriteEnum(
+      1, this->type(), output);
+  }
+
+  // optional uint64 release_id = 2;
+  if (has_release_id()) {
+    ::google::protobuf::internal::WireFormatLite::WriteUInt64(2, this->release_id(), output);
+  }
+
+  // optional uint64 track_id = 3;
+  if (has_track_id()) {
+    ::google::protobuf::internal::WireFormatLite::WriteUInt64(3, this->track_id(), output);
+  }
+
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* AudioCollectionRequest_GetCoverArt::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // required .Remote.AudioCollectionRequest.GetCoverArt.Type type = 1;
+  if (has_type()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
+      1, this->type(), target);
+  }
+
+  // optional uint64 release_id = 2;
+  if (has_release_id()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteUInt64ToArray(2, this->release_id(), target);
+  }
+
+  // optional uint64 track_id = 3;
+  if (has_track_id()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteUInt64ToArray(3, this->track_id(), target);
+  }
+
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int AudioCollectionRequest_GetCoverArt::ByteSize() const {
+  int total_size = 0;
+
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required .Remote.AudioCollectionRequest.GetCoverArt.Type type = 1;
+    if (has_type()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
+    }
+
+    // optional uint64 release_id = 2;
+    if (has_release_id()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::UInt64Size(
+          this->release_id());
+    }
+
+    // optional uint64 track_id = 3;
+    if (has_track_id()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::UInt64Size(
+          this->track_id());
+    }
+
+  }
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void AudioCollectionRequest_GetCoverArt::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const AudioCollectionRequest_GetCoverArt* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const AudioCollectionRequest_GetCoverArt*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void AudioCollectionRequest_GetCoverArt::MergeFrom(const AudioCollectionRequest_GetCoverArt& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_type()) {
+      set_type(from.type());
+    }
+    if (from.has_release_id()) {
+      set_release_id(from.release_id());
+    }
+    if (from.has_track_id()) {
+      set_track_id(from.track_id());
+    }
+  }
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void AudioCollectionRequest_GetCoverArt::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void AudioCollectionRequest_GetCoverArt::CopyFrom(const AudioCollectionRequest_GetCoverArt& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool AudioCollectionRequest_GetCoverArt::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
+
+  return true;
+}
+
+void AudioCollectionRequest_GetCoverArt::Swap(AudioCollectionRequest_GetCoverArt* other) {
+  if (other != this) {
+    std::swap(type_, other->type_);
+    std::swap(release_id_, other->release_id_);
+    std::swap(track_id_, other->track_id_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata AudioCollectionRequest_GetCoverArt::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = AudioCollectionRequest_GetCoverArt_descriptor_;
+  metadata.reflection = AudioCollectionRequest_GetCoverArt_reflection_;
+  return metadata;
+}
+
+
+// -------------------------------------------------------------------
+
 #ifndef _MSC_VER
 const int AudioCollectionRequest::kTypeFieldNumber;
 const int AudioCollectionRequest::kGetGenresFieldNumber;
 const int AudioCollectionRequest::kGetArtistsFieldNumber;
 const int AudioCollectionRequest::kGetReleasesFieldNumber;
 const int AudioCollectionRequest::kGetTracksFieldNumber;
+const int AudioCollectionRequest::kGetCoverArtFieldNumber;
 #endif  // !_MSC_VER
 
 AudioCollectionRequest::AudioCollectionRequest()
@@ -2082,6 +2353,7 @@ void AudioCollectionRequest::InitAsDefaultInstance() {
   get_artists_ = const_cast< ::Remote::AudioCollectionRequest_GetArtistList*>(&::Remote::AudioCollectionRequest_GetArtistList::default_instance());
   get_releases_ = const_cast< ::Remote::AudioCollectionRequest_GetReleaseList*>(&::Remote::AudioCollectionRequest_GetReleaseList::default_instance());
   get_tracks_ = const_cast< ::Remote::AudioCollectionRequest_GetTrackList*>(&::Remote::AudioCollectionRequest_GetTrackList::default_instance());
+  get_cover_art_ = const_cast< ::Remote::AudioCollectionRequest_GetCoverArt*>(&::Remote::AudioCollectionRequest_GetCoverArt::default_instance());
 }
 
 AudioCollectionRequest::AudioCollectionRequest(const AudioCollectionRequest& from)
@@ -2097,6 +2369,7 @@ void AudioCollectionRequest::SharedCtor() {
   get_artists_ = NULL;
   get_releases_ = NULL;
   get_tracks_ = NULL;
+  get_cover_art_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -2110,6 +2383,7 @@ void AudioCollectionRequest::SharedDtor() {
     delete get_artists_;
     delete get_releases_;
     delete get_tracks_;
+    delete get_cover_art_;
   }
 }
 
@@ -2148,6 +2422,9 @@ void AudioCollectionRequest::Clear() {
     }
     if (has_get_tracks()) {
       if (get_tracks_ != NULL) get_tracks_->::Remote::AudioCollectionRequest_GetTrackList::Clear();
+    }
+    if (has_get_cover_art()) {
+      if (get_cover_art_ != NULL) get_cover_art_->::Remote::AudioCollectionRequest_GetCoverArt::Clear();
     }
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -2232,6 +2509,20 @@ bool AudioCollectionRequest::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
+        if (input->ExpectTag(50)) goto parse_get_cover_art;
+        break;
+      }
+
+      // optional .Remote.AudioCollectionRequest.GetCoverArt get_cover_art = 6;
+      case 6: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_get_cover_art:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_get_cover_art()));
+        } else {
+          goto handle_uninterpreted;
+        }
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -2284,6 +2575,12 @@ void AudioCollectionRequest::SerializeWithCachedSizes(
       5, this->get_tracks(), output);
   }
 
+  // optional .Remote.AudioCollectionRequest.GetCoverArt get_cover_art = 6;
+  if (has_get_cover_art()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      6, this->get_cover_art(), output);
+  }
+
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -2324,6 +2621,13 @@ void AudioCollectionRequest::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         5, this->get_tracks(), target);
+  }
+
+  // optional .Remote.AudioCollectionRequest.GetCoverArt get_cover_art = 6;
+  if (has_get_cover_art()) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        6, this->get_cover_art(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -2371,6 +2675,13 @@ int AudioCollectionRequest::ByteSize() const {
           this->get_tracks());
     }
 
+    // optional .Remote.AudioCollectionRequest.GetCoverArt get_cover_art = 6;
+    if (has_get_cover_art()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+          this->get_cover_art());
+    }
+
   }
   if (!unknown_fields().empty()) {
     total_size +=
@@ -2413,6 +2724,9 @@ void AudioCollectionRequest::MergeFrom(const AudioCollectionRequest& from) {
     if (from.has_get_tracks()) {
       mutable_get_tracks()->::Remote::AudioCollectionRequest_GetTrackList::MergeFrom(from.get_tracks());
     }
+    if (from.has_get_cover_art()) {
+      mutable_get_cover_art()->::Remote::AudioCollectionRequest_GetCoverArt::MergeFrom(from.get_cover_art());
+    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -2444,6 +2758,9 @@ bool AudioCollectionRequest::IsInitialized() const {
   if (has_get_tracks()) {
     if (!this->get_tracks().IsInitialized()) return false;
   }
+  if (has_get_cover_art()) {
+    if (!this->get_cover_art().IsInitialized()) return false;
+  }
   return true;
 }
 
@@ -2454,6 +2771,7 @@ void AudioCollectionRequest::Swap(AudioCollectionRequest* other) {
     std::swap(get_artists_, other->get_artists_);
     std::swap(get_releases_, other->get_releases_);
     std::swap(get_tracks_, other->get_tracks_);
+    std::swap(get_cover_art_, other->get_cover_art_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -2482,6 +2800,7 @@ bool AudioCollectionResponse_Type_IsValid(int value) {
     case 3:
     case 4:
     case 5:
+    case 6:
       return true;
     default:
       return false;
@@ -2494,6 +2813,7 @@ const AudioCollectionResponse_Type AudioCollectionResponse::TypeGenreList;
 const AudioCollectionResponse_Type AudioCollectionResponse::TypeArtistList;
 const AudioCollectionResponse_Type AudioCollectionResponse::TypeReleaseList;
 const AudioCollectionResponse_Type AudioCollectionResponse::TypeTrackList;
+const AudioCollectionResponse_Type AudioCollectionResponse::TypeCoverArt;
 const AudioCollectionResponse_Type AudioCollectionResponse::Type_MIN;
 const AudioCollectionResponse_Type AudioCollectionResponse::Type_MAX;
 const int AudioCollectionResponse::Type_ARRAYSIZE;
@@ -3344,6 +3664,7 @@ AudioCollectionResponse_CoverArt::AudioCollectionResponse_CoverArt(const AudioCo
 void AudioCollectionResponse_CoverArt::SharedCtor() {
   _cached_size_ = 0;
   mime_type_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  data_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -3354,6 +3675,9 @@ AudioCollectionResponse_CoverArt::~AudioCollectionResponse_CoverArt() {
 void AudioCollectionResponse_CoverArt::SharedDtor() {
   if (mime_type_ != &::google::protobuf::internal::kEmptyString) {
     delete mime_type_;
+  }
+  if (data_ != &::google::protobuf::internal::kEmptyString) {
+    delete data_;
   }
   if (this != default_instance_) {
   }
@@ -3387,8 +3711,12 @@ void AudioCollectionResponse_CoverArt::Clear() {
         mime_type_->clear();
       }
     }
+    if (has_data()) {
+      if (data_ != &::google::protobuf::internal::kEmptyString) {
+        data_->clear();
+      }
+    }
   }
-  data_.Clear();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
 }
@@ -3415,17 +3743,16 @@ bool AudioCollectionResponse_CoverArt::MergePartialFromCodedStream(
         break;
       }
 
-      // repeated bytes data = 2;
+      // required bytes data = 2;
       case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_data:
           DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
-                input, this->add_data()));
+                input, this->mutable_data()));
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(18)) goto parse_data;
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -3457,10 +3784,10 @@ void AudioCollectionResponse_CoverArt::SerializeWithCachedSizes(
       1, this->mime_type(), output);
   }
 
-  // repeated bytes data = 2;
-  for (int i = 0; i < this->data_size(); i++) {
+  // required bytes data = 2;
+  if (has_data()) {
     ::google::protobuf::internal::WireFormatLite::WriteBytes(
-      2, this->data(i), output);
+      2, this->data(), output);
   }
 
   if (!unknown_fields().empty()) {
@@ -3481,10 +3808,11 @@ void AudioCollectionResponse_CoverArt::SerializeWithCachedSizes(
         1, this->mime_type(), target);
   }
 
-  // repeated bytes data = 2;
-  for (int i = 0; i < this->data_size(); i++) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteBytesToArray(2, this->data(i), target);
+  // required bytes data = 2;
+  if (has_data()) {
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
+        2, this->data(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -3505,14 +3833,14 @@ int AudioCollectionResponse_CoverArt::ByteSize() const {
           this->mime_type());
     }
 
-  }
-  // repeated bytes data = 2;
-  total_size += 1 * this->data_size();
-  for (int i = 0; i < this->data_size(); i++) {
-    total_size += ::google::protobuf::internal::WireFormatLite::BytesSize(
-      this->data(i));
-  }
+    // required bytes data = 2;
+    if (has_data()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::BytesSize(
+          this->data());
+    }
 
+  }
   if (!unknown_fields().empty()) {
     total_size +=
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
@@ -3538,10 +3866,12 @@ void AudioCollectionResponse_CoverArt::MergeFrom(const ::google::protobuf::Messa
 
 void AudioCollectionResponse_CoverArt::MergeFrom(const AudioCollectionResponse_CoverArt& from) {
   GOOGLE_CHECK_NE(&from, this);
-  data_.MergeFrom(from.data_);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (from.has_mime_type()) {
       set_mime_type(from.mime_type());
+    }
+    if (from.has_data()) {
+      set_data(from.data());
     }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -3560,6 +3890,7 @@ void AudioCollectionResponse_CoverArt::CopyFrom(const AudioCollectionResponse_Co
 }
 
 bool AudioCollectionResponse_CoverArt::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00000002) != 0x00000002) return false;
 
   return true;
 }
@@ -3567,7 +3898,7 @@ bool AudioCollectionResponse_CoverArt::IsInitialized() const {
 void AudioCollectionResponse_CoverArt::Swap(AudioCollectionResponse_CoverArt* other) {
   if (other != this) {
     std::swap(mime_type_, other->mime_type_);
-    data_.Swap(&other->data_);
+    std::swap(data_, other->data_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -4163,7 +4494,6 @@ const int AudioCollectionResponse_Release::kNameFieldNumber;
 const int AudioCollectionResponse_Release::kNbTracksFieldNumber;
 const int AudioCollectionResponse_Release::kDurationSecsFieldNumber;
 const int AudioCollectionResponse_Release::kReleaseDateFieldNumber;
-const int AudioCollectionResponse_Release::kCoverArtFieldNumber;
 #endif  // !_MSC_VER
 
 AudioCollectionResponse_Release::AudioCollectionResponse_Release()
@@ -4172,7 +4502,6 @@ AudioCollectionResponse_Release::AudioCollectionResponse_Release()
 }
 
 void AudioCollectionResponse_Release::InitAsDefaultInstance() {
-  coverart_ = const_cast< ::Remote::AudioCollectionResponse_CoverArt*>(&::Remote::AudioCollectionResponse_CoverArt::default_instance());
 }
 
 AudioCollectionResponse_Release::AudioCollectionResponse_Release(const AudioCollectionResponse_Release& from)
@@ -4188,7 +4517,6 @@ void AudioCollectionResponse_Release::SharedCtor() {
   nb_tracks_ = 0u;
   duration_secs_ = 0u;
   release_date_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  coverart_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -4204,7 +4532,6 @@ void AudioCollectionResponse_Release::SharedDtor() {
     delete release_date_;
   }
   if (this != default_instance_) {
-    delete coverart_;
   }
 }
 
@@ -4243,9 +4570,6 @@ void AudioCollectionResponse_Release::Clear() {
       if (release_date_ != &::google::protobuf::internal::kEmptyString) {
         release_date_->clear();
       }
-    }
-    if (has_coverart()) {
-      if (coverart_ != NULL) coverart_->::Remote::AudioCollectionResponse_CoverArt::Clear();
     }
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -4335,20 +4659,6 @@ bool AudioCollectionResponse_Release::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(50)) goto parse_coverArt;
-        break;
-      }
-
-      // optional .Remote.AudioCollectionResponse.CoverArt coverArt = 6;
-      case 6: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_coverArt:
-          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_coverart()));
-        } else {
-          goto handle_uninterpreted;
-        }
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -4404,12 +4714,6 @@ void AudioCollectionResponse_Release::SerializeWithCachedSizes(
       5, this->release_date(), output);
   }
 
-  // optional .Remote.AudioCollectionResponse.CoverArt coverArt = 6;
-  if (has_coverart()) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      6, this->coverart(), output);
-  }
-
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -4451,13 +4755,6 @@ void AudioCollectionResponse_Release::SerializeWithCachedSizes(
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         5, this->release_date(), target);
-  }
-
-  // optional .Remote.AudioCollectionResponse.CoverArt coverArt = 6;
-  if (has_coverart()) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteMessageNoVirtualToArray(
-        6, this->coverart(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -4506,13 +4803,6 @@ int AudioCollectionResponse_Release::ByteSize() const {
           this->release_date());
     }
 
-    // optional .Remote.AudioCollectionResponse.CoverArt coverArt = 6;
-    if (has_coverart()) {
-      total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->coverart());
-    }
-
   }
   if (!unknown_fields().empty()) {
     total_size +=
@@ -4555,9 +4845,6 @@ void AudioCollectionResponse_Release::MergeFrom(const AudioCollectionResponse_Re
     if (from.has_release_date()) {
       set_release_date(from.release_date());
     }
-    if (from.has_coverart()) {
-      mutable_coverart()->::Remote::AudioCollectionResponse_CoverArt::MergeFrom(from.coverart());
-    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -4587,7 +4874,6 @@ void AudioCollectionResponse_Release::Swap(AudioCollectionResponse_Release* othe
     std::swap(nb_tracks_, other->nb_tracks_);
     std::swap(duration_secs_, other->duration_secs_);
     std::swap(release_date_, other->release_date_);
-    std::swap(coverart_, other->coverart_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -4616,7 +4902,6 @@ const int AudioCollectionResponse_Track::kNameFieldNumber;
 const int AudioCollectionResponse_Track::kDurationSecsFieldNumber;
 const int AudioCollectionResponse_Track::kReleaseDateFieldNumber;
 const int AudioCollectionResponse_Track::kOriginalReleaseDateFieldNumber;
-const int AudioCollectionResponse_Track::kCoverArtFieldNumber;
 #endif  // !_MSC_VER
 
 AudioCollectionResponse_Track::AudioCollectionResponse_Track()
@@ -4644,7 +4929,6 @@ void AudioCollectionResponse_Track::SharedCtor() {
   duration_secs_ = 0u;
   release_date_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   original_release_date_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  coverart_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -4661,9 +4945,6 @@ void AudioCollectionResponse_Track::SharedDtor() {
   }
   if (original_release_date_ != &::google::protobuf::internal::kEmptyString) {
     delete original_release_date_;
-  }
-  if (coverart_ != &::google::protobuf::internal::kEmptyString) {
-    delete coverart_;
   }
   if (this != default_instance_) {
   }
@@ -4713,11 +4994,6 @@ void AudioCollectionResponse_Track::Clear() {
     if (has_original_release_date()) {
       if (original_release_date_ != &::google::protobuf::internal::kEmptyString) {
         original_release_date_->clear();
-      }
-    }
-    if (has_coverart()) {
-      if (coverart_ != &::google::protobuf::internal::kEmptyString) {
-        coverart_->clear();
       }
     }
   }
@@ -4896,20 +5172,6 @@ bool AudioCollectionResponse_Track::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(90)) goto parse_coverArt;
-        break;
-      }
-
-      // optional bytes coverArt = 11;
-      case 11: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_coverArt:
-          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
-                input, this->mutable_coverart()));
-        } else {
-          goto handle_uninterpreted;
-        }
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -4995,12 +5257,6 @@ void AudioCollectionResponse_Track::SerializeWithCachedSizes(
       10, this->original_release_date(), output);
   }
 
-  // optional bytes coverArt = 11;
-  if (has_coverart()) {
-    ::google::protobuf::internal::WireFormatLite::WriteBytes(
-      11, this->coverart(), output);
-  }
-
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -5073,13 +5329,6 @@ void AudioCollectionResponse_Track::SerializeWithCachedSizes(
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         10, this->original_release_date(), target);
-  }
-
-  // optional bytes coverArt = 11;
-  if (has_coverart()) {
-    target =
-      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
-        11, this->coverart(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -5158,13 +5407,6 @@ int AudioCollectionResponse_Track::ByteSize() const {
           this->original_release_date());
     }
 
-    // optional bytes coverArt = 11;
-    if (has_coverart()) {
-      total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::BytesSize(
-          this->coverart());
-    }
-
   }
   // repeated uint64 genre_id = 4;
   {
@@ -5232,9 +5474,6 @@ void AudioCollectionResponse_Track::MergeFrom(const AudioCollectionResponse_Trac
     if (from.has_original_release_date()) {
       set_original_release_date(from.original_release_date());
     }
-    if (from.has_coverart()) {
-      set_coverart(from.coverart());
-    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -5269,7 +5508,6 @@ void AudioCollectionResponse_Track::Swap(AudioCollectionResponse_Track* other) {
     std::swap(duration_secs_, other->duration_secs_);
     std::swap(release_date_, other->release_date_);
     std::swap(original_release_date_, other->original_release_date_);
-    std::swap(coverart_, other->coverart_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -5294,6 +5532,7 @@ const int AudioCollectionResponse::kGenreListFieldNumber;
 const int AudioCollectionResponse::kArtistListFieldNumber;
 const int AudioCollectionResponse::kReleaseListFieldNumber;
 const int AudioCollectionResponse::kTrackListFieldNumber;
+const int AudioCollectionResponse::kCoverArtFieldNumber;
 #endif  // !_MSC_VER
 
 AudioCollectionResponse::AudioCollectionResponse()
@@ -5380,6 +5619,7 @@ void AudioCollectionResponse::Clear() {
       if (track_list_ != NULL) track_list_->::Remote::AudioCollectionResponse_TrackList::Clear();
     }
   }
+  cover_art_.Clear();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
 }
@@ -5476,6 +5716,21 @@ bool AudioCollectionResponse::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
+        if (input->ExpectTag(58)) goto parse_cover_art;
+        break;
+      }
+
+      // repeated .Remote.AudioCollectionResponse.CoverArt cover_art = 7;
+      case 7: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_cover_art:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+                input, add_cover_art()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(58)) goto parse_cover_art;
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -5534,6 +5789,12 @@ void AudioCollectionResponse::SerializeWithCachedSizes(
       6, this->track_list(), output);
   }
 
+  // repeated .Remote.AudioCollectionResponse.CoverArt cover_art = 7;
+  for (int i = 0; i < this->cover_art_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      7, this->cover_art(i), output);
+  }
+
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -5581,6 +5842,13 @@ void AudioCollectionResponse::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         6, this->track_list(), target);
+  }
+
+  // repeated .Remote.AudioCollectionResponse.CoverArt cover_art = 7;
+  for (int i = 0; i < this->cover_art_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        7, this->cover_art(i), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -5636,6 +5904,14 @@ int AudioCollectionResponse::ByteSize() const {
     }
 
   }
+  // repeated .Remote.AudioCollectionResponse.CoverArt cover_art = 7;
+  total_size += 1 * this->cover_art_size();
+  for (int i = 0; i < this->cover_art_size(); i++) {
+    total_size +=
+      ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+        this->cover_art(i));
+  }
+
   if (!unknown_fields().empty()) {
     total_size +=
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
@@ -5661,6 +5937,7 @@ void AudioCollectionResponse::MergeFrom(const ::google::protobuf::Message& from)
 
 void AudioCollectionResponse::MergeFrom(const AudioCollectionResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
+  cover_art_.MergeFrom(from.cover_art_);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (from.has_type()) {
       set_type(from.type());
@@ -5713,6 +5990,9 @@ bool AudioCollectionResponse::IsInitialized() const {
   if (has_track_list()) {
     if (!this->track_list().IsInitialized()) return false;
   }
+  for (int i = 0; i < cover_art_size(); i++) {
+    if (!this->cover_art(i).IsInitialized()) return false;
+  }
   return true;
 }
 
@@ -5724,6 +6004,7 @@ void AudioCollectionResponse::Swap(AudioCollectionResponse* other) {
     std::swap(artist_list_, other->artist_list_);
     std::swap(release_list_, other->release_list_);
     std::swap(track_list_, other->track_list_);
+    cover_art_.Swap(&other->cover_art_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);

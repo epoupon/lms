@@ -60,7 +60,6 @@ class Database
 
 		DatabaseHandler	_db;
 
-
 		std::list<WatchedDirectory>	_directories;
 		MetaData::Parser&		_metadataParser;
 };

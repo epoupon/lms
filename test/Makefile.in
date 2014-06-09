@@ -124,7 +124,8 @@ am_remote_OBJECTS = remote-RemoteClientServer.$(OBJEXT) \
 	remote-Common.$(OBJEXT) remote-Dictionary.$(OBJEXT) \
 	remote-FormatContext.$(OBJEXT) \
 	remote-InputFormatContext.$(OBJEXT) remote-Stream.$(OBJEXT) \
-	remote-Server.$(OBJEXT) remote-RequestHandler.$(OBJEXT) \
+	remote-CoverArtGrabber.$(OBJEXT) remote-Server.$(OBJEXT) \
+	remote-RequestHandler.$(OBJEXT) \
 	remote-AudioCollectionRequestHandler.$(OBJEXT) \
 	remote-MediaRequestHandler.$(OBJEXT) \
 	remote-ConnectionManager.$(OBJEXT) remote-Connection.$(OBJEXT) \
@@ -510,6 +511,7 @@ remote_SOURCES = \
 	$(top_srcdir)/av/FormatContext.cpp			\
 	$(top_srcdir)/av/InputFormatContext.cpp			\
 	$(top_srcdir)/av/Stream.cpp				\
+	$(top_srcdir)/cover/CoverArtGrabber.cpp			\
 	$(top_srcdir)/remote/server/Server.cpp			\
 	$(top_srcdir)/remote/server/RequestHandler.cpp		\
 	$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp		\
@@ -655,6 +657,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Connection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-ConnectionManager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-CoverArtGrabber.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-DatabaseHandler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Dictionary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/remote-Format.Po@am__quote@
@@ -1087,6 +1090,20 @@ remote-Stream.obj: $(top_srcdir)/av/Stream.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/av/Stream.cpp' object='remote-Stream.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-Stream.obj `if test -f '$(top_srcdir)/av/Stream.cpp'; then $(CYGPATH_W) '$(top_srcdir)/av/Stream.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/av/Stream.cpp'; fi`
+
+remote-CoverArtGrabber.o: $(top_srcdir)/cover/CoverArtGrabber.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-CoverArtGrabber.o -MD -MP -MF $(DEPDIR)/remote-CoverArtGrabber.Tpo -c -o remote-CoverArtGrabber.o `test -f '$(top_srcdir)/cover/CoverArtGrabber.cpp' || echo '$(srcdir)/'`$(top_srcdir)/cover/CoverArtGrabber.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-CoverArtGrabber.Tpo $(DEPDIR)/remote-CoverArtGrabber.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/cover/CoverArtGrabber.cpp' object='remote-CoverArtGrabber.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-CoverArtGrabber.o `test -f '$(top_srcdir)/cover/CoverArtGrabber.cpp' || echo '$(srcdir)/'`$(top_srcdir)/cover/CoverArtGrabber.cpp
+
+remote-CoverArtGrabber.obj: $(top_srcdir)/cover/CoverArtGrabber.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-CoverArtGrabber.obj -MD -MP -MF $(DEPDIR)/remote-CoverArtGrabber.Tpo -c -o remote-CoverArtGrabber.obj `if test -f '$(top_srcdir)/cover/CoverArtGrabber.cpp'; then $(CYGPATH_W) '$(top_srcdir)/cover/CoverArtGrabber.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cover/CoverArtGrabber.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/remote-CoverArtGrabber.Tpo $(DEPDIR)/remote-CoverArtGrabber.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/cover/CoverArtGrabber.cpp' object='remote-CoverArtGrabber.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -c -o remote-CoverArtGrabber.obj `if test -f '$(top_srcdir)/cover/CoverArtGrabber.cpp'; then $(CYGPATH_W) '$(top_srcdir)/cover/CoverArtGrabber.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cover/CoverArtGrabber.cpp'; fi`
 
 remote-Server.o: $(top_srcdir)/remote/server/Server.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(remote_CXXFLAGS) $(CXXFLAGS) -MT remote-Server.o -MD -MP -MF $(DEPDIR)/remote-Server.Tpo -c -o remote-Server.o `test -f '$(top_srcdir)/remote/server/Server.cpp' || echo '$(srcdir)/'`$(top_srcdir)/remote/server/Server.cpp

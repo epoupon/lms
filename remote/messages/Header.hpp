@@ -1,6 +1,8 @@
 #ifndef REMOTE_HEADER_HPP
 #define REMOTE_HEADER_HPP
 
+#include <iomanip>
+
 namespace Remote
 {
 
@@ -32,7 +34,7 @@ class Header
 		bool from_buffer(const std::array<unsigned char, size>& buffer)
 		{
 			if (decode32(&buffer[0]) != _magic) {
-				std::cerr << "Header: bad magic" << std::endl;
+				std::cerr << "Header: bad magic ('" << std::hex << std::setfill('0') << std::setw(8) << decode32(&buffer[0]) << "' instead of '" << std::hex << std::setfill('0') << std::setw(8) << _magic << "')" << std::endl;
 				return false;
 			}
 			else
@@ -75,8 +77,8 @@ class Header
 			data[3] = (value) & 0xFF;
 		}
 
-		static const uint32_t _magic = 0xbeef;
-		static const uint32_t _maxSize = 65536;
+		static const uint32_t _magic = 0xdeadbeef;
+		static const uint32_t _maxSize = 65536*32;
 
 		uint32_t	_size;
 };

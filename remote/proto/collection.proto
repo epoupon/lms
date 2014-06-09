@@ -13,39 +13,47 @@ message AudioCollectionRequest
 
 	message GetGenreList
 	{
-		required BatchParameter batch_parameter = 2;
+		required BatchParameter batch_parameter = 1;
 	}
 
 	message GetArtistList
 	{
-		repeated uint64	genre_id		= 2;	// Artist that has at least a track of the genre
+		required BatchParameter batch_parameter = 1;
 
-		required BatchParameter batch_parameter = 3;
+		repeated uint64	genre_id		= 2;	// Artist that has at least a track of the genre
 	}
 
 	message GetReleaseList
 	{
+		required BatchParameter batch_parameter = 1;
 		// Search filters
-		repeated uint64	artist_id		= 1;	// Release that contains at least a track of this artist
-		repeated uint64	filter_genre		= 2;	// Release that has at least a track of the genre
-
-		optional bool	get_cover		= 3;	// Request cover art for each release
-
-		required BatchParameter batch_parameter = 4;
+		repeated uint64	artist_id		= 2;	// Release that contains at least a track of one of these artists
+		repeated uint64	filter_genre		= 3;	// Release that has at least a track of the genre
 	}
 
 	message GetTrackList
 	{
+		required BatchParameter batch_parameter = 1;
 		// Search filters
-		repeated uint64	artist_id		= 1;	// Track that belongs to these artists
-		repeated uint64	release_id		= 2;	// Track that is part of these releases
-		repeated uint64	genre_id		= 3;    // Track that has at least a track of the genre
-
-		optional bool	get_cover		= 4;	// Request cover art for each track
-
-		required BatchParameter batch_parameter = 5;
+		repeated uint64	artist_id		= 2;	// Track that belongs to these artists
+		repeated uint64	release_id		= 3;	// Track that is part of these releases
+		repeated uint64	genre_id		= 4;    // Track that has at least a track of the genre
 	}
 
+	message GetCoverArt
+	{
+		enum Type
+		{
+			TypeGetCoverArtRelease		= 1;
+			TypeGetCoverArtTrack		= 2;
+		}
+
+		required Type	type			= 1;
+
+		optional uint64	release_id		= 2;	// Release that owns the cover art
+		optional uint64	track_id		= 3;	// Track that owns the cover art
+
+	}
 
 	enum Type
 	{
@@ -53,6 +61,7 @@ message AudioCollectionRequest
 		TypeGetArtistList	= 2;
 		TypeGetReleaseList	= 3;
 		TypeGetTrackList	= 4;
+		TypeGetCoverArt		= 5;
 	}
 
 	required Type	type			= 1;
@@ -61,6 +70,7 @@ message AudioCollectionRequest
 	optional GetArtistList	get_artists	= 3;
 	optional GetReleaseList	get_releases	= 4;
 	optional GetTrackList	get_tracks	= 5;
+	optional GetCoverArt	get_cover_art	= 6;
 }
 
 
@@ -89,20 +99,19 @@ message AudioCollectionResponse
 	message CoverArt
 	{
 		optional string	mime_type	= 1;
-
-		repeated bytes data		= 2;
+		required bytes data		= 2;
 	}
 
 	message Genre
 	{
-		required uint64	id		= 1;
+		required uint64	id		= 1;	// Genre Id
 
 		required string name		= 2;
 	}
 
 	message Artist
 	{
-		required uint64	id		= 1;
+		required uint64	id		= 1;	// Artist Id
 
 		required string name		= 2;
 		required uint32 nb_releases	= 3;
@@ -110,7 +119,7 @@ message AudioCollectionResponse
 
 	message Release
 	{
-		required uint64	id		= 1;
+		required uint64	id		= 1;	// Release id
 
 		required string name		= 2;
 
@@ -119,12 +128,11 @@ message AudioCollectionResponse
 
 		optional string	release_date	= 5;
 
-		optional CoverArt coverArt	= 6;
 	}
 
 	message Track
 	{
-		required uint64	id		= 1;
+		required uint64	id		= 1;	// Track id
 
 		required uint64	artist_id	= 2;
 		required uint64	release_id	= 3;
@@ -136,7 +144,6 @@ message AudioCollectionResponse
 		required uint32	duration_secs	= 8;
 		optional string	release_date	= 9;
 		optional string	original_release_date	= 10;
-		optional bytes	coverArt	= 11;
 	}
 
 	enum Type {
@@ -145,16 +152,18 @@ message AudioCollectionResponse
 		TypeArtistList	= 3;
 		TypeReleaseList	= 4;
 		TypeTrackList	= 5;
+		TypeCoverArt	= 6;
 	}
 
 
-	optional Type	type	= 1;
+	optional Type		type		= 1;
 
 	optional Error		error		= 2;
 	optional GenreList	genre_list	= 3;
 	optional ArtistList	artist_list	= 4;
 	optional ReleaseList	release_list	= 5;
 	optional TrackList	track_list	= 6;
+	repeated CoverArt	cover_art	= 7;
 }
 
 

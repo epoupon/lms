@@ -15,6 +15,8 @@ class Track;
 class Release;
 class Artist;
 
+
+
 class Artist
 {
 	public:
@@ -66,6 +68,7 @@ class Release
 
 		// Accessors
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
+		static pointer getById(Wt::Dbo::Session& session, id_type id);
 		static pointer getNone(Wt::Dbo::Session& session);
 
 		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, std::vector<Artist::id_type> artistIds, int offset = -1, int size = -1);
@@ -78,6 +81,7 @@ class Release
 		Wt::Dbo::collection<Wt::Dbo::ptr<Track> > getTracks(void) const	{ return _tracks;}
 		boost::posix_time::time_duration getDuration(void) const;
 
+
 		template<class Action>
 			void persist(Action& a)
 			{
@@ -87,7 +91,7 @@ class Release
 			}
 
 	private:
-		std::string _name;
+		std::string 			_name;
 
 		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;	// Tracks in the release
 };

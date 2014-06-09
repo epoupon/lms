@@ -584,15 +584,15 @@ int main()
 		Av::AvInit();
 		Transcode::AvConvTranscoder::init();
 
-		bool extendedTests = false;
+		bool extendedTests = true;
 
 		// Runs in its own thread
 		// Listen on any
-		TestServer	testServer( boost::asio::ip::tcp::endpoint( boost::asio::ip::tcp::v4(), 5080));
+		TestServer	testServer( boost::asio::ip::tcp::endpoint( boost::asio::ip::tcp::v4(), 5081));
 
 		// Client
 		// connect to loopback
-		TestClient	client( boost::asio::ip::tcp::endpoint( boost::asio::ip::address_v4::loopback(), 5080));
+		TestClient	client( boost::asio::ip::tcp::endpoint( boost::asio::ip::address_v4::loopback(), 5081));
 
 		// ****** Artists *********
 		std::vector<ArtistInfo>	artists;
@@ -615,6 +615,12 @@ int main()
 		client.getReleases(releases, std::vector<uint64_t>(1, 1162));
 		BOOST_FOREACH(const ReleaseInfo& release, releases)
 			std::cout << "Release: '" << release << "'" << std::endl;
+		{
+			std::vector<ReleaseInfo> releases;
+			client.getReleases(releases, std::vector<uint64_t>());
+			BOOST_FOREACH(const ReleaseInfo& release, releases)
+				std::cout << "Release: '" << release << "'" << std::endl;
+		}
 
 		// **** Tracks ******
 		{

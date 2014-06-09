@@ -16,6 +16,7 @@ lms_SOURCES = \
 	$(top_srcdir)/av/FormatContext.cpp	\
 	$(top_srcdir)/av/InputFormatContext.cpp	\
 	$(top_srcdir)/av/Stream.cpp		\
+	$(top_srcdir)/cover/CoverArtGrabber.cpp	\
 	$(top_srcdir)/ui/LmsApplication.cpp	\
 	$(top_srcdir)/ui/audio/AudioWidget.cpp			\
 	$(top_srcdir)/ui/audio/AudioDatabaseWidget.cpp		\

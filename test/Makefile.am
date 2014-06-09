@@ -12,6 +12,7 @@ remote_SOURCES = \
 	$(top_srcdir)/av/FormatContext.cpp			\
 	$(top_srcdir)/av/InputFormatContext.cpp			\
 	$(top_srcdir)/av/Stream.cpp				\
+	$(top_srcdir)/cover/CoverArtGrabber.cpp			\
 	$(top_srcdir)/remote/server/Server.cpp			\
 	$(top_srcdir)/remote/server/RequestHandler.cpp		\
 	$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp		\
