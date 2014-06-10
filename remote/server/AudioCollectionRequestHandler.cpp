@@ -286,6 +286,7 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 					cover_art->set_data( std::string( coverArt.getData().begin(), coverArt.getData().end()) );
 				}
 			}
+			res = true;
 			break;
 
 		case AudioCollectionRequest::GetCoverArt::TypeGetCoverArtTrack:

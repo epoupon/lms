@@ -57,11 +57,12 @@ message AudioCollectionRequest
 
 	enum Type
 	{
-		TypeGetGenreList	= 1;
-		TypeGetArtistList	= 2;
-		TypeGetReleaseList	= 3;
-		TypeGetTrackList	= 4;
-		TypeGetCoverArt		= 5;
+		TypeGetRevision		= 1;
+		TypeGetGenreList	= 2;
+		TypeGetArtistList	= 3;
+		TypeGetReleaseList	= 4;
+		TypeGetTrackList	= 5;
+		TypeGetCoverArt		= 6;
 	}
 
 	required Type	type			= 1;
@@ -76,6 +77,12 @@ message AudioCollectionRequest
 
 message AudioCollectionResponse
 {
+
+	message Revision
+	{
+		required uint64	rev	= 1;
+	}
+
 	message GenreList
 	{
 		repeated Genre	genres	= 2;
@@ -148,22 +155,24 @@ message AudioCollectionResponse
 
 	enum Type {
 		TypeError	= 1;
-		TypeGenreList	= 2;
-		TypeArtistList	= 3;
-		TypeReleaseList	= 4;
-		TypeTrackList	= 5;
-		TypeCoverArt	= 6;
+		TypeRevision	= 2;
+		TypeGenreList	= 3;
+		TypeArtistList	= 4;
+		TypeReleaseList	= 5;
+		TypeTrackList	= 6;
+		TypeCoverArt	= 7;
 	}
 
 
 	optional Type		type		= 1;
 
 	optional Error		error		= 2;
-	optional GenreList	genre_list	= 3;
-	optional ArtistList	artist_list	= 4;
-	optional ReleaseList	release_list	= 5;
-	optional TrackList	track_list	= 6;
-	repeated CoverArt	cover_art	= 7;
+	optional Revision	revision	= 3;
+	optional GenreList	genre_list	= 4;
+	optional ArtistList	artist_list	= 5;
+	optional ReleaseList	release_list	= 6;
+	optional TrackList	track_list	= 7;
+	repeated CoverArt	cover_art	= 8;
 }
 
 

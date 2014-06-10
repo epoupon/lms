@@ -75,6 +75,11 @@ std::ostream& operator<<(std::ostream& os, const TrackInfo& info)
 	return os;
 }
 
+struct CoverArt
+{
+	std::string 			mimeType;
+	std::vector<unsigned char>	data;
+};
 
 // Ugly class for testing purposes
 class TestServer
@@ -359,6 +364,37 @@ class TestClient
 			mediaTerminate();
 		}
 
+		void getCoverRelease(std::vector<CoverArt>& coverArt, uint64_t releaseId)
+		{
+			// Send request
+			Remote::ClientMessage request;
+
+			request.set_type( Remote::ClientMessage::AudioCollectionRequest );
+
+			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest::TypeGetCoverArt);
+			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_type( Remote::AudioCollectionRequest::GetCoverArt::TypeGetCoverArtRelease);
+			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_release_id( releaseId );
+			sendMsg(request);
+
+			// Receive responses
+			Remote::ServerMessage response;
+			recvMsg(response);
+
+			// Process message
+			if (!response.has_audio_collection_response())
+				throw std::runtime_error("not an audio_collection_response!");
+
+			for (int i = 0; i < response.audio_collection_response().cover_art_size(); ++i)
+			{
+				CoverArt cover;
+				cover.mimeType = response.audio_collection_response().cover_art(i).mime_type();
+				cover.data.assign(response.audio_collection_response().cover_art(i).data().begin(), response.audio_collection_response().cover_art(i).data().end());;
+
+				coverArt.push_back(cover);
+			}
+
+		}
+
 
 	private:
 
@@ -631,7 +667,7 @@ int main()
 		}
 
 		// Caution: long test!
-		if (extendedTests)
+/*		if (extendedTests)
 		{
 			BOOST_FOREACH(const ArtistInfo& artist, artists)
 			{
@@ -642,6 +678,19 @@ int main()
 				std::cout << "Artist '" << artist.name << "', nb tracks = " << tracks.size() << std::endl;
 				BOOST_FOREACH(const TrackInfo& track, tracks)
 					std::cout << "Track: '" << track << "'" << std::endl;
+			}
+		}*/
+
+		// ***** Covers *******
+		if (extendedTests)
+		{
+
+			BOOST_FOREACH(const ReleaseInfo& release, releases)
+			{
+				std::vector<CoverArt> coverArt;
+				client.getCoverRelease(coverArt, release.id);
+
+				std::cout << "Release '" << release << "', spotted " << coverArt.size() << " covers!" << std::endl;
 			}
 		}
 

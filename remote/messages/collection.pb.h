@@ -43,6 +43,7 @@ class AudioCollectionRequest_GetReleaseList;
 class AudioCollectionRequest_GetTrackList;
 class AudioCollectionRequest_GetCoverArt;
 class AudioCollectionResponse;
+class AudioCollectionResponse_Revision;
 class AudioCollectionResponse_GenreList;
 class AudioCollectionResponse_ArtistList;
 class AudioCollectionResponse_ReleaseList;
@@ -73,14 +74,15 @@ inline bool AudioCollectionRequest_GetCoverArt_Type_Parse(
     AudioCollectionRequest_GetCoverArt_Type_descriptor(), name, value);
 }
 enum AudioCollectionRequest_Type {
-  AudioCollectionRequest_Type_TypeGetGenreList = 1,
-  AudioCollectionRequest_Type_TypeGetArtistList = 2,
-  AudioCollectionRequest_Type_TypeGetReleaseList = 3,
-  AudioCollectionRequest_Type_TypeGetTrackList = 4,
-  AudioCollectionRequest_Type_TypeGetCoverArt = 5
+  AudioCollectionRequest_Type_TypeGetRevision = 1,
+  AudioCollectionRequest_Type_TypeGetGenreList = 2,
+  AudioCollectionRequest_Type_TypeGetArtistList = 3,
+  AudioCollectionRequest_Type_TypeGetReleaseList = 4,
+  AudioCollectionRequest_Type_TypeGetTrackList = 5,
+  AudioCollectionRequest_Type_TypeGetCoverArt = 6
 };
 bool AudioCollectionRequest_Type_IsValid(int value);
-const AudioCollectionRequest_Type AudioCollectionRequest_Type_Type_MIN = AudioCollectionRequest_Type_TypeGetGenreList;
+const AudioCollectionRequest_Type AudioCollectionRequest_Type_Type_MIN = AudioCollectionRequest_Type_TypeGetRevision;
 const AudioCollectionRequest_Type AudioCollectionRequest_Type_Type_MAX = AudioCollectionRequest_Type_TypeGetCoverArt;
 const int AudioCollectionRequest_Type_Type_ARRAYSIZE = AudioCollectionRequest_Type_Type_MAX + 1;
 
@@ -96,11 +98,12 @@ inline bool AudioCollectionRequest_Type_Parse(
 }
 enum AudioCollectionResponse_Type {
   AudioCollectionResponse_Type_TypeError = 1,
-  AudioCollectionResponse_Type_TypeGenreList = 2,
-  AudioCollectionResponse_Type_TypeArtistList = 3,
-  AudioCollectionResponse_Type_TypeReleaseList = 4,
-  AudioCollectionResponse_Type_TypeTrackList = 5,
-  AudioCollectionResponse_Type_TypeCoverArt = 6
+  AudioCollectionResponse_Type_TypeRevision = 2,
+  AudioCollectionResponse_Type_TypeGenreList = 3,
+  AudioCollectionResponse_Type_TypeArtistList = 4,
+  AudioCollectionResponse_Type_TypeReleaseList = 5,
+  AudioCollectionResponse_Type_TypeTrackList = 6,
+  AudioCollectionResponse_Type_TypeCoverArt = 7
 };
 bool AudioCollectionResponse_Type_IsValid(int value);
 const AudioCollectionResponse_Type AudioCollectionResponse_Type_Type_MIN = AudioCollectionResponse_Type_TypeError;
@@ -811,6 +814,7 @@ class AudioCollectionRequest : public ::google::protobuf::Message {
   typedef AudioCollectionRequest_GetCoverArt GetCoverArt;
 
   typedef AudioCollectionRequest_Type Type;
+  static const Type TypeGetRevision = AudioCollectionRequest_Type_TypeGetRevision;
   static const Type TypeGetGenreList = AudioCollectionRequest_Type_TypeGetGenreList;
   static const Type TypeGetArtistList = AudioCollectionRequest_Type_TypeGetArtistList;
   static const Type TypeGetReleaseList = AudioCollectionRequest_Type_TypeGetReleaseList;
@@ -924,6 +928,88 @@ class AudioCollectionRequest : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static AudioCollectionRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class AudioCollectionResponse_Revision : public ::google::protobuf::Message {
+ public:
+  AudioCollectionResponse_Revision();
+  virtual ~AudioCollectionResponse_Revision();
+
+  AudioCollectionResponse_Revision(const AudioCollectionResponse_Revision& from);
+
+  inline AudioCollectionResponse_Revision& operator=(const AudioCollectionResponse_Revision& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const AudioCollectionResponse_Revision& default_instance();
+
+  void Swap(AudioCollectionResponse_Revision* other);
+
+  // implements Message ----------------------------------------------
+
+  AudioCollectionResponse_Revision* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const AudioCollectionResponse_Revision& from);
+  void MergeFrom(const AudioCollectionResponse_Revision& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required uint64 rev = 1;
+  inline bool has_rev() const;
+  inline void clear_rev();
+  static const int kRevFieldNumber = 1;
+  inline ::google::protobuf::uint64 rev() const;
+  inline void set_rev(::google::protobuf::uint64 value);
+
+  // @@protoc_insertion_point(class_scope:Remote.AudioCollectionResponse.Revision)
+ private:
+  inline void set_has_rev();
+  inline void clear_has_rev();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::google::protobuf::uint64 rev_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
+
+  friend void  protobuf_AddDesc_collection_2eproto();
+  friend void protobuf_AssignDesc_collection_2eproto();
+  friend void protobuf_ShutdownFile_collection_2eproto();
+
+  void InitAsDefaultInstance();
+  static AudioCollectionResponse_Revision* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -1947,6 +2033,7 @@ class AudioCollectionResponse : public ::google::protobuf::Message {
 
   // nested types ----------------------------------------------------
 
+  typedef AudioCollectionResponse_Revision Revision;
   typedef AudioCollectionResponse_GenreList GenreList;
   typedef AudioCollectionResponse_ArtistList ArtistList;
   typedef AudioCollectionResponse_ReleaseList ReleaseList;
@@ -1959,6 +2046,7 @@ class AudioCollectionResponse : public ::google::protobuf::Message {
 
   typedef AudioCollectionResponse_Type Type;
   static const Type TypeError = AudioCollectionResponse_Type_TypeError;
+  static const Type TypeRevision = AudioCollectionResponse_Type_TypeRevision;
   static const Type TypeGenreList = AudioCollectionResponse_Type_TypeGenreList;
   static const Type TypeArtistList = AudioCollectionResponse_Type_TypeArtistList;
   static const Type TypeReleaseList = AudioCollectionResponse_Type_TypeReleaseList;
@@ -2003,46 +2091,55 @@ class AudioCollectionResponse : public ::google::protobuf::Message {
   inline ::Remote::Error* release_error();
   inline void set_allocated_error(::Remote::Error* error);
 
-  // optional .Remote.AudioCollectionResponse.GenreList genre_list = 3;
+  // optional .Remote.AudioCollectionResponse.Revision revision = 3;
+  inline bool has_revision() const;
+  inline void clear_revision();
+  static const int kRevisionFieldNumber = 3;
+  inline const ::Remote::AudioCollectionResponse_Revision& revision() const;
+  inline ::Remote::AudioCollectionResponse_Revision* mutable_revision();
+  inline ::Remote::AudioCollectionResponse_Revision* release_revision();
+  inline void set_allocated_revision(::Remote::AudioCollectionResponse_Revision* revision);
+
+  // optional .Remote.AudioCollectionResponse.GenreList genre_list = 4;
   inline bool has_genre_list() const;
   inline void clear_genre_list();
-  static const int kGenreListFieldNumber = 3;
+  static const int kGenreListFieldNumber = 4;
   inline const ::Remote::AudioCollectionResponse_GenreList& genre_list() const;
   inline ::Remote::AudioCollectionResponse_GenreList* mutable_genre_list();
   inline ::Remote::AudioCollectionResponse_GenreList* release_genre_list();
   inline void set_allocated_genre_list(::Remote::AudioCollectionResponse_GenreList* genre_list);
 
-  // optional .Remote.AudioCollectionResponse.ArtistList artist_list = 4;
+  // optional .Remote.AudioCollectionResponse.ArtistList artist_list = 5;
   inline bool has_artist_list() const;
   inline void clear_artist_list();
-  static const int kArtistListFieldNumber = 4;
+  static const int kArtistListFieldNumber = 5;
   inline const ::Remote::AudioCollectionResponse_ArtistList& artist_list() const;
   inline ::Remote::AudioCollectionResponse_ArtistList* mutable_artist_list();
   inline ::Remote::AudioCollectionResponse_ArtistList* release_artist_list();
   inline void set_allocated_artist_list(::Remote::AudioCollectionResponse_ArtistList* artist_list);
 
-  // optional .Remote.AudioCollectionResponse.ReleaseList release_list = 5;
+  // optional .Remote.AudioCollectionResponse.ReleaseList release_list = 6;
   inline bool has_release_list() const;
   inline void clear_release_list();
-  static const int kReleaseListFieldNumber = 5;
+  static const int kReleaseListFieldNumber = 6;
   inline const ::Remote::AudioCollectionResponse_ReleaseList& release_list() const;
   inline ::Remote::AudioCollectionResponse_ReleaseList* mutable_release_list();
   inline ::Remote::AudioCollectionResponse_ReleaseList* release_release_list();
   inline void set_allocated_release_list(::Remote::AudioCollectionResponse_ReleaseList* release_list);
 
-  // optional .Remote.AudioCollectionResponse.TrackList track_list = 6;
+  // optional .Remote.AudioCollectionResponse.TrackList track_list = 7;
   inline bool has_track_list() const;
   inline void clear_track_list();
-  static const int kTrackListFieldNumber = 6;
+  static const int kTrackListFieldNumber = 7;
   inline const ::Remote::AudioCollectionResponse_TrackList& track_list() const;
   inline ::Remote::AudioCollectionResponse_TrackList* mutable_track_list();
   inline ::Remote::AudioCollectionResponse_TrackList* release_track_list();
   inline void set_allocated_track_list(::Remote::AudioCollectionResponse_TrackList* track_list);
 
-  // repeated .Remote.AudioCollectionResponse.CoverArt cover_art = 7;
+  // repeated .Remote.AudioCollectionResponse.CoverArt cover_art = 8;
   inline int cover_art_size() const;
   inline void clear_cover_art();
-  static const int kCoverArtFieldNumber = 7;
+  static const int kCoverArtFieldNumber = 8;
   inline const ::Remote::AudioCollectionResponse_CoverArt& cover_art(int index) const;
   inline ::Remote::AudioCollectionResponse_CoverArt* mutable_cover_art(int index);
   inline ::Remote::AudioCollectionResponse_CoverArt* add_cover_art();
@@ -2057,6 +2154,8 @@ class AudioCollectionResponse : public ::google::protobuf::Message {
   inline void clear_has_type();
   inline void set_has_error();
   inline void clear_has_error();
+  inline void set_has_revision();
+  inline void clear_has_revision();
   inline void set_has_genre_list();
   inline void clear_has_genre_list();
   inline void set_has_artist_list();
@@ -2069,6 +2168,7 @@ class AudioCollectionResponse : public ::google::protobuf::Message {
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::Remote::Error* error_;
+  ::Remote::AudioCollectionResponse_Revision* revision_;
   ::Remote::AudioCollectionResponse_GenreList* genre_list_;
   ::Remote::AudioCollectionResponse_ArtistList* artist_list_;
   ::Remote::AudioCollectionResponse_ReleaseList* release_list_;
@@ -2077,7 +2177,7 @@ class AudioCollectionResponse : public ::google::protobuf::Message {
   int type_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(7 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(8 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -2741,6 +2841,32 @@ inline void AudioCollectionRequest::set_allocated_get_cover_art(::Remote::AudioC
   } else {
     clear_has_get_cover_art();
   }
+}
+
+// -------------------------------------------------------------------
+
+// AudioCollectionResponse_Revision
+
+// required uint64 rev = 1;
+inline bool AudioCollectionResponse_Revision::has_rev() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void AudioCollectionResponse_Revision::set_has_rev() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void AudioCollectionResponse_Revision::clear_has_rev() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void AudioCollectionResponse_Revision::clear_rev() {
+  rev_ = GOOGLE_ULONGLONG(0);
+  clear_has_rev();
+}
+inline ::google::protobuf::uint64 AudioCollectionResponse_Revision::rev() const {
+  return rev_;
+}
+inline void AudioCollectionResponse_Revision::set_rev(::google::protobuf::uint64 value) {
+  set_has_rev();
+  rev_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -3863,15 +3989,53 @@ inline void AudioCollectionResponse::set_allocated_error(::Remote::Error* error)
   }
 }
 
-// optional .Remote.AudioCollectionResponse.GenreList genre_list = 3;
-inline bool AudioCollectionResponse::has_genre_list() const {
+// optional .Remote.AudioCollectionResponse.Revision revision = 3;
+inline bool AudioCollectionResponse::has_revision() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
-inline void AudioCollectionResponse::set_has_genre_list() {
+inline void AudioCollectionResponse::set_has_revision() {
   _has_bits_[0] |= 0x00000004u;
 }
-inline void AudioCollectionResponse::clear_has_genre_list() {
+inline void AudioCollectionResponse::clear_has_revision() {
   _has_bits_[0] &= ~0x00000004u;
+}
+inline void AudioCollectionResponse::clear_revision() {
+  if (revision_ != NULL) revision_->::Remote::AudioCollectionResponse_Revision::Clear();
+  clear_has_revision();
+}
+inline const ::Remote::AudioCollectionResponse_Revision& AudioCollectionResponse::revision() const {
+  return revision_ != NULL ? *revision_ : *default_instance_->revision_;
+}
+inline ::Remote::AudioCollectionResponse_Revision* AudioCollectionResponse::mutable_revision() {
+  set_has_revision();
+  if (revision_ == NULL) revision_ = new ::Remote::AudioCollectionResponse_Revision;
+  return revision_;
+}
+inline ::Remote::AudioCollectionResponse_Revision* AudioCollectionResponse::release_revision() {
+  clear_has_revision();
+  ::Remote::AudioCollectionResponse_Revision* temp = revision_;
+  revision_ = NULL;
+  return temp;
+}
+inline void AudioCollectionResponse::set_allocated_revision(::Remote::AudioCollectionResponse_Revision* revision) {
+  delete revision_;
+  revision_ = revision;
+  if (revision) {
+    set_has_revision();
+  } else {
+    clear_has_revision();
+  }
+}
+
+// optional .Remote.AudioCollectionResponse.GenreList genre_list = 4;
+inline bool AudioCollectionResponse::has_genre_list() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void AudioCollectionResponse::set_has_genre_list() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void AudioCollectionResponse::clear_has_genre_list() {
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void AudioCollectionResponse::clear_genre_list() {
   if (genre_list_ != NULL) genre_list_->::Remote::AudioCollectionResponse_GenreList::Clear();
@@ -3901,15 +4065,15 @@ inline void AudioCollectionResponse::set_allocated_genre_list(::Remote::AudioCol
   }
 }
 
-// optional .Remote.AudioCollectionResponse.ArtistList artist_list = 4;
+// optional .Remote.AudioCollectionResponse.ArtistList artist_list = 5;
 inline bool AudioCollectionResponse::has_artist_list() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
+  return (_has_bits_[0] & 0x00000010u) != 0;
 }
 inline void AudioCollectionResponse::set_has_artist_list() {
-  _has_bits_[0] |= 0x00000008u;
+  _has_bits_[0] |= 0x00000010u;
 }
 inline void AudioCollectionResponse::clear_has_artist_list() {
-  _has_bits_[0] &= ~0x00000008u;
+  _has_bits_[0] &= ~0x00000010u;
 }
 inline void AudioCollectionResponse::clear_artist_list() {
   if (artist_list_ != NULL) artist_list_->::Remote::AudioCollectionResponse_ArtistList::Clear();
@@ -3939,15 +4103,15 @@ inline void AudioCollectionResponse::set_allocated_artist_list(::Remote::AudioCo
   }
 }
 
-// optional .Remote.AudioCollectionResponse.ReleaseList release_list = 5;
+// optional .Remote.AudioCollectionResponse.ReleaseList release_list = 6;
 inline bool AudioCollectionResponse::has_release_list() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
+  return (_has_bits_[0] & 0x00000020u) != 0;
 }
 inline void AudioCollectionResponse::set_has_release_list() {
-  _has_bits_[0] |= 0x00000010u;
+  _has_bits_[0] |= 0x00000020u;
 }
 inline void AudioCollectionResponse::clear_has_release_list() {
-  _has_bits_[0] &= ~0x00000010u;
+  _has_bits_[0] &= ~0x00000020u;
 }
 inline void AudioCollectionResponse::clear_release_list() {
   if (release_list_ != NULL) release_list_->::Remote::AudioCollectionResponse_ReleaseList::Clear();
@@ -3977,15 +4141,15 @@ inline void AudioCollectionResponse::set_allocated_release_list(::Remote::AudioC
   }
 }
 
-// optional .Remote.AudioCollectionResponse.TrackList track_list = 6;
+// optional .Remote.AudioCollectionResponse.TrackList track_list = 7;
 inline bool AudioCollectionResponse::has_track_list() const {
-  return (_has_bits_[0] & 0x00000020u) != 0;
+  return (_has_bits_[0] & 0x00000040u) != 0;
 }
 inline void AudioCollectionResponse::set_has_track_list() {
-  _has_bits_[0] |= 0x00000020u;
+  _has_bits_[0] |= 0x00000040u;
 }
 inline void AudioCollectionResponse::clear_has_track_list() {
-  _has_bits_[0] &= ~0x00000020u;
+  _has_bits_[0] &= ~0x00000040u;
 }
 inline void AudioCollectionResponse::clear_track_list() {
   if (track_list_ != NULL) track_list_->::Remote::AudioCollectionResponse_TrackList::Clear();
@@ -4015,7 +4179,7 @@ inline void AudioCollectionResponse::set_allocated_track_list(::Remote::AudioCol
   }
 }
 
-// repeated .Remote.AudioCollectionResponse.CoverArt cover_art = 7;
+// repeated .Remote.AudioCollectionResponse.CoverArt cover_art = 8;
 inline int AudioCollectionResponse::cover_art_size() const {
   return cover_art_.size();
 }
