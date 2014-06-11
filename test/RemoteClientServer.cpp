@@ -364,6 +364,36 @@ class TestClient
 			mediaTerminate();
 		}
 
+		void getCoverTrack(std::vector<CoverArt>& coverArt, uint64_t trackId)
+		{
+			// Send request
+			Remote::ClientMessage request;
+
+			request.set_type( Remote::ClientMessage::AudioCollectionRequest );
+
+			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest::TypeGetCoverArt);
+			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_type( Remote::AudioCollectionRequest::GetCoverArt::TypeGetCoverArtTrack);
+			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_track_id( trackId );
+			sendMsg(request);
+
+			// Receive responses
+			Remote::ServerMessage response;
+			recvMsg(response);
+
+			// Process message
+			if (!response.has_audio_collection_response())
+				throw std::runtime_error("not an audio_collection_response!");
+
+			for (int i = 0; i < response.audio_collection_response().cover_art_size(); ++i)
+			{
+				CoverArt cover;
+				cover.mimeType = response.audio_collection_response().cover_art(i).mime_type();
+				cover.data.assign(response.audio_collection_response().cover_art(i).data().begin(), response.audio_collection_response().cover_art(i).data().end());;
+
+				coverArt.push_back(cover);
+			}
+		}
+
 		void getCoverRelease(std::vector<CoverArt>& coverArt, uint64_t releaseId)
 		{
 			// Send request
@@ -536,13 +566,20 @@ class TestClient
 			// Serialize message
 			if (message.SerializeToOstream(&os))
 			{
+
+				if (_outputStreamBuf.size() > Remote::Header::max_data_size)
+				{
+					std::ostringstream oss; oss << "Message too big = " << _outputStreamBuf.size() << " bytes! (max is " << Remote::Header::max_data_size << ")" << std::endl;
+					throw std::runtime_error("Message to big!");
+				}
+
 				// Send message header
 				std::array<unsigned char, Remote::Header::size> headerBuffer;
 
 				// Generate header content
 				{
 					Remote::Header header;
-					header.setSize(_outputStreamBuf.size());
+					header.setDataSize(_outputStreamBuf.size());
 					header.to_buffer(headerBuffer);
 				}
 
@@ -589,13 +626,13 @@ class TestClient
 			// Read in a stream buffer
 			{
 				// reserve bytes in output sequence
-				boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(header.getSize());
+				boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(header.getDataSize());
 
 				std::size_t n = boost::asio::read(_socket,
 									bufs,
-									boost::asio::transfer_exactly(header.getSize()));
+									boost::asio::transfer_exactly(header.getDataSize()));
 
-				assert(n == header.getSize());
+				assert(n == header.getDataSize());
 				_inputStreamBuf.commit(n);
 
 				if (!message.ParseFromIstream(&is))
@@ -648,23 +685,15 @@ int main()
 
 		// **** Releases ******
 		std::vector<ReleaseInfo> releases;
-		client.getReleases(releases, std::vector<uint64_t>(1, 1162));
+		client.getReleases(releases, std::vector<uint64_t>());
 		BOOST_FOREACH(const ReleaseInfo& release, releases)
 			std::cout << "Release: '" << release << "'" << std::endl;
-		{
-			std::vector<ReleaseInfo> releases;
-			client.getReleases(releases, std::vector<uint64_t>());
-			BOOST_FOREACH(const ReleaseInfo& release, releases)
-				std::cout << "Release: '" << release << "'" << std::endl;
-		}
 
 		// **** Tracks ******
-		{
-			std::vector<TrackInfo> tracks;
-			client.getTracks(tracks, std::vector<uint64_t>(), std::vector<uint64_t>(), std::vector<uint64_t>());
-			BOOST_FOREACH(const TrackInfo& track, tracks)
-				std::cout << "Track: '" << track << "'" << std::endl;
-		}
+		std::vector<TrackInfo> tracks;
+		client.getTracks(tracks, std::vector<uint64_t>(), std::vector<uint64_t>(), std::vector<uint64_t>());
+		BOOST_FOREACH(const TrackInfo& track, tracks)
+			std::cout << "Track: '" << track << "'" << std::endl;
 
 		// Caution: long test!
 /*		if (extendedTests)
@@ -684,7 +713,6 @@ int main()
 		// ***** Covers *******
 		if (extendedTests)
 		{
-
 			BOOST_FOREACH(const ReleaseInfo& release, releases)
 			{
 				std::vector<CoverArt> coverArt;
@@ -692,6 +720,15 @@ int main()
 
 				std::cout << "Release '" << release << "', spotted " << coverArt.size() << " covers!" << std::endl;
 			}
+
+			BOOST_FOREACH(const TrackInfo& track, tracks)
+			{
+				std::vector<CoverArt> coverArt;
+				client.getCoverTrack(coverArt, track.id);
+
+				std::cout << "Track '" << track << "', spotted " << coverArt.size() << " covers!" << std::endl;
+			}
+
 		}
 
 		// ****** Transcode test ********

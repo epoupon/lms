@@ -84,11 +84,11 @@ Connection::handleReadHeader(const boost::system::error_code& error, std::size_t
 		}
 
 		// Now read the real message
-		boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(header.getSize());
+		boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(header.getDataSize());
 
 		boost::asio::async_read(_socket,
 				bufs,
-				boost::asio::transfer_exactly(header.getSize()),
+				boost::asio::transfer_exactly(header.getDataSize()),
 				boost::bind(&Connection::handleReadMsg, shared_from_this(),
 					boost::asio::placeholders::error,
 					boost::asio::placeholders::bytes_transferred));
@@ -138,10 +138,17 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 				return;
 			}
 
+			if (_outputStreamBuf.size() >= Remote::Header::max_data_size)
+			{
+				std::cerr << "output message is too big! " << _outputStreamBuf.size() << " > " << Remote::Header::max_data_size << std::endl;
+				_connectionManager.stop(shared_from_this());
+				return;
+			}
+
 			std::array<unsigned char, Remote::Header::size> headerBuffer;
 			{
 				Remote::Header header;
-				header.setSize(_outputStreamBuf.size());
+				header.setDataSize(_outputStreamBuf.size());
 				header.to_buffer(headerBuffer);
 			}
 

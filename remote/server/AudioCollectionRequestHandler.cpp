@@ -290,9 +290,25 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 			break;
 
 		case AudioCollectionRequest::GetCoverArt::TypeGetCoverArtTrack:
-			std::cerr << "TODO AudioCollectionRequest::GetCoverArt::TypeGetCoverArtTrack" <<std::endl;
-			break;
+			if (request.has_track_id())
+			{
+				Wt::Dbo::Transaction transaction( _db.getSession() );
 
+				// Get the request release
+				Track::pointer track = Track::getById( _db.getSession(), request.track_id());
+
+				std::vector<CoverArt::CoverArt> coverArts = CoverArt::Grabber::getFromTrack(track);
+
+				BOOST_FOREACH(const CoverArt::CoverArt& coverArt, coverArts)
+				{
+					AudioCollectionResponse_CoverArt* cover_art = response.add_cover_art();
+
+					cover_art->set_mime_type(coverArt.getMimeType());
+					cover_art->set_data( std::string( coverArt.getData().begin(), coverArt.getData().end()) );
+				}
+			}
+			res = true;
+			break;
 	}
 
 	return res;

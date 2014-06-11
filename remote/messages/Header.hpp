@@ -10,14 +10,13 @@ namespace Remote
 class Header
 {
 	public:
+		static const std::size_t size = 8;	// HeaderSize
+		static const std::size_t max_data_size = 65536*64 - size;
 
-		static const std::size_t size = 8;
+		Header() : _dataSize(0) {}
 
-		Header() : _size(0) {}
-
-		void setSize(std::size_t size)	{ _size = size; }
-		std::size_t getSize(void) const	{return _size;}
-
+		void setDataSize(std::size_t size)	{ _dataSize = size; }
+		std::size_t getDataSize(void) const	{return _dataSize;}
 
 		bool from_istream(std::istream &is)
 		{
@@ -39,12 +38,12 @@ class Header
 			}
 			else
 			{
-				_size = decode32(&buffer[4]);
+				_dataSize = decode32(&buffer[4]);
 
-				if (_size > _maxSize)
-					std::cerr << "Header: msg too big (" << _size << ")!" << std::endl;
+				if (_dataSize > max_data_size)
+					std::cerr << "Header: msg too big (" << _dataSize << ")!" << std::endl;
 
-				return _size <= _maxSize;
+				return _dataSize <= max_data_size;
 			}
 		}
 
@@ -57,7 +56,7 @@ class Header
 		void to_buffer(std::array<unsigned char, size>& buffer) const
 		{
 			encode32(_magic, &buffer[0]);
-			encode32(_size, &buffer[4]);
+			encode32(_dataSize, &buffer[4]);
 		}
 
 	private:
@@ -78,9 +77,8 @@ class Header
 		}
 
 		static const uint32_t _magic = 0xdeadbeef;
-		static const uint32_t _maxSize = 65536*32;
 
-		uint32_t	_size;
+		uint32_t	_dataSize;
 };
 
 
