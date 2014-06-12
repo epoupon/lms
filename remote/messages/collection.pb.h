@@ -727,6 +727,13 @@ class AudioCollectionRequest_GetCoverArt : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 track_id() const;
   inline void set_track_id(::google::protobuf::uint64 value);
 
+  // optional uint32 size = 4;
+  inline bool has_size() const;
+  inline void clear_size();
+  static const int kSizeFieldNumber = 4;
+  inline ::google::protobuf::uint32 size() const;
+  inline void set_size(::google::protobuf::uint32 value);
+
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionRequest.GetCoverArt)
  private:
   inline void set_has_type();
@@ -735,15 +742,18 @@ class AudioCollectionRequest_GetCoverArt : public ::google::protobuf::Message {
   inline void clear_has_release_id();
   inline void set_has_track_id();
   inline void clear_has_track_id();
+  inline void set_has_size();
+  inline void clear_has_size();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::google::protobuf::uint64 release_id_;
-  ::google::protobuf::uint64 track_id_;
   int type_;
+  ::google::protobuf::uint32 size_;
+  ::google::protobuf::uint64 track_id_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -2624,6 +2634,28 @@ inline ::google::protobuf::uint64 AudioCollectionRequest_GetCoverArt::track_id()
 inline void AudioCollectionRequest_GetCoverArt::set_track_id(::google::protobuf::uint64 value) {
   set_has_track_id();
   track_id_ = value;
+}
+
+// optional uint32 size = 4;
+inline bool AudioCollectionRequest_GetCoverArt::has_size() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void AudioCollectionRequest_GetCoverArt::set_has_size() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void AudioCollectionRequest_GetCoverArt::clear_has_size() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void AudioCollectionRequest_GetCoverArt::clear_size() {
+  size_ = 0u;
+  clear_has_size();
+}
+inline ::google::protobuf::uint32 AudioCollectionRequest_GetCoverArt::size() const {
+  return size_;
+}
+inline void AudioCollectionRequest_GetCoverArt::set_size(::google::protobuf::uint32 value) {
+  set_has_size();
+  size_ = value;
 }
 
 // -------------------------------------------------------------------
