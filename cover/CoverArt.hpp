@@ -23,6 +23,8 @@ class CoverArt
 		void	setMimeType(const std::string& mimeType) { _mimeType = mimeType;}
 		void	setData(const data_type& data) { _data = data; }
 
+		bool	scale(std::size_t size);
+
 	private:
 
 		std::string	_mimeType;

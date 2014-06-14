@@ -3,6 +3,9 @@
 - Do the feature
 	- Admin account to add/remove users, add path to watch for Audio/Video files
 
+[Cover]
+- Scaling: find something more "reliable" than GIL and its customs extensions (adobe work, io_new)
+
 [Database]
 - When removing a track, make sure to remove genre/artist/release if last of it
 - Use Inotify like system to watch modified/added files

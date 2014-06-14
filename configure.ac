@@ -8,9 +8,14 @@ AC_LANG_CPLUSPLUS
 # Checks for programs
 AC_PROG_CXX
 
-AC_CHECK_HEADERS([Wt/WApplication],
+AC_CHECK_HEADERS([Wt/WApplication jpeglib.h],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
+
+AC_CHECK_LIB([jpeg],
+	     [jpeg_destroy],
+	     ,
+	     [AC_MSG_ERROR([libpthread not found!])])
 
 AC_CHECK_LIB([pthread],
 	     [pthread_create],

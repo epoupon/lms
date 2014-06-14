@@ -9,8 +9,6 @@ namespace Av
 InputFormatContext::InputFormatContext(const boost::filesystem::path& p)
 : _path(p)
 {
-	std::cout << "Opening '" << p.string().c_str() << "'" << std::endl;
-
 	AVFormatContext* context = nullptr;
 
 	// The last three parameters specify the file format, buffer size and
@@ -103,7 +101,6 @@ InputFormatContext::getPictures(std::vector< std::vector<unsigned char> >& pictu
 	{
 		if (native()->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
 		{
-			std::cout << "Found album art..." << std::endl;
 			AVPacket pkt = native()->streams[i]->attached_pic;
 
 			std::vector<unsigned char> data;

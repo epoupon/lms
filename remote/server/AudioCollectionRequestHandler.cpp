@@ -251,8 +251,6 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 		BOOST_FOREACH(Genre::pointer genre, (*it)->getGenres())
 			track->add_genre_id( genre.id() );
 
-//		if (!(*it)->getCoverArt().empty)
-//			track->set_coverart( (*it)->getCoverArt() );
 	}
 
 	return true;
@@ -278,9 +276,12 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 
 				std::vector<CoverArt::CoverArt> coverArts = CoverArt::Grabber::getFromRelease(release);
 
-				BOOST_FOREACH(const CoverArt::CoverArt& coverArt, coverArts)
+				BOOST_FOREACH(CoverArt::CoverArt& coverArt, coverArts)
 				{
 					AudioCollectionResponse_CoverArt* cover_art = response.add_cover_art();
+
+					if (request.has_size())
+						coverArt.scale(request.size());
 
 					cover_art->set_mime_type(coverArt.getMimeType());
 					cover_art->set_data( std::string( coverArt.getData().begin(), coverArt.getData().end()) );
@@ -299,9 +300,20 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 
 				std::vector<CoverArt::CoverArt> coverArts = CoverArt::Grabber::getFromTrack(track);
 
-				BOOST_FOREACH(const CoverArt::CoverArt& coverArt, coverArts)
+				BOOST_FOREACH(CoverArt::CoverArt& coverArt, coverArts)
 				{
 					AudioCollectionResponse_CoverArt* cover_art = response.add_cover_art();
+
+					if (request.has_size())
+					{
+						std::size_t size = request.size();
+						if (size > _maxCoverArtSize || size == 0)
+							size = _maxCoverArtSize;
+						if (size < _minCoverArtSize)
+							size = _minCoverArtSize;
+
+						coverArt.scale(size);
+					}
 
 					cover_art->set_mime_type(coverArt.getMimeType());
 					cover_art->set_data( std::string( coverArt.getData().begin(), coverArt.getData().end()) );

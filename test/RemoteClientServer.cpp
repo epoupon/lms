@@ -374,6 +374,7 @@ class TestClient
 			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest::TypeGetCoverArt);
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_type( Remote::AudioCollectionRequest::GetCoverArt::TypeGetCoverArtTrack);
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_track_id( trackId );
+			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_size( 100 );
 			sendMsg(request);
 
 			// Receive responses
@@ -404,6 +405,8 @@ class TestClient
 			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest::TypeGetCoverArt);
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_type( Remote::AudioCollectionRequest::GetCoverArt::TypeGetCoverArtRelease);
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_release_id( releaseId );
+			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_size( 100 );
+
 			sendMsg(request);
 
 			// Receive responses
@@ -715,10 +718,18 @@ int main()
 		{
 			BOOST_FOREACH(const ReleaseInfo& release, releases)
 			{
-				std::vector<CoverArt> coverArt;
-				client.getCoverRelease(coverArt, release.id);
+				std::vector<CoverArt> coverArts;
+				client.getCoverRelease(coverArts, release.id);
 
-				std::cout << "Release '" << release << "', spotted " << coverArt.size() << " covers!" << std::endl;
+				BOOST_FOREACH(const CoverArt coverArt, coverArts)
+				{
+					std::ostringstream oss; oss << release.name << ".jpeg";
+					std::ofstream out(oss.str().c_str());
+					BOOST_FOREACH(unsigned char c, coverArt.data)
+						out.put(c);
+				}
+
+				std::cout << "Release '" << release << "', spotted " << coverArts.size() << " covers!" << std::endl;
 			}
 
 			BOOST_FOREACH(const TrackInfo& track, tracks)

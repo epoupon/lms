@@ -12,6 +12,7 @@ remote_SOURCES = \
 	$(top_srcdir)/av/FormatContext.cpp			\
 	$(top_srcdir)/av/InputFormatContext.cpp			\
 	$(top_srcdir)/av/Stream.cpp				\
+	$(top_srcdir)/cover/CoverArt.cpp			\
 	$(top_srcdir)/cover/CoverArtGrabber.cpp			\
 	$(top_srcdir)/remote/server/Server.cpp			\
 	$(top_srcdir)/remote/server/RequestHandler.cpp		\
@@ -38,7 +39,7 @@ remote_SOURCES = \
 	$(top_srcdir)/database/Video.cpp			\
 	$(top_srcdir)/database/Checksum.cpp
 
-remote_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir) -I$(top_srcdir)/remote
+remote_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir) -I$(top_srcdir)/remote -I$(top_srcdir)/boost
 
 database_integrity_SOURCES = \
 	$(srcdir)/DatabaseIntegrity.cpp		\

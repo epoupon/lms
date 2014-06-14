@@ -29,6 +29,9 @@ class AudioCollectionRequestHandler
 		static const std::size_t _maxListGenres = 256;
 		static const std::size_t _maxListReleases = 128;
 		static const std::size_t _maxListTracks = 128;
+
+		static const std::size_t _minCoverArtSize = 64;		// in pixels, square
+		static const std::size_t _maxCoverArtSize = 512;	// in pixels, square
 };
 
 } // namespace Remote
