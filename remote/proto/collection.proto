@@ -53,7 +53,7 @@ message AudioCollectionRequest
 		optional uint64	release_id		= 2;	// Release that owns the cover art
 		optional uint64	track_id		= 3;	// Track that owns the cover art
 
-		optional uint32 size			= 4;	// Scale image to this size
+		required uint32 size			= 4;	// Scale image to size*size pixels. Set 0 to get the biggest image
 	}
 
 	enum Type

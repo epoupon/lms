@@ -2,8 +2,6 @@
 
 #include "AudioWidget.hpp"
 
-#include "metadata/Extractor.hpp"
-
 namespace UserInterface {
 
 AudioWidget::AudioWidget(SessionData& sessionData, Wt::WContainerWidget* parent)
@@ -51,13 +49,16 @@ AudioWidget::playTrack(boost::filesystem::path p)
 
 		// Refresh cover
 		{
-			const std::vector< std::vector<unsigned char> >& pictures = inputFile.getCoverPictures();
+			std::vector<CoverArt::CoverArt> covers = inputFile.getCovers();
 
-			if (!pictures.empty())
+			if (!covers.empty())
 			{
 				std::cout << "Cover found!" << std::endl;
-//				_imgResource->setMimeType(cover.mimeType);
-				_imgResource->setData(pictures.front());
+				if (!covers.front().scale(256))
+					std::cerr << "Cannot resize!" << std::endl;
+
+				//_imgResource->setMimeType(covers.front().getMimeType());
+				_imgResource->setData(covers.front().getData());
 			}
 			else {
 				std::cout << "No cover found!" << std::endl;

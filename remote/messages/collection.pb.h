@@ -727,7 +727,7 @@ class AudioCollectionRequest_GetCoverArt : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 track_id() const;
   inline void set_track_id(::google::protobuf::uint64 value);
 
-  // optional uint32 size = 4;
+  // required uint32 size = 4;
   inline bool has_size() const;
   inline void clear_size();
   static const int kSizeFieldNumber = 4;
@@ -2636,7 +2636,7 @@ inline void AudioCollectionRequest_GetCoverArt::set_track_id(::google::protobuf:
   track_id_ = value;
 }
 
-// optional uint32 size = 4;
+// required uint32 size = 4;
 inline bool AudioCollectionRequest_GetCoverArt::has_size() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }

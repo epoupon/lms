@@ -75,7 +75,7 @@ std::ostream& operator<<(std::ostream& os, const TrackInfo& info)
 	return os;
 }
 
-struct CoverArt
+struct Cover
 {
 	std::string 			mimeType;
 	std::vector<unsigned char>	data;
@@ -364,7 +364,7 @@ class TestClient
 			mediaTerminate();
 		}
 
-		void getCoverTrack(std::vector<CoverArt>& coverArt, uint64_t trackId)
+		void getCoverTrack(std::vector<Cover>& coverArt, uint64_t trackId)
 		{
 			// Send request
 			Remote::ClientMessage request;
@@ -374,7 +374,7 @@ class TestClient
 			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest::TypeGetCoverArt);
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_type( Remote::AudioCollectionRequest::GetCoverArt::TypeGetCoverArtTrack);
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_track_id( trackId );
-			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_size( 100 );
+			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_size( 256 );
 			sendMsg(request);
 
 			// Receive responses
@@ -387,7 +387,7 @@ class TestClient
 
 			for (int i = 0; i < response.audio_collection_response().cover_art_size(); ++i)
 			{
-				CoverArt cover;
+				Cover cover;
 				cover.mimeType = response.audio_collection_response().cover_art(i).mime_type();
 				cover.data.assign(response.audio_collection_response().cover_art(i).data().begin(), response.audio_collection_response().cover_art(i).data().end());;
 
@@ -395,7 +395,7 @@ class TestClient
 			}
 		}
 
-		void getCoverRelease(std::vector<CoverArt>& coverArt, uint64_t releaseId)
+		void getCoverRelease(std::vector<Cover>& coverArt, uint64_t releaseId)
 		{
 			// Send request
 			Remote::ClientMessage request;
@@ -405,7 +405,7 @@ class TestClient
 			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest::TypeGetCoverArt);
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_type( Remote::AudioCollectionRequest::GetCoverArt::TypeGetCoverArtRelease);
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_release_id( releaseId );
-			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_size( 100 );
+			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_size( 256 );
 
 			sendMsg(request);
 
@@ -419,7 +419,7 @@ class TestClient
 
 			for (int i = 0; i < response.audio_collection_response().cover_art_size(); ++i)
 			{
-				CoverArt cover;
+				Cover cover;
 				cover.mimeType = response.audio_collection_response().cover_art(i).mime_type();
 				cover.data.assign(response.audio_collection_response().cover_art(i).data().begin(), response.audio_collection_response().cover_art(i).data().end());;
 
@@ -718,12 +718,13 @@ int main()
 		{
 			BOOST_FOREACH(const ReleaseInfo& release, releases)
 			{
-				std::vector<CoverArt> coverArts;
+				std::vector<Cover> coverArts;
 				client.getCoverRelease(coverArts, release.id);
 
-				BOOST_FOREACH(const CoverArt coverArt, coverArts)
+				boost::filesystem::create_directory("cover");
+				BOOST_FOREACH(const Cover coverArt, coverArts)
 				{
-					std::ostringstream oss; oss << release.name << ".jpeg";
+					std::ostringstream oss; oss << "cover/" << release.id << "." << release.name << ".jpeg";
 					std::ofstream out(oss.str().c_str());
 					BOOST_FOREACH(unsigned char c, coverArt.data)
 						out.put(c);
@@ -734,7 +735,7 @@ int main()
 
 			BOOST_FOREACH(const TrackInfo& track, tracks)
 			{
-				std::vector<CoverArt> coverArt;
+				std::vector<Cover> coverArt;
 				client.getCoverTrack(coverArt, track.id);
 
 				std::cout << "Track '" << track << "', spotted " << coverArt.size() << " covers!" << std::endl;

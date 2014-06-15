@@ -525,7 +525,7 @@ void protobuf_AddDesc_collection_2eproto() {
     "nre_id\030\004 \003(\004\032\276\001\n\013GetCoverArt\022=\n\004type\030\001 \002"
     "(\0162/.Remote.AudioCollectionRequest.GetCo"
     "verArt.Type\022\022\n\nrelease_id\030\002 \001(\004\022\020\n\010track"
-    "_id\030\003 \001(\004\022\014\n\004size\030\004 \001(\r\"<\n\004Type\022\032\n\026TypeG"
+    "_id\030\003 \001(\004\022\014\n\004size\030\004 \002(\r\"<\n\004Type\022\032\n\026TypeG"
     "etCoverArtRelease\020\001\022\030\n\024TypeGetCoverArtTr"
     "ack\020\002\"\213\001\n\004Type\022\023\n\017TypeGetRevision\020\001\022\024\n\020T"
     "ypeGetGenreList\020\002\022\025\n\021TypeGetArtistList\020\003"
@@ -2200,7 +2200,7 @@ bool AudioCollectionRequest_GetCoverArt::MergePartialFromCodedStream(
         break;
       }
 
-      // optional uint32 size = 4;
+      // required uint32 size = 4;
       case 4: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
@@ -2250,7 +2250,7 @@ void AudioCollectionRequest_GetCoverArt::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteUInt64(3, this->track_id(), output);
   }
 
-  // optional uint32 size = 4;
+  // required uint32 size = 4;
   if (has_size()) {
     ::google::protobuf::internal::WireFormatLite::WriteUInt32(4, this->size(), output);
   }
@@ -2279,7 +2279,7 @@ void AudioCollectionRequest_GetCoverArt::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteUInt64ToArray(3, this->track_id(), target);
   }
 
-  // optional uint32 size = 4;
+  // required uint32 size = 4;
   if (has_size()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(4, this->size(), target);
   }
@@ -2315,7 +2315,7 @@ int AudioCollectionRequest_GetCoverArt::ByteSize() const {
           this->track_id());
     }
 
-    // optional uint32 size = 4;
+    // required uint32 size = 4;
     if (has_size()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::UInt32Size(
@@ -2378,7 +2378,7 @@ void AudioCollectionRequest_GetCoverArt::CopyFrom(const AudioCollectionRequest_G
 }
 
 bool AudioCollectionRequest_GetCoverArt::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
+  if ((_has_bits_[0] & 0x00000009) != 0x00000009) return false;
 
   return true;
 }

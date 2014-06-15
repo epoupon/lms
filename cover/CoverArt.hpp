@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 
-#include "database/AudioTypes.hpp"
 
 namespace CoverArt
 {

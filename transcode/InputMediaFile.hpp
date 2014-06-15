@@ -7,6 +7,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include "cover/CoverArt.hpp"
+
 #include "Stream.hpp"
 
 
@@ -33,7 +35,7 @@ class InputMediaFile
 		boost::posix_time::time_duration	getDuration(void) const		{return _duration;}
 
 		// Pictures
-		const std::vector< std::vector<unsigned char> >&	getCoverPictures(void) const { return _coverPictures; }
+		const std::vector< CoverArt::CoverArt >&	getCovers(void) const { return _covers; }
 
 		// Stream handling
 		std::vector<Stream>			getStreams(Stream::Type type) const;
@@ -47,7 +49,7 @@ class InputMediaFile
 		std::vector<Stream>			_streams;
 		std::map<Stream::Type, Stream::Id>	_bestStreams;
 
-		std::vector< std::vector<unsigned char> > _coverPictures;
+		std::vector< CoverArt::CoverArt > _covers;
 };
 
 

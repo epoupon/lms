@@ -8,6 +8,32 @@
 
 namespace CoverArt {
 
+
+std::vector<CoverArt>
+Grabber::getFromInputFormatContext(const Av::InputFormatContext& input)
+{
+	std::vector<CoverArt> res;
+
+	try
+	{
+		std::vector< std::vector<unsigned char> > pictures;
+		input.getPictures(pictures);
+
+		BOOST_FOREACH(const std::vector<unsigned char>& picture, pictures)
+			res.push_back( CoverArt("application/octet-stream", picture) );
+
+	}
+	catch(std::exception& e)
+	{
+		std::cerr << "Cannot get pictures: " << e.what() << std::endl;
+	}
+
+	return res;
+}
+
+
+
+
 std::vector<CoverArt>
 Grabber::getFromTrack(Track::pointer track)
 {
@@ -17,12 +43,7 @@ Grabber::getFromTrack(Track::pointer track)
 	{
 		Av::InputFormatContext input(track->getPath());
 
-		std::vector< std::vector<unsigned char> > pictures;
-		input.getPictures(pictures);
-
-		BOOST_FOREACH(const std::vector<unsigned char>& picture, pictures)
-			res.push_back( CoverArt("application/octet-stream", picture) );
-
+		return getFromInputFormatContext(input);
 	}
 	catch(std::exception& e)
 	{

@@ -6,6 +6,7 @@
 #include "InputMediaFile.hpp"
 
 #include "av/InputFormatContext.hpp"
+#include "cover/CoverArtGrabber.hpp"
 
 namespace Transcode
 {
@@ -77,7 +78,7 @@ InputMediaFile::InputMediaFile(const boost::filesystem::path& p)
 			std::cerr << "Cannot find best stream for type " << type << std::endl;
 	}
 
-	input.getPictures( _coverPictures );
+	_covers = CoverArt::Grabber::getFromInputFormatContext(input);
 }
 
 std::vector<Stream>
