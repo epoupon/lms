@@ -2085,7 +2085,7 @@ class AudioCollectionResponse : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // optional .Remote.AudioCollectionResponse.Type type = 1;
+  // required .Remote.AudioCollectionResponse.Type type = 1;
   inline bool has_type() const;
   inline void clear_type();
   static const int kTypeFieldNumber = 1;
@@ -3960,7 +3960,7 @@ inline void AudioCollectionResponse_Track::set_allocated_original_release_date(:
 
 // AudioCollectionResponse
 
-// optional .Remote.AudioCollectionResponse.Type type = 1;
+// required .Remote.AudioCollectionResponse.Type type = 1;
 inline bool AudioCollectionResponse::has_type() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }

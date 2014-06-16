@@ -531,7 +531,7 @@ void protobuf_AddDesc_collection_2eproto() {
     "ypeGetGenreList\020\002\022\025\n\021TypeGetArtistList\020\003"
     "\022\026\n\022TypeGetReleaseList\020\004\022\024\n\020TypeGetTrack"
     "List\020\005\022\023\n\017TypeGetCoverArt\020\006\"\345\n\n\027AudioCol"
-    "lectionResponse\0222\n\004type\030\001 \001(\0162$.Remote.A"
+    "lectionResponse\0222\n\004type\030\001 \002(\0162$.Remote.A"
     "udioCollectionResponse.Type\022\034\n\005error\030\002 \001"
     "(\0132\r.Remote.Error\022:\n\010revision\030\003 \001(\0132(.Re"
     "mote.AudioCollectionResponse.Revision\022=\n"
@@ -5920,7 +5920,7 @@ bool AudioCollectionResponse::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // optional .Remote.AudioCollectionResponse.Type type = 1;
+      // required .Remote.AudioCollectionResponse.Type type = 1;
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
@@ -6057,7 +6057,7 @@ bool AudioCollectionResponse::MergePartialFromCodedStream(
 
 void AudioCollectionResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // optional .Remote.AudioCollectionResponse.Type type = 1;
+  // required .Remote.AudioCollectionResponse.Type type = 1;
   if (has_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->type(), output);
@@ -6113,7 +6113,7 @@ void AudioCollectionResponse::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* AudioCollectionResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // optional .Remote.AudioCollectionResponse.Type type = 1;
+  // required .Remote.AudioCollectionResponse.Type type = 1;
   if (has_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       1, this->type(), target);
@@ -6179,7 +6179,7 @@ int AudioCollectionResponse::ByteSize() const {
   int total_size = 0;
 
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // optional .Remote.AudioCollectionResponse.Type type = 1;
+    // required .Remote.AudioCollectionResponse.Type type = 1;
     if (has_type()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
@@ -6301,6 +6301,7 @@ void AudioCollectionResponse::CopyFrom(const AudioCollectionResponse& from) {
 }
 
 bool AudioCollectionResponse::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
 
   if (has_error()) {
     if (!this->error().IsInitialized()) return false;
