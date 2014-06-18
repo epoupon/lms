@@ -43,13 +43,11 @@ struct ReleaseInfo
 {
 	uint64_t        id;
 	std::string	name;
-	std::size_t	nbTracks;
-	boost::posix_time::time_duration duration;
 };
 
 std::ostream& operator<<(std::ostream& os, const ReleaseInfo& info)
 {
-	os << "id = " << info.id << ", name = '" << info.name << "', tracks = " << info.nbTracks << ", duration = " << info.duration;
+	os << "id = " << info.id << ", name = '" << info.name;
 	return os;
 }
 
@@ -264,6 +262,12 @@ class TestClient
 			recvMsg(response);
 
 			// Process message
+			if (!response.audio_collection_response().has_type())
+				throw std::runtime_error("Missing type!");
+
+//			if (!response.audio_collection_response().type() != Remote::ServerMessage::AudioCollectionResponse::TypeReleaseList)
+//				throw std::runtime_error("Bad type!");
+
 			if (!response.has_audio_collection_response())
 				throw std::runtime_error("not an audio_collection_response!");
 
@@ -278,8 +282,6 @@ class TestClient
 				ReleaseInfo release;
 				release.id = response.audio_collection_response().release_list().releases(i).id();
 				release.name = response.audio_collection_response().release_list().releases(i).name();
-				release.duration = boost::posix_time::seconds(response.audio_collection_response().release_list().releases(i).duration_secs());
-				release.nbTracks = response.audio_collection_response().release_list().releases(i).nb_tracks();
 
 				releases.push_back( release );
 				nbAdded++;

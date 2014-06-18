@@ -1,5 +1,8 @@
 #include <algorithm>    // std::min
 
+#include <boost/locale.hpp>
+
+
 #include <boost/foreach.hpp>
 
 #include "AudioCollectionRequestHandler.hpp"
@@ -111,7 +114,7 @@ AudioCollectionRequestHandler::processGetGenres(const AudioCollectionRequest::Ge
 	{
 		AudioCollectionResponse_Genre* genre = response.add_genres();
 
-		genre->set_name((*it)->getName());
+		genre->set_name( std::string( boost::locale::conv::to_utf<char>((*it)->getName(), "UTF-8") ) );
 		genre->set_id(it->id());
 	}
 
@@ -127,8 +130,6 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 		std::cerr << "No batch parameters found!" << std::endl;
 		return false;
 	}
-
-	std::cout << "Batch offset = " << request.batch_parameter().offset() << ", batch size = " << request.batch_parameter().size() << std::endl;
 
 	std::size_t  size = request.batch_parameter().size();
 	if (!size)
@@ -147,10 +148,8 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 	{
 		AudioCollectionResponse_Artist* artist = response.add_artists();
 
-		artist->set_name((*it)->getName());
-		artist->set_nb_releases(0);		// TODO
+		artist->set_name( std::string( boost::locale::conv::to_utf<char>((*it)->getName(), "UTF-8") ) );
 		artist->set_id(it->id());
-		std::cout << "Adding artist '" << artist->name() << "'" << std::endl;
 	}
 
 	return true;
@@ -185,13 +184,8 @@ AudioCollectionRequestHandler::processGetReleases(const AudioCollectionRequest::
 	{
 		AudioCollectionResponse_Release* release = response.add_releases();
 
-		release->set_name((*it)->getName());
+		release->set_name( std::string( boost::locale::conv::to_utf<char>((*it)->getName(), "UTF-8") ) );
 		release->set_id(it->id());
-
-		// WARNING: next lines are very time consuming!
-		release->set_nb_tracks( (*it)->getTracks().size() );
-		release->set_duration_secs( (*it)->getDuration().total_seconds() );
-
 	}
 
 	return true;
@@ -243,7 +237,7 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 		track->set_artist_id( (*it)->getArtist().id() );
 		track->set_release_id( (*it)->getRelease().id() );
 
-		track->set_name( (*it)->getName() );
+		track->set_name( std::string( boost::locale::conv::to_utf<char>((*it)->getName(), "UTF-8") ) );
 		track->set_duration_secs( (*it)->getDuration().total_seconds() );
 //		if (!(*it)->getCreationTime().is_special())
 //			track->set_release_date(  boost::posix_time::to_simple_string((*it)->getCreationTime()) );

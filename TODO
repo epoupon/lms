@@ -15,7 +15,8 @@
 - Group video in "video groups". Each video may has sub groups (current "Path" class)
 	- Simplify database and remove the Path class
 - Use limits for strings?
-- Filter non valid UTF-8 data in strings?
+- Convert to UTF-8 in name strings
+- Manage a global database revision number
 
 [Audio]
 - ReleaseView/ArtistView/GenreView: <All> -> Track count for this special category. Easier: add a special entry '<All>' that contains everything?

@@ -122,7 +122,6 @@ message AudioCollectionResponse
 		required uint64	id		= 1;	// Artist Id
 
 		required string name		= 2;
-		required uint32 nb_releases	= 3;
 	}
 
 	message Release
@@ -130,12 +129,6 @@ message AudioCollectionResponse
 		required uint64	id		= 1;	// Release id
 
 		required string name		= 2;
-
-		required uint32 nb_tracks	= 3;
-		required uint32 duration_secs	= 4;
-
-		optional string	release_date	= 5;
-
 	}
 
 	message Track
@@ -155,25 +148,23 @@ message AudioCollectionResponse
 	}
 
 	enum Type {
-		TypeError	= 1;
-		TypeRevision	= 2;
-		TypeGenreList	= 3;
-		TypeArtistList	= 4;
-		TypeReleaseList	= 5;
-		TypeTrackList	= 6;
-		TypeCoverArt	= 7;
+		TypeRevision	= 1;
+		TypeGenreList	= 2;
+		TypeArtistList	= 3;
+		TypeReleaseList	= 4;
+		TypeTrackList	= 5;
+		TypeCoverArt	= 6;
 	}
 
 
 	required Type		type		= 1;
 
-	optional Error		error		= 2;
-	optional Revision	revision	= 3;
-	optional GenreList	genre_list	= 4;
-	optional ArtistList	artist_list	= 5;
-	optional ReleaseList	release_list	= 6;
-	optional TrackList	track_list	= 7;
-	repeated CoverArt	cover_art	= 8;
+	optional Revision	revision	= 2;
+	optional GenreList	genre_list	= 3;
+	optional ArtistList	artist_list	= 4;
+	optional ReleaseList	release_list	= 5;
+	optional TrackList	track_list	= 6;
+	repeated CoverArt	cover_art	= 7;
 }
 
 
