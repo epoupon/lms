@@ -5,6 +5,7 @@
 #include <memory>
 
 #include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 
 #include "RequestHandler.hpp"
 
@@ -20,16 +21,18 @@ class Connection : public std::enable_shared_from_this<Connection>
 {
 	public:
 
+		typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> 	ssl_socket;
+
 		Connection(const Connection&) = delete;
 		Connection& operator=(const Connection&) = delete;
 
 		typedef std::shared_ptr<Connection> pointer;
 
 		/// Construct a connection with the given io_service.
-		explicit Connection(boost::asio::ip::tcp::socket socket,
+		explicit Connection(boost::asio::io_service& ioService, boost::asio::ssl::context& context,
 				ConnectionManager& manager, RequestHandler& handler);
 
-		boost::asio::ip::tcp::socket& socket();
+		ssl_socket::lowest_layer_type& getSocket()	{return _socket.lowest_layer();}
 
 		/// Start the first asynchronous operation for the connection.
 		void start();
@@ -40,6 +43,12 @@ class Connection : public std::enable_shared_from_this<Connection>
 	private:
 		bool _closing;
 
+		/// Read a new message on the the connection
+		void readMsg();
+
+		/// Handle completion of ssl handshake
+		void handleHandshake(const boost::system::error_code& error);
+
 		/// Handle completion of a read operation.
 		void handleReadHeader(const boost::system::error_code& e,
 					std::size_t bytes_transferred);
@@ -48,7 +57,7 @@ class Connection : public std::enable_shared_from_this<Connection>
 					std::size_t bytes_transferred);
 
 		/// Socket for the connection.
-		boost::asio::ip::tcp::socket _socket;
+		ssl_socket _socket;
 
 		/// The manager for this connection.
 		ConnectionManager& _connectionManager;

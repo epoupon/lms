@@ -37,6 +37,16 @@ AC_CHECK_LIB([avformat],
 	     ,
 	     [AC_MSG_ERROR([libavformat not found!])])
 
+AC_CHECK_LIB([ssl],
+	     [SSL_CTX_new],
+	     ,
+	     [AC_MSG_ERROR([libssl not found!])])
+
+AC_CHECK_LIB([crypto],
+	     [ASN1_STRING_to_UTF8],
+	     ,
+	     [AC_MSG_ERROR([libcrypto not found!])])
+
 AC_CHECK_LIB([boost_system],
 		[main],
 		,

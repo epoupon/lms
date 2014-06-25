@@ -15,26 +15,49 @@
 namespace Remote {
 namespace Server {
 
-Connection::Connection(boost::asio::ip::tcp::socket socket,
+Connection::Connection(boost::asio::io_service& ioService,
+			boost::asio::ssl::context& context,
 			ConnectionManager& manager,
 			RequestHandler& handler)
 : _closing(false),
-_socket(std::move(socket)),
+_socket(ioService, context),
 _connectionManager(manager),
 _requestHandler(handler)
 {
 	std::cout << "Server::Connection::Connection, Creating connection" << std::endl;
 }
 
-boost::asio::ip::tcp::socket&
-Connection::socket()
-{
-  return _socket;
-}
-
 void
 Connection::start()
 {
+	std::cout << "Starting connection..." << std::endl;
+	_socket.async_handshake(boost::asio::ssl::stream_base::server,
+			boost::bind(&Connection::handleHandshake, this,
+				boost::asio::placeholders::error));
+}
+
+void
+Connection::handleHandshake(const boost::system::error_code& error)
+{
+	if (!error)
+	{
+		std::cout << "Handshake successfully performed... Now reading messages" << std::endl;
+		readMsg();
+	}
+	else if (error != boost::asio::error::operation_aborted)
+	{
+		std::cerr << "Connection::handleHandshake: " << error.message() << std::endl;
+		_connectionManager.stop(shared_from_this());
+	}
+	else
+		std::cerr << "Handshake error: " << error.message() << std::endl;
+}
+
+
+void
+Connection::readMsg()
+{
+	// Read a header first
 	boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(Remote::Header::size);
 
 	boost::asio::async_read(_socket,
@@ -50,13 +73,19 @@ Connection::stop()
 {
 	if (!_closing)
 	{
+		boost::system::error_code ec;
+
 		_closing = true;
 		std::cout << "Server::Connection::stop, Stopping connection " << this << std::endl;
-		_socket.close();
+		_socket.shutdown(ec);
+
+		if (ec)
+			std::cerr << "Error while shutting down connection " << this << ": " << ec.message() << std::endl;
+
 		std::cout << "Server::Connection::stop, connection stopped " << this << std::endl;
 	}
 	else
-		std::cout << "Close in progress..." << std::endl;
+		std::cout << "Stop: close already in progress..." << std::endl;
 }
 
 void
@@ -83,7 +112,7 @@ Connection::handleReadHeader(const boost::system::error_code& error, std::size_t
 			return;
 		}
 
-		// Now read the real message
+		// Now read the real message payload
 		boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(header.getDataSize());
 
 		boost::asio::async_read(_socket,
@@ -178,7 +207,9 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 				_connectionManager.stop(shared_from_this());
 			}
 		}
-		start();
+
+		// All good here, read another message
+		readMsg();
 
 		// Initiate graceful Connection closure.
 		//		boost::system::error_code ignored_ec;

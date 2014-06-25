@@ -11,8 +11,6 @@
 #include "remote/messages/Header.hpp"
 #include "remote/messages/messages.pb.h"
 
-#include "av/Common.hpp"
-
 #include "TestDatabase.hpp"
 
 struct GenreInfo
@@ -80,44 +78,22 @@ struct Cover
 };
 
 // Ugly class for testing purposes
-class TestServer
-{
-	public:
-		TestServer(boost::asio::ip::tcp::endpoint endpoint)
-			: _db(TestDatabase::create()),
-			 _server(_ioService, endpoint, _db->getPath()),
-			 _thread( boost::bind(&TestServer::threadEntry, this))
-		{
-			_server.run();
-		}
-
-		~TestServer()
-		{
-			_server.stop();
-			_thread.join();
-		}
-
-	private:
-
-		void threadEntry(void)
-		{
-			_ioService.run();
-		}
-
-		boost::asio::io_service			_ioService;
-		std::unique_ptr<DatabaseHandler>	_db;
-		Remote::Server::Server			_server;
-		std::thread				_thread;
-
-};
 
 class TestClient
 {
 	public:
 		TestClient(boost::asio::ip::tcp::endpoint endpoint)
-		:_socket(_ioService)
+		: _context(boost::asio::ssl::context::sslv23),		// be large on this
+		  _socket(_ioService, _context)
 		{
-			_socket.connect(endpoint);
+			boost::asio::ip::tcp::resolver resolver(_ioService);
+
+			_socket.set_verify_mode(boost::asio::ssl::verify_peer);
+			_socket.set_verify_callback(boost::bind(&TestClient::verifyCertificate, this, _1, _2));
+
+			boost::asio::connect(_socket.lowest_layer(), resolver.resolve(endpoint));
+
+			_socket.handshake(boost::asio::ssl::stream_base::client);
 		}
 
 		void getArtists(std::vector<ArtistInfo>& artists)
@@ -433,6 +409,19 @@ class TestClient
 
 	private:
 
+		bool verifyCertificate(bool preverified, boost::asio::ssl::verify_context& ctx)
+		{
+			// In this example we will simply print the certificate's subject name.
+			std::array<char, 256> subject_name;
+
+			X509* cert = X509_STORE_CTX_get_current_cert(ctx.native_handle());
+			X509_NAME_oneline(X509_get_subject_name(cert), subject_name.data(), subject_name.size());
+
+			std::cout << "Verifying '" << std::string(subject_name.data()) << "', preverified = " << std::boolalpha << preverified << std::endl;
+
+			return true; // preverified;
+		}
+
 		void mediaAudioPrepare(uint64_t audioId)
 		{
 
@@ -646,11 +635,14 @@ class TestClient
 			}
 		}
 
-		boost::asio::io_service		_ioService;
-		boost::asio::ip::tcp::socket	_socket;
+		typedef   boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssl_socket;
 
-		boost::asio::streambuf _inputStreamBuf;
-		boost::asio::streambuf _outputStreamBuf;
+		boost::asio::io_service		_ioService;
+		boost::asio::ssl::context	_context;
+		ssl_socket			_socket;
+
+		boost::asio::streambuf	_inputStreamBuf;
+		boost::asio::streambuf	_outputStreamBuf;
 
 };
 
@@ -658,19 +650,13 @@ class TestClient
 int main()
 {
 	try {
-		// lib init
-		Av::AvInit();
-		Transcode::AvConvTranscoder::init();
-
 		bool extendedTests = true;
 
-		// Runs in its own thread
-		// Listen on any
-		TestServer	testServer( boost::asio::ip::tcp::endpoint( boost::asio::ip::tcp::v4(), 5081));
+		std::cout << "Running test... extendedTests = " << std::boolalpha << extendedTests << std::endl;
 
 		// Client
 		// connect to loopback
-		TestClient	client( boost::asio::ip::tcp::endpoint( boost::asio::ip::address_v4::loopback(), 5081));
+		TestClient	client( boost::asio::ip::tcp::endpoint( boost::asio::ip::address_v4::loopback(), 5080));
 
 		// ****** Artists *********
 		std::vector<ArtistInfo>	artists;

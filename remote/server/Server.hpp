@@ -2,6 +2,8 @@
 #define REMOTE_SERVER_HPP
 
 #include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
+
 #include <boost/filesystem.hpp>
 
 #include "Connection.hpp"
@@ -32,7 +34,7 @@ class Server
 	private:
 		/// Perform an asynchronous accept operation.
 		void asyncAccept();
-		void handleAccept(boost::system::error_code ec);
+		void handleAccept(std::shared_ptr<Connection> newConnection, boost::system::error_code ec);
 
 		boost::asio::io_service& _ioService;
 
@@ -42,8 +44,7 @@ class Server
 		/// The connection manager which owns all live connections.
 		ConnectionManager _connectionManager;
 
-		/// The next socket to be accepted.
-		boost::asio::ip::tcp::socket _socket;
+		boost::asio::ssl::context _context;
 
 		/// The handler for all incoming requests.
 		RequestHandler _requestHandler;
