@@ -18,6 +18,11 @@ ServiceManager::ServiceManager()
 	_signalSet.add(SIGHUP);
 }
 
+ServiceManager::~ServiceManager()
+{
+	stopServices();
+}
+
 void
 ServiceManager::run()
 {
@@ -25,8 +30,15 @@ ServiceManager::run()
 	asyncWaitSignals();
 
 	std::cout << "ServiceManager::run Waiting for events..." << std::endl;
-	// Wait for events
-	_ioService.run();
+	try {
+		// Wait for events
+		_ioService.run();
+	}
+	catch( std::exception& e )
+	{
+		std::cerr << "Caugh exception in service : " << e.what() << std::endl;
+		stopServices();
+	}
 
 	std::cout << "ServiceManager::run complete!" << std::endl;
 }

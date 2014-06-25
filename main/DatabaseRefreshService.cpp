@@ -6,27 +6,26 @@ DatabaseRefreshService::DatabaseRefreshService(boost::asio::io_service& ioServic
 : _metadataParser(),
  _database( p, _metadataParser)
 {
-
 	// TODO read from the database itself!
 	// Move this code in the database class
 	_database.watchDirectory( WatchedDirectory("/storage/common/Media/Son/Metal", WatchedDirectory::Audio) );
 	_database.watchDirectory( WatchedDirectory("/storage/common/Media/Video", WatchedDirectory::Video) );
 
-	// TODO launch thread
-	boost::thread refreshThread(boost::bind(&Database::refresh, &_database));
 }
 
 void
 DatabaseRefreshService::start(void)
 {
-	std::cout << "DatabaseRefreshService::start, not implemented" << std::endl;
-
+//	_thread = boost::thread(boost::bind(&Database::refresh, &_database));
 }
 
 void
 DatabaseRefreshService::stop(void)
 {
-	std::cout << "DatabaseRefreshService::stop, not implemented" << std::endl;
+	std::cout << "DatabaseRefreshService::stop, processing..." << std::endl;
+	_thread.interrupt();
+	_thread.join();
+	std::cout << "DatabaseRefreshService::stop, process done" << std::endl;
 }
 
 void

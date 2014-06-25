@@ -1,4 +1,7 @@
 
+[ServiceManager]
+- Rework the whole start/stop/try/cach/thread/interrupts things
+
 [Users]
 - Do the feature
 	- Admin account to add/remove users, add path to watch for Audio/Video files

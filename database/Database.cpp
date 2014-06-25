@@ -1,6 +1,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
+#include <boost/thread.hpp>
 
 #include "Database.hpp"
 #include "Checksum.hpp"
@@ -239,6 +240,8 @@ Database::refreshAudioDirectory( const boost::filesystem::path& p)
 		std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(files));
 
 		BOOST_FOREACH(const boost::filesystem::path& file, files) {
+
+			boost::this_thread::interruption_point();
 
 			try {
 				if (boost::filesystem::is_directory(file)) {

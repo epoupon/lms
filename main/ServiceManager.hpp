@@ -12,9 +12,12 @@ class ServiceManager
 	public:
 
 		ServiceManager();
+		~ServiceManager();
 
 		void stopService(Service::pointer service);
 		void startService(Service::pointer service);
+
+		void stopAllServices();
 
 		// Return in case of failure/stop by user
 		void run();

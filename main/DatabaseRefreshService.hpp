@@ -1,6 +1,7 @@
 #ifndef DB_REFRESH_SERVICE_HPP
 #define DB_REFRESH_SERVICE_HPP
 
+#include <boost/thread.hpp>
 #include <boost/asio/io_service.hpp>
 
 #include "metadata/AvFormat.hpp"
@@ -19,6 +20,8 @@ class DatabaseRefreshService : public Service
 		void restart(void);
 
 	private:
+
+		boost::thread		_thread;
 
 		MetaData::AvFormat	_metadataParser;
 		Database		_database;
