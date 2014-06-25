@@ -1,3 +1,4 @@
+#include <boost/thread.hpp>
 
 #include "DatabaseRefreshService.hpp"
 
@@ -12,7 +13,7 @@ DatabaseRefreshService::DatabaseRefreshService(boost::asio::io_service& ioServic
 	_database.watchDirectory( WatchedDirectory("/storage/common/Media/Video", WatchedDirectory::Video) );
 
 	// TODO launch thread
-	//	boost::thread refreshThread(boost::bind(&Database::refresh, &database));
+	boost::thread refreshThread(boost::bind(&Database::refresh, &_database));
 }
 
 void

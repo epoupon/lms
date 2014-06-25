@@ -14,9 +14,9 @@
 - Create a new type: "share", that handles every other types in a directory based share?
 - Group video in "video groups". Each video may has sub groups (current "Path" class)
 	- Simplify database and remove the Path class
-- Use limits for strings?
-- Convert to UTF-8 in name strings
+- Use size limits for strings?
 - Manage a global database revision number
+- Process only files whose extensions are well known in audio/video world (avoid useless parsing/errors)
 
 [Audio]
 - ReleaseView/ArtistView/GenreView: <All> -> Track count for this special category. Easier: add a special entry '<All>' that contains everything?
@@ -35,7 +35,7 @@
 	- Use Groups/SubGroups to organize videos (WTreeView?)
 
 [Remote API]
-- Think about a remote API to get/retrieve media (i.e. for mobile apps)
+- Use SSL based sockets
 
 [Layout]
 - Make it mobile browser compatible

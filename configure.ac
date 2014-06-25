@@ -52,10 +52,10 @@ AC_CHECK_LIB(	[boost_locale],
 		,
 		[AC_MSG_ERROR([libboost_locale not found!])])
 
-#AC_CHECK_LIB(	[boost_thread],
-# 		[main],
-#		,
-#		[AC_MSG_ERROR([libboost_thread not found!])])
+AC_CHECK_LIB(	[boost_thread],
+ 		[main],
+		,
+		[AC_MSG_ERROR([libboost_thread not found!])])
 
 #AC_CHECK_LIB(	[boost_date_time],
 #		[main],

@@ -39,6 +39,9 @@ Grabber::getFromTrack(Track::pointer track)
 {
 	std::vector<CoverArt> res;
 
+	if (!track)
+		return std::vector<CoverArt>();
+
 	try
 	{
 		Av::InputFormatContext input(track->getPath());
@@ -56,6 +59,9 @@ Grabber::getFromTrack(Track::pointer track)
 std::vector<CoverArt>
 Grabber::getFromRelease(Release::pointer release)
 {
+	if (!release)
+		return std::vector<CoverArt>();
+
 	// TODO
 	// Check if there is an image file in the directory of the release
 	// For now, just get the cover art from the first track of the release

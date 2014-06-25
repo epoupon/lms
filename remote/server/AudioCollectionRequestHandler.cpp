@@ -2,7 +2,6 @@
 
 #include <boost/locale.hpp>
 
-
 #include <boost/foreach.hpp>
 
 #include "AudioCollectionRequestHandler.hpp"
@@ -275,7 +274,15 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 					AudioCollectionResponse_CoverArt* cover_art = response.add_cover_art();
 
 					if (request.has_size())
-						coverArt.scale(request.size());
+					{
+						std::size_t size = request.size();
+						if (size > _maxCoverArtSize || size == 0)
+							size = _maxCoverArtSize;
+						if (size < _minCoverArtSize)
+							size = _minCoverArtSize;
+
+						coverArt.scale(size);
+					}
 
 					cover_art->set_mime_type(coverArt.getMimeType());
 					cover_art->set_data( std::string( coverArt.getData().begin(), coverArt.getData().end()) );

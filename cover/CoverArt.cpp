@@ -13,6 +13,10 @@ bool
 CoverArt::scale(std::size_t size)
 {
 	bool res = false;
+
+	if (!size)
+		return false;
+
 	try {
 
 		boost::gil::rgb8_image_t source;
