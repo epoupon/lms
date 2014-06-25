@@ -8,17 +8,25 @@ Warning: your distrib may provide an outdated wt library. Latest Wt highly recom
 
 II) BUILD
 
-autoreconf -vfi
-mkdir build
-cd build
-../configure
+# autoreconf -vfi
+# mkdir build
+# cd build
+# ../configure
 
 (configure will complain if a mandatory library is missing)
 
-make -j 4
+# make -j 4
 
 
 III) RUNNING
 
-./lms --docroot=../ --http-port=8080 --http-address=0.0.0.0
+# ./lms --docroot=../ --http-port=8080 --http-address=0.0.0.0
+
+IV) Setting up SSL (required by the Remote mobile service)
+
+Generate a dh file:
+# openssl dhparam -out dh2048.pem 2048
+
+Generate a self signed certificate:
+# openssl req -x509 -out cert.pem -keyout privkey.pem -newkey rsa:4096
 
