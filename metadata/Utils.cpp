@@ -40,8 +40,10 @@ bool readList(const std::string& str, const std::string& separators, std::list<s
 	BOOST_FOREACH(char c, str) {
 
 		if (separators.find(c) != std::string::npos) {
-			results.push_back(curStr);
-			curStr.clear();
+			if (!curStr.empty()) {
+				results.push_back(string_to_utf8(curStr));
+				curStr.clear();
+			}
 		}
 		else {
 			if (curStr.empty() && std::isspace(c))
@@ -52,7 +54,7 @@ bool readList(const std::string& str, const std::string& separators, std::list<s
 	}
 
 	if (!curStr.empty())
-		results.push_back(curStr);
+		results.push_back(string_to_utf8(curStr));
 
 	return !str.empty();
 }

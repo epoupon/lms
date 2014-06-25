@@ -44,15 +44,16 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 
 		items.insert( std::make_pair(MetaData::Duration, boost::posix_time::time_duration( boost::posix_time::seconds( input.getDurationSecs() )) ));
 
+		// Make sure to convert strings into UTF-8
 		std::map<std::string, std::string>::const_iterator it;
 		for (it = metadata.begin(); it != metadata.end(); ++it)
 		{
 			if (boost::iequals(it->first, "artist"))
-				items.insert( std::make_pair(MetaData::Artist, it->second ));
+				items.insert( std::make_pair(MetaData::Artist, string_to_utf8(it->second)) );
 			else if (boost::iequals(it->first, "album"))
-				items.insert( std::make_pair(MetaData::Album, it->second ));
+				items.insert( std::make_pair(MetaData::Album, string_to_utf8(it->second) ));
 			else if (boost::iequals(it->first, "title"))
-				items.insert( std::make_pair(MetaData::Title, it->second ));
+				items.insert( std::make_pair(MetaData::Title, string_to_utf8(it->second) ));
 			else if (boost::iequals(it->first, "track")) {
 				std::size_t number;
 				if (readAs<std::size_t>(it->second, number))

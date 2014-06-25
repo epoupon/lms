@@ -4,6 +4,8 @@
 #include <string>
 #include <list>
 
+#include <boost/locale.hpp>
+
 namespace MetaData
 {
 
@@ -18,7 +20,13 @@ static inline bool readAs(const std::string& str, T& data)
 	return iss >> data;
 }
 
+std::string
+static inline string_to_utf8(const std::string& str)
+{
+	return boost::locale::conv::to_utf<char>(str, "UTF-8");
 }
+
+} // namespace MetaData
 
 #endif
 

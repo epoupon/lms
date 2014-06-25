@@ -240,14 +240,19 @@ Database::refreshAudioDirectory( const boost::filesystem::path& p)
 
 		BOOST_FOREACH(const boost::filesystem::path& file, files) {
 
-			if (boost::filesystem::is_directory(file)) {
-				refreshAudioDirectory( file );
+			try {
+				if (boost::filesystem::is_directory(file)) {
+					refreshAudioDirectory( file );
+				}
+				else if (boost::filesystem::is_regular(file)) {
+					processAudioFile( file );
+				}
+				else {
+					std::cout << "Skipped '" << file << "' (not regular)" << std::endl;
+				}
 			}
-			else if (boost::filesystem::is_regular(file)) {
-				processAudioFile( file );
-			}
-			else {
-				std::cout << "Skipped '" << file << "' (not regular)" << std::endl;
+			catch(std::exception& e) {
+				std::cerr << "Exception while accessing '" << file << ": " << e.what() << std::endl;
 			}
 		}
 	}
