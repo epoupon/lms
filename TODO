@@ -32,6 +32,10 @@
 - OGG metadata -> properly handle metadata nested in the audio stream
 - TrackView : when udating the view, reselect the current playing track
 - Filters: use directly the id as constraint, instead of the name?
+- Implement a playlist:
+	- Drag and drop all objets from the views (genre, artist, release, track) in the playlist?
+	- Add 'play/add last' button on mouse hover?
+	- Save/Load playlists?
 
 [Video]
 - View the Videos in a WtTableView ?
