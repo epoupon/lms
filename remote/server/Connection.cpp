@@ -190,6 +190,10 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 				std::cerr << "cannot write header: " << error.message() << std::endl;
 				_connectionManager.stop(shared_from_this());
 			}
+			else
+			{
+				assert(n == Remote::Header::size);
+			}
 
 			// Now send serialized payload
 			n = boost::asio::write(_socket,
@@ -197,15 +201,17 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 					boost::asio::transfer_exactly(_outputStreamBuf.size()),
 					ec);
 
-			assert(n == _outputStreamBuf.size());
-
-			_outputStreamBuf.consume(n);
-
 			if (ec)
 			{
 				std::cerr << "cannot write msg: " << error.message() << std::endl;
 				_connectionManager.stop(shared_from_this());
 			}
+			else
+			{
+				assert(n == _outputStreamBuf.size());
+				_outputStreamBuf.consume(n);
+			}
+
 		}
 
 		// All good here, read another message
