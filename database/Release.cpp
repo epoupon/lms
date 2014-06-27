@@ -4,6 +4,8 @@
 
 #include "AudioTypes.hpp"
 
+namespace Database {
+
 Release::Release(const std::string& name)
 : _name(name)
 {
@@ -72,3 +74,4 @@ Release::getDuration(void) const
 }
 
 
+} // namespace Database

@@ -1,9 +1,10 @@
 
 #include "FileTypes.hpp"
 
+namespace Database {
+
 Path::Path()
 {}
-
 
 Path::Path(boost::filesystem::path p)
 : _filePath (p.string()),
@@ -100,3 +101,5 @@ Path::getFileName(void) const
 	else
 		return boost::filesystem::path(_filePath).filename().string();
 }
+
+} // namespace Database

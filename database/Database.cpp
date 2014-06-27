@@ -10,6 +10,8 @@
 
 #include "transcode/InputMediaFile.hpp"
 
+namespace Database {
+
 Database::Database(boost::filesystem::path dbPath, MetaData::Parser& parser)
  : _db(dbPath),
    _metadataParser(parser)
@@ -428,3 +430,4 @@ Database::processVideoFile( const boost::filesystem::path& file)
 	}
 }
 
+} // namespace Database

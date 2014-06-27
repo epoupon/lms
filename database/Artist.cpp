@@ -1,5 +1,7 @@
 #include "AudioTypes.hpp"
 
+namespace Database
+{
 
 Artist::Artist(const std::string& name)
 : _name(name)
@@ -35,3 +37,6 @@ Artist::getAll(Wt::Dbo::Session& session, int offset, int size)
 {
 	return session.find<Artist>().offset(offset).limit(size);
 }
+
+} // namespace Database
+

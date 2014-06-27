@@ -19,24 +19,24 @@ int main(void)
 
 		std::cout << "Creating objects..." << std::endl;
 
-		assert( Path::getRoots(database.getSession()).empty() );
+		assert( Database::Path::getRoots(database.getSession()).empty() );
 
-		Path::pointer parentPath = database.getSession().add(new Path("/PARENT") );
+		Database::Path::pointer parentPath = database.getSession().add(new Database::Path("/PARENT") );
 
-		assert( Path::getRoots(database.getSession()).size() == 1);
+		assert( Database::Path::getRoots(database.getSession()).size() == 1);
 
 		for (std::size_t i = 0; i < 5; ++i)
 		{
 			std::ostringstream oss; oss << "/PARENT/toto" << i << ".mp4";
-			Path::pointer childPath = database.getSession().add(new Path( oss.str()) );
+			Database::Path::pointer childPath = database.getSession().add(new Database::Path( oss.str()) );
 
 			{
 				std::ostringstream oss; oss << "/PARENT/toto" << i << "_dir";
-				Path::pointer childDirPath = database.getSession().add(new Path( oss.str()) );
+				Database::Path::pointer childDirPath = database.getSession().add(new Database::Path( oss.str()) );
 				for (std::size_t j = 0; j < 6; ++j) {
 
 					std::ostringstream oss2; oss2 << "/PARENT/toto" << i << "_dir/" << j << ".mp4";
-					Path::pointer childPath2 = database.getSession().add(new Path( oss2.str()) );
+					Database::Path::pointer childPath2 = database.getSession().add(new Database::Path( oss2.str()) );
 
 					childDirPath.modify()->addChild( childPath2 );
 				}
@@ -50,10 +50,10 @@ int main(void)
 		}
 
 		{
-			std::vector<Path::pointer> roots = Path::getRoots(database.getSession());
+			std::vector<Database::Path::pointer> roots = Database::Path::getRoots(database.getSession());
 
 			std::cout << "There are now " << roots.size() << " roots!" << std::endl;
-			BOOST_FOREACH(Path::pointer root, roots)
+			BOOST_FOREACH(Database::Path::pointer root, roots)
 			{
 				std::cout << "ROOT Path = " << root->getPath() << std::endl;
 			}
@@ -63,13 +63,12 @@ int main(void)
 
 		std::cout << "PRINT objects..." << std::endl;
 
-		std::vector< Path::pointer > pathes = parentPath->getChilds();
-		BOOST_FOREACH(Path::pointer path, pathes)
+		std::vector< Database::Path::pointer > pathes = parentPath->getChilds();
+		BOOST_FOREACH(Database::Path::pointer path, pathes)
 		{
 			std::cout << "Found a child: " << path->getPath()  << std::endl;
 			std::cout << "Parent's = " << path->getParent()->getPath() << std::endl;
 		}
-
 
 
 		// make some empty root dirs

@@ -105,9 +105,9 @@ AudioCollectionRequestHandler::processGetGenres(const AudioCollectionRequest::Ge
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Wt::Dbo::collection<Genre::pointer> genres = Genre::getAll( _db.getSession(), request.batch_parameter().offset(), static_cast<int>(size));
+	Wt::Dbo::collection<Database::Genre::pointer> genres = Database::Genre::getAll( _db.getSession(), request.batch_parameter().offset(), static_cast<int>(size));
 
-	typedef Wt::Dbo::collection< Genre::pointer > Genres;
+	typedef Wt::Dbo::collection< Database::Genre::pointer > Genres;
 
 	for (Genres::const_iterator it = genres.begin(); it != genres.end(); ++it)
 	{
@@ -139,9 +139,9 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Wt::Dbo::collection<Artist::pointer> artists = Artist::getAll( _db.getSession(), request.batch_parameter().offset(), static_cast<int>(size) );
+	Wt::Dbo::collection<Database::Artist::pointer> artists = Database::Artist::getAll( _db.getSession(), request.batch_parameter().offset(), static_cast<int>(size) );
 
-	typedef Wt::Dbo::collection< Artist::pointer > Artists;
+	typedef Wt::Dbo::collection< Database::Artist::pointer > Artists;
 
 	for (Artists::const_iterator it = artists.begin(); it != artists.end(); ++it)
 	{
@@ -169,15 +169,15 @@ AudioCollectionRequestHandler::processGetReleases(const AudioCollectionRequest::
 		size = _maxListReleases;
 	size = std::min(size, _maxListReleases);
 
-	std::vector<Artist::id_type> artistIds;
+	std::vector<Database::Artist::id_type> artistIds;
 	for (int id = 0; id < request.artist_id_size(); ++id)
 		artistIds.push_back( request.artist_id(id) );
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Wt::Dbo::collection<Release::pointer> releases = Release::getAll( _db.getSession(), artistIds, request.batch_parameter().offset(), static_cast<int>(size));
+	Wt::Dbo::collection<Database::Release::pointer> releases = Database::Release::getAll( _db.getSession(), artistIds, request.batch_parameter().offset(), static_cast<int>(size));
 
-	typedef Wt::Dbo::collection< Release::pointer > Releases;
+	typedef Wt::Dbo::collection< Database::Release::pointer > Releases;
 
 	for (Releases::const_iterator it = releases.begin(); it != releases.end(); ++it)
 	{
@@ -206,25 +206,29 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 	size = std::min(size, _maxListTracks);
 
 	// Get filters
-	std::vector<Artist::id_type> artistIds;
+	std::vector<Database::Artist::id_type> artistIds;
 	for (int id = 0; id < request.artist_id_size(); ++id)
 		artistIds.push_back( request.artist_id(id) );
 
-	std::vector<Release::id_type> releaseIds;
+	std::vector<Database::Release::id_type> releaseIds;
 	for (int id = 0; id < request.release_id_size(); ++id)
 		releaseIds.push_back( request.release_id(id) );
 
-	std::vector<Release::id_type> genreIds;
+	std::vector<Database::Release::id_type> genreIds;
 	for (int id = 0; id < request.genre_id_size(); ++id)
 		genreIds.push_back( request.genre_id(id) );
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Wt::Dbo::collection<Track::pointer> tracks = Track::getAll( _db.getSession(),
-							artistIds, releaseIds, genreIds,
-							request.batch_parameter().offset(), static_cast<int>(size));
+	Wt::Dbo::collection<Database::Track::pointer> tracks
+		= Database::Track::getAll( _db.getSession(),
+				artistIds,
+				releaseIds,
+				genreIds,
+				request.batch_parameter().offset(),
+				static_cast<int>(size));
 
-	typedef Wt::Dbo::collection< Track::pointer > Tracks;
+	typedef Wt::Dbo::collection< Database::Track::pointer > Tracks;
 
 	for (Tracks::const_iterator it = tracks.begin(); it != tracks.end(); ++it)
 	{
@@ -241,7 +245,7 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 //		if (!(*it)->getCreationTime().is_special())
 //			track->set_release_date(  boost::posix_time::to_simple_string((*it)->getCreationTime()) );
 
-		BOOST_FOREACH(Genre::pointer genre, (*it)->getGenres())
+		BOOST_FOREACH(Database::Genre::pointer genre, (*it)->getGenres())
 			track->add_genre_id( genre.id() );
 
 	}
@@ -265,7 +269,7 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 				Wt::Dbo::Transaction transaction( _db.getSession() );
 
 				// Get the request release
-				Release::pointer release = Release::getById( _db.getSession(), request.release_id());
+				Database::Release::pointer release = Database::Release::getById( _db.getSession(), request.release_id());
 
 				std::vector<CoverArt::CoverArt> coverArts = CoverArt::Grabber::getFromRelease(release);
 
@@ -297,7 +301,7 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 				Wt::Dbo::Transaction transaction( _db.getSession() );
 
 				// Get the request release
-				Track::pointer track = Track::getById( _db.getSession(), request.track_id());
+				Database::Track::pointer track = Database::Track::getById( _db.getSession(), request.track_id());
 
 				std::vector<CoverArt::CoverArt> coverArts = CoverArt::Grabber::getFromTrack(track);
 

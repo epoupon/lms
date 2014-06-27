@@ -12,6 +12,8 @@
 
 #include "VideoTypes.hpp"
 
+namespace Database {
+
 class Path
 {
 	public:
@@ -71,6 +73,7 @@ class Path
 
 };
 
+} // namespace Database
 
 #endif
 

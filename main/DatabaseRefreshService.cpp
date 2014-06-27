@@ -8,8 +8,8 @@ DatabaseRefreshService::DatabaseRefreshService(boost::asio::io_service& ioServic
 {
 	// TODO read from the database itself!
 	// Move this code in the database class
-	_database.watchDirectory( WatchedDirectory("/storage/common/Media/Son/Metal", WatchedDirectory::Audio) );
-	_database.watchDirectory( WatchedDirectory("/storage/common/Media/Video", WatchedDirectory::Video) );
+	_database.watchDirectory( Database::WatchedDirectory("/storage/common/Media/Son/Metal", Database::WatchedDirectory::Audio) );
+	_database.watchDirectory( Database::WatchedDirectory("/storage/common/Media/Video", Database::WatchedDirectory::Video) );
 
 }
 

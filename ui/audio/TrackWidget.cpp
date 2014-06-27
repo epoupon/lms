@@ -105,7 +105,7 @@ TrackWidget::handleTrackSelected(void)
 			ResultType result = _queryModel.resultRow( currentIndex.row());
 
 			// Get the track part
-			Wt::Dbo::ptr<Track> track ( result.get<0>() );
+			Wt::Dbo::ptr<Database::Track> track ( result.get<0>() );
 
 			_trackSelected.emit( track->getPath() );
 		}
@@ -127,7 +127,7 @@ TrackWidget::selectNextTrack(void)
 			ResultType result = _queryModel.resultRow( currentIndex.row() + 1 );
 
 			// Get the track part
-			Wt::Dbo::ptr<Track> track ( result.get<0>() );
+			Wt::Dbo::ptr<Database::Track> track ( result.get<0>() );
 
 			_trackSelected.emit( track->getPath() );
 		}

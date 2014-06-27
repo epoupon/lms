@@ -24,7 +24,7 @@ class DatabaseRefreshService : public Service
 		boost::thread		_thread;
 
 		MetaData::AvFormat	_metadataParser;
-		Database		_database;
+		Database::Database	_database;	// Todo use handler
 };
 
 #endif

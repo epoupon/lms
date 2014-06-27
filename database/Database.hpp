@@ -5,6 +5,8 @@
 
 #include "FileTypes.hpp"
 
+namespace Database {
+
 class WatchedDirectory {
 
 	public:
@@ -64,3 +66,4 @@ class Database
 		MetaData::Parser&		_metadataParser;
 };
 
+} // Database

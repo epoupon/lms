@@ -35,7 +35,7 @@ Grabber::getFromInputFormatContext(const Av::InputFormatContext& input)
 
 
 std::vector<CoverArt>
-Grabber::getFromTrack(Track::pointer track)
+Grabber::getFromTrack(Database::Track::pointer track)
 {
 	std::vector<CoverArt> res;
 
@@ -57,7 +57,7 @@ Grabber::getFromTrack(Track::pointer track)
 }
 
 std::vector<CoverArt>
-Grabber::getFromRelease(Release::pointer release)
+Grabber::getFromRelease(Database::Release::pointer release)
 {
 	if (!release)
 		return std::vector<CoverArt>();
@@ -66,9 +66,9 @@ Grabber::getFromRelease(Release::pointer release)
 	// Check if there is an image file in the directory of the release
 	// For now, just get the cover art from the first track of the release
 
-	Wt::Dbo::collection<Track::pointer> tracks (release->getTracks());
+	Wt::Dbo::collection<Database::Track::pointer> tracks (release->getTracks());
 
-	Track::pointer firstTrack;
+	Database::Track::pointer firstTrack;
 	if (tracks.begin() != tracks.end())
 		firstTrack = *tracks.begin();
 

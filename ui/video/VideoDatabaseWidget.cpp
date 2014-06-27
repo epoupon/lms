@@ -22,7 +22,7 @@ VideoDatabaseWidget::VideoDatabaseWidget(DatabaseHandler& db,  Wt::WContainerWid
 
 	Wt::Dbo::Transaction transaction ( _db.getSession() );
 
-	updateView( Path::pointer() );
+	updateView( Database::Path::pointer() );
 
 	_table->addStyleClass("table form-inline");
 
@@ -72,7 +72,7 @@ VideoDatabaseWidget::addVideo(const std::string& name, const boost::posix_time::
 
 
 void
-VideoDatabaseWidget::updateView(Path::pointer directory)
+VideoDatabaseWidget::updateView(Database::Path::pointer directory)
 {
 	// Clear table from row 1 to end
 //	while(_table->rowCount() > 2)
@@ -82,7 +82,7 @@ VideoDatabaseWidget::updateView(Path::pointer directory)
 
 	addHeader();
 
-	std::vector< Path::pointer > pathes;
+	std::vector< Database::Path::pointer > pathes;
 	if(directory)
 	{
 		pathes = directory->getChilds();
@@ -90,10 +90,10 @@ VideoDatabaseWidget::updateView(Path::pointer directory)
 		addDirectory("<Parent>", directory->getParent() ? directory->getParent() ->getPath() : boost::filesystem::path());
 	}
 	else
-		pathes = Path::getRoots(_db.getSession() );
+		pathes = Database::Path::getRoots(_db.getSession() );
 
 	// Add childs
-	BOOST_FOREACH(Path::pointer path, pathes)
+	BOOST_FOREACH(Database::Path::pointer path, pathes)
 	{
 		std::cout << "Adding path " << path->getPath() << std::endl;
 		if (path->isDirectory())
@@ -111,7 +111,7 @@ VideoDatabaseWidget::handleOpenDirectory(boost::filesystem::path path)
 {
 	Wt::Dbo::Transaction transaction ( _db.getSession() );
 
-	Path::pointer directory = Path::getByPath(_db.getSession(), path);
+	Database::Path::pointer directory = Database::Path::getByPath(_db.getSession(), path);
 	updateView(directory);
 }
 
@@ -122,8 +122,8 @@ VideoDatabaseWidget::handlePlayVideo(const boost::filesystem::path& videoFilePat
 
 	Wt::Dbo::Transaction transaction ( _db.getSession() );
 
-	Path::pointer path = Path::getByPath(_db.getSession(), videoFilePath);
-	Video::pointer video;
+	Database::Path::pointer path = Database::Path::getByPath(_db.getSession(), videoFilePath);
+	Database::Video::pointer video;
 	if (path)
 		video = path->getVideo();
 

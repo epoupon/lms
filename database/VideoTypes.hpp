@@ -10,6 +10,8 @@
 
 #include <Wt/WDateTime>
 
+namespace Database {
+
 class Path;
 
 class Video
@@ -54,6 +56,7 @@ class Video
 }; // Video
 
 
+} // namespace Database
 
 #endif
 

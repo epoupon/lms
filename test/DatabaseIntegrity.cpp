@@ -19,11 +19,11 @@ int main(void)
 
 		Wt::Dbo::Transaction transaction(database.getSession());
 
-		Wt::Dbo::collection< Track::pointer > tracks (Track::getAll( database.getSession() ));
+		Wt::Dbo::collection< Database::Track::pointer > tracks (Database::Track::getAll( database.getSession() ));
 
 		std::cout << "Found " << tracks.size() << " tracks!" << std::endl;
 
-		BOOST_FOREACH(Track::pointer track, tracks ) {
+		BOOST_FOREACH(Database::Track::pointer track, tracks ) {
 			assert( !track->getName().empty() );
 			assert( track->getArtist() );
 			assert( track->getRelease() );

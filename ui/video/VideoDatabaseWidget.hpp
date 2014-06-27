@@ -20,7 +20,7 @@ class VideoDatabaseWidget : public Wt::WContainerWidget
 	private:
 
 
-		void updateView(Path::pointer directory);
+		void updateView(Database::Path::pointer directory);
 		void handleOpenDirectory(boost::filesystem::path directory);
 		void handlePlayVideo(const boost::filesystem::path& path);
 

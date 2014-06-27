@@ -10,13 +10,13 @@ _path(db),
 _dbBackend( db.string() )
 {
 	_session.setConnection(_dbBackend);
-	_session.mapClass<Genre>("genre");
-	_session.mapClass<Track>("track");
-	_session.mapClass<Artist>("artist");
-	_session.mapClass<Release>("release");
-	_session.mapClass<Release>("release");
-	_session.mapClass<Path>("path");
-	_session.mapClass<Video>("video");
+	_session.mapClass<Database::Genre>("genre");
+	_session.mapClass<Database::Track>("track");
+	_session.mapClass<Database::Artist>("artist");
+	_session.mapClass<Database::Release>("release");
+	_session.mapClass<Database::Release>("release");
+	_session.mapClass<Database::Path>("path");
+	_session.mapClass<Database::Video>("video");
 
 	try {
 	        _session.createTables();

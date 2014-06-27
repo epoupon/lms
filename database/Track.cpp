@@ -4,6 +4,7 @@
 
 #include "AudioTypes.hpp"
 
+namespace Database {
 
 Track::Track(const boost::filesystem::path& p, Artist::pointer artist, Release::pointer release)
 :
@@ -127,7 +128,7 @@ Track::getAll(Wt::Dbo::Session& session,
 	return query;
 }
 
-
+} // namespace Database
 
 
 

@@ -11,11 +11,11 @@
 
 #include <Wt/WDateTime>
 
+namespace Database {
+
 class Track;
 class Release;
 class Artist;
-
-
 
 class Artist
 {
@@ -215,7 +215,7 @@ class Track
 		Wt::Dbo::collection< Genre::pointer > _genres;	// Tracks in the release
 };
 
-
+} // namespace database
 
 #endif
 

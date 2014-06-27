@@ -1,5 +1,6 @@
 #include "AudioTypes.hpp"
 
+namespace Database {
 
 Genre::Genre()
 {
@@ -44,3 +45,5 @@ Genre::getAll(Wt::Dbo::Session& session, std::size_t offset, std::size_t size)
 {
 	return session.find<Genre>().offset(offset).limit(size);
 }
+
+} // namespace Database

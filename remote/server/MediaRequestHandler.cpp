@@ -85,7 +85,7 @@ MediaRequestHandler::processAudioPrepare(const MediaRequest::Prepare::Audio& req
 
 	Wt::Dbo::Transaction transaction( _db.getSession());
 
-	Track::pointer track = Track::getById( _db.getSession(), request.track_id() );
+	Database::Track::pointer track = Database::Track::getById( _db.getSession(), request.track_id() );
 
 	if (!track)
 	{

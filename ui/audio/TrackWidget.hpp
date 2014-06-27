@@ -36,7 +36,7 @@ class TrackWidget : public FilterWidget
 
 		DatabaseHandler&                        _db;
 
-		typedef boost::tuple<Track::pointer, Release::pointer, Artist::pointer>  ResultType;
+		typedef boost::tuple<Database::Track::pointer, Database::Release::pointer, Database::Artist::pointer>  ResultType;
 		Wt::Dbo::QueryModel< ResultType > _queryModel;
 		Wt::WTableView* _tableView;
 
