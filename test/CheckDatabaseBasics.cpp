@@ -4,6 +4,7 @@
 #include "database/DatabaseHandler.hpp"
 
 #include "database/FileTypes.hpp"
+#include "database/MediaDirectory.hpp"
 
 int main(void)
 {
@@ -13,7 +14,7 @@ int main(void)
 		boost::filesystem::remove("test2.db");
 
 		// Set up the long living database session
-		DatabaseHandler database("test2.db");
+		Database::Handler database("test2.db");
 
 		Wt::Dbo::Transaction transaction(database.getSession());
 
@@ -70,6 +71,11 @@ int main(void)
 			std::cout << "Parent's = " << path->getParent()->getPath() << std::endl;
 		}
 
+		// Update last update
+		Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(database.getSession());
+		settings.modify()->setLastUpdate(boost::posix_time::second_clock::local_time());
+
+		std::cout << "last update = " << settings->getLastUpdated() << std::endl;
 
 		// make some empty root dirs
 

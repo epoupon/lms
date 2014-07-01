@@ -11,7 +11,7 @@
 
 namespace UserInterface {
 
-AudioDatabaseWidget::AudioDatabaseWidget( DatabaseHandler& db, Wt::WContainerWidget *parent)
+AudioDatabaseWidget::AudioDatabaseWidget( Database::Handler& db, Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent),
 _refreshingFilters(false)
 {

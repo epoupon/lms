@@ -12,7 +12,7 @@ namespace UserInterface {
 class VideoDatabaseWidget : public Wt::WContainerWidget
 {
 	public:
-		VideoDatabaseWidget( DatabaseHandler& db, Wt::WContainerWidget *parent = 0);
+		VideoDatabaseWidget( Database::Handler& db, Wt::WContainerWidget *parent = 0);
 
 		// Signals
 		Wt::Signal< boost::filesystem::path >&	playVideo() { return _playVideo; }
@@ -28,7 +28,7 @@ class VideoDatabaseWidget : public Wt::WContainerWidget
 		void addDirectory(const std::string& name, const boost::filesystem::path& path);
 		void addVideo(const std::string& name, const boost::posix_time::time_duration& duration, const boost::filesystem::path& path);
 
-		DatabaseHandler&	_db;
+		Database::Handler&	_db;
 
 		Wt::Signal< boost::filesystem::path > _playVideo;
 

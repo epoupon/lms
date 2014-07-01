@@ -8,7 +8,7 @@ bin_PROGRAMS = lms
 lms_SOURCES = \
 	$(top_srcdir)/main/main.cpp			\
 	$(top_srcdir)/main/ServiceManager.cpp		\
-	$(top_srcdir)/main/DatabaseRefreshService.cpp	\
+	$(top_srcdir)/main/DatabaseUpdateService.cpp	\
 	$(top_srcdir)/main/UserInterfaceService.cpp		\
 	$(top_srcdir)/av/CodecContext.cpp	\
 	$(top_srcdir)/av/Common.cpp		\
@@ -34,13 +34,14 @@ lms_SOURCES = \
 	$(top_srcdir)/database/Artist.cpp		\
 	$(top_srcdir)/database/Genre.cpp		\
 	$(top_srcdir)/database/Release.cpp		\
+	$(top_srcdir)/database/MediaDirectory.cpp	\
 	$(top_srcdir)/database/Track.cpp		\
-	$(top_srcdir)/database/Database.cpp		\
 	$(top_srcdir)/database/DatabaseHandler.cpp	\
-	$(top_srcdir)/database/Checksum.cpp		\
 	$(top_srcdir)/database/SqlQuery.cpp		\
 	$(top_srcdir)/database/Path.cpp			\
 	$(top_srcdir)/database/Video.cpp		\
+	$(top_srcdir)/database-updater/DatabaseUpdater.cpp	\
+	$(top_srcdir)/database-updater/Checksum.cpp		\
 	$(top_srcdir)/transcode/AvConvTranscoder.cpp	\
 	$(top_srcdir)/transcode/Format.cpp		\
 	$(top_srcdir)/transcode/Parameters.cpp		\

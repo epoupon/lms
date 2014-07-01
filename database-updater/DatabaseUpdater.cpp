@@ -3,16 +3,19 @@
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
 
-#include "Database.hpp"
-#include "Checksum.hpp"
-
-#include "AudioTypes.hpp"
+#include "database/MediaDirectory.hpp"
+#include "database/AudioTypes.hpp"
 
 #include "transcode/InputMediaFile.hpp"
 
-namespace Database {
+#include "Checksum.hpp"
+#include "DatabaseUpdater.hpp"
 
-Database::Database(boost::filesystem::path dbPath, MetaData::Parser& parser)
+namespace DatabaseUpdater {
+
+using namespace Database;
+
+Updater::Updater(boost::filesystem::path dbPath, MetaData::Parser& parser)
  : _db(dbPath),
    _metadataParser(parser)
 {
@@ -20,42 +23,30 @@ Database::Database(boost::filesystem::path dbPath, MetaData::Parser& parser)
 }
 
 void
-Database::watchDirectory(WatchedDirectory directory)
-{
-	_directories.push_back(directory);
-}
-
-
-void
-Database::unwatchDirectory(WatchedDirectory directory)
-{
-	std::list<WatchedDirectory>::iterator it = std::find(_directories.begin(), _directories.end(), directory);
-	if (it != _directories.end())
-		_directories.erase(it);
-}
-
-
-void
-Database::refresh(void)
+Updater::process(void)
 {
 	removeMissingAudioFiles();
+	// TODO video files
 
-	BOOST_FOREACH( const WatchedDirectory& directory, _directories) {
-		switch (directory.getType()) {
-			case WatchedDirectory::Audio:
-				refreshAudioDirectory(directory.getPath());
+	Wt::Dbo::Transaction transaction(_db.getSession());
+
+	std::vector<MediaDirectory::pointer> mediaDirectories = MediaDirectory::getAll(_db.getSession());
+
+	BOOST_FOREACH( MediaDirectory::pointer directory, mediaDirectories)
+	{
+		switch (directory->getType()) {
+			case MediaDirectory::Audio:
+				refreshAudioDirectory(directory->getPath());
 				break;
-			case WatchedDirectory::Video:
-				refreshVideoDirectory(directory.getPath());
+			case MediaDirectory::Video:
+				refreshVideoDirectory(directory->getPath());
 				break;
-			default:
-				assert(0);
 		}
 	}
 }
 
 void
-Database::processAudioFile( const boost::filesystem::path& file)
+Updater::processAudioFile( const boost::filesystem::path& file)
 {
 	try {
 
@@ -231,7 +222,7 @@ Database::processAudioFile( const boost::filesystem::path& file)
 
 
 void
-Database::refreshAudioDirectory( const boost::filesystem::path& p)
+Updater::refreshAudioDirectory( const boost::filesystem::path& p)
 {
 	std::cout << "Refreshing audio directory " << p << std::endl;
 	if (boost::filesystem::exists(p) && boost::filesystem::is_directory(p)) {
@@ -265,7 +256,7 @@ Database::refreshAudioDirectory( const boost::filesystem::path& p)
 }
 
 void
-Database::removeMissingAudioFiles( void )
+Updater::removeMissingAudioFiles( void )
 {
 	std::cerr << "Removing missing files..." << std::endl;
 	Wt::Dbo::Transaction transaction(_db.getSession());
@@ -291,7 +282,7 @@ Database::removeMissingAudioFiles( void )
 }
 
 Path::pointer
-Database::getAddPath(const boost::filesystem::path& path)
+Updater::getAddPath(const boost::filesystem::path& path)
 {
 	Path::pointer res;
 	Path::pointer parentDirectory;
@@ -314,7 +305,7 @@ Database::getAddPath(const boost::filesystem::path& path)
 
 
 void
-Database::refreshVideoDirectory( const boost::filesystem::path& path)
+Updater::refreshVideoDirectory( const boost::filesystem::path& path)
 {
 	std::cout << "Refreshing video directory " << path << std::endl;
 	if (boost::filesystem::exists(path) && boost::filesystem::is_directory(path))
@@ -353,7 +344,7 @@ Database::refreshVideoDirectory( const boost::filesystem::path& path)
 }
 
 void
-Database::processVideoFile( const boost::filesystem::path& file)
+Updater::processVideoFile( const boost::filesystem::path& file)
 {
 	try {
 
@@ -430,4 +421,4 @@ Database::processVideoFile( const boost::filesystem::path& file)
 	}
 }
 
-} // namespace Database
+} // namespace DatabaseUpdater

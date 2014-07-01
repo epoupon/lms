@@ -25,7 +25,7 @@ class RequestHandler
 
 	private:
 
-		DatabaseHandler _db;
+		Database::Handler _db;
 
 		AudioCollectionRequestHandler	_audioCollectionRequestHandler;
 		MediaRequestHandler		_mediaRequestHandler;

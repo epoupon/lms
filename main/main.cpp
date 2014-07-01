@@ -7,7 +7,7 @@
 #include "av/Common.hpp"
 
 #include "ServiceManager.hpp"
-#include "DatabaseRefreshService.hpp"
+#include "DatabaseUpdateService.hpp"
 #include "UserInterfaceService.hpp"
 #include "RemoteServerService.hpp"
 
@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
 
 		std::cout << "Starting services..." << std::endl;
 
-		serviceManager.startService( std::make_shared<DatabaseRefreshService>( serviceManager.getIoService(), dbPath) );
+		serviceManager.startService( std::make_shared<DatabaseUpdateService>( serviceManager.getIoService(), dbPath) );
 		serviceManager.startService( std::make_shared<RemoteServerService>( serviceManager.getIoService(), remoteListenEndpoint, dbPath) );
 		serviceManager.startService( std::make_shared<UserInterfaceService>(argc, argv, dbPath) );
 

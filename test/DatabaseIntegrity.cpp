@@ -15,7 +15,7 @@ int main(void)
 		std::cout << "Starting test!" << std::endl;
 
 		// Set up the long living database session
-		DatabaseHandler database("test.db");
+		Database::Handler database("test.db");
 
 		Wt::Dbo::Transaction transaction(database.getSession());
 

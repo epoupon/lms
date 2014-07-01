@@ -5,7 +5,7 @@
 namespace Remote {
 namespace Server {
 
-MediaRequestHandler::MediaRequestHandler(DatabaseHandler& db)
+MediaRequestHandler::MediaRequestHandler(Database::Handler& db)
 : _db(db)
 {}
 

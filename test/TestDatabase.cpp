@@ -3,7 +3,7 @@
 
 namespace TestDatabase {
 
-DatabaseHandler* create()
+	Database::Handler* create()
 {
 
 	boost::filesystem::path p ("test_db");
@@ -11,7 +11,7 @@ DatabaseHandler* create()
 	// Remove previous db
 //	boost::filesystem::remove(p);
 
-	DatabaseHandler* db = new DatabaseHandler(p);
+	Database::Handler* db = new Database::Handler(p);
 
 
 	// Populate DB

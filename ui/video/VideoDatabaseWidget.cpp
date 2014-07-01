@@ -13,7 +13,7 @@
 
 namespace UserInterface {
 
-VideoDatabaseWidget::VideoDatabaseWidget(DatabaseHandler& db,  Wt::WContainerWidget *parent)
+VideoDatabaseWidget::VideoDatabaseWidget(Database::Handler& db,  Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent),
  _db(db)
 {

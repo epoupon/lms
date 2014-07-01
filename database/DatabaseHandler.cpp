@@ -2,9 +2,11 @@
 
 #include "AudioTypes.hpp"
 #include "FileTypes.hpp"
+#include "MediaDirectory.hpp"
 
+namespace Database {
 
-DatabaseHandler::DatabaseHandler(boost::filesystem::path db)
+Handler::Handler(boost::filesystem::path db)
 :
 _path(db),
 _dbBackend( db.string() )
@@ -17,6 +19,8 @@ _dbBackend( db.string() )
 	_session.mapClass<Database::Release>("release");
 	_session.mapClass<Database::Path>("path");
 	_session.mapClass<Database::Video>("video");
+	_session.mapClass<Database::MediaDirectory>("media_directory");
+	_session.mapClass<Database::MediaDirectorySettings>("media_directory_settings");
 
 	try {
 	        _session.createTables();
@@ -28,3 +32,4 @@ _dbBackend( db.string() )
 	_dbBackend.executeSql("pragma journal_mode=WAL");
 }
 
+} // namespace Database

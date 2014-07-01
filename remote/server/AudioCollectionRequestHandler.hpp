@@ -11,7 +11,7 @@ namespace Server {
 class AudioCollectionRequestHandler
 {
 	public:
-		AudioCollectionRequestHandler(DatabaseHandler& db);
+		AudioCollectionRequestHandler(Database::Handler& db);
 
 		bool process(const AudioCollectionRequest& request, AudioCollectionResponse& response);
 
@@ -23,7 +23,7 @@ class AudioCollectionRequestHandler
 		bool processGetTracks(const AudioCollectionRequest::GetTrackList& request, AudioCollectionResponse::TrackList& response);
 		bool processGetCoverArt(const AudioCollectionRequest::GetCoverArt& request, AudioCollectionResponse& response);
 
-		DatabaseHandler& _db;
+		Database::Handler& _db;
 
 		static const std::size_t _maxListArtists = 256;
 		static const std::size_t _maxListGenres = 256;

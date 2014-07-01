@@ -6,11 +6,13 @@
 #include <Wt/Dbo/Dbo>
 #include <Wt/Dbo/backend/Sqlite3>
 
+namespace Database {
+
 // Long living class handling the database
-class DatabaseHandler
+class Handler
 {
 	public:
-		DatabaseHandler(boost::filesystem::path db);
+		Handler(boost::filesystem::path db);
 
 		Wt::Dbo::Session& getSession() { return _session; }
 
@@ -25,6 +27,7 @@ class DatabaseHandler
 
 };
 
+} // namespace Database
 
 #endif
 

@@ -4,7 +4,7 @@
 
 namespace UserInterface {
 
-TableFilterWidget::TableFilterWidget(DatabaseHandler& db, std::string table, std::string field, Wt::WContainerWidget* parent)
+TableFilterWidget::TableFilterWidget(Database::Handler& db, std::string table, std::string field, Wt::WContainerWidget* parent)
 : FilterWidget( parent ),
 _db(db),
 _table(table),

@@ -15,7 +15,7 @@ namespace UserInterface {
 class AudioDatabaseWidget : public Wt::WContainerWidget
 {
 	public:
-		AudioDatabaseWidget( DatabaseHandler& db, Wt::WContainerWidget *parent = 0);
+		AudioDatabaseWidget( Database::Handler& db, Wt::WContainerWidget *parent = 0);
 
 		void search(const std::string& text);
 

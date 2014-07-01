@@ -651,6 +651,7 @@ int main()
 {
 	try {
 		bool extendedTests = true;
+		bool writeCovers = false;
 
 		std::cout << "Running test... extendedTests = " << std::boolalpha << extendedTests << std::endl;
 
@@ -709,13 +710,16 @@ int main()
 				std::vector<Cover> coverArts;
 				client.getCoverRelease(coverArts, release.id);
 
-				boost::filesystem::create_directory("cover");
-				BOOST_FOREACH(const Cover coverArt, coverArts)
+				if (writeCovers)
 				{
-					std::ostringstream oss; oss << "cover/" << release.id << "." << release.name << ".jpeg";
-					std::ofstream out(oss.str().c_str());
-					BOOST_FOREACH(unsigned char c, coverArt.data)
-						out.put(c);
+					boost::filesystem::create_directory("cover");
+					BOOST_FOREACH(const Cover coverArt, coverArts)
+					{
+						std::ostringstream oss; oss << "cover/" << release.id << "." << release.name << ".jpeg";
+						std::ofstream out(oss.str().c_str());
+						BOOST_FOREACH(unsigned char c, coverArt.data)
+							out.put(c);
+					}
 				}
 
 				std::cout << "Release '" << release << "', spotted " << coverArts.size() << " covers!" << std::endl;

@@ -8,7 +8,7 @@
 
 namespace UserInterface {
 
-TrackWidget::TrackWidget( DatabaseHandler& db, Wt::WContainerWidget* parent)
+TrackWidget::TrackWidget( Database::Handler& db, Wt::WContainerWidget* parent)
 : FilterWidget( parent ),
 _db(db),
 _tableView(nullptr),

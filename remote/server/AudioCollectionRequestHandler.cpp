@@ -12,7 +12,7 @@
 namespace Remote {
 namespace Server {
 
-AudioCollectionRequestHandler::AudioCollectionRequestHandler(DatabaseHandler& db)
+AudioCollectionRequestHandler::AudioCollectionRequestHandler(Database::Handler& db)
 : _db(db)
 {}
 

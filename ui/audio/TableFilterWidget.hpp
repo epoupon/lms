@@ -14,7 +14,7 @@ class TableFilterWidget : public FilterWidget
 {
 
 	public:
-		TableFilterWidget(DatabaseHandler& db, std::string table, std::string field, Wt::WContainerWidget* parent = 0);
+		TableFilterWidget(Database::Handler& db, std::string table, std::string field, Wt::WContainerWidget* parent = 0);
 
 		// Set constraints on this filter
 		virtual void refresh(const Constraint& constraint);
@@ -24,7 +24,7 @@ class TableFilterWidget : public FilterWidget
 
 	protected:
 
-		DatabaseHandler&			_db;
+		Database::Handler&			_db;
 		const std::string			_table;
 		const std::string			_field;
 

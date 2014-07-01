@@ -18,14 +18,14 @@ class SessionData
 		void setAuthenticatedUser(std::string user);
 
 
-		DatabaseHandler&	getDatabaseHandler()		{ return _db;}
-		const DatabaseHandler&	getDatabaseHandler() const	{ return _db;}
+		Database::Handler&		getDatabaseHandler()		{ return _db;}
+		const Database::Handler&	getDatabaseHandler() const	{ return _db;}
 
 	private:
 
 
-		DatabaseHandler _db;
-		std::string	_authenticatedUser;
+		Database::Handler	_db;
+		std::string		_authenticatedUser;
 
 };
 

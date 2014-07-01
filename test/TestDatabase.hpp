@@ -3,6 +3,6 @@
 
 namespace TestDatabase {
 
-	DatabaseHandler* create();
+	Database::Handler* create();
 
 } // namespace TestDatabase

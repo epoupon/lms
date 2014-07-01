@@ -14,7 +14,7 @@ namespace Server {
 class MediaRequestHandler
 {
 	public:
-		MediaRequestHandler(DatabaseHandler& db);
+		MediaRequestHandler(Database::Handler& db);
 
 		bool process(const MediaRequest& request, MediaResponse& response);
 
@@ -28,7 +28,7 @@ class MediaRequestHandler
 
 		std::shared_ptr<Transcode::AvConvTranscoder>	_transcoder;
 
-		DatabaseHandler& _db;
+		Database::Handler& _db;
 
 		static const std::size_t _maxPartSize = 65536 - 128;
 };
