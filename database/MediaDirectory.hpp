@@ -24,7 +24,6 @@ class MediaDirectorySettings
 		static pointer get(Wt::Dbo::Session& session);
 
 		// write accessors
-		void	addMediaDirectory(Wt::Dbo::ptr<MediaDirectory> mediaDirectory);
 		void	setLastUpdate(boost::posix_time::ptime time)	{ _lastUpdate = time; }
 		void	setLastScan(boost::posix_time::ptime time)	{ _lastScan = time; }
 
@@ -63,6 +62,7 @@ class MediaDirectory
 		MediaDirectory(boost::filesystem::path p, Type type);
 
 		// Accessors
+		static pointer create(Wt::Dbo::Session& session, boost::filesystem::path p, Type type);
 		static std::vector<MediaDirectory::pointer>	getAll(Wt::Dbo::Session& session);
 
 		Type			getType(void) const	{ return _type; }

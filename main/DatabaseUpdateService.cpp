@@ -6,13 +6,12 @@ DatabaseUpdateService::DatabaseUpdateService(boost::asio::io_service& ioService,
 : _metadataParser(),
  _databaseUpdater( p, _metadataParser)
 {
-
 }
 
 void
 DatabaseUpdateService::start(void)
 {
-//	_thread = boost::thread(boost::bind(&Database::refresh, &_databaseUpdater.);
+//	_thread = boost::thread(boost::bind(&DatabaseUpdater::Updater::process, &_databaseUpdater));
 }
 
 void

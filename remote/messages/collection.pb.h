@@ -37,6 +37,7 @@ void protobuf_ShutdownFile_collection_2eproto();
 
 class AudioCollectionRequest;
 class AudioCollectionRequest_BatchParameter;
+class AudioCollectionRequest_GetRevision;
 class AudioCollectionRequest_GetGenreList;
 class AudioCollectionRequest_GetArtistList;
 class AudioCollectionRequest_GetReleaseList;
@@ -210,6 +211,78 @@ class AudioCollectionRequest_BatchParameter : public ::google::protobuf::Message
 
   void InitAsDefaultInstance();
   static AudioCollectionRequest_BatchParameter* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class AudioCollectionRequest_GetRevision : public ::google::protobuf::Message {
+ public:
+  AudioCollectionRequest_GetRevision();
+  virtual ~AudioCollectionRequest_GetRevision();
+
+  AudioCollectionRequest_GetRevision(const AudioCollectionRequest_GetRevision& from);
+
+  inline AudioCollectionRequest_GetRevision& operator=(const AudioCollectionRequest_GetRevision& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const AudioCollectionRequest_GetRevision& default_instance();
+
+  void Swap(AudioCollectionRequest_GetRevision* other);
+
+  // implements Message ----------------------------------------------
+
+  AudioCollectionRequest_GetRevision* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const AudioCollectionRequest_GetRevision& from);
+  void MergeFrom(const AudioCollectionRequest_GetRevision& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // @@protoc_insertion_point(class_scope:Remote.AudioCollectionRequest.GetRevision)
+ private:
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[1];
+
+  friend void  protobuf_AddDesc_collection_2eproto();
+  friend void protobuf_AssignDesc_collection_2eproto();
+  friend void protobuf_ShutdownFile_collection_2eproto();
+
+  void InitAsDefaultInstance();
+  static AudioCollectionRequest_GetRevision* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -816,6 +889,7 @@ class AudioCollectionRequest : public ::google::protobuf::Message {
   // nested types ----------------------------------------------------
 
   typedef AudioCollectionRequest_BatchParameter BatchParameter;
+  typedef AudioCollectionRequest_GetRevision GetRevision;
   typedef AudioCollectionRequest_GetGenreList GetGenreList;
   typedef AudioCollectionRequest_GetArtistList GetArtistList;
   typedef AudioCollectionRequest_GetReleaseList GetReleaseList;
@@ -859,46 +933,55 @@ class AudioCollectionRequest : public ::google::protobuf::Message {
   inline ::Remote::AudioCollectionRequest_Type type() const;
   inline void set_type(::Remote::AudioCollectionRequest_Type value);
 
-  // optional .Remote.AudioCollectionRequest.GetGenreList get_genres = 2;
+  // optional .Remote.AudioCollectionRequest.GetRevision get_revision = 2;
+  inline bool has_get_revision() const;
+  inline void clear_get_revision();
+  static const int kGetRevisionFieldNumber = 2;
+  inline const ::Remote::AudioCollectionRequest_GetRevision& get_revision() const;
+  inline ::Remote::AudioCollectionRequest_GetRevision* mutable_get_revision();
+  inline ::Remote::AudioCollectionRequest_GetRevision* release_get_revision();
+  inline void set_allocated_get_revision(::Remote::AudioCollectionRequest_GetRevision* get_revision);
+
+  // optional .Remote.AudioCollectionRequest.GetGenreList get_genres = 3;
   inline bool has_get_genres() const;
   inline void clear_get_genres();
-  static const int kGetGenresFieldNumber = 2;
+  static const int kGetGenresFieldNumber = 3;
   inline const ::Remote::AudioCollectionRequest_GetGenreList& get_genres() const;
   inline ::Remote::AudioCollectionRequest_GetGenreList* mutable_get_genres();
   inline ::Remote::AudioCollectionRequest_GetGenreList* release_get_genres();
   inline void set_allocated_get_genres(::Remote::AudioCollectionRequest_GetGenreList* get_genres);
 
-  // optional .Remote.AudioCollectionRequest.GetArtistList get_artists = 3;
+  // optional .Remote.AudioCollectionRequest.GetArtistList get_artists = 4;
   inline bool has_get_artists() const;
   inline void clear_get_artists();
-  static const int kGetArtistsFieldNumber = 3;
+  static const int kGetArtistsFieldNumber = 4;
   inline const ::Remote::AudioCollectionRequest_GetArtistList& get_artists() const;
   inline ::Remote::AudioCollectionRequest_GetArtistList* mutable_get_artists();
   inline ::Remote::AudioCollectionRequest_GetArtistList* release_get_artists();
   inline void set_allocated_get_artists(::Remote::AudioCollectionRequest_GetArtistList* get_artists);
 
-  // optional .Remote.AudioCollectionRequest.GetReleaseList get_releases = 4;
+  // optional .Remote.AudioCollectionRequest.GetReleaseList get_releases = 5;
   inline bool has_get_releases() const;
   inline void clear_get_releases();
-  static const int kGetReleasesFieldNumber = 4;
+  static const int kGetReleasesFieldNumber = 5;
   inline const ::Remote::AudioCollectionRequest_GetReleaseList& get_releases() const;
   inline ::Remote::AudioCollectionRequest_GetReleaseList* mutable_get_releases();
   inline ::Remote::AudioCollectionRequest_GetReleaseList* release_get_releases();
   inline void set_allocated_get_releases(::Remote::AudioCollectionRequest_GetReleaseList* get_releases);
 
-  // optional .Remote.AudioCollectionRequest.GetTrackList get_tracks = 5;
+  // optional .Remote.AudioCollectionRequest.GetTrackList get_tracks = 6;
   inline bool has_get_tracks() const;
   inline void clear_get_tracks();
-  static const int kGetTracksFieldNumber = 5;
+  static const int kGetTracksFieldNumber = 6;
   inline const ::Remote::AudioCollectionRequest_GetTrackList& get_tracks() const;
   inline ::Remote::AudioCollectionRequest_GetTrackList* mutable_get_tracks();
   inline ::Remote::AudioCollectionRequest_GetTrackList* release_get_tracks();
   inline void set_allocated_get_tracks(::Remote::AudioCollectionRequest_GetTrackList* get_tracks);
 
-  // optional .Remote.AudioCollectionRequest.GetCoverArt get_cover_art = 6;
+  // optional .Remote.AudioCollectionRequest.GetCoverArt get_cover_art = 7;
   inline bool has_get_cover_art() const;
   inline void clear_get_cover_art();
-  static const int kGetCoverArtFieldNumber = 6;
+  static const int kGetCoverArtFieldNumber = 7;
   inline const ::Remote::AudioCollectionRequest_GetCoverArt& get_cover_art() const;
   inline ::Remote::AudioCollectionRequest_GetCoverArt* mutable_get_cover_art();
   inline ::Remote::AudioCollectionRequest_GetCoverArt* release_get_cover_art();
@@ -908,6 +991,8 @@ class AudioCollectionRequest : public ::google::protobuf::Message {
  private:
   inline void set_has_type();
   inline void clear_has_type();
+  inline void set_has_get_revision();
+  inline void clear_has_get_revision();
   inline void set_has_get_genres();
   inline void clear_has_get_genres();
   inline void set_has_get_artists();
@@ -921,6 +1006,7 @@ class AudioCollectionRequest : public ::google::protobuf::Message {
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
+  ::Remote::AudioCollectionRequest_GetRevision* get_revision_;
   ::Remote::AudioCollectionRequest_GetGenreList* get_genres_;
   ::Remote::AudioCollectionRequest_GetArtistList* get_artists_;
   ::Remote::AudioCollectionRequest_GetReleaseList* get_releases_;
@@ -929,7 +1015,7 @@ class AudioCollectionRequest : public ::google::protobuf::Message {
   int type_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(7 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -994,12 +1080,17 @@ class AudioCollectionResponse_Revision : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required uint64 rev = 1;
+  // required string rev = 1;
   inline bool has_rev() const;
   inline void clear_rev();
   static const int kRevFieldNumber = 1;
-  inline ::google::protobuf::uint64 rev() const;
-  inline void set_rev(::google::protobuf::uint64 value);
+  inline const ::std::string& rev() const;
+  inline void set_rev(const ::std::string& value);
+  inline void set_rev(const char* value);
+  inline void set_rev(const char* value, size_t size);
+  inline ::std::string* mutable_rev();
+  inline ::std::string* release_rev();
+  inline void set_allocated_rev(::std::string* rev);
 
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionResponse.Revision)
  private:
@@ -1008,7 +1099,7 @@ class AudioCollectionResponse_Revision : public ::google::protobuf::Message {
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::google::protobuf::uint64 rev_;
+  ::std::string* rev_;
 
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
@@ -2190,6 +2281,10 @@ inline void AudioCollectionRequest_BatchParameter::set_size(::google::protobuf::
 
 // -------------------------------------------------------------------
 
+// AudioCollectionRequest_GetRevision
+
+// -------------------------------------------------------------------
+
 // AudioCollectionRequest_GetGenreList
 
 // required .Remote.AudioCollectionRequest.BatchParameter batch_parameter = 1;
@@ -2626,15 +2721,53 @@ inline void AudioCollectionRequest::set_type(::Remote::AudioCollectionRequest_Ty
   type_ = value;
 }
 
-// optional .Remote.AudioCollectionRequest.GetGenreList get_genres = 2;
-inline bool AudioCollectionRequest::has_get_genres() const {
+// optional .Remote.AudioCollectionRequest.GetRevision get_revision = 2;
+inline bool AudioCollectionRequest::has_get_revision() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void AudioCollectionRequest::set_has_get_genres() {
+inline void AudioCollectionRequest::set_has_get_revision() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void AudioCollectionRequest::clear_has_get_genres() {
+inline void AudioCollectionRequest::clear_has_get_revision() {
   _has_bits_[0] &= ~0x00000002u;
+}
+inline void AudioCollectionRequest::clear_get_revision() {
+  if (get_revision_ != NULL) get_revision_->::Remote::AudioCollectionRequest_GetRevision::Clear();
+  clear_has_get_revision();
+}
+inline const ::Remote::AudioCollectionRequest_GetRevision& AudioCollectionRequest::get_revision() const {
+  return get_revision_ != NULL ? *get_revision_ : *default_instance_->get_revision_;
+}
+inline ::Remote::AudioCollectionRequest_GetRevision* AudioCollectionRequest::mutable_get_revision() {
+  set_has_get_revision();
+  if (get_revision_ == NULL) get_revision_ = new ::Remote::AudioCollectionRequest_GetRevision;
+  return get_revision_;
+}
+inline ::Remote::AudioCollectionRequest_GetRevision* AudioCollectionRequest::release_get_revision() {
+  clear_has_get_revision();
+  ::Remote::AudioCollectionRequest_GetRevision* temp = get_revision_;
+  get_revision_ = NULL;
+  return temp;
+}
+inline void AudioCollectionRequest::set_allocated_get_revision(::Remote::AudioCollectionRequest_GetRevision* get_revision) {
+  delete get_revision_;
+  get_revision_ = get_revision;
+  if (get_revision) {
+    set_has_get_revision();
+  } else {
+    clear_has_get_revision();
+  }
+}
+
+// optional .Remote.AudioCollectionRequest.GetGenreList get_genres = 3;
+inline bool AudioCollectionRequest::has_get_genres() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void AudioCollectionRequest::set_has_get_genres() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void AudioCollectionRequest::clear_has_get_genres() {
+  _has_bits_[0] &= ~0x00000004u;
 }
 inline void AudioCollectionRequest::clear_get_genres() {
   if (get_genres_ != NULL) get_genres_->::Remote::AudioCollectionRequest_GetGenreList::Clear();
@@ -2664,15 +2797,15 @@ inline void AudioCollectionRequest::set_allocated_get_genres(::Remote::AudioColl
   }
 }
 
-// optional .Remote.AudioCollectionRequest.GetArtistList get_artists = 3;
+// optional .Remote.AudioCollectionRequest.GetArtistList get_artists = 4;
 inline bool AudioCollectionRequest::has_get_artists() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
+  return (_has_bits_[0] & 0x00000008u) != 0;
 }
 inline void AudioCollectionRequest::set_has_get_artists() {
-  _has_bits_[0] |= 0x00000004u;
+  _has_bits_[0] |= 0x00000008u;
 }
 inline void AudioCollectionRequest::clear_has_get_artists() {
-  _has_bits_[0] &= ~0x00000004u;
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void AudioCollectionRequest::clear_get_artists() {
   if (get_artists_ != NULL) get_artists_->::Remote::AudioCollectionRequest_GetArtistList::Clear();
@@ -2702,15 +2835,15 @@ inline void AudioCollectionRequest::set_allocated_get_artists(::Remote::AudioCol
   }
 }
 
-// optional .Remote.AudioCollectionRequest.GetReleaseList get_releases = 4;
+// optional .Remote.AudioCollectionRequest.GetReleaseList get_releases = 5;
 inline bool AudioCollectionRequest::has_get_releases() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
+  return (_has_bits_[0] & 0x00000010u) != 0;
 }
 inline void AudioCollectionRequest::set_has_get_releases() {
-  _has_bits_[0] |= 0x00000008u;
+  _has_bits_[0] |= 0x00000010u;
 }
 inline void AudioCollectionRequest::clear_has_get_releases() {
-  _has_bits_[0] &= ~0x00000008u;
+  _has_bits_[0] &= ~0x00000010u;
 }
 inline void AudioCollectionRequest::clear_get_releases() {
   if (get_releases_ != NULL) get_releases_->::Remote::AudioCollectionRequest_GetReleaseList::Clear();
@@ -2740,15 +2873,15 @@ inline void AudioCollectionRequest::set_allocated_get_releases(::Remote::AudioCo
   }
 }
 
-// optional .Remote.AudioCollectionRequest.GetTrackList get_tracks = 5;
+// optional .Remote.AudioCollectionRequest.GetTrackList get_tracks = 6;
 inline bool AudioCollectionRequest::has_get_tracks() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
+  return (_has_bits_[0] & 0x00000020u) != 0;
 }
 inline void AudioCollectionRequest::set_has_get_tracks() {
-  _has_bits_[0] |= 0x00000010u;
+  _has_bits_[0] |= 0x00000020u;
 }
 inline void AudioCollectionRequest::clear_has_get_tracks() {
-  _has_bits_[0] &= ~0x00000010u;
+  _has_bits_[0] &= ~0x00000020u;
 }
 inline void AudioCollectionRequest::clear_get_tracks() {
   if (get_tracks_ != NULL) get_tracks_->::Remote::AudioCollectionRequest_GetTrackList::Clear();
@@ -2778,15 +2911,15 @@ inline void AudioCollectionRequest::set_allocated_get_tracks(::Remote::AudioColl
   }
 }
 
-// optional .Remote.AudioCollectionRequest.GetCoverArt get_cover_art = 6;
+// optional .Remote.AudioCollectionRequest.GetCoverArt get_cover_art = 7;
 inline bool AudioCollectionRequest::has_get_cover_art() const {
-  return (_has_bits_[0] & 0x00000020u) != 0;
+  return (_has_bits_[0] & 0x00000040u) != 0;
 }
 inline void AudioCollectionRequest::set_has_get_cover_art() {
-  _has_bits_[0] |= 0x00000020u;
+  _has_bits_[0] |= 0x00000040u;
 }
 inline void AudioCollectionRequest::clear_has_get_cover_art() {
-  _has_bits_[0] &= ~0x00000020u;
+  _has_bits_[0] &= ~0x00000040u;
 }
 inline void AudioCollectionRequest::clear_get_cover_art() {
   if (get_cover_art_ != NULL) get_cover_art_->::Remote::AudioCollectionRequest_GetCoverArt::Clear();
@@ -2820,7 +2953,7 @@ inline void AudioCollectionRequest::set_allocated_get_cover_art(::Remote::AudioC
 
 // AudioCollectionResponse_Revision
 
-// required uint64 rev = 1;
+// required string rev = 1;
 inline bool AudioCollectionResponse_Revision::has_rev() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -2831,15 +2964,63 @@ inline void AudioCollectionResponse_Revision::clear_has_rev() {
   _has_bits_[0] &= ~0x00000001u;
 }
 inline void AudioCollectionResponse_Revision::clear_rev() {
-  rev_ = GOOGLE_ULONGLONG(0);
+  if (rev_ != &::google::protobuf::internal::kEmptyString) {
+    rev_->clear();
+  }
   clear_has_rev();
 }
-inline ::google::protobuf::uint64 AudioCollectionResponse_Revision::rev() const {
+inline const ::std::string& AudioCollectionResponse_Revision::rev() const {
+  return *rev_;
+}
+inline void AudioCollectionResponse_Revision::set_rev(const ::std::string& value) {
+  set_has_rev();
+  if (rev_ == &::google::protobuf::internal::kEmptyString) {
+    rev_ = new ::std::string;
+  }
+  rev_->assign(value);
+}
+inline void AudioCollectionResponse_Revision::set_rev(const char* value) {
+  set_has_rev();
+  if (rev_ == &::google::protobuf::internal::kEmptyString) {
+    rev_ = new ::std::string;
+  }
+  rev_->assign(value);
+}
+inline void AudioCollectionResponse_Revision::set_rev(const char* value, size_t size) {
+  set_has_rev();
+  if (rev_ == &::google::protobuf::internal::kEmptyString) {
+    rev_ = new ::std::string;
+  }
+  rev_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* AudioCollectionResponse_Revision::mutable_rev() {
+  set_has_rev();
+  if (rev_ == &::google::protobuf::internal::kEmptyString) {
+    rev_ = new ::std::string;
+  }
   return rev_;
 }
-inline void AudioCollectionResponse_Revision::set_rev(::google::protobuf::uint64 value) {
-  set_has_rev();
-  rev_ = value;
+inline ::std::string* AudioCollectionResponse_Revision::release_rev() {
+  clear_has_rev();
+  if (rev_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = rev_;
+    rev_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void AudioCollectionResponse_Revision::set_allocated_rev(::std::string* rev) {
+  if (rev_ != &::google::protobuf::internal::kEmptyString) {
+    delete rev_;
+  }
+  if (rev) {
+    set_has_rev();
+    rev_ = rev;
+  } else {
+    clear_has_rev();
+    rev_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
 }
 
 // -------------------------------------------------------------------

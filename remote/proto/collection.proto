@@ -11,6 +11,11 @@ message AudioCollectionRequest
 		required uint32	size			= 2;	// Number of elements requested. Server may not honor this size if too big
 	}
 
+	message GetRevision
+	{
+
+	}
+
 	message GetGenreList
 	{
 		required BatchParameter batch_parameter = 1;
@@ -68,11 +73,12 @@ message AudioCollectionRequest
 
 	required Type	type			= 1;
 
-	optional GetGenreList	get_genres	= 2;
-	optional GetArtistList	get_artists	= 3;
-	optional GetReleaseList	get_releases	= 4;
-	optional GetTrackList	get_tracks	= 5;
-	optional GetCoverArt	get_cover_art	= 6;
+	optional GetRevision	get_revision	= 2;
+	optional GetGenreList	get_genres	= 3;
+	optional GetArtistList	get_artists	= 4;
+	optional GetReleaseList	get_releases	= 5;
+	optional GetTrackList	get_tracks	= 6;
+	optional GetCoverArt	get_cover_art	= 7;
 }
 
 
@@ -81,7 +87,7 @@ message AudioCollectionResponse
 
 	message Revision
 	{
-		required uint64	rev	= 1;
+		required string	rev	= 1;	// Unique identifier of the database revision
 	}
 
 	message GenreList

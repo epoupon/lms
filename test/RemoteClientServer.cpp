@@ -406,6 +406,31 @@ class TestClient
 
 		}
 
+		std::string getRevision(void)
+		{
+			// Send request
+			Remote::ClientMessage request;
+
+			request.set_type( Remote::ClientMessage::AudioCollectionRequest );
+
+			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest::TypeGetRevision);
+			request.mutable_audio_collection_request()->mutable_get_revision();
+
+			sendMsg(request);
+
+			// Receive responses
+			Remote::ServerMessage response;
+			recvMsg(response);
+
+			// Process message
+			if (!response.has_audio_collection_response())
+				throw std::runtime_error("not an audio_collection_response!");
+
+			if (!response.audio_collection_response().has_revision())
+				throw std::runtime_error("not a revision!");
+
+			return response.audio_collection_response().revision().rev();
+		}
 
 	private:
 
@@ -658,6 +683,10 @@ int main()
 		// Client
 		// connect to loopback
 		TestClient	client( boost::asio::ip::tcp::endpoint( boost::asio::ip::address_v4::loopback(), 5080));
+
+		// **** REVISION ***
+		std::string rev = client.getRevision();
+		std::cout << "Revision '" << rev << "'" << std::endl;
 
 		// ****** Artists *********
 		std::vector<ArtistInfo>	artists;

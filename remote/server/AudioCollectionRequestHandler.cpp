@@ -1,12 +1,13 @@
 #include <algorithm>    // std::min
 
 #include <boost/locale.hpp>
-
+#include <boost/uuid/sha1.hpp>
 #include <boost/foreach.hpp>
 
 #include "AudioCollectionRequestHandler.hpp"
 
 #include "database/AudioTypes.hpp"
+#include "database/MediaDirectory.hpp"
 #include "cover/CoverArtGrabber.hpp"
 
 namespace Remote {
@@ -25,6 +26,17 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 
 	switch (request.type())
 	{
+		case AudioCollectionRequest::TypeGetRevision:
+			if (request.has_get_revision())
+			{
+				res = processGetRevision(request.get_revision(), *response.mutable_revision());
+				if (res)
+					response.set_type(AudioCollectionResponse::TypeRevision);
+			}
+			else
+				std::cerr << "Bad AudioCollectionRequest::TypeGetRevision" << std::endl;
+			break;
+
 		case AudioCollectionRequest::TypeGetGenreList:
 			if (request.has_get_genres())
 			{
@@ -327,6 +339,36 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 			res = true;
 			break;
 	}
+
+	return res;
+}
+
+bool
+AudioCollectionRequestHandler::processGetRevision(const AudioCollectionRequest::GetRevision& request, AudioCollectionResponse::Revision& response)
+{
+
+	bool res = false;
+
+	Wt::Dbo::Transaction transaction( _db.getSession() );
+
+	Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get( _db.getSession() );
+
+	std::string hashStr = boost::posix_time::to_iso_string(settings->getLastUpdated());
+
+	boost::uuids::detail::sha1 s;
+	BOOST_FOREACH(const char c, hashStr)
+		s.process_byte(c);
+
+	unsigned int digest[5];
+	s.get_digest(digest);
+
+	std::ostringstream oss;
+	for (std::size_t i = 0; i < 5; ++i)
+		oss << std::hex << std::setfill('0') << std::setw(4) << digest[i];
+
+	response.set_rev(oss.str());
+
+	res = true;
 
 	return res;
 }
