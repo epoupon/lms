@@ -11,23 +11,42 @@ namespace MetaData
 
 	enum Type
 	{
-		Artist,
-		Title,
-		Album,
-		Genre,
-		Duration,
-		TrackNumber,
-		DiscNumber,
-		CreationTime,
-		Cover,
+		Artist,			// string
+		Title,			// string
+		Album,			// string
+		Genres,			// list<string>
+		Duration,		// boost::posix_time::time_duration
+		TrackNumber,		// size_t
+		DiscNumber,		// size_t
+		CreationTime,		// boost::posix_time::ptime
+		Cover,			// GenericData
+		AudioStreams,		// vector<AudioStream>
+		VideoStreams,		// vector<VideoStream>
+		SubtitleStreams,	// vector<SubtitleStream>
 	};
 
-	// Used for Cover
+	// Used by Cover
 	struct GenericData {
 		std::string mimeType;
 		std::vector<unsigned char> data;
 	};
 
+	// Used by Streams
+	struct AudioStream {
+		std::size_t nbChannels;
+		std::size_t bitRate;
+	};
+
+	struct VideoStream {
+		std::size_t bitRate;
+	};
+
+	struct SubtitleStream {
+		;
+	};
+
+	// Type and associated data
+	// See enum Type's comments
 	typedef std::map<Type, boost::any>  Items;
 
 	class Parser

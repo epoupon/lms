@@ -32,7 +32,8 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 			// Get input streams
 			std::vector<Av::Stream> streams = input.getStreams();
 
-			BOOST_FOREACH(Av::Stream& stream, streams) {
+			BOOST_FOREACH(Av::Stream& stream, streams)
+			{
 				stream.getMetadata().get(metadata);
 
 				if (!metadata.empty())
@@ -40,10 +41,61 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 			}
 		}
 
-		std::cout << "Found " << metadata.size() << " tags!" << std::endl;
 
+		// Stream info
+		{
+			std::vector<Av::Stream> avStreams = input.getStreams();
+
+			std::vector<AudioStream>	audioStreams;
+			std::vector<VideoStream>	videoStreams;
+			std::vector<SubtitleStream>	subtitleStreams;
+
+			BOOST_FOREACH(Av::Stream& avStream, avStreams)
+			{
+				switch(avStream.getCodecContext().getType())
+				{
+					case AVMEDIA_TYPE_VIDEO:
+						if (!avStream.hasAttachedPic())
+						{
+							VideoStream stream;
+							stream.bitRate = avStream.getCodecContext().getBitRate();
+							videoStreams.push_back(stream);
+						}
+						break;
+
+					case AVMEDIA_TYPE_AUDIO:
+						{
+							AudioStream stream;
+							stream.nbChannels = avStream.getCodecContext().getNbChannels();
+							stream.bitRate = avStream.getCodecContext().getBitRate();
+							audioStreams.push_back(stream);
+						}
+						break;
+
+					case AVMEDIA_TYPE_SUBTITLE:
+						{
+							subtitleStreams.push_back( SubtitleStream() );
+						}
+						break;
+
+					default:
+						break;
+				}
+			}
+
+			if (!videoStreams.empty())
+				items.insert( std::make_pair(MetaData::VideoStreams, videoStreams));
+			if (!audioStreams.empty())
+				items.insert( std::make_pair(MetaData::AudioStreams, audioStreams));
+			if (!subtitleStreams.empty())
+				items.insert( std::make_pair(MetaData::SubtitleStreams, SubtitleStreams));
+
+		}
+
+		// Duration
 		items.insert( std::make_pair(MetaData::Duration, boost::posix_time::time_duration( boost::posix_time::seconds( input.getDurationSecs() )) ));
 
+		// Embedded MetaData
 		// Make sure to convert strings into UTF-8
 		std::map<std::string, std::string>::const_iterator it;
 		for (it = metadata.begin(); it != metadata.end(); ++it)
@@ -80,7 +132,7 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 			{
 				std::list<std::string> genres;
 				if (readList(it->second, ";,", genres))
-					items.insert( std::make_pair(MetaData::Genre, genres));
+					items.insert( std::make_pair(MetaData::Genres, genres));
 
 			}
 /*			else

@@ -6,8 +6,6 @@
 #include "database/MediaDirectory.hpp"
 #include "database/AudioTypes.hpp"
 
-#include "transcode/InputMediaFile.hpp"
-
 #include "Checksum.hpp"
 #include "DatabaseUpdater.hpp"
 
@@ -44,12 +42,18 @@ Updater::process(void)
 		}
 	}
 
+	std::cout << "Audio changes = " << _result.audioStats.nbChanges() << std::endl;
+	std::cout << "Video changes = " << _result.videoStats.nbChanges() << std::endl;
+
+	Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(_db.getSession());
+	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
 
 	if (_result.audioStats.nbChanges() + _result.videoStats.nbChanges() > 0)
-	{
-		Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(_db.getSession());
-		settings.modify()->setLastUpdate(boost::posix_time::second_clock::local_time());
-	}
+		settings.modify()->setLastUpdate(now);
+
+	settings.modify()->setLastScan(now);
+
+	transaction.commit();
 }
 
 void
@@ -71,7 +75,6 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		}
 
 		std::vector<unsigned char> checksum;
-		/* Compute CRC */
 		computeCrc( file, checksum );
 
 		// Skip file if its checksum is still the same
@@ -87,29 +90,30 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		// We estimate this is a audio file if:
 		// - we found a least one audio
-		// - there is no video stream
 		// - the duration is not null
-
-		Transcode::InputMediaFile mediaFile(file);
-/*		if (!mediaFile.getStreams( Transcode::Stream::Video ).empty())
-		{
-			std::cerr << "Skipped '" << file << "' (estimated video)" << std::endl;
-			return;
-		}
-		else */if (mediaFile.getStreams( Transcode::Stream::Audio ).empty())
+		if (items.find(MetaData::AudioStreams) == items.end()
+		|| boost::any_cast<std::vector<MetaData::AudioStream> >(items[MetaData::AudioStreams]).empty())
 		{
 			std::cerr << "Skipped '" << file << "' (no audio stream found)" << std::endl;
-			return;
-		}
-		else if (mediaFile.getDuration().total_seconds() == 0)
-		{
-			std::cerr << "Skipped '" << file << "' (duration null!)" << std::endl;
 
 			// If Track exists here, delete it!
 			if (track) {
 				track.remove();
 				stats.nbRemoved++;
 			}
+			return;
+		}
+		if (items.find(MetaData::Duration) == items.end()
+		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Duration]).total_seconds() == 0)
+		{
+			std::cerr << "Skipped '" << file << "' (no duration or duration 0)" << std::endl;
+
+			// If Track exists here, delete it!
+			if (track) {
+				track.remove();
+				stats.nbRemoved++;
+			}
+			return;
 		}
 
 		std::string title;
@@ -157,9 +161,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		typedef std::list<std::string> GenreList;
 		GenreList genreList;
 		std::vector< Genre::pointer > genres;
-		if (items.find(MetaData::Genre) != items.end())
+		if (items.find(MetaData::Genres) != items.end())
 		{
-			genreList = (boost::any_cast<GenreList>(items[MetaData::Genre]));
+			genreList = (boost::any_cast<GenreList>(items[MetaData::Genres]));
 
 			BOOST_FOREACH(const std::string& genre, genreList) {
 				Genre::pointer dbGenre ( Genre::getByName(_db.getSession(), genre) );
@@ -376,26 +380,27 @@ Updater::processVideoFile( const boost::filesystem::path& file)
 
 		std::cout << "Video, parsing file " << file << std::endl;
 
-		// TODO try to open the video file and get info on it
-		Transcode::InputMediaFile mediaFile(file);
+		MetaData::Items items;
+		_metadataParser.parse(file, items);
 
 		// We estimate this is a video if:
 		// - we found a least one video stream
 		// - the duration is not null
-		std::vector<Transcode::Stream> videoStreams(mediaFile.getStreams( Transcode::Stream::Video ));
-		if (videoStreams.empty())
+		if (items.find(MetaData::VideoStreams) == items.end()
+		|| boost::any_cast<std::vector<MetaData::VideoStream> >(items[MetaData::VideoStreams]).empty())
 		{
-			std::cerr << "Skipped '" << file << "' (no video stream found!)" << std::endl;
+			std::cerr << "Skipped '" << file << "' (no video stream found)" << std::endl;
 
-			// If Path exist, delete it!
+			// If Track exists here, delete it!
 			if (dbPath)
 				dbPath.remove();
 		}
-		else if (mediaFile.getDuration().total_seconds() == 0)
+		else if (items.find(MetaData::Duration) == items.end()
+		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Duration]).total_seconds() == 0)
 		{
-			std::cerr << "Skipped '" << file << "' (duration null!)" << std::endl;
+			std::cerr << "Skipped '" << file << "' (no duration or duration 0)" << std::endl;
 
-			// If Path exist, delete it!
+			// If Track exists here, delete it!
 			if (dbPath)
 				dbPath.remove();
 		}
@@ -423,7 +428,7 @@ Updater::processVideoFile( const boost::filesystem::path& file)
 			assert(video);
 
 			video.modify()->setName( file.filename().string() );
-			video.modify()->setDuration( mediaFile.getDuration() );
+			video.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Duration]) );
 		}
 
 		transaction.commit();
