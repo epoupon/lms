@@ -46,11 +46,7 @@ InputMediaFile::InputMediaFile(const boost::filesystem::path& p)
 		{
 			// Reject Video stream hat are in fact cover arts
 			if (avStream.hasAttachedPic())
-			{
-				std::cout << "Rejecting stream since it is an attached picture!" << std::endl;
 				continue;
-			}
-
 
 			avMediaTypes.push_back(avStream.getCodecContext().getType());
 

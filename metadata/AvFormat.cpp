@@ -20,8 +20,6 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 		Av::InputFormatContext input(p);
 		input.findStreamInfo(); // needed by input.getDurationSecs
 
-		std::cout << "Processing file '" << p << "'" << std::endl;
-
 		std::map<std::string, std::string> metadata;
 		input.getMetadata().get(metadata);
 

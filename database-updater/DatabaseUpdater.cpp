@@ -69,21 +69,14 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		// Skip file if last write is the same
 		Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
 		if (track && track->getLastWriteTime() == lastWriteTime)
-		{
-			std::cerr << "Skipped '" << file << "' (last write time match)" << std::endl;
 			return;
-		}
 
 		std::vector<unsigned char> checksum;
 		computeCrc( file, checksum );
 
 		// Skip file if its checksum is still the same
-		if (track && track->getChecksum() == checksum) {
-			std::cerr << "Skipped '" << file << "' (checksum match)" << std::endl;
+		if (track && track->getChecksum() == checksum)
 			return;
-		}
-
-		std::cout << "parsing file " << file << std::endl;
 
 		MetaData::Items items;
 		_metadataParser.parse(file, items);
@@ -239,7 +232,6 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 void
 Updater::refreshAudioDirectory( const boost::filesystem::path& p, Stats& stats)
 {
-	std::cout << "Refreshing audio directory " << p << std::endl;
 	if (boost::filesystem::exists(p) && boost::filesystem::is_directory(p)) {
 
 		typedef std::vector<boost::filesystem::path> Paths;             // store paths,
@@ -267,7 +259,6 @@ Updater::refreshAudioDirectory( const boost::filesystem::path& p, Stats& stats)
 			}
 		}
 	}
-	std::cout << "Refreshing audio directory " << p << ": DONE" << std::endl;
 }
 
 void
