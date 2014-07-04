@@ -25,7 +25,7 @@ Updater::Updater(boost::filesystem::path dbPath, MetaData::Parser& parser)
 void
 Updater::process(void)
 {
-	removeMissingAudioFiles();
+	removeMissingAudioFiles(_result.audioStats);
 	// TODO video files
 
 	Wt::Dbo::Transaction transaction(_db.getSession());
@@ -36,17 +36,24 @@ Updater::process(void)
 	{
 		switch (directory->getType()) {
 			case MediaDirectory::Audio:
-				refreshAudioDirectory(directory->getPath());
+				refreshAudioDirectory(directory->getPath(), _result.audioStats);
 				break;
 			case MediaDirectory::Video:
 				refreshVideoDirectory(directory->getPath());
 				break;
 		}
 	}
+
+
+	if (_result.audioStats.nbChanges() + _result.videoStats.nbChanges() > 0)
+	{
+		Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(_db.getSession());
+		settings.modify()->setLastUpdate(boost::posix_time::second_clock::local_time());
+	}
 }
 
 void
-Updater::processAudioFile( const boost::filesystem::path& file)
+Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 {
 	try {
 
@@ -99,8 +106,10 @@ Updater::processAudioFile( const boost::filesystem::path& file)
 			std::cerr << "Skipped '" << file << "' (duration null!)" << std::endl;
 
 			// If Track exists here, delete it!
-			if (track)
+			if (track) {
 				track.remove();
+				stats.nbRemoved++;
+			}
 		}
 
 		std::string title;
@@ -172,10 +181,12 @@ Updater::processAudioFile( const boost::filesystem::path& file)
 			// Create a new song
 			track = Track::create(_db.getSession(), file, artist, release);
 			std::cout << "Adding '" << file << "'" << std::endl;
+			stats.nbAdded++;
 		}
 		else
 		{
 			std::cout << "Updating '" << file << "'" << std::endl;
+			stats.nbModified++;
 		}
 
 		assert(track);
@@ -222,7 +233,7 @@ Updater::processAudioFile( const boost::filesystem::path& file)
 
 
 void
-Updater::refreshAudioDirectory( const boost::filesystem::path& p)
+Updater::refreshAudioDirectory( const boost::filesystem::path& p, Stats& stats)
 {
 	std::cout << "Refreshing audio directory " << p << std::endl;
 	if (boost::filesystem::exists(p) && boost::filesystem::is_directory(p)) {
@@ -238,10 +249,10 @@ Updater::refreshAudioDirectory( const boost::filesystem::path& p)
 
 			try {
 				if (boost::filesystem::is_directory(file)) {
-					refreshAudioDirectory( file );
+					refreshAudioDirectory( file, stats );
 				}
 				else if (boost::filesystem::is_regular(file)) {
-					processAudioFile( file );
+					processAudioFile( file, stats );
 				}
 				else {
 					std::cout << "Skipped '" << file << "' (not regular)" << std::endl;
@@ -256,7 +267,7 @@ Updater::refreshAudioDirectory( const boost::filesystem::path& p)
 }
 
 void
-Updater::removeMissingAudioFiles( void )
+Updater::removeMissingAudioFiles( Stats& stats )
 {
 	std::cerr << "Removing missing files..." << std::endl;
 	Wt::Dbo::Transaction transaction(_db.getSession());
@@ -272,13 +283,14 @@ Updater::removeMissingAudioFiles( void )
 			|| !boost::filesystem::is_regular( p ) )
 		{
 			(*i).remove();
+			stats.nbRemoved++;
 			std::cerr << "Removing file '" << p << "'" << std::endl;
 		}
 	}
 
 	transaction.commit();
 
-	std::cerr << "Refrshing missing files done!" << std::endl;
+	std::cerr << "Refreshing missing files done!" << std::endl;
 }
 
 Path::pointer

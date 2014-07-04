@@ -14,12 +14,32 @@ class Updater
 {
 	public:
 
+		struct Stats
+		{
+			std::size_t	nbAdded;
+			std::size_t	nbRemoved;
+			std::size_t	nbModified;
+			Stats() : nbAdded(0), nbRemoved(0), nbModified(0) {}
+
+			std::size_t nbChanges() const { return nbAdded + nbRemoved + nbModified;}
+		};
+
+		struct Result
+		{
+			Stats	audioStats;
+			Stats	videoStats;
+		};
+
 		Updater(boost::filesystem::path db, MetaData::Parser& parser);
 
 		// Update database
+		// TODO add a callback to get notifed once finished
 		void process();
 
+		const Result& getResult(void) const { return _result; }
+
 	private:
+
 
 //		void refresh(const WatchedDirectory& directory);
 
@@ -28,15 +48,17 @@ class Updater
 		void processVideoFile( const boost::filesystem::path& file);
 
 		// Audio
-		void removeMissingAudioFiles( void );
-		void refreshAudioDirectory( const boost::filesystem::path& directory);
-		void processAudioFile( const boost::filesystem::path& file);
+		void removeMissingAudioFiles( Stats& stats );
+		void refreshAudioDirectory( const boost::filesystem::path& directory, Stats& stats);
+		void processAudioFile( const boost::filesystem::path& file, Stats& stats);
 
 		Database::Path::pointer getAddPath(const boost::filesystem::path& path);
 
 		Database::Handler	_db;
 
-		MetaData::Parser&		_metadataParser;
+		MetaData::Parser&	_metadataParser;
+
+		Result			_result;	// update results
 }; // class Updater
 
 } // DatabaseUpdater
