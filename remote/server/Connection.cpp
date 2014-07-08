@@ -18,11 +18,11 @@ namespace Server {
 Connection::Connection(boost::asio::io_service& ioService,
 			boost::asio::ssl::context& context,
 			ConnectionManager& manager,
-			RequestHandler& handler)
+			const boost::filesystem::path& dbPath)
 : _closing(false),
 _socket(ioService, context),
 _connectionManager(manager),
-_requestHandler(handler)
+_requestHandler(dbPath)
 {
 	std::cout << "Server::Connection::Connection, Creating connection" << std::endl;
 }

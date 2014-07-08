@@ -5,25 +5,43 @@
 
 #include <Wt/Dbo/Dbo>
 #include <Wt/Dbo/backend/Sqlite3>
+#include <Wt/Auth/Dbo/UserDatabase>
+#include <Wt/Auth/Login>
+#include <Wt/Auth/PasswordService>
+
+#include "User.hpp"
 
 namespace Database {
 
-// Long living class handling the database
+		typedef Wt::Auth::Dbo::UserDatabase<AuthInfo> UserDatabase;
+
+// Session living class handling the database
 class Handler
 {
 	public:
+
 		Handler(boost::filesystem::path db);
+		~Handler();
 
 		Wt::Dbo::Session& getSession() { return _session; }
 
-		boost::filesystem::path getPath() const { return _path; }
+		Wt::Auth::AbstractUserDatabase& getUserDatabase();
+		Wt::Auth::Login& getLogin() { return _login; }
+
+		// Long living shared associated services
+		static void configureAuth();
+
+		static const Wt::Auth::AuthService& getAuthService();
+		static const Wt::Auth::PasswordService& getPasswordService();
 
 
 	private:
 
-		boost::filesystem::path		_path;
 		Wt::Dbo::backend::Sqlite3	_dbBackend;
 		Wt::Dbo::Session		_session;
+
+		UserDatabase*			_users;
+		Wt::Auth::Login 		_login;
 
 };
 

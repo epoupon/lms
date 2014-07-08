@@ -11,7 +11,7 @@ DatabaseUpdateService::DatabaseUpdateService(boost::asio::io_service& ioService,
 void
 DatabaseUpdateService::start(void)
 {
-//	_thread = boost::thread(boost::bind(&DatabaseUpdater::Updater::process, &_databaseUpdater));
+	_thread = boost::thread(boost::bind(&DatabaseUpdater::Updater::process, &_databaseUpdater));
 }
 
 void

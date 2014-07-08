@@ -5,6 +5,7 @@
 
 #include "transcode/AvConvTranscoder.hpp"
 #include "av/Common.hpp"
+#include "database/DatabaseHandler.hpp"
 
 #include "ServiceManager.hpp"
 #include "DatabaseUpdateService.hpp"
@@ -29,10 +30,11 @@ int main(int argc, char* argv[])
 		// lib init
 		Av::AvInit();
 		Transcode::AvConvTranscoder::init();
+		Database::Handler::configureAuth();
 
 		std::cout << "Starting services..." << std::endl;
 
-		serviceManager.startService( std::make_shared<DatabaseUpdateService>( serviceManager.getIoService(), dbPath) );
+//		serviceManager.startService( std::make_shared<DatabaseUpdateService>( serviceManager.getIoService(), dbPath) );
 		serviceManager.startService( std::make_shared<RemoteServerService>( serviceManager.getIoService(), remoteListenEndpoint, dbPath) );
 		serviceManager.startService( std::make_shared<UserInterfaceService>(argc, argv, dbPath) );
 

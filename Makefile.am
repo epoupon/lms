@@ -19,6 +19,7 @@ lms_SOURCES = \
 	$(top_srcdir)/cover/CoverArt.cpp	\
 	$(top_srcdir)/cover/CoverArtGrabber.cpp	\
 	$(top_srcdir)/ui/LmsApplication.cpp	\
+	$(top_srcdir)/ui/LmsHome.cpp		\
 	$(top_srcdir)/ui/audio/AudioWidget.cpp			\
 	$(top_srcdir)/ui/audio/AudioDatabaseWidget.cpp		\
 	$(top_srcdir)/ui/audio/AudioMediaPlayerWidget.cpp	\

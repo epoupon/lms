@@ -15,7 +15,7 @@ _ioService(ioService),
 _acceptor(_ioService, bindEndpoint, true /*SO_REUSEADDR*/),
 _connectionManager(),
 _context(boost::asio::ssl::context::tlsv1_server),
-_requestHandler(dbPath)
+_dbPath(dbPath)
 {
 	_context.set_options( boost::asio::ssl::context::default_workarounds // TODO check this thing
 			| boost::asio::ssl::context::single_dh_use
@@ -40,7 +40,7 @@ Server::run()
 void
 Server::asyncAccept()
 {
-	std::shared_ptr<Connection> newConnection = std::make_shared<Connection>(_ioService, _context, _connectionManager, _requestHandler);
+	std::shared_ptr<Connection> newConnection = std::make_shared<Connection>(_ioService, _context, _connectionManager, _dbPath);
 
 	_acceptor.async_accept(newConnection->getSocket(),
 			boost::bind(&Server::handleAccept, this, newConnection, boost::asio::placeholders::error));

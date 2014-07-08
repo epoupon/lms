@@ -1,9 +1,9 @@
 
 #include <Wt/WApplication>
-#include <Wt/WLineEdit>
 
-#include "audio/AudioWidget.hpp"
-#include "video/VideoWidget.hpp"
+#include "common/SessionData.hpp"
+
+#include "LmsHome.hpp"
 
 namespace UserInterface {
 
@@ -18,13 +18,11 @@ class LmsApplication : public Wt::WApplication
 
 	private:
 
-		void handleSearch();
+		void handleAuthEvent(void);
 
 		SessionData	_sessionData;
 
-		Wt::WLineEdit*	_searchEdit;
-		AudioWidget*	_audioWidget;
-		VideoWidget*	_videoWidget;
+		LmsHome*	_home;
 
 };
 

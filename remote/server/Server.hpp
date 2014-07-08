@@ -46,8 +46,8 @@ class Server
 
 		boost::asio::ssl::context _context;
 
-		/// The handler for all incoming requests.
-		RequestHandler _requestHandler;
+		/// The database to be used for requests
+		boost::filesystem::path _dbPath;
 };
 
 } // namespace Server
