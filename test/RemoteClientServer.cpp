@@ -456,7 +456,20 @@ class TestClient
 			if (!response.auth_response().has_password_result())
 				throw std::runtime_error("not a password result!");
 
-			return (response.auth_response().password_result().type() == Remote::AuthResponse::PasswordResult::TypePasswordValid);
+			switch( response.auth_response().password_result().type())
+			{
+				case Remote::AuthResponse::PasswordResult::TypePasswordValid:
+					return true;
+				case Remote::AuthResponse::PasswordResult::TypePasswordInvalid:
+					return false;
+				case Remote::AuthResponse::PasswordResult::TypeLoginThrottling:
+					if (response.auth_response().password_result().has_delay())
+						std::cerr << "Has to wait for " << response.auth_response().password_result().delay()  << " seconds" << std::endl;
+
+					return false;
+				default:
+					throw std::runtime_error("bad password result type");
+			}
 		}
 
 	private:
