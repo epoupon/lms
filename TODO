@@ -2,23 +2,28 @@
 [ServiceManager]
 - Rework the whole start/stop/try/cach/thread/interrupts things
 
+[Admin users]
+- Add/remove users
+- Add path to Audio/Video files
+- Manual/autorefresh settings
+- Display some stats about the database:
+	- nb audio/video files
+	- last scan/update
+
 [Users]
-- Admin account to add/remove users, add path to watch for Audio/Video files
+- Prefered bitrate and codecs for audio/video
 - Handle login lifetime?
 
 [Cover]
-- Scaling: find something more "reliable" than GIL and its customs extensions (adobe work, io_new)
+- Scaling: find something more "reliable" than GIL and its customs extensions (adobe work, io_new)?
 
 [Database]
 - When removing a track, make sure to remove genre/artist/release if last of it
-- Use Inotify like system to watch modified/added files
+- Use Inotify like system to watch modified/added files?
 - Implement a video database cleanup
-- User access for Video/Pictures  (really needed for Audio?)
-- Create a new type: "share", that handles every other types in a directory based share?
 - Group video in "video groups". Each video may has sub groups (current "Path" class)
-	- Simplify database and remove the Path class
-- Use size limits for strings?
-- Manage a global database revision number
+	-> Simplify database and remove the Path class
+- Use size limits for strings (artist, release, genre)?
 - Process only files whose extensions are well known in audio/video world (avoid useless parsing/errors)
 
 [Audio]
