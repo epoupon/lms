@@ -23,6 +23,7 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/extension_set.h>
+#include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
 #include "common.pb.h"
 // @@protoc_insertion_point(includes)
@@ -35,9 +36,169 @@ void protobuf_AssignDesc_auth_2eproto();
 void protobuf_ShutdownFile_auth_2eproto();
 
 class AuthRequest;
+class AuthRequest_Password;
 class AuthResponse;
+class AuthResponse_PasswordResult;
 
+enum AuthRequest_Type {
+  AuthRequest_Type_TypePassword = 1
+};
+bool AuthRequest_Type_IsValid(int value);
+const AuthRequest_Type AuthRequest_Type_Type_MIN = AuthRequest_Type_TypePassword;
+const AuthRequest_Type AuthRequest_Type_Type_MAX = AuthRequest_Type_TypePassword;
+const int AuthRequest_Type_Type_ARRAYSIZE = AuthRequest_Type_Type_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* AuthRequest_Type_descriptor();
+inline const ::std::string& AuthRequest_Type_Name(AuthRequest_Type value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    AuthRequest_Type_descriptor(), value);
+}
+inline bool AuthRequest_Type_Parse(
+    const ::std::string& name, AuthRequest_Type* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<AuthRequest_Type>(
+    AuthRequest_Type_descriptor(), name, value);
+}
+enum AuthResponse_PasswordResult_Type {
+  AuthResponse_PasswordResult_Type_TypePasswordInvalid = 1,
+  AuthResponse_PasswordResult_Type_TypeLoginThrottling = 2,
+  AuthResponse_PasswordResult_Type_TypePasswordValid = 3
+};
+bool AuthResponse_PasswordResult_Type_IsValid(int value);
+const AuthResponse_PasswordResult_Type AuthResponse_PasswordResult_Type_Type_MIN = AuthResponse_PasswordResult_Type_TypePasswordInvalid;
+const AuthResponse_PasswordResult_Type AuthResponse_PasswordResult_Type_Type_MAX = AuthResponse_PasswordResult_Type_TypePasswordValid;
+const int AuthResponse_PasswordResult_Type_Type_ARRAYSIZE = AuthResponse_PasswordResult_Type_Type_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* AuthResponse_PasswordResult_Type_descriptor();
+inline const ::std::string& AuthResponse_PasswordResult_Type_Name(AuthResponse_PasswordResult_Type value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    AuthResponse_PasswordResult_Type_descriptor(), value);
+}
+inline bool AuthResponse_PasswordResult_Type_Parse(
+    const ::std::string& name, AuthResponse_PasswordResult_Type* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<AuthResponse_PasswordResult_Type>(
+    AuthResponse_PasswordResult_Type_descriptor(), name, value);
+}
+enum AuthResponse_Type {
+  AuthResponse_Type_TypePasswordResult = 1
+};
+bool AuthResponse_Type_IsValid(int value);
+const AuthResponse_Type AuthResponse_Type_Type_MIN = AuthResponse_Type_TypePasswordResult;
+const AuthResponse_Type AuthResponse_Type_Type_MAX = AuthResponse_Type_TypePasswordResult;
+const int AuthResponse_Type_Type_ARRAYSIZE = AuthResponse_Type_Type_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* AuthResponse_Type_descriptor();
+inline const ::std::string& AuthResponse_Type_Name(AuthResponse_Type value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    AuthResponse_Type_descriptor(), value);
+}
+inline bool AuthResponse_Type_Parse(
+    const ::std::string& name, AuthResponse_Type* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<AuthResponse_Type>(
+    AuthResponse_Type_descriptor(), name, value);
+}
 // ===================================================================
+
+class AuthRequest_Password : public ::google::protobuf::Message {
+ public:
+  AuthRequest_Password();
+  virtual ~AuthRequest_Password();
+
+  AuthRequest_Password(const AuthRequest_Password& from);
+
+  inline AuthRequest_Password& operator=(const AuthRequest_Password& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const AuthRequest_Password& default_instance();
+
+  void Swap(AuthRequest_Password* other);
+
+  // implements Message ----------------------------------------------
+
+  AuthRequest_Password* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const AuthRequest_Password& from);
+  void MergeFrom(const AuthRequest_Password& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required string user_login = 1;
+  inline bool has_user_login() const;
+  inline void clear_user_login();
+  static const int kUserLoginFieldNumber = 1;
+  inline const ::std::string& user_login() const;
+  inline void set_user_login(const ::std::string& value);
+  inline void set_user_login(const char* value);
+  inline void set_user_login(const char* value, size_t size);
+  inline ::std::string* mutable_user_login();
+  inline ::std::string* release_user_login();
+  inline void set_allocated_user_login(::std::string* user_login);
+
+  // required string user_password = 2;
+  inline bool has_user_password() const;
+  inline void clear_user_password();
+  static const int kUserPasswordFieldNumber = 2;
+  inline const ::std::string& user_password() const;
+  inline void set_user_password(const ::std::string& value);
+  inline void set_user_password(const char* value);
+  inline void set_user_password(const char* value, size_t size);
+  inline ::std::string* mutable_user_password();
+  inline ::std::string* release_user_password();
+  inline void set_allocated_user_password(::std::string* user_password);
+
+  // @@protoc_insertion_point(class_scope:Remote.AuthRequest.Password)
+ private:
+  inline void set_has_user_login();
+  inline void clear_has_user_login();
+  inline void set_has_user_password();
+  inline void clear_has_user_password();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::std::string* user_login_;
+  ::std::string* user_password_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+
+  friend void  protobuf_AddDesc_auth_2eproto();
+  friend void protobuf_AssignDesc_auth_2eproto();
+  friend void protobuf_ShutdownFile_auth_2eproto();
+
+  void InitAsDefaultInstance();
+  static AuthRequest_Password* default_instance_;
+};
+// -------------------------------------------------------------------
 
 class AuthRequest : public ::google::protobuf::Message {
  public:
@@ -91,43 +252,60 @@ class AuthRequest : public ::google::protobuf::Message {
 
   // nested types ----------------------------------------------------
 
+  typedef AuthRequest_Password Password;
+
+  typedef AuthRequest_Type Type;
+  static const Type TypePassword = AuthRequest_Type_TypePassword;
+  static inline bool Type_IsValid(int value) {
+    return AuthRequest_Type_IsValid(value);
+  }
+  static const Type Type_MIN =
+    AuthRequest_Type_Type_MIN;
+  static const Type Type_MAX =
+    AuthRequest_Type_Type_MAX;
+  static const int Type_ARRAYSIZE =
+    AuthRequest_Type_Type_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor*
+  Type_descriptor() {
+    return AuthRequest_Type_descriptor();
+  }
+  static inline const ::std::string& Type_Name(Type value) {
+    return AuthRequest_Type_Name(value);
+  }
+  static inline bool Type_Parse(const ::std::string& name,
+      Type* value) {
+    return AuthRequest_Type_Parse(name, value);
+  }
+
   // accessors -------------------------------------------------------
 
-  // required string user_name = 1;
-  inline bool has_user_name() const;
-  inline void clear_user_name();
-  static const int kUserNameFieldNumber = 1;
-  inline const ::std::string& user_name() const;
-  inline void set_user_name(const ::std::string& value);
-  inline void set_user_name(const char* value);
-  inline void set_user_name(const char* value, size_t size);
-  inline ::std::string* mutable_user_name();
-  inline ::std::string* release_user_name();
-  inline void set_allocated_user_name(::std::string* user_name);
+  // required .Remote.AuthRequest.Type type = 1;
+  inline bool has_type() const;
+  inline void clear_type();
+  static const int kTypeFieldNumber = 1;
+  inline ::Remote::AuthRequest_Type type() const;
+  inline void set_type(::Remote::AuthRequest_Type value);
 
-  // required string user_password = 2;
-  inline bool has_user_password() const;
-  inline void clear_user_password();
-  static const int kUserPasswordFieldNumber = 2;
-  inline const ::std::string& user_password() const;
-  inline void set_user_password(const ::std::string& value);
-  inline void set_user_password(const char* value);
-  inline void set_user_password(const char* value, size_t size);
-  inline ::std::string* mutable_user_password();
-  inline ::std::string* release_user_password();
-  inline void set_allocated_user_password(::std::string* user_password);
+  // optional .Remote.AuthRequest.Password password = 2;
+  inline bool has_password() const;
+  inline void clear_password();
+  static const int kPasswordFieldNumber = 2;
+  inline const ::Remote::AuthRequest_Password& password() const;
+  inline ::Remote::AuthRequest_Password* mutable_password();
+  inline ::Remote::AuthRequest_Password* release_password();
+  inline void set_allocated_password(::Remote::AuthRequest_Password* password);
 
   // @@protoc_insertion_point(class_scope:Remote.AuthRequest)
  private:
-  inline void set_has_user_name();
-  inline void clear_has_user_name();
-  inline void set_has_user_password();
-  inline void clear_has_user_password();
+  inline void set_has_type();
+  inline void clear_has_type();
+  inline void set_has_password();
+  inline void clear_has_password();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::std::string* user_name_;
-  ::std::string* user_password_;
+  ::Remote::AuthRequest_Password* password_;
+  int type_;
 
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
@@ -138,6 +316,123 @@ class AuthRequest : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static AuthRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class AuthResponse_PasswordResult : public ::google::protobuf::Message {
+ public:
+  AuthResponse_PasswordResult();
+  virtual ~AuthResponse_PasswordResult();
+
+  AuthResponse_PasswordResult(const AuthResponse_PasswordResult& from);
+
+  inline AuthResponse_PasswordResult& operator=(const AuthResponse_PasswordResult& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const AuthResponse_PasswordResult& default_instance();
+
+  void Swap(AuthResponse_PasswordResult* other);
+
+  // implements Message ----------------------------------------------
+
+  AuthResponse_PasswordResult* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const AuthResponse_PasswordResult& from);
+  void MergeFrom(const AuthResponse_PasswordResult& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  typedef AuthResponse_PasswordResult_Type Type;
+  static const Type TypePasswordInvalid = AuthResponse_PasswordResult_Type_TypePasswordInvalid;
+  static const Type TypeLoginThrottling = AuthResponse_PasswordResult_Type_TypeLoginThrottling;
+  static const Type TypePasswordValid = AuthResponse_PasswordResult_Type_TypePasswordValid;
+  static inline bool Type_IsValid(int value) {
+    return AuthResponse_PasswordResult_Type_IsValid(value);
+  }
+  static const Type Type_MIN =
+    AuthResponse_PasswordResult_Type_Type_MIN;
+  static const Type Type_MAX =
+    AuthResponse_PasswordResult_Type_Type_MAX;
+  static const int Type_ARRAYSIZE =
+    AuthResponse_PasswordResult_Type_Type_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor*
+  Type_descriptor() {
+    return AuthResponse_PasswordResult_Type_descriptor();
+  }
+  static inline const ::std::string& Type_Name(Type value) {
+    return AuthResponse_PasswordResult_Type_Name(value);
+  }
+  static inline bool Type_Parse(const ::std::string& name,
+      Type* value) {
+    return AuthResponse_PasswordResult_Type_Parse(name, value);
+  }
+
+  // accessors -------------------------------------------------------
+
+  // required .Remote.AuthResponse.PasswordResult.Type type = 1;
+  inline bool has_type() const;
+  inline void clear_type();
+  static const int kTypeFieldNumber = 1;
+  inline ::Remote::AuthResponse_PasswordResult_Type type() const;
+  inline void set_type(::Remote::AuthResponse_PasswordResult_Type value);
+
+  // optional uint32 delay = 2;
+  inline bool has_delay() const;
+  inline void clear_delay();
+  static const int kDelayFieldNumber = 2;
+  inline ::google::protobuf::uint32 delay() const;
+  inline void set_delay(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:Remote.AuthResponse.PasswordResult)
+ private:
+  inline void set_has_type();
+  inline void clear_has_type();
+  inline void set_has_delay();
+  inline void clear_has_delay();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  int type_;
+  ::google::protobuf::uint32 delay_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+
+  friend void  protobuf_AddDesc_auth_2eproto();
+  friend void protobuf_AssignDesc_auth_2eproto();
+  friend void protobuf_ShutdownFile_auth_2eproto();
+
+  void InitAsDefaultInstance();
+  static AuthResponse_PasswordResult* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -193,28 +488,63 @@ class AuthResponse : public ::google::protobuf::Message {
 
   // nested types ----------------------------------------------------
 
+  typedef AuthResponse_PasswordResult PasswordResult;
+
+  typedef AuthResponse_Type Type;
+  static const Type TypePasswordResult = AuthResponse_Type_TypePasswordResult;
+  static inline bool Type_IsValid(int value) {
+    return AuthResponse_Type_IsValid(value);
+  }
+  static const Type Type_MIN =
+    AuthResponse_Type_Type_MIN;
+  static const Type Type_MAX =
+    AuthResponse_Type_Type_MAX;
+  static const int Type_ARRAYSIZE =
+    AuthResponse_Type_Type_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor*
+  Type_descriptor() {
+    return AuthResponse_Type_descriptor();
+  }
+  static inline const ::std::string& Type_Name(Type value) {
+    return AuthResponse_Type_Name(value);
+  }
+  static inline bool Type_Parse(const ::std::string& name,
+      Type* value) {
+    return AuthResponse_Type_Parse(name, value);
+  }
+
   // accessors -------------------------------------------------------
 
-  // required .Remote.Error error = 1;
-  inline bool has_error() const;
-  inline void clear_error();
-  static const int kErrorFieldNumber = 1;
-  inline const ::Remote::Error& error() const;
-  inline ::Remote::Error* mutable_error();
-  inline ::Remote::Error* release_error();
-  inline void set_allocated_error(::Remote::Error* error);
+  // required .Remote.AuthResponse.Type type = 1;
+  inline bool has_type() const;
+  inline void clear_type();
+  static const int kTypeFieldNumber = 1;
+  inline ::Remote::AuthResponse_Type type() const;
+  inline void set_type(::Remote::AuthResponse_Type value);
+
+  // optional .Remote.AuthResponse.PasswordResult password_result = 2;
+  inline bool has_password_result() const;
+  inline void clear_password_result();
+  static const int kPasswordResultFieldNumber = 2;
+  inline const ::Remote::AuthResponse_PasswordResult& password_result() const;
+  inline ::Remote::AuthResponse_PasswordResult* mutable_password_result();
+  inline ::Remote::AuthResponse_PasswordResult* release_password_result();
+  inline void set_allocated_password_result(::Remote::AuthResponse_PasswordResult* password_result);
 
   // @@protoc_insertion_point(class_scope:Remote.AuthResponse)
  private:
-  inline void set_has_error();
-  inline void clear_has_error();
+  inline void set_has_type();
+  inline void clear_has_type();
+  inline void set_has_password_result();
+  inline void clear_has_password_result();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::Remote::Error* error_;
+  ::Remote::AuthResponse_PasswordResult* password_result_;
+  int type_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
 
   friend void  protobuf_AddDesc_auth_2eproto();
   friend void protobuf_AssignDesc_auth_2eproto();
@@ -228,126 +558,126 @@ class AuthResponse : public ::google::protobuf::Message {
 
 // ===================================================================
 
-// AuthRequest
+// AuthRequest_Password
 
-// required string user_name = 1;
-inline bool AuthRequest::has_user_name() const {
+// required string user_login = 1;
+inline bool AuthRequest_Password::has_user_login() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void AuthRequest::set_has_user_name() {
+inline void AuthRequest_Password::set_has_user_login() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void AuthRequest::clear_has_user_name() {
+inline void AuthRequest_Password::clear_has_user_login() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void AuthRequest::clear_user_name() {
-  if (user_name_ != &::google::protobuf::internal::kEmptyString) {
-    user_name_->clear();
+inline void AuthRequest_Password::clear_user_login() {
+  if (user_login_ != &::google::protobuf::internal::kEmptyString) {
+    user_login_->clear();
   }
-  clear_has_user_name();
+  clear_has_user_login();
 }
-inline const ::std::string& AuthRequest::user_name() const {
-  return *user_name_;
+inline const ::std::string& AuthRequest_Password::user_login() const {
+  return *user_login_;
 }
-inline void AuthRequest::set_user_name(const ::std::string& value) {
-  set_has_user_name();
-  if (user_name_ == &::google::protobuf::internal::kEmptyString) {
-    user_name_ = new ::std::string;
+inline void AuthRequest_Password::set_user_login(const ::std::string& value) {
+  set_has_user_login();
+  if (user_login_ == &::google::protobuf::internal::kEmptyString) {
+    user_login_ = new ::std::string;
   }
-  user_name_->assign(value);
+  user_login_->assign(value);
 }
-inline void AuthRequest::set_user_name(const char* value) {
-  set_has_user_name();
-  if (user_name_ == &::google::protobuf::internal::kEmptyString) {
-    user_name_ = new ::std::string;
+inline void AuthRequest_Password::set_user_login(const char* value) {
+  set_has_user_login();
+  if (user_login_ == &::google::protobuf::internal::kEmptyString) {
+    user_login_ = new ::std::string;
   }
-  user_name_->assign(value);
+  user_login_->assign(value);
 }
-inline void AuthRequest::set_user_name(const char* value, size_t size) {
-  set_has_user_name();
-  if (user_name_ == &::google::protobuf::internal::kEmptyString) {
-    user_name_ = new ::std::string;
+inline void AuthRequest_Password::set_user_login(const char* value, size_t size) {
+  set_has_user_login();
+  if (user_login_ == &::google::protobuf::internal::kEmptyString) {
+    user_login_ = new ::std::string;
   }
-  user_name_->assign(reinterpret_cast<const char*>(value), size);
+  user_login_->assign(reinterpret_cast<const char*>(value), size);
 }
-inline ::std::string* AuthRequest::mutable_user_name() {
-  set_has_user_name();
-  if (user_name_ == &::google::protobuf::internal::kEmptyString) {
-    user_name_ = new ::std::string;
+inline ::std::string* AuthRequest_Password::mutable_user_login() {
+  set_has_user_login();
+  if (user_login_ == &::google::protobuf::internal::kEmptyString) {
+    user_login_ = new ::std::string;
   }
-  return user_name_;
+  return user_login_;
 }
-inline ::std::string* AuthRequest::release_user_name() {
-  clear_has_user_name();
-  if (user_name_ == &::google::protobuf::internal::kEmptyString) {
+inline ::std::string* AuthRequest_Password::release_user_login() {
+  clear_has_user_login();
+  if (user_login_ == &::google::protobuf::internal::kEmptyString) {
     return NULL;
   } else {
-    ::std::string* temp = user_name_;
-    user_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    ::std::string* temp = user_login_;
+    user_login_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
     return temp;
   }
 }
-inline void AuthRequest::set_allocated_user_name(::std::string* user_name) {
-  if (user_name_ != &::google::protobuf::internal::kEmptyString) {
-    delete user_name_;
+inline void AuthRequest_Password::set_allocated_user_login(::std::string* user_login) {
+  if (user_login_ != &::google::protobuf::internal::kEmptyString) {
+    delete user_login_;
   }
-  if (user_name) {
-    set_has_user_name();
-    user_name_ = user_name;
+  if (user_login) {
+    set_has_user_login();
+    user_login_ = user_login;
   } else {
-    clear_has_user_name();
-    user_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    clear_has_user_login();
+    user_login_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   }
 }
 
 // required string user_password = 2;
-inline bool AuthRequest::has_user_password() const {
+inline bool AuthRequest_Password::has_user_password() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void AuthRequest::set_has_user_password() {
+inline void AuthRequest_Password::set_has_user_password() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void AuthRequest::clear_has_user_password() {
+inline void AuthRequest_Password::clear_has_user_password() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void AuthRequest::clear_user_password() {
+inline void AuthRequest_Password::clear_user_password() {
   if (user_password_ != &::google::protobuf::internal::kEmptyString) {
     user_password_->clear();
   }
   clear_has_user_password();
 }
-inline const ::std::string& AuthRequest::user_password() const {
+inline const ::std::string& AuthRequest_Password::user_password() const {
   return *user_password_;
 }
-inline void AuthRequest::set_user_password(const ::std::string& value) {
+inline void AuthRequest_Password::set_user_password(const ::std::string& value) {
   set_has_user_password();
   if (user_password_ == &::google::protobuf::internal::kEmptyString) {
     user_password_ = new ::std::string;
   }
   user_password_->assign(value);
 }
-inline void AuthRequest::set_user_password(const char* value) {
+inline void AuthRequest_Password::set_user_password(const char* value) {
   set_has_user_password();
   if (user_password_ == &::google::protobuf::internal::kEmptyString) {
     user_password_ = new ::std::string;
   }
   user_password_->assign(value);
 }
-inline void AuthRequest::set_user_password(const char* value, size_t size) {
+inline void AuthRequest_Password::set_user_password(const char* value, size_t size) {
   set_has_user_password();
   if (user_password_ == &::google::protobuf::internal::kEmptyString) {
     user_password_ = new ::std::string;
   }
   user_password_->assign(reinterpret_cast<const char*>(value), size);
 }
-inline ::std::string* AuthRequest::mutable_user_password() {
+inline ::std::string* AuthRequest_Password::mutable_user_password() {
   set_has_user_password();
   if (user_password_ == &::google::protobuf::internal::kEmptyString) {
     user_password_ = new ::std::string;
   }
   return user_password_;
 }
-inline ::std::string* AuthRequest::release_user_password() {
+inline ::std::string* AuthRequest_Password::release_user_password() {
   clear_has_user_password();
   if (user_password_ == &::google::protobuf::internal::kEmptyString) {
     return NULL;
@@ -357,7 +687,7 @@ inline ::std::string* AuthRequest::release_user_password() {
     return temp;
   }
 }
-inline void AuthRequest::set_allocated_user_password(::std::string* user_password) {
+inline void AuthRequest_Password::set_allocated_user_password(::std::string* user_password) {
   if (user_password_ != &::google::protobuf::internal::kEmptyString) {
     delete user_password_;
   }
@@ -372,43 +702,180 @@ inline void AuthRequest::set_allocated_user_password(::std::string* user_passwor
 
 // -------------------------------------------------------------------
 
-// AuthResponse
+// AuthRequest
 
-// required .Remote.Error error = 1;
-inline bool AuthResponse::has_error() const {
+// required .Remote.AuthRequest.Type type = 1;
+inline bool AuthRequest::has_type() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void AuthResponse::set_has_error() {
+inline void AuthRequest::set_has_type() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void AuthResponse::clear_has_error() {
+inline void AuthRequest::clear_has_type() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void AuthResponse::clear_error() {
-  if (error_ != NULL) error_->::Remote::Error::Clear();
-  clear_has_error();
+inline void AuthRequest::clear_type() {
+  type_ = 1;
+  clear_has_type();
 }
-inline const ::Remote::Error& AuthResponse::error() const {
-  return error_ != NULL ? *error_ : *default_instance_->error_;
+inline ::Remote::AuthRequest_Type AuthRequest::type() const {
+  return static_cast< ::Remote::AuthRequest_Type >(type_);
 }
-inline ::Remote::Error* AuthResponse::mutable_error() {
-  set_has_error();
-  if (error_ == NULL) error_ = new ::Remote::Error;
-  return error_;
+inline void AuthRequest::set_type(::Remote::AuthRequest_Type value) {
+  assert(::Remote::AuthRequest_Type_IsValid(value));
+  set_has_type();
+  type_ = value;
 }
-inline ::Remote::Error* AuthResponse::release_error() {
-  clear_has_error();
-  ::Remote::Error* temp = error_;
-  error_ = NULL;
+
+// optional .Remote.AuthRequest.Password password = 2;
+inline bool AuthRequest::has_password() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void AuthRequest::set_has_password() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void AuthRequest::clear_has_password() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void AuthRequest::clear_password() {
+  if (password_ != NULL) password_->::Remote::AuthRequest_Password::Clear();
+  clear_has_password();
+}
+inline const ::Remote::AuthRequest_Password& AuthRequest::password() const {
+  return password_ != NULL ? *password_ : *default_instance_->password_;
+}
+inline ::Remote::AuthRequest_Password* AuthRequest::mutable_password() {
+  set_has_password();
+  if (password_ == NULL) password_ = new ::Remote::AuthRequest_Password;
+  return password_;
+}
+inline ::Remote::AuthRequest_Password* AuthRequest::release_password() {
+  clear_has_password();
+  ::Remote::AuthRequest_Password* temp = password_;
+  password_ = NULL;
   return temp;
 }
-inline void AuthResponse::set_allocated_error(::Remote::Error* error) {
-  delete error_;
-  error_ = error;
-  if (error) {
-    set_has_error();
+inline void AuthRequest::set_allocated_password(::Remote::AuthRequest_Password* password) {
+  delete password_;
+  password_ = password;
+  if (password) {
+    set_has_password();
   } else {
-    clear_has_error();
+    clear_has_password();
+  }
+}
+
+// -------------------------------------------------------------------
+
+// AuthResponse_PasswordResult
+
+// required .Remote.AuthResponse.PasswordResult.Type type = 1;
+inline bool AuthResponse_PasswordResult::has_type() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void AuthResponse_PasswordResult::set_has_type() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void AuthResponse_PasswordResult::clear_has_type() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void AuthResponse_PasswordResult::clear_type() {
+  type_ = 1;
+  clear_has_type();
+}
+inline ::Remote::AuthResponse_PasswordResult_Type AuthResponse_PasswordResult::type() const {
+  return static_cast< ::Remote::AuthResponse_PasswordResult_Type >(type_);
+}
+inline void AuthResponse_PasswordResult::set_type(::Remote::AuthResponse_PasswordResult_Type value) {
+  assert(::Remote::AuthResponse_PasswordResult_Type_IsValid(value));
+  set_has_type();
+  type_ = value;
+}
+
+// optional uint32 delay = 2;
+inline bool AuthResponse_PasswordResult::has_delay() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void AuthResponse_PasswordResult::set_has_delay() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void AuthResponse_PasswordResult::clear_has_delay() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void AuthResponse_PasswordResult::clear_delay() {
+  delay_ = 0u;
+  clear_has_delay();
+}
+inline ::google::protobuf::uint32 AuthResponse_PasswordResult::delay() const {
+  return delay_;
+}
+inline void AuthResponse_PasswordResult::set_delay(::google::protobuf::uint32 value) {
+  set_has_delay();
+  delay_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// AuthResponse
+
+// required .Remote.AuthResponse.Type type = 1;
+inline bool AuthResponse::has_type() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void AuthResponse::set_has_type() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void AuthResponse::clear_has_type() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void AuthResponse::clear_type() {
+  type_ = 1;
+  clear_has_type();
+}
+inline ::Remote::AuthResponse_Type AuthResponse::type() const {
+  return static_cast< ::Remote::AuthResponse_Type >(type_);
+}
+inline void AuthResponse::set_type(::Remote::AuthResponse_Type value) {
+  assert(::Remote::AuthResponse_Type_IsValid(value));
+  set_has_type();
+  type_ = value;
+}
+
+// optional .Remote.AuthResponse.PasswordResult password_result = 2;
+inline bool AuthResponse::has_password_result() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void AuthResponse::set_has_password_result() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void AuthResponse::clear_has_password_result() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void AuthResponse::clear_password_result() {
+  if (password_result_ != NULL) password_result_->::Remote::AuthResponse_PasswordResult::Clear();
+  clear_has_password_result();
+}
+inline const ::Remote::AuthResponse_PasswordResult& AuthResponse::password_result() const {
+  return password_result_ != NULL ? *password_result_ : *default_instance_->password_result_;
+}
+inline ::Remote::AuthResponse_PasswordResult* AuthResponse::mutable_password_result() {
+  set_has_password_result();
+  if (password_result_ == NULL) password_result_ = new ::Remote::AuthResponse_PasswordResult;
+  return password_result_;
+}
+inline ::Remote::AuthResponse_PasswordResult* AuthResponse::release_password_result() {
+  clear_has_password_result();
+  ::Remote::AuthResponse_PasswordResult* temp = password_result_;
+  password_result_ = NULL;
+  return temp;
+}
+inline void AuthResponse::set_allocated_password_result(::Remote::AuthResponse_PasswordResult* password_result) {
+  delete password_result_;
+  password_result_ = password_result;
+  if (password_result) {
+    set_has_password_result();
+  } else {
+    clear_has_password_result();
   }
 }
 
@@ -421,6 +888,18 @@ inline void AuthResponse::set_allocated_error(::Remote::Error* error) {
 namespace google {
 namespace protobuf {
 
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::Remote::AuthRequest_Type>() {
+  return ::Remote::AuthRequest_Type_descriptor();
+}
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::Remote::AuthResponse_PasswordResult_Type>() {
+  return ::Remote::AuthResponse_PasswordResult_Type_descriptor();
+}
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::Remote::AuthResponse_Type>() {
+  return ::Remote::AuthResponse_Type_descriptor();
+}
 
 }  // namespace google
 }  // namespace protobuf

@@ -6,9 +6,16 @@ namespace Server {
 
 RequestHandler::RequestHandler(boost::filesystem::path dbPath)
 : _db( dbPath ),
+_authRequestHandler(_db),
 _audioCollectionRequestHandler(_db),
 _mediaRequestHandler(_db)
 {
+}
+
+RequestHandler::~RequestHandler()
+{
+	// TODO manually log out user if needed?
+	_db.getLogin().logout();
 }
 
 bool
@@ -19,30 +26,44 @@ RequestHandler::process(const ClientMessage& request, ServerMessage& response)
 	switch(request.type())
 	{
 
-		case ClientMessage_Type_AuthRequest:
-
-			break;
-		case ClientMessage_Type_AudioCollectionRequest:
-			if (request.has_audio_collection_request())
+		case ClientMessage::AuthRequest:
+			if (request.has_auth_request())
 			{
-				res = _audioCollectionRequestHandler.process(request.audio_collection_request(), *response.mutable_audio_collection_response());
+				res = _authRequestHandler.process(request.auth_request(), *response.mutable_auth_response());
 				if (res)
-					response.set_type( ServerMessage::AudioCollectionResponse);
+					response.set_type(ServerMessage::AuthResponse);
 			}
 			else
-				std::cerr << "Malformed AudioCollectionRequest message!" << std::endl;
+				std::cerr << "Bad ClientMessage::AuthRequest !" << std::endl;
+			break;
+		case ClientMessage::AudioCollectionRequest:
+			// Not allowed if the user is not logged in
+			if (_db.getLogin().loggedIn())
+			{
+				if (request.has_audio_collection_request())
+				{
+					res = _audioCollectionRequestHandler.process(request.audio_collection_request(), *response.mutable_audio_collection_response());
+					if (res)
+						response.set_type( ServerMessage::AudioCollectionResponse);
+				}
+				else
+					std::cerr << "Bad ClientMessage::AudioCollectionRequest message!" << std::endl;
+			}
 			break;
 
-		case ClientMessage_Type_MediaRequest:
-			if (request.has_media_request())
+		case ClientMessage::MediaRequest:
+			// Not allowed if the user is not logged in
+			if (_db.getLogin().loggedIn())
 			{
-				res = _mediaRequestHandler.process(request.media_request(), *response.mutable_media_response());
-				if (res)
-					response.set_type( ServerMessage::MediaResponse);
+				if (request.has_media_request())
+				{
+					res = _mediaRequestHandler.process(request.media_request(), *response.mutable_media_response());
+					if (res)
+						response.set_type( ServerMessage::MediaResponse);
+				}
+				else
+					std::cerr << "Malformed ClientMessage::MediaRequest message!" << std::endl;
 			}
-			else
-				std::cerr << "Malformed AudioCollectionRequest message!" << std::endl;
-			break;
 			break;
 
 		default:

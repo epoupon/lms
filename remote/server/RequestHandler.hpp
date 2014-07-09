@@ -7,6 +7,7 @@
 
 #include "database/DatabaseHandler.hpp"
 
+#include "AuthRequestHandler.hpp"
 #include "AudioCollectionRequestHandler.hpp"
 #include "MediaRequestHandler.hpp"
 
@@ -18,15 +19,15 @@ class RequestHandler
 	public:
 
 		RequestHandler(boost::filesystem::path dbPath);
+		~RequestHandler();
 
 		bool process(const ClientMessage& request, ServerMessage& response);
-
-		bool processAudioCollectionRequest(const AudioCollectionRequest& request, ServerMessage& response);
 
 	private:
 
 		Database::Handler _db;
 
+		AuthRequestHandler		_authRequestHandler;
 		AudioCollectionRequestHandler	_audioCollectionRequestHandler;
 		MediaRequestHandler		_mediaRequestHandler;
 };

@@ -3,8 +3,8 @@
 - Rework the whole start/stop/try/cach/thread/interrupts things
 
 [Users]
-- Do the feature
-	- Admin account to add/remove users, add path to watch for Audio/Video files
+- Admin account to add/remove users, add path to watch for Audio/Video files
+- Handle login lifetime?
 
 [Cover]
 - Scaling: find something more "reliable" than GIL and its customs extensions (adobe work, io_new)

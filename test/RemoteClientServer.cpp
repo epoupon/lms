@@ -432,6 +432,33 @@ class TestClient
 			return response.audio_collection_response().revision().rev();
 		}
 
+		bool login(const std::string& username, const std::string& password)
+		{
+			// Send request
+			Remote::ClientMessage request;
+
+			request.set_type( Remote::ClientMessage::AuthRequest );
+
+			request.mutable_auth_request()->set_type( Remote::AuthRequest::TypePassword);
+			request.mutable_auth_request()->mutable_password()->set_user_login( username );
+			request.mutable_auth_request()->mutable_password()->set_user_password( password );
+
+			sendMsg(request);
+
+			// Receive responses
+			Remote::ServerMessage response;
+			recvMsg(response);
+
+			// Process message
+			if (!response.has_auth_response())
+				throw std::runtime_error("not an auth response!");
+
+			if (!response.auth_response().has_password_result())
+				throw std::runtime_error("not a password result!");
+
+			return (response.auth_response().password_result().type() == Remote::AuthResponse::PasswordResult::TypePasswordValid);
+		}
+
 	private:
 
 		bool verifyCertificate(bool preverified, boost::asio::ssl::verify_context& ctx)
@@ -683,6 +710,10 @@ int main()
 		// Client
 		// connect to loopback
 		TestClient	client( boost::asio::ip::tcp::endpoint( boost::asio::ip::address_v4::loopback(), 5080));
+
+		// Use a dumb account in order to test the login
+		if (!client.login("toto", "Tot&3131"))
+			throw std::runtime_error("login failed!");
 
 		// **** REVISION ***
 		std::string rev = client.getRevision();

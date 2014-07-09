@@ -23,9 +23,18 @@ namespace {
 const ::google::protobuf::Descriptor* AuthRequest_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   AuthRequest_reflection_ = NULL;
+const ::google::protobuf::Descriptor* AuthRequest_Password_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  AuthRequest_Password_reflection_ = NULL;
+const ::google::protobuf::EnumDescriptor* AuthRequest_Type_descriptor_ = NULL;
 const ::google::protobuf::Descriptor* AuthResponse_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   AuthResponse_reflection_ = NULL;
+const ::google::protobuf::Descriptor* AuthResponse_PasswordResult_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  AuthResponse_PasswordResult_reflection_ = NULL;
+const ::google::protobuf::EnumDescriptor* AuthResponse_PasswordResult_Type_descriptor_ = NULL;
+const ::google::protobuf::EnumDescriptor* AuthResponse_Type_descriptor_ = NULL;
 
 }  // namespace
 
@@ -38,8 +47,8 @@ void protobuf_AssignDesc_auth_2eproto() {
   GOOGLE_CHECK(file != NULL);
   AuthRequest_descriptor_ = file->message_type(0);
   static const int AuthRequest_offsets_[2] = {
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthRequest, user_name_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthRequest, user_password_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthRequest, type_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthRequest, password_),
   };
   AuthRequest_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -52,9 +61,27 @@ void protobuf_AssignDesc_auth_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(AuthRequest));
+  AuthRequest_Password_descriptor_ = AuthRequest_descriptor_->nested_type(0);
+  static const int AuthRequest_Password_offsets_[2] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthRequest_Password, user_login_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthRequest_Password, user_password_),
+  };
+  AuthRequest_Password_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      AuthRequest_Password_descriptor_,
+      AuthRequest_Password::default_instance_,
+      AuthRequest_Password_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthRequest_Password, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthRequest_Password, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(AuthRequest_Password));
+  AuthRequest_Type_descriptor_ = AuthRequest_descriptor_->enum_type(0);
   AuthResponse_descriptor_ = file->message_type(1);
-  static const int AuthResponse_offsets_[1] = {
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthResponse, error_),
+  static const int AuthResponse_offsets_[2] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthResponse, type_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthResponse, password_result_),
   };
   AuthResponse_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -67,6 +94,24 @@ void protobuf_AssignDesc_auth_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(AuthResponse));
+  AuthResponse_PasswordResult_descriptor_ = AuthResponse_descriptor_->nested_type(0);
+  static const int AuthResponse_PasswordResult_offsets_[2] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthResponse_PasswordResult, type_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthResponse_PasswordResult, delay_),
+  };
+  AuthResponse_PasswordResult_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      AuthResponse_PasswordResult_descriptor_,
+      AuthResponse_PasswordResult::default_instance_,
+      AuthResponse_PasswordResult_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthResponse_PasswordResult, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(AuthResponse_PasswordResult, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(AuthResponse_PasswordResult));
+  AuthResponse_PasswordResult_Type_descriptor_ = AuthResponse_PasswordResult_descriptor_->enum_type(0);
+  AuthResponse_Type_descriptor_ = AuthResponse_descriptor_->enum_type(0);
 }
 
 namespace {
@@ -82,7 +127,11 @@ void protobuf_RegisterTypes(const ::std::string&) {
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     AuthRequest_descriptor_, &AuthRequest::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    AuthRequest_Password_descriptor_, &AuthRequest_Password::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     AuthResponse_descriptor_, &AuthResponse::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    AuthResponse_PasswordResult_descriptor_, &AuthResponse_PasswordResult::default_instance());
 }
 
 }  // namespace
@@ -90,8 +139,12 @@ void protobuf_RegisterTypes(const ::std::string&) {
 void protobuf_ShutdownFile_auth_2eproto() {
   delete AuthRequest::default_instance_;
   delete AuthRequest_reflection_;
+  delete AuthRequest_Password::default_instance_;
+  delete AuthRequest_Password_reflection_;
   delete AuthResponse::default_instance_;
   delete AuthResponse_reflection_;
+  delete AuthResponse_PasswordResult::default_instance_;
+  delete AuthResponse_PasswordResult_reflection_;
 }
 
 void protobuf_AddDesc_auth_2eproto() {
@@ -102,16 +155,30 @@ void protobuf_AddDesc_auth_2eproto() {
 
   ::Remote::protobuf_AddDesc_common_2eproto();
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\nauth.proto\022\006Remote\032\014common.proto\"7\n\013Au"
-    "thRequest\022\021\n\tuser_name\030\001 \002(\t\022\025\n\ruser_pas"
-    "sword\030\002 \002(\t\",\n\014AuthResponse\022\034\n\005error\030\001 \002"
-    "(\0132\r.Remote.Error", 137);
+    "\n\nauth.proto\022\006Remote\032\014common.proto\"\266\001\n\013A"
+    "uthRequest\022&\n\004type\030\001 \002(\0162\030.Remote.AuthRe"
+    "quest.Type\022.\n\010password\030\002 \001(\0132\034.Remote.Au"
+    "thRequest.Password\0325\n\010Password\022\022\n\nuser_l"
+    "ogin\030\001 \002(\t\022\025\n\ruser_password\030\002 \002(\t\"\030\n\004Typ"
+    "e\022\020\n\014TypePassword\020\001\"\300\002\n\014AuthResponse\022\'\n\004"
+    "type\030\001 \002(\0162\031.Remote.AuthResponse.Type\022<\n"
+    "\017password_result\030\002 \001(\0132#.Remote.AuthResp"
+    "onse.PasswordResult\032\250\001\n\016PasswordResult\0226"
+    "\n\004type\030\001 \002(\0162(.Remote.AuthResponse.Passw"
+    "ordResult.Type\022\r\n\005delay\030\002 \001(\r\"O\n\004Type\022\027\n"
+    "\023TypePasswordInvalid\020\001\022\027\n\023TypeLoginThrot"
+    "tling\020\002\022\025\n\021TypePasswordValid\020\003\"\036\n\004Type\022\026"
+    "\n\022TypePasswordResult\020\001", 542);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "auth.proto", &protobuf_RegisterTypes);
   AuthRequest::default_instance_ = new AuthRequest();
+  AuthRequest_Password::default_instance_ = new AuthRequest_Password();
   AuthResponse::default_instance_ = new AuthResponse();
+  AuthResponse_PasswordResult::default_instance_ = new AuthResponse_PasswordResult();
   AuthRequest::default_instance_->InitAsDefaultInstance();
+  AuthRequest_Password::default_instance_->InitAsDefaultInstance();
   AuthResponse::default_instance_->InitAsDefaultInstance();
+  AuthResponse_PasswordResult::default_instance_->InitAsDefaultInstance();
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_auth_2eproto);
 }
 
@@ -124,39 +191,58 @@ struct StaticDescriptorInitializer_auth_2eproto {
 
 // ===================================================================
 
+const ::google::protobuf::EnumDescriptor* AuthRequest_Type_descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return AuthRequest_Type_descriptor_;
+}
+bool AuthRequest_Type_IsValid(int value) {
+  switch(value) {
+    case 1:
+      return true;
+    default:
+      return false;
+  }
+}
+
 #ifndef _MSC_VER
-const int AuthRequest::kUserNameFieldNumber;
-const int AuthRequest::kUserPasswordFieldNumber;
+const AuthRequest_Type AuthRequest::TypePassword;
+const AuthRequest_Type AuthRequest::Type_MIN;
+const AuthRequest_Type AuthRequest::Type_MAX;
+const int AuthRequest::Type_ARRAYSIZE;
+#endif  // _MSC_VER
+#ifndef _MSC_VER
+const int AuthRequest_Password::kUserLoginFieldNumber;
+const int AuthRequest_Password::kUserPasswordFieldNumber;
 #endif  // !_MSC_VER
 
-AuthRequest::AuthRequest()
+AuthRequest_Password::AuthRequest_Password()
   : ::google::protobuf::Message() {
   SharedCtor();
 }
 
-void AuthRequest::InitAsDefaultInstance() {
+void AuthRequest_Password::InitAsDefaultInstance() {
 }
 
-AuthRequest::AuthRequest(const AuthRequest& from)
+AuthRequest_Password::AuthRequest_Password(const AuthRequest_Password& from)
   : ::google::protobuf::Message() {
   SharedCtor();
   MergeFrom(from);
 }
 
-void AuthRequest::SharedCtor() {
+void AuthRequest_Password::SharedCtor() {
   _cached_size_ = 0;
-  user_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  user_login_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   user_password_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
-AuthRequest::~AuthRequest() {
+AuthRequest_Password::~AuthRequest_Password() {
   SharedDtor();
 }
 
-void AuthRequest::SharedDtor() {
-  if (user_name_ != &::google::protobuf::internal::kEmptyString) {
-    delete user_name_;
+void AuthRequest_Password::SharedDtor() {
+  if (user_login_ != &::google::protobuf::internal::kEmptyString) {
+    delete user_login_;
   }
   if (user_password_ != &::google::protobuf::internal::kEmptyString) {
     delete user_password_;
@@ -165,32 +251,32 @@ void AuthRequest::SharedDtor() {
   }
 }
 
-void AuthRequest::SetCachedSize(int size) const {
+void AuthRequest_Password::SetCachedSize(int size) const {
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
   _cached_size_ = size;
   GOOGLE_SAFE_CONCURRENT_WRITES_END();
 }
-const ::google::protobuf::Descriptor* AuthRequest::descriptor() {
+const ::google::protobuf::Descriptor* AuthRequest_Password::descriptor() {
   protobuf_AssignDescriptorsOnce();
-  return AuthRequest_descriptor_;
+  return AuthRequest_Password_descriptor_;
 }
 
-const AuthRequest& AuthRequest::default_instance() {
+const AuthRequest_Password& AuthRequest_Password::default_instance() {
   if (default_instance_ == NULL) protobuf_AddDesc_auth_2eproto();
   return *default_instance_;
 }
 
-AuthRequest* AuthRequest::default_instance_ = NULL;
+AuthRequest_Password* AuthRequest_Password::default_instance_ = NULL;
 
-AuthRequest* AuthRequest::New() const {
-  return new AuthRequest;
+AuthRequest_Password* AuthRequest_Password::New() const {
+  return new AuthRequest_Password;
 }
 
-void AuthRequest::Clear() {
+void AuthRequest_Password::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (has_user_name()) {
-      if (user_name_ != &::google::protobuf::internal::kEmptyString) {
-        user_name_->clear();
+    if (has_user_login()) {
+      if (user_login_ != &::google::protobuf::internal::kEmptyString) {
+        user_login_->clear();
       }
     }
     if (has_user_password()) {
@@ -203,20 +289,20 @@ void AuthRequest::Clear() {
   mutable_unknown_fields()->Clear();
 }
 
-bool AuthRequest::MergePartialFromCodedStream(
+bool AuthRequest_Password::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) if (!(EXPRESSION)) return false
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required string user_name = 1;
+      // required string user_login = 1;
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-                input, this->mutable_user_name()));
+                input, this->mutable_user_login()));
           ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-            this->user_name().data(), this->user_name().length(),
+            this->user_login().data(), this->user_login().length(),
             ::google::protobuf::internal::WireFormat::PARSE);
         } else {
           goto handle_uninterpreted;
@@ -258,15 +344,15 @@ bool AuthRequest::MergePartialFromCodedStream(
 #undef DO_
 }
 
-void AuthRequest::SerializeWithCachedSizes(
+void AuthRequest_Password::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // required string user_name = 1;
-  if (has_user_name()) {
+  // required string user_login = 1;
+  if (has_user_login()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-      this->user_name().data(), this->user_name().length(),
+      this->user_login().data(), this->user_login().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
     ::google::protobuf::internal::WireFormatLite::WriteString(
-      1, this->user_name(), output);
+      1, this->user_login(), output);
   }
 
   // required string user_password = 2;
@@ -284,16 +370,16 @@ void AuthRequest::SerializeWithCachedSizes(
   }
 }
 
-::google::protobuf::uint8* AuthRequest::SerializeWithCachedSizesToArray(
+::google::protobuf::uint8* AuthRequest_Password::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // required string user_name = 1;
-  if (has_user_name()) {
+  // required string user_login = 1;
+  if (has_user_login()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-      this->user_name().data(), this->user_name().length(),
+      this->user_login().data(), this->user_login().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        1, this->user_name(), target);
+        1, this->user_login(), target);
   }
 
   // required string user_password = 2;
@@ -313,15 +399,15 @@ void AuthRequest::SerializeWithCachedSizes(
   return target;
 }
 
-int AuthRequest::ByteSize() const {
+int AuthRequest_Password::ByteSize() const {
   int total_size = 0;
 
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required string user_name = 1;
-    if (has_user_name()) {
+    // required string user_login = 1;
+    if (has_user_login()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::StringSize(
-          this->user_name());
+          this->user_login());
     }
 
     // required string user_password = 2;
@@ -329,6 +415,266 @@ int AuthRequest::ByteSize() const {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::StringSize(
           this->user_password());
+    }
+
+  }
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void AuthRequest_Password::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const AuthRequest_Password* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const AuthRequest_Password*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void AuthRequest_Password::MergeFrom(const AuthRequest_Password& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_user_login()) {
+      set_user_login(from.user_login());
+    }
+    if (from.has_user_password()) {
+      set_user_password(from.user_password());
+    }
+  }
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void AuthRequest_Password::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void AuthRequest_Password::CopyFrom(const AuthRequest_Password& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool AuthRequest_Password::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
+
+  return true;
+}
+
+void AuthRequest_Password::Swap(AuthRequest_Password* other) {
+  if (other != this) {
+    std::swap(user_login_, other->user_login_);
+    std::swap(user_password_, other->user_password_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata AuthRequest_Password::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = AuthRequest_Password_descriptor_;
+  metadata.reflection = AuthRequest_Password_reflection_;
+  return metadata;
+}
+
+
+// -------------------------------------------------------------------
+
+#ifndef _MSC_VER
+const int AuthRequest::kTypeFieldNumber;
+const int AuthRequest::kPasswordFieldNumber;
+#endif  // !_MSC_VER
+
+AuthRequest::AuthRequest()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void AuthRequest::InitAsDefaultInstance() {
+  password_ = const_cast< ::Remote::AuthRequest_Password*>(&::Remote::AuthRequest_Password::default_instance());
+}
+
+AuthRequest::AuthRequest(const AuthRequest& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void AuthRequest::SharedCtor() {
+  _cached_size_ = 0;
+  type_ = 1;
+  password_ = NULL;
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+AuthRequest::~AuthRequest() {
+  SharedDtor();
+}
+
+void AuthRequest::SharedDtor() {
+  if (this != default_instance_) {
+    delete password_;
+  }
+}
+
+void AuthRequest::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* AuthRequest::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return AuthRequest_descriptor_;
+}
+
+const AuthRequest& AuthRequest::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_auth_2eproto();
+  return *default_instance_;
+}
+
+AuthRequest* AuthRequest::default_instance_ = NULL;
+
+AuthRequest* AuthRequest::New() const {
+  return new AuthRequest;
+}
+
+void AuthRequest::Clear() {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    type_ = 1;
+    if (has_password()) {
+      if (password_ != NULL) password_->::Remote::AuthRequest_Password::Clear();
+    }
+  }
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool AuthRequest::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required .Remote.AuthRequest.Type type = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+                 input, &value)));
+          if (::Remote::AuthRequest_Type_IsValid(value)) {
+            set_type(static_cast< ::Remote::AuthRequest_Type >(value));
+          } else {
+            mutable_unknown_fields()->AddVarint(1, value);
+          }
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(18)) goto parse_password;
+        break;
+      }
+
+      // optional .Remote.AuthRequest.Password password = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_password:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_password()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void AuthRequest::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // required .Remote.AuthRequest.Type type = 1;
+  if (has_type()) {
+    ::google::protobuf::internal::WireFormatLite::WriteEnum(
+      1, this->type(), output);
+  }
+
+  // optional .Remote.AuthRequest.Password password = 2;
+  if (has_password()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      2, this->password(), output);
+  }
+
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* AuthRequest::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // required .Remote.AuthRequest.Type type = 1;
+  if (has_type()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
+      1, this->type(), target);
+  }
+
+  // optional .Remote.AuthRequest.Password password = 2;
+  if (has_password()) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        2, this->password(), target);
+  }
+
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int AuthRequest::ByteSize() const {
+  int total_size = 0;
+
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required .Remote.AuthRequest.Type type = 1;
+    if (has_type()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
+    }
+
+    // optional .Remote.AuthRequest.Password password = 2;
+    if (has_password()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+          this->password());
     }
 
   }
@@ -358,11 +704,11 @@ void AuthRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void AuthRequest::MergeFrom(const AuthRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from.has_user_name()) {
-      set_user_name(from.user_name());
+    if (from.has_type()) {
+      set_type(from.type());
     }
-    if (from.has_user_password()) {
-      set_user_password(from.user_password());
+    if (from.has_password()) {
+      mutable_password()->::Remote::AuthRequest_Password::MergeFrom(from.password());
     }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -381,15 +727,18 @@ void AuthRequest::CopyFrom(const AuthRequest& from) {
 }
 
 bool AuthRequest::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
 
+  if (has_password()) {
+    if (!this->password().IsInitialized()) return false;
+  }
   return true;
 }
 
 void AuthRequest::Swap(AuthRequest* other) {
   if (other != this) {
-    std::swap(user_name_, other->user_name_);
-    std::swap(user_password_, other->user_password_);
+    std::swap(type_, other->type_);
+    std::swap(password_, other->password_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -407,8 +756,306 @@ void AuthRequest::Swap(AuthRequest* other) {
 
 // ===================================================================
 
+const ::google::protobuf::EnumDescriptor* AuthResponse_Type_descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return AuthResponse_Type_descriptor_;
+}
+bool AuthResponse_Type_IsValid(int value) {
+  switch(value) {
+    case 1:
+      return true;
+    default:
+      return false;
+  }
+}
+
 #ifndef _MSC_VER
-const int AuthResponse::kErrorFieldNumber;
+const AuthResponse_Type AuthResponse::TypePasswordResult;
+const AuthResponse_Type AuthResponse::Type_MIN;
+const AuthResponse_Type AuthResponse::Type_MAX;
+const int AuthResponse::Type_ARRAYSIZE;
+#endif  // _MSC_VER
+const ::google::protobuf::EnumDescriptor* AuthResponse_PasswordResult_Type_descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return AuthResponse_PasswordResult_Type_descriptor_;
+}
+bool AuthResponse_PasswordResult_Type_IsValid(int value) {
+  switch(value) {
+    case 1:
+    case 2:
+    case 3:
+      return true;
+    default:
+      return false;
+  }
+}
+
+#ifndef _MSC_VER
+const AuthResponse_PasswordResult_Type AuthResponse_PasswordResult::TypePasswordInvalid;
+const AuthResponse_PasswordResult_Type AuthResponse_PasswordResult::TypeLoginThrottling;
+const AuthResponse_PasswordResult_Type AuthResponse_PasswordResult::TypePasswordValid;
+const AuthResponse_PasswordResult_Type AuthResponse_PasswordResult::Type_MIN;
+const AuthResponse_PasswordResult_Type AuthResponse_PasswordResult::Type_MAX;
+const int AuthResponse_PasswordResult::Type_ARRAYSIZE;
+#endif  // _MSC_VER
+#ifndef _MSC_VER
+const int AuthResponse_PasswordResult::kTypeFieldNumber;
+const int AuthResponse_PasswordResult::kDelayFieldNumber;
+#endif  // !_MSC_VER
+
+AuthResponse_PasswordResult::AuthResponse_PasswordResult()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void AuthResponse_PasswordResult::InitAsDefaultInstance() {
+}
+
+AuthResponse_PasswordResult::AuthResponse_PasswordResult(const AuthResponse_PasswordResult& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void AuthResponse_PasswordResult::SharedCtor() {
+  _cached_size_ = 0;
+  type_ = 1;
+  delay_ = 0u;
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+AuthResponse_PasswordResult::~AuthResponse_PasswordResult() {
+  SharedDtor();
+}
+
+void AuthResponse_PasswordResult::SharedDtor() {
+  if (this != default_instance_) {
+  }
+}
+
+void AuthResponse_PasswordResult::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* AuthResponse_PasswordResult::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return AuthResponse_PasswordResult_descriptor_;
+}
+
+const AuthResponse_PasswordResult& AuthResponse_PasswordResult::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_auth_2eproto();
+  return *default_instance_;
+}
+
+AuthResponse_PasswordResult* AuthResponse_PasswordResult::default_instance_ = NULL;
+
+AuthResponse_PasswordResult* AuthResponse_PasswordResult::New() const {
+  return new AuthResponse_PasswordResult;
+}
+
+void AuthResponse_PasswordResult::Clear() {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    type_ = 1;
+    delay_ = 0u;
+  }
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool AuthResponse_PasswordResult::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required .Remote.AuthResponse.PasswordResult.Type type = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+                 input, &value)));
+          if (::Remote::AuthResponse_PasswordResult_Type_IsValid(value)) {
+            set_type(static_cast< ::Remote::AuthResponse_PasswordResult_Type >(value));
+          } else {
+            mutable_unknown_fields()->AddVarint(1, value);
+          }
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(16)) goto parse_delay;
+        break;
+      }
+
+      // optional uint32 delay = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+         parse_delay:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
+                 input, &delay_)));
+          set_has_delay();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void AuthResponse_PasswordResult::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // required .Remote.AuthResponse.PasswordResult.Type type = 1;
+  if (has_type()) {
+    ::google::protobuf::internal::WireFormatLite::WriteEnum(
+      1, this->type(), output);
+  }
+
+  // optional uint32 delay = 2;
+  if (has_delay()) {
+    ::google::protobuf::internal::WireFormatLite::WriteUInt32(2, this->delay(), output);
+  }
+
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* AuthResponse_PasswordResult::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // required .Remote.AuthResponse.PasswordResult.Type type = 1;
+  if (has_type()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
+      1, this->type(), target);
+  }
+
+  // optional uint32 delay = 2;
+  if (has_delay()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(2, this->delay(), target);
+  }
+
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int AuthResponse_PasswordResult::ByteSize() const {
+  int total_size = 0;
+
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required .Remote.AuthResponse.PasswordResult.Type type = 1;
+    if (has_type()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
+    }
+
+    // optional uint32 delay = 2;
+    if (has_delay()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::UInt32Size(
+          this->delay());
+    }
+
+  }
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void AuthResponse_PasswordResult::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const AuthResponse_PasswordResult* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const AuthResponse_PasswordResult*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void AuthResponse_PasswordResult::MergeFrom(const AuthResponse_PasswordResult& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_type()) {
+      set_type(from.type());
+    }
+    if (from.has_delay()) {
+      set_delay(from.delay());
+    }
+  }
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void AuthResponse_PasswordResult::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void AuthResponse_PasswordResult::CopyFrom(const AuthResponse_PasswordResult& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool AuthResponse_PasswordResult::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
+
+  return true;
+}
+
+void AuthResponse_PasswordResult::Swap(AuthResponse_PasswordResult* other) {
+  if (other != this) {
+    std::swap(type_, other->type_);
+    std::swap(delay_, other->delay_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata AuthResponse_PasswordResult::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = AuthResponse_PasswordResult_descriptor_;
+  metadata.reflection = AuthResponse_PasswordResult_reflection_;
+  return metadata;
+}
+
+
+// -------------------------------------------------------------------
+
+#ifndef _MSC_VER
+const int AuthResponse::kTypeFieldNumber;
+const int AuthResponse::kPasswordResultFieldNumber;
 #endif  // !_MSC_VER
 
 AuthResponse::AuthResponse()
@@ -417,7 +1064,7 @@ AuthResponse::AuthResponse()
 }
 
 void AuthResponse::InitAsDefaultInstance() {
-  error_ = const_cast< ::Remote::Error*>(&::Remote::Error::default_instance());
+  password_result_ = const_cast< ::Remote::AuthResponse_PasswordResult*>(&::Remote::AuthResponse_PasswordResult::default_instance());
 }
 
 AuthResponse::AuthResponse(const AuthResponse& from)
@@ -428,7 +1075,8 @@ AuthResponse::AuthResponse(const AuthResponse& from)
 
 void AuthResponse::SharedCtor() {
   _cached_size_ = 0;
-  error_ = NULL;
+  type_ = 1;
+  password_result_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -438,7 +1086,7 @@ AuthResponse::~AuthResponse() {
 
 void AuthResponse::SharedDtor() {
   if (this != default_instance_) {
-    delete error_;
+    delete password_result_;
   }
 }
 
@@ -465,8 +1113,9 @@ AuthResponse* AuthResponse::New() const {
 
 void AuthResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (has_error()) {
-      if (error_ != NULL) error_->::Remote::Error::Clear();
+    type_ = 1;
+    if (has_password_result()) {
+      if (password_result_ != NULL) password_result_->::Remote::AuthResponse_PasswordResult::Clear();
     }
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -479,12 +1128,33 @@ bool AuthResponse::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .Remote.Error error = 1;
+      // required .Remote.AuthResponse.Type type = 1;
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+                 input, &value)));
+          if (::Remote::AuthResponse_Type_IsValid(value)) {
+            set_type(static_cast< ::Remote::AuthResponse_Type >(value));
+          } else {
+            mutable_unknown_fields()->AddVarint(1, value);
+          }
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(18)) goto parse_password_result;
+        break;
+      }
+
+      // optional .Remote.AuthResponse.PasswordResult password_result = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_password_result:
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_error()));
+               input, mutable_password_result()));
         } else {
           goto handle_uninterpreted;
         }
@@ -510,10 +1180,16 @@ bool AuthResponse::MergePartialFromCodedStream(
 
 void AuthResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // required .Remote.Error error = 1;
-  if (has_error()) {
+  // required .Remote.AuthResponse.Type type = 1;
+  if (has_type()) {
+    ::google::protobuf::internal::WireFormatLite::WriteEnum(
+      1, this->type(), output);
+  }
+
+  // optional .Remote.AuthResponse.PasswordResult password_result = 2;
+  if (has_password_result()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      1, this->error(), output);
+      2, this->password_result(), output);
   }
 
   if (!unknown_fields().empty()) {
@@ -524,11 +1200,17 @@ void AuthResponse::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* AuthResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // required .Remote.Error error = 1;
-  if (has_error()) {
+  // required .Remote.AuthResponse.Type type = 1;
+  if (has_type()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
+      1, this->type(), target);
+  }
+
+  // optional .Remote.AuthResponse.PasswordResult password_result = 2;
+  if (has_password_result()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        1, this->error(), target);
+        2, this->password_result(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -542,11 +1224,17 @@ int AuthResponse::ByteSize() const {
   int total_size = 0;
 
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required .Remote.Error error = 1;
-    if (has_error()) {
+    // required .Remote.AuthResponse.Type type = 1;
+    if (has_type()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
+    }
+
+    // optional .Remote.AuthResponse.PasswordResult password_result = 2;
+    if (has_password_result()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->error());
+          this->password_result());
     }
 
   }
@@ -576,8 +1264,11 @@ void AuthResponse::MergeFrom(const ::google::protobuf::Message& from) {
 void AuthResponse::MergeFrom(const AuthResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from.has_error()) {
-      mutable_error()->::Remote::Error::MergeFrom(from.error());
+    if (from.has_type()) {
+      set_type(from.type());
+    }
+    if (from.has_password_result()) {
+      mutable_password_result()->::Remote::AuthResponse_PasswordResult::MergeFrom(from.password_result());
     }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -598,15 +1289,16 @@ void AuthResponse::CopyFrom(const AuthResponse& from) {
 bool AuthResponse::IsInitialized() const {
   if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
 
-  if (has_error()) {
-    if (!this->error().IsInitialized()) return false;
+  if (has_password_result()) {
+    if (!this->password_result().IsInitialized()) return false;
   }
   return true;
 }
 
 void AuthResponse::Swap(AuthResponse* other) {
   if (other != this) {
-    std::swap(error_, other->error_);
+    std::swap(type_, other->type_);
+    std::swap(password_result_, other->password_result_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);

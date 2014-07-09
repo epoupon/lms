@@ -13,6 +13,8 @@ class User {
 
 	public:
 
+		typedef Wt::Dbo::ptr<User>	pointer;
+
 		template<class Action>
 			void persist(Action& a)
 			{
