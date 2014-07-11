@@ -2,17 +2,20 @@
 [ServiceManager]
 - Rework the whole start/stop/try/cach/thread/interrupts things
 
-[Admin users]
-- Add/remove users
-- Add path to Audio/Video files
-- Manual/autorefresh settings
-- Display some stats about the database:
+[Settings]
+- [admin] Add/remove users
+	- max audio/video bitrates for user
+	- capabilities
+- [admin] Add path to Audio/Video files
+- [admin] Manual/autorefresh settings
+- [admin] Display some stats about the database:
 	- nb audio/video files
 	- last scan/update
+- Prefered bitrate and codecs for audio/video
 
 [Users]
-- Prefered bitrate and codecs for audio/video
 - Handle login lifetime?
+- Disable multi login?
 
 [Cover]
 - Scaling: find something more "reliable" than GIL and its customs extensions (adobe work, io_new)?
@@ -47,7 +50,7 @@
 	- Use Groups/SubGroups to organize videos (WTreeView?)
 
 [Remote API]
-- Use SSL based sockets
+- Implement text search options in the GetXXX messages
 
 [Layout]
 - Make it mobile browser compatible
