@@ -1,6 +1,7 @@
 #ifndef SERVICE_HPP
 #define SERVICE_HPP
 
+#include <boost/thread.hpp>
 #include <memory>
 #include <set>
 
@@ -20,8 +21,6 @@ class Service
 		virtual void start(void) = 0;
 		virtual void stop(void) = 0;
 		virtual void restart(void) = 0;
-
-	private:
 
 };
 

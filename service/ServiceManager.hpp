@@ -11,7 +11,7 @@ class ServiceManager
 {
 	public:
 
-		ServiceManager();
+		static ServiceManager& instance();
 		~ServiceManager();
 
 		void stopService(Service::pointer service);
@@ -25,7 +25,15 @@ class ServiceManager
 		boost::asio::io_service&	getIoService() {return _ioService;}
 		const boost::asio::io_service&	getIoService() const {return _ioService;}
 
+		template <class T> typename T::pointer getService();
+
+		boost::mutex&	mutex() { return _mutex;}
+
 	private:
+
+		ServiceManager();
+		ServiceManager(ServiceManager const&);	// Don't Implement
+		void operator=(ServiceManager const&);	// Don't implement
 
 		void restartServices(void);
 		void stopServices(void);
@@ -33,6 +41,8 @@ class ServiceManager
 		void asyncWaitSignals(void);
 
 		void handleSignal(boost::system::error_code error, int signo);
+
+		boost::mutex	_mutex;
 
 		boost::asio::io_service	_ioService;
 
@@ -42,6 +52,19 @@ class ServiceManager
 		std::set<Service::pointer>	_services;
 };
 
+
+template <class T> typename T::pointer
+ServiceManager::getService()
+{
+	std::set<Service::pointer>::iterator it;
+	for (std::set<Service::pointer>::iterator it = _services.begin(); it != _services.end(); ++it)
+	{
+		if (typeid(*(*it)) == typeid(T)) {
+			return std::dynamic_pointer_cast<T>(*it);
+		}
+	}
+	return std::shared_ptr<T>();
+}
 
 #endif
 

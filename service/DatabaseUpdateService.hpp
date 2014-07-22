@@ -13,11 +13,17 @@ class DatabaseUpdateService : public Service
 {
 	public:
 
+		typedef std::shared_ptr<DatabaseUpdateService>	pointer;
+
 		DatabaseUpdateService(boost::asio::io_service& ioService, const boost::filesystem::path& p);
 
+		// Service interface
 		void start(void);
 		void stop(void);
 		void restart(void);
+
+		// Specific interface
+		bool	isScanning(void) const;	//return if the service is currently scanning the db
 
 	private:
 

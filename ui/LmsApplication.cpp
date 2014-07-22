@@ -1,5 +1,5 @@
 #include <Wt/WBootstrapTheme>
-#include "LmsAuth.hpp"
+#include "auth/LmsAuth.hpp"
 #include "LmsHome.hpp"
 
 #include "LmsApplication.hpp"
@@ -35,12 +35,10 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::p
 
 	_sessionData.getDatabaseHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
 
-	LmsAuth *authWidget = new LmsAuth(Database::Handler::getAuthService(),
-					_sessionData.getDatabaseHandler().getUserDatabase(),
-					_sessionData.getDatabaseHandler().getLogin());
+	LmsAuth *authWidget = new LmsAuth(_sessionData.getDatabaseHandler());
 
 	authWidget->model()->addPasswordAuth(&Database::Handler::getPasswordService());
-	authWidget->setRegistrationEnabled(true);
+	authWidget->setRegistrationEnabled(false);
 
 	authWidget->processEnvironment();
 

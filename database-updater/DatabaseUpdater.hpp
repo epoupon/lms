@@ -13,6 +13,12 @@ namespace DatabaseUpdater {
 class Updater
 {
 	public:
+		Updater(boost::filesystem::path db, MetaData::Parser& parser);
+
+		// Update database
+		void process();
+
+	private:
 
 		struct Stats
 		{
@@ -29,19 +35,6 @@ class Updater
 			Stats	audioStats;
 			Stats	videoStats;
 		};
-
-		Updater(boost::filesystem::path db, MetaData::Parser& parser);
-
-		// Update database
-		// TODO add a callback to get notifed once finished
-		void process();
-
-		const Result& getResult(void) const { return _result; }
-
-	private:
-
-
-//		void refresh(const WatchedDirectory& directory);
 
 		// Video
 		void refreshVideoDirectory( const boost::filesystem::path& directory );

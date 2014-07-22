@@ -1,3 +1,5 @@
+#include <boost/foreach.hpp>
+
 #include "MediaDirectory.hpp"
 
 namespace Database {
@@ -25,6 +27,14 @@ MediaDirectory::pointer
 MediaDirectory::create(Wt::Dbo::Session& session, boost::filesystem::path p, Type type)
 {
 	return session.add( new MediaDirectory( p, type ) );
+}
+
+void
+MediaDirectory::eraseAll(Wt::Dbo::Session& session)
+{
+	std::vector<MediaDirectory::pointer> dirs = getAll(session);
+	BOOST_FOREACH(MediaDirectory::pointer dir, dirs)
+		dir.remove();
 }
 
 std::vector<MediaDirectory::pointer>

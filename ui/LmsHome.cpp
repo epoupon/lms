@@ -5,6 +5,8 @@
 #include <Wt/WPopupMenuItem>
 #include <Wt/Auth/Identity>
 
+#include "settings/Settings.hpp"
+
 #include "LmsHome.hpp"
 
 namespace UserInterface {
@@ -31,6 +33,7 @@ LmsHome::LmsHome(SessionData& sessionData)
 
 	leftMenu->addItem("Audio", _audioWidget);
 	leftMenu->addItem("Video", _videoWidget);
+	leftMenu->addItem("Settings", new Settings::Settings(_sessionData));
 
 	// Setup a Right-aligned menu.
 	Wt::WMenu *rightMenu = new Wt::WMenu();
@@ -38,8 +41,6 @@ LmsHome::LmsHome(SessionData& sessionData)
 	navigation->addMenu(rightMenu, Wt::AlignRight);
 
 	Wt::WPopupMenu *popup = new Wt::WPopupMenu();
-	popup->addItem("Parameters");
-	popup->addSeparator();
 	popup->addItem("Logout");
 
 	popup->itemSelected().connect(this, &LmsHome::handleUserMenuSelected);

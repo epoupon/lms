@@ -7,10 +7,10 @@
 #include "av/Common.hpp"
 #include "database/DatabaseHandler.hpp"
 
-#include "ServiceManager.hpp"
-#include "DatabaseUpdateService.hpp"
-#include "UserInterfaceService.hpp"
-#include "RemoteServerService.hpp"
+#include "service/ServiceManager.hpp"
+#include "service/DatabaseUpdateService.hpp"
+#include "service/UserInterfaceService.hpp"
+#include "service/RemoteServerService.hpp"
 
 #include "ui/LmsApplication.hpp"
 
@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		ServiceManager serviceManager;
+		ServiceManager& serviceManager = ServiceManager::instance();
 
 		// TODO Retreive the database path in some config file
 		const boost::filesystem::path dbPath("test.db");
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 
 		std::cout << "Starting services..." << std::endl;
 
-//		serviceManager.startService( std::make_shared<DatabaseUpdateService>( serviceManager.getIoService(), dbPath) );
+		serviceManager.startService( std::make_shared<DatabaseUpdateService>( serviceManager.getIoService(), dbPath) );
 		serviceManager.startService( std::make_shared<RemoteServerService>( serviceManager.getIoService(), remoteListenEndpoint, dbPath) );
 		serviceManager.startService( std::make_shared<UserInterfaceService>(argc, argv, dbPath) );
 

@@ -6,6 +6,13 @@
 
 #include "ServiceManager.hpp"
 
+ServiceManager&
+ServiceManager::instance()
+{
+	static ServiceManager instance;
+	return instance;
+}
+
 ServiceManager::ServiceManager()
 : _signalSet(_ioService)
 {

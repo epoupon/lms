@@ -91,4 +91,29 @@ Handler::getUserDatabase()
 	return *_users;
 }
 
+User::pointer
+Handler::getCurrentUser()
+{
+	if (_login.loggedIn())
+		return getUser(_login.user());
+	else
+		return User::pointer();
+}
+
+User::pointer
+Handler::getUser(const Wt::Auth::User& authUser)
+{
+	Wt::Dbo::ptr<AuthInfo> authInfo = _users->find(authUser);
+
+	User::pointer user = authInfo->user();
+
+	if (!user) {
+		user = _session.add(new User());
+		authInfo.modify()->setUser(user);
+	}
+
+	return user;
+}
+
+
 } // namespace Database

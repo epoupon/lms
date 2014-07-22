@@ -1,6 +1,12 @@
 
 [ServiceManager]
 - Rework the whole start/stop/try/cach/thread/interrupts things
+- Rework the io_service thread pool thing
+
+[Services]
+- [UI] generate argc/argv from a config file (crypto, port info, db path)
+- [Remote] use config file to get crypto, port info, db path
+- consider using external web server instead of builtin httpd (new FCGI service?)
 
 [Settings]
 - [admin] Add/remove users
@@ -21,6 +27,7 @@
 - Scaling: find something more "reliable" than GIL and its customs extensions (adobe work, io_new)?
 
 [Database]
+- Remove Audio/Video distinction
 - When removing a track, make sure to remove genre/artist/release if last of it
 - Use Inotify like system to watch modified/added files?
 - Implement a video database cleanup
