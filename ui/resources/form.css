@@ -1,0 +1,97 @@
+.Wt-form {
+    margin: 0 auto;
+    width: 40em;
+    padding: 0.7em;
+}
+
+.Wt-form h2 {
+    font-size: 130%;
+    font-weight: bold;
+    padding: 0px;
+    margin: 8px 0px;
+    letter-spacing: inherit;
+    line-height: inherit;
+    color: inherit;
+    background: inherit;
+    height: auto;
+}
+
+.Wt-form h3 {
+    font-size: 100%;
+    font-weight: bold;
+    margin: 8px 0px;
+}
+
+.Wt-form p {
+    font-size: 85%;
+    color: #666666;
+    margin-bottom: 1.5em;
+    border-bottom: solid 1px #b7ddf2;
+    padding-bottom: 0.5em;
+}
+
+.Wt-form label {
+    display: block;
+    font-weight: bold;
+    text-align: right;
+    width: 14em;
+    float: left;
+    clear: left;
+    line-height: 110%;
+}
+
+.Wt-form .Wt-info {
+    color: #666666;
+    display: block;
+    font-size: 85%;
+    width: 16.47em;
+    font-weight: normal;
+    text-align: right;
+}
+
+.Wt-form .Wt-fields input {
+    float: left;
+    padding: 5px 2px;
+    border: solid 1px #aacfe4;
+    font-size: 90%;
+    width: 14em;
+    margin: 0.5em 0.5em 1.4em 0.7em;
+}
+
+.Wt-form .Wt-fields input[type="checkbox"] {
+    margin-top: 1em;
+    width: auto;
+}
+
+.Wt-form .Wt-fields select {
+    margin-top: 1em;
+    width: auto;
+}
+
+.Wt-form .Wt-field {
+    float: left;
+    padding: 5px 2px;
+    width: 15em;
+    margin: 0 0.5em 1.4em 0.7em;
+}
+
+.Wt-form .Wt-buttons {
+    clear: both;
+    text-align: center;
+    margin: 0.5em 0;
+}
+
+.Wt-form .Wt-buttons span {
+    text-decoration: underline;
+    cursor: pointer; cursor: hand;
+}
+
+.Wt-form .Wt-error {
+    color: black;
+}
+
+.Wt-form .Wt-col-right {
+    margin-left: 29em;
+    padding-left: 2em;
+    border-left: solid 1px #b7ddf2;
+}
