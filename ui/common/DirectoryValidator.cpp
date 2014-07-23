@@ -4,8 +4,8 @@
 
 namespace UserInterface {
 
-DirectoryValidator::DirectoryValidator(bool mandatory, Wt::WObject *parent)
-: Wt::WValidator(mandatory, parent)
+DirectoryValidator::DirectoryValidator(Wt::WObject *parent)
+: Wt::WValidator(parent)
 {
 }
 
@@ -20,7 +20,7 @@ DirectoryValidator::validate(const Wt::WString& input) const
 	if (ec)
 		return Wt::WValidator::Result(Wt::WValidator::Invalid, ec.message());
 	else if (res)
-		return Wt::WValidator::Result(Wt::WValidator::Valid, "Valid");
+		return Wt::WValidator::Result(Wt::WValidator::Valid);
 	else
 		return Wt::WValidator::Result(Wt::WValidator::Invalid, "Not a directory");
 }

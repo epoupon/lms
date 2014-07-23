@@ -29,7 +29,13 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::p
  _home(nullptr)
 {
 
-	setTheme(new Wt::WBootstrapTheme());
+	Wt::WBootstrapTheme *bootstrapTheme = new Wt::WBootstrapTheme(this);
+	bootstrapTheme->setVersion(Wt::WBootstrapTheme::Version3);
+	bootstrapTheme->setResponsive(true);
+	setTheme(bootstrapTheme);
+
+	// Add a resource bundle
+	messageResourceBundle().use(appRoot() + "templates");
 
 	setTitle("LMS");                               // application title
 

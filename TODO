@@ -9,15 +9,18 @@
 - consider using external web server instead of builtin httpd (new FCGI service?)
 
 [Settings]
-- [admin] Add/remove users
+- [admin/Users]
+	- Add/remove users
 	- max audio/video bitrates for user
-	- capabilities
-- [admin] Add path to Audio/Video files
-- [admin] Manual/autorefresh settings
-- [admin] Display some stats about the database:
-	- nb audio/video files
-	- last scan/update
-- Prefered bitrate and codecs for audio/video
+	- capabilities (admin)
+- [admin/DB]
+	- Add path to Audio/Video files
+	- Do not make the update start time active when update perdiod is "Never"
+	- Do not restart the db update service if user applied no changes
+- [user/transcoding]
+	- Prefered bitrate and codecs for audio/video
+- [user/Personal]
+	- password, email
 
 [Users]
 - Handle login lifetime?

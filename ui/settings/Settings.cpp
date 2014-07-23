@@ -2,7 +2,7 @@
 #include <Wt/WStackedWidget>
 #include <Wt/WTextArea>
 
-#include "SettingsDatabase.hpp"
+#include "SettingsDatabaseFormView.hpp"
 
 #include "Settings.hpp"
 
@@ -30,7 +30,7 @@ _sessionData(sessionData)
 	if (user->isAdmin())
 	{
 		// TODO Special admin settings
-		menu->addItem("Database", new Database(sessionData));
+		menu->addItem("Database", new DatabaseFormView(sessionData));
 		menu->addItem("Users", new Wt::WTextArea("Users here!"));
 	}
 

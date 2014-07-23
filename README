@@ -3,7 +3,7 @@ I) DEPENCIES
 
 libboost-dev libextractor-dev libavcodec-dev libwt-dev
 
-Warning: your distrib may provide an outdated wt library. Latest Wt highly recommended (http://www.webtoolkit.eu/wt)
+Warning: your distrib may provide an outdated wt library. Using the latest Wt (>= 3.3.3) is highly recommended (http://www.webtoolkit.eu/wt)
 
 
 II) BUILD
@@ -18,15 +18,21 @@ II) BUILD
 # make -j 4
 
 
-III) RUNNING
+III) Setting up SSL (required by the Remote mobile service and the web server)
 
-# ./lms --docroot=../ --http-port=8080 --http-address=0.0.0.0
-
-IV) Setting up SSL (required by the Remote mobile service)
+Just an example, you could do whatever you want (ca, self signed cert, etc.)
 
 Generate a dh file:
 # openssl dhparam -out dh2048.pem 2048
 
 Generate a self signed certificate:
 # openssl req -x509 -out cert.pem -keyout privkey.pem -newkey rsa:4096
+
+
+IV) RUNNING
+
+In the build directory:
+# ./lms --docroot=../ui --approot=../ui/approot --https-port=5081 --https-address=0.0.0.0 --ssl-certificate=./certUI.pem --ssl-private-key ./privkeyUI.pem --ssl-tmp-dh dh2048.pem
+
+Depending of your SSL parameters, you may be asked for the PEM passphrase to unlock the private key.
 

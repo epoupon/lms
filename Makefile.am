@@ -66,7 +66,7 @@ lms_SOURCES = \
 	$(top_srcdir)/ui/video/VideoMediaPlayerWidget.cpp	\
 	$(top_srcdir)/ui/video/VideoParametersDialog.cpp	\
 	$(top_srcdir)/ui/settings/Settings.cpp		\
-	$(top_srcdir)/ui/settings/SettingsDatabase.cpp
+	$(top_srcdir)/ui/settings/SettingsDatabaseFormView.cpp
 
 
 lms_CXXFLAGS=-std=c++11 -Wall -I$(top_srcdir)/boost/ -I$(top_srcdir)/ui -I$(top_srcdir)/remote

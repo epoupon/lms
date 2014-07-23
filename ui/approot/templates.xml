@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="databaseForm-template">
+	<legend>${title}</legend>
+	<div class="form-horizontal">
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:path}">
+				Media root path
+			</label>
+			<div class="col-sm-5">
+				${path}
+			</div>
+			<div class="help-block col-sm-5">
+				${path-info}
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:update-period}">
+				Update period
+			</label>
+			<div class="col-sm-5">
+				${update-period}
+			</div>
+			<div class="help-block col-sm-5">
+				${update-period-info}
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:update-start-time}">
+				Update start time
+			</label>
+			<div class="col-sm-5">
+				${update-start-time}
+			</div>
+			<div class="help-block col-sm-5">
+				${update-start-time-info}
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:update-request-immediate-scan}">
+				Request immediate scan
+			</label>
+			<div class="col-sm-5">
+				${update-request-immediate-scan}
+			</div>
+			<div class="help-block col-sm-5">
+				${update-request-immediate-scan-info}
+			</div>
+		</div>
+
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				${apply-button} ${discard-button}
+			</div>
+		</div>
+		${apply-info}
+	</div>
+</message>
+</messages>
+
+
