@@ -14,6 +14,12 @@ _videoBitrate(defaultVideoBitrate)
 
 }
 
+std::vector<User::pointer>
+User::getAll(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::collection<pointer> res = session.find<User>();
+	return std::vector<pointer>(res.begin(), res.end());
+}
 
 
 

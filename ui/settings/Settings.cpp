@@ -3,6 +3,7 @@
 #include <Wt/WTextArea>
 
 #include "SettingsDatabaseFormView.hpp"
+#include "SettingsUsers.hpp"
 
 #include "Settings.hpp"
 
@@ -31,7 +32,7 @@ _sessionData(sessionData)
 	{
 		// TODO Special admin settings
 		menu->addItem("Database", new DatabaseFormView(sessionData));
-		menu->addItem("Users", new Wt::WTextArea("Users here!"));
+		menu->addItem("Users", new Users(sessionData));
 	}
 
 	// User specifics settings

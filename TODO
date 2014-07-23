@@ -17,6 +17,7 @@
 	- Add path to Audio/Video files
 	- Do not make the update start time active when update perdiod is "Never"
 	- Do not restart the db update service if user applied no changes
+	- Uncheck the "Request immediate scan" once setins are applied
 - [user/transcoding]
 	- Prefered bitrate and codecs for audio/video
 - [user/Personal]

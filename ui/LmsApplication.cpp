@@ -57,7 +57,6 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::p
 void
 LmsApplication::handleAuthEvent(void)
 {
-	_sessionData.getDatabaseHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
 	if (_sessionData.getDatabaseHandler().getLogin().loggedIn())
 	{
 		if (_home == nullptr) {

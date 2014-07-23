@@ -17,6 +17,9 @@ class User {
 
 		typedef Wt::Dbo::ptr<User>	pointer;
 
+		// accessors
+		static std::vector<pointer>	getAll(Wt::Dbo::Session& session);
+
 		bool isAdmin() const {return _isAdmin;}
 
 		template<class Action>
