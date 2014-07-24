@@ -13,6 +13,9 @@ DirectoryValidator::DirectoryValidator(Wt::WObject *parent)
 Wt::WValidator::Result
 DirectoryValidator::validate(const Wt::WString& input) const
 {
+	if (input.empty())
+		return Wt::WValidator::validate(input);
+
 	boost::filesystem::path p(input.toUTF8());
 	boost::system::error_code ec;
 
