@@ -19,9 +19,10 @@ class Users : public Wt::WContainerWidget
 
 	private:
 
+		void handleUserFormCompleted(bool changed);
+
 		void handleDelUser(Wt::WString loginNameIdentity, std::string id);
-		void handleEditUser(std::string id);
-		void handleAddUser(void);
+		void handleCreateUser(std::string id); // set the id in order to edit the user
 
 		SessionData&	_sessionData;
 

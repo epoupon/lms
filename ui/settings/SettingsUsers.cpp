@@ -6,6 +6,8 @@
 
 #include <Wt/Auth/Identity>
 
+#include "SettingsUserFormView.hpp"
+
 #include "SettingsUsers.hpp"
 
 namespace UserInterface {
@@ -39,12 +41,7 @@ _sessionData(sessionData)
 		Wt::WPushButton* addBtn = new Wt::WPushButton("Add User");
 		addBtn->setStyleClass("btn-success");
 		container->addWidget( addBtn );
-		addBtn->clicked().connect(this, &Users::handleAddUser);
-	}
-
-	// 2/ the user form
-	{
-		new Wt::WText("This is the user form!", _stack);
+		addBtn->clicked().connect(boost::bind(&Users::handleCreateUser, this, ""));
 	}
 
 	refresh();
@@ -55,7 +52,7 @@ Users::refresh(void)
 {
 
 	assert(_table->rowCount() > 0);
-	for (int i = _table->rowCount() - 1; i > 0; ++i)
+	for (int i = _table->rowCount() - 1; i > 0; --i)
 		_table->deleteRow(i);
 
 	Database::Handler& db = _sessionData.getDatabaseHandler();
@@ -66,6 +63,7 @@ Users::refresh(void)
 
 	std::vector<Database::User::pointer> users = Database::User::getAll(db.getSession());
 
+	std::size_t userIndex = 1;
 	for (std::size_t i = 0; i < users.size(); ++i)
 	{
 
@@ -75,10 +73,25 @@ Users::refresh(void)
 			userId = oss.str();
 		}
 
-		Wt::Auth::User authUser = db.getUserDatabase().findWithId( userId );
+		Wt::Auth::User authUser;
 
-		_table->elementAt(i + 1, 0)->addWidget(new Wt::WText( Wt::WString::fromUTF8("{1}").arg(i+1)));
-		_table->elementAt(i + 1, 1)->addWidget(new Wt::WText( authUser.identity(Wt::Auth::Identity::LoginName)) );
+		// Hack try/catch here since it may fail!
+		try {
+			authUser = db.getUserDatabase().findWithId( userId );
+		}
+		catch(Wt::Dbo::Exception& e)
+		{
+			std::cerr << "Caught exception when getting userId=" << userId << ": " << e.code() << std::endl;
+			continue;
+		}
+
+		if (!authUser.isValid()) {
+			std::cerr << "Users::refresh: skipping invalid userId = " << userId << std::endl;
+			continue;
+		}
+
+		_table->elementAt(userIndex, 0)->addWidget(new Wt::WText( Wt::WString::fromUTF8("{1}").arg(userIndex)));
+		_table->elementAt(userIndex, 1)->addWidget(new Wt::WText( authUser.identity(Wt::Auth::Identity::LoginName)) );
 
 		Wt::WText* email = new Wt::WText();
 		if (!authUser.email().empty()) {
@@ -88,21 +101,23 @@ Users::refresh(void)
 			email->setStyleClass("alert-danger");
 			email->setText(authUser.unverifiedEmail());
 		}
-		_table->elementAt(i + 1, 2)->addWidget( email ) ;
-		_table->elementAt(i + 1, 3)->addWidget(new Wt::WText( users[i]->isAdmin() ? "Yes" : "No" ));
+		_table->elementAt(userIndex, 2)->addWidget( email ) ;
+		_table->elementAt(userIndex, 3)->addWidget(new Wt::WText( users[i]->isAdmin() ? "Yes" : "No" ));
 
 		Wt::WPushButton* editBtn = new Wt::WPushButton("Edit");
-		_table->elementAt(i + 1, 4)->addWidget(editBtn);
-		editBtn->clicked().connect(boost::bind( &Users::handleEditUser, this, userId));
+		_table->elementAt(userIndex, 4)->addWidget(editBtn);
+		editBtn->clicked().connect(boost::bind( &Users::handleCreateUser, this, userId));
 
 		if (currentUser != authUser)
 		{
 			Wt::WPushButton* delBtn = new Wt::WPushButton("Delete");
 			delBtn->setStyleClass("btn-danger");
 			delBtn->setMargin(5, Wt::Left);
-			_table->elementAt(i + 1, 4)->addWidget(delBtn);
+			_table->elementAt(userIndex, 4)->addWidget(delBtn);
 			delBtn->clicked().connect(boost::bind( &Users::handleDelUser, this, authUser.identity(Wt::Auth::Identity::LoginName), userId));
 		}
+
+		++userIndex;
 	}
 
 }
@@ -122,36 +137,51 @@ Users::handleDelUser(Wt::WString loginNameIdentity, std::string id)
 		{
 			Database::Handler& db = _sessionData.getDatabaseHandler();
 
+			Wt::Dbo::Transaction transaction(db.getSession());
+
 			// Delete the user
 			Wt::Auth::User authUser = db.getUserDatabase().findWithId( id );
 
 			db.getUserDatabase().deleteUser( authUser );
 
-			// TODO remove Database::User too?
+			Database::User::pointer user = Database::User::getById(db.getSession(), id);
+			if (user)
+				user.remove();
 
-			// TODO Update the view
+			refresh();
 		}
 
 		delete messageBox;
 	}));
 
 	messageBox->show();
+
 }
 
 void
-Users::handleAddUser(void)
+Users::handleCreateUser(std::string id)
 {
-	// TODO refresh the User Form for a new user
-	//_stack->setCurrentIndex(1);
+	assert(_stack->count() == 1);
+
+	UserFormView* userFormView = new UserFormView(_sessionData, id, _stack);
+	userFormView->completed().connect(this, &Users::handleUserFormCompleted);
+
+	_stack->setCurrentIndex(1);
 }
 
 void
-Users::handleEditUser(std::string id)
+Users::handleUserFormCompleted(bool changed)
 {
-	//TODO refresh the User Form to edit the given user
-	//_stack->setCurrentIndex(1);
-}
+	_stack->setCurrentIndex(0);
 
+	// Refresh the user table if a change has been made
+	if (changed)
+		refresh();
+
+	// Delete the form view
+	delete _stack->widget(1);
+
+}
 
 } // namespace UserInterface
 } // namespace Settings

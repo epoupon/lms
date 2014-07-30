@@ -40,10 +40,10 @@ class DatabaseFormModel : public Wt::WFormModel
 			addField(UpdateStartTimeField);
 			addField(UpdateRequestImmediateField);
 
-			setValidator(PathField, 			createPathValidator(PathField));
-			setValidator(UpdatePeriodField, 		createUpdatePeriodValidator(UpdatePeriodField));
-			setValidator(UpdateStartTimeField, 		createStartTimeValidator(UpdateStartTimeField));
-			setValidator(UpdateRequestImmediateField,	createRequestImmediateFieldValidator(UpdateRequestImmediateField));
+			setValidator(PathField, 			createPathValidator());
+			setValidator(UpdatePeriodField, 		createUpdatePeriodValidator());
+			setValidator(UpdateStartTimeField, 		createStartTimeValidator());
+			setValidator(UpdateRequestImmediateField,	createRequestImmediateFieldValidator());
 
 			// populate the model with initial data
 			loadData();
@@ -206,25 +206,25 @@ class DatabaseFormModel : public Wt::WFormModel
 
 		}
 
-		Wt::WValidator *createPathValidator(const std::string& field) {
+		Wt::WValidator *createPathValidator() {
 			DirectoryValidator* v = new DirectoryValidator();
 			v->setMandatory(true);
 			return v;
 		}
 
-		Wt::WValidator *createUpdatePeriodValidator(const std::string& field) {
+		Wt::WValidator *createUpdatePeriodValidator() {
 			Wt::WValidator* v = new Wt::WValidator();
 			v->setMandatory(true);
 			return v;
 		}
 
-		Wt::WValidator *createStartTimeValidator(const std::string& field) {
+		Wt::WValidator *createStartTimeValidator() {
 			Wt::WValidator* v = new Wt::WValidator();
 			v->setMandatory(true);
 			return v;
 		}
 
-		Wt::WValidator *createRequestImmediateFieldValidator(const std::string& field) {
+		Wt::WValidator *createRequestImmediateFieldValidator() {
 			Wt::WValidator* v = new Wt::WValidator();
 			return v;
 		}

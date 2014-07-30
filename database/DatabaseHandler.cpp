@@ -103,6 +103,12 @@ Handler::getCurrentUser()
 User::pointer
 Handler::getUser(const Wt::Auth::User& authUser)
 {
+
+	if (!authUser.isValid()) {
+		std::cerr << "Handler::getUser: invalid authUser" << std::endl;
+		return User::pointer();
+	}
+
 	Wt::Dbo::ptr<AuthInfo> authInfo = _users->find(authUser);
 
 	User::pointer user = authInfo->user();

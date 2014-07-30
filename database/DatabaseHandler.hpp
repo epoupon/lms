@@ -15,7 +15,7 @@ namespace Database {
 
 		typedef Wt::Auth::Dbo::UserDatabase<AuthInfo> UserDatabase;
 
-// Session living class handling the database
+// Session living class handling the database and the login
 class Handler
 {
 	public:

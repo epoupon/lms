@@ -21,6 +21,11 @@ User::getAll(Wt::Dbo::Session& session)
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+User::pointer
+User::getById(Wt::Dbo::Session& session, std::string id)
+{
+	return session.find<User>().where("id = ?").bind( id );
+}
 
 
 } // namespace Database

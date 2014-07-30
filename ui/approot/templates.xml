@@ -2,6 +2,104 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
+<message id="userForm-template">
+	<legend>${title}</legend>
+	<div class="form-horizontal">
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:name}">
+				Name
+			</label>
+			<div class="col-sm-5">
+				${name}
+			</div>
+			<div class="help-block col-sm-5">
+				${name-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:email}">
+				e-Mail
+			</label>
+			<div class="col-sm-5">
+				${email}
+			</div>
+			<div class="help-block col-sm-5">
+				${email-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:password}">
+				Password
+			</label>
+			<div class="col-sm-5">
+				${password}
+			</div>
+			<div class="help-block col-sm-5">
+				${password-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:password-confirm}">
+				Confirm password
+			</label>
+			<div class="col-sm-5">
+				${password-confirm}
+			</div>
+			<div class="help-block col-sm-5">
+				${password-confirm-info}
+			</div>
+		</div>
+	</div>
+	<legend>Access</legend>
+	<div class="form-horizontal">
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:admin}">
+				Admin
+			</label>
+			<div class="col-sm-5">
+				${admin}
+			</div>
+			<div class="help-block col-sm-5">
+				${admin-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:audio-bitrate-limit}">
+				Audio Bitrate Limit
+			</label>
+			<div class="col-sm-5">
+				<div class="input-group">
+				${audio-bitrate-limit}
+				<span class="input-group-addon">kbps</span>
+				</div>
+			</div>
+			<div class="help-block col-sm-5">
+				${audio-bitrate-limit-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:video-bitrate-limit}">
+				Video Bitrate Limit
+			</label>
+			<div class="col-sm-5">
+				<div class="input-group">
+					${video-bitrate-limit}
+					<span class="input-group-addon">kbps</span>
+				</div>
+			</div>
+			<div class="help-block col-sm-5">
+				${video-bitrate-limit-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				${save-button} ${cancel-button}
+			</div>
+		</div>
+	</div>
+
+</message>
+
 <message id="databaseForm-template">
 	<legend>${title}</legend>
 	<div class="form-horizontal">

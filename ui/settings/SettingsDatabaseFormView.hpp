@@ -18,6 +18,7 @@ class DatabaseFormView : public Wt::WTemplateFormView
 		DatabaseFormView(SessionData& sessionData, Wt::WContainerWidget *parent = 0);
 
 	private:
+
 		void processSave();
 		void processDiscard();
 

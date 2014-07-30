@@ -10,7 +10,7 @@
 
 [Users]
 - Handle login lifetime?
-- Disable multi login?
+- Limit multi login from UI and remote interface (limit per interface is OK)
 
 [Cover]
 - Scaling: find something more "reliable" than GIL and its customs extensions (adobe work, io_new)?
@@ -25,15 +25,20 @@
 - Use size limits for strings (artist, release, genre)?
 - Process only files whose extensions are well known in audio/video world (avoid useless parsing/errors)
 
+[Transcode]
+- some zombies seem to be remaining after a week of use
+
 [UI]
 	[Settings]
+		- logout users that are being changed (loss of admin admin rights), or make sure they are still admin when they make changes
+		- "signal not exposed" problem if a user logout and login again. bad resource destruction?
 		[admin/Users]
 		- Add/remove users
 		- max audio/video bitrates for user
 		- capabilities (admin)
 		[admin/DB]
-		- Add path to Audio/Video files
-		- Do not make the update start time active when update perdiod is "Never"
+		- Add a dedicated Menu to add/delete and view the Media pathes (see Users for the idea)
+		- Do not make the update start time field active when update perdiod is "Never"
 		- Do not restart the db update service if user applied no changes
 		- Uncheck the "Request immediate scan" once setins are applied
 		[user/transcoding]
@@ -47,7 +52,7 @@
 	- TrackView : handle original release date
 	- TrackView : handle duration > 1 hour
 	- TrackView : select only relevant columns to speed up queries (do not get eveything)
-	- TrackView : Reselect the current playing song when displaying the updated search results
+	- TrackView : Reselect the current selected item when displaying the updated search results
 	- ReleaseView: display the release's publication year
 	- OGG metadata -> properly handle metadata nested in the audio stream
 	- TrackView : when udating the view, reselect the current playing track

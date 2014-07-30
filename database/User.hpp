@@ -12,15 +12,25 @@ typedef Wt::Auth::Dbo::AuthInfo<User> AuthInfo;
 class User {
 
 	public:
+		static const std::size_t MaxNameLength = 15;
 
 		User();
 
 		typedef Wt::Dbo::ptr<User>	pointer;
 
 		// accessors
+		static pointer			getById(Wt::Dbo::Session& session, std::string id);
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session);
 
+		// write
+		void setAdmin(bool admin)	{ _isAdmin = admin; }
+		void setMaxAudioBitrate(std::size_t bitrate)	{ _maxAudioBitrate = bitrate; }
+		void setMaxVideoBitrate(std::size_t bitrate)	{ _maxVideoBitrate = bitrate; }
+
+		// read
 		bool isAdmin() const {return _isAdmin;}
+		std::size_t	getMaxAudioBitrate() const { return _maxAudioBitrate; }
+		std::size_t	getMaxVideoBitrate() const { return _maxVideoBitrate; }
 
 		template<class Action>
 			void persist(Action& a)
