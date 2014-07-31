@@ -27,24 +27,19 @@
 
 [Transcode]
 - some zombies seem to be remaining after a week of use
+- some early playback end spotted on flac files
 
 [UI]
 	[Settings]
 		- logout users that are being changed (loss of admin admin rights), or make sure they are still admin when they make changes
 		- "signal not exposed" problem if a user logout and login again. bad resource destruction?
-		[admin/Users]
-		- Add/remove users
-		- max audio/video bitrates for user
-		- capabilities (admin)
 		[admin/DB]
 		- Add a dedicated Menu to add/delete and view the Media pathes (see Users for the idea)
 		- Do not make the update start time field active when update perdiod is "Never"
 		- Do not restart the db update service if user applied no changes
 		- Uncheck the "Request immediate scan" once setins are applied
 		[user/transcoding]
-		- Prefered bitrate and codecs for audio/video
-		[user/Personal]
-		- password, email
+		- Prefered codecs for audio/video?
 
 	[Audio]
 	- ReleaseView/ArtistView/GenreView: <All> -> Track count for this special category. Easier: add a special entry '<All>' that contains everything?
