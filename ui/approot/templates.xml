@@ -50,7 +50,7 @@
 			</div>
 		</div>
 	</div>
-	<legend>Access</legend>
+	<legend>${access}</legend>
 	<div class="form-horizontal">
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:admin}">
@@ -91,6 +91,8 @@
 				${video-bitrate-limit-info}
 			</div>
 		</div>
+	</div>
+	<div class="form-horizontal">
 		<div class="form-group">
 			<div class="col-sm-offset-2 col-sm-10">
 				${save-button} ${cancel-button}
@@ -98,6 +100,88 @@
 		</div>
 	</div>
 
+</message>
+
+<message id="userAccountForm-template">
+	<legend>${title}</legend>
+	<div class="form-horizontal">
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:name}">
+				Name
+			</label>
+			<div class="col-sm-5">
+				${name}
+			</div>
+			<div class="help-block col-sm-5">
+				${name-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:email}">
+				e-Mail
+			</label>
+			<div class="col-sm-5">
+				${email}
+			</div>
+			<div class="help-block col-sm-5">
+				${email-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:password}">
+				Password
+			</label>
+			<div class="col-sm-5">
+				${password}
+			</div>
+			<div class="help-block col-sm-5">
+				${password-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:password-confirm}">
+				Confirm password
+			</label>
+			<div class="col-sm-5">
+				${password-confirm}
+			</div>
+			<div class="help-block col-sm-5">
+				${password-confirm-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				${save-button} ${cancel-button}
+			</div>
+		</div>
+		${apply-info}
+	</div>
+</message>
+
+<message id="audioForm-template">
+	<legend>${title}</legend>
+	<div class="form-horizontal">
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:bitrate}">
+				Audio bitrate
+			</label>
+			<div class="col-sm-5">
+				<div class="input-group">
+					${bitrate}
+					<span class="input-group-addon">kbps</span>
+				</div>
+			</div>
+			<div class="help-block col-sm-5">
+				${bitrate-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				${save-button} ${cancel-button}
+			</div>
+		</div>
+		${apply-info}
+	</div>
 </message>
 
 <message id="databaseForm-template">
@@ -150,7 +234,6 @@
 				${update-request-immediate-scan-info}
 			</div>
 		</div>
-
 		<div class="form-group">
 			<div class="col-sm-offset-2 col-sm-10">
 				${apply-button} ${discard-button}

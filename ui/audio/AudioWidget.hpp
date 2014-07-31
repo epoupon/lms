@@ -28,7 +28,7 @@ class AudioWidget : public Wt::WContainerWidget
 
 		void handleTrackEnded(void);
 
-		SessionData&		_sessionData;
+		Database::Handler&	_db;
 
 		AudioDatabaseWidget*	_audioDbWidget;
 

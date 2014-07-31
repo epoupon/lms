@@ -32,7 +32,14 @@ Handler::configureAuth(void)
 	verifier->addHashFunction(new Wt::Auth::BCryptHashFunction(8));
 	passwordService.setVerifier(verifier);
 	passwordService.setAttemptThrottlingEnabled(true);
-	passwordService.setStrengthValidator(new Wt::Auth::PasswordStrengthValidator());
+
+	Wt::Auth::PasswordStrengthValidator* strengthValidator = new Wt::Auth::PasswordStrengthValidator();
+	// Reduce some constraints...
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::TwoCharClass, 11);
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::ThreeCharClass, 8 );
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::FourCharClass, 6  );
+
+	passwordService.setStrengthValidator(strengthValidator);
 }
 
 const Wt::Auth::AuthService&

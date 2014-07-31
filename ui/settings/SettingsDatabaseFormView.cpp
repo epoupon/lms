@@ -250,25 +250,35 @@ DatabaseFormView::DatabaseFormView(SessionData& sessionData, Wt::WContainerWidge
 	addFunction("id", &WTemplate::Functions::id);
 	addFunction("block", &WTemplate::Functions::id);
 
+	applyInfo = new Wt::WText();
+	applyInfo->setInline(false);
+	applyInfo->hide();
+	bindWidget("apply-info", applyInfo);
+
 	// Path
-	setFormWidget(DatabaseFormModel::PathField, new Wt::WLineEdit());
+	Wt::WLineEdit *pathEdit = new Wt::WLineEdit();
+	setFormWidget(DatabaseFormModel::PathField, pathEdit);
+	pathEdit->changed().connect(applyInfo, &Wt::WWidget::hide);
 
 	// Update Period
 	Wt::WComboBox *updatePeriodCB = new Wt::WComboBox();
 	setFormWidget(DatabaseFormModel::UpdatePeriodField, updatePeriodCB);
 	updatePeriodCB->setModel(model->updatePeriodModel());
+	updatePeriodCB->changed().connect(applyInfo, &Wt::WWidget::hide);
 
 	// Update Start Time
 	Wt::WComboBox *updateStartTimeCB = new Wt::WComboBox();
 	setFormWidget(DatabaseFormModel::UpdateStartTimeField, updateStartTimeCB);
 	updateStartTimeCB->setModel(model->updateStartTimeModel());
+	updateStartTimeCB->changed().connect(applyInfo, &Wt::WWidget::hide);
 
 	// Request Immediate scan
-	setFormWidget(DatabaseFormModel::UpdateRequestImmediateField, new Wt::WCheckBox());
+	Wt::WCheckBox *immScan = new Wt::WCheckBox();
+	setFormWidget(DatabaseFormModel::UpdateRequestImmediateField, immScan);
+	immScan->changed().connect(applyInfo, &Wt::WWidget::hide);
 
 	// Title & Buttons
-	Wt::WString title = Wt::WString("Media directories settings");
-	bindString("title", title);
+	bindString("title", "Media directories settings");
 
 	Wt::WPushButton *saveButton = new Wt::WPushButton("Apply");
 	bindWidget("apply-button", saveButton);
@@ -276,11 +286,6 @@ DatabaseFormView::DatabaseFormView(SessionData& sessionData, Wt::WContainerWidge
 
 	Wt::WPushButton *discardButton = new Wt::WPushButton("Discard");
 	bindWidget("discard-button", discardButton);
-
-	applyInfo = new Wt::WText();
-	applyInfo->setInline(false);
-	applyInfo->hide();
-	bindWidget("apply-info", applyInfo);
 
 	saveButton->clicked().connect(this, &DatabaseFormView::processSave);
 	discardButton->clicked().connect(this, &DatabaseFormView::processDiscard);
@@ -325,15 +330,13 @@ DatabaseFormView::processSave()
 
 		applyInfo->setText( Wt::WString::fromUTF8("New parameters successfully applied!"));
 		applyInfo->setStyleClass("alert alert-success");
-
-		// Udate the view: Delete any validation message in the view, etc.
-		updateView(model);
-
-	} else {
+	}
+	else {
 		applyInfo->setText( Wt::WString::fromUTF8("Cannot apply new parameters!"));
 		applyInfo->setStyleClass("alert alert-danger");
-		updateView(model);
 	}
+	// Udate the view: Delete any validation message in the view, etc.
+	updateView(model);
 }
 
 

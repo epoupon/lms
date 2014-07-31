@@ -14,6 +14,10 @@ class User {
 	public:
 		static const std::size_t MaxNameLength = 15;
 
+		// list of commonly used bitrates
+		static const std::vector<std::size_t> audioBitrates;
+		static const std::vector<std::size_t> videoBitrates;
+
 		User();
 
 		typedef Wt::Dbo::ptr<User>	pointer;
@@ -21,16 +25,21 @@ class User {
 		// accessors
 		static pointer			getById(Wt::Dbo::Session& session, std::string id);
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session);
+		static std::string		getId(pointer user);
 
 		// write
 		void setAdmin(bool admin)	{ _isAdmin = admin; }
-		void setMaxAudioBitrate(std::size_t bitrate)	{ _maxAudioBitrate = bitrate; }
-		void setMaxVideoBitrate(std::size_t bitrate)	{ _maxVideoBitrate = bitrate; }
+		void setAudioBitrate(std::size_t bitrate);
+		void setVideoBitrate(std::size_t bitrate);
+		void setMaxAudioBitrate(std::size_t bitrate);
+		void setMaxVideoBitrate(std::size_t bitrate);
 
 		// read
 		bool isAdmin() const {return _isAdmin;}
-		std::size_t	getMaxAudioBitrate() const { return _maxAudioBitrate; }
-		std::size_t	getMaxVideoBitrate() const { return _maxVideoBitrate; }
+		std::size_t	getAudioBitrate() const;
+		std::size_t	getVideoBitrate() const;
+		std::size_t	getMaxAudioBitrate() const;
+		std::size_t	getMaxVideoBitrate() const;
 
 		template<class Action>
 			void persist(Action& a)
@@ -45,10 +54,10 @@ class User {
 	private:
 
 		static const std::size_t	maxAudioBitrate = 320000;
-		static const std::size_t	maxVideoBitrate = 7500000;
+		static const std::size_t	maxVideoBitrate = 2048000;
 
 		static const std::size_t	defaultAudioBitrate = 128000;
-		static const std::size_t	defaultVideoBitrate = 1500000;
+		static const std::size_t	defaultVideoBitrate = 1024000;
 
 		// Admin defined settings
 		int	 	_maxAudioBitrate;

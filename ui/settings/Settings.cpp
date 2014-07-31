@@ -2,6 +2,9 @@
 #include <Wt/WStackedWidget>
 #include <Wt/WTextArea>
 
+#include "SettingsAudioFormView.hpp"
+#include "SettingsUserFormView.hpp"
+#include "SettingsAccountFormView.hpp"
 #include "SettingsDatabaseFormView.hpp"
 #include "SettingsUsers.hpp"
 
@@ -28,16 +31,16 @@ _sessionData(sessionData)
 	// Must be logged in here
 	assert(user);
 
+	menu->addItem("Audio", new AudioFormView(sessionData, Database::User::getId(user)));
 	if (user->isAdmin())
 	{
-		// TODO Special admin settings
 		menu->addItem("Database", new DatabaseFormView(sessionData));
 		menu->addItem("Users", new Users(sessionData));
 	}
-
-	// User specifics settings
-	menu->addItem("Transcoding", new Wt::WTextArea("User's transcoding settings here!"));
-	menu->addItem("Personal", new Wt::WTextArea("User's password + mail here!"));
+	else
+	{
+		menu->addItem("Account", new AccountFormView(sessionData, Database::User::getId(user)));
+	}
 
 	addWidget(contents);
 }

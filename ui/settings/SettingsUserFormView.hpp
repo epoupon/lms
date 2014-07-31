@@ -15,6 +15,7 @@ class UserFormModel;
 class UserFormView : public Wt::WTemplateFormView
 {
 	public:
+
 		UserFormView(SessionData& sessionData, std::string userId, Wt::WContainerWidget *parent = 0);
 
 		// Signal emitted once the form is completed
@@ -23,8 +24,6 @@ class UserFormView : public Wt::WTemplateFormView
 	private:
 
 		Wt::Signal<bool>	_sigCompleted;
-
-		SessionData& _sessionData;
 
 		void processSave();
 		void processCancel();

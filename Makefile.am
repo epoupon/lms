@@ -66,7 +66,10 @@ lms_SOURCES = \
 	$(top_srcdir)/ui/video/VideoMediaPlayerWidget.cpp	\
 	$(top_srcdir)/ui/video/VideoParametersDialog.cpp	\
 	$(top_srcdir)/ui/settings/Settings.cpp			\
+	$(top_srcdir)/ui/settings/SettingsAccountFormView.cpp	\
+	$(top_srcdir)/ui/settings/SettingsAudioFormView.cpp	\
 	$(top_srcdir)/ui/settings/SettingsDatabaseFormView.cpp	\
+	$(top_srcdir)/ui/settings/SettingsUserFormView.cpp	\
 	$(top_srcdir)/ui/settings/SettingsUsers.cpp
 
 

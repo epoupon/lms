@@ -6,7 +6,7 @@ namespace UserInterface {
 
 AudioWidget::AudioWidget(SessionData& sessionData, Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent),
-_sessionData(sessionData),
+_db(sessionData.getDatabaseHandler()),
 _audioDbWidget(nullptr),
 _mediaPlayer(nullptr),
 _imgResource(nullptr),
@@ -39,11 +39,22 @@ AudioWidget::playTrack(boost::filesystem::path p)
 {
 	std::cout << "play track '" << p << "'" << std::endl;
 	try {
-		// TODO get user's encoding preference
+
+		std::size_t bitrate = 0;
+
+		// Get user preferences
+		{
+			Wt::Dbo::Transaction transaction(_db.getSession());
+			Database::User::pointer user = _db.getCurrentUser();
+			if (user)
+				bitrate = user->getAudioBitrate();
+			else
+				return; // TODO logout?
+		}
 
 		Transcode::InputMediaFile inputFile(p);
 
-		Transcode::Parameters parameters(inputFile, Transcode::Format::get(Transcode::Format::OGA), 128000);
+		Transcode::Parameters parameters(inputFile, Transcode::Format::get(Transcode::Format::OGA), bitrate);
 
 		_mediaPlayer->load( parameters );
 

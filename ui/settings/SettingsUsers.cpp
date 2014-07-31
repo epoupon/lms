@@ -67,11 +67,7 @@ Users::refresh(void)
 	for (std::size_t i = 0; i < users.size(); ++i)
 	{
 
-		std::string userId;
-		{
-			std::ostringstream oss; oss << users[i].id();
-			userId = oss.str();
-		}
+		std::string userId = Database::User::getId(users[i]);
 
 		Wt::Auth::User authUser;
 

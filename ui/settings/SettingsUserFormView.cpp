@@ -2,19 +2,16 @@
 
 #include <Wt/WStringListModel>
 #include <Wt/WFormModel>
-#include <Wt/WLengthValidator>
 #include <Wt/WLineEdit>
 #include <Wt/WCheckBox>
 #include <Wt/WComboBox>
 #include <Wt/WPushButton>
 #include <Wt/Auth/Identity>
-#include <Wt/Auth/PasswordStrengthValidator>
-#include <Wt/Auth/AbstractPasswordService>
-#include <Wt/Auth/PasswordVerifier>
 
-#include "common/EmailValidator.hpp"
+#include "common/Validators.hpp"
 
 #include "SettingsUserFormView.hpp"
+
 
 namespace UserInterface {
 namespace Settings {
@@ -34,7 +31,7 @@ class UserFormModel : public Wt::WFormModel
 
 		UserFormModel(SessionData& sessionData, std::string userId, Wt::WObject *parent = 0)
 			: Wt::WFormModel(parent),
-			_sessionData(sessionData),
+			_db(sessionData.getDatabaseHandler()),
 			_userId(userId)
 		{
 			initializeModels();
@@ -48,9 +45,7 @@ class UserFormModel : public Wt::WFormModel
 			addField(VideoBitrateLimitField);
 
 			setValidator(NameField, createNameValidator());
-			Wt::WValidator *emailValidator = createEmailValidator();
-			emailValidator->setMandatory(true);
-			setValidator(EmailField, emailValidator);
+			setValidator(EmailField, createEmailValidator());
 			// If creating a user, passwords are mandatory
 			if (_userId.empty())
 			{
@@ -72,67 +67,60 @@ class UserFormModel : public Wt::WFormModel
 
 			if (!userId.empty())
 			{
-				Database::Handler& db = _sessionData.getDatabaseHandler();
+				Wt::Dbo::Transaction transaction(_db.getSession());
 
-				Wt::Dbo::Transaction transaction(db.getSession());
+				Wt::Auth::User authUser = _db.getUserDatabase().findWithId( userId );
+				Database::User::pointer user = _db.getUser(authUser);
 
-				Wt::Auth::User authUser = db.getUserDatabase().findWithId( userId );
-				Database::User::pointer user = db.getUser(authUser);
-
-				Wt::Auth::User currentUser = _sessionData.getDatabaseHandler().getLogin().user();
-
-				if (user && user->isAdmin())
-				{
-					setValue(AdminField, true);
-
-					// We can cannot remove admin rights to ourselves
-					if (currentUser == authUser)
-						setReadOnly(AdminField, true);
-
-					// if the user is admin, no need to limit it
-					setReadOnly(AudioBitrateLimitField, true);
-					setValidator(AudioBitrateLimitField, nullptr);
-
-					setReadOnly(VideoBitrateLimitField, true);
-					setValidator(VideoBitrateLimitField, nullptr);
-				}
-
+				Wt::Auth::User currentUser = _db.getLogin().user();
 
 				if (user && authUser.isValid())
 				{
+					if (user->isAdmin())
+					{
+						setValue(AdminField, true);
+
+						// We can cannot remove admin rights to ourselves
+						if (currentUser == authUser)
+							setReadOnly(AdminField, true);
+
+						// if the user is admin, no need to limit it
+						setReadOnly(AudioBitrateLimitField, true);
+						setValidator(AudioBitrateLimitField, nullptr);
+
+						setReadOnly(VideoBitrateLimitField, true);
+						setValidator(VideoBitrateLimitField, nullptr);
+					}
+					else
+					{
+						setValue(AudioBitrateLimitField, user->getMaxAudioBitrate() / 1000); // in kbps
+						setValue(VideoBitrateLimitField, user->getMaxVideoBitrate() / 1000); // in kbps
+					}
+
 					setValue(NameField, authUser.identity(Wt::Auth::Identity::LoginName));
 					if (!authUser.email().empty())
 						setValue(EmailField, authUser.email());
 					else
 						setValue(EmailField, authUser.unverifiedEmail());
 				}
-
-				if (user)
-				{
-					setValue(AudioBitrateLimitField, user->getMaxAudioBitrate() / 1000); // in kbps
-					setValue(VideoBitrateLimitField, user->getMaxVideoBitrate() / 1000); // in kbps
-				}
-
 			}
 		}
 
 		bool saveData()
 		{
-			// DBO transaction active here
 			try {
-				Database::Handler& db = _sessionData.getDatabaseHandler();
-				Wt::Dbo::Transaction transaction(db.getSession());
+				Wt::Dbo::Transaction transaction(_db.getSession());
 
 				if (_userId.empty())
 				{
 					// Create user
-					Wt::Auth::User authUser = db.getUserDatabase().registerNew();
-					Database::User::pointer user = db.getUser(authUser);
+					Wt::Auth::User authUser = _db.getUserDatabase().registerNew();
+					Database::User::pointer user = _db.getUser(authUser);
 
 					// Account
 					authUser.setIdentity(Wt::Auth::Identity::LoginName, valueText(NameField));
 					authUser.setEmail(valueText(EmailField).toUTF8());
-					db.getPasswordService().updatePassword(authUser, valueText(PasswordField));
+					Database::Handler::getPasswordService().updatePassword(authUser, valueText(PasswordField));
 
 					// Access
 					{
@@ -153,10 +141,9 @@ class UserFormModel : public Wt::WFormModel
 				}
 				else
 				{
-
 					// Update user
-					Wt::Auth::User authUser = db.getUserDatabase().findWithId(_userId);
-					Database::User::pointer user = db.getUser( authUser );
+					Wt::Auth::User authUser = _db.getUserDatabase().findWithId(_userId);
+					Database::User::pointer user = _db.getUser( authUser );
 
 					// user may have been deleted by someone else
 					if (!authUser.isValid()) {
@@ -175,7 +162,7 @@ class UserFormModel : public Wt::WFormModel
 
 					// Password
 					if (!valueText(PasswordField).empty())
-						db.getPasswordService().updatePassword(authUser, valueText(PasswordField));
+						Database::Handler::getPasswordService().updatePassword(authUser, valueText(PasswordField));
 
 					// Access
 					if (!isReadOnly(AdminField))
@@ -207,15 +194,13 @@ class UserFormModel : public Wt::WFormModel
 
 		bool validateField(Field field)
 		{
-			// DBO transaction active here
-
 			Wt::WString error;
 
 			if (field == NameField)
 			{
-				Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
+				Wt::Dbo::Transaction transaction(_db.getSession());
 				// Must be unique since used as LoginIdentity
-				Wt::Auth::User user = _sessionData.getDatabaseHandler().getUserDatabase().findWithIdentity(Wt::Auth::Identity::LoginName, valueText(field));
+				Wt::Auth::User user = _db.getUserDatabase().findWithIdentity(Wt::Auth::Identity::LoginName, valueText(field));
 				if (user.isValid() && user.id() != _userId)
 					error = "Already exists";
 				else
@@ -227,17 +212,10 @@ class UserFormModel : public Wt::WFormModel
 				if (!valueText(PasswordField).empty())
 				{
 					// Evaluate the strength of the password
-					Wt::Auth::PasswordStrengthValidator validator;
-
-					// Reduce some constraints...
-					validator.setMinimumLength( Wt::Auth::PasswordStrengthValidator::TwoCharClass, 11);
-					validator.setMinimumLength( Wt::Auth::PasswordStrengthValidator::ThreeCharClass, 8 );
-					validator.setMinimumLength( Wt::Auth::PasswordStrengthValidator::FourCharClass, 6  );
-
 					Wt::Auth::AbstractPasswordService::StrengthValidatorResult res
-						= validator.evaluateStrength(valueText(PasswordField),
-										valueText(NameField),
-										valueText(EmailField).toUTF8());
+						= Database::Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField),
+								valueText(NameField),
+								valueText(EmailField).toUTF8());
 
 					if (!res.isValid())
 						error = res.message();
@@ -267,58 +245,21 @@ class UserFormModel : public Wt::WFormModel
 
 	private:
 
-		static Wt::WValidator *createNameValidator() {
-			Wt::WLengthValidator *v = new Wt::WLengthValidator();
-			v->setMandatory(true);
-			v->setMinimumLength(3);
-			v->setMaximumLength(::Database::User::MaxNameLength);
-			return v;
-		}
-
 		void initializeModels()
 		{
-
 			// AUDIO
-			// TODO move defaults somewhere else?
-			static const std::vector<std::size_t>
-				audioBitrateLimits =
-				{
-					64,
-					96,
-					128,
-					160,
-					192,
-					224,
-					256,
-					320,
-					512
-				};
-
 			_audioBitrateModel = new Wt::WStringListModel();
-			for (std::size_t i = 0; i < audioBitrateLimits.size(); ++i)
-				_audioBitrateModel->addString( Wt::WString("{1}").arg( audioBitrateLimits[i] ) );
-
+			BOOST_FOREACH(std::size_t bitrate, Database::User::audioBitrates)
+				_audioBitrateModel->addString( Wt::WString("{1}").arg( bitrate / 1000 ) ); // in kbps
 
 			// VIDEO
-			// TODO move defaults somewhere else?
-			static const std::vector<std::size_t>
-				videoBitrateLimits =
-				{
-					256,
-					512,
-					1024,
-					2048,
-					4096,
-					8192
-				};
-
 			_videoBitrateModel = new Wt::WStringListModel();
-			for (std::size_t i = 0; i < videoBitrateLimits.size(); ++i)
-				_videoBitrateModel->addString( Wt::WString("{1}").arg( videoBitrateLimits[i] ) );
+			BOOST_FOREACH(std::size_t bitrate, Database::User::videoBitrates)
+				_videoBitrateModel->addString( Wt::WString("{1}").arg( bitrate / 1000 ) ); // in kbps
 
 		}
 
-		SessionData&		_sessionData;
+		Database::Handler&	_db;
 		std::string		_userId;
 		Wt::WStringListModel*	_audioBitrateModel;
 		Wt::WStringListModel*	_videoBitrateModel;
@@ -334,8 +275,7 @@ const Wt::WFormModel::Field UserFormModel::VideoBitrateLimitField = "video-bitra
 
 
 UserFormView::UserFormView(SessionData& sessionData, std::string userId, Wt::WContainerWidget *parent)
-: Wt::WTemplateFormView(parent),
- _sessionData(sessionData)
+: Wt::WTemplateFormView(parent)
 {
 
 	_model = new UserFormModel(sessionData, userId, this);
@@ -360,9 +300,10 @@ UserFormView::UserFormView(SessionData& sessionData, std::string userId, Wt::WCo
 	setFormWidget(UserFormModel::PasswordConfirmField, passwordConfirmEdit);
 	passwordConfirmEdit->setEchoMode(Wt::WLineEdit::Password);
 
+	bindString("access", "Access");
+
 	// Admin Field
-	Wt::WCheckBox *admin = new Wt::WCheckBox();
-	setFormWidget(UserFormModel::AdminField, admin);
+	setFormWidget(UserFormModel::AdminField, new Wt::WCheckBox());
 
 	// AudioBitrate
 	Wt::WComboBox *audioBitrateCB = new Wt::WComboBox();
@@ -418,7 +359,7 @@ UserFormView::UserFormView(SessionData& sessionData, std::string userId, Wt::WCo
 
 }
 
-void
+	void
 UserFormView::processCancel()
 {
 	// parent widget will delete this widget
