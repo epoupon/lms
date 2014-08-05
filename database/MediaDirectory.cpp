@@ -44,5 +44,10 @@ MediaDirectory::getAll(Wt::Dbo::Session& session)
 
 	return std::vector<MediaDirectory::pointer>(res.begin(), res.end());
 }
+MediaDirectory::pointer
+MediaDirectory::getByPath(Wt::Dbo::Session& session, boost::filesystem::path p)
+{
+	return session.find<MediaDirectory>().where("path = ?").bind( p.string() );
+}
 
 } // namespace Database

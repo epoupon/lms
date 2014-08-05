@@ -76,6 +76,7 @@ class MediaDirectory
 		// Accessors
 		static pointer create(Wt::Dbo::Session& session, boost::filesystem::path p, Type type);
 		static std::vector<MediaDirectory::pointer>	getAll(Wt::Dbo::Session& session);
+		static pointer getByPath(Wt::Dbo::Session& session, boost::filesystem::path p);
 
 		static void eraseAll(Wt::Dbo::Session& session);
 

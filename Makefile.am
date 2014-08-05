@@ -69,6 +69,8 @@ lms_SOURCES = \
 	$(top_srcdir)/ui/settings/SettingsAccountFormView.cpp	\
 	$(top_srcdir)/ui/settings/SettingsAudioFormView.cpp	\
 	$(top_srcdir)/ui/settings/SettingsDatabaseFormView.cpp	\
+	$(top_srcdir)/ui/settings/SettingsMediaDirectories.cpp	\
+	$(top_srcdir)/ui/settings/SettingsMediaDirectoryFormView.cpp	\
 	$(top_srcdir)/ui/settings/SettingsUserFormView.cpp	\
 	$(top_srcdir)/ui/settings/SettingsUsers.cpp
 

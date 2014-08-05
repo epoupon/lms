@@ -6,6 +6,7 @@
 #include "SettingsUserFormView.hpp"
 #include "SettingsAccountFormView.hpp"
 #include "SettingsDatabaseFormView.hpp"
+#include "SettingsMediaDirectories.hpp"
 #include "SettingsUsers.hpp"
 
 #include "Settings.hpp"
@@ -34,7 +35,8 @@ _sessionData(sessionData)
 	menu->addItem("Audio", new AudioFormView(sessionData, Database::User::getId(user)));
 	if (user->isAdmin())
 	{
-		menu->addItem("Database", new DatabaseFormView(sessionData));
+		menu->addItem("Media Folders", new MediaDirectories(sessionData));
+		menu->addItem("Database Update", new DatabaseFormView(sessionData));
 		menu->addItem("Users", new Users(sessionData));
 	}
 	else

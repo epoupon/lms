@@ -24,7 +24,6 @@ class DatabaseFormModel : public Wt::WFormModel
 {
 	public:
 		// Associate each field with a unique string literal.
-		static const Field PathField;
 		static const Field UpdatePeriodField;
 		static const Field UpdateStartTimeField;
 		static const Field UpdateRequestImmediateField;
@@ -35,12 +34,10 @@ class DatabaseFormModel : public Wt::WFormModel
 		{
 			initializeModels();
 
-			addField(PathField);
 			addField(UpdatePeriodField);
 			addField(UpdateStartTimeField);
 			addField(UpdateRequestImmediateField);
 
-			setValidator(PathField, 			createPathValidator());
 			setValidator(UpdatePeriodField, 		createUpdatePeriodValidator());
 			setValidator(UpdateStartTimeField, 		createStartTimeValidator());
 			setValidator(UpdateRequestImmediateField,	createRequestImmediateFieldValidator());
@@ -56,16 +53,6 @@ class DatabaseFormModel : public Wt::WFormModel
 		{
 			Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
 
-			// Get directories
-			std::vector<::Database::MediaDirectory::pointer>	directories = ::Database::MediaDirectory::getAll(_sessionData.getDatabaseHandler().getSession());
-
-			BOOST_FOREACH(::Database::MediaDirectory::pointer directory, directories)
-			{
-			        setValue(PathField, directory->getPath().string() );
-				// TODO, handle multiple directories
-				break;
-			}
-
 			// Get refresh settings
 			::Database::MediaDirectorySettings::pointer settings = ::Database::MediaDirectorySettings::get(_sessionData.getDatabaseHandler().getSession());
 
@@ -77,16 +64,13 @@ class DatabaseFormModel : public Wt::WFormModel
 			if (startTimeRow != -1)
 				setValue(UpdateStartTimeField, updateStartTime( startTimeRow ) );
 
-			setValue(UpdateRequestImmediateField, settings->getManualScanRequested() );
+			setValue(UpdateRequestImmediateField, false);
 		}
 
 		void saveData()
 		{
 			Wt::Dbo::Session& session( _sessionData.getDatabaseHandler().getSession());
 			Wt::Dbo::Transaction transaction(session);
-
-			::Database::MediaDirectory::eraseAll( session );
-			::Database::MediaDirectory::create(session, valueText(PathField).toUTF8(), ::Database::MediaDirectory::Audio);
 
 			::Database::MediaDirectorySettings::pointer settings = ::Database::MediaDirectorySettings::get(_sessionData.getDatabaseHandler().getSession() );
 
@@ -206,12 +190,6 @@ class DatabaseFormModel : public Wt::WFormModel
 
 		}
 
-		Wt::WValidator *createPathValidator() {
-			DirectoryValidator* v = new DirectoryValidator();
-			v->setMandatory(true);
-			return v;
-		}
-
 		Wt::WValidator *createUpdatePeriodValidator() {
 			Wt::WValidator* v = new Wt::WValidator();
 			v->setMandatory(true);
@@ -235,7 +213,6 @@ class DatabaseFormModel : public Wt::WFormModel
 
 };
 
-const Wt::WFormModel::Field DatabaseFormModel::PathField 			= "path";
 const Wt::WFormModel::Field DatabaseFormModel::UpdatePeriodField		= "update-period";
 const Wt::WFormModel::Field DatabaseFormModel::UpdateStartTimeField		= "update-start-time";
 const Wt::WFormModel::Field DatabaseFormModel::UpdateRequestImmediateField	= "update-request-immediate-scan";
@@ -255,11 +232,6 @@ DatabaseFormView::DatabaseFormView(SessionData& sessionData, Wt::WContainerWidge
 	applyInfo->hide();
 	bindWidget("apply-info", applyInfo);
 
-	// Path
-	Wt::WLineEdit *pathEdit = new Wt::WLineEdit();
-	setFormWidget(DatabaseFormModel::PathField, pathEdit);
-	pathEdit->changed().connect(applyInfo, &Wt::WWidget::hide);
-
 	// Update Period
 	Wt::WComboBox *updatePeriodCB = new Wt::WComboBox();
 	setFormWidget(DatabaseFormModel::UpdatePeriodField, updatePeriodCB);
@@ -278,7 +250,7 @@ DatabaseFormView::DatabaseFormView(SessionData& sessionData, Wt::WContainerWidge
 	immScan->changed().connect(applyInfo, &Wt::WWidget::hide);
 
 	// Title & Buttons
-	bindString("title", "Media directories settings");
+	bindString("title", "Media folder settings");
 
 	Wt::WPushButton *saveButton = new Wt::WPushButton("Apply");
 	bindWidget("apply-button", saveButton);
@@ -327,6 +299,9 @@ DatabaseFormView::processSave()
 			if (service)
 				service->restart();
 		}
+
+		// uncheck the special button
+		model->setValue(DatabaseFormModel::UpdateRequestImmediateField, false);
 
 		applyInfo->setText( Wt::WString::fromUTF8("New parameters successfully applied!"));
 		applyInfo->setStyleClass("alert alert-success");

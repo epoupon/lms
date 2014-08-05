@@ -89,13 +89,18 @@ Updater::process(boost::system::error_code err)
 		removeMissingAudioFiles(_result.audioStats);
 		// TODO video files
 
+		// TODO remove files that do not belong to a root directory
+
 		std::vector<boost::filesystem::path> pathes;
 
 		{
 			Wt::Dbo::Transaction transaction(_db.getSession());
 			std::vector<MediaDirectory::pointer> mediaDirectories = MediaDirectory::getAll(_db.getSession());
 			BOOST_FOREACH(MediaDirectory::pointer directory, mediaDirectories)
-				pathes.push_back(directory->getPath());
+			{
+				if (directory->getType() == Database::MediaDirectory::Audio)
+					pathes.push_back(directory->getPath());
+			}
 		}
 
 		BOOST_FOREACH( boost::filesystem::path p, pathes)
@@ -311,6 +316,7 @@ Updater::refreshAudioDirectory( const boost::filesystem::path& p, Stats& stats)
 
 		typedef std::vector<boost::filesystem::path> Paths;             // store paths,
 
+		// TODO use a recursive directory iterator instead
 		Paths files;
 		std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(files));
 
