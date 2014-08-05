@@ -9,14 +9,15 @@
 namespace Remote {
 namespace Server {
 
-Server::Server(boost::asio::io_service& ioService, const endpoint_type& bindEndpoint, boost::filesystem::path dbPath)
+Server::Server(const endpoint_type& bindEndpoint, boost::filesystem::path dbPath)
 :
-_ioService(ioService),
 _acceptor(_ioService, bindEndpoint, true /*SO_REUSEADDR*/),
 _connectionManager(),
 _context(boost::asio::ssl::context::tlsv1_server),
 _dbPath(dbPath)
 {
+	_ioService.setThreadCount(1);
+
 	_context.set_options( boost::asio::ssl::context::default_workarounds // TODO check this thing
 			| boost::asio::ssl::context::single_dh_use
 			| boost::asio::ssl::context::no_sslv2
@@ -29,12 +30,14 @@ _dbPath(dbPath)
 }
 
 void
-Server::run()
+Server::start()
 {
 	// While the server is running, there is always at least one
 	// asynchronous operation outstanding: the asynchronous accept call waiting
 	// for new incoming connections.
 	asyncAccept();
+
+	_ioService.start();
 }
 
 void
@@ -77,6 +80,8 @@ Server::stop()
 	// operations.
 	_acceptor.close();
 	_connectionManager.stopAll();
+
+	_ioService.stop();
 }
 
 } // namespace Server

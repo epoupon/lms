@@ -1,6 +1,8 @@
 #ifndef DB_UPDATER_UPDATER_HPP
 #define DB_UPDATER_UPDATER_HPP
 
+#include <boost/asio/deadline_timer.hpp>
+#include <Wt/WIOService>
 
 #include "metadata/MetaData.hpp"
 #include "database/DatabaseHandler.hpp"
@@ -15,8 +17,9 @@ class Updater
 	public:
 		Updater(boost::filesystem::path db, MetaData::Parser& parser);
 
-		// Update database
-		void process();
+		void start();
+		void stop();
+
 
 	private:
 
@@ -36,6 +39,14 @@ class Updater
 			Stats	videoStats;
 		};
 
+		// Job handling
+		void processNextJob();
+		void scheduleScan(boost::posix_time::time_duration duration);
+		void scheduleScan(boost::posix_time::ptime time);
+
+		// Update database
+		void process(boost::system::error_code ec);
+
 		// Video
 		void refreshVideoDirectory( const boost::filesystem::path& directory );
 		void processVideoFile( const boost::filesystem::path& file);
@@ -46,6 +57,11 @@ class Updater
 		void processAudioFile( const boost::filesystem::path& file, Stats& stats);
 
 		Database::Path::pointer getAddPath(const boost::filesystem::path& path);
+
+		bool			_running;
+		Wt::WIOService		_ioService;
+
+		boost::asio::deadline_timer _scheduleTimer;
 
 		Database::Handler	_db;
 

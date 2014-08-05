@@ -27,7 +27,6 @@ ServiceManager::ServiceManager()
 
 ServiceManager::~ServiceManager()
 {
-	stopServices();
 }
 
 void
@@ -44,8 +43,10 @@ ServiceManager::run()
 	catch( std::exception& e )
 	{
 		std::cerr << "Caugh exception in service : " << e.what() << std::endl;
-		stopServices();
 	}
+
+	// Stopping services
+	stopServices();
 
 	std::cout << "ServiceManager::run complete!" << std::endl;
 }

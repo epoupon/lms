@@ -34,8 +34,8 @@ int main(int argc, char* argv[])
 
 		std::cout << "Starting services..." << std::endl;
 
-		serviceManager.startService( std::make_shared<DatabaseUpdateService>( serviceManager.getIoService(), dbPath) );
-		serviceManager.startService( std::make_shared<RemoteServerService>( serviceManager.getIoService(), remoteListenEndpoint, dbPath) );
+		serviceManager.startService( std::make_shared<DatabaseUpdateService>( dbPath) );
+		serviceManager.startService( std::make_shared<RemoteServerService>( remoteListenEndpoint, dbPath) );
 		serviceManager.startService( std::make_shared<UserInterfaceService>(argc, argv, dbPath) );
 
 		std::cout << "Running..." << std::endl;

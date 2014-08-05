@@ -2,6 +2,7 @@
 [ServiceManager]
 - Rework the whole start/stop/try/cach/thread/interrupts things
 - Rework the io_service thread pool thing
+	- Use our own WIOService
 
 [Services]
 - [UI] generate argc/argv from a config file (crypto, port info, db path)

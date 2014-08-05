@@ -11,7 +11,7 @@ class RemoteServerService : public Service
 {
 	public:
 
-		RemoteServerService(boost::asio::io_service& ioService, const Remote::Server::Server::endpoint_type& endpoint, boost::filesystem::path dbPath);
+		RemoteServerService(const Remote::Server::Server::endpoint_type& endpoint, boost::filesystem::path dbPath);
 
 		void start(void);
 		void stop(void);

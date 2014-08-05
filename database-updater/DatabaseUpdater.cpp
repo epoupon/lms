@@ -2,6 +2,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp>
+#include <boost/asio/placeholders.hpp>
 
 #include "database/MediaDirectory.hpp"
 #include "database/AudioTypes.hpp"
@@ -14,46 +15,114 @@ namespace DatabaseUpdater {
 using namespace Database;
 
 Updater::Updater(boost::filesystem::path dbPath, MetaData::Parser& parser)
- : _db(dbPath),
-   _metadataParser(parser)
+ : _running(false),
+_scheduleTimer(_ioService),
+_db(dbPath),
+_metadataParser(parser)
 {
-
+	_ioService.setThreadCount(1);
 }
 
 void
-Updater::process(void)
+Updater::start(void)
 {
-	removeMissingAudioFiles(_result.audioStats);
-	// TODO video files
+	_running = true;
 
+	// post some jobs in the io_service
+	processNextJob();
+
+	_ioService.start();
+}
+
+void
+Updater::stop(void)
+{
+	_running = false;
+
+	// TODO cancel all jobs (timer, ...)
+	_scheduleTimer.cancel();
+
+	_ioService.stop();
+}
+
+void
+Updater::processNextJob(void)
+{
 	Wt::Dbo::Transaction transaction(_db.getSession());
 
-	std::vector<MediaDirectory::pointer> mediaDirectories = MediaDirectory::getAll(_db.getSession());
+	MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(_db.getSession());
 
-	BOOST_FOREACH( MediaDirectory::pointer directory, mediaDirectories)
+	if (settings->getManualScanRequested())
 	{
-		switch (directory->getType()) {
-			case MediaDirectory::Audio:
-				refreshAudioDirectory(directory->getPath(), _result.audioStats);
-				break;
-			case MediaDirectory::Video:
-				refreshVideoDirectory(directory->getPath());
-				break;
-		}
+		settings.modify()->setManualScanRequested(false);
+		// Schedule immediate scan
+		scheduleScan( boost::posix_time::seconds(0) );
 	}
+	else
+	{
+//		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
 
-	std::cout << "Audio changes = " << _result.audioStats.nbChanges() << std::endl;
-	std::cout << "Video changes = " << _result.videoStats.nbChanges() << std::endl;
+		// TODO
+	}
+}
 
-	Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(_db.getSession());
-	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
+void
+Updater::scheduleScan( boost::posix_time::time_duration duration)
+{
+	std::cout << "Scheduling next scan in " << duration << std::endl;
+	_scheduleTimer.expires_from_now(duration);
+	_scheduleTimer.async_wait( boost::bind( &Updater::process, this, boost::asio::placeholders::error) );
+}
 
-	if (_result.audioStats.nbChanges() + _result.videoStats.nbChanges() > 0)
-		settings.modify()->setLastUpdate(now);
+void
+Updater::scheduleScan( boost::posix_time::ptime time)
+{
+	_scheduleTimer.expires_at(time);
+	_scheduleTimer.async_wait( boost::bind( &Updater::process, this, boost::asio::placeholders::error) );
+}
 
-	settings.modify()->setLastScan(now);
+void
+Updater::process(boost::system::error_code err)
+{
+	if (!err)
+	{
+		removeMissingAudioFiles(_result.audioStats);
+		// TODO video files
 
-	transaction.commit();
+		std::vector<boost::filesystem::path> pathes;
+
+		{
+			Wt::Dbo::Transaction transaction(_db.getSession());
+			std::vector<MediaDirectory::pointer> mediaDirectories = MediaDirectory::getAll(_db.getSession());
+			BOOST_FOREACH(MediaDirectory::pointer directory, mediaDirectories)
+				pathes.push_back(directory->getPath());
+		}
+
+		BOOST_FOREACH( boost::filesystem::path p, pathes)
+			refreshAudioDirectory(p, _result.audioStats);
+
+		std::cout << "Audio changes = " << _result.audioStats.nbChanges() << std::endl;
+		std::cout << "Video changes = " << _result.videoStats.nbChanges() << std::endl;
+
+		// Update database stats only if it has not been interrupted
+		if (_running)
+		{
+			boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
+			{
+				Wt::Dbo::Transaction transaction(_db.getSession());
+
+				Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(_db.getSession());
+
+				if (_result.audioStats.nbChanges() + _result.videoStats.nbChanges() > 0)
+					settings.modify()->setLastUpdate(now);
+
+				settings.modify()->setLastScan(now);
+			}
+
+			processNextJob();
+		}
+
+	}
 }
 
 void
@@ -62,7 +131,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	try {
 
 		// Check last update time
-	        boost::posix_time::ptime lastWriteTime (boost::posix_time::from_time_t( boost::filesystem::last_write_time( file ) ) );
+		boost::posix_time::ptime lastWriteTime (boost::posix_time::from_time_t( boost::filesystem::last_write_time( file ) ) );
 
 		Wt::Dbo::Transaction transaction(_db.getSession());
 
@@ -232,6 +301,12 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 void
 Updater::refreshAudioDirectory( const boost::filesystem::path& p, Stats& stats)
 {
+	if (!_running)
+	{
+		std::cerr << "Not running! Stopping scan" << std::endl;
+		return;
+	}
+
 	if (boost::filesystem::exists(p) && boost::filesystem::is_directory(p)) {
 
 		typedef std::vector<boost::filesystem::path> Paths;             // store paths,
@@ -247,6 +322,7 @@ Updater::refreshAudioDirectory( const boost::filesystem::path& p, Stats& stats)
 				if (boost::filesystem::is_directory(file)) {
 					refreshAudioDirectory( file, stats );
 				}
+
 				else if (boost::filesystem::is_regular(file)) {
 					processAudioFile( file, stats );
 				}

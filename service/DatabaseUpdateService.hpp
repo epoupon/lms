@@ -15,19 +15,14 @@ class DatabaseUpdateService : public Service
 
 		typedef std::shared_ptr<DatabaseUpdateService>	pointer;
 
-		DatabaseUpdateService(boost::asio::io_service& ioService, const boost::filesystem::path& p);
+		DatabaseUpdateService(const boost::filesystem::path& p);
 
 		// Service interface
 		void start(void);
 		void stop(void);
 		void restart(void);
 
-		// Specific interface
-		bool	isScanning(void) const;	//return if the service is currently scanning the db
-
 	private:
-
-		boost::thread				_thread;
 
 		MetaData::AvFormat			_metadataParser;
 		DatabaseUpdater::Updater		_databaseUpdater;	// Todo use handler

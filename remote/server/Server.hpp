@@ -1,6 +1,8 @@
 #ifndef REMOTE_SERVER_HPP
 #define REMOTE_SERVER_HPP
 
+#include <Wt/WIOService>
+
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 
@@ -24,10 +26,10 @@ class Server
 		typedef boost::asio::ip::tcp::endpoint 	endpoint_type;
 
 		// Serve up data from the given database
-		Server(boost::asio::io_service& ioService, const endpoint_type& bindEndpoint, boost::filesystem::path dbPath);
+		Server(const endpoint_type& bindEndpoint, boost::filesystem::path dbPath);
 
 		// Run the server's io_service loop.
-		void run();
+		void start();
 
 		void stop();
 
@@ -36,7 +38,7 @@ class Server
 		void asyncAccept();
 		void handleAccept(std::shared_ptr<Connection> newConnection, boost::system::error_code ec);
 
-		boost::asio::io_service& _ioService;
+		Wt::WIOService		_ioService;
 
 		/// Acceptor used to listen for incoming connections.
 		boost::asio::ip::tcp::acceptor _acceptor;

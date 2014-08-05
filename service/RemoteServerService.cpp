@@ -1,8 +1,8 @@
 
 #include "RemoteServerService.hpp"
 
-RemoteServerService::RemoteServerService(boost::asio::io_service& ioService, const Remote::Server::Server::endpoint_type& endpoint, boost::filesystem::path dbPath)
-: _server(ioService, endpoint, dbPath)
+RemoteServerService::RemoteServerService(const Remote::Server::Server::endpoint_type& endpoint, boost::filesystem::path dbPath)
+: _server(endpoint, dbPath)
 {
 }
 
@@ -10,7 +10,8 @@ void
 RemoteServerService::start(void)
 {
 	std::cout << "RemoteServerService::start, starting..." << std::endl;
-	_server.run();
+	_server.start();
+	std::cout << "RemoteServerService::start, started!" << std::endl;
 }
 
 
@@ -19,6 +20,7 @@ RemoteServerService::stop(void)
 {
 	std::cout << "RemoteServerService::stop, stopping..." << std::endl;
 	_server.stop();
+	std::cout << "RemoteServerService::stop, stopped!" << std::endl;
 }
 
 void
