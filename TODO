@@ -1,8 +1,7 @@
 
 [ServiceManager]
 - Rework the whole start/stop/try/cach/thread/interrupts things
-- Rework the io_service thread pool thing
-	- Use our own WIOService
+- Use our own WIOService
 
 [Services]
 - [UI] generate argc/argv from a config file (crypto, port info, db path)
@@ -17,28 +16,27 @@
 - Scaling: find something more "reliable" than GIL and its customs extensions (adobe work, io_new)?
 
 [Database]
-- Remove Audio/Video distinction
-- When removing a track, make sure to remove genre/artist/release if last of it
+- Optim, use SQL query to get genre orphans
 - Use Inotify like system to watch modified/added files?
 - Implement a video database cleanup
 - Group video in "video groups". Each video may has sub groups (current "Path" class)
 	-> Simplify database and remove the Path class
 - Use size limits for strings (artist, release, genre)?
-- Process only files whose extensions are well known in audio/video world (avoid useless parsing/errors)
+- Process only files whose extensions are well known in audio/video world (avoid useless parsing/errors)?
+
+[Metadata]
+- Skip trailing non printable characters (spaces) in track name, artist, etc.
 
 [Transcode]
 - some zombies seem to be remaining after a week of use
-- some early playback end spotted on flac files
+- some early playback end spotted on flac files (windows chrome only?)
 
 [UI]
 	[Settings]
 		- logout users that are being changed (loss of admin admin rights), or make sure they are still admin when they make changes
 		- "signal not exposed" problem if a user logout and login again. bad resource destruction?
 		[admin/DB]
-		- Add a dedicated Menu to add/delete and view the Media pathes (see Users for the idea)
 		- Do not make the update start time field active when update perdiod is "Never"
-		- Do not restart the db update service if user applied no changes
-		- Uncheck the "Request immediate scan" once setins are applied
 		[user/transcoding]
 		- Prefered codecs for audio/video?
 

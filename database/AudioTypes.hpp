@@ -31,8 +31,10 @@ class Artist
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getNone(Wt::Dbo::Session& session);
 		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, int offset = -1, int size = -1);
+		static Wt::Dbo::collection<pointer> getAllOrphans(Wt::Dbo::Session& session);
 
 		const std::string& getName(void) const { return _name; }
+		const Wt::Dbo::collection< Wt::Dbo::ptr<Track> >& getTracks(void) const  { return _tracks;}
 
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name);
@@ -70,7 +72,7 @@ class Release
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getById(Wt::Dbo::Session& session, id_type id);
 		static pointer getNone(Wt::Dbo::Session& session);
-
+		static Wt::Dbo::collection<pointer> getAllOrphans(Wt::Dbo::Session& session);
 		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, std::vector<Artist::id_type> artistIds, int offset = -1, int size = -1);
 
 		// Create
@@ -78,7 +80,7 @@ class Release
 
 		std::string	getName() const	{ return _name; }
 		bool		isNone(void) const;
-		Wt::Dbo::collection<Wt::Dbo::ptr<Track> > getTracks(void) const	{ return _tracks;}
+		const Wt::Dbo::collection<Wt::Dbo::ptr<Track> >& getTracks(void) const	{ return _tracks;}
 		boost::posix_time::time_duration getDuration(void) const;
 
 
@@ -110,7 +112,7 @@ class Genre
 		// Find utility
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getNone(Wt::Dbo::Session& session);
-		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, std::size_t offset, std::size_t size);
+		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, std::size_t offset = -1, std::size_t size = -1);
 
 		// Create utility
 		static pointer create(Wt::Dbo::Session& session, const std::string& name);
@@ -118,6 +120,7 @@ class Genre
 		// Accessors
 		const std::string& getName(void) const { return _name; }
 		bool isNone(void) const;
+		const Wt::Dbo::collection< Wt::Dbo::ptr<Track> >&	getTracks() const { return _tracks;}
 
 		template<class Action>
 			void persist(Action& a)

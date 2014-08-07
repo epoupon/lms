@@ -73,5 +73,12 @@ Release::getDuration(void) const
 	return res;
 }
 
+Wt::Dbo::collection<Release::pointer>
+Release::getAllOrphans(Wt::Dbo::Session& session)
+{
+	return session.query< Wt::Dbo::ptr<Release> >("select r from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL");
+}
+
+
 
 } // namespace Database

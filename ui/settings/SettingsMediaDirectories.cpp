@@ -75,14 +75,14 @@ MediaDirectories::refresh(void)
 		Wt::WPushButton* delBtn = new Wt::WPushButton("Delete");
 		delBtn->setStyleClass("btn-danger");
 		_table->elementAt(id, 3)->addWidget(delBtn);
-		delBtn->clicked().connect(boost::bind( &MediaDirectories::handleDelMediaDirectory, this, mediaDirectory->getPath() ) );
+		delBtn->clicked().connect(boost::bind( &MediaDirectories::handleDelMediaDirectory, this, mediaDirectory->getPath(), mediaDirectory->getType() ) );
 
 		++id;
 	}
 }
 
 void
-MediaDirectories::handleDelMediaDirectory(boost::filesystem::path p)
+MediaDirectories::handleDelMediaDirectory(boost::filesystem::path p, Database::MediaDirectory::Type type)
 {
 	Wt::WMessageBox *messageBox = new Wt::WMessageBox
 		("Delete Folder",
@@ -98,12 +98,15 @@ MediaDirectories::handleDelMediaDirectory(boost::filesystem::path p)
 				Wt::Dbo::Transaction transaction(_db.getSession());
 
 				// Delete the media diretory
-				Database::MediaDirectory::pointer mediaDirectory = Database::MediaDirectory::getByPath(_db.getSession(), p);
+				Database::MediaDirectory::pointer mediaDirectory = Database::MediaDirectory::get(_db.getSession(), p, type);
 				if (mediaDirectory)
 					mediaDirectory.remove();
 				}
 
 				refresh();
+
+				// Emit something changed in the settings
+				_sigChanged.emit();
 			}
 
 		delete messageBox;
@@ -129,9 +132,14 @@ MediaDirectories::handleMediaDirectoryFormCompleted(bool changed)
 {
 	_stack->setCurrentIndex(0);
 
-	// Refresh the user table if a change has been made
 	if (changed)
+	{
+		// Refresh the user table if a change has been made
 		refresh();
+
+		// Emit something changed in the settings
+		_sigChanged.emit();
+	}
 
 	// Delete the form view
 	delete _stack->widget(1);

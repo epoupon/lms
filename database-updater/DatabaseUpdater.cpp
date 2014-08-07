@@ -14,6 +14,23 @@ namespace DatabaseUpdater {
 
 using namespace Database;
 
+namespace {
+
+	std::vector<boost::filesystem::path>
+	getRootDirectoriesByType(Wt::Dbo::Session& session, Database::MediaDirectory::Type type)
+	{
+		std::vector<boost::filesystem::path> res;
+		std::vector<Database::MediaDirectory::pointer> rootDirs = Database::MediaDirectory::getByType(session, type);
+
+		BOOST_FOREACH(Database::MediaDirectory::pointer rootDir, rootDirs)
+			res.push_back(rootDir->getPath());
+
+		return res;
+	}
+
+}
+
+
 Updater::Updater(boost::filesystem::path dbPath, MetaData::Parser& parser)
  : _running(false),
 _scheduleTimer(_ioService),
@@ -53,11 +70,7 @@ Updater::processNextJob(void)
 	MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(_db.getSession());
 
 	if (settings->getManualScanRequested())
-	{
-		settings.modify()->setManualScanRequested(false);
-		// Schedule immediate scan
 		scheduleScan( boost::posix_time::seconds(0) );
-	}
 	else
 	{
 //		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
@@ -86,47 +99,49 @@ Updater::process(boost::system::error_code err)
 {
 	if (!err)
 	{
-		removeMissingAudioFiles(_result.audioStats);
+		Stats stats;
+
+		checkAudioFiles(stats);
 		// TODO video files
 
-		// TODO remove files that do not belong to a root directory
 
-		std::vector<boost::filesystem::path> pathes;
-
+		typedef std::pair<boost::filesystem::path, Database::MediaDirectory::Type> RootDirectory;
+		std::vector<RootDirectory> rootDirectories;
 		{
 			Wt::Dbo::Transaction transaction(_db.getSession());
 			std::vector<MediaDirectory::pointer> mediaDirectories = MediaDirectory::getAll(_db.getSession());
 			BOOST_FOREACH(MediaDirectory::pointer directory, mediaDirectories)
-			{
-				if (directory->getType() == Database::MediaDirectory::Audio)
-					pathes.push_back(directory->getPath());
-			}
+				rootDirectories.push_back( std::make_pair( directory->getPath(), directory->getType() ));
 		}
 
-		BOOST_FOREACH( boost::filesystem::path p, pathes)
-			refreshAudioDirectory(p, _result.audioStats);
+		BOOST_FOREACH( RootDirectory rootDirectory, rootDirectories)
+			processDirectory(rootDirectory.first, rootDirectory.first, rootDirectory.second, stats);
 
-		std::cout << "Audio changes = " << _result.audioStats.nbChanges() << std::endl;
-		std::cout << "Video changes = " << _result.videoStats.nbChanges() << std::endl;
+		std::cout << "Changes = " << stats.nbChanges() << std::endl;
 
-		// Update database stats only if it has not been interrupted
-		if (_running)
+		// Update database stats
+		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
 		{
-			boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-			{
-				Wt::Dbo::Transaction transaction(_db.getSession());
+			Wt::Dbo::Transaction transaction(_db.getSession());
 
-				Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(_db.getSession());
+			Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(_db.getSession());
 
-				if (_result.audioStats.nbChanges() + _result.videoStats.nbChanges() > 0)
-					settings.modify()->setLastUpdate(now);
+			if (stats.nbChanges() > 0)
+				settings.modify()->setLastUpdate(now);
 
+			// Save the last scan only if it has been completed
+			if (_running)
 				settings.modify()->setLastScan(now);
-			}
 
-			processNextJob();
+			// If the manual scan was required we can now set it to done
+			// Update only if the scan is complete!
+			if (settings->getManualScanRequested() & _running)
+				settings.modify()->setManualScanRequested(false);
+
 		}
 
+		if (_running)
+			processNextJob();
 	}
 }
 
@@ -143,13 +158,6 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		// Skip file if last write is the same
 		Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
 		if (track && track->getLastWriteTime() == lastWriteTime)
-			return;
-
-		std::vector<unsigned char> checksum;
-		computeCrc( file, checksum );
-
-		// Skip file if its checksum is still the same
-		if (track && track->getChecksum() == checksum)
 			return;
 
 		MetaData::Items items;
@@ -262,7 +270,6 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		assert(track);
 
-		track.modify()->setChecksum(checksum);
 		track.modify()->setLastWriteTime(lastWriteTime);
 		track.modify()->setName(title);
 
@@ -304,70 +311,139 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 
 void
-Updater::refreshAudioDirectory( const boost::filesystem::path& p, Stats& stats)
+Updater::processDirectory(const boost::filesystem::path& rootDirectory,
+			const boost::filesystem::path& p,
+			Database::MediaDirectory::Type type,
+			Stats& stats)
 {
 	if (!_running)
-	{
-		std::cerr << "Not running! Stopping scan" << std::endl;
 		return;
-	}
 
-	if (boost::filesystem::exists(p) && boost::filesystem::is_directory(p)) {
+	if (!boost::filesystem::exists(p) || !boost::filesystem::is_directory(p))
+		return;
 
-		typedef std::vector<boost::filesystem::path> Paths;             // store paths,
+	boost::filesystem::recursive_directory_iterator itPath(rootDirectory);
+	boost::filesystem::recursive_directory_iterator itEnd;
+	while (itPath != itEnd)
+	{
+		if (!_running)
+			return;
 
-		// TODO use a recursive directory iterator instead
-		Paths files;
-		std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(files));
+		if (boost::filesystem::is_regular(*itPath)) {
+			switch( type )
+			{
+				case Database::MediaDirectory::Audio:
+					processAudioFile( *itPath, stats );
 
-		BOOST_FOREACH(const boost::filesystem::path& file, files) {
+					break;
 
-			boost::this_thread::interruption_point();
-
-			try {
-				if (boost::filesystem::is_directory(file)) {
-					refreshAudioDirectory( file, stats );
-				}
-
-				else if (boost::filesystem::is_regular(file)) {
-					processAudioFile( file, stats );
-				}
-				else {
-					std::cout << "Skipped '" << file << "' (not regular)" << std::endl;
-				}
-			}
-			catch(std::exception& e) {
-				std::cerr << "Exception while accessing '" << file << ": " << e.what() << std::endl;
+				case Database::MediaDirectory::Video:
+//					processVideoFile( rootDirectory, *itPath, stats);
+					break;
 			}
 		}
+
+		++itPath;
 	}
 }
 
-void
-Updater::removeMissingAudioFiles( Stats& stats )
+bool
+Updater::checkFile(const boost::filesystem::path& p, const std::vector<boost::filesystem::path>& rootDirs)
 {
-	std::cerr << "Removing missing files..." << std::endl;
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	bool status = true;
 
-	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Track> > Tracks;
-
-	Tracks tracks = Track::getAll(_db.getSession());
-
-	for (Tracks::iterator i = tracks.begin(); i != tracks.end(); ++i)
-	{
-		const boost::filesystem::path p ((*i)->getPath() );
-		if (!boost::filesystem::exists( p )
+	// For each track, make sure the the file still exists
+	// and still belongs to a root directory
+	if (!boost::filesystem::exists( p )
 			|| !boost::filesystem::is_regular( p ) )
+	{
+		std::cerr << "Missing file '" << p << "'" << std::endl;
+		status = false;
+	}
+	else
+	{
+		bool foundRoot = false;
+		BOOST_FOREACH(const boost::filesystem::path& rootDir, rootDirs)
 		{
-			(*i).remove();
-			stats.nbRemoved++;
-			std::cerr << "Removing file '" << p << "'" << std::endl;
+			if (p.string().find( rootDir.string() ) != std::string::npos)
+			{
+				foundRoot = true;
+				break;
+			}
+		}
+
+		if (!foundRoot)
+		{
+			std::cerr << "Out of root file '" << p << "'" << std::endl;
+			status = false;
 		}
 	}
 
-	transaction.commit();
+	return status;
+}
 
-	std::cerr << "Refreshing missing files done!" << std::endl;
+
+void
+Updater::checkAudioFiles( Stats& stats )
+{
+
+	std::cerr << "Checking audio files..." << std::endl;
+	Wt::Dbo::Transaction transaction(_db.getSession());
+
+	std::vector<boost::filesystem::path> rootDirs = getRootDirectoriesByType(_db.getSession(), Database::MediaDirectory::Audio);
+
+	std::cerr << "Checking tracks..." << std::endl;
+	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Track> > Tracks;
+	Tracks tracks = Track::getAll(_db.getSession());
+
+	for (Tracks::iterator it = tracks.begin(); it != tracks.end(); ++it)
+	{
+		Track::pointer track = (*it);
+
+		if (!checkFile(track->getPath(), rootDirs))
+		{
+			track.remove();
+			stats.nbRemoved++;
+		}
+	}
+
+	std::cerr << "Checking Artists..." << std::endl;
+	// Now process orphan Artists (no track)
+	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Artist> > Artists;
+	Artists artists = Artist::getAllOrphans(_db.getSession());
+
+	for (Artists::iterator it = artists.begin(); it != artists.end(); ++it)
+	{
+		std::cout << "Removing orphan artist " << (*it)->getName() << std::endl;
+		(*it).remove();
+	}
+
+	std::cerr << "Checking Releases..." << std::endl;
+	// Now process orphan Release (no track)
+	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Release> > Releases;
+	Releases releases = Release::getAllOrphans(_db.getSession());
+
+	for (Releases::iterator it = releases.begin(); it != releases.end(); ++it)
+	{
+		std::cout << "Removing orphan release " << (*it)->getName() << std::endl;
+		(*it).remove();
+	}
+
+	std::cerr << "Checking Genres..." << std::endl;
+	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Genre> > Genres;
+	Genres genres = Genre::getAll(_db.getSession());
+
+	for (Genres::iterator it = genres.begin(); it != genres.end(); ++it)
+	{
+		Genre::pointer genre = (*it);
+
+		if (genre->getTracks().size() == 0)
+			genre.remove();
+	}
+
+	// Now process orphan Genre (no track)
+
+	std::cerr << "Check audio files done!" << std::endl;
 }
 
 Path::pointer
@@ -393,7 +469,7 @@ Updater::getAddPath(const boost::filesystem::path& path)
 }
 
 
-void
+/*void
 Updater::refreshVideoDirectory( const boost::filesystem::path& path)
 {
 	std::cout << "Refreshing video directory " << path << std::endl;
@@ -430,8 +506,8 @@ Updater::refreshVideoDirectory( const boost::filesystem::path& path)
 		}
 	}
 	std::cout << "Refreshing video directory " << path << ": DONE" << std::endl;
-}
-
+}*/
+/*
 void
 Updater::processVideoFile( const boost::filesystem::path& file)
 {
@@ -510,5 +586,5 @@ Updater::processVideoFile( const boost::filesystem::path& file)
 		std::cerr << "Exception while parsing video file : '" << file << "': '" << e.what() << "' => skipping!" << std::endl;
 	}
 }
-
+*/
 } // namespace DatabaseUpdater

@@ -9,6 +9,9 @@
 #include "SettingsMediaDirectories.hpp"
 #include "SettingsUsers.hpp"
 
+#include "service/ServiceManager.hpp"
+#include "service/DatabaseUpdateService.hpp"
+
 #include "Settings.hpp"
 
 namespace UserInterface {
@@ -35,8 +38,14 @@ _sessionData(sessionData)
 	menu->addItem("Audio", new AudioFormView(sessionData, Database::User::getId(user)));
 	if (user->isAdmin())
 	{
-		menu->addItem("Media Folders", new MediaDirectories(sessionData));
-		menu->addItem("Database Update", new DatabaseFormView(sessionData));
+		MediaDirectories* mediaDirectory = new MediaDirectories(sessionData);
+		mediaDirectory->changed().connect(this, &Settings::handleDatabaseSettingsChanged);
+		menu->addItem("Media Folders", mediaDirectory);
+
+		DatabaseFormView* databaseFormView = new DatabaseFormView(sessionData);
+		databaseFormView->changed().connect(this, &Settings::handleDatabaseSettingsChanged);
+		menu->addItem("Database Update", databaseFormView);
+
 		menu->addItem("Users", new Users(sessionData));
 	}
 	else
@@ -45,6 +54,23 @@ _sessionData(sessionData)
 	}
 
 	addWidget(contents);
+}
+
+void
+Settings::handleDatabaseSettingsChanged()
+{
+	// On settings change, request an immediate scan
+	{
+		Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
+		Database::MediaDirectorySettings::get(_sessionData.getDatabaseHandler().getSession()).modify()->setManualScanRequested(true);
+	}
+
+	// Restarting the update service
+	boost::lock_guard<boost::mutex> serviceLock (ServiceManager::instance().mutex());
+
+	DatabaseUpdateService::pointer service = ServiceManager::instance().getService<DatabaseUpdateService>();
+	if (service)
+		service->restart();
 }
 
 } // namespace Settings

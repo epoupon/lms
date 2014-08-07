@@ -38,5 +38,11 @@ Artist::getAll(Wt::Dbo::Session& session, int offset, int size)
 	return session.find<Artist>().offset(offset).limit(size);
 }
 
+Wt::Dbo::collection<Artist::pointer>
+Artist::getAllOrphans(Wt::Dbo::Session& session)
+{
+	return session.query< Wt::Dbo::ptr<Artist> >("select a from artist a LEFT OUTER JOIN Track t ON a.id = t.artist_id WHERE t.id IS NULL");
+}
+
 } // namespace Database
 

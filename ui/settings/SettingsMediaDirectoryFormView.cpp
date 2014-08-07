@@ -51,6 +51,12 @@ class MediaDirectoryFormModel : public Wt::WFormModel
 				Database::MediaDirectory::Type type
 					= (valueText(TypeField) == "Audio") ? Database::MediaDirectory::Audio : Database::MediaDirectory::Video;
 
+				if (Database::MediaDirectory::get(_db.getSession(), valueText(PathField).toUTF8(), type))
+				{
+					error = "This Path/Type already exists!";
+					return false;
+				}
+
 				Database::MediaDirectory::create(_db.getSession(), valueText(PathField).toUTF8(), type);
 
 			}

@@ -4,6 +4,9 @@
 #include <Wt/WStackedWidget>
 #include <Wt/WContainerWidget>
 #include <Wt/WTable>
+#include <Wt/WSignal>
+
+#include "database/MediaDirectory.hpp"
 
 #include "common/SessionData.hpp"
 
@@ -17,11 +20,15 @@ class MediaDirectories : public Wt::WContainerWidget
 
 		void refresh();
 
+		Wt::Signal<void>& changed()	{ return _sigChanged; }
+
 	private:
+
+		Wt::Signal<void>	_sigChanged;
 
 		void handleMediaDirectoryFormCompleted(bool changed);
 
-		void handleDelMediaDirectory(boost::filesystem::path p);
+		void handleDelMediaDirectory(boost::filesystem::path p, Database::MediaDirectory::Type type);
 		void handleCreateMediaDirectory(void);
 
 		Database::Handler&	_db;

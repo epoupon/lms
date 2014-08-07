@@ -12,6 +12,8 @@ class Settings : public Wt::WContainerWidget
 
 	private:
 
+		void handleDatabaseSettingsChanged();
+
 		SessionData&	_sessionData;
 
 };

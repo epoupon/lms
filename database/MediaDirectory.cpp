@@ -44,10 +44,19 @@ MediaDirectory::getAll(Wt::Dbo::Session& session)
 
 	return std::vector<MediaDirectory::pointer>(res.begin(), res.end());
 }
-MediaDirectory::pointer
-MediaDirectory::getByPath(Wt::Dbo::Session& session, boost::filesystem::path p)
+
+std::vector<MediaDirectory::pointer>
+MediaDirectory::getByType(Wt::Dbo::Session& session, Type type)
 {
-	return session.find<MediaDirectory>().where("path = ?").bind( p.string() );
+	Wt::Dbo::collection< MediaDirectory::pointer > res = session.find<MediaDirectory>().where("type = ?").bind (type);
+
+	return std::vector<MediaDirectory::pointer>(res.begin(), res.end());
+}
+
+MediaDirectory::pointer
+MediaDirectory::get(Wt::Dbo::Session& session, boost::filesystem::path p, Type type)
+{
+	return session.find<MediaDirectory>().where("path = ?").where("type = ?").bind( p.string()).bind(type);
 }
 
 } // namespace Database

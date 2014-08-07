@@ -10,9 +10,6 @@
 
 #include "database/MediaDirectory.hpp"
 
-#include "service/ServiceManager.hpp"
-#include "service/DatabaseUpdateService.hpp"
-
 #include "common/DirectoryValidator.hpp"
 
 #include "SettingsDatabaseFormView.hpp"
@@ -291,14 +288,7 @@ DatabaseFormView::processSave()
 		// Make the model to commit data into DB
 		model->saveData();
 
-		// Restarting the update service
-		{
-			boost::lock_guard<boost::mutex> serviceLock (ServiceManager::instance().mutex());
-
-			DatabaseUpdateService::pointer service = ServiceManager::instance().getService<DatabaseUpdateService>();
-			if (service)
-				service->restart();
-		}
+		_sigChanged.emit();
 
 		// uncheck the special button
 		model->setValue(DatabaseFormModel::UpdateRequestImmediateField, false);
