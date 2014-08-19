@@ -16,6 +16,13 @@ class MediaDirectorySettings
 {
 	public:
 
+		enum UpdatePeriod {
+			Never,
+			Daily,
+			Weekly,
+			Monthly
+		};
+
 		typedef Wt::Dbo::ptr<MediaDirectorySettings> pointer;
 
 		MediaDirectorySettings() {}
@@ -25,17 +32,17 @@ class MediaDirectorySettings
 
 		// write accessors
 		void	setManualScanRequested(bool value)		{ _manualScanRequested = value;}
-		void	setUpdatePeriod(boost::posix_time::time_duration dur)		{ _updatePeriod = dur;}
+		void	setUpdatePeriod(UpdatePeriod period)		{ _updatePeriod = period;}
 		void	setUpdateStartTime(boost::posix_time::time_duration dur)	{ _updateStartTime = dur;}
 		void	setLastUpdate(boost::posix_time::ptime time)	{ _lastUpdate = time; }
 		void	setLastScan(boost::posix_time::ptime time)	{ _lastScan = time; }
 
 		// Read accessors
 		bool				getManualScanRequested(void) const	{ return _manualScanRequested; }
-		boost::posix_time::time_duration	getUpdatePeriod(void) const	{ return _updatePeriod; }
+		UpdatePeriod			getUpdatePeriod(void) const		{ return _updatePeriod; }
 		boost::posix_time::time_duration	getUpdateStartTime(void) const	{ return _updateStartTime; }
 		boost::posix_time::ptime	getLastUpdated(void) const		{ return _lastUpdate; }
-		boost::posix_time::ptime	getLastScan(void) const		{ return _lastScan; }
+		boost::posix_time::ptime	getLastScan(void) const			{ return _lastScan; }
 
 		template<class Action>
 			void persist(Action& a)
@@ -51,7 +58,7 @@ class MediaDirectorySettings
 	private:
 
 		bool					_manualScanRequested;	// Immadiate scan has been requested by user
-		boost::posix_time::time_duration	_updatePeriod;		// How long between updates
+		UpdatePeriod				_updatePeriod;		// How long between updates
 		boost::posix_time::time_duration	_updateStartTime;	// Time of day to begin the update
 		boost::posix_time::ptime		_lastUpdate;		// last time the database has changed
 		boost::posix_time::ptime		_lastScan;		// last time the database has been scanned

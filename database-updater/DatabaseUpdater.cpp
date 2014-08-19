@@ -10,6 +10,45 @@
 #include "Checksum.hpp"
 #include "DatabaseUpdater.hpp"
 
+namespace {
+
+boost::gregorian::date
+getNextDay(const boost::gregorian::date& current)
+{
+	boost::gregorian::day_iterator it(current);
+	return *(++it);
+}
+
+boost::gregorian::date
+getNextMonday(const boost::gregorian::date& current)
+{
+	boost::gregorian::day_iterator it(current);
+
+	++it;
+	// While it's not monday
+	while( it->day_of_week() != 1 )
+		++it;
+
+	return *(it);
+}
+
+boost::gregorian::date
+getNextFirstOfMonth(const boost::gregorian::date& current)
+{
+	boost::gregorian::day_iterator it(current);
+
+	++it;
+	// While it's not the 1st of the month
+	while( it->day() != 1 )
+		++it;
+
+	return (*it);
+}
+
+
+}
+
+
 namespace DatabaseUpdater {
 
 using namespace Database;
@@ -69,13 +108,44 @@ Updater::processNextJob(void)
 
 	MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(_db.getSession());
 
-	if (settings->getManualScanRequested())
+	if (settings->getManualScanRequested()) {
+		std::cout << "Manual scan requested!" << std::endl;
 		scheduleScan( boost::posix_time::seconds(0) );
+	}
 	else
 	{
-//		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
+		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
+		boost::posix_time::time_duration startTime = settings->getUpdateStartTime();
 
-		// TODO
+		boost::gregorian::date nextScanDate;
+
+		switch( settings->getUpdatePeriod() )
+		{
+			case Database::MediaDirectorySettings::Never:
+				// Nothing to do
+				break;
+			case Database::MediaDirectorySettings::Daily:
+				if (now.time_of_day() < startTime)
+					nextScanDate = now.date();
+				else
+					nextScanDate = getNextDay(now.date());
+				break;
+			case Database::MediaDirectorySettings::Weekly:
+				if (now.time_of_day() < startTime && now.date().day_of_week() == 1)
+					nextScanDate = now.date();
+				else
+					nextScanDate = getNextMonday(now.date());
+				break;
+			case Database::MediaDirectorySettings::Monthly:
+				if (now.time_of_day() < startTime && now.date().day() == 1)
+					nextScanDate = now.date();
+				else
+					nextScanDate = getNextFirstOfMonth(now.date());
+				break;
+		}
+
+		if (!nextScanDate.is_special())
+			scheduleScan( boost::posix_time::ptime (nextScanDate, settings->getUpdateStartTime() ) );
 	}
 }
 
@@ -90,6 +160,7 @@ Updater::scheduleScan( boost::posix_time::time_duration duration)
 void
 Updater::scheduleScan( boost::posix_time::ptime time)
 {
+	std::cout << "Scheduling next scan at " << time << std::endl;
 	_scheduleTimer.expires_at(time);
 	_scheduleTimer.async_wait( boost::bind( &Updater::process, this, boost::asio::placeholders::error) );
 }
@@ -135,7 +206,7 @@ Updater::process(boost::system::error_code err)
 
 			// If the manual scan was required we can now set it to done
 			// Update only if the scan is complete!
-			if (settings->getManualScanRequested() & _running)
+			if (settings->getManualScanRequested() && _running)
 				settings.modify()->setManualScanRequested(false);
 
 		}

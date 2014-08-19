@@ -12,7 +12,9 @@ class Settings : public Wt::WContainerWidget
 
 	private:
 
-		void handleDatabaseSettingsChanged();
+		void handleDatabaseDirectoriesChanged();
+
+		void restartDatabaseUpdateService(void);
 
 		SessionData&	_sessionData;
 

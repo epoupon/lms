@@ -1,9 +1,8 @@
-#include <Wt/WLineEdit>
 #include <Wt/WString>
 #include <Wt/WPushButton>
 #include <Wt/WCheckBox>
 #include <Wt/WComboBox>
-#include <Wt/WBreak>
+#include <Wt/WMessageBox>
 
 #include <Wt/WFormModel>
 #include <Wt/WStringListModel>
@@ -23,7 +22,6 @@ class DatabaseFormModel : public Wt::WFormModel
 		// Associate each field with a unique string literal.
 		static const Field UpdatePeriodField;
 		static const Field UpdateStartTimeField;
-		static const Field UpdateRequestImmediateField;
 
 		DatabaseFormModel(SessionData& sessionData, Wt::WObject *parent = 0)
 			: Wt::WFormModel(parent),
@@ -33,11 +31,9 @@ class DatabaseFormModel : public Wt::WFormModel
 
 			addField(UpdatePeriodField);
 			addField(UpdateStartTimeField);
-			addField(UpdateRequestImmediateField);
 
 			setValidator(UpdatePeriodField, 		createUpdatePeriodValidator());
 			setValidator(UpdateStartTimeField, 		createStartTimeValidator());
-			setValidator(UpdateRequestImmediateField,	createRequestImmediateFieldValidator());
 
 			// populate the model with initial data
 			loadData();
@@ -61,7 +57,6 @@ class DatabaseFormModel : public Wt::WFormModel
 			if (startTimeRow != -1)
 				setValue(UpdateStartTimeField, updateStartTime( startTimeRow ) );
 
-			setValue(UpdateRequestImmediateField, false);
 		}
 
 		void saveData()
@@ -79,9 +74,26 @@ class DatabaseFormModel : public Wt::WFormModel
 			assert(startTimeRow != -1);
 			settings.modify()->setUpdateStartTime( updateStartTimeDuration( startTimeRow ) );
 
-			settings.modify()->setManualScanRequested( boost::any_cast<bool>(value(UpdateRequestImmediateField )) );
 		}
 
+		bool setImmediateScan(Wt::WString& error)
+		{
+			try {
+				Wt::Dbo::Session& session( _sessionData.getDatabaseHandler().getSession());
+				Wt::Dbo::Transaction transaction(session);
+
+				::Database::MediaDirectorySettings::pointer settings = ::Database::MediaDirectorySettings::get(_sessionData.getDatabaseHandler().getSession() );
+
+				settings.modify()->setManualScanRequested( true );
+			}
+			catch(Wt::Dbo::Exception& exception)
+			{
+				std::cerr << "Dbo exception: " << exception.what() << std::endl;
+				return false;
+			}
+
+			return true;
+		}
 
 		int getUpdatePeriodModelRow(Wt::WString value)
 		{
@@ -93,7 +105,7 @@ class DatabaseFormModel : public Wt::WFormModel
 			return -1;
 		}
 
-		int getUpdatePeriodModelRow(boost::posix_time::time_duration duration)
+		int getUpdatePeriodModelRow(Database::MediaDirectorySettings::UpdatePeriod duration)
 		{
 			for (int i = 0; i < _updatePeriodModel->rowCount(); ++i)
 			{
@@ -104,8 +116,8 @@ class DatabaseFormModel : public Wt::WFormModel
 			return -1;
 		}
 
-		boost::posix_time::time_duration updatePeriodDuration(int row) {
-			return boost::any_cast<boost::posix_time::time_duration>
+		Database::MediaDirectorySettings::UpdatePeriod updatePeriodDuration(int row) {
+			return boost::any_cast<Database::MediaDirectorySettings::UpdatePeriod>
 				(_updatePeriodModel->data(_updatePeriodModel->index(row, 0), Wt::UserRole));
 		}
 
@@ -155,17 +167,16 @@ class DatabaseFormModel : public Wt::WFormModel
 			_updatePeriodModel = new Wt::WStringListModel(this);
 
 			_updatePeriodModel->addString("Never");
-			_updatePeriodModel->setData(0, 0, boost::posix_time::time_duration( boost::posix_time::hours(0) ), Wt::UserRole);
+			_updatePeriodModel->setData(0, 0, Database::MediaDirectorySettings::Never, Wt::UserRole);
 
 			_updatePeriodModel->addString("Daily");
-			_updatePeriodModel->setData(1, 0, boost::posix_time::time_duration( boost::posix_time::hours(24) ), Wt::UserRole);
+			_updatePeriodModel->setData(1, 0, Database::MediaDirectorySettings::Daily, Wt::UserRole);
 
 			_updatePeriodModel->addString("Weekly");
-			_updatePeriodModel->setData(2, 0, boost::posix_time::time_duration( boost::posix_time::hours(24*7) ), Wt::UserRole);
+			_updatePeriodModel->setData(2, 0, Database::MediaDirectorySettings::Weekly, Wt::UserRole);
 
 			_updatePeriodModel->addString("Monthly");
-			_updatePeriodModel->setData(3, 0, boost::posix_time::time_duration(boost::posix_time::hours(24*30) ), Wt::UserRole);
-
+			_updatePeriodModel->setData(3, 0, Database::MediaDirectorySettings::Monthly, Wt::UserRole);
 
 			_updateStartTimeModel = new Wt::WStringListModel(this);
 
@@ -199,10 +210,6 @@ class DatabaseFormModel : public Wt::WFormModel
 			return v;
 		}
 
-		Wt::WValidator *createRequestImmediateFieldValidator() {
-			Wt::WValidator* v = new Wt::WValidator();
-			return v;
-		}
 
 		SessionData&		_sessionData;
 		Wt::WStringListModel*	_updatePeriodModel;
@@ -212,39 +219,33 @@ class DatabaseFormModel : public Wt::WFormModel
 
 const Wt::WFormModel::Field DatabaseFormModel::UpdatePeriodField		= "update-period";
 const Wt::WFormModel::Field DatabaseFormModel::UpdateStartTimeField		= "update-start-time";
-const Wt::WFormModel::Field DatabaseFormModel::UpdateRequestImmediateField	= "update-request-immediate-scan";
 
 
 DatabaseFormView::DatabaseFormView(SessionData& sessionData, Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
-	model = new DatabaseFormModel(sessionData, this);
+	_model = new DatabaseFormModel(sessionData, this);
 
 	setTemplateText(tr("databaseForm-template"));
 	addFunction("id", &WTemplate::Functions::id);
 	addFunction("block", &WTemplate::Functions::id);
 
-	applyInfo = new Wt::WText();
-	applyInfo->setInline(false);
-	applyInfo->hide();
-	bindWidget("apply-info", applyInfo);
+	_applyInfo = new Wt::WText();
+	_applyInfo->setInline(false);
+	_applyInfo->hide();
+	bindWidget("apply-info", _applyInfo);
 
 	// Update Period
 	Wt::WComboBox *updatePeriodCB = new Wt::WComboBox();
 	setFormWidget(DatabaseFormModel::UpdatePeriodField, updatePeriodCB);
-	updatePeriodCB->setModel(model->updatePeriodModel());
-	updatePeriodCB->changed().connect(applyInfo, &Wt::WWidget::hide);
+	updatePeriodCB->setModel(_model->updatePeriodModel());
+	updatePeriodCB->changed().connect(_applyInfo, &Wt::WWidget::hide);
 
 	// Update Start Time
 	Wt::WComboBox *updateStartTimeCB = new Wt::WComboBox();
 	setFormWidget(DatabaseFormModel::UpdateStartTimeField, updateStartTimeCB);
-	updateStartTimeCB->setModel(model->updateStartTimeModel());
-	updateStartTimeCB->changed().connect(applyInfo, &Wt::WWidget::hide);
-
-	// Request Immediate scan
-	Wt::WCheckBox *immScan = new Wt::WCheckBox();
-	setFormWidget(DatabaseFormModel::UpdateRequestImmediateField, immScan);
-	immScan->changed().connect(applyInfo, &Wt::WWidget::hide);
+	updateStartTimeCB->setModel(_model->updateStartTimeModel());
+	updateStartTimeCB->changed().connect(_applyInfo, &Wt::WWidget::hide);
 
 	// Title & Buttons
 	bindString("title", "Media folder settings");
@@ -259,49 +260,71 @@ DatabaseFormView::DatabaseFormView(SessionData& sessionData, Wt::WContainerWidge
 	saveButton->clicked().connect(this, &DatabaseFormView::processSave);
 	discardButton->clicked().connect(this, &DatabaseFormView::processDiscard);
 
-	updateView(model);
+	Wt::WPushButton *immediateScanButton = new Wt::WPushButton("Immediate scan");
+	immediateScanButton->setStyleClass("btn-warning");
+	bindWidget("immediate-scan-button", immediateScanButton);
+	immediateScanButton->clicked().connect(this, &DatabaseFormView::processImmediateScan);
 
+	updateView(_model);
+
+}
+
+void
+DatabaseFormView::processImmediateScan()
+{
+	Wt::WString error;
+	_applyInfo->show();
+
+	if (_model->setImmediateScan(error))
+	{
+		_applyInfo->setText( Wt::WString::fromUTF8("Media folder scan has been started!" ) );
+		_applyInfo->setStyleClass("alert alert-warning");
+
+		_sigChanged.emit();
+	}
+	else
+	{
+		_applyInfo->setText( error );
+		_applyInfo->setStyleClass("alert alert-danger");
+	}
 }
 
 void
 DatabaseFormView::processDiscard()
 {
-	applyInfo->show();
+	_applyInfo->show();
 
-	applyInfo->setText( Wt::WString::fromUTF8("Parameters reverted!"));
-	applyInfo->setStyleClass("alert alert-info");
+	_applyInfo->setText( Wt::WString::fromUTF8("Parameters reverted!"));
+	_applyInfo->setStyleClass("alert alert-info");
 
-	model->loadData();
+	_model->loadData();
 
-	model->validate();
-	updateView(model);
+	_model->validate();
+	updateView(_model);
 }
 
 void
 DatabaseFormView::processSave()
 {
-	updateModel(model);
+	updateModel(_model);
 
-	applyInfo->show();
+	_applyInfo->show();
 
-	if (model->validate()) {
+	if (_model->validate()) {
 		// Make the model to commit data into DB
-		model->saveData();
+		_model->saveData();
 
 		_sigChanged.emit();
 
-		// uncheck the special button
-		model->setValue(DatabaseFormModel::UpdateRequestImmediateField, false);
-
-		applyInfo->setText( Wt::WString::fromUTF8("New parameters successfully applied!"));
-		applyInfo->setStyleClass("alert alert-success");
+		_applyInfo->setText( Wt::WString::fromUTF8("New parameters successfully applied!"));
+		_applyInfo->setStyleClass("alert alert-success");
 	}
 	else {
-		applyInfo->setText( Wt::WString::fromUTF8("Cannot apply new parameters!"));
-		applyInfo->setStyleClass("alert alert-danger");
+		_applyInfo->setText( Wt::WString::fromUTF8("Cannot apply new parameters!"));
+		_applyInfo->setStyleClass("alert alert-danger");
 	}
 	// Udate the view: Delete any validation message in the view, etc.
-	updateView(model);
+	updateView(_model);
 }
 
 

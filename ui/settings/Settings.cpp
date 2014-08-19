@@ -48,11 +48,11 @@ _sessionData(sessionData)
 	if (user->isAdmin())
 	{
 		MediaDirectories* mediaDirectory = new MediaDirectories(sessionData);
-		mediaDirectory->changed().connect(this, &Settings::handleDatabaseSettingsChanged);
+		mediaDirectory->changed().connect(this, &Settings::handleDatabaseDirectoriesChanged);
 		menu->addItem("Media Folders", mediaDirectory);
 
 		DatabaseFormView* databaseFormView = new DatabaseFormView(sessionData);
-		databaseFormView->changed().connect(this, &Settings::handleDatabaseSettingsChanged);
+		databaseFormView->changed().connect(this, &Settings::restartDatabaseUpdateService);
 		menu->addItem("Database Update", databaseFormView);
 
 		menu->addItem("Users", new Users(sessionData));
@@ -65,14 +65,21 @@ _sessionData(sessionData)
 }
 
 void
-Settings::handleDatabaseSettingsChanged()
+Settings::handleDatabaseDirectoriesChanged()
 {
-	// On settings change, request an immediate scan
+	std::cout << "Media directories have changed: requesting imediate scan" << std::endl;
+	// On directory add or delete, request an immediate scan
 	{
 		Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
 		Database::MediaDirectorySettings::get(_sessionData.getDatabaseHandler().getSession()).modify()->setManualScanRequested(true);
 	}
 
+	restartDatabaseUpdateService();
+}
+
+void
+Settings::restartDatabaseUpdateService()
+{
 	// Restarting the update service
 	boost::lock_guard<boost::mutex> serviceLock (ServiceManager::instance().mutex());
 

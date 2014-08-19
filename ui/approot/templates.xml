@@ -246,19 +246,8 @@
 		</div>
 
 		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:update-request-immediate-scan}">
-				Request immediate scan
-			</label>
-			<div class="col-sm-5">
-				${update-request-immediate-scan}
-			</div>
-			<div class="help-block col-sm-5">
-				${update-request-immediate-scan-info}
-			</div>
-		</div>
-		<div class="form-group">
 			<div class="col-sm-offset-2 col-sm-10">
-				${apply-button} ${discard-button}
+				${apply-button} ${discard-button} ${immediate-scan-button}
 			</div>
 		</div>
 		${apply-info}

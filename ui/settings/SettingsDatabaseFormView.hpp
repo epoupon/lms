@@ -26,9 +26,10 @@ class DatabaseFormView : public Wt::WTemplateFormView
 
 		void processSave();
 		void processDiscard();
+		void processImmediateScan();
 
-		Wt::WText		*applyInfo;
-		DatabaseFormModel	*model;
+		Wt::WText		*_applyInfo;
+		DatabaseFormModel	*_model;
 
 };
 
