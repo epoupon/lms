@@ -33,6 +33,7 @@
 
 [UI]
 	[Settings]
+		- increase the menu's width
 		- logout users that are being changed (loss of admin admin rights), or make sure they are still admin when they make changes
 		- "signal not exposed" problem if a user logout and login again. bad resource destruction?
 		[admin/DB]

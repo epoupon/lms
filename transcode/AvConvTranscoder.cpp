@@ -11,6 +11,8 @@
 namespace Transcode
 {
 
+boost::mutex	AvConvTranscoder::_mutex;
+
 boost::filesystem::path	AvConvTranscoder::_avConvPath = "";
 
 void
@@ -109,15 +111,21 @@ AvConvTranscoder::AvConvTranscoder(const Parameters& parameters)
 
 	std::cout << "executing... '" << oss.str() << "'" << std::endl;
 
-	std::vector<int> ranges = { 3, 1024 };	// fd range to be closed
-	_child = std::make_shared<boost::process::child>( boost::process::execute(
-				boost::process::initializers::run_exe(_avConvPath),
-				boost::process::initializers::set_cmd_line(oss.str()),
-				boost::process::initializers::bind_stdout(sink),
-				boost::process::initializers::close_fd(STDIN_FILENO),
-				boost::process::initializers::close_fds(ranges)
-				)
-			);
+	// make sure only one thread is executing this part of code
+	// See boost process FAQ
+	{
+		boost::lock_guard<boost::mutex>	lock(_mutex);
+		std::vector<int> ranges = { 3, 1024 };	// fd range to be closed
+
+		_child = std::make_shared<boost::process::child>( boost::process::execute(
+					boost::process::initializers::run_exe(_avConvPath),
+					boost::process::initializers::set_cmd_line(oss.str()),
+					boost::process::initializers::bind_stdout(sink),
+					boost::process::initializers::close_fd(STDIN_FILENO),
+					boost::process::initializers::close_fds(ranges)
+					)
+				);
+	}
 
 }
 
@@ -154,34 +162,37 @@ AvConvTranscoder::~AvConvTranscoder()
 void
 AvConvTranscoder::waitChild()
 {
-	try {
-		if (_child) {
-			std::cout << "waiting for child!" << std::endl;
-			boost::process::wait_for_exit(*_child);
-			std::cout << "waiting for child! DONE" << std::endl;
-			_child.reset();
-		}
-	}
-	catch( std::exception& e)
+	if (_child)
 	{
-		std::cerr << "Exception caugh in waitChild: " << e.what() << std::endl;
+		boost::system::error_code ec;
+
+		std::cout << "waiting for child!" << std::endl;
+		boost::process::wait_for_exit(*_child, ec);
+		std::cout << "waiting for child! DONE." << std::endl;
+
+		if (ec)
+			std::cerr << "AvConvTranscoder::waitChild: error: " << ec.message() << std::endl;
+
+		_child.reset();
 	}
 }
 
-	void
+void
 AvConvTranscoder::killChild()
 {
-	try {
-		if (_child) {
-			std::cout << "Killing child!" << std::endl;
-			boost::process::terminate(*_child);
-			std::cout << "Killing child DONE" << std::endl;
-			_child.reset();
-		}
-	}
-	catch( std::exception& e)
+	if (_child)
 	{
-		std::cerr << "Exception caugh in killChild: " << e.what() << std::endl;
+		boost::system::error_code ec;
+
+		std::cout << "Killing child! pid = " << _child->pid << std::endl;
+		boost::process::terminate(*_child, ec);
+		std::cout << "Killing child DONE" << std::endl;
+
+		// If an error occured, force kill the child
+		if (ec)
+			std::cerr << "AvConvTranscoder::killChild: error: " << ec.message() << std::endl;
+
+		_child.reset();
 	}
 }
 

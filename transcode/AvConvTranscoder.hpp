@@ -8,6 +8,7 @@
 #include <boost/iostreams/stream.hpp>
 #include <boost/process.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/thread.hpp>
 
 #include "Parameters.hpp"
 
@@ -42,6 +43,8 @@ class AvConvTranscoder
 		void killChild();
 
 		const Parameters	_parameters;
+
+		static boost::mutex	_mutex;
 
 		boost::process::pipe _outputPipe;
 		boost::iostreams::file_descriptor_source _source;

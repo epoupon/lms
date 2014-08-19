@@ -23,6 +23,11 @@ ServiceManager::ServiceManager()
 #endif // defined(SIGQUIT)
 
 	_signalSet.add(SIGHUP);
+
+	// Excplicitely ignore SIGCHLD to avoid zombies
+	// when avconv child processes are being killed
+	if (::signal(SIGCHLD, SIG_IGN) == SIG_ERR)
+		throw std::runtime_error("ServiceManager::ServiceManager, signal failed!");
 }
 
 ServiceManager::~ServiceManager()
