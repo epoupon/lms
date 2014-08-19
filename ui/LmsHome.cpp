@@ -20,9 +20,9 @@ LmsHome::LmsHome(SessionData& sessionData)
 	Wt::WNavigationBar *navigation = new Wt::WNavigationBar(this);
 	navigation->setTitle("LMS");
 	navigation->setResponsive(true);
+	navigation->addStyleClass("main-nav");
 
 	Wt::WStackedWidget *contentsStack = new Wt::WStackedWidget(this);
-	contentsStack->addStyleClass("contents");
 
 	// Setup a Left-aligned menu.
 	Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack, this);
@@ -53,7 +53,7 @@ LmsHome::LmsHome(SessionData& sessionData)
 	_searchEdit = new Wt::WLineEdit();
 	_searchEdit->setEmptyText("Search...");
 
-	_searchEdit->keyWentUp().connect(this, &LmsHome::handleSearch);
+	_searchEdit->enterPressed().connect(this, &LmsHome::handleSearch);
 
 	navigation->addSearch(_searchEdit, Wt::AlignLeft);
 

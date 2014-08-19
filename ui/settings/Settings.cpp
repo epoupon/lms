@@ -1,6 +1,7 @@
 #include <Wt/WMenu>
 #include <Wt/WStackedWidget>
 #include <Wt/WTextArea>
+#include <Wt/WHBoxLayout>
 
 #include "SettingsAudioFormView.hpp"
 #include "SettingsUserFormView.hpp"
@@ -21,12 +22,20 @@ Settings::Settings(SessionData& sessionData, Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent),
 _sessionData(sessionData)
 {
+	Wt::WHBoxLayout* hLayout = new Wt::WHBoxLayout(this);
+
 	// Create a stack where the contents will be located.
 	Wt::WStackedWidget *contents = new Wt::WStackedWidget();
 
-	Wt::WMenu *menu = new Wt::WMenu(contents, Wt::Vertical, this);
-	menu->setStyleClass("nav nav-pills nav-stacked");
+	contents->setStyleClass("contents");
+	contents->setOverflow(WContainerWidget::OverflowHidden);
+
+	Wt::WMenu *menu = new Wt::WMenu(contents, Wt::Vertical);
+	menu->setStyleClass("nav nav-pills nav-stacked submenu");
 	menu->setWidth(150);
+
+	hLayout->addWidget(menu);
+	hLayout->addWidget(contents, 1);
 
 	Wt::Dbo::Transaction transaction( sessionData.getDatabaseHandler().getSession());
 
@@ -53,7 +62,6 @@ _sessionData(sessionData)
 		menu->addItem("Account", new AccountFormView(sessionData, Database::User::getId(user)));
 	}
 
-	addWidget(contents);
 }
 
 void
