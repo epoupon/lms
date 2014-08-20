@@ -12,10 +12,8 @@ SearchFilterWidget::SearchFilterWidget(Wt::WContainerWidget* parent)
 void
 SearchFilterWidget::setText(const std::string& text)
 {
-	if (text != _lastEmittedText) {
-		_lastEmittedText = text;
-		emitUpdate();
-	}
+	_lastEmittedText = text;
+	emitUpdate();
 }
 
 // Get constraints created by this filter
