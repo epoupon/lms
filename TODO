@@ -21,11 +21,9 @@
 - Implement a video database cleanup
 - Group video in "video groups". Each video may has sub groups (current "Path" class)
 	-> Simplify database and remove the Path class
-- Use size limits for strings (artist, release, genre)?
 - Process only files whose extensions are well known in audio/video world (avoid useless parsing/errors)?
 
 [Metadata]
-- Skip trailing non printable characters (spaces) in track name, artist, etc.
 
 [Transcode]
 - some zombies seem to be remaining after a week of use
@@ -43,20 +41,20 @@
 		- Prefered codecs for audio/video?
 
 	[Audio]
+	- Search patterns in the genre list
 	- ReleaseView/ArtistView/GenreView: <All> -> Track count for this special category. Easier: add a special entry '<All>' that contains everything?
 	- MediaPlayer: move slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478)
 	- TrackView : handle original release date
 	- TrackView : handle duration > 1 hour
 	- TrackView : select only relevant columns to speed up queries (do not get eveything)
 	- TrackView : Reselect the current selected item when displaying the updated search results
-	- ReleaseView: display the release's publication year
+	- ReleaseView: display the original release's publication year
 	- OGG metadata -> properly handle metadata nested in the audio stream
-	- TrackView : when udating the view, reselect the current playing track
 	- Filters: use directly the id as constraint, instead of the name?
 	- Implement a playlist:
-	- Drag and drop all objets from the views (genre, artist, release, track) in the playlist?
-	- Add 'play/add last' button on mouse hover?
-	- Save/Load playlists?
+		- Drag and drop all objets from the views (genre, artist, release, track) in the playlist?
+		- Add 'play/add last' button on mouse hover?
+		- Save/Load playlists?
 
 	[Video]
 	- View the Videos in a WtTableView ?

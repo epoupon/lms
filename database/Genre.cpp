@@ -7,7 +7,7 @@ Genre::Genre()
 }
 
 Genre::Genre(const std::string& name)
-: _name( name )
+: _name( std::string(name, 0, _maxNameLength) )
 {
 }
 
@@ -16,7 +16,7 @@ Genre::pointer
 Genre::getByName(Wt::Dbo::Session& session, const std::string& name)
 {
 	// TODO use like search
-	return session.find<Genre>().where("name = ?").bind( name );
+	return session.find<Genre>().where("name = ?").bind( std::string(name, 0, _maxNameLength) );
 }
 
 Genre::pointer

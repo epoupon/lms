@@ -51,6 +51,9 @@ class Artist
 
 
 	private:
+
+		static const std::size_t _maxNameLength = 128;
+
 		std::string _name;
 
 		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;	// Tracks of this artist
@@ -93,6 +96,7 @@ class Release
 			}
 
 	private:
+		static const std::size_t _maxNameLength = 128;
 		std::string 			_name;
 
 		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;	// Tracks in the release
@@ -130,6 +134,7 @@ class Genre
 			}
 
 	private:
+		static const std::size_t _maxNameLength = 128;
 		std::string	_name;
 
 		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;
@@ -161,7 +166,7 @@ class Track
 		// Accessors
 		void setTrackNumber(int num)					{ _trackNumber = num; }
 		void setDiscNumber(int num)					{ _discNumber = num; }
-		void setName(const std::string& name)				{ _name = name; }
+		void setName(const std::string& name)				{ _name = std::string(name, 0, _maxNameLength); }
 		void setDuration(boost::posix_time::time_duration duration)	{ _duration = duration; }
 		void setLastWriteTime(boost::posix_time::ptime time)		{ _fileLastWrite = time; }
 		void setChecksum(const std::vector<unsigned char>& checksum)	{ _fileChecksum = checksum; }
@@ -203,6 +208,9 @@ class Track
 			}
 
 	private:
+
+		static const std::size_t _maxNameLength = 128;
+
 		int					_trackNumber;
 		int					_discNumber;
 		std::string				_name;

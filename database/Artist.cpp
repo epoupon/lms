@@ -4,7 +4,7 @@ namespace Database
 {
 
 Artist::Artist(const std::string& name)
-: _name(name)
+: _name(std::string(name, 0 , _maxNameLength))
 {
 }
 
@@ -12,7 +12,7 @@ Artist::Artist(const std::string& name)
 Artist::pointer
 Artist::getByName(Wt::Dbo::Session& session, const std::string& name)
 {
-	return session.find<Artist>().where("name = ?").bind( name );
+	return session.find<Artist>().where("name = ?").bind( std::string(name, 0, _maxNameLength) );
 }
 
 // Create

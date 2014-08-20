@@ -7,14 +7,14 @@
 namespace Database {
 
 Release::Release(const std::string& name)
-: _name(name)
+: _name(std::string(name, 0, _maxNameLength))
 {
 }
 
 Release::pointer
 Release::getByName(Wt::Dbo::Session& session, const std::string& name)
 {
-	return session.find<Release>().where("name = ?").bind( name );
+	return session.find<Release>().where("name = ?").bind( std::string(name, 0, _maxNameLength) );
 }
 
 Release::pointer
