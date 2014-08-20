@@ -353,7 +353,6 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 				trackGenreList += genre;
 			}
 
-			std::cout << "Genre list = " << trackGenreList << std::endl;
 			track.modify()->setGenres( trackGenreList );
 		}
 		track.modify()->setGenres( genres );
