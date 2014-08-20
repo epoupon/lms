@@ -20,6 +20,23 @@ static inline bool readAs(const std::string& str, T& data)
 	return iss >> data;
 }
 
+
+
+std::string
+static inline string_trim(const std::string& str,
+		const std::string& whitespace = " \t")
+{
+	const auto strBegin = str.find_first_not_of(whitespace);
+	if (strBegin == std::string::npos)
+		return ""; // no content
+
+	const auto strEnd = str.find_last_not_of(whitespace);
+	const auto strRange = strEnd - strBegin + 1;
+
+	return str.substr(strBegin, strRange);
+}
+
+
 std::string
 static inline string_to_utf8(const std::string& str)
 {

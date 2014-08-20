@@ -38,6 +38,7 @@
 		- "signal not exposed" problem if a user logout and login again. bad resource destruction?
 		[admin/DB]
 		- Do not make the update start time field active when update perdiod is "Never"
+		- refresh the audio/video view when the database directories have been updated
 		[user/transcoding]
 		- Prefered codecs for audio/video?
 

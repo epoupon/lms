@@ -99,11 +99,11 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 		for (it = metadata.begin(); it != metadata.end(); ++it)
 		{
 			if (boost::iequals(it->first, "artist"))
-				items.insert( std::make_pair(MetaData::Artist, string_to_utf8(it->second)) );
+				items.insert( std::make_pair(MetaData::Artist, string_trim( string_to_utf8(it->second)) ));
 			else if (boost::iequals(it->first, "album"))
-				items.insert( std::make_pair(MetaData::Album, string_to_utf8(it->second) ));
+				items.insert( std::make_pair(MetaData::Album, string_trim( string_to_utf8(it->second)) ));
 			else if (boost::iequals(it->first, "title"))
-				items.insert( std::make_pair(MetaData::Title, string_to_utf8(it->second) ));
+				items.insert( std::make_pair(MetaData::Title, string_trim( string_to_utf8(it->second)) ));
 			else if (boost::iequals(it->first, "track")) {
 				std::size_t number;
 				if (readAs<std::size_t>(it->second, number))
