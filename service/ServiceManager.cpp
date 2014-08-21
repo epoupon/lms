@@ -1,10 +1,10 @@
 
-//#include <csignal>
-
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
 #include "ServiceManager.hpp"
+
+namespace Service {
 
 ServiceManager&
 ServiceManager::instance()
@@ -121,4 +121,6 @@ ServiceManager::handleSignal(boost::system::error_code /*ec*/, int signo)
 			assert(0);
 	}
 }
+
+} // namespace Service
 

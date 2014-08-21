@@ -13,6 +13,7 @@ lms_SOURCES = \
 	$(top_srcdir)/av/FormatContext.cpp	\
 	$(top_srcdir)/av/InputFormatContext.cpp	\
 	$(top_srcdir)/av/Stream.cpp		\
+	$(top_srcdir)/config/ConfigReader.cpp	\
 	$(top_srcdir)/cover/CoverArt.cpp	\
 	$(top_srcdir)/cover/CoverArtGrabber.cpp	\
 	$(top_srcdir)/database/Artist.cpp		\

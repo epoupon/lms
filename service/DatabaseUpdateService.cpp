@@ -2,6 +2,8 @@
 
 #include "DatabaseUpdateService.hpp"
 
+namespace Service {
+
 DatabaseUpdateService::DatabaseUpdateService(const boost::filesystem::path& p)
 : _metadataParser(),
  _databaseUpdater( p, _metadataParser)
@@ -29,4 +31,6 @@ DatabaseUpdateService::restart(void)
 	stop();
 	start();
 }
+
+} // namespace Service
 

@@ -12,6 +12,11 @@ AC_CHECK_HEADERS([Wt/WApplication jpeglib.h],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
 
+AC_CHECK_LIB([config++],
+	     [main],
+	     ,
+	     [AC_MSG_ERROR([config++ not found!])])
+
 AC_CHECK_LIB([jpeg],
 	     [jpeg_destroy],
 	     ,

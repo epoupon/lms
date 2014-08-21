@@ -6,6 +6,8 @@
 
 #include "Service.hpp"
 
+namespace Service {
+
 // Start/Stop/Reload Services
 class ServiceManager
 {
@@ -62,6 +64,8 @@ ServiceManager::getService()
 	}
 	return std::shared_ptr<T>();
 }
+
+} // namespace Service
 
 #endif
 

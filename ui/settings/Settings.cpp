@@ -81,9 +81,9 @@ void
 Settings::restartDatabaseUpdateService()
 {
 	// Restarting the update service
-	boost::lock_guard<boost::mutex> serviceLock (ServiceManager::instance().mutex());
+	boost::lock_guard<boost::mutex> serviceLock (Service::ServiceManager::instance().mutex());
 
-	DatabaseUpdateService::pointer service = ServiceManager::instance().getService<DatabaseUpdateService>();
+	Service::DatabaseUpdateService::pointer service = Service::ServiceManager::instance().getService<Service::DatabaseUpdateService>();
 	if (service)
 		service->restart();
 }

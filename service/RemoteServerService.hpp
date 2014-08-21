@@ -7,6 +7,8 @@
 
 #include "remote/server/Server.hpp"
 
+namespace Service {
+
 class RemoteServerService : public Service
 {
 	public:
@@ -21,5 +23,7 @@ class RemoteServerService : public Service
 
 		Remote::Server::Server	_server;
 };
+
+} // namespace Service
 
 #endif

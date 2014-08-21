@@ -9,6 +9,8 @@
 
 #include "Service.hpp"
 
+namespace Service {
+
 class DatabaseUpdateService : public Service
 {
 	public:
@@ -27,6 +29,8 @@ class DatabaseUpdateService : public Service
 		MetaData::AvFormat			_metadataParser;
 		DatabaseUpdater::Updater		_databaseUpdater;	// Todo use handler
 };
+
+} // namespace Service
 
 #endif
 

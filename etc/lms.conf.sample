@@ -1,0 +1,44 @@
+
+main = {
+	log-level = 1;
+	db = "/var/lms/lms.db";
+}
+
+ui = {
+	enable = true;
+
+	resources = {
+		docroot = "/usr/share/Wt/"
+		approot = "/var/lms/approot"
+	}
+
+	listen-endpoint = {
+		port = 5081;
+		addr = "0.0.0.0";
+	}
+
+	ssl-crypto = {
+		cert = "/var/lms/certs/certUI.pem";
+		key = "/var/lms/private/privkeyUI.pem";
+		dh = "/var/lms/dh/dh2048.pem";
+	}
+
+}
+
+remote = {
+	enable = true;
+
+	nb-threads = 1;
+
+	listen-endpoint = {
+		port = 5080;
+		addr = "0.0.0.0";
+	}
+
+	ssl-crypto = {
+		cert = "";
+		key = "";
+		dh = "";
+	}
+}
+

@@ -5,6 +5,8 @@
 #include <memory>
 #include <set>
 
+namespace Service {
+
 // Interface class wrapper for running services
 class Service
 {
@@ -23,6 +25,8 @@ class Service
 		virtual void restart(void) = 0;
 
 };
+
+} // namespace Service
 
 #endif
 

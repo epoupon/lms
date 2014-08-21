@@ -1,6 +1,8 @@
 
 #include "RemoteServerService.hpp"
 
+namespace Service {
+
 RemoteServerService::RemoteServerService(const Remote::Server::Server::endpoint_type& endpoint, boost::filesystem::path dbPath)
 : _server(endpoint, dbPath)
 {
@@ -28,3 +30,5 @@ RemoteServerService::restart(void)
 {
 	std::cout << "RemoteServerService::restart, not implemented!" << std::endl;
 }
+
+} // namespace Service
