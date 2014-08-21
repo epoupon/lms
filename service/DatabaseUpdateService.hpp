@@ -17,7 +17,12 @@ class DatabaseUpdateService : public Service
 
 		typedef std::shared_ptr<DatabaseUpdateService>	pointer;
 
-		DatabaseUpdateService(const boost::filesystem::path& p);
+		struct Config {
+			bool enable;
+			boost::filesystem::path dbPath;
+		};
+
+		DatabaseUpdateService(const Config& config);
 
 		// Service interface
 		void start(void);

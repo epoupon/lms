@@ -3,8 +3,8 @@
 
 namespace Service {
 
-RemoteServerService::RemoteServerService(const Remote::Server::Server::endpoint_type& endpoint, boost::filesystem::path dbPath)
-: _server(endpoint, dbPath)
+RemoteServerService::RemoteServerService(const Config& config)
+: _server(boost::asio::ip::tcp::endpoint(config.address, config.port), config.dbPath)
 {
 }
 

@@ -5,6 +5,8 @@
 #include <libconfig.h++>
 
 #include "service/UserInterfaceService.hpp"
+#include "service/RemoteServerService.hpp"
+#include "service/DatabaseUpdateService.hpp"
 
 class ConfigReader
 {
@@ -13,7 +15,8 @@ class ConfigReader
 		ConfigReader(boost::filesystem::path p);
 
 		void getUserInterfaceConfig(Service::UserInterfaceService::Config& config);
-
+		void getRemoteServerConfig(Service::RemoteServerService::Config& config);
+		void getDatabaseUpdateConfig(Service::DatabaseUpdateService::Config& config);
 
 	private:
 

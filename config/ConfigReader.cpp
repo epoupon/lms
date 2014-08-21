@@ -24,3 +24,24 @@ ConfigReader::getUserInterfaceConfig(Service::UserInterfaceService::Config& conf
 	config.dbPath = _config.lookup("main.db");
 }
 
+void
+ConfigReader::getRemoteServerConfig(Service::RemoteServerService::Config& config)
+{
+	config.enable = _config.lookup("remote.enable");
+	if (!config.enable)
+		return;
+
+	config.port = static_cast<unsigned int>(_config.lookup("remote.listen-endpoint.port"));
+	config.address = boost::asio::ip::address::from_string((const char*)_config.lookup("remote.listen-endpoint.addr"));
+
+	config.dbPath = _config.lookup("main.db");
+}
+
+void
+ConfigReader::getDatabaseUpdateConfig(Service::DatabaseUpdateService::Config& config)
+{
+	config.enable = true;
+
+	config.dbPath = _config.lookup("main.db");
+}
+

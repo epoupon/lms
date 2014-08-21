@@ -14,12 +14,15 @@ int main(int argc, char* argv[])
 
 	int res = EXIT_FAILURE;
 
+	assert(argc > 0);
+	assert(argv[0] != NULL);
+
 	try
 	{
 		// TODO generate a nice command line help with args
 
 		// Open configuration file
-		boost::filesystem::path configFile("/etc/lms.conf");
+		boost::filesystem::path configFile("/etc/lms.conf"); // TODO
 		if (argc > 1)
 			configFile = boost::filesystem::path(argv[1]);
 
@@ -32,14 +35,16 @@ int main(int argc, char* argv[])
 
 		ConfigReader configReader(configFile);
 
+		Service::DatabaseUpdateService::Config dbUpdateConfig;
+		configReader.getDatabaseUpdateConfig(dbUpdateConfig);
+
 		Service::UserInterfaceService::Config uiConfig;
 		configReader.getUserInterfaceConfig(uiConfig);
 
-		Service::ServiceManager& serviceManager = Service::ServiceManager::instance();
+		Service::RemoteServerService::Config remoteConfig;
+		configReader.getRemoteServerConfig(remoteConfig);
 
-		// TODO Retreive the database path in some config file
-		const boost::filesystem::path dbPath("test.db");
-		Remote::Server::Server::endpoint_type remoteListenEndpoint( boost::asio::ip::address::from_string("0.0.0.0"), 5080);
+		Service::ServiceManager& serviceManager = Service::ServiceManager::instance();
 
 		// lib init
 		Av::AvInit();
@@ -48,9 +53,14 @@ int main(int argc, char* argv[])
 
 		std::cout << "Starting services..." << std::endl;
 
-		serviceManager.startService( std::make_shared<Service::DatabaseUpdateService>( dbPath) );
-		serviceManager.startService( std::make_shared<Service::RemoteServerService>( remoteListenEndpoint, dbPath) );
-		serviceManager.startService( std::make_shared<Service::UserInterfaceService>(boost::filesystem::path(argv[0]), uiConfig));
+		if (dbUpdateConfig.enable)
+			serviceManager.startService( std::make_shared<Service::DatabaseUpdateService>( dbUpdateConfig ) );
+
+		if (remoteConfig.enable)
+			serviceManager.startService( std::make_shared<Service::RemoteServerService>( remoteConfig ));
+
+		if (uiConfig.enable)
+			serviceManager.startService( std::make_shared<Service::UserInterfaceService>(boost::filesystem::path(argv[0]), uiConfig));
 
 		std::cout << "Running..." << std::endl;
 

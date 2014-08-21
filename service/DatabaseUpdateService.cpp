@@ -4,9 +4,9 @@
 
 namespace Service {
 
-DatabaseUpdateService::DatabaseUpdateService(const boost::filesystem::path& p)
+DatabaseUpdateService::DatabaseUpdateService(const Config& config)
 : _metadataParser(),
- _databaseUpdater( p, _metadataParser)
+ _databaseUpdater( config.dbPath, _metadataParser)
 {
 }
 

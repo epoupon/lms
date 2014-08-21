@@ -2,6 +2,7 @@
 #define REMOTE_SERVER_SERVICE_HPP
 
 #include <boost/filesystem.hpp>
+#include <boost/asio/ip/address.hpp>
 
 #include "Service.hpp"
 
@@ -13,7 +14,14 @@ class RemoteServerService : public Service
 {
 	public:
 
-		RemoteServerService(const Remote::Server::Server::endpoint_type& endpoint, boost::filesystem::path dbPath);
+		struct Config {
+			bool				enable;
+			boost::asio::ip::address	address;
+			unsigned short			port;
+			boost::filesystem::path		dbPath;
+		};
+
+		RemoteServerService(const Config& config);
 
 		void start(void);
 		void stop(void);
