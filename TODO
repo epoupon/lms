@@ -67,6 +67,7 @@
 
 [Remote API]
 - Implement text search options in the GetXXX messages
+- Implement genre id filters for Artist/Release
 
 [Logs]
 - Use a logging facility

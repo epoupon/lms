@@ -433,18 +433,6 @@ class AudioCollectionRequest_GetArtistList : public ::google::protobuf::Message 
   inline ::Remote::AudioCollectionRequest_BatchParameter* release_batch_parameter();
   inline void set_allocated_batch_parameter(::Remote::AudioCollectionRequest_BatchParameter* batch_parameter);
 
-  // repeated uint64 genre_id = 2;
-  inline int genre_id_size() const;
-  inline void clear_genre_id();
-  static const int kGenreIdFieldNumber = 2;
-  inline ::google::protobuf::uint64 genre_id(int index) const;
-  inline void set_genre_id(int index, ::google::protobuf::uint64 value);
-  inline void add_genre_id(::google::protobuf::uint64 value);
-  inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
-      genre_id() const;
-  inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
-      mutable_genre_id();
-
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionRequest.GetArtistList)
  private:
   inline void set_has_batch_parameter();
@@ -453,10 +441,9 @@ class AudioCollectionRequest_GetArtistList : public ::google::protobuf::Message 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::Remote::AudioCollectionRequest_BatchParameter* batch_parameter_;
-  ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > genre_id_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -542,18 +529,6 @@ class AudioCollectionRequest_GetReleaseList : public ::google::protobuf::Message
   inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
       mutable_artist_id();
 
-  // repeated uint64 filter_genre = 3;
-  inline int filter_genre_size() const;
-  inline void clear_filter_genre();
-  static const int kFilterGenreFieldNumber = 3;
-  inline ::google::protobuf::uint64 filter_genre(int index) const;
-  inline void set_filter_genre(int index, ::google::protobuf::uint64 value);
-  inline void add_filter_genre(::google::protobuf::uint64 value);
-  inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
-      filter_genre() const;
-  inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
-      mutable_filter_genre();
-
   // @@protoc_insertion_point(class_scope:Remote.AudioCollectionRequest.GetReleaseList)
  private:
   inline void set_has_batch_parameter();
@@ -563,10 +538,9 @@ class AudioCollectionRequest_GetReleaseList : public ::google::protobuf::Message
 
   ::Remote::AudioCollectionRequest_BatchParameter* batch_parameter_;
   ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > artist_id_;
-  ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > filter_genre_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
 
   friend void  protobuf_AddDesc_collection_2eproto();
   friend void protobuf_AssignDesc_collection_2eproto();
@@ -2367,31 +2341,6 @@ inline void AudioCollectionRequest_GetArtistList::set_allocated_batch_parameter(
   }
 }
 
-// repeated uint64 genre_id = 2;
-inline int AudioCollectionRequest_GetArtistList::genre_id_size() const {
-  return genre_id_.size();
-}
-inline void AudioCollectionRequest_GetArtistList::clear_genre_id() {
-  genre_id_.Clear();
-}
-inline ::google::protobuf::uint64 AudioCollectionRequest_GetArtistList::genre_id(int index) const {
-  return genre_id_.Get(index);
-}
-inline void AudioCollectionRequest_GetArtistList::set_genre_id(int index, ::google::protobuf::uint64 value) {
-  genre_id_.Set(index, value);
-}
-inline void AudioCollectionRequest_GetArtistList::add_genre_id(::google::protobuf::uint64 value) {
-  genre_id_.Add(value);
-}
-inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
-AudioCollectionRequest_GetArtistList::genre_id() const {
-  return genre_id_;
-}
-inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
-AudioCollectionRequest_GetArtistList::mutable_genre_id() {
-  return &genre_id_;
-}
-
 // -------------------------------------------------------------------
 
 // AudioCollectionRequest_GetReleaseList
@@ -2457,31 +2406,6 @@ AudioCollectionRequest_GetReleaseList::artist_id() const {
 inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
 AudioCollectionRequest_GetReleaseList::mutable_artist_id() {
   return &artist_id_;
-}
-
-// repeated uint64 filter_genre = 3;
-inline int AudioCollectionRequest_GetReleaseList::filter_genre_size() const {
-  return filter_genre_.size();
-}
-inline void AudioCollectionRequest_GetReleaseList::clear_filter_genre() {
-  filter_genre_.Clear();
-}
-inline ::google::protobuf::uint64 AudioCollectionRequest_GetReleaseList::filter_genre(int index) const {
-  return filter_genre_.Get(index);
-}
-inline void AudioCollectionRequest_GetReleaseList::set_filter_genre(int index, ::google::protobuf::uint64 value) {
-  filter_genre_.Set(index, value);
-}
-inline void AudioCollectionRequest_GetReleaseList::add_filter_genre(::google::protobuf::uint64 value) {
-  filter_genre_.Add(value);
-}
-inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
-AudioCollectionRequest_GetReleaseList::filter_genre() const {
-  return filter_genre_;
-}
-inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
-AudioCollectionRequest_GetReleaseList::mutable_filter_genre() {
-  return &filter_genre_;
 }
 
 // -------------------------------------------------------------------
