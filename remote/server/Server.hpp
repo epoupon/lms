@@ -26,7 +26,11 @@ class Server
 		typedef boost::asio::ip::tcp::endpoint 	endpoint_type;
 
 		// Serve up data from the given database
-		Server(const endpoint_type& bindEndpoint, boost::filesystem::path dbPath);
+		Server(const endpoint_type& bindEndpoint,
+				boost::filesystem::path certPath,
+				boost::filesystem::path privKeyPath,
+				boost::filesystem::path dhPath,
+				boost::filesystem::path dbPath);
 
 		// Run the server's io_service loop.
 		void start();

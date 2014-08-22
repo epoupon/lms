@@ -4,7 +4,11 @@
 namespace Service {
 
 RemoteServerService::RemoteServerService(const Config& config)
-: _server(boost::asio::ip::tcp::endpoint(config.address, config.port), config.dbPath)
+: _server(boost::asio::ip::tcp::endpoint(config.address, config.port),
+	config.sslCertificatePath,
+	config.sslPrivateKeyPath,
+	config.sslTempDhPath,
+	config.dbPath)
 {
 }
 

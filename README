@@ -1,7 +1,7 @@
 
 I) DEPENCIES
 
-libboost-dev libextractor-dev libavcodec-dev libwt-dev
+libboost-dev libextractor-dev libavcodec-dev libwt-dev libprotobuf-dev libconfig++-dev
 
 Warning: your distrib may provide an outdated wt library. Using the latest Wt (>= 3.3.3) is highly recommended (http://www.webtoolkit.eu/wt)
 
@@ -32,7 +32,9 @@ Generate a self signed certificate:
 IV) RUNNING
 
 In the build directory:
-# ./lms --docroot=../ui --approot=../ui/approot --https-port=5081 --https-address=0.0.0.0 --ssl-certificate=./certUI.pem --ssl-private-key ./privkeyUI.pem --ssl-tmp-dh dh2048.pem
+# ./lms lms.conf
+
+Create the lms.conf file using the etc/lms.sample.conf
 
 Depending of your SSL parameters, you may be asked for the PEM passphrase to unlock the private key.
 

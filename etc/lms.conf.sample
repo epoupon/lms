@@ -36,9 +36,9 @@ remote = {
 	}
 
 	ssl-crypto = {
-		cert = "";
-		key = "";
-		dh = "";
+		cert = "/var/lms/certs/certRemote.pem";
+		key = "/var/lms/private/privkeyRemote.pem";
+		dh = "/var/lms/dh/dh2048.pem";
 	}
 }
 

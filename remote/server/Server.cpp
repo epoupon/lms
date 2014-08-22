@@ -9,14 +9,18 @@
 namespace Remote {
 namespace Server {
 
-Server::Server(const endpoint_type& bindEndpoint, boost::filesystem::path dbPath)
+Server::Server(const endpoint_type& bindEndpoint,
+		boost::filesystem::path certPath,
+		boost::filesystem::path privKeyPath,
+		boost::filesystem::path dhPath,
+		boost::filesystem::path dbPath)
 :
 _acceptor(_ioService, bindEndpoint, true /*SO_REUSEADDR*/),
 _connectionManager(),
 _context(boost::asio::ssl::context::tlsv1_server),
 _dbPath(dbPath)
 {
-	_ioService.setThreadCount(1);
+	_ioService.setThreadCount(1); // TODO parametrize
 
 	_context.set_options( boost::asio::ssl::context::default_workarounds // TODO check this thing
 			| boost::asio::ssl::context::single_dh_use
@@ -24,9 +28,9 @@ _dbPath(dbPath)
 			| boost::asio::ssl::context::no_sslv3
 			);
 //	context_.set_password_callback(boost::bind(&server::get_password, this));
-	_context.use_certificate_chain_file("cert.pem"); // TODO parametrize
-	_context.use_private_key_file("privkey.pem", boost::asio::ssl::context::pem); // TODO parametrize
-	_context.use_tmp_dh_file("dh2048.pem");	// TODO parametrize
+	_context.use_certificate_chain_file(certPath.string());
+	_context.use_private_key_file(privKeyPath.string(), boost::asio::ssl::context::pem);
+	_context.use_tmp_dh_file(dhPath.string());
 }
 
 void

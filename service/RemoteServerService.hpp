@@ -18,6 +18,9 @@ class RemoteServerService : public Service
 			bool				enable;
 			boost::asio::ip::address	address;
 			unsigned short			port;
+			boost::filesystem::path		sslCertificatePath;
+			boost::filesystem::path		sslPrivateKeyPath;
+			boost::filesystem::path		sslTempDhPath;
 			boost::filesystem::path		dbPath;
 		};
 

@@ -4,8 +4,6 @@
 - Use our own WIOService
 
 [Services]
-- [UI] generate argc/argv from a config file (crypto, port info, db path)
-- [Remote] use config file to get crypto, port info, db path
 - consider using external web server instead of builtin httpd (new FCGI service?)
 
 [Users]

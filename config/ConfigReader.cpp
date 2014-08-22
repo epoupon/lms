@@ -33,6 +33,9 @@ ConfigReader::getRemoteServerConfig(Service::RemoteServerService::Config& config
 
 	config.port = static_cast<unsigned int>(_config.lookup("remote.listen-endpoint.port"));
 	config.address = boost::asio::ip::address::from_string((const char*)_config.lookup("remote.listen-endpoint.addr"));
+	config.sslCertificatePath = _config.lookup("remote.ssl-crypto.cert");
+	config.sslPrivateKeyPath = _config.lookup("remote.ssl-crypto.key");
+	config.sslTempDhPath = _config.lookup("remote.ssl-crypto.dh");
 
 	config.dbPath = _config.lookup("main.db");
 }
