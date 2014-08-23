@@ -11,8 +11,9 @@
 
 namespace UserInterface {
 
-LmsHome::LmsHome(SessionData& sessionData)
-: _sessionData(sessionData)
+LmsHome::LmsHome(SessionData& sessionData, Wt::WContainerWidget* parent)
+: Wt::WContainerWidget(parent),
+ _sessionData(sessionData)
 {
 	const Wt::Auth::User& user = sessionData.getDatabaseHandler().getLogin().user();
 
@@ -25,7 +26,7 @@ LmsHome::LmsHome(SessionData& sessionData)
 	Wt::WStackedWidget *contentsStack = new Wt::WStackedWidget(this);
 
 	// Setup a Left-aligned menu.
-	Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack, this);
+	Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack);
 	navigation->addMenu(leftMenu);
 
 	_audioWidget = new AudioWidget(_sessionData);

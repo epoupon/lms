@@ -15,7 +15,7 @@ class LmsHome : public Wt::WContainerWidget
 {
 	public:
 
-		LmsHome(SessionData& sessionData);
+		LmsHome(SessionData& sessionData, Wt::WContainerWidget* parent = 0);
 
 	private:
 

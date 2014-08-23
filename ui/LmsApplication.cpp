@@ -60,8 +60,7 @@ LmsApplication::handleAuthEvent(void)
 	if (_sessionData.getDatabaseHandler().getLogin().loggedIn())
 	{
 		if (_home == nullptr) {
-			_home = new LmsHome(_sessionData );
-			root()->addWidget( _home );
+			_home = new LmsHome(_sessionData, root() );
 		}
 		else
 			std::cerr << "Already logged in??" << std::endl;
@@ -70,9 +69,14 @@ LmsApplication::handleAuthEvent(void)
 	{
 		std::cerr << "user log out" << std::endl;
 		if (_home != nullptr) {
-			std::cerr << "Deleting home pointer..." << std::endl;
 			delete _home;
 			_home = nullptr;
+
+			// Hack: quit/redirect in order to avoid 'signal not exposed' problems
+			// TODO, investigate/remove?
+			quit();
+			redirect("/");
+
 		}
 		else
 			std::cerr << "Already logged out??" << std::endl;

@@ -26,10 +26,14 @@ int main(int argc, char* argv[])
 		if (argc > 1)
 			configFile = boost::filesystem::path(argv[1]);
 
-		if ( !boost::filesystem::exists(configFile)
-			|| !boost::filesystem::is_regular(configFile))
+		if ( !boost::filesystem::exists(configFile))
 		{
-			std::cerr << "Cannot open config file '" << configFile << "'" << std::endl;
+			std::cerr << "Config file '" << configFile << "' does not exist!" << std::endl;
+			return EXIT_FAILURE;
+		}
+		else if (!boost::filesystem::is_regular(configFile))
+		{
+			std::cerr << "Config file '" << configFile << "' is not regular!" << std::endl;
 			return EXIT_FAILURE;
 		}
 

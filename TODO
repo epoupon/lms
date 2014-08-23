@@ -28,15 +28,19 @@
 - some early playback end spotted on flac files (windows chrome only?)
 
 [UI]
+	- handle internationalization
+	- make a wizard on first connection (or make a default admin/admin account of the very first connection)
 	[Settings]
 		- increase the menu's width
 		- logout users that are being changed (loss of admin admin rights), or make sure they are still admin when they make changes
 		- "signal not exposed" problem if a user logout and login again. bad resource destruction?
-		[admin/DB]
-		- Do not make the update start time field active when update perdiod is "Never"
-		- refresh the audio/video view when the database directories have been updated
 		[user/transcoding]
 		- Prefered codecs for audio/video?
+		[admin/Users]
+		- do not activate the update period/start time when 'admin' is checked
+		[admin/Database update]
+		- do not make the update start time field active when update perdiod is "Never"
+		- refresh the audio/video view when the database directories have been updated
 
 	[Audio]
 	- Search patterns in the genre list
