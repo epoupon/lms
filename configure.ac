@@ -87,6 +87,16 @@ AC_CHECK_LIB(	[boost_iostreams],
 		,
 		[AC_MSG_ERROR([libboost_iostreams not found!])])
 
+AC_CHECK_LIB(	[boost_log],
+		[main],
+		,
+		[AC_MSG_ERROR([libboost_log not found!])])
+
+AC_CHECK_LIB(	[boost_log_setup],
+		[main],
+		,
+		[AC_MSG_ERROR([libboost_log_setup not found!])])
+
 AC_CHECK_LIB(	[protobuf],
 	     	[main],
 		,
@@ -112,7 +122,6 @@ AC_CHECK_LIB([wt],
              [main],
              ,
              [AC_MSG_ERROR([libwt not found!])])
-
 
 
 AC_CONFIG_FILES([Makefile

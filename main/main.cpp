@@ -1,5 +1,7 @@
 #include <boost/filesystem.hpp>
 
+#include "logger/Logger.hpp"
+
 #include "config/ConfigReader.hpp"
 #include "transcode/AvConvTranscoder.hpp"
 #include "av/Common.hpp"
@@ -38,6 +40,13 @@ int main(int argc, char* argv[])
 		}
 
 		ConfigReader configReader(configFile);
+
+		// Initializa logging facility
+		{
+			Logger::Config loggerConfig;
+			configReader.getLoggerConfig(loggerConfig);
+			Logger::instance().init(loggerConfig);
+		}
 
 		Service::DatabaseUpdateService::Config dbUpdateConfig;
 		configReader.getDatabaseUpdateConfig(dbUpdateConfig);

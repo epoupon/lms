@@ -28,6 +28,7 @@ lms_SOURCES = \
 	$(top_srcdir)/database/User.cpp			\
 	$(top_srcdir)/database-updater/DatabaseUpdater.cpp	\
 	$(top_srcdir)/database-updater/Checksum.cpp		\
+	$(top_srcdir)/logger/Logger.cpp			\
 	$(top_srcdir)/metadata/AvFormat.cpp		\
 	$(top_srcdir)/metadata/Utils.cpp		\
 	$(top_srcdir)/remote/messages/auth.pb.cc		\
@@ -76,5 +77,5 @@ lms_SOURCES = \
 	$(top_srcdir)/ui/settings/SettingsUsers.cpp
 
 
-lms_CXXFLAGS=-std=c++11 -Wall -I$(top_srcdir)/boost/ -I$(top_srcdir)/ui -I$(top_srcdir)/remote
+lms_CXXFLAGS=-DBOOST_LOG_DYN_LINK -std=c++11 -Wall -I$(top_srcdir)/boost/ -I$(top_srcdir)/ui -I$(top_srcdir)/remote
 

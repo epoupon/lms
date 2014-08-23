@@ -6,6 +6,13 @@ ConfigReader::ConfigReader(boost::filesystem::path p)
 }
 
 void
+ConfigReader::getLoggerConfig(Logger::Config& config)
+{
+	config.enableFileLogging = _config.lookupValue("main.logger.file", config.logPath);
+	config.enableConsoleLogging = _config.lookup("main.logger.console");
+}
+
+void
 ConfigReader::getUserInterfaceConfig(Service::UserInterfaceService::Config& config)
 {
 
