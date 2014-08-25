@@ -4,6 +4,7 @@ main = {
 	logger = {
 		file = "/var/lms/lms.log"	# comment to disable file logging
 		console = true;
+		level = 7;
 	}
 
 	db = "/var/lms/lms.db";

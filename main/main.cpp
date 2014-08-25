@@ -48,6 +48,7 @@ int main(int argc, char* argv[])
 			Logger::instance().init(loggerConfig);
 		}
 
+
 		Service::DatabaseUpdateService::Config dbUpdateConfig;
 		configReader.getDatabaseUpdateConfig(dbUpdateConfig);
 

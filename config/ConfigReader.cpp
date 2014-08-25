@@ -10,6 +10,7 @@ ConfigReader::getLoggerConfig(Logger::Config& config)
 {
 	config.enableFileLogging = _config.lookupValue("main.logger.file", config.logPath);
 	config.enableConsoleLogging = _config.lookup("main.logger.console");
+	config.minSeverity = static_cast<Severity>((int)_config.lookup("main.logger.level"));
 }
 
 void
