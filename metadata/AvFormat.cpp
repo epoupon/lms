@@ -6,6 +6,8 @@
 
 #include "av/InputFormatContext.hpp"
 
+#include "logger/Logger.hpp"
+
 #include "Utils.hpp"
 
 namespace MetaData
@@ -134,16 +136,15 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 
 			}
 /*			else
-				std::cout << "key = " << it->first << ", value = " << it->second << std::endl;
+				LMS_LOG(MOD_METADATA, SEV_DEBUG) << "key = " << it->first << ", value = " << it->second;
 */
 		}
 
 	}
 	catch(std::exception &e)
 	{
-		std::cerr << "Parsing of '" << p << "' failed!" << std::endl;
+		LMS_LOG(MOD_METADATA, SEV_ERROR) << "Parsing of '" << p << "' failed!";
 	}
-
 
 }
 

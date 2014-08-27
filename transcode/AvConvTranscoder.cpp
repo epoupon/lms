@@ -1,10 +1,10 @@
-
-#include <iostream>
 #include <sstream>
 
 #include <boost/iostreams/stream.hpp>
 #include <boost/process.hpp>
 #include <boost/foreach.hpp>
+
+#include "logger/Logger.hpp"
 
 #include "AvConvTranscoder.hpp"
 
@@ -19,7 +19,7 @@ void
 AvConvTranscoder::init()
 {
 	_avConvPath = boost::process::search_path("avconv");
-	std::cout << "Using execPath " << _avConvPath << std::endl;
+	LMS_LOG(MOD_TRANSCODE, SEV_INFO) << "Using execPath " << _avConvPath;
 }
 
 
@@ -41,7 +41,7 @@ AvConvTranscoder::AvConvTranscoder(const Parameters& parameters)
 		throw std::runtime_error("File " +  _parameters.getInputMediaFile().getPath().string() + " is not regular!");
 	}
 
-	std::cout << "Transcoding file '" << _parameters.getInputMediaFile().getPath() << "'" << std::endl;
+	LMS_LOG(MOD_TRANSCODE, SEV_INFO) << "Transcoding file '" << _parameters.getInputMediaFile().getPath() << "'";
 
 	// Launch a process to handle the conversion
 	boost::iostreams::file_descriptor_sink sink(_outputPipe.sink, boost::iostreams::close_handle);
@@ -108,8 +108,7 @@ AvConvTranscoder::AvConvTranscoder(const Parameters& parameters)
 	}
 	oss << " -";		// output to stdout
 
-
-	std::cout << "executing... '" << oss.str() << "'" << std::endl;
+	LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Executing '" << oss.str() << "'";
 
 	// make sure only one thread is executing this part of code
 	// See boost process FAQ
@@ -141,7 +140,7 @@ AvConvTranscoder::process(void)
 	}
 
 	if (!_in || _in.fail() || _in.eof()) {
-		std::cout << "Transcode complete!" << std::endl;
+		LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Transcode complete!";
 
 		waitChild();
 		_isComplete = true;
@@ -151,7 +150,7 @@ AvConvTranscoder::process(void)
 
 AvConvTranscoder::~AvConvTranscoder()
 {
-	std::cout << "AvConvTranscoder::~AvConvTranscoder called!" << std::endl;
+	LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "~AvConvTranscoder called!";
 
 	if (_in.eof())
 		waitChild();
@@ -166,12 +165,12 @@ AvConvTranscoder::waitChild()
 	{
 		boost::system::error_code ec;
 
-		std::cout << "waiting for child!" << std::endl;
+		LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Waiting for child...";
 		boost::process::wait_for_exit(*_child, ec);
-		std::cout << "waiting for child! DONE." << std::endl;
+		LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Waiting for child: OK";
 
 		if (ec)
-			std::cerr << "AvConvTranscoder::waitChild: error: " << ec.message() << std::endl;
+			LMS_LOG(MOD_TRANSCODE, SEV_ERROR) << "AvConvTranscoder::waitChild: error: " << ec.message();
 
 		_child.reset();
 	}
@@ -184,13 +183,13 @@ AvConvTranscoder::killChild()
 	{
 		boost::system::error_code ec;
 
-		std::cout << "Killing child! pid = " << _child->pid << std::endl;
+		LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Killing child! pid = " << _child->pid;
 		boost::process::terminate(*_child, ec);
-		std::cout << "Killing child DONE" << std::endl;
+		LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Killing child DONE";
 
 		// If an error occured, force kill the child
 		if (ec)
-			std::cerr << "AvConvTranscoder::killChild: error: " << ec.message() << std::endl;
+			LMS_LOG(MOD_TRANSCODE, SEV_ERROR) << "AvConvTranscoder::killChild: error: " << ec.message();
 
 		_child.reset();
 	}

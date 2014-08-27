@@ -3,6 +3,8 @@
 
 #include <boost/crc.hpp>  // for boost::crc_32_type
 
+#include "logger/Logger.hpp"
+
 #include "Checksum.hpp"
 
 typedef boost::crc_32_type crc_type;
@@ -26,7 +28,7 @@ void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& cr
 	}
 	else
 	{
-		std::cerr << "Failed to open file '" << p << "'" << std::endl;
+		LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Failed to open file '" << p << "'";
 		throw std::runtime_error("Failed to open file '" + p.string() + "'" );
 	}
 

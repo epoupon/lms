@@ -48,6 +48,7 @@ int main(int argc, char* argv[])
 			Logger::instance().init(loggerConfig);
 		}
 
+		LMS_LOG(MOD_MAIN, SEV_INFO) << "Reading service configurations...";
 
 		Service::DatabaseUpdateService::Config dbUpdateConfig;
 		configReader.getDatabaseUpdateConfig(dbUpdateConfig);
@@ -65,7 +66,7 @@ int main(int argc, char* argv[])
 		Transcode::AvConvTranscoder::init();
 		Database::Handler::configureAuth();
 
-		std::cout << "Starting services..." << std::endl;
+		LMS_LOG(MOD_MAIN, SEV_INFO) << "Starting services...";
 
 		if (dbUpdateConfig.enable)
 			serviceManager.startService( std::make_shared<Service::DatabaseUpdateService>( dbUpdateConfig ) );
@@ -76,7 +77,7 @@ int main(int argc, char* argv[])
 		if (uiConfig.enable)
 			serviceManager.startService( std::make_shared<Service::UserInterfaceService>(boost::filesystem::path(argv[0]), uiConfig));
 
-		std::cout << "Running..." << std::endl;
+		LMS_LOG(MOD_MAIN, SEV_NOTICE) << "Now running...";
 
 		serviceManager.run();
 
@@ -89,11 +90,11 @@ int main(int argc, char* argv[])
 	}
 	catch( Wt::WServer::Exception& e)
 	{
-		std::cerr << "Caught WServer::Exception: " << e.what() << std::endl;
+		LMS_LOG(MOD_MAIN, SEV_CRIT) << "Caught a WServer::Exception: " << e.what();
 	}
 	catch( std::exception& e)
 	{
-		std::cerr << "Caught std::exception: " << e.what() << std::endl;
+		LMS_LOG(MOD_MAIN, SEV_CRIT) << "Caught std::exception: " << e.what();
 	}
 
 	return res;

@@ -5,6 +5,8 @@
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 
+#include "logger/Logger.hpp"
+
 #include "messages/messages.pb.h"
 
 #include "RequestHandler.hpp"
@@ -24,13 +26,13 @@ _socket(ioService, context),
 _connectionManager(manager),
 _requestHandler(dbPath)
 {
-	std::cout << "Server::Connection::Connection, Creating connection" << std::endl;
+	LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "Server::Connection::Connection, Creating connection";
 }
 
 void
 Connection::start()
 {
-	std::cout << "Starting connection..." << std::endl;
+	LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "Starting connection...";
 	_socket.async_handshake(boost::asio::ssl::stream_base::server,
 			boost::bind(&Connection::handleHandshake, this,
 				boost::asio::placeholders::error));
@@ -41,16 +43,16 @@ Connection::handleHandshake(const boost::system::error_code& error)
 {
 	if (!error)
 	{
-		std::cout << "Handshake successfully performed... Now reading messages" << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "Handshake successfully performed... Now reading messages";
 		readMsg();
 	}
 	else if (error != boost::asio::error::operation_aborted)
 	{
-		std::cerr << "Connection::handleHandshake: " << error.message() << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Connection::handleHandshake: " << error.message();
 		_connectionManager.stop(shared_from_this());
 	}
 	else
-		std::cerr << "Handshake error: " << error.message() << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Handshake error: " << error.message();
 }
 
 
@@ -76,16 +78,16 @@ Connection::stop()
 		boost::system::error_code ec;
 
 		_closing = true;
-		std::cout << "Server::Connection::stop, Stopping connection " << this << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "Server::Connection::stop, Stopping connection " << this;
 		_socket.shutdown(ec);
 
 		if (ec)
-			std::cerr << "Error while shutting down connection " << this << ": " << ec.message() << std::endl;
+			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Error while shutting down connection " << this << ": " << ec.message();
 
-		std::cout << "Server::Connection::stop, connection stopped " << this << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "Server::Connection::stop, connection stopped " << this;
 	}
 	else
-		std::cout << "Stop: close already in progress..." << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "Stop: close already in progress...";
 }
 
 void
@@ -95,7 +97,7 @@ Connection::handleReadHeader(const boost::system::error_code& error, std::size_t
 	{
 		if (bytes_transferred != Remote::Header::size)
 		{
-			std::cerr << "bytes_transferred (" << bytes_transferred << ") != Remote::Header::size!" << std::endl;
+			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "bytes_transferred (" << bytes_transferred << ") != Remote::Header::size!";
 			_connectionManager.stop(shared_from_this());
 			return;
 		}
@@ -107,7 +109,7 @@ Connection::handleReadHeader(const boost::system::error_code& error, std::size_t
 		Remote::Header header;
 		if (!header.from_istream(is))
 		{
-			std::cerr << "Cannot read header from buffer!" << std::endl;
+			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Cannot read header from buffer!";
 			_connectionManager.stop(shared_from_this());
 			return;
 		}
@@ -125,7 +127,7 @@ Connection::handleReadHeader(const boost::system::error_code& error, std::size_t
 	}
 	else if (error != boost::asio::error::operation_aborted)
 	{
-		std::cerr << "Connection::handleReadHeader: " << error.message() << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Connection::handleReadHeader: " << error.message();
 		_connectionManager.stop(shared_from_this());
 	}
 }
@@ -145,14 +147,14 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 
 		if (!request.ParseFromIstream(&is))
 		{
-			std::cerr << "Cannot parse request!" << std::endl;
+			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Parse request failed!";
 			_connectionManager.stop(shared_from_this());
 			return;
 		}
 
 		if (!_requestHandler.process(request, response))
 		{
-			std::cerr << "Cannot process request!" << std::endl;
+			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Process request failed!";
 			_connectionManager.stop(shared_from_this());
 			return;
 		}
@@ -162,14 +164,14 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 
 			if (!response.SerializeToOstream(&os))
 			{
-				std::cerr << "Cannot serialize to ostream!" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Cannot serialize to ostream!";
 				_connectionManager.stop(shared_from_this());
 				return;
 			}
 
 			if (_outputStreamBuf.size() >= Remote::Header::max_data_size)
 			{
-				std::cerr << "output message is too big! " << _outputStreamBuf.size() << " > " << Remote::Header::max_data_size << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "output message is too big! " << _outputStreamBuf.size() << " > " << Remote::Header::max_data_size;
 				_connectionManager.stop(shared_from_this());
 				return;
 			}
@@ -187,7 +189,7 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 								ec);
 			if (ec)
 			{
-				std::cerr << "cannot write header: " << error.message() << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "cannot write header: " << error.message();
 				_connectionManager.stop(shared_from_this());
 			}
 			else
@@ -203,7 +205,7 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 
 			if (ec)
 			{
-				std::cerr << "cannot write msg: " << error.message() << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "cannot write msg: " << error.message();
 				_connectionManager.stop(shared_from_this());
 			}
 			else
@@ -216,15 +218,10 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 
 		// All good here, read another message
 		readMsg();
-
-		// Initiate graceful Connection closure.
-		//		boost::system::error_code ignored_ec;
-		//		_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
-
 	}
 	else if (error != boost::asio::error::operation_aborted)
 	{
-		std::cerr << "Connection::handleRead: " << error.message() << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Connection::handleRead: " << error.message();
 		_connectionManager.stop(shared_from_this());
 	}
 }

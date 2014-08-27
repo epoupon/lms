@@ -1,9 +1,11 @@
 
 #include <boost/foreach.hpp>
 
+#include "logger/Logger.hpp"
+#include "av/InputFormatContext.hpp"
+
 #include "CoverArtGrabber.hpp"
 
-#include "av/InputFormatContext.hpp"
 
 
 namespace CoverArt {
@@ -25,7 +27,7 @@ Grabber::getFromInputFormatContext(const Av::InputFormatContext& input)
 	}
 	catch(std::exception& e)
 	{
-		std::cerr << "Cannot get pictures: " << e.what() << std::endl;
+		LMS_LOG(MOD_COVER, SEV_ERROR) << "Cannot get pictures: " << e.what();
 	}
 
 	return res;
@@ -50,7 +52,7 @@ Grabber::getFromTrack(Database::Track::pointer track)
 	}
 	catch(std::exception& e)
 	{
-		std::cerr << "Cannot get pictures: " << e.what();
+		LMS_LOG(MOD_COVER, SEV_ERROR) << "Cannot get pictures: " << e.what();
 	}
 
 	return res;

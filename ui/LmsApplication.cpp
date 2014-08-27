@@ -13,7 +13,6 @@ LmsApplication::create(const Wt::WEnvironment& env, boost::filesystem::path dbPa
 	 * You could read information from the environment to decide whether
 	 * the user has permission to start a new application
 	 */
-	std::cout << "Creating new Application" << std::endl;
 	return new LmsApplication(env, dbPath);
 }
 

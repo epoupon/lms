@@ -1,5 +1,7 @@
 #include <Wt/Auth/Identity>
 
+#include "logger/Logger.hpp"
+
 #include "AuthRequestHandler.hpp"
 
 namespace Remote {
@@ -25,7 +27,7 @@ AuthRequestHandler::process(const AuthRequest& request, AuthResponse& response)
 					response.set_type(AuthResponse::TypePasswordResult);
 			}
 			else
-				std::cerr << "Bad AuthRequest::TypePassword" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad AuthRequest::TypePassword";
 			break;
 	}
 
@@ -69,7 +71,7 @@ AuthRequestHandler::processPassword(const AuthRequest::Password& request, AuthRe
 	}
 	else
 	{
-		std::cerr << "Invalid user '" << request.user_login() << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Invalid user '" << request.user_login();
 		response.set_type(AuthResponse::PasswordResult::TypePasswordInvalid);
 	}
 

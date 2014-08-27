@@ -1,3 +1,5 @@
+#include "logger/Logger.hpp"
+
 #include "MediaRequestHandler.hpp"
 
 #include "database/AudioTypes.hpp"
@@ -23,31 +25,31 @@ MediaRequestHandler::process(const MediaRequest& request, MediaResponse& respons
 				if (request.prepare().has_audio())
 					res = processAudioPrepare(request.prepare().audio(), response);
 				else if (request.prepare().has_video())
-					;// TODO;
+					LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Video prepare not supported!";
 				else
-					std::cerr << "Bad MediaRequest::TypeMediaPrepare!" << std::endl;
+					LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad MediaRequest::TypeMediaPrepare!";
 
 			}
 			else
-				std::cerr << "Bad MediaRequest::TypeMediaPrepare!" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad MediaRequest::TypeMediaPrepare!";
 			break;
 
 		case MediaRequest::TypeMediaGetPart:
 			if (request.has_get_part())
 				res = processGetPart(request.get_part(), response);
 			else
-				std::cerr << "Bad MediaRequest::TypeMediaGet!" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad MediaRequest::TypeMediaGet!";
 			break;
 
 		case MediaRequest::TypeMediaTerminate:
 			if (request.has_terminate())
 				res = processTerminate(request.terminate(), response);
 			else
-				std::cerr << "Bad MediaRequest::TypeMediaTerminate!" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad MediaRequest::TypeMediaTerminate!";
 			break;
 
 		default:
-			std::cerr << "Unhandled MediaRequest type = " << request.type() << std::endl;
+			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Unhandled MediaRequest type = " << request.type();
 	}
 
 	return res;
@@ -68,7 +70,7 @@ MediaRequestHandler::processAudioPrepare(const MediaRequest::Prepare::Audio& req
 				format = Transcode::Format::OGA;
 				break;
 			default:
-				std::cerr << "Unhandled codec type = " << request.codec_type() << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Unhandled codec type = " << request.codec_type();
 				return false;
 		}
 	}
@@ -108,7 +110,7 @@ MediaRequestHandler::processAudioPrepare(const MediaRequest::Prepare::Audio& req
 	}
 	catch(std::exception& e)
 	{
-		std::cerr << "Caught exception: " << e.what() << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Caught exception: " << e.what();
 		response.mutable_error()->set_error(true);
 		response.mutable_error()->set_message("exception: " + std::string(e.what()));
 		response.set_type(MediaResponse::TypeError);
@@ -135,7 +137,7 @@ MediaRequestHandler::processGetPart(const MediaRequest::GetPart& request, MediaR
 	while (!_transcoder->isComplete() && _transcoder->getOutputData().size() < dataSize)
 		_transcoder->process();
 
-	std::cout << "MediaRequestHandler::processGetPart, isComplete = " << std::boolalpha << _transcoder->isComplete() << ", size = " << _transcoder->getOutputData().size() << std::endl;
+	LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "MediaRequestHandler::processGetPart, isComplete = " << std::boolalpha << _transcoder->isComplete() << ", size = " << _transcoder->getOutputData().size();
 
 	Transcode::AvConvTranscoder::data_type::iterator itEnd;
 	if (_transcoder->getOutputData().size() > dataSize)
@@ -156,7 +158,7 @@ MediaRequestHandler::processGetPart(const MediaRequest::GetPart& request, MediaR
 bool
 MediaRequestHandler::processTerminate(const MediaRequest::Terminate& /*request*/, MediaResponse& response)
 {
-	std::cout << "MediaRequestHandler: resetting transcoder" << std::endl;
+	LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "MediaRequestHandler: resetting transcoder";
 	_transcoder.reset();
 
 	assert(!_transcoder);

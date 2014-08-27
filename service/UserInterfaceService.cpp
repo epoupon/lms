@@ -1,4 +1,4 @@
-#include <iostream>
+#include "logger/Logger.hpp"
 
 #include "UserInterfaceService.hpp"
 #include "ui/LmsApplication.hpp"
@@ -30,7 +30,7 @@ UserInterfaceService::UserInterfaceService( boost::filesystem::path runAppPath, 
 
 	for(int i = 0; i < argc; ++i)
 	{
-		std::cout << "i = " << i << ", arg = '" << argv[i] << "'" << std::endl;
+		LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "i = " << i << ", arg = '" << argv[i] << "'";
 	}
 
 	_server.setServerConfiguration (argc, const_cast<char**>(argv));
@@ -44,15 +44,15 @@ void
 UserInterfaceService::start(void)
 {
 	_server.start();
-	std::cout << "UserInterfaceService::start -> Service started..." << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "UserInterfaceService::start -> Service started...";
 }
 
 void
 UserInterfaceService::stop(void)
 {
-	std::cout << "UserInterfaceService::stop -> stopping..." << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "UserInterfaceService::stop -> stopping...";
 	_server.stop();
-	std::cout << "UserInterfaceService::stop -> stopped!" << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "UserInterfaceService::stop -> stopped!";
 }
 
 void

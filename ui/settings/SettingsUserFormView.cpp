@@ -8,6 +8,8 @@
 #include <Wt/WPushButton>
 #include <Wt/Auth/Identity>
 
+#include "logger/Logger.hpp"
+
 #include "common/Validators.hpp"
 
 #include "SettingsUserFormView.hpp"
@@ -147,12 +149,12 @@ class UserFormModel : public Wt::WFormModel
 
 					// user may have been deleted by someone else
 					if (!authUser.isValid()) {
-						std::cerr << "user identity does not exist!" << std::endl;
+						LMS_LOG(MOD_UI, SEV_ERROR) << "user identity does not exist!";
 						return false;
 					}
 					else if(!user)
 					{
-						std::cerr << "User not found!" << std::endl;
+						LMS_LOG(MOD_UI, SEV_ERROR) << "User not found!";
 						return false;
 					}
 
@@ -185,7 +187,7 @@ class UserFormModel : public Wt::WFormModel
 			}
 			catch(Wt::Dbo::Exception& exception)
 			{
-				std::cerr << "Dbo exception: " << exception.what() << std::endl;
+				LMS_LOG(MOD_UI, SEV_ERROR) << "Dbo exception: " << exception.what();
 				return false;
 			}
 

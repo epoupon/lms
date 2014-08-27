@@ -1,5 +1,7 @@
 #include <boost/thread.hpp>
 
+#include "logger/Logger.hpp"
+
 #include "DatabaseUpdateService.hpp"
 
 namespace Service {
@@ -13,21 +15,22 @@ DatabaseUpdateService::DatabaseUpdateService(const Config& config)
 void
 DatabaseUpdateService::start(void)
 {
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "DatabaseUpdateService, starting...";
 	_databaseUpdater.start();
 }
 
 void
 DatabaseUpdateService::stop(void)
 {
-	std::cout << "DatabaseUpdateService::stop, processing..." << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "DatabaseUpdateService, stopping...";
 	_databaseUpdater.stop();
-	std::cout << "DatabaseUpdateService::stop, process done" << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "DatabaseUpdateService, stopped";
 }
 
 void
 DatabaseUpdateService::restart(void)
 {
-	std::cout << "DatabaseUpdateService::restart" << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "DatabaseUpdateService, restart";
 	stop();
 	start();
 }

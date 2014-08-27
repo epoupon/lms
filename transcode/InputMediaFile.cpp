@@ -1,12 +1,13 @@
 
 #include <list>
-
 #include <boost/foreach.hpp>
 
-#include "InputMediaFile.hpp"
+#include "logger/Logger.hpp"
 
 #include "av/InputFormatContext.hpp"
 #include "cover/CoverArtGrabber.hpp"
+
+#include "InputMediaFile.hpp"
 
 namespace Transcode
 {
@@ -71,7 +72,7 @@ InputMediaFile::InputMediaFile(const boost::filesystem::path& p)
 				_bestStreams.insert(std::make_pair( streamType, index) );
 		}
 		else
-			std::cerr << "Cannot find best stream for type " << type << std::endl;
+			LMS_LOG(MOD_TRANSCODE, SEV_WARNING) << "Cannot find best stream for type " << type;
 	}
 
 	_covers = CoverArt::Grabber::getFromInputFormatContext(input);

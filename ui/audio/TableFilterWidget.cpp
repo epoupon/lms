@@ -1,5 +1,7 @@
 #include <boost/foreach.hpp>
 
+#include "logger/Logger.hpp"
+
 #include "TableFilterWidget.hpp"
 
 namespace UserInterface {
@@ -41,20 +43,20 @@ TableFilterWidget::refresh(const Constraint& constraint)
 	SqlQuery AllSqlQuery;
 	AllSqlQuery.select("'<All>',0,1 AS ORDERBY");
 
-	std::cout << _table << ", generated query = '" << sqlQuery.get() + " UNION " + AllSqlQuery.get() << "'" << std::endl;
+	LMS_LOG(MOD_UI, SEV_DEBUG) << _table << ", generated query = '" << sqlQuery.get() + " UNION " + AllSqlQuery.get() << "'";
 
 	Wt::Dbo::Query<ResultType> query = _db.getSession().query<ResultType>( sqlQuery.get() + " UNION " + AllSqlQuery.get() );
 
 	query.orderBy("ORDERBY DESC," + _table + "." + _field);
 
 	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs()) {
-		std::cout << "Binding value '" << bindArg << "'" << std::endl;
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "Binding value '" << bindArg << "'";
 		query.bind(bindArg);
 	}
 
 	_queryModel.setQuery( query, true /* Keep columns */);
 
-	std::cout << "Finish !" << std::endl;
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Finish !";
 }
 
 // Get constraint created by this filter

@@ -1,6 +1,8 @@
-#include "Common.hpp"
-
 #include <boost/array.hpp>
+
+#include "logger/Logger.hpp"
+
+#include "Common.hpp"
 
 namespace Av
 {
@@ -28,7 +30,7 @@ void AvInit()
 	/* register all the codecs */
 	avcodec_register_all();
 	av_register_all();
-	std::cout << "AVCDOEC VERSION = " << avcodec_version() << std::endl;
+	LMS_LOG(MOD_AV, SEV_INFO) << "AVCDOEC VERSION = " << avcodec_version();
 }
 
 } // namespace Av

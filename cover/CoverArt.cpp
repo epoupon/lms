@@ -5,6 +5,8 @@
 #include <boost/gil/extension/numeric/resample.hpp>
 #include <boost/gil/extension/io_new/jpeg_all.hpp>
 
+#include "logger/Logger.hpp"
+
 #include "CoverArt.hpp"
 
 namespace CoverArt {
@@ -46,7 +48,7 @@ CoverArt::scale(std::size_t size)
 	}
 	catch(std::exception& e)
 	{
-		std::cerr << "Caught exception: " << e.what() << std::endl;
+		LMS_LOG(MOD_COVER, SEV_ERROR) << "Caught exception: " << e.what();
 	}
 
 	return res;

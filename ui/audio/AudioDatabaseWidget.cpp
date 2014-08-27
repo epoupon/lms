@@ -72,15 +72,12 @@ AudioDatabaseWidget::handleFilterUpdated(std::size_t idFilterUpdated)
 
 	_refreshingFilters = true;
 
-	std::cout << "FILTER " << idFilterUpdated << " has been UPDATED!" << std::endl;
-
 	FilterWidget::Constraint currentConstraint;
 
 	currentConstraint.where.And( WhereClause( "track.artist_id = artist.id and track.release_id = release.id and track_genre.track_id = track.id and genre.id = track_genre.genre_id"));
 
 	for (std::size_t idFilter = 0; idFilter < _filters.size(); ++idFilter)
 	{
-		std::cout << "Processing Filter INDEX " << idFilter << std::endl;
 		FilterWidget* filter = _filters.at(idFilter);
 
 		// Apply contraints created by previous filters
@@ -100,8 +97,6 @@ AudioDatabaseWidget::handleFilterUpdated(std::size_t idFilterUpdated)
 void
 AudioDatabaseWidget::selectNextTrack(void)
 {
-	std::cout << "Wants to select next track!" << std::endl;
-
 	TrackWidget* trackWidget ( dynamic_cast<TrackWidget*>(_filters.back() ) );
 
 	trackWidget->selectNextTrack();

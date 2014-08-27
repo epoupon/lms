@@ -6,6 +6,8 @@
 #include <Wt/Auth/PasswordStrengthValidator>
 #include <Wt/Auth/PasswordVerifier>
 
+#include "logger/Logger.hpp"
+
 // Db types
 #include "AudioTypes.hpp"
 #include "FileTypes.hpp"
@@ -79,7 +81,7 @@ _dbBackend( db.string() )
 	        _session.createTables();
 	}
 	catch(std::exception& e) {
-		std::cerr << "Cannot create tables: " << e.what() << std::endl;
+		LMS_LOG(MOD_DB, SEV_ERROR) << "Cannot create tables: " << e.what();
 	}
 
 	_dbBackend.executeSql("pragma journal_mode=WAL");
@@ -112,7 +114,7 @@ Handler::getUser(const Wt::Auth::User& authUser)
 {
 
 	if (!authUser.isValid()) {
-		std::cerr << "Handler::getUser: invalid authUser" << std::endl;
+		LMS_LOG(MOD_DB, SEV_ERROR) << "Handler::getUser: invalid authUser";
 		return User::pointer();
 	}
 

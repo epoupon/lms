@@ -10,6 +10,8 @@
 #include "SettingsMediaDirectories.hpp"
 #include "SettingsUsers.hpp"
 
+#include "logger/Logger.hpp"
+
 #include "service/ServiceManager.hpp"
 #include "service/DatabaseUpdateService.hpp"
 
@@ -67,7 +69,7 @@ _sessionData(sessionData)
 void
 Settings::handleDatabaseDirectoriesChanged()
 {
-	std::cout << "Media directories have changed: requesting imediate scan" << std::endl;
+	LMS_LOG(MOD_UI, SEV_NOTICE) << "Media directories have changed: requesting imediate scan";
 	// On directory add or delete, request an immediate scan
 	{
 		Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());

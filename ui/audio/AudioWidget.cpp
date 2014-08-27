@@ -1,5 +1,7 @@
 #include <Wt/WBreak>
 
+#include "logger/Logger.hpp"
+
 #include "AudioWidget.hpp"
 
 namespace UserInterface {
@@ -37,7 +39,7 @@ AudioWidget::search(const std::string& searchText)
 void
 AudioWidget::playTrack(boost::filesystem::path p)
 {
-	std::cout << "play track '" << p << "'" << std::endl;
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "play track '" << p << "'";
 	try {
 
 		std::size_t bitrate = 0;
@@ -65,15 +67,15 @@ AudioWidget::playTrack(boost::filesystem::path p)
 
 			if (!covers.empty())
 			{
-				std::cout << "Cover found!" << std::endl;
+				LMS_LOG(MOD_UI, SEV_DEBUG) << "Cover found!";
 				if (!covers.front().scale(256))
-					std::cerr << "Cannot resize!" << std::endl;
+					LMS_LOG(MOD_UI, SEV_ERROR) << "Cannot resize!";
 
 				//_imgResource->setMimeType(covers.front().getMimeType());
 				_imgResource->setData(covers.front().getData());
 			}
 			else {
-				std::cout << "No cover found!" << std::endl;
+				LMS_LOG(MOD_UI, SEV_DEBUG) << "No cover found!";
 				_imgResource->setData( std::vector<unsigned char>());
 			}
 
@@ -82,14 +84,14 @@ AudioWidget::playTrack(boost::filesystem::path p)
 	}
 	catch( std::exception &e)
 	{
-		std::cerr <<"Caught exception while loading '" << p << "': " << e.what() << std::endl;
+		LMS_LOG(MOD_UI, SEV_ERROR) << "Caught exception while loading '" << p << "': " << e.what();
 	}
 }
 
 	void
 AudioWidget::handleTrackEnded(void)
 {
-	std::cout << "Track playback ended!" << std::endl;
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Track playback ended!";
 	_audioDbWidget->selectNextTrack();
 }
 

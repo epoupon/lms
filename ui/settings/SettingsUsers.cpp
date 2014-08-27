@@ -6,6 +6,8 @@
 
 #include <Wt/Auth/Identity>
 
+#include "logger/Logger.hpp"
+
 #include "SettingsUserFormView.hpp"
 
 #include "SettingsUsers.hpp"
@@ -77,12 +79,12 @@ Users::refresh(void)
 		}
 		catch(Wt::Dbo::Exception& e)
 		{
-			std::cerr << "Caught exception when getting userId=" << userId << ": " << e.code() << std::endl;
+			LMS_LOG(MOD_UI, SEV_ERROR) << "Caught exception when getting userId=" << userId << ": " << e.code();
 			continue;
 		}
 
 		if (!authUser.isValid()) {
-			std::cerr << "Users::refresh: skipping invalid userId = " << userId << std::endl;
+			LMS_LOG(MOD_UI, SEV_ERROR) << "Users::refresh: skipping invalid userId = " << userId;
 			continue;
 		}
 

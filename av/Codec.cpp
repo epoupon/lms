@@ -2,6 +2,8 @@
 #include <stdexcept>
 #include <iostream>
 
+#include "logger/Logger.hpp"
+
 #include "Codec.hpp"
 
 Codec::Codec(enum CodecID codec, Type type )
@@ -13,7 +15,7 @@ Codec::Codec(enum CodecID codec, Type type )
 		_codec = avcodec_find_decoder(codec);
 
 	if (_codec == nullptr) {
-		std::cerr << "Codec constructor failed! codec = " << codec << ", type = " << type << std::endl;
+		LMS_LOG(MOD_AV, SEV_ERROR) << "Codec constructor failed! codec = " << codec << ", type = " << type;
 		throw std::runtime_error("can't find codec using this id!");
 	}
 }

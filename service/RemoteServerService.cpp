@@ -1,3 +1,4 @@
+#include "logger/Logger.hpp"
 
 #include "RemoteServerService.hpp"
 
@@ -15,24 +16,24 @@ RemoteServerService::RemoteServerService(const Config& config)
 void
 RemoteServerService::start(void)
 {
-	std::cout << "RemoteServerService::start, starting..." << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "RemoteServerService::start, starting...";
 	_server.start();
-	std::cout << "RemoteServerService::start, started!" << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "RemoteServerService::start, started!";
 }
 
 
 void
 RemoteServerService::stop(void)
 {
-	std::cout << "RemoteServerService::stop, stopping..." << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "RemoteServerService::stop, stopping...";
 	_server.stop();
-	std::cout << "RemoteServerService::stop, stopped!" << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "RemoteServerService::stop, stopped!";
 }
 
 void
 RemoteServerService::restart(void)
 {
-	std::cout << "RemoteServerService::restart, not implemented!" << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "RemoteServerService::restart, not implemented!";
 }
 
 } // namespace Service

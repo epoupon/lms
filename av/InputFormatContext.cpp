@@ -1,6 +1,8 @@
 #include <stdexcept>
 #include <iostream>
 
+#include "logger/Logger.hpp"
+
 #include "InputFormatContext.hpp"
 
 namespace Av
@@ -17,7 +19,7 @@ InputFormatContext::InputFormatContext(const boost::filesystem::path& p)
 	AvError error = avformat_open_input(&context, p.string().c_str(), nullptr, nullptr);
 	if (error)
 	{
-		std::cerr << "Cannot open '" << p.string() << "', avformat_open_input returned " << error << std::endl;
+		LMS_LOG(MOD_AV, SEV_ERROR) << "Cannot open '" << p.string() << "', avformat_open_input returned " << error;
 		throw std::runtime_error("avformat_open_input failed: " + error.to_str());
 	}
 
@@ -57,7 +59,7 @@ InputFormatContext::getBestStreamIdx(AVMediaType type, Stream::Idx& index)
 
 	AvError error(res);
 	if (error) {
-		std::cerr << "Cannot get best stream for type " << type << ": " << error << std::endl;
+		LMS_LOG(MOD_AV, SEV_DEBUG) << "Cannot get best stream for type " << type << ": " << error;
 		return false;
 	}
 	else {
@@ -72,7 +74,7 @@ InputFormatContext::findStreamInfo(void)
 	native()->max_analyze_duration = 10 * AV_TIME_BASE; // 10 secs
 	AvError err = avformat_find_stream_info(native(), NULL);
 	if (err) {
-		std::cerr << "Couldn't find stream information: " << err << std::endl;
+		LMS_LOG(MOD_AV, SEV_ERROR) << "Couldn't find stream information: " << err;
 		throw std::runtime_error("av_find_stream_info failed!");
 	}
 }

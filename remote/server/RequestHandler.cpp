@@ -1,3 +1,4 @@
+#include "logger/Logger.hpp"
 
 #include "RequestHandler.hpp"
 
@@ -34,7 +35,7 @@ RequestHandler::process(const ClientMessage& request, ServerMessage& response)
 					response.set_type(ServerMessage::AuthResponse);
 			}
 			else
-				std::cerr << "Bad ClientMessage::AuthRequest !" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad ClientMessage::AuthRequest !";
 			break;
 		case ClientMessage::AudioCollectionRequest:
 			// Not allowed if the user is not logged in
@@ -47,7 +48,7 @@ RequestHandler::process(const ClientMessage& request, ServerMessage& response)
 						response.set_type( ServerMessage::AudioCollectionResponse);
 				}
 				else
-					std::cerr << "Bad ClientMessage::AudioCollectionRequest message!" << std::endl;
+					LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad ClientMessage::AudioCollectionRequest message!";
 			}
 			break;
 
@@ -62,12 +63,12 @@ RequestHandler::process(const ClientMessage& request, ServerMessage& response)
 						response.set_type( ServerMessage::MediaResponse);
 				}
 				else
-					std::cerr << "Malformed ClientMessage::MediaRequest message!" << std::endl;
+					LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Malformed ClientMessage::MediaRequest message!";
 			}
 			break;
 
 		default:
-			std::cerr << "Unhandled message type = " << request.type() << std::endl;
+			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Unhandled message type = " << request.type();
 	}
 
 	return res;

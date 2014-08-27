@@ -1,6 +1,8 @@
 #ifndef REMOTE_HEADER_HPP
 #define REMOTE_HEADER_HPP
 
+#include "logger/Logger.hpp"
+
 #include <iomanip>
 
 namespace Remote
@@ -33,7 +35,7 @@ class Header
 		bool from_buffer(const std::array<unsigned char, size>& buffer)
 		{
 			if (decode32(&buffer[0]) != _magic) {
-				std::cerr << "Header: bad magic ('" << std::hex << std::setfill('0') << std::setw(8) << decode32(&buffer[0]) << "' instead of '" << std::hex << std::setfill('0') << std::setw(8) << _magic << "')" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Header: bad magic ('" << std::hex << std::setfill('0') << std::setw(8) << decode32(&buffer[0]) << "' instead of '" << std::hex << std::setfill('0') << std::setw(8) << _magic << "')";
 				return false;
 			}
 			else
@@ -41,7 +43,7 @@ class Header
 				_dataSize = decode32(&buffer[4]);
 
 				if (_dataSize > max_data_size)
-					std::cerr << "Header: msg too big (" << _dataSize << ")!" << std::endl;
+					LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Header: msg too big (" << _dataSize << ")!";
 
 				return _dataSize <= max_data_size;
 			}

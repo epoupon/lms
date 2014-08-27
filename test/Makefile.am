@@ -6,6 +6,7 @@ check_PROGRAMS = database-integrity sql-query database-basics database-user remo
 remote_SOURCES = \
 	$(srcdir)/RemoteClientServer.cpp			\
 	$(srcdir)/TestDatabase.cpp				\
+	$(top_srcdir)/logger/Logger.cpp 			\
 	$(top_srcdir)/remote/messages/auth.pb.cc		\
 	$(top_srcdir)/remote/messages/collection.pb.cc		\
 	$(top_srcdir)/remote/messages/common.pb.cc		\
@@ -21,10 +22,11 @@ remote_SOURCES = \
 	$(top_srcdir)/database/Path.cpp				\
 	$(top_srcdir)/database/Video.cpp
 
-remote_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir) -I$(top_srcdir)/remote -I$(top_srcdir)/boost
+remote_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir) -I$(top_srcdir)/remote -I$(top_srcdir)/boost
 
 database_user_SOURCES = \
 	$(srcdir)/CheckDatabaseUser.cpp		\
+	$(top_srcdir)/logger/Logger.cpp 			\
 	$(top_srcdir)/database/Artist.cpp	\
 	$(top_srcdir)/database/Genre.cpp	\
 	$(top_srcdir)/database/Release.cpp	\
@@ -35,11 +37,12 @@ database_user_SOURCES = \
 	$(top_srcdir)/database/User.cpp			\
 	$(top_srcdir)/database/Video.cpp
 
-database_user_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir)
+database_user_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir)
 
 
 database_integrity_SOURCES = \
 	$(srcdir)/DatabaseIntegrity.cpp		\
+	$(top_srcdir)/logger/Logger.cpp 			\
 	$(top_srcdir)/database/Artist.cpp	\
 	$(top_srcdir)/database/Genre.cpp	\
 	$(top_srcdir)/database/Release.cpp	\
@@ -50,10 +53,11 @@ database_integrity_SOURCES = \
 	$(top_srcdir)/database/User.cpp			\
 	$(top_srcdir)/database/Video.cpp
 
-database_integrity_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir)
+database_integrity_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir)
 
 database_basics_SOURCES = \
 	$(srcdir)/CheckDatabaseBasics.cpp		\
+	$(top_srcdir)/logger/Logger.cpp 			\
 	$(top_srcdir)/database/Artist.cpp	\
 	$(top_srcdir)/database/Genre.cpp	\
 	$(top_srcdir)/database/Release.cpp	\
@@ -65,7 +69,7 @@ database_basics_SOURCES = \
 	$(top_srcdir)/database/User.cpp			\
 	$(top_srcdir)/database/Video.cpp
 
-database_basics_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir)
+database_basics_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir)
 
 
 sql_query_SOURCES = \

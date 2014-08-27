@@ -715,7 +715,7 @@ class TestClient
 int main()
 {
 	try {
-		bool extendedTests = true;
+		bool extendedTests = false;
 		bool writeCovers = false;
 
 		std::cout << "Running test... extendedTests = " << std::boolalpha << extendedTests << std::endl;
@@ -811,16 +811,16 @@ int main()
 		// ****** Transcode test ********
 		{
 			std::vector<unsigned char> data;
-			client.getMediaAudio(1, data);
+			client.getMediaAudio(30000, data);
 
 			std::cout << "Media size = " << data.size() << std::endl;
 		}
-		{
+/*		{
 			std::vector<unsigned char> data;
 			client.getMediaAudio(100, data);
 
 			std::cout << "Media size = " << data.size() << std::endl;
-		}
+		}*/
 
 
 		std::cout << "End of tests!" << std::endl;

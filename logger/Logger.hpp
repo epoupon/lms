@@ -7,25 +7,32 @@
 #include <boost/log/expressions/keyword.hpp>
 
 #include <boost/log/trivial.hpp>
-#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/attributes/named_scope.hpp>
 
 #define LMS_LOG(module, level)	BOOST_LOG_SEV(Logger::instance().get(module), level)
 
 enum Severity
 {
-	SEV_DEBUG	= 7,
-	SEV_INFO	= 6,
-	SEV_NOTICE	= 5,
-	SEV_WARNING	= 4,
-	SEV_ERROR	= 3,
 	SEV_CRIT	= 2,
+	SEV_ERROR	= 3,
+	SEV_WARNING	= 4,
+	SEV_NOTICE	= 5,
+	SEV_INFO	= 6,
+	SEV_DEBUG	= 7,
 };
 
 enum Module
 {
-	MOD_MAIN	= 0,
-	MOD_UI,
+	MOD_AV		= 0,
+	MOD_COVER,
+	MOD_DB,
+	MOD_DBUPDATER,
+	MOD_MAIN,
+	MOD_METADATA,
 	MOD_REMOTE,
+	MOD_SERVICE,
+	MOD_TRANSCODE,
+	MOD_UI,
 };
 
 BOOST_LOG_ATTRIBUTE_KEYWORD(module, "Module", Module)
@@ -47,7 +54,7 @@ class Logger
 		void init(const Config& config);
 
 		boost::log::sources::severity_logger< Severity >&
-			get(Module module) { return _loggers[module]; }
+			get(Module module);
 
 	private:
 
@@ -83,14 +90,24 @@ template< typename CharT, typename TraitsT >
 inline std::basic_ostream< CharT, TraitsT >& operator<< (
     std::basic_ostream< CharT, TraitsT >& strm, Module val)
 {
-	static const char* const str[] =
+	const char* res = NULL;
+
+	switch(val)
 	{
-		"MAIN",
-		"UI",
-		"REMOTE",
-	};
-	if (static_cast< std::size_t >(val) < (sizeof(str) / sizeof(*str)))
-		strm << str[val];
+		case 	MOD_AV: 	res = "AV"; break;
+		case 	MOD_COVER: 	res = "COVER"; break;
+		case 	MOD_DB: 	res = "DB"; break;
+		case 	MOD_DBUPDATER: 	res = "DBUPDATER"; break;
+		case 	MOD_MAIN: 	res = "MAIN"; break;
+		case 	MOD_METADATA: 	res = "METADATA"; break;
+		case 	MOD_REMOTE: 	res = "REMOTE"; break;
+		case 	MOD_SERVICE: 	res = "SERVICE"; break;
+		case 	MOD_TRANSCODE: 	res = "TRANSCODE"; break;
+		case 	MOD_UI:		res = "UI"; break;
+	}
+
+	if (res)
+		strm << res;
 	else
 		strm << static_cast< int >(val);
 	return strm;

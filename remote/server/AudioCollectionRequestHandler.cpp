@@ -4,6 +4,8 @@
 #include <boost/uuid/sha1.hpp>
 #include <boost/foreach.hpp>
 
+#include "logger/Logger.hpp"
+
 #include "AudioCollectionRequestHandler.hpp"
 
 #include "database/AudioTypes.hpp"
@@ -34,7 +36,7 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 					response.set_type(AudioCollectionResponse::TypeRevision);
 			}
 			else
-				std::cerr << "Bad AudioCollectionRequest::TypeGetRevision" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad AudioCollectionRequest::TypeGetRevision";
 			break;
 
 		case AudioCollectionRequest::TypeGetGenreList:
@@ -45,7 +47,7 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 					response.set_type(AudioCollectionResponse::TypeArtistList);
 			}
 			else
-				std::cerr << "Bad AudioCollectionRequest::TypeGetGenreList" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad AudioCollectionRequest::TypeGetGenreList";
 			break;
 
 		case AudioCollectionRequest::TypeGetArtistList:
@@ -57,7 +59,7 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 
 			}
 			else
-				std::cerr << "Bad AudioCollectionRequest::TypeGetArtistList message!" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad AudioCollectionRequest::TypeGetArtistList message!";
 			break;
 
 		case AudioCollectionRequest::TypeGetReleaseList:
@@ -69,7 +71,7 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 
 			}
 			else
-				std::cerr << "Bad AudioCollectionRequest::TypeGetReleaseList message!" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad AudioCollectionRequest::TypeGetReleaseList message!";
 			break;
 
 		case AudioCollectionRequest::TypeGetTrackList:
@@ -81,18 +83,18 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 
 			}
 			else
-				std::cerr << "Bad AudioCollectionRequest::TypeGetTrackList message!" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad AudioCollectionRequest::TypeGetTrackList message!";
 			break;
 
 		case AudioCollectionRequest::TypeGetCoverArt:
 			if (request.has_get_cover_art())
 				res = processGetCoverArt(request.get_cover_art(), response);
 			else
-				std::cerr << "Bad AudioCollectionRequest::TypeGetCoverArt message!" << std::endl;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad AudioCollectionRequest::TypeGetCoverArt message!";
 			break;
 
 		default:
-			std::cerr << "Unhandled AudioCollectionRequest_Type = " << request.type() << std::endl;
+			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Unhandled AudioCollectionRequest_Type = " << request.type();
 
 	}
 
@@ -106,7 +108,7 @@ AudioCollectionRequestHandler::processGetGenres(const AudioCollectionRequest::Ge
 	// sanity checks
 	if (!request.has_batch_parameter())
 	{
-		std::cerr << "No batch parameters found!" << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "No batch parameters found!";
 		return false;
 	}
 
@@ -138,7 +140,7 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 	// sanity checks
 	if (!request.has_batch_parameter())
 	{
-		std::cerr << "No batch parameters found!" << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "No batch parameters found!";
 		return false;
 	}
 
@@ -172,7 +174,7 @@ AudioCollectionRequestHandler::processGetReleases(const AudioCollectionRequest::
 	// sanity checks
 	if (!request.has_batch_parameter())
 	{
-		std::cerr << "No batch parameters found!" << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "No batch parameters found!";
 		return false;
 	}
 
@@ -208,7 +210,7 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 	// sanity checks
 	if (!request.has_batch_parameter())
 	{
-		std::cerr << "No batch parameters found!" << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "No batch parameters found!";
 		return false;
 	}
 

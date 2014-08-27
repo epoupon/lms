@@ -14,6 +14,7 @@
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/support/date_time.hpp>
+#include <boost/log/attributes/named_scope.hpp>
 
 #include <boost/date_time/posix_time/ptime.hpp>
 
@@ -30,20 +31,30 @@ Logger::instance()
 Logger::Logger()
 {
 	// Initialiaz loggers
-	static const struct LoggerDef {
-		Module	module;
-		std::string	name;
-	} loggers[] = {
-		{MOD_MAIN,	"MAIN"},
-		{MOD_UI,	"UI"},
-		{MOD_REMOTE,	"REMOTE"}
+	static const std::vector<Module> modules =
+	{
+		MOD_AV,
+		MOD_COVER,
+		MOD_DB,
+		MOD_DBUPDATER,
+		MOD_MAIN,
+		MOD_METADATA,
+		MOD_REMOTE,
+		MOD_SERVICE,
+		MOD_TRANSCODE,
+		MOD_UI,
 	};
 
-	BOOST_FOREACH(const struct LoggerDef& logger, loggers) {
-		std::cout << "Adding attribute" << std::endl;
-	    _loggers[logger.module].add_attribute("Module", boost::log::attributes::constant< Module >(logger.module));
-	}
+	BOOST_FOREACH(Module module, modules)
+		_loggers[module].add_attribute("Module", boost::log::attributes::constant< Module >(module));
 }
+
+boost::log::sources::severity_logger< Severity >&
+Logger::get(Module module)
+{
+	return _loggers[module];
+}
+
 
 void
 Logger::init(const Config& config)

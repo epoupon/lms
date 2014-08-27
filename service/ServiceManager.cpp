@@ -1,3 +1,4 @@
+#include "logger/Logger.hpp"
 
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
@@ -40,20 +41,20 @@ ServiceManager::run()
 
 	asyncWaitSignals();
 
-	std::cout << "ServiceManager::run Waiting for events..." << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "ServiceManager: waiting for events...";
 	try {
 		// Wait for events
 		_ioService.run();
 	}
 	catch( std::exception& e )
 	{
-		std::cerr << "Caugh exception in service : " << e.what() << std::endl;
+		LMS_LOG(MOD_SERVICE, SEV_ERROR) << "ServiceManager: exception in ioService::run: " << e.what();
 	}
 
 	// Stopping services
 	stopServices();
 
-	std::cout << "ServiceManager::run complete!" << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "ServiceManager: run complete !";
 }
 
 void
@@ -68,10 +69,8 @@ ServiceManager::asyncWaitSignals(void)
 void
 ServiceManager::startService(Service::pointer service)
 {
-	std::cout << "ServiceManager::startService" << std::endl;
 	_services.insert(service);
 	service->start();
-	std::cout << "ServiceManager::startService done" << std::endl;
 }
 
 void
@@ -99,20 +98,20 @@ ServiceManager::restartServices(void)
 void
 ServiceManager::handleSignal(boost::system::error_code /*ec*/, int signo)
 {
-	std::cout << "Received signal " << signo << std::endl;
+	LMS_LOG(MOD_SERVICE, SEV_INFO) << "Received signal " << signo;
 
 	switch (signo)
 	{
 		case SIGINT:
 		case SIGTERM:
 		case SIGQUIT:
-			std::cout << "Stopping services..." << std::endl;
+			LMS_LOG(MOD_SERVICE, SEV_NOTICE) << "Stopping services...";
 			stopServices();
 
 			// Do not listen for signals, this will make the ioservice.run return
 			break;
 		case SIGHUP:
-			std::cout << "Restarting services..." << std::endl;
+			LMS_LOG(MOD_SERVICE, SEV_NOTICE) << "Restarting services...";
 
 			restartServices();
 			asyncWaitSignals();

@@ -5,6 +5,8 @@
 #include <Wt/WComboBox>
 #include <Wt/WPushButton>
 
+#include "logger/Logger.hpp"
+
 #include "common/Validators.hpp"
 
 #include "SettingsAudioFormView.hpp"
@@ -64,7 +66,7 @@ class AudioFormModel : public Wt::WFormModel
 			}
 			catch(Wt::Dbo::Exception& exception)
 			{
-				std::cerr << "Dbo exception: " << exception.what() << std::endl;
+				LMS_LOG(MOD_UI, SEV_ERROR) << "Dbo exception: " << exception.what();
 				return false;
 			}
 

@@ -7,6 +7,7 @@
 #include <Wt/WFormModel>
 #include <Wt/WStringListModel>
 
+#include "logger/Logger.hpp"
 #include "database/MediaDirectory.hpp"
 
 #include "common/DirectoryValidator.hpp"
@@ -88,7 +89,7 @@ class DatabaseFormModel : public Wt::WFormModel
 			}
 			catch(Wt::Dbo::Exception& exception)
 			{
-				std::cerr << "Dbo exception: " << exception.what() << std::endl;
+				LMS_LOG(MOD_UI, SEV_ERROR) << "Dbo exception: " << exception.what();
 				return false;
 			}
 

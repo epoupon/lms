@@ -4,6 +4,8 @@
 #include <Wt/WItemDelegate>
 #include <Wt/WBreak>
 
+#include "logger/Logger.hpp"
+
 #include "TrackWidget.hpp"
 
 namespace UserInterface {
@@ -76,14 +78,14 @@ TrackWidget::refresh(const Constraint& constraint)
 	sqlQuery.from().And( FromClause("artist,release,track,genre,track_genre"));
 	sqlQuery.where().And(constraint.where);
 
-	std::cout << "TRACK REQ = '" << sqlQuery.get() << "'" << std::endl;
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "TRACK REQ = '" << sqlQuery.get() << "'";
 
 	Wt::Dbo::Query<ResultType> query = _db.getSession().query<ResultType>( sqlQuery.get() );
 
 	query.groupBy("track").orderBy("artist.name,track.creation_time,release.name,track.disc_number,track.track_number");
 
 	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs()) {
-		std::cout << "Binding value '" << bindArg << "'" << std::endl;
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "Binding value '" << bindArg << "'";
 		query.bind(bindArg);
 	}
 

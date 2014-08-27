@@ -4,6 +4,8 @@
 #include <boost/thread.hpp>
 #include <boost/asio/placeholders.hpp>
 
+#include "logger/Logger.hpp"
+
 #include "database/MediaDirectory.hpp"
 #include "database/AudioTypes.hpp"
 
@@ -109,7 +111,7 @@ Updater::processNextJob(void)
 	MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(_db.getSession());
 
 	if (settings->getManualScanRequested()) {
-		std::cout << "Manual scan requested!" << std::endl;
+		LMS_LOG(MOD_DBUPDATER, SEV_NOTICE) << "Manual scan requested!";
 		scheduleScan( boost::posix_time::seconds(0) );
 	}
 	else
@@ -152,7 +154,7 @@ Updater::processNextJob(void)
 void
 Updater::scheduleScan( boost::posix_time::time_duration duration)
 {
-	std::cout << "Scheduling next scan in " << duration << std::endl;
+	LMS_LOG(MOD_DBUPDATER, SEV_NOTICE) << "Scheduling next scan in " << duration;
 	_scheduleTimer.expires_from_now(duration);
 	_scheduleTimer.async_wait( boost::bind( &Updater::process, this, boost::asio::placeholders::error) );
 }
@@ -160,7 +162,7 @@ Updater::scheduleScan( boost::posix_time::time_duration duration)
 void
 Updater::scheduleScan( boost::posix_time::ptime time)
 {
-	std::cout << "Scheduling next scan at " << time << std::endl;
+	LMS_LOG(MOD_DBUPDATER, SEV_NOTICE) << "Scheduling next scan at " << time;
 	_scheduleTimer.expires_at(time);
 	_scheduleTimer.async_wait( boost::bind( &Updater::process, this, boost::asio::placeholders::error) );
 }
@@ -188,7 +190,7 @@ Updater::process(boost::system::error_code err)
 		BOOST_FOREACH( RootDirectory rootDirectory, rootDirectories)
 			processDirectory(rootDirectory.first, rootDirectory.first, rootDirectory.second, stats);
 
-		std::cout << "Changes = " << stats.nbChanges() << std::endl;
+		LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Changes = " << stats.nbChanges();
 
 		// Update database stats
 		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
@@ -240,7 +242,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		if (items.find(MetaData::AudioStreams) == items.end()
 		|| boost::any_cast<std::vector<MetaData::AudioStream> >(items[MetaData::AudioStreams]).empty())
 		{
-			std::cerr << "Skipped '" << file << "' (no audio stream found)" << std::endl;
+			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Skipped '" << file << "' (no audio stream found)";
 
 			// If Track exists here, delete it!
 			if (track) {
@@ -252,7 +254,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		if (items.find(MetaData::Duration) == items.end()
 		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Duration]).total_seconds() == 0)
 		{
-			std::cerr << "Skipped '" << file << "' (no duration or duration 0)" << std::endl;
+			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Skipped '" << file << "' (no duration or duration 0)";
 
 			// If Track exists here, delete it!
 			if (track) {
@@ -330,12 +332,12 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		{
 			// Create a new song
 			track = Track::create(_db.getSession(), file, artist, release);
-			std::cout << "Adding '" << file << "'" << std::endl;
+			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Adding '" << file << "'";
 			stats.nbAdded++;
 		}
 		else
 		{
-			std::cout << "Updating '" << file << "'" << std::endl;
+			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Updating '" << file << "'";
 			stats.nbModified++;
 		}
 
@@ -375,7 +377,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 	}
 	catch( std::exception& e ) {
-		std::cerr << "Exception while parsing audio file : '" << file << "': '" << e.what() << "' => skipping!" << std::endl;
+		LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Exception while parsing audio file : '" << file << "': '" << e.what() << "' => skipping!";
 	}
 }
 
@@ -427,7 +429,7 @@ Updater::checkFile(const boost::filesystem::path& p, const std::vector<boost::fi
 	if (!boost::filesystem::exists( p )
 			|| !boost::filesystem::is_regular( p ) )
 	{
-		std::cerr << "Missing file '" << p << "'" << std::endl;
+		LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Missing file '" << p << "'";
 		status = false;
 	}
 	else
@@ -444,7 +446,7 @@ Updater::checkFile(const boost::filesystem::path& p, const std::vector<boost::fi
 
 		if (!foundRoot)
 		{
-			std::cerr << "Out of root file '" << p << "'" << std::endl;
+			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Out of root file '" << p << "'";
 			status = false;
 		}
 	}
@@ -457,12 +459,12 @@ void
 Updater::checkAudioFiles( Stats& stats )
 {
 
-	std::cerr << "Checking audio files..." << std::endl;
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking audio files...";
 	Wt::Dbo::Transaction transaction(_db.getSession());
 
 	std::vector<boost::filesystem::path> rootDirs = getRootDirectoriesByType(_db.getSession(), Database::MediaDirectory::Audio);
 
-	std::cerr << "Checking tracks..." << std::endl;
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking tracks...";
 	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Track> > Tracks;
 	Tracks tracks = Track::getAll(_db.getSession());
 
@@ -477,29 +479,30 @@ Updater::checkAudioFiles( Stats& stats )
 		}
 	}
 
-	std::cerr << "Checking Artists..." << std::endl;
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking Artists...";
 	// Now process orphan Artists (no track)
 	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Artist> > Artists;
 	Artists artists = Artist::getAllOrphans(_db.getSession());
 
 	for (Artists::iterator it = artists.begin(); it != artists.end(); ++it)
 	{
-		std::cout << "Removing orphan artist " << (*it)->getName() << std::endl;
+		LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Removing orphan artist " << (*it)->getName();
 		(*it).remove();
 	}
 
-	std::cerr << "Checking Releases..." << std::endl;
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking Releases...";
 	// Now process orphan Release (no track)
 	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Release> > Releases;
 	Releases releases = Release::getAllOrphans(_db.getSession());
 
 	for (Releases::iterator it = releases.begin(); it != releases.end(); ++it)
 	{
-		std::cout << "Removing orphan release " << (*it)->getName() << std::endl;
+		LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Removing orphan release " << (*it)->getName();
 		(*it).remove();
 	}
 
-	std::cerr << "Checking Genres..." << std::endl;
+	// Now process orphan Genre (no track)
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking Genres...";
 	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Genre> > Genres;
 	Genres genres = Genre::getAll(_db.getSession());
 
@@ -511,9 +514,8 @@ Updater::checkAudioFiles( Stats& stats )
 			genre.remove();
 	}
 
-	// Now process orphan Genre (no track)
 
-	std::cerr << "Check audio files done!" << std::endl;
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Check audio files done!";
 }
 
 Path::pointer
@@ -542,7 +544,7 @@ Updater::getAddPath(const boost::filesystem::path& path)
 /*void
 Updater::refreshVideoDirectory( const boost::filesystem::path& path)
 {
-	std::cout << "Refreshing video directory " << path << std::endl;
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Refreshing video directory " << path;
 	if (boost::filesystem::exists(path) && boost::filesystem::is_directory(path))
 	{
 
@@ -571,11 +573,11 @@ Updater::refreshVideoDirectory( const boost::filesystem::path& path)
 				processVideoFile( pathChild );
 			}
 			else {
-				std::cout << "Skipped '" << pathChild << "' (not regular)" << std::endl;
+				LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Skipped '" << pathChild << "' (not regular)";
 			}
 		}
 	}
-	std::cout << "Refreshing video directory " << path << ": DONE" << std::endl;
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Refreshing video directory " << path << ": DONE";
 }*/
 /*
 void
@@ -592,12 +594,12 @@ Updater::processVideoFile( const boost::filesystem::path& file)
 		Path::pointer dbPath = Path::getByPath(_db.getSession(), file);
 		if (dbPath && dbPath->getLastWriteTime() == lastWriteTime)
 		{
-			std::cerr << "Skipped '" << file << "' (last write time match)" << std::endl;
+			LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Skipped '" << file << "' (last write time match)";
 			return;
 		}
 
 
-		std::cout << "Video, parsing file " << file << std::endl;
+		LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Video, parsing file " << file;
 
 		MetaData::Items items;
 		_metadataParser.parse(file, items);
@@ -608,7 +610,7 @@ Updater::processVideoFile( const boost::filesystem::path& file)
 		if (items.find(MetaData::VideoStreams) == items.end()
 		|| boost::any_cast<std::vector<MetaData::VideoStream> >(items[MetaData::VideoStreams]).empty())
 		{
-			std::cerr << "Skipped '" << file << "' (no video stream found)" << std::endl;
+			LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Skipped '" << file << "' (no video stream found)";
 
 			// If Track exists here, delete it!
 			if (dbPath)
@@ -617,7 +619,7 @@ Updater::processVideoFile( const boost::filesystem::path& file)
 		else if (items.find(MetaData::Duration) == items.end()
 		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Duration]).total_seconds() == 0)
 		{
-			std::cerr << "Skipped '" << file << "' (no duration or duration 0)" << std::endl;
+			LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Skipped '" << file << "' (no duration or duration 0)";
 
 			// If Track exists here, delete it!
 			if (dbPath)
@@ -639,10 +641,10 @@ Updater::processVideoFile( const boost::filesystem::path& file)
 			Video::pointer video = dbPath.modify()->getVideo();
 			if (!video) {
 				video = Video::create(_db.getSession(), dbPath);
-				std::cout << "Adding '" << file << "'" << std::endl;
+				LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Adding '" << file << "'";
 			}
 			else
-				std::cout << "Updating '" << file << "'" << std::endl;
+				LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Updating '" << file << "'";
 
 			assert(video);
 
@@ -653,7 +655,7 @@ Updater::processVideoFile( const boost::filesystem::path& file)
 		transaction.commit();
 	}
 	catch( std::exception& e ) {
-		std::cerr << "Exception while parsing video file : '" << file << "': '" << e.what() << "' => skipping!" << std::endl;
+		LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Exception while parsing video file : '" << file << "': '" << e.what() << "' => skipping!";
 	}
 }
 */

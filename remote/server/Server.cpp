@@ -4,6 +4,8 @@
 #include <boost/asio/placeholders.hpp>
 #include <boost/bind.hpp>
 
+#include "logger/Logger.hpp"
+
 #include "Server.hpp"
 
 namespace Remote {
@@ -56,7 +58,6 @@ Server::asyncAccept()
 void
 Server::handleAccept(std::shared_ptr<Connection> newConnection, boost::system::error_code ec)
 {
-	std::cout << "Server::handleAccept..." << std::endl;
 	// Check whether the server was stopped before this
 	// completion handler had a chance to run.
 	if (!_acceptor.is_open())
@@ -73,7 +74,7 @@ Server::handleAccept(std::shared_ptr<Connection> newConnection, boost::system::e
 		asyncAccept();
 	}
 	else
-		std::cerr << "handleAccept: " << ec.message() << std::endl;
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "handleAccept: " << ec.message();
 }
 
 

@@ -94,8 +94,6 @@ AudioMediaPlayerWidget::handlePlayOffset(int offsetSecs)
 	if (!_currentParameters)
 		return;
 
-	std::cout << "Want to play at offset " << offsetSecs << std::endl;;
-
 	_currentParameters->setOffset( boost::posix_time::seconds(offsetSecs) );
 
 	loadPlayer();
@@ -107,41 +105,37 @@ AudioMediaPlayerWidget::handlePlayOffset(int offsetSecs)
 void
 AudioMediaPlayerWidget::handlePlayNext(void)
 {
-	std::cout << "Want to play next!" << std::endl;
+	// TODO
 }
 
 void
 AudioMediaPlayerWidget::handlePlayPrev(void)
 {
-	std::cout << "Want to play prev!" << std::endl;
+	// TODO
 }
 
 
 void
 AudioMediaPlayerWidget::handleTrackEnded(void)
 {
-	std::cout << "Track playback ended!" << std::endl;
 	_playbackEnded.emit();
 }
 
 void
 AudioMediaPlayerWidget::handleValueChanged(double value)
 {
-	std::cout << "Value changed!" << std::endl;
-
+	// TODO
 }
 
 void
 AudioMediaPlayerWidget::handleSliderMoved(int value)
 {
-	std::cout << "Slider moved to " << value << std::endl;
+	;
 }
 
 void
 AudioMediaPlayerWidget::handleTimeUpdated(void)
 {
-	std::cout << "Time updated to " << _mediaPlayer->currentTime() << std::endl;
-
 	if (!_currentParameters)
 		return;
 

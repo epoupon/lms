@@ -1,6 +1,9 @@
 
 #include <Wt/Http/Request>
 #include <Wt/Http/Response>
+
+#include "logger/Logger.hpp"
+
 #include "AvConvTranscodeStreamResource.hpp"
 
 namespace UserInterface {
@@ -9,12 +12,12 @@ AvConvTranscodeStreamResource::AvConvTranscodeStreamResource(const Transcode::Pa
 : Wt::WResource(parent),
 	_parameters( parameters )
 {
-	std::cout << "CONSTRUCTING RESOURCE" << std::endl;
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "CONSTRUCTING RESOURCE";
 }
 
 AvConvTranscodeStreamResource::~AvConvTranscodeStreamResource()
 {
-	std::cout << "DESTRUCTING RESOURCE" << std::endl;
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "DESTRUCTING RESOURCE";
 	beingDeleted();
 }
 
@@ -31,7 +34,7 @@ AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 
 	if (!transcoder)
 	{
-		std::cout << "Launching transcoder" << std::endl;
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "Launching transcoder";
 		transcoder = std::make_shared<Transcode::AvConvTranscoder>( _parameters);
 
 		response.setMimeType(_parameters.getOutputFormat().getMimeType());
@@ -56,10 +59,10 @@ AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 			copiedSize++;
 	}
 
-	std::cout << "Wrote " << copiedSize << " bytes" << std::endl;
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Wrote " << copiedSize << " bytes";
 
 	if (!copySuccess)
-		std::cerr << "** Write failed!" << std::endl;
+		LMS_LOG(MOD_UI, SEV_ERROR) << "** Write failed!";
 
 	// Consume copied bytes
 	data.erase(data.begin(), data.begin() + copiedSize);
@@ -67,10 +70,10 @@ AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 	if (copySuccess && !transcoder->isComplete()) {
 		continuation = response.createContinuation();
 		continuation->setData(transcoder);
-		std::cout << "Continuation set!" << std::endl;
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "Continuation set!";
 	}
 	else
-		std::cout << "No more data!" << std::endl;
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "No more data!";
 }
 
 } // namespace UserInterface
