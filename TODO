@@ -8,7 +8,7 @@
 
 [Users]
 - Handle login lifetime?
-- Limit multi login from UI and remote interface (limit per interface is OK)
+- Limit multi login from UI and remote interfaces (limit per interface is acceptable)
 
 [Cover]
 - Scaling: find something more "reliable" than GIL and its customs extensions (adobe work, io_new)?
@@ -17,19 +17,20 @@
 - Optim, use SQL query to get genre orphans
 - Use Inotify like system to watch modified/added files?
 - Implement a video database cleanup
-- Group video in "video groups". Each video may has sub groups (current "Path" class)
-	-> Simplify database and remove the Path class
+- Group videos in "video groups". Each video may has sub groups (current "Path" class)
+	-> Simplify the database and remove the Path class
 - Process only files whose extensions are well known in audio/video world (avoid useless parsing/errors)?
+- make a default admin/admin account of the very first connection?
 
 [Metadata]
 
 [Transcode]
-- some zombies seem to be remaining after a week of use
-- some early playback end spotted on flac files (windows chrome only?)
+- some early playback end spotted on flac files or huge audio files (> several hours)
+- limit transcode bitrate to the media bitrate (no need to upscale)
 
 [UI]
 	- handle internationalization
-	- make a wizard on first connection (or make a default admin/admin account of the very first connection)
+	- make a wizard on first connection (or make a default admin/admin account of the very first connection)?
 	[Settings]
 		- increase the menu's width
 		- logout users that are being changed (loss of admin admin rights), or make sure they are still admin when they make changes
@@ -43,6 +44,7 @@
 		- refresh the audio/video view when the database directories have been updated
 
 	[Audio]
+	- Style eveything nicely...
 	- Search patterns in the genre list
 	- ReleaseView/ArtistView/GenreView: <All> -> Track count for this special category. Easier: add a special entry '<All>' that contains everything?
 	- MediaPlayer: move slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478)
@@ -70,6 +72,7 @@
 [Remote API]
 - Implement text search options in the GetXXX messages
 - Implement genre id filters for Artist/Release
+- Rework the media API (use a handle)
 
 [Logs]
 - Use a logging facility
