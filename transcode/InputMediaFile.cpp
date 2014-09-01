@@ -53,6 +53,7 @@ InputMediaFile::InputMediaFile(const boost::filesystem::path& p)
 
 			_streams.push_back( Stream(avStreamId,
 						type,
+						avStream.getCodecContext().getBitRate(),
 						avStream.getMetadata().get("language"),	// TODO define somewhere else?
 						avStream.getCodecContext().getCodecDesc()
 						));
@@ -89,6 +90,19 @@ InputMediaFile::getStreams(Stream::Type type) const
 	}
 	return res;
 }
+
+const Stream&
+InputMediaFile::getStream(Stream::Id index) const
+{
+	BOOST_FOREACH(const Stream& stream, _streams)
+	{
+		if (stream.getId() == index)
+			return stream;
+	}
+	LMS_LOG(MOD_TRANSCODE, SEV_CRIT) << "Cannot find stream index " << index << " in stream map!";
+	throw std::runtime_error("InputMediaFile::getStream, cannot find stream idx");
+}
+
 
 } // namespace Transcode
 

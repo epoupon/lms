@@ -26,7 +26,6 @@
 
 [Transcode]
 - some early playback end spotted on flac files or huge audio files (> several hours)
-- limit transcode bitrate to the media bitrate (no need to upscale)
 
 [UI]
 	- handle internationalization

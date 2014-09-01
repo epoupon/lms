@@ -100,7 +100,8 @@ MediaRequestHandler::processAudioPrepare(const MediaRequest::Prepare::Audio& req
 	try
 	{
 		Transcode::InputMediaFile inputFile(track->getPath());
-		Transcode::Parameters parameters(inputFile, Transcode::Format::get( format ), bitrate);
+		Transcode::Parameters parameters(inputFile, Transcode::Format::get( format ));
+		parameters.setBitrate( Transcode::Stream::Audio, bitrate);
 
 		_transcoder = std::make_shared<Transcode::AvConvTranscoder>( parameters );
 

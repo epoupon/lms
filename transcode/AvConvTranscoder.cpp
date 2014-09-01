@@ -58,9 +58,9 @@ AvConvTranscoder::AvConvTranscoder(const Parameters& parameters)
 	oss << " -i \"" << _parameters.getInputMediaFile().getPath().string() << "\"";
 
 	// Output bitrates
-	oss << " -b:a " << _parameters.getOutputAudioBitrate() ;
+	oss << " -b:a " << _parameters.getOutputBitrate(Stream::Audio) ;
 	if (_parameters.getOutputFormat().getType() == Format::Video)
-		oss << " -b:v " << _parameters.getOutputVideoBitrate();
+		oss << " -b:v " << _parameters.getOutputBitrate(Stream::Video);
 
 	// Stream mapping
 	{

@@ -38,6 +38,7 @@ class InputMediaFile
 		const std::vector< CoverArt::CoverArt >&	getCovers(void) const { return _covers; }
 
 		// Stream handling
+		const Stream&				getStream(Stream::Id id) const;
 		std::vector<Stream>			getStreams(Stream::Type type) const;
 		const std::map<Stream::Type, Stream::Id>& getBestStreams(void) const	{return _bestStreams;}
 

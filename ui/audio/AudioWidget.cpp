@@ -57,7 +57,9 @@ AudioWidget::playTrack(boost::filesystem::path p)
 		Transcode::InputMediaFile inputFile(p);
 
 		// TODO get the input stream bitrate and min the result with the desired bitrate
-		Transcode::Parameters parameters(inputFile, Transcode::Format::get(Transcode::Format::OGA), bitrate);
+		Transcode::Parameters parameters(inputFile, Transcode::Format::get(Transcode::Format::OGA));
+
+		parameters.setBitrate(Transcode::Stream::Audio, bitrate);
 
 		_mediaPlayer->load( parameters );
 

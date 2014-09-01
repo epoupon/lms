@@ -51,7 +51,10 @@ VideoWidget::playVideo(boost::filesystem::path p)
 		else
 			encoding = Transcode::Format::FLV;
 
-		Transcode::Parameters parameters(inputFile, Transcode::Format::get(encoding), 128000, 500000);
+		Transcode::Parameters parameters(inputFile, Transcode::Format::get(encoding));
+
+		parameters.setBitrate(Transcode::Stream::Audio, 128000); // TODO
+		parameters.setBitrate(Transcode::Stream::Video, 500000); // TODO
 
 		_mediaPlayer = new VideoMediaPlayerWidget(parameters, this);
 		_mediaPlayer->close().connect(this, &VideoWidget::backToList);

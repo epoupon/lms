@@ -18,12 +18,12 @@ class Parameters {
 
 	public:
 
-		Parameters(const InputMediaFile& InputFile, const Format& outputFormat, std::size_t audioBitrate);
-		Parameters(const InputMediaFile& InputFile, const Format& outputFormat, std::size_t audioBitrate, std::size_t videoBitrate);
+		Parameters(const InputMediaFile& InputFile, const Format& outputFormat);
 
 		// Modifiers
 		void setOffset(boost::posix_time::time_duration offset)	{ _offset = offset; }	// Set input offset
 		void setOutputFormat(const Format& format)		{ _outputFormat = format; }
+		std::size_t setBitrate(Stream::Type type, std::size_t bitrate);
 
 		// Manually select an input stream to output
 		// There can be only one stream per each type (video, audio, subtitle)
@@ -34,8 +34,7 @@ class Parameters {
 		//Accessors
 		boost::posix_time::time_duration	getOffset(void) const {return _offset;}
 		const Format&				getOutputFormat(void) const { return _outputFormat; }
-		std::size_t				getOutputAudioBitrate(void) const { return _outputAudioBitrate; }
-		std::size_t				getOutputVideoBitrate(void) const { return _outputVideoBitrate; }
+		std::size_t				getOutputBitrate(Stream::Type type) const;
 		const InputMediaFile&			getInputMediaFile(void) const { return _mediaFile;}
 		InputMediaFile&				getInputMediaFile(void) { return _mediaFile;}
 
@@ -47,8 +46,7 @@ class Parameters {
 		boost::posix_time::time_duration	_offset;		// start input offset
 
 		Format					_outputFormat;		// OGA, OGV, etc.
-		std::size_t				_outputAudioBitrate;	// 192000, 128000, etc.
-		std::size_t				_outputVideoBitrate;	// 300000, 700000, etc.
+		std::map<Stream::Type, std::size_t>	_outputBitrate;
 
 		StreamMap				_inputStreams;
 
