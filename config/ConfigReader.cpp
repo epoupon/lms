@@ -1,4 +1,19 @@
+#include <sstream>
+
 #include "ConfigReader.hpp"
+
+namespace {
+
+	void splitStrings(const std::string& source, std::vector<std::string>& res)
+	{
+		std::istringstream oss(source);
+
+		std::string str;
+		while(oss >> str)
+			res.push_back(str);
+	}
+
+}
 
 ConfigReader::ConfigReader(boost::filesystem::path p)
 {
@@ -29,7 +44,7 @@ ConfigReader::getUserInterfaceConfig(Service::UserInterfaceService::Config& conf
 	config.sslPrivateKeyPath = _config.lookup("ui.ssl-crypto.key");
 	config.sslTempDhPath = _config.lookup("ui.ssl-crypto.dh");
 
-	config.dbPath = _config.lookup("main.db");
+	config.dbPath = _config.lookup("main.database.path");
 }
 
 void
@@ -45,7 +60,7 @@ ConfigReader::getRemoteServerConfig(Service::RemoteServerService::Config& config
 	config.sslPrivateKeyPath = _config.lookup("remote.ssl-crypto.key");
 	config.sslTempDhPath = _config.lookup("remote.ssl-crypto.dh");
 
-	config.dbPath = _config.lookup("main.db");
+	config.dbPath = _config.lookup("main.database.path");
 }
 
 void
@@ -53,6 +68,12 @@ ConfigReader::getDatabaseUpdateConfig(Service::DatabaseUpdateService::Config& co
 {
 	config.enable = true;
 
-	config.dbPath = _config.lookup("main.db");
+	config.dbPath = _config.lookup("main.database.path");
+
+	std::string audioExtensions = _config.lookup("main.database.audio_extensions");
+	std::string videoExtensions = _config.lookup("main.database.audio_extensions");
+
+	splitStrings(audioExtensions, config.audioExtensions);
+	splitStrings(videoExtensions, config.videoExtensions);
 }
 

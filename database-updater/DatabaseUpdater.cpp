@@ -48,28 +48,39 @@ getNextFirstOfMonth(const boost::gregorian::date& current)
 }
 
 
+bool
+isFileSupported(const boost::filesystem::path& file, const std::vector<boost::filesystem::path> extensions)
+{
+
+	boost::filesystem::path fileExtension = file.extension();
+
+	BOOST_FOREACH(const boost::filesystem::path extension, extensions)
+	{
+		if (extension == fileExtension)
+			return true;
+	}
+
+	return false;
 }
+
+std::vector<boost::filesystem::path>
+getRootDirectoriesByType(Wt::Dbo::Session& session, Database::MediaDirectory::Type type)
+{
+	std::vector<boost::filesystem::path> res;
+	std::vector<Database::MediaDirectory::pointer> rootDirs = Database::MediaDirectory::getByType(session, type);
+
+	BOOST_FOREACH(Database::MediaDirectory::pointer rootDir, rootDirs)
+		res.push_back(rootDir->getPath());
+
+	return res;
+}
+
+} // namespace
 
 
 namespace DatabaseUpdater {
 
 using namespace Database;
-
-namespace {
-
-	std::vector<boost::filesystem::path>
-	getRootDirectoriesByType(Wt::Dbo::Session& session, Database::MediaDirectory::Type type)
-	{
-		std::vector<boost::filesystem::path> res;
-		std::vector<Database::MediaDirectory::pointer> rootDirs = Database::MediaDirectory::getByType(session, type);
-
-		BOOST_FOREACH(Database::MediaDirectory::pointer rootDir, rootDirs)
-			res.push_back(rootDir->getPath());
-
-		return res;
-	}
-
-}
 
 
 Updater::Updater(boost::filesystem::path dbPath, MetaData::Parser& parser)
@@ -79,6 +90,20 @@ _db(dbPath),
 _metadataParser(parser)
 {
 	_ioService.setThreadCount(1);
+}
+
+void
+Updater::setAudioExtensions(const std::vector<std::string>& extensions)
+{
+	BOOST_FOREACH(const std::string& extension, extensions)
+		_audioExtensions.push_back("." + extension);
+}
+
+void
+Updater::setVideoExtensions(const std::vector<std::string>& extensions)
+{
+	BOOST_FOREACH(const std::string& extension, extensions)
+		_videoExtensions.push_back("." + extension);
 }
 
 void
@@ -405,7 +430,8 @@ Updater::processDirectory(const boost::filesystem::path& rootDirectory,
 			switch( type )
 			{
 				case Database::MediaDirectory::Audio:
-					processAudioFile( *itPath, stats );
+					if (isFileSupported(*itPath, _audioExtensions))
+						processAudioFile( *itPath, stats );
 
 					break;
 
@@ -420,7 +446,7 @@ Updater::processDirectory(const boost::filesystem::path& rootDirectory,
 }
 
 bool
-Updater::checkFile(const boost::filesystem::path& p, const std::vector<boost::filesystem::path>& rootDirs)
+Updater::checkFile(const boost::filesystem::path& p, const std::vector<boost::filesystem::path>& rootDirs, const std::vector<boost::filesystem::path>& extensions)
 {
 	bool status = true;
 
@@ -449,6 +475,11 @@ Updater::checkFile(const boost::filesystem::path& p, const std::vector<boost::fi
 			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Out of root file '" << p << "'";
 			status = false;
 		}
+		else if (!isFileSupported(p, extensions))
+		{
+			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "File format no longer supported for '" << p << "'";
+			status = false;
+		}
 	}
 
 	return status;
@@ -472,7 +503,7 @@ Updater::checkAudioFiles( Stats& stats )
 	{
 		Track::pointer track = (*it);
 
-		if (!checkFile(track->getPath(), rootDirs))
+		if (!checkFile(track->getPath(), rootDirs, _audioExtensions))
 		{
 			track.remove();
 			stats.nbRemoved++;

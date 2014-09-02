@@ -20,6 +20,8 @@ class DatabaseUpdateService : public Service
 		struct Config {
 			bool enable;
 			boost::filesystem::path dbPath;
+			std::vector<std::string>	audioExtensions;
+			std::vector<std::string>	videoExtensions;
 		};
 
 		DatabaseUpdateService(const Config& config);

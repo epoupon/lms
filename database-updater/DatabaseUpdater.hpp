@@ -1,5 +1,5 @@
-#ifndef DB_UPDATER_UPDATER_HPP
-#define DB_UPDATER_UPDATER_HPP
+#ifndef DB_UPDATER_HPP
+#define DB_UPDATER_HPP
 
 #include <boost/asio/deadline_timer.hpp>
 #include <Wt/WIOService>
@@ -18,9 +18,11 @@ class Updater
 	public:
 		Updater(boost::filesystem::path db, MetaData::Parser& parser);
 
+		void setAudioExtensions(const std::vector<std::string>&	extensions);
+		void setVideoExtensions(const std::vector<std::string>&	extensions);
+
 		void start();
 		void stop();
-
 
 	private:
 
@@ -44,7 +46,10 @@ class Updater
 		void process(boost::system::error_code ec);
 
 		// Check if a file exists and is still in a root directory
-		static bool checkFile(const boost::filesystem::path& p, const std::vector<boost::filesystem::path>& rootDirectories);
+		static bool checkFile(const boost::filesystem::path& p,
+				const std::vector<boost::filesystem::path>& rootDirectories,
+				const std::vector<boost::filesystem::path>& extensions);
+
 
 		// Video
 
@@ -68,7 +73,11 @@ class Updater
 
 		Database::Handler	_db;
 
+		std::vector<boost::filesystem::path>	_audioExtensions;
+		std::vector<boost::filesystem::path>	_videoExtensions;
+
 		MetaData::Parser&	_metadataParser;
+
 
 }; // class Updater
 

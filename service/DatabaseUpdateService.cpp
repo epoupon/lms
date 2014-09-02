@@ -10,6 +10,8 @@ DatabaseUpdateService::DatabaseUpdateService(const Config& config)
 : _metadataParser(),
  _databaseUpdater( config.dbPath, _metadataParser)
 {
+	_databaseUpdater.setAudioExtensions(config.audioExtensions);
+	_databaseUpdater.setVideoExtensions(config.videoExtensions);
 }
 
 void

@@ -7,8 +7,14 @@ main = {
 		level = 7;
 	}
 
-	db = "/var/lms/lms.db";
+	database = {
+		path = "/var/lms/lms.db";
+
+		audio_extensions = "mp3 ogg oga aac m4a flac wav wma aif aiff ape mpc shn";
+		video_extensions = "flv avi mpg mpeg mp4 m4v mkv mov wmv ogv divx m2ts"
+	}
 }
+
 
 ui = {
 	enable = true;
