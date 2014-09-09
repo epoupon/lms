@@ -19,8 +19,8 @@
 - Implement a video database cleanup
 - Group videos in "video groups". Each video may has sub groups (current "Path" class)
 	-> Simplify the database and remove the Path class
-- Process only files whose extensions are well known in audio/video world (avoid useless parsing/errors)?
 - make a default admin/admin account of the very first connection?
+- count scan import errors
 
 [Metadata]
 

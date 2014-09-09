@@ -5,9 +5,10 @@
 
 #include <Wt/WMediaPlayer>
 #include <Wt/WFileResource>
-#include "transcode/Parameters.hpp"
 
-#include "resource/AvConvTranscodeStreamResource.hpp"
+#include "transcode/Parameters.hpp"
+#include "database/VideoTypes.hpp"
+#include "database/MediaDirectory.hpp"
 
 #include "VideoDatabaseWidget.hpp"
 
@@ -20,15 +21,12 @@ VideoDatabaseWidget::VideoDatabaseWidget(Database::Handler& db,  Wt::WContainerW
 	_table = new Wt::WTable( this );
 	_table->setHeaderCount(1);
 
-	Wt::Dbo::Transaction transaction ( _db.getSession() );
-
-	updateView( Database::Path::pointer() );
-
 	_table->addStyleClass("table form-inline");
 
 	_table->toggleStyleClass("table-hover", true);
 	_table->toggleStyleClass("table-striped", true);
 
+	updateView( boost::filesystem::path(), 0);
 }
 
 void
@@ -40,18 +38,20 @@ VideoDatabaseWidget::addHeader(void)
 }
 
 void
-VideoDatabaseWidget::addDirectory(const std::string& name, const boost::filesystem::path& path)
+VideoDatabaseWidget::addDirectory(const std::string& name, boost::filesystem::path path, size_t depth)
 {
 
 	int row = _table->rowCount();
-
-	std::cout << "Adding DIR at row " << row << ", path = '" << path << "'" << std::endl;
 
 	new Wt::WText(Wt::WString::fromUTF8( name ), _table->elementAt(row, 0));
 	new Wt::WText(Wt::WString::fromUTF8( " " ), _table->elementAt(row, 1));
 
 	Wt::WPushButton* btn = new Wt::WPushButton(Wt::WString::fromUTF8( "Open"), _table->elementAt(row, 2));
-	btn->clicked().connect( boost::bind(&VideoDatabaseWidget::handleOpenDirectory, this, path) );
+
+	btn->clicked().connect(std::bind([=] () {
+		updateView(path, depth);
+	}));
+
 }
 
 
@@ -61,82 +61,67 @@ VideoDatabaseWidget::addVideo(const std::string& name, const boost::posix_time::
 
 	int row = _table->rowCount();
 
-	std::cout << "Adding VIDEO at row " << row << ", path = '" << path << "'" << std::endl;
-
 	new Wt::WText(Wt::WString::fromUTF8( name ), _table->elementAt(row, 0));
 	new Wt::WText(Wt::WString::fromUTF8( boost::posix_time::to_simple_string( duration )), _table->elementAt(row, 1));
 
 	Wt::WPushButton* btn = new Wt::WPushButton(Wt::WString::fromUTF8( "Play"), _table->elementAt(row, 2));
-	btn->clicked().connect( boost::bind(&VideoDatabaseWidget::handlePlayVideo, this, path) );
+
+	btn->clicked().connect(std::bind([=] () {
+		playVideo().emit(path);
+	}));
 }
 
 
 void
-VideoDatabaseWidget::updateView(Database::Path::pointer directory)
+VideoDatabaseWidget::updateView(boost::filesystem::path directory, size_t depth)
 {
-	// Clear table from row 1 to end
-//	while(_table->rowCount() > 2)
-//		_table->deleteRow( _table->rowCount() - 1);
-
 	_table->clear();
-
 	addHeader();
 
-	std::vector< Database::Path::pointer > pathes;
-	if(directory)
+	// If directory is not valid, add the root Media Directories
+	if (depth == 0)
 	{
-		pathes = directory->getChilds();
-		// Add parent directory
-		addDirectory("<Parent>", directory->getParent() ? directory->getParent() ->getPath() : boost::filesystem::path());
+		Wt::Dbo::Transaction transaction ( _db.getSession() );
+
+		std::vector<Database::MediaDirectory::pointer> dirs
+			= Database::MediaDirectory::getByType(_db.getSession(), Database::MediaDirectory::Video);
+
+		BOOST_FOREACH(Database::MediaDirectory::pointer dir, dirs)
+		{
+			addDirectory( dir->getPath().filename().string(),
+					dir->getPath(),
+					depth + 1);
+		}
 	}
 	else
-		pathes = Database::Path::getRoots(_db.getSession() );
-
-	// Add childs
-	BOOST_FOREACH(Database::Path::pointer path, pathes)
 	{
-		std::cout << "Adding path " << path->getPath() << std::endl;
-		if (path->isDirectory())
-			addDirectory( path->getFileName(), path->getPath());
-		else if (path->getVideo())
-			addVideo( path->getFileName(), path->getVideo()->getDuration(), path->getPath());
-		else
-			std::cerr << "Bad type??" << std::endl;
+		addDirectory( "..", directory.parent_path(), depth - 1);
+
+		// Iterators over files in the directory
+		// If directory, add a directory entry
+		// If video, add a video entry
+		std::vector<boost::filesystem::path> paths;
+		std::copy(boost::filesystem::directory_iterator(directory), boost::filesystem::directory_iterator(), std::back_inserter(paths));
+
+		std::sort(paths.begin(), paths.end());
+
+		BOOST_FOREACH(const boost::filesystem::path& path, paths)
+		{
+			if (boost::filesystem::is_directory(path))
+				addDirectory( path.filename().string(), path, depth + 1);
+			else if (boost::filesystem::is_regular(path) )
+			{
+				Wt::Dbo::Transaction transaction ( _db.getSession() );
+
+				Database::Video::pointer video = Database::Video::getByPath( _db.getSession(), path);
+				if (video)
+					addVideo( video->getName(), video->getDuration(), path);
+			}
+		}
 	}
 
 }
 
-void
-VideoDatabaseWidget::handleOpenDirectory(boost::filesystem::path path)
-{
-	Wt::Dbo::Transaction transaction ( _db.getSession() );
-
-	Database::Path::pointer directory = Database::Path::getByPath(_db.getSession(), path);
-	updateView(directory);
-}
-
-void
-VideoDatabaseWidget::handlePlayVideo(const boost::filesystem::path& videoFilePath)
-{
-	std::cout << "Wants to play video " << videoFilePath << std::endl;
-
-	Wt::Dbo::Transaction transaction ( _db.getSession() );
-
-	Database::Path::pointer path = Database::Path::getByPath(_db.getSession(), videoFilePath);
-	Database::Video::pointer video;
-	if (path)
-		video = path->getVideo();
-
-	if (!video)
-	{
-		std::cerr << "Cannot find video for this path '" << videoFilePath << "'" << std::endl;
-		return;
-	}
-
-	// Emit signal
-	playVideo().emit(videoFilePath);
-
-}
 
 } // namespace UserInterface
 

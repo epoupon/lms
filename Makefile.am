@@ -23,7 +23,6 @@ lms_SOURCES = \
 	$(top_srcdir)/database/Track.cpp		\
 	$(top_srcdir)/database/DatabaseHandler.cpp	\
 	$(top_srcdir)/database/SqlQuery.cpp		\
-	$(top_srcdir)/database/Path.cpp			\
 	$(top_srcdir)/database/Video.cpp		\
 	$(top_srcdir)/database/User.cpp			\
 	$(top_srcdir)/database-updater/DatabaseUpdater.cpp	\

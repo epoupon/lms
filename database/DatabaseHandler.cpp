@@ -10,7 +10,7 @@
 
 // Db types
 #include "AudioTypes.hpp"
-#include "FileTypes.hpp"
+#include "VideoTypes.hpp"
 #include "MediaDirectory.hpp"
 #include "User.hpp"
 
@@ -67,7 +67,6 @@ _dbBackend( db.string() )
 	_session.mapClass<Database::Artist>("artist");
 	_session.mapClass<Database::Release>("release");
 	_session.mapClass<Database::Release>("release");
-	_session.mapClass<Database::Path>("path");
 	_session.mapClass<Database::Video>("video");
 	_session.mapClass<Database::MediaDirectory>("media_directory");
 	_session.mapClass<Database::MediaDirectorySettings>("media_directory_settings");

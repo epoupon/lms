@@ -8,6 +8,7 @@
 
 #include "database/MediaDirectory.hpp"
 #include "database/AudioTypes.hpp"
+#include "database/VideoTypes.hpp"
 
 #include "Checksum.hpp"
 #include "DatabaseUpdater.hpp"
@@ -200,8 +201,7 @@ Updater::process(boost::system::error_code err)
 		Stats stats;
 
 		checkAudioFiles(stats);
-		// TODO video files
-
+		checkVideoFiles(stats);
 
 		typedef std::pair<boost::filesystem::path, Database::MediaDirectory::Type> RootDirectory;
 		std::vector<RootDirectory> rootDirectories;
@@ -289,6 +289,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 			return;
 		}
 
+		// ***** Title
 		std::string title;
 		if (items.find(MetaData::Title) != items.end()) {
 			title = boost::any_cast<std::string>(items[MetaData::Title]);
@@ -436,7 +437,8 @@ Updater::processDirectory(const boost::filesystem::path& rootDirectory,
 					break;
 
 				case Database::MediaDirectory::Video:
-//					processVideoFile( rootDirectory, *itPath, stats);
+					if (isFileSupported(*itPath, _videoExtensions))
+						processVideoFile( *itPath, stats);
 					break;
 			}
 		}
@@ -549,70 +551,33 @@ Updater::checkAudioFiles( Stats& stats )
 	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Check audio files done!";
 }
 
-Path::pointer
-Updater::getAddPath(const boost::filesystem::path& path)
-{
-	Path::pointer res;
-	Path::pointer parentDirectory;
-
-	if (path.has_parent_path())
-		parentDirectory = Path::getByPath(_db.getSession(), path.parent_path());
-
-	res = Path::getByPath(_db.getSession(), path);
-	if (!res)
-		res = Path::create(_db.getSession(), path, parentDirectory);
-	else
-	{
-		// Make sure the parent directory owns the child
-		if (parentDirectory && !res->getParent())
-			parentDirectory.modify()->addChild( res );
-	}
-
-	return res;
-}
-
-
-/*void
-Updater::refreshVideoDirectory( const boost::filesystem::path& path)
-{
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Refreshing video directory " << path;
-	if (boost::filesystem::exists(path) && boost::filesystem::is_directory(path))
-	{
-
-		// Add this directory in the database
-		{
-			Wt::Dbo::Transaction transaction(_db.getSession());
-
-			Path::pointer pathDirectory = getAddPath(path);
-			assert( pathDirectory->isDirectory() );
-
-			transaction.commit();
-		}
-
-		// Now process all files/dirs in directory
-		typedef std::vector<boost::filesystem::path> Paths;             // store paths,
-
-		Paths pathChildren;
-		std::copy(boost::filesystem::directory_iterator(path), boost::filesystem::directory_iterator(), std::back_inserter(pathChildren));
-
-		BOOST_FOREACH(const boost::filesystem::path& pathChild, pathChildren) {
-
-			if (boost::filesystem::is_directory(pathChild)) {
-				refreshVideoDirectory( pathChild );
-			}
-			else if (boost::filesystem::is_regular(pathChild)) {
-				processVideoFile( pathChild );
-			}
-			else {
-				LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Skipped '" << pathChild << "' (not regular)";
-			}
-		}
-	}
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Refreshing video directory " << path << ": DONE";
-}*/
-/*
 void
-Updater::processVideoFile( const boost::filesystem::path& file)
+Updater::checkVideoFiles( Stats& stats )
+{
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking video files...";
+	Wt::Dbo::Transaction transaction(_db.getSession());
+
+	std::vector<boost::filesystem::path> rootDirs = getRootDirectoriesByType(_db.getSession(), Database::MediaDirectory::Video);
+
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking videos...";
+	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Video> > Videos;
+	Videos videos = Video::getAll(_db.getSession());
+
+	for (Videos::iterator it = videos.begin(); it != videos.end(); ++it)
+	{
+		Video::pointer video = (*it);
+
+		if (!checkFile(video->getPath(), rootDirs, _videoExtensions))
+		{
+			video.remove();
+			stats.nbRemoved++;
+		}
+	}
+
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Check video files done!";
+}
+void
+Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 {
 	try {
 
@@ -622,15 +587,9 @@ Updater::processVideoFile( const boost::filesystem::path& file)
 		Wt::Dbo::Transaction transaction(_db.getSession());
 
 		// Skip file if last write is the same
-		Path::pointer dbPath = Path::getByPath(_db.getSession(), file);
-		if (dbPath && dbPath->getLastWriteTime() == lastWriteTime)
-		{
-			LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Skipped '" << file << "' (last write time match)";
+		Wt::Dbo::ptr<Video> video = Video::getByPath(_db.getSession(), file);
+		if (video && video->getLastWriteTime() == lastWriteTime)
 			return;
-		}
-
-
-		LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Video, parsing file " << file;
 
 		MetaData::Items items;
 		_metadataParser.parse(file, items);
@@ -643,45 +602,46 @@ Updater::processVideoFile( const boost::filesystem::path& file)
 		{
 			LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Skipped '" << file << "' (no video stream found)";
 
-			// If Track exists here, delete it!
-			if (dbPath)
-				dbPath.remove();
+			// If the video exists here, delete it!
+			if (video) {
+				video.remove();
+				stats.nbRemoved++;
+			}
+			return;
 		}
-		else if (items.find(MetaData::Duration) == items.end()
+		if (items.find(MetaData::Duration) == items.end()
 		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Duration]).total_seconds() == 0)
 		{
 			LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Skipped '" << file << "' (no duration or duration 0)";
 
 			// If Track exists here, delete it!
-			if (dbPath)
-				dbPath.remove();
+			if (video) {
+				video.remove();
+				stats.nbRemoved++;
+			}
+			return;
+		}
+
+		// If video already exist, update data
+		// Otherwise, create it
+		// Today we are very aggressive, but we could also guess names from path, etc.
+		if (!video)
+		{
+			video = Video::create(_db.getSession(), file);
+			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Adding '" << file << "'";
+			stats.nbAdded++;
 		}
 		else
 		{
-			// add Path if needed
-			if (!dbPath)
-				dbPath = getAddPath( file );
-
-			dbPath.modify()->setLastWriteTime( lastWriteTime );
-
-			assert(dbPath);
-
-			// Valid video here
-			// Today we are very aggressive, but we could also guess names from path, etc.
-
-			Video::pointer video = dbPath.modify()->getVideo();
-			if (!video) {
-				video = Video::create(_db.getSession(), dbPath);
-				LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Adding '" << file << "'";
-			}
-			else
-				LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Updating '" << file << "'";
-
-			assert(video);
-
-			video.modify()->setName( file.filename().string() );
-			video.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Duration]) );
+			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Updating '" << file << "'";
+			stats.nbModified++;
 		}
+
+		assert(video);
+
+		video.modify()->setName( file.filename().string() );
+		video.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Duration]) );
+		video.modify()->setLastWriteTime(lastWriteTime);
 
 		transaction.commit();
 	}
@@ -689,5 +649,5 @@ Updater::processVideoFile( const boost::filesystem::path& file)
 		LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Exception while parsing video file : '" << file << "': '" << e.what() << "' => skipping!";
 	}
 }
-*/
+
 } // namespace DatabaseUpdater

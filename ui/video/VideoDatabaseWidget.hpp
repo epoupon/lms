@@ -5,7 +5,6 @@
 #include <Wt/WContainerWidget>
 
 #include "common/SessionData.hpp"
-#include "database/FileTypes.hpp"
 
 namespace UserInterface {
 
@@ -19,14 +18,11 @@ class VideoDatabaseWidget : public Wt::WContainerWidget
 
 	private:
 
-
-		void updateView(Database::Path::pointer directory);
-		void handleOpenDirectory(boost::filesystem::path directory);
-		void handlePlayVideo(const boost::filesystem::path& path);
-
 		void addHeader(void);
-		void addDirectory(const std::string& name, const boost::filesystem::path& path);
+		void addDirectory(const std::string& name, boost::filesystem::path path, size_t depth);
 		void addVideo(const std::string& name, const boost::posix_time::time_duration& duration, const boost::filesystem::path& path);
+
+		void updateView(boost::filesystem::path directory, size_t depth);
 
 		Database::Handler&	_db;
 

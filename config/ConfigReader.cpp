@@ -71,7 +71,7 @@ ConfigReader::getDatabaseUpdateConfig(Service::DatabaseUpdateService::Config& co
 	config.dbPath = _config.lookup("main.database.path");
 
 	std::string audioExtensions = _config.lookup("main.database.audio_extensions");
-	std::string videoExtensions = _config.lookup("main.database.audio_extensions");
+	std::string videoExtensions = _config.lookup("main.database.video_extensions");
 
 	splitStrings(audioExtensions, config.audioExtensions);
 	splitStrings(videoExtensions, config.videoExtensions);
