@@ -24,7 +24,6 @@ class AvConvTranscodeStreamResource : public Wt::WResource
 		Transcode::Parameters		_parameters;
 		std::shared_ptr<Transcode::AvConvTranscoder> 	_transcoder;
 
-		std::streamsize			_beyondLastByte;
 		static const std::size_t	_bufferSize = 8192*16;
 };
 
