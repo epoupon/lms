@@ -4,6 +4,12 @@
 
 namespace Database {
 
+MediaDirectorySettings::MediaDirectorySettings()
+: _manualScanRequested(false),
+_updatePeriod(Never)
+{
+}
+
 MediaDirectory::MediaDirectory(boost::filesystem::path p, Type type)
 : _type(type),
  _path(p.string())

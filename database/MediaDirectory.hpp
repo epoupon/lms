@@ -25,7 +25,7 @@ class MediaDirectorySettings
 
 		typedef Wt::Dbo::ptr<MediaDirectorySettings> pointer;
 
-		MediaDirectorySettings() {}
+		MediaDirectorySettings(); 
 
 		// accessors
 		static pointer get(Wt::Dbo::Session& session);
