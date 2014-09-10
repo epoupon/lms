@@ -1,8 +1,6 @@
 #ifndef METADATA_AVFORMAT_HPP
 #define METADATA_AVFORMAT_HPP
 
-#include <extractor.h>
-
 #include "MetaData.hpp"
 
 namespace MetaData
