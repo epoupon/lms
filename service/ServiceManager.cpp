@@ -33,6 +33,7 @@ ServiceManager::ServiceManager()
 
 ServiceManager::~ServiceManager()
 {
+	stopServices();
 }
 
 void
