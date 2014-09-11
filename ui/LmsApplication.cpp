@@ -1,8 +1,15 @@
 #include <Wt/WBootstrapTheme>
 #include "auth/LmsAuth.hpp"
+
 #include "LmsHome.hpp"
+#include "settings/SettingsFirstConnectionFormView.hpp"
 
 #include "LmsApplication.hpp"
+
+namespace skeletons {
+	  extern const char *AuthStrings_xml1;
+}
+
 
 namespace UserInterface {
 
@@ -38,17 +45,34 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::p
 
 	setTitle("LMS");                               // application title
 
-	_sessionData.getDatabaseHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
+	bool firstConnection;
+	{
+		Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
 
-	LmsAuth *authWidget = new LmsAuth(_sessionData.getDatabaseHandler());
+		firstConnection = (Database::User::getAll(_sessionData.getDatabaseHandler().getSession()).size() == 0);
+	}
 
-	authWidget->model()->addPasswordAuth(&Database::Handler::getPasswordService());
-	authWidget->setRegistrationEnabled(false);
+	// If here is no account in the database, launch the first connection wizard
+	if (firstConnection)
+	{
+		// Hack, use the auth widget builtin strings
+		builtinLocalizedStrings().useBuiltin(skeletons::AuthStrings_xml1);
 
-	authWidget->processEnvironment();
+		root()->addWidget( new Settings::FirstConnectionFormView(_sessionData));
+	}
+	else
+	{
+		_sessionData.getDatabaseHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
 
-	root()->addWidget(authWidget);
+		LmsAuth *authWidget = new LmsAuth(_sessionData.getDatabaseHandler());
 
+		authWidget->model()->addPasswordAuth(&Database::Handler::getPasswordService());
+		authWidget->setRegistrationEnabled(false);
+
+		authWidget->processEnvironment();
+
+		root()->addWidget(authWidget);
+	}
 }
 
 

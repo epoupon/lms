@@ -1,3 +1,5 @@
+#ifndef LMS_APPLICATION_HPP
+#define LMS_APPLICATION_HPP
 
 #include <Wt/WApplication>
 
@@ -28,3 +30,6 @@ class LmsApplication : public Wt::WApplication
 
 
 } // namespace UserInterface
+
+#endif
+
