@@ -51,12 +51,14 @@ AudioWidget::playTrack(boost::filesystem::path p)
 			if (user)
 				bitrate = user->getAudioBitrate();
 			else
+			{
+				LMS_LOG(MOD_UI, SEV_ERROR) << "Can't play video: user does not exists!";
 				return; // TODO logout?
+			}
 		}
 
 		Transcode::InputMediaFile inputFile(p);
 
-		// TODO get the input stream bitrate and min the result with the desired bitrate
 		Transcode::Parameters parameters(inputFile, Transcode::Format::get(Transcode::Format::OGA));
 
 		parameters.setBitrate(Transcode::Stream::Audio, bitrate);
@@ -70,7 +72,7 @@ AudioWidget::playTrack(boost::filesystem::path p)
 			if (!covers.empty())
 			{
 				LMS_LOG(MOD_UI, SEV_DEBUG) << "Cover found!";
-				if (!covers.front().scale(256))
+				if (!covers.front().scale(256)) // TODO
 					LMS_LOG(MOD_UI, SEV_ERROR) << "Cannot resize!";
 
 				//_imgResource->setMimeType(covers.front().getMimeType());

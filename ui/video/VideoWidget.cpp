@@ -1,6 +1,8 @@
 #include <Wt/WApplication>
 #include <Wt/WEnvironment>
 
+#include "logger/Logger.hpp"
+
 #include "VideoWidget.hpp"
 
 namespace UserInterface {
@@ -38,10 +40,30 @@ VideoWidget::backToList(void)
 void
 VideoWidget::playVideo(boost::filesystem::path p)
 {
-	std::cout << "Want to play video " << p << "'" << std::endl;
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Want to play video " << p << "'" << std::endl;
 	try {
 
-		// TODO get user's encoding preference
+		std::size_t audioBitrate = 0;
+		std::size_t videoBitrate = 0;
+
+		// Get user preferences
+		{
+			Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
+			Database::User::pointer user = _sessionData.getDatabaseHandler().getCurrentUser();
+			if (user)
+			{
+				audioBitrate = user->getMaxAudioBitrate();
+				videoBitrate = user->getMaxVideoBitrate();
+			}
+			else
+			{
+				LMS_LOG(MOD_UI, SEV_ERROR) << "Can't play video: user does not exists!";
+				return; // TODO logout?
+			}
+		}
+
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "Max bitrate set to " << videoBitrate << "/" << audioBitrate;
+
 		Transcode::InputMediaFile inputFile(p);
 
 		Transcode::Format::Encoding encoding;
@@ -53,8 +75,10 @@ VideoWidget::playVideo(boost::filesystem::path p)
 
 		Transcode::Parameters parameters(inputFile, Transcode::Format::get(encoding));
 
-		parameters.setBitrate(Transcode::Stream::Audio, 128000); // TODO
-		parameters.setBitrate(Transcode::Stream::Video, 500000); // TODO
+		// TODO, make a quality button in order to choose...
+
+		parameters.setBitrate(Transcode::Stream::Audio, 0/*audioBitrate*/);
+		parameters.setBitrate(Transcode::Stream::Video, 0/*videoBitrate*/);
 
 		_mediaPlayer = new VideoMediaPlayerWidget(parameters, this);
 		_mediaPlayer->close().connect(this, &VideoWidget::backToList);
@@ -62,7 +86,7 @@ VideoWidget::playVideo(boost::filesystem::path p)
 		_videoDbWidget->setHidden(true);
 	}
 	catch( std::exception& e) {
-		std::cerr <<"Caught exception while loading '" << p << "': " << e.what() << std::endl;
+		LMS_LOG(MOD_UI, SEV_ERROR) << "Caught exception while loading '" << p << "': " << e.what() << std::endl;
 	}
 }
 
