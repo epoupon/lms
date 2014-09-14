@@ -24,8 +24,6 @@ _outputFormat(outputFormat)
 	// By default, select the best stream indexes
 	_inputStreams = _mediaFile.getBestStreams();
 
-//	setBitrate(Stream::Audio, 0);
-//	setBitrate(Stream::Video, 0);
 }
 
 std::size_t
@@ -38,7 +36,7 @@ Parameters::setBitrate(Stream::Type type, std::size_t bitrate)
 
 		LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Stream bitrate = " << stream.getBitrate();
 
-		if (!bitrate || bitrate > stream.getBitrate())
+		if (bitrate > stream.getBitrate())
 		{
 			LMS_LOG(MOD_TRANSCODE, SEV_INFO) << "Setting bitrate for stream idx " << _inputStreams[type] << " to input bitrate (" << stream.getBitrate() << ")";
 			_outputBitrate[type] = stream.getBitrate();
