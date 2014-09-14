@@ -11,15 +11,35 @@
 namespace Transcode
 {
 
+// TODO, parametrize?
+const std::vector<std::string> execNames =
+{
+	"avconv",
+	"ffmpeg",
+};
+
+
 boost::mutex	AvConvTranscoder::_mutex;
 
-boost::filesystem::path	AvConvTranscoder::_avConvPath = "";
+boost::filesystem::path	AvConvTranscoder::_avConvPath = boost::filesystem::path();
 
 void
 AvConvTranscoder::init()
 {
-	_avConvPath = boost::process::search_path("avconv");
-	LMS_LOG(MOD_TRANSCODE, SEV_INFO) << "Using execPath " << _avConvPath;
+	BOOST_FOREACH(std::string execName, execNames)
+	{
+		const boost::filesystem::path p = boost::process::search_path(execName);
+		if (!p.empty())
+		{
+			_avConvPath = p;
+			break;
+		}
+	}
+
+	if (!_avConvPath.empty())
+		LMS_LOG(MOD_TRANSCODE, SEV_INFO) << "Using transcoder " << _avConvPath;
+	else
+		LMS_LOG(MOD_TRANSCODE, SEV_ERROR) << "Cannot find any transcoder binary!";
 }
 
 
@@ -48,7 +68,7 @@ AvConvTranscoder::AvConvTranscoder(const Parameters& parameters)
 
 	std::ostringstream oss;
 
-	oss << "avconv";
+	oss << _avConvPath;
 
 	// input Offset
 	if (_parameters.getOffset().total_seconds() > 0)
