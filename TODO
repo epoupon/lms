@@ -26,6 +26,7 @@
 
 [Transcode]
 - some early playback end spotted on flac files or huge audio files (> several hours)
+- do not use a queue to output data, but just fill produced bytes into a buffer and let the transcode user decide what to do with it
 
 [UI]
 	- handle internationalization

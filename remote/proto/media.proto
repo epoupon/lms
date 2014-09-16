@@ -2,15 +2,6 @@ import "common.proto";
 
 package Remote;
 
-enum AudioCodecType
-{
-	CodecTypeOGA	= 1;
-}
-
-enum VideoCodecType
-{
-	CodecTypeOGV	= 1;
-}
 
 
 message MediaRequest
@@ -19,11 +10,32 @@ message MediaRequest
 	message Prepare
 	{
 
+		enum AudioCodecType
+		{
+			AudioCodecTypeOGA	= 1;
+		}
+		enum AudioBitrate {
+			AudioBitrate_32_kbps	= 1;
+			AudioBitrate_64_kbps	= 2;
+			AudioBitrate_96_kbps	= 3;
+			AudioBitrate_128_kbps	= 4;
+			AudioBitrate_192_kbps	= 5;
+			AudioBitrate_256_kbps	= 6;
+		}
+
+		enum VideoCodecType
+		{
+			VideoCodecTypeOGV	= 1;
+		}
+		enum VideoBitrate {
+			VideoBitrate_512_kbps	= 1;
+		}
+
 		message Audio
 		{
 			required int64		track_id		= 1;	// Id if the media
-			optional AudioCodecType	codec_type              = 2;
-			optional uint32		bitrate			= 3;
+			required AudioCodecType	codec_type              = 2;
+			required AudioBitrate	bitrate			= 3;
 			optional uint32		stream_idx		= 4;
 			optional uint32		offset_secs		= 5;
 		}
@@ -31,12 +43,13 @@ message MediaRequest
 		message Video
 		{
 			required int64		video_id		= 1;	// Id if the media
-			optional VideoCodecType	codec_type              = 2;
-			optional uint32		bitrate			= 3;
-			optional uint32		offset_secs		= 4;
-			optional uint32		audio_stream_idx	= 5;
-			optional uint32		video_stream_idx	= 6;
-			optional uint32		subtitle_stream_idx	= 7;
+			required VideoCodecType	codec_type              = 2;
+			required AudioBitrate	audio_bitrate		= 3;
+			required VideoBitrate	video_bitrate		= 4;
+			optional uint32		offset_secs		= 5;
+			optional uint32		audio_stream_idx	= 6;
+			optional uint32		video_stream_idx	= 7;
+			optional uint32		subtitle_stream_idx	= 8;
 		}
 
 		enum Type {
@@ -52,12 +65,13 @@ message MediaRequest
 
 	message GetPart
 	{
-		required uint32		requested_data_size	= 1;	// Amount of data requested. May receive more or less. May receive 0 byte if complete
+		required uint32		handle			= 1;	// handle that uniquely identify the media. Get using the Prepare request
+		required uint32		requested_data_size	= 2;	// Amount of data requested. May receive more or less. May receive 0 byte if complete
 	}
 
 	message Terminate
 	{
-
+		required uint32         handle                  = 1;
 	}
 
 	enum Type
@@ -77,20 +91,32 @@ message MediaRequest
 
 message MediaResponse
 {
-	message Part
+
+	message PrepareResult
 	{
-		required bytes	data		= 1;
+		optional uint32	handle		= 1;	// handle iif prepare request was ok
+	}
+
+	message PartResult
+	{
+		optional bytes	data		= 2;	// 0 bytes when the media is over, nothing when the request is ill formed
+	}
+
+	message TerminateResult
+	{
 	}
 
 	enum Type
 	{
-		TypeError			= 1;
-		TypePart			= 2;
+		TypePrepareResult		= 1;
+		TypePartResult			= 2;
+		TypeTerminateResult		= 3;
 	}
 
 	required Type		type		= 1;
 
-	optional Error		error		= 2;
-	optional Part		part		= 3;
+	optional PrepareResult		prepare_result		= 2;
+	optional PartResult		part_result		= 3;
+	optional TerminateResult	terminate_result	= 4;
 }
 

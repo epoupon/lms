@@ -23,12 +23,14 @@ MediaRequestHandler::process(const MediaRequest& request, MediaResponse& respons
 			if (request.has_prepare())
 			{
 				if (request.prepare().has_audio())
-					res = processAudioPrepare(request.prepare().audio(), response);
+					res = processAudioPrepare(request.prepare().audio(), *response.mutable_prepare_result());
 				else if (request.prepare().has_video())
 					LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Video prepare not supported!";
 				else
 					LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad MediaRequest::TypeMediaPrepare!";
 
+				if (res)
+					response.set_type(MediaResponse::TypePrepareResult);
 			}
 			else
 				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad MediaRequest::TypeMediaPrepare!";
@@ -36,16 +38,26 @@ MediaRequestHandler::process(const MediaRequest& request, MediaResponse& respons
 
 		case MediaRequest::TypeMediaGetPart:
 			if (request.has_get_part())
-				res = processGetPart(request.get_part(), response);
+			{
+				res = processGetPart(request.get_part(), *response.mutable_part_result());
+				if (res)
+					response.set_type(MediaResponse::TypePartResult);
+			}
 			else
 				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad MediaRequest::TypeMediaGet!";
+
 			break;
 
 		case MediaRequest::TypeMediaTerminate:
 			if (request.has_terminate())
-				res = processTerminate(request.terminate(), response);
+			{
+				res = processTerminate(request.terminate(), *response.mutable_terminate_result());
+				if (res)
+					response.set_type(MediaResponse::TypePartResult);
+			}
 			else
 				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad MediaRequest::TypeMediaTerminate!";
+
 			break;
 
 		default:
@@ -56,117 +68,128 @@ MediaRequestHandler::process(const MediaRequest& request, MediaResponse& respons
 }
 
 bool
-MediaRequestHandler::processAudioPrepare(const MediaRequest::Prepare::Audio& request, MediaResponse& response)
+MediaRequestHandler::processAudioPrepare(const MediaRequest::Prepare::Audio& request, MediaResponse::PrepareResult& response)
 {
-	// TODO, get user default values
-	Transcode::Format::Encoding	format	= Transcode::Format::OGA;
-	std::size_t			bitrate	= 128000;
+	std::size_t			bitrate;
+	Transcode::Format::Encoding	format;
 
-	if (request.has_codec_type())
+	switch( request.codec_type())
 	{
-		switch( request.codec_type())
-		{
-			case AudioCodecType::CodecTypeOGA:
-				format = Transcode::Format::OGA;
-				break;
-			default:
-				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Unhandled codec type = " << request.codec_type();
-				return false;
-		}
-	}
-	if (request.has_bitrate())
-		bitrate = request.bitrate();
-
-	if (_transcoder)
-	{
-		response.mutable_error()->set_error(true);
-		response.mutable_error()->set_message("Transcode already in progress");
-		response.set_type(MediaResponse::TypeError);
-		return true;
+		case MediaRequest::Prepare::AudioCodecTypeOGA:	format = Transcode::Format::OGA; break;
+		default:
+			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Unhandled codec type = " << request.codec_type();
+			return false;
 	}
 
-	Wt::Dbo::Transaction transaction( _db.getSession());
-
-	Database::Track::pointer track = Database::Track::getById( _db.getSession(), request.track_id() );
-
-	if (!track)
+	switch( request.bitrate() )
 	{
-		response.mutable_error()->set_error(true);
-		response.mutable_error()->set_message("Cannot find requested track!");
-		response.set_type(MediaResponse::TypeError);
+		case MediaRequest::Prepare::AudioBitrate_32_kbps: bitrate = 32000; break;
+		case MediaRequest::Prepare::AudioBitrate_64_kbps: bitrate = 64000; break;
+		case MediaRequest::Prepare::AudioBitrate_96_kbps: bitrate = 96000; break;
+		case MediaRequest::Prepare::AudioBitrate_128_kbps: bitrate = 128000; break;
+		case MediaRequest::Prepare::AudioBitrate_192_kbps: bitrate = 192000; break;
+		case MediaRequest::Prepare::AudioBitrate_256_kbps: bitrate = 256000; break;
+		default:
+			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Unhandled bitrate type = " << request.bitrate();
+			return false;
+	}
+
+	// TODO use user's bitrate limits!
+	// TODO limit transcoder number by user?
+
+	if (_transcoders.size() + 1 > _maxTranscoders)
+	{
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Transcoder limit reached!" << std::endl;
+		// Just answer an empty response, dont delete existing trasncode jobs
 		return true;
 	}
 
 	try
 	{
+		Wt::Dbo::Transaction transaction( _db.getSession());
+
+		Database::Track::pointer track = Database::Track::getById( _db.getSession(), request.track_id() );
+		if (!track)
+		{
+			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Requested track does not exist" << std::endl;
+			// Track does no longer exist, just answer an empty response
+			return true;
+		}
+
 		Transcode::InputMediaFile inputFile(track->getPath());
 		Transcode::Parameters parameters(inputFile, Transcode::Format::get( format ));
 		parameters.setBitrate( Transcode::Stream::Audio, bitrate);
 
-		_transcoder = std::make_shared<Transcode::AvConvTranscoder>( parameters );
+		std::shared_ptr<Transcode::AvConvTranscoder> transcoder = std::make_shared<Transcode::AvConvTranscoder>( parameters );
 
-		response.mutable_error()->set_error(false);
-		response.mutable_error()->set_message("");
-		response.set_type(MediaResponse::TypeError);
+		// now get a unique id (relative to this connection!)
+		uint32_t handle = _curHandle++;
+		assert(_transcoders.find(handle) == _transcoders.end());
+
+		_transcoders[handle] = transcoder;
+
+		response.set_handle(handle);
+
+		LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "Set up new transcode, handle = " << handle;
 	}
 	catch(std::exception& e)
 	{
 		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Caught exception: " << e.what();
-		response.mutable_error()->set_error(true);
-		response.mutable_error()->set_message("exception: " + std::string(e.what()));
-		response.set_type(MediaResponse::TypeError);
+		return false;
 	}
 
 	return true;
 }
 
 bool
-MediaRequestHandler::processGetPart(const MediaRequest::GetPart& request, MediaResponse& response)
+MediaRequestHandler::processGetPart(const MediaRequest::GetPart& request, MediaResponse::PartResult& response)
 {
-	std::size_t dataSize = request.requested_data_size();
+	std::size_t	dataSize = request.requested_data_size();
 	if (dataSize > _maxPartSize)
 		dataSize = _maxPartSize;
 
-	if (!_transcoder)
+	if (_transcoders.find(request.handle()) == _transcoders.end())
 	{
-		response.mutable_error()->set_error(true);
-		response.mutable_error()->set_message("No transcoder set!");
-		response.set_type(MediaResponse::TypeError);
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "No transcoder found for handle " << request.handle();
 		return true;
 	}
 
-	while (!_transcoder->isComplete() && _transcoder->getOutputData().size() < dataSize)
-		_transcoder->process();
+	std::shared_ptr<Transcode::AvConvTranscoder> transcoder = _transcoders[request.handle()];
 
-	LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "MediaRequestHandler::processGetPart, isComplete = " << std::boolalpha << _transcoder->isComplete() << ", size = " << _transcoder->getOutputData().size();
+	while (!transcoder->isComplete() && transcoder->getOutputData().size() < dataSize)
+		transcoder->process();
+
+	LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "MediaRequestHandler::processGetPart, handle = " << request.handle() << ", isComplete = " << std::boolalpha << transcoder->isComplete() << ", size = " << transcoder->getOutputData().size();
 
 	Transcode::AvConvTranscoder::data_type::iterator itEnd;
-	if (_transcoder->getOutputData().size() > dataSize)
-		itEnd = _transcoder->getOutputData().begin() + dataSize;
+	if (transcoder->getOutputData().size() > dataSize)
+		itEnd = transcoder->getOutputData().begin() + dataSize;
 	else
-		itEnd = _transcoder->getOutputData().end();
+		itEnd = transcoder->getOutputData().end();
 
-	response.set_type(MediaResponse::TypePart);
-	std::copy(_transcoder->getOutputData().begin(), itEnd, std::back_inserter(*response.mutable_part()->mutable_data()));
+	std::copy(transcoder->getOutputData().begin(), itEnd, std::back_inserter(*response.mutable_data()));
 
 	// Consume sent bytes
-	_transcoder->getOutputData().erase(_transcoder->getOutputData().begin(), itEnd);
+	transcoder->getOutputData().erase(transcoder->getOutputData().begin(), itEnd);
 
 	return true;
 }
 
 
 bool
-MediaRequestHandler::processTerminate(const MediaRequest::Terminate& /*request*/, MediaResponse& response)
+MediaRequestHandler::processTerminate(const MediaRequest::Terminate& request, MediaResponse::TerminateResult& response)
 {
-	LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "MediaRequestHandler: resetting transcoder";
-	_transcoder.reset();
+	LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "MediaRequestHandler: resetting transcoder for handle " << request.handle();
 
-	assert(!_transcoder);
-
-	response.mutable_error()->set_error(false);
-	response.mutable_error()->set_message("");
-	response.set_type(MediaResponse::TypeError);
+	if (_transcoders.find(request.handle()) == _transcoders.end())
+	{
+		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "No transcoder found for handle " << request.handle();
+		return true;
+	}
+	else
+	{
+		_transcoders.erase(request.handle());
+	}
 
 	return true;
 }

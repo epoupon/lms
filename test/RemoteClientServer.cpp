@@ -63,6 +63,8 @@ struct TrackInfo
 	std::string	name;
 
 	boost::posix_time::time_duration duration;
+
+	TrackInfo(): id(0), release_id(0), artist_id(0), disc_number(0), track_number(0) {}
 };
 
 std::ostream& operator<<(std::ostream& os, const TrackInfo& info)
@@ -320,6 +322,12 @@ class TestClient
 				track.id = response.audio_collection_response().track_list().tracks(i).id();
 				track.name = response.audio_collection_response().track_list().tracks(i).name();
 				track.duration = boost::posix_time::seconds(response.audio_collection_response().track_list().tracks(i).duration_secs());
+				if (response.audio_collection_response().track_list().tracks(i).has_track_number())
+					track.track_number = response.audio_collection_response().track_list().tracks(i).track_number();
+
+				if (response.audio_collection_response().track_list().tracks(i).has_disc_number())
+					track.disc_number = response.audio_collection_response().track_list().tracks(i).disc_number();
+
 
 				tracks.push_back( track );
 				nbAdded++;
@@ -333,13 +341,13 @@ class TestClient
 		{
 
 			// Prepare
-			mediaAudioPrepare( audioId );
+			uint32_t handle = mediaAudioPrepare( audioId );
 
 			// Get while available
-			mediaGet( data );
+			mediaGet( handle, data );
 
 			// Terminate
-			mediaTerminate();
+			mediaTerminate( handle );
 		}
 
 		void getCoverTrack(std::vector<Cover>& coverArt, uint64_t trackId)
@@ -487,7 +495,7 @@ class TestClient
 			return true; // preverified;
 		}
 
-		void mediaAudioPrepare(uint64_t audioId)
+		uint32_t mediaAudioPrepare(uint64_t audioId)
 		{
 
 			// Send request
@@ -500,6 +508,8 @@ class TestClient
 
 			// Set fields
 			request.mutable_media_request()->mutable_prepare()->mutable_audio()->set_track_id( audioId );
+			request.mutable_media_request()->mutable_prepare()->mutable_audio()->set_codec_type( Remote::MediaRequest::Prepare::AudioCodecTypeOGA );
+			request.mutable_media_request()->mutable_prepare()->mutable_audio()->set_bitrate( Remote::MediaRequest::Prepare::AudioBitrate_64_kbps );
 
 			std::cout << "Sending prepare request" << std::endl;
 			sendMsg(request);
@@ -515,22 +525,23 @@ class TestClient
 			if (!response.has_media_response())
 				throw std::runtime_error("Preapre: not an media reponse!");
 
-			if (!response.media_response().has_error())
-				throw std::runtime_error("Prepare: not an error msg!");
+			if (!response.media_response().has_prepare_result())
+				throw std::runtime_error("Prepare: not an prepare result msg!");
 
-			if (response.media_response().error().error())
-				throw std::runtime_error("Prepare failed: '" + response.media_response().error().message() + "'");
+			if (!response.media_response().prepare_result().has_handle())
+				throw std::runtime_error("Prepare: cannot get handle");
 
+			return response.media_response().prepare_result().handle();
 		}
 
-		void mediaGet(std::vector<unsigned char>& data)
+		void mediaGet(uint32_t handle, std::vector<unsigned char>& data)
 		{
-			while (mediaGetPart(data) > 0)
+			while (mediaGetPart(handle, data) > 0)
 				;
 		}
 
 
-		std::size_t mediaGetPart(std::vector<unsigned char>& data)
+		std::size_t mediaGetPart(uint32_t handle, std::vector<unsigned char>& data)
 		{
 			// Send request
 			Remote::ClientMessage request;
@@ -538,6 +549,7 @@ class TestClient
 			request.set_type( Remote::ClientMessage::MediaRequest);
 
 			request.mutable_media_request()->set_type( Remote::MediaRequest::TypeMediaGetPart);
+			request.mutable_media_request()->mutable_get_part()->set_handle(handle);
 			request.mutable_media_request()->mutable_get_part()->set_requested_data_size(65536);
 
 			std::cout << "Sending GetPart request" << std::endl;
@@ -554,40 +566,18 @@ class TestClient
 				throw std::runtime_error("not an media response");
 
 			// Process message
-			switch( response.media_response().type())
-			{
-				case Remote::MediaResponse::TypeError:
-					{
-						std::string msg;
-						if (response.media_response().has_error())
-						{
-							if (response.media_response().error().has_message())
-								throw std::runtime_error("Error spotted: '" + response.media_response().error().message()+ "'");
-							else
-								throw std::runtime_error("Error spotted, no msg");
-						}
-						else
-							throw std::runtime_error("Error spotted but no error message");
-					}
-					break;
+			if (response.media_response().type() != Remote::MediaResponse::TypePartResult)
+				throw std::runtime_error("GetPart: not a Part response!");
 
-				case Remote::MediaResponse::TypePart:
-					if (!response.media_response().has_part())
-						throw std::runtime_error("not an media part");
+			if (!response.media_response().has_part_result())
+				throw std::runtime_error("GetPart: does not have a Part result!");
 
-					std::copy(response.media_response().part().data().begin(), response.media_response().part().data().end(), std::back_inserter(data));
+			std::copy(response.media_response().part_result().data().begin(), response.media_response().part_result().data().end(), std::back_inserter(data));
 
-					return response.media_response().part().data().size();
-					break;
-
-				default:
-					throw std::runtime_error("Unhandled response.media_response().type()!");
-			}
-
-			return 0;
+			return response.media_response().part_result().data().size();
 		}
 
-		void mediaTerminate(void)
+		void mediaTerminate( uint32_t handle )
 		{
 			// Send request
 			Remote::ClientMessage request;
@@ -595,8 +585,7 @@ class TestClient
 			request.set_type( Remote::ClientMessage::MediaRequest);
 
 			request.mutable_media_request()->set_type( Remote::MediaRequest::TypeMediaTerminate);
-			request.mutable_media_request()->mutable_terminate();
-
+			request.mutable_media_request()->mutable_terminate()->set_handle(handle);
 
 			sendMsg(request);
 
@@ -609,11 +598,8 @@ class TestClient
 			if (!response.has_media_response())
 				throw std::runtime_error("Terminate: not an media response");
 
-			if (!response.media_response().has_error())
-				throw std::runtime_error("Terminate: not an error msg!");
-
-			if (response.media_response().error().error())
-				throw std::runtime_error("Terminate failed: '" + response.media_response().error().message() + "'");
+			if (!response.media_response().has_terminate_result())
+				throw std::runtime_error("Terminate: not an terminate msg!");
 
 		}
 
@@ -725,7 +711,7 @@ int main()
 		TestClient	client( boost::asio::ip::tcp::endpoint( boost::asio::ip::address_v4::loopback(), 5080));
 
 		// Use a dumb account in order to test the login
-		if (!client.login("toto", "Tot&3131"))
+		if (!client.login("admin", "admin"))
 			throw std::runtime_error("login failed!");
 
 		// **** REVISION ***
@@ -809,19 +795,13 @@ int main()
 		}
 
 		// ****** Transcode test ********
+		const std::vector<uint64_t> mediaIds = {14000, 14001};
+		BOOST_FOREACH(uint64_t mediaId, mediaIds)
 		{
 			std::vector<unsigned char> data;
-			client.getMediaAudio(30000, data);
-
+			client.getMediaAudio(mediaId, data);
 			std::cout << "Media size = " << data.size() << std::endl;
 		}
-/*		{
-			std::vector<unsigned char> data;
-			client.getMediaAudio(100, data);
-
-			std::cout << "Media size = " << data.size() << std::endl;
-		}*/
-
 
 		std::cout << "End of tests!" << std::endl;
 	}

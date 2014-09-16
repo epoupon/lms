@@ -1,7 +1,7 @@
 
-TESTS = database-integrity sql-query database-basics database-user remote
+TESTS = database-integrity sql-query database-user remote
 
-check_PROGRAMS = database-integrity sql-query database-basics database-user remote
+check_PROGRAMS = database-integrity sql-query database-user remote
 
 remote_SOURCES = \
 	$(srcdir)/RemoteClientServer.cpp			\
@@ -17,9 +17,9 @@ remote_SOURCES = \
 	$(top_srcdir)/database/Release.cpp			\
 	$(top_srcdir)/database/Track.cpp			\
 	$(top_srcdir)/database/DatabaseHandler.cpp		\
+	$(top_srcdir)/database/MediaDirectory.cpp		\
 	$(top_srcdir)/database/SqlQuery.cpp		\
 	$(top_srcdir)/database/User.cpp			\
-	$(top_srcdir)/database/Path.cpp				\
 	$(top_srcdir)/database/Video.cpp
 
 remote_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir) -I$(top_srcdir)/remote -I$(top_srcdir)/boost
@@ -32,8 +32,8 @@ database_user_SOURCES = \
 	$(top_srcdir)/database/Release.cpp	\
 	$(top_srcdir)/database/Track.cpp	\
 	$(top_srcdir)/database/DatabaseHandler.cpp	\
+	$(top_srcdir)/database/MediaDirectory.cpp		\
 	$(top_srcdir)/database/SqlQuery.cpp		\
-	$(top_srcdir)/database/Path.cpp			\
 	$(top_srcdir)/database/User.cpp			\
 	$(top_srcdir)/database/Video.cpp
 
@@ -48,29 +48,12 @@ database_integrity_SOURCES = \
 	$(top_srcdir)/database/Release.cpp	\
 	$(top_srcdir)/database/Track.cpp	\
 	$(top_srcdir)/database/DatabaseHandler.cpp	\
+	$(top_srcdir)/database/MediaDirectory.cpp		\
 	$(top_srcdir)/database/SqlQuery.cpp		\
-	$(top_srcdir)/database/Path.cpp			\
 	$(top_srcdir)/database/User.cpp			\
 	$(top_srcdir)/database/Video.cpp
 
 database_integrity_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir)
-
-database_basics_SOURCES = \
-	$(srcdir)/CheckDatabaseBasics.cpp		\
-	$(top_srcdir)/logger/Logger.cpp 			\
-	$(top_srcdir)/database/Artist.cpp	\
-	$(top_srcdir)/database/Genre.cpp	\
-	$(top_srcdir)/database/Release.cpp	\
-	$(top_srcdir)/database/Track.cpp	\
-	$(top_srcdir)/database/DatabaseHandler.cpp	\
-	$(top_srcdir)/database/MediaDirectory.cpp	\
-	$(top_srcdir)/database/SqlQuery.cpp		\
-	$(top_srcdir)/database/Path.cpp			\
-	$(top_srcdir)/database/User.cpp			\
-	$(top_srcdir)/database/Video.cpp
-
-database_basics_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir)
-
 
 sql_query_SOURCES = \
 	$(srcdir)/CheckSqlQuery.cpp         \

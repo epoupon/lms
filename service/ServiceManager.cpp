@@ -33,6 +33,7 @@ ServiceManager::ServiceManager()
 
 ServiceManager::~ServiceManager()
 {
+	LMS_LOG(MOD_SERVICE, SEV_NOTICE) << "Stopping services...";
 	stopServices();
 }
 
@@ -92,6 +93,7 @@ ServiceManager::stopServices(void)
 void
 ServiceManager::restartServices(void)
 {
+	LMS_LOG(MOD_SERVICE, SEV_NOTICE) << "Restarting services...";
 	BOOST_FOREACH(Service::pointer service, _services)
 		service->restart();
 }
@@ -106,19 +108,17 @@ ServiceManager::handleSignal(boost::system::error_code /*ec*/, int signo)
 		case SIGINT:
 		case SIGTERM:
 		case SIGQUIT:
-			LMS_LOG(MOD_SERVICE, SEV_NOTICE) << "Stopping services...";
 			stopServices();
 
 			// Do not listen for signals, this will make the ioservice.run return
 			break;
 		case SIGHUP:
-			LMS_LOG(MOD_SERVICE, SEV_NOTICE) << "Restarting services...";
-
 			restartServices();
+
 			asyncWaitSignals();
 			break;
 		default:
-			assert(0);
+			LMS_LOG(MOD_SERVICE, SEV_NOTICE) << "Unhandled signal " << signo;
 	}
 }
 
