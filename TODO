@@ -72,7 +72,7 @@
 [Remote API]
 - Implement text search options in the GetXXX messages
 - Implement genre id filters for Artist/Release
-- Rework the media API (use a handle)
+- Make protoc generate the proto files and remove them from the vcs.
 
 [Logs]
 - Use a logging facility
