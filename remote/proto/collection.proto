@@ -24,8 +24,8 @@ message AudioCollectionRequest
 	message GetArtistList
 	{
 		required BatchParameter batch_parameter = 1;
-
-//		repeated uint64	genre_id		= 2;	// Artist that has at least a track of the genre
+		// Search filters
+		repeated uint64	genre_id		= 2;	// Artist that has at least a track of the genre
 	}
 
 	message GetReleaseList
@@ -33,7 +33,7 @@ message AudioCollectionRequest
 		required BatchParameter batch_parameter = 1;
 		// Search filters
 		repeated uint64	artist_id		= 2;	// Release that contains at least a track of one of these artists
-//		repeated uint64	genre_id		= 3;	// Release that has at least a track of the genre
+		repeated uint64	genre_id		= 3;	// Release that has at least a track of the genre
 	}
 
 	message GetTrackList
