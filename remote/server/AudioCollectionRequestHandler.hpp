@@ -20,9 +20,9 @@
 #ifndef REMOTE_AUDIO_COLLECTION_REQUEST_HANDLER
 #define REMOTE_AUDIO_COLLECTION_REQUEST_HANDLER
 
-#include "messages/messages.pb.h"
-
 #include "database/DatabaseHandler.hpp"
+
+#include "messages.pb.h"
 
 namespace Remote {
 namespace Server {

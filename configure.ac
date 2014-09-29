@@ -8,6 +8,23 @@ AC_LANG_CPLUSPLUS
 # Checks for programs
 AC_PROG_CXX
 
+# ProtoBuf compiler.
+# First, specify with --with-protoc=/path/of/protoc.
+# Or, specify with env variable PROTOC.
+# If neither of the above, find it in the path.
+#AC_MSG_CHECKING([for ProtoBuf compiler protoc])
+AC_ARG_WITH([protoc],
+	    [AS_HELP_STRING([--with-protoc=/path/of/protoc],
+			    [Location of the protocol buffers compiler protoc. Defaults to looking on path.])],
+	    [PROTOC="$withval"],
+	    [ AS_IF([test "x${PROTOC}" == "x"],
+		    [AC_PATH_PROG([PROTOC], [protoc], [no])])]
+	  )
+
+#AC_MSG_RESULT([${PROTOC}])
+AS_IF([test "${PROTOC}" == "no"], [AC_MSG_ERROR([ProtoBuf compiler "protoc" not found.])])
+
+
 AC_CHECK_HEADERS([Wt/WApplication jpeglib.h],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])

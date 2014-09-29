@@ -30,11 +30,6 @@ lms_SOURCES = \
 	$(top_srcdir)/logger/Logger.cpp			\
 	$(top_srcdir)/metadata/AvFormat.cpp		\
 	$(top_srcdir)/metadata/Utils.cpp		\
-	$(top_srcdir)/remote/messages/auth.pb.cc		\
-	$(top_srcdir)/remote/messages/collection.pb.cc		\
-	$(top_srcdir)/remote/messages/common.pb.cc		\
-	$(top_srcdir)/remote/messages/media.pb.cc		\
-	$(top_srcdir)/remote/messages/messages.pb.cc		\
 	$(top_srcdir)/remote/server/Connection.cpp		\
 	$(top_srcdir)/remote/server/ConnectionManager.cpp	\
 	$(top_srcdir)/remote/server/AudioCollectionRequestHandler.cpp		\
@@ -76,6 +71,45 @@ lms_SOURCES = \
 	$(top_srcdir)/ui/settings/SettingsUserFormView.cpp	\
 	$(top_srcdir)/ui/settings/SettingsUsers.cpp
 
+nodist_lms_SOURCES = \
+	$(builddir)/auth.pb.cc			\
+	$(builddir)/auth.pb.h			\
+	$(builddir)/collection.pb.cc		\
+	$(builddir)/collection.pb.h		\
+	$(builddir)/common.pb.cc		\
+	$(builddir)/common.pb.h			\
+	$(builddir)/media.pb.cc			\
+	$(builddir)/media.pb.h			\
+	$(builddir)/messages.pb.cc		\
+	$(builddir)/messages.pb.h
+
+BUILT_SOURCES = \
+	$(builddir)/auth.pb.cc			\
+	$(builddir)/auth.pb.h			\
+	$(builddir)/collection.pb.cc		\
+	$(builddir)/collection.pb.h		\
+	$(builddir)/common.pb.cc		\
+	$(builddir)/common.pb.h			\
+	$(builddir)/media.pb.cc			\
+	$(builddir)/media.pb.h			\
+	$(builddir)/messages.pb.cc		\
+	$(builddir)/messages.pb.h
+
+MOSTLYCLEANFILES = \
+	$(builddir)/auth.pb.cc			\
+	$(builddir)/auth.pb.h			\
+	$(builddir)/collection.pb.cc		\
+	$(builddir)/collection.pb.h		\
+	$(builddir)/common.pb.cc		\
+	$(builddir)/common.pb.h			\
+	$(builddir)/media.pb.cc			\
+	$(builddir)/media.pb.h			\
+	$(builddir)/messages.pb.cc		\
+	$(builddir)/messages.pb.h
+
+
+%.pb.cc %.pb.h: $(top_srcdir)/remote/proto/%.proto
+	$(PROTOC) --proto_path=$(srcdir)/remote/proto/ --cpp_out=$(builddir)/ $^
 
 lms_CXXFLAGS=-DBOOST_LOG_DYN_LINK -std=c++11 -Wall -I$(top_srcdir)/boost/ -I$(top_srcdir)/ui -I$(top_srcdir)/remote
 

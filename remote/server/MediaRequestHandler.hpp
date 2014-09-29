@@ -23,10 +23,10 @@
 #include <map>
 #include <memory>
 
-#include "messages/media.pb.h"
-
 #include "database/DatabaseHandler.hpp"
 #include "transcode/AvConvTranscoder.hpp"
+
+#include "media.pb.h"
 
 namespace Remote {
 namespace Server {

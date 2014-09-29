@@ -22,7 +22,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include "messages/messages.pb.h"
+#include "messages.pb.h"
 
 #include "database/DatabaseHandler.hpp"
 

@@ -26,7 +26,7 @@
 
 #include "logger/Logger.hpp"
 
-#include "messages/messages.pb.h"
+#include "messages.pb.h"
 
 #include "RequestHandler.hpp"
 

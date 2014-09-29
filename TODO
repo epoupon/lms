@@ -75,4 +75,5 @@
 - Make protoc generate the proto files and remove them from the vcs.
 
 [Logs]
+- capture transcoder log output to get more information
 - Use a logging facility
