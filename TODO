@@ -72,7 +72,6 @@
 [Remote API]
 - Implement text search options in the GetXXX messages
 - Implement genre id filters for Artist/Release
-- Make protoc generate the proto files and remove them from the vcs.
 
 [Logs]
 - capture transcoder log output to get more information
