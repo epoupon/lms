@@ -11,28 +11,24 @@
 - Limit multi login from UI and remote interfaces (limit per interface is acceptable)
 
 [Cover]
-- Scaling: find something more "reliable" than GIL and its customs extensions (adobe work, io_new)?
+- Scaling: find something more "reliable" than GIL and its custom extensions (adobe work, io_new)?
 
 [Database]
 - Optim, use SQL query to get genre orphans
 - Use Inotify like system to watch modified/added files?
 - Implement a video database cleanup
-- Group videos in "video groups". Each video may has sub groups (current "Path" class)
-	-> Simplify the database and remove the Path class
-- make a default admin/admin account of the very first connection?
 - count scan import errors
 
 [Metadata]
 
 [Transcode]
-- some early playback end spotted on flac files or huge audio files (> several hours)
+- some early end of playback spotted on flac files
 - do not use a queue to output data, but just fill produced bytes into a buffer and let the transcode user decide what to do with it
 
 [UI]
 	- handle internationalization
-	- make a wizard on first connection (or make a default admin/admin account of the very first connection)?
 	[Settings]
-		- increase the menu's width
+		- increase the menu's width / add margins
 		- logout users that are being changed (loss of admin admin rights), or make sure they are still admin when they make changes
 		- "signal not exposed" problem if a user logout and login again. bad resource destruction?
 		[user/transcoding]
@@ -50,7 +46,7 @@
 	- MediaPlayer: move slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478)
 	- TrackView : handle original release date
 	- TrackView : handle duration > 1 hour
-	- TrackView : select only relevant columns to speed up queries (do not get eveything)
+	- TrackView : select only relevant columns to speed up queries (do not fetch eveything)
 	- TrackView : Reselect the current selected item when displaying the updated search results
 	- ReleaseView: display the original release's publication year
 	- OGG metadata -> properly handle metadata nested in the audio stream
@@ -75,4 +71,3 @@
 
 [Logs]
 - capture transcoder log output to get more information
-- Use a logging facility

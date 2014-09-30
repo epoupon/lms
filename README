@@ -1,9 +1,28 @@
+LMS - Lightweight Media Server
+
+
+LMS is a free media streaming software, released on the GPLv3 license.
+It allows you to access your music and your videos using the following built-in services:
+- Web server
+- TCP/SSL server using a Protocol Buffers format (see https://github.com/google/protobuf/)
+
+LMS is written entirely in C++. Therefore, it is suitable to run on embedded devices, where space and/or memory are limited.
+Please note the media files are transcoded on-the-fly: this reduces compatibility issues but may need a lot of computation power, at least for HD videos.
+
+Features:
+- User management
+- "Winamp-style" interface
+- Audio/Video transcode (including downsampling), based on the libav project (see https://www.libav.org/)
+
+Please note LMS is still under development and will gain more features in the future.
+An android application is being developped as well.
 
 I) DEPENCIES
 
-libboost-dev libextractor-dev libavcodec-dev libwt-dev libprotobuf-dev libconfig++-dev
+Debian packages:
+libboost-dev libavcodec-dev libwtdbosqlite-dev libwthttp-dev libwtdbo-dev libwt-dev libprotobuf-dev libconfig++-dev libprotobuf-dev protobuf-compiler libjpeg8-dev libavcodec-dev libavformat-dev libavutil-dev
 
-Warning: your distrib may provide an outdated wt library. Using the latest Wt (>= 3.3.3) is highly recommended (http://www.webtoolkit.eu/wt)
+Warning: your distrib may provide an outdated wt library. Using the latest Wt (>= 3.3.3) is highly recommended (see http://www.webtoolkit.eu/wt)
 
 
 II) BUILD
@@ -15,12 +34,11 @@ II) BUILD
 
 (configure will complain if a mandatory library is missing)
 
-# make -j 4
+# make
 
+III) Setting up SSL materials (required by the SSL server and the web server)
 
-III) Setting up SSL (required by the Remote mobile service and the web server)
-
-Just an example, you could do whatever you want (ca, self signed cert, etc.)
+This is just an example, you could do whatever you want (ca, self signed cert, etc.)
 
 Generate a dh file:
 # openssl dhparam -out dh2048.pem 2048
@@ -35,6 +53,8 @@ In the build directory:
 # ./lms lms.conf
 
 Create the lms.conf file using the etc/lms.sample.conf
+- "ui.resources.approot" has to refer to the ui/approot/ directory.
+- "ui.resources.docroot" has to refer to Wt's docroot (usually located in /usr/share/Wt)
 
-Depending of your SSL parameters, you may be asked for the PEM passphrase to unlock the private key.
+Depending on your SSL parameters, you may be asked for the PEM passphrase to unlock the private key.
 
