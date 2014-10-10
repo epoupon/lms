@@ -109,7 +109,7 @@ MOSTLYCLEANFILES = \
 
 
 %.pb.cc %.pb.h: $(top_srcdir)/remote/proto/%.proto
-	$(PROTOC) --proto_path=$(srcdir)/remote/proto/ --cpp_out=$(builddir)/ $^
+	$(PROTOC) --proto_path=$(top_srcdir)/remote/proto/ --cpp_out=$(builddir)/ $^
 
 lms_CXXFLAGS=-DBOOST_LOG_DYN_LINK -std=c++11 -Wall -I$(top_srcdir)/boost/ -I$(top_srcdir)/ui -I$(top_srcdir)/remote
 

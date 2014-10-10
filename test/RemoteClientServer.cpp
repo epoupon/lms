@@ -28,7 +28,7 @@
 
 #include "remote/server/Server.hpp"
 #include "remote/messages/Header.hpp"
-#include "remote/messages/messages.pb.h"
+#include "messages.pb.h"
 
 #include "TestDatabase.hpp"
 

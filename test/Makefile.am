@@ -7,11 +7,6 @@ remote_SOURCES = \
 	$(srcdir)/RemoteClientServer.cpp			\
 	$(srcdir)/TestDatabase.cpp				\
 	$(top_srcdir)/logger/Logger.cpp 			\
-	$(top_srcdir)/remote/messages/auth.pb.cc		\
-	$(top_srcdir)/remote/messages/collection.pb.cc		\
-	$(top_srcdir)/remote/messages/common.pb.cc		\
-	$(top_srcdir)/remote/messages/media.pb.cc		\
-	$(top_srcdir)/remote/messages/messages.pb.cc		\
 	$(top_srcdir)/database/Artist.cpp			\
 	$(top_srcdir)/database/Genre.cpp			\
 	$(top_srcdir)/database/Release.cpp			\
@@ -21,8 +16,26 @@ remote_SOURCES = \
 	$(top_srcdir)/database/SqlQuery.cpp		\
 	$(top_srcdir)/database/User.cpp			\
 	$(top_srcdir)/database/Video.cpp
+nodist_remote_SOURCES = \
+	$(builddir)/auth.pb.cc			\
+	$(builddir)/collection.pb.cc		\
+	$(builddir)/common.pb.cc		\
+	$(builddir)/media.pb.cc			\
+	$(builddir)/messages.pb.cc
+
+BUILT_SOURCES = \
+	$(builddir)/auth.pb.h			\
+	$(builddir)/collection.pb.h		\
+	$(builddir)/common.pb.h			\
+	$(builddir)/media.pb.h			\
+	$(builddir)/messages.pb.h
+
 
 remote_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir) -I$(top_srcdir)/remote -I$(top_srcdir)/boost
+
+%.pb.cc %.pb.h: $(top_srcdir)/remote/proto/%.proto
+	$(PROTOC) --proto_path=$(top_srcdir)/remote/proto/ --cpp_out=$(builddir)/ $^
+
 
 database_user_SOURCES = \
 	$(srcdir)/CheckDatabaseUser.cpp		\
