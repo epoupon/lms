@@ -1,21 +1,20 @@
 LMS - Lightweight Media Server
 
 
-LMS is a free media streaming software, released on the GPLv3 license.
-It allows you to access your music and your videos using the following built-in services:
-- Web server
-- TCP/SSL server using a Protocol Buffers format (see https://github.com/google/protobuf/)
-
-LMS is written entirely in C++. Therefore, it is suitable to run on embedded devices, where space and/or memory are limited.
-Please note the media files are transcoded on-the-fly: this reduces compatibility issues but may need a lot of computation power, at least for HD videos.
+LMS is a free media streaming software, released under the GPLv3 license.
+It allows you to access your music and your videos using an https web interface.
 
 Features:
 - User management
-- "Winamp-style" interface
-- Audio/Video transcode (including downsampling), based on the libav project (see https://www.libav.org/)
+- Fast "Winamp-style" interface
+- Audio/Video transcode (including downsampling), based on the libav project (see https://www.libav.org/).
+- Custom API to access data using Protocol Buffers format over TCP/SSL (see https://github.com/google/protobuf/ and src/remote/proto)
 
 Please note LMS is still under development and will gain more features in the future.
 An android application is being developped as well.
+
+LMS is written entirely in C++. Therefore, it is suitable to run on embedded devices, where space and/or memory are limited.
+Please note some media files may require significant CPU usage to be trasncoded.
 
 I) DEPENCIES
 
@@ -50,7 +49,7 @@ Generate a self signed certificate:
 IV) RUNNING
 
 In the build directory:
-# ./lms lms.conf
+# ./src/lms lms.conf
 
 Create the lms.conf file using the etc/lms.sample.conf
 - "ui.resources.approot" has to refer to the ui/approot/ directory.

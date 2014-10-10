@@ -6,16 +6,16 @@ check_PROGRAMS = database-integrity sql-query database-user remote
 remote_SOURCES = \
 	$(srcdir)/RemoteClientServer.cpp			\
 	$(srcdir)/TestDatabase.cpp				\
-	$(top_srcdir)/logger/Logger.cpp 			\
-	$(top_srcdir)/database/Artist.cpp			\
-	$(top_srcdir)/database/Genre.cpp			\
-	$(top_srcdir)/database/Release.cpp			\
-	$(top_srcdir)/database/Track.cpp			\
-	$(top_srcdir)/database/DatabaseHandler.cpp		\
-	$(top_srcdir)/database/MediaDirectory.cpp		\
-	$(top_srcdir)/database/SqlQuery.cpp		\
-	$(top_srcdir)/database/User.cpp			\
-	$(top_srcdir)/database/Video.cpp
+	$(top_srcdir)/src/logger/Logger.cpp 			\
+	$(top_srcdir)/src/database/Artist.cpp			\
+	$(top_srcdir)/src/database/Genre.cpp			\
+	$(top_srcdir)/src/database/Release.cpp			\
+	$(top_srcdir)/src/database/Track.cpp			\
+	$(top_srcdir)/src/database/DatabaseHandler.cpp		\
+	$(top_srcdir)/src/database/MediaDirectory.cpp		\
+	$(top_srcdir)/src/database/SqlQuery.cpp		\
+	$(top_srcdir)/src/database/User.cpp			\
+	$(top_srcdir)/src/database/Video.cpp
 nodist_remote_SOURCES = \
 	$(builddir)/auth.pb.cc			\
 	$(builddir)/collection.pb.cc		\
@@ -31,46 +31,46 @@ BUILT_SOURCES = \
 	$(builddir)/messages.pb.h
 
 
-remote_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir) -I$(top_srcdir)/remote -I$(top_srcdir)/boost
+remote_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir) -I$(top_srcdir)/src
 
-%.pb.cc %.pb.h: $(top_srcdir)/remote/proto/%.proto
-	$(PROTOC) --proto_path=$(top_srcdir)/remote/proto/ --cpp_out=$(builddir)/ $^
+%.pb.cc %.pb.h: $(top_srcdir)/src/remote/proto/%.proto
+	$(PROTOC) --proto_path=$(top_srcdir)/src/remote/proto/ --cpp_out=$(builddir)/ $^
 
 
 database_user_SOURCES = \
 	$(srcdir)/CheckDatabaseUser.cpp		\
-	$(top_srcdir)/logger/Logger.cpp 			\
-	$(top_srcdir)/database/Artist.cpp	\
-	$(top_srcdir)/database/Genre.cpp	\
-	$(top_srcdir)/database/Release.cpp	\
-	$(top_srcdir)/database/Track.cpp	\
-	$(top_srcdir)/database/DatabaseHandler.cpp	\
-	$(top_srcdir)/database/MediaDirectory.cpp		\
-	$(top_srcdir)/database/SqlQuery.cpp		\
-	$(top_srcdir)/database/User.cpp			\
-	$(top_srcdir)/database/Video.cpp
+	$(top_srcdir)/src/logger/Logger.cpp 			\
+	$(top_srcdir)/src/database/Artist.cpp	\
+	$(top_srcdir)/src/database/Genre.cpp	\
+	$(top_srcdir)/src/database/Release.cpp	\
+	$(top_srcdir)/src/database/Track.cpp	\
+	$(top_srcdir)/src/database/DatabaseHandler.cpp	\
+	$(top_srcdir)/src/database/MediaDirectory.cpp		\
+	$(top_srcdir)/src/database/SqlQuery.cpp		\
+	$(top_srcdir)/src/database/User.cpp			\
+	$(top_srcdir)/src/database/Video.cpp
 
-database_user_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir)
+database_user_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir) -I$(top_srcdir)/src
 
 
 database_integrity_SOURCES = \
 	$(srcdir)/DatabaseIntegrity.cpp		\
-	$(top_srcdir)/logger/Logger.cpp 			\
-	$(top_srcdir)/database/Artist.cpp	\
-	$(top_srcdir)/database/Genre.cpp	\
-	$(top_srcdir)/database/Release.cpp	\
-	$(top_srcdir)/database/Track.cpp	\
-	$(top_srcdir)/database/DatabaseHandler.cpp	\
-	$(top_srcdir)/database/MediaDirectory.cpp		\
-	$(top_srcdir)/database/SqlQuery.cpp		\
-	$(top_srcdir)/database/User.cpp			\
-	$(top_srcdir)/database/Video.cpp
+	$(top_srcdir)/src/logger/Logger.cpp 			\
+	$(top_srcdir)/src/database/Artist.cpp	\
+	$(top_srcdir)/src/database/Genre.cpp	\
+	$(top_srcdir)/src/database/Release.cpp	\
+	$(top_srcdir)/src/database/Track.cpp	\
+	$(top_srcdir)/src/database/DatabaseHandler.cpp	\
+	$(top_srcdir)/src/database/MediaDirectory.cpp		\
+	$(top_srcdir)/src/database/SqlQuery.cpp		\
+	$(top_srcdir)/src/database/User.cpp			\
+	$(top_srcdir)/src/database/Video.cpp
 
-database_integrity_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir)
+database_integrity_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir) -I$(top_srcdir)/src
 
 sql_query_SOURCES = \
 	$(srcdir)/CheckSqlQuery.cpp         \
-	$(top_srcdir)/database/SqlQuery.cpp
+	$(top_srcdir)/src/database/SqlQuery.cpp
 
-sql_query_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir)
+sql_query_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir) -I$(top_srcdir)/src
 
