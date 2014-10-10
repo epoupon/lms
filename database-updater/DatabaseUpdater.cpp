@@ -281,7 +281,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		_metadataParser.parse(file, items);
 
 		// We estimate this is a audio file if:
-		// - we found a least one audio
+		// - we found a least one audio stream
 		// - the duration is not null
 		if (items.find(MetaData::AudioStreams) == items.end()
 		|| boost::any_cast<std::vector<MetaData::AudioStream> >(items[MetaData::AudioStreams]).empty())

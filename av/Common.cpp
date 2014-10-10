@@ -49,7 +49,7 @@ void AvInit()
 	/* register all the codecs */
 	avcodec_register_all();
 	av_register_all();
-	LMS_LOG(MOD_AV, SEV_INFO) << "AVCDOEC VERSION = " << avcodec_version();
+	LMS_LOG(MOD_AV, SEV_INFO) << "avcodec version = " << avcodec_version();
 }
 
 } // namespace Av
