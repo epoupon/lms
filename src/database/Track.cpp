@@ -98,7 +98,7 @@ Track::getAll(Wt::Dbo::Session& session,
 	if (!genreIds.empty())
 	{
 		sqlQuery += " INNER JOIN genre g ON g.id = t_g.genre_id";
-		sqlQuery += " INNER JOIN track_genre t_g ON t_g.track_id = t.id AND t_d.genre_id = g.id";
+		sqlQuery += " INNER JOIN track_genre t_g ON t_g.track_id = t.id AND t_g.genre_id = g.id";
 	}
 
 	WhereClause where;
