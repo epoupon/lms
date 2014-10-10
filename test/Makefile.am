@@ -1,22 +1,12 @@
 
 TESTS = database-integrity sql-query database-user remote
 
-check_PROGRAMS = database-integrity sql-query database-user remote
+check_PROGRAMS = database-integrity sql-query database-user remote-client
 
-remote_SOURCES = \
-	$(srcdir)/RemoteClientServer.cpp			\
-	$(srcdir)/TestDatabase.cpp				\
-	$(top_srcdir)/src/logger/Logger.cpp 			\
-	$(top_srcdir)/src/database/Artist.cpp			\
-	$(top_srcdir)/src/database/Genre.cpp			\
-	$(top_srcdir)/src/database/Release.cpp			\
-	$(top_srcdir)/src/database/Track.cpp			\
-	$(top_srcdir)/src/database/DatabaseHandler.cpp		\
-	$(top_srcdir)/src/database/MediaDirectory.cpp		\
-	$(top_srcdir)/src/database/SqlQuery.cpp		\
-	$(top_srcdir)/src/database/User.cpp			\
-	$(top_srcdir)/src/database/Video.cpp
-nodist_remote_SOURCES = \
+remote_client_SOURCES = \
+	$(srcdir)/RemoteClient.cpp		\
+	$(top_srcdir)/src/logger/Logger.cpp
+nodist_remote_client_SOURCES = \
 	$(builddir)/auth.pb.cc			\
 	$(builddir)/collection.pb.cc		\
 	$(builddir)/common.pb.cc		\
@@ -31,7 +21,7 @@ BUILT_SOURCES = \
 	$(builddir)/messages.pb.h
 
 
-remote_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir) -I$(top_srcdir)/src
+remote_client_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir) -I$(top_srcdir)/src
 
 %.pb.cc %.pb.h: $(top_srcdir)/src/remote/proto/%.proto
 	$(PROTOC) --proto_path=$(top_srcdir)/src/remote/proto/ --cpp_out=$(builddir)/ $^
