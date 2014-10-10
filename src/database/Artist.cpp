@@ -17,7 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <boost/foreach.hpp>
+
 #include "AudioTypes.hpp"
+
+#include "SqlQuery.hpp"
 
 namespace Database
 {
@@ -62,6 +66,41 @@ Artist::getAllOrphans(Wt::Dbo::Session& session)
 {
 	return session.query< Wt::Dbo::ptr<Artist> >("select a from artist a LEFT OUTER JOIN Track t ON a.id = t.artist_id WHERE t.id IS NULL");
 }
+
+Wt::Dbo::collection<Artist::pointer>
+Artist::getAll(Wt::Dbo::Session& session,
+		const std::vector<Genre::id_type>& genreIds,
+		int offset, int size)
+{
+	std::string sqlQuery = "SELECT a FROM artist a";
+
+	if (!genreIds.empty())
+	{
+		sqlQuery += " INNER JOIN genre g ON g.id = t_g.genre_id";
+		sqlQuery += " INNER JOIN track t ON t.id = t_g.track_id AND t.artist_id = a.id";
+		sqlQuery += " INNER JOIN track_genre t_g ON t_g.track_id = t.id AND t_g.genre_id = g.id";
+	}
+
+	WhereClause where;
+	{
+		WhereClause genreWhere;
+
+		for (std::size_t i = 0; i < genreIds.size(); ++i)
+			genreWhere.Or( WhereClause("g.id = ?") );
+
+		where.And(genreWhere);
+	}
+
+	Wt::Dbo::Query<Artist::pointer> query = session.query<Artist::pointer>( sqlQuery + " " + where.get() ).offset(offset).limit(size);
+
+	BOOST_FOREACH(const Genre::id_type genreId, genreIds)
+		query.bind(genreId);
+
+	query.groupBy("a");
+
+	return query;
+}
+
 
 } // namespace Database
 

@@ -117,7 +117,7 @@ class TestClient
 			_socket.handshake(boost::asio::ssl::stream_base::client);
 		}
 
-		void getArtists(std::vector<ArtistInfo>& artists)
+		void getArtists(std::vector<ArtistInfo>& artists, const std::vector<uint64_t>& genreIds)
 		{
 
 			const std::size_t requestedBatchSize = 128;
@@ -125,12 +125,12 @@ class TestClient
 			std::size_t res = 0;
 
 
-			while ((res = getArtists(artists, offset, requestedBatchSize) ) > 0)
+			while ((res = getArtists(artists, genreIds, offset, requestedBatchSize) ) > 0)
 				offset += res;
 
 		}
 
-		std::size_t getArtists(std::vector<ArtistInfo>& artists, std::size_t offset, std::size_t size)
+		std::size_t getArtists(std::vector<ArtistInfo>& artists, const std::vector<uint64_t>& genreIds, std::size_t offset, std::size_t size)
 		{
 			std::size_t nbArtists = 0;
 
@@ -142,6 +142,8 @@ class TestClient
 			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetArtistList);
 			request.mutable_audio_collection_request()->mutable_get_artists()->mutable_batch_parameter()->set_size(size);
 			request.mutable_audio_collection_request()->mutable_get_artists()->mutable_batch_parameter()->set_offset(offset);
+			BOOST_FOREACH(uint64_t genreId, genreIds)
+				request.mutable_audio_collection_request()->mutable_get_artists()->add_genre_id(genreId);
 
 			sendMsg(request);
 
@@ -719,7 +721,7 @@ class TestClient
 int main()
 {
 	try {
-		bool extendedTests = false;
+		bool extendedTests = true;
 		bool writeCovers = false;
 
 		std::cout << "Running test... extendedTests = " << std::boolalpha << extendedTests << std::endl;
@@ -733,18 +735,21 @@ int main()
 			throw std::runtime_error("login failed!");
 
 		// **** REVISION ***
+		std::cout << "Getting revision..." << std::endl;
 		std::string rev = client.getRevision();
 		std::cout << "Revision '" << rev << "'" << std::endl;
 
 		// ****** Artists *********
+		std::cout << "Getting artists..." << std::endl;
 		std::vector<ArtistInfo>	artists;
-		client.getArtists(artists);
+		client.getArtists(artists, std::vector<uint64_t>());
 
 		std::cout << "Got " << artists.size() << " artists!" << std::endl;
 		BOOST_FOREACH(const ArtistInfo& artist, artists)
 			std::cout << "Artist: '" << artist << "'" << std::endl;
 
 		// ***** Genres *********
+		std::cout << "Getting genres..." << std::endl;
 		std::vector<GenreInfo>	genres;
 		client.getGenres(genres);
 
@@ -753,31 +758,47 @@ int main()
 			std::cout << "Genre: '" << genre << "'" << std::endl;
 
 		// **** Releases ******
+		std::cout << "Getting releases..." << std::endl;
 		std::vector<ReleaseInfo> releases;
 		client.getReleases(releases, std::vector<uint64_t>());
 		BOOST_FOREACH(const ReleaseInfo& release, releases)
 			std::cout << "Release: '" << release << "'" << std::endl;
 
 		// **** Tracks ******
+		std::cout << "Getting tracks..." << std::endl;
 		std::vector<TrackInfo> tracks;
 		client.getTracks(tracks, std::vector<uint64_t>(), std::vector<uint64_t>(), std::vector<uint64_t>());
 		BOOST_FOREACH(const TrackInfo& track, tracks)
 			std::cout << "Track: '" << track << "'" << std::endl;
 
 		// Caution: long test!
-/*		if (extendedTests)
+		if (extendedTests)
 		{
+
+			std::cout << "Getting artist for each genre..." << std::endl;
+			// Get the artists for each genre
+			BOOST_FOREACH(const GenreInfo& genre, genres)
+			{
+				std::cout << "Getting artists genre '" << genre.name << "'" << std::endl;
+				std::vector<ArtistInfo> artists;
+				client.getArtists(artists, std::vector<uint64_t>(1, genre.id));
+
+				BOOST_FOREACH(const ArtistInfo& artist, artists)
+					std::cout << "-> Artist: " << artist << std::endl;
+			}
+
+			std::cout << "Getting tracks for each artist..." << std::endl;
+			// Get the tracks for each artist
 			BOOST_FOREACH(const ArtistInfo& artist, artists)
 			{
-				// Get the tracks for each artist
 				std::vector<TrackInfo> tracks;
 				client.getTracks(tracks, std::vector<uint64_t>(1, artist.id), std::vector<uint64_t>(), std::vector<uint64_t>());
 
 				std::cout << "Artist '" << artist.name << "', nb tracks = " << tracks.size() << std::endl;
 				BOOST_FOREACH(const TrackInfo& track, tracks)
-					std::cout << "Track: '" << track << "'" << std::endl;
+					std::cout << "Artist '" << artist.name << "', track: '" << track << "'" << std::endl;
 			}
-		}*/
+		}
 
 		// ***** Covers *******
 		if (extendedTests)

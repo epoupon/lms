@@ -36,6 +36,44 @@ class Track;
 class Release;
 class Artist;
 
+class Genre
+{
+	public:
+
+		typedef Wt::Dbo::ptr<Genre> pointer;
+		typedef Wt::Dbo::dbo_traits<Genre>::IdType id_type;
+
+		Genre();
+		Genre(const std::string& name);
+
+		// Find utility
+		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
+		static pointer getNone(Wt::Dbo::Session& session);
+		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, std::size_t offset = -1, std::size_t size = -1);
+
+		// Create utility
+		static pointer create(Wt::Dbo::Session& session, const std::string& name);
+
+		// Accessors
+		const std::string& getName(void) const { return _name; }
+		bool isNone(void) const;
+		const Wt::Dbo::collection< Wt::Dbo::ptr<Track> >&	getTracks() const { return _tracks;}
+
+		template<class Action>
+			void persist(Action& a)
+			{
+				Wt::Dbo::field(a, _name,	"name");
+				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
+			}
+
+	private:
+		static const std::size_t _maxNameLength = 128;
+		std::string	_name;
+
+		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;
+};
+
+
 class Artist
 {
 	public:
@@ -50,6 +88,9 @@ class Artist
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getNone(Wt::Dbo::Session& session);
 		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, int offset = -1, int size = -1);
+		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session,
+							const std::vector<Genre::id_type>& genreIds,
+							int offset = -1, int size = -1);
 		static Wt::Dbo::collection<pointer> getAllOrphans(Wt::Dbo::Session& session);
 
 		const std::string& getName(void) const { return _name; }
@@ -121,43 +162,6 @@ class Release
 		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;	// Tracks in the release
 };
 
-
-class Genre
-{
-	public:
-
-		typedef Wt::Dbo::ptr<Genre> pointer;
-		typedef Wt::Dbo::dbo_traits<Genre>::IdType id_type;
-
-		Genre();
-		Genre(const std::string& name);
-
-		// Find utility
-		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
-		static pointer getNone(Wt::Dbo::Session& session);
-		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, std::size_t offset = -1, std::size_t size = -1);
-
-		// Create utility
-		static pointer create(Wt::Dbo::Session& session, const std::string& name);
-
-		// Accessors
-		const std::string& getName(void) const { return _name; }
-		bool isNone(void) const;
-		const Wt::Dbo::collection< Wt::Dbo::ptr<Track> >&	getTracks() const { return _tracks;}
-
-		template<class Action>
-			void persist(Action& a)
-			{
-				Wt::Dbo::field(a, _name,	"name");
-				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
-			}
-
-	private:
-		static const std::size_t _maxNameLength = 128;
-		std::string	_name;
-
-		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;
-};
 
 class Track
 {

@@ -164,11 +164,16 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 		size = _maxListArtists;
 	size = std::min(size, _maxListArtists);
 
+	// Get filters
+	std::vector<Database::Artist::id_type> genreIds;
+	for (int id = 0; id < request.genre_id_size(); ++id)
+		genreIds.push_back( request.genre_id(id) );
+
 	// Now fetch requested data...
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Wt::Dbo::collection<Database::Artist::pointer> artists = Database::Artist::getAll( _db.getSession(), request.batch_parameter().offset(), static_cast<int>(size) );
+	Wt::Dbo::collection<Database::Artist::pointer> artists = Database::Artist::getAll( _db.getSession(), genreIds, request.batch_parameter().offset(), static_cast<int>(size) );
 
 	typedef Wt::Dbo::collection< Database::Artist::pointer > Artists;
 
