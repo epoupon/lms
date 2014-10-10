@@ -24,9 +24,9 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 #include <boost/foreach.hpp>
 
-#include "remote/server/Server.hpp"
 #include "remote/messages/Header.hpp"
 #include "messages.pb.h"
 
@@ -441,7 +441,6 @@ class TestClient
 			request.set_type( Remote::ClientMessage::AudioCollectionRequest );
 
 			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest::TypeGetRevision);
-			request.mutable_audio_collection_request()->mutable_get_revision();
 
 			sendMsg(request);
 

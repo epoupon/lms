@@ -11,11 +11,6 @@ message AudioCollectionRequest
 		required uint32	size			= 2;	// Number of elements requested. Server may not honor this size if too big
 	}
 
-	message GetRevision
-	{
-
-	}
-
 	message GetGenreList
 	{
 		required BatchParameter batch_parameter = 1;
@@ -73,7 +68,6 @@ message AudioCollectionRequest
 
 	required Type	type			= 1;
 
-	optional GetRevision	get_revision	= 2;
 	optional GetGenreList	get_genres	= 3;
 	optional GetArtistList	get_artists	= 4;
 	optional GetReleaseList	get_releases	= 5;

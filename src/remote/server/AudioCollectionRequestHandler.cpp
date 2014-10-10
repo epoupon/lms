@@ -48,14 +48,10 @@ AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, Au
 	switch (request.type())
 	{
 		case AudioCollectionRequest::TypeGetRevision:
-			if (request.has_get_revision())
-			{
-				res = processGetRevision(request.get_revision(), *response.mutable_revision());
-				if (res)
-					response.set_type(AudioCollectionResponse::TypeRevision);
-			}
-			else
-				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Bad AudioCollectionRequest::TypeGetRevision";
+			// No payload
+			res = processGetRevision(*response.mutable_revision());
+			if (res)
+				response.set_type(AudioCollectionResponse::TypeRevision);
 			break;
 
 		case AudioCollectionRequest::TypeGetGenreList:
@@ -365,7 +361,7 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 }
 
 bool
-AudioCollectionRequestHandler::processGetRevision(const AudioCollectionRequest::GetRevision& request, AudioCollectionResponse::Revision& response)
+AudioCollectionRequestHandler::processGetRevision(AudioCollectionResponse::Revision& response)
 {
 
 	bool res = false;

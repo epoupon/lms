@@ -36,7 +36,7 @@ class AudioCollectionRequestHandler
 
 	private:
 
-		bool processGetRevision(const AudioCollectionRequest::GetRevision& request, AudioCollectionResponse::Revision& response);
+		bool processGetRevision(AudioCollectionResponse::Revision& response);
 		bool processGetArtists(const AudioCollectionRequest::GetArtistList& request, AudioCollectionResponse::ArtistList& response);
 		bool processGetGenres(const AudioCollectionRequest::GetGenreList& request, AudioCollectionResponse::GenreList& response);
 		bool processGetReleases(const AudioCollectionRequest::GetReleaseList& request, AudioCollectionResponse::ReleaseList& response);
