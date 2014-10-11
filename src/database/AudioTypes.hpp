@@ -136,7 +136,10 @@ class Release
 		static pointer getById(Wt::Dbo::Session& session, id_type id);
 		static pointer getNone(Wt::Dbo::Session& session);
 		static Wt::Dbo::collection<pointer> getAllOrphans(Wt::Dbo::Session& session);
-		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, std::vector<Artist::id_type> artistIds, int offset = -1, int size = -1);
+		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session,
+						const std::vector<Artist::id_type>& artistIds,
+						const std::vector<Genre::id_type>& genreIds,
+						int offset = -1, int size = -1);
 
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name);

@@ -59,20 +59,53 @@ Release::create(Wt::Dbo::Session& session, const std::string& name)
 }
 
 Wt::Dbo::collection<Release::pointer>
-Release::getAll(Wt::Dbo::Session& session, std::vector<Artist::id_type> artistIds, int offset, int size)
+Release::getAll(Wt::Dbo::Session& session,
+			const std::vector<Artist::id_type>& artistIds,
+			const std::vector<Genre::id_type>& genreIds,
+			int offset, int size)
 {
 	std::string sqlQuery = "SELECT r FROM release r";
+
+	if (!artistIds.empty() || !genreIds.empty())
+		sqlQuery += " INNER JOIN track t ON t.release_id = r.id";
 
 	if (!artistIds.empty())
 	{
 		sqlQuery += " INNER JOIN artist a ON a.id = t.artist_id";
-		sqlQuery += " INNER JOIN track t ON t.release_id = r.id";
 	}
 
-	Wt::Dbo::Query<Release::pointer> query = session.query<Release::pointer>( sqlQuery ).offset(offset).limit(size);
+	if (!genreIds.empty())
+	{
+		sqlQuery += " INNER JOIN genre g ON g.id = t_g.genre_id";
+		sqlQuery += " INNER JOIN track_genre t_g ON t_g.track_id = t.id AND t_g.genre_id = g.id";
+	}
+
+	WhereClause where;
+	{
+		WhereClause artistWhere;
+
+		for (std::size_t i = 0; i < artistIds.size(); ++i)
+			artistWhere.Or( WhereClause("a.id = ?") );
+
+		where.And(artistWhere);
+	}
+
+	{
+		WhereClause genreWhere;
+
+		for (std::size_t i = 0; i < genreIds.size(); ++i)
+			genreWhere.Or( WhereClause("g.id = ?") );
+
+		where.And(genreWhere);
+	}
+
+	Wt::Dbo::Query<Release::pointer> query = session.query<Release::pointer>( sqlQuery + " " + where.get() ).offset(offset).limit(size);
 
 	BOOST_FOREACH(const Artist::id_type artistId, artistIds)
-		query.where("a.id = ?").bind(artistId);
+		query.bind(artistId);
+
+	BOOST_FOREACH(const Genre::id_type genreId, genreIds)
+		query.bind(genreId);
 
 	query.groupBy("r");
 

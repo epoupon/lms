@@ -207,9 +207,17 @@ AudioCollectionRequestHandler::processGetReleases(const AudioCollectionRequest::
 	for (int id = 0; id < request.artist_id_size(); ++id)
 		artistIds.push_back( request.artist_id(id) );
 
+	std::vector<Database::Genre::id_type> genreIds;
+	for (int id = 0; id < request.genre_id_size(); ++id)
+		genreIds.push_back( request.genre_id(id) );
+
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Wt::Dbo::collection<Database::Release::pointer> releases = Database::Release::getAll( _db.getSession(), artistIds, request.batch_parameter().offset(), static_cast<int>(size));
+	Wt::Dbo::collection<Database::Release::pointer> releases
+		= Database::Release::getAll( _db.getSession(),
+						artistIds,
+						genreIds,
+						request.batch_parameter().offset(), static_cast<int>(size));
 
 	typedef Wt::Dbo::collection< Database::Release::pointer > Releases;
 
