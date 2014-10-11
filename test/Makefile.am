@@ -1,5 +1,5 @@
 
-TESTS = database-integrity sql-query database-user remote
+TESTS = database-integrity sql-query database-user remote-client
 
 check_PROGRAMS = database-integrity sql-query database-user remote-client
 
@@ -21,7 +21,7 @@ BUILT_SOURCES = \
 	$(builddir)/messages.pb.h
 
 
-remote_client_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir) -I$(top_srcdir)/src
+remote_client_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir)/src
 
 %.pb.cc %.pb.h: $(top_srcdir)/src/remote/proto/%.proto
 	$(PROTOC) --proto_path=$(top_srcdir)/src/remote/proto/ --cpp_out=$(builddir)/ $^
@@ -40,7 +40,7 @@ database_user_SOURCES = \
 	$(top_srcdir)/src/database/User.cpp			\
 	$(top_srcdir)/src/database/Video.cpp
 
-database_user_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir) -I$(top_srcdir)/src
+database_user_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir)/src
 
 
 database_integrity_SOURCES = \
@@ -56,11 +56,11 @@ database_integrity_SOURCES = \
 	$(top_srcdir)/src/database/User.cpp			\
 	$(top_srcdir)/src/database/Video.cpp
 
-database_integrity_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir) -I$(top_srcdir)/src
+database_integrity_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir)/src
 
 sql_query_SOURCES = \
 	$(srcdir)/CheckSqlQuery.cpp         \
 	$(top_srcdir)/src/database/SqlQuery.cpp
 
-sql_query_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir) -I$(top_srcdir)/src
+sql_query_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir)/src
 
