@@ -168,14 +168,17 @@ AvConvTranscoder::AvConvTranscoder(const Parameters& parameters)
 }
 
 void
-AvConvTranscoder::process(void)
+AvConvTranscoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 {
-	std::size_t readDatasSize = 1024; // TODO parametrize elsewhere?
+	std::size_t readDataSize = 0;
+
+	if (_isComplete)
+		return;
 
 	char ch;
-	while(readDatasSize != 0 && _in && _in.get(ch)) {
-		_data.push_back(ch);
-		--readDatasSize;
+	while(readDataSize < maxSize && _in && _in.get(ch)) {
+		output.push_back(ch);
+		readDataSize++;
 	}
 
 	if (!_in || _in.fail() || _in.eof()) {

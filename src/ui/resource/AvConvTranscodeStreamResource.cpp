@@ -44,6 +44,8 @@ void
 AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 		Wt::Http::Response& response)
 {
+	static const std::size_t chunkSize = 8192; // TODO parametrize?
+
 	// see if this request is for a continuation:
 	Wt::Http::ResponseContinuation *continuation = request.continuation();
 
@@ -59,34 +61,21 @@ AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 		response.setMimeType(_parameters.getOutputFormat().getMimeType());
 	}
 
-	Transcode::AvConvTranscoder::data_type& data = transcoder->getOutputData();
-
-	while (!transcoder->isComplete() && data.size() < _bufferSize)
-		transcoder->process();
-
-	// Give the client all the output data
-	Transcode::AvConvTranscoder::data_type::const_iterator it = data.begin();
-	bool copySuccess = true;
-	std::size_t copiedSize = 0;
-	for (Transcode::AvConvTranscoder::data_type::const_iterator it = data.begin(); it != data.end(); ++it)
+	if (!transcoder->isComplete())
 	{
-		if (!response.out().put(*it)) {
-			copySuccess = false;
-			break;
-		}
-		else
-			copiedSize++;
+		std::vector<unsigned char> data;
+		data.reserve(chunkSize);
+
+		transcoder->process(data, chunkSize);
+
+		// Give the client all the output data
+		response.out().write(reinterpret_cast<char*>(&data[0]), data.size());
+
+		if (!response.out())
+			LMS_LOG(MOD_UI, SEV_ERROR) << "Write failed!";
 	}
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Wrote " << copiedSize << " bytes";
-
-	if (!copySuccess)
-		LMS_LOG(MOD_UI, SEV_ERROR) << "** Write failed!";
-
-	// Consume copied bytes
-	data.erase(data.begin(), data.begin() + copiedSize);
-
-	if (copySuccess && !transcoder->isComplete()) {
+	if (!transcoder->isComplete() && response.out()) {
 		continuation = response.createContinuation();
 		continuation->setData(transcoder);
 		LMS_LOG(MOD_UI, SEV_DEBUG) << "Continuation set!";

@@ -22,7 +22,7 @@
 
 #include <memory>
 #include <iostream>
-#include <deque>
+#include <vector>
 
 #include <boost/iostreams/stream.hpp>
 #include <boost/process.hpp>
@@ -37,21 +37,18 @@ namespace Transcode
 class AvConvTranscoder
 {
 	public:
-
-		typedef	std::deque<unsigned char>	data_type;
-
 		static void init();
 
 		~AvConvTranscoder();
 
 		AvConvTranscoder(const Parameters& parameters);
 
-		data_type& getOutputData()  { return _data; }
-
 		const Parameters&	getParameters(void) const { return _parameters; }
 
-		// Process a bunch of input data
-		void process(void);
+		// Get a bunch of input data
+		// Place it at the end of the parameter, no more that maxSize bytes
+		void process(std::vector<unsigned char>& output, std::size_t maxSize);
+
 		bool isComplete(void) const { return _isComplete;};
 
 	private:
@@ -74,7 +71,6 @@ class AvConvTranscoder
 
 		static boost::filesystem::path _avConvPath;
 
-		data_type	_data;
 		bool		_isComplete;
 };
 

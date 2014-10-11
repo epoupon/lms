@@ -46,7 +46,9 @@ class MediaRequestHandler
 
 //		bool processVideoPrepare(const AudioCollectionRequest::GetGenreList& request, AudioCollectionResponse::GenreList& response);
 
-		std::map<uint32_t, std::shared_ptr<Transcode::AvConvTranscoder> > _transcoders;
+		typedef std::map<uint32_t, std::shared_ptr<Transcode::AvConvTranscoder> > TranscoderMap;
+
+		TranscoderMap _transcoders;
 
 		Database::Handler& _db;
 

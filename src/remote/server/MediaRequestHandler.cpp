@@ -164,32 +164,28 @@ bool
 MediaRequestHandler::processGetPart(const MediaRequest::GetPart& request, MediaResponse::PartResult& response)
 {
 	std::size_t	dataSize = request.requested_data_size();
+	std::vector<unsigned char> data;
 	if (dataSize > _maxPartSize)
 		dataSize = _maxPartSize;
 
-	if (_transcoders.find(request.handle()) == _transcoders.end())
+	TranscoderMap::iterator itTranscoder = _transcoders.find(request.handle());
+	if (itTranscoder == _transcoders.end())
 	{
 		LMS_LOG(MOD_REMOTE, SEV_ERROR) << "No transcoder found for handle " << request.handle();
 		return true;
 	}
 
-	std::shared_ptr<Transcode::AvConvTranscoder> transcoder = _transcoders[request.handle()];
+	std::shared_ptr<Transcode::AvConvTranscoder> transcoder = itTranscoder->second;
 
-	while (!transcoder->isComplete() && transcoder->getOutputData().size() < dataSize)
-		transcoder->process();
+	if (!transcoder->isComplete())
+	{
+		data.reserve(dataSize);
+		transcoder->process(data, dataSize);
+	}
 
-	LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "MediaRequestHandler::processGetPart, handle = " << request.handle() << ", isComplete = " << std::boolalpha << transcoder->isComplete() << ", size = " << transcoder->getOutputData().size();
+	LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "MediaRequestHandler::processGetPart, handle = " << request.handle() << ", isComplete = " << std::boolalpha << transcoder->isComplete() << ", size = " << data.size();
 
-	Transcode::AvConvTranscoder::data_type::iterator itEnd;
-	if (transcoder->getOutputData().size() > dataSize)
-		itEnd = transcoder->getOutputData().begin() + dataSize;
-	else
-		itEnd = transcoder->getOutputData().end();
-
-	std::copy(transcoder->getOutputData().begin(), itEnd, std::back_inserter(*response.mutable_data()));
-
-	// Consume sent bytes
-	transcoder->getOutputData().erase(transcoder->getOutputData().begin(), itEnd);
+	std::copy(data.begin(), data.end(), std::back_inserter(*response.mutable_data()));
 
 	return true;
 }
