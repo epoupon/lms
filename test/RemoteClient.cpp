@@ -83,12 +83,20 @@ struct TrackInfo
 
 	boost::posix_time::time_duration duration;
 
+	std::string	date;
+	std::string	original_date;
+
 	TrackInfo(): id(0), release_id(0), artist_id(0), disc_number(0), track_number(0) {}
 };
 
 std::ostream& operator<<(std::ostream& os, const TrackInfo& info)
 {
 	os << "id = " << info.id << ", name = '" << info.name << "', track_number = " << info.track_number << ", duration = " << info.duration;
+	if (!info.date.empty())
+		os << ", date = " << info.date;
+	if (!info.original_date.empty())
+		os << ", original date = " << info.original_date;
+
 	return os;
 }
 
@@ -351,6 +359,12 @@ class TestClient
 
 				if (response.audio_collection_response().track_list().tracks(i).has_disc_number())
 					track.disc_number = response.audio_collection_response().track_list().tracks(i).disc_number();
+
+				if (response.audio_collection_response().track_list().tracks(i).has_release_date())
+					track.date = response.audio_collection_response().track_list().tracks(i).release_date();
+
+				if (response.audio_collection_response().track_list().tracks(i).has_original_release_date())
+					track.original_date = response.audio_collection_response().track_list().tracks(i).original_release_date();
 
 
 				tracks.push_back( track );
@@ -756,7 +770,7 @@ int main()
 		TestClient	client( boost::asio::ip::tcp::endpoint( boost::asio::ip::address_v4::loopback(), 5080));
 
 		// Use a dumb account in order to login TODO parametrize
-		if (!client.login("admin", "admin"))
+		if (!client.login("admin", "toto"))
 			throw std::runtime_error("login failed!");
 
 		// **** REVISION ***

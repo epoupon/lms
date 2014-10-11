@@ -103,16 +103,16 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 			}
 
 			if (!videoStreams.empty())
-				items.insert( std::make_pair(MetaData::VideoStreams, videoStreams));
+				items.insert( std::make_pair(MetaData::Type::VideoStreams, videoStreams));
 			if (!audioStreams.empty())
-				items.insert( std::make_pair(MetaData::AudioStreams, audioStreams));
+				items.insert( std::make_pair(MetaData::Type::AudioStreams, audioStreams));
 			if (!subtitleStreams.empty())
-				items.insert( std::make_pair(MetaData::SubtitleStreams, SubtitleStreams));
+				items.insert( std::make_pair(MetaData::Type::SubtitleStreams, subtitleStreams));
 
 		}
 
 		// Duration
-		items.insert( std::make_pair(MetaData::Duration, boost::posix_time::time_duration( boost::posix_time::seconds( input.getDurationSecs() )) ));
+		items.insert( std::make_pair(MetaData::Type::Duration, boost::posix_time::time_duration( boost::posix_time::seconds( input.getDurationSecs() )) ));
 
 		// Embedded MetaData
 		// Make sure to convert strings into UTF-8
@@ -120,38 +120,42 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 		for (it = metadata.begin(); it != metadata.end(); ++it)
 		{
 			if (boost::iequals(it->first, "artist"))
-				items.insert( std::make_pair(MetaData::Artist, string_trim( string_to_utf8(it->second)) ));
+				items.insert( std::make_pair(MetaData::Type::Artist, string_trim( string_to_utf8(it->second)) ));
 			else if (boost::iequals(it->first, "album"))
-				items.insert( std::make_pair(MetaData::Album, string_trim( string_to_utf8(it->second)) ));
+				items.insert( std::make_pair(MetaData::Type::Album, string_trim( string_to_utf8(it->second)) ));
 			else if (boost::iequals(it->first, "title"))
-				items.insert( std::make_pair(MetaData::Title, string_trim( string_to_utf8(it->second)) ));
+				items.insert( std::make_pair(MetaData::Type::Title, string_trim( string_to_utf8(it->second)) ));
 			else if (boost::iequals(it->first, "track")) {
 				std::size_t number;
 				if (readAs<std::size_t>(it->second, number))
-					items.insert( std::make_pair(MetaData::TrackNumber, number ));
+					items.insert( std::make_pair(MetaData::Type::TrackNumber, number ));
 			}
 			else if (boost::iequals(it->first, "disc"))
 			{
 				std::size_t number;
 				if (readAs<std::size_t>(it->second, number))
-					items.insert( std::make_pair(MetaData::DiscNumber, number ));
+					items.insert( std::make_pair(MetaData::Type::DiscNumber, number ));
 			}
 			else if (boost::iequals(it->first, "date")
 				|| boost::iequals(it->first, "year")
-				|| boost::iequals(it->first, "WM/Year")
-				|| boost::iequals(it->first, "TDOR")	// Original date fallback
-				|| boost::iequals(it->first, "TORY")	// Original date fallback
-				)
+				|| boost::iequals(it->first, "WM/Year"))
 			{
 				boost::posix_time::ptime p;
 				if (readAsPosixTime(it->second, p))
-					items.insert( std::make_pair(MetaData::CreationTime, p));
+					items.insert( std::make_pair(MetaData::Type::Date, p));
+			}
+			else if (boost::iequals(it->first, "TDOR")	// Original release time (ID3v2 2.4)
+				|| boost::iequals(it->first, "TORY"))	// Original release year
+			{
+				boost::posix_time::ptime p;
+				if (readAsPosixTime(it->second, p))
+					items.insert( std::make_pair(MetaData::Type::OriginalDate, p));
 			}
 			else if (boost::iequals(it->first, "genre"))
 			{
 				std::list<std::string> genres;
 				if (readList(it->second, ";,", genres))
-					items.insert( std::make_pair(MetaData::Genres, genres));
+					items.insert( std::make_pair(MetaData::Type::Genres, genres));
 
 			}
 /*			else

@@ -28,7 +28,7 @@
 namespace MetaData
 {
 
-	enum Type
+	enum class Type
 	{
 		Artist,			// string
 		Title,			// string
@@ -37,7 +37,8 @@ namespace MetaData
 		Duration,		// boost::posix_time::time_duration
 		TrackNumber,		// size_t
 		DiscNumber,		// size_t
-		CreationTime,		// boost::posix_time::ptime
+		Date,			// boost::posix_time::ptime
+		OriginalDate,		// boost::posix_time::ptime
 		Cover,			// GenericData
 		AudioStreams,		// vector<AudioStream>
 		VideoStreams,		// vector<VideoStream>

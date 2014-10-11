@@ -284,8 +284,12 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 
 		track->set_name( std::string( boost::locale::conv::to_utf<char>((*it)->getName(), "UTF-8") ) );
 		track->set_duration_secs( (*it)->getDuration().total_seconds() );
-//		if (!(*it)->getCreationTime().is_special())
-//			track->set_release_date(  boost::posix_time::to_simple_string((*it)->getCreationTime()) );
+
+		// Only send the year part of the release times
+		if (!(*it)->getDate().is_special())
+			track->set_release_date( std::to_string((*it)->getDate().date().year()) );
+		if (!(*it)->getOriginalDate().is_special())
+			track->set_original_release_date( std::to_string((*it)->getOriginalDate().date().year()) );
 
 		BOOST_FOREACH(Database::Genre::pointer genre, (*it)->getGenres())
 			track->add_genre_id( genre.id() );

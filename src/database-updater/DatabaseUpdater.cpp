@@ -283,8 +283,8 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		// We estimate this is a audio file if:
 		// - we found a least one audio stream
 		// - the duration is not null
-		if (items.find(MetaData::AudioStreams) == items.end()
-		|| boost::any_cast<std::vector<MetaData::AudioStream> >(items[MetaData::AudioStreams]).empty())
+		if (items.find(MetaData::Type::AudioStreams) == items.end()
+		|| boost::any_cast<std::vector<MetaData::AudioStream> >(items[MetaData::Type::AudioStreams]).empty())
 		{
 			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Skipped '" << file << "' (no audio stream found)";
 
@@ -295,8 +295,8 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 			}
 			return;
 		}
-		if (items.find(MetaData::Duration) == items.end()
-		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Duration]).total_seconds() == 0)
+		if (items.find(MetaData::Type::Duration) == items.end()
+		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]).total_seconds() == 0)
 		{
 			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Skipped '" << file << "' (no duration or duration 0)";
 
@@ -310,8 +310,8 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		// ***** Title
 		std::string title;
-		if (items.find(MetaData::Title) != items.end()) {
-			title = boost::any_cast<std::string>(items[MetaData::Title]);
+		if (items.find(MetaData::Type::Title) != items.end()) {
+			title = boost::any_cast<std::string>(items[MetaData::Type::Title]);
 		}
 		else
 		{
@@ -322,9 +322,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		// ***** Artist
 		Wt::Dbo::ptr<Artist> artist;
-		if (items.find(MetaData::Artist) != items.end())
+		if (items.find(MetaData::Type::Artist) != items.end())
 		{
-			const std::string artistName (boost::any_cast<std::string>(items[MetaData::Artist]));
+			const std::string artistName (boost::any_cast<std::string>(items[MetaData::Type::Artist]));
 			artist = Artist::getByName(_db.getSession(), artistName );
 			if (!artist)
 				artist = Artist::create( _db.getSession(), artistName );
@@ -337,9 +337,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		// ***** Release
 		Wt::Dbo::ptr<Release> release;
-		if (items.find(MetaData::Album) != items.end())
+		if (items.find(MetaData::Type::Album) != items.end())
 		{
-			const std::string albumName (boost::any_cast<std::string>(items[MetaData::Album]));
+			const std::string albumName (boost::any_cast<std::string>(items[MetaData::Type::Album]));
 			release = Release::getByName(_db.getSession(), albumName);
 			if (!release)
 				release = Release::create( _db.getSession(),  albumName );
@@ -354,9 +354,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		typedef std::list<std::string> GenreList;
 		GenreList genreList;
 		std::vector< Genre::pointer > genres;
-		if (items.find(MetaData::Genres) != items.end())
+		if (items.find(MetaData::Type::Genres) != items.end())
 		{
-			genreList = (boost::any_cast<GenreList>(items[MetaData::Genres]));
+			genreList = (boost::any_cast<GenreList>(items[MetaData::Type::Genres]));
 
 			BOOST_FOREACH(const std::string& genre, genreList) {
 				Genre::pointer dbGenre ( Genre::getByName(_db.getSession(), genre) );
@@ -406,17 +406,26 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		track.modify()->setArtist( artist );
 		track.modify()->setRelease( release );
 
-		if (items.find(MetaData::TrackNumber) != items.end())
-			track.modify()->setTrackNumber( boost::any_cast<std::size_t>(items[MetaData::TrackNumber]) );
+		if (items.find(MetaData::Type::TrackNumber) != items.end())
+			track.modify()->setTrackNumber( boost::any_cast<std::size_t>(items[MetaData::Type::TrackNumber]) );
 
-		if (items.find(MetaData::DiscNumber) != items.end())
-			track.modify()->setDiscNumber( boost::any_cast<std::size_t>(items[MetaData::DiscNumber]) );
+		if (items.find(MetaData::Type::DiscNumber) != items.end())
+			track.modify()->setDiscNumber( boost::any_cast<std::size_t>(items[MetaData::Type::DiscNumber]) );
 
-		if (items.find(MetaData::Duration) != items.end())
-			track.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Duration]) );
+		if (items.find(MetaData::Type::Duration) != items.end())
+			track.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]) );
 
-		if (items.find(MetaData::CreationTime) != items.end())
-			track.modify()->setCreationTime( boost::any_cast<boost::posix_time::ptime>(items[MetaData::CreationTime]) );
+		if (items.find(MetaData::Type::Date) != items.end())
+			track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>(items[MetaData::Type::Date]) );
+
+		if (items.find(MetaData::Type::OriginalDate) != items.end())
+		{
+			track.modify()->setOriginalDate( boost::any_cast<boost::posix_time::ptime>(items[MetaData::Type::OriginalDate]) );
+
+			// If a file has an OriginalDate but no date, set the date to ease filtering
+			if (items.find(MetaData::Type::Date) == items.end())
+				track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>(items[MetaData::Type::OriginalDate]) );
+		}
 
 		transaction.commit();
 
@@ -616,8 +625,8 @@ Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 		// We estimate this is a video if:
 		// - we found a least one video stream
 		// - the duration is not null
-		if (items.find(MetaData::VideoStreams) == items.end()
-		|| boost::any_cast<std::vector<MetaData::VideoStream> >(items[MetaData::VideoStreams]).empty())
+		if (items.find(MetaData::Type::VideoStreams) == items.end()
+		|| boost::any_cast<std::vector<MetaData::VideoStream> >(items[MetaData::Type::VideoStreams]).empty())
 		{
 			LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Skipped '" << file << "' (no video stream found)";
 
@@ -628,8 +637,8 @@ Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 			}
 			return;
 		}
-		if (items.find(MetaData::Duration) == items.end()
-		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Duration]).total_seconds() == 0)
+		if (items.find(MetaData::Type::Duration) == items.end()
+		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]).total_seconds() == 0)
 		{
 			LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Skipped '" << file << "' (no duration or duration 0)";
 
@@ -659,7 +668,7 @@ Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 		assert(video);
 
 		video.modify()->setName( file.filename().string() );
-		video.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Duration]) );
+		video.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]) );
 		video.modify()->setLastWriteTime(lastWriteTime);
 
 		transaction.commit();

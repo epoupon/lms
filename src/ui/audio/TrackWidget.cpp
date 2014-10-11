@@ -44,7 +44,8 @@ _trackStats(nullptr)
 	_queryModel.addColumn( "track.track_number", "Track #" );
 	_queryModel.addColumn( "track.name", "Track" );
 	_queryModel.addColumn( "track.duration", "Duration" );
-	_queryModel.addColumn( "track.creation_time", "Date" );
+	_queryModel.addColumn( "track.date", "Date" );
+	_queryModel.addColumn( "track.original_date", "Original Date" );
 	_queryModel.addColumn( "track.genre_list", "Genres" );
 
 	_queryModel.setBatchSize(1000);
@@ -57,16 +58,24 @@ _trackStats(nullptr)
 	_tableView->setAlternatingRowColors(true);
 	_tableView->setModel(&_queryModel);
 
+	// Duration display
+	{
+		// TODO better handle 1 hour+ files!
+		Wt::WItemDelegate *delegate = new Wt::WItemDelegate(this);
+		delegate->setTextFormat("mm:ss");
+		_tableView->setItemDelegateForColumn(5, delegate);
+	}
+
+	// Date display, just the year
 	{
 		Wt::WItemDelegate *delegate = new Wt::WItemDelegate(this);
 		delegate->setTextFormat("yyyy");
 		_tableView->setItemDelegateForColumn(6, delegate);
 	}
 	{
-		// TODO better handle 1 hour+ files!
 		Wt::WItemDelegate *delegate = new Wt::WItemDelegate(this);
-		delegate->setTextFormat("mm:ss");
-		_tableView->setItemDelegateForColumn(5, delegate);
+		delegate->setTextFormat("yyyy");
+		_tableView->setItemDelegateForColumn(7, delegate);
 	}
 
 	// TODO other event!
@@ -101,7 +110,7 @@ TrackWidget::refresh(const Constraint& constraint)
 
 	Wt::Dbo::Query<ResultType> query = _db.getSession().query<ResultType>( sqlQuery.get() );
 
-	query.groupBy("track").orderBy("artist.name,track.creation_time,release.name,track.disc_number,track.track_number");
+	query.groupBy("track").orderBy("artist.name,track.date,release.name,track.disc_number,track.track_number");
 
 	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs()) {
 		LMS_LOG(MOD_UI, SEV_DEBUG) << "Binding value '" << bindArg << "'";

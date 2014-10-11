@@ -196,7 +196,8 @@ class Track
 		void setDuration(boost::posix_time::time_duration duration)	{ _duration = duration; }
 		void setLastWriteTime(boost::posix_time::ptime time)		{ _fileLastWrite = time; }
 		void setChecksum(const std::vector<unsigned char>& checksum)	{ _fileChecksum = checksum; }
-		void setCreationTime(const boost::posix_time::ptime& time)	{ _creationTime = time; }
+		void setDate(const boost::posix_time::ptime& date)		{ _date = date; }
+		void setOriginalDate(const boost::posix_time::ptime& date)	{ _originalDate = date; }
 		void setGenres(const std::string& genreList)			{ _genreList = genreList; }
 		void setGenres(std::vector<Genre::pointer> genres);
 		void setArtist(Artist::pointer artist)				{ _artist = artist; }
@@ -207,7 +208,8 @@ class Track
 		std::string 			getName(void) const			{ return _name; }
 		const std::string&		getPath(void) const			{ return _filePath; }
 		boost::posix_time::time_duration	getDuration(void) const		{ return _duration; }
-		boost::posix_time::ptime	getCreationTime(void) const		{ return _creationTime; }
+		boost::posix_time::ptime	getDate(void) const			{ return _date; }
+		boost::posix_time::ptime	getOriginalDate(void) const		{ return _originalDate; }
 		Artist::pointer			getArtist(void)	const			{ return _artist; }
 		Release::pointer		getRelease(void) const			{ return _release; }
 		bool				hasGenre(Genre::pointer genre) const	{ return _genres.count(genre); }
@@ -223,7 +225,8 @@ class Track
 				Wt::Dbo::field(a, _discNumber,		"disc_number");
 				Wt::Dbo::field(a, _name,		"name");
 				Wt::Dbo::field(a, _duration,		"duration");
-				Wt::Dbo::field(a, _creationTime,	"creation_time");
+				Wt::Dbo::field(a, _date,		"date");
+				Wt::Dbo::field(a, _originalDate,	"original_date");
 				Wt::Dbo::field(a, _genreList,		"genre_list");
 				Wt::Dbo::field(a, _filePath,		"path");
 				Wt::Dbo::field(a, _fileLastWrite,	"last_write");
@@ -241,7 +244,8 @@ class Track
 		int					_discNumber;
 		std::string				_name;
 		boost::posix_time::time_duration	_duration;
-		boost::posix_time::ptime		_creationTime;
+		boost::posix_time::ptime		_date;
+		boost::posix_time::ptime		_originalDate;
 		std::string				_genreList;
 		std::string				_filePath;
 		std::vector<unsigned char>		_fileChecksum;
