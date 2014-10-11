@@ -4,7 +4,7 @@
 - Use our own WIOService
 
 [Services]
-- consider using external web server instead of builtin httpd (new FCGI service?)
+- consider adding support for external web servers (new FCGI service?)
 
 [Users]
 - Handle login lifetime?
@@ -16,7 +16,6 @@
 [Database]
 - Optim, use SQL query to get genre orphans
 - Use Inotify like system to watch modified/added files?
-- Implement a video database cleanup
 - count scan import errors
 
 [Metadata]
@@ -67,7 +66,6 @@
 
 [Remote API]
 - Implement text search options in the GetXXX messages
-- Implement genre id filters for Artist/Release
 
 [Logs]
-- capture transcoder log output to get more information
+- capture transcoder log output to get more information on errors
