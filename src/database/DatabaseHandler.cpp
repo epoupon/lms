@@ -56,11 +56,11 @@ Handler::configureAuth(void)
 
 	Wt::Auth::PasswordStrengthValidator* strengthValidator = new Wt::Auth::PasswordStrengthValidator();
 	// Reduce some constraints...
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::PassPhrase, 10);
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::OneCharClass, 8);
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::TwoCharClass, 7);
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::ThreeCharClass, 6 );
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::FourCharClass, 5  );
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::PassPhrase, 4);
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::OneCharClass, 4);
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::TwoCharClass, 4);
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::ThreeCharClass, 4 );
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::FourCharClass, 4  );
 
 	passwordService.setStrengthValidator(strengthValidator);
 }
