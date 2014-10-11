@@ -90,7 +90,6 @@ InputFormatContext::getBestStreamIdx(AVMediaType type, Stream::Idx& index)
 void
 InputFormatContext::findStreamInfo(void)
 {
-	native()->max_analyze_duration = 10 * AV_TIME_BASE; // 10 secs. TODO deprecated
 	AvError err = avformat_find_stream_info(native(), NULL);
 	if (err) {
 		LMS_LOG(MOD_AV, SEV_ERROR) << "Couldn't find stream information: " << err;
