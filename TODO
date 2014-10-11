@@ -22,7 +22,6 @@
 
 [Transcode]
 - some early end of playback spotted on flac files
-- do not use a queue to output data, but just fill produced bytes into a buffer and let the transcode user decide what to do with it
 
 [UI]
 	- handle internationalization

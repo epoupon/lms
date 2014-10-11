@@ -19,7 +19,7 @@ Please note some media files may require significant CPU usage to be transcoded.
 I) DEPENCIES
 
 Debian packages:
-libboost-dev libavcodec-dev libwtdbosqlite-dev libwthttp-dev libwtdbo-dev libwt-dev libprotobuf-dev libconfig++-dev libprotobuf-dev protobuf-compiler libjpeg8-dev libavcodec-dev libavformat-dev libavutil-dev
+g++ autoconf automake libboost-dev libavcodec-dev libwtdbosqlite-dev libwthttp-dev libwtdbo-dev libwt-dev libprotobuf-dev libconfig++-dev libprotobuf-dev protobuf-compiler libjpeg8-dev libavcodec-dev libavformat-dev libavutil-dev
 
 Warning: your distrib may provide an outdated wt library. Using the latest Wt (>= 3.3.3) is highly recommended (see http://www.webtoolkit.eu/wt)
 
