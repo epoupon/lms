@@ -17,41 +17,48 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TABLE_VIEW_FILTER_WIDGET_HPP
-#define TABLE_VIEW_FILTER_WIDGET_HPP
+#ifndef TRACK_HPP
+#define TRACK_HPP
 
-
-#include <Wt/Dbo/QueryModel>
 #include <Wt/WTableView>
+#include <Wt/Dbo/QueryModel>
 
-#include "FilterWidget.hpp"
 #include "database/DatabaseHandler.hpp"
+#include "database/AudioTypes.hpp"
+
+#include "Filter.hpp"
 
 namespace UserInterface {
 
-class TableFilterWidget : public FilterWidget
+class TrackView : public Wt::WTableView, public Filter
 {
-
 	public:
-		TableFilterWidget(Database::Handler& db, std::string table, std::string field, Wt::WContainerWidget* parent = 0);
 
-		// Set constraints on this filter
-		virtual void refresh(const Constraint& constraint);
+		TrackView( Database::Handler& db, Wt::WContainerWidget* parent = 0);
 
-		// Get constraints created by this filter
-		virtual void getConstraint(Constraint& constraint);
+		// Set constraints created by parent filters
+		void refresh(const Constraint& constraint);
 
-	protected:
+		// Create constraints for child filters (N/A)
+		void getConstraint(Constraint& constraint) {}
+
+		void selectNextTrack(void);	// Emit a trackSelected() if success
+
+		// Signals
+		Wt::Signal< boost::filesystem::path >& trackSelected() { return _trackSelected; }
+
+	private:
+
+		void handleTrackSelected();
+
+		Wt::Signal< boost::filesystem::path > _trackSelected;
 
 		Database::Handler&			_db;
-		const std::string			_table;
-		const std::string			_field;
 
-		// Name, track count, special value that means 'all' if set to 1
-		typedef boost::tuple<std::string, int, int>  ResultType;
+		typedef boost::tuple<Database::Track::pointer, Database::Release::pointer, Database::Artist::pointer>  ResultType;
 		Wt::Dbo::QueryModel< ResultType >	_queryModel;
-
 		Wt::WTableView*				_tableView;
+
 };
 
 } // namespace UserInterface

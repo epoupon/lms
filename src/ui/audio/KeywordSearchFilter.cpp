@@ -17,45 +17,33 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AUDIO_WIDGET_HPP
-#define AUDIO_WIDGET_HPP
-
-#include <string>
-
-#include <Wt/WContainerWidget>
-
-#include "common/SessionData.hpp"
-
-#include "AudioMediaPlayerWidget.hpp"
-
-#include "FilterChain.hpp"
+#include "KeywordSearchFilter.hpp"
 
 namespace UserInterface {
 
-class AudioWidget : public Wt::WContainerWidget
+KeywordSearchFilter::KeywordSearchFilter()
 {
+}
 
-	public:
+void
+KeywordSearchFilter::setText(const std::string& text)
+{
+	_lastEmittedText = text;
+	emitUpdate();
+}
 
-		AudioWidget(SessionData& sessionData, Wt::WContainerWidget* parent = 0);
+// Get constraints created by this filter
+void
+KeywordSearchFilter::getConstraint(Constraint& constraint)
+{
+	// No active search means no constaint!
+	if (!_lastEmittedText.empty()) {
+		const std::string bindText ("%%" + _lastEmittedText + "%%");
+		constraint.where.And( WhereClause("(track.name like ? or release.name like ? or artist.name like ?)").bind(bindText).bind(bindText).bind(bindText));
+	}
 
-		void search(const std::string& searchText);
-
-	private:
-
-		void playTrack(boost::filesystem::path p);
-
-		void handleTrackEnded(void);
-
-		Database::Handler&	_db;
-
-		AudioMediaPlayerWidget*	_mediaPlayer;
-
-		FilterChain		_filterChain;
-
-};
+	// else no constraint!
+}
 
 } // namespace UserInterface
-
-#endif
 

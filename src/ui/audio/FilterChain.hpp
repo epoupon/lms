@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2014 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,36 +17,41 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WLabel>
+#ifndef FILTER_CHAIN_HPP
+#define FILTER_CHAIN_HPP
 
-#include "SearchFilterWidget.hpp"
+#include <Wt/WSignal>
+
+#include "Filter.hpp"
+#include "KeywordSearchFilter.hpp"
 
 namespace UserInterface {
 
-SearchFilterWidget::SearchFilterWidget(Wt::WContainerWidget* parent)
-: FilterWidget( parent )
+// FilterChain
+class FilterChain
 {
-}
+	public:
 
-void
-SearchFilterWidget::setText(const std::string& text)
-{
-	_lastEmittedText = text;
-	emitUpdate();
-}
+		FilterChain();
 
-// Get constraints created by this filter
-void
-SearchFilterWidget::getConstraint(Constraint& constraint)
-{
-	// No active search means no constaint!
-	if (!_lastEmittedText.empty()) {
-		const std::string bindText ("%%" + _lastEmittedText + "%%");
-		constraint.where.And( WhereClause("(track.name like ? or release.name like ? or artist.name like ?)").bind(bindText).bind(bindText).bind(bindText));
-	}
+		void addFilter(Filter* filter);
 
-	// else no constraint!
-}
+		// First filter is a keywork search
+		void searchKeyword(const std::string& text);
+
+		// Update filters from filter @ startIdx
+		void updateFilters(std::size_t startIdx);
+
+	private:
+
+		KeywordSearchFilter	_keywordSearchFilter;
+
+		// No ownership
+		std::vector<Filter*>	_filters;
+
+		bool _refreshingFilters;
+};
 
 } // namespace UserInterface
 
+#endif

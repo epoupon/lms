@@ -44,6 +44,8 @@ class LmsApplication : public Wt::WApplication
 		SessionData	_sessionData;
 
 		LmsHome*	_home;
+		AudioWidget*	_audioWidget;
+		VideoWidget*	_videoWidget;
 
 };
 

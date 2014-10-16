@@ -18,7 +18,23 @@
  */
 
 #include <Wt/WBootstrapTheme>
+#include <Wt/WVBoxLayout>
+#include <Wt/WHBoxLayout>
+#include <Wt/WNavigationBar>
+#include <Wt/WStackedWidget>
+#include <Wt/WMenu>
+#include <Wt/WNavigationBar>
+#include <Wt/WPopupMenu>
+#include <Wt/WPopupMenuItem>
+#include <Wt/WVBoxLayout>
+#include <Wt/Auth/Identity>
+
+#include "settings/Settings.hpp"
+
+
 #include "auth/LmsAuth.hpp"
+
+#include "logger/Logger.hpp"
 
 #include "LmsHome.hpp"
 #include "settings/SettingsFirstConnectionFormView.hpp"
@@ -64,65 +80,52 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::p
 
 	setTitle("LMS");                               // application title
 
-	bool firstConnection;
-	{
-		Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
+	// Create a Vertical layout: top is the nav bar, bottom is the contents
+	Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
+	// Create a navigation bar with a link to a web page.
+	Wt::WNavigationBar *navigation = new Wt::WNavigationBar();
+	navigation->setTitle("LMS");
+	navigation->setResponsive(true);
+	navigation->addStyleClass("main-nav");
 
-		firstConnection = (Database::User::getAll(_sessionData.getDatabaseHandler().getSession()).size() == 0);
-	}
+	Wt::WStackedWidget *contentsStack = new Wt::WStackedWidget();
 
-	// If here is no account in the database, launch the first connection wizard
-	if (firstConnection)
-	{
-		// Hack, use the auth widget builtin strings
-		builtinLocalizedStrings().useBuiltin(skeletons::AuthStrings_xml1);
+	// Setup a Left-aligned menu.
+	Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack);
+	navigation->addMenu(leftMenu);
 
-		root()->addWidget( new Settings::FirstConnectionFormView(_sessionData));
-	}
-	else
-	{
-		_sessionData.getDatabaseHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
+	_audioWidget = new AudioWidget(_sessionData);
+	_videoWidget = new VideoWidget(_sessionData);
 
-		LmsAuth *authWidget = new LmsAuth(_sessionData.getDatabaseHandler());
+	leftMenu->addItem("Audio", _audioWidget);
+	leftMenu->addItem("Video", _videoWidget);
+//	leftMenu->addItem("Settings", new Settings::Settings(_sessionData));
 
-		authWidget->model()->addPasswordAuth(&Database::Handler::getPasswordService());
-		authWidget->setRegistrationEnabled(false);
+	// Setup a Right-aligned menu.
+	Wt::WMenu *rightMenu = new Wt::WMenu();
 
-		authWidget->processEnvironment();
+	navigation->addMenu(rightMenu, Wt::AlignRight);
 
-		root()->addWidget(authWidget);
-	}
-}
+	Wt::WPopupMenu *popup = new Wt::WPopupMenu();
+	popup->addItem("Logout");
 
+//	popup->itemSelected().connect(this, &LmsHome::handleUserMenuSelected);
 
+/*	Wt::WMenuItem *item = new Wt::WMenuItem( user.identity(Wt::Auth::Identity::LoginName) );
+	item->setMenu(popup);
+	rightMenu->addItem(item);*/
 
-void
-LmsApplication::handleAuthEvent(void)
-{
-	if (_sessionData.getDatabaseHandler().getLogin().loggedIn())
-	{
-		if (_home == nullptr) {
-			_home = new LmsHome(_sessionData, root() );
-		}
-		else
-			std::cerr << "Already logged in??" << std::endl;
-	}
-	else
-	{
-		std::cerr << "user log out" << std::endl;
-		if (_home != nullptr) {
-			delete _home;
-			_home = nullptr;
+	// Add a Search control.
+/*	_searchEdit = new Wt::WLineEdit();
+	_searchEdit->setEmptyText("Search...");
 
-			// Hack: quit/redirect in order to avoid 'signal not exposed' problems
-			// TODO, investigate/remove?
-			quit();
-			redirect("/");
+	_searchEdit->enterPressed().connect(this, &LmsHome::handleSearch);
+*/
+//	navigation->addSearch(_searchEdit, Wt::AlignLeft);
 
-		}
-		else
-			std::cerr << "Already logged out??" << std::endl;
-	}
+	layout->addWidget(navigation);
+	layout->addWidget(contentsStack, 1);
+	layout->setContentsMargins(0, 0, 0, 0);
 }
 
 } // namespace UserInterface

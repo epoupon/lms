@@ -17,35 +17,44 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SEARCH_FILTER_WIDGET_PP
-#define SEARCH_FILTER_WIDGET_PP
+#ifndef FILTER_HPP
+#define FILTER_HPP
 
-#include <Wt/WLineEdit>
+#include <Wt/WSignal>
 
-#include "FilterWidget.hpp"
+#include "database/SqlQuery.hpp"
 
 namespace UserInterface {
 
-class SearchFilterWidget : public FilterWidget {
+class Filter
+{
 	public:
-		SearchFilterWidget(Wt::WContainerWidget* parent = 0);
 
-		void setText(const std::string& text);
+		struct Constraint {
+			WhereClause	where;		// WHERE SQL clause
+		};
 
-		// Set constraint on this filter
-		void refresh(const Constraint& constraint) {}
+		Filter() {}
+		virtual ~Filter() {}
 
-		// Get constraints created by this filter
-		void getConstraint(Constraint& constraint);
+		// Refresh filter using constraints created by parent filters
+		virtual void refresh(const Constraint& constraint) = 0;
+
+		// Update constraints for next filters
+		virtual void getConstraint(Constraint& constraint) = 0;
+
+		// Emitted when a constraint has changed
+		Wt::Signal<void>& update() { return _update; };
+
+	protected:
+
+		void emitUpdate()	{ _update.emit(); }
 
 	private:
 
-		void handleKeyWentUp(void);
-
-		std::string	 _lastEmittedText;
+		Wt::Signal<void> _update;
 };
 
 } // namespace UserInterface
 
 #endif
-

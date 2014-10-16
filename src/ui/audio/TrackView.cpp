@@ -25,18 +25,14 @@
 
 #include "logger/Logger.hpp"
 
-#include "TrackWidget.hpp"
+#include "TrackView.hpp"
 
 namespace UserInterface {
 
-TrackWidget::TrackWidget( Database::Handler& db, Wt::WContainerWidget* parent)
-: FilterWidget( parent ),
-_db(db),
-_tableView(nullptr),
-_trackStats(nullptr)
+TrackView::TrackView( Database::Handler& db, Wt::WContainerWidget* parent)
+: Wt::WTableView( parent ),
+_db(db)
 {
-
-	// ----- TRACK -----
 	_queryModel.setQuery(_db.getSession().query<ResultType>("select track,release,artist from track,release,artist where track.release_id = release.id and track.artist_id = artist.id" ).orderBy("artist.name,release.name,track.disc_number,track.track_number"));
 	_queryModel.addColumn( "artist.name", "Artist" );
 	_queryModel.addColumn( "release.name", "Album" );
@@ -48,56 +44,52 @@ _trackStats(nullptr)
 	_queryModel.addColumn( "track.original_date", "Original Date" );
 	_queryModel.addColumn( "track.genre_list", "Genres" );
 
-	_queryModel.setBatchSize(1000);
+	_queryModel.setBatchSize(250);
 
-	_tableView = new Wt::WTableView( this );
-	_tableView->resize(Wt::WLength::Auto, 400);
+	this->setSortingEnabled(true);
+	this->setSelectionMode(Wt::SingleSelection);
+	this->setAlternatingRowColors(true);
+	this->setModel(&_queryModel);
 
-	_tableView->setSortingEnabled(true);
-	_tableView->setSelectionMode(Wt::SingleSelection);
-	_tableView->setAlternatingRowColors(true);
-	_tableView->setModel(&_queryModel);
+	this->setColumnWidth(0, 180);	// Artist
+	this->setColumnWidth(1, 180);	// Album
+	this->setColumnWidth(2, 70);	// Disc Number
+	this->setColumnWidth(3, 70);	// Track Number
+	this->setColumnWidth(4, 180);	// Track
+	this->setColumnWidth(5, 70);	// Duration
+	this->setColumnWidth(6, 70);	// Date
+	this->setColumnWidth(7, 70);	// Original Date
+	this->setColumnWidth(8, 180);	// Genres
+
+//	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
 
 	// Duration display
 	{
 		// TODO better handle 1 hour+ files!
 		Wt::WItemDelegate *delegate = new Wt::WItemDelegate(this);
 		delegate->setTextFormat("mm:ss");
-		_tableView->setItemDelegateForColumn(5, delegate);
+		this->setItemDelegateForColumn(5, delegate);
 	}
 
 	// Date display, just the year
 	{
 		Wt::WItemDelegate *delegate = new Wt::WItemDelegate(this);
 		delegate->setTextFormat("yyyy");
-		_tableView->setItemDelegateForColumn(6, delegate);
+		this->setItemDelegateForColumn(6, delegate);
 	}
 	{
 		Wt::WItemDelegate *delegate = new Wt::WItemDelegate(this);
 		delegate->setTextFormat("yyyy");
-		_tableView->setItemDelegateForColumn(7, delegate);
+		this->setItemDelegateForColumn(7, delegate);
 	}
 
 	// TODO other event!
-	_tableView->selectionChanged().connect(this, &TrackWidget::handleTrackSelected);
-
-	new Wt::WBreak(this);
-	_trackStats = new Wt::WText(this);
-
-	updateStats();
-}
-
-void
-TrackWidget::updateStats(void)
-{
-	std::ostringstream oss; oss <<  "Files :" << _tableView->model()->rowCount();
-	// TODO from UTF-8 ?
-	_trackStats->setText(oss.str());
+	this->selectionChanged().connect(this, &TrackView::handleTrackSelected);
 }
 
 // Set constraints created by parent filters
 void
-TrackWidget::refresh(const Constraint& constraint)
+TrackView::refresh(const Constraint& constraint)
 {
 
 	SqlQuery sqlQuery;
@@ -119,13 +111,12 @@ TrackWidget::refresh(const Constraint& constraint)
 
 	_queryModel.setQuery( query, true );
 
-	updateStats();
 }
 
 void
-TrackWidget::handleTrackSelected(void)
+TrackView::handleTrackSelected(void)
 {
-	Wt::WModelIndexSet indexSet = _tableView->selectedIndexes();
+	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 	if (!indexSet.empty()) {
 		Wt::WModelIndex currentIndex( *indexSet.begin() );
 
@@ -144,15 +135,15 @@ TrackWidget::handleTrackSelected(void)
 }
 
 void
-TrackWidget::selectNextTrack(void)
+TrackView::selectNextTrack(void)
 {
-	Wt::WModelIndexSet indexSet = _tableView->selectedIndexes();
+	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 	if (!indexSet.empty()) {
 		Wt::WModelIndex currentIndex( *indexSet.begin() );
 		// Check there are remainin tracks!
-		if (currentIndex.isValid() && _tableView->model()->rowCount() > currentIndex.row() + 1)
+		if (currentIndex.isValid() && this->model()->rowCount() > currentIndex.row() + 1)
 		{
-			_tableView->select( _tableView->model()->index( currentIndex.row() + 1, currentIndex.column()));
+			this->select( this->model()->index( currentIndex.row() + 1, currentIndex.column()));
 
 			ResultType result = _queryModel.resultRow( currentIndex.row() + 1 );
 

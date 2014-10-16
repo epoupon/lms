@@ -70,6 +70,7 @@ AuthRequestHandler::processPassword(const AuthRequest::Password& request, AuthRe
 		{
 			case Wt::Auth::PasswordInvalid:
 				response.set_type(AuthResponse::PasswordResult::TypePasswordInvalid);
+				LMS_LOG(MOD_REMOTE, SEV_NOTICE) << "User '" << request.user_login() << "': invalid password";
 				res = true;
 				break;
 			case Wt::Auth::LoginThrottling:
@@ -81,9 +82,11 @@ AuthRequestHandler::processPassword(const AuthRequest::Password& request, AuthRe
 				response.set_type(AuthResponse::PasswordResult::TypePasswordValid);
 				// Log the user in
 				_db.getLogin().login( user );
+				LMS_LOG(MOD_REMOTE, SEV_NOTICE) << "User '" << request.user_login() << "' successfully logged in";
 				res = true;
 				break;
 			default:
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Cannot handle password result!";
 				break;
 		}
 

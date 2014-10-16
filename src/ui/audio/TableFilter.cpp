@@ -21,36 +21,49 @@
 
 #include "logger/Logger.hpp"
 
-#include "TableFilterWidget.hpp"
+#include "TableFilter.hpp"
 
 namespace UserInterface {
 
-TableFilterWidget::TableFilterWidget(Database::Handler& db, std::string table, std::string field, Wt::WContainerWidget* parent)
-: FilterWidget( parent ),
+TableFilter::TableFilter(Database::Handler& db, std::string table, std::string field, Wt::WContainerWidget* parent)
+: Wt::WTableView( parent ),
+Filter(),
 _db(db),
 _table(table),
-_field(field),
-_tableView(nullptr)
+_field(field)
 {
 	_queryModel.setQuery( _db.getSession().query< ResultType >("select " + _table + "." + _field + ",count(DISTINCT track.id),0 as ORDERBY from track,artist,release,genre,track_genre WHERE track.artist_id = artist.id and track.release_id = release.id and track_genre.track_id = track.id and genre.id = track_genre.genre_id GROUP BY " + _table + "." + _field + " UNION select '<All>',0,1 AS ORDERBY").orderBy("ORDERBY DESC," + _table + "." + _field));
 	_queryModel.addColumn( _table + "." + _field, table);
 	_queryModel.addColumn( "count(DISTINCT track.id)", "Tracks");
 
-	_tableView = new Wt::WTableView( this );
-	_tableView->resize(250, 200);	// TODO
-	_tableView->setSelectionMode(Wt::ExtendedSelection);
-	_tableView->setSortingEnabled(false);
-	_tableView->setAlternatingRowColors(true);
-	_tableView->setModel(&_queryModel);
+	this->setSelectionMode(Wt::ExtendedSelection);
+	this->setSortingEnabled(false);
+	this->setAlternatingRowColors(true);
+	this->setModel(&_queryModel);
 
-	_tableView->selectionChanged().connect(this, &TableFilterWidget::emitUpdate);
+	this->selectionChanged().connect(this, &TableFilter::emitUpdate);
+
+	setLayoutSizeAware(true);
 
 	_queryModel.setBatchSize(100);
 }
 
+void
+TableFilter::layoutSizeChanged (int width, int height)
+{
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "LAYOUT CHANGED!";
+
+	/* TODO
+	std::size_t trackColumnSize = this->columnWidth(1).toPixels() + 30 ;
+	// Set the remaining size for the name column
+	this->setColumnWidth(0, width - 7 - trackColumnSize);
+	*/
+
+}
+
 // Set constraints on this filter
 void
-TableFilterWidget::refresh(const Constraint& constraint)
+TableFilter::refresh(const Constraint& constraint)
 {
 	SqlQuery sqlQuery;
 
@@ -73,16 +86,16 @@ TableFilterWidget::refresh(const Constraint& constraint)
 		query.bind(bindArg);
 	}
 
-	_queryModel.setQuery( query, true /* Keep columns */);
+	_queryModel.setQuery( query, true );
 
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Finish !";
 }
 
 // Get constraint created by this filter
 void
-TableFilterWidget::getConstraint(Constraint& constraint)
+TableFilter::getConstraint(Constraint& constraint)
 {
-	Wt::WModelIndexSet indexSet = _tableView->selectedIndexes();
+	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
 	// WHERE statement
 	WhereClause clause;

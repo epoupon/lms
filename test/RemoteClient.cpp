@@ -750,7 +750,7 @@ std::set<Test>	tests = {
 	Test::ReleaseFilterGenre,
 //	Test::TrackFilters,
 //	Test::Cover,
-//	Test::Transcode,
+	Test::Transcode,
 };
 
 bool test(Test t)

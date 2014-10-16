@@ -17,9 +17,19 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WBreak>
+#include <boost/bind.hpp>
+
+#include <Wt/WVBoxLayout>
+#include <Wt/WHBoxLayout>
+#include <Wt/WGridLayout>
+#include <Wt/WComboBox>
+#include <Wt/WPushButton>
 
 #include "logger/Logger.hpp"
+
+#include "TableFilter.hpp"
+#include "KeywordSearchFilter.hpp"
+#include "TrackView.hpp"
 
 #include "AudioWidget.hpp"
 
@@ -28,32 +38,79 @@ namespace UserInterface {
 AudioWidget::AudioWidget(SessionData& sessionData, Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent),
 _db(sessionData.getDatabaseHandler()),
-_audioDbWidget(nullptr),
-_mediaPlayer(nullptr),
-_imgResource(nullptr),
-_img(nullptr)
+_mediaPlayer(nullptr)
 {
-	_audioDbWidget = new AudioDatabaseWidget(sessionData.getDatabaseHandler(), this);
 
-	_audioDbWidget->trackSelected().connect(this, &AudioWidget::playTrack);
+	Wt::WGridLayout *mainLayout = new Wt::WGridLayout();
+	this->setLayout(mainLayout);
 
-	_mediaPlayer = new AudioMediaPlayerWidget(this);
+	// Filters
+	Wt::WHBoxLayout *filterLayout = new Wt::WHBoxLayout();
+
+	{
+		TableFilter *filter = new TableFilter(_db, "genre", "name");
+		filterLayout->addWidget(filter);
+		_filterChain.addFilter(filter);
+	}
+	{
+		TableFilter *filter = new TableFilter(_db, "artist", "name");
+		filterLayout->addWidget(filter);
+		_filterChain.addFilter(filter);
+	}
+	{
+		TableFilter *filter = new TableFilter(_db, "release", "name");
+		filterLayout->addWidget(filter);
+		_filterChain.addFilter(filter);
+	}
+
+	mainLayout->addLayout(filterLayout, 0, 0);
+	// ENDOF(Filters)
+
+	TrackView* trackView = new TrackView(_db);
+	mainLayout->addWidget( trackView, 1, 0);
+	_filterChain.addFilter(trackView);
+
+	// TODO Playlist here
+	{
+		Wt::WVBoxLayout* playlist = new Wt::WVBoxLayout();
+
+		Wt::WHBoxLayout* playlistControls = new Wt::WHBoxLayout();
+
+		Wt::WComboBox *cb = new Wt::WComboBox();
+		cb->addItem("metal");
+		cb->addItem("rock");
+		cb->addItem("top50");
+		cb->setWidth(100);
+
+		playlistControls->addWidget(cb, 1);
+		playlistControls->addWidget(new Wt::WPushButton("Rename"));
+		playlistControls->addWidget(new Wt::WPushButton("+"));
+		playlistControls->addWidget(new Wt::WPushButton("-"));
+
+		playlist->addLayout(playlistControls);
+
+		playlist->addWidget( new TableFilter(_db, "release", "name"), 1);
+
+		mainLayout->addLayout(playlist, 0, 1, 2, 1);
+	}
+
+	_mediaPlayer = new AudioMediaPlayerWidget();
+	mainLayout->addWidget(_mediaPlayer, 2, 0, 1, 2);
+
+	mainLayout->setColumnStretch(0, 1);
+	mainLayout->setRowStretch(1, 1);
+	mainLayout->setRowResizable(0, true, Wt::WLength(200, Wt::WLength::Pixel));
+	mainLayout->setColumnResizable(0, true);
+
 	_mediaPlayer->playbackEnded().connect(this, &AudioWidget::handleTrackEnded);
-	this->addWidget(new Wt::WBreak());
-
-	// Image
-	_imgResource = new Wt::WMemoryResource(this);
-	_imgLink.setResource( _imgResource);
-	_img = new Wt::WImage(_imgLink, this);
-
+	trackView->trackSelected().connect(boost::bind(&AudioWidget::playTrack, this, _1));
 }
 
 void
 AudioWidget::search(const std::string& searchText)
 {
-	_audioDbWidget->search(searchText);
+	_filterChain.searchKeyword(searchText);
 }
-
 
 void
 AudioWidget::playTrack(boost::filesystem::path p)
@@ -71,7 +128,7 @@ AudioWidget::playTrack(boost::filesystem::path p)
 				bitrate = user->getAudioBitrate();
 			else
 			{
-				LMS_LOG(MOD_UI, SEV_ERROR) << "Can't play video: user does not exists!";
+				LMS_LOG(MOD_UI, SEV_ERROR) << "Can't play: user does not exists!";
 				return; // TODO logout?
 			}
 		}
@@ -83,27 +140,6 @@ AudioWidget::playTrack(boost::filesystem::path p)
 		parameters.setBitrate(Transcode::Stream::Audio, bitrate);
 
 		_mediaPlayer->load( parameters );
-
-		// Refresh cover
-		{
-			std::vector<CoverArt::CoverArt> covers = inputFile.getCovers();
-
-			if (!covers.empty())
-			{
-				LMS_LOG(MOD_UI, SEV_DEBUG) << "Cover found!";
-				if (!covers.front().scale(256)) // TODO
-					LMS_LOG(MOD_UI, SEV_ERROR) << "Cannot resize!";
-
-				//_imgResource->setMimeType(covers.front().getMimeType());
-				_imgResource->setData(covers.front().getData());
-			}
-			else {
-				LMS_LOG(MOD_UI, SEV_DEBUG) << "No cover found!";
-				_imgResource->setData( std::vector<unsigned char>());
-			}
-
-			_imgResource->setChanged();
-		}
 	}
 	catch( std::exception &e)
 	{
@@ -111,11 +147,10 @@ AudioWidget::playTrack(boost::filesystem::path p)
 	}
 }
 
-	void
+void
 AudioWidget::handleTrackEnded(void)
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Track playback ended!";
-	_audioDbWidget->selectNextTrack();
 }
 
 } // namespace UserInterface
