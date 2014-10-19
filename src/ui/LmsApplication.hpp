@@ -24,8 +24,6 @@
 
 #include "common/SessionData.hpp"
 
-#include "LmsHome.hpp"
-
 namespace UserInterface {
 
 
@@ -42,10 +40,6 @@ class LmsApplication : public Wt::WApplication
 		void handleAuthEvent(void);
 
 		SessionData	_sessionData;
-
-		LmsHome*	_home;
-		AudioWidget*	_audioWidget;
-		VideoWidget*	_videoWidget;
 
 };
 

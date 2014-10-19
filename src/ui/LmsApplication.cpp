@@ -27,17 +27,19 @@
 #include <Wt/WPopupMenu>
 #include <Wt/WPopupMenuItem>
 #include <Wt/WVBoxLayout>
+#include <Wt/WLineEdit>
 #include <Wt/Auth/Identity>
 
 #include "settings/Settings.hpp"
-
 
 #include "auth/LmsAuth.hpp"
 
 #include "logger/Logger.hpp"
 
-#include "LmsHome.hpp"
 #include "settings/SettingsFirstConnectionFormView.hpp"
+
+#include "audio/AudioWidget.hpp"
+#include "video/VideoWidget.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -66,8 +68,7 @@ LmsApplication::create(const Wt::WEnvironment& env, boost::filesystem::path dbPa
 */
 LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::path dbPath)
 : Wt::WApplication(env),
- _sessionData(dbPath),
- _home(nullptr)
+ _sessionData(dbPath)
 {
 
 	Wt::WBootstrapTheme *bootstrapTheme = new Wt::WBootstrapTheme(this);
@@ -78,54 +79,107 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::p
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "templates");
 
-	setTitle("LMS");                               // application title
+	setTitle("LMS");
 
-	// Create a Vertical layout: top is the nav bar, bottom is the contents
-	Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
-	// Create a navigation bar with a link to a web page.
-	Wt::WNavigationBar *navigation = new Wt::WNavigationBar();
-	navigation->setTitle("LMS");
-	navigation->setResponsive(true);
-	navigation->addStyleClass("main-nav");
+	bool firstConnection;
+	{
+		Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
 
-	Wt::WStackedWidget *contentsStack = new Wt::WStackedWidget();
+		firstConnection = (Database::User::getAll(_sessionData.getDatabaseHandler().getSession()).size() == 0);
+	}
 
-	// Setup a Left-aligned menu.
-	Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack);
-	navigation->addMenu(leftMenu);
+	// If here is no account in the database, launch the first connection wizard
+	if (firstConnection)
+	{
+		// Hack, use the auth widget builtin strings
+		builtinLocalizedStrings().useBuiltin(skeletons::AuthStrings_xml1);
 
-	_audioWidget = new AudioWidget(_sessionData);
-	_videoWidget = new VideoWidget(_sessionData);
+		root()->addWidget( new Settings::FirstConnectionFormView(_sessionData));
+	}
+	else
+	{
+		_sessionData.getDatabaseHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
 
-	leftMenu->addItem("Audio", _audioWidget);
-	leftMenu->addItem("Video", _videoWidget);
-//	leftMenu->addItem("Settings", new Settings::Settings(_sessionData));
+		LmsAuth *authWidget = new LmsAuth(_sessionData.getDatabaseHandler());
 
-	// Setup a Right-aligned menu.
-	Wt::WMenu *rightMenu = new Wt::WMenu();
+		authWidget->model()->addPasswordAuth(&Database::Handler::getPasswordService());
+		authWidget->setRegistrationEnabled(false);
 
-	navigation->addMenu(rightMenu, Wt::AlignRight);
+		authWidget->processEnvironment();
 
-	Wt::WPopupMenu *popup = new Wt::WPopupMenu();
-	popup->addItem("Logout");
+		root()->addWidget(authWidget);
+	}
+}
 
-//	popup->itemSelected().connect(this, &LmsHome::handleUserMenuSelected);
 
-/*	Wt::WMenuItem *item = new Wt::WMenuItem( user.identity(Wt::Auth::Identity::LoginName) );
-	item->setMenu(popup);
-	rightMenu->addItem(item);*/
+void
+LmsApplication::handleAuthEvent(void)
+{
+	if (_sessionData.getDatabaseHandler().getLogin().loggedIn())
+	{
+		Wt::Auth::User user(_sessionData.getDatabaseHandler().getLogin().user());
 
-	// Add a Search control.
-/*	_searchEdit = new Wt::WLineEdit();
-	_searchEdit->setEmptyText("Search...");
+		// Create a Vertical layout: top is the nav bar, bottom is the contents
+		Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
+		// Create a navigation bar with a link to a web page.
+		Wt::WNavigationBar *navigation = new Wt::WNavigationBar();
+		navigation->setTitle("LMS");
+		navigation->setResponsive(true);
+		navigation->addStyleClass("main-nav");
 
-	_searchEdit->enterPressed().connect(this, &LmsHome::handleSearch);
-*/
-//	navigation->addSearch(_searchEdit, Wt::AlignLeft);
+		Wt::WStackedWidget *contentsStack = new Wt::WStackedWidget();
 
-	layout->addWidget(navigation);
-	layout->addWidget(contentsStack, 1);
-	layout->setContentsMargins(0, 0, 0, 0);
+		// Setup a Left-aligned menu.
+		Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack);
+		navigation->addMenu(leftMenu);
+
+		AudioWidget *audioWidget = new AudioWidget(_sessionData);
+		VideoWidget *videoWidget = new VideoWidget(_sessionData);
+
+		leftMenu->addItem("Audio", audioWidget);
+		leftMenu->addItem("Video", videoWidget);
+		leftMenu->addItem("Settings", new Settings::Settings(_sessionData));
+
+		// Setup a Right-aligned menu.
+		Wt::WMenu *rightMenu = new Wt::WMenu();
+
+		navigation->addMenu(rightMenu, Wt::AlignRight);
+
+		Wt::WPopupMenu *popup = new Wt::WPopupMenu();
+		popup->addItem("Logout");
+
+		Wt::WMenuItem *item = new Wt::WMenuItem( user.identity(Wt::Auth::Identity::LoginName) );
+			item->setMenu(popup);
+			rightMenu->addItem(item);
+
+		popup->itemSelected().connect(std::bind([=] (Wt::WMenuItem* item)
+		{
+			if (item && item->text() == "Logout")
+				_sessionData.getDatabaseHandler().getLogin().logout();
+		}, std::placeholders::_1));
+
+		// Add a Search control.
+		Wt::WLineEdit *searchEdit = new Wt::WLineEdit();
+		searchEdit->setEmptyText("Search...");
+
+		searchEdit->enterPressed().connect(std::bind([=] ()
+		{
+			audioWidget->search(searchEdit->text().toUTF8());
+		}));
+
+		navigation->addSearch(searchEdit, Wt::AlignLeft);
+
+		layout->addWidget(navigation);
+		layout->addWidget(contentsStack, 1);
+		layout->setContentsMargins(0, 0, 0, 0);
+	}
+	else
+	{
+		LMS_LOG(MOD_UI, SEV_NOTICE) << "User logged out";
+
+		quit("");
+		redirect("/");
+	}
 }
 
 } // namespace UserInterface

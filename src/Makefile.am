@@ -41,7 +41,6 @@ lms_SOURCES = \
 	$(srcdir)/transcode/Parameters.cpp			\
 	$(srcdir)/transcode/InputMediaFile.cpp			\
 	$(srcdir)/ui/LmsApplication.cpp				\
-	$(srcdir)/ui/LmsHome.cpp				\
 	$(srcdir)/ui/auth/LmsAuth.cpp				\
 	$(srcdir)/ui/audio/AudioWidget.cpp			\
 	$(srcdir)/ui/audio/AudioMediaPlayerWidget.cpp		\
