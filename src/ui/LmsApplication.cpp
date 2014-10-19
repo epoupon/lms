@@ -38,7 +38,7 @@
 
 #include "settings/SettingsFirstConnectionFormView.hpp"
 
-#include "audio/AudioWidget.hpp"
+#include "audio/Audio.hpp"
 #include "video/VideoWidget.hpp"
 
 #include "LmsApplication.hpp"
@@ -133,10 +133,10 @@ LmsApplication::handleAuthEvent(void)
 		Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack);
 		navigation->addMenu(leftMenu);
 
-		AudioWidget *audioWidget = new AudioWidget(_sessionData);
+		Audio *audio = new Audio(_sessionData);
 		VideoWidget *videoWidget = new VideoWidget(_sessionData);
 
-		leftMenu->addItem("Audio", audioWidget);
+		leftMenu->addItem("Audio", audio);
 		leftMenu->addItem("Video", videoWidget);
 		leftMenu->addItem("Settings", new Settings::Settings(_sessionData));
 
@@ -164,7 +164,8 @@ LmsApplication::handleAuthEvent(void)
 
 		searchEdit->enterPressed().connect(std::bind([=] ()
 		{
-			audioWidget->search(searchEdit->text().toUTF8());
+			// TODO: check which view is activated and search into it
+			audio->search(searchEdit->text().toUTF8());
 		}));
 
 		navigation->addSearch(searchEdit, Wt::AlignLeft);

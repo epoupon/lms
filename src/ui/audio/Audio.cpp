@@ -31,11 +31,11 @@
 #include "KeywordSearchFilter.hpp"
 #include "TrackView.hpp"
 
-#include "AudioWidget.hpp"
+#include "Audio.hpp"
 
 namespace UserInterface {
 
-AudioWidget::AudioWidget(SessionData& sessionData, Wt::WContainerWidget* parent)
+Audio::Audio(SessionData& sessionData, Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent),
 _db(sessionData.getDatabaseHandler()),
 _mediaPlayer(nullptr)
@@ -95,29 +95,30 @@ _mediaPlayer(nullptr)
 		mainLayout->addLayout(playlist, 0, 1, 2, 1);
 	}
 
-	_mediaPlayer = new AudioMediaPlayerWidget();
+	_mediaPlayer = new AudioMediaPlayer();
 	mainLayout->addWidget(_mediaPlayer, 2, 0, 1, 2);
 
 	mainLayout->setRowStretch(1, 1);
 	mainLayout->setRowResizable(0, true, Wt::WLength(200, Wt::WLength::Pixel));
 	mainLayout->setColumnResizable(0, true);
 
-	trackView->trackSelected().connect(boost::bind(&AudioWidget::playTrack, this, _1));
+	trackView->trackSelected().connect(boost::bind(&Audio::playTrack, this, _1));
 
 	_mediaPlayer->playbackEnded().connect(std::bind([=] ()
 	{
+		// TODO link to playlist
 		trackView->selectNextTrack();
 	}));
 }
 
 void
-AudioWidget::search(const std::string& searchText)
+Audio::search(const std::string& searchText)
 {
 	_filterChain.searchKeyword(searchText);
 }
 
 void
-AudioWidget::playTrack(boost::filesystem::path p)
+Audio::playTrack(boost::filesystem::path p)
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "play track '" << p << "'";
 	try {

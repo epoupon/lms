@@ -17,8 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __MEDIA_PLAYER_WIDGET_HPP
-#define __MEDIA_PLAYER_WIDGET_HPP
+#ifndef __AUDIO_MEDIA_PLAYER_HPP
+#define __AUDIO_MEDIA_PLAYER_HPP
 
 #include <memory>
 
@@ -34,11 +34,11 @@
 
 namespace UserInterface {
 
-class AudioMediaPlayerWidget : public Wt::WContainerWidget
+class AudioMediaPlayer : public Wt::WContainerWidget
 {
 	public:
 
-		AudioMediaPlayerWidget( Wt::WContainerWidget *parent = 0);
+		AudioMediaPlayer( Wt::WContainerWidget *parent = 0);
 
 		void load(const Transcode::Parameters& parameters);
 

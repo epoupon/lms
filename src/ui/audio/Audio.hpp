@@ -17,8 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AUDIO_WIDGET_HPP
-#define AUDIO_WIDGET_HPP
+#ifndef AUDIO_HPP
+#define AUDIO_HPP
 
 #include <string>
 
@@ -26,18 +26,18 @@
 
 #include "common/SessionData.hpp"
 
-#include "AudioMediaPlayerWidget.hpp"
+#include "AudioMediaPlayer.hpp"
 
 #include "FilterChain.hpp"
 
 namespace UserInterface {
 
-class AudioWidget : public Wt::WContainerWidget
+class Audio : public Wt::WContainerWidget
 {
 
 	public:
 
-		AudioWidget(SessionData& sessionData, Wt::WContainerWidget* parent = 0);
+		Audio(SessionData& sessionData, Wt::WContainerWidget* parent = 0);
 
 		void search(const std::string& searchText);
 
@@ -47,7 +47,7 @@ class AudioWidget : public Wt::WContainerWidget
 
 		Database::Handler&	_db;
 
-		AudioMediaPlayerWidget*	_mediaPlayer;
+		AudioMediaPlayer*	_mediaPlayer;
 
 		FilterChain		_filterChain;
 

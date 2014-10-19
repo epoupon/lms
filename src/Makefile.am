@@ -42,8 +42,8 @@ lms_SOURCES = \
 	$(srcdir)/transcode/InputMediaFile.cpp			\
 	$(srcdir)/ui/LmsApplication.cpp				\
 	$(srcdir)/ui/auth/LmsAuth.cpp				\
-	$(srcdir)/ui/audio/AudioWidget.cpp			\
-	$(srcdir)/ui/audio/AudioMediaPlayerWidget.cpp		\
+	$(srcdir)/ui/audio/Audio.cpp				\
+	$(srcdir)/ui/audio/AudioMediaPlayer.cpp			\
 	$(srcdir)/ui/audio/FilterChain.cpp			\
 	$(srcdir)/ui/audio/KeywordSearchFilter.cpp		\
 	$(srcdir)/ui/audio/TableFilter.cpp			\

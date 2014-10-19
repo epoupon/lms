@@ -21,11 +21,11 @@
 #include <Wt/WMediaPlayer>
 #include <Wt/WProgressBar>
 
-#include "AudioMediaPlayerWidget.hpp"
+#include "AudioMediaPlayer.hpp"
 
 namespace UserInterface {
 
-AudioMediaPlayerWidget::AudioMediaPlayerWidget( Wt::WContainerWidget *parent)
+AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	: Wt::WContainerWidget(parent),
 	_mediaResource(nullptr)
 {
@@ -34,7 +34,7 @@ AudioMediaPlayerWidget::AudioMediaPlayerWidget( Wt::WContainerWidget *parent)
 //	_mediaPlayer->setOptions( Wt::WMediaPlayer::Autoplay );
 	_mediaPlayer->addSource( Wt::WMediaPlayer::OGA, "" );
 
-	_mediaPlayer->ended().connect(this, &AudioMediaPlayerWidget::handleTrackEnded);
+	_mediaPlayer->ended().connect(this, &AudioMediaPlayer::handleTrackEnded);
 
 	{
 		Wt::WContainerWidget *container = new Wt::WContainerWidget(this);
@@ -59,23 +59,23 @@ AudioMediaPlayerWidget::AudioMediaPlayerWidget( Wt::WContainerWidget *parent)
 		_mediaPlayer->setText( Wt::WMediaPlayer::CurrentTime, _curTime);
 		_mediaPlayer->setText( Wt::WMediaPlayer::Duration, _duration);
 
-		_mediaPlayer->timeUpdated().connect(this, &AudioMediaPlayerWidget::handleTimeUpdated);
+		_mediaPlayer->timeUpdated().connect(this, &AudioMediaPlayer::handleTimeUpdated);
 	}
 
-	_timeSlider->valueChanged().connect(this, &AudioMediaPlayerWidget::handlePlayOffset);
-	_timeSlider->sliderMoved().connect(this, &AudioMediaPlayerWidget::handleSliderMoved);
+	_timeSlider->valueChanged().connect(this, &AudioMediaPlayer::handlePlayOffset);
+	_timeSlider->sliderMoved().connect(this, &AudioMediaPlayer::handleSliderMoved);
 	_timeSlider->setDisabled(true);
 
-	_volumeSlider->sliderMoved().connect(this, &AudioMediaPlayerWidget::handleVolumeSliderMoved);
+	_volumeSlider->sliderMoved().connect(this, &AudioMediaPlayer::handleVolumeSliderMoved);
 
-	_nextBtn->clicked().connect(this, &AudioMediaPlayerWidget::handlePlayNext);
-	_prevBtn->clicked().connect(this, &AudioMediaPlayerWidget::handlePlayPrev);
+	_nextBtn->clicked().connect(this, &AudioMediaPlayer::handlePlayNext);
+	_prevBtn->clicked().connect(this, &AudioMediaPlayer::handlePlayPrev);
 
 }
 
 
 void
-AudioMediaPlayerWidget::loadPlayer(void)
+AudioMediaPlayer::loadPlayer(void)
 {
 	_mediaPlayer->clearSources();
 
@@ -91,7 +91,7 @@ AudioMediaPlayerWidget::loadPlayer(void)
 }
 
 void
-AudioMediaPlayerWidget::load(const Transcode::Parameters& parameters)
+AudioMediaPlayer::load(const Transcode::Parameters& parameters)
 {
 	_timeSlider->setDisabled(false);
 
@@ -108,7 +108,7 @@ AudioMediaPlayerWidget::load(const Transcode::Parameters& parameters)
 }
 
 void
-AudioMediaPlayerWidget::handlePlayOffset(int offsetSecs)
+AudioMediaPlayer::handlePlayOffset(int offsetSecs)
 {
 	if (!_currentParameters)
 		return;
@@ -122,38 +122,38 @@ AudioMediaPlayerWidget::handlePlayOffset(int offsetSecs)
 
 
 void
-AudioMediaPlayerWidget::handlePlayNext(void)
+AudioMediaPlayer::handlePlayNext(void)
 {
 	// TODO
 }
 
 void
-AudioMediaPlayerWidget::handlePlayPrev(void)
+AudioMediaPlayer::handlePlayPrev(void)
 {
 	// TODO
 }
 
 
 void
-AudioMediaPlayerWidget::handleTrackEnded(void)
+AudioMediaPlayer::handleTrackEnded(void)
 {
 	_playbackEnded.emit();
 }
 
 void
-AudioMediaPlayerWidget::handleValueChanged(double value)
+AudioMediaPlayer::handleValueChanged(double value)
 {
 	// TODO
 }
 
 void
-AudioMediaPlayerWidget::handleSliderMoved(int value)
+AudioMediaPlayer::handleSliderMoved(int value)
 {
 	;
 }
 
 void
-AudioMediaPlayerWidget::handleTimeUpdated(void)
+AudioMediaPlayer::handleTimeUpdated(void)
 {
 	if (!_currentParameters)
 		return;
@@ -165,7 +165,7 @@ AudioMediaPlayerWidget::handleTimeUpdated(void)
 }
 
 void
-AudioMediaPlayerWidget::handleVolumeSliderMoved(int value)
+AudioMediaPlayer::handleVolumeSliderMoved(int value)
 {
 	_mediaPlayer->setVolume( value / 100. );
 }
