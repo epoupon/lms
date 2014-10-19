@@ -45,8 +45,6 @@ class AudioWidget : public Wt::WContainerWidget
 
 		void playTrack(boost::filesystem::path p);
 
-		void handleTrackEnded(void);
-
 		Database::Handler&	_db;
 
 		AudioMediaPlayerWidget*	_mediaPlayer;

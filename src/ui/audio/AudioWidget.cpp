@@ -80,7 +80,7 @@ _mediaPlayer(nullptr)
 		cb->addItem("metal");
 		cb->addItem("rock");
 		cb->addItem("top50");
-		cb->setWidth(100);
+		cb->setWidth(75);
 
 		playlistControls->addWidget(cb, 1);
 		playlistControls->addWidget(new Wt::WPushButton("Rename"));
@@ -89,7 +89,8 @@ _mediaPlayer(nullptr)
 
 		playlist->addLayout(playlistControls);
 
-		playlist->addWidget( new TableFilter(_db, "release", "name"), 1);
+		// TODO
+		playlist->addWidget( new Wt::WTableView(), 1);
 
 		mainLayout->addLayout(playlist, 0, 1, 2, 1);
 	}
@@ -97,13 +98,16 @@ _mediaPlayer(nullptr)
 	_mediaPlayer = new AudioMediaPlayerWidget();
 	mainLayout->addWidget(_mediaPlayer, 2, 0, 1, 2);
 
-	mainLayout->setColumnStretch(0, 1);
 	mainLayout->setRowStretch(1, 1);
 	mainLayout->setRowResizable(0, true, Wt::WLength(200, Wt::WLength::Pixel));
 	mainLayout->setColumnResizable(0, true);
 
-	_mediaPlayer->playbackEnded().connect(this, &AudioWidget::handleTrackEnded);
 	trackView->trackSelected().connect(boost::bind(&AudioWidget::playTrack, this, _1));
+
+	_mediaPlayer->playbackEnded().connect(std::bind([=] ()
+	{
+		trackView->selectNextTrack();
+	}));
 }
 
 void
@@ -145,12 +149,6 @@ AudioWidget::playTrack(boost::filesystem::path p)
 	{
 		LMS_LOG(MOD_UI, SEV_ERROR) << "Caught exception while loading '" << p << "': " << e.what();
 	}
-}
-
-void
-AudioWidget::handleTrackEnded(void)
-{
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Track playback ended!";
 }
 
 } // namespace UserInterface
