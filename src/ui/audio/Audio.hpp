@@ -45,6 +45,8 @@ class Audio : public Wt::WContainerWidget
 
 		void playTrack(boost::filesystem::path p);
 
+		void handlePlaylistSelected(Wt::WString name);
+
 		Database::Handler&	_db;
 
 		AudioMediaPlayer*	_mediaPlayer;

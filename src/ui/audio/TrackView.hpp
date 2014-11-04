@@ -36,22 +36,24 @@ class TrackView : public Wt::WTableView, public Filter
 
 		TrackView( Database::Handler& db, Wt::WContainerWidget* parent = 0);
 
+		// Filter interface
 		// Set constraints created by parent filters
 		void refresh(const Constraint& constraint);
 
 		// Create constraints for child filters (N/A)
 		void getConstraint(Constraint& constraint) {}
 
-		void selectNextTrack(void);	// Emit a trackSelected() if success
 
-		// Signals
-		Wt::Signal< boost::filesystem::path >& trackSelected() { return _trackSelected; }
+		// Get all the tracks that are currently displayed
+		void getSelectedTracks(std::vector<Database::Track::id_type>& track_ids);
+
+		typedef Wt::Signal<void> SigTrackDoubleClicked;
+
+		SigTrackDoubleClicked&	trackDoubleClicked() { return _sigTrackDoubleClicked; }
 
 	private:
 
-		void handleTrackSelected();
-
-		Wt::Signal< boost::filesystem::path > _trackSelected;
+		SigTrackDoubleClicked	_sigTrackDoubleClicked;
 
 		Database::Handler&			_db;
 

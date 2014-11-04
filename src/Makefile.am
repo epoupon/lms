@@ -12,14 +12,14 @@ lms_SOURCES = \
 	$(srcdir)/cover/CoverArt.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
 	$(srcdir)/database/Artist.cpp				\
-	$(srcdir)/database/Genre.cpp				\
-	$(srcdir)/database/Release.cpp				\
-	$(srcdir)/database/MediaDirectory.cpp			\
-	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
+	$(srcdir)/database/Genre.cpp				\
+	$(srcdir)/database/MediaDirectory.cpp			\
+	$(srcdir)/database/Release.cpp				\
 	$(srcdir)/database/SqlQuery.cpp				\
-	$(srcdir)/database/Video.cpp				\
+	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/User.cpp				\
+	$(srcdir)/database/Video.cpp				\
 	$(srcdir)/database-updater/DatabaseUpdater.cpp		\
 	$(srcdir)/database-updater/Checksum.cpp			\
 	$(srcdir)/logger/Logger.cpp				\
@@ -46,6 +46,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/audio/AudioMediaPlayer.cpp			\
 	$(srcdir)/ui/audio/FilterChain.cpp			\
 	$(srcdir)/ui/audio/KeywordSearchFilter.cpp		\
+	$(srcdir)/ui/audio/PlayQueue.cpp			\
 	$(srcdir)/ui/audio/TableFilter.cpp			\
 	$(srcdir)/ui/audio/TrackView.cpp			\
 	$(srcdir)/ui/common/DirectoryValidator.cpp		\

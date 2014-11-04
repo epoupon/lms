@@ -44,10 +44,10 @@ _db(db)
 	_queryModel.addColumn( "track.original_date", "Original Date" );
 	_queryModel.addColumn( "track.genre_list", "Genres" );
 
-	_queryModel.setBatchSize(250);
+	_queryModel.setBatchSize(500);
 
 	this->setSortingEnabled(true);
-	this->setSelectionMode(Wt::SingleSelection);
+	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setAlternatingRowColors(true);
 	this->setModel(&_queryModel);
 
@@ -83,8 +83,21 @@ _db(db)
 		this->setItemDelegateForColumn(7, delegate);
 	}
 
-	// TODO other event!
-	this->selectionChanged().connect(this, &TrackView::handleTrackSelected);
+	// If an item is double clicked, select the track and emit signal
+	this->doubleClicked().connect( std::bind([=] (Wt::WModelIndex idx, Wt::WMouseEvent evt)
+	{
+		if (!idx.isValid())
+			return;
+
+		Wt::WModelIndexSet indexSet;
+		indexSet.insert(idx);
+
+		this->setSelectedIndexes( indexSet );
+
+		_sigTrackDoubleClicked.emit( );
+
+	}, std::placeholders::_1, std::placeholders::_2));
+
 }
 
 // Set constraints created by parent filters
@@ -113,6 +126,7 @@ TrackView::refresh(const Constraint& constraint)
 
 }
 
+/*
 void
 TrackView::handleTrackSelected(void)
 {
@@ -133,26 +147,28 @@ TrackView::handleTrackSelected(void)
 
 	}
 }
-
+*/
 void
-TrackView::selectNextTrack(void)
+TrackView::getSelectedTracks(std::vector<Database::Track::id_type>& track_ids)
 {
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting selected tracks...";
+
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
-	if (!indexSet.empty()) {
-		Wt::WModelIndex currentIndex( *indexSet.begin() );
-		// Check there are remainin tracks!
-		if (currentIndex.isValid() && this->model()->rowCount() > currentIndex.row() + 1)
-		{
-			this->select( this->model()->index( currentIndex.row() + 1, currentIndex.column()));
 
-			ResultType result = _queryModel.resultRow( currentIndex.row() + 1 );
+	BOOST_FOREACH(Wt::WModelIndex index, indexSet)
+	{
+		if (!index.isValid())
+			continue;
 
-			// Get the track part
-			Wt::Dbo::ptr<Database::Track> track ( result.get<0>() );
+		const ResultType& result = _queryModel.resultRow( index.row() );
 
-			_trackSelected.emit( track->getPath() );
-		}
+		// Get the track part
+		Wt::Dbo::ptr<Database::Track> track ( result.get<0>() );
+
+		track_ids.push_back(track.id());
 	}
+
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all selected tracks DONE...";
 }
 
 } // namespace UserInterface

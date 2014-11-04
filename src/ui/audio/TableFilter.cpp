@@ -105,7 +105,7 @@ TableFilter::getConstraint(Constraint& constraint)
 		if (!index.isValid())
 			continue;
 
-		ResultType result = _queryModel.resultRow( index.row() );
+		const ResultType& result = _queryModel.resultRow( index.row() );
 
 		// Get the track part
 		std::string	name( result.get<0>() );

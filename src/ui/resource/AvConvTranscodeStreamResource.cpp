@@ -78,7 +78,6 @@ AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 	if (!transcoder->isComplete() && response.out()) {
 		continuation = response.createContinuation();
 		continuation->setData(transcoder);
-		LMS_LOG(MOD_UI, SEV_DEBUG) << "Continuation set!";
 	}
 	else
 		LMS_LOG(MOD_UI, SEV_DEBUG) << "No more data!";

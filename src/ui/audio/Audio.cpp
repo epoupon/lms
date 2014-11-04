@@ -30,6 +30,7 @@
 #include "TableFilter.hpp"
 #include "KeywordSearchFilter.hpp"
 #include "TrackView.hpp"
+#include "PlayQueue.hpp"
 
 #include "Audio.hpp"
 
@@ -66,33 +67,49 @@ _mediaPlayer(nullptr)
 	mainLayout->addLayout(filterLayout, 0, 0);
 	// ENDOF(Filters)
 
+	// TODO ADD controls (Play, add)
+	// TODO ADD some stats (nb files, total duration, etc.)
+
+	Wt::WVBoxLayout* trackLayout = new Wt::WVBoxLayout();
+
 	TrackView* trackView = new TrackView(_db);
-	mainLayout->addWidget( trackView, 1, 0);
+	trackLayout->addWidget(trackView, 1);
+
+	Wt::WHBoxLayout* trackControls = new Wt::WHBoxLayout();
+
+	Wt::WPushButton* playBtn = new Wt::WPushButton("Play");
+	trackControls->addWidget(playBtn);
+
+	Wt::WPushButton* addBtn = new Wt::WPushButton("Add");
+	trackControls->addWidget(addBtn);
+	trackControls->addWidget(new Wt::WText("Total duration: "), 1);
+
+
+	trackLayout->addLayout(trackControls);
+
+	mainLayout->addLayout(trackLayout, 1, 0);
+
 	_filterChain.addFilter(trackView);
 
-	// TODO Playlist here
+	PlayQueue *playQueue = new PlayQueue(_db);
+
+	// Playlist/PlayQueue
 	{
-		Wt::WVBoxLayout* playlist = new Wt::WVBoxLayout();
+		Wt::Dbo::Transaction transaction(_db.getSession());
+		Database::User::pointer user = _db.getCurrentUser();
+
+		Wt::WVBoxLayout* playQueueLayout = new Wt::WVBoxLayout();
 
 		Wt::WHBoxLayout* playlistControls = new Wt::WHBoxLayout();
 
-		Wt::WComboBox *cb = new Wt::WComboBox();
-		cb->addItem("metal");
-		cb->addItem("rock");
-		cb->addItem("top50");
-		cb->setWidth(75);
+		playlistControls->addWidget(new Wt::WPushButton("Playlist"));
+		playlistControls->addWidget(new Wt::WText("Duration:"));
 
-		playlistControls->addWidget(cb, 1);
-		playlistControls->addWidget(new Wt::WPushButton("Rename"));
-		playlistControls->addWidget(new Wt::WPushButton("+"));
-		playlistControls->addWidget(new Wt::WPushButton("-"));
+		playQueueLayout->addLayout(playlistControls);
 
-		playlist->addLayout(playlistControls);
+		playQueueLayout->addWidget( playQueue, 1);
 
-		// TODO
-		playlist->addWidget( new Wt::WTableView(), 1);
-
-		mainLayout->addLayout(playlist, 0, 1, 2, 1);
+		mainLayout->addLayout(playQueueLayout, 0, 1, 2, 1);
 	}
 
 	_mediaPlayer = new AudioMediaPlayer();
@@ -102,13 +119,46 @@ _mediaPlayer(nullptr)
 	mainLayout->setRowResizable(0, true, Wt::WLength(200, Wt::WLength::Pixel));
 	mainLayout->setColumnResizable(0, true);
 
-	trackView->trackSelected().connect(boost::bind(&Audio::playTrack, this, _1));
-
-	_mediaPlayer->playbackEnded().connect(std::bind([=] ()
+	// Double click on track
+	// Set the selected tracks to the play queue
+	trackView->trackDoubleClicked().connect(std::bind([=] ()
 	{
-		// TODO link to playlist
-		trackView->selectNextTrack();
+		std::vector<Database::Track::id_type> trackIds;
+		trackView->getSelectedTracks(trackIds);
+
+		playQueue->clear();
+		playQueue->addTracks(trackIds);
+
+		playQueue->play();
+
 	}));
+
+	// Play button
+	// Set the selected tracks to the play queue
+	playBtn->clicked().connect(std::bind([=] ()
+	{
+		std::vector<Database::Track::id_type> trackIds;
+		trackView->getSelectedTracks(trackIds);
+
+		playQueue->clear();
+		playQueue->addTracks(trackIds);
+
+		playQueue->play();
+	}));
+
+	// Add Button
+	// Add the selected tracks at the end of the play queue
+	addBtn->clicked().connect(std::bind([=] ()
+	{
+		std::vector<Database::Track::id_type> trackIds;
+		trackView->getSelectedTracks(trackIds);
+
+		playQueue->addTracks(trackIds);
+	}));
+
+	playQueue->playTrack().connect(this, &Audio::playTrack);
+
+	_mediaPlayer->playbackEnded().connect(playQueue, &PlayQueue::handlePlaybackComplete);
 }
 
 void
@@ -151,6 +201,7 @@ Audio::playTrack(boost::filesystem::path p)
 		LMS_LOG(MOD_UI, SEV_ERROR) << "Caught exception while loading '" << p << "': " << e.what();
 	}
 }
+
 
 } // namespace UserInterface
 
