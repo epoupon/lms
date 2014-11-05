@@ -159,6 +159,8 @@ _mediaPlayer(nullptr)
 	playQueue->playTrack().connect(this, &Audio::playTrack);
 
 	_mediaPlayer->playbackEnded().connect(playQueue, &PlayQueue::handlePlaybackComplete);
+	_mediaPlayer->playNext().connect(playQueue, &PlayQueue::playNext);
+	_mediaPlayer->playPrevious().connect(playQueue, &PlayQueue::playPrevious);
 }
 
 void

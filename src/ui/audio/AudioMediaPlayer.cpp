@@ -39,10 +39,10 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	{
 		Wt::WContainerWidget *container = new Wt::WContainerWidget(this);
 
-		_prevBtn = new Wt::WPushButton("<<", container );
+		Wt::WPushButton *prevBtn = new Wt::WPushButton("<<", container );
 		_playBtn = new Wt::WPushButton("Play", container );
 		_pauseBtn = new Wt::WPushButton("Pause", container );
-		_nextBtn = new Wt::WPushButton(">>", container );
+		Wt::WPushButton *nextBtn = new Wt::WPushButton(">>", container );
 
 		_curTime = new Wt::WText(container);
 		_timeSlider = new Wt::WSlider( container );
@@ -60,6 +60,16 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 		_mediaPlayer->setText( Wt::WMediaPlayer::Duration, _duration);
 
 		_mediaPlayer->timeUpdated().connect(this, &AudioMediaPlayer::handleTimeUpdated);
+
+		nextBtn->clicked().connect(std::bind([=] ()
+		{
+			_playNext.emit();
+		}));
+
+		prevBtn->clicked().connect(std::bind([=] ()
+		{
+			_playPrevious.emit();
+		}));
 	}
 
 	_timeSlider->valueChanged().connect(this, &AudioMediaPlayer::handlePlayOffset);
@@ -68,8 +78,6 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 
 	_volumeSlider->sliderMoved().connect(this, &AudioMediaPlayer::handleVolumeSliderMoved);
 
-	_nextBtn->clicked().connect(this, &AudioMediaPlayer::handlePlayNext);
-	_prevBtn->clicked().connect(this, &AudioMediaPlayer::handlePlayPrev);
 
 }
 
@@ -119,20 +127,6 @@ AudioMediaPlayer::handlePlayOffset(int offsetSecs)
 
 	_mediaPlayer->play();
 }
-
-
-void
-AudioMediaPlayer::handlePlayNext(void)
-{
-	// TODO
-}
-
-void
-AudioMediaPlayer::handlePlayPrev(void)
-{
-	// TODO
-}
-
 
 void
 AudioMediaPlayer::handleTrackEnded(void)

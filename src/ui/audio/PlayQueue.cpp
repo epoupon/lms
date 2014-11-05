@@ -25,7 +25,7 @@ namespace UserInterface {
 PlayQueue::PlayQueue(Database::Handler& db, Wt::WContainerWidget* parent)
 : Wt::WTableView(parent),
 _db(db),
-_playingTrackId(0)
+_playedId(-1)
 {
 	_model = new Wt::WStandardItemModel(0, 4, this);
 
@@ -97,13 +97,31 @@ void
 PlayQueue::clear(void)
 {
 	_model->removeRows(0, _model->rowCount());
+
+	// Reset play id
+	_playedId = -1;
 }
 
 void
 PlayQueue::handlePlaybackComplete(void)
 {
 	// Play the next track
-	readTrack(_playingTrackId + 1);
+	if (_playedId != -1)
+	{
+		readTrack(_playedId + 1);
+	}
+}
+
+void
+PlayQueue::playNext(void)
+{
+	readTrack( _playedId != -1 ? _playedId + 1 : 0);
+}
+
+void
+PlayQueue::playPrevious(void)
+{
+	readTrack( _playedId >= 1 ? _playedId - 1 : 0);
 }
 
 void
@@ -118,7 +136,7 @@ PlayQueue::readTrack(int rowId)
 		Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
 		if (track)
 		{
-			_playingTrackId = rowId;
+			_playedId = rowId;
 			_sigTrackPlay.emit(track->getPath());
 			break;
 		}

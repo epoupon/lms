@@ -42,16 +42,16 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 
 		void load(const Transcode::Parameters& parameters);
 
-		// Signal slot Next
-		Wt::Signal<void>&	playbackEnded() {return _playbackEnded;}
-		// Signal Slot Previous
 		// Signal slot Ended
+		Wt::Signal<void>&	playbackEnded() {return _playbackEnded;}
+		// Signal slot Next
+		Wt::Signal<void>&	playNext()	{return _playNext;}
+		// Signal Slot Previous
+		Wt::Signal<void>&	playPrevious()	{return _playPrevious;}
 
 	private:
 
 		void handlePlayOffset(int offsetSecs);
-		void handlePlayNext(void);
-		void handlePlayPrev(void);
 		void handleTrackEnded(void);
 
 		void handleValueChanged(double);
@@ -64,6 +64,8 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 
 		// Signals
 		Wt::Signal<void>	_playbackEnded;
+		Wt::Signal<void>	_playNext;
+		Wt::Signal<void>	_playPrevious;
 
 		// Core
 		Wt::WMediaPlayer*		_mediaPlayer;
@@ -74,8 +76,6 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 		std::shared_ptr<Transcode::Parameters>	_currentParameters;
 		Wt::WPushButton* 	_playBtn;
 		Wt::WPushButton* 	_pauseBtn;
-		Wt::WPushButton* 	_nextBtn;
-		Wt::WPushButton*	_prevBtn;
 		Wt::WSlider*		_timeSlider;
 		Wt::WSlider*		_volumeSlider;
 		Wt::WText*		_curTime;

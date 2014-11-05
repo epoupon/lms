@@ -37,7 +37,9 @@ class PlayQueue : public Wt::WTableView
 
 		void clear(void);
 
-		void play(void);
+		void play(void);		// Play the queue from the beginning
+		void playNext(void);		// Play the next track
+		void playPrevious(void);	// Play the previous track
 
 		// Signals
 		Wt::Signal< boost::filesystem::path >& playTrack() { return _sigTrackPlay; }
@@ -57,7 +59,7 @@ class PlayQueue : public Wt::WTableView
 
 		Wt::WStandardItemModel*	_model;
 
-		int			_playingTrackId;
+		int			_playedId;
 
 };
 
