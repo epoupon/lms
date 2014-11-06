@@ -8,22 +8,34 @@ AC_LANG_CPLUSPLUS
 # Checks for programs
 AC_PROG_CXX
 
+
+AC_ARG_ENABLE(remote, AS_HELP_STRING([--enable-remote],
+	    				[Build with the remote protocol support. Defaults to yes.])],
+		[enable_remote="$enableval"],
+		[enable_remote="yes"])
+
 # ProtoBuf compiler.
 # First, specify with --with-protoc=/path/of/protoc.
 # Or, specify with env variable PROTOC.
 # If neither of the above, find it in the path.
-#AC_MSG_CHECKING([for ProtoBuf compiler protoc])
-AC_ARG_WITH([protoc],
+AS_IF([test "$enable_remote" = "yes"],
+      [AC_ARG_WITH([protoc],
 	    [AS_HELP_STRING([--with-protoc=/path/of/protoc],
 			    [Location of the protocol buffers compiler protoc. Defaults to looking on path.])],
 	    [PROTOC="$withval"],
 	    [ AS_IF([test "x${PROTOC}" == "x"],
 		    [AC_PATH_PROG([PROTOC], [protoc], [no])])]
 	  )
-
-#AC_MSG_RESULT([${PROTOC}])
-AS_IF([test "${PROTOC}" == "no"], [AC_MSG_ERROR([ProtoBuf compiler "protoc" not found.])])
-
+	]
+      	[ AS_IF([test "${PROTOC}" == "no"], [AC_MSG_ERROR([ProtoBuf compiler "protoc" not found.])]) ]
+	[AC_CHECK_LIB(	[protobuf],
+	     	[main],
+		,
+		[AC_MSG_ERROR([libprotobuf not found!])])]
+      [AC_DEFINE(REMOTE_ENABLE, 1, [Remote support disabled])]
+      ,
+      [AC_DEFINE(REMOTE_ENABLE, 0, [Remote support enabled])]
+)
 
 AC_CHECK_HEADERS([Wt/WApplication jpeglib.h],
                  [],
@@ -113,11 +125,6 @@ AC_CHECK_LIB(	[boost_log_setup],
 		[main],
 		,
 		[AC_MSG_ERROR([libboost_log_setup not found!])])
-
-AC_CHECK_LIB(	[protobuf],
-	     	[main],
-		,
-		[AC_MSG_ERROR([libprotobuf not found!])])
 
 # TODO -> PARAMETRIZE THIS
 AC_CHECK_LIB([wthttp],
