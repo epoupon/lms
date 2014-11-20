@@ -44,8 +44,11 @@ class TrackView : public Wt::WTableView, public Filter
 		void getConstraint(Constraint& constraint) {}
 
 
-		// Get all the tracks that are currently displayed
+		// Get all the tracks that are currently selected
 		void getSelectedTracks(std::vector<Database::Track::id_type>& track_ids);
+
+		// Get all the tracks
+		void getTracks(std::vector<Database::Track::id_type>& track_ids);
 
 		typedef Wt::Signal<void> SigTrackDoubleClicked;
 

@@ -171,5 +171,23 @@ TrackView::getSelectedTracks(std::vector<Database::Track::id_type>& track_ids)
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all selected tracks DONE...";
 }
 
+void
+TrackView::getTracks(std::vector<Database::Track::id_type>& trackIds)
+{
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all tracks...";
+
+	for (int i = 0; i < _queryModel.rowCount(); ++i)
+	{
+		const ResultType& result = _queryModel.resultRow( i );
+
+		// Get the track part
+		Wt::Dbo::ptr<Database::Track> track ( result.get<0>() );
+
+		trackIds.push_back(track.id());
+	}
+
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all tracks done!";
+}
+
 } // namespace UserInterface
 

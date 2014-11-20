@@ -140,6 +140,10 @@ _mediaPlayer(nullptr)
 		std::vector<Database::Track::id_type> trackIds;
 		trackView->getSelectedTracks(trackIds);
 
+		// If nothing is selected, get the whole track list
+		if (trackIds.empty())
+			trackView->getTracks(trackIds);
+
 		playQueue->clear();
 		playQueue->addTracks(trackIds);
 
@@ -152,6 +156,10 @@ _mediaPlayer(nullptr)
 	{
 		std::vector<Database::Track::id_type> trackIds;
 		trackView->getSelectedTracks(trackIds);
+
+		// If nothing is selected, get the whole track list
+		if (trackIds.empty())
+			trackView->getTracks(trackIds);
 
 		playQueue->addTracks(trackIds);
 	}));
