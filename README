@@ -16,7 +16,7 @@ An android application is being developped as well.
 LMS is written entirely in C++. Therefore, it is suitable to run on embedded devices, where space and/or memory are limited.
 Please note some media files may require significant CPU usage to be transcoded.
 
-I) DEPENCIES
+I) DEPENDENCIES
 
 Debian packages:
 g++ autoconf automake libboost-dev libavcodec-dev libwtdbosqlite-dev libwthttp-dev libwtdbo-dev libwt-dev libprotobuf-dev libconfig++-dev libprotobuf-dev protobuf-compiler libjpeg8-dev libavcodec-dev libavformat-dev libavutil-dev
@@ -37,7 +37,7 @@ II) BUILD
 
 III) Setting up SSL materials (required by the SSL server and the web server)
 
-This is just an example, you could do whatever you want (ca, self signed cert, etc.)
+This is just a self-signed certificate example, you can set up a real CA if you want to.
 
 Generate a dh file:
 # openssl dhparam -out dh2048.pem 2048

@@ -39,12 +39,9 @@
 
 	[Audio]
 	- Style eveything nicely...
-	- Search patterns in the genre list
 	- ReleaseView/ArtistView/GenreView: <All> -> Track count for this special category. Easier: add a special entry '<All>' that contains everything?
 	- MediaPlayer: move slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478)
 	- TrackView : handle duration > 1 hour
-	- TrackView : select only relevant columns to speed up queries (do not fetch eveything)
-	- TrackView : Reselect the current selected item when displaying the updated search results
 	- OGG metadata -> properly handle metadata nested in the audio stream
 	- Filters: use directly the id as constraint, instead of the name?
 	- Implement a playlist:
@@ -62,7 +59,7 @@
 	- Handle internal path
 
 [Remote API]
-- Implement text search options in the GetXXX messages
+- Implement partial text search options in the GetXXX messages
 
 [Logs]
 - capture transcoder log output to get more information on errors
