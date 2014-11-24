@@ -745,12 +745,12 @@ enum class Test {
 
 /* Uncomment test to be disabled */
 std::set<Test>	tests = {
-//	Test::ArtistFilters,
-//	Test::ReleaseFilterArtist,
+	Test::ArtistFilters,
+	Test::ReleaseFilterArtist,
 	Test::ReleaseFilterGenre,
-//	Test::TrackFilters,
+	Test::TrackFilters,
 //	Test::Cover,
-	Test::Transcode,
+//	Test::Transcode,
 };
 
 bool test(Test t)
