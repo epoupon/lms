@@ -57,7 +57,7 @@
 	- Handle internal path
 
 [Remote API]
-- Implement text search options in the GetXXX messages
+- Implement partial text search options in the GetXXX messages
 
 [Logs]
 - capture transcoder log output to get more information on errors
