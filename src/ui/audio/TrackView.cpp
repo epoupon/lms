@@ -33,9 +33,9 @@ TrackView::TrackView( Database::Handler& db, Wt::WContainerWidget* parent)
 : Wt::WTableView( parent ),
 _db(db)
 {
-	_queryModel.setQuery(_db.getSession().query<ResultType>("select track,release,artist from track,release,artist where track.release_id = release.id and track.artist_id = artist.id" ).orderBy("artist.name,release.name,track.disc_number,track.track_number"));
-	_queryModel.addColumn( "artist.name", "Artist" );
-	_queryModel.addColumn( "release.name", "Album" );
+	_queryModel.setQuery(_db.getSession().query<ResultType>("select track from track").orderBy("track.artist_name,track.date,track.release_name,track.disc_number,track.track_number"));
+	_queryModel.addColumn( "track.artist_name", "Artist" );
+	_queryModel.addColumn( "track.release_name", "Album" );
 	_queryModel.addColumn( "track.disc_number", "Disc #" );
 	_queryModel.addColumn( "track.track_number", "Track #" );
 	_queryModel.addColumn( "track.name", "Track" );
@@ -107,15 +107,15 @@ TrackView::refresh(const Constraint& constraint)
 
 	SqlQuery sqlQuery;
 
-	sqlQuery.select( "track,release,artist" );
-	sqlQuery.from().And( FromClause("artist,release,track,genre,track_genre"));
+	sqlQuery.select( "track" );
+	sqlQuery.from().And( FromClause("track"));
 	sqlQuery.where().And(constraint.where);
 
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "TRACK REQ = '" << sqlQuery.get() << "'";
 
 	Wt::Dbo::Query<ResultType> query = _db.getSession().query<ResultType>( sqlQuery.get() );
 
-	query.groupBy("track").orderBy("artist.name,track.date,release.name,track.disc_number,track.track_number");
+	query.groupBy("track").orderBy("track.artist_name,track.date,track.release_name,track.disc_number,track.track_number");
 
 	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs()) {
 		LMS_LOG(MOD_UI, SEV_DEBUG) << "Binding value '" << bindArg << "'";
@@ -126,28 +126,6 @@ TrackView::refresh(const Constraint& constraint)
 
 }
 
-/*
-void
-TrackView::handleTrackSelected(void)
-{
-	Wt::WModelIndexSet indexSet = this->selectedIndexes();
-	if (!indexSet.empty()) {
-		Wt::WModelIndex currentIndex( *indexSet.begin() );
-
-		// Check there are remainin tracks!
-		if (currentIndex.isValid())
-		{
-			ResultType result = _queryModel.resultRow( currentIndex.row());
-
-			// Get the track part
-			Wt::Dbo::ptr<Database::Track> track ( result.get<0>() );
-
-			_trackSelected.emit( track->getPath() );
-		}
-
-	}
-}
-*/
 void
 TrackView::getSelectedTracks(std::vector<Database::Track::id_type>& track_ids)
 {

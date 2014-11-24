@@ -52,9 +52,6 @@ FilterChain::updateFilters(std::size_t startIdx)
 
 	Filter::Constraint currentConstraint;
 
-	// TODO: replace with inner joins?
-	currentConstraint.where.And( WhereClause( "track.artist_id = artist.id and track.release_id = release.id and track_genre.track_id = track.id and genre.id = track_genre.genre_id"));
-
 	for (std::size_t idFilter = 0; idFilter < _filters.size(); ++idFilter)
 	{
 		Filter* filter = _filters.at(idFilter);

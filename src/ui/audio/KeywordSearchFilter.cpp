@@ -39,7 +39,7 @@ KeywordSearchFilter::getConstraint(Constraint& constraint)
 	// No active search means no constaint!
 	if (!_lastEmittedText.empty()) {
 		const std::string bindText ("%%" + _lastEmittedText + "%%");
-		constraint.where.And( WhereClause("(track.name like ? or release.name like ? or artist.name like ?)").bind(bindText).bind(bindText).bind(bindText));
+		constraint.where.And( WhereClause("(track.name like ? or track.release_name like ? or track.artist_name like ? or track.genre_list like ?)").bind(bindText).bind(bindText).bind(bindText).bind(bindText));
 	}
 
 	// else no constraint!

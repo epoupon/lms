@@ -11,11 +11,9 @@ lms_SOURCES = \
 	$(srcdir)/config/ConfigReader.cpp			\
 	$(srcdir)/cover/CoverArt.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
-	$(srcdir)/database/Artist.cpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
 	$(srcdir)/database/Genre.cpp				\
 	$(srcdir)/database/MediaDirectory.cpp			\
-	$(srcdir)/database/Release.cpp				\
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/User.cpp				\
@@ -48,6 +46,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/audio/KeywordSearchFilter.cpp		\
 	$(srcdir)/ui/audio/PlayQueue.cpp			\
 	$(srcdir)/ui/audio/TableFilter.cpp			\
+	$(srcdir)/ui/audio/TableFilterGenre.cpp			\
 	$(srcdir)/ui/audio/TrackView.cpp			\
 	$(srcdir)/ui/common/DirectoryValidator.cpp		\
 	$(srcdir)/ui/common/SessionData.cpp			\

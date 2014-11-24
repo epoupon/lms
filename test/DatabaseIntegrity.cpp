@@ -44,8 +44,6 @@ int main(void)
 
 		BOOST_FOREACH(Database::Track::pointer track, tracks ) {
 			assert( !track->getName().empty() );
-			assert( track->getArtist() );
-			assert( track->getRelease() );
 			assert( !track->getGenres().empty() );
 			assert( !track->getDuration().is_not_a_date_time()  );
 		}

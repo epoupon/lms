@@ -87,7 +87,7 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 
 			_model->setData(dataRow, 0, track.id());
 			_model->setData(dataRow, 1, dataRow + 1);
-			_model->setData(dataRow, 2, track->getArtist()->getName() + " - " + track->getName());
+			_model->setData(dataRow, 2, track->getArtistName() + " - " + track->getName());
 			_model->setData(dataRow, 3, track->getDuration());
 		}
 	}

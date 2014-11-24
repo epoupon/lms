@@ -85,9 +85,6 @@ _dbBackend( db.string() )
 	_session.setConnection(_dbBackend);
 	_session.mapClass<Database::Genre>("genre");
 	_session.mapClass<Database::Track>("track");
-	_session.mapClass<Database::Artist>("artist");
-	_session.mapClass<Database::Release>("release");
-	_session.mapClass<Database::Release>("release");
 	_session.mapClass<Database::Video>("video");
 	_session.mapClass<Database::MediaDirectory>("media_directory");
 	_session.mapClass<Database::MediaDirectorySettings>("media_directory_settings");
@@ -99,6 +96,8 @@ _dbBackend( db.string() )
 
 	try {
 	        _session.createTables();
+		_dbBackend.executeSql("CREATE INDEX artist_name_idx ON track(artist_name)");
+		_dbBackend.executeSql("CREATE INDEX release_name_idx ON track(release_name)");
 	}
 	catch(std::exception& e) {
 		LMS_LOG(MOD_DB, SEV_ERROR) << "Cannot create tables: " << e.what();

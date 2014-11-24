@@ -33,8 +33,6 @@
 namespace Database {
 
 class Track;
-class Release;
-class Artist;
 
 class Genre
 {
@@ -73,99 +71,6 @@ class Genre
 		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;
 };
 
-
-class Artist
-{
-	public:
-
-		typedef Wt::Dbo::ptr<Artist> pointer;
-		typedef Wt::Dbo::dbo_traits<Artist>::IdType id_type;
-
-		Artist() {}
-		Artist(const std::string& p_name);
-
-		// Accessors
-		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
-		static pointer getNone(Wt::Dbo::Session& session);
-		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, int offset = -1, int size = -1);
-		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session,
-							const std::vector<Genre::id_type>& genreIds,
-							int offset = -1, int size = -1);
-		static Wt::Dbo::collection<pointer> getAllOrphans(Wt::Dbo::Session& session);
-
-		const std::string& getName(void) const { return _name; }
-		const Wt::Dbo::collection< Wt::Dbo::ptr<Track> >& getTracks(void) const  { return _tracks;}
-
-		// Create
-		static pointer create(Wt::Dbo::Session& session, const std::string& name);
-
-		bool	isNone(void) const;
-
-		template<class Action>
-			void persist(Action& a)
-			{
-				Wt::Dbo::field(a, _name, "name");
-
-				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "artist");
-			}
-
-
-	private:
-
-		static const std::size_t _maxNameLength = 128;
-
-		std::string _name;
-
-		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;	// Tracks of this artist
-};
-
-
-// Album release
-class Release
-{
-	public:
-
-		typedef Wt::Dbo::ptr<Release> pointer;
-		typedef Wt::Dbo::dbo_traits<Release>::IdType id_type;
-
-		Release() {}
-		Release(const std::string& name);
-
-		// Accessors
-		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
-		static pointer getById(Wt::Dbo::Session& session, id_type id);
-		static pointer getNone(Wt::Dbo::Session& session);
-		static Wt::Dbo::collection<pointer> getAllOrphans(Wt::Dbo::Session& session);
-		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session,
-						const std::vector<Artist::id_type>& artistIds,
-						const std::vector<Genre::id_type>& genreIds,
-						int offset = -1, int size = -1);
-
-		// Create
-		static pointer create(Wt::Dbo::Session& session, const std::string& name);
-
-		std::string	getName() const	{ return _name; }
-		bool		isNone(void) const;
-		const Wt::Dbo::collection<Wt::Dbo::ptr<Track> >& getTracks(void) const	{ return _tracks;}
-		boost::posix_time::time_duration getDuration(void) const;
-
-
-		template<class Action>
-			void persist(Action& a)
-			{
-				Wt::Dbo::field(a, _name, "name");
-
-				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
-			}
-
-	private:
-		static const std::size_t _maxNameLength = 128;
-		std::string 			_name;
-
-		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;	// Tracks in the release
-};
-
-
 class Track
 {
 	public:
@@ -174,25 +79,37 @@ class Track
 		typedef Wt::Dbo::dbo_traits<Track>::IdType id_type;
 
 		Track() {}
-		Track(const boost::filesystem::path& p, Artist::pointer artist, Release::pointer release);
+		Track(const boost::filesystem::path& p);
 
 		// Find utilities
 		static pointer getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
 		static pointer getById(Wt::Dbo::Session& session, id_type id);
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session,
-				const std::vector<Artist::id_type>& artistIds,
-				const std::vector<Release::id_type>& releaseIds,
-				const std::vector<Genre::id_type>& genreIds,
+				const std::vector<std::string>& artists,	// OR filter if many
+				const std::vector<std::string>& releases,	// OR filter if many
+				const std::vector<std::string>& genres,		// OR filter if many
 				int offset = -1, int size = -1);
 
+		static std::vector<std::string> getReleases(Wt::Dbo::Session& session,
+				const std::vector<std::string>& artists,	// OR filter if many
+				const std::vector<std::string>& genres,		// OR filter if many
+				int offset = -1, int size = -1);
+
+		static std::vector<std::string> getArtists(Wt::Dbo::Session& session,
+				const std::vector<std::string>& genres,		// OR filter
+				int offset = -1, int size = -1);
+
+
 		// Create utility
-		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p, Artist::pointer artist, Release::pointer release);
+		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p);
 
 		// Accessors
 		void setTrackNumber(int num)					{ _trackNumber = num; }
 		void setDiscNumber(int num)					{ _discNumber = num; }
 		void setName(const std::string& name)				{ _name = std::string(name, 0, _maxNameLength); }
+		void setArtistName(const std::string& name)				{ _artistName = std::string(name, 0, _maxNameLength); }
+		void setReleaseName(const std::string& name)				{ _releaseName = std::string(name, 0, _maxNameLength); }
 		void setDuration(boost::posix_time::time_duration duration)	{ _duration = duration; }
 		void setLastWriteTime(boost::posix_time::ptime time)		{ _fileLastWrite = time; }
 		void setChecksum(const std::vector<unsigned char>& checksum)	{ _fileChecksum = checksum; }
@@ -200,18 +117,16 @@ class Track
 		void setOriginalDate(const boost::posix_time::ptime& date)	{ _originalDate = date; }
 		void setGenres(const std::string& genreList)			{ _genreList = genreList; }
 		void setGenres(std::vector<Genre::pointer> genres);
-		void setArtist(Artist::pointer artist)				{ _artist = artist; }
-		void setRelease(Release::pointer release)			{ _release = release; }
 
 		int				getTrackNumber(void) const		{ return _trackNumber; }
 		int				getDiscNumber(void) const		{ return _discNumber; }
 		std::string 			getName(void) const			{ return _name; }
+		std::string 			getArtistName(void) const			{ return _artistName; }
+		std::string 			getReleaseName(void) const			{ return _releaseName; }
 		const std::string&		getPath(void) const			{ return _filePath; }
 		boost::posix_time::time_duration	getDuration(void) const		{ return _duration; }
 		boost::posix_time::ptime	getDate(void) const			{ return _date; }
 		boost::posix_time::ptime	getOriginalDate(void) const		{ return _originalDate; }
-		Artist::pointer			getArtist(void)	const			{ return _artist; }
-		Release::pointer		getRelease(void) const			{ return _release; }
 		bool				hasGenre(Genre::pointer genre) const	{ return _genres.count(genre); }
 		std::vector< Genre::pointer >	getGenres(void) const;
 
@@ -224,6 +139,8 @@ class Track
 				Wt::Dbo::field(a, _trackNumber,		"track_number");
 				Wt::Dbo::field(a, _discNumber,		"disc_number");
 				Wt::Dbo::field(a, _name,		"name");
+				Wt::Dbo::field(a, _artistName,		"artist_name");
+				Wt::Dbo::field(a, _releaseName,		"release_name");
 				Wt::Dbo::field(a, _duration,		"duration");
 				Wt::Dbo::field(a, _date,		"date");
 				Wt::Dbo::field(a, _originalDate,	"original_date");
@@ -232,8 +149,6 @@ class Track
 				Wt::Dbo::field(a, _fileLastWrite,	"last_write");
 				Wt::Dbo::field(a, _fileChecksum,	"checksum");
 				Wt::Dbo::hasMany(a, _genres, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
-				Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
-				Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
 			}
 
 	private:
@@ -243,6 +158,8 @@ class Track
 		int					_trackNumber;
 		int					_discNumber;
 		std::string				_name;
+		std::string				_artistName;
+		std::string				_releaseName;
 		boost::posix_time::time_duration	_duration;
 		boost::posix_time::ptime		_date;
 		boost::posix_time::ptime		_originalDate;
@@ -251,9 +168,7 @@ class Track
 		std::vector<unsigned char>		_fileChecksum;
 		boost::posix_time::ptime		_fileLastWrite;
 
-		Artist::pointer		_artist;		// Associated Artist
-		Release::pointer	_release;		// Associated Release
-		Wt::Dbo::collection< Genre::pointer > _genres;	// Tracks in the release
+		Wt::Dbo::collection< Genre::pointer > _genres;	// Tracks that belong to this genre
 };
 
 } // namespace database

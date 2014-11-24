@@ -28,6 +28,7 @@
 #include "logger/Logger.hpp"
 
 #include "TableFilter.hpp"
+#include "TableFilterGenre.hpp"
 #include "KeywordSearchFilter.hpp"
 #include "TrackView.hpp"
 #include "PlayQueue.hpp"
@@ -49,17 +50,17 @@ _mediaPlayer(nullptr)
 	Wt::WHBoxLayout *filterLayout = new Wt::WHBoxLayout();
 
 	{
-		TableFilter *filter = new TableFilter(_db, "genre", "name");
+		TableFilterGenre *filter = new TableFilterGenre(_db);
 		filterLayout->addWidget(filter);
 		_filterChain.addFilter(filter);
 	}
 	{
-		TableFilter *filter = new TableFilter(_db, "artist", "name");
+		TableFilter *filter = new TableFilter(_db, "track", "artist_name");
 		filterLayout->addWidget(filter);
 		_filterChain.addFilter(filter);
 	}
 	{
-		TableFilter *filter = new TableFilter(_db, "release", "name");
+		TableFilter *filter = new TableFilter(_db, "track", "release_name");
 		filterLayout->addWidget(filter);
 		_filterChain.addFilter(filter);
 	}

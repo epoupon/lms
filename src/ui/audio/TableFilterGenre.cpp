@@ -21,27 +21,25 @@
 
 #include "logger/Logger.hpp"
 
-#include "TableFilter.hpp"
+#include "TableFilterGenre.hpp"
 
 namespace UserInterface {
 
-TableFilter::TableFilter(Database::Handler& db, std::string table, std::string field, Wt::WContainerWidget* parent)
+TableFilterGenre::TableFilterGenre(Database::Handler& db, Wt::WContainerWidget* parent)
 : Wt::WTableView( parent ),
 Filter(),
-_db(db),
-_table(table),
-_field(field)
+_db(db)
 {
-	_queryModel.setQuery( _db.getSession().query< ResultType >("select track." + _field + ", COUNT(DISTINCT track.id) from track GROUP BY track." + _field).orderBy("track." + _field));
-	_queryModel.addColumn( "track." + _field, field);
-	_queryModel.addColumn( "COUNT(DISTINCT track.id)", "tracks");
+	_queryModel.setQuery( _db.getSession().query< ResultType >("select genre.name, COUNT(DISTINCT track.id) from genre INNER JOIN track_genre ON track_genre.genre_id = genre.id INNER JOIN track ON track.id = track_genre.track_id").orderBy("genre.name").groupBy("genre.name").orderBy("genre.name"));
+	_queryModel.addColumn("genre.name", "Genre");
+	_queryModel.addColumn("COUNT(DISTINCT track.id)", "tracks");
 
 	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setSortingEnabled(false);
 	this->setAlternatingRowColors(true);
 	this->setModel(&_queryModel);
 
-	this->selectionChanged().connect(this, &TableFilter::emitUpdate);
+	this->selectionChanged().connect(this, &TableFilterGenre::emitUpdate);
 
 	setLayoutSizeAware(true);
 
@@ -49,7 +47,7 @@ _field(field)
 }
 
 void
-TableFilter::layoutSizeChanged (int width, int height)
+TableFilterGenre::layoutSizeChanged (int width, int height)
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "LAYOUT CHANGED!";
 
@@ -63,20 +61,20 @@ TableFilter::layoutSizeChanged (int width, int height)
 
 // Set constraints on this filter
 void
-TableFilter::refresh(const Constraint& constraint)
+TableFilterGenre::refresh(const Constraint& constraint)
 {
 	SqlQuery sqlQuery;
 
-	sqlQuery.select("track." + _field + ", COUNT(DISTINCT track.id)");
-	sqlQuery.from().And( FromClause("track")) ;
+	sqlQuery.select("genre.name, COUNT(DISTINCT track.id)");
+	sqlQuery.from().And( std::string("genre INNER JOIN track_genre ON track_genre.genre_id = genre.id INNER JOIN track ON track.id = track_genre.track_id") );
 	sqlQuery.where().And(constraint.where);	// Add constraint made by other filters
-	sqlQuery.groupBy().And( "track." + _field);	// Add constraint made by other filters
+	sqlQuery.groupBy().And( std::string("genre.name") );
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << _table << ", generated query = '" << sqlQuery.get() << "'";
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "genre, generated query = '" << sqlQuery.get() << "'";
 
 	Wt::Dbo::Query<ResultType> query = _db.getSession().query<ResultType>( sqlQuery.get() );
 
-	query.orderBy(_table + "." + _field);
+	query.orderBy("genre.name");
 
 	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs()) {
 		LMS_LOG(MOD_UI, SEV_DEBUG) << "Binding value '" << bindArg << "'";
@@ -85,12 +83,11 @@ TableFilter::refresh(const Constraint& constraint)
 
 	_queryModel.setQuery( query, true );
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Finish !";
 }
 
 // Get constraint created by this filter
 void
-TableFilter::getConstraint(Constraint& constraint)
+TableFilterGenre::getConstraint(Constraint& constraint)
 {
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
@@ -107,11 +104,15 @@ TableFilter::getConstraint(Constraint& constraint)
 		// Get the track part
 		std::string	name(result.get<0>());
 
-		clause.Or(_table + "." + _field + " = ?").bind(name);
+		if (name == "<None>")
+			clause.Or( std::string("track.genre_list = ?") ).bind("");
+		else
+			clause.Or( std::string("track.genre_list LIKE ?") ).bind("%%" + name + "%%");
 	}
 
 	// Adding our WHERE clause
 	constraint.where.And( clause );
+
 }
 
 } // namespace UserInterface

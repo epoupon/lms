@@ -143,7 +143,6 @@ AudioCollectionRequestHandler::processGetGenres(const AudioCollectionRequest::Ge
 		AudioCollectionResponse_Genre* genre = response.add_genres();
 
 		genre->set_name( std::string( boost::locale::conv::to_utf<char>((*it)->getName(), "UTF-8") ) );
-		genre->set_id(it->id());
 	}
 
 	return true;
@@ -165,24 +164,22 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 	size = std::min(size, _maxListArtists);
 
 	// Get filters
-	std::vector<Database::Artist::id_type> genreIds;
-	for (int id = 0; id < request.genre_id_size(); ++id)
-		genreIds.push_back( request.genre_id(id) );
+	std::vector<std::string> genres;
+	for (int id = 0; id < request.genre_size(); ++id)
+		genres.push_back( request.genre(id) );
 
 	// Now fetch requested data...
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Wt::Dbo::collection<Database::Artist::pointer> artists = Database::Artist::getAll( _db.getSession(), genreIds, request.batch_parameter().offset(), static_cast<int>(size) );
+	std::vector<std::string> artists
+		= Database::Track::getArtists(_db.getSession(),
+						genres,
+						request.batch_parameter().offset(), static_cast<int>(size) );
 
-	typedef Wt::Dbo::collection< Database::Artist::pointer > Artists;
-
-	for (Artists::const_iterator it = artists.begin(); it != artists.end(); ++it)
+	BOOST_FOREACH(const std::string& artist, artists)
 	{
-		AudioCollectionResponse_Artist* artist = response.add_artists();
-
-		artist->set_name( std::string( boost::locale::conv::to_utf<char>((*it)->getName(), "UTF-8") ) );
-		artist->set_id(it->id());
+		response.add_artists()->set_name( std::string( boost::locale::conv::to_utf<char>(artist, "UTF-8") ) );
 	}
 
 	return true;
@@ -203,30 +200,25 @@ AudioCollectionRequestHandler::processGetReleases(const AudioCollectionRequest::
 		size = _maxListReleases;
 	size = std::min(size, _maxListReleases);
 
-	std::vector<Database::Artist::id_type> artistIds;
-	for (int id = 0; id < request.artist_id_size(); ++id)
-		artistIds.push_back( request.artist_id(id) );
+	std::vector<std::string> artists;
+	for (int id = 0; id < request.artist_size(); ++id)
+		artists.push_back( request.artist(id) );
 
-	std::vector<Database::Genre::id_type> genreIds;
-	for (int id = 0; id < request.genre_id_size(); ++id)
-		genreIds.push_back( request.genre_id(id) );
+	std::vector<std::string> genres;
+	for (int id = 0; id < request.genre_size(); ++id)
+		genres.push_back( request.genre(id) );
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Wt::Dbo::collection<Database::Release::pointer> releases
-		= Database::Release::getAll( _db.getSession(),
-						artistIds,
-						genreIds,
+	std::vector<std::string> releases
+		= Database::Track::getReleases( _db.getSession(),
+						artists,
+						genres,
 						request.batch_parameter().offset(), static_cast<int>(size));
 
-	typedef Wt::Dbo::collection< Database::Release::pointer > Releases;
-
-	for (Releases::const_iterator it = releases.begin(); it != releases.end(); ++it)
+	BOOST_FOREACH(const std::string& release, releases)
 	{
-		AudioCollectionResponse_Release* release = response.add_releases();
-
-		release->set_name( std::string( boost::locale::conv::to_utf<char>((*it)->getName(), "UTF-8") ) );
-		release->set_id(it->id());
+		response.add_releases()->set_name( std::string( boost::locale::conv::to_utf<char>(release, "UTF-8")));
 	}
 
 	return true;
@@ -248,27 +240,26 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 	size = std::min(size, _maxListTracks);
 
 	// Get filters
-	std::vector<Database::Artist::id_type> artistIds;
-	for (int id = 0; id < request.artist_id_size(); ++id)
-		artistIds.push_back( request.artist_id(id) );
+	std::vector<std::string> artists;
+	for (int id = 0; id < request.artist_size(); ++id)
+		artists.push_back( request.artist(id) );
 
-	std::vector<Database::Release::id_type> releaseIds;
-	for (int id = 0; id < request.release_id_size(); ++id)
-		releaseIds.push_back( request.release_id(id) );
+	std::vector<std::string> releases;
+	for (int id = 0; id < request.release_size(); ++id)
+		releases.push_back( request.release(id) );
 
-	std::vector<Database::Release::id_type> genreIds;
-	for (int id = 0; id < request.genre_id_size(); ++id)
-		genreIds.push_back( request.genre_id(id) );
+	std::vector<std::string> genres;
+	for (int id = 0; id < request.genre_size(); ++id)
+		genres.push_back( request.genre(id) );
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
 	Wt::Dbo::collection<Database::Track::pointer> tracks
 		= Database::Track::getAll( _db.getSession(),
-				artistIds,
-				releaseIds,
-				genreIds,
-				request.batch_parameter().offset(),
-				static_cast<int>(size));
+				artists,
+				releases,
+				genres,
+				request.batch_parameter().offset(), static_cast<int>(size));
 
 	typedef Wt::Dbo::collection< Database::Track::pointer > Tracks;
 
@@ -279,8 +270,8 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 		track->set_id(it->id());
 		track->set_disc_number( (*it)->getDiscNumber() );
 		track->set_track_number( (*it)->getTrackNumber() );
-		track->set_artist_id( (*it)->getArtist().id() );
-		track->set_release_id( (*it)->getRelease().id() );
+		track->set_artist( (*it)->getArtistName() );
+		track->set_release( (*it)->getReleaseName() );
 
 		track->set_name( std::string( boost::locale::conv::to_utf<char>((*it)->getName(), "UTF-8") ) );
 		track->set_duration_secs( (*it)->getDuration().total_seconds() );
@@ -292,7 +283,7 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 			track->set_original_release_date( std::to_string((*it)->getOriginalDate().date().year()) );
 
 		BOOST_FOREACH(Database::Genre::pointer genre, (*it)->getGenres())
-			track->add_genre_id( genre.id() );
+			track->add_genre( genre->getName() );
 
 	}
 
@@ -306,72 +297,62 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 
 	response.set_type(AudioCollectionResponse::TypeCoverArt);
 
+	Wt::Dbo::Transaction transaction( _db.getSession() );
+	Database::Track::pointer track;
+
 	switch(request.type())
 	{
 		case AudioCollectionRequest::GetCoverArt::TypeGetCoverArtRelease:
-
-			if (request.has_release_id())
+			if (request.has_release())
 			{
-				Wt::Dbo::Transaction transaction( _db.getSession() );
+				Wt::Dbo::collection<Database::Track::pointer> tracks = Database::Track::getAll(_db.getSession(),
+						std::vector<std::string>(), // artist
+						std::vector<std::string>(1, request.release()), // release
+						std::vector<std::string>(), // genre
+							-1, 1);
 
-				// Get the request release
-				Database::Release::pointer release = Database::Release::getById( _db.getSession(), request.release_id());
+				Wt::Dbo::collection<Database::Track::pointer>::iterator it = tracks.begin();
 
-				std::vector<CoverArt::CoverArt> coverArts = CoverArt::Grabber::getFromRelease(release);
+				if (it != tracks.end())
+					track = *it;
 
-				BOOST_FOREACH(CoverArt::CoverArt& coverArt, coverArts)
-				{
-					AudioCollectionResponse_CoverArt* cover_art = response.add_cover_art();
-
-					if (request.has_size())
-					{
-						std::size_t size = request.size();
-						if (size > _maxCoverArtSize || size == 0)
-							size = _maxCoverArtSize;
-						if (size < _minCoverArtSize)
-							size = _minCoverArtSize;
-
-						coverArt.scale(size);
-					}
-
-					cover_art->set_mime_type(coverArt.getMimeType());
-					cover_art->set_data( std::string( coverArt.getData().begin(), coverArt.getData().end()) );
-				}
+				res = true;
 			}
-			res = true;
 			break;
 
 		case AudioCollectionRequest::GetCoverArt::TypeGetCoverArtTrack:
 			if (request.has_track_id())
 			{
-				Wt::Dbo::Transaction transaction( _db.getSession() );
-
 				// Get the request release
-				Database::Track::pointer track = Database::Track::getById( _db.getSession(), request.track_id());
+				track = Database::Track::getById( _db.getSession(), request.track_id());
 
-				std::vector<CoverArt::CoverArt> coverArts = CoverArt::Grabber::getFromTrack(track);
-
-				BOOST_FOREACH(CoverArt::CoverArt& coverArt, coverArts)
-				{
-					AudioCollectionResponse_CoverArt* cover_art = response.add_cover_art();
-
-					if (request.has_size())
-					{
-						std::size_t size = request.size();
-						if (size > _maxCoverArtSize || size == 0)
-							size = _maxCoverArtSize;
-						if (size < _minCoverArtSize)
-							size = _minCoverArtSize;
-
-						coverArt.scale(size);
-					}
-
-					cover_art->set_mime_type(coverArt.getMimeType());
-					cover_art->set_data( std::string( coverArt.getData().begin(), coverArt.getData().end()) );
-				}
+				res = true;
 			}
-			res = true;
 			break;
+	}
+
+	if (!res)
+		return false;
+
+	std::vector<CoverArt::CoverArt> coverArts = CoverArt::Grabber::getFromTrack(track);
+
+	BOOST_FOREACH(CoverArt::CoverArt& coverArt, coverArts)
+	{
+		AudioCollectionResponse_CoverArt* cover_art = response.add_cover_art();
+
+		if (request.has_size())
+		{
+			std::size_t size = request.size();
+			if (size > _maxCoverArtSize || size == 0)
+				size = _maxCoverArtSize;
+			if (size < _minCoverArtSize)
+				size = _minCoverArtSize;
+
+			coverArt.scale(size);
+		}
+
+		cover_art->set_mime_type(coverArt.getMimeType());
+		cover_art->set_data( std::string( coverArt.getData().begin(), coverArt.getData().end()) );
 	}
 
 	return res;

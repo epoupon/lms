@@ -17,8 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TABLE_FILTER_HPP
-#define TABLE_FILTER_HPP
+#ifndef TABLE_FILTER_GENRE_HPP
+#define TABLE_FILTER_GENRE_HPP
 
 
 #include <Wt/Dbo/QueryModel>
@@ -29,11 +29,11 @@
 
 namespace UserInterface {
 
-class TableFilter : public Wt::WTableView, public Filter
+class TableFilterGenre : public Wt::WTableView, public Filter
 {
 
 	public:
-		TableFilter(Database::Handler& db, std::string table, std::string field, Wt::WContainerWidget* parent = 0);
+		TableFilterGenre(Database::Handler& db, Wt::WContainerWidget* parent = 0);
 
 		// Set constraints on this filter
 		void refresh(const Constraint& constraint);
@@ -46,10 +46,8 @@ class TableFilter : public Wt::WTableView, public Filter
 	protected:
 
 		Database::Handler&			_db;
-		const std::string			_table;
-		const std::string			_field;
 
-		// Name, track count, special value that means 'all' if set to 1
+		// genre_name, count
 		typedef boost::tuple<std::string, int>  ResultType;
 		Wt::Dbo::QueryModel< ResultType >	_queryModel;
 

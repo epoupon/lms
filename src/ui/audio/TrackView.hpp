@@ -60,7 +60,7 @@ class TrackView : public Wt::WTableView, public Filter
 
 		Database::Handler&			_db;
 
-		typedef boost::tuple<Database::Track::pointer, Database::Release::pointer, Database::Artist::pointer>  ResultType;
+		typedef boost::tuple<Database::Track::pointer>  ResultType;
 		Wt::Dbo::QueryModel< ResultType >	_queryModel;
 		Wt::WTableView*				_tableView;
 

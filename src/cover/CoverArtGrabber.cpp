@@ -77,30 +77,5 @@ Grabber::getFromTrack(Database::Track::pointer track)
 	return res;
 }
 
-std::vector<CoverArt>
-Grabber::getFromRelease(Database::Release::pointer release)
-{
-	if (!release)
-		return std::vector<CoverArt>();
-
-	// TODO
-	// Check if there is an image file in the directory of the release
-	// For now, just get the cover art from the first track of the release
-
-	Wt::Dbo::collection<Database::Track::pointer> tracks (release->getTracks());
-
-	Database::Track::pointer firstTrack;
-	if (tracks.begin() != tracks.end())
-		firstTrack = *tracks.begin();
-
-	if (firstTrack)
-	{
-		return Grabber::getFromTrack(firstTrack);
-	}
-	else
-		return std::vector<CoverArt>();
-
-}
-
 } // namespace CoverArt
 

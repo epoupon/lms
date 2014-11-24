@@ -320,35 +320,6 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 			title = file.filename().string();
 		}
 
-		// ***** Artist
-		Wt::Dbo::ptr<Artist> artist;
-		if (items.find(MetaData::Type::Artist) != items.end())
-		{
-			const std::string artistName (boost::any_cast<std::string>(items[MetaData::Type::Artist]));
-			artist = Artist::getByName(_db.getSession(), artistName );
-			if (!artist)
-				artist = Artist::create( _db.getSession(), artistName );
-		}
-		else
-			artist = Artist::getNone(_db.getSession());
-
-		assert(artist);
-
-
-		// ***** Release
-		Wt::Dbo::ptr<Release> release;
-		if (items.find(MetaData::Type::Album) != items.end())
-		{
-			const std::string albumName (boost::any_cast<std::string>(items[MetaData::Type::Album]));
-			release = Release::getByName(_db.getSession(), albumName);
-			if (!release)
-				release = Release::create( _db.getSession(),  albumName );
-		}
-		else
-			release = Release::getNone( _db.getSession() );
-
-		assert(release);
-
 
 		// ***** Genres
 		typedef std::list<std::string> GenreList;
@@ -376,7 +347,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		if (!track)
 		{
 			// Create a new song
-			track = Track::create(_db.getSession(), file, artist, release);
+			track = Track::create(_db.getSession(), file);
 			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Adding '" << file << "'";
 			stats.nbAdded++;
 		}
@@ -403,8 +374,12 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 			track.modify()->setGenres( trackGenreList );
 		}
 		track.modify()->setGenres( genres );
-		track.modify()->setArtist( artist );
-		track.modify()->setRelease( release );
+
+		if (items.find(MetaData::Type::Artist) != items.end())
+			track.modify()->setArtistName( boost::any_cast<std::string>(items[MetaData::Type::Artist]) );
+
+		if (items.find(MetaData::Type::Album) != items.end())
+			track.modify()->setReleaseName( boost::any_cast<std::string>(items[MetaData::Type::Album]) );
 
 		if (items.find(MetaData::Type::TrackNumber) != items.end())
 			track.modify()->setTrackNumber( boost::any_cast<std::size_t>(items[MetaData::Type::TrackNumber]) );
@@ -538,28 +513,6 @@ Updater::checkAudioFiles( Stats& stats )
 			track.remove();
 			stats.nbRemoved++;
 		}
-	}
-
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking Artists...";
-	// Now process orphan Artists (no track)
-	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Artist> > Artists;
-	Artists artists = Artist::getAllOrphans(_db.getSession());
-
-	for (Artists::iterator it = artists.begin(); it != artists.end(); ++it)
-	{
-		LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Removing orphan artist " << (*it)->getName();
-		(*it).remove();
-	}
-
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking Releases...";
-	// Now process orphan Release (no track)
-	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Release> > Releases;
-	Releases releases = Release::getAllOrphans(_db.getSession());
-
-	for (Releases::iterator it = releases.begin(); it != releases.end(); ++it)
-	{
-		LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Removing orphan release " << (*it)->getName();
-		(*it).remove();
 	}
 
 	// Now process orphan Genre (no track)

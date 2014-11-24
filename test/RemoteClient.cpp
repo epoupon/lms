@@ -34,37 +34,34 @@
 
 struct GenreInfo
 {
-	uint64_t	id;
 	std::string	name;
 };
 
 std::ostream& operator<<(std::ostream& os, const GenreInfo& info)
 {
-	os << "id = " << info.id << ", name = '" << info.name << "'";
+	os << "name = '" << info.name << "'";
 	return os;
 }
 
 struct ArtistInfo
 {
-	uint64_t	id;
 	std::string	name;
 };
 
 std::ostream& operator<<(std::ostream& os, const ArtistInfo& info)
 {
-	os << "id = " << info.id << ", name = '" << info.name << "'";
+	os << "name = '" << info.name << "'";
 	return os;
 }
 
 struct ReleaseInfo
 {
-	uint64_t        id;
 	std::string	name;
 };
 
 std::ostream& operator<<(std::ostream& os, const ReleaseInfo& info)
 {
-	os << "id = " << info.id << ", name = '" << info.name;
+	os << "name = '" << info.name;
 	return os;
 }
 
@@ -125,7 +122,8 @@ class TestClient
 			_socket.handshake(boost::asio::ssl::stream_base::client);
 		}
 
-		void getArtists(std::vector<ArtistInfo>& artists, const std::vector<uint64_t>& genreIds)
+		void getArtists(std::vector<ArtistInfo>& artists,
+				const std::vector<std::string>& genres = std::vector<std::string>())
 		{
 
 			const std::size_t requestedBatchSize = 128;
@@ -133,12 +131,12 @@ class TestClient
 			std::size_t res = 0;
 
 
-			while ((res = getArtists(artists, genreIds, offset, requestedBatchSize) ) > 0)
+			while ((res = getArtists(artists, genres, offset, requestedBatchSize) ) > 0)
 				offset += res;
 
 		}
 
-		std::size_t getArtists(std::vector<ArtistInfo>& artists, const std::vector<uint64_t>& genreIds, std::size_t offset, std::size_t size)
+		std::size_t getArtists(std::vector<ArtistInfo>& artists, const std::vector<std::string>& genres, std::size_t offset, std::size_t size)
 		{
 			std::size_t nbArtists = 0;
 
@@ -150,8 +148,8 @@ class TestClient
 			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetArtistList);
 			request.mutable_audio_collection_request()->mutable_get_artists()->mutable_batch_parameter()->set_size(size);
 			request.mutable_audio_collection_request()->mutable_get_artists()->mutable_batch_parameter()->set_offset(offset);
-			BOOST_FOREACH(uint64_t genreId, genreIds)
-				request.mutable_audio_collection_request()->mutable_get_artists()->add_genre_id(genreId);
+			BOOST_FOREACH(const std::string& genre, genres)
+				request.mutable_audio_collection_request()->mutable_get_artists()->add_genre(genre);
 
 			sendMsg(request);
 
@@ -172,7 +170,6 @@ class TestClient
 					throw std::runtime_error("no artist name!");
 
 				ArtistInfo artist;
-				artist.id = response.audio_collection_response().artist_list().artists(i).id();
 				artist.name = response.audio_collection_response().artist_list().artists(i).name();
 
 				artists.push_back( artist );
@@ -226,7 +223,6 @@ class TestClient
 					throw std::runtime_error("no genre name!");
 
 				GenreInfo genre;
-				genre.id = response.audio_collection_response().genre_list().genres(i).id();
 				genre.name = response.audio_collection_response().genre_list().genres(i).name();
 
 				genres.push_back( genre );
@@ -235,19 +231,21 @@ class TestClient
 			return nbAdded;
 		}
 
-		void getReleases(std::vector<ReleaseInfo>& releases, const std::vector<uint64_t> artistIds, const std::vector<uint64_t> genreIds)
+		void getReleases(std::vector<ReleaseInfo>& releases,
+				const std::vector<std::string>& artists = std::vector<std::string>(),
+				const std::vector<std::string>& genres = std::vector<std::string>())
 		{
 
 			const std::size_t requestedBatchSize = 256;
 			std::size_t offset = 0;
 			std::size_t res = 0;
 
-			while ((res = getReleases(releases, artistIds, genreIds, offset, requestedBatchSize) ) > 0)
+			while ((res = getReleases(releases, artists, genres, offset, requestedBatchSize) ) > 0)
 				offset += res;
 
 		}
 
-		std::size_t getReleases(std::vector<ReleaseInfo>& releases, const std::vector<uint64_t> artistIds, const std::vector<uint64_t> genreIds, std::size_t offset, std::size_t size)
+		std::size_t getReleases(std::vector<ReleaseInfo>& releases, const std::vector<std::string>& artists, const std::vector<std::string>& genres, std::size_t offset, std::size_t size)
 		{
 			std::size_t nbAdded = 0;
 
@@ -259,11 +257,11 @@ class TestClient
 			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetReleaseList);
 			request.mutable_audio_collection_request()->mutable_get_releases()->mutable_batch_parameter()->set_size(size);
 			request.mutable_audio_collection_request()->mutable_get_releases()->mutable_batch_parameter()->set_offset(offset);
-			BOOST_FOREACH(uint64_t artistId, artistIds)
-				request.mutable_audio_collection_request()->mutable_get_releases()->add_artist_id(artistId);
+			BOOST_FOREACH(const std::string& artist, artists)
+				request.mutable_audio_collection_request()->mutable_get_releases()->add_artist(artist);
 
-			BOOST_FOREACH(uint64_t genreId, genreIds)
-				request.mutable_audio_collection_request()->mutable_get_releases()->add_genre_id(genreId);
+			BOOST_FOREACH(const std::string& genre, genres)
+				request.mutable_audio_collection_request()->mutable_get_releases()->add_genre(genre);
 
 			sendMsg(request);
 
@@ -290,7 +288,6 @@ class TestClient
 					throw std::runtime_error("no release name!");
 
 				ReleaseInfo release;
-				release.id = response.audio_collection_response().release_list().releases(i).id();
 				release.name = response.audio_collection_response().release_list().releases(i).name();
 
 				releases.push_back( release );
@@ -299,20 +296,23 @@ class TestClient
 			return nbAdded;
 		}
 
-		void getTracks(std::vector<TrackInfo>& tracks, const std::vector<uint64_t> artistIds, const std::vector<uint64_t> releaseIds, const std::vector<uint64_t> genreIds)
+		void getTracks(std::vector<TrackInfo>& tracks,
+				const std::vector<std::string>& artists = std::vector<std::string>(),
+				const std::vector<std::string>& releases = std::vector<std::string>(),
+				const std::vector<std::string>& genres = std::vector<std::string>())
 		{
 			const std::size_t requestedBatchSize = 0;
 			std::size_t offset = 0;
 			std::size_t res = 0;
 
-			while ((res = getTracks(tracks, artistIds, releaseIds, genreIds, offset, requestedBatchSize) ) > 0)
+			while ((res = getTracks(tracks, artists, releases, genres, offset, requestedBatchSize) ) > 0)
 				offset += res;
 		}
 
 		std::size_t getTracks(std::vector<TrackInfo>& tracks,
-				const std::vector<uint64_t> artistIds,
-				const std::vector<uint64_t> releaseIds,
-				const std::vector<uint64_t> genreIds,
+				const std::vector<std::string>& artists,
+				const std::vector<std::string>& releases,
+				const std::vector<std::string>& genres,
 				std::size_t offset,
 				std::size_t size)
 		{
@@ -327,12 +327,12 @@ class TestClient
 			request.mutable_audio_collection_request()->mutable_get_tracks()->mutable_batch_parameter()->set_size(size);
 			request.mutable_audio_collection_request()->mutable_get_tracks()->mutable_batch_parameter()->set_offset(offset);
 
-			BOOST_FOREACH(uint64_t artistId, artistIds)
-				request.mutable_audio_collection_request()->mutable_get_tracks()->add_artist_id(artistId);
-			BOOST_FOREACH(uint64_t releaseId, releaseIds)
-				request.mutable_audio_collection_request()->mutable_get_tracks()->add_release_id(releaseId);
-			BOOST_FOREACH(uint64_t genreId, genreIds)
-				request.mutable_audio_collection_request()->mutable_get_tracks()->add_genre_id(genreId);
+			BOOST_FOREACH(const std::string& artist, artists)
+				request.mutable_audio_collection_request()->mutable_get_tracks()->add_artist(artist);
+			BOOST_FOREACH(const std::string& release, releases)
+				request.mutable_audio_collection_request()->mutable_get_tracks()->add_release(release);
+			BOOST_FOREACH(const std::string& genre, genres)
+				request.mutable_audio_collection_request()->mutable_get_tracks()->add_genre(genre);
 
 			sendMsg(request);
 
@@ -419,7 +419,7 @@ class TestClient
 			}
 		}
 
-		void getCoverRelease(std::vector<Cover>& coverArt, uint64_t releaseId)
+		void getCoverRelease(std::vector<Cover>& coverArt, const std::string& release)
 		{
 			// Send request
 			Remote::ClientMessage request;
@@ -428,7 +428,7 @@ class TestClient
 
 			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest::TypeGetCoverArt);
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_type( Remote::AudioCollectionRequest::GetCoverArt::TypeGetCoverArtRelease);
-			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_release_id( releaseId );
+			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_release( release );
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_size( 256 );
 
 			sendMsg(request);
@@ -739,7 +739,8 @@ enum class Test {
 	ReleaseFilterArtist,
 	ReleaseFilterGenre,
 	TrackFilters,
-	Cover,
+	CoverByTrack,
+	CoverByRelease,
 	Transcode,
 };
 
@@ -749,7 +750,8 @@ std::set<Test>	tests = {
 	Test::ReleaseFilterArtist,
 	Test::ReleaseFilterGenre,
 	Test::TrackFilters,
-//	Test::Cover,
+//	Test::CoverByTrack,
+	Test::CoverByRelease,
 //	Test::Transcode,
 };
 
@@ -781,7 +783,7 @@ int main()
 		// ****** Artists *********
 		std::cout << "Getting artists..." << std::endl;
 		std::vector<ArtistInfo>	artists;
-		client.getArtists(artists, std::vector<uint64_t>());
+		client.getArtists(artists);
 
 		std::cout << "Got " << artists.size() << " artists!" << std::endl;
 		BOOST_FOREACH(const ArtistInfo& artist, artists)
@@ -799,14 +801,15 @@ int main()
 		// **** Releases ******
 		std::cout << "Getting releases..." << std::endl;
 		std::vector<ReleaseInfo> releases;
-		client.getReleases(releases, std::vector<uint64_t>(), std::vector<uint64_t>());
+		client.getReleases(releases);
 		BOOST_FOREACH(const ReleaseInfo& release, releases)
 			std::cout << "Release: '" << release << "'" << std::endl;
 
 		// **** Tracks ******
 		std::cout << "Getting tracks..." << std::endl;
 		std::vector<TrackInfo> tracks;
-		client.getTracks(tracks, std::vector<uint64_t>(), std::vector<uint64_t>(), std::vector<uint64_t>());
+		client.getTracks(tracks);
+
 		BOOST_FOREACH(const TrackInfo& track, tracks)
 			std::cout << "Track: '" << track << "'" << std::endl;
 
@@ -819,7 +822,7 @@ int main()
 			{
 				std::cout << "Getting artists from genre '" << genre.name << "'" << std::endl;
 				std::vector<ArtistInfo> artists;
-				client.getArtists(artists, std::vector<uint64_t>(1, genre.id));
+				client.getArtists(artists, std::vector<std::string>(1, genre.name));
 
 				BOOST_FOREACH(const ArtistInfo& artist, artists)
 					std::cout << "Genre '" << genre.name << "' -> Artist: " << artist << std::endl;
@@ -833,7 +836,7 @@ int main()
 			{
 				std::cout << "Getting release from artist '" << artist.name << "'" << std::endl;
 				std::vector<ReleaseInfo> releases;
-				client.getReleases(releases, std::vector<uint64_t>(1, artist.id), std::vector<uint64_t>());
+				client.getReleases(releases, std::vector<std::string>(1, artist.name) );
 
 				BOOST_FOREACH(const ReleaseInfo& release, releases)
 					std::cout << "Artist '" << artist.name << "' -> Release: '" << release << "'" << std::endl;
@@ -847,7 +850,7 @@ int main()
 			{
 				std::cout << "Getting release from genre '" << genre.name << "'" << std::endl;
 				std::vector<ReleaseInfo> releases;
-				client.getReleases(releases, std::vector<uint64_t>(), std::vector<uint64_t>(1, genre.id));
+				client.getReleases(releases, std::vector<std::string>(), std::vector<std::string>(1, genre.name));
 
 				BOOST_FOREACH(const ReleaseInfo& release, releases)
 					std::cout << "Genre '" << genre.name << "' -> Release: '" << release << "'" << std::endl;
@@ -861,7 +864,7 @@ int main()
 			BOOST_FOREACH(const ArtistInfo& artist, artists)
 			{
 				std::vector<TrackInfo> tracks;
-				client.getTracks(tracks, std::vector<uint64_t>(1, artist.id), std::vector<uint64_t>(), std::vector<uint64_t>());
+				client.getTracks(tracks, std::vector<std::string>(1, artist.name));
 
 				std::cout << "Artist '" << artist.name << "', nb tracks = " << tracks.size() << std::endl;
 				BOOST_FOREACH(const TrackInfo& track, tracks)
@@ -870,20 +873,20 @@ int main()
 		}
 
 		// ***** Covers *******
-		if (test(Test::Cover))
+		if (test(Test::CoverByRelease))
 		{
 			std::cout << "Getting cover for each release..." << std::endl;
 			BOOST_FOREACH(const ReleaseInfo& release, releases)
 			{
 				std::vector<Cover> coverArts;
-				client.getCoverRelease(coverArts, release.id);
+				client.getCoverRelease(coverArts, release.name);
 
 				if (writeCovers)
 				{
 					boost::filesystem::create_directory("cover");
 					BOOST_FOREACH(const Cover coverArt, coverArts)
 					{
-						std::ostringstream oss; oss << "cover/" << release.id << "." << release.name << ".jpeg";
+						std::ostringstream oss; oss << "cover/" << release.name << ".jpeg";
 						std::ofstream out(oss.str().c_str());
 						BOOST_FOREACH(unsigned char c, coverArt.data)
 							out.put(c);
@@ -892,7 +895,10 @@ int main()
 
 				std::cout << "Release '" << release << "', spotted " << coverArts.size() << " covers!" << std::endl;
 			}
+		}
 
+		if (test(Test::CoverByTrack))
+		{
 			std::cout << "Getting cover for each track..." << std::endl;
 			BOOST_FOREACH(const TrackInfo& track, tracks)
 			{

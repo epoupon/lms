@@ -20,24 +20,24 @@ message AudioCollectionRequest
 	{
 		required BatchParameter batch_parameter = 1;
 		// Search filters
-		repeated uint64	genre_id		= 2;	// Artist that has at least a track of the genre
+		repeated string	genre			= 2;	// Artist that has at least a track of the genre
 	}
 
 	message GetReleaseList
 	{
 		required BatchParameter batch_parameter = 1;
 		// Search filters
-		repeated uint64	artist_id		= 2;	// Release that contains at least a track of one of these artists
-		repeated uint64	genre_id		= 3;	// Release that has at least a track of the genre
+		repeated string artist			= 2;	// Release that contains at least a track of one of these artists
+		repeated string genre			= 3;	// Release that has at least a track of the genre
 	}
 
 	message GetTrackList
 	{
 		required BatchParameter batch_parameter = 1;
 		// Search filters
-		repeated uint64	artist_id		= 2;	// Track that belongs to these artists
-		repeated uint64	release_id		= 3;	// Track that is part of these releases
-		repeated uint64	genre_id		= 4;    // Track that has at least a track of the genre
+		repeated string artist			= 2;	// Track that belongs to these artists
+		repeated string release			= 3;	// Track that is part of these releases
+		repeated string genre			= 4;    // Track that has at least a track of the genre
 	}
 
 	message GetCoverArt
@@ -50,7 +50,7 @@ message AudioCollectionRequest
 
 		required Type	type			= 1;
 
-		optional uint64	release_id		= 2;	// Release that owns the cover art
+		optional string release			= 2;	// Release that owns the cover art
 		optional uint64	track_id		= 3;	// Track that owns the cover art
 
 		required uint32 size			= 4;	// Scale image to size*size pixels. Set 0 to get the biggest image
@@ -86,22 +86,22 @@ message AudioCollectionResponse
 
 	message GenreList
 	{
-		repeated Genre	genres	= 2;
+		repeated Genre	genres	= 1;
 	}
 
 	message ArtistList
 	{
-		repeated Artist	artists	= 2;
+		repeated Artist	artists	= 1;
 	}
 
 	message ReleaseList
 	{
-		repeated Release	releases = 2;
+		repeated Release	releases = 1;
 	}
 
 	message TrackList
 	{
-		repeated Track	tracks	= 2;
+		repeated Track	tracks		= 1;
 	}
 
 	message CoverArt
@@ -112,32 +112,26 @@ message AudioCollectionResponse
 
 	message Genre
 	{
-		required uint64	id		= 1;	// Genre Id
-
-		required string name		= 2;
+		required string name		= 1;
 	}
 
 	message Artist
 	{
-		required uint64	id		= 1;	// Artist Id
-
-		required string name		= 2;
+		required string name		= 1;
 	}
 
 	message Release
 	{
-		required uint64	id		= 1;	// Release id
-
-		required string name		= 2;
+		required string name		= 1;
 	}
 
 	message Track
 	{
 		required uint64	id		= 1;	// Track id
 
-		required uint64	artist_id	= 2;
-		required uint64	release_id	= 3;
-		repeated uint64	genre_id	= 4;
+		required string artist		= 2;
+		required string release		= 3;
+		repeated string genre		= 4;
 
 		optional uint32 disc_number	= 5;
 		optional uint32 track_number	= 6;
