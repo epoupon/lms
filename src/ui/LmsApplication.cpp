@@ -76,6 +76,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::p
 	bootstrapTheme->setResponsive(true);
 	setTheme(bootstrapTheme);
 
+	useStyleSheet("css/lms.css");
+
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "templates");
 
@@ -118,6 +120,8 @@ LmsApplication::handleAuthEvent(void)
 	if (_sessionData.getDatabaseHandler().getLogin().loggedIn())
 	{
 		Wt::Auth::User user(_sessionData.getDatabaseHandler().getLogin().user());
+
+		LMS_LOG(MOD_UI, SEV_NOTICE) << "User '" << user.identity(Wt::Auth::Identity::LoginName) << "' logged in";
 
 		// Create a Vertical layout: top is the nav bar, bottom is the contents
 		Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());

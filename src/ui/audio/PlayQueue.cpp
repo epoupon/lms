@@ -17,15 +17,64 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <Wt/WItemDelegate>
+
+#include "logger/Logger.hpp"
+
 #include "PlayQueue.hpp"
 
+namespace {
+
+	void modelForceRefreshDataRow(Wt::WStandardItemModel *model, int row)
+	{
+		for (int i = 0; i < model->columnCount(); ++i)
+			model->setData(row, i, model->data(row, i));
+	}
+
+	void swapRows(Wt::WStandardItemModel *model, int row1, int row2)
+	{
+		// Copy column by column
+		for (int i = 0; i < model->columnCount(); ++i)
+		{
+			boost::any tmp = model->data(row1, i);		// 1 -> tmp
+			model->setData(row1, i, model->data(row2, i));	// 2 -> 1
+			model->setData(row2, i, tmp);			// tmp-> 2
+		}
+	}
+}
+
 namespace UserInterface {
+
+static const int trackIdInvalid = -1;
+
+class PlayQueueItemDelegate : public Wt::WItemDelegate
+{
+	public:
+		PlayQueueItemDelegate(Wt::WObject *parent = 0) : Wt::WItemDelegate(parent), _selectedRowId(trackIdInvalid) {}
+
+		void setSelectedRowId(int rowId)	{ _selectedRowId = rowId; }
+
+		Wt::WWidget* update(Wt::WWidget *widget, const Wt::WModelIndex &index, Wt::WFlags< Wt::ViewItemRenderFlag > flags)
+		{
+			Wt::WWidget* res = Wt::WItemDelegate::update(widget, index, flags);
+
+			if (res && index.isValid() && index.row() == _selectedRowId)
+				res->toggleStyleClass("playqueue-playing", true);
+
+			return res;
+		}
+
+	private:
+
+		int _selectedRowId;
+};
+
 
 
 PlayQueue::PlayQueue(Database::Handler& db, Wt::WContainerWidget* parent)
 : Wt::WTableView(parent),
 _db(db),
-_playedId(-1)
+_playedId(trackIdInvalid)
 {
 	_model = new Wt::WStandardItemModel(0, 4, this);
 
@@ -44,6 +93,9 @@ _playedId(-1)
 	this->setColumnWidth(1, 50);
 
 	this->setColumnHidden(0, true);
+
+	_itemDelegate = new PlayQueueItemDelegate();
+	this->setItemDelegate(_itemDelegate);
 
 	this->doubleClicked().connect( std::bind([=] (Wt::WModelIndex idx, Wt::WMouseEvent evt)
 	{
@@ -64,9 +116,9 @@ _playedId(-1)
 }
 
 void
-PlayQueue::play(void)
+PlayQueue::play(int trackId)
 {
-	readTrack(0);
+	readTrack(trackId);
 }
 
 void
@@ -99,23 +151,21 @@ PlayQueue::clear(void)
 	_model->removeRows(0, _model->rowCount());
 
 	// Reset play id
-	_playedId = -1;
+	_playedId = trackIdInvalid;
 }
 
 void
 PlayQueue::handlePlaybackComplete(void)
 {
 	// Play the next track
-	if (_playedId != -1)
-	{
+	if (_playedId != trackIdInvalid)
 		readTrack(_playedId + 1);
-	}
 }
 
 void
 PlayQueue::playNext(void)
 {
-	readTrack( _playedId != -1 ? _playedId + 1 : 0);
+	readTrack( _playedId != trackIdInvalid ? _playedId + 1 : 0);
 }
 
 void
@@ -136,14 +186,140 @@ PlayQueue::readTrack(int rowId)
 		Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
 		if (track)
 		{
-			_playedId = rowId;
+			setPlayingTrackId(rowId);
+
 			_sigTrackPlay.emit(track->getPath());
-			break;
+
+			return;
 		}
 
 		++rowId;
 	}
+
 }
+
+void
+PlayQueue::setPlayingTrackId(int newRowId)
+{
+	int oldRowId = _playedId;
+	_playedId = newRowId;
+
+	_itemDelegate->setSelectedRowId(newRowId);
+
+	// Hack re-set the data in order to trigger the rerending of the widget
+	// calling the update method of our custom item delegate gives bad results
+	if (oldRowId >= 0)
+		modelForceRefreshDataRow(_model, oldRowId);
+
+	if (newRowId >= 0)
+		modelForceRefreshDataRow(_model, newRowId);
+}
+
+void
+PlayQueue::delSelected(void)
+{
+	int minId = _model->rowCount();
+	Wt::WModelIndexSet indexSet = this->selectedIndexes();
+
+	BOOST_REVERSE_FOREACH(Wt::WModelIndex index, indexSet)
+	{
+		_model->removeRow(index.row());
+		if (index.row() < minId)
+			minId = index.row();
+	}
+
+	// If the current played track is removed, make sure to unselect it
+	_itemDelegate->setSelectedRowId(trackIdInvalid);
+
+	renumber(minId, _model->rowCount() - 1);
+}
+
+void
+PlayQueue::moveSelectedUp(void)
+{
+	int minId = _model->rowCount();
+	int maxId = 0;
+
+	Wt::WModelIndexSet indexSet = this->selectedIndexes();
+	Wt::WModelIndexSet newIndexSet;
+
+	// ordered from up to down
+	BOOST_FOREACH(Wt::WModelIndex index, indexSet)
+	{
+		// Do nothing if the first selected index is on the top
+		if (index.row() == 0)
+			return;
+
+		// TODO optimize for blocks
+		swapRows(_model, index.row() - 1, index.row());
+
+		if (index.row() - 1 < minId)
+			minId = index.row() - 1;
+
+		if (index.row() > maxId)
+			maxId = index.row();
+
+		// Update playing status
+		if (_playedId == index.row())
+			setPlayingTrackId(_playedId - 1);
+		else if (_playedId == index.row() - 1)
+			setPlayingTrackId(_playedId + 1);
+
+		newIndexSet.insert( _model->index(index.row() - 1, 0));
+	}
+
+	this->setSelectedIndexes( newIndexSet );
+
+	renumber(minId, maxId);
+}
+
+
+void
+PlayQueue::moveSelectedDown(void)
+{
+	int minId = _model->rowCount();
+	int maxId = 0;
+
+	Wt::WModelIndexSet indexSet = this->selectedIndexes();
+	Wt::WModelIndexSet newIndexSet;
+
+	// ordered from up to down
+	BOOST_REVERSE_FOREACH(Wt::WModelIndex index, indexSet)
+	{
+		// Do nothing if the last selected index is the last one
+		if (index.row() == _model->rowCount() - 1)
+			return;
+
+		// TODO optimize for blocks
+		swapRows(_model, index.row(), index.row() + 1);
+
+		if (index.row() < minId)
+			minId = index.row();
+
+		if (index.row() + 1 > maxId)
+			maxId = index.row() + 1;
+
+		// Update playing status
+		if (_playedId == index.row())
+			setPlayingTrackId(_playedId + 1);
+		else if (_playedId == index.row() + 1)
+			setPlayingTrackId(_playedId - 1);
+
+		newIndexSet.insert( _model->index(index.row() + 1, 0));
+	}
+
+	this->setSelectedIndexes( newIndexSet );
+
+	renumber(minId, maxId);
+}
+
+void
+PlayQueue::renumber(int firstId, int lastId)
+{
+	for (int i = firstId; i <= lastId; ++i)
+		_model->setData( i, 1, i + 1);
+}
+
 
 
 } // namespace UserInterface

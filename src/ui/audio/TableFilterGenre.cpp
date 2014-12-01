@@ -44,6 +44,20 @@ _db(db)
 	setLayoutSizeAware(true);
 
 	_queryModel.setBatchSize(100);
+
+	// If an item is double clicked, select and emit signal
+	this->doubleClicked().connect( std::bind([=] (Wt::WModelIndex idx, Wt::WMouseEvent evt)
+	{
+		if (!idx.isValid())
+			return;
+
+		Wt::WModelIndexSet indexSet;
+		indexSet.insert(idx);
+
+		this->setSelectedIndexes( indexSet );
+		_sigDoubleClicked.emit( );
+	}, std::placeholders::_1, std::placeholders::_2));
+
 }
 
 void

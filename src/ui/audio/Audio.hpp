@@ -27,6 +27,8 @@
 #include "common/SessionData.hpp"
 
 #include "AudioMediaPlayer.hpp"
+#include "TrackView.hpp"
+#include "PlayQueue.hpp"
 
 #include "FilterChain.hpp"
 
@@ -45,11 +47,22 @@ class Audio : public Wt::WContainerWidget
 
 		void playTrack(boost::filesystem::path p);
 
+		enum PlayQueueAddType
+		{
+			PlayQueueAddAllTracks,
+			PlayQueueAddSelectedTracks,
+		};
+
+		void playSelectedTracks(PlayQueueAddType addType);
+		void addSelectedTracks();
+
 		void handlePlaylistSelected(Wt::WString name);
 
 		Database::Handler&	_db;
 
 		AudioMediaPlayer*	_mediaPlayer;
+		TrackView*		_trackView;
+		PlayQueue*		_playQueue;
 
 		FilterChain		_filterChain;
 

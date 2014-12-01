@@ -28,6 +28,8 @@
 
 namespace UserInterface {
 
+class PlayQueueItemDelegate;
+
 class PlayQueue : public Wt::WTableView
 {
 	public:
@@ -37,9 +39,15 @@ class PlayQueue : public Wt::WTableView
 
 		void clear(void);
 
-		void play(void);		// Play the queue from the beginning
+		// Play functions
+		void play(int trackId = 0);	// Play the queue
 		void playNext(void);		// Play the next track
 		void playPrevious(void);	// Play the previous track
+
+		// List manipulations
+		void delSelected(void);
+		void moveSelectedUp(void);
+		void moveSelectedDown(void);
 
 		// Signals
 		Wt::Signal< boost::filesystem::path >& playTrack() { return _sigTrackPlay; }
@@ -52,12 +60,16 @@ class PlayQueue : public Wt::WTableView
 	private:
 
 		void readTrack(int rowId);
+		void setPlayingTrackId(int newRowId);
+		void renumber(int firstId, int lastId);
 
 		Wt::Signal< boost::filesystem::path >	_sigTrackPlay;
 
 		Database::Handler&	_db;
 
 		Wt::WStandardItemModel*	_model;
+
+		PlayQueueItemDelegate*	_itemDelegate;
 
 		int			_playedId;
 

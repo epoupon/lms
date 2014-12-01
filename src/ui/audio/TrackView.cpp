@@ -149,6 +149,27 @@ TrackView::getSelectedTracks(std::vector<Database::Track::id_type>& track_ids)
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all selected tracks DONE...";
 }
 
+std::size_t
+TrackView::getNbSelectedTracks(void)
+{
+	return this->selectedIndexes().size();
+}
+
+int
+TrackView::getFirstSelectedTrackPosition(void)
+{
+	Wt::WModelIndexSet indexSet = this->selectedIndexes();
+	BOOST_FOREACH(Wt::WModelIndex index, indexSet)
+	{
+		if (!index.isValid())
+			continue;
+
+		return index.row();
+	}
+
+	return 0;
+}
+
 void
 TrackView::getTracks(std::vector<Database::Track::id_type>& trackIds)
 {

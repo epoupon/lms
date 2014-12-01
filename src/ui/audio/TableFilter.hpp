@@ -33,7 +33,7 @@ class TableFilter : public Wt::WTableView, public Filter
 {
 
 	public:
-		TableFilter(Database::Handler& db, std::string table, std::string field, Wt::WContainerWidget* parent = 0);
+		TableFilter(Database::Handler& db, std::string table, std::string field, const Wt::WString& displayName, Wt::WContainerWidget* parent = 0);
 
 		// Set constraints on this filter
 		void refresh(const Constraint& constraint);
@@ -43,7 +43,13 @@ class TableFilter : public Wt::WTableView, public Filter
 
 		void layoutSizeChanged (int width, int height);
 
+		typedef Wt::Signal<void> SigDoubleClicked;
+
+		SigDoubleClicked&	sigDoubleClicked() { return _sigDoubleClicked; }
+
 	protected:
+
+		SigDoubleClicked			_sigDoubleClicked;
 
 		Database::Handler&			_db;
 		const std::string			_table;

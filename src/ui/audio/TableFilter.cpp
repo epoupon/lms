@@ -25,7 +25,7 @@
 
 namespace UserInterface {
 
-TableFilter::TableFilter(Database::Handler& db, std::string table, std::string field, Wt::WContainerWidget* parent)
+TableFilter::TableFilter(Database::Handler& db, std::string table, std::string field, const Wt::WString& displayName, Wt::WContainerWidget* parent)
 : Wt::WTableView( parent ),
 Filter(),
 _db(db),
@@ -33,8 +33,8 @@ _table(table),
 _field(field)
 {
 	_queryModel.setQuery( _db.getSession().query< ResultType >("select track." + _field + ", COUNT(DISTINCT track.id) from track GROUP BY track." + _field).orderBy("track." + _field));
-	_queryModel.addColumn( "track." + _field, field);
-	_queryModel.addColumn( "COUNT(DISTINCT track.id)", "tracks");
+	_queryModel.addColumn( "track." + _field, displayName);
+	_queryModel.addColumn( "COUNT(DISTINCT track.id)", "Tracks");
 
 	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setSortingEnabled(false);
@@ -46,6 +46,21 @@ _field(field)
 	setLayoutSizeAware(true);
 
 	_queryModel.setBatchSize(100);
+
+	// If an item is double clicked, select and emit signal
+	this->doubleClicked().connect( std::bind([=] (Wt::WModelIndex idx, Wt::WMouseEvent evt)
+	{
+		if (!idx.isValid())
+			return;
+
+		Wt::WModelIndexSet indexSet;
+		indexSet.insert(idx);
+
+		this->setSelectedIndexes( indexSet );
+		_sigDoubleClicked.emit( );
+
+	}, std::placeholders::_1, std::placeholders::_2));
+
 }
 
 void

@@ -20,7 +20,7 @@ ui = {
 	enable = true;
 
 	resources = {
-		docroot = "/usr/share/Wt/"
+		docroot = "/var/lms/docroot"
 		approot = "/var/lms/approot"
 	}
 
