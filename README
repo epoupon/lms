@@ -53,7 +53,9 @@ In the build directory:
 
 Create the lms.conf file using the etc/lms.sample.conf
 - "ui.resources.approot" has to refer to the ui/approot/ directory.
-- "ui.resources.docroot" has to refer to Wt's docroot (usually located in /usr/share/Wt)
+- "ui.resources.docroot" has to refer to the ui/docroot/ directory
+You must also link Wt's docroot (usually located in /usr/share/Wt) into that directory. Example:
+# ln -s /var/lms/docroot/resources /usr/share/Wt/resources
 
 Depending on your SSL parameters, you may be asked for the PEM passphrase to unlock the private key.
 
