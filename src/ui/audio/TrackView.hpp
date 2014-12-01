@@ -43,9 +43,13 @@ class TrackView : public Wt::WTableView, public Filter
 		// Create constraints for child filters (N/A)
 		void getConstraint(Constraint& constraint) {}
 
-
 		// Get all the tracks that are currently selected
-		void getSelectedTracks(std::vector<Database::Track::id_type>& track_ids);
+		void getSelectedTracks(std::vector<Database::Track::id_type>& trackIds);
+
+		std::size_t getNbSelectedTracks(void);
+
+		// Get the first position of the selected tracks (0 if nothing selected)
+		int getFirstSelectedTrackPosition(void);
 
 		// Get all the tracks
 		void getTracks(std::vector<Database::Track::id_type>& track_ids);

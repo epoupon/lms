@@ -76,6 +76,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::p
 	bootstrapTheme->setResponsive(true);
 	setTheme(bootstrapTheme);
 
+	useStyleSheet("css/lms.css");
+
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "templates");
 

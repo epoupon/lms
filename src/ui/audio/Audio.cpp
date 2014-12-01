@@ -24,14 +24,13 @@
 #include <Wt/WGridLayout>
 #include <Wt/WComboBox>
 #include <Wt/WPushButton>
+#include <Wt/WPopupMenu>
 
 #include "logger/Logger.hpp"
 
 #include "TableFilter.hpp"
 #include "TableFilterGenre.hpp"
 #include "KeywordSearchFilter.hpp"
-#include "TrackView.hpp"
-#include "PlayQueue.hpp"
 
 #include "Audio.hpp"
 
@@ -40,41 +39,37 @@ namespace UserInterface {
 Audio::Audio(SessionData& sessionData, Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent),
 _db(sessionData.getDatabaseHandler()),
-_mediaPlayer(nullptr)
+_mediaPlayer(nullptr),
+_trackView(nullptr),
+_playQueue(nullptr)
 {
-
 	Wt::WGridLayout *mainLayout = new Wt::WGridLayout();
 	this->setLayout(mainLayout);
 
 	// Filters
 	Wt::WHBoxLayout *filterLayout = new Wt::WHBoxLayout();
 
-	{
-		TableFilterGenre *filter = new TableFilterGenre(_db);
-		filterLayout->addWidget(filter);
-		_filterChain.addFilter(filter);
-	}
-	{
-		TableFilter *filter = new TableFilter(_db, "track", "artist_name");
-		filterLayout->addWidget(filter);
-		_filterChain.addFilter(filter);
-	}
-	{
-		TableFilter *filter = new TableFilter(_db, "track", "release_name");
-		filterLayout->addWidget(filter);
-		_filterChain.addFilter(filter);
-	}
+	TableFilterGenre *filterGenre = new TableFilterGenre(_db);
+	filterLayout->addWidget(filterGenre);
+	_filterChain.addFilter(filterGenre);
+
+	TableFilter *filterArtist = new TableFilter(_db, "track", "artist_name", "Artist");
+	filterLayout->addWidget(filterArtist);
+	_filterChain.addFilter(filterArtist);
+
+	TableFilter *filterRelease = new TableFilter(_db, "track", "release_name", "Release");
+	filterLayout->addWidget(filterRelease);
+	_filterChain.addFilter(filterRelease);
 
 	mainLayout->addLayout(filterLayout, 0, 0);
 	// ENDOF(Filters)
 
-	// TODO ADD controls (Play, add)
 	// TODO ADD some stats (nb files, total duration, etc.)
 
 	Wt::WVBoxLayout* trackLayout = new Wt::WVBoxLayout();
 
-	TrackView* trackView = new TrackView(_db);
-	trackLayout->addWidget(trackView, 1);
+	_trackView = new TrackView(_db);
+	trackLayout->addWidget(_trackView, 1);
 
 	Wt::WHBoxLayout* trackControls = new Wt::WHBoxLayout();
 
@@ -90,9 +85,9 @@ _mediaPlayer(nullptr)
 
 	mainLayout->addLayout(trackLayout, 1, 0);
 
-	_filterChain.addFilter(trackView);
+	_filterChain.addFilter(_trackView);
 
-	PlayQueue *playQueue = new PlayQueue(_db);
+	_playQueue = new PlayQueue(_db);
 
 	// Playlist/PlayQueue
 	{
@@ -103,12 +98,49 @@ _mediaPlayer(nullptr)
 
 		Wt::WHBoxLayout* playlistControls = new Wt::WHBoxLayout();
 
-		playlistControls->addWidget(new Wt::WPushButton("Playlist"));
-		playlistControls->addWidget(new Wt::WText("Duration:"));
+		Wt::WPushButton *saveBtn = new Wt::WPushButton("Save");
+		playlistControls->addWidget(saveBtn);
+		Wt::WPushButton *loadBtn = new Wt::WPushButton("Load");
+		playlistControls->addWidget(loadBtn);
+
+		Wt::WPushButton *upBtn = new Wt::WPushButton("UP");
+		playlistControls->addWidget(upBtn);
+		Wt::WPushButton *downBtn = new Wt::WPushButton("DO");
+		playlistControls->addWidget(downBtn);
+		Wt::WPushButton *delBtn = new Wt::WPushButton("DEL");
+		playlistControls->addWidget(delBtn);
+
+		delBtn->clicked().connect(_playQueue, &PlayQueue::delSelected);
+		upBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedUp);
+		downBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedDown);
+
+		playlistControls->addWidget(new Wt::WText("Duration:"), 1);
+
+		// Load menu
+		{
+			Wt::WPopupMenu *popup = new Wt::WPopupMenu();
+
+			popup->addItem("Metal");
+			popup->addItem("Test");
+
+			loadBtn->setMenu(popup);
+		}
+
+		// Save Menu
+		{
+			Wt::WPopupMenu *popup = new Wt::WPopupMenu();
+
+			popup->addItem("New");
+			popup->addSeparator();
+			popup->addItem("Metal");
+			popup->addItem("Test");
+
+			saveBtn->setMenu(popup);
+		}
 
 		playQueueLayout->addLayout(playlistControls);
 
-		playQueueLayout->addWidget( playQueue, 1);
+		playQueueLayout->addWidget( _playQueue, 1);
 
 		mainLayout->addLayout(playQueueLayout, 0, 1, 2, 1);
 	}
@@ -122,60 +154,82 @@ _mediaPlayer(nullptr)
 
 	// Double click on track
 	// Set the selected tracks to the play queue
-	trackView->trackDoubleClicked().connect(std::bind([=] ()
-	{
-		std::vector<Database::Track::id_type> trackIds;
-		trackView->getSelectedTracks(trackIds);
+	_trackView->trackDoubleClicked().connect(boost::bind(&Audio::playSelectedTracks, this, PlayQueueAddSelectedTracks));
 
-		playQueue->clear();
-		playQueue->addTracks(trackIds);
-
-		playQueue->play();
-
-	}));
+	// Double click on artist
+	// Set the selected tracks to the play queue
+	filterArtist->sigDoubleClicked().connect(boost::bind(&Audio::playSelectedTracks, this, PlayQueueAddAllTracks));
+	filterRelease->sigDoubleClicked().connect(boost::bind(&Audio::playSelectedTracks, this, PlayQueueAddAllTracks));
+	filterGenre->sigDoubleClicked().connect(boost::bind(&Audio::playSelectedTracks, this, PlayQueueAddAllTracks));
 
 	// Play button
 	// Set the selected tracks to the play queue
-	playBtn->clicked().connect(std::bind([=] ()
-	{
-		std::vector<Database::Track::id_type> trackIds;
-		trackView->getSelectedTracks(trackIds);
-
-		// If nothing is selected, get the whole track list
-		if (trackIds.empty())
-			trackView->getTracks(trackIds);
-
-		playQueue->clear();
-		playQueue->addTracks(trackIds);
-
-		playQueue->play();
-	}));
+	playBtn->clicked().connect(boost::bind(&Audio::playSelectedTracks, this, PlayQueueAddSelectedTracks));
 
 	// Add Button
 	// Add the selected tracks at the end of the play queue
-	addBtn->clicked().connect(std::bind([=] ()
-	{
-		std::vector<Database::Track::id_type> trackIds;
-		trackView->getSelectedTracks(trackIds);
+	addBtn->clicked().connect(this, &Audio::addSelectedTracks);
 
-		// If nothing is selected, get the whole track list
-		if (trackIds.empty())
-			trackView->getTracks(trackIds);
+	_playQueue->playTrack().connect(this, &Audio::playTrack);
 
-		playQueue->addTracks(trackIds);
-	}));
-
-	playQueue->playTrack().connect(this, &Audio::playTrack);
-
-	_mediaPlayer->playbackEnded().connect(playQueue, &PlayQueue::handlePlaybackComplete);
-	_mediaPlayer->playNext().connect(playQueue, &PlayQueue::playNext);
-	_mediaPlayer->playPrevious().connect(playQueue, &PlayQueue::playPrevious);
+	_mediaPlayer->playbackEnded().connect(_playQueue, &PlayQueue::handlePlaybackComplete);
+	_mediaPlayer->playNext().connect(_playQueue, &PlayQueue::playNext);
+	_mediaPlayer->playPrevious().connect(_playQueue, &PlayQueue::playPrevious);
 }
 
 void
 Audio::search(const std::string& searchText)
 {
 	_filterChain.searchKeyword(searchText);
+}
+
+void
+Audio::playSelectedTracks(PlayQueueAddType addType)
+{
+	int firstTrackPos = 0;
+	std::vector<Database::Track::id_type> trackIds;
+
+	switch(addType)
+	{
+		case PlayQueueAddAllTracks:
+			// Play all the tracks, from the first one
+			firstTrackPos = 0;
+			_trackView->getTracks(trackIds);
+			break;
+		case PlayQueueAddSelectedTracks:
+			// If nothing or only ONE selected, get them all
+			if (_trackView->getNbSelectedTracks() <= 1)
+			{
+				// Start to play at the selected track, if any
+				firstTrackPos = _trackView->getFirstSelectedTrackPosition();
+				_trackView->getTracks(trackIds);
+			}
+			else
+			{
+				// Play all the selected tracks, frm the first one
+				firstTrackPos = 0;
+				_trackView->getSelectedTracks(trackIds);
+			}
+			break;
+	}
+
+	_playQueue->clear();
+	_playQueue->addTracks(trackIds);
+
+	_playQueue->play(firstTrackPos);
+}
+
+void
+Audio::addSelectedTracks(void)
+{
+	std::vector<Database::Track::id_type> trackIds;
+	_trackView->getSelectedTracks(trackIds);
+
+	// If nothing is selected, get the whole track list
+	if (trackIds.empty())
+		_trackView->getTracks(trackIds);
+
+	_playQueue->addTracks(trackIds);
 }
 
 void

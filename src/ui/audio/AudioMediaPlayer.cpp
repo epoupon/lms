@@ -63,11 +63,13 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 
 		nextBtn->clicked().connect(std::bind([=] ()
 		{
+			_mediaPlayer->stop();
 			_playNext.emit();
 		}));
 
 		prevBtn->clicked().connect(std::bind([=] ()
 		{
+			_mediaPlayer->stop();
 			_playPrevious.emit();
 		}));
 	}

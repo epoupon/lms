@@ -43,7 +43,13 @@ class TableFilterGenre : public Wt::WTableView, public Filter
 
 		void layoutSizeChanged (int width, int height);
 
+		typedef Wt::Signal<void> SigDoubleClicked;
+
+		SigDoubleClicked&	sigDoubleClicked() { return _sigDoubleClicked; }
+
 	protected:
+
+		SigDoubleClicked			_sigDoubleClicked;
 
 		Database::Handler&			_db;
 
