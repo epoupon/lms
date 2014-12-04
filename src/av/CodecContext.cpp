@@ -44,10 +44,10 @@ CodecContext::dumpInfo(std::ostream& ost) const
 std::string
 CodecContext::getCodecDesc(void) const
 {
-	std::vector<char> buf(256, 0);
-	avcodec_string(&buf[0], buf.size(), _codecContext, 0);
+	std::array<char, 256> buf;
+	avcodec_string(buf.data(), buf.size(), _codecContext, 0);
 
-	return std::string(buf.begin(), buf.end());
+	return std::string(buf.data());
 }
 
 } // namespace Av

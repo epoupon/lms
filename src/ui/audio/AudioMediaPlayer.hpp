@@ -42,12 +42,12 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 
 		void load(const Transcode::Parameters& parameters);
 
-		// Signal slot Ended
+		// Signal slots
 		Wt::Signal<void>&	playbackEnded() {return _playbackEnded;}
-		// Signal slot Next
 		Wt::Signal<void>&	playNext()	{return _playNext;}
-		// Signal Slot Previous
 		Wt::Signal<void>&	playPrevious()	{return _playPrevious;}
+		Wt::Signal<bool>&	shuffle()	{return _shuffle;}
+		Wt::Signal<bool>&	loop()		{return _loop;}
 
 	private:
 
@@ -66,6 +66,8 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 		Wt::Signal<void>	_playbackEnded;
 		Wt::Signal<void>	_playNext;
 		Wt::Signal<void>	_playPrevious;
+		Wt::Signal<bool>	_shuffle;
+		Wt::Signal<bool>	_loop;
 
 		// Core
 		Wt::WMediaPlayer*		_mediaPlayer;

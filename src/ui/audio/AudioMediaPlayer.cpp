@@ -20,6 +20,7 @@
 
 #include <Wt/WMediaPlayer>
 #include <Wt/WProgressBar>
+#include <Wt/WCheckBox>
 
 #include "AudioMediaPlayer.hpp"
 
@@ -38,6 +39,18 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 
 	{
 		Wt::WContainerWidget *container = new Wt::WContainerWidget(this);
+
+		Wt::WCheckBox *loop = new Wt::WCheckBox("Loop", this);
+		loop->changed().connect(std::bind([=] ()
+		{
+			_loop.emit( loop->checkState() == Wt::Checked);
+		}));
+
+		Wt::WCheckBox *shuffle = new Wt::WCheckBox("Shuffle", this);
+		shuffle->changed().connect(std::bind([=] ()
+		{
+			_shuffle.emit( shuffle->checkState() == Wt::Checked);
+		}));
 
 		Wt::WPushButton *prevBtn = new Wt::WPushButton("<<", container );
 		_playBtn = new Wt::WPushButton("Play", container );

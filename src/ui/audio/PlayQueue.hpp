@@ -29,6 +29,7 @@
 namespace UserInterface {
 
 class PlayQueueItemDelegate;
+class TrackSelector;
 
 class PlayQueue : public Wt::WTableView
 {
@@ -39,8 +40,12 @@ class PlayQueue : public Wt::WTableView
 
 		void clear(void);
 
+		void setShuffle(bool enable);	// true to enable shuffle
+		void setLoop(bool enable);	// true to enable loop
+
 		// Play functions
-		void play(int trackId = 0);	// Play the queue
+		void play(void);		// Play the queue from the beginning
+		void play(int rowId);		// Play the queue from the given rowId
 		void playNext(void);		// Play the next track
 		void playPrevious(void);	// Play the previous track
 
@@ -59,8 +64,8 @@ class PlayQueue : public Wt::WTableView
 
 	private:
 
-		void readTrack(int rowId);
-		void setPlayingTrackId(int newRowId);
+		bool readTrack(int rowId);
+		void setPlayingTrackPos(int newRowPos);
 		void renumber(int firstId, int lastId);
 
 		Wt::Signal< boost::filesystem::path >	_sigTrackPlay;
@@ -71,7 +76,8 @@ class PlayQueue : public Wt::WTableView
 
 		PlayQueueItemDelegate*	_itemDelegate;
 
-		int			_playedId;
+		int				_curPlayedTrackPos;
+		std::unique_ptr<TrackSelector>	_trackSelector;
 
 };
 
