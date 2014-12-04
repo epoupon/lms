@@ -175,48 +175,14 @@ _playQueue(nullptr)
 	_mediaPlayer->playbackEnded().connect(_playQueue, &PlayQueue::handlePlaybackComplete);
 	_mediaPlayer->playNext().connect(_playQueue, &PlayQueue::playNext);
 	_mediaPlayer->playPrevious().connect(_playQueue, &PlayQueue::playPrevious);
+	_mediaPlayer->shuffle().connect(boost::bind(&PlayQueue::setShuffle, _playQueue, _1));
+	_mediaPlayer->loop().connect(boost::bind(&PlayQueue::setLoop,_playQueue, _1));
 }
 
 void
 Audio::search(const std::string& searchText)
 {
 	_filterChain.searchKeyword(searchText);
-}
-
-void
-Audio::playSelectedTracks(PlayQueueAddType addType)
-{
-	int firstTrackPos = 0;
-	std::vector<Database::Track::id_type> trackIds;
-
-	switch(addType)
-	{
-		case PlayQueueAddAllTracks:
-			// Play all the tracks, from the first one
-			firstTrackPos = 0;
-			_trackView->getTracks(trackIds);
-			break;
-		case PlayQueueAddSelectedTracks:
-			// If nothing or only ONE selected, get them all
-			if (_trackView->getNbSelectedTracks() <= 1)
-			{
-				// Start to play at the selected track, if any
-				firstTrackPos = _trackView->getFirstSelectedTrackPosition();
-				_trackView->getTracks(trackIds);
-			}
-			else
-			{
-				// Play all the selected tracks, frm the first one
-				firstTrackPos = 0;
-				_trackView->getSelectedTracks(trackIds);
-			}
-			break;
-	}
-
-	_playQueue->clear();
-	_playQueue->addTracks(trackIds);
-
-	_playQueue->play(firstTrackPos);
 }
 
 void
@@ -230,6 +196,49 @@ Audio::addSelectedTracks(void)
 		_trackView->getTracks(trackIds);
 
 	_playQueue->addTracks(trackIds);
+}
+
+void
+Audio::playSelectedTracks(PlayQueueAddType addType)
+{
+	std::vector<Database::Track::id_type> trackIds;
+
+	_playQueue->clear();
+
+	switch(addType)
+	{
+		case PlayQueueAddAllTracks:
+			// Play all the tracks
+			_trackView->getTracks(trackIds);
+			_playQueue->addTracks(trackIds);
+			_playQueue->play();
+
+			break;
+		case PlayQueueAddSelectedTracks:
+			// If nothing selected, get all the track and play everything
+			if (_trackView->getNbSelectedTracks() == 0)
+			{
+				_trackView->getTracks(trackIds);
+				_playQueue->addTracks(trackIds);
+				_playQueue->play();
+			}
+			// If only ONE selected, get them all and pre select the track
+			else if (_trackView->getNbSelectedTracks() == 1)
+			{
+				// Start to play at the selected track, if any
+				_trackView->getTracks(trackIds);
+				_playQueue->addTracks(trackIds);
+				_playQueue->play(_trackView->getFirstSelectedTrackPosition());
+			}
+			else
+			{
+				// Play all the selected tracks
+				_trackView->getSelectedTracks(trackIds);
+				_playQueue->addTracks(trackIds);
+				_playQueue->play();
+			}
+			break;
+	}
 }
 
 void
