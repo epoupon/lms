@@ -39,9 +39,9 @@
 
 	[Audio]
 	- Style eveything nicely...
-	- ReleaseView/ArtistView/GenreView: <All> -> Track count for this special category. Easier: add a special entry '<All>' that contains everything?
 	- MediaPlayer: move slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478)
 	- TrackView : handle duration > 1 hour
+	- Filter by Genre: use id and not a "like" string search (selecting "Pop" currently shows "JPop" songs)
 	- OGG metadata -> properly handle metadata nested in the audio stream
 	- Filters: use directly the id as constraint, instead of the name?
 	- Implement a playlist:
