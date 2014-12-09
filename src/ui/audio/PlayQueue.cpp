@@ -31,23 +31,37 @@
 
 #include "PlayQueue.hpp"
 
+static const int CoverRole = Wt::UserRole + 1;
+
 namespace {
 
 	void swapRows(Wt::WStandardItemModel *model, int row1, int row2)
 	{
-		// Copy column by column
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "Swap called row1 = " << row1 << ", row2 = " << row2 << ", CoverRole = " << CoverRole;
+
+		// Swap data column by column
 		for (int i = 0; i < model->columnCount(); ++i)
 		{
-			boost::any tmp = model->data(row1, i);		// 1 -> tmp
-			model->setData(row1, i, model->data(row2, i));	// 2 -> 1
-			model->setData(row2, i, tmp);			// tmp-> 2
+			Wt::WModelIndex index1 = model->index(row1, i);
+			Wt::WModelIndex index2 = model->index(row2, i);
+
+			{
+				auto tmp = model->itemData(index1);			// 1 -> tmp
+				model->setItemData(index1, model->itemData(index2));	// 2 -> 1
+				model->setItemData(index2, tmp);			// tmp-> 2
+			}
+
+			// Workaround, do the same thing for the CoverRole
+			{
+				auto tmp = model->data(index1, CoverRole);
+				model->setData(index1, model->data(index2, CoverRole), CoverRole);
+				model->setData(index2, tmp, CoverRole);
+			}
 		}
 	}
 }
 
 namespace UserInterface {
-
-static const int CoverRole = Wt::UserRole + 1;
 
 enum ColumnId
 {
@@ -215,9 +229,13 @@ class PlayQueueItemDelegate : public Wt::WItemDelegate
 		{
 			Wt::WWidget* res;
 
+			LMS_LOG(MOD_UI, SEV_DEBUG) << "Update called! widget = " << widget << ", row = " << index.row() << ", col = " << index.column();
+
 			Wt::WString path = Wt::asString(index.data(CoverRole));
 			if (!path.empty())
 			{
+				LMS_LOG(MOD_UI, SEV_DEBUG) << "Path = " << path ;
+
 				// Create an image for this track
 				Wt::WImage *image = new Wt::WImage( );
 				CoverResource *resource = new CoverResource(boost::filesystem::path(path.toUTF8()), 64, image);
@@ -331,7 +349,7 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 
 			_model->insertRows(dataRow, 1);
 
-			_model->setData(dataRow, COLUMN_ID_TRACK_ID, track.id());
+			_model->setData(dataRow, COLUMN_ID_TRACK_ID, track.id(), Wt::UserRole);
 			_model->setData(dataRow, COLUMN_ID_POS, dataRow + 1);
 			_model->setData(dataRow, COLUMN_ID_COVER, track->getPath(), CoverRole);
 			_model->setData(dataRow, COLUMN_ID_NAME,  track->getArtistName() + " - " + track->getName());
@@ -400,7 +418,7 @@ PlayQueue::readTrack(int rowPos)
 	Wt::Dbo::Transaction transaction(_db.getSession());
 
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Reading track at pos " << rowPos;
-	Database::Track::id_type trackId = boost::any_cast<Database::Track::id_type>(_model->data(rowPos, COLUMN_ID_TRACK_ID));
+	Database::Track::id_type trackId = boost::any_cast<Database::Track::id_type>(_model->data(rowPos, COLUMN_ID_TRACK_ID, Wt::UserRole));
 
 	Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
 	if (track)
