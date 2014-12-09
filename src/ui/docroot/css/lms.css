@@ -2,6 +2,10 @@
 	margin-bottom: 0px;
 }
 
+div.contents {
+	padding: 0px 12px 6px;
+}
+
 .playqueue-playing {
 	font-weight: bold;
 }
