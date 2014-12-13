@@ -41,6 +41,8 @@ _field(field)
 	this->setAlternatingRowColors(true);
 	this->setModel(&_queryModel);
 
+	this->setColumnWidth(1, 50);
+
 	this->selectionChanged().connect(this, &TableFilter::emitUpdate);
 
 	setLayoutSizeAware(true);
@@ -66,14 +68,15 @@ _field(field)
 void
 TableFilter::layoutSizeChanged (int width, int height)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "LAYOUT CHANGED!";
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "LAYOUT CHANGED, new width = " << width;
 
-	/* TODO
-	std::size_t trackColumnSize = this->columnWidth(1).toPixels() + 30 ;
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Before: sizes = " << this->columnWidth(0).toPixels() << ", " << this->columnWidth(1).toPixels();
+
+	std::size_t trackColumnSize = this->columnWidth(1).toPixels();
 	// Set the remaining size for the name column
-	this->setColumnWidth(0, width - 7 - trackColumnSize);
-	*/
+	this->setColumnWidth(0, width - 7 - trackColumnSize - 23 /*Asc wdth */);
 
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "After: sizes = " << this->columnWidth(0).toPixels() << ", " << this->columnWidth(1).toPixels();
 }
 
 // Set constraints on this filter

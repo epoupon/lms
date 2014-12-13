@@ -21,6 +21,7 @@
 #include <Wt/WMediaPlayer>
 #include <Wt/WProgressBar>
 #include <Wt/WCheckBox>
+#include <Wt/WTemplate>
 
 #include "AudioMediaPlayer.hpp"
 
@@ -30,6 +31,9 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	: Wt::WContainerWidget(parent),
 	_mediaResource(nullptr)
 {
+
+	this->setStyleClass("mediaplayer");
+
 	_mediaPlayer = new Wt::WMediaPlayer( Wt::WMediaPlayer::Audio, this );
 //	_mediaPlayer->setAlternativeContent (new Wt::WText("You don't have HTML5 audio support!"));
 //	_mediaPlayer->setOptions( Wt::WMediaPlayer::Autoplay );
@@ -52,14 +56,15 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 			_shuffle.emit( shuffle->checkState() == Wt::Checked);
 		}));
 
+		_curTime = new Wt::WText("00:00:00", container);
+		_timeSlider = new Wt::WSlider( container );
+		_duration = new Wt::WText("00:00:00", container);
+
 		Wt::WPushButton *prevBtn = new Wt::WPushButton("<<", container );
 		_playBtn = new Wt::WPushButton("Play", container );
 		_pauseBtn = new Wt::WPushButton("Pause", container );
 		Wt::WPushButton *nextBtn = new Wt::WPushButton(">>", container );
 
-		_curTime = new Wt::WText(container);
-		_timeSlider = new Wt::WSlider( container );
-		_duration = new Wt::WText(container);
 
 		_volumeSlider = new Wt::WSlider( container );
 		_volumeSlider->setRange(0,100);

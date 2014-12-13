@@ -114,6 +114,9 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 		// Duration
 		items.insert( std::make_pair(MetaData::Type::Duration, boost::posix_time::time_duration( boost::posix_time::seconds( input.getDurationSecs() )) ));
 
+		// Cover
+		items.insert( std::make_pair(MetaData::Type::HasCover, input.getNbPictures() > 0));
+
 		// Embedded MetaData
 		// Make sure to convert strings into UTF-8
 		std::map<std::string, std::string>::const_iterator it;

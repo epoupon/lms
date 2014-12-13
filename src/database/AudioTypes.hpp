@@ -117,6 +117,7 @@ class Track
 		void setOriginalDate(const boost::posix_time::ptime& date)	{ _originalDate = date; }
 		void setGenres(const std::string& genreList)			{ _genreList = genreList; }
 		void setGenres(std::vector<Genre::pointer> genres);
+		void setHasCover(bool hasCover)					{ _hasCover = hasCover; }
 
 		int				getTrackNumber(void) const		{ return _trackNumber; }
 		int				getDiscNumber(void) const		{ return _discNumber; }
@@ -132,6 +133,7 @@ class Track
 
 		boost::posix_time::ptime	getLastWriteTime(void) const		{ return _fileLastWrite; }
 		const std::vector<unsigned char>& getChecksum(void) const		{ return _fileChecksum; }
+		bool				hasCover(void) const			{ return _hasCover; }
 
 		template<class Action>
 			void persist(Action& a)
@@ -148,6 +150,7 @@ class Track
 				Wt::Dbo::field(a, _filePath,		"path");
 				Wt::Dbo::field(a, _fileLastWrite,	"last_write");
 				Wt::Dbo::field(a, _fileChecksum,	"checksum");
+				Wt::Dbo::field(a, _hasCover,		"has_cover");
 				Wt::Dbo::hasMany(a, _genres, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
 			}
 
@@ -167,6 +170,7 @@ class Track
 		std::string				_filePath;
 		std::vector<unsigned char>		_fileChecksum;
 		boost::posix_time::ptime		_fileLastWrite;
+		bool					_hasCover;
 
 		Wt::Dbo::collection< Genre::pointer > _genres;	// Tracks that belong to this genre
 };

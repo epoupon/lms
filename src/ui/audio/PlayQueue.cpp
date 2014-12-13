@@ -20,10 +20,12 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 
+#include <Wt/WApplication>
 #include <Wt/WImage>
 #include <Wt/WLink>
 #include <Wt/WItemDelegate>
 #include <Wt/WStandardItem>
+#include <Wt/WFileResource>
 
 #include "resource/CoverResource.hpp"
 
@@ -82,8 +84,8 @@ class TrackSelector
 		void setShuffle(bool enable);
 		void setLoop(bool enable) { _loop = enable; }
 
-		int getPrevious(void);
-		int getNext(void);
+		int previous(void);
+		int next(void);
 		int getCurrent(void);
 
 		// Set the internal pos thanks to the track pos
@@ -125,7 +127,7 @@ TrackSelector::refreshPositions()
 		_trackPos.push_back(i);
 
 	// Now shuffle
-	// Perform size/2 permutations
+	// Source: http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
 	boost::random::mt19937 rng;         // produces randomness out of thin air
 	rng.seed(static_cast<unsigned int>(std::time(0)));
 
@@ -157,7 +159,7 @@ TrackSelector::setShuffle(bool enable)
 }
 
 int
-TrackSelector::getNext()
+TrackSelector::next()
 {
 	if (_size == 0)
 		return trackPosInvalid;
@@ -176,7 +178,7 @@ TrackSelector::getNext()
 }
 
 int
-TrackSelector::getPrevious()
+TrackSelector::previous()
 {
 	if (_size == 0)
 		return trackPosInvalid;
@@ -229,16 +231,17 @@ class PlayQueueItemDelegate : public Wt::WItemDelegate
 		{
 			Wt::WWidget* res;
 
-			LMS_LOG(MOD_UI, SEV_DEBUG) << "Update called! widget = " << widget << ", row = " << index.row() << ", col = " << index.column();
-
 			Wt::WString path = Wt::asString(index.data(CoverRole));
 			if (!path.empty())
 			{
-				LMS_LOG(MOD_UI, SEV_DEBUG) << "Path = " << path ;
-
 				// Create an image for this track
-				Wt::WImage *image = new Wt::WImage( );
-				CoverResource *resource = new CoverResource(boost::filesystem::path(path.toUTF8()), 64, image);
+				Wt::WImage* image = new Wt::WImage( );
+				Wt::WResource* resource;
+				if (path != "none")
+					resource = new CoverResource(boost::filesystem::path(path.toUTF8()), 64, image);
+				else
+					resource = new Wt::WFileResource("image/jpeg", Wt::WApplication::instance()->docRoot() + "/images/unknown-cover.jpg", image);
+
 				image->setImageLink(Wt::WLink(resource));
 
 				res = image;
@@ -351,7 +354,7 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 
 			_model->setData(dataRow, COLUMN_ID_TRACK_ID, track.id(), Wt::UserRole);
 			_model->setData(dataRow, COLUMN_ID_POS, dataRow + 1);
-			_model->setData(dataRow, COLUMN_ID_COVER, track->getPath(), CoverRole);
+			_model->setData(dataRow, COLUMN_ID_COVER, track->hasCover() ? track->getPath() : "none", CoverRole);
 			_model->setData(dataRow, COLUMN_ID_NAME,  track->getArtistName() + " - " + track->getName());
 			_model->setData(dataRow, COLUMN_ID_DURATION, track->getDuration());
 		}
@@ -383,7 +386,7 @@ PlayQueue::playNext(void)
 
 	while (nbTries > 0)
 	{
-		int pos = _trackSelector->getNext();
+		int pos = _trackSelector->next();
 		if (pos == trackPosInvalid)
 			break;
 
@@ -401,7 +404,7 @@ PlayQueue::playPrevious(void)
 
 	while (nbTries > 0)
 	{
-		int pos = _trackSelector->getPrevious();
+		int pos = _trackSelector->previous();
 		if (pos == trackPosInvalid)
 			break;
 
@@ -426,6 +429,8 @@ PlayQueue::readTrack(int rowPos)
 		setPlayingTrackPos(rowPos);
 
 		_sigTrackPlay.emit(track->getPath());
+
+		this->scrollTo( _model->index(_trackSelector->getCurrent(), 0));
 
 		return true;
 	}

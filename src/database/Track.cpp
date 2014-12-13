@@ -29,7 +29,8 @@ Track::Track(const boost::filesystem::path& p)
 :
 _trackNumber(0),
 _discNumber(0),
-_filePath( p.string() )
+_filePath( p.string() ),
+_hasCover(false)
 {
 }
 

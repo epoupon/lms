@@ -39,16 +39,10 @@ namespace MetaData
 		DiscNumber,		// size_t
 		Date,			// boost::posix_time::ptime
 		OriginalDate,		// boost::posix_time::ptime
-		Cover,			// GenericData
+		HasCover,		// bool
 		AudioStreams,		// vector<AudioStream>
 		VideoStreams,		// vector<VideoStream>
 		SubtitleStreams,	// vector<SubtitleStream>
-	};
-
-	// Used by Cover
-	struct GenericData {
-		std::string mimeType;
-		std::vector<unsigned char> data;
 	};
 
 	// Used by Streams
