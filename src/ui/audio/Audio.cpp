@@ -96,6 +96,11 @@ _playQueue(nullptr)
 
 		Wt::WVBoxLayout* playQueueLayout = new Wt::WVBoxLayout();
 
+		_mediaPlayer = new AudioMediaPlayer();
+		playQueueLayout->addWidget(_mediaPlayer);
+
+		playQueueLayout->addWidget( _playQueue, 1);
+
 		Wt::WHBoxLayout* playlistControls = new Wt::WHBoxLayout();
 
 		Wt::WPushButton *saveBtn = new Wt::WPushButton("Save");
@@ -139,11 +144,6 @@ _playQueue(nullptr)
 		}
 
 		playQueueLayout->addLayout(playlistControls);
-
-		playQueueLayout->addWidget( _playQueue, 1);
-
-		_mediaPlayer = new AudioMediaPlayer();
-		playQueueLayout->addWidget(_mediaPlayer);
 
 		mainLayout->addLayout(playQueueLayout, 0, 0, 2, 1);
 	}

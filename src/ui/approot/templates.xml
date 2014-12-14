@@ -308,6 +308,16 @@
 		${apply-info}
 	</div>
 </message>
+
+<message id="mediaplayer-controls">
+	<div class="btn-group" role="group" aria-label="...">
+		${prev}
+		${play}
+		${pause}
+		${next}
+	</div>
+</message>
+
 </messages>
 
 

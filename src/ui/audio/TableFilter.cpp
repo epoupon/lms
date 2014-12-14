@@ -74,7 +74,7 @@ TableFilter::layoutSizeChanged (int width, int height)
 
 	std::size_t trackColumnSize = this->columnWidth(1).toPixels();
 	// Set the remaining size for the name column
-	this->setColumnWidth(0, width - 7 - trackColumnSize - 23 /*Asc wdth */);
+	this->setColumnWidth(0, width - trackColumnSize - (7 * 2) - 2);
 
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "After: sizes = " << this->columnWidth(0).toPixels() << ", " << this->columnWidth(1).toPixels();
 }

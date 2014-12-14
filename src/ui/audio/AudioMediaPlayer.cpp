@@ -17,11 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <Wt/WMediaPlayer>
 #include <Wt/WProgressBar>
 #include <Wt/WCheckBox>
 #include <Wt/WTemplate>
+#include <Wt/WHBoxLayout>
+#include <Wt/WVBoxLayout>
 
 #include "AudioMediaPlayer.hpp"
 
@@ -31,69 +32,94 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	: Wt::WContainerWidget(parent),
 	_mediaResource(nullptr)
 {
-
 	this->setStyleClass("mediaplayer");
+	this->setHeight(100);
+
+	Wt::WContainerWidget *sliderContainer = new Wt::WContainerWidget(this);
+	Wt::WHBoxLayout *sliderLayout = new Wt::WHBoxLayout();
+	sliderContainer->setLayout(sliderLayout);
+
+	sliderLayout->addWidget(_curTime = new Wt::WText("00:00:00"));
+	_curTime->setLineHeight(30);
+	sliderLayout->addWidget(_timeSlider = new Wt::WSlider( ), 1);
+	_timeSlider->setHeight(30);
+	sliderLayout->addWidget(_duration = new Wt::WText("00:00:00"));
+	_duration->setLineHeight(30);
+
+	Wt::WContainerWidget *controlsContainer = new Wt::WContainerWidget(this);
+	Wt::WHBoxLayout *controlsLayout = new Wt::WHBoxLayout();
+	controlsContainer->setLayout(controlsLayout);
+
+	Wt::WContainerWidget *btnContainer = new Wt::WContainerWidget();
+
+	Wt::WTemplate *t = new Wt::WTemplate(Wt::WString::tr("mediaplayer-controls"), btnContainer);
+
+	Wt::WPushButton *prevBtn = new Wt::WPushButton("<<");
+	t->bindWidget("prev", prevBtn);
+
+	_playBtn = new Wt::WPushButton("Play");
+	t->bindWidget("play", _playBtn);
+	_playBtn->setWidth(70);
+
+	_pauseBtn = new Wt::WPushButton("Pause");
+	t->bindWidget("pause", _pauseBtn);
+	_pauseBtn->setWidth(70);
+
+	Wt::WPushButton *nextBtn = new Wt::WPushButton(">>");
+	t->bindWidget("next", nextBtn);
+
+	controlsLayout->addWidget(btnContainer);
+
+	_volumeSlider = new Wt::WSlider();
+	_volumeSlider->setRange(0,100);
+	_volumeSlider->setWidth(60);
+	_volumeSlider->setMinimumSize(60, Wt::WLength::Auto);
+	_volumeSlider->setHeight(30);
+	controlsLayout->addWidget(_volumeSlider);
+
+/*	Wt::WText* name = new Wt::WText("My track name");
+	controlsLayout->addWidget(name, 1);*/
+
+	   Wt::WCheckBox *loop = new Wt::WCheckBox("Loop", controlsContainer);
+	   loop->changed().connect(std::bind([=] ()
+	   {
+	   _loop.emit( loop->checkState() == Wt::Checked);
+	   }));
+
+	   Wt::WCheckBox *shuffle = new Wt::WCheckBox("Shuffle", controlsContainer);
+	   shuffle->changed().connect(std::bind([=] ()
+	   {
+	   _shuffle.emit( shuffle->checkState() == Wt::Checked);
+	   }));
+
+	   controlsLayout->addWidget(loop);
+	   controlsLayout->addWidget(shuffle);
 
 	_mediaPlayer = new Wt::WMediaPlayer( Wt::WMediaPlayer::Audio, this );
-//	_mediaPlayer->setAlternativeContent (new Wt::WText("You don't have HTML5 audio support!"));
-//	_mediaPlayer->setOptions( Wt::WMediaPlayer::Autoplay );
 	_mediaPlayer->addSource( Wt::WMediaPlayer::OGA, "" );
-
 	_mediaPlayer->ended().connect(this, &AudioMediaPlayer::handleTrackEnded);
 
-	{
-		Wt::WContainerWidget *container = new Wt::WContainerWidget(this);
+	_mediaPlayer->setControlsWidget( 0 );
+	_mediaPlayer->setButton(Wt::WMediaPlayer::Play, _playBtn);
+	_mediaPlayer->setButton(Wt::WMediaPlayer::Pause, _pauseBtn);
 
-		Wt::WCheckBox *loop = new Wt::WCheckBox("Loop", this);
-		loop->changed().connect(std::bind([=] ()
-		{
-			_loop.emit( loop->checkState() == Wt::Checked);
-		}));
+	_mediaPlayer->timeUpdated().connect(this, &AudioMediaPlayer::handleTimeUpdated);
 
-		Wt::WCheckBox *shuffle = new Wt::WCheckBox("Shuffle", this);
-		shuffle->changed().connect(std::bind([=] ()
-		{
-			_shuffle.emit( shuffle->checkState() == Wt::Checked);
-		}));
+	_volumeSlider->setValue(_mediaPlayer->volume() * 100);
 
-		_curTime = new Wt::WText("00:00:00", container);
-		_timeSlider = new Wt::WSlider( container );
-		_duration = new Wt::WText("00:00:00", container);
+	nextBtn->clicked().connect(std::bind([=] ()
+				{
+				_mediaPlayer->stop();
+				_playNext.emit();
+				}));
 
-		Wt::WPushButton *prevBtn = new Wt::WPushButton("<<", container );
-		_playBtn = new Wt::WPushButton("Play", container );
-		_pauseBtn = new Wt::WPushButton("Pause", container );
-		Wt::WPushButton *nextBtn = new Wt::WPushButton(">>", container );
-
-
-		_volumeSlider = new Wt::WSlider( container );
-		_volumeSlider->setRange(0,100);
-		_volumeSlider->setValue(_mediaPlayer->volume() * 100);
-
-		_mediaPlayer->setControlsWidget( container );
-		_mediaPlayer->setButton(Wt::WMediaPlayer::Play, _playBtn);
-		_mediaPlayer->setButton(Wt::WMediaPlayer::Pause, _pauseBtn);
-
-		_mediaPlayer->setText( Wt::WMediaPlayer::CurrentTime, _curTime);
-		_mediaPlayer->setText( Wt::WMediaPlayer::Duration, _duration);
-
-		_mediaPlayer->timeUpdated().connect(this, &AudioMediaPlayer::handleTimeUpdated);
-
-		nextBtn->clicked().connect(std::bind([=] ()
-		{
-			_mediaPlayer->stop();
-			_playNext.emit();
-		}));
-
-		prevBtn->clicked().connect(std::bind([=] ()
-		{
-			_mediaPlayer->stop();
-			_playPrevious.emit();
-		}));
-	}
-
-	_timeSlider->valueChanged().connect(this, &AudioMediaPlayer::handlePlayOffset);
-	_timeSlider->sliderMoved().connect(this, &AudioMediaPlayer::handleSliderMoved);
+	prevBtn->clicked().connect(std::bind([=] ()
+				{
+				_mediaPlayer->stop();
+				_playPrevious.emit();
+				}));
+	   _timeSlider->valueChanged().connect(this, &AudioMediaPlayer::handlePlayOffset);
+//	_timeSlider->sliderMoved().connect(this, &AudioMediaPlayer::handleSliderMoved);
 	_timeSlider->setDisabled(true);
 
 	_volumeSlider->sliderMoved().connect(this, &AudioMediaPlayer::handleVolumeSliderMoved);
