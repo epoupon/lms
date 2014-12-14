@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2014 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,29 +17,34 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef COVER_ART_GRABBER_HPP
-#define COVER_ART_GRABBER_HPP
+#include <boost/foreach.hpp>
+#include <boost/filesystem.hpp>
 
-#include <vector>
+#include <Wt/WResource>
 
-#include "av/InputFormatContext.hpp"
 #include "database/AudioTypes.hpp"
 
-#include "CoverArt.hpp"
+namespace UserInterface {
 
-
-namespace CoverArt {
-
-class Grabber
+class CoverResource : public Wt::WResource
 {
 	public:
+		CoverResource(const boost::filesystem::path& p,		// track to get cover from
+				std::size_t size,			// size * size pixels
+				Wt::WObject *parent = 0);
+		~CoverResource();
 
-		static std::vector<CoverArt>	getFromInputFormatContext(const Av::InputFormatContext& input);
-		static std::vector<CoverArt>	getFromTrack(Database::Track::pointer		track);
-		static std::vector<CoverArt>	getFromTrack(const boost::filesystem::path& path);
+		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
+
+	private:
+
+		boost::filesystem::path 	_path;
+		std::size_t			_size;
+		std::string			_mimeType;
+
+		std::vector<unsigned char>	_data;
 };
 
-} // namespace CoverArt
 
 
-#endif
+} // namespace UserInterface

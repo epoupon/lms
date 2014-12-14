@@ -52,6 +52,25 @@ Grabber::getFromInputFormatContext(const Av::InputFormatContext& input)
 	return res;
 }
 
+std::vector<CoverArt>
+Grabber::getFromTrack(const boost::filesystem::path& p)
+{
+	std::vector<CoverArt> res;
+
+	try
+	{
+		Av::InputFormatContext input(p);
+
+		return getFromInputFormatContext(input);
+
+	}
+	catch(std::exception& e)
+	{
+		LMS_LOG(MOD_COVER, SEV_ERROR) << "Cannot get pictures: " << e.what();
+	}
+
+	return res;
+}
 
 
 

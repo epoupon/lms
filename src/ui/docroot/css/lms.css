@@ -1,5 +1,25 @@
+.main-nav {
+	margin-bottom: 0px;
+}
+
+.Wt-hrh2 {
+	background-color: white;
+}
+
+.Wt-vrh2 {
+	background-color: white;
+}
+
+div.contents {
+	padding: 0px 12px 6px;
+}
 
 .playqueue-playing {
-    font-weight: bold;
+	font-weight: bold;
+}
+
+.mediaplayer {
+	background-color: #ccc;
+	border-radius: 10px;
 }
 

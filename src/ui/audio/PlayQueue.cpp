@@ -20,34 +20,59 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 
+#include <Wt/WApplication>
+#include <Wt/WImage>
+#include <Wt/WLink>
 #include <Wt/WItemDelegate>
+#include <Wt/WStandardItem>
+#include <Wt/WFileResource>
+
+#include "resource/CoverResource.hpp"
 
 #include "logger/Logger.hpp"
 
 #include "PlayQueue.hpp"
 
-namespace {
+static const int CoverRole = Wt::UserRole + 1;
 
-	void modelForceRefreshDataRow(Wt::WStandardItemModel *model, int row)
-	{
-		for (int i = 0; i < model->columnCount(); ++i)
-			model->setData(row, i, model->data(row, i));
-	}
+namespace {
 
 	void swapRows(Wt::WStandardItemModel *model, int row1, int row2)
 	{
-		// Copy column by column
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "Swap called row1 = " << row1 << ", row2 = " << row2 << ", CoverRole = " << CoverRole;
+
+		// Swap data column by column
 		for (int i = 0; i < model->columnCount(); ++i)
 		{
-			boost::any tmp = model->data(row1, i);		// 1 -> tmp
-			model->setData(row1, i, model->data(row2, i));	// 2 -> 1
-			model->setData(row2, i, tmp);			// tmp-> 2
+			Wt::WModelIndex index1 = model->index(row1, i);
+			Wt::WModelIndex index2 = model->index(row2, i);
+
+			{
+				auto tmp = model->itemData(index1);			// 1 -> tmp
+				model->setItemData(index1, model->itemData(index2));	// 2 -> 1
+				model->setItemData(index2, tmp);			// tmp-> 2
+			}
+
+			// Workaround, do the same thing for the CoverRole
+			{
+				auto tmp = model->data(index1, CoverRole);
+				model->setData(index1, model->data(index2, CoverRole), CoverRole);
+				model->setData(index2, tmp, CoverRole);
+			}
 		}
 	}
-
 }
 
 namespace UserInterface {
+
+enum ColumnId
+{
+	COLUMN_ID_TRACK_ID	= 0,
+	COLUMN_ID_POS		= 1,
+	COLUMN_ID_COVER		= 2,
+	COLUMN_ID_NAME		= 3,
+	COLUMN_ID_DURATION	= 4
+};
 
 static const int trackPosInvalid = -1;
 
@@ -59,8 +84,8 @@ class TrackSelector
 		void setShuffle(bool enable);
 		void setLoop(bool enable) { _loop = enable; }
 
-		int getPrevious(void);
-		int getNext(void);
+		int previous(void);
+		int next(void);
 		int getCurrent(void);
 
 		// Set the internal pos thanks to the track pos
@@ -86,11 +111,12 @@ class TrackSelector
 TrackSelector::TrackSelector()
 : _loop(false),
 _shuffle(false),
+_size(0),
 _curPos(0)
 {
 }
 
-	void
+void
 TrackSelector::refreshPositions()
 {
 	_trackPos.clear();
@@ -102,7 +128,7 @@ TrackSelector::refreshPositions()
 		_trackPos.push_back(i);
 
 	// Now shuffle
-	// Perform size/2 permutations
+	// Source: http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
 	boost::random::mt19937 rng;         // produces randomness out of thin air
 	rng.seed(static_cast<unsigned int>(std::time(0)));
 
@@ -127,14 +153,18 @@ TrackSelector::setShuffle(bool enable)
 {
 	_shuffle = enable;
 
-	if (_shuffle)
-		setPosByRowId(_curPos);
-	else
-		setPos(_trackPos[_curPos]);
+	if (_size != 0)
+	{
+		// Update the current index we are playing if we switch shuffle
+		if (_shuffle)
+			setPosByRowId(_curPos);
+		else
+			setPos(_trackPos[_curPos]);
+	}
 }
 
 int
-TrackSelector::getNext()
+TrackSelector::next()
 {
 	if (_size == 0)
 		return trackPosInvalid;
@@ -153,7 +183,7 @@ TrackSelector::getNext()
 }
 
 int
-TrackSelector::getPrevious()
+TrackSelector::previous()
 {
 	if (_size == 0)
 		return trackPosInvalid;
@@ -200,30 +230,37 @@ TrackSelector::setSize(std::size_t size)
 class PlayQueueItemDelegate : public Wt::WItemDelegate
 {
 	public:
-		PlayQueueItemDelegate(Wt::WObject *parent = 0) : Wt::WItemDelegate(parent), _selectedRowPos(trackPosInvalid) {}
-
-		void setSelectedRowPos(int rowPos)	{ _selectedRowPos = rowPos; }
+		PlayQueueItemDelegate(Wt::WObject *parent = 0) : Wt::WItemDelegate(parent) {}
 
 		Wt::WWidget* update(Wt::WWidget *widget, const Wt::WModelIndex &index, Wt::WFlags< Wt::ViewItemRenderFlag > flags)
 		{
-			Wt::WWidget* res = Wt::WItemDelegate::update(widget, index, flags);
+			Wt::WWidget* res;
 
-			if (res && index.isValid())
+			Wt::WString path = Wt::asString(index.data(CoverRole));
+			if (!path.empty())
 			{
-				if (_selectedRowPos != trackPosInvalid && index.row() == _selectedRowPos)
-					res->toggleStyleClass("playqueue-playing", true);
+				// Create an image for this track
+				Wt::WImage* image = new Wt::WImage( );
+				Wt::WResource* resource;
+				if (path != "none")
+					resource = new CoverResource(boost::filesystem::path(path.toUTF8()), 64, image);
 				else
-					res->toggleStyleClass("playqueue-playing", false);
+					resource = new Wt::WFileResource("image/jpeg", Wt::WApplication::instance()->docRoot() + "/images/unknown-cover.jpg", image);
+
+				image->setImageLink(Wt::WLink(resource));
+
+				res = image;
+				res->setObjectName("z");
 			}
+			else
+				res = Wt::WItemDelegate::update(widget, index, flags);
 
 			return res;
 		}
 
 	private:
 
-		int _selectedRowPos;
 };
-
 
 
 PlayQueue::PlayQueue(Database::Handler& db, Wt::WContainerWidget* parent)
@@ -232,23 +269,25 @@ _db(db),
 _curPlayedTrackPos(trackPosInvalid),
 _trackSelector(new TrackSelector())
 {
-	_model = new Wt::WStandardItemModel(0, 4, this);
+	_model = new Wt::WStandardItemModel(0, 5, this);
 
 	// 0 Column is hidden (track id)
-	_model->setHeaderData(0, Wt::WString("#"));
-	_model->setHeaderData(1, Wt::WString("#"));
-	_model->setHeaderData(2, Wt::WString("Track"));
-	_model->setHeaderData(3, Wt::WString("Duration"));
+	_model->setHeaderData(COLUMN_ID_TRACK_ID, Wt::WString("#"));
+	_model->setHeaderData(COLUMN_ID_POS, Wt::WString("#"));
+	_model->setHeaderData(COLUMN_ID_COVER, Wt::WString("Cover"));
+	_model->setHeaderData(COLUMN_ID_NAME, Wt::WString("Track"));
+	_model->setHeaderData(COLUMN_ID_DURATION, Wt::WString("Duration"));
 
 	this->setModel(_model);
 	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setSortingEnabled(false);
 	this->setAlternatingRowColors(true);
+	this->setRowHeight(64);
+	this->setColumnWidth(COLUMN_ID_COVER, 64);
+	this->setColumnWidth(COLUMN_ID_POS, 50);
+	this->setColumnWidth(COLUMN_ID_DURATION, 75);
 
-	this->setColumnWidth(0, 50);
-	this->setColumnWidth(1, 50);
-
-	this->setColumnHidden(0, true);
+	this->setColumnHidden(COLUMN_ID_TRACK_ID, true);
 
 	_itemDelegate = new PlayQueueItemDelegate();
 	this->setItemDelegate(_itemDelegate);
@@ -318,10 +357,11 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 
 			_model->insertRows(dataRow, 1);
 
-			_model->setData(dataRow, 0, track.id());
-			_model->setData(dataRow, 1, dataRow + 1);
-			_model->setData(dataRow, 2, track->getArtistName() + " - " + track->getName());
-			_model->setData(dataRow, 3, track->getDuration());
+			_model->setData(dataRow, COLUMN_ID_TRACK_ID, track.id(), Wt::UserRole);
+			_model->setData(dataRow, COLUMN_ID_POS, dataRow + 1);
+			_model->setData(dataRow, COLUMN_ID_COVER, track->hasCover() ? track->getPath() : "none", CoverRole);
+			_model->setData(dataRow, COLUMN_ID_NAME,  track->getArtistName() + " - " + track->getName());
+			_model->setData(dataRow, COLUMN_ID_DURATION, track->getDuration());
 		}
 	}
 
@@ -351,7 +391,7 @@ PlayQueue::playNext(void)
 
 	while (nbTries > 0)
 	{
-		int pos = _trackSelector->getNext();
+		int pos = _trackSelector->next();
 		if (pos == trackPosInvalid)
 			break;
 
@@ -369,7 +409,7 @@ PlayQueue::playPrevious(void)
 
 	while (nbTries > 0)
 	{
-		int pos = _trackSelector->getPrevious();
+		int pos = _trackSelector->previous();
 		if (pos == trackPosInvalid)
 			break;
 
@@ -386,7 +426,7 @@ PlayQueue::readTrack(int rowPos)
 	Wt::Dbo::Transaction transaction(_db.getSession());
 
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Reading track at pos " << rowPos;
-	Database::Track::id_type trackId = boost::any_cast<Database::Track::id_type>(_model->data(rowPos, 0));
+	Database::Track::id_type trackId = boost::any_cast<Database::Track::id_type>(_model->data(rowPos, COLUMN_ID_TRACK_ID, Wt::UserRole));
 
 	Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
 	if (track)
@@ -394,6 +434,8 @@ PlayQueue::readTrack(int rowPos)
 		setPlayingTrackPos(rowPos);
 
 		_sigTrackPlay.emit(track->getPath());
+
+		this->scrollTo( _model->index(_trackSelector->getCurrent(), 0));
 
 		return true;
 	}
@@ -407,15 +449,21 @@ PlayQueue::setPlayingTrackPos(int newRowPos)
 	int oldRowPos = _curPlayedTrackPos;
 	_curPlayedTrackPos = newRowPos;
 
-	_itemDelegate->setSelectedRowPos(newRowPos);
-
 	// Hack re-set the data in order to trigger the rerending of the widget
 	// calling the update method of our custom item delegate gives bad results
 	if (oldRowPos >= 0)
-		modelForceRefreshDataRow(_model, oldRowPos);
+	{
+		_model->setData(oldRowPos, COLUMN_ID_POS, boost::any(), Wt::StyleClassRole);
+		_model->setData(oldRowPos, COLUMN_ID_NAME, boost::any(), Wt::StyleClassRole);
+		_model->setData(oldRowPos, COLUMN_ID_DURATION, boost::any(), Wt::StyleClassRole);
+	}
 
 	if (newRowPos >= 0)
-		modelForceRefreshDataRow(_model, newRowPos);
+	{
+		_model->setData(newRowPos, COLUMN_ID_POS, "playqueue-playing", Wt::StyleClassRole);
+		_model->setData(newRowPos, COLUMN_ID_NAME, "playqueue-playing", Wt::StyleClassRole);
+		_model->setData(newRowPos, COLUMN_ID_DURATION, "playqueue-playing", Wt::StyleClassRole);
+	}
 }
 
 void
@@ -432,7 +480,6 @@ PlayQueue::delSelected(void)
 	}
 
 	// If the current played track is removed, make sure to unselect it
-	_itemDelegate->setSelectedRowPos(trackPosInvalid);
 	_trackSelector->setSize(_model->rowCount());
 
 	renumber(minId, _model->rowCount() - 1);

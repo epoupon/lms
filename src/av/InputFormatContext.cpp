@@ -114,6 +114,19 @@ InputFormatContext::getMetadata(void)
 
 }
 
+std::size_t
+InputFormatContext::getNbPictures(void) const
+{
+	std::size_t res = 0;
+
+	for (std::size_t i = 0; i < native()->nb_streams; ++i)
+	{
+		if (native()->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
+			++res;
+	}
+	return res;
+}
+
 void
 InputFormatContext::getPictures(std::vector< std::vector<unsigned char> >& pictures) const
 {

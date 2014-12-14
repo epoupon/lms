@@ -92,25 +92,35 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::p
 
 	// If here is no account in the database, launch the first connection wizard
 	if (firstConnection)
-	{
-		// Hack, use the auth widget builtin strings
-		builtinLocalizedStrings().useBuiltin(skeletons::AuthStrings_xml1);
-
-		root()->addWidget( new Settings::FirstConnectionFormView(_sessionData));
-	}
+		createFirstConnectionUI();
 	else
-	{
-		_sessionData.getDatabaseHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
+		createLmsUI();
 
-		LmsAuth *authWidget = new LmsAuth(_sessionData.getDatabaseHandler());
+}
 
-		authWidget->model()->addPasswordAuth(&Database::Handler::getPasswordService());
-		authWidget->setRegistrationEnabled(false);
+void
+LmsApplication::createFirstConnectionUI()
+{
+	// Hack, use the auth widget builtin strings
+	builtinLocalizedStrings().useBuiltin(skeletons::AuthStrings_xml1);
 
-		authWidget->processEnvironment();
+	root()->addWidget( new Settings::FirstConnectionFormView(_sessionData));
+}
 
-		root()->addWidget(authWidget);
-	}
+void
+LmsApplication::createLmsUI()
+{
+
+	_sessionData.getDatabaseHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
+
+	LmsAuth *authWidget = new LmsAuth(_sessionData.getDatabaseHandler());
+
+	authWidget->model()->addPasswordAuth(&Database::Handler::getPasswordService());
+	authWidget->setRegistrationEnabled(false);
+
+	authWidget->processEnvironment();
+
+	root()->addWidget(authWidget);
 }
 
 
