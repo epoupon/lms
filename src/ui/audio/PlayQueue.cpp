@@ -111,6 +111,7 @@ class TrackSelector
 TrackSelector::TrackSelector()
 : _loop(false),
 _shuffle(false),
+_size(0),
 _curPos(0)
 {
 }
@@ -152,10 +153,14 @@ TrackSelector::setShuffle(bool enable)
 {
 	_shuffle = enable;
 
-	if (_shuffle)
-		setPosByRowId(_curPos);
-	else
-		setPos(_trackPos[_curPos]);
+	if (_size != 0)
+	{
+		// Update the current index we are playing if we switch shuffle
+		if (_shuffle)
+			setPosByRowId(_curPos);
+		else
+			setPos(_trackPos[_curPos]);
+	}
 }
 
 int
