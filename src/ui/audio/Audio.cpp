@@ -29,7 +29,6 @@
 #include "logger/Logger.hpp"
 
 #include "TableFilter.hpp"
-#include "TableFilterGenre.hpp"
 #include "KeywordSearchFilter.hpp"
 
 #include "Audio.hpp"
@@ -49,15 +48,15 @@ _playQueue(nullptr)
 	// Filters
 	Wt::WHBoxLayout *filterLayout = new Wt::WHBoxLayout();
 
-	TableFilterGenre *filterGenre = new TableFilterGenre(_db);
+	TableFilter *filterGenre = new TableFilter(_db, Database::SearchFilter::Field::Genre, { "Genre", "Tracks"} );
 	filterLayout->addWidget(filterGenre);
 	_filterChain.addFilter(filterGenre);
 
-	TableFilter *filterArtist = new TableFilter(_db, "track", "artist_name", "Artist");
+	TableFilter *filterArtist = new TableFilter(_db, Database::SearchFilter::Field::Artist, {"Artist", "Tracks"} );
 	filterLayout->addWidget(filterArtist);
 	_filterChain.addFilter(filterArtist);
 
-	TableFilter *filterRelease = new TableFilter(_db, "track", "release_name", "Release");
+	TableFilter *filterRelease = new TableFilter(_db, Database::SearchFilter::Field::Release, {"Release", "Tracks"});
 	filterLayout->addWidget(filterRelease);
 	_filterChain.addFilter(filterRelease);
 
@@ -95,6 +94,7 @@ _playQueue(nullptr)
 		Database::User::pointer user = _db.getCurrentUser();
 
 		Wt::WVBoxLayout* playQueueLayout = new Wt::WVBoxLayout();
+		playQueueLayout->setContentsMargins(5,5,5,5);
 
 		_mediaPlayer = new AudioMediaPlayer();
 		playQueueLayout->addWidget(_mediaPlayer);

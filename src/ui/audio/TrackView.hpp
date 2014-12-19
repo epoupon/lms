@@ -38,10 +38,10 @@ class TrackView : public Wt::WTableView, public Filter
 
 		// Filter interface
 		// Set constraints created by parent filters
-		void refresh(const Constraint& constraint);
+		void refresh(Database::SearchFilter& filter);
 
 		// Create constraints for child filters (N/A)
-		void getConstraint(Constraint& constraint) {}
+		void getConstraint(Database::SearchFilter& filter) {}
 
 		// Get all the tracks that are currently selected
 		void getSelectedTracks(std::vector<Database::Track::id_type>& trackIds);
@@ -64,7 +64,7 @@ class TrackView : public Wt::WTableView, public Filter
 
 		Database::Handler&			_db;
 
-		typedef boost::tuple<Database::Track::pointer>  ResultType;
+		typedef Database::Track::pointer  ResultType;
 		Wt::Dbo::QueryModel< ResultType >	_queryModel;
 		Wt::WTableView*				_tableView;
 

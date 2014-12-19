@@ -22,7 +22,7 @@
 
 #include <Wt/WSignal>
 
-#include "database/SqlQuery.hpp"
+#include "database/AudioTypes.hpp"
 
 namespace UserInterface {
 
@@ -31,17 +31,20 @@ class Filter
 	public:
 
 		struct Constraint {
-			WhereClause	where;		// WHERE SQL clause
+			std::vector<std::string>	search;
+
+			typedef std::map<std::string,    std::vector<std::string> > ColumnValues;
+			ColumnValues	columnValues;
 		};
 
 		Filter() {}
 		virtual ~Filter() {}
 
 		// Refresh filter using constraints created by parent filters
-		virtual void refresh(const Constraint& constraint) = 0;
+		virtual void refresh(Database::SearchFilter& filter) = 0;
 
 		// Update constraints for next filters
-		virtual void getConstraint(Constraint& constraint) = 0;
+		virtual void getConstraint(Database::SearchFilter& filter) = 0;
 
 		// Emitted when a constraint has changed
 		Wt::Signal<void>& update() { return _update; };

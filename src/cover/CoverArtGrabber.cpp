@@ -79,7 +79,7 @@ Grabber::getFromTrack(Database::Track::pointer track)
 {
 	std::vector<CoverArt> res;
 
-	if (!track)
+	if (!track || !track->hasCover())
 		return std::vector<CoverArt>();
 
 	try

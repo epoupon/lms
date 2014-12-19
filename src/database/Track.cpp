@@ -19,11 +19,113 @@
 
 #include <boost/foreach.hpp>
 
+#include <Wt/Dbo/QueryModel>
+
+#include "logger/Logger.hpp"
+
 #include "SqlQuery.hpp"
 
 #include "AudioTypes.hpp"
 
 namespace Database {
+
+static SqlQuery generatePartialQuery(SearchFilter& filter, bool forceGenreInnerJoin = false)
+{
+	bool genreJoin = forceGenreInnerJoin;
+	SqlQuery sqlQuery;
+
+
+	// Process like searches
+	BOOST_FOREACH(SearchFilter::FieldValues& likeMatch, filter.likeMatches)
+	{
+		WhereClause likeWhereClause;
+
+		// Artist
+		{
+			WhereClause whereClause;
+
+			BOOST_FOREACH(const std::string& name, likeMatch[SearchFilter::Field::Artist])
+				whereClause.Or( WhereClause("t.artist_name LIKE ?") ).bind("%%" + name + "%%");
+
+			likeWhereClause.Or( whereClause );
+		}
+		// Release
+		{
+			WhereClause whereClause;
+
+			BOOST_FOREACH(const std::string& name, likeMatch[SearchFilter::Field::Release])
+				whereClause.Or( WhereClause("t.release_name LIKE ?") ).bind("%%" + name + "%%");
+
+			likeWhereClause.Or( whereClause );
+		}
+		// Genre
+		{
+			WhereClause whereClause;
+
+			BOOST_FOREACH(const std::string& name, likeMatch[SearchFilter::Field::Genre])
+			{
+				whereClause.Or( WhereClause("g.name LIKE ?") ).bind("%%" + name + "%%");
+				genreJoin = true;
+			}
+
+			likeWhereClause.Or( whereClause );
+		}
+		// Track
+		{
+			WhereClause whereClause;
+
+			BOOST_FOREACH(const std::string& name, likeMatch[SearchFilter::Field::Track])
+				whereClause.Or( WhereClause("t.name LIKE ?") ).bind("%%" + name + "%%");
+
+			likeWhereClause.Or( whereClause );
+		}
+
+		sqlQuery.where().And( likeWhereClause );
+	}
+
+	// Add exact search constraints
+	// Artist
+	{
+		WhereClause whereClause;
+
+		BOOST_FOREACH(const std::string& name, filter.exactMatch[SearchFilter::Field::Artist])
+			whereClause.Or( WhereClause("t.artist_name = ?") ).bind(name);
+
+		sqlQuery.where().And( whereClause );
+	}
+
+	// Release
+	{
+		WhereClause whereClause;
+
+		BOOST_FOREACH(const std::string& name, filter.exactMatch[SearchFilter::Field::Release])
+			whereClause.Or( WhereClause("t.release_name = ?") ).bind(name);
+
+		sqlQuery.where().And( whereClause );
+	}
+
+	// Genre
+	{
+		WhereClause whereClause;
+
+		BOOST_FOREACH(const std::string& name, filter.exactMatch[SearchFilter::Field::Genre])
+		{
+			whereClause.Or( WhereClause("g.name = ?") ).bind(name);
+			genreJoin = true;
+		}
+
+		sqlQuery.where().And( whereClause );
+	}
+
+	if (genreJoin)
+	{
+		sqlQuery.innerJoin().And( InnerJoinClause("genre g ON g.id = t_g.genre_id"));
+		sqlQuery.innerJoin().And( InnerJoinClause("track_genre t_g ON t_g.track_id = t.id"));
+	}
+
+	return sqlQuery;
+}
+
 
 Track::Track(const boost::filesystem::path& p)
 :
@@ -34,6 +136,11 @@ _hasCover(false)
 {
 }
 
+Wt::Dbo::collection< Track::pointer >
+Track::getAll(Wt::Dbo::Session& session)
+{
+	return session.find<Track>();
+}
 
 void
 Track::setGenres(std::vector<Genre::pointer> genres)
@@ -65,12 +172,6 @@ Track::create(Wt::Dbo::Session& session, const boost::filesystem::path& p)
 	return session.add(new Track(p) );
 }
 
-Wt::Dbo::collection< Track::pointer >
-Track::getAll(Wt::Dbo::Session& session)
-{
-	return session.find<Track>();
-}
-
 std::vector< Genre::pointer >
 Track::getGenres(void) const
 {
@@ -79,89 +180,116 @@ Track::getGenres(void) const
 	return genres;
 }
 
-Wt::Dbo::collection< Track::pointer >
-Track::getAll(Wt::Dbo::Session& session,
-			const std::vector<std::string>& artists,
-			const std::vector<std::string>& releases,
-			const std::vector<std::string>& genres,
-			int offset, int size)
+Wt::Dbo::Query< Track::pointer >
+Track::getAllQuery(Wt::Dbo::Session& session, SearchFilter filter)
 {
-	std::string sqlQuery = "SELECT t FROM track t";
+	SqlQuery sqlQuery = generatePartialQuery(filter);
 
-	if (!genres.empty())
-	{
-		sqlQuery += " INNER JOIN genre g ON g.id = t_g.genre_id";
-		sqlQuery += " INNER JOIN track_genre t_g ON t_g.track_id = t.id AND t_g.genre_id = g.id";
-	}
+	Wt::Dbo::Query<pointer> query
+		= session.query<Track::pointer>( "SELECT t FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).groupBy("t.id");
 
-	WhereClause where;
-
-	{
-		WhereClause artistWhere;
-
-		for (std::size_t i = 0; i < artists.size(); ++i)
-			artistWhere.Or( WhereClause("t.artist_name = ?") );
-
-		where.And(artistWhere);
-	}
-
-	{
-		WhereClause releaseWhere;
-
-		for (std::size_t i = 0; i < releases.size(); ++i)
-			releaseWhere.Or( WhereClause("t.release_name = ?") );
-
-		where.And(releaseWhere);
-	}
-
-	{
-		WhereClause genreWhere;
-
-		for (std::size_t i = 0; i < genres.size(); ++i)
-			genreWhere.Or( WhereClause("g.name = ?") );
-
-		where.And(genreWhere);
-	}
-
-
-	Wt::Dbo::Query<Track::pointer> query = session.query<Track::pointer>( sqlQuery + " " + where.get() ).offset(offset).limit(size);
-
-	BOOST_FOREACH(const std::string& artist, artists)
-		query.bind(artist);
-
-	BOOST_FOREACH(const std::string& release, releases)
-		query.bind(release);
-
-	BOOST_FOREACH(const std::string& genre, genres)
-		query.bind(genre);
-
-	query.groupBy("t");
+	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs())
+		query.bind(bindArg);
 
 	return query;
 }
 
-std::vector<std::string>
-Track::getArtists(Wt::Dbo::Session& session,
-		const std::vector<std::string>& genres,
-		int offset, int size)
+Wt::Dbo::collection< Track::pointer >
+Track::getAll(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
 {
-	std::string sqlQuery = "SELECT t.artist_name FROM track t";
+	return getAllQuery(session, filter).limit(size).offset(offset);
+}
 
-	if (!genres.empty())
+Wt::Dbo::Query< boost::tuple<std::string, int> >
+Track::getReleasesQuery(Wt::Dbo::Session& session, SearchFilter filter)
+{
+	SqlQuery sqlQuery = generatePartialQuery(filter);
+
+	Wt::Dbo::Query<boost::tuple<std::string, int> > query
+		= session.query<boost::tuple<std::string, int> >("SELECT t.release_name, COUNT(DISTINCT t.id) FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).groupBy("t.release_name").orderBy("t.release_name");
+
+	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs())
+		query.bind(bindArg);
+
+	return query;
+}
+
+Wt::Dbo::Query< boost::tuple<std::string, int> >
+Track::getArtistsQuery(Wt::Dbo::Session& session, SearchFilter filter)
+{
+	SqlQuery sqlQuery = generatePartialQuery(filter);
+
+	Wt::Dbo::Query<boost::tuple<std::string, int> > query
+		= session.query<boost::tuple<std::string, int> >( "SELECT t.artist_name, COUNT(DISTINCT t.id) FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).groupBy("t.artist_name").orderBy("t.artist_name");
+
+	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs())
+		query.bind(bindArg);
+
+	return query;
+}
+
+void
+Track::updateTracksQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< pointer >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
+{
+	Wt::Dbo::Query< pointer > query = getAllQuery(session, filter).orderBy("t.artist_name,t.date,t.release_name,t.disc_number,t.track_number");
+	model.setQuery(query, columnNames.empty() ? true : false);
+
+	// TODO do something better
+	if (columnNames.size() == 9)
 	{
-		sqlQuery += " INNER JOIN genre g ON g.id = t_g.genre_id";
-		sqlQuery += " INNER JOIN track_genre t_g ON t_g.track_id = t.id AND t_g.genre_id = g.id";
+		model.addColumn( "t.artist_name", columnNames[0] );
+		model.addColumn( "t.release_name", columnNames[1] );
+		model.addColumn( "t.disc_number", columnNames[2] );
+		model.addColumn( "t.track_number", columnNames[3] );
+		model.addColumn( "t.name", columnNames[4] );
+		model.addColumn( "t.duration", columnNames[5] );
+		model.addColumn( "t.date", columnNames[6] );
+		model.addColumn( "t.original_date", columnNames[7] );
+		model.addColumn( "t.genre_list", columnNames[8] );
 	}
 
-	WhereClause whereClause;
+}
 
-	for (std::size_t i = 0; i < genres.size(); ++i)
-		whereClause.Or( WhereClause("g.name = ?") );
+void
+Track::updateReleaseQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<boost::tuple<std::string, int> >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
+{
+	Wt::Dbo::Query<  boost::tuple<std::string, int> > query = getReleasesQuery(session, filter);
 
-	Wt::Dbo::Query<std::string> query = session.query<std::string>( sqlQuery + " " + whereClause.get() ).offset(offset).limit(size).groupBy("t.artist_name");
+	model.setQuery(query, columnNames.empty() ? true : false);
 
-	BOOST_FOREACH(const std::string& genre, genres)
-		query.bind(genre);
+	// TODO do something better
+	if (columnNames.size() == 2)
+	{
+		model.addColumn( "t.release_name", columnNames[0]);
+		model.addColumn( "COUNT(DISTINCT t.id)" );
+	}
+}
+
+void
+Track::updateArtistQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<boost::tuple<std::string, int> >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
+{
+	Wt::Dbo::Query<  boost::tuple<std::string, int> > query = getArtistsQuery(session, filter);
+
+	model.setQuery(query, columnNames.empty() ? true : false);
+
+	// TODO do something better
+	if (columnNames.size() == 2)
+	{
+		model.addColumn( "t.artist_name", columnNames[0]);
+		model.addColumn( "COUNT(DISTINCT t.id)" );
+	}
+}
+
+std::vector<std::string>
+Track::getArtists(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
+{
+	SqlQuery sqlQuery = generatePartialQuery(filter);
+
+	Wt::Dbo::Query<std::string> query
+		= session.query<std::string>( "SELECT DISTINCT t.artist_name FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).offset(offset).limit(size).orderBy("t.artist_name");
+
+	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs())
+		query.bind(bindArg);
 
 	typedef Wt::Dbo::collection< std::string > ArtistNames;
 	ArtistNames artistNames(query);
@@ -171,46 +299,17 @@ Track::getArtists(Wt::Dbo::Session& session,
 		res.push_back((*it));
 
 	return res;
-
 }
 
 std::vector<std::string>
-Track::getReleases(Wt::Dbo::Session& session,
-		const std::vector<std::string>& artists,
-		const std::vector<std::string>& genres,
-		int offset, int size)
+Track::getReleases(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
 {
+	SqlQuery sqlQuery = generatePartialQuery(filter);
 
-	std::string sqlQuery = "SELECT t.release_name FROM track t";
+	Wt::Dbo::Query<std::string> query
+		= session.query<std::string>( "SELECT DISTINCT t.release_name FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).offset(offset).limit(size).orderBy("t.release_name");
 
-	if (!genres.empty())
-	{
-		sqlQuery += " INNER JOIN genre g ON g.id = t_g.genre_id";
-		sqlQuery += " INNER JOIN track_genre t_g ON t_g.track_id = t.id AND t_g.genre_id = g.id";
-	}
-
-	WhereClause whereClause;
-
-	{
-		WhereClause clause;
-
-		BOOST_FOREACH(const std::string& artist, artists)
-			clause.Or( WhereClause("t.artist_name = ?") ).bind(artist);
-
-		whereClause.And(clause);
-	}
-	{
-		WhereClause clause;
-
-		BOOST_FOREACH(const std::string& genre, genres)
-			clause.Or( WhereClause("g.name = ?") ).bind(genre);
-
-		whereClause.And(clause);
-	}
-
-	Wt::Dbo::Query<std::string> query = session.query<std::string>( sqlQuery + " " + whereClause.get() ).offset(offset).limit(size).groupBy("t.release_name");
-
-	BOOST_FOREACH(const std::string& bindArg, whereClause.getBindArgs())
+	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
 
 	typedef Wt::Dbo::collection< std::string > ReleaseNames;
@@ -223,8 +322,77 @@ Track::getReleases(Wt::Dbo::Session& session,
 	return res;
 }
 
+Genre::Genre()
+{
+}
+
+Genre::Genre(const std::string& name)
+: _name( std::string(name, 0, _maxNameLength) )
+{
+}
+
+
+Genre::pointer
+Genre::getByName(Wt::Dbo::Session& session, const std::string& name)
+{
+	// TODO use like search
+	return session.find<Genre>().where("name = ?").bind( std::string(name, 0, _maxNameLength) );
+}
+
+Genre::pointer
+Genre::getNone(Wt::Dbo::Session& session)
+{
+	pointer res = getByName(session, "<None>");
+	if (!res)
+		res = create(session, "<None>");
+	return res;
+}
+
+bool
+Genre::isNone(void) const
+{
+	return (_name == "<None>");
+}
+
+Genre::pointer
+Genre::create(Wt::Dbo::Session& session, const std::string& name)
+{
+	return session.add(new Genre(name));
+}
+
+Wt::Dbo::collection<Genre::pointer>
+Genre::getAll(Wt::Dbo::Session& session, int offset, int size)
+{
+	return session.find<Genre>().offset(offset).limit(size).orderBy("name");
+}
+
+Wt::Dbo::Query<boost::tuple<std::string, int> >
+Genre::getAllQuery(Wt::Dbo::Session& session, SearchFilter& filter)
+{
+	SqlQuery sqlQuery = generatePartialQuery(filter, true);
+
+	Wt::Dbo::Query<boost::tuple<std::string, int> > query
+		= session.query<boost::tuple<std::string, int> >( "SELECT g.name, COUNT(DISTINCT t.id) FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).groupBy("g.name").orderBy("g.name");
+
+	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs())
+		query.bind(bindArg);
+
+	return query;
+}
+
+void
+Genre::updateGenreQueryModel(Wt::Dbo::Session& session,  Wt::Dbo::QueryModel< boost::tuple<std::string, int> >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
+{
+	Wt::Dbo::Query<  boost::tuple<std::string, int> > query = getAllQuery(session, filter);
+	model.setQuery(query, columnNames.empty() ? true : false);
+
+	// TODO do something better
+	if (columnNames.size() == 2)
+	{
+		model.addColumn( "g.name", columnNames[0] );
+		model.addColumn( "COUNT(DISTINCT t.id)", columnNames[1] );
+	}
+}
 
 } // namespace Database
-
-
 

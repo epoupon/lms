@@ -98,6 +98,7 @@ _dbBackend( db.string() )
 	        _session.createTables();
 		_dbBackend.executeSql("CREATE INDEX artist_name_idx ON track(artist_name)");
 		_dbBackend.executeSql("CREATE INDEX release_name_idx ON track(release_name)");
+		_dbBackend.executeSql("CREATE INDEX genre_name_idx ON genre(name)");
 	}
 	catch(std::exception& e) {
 		LMS_LOG(MOD_DB, SEV_ERROR) << "Cannot create tables: " << e.what();

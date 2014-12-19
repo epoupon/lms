@@ -33,13 +33,13 @@ class TableFilter : public Wt::WTableView, public Filter
 {
 
 	public:
-		TableFilter(Database::Handler& db, std::string table, std::string field, const Wt::WString& displayName, Wt::WContainerWidget* parent = 0);
+		TableFilter(Database::Handler& db, Database::SearchFilter::Field field, std::vector<Wt::WString> displayName, Wt::WContainerWidget* parent = 0);
 
 		// Set constraints on this filter
-		void refresh(const Constraint& constraint);
+		void refresh(Database::SearchFilter& filter);
 
 		// Get constraints created by this filter
-		void getConstraint(Constraint& constraint);
+		void getConstraint(Database::SearchFilter& filter);
 
 		void layoutSizeChanged (int width, int height);
 
@@ -52,10 +52,9 @@ class TableFilter : public Wt::WTableView, public Filter
 		SigDoubleClicked			_sigDoubleClicked;
 
 		Database::Handler&			_db;
-		const std::string			_table;
-		const std::string			_field;
+		Database::SearchFilter::Field		_field;
 
-		// Name, track count, special value that means 'all' if set to 1
+		// Name, track count
 		typedef boost::tuple<std::string, int>  ResultType;
 		Wt::Dbo::QueryModel< ResultType >	_queryModel;
 

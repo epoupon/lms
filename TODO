@@ -39,7 +39,6 @@
 
 	[Audio]
 	- Style eveything nicely...
-	- Search patterns in the genre list
 	- ReleaseView/ArtistView/GenreView: <All> -> Track count for this special category. Easier: add a special entry '<All>' that contains everything?
 	- MediaPlayer: move slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478)
 	- TrackView : handle duration > 1 hour

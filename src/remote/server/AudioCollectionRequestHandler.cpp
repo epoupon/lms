@@ -34,6 +34,8 @@
 namespace Remote {
 namespace Server {
 
+using namespace Database;
+
 AudioCollectionRequestHandler::AudioCollectionRequestHandler(Database::Handler& db)
 : _db(db)
 {}
@@ -163,24 +165,23 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 		size = _maxListArtists;
 	size = std::min(size, _maxListArtists);
 
+	SearchFilter filter;
+
 	// Get filters
 	std::vector<std::string> genres;
 	for (int id = 0; id < request.genre_size(); ++id)
-		genres.push_back( request.genre(id) );
+		filter.exactMatch[SearchFilter::Field::Genre].push_back( request.genre(id) );
 
 	// Now fetch requested data...
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
 	std::vector<std::string> artists
-		= Database::Track::getArtists(_db.getSession(),
-						genres,
+		= Database::Track::getArtists(_db.getSession(), filter,
 						request.batch_parameter().offset(), static_cast<int>(size) );
 
 	BOOST_FOREACH(const std::string& artist, artists)
-	{
 		response.add_artists()->set_name( std::string( boost::locale::conv::to_utf<char>(artist, "UTF-8") ) );
-	}
 
 	return true;
 }
@@ -200,20 +201,20 @@ AudioCollectionRequestHandler::processGetReleases(const AudioCollectionRequest::
 		size = _maxListReleases;
 	size = std::min(size, _maxListReleases);
 
+	SearchFilter filter;
+
 	std::vector<std::string> artists;
 	for (int id = 0; id < request.artist_size(); ++id)
-		artists.push_back( request.artist(id) );
+		filter.exactMatch[SearchFilter::Field::Artist].push_back( request.artist(id) );
 
 	std::vector<std::string> genres;
 	for (int id = 0; id < request.genre_size(); ++id)
-		genres.push_back( request.genre(id) );
+		filter.exactMatch[SearchFilter::Field::Genre].push_back( request.genre(id) );
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
 	std::vector<std::string> releases
-		= Database::Track::getReleases( _db.getSession(),
-						artists,
-						genres,
+		= Database::Track::getReleases( _db.getSession(), filter,
 						request.batch_parameter().offset(), static_cast<int>(size));
 
 	BOOST_FOREACH(const std::string& release, releases)
@@ -240,25 +241,24 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 	size = std::min(size, _maxListTracks);
 
 	// Get filters
+	SearchFilter filter;
+
 	std::vector<std::string> artists;
 	for (int id = 0; id < request.artist_size(); ++id)
-		artists.push_back( request.artist(id) );
+		filter.exactMatch[SearchFilter::Field::Artist].push_back( request.artist(id) );
 
 	std::vector<std::string> releases;
 	for (int id = 0; id < request.release_size(); ++id)
-		releases.push_back( request.release(id) );
+		filter.exactMatch[SearchFilter::Field::Release].push_back( request.release(id) );
 
 	std::vector<std::string> genres;
 	for (int id = 0; id < request.genre_size(); ++id)
-		genres.push_back( request.genre(id) );
+		filter.exactMatch[SearchFilter::Field::Genre].push_back( request.genre(id) );
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
 	Wt::Dbo::collection<Database::Track::pointer> tracks
-		= Database::Track::getAll( _db.getSession(),
-				artists,
-				releases,
-				genres,
+		= Database::Track::getAll( _db.getSession(), filter,
 				request.batch_parameter().offset(), static_cast<int>(size));
 
 	typedef Wt::Dbo::collection< Database::Track::pointer > Tracks;
@@ -305,11 +305,11 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 		case AudioCollectionRequest::GetCoverArt::TypeGetCoverArtRelease:
 			if (request.has_release())
 			{
-				Wt::Dbo::collection<Database::Track::pointer> tracks = Database::Track::getAll(_db.getSession(),
-						std::vector<std::string>(), // artist
-						std::vector<std::string>(1, request.release()), // release
-						std::vector<std::string>(), // genre
-							-1, 1);
+				SearchFilter filter;
+				filter.exactMatch[SearchFilter::Field::Release].push_back(request.release());
+
+				Wt::Dbo::collection<Database::Track::pointer> tracks
+					= Database::Track::getAll(_db.getSession(), filter, -1, 1 /* limit reuslt size */);
 
 				Wt::Dbo::collection<Database::Track::pointer>::iterator it = tracks.begin();
 
