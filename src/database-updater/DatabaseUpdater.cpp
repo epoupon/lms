@@ -402,6 +402,11 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 				track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>(items[MetaData::Type::OriginalDate]) );
 		}
 
+		if (items.find(MetaData::Type::HasCover) != items.end())
+		{
+			track.modify()->setHasCover( boost::any_cast<bool>(items[MetaData::Type::HasCover]));
+		}
+
 		transaction.commit();
 
 	}

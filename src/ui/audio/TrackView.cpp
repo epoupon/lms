@@ -33,18 +33,25 @@ TrackView::TrackView( Database::Handler& db, Wt::WContainerWidget* parent)
 : Wt::WTableView( parent ),
 _db(db)
 {
-	_queryModel.setQuery(_db.getSession().query<ResultType>("select track from track").orderBy("track.artist_name,track.date,track.release_name,track.disc_number,track.track_number"));
-	_queryModel.addColumn( "track.artist_name", "Artist" );
-	_queryModel.addColumn( "track.release_name", "Album" );
-	_queryModel.addColumn( "track.disc_number", "Disc #" );
-	_queryModel.addColumn( "track.track_number", "Track #" );
-	_queryModel.addColumn( "track.name", "Track" );
-	_queryModel.addColumn( "track.duration", "Duration" );
-	_queryModel.addColumn( "track.date", "Date" );
-	_queryModel.addColumn( "track.original_date", "Original Date" );
-	_queryModel.addColumn( "track.genre_list", "Genres" );
 
-	_queryModel.setBatchSize(500);
+	static const std::vector<Wt::WString> columnNames =
+	{
+		"Artist",
+		"Album",
+		"Disc #",
+		"Track #",
+		"Track",
+		"Duration",
+		"Date",
+		"Original Date",
+		"Genres",
+	};
+
+	Database::SearchFilter filter;
+
+	Database::Track::updateTracksQueryModel(_db.getSession(), _queryModel, filter, columnNames);
+
+	_queryModel.setBatchSize(300);
 
 	this->setSortingEnabled(true);
 	this->setSelectionMode(Wt::ExtendedSelection);
@@ -60,7 +67,6 @@ _db(db)
 	this->setColumnWidth(6, 70);	// Date
 	this->setColumnWidth(7, 70);	// Original Date
 	this->setColumnWidth(8, 180);	// Genres
-
 //	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
 
 	// Duration display
@@ -102,28 +108,9 @@ _db(db)
 
 // Set constraints created by parent filters
 void
-TrackView::refresh(const Constraint& constraint)
+TrackView::refresh(Database::SearchFilter& filter)
 {
-
-	SqlQuery sqlQuery;
-
-	sqlQuery.select( "track" );
-	sqlQuery.from().And( FromClause("track"));
-	sqlQuery.where().And(constraint.where);
-
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "TRACK REQ = '" << sqlQuery.get() << "'";
-
-	Wt::Dbo::Query<ResultType> query = _db.getSession().query<ResultType>( sqlQuery.get() );
-
-	query.groupBy("track").orderBy("track.artist_name,track.date,track.release_name,track.disc_number,track.track_number");
-
-	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs()) {
-		LMS_LOG(MOD_UI, SEV_DEBUG) << "Binding value '" << bindArg << "'";
-		query.bind(bindArg);
-	}
-
-	_queryModel.setQuery( query, true );
-
+	Database::Track::updateTracksQueryModel(_db.getSession(), _queryModel, filter);
 }
 
 void
@@ -138,10 +125,7 @@ TrackView::getSelectedTracks(std::vector<Database::Track::id_type>& track_ids)
 		if (!index.isValid())
 			continue;
 
-		const ResultType& result = _queryModel.resultRow( index.row() );
-
-		// Get the track part
-		Wt::Dbo::ptr<Database::Track> track ( result.get<0>() );
+		Database::Track::pointer track = _queryModel.resultRow( index.row() );
 
 		track_ids.push_back(track.id());
 	}
@@ -177,10 +161,7 @@ TrackView::getTracks(std::vector<Database::Track::id_type>& trackIds)
 
 	for (int i = 0; i < _queryModel.rowCount(); ++i)
 	{
-		const ResultType& result = _queryModel.resultRow( i );
-
-		// Get the track part
-		Wt::Dbo::ptr<Database::Track> track ( result.get<0>() );
+		Database::Track::pointer track = _queryModel.resultRow(i);
 
 		trackIds.push_back(track.id());
 	}

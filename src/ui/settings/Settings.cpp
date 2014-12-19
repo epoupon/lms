@@ -51,6 +51,7 @@ _sessionData(sessionData)
 	contents->setStyleClass("contents");
 	contents->setOverflow(WContainerWidget::OverflowHidden);
 
+	// TODO menu style on hover
 	Wt::WMenu *menu = new Wt::WMenu(contents, Wt::Vertical);
 	menu->setStyleClass("nav nav-pills nav-stacked submenu");
 	menu->setWidth(150);

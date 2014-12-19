@@ -89,7 +89,7 @@ InnerJoinClause::And(const InnerJoinClause& clause)
 	if (!_clause.empty())
 		_clause += " ";
 
-	_clause += clause._clause;
+	_clause += "INNER JOIN " + clause._clause;
 
 	return *this;
 }

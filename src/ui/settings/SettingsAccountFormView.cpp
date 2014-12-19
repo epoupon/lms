@@ -19,7 +19,6 @@
 
 #include <vector>
 
-#include <Wt/WStringListModel>
 #include <Wt/WFormModel>
 #include <Wt/WLineEdit>
 #include <Wt/WCheckBox>

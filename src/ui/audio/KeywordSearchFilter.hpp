@@ -34,10 +34,10 @@ class KeywordSearchFilter : public Filter
 		void setText(const std::string& text);
 
 		// Set constraint on this filter
-		void refresh(const Constraint& constraint) {}
+		void refresh(Database::SearchFilter& filter) {}
 
 		// Get constraints created by this filter
-		void getConstraint(Constraint& constraint);
+		void getConstraint(Database::SearchFilter& filter);
 
 	private:
 

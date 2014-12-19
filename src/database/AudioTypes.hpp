@@ -32,6 +32,25 @@
 
 namespace Database {
 
+// Find utilities
+struct SearchFilter
+{
+	enum class Field {
+		Artist,		// artist name
+		Release,	// release name
+		Genre,		// genre name
+		Track,		// track name
+	};
+
+	typedef std::map<Field, std::vector<std::string> > FieldValues;
+
+	// Formulas :
+	// ((like1-1 LIKE ? OR like1-2 LIKE = ? ...) AND (like2-1 LIKE ? OR like2-2 LIKE ? ...)) AND exact1 = ? AND exact2 = ? ...
+
+	std::vector<FieldValues> likeMatches;
+	FieldValues exactMatch;
+};
+
 class Track;
 
 class Genre
@@ -47,7 +66,9 @@ class Genre
 		// Find utility
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getNone(Wt::Dbo::Session& session);
-		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, std::size_t offset = -1, std::size_t size = -1);
+		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, int offset = -1, int size = -1);
+		static Wt::Dbo::Query<boost::tuple<std::string, int> > getAllQuery(Wt::Dbo::Session& session, SearchFilter& filter);
+		static void updateGenreQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<boost::tuple<std::string, int> >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
 
 		// Create utility
 		static pointer create(Wt::Dbo::Session& session, const std::string& name);
@@ -81,25 +102,21 @@ class Track
 		Track() {}
 		Track(const boost::filesystem::path& p);
 
-		// Find utilities
+
+		// Find utility functions
 		static pointer getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
 		static pointer getById(Wt::Dbo::Session& session, id_type id);
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
-		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session,
-				const std::vector<std::string>& artists,	// OR filter if many
-				const std::vector<std::string>& releases,	// OR filter if many
-				const std::vector<std::string>& genres,		// OR filter if many
-				int offset = -1, int size = -1);
+		// Used for remote
+		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
+		static std::vector<std::string> getReleases(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
+		static std::vector<std::string> getArtists(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 
-		static std::vector<std::string> getReleases(Wt::Dbo::Session& session,
-				const std::vector<std::string>& artists,	// OR filter if many
-				const std::vector<std::string>& genres,		// OR filter if many
-				int offset = -1, int size = -1);
-
-		static std::vector<std::string> getArtists(Wt::Dbo::Session& session,
-				const std::vector<std::string>& genres,		// OR filter
-				int offset = -1, int size = -1);
-
+		// Utility fonctions
+		// MVC models for the user interface
+		static void updateTracksQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< pointer >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
+		static void updateReleaseQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<boost::tuple<std::string, int> >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
+		static void updateArtistQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<boost::tuple<std::string, int> >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
 
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p);
@@ -117,6 +134,7 @@ class Track
 		void setOriginalDate(const boost::posix_time::ptime& date)	{ _originalDate = date; }
 		void setGenres(const std::string& genreList)			{ _genreList = genreList; }
 		void setGenres(std::vector<Genre::pointer> genres);
+		void setHasCover(bool hasCover)					{ _hasCover = hasCover; }
 
 		int				getTrackNumber(void) const		{ return _trackNumber; }
 		int				getDiscNumber(void) const		{ return _discNumber; }
@@ -132,6 +150,7 @@ class Track
 
 		boost::posix_time::ptime	getLastWriteTime(void) const		{ return _fileLastWrite; }
 		const std::vector<unsigned char>& getChecksum(void) const		{ return _fileChecksum; }
+		bool				hasCover(void) const			{ return _hasCover; }
 
 		template<class Action>
 			void persist(Action& a)
@@ -148,10 +167,15 @@ class Track
 				Wt::Dbo::field(a, _filePath,		"path");
 				Wt::Dbo::field(a, _fileLastWrite,	"last_write");
 				Wt::Dbo::field(a, _fileChecksum,	"checksum");
+				Wt::Dbo::field(a, _hasCover,		"has_cover");
 				Wt::Dbo::hasMany(a, _genres, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
 			}
 
 	private:
+
+		static Wt::Dbo::Query< pointer > getAllQuery(Wt::Dbo::Session& session, SearchFilter filter);
+		static Wt::Dbo::Query<boost::tuple<std::string, int> > getReleasesQuery(Wt::Dbo::Session& session, SearchFilter filter);
+		static Wt::Dbo::Query<boost::tuple<std::string, int> > getArtistsQuery(Wt::Dbo::Session& session, SearchFilter filter);
 
 		static const std::size_t _maxNameLength = 128;
 
@@ -167,9 +191,11 @@ class Track
 		std::string				_filePath;
 		std::vector<unsigned char>		_fileChecksum;
 		boost::posix_time::ptime		_fileLastWrite;
+		bool					_hasCover;
 
 		Wt::Dbo::collection< Genre::pointer > _genres;	// Tracks that belong to this genre
 };
+
 
 } // namespace database
 

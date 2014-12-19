@@ -269,12 +269,12 @@ class UserFormModel : public Wt::WFormModel
 		void initializeModels()
 		{
 			// AUDIO
-			_audioBitrateModel = new Wt::WStringListModel();
+			_audioBitrateModel = new Wt::WStringListModel(this);
 			BOOST_FOREACH(std::size_t bitrate, Database::User::audioBitrates)
 				_audioBitrateModel->addString( Wt::WString("{1}").arg( bitrate / 1000 ) ); // in kbps
 
 			// VIDEO
-			_videoBitrateModel = new Wt::WStringListModel();
+			_videoBitrateModel = new Wt::WStringListModel(this);
 			BOOST_FOREACH(std::size_t bitrate, Database::User::videoBitrates)
 				_videoBitrateModel->addString( Wt::WString("{1}").arg( bitrate / 1000 ) ); // in kbps
 

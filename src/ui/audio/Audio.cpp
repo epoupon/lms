@@ -29,7 +29,6 @@
 #include "logger/Logger.hpp"
 
 #include "TableFilter.hpp"
-#include "TableFilterGenre.hpp"
 #include "KeywordSearchFilter.hpp"
 
 #include "Audio.hpp"
@@ -49,19 +48,19 @@ _playQueue(nullptr)
 	// Filters
 	Wt::WHBoxLayout *filterLayout = new Wt::WHBoxLayout();
 
-	TableFilterGenre *filterGenre = new TableFilterGenre(_db);
+	TableFilter *filterGenre = new TableFilter(_db, Database::SearchFilter::Field::Genre, { "Genre", "Tracks"} );
 	filterLayout->addWidget(filterGenre);
 	_filterChain.addFilter(filterGenre);
 
-	TableFilter *filterArtist = new TableFilter(_db, "track", "artist_name", "Artist");
+	TableFilter *filterArtist = new TableFilter(_db, Database::SearchFilter::Field::Artist, {"Artist", "Tracks"} );
 	filterLayout->addWidget(filterArtist);
 	_filterChain.addFilter(filterArtist);
 
-	TableFilter *filterRelease = new TableFilter(_db, "track", "release_name", "Release");
+	TableFilter *filterRelease = new TableFilter(_db, Database::SearchFilter::Field::Release, {"Release", "Tracks"});
 	filterLayout->addWidget(filterRelease);
 	_filterChain.addFilter(filterRelease);
 
-	mainLayout->addLayout(filterLayout, 0, 0);
+	mainLayout->addLayout(filterLayout, 0, 1);
 	// ENDOF(Filters)
 
 	// TODO ADD some stats (nb files, total duration, etc.)
@@ -83,7 +82,7 @@ _playQueue(nullptr)
 
 	trackLayout->addLayout(trackControls);
 
-	mainLayout->addLayout(trackLayout, 1, 0);
+	mainLayout->addLayout(trackLayout, 1, 1);
 
 	_filterChain.addFilter(_trackView);
 
@@ -95,6 +94,12 @@ _playQueue(nullptr)
 		Database::User::pointer user = _db.getCurrentUser();
 
 		Wt::WVBoxLayout* playQueueLayout = new Wt::WVBoxLayout();
+		playQueueLayout->setContentsMargins(5,5,5,5);
+
+		_mediaPlayer = new AudioMediaPlayer();
+		playQueueLayout->addWidget(_mediaPlayer);
+
+		playQueueLayout->addWidget( _playQueue, 1);
 
 		Wt::WHBoxLayout* playlistControls = new Wt::WHBoxLayout();
 
@@ -140,17 +145,12 @@ _playQueue(nullptr)
 
 		playQueueLayout->addLayout(playlistControls);
 
-		playQueueLayout->addWidget( _playQueue, 1);
-
-		mainLayout->addLayout(playQueueLayout, 0, 1, 2, 1);
+		mainLayout->addLayout(playQueueLayout, 0, 0, 2, 1);
 	}
-
-	_mediaPlayer = new AudioMediaPlayer();
-	mainLayout->addWidget(_mediaPlayer, 2, 0, 1, 2);
 
 	mainLayout->setRowStretch(1, 1);
 	mainLayout->setRowResizable(0, true, Wt::WLength(200, Wt::WLength::Pixel));
-	mainLayout->setColumnResizable(0, true);
+	mainLayout->setColumnResizable(0, true, Wt::WLength(400, Wt::WLength::Pixel));
 
 	// Double click on track
 	// Set the selected tracks to the play queue

@@ -17,6 +17,10 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/foreach.hpp>
+
 #include "KeywordSearchFilter.hpp"
 
 namespace UserInterface {
@@ -34,15 +38,26 @@ KeywordSearchFilter::setText(const std::string& text)
 
 // Get constraints created by this filter
 void
-KeywordSearchFilter::getConstraint(Constraint& constraint)
+KeywordSearchFilter::getConstraint(Database::SearchFilter& filter)
 {
 	// No active search means no constaint!
 	if (!_lastEmittedText.empty()) {
-		const std::string bindText ("%%" + _lastEmittedText + "%%");
-		constraint.where.And( WhereClause("(track.name like ? or track.release_name like ? or track.artist_name like ? or track.genre_list like ?)").bind(bindText).bind(bindText).bind(bindText).bind(bindText));
-	}
+		std::vector<std::string> values;
+		boost::algorithm::split(values, _lastEmittedText, boost::is_any_of(" "), boost::token_compress_on);
 
-	// else no constraint!
+		// For each part, do a global search on all searchable fields
+		BOOST_FOREACH(std::string value, values)
+		{
+			Database::SearchFilter::FieldValues likeMatch;
+
+			likeMatch[Database::SearchFilter::Field::Artist].push_back(value);
+			likeMatch[Database::SearchFilter::Field::Release].push_back(value);
+			likeMatch[Database::SearchFilter::Field::Genre].push_back(value);
+			likeMatch[Database::SearchFilter::Field::Track].push_back(value);
+
+			filter.likeMatches.push_back(likeMatch);
+		}
+	}
 }
 
 } // namespace UserInterface

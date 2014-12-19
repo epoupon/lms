@@ -99,7 +99,7 @@ class AudioFormModel : public Wt::WFormModel
 
 			Database::User::pointer user = Database::User::getById(_db.getSession(), _userId);
 
-			_bitrateModel = new Wt::WStringListModel();
+			_bitrateModel = new Wt::WStringListModel(this);
 			BOOST_FOREACH(std::size_t bitrate, Database::User::audioBitrates)
 			{
 				if (user && bitrate <= user->getMaxAudioBitrate())

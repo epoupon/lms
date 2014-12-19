@@ -810,6 +810,7 @@ int main()
 		std::vector<TrackInfo> tracks;
 		client.getTracks(tracks);
 
+		std::cout << "Got " << tracks.size() << " tracks!" << std::endl;
 		BOOST_FOREACH(const TrackInfo& track, tracks)
 			std::cout << "Track: '" << track << "'" << std::endl;
 
@@ -820,10 +821,11 @@ int main()
 			// Get the artists for each genre
 			BOOST_FOREACH(const GenreInfo& genre, genres)
 			{
-				std::cout << "Getting artists from genre '" << genre.name << "'" << std::endl;
+				std::cout << "Getting artists from genre '" << genre.name << "'... ";
 				std::vector<ArtistInfo> artists;
 				client.getArtists(artists, std::vector<std::string>(1, genre.name));
 
+				std::cout << "Found " << artists.size() << " artists!" << std::endl;
 				BOOST_FOREACH(const ArtistInfo& artist, artists)
 					std::cout << "Genre '" << genre.name << "' -> Artist: " << artist << std::endl;
 			}
@@ -834,10 +836,11 @@ int main()
 			std::cout << "Getting release for each artist..." << std::endl;
 			BOOST_FOREACH(const ArtistInfo& artist, artists)
 			{
-				std::cout << "Getting release from artist '" << artist.name << "'" << std::endl;
+				std::cout << "Getting release from artist '" << artist.name << "'... ";
 				std::vector<ReleaseInfo> releases;
 				client.getReleases(releases, std::vector<std::string>(1, artist.name) );
 
+				std::cout << "Found " << releases.size() << " releases!" << std::endl;
 				BOOST_FOREACH(const ReleaseInfo& release, releases)
 					std::cout << "Artist '" << artist.name << "' -> Release: '" << release << "'" << std::endl;
 			}
@@ -848,10 +851,11 @@ int main()
 			std::cout << "Getting release for each genre..." << std::endl;
 			BOOST_FOREACH(const GenreInfo& genre, genres)
 			{
-				std::cout << "Getting release from genre '" << genre.name << "'" << std::endl;
+				std::cout << "Getting release from genre '" << genre.name << "'... ";
 				std::vector<ReleaseInfo> releases;
 				client.getReleases(releases, std::vector<std::string>(), std::vector<std::string>(1, genre.name));
 
+				std::cout << "Found " << releases.size() << " releases!" << std::endl;
 				BOOST_FOREACH(const ReleaseInfo& release, releases)
 					std::cout << "Genre '" << genre.name << "' -> Release: '" << release << "'" << std::endl;
 			}

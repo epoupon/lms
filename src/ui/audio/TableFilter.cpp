@@ -19,27 +19,45 @@
 
 #include <boost/foreach.hpp>
 
+#include "database/AudioTypes.hpp"
+
 #include "logger/Logger.hpp"
 
 #include "TableFilter.hpp"
 
 namespace UserInterface {
 
-TableFilter::TableFilter(Database::Handler& db, std::string table, std::string field, const Wt::WString& displayName, Wt::WContainerWidget* parent)
+using namespace Database;
+
+TableFilter::TableFilter(Database::Handler& db, Database::SearchFilter::Field field, std::vector<Wt::WString> columnNames, Wt::WContainerWidget* parent)
 : Wt::WTableView( parent ),
 Filter(),
 _db(db),
-_table(table),
 _field(field)
 {
-	_queryModel.setQuery( _db.getSession().query< ResultType >("select track." + _field + ", COUNT(DISTINCT track.id) from track GROUP BY track." + _field).orderBy("track." + _field));
-	_queryModel.addColumn( "track." + _field, displayName);
-	_queryModel.addColumn( "COUNT(DISTINCT track.id)", "Tracks");
+	SearchFilter filter;
+
+	switch (field)
+	{
+		case Database::SearchFilter::Field::Artist:
+			Track::updateArtistQueryModel(_db.getSession(), _queryModel, filter, columnNames);
+			break;
+		case Database::SearchFilter::Field::Release:
+			Track::updateReleaseQueryModel(_db.getSession(), _queryModel, filter, columnNames);
+			break;
+		case Database::SearchFilter::Field::Genre:
+			Genre::updateGenreQueryModel(_db.getSession(), _queryModel, filter, columnNames);
+			break;
+		default:
+			break;
+	}
 
 	this->setSelectionMode(Wt::ExtendedSelection);
-	this->setSortingEnabled(false);
+	this->setSortingEnabled(true);
 	this->setAlternatingRowColors(true);
 	this->setModel(&_queryModel);
+
+	this->setColumnWidth(1, 50);
 
 	this->selectionChanged().connect(this, &TableFilter::emitUpdate);
 
@@ -66,51 +84,36 @@ _field(field)
 void
 TableFilter::layoutSizeChanged (int width, int height)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "LAYOUT CHANGED!";
-
-	/* TODO
-	std::size_t trackColumnSize = this->columnWidth(1).toPixels() + 30 ;
+	std::size_t trackColumnSize = this->columnWidth(1).toPixels();
 	// Set the remaining size for the name column
-	this->setColumnWidth(0, width - 7 - trackColumnSize);
-	*/
-
+	this->setColumnWidth(0, width - trackColumnSize - (7 * 2) - 2);
 }
 
 // Set constraints on this filter
 void
-TableFilter::refresh(const Constraint& constraint)
+TableFilter::refresh(SearchFilter& filter)
 {
-	SqlQuery sqlQuery;
-
-	sqlQuery.select("track." + _field + ", COUNT(DISTINCT track.id)");
-	sqlQuery.from().And( FromClause("track")) ;
-	sqlQuery.where().And(constraint.where);	// Add constraint made by other filters
-	sqlQuery.groupBy().And( "track." + _field);	// Add constraint made by other filters
-
-	LMS_LOG(MOD_UI, SEV_DEBUG) << _table << ", generated query = '" << sqlQuery.get() << "'";
-
-	Wt::Dbo::Query<ResultType> query = _db.getSession().query<ResultType>( sqlQuery.get() );
-
-	query.orderBy(_table + "." + _field);
-
-	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs()) {
-		LMS_LOG(MOD_UI, SEV_DEBUG) << "Binding value '" << bindArg << "'";
-		query.bind(bindArg);
+	switch (_field)
+	{
+		case Database::SearchFilter::Field::Artist:
+			Track::updateArtistQueryModel(_db.getSession(), _queryModel, filter);
+			break;
+		case Database::SearchFilter::Field::Release:
+			Track::updateReleaseQueryModel(_db.getSession(), _queryModel, filter);
+			break;
+		case Database::SearchFilter::Field::Genre:
+			Genre::updateGenreQueryModel(_db.getSession(), _queryModel, filter);
+			break;
+		default:
+			break;
 	}
-
-	_queryModel.setQuery( query, true );
-
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Finish !";
 }
 
 // Get constraint created by this filter
 void
-TableFilter::getConstraint(Constraint& constraint)
+TableFilter::getConstraint(SearchFilter& filter)
 {
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
-
-	// WHERE statement
-	WhereClause clause;
 
 	BOOST_FOREACH(Wt::WModelIndex index, indexSet) {
 
@@ -119,14 +122,10 @@ TableFilter::getConstraint(Constraint& constraint)
 
 		const ResultType& result = _queryModel.resultRow( index.row() );
 
-		// Get the track part
-		std::string	name(result.get<0>());
+		std::string     name = result.get<0>();
 
-		clause.Or(_table + "." + _field + " = ?").bind(name);
+		filter.exactMatch[_field].push_back(name);
 	}
-
-	// Adding our WHERE clause
-	constraint.where.And( clause );
 }
 
 } // namespace UserInterface

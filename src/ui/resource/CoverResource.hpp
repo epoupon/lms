@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2014 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,47 +17,34 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FILTER_HPP
-#define FILTER_HPP
+#include <boost/foreach.hpp>
+#include <boost/filesystem.hpp>
 
-#include <Wt/WSignal>
+#include <Wt/WResource>
 
 #include "database/AudioTypes.hpp"
 
 namespace UserInterface {
 
-class Filter
+class CoverResource : public Wt::WResource
 {
 	public:
+		CoverResource(const boost::filesystem::path& p,		// track to get cover from
+				std::size_t size,			// size * size pixels
+				Wt::WObject *parent = 0);
+		~CoverResource();
 
-		struct Constraint {
-			std::vector<std::string>	search;
-
-			typedef std::map<std::string,    std::vector<std::string> > ColumnValues;
-			ColumnValues	columnValues;
-		};
-
-		Filter() {}
-		virtual ~Filter() {}
-
-		// Refresh filter using constraints created by parent filters
-		virtual void refresh(Database::SearchFilter& filter) = 0;
-
-		// Update constraints for next filters
-		virtual void getConstraint(Database::SearchFilter& filter) = 0;
-
-		// Emitted when a constraint has changed
-		Wt::Signal<void>& update() { return _update; };
-
-	protected:
-
-		void emitUpdate()	{ _update.emit(); }
+		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
 
 	private:
 
-		Wt::Signal<void> _update;
+		boost::filesystem::path 	_path;
+		std::size_t			_size;
+		std::string			_mimeType;
+
+		std::vector<unsigned char>	_data;
 };
 
-} // namespace UserInterface
 
-#endif
+
+} // namespace UserInterface

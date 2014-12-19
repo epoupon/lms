@@ -38,6 +38,8 @@ class LmsApplication : public Wt::WApplication
 	private:
 
 		void handleAuthEvent(void);
+		void createFirstConnectionUI();
+		void createLmsUI();
 
 		SessionData	_sessionData;
 

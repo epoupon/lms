@@ -46,6 +46,7 @@ class InputFormatContext : public FormatContext
 
 
 		// Get attached pictures
+		std::size_t		getNbPictures(void) const;
 		void			getPictures(std::vector< std::vector<unsigned char> >& pictures) const;
 
 		// Get the streams
