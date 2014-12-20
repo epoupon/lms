@@ -31,6 +31,11 @@
 namespace Av
 {
 
+struct Picture {
+	std::string mimeType;
+	std::vector<unsigned char> data;
+};
+
 class InputFormatContext : public FormatContext
 {
 	public:
@@ -47,7 +52,7 @@ class InputFormatContext : public FormatContext
 
 		// Get attached pictures
 		std::size_t		getNbPictures(void) const;
-		void			getPictures(std::vector< std::vector<unsigned char> >& pictures) const;
+		void			getPictures(std::vector<Picture>& pictures) const;
 
 		// Get the streams
 		std::vector<Stream>	getStreams(void);

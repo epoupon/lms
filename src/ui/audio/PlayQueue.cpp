@@ -26,6 +26,7 @@
 #include <Wt/WItemDelegate>
 #include <Wt/WStandardItem>
 #include <Wt/WFileResource>
+#include <Wt/WTheme>
 
 #include "resource/CoverResource.hpp"
 
@@ -33,32 +34,25 @@
 
 #include "PlayQueue.hpp"
 
-static const int CoverRole = Wt::UserRole + 1;
+static const int NameRole = Wt::UserRole;
 
 namespace {
 
 	void swapRows(Wt::WStandardItemModel *model, int row1, int row2)
 	{
-		LMS_LOG(MOD_UI, SEV_DEBUG) << "Swap called row1 = " << row1 << ", row2 = " << row2 << ", CoverRole = " << CoverRole;
-
 		// Swap data column by column
 		for (int i = 0; i < model->columnCount(); ++i)
 		{
 			Wt::WModelIndex index1 = model->index(row1, i);
 			Wt::WModelIndex index2 = model->index(row2, i);
 
+			// swap data associated with standard roles
 			{
 				auto tmp = model->itemData(index1);			// 1 -> tmp
 				model->setItemData(index1, model->itemData(index2));	// 2 -> 1
 				model->setItemData(index2, tmp);			// tmp-> 2
 			}
-
-			// Workaround, do the same thing for the CoverRole
-			{
-				auto tmp = model->data(index1, CoverRole);
-				model->setData(index1, model->data(index2, CoverRole), CoverRole);
-				model->setData(index2, tmp, CoverRole);
-			}
+			// caution: swap data associated with our custom roles if any!!
 		}
 	}
 }
@@ -68,10 +62,8 @@ namespace UserInterface {
 enum ColumnId
 {
 	COLUMN_ID_TRACK_ID	= 0,
-	COLUMN_ID_POS		= 1,
-	COLUMN_ID_COVER		= 2,
-	COLUMN_ID_NAME		= 3,
-	COLUMN_ID_DURATION	= 4
+	COLUMN_ID_COVER		= 1,
+	COLUMN_ID_NAME		= 2,
 };
 
 static const int trackPosInvalid = -1;
@@ -227,6 +219,12 @@ TrackSelector::setSize(std::size_t size)
 	refreshPositions();
 }
 
+struct Name
+{
+	Wt::WString track;
+	Wt::WString artist;
+};
+
 class PlayQueueItemDelegate : public Wt::WItemDelegate
 {
 	public:
@@ -236,21 +234,30 @@ class PlayQueueItemDelegate : public Wt::WItemDelegate
 		{
 			Wt::WWidget* res;
 
-			Wt::WString path = Wt::asString(index.data(CoverRole));
-			if (!path.empty())
+			if (!index.data(NameRole).empty())
 			{
-				// Create an image for this track
-				Wt::WImage* image = new Wt::WImage( );
-				Wt::WResource* resource;
-				if (path != "none")
-					resource = new CoverResource(boost::filesystem::path(path.toUTF8()), 64, image);
-				else
-					resource = new Wt::WFileResource("image/jpeg", Wt::WApplication::instance()->docRoot() + "/images/unknown-cover.jpg", image);
+				Name name = boost::any_cast<Name>(index.data(NameRole));
 
-				image->setImageLink(Wt::WLink(resource));
+				Wt::WContainerWidget *container = new Wt::WContainerWidget();
+				Wt::WText* track = new Wt::WText(name.track, Wt::PlainText, container);
+				Wt::WText* artist = new Wt::WText(name.artist, Wt::PlainText, container);
 
-				res = image;
-				res->setObjectName("z");
+				artist->setInline(false);
+				track->setInline(false);
+
+				artist->setStyleClass("playqueue-artist");
+				track->setStyleClass("playqueue-track");
+
+				// Apply style if any
+				Wt::WString styleClass = Wt::asString(index.data(Wt::StyleClassRole));
+
+				// Apply selection style if any
+				if (flags & Wt::RenderSelected)
+					styleClass += " " + Wt::WApplication::instance()->theme()->activeClass();
+
+				container->setStyleClass(styleClass);
+
+				res = container;
 			}
 			else
 				res = Wt::WItemDelegate::update(widget, index, flags);
@@ -269,14 +276,12 @@ _db(db),
 _curPlayedTrackPos(trackPosInvalid),
 _trackSelector(new TrackSelector())
 {
-	_model = new Wt::WStandardItemModel(0, 5, this);
+	_model = new Wt::WStandardItemModel(0, 3, this);
 
 	// 0 Column is hidden (track id)
 	_model->setHeaderData(COLUMN_ID_TRACK_ID, Wt::WString("#"));
-	_model->setHeaderData(COLUMN_ID_POS, Wt::WString("#"));
 	_model->setHeaderData(COLUMN_ID_COVER, Wt::WString("Cover"));
 	_model->setHeaderData(COLUMN_ID_NAME, Wt::WString("Track"));
-	_model->setHeaderData(COLUMN_ID_DURATION, Wt::WString("Duration"));
 
 	this->setModel(_model);
 	this->setSelectionMode(Wt::ExtendedSelection);
@@ -284,8 +289,9 @@ _trackSelector(new TrackSelector())
 	this->setAlternatingRowColors(true);
 	this->setRowHeight(64);
 	this->setColumnWidth(COLUMN_ID_COVER, 64);
-	this->setColumnWidth(COLUMN_ID_POS, 50);
-	this->setColumnWidth(COLUMN_ID_DURATION, 75);
+	this->setColumnWidth(COLUMN_ID_NAME, 240);
+
+	this->setLayoutSizeAware(true);
 
 	this->setColumnHidden(COLUMN_ID_TRACK_ID, true);
 
@@ -308,6 +314,15 @@ _trackSelector(new TrackSelector())
 
 	}, std::placeholders::_1, std::placeholders::_2));
 
+	_coverResource = new CoverResource(db, 64);
+}
+
+void
+PlayQueue::layoutSizeChanged (int width, int height)
+{
+	std::size_t coverColumnSize = this->columnWidth(COLUMN_ID_COVER).toPixels();
+	// Set the remaining size for the name column
+	this->setColumnWidth(COLUMN_ID_NAME, width - coverColumnSize - (7 * 2) - 2);
 }
 
 void
@@ -358,10 +373,18 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 			_model->insertRows(dataRow, 1);
 
 			_model->setData(dataRow, COLUMN_ID_TRACK_ID, track.id(), Wt::UserRole);
-			_model->setData(dataRow, COLUMN_ID_POS, dataRow + 1);
-			_model->setData(dataRow, COLUMN_ID_COVER, track->hasCover() ? track->getPath() : "none", CoverRole);
-			_model->setData(dataRow, COLUMN_ID_NAME,  track->getArtistName() + " - " + track->getName());
-			_model->setData(dataRow, COLUMN_ID_DURATION, track->getDuration());
+
+			std::string coverUrl;
+			if (track->hasCover())
+				coverUrl = _coverResource->url() + "&coverid=" + Wt::asString(track.id()).toUTF8();
+			else
+				coverUrl = "images/unknown-cover.jpg";
+			_model->setData(dataRow, COLUMN_ID_COVER, coverUrl, Wt::DecorationRole);
+
+			Name name;
+			name.track = Wt::WString::fromUTF8(track->getName());
+			name.artist = Wt::WString::fromUTF8(track->getArtistName());
+			_model->setData(dataRow, COLUMN_ID_NAME, name, NameRole);
 		}
 	}
 
@@ -453,16 +476,12 @@ PlayQueue::setPlayingTrackPos(int newRowPos)
 	// calling the update method of our custom item delegate gives bad results
 	if (oldRowPos >= 0)
 	{
-		_model->setData(oldRowPos, COLUMN_ID_POS, boost::any(), Wt::StyleClassRole);
 		_model->setData(oldRowPos, COLUMN_ID_NAME, boost::any(), Wt::StyleClassRole);
-		_model->setData(oldRowPos, COLUMN_ID_DURATION, boost::any(), Wt::StyleClassRole);
 	}
 
 	if (newRowPos >= 0)
 	{
-		_model->setData(newRowPos, COLUMN_ID_POS, "playqueue-playing", Wt::StyleClassRole);
 		_model->setData(newRowPos, COLUMN_ID_NAME, "playqueue-playing", Wt::StyleClassRole);
-		_model->setData(newRowPos, COLUMN_ID_DURATION, "playqueue-playing", Wt::StyleClassRole);
 	}
 }
 

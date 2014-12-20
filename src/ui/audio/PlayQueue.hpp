@@ -26,6 +26,8 @@
 #include "database/DatabaseHandler.hpp"
 #include "database/AudioTypes.hpp"
 
+#include "resource/CoverResource.hpp"
+
 namespace UserInterface {
 
 class PlayQueueItemDelegate;
@@ -64,6 +66,8 @@ class PlayQueue : public Wt::WTableView
 
 	private:
 
+		void layoutSizeChanged (int width, int height);
+
 		bool readTrack(int rowId);
 		void setPlayingTrackPos(int newRowPos);
 		void renumber(int firstId, int lastId);
@@ -75,6 +79,8 @@ class PlayQueue : public Wt::WTableView
 		Wt::WStandardItemModel*	_model;
 
 		PlayQueueItemDelegate*	_itemDelegate;
+
+		CoverResource*		_coverResource;
 
 		int				_curPlayedTrackPos;
 		std::unique_ptr<TrackSelector>	_trackSelector;
