@@ -15,7 +15,26 @@ div.contents {
 }
 
 .playqueue-playing {
+	background-color: rgba(202, 167, 66, 1);
+}
+
+.Wt-tableview .playqueue-playing {
+	color: #FFF;
+}
+
+.Wt-tableview .Wt-tv-contents.Wt-striped div.playqueue-playing:nth-child(odd) {
+	background-color: rgba(202, 167, 66, 1);
+}
+
+.playqueue-track {
+	margin-top: 12px;
+	line-height: normal;
 	font-weight: bold;
+}
+
+.playqueue-artist {
+	line-height: normal;
+	font-style: italic;
 }
 
 .mediaplayer {
