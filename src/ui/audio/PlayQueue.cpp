@@ -34,15 +34,12 @@
 
 #include "PlayQueue.hpp"
 
-static const int CoverRole = Wt::UserRole + 1;
-static const int NameRole = Wt::UserRole + 2;
+static const int NameRole = Wt::UserRole;
 
 namespace {
 
 	void swapRows(Wt::WStandardItemModel *model, int row1, int row2)
 	{
-		LMS_LOG(MOD_UI, SEV_DEBUG) << "Swap called row1 = " << row1 << ", row2 = " << row2 << ", CoverRole = " << CoverRole;
-
 		// Swap data column by column
 		for (int i = 0; i < model->columnCount(); ++i)
 		{
@@ -55,15 +52,7 @@ namespace {
 				model->setItemData(index1, model->itemData(index2));	// 2 -> 1
 				model->setItemData(index2, tmp);			// tmp-> 2
 			}
-
-			// swap data associated with our custom roles
-			const std::vector<int>(roles) = {CoverRole, NameRole};
-			BOOST_FOREACH(int role, roles)
-			{
-				auto tmp = model->data(index1, role);
-				model->setData(index1, model->data(index2, role), role);
-				model->setData(index2, tmp, role);
-			}
+			// caution: swap data associated with our custom roles if any!!
 		}
 	}
 }
@@ -245,33 +234,7 @@ class PlayQueueItemDelegate : public Wt::WItemDelegate
 		{
 			Wt::WWidget* res;
 
-			Wt::WString path = Wt::asString(index.data(CoverRole));
-			if (!path.empty())
-			{
-				// Create an image for this track
-				Wt::WImage* image = new Wt::WImage( );
-				Wt::WResource* resource;
-				if (path != "none")
-					resource = new CoverResource(boost::filesystem::path(path.toUTF8()), 64, image);
-				else
-					resource = new Wt::WFileResource("image/jpeg", Wt::WApplication::instance()->docRoot() + "/images/unknown-cover.jpg", image);
-
-				image->setImageLink(Wt::WLink(resource));
-
-				// Apply style if any
-				Wt::WString styleClass = Wt::asString(index.data(Wt::StyleClassRole));
-
-				// Apply selection style if any
-				if (flags & Wt::RenderSelected)
-					styleClass += " " + Wt::WApplication::instance()->theme()->activeClass();
-
-				image->setStyleClass(styleClass);
-
-				res = image;
-				res->setObjectName("z");
-
-			}
-			else if (!index.data(NameRole).empty())
+			if (!index.data(NameRole).empty())
 			{
 				Name name = boost::any_cast<Name>(index.data(NameRole));
 
@@ -351,6 +314,7 @@ _trackSelector(new TrackSelector())
 
 	}, std::placeholders::_1, std::placeholders::_2));
 
+	_coverResource = new CoverResource(db, 64);
 }
 
 void
@@ -409,7 +373,13 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 			_model->insertRows(dataRow, 1);
 
 			_model->setData(dataRow, COLUMN_ID_TRACK_ID, track.id(), Wt::UserRole);
-			_model->setData(dataRow, COLUMN_ID_COVER, track->hasCover() ? track->getPath() : "none", CoverRole);
+
+			std::string coverUrl;
+			if (track->hasCover())
+				coverUrl = _coverResource->url() + "&coverid=" + Wt::asString(track.id()).toUTF8();
+			else
+				coverUrl = "images/unknown-cover.jpg";
+			_model->setData(dataRow, COLUMN_ID_COVER, coverUrl, Wt::DecorationRole);
 
 			Name name;
 			name.track = Wt::WString::fromUTF8(track->getName());

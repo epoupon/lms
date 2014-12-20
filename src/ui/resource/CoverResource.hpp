@@ -17,11 +17,15 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef COVER_RESOURCE_HPP_
+#define COVER_RESOURCE_HPP_
+
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 
 #include <Wt/WResource>
 
+#include "database/DatabaseHandler.hpp"
 #include "database/AudioTypes.hpp"
 
 namespace UserInterface {
@@ -29,8 +33,8 @@ namespace UserInterface {
 class CoverResource : public Wt::WResource
 {
 	public:
-		CoverResource(const boost::filesystem::path& p,		// track to get cover from
-				std::size_t size,			// size * size pixels
+		CoverResource(Database::Handler& db,
+				std::size_t size,		// size * size pixels
 				Wt::WObject *parent = 0);
 		~CoverResource();
 
@@ -38,13 +42,10 @@ class CoverResource : public Wt::WResource
 
 	private:
 
-		boost::filesystem::path 	_path;
+		Database::Handler&		_db;
 		std::size_t			_size;
-		std::string			_mimeType;
-
-		std::vector<unsigned char>	_data;
 };
 
-
-
 } // namespace UserInterface
+
+#endif

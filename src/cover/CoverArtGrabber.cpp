@@ -37,11 +37,11 @@ Grabber::getFromInputFormatContext(const Av::InputFormatContext& input)
 
 	try
 	{
-		std::vector< std::vector<unsigned char> > pictures;
+		std::vector<Av::Picture> pictures;
 		input.getPictures(pictures);
 
-		BOOST_FOREACH(const std::vector<unsigned char>& picture, pictures)
-			res.push_back( CoverArt("application/octet-stream", picture) );
+		BOOST_FOREACH(const Av::Picture& picture, pictures)
+			res.push_back( CoverArt(picture.mimeType, picture.data) );
 
 	}
 	catch(std::exception& e)

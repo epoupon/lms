@@ -19,6 +19,7 @@
 
 #include <boost/foreach.hpp>
 
+#include <Wt/WApplication>
 #include <Wt/Http/Response>
 
 #include "logger/Logger.hpp"
@@ -29,9 +30,9 @@
 
 namespace UserInterface {
 
-CoverResource::CoverResource(const boost::filesystem::path& path, std::size_t size, Wt::WObject *parent)
+CoverResource::CoverResource(Database::Handler& db, std::size_t size, Wt::WObject *parent)
 :  Wt::WResource(parent),
-_path(path),
+_db(db),
 _size(size)
 {
 }
@@ -45,25 +46,50 @@ CoverResource:: ~CoverResource()
 void
 CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
 {
-	if (_data.empty())
+	// Get the id of the track
+	const std::string *trackIdStr = request.getParameter("coverid");
+
+	if (trackIdStr)
 	{
-		std::vector<CoverArt::CoverArt> covers = CoverArt::Grabber::getFromTrack( _path );
+		Database::Track::id_type trackId;
+		{
+			std::istringstream iss(*trackIdStr); iss >> trackId;
+		}
+
+		Wt::Dbo::Transaction transaction(_db.getSession());
+
+		Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+		std::vector<CoverArt::CoverArt> covers = CoverArt::Grabber::getFromTrack(track);
+
+		transaction.commit();
 
 		BOOST_FOREACH(CoverArt::CoverArt& cover, covers)
 		{
-			cover.scale(_size);
-			_data = cover.getData();
-			_mimeType = cover.getMimeType();
-			break;
+			if (cover.scale(_size))
+			{
+				response.setMimeType( cover.getMimeType() );
+
+				BOOST_FOREACH(unsigned char c, cover.getData())
+					response.out().put( c );
+
+				return;
+			}
+			else
+				LMS_LOG(MOD_UI, SEV_DEBUG) << "Resize error for track id = " << trackId;
 		}
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "no valid cover found for track id = " << trackId;
+		{
+			std::ifstream ist(Wt::WApplication::instance()->docRoot() + "/images/unknown-cover.jpg");
 
-		// TODO if not found fallback on an empty image
+			char c;
+			while(ist.get(c))
+				response.out().put( c );
+
+			response.setMimeType("image/jpeg");
+		}
 	}
-
-	response.setMimeType(_mimeType);
-
-	for (unsigned int i = 0; i < _data.size(); ++i)
-	        response.out().put(_data[i]);
+	else
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "no cover id parameter";
 }
 
 

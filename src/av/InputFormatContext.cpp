@@ -101,7 +101,7 @@ InputFormatContext::findStreamInfo(void)
 std::size_t
 InputFormatContext::getDurationSecs() const
 {
-	if (native()->duration != AV_NOPTS_VALUE )
+	if (static_cast<int>(native()->duration) != AV_NOPTS_VALUE )
 		return native()->duration / AV_TIME_BASE;
 	else
 		return 0;	// TODO, do something better?
@@ -128,18 +128,39 @@ InputFormatContext::getNbPictures(void) const
 }
 
 void
-InputFormatContext::getPictures(std::vector< std::vector<unsigned char> >& pictures) const
+InputFormatContext::getPictures(std::vector<Picture>& pictures) const
 {
+	static const std::map<int, std::string> codecMimeMap =
+	{
+		{ AV_CODEC_ID_BMP, "image/x-bmp" },
+		{ AV_CODEC_ID_GIF, "image/gif" },
+		{ AV_CODEC_ID_MJPEG, "image/jpeg" },
+		{ AV_CODEC_ID_PNG, "image/png" },
+		{ AV_CODEC_ID_PNG, "image/x-png" },
+		{ AV_CODEC_ID_PPM, "image/x-portable-pixmap" },
+	};
+
 	for (std::size_t i = 0; i < native()->nb_streams; ++i)
 	{
-		if (native()->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
+		Stream stream(native()->streams[i]);
+
+		if (stream.hasAttachedPic())
 		{
+			Picture picture;
+
+			auto itMime = codecMimeMap.find(stream.getCodecContext().getCodecId());
+			if (itMime != codecMimeMap.end())
+				picture.mimeType = itMime->second;
+			else
+				picture.mimeType = "application/octet-stream";
+
+			LMS_LOG(MOD_AV, SEV_DEBUG) << "MIME set to '" << picture.mimeType << "'" << std::endl;
+
 			AVPacket pkt = native()->streams[i]->attached_pic;
 
-			std::vector<unsigned char> data;
-			std::copy(pkt.data, pkt.data + pkt.size, std::back_inserter(data));
+			std::copy(pkt.data, pkt.data + pkt.size, std::back_inserter(picture.data));
 
-			pictures.push_back( data );
+			pictures.push_back( picture );
 		}
 	}
 }
