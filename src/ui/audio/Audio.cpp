@@ -73,9 +73,11 @@ _playQueue(nullptr)
 	Wt::WHBoxLayout* trackControls = new Wt::WHBoxLayout();
 
 	Wt::WPushButton* playBtn = new Wt::WPushButton("Play");
+	playBtn->setStyleClass("btn-sm");
 	trackControls->addWidget(playBtn);
 
 	Wt::WPushButton* addBtn = new Wt::WPushButton("Add");
+	addBtn->setStyleClass("btn-sm");
 	trackControls->addWidget(addBtn);
 	trackControls->addWidget(new Wt::WText("Total duration: "), 1);
 
@@ -93,8 +95,10 @@ _playQueue(nullptr)
 		Wt::Dbo::Transaction transaction(_db.getSession());
 		Database::User::pointer user = _db.getCurrentUser();
 
+		Wt::WContainerWidget* playQueueContainer = new Wt::WContainerWidget();
+		playQueueContainer->setStyleClass("playqueue");
 		Wt::WVBoxLayout* playQueueLayout = new Wt::WVBoxLayout();
-		playQueueLayout->setContentsMargins(5,5,5,5);
+		playQueueContainer->setLayout(playQueueLayout);
 
 		_mediaPlayer = new AudioMediaPlayer();
 		playQueueLayout->addWidget(_mediaPlayer);
@@ -104,15 +108,21 @@ _playQueue(nullptr)
 		Wt::WHBoxLayout* playlistControls = new Wt::WHBoxLayout();
 
 		Wt::WPushButton *saveBtn = new Wt::WPushButton("Save");
+		saveBtn->setStyleClass("btn-sm");
+
 		playlistControls->addWidget(saveBtn);
 		Wt::WPushButton *loadBtn = new Wt::WPushButton("Load");
+		loadBtn->setStyleClass("btn-sm");
 		playlistControls->addWidget(loadBtn);
 
 		Wt::WPushButton *upBtn = new Wt::WPushButton("UP");
+		upBtn->setStyleClass("btn-sm");
 		playlistControls->addWidget(upBtn);
 		Wt::WPushButton *downBtn = new Wt::WPushButton("DO");
+		downBtn->setStyleClass("btn-sm");
 		playlistControls->addWidget(downBtn);
 		Wt::WPushButton *delBtn = new Wt::WPushButton("DEL");
+		delBtn->setStyleClass("btn-sm");
 		playlistControls->addWidget(delBtn);
 
 		delBtn->clicked().connect(_playQueue, &PlayQueue::delSelected);
@@ -145,7 +155,7 @@ _playQueue(nullptr)
 
 		playQueueLayout->addLayout(playlistControls);
 
-		mainLayout->addLayout(playQueueLayout, 0, 0, 2, 1);
+		mainLayout->addWidget(playQueueContainer, 0, 0, 2, 1);
 	}
 
 	mainLayout->setRowStretch(1, 1);
