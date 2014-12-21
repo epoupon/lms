@@ -44,6 +44,7 @@ _playQueue(nullptr)
 {
 	Wt::WGridLayout *mainLayout = new Wt::WGridLayout();
 	this->setLayout(mainLayout);
+	mainLayout->setContentsMargins(9,4,9,9);
 
 	// Filters
 	Wt::WHBoxLayout *filterLayout = new Wt::WHBoxLayout();
@@ -122,14 +123,16 @@ _playQueue(nullptr)
 		downBtn->setStyleClass("btn-sm");
 		playlistControls->addWidget(downBtn);
 		Wt::WPushButton *delBtn = new Wt::WPushButton("DEL");
-		delBtn->setStyleClass("btn-sm");
+		delBtn->setStyleClass("btn-sm btn-warning");
 		playlistControls->addWidget(delBtn);
+		Wt::WPushButton *clearBtn = new Wt::WPushButton("CLR");
+		clearBtn->setStyleClass("btn-sm btn-danger");
+		playlistControls->addWidget(clearBtn);
 
 		delBtn->clicked().connect(_playQueue, &PlayQueue::delSelected);
 		upBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedUp);
 		downBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedDown);
-
-		playlistControls->addWidget(new Wt::WText("Duration:"), 1);
+		clearBtn->clicked().connect(_playQueue, &PlayQueue::delAll);
 
 		// Load menu
 		{
@@ -160,7 +163,7 @@ _playQueue(nullptr)
 
 	mainLayout->setRowStretch(1, 1);
 	mainLayout->setRowResizable(0, true, Wt::WLength(200, Wt::WLength::Pixel));
-	mainLayout->setColumnResizable(0, true, Wt::WLength(400, Wt::WLength::Pixel));
+	mainLayout->setColumnResizable(0, true, Wt::WLength(350, Wt::WLength::Pixel));
 
 	// Double click on track
 	// Set the selected tracks to the play queue

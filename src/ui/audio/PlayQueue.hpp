@@ -53,6 +53,7 @@ class PlayQueue : public Wt::WTableView
 
 		// List manipulations
 		void delSelected(void);
+		void delAll(void);
 		void moveSelectedUp(void);
 		void moveSelectedDown(void);
 

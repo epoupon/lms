@@ -502,7 +502,13 @@ PlayQueue::delSelected(void)
 	_trackSelector->setSize(_model->rowCount());
 
 	renumber(minId, _model->rowCount() - 1);
+}
 
+void
+PlayQueue::delAll(void)
+{
+	_model->removeRows(0, _model->rowCount());
+	_trackSelector->setSize(0);
 }
 
 void
