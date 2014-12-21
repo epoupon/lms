@@ -15,7 +15,7 @@ div.contents {
 }
 
 .playqueue {
-	background-color: #BBB;
+	background-color: #EEE;
 	border-radius: 10px;
 }
 
@@ -43,7 +43,11 @@ div.contents {
 }
 
 .mediaplayer {
-	background-color: #ccc;
+	background-color: #CCC;
 	border-radius: 10px;
+}
+
+.mediaplayer-controls {
+	font-weight: bold;
 }
 

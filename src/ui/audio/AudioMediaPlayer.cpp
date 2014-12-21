@@ -33,40 +33,47 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	_mediaResource(nullptr)
 {
 	this->setStyleClass("mediaplayer");
-	this->setHeight(100);
+	this->setHeight(90);
 
-	Wt::WContainerWidget *sliderContainer = new Wt::WContainerWidget(this);
+	Wt::WVBoxLayout* mainLayout = new Wt::WVBoxLayout();
+	this->setLayout(mainLayout);
+
 	Wt::WHBoxLayout *sliderLayout = new Wt::WHBoxLayout();
-	sliderContainer->setLayout(sliderLayout);
+	mainLayout->addLayout(sliderLayout);
 
 	sliderLayout->addWidget(_curTime = new Wt::WText("00:00:00"));
 	_curTime->setLineHeight(30);
 	sliderLayout->addWidget(_timeSlider = new Wt::WSlider( ), 1);
-	_timeSlider->setHeight(30);
 	sliderLayout->addWidget(_duration = new Wt::WText("00:00:00"));
 	_duration->setLineHeight(30);
 
-	Wt::WContainerWidget *controlsContainer = new Wt::WContainerWidget(this);
 	Wt::WHBoxLayout *controlsLayout = new Wt::WHBoxLayout();
-	controlsContainer->setLayout(controlsLayout);
+
+	mainLayout->addLayout(controlsLayout);
 
 	Wt::WContainerWidget *btnContainer = new Wt::WContainerWidget();
+	// Do not allow button to wrap
+	btnContainer->setMinimumSize(155, Wt::WLength::Auto);
 
 	Wt::WTemplate *t = new Wt::WTemplate(Wt::WString::tr("mediaplayer-controls"), btnContainer);
 
 	Wt::WPushButton *prevBtn = new Wt::WPushButton("<<");
 	t->bindWidget("prev", prevBtn);
+	prevBtn->setStyleClass("mediaplayer-controls");
 
 	_playBtn = new Wt::WPushButton("Play");
 	t->bindWidget("play", _playBtn);
 	_playBtn->setWidth(70);
+	_playBtn->setStyleClass("mediaplayer-controls");
 
 	_pauseBtn = new Wt::WPushButton("Pause");
 	t->bindWidget("pause", _pauseBtn);
 	_pauseBtn->setWidth(70);
+	_pauseBtn->setStyleClass("mediaplayer-controls");
 
 	Wt::WPushButton *nextBtn = new Wt::WPushButton(">>");
 	t->bindWidget("next", nextBtn);
+	nextBtn->setStyleClass("mediaplayer-controls");
 
 	controlsLayout->addWidget(btnContainer);
 
@@ -74,28 +81,23 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	_volumeSlider->setRange(0,100);
 	_volumeSlider->setWidth(60);
 	_volumeSlider->setMinimumSize(60, Wt::WLength::Auto);
-	_volumeSlider->setHeight(30);
-	controlsLayout->addWidget(_volumeSlider);
+	controlsLayout->addWidget(_volumeSlider, 1);
 
-/*	Wt::WText* name = new Wt::WText("My track name");
-	controlsLayout->addWidget(name, 1);*/
+	Wt::WPushButton *loop = new Wt::WPushButton("Loop");
+	loop->setCheckable(true);
+	loop->setStyleClass("btn-xs");
+	loop->checked().connect(std::bind([=] () { _loop.emit( true ); }));
+	loop->unChecked().connect(std::bind([=] () { _loop.emit( false ); }));
+	controlsLayout->addWidget(loop);
 
-	   Wt::WCheckBox *loop = new Wt::WCheckBox("Loop", controlsContainer);
-	   loop->changed().connect(std::bind([=] ()
-	   {
-	   _loop.emit( loop->checkState() == Wt::Checked);
-	   }));
+	Wt::WPushButton *shuffle = new Wt::WPushButton("Shuffle");
+	shuffle->setCheckable(true);
+	shuffle->setStyleClass("btn-xs");
+	shuffle->checked().connect(std::bind([=] () { _shuffle.emit( true ); }));
+	shuffle->unChecked().connect(std::bind([=] () { _shuffle.emit( false );}));
+	controlsLayout->addWidget(shuffle);
 
-	   Wt::WCheckBox *shuffle = new Wt::WCheckBox("Shuffle", controlsContainer);
-	   shuffle->changed().connect(std::bind([=] ()
-	   {
-	   _shuffle.emit( shuffle->checkState() == Wt::Checked);
-	   }));
-
-	   controlsLayout->addWidget(loop);
-	   controlsLayout->addWidget(shuffle);
-
-	_mediaPlayer = new Wt::WMediaPlayer( Wt::WMediaPlayer::Audio, this );
+	_mediaPlayer = new Wt::WMediaPlayer( Wt::WMediaPlayer::Audio, btnContainer );
 	_mediaPlayer->addSource( Wt::WMediaPlayer::OGA, "" );
 	_mediaPlayer->ended().connect(this, &AudioMediaPlayer::handleTrackEnded);
 
@@ -119,7 +121,6 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 				_playPrevious.emit();
 				}));
 	   _timeSlider->valueChanged().connect(this, &AudioMediaPlayer::handlePlayOffset);
-//	_timeSlider->sliderMoved().connect(this, &AudioMediaPlayer::handleSliderMoved);
 	_timeSlider->setDisabled(true);
 
 	_volumeSlider->sliderMoved().connect(this, &AudioMediaPlayer::handleVolumeSliderMoved);
