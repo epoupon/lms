@@ -318,13 +318,6 @@
 	</div>
 </message>
 
-<message id="mediaplayer-loopshuffle">
-	<div class="btn-group" role="group" aria-label="...">
-		${loop}
-		${shuffle}
-	</div>
-</message>
-
 </messages>
 
 
