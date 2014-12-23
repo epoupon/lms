@@ -29,11 +29,10 @@
 
 namespace UserInterface {
 
-class TableFilter : public Wt::WTableView, public Filter
+class TableFilterGenre : public Wt::WTableView, public Filter
 {
-
 	public:
-		TableFilter(Database::Handler& db, Database::SearchFilter::Field field, std::vector<Wt::WString> displayName, Wt::WContainerWidget* parent = 0);
+		TableFilterGenre(Database::Handler& db, Wt::WContainerWidget* parent = 0);
 
 		// Set constraints on this filter
 		void refresh(Database::SearchFilter& filter);
@@ -52,13 +51,65 @@ class TableFilter : public Wt::WTableView, public Filter
 		SigDoubleClicked			_sigDoubleClicked;
 
 		Database::Handler&			_db;
-		Database::SearchFilter::Field		_field;
 
 		// Name, track count
-		typedef boost::tuple<std::string, int>  ResultType;
-		Wt::Dbo::QueryModel< ResultType >	_queryModel;
-
+		Wt::Dbo::QueryModel<Database::Genre::GenreResult>	_queryModel;
 };
+
+class TableFilterArtist : public Wt::WTableView, public Filter
+{
+	public:
+		TableFilterArtist(Database::Handler& db, Wt::WContainerWidget* parent = 0);
+
+		// Set constraints on this filter
+		void refresh(Database::SearchFilter& filter);
+
+		// Get constraints created by this filter
+		void getConstraint(Database::SearchFilter& filter);
+
+		void layoutSizeChanged (int width, int height);
+
+		typedef Wt::Signal<void> SigDoubleClicked;
+
+		SigDoubleClicked&	sigDoubleClicked() { return _sigDoubleClicked; }
+
+	protected:
+
+		SigDoubleClicked			_sigDoubleClicked;
+
+		Database::Handler&			_db;
+
+		// Name, track count
+		Wt::Dbo::QueryModel<Database::Track::ArtistResult>	_queryModel;
+};
+
+class TableFilterRelease : public Wt::WTableView, public Filter
+{
+	public:
+		TableFilterRelease(Database::Handler& db, Wt::WContainerWidget* parent = 0);
+
+		// Set constraints on this filter
+		void refresh(Database::SearchFilter& filter);
+
+		// Get constraints created by this filter
+		void getConstraint(Database::SearchFilter& filter);
+
+		void layoutSizeChanged (int width, int height);
+
+		typedef Wt::Signal<void> SigDoubleClicked;
+
+		SigDoubleClicked&	sigDoubleClicked() { return _sigDoubleClicked; }
+
+	protected:
+
+		SigDoubleClicked			_sigDoubleClicked;
+
+		Database::Handler&			_db;
+
+		// Name, track count
+		Wt::Dbo::QueryModel<Database::Track::ReleaseResult>	_queryModel;
+};
+
 
 } // namespace UserInterface
 

@@ -200,13 +200,13 @@ Track::getAll(Wt::Dbo::Session& session, SearchFilter filter, int offset, int si
 	return getAllQuery(session, filter).limit(size).offset(offset);
 }
 
-Wt::Dbo::Query< boost::tuple<std::string, int> >
+Wt::Dbo::Query<Track::ReleaseResult>
 Track::getReleasesQuery(Wt::Dbo::Session& session, SearchFilter filter)
 {
 	SqlQuery sqlQuery = generatePartialQuery(filter);
 
-	Wt::Dbo::Query<boost::tuple<std::string, int> > query
-		= session.query<boost::tuple<std::string, int> >("SELECT t.release_name, COUNT(DISTINCT t.id) FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).groupBy("t.release_name").orderBy("t.release_name");
+	Wt::Dbo::Query<ReleaseResult> query
+		= session.query<ReleaseResult>("SELECT t.release_name, t.date, COUNT(DISTINCT t.id) FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).groupBy("t.release_name").orderBy("t.release_name");
 
 	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
@@ -214,19 +214,52 @@ Track::getReleasesQuery(Wt::Dbo::Session& session, SearchFilter filter)
 	return query;
 }
 
-Wt::Dbo::Query< boost::tuple<std::string, int> >
+void
+Track::updateReleaseQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<ReleaseResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
+{
+	Wt::Dbo::Query<ReleaseResult> query = getReleasesQuery(session, filter);
+
+	model.setQuery(query, columnNames.empty() ? true : false);
+
+	// TODO do something better
+	if (columnNames.size() == 3)
+	{
+		model.addColumn( "t.release_name", columnNames[0]);
+		model.addColumn( "t.date", columnNames[1]);
+		model.addColumn( "COUNT(DISTINCT t.id)", columnNames[2] );
+	}
+}
+
+Wt::Dbo::Query<Track::ArtistResult>
 Track::getArtistsQuery(Wt::Dbo::Session& session, SearchFilter filter)
 {
 	SqlQuery sqlQuery = generatePartialQuery(filter);
 
-	Wt::Dbo::Query<boost::tuple<std::string, int> > query
-		= session.query<boost::tuple<std::string, int> >( "SELECT t.artist_name, COUNT(DISTINCT t.id) FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).groupBy("t.artist_name").orderBy("t.artist_name");
+	Wt::Dbo::Query<ArtistResult> query
+		= session.query<ArtistResult>( "SELECT t.artist_name, COUNT(DISTINCT t.release_name), COUNT(DISTINCT t.id) FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).groupBy("t.artist_name").orderBy("t.artist_name");
 
 	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
 
 	return query;
 }
+
+void
+Track::updateArtistQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<ArtistResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
+{
+	Wt::Dbo::Query<ArtistResult> query = getArtistsQuery(session, filter);
+
+	model.setQuery(query, columnNames.empty() ? true : false);
+
+	// TODO do something better
+	if (columnNames.size() == 3)
+	{
+		model.addColumn( "t.artist_name", columnNames.at(0));
+		model.addColumn( "COUNT(DISTINCT t.release_name)", columnNames.at(1) );
+		model.addColumn( "COUNT(DISTINCT t.id)", columnNames.at(2) );
+	}
+}
+
 
 void
 Track::updateTracksQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< pointer >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
@@ -248,36 +281,6 @@ Track::updateTracksQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< po
 		model.addColumn( "t.genre_list", columnNames[8] );
 	}
 
-}
-
-void
-Track::updateReleaseQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<boost::tuple<std::string, int> >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
-{
-	Wt::Dbo::Query<  boost::tuple<std::string, int> > query = getReleasesQuery(session, filter);
-
-	model.setQuery(query, columnNames.empty() ? true : false);
-
-	// TODO do something better
-	if (columnNames.size() == 2)
-	{
-		model.addColumn( "t.release_name", columnNames[0]);
-		model.addColumn( "COUNT(DISTINCT t.id)" );
-	}
-}
-
-void
-Track::updateArtistQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<boost::tuple<std::string, int> >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
-{
-	Wt::Dbo::Query<  boost::tuple<std::string, int> > query = getArtistsQuery(session, filter);
-
-	model.setQuery(query, columnNames.empty() ? true : false);
-
-	// TODO do something better
-	if (columnNames.size() == 2)
-	{
-		model.addColumn( "t.artist_name", columnNames[0]);
-		model.addColumn( "COUNT(DISTINCT t.id)" );
-	}
 }
 
 std::vector<std::string>
@@ -366,13 +369,13 @@ Genre::getAll(Wt::Dbo::Session& session, int offset, int size)
 	return session.find<Genre>().offset(offset).limit(size).orderBy("name");
 }
 
-Wt::Dbo::Query<boost::tuple<std::string, int> >
+Wt::Dbo::Query<Genre::GenreResult>
 Genre::getAllQuery(Wt::Dbo::Session& session, SearchFilter& filter)
 {
 	SqlQuery sqlQuery = generatePartialQuery(filter, true);
 
-	Wt::Dbo::Query<boost::tuple<std::string, int> > query
-		= session.query<boost::tuple<std::string, int> >( "SELECT g.name, COUNT(DISTINCT t.id) FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).groupBy("g.name").orderBy("g.name");
+	Wt::Dbo::Query<Genre::GenreResult> query
+		= session.query<Genre::GenreResult>( "SELECT g.name, COUNT(DISTINCT t.id) FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).groupBy("g.name").orderBy("g.name");
 
 	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
@@ -381,9 +384,9 @@ Genre::getAllQuery(Wt::Dbo::Session& session, SearchFilter& filter)
 }
 
 void
-Genre::updateGenreQueryModel(Wt::Dbo::Session& session,  Wt::Dbo::QueryModel< boost::tuple<std::string, int> >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
+Genre::updateGenreQueryModel(Wt::Dbo::Session& session,  Wt::Dbo::QueryModel<Genre::GenreResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
 {
-	Wt::Dbo::Query<  boost::tuple<std::string, int> > query = getAllQuery(session, filter);
+	Wt::Dbo::Query<Genre::GenreResult> query = getAllQuery(session, filter);
 	model.setQuery(query, columnNames.empty() ? true : false);
 
 	// TODO do something better

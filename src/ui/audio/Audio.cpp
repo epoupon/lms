@@ -49,15 +49,15 @@ _playQueue(nullptr)
 	// Filters
 	Wt::WHBoxLayout *filterLayout = new Wt::WHBoxLayout();
 
-	TableFilter *filterGenre = new TableFilter(_db, Database::SearchFilter::Field::Genre, { "Genre", "Tracks"} );
+	TableFilterGenre *filterGenre = new TableFilterGenre(_db);
 	filterLayout->addWidget(filterGenre);
 	_filterChain.addFilter(filterGenre);
 
-	TableFilter *filterArtist = new TableFilter(_db, Database::SearchFilter::Field::Artist, {"Artist", "Tracks"} );
+	TableFilterArtist *filterArtist = new TableFilterArtist(_db);
 	filterLayout->addWidget(filterArtist);
 	_filterChain.addFilter(filterArtist);
 
-	TableFilter *filterRelease = new TableFilter(_db, Database::SearchFilter::Field::Release, {"Release", "Tracks"});
+	TableFilterRelease *filterRelease = new TableFilterRelease(_db);
 	filterLayout->addWidget(filterRelease);
 	_filterChain.addFilter(filterRelease);
 

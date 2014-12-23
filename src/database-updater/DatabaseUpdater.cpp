@@ -296,9 +296,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 			return;
 		}
 		if (items.find(MetaData::Type::Duration) == items.end()
-		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]).total_seconds() == 0)
+		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]).total_seconds() <= 0)
 		{
-			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Skipped '" << file << "' (no duration or duration 0)";
+			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Skipped '" << file << "' (no duration or duration <= 0)";
 
 			// If Track exists here, delete it!
 			if (track) {
@@ -361,6 +361,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		track.modify()->setLastWriteTime(lastWriteTime);
 		track.modify()->setName(title);
+		track.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]) );
 
 		{
 			std::string trackGenreList;
@@ -386,9 +387,6 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		if (items.find(MetaData::Type::DiscNumber) != items.end())
 			track.modify()->setDiscNumber( boost::any_cast<std::size_t>(items[MetaData::Type::DiscNumber]) );
-
-		if (items.find(MetaData::Type::Duration) != items.end())
-			track.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]) );
 
 		if (items.find(MetaData::Type::Date) != items.end())
 			track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>(items[MetaData::Type::Date]) );

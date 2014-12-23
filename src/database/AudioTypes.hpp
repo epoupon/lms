@@ -67,8 +67,9 @@ class Genre
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getNone(Wt::Dbo::Session& session);
 		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session, int offset = -1, int size = -1);
-		static Wt::Dbo::Query<boost::tuple<std::string, int> > getAllQuery(Wt::Dbo::Session& session, SearchFilter& filter);
-		static void updateGenreQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<boost::tuple<std::string, int> >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
+		typedef boost::tuple<std::string, int> GenreResult;
+		static Wt::Dbo::Query<GenreResult> getAllQuery(Wt::Dbo::Session& session, SearchFilter& filter);
+		static void updateGenreQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<GenreResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
 
 		// Create utility
 		static pointer create(Wt::Dbo::Session& session, const std::string& name);
@@ -115,8 +116,12 @@ class Track
 		// Utility fonctions
 		// MVC models for the user interface
 		static void updateTracksQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< pointer >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
-		static void updateReleaseQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<boost::tuple<std::string, int> >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
-		static void updateArtistQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<boost::tuple<std::string, int> >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
+		// Release name, year, track counts
+		typedef boost::tuple<std::string, boost::posix_time::ptime, int> ReleaseResult;
+		static void updateReleaseQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<ReleaseResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
+		// Artist name, albums, tracks
+		typedef boost::tuple<std::string, int, int> ArtistResult;
+		static void updateArtistQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<ArtistResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
 
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p);
@@ -174,8 +179,8 @@ class Track
 	private:
 
 		static Wt::Dbo::Query< pointer > getAllQuery(Wt::Dbo::Session& session, SearchFilter filter);
-		static Wt::Dbo::Query<boost::tuple<std::string, int> > getReleasesQuery(Wt::Dbo::Session& session, SearchFilter filter);
-		static Wt::Dbo::Query<boost::tuple<std::string, int> > getArtistsQuery(Wt::Dbo::Session& session, SearchFilter filter);
+		static Wt::Dbo::Query<ReleaseResult> getReleasesQuery(Wt::Dbo::Session& session, SearchFilter filter);
+		static Wt::Dbo::Query<ArtistResult> getArtistsQuery(Wt::Dbo::Session& session, SearchFilter filter);
 
 		static const std::size_t _maxNameLength = 128;
 
