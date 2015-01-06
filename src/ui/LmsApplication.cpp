@@ -30,16 +30,15 @@
 #include <Wt/WLineEdit>
 #include <Wt/Auth/Identity>
 
-#include "settings/Settings.hpp"
-
-#include "auth/LmsAuth.hpp"
-
 #include "logger/Logger.hpp"
 
+#include "settings/Settings.hpp"
 #include "settings/SettingsFirstConnectionFormView.hpp"
 
+#include "auth/LmsAuth.hpp"
 #include "audio/Audio.hpp"
 #include "video/VideoWidget.hpp"
+#include "common/LineEdit.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -133,6 +132,8 @@ LmsApplication::handleAuthEvent(void)
 
 		LMS_LOG(MOD_UI, SEV_NOTICE) << "User '" << user.identity(Wt::Auth::Identity::LoginName) << "' logged in";
 
+		this->root()->setOverflow(Wt::WContainerWidget::OverflowHidden);
+
 		// Create a Vertical layout: top is the nav bar, bottom is the contents
 		Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
 		// Create a navigation bar with a link to a web page.
@@ -142,6 +143,8 @@ LmsApplication::handleAuthEvent(void)
 		navigation->addStyleClass("main-nav");
 
 		Wt::WStackedWidget *contentsStack = new Wt::WStackedWidget();
+
+		contentsStack->setOverflow(Wt::WContainerWidget::OverflowAuto);
 
 		// Setup a Left-aligned menu.
 		Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack);
@@ -173,10 +176,10 @@ LmsApplication::handleAuthEvent(void)
 		}, std::placeholders::_1));
 
 		// Add a Search control.
-		Wt::WLineEdit *searchEdit = new Wt::WLineEdit();
+		LineEdit *searchEdit = new LineEdit(500);
 		searchEdit->setEmptyText("Search...");
 
-		searchEdit->enterPressed().connect(std::bind([=] ()
+		searchEdit->timedChanged().connect(std::bind([=] ()
 		{
 			// TODO: check which view is activated and search into it
 			audio->search(searchEdit->text().toUTF8());

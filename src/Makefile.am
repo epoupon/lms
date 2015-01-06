@@ -47,6 +47,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/audio/TableFilter.cpp			\
 	$(srcdir)/ui/audio/TrackView.cpp			\
 	$(srcdir)/ui/common/DirectoryValidator.cpp		\
+	$(srcdir)/ui/common/LineEdit.cpp			\
 	$(srcdir)/ui/common/SessionData.cpp			\
 	$(srcdir)/ui/resource/AvConvTranscodeStreamResource.cpp	\
 	$(srcdir)/ui/resource/CoverResource.cpp			\
