@@ -20,15 +20,19 @@ div.contents {
 }
 
 .playqueue-playing {
-	background-color: rgba(202, 167, 66, 1);
+	background-color: #4A42CA;
 }
 
 .Wt-tableview .playqueue-playing {
 	color: #FFF;
 }
 
+.Wt-tableview div.playqueue-playing {
+	background-color: #4A42CA;
+}
+
 .Wt-tableview .Wt-tv-contents.Wt-striped div.playqueue-playing:nth-child(odd) {
-	background-color: rgba(202, 167, 66, 1);
+	background-color: #4A42CA;
 }
 
 .playqueue-track {

@@ -19,6 +19,7 @@
 - count scan import errors
 
 [Metadata]
+- OGG metadata -> properly handle metadata nested in the audio stream
 
 [Transcode]
 - some early end of playback spotted on flac files
@@ -41,20 +42,16 @@
 	- Style eveything nicely...
 	- MediaPlayer: move slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478)
 	- TrackView : handle duration > 1 hour
-	- Filter by Genre: use id and not a "like" string search (selecting "Pop" currently shows "JPop" songs)
-	- OGG metadata -> properly handle metadata nested in the audio stream
-	- Filters: use directly the id as constraint, instead of the name?
-	- Implement a playlist:
-		- Drag and drop all objets from the views (genre, artist, release, track) in the playlist?
-		- Add 'play/add last' button on mouse hover?
-		- Save/Load playlists?
+	- TrackView : Reselect the current selected item when displaying the updated search results
+	- Add Year column in the release filter. Add covers too?
+	- Save/Load playlists
 
 	[Video]
-	- View the Videos in a WtTableView ?
-	- Use Groups/SubGroups to organize videos (WTreeView?)
+	- implement a decent mediaplayer
+	- remove codec choice from parameters
 
 	[Layout]
-	- Make it mobile browser compatible
+	- Make a dedicated audio layout in mobile environment (keep the same layout for videos)
 	- Style eveything nicely...
 	- Handle internal path
 

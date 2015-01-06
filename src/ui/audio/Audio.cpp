@@ -44,19 +44,20 @@ _playQueue(nullptr)
 {
 	Wt::WGridLayout *mainLayout = new Wt::WGridLayout();
 	this->setLayout(mainLayout);
+	mainLayout->setContentsMargins(9,4,9,9);
 
 	// Filters
 	Wt::WHBoxLayout *filterLayout = new Wt::WHBoxLayout();
 
-	TableFilter *filterGenre = new TableFilter(_db, Database::SearchFilter::Field::Genre, { "Genre", "Tracks"} );
+	TableFilterGenre *filterGenre = new TableFilterGenre(_db);
 	filterLayout->addWidget(filterGenre);
 	_filterChain.addFilter(filterGenre);
 
-	TableFilter *filterArtist = new TableFilter(_db, Database::SearchFilter::Field::Artist, {"Artist", "Tracks"} );
+	TableFilterArtist *filterArtist = new TableFilterArtist(_db);
 	filterLayout->addWidget(filterArtist);
 	_filterChain.addFilter(filterArtist);
 
-	TableFilter *filterRelease = new TableFilter(_db, Database::SearchFilter::Field::Release, {"Release", "Tracks"});
+	TableFilterRelease *filterRelease = new TableFilterRelease(_db);
 	filterLayout->addWidget(filterRelease);
 	_filterChain.addFilter(filterRelease);
 
@@ -122,14 +123,16 @@ _playQueue(nullptr)
 		downBtn->setStyleClass("btn-sm");
 		playlistControls->addWidget(downBtn);
 		Wt::WPushButton *delBtn = new Wt::WPushButton("DEL");
-		delBtn->setStyleClass("btn-sm");
+		delBtn->setStyleClass("btn-sm btn-warning");
 		playlistControls->addWidget(delBtn);
+		Wt::WPushButton *clearBtn = new Wt::WPushButton("CLR");
+		clearBtn->setStyleClass("btn-sm btn-danger");
+		playlistControls->addWidget(clearBtn);
 
 		delBtn->clicked().connect(_playQueue, &PlayQueue::delSelected);
 		upBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedUp);
 		downBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedDown);
-
-		playlistControls->addWidget(new Wt::WText("Duration:"), 1);
+		clearBtn->clicked().connect(_playQueue, &PlayQueue::delAll);
 
 		// Load menu
 		{
@@ -159,7 +162,7 @@ _playQueue(nullptr)
 	}
 
 	mainLayout->setRowStretch(1, 1);
-	mainLayout->setRowResizable(0, true, Wt::WLength(200, Wt::WLength::Pixel));
+	mainLayout->setRowResizable(0, true, Wt::WLength(250, Wt::WLength::Pixel));
 	mainLayout->setColumnResizable(0, true, Wt::WLength(400, Wt::WLength::Pixel));
 
 	// Double click on track

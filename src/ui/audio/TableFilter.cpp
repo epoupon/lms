@@ -19,6 +19,8 @@
 
 #include <boost/foreach.hpp>
 
+#include <Wt/WItemDelegate>
+
 #include "database/AudioTypes.hpp"
 
 #include "logger/Logger.hpp"
@@ -29,37 +31,24 @@ namespace UserInterface {
 
 using namespace Database;
 
-TableFilter::TableFilter(Database::Handler& db, Database::SearchFilter::Field field, std::vector<Wt::WString> columnNames, Wt::WContainerWidget* parent)
-: Wt::WTableView( parent ),
-Filter(),
-_db(db),
-_field(field)
+TableFilterGenre::TableFilterGenre(Database::Handler& db, Wt::WContainerWidget* parent)
+: Wt::WTableView( parent ), Filter(),
+_db(db)
 {
+	const std::vector<Wt::WString> columnNames = {"Genre", "Tracks"};
+
 	SearchFilter filter;
 
-	switch (field)
-	{
-		case Database::SearchFilter::Field::Artist:
-			Track::updateArtistQueryModel(_db.getSession(), _queryModel, filter, columnNames);
-			break;
-		case Database::SearchFilter::Field::Release:
-			Track::updateReleaseQueryModel(_db.getSession(), _queryModel, filter, columnNames);
-			break;
-		case Database::SearchFilter::Field::Genre:
-			Genre::updateGenreQueryModel(_db.getSession(), _queryModel, filter, columnNames);
-			break;
-		default:
-			break;
-	}
+	Genre::updateGenreQueryModel(_db.getSession(), _queryModel, filter, columnNames);
 
 	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setSortingEnabled(true);
 	this->setAlternatingRowColors(true);
 	this->setModel(&_queryModel);
 
-	this->setColumnWidth(1, 50);
+	this->setColumnWidth(1, 80);
 
-	this->selectionChanged().connect(this, &TableFilter::emitUpdate);
+	this->selectionChanged().connect(this, &TableFilterGenre::emitUpdate);
 
 	setLayoutSizeAware(true);
 
@@ -82,7 +71,7 @@ _field(field)
 }
 
 void
-TableFilter::layoutSizeChanged (int width, int height)
+TableFilterGenre::layoutSizeChanged (int width, int height)
 {
 	std::size_t trackColumnSize = this->columnWidth(1).toPixels();
 	// Set the remaining size for the name column
@@ -91,27 +80,14 @@ TableFilter::layoutSizeChanged (int width, int height)
 
 // Set constraints on this filter
 void
-TableFilter::refresh(SearchFilter& filter)
+TableFilterGenre::refresh(SearchFilter& filter)
 {
-	switch (_field)
-	{
-		case Database::SearchFilter::Field::Artist:
-			Track::updateArtistQueryModel(_db.getSession(), _queryModel, filter);
-			break;
-		case Database::SearchFilter::Field::Release:
-			Track::updateReleaseQueryModel(_db.getSession(), _queryModel, filter);
-			break;
-		case Database::SearchFilter::Field::Genre:
-			Genre::updateGenreQueryModel(_db.getSession(), _queryModel, filter);
-			break;
-		default:
-			break;
-	}
+	Genre::updateGenreQueryModel(_db.getSession(), _queryModel, filter);
 }
 
 // Get constraint created by this filter
 void
-TableFilter::getConstraint(SearchFilter& filter)
+TableFilterGenre::getConstraint(SearchFilter& filter)
 {
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
@@ -120,11 +96,160 @@ TableFilter::getConstraint(SearchFilter& filter)
 		if (!index.isValid())
 			continue;
 
-		const ResultType& result = _queryModel.resultRow( index.row() );
+		std::string name = _queryModel.resultRow( index.row() ).get<0>();
 
-		std::string     name = result.get<0>();
+		filter.exactMatch[Database::SearchFilter::Field::Genre].push_back(name);
+	}
+}
 
-		filter.exactMatch[_field].push_back(name);
+TableFilterArtist::TableFilterArtist(Database::Handler& db, Wt::WContainerWidget* parent)
+: Wt::WTableView( parent ), Filter(),
+_db(db)
+{
+	const std::vector<Wt::WString> columnNames = {"Artist", "Releases", "Tracks"};
+
+	SearchFilter filter;
+
+	Track::updateArtistQueryModel(_db.getSession(), _queryModel, filter, columnNames);
+
+	this->setSelectionMode(Wt::ExtendedSelection);
+	this->setSortingEnabled(true);
+	this->setAlternatingRowColors(true);
+	this->setModel(&_queryModel);
+
+	this->setColumnWidth(1, 80);
+	this->setColumnWidth(2, 80);
+
+	this->selectionChanged().connect(this, &TableFilterArtist::emitUpdate);
+
+	setLayoutSizeAware(true);
+
+	_queryModel.setBatchSize(100);
+
+	// If an item is double clicked, select and emit signal
+	this->doubleClicked().connect( std::bind([=] (Wt::WModelIndex idx, Wt::WMouseEvent evt)
+	{
+		if (!idx.isValid())
+			return;
+
+		Wt::WModelIndexSet indexSet;
+		indexSet.insert(idx);
+
+		this->setSelectedIndexes( indexSet );
+		_sigDoubleClicked.emit( );
+
+	}, std::placeholders::_1, std::placeholders::_2));
+
+}
+
+void
+TableFilterArtist::layoutSizeChanged (int width, int height)
+{
+	std::size_t otherColumnsSize = this->columnWidth(1).toPixels() + this->columnWidth(2).toPixels();
+	// Set the remaining size for the name column
+	this->setColumnWidth(0, width - otherColumnsSize - (7 * 3) - 2);
+}
+
+// Set constraints on this filter
+void
+TableFilterArtist::refresh(SearchFilter& filter)
+{
+	Track::updateArtistQueryModel(_db.getSession(), _queryModel, filter);
+}
+
+// Get constraint created by this filter
+void
+TableFilterArtist::getConstraint(SearchFilter& filter)
+{
+	Wt::WModelIndexSet indexSet = this->selectedIndexes();
+
+	BOOST_FOREACH(Wt::WModelIndex index, indexSet) {
+
+		if (!index.isValid())
+			continue;
+
+		std::string name = _queryModel.resultRow( index.row() ).get<0>();
+
+		filter.exactMatch[Database::SearchFilter::Field::Artist].push_back(name);
+	}
+}
+
+TableFilterRelease::TableFilterRelease(Database::Handler& db, Wt::WContainerWidget* parent)
+: Wt::WTableView( parent ), Filter(),
+_db(db)
+{
+	const std::vector<Wt::WString> columnNames = {"Release", "Date", "Tracks"};
+
+	SearchFilter filter;
+
+	Track::updateReleaseQueryModel(_db.getSession(), _queryModel, filter, columnNames);
+
+	this->setSelectionMode(Wt::ExtendedSelection);
+	this->setSortingEnabled(true);
+	this->setAlternatingRowColors(true);
+	this->setModel(&_queryModel);
+
+	this->setColumnWidth(1, 60);
+	this->setColumnWidth(2, 80);
+
+	// Date display, just the year
+	{
+		Wt::WItemDelegate *delegate = new Wt::WItemDelegate(this);
+		delegate->setTextFormat("yyyy");
+		this->setItemDelegateForColumn(1, delegate);
+	}
+
+	this->selectionChanged().connect(this, &TableFilterRelease::emitUpdate);
+
+	setLayoutSizeAware(true);
+
+	_queryModel.setBatchSize(100);
+
+	// If an item is double clicked, select and emit signal
+	this->doubleClicked().connect( std::bind([=] (Wt::WModelIndex idx, Wt::WMouseEvent evt)
+	{
+		if (!idx.isValid())
+			return;
+
+		Wt::WModelIndexSet indexSet;
+		indexSet.insert(idx);
+
+		this->setSelectedIndexes( indexSet );
+		_sigDoubleClicked.emit( );
+
+	}, std::placeholders::_1, std::placeholders::_2));
+
+}
+
+void
+TableFilterRelease::layoutSizeChanged (int width, int height)
+{
+	std::size_t otherColumnSizes = this->columnWidth(1).toPixels() + this->columnWidth(2).toPixels();
+	// Set the remaining size for the name column
+	this->setColumnWidth(0, width - otherColumnSizes - (7 * 3) - 2);
+}
+
+// Set constraints on this filter
+void
+TableFilterRelease::refresh(SearchFilter& filter)
+{
+	Track::updateReleaseQueryModel(_db.getSession(), _queryModel, filter);
+}
+
+// Get constraint created by this filter
+void
+TableFilterRelease::getConstraint(SearchFilter& filter)
+{
+	Wt::WModelIndexSet indexSet = this->selectedIndexes();
+
+	BOOST_FOREACH(Wt::WModelIndex index, indexSet) {
+
+		if (!index.isValid())
+			continue;
+
+		std::string name = _queryModel.resultRow( index.row() ).get<0>();
+
+		filter.exactMatch[Database::SearchFilter::Field::Release].push_back(name);
 	}
 }
 
