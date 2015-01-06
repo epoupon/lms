@@ -46,7 +46,7 @@ _db(db)
 	this->setAlternatingRowColors(true);
 	this->setModel(&_queryModel);
 
-	this->setColumnWidth(1, 50);
+	this->setColumnWidth(1, 80);
 
 	this->selectionChanged().connect(this, &TableFilterGenre::emitUpdate);
 
@@ -117,8 +117,8 @@ _db(db)
 	this->setAlternatingRowColors(true);
 	this->setModel(&_queryModel);
 
-	this->setColumnWidth(1, 50);
-	this->setColumnWidth(2, 50);
+	this->setColumnWidth(1, 80);
+	this->setColumnWidth(2, 80);
 
 	this->selectionChanged().connect(this, &TableFilterArtist::emitUpdate);
 
@@ -189,8 +189,8 @@ _db(db)
 	this->setAlternatingRowColors(true);
 	this->setModel(&_queryModel);
 
-	this->setColumnWidth(1, 50);
-	this->setColumnWidth(2, 50);
+	this->setColumnWidth(1, 60);
+	this->setColumnWidth(2, 80);
 
 	// Date display, just the year
 	{

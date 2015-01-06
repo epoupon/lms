@@ -162,8 +162,8 @@ _playQueue(nullptr)
 	}
 
 	mainLayout->setRowStretch(1, 1);
-	mainLayout->setRowResizable(0, true, Wt::WLength(200, Wt::WLength::Pixel));
-	mainLayout->setColumnResizable(0, true, Wt::WLength(350, Wt::WLength::Pixel));
+	mainLayout->setRowResizable(0, true, Wt::WLength(250, Wt::WLength::Pixel));
+	mainLayout->setColumnResizable(0, true, Wt::WLength(400, Wt::WLength::Pixel));
 
 	// Double click on track
 	// Set the selected tracks to the play queue
