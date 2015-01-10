@@ -17,12 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include "User.hpp"
-
+#include "Types.hpp"
 
 namespace Database {
-
 
 // must be ordered
 const std::vector<std::size_t>
@@ -139,7 +136,6 @@ User::getMaxVideoBitrate(void) const
 	else
 		return videoBitrates.back();
 }
-
 
 } // namespace Database
 

@@ -21,7 +21,7 @@
 
 #include <Wt/WItemDelegate>
 
-#include "database/AudioTypes.hpp"
+#include "database/Types.hpp"
 
 #include "logger/Logger.hpp"
 

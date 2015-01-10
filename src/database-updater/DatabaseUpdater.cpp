@@ -25,9 +25,7 @@
 
 #include "logger/Logger.hpp"
 
-#include "database/MediaDirectory.hpp"
-#include "database/AudioTypes.hpp"
-#include "database/VideoTypes.hpp"
+#include "database/Types.hpp"
 
 #include "Checksum.hpp"
 #include "DatabaseUpdater.hpp"

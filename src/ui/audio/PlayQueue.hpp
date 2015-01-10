@@ -24,7 +24,6 @@
 #include <Wt/WStandardItemModel>
 
 #include "database/DatabaseHandler.hpp"
-#include "database/AudioTypes.hpp"
 
 #include "resource/CoverResource.hpp"
 
@@ -39,6 +38,7 @@ class PlayQueue : public Wt::WTableView
 		PlayQueue(Database::Handler& db, Wt::WContainerWidget* parent = 0);
 
 		void addTracks(const std::vector<Database::Track::id_type>& trackIds);
+		void getTracks(std::vector<Database::Track::id_type>& trackIds) const;
 
 		void clear(void);
 
@@ -61,8 +61,6 @@ class PlayQueue : public Wt::WTableView
 		Wt::Signal< boost::filesystem::path >& playTrack() { return _sigTrackPlay; }
 
 		// Slots
-		void saveToPlaylist(std::string& playListName);
-		void loadFromPlaylist(std::string& playListName);
 		void handlePlaybackComplete(void);
 
 	private:

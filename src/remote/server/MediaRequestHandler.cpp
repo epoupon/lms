@@ -21,7 +21,7 @@
 
 #include "MediaRequestHandler.hpp"
 
-#include "database/AudioTypes.hpp"
+#include "database/Types.hpp"
 
 namespace Remote {
 namespace Server {

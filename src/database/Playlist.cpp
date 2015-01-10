@@ -17,22 +17,76 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include "AudioTypes.hpp"
+#include "Types.hpp"
 
 namespace Database {
 
 Playlist::Playlist()
-: _public(false)
+: _isPublic(false)
 {
 
 }
 
-Playlist::Playlist(std::string name, Wt::Dbo::ptr<User> user, bool isPublic)
-: _public(isPublic),
+Playlist::Playlist(std::string name, bool isPublic, Wt::Dbo::ptr<User> user)
+: _name(name),
+ _isPublic(isPublic),
  _user(user)
 {
 
+}
+
+Playlist::pointer
+Playlist::create(Wt::Dbo::Session& session, std::string name, bool isPublic, Wt::Dbo::ptr<User> user)
+{
+	return session.add( new Playlist(name, isPublic, user) );
+}
+
+PlaylistEntry::PlaylistEntry()
+: _pos(0)
+{
+
+}
+
+Playlist::pointer
+Playlist::get(Wt::Dbo::Session& session, std::string name, Wt::Dbo::ptr<User> user)
+{
+	return session.find<Playlist>().where("name = ? AND user_id = ?").bind(name).bind(user.id());
+}
+
+std::vector<Playlist::pointer>
+Playlist::get(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user)
+{
+	Wt::Dbo::collection<Playlist::pointer> res = session.find<Playlist>().where("user_id = ?").bind(user.id()).orderBy("name");
+
+	return std::vector<Playlist::pointer>(res.begin(), res.end());
+}
+
+PlaylistEntry::PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist, int pos)
+: _pos(pos),
+ _track(track),
+ _playlist(playlist)
+{
+
+}
+
+PlaylistEntry::pointer
+PlaylistEntry::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist, int pos)
+{
+	return session.add( new PlaylistEntry( track, playlist, pos) );
+}
+
+std::vector<Track::id_type>
+PlaylistEntry::getEntries(Wt::Dbo::Session& session, Playlist::pointer playlist)
+{
+	typedef Wt::Dbo::collection<pointer> Entries;
+
+	Entries entries = session.find<PlaylistEntry>().where("playlist_id = ?").bind(playlist.id()).orderBy("pos");
+
+	std::vector<Track::id_type> res;
+	for (Entries::iterator it = entries.begin(); it != entries.end(); ++it)
+		res.push_back((*it)->getTrack().id());
+
+	return res;
 }
 
 } // namespace Database

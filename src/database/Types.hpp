@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,23 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// header file aimed to ease database class declarations
 
-#include "AudioTypes.hpp"
+#include "Track.hpp"
+#include "Playlist.hpp"
+#include "Video.hpp"
+#include "MediaDirectory.hpp"
+#include "User.hpp"
 
-namespace Database {
-
-PlaylistEntry::PlaylistEntry()
-: _position(0)
-{
-
-}
-
-PlaylistEntry::PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist)
-: _position(0),
- _track(track),
- _playlist(playlist)
-{
-
-}
-
-} // namespace Database

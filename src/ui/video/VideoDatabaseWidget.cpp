@@ -26,8 +26,6 @@
 #include <Wt/WFileResource>
 
 #include "transcode/Parameters.hpp"
-#include "database/VideoTypes.hpp"
-#include "database/MediaDirectory.hpp"
 
 #include "VideoDatabaseWidget.hpp"
 

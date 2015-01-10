@@ -28,11 +28,11 @@
 #include <Wt/Auth/Login>
 #include <Wt/Auth/PasswordService>
 
-#include "User.hpp"
+#include "Types.hpp"
 
 namespace Database {
 
-		typedef Wt::Auth::Dbo::UserDatabase<AuthInfo> UserDatabase;
+typedef Wt::Auth::Dbo::UserDatabase<AuthInfo> UserDatabase;
 
 // Session living class handling the database and the login
 class Handler
@@ -44,8 +44,8 @@ class Handler
 
 		Wt::Dbo::Session& getSession() { return _session; }
 
-		User::pointer getCurrentUser();	// get the current user, may return empty
-		User::pointer getUser(const Wt::Auth::User& authUser);	// Get or create the given user
+		Wt::Dbo::ptr<User> getCurrentUser();	// get the current user, may return empty
+		Wt::Dbo::ptr<User> getUser(const Wt::Auth::User& authUser);	// Get or create the given user
 
 		Wt::Auth::AbstractUserDatabase& getUserDatabase();
 		Wt::Auth::Login& getLogin() { return _login; }

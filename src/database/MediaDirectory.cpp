@@ -19,7 +19,7 @@
 
 #include <boost/foreach.hpp>
 
-#include "MediaDirectory.hpp"
+#include "Types.hpp"
 
 namespace Database {
 

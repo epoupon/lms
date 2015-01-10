@@ -13,6 +13,7 @@ lms_SOURCES = \
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
 	$(srcdir)/database/DatabaseHandler.cpp			\
 	$(srcdir)/database/MediaDirectory.cpp			\
+	$(srcdir)/database/Playlist.cpp				\
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/User.cpp				\

@@ -20,13 +20,17 @@
 #ifndef DATABASE_USER_HPP
 #define DATABASE_USER_HPP
 
+#include <vector>
 
+#include <Wt/Dbo/Dbo>
 #include <Wt/Auth/Dbo/AuthInfo>
 
 namespace Database {
 
 class User;
 typedef Wt::Auth::Dbo::AuthInfo<User> AuthInfo;
+
+class Playlist;
 
 class User {
 
@@ -68,6 +72,7 @@ class User {
 				Wt::Dbo::field(a, _isAdmin, "admin");
 				Wt::Dbo::field(a, _audioBitrate, "audio_bitrate");
 				Wt::Dbo::field(a, _videoBitrate, "video_bitrate");
+				Wt::Dbo::hasMany(a, _playlists, Wt::Dbo::ManyToOne, "user");
 			}
 
 	private:
@@ -86,6 +91,8 @@ class User {
 		// User defined settings
 		int		_audioBitrate;
 		int		_videoBitrate;
+
+		Wt::Dbo::collection< Wt::Dbo::ptr<Playlist> > _playlists;
 
 };
 

@@ -26,7 +26,6 @@
 #include <Wt/WResource>
 
 #include "database/DatabaseHandler.hpp"
-#include "database/AudioTypes.hpp"
 
 namespace UserInterface {
 
