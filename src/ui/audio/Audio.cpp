@@ -502,7 +502,18 @@ Audio::playTrack(boost::filesystem::path p)
 
 		Transcode::InputMediaFile inputFile(p);
 
-		Transcode::Parameters parameters(inputFile, Transcode::Format::get(Transcode::Format::OGA));
+		// Determine the output format using the encoding of the player
+		Transcode::Format::Encoding encoding;
+		switch(AudioMediaPlayer::getEncoding())
+		{
+			case Wt::WMediaPlayer::MP3: encoding = Transcode::Format::MP3; break;
+			case Wt::WMediaPlayer::M4A: encoding = Transcode::Format::M4A; break;
+			case Wt::WMediaPlayer::OGA: encoding = Transcode::Format::OGA; break;
+			default:
+			    encoding = Transcode::Format::MP3;
+		}
+
+		Transcode::Parameters parameters(inputFile, Transcode::Format::get(encoding));
 
 		parameters.setBitrate(Transcode::Stream::Audio, bitrate);
 

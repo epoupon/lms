@@ -38,6 +38,9 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 {
 	public:
 
+		// Encoding is set based on environment
+		static Wt::WMediaPlayer::Encoding getEncoding();
+
 		AudioMediaPlayer( Wt::WContainerWidget *parent = 0);
 
 		void load(const Transcode::Parameters& parameters);

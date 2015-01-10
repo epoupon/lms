@@ -154,8 +154,6 @@ InputFormatContext::getPictures(std::vector<Picture>& pictures) const
 			else
 				picture.mimeType = "application/octet-stream";
 
-			LMS_LOG(MOD_AV, SEV_DEBUG) << "MIME set to '" << picture.mimeType << "'" << std::endl;
-
 			AVPacket pkt = native()->streams[i]->attached_pic;
 
 			std::copy(pkt.data, pkt.data + pkt.size, std::back_inserter(picture.data));
