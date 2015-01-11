@@ -25,7 +25,7 @@
 
 #include "SqlQuery.hpp"
 
-#include "AudioTypes.hpp"
+#include "Types.hpp"
 
 namespace Database {
 

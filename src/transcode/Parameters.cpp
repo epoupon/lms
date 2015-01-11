@@ -27,13 +27,6 @@
 namespace Transcode
 {
 
-std::string
-getMimeType(Format format)
-{
-	//TODO
-	return "";
-}
-
 Parameters::Parameters(const InputMediaFile& inputMediaFile,
 		const Format& outputFormat)
 	:

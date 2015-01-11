@@ -52,6 +52,7 @@ struct SearchFilter
 };
 
 class Track;
+class PlaylistEntry;
 
 class Genre
 {
@@ -174,6 +175,7 @@ class Track
 				Wt::Dbo::field(a, _fileChecksum,	"checksum");
 				Wt::Dbo::field(a, _hasCover,		"has_cover");
 				Wt::Dbo::hasMany(a, _genres, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
+				Wt::Dbo::hasMany(a, _playlistEntries, Wt::Dbo::ManyToOne, "track");
 			}
 
 	private:
@@ -198,8 +200,13 @@ class Track
 		boost::posix_time::ptime		_fileLastWrite;
 		bool					_hasCover;
 
-		Wt::Dbo::collection< Genre::pointer > _genres;	// Tracks that belong to this genre
+		Wt::Dbo::collection< Genre::pointer > _genres;	// Genres that are related to this track
+		Wt::Dbo::collection< Wt::Dbo::ptr<PlaylistEntry> > _playlistEntries;
+
 };
+
+
+
 
 
 } // namespace database

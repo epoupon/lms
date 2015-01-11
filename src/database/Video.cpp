@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "VideoTypes.hpp"
+#include "Types.hpp"
 
 namespace Database {
 

@@ -22,6 +22,7 @@
 
 #include <string>
 
+#include <Wt/WPopupMenu>
 #include <Wt/WContainerWidget>
 
 #include "common/SessionData.hpp"
@@ -45,6 +46,13 @@ class Audio : public Wt::WContainerWidget
 
 	private:
 
+		void playlistSaveFromPlayqueue(std::string name);
+		void playlistLoadToPlayqueue(std::string name);
+		void playlistShowSaveNewDialog();
+		void playlistShowSaveDialog(std::string name);
+		void playlistShowDeleteDialog(std::string name);
+		void playlistRefreshMenus();
+
 		void playTrack(boost::filesystem::path p);
 
 		enum PlayQueueAddType
@@ -66,6 +74,9 @@ class Audio : public Wt::WContainerWidget
 
 		FilterChain		_filterChain;
 
+		Wt::WPopupMenu* 	_popupMenuSave;
+		Wt::WPopupMenu* 	_popupMenuLoad;
+		Wt::WPopupMenu* 	_popupMenuDelete;
 };
 
 } // namespace UserInterface

@@ -58,6 +58,7 @@ AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 		LMS_LOG(MOD_UI, SEV_DEBUG) << "Launching transcoder";
 		transcoder = std::make_shared<Transcode::AvConvTranscoder>( _parameters);
 
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "Mime type set to '" << _parameters.getOutputFormat().getMimeType() << "'";
 		response.setMimeType(_parameters.getOutputFormat().getMimeType());
 	}
 

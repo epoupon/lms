@@ -30,7 +30,7 @@ const std::vector<Format> Format::_supportedFormats
 {
 	{Format::OGA, Format::Audio, "audio/ogg", "Ogg"},
 	{Format::OGV, Format::Video, "video/ogg", "Ogg"},
-	{Format::MP3, Format::Audio, "audio/mp3", "MP3"},
+	{Format::MP3, Format::Audio, "audio/mpeg", "MP3"},
 	{Format::WEBMA, Format::Audio, "audio/webm", "WebM"},
 	{Format::WEBMV, Format::Video, "video/webm", "WebM"},
 	{Format::FLV, Format::Video, "video/x-flv", "Flash Video"},

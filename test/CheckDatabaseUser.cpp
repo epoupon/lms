@@ -18,7 +18,6 @@
  */
 
 #include "database/DatabaseHandler.hpp"
-#include <Wt/Auth/PasswordService>
 #include <Wt/Auth/Identity>
 
 int main(void)

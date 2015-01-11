@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "av/InputFormatContext.hpp"
-#include "database/AudioTypes.hpp"
+#include "database/Types.hpp"
 
 #include "CoverArt.hpp"
 

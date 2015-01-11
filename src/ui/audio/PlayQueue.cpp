@@ -599,7 +599,16 @@ PlayQueue::renumber(int firstId, int lastId)
 		_model->setData( i, 1, i + 1);
 }
 
-
+void
+PlayQueue::getTracks(std::vector<Database::Track::id_type>& trackIds) const
+{
+	// Now add each entry in the playlist
+	for (int i = 0; i < _model->rowCount(); ++i)
+	{
+		Database::Track::id_type trackId = boost::any_cast<Database::Track::id_type>(_model->data(i, COLUMN_ID_TRACK_ID, Wt::UserRole));
+		trackIds.push_back(trackId);
+	}
+}
 
 } // namespace UserInterface
 

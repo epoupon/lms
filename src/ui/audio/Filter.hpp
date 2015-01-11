@@ -22,7 +22,7 @@
 
 #include <Wt/WSignal>
 
-#include "database/AudioTypes.hpp"
+#include "database/Types.hpp"
 
 namespace UserInterface {
 

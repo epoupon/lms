@@ -26,8 +26,6 @@
 #include "metadata/MetaData.hpp"
 
 #include "database/DatabaseHandler.hpp"
-#include "database/MediaDirectory.hpp"
-#include "database/DatabaseHandler.hpp"
 
 namespace DatabaseUpdater {
 

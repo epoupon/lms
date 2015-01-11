@@ -24,7 +24,12 @@
 #include <Wt/WGridLayout>
 #include <Wt/WComboBox>
 #include <Wt/WPushButton>
-#include <Wt/WPopupMenu>
+#include <Wt/WMessageBox>
+
+#include <Wt/WLengthValidator>
+#include <Wt/WDialog>
+#include <Wt/WLineEdit>
+#include <Wt/WLabel>
 
 #include "logger/Logger.hpp"
 
@@ -32,6 +37,16 @@
 #include "KeywordSearchFilter.hpp"
 
 #include "Audio.hpp"
+
+namespace {
+
+void WPopupMenuClear(Wt::WPopupMenu* menu)
+{
+	while(menu->count() > 0)
+		menu->removeItem(menu->itemAt(0));
+}
+
+}
 
 namespace UserInterface {
 
@@ -94,7 +109,6 @@ _playQueue(nullptr)
 	// Playlist/PlayQueue
 	{
 		Wt::Dbo::Transaction transaction(_db.getSession());
-		Database::User::pointer user = _db.getCurrentUser();
 
 		Wt::WContainerWidget* playQueueContainer = new Wt::WContainerWidget();
 		playQueueContainer->setStyleClass("playqueue");
@@ -108,13 +122,25 @@ _playQueue(nullptr)
 
 		Wt::WHBoxLayout* playlistControls = new Wt::WHBoxLayout();
 
-		Wt::WPushButton *saveBtn = new Wt::WPushButton("Save");
-		saveBtn->setStyleClass("btn-sm");
+		Wt::WPushButton *playlistBtn = new Wt::WPushButton("Playlist");
+		playlistBtn->setStyleClass("btn-sm btn-primary");
+		playlistControls->addWidget(playlistBtn);
 
-		playlistControls->addWidget(saveBtn);
-		Wt::WPushButton *loadBtn = new Wt::WPushButton("Load");
-		loadBtn->setStyleClass("btn-sm");
-		playlistControls->addWidget(loadBtn);
+		// Playlist menu
+		{
+			Wt::WPopupMenu *popupMain = new Wt::WPopupMenu();
+
+			_popupMenuSave = new Wt::WPopupMenu();
+			popupMain->addMenu("Save", _popupMenuSave);
+
+			_popupMenuLoad = new Wt::WPopupMenu();
+			popupMain->addMenu("Load", _popupMenuLoad);
+
+			_popupMenuDelete = new Wt::WPopupMenu();
+			popupMain->addMenu("Delete", _popupMenuDelete);
+
+			playlistBtn->setMenu(popupMain);
+		}
 
 		Wt::WPushButton *upBtn = new Wt::WPushButton("UP");
 		upBtn->setStyleClass("btn-sm");
@@ -134,27 +160,6 @@ _playQueue(nullptr)
 		downBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedDown);
 		clearBtn->clicked().connect(_playQueue, &PlayQueue::delAll);
 
-		// Load menu
-		{
-			Wt::WPopupMenu *popup = new Wt::WPopupMenu();
-
-			popup->addItem("Metal");
-			popup->addItem("Test");
-
-			loadBtn->setMenu(popup);
-		}
-
-		// Save Menu
-		{
-			Wt::WPopupMenu *popup = new Wt::WPopupMenu();
-
-			popup->addItem("New");
-			popup->addSeparator();
-			popup->addItem("Metal");
-			popup->addItem("Test");
-
-			saveBtn->setMenu(popup);
-		}
 
 		playQueueLayout->addLayout(playlistControls);
 
@@ -190,6 +195,226 @@ _playQueue(nullptr)
 	_mediaPlayer->playPrevious().connect(_playQueue, &PlayQueue::playPrevious);
 	_mediaPlayer->shuffle().connect(boost::bind(&PlayQueue::setShuffle, _playQueue, _1));
 	_mediaPlayer->loop().connect(boost::bind(&PlayQueue::setLoop,_playQueue, _1));
+
+	playlistRefreshMenus();
+}
+
+void
+Audio::playlistShowSaveNewDialog()
+{
+	Wt::WDialog *dialog = new Wt::WDialog("New playlist");
+
+	Wt::WLabel *label = new Wt::WLabel("Name", dialog->contents());
+	Wt::WLineEdit *edit = new Wt::WLineEdit(dialog->contents());
+	label->setBuddy(edit);
+
+	Wt::WLengthValidator* validator = new Wt::WLengthValidator();
+	validator->setMinimumLength(3);
+	validator->setMandatory(true);
+	edit->setValidator(validator);
+
+	Wt::WPushButton *save = new Wt::WPushButton("Save", dialog->footer());
+	save->setStyleClass("btn-success");
+	save->setDefault(true);
+	save->disable();
+
+	Wt::WPushButton *cancel = new Wt::WPushButton("Cancel", dialog->footer());
+	dialog->rejectWhenEscapePressed();
+
+	edit->keyWentUp().connect(std::bind([=] () {
+		save->setDisabled(edit->validate() != Wt::WValidator::Valid);
+	}));
+
+	save->clicked().connect(std::bind([=] ()
+	{
+		if (edit->validate())
+			dialog->accept();
+        }));
+
+	cancel->clicked().connect(dialog, &Wt::WDialog::reject);
+
+	dialog->finished().connect(std::bind([=] ()
+	{
+		if (dialog->result() == Wt::WDialog::Accepted)
+		{
+			playlistShowSaveDialog(edit->text().toUTF8());
+		}
+
+		delete dialog;
+	}));
+
+	dialog->show();
+}
+
+void
+Audio::playlistShowSaveDialog(std::string playlistName)
+{
+	Wt::Dbo::Transaction transaction(_db.getSession());
+
+	Database::User::pointer user = _db.getCurrentUser();
+	if (!user)
+		return;
+
+	// Actually create the dialog only if the given list already exists
+	if (Database::Playlist::get(_db.getSession(), playlistName, user))
+	{
+		Wt::WMessageBox *messageBox = new Wt::WMessageBox
+			("Overwrite playlist",
+			 Wt::WString( "Overwrite playlist '{1}'?").arg(playlistName),
+			 Wt::Question, Wt::Yes | Wt::No);
+
+		messageBox->setModal(true);
+
+		messageBox->buttonClicked().connect(std::bind([=] () {
+			if (messageBox->buttonResult() == Wt::Yes)
+				playlistSaveFromPlayqueue(playlistName);
+
+			delete messageBox;
+		}));
+
+		messageBox->show();
+	}
+	else
+	{
+		playlistSaveFromPlayqueue(playlistName);
+		playlistRefreshMenus();
+	}
+}
+
+void
+Audio::playlistSaveFromPlayqueue(std::string playlistName)
+{
+	LMS_LOG(MOD_UI, SEV_INFO) << "Saving playqueue to playlist '" << playlistName << "'";
+
+	Wt::Dbo::Transaction transaction(_db.getSession());
+
+	Database::User::pointer user = _db.getCurrentUser();
+	if (!user)
+		return;
+
+	Database::Playlist::pointer playlist = Database::Playlist::get(_db.getSession(), playlistName, user);
+	if (playlist)
+	{
+		LMS_LOG(MOD_UI, SEV_INFO) << "Erasing playlist '" << playlistName << "'";
+		playlist.remove();
+	}
+
+	playlist = Database::Playlist::create(_db.getSession(), playlistName, false, user);
+
+	std::vector<Database::Track::id_type> trackIds;
+	_playQueue->getTracks(trackIds);
+
+	int pos = 0;
+	BOOST_FOREACH(Database::Track::id_type trackId, trackIds)
+	{
+		Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+
+		if (track)
+			Database::PlaylistEntry::create(_db.getSession(), track, playlist, pos++);
+	}
+
+	LMS_LOG(MOD_UI, SEV_INFO) << "Saving playqueue to playlist '" << playlistName << "' done. Contains " << pos << " entries";
+}
+
+void
+Audio::playlistLoadToPlayqueue(std::string playlistName)
+{
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Loading playlist '" << playlistName << "' to playqueue";
+
+	Wt::Dbo::Transaction transaction(_db.getSession());
+
+	Database::User::pointer user = _db.getCurrentUser();
+	if (!user)
+		return;
+
+	Database::Playlist::pointer playlist = Database::Playlist::get(_db.getSession(), playlistName, user);
+	if (!playlist)
+		return;
+
+	std::vector<Database::Track::id_type> entries = Database::PlaylistEntry::getEntries(_db.getSession(), playlist);
+
+	_playQueue->clear();
+	_playQueue->addTracks(entries);
+
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Loading playlist '" << playlistName << "' to playqueue done. " << entries.size() << " entries";
+}
+
+
+void
+Audio::playlistShowDeleteDialog(std::string name)
+{
+
+	Wt::WMessageBox *messageBox = new Wt::WMessageBox
+		("Delete playlist",
+		 Wt::WString( "Deleting playlist '{1}'?").arg(name),
+		 Wt::Question, Wt::Yes | Wt::No);
+
+	messageBox->setModal(true);
+
+	messageBox->buttonClicked().connect(std::bind([=] () {
+		if (messageBox->buttonResult() == Wt::Yes)
+		{
+			Wt::Dbo::Transaction transaction(_db.getSession());
+			Database::User::pointer user = _db.getCurrentUser();
+			if (!user)
+				return;
+
+			Database::Playlist::pointer playlist = Database::Playlist::get(_db.getSession(), name, user);
+			if (playlist)
+				playlist.remove();
+
+			playlistRefreshMenus();
+		}
+
+		delete messageBox;
+	}));
+
+	messageBox->show();
+}
+
+void
+Audio::playlistRefreshMenus()
+{
+	Wt::Dbo::Transaction transaction(_db.getSession());
+
+	Database::User::pointer user = _db.getCurrentUser();
+	if (!user)
+		return;
+
+	// Clear playlists in each menu
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Save item count: " << _popupMenuSave->count();
+
+	WPopupMenuClear(_popupMenuDelete);
+	WPopupMenuClear(_popupMenuLoad);
+	WPopupMenuClear(_popupMenuSave);
+
+	_popupMenuSave->addItem("New")->triggered().connect(std::bind([=] ()
+	{
+		playlistShowSaveNewDialog();
+	}));
+	_popupMenuSave->addSeparator();
+
+	std::vector<Database::Playlist::pointer> playlists = Database::Playlist::get(_db.getSession(), user);
+
+	BOOST_FOREACH(Database::Playlist::pointer playlist, playlists)
+	{
+		// Add playlists in each menu
+		_popupMenuDelete->addItem(playlist->getName())->triggered().connect(std::bind([=] ()
+		{
+			playlistShowDeleteDialog(playlist->getName());
+		}));
+
+		_popupMenuLoad->addItem(playlist->getName())->triggered().connect(std::bind([=] ()
+		{
+			playlistLoadToPlayqueue(playlist->getName());
+			playlistRefreshMenus(); // in case deleted in other session
+		}));
+
+		_popupMenuSave->addItem(playlist->getName())->triggered().connect(std::bind([=] ()
+		{
+			playlistShowSaveDialog(playlist->getName());
+		}));
+	}
 }
 
 void
@@ -277,7 +502,18 @@ Audio::playTrack(boost::filesystem::path p)
 
 		Transcode::InputMediaFile inputFile(p);
 
-		Transcode::Parameters parameters(inputFile, Transcode::Format::get(Transcode::Format::OGA));
+		// Determine the output format using the encoding of the player
+		Transcode::Format::Encoding encoding;
+		switch(AudioMediaPlayer::getEncoding())
+		{
+			case Wt::WMediaPlayer::MP3: encoding = Transcode::Format::MP3; break;
+			case Wt::WMediaPlayer::M4A: encoding = Transcode::Format::M4A; break;
+			case Wt::WMediaPlayer::OGA: encoding = Transcode::Format::OGA; break;
+			default:
+			    encoding = Transcode::Format::MP3;
+		}
+
+		Transcode::Parameters parameters(inputFile, Transcode::Format::get(encoding));
 
 		parameters.setBitrate(Transcode::Stream::Audio, bitrate);
 

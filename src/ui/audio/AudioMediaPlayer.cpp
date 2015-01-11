@@ -23,10 +23,23 @@
 #include <Wt/WTemplate>
 #include <Wt/WHBoxLayout>
 #include <Wt/WVBoxLayout>
+#include <Wt/WApplication>
+#include <Wt/WEnvironment>
 
 #include "AudioMediaPlayer.hpp"
 
 namespace UserInterface {
+
+Wt::WMediaPlayer::Encoding
+AudioMediaPlayer::getEncoding()
+{
+	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
+
+	if (env.agentIsIE())
+		return Wt::WMediaPlayer::MP3;
+	else
+		return Wt::WMediaPlayer::OGA;
+}
 
 AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	: Wt::WContainerWidget(parent),
@@ -98,7 +111,7 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	controlsLayout->addWidget(shuffle);
 
 	_mediaPlayer = new Wt::WMediaPlayer( Wt::WMediaPlayer::Audio, btnContainer );
-	_mediaPlayer->addSource( Wt::WMediaPlayer::OGA, "" );
+	_mediaPlayer->addSource( getEncoding(), "" );
 	_mediaPlayer->ended().connect(this, &AudioMediaPlayer::handleTrackEnded);
 
 	_mediaPlayer->setControlsWidget( 0 );
@@ -142,7 +155,7 @@ AudioMediaPlayer::loadPlayer(void)
 	_mediaResource = new AvConvTranscodeStreamResource( *_currentParameters, this );
 	_mediaInternalLink.setResource( _mediaResource );
 
-	_mediaPlayer->addSource( Wt::WMediaPlayer::OGA, _mediaInternalLink );
+	_mediaPlayer->addSource( getEncoding(), _mediaInternalLink );
 }
 
 void

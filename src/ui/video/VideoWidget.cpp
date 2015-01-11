@@ -68,6 +68,7 @@ VideoWidget::playVideo(boost::filesystem::path p)
 		// Get user preferences
 		{
 			Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
+
 			Database::User::pointer user = _sessionData.getDatabaseHandler().getCurrentUser();
 			if (user)
 			{

@@ -27,12 +27,6 @@
 
 #include "logger/Logger.hpp"
 
-// Db types
-#include "AudioTypes.hpp"
-#include "VideoTypes.hpp"
-#include "MediaDirectory.hpp"
-#include "User.hpp"
-
 #include "DatabaseHandler.hpp"
 
 namespace Database {
@@ -85,6 +79,8 @@ _dbBackend( db.string() )
 	_session.setConnection(_dbBackend);
 	_session.mapClass<Database::Genre>("genre");
 	_session.mapClass<Database::Track>("track");
+	_session.mapClass<Database::Playlist>("playlist");
+	_session.mapClass<Database::PlaylistEntry>("playlist_entry");
 	_session.mapClass<Database::Video>("video");
 	_session.mapClass<Database::MediaDirectory>("media_directory");
 	_session.mapClass<Database::MediaDirectorySettings>("media_directory_settings");

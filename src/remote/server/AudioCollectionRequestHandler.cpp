@@ -27,8 +27,7 @@
 
 #include "AudioCollectionRequestHandler.hpp"
 
-#include "database/AudioTypes.hpp"
-#include "database/MediaDirectory.hpp"
+#include "database/Types.hpp"
 #include "cover/CoverArtGrabber.hpp"
 
 namespace Remote {

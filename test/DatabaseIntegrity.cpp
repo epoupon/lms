@@ -25,8 +25,6 @@
 
 #include "database/DatabaseHandler.hpp"
 
-#include "database/AudioTypes.hpp"
-
 int main(void)
 {
 

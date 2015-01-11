@@ -24,7 +24,6 @@
 #include <Wt/Dbo/QueryModel>
 
 #include "database/DatabaseHandler.hpp"
-#include "database/AudioTypes.hpp"
 
 #include "Filter.hpp"
 

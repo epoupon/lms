@@ -30,7 +30,7 @@ remote_client_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_src
 database_user_SOURCES = \
 	$(srcdir)/CheckDatabaseUser.cpp		\
 	$(top_srcdir)/src/logger/Logger.cpp 			\
-	$(top_srcdir)/src/database/Genre.cpp	\
+	$(top_srcdir)/src/database/Playlist.cpp	\
 	$(top_srcdir)/src/database/Track.cpp	\
 	$(top_srcdir)/src/database/DatabaseHandler.cpp	\
 	$(top_srcdir)/src/database/MediaDirectory.cpp		\
@@ -44,7 +44,7 @@ database_user_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_src
 database_integrity_SOURCES = \
 	$(srcdir)/DatabaseIntegrity.cpp		\
 	$(top_srcdir)/src/logger/Logger.cpp 			\
-	$(top_srcdir)/src/database/Genre.cpp	\
+	$(top_srcdir)/src/database/Playlist.cpp	\
 	$(top_srcdir)/src/database/Track.cpp	\
 	$(top_srcdir)/src/database/DatabaseHandler.cpp	\
 	$(top_srcdir)/src/database/MediaDirectory.cpp		\
