@@ -28,6 +28,7 @@
 #include "TrackView.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
 TrackView::TrackView( Database::Handler& db, Wt::WContainerWidget* parent)
 : Wt::WTableView( parent ),
@@ -169,5 +170,6 @@ TrackView::getTracks(std::vector<Database::Track::id_type>& trackIds)
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all tracks done!";
 }
 
+} // namespace Desktop
 } // namespace UserInterface
 

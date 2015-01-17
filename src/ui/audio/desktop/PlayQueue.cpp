@@ -58,6 +58,7 @@ namespace {
 }
 
 namespace UserInterface {
+namespace Desktop {
 
 enum ColumnId
 {
@@ -610,5 +611,6 @@ PlayQueue::getTracks(std::vector<Database::Track::id_type>& trackIds) const
 	}
 }
 
+} // namespace Desktop
 } // namespace UserInterface
 

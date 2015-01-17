@@ -17,25 +17,38 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_AUDIO_HPP
-#define UI_AUDIO_HPP
+#ifndef KEYWORD_SEARCH_FILTER_HPP
+#define KEYWORD_SEARCH_FILTER_HPP
 
 #include <string>
-#include <Wt/WContainerWidget>
+
+#include "Filter.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
-class Audio : public Wt::WContainerWidget
+class KeywordSearchFilter : public Filter
 {
 	public:
+		KeywordSearchFilter();
 
-		Audio(Wt::WContainerWidget *parent) : Wt::WContainerWidget(parent) {}
-		virtual ~Audio() {}
+		void setText(const std::string& text);
 
-		virtual void search(std::string text) = 0;
+		// Set constraint on this filter
+		void refresh(Database::SearchFilter& filter) {}
 
+		// Get constraints created by this filter
+		void getConstraint(Database::SearchFilter& filter);
+
+	private:
+
+		void handleKeyWentUp(void);
+
+		std::string	 _lastEmittedText;
 };
 
+} // namespace Desktop
 } // namespace UserInterface
 
 #endif
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,36 +17,20 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEYWORD_SEARCH_FILTER_HPP
-#define KEYWORD_SEARCH_FILTER_HPP
+#include <Wt/WContainerWidget>
+#include <Wt/WText>
 
-#include <string>
-
-#include "Filter.hpp"
+#include "MobileAudio.hpp"
 
 namespace UserInterface {
+namespace Mobile {
 
-class KeywordSearchFilter : public Filter
+Audio::Audio(Wt::WContainerWidget *parent)
+: UserInterface::Audio(parent)
 {
-	public:
-		KeywordSearchFilter();
+	new Wt::WText("Mobile version not implemented", this);
+}
 
-		void setText(const std::string& text);
-
-		// Set constraint on this filter
-		void refresh(Database::SearchFilter& filter) {}
-
-		// Get constraints created by this filter
-		void getConstraint(Database::SearchFilter& filter);
-
-	private:
-
-		void handleKeyWentUp(void);
-
-		std::string	 _lastEmittedText;
-};
-
+} // namespace Mobile
 } // namespace UserInterface
-
-#endif
 

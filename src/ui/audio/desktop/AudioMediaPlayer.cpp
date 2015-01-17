@@ -29,6 +29,7 @@
 #include "AudioMediaPlayer.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
 Wt::WMediaPlayer::Encoding
 AudioMediaPlayer::getEncoding()
@@ -224,4 +225,5 @@ AudioMediaPlayer::handleVolumeSliderMoved(int value)
 	_mediaPlayer->setVolume( value / 100. );
 }
 
+} // namespace Desktop
 } // namespace UserInterface

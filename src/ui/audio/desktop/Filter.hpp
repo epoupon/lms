@@ -25,6 +25,7 @@
 #include "database/Types.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
 class Filter
 {
@@ -58,6 +59,7 @@ class Filter
 		Wt::Signal<void> _update;
 };
 
+} // namespace Dekstop
 } // namespace UserInterface
 
 #endif

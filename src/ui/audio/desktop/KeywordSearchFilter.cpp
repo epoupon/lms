@@ -24,6 +24,7 @@
 #include "KeywordSearchFilter.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
 KeywordSearchFilter::KeywordSearchFilter()
 {
@@ -60,5 +61,6 @@ KeywordSearchFilter::getConstraint(Database::SearchFilter& filter)
 	}
 }
 
+} // namespace Desktop
 } // namespace UserInterface
 
