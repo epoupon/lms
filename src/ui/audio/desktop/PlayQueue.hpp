@@ -28,6 +28,7 @@
 #include "resource/CoverResource.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
 class PlayQueueItemDelegate;
 class TrackSelector;
@@ -86,7 +87,7 @@ class PlayQueue : public Wt::WTableView
 
 };
 
-
+} // namespace Desktop
 } // namespace UserInterface
 
 #endif

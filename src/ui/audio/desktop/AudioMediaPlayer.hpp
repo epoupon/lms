@@ -33,6 +33,7 @@
 #include "resource/AvConvTranscodeStreamResource.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
 class AudioMediaPlayer : public Wt::WContainerWidget
 {
@@ -88,6 +89,7 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 
 };
 
+} // namespace Desktop
 } // namespace UserInterface
 
 #endif

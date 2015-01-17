@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,41 +17,26 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FILTER_CHAIN_HPP
-#define FILTER_CHAIN_HPP
+#ifndef UI_AUDIO_MOBILE_HPP
+#define UI_AUDIO_MOBILE_HPP
 
-#include <Wt/WSignal>
+#include <Wt/WContainerWidget>
 
-#include "Filter.hpp"
-#include "KeywordSearchFilter.hpp"
+#include "audio/Audio.hpp"
 
 namespace UserInterface {
+namespace Mobile {
 
-// FilterChain
-class FilterChain
+class Audio : public UserInterface::Audio
 {
 	public:
+		Audio(Wt::WContainerWidget *parent = 0);
 
-		FilterChain();
+		void search(std::string text) {};
 
-		void addFilter(Filter* filter);
-
-		// First filter is a keywork search
-		void searchKeyword(const std::string& text);
-
-		// Update filters from filter @ startIdx
-		void updateFilters(std::size_t startIdx);
-
-	private:
-
-		KeywordSearchFilter	_keywordSearchFilter;
-
-		// No ownership
-		std::vector<Filter*>	_filters;
-
-		bool _refreshingFilters;
 };
 
+} // namespace Mobile
 } // namespace UserInterface
 
 #endif

@@ -20,6 +20,7 @@
 #include "FilterChain.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
 
 FilterChain::FilterChain()
@@ -69,5 +70,6 @@ FilterChain::updateFilters(std::size_t startIdx)
 	_refreshingFilters = false;
 }
 
+} // namespace Desktop
 } // namespace UserInterface
 

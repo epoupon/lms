@@ -28,6 +28,7 @@
 #include "Filter.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
 class TrackView : public Wt::WTableView, public Filter
 {
@@ -69,6 +70,7 @@ class TrackView : public Wt::WTableView, public Filter
 
 };
 
+} // namespace Desktop
 } // namespace UserInterface
 
 #endif

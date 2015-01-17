@@ -36,7 +36,7 @@
 #include "TableFilter.hpp"
 #include "KeywordSearchFilter.hpp"
 
-#include "Audio.hpp"
+#include "DesktopAudio.hpp"
 
 namespace {
 
@@ -49,9 +49,10 @@ void WPopupMenuClear(Wt::WPopupMenu* menu)
 }
 
 namespace UserInterface {
+namespace Desktop {
 
 Audio::Audio(SessionData& sessionData, Wt::WContainerWidget* parent)
-: Wt::WContainerWidget(parent),
+: UserInterface::Audio(parent),
 _db(sessionData.getDatabaseHandler()),
 _mediaPlayer(nullptr),
 _trackView(nullptr),
@@ -418,7 +419,7 @@ Audio::playlistRefreshMenus()
 }
 
 void
-Audio::search(const std::string& searchText)
+Audio::search(std::string searchText)
 {
 	_filterChain.searchKeyword(searchText);
 }
@@ -525,6 +526,6 @@ Audio::playTrack(boost::filesystem::path p)
 	}
 }
 
-
+} // namespace Desktop
 } // namespace UserInterface
 

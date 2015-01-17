@@ -28,6 +28,7 @@
 #include "TableFilter.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
 using namespace Database;
 
@@ -253,5 +254,6 @@ TableFilterRelease::getConstraint(SearchFilter& filter)
 	}
 }
 
+} // namespace Desktop
 } // namespace UserInterface
 
