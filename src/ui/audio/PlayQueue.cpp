@@ -34,7 +34,7 @@
 
 #include "PlayQueue.hpp"
 
-static const int NameRole = Wt::UserRole;
+static const int TrackInfoRole = Wt::UserRole;
 
 namespace {
 
@@ -219,10 +219,11 @@ TrackSelector::setSize(std::size_t size)
 	refreshPositions();
 }
 
-struct Name
+struct TrackInfo
 {
 	Wt::WString track;
 	Wt::WString artist;
+	Wt::WString release;
 };
 
 class PlayQueueItemDelegate : public Wt::WItemDelegate
@@ -234,13 +235,13 @@ class PlayQueueItemDelegate : public Wt::WItemDelegate
 		{
 			Wt::WWidget* res;
 
-			if (!index.data(NameRole).empty())
+			if (!index.data(TrackInfoRole).empty())
 			{
-				Name name = boost::any_cast<Name>(index.data(NameRole));
+				TrackInfo trackInfo = boost::any_cast<TrackInfo>(index.data(TrackInfoRole));
 
 				Wt::WContainerWidget *container = new Wt::WContainerWidget();
-				Wt::WText* track = new Wt::WText(name.track, Wt::PlainText, container);
-				Wt::WText* artist = new Wt::WText(name.artist, Wt::PlainText, container);
+				Wt::WText* track = new Wt::WText(trackInfo.track, Wt::PlainText, container);
+				Wt::WText* artist = new Wt::WText(trackInfo.artist + " - " + trackInfo.release, Wt::PlainText, container);
 
 				artist->setInline(false);
 				track->setInline(false);
@@ -381,10 +382,11 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 				coverUrl = "images/unknown-cover.jpg";
 			_model->setData(dataRow, COLUMN_ID_COVER, coverUrl, Wt::DecorationRole);
 
-			Name name;
-			name.track = Wt::WString::fromUTF8(track->getName());
-			name.artist = Wt::WString::fromUTF8(track->getArtistName());
-			_model->setData(dataRow, COLUMN_ID_NAME, name, NameRole);
+			TrackInfo trackInfo;
+			trackInfo.track = Wt::WString::fromUTF8(track->getName());
+			trackInfo.artist = Wt::WString::fromUTF8(track->getArtistName());
+			trackInfo.release = Wt::WString::fromUTF8(track->getReleaseName());
+			_model->setData(dataRow, COLUMN_ID_NAME, trackInfo, TrackInfoRole);
 		}
 	}
 
