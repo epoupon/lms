@@ -23,7 +23,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sinks/text_file_backend.hpp>
-#include </usr/include/boost/log/keywords/filter.hpp>
+#include <boost/log/keywords/filter.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/utility/setup/console.hpp>
@@ -89,6 +89,7 @@ Logger::init(const Config& config)
 			 boost::log::keywords::file_name = config.logPath + std::string(".%N"),
 			 boost::log::keywords::rotation_size = 10 * 1024 * 1024,
 			 boost::log::keywords::open_mode = std::ios_base::app,
+			 boost::log::keywords::auto_flush = true,
 			 boost::log::keywords::format = (
 				 boost::log::expressions::stream
 				 << boost::log::expressions::format_date_time< boost::posix_time::ptime >("TimeStamp", "[%Y-%m-%d %H:%M:%S]")
