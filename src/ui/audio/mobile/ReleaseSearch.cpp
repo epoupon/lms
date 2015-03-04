@@ -1,0 +1,120 @@
+/*
+ * Copyright (C) 2015 Emeric Poupon
+ *
+ * This file is part of LMS.
+ *
+ * LMS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * LMS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <Wt/WText>
+#include <Wt/WImage>
+#include <Wt/WPushButton>
+#include <Wt/WTemplate>
+
+#include "logger/Logger.hpp"
+
+#include "ReleaseSearch.hpp"
+
+namespace UserInterface {
+namespace Mobile {
+
+ReleaseSearch::ReleaseSearch(Database::Handler& db, Wt::WContainerWidget *parent)
+: Wt::WContainerWidget(parent),
+_db(db),
+_resCount(0)
+{
+	Wt::WTemplate* title = new Wt::WTemplate(this);
+	title->setTemplateText(Wt::WString::tr("mobile-search-title"));
+
+	title->bindWidget("text", new Wt::WText("Releases", Wt::PlainText));
+
+	_coverResource = new CoverResource(db, 56);
+}
+
+void
+ReleaseSearch::clear()
+{
+	while (count() > 1)
+		removeWidget(this->widget(1));
+
+	_resCount = 0;
+}
+
+void
+ReleaseSearch::search(Database::SearchFilter filter, size_t max)
+{
+	clear();
+	addResults(filter, max);
+}
+
+void
+ReleaseSearch::addResults(Database::SearchFilter filter, size_t nb)
+{
+
+	std::vector<std::string> releases;
+
+	{
+		Wt::Dbo::Transaction transaction(_db.getSession());
+
+		// Request one more to see if more results are to be expected
+		releases = Database::Track::getReleases(_db.getSession(), filter, _resCount, nb + 1);
+	}
+
+	bool expectMoreResults;
+	if (releases.size() == nb + 1)
+	{
+		expectMoreResults = true;
+		releases.pop_back();
+	}
+	else
+		expectMoreResults = false;
+
+	BOOST_FOREACH(std::string release, releases)
+	{
+		Wt::WTemplate* releaseWidget = new Wt::WTemplate(this);
+		releaseWidget->setTemplateText(Wt::WString::tr("mobile-release-res"));
+
+		Wt::WImage *cover = new Wt::WImage();
+		cover->setStyleClass("center-block");
+		cover->setImageLink( Wt::WLink( _coverResource->getReleaseUrl(release)));
+		releaseWidget->bindWidget("cover", cover);
+
+		releaseWidget->bindWidget("name", new Wt::WText(Wt::WString::fromUTF8(release), Wt::PlainText));
+
+		releaseWidget->clicked().connect(std::bind([=] {
+			_sigReleaseSelected(release);
+		}));
+
+	}
+
+	_resCount += releases.size();;
+
+	if (expectMoreResults)
+	{
+		Wt::WTemplate* moreRes = new Wt::WTemplate(this);
+		moreRes->setTemplateText(Wt::WString::tr("mobile-search-more"));
+
+		moreRes->bindWidget("text", new Wt::WText("Tap to show more results..."));
+
+		moreRes->clicked().connect(std::bind([=] {
+			_sigMoreReleasesSelected();
+			removeWidget(moreRes);
+
+			addResults(filter, 20);
+		}));
+	}
+}
+
+} // namespace Mobile
+} // namespace UserInterface

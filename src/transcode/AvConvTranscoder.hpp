@@ -50,6 +50,7 @@ class AvConvTranscoder
 		void process(std::vector<unsigned char>& output, std::size_t maxSize);
 
 		bool isComplete(void) const { return _isComplete;};
+		std::size_t getOutputBytes(void) const { return _outputBytes; }
 
 	private:
 
@@ -72,6 +73,7 @@ class AvConvTranscoder
 		static boost::filesystem::path _avConvPath;
 
 		bool		_isComplete;
+		std::size_t	_outputBytes;	// Bytes produced so far
 };
 
 } // naspace Transcode

@@ -17,28 +17,46 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_AUDIO_MOBILE_HPP
-#define UI_AUDIO_MOBILE_HPP
+#ifndef UI_MOBILE_TRACK_SEARCH_HPP
+#define UI_MOBILE_TRACK_SEARCH_HPP
+
+#include <boost/algorithm/string/split.hpp>
 
 #include <Wt/WContainerWidget>
+#include <Wt/WSignal>
+
+#include "resource/CoverResource.hpp"
 
 #include "database/DatabaseHandler.hpp"
-
-#include "audio/Audio.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
-class Audio : public UserInterface::Audio
+class TrackSearch : public Wt::WContainerWidget
 {
 	public:
-		Audio(Database::Handler& db, Wt::WContainerWidget *parent = 0);
 
-		void search(std::string text) {}
+		TrackSearch(Database::Handler& db, Wt::WContainerWidget *parent = 0);
+
+		void search(Database::SearchFilter filter, size_t nb);
+
+		// Slots
+		Wt::Signal<Database::Track::id_type>&	trackPlay() { return _sigTrackPlay;}
+		Wt::Signal<void>&		moreTracksSelected() { return _sigMoreTracksSelected;}
 
 	private:
 
+		Wt::Signal<Database::Track::id_type> _sigTrackPlay;
+		Wt::Signal<void>	_sigMoreTracksSelected;
+
+		void clear(void);
+		void addResults(Database::SearchFilter filter, size_t nb);
+
 		Database::Handler&	_db;
+
+		CoverResource*		_coverResource;
+
+		std::size_t		_resCount;
 };
 
 } // namespace Mobile

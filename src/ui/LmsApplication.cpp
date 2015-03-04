@@ -50,8 +50,11 @@ namespace {
 bool agentIsMobile()
 {
 	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
-
-	return (env.agentIsIEMobile() || env.agentIsMobileWebKit());
+	return (env.agentIsIEMobile()
+		|| env.agentIsMobileWebKit()
+		|| env.userAgent().find("Mobile") != std::string::npos // Workaround for firefox
+		|| env.userAgent().find("Tablet") != std::string::npos // Workaround for firefox
+		);
 }
 }
 
@@ -139,7 +142,7 @@ LmsApplication::handleAuthEvent(void)
 	{
 		Wt::Auth::User user(_sessionData.getDatabaseHandler().getLogin().user());
 
-		LMS_LOG(MOD_UI, SEV_NOTICE) << "User '" << user.identity(Wt::Auth::Identity::LoginName) << "' logged in";
+		LMS_LOG(MOD_UI, SEV_NOTICE) << "User '" << user.identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
 
 		this->root()->setOverflow(Wt::WContainerWidget::OverflowHidden);
 
@@ -164,9 +167,9 @@ LmsApplication::handleAuthEvent(void)
 		Audio *audio;
 
 		if (agentIsMobile())
-			audio = new Desktop::Audio(_sessionData);
+			audio = new Mobile::Audio(_sessionData.getDatabaseHandler());
 		else
-			audio = new Mobile::Audio();
+			audio = new Desktop::Audio(_sessionData);
 
 		VideoWidget *videoWidget = new VideoWidget(_sessionData);
 
@@ -210,7 +213,7 @@ LmsApplication::handleAuthEvent(void)
 	}
 	else
 	{
-		LMS_LOG(MOD_UI, SEV_NOTICE) << "User logged out";
+		LMS_LOG(MOD_UI, SEV_NOTICE) << "User logged out, session = " << Wt::WApplication::instance()->sessionId();
 
 		quit("");
 		redirect("/");

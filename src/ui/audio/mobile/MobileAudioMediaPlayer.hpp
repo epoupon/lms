@@ -17,31 +17,34 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_AUDIO_MOBILE_HPP
-#define UI_AUDIO_MOBILE_HPP
+#ifndef UI_AUDIO_MOBILE_MEDIA_PLAYER_HPP
+#define UI_AUDIO_MOBILE_MEDIA_PLAYER_HPP
 
 #include <Wt/WContainerWidget>
+#include <Wt/WMediaPlayer>
 
-#include "database/DatabaseHandler.hpp"
-
-#include "audio/Audio.hpp"
+#include "transcode/Parameters.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
-class Audio : public UserInterface::Audio
+class AudioMediaPlayer : public Wt::WContainerWidget
 {
 	public:
-		Audio(Database::Handler& db, Wt::WContainerWidget *parent = 0);
 
-		void search(std::string text) {}
+		static Wt::WMediaPlayer::Encoding getEncoding();
+
+		AudioMediaPlayer(Wt::WContainerWidget *parent = 0);
+
+		void play(const Transcode::Parameters& parameters);
 
 	private:
 
-		Database::Handler&	_db;
+		Wt::WMediaPlayer *_player;
+
 };
 
-} // namespace Mobile
 } // namespace UserInterface
+} // namespace Mobile
 
 #endif

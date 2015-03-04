@@ -186,7 +186,7 @@ Track::getAllQuery(Wt::Dbo::Session& session, SearchFilter filter)
 	SqlQuery sqlQuery = generatePartialQuery(filter);
 
 	Wt::Dbo::Query<pointer> query
-		= session.query<Track::pointer>( "SELECT t FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).groupBy("t.id");
+		= session.query<Track::pointer>( "SELECT t FROM track t " + sqlQuery.innerJoin().get() + " " + sqlQuery.where().get()).groupBy("t.id").orderBy("t.artist_name,t.date,t.release_name,t.disc_number,t.track_number");
 
 	BOOST_FOREACH(const std::string& bindArg, sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
@@ -198,6 +198,14 @@ Wt::Dbo::collection< Track::pointer >
 Track::getAll(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
 {
 	return getAllQuery(session, filter).limit(size).offset(offset);
+}
+
+std::vector<Track::pointer>
+Track::getTracks(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
+{
+	Wt::Dbo::collection< Track::pointer > tracks = getAll(session, filter, offset, size);
+
+	return std::vector<Track::pointer>(tracks.begin(), tracks.end());
 }
 
 Wt::Dbo::Query<Track::ReleaseResult>
@@ -264,7 +272,7 @@ Track::updateArtistQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<Art
 void
 Track::updateTracksQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< pointer >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
 {
-	Wt::Dbo::Query< pointer > query = getAllQuery(session, filter).orderBy("t.artist_name,t.date,t.release_name,t.disc_number,t.track_number");
+	Wt::Dbo::Query< pointer > query = getAllQuery(session, filter);
 	model.setQuery(query, columnNames.empty() ? true : false);
 
 	// TODO do something better

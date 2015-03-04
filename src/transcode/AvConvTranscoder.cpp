@@ -70,7 +70,8 @@ AvConvTranscoder::AvConvTranscoder(const Parameters& parameters)
   _source(_outputPipe.source, boost::iostreams::close_handle),
   _is(_source),
   _in(&_is),
-  _isComplete(false)
+  _isComplete(false),
+ _outputBytes(0)
 {
 
 	if (!boost::filesystem::exists(_parameters.getInputMediaFile().getPath())) {
@@ -179,6 +180,7 @@ AvConvTranscoder::process(std::vector<unsigned char>& output, std::size_t maxSiz
 	while(readDataSize < maxSize && _in && _in.get(ch)) {
 		output.push_back(ch);
 		readDataSize++;
+		_outputBytes++;	// stats
 	}
 
 	if (!_in || _in.fail() || _in.eof()) {

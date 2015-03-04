@@ -49,6 +49,10 @@ CoverArt::scale(std::size_t size)
 			boost::gil::read_image(iss, source, boost::gil::jpeg_tag());
 		}
 
+		if (source.width() == static_cast<int>(size)
+			&& source.height() == static_cast<int>(size))
+			return true;
+
 		// Resize
 		boost::gil::resize_view(boost::gil::const_view(source),
 				boost::gil::view(dest),

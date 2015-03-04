@@ -44,10 +44,10 @@ void
 AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 		Wt::Http::Response& response)
 {
-	static const std::size_t chunkSize = 8192; // TODO parametrize?
-
 	// see if this request is for a continuation:
 	Wt::Http::ResponseContinuation *continuation = request.continuation();
+
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Handling new request. Continuation = " << std::boolalpha << continuation;
 
 	std::shared_ptr<Transcode::AvConvTranscoder> transcoder;
 	if (continuation)
@@ -65,12 +65,14 @@ AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 	if (!transcoder->isComplete())
 	{
 		std::vector<unsigned char> data;
-		data.reserve(chunkSize);
+		data.reserve(_bufferSize);
 
-		transcoder->process(data, chunkSize);
+		transcoder->process(data, _bufferSize);
 
 		// Give the client all the output data
 		response.out().write(reinterpret_cast<char*>(&data[0]), data.size());
+
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "Written " << data.size() << " bytes! complete = " << std::boolalpha << transcoder->isComplete() << ", produced bytes = " << transcoder->getOutputBytes();
 
 		if (!response.out())
 			LMS_LOG(MOD_UI, SEV_ERROR) << "Write failed!";

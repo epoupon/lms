@@ -55,3 +55,44 @@ div.contents {
 	font-weight: bold;
 }
 
+.mobile-search-title {
+	font-weight: bold;
+	height: 32px;
+	background-color: grey;
+	color: white;
+	text-align: center;
+}
+
+.mobile-search-entry {
+	min-height: 64px;
+	border-bottom: 1px solid lightgray;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.mobile-search-entry:active {
+	background-color: lightgrey;
+}
+
+.mobile-search-more {
+	height: 64px;
+	border-bottom: 1px solid lightgray;
+}
+
+.mobile-search-more:active {
+	background-color: lightgrey;
+}
+
+.mobile-track {
+	font-weight: bold;
+}
+
+.mobile-artist {
+	font-style: italic;
+}
+
+.vertical-align {
+	display: flex;
+	align-items: center;
+}
+
