@@ -111,6 +111,7 @@ class Track
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
 		// Used for remote
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
+		static std::vector<pointer>	getTracks(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 		static std::vector<std::string> getReleases(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 		static std::vector<std::string> getArtists(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 

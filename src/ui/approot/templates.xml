@@ -318,6 +318,68 @@
 	</div>
 </message>
 
+<message id="mobile-search">
+	<div class="row">
+		<div class="col-xs-12">${search}</div>
+	</div>
+</message>
+
+<message id="mobile-search-title">
+	<div class="row">
+		<div class="col-xs-12">
+			<div class="mobile-search-title vertical-align">${text}</div>
+		</div>
+	</div>
+</message>
+<message id="mobile-search-more">
+	<div class="row">
+		<div class="col-xs-12">
+			<div class="mobile-search-more vertical-align">${text}</div>
+		</div>
+	</div>
+</message>
+
+<message id="mobile-artist-res">
+	<div class="row">
+		<div class="col-xs-12 mobile-search-entry">${name}</div>
+	</div>
+</message>
+
+<message id="mobile-release-res">
+	<div class="row">
+		<div class="col-xs-12">
+			<div class="mobile-search-entry">
+				<div class="row">
+					<div class ="vertical-align">
+						<div class="col-xs-2" style="margin-top:3px">${cover}</div>
+						<div class="col-xs-10">${name}</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+<message id="mobile-track-res">
+	<div class="row">
+		<div class="col-xs-12">
+			<div class="mobile-search-entry">
+				<div class="row">
+					<div class="vertical-align">
+						<div class="col-xs-2" style="margin-top:3px">${cover}</div>
+						<div class="col-xs-7">${name}</div>
+						<div class="col-xs-3">${btn}</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+<message id="mobile-audio-player">
+	<div class="row">
+		<div class="col-xs-12">${player}</div>
+	</div>
+</message>
+
 </messages>
-
-

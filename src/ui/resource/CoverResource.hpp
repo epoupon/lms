@@ -26,6 +26,7 @@
 #include <Wt/WResource>
 
 #include "database/DatabaseHandler.hpp"
+#include "cover/CoverArt.hpp"
 
 namespace UserInterface {
 
@@ -37,12 +38,16 @@ class CoverResource : public Wt::WResource
 				Wt::WObject *parent = 0);
 		~CoverResource();
 
+		std::string getReleaseUrl(std::string releaseName);
+		std::string getTrackUrl(Database::Track::id_type trackId);
+
 		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
 
 	private:
 
 		Database::Handler&		_db;
 		std::size_t			_size;
+		CoverArt::CoverArt		_defaultCover;
 };
 
 } // namespace UserInterface
