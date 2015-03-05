@@ -27,6 +27,8 @@ LmsAuth::LmsAuth(Database::Handler& db)
 		db.getUserDatabase(),
 		db.getLogin())
 {
+	// Root div has to be a container
+	this->setStyleClass("container");
 }
 
 

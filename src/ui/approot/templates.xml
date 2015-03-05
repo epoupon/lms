@@ -341,7 +341,9 @@
 
 <message id="mobile-artist-res">
 	<div class="row">
-		<div class="col-xs-12 mobile-search-entry">${name}</div>
+		<div class="col-xs-12">
+			<div class="mobile-search-entry">${name}</div>
+		</div>
 	</div>
 </message>
 
