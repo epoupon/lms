@@ -5,6 +5,16 @@ import "media.proto";
 
 package Remote;
 
+// Every request sent by the client must be a ClientMessage
+// The server will answer using a ServerMessage
+//
+// The client must authenticate first before querying data
+// If an expected message is received, the connection is dropped by the server
+//
+// A header is to be added before the serialized protobuf message in order to keep
+// track of where one message ends and the next begins.
+// Format:
+// MAGIC (4 bytes, 0xDE, 0xAD, 0xBE, 0xEF)- SIZE (4 bytes, big endian encoded) - serialized proto message
 message ClientMessage
 {
 	enum Type

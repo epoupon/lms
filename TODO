@@ -22,7 +22,7 @@
 - OGG metadata -> properly handle metadata nested in the audio stream
 
 [Transcode]
-- some early end of playback spotted on flac files
+- some early end of playback spotted on flac files. Spotted on old firefox versions?
 
 [UI]
 	- handle internationalization
@@ -31,6 +31,7 @@
 		- "signal not exposed" problem if a user logout and login again. bad resource destruction?
 		[user/transcoding]
 		- Prefered codecs for audio/video?
+		- use a slider instead of a combo box for the bitrates
 		[admin/Users]
 		- do not activate the update period/start time when 'admin' is checked
 		[admin/Database update]
@@ -39,10 +40,12 @@
 
 	[Audio]
 	- Style eveything nicely...
-	- MediaPlayer: move slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478)
+	- MediaPlayer: move the slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478)
 	- TrackView : handle duration > 1 hour
 	- TrackView : Reselect the current selected item when displaying the updated search results
 	- Add covers in the release filter?
+	- Add a download button to get the current playlist in a streamed zip file
+	- Add keyboard shortcuts
 
 	[Video]
 	- implement a decent mediaplayer

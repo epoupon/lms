@@ -46,17 +46,6 @@ VideoWidget::search(const std::string& searchText)
 }
 
 void
-VideoWidget::backToList(void)
-{
-	if (_mediaPlayer)
-		delete _mediaPlayer;
-
-	_videoDbWidget->setHidden(false);
-
-}
-
-
-void
 VideoWidget::playVideo(boost::filesystem::path p)
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Want to play video " << p << "'" << std::endl;
@@ -100,8 +89,11 @@ VideoWidget::playVideo(boost::filesystem::path p)
 		parameters.setBitrate(Transcode::Stream::Audio, 0/*audioBitrate*/);
 		parameters.setBitrate(Transcode::Stream::Video, 0/*videoBitrate*/);
 
-		_mediaPlayer = new VideoMediaPlayerWidget(parameters, this);
-		_mediaPlayer->close().connect(this, &VideoWidget::backToList);
+		VideoMediaPlayerWidget *mediaPlayer = new VideoMediaPlayerWidget(parameters, this);
+		mediaPlayer->close().connect(std::bind([=] () {
+			_videoDbWidget->setHidden(false);
+			delete mediaPlayer;
+		}));
 
 		_videoDbWidget->setHidden(true);
 	}
