@@ -45,6 +45,7 @@
 	- TrackView : Reselect the current selected item when displaying the updated search results
 	- Add covers in the release filter?
 	- Add a download button to get the current playlist in a streamed zip file
+	- Add keyboard shortcuts
 
 	[Video]
 	- implement a decent mediaplayer
