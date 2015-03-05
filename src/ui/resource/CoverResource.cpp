@@ -35,6 +35,21 @@ CoverResource::CoverResource(Database::Handler& db, std::size_t size, Wt::WObjec
 _db(db),
 _size(size)
 {
+	// Load default cover art
+
+	std::vector<unsigned char> data;
+
+	{
+		std::ifstream ist(Wt::WApplication::instance()->docRoot() + "/images/unknown-cover.jpg");
+		char c;
+		while(ist.get(c))
+			data.push_back(c);
+	}
+
+	_defaultCover.setData(data);
+	_defaultCover.setMimeType("image/jpeg");
+
+	_defaultCover.scale(size);
 }
 
 CoverResource:: ~CoverResource()
@@ -42,55 +57,66 @@ CoverResource:: ~CoverResource()
 	beingDeleted();
 }
 
+std::string
+CoverResource::getReleaseUrl(std::string releaseName)
+{
+	return url() +  "&release=" + releaseName;
+}
+
+std::string
+CoverResource::getTrackUrl(Database::Track::id_type trackId)
+{
+	return url()+ "&trackid=" + std::to_string(trackId);
+}
 
 void
 CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
 {
 	// Get the id of the track
-	const std::string *trackIdStr = request.getParameter("coverid");
+	const std::string *trackIdStr = request.getParameter("trackid");
+	const std::string *releaseStr = request.getParameter("release");
+
+	std::vector<CoverArt::CoverArt> covers;
 
 	if (trackIdStr)
 	{
 		Database::Track::id_type trackId;
 		{
-			std::istringstream iss(*trackIdStr); iss >> trackId;
+			std::istringstream iss(*trackIdStr);
+			iss >> trackId;
 		}
 
 		Wt::Dbo::Transaction transaction(_db.getSession());
 
 		Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
-		std::vector<CoverArt::CoverArt> covers = CoverArt::Grabber::getFromTrack(track);
+		covers = CoverArt::Grabber::getFromTrack(track);
 
 		transaction.commit();
+	}
+	else if (releaseStr)
+	{
+		Wt::Dbo::Transaction transaction(_db.getSession());
+		covers = CoverArt::Grabber::getFromRelease(_db.getSession(), *releaseStr);
+	}
 
-		BOOST_FOREACH(CoverArt::CoverArt& cover, covers)
+	BOOST_FOREACH(CoverArt::CoverArt& cover, covers)
+	{
+		if (cover.scale(_size))
 		{
-			if (cover.scale(_size))
-			{
-				response.setMimeType( cover.getMimeType() );
+			response.setMimeType( cover.getMimeType() );
 
-				BOOST_FOREACH(unsigned char c, cover.getData())
-					response.out().put( c );
-
-				return;
-			}
-			else
-				LMS_LOG(MOD_UI, SEV_DEBUG) << "Resize error for track id = " << trackId;
-		}
-		LMS_LOG(MOD_UI, SEV_DEBUG) << "no valid cover found for track id = " << trackId;
-		{
-			std::ifstream ist(Wt::WApplication::instance()->docRoot() + "/images/unknown-cover.jpg");
-
-			char c;
-			while(ist.get(c))
+			BOOST_FOREACH(unsigned char c, cover.getData())
 				response.out().put( c );
 
-			response.setMimeType("image/jpeg");
+			return;
 		}
 	}
-	else
-		LMS_LOG(MOD_UI, SEV_DEBUG) << "no cover id parameter";
-}
 
+	// If no cover found, just send default one
+	response.setMimeType( _defaultCover.getMimeType() );
+	BOOST_FOREACH(unsigned char c, _defaultCover.getData())
+		response.out().put( c );
+
+}
 
 } // namespace UserInterface

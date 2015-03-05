@@ -28,6 +28,7 @@
 #include "database/DatabaseHandler.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
 class TableFilterGenre : public Wt::WTableView, public Filter
 {
@@ -111,6 +112,7 @@ class TableFilterRelease : public Wt::WTableView, public Filter
 };
 
 
+} // namespace Desktop
 } // namespace UserInterface
 
 #endif

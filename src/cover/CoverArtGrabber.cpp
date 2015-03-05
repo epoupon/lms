@@ -72,8 +72,6 @@ Grabber::getFromTrack(const boost::filesystem::path& p)
 	return res;
 }
 
-
-
 std::vector<CoverArt>
 Grabber::getFromTrack(Database::Track::pointer track)
 {
@@ -94,6 +92,26 @@ Grabber::getFromTrack(Database::Track::pointer track)
 	}
 
 	return res;
+}
+
+std::vector<CoverArt>
+Grabber::getFromRelease(Wt::Dbo::Session& session, std::string releaseName)
+{
+	using namespace Database;
+
+	// For now, just return the embedded cover of the first track
+	SearchFilter filter;
+	filter.exactMatch[SearchFilter::Field::Release].push_back(releaseName);
+
+	Wt::Dbo::collection<Track::pointer> tracks
+		= Track::getAll(session, filter, -1, 1 /* limit result size */);
+
+	Wt::Dbo::collection<Database::Track::pointer>::iterator it = tracks.begin();
+
+	if (it != tracks.end())
+		return getFromTrack(*it);
+	else
+		return std::vector<CoverArt>();
 }
 
 } // namespace CoverArt

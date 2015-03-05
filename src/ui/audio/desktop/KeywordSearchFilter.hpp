@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Emeric Poupon
+ * Copyright (C) 2013 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,41 +17,38 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FILTER_CHAIN_HPP
-#define FILTER_CHAIN_HPP
+#ifndef KEYWORD_SEARCH_FILTER_HPP
+#define KEYWORD_SEARCH_FILTER_HPP
 
-#include <Wt/WSignal>
+#include <string>
 
 #include "Filter.hpp"
-#include "KeywordSearchFilter.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
-// FilterChain
-class FilterChain
+class KeywordSearchFilter : public Filter
 {
 	public:
+		KeywordSearchFilter();
 
-		FilterChain();
+		void setText(const std::string& text);
 
-		void addFilter(Filter* filter);
+		// Set constraint on this filter
+		void refresh(Database::SearchFilter& filter) {}
 
-		// First filter is a keywork search
-		void searchKeyword(const std::string& text);
-
-		// Update filters from filter @ startIdx
-		void updateFilters(std::size_t startIdx);
+		// Get constraints created by this filter
+		void getConstraint(Database::SearchFilter& filter);
 
 	private:
 
-		KeywordSearchFilter	_keywordSearchFilter;
+		void handleKeyWentUp(void);
 
-		// No ownership
-		std::vector<Filter*>	_filters;
-
-		bool _refreshingFilters;
+		std::string	 _lastEmittedText;
 };
 
+} // namespace Desktop
 } // namespace UserInterface
 
 #endif
+

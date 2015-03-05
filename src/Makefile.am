@@ -40,13 +40,18 @@ lms_SOURCES = \
 	$(srcdir)/transcode/InputMediaFile.cpp			\
 	$(srcdir)/ui/LmsApplication.cpp				\
 	$(srcdir)/ui/auth/LmsAuth.cpp				\
-	$(srcdir)/ui/audio/Audio.cpp				\
-	$(srcdir)/ui/audio/AudioMediaPlayer.cpp			\
-	$(srcdir)/ui/audio/FilterChain.cpp			\
-	$(srcdir)/ui/audio/KeywordSearchFilter.cpp		\
-	$(srcdir)/ui/audio/PlayQueue.cpp			\
-	$(srcdir)/ui/audio/TableFilter.cpp			\
-	$(srcdir)/ui/audio/TrackView.cpp			\
+	$(srcdir)/ui/audio/desktop/DesktopAudio.cpp		\
+	$(srcdir)/ui/audio/desktop/AudioMediaPlayer.cpp		\
+	$(srcdir)/ui/audio/desktop/FilterChain.cpp		\
+	$(srcdir)/ui/audio/desktop/KeywordSearchFilter.cpp	\
+	$(srcdir)/ui/audio/desktop/PlayQueue.cpp		\
+	$(srcdir)/ui/audio/desktop/TableFilter.cpp		\
+	$(srcdir)/ui/audio/desktop/TrackView.cpp		\
+	$(srcdir)/ui/audio/mobile/ArtistSearch.cpp		\
+	$(srcdir)/ui/audio/mobile/MobileAudio.cpp		\
+	$(srcdir)/ui/audio/mobile/MobileAudioMediaPlayer.cpp		\
+	$(srcdir)/ui/audio/mobile/ReleaseSearch.cpp		\
+	$(srcdir)/ui/audio/mobile/TrackSearch.cpp		\
 	$(srcdir)/ui/common/DirectoryValidator.cpp		\
 	$(srcdir)/ui/common/LineEdit.cpp			\
 	$(srcdir)/ui/common/SessionData.cpp			\

@@ -17,36 +17,49 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEYWORD_SEARCH_FILTER_HPP
-#define KEYWORD_SEARCH_FILTER_HPP
+#ifndef FILTER_HPP
+#define FILTER_HPP
 
-#include <string>
+#include <Wt/WSignal>
 
-#include "Filter.hpp"
+#include "database/Types.hpp"
 
 namespace UserInterface {
+namespace Desktop {
 
-class KeywordSearchFilter : public Filter
+class Filter
 {
 	public:
-		KeywordSearchFilter();
 
-		void setText(const std::string& text);
+		struct Constraint {
+			std::vector<std::string>	search;
 
-		// Set constraint on this filter
-		void refresh(Database::SearchFilter& filter) {}
+			typedef std::map<std::string,    std::vector<std::string> > ColumnValues;
+			ColumnValues	columnValues;
+		};
 
-		// Get constraints created by this filter
-		void getConstraint(Database::SearchFilter& filter);
+		Filter() {}
+		virtual ~Filter() {}
+
+		// Refresh filter using constraints created by parent filters
+		virtual void refresh(Database::SearchFilter& filter) = 0;
+
+		// Update constraints for next filters
+		virtual void getConstraint(Database::SearchFilter& filter) = 0;
+
+		// Emitted when a constraint has changed
+		Wt::Signal<void>& update() { return _update; };
+
+	protected:
+
+		void emitUpdate()	{ _update.emit(); }
 
 	private:
 
-		void handleKeyWentUp(void);
-
-		std::string	 _lastEmittedText;
+		Wt::Signal<void> _update;
 };
 
+} // namespace Dekstop
 } // namespace UserInterface
 
 #endif
-

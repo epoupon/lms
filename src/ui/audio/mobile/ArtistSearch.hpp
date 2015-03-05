@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,39 +17,42 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef COVER_RESOURCE_HPP_
-#define COVER_RESOURCE_HPP_
+#ifndef UI_MOBILE_ARTIST_SEARCH_HPP
+#define UI_MOBILE_ARTIST_SEARCH_HPP
 
-#include <boost/foreach.hpp>
-#include <boost/filesystem.hpp>
-
-#include <Wt/WResource>
+#include <boost/algorithm/string/split.hpp>
+#include <Wt/WContainerWidget>
 
 #include "database/DatabaseHandler.hpp"
-#include "cover/CoverArt.hpp"
 
 namespace UserInterface {
+namespace Mobile {
 
-class CoverResource : public Wt::WResource
+class ArtistSearch : public Wt::WContainerWidget
 {
 	public:
-		CoverResource(Database::Handler& db,
-				std::size_t size,		// size * size pixels
-				Wt::WObject *parent = 0);
-		~CoverResource();
 
-		std::string getReleaseUrl(std::string releaseName);
-		std::string getTrackUrl(Database::Track::id_type trackId);
+		ArtistSearch(Database::Handler& db, Wt::WContainerWidget *parent = 0);
 
-		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
+		void search(Database::SearchFilter filter, std::size_t nb);
+
+		// Slots
+		Wt::Signal<std::string>&	artistSelected() { return _sigArtistSelected;}
+		Wt::Signal<void>&		moreArtistsSelected() { return _sigMoreArtistsSelected;}
 
 	private:
 
-		Database::Handler&		_db;
-		std::size_t			_size;
-		CoverArt::CoverArt		_defaultCover;
+		Wt::Signal<std::string> _sigArtistSelected;
+		Wt::Signal<void>	_sigMoreArtistsSelected;
+
+		void clear(void);
+		void addResults(Database::SearchFilter filter, size_t nb);
+
+		Database::Handler&	_db;
+		std::size_t		_resCount;
 };
 
+} // namespace Mobile
 } // namespace UserInterface
 
 #endif

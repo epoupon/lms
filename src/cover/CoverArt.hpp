@@ -32,7 +32,7 @@ class CoverArt
 	public:
 		typedef std::vector<unsigned char>	data_type;
 
-		CoverArt();
+		CoverArt() {}
 		CoverArt(const std::string& mime, const data_type& data) : _mimeType(mime), _data(data) {}
 
 		const std::string&	getMimeType() const { return _mimeType; }

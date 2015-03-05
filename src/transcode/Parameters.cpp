@@ -72,7 +72,7 @@ Parameters::getOutputBitrate(Stream::Type type) const
 {
 	std::map<Stream::Type, std::size_t>::const_iterator it = _outputBitrate.find(type);
 
-	if (it != _inputStreams.end())
+	if (it != _outputBitrate.end())
 	{
 		return it->second;
 	}

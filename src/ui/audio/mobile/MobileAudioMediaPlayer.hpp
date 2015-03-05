@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,25 +17,34 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_AUDIO_HPP
-#define UI_AUDIO_HPP
+#ifndef UI_AUDIO_MOBILE_MEDIA_PLAYER_HPP
+#define UI_AUDIO_MOBILE_MEDIA_PLAYER_HPP
 
-#include <string>
 #include <Wt/WContainerWidget>
+#include <Wt/WMediaPlayer>
+
+#include "transcode/Parameters.hpp"
 
 namespace UserInterface {
+namespace Mobile {
 
-class Audio : public Wt::WContainerWidget
+class AudioMediaPlayer : public Wt::WContainerWidget
 {
 	public:
 
-		Audio(Wt::WContainerWidget *parent) : Wt::WContainerWidget(parent) {}
-		virtual ~Audio() {}
+		static Wt::WMediaPlayer::Encoding getEncoding();
 
-		virtual void search(std::string text) = 0;
+		AudioMediaPlayer(Wt::WContainerWidget *parent = 0);
+
+		void play(const Transcode::Parameters& parameters);
+
+	private:
+
+		Wt::WMediaPlayer *_player;
 
 };
 
 } // namespace UserInterface
+} // namespace Mobile
 
 #endif

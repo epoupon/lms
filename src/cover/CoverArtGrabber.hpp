@@ -37,6 +37,7 @@ class Grabber
 		static std::vector<CoverArt>	getFromInputFormatContext(const Av::InputFormatContext& input);
 		static std::vector<CoverArt>	getFromTrack(Database::Track::pointer		track);
 		static std::vector<CoverArt>	getFromTrack(const boost::filesystem::path& path);
+		static std::vector<CoverArt>	getFromRelease(Wt::Dbo::Session& session, std::string releaseName);
 };
 
 } // namespace CoverArt

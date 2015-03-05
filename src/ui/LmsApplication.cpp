@@ -17,17 +17,15 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <Wt/WEnvironment>
 #include <Wt/WBootstrapTheme>
 #include <Wt/WVBoxLayout>
-#include <Wt/WHBoxLayout>
 #include <Wt/WNavigationBar>
 #include <Wt/WStackedWidget>
 #include <Wt/WMenu>
 #include <Wt/WNavigationBar>
 #include <Wt/WPopupMenu>
-#include <Wt/WPopupMenuItem>
 #include <Wt/WVBoxLayout>
-#include <Wt/WLineEdit>
 #include <Wt/Auth/Identity>
 
 #include "logger/Logger.hpp"
@@ -36,7 +34,8 @@
 #include "settings/SettingsFirstConnectionFormView.hpp"
 
 #include "auth/LmsAuth.hpp"
-#include "audio/Audio.hpp"
+#include "audio/desktop/DesktopAudio.hpp"
+#include "audio/mobile/MobileAudio.hpp"
 #include "video/VideoWidget.hpp"
 #include "common/LineEdit.hpp"
 
@@ -44,6 +43,19 @@
 
 namespace skeletons {
 	  extern const char *AuthStrings_xml1;
+}
+
+namespace {
+
+bool agentIsMobile()
+{
+	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
+	return (env.agentIsIEMobile()
+		|| env.agentIsMobileWebKit()
+		|| env.userAgent().find("Mobile") != std::string::npos // Workaround for firefox
+		|| env.userAgent().find("Tablet") != std::string::npos // Workaround for firefox
+		);
+}
 }
 
 
@@ -130,7 +142,7 @@ LmsApplication::handleAuthEvent(void)
 	{
 		Wt::Auth::User user(_sessionData.getDatabaseHandler().getLogin().user());
 
-		LMS_LOG(MOD_UI, SEV_NOTICE) << "User '" << user.identity(Wt::Auth::Identity::LoginName) << "' logged in";
+		LMS_LOG(MOD_UI, SEV_NOTICE) << "User '" << user.identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
 
 		this->root()->setOverflow(Wt::WContainerWidget::OverflowHidden);
 
@@ -150,7 +162,15 @@ LmsApplication::handleAuthEvent(void)
 		Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack);
 		navigation->addMenu(leftMenu);
 
-		Audio *audio = new Audio(_sessionData);
+		const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
+
+		Audio *audio;
+
+		if (agentIsMobile())
+			audio = new Mobile::Audio(_sessionData.getDatabaseHandler());
+		else
+			audio = new Desktop::Audio(_sessionData);
+
 		VideoWidget *videoWidget = new VideoWidget(_sessionData);
 
 		leftMenu->addItem("Audio", audio);
@@ -193,7 +213,7 @@ LmsApplication::handleAuthEvent(void)
 	}
 	else
 	{
-		LMS_LOG(MOD_UI, SEV_NOTICE) << "User logged out";
+		LMS_LOG(MOD_UI, SEV_NOTICE) << "User logged out, session = " << Wt::WApplication::instance()->sessionId();
 
 		quit("");
 		redirect("/");

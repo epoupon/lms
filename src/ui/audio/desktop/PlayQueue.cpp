@@ -58,6 +58,7 @@ namespace {
 }
 
 namespace UserInterface {
+namespace Desktop {
 
 enum ColumnId
 {
@@ -377,7 +378,7 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 
 			std::string coverUrl;
 			if (track->hasCover())
-				coverUrl = _coverResource->url() + "&coverid=" + Wt::asString(track.id()).toUTF8();
+				coverUrl = _coverResource->getTrackUrl(track.id());
 			else
 				coverUrl = "images/unknown-cover.jpg";
 			_model->setData(dataRow, COLUMN_ID_COVER, coverUrl, Wt::DecorationRole);
@@ -612,5 +613,6 @@ PlayQueue::getTracks(std::vector<Database::Track::id_type>& trackIds) const
 	}
 }
 
+} // namespace Desktop
 } // namespace UserInterface
 

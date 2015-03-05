@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,47 +17,31 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FILTER_HPP
-#define FILTER_HPP
+#ifndef UI_AUDIO_MOBILE_HPP
+#define UI_AUDIO_MOBILE_HPP
 
-#include <Wt/WSignal>
+#include <Wt/WContainerWidget>
 
-#include "database/Types.hpp"
+#include "database/DatabaseHandler.hpp"
+
+#include "audio/Audio.hpp"
 
 namespace UserInterface {
+namespace Mobile {
 
-class Filter
+class Audio : public UserInterface::Audio
 {
 	public:
+		Audio(Database::Handler& db, Wt::WContainerWidget *parent = 0);
 
-		struct Constraint {
-			std::vector<std::string>	search;
-
-			typedef std::map<std::string,    std::vector<std::string> > ColumnValues;
-			ColumnValues	columnValues;
-		};
-
-		Filter() {}
-		virtual ~Filter() {}
-
-		// Refresh filter using constraints created by parent filters
-		virtual void refresh(Database::SearchFilter& filter) = 0;
-
-		// Update constraints for next filters
-		virtual void getConstraint(Database::SearchFilter& filter) = 0;
-
-		// Emitted when a constraint has changed
-		Wt::Signal<void>& update() { return _update; };
-
-	protected:
-
-		void emitUpdate()	{ _update.emit(); }
+		void search(std::string text) {}
 
 	private:
 
-		Wt::Signal<void> _update;
+		Database::Handler&	_db;
 };
 
+} // namespace Mobile
 } // namespace UserInterface
 
 #endif
