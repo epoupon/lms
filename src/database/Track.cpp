@@ -194,18 +194,17 @@ Track::getAllQuery(Wt::Dbo::Session& session, SearchFilter filter)
 	return query;
 }
 
-Wt::Dbo::collection< Track::pointer >
+std::vector<Track::pointer>
 Track::getAll(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
 {
-	return getAllQuery(session, filter).limit(size).offset(offset);
+	Wt::Dbo::collection<Track::pointer> res = getAllQuery(session, filter).limit(size).offset(offset);
+	return std::vector<Track::pointer>(res.begin(), res.end());
 }
 
 std::vector<Track::pointer>
 Track::getTracks(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
 {
-	Wt::Dbo::collection< Track::pointer > tracks = getAll(session, filter, offset, size);
-
-	return std::vector<Track::pointer>(tracks.begin(), tracks.end());
+	return getAll(session, filter, offset, size);
 }
 
 Wt::Dbo::Query<Track::ReleaseResult>
