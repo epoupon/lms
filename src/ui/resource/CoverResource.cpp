@@ -72,6 +72,7 @@ CoverResource::getTrackUrl(Database::Track::id_type trackId)
 void
 CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
 {
+
 	// Get the id of the track
 	const std::string *trackIdStr = request.getParameter("trackid");
 	const std::string *releaseStr = request.getParameter("release");
@@ -80,22 +81,35 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 
 	if (trackIdStr)
 	{
-		Database::Track::id_type trackId;
+		Database::Track::id_type trackId = std::stol(*trackIdStr);
+		std::string path;
+		bool hasCover = false;;
+
 		{
-			std::istringstream iss(*trackIdStr);
-			iss >> trackId;
+			// transactions are not thread safe
+			std::unique_lock<std::mutex> lock(_mutex);
+
+			Wt::Dbo::Transaction transaction(_db.getSession());
+
+			Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+			if (track)
+			{
+				hasCover = track->hasCover();;
+				path = track->getPath();
+			}
 		}
 
-		Wt::Dbo::Transaction transaction(_db.getSession());
-
-		Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
-		covers = CoverArt::Grabber::getFromTrack(track);
-
-		transaction.commit();
+		if (hasCover)
+		{
+			covers = CoverArt::Grabber::getFromTrack(path);
+		}
 	}
 	else if (releaseStr)
 	{
+		// transactions are not thread safe
+		std::unique_lock<std::mutex> lock(_mutex);
 		Wt::Dbo::Transaction transaction(_db.getSession());
+
 		covers = CoverArt::Grabber::getFromRelease(_db.getSession(), *releaseStr);
 	}
 
