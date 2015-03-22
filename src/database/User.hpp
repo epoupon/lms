@@ -32,14 +32,34 @@ typedef Wt::Auth::Dbo::AuthInfo<User> AuthInfo;
 
 class Playlist;
 
-class User {
+// User selectable audio formats
+enum class AudioEncoding
+{
+	AUTO,
+	MP3,
+	OGA,
+	WEBMA,
+	FLA,
+};
+
+enum class VideoEncoding
+{
+	AUTO,
+};
+
+class User
+{
 
 	public:
+
 		static const std::size_t MaxNameLength = 15;
 
-		// list of commonly used bitrates
+		// list of audio/video parameters
 		static const std::vector<std::size_t> audioBitrates;
+		static const std::vector<AudioEncoding> audioEncodings;
+
 		static const std::vector<std::size_t> videoBitrates;
+		static const std::vector<VideoEncoding> videoEncodings;
 
 		User();
 
@@ -53,14 +73,18 @@ class User {
 		// write
 		void setAdmin(bool admin)	{ _isAdmin = admin; }
 		void setAudioBitrate(std::size_t bitrate);
+		void setAudioEncoding(AudioEncoding encoding)	{ _audioEncoding = encoding; }
 		void setVideoBitrate(std::size_t bitrate);
+		void setVideoEncoding(VideoEncoding encoding)	{ _videoEncoding = encoding; }
 		void setMaxAudioBitrate(std::size_t bitrate);
 		void setMaxVideoBitrate(std::size_t bitrate);
 
 		// read
 		bool isAdmin() const {return _isAdmin;}
 		std::size_t	getAudioBitrate() const;
+		AudioEncoding	getAudioEncoding() const { return _audioEncoding;}
 		std::size_t	getVideoBitrate() const;
+		VideoEncoding	getVideoEncoding() const { return _videoEncoding;}
 		std::size_t	getMaxAudioBitrate() const;
 		std::size_t	getMaxVideoBitrate() const;
 
@@ -71,7 +95,9 @@ class User {
 				Wt::Dbo::field(a, _maxVideoBitrate, "max_video_bitrate");
 				Wt::Dbo::field(a, _isAdmin, "admin");
 				Wt::Dbo::field(a, _audioBitrate, "audio_bitrate");
+				Wt::Dbo::field(a, _audioEncoding, "audio_encoding");
 				Wt::Dbo::field(a, _videoBitrate, "video_bitrate");
+				Wt::Dbo::field(a, _videoEncoding, "video_encoding");
 				Wt::Dbo::hasMany(a, _playlists, Wt::Dbo::ManyToOne, "user");
 			}
 
@@ -90,7 +116,9 @@ class User {
 
 		// User defined settings
 		int		_audioBitrate;
+		AudioEncoding	_audioEncoding;
 		int		_videoBitrate;
+		VideoEncoding	_videoEncoding;
 
 		Wt::Dbo::collection< Wt::Dbo::ptr<Playlist> > _playlists;
 

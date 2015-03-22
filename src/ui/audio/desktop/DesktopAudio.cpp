@@ -110,13 +110,28 @@ _playQueue(nullptr)
 	// Playlist/PlayQueue
 	{
 		Wt::Dbo::Transaction transaction(_db.getSession());
+		Database::User::pointer user = _db.getCurrentUser();
 
 		Wt::WContainerWidget* playQueueContainer = new Wt::WContainerWidget();
 		playQueueContainer->setStyleClass("playqueue");
 		Wt::WVBoxLayout* playQueueLayout = new Wt::WVBoxLayout();
 		playQueueContainer->setLayout(playQueueLayout);
 
-		_mediaPlayer = new AudioMediaPlayer();
+		// Determine the encoding to be used
+		Wt::WMediaPlayer::Encoding encoding;
+		switch (user->getAudioEncoding())
+		{
+			case Database::AudioEncoding::MP3: encoding = Wt::WMediaPlayer::MP3; break;
+			case Database::AudioEncoding::WEBMA: encoding = Wt::WMediaPlayer::WEBMA; break;
+			case Database::AudioEncoding::OGA: encoding = Wt::WMediaPlayer::OGA; break;
+			case Database::AudioEncoding::FLA: encoding = Wt::WMediaPlayer::FLA; break;
+			case Database::AudioEncoding::AUTO:
+			default:
+				encoding = AudioMediaPlayer::getBestEncoding();
+		}
+
+		LMS_LOG(MOD_UI, SEV_INFO) << "Audio player using encoding " << encoding;
+		_mediaPlayer = new AudioMediaPlayer(encoding);
 		playQueueLayout->addWidget(_mediaPlayer);
 
 		playQueueLayout->addWidget( _playQueue, 1);
@@ -505,11 +520,12 @@ Audio::playTrack(boost::filesystem::path p)
 
 		// Determine the output format using the encoding of the player
 		Transcode::Format::Encoding encoding;
-		switch(AudioMediaPlayer::getEncoding())
+		switch (_mediaPlayer->getEncoding())
 		{
 			case Wt::WMediaPlayer::MP3: encoding = Transcode::Format::MP3; break;
-			case Wt::WMediaPlayer::M4A: encoding = Transcode::Format::M4A; break;
+			case Wt::WMediaPlayer::FLA: encoding = Transcode::Format::FLA; break;
 			case Wt::WMediaPlayer::OGA: encoding = Transcode::Format::OGA; break;
+			case Wt::WMediaPlayer::WEBMA: encoding = Transcode::Format::WEBMA; break;
 			default:
 			    encoding = Transcode::Format::MP3;
 		}

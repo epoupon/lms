@@ -32,7 +32,7 @@ namespace UserInterface {
 namespace Desktop {
 
 Wt::WMediaPlayer::Encoding
-AudioMediaPlayer::getEncoding()
+AudioMediaPlayer::getBestEncoding()
 {
 	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
 
@@ -42,9 +42,10 @@ AudioMediaPlayer::getEncoding()
 		return Wt::WMediaPlayer::OGA;
 }
 
-AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
+AudioMediaPlayer::AudioMediaPlayer( Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent)
 	: Wt::WContainerWidget(parent),
-	_mediaResource(nullptr)
+	_mediaResource(nullptr),
+	_encoding(encoding)
 {
 	this->setStyleClass("mediaplayer");
 	this->setHeight(90);
@@ -112,7 +113,7 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	controlsLayout->addWidget(shuffle);
 
 	_mediaPlayer = new Wt::WMediaPlayer( Wt::WMediaPlayer::Audio, btnContainer );
-	_mediaPlayer->addSource( getEncoding(), "" );
+	_mediaPlayer->addSource( _encoding, "" );
 	_mediaPlayer->ended().connect(this, &AudioMediaPlayer::handleTrackEnded);
 
 	_mediaPlayer->setControlsWidget( 0 );
@@ -148,15 +149,13 @@ AudioMediaPlayer::loadPlayer(void)
 {
 	_mediaPlayer->clearSources();
 
-	_mediaInternalLink.setResource( nullptr );
 	if (_mediaResource)
 		delete _mediaResource;
 
 	assert( _currentParameters );
 	_mediaResource = new AvConvTranscodeStreamResource( *_currentParameters, this );
-	_mediaInternalLink.setResource( _mediaResource );
 
-	_mediaPlayer->addSource( getEncoding(), _mediaInternalLink );
+	_mediaPlayer->addSource( getEncoding(), Wt::WLink(_mediaResource));
 }
 
 void

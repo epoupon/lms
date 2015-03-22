@@ -63,7 +63,23 @@ _db(db)
 	Wt::WTemplate* playerTemplate = new Wt::WTemplate(this);
 	playerTemplate->setTemplateText(Wt::WString::tr("mobile-audio-player"));
 
-	AudioMediaPlayer* mediaPlayer = new AudioMediaPlayer();
+	Wt::Dbo::Transaction transaction(_db.getSession());
+	Database::User::pointer user = _db.getCurrentUser();
+
+	// Determine the encoding to be used
+	Wt::WMediaPlayer::Encoding encoding;
+	switch (user->getAudioEncoding())
+	{
+		case Database::AudioEncoding::MP3: encoding = Wt::WMediaPlayer::MP3; break;
+		case Database::AudioEncoding::WEBMA: encoding = Wt::WMediaPlayer::WEBMA; break;
+		case Database::AudioEncoding::OGA: encoding = Wt::WMediaPlayer::OGA; break;
+		case Database::AudioEncoding::FLA: encoding = Wt::WMediaPlayer::FLA; break;
+		case Database::AudioEncoding::AUTO:
+		default:
+			encoding = AudioMediaPlayer::getBestEncoding();
+	}
+
+	AudioMediaPlayer* mediaPlayer = new AudioMediaPlayer(encoding);
 	playerTemplate->bindWidget("player", mediaPlayer);
 
 	edit->changed().connect(std::bind([=] () {
@@ -177,11 +193,12 @@ _db(db)
 		{
 			// Determine the output format using the encoding of the player
 			Transcode::Format::Encoding encoding;
-			switch(AudioMediaPlayer::getEncoding())
+			switch(mediaPlayer->getEncoding())
 			{
 				case Wt::WMediaPlayer::MP3: encoding = Transcode::Format::MP3; break;
-				case Wt::WMediaPlayer::M4A: encoding = Transcode::Format::M4A; break;
+				case Wt::WMediaPlayer::FLA: encoding = Transcode::Format::FLA; break;
 				case Wt::WMediaPlayer::OGA: encoding = Transcode::Format::OGA; break;
+				case Wt::WMediaPlayer::WEBMA: encoding = Transcode::Format::WEBMA; break;
 				default:
 					encoding = Transcode::Format::MP3;
 			}

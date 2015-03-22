@@ -22,7 +22,6 @@
 
 #include <Wt/WApplication>
 #include <Wt/WImage>
-#include <Wt/WLink>
 #include <Wt/WItemDelegate>
 #include <Wt/WStandardItem>
 #include <Wt/WFileResource>

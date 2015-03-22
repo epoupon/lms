@@ -38,6 +38,7 @@ convert(Transcode::Format format)
 		case Transcode::Format::MP3: return Wt::WMediaPlayer::MP3;
 		case Transcode::Format::WEBMA: return Wt::WMediaPlayer::WEBMA;
 		case Transcode::Format::WEBMV: return Wt::WMediaPlayer::WEBMV;
+		case Transcode::Format::FLA: return Wt::WMediaPlayer::FLA;
 		case Transcode::Format::FLV: return Wt::WMediaPlayer::FLV;
 		case Transcode::Format::M4A: return Wt::WMediaPlayer::M4A;
 		case Transcode::Format::M4V: return Wt::WMediaPlayer::M4V;

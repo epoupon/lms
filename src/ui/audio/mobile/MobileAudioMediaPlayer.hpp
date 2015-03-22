@@ -32,15 +32,18 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 {
 	public:
 
-		static Wt::WMediaPlayer::Encoding getEncoding();
+		static Wt::WMediaPlayer::Encoding getBestEncoding();
 
-		AudioMediaPlayer(Wt::WContainerWidget *parent = 0);
+		AudioMediaPlayer(Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent = 0);
 
 		void play(const Transcode::Parameters& parameters);
+
+		Wt::WMediaPlayer::Encoding getEncoding() const { return _encoding; }
 
 	private:
 
 		Wt::WMediaPlayer *_player;
+		Wt::WMediaPlayer::Encoding _encoding;
 
 };
 

@@ -26,7 +26,6 @@
 #include <Wt/WPushButton>
 #include <Wt/WContainerWidget>
 #include <Wt/WMediaPlayer>
-#include <Wt/WLink>
 #include <Wt/WText>
 
 #include "transcode/Parameters.hpp"
@@ -38,13 +37,14 @@ namespace Desktop {
 class AudioMediaPlayer : public Wt::WContainerWidget
 {
 	public:
+		static Wt::WMediaPlayer::Encoding getBestEncoding();
 
-		// Encoding is set based on environment
-		static Wt::WMediaPlayer::Encoding getEncoding();
-
-		AudioMediaPlayer( Wt::WContainerWidget *parent = 0);
+		AudioMediaPlayer( Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent = 0);
 
 		void load(const Transcode::Parameters& parameters);
+
+		// Accessors
+		Wt::WMediaPlayer::Encoding getEncoding() const	{ return _encoding; }
 
 		// Signal slots
 		Wt::Signal<void>&	playbackEnded() {return _playbackEnded;}
@@ -52,6 +52,7 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 		Wt::Signal<void>&	playPrevious()	{return _playPrevious;}
 		Wt::Signal<bool>&	shuffle()	{return _shuffle;}
 		Wt::Signal<bool>&	loop()		{return _loop;}
+
 
 	private:
 
@@ -76,7 +77,7 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 		// Core
 		Wt::WMediaPlayer*		_mediaPlayer;
 		AvConvTranscodeStreamResource*	_mediaResource;
-		Wt::WLink			_mediaInternalLink;
+		Wt::WMediaPlayer::Encoding	_encoding;
 
 		// Controls
 		std::shared_ptr<Transcode::Parameters>	_currentParameters;

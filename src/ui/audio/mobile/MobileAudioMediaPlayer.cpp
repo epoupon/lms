@@ -28,7 +28,7 @@ namespace UserInterface {
 namespace Mobile {
 
 Wt::WMediaPlayer::Encoding
-AudioMediaPlayer::getEncoding()
+AudioMediaPlayer::getBestEncoding()
 {
 	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
 
@@ -38,20 +38,24 @@ AudioMediaPlayer::getEncoding()
 		return Wt::WMediaPlayer::OGA;
 }
 
-AudioMediaPlayer::AudioMediaPlayer(Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent)
+AudioMediaPlayer::AudioMediaPlayer(Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent)
+:
+ Wt::WContainerWidget(parent),
+_player(nullptr),
+_encoding(encoding)
 {
 	_player = new Wt::WMediaPlayer(Wt::WMediaPlayer::Audio, this);
-	_player->addSource( getEncoding(), "" );
+	_player->addSource( _encoding, "" );
 }
 
 void
 AudioMediaPlayer::play(const Transcode::Parameters& parameters)
 {
+	// FIXME memleak here
 	AvConvTranscodeStreamResource *resource = new AvConvTranscodeStreamResource( parameters, this );
 
 	_player->clearSources();
-	_player->addSource( getEncoding(), Wt::WLink(resource));
+	_player->addSource( _encoding, Wt::WLink(resource));
 
 	_player->play();
 }

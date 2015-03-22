@@ -34,7 +34,7 @@ class AudioFormModel;
 class AudioFormView : public Wt::WTemplateFormView
 {
 	public:
-		AudioFormView(SessionData& sessionData, std::string userId, Wt::WContainerWidget *parent = 0);
+		AudioFormView(SessionData& sessionData, Wt::WContainerWidget *parent = 0);
 
 	private:
 		void processCancel();	// reload from DB

@@ -38,6 +38,7 @@ class Format
 			MP3,
 			WEBMA,
 			WEBMV,
+			FLA,
 			FLV,
 			M4A,
 			M4V,

@@ -63,10 +63,7 @@ _sessionData(sessionData)
 
 	::Database::User::pointer user = sessionData.getDatabaseHandler().getCurrentUser();
 
-	// Must be logged in here
-	assert(user);
-
-	menu->addItem("Audio", new AudioFormView(sessionData, Database::User::getId(user)));
+	menu->addItem("Audio", new AudioFormView(sessionData));
 	if (user->isAdmin())
 	{
 		MediaDirectories* mediaDirectory = new MediaDirectories(sessionData);

@@ -30,6 +30,23 @@
 
 #include "SettingsAudioFormView.hpp"
 
+namespace {
+std::string encodingToString(Database::AudioEncoding encoding)
+{
+
+	switch (encoding)
+	{
+		case Database::AudioEncoding::AUTO: return "Automatic";
+		case Database::AudioEncoding::MP3: return "MP3";
+		case Database::AudioEncoding::OGA: return "OGG";
+		case Database::AudioEncoding::WEBMA: return "WebM";
+		case Database::AudioEncoding::FLA: return "Flash";
+	}
+
+	return "?";
+}
+}
+
 namespace UserInterface {
 namespace Settings {
 
@@ -39,34 +56,35 @@ class AudioFormModel : public Wt::WFormModel
 
 		// Associate each field with a unique string literal.
 		static const Field BitrateField;
+		static const Field EncodingField;
 
-		AudioFormModel(SessionData& sessionData, std::string userId, Wt::WObject *parent = 0)
+		AudioFormModel(SessionData& sessionData, Wt::WObject *parent = 0)
 			: Wt::WFormModel(parent),
-			_db(sessionData.getDatabaseHandler()),
-			_userId(userId)
+			_db(sessionData.getDatabaseHandler())
 		{
 			initializeModels();
 
 			addField(BitrateField);
+			addField(EncodingField, "Session must be reloaded to apply this setting");
 
 			setValidator(BitrateField, new Wt::WValidator(true)); // mandatory
+			setValidator(EncodingField, new Wt::WValidator(true)); // mandatory
 
 			// populate the model with initial data
 			loadData();
 		}
 
 		Wt::WAbstractItemModel *bitrateModel() { return _bitrateModel; }
+		Wt::WAbstractItemModel *encodingModel() { return _encodingModel; }
 
 		void loadData()
 		{
 			Wt::Dbo::Transaction transaction(_db.getSession());
+			Database::User::pointer user =  _db.getCurrentUser();
 
-			Database::User::pointer user = Database::User::getById( _db.getSession(), _userId);
-
-			if (user)
-				setValue(BitrateField, std::min(user->getMaxAudioBitrate(), user->getAudioBitrate()) / 1000); // in kps
-			else
-				setValue(BitrateField, Wt::WString());
+			setValue(BitrateField, std::min(user->getMaxAudioBitrate(), user->getAudioBitrate()) / 1000); // in kps
+			int encodingRow = getAudioEncodingRow( user->getAudioEncoding());
+			setValue(EncodingField, getAudioEncodingString(encodingRow));
 		}
 
 		bool saveData(Wt::WString& error)
@@ -74,14 +92,13 @@ class AudioFormModel : public Wt::WFormModel
 			// DBO transaction active here
 			try {
 				Wt::Dbo::Transaction transaction(_db.getSession());
+				Database::User::pointer user =  _db.getCurrentUser();
 
-				Database::User::pointer user = Database::User::getById( _db.getSession(), _userId);
 				// user may have been deleted by someone else
-				if (user)
-				{
-					user.modify()->setAudioBitrate( Wt::asNumber(value(BitrateField)) * 1000); // in kbps
-				}
+				user.modify()->setAudioBitrate( Wt::asNumber(value(BitrateField)) * 1000); // in kbps
 
+				int encodingRow = getAudioEncodingRow( boost::any_cast<Wt::WString>(value((EncodingField))));
+				user.modify()->setAudioEncoding( getAudioEncodingValue(encodingRow));
 			}
 			catch(Wt::Dbo::Exception& exception)
 			{
@@ -92,33 +109,77 @@ class AudioFormModel : public Wt::WFormModel
 			return true;
 		}
 
+		int getAudioEncodingRow( Database::AudioEncoding encoding)
+		{
+			for (int i = 0; i < _encodingModel->rowCount(); ++i)
+			{
+				if (getAudioEncodingValue(i) == encoding)
+					return i;
+			}
+			return -1;
+		}
+
+		int getAudioEncodingRow( Wt::WString encoding)
+		{
+			for (int i = 0; i < _encodingModel->rowCount(); ++i)
+			{
+				if (getAudioEncodingString(i) == encoding)
+					return i;
+			}
+			return -1;
+		}
+
+		Database::AudioEncoding getAudioEncodingValue(int row)
+		{
+			return boost::any_cast<Database::AudioEncoding>
+				(_encodingModel->data(_encodingModel->index(row, 0), Wt::UserRole));
+		}
+
+		Wt::WString getAudioEncodingString(int row)
+		{
+			return boost::any_cast<Wt::WString>
+				(_encodingModel->data(_encodingModel->index(row, 0), Wt::DisplayRole));
+		}
+
+
 	private:
 		void initializeModels()
 		{
 			Wt::Dbo::Transaction transaction(_db.getSession());
 
-			Database::User::pointer user = Database::User::getById(_db.getSession(), _userId);
+			Database::User::pointer user =  _db.getCurrentUser();
 
 			_bitrateModel = new Wt::WStringListModel(this);
 			BOOST_FOREACH(std::size_t bitrate, Database::User::audioBitrates)
 			{
-				if (user && bitrate <= user->getMaxAudioBitrate())
+				if (bitrate <= user->getMaxAudioBitrate())
 					_bitrateModel->addString( Wt::WString("{1}").arg( bitrate / 1000 ) ); // in kbps
+			}
+
+			_encodingModel = new Wt::WStringListModel(this);
+			int row = 0;
+			BOOST_FOREACH(Database::AudioEncoding encoding, Database::User::audioEncodings)
+			{
+				_encodingModel->addString(encodingToString(encoding));
+				_encodingModel->setData(row, 0, encoding, Wt::UserRole);
+				row++;
 			}
 		}
 
 		Database::Handler&	_db;
 		std::string		_userId;
 		Wt::WStringListModel*	_bitrateModel;
+		Wt::WStringListModel*	_encodingModel;
 };
 
 const Wt::WFormModel::Field AudioFormModel::BitrateField = "bitrate";
+const Wt::WFormModel::Field AudioFormModel::EncodingField = "encoding";
 
-AudioFormView::AudioFormView(SessionData& sessionData, std::string userId, Wt::WContainerWidget *parent)
+AudioFormView::AudioFormView(SessionData& sessionData, Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
 
-	_model = new AudioFormModel(sessionData, userId, this);
+	_model = new AudioFormModel(sessionData, this);
 
 	setTemplateText(tr("audioForm-template"));
 	addFunction("id", &WTemplate::Functions::id);
@@ -136,6 +197,12 @@ AudioFormView::AudioFormView(SessionData& sessionData, std::string userId, Wt::W
 	bitrateCB->setModel(_model->bitrateModel());
 	bitrateCB->changed().connect(_applyInfo, &Wt::WWidget::hide);
 
+	// Encoding
+	Wt::WComboBox *encodingCB = new Wt::WComboBox();
+	setFormWidget(AudioFormModel::EncodingField, encodingCB);
+	encodingCB->setModel(_model->encodingModel());
+	encodingCB->changed().connect(_applyInfo, &Wt::WWidget::hide);
+
 	// Title & Buttons
 	bindString("title", "Audio settings");
 
@@ -148,9 +215,7 @@ AudioFormView::AudioFormView(SessionData& sessionData, std::string userId, Wt::W
 	bindWidget("cancel-button", cancelButton);
 	cancelButton->clicked().connect(this, &AudioFormView::processCancel);
 
-
 	updateView(_model);
-
 }
 
 void
