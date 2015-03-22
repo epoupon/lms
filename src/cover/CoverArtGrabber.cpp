@@ -103,13 +103,11 @@ Grabber::getFromRelease(Wt::Dbo::Session& session, std::string releaseName)
 	SearchFilter filter;
 	filter.exactMatch[SearchFilter::Field::Release].push_back(releaseName);
 
-	Wt::Dbo::collection<Track::pointer> tracks
+	std::vector<Track::pointer> tracks
 		= Track::getAll(session, filter, -1, 1 /* limit result size */);
 
-	Wt::Dbo::collection<Database::Track::pointer>::iterator it = tracks.begin();
-
-	if (it != tracks.end())
-		return getFromTrack(*it);
+	if (!tracks.empty())
+		return getFromTrack( tracks.front() );
 	else
 		return std::vector<CoverArt>();
 }

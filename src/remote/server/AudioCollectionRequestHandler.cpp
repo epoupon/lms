@@ -256,33 +256,31 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Wt::Dbo::collection<Database::Track::pointer> tracks
+	std::vector<Database::Track::pointer> tracks
 		= Database::Track::getAll( _db.getSession(), filter,
 				request.batch_parameter().offset(), static_cast<int>(size));
 
-	typedef Wt::Dbo::collection< Database::Track::pointer > Tracks;
-
-	for (Tracks::const_iterator it = tracks.begin(); it != tracks.end(); ++it)
+	BOOST_FOREACH(Database::Track::pointer track, tracks)
 	{
-		AudioCollectionResponse_Track* track = response.add_tracks();
+		AudioCollectionResponse_Track* newTrack = response.add_tracks();
 
-		track->set_id(it->id());
-		track->set_disc_number( (*it)->getDiscNumber() );
-		track->set_track_number( (*it)->getTrackNumber() );
-		track->set_artist( (*it)->getArtistName() );
-		track->set_release( (*it)->getReleaseName() );
+		newTrack->set_id(track.id());
+		newTrack->set_disc_number( track->getDiscNumber() );
+		newTrack->set_track_number( track->getTrackNumber() );
+		newTrack->set_artist( track->getArtistName() );
+		newTrack->set_release( track->getReleaseName() );
 
-		track->set_name( std::string( boost::locale::conv::to_utf<char>((*it)->getName(), "UTF-8") ) );
-		track->set_duration_secs( (*it)->getDuration().total_seconds() );
+		newTrack->set_name( std::string( boost::locale::conv::to_utf<char>(track->getName(), "UTF-8") ) );
+		newTrack->set_duration_secs( track->getDuration().total_seconds() );
 
 		// Only send the year part of the release times
-		if (!(*it)->getDate().is_special())
-			track->set_release_date( std::to_string((*it)->getDate().date().year()) );
-		if (!(*it)->getOriginalDate().is_special())
-			track->set_original_release_date( std::to_string((*it)->getOriginalDate().date().year()) );
+		if (!track->getDate().is_special())
+			newTrack->set_release_date( std::to_string(track->getDate().date().year()) );
+		if (!track->getOriginalDate().is_special())
+			newTrack->set_original_release_date( std::to_string(track->getOriginalDate().date().year()) );
 
-		BOOST_FOREACH(Database::Genre::pointer genre, (*it)->getGenres())
-			track->add_genre( genre->getName() );
+		BOOST_FOREACH(Database::Genre::pointer genre, track->getGenres())
+			newTrack->add_genre( genre->getName() );
 
 	}
 
@@ -307,13 +305,11 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 				SearchFilter filter;
 				filter.exactMatch[SearchFilter::Field::Release].push_back(request.release());
 
-				Wt::Dbo::collection<Database::Track::pointer> tracks
+				std::vector<Database::Track::pointer> tracks
 					= Database::Track::getAll(_db.getSession(), filter, -1, 1 /* limit reuslt size */);
 
-				Wt::Dbo::collection<Database::Track::pointer>::iterator it = tracks.begin();
-
-				if (it != tracks.end())
-					track = *it;
+				if (!tracks.empty())
+					track = tracks.front();
 
 				res = true;
 			}

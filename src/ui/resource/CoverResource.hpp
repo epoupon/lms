@@ -20,6 +20,8 @@
 #ifndef COVER_RESOURCE_HPP_
 #define COVER_RESOURCE_HPP_
 
+#include <mutex>
+
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 
@@ -45,6 +47,7 @@ class CoverResource : public Wt::WResource
 
 	private:
 
+		std::mutex			_mutex;
 		Database::Handler&		_db;
 		std::size_t			_size;
 		CoverArt::CoverArt		_defaultCover;
