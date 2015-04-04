@@ -71,7 +71,8 @@ _isAdmin(false),
 _audioBitrate(defaultAudioBitrate),
 _audioEncoding(AudioEncoding::AUTO),
 _videoBitrate(defaultVideoBitrate),
-_videoEncoding(VideoEncoding::AUTO)
+_videoEncoding(VideoEncoding::AUTO),
+_curPlayingTrackPos(0)
 {
 
 }

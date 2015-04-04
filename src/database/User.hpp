@@ -78,6 +78,7 @@ class User
 		void setVideoEncoding(VideoEncoding encoding)	{ _videoEncoding = encoding; }
 		void setMaxAudioBitrate(std::size_t bitrate);
 		void setMaxVideoBitrate(std::size_t bitrate);
+		void setCurPlayingTrackPos(std::size_t pos) { _curPlayingTrackPos = pos; }
 
 		// read
 		bool isAdmin() const {return _isAdmin;}
@@ -87,6 +88,7 @@ class User
 		VideoEncoding	getVideoEncoding() const { return _videoEncoding;}
 		std::size_t	getMaxAudioBitrate() const;
 		std::size_t	getMaxVideoBitrate() const;
+		std::size_t	getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
 
 		template<class Action>
 			void persist(Action& a)
@@ -98,6 +100,8 @@ class User
 				Wt::Dbo::field(a, _audioEncoding, "audio_encoding");
 				Wt::Dbo::field(a, _videoBitrate, "video_bitrate");
 				Wt::Dbo::field(a, _videoEncoding, "video_encoding");
+				// User's dynamic data
+				Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
 				Wt::Dbo::hasMany(a, _playlists, Wt::Dbo::ManyToOne, "user");
 			}
 
@@ -119,6 +123,9 @@ class User
 		AudioEncoding	_audioEncoding;
 		int		_videoBitrate;
 		VideoEncoding	_videoEncoding;
+
+		// User's dynamic data
+		int		_curPlayingTrackPos;	// Current track position in queue
 
 		Wt::Dbo::collection< Wt::Dbo::ptr<Playlist> > _playlists;
 

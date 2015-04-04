@@ -358,13 +358,24 @@ PlayQueue::play(int rowId)
 }
 
 void
+PlayQueue::select(int rowId)
+{
+	// Update the track selector to use the requested track as current position
+	_trackSelector->setPosByRowId(rowId);
+
+	Wt::WTableView::select(_model->index(_trackSelector->getCurrent(), 0));
+
+	this->scrollTo( _model->index(_trackSelector->getCurrent(), 0));
+}
+
+void
 PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 {
 	// Add tracks to model
-	Wt::Dbo::Transaction transaction(_db.getSession());
-
+	//
 	BOOST_FOREACH(Database::Track::id_type trackId, trackIds)
 	{
+		Wt::Dbo::Transaction transaction(_db.getSession());
 		Database::Track::pointer track (Database::Track::getById(_db.getSession(), trackId));
 
 		if (track)
@@ -391,6 +402,8 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 	}
 
 	_trackSelector->setSize( _model->rowCount() );
+
+	_sigTracksUpdated.emit();
 }
 
 void
@@ -401,6 +414,8 @@ PlayQueue::clear(void)
 	// Reset play id
 	_curPlayedTrackPos = trackPosInvalid;
 	_trackSelector->setSize( 0 );
+
+	_sigTracksUpdated.emit();
 }
 
 void
@@ -458,7 +473,7 @@ PlayQueue::readTrack(int rowPos)
 	{
 		setPlayingTrackPos(rowPos);
 
-		_sigTrackPlay.emit(track->getPath());
+		_sigTrackPlay.emit(track->getPath(), rowPos);
 
 		this->scrollTo( _model->index(_trackSelector->getCurrent(), 0));
 
@@ -504,6 +519,7 @@ PlayQueue::delSelected(void)
 	_trackSelector->setSize(_model->rowCount());
 
 	renumber(minId, _model->rowCount() - 1);
+	_sigTracksUpdated.emit();
 }
 
 void
@@ -511,6 +527,7 @@ PlayQueue::delAll(void)
 {
 	_model->removeRows(0, _model->rowCount());
 	_trackSelector->setSize(0);
+	_sigTracksUpdated.emit();
 }
 
 void
@@ -551,6 +568,8 @@ PlayQueue::moveSelectedUp(void)
 	this->setSelectedIndexes( newIndexSet );
 
 	renumber(minId, maxId);
+
+	_sigTracksUpdated.emit();
 }
 
 
@@ -592,6 +611,8 @@ PlayQueue::moveSelectedDown(void)
 	this->setSelectedIndexes( newIndexSet );
 
 	renumber(minId, maxId);
+
+	_sigTracksUpdated.emit();
 }
 
 void

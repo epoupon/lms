@@ -49,6 +49,7 @@ class PlayQueue : public Wt::WTableView
 		// Play functions
 		void play(void);		// Play the queue from the beginning
 		void play(int rowId);		// Play the queue from the given rowId
+		void select(int rowId);		// Select the given rowId
 		void playNext(void);		// Play the next track
 		void playPrevious(void);	// Play the previous track
 
@@ -59,7 +60,10 @@ class PlayQueue : public Wt::WTableView
 		void moveSelectedDown(void);
 
 		// Signals
-		Wt::Signal< boost::filesystem::path >& playTrack() { return _sigTrackPlay; }
+		// Emitted when a song has to be played
+		Wt::Signal< boost::filesystem::path, int >& playTrack() { return _sigTrackPlay; }
+		// Emitted when the list has changed
+		Wt::Signal< void >& tracksUpdated() { return _sigTracksUpdated; }
 
 		// Slots
 		void handlePlaybackComplete(void);
@@ -72,7 +76,8 @@ class PlayQueue : public Wt::WTableView
 		void setPlayingTrackPos(int newRowPos);
 		void renumber(int firstId, int lastId);
 
-		Wt::Signal< boost::filesystem::path >	_sigTrackPlay;
+		Wt::Signal< boost::filesystem::path, int >	_sigTrackPlay;
+		Wt::Signal< void >	_sigTracksUpdated;
 
 		Database::Handler&	_db;
 

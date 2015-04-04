@@ -59,12 +59,17 @@ _sessionData(sessionData)
 	hLayout->addWidget(menu);
 	hLayout->addWidget(contents, 1);
 
-	Wt::Dbo::Transaction transaction( sessionData.getDatabaseHandler().getSession());
-
-	::Database::User::pointer user = sessionData.getDatabaseHandler().getCurrentUser();
+	std::string userId;
+	bool userIsAdmin;
+	{
+		Wt::Dbo::Transaction transaction( sessionData.getDatabaseHandler().getSession());
+		::Database::User::pointer user = sessionData.getDatabaseHandler().getCurrentUser();
+		userId = Database::User::getId(user);
+		userIsAdmin = user->isAdmin();
+	}
 
 	menu->addItem("Audio", new AudioFormView(sessionData));
-	if (user->isAdmin())
+	if (userIsAdmin)
 	{
 		MediaDirectories* mediaDirectory = new MediaDirectories(sessionData);
 		mediaDirectory->changed().connect(this, &Settings::handleDatabaseDirectoriesChanged);
@@ -78,7 +83,7 @@ _sessionData(sessionData)
 	}
 	else
 	{
-		menu->addItem("Account", new AccountFormView(sessionData, Database::User::getId(user)));
+		menu->addItem("Account", new AccountFormView(sessionData, userId));
 	}
 
 }

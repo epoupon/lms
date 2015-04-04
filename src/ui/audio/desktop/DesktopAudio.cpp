@@ -51,6 +51,10 @@ void WPopupMenuClear(Wt::WPopupMenu* menu)
 namespace UserInterface {
 namespace Desktop {
 
+// Special playlist generated each time the playque gets changed
+// Restored at the beginning of the session
+static const std::string CurrentQueuePlaylistName = "__current__";
+
 Audio::Audio(SessionData& sessionData, Wt::WContainerWidget* parent)
 : UserInterface::Audio(parent),
 _db(sessionData.getDatabaseHandler()),
@@ -180,6 +184,11 @@ _playQueue(nullptr)
 		playQueueLayout->addLayout(playlistControls);
 
 		mainLayout->addWidget(playQueueContainer, 0, 0, 2, 1);
+
+		// Load the last known queue
+		playlistLoadToPlayqueue(CurrentQueuePlaylistName);
+		// Select the last known playing track
+		_playQueue->select(user->getCurPlayingTrackPos());
 	}
 
 	mainLayout->setRowStretch(1, 1);
@@ -211,6 +220,13 @@ _playQueue(nullptr)
 	_mediaPlayer->playPrevious().connect(_playQueue, &PlayQueue::playPrevious);
 	_mediaPlayer->shuffle().connect(boost::bind(&PlayQueue::setShuffle, _playQueue, _1));
 	_mediaPlayer->loop().connect(boost::bind(&PlayQueue::setLoop,_playQueue, _1));
+
+	_playQueue->tracksUpdated().connect(std::bind([=] () {
+		LMS_LOG(MOD_UI, SEV_INFO) << "Playqueue updated!";
+
+		playlistSaveFromPlayqueue(CurrentQueuePlaylistName);
+	}));
+
 
 	playlistRefreshMenus();
 }
@@ -337,17 +353,21 @@ Audio::playlistLoadToPlayqueue(std::string playlistName)
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Loading playlist '" << playlistName << "' to playqueue";
 
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	std::vector<Database::Track::id_type> entries;
 
-	Database::User::pointer user = _db.getCurrentUser();
-	if (!user)
-		return;
+	{
+		Wt::Dbo::Transaction transaction(_db.getSession());
 
-	Database::Playlist::pointer playlist = Database::Playlist::get(_db.getSession(), playlistName, user);
-	if (!playlist)
-		return;
+		Database::User::pointer user = _db.getCurrentUser();
+		if (!user)
+			return;
 
-	std::vector<Database::Track::id_type> entries = Database::PlaylistEntry::getEntries(_db.getSession(), playlist);
+		Database::Playlist::pointer playlist = Database::Playlist::get(_db.getSession(), playlistName, user);
+		if (!playlist)
+			return;
+
+		entries = Database::PlaylistEntry::getEntries(_db.getSession(), playlist);
+	}
 
 	_playQueue->clear();
 	_playQueue->addTracks(entries);
@@ -414,6 +434,9 @@ Audio::playlistRefreshMenus()
 
 	BOOST_FOREACH(Database::Playlist::pointer playlist, playlists)
 	{
+		if (playlist->getName() == CurrentQueuePlaylistName)
+			continue;
+
 		// Add playlists in each menu
 		_popupMenuDelete->addItem(playlist->getName())->triggered().connect(std::bind([=] ()
 		{
@@ -496,7 +519,7 @@ Audio::playSelectedTracks(PlayQueueAddType addType)
 }
 
 void
-Audio::playTrack(boost::filesystem::path p)
+Audio::playTrack(boost::filesystem::path p, int pos)
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "play track '" << p << "'";
 	try {
@@ -508,7 +531,10 @@ Audio::playTrack(boost::filesystem::path p)
 			Wt::Dbo::Transaction transaction(_db.getSession());
 			Database::User::pointer user = _db.getCurrentUser();
 			if (user)
+			{
 				bitrate = user->getAudioBitrate();
+				user.modify()->setCurPlayingTrackPos(pos);
+			}
 			else
 			{
 				LMS_LOG(MOD_UI, SEV_ERROR) << "Can't play: user does not exists!";
