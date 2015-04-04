@@ -338,7 +338,7 @@
 <message id="mobile-search-title">
 	<div class="row">
 		<div class="col-xs-12">
-			<div class="mobile-search-title vertical-align">${text}</div>
+			<div class="mobile-search-title">${text}</div>
 		</div>
 	</div>
 </message>
@@ -389,9 +389,21 @@
 	</div>
 </message>
 
+<message id="mobile-audio-footer">
+	<nav class="navbar navbar-default navbar-fixed-bottom" role="navigation">
+		${player}
+	</nav>
+</message>
+
 <message id="mobile-audio-player">
-	<div class="row">
-		<div class="col-xs-12">${player}</div>
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-2">${prev}</div>
+			<div class="col-xs-2">${play}${pause}</div>
+			<div class="col-xs-2">${next}</div>
+			<div class="col-xs-2">${cover}</div>
+			<div class="col-xs-4">${volume}</div>
+		</div>
 	</div>
 </message>
 

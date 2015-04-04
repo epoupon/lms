@@ -60,8 +60,8 @@ _db(db)
 	ReleaseSearch* releaseSearch = new ReleaseSearch(_db, this);
 	TrackSearch* trackSearch = new TrackSearch(_db, this);
 
-	Wt::WTemplate* playerTemplate = new Wt::WTemplate(this);
-	playerTemplate->setTemplateText(Wt::WString::tr("mobile-audio-player"));
+	Wt::WTemplate* footer = new Wt::WTemplate(this);
+	footer->setTemplateText(Wt::WString::tr("mobile-audio-footer"));
 
 	Wt::Dbo::Transaction transaction(_db.getSession());
 	Database::User::pointer user = _db.getCurrentUser();
@@ -79,8 +79,8 @@ _db(db)
 			encoding = AudioMediaPlayer::getBestEncoding();
 	}
 
-	AudioMediaPlayer* mediaPlayer = new AudioMediaPlayer(encoding);
-	playerTemplate->bindWidget("player", mediaPlayer);
+	AudioMediaPlayer* mediaPlayer = new AudioMediaPlayer(db, encoding);
+	footer->bindWidget("player", mediaPlayer);
 
 	edit->changed().connect(std::bind([=] () {
 		std::string text = edit->text().toUTF8();
@@ -207,7 +207,7 @@ _db(db)
 			Transcode::Parameters parameters(inputFile, Transcode::Format::get(encoding));
 			parameters.setBitrate(Transcode::Stream::Audio, 96000);
 
-			mediaPlayer->play(parameters);
+			mediaPlayer->play(track.id(), parameters);
 		}
 	} , std::placeholders::_1));
 

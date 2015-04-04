@@ -58,6 +58,7 @@ div.contents {
 .mobile-search-title {
 	font-weight: bold;
 	height: 32px;
+	line-height: 32px;
 	background-color: grey;
 	color: white;
 	text-align: center;
@@ -94,5 +95,13 @@ div.contents {
 .vertical-align {
 	display: flex;
 	align-items: center;
+}
+
+.mobile-audio-footer {
+	background-color: #f5f5f5;
+	bottom: 0;
+	height: 60px;
+	position: absolute;
+	width: 100%;
 }
 
