@@ -50,13 +50,13 @@ namespace {
 bool agentIsMobile()
 {
 	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
-	return true;
 	return (env.agentIsIEMobile()
 		|| env.agentIsMobileWebKit()
 		|| env.userAgent().find("Mobile") != std::string::npos // Workaround for firefox
 		|| env.userAgent().find("Tablet") != std::string::npos // Workaround for firefox
 		);
 }
+
 }
 
 
