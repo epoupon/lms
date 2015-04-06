@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WApplication>
-#include <Wt/WEnvironment>
 
 #include "MobileAudioMediaPlayer.hpp"
 
@@ -30,12 +28,8 @@ namespace Mobile {
 Wt::WMediaPlayer::Encoding
 AudioMediaPlayer::getBestEncoding()
 {
-	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
-
-	if (env.agentIsIE())
-		return Wt::WMediaPlayer::MP3;
-	else
-		return Wt::WMediaPlayer::OGA;
+	// MP3 seems to be better supported everywhere
+	return Wt::WMediaPlayer::MP3;
 }
 
 AudioMediaPlayer::AudioMediaPlayer(Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent)

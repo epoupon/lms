@@ -23,8 +23,6 @@
 #include <Wt/WTemplate>
 #include <Wt/WHBoxLayout>
 #include <Wt/WVBoxLayout>
-#include <Wt/WApplication>
-#include <Wt/WEnvironment>
 
 #include "AudioMediaPlayer.hpp"
 
@@ -34,12 +32,8 @@ namespace Desktop {
 Wt::WMediaPlayer::Encoding
 AudioMediaPlayer::getBestEncoding()
 {
-	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
-
-	if (env.agentIsIE())
-		return Wt::WMediaPlayer::MP3;
-	else
-		return Wt::WMediaPlayer::OGA;
+	// MP3 seems to be better supported everywhere
+	return Wt::WMediaPlayer::MP3;
 }
 
 AudioMediaPlayer::AudioMediaPlayer( Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent)
