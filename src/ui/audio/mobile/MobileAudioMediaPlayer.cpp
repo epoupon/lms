@@ -21,6 +21,7 @@
 #include <Wt/WEnvironment>
 #include <Wt/WTemplate>
 #include <Wt/WPushButton>
+#include <Wt/WSlider>
 
 #include "MobileAudioMediaPlayer.hpp"
 
@@ -39,31 +40,37 @@ AudioMediaPlayer::getBestEncoding()
 AudioMediaPlayer::AudioMediaPlayer(Database::Handler& db, Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent)
 :
  Wt::WContainerWidget(parent),
+_db(db),
 _player(nullptr),
 _encoding(encoding)
 {
-	_coverResource = new CoverResource(db, 56);
+	_coverResource = new CoverResource(db, 48);
 
 	Wt::WTemplate* container  = new Wt::WTemplate(this);
 	container->setTemplateText(Wt::WString::tr("mobile-audio-player"));
 
-	Wt::WPushButton *prev = new Wt::WPushButton("<<");
-	container->bindWidget("prev", prev);
-
 	Wt::WPushButton *play = new Wt::WPushButton("Play");
+	play->setStyleClass("btn-sm");
+	play->setWidth(52);
 	container->bindWidget("play", play);
 
 	Wt::WPushButton *pause = new Wt::WPushButton("Pause");
+	pause->setStyleClass("btn-sm");
+	pause->setWidth(52);
 	container->bindWidget("pause", pause);
 
-	Wt::WPushButton *next = new Wt::WPushButton(">>");
-	container->bindWidget("next", next);
+	_track = new Wt::WText("", Wt::PlainText);
+	_track->setStyleClass("mobile-track");
+	container->bindWidget("track", _track);
+
+	_artistRelease = new Wt::WText("", Wt::PlainText);
+	_artistRelease->setStyleClass("mobile-artist");
+	container->bindWidget("artist", _artistRelease);
 
 	_cover = new Wt::WImage();
 	container->bindWidget("cover", _cover);
+	_cover->setStyleClass("mobile-audio-player-cover");
 
-	Wt::WSlider *volume = new Wt::WSlider();
-	container->bindWidget("volume", volume);
 
 	_player = new Wt::WMediaPlayer(Wt::WMediaPlayer::Audio, this);
 	_player->addSource( _encoding, "" );
@@ -85,6 +92,15 @@ AudioMediaPlayer::play(Database::Track::id_type trackId, const Transcode::Parame
 	_player->play();
 
 	_cover->setImageLink( Wt::WLink (_coverResource->getTrackUrl(trackId)));
+
+	{
+		Wt::Dbo::Transaction transaction(_db.getSession());
+
+		Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+
+		_track->setText( Wt::WString::fromUTF8(track->getName() ));
+		_artistRelease->setText( Wt::WString::fromUTF8(track->getArtistName()) );
+	}
 }
 
 } // namespace UserInterface

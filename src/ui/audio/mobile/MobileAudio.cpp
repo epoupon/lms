@@ -24,7 +24,6 @@
 #include <Wt/WContainerWidget>
 #include <Wt/WTemplate>
 #include <Wt/WLineEdit>
-#include <Wt/WPushButton>
 #include <Wt/WText>
 #include <Wt/WTable>
 
@@ -45,7 +44,8 @@ Audio::Audio(Database::Handler& db, Wt::WContainerWidget *parent)
 _db(db)
 {
 	// Root div has to be a "container"
-	this->setStyleClass("container");
+	this->setStyleClass("container-fluid");
+	this->setPadding(60, Wt::Bottom);
 
 	Wt::WTemplate* search = new Wt::WTemplate(this);
 	search->setTemplateText(Wt::WString::tr("mobile-search"));

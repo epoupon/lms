@@ -45,12 +45,15 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 
 	private:
 
+		Database::Handler& _db;
 		CoverResource* _coverResource;
 
 		Wt::WMediaPlayer* _player;
 		Wt::WMediaPlayer::Encoding _encoding;
 
 		Wt::WImage* _cover;
+		Wt::WText* _track;
+		Wt::WText* _artistRelease;
 
 };
 

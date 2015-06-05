@@ -398,11 +398,24 @@
 <message id="mobile-audio-player">
 	<div class="container">
 		<div class="row">
-			<div class="col-xs-2">${prev}</div>
-			<div class="col-xs-2">${play}${pause}</div>
-			<div class="col-xs-2">${next}</div>
-			<div class="col-xs-2">${cover}</div>
-			<div class="col-xs-4">${volume}</div>
+			<div class="col-xs-12">
+				<div class="row">
+					<div class="mobile-audio-footer">
+						<div class="vertical-align mobile-audio-footer">
+							<div class="col-xs-2">${cover}</div>
+							<div class="col-xs-7">
+								<div class="row">
+									<div class="col-xs-12">${track}</div>
+								</div>
+								<div class="row">
+									<div class="col-xs-12">${artist}</div>
+								</div>
+							</div>
+							<div class="col-xs-3">${play}${pause}</div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </message>
