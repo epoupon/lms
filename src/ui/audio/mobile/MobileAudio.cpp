@@ -82,7 +82,7 @@ Audio::Audio(Wt::WContainerWidget *parent)
 		}
 	}
 
-	AudioMediaPlayer* mediaPlayer = new AudioMediaPlayer(db, encoding);
+	AudioMediaPlayer* mediaPlayer = new AudioMediaPlayer(encoding);
 	footer->bindWidget("player", mediaPlayer);
 
 	edit->changed().connect(std::bind([=] () {

@@ -23,6 +23,8 @@
 #include <Wt/WPushButton>
 #include <Wt/WSlider>
 
+#include "LmsApplication.hpp"
+
 #include "MobileAudioMediaPlayer.hpp"
 
 #include "resource/AvConvTranscodeStreamResource.hpp"
@@ -37,15 +39,12 @@ AudioMediaPlayer::getBestEncoding()
 	return Wt::WMediaPlayer::MP3;
 }
 
-AudioMediaPlayer::AudioMediaPlayer(Database::Handler& db, Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent)
+AudioMediaPlayer::AudioMediaPlayer(Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent)
 :
  Wt::WContainerWidget(parent),
-_db(db),
 _player(nullptr),
 _encoding(encoding)
 {
-	_coverResource = new CoverResource(db, 48);
-
 	Wt::WTemplate* container  = new Wt::WTemplate(this);
 	container->setTemplateText(Wt::WString::tr("mobile-audio-player"));
 
@@ -91,12 +90,12 @@ AudioMediaPlayer::play(Database::Track::id_type trackId, const Transcode::Parame
 
 	_player->play();
 
-	_cover->setImageLink( Wt::WLink (_coverResource->getTrackUrl(trackId)));
+	_cover->setImageLink( Wt::WLink (LmsApplication::instance()->getCoverResource()->getTrackUrl(trackId, 48)));
 
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		Wt::Dbo::Transaction transaction(DboSession());
 
-		Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+		Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
 
 		_track->setText( Wt::WString::fromUTF8(track->getName() ));
 		_artistRelease->setText( Wt::WString::fromUTF8(track->getArtistName()) );

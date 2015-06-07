@@ -25,7 +25,6 @@
 #include <Wt/WImage>
 
 #include "database/DatabaseHandler.hpp"
-#include "resource/CoverResource.hpp"
 #include "transcode/Parameters.hpp"
 
 namespace UserInterface {
@@ -37,16 +36,13 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 
 		static Wt::WMediaPlayer::Encoding getBestEncoding();
 
-		AudioMediaPlayer(Database::Handler& db, Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent = 0);
+		AudioMediaPlayer(Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent = 0);
 
 		void play(Database::Track::id_type trackId, const Transcode::Parameters& parameters);
 
 		Wt::WMediaPlayer::Encoding getEncoding() const { return _encoding; }
 
 	private:
-
-		Database::Handler& _db;
-		CoverResource* _coverResource;
 
 		Wt::WMediaPlayer* _player;
 		Wt::WMediaPlayer::Encoding _encoding;
