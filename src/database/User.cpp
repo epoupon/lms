@@ -23,7 +23,7 @@ namespace Database {
 
 // must be ordered
 const std::vector<std::size_t>
-	User::audioBitrates =
+User::audioBitrates =
 {
 	64000,
 	96000,
@@ -38,7 +38,7 @@ const std::vector<std::size_t>
 
 
 const std::vector<std::size_t>
-	User::videoBitrates =
+User::videoBitrates =
 {
 	256000,
 	512000,
@@ -47,12 +47,32 @@ const std::vector<std::size_t>
 	4096000,
 	8192000
 };
+
+const std::vector<AudioEncoding>
+User::audioEncodings =
+{
+	AudioEncoding::AUTO,
+	AudioEncoding::MP3,
+	AudioEncoding::OGA,
+	AudioEncoding::WEBMA,
+	AudioEncoding::FLA,
+};
+
+const std::vector<VideoEncoding>
+User::videoEncodings =
+{
+	VideoEncoding::AUTO,
+};
+
 User::User()
 : _maxAudioBitrate(maxAudioBitrate),
  _maxVideoBitrate(maxVideoBitrate),
 _isAdmin(false),
 _audioBitrate(defaultAudioBitrate),
-_videoBitrate(defaultVideoBitrate)
+_audioEncoding(AudioEncoding::AUTO),
+_videoBitrate(defaultVideoBitrate),
+_videoEncoding(VideoEncoding::AUTO),
+_curPlayingTrackPos(0)
 {
 
 }

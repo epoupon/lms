@@ -24,8 +24,6 @@
 #include <Wt/WTemplateFormView>
 #include <Wt/WSignal>
 
-#include "common/SessionData.hpp"
-
 namespace UserInterface {
 namespace Settings {
 
@@ -35,7 +33,7 @@ class UserFormView : public Wt::WTemplateFormView
 {
 	public:
 
-		UserFormView(SessionData& sessionData, std::string userId, Wt::WContainerWidget *parent = 0);
+		UserFormView(std::string userId, Wt::WContainerWidget *parent = 0);
 
 		// Signal emitted once the form is completed
 		Wt::Signal<bool>&	completed()	{ return _sigCompleted; }

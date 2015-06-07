@@ -25,14 +25,14 @@
 
 #include "logger/Logger.hpp"
 
+#include "LmsApplication.hpp"
 #include "TrackView.hpp"
 
 namespace UserInterface {
 namespace Desktop {
 
-TrackView::TrackView( Database::Handler& db, Wt::WContainerWidget* parent)
-: Wt::WTableView( parent ),
-_db(db)
+TrackView::TrackView(Wt::WContainerWidget* parent)
+: Wt::WTableView( parent )
 {
 
 	static const std::vector<Wt::WString> columnNames =
@@ -50,7 +50,7 @@ _db(db)
 
 	Database::SearchFilter filter;
 
-	Database::Track::updateTracksQueryModel(_db.getSession(), _queryModel, filter, columnNames);
+	Database::Track::updateTracksQueryModel(DboSession(), _queryModel, filter, columnNames);
 
 	_queryModel.setBatchSize(300);
 
@@ -111,7 +111,7 @@ _db(db)
 void
 TrackView::refresh(Database::SearchFilter& filter)
 {
-	Database::Track::updateTracksQueryModel(_db.getSession(), _queryModel, filter);
+	Database::Track::updateTracksQueryModel(DboSession(), _queryModel, filter);
 }
 
 void

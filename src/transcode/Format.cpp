@@ -33,6 +33,7 @@ const std::vector<Format> Format::_supportedFormats
 	{Format::MP3, Format::Audio, "audio/mpeg", "MP3"},
 	{Format::WEBMA, Format::Audio, "audio/webm", "WebM"},
 	{Format::WEBMV, Format::Video, "video/webm", "WebM"},
+	{Format::FLA, Format::Audio, "audio/x-flv", "Flash Audio"},
 	{Format::FLV, Format::Video, "video/x-flv", "Flash Video"},
 	{Format::M4A, Format::Audio, "audio/mp4", "MP4"},
 	{Format::M4V, Format::Video, "video/mp4", "MP4"},

@@ -25,8 +25,6 @@
 #include <Wt/WText>
 #include <Wt/WSignal>
 
-#include "common/SessionData.hpp"
-
 namespace UserInterface {
 namespace Settings {
 
@@ -35,7 +33,7 @@ class MediaDirectoryFormModel;
 class MediaDirectoryFormView : public Wt::WTemplateFormView
 {
 	public:
-		MediaDirectoryFormView(Database::Handler& db, Wt::WContainerWidget *parent = 0);
+		MediaDirectoryFormView(Wt::WContainerWidget *parent = 0);
 
 		// Signal emitted once the form is completed
 		Wt::Signal<bool>&	completed()	{ return _sigCompleted; }

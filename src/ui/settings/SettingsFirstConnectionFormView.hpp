@@ -25,8 +25,6 @@
 #include <Wt/WText>
 #include <Wt/WPushButton>
 
-#include "common/SessionData.hpp"
-
 namespace UserInterface {
 namespace Settings {
 
@@ -35,7 +33,7 @@ class FirstConnectionFormModel;
 class FirstConnectionFormView : public Wt::WTemplateFormView
 {
 	public:
-		FirstConnectionFormView(SessionData& sessionData, Wt::WContainerWidget *parent = 0);
+		FirstConnectionFormView(Wt::WContainerWidget *parent = 0);
 
 	private:
 

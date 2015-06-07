@@ -32,6 +32,7 @@
 #include <Wt/WLabel>
 
 #include "logger/Logger.hpp"
+#include "LmsApplication.hpp"
 
 #include "TableFilter.hpp"
 #include "KeywordSearchFilter.hpp"
@@ -51,9 +52,12 @@ void WPopupMenuClear(Wt::WPopupMenu* menu)
 namespace UserInterface {
 namespace Desktop {
 
-Audio::Audio(SessionData& sessionData, Wt::WContainerWidget* parent)
+// Special playlist generated each time the playque gets changed
+// Restored at the beginning of the session
+static const std::string CurrentQueuePlaylistName = "__current__";
+
+Audio::Audio(Wt::WContainerWidget* parent)
 : UserInterface::Audio(parent),
-_db(sessionData.getDatabaseHandler()),
 _mediaPlayer(nullptr),
 _trackView(nullptr),
 _playQueue(nullptr)
@@ -65,15 +69,15 @@ _playQueue(nullptr)
 	// Filters
 	Wt::WHBoxLayout *filterLayout = new Wt::WHBoxLayout();
 
-	TableFilterGenre *filterGenre = new TableFilterGenre(_db);
+	TableFilterGenre *filterGenre = new TableFilterGenre();
 	filterLayout->addWidget(filterGenre);
 	_filterChain.addFilter(filterGenre);
 
-	TableFilterArtist *filterArtist = new TableFilterArtist(_db);
+	TableFilterArtist *filterArtist = new TableFilterArtist();
 	filterLayout->addWidget(filterArtist);
 	_filterChain.addFilter(filterArtist);
 
-	TableFilterRelease *filterRelease = new TableFilterRelease(_db);
+	TableFilterRelease *filterRelease = new TableFilterRelease();
 	filterLayout->addWidget(filterRelease);
 	_filterChain.addFilter(filterRelease);
 
@@ -84,7 +88,7 @@ _playQueue(nullptr)
 
 	Wt::WVBoxLayout* trackLayout = new Wt::WVBoxLayout();
 
-	_trackView = new TrackView(_db);
+	_trackView = new TrackView();
 	trackLayout->addWidget(_trackView, 1);
 
 	Wt::WHBoxLayout* trackControls = new Wt::WHBoxLayout();
@@ -105,18 +109,32 @@ _playQueue(nullptr)
 
 	_filterChain.addFilter(_trackView);
 
-	_playQueue = new PlayQueue(_db);
+	_playQueue = new PlayQueue();
 
 	// Playlist/PlayQueue
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		Wt::Dbo::Transaction transaction(DboSession());
 
 		Wt::WContainerWidget* playQueueContainer = new Wt::WContainerWidget();
 		playQueueContainer->setStyleClass("playqueue");
 		Wt::WVBoxLayout* playQueueLayout = new Wt::WVBoxLayout();
 		playQueueContainer->setLayout(playQueueLayout);
 
-		_mediaPlayer = new AudioMediaPlayer();
+		// Determine the encoding to be used
+		Wt::WMediaPlayer::Encoding encoding;
+		switch (CurrentUser()->getAudioEncoding())
+		{
+			case Database::AudioEncoding::MP3: encoding = Wt::WMediaPlayer::MP3; break;
+			case Database::AudioEncoding::WEBMA: encoding = Wt::WMediaPlayer::WEBMA; break;
+			case Database::AudioEncoding::OGA: encoding = Wt::WMediaPlayer::OGA; break;
+			case Database::AudioEncoding::FLA: encoding = Wt::WMediaPlayer::FLA; break;
+			case Database::AudioEncoding::AUTO:
+			default:
+				encoding = AudioMediaPlayer::getBestEncoding();
+		}
+
+		LMS_LOG(MOD_UI, SEV_INFO) << "Audio player using encoding " << encoding;
+		_mediaPlayer = new AudioMediaPlayer(encoding);
 		playQueueLayout->addWidget(_mediaPlayer);
 
 		playQueueLayout->addWidget( _playQueue, 1);
@@ -165,6 +183,11 @@ _playQueue(nullptr)
 		playQueueLayout->addLayout(playlistControls);
 
 		mainLayout->addWidget(playQueueContainer, 0, 0, 2, 1);
+
+		// Load the last known queue
+		playlistLoadToPlayqueue(CurrentQueuePlaylistName);
+		// Select the last known playing track
+		_playQueue->select(CurrentUser()->getCurPlayingTrackPos());
 	}
 
 	mainLayout->setRowStretch(1, 1);
@@ -196,6 +219,13 @@ _playQueue(nullptr)
 	_mediaPlayer->playPrevious().connect(_playQueue, &PlayQueue::playPrevious);
 	_mediaPlayer->shuffle().connect(boost::bind(&PlayQueue::setShuffle, _playQueue, _1));
 	_mediaPlayer->loop().connect(boost::bind(&PlayQueue::setLoop,_playQueue, _1));
+
+	_playQueue->tracksUpdated().connect(std::bind([=] () {
+		LMS_LOG(MOD_UI, SEV_INFO) << "Playqueue updated!";
+
+		playlistSaveFromPlayqueue(CurrentQueuePlaylistName);
+	}));
+
 
 	playlistRefreshMenus();
 }
@@ -250,14 +280,10 @@ Audio::playlistShowSaveNewDialog()
 void
 Audio::playlistShowSaveDialog(std::string playlistName)
 {
-	Wt::Dbo::Transaction transaction(_db.getSession());
-
-	Database::User::pointer user = _db.getCurrentUser();
-	if (!user)
-		return;
+	Wt::Dbo::Transaction transaction(DboSession());
 
 	// Actually create the dialog only if the given list already exists
-	if (Database::Playlist::get(_db.getSession(), playlistName, user))
+	if (Database::Playlist::get(DboSession(), playlistName, CurrentUser()))
 	{
 		Wt::WMessageBox *messageBox = new Wt::WMessageBox
 			("Overwrite playlist",
@@ -287,20 +313,16 @@ Audio::playlistSaveFromPlayqueue(std::string playlistName)
 {
 	LMS_LOG(MOD_UI, SEV_INFO) << "Saving playqueue to playlist '" << playlistName << "'";
 
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	Wt::Dbo::Transaction transaction(DboSession());
 
-	Database::User::pointer user = _db.getCurrentUser();
-	if (!user)
-		return;
-
-	Database::Playlist::pointer playlist = Database::Playlist::get(_db.getSession(), playlistName, user);
+	Database::Playlist::pointer playlist = Database::Playlist::get(DboSession(), playlistName, CurrentUser());
 	if (playlist)
 	{
 		LMS_LOG(MOD_UI, SEV_INFO) << "Erasing playlist '" << playlistName << "'";
 		playlist.remove();
 	}
 
-	playlist = Database::Playlist::create(_db.getSession(), playlistName, false, user);
+	playlist = Database::Playlist::create(DboSession(), playlistName, false, CurrentUser());
 
 	std::vector<Database::Track::id_type> trackIds;
 	_playQueue->getTracks(trackIds);
@@ -308,10 +330,10 @@ Audio::playlistSaveFromPlayqueue(std::string playlistName)
 	int pos = 0;
 	BOOST_FOREACH(Database::Track::id_type trackId, trackIds)
 	{
-		Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+		Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
 
 		if (track)
-			Database::PlaylistEntry::create(_db.getSession(), track, playlist, pos++);
+			Database::PlaylistEntry::create(DboSession(), track, playlist, pos++);
 	}
 
 	LMS_LOG(MOD_UI, SEV_INFO) << "Saving playqueue to playlist '" << playlistName << "' done. Contains " << pos << " entries";
@@ -322,17 +344,17 @@ Audio::playlistLoadToPlayqueue(std::string playlistName)
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Loading playlist '" << playlistName << "' to playqueue";
 
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	std::vector<Database::Track::id_type> entries;
 
-	Database::User::pointer user = _db.getCurrentUser();
-	if (!user)
-		return;
+	{
+		Wt::Dbo::Transaction transaction(DboSession());
 
-	Database::Playlist::pointer playlist = Database::Playlist::get(_db.getSession(), playlistName, user);
-	if (!playlist)
-		return;
+		Database::Playlist::pointer playlist = Database::Playlist::get(DboSession(), playlistName, CurrentUser());
+		if (!playlist)
+			return;
 
-	std::vector<Database::Track::id_type> entries = Database::PlaylistEntry::getEntries(_db.getSession(), playlist);
+		entries = Database::PlaylistEntry::getEntries(DboSession(), playlist);
+	}
 
 	_playQueue->clear();
 	_playQueue->addTracks(entries);
@@ -355,12 +377,9 @@ Audio::playlistShowDeleteDialog(std::string name)
 	messageBox->buttonClicked().connect(std::bind([=] () {
 		if (messageBox->buttonResult() == Wt::Yes)
 		{
-			Wt::Dbo::Transaction transaction(_db.getSession());
-			Database::User::pointer user = _db.getCurrentUser();
-			if (!user)
-				return;
+			Wt::Dbo::Transaction transaction(DboSession());
 
-			Database::Playlist::pointer playlist = Database::Playlist::get(_db.getSession(), name, user);
+			Database::Playlist::pointer playlist = Database::Playlist::get(DboSession(), name, CurrentUser());
 			if (playlist)
 				playlist.remove();
 
@@ -376,11 +395,7 @@ Audio::playlistShowDeleteDialog(std::string name)
 void
 Audio::playlistRefreshMenus()
 {
-	Wt::Dbo::Transaction transaction(_db.getSession());
-
-	Database::User::pointer user = _db.getCurrentUser();
-	if (!user)
-		return;
+	Wt::Dbo::Transaction transaction(DboSession());
 
 	// Clear playlists in each menu
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Save item count: " << _popupMenuSave->count();
@@ -395,10 +410,13 @@ Audio::playlistRefreshMenus()
 	}));
 	_popupMenuSave->addSeparator();
 
-	std::vector<Database::Playlist::pointer> playlists = Database::Playlist::get(_db.getSession(), user);
+	std::vector<Database::Playlist::pointer> playlists = Database::Playlist::get(DboSession(), CurrentUser());
 
 	BOOST_FOREACH(Database::Playlist::pointer playlist, playlists)
 	{
+		if (playlist->getName() == CurrentQueuePlaylistName)
+			continue;
+
 		// Add playlists in each menu
 		_popupMenuDelete->addItem(playlist->getName())->triggered().connect(std::bind([=] ()
 		{
@@ -481,7 +499,7 @@ Audio::playSelectedTracks(PlayQueueAddType addType)
 }
 
 void
-Audio::playTrack(boost::filesystem::path p)
+Audio::playTrack(boost::filesystem::path p, int pos)
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "play track '" << p << "'";
 	try {
@@ -490,26 +508,22 @@ Audio::playTrack(boost::filesystem::path p)
 
 		// Get user preferences
 		{
-			Wt::Dbo::Transaction transaction(_db.getSession());
-			Database::User::pointer user = _db.getCurrentUser();
-			if (user)
-				bitrate = user->getAudioBitrate();
-			else
-			{
-				LMS_LOG(MOD_UI, SEV_ERROR) << "Can't play: user does not exists!";
-				return; // TODO logout?
-			}
+			Wt::Dbo::Transaction transaction(DboSession());
+
+			bitrate = CurrentUser()->getAudioBitrate();
+			CurrentUser().modify()->setCurPlayingTrackPos(pos);
 		}
 
 		Transcode::InputMediaFile inputFile(p);
 
 		// Determine the output format using the encoding of the player
 		Transcode::Format::Encoding encoding;
-		switch(AudioMediaPlayer::getEncoding())
+		switch (_mediaPlayer->getEncoding())
 		{
 			case Wt::WMediaPlayer::MP3: encoding = Transcode::Format::MP3; break;
-			case Wt::WMediaPlayer::M4A: encoding = Transcode::Format::M4A; break;
+			case Wt::WMediaPlayer::FLA: encoding = Transcode::Format::FLA; break;
 			case Wt::WMediaPlayer::OGA: encoding = Transcode::Format::OGA; break;
+			case Wt::WMediaPlayer::WEBMA: encoding = Transcode::Format::WEBMA; break;
 			default:
 			    encoding = Transcode::Format::MP3;
 		}

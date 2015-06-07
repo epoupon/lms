@@ -23,7 +23,7 @@
 #include <Wt/WTableView>
 #include <Wt/WStandardItemModel>
 
-#include "database/DatabaseHandler.hpp"
+#include "database/Types.hpp"
 
 #include "resource/CoverResource.hpp"
 
@@ -36,7 +36,7 @@ class TrackSelector;
 class PlayQueue : public Wt::WTableView
 {
 	public:
-		PlayQueue(Database::Handler& db, Wt::WContainerWidget* parent = 0);
+		PlayQueue(Wt::WContainerWidget* parent = 0);
 
 		void addTracks(const std::vector<Database::Track::id_type>& trackIds);
 		void getTracks(std::vector<Database::Track::id_type>& trackIds) const;
@@ -49,6 +49,7 @@ class PlayQueue : public Wt::WTableView
 		// Play functions
 		void play(void);		// Play the queue from the beginning
 		void play(int rowId);		// Play the queue from the given rowId
+		void select(int rowId);		// Select the given rowId
 		void playNext(void);		// Play the next track
 		void playPrevious(void);	// Play the previous track
 
@@ -59,7 +60,10 @@ class PlayQueue : public Wt::WTableView
 		void moveSelectedDown(void);
 
 		// Signals
-		Wt::Signal< boost::filesystem::path >& playTrack() { return _sigTrackPlay; }
+		// Emitted when a song has to be played
+		Wt::Signal< boost::filesystem::path, int >& playTrack() { return _sigTrackPlay; }
+		// Emitted when the list has changed
+		Wt::Signal< void >& tracksUpdated() { return _sigTracksUpdated; }
 
 		// Slots
 		void handlePlaybackComplete(void);
@@ -72,15 +76,12 @@ class PlayQueue : public Wt::WTableView
 		void setPlayingTrackPos(int newRowPos);
 		void renumber(int firstId, int lastId);
 
-		Wt::Signal< boost::filesystem::path >	_sigTrackPlay;
-
-		Database::Handler&	_db;
+		Wt::Signal< boost::filesystem::path, int >	_sigTrackPlay;
+		Wt::Signal< void >	_sigTracksUpdated;
 
 		Wt::WStandardItemModel*	_model;
 
 		PlayQueueItemDelegate*	_itemDelegate;
-
-		CoverResource*		_coverResource;
 
 		int				_curPlayedTrackPos;
 		std::unique_ptr<TrackSelector>	_trackSelector;

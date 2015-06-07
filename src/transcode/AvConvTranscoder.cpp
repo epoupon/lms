@@ -135,13 +135,16 @@ AvConvTranscoder::AvConvTranscoder(const Parameters& parameters)
 			oss << " -acodec libvorbis -ac 2 -ar 44100 -vcodec libvpx -threads 4 -f webm";
 			break;
 		case Format::M4A:
-			oss << " -acodec aac -f mp4";
+			oss << " -acodec aac -f mp4 -strict experimental";
 			break;
 		case Format::M4V:
 			oss << " -acodec aac -strict experimental -ac 2 -ar 44100 -vcodec libx264 -f m4v";
 			break;
 		case Format::FLV:
 			oss << " -acodec libmp3lame -ac 2 -ar 44100 -vcodec libx264 -f flv";
+			break;
+		case Format::FLA:
+			oss << " -acodec libmp3lame -f flv";
 			break;
 		default:
 			assert(0);

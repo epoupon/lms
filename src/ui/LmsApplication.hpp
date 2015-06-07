@@ -20,20 +20,25 @@
 #ifndef LMS_APPLICATION_HPP
 #define LMS_APPLICATION_HPP
 
+#include <boost/filesystem.hpp>
 #include <Wt/WApplication>
 
-#include "common/SessionData.hpp"
+#include "database/DatabaseHandler.hpp"
+#include "resource/CoverResource.hpp"
 
 namespace UserInterface {
-
 
 class LmsApplication : public Wt::WApplication
 {
 	public:
-
 		static Wt::WApplication *create(const Wt::WEnvironment& env, boost::filesystem::path dbPath);
+		static LmsApplication* instance();
 
 		LmsApplication(const Wt::WEnvironment& env, boost::filesystem::path dbPath);
+
+		// Session application data
+		CoverResource* getCoverResource() { return _coverResource; }
+		Database::Handler& getDbHandler() { return _db;}
 
 	private:
 
@@ -41,10 +46,16 @@ class LmsApplication : public Wt::WApplication
 		void createFirstConnectionUI();
 		void createLmsUI();
 
-		SessionData	_sessionData;
-
+		Database::Handler	_db;
+		CoverResource*          _coverResource;
 };
 
+// Helpers to get session data
+Database::Handler& DbHandler();
+Wt::Dbo::Session& DboSession();
+
+const Wt::Auth::User& CurrentAuthUser();
+Database::User::pointer CurrentUser();
 
 } // namespace UserInterface
 

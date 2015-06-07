@@ -23,14 +23,12 @@
 #include <Wt/WTable>
 #include <Wt/WContainerWidget>
 
-#include "common/SessionData.hpp"
-
 namespace UserInterface {
 
 class VideoDatabaseWidget : public Wt::WContainerWidget
 {
 	public:
-		VideoDatabaseWidget( Database::Handler& db, Wt::WContainerWidget *parent = 0);
+		VideoDatabaseWidget(Wt::WContainerWidget *parent = 0);
 
 		// Signals
 		Wt::Signal< boost::filesystem::path >&	playVideo() { return _playVideo; }
@@ -42,8 +40,6 @@ class VideoDatabaseWidget : public Wt::WContainerWidget
 		void addVideo(const std::string& name, const boost::posix_time::time_duration& duration, const boost::filesystem::path& path);
 
 		void updateView(boost::filesystem::path directory, size_t depth);
-
-		Database::Handler&	_db;
 
 		Wt::Signal< boost::filesystem::path > _playVideo;
 

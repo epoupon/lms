@@ -21,14 +21,15 @@
 #include <Wt/WTemplate>
 #include <Wt/WPushButton>
 
+#include "LmsApplication.hpp"
+
 #include "ArtistSearch.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
-ArtistSearch::ArtistSearch(Database::Handler& db, Wt::WContainerWidget *parent)
+ArtistSearch::ArtistSearch(Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent),
-_db(db),
 _resCount(0)
 {
 	Wt::WTemplate *title = new Wt::WTemplate(this);
@@ -60,10 +61,10 @@ ArtistSearch::addResults(Database::SearchFilter filter, std::size_t nb)
 	std::vector<std::string> artists;
 
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		Wt::Dbo::Transaction transaction(DboSession());
 
 		// Request one more to see if more results are to be expected
-		artists = Database::Track::getArtists(_db.getSession(), filter, _resCount, nb + 1);
+		artists = Database::Track::getArtists(DboSession(), filter, _resCount, nb + 1);
 	}
 
 	bool expectMoreResults;

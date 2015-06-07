@@ -17,15 +17,16 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "LmsAuth.hpp"
+
+#include "LmsApplication.hpp"
 
 namespace UserInterface {
 
-LmsAuth::LmsAuth(Database::Handler& db)
-: Wt::Auth::AuthWidget(db.getAuthService(),
-		db.getUserDatabase(),
-		db.getLogin())
+LmsAuth::LmsAuth()
+: Wt::Auth::AuthWidget(DbHandler().getAuthService(),
+		DbHandler().getUserDatabase(),
+		DbHandler().getLogin())
 {
 	// Root div has to be a container
 	this->setStyleClass("container");

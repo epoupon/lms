@@ -34,7 +34,7 @@ class TrackView : public Wt::WTableView, public Filter
 {
 	public:
 
-		TrackView( Database::Handler& db, Wt::WContainerWidget* parent = 0);
+		TrackView(Wt::WContainerWidget* parent = 0);
 
 		// Filter interface
 		// Set constraints created by parent filters
@@ -61,8 +61,6 @@ class TrackView : public Wt::WTableView, public Filter
 	private:
 
 		SigTrackDoubleClicked	_sigTrackDoubleClicked;
-
-		Database::Handler&			_db;
 
 		typedef Database::Track::pointer  ResultType;
 		Wt::Dbo::QueryModel< ResultType >	_queryModel;

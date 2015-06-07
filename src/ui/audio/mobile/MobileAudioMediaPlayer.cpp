@@ -19,6 +19,11 @@
 
 #include <Wt/WApplication>
 #include <Wt/WEnvironment>
+#include <Wt/WTemplate>
+#include <Wt/WPushButton>
+#include <Wt/WSlider>
+
+#include "LmsApplication.hpp"
 
 #include "MobileAudioMediaPlayer.hpp"
 
@@ -28,32 +33,73 @@ namespace UserInterface {
 namespace Mobile {
 
 Wt::WMediaPlayer::Encoding
-AudioMediaPlayer::getEncoding()
+AudioMediaPlayer::getBestEncoding()
 {
-	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
-
-	if (env.agentIsIE())
-		return Wt::WMediaPlayer::MP3;
-	else
-		return Wt::WMediaPlayer::OGA;
+	// MP3 seems to be better supported everywhere
+	return Wt::WMediaPlayer::MP3;
 }
 
-AudioMediaPlayer::AudioMediaPlayer(Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent)
+AudioMediaPlayer::AudioMediaPlayer(Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent)
+:
+ Wt::WContainerWidget(parent),
+_player(nullptr),
+_encoding(encoding)
 {
+	Wt::WTemplate* container  = new Wt::WTemplate(this);
+	container->setTemplateText(Wt::WString::tr("mobile-audio-player"));
+
+	Wt::WPushButton *play = new Wt::WPushButton("Play");
+	play->setStyleClass("btn-sm");
+	play->setWidth(52);
+	container->bindWidget("play", play);
+
+	Wt::WPushButton *pause = new Wt::WPushButton("Pause");
+	pause->setStyleClass("btn-sm");
+	pause->setWidth(52);
+	container->bindWidget("pause", pause);
+
+	_track = new Wt::WText("", Wt::PlainText);
+	_track->setStyleClass("mobile-track");
+	container->bindWidget("track", _track);
+
+	_artistRelease = new Wt::WText("", Wt::PlainText);
+	_artistRelease->setStyleClass("mobile-artist");
+	container->bindWidget("artist", _artistRelease);
+
+	_cover = new Wt::WImage();
+	container->bindWidget("cover", _cover);
+	_cover->setStyleClass("mobile-audio-player-cover");
+
+
 	_player = new Wt::WMediaPlayer(Wt::WMediaPlayer::Audio, this);
-	_player->addSource( getEncoding(), "" );
+	_player->addSource( _encoding, "" );
+	_player->setControlsWidget( 0 );
+	_player->setButton(Wt::WMediaPlayer::Play, play);
+	_player->setButton(Wt::WMediaPlayer::Pause, pause);
+
 }
 
 void
-AudioMediaPlayer::play(const Transcode::Parameters& parameters)
+AudioMediaPlayer::play(Database::Track::id_type trackId, const Transcode::Parameters& parameters)
 {
+	// FIXME memleak here
 	AvConvTranscodeStreamResource *resource = new AvConvTranscodeStreamResource( parameters, this );
 
 	_player->clearSources();
-	_player->addSource( getEncoding(), Wt::WLink(resource));
+	_player->addSource( _encoding, Wt::WLink(resource));
 
 	_player->play();
+
+	_cover->setImageLink( Wt::WLink (LmsApplication::instance()->getCoverResource()->getTrackUrl(trackId, 48)));
+
+	{
+		Wt::Dbo::Transaction transaction(DboSession());
+
+		Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
+
+		_track->setText( Wt::WString::fromUTF8(track->getName() ));
+		_artistRelease->setText( Wt::WString::fromUTF8(track->getArtistName()) );
+	}
 }
 
 } // namespace UserInterface

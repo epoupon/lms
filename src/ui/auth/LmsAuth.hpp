@@ -26,15 +26,13 @@
 #include <Wt/Auth/AuthWidget>
 #include <Wt/WContainerWidget>
 
-#include "database/DatabaseHandler.hpp"
-
 namespace UserInterface {
 
 class LmsAuth : public Wt::Auth::AuthWidget
 {
 	public:
 
-		LmsAuth(Database::Handler& db);
+		LmsAuth();
 
 		// LoggedInView is delegated to LmsHome
 		void createLoggedInView () ;

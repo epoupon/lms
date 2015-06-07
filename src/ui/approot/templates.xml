@@ -230,6 +230,17 @@
 				${bitrate-info}
 			</div>
 		</div>
+		 <div class="form-group">
+			 <label class="control-label col-sm-2"  for="${id:encoding}">
+				 Audio Encoding
+			</label>
+			<div class="col-sm-5">
+				 ${encoding}
+			</div>
+			<div class="help-block col-sm-5">
+				${encoding-info}
+			</div>
+		</div>
 		<div class="form-group">
 			<div class="col-sm-offset-2 col-sm-10">
 				${save-button} ${cancel-button}
@@ -327,7 +338,7 @@
 <message id="mobile-search-title">
 	<div class="row">
 		<div class="col-xs-12">
-			<div class="mobile-search-title vertical-align">${text}</div>
+			<div class="mobile-search-title">${text}</div>
 		</div>
 	</div>
 </message>
@@ -341,7 +352,9 @@
 
 <message id="mobile-artist-res">
 	<div class="row">
-		<div class="col-xs-12 mobile-search-entry">${name}</div>
+		<div class="col-xs-12">
+			<div class="mobile-search-entry">${name}</div>
+		</div>
 	</div>
 </message>
 
@@ -376,9 +389,34 @@
 	</div>
 </message>
 
+<message id="mobile-audio-footer">
+	<nav class="navbar navbar-default navbar-fixed-bottom" role="navigation">
+		${player}
+	</nav>
+</message>
+
 <message id="mobile-audio-player">
-	<div class="row">
-		<div class="col-xs-12">${player}</div>
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-12">
+				<div class="row">
+					<div class="mobile-audio-footer">
+						<div class="vertical-align mobile-audio-footer">
+							<div class="col-xs-2">${cover}</div>
+							<div class="col-xs-7">
+								<div class="row">
+									<div class="col-xs-12">${track}</div>
+								</div>
+								<div class="row">
+									<div class="col-xs-12">${artist}</div>
+								</div>
+							</div>
+							<div class="col-xs-3">${play}${pause}</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </message>
 

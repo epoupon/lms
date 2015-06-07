@@ -29,6 +29,7 @@
 #include "logger/Logger.hpp"
 
 #include "common/Validators.hpp"
+#include "LmsApplication.hpp"
 
 #include "SettingsAccountFormView.hpp"
 
@@ -45,9 +46,8 @@ class AccountFormModel : public Wt::WFormModel
 		static const Field PasswordField;
 		static const Field PasswordConfirmField;
 
-		AccountFormModel(SessionData& sessionData, std::string userId, Wt::WObject *parent = 0)
+		AccountFormModel(std::string userId, Wt::WObject *parent = 0)
 			: Wt::WFormModel(parent),
-			_db(sessionData.getDatabaseHandler()),
 			_userId(userId)
 		{
 			addField(NameField);
@@ -64,10 +64,10 @@ class AccountFormModel : public Wt::WFormModel
 
 		void loadData()
 		{
-			Wt::Dbo::Transaction transaction(_db.getSession());
+			Wt::Dbo::Transaction transaction(DboSession());
 
-			Wt::Auth::User authUser = _db.getUserDatabase().findWithId( _userId );
-			Database::User::pointer user = _db.getUser(authUser);
+			Wt::Auth::User authUser = DbHandler().getUserDatabase().findWithId( _userId );
+			Database::User::pointer user = DbHandler().getUser(authUser);
 
 			if (user && authUser.isValid())
 			{
@@ -85,11 +85,11 @@ class AccountFormModel : public Wt::WFormModel
 		{
 			// DBO transaction active here
 			try {
-				Wt::Dbo::Transaction transaction(_db.getSession());
+				Wt::Dbo::Transaction transaction(DboSession());
 
 				// Update user
-				Wt::Auth::User authUser = _db.getUserDatabase().findWithId(_userId);
-				Database::User::pointer user = _db.getUser( authUser );
+				Wt::Auth::User authUser = DbHandler().getUserDatabase().findWithId(_userId);
+				Database::User::pointer user = DbHandler().getUser( authUser );
 
 				// user may have been deleted by someone else
 				if (!authUser.isValid()) {
@@ -131,9 +131,9 @@ class AccountFormModel : public Wt::WFormModel
 
 			if (field == NameField)
 			{
-				Wt::Dbo::Transaction transaction(_db.getSession());
+				Wt::Dbo::Transaction transaction(DboSession());
 				// Must be unique since used as LoginIdentity
-				Wt::Auth::User user = _db.getUserDatabase().findWithIdentity(Wt::Auth::Identity::LoginName, valueText(field));
+				Wt::Auth::User user = DbHandler().getUserDatabase().findWithIdentity(Wt::Auth::Identity::LoginName, valueText(field));
 				if (user.isValid() && user.id() != _userId)
 					error = "Already exists";
 				else
@@ -178,7 +178,6 @@ class AccountFormModel : public Wt::WFormModel
 
 	private:
 
-		Database::Handler&	_db;
 		std::string		_userId;
 };
 
@@ -187,11 +186,11 @@ const Wt::WFormModel::Field AccountFormModel::EmailField = "email";
 const Wt::WFormModel::Field AccountFormModel::PasswordField = "password";
 const Wt::WFormModel::Field AccountFormModel::PasswordConfirmField = "password-confirm";
 
-AccountFormView::AccountFormView(SessionData& sessionData, std::string userId, Wt::WContainerWidget *parent)
+AccountFormView::AccountFormView(std::string userId, Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
 
-	_model = new AccountFormModel(sessionData, userId, this);
+	_model = new AccountFormModel(userId, this);
 
 	setTemplateText(tr("userAccountForm-template"));
 	addFunction("id", &WTemplate::Functions::id);

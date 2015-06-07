@@ -54,7 +54,6 @@ lms_SOURCES = \
 	$(srcdir)/ui/audio/mobile/TrackSearch.cpp		\
 	$(srcdir)/ui/common/DirectoryValidator.cpp		\
 	$(srcdir)/ui/common/LineEdit.cpp			\
-	$(srcdir)/ui/common/SessionData.cpp			\
 	$(srcdir)/ui/resource/AvConvTranscodeStreamResource.cpp	\
 	$(srcdir)/ui/resource/CoverResource.cpp			\
 	$(srcdir)/ui/video/VideoWidget.cpp			\

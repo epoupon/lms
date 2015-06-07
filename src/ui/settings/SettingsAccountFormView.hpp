@@ -24,8 +24,6 @@
 #include <Wt/WTemplateFormView>
 #include <Wt/WText>
 
-#include "common/SessionData.hpp"
-
 namespace UserInterface {
 namespace Settings {
 
@@ -34,7 +32,7 @@ class AccountFormModel;
 class AccountFormView : public Wt::WTemplateFormView
 {
 	public:
-		AccountFormView(SessionData& sessionData, std::string userId, Wt::WContainerWidget *parent = 0);
+		AccountFormView(std::string userId, Wt::WContainerWidget *parent = 0);
 
 	private:
 		void processCancel();	// reload from DB

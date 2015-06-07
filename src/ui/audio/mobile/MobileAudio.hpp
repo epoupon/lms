@@ -22,8 +22,6 @@
 
 #include <Wt/WContainerWidget>
 
-#include "database/DatabaseHandler.hpp"
-
 #include "audio/Audio.hpp"
 
 namespace UserInterface {
@@ -32,13 +30,12 @@ namespace Mobile {
 class Audio : public UserInterface::Audio
 {
 	public:
-		Audio(Database::Handler& db, Wt::WContainerWidget *parent = 0);
+		Audio(Wt::WContainerWidget *parent = 0);
 
 		void search(std::string text) {}
 
 	private:
 
-		Database::Handler&	_db;
 };
 
 } // namespace Mobile

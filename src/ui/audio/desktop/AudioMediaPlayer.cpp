@@ -23,8 +23,6 @@
 #include <Wt/WTemplate>
 #include <Wt/WHBoxLayout>
 #include <Wt/WVBoxLayout>
-#include <Wt/WApplication>
-#include <Wt/WEnvironment>
 
 #include "AudioMediaPlayer.hpp"
 
@@ -32,19 +30,16 @@ namespace UserInterface {
 namespace Desktop {
 
 Wt::WMediaPlayer::Encoding
-AudioMediaPlayer::getEncoding()
+AudioMediaPlayer::getBestEncoding()
 {
-	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
-
-	if (env.agentIsIE())
-		return Wt::WMediaPlayer::MP3;
-	else
-		return Wt::WMediaPlayer::OGA;
+	// MP3 seems to be better supported everywhere
+	return Wt::WMediaPlayer::MP3;
 }
 
-AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
+AudioMediaPlayer::AudioMediaPlayer( Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent)
 	: Wt::WContainerWidget(parent),
-	_mediaResource(nullptr)
+	_mediaResource(nullptr),
+	_encoding(encoding)
 {
 	this->setStyleClass("mediaplayer");
 	this->setHeight(90);
@@ -52,6 +47,21 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	Wt::WVBoxLayout* mainLayout = new Wt::WVBoxLayout();
 	this->setLayout(mainLayout);
 
+	/* TODO add media info here
+	// Current Media info
+	Wt::WHBoxLayout *currentMediaLayout = new Wt::WHBoxLayout();
+	mainLayout->addLayout(currentMediaLayout);
+
+	currentMediaLayout->addWidget( _mediaCover = new Wt::WImage());
+	_mediaCover->setImageLink( Wt::WLink("images/unknown-cover.jpg") );
+
+	Wt::WVBoxLayout* mediaInfoLayout = new Wt::WVBoxLayout();
+	currentMediaLayout->addLayout(mediaInfoLayout, 1);
+
+	mediaInfoLayout->addWidget( _mediaTitle = new Wt::WText());
+	mediaInfoLayout->addWidget( _mediaArtistRelease = new Wt::WText());
+	*/
+	// Time control
 	Wt::WHBoxLayout *sliderLayout = new Wt::WHBoxLayout();
 	mainLayout->addLayout(sliderLayout);
 
@@ -61,6 +71,7 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	sliderLayout->addWidget(_duration = new Wt::WText("00:00:00"));
 	_duration->setLineHeight(30);
 
+	// Controls
 	Wt::WHBoxLayout *controlsLayout = new Wt::WHBoxLayout();
 
 	mainLayout->addLayout(controlsLayout);
@@ -68,7 +79,6 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	Wt::WContainerWidget *btnContainer = new Wt::WContainerWidget();
 	// Do not allow button to wrap
 	btnContainer->setMinimumSize(155, Wt::WLength::Auto);
-
 	Wt::WTemplate *t = new Wt::WTemplate(Wt::WString::tr("mediaplayer-controls"), btnContainer);
 
 	Wt::WPushButton *prevBtn = new Wt::WPushButton("<<");
@@ -112,7 +122,7 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WContainerWidget *parent)
 	controlsLayout->addWidget(shuffle);
 
 	_mediaPlayer = new Wt::WMediaPlayer( Wt::WMediaPlayer::Audio, btnContainer );
-	_mediaPlayer->addSource( getEncoding(), "" );
+	_mediaPlayer->addSource( _encoding, "" );
 	_mediaPlayer->ended().connect(this, &AudioMediaPlayer::handleTrackEnded);
 
 	_mediaPlayer->setControlsWidget( 0 );
@@ -148,15 +158,13 @@ AudioMediaPlayer::loadPlayer(void)
 {
 	_mediaPlayer->clearSources();
 
-	_mediaInternalLink.setResource( nullptr );
 	if (_mediaResource)
 		delete _mediaResource;
 
 	assert( _currentParameters );
 	_mediaResource = new AvConvTranscodeStreamResource( *_currentParameters, this );
-	_mediaInternalLink.setResource( _mediaResource );
 
-	_mediaPlayer->addSource( getEncoding(), _mediaInternalLink );
+	_mediaPlayer->addSource( getEncoding(), Wt::WLink(_mediaResource));
 }
 
 void
