@@ -22,9 +22,9 @@
 #include <Wt/WItemDelegate>
 
 #include "database/Types.hpp"
-
 #include "logger/Logger.hpp"
 
+#include "LmsApplication.hpp"
 #include "TableFilter.hpp"
 
 namespace UserInterface {
@@ -32,15 +32,14 @@ namespace Desktop {
 
 using namespace Database;
 
-TableFilterGenre::TableFilterGenre(Database::Handler& db, Wt::WContainerWidget* parent)
-: Wt::WTableView( parent ), Filter(),
-_db(db)
+TableFilterGenre::TableFilterGenre(Wt::WContainerWidget* parent)
+: Wt::WTableView( parent ), Filter()
 {
 	const std::vector<Wt::WString> columnNames = {"Genre", "Tracks"};
 
 	SearchFilter filter;
 
-	Genre::updateGenreQueryModel(_db.getSession(), _queryModel, filter, columnNames);
+	Genre::updateGenreQueryModel(DboSession(), _queryModel, filter, columnNames);
 
 	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setSortingEnabled(true);
@@ -83,7 +82,7 @@ TableFilterGenre::layoutSizeChanged (int width, int height)
 void
 TableFilterGenre::refresh(SearchFilter& filter)
 {
-	Genre::updateGenreQueryModel(_db.getSession(), _queryModel, filter);
+	Genre::updateGenreQueryModel(DboSession(), _queryModel, filter);
 }
 
 // Get constraint created by this filter
@@ -103,15 +102,14 @@ TableFilterGenre::getConstraint(SearchFilter& filter)
 	}
 }
 
-TableFilterArtist::TableFilterArtist(Database::Handler& db, Wt::WContainerWidget* parent)
-: Wt::WTableView( parent ), Filter(),
-_db(db)
+TableFilterArtist::TableFilterArtist(Wt::WContainerWidget* parent)
+: Wt::WTableView( parent ), Filter()
 {
 	const std::vector<Wt::WString> columnNames = {"Artist", "Releases", "Tracks"};
 
 	SearchFilter filter;
 
-	Track::updateArtistQueryModel(_db.getSession(), _queryModel, filter, columnNames);
+	Track::updateArtistQueryModel(DboSession(), _queryModel, filter, columnNames);
 
 	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setSortingEnabled(true);
@@ -155,7 +153,7 @@ TableFilterArtist::layoutSizeChanged (int width, int height)
 void
 TableFilterArtist::refresh(SearchFilter& filter)
 {
-	Track::updateArtistQueryModel(_db.getSession(), _queryModel, filter);
+	Track::updateArtistQueryModel(DboSession(), _queryModel, filter);
 }
 
 // Get constraint created by this filter
@@ -175,15 +173,14 @@ TableFilterArtist::getConstraint(SearchFilter& filter)
 	}
 }
 
-TableFilterRelease::TableFilterRelease(Database::Handler& db, Wt::WContainerWidget* parent)
-: Wt::WTableView( parent ), Filter(),
-_db(db)
+TableFilterRelease::TableFilterRelease(Wt::WContainerWidget* parent)
+: Wt::WTableView( parent ), Filter()
 {
 	const std::vector<Wt::WString> columnNames = {"Release", "Date", "Tracks"};
 
 	SearchFilter filter;
 
-	Track::updateReleaseQueryModel(_db.getSession(), _queryModel, filter, columnNames);
+	Track::updateReleaseQueryModel(DboSession(), _queryModel, filter, columnNames);
 
 	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setSortingEnabled(true);
@@ -234,7 +231,7 @@ TableFilterRelease::layoutSizeChanged (int width, int height)
 void
 TableFilterRelease::refresh(SearchFilter& filter)
 {
-	Track::updateReleaseQueryModel(_db.getSession(), _queryModel, filter);
+	Track::updateReleaseQueryModel(DboSession(), _queryModel, filter);
 }
 
 // Get constraint created by this filter

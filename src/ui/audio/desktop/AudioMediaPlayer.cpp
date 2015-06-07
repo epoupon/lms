@@ -47,6 +47,21 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WMediaPlayer::Encoding encoding, Wt::WCo
 	Wt::WVBoxLayout* mainLayout = new Wt::WVBoxLayout();
 	this->setLayout(mainLayout);
 
+	/* TODO add media info here
+	// Current Media info
+	Wt::WHBoxLayout *currentMediaLayout = new Wt::WHBoxLayout();
+	mainLayout->addLayout(currentMediaLayout);
+
+	currentMediaLayout->addWidget( _mediaCover = new Wt::WImage());
+	_mediaCover->setImageLink( Wt::WLink("images/unknown-cover.jpg") );
+
+	Wt::WVBoxLayout* mediaInfoLayout = new Wt::WVBoxLayout();
+	currentMediaLayout->addLayout(mediaInfoLayout, 1);
+
+	mediaInfoLayout->addWidget( _mediaTitle = new Wt::WText());
+	mediaInfoLayout->addWidget( _mediaArtistRelease = new Wt::WText());
+	*/
+	// Time control
 	Wt::WHBoxLayout *sliderLayout = new Wt::WHBoxLayout();
 	mainLayout->addLayout(sliderLayout);
 
@@ -56,6 +71,7 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WMediaPlayer::Encoding encoding, Wt::WCo
 	sliderLayout->addWidget(_duration = new Wt::WText("00:00:00"));
 	_duration->setLineHeight(30);
 
+	// Controls
 	Wt::WHBoxLayout *controlsLayout = new Wt::WHBoxLayout();
 
 	mainLayout->addLayout(controlsLayout);
@@ -63,7 +79,6 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WMediaPlayer::Encoding encoding, Wt::WCo
 	Wt::WContainerWidget *btnContainer = new Wt::WContainerWidget();
 	// Do not allow button to wrap
 	btnContainer->setMinimumSize(155, Wt::WLength::Auto);
-
 	Wt::WTemplate *t = new Wt::WTemplate(Wt::WString::tr("mediaplayer-controls"), btnContainer);
 
 	Wt::WPushButton *prevBtn = new Wt::WPushButton("<<");

@@ -24,6 +24,8 @@
 
 #include "database/MediaDirectory.hpp"
 
+#include "LmsApplication.hpp"
+
 #include "SettingsMediaDirectoryFormView.hpp"
 
 #include "SettingsMediaDirectories.hpp"
@@ -31,9 +33,8 @@
 namespace UserInterface {
 namespace Settings {
 
-MediaDirectories::MediaDirectories(SessionData& sessionData, Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent),
-_db(sessionData.getDatabaseHandler())
+MediaDirectories::MediaDirectories(Wt::WContainerWidget *parent)
+: Wt::WContainerWidget(parent)
 {
 	// Stack two widgets:
 	_stack = new Wt::WStackedWidget(this);
@@ -72,9 +73,9 @@ MediaDirectories::refresh(void)
 	for (int i = _table->rowCount() - 1; i > 0; --i)
 		_table->deleteRow(i);
 
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	Wt::Dbo::Transaction transaction(DboSession());
 
-	std::vector<Database::MediaDirectory::pointer> mediaDirectories = Database::MediaDirectory::getAll(_db.getSession());
+	std::vector<Database::MediaDirectory::pointer> mediaDirectories = Database::MediaDirectory::getAll(DboSession());
 
 	std::size_t id = 1;
 	BOOST_FOREACH(Database::MediaDirectory::pointer mediaDirectory, mediaDirectories)
@@ -114,10 +115,10 @@ MediaDirectories::handleDelMediaDirectory(boost::filesystem::path p, Database::M
 		if (messageBox->buttonResult() == Wt::Yes)
 		{
 			{
-				Wt::Dbo::Transaction transaction(_db.getSession());
+				Wt::Dbo::Transaction transaction(DboSession());
 
 				// Delete the media diretory
-				Database::MediaDirectory::pointer mediaDirectory = Database::MediaDirectory::get(_db.getSession(), p, type);
+				Database::MediaDirectory::pointer mediaDirectory = Database::MediaDirectory::get(DboSession(), p, type);
 				if (mediaDirectory)
 					mediaDirectory.remove();
 				}
@@ -140,7 +141,7 @@ MediaDirectories::handleCreateMediaDirectory(void)
 {
 	assert(_stack->count() == 1);
 
-	MediaDirectoryFormView* formView = new MediaDirectoryFormView(_db, _stack);
+	MediaDirectoryFormView* formView = new MediaDirectoryFormView(_stack);
 	formView->completed().connect(this, &MediaDirectories::handleMediaDirectoryFormCompleted);
 
 	_stack->setCurrentIndex(1);

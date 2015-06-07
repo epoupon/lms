@@ -25,8 +25,6 @@
 #include <Wt/WText>
 #include <Wt/WSignal>
 
-#include "common/SessionData.hpp"
-
 namespace UserInterface {
 namespace Settings {
 
@@ -35,7 +33,7 @@ class DatabaseFormModel;
 class DatabaseFormView : public Wt::WTemplateFormView
 {
 	public:
-		DatabaseFormView(SessionData& sessionData, Wt::WContainerWidget *parent = 0);
+		DatabaseFormView(Wt::WContainerWidget *parent = 0);
 
 		Wt::Signal<void>& changed()	{ return _sigChanged; }
 

@@ -24,8 +24,6 @@
 
 #include <Wt/WPopupMenu>
 
-#include "common/SessionData.hpp"
-
 #include "AudioMediaPlayer.hpp"
 #include "TrackView.hpp"
 #include "PlayQueue.hpp"
@@ -42,7 +40,7 @@ class Audio : public UserInterface::Audio
 
 	public:
 
-		Audio(SessionData& sessionData, Wt::WContainerWidget* parent = 0);
+		Audio(Wt::WContainerWidget* parent = 0);
 
 		void search(std::string searchText);
 
@@ -67,8 +65,6 @@ class Audio : public UserInterface::Audio
 		void addSelectedTracks();
 
 		void handlePlaylistSelected(Wt::WString name);
-
-		Database::Handler&	_db;
 
 		AudioMediaPlayer*	_mediaPlayer;
 		TrackView*		_trackView;

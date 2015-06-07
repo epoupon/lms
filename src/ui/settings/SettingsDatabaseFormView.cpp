@@ -30,6 +30,7 @@
 #include "database/MediaDirectory.hpp"
 
 #include "common/DirectoryValidator.hpp"
+#include "LmsApplication.hpp"
 
 #include "SettingsDatabaseFormView.hpp"
 
@@ -43,9 +44,8 @@ class DatabaseFormModel : public Wt::WFormModel
 		static const Field UpdatePeriodField;
 		static const Field UpdateStartTimeField;
 
-		DatabaseFormModel(SessionData& sessionData, Wt::WObject *parent = 0)
-			: Wt::WFormModel(parent),
-			_sessionData(sessionData)
+		DatabaseFormModel(Wt::WObject *parent = 0)
+			: Wt::WFormModel(parent)
 		{
 			initializeModels();
 
@@ -64,10 +64,10 @@ class DatabaseFormModel : public Wt::WFormModel
 
 		void loadData()
 		{
-			Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
+			Wt::Dbo::Transaction transaction(DboSession());
 
 			// Get refresh settings
-			::Database::MediaDirectorySettings::pointer settings = ::Database::MediaDirectorySettings::get(_sessionData.getDatabaseHandler().getSession());
+			::Database::MediaDirectorySettings::pointer settings = ::Database::MediaDirectorySettings::get(DboSession());
 
 			int periodRow = getUpdatePeriodModelRow( settings->getUpdatePeriod() );
 			if (periodRow != -1)
@@ -81,10 +81,9 @@ class DatabaseFormModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			Wt::Dbo::Session& session( _sessionData.getDatabaseHandler().getSession());
-			Wt::Dbo::Transaction transaction(session);
+			Wt::Dbo::Transaction transaction(DboSession());
 
-			::Database::MediaDirectorySettings::pointer settings = ::Database::MediaDirectorySettings::get(_sessionData.getDatabaseHandler().getSession() );
+			::Database::MediaDirectorySettings::pointer settings = ::Database::MediaDirectorySettings::get(DboSession());
 
 			int periodRow = getUpdatePeriodModelRow( boost::any_cast<Wt::WString>(value(UpdatePeriodField)));
 			assert(periodRow != -1);
@@ -99,10 +98,9 @@ class DatabaseFormModel : public Wt::WFormModel
 		bool setImmediateScan(Wt::WString& error)
 		{
 			try {
-				Wt::Dbo::Session& session( _sessionData.getDatabaseHandler().getSession());
-				Wt::Dbo::Transaction transaction(session);
+				Wt::Dbo::Transaction transaction( DboSession());
 
-				::Database::MediaDirectorySettings::pointer settings = ::Database::MediaDirectorySettings::get(_sessionData.getDatabaseHandler().getSession() );
+				::Database::MediaDirectorySettings::pointer settings = ::Database::MediaDirectorySettings::get(DboSession() );
 
 				settings.modify()->setManualScanRequested( true );
 			}
@@ -231,7 +229,6 @@ class DatabaseFormModel : public Wt::WFormModel
 		}
 
 
-		SessionData&		_sessionData;
 		Wt::WStringListModel*	_updatePeriodModel;
 		Wt::WStringListModel*	_updateStartTimeModel;
 
@@ -241,10 +238,10 @@ const Wt::WFormModel::Field DatabaseFormModel::UpdatePeriodField		= "update-peri
 const Wt::WFormModel::Field DatabaseFormModel::UpdateStartTimeField		= "update-start-time";
 
 
-DatabaseFormView::DatabaseFormView(SessionData& sessionData, Wt::WContainerWidget *parent)
+DatabaseFormView::DatabaseFormView(Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
-	_model = new DatabaseFormModel(sessionData, this);
+	_model = new DatabaseFormModel(this);
 
 	setTemplateText(tr("databaseForm-template"));
 	addFunction("id", &WTemplate::Functions::id);

@@ -30,6 +30,7 @@
 #include "logger/Logger.hpp"
 
 #include "common/Validators.hpp"
+#include "LmsApplication.hpp"
 
 #include "SettingsUserFormView.hpp"
 
@@ -50,9 +51,8 @@ class UserFormModel : public Wt::WFormModel
 		static const Field AudioBitrateLimitField;
 		static const Field VideoBitrateLimitField;
 
-		UserFormModel(SessionData& sessionData, std::string userId, Wt::WObject *parent = 0)
+		UserFormModel(std::string userId, Wt::WObject *parent = 0)
 			: Wt::WFormModel(parent),
-			_db(sessionData.getDatabaseHandler()),
 			_userId(userId)
 		{
 			initializeModels();
@@ -88,12 +88,12 @@ class UserFormModel : public Wt::WFormModel
 
 			if (!userId.empty())
 			{
-				Wt::Dbo::Transaction transaction(_db.getSession());
+				Wt::Dbo::Transaction transaction(DboSession());
 
-				Wt::Auth::User authUser = _db.getUserDatabase().findWithId( userId );
-				Database::User::pointer user = _db.getUser(authUser);
+				Wt::Auth::User authUser = DbHandler().getUserDatabase().findWithId( userId );
+				Database::User::pointer user = DbHandler().getUser(authUser);
 
-				Wt::Auth::User currentUser = _db.getLogin().user();
+				Wt::Auth::User currentUser = CurrentAuthUser();
 
 				if (user && authUser.isValid())
 				{
@@ -130,13 +130,13 @@ class UserFormModel : public Wt::WFormModel
 		bool saveData()
 		{
 			try {
-				Wt::Dbo::Transaction transaction(_db.getSession());
+				Wt::Dbo::Transaction transaction(DboSession());
 
 				if (_userId.empty())
 				{
 					// Create user
-					Wt::Auth::User authUser = _db.getUserDatabase().registerNew();
-					Database::User::pointer user = _db.getUser(authUser);
+					Wt::Auth::User authUser = DbHandler().getUserDatabase().registerNew();
+					Database::User::pointer user = DbHandler().getUser(authUser);
 
 					// Account
 					authUser.setIdentity(Wt::Auth::Identity::LoginName, valueText(NameField));
@@ -163,8 +163,8 @@ class UserFormModel : public Wt::WFormModel
 				else
 				{
 					// Update user
-					Wt::Auth::User authUser = _db.getUserDatabase().findWithId(_userId);
-					Database::User::pointer user = _db.getUser( authUser );
+					Wt::Auth::User authUser = DbHandler().getUserDatabase().findWithId(_userId);
+					Database::User::pointer user = DbHandler().getUser( authUser );
 
 					// user may have been deleted by someone else
 					if (!authUser.isValid()) {
@@ -219,9 +219,9 @@ class UserFormModel : public Wt::WFormModel
 
 			if (field == NameField)
 			{
-				Wt::Dbo::Transaction transaction(_db.getSession());
+				Wt::Dbo::Transaction transaction(DboSession());
 				// Must be unique since used as LoginIdentity
-				Wt::Auth::User user = _db.getUserDatabase().findWithIdentity(Wt::Auth::Identity::LoginName, valueText(field));
+				Wt::Auth::User user = DbHandler().getUserDatabase().findWithIdentity(Wt::Auth::Identity::LoginName, valueText(field));
 				if (user.isValid() && user.id() != _userId)
 					error = "Already exists";
 				else
@@ -280,7 +280,6 @@ class UserFormModel : public Wt::WFormModel
 
 		}
 
-		Database::Handler&	_db;
 		std::string		_userId;
 		Wt::WStringListModel*	_audioBitrateModel;
 		Wt::WStringListModel*	_videoBitrateModel;
@@ -295,11 +294,11 @@ const Wt::WFormModel::Field UserFormModel::AudioBitrateLimitField = "audio-bitra
 const Wt::WFormModel::Field UserFormModel::VideoBitrateLimitField = "video-bitrate-limit";
 
 
-UserFormView::UserFormView(SessionData& sessionData, std::string userId, Wt::WContainerWidget *parent)
+UserFormView::UserFormView(std::string userId, Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
 
-	_model = new UserFormModel(sessionData, userId, this);
+	_model = new UserFormModel(userId, this);
 
 	setTemplateText(tr("userForm-template"));
 	addFunction("id", &WTemplate::Functions::id);
@@ -344,9 +343,8 @@ UserFormView::UserFormView(SessionData& sessionData, std::string userId, Wt::WCo
 		title = Wt::WString("Create user");
 	}
 	else {
-		Database::Handler &db = sessionData.getDatabaseHandler();
-		Wt::Dbo::Transaction transaction (db.getSession());
-		Wt::Auth::User authUser = db.getUserDatabase().findWithId( userId );
+		Wt::Dbo::Transaction transaction (DboSession());
+		Wt::Auth::User authUser = DbHandler().getUserDatabase().findWithId( userId );
 
 		Wt::WString userName;
 		if (authUser.isValid())

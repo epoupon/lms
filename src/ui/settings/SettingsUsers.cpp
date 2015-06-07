@@ -28,15 +28,15 @@
 #include "logger/Logger.hpp"
 
 #include "SettingsUserFormView.hpp"
+#include "LmsApplication.hpp"
 
 #include "SettingsUsers.hpp"
 
 namespace UserInterface {
 namespace Settings {
 
-Users::Users(SessionData& sessionData, Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent),
-_sessionData(sessionData)
+Users::Users(Wt::WContainerWidget *parent)
+: Wt::WContainerWidget(parent)
 {
 	// Stack two widgets:
 	_stack = new Wt::WStackedWidget(this);
@@ -76,13 +76,11 @@ Users::refresh(void)
 	for (int i = _table->rowCount() - 1; i > 0; --i)
 		_table->deleteRow(i);
 
-	Database::Handler& db = _sessionData.getDatabaseHandler();
+	Wt::Dbo::Transaction transaction(DboSession());
 
-	Wt::Dbo::Transaction transaction(db.getSession());
+	const Wt::Auth::User& currentUser = CurrentAuthUser();
 
-	const Wt::Auth::User& currentUser = db.getLogin().user();
-
-	std::vector<Database::User::pointer> users = Database::User::getAll(db.getSession());
+	std::vector<Database::User::pointer> users = Database::User::getAll(DboSession());
 
 	std::size_t userIndex = 1;
 	for (std::size_t i = 0; i < users.size(); ++i)
@@ -94,7 +92,7 @@ Users::refresh(void)
 
 		// Hack try/catch here since it may fail!
 		try {
-			authUser = db.getUserDatabase().findWithId( userId );
+			authUser = DbHandler().getUserDatabase().findWithId( userId );
 		}
 		catch(Wt::Dbo::Exception& e)
 		{
@@ -152,16 +150,14 @@ Users::handleDelUser(Wt::WString loginNameIdentity, std::string id)
 	messageBox->buttonClicked().connect(std::bind([=] () {
 		if (messageBox->buttonResult() == Wt::Yes)
 		{
-			Database::Handler& db = _sessionData.getDatabaseHandler();
-
-			Wt::Dbo::Transaction transaction(db.getSession());
+			Wt::Dbo::Transaction transaction(DboSession());
 
 			// Delete the user
-			Wt::Auth::User authUser = db.getUserDatabase().findWithId( id );
+			Wt::Auth::User authUser = DbHandler().getUserDatabase().findWithId( id );
 
-			db.getUserDatabase().deleteUser( authUser );
+			DbHandler().getUserDatabase().deleteUser( authUser );
 
-			Database::User::pointer user = Database::User::getById(db.getSession(), id);
+			Database::User::pointer user = Database::User::getById(DboSession(), id);
 			if (user)
 				user.remove();
 
@@ -180,7 +176,7 @@ Users::handleCreateUser(std::string id)
 {
 	assert(_stack->count() == 1);
 
-	UserFormView* userFormView = new UserFormView(_sessionData, id, _stack);
+	UserFormView* userFormView = new UserFormView(id, _stack);
 	userFormView->completed().connect(this, &Users::handleUserFormCompleted);
 
 	_stack->setCurrentIndex(1);

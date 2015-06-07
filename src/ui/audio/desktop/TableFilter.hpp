@@ -25,7 +25,7 @@
 #include <Wt/WTableView>
 
 #include "Filter.hpp"
-#include "database/DatabaseHandler.hpp"
+#include "database/Types.hpp"
 
 namespace UserInterface {
 namespace Desktop {
@@ -33,7 +33,7 @@ namespace Desktop {
 class TableFilterGenre : public Wt::WTableView, public Filter
 {
 	public:
-		TableFilterGenre(Database::Handler& db, Wt::WContainerWidget* parent = 0);
+		TableFilterGenre(Wt::WContainerWidget* parent = 0);
 
 		// Set constraints on this filter
 		void refresh(Database::SearchFilter& filter);
@@ -50,8 +50,6 @@ class TableFilterGenre : public Wt::WTableView, public Filter
 	protected:
 
 		SigDoubleClicked			_sigDoubleClicked;
-
-		Database::Handler&			_db;
 
 		// Name, track count
 		Wt::Dbo::QueryModel<Database::Genre::GenreResult>	_queryModel;
@@ -60,7 +58,7 @@ class TableFilterGenre : public Wt::WTableView, public Filter
 class TableFilterArtist : public Wt::WTableView, public Filter
 {
 	public:
-		TableFilterArtist(Database::Handler& db, Wt::WContainerWidget* parent = 0);
+		TableFilterArtist(Wt::WContainerWidget* parent = 0);
 
 		// Set constraints on this filter
 		void refresh(Database::SearchFilter& filter);
@@ -77,8 +75,6 @@ class TableFilterArtist : public Wt::WTableView, public Filter
 	protected:
 
 		SigDoubleClicked			_sigDoubleClicked;
-
-		Database::Handler&			_db;
 
 		// Name, track count
 		Wt::Dbo::QueryModel<Database::Track::ArtistResult>	_queryModel;
@@ -87,7 +83,7 @@ class TableFilterArtist : public Wt::WTableView, public Filter
 class TableFilterRelease : public Wt::WTableView, public Filter
 {
 	public:
-		TableFilterRelease(Database::Handler& db, Wt::WContainerWidget* parent = 0);
+		TableFilterRelease(Wt::WContainerWidget* parent = 0);
 
 		// Set constraints on this filter
 		void refresh(Database::SearchFilter& filter);
@@ -104,8 +100,6 @@ class TableFilterRelease : public Wt::WTableView, public Filter
 	protected:
 
 		SigDoubleClicked			_sigDoubleClicked;
-
-		Database::Handler&			_db;
 
 		// Name, track count
 		Wt::Dbo::QueryModel<Database::Track::ReleaseResult>	_queryModel;

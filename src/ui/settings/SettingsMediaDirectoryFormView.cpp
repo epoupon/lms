@@ -29,7 +29,7 @@
 #include "database/MediaDirectory.hpp"
 
 #include "common/DirectoryValidator.hpp"
-
+#include "LmsApplication.hpp"
 
 #include "SettingsMediaDirectoryFormView.hpp"
 
@@ -45,9 +45,8 @@ class MediaDirectoryFormModel : public Wt::WFormModel
 		static const Field PathField;
 		static const Field TypeField;
 
-		MediaDirectoryFormModel(Database::Handler& db, Wt::WObject *parent = 0)
-			: Wt::WFormModel(parent),
-			_db(db)
+		MediaDirectoryFormModel(Wt::WObject *parent = 0)
+			: Wt::WFormModel(parent)
 		{
 			initializeModels();
 
@@ -66,18 +65,18 @@ class MediaDirectoryFormModel : public Wt::WFormModel
 		bool saveData(Wt::WString& error)
 		{
 			try {
-				Wt::Dbo::Transaction transaction(_db.getSession());
+				Wt::Dbo::Transaction transaction(DboSession());
 
 				Database::MediaDirectory::Type type
 					= (valueText(TypeField) == "Audio") ? Database::MediaDirectory::Audio : Database::MediaDirectory::Video;
 
-				if (Database::MediaDirectory::get(_db.getSession(), valueText(PathField).toUTF8(), type))
+				if (Database::MediaDirectory::get(DboSession(), valueText(PathField).toUTF8(), type))
 				{
 					error = "This Path/Type already exists!";
 					return false;
 				}
 
-				Database::MediaDirectory::create(_db.getSession(), valueText(PathField).toUTF8(), type);
+				Database::MediaDirectory::create(DboSession(), valueText(PathField).toUTF8(), type);
 
 			}
 			catch(Wt::Dbo::Exception& exception)
@@ -97,7 +96,6 @@ class MediaDirectoryFormModel : public Wt::WFormModel
 			_typeModel->addString("Video");
 		}
 
-		Database::Handler&	_db;
 		std::string		_userId;
 		Wt::WStringListModel*	_typeModel;
 };
@@ -105,11 +103,11 @@ class MediaDirectoryFormModel : public Wt::WFormModel
 const Wt::WFormModel::Field MediaDirectoryFormModel::PathField = "path";
 const Wt::WFormModel::Field MediaDirectoryFormModel::TypeField = "type";
 
-MediaDirectoryFormView::MediaDirectoryFormView(Database::Handler& db, Wt::WContainerWidget *parent)
+MediaDirectoryFormView::MediaDirectoryFormView(Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
 
-	_model = new MediaDirectoryFormModel(db, this);
+	_model = new MediaDirectoryFormModel(this);
 
 	setTemplateText(tr("mediaDirectoryForm-template"));
 	addFunction("id", &WTemplate::Functions::id);

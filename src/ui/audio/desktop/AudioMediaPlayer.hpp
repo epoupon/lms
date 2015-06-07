@@ -27,9 +27,11 @@
 #include <Wt/WContainerWidget>
 #include <Wt/WMediaPlayer>
 #include <Wt/WText>
+#include <Wt/WImage>
 
 #include "transcode/Parameters.hpp"
 #include "resource/AvConvTranscodeStreamResource.hpp"
+#include "resource/CoverResource.hpp"
 
 namespace UserInterface {
 namespace Desktop {
@@ -78,6 +80,11 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 		Wt::WMediaPlayer*		_mediaPlayer;
 		AvConvTranscodeStreamResource*	_mediaResource;
 		Wt::WMediaPlayer::Encoding	_encoding;
+
+		// Media info
+		Wt::WImage*		_mediaCover;
+		Wt::WText*		_mediaTitle;
+		Wt::WText*		_mediaArtistRelease;
 
 		// Controls
 		std::shared_ptr<Transcode::Parameters>	_currentParameters;
