@@ -27,13 +27,14 @@
 
 #include "transcode/Parameters.hpp"
 
+#include "LmsApplication.hpp"
+
 #include "VideoDatabaseWidget.hpp"
 
 namespace UserInterface {
 
-VideoDatabaseWidget::VideoDatabaseWidget(Database::Handler& db,  Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent),
- _db(db)
+VideoDatabaseWidget::VideoDatabaseWidget(Wt::WContainerWidget *parent)
+: Wt::WContainerWidget(parent)
 {
 	_table = new Wt::WTable( this );
 	_table->setHeaderCount(1);
@@ -98,10 +99,10 @@ VideoDatabaseWidget::updateView(boost::filesystem::path directory, size_t depth)
 	// If directory is not valid, add the root Media Directories
 	if (depth == 0)
 	{
-		Wt::Dbo::Transaction transaction ( _db.getSession() );
+		Wt::Dbo::Transaction transaction ( DboSession() );
 
 		std::vector<Database::MediaDirectory::pointer> dirs
-			= Database::MediaDirectory::getByType(_db.getSession(), Database::MediaDirectory::Video);
+			= Database::MediaDirectory::getByType(DboSession(), Database::MediaDirectory::Video);
 
 		BOOST_FOREACH(Database::MediaDirectory::pointer dir, dirs)
 		{
@@ -128,9 +129,9 @@ VideoDatabaseWidget::updateView(boost::filesystem::path directory, size_t depth)
 				addDirectory( path.filename().string(), path, depth + 1);
 			else if (boost::filesystem::is_regular(path) )
 			{
-				Wt::Dbo::Transaction transaction ( _db.getSession() );
+				Wt::Dbo::Transaction transaction ( DboSession() );
 
-				Database::Video::pointer video = Database::Video::getByPath( _db.getSession(), path);
+				Database::Video::pointer video = Database::Video::getByPath( DboSession(), path);
 				if (video)
 					addVideo( video->getName(), video->getDuration(), path);
 			}

@@ -72,6 +72,12 @@ LmsApplication::create(const Wt::WEnvironment& env, boost::filesystem::path dbPa
 	return new LmsApplication(env, dbPath);
 }
 
+LmsApplication*
+LmsApplication::instance()
+{
+	return reinterpret_cast<LmsApplication*>(Wt::WApplication::instance());
+}
+
 /*
  * The env argument contains information about the new session, and
  * the initial request. It must be passed to the Wt::WApplication
@@ -80,7 +86,8 @@ LmsApplication::create(const Wt::WEnvironment& env, boost::filesystem::path dbPa
 */
 LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::path dbPath)
 : Wt::WApplication(env),
- _sessionData(dbPath)
+  _db(dbPath),
+  _coverResource(nullptr)
 {
 
 	Wt::WBootstrapTheme *bootstrapTheme = new Wt::WBootstrapTheme(this);
@@ -97,9 +104,9 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::p
 
 	bool firstConnection;
 	{
-		Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
+		Wt::Dbo::Transaction transaction(DboSession());
 
-		firstConnection = (Database::User::getAll(_sessionData.getDatabaseHandler().getSession()).size() == 0);
+		firstConnection = (Database::User::getAll(DboSession()).size() == 0);
 	}
 
 	// If here is no account in the database, launch the first connection wizard
@@ -110,22 +117,41 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::p
 
 }
 
+Database::Handler& DbHandler()
+{
+	return LmsApplication::instance()->getDbHandler();
+}
+Wt::Dbo::Session& DboSession()
+{
+	return DbHandler().getSession();
+}
+
+const Wt::Auth::User& CurrentAuthUser()
+{
+	return DbHandler().getLogin().user();
+}
+
+Database::User::pointer CurrentUser()
+{
+	return DbHandler().getCurrentUser();
+}
+
 void
 LmsApplication::createFirstConnectionUI()
 {
 	// Hack, use the auth widget builtin strings
 	builtinLocalizedStrings().useBuiltin(skeletons::AuthStrings_xml1);
 
-	root()->addWidget( new Settings::FirstConnectionFormView(_sessionData));
+	root()->addWidget( new Settings::FirstConnectionFormView());
 }
 
 void
 LmsApplication::createLmsUI()
 {
+	_coverResource = new CoverResource(_db, root());
+	DbHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
 
-	_sessionData.getDatabaseHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
-
-	LmsAuth *authWidget = new LmsAuth(_sessionData.getDatabaseHandler());
+	LmsAuth *authWidget = new LmsAuth();
 
 	authWidget->model()->addPasswordAuth(&Database::Handler::getPasswordService());
 	authWidget->setRegistrationEnabled(false);
@@ -139,11 +165,9 @@ LmsApplication::createLmsUI()
 void
 LmsApplication::handleAuthEvent(void)
 {
-	if (_sessionData.getDatabaseHandler().getLogin().loggedIn())
+	if (DbHandler().getLogin().loggedIn())
 	{
-		Wt::Auth::User user(_sessionData.getDatabaseHandler().getLogin().user());
-
-		LMS_LOG(MOD_UI, SEV_NOTICE) << "User '" << user.identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
+		LMS_LOG(MOD_UI, SEV_NOTICE) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
 
 		this->root()->setOverflow(Wt::WContainerWidget::OverflowHidden);
 
@@ -163,20 +187,18 @@ LmsApplication::handleAuthEvent(void)
 		Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack);
 		navigation->addMenu(leftMenu);
 
-		const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
-
 		Audio *audio;
 
 		if (agentIsMobile())
-			audio = new Mobile::Audio(_sessionData.getDatabaseHandler());
+			audio = new Mobile::Audio();
 		else
-			audio = new Desktop::Audio(_sessionData);
+			audio = new Desktop::Audio();
 
-		VideoWidget *videoWidget = new VideoWidget(_sessionData);
+		VideoWidget *videoWidget = new VideoWidget();
 
 		leftMenu->addItem("Audio", audio);
 		leftMenu->addItem("Video", videoWidget);
-		leftMenu->addItem("Settings", new Settings::Settings(_sessionData));
+		leftMenu->addItem("Settings", new Settings::Settings());
 
 		// Setup a Right-aligned menu.
 		Wt::WMenu *rightMenu = new Wt::WMenu();
@@ -186,14 +208,14 @@ LmsApplication::handleAuthEvent(void)
 		Wt::WPopupMenu *popup = new Wt::WPopupMenu();
 		popup->addItem("Logout");
 
-		Wt::WMenuItem *item = new Wt::WMenuItem( user.identity(Wt::Auth::Identity::LoginName) );
+		Wt::WMenuItem *item = new Wt::WMenuItem( CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) );
 			item->setMenu(popup);
 			rightMenu->addItem(item);
 
 		popup->itemSelected().connect(std::bind([=] (Wt::WMenuItem* item)
 		{
 			if (item && item->text() == "Logout")
-				_sessionData.getDatabaseHandler().getLogin().logout();
+				DbHandler().getLogin().logout();
 		}, std::placeholders::_1));
 
 		// Add a Search control.

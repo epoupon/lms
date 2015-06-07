@@ -27,6 +27,7 @@
 #include "logger/Logger.hpp"
 
 #include "common/Validators.hpp"
+#include "LmsApplication.hpp"
 
 #include "SettingsAudioFormView.hpp"
 
@@ -58,9 +59,8 @@ class AudioFormModel : public Wt::WFormModel
 		static const Field BitrateField;
 		static const Field EncodingField;
 
-		AudioFormModel(SessionData& sessionData, Wt::WObject *parent = 0)
-			: Wt::WFormModel(parent),
-			_db(sessionData.getDatabaseHandler())
+		AudioFormModel(Wt::WObject *parent = 0)
+			: Wt::WFormModel(parent)
 		{
 			initializeModels();
 
@@ -79,11 +79,10 @@ class AudioFormModel : public Wt::WFormModel
 
 		void loadData()
 		{
-			Wt::Dbo::Transaction transaction(_db.getSession());
-			Database::User::pointer user =  _db.getCurrentUser();
+			Wt::Dbo::Transaction transaction(DboSession());
 
-			setValue(BitrateField, std::min(user->getMaxAudioBitrate(), user->getAudioBitrate()) / 1000); // in kps
-			int encodingRow = getAudioEncodingRow( user->getAudioEncoding());
+			setValue(BitrateField, std::min(CurrentUser()->getMaxAudioBitrate(), CurrentUser()->getAudioBitrate()) / 1000); // in kps
+			int encodingRow = getAudioEncodingRow( CurrentUser()->getAudioEncoding());
 			setValue(EncodingField, getAudioEncodingString(encodingRow));
 		}
 
@@ -91,14 +90,13 @@ class AudioFormModel : public Wt::WFormModel
 		{
 			// DBO transaction active here
 			try {
-				Wt::Dbo::Transaction transaction(_db.getSession());
-				Database::User::pointer user =  _db.getCurrentUser();
+				Wt::Dbo::Transaction transaction(DboSession());
 
 				// user may have been deleted by someone else
-				user.modify()->setAudioBitrate( Wt::asNumber(value(BitrateField)) * 1000); // in kbps
+				CurrentUser().modify()->setAudioBitrate( Wt::asNumber(value(BitrateField)) * 1000); // in kbps
 
 				int encodingRow = getAudioEncodingRow( boost::any_cast<Wt::WString>(value((EncodingField))));
-				user.modify()->setAudioEncoding( getAudioEncodingValue(encodingRow));
+				CurrentUser().modify()->setAudioEncoding( getAudioEncodingValue(encodingRow));
 			}
 			catch(Wt::Dbo::Exception& exception)
 			{
@@ -145,14 +143,12 @@ class AudioFormModel : public Wt::WFormModel
 	private:
 		void initializeModels()
 		{
-			Wt::Dbo::Transaction transaction(_db.getSession());
-
-			Database::User::pointer user =  _db.getCurrentUser();
+			Wt::Dbo::Transaction transaction(DboSession());
 
 			_bitrateModel = new Wt::WStringListModel(this);
 			BOOST_FOREACH(std::size_t bitrate, Database::User::audioBitrates)
 			{
-				if (bitrate <= user->getMaxAudioBitrate())
+				if (bitrate <= CurrentUser()->getMaxAudioBitrate())
 					_bitrateModel->addString( Wt::WString("{1}").arg( bitrate / 1000 ) ); // in kbps
 			}
 
@@ -166,7 +162,6 @@ class AudioFormModel : public Wt::WFormModel
 			}
 		}
 
-		Database::Handler&	_db;
 		std::string		_userId;
 		Wt::WStringListModel*	_bitrateModel;
 		Wt::WStringListModel*	_encodingModel;
@@ -175,11 +170,11 @@ class AudioFormModel : public Wt::WFormModel
 const Wt::WFormModel::Field AudioFormModel::BitrateField = "bitrate";
 const Wt::WFormModel::Field AudioFormModel::EncodingField = "encoding";
 
-AudioFormView::AudioFormView(SessionData& sessionData, Wt::WContainerWidget *parent)
+AudioFormView::AudioFormView(Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
 
-	_model = new AudioFormModel(sessionData, this);
+	_model = new AudioFormModel(this);
 
 	setTemplateText(tr("audioForm-template"));
 	addFunction("id", &WTemplate::Functions::id);

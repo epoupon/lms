@@ -24,8 +24,6 @@
 #include <Wt/WTemplateFormView>
 #include <Wt/WText>
 
-#include "common/SessionData.hpp"
-
 namespace UserInterface {
 namespace Settings {
 
@@ -34,7 +32,7 @@ class AudioFormModel;
 class AudioFormView : public Wt::WTemplateFormView
 {
 	public:
-		AudioFormView(SessionData& sessionData, Wt::WContainerWidget *parent = 0);
+		AudioFormView(Wt::WContainerWidget *parent = 0);
 
 	private:
 		void processCancel();	// reload from DB

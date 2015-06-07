@@ -27,8 +27,6 @@
 
 #include "resource/CoverResource.hpp"
 
-#include "database/DatabaseHandler.hpp"
-
 namespace UserInterface {
 namespace Mobile {
 
@@ -36,7 +34,7 @@ class TrackSearch : public Wt::WContainerWidget
 {
 	public:
 
-		TrackSearch(Database::Handler& db, Wt::WContainerWidget *parent = 0);
+		TrackSearch(Wt::WContainerWidget *parent = 0);
 
 		void search(Database::SearchFilter filter, size_t nb);
 
@@ -51,10 +49,6 @@ class TrackSearch : public Wt::WContainerWidget
 
 		void clear(void);
 		void addResults(Database::SearchFilter filter, size_t nb);
-
-		Database::Handler&	_db;
-
-		CoverResource*		_coverResource;
 
 		std::size_t		_resCount;
 };

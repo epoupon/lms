@@ -22,16 +22,17 @@
 
 #include "logger/Logger.hpp"
 
+#include "LmsApplication.hpp"
+
 #include "VideoWidget.hpp"
 
 namespace UserInterface {
 
-VideoWidget::VideoWidget(SessionData& sessionData, Wt::WContainerWidget* parent )
-: Wt::WContainerWidget(parent),
-_sessionData(sessionData)
+VideoWidget::VideoWidget(Wt::WContainerWidget* parent )
+: Wt::WContainerWidget(parent)
 {
 
-	_videoDbWidget = new VideoDatabaseWidget(_sessionData.getDatabaseHandler(), this);
+	_videoDbWidget = new VideoDatabaseWidget(this);
 
 	_videoDbWidget->playVideo().connect(this, &VideoWidget::playVideo);
 
@@ -56,19 +57,10 @@ VideoWidget::playVideo(boost::filesystem::path p)
 
 		// Get user preferences
 		{
-			Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
+			Wt::Dbo::Transaction transaction(DboSession());
 
-			Database::User::pointer user = _sessionData.getDatabaseHandler().getCurrentUser();
-			if (user)
-			{
-				audioBitrate = user->getMaxAudioBitrate();
-				videoBitrate = user->getMaxVideoBitrate();
-			}
-			else
-			{
-				LMS_LOG(MOD_UI, SEV_ERROR) << "Can't play video: user does not exists!";
-				return; // TODO logout?
-			}
+			audioBitrate = CurrentUser()->getMaxAudioBitrate();
+			videoBitrate = CurrentUser()->getMaxVideoBitrate();
 		}
 
 		LMS_LOG(MOD_UI, SEV_DEBUG) << "Max bitrate set to " << videoBitrate << "/" << audioBitrate;

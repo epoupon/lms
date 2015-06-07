@@ -27,6 +27,7 @@
 #include "logger/Logger.hpp"
 
 #include "common/Validators.hpp"
+#include "LmsApplication.hpp"
 
 #include "SettingsFirstConnectionFormView.hpp"
 
@@ -43,9 +44,8 @@ class FirstConnectionFormModel : public Wt::WFormModel
 		static const Field PasswordField;
 		static const Field PasswordConfirmField;
 
-		FirstConnectionFormModel(SessionData& sessionData, Wt::WObject *parent = 0)
-			: Wt::WFormModel(parent),
-			_db(sessionData.getDatabaseHandler())
+		FirstConnectionFormModel(Wt::WObject *parent = 0)
+			: Wt::WFormModel(parent)
 		{
 			addField(NameField);
 			addField(EmailField);
@@ -61,11 +61,11 @@ class FirstConnectionFormModel : public Wt::WFormModel
 		{
 			// DBO transaction active here
 			try {
-				Wt::Dbo::Transaction transaction(_db.getSession());
+				Wt::Dbo::Transaction transaction(DboSession());
 
 				// Check if a user already exist
 				// If it's the case, just do nothing
-				if (Database::User::getAll(_db.getSession()).size() > 0)
+				if (!Database::User::getAll(DboSession()).empty())
 				{
 					LMS_LOG(MOD_UI, SEV_ERROR) << "Admin user already created";
 					error = Wt::WString("Admin user already created!");
@@ -73,8 +73,8 @@ class FirstConnectionFormModel : public Wt::WFormModel
 				}
 
 				// Create user
-				Wt::Auth::User authUser = _db.getUserDatabase().registerNew();
-				Database::User::pointer user = _db.getUser(authUser);
+				Wt::Auth::User authUser = DbHandler().getUserDatabase().registerNew();
+				Database::User::pointer user = DbHandler().getUser(authUser);
 
 				// Account
 				authUser.setIdentity(Wt::Auth::Identity::LoginName, valueText(NameField));
@@ -139,7 +139,6 @@ class FirstConnectionFormModel : public Wt::WFormModel
 
 	private:
 
-		Database::Handler&	_db;
 };
 
 const Wt::WFormModel::Field FirstConnectionFormModel::NameField = "name";
@@ -147,11 +146,11 @@ const Wt::WFormModel::Field FirstConnectionFormModel::EmailField = "email";
 const Wt::WFormModel::Field FirstConnectionFormModel::PasswordField = "password";
 const Wt::WFormModel::Field FirstConnectionFormModel::PasswordConfirmField = "password-confirm";
 
-FirstConnectionFormView::FirstConnectionFormView(SessionData& sessionData, Wt::WContainerWidget *parent)
+FirstConnectionFormView::FirstConnectionFormView(Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
 
-	_model = new FirstConnectionFormModel(sessionData, this);
+	_model = new FirstConnectionFormModel(this);
 
 	setTemplateText(tr("firstConnectionForm-template"));
 	addFunction("id", &WTemplate::Functions::id);

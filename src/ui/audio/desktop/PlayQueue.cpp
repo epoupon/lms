@@ -27,10 +27,9 @@
 #include <Wt/WFileResource>
 #include <Wt/WTheme>
 
-#include "resource/CoverResource.hpp"
-
 #include "logger/Logger.hpp"
 
+#include "LmsApplication.hpp"
 #include "PlayQueue.hpp"
 
 static const int TrackInfoRole = Wt::UserRole;
@@ -271,9 +270,8 @@ class PlayQueueItemDelegate : public Wt::WItemDelegate
 };
 
 
-PlayQueue::PlayQueue(Database::Handler& db, Wt::WContainerWidget* parent)
+PlayQueue::PlayQueue(Wt::WContainerWidget* parent)
 : Wt::WTableView(parent),
-_db(db),
 _curPlayedTrackPos(trackPosInvalid),
 _trackSelector(new TrackSelector())
 {
@@ -315,7 +313,6 @@ _trackSelector(new TrackSelector())
 
 	}, std::placeholders::_1, std::placeholders::_2));
 
-	_coverResource = new CoverResource(db, 64);
 }
 
 void
@@ -375,8 +372,8 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 	//
 	BOOST_FOREACH(Database::Track::id_type trackId, trackIds)
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
-		Database::Track::pointer track (Database::Track::getById(_db.getSession(), trackId));
+		Wt::Dbo::Transaction transaction(DboSession());
+		Database::Track::pointer track (Database::Track::getById(DboSession(), trackId));
 
 		if (track)
 		{
@@ -388,9 +385,9 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 
 			std::string coverUrl;
 			if (track->hasCover())
-				coverUrl = _coverResource->getTrackUrl(track.id());
+				coverUrl = LmsApplication::instance()->getCoverResource()->getTrackUrl(track.id(), 64);
 			else
-				coverUrl = "images/unknown-cover.jpg";
+				coverUrl = LmsApplication::instance()->getCoverResource()->getUnkownTrackUrl(64);
 			_model->setData(dataRow, COLUMN_ID_COVER, coverUrl, Wt::DecorationRole);
 
 			TrackInfo trackInfo;
@@ -463,12 +460,12 @@ PlayQueue::playPrevious(void)
 bool
 PlayQueue::readTrack(int rowPos)
 {
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	Wt::Dbo::Transaction transaction(DboSession());
 
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Reading track at pos " << rowPos;
 	Database::Track::id_type trackId = boost::any_cast<Database::Track::id_type>(_model->data(rowPos, COLUMN_ID_TRACK_ID, Wt::UserRole));
 
-	Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+	Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
 	if (track)
 	{
 		setPlayingTrackPos(rowPos);

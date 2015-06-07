@@ -22,9 +22,6 @@
 
 #include <mutex>
 
-#include <boost/foreach.hpp>
-#include <boost/filesystem.hpp>
-
 #include <Wt/WResource>
 
 #include "database/DatabaseHandler.hpp"
@@ -32,25 +29,34 @@
 
 namespace UserInterface {
 
+
 class CoverResource : public Wt::WResource
 {
 	public:
-		CoverResource(Database::Handler& db,
-				std::size_t size,		// size * size pixels
-				Wt::WObject *parent = 0);
+		static const std::string unknownCoverPath;
+		static const std::size_t maxSize = 512;
+
+		CoverResource(Database::Handler& db, Wt::WObject *parent = 0);
 		~CoverResource();
 
-		std::string getReleaseUrl(std::string releaseName);
-		std::string getTrackUrl(Database::Track::id_type trackId);
+		std::string getReleaseUrl(std::string releaseName, size_t size) const;
+		std::string getTrackUrl(Database::Track::id_type trackId, size_t size) const;
+		std::string getUnkownTrackUrl(size_t size) const;
 
 		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
 
 	private:
 
+		const CoverArt::CoverArt&	getDefaultCover(std::size_t size);
+		void				putCover(Wt::Http::Response& response, const CoverArt::CoverArt& cover);
+
 		std::mutex			_mutex;
 		Database::Handler&		_db;
-		std::size_t			_size;
-		CoverArt::CoverArt		_defaultCover;
+
+		// Default cover for different sizes
+		std::map<std::size_t, CoverArt::CoverArt>	_defaultCovers;
+
+		// TODO construct a cache for covers?
 };
 
 } // namespace UserInterface

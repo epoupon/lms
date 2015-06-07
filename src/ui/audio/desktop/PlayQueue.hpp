@@ -23,7 +23,7 @@
 #include <Wt/WTableView>
 #include <Wt/WStandardItemModel>
 
-#include "database/DatabaseHandler.hpp"
+#include "database/Types.hpp"
 
 #include "resource/CoverResource.hpp"
 
@@ -36,7 +36,7 @@ class TrackSelector;
 class PlayQueue : public Wt::WTableView
 {
 	public:
-		PlayQueue(Database::Handler& db, Wt::WContainerWidget* parent = 0);
+		PlayQueue(Wt::WContainerWidget* parent = 0);
 
 		void addTracks(const std::vector<Database::Track::id_type>& trackIds);
 		void getTracks(std::vector<Database::Track::id_type>& trackIds) const;
@@ -79,13 +79,9 @@ class PlayQueue : public Wt::WTableView
 		Wt::Signal< boost::filesystem::path, int >	_sigTrackPlay;
 		Wt::Signal< void >	_sigTracksUpdated;
 
-		Database::Handler&	_db;
-
 		Wt::WStandardItemModel*	_model;
 
 		PlayQueueItemDelegate*	_itemDelegate;
-
-		CoverResource*		_coverResource;
 
 		int				_curPlayedTrackPos;
 		std::unique_ptr<TrackSelector>	_trackSelector;

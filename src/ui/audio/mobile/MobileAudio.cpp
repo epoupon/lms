@@ -27,6 +27,8 @@
 #include <Wt/WText>
 #include <Wt/WTable>
 
+#include "LmsApplication.hpp"
+
 #include "MobileAudio.hpp"
 
 #include "ArtistSearch.hpp"
@@ -39,9 +41,8 @@
 namespace UserInterface {
 namespace Mobile {
 
-Audio::Audio(Database::Handler& db, Wt::WContainerWidget *parent)
-: UserInterface::Audio(parent),
-_db(db)
+Audio::Audio(Wt::WContainerWidget *parent)
+: UserInterface::Audio(parent)
 {
 	// Root div has to be a "container"
 	this->setStyleClass("container-fluid");
@@ -56,27 +57,29 @@ _db(db)
 	search->bindWidget("search", edit);
 	search->setMargin(10);
 
-	ArtistSearch* artistSearch = new ArtistSearch(_db, this);
-	ReleaseSearch* releaseSearch = new ReleaseSearch(_db, this);
-	TrackSearch* trackSearch = new TrackSearch(_db, this);
+	ArtistSearch* artistSearch = new ArtistSearch(this);
+	ReleaseSearch* releaseSearch = new ReleaseSearch(this);
+	TrackSearch* trackSearch = new TrackSearch(this);
 
 	Wt::WTemplate* footer = new Wt::WTemplate(this);
 	footer->setTemplateText(Wt::WString::tr("mobile-audio-footer"));
 
-	Wt::Dbo::Transaction transaction(_db.getSession());
-	Database::User::pointer user = _db.getCurrentUser();
-
 	// Determine the encoding to be used
 	Wt::WMediaPlayer::Encoding encoding;
-	switch (user->getAudioEncoding())
+
 	{
-		case Database::AudioEncoding::MP3: encoding = Wt::WMediaPlayer::MP3; break;
-		case Database::AudioEncoding::WEBMA: encoding = Wt::WMediaPlayer::WEBMA; break;
-		case Database::AudioEncoding::OGA: encoding = Wt::WMediaPlayer::OGA; break;
-		case Database::AudioEncoding::FLA: encoding = Wt::WMediaPlayer::FLA; break;
-		case Database::AudioEncoding::AUTO:
-		default:
-			encoding = AudioMediaPlayer::getBestEncoding();
+		Wt::Dbo::Transaction transaction (DboSession());
+
+		switch (CurrentUser()->getAudioEncoding())
+		{
+			case Database::AudioEncoding::MP3: encoding = Wt::WMediaPlayer::MP3; break;
+			case Database::AudioEncoding::WEBMA: encoding = Wt::WMediaPlayer::WEBMA; break;
+			case Database::AudioEncoding::OGA: encoding = Wt::WMediaPlayer::OGA; break;
+			case Database::AudioEncoding::FLA: encoding = Wt::WMediaPlayer::FLA; break;
+			case Database::AudioEncoding::AUTO:
+			default:
+							   encoding = AudioMediaPlayer::getBestEncoding();
+		}
 	}
 
 	AudioMediaPlayer* mediaPlayer = new AudioMediaPlayer(db, encoding);
@@ -185,9 +188,10 @@ _db(db)
 	trackSearch->trackPlay().connect(std::bind([=] (Database::Track::id_type id)
 	{
 		LMS_LOG(MOD_UI, SEV_DEBUG) << "Playing track id " << id;
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		// TODO reduce transaction scope here
+		Wt::Dbo::Transaction transaction(DboSession());
 
-		Database::Track::pointer track = Database::Track::getById(_db.getSession(), id);
+		Database::Track::pointer track = Database::Track::getById(DboSession(), id);
 
 		if (track)
 		{

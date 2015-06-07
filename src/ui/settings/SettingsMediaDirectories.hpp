@@ -27,15 +27,13 @@
 
 #include "database/MediaDirectory.hpp"
 
-#include "common/SessionData.hpp"
-
 namespace UserInterface {
 namespace Settings {
 
 class MediaDirectories : public Wt::WContainerWidget
 {
 	public:
-		MediaDirectories(SessionData& sessioNData, Wt::WContainerWidget *parent = 0);
+		MediaDirectories(Wt::WContainerWidget *parent = 0);
 
 		void refresh();
 
@@ -49,8 +47,6 @@ class MediaDirectories : public Wt::WContainerWidget
 
 		void handleDelMediaDirectory(boost::filesystem::path p, Database::MediaDirectory::Type type);
 		void handleCreateMediaDirectory(void);
-
-		Database::Handler&	_db;
 
 		Wt::WStackedWidget*	_stack;
 		Wt::WTable*		_table;

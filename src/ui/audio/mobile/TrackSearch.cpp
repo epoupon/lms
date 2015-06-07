@@ -23,15 +23,15 @@
 #include <Wt/WTemplate>
 
 #include "logger/Logger.hpp"
+#include "LmsApplication.hpp"
 
 #include "TrackSearch.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
-TrackSearch::TrackSearch(Database::Handler& db, Wt::WContainerWidget *parent)
+TrackSearch::TrackSearch(Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent),
-_db(db),
 _resCount(0)
 {
 	Wt::WTemplate* title = new Wt::WTemplate(this);
@@ -39,7 +39,6 @@ _resCount(0)
 
 	title->bindWidget("text", new Wt::WText("Tracks", Wt::PlainText));
 
-	_coverResource = new CoverResource(db, 56);
 }
 
 void
@@ -61,9 +60,9 @@ TrackSearch::search(Database::SearchFilter filter, size_t max)
 void
 TrackSearch::addResults(Database::SearchFilter filter, size_t nb)
 {
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	Wt::Dbo::Transaction transaction(DboSession());
 
-	std::vector< Database::Track::pointer > tracks = Database::Track::getTracks(_db.getSession(), filter, _resCount, nb + 1);
+	std::vector< Database::Track::pointer > tracks = Database::Track::getTracks(DboSession(), filter, _resCount, nb + 1);
 
 	bool expectMoreResults;
 	if (tracks.size() == nb + 1)
@@ -81,7 +80,7 @@ TrackSearch::addResults(Database::SearchFilter filter, size_t nb)
 
 		Wt::WImage *cover = new Wt::WImage();
 		cover->setStyleClass("center-block");
-		cover->setImageLink( Wt::WLink (_coverResource->getTrackUrl(track.id())) );
+		cover->setImageLink( Wt::WLink (LmsApplication::instance()->getCoverResource()->getTrackUrl(track.id(), 56)) );
 		trackWidget->bindWidget("cover", cover);
 
 		// Track Name (bold)

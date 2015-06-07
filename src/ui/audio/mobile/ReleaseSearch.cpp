@@ -23,23 +23,21 @@
 #include <Wt/WTemplate>
 
 #include "logger/Logger.hpp"
+#include "LmsApplication.hpp"
 
 #include "ReleaseSearch.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
-ReleaseSearch::ReleaseSearch(Database::Handler& db, Wt::WContainerWidget *parent)
+ReleaseSearch::ReleaseSearch(Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent),
-_db(db),
 _resCount(0)
 {
 	Wt::WTemplate* title = new Wt::WTemplate(this);
 	title->setTemplateText(Wt::WString::tr("mobile-search-title"));
 
 	title->bindWidget("text", new Wt::WText("Releases", Wt::PlainText));
-
-	_coverResource = new CoverResource(db, 56);
 }
 
 void
@@ -65,10 +63,10 @@ ReleaseSearch::addResults(Database::SearchFilter filter, size_t nb)
 	std::vector<std::string> releases;
 
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		Wt::Dbo::Transaction transaction(DboSession());
 
 		// Request one more to see if more results are to be expected
-		releases = Database::Track::getReleases(_db.getSession(), filter, _resCount, nb + 1);
+		releases = Database::Track::getReleases(DboSession(), filter, _resCount, nb + 1);
 	}
 
 	bool expectMoreResults;
@@ -87,7 +85,7 @@ ReleaseSearch::addResults(Database::SearchFilter filter, size_t nb)
 
 		Wt::WImage *cover = new Wt::WImage();
 		cover->setStyleClass("center-block");
-		cover->setImageLink( Wt::WLink( _coverResource->getReleaseUrl(release)));
+		cover->setImageLink( Wt::WLink( LmsApplication::instance()->getCoverResource()->getReleaseUrl(release, 56)));
 		releaseWidget->bindWidget("cover", cover);
 
 		releaseWidget->bindWidget("name", new Wt::WText(Wt::WString::fromUTF8(release), Wt::PlainText));

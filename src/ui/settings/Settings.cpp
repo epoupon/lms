@@ -30,18 +30,18 @@
 #include "SettingsUsers.hpp"
 
 #include "logger/Logger.hpp"
-
 #include "service/ServiceManager.hpp"
 #include "service/DatabaseUpdateService.hpp"
+
+#include "LmsApplication.hpp"
 
 #include "Settings.hpp"
 
 namespace UserInterface {
 namespace Settings {
 
-Settings::Settings(SessionData& sessionData, Wt::WContainerWidget* parent)
-: Wt::WContainerWidget(parent),
-_sessionData(sessionData)
+Settings::Settings(Wt::WContainerWidget* parent)
+: Wt::WContainerWidget(parent)
 {
 	Wt::WHBoxLayout* hLayout = new Wt::WHBoxLayout(this);
 
@@ -62,28 +62,28 @@ _sessionData(sessionData)
 	std::string userId;
 	bool userIsAdmin;
 	{
-		Wt::Dbo::Transaction transaction( sessionData.getDatabaseHandler().getSession());
-		::Database::User::pointer user = sessionData.getDatabaseHandler().getCurrentUser();
-		userId = Database::User::getId(user);
-		userIsAdmin = user->isAdmin();
+		Wt::Dbo::Transaction transaction(DboSession());
+
+		userId = Database::User::getId(CurrentUser());
+		userIsAdmin = CurrentUser()->isAdmin();
 	}
 
-	menu->addItem("Audio", new AudioFormView(sessionData));
+	menu->addItem("Audio", new AudioFormView());
 	if (userIsAdmin)
 	{
-		MediaDirectories* mediaDirectory = new MediaDirectories(sessionData);
+		MediaDirectories* mediaDirectory = new MediaDirectories();
 		mediaDirectory->changed().connect(this, &Settings::handleDatabaseDirectoriesChanged);
 		menu->addItem("Media Folders", mediaDirectory);
 
-		DatabaseFormView* databaseFormView = new DatabaseFormView(sessionData);
+		DatabaseFormView* databaseFormView = new DatabaseFormView();
 		databaseFormView->changed().connect(this, &Settings::restartDatabaseUpdateService);
 		menu->addItem("Database Update", databaseFormView);
 
-		menu->addItem("Users", new Users(sessionData));
+		menu->addItem("Users", new Users());
 	}
 	else
 	{
-		menu->addItem("Account", new AccountFormView(sessionData, userId));
+		menu->addItem("Account", new AccountFormView(userId));
 	}
 
 }
@@ -94,8 +94,8 @@ Settings::handleDatabaseDirectoriesChanged()
 	LMS_LOG(MOD_UI, SEV_NOTICE) << "Media directories have changed: requesting imediate scan";
 	// On directory add or delete, request an immediate scan
 	{
-		Wt::Dbo::Transaction transaction(_sessionData.getDatabaseHandler().getSession());
-		Database::MediaDirectorySettings::get(_sessionData.getDatabaseHandler().getSession()).modify()->setManualScanRequested(true);
+		Wt::Dbo::Transaction transaction(DboSession());
+		Database::MediaDirectorySettings::get(DboSession()).modify()->setManualScanRequested(true);
 	}
 
 	restartDatabaseUpdateService();

@@ -23,7 +23,7 @@
 #include <boost/algorithm/string/split.hpp>
 #include <Wt/WContainerWidget>
 
-#include "database/DatabaseHandler.hpp"
+#include "database/Types.hpp"
 
 namespace UserInterface {
 namespace Mobile {
@@ -32,7 +32,7 @@ class ArtistSearch : public Wt::WContainerWidget
 {
 	public:
 
-		ArtistSearch(Database::Handler& db, Wt::WContainerWidget *parent = 0);
+		ArtistSearch(Wt::WContainerWidget *parent = 0);
 
 		void search(Database::SearchFilter filter, std::size_t nb);
 
@@ -48,7 +48,6 @@ class ArtistSearch : public Wt::WContainerWidget
 		void clear(void);
 		void addResults(Database::SearchFilter filter, size_t nb);
 
-		Database::Handler&	_db;
 		std::size_t		_resCount;
 };
 
