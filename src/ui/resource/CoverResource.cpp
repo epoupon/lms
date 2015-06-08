@@ -81,13 +81,13 @@ CoverResource::getReleaseUrl(std::string releaseName, std::size_t size) const
 std::string
 CoverResource::getTrackUrl(Database::Track::id_type trackId, std::size_t size) const
 {
-	return url()+ "&trackid=" + std::to_string(trackId) + "&size=" + std::to_string(size);
+	return url() + "&trackid=" + std::to_string(trackId) + "&size=" + std::to_string(size);
 }
 
 std::string
 CoverResource::getUnkownTrackUrl(size_t size) const
 {
-	return Wt::WApplication::instance()->docRoot() + unknownCoverPath + "&size=" + std::to_string(size);
+	return url() + "&size=" + std::to_string(size);
 }
 
 void
