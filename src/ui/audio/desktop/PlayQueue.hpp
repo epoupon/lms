@@ -61,7 +61,7 @@ class PlayQueue : public Wt::WTableView
 
 		// Signals
 		// Emitted when a song has to be played
-		Wt::Signal< boost::filesystem::path, int >& playTrack() { return _sigTrackPlay; }
+		Wt::Signal< Database::Track::id_type, int >& playTrack() { return _sigTrackPlay; }
 		// Emitted when the list has changed
 		Wt::Signal< void >& tracksUpdated() { return _sigTracksUpdated; }
 
@@ -76,7 +76,7 @@ class PlayQueue : public Wt::WTableView
 		void setPlayingTrackPos(int newRowPos);
 		void renumber(int firstId, int lastId);
 
-		Wt::Signal< boost::filesystem::path, int >	_sigTrackPlay;
+		Wt::Signal< Database::Track::id_type, int >	_sigTrackPlay;
 		Wt::Signal< void >	_sigTracksUpdated;
 
 		Wt::WStandardItemModel*	_model;
