@@ -12,9 +12,10 @@
 
 [Cover]
 - Scaling: find something more "reliable" than GIL and its custom extensions (adobe work, io_new)?
+- Get the cover from image files in the same folder ("cover.jpg", etc.)
 
 [Database]
-- Optim, use SQL query to get genre orphans
+- Optim, use SQL query to get the "genre" orphans
 - Use Inotify like system to watch modified/added files?
 - count scan import errors
 
@@ -28,12 +29,13 @@
 	- handle internationalization
 	[Settings]
 		- logout users that are being changed (loss of admin admin rights), or make sure they are still admin when they make changes
-		- "signal not exposed" problem if a user logout and login again. bad resource destruction?
+		- "signal not exposed" problem if a user logout and login again. Bad resource destruction?
 		[user/transcoding]
-		- Prefered codecs for audio/video?
-		- use a slider instead of a combo box for the bitrates
+		- Prefered codecs for video
+		- use a slider instead of a combo box for the bitrates?
 		[admin/Users]
 		- do not activate the update period/start time when 'admin' is checked
+		- do not activate the bitrate limit when creating a new admin user
 		[admin/Database update]
 		- do not make the update start time field active when update perdiod is "Never"
 		- refresh the audio/video view when the database directories have been updated
@@ -41,10 +43,11 @@
 	[Audio]
 	- Style eveything nicely...
 	- MediaPlayer: move the slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478)
-	- TrackView : handle duration > 1 hour
+	- TrackView : handle durations > 1 hour
 	- TrackView : Reselect the current selected item when displaying the updated search results
 	- Add covers in the release filter?
 	- Add a download button to get the current playlist in a streamed zip file
+	- Add a upload button to upload media files in a dedicated directory
 	- Add keyboard shortcuts
 
 	[Video]
@@ -52,12 +55,15 @@
 	- remove codec choice from parameters
 
 	[Layout]
-	- Make a dedicated audio layout in mobile environment (keep the same layout for videos)
 	- Style eveything nicely...
+	- Make a dedicated audio layout in mobile environment (keep the same layout for videos?)
 	- Handle internal path
 
 [Remote API]
 - Implement partial text search options in the GetXXX messages
 
+[REST API]
+- Make another dedicated REST API. Maybe use the SubSonic API?
+
 [Logs]
-- capture transcoder log output to get more information on errors
+- Capture transcoder log output to get more information on errors
