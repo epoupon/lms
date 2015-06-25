@@ -29,6 +29,8 @@
 #include <Wt/WText>
 #include <Wt/WImage>
 
+#include "database/Types.hpp"
+
 #include "transcode/Parameters.hpp"
 #include "resource/AvConvTranscodeStreamResource.hpp"
 #include "resource/CoverResource.hpp"
@@ -41,9 +43,10 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 	public:
 		static Wt::WMediaPlayer::Encoding getBestEncoding();
 
-		AudioMediaPlayer( Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent = 0);
+		AudioMediaPlayer(Wt::WContainerWidget *parent = 0);
 
-		void load(const Transcode::Parameters& parameters);
+		// Load Media to be played
+		void load(Database::Track::id_type trackId);
 
 		// Accessors
 		Wt::WMediaPlayer::Encoding getEncoding() const	{ return _encoding; }

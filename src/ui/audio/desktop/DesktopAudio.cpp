@@ -120,21 +120,7 @@ _playQueue(nullptr)
 		Wt::WVBoxLayout* playQueueLayout = new Wt::WVBoxLayout();
 		playQueueContainer->setLayout(playQueueLayout);
 
-		// Determine the encoding to be used
-		Wt::WMediaPlayer::Encoding encoding;
-		switch (CurrentUser()->getAudioEncoding())
-		{
-			case Database::AudioEncoding::MP3: encoding = Wt::WMediaPlayer::MP3; break;
-			case Database::AudioEncoding::WEBMA: encoding = Wt::WMediaPlayer::WEBMA; break;
-			case Database::AudioEncoding::OGA: encoding = Wt::WMediaPlayer::OGA; break;
-			case Database::AudioEncoding::FLA: encoding = Wt::WMediaPlayer::FLA; break;
-			case Database::AudioEncoding::AUTO:
-			default:
-				encoding = AudioMediaPlayer::getBestEncoding();
-		}
-
-		LMS_LOG(MOD_UI, SEV_INFO) << "Audio player using encoding " << encoding;
-		_mediaPlayer = new AudioMediaPlayer(encoding);
+		_mediaPlayer = new AudioMediaPlayer();
 		playQueueLayout->addWidget(_mediaPlayer);
 
 		playQueueLayout->addWidget( _playQueue, 1);
@@ -192,7 +178,7 @@ _playQueue(nullptr)
 
 	mainLayout->setRowStretch(1, 1);
 	mainLayout->setRowResizable(0, true, Wt::WLength(250, Wt::WLength::Pixel));
-	mainLayout->setColumnResizable(0, true, Wt::WLength(400, Wt::WLength::Pixel));
+	mainLayout->setColumnResizable(0, true);
 
 	// Double click on track
 	// Set the selected tracks to the play queue
@@ -499,45 +485,16 @@ Audio::playSelectedTracks(PlayQueueAddType addType)
 }
 
 void
-Audio::playTrack(boost::filesystem::path p, int pos)
+Audio::playTrack(Database::Track::id_type trackId, int pos)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "play track '" << p << "'";
-	try {
-
-		std::size_t bitrate = 0;
-
-		// Get user preferences
-		{
-			Wt::Dbo::Transaction transaction(DboSession());
-
-			bitrate = CurrentUser()->getAudioBitrate();
-			CurrentUser().modify()->setCurPlayingTrackPos(pos);
-		}
-
-		Transcode::InputMediaFile inputFile(p);
-
-		// Determine the output format using the encoding of the player
-		Transcode::Format::Encoding encoding;
-		switch (_mediaPlayer->getEncoding())
-		{
-			case Wt::WMediaPlayer::MP3: encoding = Transcode::Format::MP3; break;
-			case Wt::WMediaPlayer::FLA: encoding = Transcode::Format::FLA; break;
-			case Wt::WMediaPlayer::OGA: encoding = Transcode::Format::OGA; break;
-			case Wt::WMediaPlayer::WEBMA: encoding = Transcode::Format::WEBMA; break;
-			default:
-			    encoding = Transcode::Format::MP3;
-		}
-
-		Transcode::Parameters parameters(inputFile, Transcode::Format::get(encoding));
-
-		parameters.setBitrate(Transcode::Stream::Audio, bitrate);
-
-		_mediaPlayer->load( parameters );
-	}
-	catch( std::exception &e)
 	{
-		LMS_LOG(MOD_UI, SEV_ERROR) << "Caught exception while loading '" << p << "': " << e.what();
+		Wt::Dbo::Transaction transaction(DboSession());
+
+		// Update user current track position
+		CurrentUser().modify()->setCurPlayingTrackPos(pos);
 	}
+
+	_mediaPlayer->load(trackId);
 }
 
 } // namespace Desktop

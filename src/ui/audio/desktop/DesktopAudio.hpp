@@ -53,7 +53,7 @@ class Audio : public UserInterface::Audio
 		void playlistShowDeleteDialog(std::string name);
 		void playlistRefreshMenus();
 
-		void playTrack(boost::filesystem::path p, int pos);
+		void playTrack(Database::Track::id_type id, int pos);
 
 		enum PlayQueueAddType
 		{

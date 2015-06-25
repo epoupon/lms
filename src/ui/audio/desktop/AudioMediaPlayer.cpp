@@ -24,6 +24,10 @@
 #include <Wt/WHBoxLayout>
 #include <Wt/WVBoxLayout>
 
+#include "logger/Logger.hpp"
+
+#include "LmsApplication.hpp"
+
 #include "AudioMediaPlayer.hpp"
 
 namespace UserInterface {
@@ -36,75 +40,91 @@ AudioMediaPlayer::getBestEncoding()
 	return Wt::WMediaPlayer::MP3;
 }
 
-AudioMediaPlayer::AudioMediaPlayer( Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent)
+AudioMediaPlayer::AudioMediaPlayer(Wt::WContainerWidget *parent)
 	: Wt::WContainerWidget(parent),
-	_mediaResource(nullptr),
-	_encoding(encoding)
+	_mediaResource(nullptr)
 {
 	this->setStyleClass("mediaplayer");
-	this->setHeight(90);
 
 	Wt::WVBoxLayout* mainLayout = new Wt::WVBoxLayout();
 	this->setLayout(mainLayout);
 
-	/* TODO add media info here
+	// Determine the encoding to be used
+	{
+		Wt::Dbo::Transaction transaction(DboSession());
+		switch (CurrentUser()->getAudioEncoding())
+		{
+			case Database::AudioEncoding::MP3: _encoding = Wt::WMediaPlayer::MP3; break;
+			case Database::AudioEncoding::WEBMA: _encoding = Wt::WMediaPlayer::WEBMA; break;
+			case Database::AudioEncoding::OGA: _encoding = Wt::WMediaPlayer::OGA; break;
+			case Database::AudioEncoding::FLA: _encoding = Wt::WMediaPlayer::FLA; break;
+			case Database::AudioEncoding::AUTO:
+			default:
+				_encoding = getBestEncoding();
+		}
+	}
+
+	LMS_LOG(MOD_UI, SEV_INFO) << "Audio player using encoding " << _encoding;
+
 	// Current Media info
 	Wt::WHBoxLayout *currentMediaLayout = new Wt::WHBoxLayout();
-	mainLayout->addLayout(currentMediaLayout);
+	mainLayout->addLayout(currentMediaLayout, 1);
 
 	currentMediaLayout->addWidget( _mediaCover = new Wt::WImage());
-	_mediaCover->setImageLink( Wt::WLink("images/unknown-cover.jpg") );
+	_mediaCover->setImageLink( LmsApplication::instance()->getCoverResource()->getUnkownTrackUrl(72));
+	_mediaCover->setStyleClass("mediaplayer-current-cover");
 
 	Wt::WVBoxLayout* mediaInfoLayout = new Wt::WVBoxLayout();
 	currentMediaLayout->addLayout(mediaInfoLayout, 1);
 
-	mediaInfoLayout->addWidget( _mediaTitle = new Wt::WText());
-	mediaInfoLayout->addWidget( _mediaArtistRelease = new Wt::WText());
-	*/
+	mediaInfoLayout->addWidget( _mediaTitle = new Wt::WText("---"));
+	mediaInfoLayout->addWidget( _mediaArtistRelease = new Wt::WText("---"));
+	_mediaTitle->setStyleClass("mediaplayer-current-track vertical-align");
+	_mediaArtistRelease->setStyleClass("mediaplayer-current-artist vertical-align");
+
 	// Time control
 	Wt::WHBoxLayout *sliderLayout = new Wt::WHBoxLayout();
 	mainLayout->addLayout(sliderLayout);
 
 	sliderLayout->addWidget(_curTime = new Wt::WText("00:00:00"));
-	_curTime->setLineHeight(30);
 	sliderLayout->addWidget(_timeSlider = new Wt::WSlider( ), 1);
 	sliderLayout->addWidget(_duration = new Wt::WText("00:00:00"));
-	_duration->setLineHeight(30);
+	_timeSlider->setHeight(26); // Default is too big (50)
+	_curTime->setStyleClass("vertical-align");
+	_duration->setStyleClass("vertical-align");
 
 	// Controls
 	Wt::WHBoxLayout *controlsLayout = new Wt::WHBoxLayout();
-
 	mainLayout->addLayout(controlsLayout);
 
-	Wt::WContainerWidget *btnContainer = new Wt::WContainerWidget();
-	// Do not allow button to wrap
-	btnContainer->setMinimumSize(155, Wt::WLength::Auto);
-	Wt::WTemplate *t = new Wt::WTemplate(Wt::WString::tr("mediaplayer-controls"), btnContainer);
 
 	Wt::WPushButton *prevBtn = new Wt::WPushButton("<<");
-	t->bindWidget("prev", prevBtn);
-	prevBtn->setStyleClass("mediaplayer-controls");
+	controlsLayout->addWidget(prevBtn);
+	prevBtn->setStyleClass("mediaplayer-btn-controls");
+
+	Wt::WContainerWidget *btnContainer = new Wt::WContainerWidget();;
 
 	_playBtn = new Wt::WPushButton("Play");
-	t->bindWidget("play", _playBtn);
+	btnContainer->addWidget(_playBtn);
 	_playBtn->setWidth(70);
-	_playBtn->setStyleClass("mediaplayer-controls");
+	_playBtn->setStyleClass("mediaplayer-btn-controls");
 
 	_pauseBtn = new Wt::WPushButton("Pause");
-	t->bindWidget("pause", _pauseBtn);
+	btnContainer->addWidget(_pauseBtn);
 	_pauseBtn->setWidth(70);
-	_pauseBtn->setStyleClass("mediaplayer-controls");
-
-	Wt::WPushButton *nextBtn = new Wt::WPushButton(">>");
-	t->bindWidget("next", nextBtn);
-	nextBtn->setStyleClass("mediaplayer-controls");
+	_pauseBtn->setStyleClass("mediaplayer-btn-controls");
 
 	controlsLayout->addWidget(btnContainer);
 
+	Wt::WPushButton *nextBtn = new Wt::WPushButton(">>");
+	controlsLayout->addWidget(nextBtn);
+	nextBtn->setStyleClass("mediaplayer-btn-controls");
+
 	_volumeSlider = new Wt::WSlider();
 	_volumeSlider->setRange(0,100);
-	_volumeSlider->setWidth(60);
-	_volumeSlider->setMinimumSize(60, Wt::WLength::Auto);
+	_volumeSlider->setWidth(60); // Default is too big (150)
+	_volumeSlider->setHeight(26); // Default is too big (50)
+	_volumeSlider->setMinimumSize(50, Wt::WLength::Auto);
 	controlsLayout->addWidget(_volumeSlider, 1);
 
 	Wt::WPushButton *loop = new Wt::WPushButton("Loop");
@@ -149,9 +169,7 @@ AudioMediaPlayer::AudioMediaPlayer( Wt::WMediaPlayer::Encoding encoding, Wt::WCo
 
 	_volumeSlider->sliderMoved().connect(this, &AudioMediaPlayer::handleVolumeSliderMoved);
 
-
 }
-
 
 void
 AudioMediaPlayer::loadPlayer(void)
@@ -168,19 +186,57 @@ AudioMediaPlayer::loadPlayer(void)
 }
 
 void
-AudioMediaPlayer::load(const Transcode::Parameters& parameters)
+AudioMediaPlayer::load(Database::Track::id_type trackId)
 {
+	std::size_t bitrate = 0;
+	boost::filesystem::path trackPath;
+
+	{
+		Wt::Dbo::Transaction transaction(DboSession());
+
+		Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
+
+		bitrate = CurrentUser()->getAudioBitrate();
+		trackPath = track->getPath();
+		_mediaTitle->setText ( Wt::WString::fromUTF8(track->getName()) );
+		_mediaArtistRelease->setText ( Wt::WString::fromUTF8(track->getArtistName()) + " - " + Wt::WString::fromUTF8(track->getReleaseName()) );
+		_mediaCover->setImageLink( Wt::WLink (LmsApplication::instance()->getCoverResource()->getTrackUrl(trackId, 72)));
+	}
+
+	Transcode::Format::Encoding encoding;
+	switch (_encoding)
+	{
+		case Wt::WMediaPlayer::MP3: encoding = Transcode::Format::MP3; break;
+		case Wt::WMediaPlayer::FLA: encoding = Transcode::Format::FLA; break;
+		case Wt::WMediaPlayer::OGA: encoding = Transcode::Format::OGA; break;
+		case Wt::WMediaPlayer::WEBMA: encoding = Transcode::Format::WEBMA; break;
+		default:
+					      encoding = Transcode::Format::MP3;
+	}
+
 	_timeSlider->setDisabled(false);
 
-	_currentParameters = std::make_shared<Transcode::Parameters>( parameters );
+	try
+	{
+		Transcode::Parameters parameters(trackPath, Transcode::Format::get(encoding));
+		parameters.setBitrate(Transcode::Stream::Audio, bitrate);
+
+		_currentParameters = std::make_shared<Transcode::Parameters>( parameters );
+	}
+	catch(std::exception &e)
+	{
+		LMS_LOG(MOD_UI, SEV_ERROR) << "Cannot load input file '" << trackPath << "'";
+		return;
+	}
 
 	loadPlayer();
 
-	_timeSlider->setRange(0, parameters.getInputMediaFile().getDuration().total_seconds() );
+	_timeSlider->setRange(0, _currentParameters->getInputMediaFile().getDuration().total_seconds() );
 	_timeSlider->setValue(0);
 
-	_duration->setText( boost::posix_time::to_simple_string( parameters.getInputMediaFile().getDuration() ));
+	_duration->setText( boost::posix_time::to_simple_string( _currentParameters->getInputMediaFile().getDuration() ));
 
+	// Auto play
 	_mediaPlayer->play();
 }
 
@@ -201,18 +257,6 @@ void
 AudioMediaPlayer::handleTrackEnded(void)
 {
 	_playbackEnded.emit();
-}
-
-void
-AudioMediaPlayer::handleValueChanged(double value)
-{
-	// TODO
-}
-
-void
-AudioMediaPlayer::handleSliderMoved(int value)
-{
-	;
 }
 
 void

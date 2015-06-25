@@ -340,8 +340,7 @@ PlayQueue::play()
 {
 	_trackSelector->setPos(0);
 
-	if (!readTrack(_trackSelector->getCurrent()))
-		playNext();
+	readTrack(_trackSelector->getCurrent());
 }
 
 void
@@ -350,8 +349,7 @@ PlayQueue::play(int rowId)
 	// Update the track selector to use the requested track as current position
 	_trackSelector->setPosByRowId(rowId);
 
-	if (!readTrack(_trackSelector->getCurrent()))
-		playNext();
+	readTrack(_trackSelector->getCurrent());
 }
 
 void
@@ -389,6 +387,7 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 			else
 				coverUrl = LmsApplication::instance()->getCoverResource()->getUnkownTrackUrl(64);
 			_model->setData(dataRow, COLUMN_ID_COVER, coverUrl, Wt::DecorationRole);
+			_model->setData(dataRow, COLUMN_ID_COVER, "playqueue-cover", Wt::StyleClassRole);
 
 			TrackInfo trackInfo;
 			trackInfo.track = Wt::WString::fromUTF8(track->getName());
@@ -432,10 +431,9 @@ PlayQueue::playNext(void)
 		if (pos == trackPosInvalid)
 			break;
 
-		if (readTrack(pos))
-			break;
+		readTrack(pos);
 
-		--nbTries;
+		break;
 	}
 }
 
@@ -450,34 +448,25 @@ PlayQueue::playPrevious(void)
 		if (pos == trackPosInvalid)
 			break;
 
-		if (readTrack(pos))
-			break;
+		readTrack(pos);
+		break;
 
-		--nbTries;
 	}
 }
 
 bool
 PlayQueue::readTrack(int rowPos)
 {
-	Wt::Dbo::Transaction transaction(DboSession());
-
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Reading track at pos " << rowPos;
 	Database::Track::id_type trackId = boost::any_cast<Database::Track::id_type>(_model->data(rowPos, COLUMN_ID_TRACK_ID, Wt::UserRole));
 
-	Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
-	if (track)
-	{
-		setPlayingTrackPos(rowPos);
+	setPlayingTrackPos(rowPos);
 
-		_sigTrackPlay.emit(track->getPath(), rowPos);
+	_sigTrackPlay.emit(trackId, rowPos);
 
-		this->scrollTo( _model->index(_trackSelector->getCurrent(), 0));
+	this->scrollTo( _model->index(_trackSelector->getCurrent(), 0));
 
-		return true;
-	}
-	else
-		return false;
+	return true;
 }
 
 void
