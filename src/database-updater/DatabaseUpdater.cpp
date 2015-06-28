@@ -29,6 +29,7 @@
 
 #include "Checksum.hpp"
 #include "DatabaseUpdater.hpp"
+#include "cover/CoverArtGrabber.hpp"
 
 namespace {
 
@@ -272,8 +273,22 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		// Skip file if last write is the same
 		Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
-		if (track && track->getLastWriteTime() == lastWriteTime)
+
+		// if the file is the same and embeds covers, no need to update
+		if (track && track->getLastWriteTime() == lastWriteTime
+			&& (track->getCoverType() == Database::Track::CoverType::Embedded))
 			return;
+
+		// Check for external covers
+		std::vector<boost::filesystem::path> externalCovers = CoverArt::Grabber::instance().getCoverPaths(file.parent_path());
+		if (track && track->getLastWriteTime() == lastWriteTime)
+		{
+			// no change since last time we updated
+			// Skip only if no external covers has to be set
+			if (track->getCoverType() == Database::Track::CoverType::None && externalCovers.empty()
+				|| track->getCoverType() == Database::Track::CoverType::ExternalFile && !externalCovers.empty())
+			return;
+		}
 
 		MetaData::Items items;
 		_metadataParser.parse(file, items);
@@ -400,11 +415,17 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		if (items.find(MetaData::Type::HasCover) != items.end())
 		{
-			track.modify()->setHasCover( boost::any_cast<bool>(items[MetaData::Type::HasCover]));
+			bool hasCover = boost::any_cast<bool>(items[MetaData::Type::HasCover]);
+
+			if (hasCover)
+				track.modify()->setCoverType( Track::CoverType::Embedded );
+			else if (!externalCovers.empty())
+				track.modify()->setCoverType( Track::CoverType::ExternalFile );
+			else
+				track.modify()->setCoverType( Track::CoverType::None);
 		}
 
 		transaction.commit();
-
 	}
 	catch( std::exception& e ) {
 		LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Exception while parsing audio file : '" << file << "': '" << e.what() << "' => skipping!";

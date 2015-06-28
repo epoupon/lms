@@ -71,7 +71,7 @@ AudioMediaPlayer::AudioMediaPlayer(Wt::WContainerWidget *parent)
 	mainLayout->addLayout(currentMediaLayout, 1);
 
 	currentMediaLayout->addWidget( _mediaCover = new Wt::WImage());
-	_mediaCover->setImageLink( LmsApplication::instance()->getCoverResource()->getUnkownTrackUrl(72));
+	_mediaCover->setImageLink( LmsApplication::instance()->getCoverResource()->getUnknownTrackUrl(72));
 	_mediaCover->setStyleClass("mediaplayer-current-cover");
 
 	Wt::WVBoxLayout* mediaInfoLayout = new Wt::WVBoxLayout();

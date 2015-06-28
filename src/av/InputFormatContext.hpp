@@ -52,7 +52,7 @@ class InputFormatContext : public FormatContext
 
 		// Get attached pictures
 		std::size_t		getNbPictures(void) const;
-		void			getPictures(std::vector<Picture>& pictures) const;
+		std::vector<Picture>	getPictures(std::size_t nbMaxPictures) const;
 
 		// Get the streams
 		std::vector<Stream>	getStreams(void);

@@ -60,6 +60,9 @@ class Logger
 {
 	public:
 
+		Logger(const Logger&) = delete;
+		Logger& operator=(const Logger&) = delete;
+
 		static Logger& instance();
 
 		struct Config {
@@ -76,7 +79,6 @@ class Logger
 			get(Module module);
 
 	private:
-
 		Logger();
 
 		std::map<Module, boost::log::sources::severity_logger< Severity > > _loggers;

@@ -41,7 +41,7 @@ class CoverResource : public Wt::WResource
 
 		std::string getReleaseUrl(std::string releaseName, size_t size) const;
 		std::string getTrackUrl(Database::Track::id_type trackId, size_t size) const;
-		std::string getUnkownTrackUrl(size_t size) const;
+		std::string getUnknownTrackUrl(size_t size) const;
 
 		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
 

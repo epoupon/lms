@@ -104,6 +104,12 @@ class Track
 		Track() {}
 		Track(const boost::filesystem::path& p);
 
+		enum class CoverType
+		{
+			Embedded,	// Contains embedded cover
+			ExternalFile,	// Cover is in an external file
+			None,		// No local cover available
+		};
 
 		// Find utility functions
 		static pointer getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
@@ -141,14 +147,14 @@ class Track
 		void setOriginalDate(const boost::posix_time::ptime& date)	{ _originalDate = date; }
 		void setGenres(const std::string& genreList)			{ _genreList = genreList; }
 		void setGenres(std::vector<Genre::pointer> genres);
-		void setHasCover(bool hasCover)					{ _hasCover = hasCover; }
+		void setCoverType(CoverType coverType)				{ _coverType = coverType; }
 
 		int				getTrackNumber(void) const		{ return _trackNumber; }
 		int				getDiscNumber(void) const		{ return _discNumber; }
 		std::string 			getName(void) const			{ return _name; }
 		std::string 			getArtistName(void) const			{ return _artistName; }
 		std::string 			getReleaseName(void) const			{ return _releaseName; }
-		const std::string&		getPath(void) const			{ return _filePath; }
+		boost::filesystem::path		getPath(void) const			{ return _filePath; }
 		boost::posix_time::time_duration	getDuration(void) const		{ return _duration; }
 		boost::posix_time::ptime	getDate(void) const			{ return _date; }
 		boost::posix_time::ptime	getOriginalDate(void) const		{ return _originalDate; }
@@ -157,7 +163,7 @@ class Track
 
 		boost::posix_time::ptime	getLastWriteTime(void) const		{ return _fileLastWrite; }
 		const std::vector<unsigned char>& getChecksum(void) const		{ return _fileChecksum; }
-		bool				hasCover(void) const			{ return _hasCover; }
+		CoverType			getCoverType(void) const		{ return _coverType; }
 
 		template<class Action>
 			void persist(Action& a)
@@ -174,7 +180,7 @@ class Track
 				Wt::Dbo::field(a, _filePath,		"path");
 				Wt::Dbo::field(a, _fileLastWrite,	"last_write");
 				Wt::Dbo::field(a, _fileChecksum,	"checksum");
-				Wt::Dbo::field(a, _hasCover,		"has_cover");
+				Wt::Dbo::field(a, _coverType,		"cover_type");
 				Wt::Dbo::hasMany(a, _genres, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _playlistEntries, Wt::Dbo::ManyToOne, "track");
 			}
@@ -199,7 +205,7 @@ class Track
 		std::string				_filePath;
 		std::vector<unsigned char>		_fileChecksum;
 		boost::posix_time::ptime		_fileLastWrite;
-		bool					_hasCover;
+		CoverType				_coverType;
 
 		Wt::Dbo::collection< Genre::pointer > _genres;	// Genres that are related to this track
 		Wt::Dbo::collection< Wt::Dbo::ptr<PlaylistEntry> > _playlistEntries;

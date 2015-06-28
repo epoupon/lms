@@ -23,6 +23,7 @@
 #include <boost/filesystem.hpp>
 #include <libconfig.h++>
 
+#include "cover/CoverArtGrabber.hpp"
 #include "logger/Logger.hpp"
 
 #include "service/UserInterfaceService.hpp"
@@ -37,6 +38,9 @@ class ConfigReader
 
 		// Logger configuration
 		void getLoggerConfig(Logger::Config& config);
+
+		// Covers
+		void getCoverGrabberConfig(CoverArt::Grabber::Config& config);
 
 		// Service configurations
 		void getUserInterfaceConfig(Service::UserInterfaceService::Config& config);
