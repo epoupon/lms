@@ -85,7 +85,7 @@ CoverResource::getTrackUrl(Database::Track::id_type trackId, std::size_t size) c
 }
 
 std::string
-CoverResource::getUnkownTrackUrl(size_t size) const
+CoverResource::getUnknownTrackUrl(size_t size) const
 {
 	return url() + "&size=" + std::to_string(size);
 }
@@ -120,8 +120,8 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	if (trackIdStr)
 	{
 		Database::Track::id_type trackId = std::stol(*trackIdStr);
-		std::string path;
-		bool hasCover = false;
+		boost::filesystem::path path;
+		Database::Track::CoverType coverType = Database::Track::CoverType::None;
 
 		{
 			// transactions are not thread safe
@@ -132,13 +132,24 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 			Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
 			if (track)
 			{
-				hasCover = track->hasCover();
+				coverType = track->getCoverType();
 				path = track->getPath();
 			}
 		}
 
-		if (hasCover)
-			covers = CoverArt::Grabber::getFromTrack(path);
+		switch (coverType)
+		{
+			case Database::Track::CoverType::Embedded:
+				covers = CoverArt::Grabber::instance().getFromTrack(path);
+				break;
+
+			case Database::Track::CoverType::ExternalFile:
+				covers = CoverArt::Grabber::instance().getFromDirectory(path.parent_path());
+				break;
+
+			case Database::Track::CoverType::None:
+				break;
+		}
 	}
 	else if (releaseStr)
 	{
@@ -146,7 +157,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		std::unique_lock<std::mutex> lock(_mutex);
 		Wt::Dbo::Transaction transaction(_db.getSession());
 
-		covers = CoverArt::Grabber::getFromRelease(_db.getSession(), *releaseStr);
+		covers = CoverArt::Grabber::instance().getFromRelease(_db.getSession(), *releaseStr);
 	}
 
 	BOOST_FOREACH(CoverArt::CoverArt& cover, covers)

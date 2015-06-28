@@ -12,7 +12,8 @@
 
 [Cover]
 - Scaling: find something more "reliable" than GIL and its custom extensions (adobe work, io_new)?
-- Get the cover from image files in the same folder ("cover.jpg", etc.)
+- Handle several file formats (not only jpg)
+- Handle preferred cover file names
 
 [Database]
 - Optim, use SQL query to get the "genre" orphans

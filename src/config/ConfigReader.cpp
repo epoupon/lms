@@ -48,6 +48,17 @@ ConfigReader::getLoggerConfig(Logger::Config& config)
 }
 
 void
+ConfigReader::getCoverGrabberConfig(CoverArt::Grabber::Config& config)
+{
+	std::string extensions = _config.lookup("main.cover.file_extensions");
+	config.maxFileSize = static_cast<unsigned int>(_config.lookup("main.cover.file_max_size"));
+	std::string filenames = _config.lookup("main.cover.file_preferred_names");
+
+	splitStrings(extensions, config.fileExtensions);
+	splitStrings(filenames, config.preferredFileNames);
+}
+
+void
 ConfigReader::getUserInterfaceConfig(Service::UserInterfaceService::Config& config)
 {
 

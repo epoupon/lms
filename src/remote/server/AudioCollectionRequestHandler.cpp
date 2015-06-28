@@ -294,23 +294,14 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 
 	response.set_type(AudioCollectionResponse::TypeCoverArt);
 
-	Wt::Dbo::Transaction transaction( _db.getSession() );
-	Database::Track::pointer track;
+	std::vector<CoverArt::CoverArt> coverArts;
 
 	switch(request.type())
 	{
 		case AudioCollectionRequest::GetCoverArt::TypeGetCoverArtRelease:
 			if (request.has_release())
 			{
-				SearchFilter filter;
-				filter.exactMatch[SearchFilter::Field::Release].push_back(request.release());
-
-				std::vector<Database::Track::pointer> tracks
-					= Database::Track::getAll(_db.getSession(), filter, -1, 1 /* limit reuslt size */);
-
-				if (!tracks.empty())
-					track = tracks.front();
-
+				coverArts = CoverArt::Grabber::instance().getFromRelease( _db.getSession(), request.release());
 				res = true;
 			}
 			break;
@@ -318,18 +309,11 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 		case AudioCollectionRequest::GetCoverArt::TypeGetCoverArtTrack:
 			if (request.has_track_id())
 			{
-				// Get the request release
-				track = Database::Track::getById( _db.getSession(), request.track_id());
-
+				coverArts = CoverArt::Grabber::instance().getFromTrack(_db.getSession(), request.track_id());
 				res = true;
 			}
 			break;
 	}
-
-	if (!res)
-		return false;
-
-	std::vector<CoverArt::CoverArt> coverArts = CoverArt::Grabber::getFromTrack(track);
 
 	BOOST_FOREACH(CoverArt::CoverArt& coverArt, coverArts)
 	{

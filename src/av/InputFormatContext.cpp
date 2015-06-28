@@ -127,8 +127,8 @@ InputFormatContext::getNbPictures(void) const
 	return res;
 }
 
-void
-InputFormatContext::getPictures(std::vector<Picture>& pictures) const
+std::vector<Picture>
+InputFormatContext::getPictures(std::size_t nbMaxPictures) const
 {
 	static const std::map<int, std::string> codecMimeMap =
 	{
@@ -139,6 +139,8 @@ InputFormatContext::getPictures(std::vector<Picture>& pictures) const
 		{ AV_CODEC_ID_PNG, "image/x-png" },
 		{ AV_CODEC_ID_PPM, "image/x-portable-pixmap" },
 	};
+
+	std::vector<Picture> pictures;
 
 	for (std::size_t i = 0; i < native()->nb_streams; ++i)
 	{
@@ -159,8 +161,13 @@ InputFormatContext::getPictures(std::vector<Picture>& pictures) const
 			std::copy(pkt.data, pkt.data + pkt.size, std::back_inserter(picture.data));
 
 			pictures.push_back( picture );
+
+			if (pictures.size() >= nbMaxPictures)
+				break;
 		}
 	}
+
+	return pictures;
 }
 
 } //namespace Av

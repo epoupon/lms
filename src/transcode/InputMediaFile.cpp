@@ -96,8 +96,6 @@ InputMediaFile::InputMediaFile(const boost::filesystem::path& p)
 		else
 			LMS_LOG(MOD_TRANSCODE, SEV_WARNING) << "Cannot find best stream for type " << type;
 	}
-
-	_covers = CoverArt::Grabber::getFromInputFormatContext(input);
 }
 
 std::vector<Stream>

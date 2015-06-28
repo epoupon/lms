@@ -34,8 +34,6 @@
 namespace Transcode
 {
 
-
-
 class InputMediaFile
 {
 	public:
@@ -53,9 +51,6 @@ class InputMediaFile
 		boost::filesystem::path			getPath(void) const		{return _path;}
 		boost::posix_time::time_duration	getDuration(void) const		{return _duration;}
 
-		// Pictures
-		const std::vector< CoverArt::CoverArt >&	getCovers(void) const { return _covers; }
-
 		// Stream handling
 		const Stream&				getStream(Stream::Id id) const;
 		std::vector<Stream>			getStreams(Stream::Type type) const;
@@ -68,8 +63,6 @@ class InputMediaFile
 
 		std::vector<Stream>			_streams;
 		std::map<Stream::Type, Stream::Id>	_bestStreams;
-
-		std::vector< CoverArt::CoverArt > _covers;
 };
 
 

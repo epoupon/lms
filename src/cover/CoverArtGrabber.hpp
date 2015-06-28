@@ -33,11 +33,35 @@ namespace CoverArt {
 class Grabber
 {
 	public:
+		Grabber(const Grabber&) = delete;
+		Grabber& operator=(const Grabber&) = delete;
 
-		static std::vector<CoverArt>	getFromInputFormatContext(const Av::InputFormatContext& input);
-		static std::vector<CoverArt>	getFromTrack(Database::Track::pointer		track);
-		static std::vector<CoverArt>	getFromTrack(const boost::filesystem::path& path);
-		static std::vector<CoverArt>	getFromRelease(Wt::Dbo::Session& session, std::string releaseName);
+		static Grabber& instance();
+
+		struct Config
+		{
+			std::vector<std::string> fileExtensions;
+			std::size_t maxFileSize;
+			std::vector<std::string> preferredFileNames;
+		};
+
+		void init(const Config& config);
+
+		std::vector<boost::filesystem::path>	getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t nbMaxCovers = 1) const;
+		std::vector<CoverArt>	getFromDirectory(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
+		std::vector<CoverArt>	getFromInputFormatContext(const Av::InputFormatContext& input, std::size_t nbMaxCovers = 1) const;
+		std::vector<CoverArt>	getFromTrack(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
+		std::vector<CoverArt>	getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::size_t nbMaxCovers = 1) const;
+		std::vector<CoverArt>	getFromRelease(Wt::Dbo::Session& session, std::string releaseName, std::size_t nbMaxCovers = 1) const;
+
+	private:
+		Grabber();
+
+		std::vector<boost::filesystem::path> _fileExtensions;
+		std::size_t _maxFileSize;
+		std::vector<boost::filesystem::path> _preferredFileNames;
+
+
 };
 
 } // namespace CoverArt

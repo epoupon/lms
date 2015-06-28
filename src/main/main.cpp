@@ -67,6 +67,12 @@ int main(int argc, char* argv[])
 			Logger::instance().init(loggerConfig);
 		}
 
+		{
+			CoverArt::Grabber::Config config;
+			configReader.getCoverGrabberConfig(config);
+			CoverArt::Grabber::instance().init(config);
+		}
+
 		LMS_LOG(MOD_MAIN, SEV_INFO) << "Reading service configurations...";
 
 		Service::DatabaseUpdateService::Config dbUpdateConfig;
@@ -103,6 +109,7 @@ int main(int argc, char* argv[])
 		res = EXIT_SUCCESS;
 
 	}
+	// TODO catch setting not found exception
 	catch( libconfig::ParseException& e)
 	{
 		std::cerr << "Caught libconfig::ParseException! error='" << e.getError() << "', file = '" << e.getFile() << "', line = " << e.getLine() << std::endl;
