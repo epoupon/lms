@@ -388,7 +388,7 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 				coverUrl = LmsApplication::instance()->getCoverResource()->getUnknownTrackUrl(64);
 
 			_model->setData(dataRow, COLUMN_ID_COVER, coverUrl, Wt::DecorationRole);
-			_model->setData(dataRow, COLUMN_ID_COVER, "playqueue-cover", Wt::StyleClassRole);
+			_model->setData(dataRow, COLUMN_ID_COVER, std::string("playqueue-cover"), Wt::StyleClassRole);
 
 			TrackInfo trackInfo;
 			trackInfo.track = Wt::WString::fromUTF8(track->getName());
