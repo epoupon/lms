@@ -285,8 +285,8 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		{
 			// no change since last time we updated
 			// Skip only if no external covers has to be set
-			if (track->getCoverType() == Database::Track::CoverType::None && externalCovers.empty()
-				|| track->getCoverType() == Database::Track::CoverType::ExternalFile && !externalCovers.empty())
+			if (((track->getCoverType() == Database::Track::CoverType::None) && externalCovers.empty())
+				|| ((track->getCoverType() == Database::Track::CoverType::ExternalFile) && !externalCovers.empty()))
 			return;
 		}
 
