@@ -58,7 +58,7 @@ AvConvTranscoder::init()
 	if (!_avConvPath.empty())
 		LMS_LOG(MOD_TRANSCODE, SEV_INFO) << "Using transcoder " << _avConvPath;
 	else
-		LMS_LOG(MOD_TRANSCODE, SEV_ERROR) << "Cannot find any transcoder binary!";
+		throw std::runtime_error("Cannot find any transcoder binary!");
 }
 
 
