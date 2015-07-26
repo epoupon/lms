@@ -30,6 +30,8 @@
 namespace UserInterface {
 namespace Mobile {
 
+using namespace Database;
+
 ReleaseSearch::ReleaseSearch(Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent),
 _resCount(0)
@@ -59,15 +61,9 @@ ReleaseSearch::search(Database::SearchFilter filter, size_t max)
 void
 ReleaseSearch::addResults(Database::SearchFilter filter, size_t nb)
 {
+	Wt::Dbo::Transaction transaction(DboSession());
 
-	std::vector<std::string> releases;
-
-	{
-		Wt::Dbo::Transaction transaction(DboSession());
-
-		// Request one more to see if more results are to be expected
-		releases = Database::Track::getReleases(DboSession(), filter, _resCount, nb + 1);
-	}
+	std::vector<Release::pointer> releases = Release::getByFilter(DboSession(), filter, _resCount, nb + 1);
 
 	bool expectMoreResults;
 	if (releases.size() == nb + 1)
@@ -78,20 +74,20 @@ ReleaseSearch::addResults(Database::SearchFilter filter, size_t nb)
 	else
 		expectMoreResults = false;
 
-	BOOST_FOREACH(std::string release, releases)
+	for (Release::pointer release : releases)
 	{
 		Wt::WTemplate* releaseWidget = new Wt::WTemplate(this);
 		releaseWidget->setTemplateText(Wt::WString::tr("mobile-release-res"));
 
 		Wt::WImage *cover = new Wt::WImage();
 		cover->setStyleClass("center-block");
-		cover->setImageLink( Wt::WLink( LmsApplication::instance()->getCoverResource()->getReleaseUrl(release, 56)));
+		cover->setImageLink( Wt::WLink( LmsApplication::instance()->getCoverResource()->getReleaseUrl(release.id(), 56)));
 		releaseWidget->bindWidget("cover", cover);
 
-		releaseWidget->bindWidget("name", new Wt::WText(Wt::WString::fromUTF8(release), Wt::PlainText));
+		releaseWidget->bindWidget("name", new Wt::WText(Wt::WString::fromUTF8(release->getName()), Wt::PlainText));
 
 		releaseWidget->clicked().connect(std::bind([=] {
-			_sigReleaseSelected(release);
+			_sigReleaseSelected(release.id());
 		}));
 
 	}

@@ -39,7 +39,7 @@ TableFilterGenre::TableFilterGenre(Wt::WContainerWidget* parent)
 
 	SearchFilter filter;
 
-	Genre::updateGenreQueryModel(DboSession(), _queryModel, filter, columnNames);
+	Genre::updateUIQueryModel(DboSession(), _queryModel, filter, columnNames);
 
 	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setSortingEnabled(true);
@@ -82,7 +82,7 @@ TableFilterGenre::layoutSizeChanged (int width, int height)
 void
 TableFilterGenre::refresh(SearchFilter& filter)
 {
-	Genre::updateGenreQueryModel(DboSession(), _queryModel, filter);
+	Genre::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 
 // Get constraint created by this filter
@@ -91,14 +91,15 @@ TableFilterGenre::getConstraint(SearchFilter& filter)
 {
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
-	BOOST_FOREACH(Wt::WModelIndex index, indexSet) {
-
+	for (Wt::WModelIndex index : indexSet)
+	{
 		if (!index.isValid())
 			continue;
 
-		std::string name = _queryModel.resultRow( index.row() ).get<0>();
+		// TODO set invisible track id
+		Database::Genre::id_type id = _queryModel.resultRow( index.row() ).get<0>();
 
-		filter.exactMatch[Database::SearchFilter::Field::Genre].push_back(name);
+		filter.idMatch[Database::SearchFilter::Field::Genre].push_back(id);
 	}
 }
 
@@ -109,7 +110,7 @@ TableFilterArtist::TableFilterArtist(Wt::WContainerWidget* parent)
 
 	SearchFilter filter;
 
-	Track::updateArtistQueryModel(DboSession(), _queryModel, filter, columnNames);
+	Artist::updateUIQueryModel(DboSession(), _queryModel, filter, columnNames);
 
 	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setSortingEnabled(true);
@@ -153,7 +154,7 @@ TableFilterArtist::layoutSizeChanged (int width, int height)
 void
 TableFilterArtist::refresh(SearchFilter& filter)
 {
-	Track::updateArtistQueryModel(DboSession(), _queryModel, filter);
+	Artist::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 
 // Get constraint created by this filter
@@ -167,9 +168,9 @@ TableFilterArtist::getConstraint(SearchFilter& filter)
 		if (!index.isValid())
 			continue;
 
-		std::string name = _queryModel.resultRow( index.row() ).get<0>();
+		Artist::id_type id = _queryModel.resultRow( index.row() ).get<0>();
 
-		filter.exactMatch[Database::SearchFilter::Field::Artist].push_back(name);
+		filter.idMatch[Database::SearchFilter::Field::Artist].push_back(id);
 	}
 }
 
@@ -180,7 +181,7 @@ TableFilterRelease::TableFilterRelease(Wt::WContainerWidget* parent)
 
 	SearchFilter filter;
 
-	Track::updateReleaseQueryModel(DboSession(), _queryModel, filter, columnNames);
+	Release::updateUIQueryModel(DboSession(), _queryModel, filter, columnNames);
 
 	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setSortingEnabled(true);
@@ -231,7 +232,7 @@ TableFilterRelease::layoutSizeChanged (int width, int height)
 void
 TableFilterRelease::refresh(SearchFilter& filter)
 {
-	Track::updateReleaseQueryModel(DboSession(), _queryModel, filter);
+	Release::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 
 // Get constraint created by this filter
@@ -240,14 +241,14 @@ TableFilterRelease::getConstraint(SearchFilter& filter)
 {
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
-	BOOST_FOREACH(Wt::WModelIndex index, indexSet) {
-
+	for (Wt::WModelIndex index : indexSet)
+	{
 		if (!index.isValid())
 			continue;
 
-		std::string name = _queryModel.resultRow( index.row() ).get<0>();
+		Release::id_type id = _queryModel.resultRow( index.row() ).get<0>();
 
-		filter.exactMatch[Database::SearchFilter::Field::Release].push_back(name);
+		filter.idMatch[Database::SearchFilter::Field::Release].push_back(id);
 	}
 }
 

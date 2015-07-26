@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/foreach.hpp>
-
 #include <Wt/WApplication>
 #include <Wt/Http/Response>
 
@@ -73,9 +71,9 @@ CoverResource::getDefaultCover(std::size_t size)
 }
 
 std::string
-CoverResource::getReleaseUrl(std::string releaseName, std::size_t size) const
+CoverResource::getReleaseUrl(Database::Release::id_type releaseId, std::size_t size) const
 {
-	return url() +  "&release=" + releaseName + "&size=" + std::to_string(size);
+	return url() + "&releaseid=" + std::to_string(releaseId) + "&size=" + std::to_string(size);
 }
 
 std::string
@@ -101,76 +99,84 @@ CoverResource::putCover(Wt::Http::Response& response, const CoverArt::CoverArt& 
 void
 CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
 {
-
-	// Get the id of the track
+	// Retrieve parameters
 	const std::string *trackIdStr = request.getParameter("trackid");
+	const std::string *releaseIdStr = request.getParameter("releaseid");
 	const std::string *sizeStr = request.getParameter("size");
-	const std::string *releaseStr = request.getParameter("release");
 
-	std::vector<CoverArt::CoverArt> covers;
-
-	// Mandatory parameter size
-	if (!sizeStr)
-		return;
-
-	std::size_t size = std::stol(*sizeStr);
-	if (size > maxSize)
-		return;
-
-	if (trackIdStr)
+	try
 	{
-		Database::Track::id_type trackId = std::stol(*trackIdStr);
-		boost::filesystem::path path;
-		Database::Track::CoverType coverType = Database::Track::CoverType::None;
+		std::vector<CoverArt::CoverArt> covers;
 
+		// Mandatory parameter size
+		if (!sizeStr)
+			return;
+
+		std::size_t size = std::stol(*sizeStr);
+		if (size > maxSize)
+			return;
+
+		if (trackIdStr)
 		{
+			Database::Track::id_type trackId = std::stol(*trackIdStr);
+			boost::filesystem::path path;
+			Database::Track::CoverType coverType = Database::Track::CoverType::None;
+
+			{
+				// transactions are not thread safe
+				std::unique_lock<std::mutex> lock(_mutex);
+
+				Wt::Dbo::Transaction transaction(_db.getSession());
+
+				Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+				if (track)
+				{
+					coverType = track->getCoverType();
+					path = track->getPath();
+				}
+			}
+
+			switch (coverType)
+			{
+				case Database::Track::CoverType::Embedded:
+					covers = CoverArt::Grabber::instance().getFromTrack(path);
+					break;
+
+				case Database::Track::CoverType::ExternalFile:
+					covers = CoverArt::Grabber::instance().getFromDirectory(path.parent_path());
+					break;
+
+				case Database::Track::CoverType::None:
+					break;
+			}
+		}
+		else if (releaseIdStr)
+		{
+			Database::Release::id_type releaseId = std::stol(*releaseIdStr); // TODO try catch
 			// transactions are not thread safe
 			std::unique_lock<std::mutex> lock(_mutex);
-
 			Wt::Dbo::Transaction transaction(_db.getSession());
 
-			Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
-			if (track)
+			covers = CoverArt::Grabber::instance().getFromRelease(_db.getSession(), releaseId);
+		}
+
+		for (CoverArt::CoverArt& cover : covers)
+		{
+			if (cover.scale(size))
 			{
-				coverType = track->getCoverType();
-				path = track->getPath();
+				putCover(response, cover);
+				return;
 			}
 		}
 
-		switch (coverType)
-		{
-			case Database::Track::CoverType::Embedded:
-				covers = CoverArt::Grabber::instance().getFromTrack(path);
-				break;
+		// If no cover found, just send default one
+		putCover(response, getDefaultCover(size));
 
-			case Database::Track::CoverType::ExternalFile:
-				covers = CoverArt::Grabber::instance().getFromDirectory(path.parent_path());
-				break;
-
-			case Database::Track::CoverType::None:
-				break;
-		}
 	}
-	else if (releaseStr)
+	catch (std::invalid_argument& e)
 	{
-		// transactions are not thread safe
-		std::unique_lock<std::mutex> lock(_mutex);
-		Wt::Dbo::Transaction transaction(_db.getSession());
-
-		covers = CoverArt::Grabber::instance().getFromRelease(_db.getSession(), *releaseStr);
+		LMS_LOG(MOD_UI, SEV_ERROR) << "Invalid argument: " << e.what();
 	}
-
-	BOOST_FOREACH(CoverArt::CoverArt& cover, covers)
-	{
-		if (cover.scale(size))
-		{
-			putCover(response, cover);
-			return;
-		}
-	}
-
-	// If no cover found, just send default one
-	putCover(response, getDefaultCover(size));
 }
 
 } // namespace UserInterface

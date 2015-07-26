@@ -21,7 +21,6 @@
 
 #include <boost/locale.hpp>
 #include <boost/uuid/sha1.hpp>
-#include <boost/foreach.hpp>
 
 #include "logger/Logger.hpp"
 
@@ -35,10 +34,28 @@ namespace Server {
 
 using namespace Database;
 
-AudioCollectionRequestHandler::AudioCollectionRequestHandler(Database::Handler& db)
+static SearchFilter SearchFilterFromRequest(const AudioCollectionRequest_SearchFilter& request)
+{
+	SearchFilter filter;
+
+	for (int id = 0; id < request.artist_id_size(); ++id)
+		filter.idMatch[SearchFilter::Field::Artist].push_back( request.artist_id(id) );
+
+	for (int id = 0; id < request.genre_id_size(); ++id)
+		filter.idMatch[SearchFilter::Field::Genre].push_back( request.genre_id(id) );
+
+	for (int id = 0; id < request.release_id_size(); ++id)
+		filter.idMatch[SearchFilter::Field::Release].push_back( request.release_id(id) );
+
+	for (int id = 0; id < request.track_id_size(); ++id)
+		filter.idMatch[SearchFilter::Field::Track].push_back( request.track_id(id) );
+
+	return filter;
+}
+
+AudioCollectionRequestHandler::AudioCollectionRequestHandler(Handler& db)
 : _db(db)
 {}
-
 
 bool
 AudioCollectionRequestHandler::process(const AudioCollectionRequest& request, AudioCollectionResponse& response)
@@ -133,17 +150,21 @@ AudioCollectionRequestHandler::processGetGenres(const AudioCollectionRequest::Ge
 		size = _maxListArtists;
 	size = std::min(size, _maxListArtists);
 
+	// Get filters
+	SearchFilter filter;
+	if (request.has_search_filter())
+		filter = SearchFilterFromRequest(request.search_filter());
+
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Wt::Dbo::collection<Database::Genre::pointer> genres = Database::Genre::getAll( _db.getSession(), request.batch_parameter().offset(), static_cast<int>(size));
+	std::vector<Genre::pointer> genres = Genre::getByFilter( _db.getSession(), filter, request.batch_parameter().offset(), static_cast<int>(size));
 
-	typedef Wt::Dbo::collection< Database::Genre::pointer > Genres;
-
-	for (Genres::const_iterator it = genres.begin(); it != genres.end(); ++it)
+	for (Genre::pointer genre : genres)
 	{
-		AudioCollectionResponse_Genre* genre = response.add_genres();
+		AudioCollectionResponse_Genre* addGenre = response.add_genres();
 
-		genre->set_name( std::string( boost::locale::conv::to_utf<char>((*it)->getName(), "UTF-8") ) );
+		addGenre->set_id(genre.id());
+		addGenre->set_name( std::string( boost::locale::conv::to_utf<char>(genre->getName(), "UTF-8") ) );
 	}
 
 	return true;
@@ -164,23 +185,28 @@ AudioCollectionRequestHandler::processGetArtists(const AudioCollectionRequest::G
 		size = _maxListArtists;
 	size = std::min(size, _maxListArtists);
 
-	SearchFilter filter;
-
 	// Get filters
-	std::vector<std::string> genres;
-	for (int id = 0; id < request.genre_size(); ++id)
-		filter.exactMatch[SearchFilter::Field::Genre].push_back( request.genre(id) );
+	SearchFilter filter;
+	if (request.has_search_filter())
+		filter = SearchFilterFromRequest(request.search_filter());
 
 	// Now fetch requested data...
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	std::vector<std::string> artists
-		= Database::Track::getArtists(_db.getSession(), filter,
+	std::vector<Artist::pointer> artists
+		= Artist::getByFilter(_db.getSession(), filter,
 						request.batch_parameter().offset(), static_cast<int>(size) );
 
-	BOOST_FOREACH(const std::string& artist, artists)
-		response.add_artists()->set_name( std::string( boost::locale::conv::to_utf<char>(artist, "UTF-8") ) );
+	for (Artist::pointer artist : artists)
+	{
+		AudioCollectionResponse_Artist *addArtist = response.add_artists();
+
+		addArtist->set_id(artist.id());
+		addArtist->set_name( std::string( boost::locale::conv::to_utf<char>(artist->getName(), "UTF-8") ) );
+		if (!artist->getMBID().empty())
+			addArtist->set_mbid(artist->getMBID());
+	}
 
 	return true;
 }
@@ -200,25 +226,25 @@ AudioCollectionRequestHandler::processGetReleases(const AudioCollectionRequest::
 		size = _maxListReleases;
 	size = std::min(size, _maxListReleases);
 
+	// Get filters
 	SearchFilter filter;
-
-	std::vector<std::string> artists;
-	for (int id = 0; id < request.artist_size(); ++id)
-		filter.exactMatch[SearchFilter::Field::Artist].push_back( request.artist(id) );
-
-	std::vector<std::string> genres;
-	for (int id = 0; id < request.genre_size(); ++id)
-		filter.exactMatch[SearchFilter::Field::Genre].push_back( request.genre(id) );
+	if (request.has_search_filter())
+		filter = SearchFilterFromRequest(request.search_filter());
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	std::vector<std::string> releases
-		= Database::Track::getReleases( _db.getSession(), filter,
+	std::vector<Release::pointer> releases
+		= Release::getByFilter( _db.getSession(), filter,
 						request.batch_parameter().offset(), static_cast<int>(size));
 
-	BOOST_FOREACH(const std::string& release, releases)
+	for (Release::pointer release : releases)
 	{
-		response.add_releases()->set_name( std::string( boost::locale::conv::to_utf<char>(release, "UTF-8")));
+		AudioCollectionResponse_Release *addRelease = response.add_releases();
+
+		addRelease->set_id(release.id());
+		addRelease->set_name( std::string( boost::locale::conv::to_utf<char>(release->getName(), "UTF-8")));
+		if (!release->getMBID().empty())
+			addRelease->set_mbid(release->getMBID());
 	}
 
 	return true;
@@ -241,34 +267,24 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 
 	// Get filters
 	SearchFilter filter;
-
-	std::vector<std::string> artists;
-	for (int id = 0; id < request.artist_size(); ++id)
-		filter.exactMatch[SearchFilter::Field::Artist].push_back( request.artist(id) );
-
-	std::vector<std::string> releases;
-	for (int id = 0; id < request.release_size(); ++id)
-		filter.exactMatch[SearchFilter::Field::Release].push_back( request.release(id) );
-
-	std::vector<std::string> genres;
-	for (int id = 0; id < request.genre_size(); ++id)
-		filter.exactMatch[SearchFilter::Field::Genre].push_back( request.genre(id) );
+	if (request.has_search_filter())
+		filter = SearchFilterFromRequest(request.search_filter());
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	std::vector<Database::Track::pointer> tracks
-		= Database::Track::getAll( _db.getSession(), filter,
+	std::vector<Track::pointer> tracks
+		= Track::getByFilter( _db.getSession(), filter,
 				request.batch_parameter().offset(), static_cast<int>(size));
 
-	BOOST_FOREACH(Database::Track::pointer track, tracks)
+	for (Track::pointer track : tracks)
 	{
 		AudioCollectionResponse_Track* newTrack = response.add_tracks();
 
 		newTrack->set_id(track.id());
 		newTrack->set_disc_number( track->getDiscNumber() );
 		newTrack->set_track_number( track->getTrackNumber() );
-		newTrack->set_artist( track->getArtistName() );
-		newTrack->set_release( track->getReleaseName() );
+		newTrack->set_artist_id( track->getArtist().id() );
+		newTrack->set_release_id( track->getRelease().id() );
 
 		newTrack->set_name( std::string( boost::locale::conv::to_utf<char>(track->getName(), "UTF-8") ) );
 		newTrack->set_duration_secs( track->getDuration().total_seconds() );
@@ -278,9 +294,11 @@ AudioCollectionRequestHandler::processGetTracks(const AudioCollectionRequest::Ge
 			newTrack->set_release_date( std::to_string(track->getDate().date().year()) );
 		if (!track->getOriginalDate().is_special())
 			newTrack->set_original_release_date( std::to_string(track->getOriginalDate().date().year()) );
+		if (!track->getMBID().empty())
+			newTrack->set_mbid(track->getMBID());
 
-		BOOST_FOREACH(Database::Genre::pointer genre, track->getGenres())
-			newTrack->add_genre( genre->getName() );
+		for (Genre::pointer genre : track->getGenres())
+			newTrack->add_genre_id( genre.id() );
 
 	}
 
@@ -299,9 +317,9 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 	switch(request.type())
 	{
 		case AudioCollectionRequest::GetCoverArt::TypeGetCoverArtRelease:
-			if (request.has_release())
+			if (request.has_release_id())
 			{
-				coverArts = CoverArt::Grabber::instance().getFromRelease( _db.getSession(), request.release());
+				coverArts = CoverArt::Grabber::instance().getFromRelease( _db.getSession(), request.release_id());
 				res = true;
 			}
 			break;
@@ -315,7 +333,7 @@ AudioCollectionRequestHandler::processGetCoverArt(const AudioCollectionRequest::
 			break;
 	}
 
-	BOOST_FOREACH(CoverArt::CoverArt& coverArt, coverArts)
+	for (CoverArt::CoverArt& coverArt : coverArts)
 	{
 		AudioCollectionResponse_CoverArt* cover_art = response.add_cover_art();
 
@@ -345,12 +363,12 @@ AudioCollectionRequestHandler::processGetRevision(AudioCollectionResponse::Revis
 
 	Wt::Dbo::Transaction transaction( _db.getSession() );
 
-	Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get( _db.getSession() );
+	MediaDirectorySettings::pointer settings = MediaDirectorySettings::get( _db.getSession() );
 
 	std::string hashStr = boost::posix_time::to_iso_string(settings->getLastUpdated());
 
 	boost::uuids::detail::sha1 s;
-	BOOST_FOREACH(const char c, hashStr)
+	for (const char c : hashStr)
 		s.process_byte(c);
 
 	unsigned int digest[5];

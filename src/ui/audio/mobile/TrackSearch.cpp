@@ -30,6 +30,8 @@
 namespace UserInterface {
 namespace Mobile {
 
+using namespace Database;
+
 TrackSearch::TrackSearch(Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent),
 _resCount(0)
@@ -62,7 +64,7 @@ TrackSearch::addResults(Database::SearchFilter filter, size_t nb)
 {
 	Wt::Dbo::Transaction transaction(DboSession());
 
-	std::vector< Database::Track::pointer > tracks = Database::Track::getTracks(DboSession(), filter, _resCount, nb + 1);
+	std::vector<Track::pointer > tracks = Track::getByFilter(DboSession(), filter, _resCount, nb + 1);
 
 	bool expectMoreResults;
 	if (tracks.size() == nb + 1)
@@ -73,7 +75,7 @@ TrackSearch::addResults(Database::SearchFilter filter, size_t nb)
 	else
 		expectMoreResults = false;
 
-	BOOST_FOREACH(Database::Track::pointer track, tracks)
+	for (Track::pointer track : tracks)
 	{
 		Wt::WTemplate* trackWidget = new Wt::WTemplate(this);
 		trackWidget->setTemplateText(Wt::WString::tr("mobile-track-res"));
@@ -90,11 +92,11 @@ TrackSearch::addResults(Database::SearchFilter filter, size_t nb)
 		title->setStyleClass("mobile-track");
 		container->addWidget(title);
 
-		if (!track->getArtistName().empty()
-			|| !track->getReleaseName().empty())
+		if (!track->getArtist()->getName().empty()
+			|| !track->getRelease()->getName().empty())
 		{
 			title->setInline(false);
-			Wt::WText *artistRelease = new  Wt::WText(Wt::WString::fromUTF8(track->getArtistName() + " - " + track->getReleaseName()), Wt::PlainText);
+			Wt::WText *artistRelease = new  Wt::WText(Wt::WString::fromUTF8(track->getArtist()->getName() + " - " + track->getRelease()->getName()), Wt::PlainText);
 			artistRelease->setStyleClass("mobile-artist");
 			container->addWidget(artistRelease);
 		}

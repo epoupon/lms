@@ -5,6 +5,14 @@ package Remote;
 message AudioCollectionRequest
 {
 
+	message SearchFilter
+	{
+		repeated uint64 artist_id		= 1;	// has one of these artists
+		repeated uint64 genre_id		= 2;	// has one of these genres
+		repeated uint64 release_id		= 3;	// hase one of these releases
+		repeated uint64 track_id		= 4;	// has one of theses tracks
+	}
+
 	message BatchParameter
 	{
 		required uint32 offset			= 1;	// First element requested
@@ -14,30 +22,25 @@ message AudioCollectionRequest
 	message GetGenreList
 	{
 		required BatchParameter batch_parameter = 1;
+		optional SearchFilter search_filter	= 2;
 	}
 
 	message GetArtistList
 	{
 		required BatchParameter batch_parameter = 1;
-		// Search filters
-		repeated string	genre			= 2;	// Artist that has at least a track of the genre
+		optional SearchFilter search_filter	= 2;
 	}
 
 	message GetReleaseList
 	{
 		required BatchParameter batch_parameter = 1;
-		// Search filters
-		repeated string artist			= 2;	// Release that contains at least a track of one of these artists
-		repeated string genre			= 3;	// Release that has at least a track of the genre
+		optional SearchFilter search_filter	= 2;
 	}
 
 	message GetTrackList
 	{
 		required BatchParameter batch_parameter = 1;
-		// Search filters
-		repeated string artist			= 2;	// Track that belongs to these artists
-		repeated string release			= 3;	// Track that is part of these releases
-		repeated string genre			= 4;    // Track that has at least a track of the genre
+		optional SearchFilter search_filter	= 2;
 	}
 
 	message GetCoverArt
@@ -50,7 +53,7 @@ message AudioCollectionRequest
 
 		required Type	type			= 1;
 
-		optional string release			= 2;	// Release that owns the cover art
+		optional uint64 release_id		= 2;	// Release that owns the cover art
 		optional uint64	track_id		= 3;	// Track that owns the cover art
 
 		required uint32 size			= 4;	// Scale image to size*size pixels. Set 0 to get the biggest image
@@ -112,33 +115,42 @@ message AudioCollectionResponse
 
 	message Genre
 	{
-		required string name		= 1;
+		required uint64 id		= 1;
+		optional string	mbid		= 2;
+		required string name		= 3;
 	}
 
 	message Artist
 	{
-		required string name		= 1;
+		required uint64 id		= 1;
+		optional string	mbid		= 2;
+		required string name		= 3;
 	}
 
 	message Release
 	{
-		required string name		= 1;
+		required uint64 id		= 1;
+		optional string	mbid		= 2;
+		required string name		= 3;
 	}
 
 	message Track
 	{
 		required uint64	id		= 1;	// Track id
+		optional string	mbid		= 2;
 
-		required string artist		= 2;
-		required string release		= 3;
-		repeated string genre		= 4;
+		required uint64 artist_id	= 3;
+		required uint64 release_id	= 4;
+		repeated uint64 genre_id	= 5;
 
-		optional uint32 disc_number	= 5;
-		optional uint32 track_number	= 6;
-		required string	name		= 7;
-		required uint32	duration_secs	= 8;
-		optional string	release_date	= 9;
-		optional string	original_release_date	= 10;
+		optional string	artist_mbid	= 6;
+		optional string	release_mbid	= 7;
+		optional uint32 disc_number	= 8;
+		optional uint32 track_number	= 9;
+		required string	name		= 10;
+		required uint32	duration_secs	= 11;
+		optional string	release_date	= 12;
+		optional string	original_release_date	= 13;
 	}
 
 	enum Type {

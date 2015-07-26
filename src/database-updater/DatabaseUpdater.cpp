@@ -261,11 +261,104 @@ Updater::process(boost::system::error_code err)
 	}
 }
 
+Artist::pointer
+Updater::getArtist( const boost::filesystem::path& file, const std::string& name, const std::string& mbid)
+{
+	Artist::pointer artist;
+
+	// First try to get by MBID
+	if (!mbid.empty())
+	{
+		artist = Artist::getByMBID( _db.getSession(), mbid );
+		if (!artist)
+			artist = Artist::create( _db.getSession(), name, mbid);
+
+		return artist;
+	}
+
+	// Fall back on artist name (collisions may occur)
+	if (!name.empty())
+	{
+		for (Artist::pointer sameNamedArtist : Artist::getByName( _db.getSession(), name ))
+		{
+			if (sameNamedArtist->getMBID().empty())
+			{
+				artist = sameNamedArtist;
+				break;
+			}
+		}
+
+		// No Artist found with the same name and without MBID -> creating
+		if (!artist)
+			artist = Artist::create( _db.getSession(), name);
+
+		return artist;
+	}
+
+	return Artist::getNone( _db.getSession() );
+}
+
+Release::pointer
+Updater::getRelease( const boost::filesystem::path& file, const std::string& name, const std::string& mbid)
+{
+	Release::pointer release;
+
+	// First try to get by MBID
+	if (!mbid.empty())
+	{
+		release = Release::getByMBID( _db.getSession(), mbid );
+		if (!release)
+			release = Release::create( _db.getSession(), name, mbid);
+
+		return release;
+	}
+
+	// Fall back on release name (collisions may occur)
+	if (!name.empty())
+	{
+		for (Release::pointer sameNamedRelease : Release::getByName( _db.getSession(), name ))
+		{
+			if (sameNamedRelease->getMBID().empty())
+			{
+				release = sameNamedRelease;
+				break;
+			}
+		}
+
+		// No release found with the same name and without MBID -> creating
+		if (!release)
+			release = Release::create( _db.getSession(), name);
+
+		return release;
+	}
+
+	return Release::getNone( _db.getSession() );
+}
+
+std::vector<Genre::pointer>
+Updater::getGenres( const std::list<std::string>& names)
+{
+	std::vector< Genre::pointer > genres;
+
+	for (const std::string& name : names)
+	{
+		Genre::pointer genre ( Genre::getByName(_db.getSession(), name) );
+		if (!genre)
+			genre = Genre::create(_db.getSession(), name);
+
+		genres.push_back( genre );
+	}
+
+	if (genres.empty())
+		genres.push_back( Genre::getNone( _db.getSession() ));
+
+	return genres;
+}
+
 void
 Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 {
 	try {
-
 		// Check last update time
 		boost::posix_time::ptime lastWriteTime (boost::posix_time::from_time_t( boost::filesystem::last_write_time( file ) ) );
 
@@ -335,25 +428,43 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 
 		// ***** Genres
-		typedef std::list<std::string> GenreList;
-		GenreList genreList;
 		std::vector< Genre::pointer > genres;
-		if (items.find(MetaData::Type::Genres) != items.end())
 		{
-			genreList = (boost::any_cast<GenreList>(items[MetaData::Type::Genres]));
-
-			BOOST_FOREACH(const std::string& genre, genreList) {
-				Genre::pointer dbGenre ( Genre::getByName(_db.getSession(), genre) );
-				if (!dbGenre)
-					dbGenre = Genre::create(_db.getSession(), genre);
-
-				genres.push_back( dbGenre );
-			}
+			genres = getGenres( boost::any_cast< std::list<std::string> > (items[MetaData::Type::Genres]) );
 		}
-		if (genres.empty())
-			genres.push_back( Genre::getNone( _db.getSession() ));
-
 		assert( !genres.empty() );
+
+		// Get the associated Artist
+		Artist::pointer artist;
+		{
+			std::string artistName;
+			std::string artistMusicBrainzID;
+
+			if (items.find(MetaData::Type::MusicBrainzArtistID) != items.end())
+				artistMusicBrainzID = boost::any_cast<std::string>(items[MetaData::Type::MusicBrainzArtistID] );
+
+			if (items.find(MetaData::Type::Artist) != items.end())
+				artistName = boost::any_cast<std::string>(items[MetaData::Type::Artist]);
+
+			artist = getArtist(file, artistName, artistMusicBrainzID);
+		}
+		assert(artist);
+
+		// Get the associated Release
+		Release::pointer release;
+		{
+			std::string releaseName;
+			std::string releaseMusicBrainzID;
+
+			if (items.find(MetaData::Type::MusicBrainzAlbumID) != items.end())
+				releaseMusicBrainzID = boost::any_cast<std::string>(items[MetaData::Type::MusicBrainzAlbumID] );
+
+			if (items.find(MetaData::Type::Album) != items.end())
+				releaseName = boost::any_cast<std::string>(items[MetaData::Type::Album]);
+
+			release = getRelease(file, releaseName, releaseMusicBrainzID);
+		}
+		assert(release);
 
 		// If file already exist, update data
 		// Otherwise, create it
@@ -372,6 +483,8 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		assert(track);
 
+		track.modify()->setArtist(artist);
+		track.modify()->setRelease(release);
 		track.modify()->setLastWriteTime(lastWriteTime);
 		track.modify()->setName(title);
 		track.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]) );
@@ -379,21 +492,16 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		{
 			std::string trackGenreList;
 			// Product genre list
-			BOOST_FOREACH(const std::string& genre, genreList) {
+			for (Genre::pointer genre : genres)
+			{
 				if (!trackGenreList.empty())
 					trackGenreList += ", ";
-				trackGenreList += genre;
+				trackGenreList += genre->getName();
 			}
 
 			track.modify()->setGenres( trackGenreList );
 		}
 		track.modify()->setGenres( genres );
-
-		if (items.find(MetaData::Type::Artist) != items.end())
-			track.modify()->setArtistName( boost::any_cast<std::string>(items[MetaData::Type::Artist]) );
-
-		if (items.find(MetaData::Type::Album) != items.end())
-			track.modify()->setReleaseName( boost::any_cast<std::string>(items[MetaData::Type::Album]) );
 
 		if (items.find(MetaData::Type::TrackNumber) != items.end())
 			track.modify()->setTrackNumber( boost::any_cast<std::size_t>(items[MetaData::Type::TrackNumber]) );
@@ -538,7 +646,7 @@ Updater::checkAudioFiles( Stats& stats )
 	}
 
 	// Now process orphan Genre (no track)
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking Genres...";
+/*	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking Genres...";
 	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Genre> > Genres;
 	Genres genres = Genre::getAll(_db.getSession());
 
@@ -549,7 +657,7 @@ Updater::checkAudioFiles( Stats& stats )
 		if (genre->getTracks().size() == 0)
 			genre.remove();
 	}
-
+*/
 
 	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Check audio files done!";
 }
