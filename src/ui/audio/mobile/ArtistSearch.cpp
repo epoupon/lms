@@ -28,6 +28,8 @@
 namespace UserInterface {
 namespace Mobile {
 
+using namespace Database;
+
 ArtistSearch::ArtistSearch(Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent),
 _resCount(0)
@@ -57,15 +59,9 @@ ArtistSearch::search(Database::SearchFilter filter, size_t nb)
 void
 ArtistSearch::addResults(Database::SearchFilter filter, std::size_t nb)
 {
+	Wt::Dbo::Transaction transaction(DboSession());
 
-	std::vector<std::string> artists;
-
-	{
-		Wt::Dbo::Transaction transaction(DboSession());
-
-		// Request one more to see if more results are to be expected
-		artists = Database::Track::getArtists(DboSession(), filter, _resCount, nb + 1);
-	}
+	std::vector<Artist::pointer> artists = Artist::getByFilter(DboSession(), filter, _resCount, nb + 1);
 
 	bool expectMoreResults;
 	if (artists.size() == nb + 1)
@@ -76,16 +72,16 @@ ArtistSearch::addResults(Database::SearchFilter filter, std::size_t nb)
 	else
 		expectMoreResults = false;
 
-	BOOST_FOREACH(std::string artist, artists)
+	for (Artist::pointer artist : artists)
 	{
 		Wt::WTemplate* res = new Wt::WTemplate(this);
 		res->setTemplateText(Wt::WString::tr("mobile-artist-res"));
 
-		Wt::WText *text = new Wt::WText(Wt::WString::fromUTF8(artist), Wt::PlainText);
+		Wt::WText *text = new Wt::WText(Wt::WString::fromUTF8(artist->getName()), Wt::PlainText);
 		res->bindWidget("name", text);
 
 		res->clicked().connect(std::bind([=] {
-			_sigArtistSelected(artist);
+			_sigArtistSelected(artist.id());
 		}));
 	}
 

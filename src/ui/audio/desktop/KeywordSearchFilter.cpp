@@ -47,16 +47,12 @@ KeywordSearchFilter::getConstraint(Database::SearchFilter& filter)
 		boost::algorithm::split(values, _lastEmittedText, boost::is_any_of(" "), boost::token_compress_on);
 
 		// For each part, do a global search on all searchable fields
-		BOOST_FOREACH(std::string value, values)
+		for (const std::string& value : values)
 		{
-			Database::SearchFilter::FieldValues likeMatch;
-
-			likeMatch[Database::SearchFilter::Field::Artist].push_back(value);
-			likeMatch[Database::SearchFilter::Field::Release].push_back(value);
-			likeMatch[Database::SearchFilter::Field::Genre].push_back(value);
-			likeMatch[Database::SearchFilter::Field::Track].push_back(value);
-
-			filter.likeMatches.push_back(likeMatch);
+			filter.nameLikeMatch[Database::SearchFilter::Field::Artist].push_back(value);
+			filter.nameLikeMatch[Database::SearchFilter::Field::Release].push_back(value);
+			filter.nameLikeMatch[Database::SearchFilter::Field::Genre].push_back(value);
+			filter.nameLikeMatch[Database::SearchFilter::Field::Track].push_back(value);
 		}
 	}
 }

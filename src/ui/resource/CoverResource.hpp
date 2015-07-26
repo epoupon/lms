@@ -39,7 +39,7 @@ class CoverResource : public Wt::WResource
 		CoverResource(Database::Handler& db, Wt::WObject *parent = 0);
 		~CoverResource();
 
-		std::string getReleaseUrl(std::string releaseName, size_t size) const;
+		std::string getReleaseUrl(Database::Release::id_type releaseId, size_t size) const;
 		std::string getTrackUrl(Database::Track::id_type trackId, size_t size) const;
 		std::string getUnknownTrackUrl(size_t size) const;
 

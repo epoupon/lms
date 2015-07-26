@@ -1,0 +1,78 @@
+/*
+ * Copyright (C) 2015 Emeric Poupon
+ *
+ * This file is part of LMS.
+ *
+ * LMS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * LMS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifndef _DB_SEARCH_FILTER_HPP_
+#define _DB_SEARCH_FILTER_HPP_
+
+#include <string>
+#include <vector>
+#include <map>
+
+#include <Wt/Dbo/Dbo>
+
+#include "SqlQuery.hpp"
+
+namespace Database
+{
+
+class SearchFilter
+{
+	public:
+
+		enum class Field {
+			Artist,		// artist
+			Release,	// release
+			Genre,		// genre
+			Track,		// track
+		};
+
+		typedef std::map<Field, std::vector<std::string> > NameLikeMatchMap;
+		typedef std::map<Field, std::vector< Wt::Dbo::dbo_default_traits::IdType> > IdMatchMap;
+
+		SearchFilter() {}
+
+		static SearchFilter IdMatch( const IdMatchMap& _idMatch )
+		{
+			return SearchFilter(_idMatch);
+		}
+
+		static SearchFilter NameLikeMatch( const NameLikeMatchMap& _nameLikeMatch )
+		{
+			return SearchFilter(_nameLikeMatch);
+		}
+
+		// The filter is a AND of the following conditions:
+
+		// ((Field1.name LIKE STR1-1 OR Field1.name LIKE STR1-2 ...) OR (Field2.name LIKE STR2-1 OR Field2.name LIKE STR2-2 ...) ...
+		NameLikeMatchMap	nameLikeMatch;
+
+		// ((Field1.id = ID1-1 OR Field1.id = ID1-2 ... ) AND ((Field2.id = ID2-1 OR Field2.id = ID2-2 ... ) ...
+		IdMatchMap	idMatch;
+
+	private:
+
+		SearchFilter(const NameLikeMatchMap& _nameLikeMatch) : nameLikeMatch(_nameLikeMatch) {}
+		SearchFilter(const IdMatchMap& _idMatch) : idMatch(_idMatch) {}
+};
+
+SqlQuery generatePartialQuery(SearchFilter& filter);
+
+} // namespace Database
+
+#endif // _DB_SEARCH_FILTER_HPP_

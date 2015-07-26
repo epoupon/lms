@@ -366,12 +366,16 @@ PlayQueue::select(int rowId)
 void
 PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 {
+	using namespace Database;
+
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Adding " << trackIds.size() << " tracks to play queue";
+
 	// Add tracks to model
-	//
-	BOOST_FOREACH(Database::Track::id_type trackId, trackIds)
+	for (Track::id_type trackId : trackIds)
 	{
 		Wt::Dbo::Transaction transaction(DboSession());
-		Database::Track::pointer track (Database::Track::getById(DboSession(), trackId));
+
+		Track::pointer track (Track::getById(DboSession(), trackId));
 
 		if (track)
 		{
@@ -382,7 +386,7 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 			_model->setData(dataRow, COLUMN_ID_TRACK_ID, track.id(), Wt::UserRole);
 
 			std::string coverUrl;
-			if (track->getCoverType() != Database::Track::CoverType::None)
+			if (track->getCoverType() != Track::CoverType::None)
 				coverUrl = LmsApplication::instance()->getCoverResource()->getTrackUrl(track.id(), 64);
 			else
 				coverUrl = LmsApplication::instance()->getCoverResource()->getUnknownTrackUrl(64);
@@ -392,8 +396,8 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 
 			TrackInfo trackInfo;
 			trackInfo.track = Wt::WString::fromUTF8(track->getName());
-			trackInfo.artist = Wt::WString::fromUTF8(track->getArtistName());
-			trackInfo.release = Wt::WString::fromUTF8(track->getReleaseName());
+			trackInfo.artist = Wt::WString::fromUTF8(track->getArtist()->getName());
+			trackInfo.release = Wt::WString::fromUTF8(track->getRelease()->getName());
 			_model->setData(dataRow, COLUMN_ID_NAME, trackInfo, TrackInfoRole);
 		}
 	}
@@ -455,19 +459,21 @@ PlayQueue::playPrevious(void)
 	}
 }
 
-bool
+void
 PlayQueue::readTrack(int rowPos)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Reading track at pos " << rowPos;
-	Database::Track::id_type trackId = boost::any_cast<Database::Track::id_type>(_model->data(rowPos, COLUMN_ID_TRACK_ID, Wt::UserRole));
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Reading track at pos " << rowPos << ", row count = " << _model->rowCount();
 
-	setPlayingTrackPos(rowPos);
+	if (rowPos < _model->rowCount())
+	{
+		Database::Track::id_type trackId = boost::any_cast<Database::Track::id_type>(_model->data(rowPos, COLUMN_ID_TRACK_ID, Wt::UserRole));
 
-	_sigTrackPlay.emit(trackId, rowPos);
+		setPlayingTrackPos(rowPos);
 
-	this->scrollTo( _model->index(_trackSelector->getCurrent(), 0));
+		_sigTrackPlay.emit(trackId, rowPos);
 
-	return true;
+		this->scrollTo( _model->index(_trackSelector->getCurrent(), 0));
+	}
 }
 
 void
@@ -485,7 +491,7 @@ PlayQueue::setPlayingTrackPos(int newRowPos)
 
 	if (newRowPos >= 0)
 	{
-		_model->setData(newRowPos, COLUMN_ID_NAME, "playqueue-playing", Wt::StyleClassRole);
+		_model->setData(newRowPos, COLUMN_ID_NAME, std::string("playqueue-playing"), Wt::StyleClassRole);
 	}
 }
 
@@ -527,7 +533,7 @@ PlayQueue::moveSelectedUp(void)
 	Wt::WModelIndexSet newIndexSet;
 
 	// ordered from up to down
-	BOOST_FOREACH(Wt::WModelIndex index, indexSet)
+	for (Wt::WModelIndex index : indexSet)
 	{
 		// Do nothing if the first selected index is on the top
 		if (index.row() == 0)
@@ -570,7 +576,7 @@ PlayQueue::moveSelectedDown(void)
 	Wt::WModelIndexSet newIndexSet;
 
 	// ordered from up to down
-	BOOST_REVERSE_FOREACH(Wt::WModelIndex index, indexSet)
+	for (Wt::WModelIndex index : indexSet)
 	{
 		// Do nothing if the last selected index is the last one
 		if (index.row() == _model->rowCount() - 1)

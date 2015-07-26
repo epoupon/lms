@@ -98,7 +98,7 @@ AudioMediaPlayer::play(Database::Track::id_type trackId, const Transcode::Parame
 		Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
 
 		_track->setText( Wt::WString::fromUTF8(track->getName() ));
-		_artistRelease->setText( Wt::WString::fromUTF8(track->getArtistName()) );
+		_artistRelease->setText( Wt::WString::fromUTF8(track->getArtist()->getName()) );
 	}
 }
 

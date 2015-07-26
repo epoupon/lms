@@ -52,7 +52,7 @@ class TableFilterGenre : public Wt::WTableView, public Filter
 		SigDoubleClicked			_sigDoubleClicked;
 
 		// Name, track count
-		Wt::Dbo::QueryModel<Database::Genre::GenreResult>	_queryModel;
+		Wt::Dbo::QueryModel<Database::Genre::UIQueryResult>	_queryModel;
 };
 
 class TableFilterArtist : public Wt::WTableView, public Filter
@@ -77,7 +77,7 @@ class TableFilterArtist : public Wt::WTableView, public Filter
 		SigDoubleClicked			_sigDoubleClicked;
 
 		// Name, track count
-		Wt::Dbo::QueryModel<Database::Track::ArtistResult>	_queryModel;
+		Wt::Dbo::QueryModel<Database::Artist::UIQueryResult>	_queryModel;
 };
 
 class TableFilterRelease : public Wt::WTableView, public Filter
@@ -102,7 +102,7 @@ class TableFilterRelease : public Wt::WTableView, public Filter
 		SigDoubleClicked			_sigDoubleClicked;
 
 		// Name, track count
-		Wt::Dbo::QueryModel<Database::Track::ReleaseResult>	_queryModel;
+		Wt::Dbo::QueryModel<Database::Release::UIQueryResult>	_queryModel;
 };
 
 

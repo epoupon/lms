@@ -37,13 +37,13 @@ class ReleaseSearch : public Wt::WContainerWidget
 		void search(Database::SearchFilter filter, size_t nb);
 
 		// Slots
-		Wt::Signal<std::string>&	releaseSelected() { return _sigReleaseSelected;}
-		Wt::Signal<void>&		moreReleasesSelected() { return _sigMoreReleasesSelected;}
+		Wt::Signal<Database::Release::id_type>& releaseSelected() { return _sigReleaseSelected;}
+		Wt::Signal<void>& moreReleasesSelected() { return _sigMoreReleasesSelected;}
 
 	private:
 
-		Wt::Signal<std::string> _sigReleaseSelected;
-		Wt::Signal<void>	_sigMoreReleasesSelected;
+		Wt::Signal<Database::Release::id_type> _sigReleaseSelected;
+		Wt::Signal<void> _sigMoreReleasesSelected;
 
 		void clear(void);
 		void addResults(Database::SearchFilter filter, size_t nb);

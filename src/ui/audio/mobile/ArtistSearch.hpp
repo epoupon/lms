@@ -37,13 +37,13 @@ class ArtistSearch : public Wt::WContainerWidget
 		void search(Database::SearchFilter filter, std::size_t nb);
 
 		// Slots
-		Wt::Signal<std::string>&	artistSelected() { return _sigArtistSelected;}
-		Wt::Signal<void>&		moreArtistsSelected() { return _sigMoreArtistsSelected;}
+		Wt::Signal<Database::Artist::id_type>&	artistSelected() { return _sigArtistSelected;}
+		Wt::Signal<void>& moreArtistsSelected() { return _sigMoreArtistsSelected;}
 
 	private:
 
-		Wt::Signal<std::string> _sigArtistSelected;
-		Wt::Signal<void>	_sigMoreArtistsSelected;
+		Wt::Signal<Database::Artist::id_type> _sigArtistSelected;
+		Wt::Signal<void> _sigMoreArtistsSelected;
 
 		void clear(void);
 		void addResults(Database::SearchFilter filter, size_t nb);

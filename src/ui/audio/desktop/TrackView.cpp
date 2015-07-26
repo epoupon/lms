@@ -50,7 +50,7 @@ TrackView::TrackView(Wt::WContainerWidget* parent)
 
 	Database::SearchFilter filter;
 
-	Database::Track::updateTracksQueryModel(DboSession(), _queryModel, filter, columnNames);
+	Database::Track::updateUIQueryModel(DboSession(), _queryModel, filter, columnNames);
 
 	_queryModel.setBatchSize(300);
 
@@ -111,7 +111,7 @@ TrackView::TrackView(Wt::WContainerWidget* parent)
 void
 TrackView::refresh(Database::SearchFilter& filter)
 {
-	Database::Track::updateTracksQueryModel(DboSession(), _queryModel, filter);
+	Database::Track::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 
 void
@@ -121,17 +121,17 @@ TrackView::getSelectedTracks(std::vector<Database::Track::id_type>& track_ids)
 
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
-	BOOST_FOREACH(Wt::WModelIndex index, indexSet)
+	for (Wt::WModelIndex index : indexSet)
 	{
 		if (!index.isValid())
 			continue;
 
-		Database::Track::pointer track = _queryModel.resultRow( index.row() );
+		Database::Track::id_type id = _queryModel.resultRow( index.row() ).get<0>();
 
-		track_ids.push_back(track.id());
+		track_ids.push_back(id);
 	}
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all selected tracks DONE...";
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all selected tracks: " << track_ids.size();
 }
 
 std::size_t
@@ -144,7 +144,8 @@ int
 TrackView::getFirstSelectedTrackPosition(void)
 {
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
-	BOOST_FOREACH(Wt::WModelIndex index, indexSet)
+
+	for (Wt::WModelIndex index : indexSet)
 	{
 		if (!index.isValid())
 			continue;
@@ -160,14 +161,16 @@ TrackView::getTracks(std::vector<Database::Track::id_type>& trackIds)
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all tracks...";
 
-	for (int i = 0; i < _queryModel.rowCount(); ++i)
-	{
-		Database::Track::pointer track = _queryModel.resultRow(i);
+	Wt::Dbo::Transaction transaction(DboSession());
+	Wt::Dbo::collection<Database::Track::UIQueryResult> results = _queryModel.query();
 
-		trackIds.push_back(track.id());
+	for (auto it = results.begin(); it != results.end(); ++it)
+	{
+		Database::Track::id_type id = it->get<0>();
+		trackIds.push_back(id);
 	}
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all tracks done!";
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all tracks done! " << trackIds.size() << " tracks!";
 }
 
 } // namespace Desktop

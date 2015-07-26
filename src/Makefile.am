@@ -11,9 +11,12 @@ lms_SOURCES = \
 	$(srcdir)/config/ConfigReader.cpp			\
 	$(srcdir)/cover/CoverArt.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
+	$(srcdir)/database/Artist.cpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
 	$(srcdir)/database/MediaDirectory.cpp			\
 	$(srcdir)/database/Playlist.cpp				\
+	$(srcdir)/database/Release.cpp				\
+	$(srcdir)/database/SearchFilter.cpp			\
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/User.cpp				\
