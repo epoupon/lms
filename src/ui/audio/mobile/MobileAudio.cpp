@@ -97,32 +97,16 @@ Audio::Audio(Wt::WContainerWidget *parent)
 		std::vector<std::string> keywords;
 		boost::algorithm::split(keywords, text, boost::is_any_of(" "), boost::token_compress_on);
 
-		{
-			SearchFilter filter;
-			for (std::string keyword : keywords)
-			{
-				filter.nameLikeMatch[SearchFilter::Field::Artist].push_back(keyword);
-				filter.nameLikeMatch[SearchFilter::Field::Release].push_back(keyword);
-			}
+		releaseSearch->search(SearchFilter::NameLikeMatch( {
+					{ SearchFilter::Field::Artist, keywords },
+					{ SearchFilter::Field::Release, keywords }}),
+					3);
 
-			releaseSearch->search(filter, 3);
-		}
+		artistSearch->search(SearchFilter::NameLikeMatch({{SearchFilter::Field::Artist, keywords}}),
+					3);
 
-		{
-			SearchFilter filter;
-			for (std::string keyword : keywords)
-				filter.nameLikeMatch[SearchFilter::Field::Artist].push_back(keyword);
-
-			artistSearch->search(filter, 3);
-		}
-
-		{
-			SearchFilter filter;
-			BOOST_FOREACH(std::string keyword, keywords)
-				filter.nameLikeMatch[SearchFilter::Field::Track].push_back(keyword);
-
-			trackSearch->search(filter, 3);
-		}
+		trackSearch->search(SearchFilter::NameLikeMatch({{SearchFilter::Field::Track, keywords}}),
+					3);
 
 		artistSearch->show();
 		releaseSearch->show();
@@ -143,10 +127,8 @@ Audio::Audio(Wt::WContainerWidget *parent)
 		trackSearch->hide();
 		releaseSearch->show();
 
-		SearchFilter filter;
-		filter.idMatch[SearchFilter::Field::Artist].push_back(artistId);
-
-		releaseSearch->search(filter, 20);
+		releaseSearch->search(SearchFilter::IdMatch({{SearchFilter::Field::Artist, {artistId}}}),
+				20);
 	}, std::placeholders::_1));
 
 	releaseSearch->moreReleasesSelected().connect(std::bind([=]
@@ -162,11 +144,8 @@ Audio::Audio(Wt::WContainerWidget *parent)
 		releaseSearch->hide();
 		trackSearch->show();
 
-		// TODO load track search with selected release
-		SearchFilter filter;
-		filter.idMatch[SearchFilter::Field::Release].push_back(releaseId);
-
-		trackSearch->search(filter, 20);
+		trackSearch->search(SearchFilter::IdMatch({{SearchFilter::Field::Release, {releaseId}}}),
+				20);
 	}, std::placeholders::_1));
 
 	trackSearch->moreTracksSelected().connect(std::bind([=]
@@ -207,10 +186,9 @@ Audio::Audio(Wt::WContainerWidget *parent)
 
 	// Initially, populate the widgets using an empty search
 	{
-		SearchFilter filter; // empty filter
-		artistSearch->search(filter, 3);
-		releaseSearch->search(filter, 3);
-		trackSearch->search(filter, 3);
+		artistSearch->search(SearchFilter(), 3);
+		releaseSearch->search(SearchFilter(), 3);
+		trackSearch->search(SearchFilter(), 3);
 	}
 
 }

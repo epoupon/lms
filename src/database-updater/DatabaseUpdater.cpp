@@ -230,7 +230,7 @@ Updater::process(boost::system::error_code err)
 				rootDirectories.push_back( std::make_pair( directory->getPath(), directory->getType() ));
 		}
 
-		BOOST_FOREACH( RootDirectory rootDirectory, rootDirectories)
+		for (RootDirectory rootDirectory : rootDirectories)
 			processDirectory(rootDirectory.first, rootDirectory.first, rootDirectory.second, stats);
 
 		LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Changes = " << stats.nbChanges();
@@ -430,11 +430,16 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		// ***** Genres
 		std::vector< Genre::pointer > genres;
 		{
-			genres = getGenres( boost::any_cast< std::list<std::string> > (items[MetaData::Type::Genres]) );
+			std::list<std::string> genreList;
+
+			if (items.find(MetaData::Type::Genres) != items.end())
+				genreList = boost::any_cast< std::list<std::string> > (items[MetaData::Type::Genres]);
+
+			genres = getGenres( genreList );
 		}
 		assert( !genres.empty() );
 
-		// Get the associated Artist
+		//  ***** Artist
 		Artist::pointer artist;
 		{
 			std::string artistName;
@@ -450,7 +455,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		}
 		assert(artist);
 
-		// Get the associated Release
+		//  ***** Release
 		Release::pointer release;
 		{
 			std::string releaseName;
