@@ -22,6 +22,8 @@
 
 #include <Wt/Dbo/Dbo>
 
+#include <string>
+
 namespace Database {
 
 class PlaylistEntry;

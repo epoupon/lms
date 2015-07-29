@@ -196,7 +196,7 @@ Grabber::getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackI
 
 
 std::vector<CoverArt>
-Grabber::getFromRelease(Wt::Dbo::Session& session, std::string releaseName, std::size_t nbMaxCovers) const
+Grabber::getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type releaseId, std::size_t nbMaxCovers) const
 {
 	using namespace Database;
 
@@ -205,13 +205,11 @@ Grabber::getFromRelease(Wt::Dbo::Session& session, std::string releaseName, std:
 
 	// Get the first track of the release
 	{
-		SearchFilter filter;
-		filter.exactMatch[SearchFilter::Field::Release].push_back(releaseName);
-
 		Wt::Dbo::Transaction transaction(session);
 
-		std::vector<Track::pointer> tracks
-			= Track::getAll(session, filter, -1, 1 /* limit result size */);
+		std::vector<Track::pointer> tracks = Track::getByFilter(session,
+					SearchFilter::IdMatch({{SearchFilter::Field::Release, {releaseId}}}),
+					-1, 1 /* limit result size */);
 
 		if (tracks.empty())
 			return std::vector<CoverArt>();

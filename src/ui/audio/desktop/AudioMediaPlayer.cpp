@@ -199,7 +199,7 @@ AudioMediaPlayer::load(Database::Track::id_type trackId)
 		bitrate = CurrentUser()->getAudioBitrate();
 		trackPath = track->getPath();
 		_mediaTitle->setText ( Wt::WString::fromUTF8(track->getName()) );
-		_mediaArtistRelease->setText ( Wt::WString::fromUTF8(track->getArtistName()) + " - " + Wt::WString::fromUTF8(track->getReleaseName()) );
+		_mediaArtistRelease->setText ( Wt::WString::fromUTF8(track->getArtist()->getName()) + " - " + Wt::WString::fromUTF8(track->getRelease()->getName()) );
 		_mediaCover->setImageLink( Wt::WLink (LmsApplication::instance()->getCoverResource()->getTrackUrl(trackId, 72)));
 	}
 

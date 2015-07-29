@@ -1,9 +1,0 @@
-
-package Remote;
-
-message Error
-{
-	required bool	error	= 1;
-	optional string message	= 2;
-}
-

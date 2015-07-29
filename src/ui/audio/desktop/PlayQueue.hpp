@@ -72,7 +72,7 @@ class PlayQueue : public Wt::WTableView
 
 		void layoutSizeChanged (int width, int height);
 
-		bool readTrack(int rowId);
+		void readTrack(int rowId);
 		void setPlayingTrackPos(int newRowPos);
 		void renumber(int firstId, int lastId);
 

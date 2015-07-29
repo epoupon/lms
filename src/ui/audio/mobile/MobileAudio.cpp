@@ -41,6 +41,8 @@
 namespace UserInterface {
 namespace Mobile {
 
+using namespace Database;
+
 Audio::Audio(Wt::WContainerWidget *parent)
 : UserInterface::Audio(parent)
 {
@@ -72,13 +74,13 @@ Audio::Audio(Wt::WContainerWidget *parent)
 
 		switch (CurrentUser()->getAudioEncoding())
 		{
-			case Database::AudioEncoding::MP3: encoding = Wt::WMediaPlayer::MP3; break;
-			case Database::AudioEncoding::WEBMA: encoding = Wt::WMediaPlayer::WEBMA; break;
-			case Database::AudioEncoding::OGA: encoding = Wt::WMediaPlayer::OGA; break;
-			case Database::AudioEncoding::FLA: encoding = Wt::WMediaPlayer::FLA; break;
-			case Database::AudioEncoding::AUTO:
+			case AudioEncoding::MP3: encoding = Wt::WMediaPlayer::MP3; break;
+			case AudioEncoding::WEBMA: encoding = Wt::WMediaPlayer::WEBMA; break;
+			case AudioEncoding::OGA: encoding = Wt::WMediaPlayer::OGA; break;
+			case AudioEncoding::FLA: encoding = Wt::WMediaPlayer::FLA; break;
+			case AudioEncoding::AUTO:
 			default:
-							   encoding = AudioMediaPlayer::getBestEncoding();
+			   encoding = AudioMediaPlayer::getBestEncoding();
 		}
 	}
 
@@ -95,47 +97,16 @@ Audio::Audio(Wt::WContainerWidget *parent)
 		std::vector<std::string> keywords;
 		boost::algorithm::split(keywords, text, boost::is_any_of(" "), boost::token_compress_on);
 
-		{
-			Database::SearchFilter filter;
-			BOOST_FOREACH(std::string keyword, keywords)
-			{
-				Database::SearchFilter::FieldValues likeMatch;
+		releaseSearch->search(SearchFilter::NameLikeMatch( {{
+					{ SearchFilter::Field::Artist, keywords },
+					{ SearchFilter::Field::Release, keywords }}}),
+					3);
 
-				likeMatch[Database::SearchFilter::Field::Artist].push_back(keyword);
-				likeMatch[Database::SearchFilter::Field::Release].push_back(keyword);
-				filter.likeMatches.push_back(likeMatch);
-			}
+		artistSearch->search(SearchFilter::NameLikeMatch({{{SearchFilter::Field::Artist, keywords}}}),
+					3);
 
-			releaseSearch->search(filter, 3);
-		}
-
-		{
-			Database::SearchFilter filter;
-			BOOST_FOREACH(std::string keyword, keywords)
-			{
-				Database::SearchFilter::FieldValues likeMatch;
-
-				likeMatch[Database::SearchFilter::Field::Artist].push_back(keyword);
-
-				filter.likeMatches.push_back(likeMatch);
-			}
-
-			artistSearch->search(filter, 3);
-		}
-
-		{
-			Database::SearchFilter filter;
-			BOOST_FOREACH(std::string keyword, keywords)
-			{
-				Database::SearchFilter::FieldValues likeMatch;
-
-				likeMatch[Database::SearchFilter::Field::Track].push_back(keyword);
-
-				filter.likeMatches.push_back(likeMatch);
-			}
-
-			trackSearch->search(filter, 3);
-		}
+		trackSearch->search(SearchFilter::NameLikeMatch({{{SearchFilter::Field::Track, keywords}}}),
+					3);
 
 		artistSearch->show();
 		releaseSearch->show();
@@ -143,40 +114,38 @@ Audio::Audio(Wt::WContainerWidget *parent)
 
 	}));
 
-	artistSearch->moreArtistsSelected().connect(std::bind([=] {
+	artistSearch->moreArtistsSelected().connect(std::bind([=]
+	{
 		releaseSearch->hide();
 		trackSearch->hide();
 		artistSearch->show();
 	}));
 
-	artistSearch->artistSelected().connect(std::bind([=] (std::string artist) {
+	artistSearch->artistSelected().connect(std::bind([=] (Artist::id_type artistId)
+	{
 		artistSearch->hide();
 		trackSearch->hide();
 		releaseSearch->show();
 
-		Database::SearchFilter filter;
-		filter.exactMatch[Database::SearchFilter::Field::Artist].push_back(artist);
-
-		releaseSearch->search(filter, 20);
+		releaseSearch->search(SearchFilter::IdMatch({{SearchFilter::Field::Artist, {artistId}}}),
+				20);
 	}, std::placeholders::_1));
 
-	releaseSearch->moreReleasesSelected().connect(std::bind([=] {
+	releaseSearch->moreReleasesSelected().connect(std::bind([=]
+	{
 		artistSearch->hide();
 		trackSearch->hide();
 		releaseSearch->show();
 	}));
 
-	releaseSearch->releaseSelected().connect(std::bind([=] (std::string release)
+	releaseSearch->releaseSelected().connect(std::bind([=] (Release::id_type releaseId)
 	{
 		artistSearch->hide();
 		releaseSearch->hide();
 		trackSearch->show();
 
-		// TODO load track search with selected release
-		Database::SearchFilter filter;
-		filter.exactMatch[Database::SearchFilter::Field::Release].push_back(release);
-
-		trackSearch->search(filter, 20);
+		trackSearch->search(SearchFilter::IdMatch({{SearchFilter::Field::Release, {releaseId}}}),
+				20);
 	}, std::placeholders::_1));
 
 	trackSearch->moreTracksSelected().connect(std::bind([=]
@@ -185,13 +154,13 @@ Audio::Audio(Wt::WContainerWidget *parent)
 		releaseSearch->hide();
 	}));
 
-	trackSearch->trackPlay().connect(std::bind([=] (Database::Track::id_type id)
+	trackSearch->trackPlay().connect(std::bind([=] (Track::id_type id)
 	{
 		LMS_LOG(MOD_UI, SEV_DEBUG) << "Playing track id " << id;
 		// TODO reduce transaction scope here
 		Wt::Dbo::Transaction transaction(DboSession());
 
-		Database::Track::pointer track = Database::Track::getById(DboSession(), id);
+		Track::pointer track = Track::getById(DboSession(), id);
 
 		if (track)
 		{
@@ -217,10 +186,9 @@ Audio::Audio(Wt::WContainerWidget *parent)
 
 	// Initially, populate the widgets using an empty search
 	{
-		Database::SearchFilter filter; // empty filter
-		artistSearch->search(filter, 3);
-		releaseSearch->search(filter, 3);
-		trackSearch->search(filter, 3);
+		artistSearch->search(SearchFilter(), 3);
+		releaseSearch->search(SearchFilter(), 3);
+		trackSearch->search(SearchFilter(), 3);
 	}
 
 }

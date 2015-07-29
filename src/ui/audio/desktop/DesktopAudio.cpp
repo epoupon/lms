@@ -52,6 +52,8 @@ void WPopupMenuClear(Wt::WPopupMenu* menu)
 namespace UserInterface {
 namespace Desktop {
 
+using namespace Database;
+
 // Special playlist generated each time the playque gets changed
 // Restored at the beginning of the session
 static const std::string CurrentQueuePlaylistName = "__current__";
@@ -269,7 +271,7 @@ Audio::playlistShowSaveDialog(std::string playlistName)
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	// Actually create the dialog only if the given list already exists
-	if (Database::Playlist::get(DboSession(), playlistName, CurrentUser()))
+	if (Playlist::get(DboSession(), playlistName, CurrentUser()))
 	{
 		Wt::WMessageBox *messageBox = new Wt::WMessageBox
 			("Overwrite playlist",
@@ -301,25 +303,25 @@ Audio::playlistSaveFromPlayqueue(std::string playlistName)
 
 	Wt::Dbo::Transaction transaction(DboSession());
 
-	Database::Playlist::pointer playlist = Database::Playlist::get(DboSession(), playlistName, CurrentUser());
+	Playlist::pointer playlist = Playlist::get(DboSession(), playlistName, CurrentUser());
 	if (playlist)
 	{
 		LMS_LOG(MOD_UI, SEV_INFO) << "Erasing playlist '" << playlistName << "'";
 		playlist.remove();
 	}
 
-	playlist = Database::Playlist::create(DboSession(), playlistName, false, CurrentUser());
+	playlist = Playlist::create(DboSession(), playlistName, false, CurrentUser());
 
-	std::vector<Database::Track::id_type> trackIds;
+	std::vector<Track::id_type> trackIds;
 	_playQueue->getTracks(trackIds);
 
 	int pos = 0;
-	BOOST_FOREACH(Database::Track::id_type trackId, trackIds)
+	for (Track::id_type trackId : trackIds)
 	{
-		Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
+		Track::pointer track = Track::getById(DboSession(), trackId);
 
 		if (track)
-			Database::PlaylistEntry::create(DboSession(), track, playlist, pos++);
+			PlaylistEntry::create(DboSession(), track, playlist, pos++);
 	}
 
 	LMS_LOG(MOD_UI, SEV_INFO) << "Saving playqueue to playlist '" << playlistName << "' done. Contains " << pos << " entries";
@@ -330,16 +332,16 @@ Audio::playlistLoadToPlayqueue(std::string playlistName)
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Loading playlist '" << playlistName << "' to playqueue";
 
-	std::vector<Database::Track::id_type> entries;
+	std::vector<Track::id_type> entries;
 
 	{
 		Wt::Dbo::Transaction transaction(DboSession());
 
-		Database::Playlist::pointer playlist = Database::Playlist::get(DboSession(), playlistName, CurrentUser());
+		Playlist::pointer playlist = Playlist::get(DboSession(), playlistName, CurrentUser());
 		if (!playlist)
 			return;
 
-		entries = Database::PlaylistEntry::getEntries(DboSession(), playlist);
+		entries = PlaylistEntry::getEntries(DboSession(), playlist);
 	}
 
 	_playQueue->clear();
@@ -365,7 +367,7 @@ Audio::playlistShowDeleteDialog(std::string name)
 		{
 			Wt::Dbo::Transaction transaction(DboSession());
 
-			Database::Playlist::pointer playlist = Database::Playlist::get(DboSession(), name, CurrentUser());
+			Playlist::pointer playlist = Playlist::get(DboSession(), name, CurrentUser());
 			if (playlist)
 				playlist.remove();
 
@@ -396,9 +398,9 @@ Audio::playlistRefreshMenus()
 	}));
 	_popupMenuSave->addSeparator();
 
-	std::vector<Database::Playlist::pointer> playlists = Database::Playlist::get(DboSession(), CurrentUser());
+	std::vector<Playlist::pointer> playlists = Playlist::get(DboSession(), CurrentUser());
 
-	BOOST_FOREACH(Database::Playlist::pointer playlist, playlists)
+	for (Playlist::pointer playlist : playlists)
 	{
 		if (playlist->getName() == CurrentQueuePlaylistName)
 			continue;
@@ -431,7 +433,7 @@ Audio::search(std::string searchText)
 void
 Audio::addSelectedTracks(void)
 {
-	std::vector<Database::Track::id_type> trackIds;
+	std::vector<Track::id_type> trackIds;
 	_trackView->getSelectedTracks(trackIds);
 
 	// If nothing is selected, get the whole track list
@@ -444,7 +446,9 @@ Audio::addSelectedTracks(void)
 void
 Audio::playSelectedTracks(PlayQueueAddType addType)
 {
-	std::vector<Database::Track::id_type> trackIds;
+	std::vector<Track::id_type> trackIds;
+
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Playing selected tracks... nb selected = " << _trackView->getNbSelectedTracks() << ", add type = " << (addType == PlayQueueAddAllTracks ? "AddAll" : "AddSelected");
 
 	_playQueue->clear();
 
@@ -458,6 +462,9 @@ Audio::playSelectedTracks(PlayQueueAddType addType)
 
 			break;
 		case PlayQueueAddSelectedTracks:
+
+			LMS_LOG(MOD_UI, SEV_DEBUG) << "Adding selected tracks...";
+
 			// If nothing selected, get all the track and play everything
 			if (_trackView->getNbSelectedTracks() == 0)
 			{
@@ -485,7 +492,7 @@ Audio::playSelectedTracks(PlayQueueAddType addType)
 }
 
 void
-Audio::playTrack(Database::Track::id_type trackId, int pos)
+Audio::playTrack(Track::id_type trackId, int pos)
 {
 	{
 		Wt::Dbo::Transaction transaction(DboSession());

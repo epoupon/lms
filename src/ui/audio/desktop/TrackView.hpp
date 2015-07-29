@@ -62,7 +62,7 @@ class TrackView : public Wt::WTableView, public Filter
 
 		SigTrackDoubleClicked	_sigTrackDoubleClicked;
 
-		typedef Database::Track::pointer  ResultType;
+		typedef Database::Track::UIQueryResult  ResultType;
 		Wt::Dbo::QueryModel< ResultType >	_queryModel;
 		Wt::WTableView*				_tableView;
 

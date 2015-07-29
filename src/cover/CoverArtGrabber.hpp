@@ -52,7 +52,7 @@ class Grabber
 		std::vector<CoverArt>	getFromInputFormatContext(const Av::InputFormatContext& input, std::size_t nbMaxCovers = 1) const;
 		std::vector<CoverArt>	getFromTrack(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
 		std::vector<CoverArt>	getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::size_t nbMaxCovers = 1) const;
-		std::vector<CoverArt>	getFromRelease(Wt::Dbo::Session& session, std::string releaseName, std::size_t nbMaxCovers = 1) const;
+		std::vector<CoverArt>	getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type releaseId, std::size_t nbMaxCovers = 1) const;
 
 	private:
 		Grabber();

@@ -23,12 +23,16 @@
 #include <boost/filesystem.hpp>
 #include <libconfig.h++>
 
+#include "config/config.h"
+
 #include "cover/CoverArtGrabber.hpp"
 #include "logger/Logger.hpp"
 
 #include "service/UserInterfaceService.hpp"
-#include "service/RemoteServerService.hpp"
 #include "service/DatabaseUpdateService.hpp"
+#if defined HAVE_LMSAPI
+#include "service/LmsAPIServerService.hpp"
+#endif
 
 class ConfigReader
 {
@@ -44,8 +48,11 @@ class ConfigReader
 
 		// Service configurations
 		void getUserInterfaceConfig(Service::UserInterfaceService::Config& config);
-		void getRemoteServerConfig(Service::RemoteServerService::Config& config);
 		void getDatabaseUpdateConfig(Service::DatabaseUpdateService::Config& config);
+
+#if defined HAVE_LMSAPI
+		void getLmsAPIConfig(Service::LmsAPIService::Config& config);
+#endif
 
 	private:
 

@@ -11,9 +11,12 @@ lms_SOURCES = \
 	$(srcdir)/config/ConfigReader.cpp			\
 	$(srcdir)/cover/CoverArt.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
+	$(srcdir)/database/Artist.cpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
 	$(srcdir)/database/MediaDirectory.cpp			\
 	$(srcdir)/database/Playlist.cpp				\
+	$(srcdir)/database/Release.cpp				\
+	$(srcdir)/database/SearchFilter.cpp			\
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/User.cpp				\
@@ -23,17 +26,9 @@ lms_SOURCES = \
 	$(srcdir)/logger/Logger.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
 	$(srcdir)/metadata/Utils.cpp				\
-	$(srcdir)/remote/server/Connection.cpp			\
-	$(srcdir)/remote/server/ConnectionManager.cpp		\
-	$(srcdir)/remote/server/AudioCollectionRequestHandler.cpp		\
-	$(srcdir)/remote/server/AuthRequestHandler.cpp		\
-	$(srcdir)/remote/server/MediaRequestHandler.cpp		\
-	$(srcdir)/remote/server/RequestHandler.cpp		\
-	$(srcdir)/remote/server/Server.cpp			\
 	$(srcdir)/service/ServiceManager.cpp			\
 	$(srcdir)/service/DatabaseUpdateService.cpp		\
 	$(srcdir)/service/UserInterfaceService.cpp		\
-	$(srcdir)/service/RemoteServerService.cpp		\
 	$(srcdir)/transcode/AvConvTranscoder.cpp		\
 	$(srcdir)/transcode/Format.cpp				\
 	$(srcdir)/transcode/Parameters.cpp			\
@@ -69,6 +64,17 @@ lms_SOURCES = \
 	$(srcdir)/ui/settings/SettingsMediaDirectoryFormView.cpp	\
 	$(srcdir)/ui/settings/SettingsUserFormView.cpp	\
 	$(srcdir)/ui/settings/SettingsUsers.cpp
+
+if LMSAPI
+lms_SOURCES += \
+	$(srcdir)/lms-api/server/Connection.cpp			\
+	$(srcdir)/lms-api/server/ConnectionManager.cpp		\
+	$(srcdir)/lms-api/server/AudioCollectionRequestHandler.cpp		\
+	$(srcdir)/lms-api/server/AuthRequestHandler.cpp		\
+	$(srcdir)/lms-api/server/MediaRequestHandler.cpp		\
+	$(srcdir)/lms-api/server/RequestHandler.cpp		\
+	$(srcdir)/lms-api/server/Server.cpp			\
+	$(srcdir)/service/LmsAPIServerService.cpp
 
 nodist_lms_SOURCES = \
 	$(builddir)/auth.pb.cc			\
@@ -106,8 +112,10 @@ MOSTLYCLEANFILES = \
 	$(builddir)/messages.pb.cc		\
 	$(builddir)/messages.pb.h
 
-%.pb.cc %.pb.h: $(srcdir)/remote/proto/%.proto
-	$(PROTOC) --proto_path=$(srcdir)/remote/proto/ --cpp_out=$(builddir)/ $^
+%.pb.cc %.pb.h: $(srcdir)/lms-api/proto/%.proto
+	$(PROTOC) --proto_path=$(srcdir)/lms-api/proto/ --cpp_out=$(builddir)/ $^
 
-lms_CXXFLAGS=-DBOOST_LOG_DYN_LINK -std=c++11 -Wall -I$(top_srcdir)/third-party -I$(srcdir)/ui -I$(srcdir)/remote
+endif
+
+lms_CXXFLAGS=-DBOOST_LOG_DYN_LINK -std=c++11 -Wall -I$(top_srcdir)/third-party -I$(srcdir)/ui -I$(srcdir)/lms-api
 

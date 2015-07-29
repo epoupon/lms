@@ -1,0 +1,71 @@
+/*
+ * Copyright (C) 2013 Emeric Poupon
+ *
+ * This file is part of LMS.
+ *
+ * LMS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * LMS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+import "common.proto";
+
+import "auth.proto";
+import "collection.proto";
+import "media.proto";
+
+package LmsAPI;
+
+// Every request sent by the client must be a ClientMessage
+// The server will answer using a ServerMessage
+//
+// The client must authenticate first before querying data
+// If an expected message is received, the connection is dropped by the server
+//
+// A header is to be added before the serialized protobuf message in order to keep
+// track of where one message ends and the next begins.
+// Format:
+// MAGIC (4 bytes, 0xDE, 0xAD, 0xBE, 0xEF)- SIZE (4 bytes, big endian encoded) - serialized proto message
+message ClientMessage
+{
+	enum Type
+	{
+		AuthRequest		= 1;
+		AudioCollectionRequest	= 2;
+		MediaRequest		= 3;
+	}
+
+	required Type	type	= 1;
+
+	optional AuthRequest		auth_request			= 2;
+	optional AudioCollectionRequest	audio_collection_request	= 3;
+	optional MediaRequest		media_request			= 4;
+}
+
+
+message ServerMessage
+{
+	enum Type
+	{
+		AuthResponse		= 1;
+		AudioCollectionResponse	= 2;
+		MediaResponse		= 3;
+	}
+
+	required Type	type	= 1;
+
+	optional AuthResponse			auth_response			= 2;
+	optional AudioCollectionResponse	audio_collection_response	= 3;
+	optional MediaResponse			media_response			= 4;
+}
+
+
