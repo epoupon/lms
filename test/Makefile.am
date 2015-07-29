@@ -26,8 +26,8 @@ BUILT_SOURCES = \
 
 remote_client_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir)/src
 
-%.pb.cc %.pb.h: $(top_srcdir)/src/lms-api/proto/%.proto
-	$(PROTOC) --proto_path=$(top_srcdir)/src/lms-api/proto/ --cpp_out=$(builddir)/ $^
+%.pb.cc %.pb.h: $(top_srcdir)/lms-api/proto/%.proto
+	$(PROTOC) --proto_path=$(top_srcdir)/lms-api/proto/ --cpp_out=$(builddir)/ $^
 
 endif
 

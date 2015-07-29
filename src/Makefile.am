@@ -112,8 +112,8 @@ MOSTLYCLEANFILES = \
 	$(builddir)/messages.pb.cc		\
 	$(builddir)/messages.pb.h
 
-%.pb.cc %.pb.h: $(srcdir)/lms-api/proto/%.proto
-	$(PROTOC) --proto_path=$(srcdir)/lms-api/proto/ --cpp_out=$(builddir)/ $^
+%.pb.cc %.pb.h: $(top_srcdir)/lms-api/proto/%.proto
+	$(PROTOC) --proto_path=$(top_srcdir)/lms-api/proto/ --cpp_out=$(builddir)/ $^
 
 endif
 
