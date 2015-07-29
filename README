@@ -8,7 +8,7 @@ Features:
 - Winamp-like interface, suited for large databases
 - Audio/Video transcode for maximum interoperability and low bandwith requirements
 - User management
-- API available in Protocol Buffers (see src/remote/proto/messages.proto)
+- LMS API available in Protocol Buffers (see src/lms-api/proto/messages.proto)
 
 Please note LMS is still under development and will gain more features in the future.
 A mobile application based on Kivy is being developped as well.
@@ -32,6 +32,9 @@ II) BUILD
 # ../configure
 
 (configure will complain if a mandatory library is missing)
+
+The configure script allows you to disable the LMS API support (and protobuf dependencies)
+See 'configure --help' for more information.
 
 # make
 
