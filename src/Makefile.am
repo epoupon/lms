@@ -81,8 +81,6 @@ nodist_lms_SOURCES = \
 	$(builddir)/auth.pb.h			\
 	$(builddir)/collection.pb.cc		\
 	$(builddir)/collection.pb.h		\
-	$(builddir)/common.pb.cc		\
-	$(builddir)/common.pb.h			\
 	$(builddir)/media.pb.cc			\
 	$(builddir)/media.pb.h			\
 	$(builddir)/messages.pb.cc		\
@@ -93,8 +91,6 @@ BUILT_SOURCES = \
 	$(builddir)/auth.pb.h			\
 	$(builddir)/collection.pb.cc		\
 	$(builddir)/collection.pb.h		\
-	$(builddir)/common.pb.cc		\
-	$(builddir)/common.pb.h			\
 	$(builddir)/media.pb.cc			\
 	$(builddir)/media.pb.h			\
 	$(builddir)/messages.pb.cc		\
@@ -105,15 +101,13 @@ MOSTLYCLEANFILES = \
 	$(builddir)/auth.pb.h			\
 	$(builddir)/collection.pb.cc		\
 	$(builddir)/collection.pb.h		\
-	$(builddir)/common.pb.cc		\
-	$(builddir)/common.pb.h			\
 	$(builddir)/media.pb.cc			\
 	$(builddir)/media.pb.h			\
 	$(builddir)/messages.pb.cc		\
 	$(builddir)/messages.pb.h
 
-%.pb.cc %.pb.h: $(srcdir)/lms-api/proto/%.proto
-	$(PROTOC) --proto_path=$(srcdir)/lms-api/proto/ --cpp_out=$(builddir)/ $^
+%.pb.cc %.pb.h: $(top_srcdir)/lms-api/proto/%.proto
+	$(PROTOC) --proto_path=$(top_srcdir)/lms-api/proto/ --cpp_out=$(builddir)/ $^
 
 endif
 

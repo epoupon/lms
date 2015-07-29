@@ -13,21 +13,19 @@ remote_client_SOURCES = \
 nodist_remote_client_SOURCES = \
 	$(builddir)/auth.pb.cc			\
 	$(builddir)/collection.pb.cc		\
-	$(builddir)/common.pb.cc		\
 	$(builddir)/media.pb.cc			\
 	$(builddir)/messages.pb.cc
 
 BUILT_SOURCES = \
 	$(builddir)/auth.pb.h			\
 	$(builddir)/collection.pb.h		\
-	$(builddir)/common.pb.h			\
 	$(builddir)/media.pb.h			\
 	$(builddir)/messages.pb.h
 
 remote_client_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_srcdir)/src
 
-%.pb.cc %.pb.h: $(top_srcdir)/src/lms-api/proto/%.proto
-	$(PROTOC) --proto_path=$(top_srcdir)/src/lms-api/proto/ --cpp_out=$(builddir)/ $^
+%.pb.cc %.pb.h: $(top_srcdir)/lms-api/proto/%.proto
+	$(PROTOC) --proto_path=$(top_srcdir)/lms-api/proto/ --cpp_out=$(builddir)/ $^
 
 endif
 
