@@ -49,10 +49,12 @@ KeywordSearchFilter::getConstraint(Database::SearchFilter& filter)
 		// For each part, do a global search on all searchable fields
 		for (const std::string& value : values)
 		{
-			filter.nameLikeMatch[Database::SearchFilter::Field::Artist].push_back(value);
-			filter.nameLikeMatch[Database::SearchFilter::Field::Release].push_back(value);
-			filter.nameLikeMatch[Database::SearchFilter::Field::Genre].push_back(value);
-			filter.nameLikeMatch[Database::SearchFilter::Field::Track].push_back(value);
+			filter.nameLikeMatch.push_back({
+			 {Database::SearchFilter::Field::Artist, {value}},
+			 {Database::SearchFilter::Field::Release, {value}},
+			 {Database::SearchFilter::Field::Genre, {value}},
+			 {Database::SearchFilter::Field::Track, {value}}
+			 });
 		}
 	}
 }

@@ -42,17 +42,17 @@ class SearchFilter
 			Track,		// track
 		};
 
-		typedef std::map<Field, std::vector<std::string> > NameLikeMatchMap;
-		typedef std::map<Field, std::vector< Wt::Dbo::dbo_default_traits::IdType> > IdMatchMap;
+		typedef std::vector<std::map<Field, std::vector<std::string> > > NameLikeMatchType;
+		typedef std::map<Field, std::vector< Wt::Dbo::dbo_default_traits::IdType> > IdMatchType;
 
 		SearchFilter() {}
 
-		static SearchFilter IdMatch( const IdMatchMap& _idMatch )
+		static SearchFilter IdMatch( const IdMatchType& _idMatch )
 		{
 			return SearchFilter(_idMatch);
 		}
 
-		static SearchFilter NameLikeMatch( const NameLikeMatchMap& _nameLikeMatch )
+		static SearchFilter NameLikeMatch( const NameLikeMatchType& _nameLikeMatch )
 		{
 			return SearchFilter(_nameLikeMatch);
 		}
@@ -60,15 +60,15 @@ class SearchFilter
 		// The filter is a AND of the following conditions:
 
 		// ((Field1.name LIKE STR1-1 OR Field1.name LIKE STR1-2 ...) OR (Field2.name LIKE STR2-1 OR Field2.name LIKE STR2-2 ...) ...
-		NameLikeMatchMap	nameLikeMatch;
+		NameLikeMatchType	nameLikeMatch;
 
 		// ((Field1.id = ID1-1 OR Field1.id = ID1-2 ... ) AND ((Field2.id = ID2-1 OR Field2.id = ID2-2 ... ) ...
-		IdMatchMap	idMatch;
+		IdMatchType	idMatch;
 
 	private:
 
-		SearchFilter(const NameLikeMatchMap& _nameLikeMatch) : nameLikeMatch(_nameLikeMatch) {}
-		SearchFilter(const IdMatchMap& _idMatch) : idMatch(_idMatch) {}
+		SearchFilter(const NameLikeMatchType& _nameLikeMatch) : nameLikeMatch(_nameLikeMatch) {}
+		SearchFilter(const IdMatchType& _idMatch) : idMatch(_idMatch) {}
 };
 
 SqlQuery generatePartialQuery(SearchFilter& filter);

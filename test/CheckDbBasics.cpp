@@ -71,14 +71,12 @@ int main(void)
 		{
 			Wt::Dbo::Transaction transaction(db.getSession());
 
-			SearchFilter filter;
-			filter.nameLikeMatch[SearchFilter::Field::Track].push_back("track");
+			SearchFilter filter = SearchFilter::NameLikeMatch({{{SearchFilter::Field::Track, {"track"}}}});
 			std::vector<Track::pointer> res = Track::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
 
-			filter.nameLikeMatch[SearchFilter::Field::Track].clear();
-			filter.nameLikeMatch[SearchFilter::Field::Track].push_back("not-found");
+			filter = SearchFilter::NameLikeMatch({{{SearchFilter::Field::Track,{"not-found"}}}});
 			res = Track::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 0 );
 		}
@@ -87,8 +85,7 @@ int main(void)
 		{
 			Wt::Dbo::Transaction transaction(db.getSession());
 
-			SearchFilter filter;
-			filter.nameLikeMatch[SearchFilter::Field::Artist].push_back("artist");
+			SearchFilter filter = SearchFilter::NameLikeMatch({{{SearchFilter::Field::Artist, {"artist"}}}});
 			std::vector<Track::pointer> res = Track::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
@@ -98,8 +95,7 @@ int main(void)
 		{
 			Wt::Dbo::Transaction transaction(db.getSession());
 
-			SearchFilter filter;
-			filter.idMatch[SearchFilter::Field::Artist].push_back(1);
+			SearchFilter filter = SearchFilter::IdMatch({{SearchFilter::Field::Artist, {1}}});
 			std::vector<Track::pointer> res = Track::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
@@ -110,8 +106,8 @@ int main(void)
 			Wt::Dbo::Transaction transaction(db.getSession());
 
 			SearchFilter filter;
-			filter.idMatch[SearchFilter::Field::Artist].push_back(1);
-			filter.nameLikeMatch[SearchFilter::Field::Track].push_back("track");
+			filter.idMatch[SearchFilter::Field::Artist] = { 1 };
+			filter.nameLikeMatch = {{{ SearchFilter::Field::Track, {"track"} }}};
 			std::vector<Track::pointer> res = Track::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
@@ -122,7 +118,7 @@ int main(void)
 		{
 			Wt::Dbo::Transaction transaction(db.getSession());
 
-			SearchFilter filter = SearchFilter::NameLikeMatch({{SearchFilter::Field::Genre, {"genre"}}});
+			SearchFilter filter = SearchFilter::NameLikeMatch({{{SearchFilter::Field::Genre, {"genre"}}}});
 			std::vector<Track::pointer> res = Track::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
@@ -133,14 +129,12 @@ int main(void)
 		{
 			Wt::Dbo::Transaction transaction(db.getSession());
 
-			SearchFilter filter;
-			filter.nameLikeMatch[SearchFilter::Field::Track].push_back("track");
+			SearchFilter filter = SearchFilter::NameLikeMatch({{{SearchFilter::Field::Track, { "track" } }}});
 			std::vector<Artist::pointer> res = Artist::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
 
-			filter.nameLikeMatch[SearchFilter::Field::Track].clear();
-			filter.nameLikeMatch[SearchFilter::Field::Track].push_back("badtrack");
+			filter = SearchFilter::NameLikeMatch({{{SearchFilter::Field::Track, {"badtrack"} }}});
 			res = Artist::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 0);
 		}
@@ -149,8 +143,7 @@ int main(void)
 		{
 			Wt::Dbo::Transaction transaction(db.getSession());
 
-			SearchFilter filter;
-			filter.idMatch[SearchFilter::Field::Track].push_back(1);
+			SearchFilter filter = SearchFilter::IdMatch({{SearchFilter::Field::Track, {1} }});
 			std::vector<Artist::pointer> res = Artist::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
@@ -160,8 +153,7 @@ int main(void)
 		{
 			Wt::Dbo::Transaction transaction(db.getSession());
 
-			SearchFilter filter;
-			filter.nameLikeMatch[SearchFilter::Field::Artist].push_back("artist");
+			SearchFilter filter = SearchFilter::NameLikeMatch({{{SearchFilter::Field::Artist, {"artist"}}}});
 			std::vector<Artist::pointer> res = Artist::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
@@ -171,8 +163,7 @@ int main(void)
 		{
 			Wt::Dbo::Transaction transaction(db.getSession());
 
-			SearchFilter filter;
-			filter.nameLikeMatch[SearchFilter::Field::Release].push_back("release");
+			SearchFilter filter = SearchFilter::NameLikeMatch({{{SearchFilter::Field::Release, {"release"} }}});
 
 			std::vector<Release::pointer> res = Release::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
@@ -183,7 +174,7 @@ int main(void)
 		{
 			Wt::Dbo::Transaction transaction(db.getSession());
 
-			SearchFilter filter = SearchFilter::NameLikeMatch({{SearchFilter::Field::Track, {"track"}}});
+			SearchFilter filter = SearchFilter::NameLikeMatch({{{SearchFilter::Field::Track, {"track"}}}});
 			std::vector<Release::pointer> res = Release::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
@@ -194,7 +185,7 @@ int main(void)
 		{
 			Wt::Dbo::Transaction transaction(db.getSession());
 
-			SearchFilter filter = SearchFilter::NameLikeMatch({{SearchFilter::Field::Genre, {"genre"}}});
+			SearchFilter filter = SearchFilter::NameLikeMatch({{{SearchFilter::Field::Genre, {"genre"}}}});
 			std::vector<Genre::pointer> res = Genre::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
@@ -205,7 +196,7 @@ int main(void)
 		{
 			Wt::Dbo::Transaction transaction(db.getSession());
 
-			SearchFilter filter = SearchFilter::NameLikeMatch({{SearchFilter::Field::Track, {"track"}}});
+			SearchFilter filter = SearchFilter::NameLikeMatch({{{SearchFilter::Field::Track, {"track"}}}});
 			std::vector<Genre::pointer> res = Genre::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
@@ -216,8 +207,8 @@ int main(void)
 		{
 			Wt::Dbo::Transaction transaction(db.getSession());
 
-			SearchFilter filter = SearchFilter::NameLikeMatch({{SearchFilter::Field::Track, {"track"}},
-					{SearchFilter::Field::Artist, {"artist"}}});
+			SearchFilter filter = SearchFilter::NameLikeMatch({{{SearchFilter::Field::Track, {"track"}},
+					{SearchFilter::Field::Artist, {"artist"}}}});
 			std::vector<Genre::pointer> res = Genre::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);

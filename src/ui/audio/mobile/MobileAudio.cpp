@@ -97,15 +97,15 @@ Audio::Audio(Wt::WContainerWidget *parent)
 		std::vector<std::string> keywords;
 		boost::algorithm::split(keywords, text, boost::is_any_of(" "), boost::token_compress_on);
 
-		releaseSearch->search(SearchFilter::NameLikeMatch( {
+		releaseSearch->search(SearchFilter::NameLikeMatch( {{
 					{ SearchFilter::Field::Artist, keywords },
-					{ SearchFilter::Field::Release, keywords }}),
+					{ SearchFilter::Field::Release, keywords }}}),
 					3);
 
-		artistSearch->search(SearchFilter::NameLikeMatch({{SearchFilter::Field::Artist, keywords}}),
+		artistSearch->search(SearchFilter::NameLikeMatch({{{SearchFilter::Field::Artist, keywords}}}),
 					3);
 
-		trackSearch->search(SearchFilter::NameLikeMatch({{SearchFilter::Field::Track, keywords}}),
+		trackSearch->search(SearchFilter::NameLikeMatch({{{SearchFilter::Field::Track, keywords}}}),
 					3);
 
 		artistSearch->show();

@@ -26,37 +26,40 @@ SqlQuery generatePartialQuery(SearchFilter& filter)
 {
 	SqlQuery sqlQuery;
 
-	WhereClause likeWhereClause;
-
 	// Process name like parameters
-	for (auto nameLikeMatch : filter.nameLikeMatch)
+	for (auto nameLikeMatches : filter.nameLikeMatch)
 	{
-		// Artist
-		switch (nameLikeMatch.first)
+		WhereClause likeWhereClause;
+
+		for (auto nameLikeMatch : nameLikeMatches)
 		{
-			case SearchFilter::Field::Artist:
-				for (const std::string& name : nameLikeMatch.second)
-					likeWhereClause.Or( WhereClause("a.name LIKE ?") ).bind("%%" + name + "%%");
-				break;
 
-			case SearchFilter::Field::Release:
-				for (const std::string& name : nameLikeMatch.second)
-					likeWhereClause.Or( WhereClause("r.name LIKE ?") ).bind("%%" + name + "%%");
-				break;
+			// Artist
+			switch (nameLikeMatch.first)
+			{
+				case SearchFilter::Field::Artist:
+					for (const std::string& name : nameLikeMatch.second)
+						likeWhereClause.Or( WhereClause("a.name LIKE ?") ).bind("%%" + name + "%%");
+					break;
 
-			case SearchFilter::Field::Genre:
-				for (const std::string& name : nameLikeMatch.second)
-					likeWhereClause.Or( WhereClause("g.name LIKE ?") ).bind("%%" + name + "%%");
-				break;
+				case SearchFilter::Field::Release:
+					for (const std::string& name : nameLikeMatch.second)
+						likeWhereClause.Or( WhereClause("r.name LIKE ?") ).bind("%%" + name + "%%");
+					break;
 
-			case SearchFilter::Field::Track:
-				for (const std::string& name : nameLikeMatch.second)
-					likeWhereClause.Or( WhereClause("t.name LIKE ?") ).bind("%%" + name + "%%");
-				break;
+				case SearchFilter::Field::Genre:
+					for (const std::string& name : nameLikeMatch.second)
+						likeWhereClause.Or( WhereClause("g.name LIKE ?") ).bind("%%" + name + "%%");
+					break;
+
+				case SearchFilter::Field::Track:
+					for (const std::string& name : nameLikeMatch.second)
+						likeWhereClause.Or( WhereClause("t.name LIKE ?") ).bind("%%" + name + "%%");
+					break;
+			}
 		}
-
+		sqlQuery.where().And( likeWhereClause );
 	}
-	sqlQuery.where().And( likeWhereClause );
 
 	// Process id exact match parameters
 
