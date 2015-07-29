@@ -24,7 +24,7 @@
 
 #include "messages.pb.h"
 
-namespace Remote {
+namespace LmsAPI {
 namespace Server {
 
 class AudioCollectionRequestHandler
@@ -54,7 +54,7 @@ class AudioCollectionRequestHandler
 		static const std::size_t _maxCoverArtSize = 512;	// in pixels, square
 };
 
-} // namespace Remote
+} // namespace LmsAPI
 } // namespace Server
 
 #endif

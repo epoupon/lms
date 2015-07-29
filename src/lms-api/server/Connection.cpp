@@ -33,7 +33,7 @@
 #include "ConnectionManager.hpp"
 #include "Connection.hpp"
 
-namespace Remote {
+namespace LmsAPI {
 namespace Server {
 
 Connection::Connection(boost::asio::io_service& ioService,
@@ -79,11 +79,11 @@ void
 Connection::readMsg()
 {
 	// Read a header first
-	boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(Remote::Header::size);
+	boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(LmsAPI::Header::size);
 
 	boost::asio::async_read(_socket,
 			bufs,
-			boost::asio::transfer_exactly(Remote::Header::size),
+			boost::asio::transfer_exactly(LmsAPI::Header::size),
 			boost::bind(&Connection::handleReadHeader, shared_from_this(),
 				boost::asio::placeholders::error,
 				boost::asio::placeholders::bytes_transferred));
@@ -114,9 +114,9 @@ Connection::handleReadHeader(const boost::system::error_code& error, std::size_t
 {
 	if (!error)
 	{
-		if (bytes_transferred != Remote::Header::size)
+		if (bytes_transferred != LmsAPI::Header::size)
 		{
-			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "bytes_transferred (" << bytes_transferred << ") != Remote::Header::size!";
+			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "bytes_transferred (" << bytes_transferred << ") != LmsAPI::Header::size!";
 			_connectionManager.stop(shared_from_this());
 			return;
 		}
@@ -125,7 +125,7 @@ Connection::handleReadHeader(const boost::system::error_code& error, std::size_t
 
 		std::istream is(&_inputStreamBuf);
 
-		Remote::Header header;
+		LmsAPI::Header header;
 		if (!header.from_istream(is))
 		{
 			LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Cannot read header from buffer!";
@@ -161,8 +161,8 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 		std::istream is(&_inputStreamBuf);
 		std::ostream os(&_outputStreamBuf);
 
-		Remote::ServerMessage response;
-		Remote::ClientMessage request;
+		LmsAPI::ServerMessage response;
+		LmsAPI::ClientMessage request;
 
 		if (!request.ParseFromIstream(&is))
 		{
@@ -188,23 +188,23 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 				return;
 			}
 
-			if (_outputStreamBuf.size() >= Remote::Header::max_data_size)
+			if (_outputStreamBuf.size() >= LmsAPI::Header::max_data_size)
 			{
-				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "output message is too big! " << _outputStreamBuf.size() << " > " << Remote::Header::max_data_size;
+				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "output message is too big! " << _outputStreamBuf.size() << " > " << LmsAPI::Header::max_data_size;
 				_connectionManager.stop(shared_from_this());
 				return;
 			}
 
-			std::array<unsigned char, Remote::Header::size> headerBuffer;
+			std::array<unsigned char, LmsAPI::Header::size> headerBuffer;
 			{
-				Remote::Header header;
+				LmsAPI::Header header;
 				header.setDataSize(_outputStreamBuf.size());
 				header.to_buffer(headerBuffer);
 			}
 
 			std::size_t n = boost::asio::write(_socket,
 								boost::asio::buffer(headerBuffer),
-								boost::asio::transfer_exactly(Remote::Header::size),
+								boost::asio::transfer_exactly(LmsAPI::Header::size),
 								ec);
 			if (ec)
 			{
@@ -213,7 +213,7 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 			}
 			else
 			{
-				assert(n == Remote::Header::size);
+				assert(n == LmsAPI::Header::size);
 			}
 
 			// Now send serialized payload
@@ -247,4 +247,4 @@ Connection::handleReadMsg(const boost::system::error_code& error, std::size_t by
 
 
 } // namespace Server
-} // namespace Remote
+} // namespace LmsAPI

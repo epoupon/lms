@@ -23,7 +23,7 @@
 
 #include "database/Types.hpp"
 
-namespace Remote {
+namespace LmsAPI {
 namespace Server {
 
 MediaRequestHandler::MediaRequestHandler(Database::Handler& db)
@@ -211,7 +211,7 @@ MediaRequestHandler::processTerminate(const MediaRequest::Terminate& request, Me
 
 
 
-} // namespace Remote
+} // namespace LmsAPI
 } // namespace Server
 
 

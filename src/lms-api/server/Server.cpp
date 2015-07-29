@@ -27,7 +27,7 @@
 
 #include "Server.hpp"
 
-namespace Remote {
+namespace LmsAPI {
 namespace Server {
 
 Server::Server(const endpoint_type& bindEndpoint,
@@ -109,4 +109,4 @@ Server::stop()
 }
 
 } // namespace Server
-} // namespace Remote
+} // namespace LmsAPI

@@ -17,46 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <algorithm>
+package LmsAPI;
 
-#include <boost/foreach.hpp>
-
-#include "ConnectionManager.hpp"
-
-namespace Remote {
-namespace Server {
-
-ConnectionManager::ConnectionManager()
+message Error
 {
+	required bool	error	= 1;
+	optional string message	= 2;
 }
-
-
-void
-ConnectionManager::start(Connection::pointer c)
-{
-	_connections.insert(c);
-	c->start();
-}
-
-void
-ConnectionManager::stop(Connection::pointer c)
-{
-	_connections.erase(c);
-	c->stop();
-}
-
-void
-ConnectionManager::stopAll()
-{
-	BOOST_FOREACH(Connection::pointer c, _connections)
-	{
-		c->stop();
-	}
-	_connections.clear();
-}
-
-
-} // namespace Server
-} // namespace Remote
-
 

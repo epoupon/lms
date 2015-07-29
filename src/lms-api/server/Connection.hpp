@@ -17,8 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef REMOTE_CONNECTION_HPP
-#define REMOTE_CONNECTION_HPP
+#ifndef LMSAPI_CONNECTION_HPP
+#define LMSAPI_CONNECTION_HPP
 
 #include <array>
 #include <memory>
@@ -30,7 +30,7 @@
 
 #include "messages/Header.hpp"
 
-namespace Remote {
+namespace LmsAPI {
 namespace Server {
 
 class ConnectionManager;
@@ -91,7 +91,7 @@ class Connection : public std::enable_shared_from_this<Connection>
 
 
 } // namespace Server
-} // namespace Remote
+} // namespace LmsAPI
 
 #endif
 

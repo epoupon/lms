@@ -61,7 +61,7 @@
 	- Make a dedicated audio layout in mobile environment (keep the same layout for videos?)
 	- Handle internal path
 
-[Remote API]
+[Lms API]
 - Implement partial text search options in the GetXXX messages
 
 [REST API]

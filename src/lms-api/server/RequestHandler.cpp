@@ -21,7 +21,7 @@
 
 #include "RequestHandler.hpp"
 
-namespace Remote {
+namespace LmsAPI {
 namespace Server {
 
 RequestHandler::RequestHandler(boost::filesystem::path dbPath)
@@ -95,7 +95,7 @@ RequestHandler::process(const ClientMessage& request, ServerMessage& response)
 
 
 } // namespace Server
-} // namespace Remote
+} // namespace LmsAPI
 
 
 

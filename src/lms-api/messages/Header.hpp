@@ -24,7 +24,7 @@
 
 #include <iomanip>
 
-namespace Remote
+namespace LmsAPI
 {
 
 
@@ -104,7 +104,7 @@ class Header
 
 
 
-} // namespace Remote
+} // namespace LmsAPI
 
 
 #endif

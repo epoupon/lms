@@ -28,7 +28,7 @@
 #include "service/ServiceManager.hpp"
 #include "service/DatabaseUpdateService.hpp"
 #include "service/UserInterfaceService.hpp"
-#include "service/RemoteServerService.hpp"
+#include "service/LmsAPIServerService.hpp"
 
 int main(int argc, char* argv[])
 {

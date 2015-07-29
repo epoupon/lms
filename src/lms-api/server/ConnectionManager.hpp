@@ -24,7 +24,7 @@
 
 #include "Connection.hpp"
 
-namespace Remote {
+namespace LmsAPI {
 namespace Server {
 
 /// Manages open connections so that they may be cleanly stopped when the server
@@ -53,6 +53,6 @@ class ConnectionManager
 };
 
 } // namespace Server
-} // namespace Remote
+} // namespace LmsAPI
 
 #endif

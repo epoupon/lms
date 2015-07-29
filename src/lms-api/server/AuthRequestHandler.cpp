@@ -23,7 +23,7 @@
 
 #include "AuthRequestHandler.hpp"
 
-namespace Remote {
+namespace LmsAPI {
 namespace Server {
 
 AuthRequestHandler::AuthRequestHandler(Database::Handler& db)
@@ -100,6 +100,6 @@ AuthRequestHandler::processPassword(const AuthRequest::Password& request, AuthRe
 	return res;
 }
 
-} // namespace Remote
 } // namespace Server
+} // namespace LmsAPI
 

@@ -25,7 +25,7 @@
 
 #include "Service.hpp"
 
-#include "remote/server/Server.hpp"
+#include "lms-api/server/Server.hpp"
 
 namespace Service {
 
@@ -51,7 +51,7 @@ class RemoteServerService : public Service
 
 	private:
 
-		Remote::Server::Server	_server;
+		LmsAPI::Server::Server	_server;
 };
 
 } // namespace Service

@@ -19,7 +19,7 @@
 
 #include "logger/Logger.hpp"
 
-#include "RemoteServerService.hpp"
+#include "LmsAPIServerService.hpp"
 
 namespace Service {
 

@@ -17,42 +17,31 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef REMOTE_REQUEST_HANDLER
-#define REMOTE_REQUEST_HANDLER
-
-#include <boost/filesystem.hpp>
-
-#include "messages.pb.h"
+#ifndef LMSAPI_AUTH_REQUEST_HANDLER
+#define LMSAPI_AUTH_REQUEST_HANDLER
 
 #include "database/DatabaseHandler.hpp"
 
-#include "AuthRequestHandler.hpp"
-#include "AudioCollectionRequestHandler.hpp"
-#include "MediaRequestHandler.hpp"
+#include "messages.pb.h"
 
-namespace Remote {
+namespace LmsAPI {
 namespace Server {
 
-class RequestHandler
+class AuthRequestHandler
 {
 	public:
+		AuthRequestHandler(Database::Handler& db);
 
-		RequestHandler(boost::filesystem::path dbPath);
-		~RequestHandler();
-
-		bool process(const ClientMessage& request, ServerMessage& response);
+		bool process(const AuthRequest& request, AuthResponse& response);
 
 	private:
 
-		Database::Handler _db;
+		bool processPassword(const AuthRequest::Password& request, AuthResponse::PasswordResult& response);
 
-		AuthRequestHandler		_authRequestHandler;
-		AudioCollectionRequestHandler	_audioCollectionRequestHandler;
-		MediaRequestHandler		_mediaRequestHandler;
+		Database::Handler& _db;
 };
 
 } // namespace Server
-} // namespace Remote
+} // namespace LmsAPI
 
 #endif
-

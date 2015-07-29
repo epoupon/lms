@@ -29,7 +29,7 @@
 #include "database/Types.hpp"
 #include "cover/CoverArtGrabber.hpp"
 
-namespace Remote {
+namespace LmsAPI {
 namespace Server {
 
 using namespace Database;
@@ -387,7 +387,7 @@ AudioCollectionRequestHandler::processGetRevision(AudioCollectionResponse::Revis
 
 
 
-} // namespace Remote
+} // namespace LmsAPI
 } // namespace Server
 
 

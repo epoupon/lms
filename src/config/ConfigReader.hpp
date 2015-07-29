@@ -27,7 +27,7 @@
 #include "logger/Logger.hpp"
 
 #include "service/UserInterfaceService.hpp"
-#include "service/RemoteServerService.hpp"
+#include "service/LmsAPIServerService.hpp"
 #include "service/DatabaseUpdateService.hpp"
 
 class ConfigReader

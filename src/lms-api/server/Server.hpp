@@ -32,7 +32,7 @@
 
 #include "RequestHandler.hpp"
 
-namespace Remote {
+namespace LmsAPI {
 namespace Server {
 
 class Server
@@ -76,6 +76,6 @@ class Server
 };
 
 } // namespace Server
-} // namespace Remote
+} // namespace LmsAPI
 
 #endif

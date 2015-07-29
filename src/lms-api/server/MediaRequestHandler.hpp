@@ -28,7 +28,7 @@
 
 #include "media.pb.h"
 
-namespace Remote {
+namespace LmsAPI {
 namespace Server {
 
 class MediaRequestHandler
@@ -58,8 +58,8 @@ class MediaRequestHandler
 		static const std::size_t _maxTranscoders = 1;
 };
 
-} // namespace Remote
 } // namespace Server
+} // namespace LmsAPI
 
 #endif
 
