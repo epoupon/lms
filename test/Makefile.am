@@ -13,14 +13,12 @@ remote_client_SOURCES = \
 nodist_remote_client_SOURCES = \
 	$(builddir)/auth.pb.cc			\
 	$(builddir)/collection.pb.cc		\
-	$(builddir)/common.pb.cc		\
 	$(builddir)/media.pb.cc			\
 	$(builddir)/messages.pb.cc
 
 BUILT_SOURCES = \
 	$(builddir)/auth.pb.h			\
 	$(builddir)/collection.pb.h		\
-	$(builddir)/common.pb.h			\
 	$(builddir)/media.pb.h			\
 	$(builddir)/messages.pb.h
 
