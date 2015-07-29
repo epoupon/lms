@@ -97,7 +97,13 @@ int main(int argc, char* argv[])
 			serviceManager.startService( std::make_shared<Service::DatabaseUpdateService>( dbUpdateConfig ) );
 
 		if (remoteConfig.enable)
+		{
+#if defined HAVE_LMSAPI
 			serviceManager.startService( std::make_shared<Service::RemoteServerService>( remoteConfig ));
+#else
+			LMS_LOG(MOD_MAIN, SEV_ERROR) << "LMS API cannot be activated since it is not compiled";
+#endif
+		}
 
 		if (uiConfig.enable)
 			serviceManager.startService( std::make_shared<Service::UserInterfaceService>(boost::filesystem::path(argv[0]), uiConfig));

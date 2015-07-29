@@ -26,17 +26,9 @@ lms_SOURCES = \
 	$(srcdir)/logger/Logger.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
 	$(srcdir)/metadata/Utils.cpp				\
-	$(srcdir)/remote/server/Connection.cpp			\
-	$(srcdir)/remote/server/ConnectionManager.cpp		\
-	$(srcdir)/remote/server/AudioCollectionRequestHandler.cpp		\
-	$(srcdir)/remote/server/AuthRequestHandler.cpp		\
-	$(srcdir)/remote/server/MediaRequestHandler.cpp		\
-	$(srcdir)/remote/server/RequestHandler.cpp		\
-	$(srcdir)/remote/server/Server.cpp			\
 	$(srcdir)/service/ServiceManager.cpp			\
 	$(srcdir)/service/DatabaseUpdateService.cpp		\
 	$(srcdir)/service/UserInterfaceService.cpp		\
-	$(srcdir)/service/RemoteServerService.cpp		\
 	$(srcdir)/transcode/AvConvTranscoder.cpp		\
 	$(srcdir)/transcode/Format.cpp				\
 	$(srcdir)/transcode/Parameters.cpp			\
@@ -72,6 +64,17 @@ lms_SOURCES = \
 	$(srcdir)/ui/settings/SettingsMediaDirectoryFormView.cpp	\
 	$(srcdir)/ui/settings/SettingsUserFormView.cpp	\
 	$(srcdir)/ui/settings/SettingsUsers.cpp
+
+if LMSAPI
+lms_SOURCES += \
+	$(srcdir)/remote/server/Connection.cpp			\
+	$(srcdir)/remote/server/ConnectionManager.cpp		\
+	$(srcdir)/remote/server/AudioCollectionRequestHandler.cpp		\
+	$(srcdir)/remote/server/AuthRequestHandler.cpp		\
+	$(srcdir)/remote/server/MediaRequestHandler.cpp		\
+	$(srcdir)/remote/server/RequestHandler.cpp		\
+	$(srcdir)/remote/server/Server.cpp			\
+	$(srcdir)/service/RemoteServerService.cpp
 
 nodist_lms_SOURCES = \
 	$(builddir)/auth.pb.cc			\
@@ -111,6 +114,8 @@ MOSTLYCLEANFILES = \
 
 %.pb.cc %.pb.h: $(srcdir)/remote/proto/%.proto
 	$(PROTOC) --proto_path=$(srcdir)/remote/proto/ --cpp_out=$(builddir)/ $^
+
+endif
 
 lms_CXXFLAGS=-DBOOST_LOG_DYN_LINK -std=c++11 -Wall -I$(top_srcdir)/third-party -I$(srcdir)/ui -I$(srcdir)/remote
 

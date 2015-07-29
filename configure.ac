@@ -1,7 +1,7 @@
 AC_PREREQ(2.59)
 AC_INIT(lms, 1.0.0, test@test)
 AM_INIT_AUTOMAKE
-AC_CONFIG_HEADER(include/config.h)
+AC_CONFIG_HEADER(src/config/config.h)
 
 AC_LANG_CPLUSPLUS
 
@@ -9,16 +9,16 @@ AC_LANG_CPLUSPLUS
 AC_PROG_CXX
 
 
-AC_ARG_ENABLE(remote, AS_HELP_STRING([--enable-remote],
-	    				[Build with the remote protocol support. Defaults to yes.])],
-		[enable_remote="$enableval"],
-		[enable_remote="yes"])
+AC_ARG_ENABLE(lmsapi, AS_HELP_STRING([--enable-lmsapi],
+	    				[Build with the lmsapi protocol support. Defaults to yes.])],
+		[enable_lmsapi="$enableval"],
+		[enable_lmsapi="yes"])
 
 # ProtoBuf compiler.
 # First, specify with --with-protoc=/path/of/protoc.
 # Or, specify with env variable PROTOC.
 # If neither of the above, find it in the path.
-AS_IF([test "$enable_remote" = "yes"],
+AS_IF([test "$enable_lmsapi" = "yes"],
       [AC_ARG_WITH([protoc],
 	    [AS_HELP_STRING([--with-protoc=/path/of/protoc],
 			    [Location of the protocol buffers compiler protoc. Defaults to looking on path.])],
@@ -32,10 +32,12 @@ AS_IF([test "$enable_remote" = "yes"],
 	     	[main],
 		,
 		[AC_MSG_ERROR([libprotobuf not found!])])]
-      [AC_DEFINE(REMOTE_ENABLE, 1, [Remote support disabled])]
+      [lmsapi=true]
       ,
-      [AC_DEFINE(REMOTE_ENABLE, 0, [Remote support enabled])]
-)
+      [lmsapi=false])
+
+AM_CONDITIONAL([LMSAPI], [test x$lmsapi = xtrue])
+AS_IF([test x$lmsapi = xtrue], [AC_DEFINE(HAVE_LMSAPI, [1], [Enable LMS API support])])
 
 AC_CHECK_HEADERS([Wt/WApplication jpeglib.h],
                  [],
