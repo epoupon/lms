@@ -23,7 +23,7 @@
 
 namespace Service {
 
-RemoteServerService::RemoteServerService(const Config& config)
+LmsAPIService::LmsAPIService(const Config& config)
 : _server(boost::asio::ip::tcp::endpoint(config.address, config.port),
 	config.sslCertificatePath,
 	config.sslPrivateKeyPath,
@@ -33,26 +33,26 @@ RemoteServerService::RemoteServerService(const Config& config)
 }
 
 void
-RemoteServerService::start(void)
+LmsAPIService::start(void)
 {
-	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "RemoteServerService::start, starting...";
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "LmsAPIService::start, starting...";
 	_server.start();
-	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "RemoteServerService::start, started!";
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "LmsAPIService::start, started!";
 }
 
 
 void
-RemoteServerService::stop(void)
+LmsAPIService::stop(void)
 {
-	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "RemoteServerService::stop, stopping...";
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "LmsAPIService::stop, stopping...";
 	_server.stop();
-	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "RemoteServerService::stop, stopped!";
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "LmsAPIService::stop, stopped!";
 }
 
 void
-RemoteServerService::restart(void)
+LmsAPIService::restart(void)
 {
-	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "RemoteServerService::restart, not implemented!";
+	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "LmsAPIService::restart, not implemented!";
 }
 
 } // namespace Service

@@ -77,8 +77,9 @@ ConfigReader::getUserInterfaceConfig(Service::UserInterfaceService::Config& conf
 	config.dbPath = _config.lookup("main.database.path");
 }
 
+#if defined HAVE_LMSAPI
 void
-ConfigReader::getRemoteServerConfig(Service::RemoteServerService::Config& config)
+ConfigReader::getLmsAPIConfig(Service::LmsAPIService::Config& config)
 {
 	config.enable = _config.lookup("remote.enable");
 	if (!config.enable)
@@ -92,6 +93,7 @@ ConfigReader::getRemoteServerConfig(Service::RemoteServerService::Config& config
 
 	config.dbPath = _config.lookup("main.database.path");
 }
+#endif
 
 void
 ConfigReader::getDatabaseUpdateConfig(Service::DatabaseUpdateService::Config& config)

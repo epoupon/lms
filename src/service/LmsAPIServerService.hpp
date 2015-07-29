@@ -23,13 +23,15 @@
 #include <boost/filesystem.hpp>
 #include <boost/asio/ip/address.hpp>
 
+#include "config/config.h"
+
 #include "Service.hpp"
 
 #include "lms-api/server/Server.hpp"
 
 namespace Service {
 
-class RemoteServerService : public Service
+class LmsAPIService : public Service
 {
 	public:
 
@@ -43,7 +45,7 @@ class RemoteServerService : public Service
 			boost::filesystem::path		dbPath;
 		};
 
-		RemoteServerService(const Config& config);
+		LmsAPIService(const Config& config);
 
 		void start(void);
 		void stop(void);

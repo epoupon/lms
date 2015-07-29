@@ -19,6 +19,7 @@
 
 #include <boost/filesystem.hpp>
 
+#include "config/config.h"
 #include "logger/Logger.hpp"
 
 #include "config/ConfigReader.hpp"
@@ -28,7 +29,9 @@
 #include "service/ServiceManager.hpp"
 #include "service/DatabaseUpdateService.hpp"
 #include "service/UserInterfaceService.hpp"
+#if defined HAVE_LMSAPI
 #include "service/LmsAPIServerService.hpp"
+#endif
 
 int main(int argc, char* argv[])
 {
@@ -81,9 +84,6 @@ int main(int argc, char* argv[])
 		Service::UserInterfaceService::Config uiConfig;
 		configReader.getUserInterfaceConfig(uiConfig);
 
-		Service::RemoteServerService::Config remoteConfig;
-		configReader.getRemoteServerConfig(remoteConfig);
-
 		Service::ServiceManager& serviceManager = Service::ServiceManager::instance();
 
 		// lib init
@@ -96,14 +96,13 @@ int main(int argc, char* argv[])
 		if (dbUpdateConfig.enable)
 			serviceManager.startService( std::make_shared<Service::DatabaseUpdateService>( dbUpdateConfig ) );
 
-		if (remoteConfig.enable)
-		{
 #if defined HAVE_LMSAPI
-			serviceManager.startService( std::make_shared<Service::RemoteServerService>( remoteConfig ));
-#else
-			LMS_LOG(MOD_MAIN, SEV_ERROR) << "LMS API cannot be activated since it is not compiled";
+		Service::LmsAPIService::Config lmsAPIConfig;
+		configReader.getLmsAPIConfig(lmsAPIConfig);
+
+		if (lmsAPIConfig.enable)
+			serviceManager.startService( std::make_shared<Service::LmsAPIService>( lmsAPIConfig ));
 #endif
-		}
 
 		if (uiConfig.enable)
 			serviceManager.startService( std::make_shared<Service::UserInterfaceService>(boost::filesystem::path(argv[0]), uiConfig));
