@@ -60,7 +60,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		std::string getMBID(void) const { return _MBID; }
 
 		// Get the releases that have at least one track for this artist
-		std::vector<Wt::Dbo::ptr<Release> >	getReleases();
+		std::vector<Wt::Dbo::ptr<Release> >	getReleases() const;
 
 		void setMBID(std::string mbid) { _MBID = mbid; }
 

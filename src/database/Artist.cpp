@@ -85,7 +85,7 @@ Artist::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, 
 }
 
 std::vector<Wt::Dbo::ptr<Release> >
-Artist::getReleases()
+Artist::getReleases() const
 {
 	assert(self());
 	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );

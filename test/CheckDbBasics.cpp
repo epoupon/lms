@@ -157,6 +157,9 @@ int main(void)
 			std::vector<Artist::pointer> res = Artist::getByFilter(db.getSession(), filter, -1, -1);
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
+
+			// Make sure artist has a release
+			assert(res.front()->getReleases().size() == 1);
 		}
 
 		// Select Release by name
@@ -179,6 +182,9 @@ int main(void)
 			assert(res.size() == 1);
 			assert(res.front().id() == 1);
 			assert(res.front()->getName() == "release01");
+
+			// Make sure release has an artist
+			assert(res.front()->getArtists().size() == 1);
 		}
 
 		// Select genre by name

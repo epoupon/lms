@@ -27,7 +27,7 @@
 #include <boost/asio/ssl.hpp>
 #include <boost/foreach.hpp>
 
-#include "remote/messages/Header.hpp"
+#include "lms-api/messages/Header.hpp"
 #include "messages.pb.h"
 
 #include "TestDatabase.hpp"
@@ -123,7 +123,7 @@ struct SearchFilter
 	std::vector<uint64_t> trackIds;
 };
 
-void SearchFilterToRequest(const SearchFilter& filter, Remote::AudioCollectionRequest_SearchFilter& request)
+void SearchFilterToRequest(const SearchFilter& filter, LmsAPI::AudioCollectionRequest_SearchFilter& request)
 {
 	for (uint64_t id : filter.artistIds)
 		request.add_artist_id(id);
@@ -174,11 +174,11 @@ class TestClient
 			std::size_t nbArtists = 0;
 
 			// Send request
-			Remote::ClientMessage request;
+			LmsAPI::ClientMessage request;
 
-			request.set_type( Remote::ClientMessage_Type_AudioCollectionRequest );
+			request.set_type( LmsAPI::ClientMessage_Type_AudioCollectionRequest );
 
-			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetArtistList);
+			request.mutable_audio_collection_request()->set_type( LmsAPI::AudioCollectionRequest_Type_TypeGetArtistList);
 			request.mutable_audio_collection_request()->mutable_get_artists()->mutable_batch_parameter()->set_size(size);
 			request.mutable_audio_collection_request()->mutable_get_artists()->mutable_batch_parameter()->set_offset(offset);
 			SearchFilterToRequest(filter, *request.mutable_audio_collection_request()->mutable_get_artists()->mutable_search_filter());
@@ -186,7 +186,7 @@ class TestClient
 			sendMsg(request);
 
 			// Receive responses
-			Remote::ServerMessage response;
+			LmsAPI::ServerMessage response;
 			recvMsg(response);
 
 			// Process message
@@ -198,7 +198,7 @@ class TestClient
 
 			for (int i = 0; i < response.audio_collection_response().artist_list().artists_size(); ++i)
 			{
-				const Remote::AudioCollectionResponse_Artist& respArtist =  response.audio_collection_response().artist_list().artists(i);
+				const LmsAPI::AudioCollectionResponse_Artist& respArtist =  response.audio_collection_response().artist_list().artists(i);
 
 				if (!respArtist.has_id())
 					throw std::runtime_error("no id!");
@@ -235,11 +235,11 @@ class TestClient
 			std::size_t nbAdded = 0;
 
 			// Send request
-			Remote::ClientMessage request;
+			LmsAPI::ClientMessage request;
 
-			request.set_type( Remote::ClientMessage_Type_AudioCollectionRequest );
+			request.set_type( LmsAPI::ClientMessage_Type_AudioCollectionRequest );
 
-			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetGenreList);
+			request.mutable_audio_collection_request()->set_type( LmsAPI::AudioCollectionRequest_Type_TypeGetGenreList);
 			request.mutable_audio_collection_request()->mutable_get_genres()->mutable_batch_parameter()->set_size(size);
 			request.mutable_audio_collection_request()->mutable_get_genres()->mutable_batch_parameter()->set_offset(offset);
 			SearchFilterToRequest(filter, *request.mutable_audio_collection_request()->mutable_get_genres()->mutable_search_filter());
@@ -247,7 +247,7 @@ class TestClient
 			sendMsg(request);
 
 			// Receive responses
-			Remote::ServerMessage response;
+			LmsAPI::ServerMessage response;
 			recvMsg(response);
 
 			// Process message
@@ -259,7 +259,7 @@ class TestClient
 
 			for (int i = 0; i < response.audio_collection_response().genre_list().genres_size(); ++i)
 			{
-				const Remote::AudioCollectionResponse_Genre& respGenre =  response.audio_collection_response().genre_list().genres(i);
+				const LmsAPI::AudioCollectionResponse_Genre& respGenre =  response.audio_collection_response().genre_list().genres(i);
 
 				if (!respGenre.has_id())
 					throw std::runtime_error("no genre id!");
@@ -293,11 +293,11 @@ class TestClient
 			std::size_t nbAdded = 0;
 
 			// Send request
-			Remote::ClientMessage request;
+			LmsAPI::ClientMessage request;
 
-			request.set_type( Remote::ClientMessage_Type_AudioCollectionRequest );
+			request.set_type( LmsAPI::ClientMessage_Type_AudioCollectionRequest );
 
-			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetReleaseList);
+			request.mutable_audio_collection_request()->set_type( LmsAPI::AudioCollectionRequest_Type_TypeGetReleaseList);
 			request.mutable_audio_collection_request()->mutable_get_releases()->mutable_batch_parameter()->set_size(size);
 			request.mutable_audio_collection_request()->mutable_get_releases()->mutable_batch_parameter()->set_offset(offset);
 			SearchFilterToRequest(filter, *request.mutable_audio_collection_request()->mutable_get_releases()->mutable_search_filter());
@@ -305,14 +305,14 @@ class TestClient
 			sendMsg(request);
 
 			// Receive responses
-			Remote::ServerMessage response;
+			LmsAPI::ServerMessage response;
 			recvMsg(response);
 
 			// Process message
 			if (!response.audio_collection_response().has_type())
 				throw std::runtime_error("Missing type!");
 
-//			if (!response.audio_collection_response().type() != Remote::ServerMessage::AudioCollectionResponse::TypeReleaseList)
+//			if (!response.audio_collection_response().type() != LmsAPI::ServerMessage::AudioCollectionResponse::TypeReleaseList)
 //				throw std::runtime_error("Bad type!");
 
 			if (!response.has_audio_collection_response())
@@ -323,7 +323,7 @@ class TestClient
 
 			for (int i = 0; i < response.audio_collection_response().release_list().releases_size(); ++i)
 			{
-				const Remote::AudioCollectionResponse_Release& respRelease =  response.audio_collection_response().release_list().releases(i);
+				const LmsAPI::AudioCollectionResponse_Release& respRelease =  response.audio_collection_response().release_list().releases(i);
 
 				if (!respRelease.has_id())
 					throw std::runtime_error("no id!");
@@ -355,11 +355,11 @@ class TestClient
 			std::size_t nbAdded = 0;
 
 			// Send request
-			Remote::ClientMessage request;
+			LmsAPI::ClientMessage request;
 
-			request.set_type( Remote::ClientMessage_Type_AudioCollectionRequest );
+			request.set_type( LmsAPI::ClientMessage_Type_AudioCollectionRequest );
 
-			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest_Type_TypeGetTrackList);
+			request.mutable_audio_collection_request()->set_type( LmsAPI::AudioCollectionRequest_Type_TypeGetTrackList);
 			request.mutable_audio_collection_request()->mutable_get_tracks()->mutable_batch_parameter()->set_size(size);
 			request.mutable_audio_collection_request()->mutable_get_tracks()->mutable_batch_parameter()->set_offset(offset);
 			SearchFilterToRequest(filter, *request.mutable_audio_collection_request()->mutable_get_tracks()->mutable_search_filter());
@@ -367,7 +367,7 @@ class TestClient
 			sendMsg(request);
 
 			// Receive responses
-			Remote::ServerMessage response;
+			LmsAPI::ServerMessage response;
 			recvMsg(response);
 
 			// Process message
@@ -379,7 +379,7 @@ class TestClient
 
 			for (int i = 0; i < response.audio_collection_response().track_list().tracks_size(); ++i)
 			{
-				const Remote::AudioCollectionResponse_Track& respTrack = response.audio_collection_response().track_list().tracks(i);;
+				const LmsAPI::AudioCollectionResponse_Track& respTrack = response.audio_collection_response().track_list().tracks(i);;
 
 				TrackInfo track;
 				track.id = respTrack.id();
@@ -426,18 +426,18 @@ class TestClient
 		void getCoverTrack(std::vector<Cover>& coverArt, uint64_t trackId)
 		{
 			// Send request
-			Remote::ClientMessage request;
+			LmsAPI::ClientMessage request;
 
-			request.set_type( Remote::ClientMessage::AudioCollectionRequest );
+			request.set_type( LmsAPI::ClientMessage::AudioCollectionRequest );
 
-			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest::TypeGetCoverArt);
-			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_type( Remote::AudioCollectionRequest::GetCoverArt::TypeGetCoverArtTrack);
+			request.mutable_audio_collection_request()->set_type( LmsAPI::AudioCollectionRequest::TypeGetCoverArt);
+			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_type( LmsAPI::AudioCollectionRequest::GetCoverArt::TypeGetCoverArtTrack);
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_track_id( trackId );
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_size( 256 );
 			sendMsg(request);
 
 			// Receive responses
-			Remote::ServerMessage response;
+			LmsAPI::ServerMessage response;
 			recvMsg(response);
 
 			// Process message
@@ -457,19 +457,19 @@ class TestClient
 		void getCoverRelease(std::vector<Cover>& coverArt, uint64_t releaseId)
 		{
 			// Send request
-			Remote::ClientMessage request;
+			LmsAPI::ClientMessage request;
 
-			request.set_type( Remote::ClientMessage::AudioCollectionRequest );
+			request.set_type( LmsAPI::ClientMessage::AudioCollectionRequest );
 
-			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest::TypeGetCoverArt);
-			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_type( Remote::AudioCollectionRequest::GetCoverArt::TypeGetCoverArtRelease);
+			request.mutable_audio_collection_request()->set_type( LmsAPI::AudioCollectionRequest::TypeGetCoverArt);
+			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_type( LmsAPI::AudioCollectionRequest::GetCoverArt::TypeGetCoverArtRelease);
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_release_id( releaseId );
 			request.mutable_audio_collection_request()->mutable_get_cover_art()->set_size( 256 );
 
 			sendMsg(request);
 
 			// Receive responses
-			Remote::ServerMessage response;
+			LmsAPI::ServerMessage response;
 			recvMsg(response);
 
 			// Process message
@@ -490,16 +490,16 @@ class TestClient
 		std::string getRevision(void)
 		{
 			// Send request
-			Remote::ClientMessage request;
+			LmsAPI::ClientMessage request;
 
-			request.set_type( Remote::ClientMessage::AudioCollectionRequest );
+			request.set_type( LmsAPI::ClientMessage::AudioCollectionRequest );
 
-			request.mutable_audio_collection_request()->set_type( Remote::AudioCollectionRequest::TypeGetRevision);
+			request.mutable_audio_collection_request()->set_type( LmsAPI::AudioCollectionRequest::TypeGetRevision);
 
 			sendMsg(request);
 
 			// Receive responses
-			Remote::ServerMessage response;
+			LmsAPI::ServerMessage response;
 			recvMsg(response);
 
 			// Process message
@@ -515,18 +515,18 @@ class TestClient
 		bool login(const std::string& username, const std::string& password)
 		{
 			// Send request
-			Remote::ClientMessage request;
+			LmsAPI::ClientMessage request;
 
-			request.set_type( Remote::ClientMessage::AuthRequest );
+			request.set_type( LmsAPI::ClientMessage::AuthRequest );
 
-			request.mutable_auth_request()->set_type( Remote::AuthRequest::TypePassword);
+			request.mutable_auth_request()->set_type( LmsAPI::AuthRequest::TypePassword);
 			request.mutable_auth_request()->mutable_password()->set_user_login( username );
 			request.mutable_auth_request()->mutable_password()->set_user_password( password );
 
 			sendMsg(request);
 
 			// Receive responses
-			Remote::ServerMessage response;
+			LmsAPI::ServerMessage response;
 			recvMsg(response);
 
 			// Process message
@@ -538,11 +538,11 @@ class TestClient
 
 			switch( response.auth_response().password_result().type())
 			{
-				case Remote::AuthResponse::PasswordResult::TypePasswordValid:
+				case LmsAPI::AuthResponse::PasswordResult::TypePasswordValid:
 					return true;
-				case Remote::AuthResponse::PasswordResult::TypePasswordInvalid:
+				case LmsAPI::AuthResponse::PasswordResult::TypePasswordInvalid:
 					return false;
-				case Remote::AuthResponse::PasswordResult::TypeLoginThrottling:
+				case LmsAPI::AuthResponse::PasswordResult::TypeLoginThrottling:
 					if (response.auth_response().password_result().has_delay())
 						std::cerr << "Has to wait for " << response.auth_response().password_result().delay()  << " seconds" << std::endl;
 
@@ -571,24 +571,24 @@ class TestClient
 		{
 
 			// Send request
-			Remote::ClientMessage request;
+			LmsAPI::ClientMessage request;
 
-			request.set_type( Remote::ClientMessage_Type_MediaRequest);
+			request.set_type( LmsAPI::ClientMessage_Type_MediaRequest);
 
-			request.mutable_media_request()->set_type( Remote::MediaRequest_Type_TypeMediaPrepare);
-			request.mutable_media_request()->mutable_prepare()->set_type(Remote::MediaRequest_Prepare_Type_AudioRequest);
+			request.mutable_media_request()->set_type( LmsAPI::MediaRequest_Type_TypeMediaPrepare);
+			request.mutable_media_request()->mutable_prepare()->set_type(LmsAPI::MediaRequest_Prepare_Type_AudioRequest);
 
 			// Set fields
 			request.mutable_media_request()->mutable_prepare()->mutable_audio()->set_track_id( audioId );
-			request.mutable_media_request()->mutable_prepare()->mutable_audio()->set_codec_type( Remote::MediaRequest::Prepare::AudioCodecTypeOGA );
-			request.mutable_media_request()->mutable_prepare()->mutable_audio()->set_bitrate( Remote::MediaRequest::Prepare::AudioBitrate_64_kbps );
+			request.mutable_media_request()->mutable_prepare()->mutable_audio()->set_codec_type( LmsAPI::MediaRequest::Prepare::AudioCodecTypeOGA );
+			request.mutable_media_request()->mutable_prepare()->mutable_audio()->set_bitrate( LmsAPI::MediaRequest::Prepare::AudioBitrate_64_kbps );
 
 			std::cout << "Sending prepare request" << std::endl;
 			sendMsg(request);
 
 			std::cout << "Waiting for response" << std::endl;
 			// Receive response
-			Remote::ServerMessage response;
+			LmsAPI::ServerMessage response;
 			recvMsg(response);
 
 			std::cout << "Got a response" << std::endl;
@@ -616,11 +616,11 @@ class TestClient
 		std::size_t mediaGetPart(uint32_t handle, std::vector<unsigned char>& data)
 		{
 			// Send request
-			Remote::ClientMessage request;
+			LmsAPI::ClientMessage request;
 
-			request.set_type( Remote::ClientMessage::MediaRequest);
+			request.set_type( LmsAPI::ClientMessage::MediaRequest);
 
-			request.mutable_media_request()->set_type( Remote::MediaRequest::TypeMediaGetPart);
+			request.mutable_media_request()->set_type( LmsAPI::MediaRequest::TypeMediaGetPart);
 			request.mutable_media_request()->mutable_get_part()->set_handle(handle);
 			request.mutable_media_request()->mutable_get_part()->set_requested_data_size(65536);
 
@@ -629,7 +629,7 @@ class TestClient
 
 			std::cout << "Waiting for response" << std::endl;
 			// Receive response
-			Remote::ServerMessage response;
+			LmsAPI::ServerMessage response;
 			recvMsg(response);
 
 			std::cout << "Got a response" << std::endl;
@@ -638,7 +638,7 @@ class TestClient
 				throw std::runtime_error("not an media response");
 
 			// Process message
-			if (response.media_response().type() != Remote::MediaResponse::TypePartResult)
+			if (response.media_response().type() != LmsAPI::MediaResponse::TypePartResult)
 				throw std::runtime_error("GetPart: not a Part response!");
 
 			if (!response.media_response().has_part_result())
@@ -652,17 +652,17 @@ class TestClient
 		void mediaTerminate( uint32_t handle )
 		{
 			// Send request
-			Remote::ClientMessage request;
+			LmsAPI::ClientMessage request;
 
-			request.set_type( Remote::ClientMessage::MediaRequest);
+			request.set_type( LmsAPI::ClientMessage::MediaRequest);
 
-			request.mutable_media_request()->set_type( Remote::MediaRequest::TypeMediaTerminate);
+			request.mutable_media_request()->set_type( LmsAPI::MediaRequest::TypeMediaTerminate);
 			request.mutable_media_request()->mutable_terminate()->set_handle(handle);
 
 			sendMsg(request);
 
 			// Receive response
-			Remote::ServerMessage response;
+			LmsAPI::ServerMessage response;
 			recvMsg(response);
 
 
@@ -684,18 +684,18 @@ class TestClient
 			if (message.SerializeToOstream(&os))
 			{
 
-				if (_outputStreamBuf.size() > Remote::Header::max_data_size)
+				if (_outputStreamBuf.size() > LmsAPI::Header::max_data_size)
 				{
-					std::ostringstream oss; oss << "Message too big = " << _outputStreamBuf.size() << " bytes! (max is " << Remote::Header::max_data_size << ")" << std::endl;
+					std::ostringstream oss; oss << "Message too big = " << _outputStreamBuf.size() << " bytes! (max is " << LmsAPI::Header::max_data_size << ")" << std::endl;
 					throw std::runtime_error("Message to big!");
 				}
 
 				// Send message header
-				std::array<unsigned char, Remote::Header::size> headerBuffer;
+				std::array<unsigned char, LmsAPI::Header::size> headerBuffer;
 
 				// Generate header content
 				{
-					Remote::Header header;
+					LmsAPI::Header header;
 					header.setDataSize(_outputStreamBuf.size());
 					header.to_buffer(headerBuffer);
 				}
@@ -725,18 +725,18 @@ class TestClient
 
 			{
 				// reserve bytes in output sequence
-				boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(Remote::Header::size);
+				boost::asio::streambuf::mutable_buffers_type bufs = _inputStreamBuf.prepare(LmsAPI::Header::size);
 
 				std::size_t n = boost::asio::read(_socket,
 									bufs,
-									boost::asio::transfer_exactly(Remote::Header::size));
+									boost::asio::transfer_exactly(LmsAPI::Header::size));
 
-				assert(n == Remote::Header::size);
+				assert(n == LmsAPI::Header::size);
 				_inputStreamBuf.commit(n);
 
 			}
 
-			Remote::Header header;
+			LmsAPI::Header header;
 			if (!header.from_istream(is))
 				throw std::runtime_error("Cannot read header from buffer!");
 
