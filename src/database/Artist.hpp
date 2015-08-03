@@ -33,8 +33,9 @@ namespace Database
 
 class Track;
 class Genre;
+class Release;
 
-class Artist
+class Artist : public Wt::Dbo::Dbo<Artist>
 {
 	public:
 
@@ -57,6 +58,9 @@ class Artist
 		// Accessors
 		std::string getName(void) const { return _name; }
 		std::string getMBID(void) const { return _MBID; }
+
+		// Get the releases that have at least one track for this artist
+		std::vector<Wt::Dbo::ptr<Release> >	getReleases();
 
 		void setMBID(std::string mbid) { _MBID = mbid; }
 

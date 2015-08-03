@@ -630,19 +630,15 @@ void
 Updater::checkAudioFiles( Stats& stats )
 {
 
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking audio files...";
+	LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Checking audio files...";
 	Wt::Dbo::Transaction transaction(_db.getSession());
 
 	std::vector<boost::filesystem::path> rootDirs = getRootDirectoriesByType(_db.getSession(), Database::MediaDirectory::Audio);
 
 	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking tracks...";
-	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Track> > Tracks;
-	Tracks tracks = Track::getAll(_db.getSession());
-
-	for (Tracks::iterator it = tracks.begin(); it != tracks.end(); ++it)
+	auto tracks = Track::getAll(_db.getSession());
+	for (auto track : tracks)
 	{
-		Track::pointer track = (*it);
-
 		if (!checkFile(track->getPath(), rootDirs, _audioExtensions))
 		{
 			track.remove();
@@ -651,20 +647,34 @@ Updater::checkAudioFiles( Stats& stats )
 	}
 
 	// Now process orphan Genre (no track)
-/*	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking Genres...";
-	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Genre> > Genres;
-	Genres genres = Genre::getAll(_db.getSession());
-
-	for (Genres::iterator it = genres.begin(); it != genres.end(); ++it)
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking Genres...";
+	auto genres = Genre::getAll(_db.getSession());
+	for (auto genre : genres)
 	{
-		Genre::pointer genre = (*it);
-
 		if (genre->getTracks().size() == 0)
+		{
+			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Removing orphan genre '" << genre->getName() << "'";
 			genre.remove();
+		}
 	}
-*/
 
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Check audio files done!";
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking artists...";
+	auto artists = Artist::getAllOrphans(_db.getSession());
+	for (auto artist : artists)
+	{
+		LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Removing orphan artist '" << artist->getName() << "'";
+		artist.remove();
+	}
+
+	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking releases...";
+	auto releases = Release::getAllOrphans(_db.getSession());
+	for (auto release : releases)
+	{
+		LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Removing orphan release '" << release->getName() << "'";
+		release.remove();
+	}
+
+	LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Check audio files done!";
 }
 
 void
