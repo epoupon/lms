@@ -47,7 +47,7 @@ AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 	// see if this request is for a continuation:
 	Wt::Http::ResponseContinuation *continuation = request.continuation();
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Handling new request. Continuation = " << std::boolalpha << continuation;
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Handling new request. Continuation = " << continuation;
 
 	std::shared_ptr<Transcode::AvConvTranscoder> transcoder;
 	if (continuation)

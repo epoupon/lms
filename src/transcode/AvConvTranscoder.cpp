@@ -164,6 +164,7 @@ AvConvTranscoder::AvConvTranscoder(const Parameters& parameters)
 					boost::process::initializers::set_cmd_line(oss.str()),
 					boost::process::initializers::bind_stdout(sink),
 					boost::process::initializers::close_fd(STDIN_FILENO),
+					boost::process::initializers::close_fd(STDERR_FILENO),
 					boost::process::initializers::close_fds(ranges)
 					)
 				);
