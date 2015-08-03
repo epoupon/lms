@@ -17,16 +17,26 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <boost/foreach.hpp>
-
 #include "logger/Logger.hpp"
+#include "config/ConfigReader.hpp"
 #include "av/InputFormatContext.hpp"
 
 #include "CoverArtGrabber.hpp"
 
 
 namespace {
+
+std::vector<std::string> splitStrings(const std::string& source)
+{
+	std::vector<std::string> res;
+	std::istringstream oss(source);
+
+	std::string str;
+	while(oss >> str)
+		res.push_back(str);
+
+	return res;
+}
 
 bool
 isFileSupported(const boost::filesystem::path& file, const std::vector<boost::filesystem::path> extensions)
@@ -58,12 +68,12 @@ Grabber::instance()
 }
 
 void
-Grabber::init(const Config& config)
+Grabber::init()
 {
-	for (auto extension : config.fileExtensions)
+	for (const std::string& extension : splitStrings( ConfigReader::instance().getString("main.cover.file_extensions")))
 		_fileExtensions.push_back("." + extension);
 
-	_maxFileSize = config.maxFileSize;
+	_maxFileSize = ConfigReader::instance().getULong("main.cover.file_max_size");
 }
 
 std::vector<CoverArt>
@@ -75,7 +85,7 @@ Grabber::getFromInputFormatContext(const Av::InputFormatContext& input, std::siz
 	{
 		std::vector<Av::Picture> pictures = input.getPictures(nbMaxCovers);
 
-		BOOST_FOREACH(const Av::Picture& picture, pictures)
+		for (Av::Picture& picture : pictures)
 			res.push_back( CoverArt(picture.mimeType, picture.data) );
 
 	}

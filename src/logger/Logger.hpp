@@ -65,15 +65,8 @@ class Logger
 
 		static Logger& instance();
 
-		struct Config {
-			bool		enableFileLogging;
-			bool		enableConsoleLogging;
-			std::string	logPath;
-			Severity	minSeverity;
-		};
-
 		//[ example_tutorial_file_advanced
-		void init(const Config& config);
+		void init();
 
 		boost::log::sources::severity_logger< Severity >&
 			get(Module module);

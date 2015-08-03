@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/foreach.hpp>
-
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
@@ -36,6 +34,8 @@
 #include <boost/log/attributes/named_scope.hpp>
 
 #include <boost/date_time/posix_time/ptime.hpp>
+
+#include "config/ConfigReader.hpp"
 
 
 #include "Logger.hpp"
@@ -64,7 +64,7 @@ Logger::Logger()
 		MOD_UI,
 	};
 
-	BOOST_FOREACH(Module module, modules)
+	for(Module module : modules)
 		_loggers[module].add_attribute("Module", boost::log::attributes::constant< Module >(module));
 }
 
@@ -74,19 +74,18 @@ Logger::get(Module module)
 	return _loggers[module];
 }
 
-
 void
-Logger::init(const Config& config)
+Logger::init()
 {
 	boost::log::add_common_attributes();
 
 	boost::log::register_simple_formatter_factory< Severity, char >("Severity");
 
-	if (config.enableFileLogging)
+	if (ConfigReader::instance().getBool("main.logger.file.enable"))
 	{
 		boost::log::add_file_log
 			(
-			 boost::log::keywords::file_name = config.logPath + std::string(".%N"),
+			 boost::log::keywords::file_name = ConfigReader::instance().getString("main.logger.file.path") + std::string(".%N"),
 			 boost::log::keywords::rotation_size = 10 * 1024 * 1024,
 			 boost::log::keywords::open_mode = std::ios_base::app,
 			 boost::log::keywords::auto_flush = true,
@@ -100,7 +99,7 @@ Logger::init(const Config& config)
 			);
 	}
 
-	if (config.enableConsoleLogging)
+	if (ConfigReader::instance().getBool("main.logger.console.enable"))
 	{
 		boost::log::add_console_log(std::cout,
 				boost::log::keywords::format = (
@@ -115,7 +114,7 @@ Logger::init(const Config& config)
 
 	boost::log::core::get()->set_filter
 		(
-		 boost::log::expressions::attr<Severity>("Severity") <= config.minSeverity
+		 boost::log::expressions::attr<Severity>("Severity") <= ConfigReader::instance().getULong("main.logger.level")
 		);
 
 }

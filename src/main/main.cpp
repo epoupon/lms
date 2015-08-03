@@ -20,11 +20,11 @@
 #include <boost/filesystem.hpp>
 
 #include "config/config.h"
-#include "logger/Logger.hpp"
-
 #include "config/ConfigReader.hpp"
 #include "transcode/AvConvTranscoder.hpp"
 #include "av/Common.hpp"
+#include "logger/Logger.hpp"
+#include "cover/CoverArtGrabber.hpp"
 
 #include "service/ServiceManager.hpp"
 #include "service/DatabaseUpdateService.hpp"
@@ -61,28 +61,10 @@ int main(int argc, char* argv[])
 			return EXIT_FAILURE;
 		}
 
-		ConfigReader configReader(configFile);
+		ConfigReader::instance().setFile(configFile);
 
-		// Initializa logging facility
-		{
-			Logger::Config loggerConfig;
-			configReader.getLoggerConfig(loggerConfig);
-			Logger::instance().init(loggerConfig);
-		}
-
-		{
-			CoverArt::Grabber::Config config;
-			configReader.getCoverGrabberConfig(config);
-			CoverArt::Grabber::instance().init(config);
-		}
-
-		LMS_LOG(MOD_MAIN, SEV_INFO) << "Reading service configurations...";
-
-		Service::DatabaseUpdateService::Config dbUpdateConfig;
-		configReader.getDatabaseUpdateConfig(dbUpdateConfig);
-
-		Service::UserInterfaceService::Config uiConfig;
-		configReader.getUserInterfaceConfig(uiConfig);
+		Logger::instance().init();
+		CoverArt::Grabber::instance().init();
 
 		Service::ServiceManager& serviceManager = Service::ServiceManager::instance();
 
@@ -93,19 +75,11 @@ int main(int argc, char* argv[])
 
 		LMS_LOG(MOD_MAIN, SEV_INFO) << "Starting services...";
 
-		if (dbUpdateConfig.enable)
-			serviceManager.startService( std::make_shared<Service::DatabaseUpdateService>( dbUpdateConfig ) );
-
+		serviceManager.startService( std::make_shared<Service::DatabaseUpdateService>() );
+		serviceManager.startService( std::make_shared<Service::UserInterfaceService>(boost::filesystem::path(argv[0])));
 #if defined HAVE_LMSAPI
-		Service::LmsAPIService::Config lmsAPIConfig;
-		configReader.getLmsAPIConfig(lmsAPIConfig);
-
-		if (lmsAPIConfig.enable)
-			serviceManager.startService( std::make_shared<Service::LmsAPIService>( lmsAPIConfig ));
+		serviceManager.startService( std::make_shared<Service::LmsAPIService>( ));
 #endif
-
-		if (uiConfig.enable)
-			serviceManager.startService( std::make_shared<Service::UserInterfaceService>(boost::filesystem::path(argv[0]), uiConfig));
 
 		LMS_LOG(MOD_MAIN, SEV_NOTICE) << "Now running...";
 

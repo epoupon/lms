@@ -23,40 +23,27 @@
 #include <boost/filesystem.hpp>
 #include <libconfig.h++>
 
-#include "config/config.h"
-
-#include "cover/CoverArtGrabber.hpp"
-#include "logger/Logger.hpp"
-
-#include "service/UserInterfaceService.hpp"
-#include "service/DatabaseUpdateService.hpp"
-#if defined HAVE_LMSAPI
-#include "service/LmsAPIServerService.hpp"
-#endif
-
 class ConfigReader
 {
 	public:
 
-		ConfigReader(boost::filesystem::path p);
+		ConfigReader(const ConfigReader&) = delete;
+		ConfigReader& operator=(const ConfigReader&) = delete;
 
-		// Logger configuration
-		void getLoggerConfig(Logger::Config& config);
+		static ConfigReader& instance();
 
-		// Covers
-		void getCoverGrabberConfig(CoverArt::Grabber::Config& config);
+		void		setFile(boost::filesystem::path p);
 
-		// Service configurations
-		void getUserInterfaceConfig(Service::UserInterfaceService::Config& config);
-		void getDatabaseUpdateConfig(Service::DatabaseUpdateService::Config& config);
-
-#if defined HAVE_LMSAPI
-		void getLmsAPIConfig(Service::LmsAPIService::Config& config);
-#endif
+		std::string	getString(std::string setting);
+		unsigned long	getULong(std::string setting);
+		long		getLong(std::string setting);
+		bool		getBool(std::string setting);
 
 	private:
 
-		libconfig::Config	_config;
+		ConfigReader();
+
+		libconfig::Config	*_config;
 };
 
 #endif
