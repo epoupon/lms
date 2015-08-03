@@ -1,19 +1,12 @@
 
-[ServiceManager]
-- Rework the whole start/stop/try/cach/thread/interrupts things
-- Use our own WIOService
-
-[Services]
-- consider adding support for external web servers (new FCGI service?)
-
-[Users]
-- Handle login lifetime?
-- Limit multi login from UI and remote interfaces (limit per interface is acceptable)
+[Book]
+- Make the feature
 
 [Cover]
 - Scaling: find something more "reliable" than GIL and its custom extensions (adobe work, io_new)?
 - Handle several file formats (not only jpg)
 - Handle preferred cover file names
+- Implement a cache and a grabber from some web service (mandatory for artists)
 
 [Database]
 - Optim, use SQL query to get the "genre" orphans
@@ -24,8 +17,22 @@
 [Metadata]
 - OGG metadata -> properly handle metadata nested in the audio stream
 
+[Playlist]
+- Make public playlists so that users can see what other people are listening to
+
+[Users]
+- Handle login lifetime?
+- Limit multi login from UI and remote interfaces (limit per interface is acceptable)
+
+[ServiceManager]
+- Rework the whole start/stop/try/cach/thread/interrupts things
+- Use our own WIOService
+
+[Services]
+- consider adding support for external web servers (new FCGI service?)
+
 [Transcode]
-- some early end of playback spotted on flac files. Spotted on old firefox versions?
+- some early end of playback spotted on files. Maybe this is because the stderr of the forked process is not properly closed?
 
 [UI]
 	- handle internationalization
@@ -44,9 +51,10 @@
 
 	[Audio]
 	- Style eveything nicely...
-	- MediaPlayer: move the slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478)
-	- TrackView : handle durations > 1 hour
-	- TrackView : Reselect the current selected item when displaying the updated search results
+	- MediaPlayer: move the slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478, http://redmine.emweb.be/boards/2/topics/10994)
+	- TrackView: handle durations > 1 hour
+	- TrackView: Reselect the current selected item when displaying the updated search results
+	- TrackView: display the total duration of the track query
 	- Add covers in the release filter?
 	- Add a download button to get the current playlist in a streamed zip file
 	- Add a upload button to upload media files in a dedicated directory
@@ -65,7 +73,7 @@
 - Implement partial text search options in the GetXXX messages
 
 [REST API]
-- Make another dedicated REST API. Maybe use the SubSonic API?
+- Make another dedicated REST API. Maybe use the SubSonic API or Ampache API?
 
 [Logs]
 - Capture transcoder log output to get more information on errors
