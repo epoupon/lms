@@ -152,11 +152,10 @@ Genre::Genre(const std::string& name)
 {
 }
 
-std::vector<Genre::pointer>
-Genre::getAll(Wt::Dbo::Session& session, int offset, int size)
+Wt::Dbo::collection<Genre::pointer>
+Genre::getAll(Wt::Dbo::Session& session)
 {
-	Wt::Dbo::collection<pointer> res = session.find<Genre>().offset(offset).limit(size);
-	return std::vector<Genre::pointer>(res.begin(), res.end());
+	return session.find<Genre>();
 }
 
 Genre::pointer

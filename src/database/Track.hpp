@@ -52,7 +52,7 @@ class Genre
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getNone(Wt::Dbo::Session& session);
 		static std::vector<pointer> getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
-		static std::vector<pointer> getAll(Wt::Dbo::Session& session, int offset = -1, int size = -1);
+		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session);
 
 		// MVC models for the user interface
 		// Genre ID, name, track count
