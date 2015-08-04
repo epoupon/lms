@@ -55,12 +55,17 @@ class TrackView : public Wt::WTableView, public Filter
 		void getTracks(std::vector<Database::Track::id_type>& track_ids);
 
 		typedef Wt::Signal<void> SigTrackDoubleClicked;
+		typedef Wt::Signal<Wt::WString> SigStatsUpdated;
 
 		SigTrackDoubleClicked&	trackDoubleClicked() { return _sigTrackDoubleClicked; }
+		SigStatsUpdated&	statsUpdated() { return _sigStatsUpdated; }
 
 	private:
 
 		SigTrackDoubleClicked	_sigTrackDoubleClicked;
+		SigStatsUpdated		_sigStatsUpdated;
+
+		void emitStats(const Database::SearchFilter& filter);
 
 		typedef Database::Track::UIQueryResult  ResultType;
 		Wt::Dbo::QueryModel< ResultType >	_queryModel;

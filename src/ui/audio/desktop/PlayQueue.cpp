@@ -501,7 +501,7 @@ PlayQueue::delSelected(void)
 	int minId = _model->rowCount();
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
-	BOOST_REVERSE_FOREACH(Wt::WModelIndex index, indexSet)
+	for (Wt::WModelIndex index : indexSet)
 	{
 		_model->removeRow(index.row());
 		if (index.row() < minId)
