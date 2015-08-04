@@ -157,15 +157,12 @@ AvConvTranscoder::AvConvTranscoder(const Parameters& parameters)
 	// See boost process FAQ
 	{
 		boost::lock_guard<boost::mutex>	lock(_mutex);
-		std::vector<int> ranges = { 3, 1024 };	// fd range to be closed
 
 		_child = std::make_shared<boost::process::child>( boost::process::execute(
 					boost::process::initializers::run_exe(_avConvPath),
 					boost::process::initializers::set_cmd_line(oss.str()),
 					boost::process::initializers::bind_stdout(sink),
-					boost::process::initializers::close_fd(STDIN_FILENO),
-					boost::process::initializers::close_fd(STDERR_FILENO),
-					boost::process::initializers::close_fds(ranges)
+					boost::process::initializers::close_fds_if([](int fd) { return fd != STDOUT_FILENO;})
 					)
 				);
 	}
