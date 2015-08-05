@@ -501,12 +501,17 @@ PlayQueue::delSelected(void)
 	int minId = _model->rowCount();
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
+	// Make sure to delete entries in the reverse order
+	std::vector<int> rowIds;
 	for (Wt::WModelIndex index : indexSet)
-	{
-		_model->removeRow(index.row());
-		if (index.row() < minId)
-			minId = index.row();
-	}
+		rowIds.push_back(index.row());
+
+	std::sort(rowIds.begin(), rowIds.end(), std::greater<int>());
+	if (!rowIds.empty())
+		minId = rowIds.back();
+
+	for (int rowId : rowIds)
+		_model->removeRow(rowId);
 
 	// If the current played track is removed, make sure to unselect it
 	_trackSelector->setSize(_model->rowCount());
