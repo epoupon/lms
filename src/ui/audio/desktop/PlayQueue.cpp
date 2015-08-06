@@ -291,6 +291,8 @@ _trackSelector(new TrackSelector())
 	this->setColumnWidth(COLUMN_ID_NAME, 240);
 
 	this->setLayoutSizeAware(true);
+	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
+	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
 
 	this->setColumnHidden(COLUMN_ID_TRACK_ID, true);
 
@@ -501,12 +503,17 @@ PlayQueue::delSelected(void)
 	int minId = _model->rowCount();
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
-	BOOST_REVERSE_FOREACH(Wt::WModelIndex index, indexSet)
-	{
-		_model->removeRow(index.row());
-		if (index.row() < minId)
-			minId = index.row();
-	}
+	// Make sure to delete entries in the reverse order
+	std::vector<int> rowIds;
+	for (Wt::WModelIndex index : indexSet)
+		rowIds.push_back(index.row());
+
+	std::sort(rowIds.begin(), rowIds.end(), std::greater<int>());
+	if (!rowIds.empty())
+		minId = rowIds.back();
+
+	for (int rowId : rowIds)
+		_model->removeRow(rowId);
 
 	// If the current played track is removed, make sure to unselect it
 	_trackSelector->setSize(_model->rowCount());

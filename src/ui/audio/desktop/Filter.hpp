@@ -30,14 +30,6 @@ namespace Desktop {
 class Filter
 {
 	public:
-
-		struct Constraint {
-			std::vector<std::string>	search;
-
-			typedef std::map<std::string,    std::vector<std::string> > ColumnValues;
-			ColumnValues	columnValues;
-		};
-
 		Filter() {}
 		virtual ~Filter() {}
 

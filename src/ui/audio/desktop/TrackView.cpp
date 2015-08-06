@@ -17,9 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <boost/foreach.hpp>
-
 #include <Wt/WItemDelegate>
 #include <Wt/WBreak>
 
@@ -30,6 +27,8 @@
 
 namespace UserInterface {
 namespace Desktop {
+
+using namespace Database;
 
 TrackView::TrackView(Wt::WContainerWidget* parent)
 : Wt::WTableView( parent )
@@ -48,9 +47,9 @@ TrackView::TrackView(Wt::WContainerWidget* parent)
 		"Genres",
 	};
 
-	Database::SearchFilter filter;
+	SearchFilter filter;
 
-	Database::Track::updateUIQueryModel(DboSession(), _queryModel, filter, columnNames);
+	Track::updateUIQueryModel(DboSession(), _queryModel, filter, columnNames);
 
 	_queryModel.setBatchSize(300);
 
@@ -68,7 +67,7 @@ TrackView::TrackView(Wt::WContainerWidget* parent)
 	this->setColumnWidth(6, 70);	// Date
 	this->setColumnWidth(7, 70);	// Original Date
 	this->setColumnWidth(8, 180);	// Genres
-//	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
 
 	// Duration display
 	{
@@ -107,15 +106,47 @@ TrackView::TrackView(Wt::WContainerWidget* parent)
 
 }
 
+void
+TrackView::emitStats(const SearchFilter& filter)
+{
+	Wt::Dbo::Transaction transaction (DboSession());
+
+	// Update stats on the view
+	Track::StatsQueryResult stats = Track::getStats(DboSession(), filter);
+
+	transaction.commit();
+
+	int nbTracks = stats.get<0>();
+	boost::posix_time::time_duration totalDuration = stats.get<1>();
+
+	std::ostringstream oss;
+
+	oss << nbTracks << " track" << (nbTracks > 1 ? "s" : "") << ", ";
+
+	if (totalDuration.hours() >= 24)
+	{
+		auto days = totalDuration.hours() / 24;
+		oss << days << " day" << (days > 1 ? "s " : " ");
+	}
+
+	oss << std::setw(2) << std::setfill('0') << totalDuration.hours() % 24
+		<< ":" << std::setw(2) << std::setfill('0') << totalDuration.minutes()
+		<< ":" << std::setw(2) << std::setfill('0') << totalDuration.seconds();
+
+	_sigStatsUpdated.emit(Wt::WString(oss.str()));
+}
+
 // Set constraints created by parent filters
 void
-TrackView::refresh(Database::SearchFilter& filter)
+TrackView::refresh(SearchFilter& filter)
 {
-	Database::Track::updateUIQueryModel(DboSession(), _queryModel, filter);
+	Track::updateUIQueryModel(DboSession(), _queryModel, filter);
+
+	emitStats(filter);
 }
 
 void
-TrackView::getSelectedTracks(std::vector<Database::Track::id_type>& track_ids)
+TrackView::getSelectedTracks(std::vector<Track::id_type>& track_ids)
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting selected tracks...";
 
@@ -126,7 +157,7 @@ TrackView::getSelectedTracks(std::vector<Database::Track::id_type>& track_ids)
 		if (!index.isValid())
 			continue;
 
-		Database::Track::id_type id = _queryModel.resultRow( index.row() ).get<0>();
+		Track::id_type id = _queryModel.resultRow( index.row() ).get<0>();
 
 		track_ids.push_back(id);
 	}
@@ -157,16 +188,16 @@ TrackView::getFirstSelectedTrackPosition(void)
 }
 
 void
-TrackView::getTracks(std::vector<Database::Track::id_type>& trackIds)
+TrackView::getTracks(std::vector<Track::id_type>& trackIds)
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all tracks...";
 
 	Wt::Dbo::Transaction transaction(DboSession());
-	Wt::Dbo::collection<Database::Track::UIQueryResult> results = _queryModel.query();
+	Wt::Dbo::collection<Track::UIQueryResult> results = _queryModel.query();
 
 	for (auto it = results.begin(); it != results.end(); ++it)
 	{
-		Database::Track::id_type id = it->get<0>();
+		Track::id_type id = it->get<0>();
 		trackIds.push_back(id);
 	}
 

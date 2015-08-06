@@ -19,9 +19,47 @@
 
 package LmsAPI;
 
-message Error
+message AuthRequest
 {
-	required bool	error	= 1;
-	optional string message	= 2;
+	message Password
+	{
+		required string	user_login	= 1;
+		required string	user_password	= 2;
+	}
+
+	enum Type
+	{
+		TypePassword		= 1;
+	}
+
+	required Type		type		= 1;
+
+	optional Password	password	= 2;
+}
+
+message AuthResponse
+{
+
+	message PasswordResult
+	{
+		enum Type
+		{
+			TypePasswordInvalid	= 1;
+			TypeLoginThrottling	= 2;	// The attempt was not processed because of throttling
+			TypePasswordValid	= 3;
+		}
+		required Type	type	= 1;
+
+		optional uint32	delay	= 2;	// in seconds, in case of PasswordInvalid/LoginThrottling
+	}
+
+	enum Type
+	{
+		TypePasswordResult	= 1;
+	}
+
+	required Type		type		= 1;
+
+	optional PasswordResult password_result = 2;
 }
 

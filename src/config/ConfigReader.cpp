@@ -23,89 +23,52 @@
 
 namespace {
 
-	void splitStrings(const std::string& source, std::vector<std::string>& res)
-	{
-		std::istringstream oss(source);
-
-		std::string str;
-		while(oss >> str)
-			res.push_back(str);
-	}
-
 }
 
-ConfigReader::ConfigReader(boost::filesystem::path p)
+ConfigReader::ConfigReader()
+: _config (nullptr)
 {
-	_config.readFile(p.string().c_str());
 }
 
-void
-ConfigReader::getLoggerConfig(Logger::Config& config)
+ConfigReader&
+ConfigReader::instance()
 {
-	config.enableFileLogging = _config.lookupValue("main.logger.file", config.logPath);
-	config.enableConsoleLogging = _config.lookup("main.logger.console");
-	config.minSeverity = static_cast<Severity>((int)_config.lookup("main.logger.level"));
+	static ConfigReader instance;
+	return instance;
 }
 
 void
-ConfigReader::getCoverGrabberConfig(CoverArt::Grabber::Config& config)
+ConfigReader::setFile(boost::filesystem::path p)
 {
-	std::string extensions = _config.lookup("main.cover.file_extensions");
-	config.maxFileSize = static_cast<unsigned int>(_config.lookup("main.cover.file_max_size"));
-	std::string filenames = _config.lookup("main.cover.file_preferred_names");
+	if (_config != nullptr)
+		delete _config;
 
-	splitStrings(extensions, config.fileExtensions);
-	splitStrings(filenames, config.preferredFileNames);
+	_config = new libconfig::Config();
+
+	_config->readFile(p.string().c_str());
 }
 
-void
-ConfigReader::getUserInterfaceConfig(Service::UserInterfaceService::Config& config)
+std::string
+ConfigReader::getString(std::string setting)
 {
-
-	config.enable = _config.lookup("ui.enable");
-	if (!config.enable)
-		return;
-
-	config.docRootPath = _config.lookup("ui.resources.docroot");
-	config.appRootPath = _config.lookup("ui.resources.approot");
-	config.httpsPort = static_cast<unsigned int>(_config.lookup("ui.listen-endpoint.port"));
-	config.httpsAddress = boost::asio::ip::address::from_string((const char*)_config.lookup("ui.listen-endpoint.addr"));
-	config.sslCertificatePath = _config.lookup("ui.ssl-crypto.cert");
-	config.sslPrivateKeyPath = _config.lookup("ui.ssl-crypto.key");
-	config.sslTempDhPath = _config.lookup("ui.ssl-crypto.dh");
-
-	config.dbPath = _config.lookup("main.database.path");
+	return _config->lookup(setting);
 }
 
-#if defined HAVE_LMSAPI
-void
-ConfigReader::getLmsAPIConfig(Service::LmsAPIService::Config& config)
+unsigned long
+ConfigReader::getULong(std::string setting)
 {
-	config.enable = _config.lookup("remote.enable");
-	if (!config.enable)
-		return;
-
-	config.port = static_cast<unsigned int>(_config.lookup("remote.listen-endpoint.port"));
-	config.address = boost::asio::ip::address::from_string((const char*)_config.lookup("remote.listen-endpoint.addr"));
-	config.sslCertificatePath = _config.lookup("remote.ssl-crypto.cert");
-	config.sslPrivateKeyPath = _config.lookup("remote.ssl-crypto.key");
-	config.sslTempDhPath = _config.lookup("remote.ssl-crypto.dh");
-
-	config.dbPath = _config.lookup("main.database.path");
+	return static_cast<unsigned int>(_config->lookup(setting));
 }
-#endif
 
-void
-ConfigReader::getDatabaseUpdateConfig(Service::DatabaseUpdateService::Config& config)
+long
+ConfigReader::getLong(std::string setting)
 {
-	config.enable = true;
+	return _config->lookup(setting);
+}
 
-	config.dbPath = _config.lookup("main.database.path");
-
-	std::string audioExtensions = _config.lookup("main.database.audio_extensions");
-	std::string videoExtensions = _config.lookup("main.database.video_extensions");
-
-	splitStrings(audioExtensions, config.audioExtensions);
-	splitStrings(videoExtensions, config.videoExtensions);
+bool
+ConfigReader::getBool(std::string setting)
+{
+	return _config->lookup(setting);
 }
 

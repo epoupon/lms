@@ -71,7 +71,7 @@ Release::getAll(Wt::Dbo::Session& session, int offset, int size)
 std::vector<Release::pointer>
 Release::getAllOrphans(Wt::Dbo::Session& session)
 {
-	Wt::Dbo::collection<Release::pointer> res = session.query< Wt::Dbo::ptr<Release> >("select a from artist a LEFT OUTER JOIN Track t ON a.id = t.artist_id WHERE t.id IS NULL");
+	Wt::Dbo::collection<Release::pointer> res = session.query< Wt::Dbo::ptr<Release> >("select r from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL");
 
 	return std::vector<pointer>(res.begin(), res.end());
 }
@@ -127,6 +127,18 @@ Release::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset,
 	Wt::Dbo::collection<pointer> res = getQuery(session, filter).limit(size).offset(offset);
 
 	return std::vector<pointer>(res.begin(), res.end());
+}
+
+std::vector< Wt::Dbo::ptr<Artist> >
+Release::getArtists() const
+{
+	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Release>::invalidId() );
+	assert(session());
+
+	Wt::Dbo::collection< Wt::Dbo::ptr<Artist> > res = session()->query<Wt::Dbo::ptr<Artist> >("SELECT a FROM artist a INNER JOIN release r ON r.id = t.release_id INNER JOIN track t ON t.release_id = r.id").where("r.id = ?").bind(id());
+
+	return std::vector< Wt::Dbo::ptr<Artist> > (res.begin(), res.end());
 }
 
 } // namespace Database

@@ -19,18 +19,32 @@
 
 #include <boost/thread.hpp>
 
+#include "config/ConfigReader.hpp"
 #include "logger/Logger.hpp"
 
 #include "DatabaseUpdateService.hpp"
 
+static std::vector<std::string> splitStrings(const std::string& source)
+{
+	std::vector<std::string> res;
+	std::istringstream oss(source);
+
+	std::string str;
+	while(oss >> str)
+		res.push_back(str);
+
+	return res;
+}
+
 namespace Service {
 
-DatabaseUpdateService::DatabaseUpdateService(const Config& config)
+DatabaseUpdateService::DatabaseUpdateService()
 : _metadataParser(),
- _databaseUpdater( config.dbPath, _metadataParser)
+ _databaseUpdater( ConfigReader::instance().getString("main.database.path"),
+		 _metadataParser)
 {
-	_databaseUpdater.setAudioExtensions(config.audioExtensions);
-	_databaseUpdater.setVideoExtensions(config.videoExtensions);
+	_databaseUpdater.setAudioExtensions(splitStrings(ConfigReader::instance().getString("main.database.audio_extensions")));
+	_databaseUpdater.setVideoExtensions(splitStrings(ConfigReader::instance().getString("main.database.video_extensions")));
 }
 
 void

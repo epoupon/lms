@@ -52,7 +52,7 @@ class Genre
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getNone(Wt::Dbo::Session& session);
 		static std::vector<pointer> getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
-		static std::vector<pointer> getAll(Wt::Dbo::Session& session, int offset = -1, int size = -1);
+		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session);
 
 		// MVC models for the user interface
 		// Genre ID, name, track count
@@ -105,10 +105,8 @@ class Track
 		static pointer getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
 		static pointer getById(Wt::Dbo::Session& session, id_type id);
 		static pointer getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
-		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
-
-		// Used for remote
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
+		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
 
 		// Utility fonctions
 		// MVC models for the user interface
@@ -126,6 +124,13 @@ class Track
 			UIQueryResult;
 		static Wt::Dbo::Query< UIQueryResult > getUIQuery(Wt::Dbo::Session& session, SearchFilter filter);
 		static void updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< UIQueryResult >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
+
+		// Stats for a given search filter
+		typedef boost::tuple<
+				int,		// Total tracks
+				boost::posix_time::time_duration // Total duration
+				> StatsQueryResult;
+		static StatsQueryResult getStats(Wt::Dbo::Session& session, SearchFilter filter);
 
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p);

@@ -102,14 +102,20 @@ _playQueue(nullptr)
 	Wt::WPushButton* addBtn = new Wt::WPushButton("Add");
 	addBtn->setStyleClass("btn-sm");
 	trackControls->addWidget(addBtn);
-	trackControls->addWidget(new Wt::WText("Total duration: "), 1);
 
+	Wt::WText *statsText = new Wt::WText();
+	statsText->setStyleClass("vertical-align");
+	trackControls->addWidget(statsText, 1);
+	_trackView->statsUpdated().connect(std::bind([=] (Wt::WString stats) {
+		statsText->setText(stats);
+	}, std::placeholders::_1));
 
 	trackLayout->addLayout(trackControls);
 
 	mainLayout->addLayout(trackLayout, 1, 1);
 
 	_filterChain.addFilter(_trackView);
+
 
 	_playQueue = new PlayQueue();
 
@@ -216,6 +222,9 @@ _playQueue(nullptr)
 
 
 	playlistRefreshMenus();
+
+	// Initially, search for everything
+	_filterChain.searchKeyword("");
 }
 
 void

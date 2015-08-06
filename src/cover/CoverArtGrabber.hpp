@@ -38,14 +38,7 @@ class Grabber
 
 		static Grabber& instance();
 
-		struct Config
-		{
-			std::vector<std::string> fileExtensions;
-			std::size_t maxFileSize;
-			std::vector<std::string> preferredFileNames;
-		};
-
-		void init(const Config& config);
+		void init();
 
 		std::vector<boost::filesystem::path>	getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t nbMaxCovers = 1) const;
 		std::vector<CoverArt>	getFromDirectory(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;

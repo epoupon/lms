@@ -2,9 +2,14 @@
 main = {
 
 	logger = {
-		file = "/var/lms/lms.log"	# comment to disable file logging
-		console = true;
-		level = 7;
+		level = 7;	# level common for all loggers
+		file = {
+			enable = true;
+			path = "/var/lms/lms.log";	# comment to disable file logging
+		}
+		console = {
+			enable = true;
+		}
 	}
 
 	database = {
@@ -16,15 +21,13 @@ main = {
 
 	cover = {
 		file_extensions = "jpg jpeg";
-		file_max_size = 500000;
+		file_max_size = 5000000;
 		file_preferred_names = "cover front";
 	}
 }
 
 
 ui = {
-	enable = true;
-
 	resources = {
 		docroot = "/var/lms/docroot"
 		approot = "/var/lms/approot"
@@ -44,8 +47,6 @@ ui = {
 }
 
 remote = {
-	enable = true;
-
 	nb-threads = 1;
 
 	listen-endpoint = {

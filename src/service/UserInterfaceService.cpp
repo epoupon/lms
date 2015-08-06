@@ -22,24 +22,23 @@
 #include "UserInterfaceService.hpp"
 #include "ui/LmsApplication.hpp"
 
+#include "config/ConfigReader.hpp"
+
 namespace Service {
 
-UserInterfaceService::UserInterfaceService( boost::filesystem::path runAppPath, const Config& config)
+UserInterfaceService::UserInterfaceService( boost::filesystem::path runAppPath)
 : _server(runAppPath.string())
 {
 	std::vector<std::string> args;
 
 	args.push_back(runAppPath.string());
-	args.push_back("--docroot=" + config.docRootPath.string());
-	args.push_back("--approot=" + config.appRootPath.string());
-	{
-		std::ostringstream oss; oss << config.httpsPort;
-		args.push_back("--https-port=" + oss.str());
-	}
-	args.push_back("--https-address=" + config.httpsAddress.to_string());
-	args.push_back("--ssl-certificate=" + config.sslCertificatePath.string());
-	args.push_back("--ssl-private-key=" + config.sslPrivateKeyPath.string());
-	args.push_back("--ssl-tmp-dh=" + config.sslTempDhPath.string());
+	args.push_back("--docroot=" + ConfigReader::instance().getString("ui.resources.docroot"));
+	args.push_back("--approot=" + ConfigReader::instance().getString("ui.resources.approot"));
+	args.push_back("--https-port=" + std::to_string( ConfigReader::instance().getULong("ui.listen-endpoint.port")));
+	args.push_back("--https-address=" + ConfigReader::instance().getString("ui.listen-endpoint.addr"));
+	args.push_back("--ssl-certificate=" + ConfigReader::instance().getString("ui.ssl-crypto.cert"));
+	args.push_back("--ssl-private-key=" + ConfigReader::instance().getString("ui.ssl-crypto.key"));
+	args.push_back("--ssl-tmp-dh=" + ConfigReader::instance().getString("ui.ssl-crypto.dh"));
 
 	// Construct argc/argv
 	int argc = args.size();
@@ -55,7 +54,7 @@ UserInterfaceService::UserInterfaceService( boost::filesystem::path runAppPath, 
 	_server.setServerConfiguration (argc, const_cast<char**>(argv));
 
 	// bind entry point
-	_server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, config.dbPath));
+	_server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, ConfigReader::instance().getString("main.database.path")));
 
 }
 

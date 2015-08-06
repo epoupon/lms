@@ -84,6 +84,18 @@ Artist::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, 
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+std::vector<Wt::Dbo::ptr<Release> >
+Artist::getReleases() const
+{
+	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );
+	assert(session());
+
+	Wt::Dbo::collection< Wt::Dbo::ptr<Release> > res = session()->query<Wt::Dbo::ptr<Release> >("SELECT r FROM release r INNER JOIN artist a ON t.artist_id = a.id INNER JOIN track t ON t.release_id = r.id").where("a.id = ?").bind(id());
+
+	return std::vector< Wt::Dbo::ptr<Release> > (res.begin(), res.end());
+}
+
 Wt::Dbo::Query<Artist::pointer>
 Artist::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
 {

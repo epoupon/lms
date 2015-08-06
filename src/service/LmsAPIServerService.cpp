@@ -17,18 +17,24 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <boost/asio/ip/address.hpp>
+
+#include "config/ConfigReader.hpp"
 #include "logger/Logger.hpp"
 
 #include "LmsAPIServerService.hpp"
 
 namespace Service {
 
-LmsAPIService::LmsAPIService(const Config& config)
-: _server(boost::asio::ip::tcp::endpoint(config.address, config.port),
-	config.sslCertificatePath,
-	config.sslPrivateKeyPath,
-	config.sslTempDhPath,
-	config.dbPath)
+LmsAPIService::LmsAPIService()
+: _server(
+	boost::asio::ip::tcp::endpoint(
+		boost::asio::ip::address::from_string(ConfigReader::instance().getString("remote.listen-endpoint.addr")),
+		ConfigReader::instance().getULong("remote.listen-endpoint.port")),
+	ConfigReader::instance().getString("remote.ssl-crypto.cert"),
+	ConfigReader::instance().getString("remote.ssl-crypto.key"),
+	ConfigReader::instance().getString("remote.ssl-crypto.dh"),
+	ConfigReader::instance().getString("main.database.path"))
 {
 }
 

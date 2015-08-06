@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/foreach.hpp>
-
 #include <Wt/WItemDelegate>
 
 #include "database/Types.hpp"
@@ -50,7 +48,10 @@ TableFilterGenre::TableFilterGenre(Wt::WContainerWidget* parent)
 
 	this->selectionChanged().connect(this, &TableFilterGenre::emitUpdate);
 
-	setLayoutSizeAware(true);
+	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
+	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+
+	this->setLayoutSizeAware(true);
 
 	_queryModel.setBatchSize(100);
 
@@ -122,7 +123,10 @@ TableFilterArtist::TableFilterArtist(Wt::WContainerWidget* parent)
 
 	this->selectionChanged().connect(this, &TableFilterArtist::emitUpdate);
 
-	setLayoutSizeAware(true);
+	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
+	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+
+	this->setLayoutSizeAware(true);
 
 	_queryModel.setBatchSize(100);
 
@@ -163,8 +167,8 @@ TableFilterArtist::getConstraint(SearchFilter& filter)
 {
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
-	BOOST_FOREACH(Wt::WModelIndex index, indexSet) {
-
+	for (Wt::WModelIndex index : indexSet)
+	{
 		if (!index.isValid())
 			continue;
 
@@ -200,7 +204,10 @@ TableFilterRelease::TableFilterRelease(Wt::WContainerWidget* parent)
 
 	this->selectionChanged().connect(this, &TableFilterRelease::emitUpdate);
 
-	setLayoutSizeAware(true);
+	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
+	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+
+	this->setLayoutSizeAware(true);
 
 	_queryModel.setBatchSize(100);
 

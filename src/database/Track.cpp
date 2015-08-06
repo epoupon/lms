@@ -113,6 +113,20 @@ Track::getUIQuery(Wt::Dbo::Session& session, SearchFilter filter)
 	return query;
 }
 
+Track::StatsQueryResult
+Track::getStats(Wt::Dbo::Session& session, SearchFilter filter)
+{
+	SqlQuery sqlQuery = generatePartialQuery(filter);
+
+	Wt::Dbo::Query<StatsQueryResult> query = session.query<StatsQueryResult>( "SELECT COUNT(DISTINCT t.id), SUM(t.duration) FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN genre g ON g.id = t_g.genre_id INNER JOIN track_genre t_g ON t_g.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get());
+
+	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
+		query.bind(bindArg);
+
+	return query;
+}
+
+
 std::vector<Track::pointer>
 Track::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
 {
@@ -152,11 +166,10 @@ Genre::Genre(const std::string& name)
 {
 }
 
-std::vector<Genre::pointer>
-Genre::getAll(Wt::Dbo::Session& session, int offset, int size)
+Wt::Dbo::collection<Genre::pointer>
+Genre::getAll(Wt::Dbo::Session& session)
 {
-	Wt::Dbo::collection<pointer> res = session.find<Genre>().offset(offset).limit(size);
-	return std::vector<Genre::pointer>(res.begin(), res.end());
+	return session.find<Genre>();
 }
 
 Genre::pointer
