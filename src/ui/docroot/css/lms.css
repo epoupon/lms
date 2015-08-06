@@ -14,31 +14,19 @@ div.contents {
 	padding: 0px 12px 6px;
 }
 
-.Wt-tableview .playqueue-playing {
-	color: #FFF;
-}
-
-.Wt-tableview div.playqueue-playing {
-	background-color: #4A42CA;
-}
-
-.Wt-tableview .Wt-tv-contents.Wt-striped div.playqueue-playing:nth-child(odd) {
-	background-color: #4A42CA;
-}
-
 .playqueue {
 	background-color: #EEE;
 	border-radius: 10px;
 }
 
 .playqueue-playing {
-	background-color: #4A42CA;
+	font-weight: bold;
 }
 
 .playqueue-track {
+	font-size: 120%;
 	margin-top: 12px;
 	line-height: normal;
-	font-weight: bold;
 }
 
 .playqueue-artist {
@@ -70,6 +58,7 @@ div.contents {
 
 .mediaplayer-current-track {
 	font-weight: bold;
+	font-size: 120%;
 }
 
 .mediaplayer-current-artist {
