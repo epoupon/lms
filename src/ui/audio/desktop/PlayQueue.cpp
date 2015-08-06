@@ -291,6 +291,8 @@ _trackSelector(new TrackSelector())
 	this->setColumnWidth(COLUMN_ID_NAME, 240);
 
 	this->setLayoutSizeAware(true);
+	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
+	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
 
 	this->setColumnHidden(COLUMN_ID_TRACK_ID, true);
 

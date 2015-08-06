@@ -48,7 +48,10 @@ TableFilterGenre::TableFilterGenre(Wt::WContainerWidget* parent)
 
 	this->selectionChanged().connect(this, &TableFilterGenre::emitUpdate);
 
-	setLayoutSizeAware(true);
+	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
+	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+
+	this->setLayoutSizeAware(true);
 
 	_queryModel.setBatchSize(100);
 
@@ -120,7 +123,10 @@ TableFilterArtist::TableFilterArtist(Wt::WContainerWidget* parent)
 
 	this->selectionChanged().connect(this, &TableFilterArtist::emitUpdate);
 
-	setLayoutSizeAware(true);
+	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
+	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+
+	this->setLayoutSizeAware(true);
 
 	_queryModel.setBatchSize(100);
 
@@ -198,7 +204,10 @@ TableFilterRelease::TableFilterRelease(Wt::WContainerWidget* parent)
 
 	this->selectionChanged().connect(this, &TableFilterRelease::emitUpdate);
 
-	setLayoutSizeAware(true);
+	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
+	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+
+	this->setLayoutSizeAware(true);
 
 	_queryModel.setBatchSize(100);
 

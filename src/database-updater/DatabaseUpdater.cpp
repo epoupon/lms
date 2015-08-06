@@ -493,6 +493,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		track.modify()->setLastWriteTime(lastWriteTime);
 		track.modify()->setName(title);
 		track.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]) );
+		track.modify()->setAddedTime( boost::posix_time::second_clock::local_time() );
 
 		{
 			std::string trackGenreList;
