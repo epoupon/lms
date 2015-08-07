@@ -175,7 +175,7 @@ LmsApplication::handleAuthEvent(void)
 		Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
 		// Create a navigation bar with a link to a web page.
 		Wt::WNavigationBar *navigation = new Wt::WNavigationBar();
-		navigation->setTitle("LMS");
+		navigation->setTitle("LMS", "https://github.com/epoupon/lms");
 		navigation->setResponsive(true);
 		navigation->addStyleClass("main-nav");
 
