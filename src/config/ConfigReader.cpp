@@ -49,26 +49,50 @@ ConfigReader::setFile(boost::filesystem::path p)
 }
 
 std::string
-ConfigReader::getString(std::string setting)
+ConfigReader::getString(std::string setting, std::string def)
 {
-	return _config->lookup(setting);
+	try {
+		return _config->lookup(setting);
+	}
+	catch (std::exception &e)
+	{
+		return def;
+	}
 }
 
 unsigned long
-ConfigReader::getULong(std::string setting)
+ConfigReader::getULong(std::string setting, unsigned long def)
 {
-	return static_cast<unsigned int>(_config->lookup(setting));
+	try {
+		return static_cast<unsigned int>(_config->lookup(setting));
+	}
+	catch (...)
+	{
+		return def;
+	}
 }
 
 long
-ConfigReader::getLong(std::string setting)
+ConfigReader::getLong(std::string setting, long def)
 {
-	return _config->lookup(setting);
+	try {
+		return _config->lookup(setting);
+	}
+	catch (...)
+	{
+		return def;
+	}
 }
 
 bool
-ConfigReader::getBool(std::string setting)
+ConfigReader::getBool(std::string setting, bool def)
 {
-	return _config->lookup(setting);
+	try {
+		return _config->lookup(setting);
+	}
+	catch (...)
+	{
+		return def;
+	}
 }
 

@@ -65,7 +65,6 @@ class Logger
 
 		static Logger& instance();
 
-		//[ example_tutorial_file_advanced
 		void init();
 
 		boost::log::sources::severity_logger< Severity >&

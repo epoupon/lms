@@ -8,8 +8,8 @@ TESTS += remote-client
 check_PROGRAMS += remote-client
 
 remote_client_SOURCES = \
-	$(srcdir)/RemoteClient.cpp		\
-	$(top_srcdir)/src/logger/Logger.cpp
+	$(srcdir)/RemoteClient.cpp
+
 nodist_remote_client_SOURCES = \
 	$(builddir)/auth.pb.cc			\
 	$(builddir)/collection.pb.cc		\
@@ -31,6 +31,7 @@ endif
 
 database_basics_SOURCES = \
 	$(srcdir)/CheckDbBasics.cpp			\
+	$(top_srcdir)/src/config/ConfigReader.cpp 	\
 	$(top_srcdir)/src/logger/Logger.cpp 		\
 	$(top_srcdir)/src/database/Artist.cpp		\
 	$(top_srcdir)/src/database/DatabaseHandler.cpp	\
@@ -47,6 +48,7 @@ database_basics_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_s
 
 database_user_SOURCES = \
 	$(srcdir)/CheckDatabaseUser.cpp		\
+	$(top_srcdir)/src/config/ConfigReader.cpp 	\
 	$(top_srcdir)/src/logger/Logger.cpp 			\
 	$(top_srcdir)/src/database/Artist.cpp		\
 	$(top_srcdir)/src/database/Playlist.cpp	\
@@ -64,6 +66,7 @@ database_user_CXXFLAGS=-std=c++11 -Wall -Wextra -DBOOST_LOG_DYN_LINK -I$(top_src
 
 database_integrity_SOURCES = \
 	$(srcdir)/DatabaseIntegrity.cpp		\
+	$(top_srcdir)/src/config/ConfigReader.cpp 	\
 	$(top_srcdir)/src/logger/Logger.cpp 			\
 	$(top_srcdir)/src/database/Artist.cpp	\
 	$(top_srcdir)/src/database/Playlist.cpp	\

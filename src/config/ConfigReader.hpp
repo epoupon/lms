@@ -34,10 +34,11 @@ class ConfigReader
 
 		void		setFile(boost::filesystem::path p);
 
-		std::string	getString(std::string setting);
-		unsigned long	getULong(std::string setting);
-		long		getLong(std::string setting);
-		bool		getBool(std::string setting);
+		/* Default values are returned in case of setting not found */
+		std::string	getString(std::string setting, std::string def = "");
+		unsigned long	getULong(std::string setting, unsigned long def = 0);
+		long		getLong(std::string setting, long def = 0);
+		bool		getBool(std::string setting, bool def = false);
 
 	private:
 

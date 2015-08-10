@@ -20,8 +20,6 @@
 #ifndef REMOTE_HEADER_HPP
 #define REMOTE_HEADER_HPP
 
-#include "logger/Logger.hpp"
-
 #include <iomanip>
 
 namespace LmsAPI
@@ -53,17 +51,13 @@ class Header
 
 		bool from_buffer(const std::array<unsigned char, size>& buffer)
 		{
-			if (decode32(&buffer[0]) != _magic) {
-				LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Header: bad magic ('" << std::hex << std::setfill('0') << std::setw(8) << decode32(&buffer[0]) << "' instead of '" << std::hex << std::setfill('0') << std::setw(8) << _magic << "')";
+			if (decode32(&buffer[0]) != _magic)
+			{
 				return false;
 			}
 			else
 			{
 				_dataSize = decode32(&buffer[4]);
-
-				if (_dataSize > max_data_size)
-					LMS_LOG(MOD_REMOTE, SEV_ERROR) << "Header: msg too big (" << _dataSize << ")!";
-
 				return _dataSize <= max_data_size;
 			}
 		}

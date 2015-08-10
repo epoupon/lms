@@ -81,7 +81,7 @@ Logger::init()
 
 	boost::log::register_simple_formatter_factory< Severity, char >("Severity");
 
-	if (ConfigReader::instance().getBool("main.logger.file.enable"))
+	if (ConfigReader::instance().getBool("main.logger.file.enable"), false)
 	{
 		boost::log::add_file_log
 			(
@@ -99,7 +99,7 @@ Logger::init()
 			);
 	}
 
-	if (ConfigReader::instance().getBool("main.logger.console.enable"))
+	if (ConfigReader::instance().getBool("main.logger.console.enable"), false)
 	{
 		boost::log::add_console_log(std::cout,
 				boost::log::keywords::format = (
@@ -114,7 +114,7 @@ Logger::init()
 
 	boost::log::core::get()->set_filter
 		(
-		 boost::log::expressions::attr<Severity>("Severity") <= ConfigReader::instance().getULong("main.logger.level")
+		 boost::log::expressions::attr<Severity>("Severity") <= ConfigReader::instance().getULong("main.logger.level", SEV_DEBUG)
 		);
 
 }
