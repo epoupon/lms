@@ -589,43 +589,52 @@ Updater::processDirectory(const boost::filesystem::path& rootDirectory,
 bool
 Updater::checkFile(const boost::filesystem::path& p, const std::vector<boost::filesystem::path>& rootDirs, const std::vector<boost::filesystem::path>& extensions)
 {
-	bool status = true;
+	try
+	{
+		bool status = true;
 
-	// For each track, make sure the the file still exists
-	// and still belongs to a root directory
-	if (!boost::filesystem::exists( p )
-			|| !boost::filesystem::is_regular( p ) )
-	{
-		LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Missing file '" << p << "'";
-		status = false;
-	}
-	else
-	{
-		bool foundRoot = false;
-		BOOST_FOREACH(const boost::filesystem::path& rootDir, rootDirs)
+		// For each track, make sure the the file still exists
+		// and still belongs to a root directory
+		if (!boost::filesystem::exists( p )
+				|| !boost::filesystem::is_regular( p ) )
 		{
-			if (p.string().find( rootDir.string() ) != std::string::npos)
+			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Missing file '" << p << "'";
+			status = false;
+		}
+		else
+		{
+			bool foundRoot = false;
+			BOOST_FOREACH(const boost::filesystem::path& rootDir, rootDirs)
 			{
-				foundRoot = true;
-				break;
+				if (p.string().find( rootDir.string() ) != std::string::npos)
+				{
+					foundRoot = true;
+					break;
+				}
+			}
+
+			if (!foundRoot)
+			{
+				LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Out of root file '" << p << "'";
+				status = false;
+			}
+			else if (!isFileSupported(p, extensions))
+			{
+				LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "File format no longer supported for '" << p << "'";
+				status = false;
 			}
 		}
 
-		if (!foundRoot)
-		{
-			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Out of root file '" << p << "'";
-			status = false;
-		}
-		else if (!isFileSupported(p, extensions))
-		{
-			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "File format no longer supported for '" << p << "'";
-			status = false;
-		}
+		return status;
+
+	}
+	catch (boost::filesystem::filesystem_error& e)
+	{
+		LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Caught exception while checking file '" << p << "': " << e.what();
+		return false;
 	}
 
-	return status;
 }
-
 
 void
 Updater::checkAudioFiles( Stats& stats )
