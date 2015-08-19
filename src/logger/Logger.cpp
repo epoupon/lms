@@ -81,7 +81,7 @@ Logger::init()
 
 	boost::log::register_simple_formatter_factory< Severity, char >("Severity");
 
-	if (ConfigReader::instance().getBool("main.logger.file.enable"), false)
+	if (ConfigReader::instance().getBool("main.logger.file.enable", false))
 	{
 		boost::log::add_file_log
 			(
@@ -99,7 +99,7 @@ Logger::init()
 			);
 	}
 
-	if (ConfigReader::instance().getBool("main.logger.console.enable"), false)
+	if (ConfigReader::instance().getBool("main.logger.console.enable", false))
 	{
 		boost::log::add_console_log(std::cout,
 				boost::log::keywords::format = (
