@@ -44,13 +44,20 @@ class Updater
 
 		struct Stats
 		{
-			std::size_t	nbAdded;
-			std::size_t	nbRemoved;
-			std::size_t	nbModified;
-			Stats() : nbAdded(0), nbRemoved(0), nbModified(0) {}
+			std::size_t	nbAdded = 0;
+			std::size_t	nbRemoved = 0;
+			std::size_t	nbModified = 0;
+			std::size_t	nbScanErrors = 0;
 
-			void	clear(void) { nbAdded = 0; nbRemoved = 0; nbModified = 0; }
 			std::size_t nbChanges() const { return nbAdded + nbRemoved + nbModified;}
+		};
+
+		struct RootDirectory
+		{
+			Database::MediaDirectory::Type type;
+			boost::filesystem::path path;
+
+			RootDirectory(Database::MediaDirectory::Type t, boost::filesystem::path p) : type(t), path(p) {}
 		};
 
 		// Job handling
@@ -67,10 +74,7 @@ class Updater
 				const std::vector<boost::filesystem::path>& extensions);
 
 
-		void processDirectory(  const boost::filesystem::path& rootDirectory,
-					const boost::filesystem::path& directory,
-					Database::MediaDirectory::Type type,
-					Stats& stats);
+		void processRootDirectory(  RootDirectory rootDirectory, Stats& stats);
 
 		// Helpers
 		Database::Artist::pointer getArtist( const boost::filesystem::path& file, const std::string& name, const std::string& MBID);

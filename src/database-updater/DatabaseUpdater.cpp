@@ -220,19 +220,22 @@ Updater::process(boost::system::error_code err)
 		checkAudioFiles(stats);
 		checkVideoFiles(stats);
 
-		typedef std::pair<boost::filesystem::path, Database::MediaDirectory::Type> RootDirectory;
 		std::vector<RootDirectory> rootDirectories;
 		{
 			Wt::Dbo::Transaction transaction(_db.getSession());
-			std::vector<MediaDirectory::pointer> mediaDirectories = MediaDirectory::getAll(_db.getSession());
-			for (MediaDirectory::pointer directory : mediaDirectories)
-				rootDirectories.push_back( std::make_pair( directory->getPath(), directory->getType() ));
+
+			for (MediaDirectory::pointer directory : MediaDirectory::getAll(_db.getSession()))
+				rootDirectories.push_back( RootDirectory( directory->getType(), directory->getPath() ));
 		}
 
 		for (RootDirectory rootDirectory : rootDirectories)
-			processDirectory(rootDirectory.first, rootDirectory.first, rootDirectory.second, stats);
+		{
+			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Processing root directory '" << rootDirectory.path << "'...";
+			processRootDirectory(rootDirectory, stats);
+			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Processing root directory '" << rootDirectory.path << "' DONE";
+		}
 
-		LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Changes = " << stats.nbChanges();
+		LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Scan complete. Changes = " << stats.nbChanges() << ", Errors = " << stats.nbScanErrors;
 
 		// Update database stats
 		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
@@ -540,33 +543,33 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		transaction.commit();
 	}
-	catch( std::exception& e ) {
+	catch( std::exception& e )
+	{
 		LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Exception while parsing audio file : '" << file << "': '" << e.what() << "' => skipping!";
+		stats.nbRemoved++;
 	}
 }
 
 
 void
-Updater::processDirectory(const boost::filesystem::path& rootDirectory,
-			const boost::filesystem::path& p,
-			Database::MediaDirectory::Type type,
-			Stats& stats)
+Updater::processRootDirectory(RootDirectory rootDirectory, Stats& stats)
 {
 	if (!_running)
 		return;
 
-	if (!boost::filesystem::exists(p) || !boost::filesystem::is_directory(p))
+	if (!boost::filesystem::exists(rootDirectory.path) || !boost::filesystem::is_directory(rootDirectory.path))
 		return;
 
-	boost::filesystem::recursive_directory_iterator itPath(rootDirectory);
+	boost::filesystem::recursive_directory_iterator itPath(rootDirectory.path);
 	boost::filesystem::recursive_directory_iterator itEnd;
 	while (itPath != itEnd)
 	{
 		if (!_running)
 			return;
 
-		if (boost::filesystem::is_regular(*itPath)) {
-			switch( type )
+		if (!boost::filesystem::is_regular(*itPath))
+		{
+			switch( rootDirectory.type )
 			{
 				case Database::MediaDirectory::Audio:
 					if (isFileSupported(*itPath, _audioExtensions))
@@ -780,8 +783,10 @@ Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 
 		transaction.commit();
 	}
-	catch( std::exception& e ) {
+	catch( std::exception& e )
+	{
 		LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Exception while parsing video file : '" << file << "': '" << e.what() << "' => skipping!";
+		stats.nbScanErrors++;
 	}
 }
 
