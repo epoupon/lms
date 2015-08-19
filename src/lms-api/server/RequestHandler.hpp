@@ -20,7 +20,7 @@
 #ifndef REMOTE_REQUEST_HANDLER
 #define REMOTE_REQUEST_HANDLER
 
-#include <boost/filesystem.hpp>
+#include <Wt/Dbo/SqlConnectionPool>
 
 #include "messages.pb.h"
 
@@ -37,7 +37,7 @@ class RequestHandler
 {
 	public:
 
-		RequestHandler(boost::filesystem::path dbPath);
+		RequestHandler(Wt::Dbo::SqlConnectionPool& connectionPool);
 		~RequestHandler();
 
 		bool process(const ClientMessage& request, ServerMessage& response);

@@ -50,7 +50,7 @@ class Connection : public std::enable_shared_from_this<Connection>
 		/// Construct a connection with the given io_service.
 		explicit Connection(boost::asio::io_service& ioService, boost::asio::ssl::context& context,
 				ConnectionManager& manager,
-				const boost::filesystem::path& dbPath);
+				Wt::Dbo::SqlConnectionPool& connectionPool);
 
 		ssl_socket::lowest_layer_type& getSocket()	{return _socket.lowest_layer();}
 

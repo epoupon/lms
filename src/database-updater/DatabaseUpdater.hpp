@@ -32,7 +32,7 @@ namespace DatabaseUpdater {
 class Updater
 {
 	public:
-		Updater(boost::filesystem::path db, MetaData::Parser& parser);
+		Updater(Wt::Dbo::SqlConnectionPool& connectionPool, MetaData::Parser& parser);
 
 		void setAudioExtensions(const std::vector<std::string>&	extensions);
 		void setVideoExtensions(const std::vector<std::string>&	extensions);

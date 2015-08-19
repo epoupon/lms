@@ -17,6 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <Wt/Dbo/FixedSqlConnectionPool>
+#include <Wt/Dbo/backend/Sqlite3>
+
 #include <Wt/Auth/Dbo/AuthInfo>
 #include <Wt/Auth/Dbo/UserDatabase>
 #include <Wt/Auth/AuthService>
@@ -72,11 +75,10 @@ Handler::getPasswordService()
 }
 
 
-Handler::Handler(boost::filesystem::path db)
-:
-_dbBackend( db.string() )
+Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 {
-	_session.setConnection(_dbBackend);
+	_session.setConnectionPool(connectionPool);
+
 	_session.mapClass<Database::Artist>("artist");
 	_session.mapClass<Database::Genre>("genre");
 	_session.mapClass<Database::Track>("track");
@@ -94,16 +96,14 @@ _dbBackend( db.string() )
 
 	try {
 	        _session.createTables();
-		_dbBackend.executeSql("CREATE INDEX artist_name_idx ON artist(name)");
-		_dbBackend.executeSql("CREATE INDEX genre_name_idx ON genre(name)");
-		_dbBackend.executeSql("CREATE INDEX release_name_idx ON release(name)");
-		_dbBackend.executeSql("CREATE INDEX track_name_idx ON track(name)");
+		_session.execute("CREATE INDEX artist_name_idx ON artist(name)");
+		_session.execute("CREATE INDEX genre_name_idx ON genre(name)");
+		_session.execute("CREATE INDEX release_name_idx ON release(name)");
+		_session.execute("CREATE INDEX track_name_idx ON track(name)");
 	}
 	catch(std::exception& e) {
 		LMS_LOG(MOD_DB, SEV_ERROR) << "Cannot create tables: " << e.what();
 	}
-
-	_dbBackend.executeSql("pragma journal_mode=WAL");
 
 	_users = new UserDatabase(_session);
 }
@@ -147,6 +147,17 @@ Handler::getUser(const Wt::Auth::User& authUser)
 	}
 
 	return user;
+}
+
+Wt::Dbo::SqlConnectionPool*
+Handler::createConnectionPool(boost::filesystem::path p)
+{
+	Wt::Dbo::backend::Sqlite3 *connection = new Wt::Dbo::backend::Sqlite3(p.string());
+
+	connection->executeSql("pragma journal_mode=WAL");
+
+	//  connection->setProperty("show-queries", "true");
+	return new Wt::Dbo::FixedSqlConnectionPool(connection, 10);
 }
 
 

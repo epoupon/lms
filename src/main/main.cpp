@@ -73,12 +73,15 @@ int main(int argc, char* argv[])
 		Transcode::AvConvTranscoder::init();
 		Database::Handler::configureAuth();
 
+		// Initializing a connection pool to the database that will be shared along services
+		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool( Database::Handler::createConnectionPool( ConfigReader::instance().getString("main.database.path") ));
+
 		LMS_LOG(MOD_MAIN, SEV_INFO) << "Starting services...";
 
-		serviceManager.startService( std::make_shared<Service::DatabaseUpdateService>() );
-		serviceManager.startService( std::make_shared<Service::UserInterfaceService>(boost::filesystem::path(argv[0])));
+		serviceManager.startService( std::make_shared<Service::DatabaseUpdateService>(*connectionPool));
+		serviceManager.startService( std::make_shared<Service::UserInterfaceService>(boost::filesystem::path(argv[0]), *connectionPool));
 #if defined HAVE_LMSAPI
-		serviceManager.startService( std::make_shared<Service::LmsAPIService>( ));
+		serviceManager.startService( std::make_shared<Service::LmsAPIService>(*connectionPool));
 #endif
 
 		LMS_LOG(MOD_MAIN, SEV_NOTICE) << "Now running...";
@@ -86,7 +89,6 @@ int main(int argc, char* argv[])
 		serviceManager.run();
 
 		res = EXIT_SUCCESS;
-
 	}
 	// TODO catch setting not found exception
 	catch( libconfig::ParseException& e)

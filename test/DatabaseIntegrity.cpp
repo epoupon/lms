@@ -21,7 +21,7 @@
 #include <stdexcept>
 #include <cstdlib>
 
-#include <boost/foreach.hpp>
+#include <Wt/Dbo/SqlConnectionPool>
 
 #include "database/DatabaseHandler.hpp"
 
@@ -32,7 +32,9 @@ int main(void)
 		std::cout << "Starting test!" << std::endl;
 
 		// Set up the long living database session
-		Database::Handler database("test.db");
+		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool(Database::Handler::createConnectionPool( "test.db"));
+
+		Database::Handler database(*connectionPool);
 
 		Wt::Dbo::Transaction transaction(database.getSession());
 
@@ -40,7 +42,8 @@ int main(void)
 
 		std::cout << "Found " << tracks.size() << " tracks!" << std::endl;
 
-		BOOST_FOREACH(Database::Track::pointer track, tracks ) {
+		for (auto track : tracks)
+		{
 			assert( !track->getName().empty() );
 			assert( !track->getGenres().empty() );
 			assert( !track->getDuration().is_not_a_date_time()  );

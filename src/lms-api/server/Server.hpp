@@ -21,6 +21,7 @@
 #define REMOTE_SERVER_HPP
 
 #include <Wt/WIOService>
+#include <Wt/Dbo/SqlConnectionPool>
 
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
@@ -49,7 +50,7 @@ class Server
 				boost::filesystem::path certPath,
 				boost::filesystem::path privKeyPath,
 				boost::filesystem::path dhPath,
-				boost::filesystem::path dbPath);
+				Wt::Dbo::SqlConnectionPool& connectionPool);
 
 		// Run the server's io_service loop.
 		void start();
@@ -72,7 +73,7 @@ class Server
 		boost::asio::ssl::context _context;
 
 		/// The database to be used for requests
-		boost::filesystem::path _dbPath;
+		Wt::Dbo::SqlConnectionPool& _connectionPool;
 };
 
 } // namespace Server

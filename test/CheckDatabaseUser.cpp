@@ -29,7 +29,9 @@ int main(void)
 		// Set up the database session
 		Database::Handler::configureAuth();
 
-		Database::Handler db("test_user.db");
+		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool( Database::Handler::createConnectionPool("test_user.db"));
+
+		Database::Handler db(*connectionPool);
 
 		Wt::Dbo::Transaction transaction(db.getSession());
 

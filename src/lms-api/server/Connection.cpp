@@ -39,11 +39,11 @@ namespace Server {
 Connection::Connection(boost::asio::io_service& ioService,
 			boost::asio::ssl::context& context,
 			ConnectionManager& manager,
-			const boost::filesystem::path& dbPath)
+			Wt::Dbo::SqlConnectionPool& connectionPool)
 : _closing(false),
 _socket(ioService, context),
 _connectionManager(manager),
-_requestHandler(dbPath)
+_requestHandler(connectionPool)
 {
 	LMS_LOG(MOD_REMOTE, SEV_DEBUG) << "Server::Connection::Connection, Creating connection";
 }

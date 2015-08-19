@@ -36,7 +36,7 @@ class DatabaseUpdateService : public Service
 
 		typedef std::shared_ptr<DatabaseUpdateService>	pointer;
 
-		DatabaseUpdateService();
+		DatabaseUpdateService(Wt::Dbo::SqlConnectionPool &connectionPool);
 
 		// Service interface
 		void start(void);

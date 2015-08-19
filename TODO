@@ -13,6 +13,7 @@
 - Use Inotify like system to watch modified/added files?
 - count scan import errors
 - handle access rights problems (instead of aborting)
+- make a single connection pool and make everybody use it (database, UI sessions, etc.)
 
 [Metadata]
 - OGG metadata -> properly handle metadata nested in the audio stream
@@ -39,6 +40,7 @@
 	[Settings]
 		- logout users that are being changed (loss of admin admin rights), or make sure they are still admin when they make changes
 		- "signal not exposed" problem if a user logout and login again. Bad resource destruction?
+		- add a scroll area in order for settings to work on mobile devices
 		[user/transcoding]
 		- Prefered codecs for video
 		- use a slider instead of a combo box for the bitrates?
@@ -71,6 +73,7 @@
 
 [Lms API]
 - Implement partial text search options in the GetXXX messages
+- Make it REST ?
 
 [REST API]
 - Make another dedicated REST API. Maybe use the SubSonic API or Ampache API?

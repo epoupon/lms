@@ -24,8 +24,8 @@
 namespace LmsAPI {
 namespace Server {
 
-RequestHandler::RequestHandler(boost::filesystem::path dbPath)
-: _db( dbPath ),
+RequestHandler::RequestHandler(Wt::Dbo::SqlConnectionPool &connectionPool)
+: _db( connectionPool ),
 _authRequestHandler(_db),
 _audioCollectionRequestHandler(_db),
 _mediaRequestHandler(_db)

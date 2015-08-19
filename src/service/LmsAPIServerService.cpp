@@ -26,7 +26,7 @@
 
 namespace Service {
 
-LmsAPIService::LmsAPIService()
+LmsAPIService::LmsAPIService(Wt::Dbo::SqlConnectionPool& connectionPool)
 : _server(
 	boost::asio::ip::tcp::endpoint(
 		boost::asio::ip::address::from_string(ConfigReader::instance().getString("remote.listen-endpoint.addr")),
@@ -34,7 +34,7 @@ LmsAPIService::LmsAPIService()
 	ConfigReader::instance().getString("remote.ssl-crypto.cert"),
 	ConfigReader::instance().getString("remote.ssl-crypto.key"),
 	ConfigReader::instance().getString("remote.ssl-crypto.dh"),
-	ConfigReader::instance().getString("main.database.path"))
+	connectionPool)
 {
 }
 

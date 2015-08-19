@@ -38,10 +38,9 @@ static std::vector<std::string> splitStrings(const std::string& source)
 
 namespace Service {
 
-DatabaseUpdateService::DatabaseUpdateService()
+DatabaseUpdateService::DatabaseUpdateService(Wt::Dbo::SqlConnectionPool &connectionPool)
 : _metadataParser(),
- _databaseUpdater( ConfigReader::instance().getString("main.database.path"),
-		 _metadataParser)
+ _databaseUpdater( connectionPool, _metadataParser)
 {
 	_databaseUpdater.setAudioExtensions(splitStrings(ConfigReader::instance().getString("main.database.audio_extensions")));
 	_databaseUpdater.setVideoExtensions(splitStrings(ConfigReader::instance().getString("main.database.video_extensions")));

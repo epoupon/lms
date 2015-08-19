@@ -34,12 +34,12 @@ Server::Server(const endpoint_type& bindEndpoint,
 		boost::filesystem::path certPath,
 		boost::filesystem::path privKeyPath,
 		boost::filesystem::path dhPath,
-		boost::filesystem::path dbPath)
+		Wt::Dbo::SqlConnectionPool& connectionPool)
 :
 _acceptor(_ioService, bindEndpoint, true /*SO_REUSEADDR*/),
 _connectionManager(),
 _context(boost::asio::ssl::context::tlsv1_server),
-_dbPath(dbPath)
+_connectionPool(connectionPool)
 {
 	_ioService.setThreadCount(1); // TODO parametrize
 
@@ -68,7 +68,7 @@ Server::start()
 void
 Server::asyncAccept()
 {
-	std::shared_ptr<Connection> newConnection = std::make_shared<Connection>(_ioService, _context, _connectionManager, _dbPath);
+	std::shared_ptr<Connection> newConnection = std::make_shared<Connection>(_ioService, _context, _connectionManager, _connectionPool);
 
 	_acceptor.async_accept(newConnection->getSocket(),
 			boost::bind(&Server::handleAccept, this, newConnection, boost::asio::placeholders::error));

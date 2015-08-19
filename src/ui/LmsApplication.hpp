@@ -23,6 +23,8 @@
 #include <boost/filesystem.hpp>
 #include <Wt/WApplication>
 
+#include <Wt/Dbo/SqlConnectionPool>
+
 #include "database/DatabaseHandler.hpp"
 #include "resource/CoverResource.hpp"
 
@@ -31,10 +33,10 @@ namespace UserInterface {
 class LmsApplication : public Wt::WApplication
 {
 	public:
-		static Wt::WApplication *create(const Wt::WEnvironment& env, boost::filesystem::path dbPath);
+		static Wt::WApplication *create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool);
 		static LmsApplication* instance();
 
-		LmsApplication(const Wt::WEnvironment& env, boost::filesystem::path dbPath);
+		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool);
 
 		// Session application data
 		CoverResource* getCoverResource() { return _coverResource; }

@@ -63,13 +63,13 @@ bool agentIsMobile()
 namespace UserInterface {
 
 Wt::WApplication*
-LmsApplication::create(const Wt::WEnvironment& env, boost::filesystem::path dbPath)
+LmsApplication::create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool)
 {
 	/*
 	 * You could read information from the environment to decide whether
 	 * the user has permission to start a new application
 	 */
-	return new LmsApplication(env, dbPath);
+	return new LmsApplication(env, connectionPool);
 }
 
 LmsApplication*
@@ -84,9 +84,9 @@ LmsApplication::instance()
  * constructor so it is typically also an argument for your custom
  * application constructor.
 */
-LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::path dbPath)
+LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool)
 : Wt::WApplication(env),
-  _db(dbPath),
+  _db(connectionPool),
   _coverResource(nullptr)
 {
 
@@ -182,6 +182,7 @@ LmsApplication::handleAuthEvent(void)
 		Wt::WStackedWidget *contentsStack = new Wt::WStackedWidget();
 
 		contentsStack->setOverflow(Wt::WContainerWidget::OverflowAuto);
+		contentsStack->addStyleClass("contents");
 
 		// Setup a Left-aligned menu.
 		Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack);

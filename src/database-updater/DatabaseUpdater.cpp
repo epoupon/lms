@@ -19,7 +19,6 @@
 
 
 #include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
 #include <boost/thread.hpp>
 #include <boost/asio/placeholders.hpp>
 
@@ -73,7 +72,7 @@ isFileSupported(const boost::filesystem::path& file, const std::vector<boost::fi
 
 	boost::filesystem::path fileExtension = file.extension();
 
-	BOOST_FOREACH(const boost::filesystem::path extension, extensions)
+	for (auto extension : extensions)
 	{
 		if (extension == fileExtension)
 			return true;
@@ -88,7 +87,7 @@ getRootDirectoriesByType(Wt::Dbo::Session& session, Database::MediaDirectory::Ty
 	std::vector<boost::filesystem::path> res;
 	std::vector<Database::MediaDirectory::pointer> rootDirs = Database::MediaDirectory::getByType(session, type);
 
-	BOOST_FOREACH(Database::MediaDirectory::pointer rootDir, rootDirs)
+	for (auto rootDir : rootDirs)
 		res.push_back(rootDir->getPath());
 
 	return res;
@@ -102,10 +101,10 @@ namespace DatabaseUpdater {
 using namespace Database;
 
 
-Updater::Updater(boost::filesystem::path dbPath, MetaData::Parser& parser)
+Updater::Updater(Wt::Dbo::SqlConnectionPool &connectionPool, MetaData::Parser& parser)
  : _running(false),
 _scheduleTimer(_ioService),
-_db(dbPath),
+_db(connectionPool),
 _metadataParser(parser)
 {
 	_ioService.setThreadCount(1);
@@ -114,14 +113,14 @@ _metadataParser(parser)
 void
 Updater::setAudioExtensions(const std::vector<std::string>& extensions)
 {
-	BOOST_FOREACH(const std::string& extension, extensions)
+	for (const std::string& extension : extensions)
 		_audioExtensions.push_back("." + extension);
 }
 
 void
 Updater::setVideoExtensions(const std::vector<std::string>& extensions)
 {
-	BOOST_FOREACH(const std::string& extension, extensions)
+	for (const std::string& extension : extensions)
 		_videoExtensions.push_back("." + extension);
 }
 
@@ -226,7 +225,7 @@ Updater::process(boost::system::error_code err)
 		{
 			Wt::Dbo::Transaction transaction(_db.getSession());
 			std::vector<MediaDirectory::pointer> mediaDirectories = MediaDirectory::getAll(_db.getSession());
-			BOOST_FOREACH(MediaDirectory::pointer directory, mediaDirectories)
+			for (MediaDirectory::pointer directory : mediaDirectories)
 				rootDirectories.push_back( std::make_pair( directory->getPath(), directory->getType() ));
 		}
 
@@ -604,7 +603,7 @@ Updater::checkFile(const boost::filesystem::path& p, const std::vector<boost::fi
 		else
 		{
 			bool foundRoot = false;
-			BOOST_FOREACH(const boost::filesystem::path& rootDir, rootDirs)
+			for (auto rootDir : rootDirs)
 			{
 				if (p.string().find( rootDir.string() ) != std::string::npos)
 				{

@@ -20,7 +20,7 @@
 #ifndef REMOTE_SERVER_SERVICE_HPP
 #define REMOTE_SERVER_SERVICE_HPP
 
-#include <boost/filesystem.hpp>
+#include <Wt/Dbo/SqlConnectionPool>
 
 #include "config/config.h"
 
@@ -34,7 +34,7 @@ class LmsAPIService : public Service
 {
 	public:
 
-		LmsAPIService();
+		LmsAPIService(Wt::Dbo::SqlConnectionPool& connectionPool);
 
 		void start(void);
 		void stop(void);

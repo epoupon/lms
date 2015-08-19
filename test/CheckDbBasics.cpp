@@ -31,7 +31,9 @@ int main(void)
 
 		boost::filesystem::remove("test.db");
 
-		Handler db("test.db");
+		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool(Database::Handler::createConnectionPool( "test.db"));
+
+		Handler db( *connectionPool );
 
 		// Create
 		{

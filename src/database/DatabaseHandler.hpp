@@ -23,7 +23,8 @@
 #include <boost/filesystem.hpp>
 
 #include <Wt/Dbo/Dbo>
-#include <Wt/Dbo/backend/Sqlite3>
+#include <Wt/Dbo/SqlConnectionPool>
+
 #include <Wt/Auth/Dbo/UserDatabase>
 #include <Wt/Auth/Login>
 #include <Wt/Auth/PasswordService>
@@ -39,7 +40,7 @@ class Handler
 {
 	public:
 
-		Handler(boost::filesystem::path db);
+		Handler(Wt::Dbo::SqlConnectionPool& connectionPool);
 		~Handler();
 
 		Wt::Dbo::Session& getSession() { return _session; }
@@ -56,12 +57,11 @@ class Handler
 		static const Wt::Auth::AuthService& getAuthService();
 		static const Wt::Auth::PasswordService& getPasswordService();
 
+		static Wt::Dbo::SqlConnectionPool*	createConnectionPool(boost::filesystem::path db);
 
 	private:
 
-		Wt::Dbo::backend::Sqlite3	_dbBackend;
 		Wt::Dbo::Session		_session;
-
 		UserDatabase*			_users;
 		Wt::Auth::Login 		_login;
 

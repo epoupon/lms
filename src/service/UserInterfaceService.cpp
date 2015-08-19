@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <Wt/Dbo/SqlConnectionPool>
+
 #include "logger/Logger.hpp"
 
 #include "UserInterfaceService.hpp"
@@ -26,7 +28,7 @@
 
 namespace Service {
 
-UserInterfaceService::UserInterfaceService( boost::filesystem::path runAppPath)
+UserInterfaceService::UserInterfaceService( boost::filesystem::path runAppPath, Wt::Dbo::SqlConnectionPool& connectionPool)
 : _server(runAppPath.string())
 {
 	std::vector<std::string> args;
@@ -54,7 +56,7 @@ UserInterfaceService::UserInterfaceService( boost::filesystem::path runAppPath)
 	_server.setServerConfiguration (argc, const_cast<char**>(argv));
 
 	// bind entry point
-	_server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, ConfigReader::instance().getString("main.database.path")));
+	_server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, boost::ref(connectionPool)));
 
 }
 

@@ -32,7 +32,7 @@ class UserInterfaceService : public Service
 {
 	public:
 
-		UserInterfaceService(boost::filesystem::path runAppPath);
+		UserInterfaceService(boost::filesystem::path runAppPath, Wt::Dbo::SqlConnectionPool& connectionPool);
 
 		void start(void);
 		void stop(void);
