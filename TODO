@@ -4,16 +4,16 @@
 
 [Cover]
 - Scaling: find something more "reliable" than GIL and its custom extensions (adobe work, io_new)?
-- Handle several file formats (not only jpg)
+- Handle several file formats (not only jpg), use libmagic?
 - Handle preferred cover file names
 - Implement a cache and a grabber from some web service (mandatory for artists)
 
 [Database]
 - Optim, use SQL query to get the "genre" orphans
 - Use Inotify like system to watch modified/added files?
-- count scan import errors
 - handle access rights problems (instead of aborting)
-- make a single connection pool and make everybody use it (database, UI sessions, etc.)
+- add a global play counter for tracks. This will help people to spot most popular files
+- rework the exception process in av/metadata/updater in case of bad files
 
 [Metadata]
 - OGG metadata -> properly handle metadata nested in the audio stream
