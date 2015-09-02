@@ -48,8 +48,10 @@ TableFilterGenre::TableFilterGenre(Wt::WContainerWidget* parent)
 
 	this->selectionChanged().connect(this, &TableFilterGenre::emitUpdate);
 
+#if WT_VERSION >= 0X03030400
 	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
 	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+#endif
 
 	this->setLayoutSizeAware(true);
 
@@ -123,8 +125,10 @@ TableFilterArtist::TableFilterArtist(Wt::WContainerWidget* parent)
 
 	this->selectionChanged().connect(this, &TableFilterArtist::emitUpdate);
 
+#if WT_VERSION >= 0X03030400
 	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
 	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+#endif
 
 	this->setLayoutSizeAware(true);
 
@@ -204,8 +208,10 @@ TableFilterRelease::TableFilterRelease(Wt::WContainerWidget* parent)
 
 	this->selectionChanged().connect(this, &TableFilterRelease::emitUpdate);
 
+#if WT_VERSION >= 0X03030400
 	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
 	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+#endif
 
 	this->setLayoutSizeAware(true);
 

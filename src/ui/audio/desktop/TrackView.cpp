@@ -67,7 +67,9 @@ TrackView::TrackView(Wt::WContainerWidget* parent)
 	this->setColumnWidth(6, 70);	// Date
 	this->setColumnWidth(7, 70);	// Original Date
 	this->setColumnWidth(8, 180);	// Genres
+#if WT_VERSION >= 0X03030400
 	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+#endif
 
 	// Duration display
 	{

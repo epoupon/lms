@@ -291,9 +291,10 @@ _trackSelector(new TrackSelector())
 	this->setColumnWidth(COLUMN_ID_NAME, 240);
 
 	this->setLayoutSizeAware(true);
+#if WT_VERSION >= 0X03030400
 	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
 	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
-
+#endif
 	this->setColumnHidden(COLUMN_ID_TRACK_ID, true);
 
 	_itemDelegate = new PlayQueueItemDelegate();
