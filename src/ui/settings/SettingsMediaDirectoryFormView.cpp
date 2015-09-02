@@ -130,7 +130,7 @@ MediaDirectoryFormView::MediaDirectoryFormView(Wt::WContainerWidget *parent)
 	typeCB->changed().connect(_applyInfo, &Wt::WWidget::hide);
 
 	// Title & Buttons
-	bindString("title", "Add Media Folder");
+	bindString("title", "Add media folder");
 
 	Wt::WPushButton *saveButton = new Wt::WPushButton("Add");
 	saveButton->setStyleClass("btn-primary");

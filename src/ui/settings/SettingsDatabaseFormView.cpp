@@ -265,7 +265,7 @@ DatabaseFormView::DatabaseFormView(Wt::WContainerWidget *parent)
 	updateStartTimeCB->changed().connect(_applyInfo, &Wt::WWidget::hide);
 
 	// Title & Buttons
-	bindString("title", "Media folder settings");
+	bindString("title", "Database update settings");
 
 	Wt::WPushButton *saveButton = new Wt::WPushButton("Apply");
 	bindWidget("apply-button", saveButton);
