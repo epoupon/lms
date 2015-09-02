@@ -19,7 +19,6 @@
 
 
 #include <list>
-#include <boost/foreach.hpp>
 
 #include "logger/Logger.hpp"
 
@@ -47,7 +46,9 @@ InputMediaFile::InputMediaFile(const boost::filesystem::path& p)
 : _path(p)
 {
 	Av::InputFormatContext input(_path);
-	input.findStreamInfo();
+
+	if (!input.findStreamInfo())
+		throw std::runtime_error("Cannot find stream info in file: " + p.string());
 
 	// Calculate estimated duration
 	if (input.getDurationSecs())
@@ -83,7 +84,7 @@ InputMediaFile::InputMediaFile(const boost::filesystem::path& p)
 
 	avMediaTypes.unique();
 	// Scan for best streams
-	BOOST_FOREACH(enum AVMediaType type, avMediaTypes)
+	for (enum AVMediaType type : avMediaTypes)
 	{
 		Av::Stream::Idx index;
 
@@ -102,7 +103,7 @@ std::vector<Stream>
 InputMediaFile::getStreams(Stream::Type type) const
 {
 	std::vector<Stream> res;
-	BOOST_FOREACH(const Stream& stream, _streams)
+	for (const Stream& stream : _streams)
 	{
 		if (stream.getType() == type)
 			res.push_back(stream);
@@ -113,7 +114,7 @@ InputMediaFile::getStreams(Stream::Type type) const
 const Stream&
 InputMediaFile::getStream(Stream::Id index) const
 {
-	BOOST_FOREACH(const Stream& stream, _streams)
+	for (const Stream& stream : _streams)
 	{
 		if (stream.getId() == index)
 			return stream;

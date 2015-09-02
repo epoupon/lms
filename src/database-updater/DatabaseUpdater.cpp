@@ -386,7 +386,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		}
 
 		MetaData::Items items;
-		_metadataParser.parse(file, items);
+
+		if (!_metadataParser.parse(file, items))
+			return;
 
 		// We estimate this is a audio file if:
 		// - we found a least one audio stream

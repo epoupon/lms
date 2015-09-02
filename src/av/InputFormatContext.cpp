@@ -87,14 +87,17 @@ InputFormatContext::getBestStreamIdx(AVMediaType type, Stream::Idx& index)
 	}
 }
 
-void
+bool
 InputFormatContext::findStreamInfo(void)
 {
 	AvError err = avformat_find_stream_info(native(), NULL);
-	if (err) {
+	if (err)
+	{
 		LMS_LOG(MOD_AV, SEV_ERROR) << "Couldn't find stream information: " << err;
-		throw std::runtime_error("av_find_stream_info failed!");
+		return false;
 	}
+
+	return true;
 }
 
 

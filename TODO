@@ -14,6 +14,7 @@
 - handle access rights problems (instead of aborting)
 - add a global play counter for tracks. This will help people to spot most popular files
 - rework the exception process in av/metadata/updater in case of bad files
+- Use the WServer::post method to notify the end of the database scan? (with results?)
 
 [Metadata]
 - OGG metadata -> properly handle metadata nested in the audio stream

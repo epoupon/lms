@@ -47,7 +47,7 @@ class InputFormatContext : public FormatContext
 		Dictionary	getMetadata(void);	// metadata access
 
 		// Scan file
-		void findStreamInfo();
+		bool findStreamInfo();
 
 
 		// Get attached pictures

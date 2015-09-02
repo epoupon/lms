@@ -71,7 +71,7 @@ namespace MetaData
 
 			typedef std::shared_ptr<Parser> pointer;
 
-			virtual void parse(const boost::filesystem::path& p, Items& items) = 0;
+			virtual bool parse(const boost::filesystem::path& p, Items& items) = 0;
 
 	};
 
