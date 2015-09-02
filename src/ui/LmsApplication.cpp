@@ -170,6 +170,7 @@ LmsApplication::handleAuthEvent(void)
 		LMS_LOG(MOD_UI, SEV_NOTICE) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
 
 		this->root()->setOverflow(Wt::WContainerWidget::OverflowHidden);
+                setConfirmCloseMessage("Closing LMS. Are you sure?");
 
 		// Create a Vertical layout: top is the nav bar, bottom is the contents
 		Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
