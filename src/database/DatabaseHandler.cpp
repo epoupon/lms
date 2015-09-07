@@ -79,6 +79,7 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 {
 	_session.setConnectionPool(connectionPool);
 
+
 	_session.mapClass<Database::Artist>("artist");
 	_session.mapClass<Database::Genre>("genre");
 	_session.mapClass<Database::Track>("track");
@@ -95,6 +96,8 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 	_session.mapClass<Database::AuthInfo::AuthTokenType>("auth_token");
 
 	try {
+		Wt::Dbo::Transaction transaction(_session);
+
 	        _session.createTables();
 		_session.execute("CREATE INDEX artist_name_idx ON artist(name)");
 		_session.execute("CREATE INDEX genre_name_idx ON genre(name)");

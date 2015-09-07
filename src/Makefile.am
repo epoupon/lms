@@ -28,7 +28,6 @@ lms_SOURCES = \
 	$(srcdir)/metadata/Utils.cpp				\
 	$(srcdir)/service/ServiceManager.cpp			\
 	$(srcdir)/service/DatabaseUpdateService.cpp		\
-	$(srcdir)/service/UserInterfaceService.cpp		\
 	$(srcdir)/transcode/AvConvTranscoder.cpp		\
 	$(srcdir)/transcode/Format.cpp				\
 	$(srcdir)/transcode/Parameters.cpp			\

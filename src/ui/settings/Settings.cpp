@@ -107,7 +107,7 @@ Settings::restartDatabaseUpdateService()
 	// Restarting the update service
 	boost::lock_guard<boost::mutex> serviceLock (Service::ServiceManager::instance().mutex());
 
-	Service::DatabaseUpdateService::pointer service = Service::ServiceManager::instance().getService<Service::DatabaseUpdateService>();
+	Service::DatabaseUpdateService::pointer service = Service::ServiceManager::instance().get<Service::DatabaseUpdateService>();
 	if (service)
 		service->restart();
 }

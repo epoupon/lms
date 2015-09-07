@@ -81,6 +81,19 @@ Logger::init()
 
 	boost::log::register_simple_formatter_factory< Severity, char >("Severity");
 
+	if (ConfigReader::instance().getBool("main.logger.console.enable", false))
+	{
+		boost::log::add_console_log(std::cout,
+				boost::log::keywords::format = (
+					boost::log::expressions::stream
+					<< boost::log::expressions::format_date_time< boost::posix_time::ptime >("TimeStamp", "[%Y-%m-%d %H:%M:%S]")
+					<< " [" << boost::log::expressions::attr< Module >("Module") << "]"
+					<< " [" << boost::log::expressions::attr< Severity >("Severity") << "]"
+					<< " " << boost::log::expressions::smessage
+					)
+				);
+	}
+
 	if (ConfigReader::instance().getBool("main.logger.file.enable", false))
 	{
 		boost::log::add_file_log
@@ -97,19 +110,6 @@ Logger::init()
 				 << " " << boost::log::expressions::smessage
 				 )
 			);
-	}
-
-	if (ConfigReader::instance().getBool("main.logger.console.enable", false))
-	{
-		boost::log::add_console_log(std::cout,
-				boost::log::keywords::format = (
-					boost::log::expressions::stream
-					<< boost::log::expressions::format_date_time< boost::posix_time::ptime >("TimeStamp", "[%Y-%m-%d %H:%M:%S]")
-					<< " [" << boost::log::expressions::attr< Module >("Module") << "]"
-					<< " [" << boost::log::expressions::attr< Severity >("Severity") << "]"
-					<< " " << boost::log::expressions::smessage
-					)
-				);
 	}
 
 	boost::log::core::get()->set_filter

@@ -26,38 +26,3 @@ main = {
 	}
 }
 
-
-ui = {
-	resources = {
-		docroot = "/var/lms/docroot"
-		approot = "/var/lms/approot"
-	}
-
-	listen-endpoint = {
-		port = 5081;
-		addr = "0.0.0.0";
-	}
-
-	ssl-crypto = {
-		cert = "/var/lms/certs/certUI.pem";
-		key = "/var/lms/private/privkeyUI.pem";
-		dh = "/var/lms/dh/dh2048.pem";
-	}
-
-}
-
-remote = {
-	nb-threads = 1;
-
-	listen-endpoint = {
-		port = 5080;
-		addr = "0.0.0.0";
-	}
-
-	ssl-crypto = {
-		cert = "/var/lms/certs/certRemote.pem";
-		key = "/var/lms/private/privkeyRemote.pem";
-		dh = "/var/lms/dh/dh2048.pem";
-	}
-}
-

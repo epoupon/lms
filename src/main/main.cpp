@@ -26,16 +26,18 @@
 #include "logger/Logger.hpp"
 #include "cover/CoverArtGrabber.hpp"
 
+#include "ui/LmsApplication.hpp"
+
 #include "service/ServiceManager.hpp"
 #include "service/DatabaseUpdateService.hpp"
-#include "service/UserInterfaceService.hpp"
 #if defined HAVE_LMSAPI
 #include "service/LmsAPIServerService.hpp"
 #endif
 
+#include <Wt/WServer>
+
 int main(int argc, char* argv[])
 {
-
 	int res = EXIT_FAILURE;
 
 	assert(argc > 0);
@@ -43,25 +45,10 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		// TODO generate a nice command line help with args
-
 		// Open configuration file
-		boost::filesystem::path configFile("/etc/lms.conf"); // TODO
-		if (argc > 1)
-			configFile = boost::filesystem::path(argv[1]);
+		boost::filesystem::path configFilePath("/etc/lms.conf"); // TODO use $confdir from autotools
 
-		if ( !boost::filesystem::exists(configFile))
-		{
-			std::cerr << "Config file '" << configFile << "' does not exist!" << std::endl;
-			return EXIT_FAILURE;
-		}
-		else if (!boost::filesystem::is_regular(configFile))
-		{
-			std::cerr << "Config file '" << configFile << "' is not regular!" << std::endl;
-			return EXIT_FAILURE;
-		}
-
-		ConfigReader::instance().setFile(configFile);
+		ConfigReader::instance().setFile(configFilePath);
 
 		Logger::instance().init();
 		CoverArt::Grabber::instance().init();
@@ -76,17 +63,36 @@ int main(int argc, char* argv[])
 		// Initializing a connection pool to the database that will be shared along services
 		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool( Database::Handler::createConnectionPool( ConfigReader::instance().getString("main.database.path") ));
 
-		LMS_LOG(MOD_MAIN, SEV_INFO) << "Starting services...";
 
-		serviceManager.startService( std::make_shared<Service::DatabaseUpdateService>(*connectionPool));
-		serviceManager.startService( std::make_shared<Service::UserInterfaceService>(boost::filesystem::path(argv[0]), *connectionPool));
+		serviceManager.add( std::make_shared<Service::DatabaseUpdateService>(*connectionPool));
+
 #if defined HAVE_LMSAPI
-		serviceManager.startService( std::make_shared<Service::LmsAPIService>(*connectionPool));
+		serviceManager.add( std::make_shared<Service::LmsAPIService>(*connectionPool));
 #endif
+
+		Wt::WServer server(argv[0]);
+		server.setServerConfiguration (argc, argv);
+		// bind entry point
+		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, boost::ref(*connectionPool)));
 
 		LMS_LOG(MOD_MAIN, SEV_NOTICE) << "Now running...";
 
-		serviceManager.run();
+		// Start underlying services
+		LMS_LOG(MOD_MAIN, SEV_INFO) << "Starting services...";
+		serviceManager.start();
+
+		// Starting the main server
+		LMS_LOG(MOD_MAIN, SEV_INFO) << "Starting server...";
+		server.start();
+
+		// Waiting for shutdown command
+		Wt::WServer::waitForShutdown(argv[0]);
+
+		LMS_LOG(MOD_MAIN, SEV_INFO) << "Stopping server...";
+		server.stop();
+
+		LMS_LOG(MOD_MAIN, SEV_INFO) << "Stopping services...";
+		serviceManager.stop();
 
 		res = EXIT_SUCCESS;
 	}
