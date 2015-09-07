@@ -38,8 +38,6 @@ class Grabber
 
 		static Grabber& instance();
 
-		void init();
-
 		std::vector<boost::filesystem::path>	getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t nbMaxCovers = 1) const;
 		std::vector<CoverArt>	getFromDirectory(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
 		std::vector<CoverArt>	getFromInputFormatContext(const Av::InputFormatContext& input, std::size_t nbMaxCovers = 1) const;
@@ -50,9 +48,11 @@ class Grabber
 	private:
 		Grabber();
 
-		std::vector<boost::filesystem::path> _fileExtensions;
-		std::size_t _maxFileSize;
-		std::vector<boost::filesystem::path> _preferredFileNames;
+		std::vector<boost::filesystem::path> _fileExtensions
+			= {"jpg", "jpeg"};
+		std::size_t _maxFileSize = 5000000;
+		std::vector<boost::filesystem::path> _preferredFileNames
+			= {"cover", "front"};
 
 
 };

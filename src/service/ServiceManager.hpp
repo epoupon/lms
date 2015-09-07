@@ -36,6 +36,7 @@ class ServiceManager
 
 		void add(Service::pointer service);
 		void del(Service::pointer service);
+		void clear();
 
 		void start();
 		void stop();

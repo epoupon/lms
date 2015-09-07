@@ -155,6 +155,8 @@ Handler::getUser(const Wt::Auth::User& authUser)
 Wt::Dbo::SqlConnectionPool*
 Handler::createConnectionPool(boost::filesystem::path p)
 {
+	LMS_LOG(MOD_DB, SEV_INFO) << "Creating connection pool on file " << p;
+
 	Wt::Dbo::backend::Sqlite3 *connection = new Wt::Dbo::backend::Sqlite3(p.string());
 
 	connection->executeSql("pragma journal_mode=WAL");

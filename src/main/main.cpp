@@ -20,7 +20,6 @@
 #include <boost/filesystem.hpp>
 
 #include "config/config.h"
-#include "config/ConfigReader.hpp"
 #include "transcode/AvConvTranscoder.hpp"
 #include "av/Common.hpp"
 #include "logger/Logger.hpp"
@@ -45,13 +44,8 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		// Open configuration file
-		boost::filesystem::path configFilePath("/etc/lms.conf"); // TODO use $confdir from autotools
-
-		ConfigReader::instance().setFile(configFilePath);
-
-		Logger::instance().init();
-		CoverArt::Grabber::instance().init();
+		Wt::WServer server(argv[0]);
+		server.setServerConfiguration (argc, argv);
 
 		Service::ServiceManager& serviceManager = Service::ServiceManager::instance();
 
@@ -61,8 +55,7 @@ int main(int argc, char* argv[])
 		Database::Handler::configureAuth();
 
 		// Initializing a connection pool to the database that will be shared along services
-		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool( Database::Handler::createConnectionPool( ConfigReader::instance().getString("main.database.path") ));
-
+		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool( Database::Handler::createConnectionPool("/var/lms/lms.db")); // TODO use $datadir from autotools
 
 		serviceManager.add( std::make_shared<Service::DatabaseUpdateService>(*connectionPool));
 
@@ -70,36 +63,30 @@ int main(int argc, char* argv[])
 		serviceManager.add( std::make_shared<Service::LmsAPIService>(*connectionPool));
 #endif
 
-		Wt::WServer server(argv[0]);
-		server.setServerConfiguration (argc, argv);
 		// bind entry point
 		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, boost::ref(*connectionPool)));
 
 		LMS_LOG(MOD_MAIN, SEV_NOTICE) << "Now running...";
 
-		// Start underlying services
-		LMS_LOG(MOD_MAIN, SEV_INFO) << "Starting services...";
-		serviceManager.start();
-
 		// Starting the main server
 		LMS_LOG(MOD_MAIN, SEV_INFO) << "Starting server...";
 		server.start();
 
+		// Start underlying services
+		LMS_LOG(MOD_MAIN, SEV_INFO) << "Starting services...";
+		serviceManager.start();
+
 		// Waiting for shutdown command
 		Wt::WServer::waitForShutdown(argv[0]);
+
+		LMS_LOG(MOD_MAIN, SEV_INFO) << "Stopping services...";
+		serviceManager.stop();
+		serviceManager.clear();
 
 		LMS_LOG(MOD_MAIN, SEV_INFO) << "Stopping server...";
 		server.stop();
 
-		LMS_LOG(MOD_MAIN, SEV_INFO) << "Stopping services...";
-		serviceManager.stop();
-
 		res = EXIT_SUCCESS;
-	}
-	// TODO catch setting not found exception
-	catch( libconfig::ParseException& e)
-	{
-		std::cerr << "Caught libconfig::ParseException! error='" << e.getError() << "', file = '" << e.getFile() << "', line = " << e.getLine() << std::endl;
 	}
 	catch( Wt::WServer::Exception& e)
 	{

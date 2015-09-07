@@ -26,18 +26,6 @@
 
 namespace {
 
-std::vector<std::string> splitStrings(const std::string& source)
-{
-	std::vector<std::string> res;
-	std::istringstream oss(source);
-
-	std::string str;
-	while(oss >> str)
-		res.push_back(str);
-
-	return res;
-}
-
 bool
 isFileSupported(const boost::filesystem::path& file, const std::vector<boost::filesystem::path> extensions)
 {
@@ -65,15 +53,6 @@ Grabber::instance()
 {
 	static Grabber instance;
 	return instance;
-}
-
-void
-Grabber::init()
-{
-	for (const std::string& extension : splitStrings( ConfigReader::instance().getString("main.cover.file_extensions")))
-		_fileExtensions.push_back("." + extension);
-
-	_maxFileSize = ConfigReader::instance().getULong("main.cover.file_max_size");
 }
 
 std::vector<CoverArt>

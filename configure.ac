@@ -43,11 +43,6 @@ AC_CHECK_HEADERS([Wt/WApplication jpeglib.h],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
 
-AC_CHECK_LIB([config++],
-	     [main],
-	     ,
-	     [AC_MSG_ERROR([config++ not found!])])
-
 AC_CHECK_LIB([jpeg],
 	     [jpeg_destroy],
 	     ,
@@ -117,16 +112,6 @@ AC_CHECK_LIB(	[boost_iostreams],
 		[main],
 		,
 		[AC_MSG_ERROR([libboost_iostreams not found!])])
-
-AC_CHECK_LIB(	[boost_log],
-		[main],
-		,
-		[AC_MSG_ERROR([libboost_log not found!])])
-
-AC_CHECK_LIB(	[boost_log_setup],
-		[main],
-		,
-		[AC_MSG_ERROR([libboost_log_setup not found!])])
 
 # TODO -> PARAMETRIZE THIS
 AC_CHECK_LIB([wthttp],

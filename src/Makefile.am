@@ -8,7 +8,6 @@ lms_SOURCES = \
 	$(srcdir)/av/FormatContext.cpp				\
 	$(srcdir)/av/InputFormatContext.cpp			\
 	$(srcdir)/av/Stream.cpp					\
-	$(srcdir)/config/ConfigReader.cpp			\
 	$(srcdir)/cover/CoverArt.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
 	$(srcdir)/database/Artist.cpp				\

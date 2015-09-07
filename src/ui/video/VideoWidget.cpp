@@ -49,7 +49,7 @@ VideoWidget::search(const std::string& searchText)
 void
 VideoWidget::playVideo(boost::filesystem::path p)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Want to play video " << p << "'" << std::endl;
+	LMS_LOG(MOD_UI, SEV_DEBUG) << "Want to play video " << p << "'";
 	try {
 
 		std::size_t audioBitrate = 0;
@@ -82,7 +82,8 @@ VideoWidget::playVideo(boost::filesystem::path p)
 		parameters.setBitrate(Transcode::Stream::Video, 0/*videoBitrate*/);
 
 		VideoMediaPlayerWidget *mediaPlayer = new VideoMediaPlayerWidget(parameters, this);
-		mediaPlayer->close().connect(std::bind([=] () {
+		mediaPlayer->close().connect(std::bind([=] ()
+		{
 			_videoDbWidget->setHidden(false);
 			delete mediaPlayer;
 		}));
@@ -90,7 +91,7 @@ VideoWidget::playVideo(boost::filesystem::path p)
 		_videoDbWidget->setHidden(true);
 	}
 	catch( std::exception& e) {
-		LMS_LOG(MOD_UI, SEV_ERROR) << "Caught exception while loading '" << p << "': " << e.what() << std::endl;
+		LMS_LOG(MOD_UI, SEV_ERROR) << "Caught exception while loading '" << p << "': " << e.what();
 	}
 }
 

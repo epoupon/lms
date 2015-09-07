@@ -96,8 +96,11 @@ class Updater
 
 		Database::Handler	_db;
 
-		std::vector<boost::filesystem::path>	_audioExtensions;
-		std::vector<boost::filesystem::path>	_videoExtensions;
+		std::vector<boost::filesystem::path>	_audioExtensions
+			= {"mp3", "ogg", "oga", "aac", "m4a", "flac", "wav", "wma", "aif", "aiff", "ape", "mpc", "shn"};
+
+		std::vector<boost::filesystem::path>	_videoExtensions
+			= {"flv", "avi", "mpg", "mpeg", "mp4", "m4v", "mkv", "mov", "wmv", "ogv", "divx", "m2ts"};
 
 		MetaData::Parser&	_metadataParser;
 

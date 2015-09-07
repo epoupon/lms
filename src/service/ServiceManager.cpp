@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "logger/Logger.hpp"
-
 #include "ServiceManager.hpp"
 
 namespace Service {
@@ -36,7 +34,6 @@ ServiceManager::ServiceManager()
 
 ServiceManager::~ServiceManager()
 {
-	LMS_LOG(MOD_SERVICE, SEV_NOTICE) << "Stopping services...";
 	stop();
 }
 
@@ -52,6 +49,13 @@ ServiceManager::del(Service::pointer service)
 {
 	service->stop();
 	_services.erase(service);
+}
+
+void
+ServiceManager::clear(void)
+{
+	stop();
+	_services.clear();
 }
 
 void
@@ -72,7 +76,6 @@ ServiceManager::stop(void)
 void
 ServiceManager::restart(void)
 {
-	LMS_LOG(MOD_SERVICE, SEV_NOTICE) << "Restarting services...";
 	for (Service::pointer service : _services)
 		service->restart();
 }

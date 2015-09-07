@@ -20,15 +20,11 @@
 #ifndef LOGGER_HPP__
 #define LOGGER_HPP__
 
-#include <map>
+#include <Wt/WServer>
+#include <Wt/WLogger>
 
-#include <boost/log/expressions/keyword_fwd.hpp>
-#include <boost/log/expressions/keyword.hpp>
+#include <string>
 
-#include <boost/log/trivial.hpp>
-#include <boost/log/attributes/named_scope.hpp>
-
-#define LMS_LOG(module, level)	BOOST_LOG_SEV(Logger::instance().get(module), level)
 
 enum Severity
 {
@@ -42,7 +38,7 @@ enum Severity
 
 enum Module
 {
-	MOD_AV		= 0,
+	MOD_AV,
 	MOD_COVER,
 	MOD_DB,
 	MOD_DBUPDATER,
@@ -54,78 +50,9 @@ enum Module
 	MOD_UI,
 };
 
-BOOST_LOG_ATTRIBUTE_KEYWORD(module, "Module", Module)
+std::string getModuleName(Module mod);
+std::string getSeverityName(Severity sev);
 
-class Logger
-{
-	public:
+#define LMS_LOG(module, level)	Wt::WServer::instance()->log(getSeverityName(level)) <<  Wt::WLogger::sep << "[" << getModuleName(module) << "]" <<  Wt::WLogger::sep
 
-		Logger(const Logger&) = delete;
-		Logger& operator=(const Logger&) = delete;
-
-		static Logger& instance();
-
-		void init();
-
-		boost::log::sources::severity_logger< Severity >&
-			get(Module module);
-
-	private:
-		Logger();
-
-		std::map<Module, boost::log::sources::severity_logger< Severity > > _loggers;
-};
-
-// The formatting logic for the severity level
-template< typename CharT, typename TraitsT >
-inline std::basic_ostream< CharT, TraitsT >& operator<< (
-    std::basic_ostream< CharT, TraitsT >& strm, Severity lvl)
-{
-	static const char* const str[] =
-	{
-		"",
-		"",
-		"CRIT",
-		"ERROR",
-		"WARNING",
-		"NOTICE",
-		"INFO",
-		"DEBUG"
-	};
-	if (static_cast< std::size_t >(lvl) < (sizeof(str) / sizeof(*str)))
-		strm << str[lvl];
-	else
-		strm << static_cast< int >(lvl);
-	return strm;
-}
-
-template< typename CharT, typename TraitsT >
-inline std::basic_ostream< CharT, TraitsT >& operator<< (
-    std::basic_ostream< CharT, TraitsT >& strm, Module val)
-{
-	const char* res = NULL;
-
-	switch(val)
-	{
-		case 	MOD_AV: 	res = "AV"; break;
-		case 	MOD_COVER: 	res = "COVER"; break;
-		case 	MOD_DB: 	res = "DB"; break;
-		case 	MOD_DBUPDATER: 	res = "DBUPDATER"; break;
-		case 	MOD_MAIN: 	res = "MAIN"; break;
-		case 	MOD_METADATA: 	res = "METADATA"; break;
-		case 	MOD_REMOTE: 	res = "REMOTE"; break;
-		case 	MOD_SERVICE: 	res = "SERVICE"; break;
-		case 	MOD_TRANSCODE: 	res = "TRANSCODE"; break;
-		case 	MOD_UI:		res = "UI"; break;
-	}
-
-	if (res)
-		strm << res;
-	else
-		strm << static_cast< int >(val);
-	return strm;
-}
-
-
-#endif // LOGGER_HPP__
-
+#endif
