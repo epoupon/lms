@@ -17,7 +17,7 @@ Please note some media files may require significant CPU usage to be transcoded.
 ## Dependencies
 ### Debian or Ubuntu packages
 ```sh
-$ apt-get install g++ autoconf automake libboost-dev libboost-locale-dev libboost-iostreams-dev libboost-log-dev libavcodec-dev libwtdbosqlite-dev libwthttp-dev libwtdbo-dev libwt-dev libconfig++-dev libjpeg8-dev libavcodec-dev libavformat-dev libavutil-dvegi
+$ apt-get install g++ autoconf automake libboost-dev libboost-locale-dev libboost-iostreams-dev libboost-log-dev libavcodec-dev libwtdbosqlite-dev libwthttp-dev libwtdbo-dev libwt-dev libconfig++-dev libjpeg8-dev libavcodec-dev libavformat-dev libavutil-dvegi libav-tools
 ```
 
 If you want to enable the LMS API, you need these additional packages:
