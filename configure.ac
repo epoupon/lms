@@ -39,6 +39,14 @@ AS_IF([test "$enable_lmsapi" = "yes"],
 AM_CONDITIONAL([LMSAPI], [test x$lmsapi = xtrue])
 AS_IF([test x$lmsapi = xtrue], [AC_DEFINE(HAVE_LMSAPI, [1], [Enable LMS API support])])
 
+AC_ARG_ENABLE([video], AS_HELP_STRING([--enable-video],
+				      [Enable Video support. Default to yes.])],
+			[enable_video="$enableval"],
+			[enable_video="yes"])
+
+AM_CONDITIONAL([VIDEO], [test x$enable_video = xyes])
+
+
 AC_CHECK_HEADERS([Wt/WApplication jpeglib.h],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])

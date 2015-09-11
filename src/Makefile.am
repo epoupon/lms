@@ -2,12 +2,8 @@ bin_PROGRAMS = lms
 
 lms_SOURCES = \
 	$(srcdir)/main/main.cpp					\
-	$(srcdir)/av/CodecContext.cpp				\
-	$(srcdir)/av/Common.cpp					\
-	$(srcdir)/av/Dictionary.cpp				\
-	$(srcdir)/av/FormatContext.cpp				\
-	$(srcdir)/av/InputFormatContext.cpp			\
-	$(srcdir)/av/Stream.cpp					\
+	$(srcdir)/av/AvInfo.cpp					\
+	$(srcdir)/av/AvTranscoder.cpp					\
 	$(srcdir)/cover/CoverArt.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
 	$(srcdir)/database/Artist.cpp				\
@@ -27,10 +23,6 @@ lms_SOURCES = \
 	$(srcdir)/metadata/Utils.cpp				\
 	$(srcdir)/service/ServiceManager.cpp			\
 	$(srcdir)/service/DatabaseUpdateService.cpp		\
-	$(srcdir)/transcode/AvConvTranscoder.cpp		\
-	$(srcdir)/transcode/Format.cpp				\
-	$(srcdir)/transcode/Parameters.cpp			\
-	$(srcdir)/transcode/InputMediaFile.cpp			\
 	$(srcdir)/ui/LmsApplication.cpp				\
 	$(srcdir)/ui/auth/LmsAuth.cpp				\
 	$(srcdir)/ui/audio/desktop/DesktopAudio.cpp		\
@@ -49,10 +41,6 @@ lms_SOURCES = \
 	$(srcdir)/ui/common/LineEdit.cpp			\
 	$(srcdir)/ui/resource/AvConvTranscodeStreamResource.cpp	\
 	$(srcdir)/ui/resource/CoverResource.cpp			\
-	$(srcdir)/ui/video/VideoWidget.cpp			\
-	$(srcdir)/ui/video/VideoDatabaseWidget.cpp		\
-	$(srcdir)/ui/video/VideoMediaPlayerWidget.cpp		\
-	$(srcdir)/ui/video/VideoParametersDialog.cpp		\
 	$(srcdir)/ui/settings/Settings.cpp			\
 	$(srcdir)/ui/settings/SettingsAccountFormView.cpp	\
 	$(srcdir)/ui/settings/SettingsAudioFormView.cpp		\
@@ -62,6 +50,14 @@ lms_SOURCES = \
 	$(srcdir)/ui/settings/SettingsMediaDirectoryFormView.cpp	\
 	$(srcdir)/ui/settings/SettingsUserFormView.cpp	\
 	$(srcdir)/ui/settings/SettingsUsers.cpp
+
+if VIDEO
+lms_SOURCES += \
+	$(srcdir)/ui/video/VideoWidget.cpp			\
+	$(srcdir)/ui/video/VideoDatabaseWidget.cpp		\
+	$(srcdir)/ui/video/VideoMediaPlayerWidget.cpp		\
+	$(srcdir)/ui/video/VideoParametersDialog.cpp
+endif
 
 if LMSAPI
 lms_SOURCES += \

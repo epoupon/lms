@@ -27,9 +27,10 @@
 
 namespace UserInterface {
 
-AvConvTranscodeStreamResource::AvConvTranscodeStreamResource(const Transcode::Parameters& parameters, Wt::WObject *parent)
+AvConvTranscodeStreamResource::AvConvTranscodeStreamResource(boost::filesystem::path p, Av::TranscodeParameters parameters, Wt::WObject *parent)
 : Wt::WResource(parent),
-	_parameters( parameters )
+_filePath(p),
+_parameters( parameters )
 {
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "CONSTRUCTING RESOURCE";
 }
@@ -49,17 +50,23 @@ AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Handling new request. Continuation = " << continuation;
 
-	std::shared_ptr<Transcode::AvConvTranscoder> transcoder;
+	std::shared_ptr<Av::Transcoder> transcoder;
 	if (continuation)
-		transcoder = boost::any_cast<std::shared_ptr<Transcode::AvConvTranscoder> >(continuation->data());
+		transcoder = boost::any_cast<std::shared_ptr<Av::Transcoder> >(continuation->data());
 
 	if (!transcoder)
 	{
 		LMS_LOG(MOD_UI, SEV_DEBUG) << "Launching transcoder";
-		transcoder = std::make_shared<Transcode::AvConvTranscoder>( _parameters);
+		transcoder = std::make_shared<Av::Transcoder>( _filePath, _parameters);
 
-		LMS_LOG(MOD_UI, SEV_DEBUG) << "Mime type set to '" << _parameters.getOutputFormat().getMimeType() << "'";
-		response.setMimeType(_parameters.getOutputFormat().getMimeType());
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "Mime type set to '" << Av::encoding_to_mimetype(_parameters.getEncoding());
+		response.setMimeType( Av::encoding_to_mimetype(_parameters.getEncoding()) );
+
+		if (!transcoder->start())
+		{
+			LMS_LOG(MOD_UI, SEV_ERROR) << "Cannot start transcoder";
+			return;
+		}
 	}
 
 	if (!transcoder->isComplete())
@@ -72,7 +79,7 @@ AvConvTranscodeStreamResource::handleRequest(const Wt::Http::Request& request,
 		// Give the client all the output data
 		response.out().write(reinterpret_cast<char*>(&data[0]), data.size());
 
-		LMS_LOG(MOD_UI, SEV_DEBUG) << "Written " << data.size() << " bytes! complete = " << std::boolalpha << transcoder->isComplete() << ", produced bytes = " << transcoder->getOutputBytes();
+		LMS_LOG(MOD_UI, SEV_DEBUG) << "Written " << data.size() << " bytes! complete = " << std::boolalpha << transcoder->isComplete();
 
 		if (!response.out())
 			LMS_LOG(MOD_UI, SEV_ERROR) << "Write failed!";

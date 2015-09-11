@@ -19,7 +19,7 @@
 
 #include "logger/Logger.hpp"
 #include "config/ConfigReader.hpp"
-#include "av/InputFormatContext.hpp"
+#include "av/AvInfo.hpp"
 
 #include "CoverArtGrabber.hpp"
 
@@ -55,23 +55,13 @@ Grabber::instance()
 	return instance;
 }
 
-std::vector<CoverArt>
-Grabber::getFromInputFormatContext(const Av::InputFormatContext& input, std::size_t nbMaxCovers) const
+static std::vector<CoverArt>
+getFromAvMediaFile(const Av::MediaFile& input, std::size_t nbMaxCovers)
 {
 	std::vector<CoverArt> res;
 
-	try
-	{
-		std::vector<Av::Picture> pictures = input.getPictures(nbMaxCovers);
-
-		for (Av::Picture& picture : pictures)
-			res.push_back( CoverArt(picture.mimeType, picture.data) );
-
-	}
-	catch(std::exception& e)
-	{
-		LMS_LOG(MOD_COVER, SEV_ERROR) << "Cannot get pictures: " << e.what();
-	}
+	for (Av::Picture& picture : input.getAttachedPictures(nbMaxCovers))
+		res.push_back( CoverArt(picture.mimeType, picture.data) );
 
 	return res;
 }
@@ -137,21 +127,12 @@ Grabber::getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t
 std::vector<CoverArt>
 Grabber::getFromTrack(const boost::filesystem::path& p, std::size_t nbMaxCovers) const
 {
-	std::vector<CoverArt> res;
+	Av::MediaFile input(p);
 
-	try
-	{
-		Av::InputFormatContext input(p);
-
-		res = getFromInputFormatContext(input, nbMaxCovers);
-
-	}
-	catch(std::exception& e)
-	{
-		LMS_LOG(MOD_COVER, SEV_ERROR) << "Cannot get covers from file " << p << ": " << e.what();
-	}
-
-	return res;
+	if (input.open())
+		return getFromAvMediaFile(input, nbMaxCovers);
+	else
+		return std::vector<CoverArt>();
 }
 
 std::vector<CoverArt>

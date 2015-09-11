@@ -36,7 +36,9 @@
 #include "auth/LmsAuth.hpp"
 #include "audio/desktop/DesktopAudio.hpp"
 #include "audio/mobile/MobileAudio.hpp"
+#if HAVE_VIDEO
 #include "video/VideoWidget.hpp"
+#endif
 #include "common/LineEdit.hpp"
 
 #include "LmsApplication.hpp"
@@ -196,10 +198,13 @@ LmsApplication::handleAuthEvent(void)
 		else
 			audio = new Desktop::Audio();
 
-		VideoWidget *videoWidget = new VideoWidget();
-
 		leftMenu->addItem("Audio", audio);
+
+#if defined HAVE_VIDEO
+		VideoWidget *videoWidget = new VideoWidget();
 		leftMenu->addItem("Video", videoWidget);
+#endif
+
 		leftMenu->addItem("Settings", new Settings::Settings());
 
 		// Setup a Right-aligned menu.

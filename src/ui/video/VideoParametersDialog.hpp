@@ -17,8 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef VIDEO_PARAMETER_DIALOG
-#define VIDEO_PARAMETER_DIALOG
+#pragma once
 
 #include <map>
 
@@ -65,6 +64,4 @@ class VideoParametersDialog : public Wt::WDialog
 };
 
 } // namespace UserInterface
-
-#endif
 

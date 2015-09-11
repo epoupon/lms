@@ -29,25 +29,25 @@
 namespace UserInterface {
 
 Wt::WMediaPlayer::Encoding
-convert(Transcode::Format format)
+AvEncoding_to_WtEncoding(Av::Encoding encoding)
 {
-	switch( format.getEncoding() )
+	switch( encoding )
 	{
-		case Transcode::Format::OGA: return Wt::WMediaPlayer::OGA;
-		case Transcode::Format::OGV: return Wt::WMediaPlayer::OGV;
-		case Transcode::Format::MP3: return Wt::WMediaPlayer::MP3;
-		case Transcode::Format::WEBMA: return Wt::WMediaPlayer::WEBMA;
-		case Transcode::Format::WEBMV: return Wt::WMediaPlayer::WEBMV;
-		case Transcode::Format::FLA: return Wt::WMediaPlayer::FLA;
-		case Transcode::Format::FLV: return Wt::WMediaPlayer::FLV;
-		case Transcode::Format::M4A: return Wt::WMediaPlayer::M4A;
-		case Transcode::Format::M4V: return Wt::WMediaPlayer::M4V;
+		case Av::Encoding::OGA: return Wt::WMediaPlayer::OGA;
+		case Av::Encoding::OGV: return Wt::WMediaPlayer::OGV;
+		case Av::Encoding::MP3: return Wt::WMediaPlayer::MP3;
+		case Av::Encoding::WEBMA: return Wt::WMediaPlayer::WEBMA;
+		case Av::Encoding::WEBMV: return Wt::WMediaPlayer::WEBMV;
+		case Av::Encoding::FLA: return Wt::WMediaPlayer::FLA;
+		case Av::Encoding::FLV: return Wt::WMediaPlayer::FLV;
+		case Av::Encoding::M4A: return Wt::WMediaPlayer::M4A;
+		case Av::Encoding::M4V: return Wt::WMediaPlayer::M4V;
 	}
 	assert(0);
 }
 
 
-VideoMediaPlayerWidget::VideoMediaPlayerWidget( const Transcode::Parameters& parameters, Wt::WContainerWidget *parent)
+VideoMediaPlayerWidget::VideoMediaPlayerWidget( Av::TranscodeParameters parameters, Wt::WContainerWidget *parent)
 	: Wt::WContainerWidget(parent),
 	_mediaResource(nullptr),
 	_currentParameters(parameters),
@@ -106,7 +106,7 @@ VideoMediaPlayerWidget::VideoMediaPlayerWidget( const Transcode::Parameters& par
 }
 
 void
-VideoMediaPlayerWidget::load(const Transcode::Parameters& parameters)
+VideoMediaPlayerWidget::load(Av::TranscodeParameters parameters)
 {
 	_mediaPlayer->clearSources();
 
@@ -116,15 +116,15 @@ VideoMediaPlayerWidget::load(const Transcode::Parameters& parameters)
 	if (_mediaResource)
 		delete _mediaResource;
 
-	_mediaResource = new AvConvTranscodeStreamResource( parameters, this );
+// TODO 	_mediaResource = new AvConvTranscodeStreamResource( parameters, this );
 	_mediaInternalLink.setResource( _mediaResource );
 
-	_mediaPlayer->addSource( convert(parameters.getOutputFormat()), _mediaInternalLink );
+	_mediaPlayer->addSource( AvEncoding_to_WtEncoding(parameters.getEncoding()), _mediaInternalLink );
 
-	_timeSlider->setRange(0, parameters.getInputMediaFile().getDuration().total_seconds() );
+	_timeSlider->setRange(0, 0/* TODO  parameters.getInputMediaFile().getDuration().total_seconds()*/ );
 	_timeSlider->setValue( parameters.getOffset().total_seconds() );
 
-	_duration->setText( boost::posix_time::to_simple_string( parameters.getInputMediaFile().getDuration() ));
+// TODO	_duration->setText( boost::posix_time::to_simple_string( parameters.getInputMediaFile().getDuration() ));
 
 	_mediaPlayer->play();
 }
@@ -151,6 +151,7 @@ VideoMediaPlayerWidget::handleTimeUpdated(void)
 {
 	std::cout << "Time updated to " << _mediaPlayer->currentTime() << std::endl;
 
+	/* TODO
 	if (_mediaPlayer->currentTime() > 0 && _mediaPlayer->currentTime() < _currentParameters.getInputMediaFile().getDuration().total_seconds())
 	{
 		boost::posix_time::time_duration currentTime ( boost::posix_time::seconds( _mediaPlayer->currentTime() + _currentParameters.getOffset().total_seconds()));
@@ -158,6 +159,7 @@ VideoMediaPlayerWidget::handleTimeUpdated(void)
 		_timeSlider->setValue( currentTime.total_seconds() );
 		_curTime->setText( boost::posix_time::to_simple_string( currentTime) );
 	}
+	*/
 }
 
 void
@@ -176,12 +178,12 @@ void
 VideoMediaPlayerWidget::handleParametersEdit(void)
 {
 
-	_dialog = new VideoParametersDialog("Parameters");
-	_dialog->load(_currentParameters);
+//	_dialog = new VideoParametersDialog("Parameters");
+//TODO	_dialog->load(_currentParameters);
 
-	_dialog->show();
+//	_dialog->show();
 
-	_dialog->finished().connect(this, &VideoMediaPlayerWidget::handleParametersDone);
+//	_dialog->finished().connect(this, &VideoMediaPlayerWidget::handleParametersDone);
 }
 
 void
@@ -191,7 +193,7 @@ VideoMediaPlayerWidget::handleParametersDone(Wt::WDialog::DialogCode code)
 
 	if (code == Wt::WDialog::Accepted)
 	{
-		_dialog->save( _currentParameters );
+// TODO		_dialog->save( _currentParameters );
 
 		// TODO SYNC current offset with player?
 		// HACK use slider current value

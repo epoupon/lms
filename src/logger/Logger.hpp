@@ -21,6 +21,7 @@
 #define LOGGER_HPP__
 
 #include <Wt/WServer>
+#include <Wt/WApplication>
 #include <Wt/WLogger>
 
 #include <string>
@@ -53,6 +54,6 @@ enum Module
 std::string getModuleName(Module mod);
 std::string getSeverityName(Severity sev);
 
-#define LMS_LOG(module, level)	Wt::WServer::instance()->log(getSeverityName(level)) <<  Wt::WLogger::sep << "[" << getModuleName(module) << "]" <<  Wt::WLogger::sep
+#define LMS_LOG(module, level)	Wt::log(getSeverityName(level)) << Wt::WLogger::sep << "[" << getModuleName(module) << "]" <<  Wt::WLogger::sep
 
 #endif

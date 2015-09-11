@@ -52,6 +52,7 @@ VideoWidget::playVideo(boost::filesystem::path p)
 	LMS_LOG(MOD_UI, SEV_DEBUG) << "Want to play video " << p << "'";
 	try {
 
+#if 0
 		std::size_t audioBitrate = 0;
 		std::size_t videoBitrate = 0;
 
@@ -89,6 +90,7 @@ VideoWidget::playVideo(boost::filesystem::path p)
 		}));
 
 		_videoDbWidget->setHidden(true);
+#endif
 	}
 	catch( std::exception& e) {
 		LMS_LOG(MOD_UI, SEV_ERROR) << "Caught exception while loading '" << p << "': " << e.what();

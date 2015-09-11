@@ -48,7 +48,7 @@ VideoParametersDialog::VideoParametersDialog(const Wt::WString &windowTitle, Wt:
 
 		_outputFormatModel = new Wt::WStringListModel(_outputFormat);
 
-		std::vector<Format> formats = Format::get( Format::Video );
+		std::vector<Format> formats ; // TODO Format::get( Format::Video );
 
 		for(std::size_t idFormat = 0; idFormat < formats.size(); ++idFormat)
 		{
@@ -154,7 +154,7 @@ VideoParametersDialog::load(const Transcode::Parameters& parameters)
 		Wt::WComboBox* combo = _streamSelection[streamType].first;
 		Wt::WStringListModel* model = _streamSelection[streamType].second;
 
-		addStreams(model, parameters.getInputMediaFile().getStreams( streamType ) );
+// TODO		addStreams(model, parameters.getInputMediaFile().getStreams( streamType ) );
 
 		selectStream(model, streamMap[streamType], combo);
 	}
@@ -168,7 +168,7 @@ VideoParametersDialog::save(Transcode::Parameters& parameters)
 
 	// Get encoder used
 	Format::Encoding encoding = boost::any_cast<Format::Encoding>( _outputFormatModel->data(_outputFormatModel->index(_outputFormat->currentIndex(), 0), Wt::UserRole));
-	parameters.setOutputFormat( Format::get(encoding) );
+// TODO	parameters.setOutputFormat( Format::get(encoding) );
 
 	// Get stream selected, if any
 	BOOST_FOREACH(Stream::Type streamType, streamTypes)

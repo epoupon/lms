@@ -22,7 +22,6 @@
 
 #include <vector>
 
-#include "av/InputFormatContext.hpp"
 #include "database/Types.hpp"
 
 #include "CoverArt.hpp"
@@ -40,7 +39,6 @@ class Grabber
 
 		std::vector<boost::filesystem::path>	getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t nbMaxCovers = 1) const;
 		std::vector<CoverArt>	getFromDirectory(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
-		std::vector<CoverArt>	getFromInputFormatContext(const Av::InputFormatContext& input, std::size_t nbMaxCovers = 1) const;
 		std::vector<CoverArt>	getFromTrack(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
 		std::vector<CoverArt>	getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::size_t nbMaxCovers = 1) const;
 		std::vector<CoverArt>	getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type releaseId, std::size_t nbMaxCovers = 1) const;

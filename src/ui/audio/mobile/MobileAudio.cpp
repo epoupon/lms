@@ -164,21 +164,23 @@ Audio::Audio(Wt::WContainerWidget *parent)
 
 		if (track)
 		{
+			Av::TranscodeParameters parameters;
+
 			// Determine the output format using the encoding of the player
-			Transcode::Format::Encoding encoding;
+			Av::Encoding encoding;
 			switch(mediaPlayer->getEncoding())
 			{
-				case Wt::WMediaPlayer::MP3: encoding = Transcode::Format::MP3; break;
-				case Wt::WMediaPlayer::FLA: encoding = Transcode::Format::FLA; break;
-				case Wt::WMediaPlayer::OGA: encoding = Transcode::Format::OGA; break;
-				case Wt::WMediaPlayer::WEBMA: encoding = Transcode::Format::WEBMA; break;
+			case Wt::WMediaPlayer::MP3: encoding = Av::Encoding::MP3; break;
+			case Wt::WMediaPlayer::FLA: encoding = Av::Encoding::FLA; break;
+			case Wt::WMediaPlayer::OGA: encoding = Av::Encoding::OGA; break;
+			case Wt::WMediaPlayer::WEBMA: encoding = Av::Encoding::WEBMA; break;
 				default:
-					encoding = Transcode::Format::MP3;
+					encoding = Av::Encoding::MP3;
 			}
-			// TODO compute parameters using user s profile
-			Transcode::InputMediaFile inputFile(track->getPath());
-			Transcode::Parameters parameters(inputFile, Transcode::Format::get(encoding));
-			parameters.setBitrate(Transcode::Stream::Audio, 96000);
+			parameters.setEncoding(encoding);
+
+			// TODO compute parameters using user's profile
+			parameters.setBitrate(Av::Stream::Type::Audio, 96000);
 
 			mediaPlayer->play(track.id(), parameters);
 		}

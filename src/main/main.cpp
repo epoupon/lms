@@ -20,8 +20,8 @@
 #include <boost/filesystem.hpp>
 
 #include "config/config.h"
-#include "transcode/AvConvTranscoder.hpp"
-#include "av/Common.hpp"
+#include "av/AvInfo.hpp"
+#include "av/AvTranscoder.hpp"
 #include "logger/Logger.hpp"
 #include "cover/CoverArtGrabber.hpp"
 
@@ -47,11 +47,13 @@ int main(int argc, char* argv[])
 		Wt::WServer server(argv[0]);
 		server.setServerConfiguration (argc, argv);
 
+		Wt::WServer::instance()->logger().configure("*"); // log everything
+
 		Service::ServiceManager& serviceManager = Service::ServiceManager::instance();
 
 		// lib init
 		Av::AvInit();
-		Transcode::AvConvTranscoder::init();
+		Av::Transcoder::init();
 		Database::Handler::configureAuth();
 
 		// Initializing a connection pool to the database that will be shared along services
