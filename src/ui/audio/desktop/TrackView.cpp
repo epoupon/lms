@@ -150,7 +150,7 @@ TrackView::refresh(SearchFilter& filter)
 void
 TrackView::getSelectedTracks(std::vector<Track::id_type>& track_ids)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting selected tracks...";
+	LMS_LOG(UI, DEBUG) << "Getting selected tracks...";
 
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
@@ -164,7 +164,7 @@ TrackView::getSelectedTracks(std::vector<Track::id_type>& track_ids)
 		track_ids.push_back(id);
 	}
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all selected tracks: " << track_ids.size();
+	LMS_LOG(UI, DEBUG) << "Getting all selected tracks: " << track_ids.size();
 }
 
 std::size_t
@@ -192,7 +192,7 @@ TrackView::getFirstSelectedTrackPosition(void)
 void
 TrackView::getTracks(std::vector<Track::id_type>& trackIds)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all tracks...";
+	LMS_LOG(UI, DEBUG) << "Getting all tracks...";
 
 	Wt::Dbo::Transaction transaction(DboSession());
 	Wt::Dbo::collection<Track::UIQueryResult> results = _queryModel.query();
@@ -203,7 +203,7 @@ TrackView::getTracks(std::vector<Track::id_type>& trackIds)
 		trackIds.push_back(id);
 	}
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all tracks done! " << trackIds.size() << " tracks!";
+	LMS_LOG(UI, DEBUG) << "Getting all tracks done! " << trackIds.size() << " tracks!";
 }
 
 } // namespace Desktop

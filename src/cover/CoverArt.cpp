@@ -71,7 +71,7 @@ CoverArt::scale(std::size_t size)
 	}
 	catch(std::exception& e)
 	{
-		LMS_LOG(MOD_COVER, SEV_ERROR) << "Caught exception: " << e.what();
+		LMS_LOG(COVER, ERROR) << "Caught exception: " << e.what();
 	}
 
 	return res;

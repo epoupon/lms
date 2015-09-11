@@ -53,7 +53,7 @@ void AvInit()
        /* register all the codecs */
        avcodec_register_all();
        av_register_all();
-       LMS_LOG(MOD_AV, SEV_INFO) << "avcodec version = " << avcodec_version();
+       LMS_LOG(AV, INFO) << "avcodec version = " << avcodec_version();
 }
 
 
@@ -79,7 +79,7 @@ MediaFile::open(void)
 	int error = avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr);
 	if (error < 0)
 	{
-		LMS_LOG(MOD_AV, SEV_ERROR) << "Cannot open '" << _p.string() << "', avformat_open_input returned " << averror_to_string(error);
+		LMS_LOG(AV, ERROR) << "Cannot open '" << _p.string() << "', avformat_open_input returned " << averror_to_string(error);
 		return false;
 	}
 
@@ -95,7 +95,7 @@ MediaFile::scan(void)
 	int error = avformat_find_stream_info(_context, nullptr);
 	if (error < 0)
 	{
-		LMS_LOG(MOD_AV, SEV_ERROR) << "Cannot find stream information: '" << averror_to_string(error);
+		LMS_LOG(AV, ERROR) << "Cannot find stream information: '" << averror_to_string(error);
 		return false;
 	}
 
@@ -171,7 +171,7 @@ MediaFile::getStreams(Stream::Type type) const
 
 		if (avstream->codec == nullptr)
 		{
-			LMS_LOG(MOD_AV, SEV_ERROR) << "Skipping stream " << i << " since no codec is set";
+			LMS_LOG(AV, ERROR) << "Skipping stream " << i << " since no codec is set";
 			continue;
 		}
 
@@ -226,7 +226,7 @@ MediaFile::getBestStreamId(Stream::Type type) const
 		0);
 	if (res < 0)
 	{
-		LMS_LOG(MOD_AV, SEV_ERROR) << "Cannot find best stream for type " << streamType_to_string(type);
+		LMS_LOG(AV, ERROR) << "Cannot find best stream for type " << streamType_to_string(type);
 		return -1;
 	}
 
@@ -273,7 +273,7 @@ MediaFile::getAttachedPictures(std::size_t nbMaxPictures) const
 
 		if (avstream->codec == nullptr)
 		{
-			LMS_LOG(MOD_AV, SEV_ERROR) << "Skipping stream " << i << " since no codec is set";
+			LMS_LOG(AV, ERROR) << "Skipping stream " << i << " since no codec is set";
 			continue;
 		}
 
@@ -287,7 +287,7 @@ MediaFile::getAttachedPictures(std::size_t nbMaxPictures) const
 		else
 		{
 			picture.mimeType = "application/octet-stream";
-			LMS_LOG(MOD_AV, SEV_ERROR) << "CODEC ID " << avstream->codec->codec_id << " not handled in mime type conversion";
+			LMS_LOG(AV, ERROR) << "CODEC ID " << avstream->codec->codec_id << " not handled in mime type conversion";
 		}
 
 		AVPacket pkt = avstream->attached_pic;

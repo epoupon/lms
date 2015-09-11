@@ -64,7 +64,7 @@ AudioMediaPlayer::AudioMediaPlayer(Wt::WContainerWidget *parent)
 		}
 	}
 
-	LMS_LOG(MOD_UI, SEV_INFO) << "Audio player using encoding " << _encoding;
+	LMS_LOG(UI, INFO) << "Audio player using encoding " << _encoding;
 
 	// Current Media info
 	Wt::WHBoxLayout *currentMediaLayout = new Wt::WHBoxLayout();
@@ -219,7 +219,7 @@ AudioMediaPlayer::load(Database::Track::id_type trackId)
 	if (!mediaFile.open())
 	{
 		// No longer exist ? TODO next?
-		LMS_LOG(MOD_UI, SEV_INFO) << "Cannot open file '" << path << "'";
+		LMS_LOG(UI, INFO) << "Cannot open file '" << path << "'";
 		return;
 	}
 

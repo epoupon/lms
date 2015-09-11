@@ -105,7 +105,7 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		_session.execute("CREATE INDEX track_name_idx ON track(name)");
 	}
 	catch(std::exception& e) {
-		LMS_LOG(MOD_DB, SEV_ERROR) << "Cannot create tables: " << e.what();
+		LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();
 	}
 
 	_users = new UserDatabase(_session);
@@ -136,7 +136,7 @@ Handler::getUser(const Wt::Auth::User& authUser)
 {
 
 	if (!authUser.isValid()) {
-		LMS_LOG(MOD_DB, SEV_ERROR) << "Handler::getUser: invalid authUser";
+		LMS_LOG(DB, ERROR) << "Handler::getUser: invalid authUser";
 		return User::pointer();
 	}
 
@@ -155,7 +155,7 @@ Handler::getUser(const Wt::Auth::User& authUser)
 Wt::Dbo::SqlConnectionPool*
 Handler::createConnectionPool(boost::filesystem::path p)
 {
-	LMS_LOG(MOD_DB, SEV_INFO) << "Creating connection pool on file " << p;
+	LMS_LOG(DB, INFO) << "Creating connection pool on file " << p;
 
 	Wt::Dbo::backend::Sqlite3 *connection = new Wt::Dbo::backend::Sqlite3(p.string());
 

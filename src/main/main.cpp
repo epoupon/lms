@@ -68,35 +68,35 @@ int main(int argc, char* argv[])
 		// bind entry point
 		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, boost::ref(*connectionPool)));
 
-		LMS_LOG(MOD_MAIN, SEV_NOTICE) << "Now running...";
-
 		// Starting the main server
-		LMS_LOG(MOD_MAIN, SEV_INFO) << "Starting server...";
+		LMS_LOG(MAIN, INFO) << "Starting server...";
 		server.start();
 
 		// Start underlying services
-		LMS_LOG(MOD_MAIN, SEV_INFO) << "Starting services...";
+		LMS_LOG(MAIN, INFO) << "Starting services...";
 		serviceManager.start();
+
+		LMS_LOG(MAIN, INFO) << "Now running...";
 
 		// Waiting for shutdown command
 		Wt::WServer::waitForShutdown(argv[0]);
 
-		LMS_LOG(MOD_MAIN, SEV_INFO) << "Stopping services...";
+		LMS_LOG(MAIN, INFO) << "Stopping services...";
 		serviceManager.stop();
 		serviceManager.clear();
 
-		LMS_LOG(MOD_MAIN, SEV_INFO) << "Stopping server...";
+		LMS_LOG(MAIN, INFO) << "Stopping server...";
 		server.stop();
 
 		res = EXIT_SUCCESS;
 	}
 	catch( Wt::WServer::Exception& e)
 	{
-		LMS_LOG(MOD_MAIN, SEV_CRIT) << "Caught a WServer::Exception: " << e.what();
+		LMS_LOG(MAIN, FATAL) << "Caught a WServer::Exception: " << e.what();
 	}
 	catch( std::exception& e)
 	{
-		LMS_LOG(MOD_MAIN, SEV_CRIT) << "Caught std::exception: " << e.what();
+		LMS_LOG(MAIN, FATAL) << "Caught std::exception: " << e.what();
 	}
 
 	return res;

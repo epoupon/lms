@@ -96,12 +96,12 @@ Users::refresh(void)
 		}
 		catch(Wt::Dbo::Exception& e)
 		{
-			LMS_LOG(MOD_UI, SEV_ERROR) << "Caught exception when getting userId=" << userId << ": " << e.code();
+			LMS_LOG(UI, ERROR) << "Caught exception when getting userId=" << userId << ": " << e.code();
 			continue;
 		}
 
 		if (!authUser.isValid()) {
-			LMS_LOG(MOD_UI, SEV_ERROR) << "Users::refresh: skipping invalid userId = " << userId;
+			LMS_LOG(UI, ERROR) << "Users::refresh: skipping invalid userId = " << userId;
 			continue;
 		}
 

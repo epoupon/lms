@@ -371,7 +371,7 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 {
 	using namespace Database;
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Adding " << trackIds.size() << " tracks to play queue";
+	LMS_LOG(UI, DEBUG) << "Adding " << trackIds.size() << " tracks to play queue";
 
 	// Add tracks to model
 	for (Track::id_type trackId : trackIds)
@@ -465,7 +465,7 @@ PlayQueue::playPrevious(void)
 void
 PlayQueue::readTrack(int rowPos)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Reading track at pos " << rowPos << ", row count = " << _model->rowCount();
+	LMS_LOG(UI, DEBUG) << "Reading track at pos " << rowPos << ", row count = " << _model->rowCount();
 
 	if (rowPos < _model->rowCount())
 	{

@@ -156,7 +156,7 @@ Audio::Audio(Wt::WContainerWidget *parent)
 
 	trackSearch->trackPlay().connect(std::bind([=] (Track::id_type id)
 	{
-		LMS_LOG(MOD_UI, SEV_DEBUG) << "Playing track id " << id;
+		LMS_LOG(UI, DEBUG) << "Playing track id " << id;
 		// TODO reduce transaction scope here
 		Wt::Dbo::Transaction transaction(DboSession());
 

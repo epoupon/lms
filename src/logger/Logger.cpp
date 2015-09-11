@@ -23,16 +23,16 @@ std::string getModuleName(Module mod)
 {
 	switch (mod)
 	{
-		case MOD_AV:		return "AV";
-		case MOD_COVER:		return "COVER";
-		case MOD_DB:		return "DB";
-		case MOD_DBUPDATER:	return "DB UPDATER";
-		case MOD_MAIN:		return "MAIN";
-		case MOD_METADATA:	return "METADATA";
-		case MOD_REMOTE:	return "REMOTE";
-		case MOD_SERVICE:	return "SERVICE";
-		case MOD_TRANSCODE:	return "TRANSCODE";
-		case MOD_UI:		return "UI";
+		case Module::AV:		return "AV";
+		case Module::COVER:		return "COVER";
+		case Module::DB:		return "DB";
+		case Module::DBUPDATER:	return "DB UPDATER";
+		case Module::MAIN:		return "MAIN";
+		case Module::METADATA:	return "METADATA";
+		case Module::REMOTE:	return "REMOTE";
+		case Module::SERVICE:	return "SERVICE";
+		case Module::TRANSCODE:	return "TRANSCODE";
+		case Module::UI:		return "UI";
 	}
 	return "";
 }
@@ -41,12 +41,11 @@ std::string getSeverityName(Severity sev)
 {
 	switch (sev)
 	{
-		case SEV_CRIT:		return "fatal";
-		case SEV_ERROR:		return "error";
-		case SEV_WARNING:	return "warning";
-		case SEV_NOTICE:
-		case SEV_INFO:		return "info";
-		case SEV_DEBUG:		return "debug";
+		case Severity::FATAL:		return "fatal";
+		case Severity::ERROR:		return "error";
+		case Severity::WARNING:		return "warning";
+		case Severity::INFO:		return "info";
+		case Severity::DEBUG:		return "debug";
 	}
 	return "";
 }

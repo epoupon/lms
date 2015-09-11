@@ -66,7 +66,7 @@ Transcoder::init()
 	}
 
 	if (!_avConvPath.empty())
-		LMS_LOG(MOD_TRANSCODE, SEV_INFO) << "Using transcoder " << _avConvPath;
+		LMS_LOG(TRANSCODE, INFO) << "Using transcoder " << _avConvPath;
 	else
 		throw std::runtime_error("Cannot find any transcoder binary!");
 }
@@ -94,7 +94,7 @@ Transcoder::start()
 	else if (!boost::filesystem::is_regular( _filePath) )
 		return false;
 
-	LMS_LOG(MOD_TRANSCODE, SEV_INFO) << "Transcoding file '" << _filePath << "'";
+	LMS_LOG(TRANSCODE, INFO) << "Transcoding file '" << _filePath << "'";
 
 	// Launch a process to handle the conversion
 	boost::iostreams::file_descriptor_sink sink(_outputPipe.sink, boost::iostreams::close_handle);
@@ -157,7 +157,7 @@ Transcoder::start()
 	}
 	oss << " -";		// output to stdout
 
-	LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Executing '" << oss.str() << "'";
+	LMS_LOG(TRANSCODE, DEBUG) << "Executing '" << oss.str() << "'";
 
 	// make sure only one thread is executing this part of code
 	// See boost process FAQ
@@ -191,7 +191,7 @@ Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 	}
 
 	if (!_in || _in.fail() || _in.eof()) {
-		LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Transcode complete!";
+		LMS_LOG(TRANSCODE, DEBUG) << "Transcode complete!";
 
 		waitChild();
 		_isComplete = true;
@@ -201,7 +201,7 @@ Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 
 Transcoder::~Transcoder()
 {
-	LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "~Transcoder called!";
+	LMS_LOG(TRANSCODE, DEBUG) << "~Transcoder called!";
 
 	if (_in.eof())
 		waitChild();
@@ -216,12 +216,12 @@ Transcoder::waitChild()
 	{
 		boost::system::error_code ec;
 
-		LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Waiting for child...";
+		LMS_LOG(TRANSCODE, DEBUG) << "Waiting for child...";
 		boost::process::wait_for_exit(*_child, ec);
-		LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Waiting for child: OK";
+		LMS_LOG(TRANSCODE, DEBUG) << "Waiting for child: OK";
 
 		if (ec)
-			LMS_LOG(MOD_TRANSCODE, SEV_ERROR) << "Transcoder::waitChild: error: " << ec.message();
+			LMS_LOG(TRANSCODE, ERROR) << "Transcoder::waitChild: error: " << ec.message();
 
 		_child.reset();
 	}
@@ -234,13 +234,13 @@ Transcoder::killChild()
 	{
 		boost::system::error_code ec;
 
-		LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Killing child! pid = " << _child->pid;
+		LMS_LOG(TRANSCODE, DEBUG) << "Killing child! pid = " << _child->pid;
 		boost::process::terminate(*_child, ec);
-		LMS_LOG(MOD_TRANSCODE, SEV_DEBUG) << "Killing child DONE";
+		LMS_LOG(TRANSCODE, DEBUG) << "Killing child DONE";
 
 		// If an error occured, force kill the child
 		if (ec)
-			LMS_LOG(MOD_TRANSCODE, SEV_ERROR) << "Transcoder::killChild: error: " << ec.message();
+			LMS_LOG(TRANSCODE, ERROR) << "Transcoder::killChild: error: " << ec.message();
 
 		_child.reset();
 	}

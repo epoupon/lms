@@ -168,12 +168,12 @@ class UserFormModel : public Wt::WFormModel
 
 					// user may have been deleted by someone else
 					if (!authUser.isValid()) {
-						LMS_LOG(MOD_UI, SEV_ERROR) << "user identity does not exist!";
+						LMS_LOG(UI, ERROR) << "user identity does not exist!";
 						return false;
 					}
 					else if(!user)
 					{
-						LMS_LOG(MOD_UI, SEV_ERROR) << "User not found!";
+						LMS_LOG(UI, ERROR) << "User not found!";
 						return false;
 					}
 
@@ -206,7 +206,7 @@ class UserFormModel : public Wt::WFormModel
 			}
 			catch(Wt::Dbo::Exception& exception)
 			{
-				LMS_LOG(MOD_UI, SEV_ERROR) << "Dbo exception: " << exception.what();
+				LMS_LOG(UI, ERROR) << "Dbo exception: " << exception.what();
 				return false;
 			}
 

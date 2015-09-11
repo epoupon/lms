@@ -112,7 +112,7 @@ Grabber::getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t
 
 		if (boost::filesystem::file_size(path) > _maxFileSize)
 		{
-			LMS_LOG(MOD_COVER, SEV_INFO) << "Cover file '" << path << " is too big (" << boost::filesystem::file_size(path) << "), limit is " << _maxFileSize;
+			LMS_LOG(COVER, INFO) << "Cover file '" << path << " is too big (" << boost::filesystem::file_size(path) << "), limit is " << _maxFileSize;
 			continue;
 		}
 

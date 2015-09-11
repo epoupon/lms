@@ -175,7 +175,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	}
 	catch (std::invalid_argument& e)
 	{
-		LMS_LOG(MOD_UI, SEV_ERROR) << "Invalid argument: " << e.what();
+		LMS_LOG(UI, ERROR) << "Invalid argument: " << e.what();
 	}
 }
 

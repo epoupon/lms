@@ -27,33 +27,32 @@
 #include <string>
 
 
-enum Severity
+enum class Severity
 {
-	SEV_CRIT	= 2,
-	SEV_ERROR	= 3,
-	SEV_WARNING	= 4,
-	SEV_NOTICE	= 5,
-	SEV_INFO	= 6,
-	SEV_DEBUG	= 7,
+	FATAL,
+	ERROR,
+	WARNING,
+	INFO,
+	DEBUG,
 };
 
-enum Module
+enum class Module
 {
-	MOD_AV,
-	MOD_COVER,
-	MOD_DB,
-	MOD_DBUPDATER,
-	MOD_MAIN,
-	MOD_METADATA,
-	MOD_REMOTE,
-	MOD_SERVICE,
-	MOD_TRANSCODE,
-	MOD_UI,
+	AV,
+	COVER,
+	DB,
+	DBUPDATER,
+	MAIN,
+	METADATA,
+	REMOTE,
+	SERVICE,
+	TRANSCODE,
+	UI,
 };
 
 std::string getModuleName(Module mod);
 std::string getSeverityName(Severity sev);
 
-#define LMS_LOG(module, level)	Wt::log(getSeverityName(level)) << Wt::WLogger::sep << "[" << getModuleName(module) << "]" <<  Wt::WLogger::sep
+#define LMS_LOG(module, level)	Wt::log(getSeverityName(Severity::level)) << Wt::WLogger::sep << "[" << getModuleName(Module::module) << "]" <<  Wt::WLogger::sep
 
 #endif

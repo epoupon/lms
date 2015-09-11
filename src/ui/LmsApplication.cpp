@@ -169,7 +169,7 @@ LmsApplication::handleAuthEvent(void)
 {
 	if (DbHandler().getLogin().loggedIn())
 	{
-		LMS_LOG(MOD_UI, SEV_NOTICE) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
+		LMS_LOG(UI, INFO) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
 
 		this->root()->setOverflow(Wt::WContainerWidget::OverflowHidden);
                 setConfirmCloseMessage("Closing LMS. Are you sure?");
@@ -243,7 +243,7 @@ LmsApplication::handleAuthEvent(void)
 	}
 	else
 	{
-		LMS_LOG(MOD_UI, SEV_NOTICE) << "User logged out, session = " << Wt::WApplication::instance()->sessionId();
+		LMS_LOG(UI, INFO) << "User logged out, session = " << Wt::WApplication::instance()->sessionId();
 
 		quit("");
 		redirect("/");
