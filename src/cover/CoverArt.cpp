@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -16,65 +16,79 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <boost/gil/image.hpp>
-#include <boost/gil/typedefs.hpp>
-#include <boost/gil/extension/io/jpeg_io.hpp>
-#include <boost/gil/extension/numeric/sampler.hpp>
-#include <boost/gil/extension/numeric/resample.hpp>
-#include <boost/gil/extension/io_new/jpeg_all.hpp>
-
 #include "logger/Logger.hpp"
 
 #include "CoverArt.hpp"
 
+
 namespace CoverArt {
+
+static
+std::string format_to_magick(Format format)
+{
+	switch (format)
+	{
+		case Format::JPEG: return "JPEG";
+	}
+
+	return "JPEG";
+}
+
+std::string format_to_mimeType(Format format)
+{
+	switch (format)
+	{
+		case Format::JPEG: return "JPEG";
+	}
+
+	return "application/octet-stream";
+}
+
+void
+CoverArt::init(const char *path)
+{
+	Magick::InitializeMagick(path);
+}
+
+CoverArt::CoverArt(const std::vector<unsigned char>& rawData)
+{
+	Magick::Blob blob(&rawData[0], rawData.size());
+	_image.read(blob);
+}
+
 
 bool
 CoverArt::scale(std::size_t size)
 {
-	bool res = false;
-
 	if (!size)
 		return false;
 
-	try {
+	try
+	{
+		_image.resize( Magick::Geometry(size, size ) );
 
-		boost::gil::rgb8_image_t source;
-		boost::gil::rgb8_image_t dest(size, size);
-
-		// Read source
-		{
-			std::istringstream iss( std::string(_data.begin(), _data.end()));
-			boost::gil::read_image(iss, source, boost::gil::jpeg_tag());
-		}
-
-		if (source.width() == static_cast<int>(size)
-			&& source.height() == static_cast<int>(size))
-			return true;
-
-		// Resize
-		boost::gil::resize_view(boost::gil::const_view(source),
-				boost::gil::view(dest),
-				boost::gil::bilinear_sampler());
-
-		// Output to dest
-		{
-			std::ostringstream oss;
-			boost::gil::write_view(oss, boost::gil::const_view(dest), boost::gil::jpeg_tag());
-
-			std::string output = oss.str();
-			_data.assign(output.begin(), output.end());
-		}
-
-		res = true;
+		return true;
 	}
-	catch(std::exception& e)
+	catch (Magick::Exception& e)
 	{
 		LMS_LOG(COVER, ERROR) << "Caught exception: " << e.what();
+		return false;
 	}
+}
 
-	return res;
+void
+CoverArt::getData(std::vector<unsigned char>& data, Format format) const
+{
+
+	Magick::Image outputImage(_image);
+
+	outputImage.magick( format_to_magick(format));
+
+	Magick::Blob blob;
+	outputImage.write(&blob);
+
+	unsigned char *charBuf = (unsigned char*)blob.data();
+	data.assign( charBuf, charBuf + blob.length() );
 }
 
 } // namespace CoverArt

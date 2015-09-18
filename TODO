@@ -3,8 +3,6 @@
 - Make the feature
 
 [Cover]
-- Scaling: find something more "reliable" than GIL and its custom extensions (adobe work, io_new)?
-- Handle several file formats (not only jpg), use libmagic?
 - Handle preferred cover file names
 - Implement a cache and a grabber from some web service (mandatory for artists)
 

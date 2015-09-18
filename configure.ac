@@ -46,20 +46,17 @@ AC_ARG_ENABLE([video], AS_HELP_STRING([--enable-video],
 
 AM_CONDITIONAL([VIDEO], [test x$enable_video = xyes])
 
+PKG_CHECK_MODULES(IMAGEMAGICKXX, "ImageMagick++", [ HAVE_IMAGEMAGICKXX=yes ], [ ])
+if test -n "$HAVE_IMAGEMAGICKXX"; then
+	MAGICKXX_CFLAGS="$IMAGEMAGICKXX_CFLAGS"
+	MAGICKXX_LIBS="$IMAGEMAGICKXX_LIBS"
+fi
+AC_SUBST(MAGICKXX_CFLAGS)
+AC_SUBST(MAGICKXX_LIBS)
 
-AC_CHECK_HEADERS([Wt/WApplication jpeglib.h],
+AC_CHECK_HEADERS([Wt/WApplication],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
-
-AC_CHECK_LIB([jpeg],
-	     [jpeg_destroy],
-	     ,
-	     [AC_MSG_ERROR([libpthread not found!])])
-
-AC_CHECK_LIB([pthread],
-	     [pthread_create],
-	     ,
-	     [AC_MSG_ERROR([libpthread not found!])])
 
 AC_CHECK_LIB([avutil],
 	     [av_free],
@@ -75,16 +72,6 @@ AC_CHECK_LIB([avformat],
 	     [av_read_frame],
 	     ,
 	     [AC_MSG_ERROR([libavformat not found!])])
-
-AC_CHECK_LIB([ssl],
-	     [SSL_CTX_new],
-	     ,
-	     [AC_MSG_ERROR([libssl not found!])])
-
-AC_CHECK_LIB([crypto],
-	     [ASN1_STRING_to_UTF8],
-	     ,
-	     [AC_MSG_ERROR([libcrypto not found!])])
 
 AC_CHECK_LIB([boost_system],
 		[main],

@@ -44,6 +44,8 @@ int main(int argc, char* argv[])
 
 	try
 	{
+
+		CoverArt::CoverArt::init(argv[0]);
 		Wt::WServer server(argv[0]);
 		server.setServerConfiguration (argc, argv);
 

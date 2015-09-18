@@ -61,7 +61,7 @@ getFromAvMediaFile(const Av::MediaFile& input, std::size_t nbMaxCovers)
 	std::vector<CoverArt> res;
 
 	for (Av::Picture& picture : input.getAttachedPictures(nbMaxCovers))
-		res.push_back( CoverArt(picture.mimeType, picture.data) );
+		res.push_back( CoverArt(picture.data) );
 
 	return res;
 }
@@ -83,8 +83,7 @@ Grabber::getFromDirectory(const boost::filesystem::path& p, std::size_t nbMaxCov
 		while (file.get(c))
 			data.push_back(c);
 
-		// TODO handle other formats
-		res.push_back(CoverArt("image/jpeg", data));
+		res.push_back(CoverArt(data));
 	}
 
 	return res;

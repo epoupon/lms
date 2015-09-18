@@ -105,5 +105,6 @@ MOSTLYCLEANFILES = \
 
 endif
 
-lms_CXXFLAGS=-DBOOST_LOG_DYN_LINK -std=c++11 -Wall -I$(top_srcdir)/third-party -I$(srcdir)/ui -I$(srcdir)/lms-api
+lms_CXXFLAGS=-std=c++11 -Wall -I$(top_srcdir)/third-party -I$(srcdir)/ui -I$(srcdir)/lms-api $(MAGICKXX_CFLAGS)
 
+lms_LDADD=$(MAGICKXX_LIBS)

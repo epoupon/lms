@@ -27,8 +27,6 @@
 #include <Wt/WStringListModel>
 #include <Wt/WString>
 
-#include "transcode/Parameters.hpp"
-
 namespace UserInterface {
 
 class VideoParametersDialog : public Wt::WDialog

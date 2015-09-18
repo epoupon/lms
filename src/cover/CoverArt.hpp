@@ -23,30 +23,34 @@
 #include <vector>
 #include <string>
 
+#include <Magick++.h>
 
 namespace CoverArt
 {
 
+enum class Format
+{
+	JPEG,
+};
+
+std::string format_to_mimeType(Format format);
+
 class CoverArt
 {
 	public:
-		typedef std::vector<unsigned char>	data_type;
+		static void init(const char *path);
 
 		CoverArt() {}
-		CoverArt(const std::string& mime, const data_type& data) : _mimeType(mime), _data(data) {}
+		CoverArt(const std::vector<unsigned char>& rawData);
 
-		const std::string&	getMimeType() const { return _mimeType; }
-		const data_type&	getData() const { return _data; }
-
-		void	setMimeType(const std::string& mimeType) { _mimeType = mimeType;}
-		void	setData(const data_type& data) { _data = data; }
-
+		// Operations on cover arts
 		bool	scale(std::size_t size);
 
-	private:
+		// output
+		void	getData(std::vector<unsigned char>& data, Format format) const;
 
-		std::string	_mimeType;
-		data_type	_data;
+	private:
+		Magick::Image	_image;
 };
 
 

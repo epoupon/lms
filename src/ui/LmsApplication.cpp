@@ -199,12 +199,9 @@ LmsApplication::handleAuthEvent(void)
 			audio = new Desktop::Audio();
 
 		leftMenu->addItem("Audio", audio);
-
 #if defined HAVE_VIDEO
-		VideoWidget *videoWidget = new VideoWidget();
-		leftMenu->addItem("Video", videoWidget);
+		leftMenu->addItem("Video", new VideoWidget());
 #endif
-
 		leftMenu->addItem("Settings", new Settings::Settings());
 
 		// Setup a Right-aligned menu.

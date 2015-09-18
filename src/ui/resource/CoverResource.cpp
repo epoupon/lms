@@ -49,7 +49,6 @@ CoverResource::getDefaultCover(std::size_t size)
 	{
 		// Load default cover art for this size
 
-		CoverArt::CoverArt defaultCover;
 
 		std::vector<unsigned char> data;
 		{
@@ -59,8 +58,8 @@ CoverResource::getDefaultCover(std::size_t size)
 				data.push_back(c);
 		}
 
-		defaultCover.setData(data);
-		defaultCover.setMimeType("image/jpeg");
+		CoverArt::CoverArt defaultCover(data);
+
 		defaultCover.scale(size);
 
 		auto res = _defaultCovers.insert(std::make_pair(size, defaultCover));
@@ -91,9 +90,12 @@ CoverResource::getUnknownTrackUrl(size_t size) const
 void
 CoverResource::putCover(Wt::Http::Response& response, const CoverArt::CoverArt& cover)
 {
-	response.setMimeType( cover.getMimeType() );
-	BOOST_FOREACH(unsigned char c, cover.getData())
-		response.out().put( c );
+	response.setMimeType( format_to_mimeType(CoverArt::Format::JPEG) );
+
+	std::vector<unsigned char> data;
+	cover.getData(data, CoverArt::Format::JPEG);
+
+	response.out().write(reinterpret_cast<const char *>(&data[0]), data.size());
 }
 
 void
