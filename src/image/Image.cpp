@@ -18,10 +18,10 @@
  */
 #include "logger/Logger.hpp"
 
-#include "CoverArt.hpp"
+#include "Image.hpp"
 
 
-namespace CoverArt {
+namespace Image {
 
 static
 std::string format_to_magick(Format format)
@@ -45,20 +45,46 @@ std::string format_to_mimeType(Format format)
 }
 
 void
-CoverArt::init(const char *path)
+init(const char *path)
 {
 	Magick::InitializeMagick(path);
 }
 
-CoverArt::CoverArt(const std::vector<unsigned char>& rawData)
+bool
+Image::load(const std::vector<unsigned char>& rawData)
 {
-	Magick::Blob blob(&rawData[0], rawData.size());
-	_image.read(blob);
+	try
+	{
+		Magick::Blob blob(&rawData[0], rawData.size());
+		_image.read(blob);
+
+		return true;
+	}
+	catch (Magick::Exception& e)
+	{
+		LMS_LOG(COVER, ERROR) << "Caught Magick exception while loading raw image: " << e.what();
+		return false;
+	}
 }
 
+bool
+Image::load(boost::filesystem::path p)
+{
+	try
+	{
+		_image.read(p.string());
+
+		return true;
+	}
+	catch (Magick::Exception& e)
+	{
+		LMS_LOG(COVER, ERROR) << "Caught Magick exception while loading image from file '" << p << "': " << e.what();
+		return false;
+	}
+}
 
 bool
-CoverArt::scale(std::size_t size)
+Image::scale(std::size_t size)
 {
 	if (!size)
 		return false;
@@ -71,15 +97,14 @@ CoverArt::scale(std::size_t size)
 	}
 	catch (Magick::Exception& e)
 	{
-		LMS_LOG(COVER, ERROR) << "Caught exception: " << e.what();
+		LMS_LOG(COVER, ERROR) << "Caught Magick exception: " << e.what();
 		return false;
 	}
 }
 
 void
-CoverArt::getData(std::vector<unsigned char>& data, Format format) const
+Image::save(std::vector<unsigned char>& data, Format format) const
 {
-
 	Magick::Image outputImage(_image);
 
 	outputImage.magick( format_to_magick(format));
@@ -91,4 +116,4 @@ CoverArt::getData(std::vector<unsigned char>& data, Format format) const
 	data.assign( charBuf, charBuf + blob.length() );
 }
 
-} // namespace CoverArt
+} // namespace Image

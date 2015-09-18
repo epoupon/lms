@@ -4,7 +4,6 @@ lms_SOURCES = \
 	$(srcdir)/main/main.cpp					\
 	$(srcdir)/av/AvInfo.cpp					\
 	$(srcdir)/av/AvTranscoder.cpp					\
-	$(srcdir)/cover/CoverArt.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
 	$(srcdir)/database/Artist.cpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
@@ -18,6 +17,7 @@ lms_SOURCES = \
 	$(srcdir)/database/Video.cpp				\
 	$(srcdir)/database-updater/DatabaseUpdater.cpp		\
 	$(srcdir)/database-updater/Checksum.cpp			\
+	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/logger/Logger.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
 	$(srcdir)/metadata/Utils.cpp				\

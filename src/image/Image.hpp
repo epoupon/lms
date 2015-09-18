@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,15 +17,15 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef COVER_ART_HPP
-#define COVER_ART_HPP
+#pragma once
 
 #include <vector>
-#include <string>
+
+#include <boost/filesystem/path.hpp>
 
 #include <Magick++.h>
 
-namespace CoverArt
+namespace Image
 {
 
 enum class Format
@@ -35,26 +35,26 @@ enum class Format
 
 std::string format_to_mimeType(Format format);
 
-class CoverArt
+void init(const char *path);
+
+class Image
 {
 	public:
-		static void init(const char *path);
 
-		CoverArt() {}
-		CoverArt(const std::vector<unsigned char>& rawData);
+		// input
+		bool	load(const std::vector<unsigned char>& rawData);
+		bool	load(boost::filesystem::path p);
 
-		// Operations on cover arts
+		// Operations
 		bool	scale(std::size_t size);
 
 		// output
-		void	getData(std::vector<unsigned char>& data, Format format) const;
+		void	save(std::vector<unsigned char>& rawData, Format format) const;
 
 	private:
 		Magick::Image	_image;
 };
 
 
-} // namespace CoverArt
-
-#endif
+} // namespace Image
 

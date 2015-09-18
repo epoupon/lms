@@ -23,7 +23,7 @@
 #include "av/AvInfo.hpp"
 #include "av/AvTranscoder.hpp"
 #include "logger/Logger.hpp"
-#include "cover/CoverArtGrabber.hpp"
+#include "image/Image.hpp"
 
 #include "ui/LmsApplication.hpp"
 
@@ -45,7 +45,6 @@ int main(int argc, char* argv[])
 	try
 	{
 
-		CoverArt::CoverArt::init(argv[0]);
 		Wt::WServer server(argv[0]);
 		server.setServerConfiguration (argc, argv);
 
@@ -54,6 +53,7 @@ int main(int argc, char* argv[])
 		Service::ServiceManager& serviceManager = Service::ServiceManager::instance();
 
 		// lib init
+		Image::init(argv[0]);
 		Av::AvInit();
 		Av::Transcoder::init();
 		Database::Handler::configureAuth();

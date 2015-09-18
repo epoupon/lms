@@ -25,7 +25,7 @@
 #include <Wt/WResource>
 
 #include "database/DatabaseHandler.hpp"
-#include "cover/CoverArt.hpp"
+#include "image/Image.hpp"
 
 namespace UserInterface {
 
@@ -47,14 +47,14 @@ class CoverResource : public Wt::WResource
 
 	private:
 
-		const CoverArt::CoverArt&	getDefaultCover(std::size_t size);
-		void				putCover(Wt::Http::Response& response, const CoverArt::CoverArt& cover);
+		const Image::Image&		getDefaultCover(std::size_t size);
+		void				putCover(Wt::Http::Response& response, Image::Image image);
 
 		std::mutex			_mutex;
 		Database::Handler&		_db;
 
 		// Default cover for different sizes
-		std::map<std::size_t, CoverArt::CoverArt>	_defaultCovers;
+		std::map<std::size_t, Image::Image>	_defaultCovers;
 
 		// TODO construct a cache for covers?
 };
