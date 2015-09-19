@@ -585,7 +585,7 @@ Updater::processRootDirectory(RootDirectory rootDirectory, Stats& stats)
 		if (!_running)
 			return;
 
-		if (!boost::filesystem::is_regular(*itPath))
+		if (boost::filesystem::is_regular(*itPath))
 		{
 			switch( rootDirectory.type )
 			{
