@@ -72,7 +72,7 @@ isFileSupported(const boost::filesystem::path& file, const std::vector<boost::fi
 
 	boost::filesystem::path fileExtension = file.extension();
 
-	for (auto extension : extensions)
+	for (auto& extension : extensions)
 	{
 		if (extension == fileExtension)
 			return true;
@@ -91,6 +91,22 @@ getRootDirectoriesByType(Wt::Dbo::Session& session, Database::MediaDirectory::Ty
 		res.push_back(rootDir->getPath());
 
 	return res;
+}
+
+bool
+isPathInParentPath(const boost::filesystem::path& path, const boost::filesystem::path& parentPath)
+{
+	boost::filesystem::path curPath = path;
+
+	while (curPath.has_parent_path())
+	{
+		curPath = curPath.parent_path();
+
+		if (curPath == parentPath)
+			return true;
+	}
+
+	return false;
 }
 
 } // namespace
@@ -607,10 +623,11 @@ Updater::checkFile(const boost::filesystem::path& p, const std::vector<boost::fi
 		}
 		else
 		{
+
 			bool foundRoot = false;
-			for (auto rootDir : rootDirs)
+			for (auto& rootDir : rootDirs)
 			{
-				if (p.string().find( rootDir.string() ) != std::string::npos)
+				if (isPathInParentPath(p, rootDir))
 				{
 					foundRoot = true;
 					break;

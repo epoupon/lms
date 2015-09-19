@@ -62,6 +62,7 @@
 	- Add a download button to get the current playlist in a streamed zip file
 	- Add a upload button to upload media files in a dedicated directory
 	- Add keyboard shortcuts
+	- Properly handle files that have disappear from the DB (skip)
 
 	[Video]
 	- implement a decent mediaplayer
