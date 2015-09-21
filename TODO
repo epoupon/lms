@@ -22,17 +22,11 @@
 
 [Users]
 - Handle login lifetime?
-- Limit multi login from UI and remote interfaces (limit per interface is acceptable)
-
-[ServiceManager]
-- Rework the whole start/stop/try/cach/thread/interrupts things
-- Use our own WIOService
+- Use the WServer::post method to kick users already logged in?
+- Limit multi login from UI and API interfaces (limit per interface is acceptable)
 
 [Services]
 - consider adding support for external web servers (new FCGI service?)
-
-[Transcode]
-- some early end of playback spotted on files. Maybe this is because the stderr of the forked process is not properly closed?
 
 [UI]
 	- handle internationalization
@@ -78,4 +72,4 @@
 - Make another dedicated REST API. Maybe use the SubSonic API or Ampache API?
 
 [Logs]
-- Capture transcoder log output to get more information on errors
+- Capture transcoder log output to get more information on errors?
