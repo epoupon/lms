@@ -18,5 +18,8 @@ lms_images_DATA = \
 lms_approot_DATA = \
 		approot/templates.xml
 
-install-data-local:
-	ln -s $(datadir)/Wt/resources $(lms_docrootdir)/resources
+install-data-hook:
+	ln -s $(datadir)/Wt/resources $(lms_docrootdir)/resources || echo "Skipped symlink creation"
+
+uninstall-local:
+	cd $(lms_docrootdir) && rm -f -r $(lms_docrootdir)/resources
