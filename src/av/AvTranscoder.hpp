@@ -73,7 +73,7 @@ class TranscodeParameters
 	private:
 		Encoding				_encoding = Encoding::MP3;
 		boost::posix_time::time_duration	_offset = boost::posix_time::seconds(0);
-		std::set<int>			_selectedStreams;
+		std::set<int>				_selectedStreams;
 		std::map<Stream::Type, std::size_t>	_outputBitrate = { {Stream::Type::Audio, 0}, { Stream::Type::Video, 0}, { Stream::Type::Subtitle, 0} };
 };
 
@@ -86,11 +86,17 @@ class Transcoder
 		Transcoder(boost::filesystem::path file, TranscodeParameters parameters);
 		~Transcoder();
 
+		// non copyable
+		Transcoder(const Transcoder&) = delete;
+		Transcoder& operator=(const Transcoder&) = delete;
+
 		bool start();
 		void process(std::vector<unsigned char>& output, std::size_t maxSize);
 		bool isComplete(void);
 
 	private:
+
+		Transcoder();
 
 		boost::filesystem::path	_filePath;
 		TranscodeParameters	_parameters;

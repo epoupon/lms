@@ -45,6 +45,7 @@ AC_ARG_ENABLE([video], AS_HELP_STRING([--enable-video],
 			[enable_video="yes"])
 
 AM_CONDITIONAL([VIDEO], [test x$enable_video = xyes])
+AS_IF([test x$enable_video = xyes], [AC_DEFINE(HAVE_VIDEO, [1], [Enable Video support])])
 
 PKG_CHECK_MODULES(IMAGEMAGICKXX, "ImageMagick++", [ HAVE_IMAGEMAGICKXX=yes ], [ ])
 if test -n "$HAVE_IMAGEMAGICKXX"; then

@@ -49,52 +49,42 @@ VideoWidget::search(const std::string& searchText)
 void
 VideoWidget::playVideo(boost::filesystem::path p)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Want to play video " << p << "'";
-	try {
+	LMS_LOG(UI, DEBUG) << "Want to play video " << p << "'";
 
-#if 0
-		std::size_t audioBitrate = 0;
-		std::size_t videoBitrate = 0;
+	std::size_t audioBitrate = 0;
+	std::size_t videoBitrate = 0;
 
-		// Get user preferences
-		{
-			Wt::Dbo::Transaction transaction(DboSession());
+	// Get user preferences
+	{
+		Wt::Dbo::Transaction transaction(DboSession());
 
-			audioBitrate = CurrentUser()->getMaxAudioBitrate();
-			videoBitrate = CurrentUser()->getMaxVideoBitrate();
-		}
-
-		LMS_LOG(MOD_UI, SEV_DEBUG) << "Max bitrate set to " << videoBitrate << "/" << audioBitrate;
-
-		Transcode::InputMediaFile inputFile(p);
-
-		Transcode::Format::Encoding encoding;
-
-		if (Wt::WApplication::instance()->environment().agentIsChrome())
-			encoding = Transcode::Format::WEBMV;
-		else
-			encoding = Transcode::Format::FLV;
-
-		Transcode::Parameters parameters(inputFile, Transcode::Format::get(encoding));
-
-		// TODO, make a quality button in order to choose...
-
-		parameters.setBitrate(Transcode::Stream::Audio, 0/*audioBitrate*/);
-		parameters.setBitrate(Transcode::Stream::Video, 0/*videoBitrate*/);
-
-		VideoMediaPlayerWidget *mediaPlayer = new VideoMediaPlayerWidget(parameters, this);
-		mediaPlayer->close().connect(std::bind([=] ()
-		{
-			_videoDbWidget->setHidden(false);
-			delete mediaPlayer;
-		}));
-
-		_videoDbWidget->setHidden(true);
-#endif
+		audioBitrate = CurrentUser()->getMaxAudioBitrate();
+		videoBitrate = CurrentUser()->getMaxVideoBitrate();
 	}
-	catch( std::exception& e) {
-		LMS_LOG(MOD_UI, SEV_ERROR) << "Caught exception while loading '" << p << "': " << e.what();
-	}
+
+	LMS_LOG(UI, DEBUG) << "Max bitrate set to " << videoBitrate << "/" << audioBitrate;
+
+	Av::MediaFile mediaFile(p);
+
+	if (!mediaFile.open())
+		return;
+
+	if (!mediaFile.scan())
+		return;
+
+	Av::TranscodeParameters parameters;
+
+	parameters.setEncoding( Av::Encoding::WEBMV );
+
+	VideoMediaPlayerWidget *mediaPlayer = new VideoMediaPlayerWidget(mediaFile, parameters, this);
+
+	mediaPlayer->close().connect(std::bind([=] ()
+				{
+				_videoDbWidget->setHidden(false);
+				delete mediaPlayer;
+				}));
+
+	_videoDbWidget->setHidden(true);
 }
 
 } // namespace UserInterface

@@ -28,6 +28,8 @@
 #include <Wt/WVBoxLayout>
 #include <Wt/Auth/Identity>
 
+#include "config/config.h"
+
 #include "logger/Logger.hpp"
 
 #include "settings/Settings.hpp"

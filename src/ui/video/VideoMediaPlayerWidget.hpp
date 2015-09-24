@@ -37,7 +37,7 @@ class VideoMediaPlayerWidget : public Wt::WContainerWidget
 {
 	public:
 
-		VideoMediaPlayerWidget( Av::TranscodeParameters parameters, Wt::WContainerWidget *parent = 0);
+		VideoMediaPlayerWidget( const Av::MediaFile& mediaFile, Av::TranscodeParameters parameters, Wt::WContainerWidget *parent = 0);
 
 		Wt::Signal<void>&	close() { return _close; };
 
@@ -59,6 +59,8 @@ class VideoMediaPlayerWidget : public Wt::WContainerWidget
 
 		void handleParametersEdit(void);
 		void handleParametersDone(Wt::WDialog::DialogCode);
+
+		boost::filesystem::path		_currentFile;
 
 		// Core
 		Wt::WMediaPlayer*		_mediaPlayer;

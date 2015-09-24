@@ -17,8 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <boost/foreach.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp> //include all types plus i/o
 
 #include <Wt/WMediaPlayer>
 
@@ -47,7 +46,7 @@ AvEncoding_to_WtEncoding(Av::Encoding encoding)
 }
 
 
-VideoMediaPlayerWidget::VideoMediaPlayerWidget( Av::TranscodeParameters parameters, Wt::WContainerWidget *parent)
+VideoMediaPlayerWidget::VideoMediaPlayerWidget( const Av::MediaFile& mediaFile, Av::TranscodeParameters parameters, Wt::WContainerWidget *parent)
 	: Wt::WContainerWidget(parent),
 	_mediaResource(nullptr),
 	_currentParameters(parameters),
@@ -102,7 +101,12 @@ VideoMediaPlayerWidget::VideoMediaPlayerWidget( Av::TranscodeParameters paramete
 	Wt::WPushButton* parametersButton = new Wt::WPushButton("Parameters", this);
 	parametersButton->clicked().connect( this, &VideoMediaPlayerWidget::handleParametersEdit );
 
+	_currentFile = mediaFile.getPath();
+
 	load(parameters);
+
+	_timeSlider->setRange(0, mediaFile.getDuration().total_seconds() );
+	_duration->setText( boost::posix_time::to_simple_string( mediaFile.getDuration() ));
 }
 
 void
@@ -116,15 +120,13 @@ VideoMediaPlayerWidget::load(Av::TranscodeParameters parameters)
 	if (_mediaResource)
 		delete _mediaResource;
 
-// TODO 	_mediaResource = new AvConvTranscodeStreamResource( parameters, this );
+ 	_mediaResource = new AvConvTranscodeStreamResource( _currentFile, parameters, this );
 	_mediaInternalLink.setResource( _mediaResource );
 
 	_mediaPlayer->addSource( AvEncoding_to_WtEncoding(parameters.getEncoding()), _mediaInternalLink );
 
-	_timeSlider->setRange(0, 0/* TODO  parameters.getInputMediaFile().getDuration().total_seconds()*/ );
-	_timeSlider->setValue( parameters.getOffset().total_seconds() );
+	_timeSlider->setValue( 0 );
 
-// TODO	_duration->setText( boost::posix_time::to_simple_string( parameters.getInputMediaFile().getDuration() ));
 
 	_mediaPlayer->play();
 }
@@ -132,7 +134,6 @@ VideoMediaPlayerWidget::load(Av::TranscodeParameters parameters)
 void
 VideoMediaPlayerWidget::handlePlayOffset(int offsetSecs)
 {
-	std::cout << "Want to play at offset " << offsetSecs << std::endl;;
 	_currentParameters.setOffset( boost::posix_time::seconds(offsetSecs) );
 	load( _currentParameters );
 
@@ -142,24 +143,17 @@ VideoMediaPlayerWidget::handlePlayOffset(int offsetSecs)
 void
 VideoMediaPlayerWidget::handleSliderMoved(int value)
 {
-	std::cout << "Slider moved to " << value << std::endl;
 	_curTime->setText( boost::posix_time::to_simple_string( boost::posix_time::seconds( value ) ) );
 }
 
 void
 VideoMediaPlayerWidget::handleTimeUpdated(void)
 {
-	std::cout << "Time updated to " << _mediaPlayer->currentTime() << std::endl;
 
-	/* TODO
-	if (_mediaPlayer->currentTime() > 0 && _mediaPlayer->currentTime() < _currentParameters.getInputMediaFile().getDuration().total_seconds())
-	{
-		boost::posix_time::time_duration currentTime ( boost::posix_time::seconds( _mediaPlayer->currentTime() + _currentParameters.getOffset().total_seconds()));
+	boost::posix_time::time_duration currentTime ( boost::posix_time::seconds( _mediaPlayer->currentTime() + _currentParameters.getOffset().total_seconds()));
 
-		_timeSlider->setValue( currentTime.total_seconds() );
-		_curTime->setText( boost::posix_time::to_simple_string( currentTime) );
-	}
-	*/
+	_timeSlider->setValue( currentTime.total_seconds() );
+	_curTime->setText( boost::posix_time::to_simple_string( currentTime) );
 }
 
 void
@@ -177,13 +171,14 @@ VideoMediaPlayerWidget::handleClose(void)
 void
 VideoMediaPlayerWidget::handleParametersEdit(void)
 {
+/*
+	_dialog = new VideoParametersDialog("Parameters");
+	_dialog->load(_currentParameters);
 
-//	_dialog = new VideoParametersDialog("Parameters");
-//TODO	_dialog->load(_currentParameters);
+	_dialog->show();
 
-//	_dialog->show();
-
-//	_dialog->finished().connect(this, &VideoMediaPlayerWidget::handleParametersDone);
+	_dialog->finished().connect(this, &VideoMediaPlayerWidget::handleParametersDone);
+	*/
 }
 
 void
@@ -193,7 +188,7 @@ VideoMediaPlayerWidget::handleParametersDone(Wt::WDialog::DialogCode code)
 
 	if (code == Wt::WDialog::Accepted)
 	{
-// TODO		_dialog->save( _currentParameters );
+		_dialog->save( _currentParameters );
 
 		// TODO SYNC current offset with player?
 		// HACK use slider current value

@@ -71,6 +71,10 @@ class MediaFile
 		MediaFile(const boost::filesystem::path& p);
 		~MediaFile();
 
+		// non copyable
+		MediaFile(const MediaFile&) = delete;
+		MediaFile& operator=(const MediaFile&) = delete;
+
 		boost::filesystem::path			getPath() const {return _p;};
 
 		bool open(void);
@@ -85,6 +89,7 @@ class MediaFile
 		std::vector<Picture>	getAttachedPictures(std::size_t nbMaxPictures) const;
 
 	private:
+		MediaFile();
 
 		boost::filesystem::path	_p;
 		AVFormatContext* _context;
