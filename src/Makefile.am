@@ -59,52 +59,6 @@ lms_SOURCES += \
 	$(srcdir)/ui/video/VideoParametersDialog.cpp
 endif
 
-if LMSAPI
-lms_SOURCES += \
-	$(srcdir)/lms-api/server/Connection.cpp			\
-	$(srcdir)/lms-api/server/ConnectionManager.cpp		\
-	$(srcdir)/lms-api/server/AudioCollectionRequestHandler.cpp		\
-	$(srcdir)/lms-api/server/AuthRequestHandler.cpp		\
-	$(srcdir)/lms-api/server/MediaRequestHandler.cpp		\
-	$(srcdir)/lms-api/server/RequestHandler.cpp		\
-	$(srcdir)/lms-api/server/Server.cpp			\
-	$(srcdir)/service/LmsAPIServerService.cpp
-
-nodist_lms_SOURCES = \
-	$(builddir)/auth.pb.cc			\
-	$(builddir)/auth.pb.h			\
-	$(builddir)/collection.pb.cc		\
-	$(builddir)/collection.pb.h		\
-	$(builddir)/media.pb.cc			\
-	$(builddir)/media.pb.h			\
-	$(builddir)/messages.pb.cc		\
-	$(builddir)/messages.pb.h
-
-BUILT_SOURCES = \
-	$(builddir)/auth.pb.cc			\
-	$(builddir)/auth.pb.h			\
-	$(builddir)/collection.pb.cc		\
-	$(builddir)/collection.pb.h		\
-	$(builddir)/media.pb.cc			\
-	$(builddir)/media.pb.h			\
-	$(builddir)/messages.pb.cc		\
-	$(builddir)/messages.pb.h
-
-MOSTLYCLEANFILES = \
-	$(builddir)/auth.pb.cc			\
-	$(builddir)/auth.pb.h			\
-	$(builddir)/collection.pb.cc		\
-	$(builddir)/collection.pb.h		\
-	$(builddir)/media.pb.cc			\
-	$(builddir)/media.pb.h			\
-	$(builddir)/messages.pb.cc		\
-	$(builddir)/messages.pb.h
-
-%.pb.cc %.pb.h: $(top_srcdir)/lms-api/proto/%.proto
-	$(PROTOC) --proto_path=$(top_srcdir)/lms-api/proto/ --cpp_out=$(builddir)/ $^
-
-endif
-
-lms_CXXFLAGS=-std=c++11 -Wall -I$(top_srcdir)/third-party -I$(srcdir)/ui -I$(srcdir)/lms-api $(MAGICKXX_CFLAGS)
+lms_CXXFLAGS=-std=c++11 -Wall -I$(top_srcdir)/third-party -I$(srcdir)/ui $(MAGICKXX_CFLAGS)
 
 lms_LDADD=$(MAGICKXX_LIBS)

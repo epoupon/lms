@@ -43,7 +43,9 @@ This command requires root privileges
 ```sh
 $ /usr/bin/lms --docroot='/usr/share/lms/docroot/;/resources,/css,/images' --approot=/usr/share/lms/approot --http-address 0.0.0.0 --http-port 5081
 ```
-The exectuable needs write accesses to the /var/lms/ directory
+It is highly recommended to run LMS as a non root user.
+The exectuable needs write accesses to the /var/lms/ directory.
+
 ## Setting up SSL materials (optional)
 Here is just a self signed certificate example, you could do use a CA if you want.
 

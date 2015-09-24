@@ -19,8 +19,6 @@
 
 #include <boost/thread.hpp>
 
-#include "config/ConfigReader.hpp"
-
 #include "DatabaseUpdateService.hpp"
 
 namespace Service {

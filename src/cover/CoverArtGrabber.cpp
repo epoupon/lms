@@ -18,7 +18,6 @@
  */
 
 #include "logger/Logger.hpp"
-#include "config/ConfigReader.hpp"
 #include "av/AvInfo.hpp"
 
 #include "CoverArtGrabber.hpp"

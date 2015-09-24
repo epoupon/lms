@@ -50,7 +50,7 @@ int main(void)
 
 			track.modify()->setArtist(artist);
 			track.modify()->setRelease(release);
-			track.modify()->setGenres( { genre });
+			track.modify()->setGenres( std::vector<Genre::pointer>({ genre }));
 		}
 
 		// Search
