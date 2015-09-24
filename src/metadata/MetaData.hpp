@@ -48,17 +48,21 @@ namespace MetaData
 	};
 
 	// Used by Streams
-	struct AudioStream {
-		std::size_t nbChannels;
+	struct AudioStream
+	{
+		std::string desc;
 		std::size_t bitRate;
 	};
 
-	struct VideoStream {
+	struct VideoStream
+	{
+		std::string desc;
 		std::size_t bitRate;
 	};
 
-	struct SubtitleStream {
-		;
+	struct SubtitleStream
+	{
+		std::string desc;
 	};
 
 	// Type and associated data

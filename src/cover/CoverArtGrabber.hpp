@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,16 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef COVER_ART_GRABBER_HPP
-#define COVER_ART_GRABBER_HPP
+#pragma once
 
 #include <vector>
 
-#include "av/InputFormatContext.hpp"
 #include "database/Types.hpp"
 
-#include "CoverArt.hpp"
-
+#include "image/Image.hpp"
 
 namespace CoverArt {
 
@@ -38,26 +35,21 @@ class Grabber
 
 		static Grabber& instance();
 
-		void init();
-
 		std::vector<boost::filesystem::path>	getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t nbMaxCovers = 1) const;
-		std::vector<CoverArt>	getFromDirectory(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
-		std::vector<CoverArt>	getFromInputFormatContext(const Av::InputFormatContext& input, std::size_t nbMaxCovers = 1) const;
-		std::vector<CoverArt>	getFromTrack(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
-		std::vector<CoverArt>	getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::size_t nbMaxCovers = 1) const;
-		std::vector<CoverArt>	getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type releaseId, std::size_t nbMaxCovers = 1) const;
+		std::vector<Image::Image>	getFromDirectory(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
+		std::vector<Image::Image>	getFromTrack(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
+		std::vector<Image::Image>	getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::size_t nbMaxCovers = 1) const;
+		std::vector<Image::Image>	getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type releaseId, std::size_t nbMaxCovers = 1) const;
 
 	private:
 		Grabber();
 
-		std::vector<boost::filesystem::path> _fileExtensions;
-		std::size_t _maxFileSize;
-		std::vector<boost::filesystem::path> _preferredFileNames;
-
-
+		std::vector<boost::filesystem::path> _fileExtensions
+			= {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize
+		std::size_t _maxFileSize = 5000000;
+		std::vector<boost::filesystem::path> _preferredFileNames
+			= {"cover", "front"}; // TODO parametrize
 };
 
 } // namespace CoverArt
 
-
-#endif

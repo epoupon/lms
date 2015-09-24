@@ -3,8 +3,6 @@
 - Make the feature
 
 [Cover]
-- Scaling: find something more "reliable" than GIL and its custom extensions (adobe work, io_new)?
-- Handle several file formats (not only jpg), use libmagic?
 - Handle preferred cover file names
 - Implement a cache and a grabber from some web service (mandatory for artists)
 
@@ -25,17 +23,11 @@
 
 [Users]
 - Handle login lifetime?
-- Limit multi login from UI and remote interfaces (limit per interface is acceptable)
-
-[ServiceManager]
-- Rework the whole start/stop/try/cach/thread/interrupts things
-- Use our own WIOService
+- Use the WServer::post method to kick users already logged in?
+- Limit multi login from UI and API interfaces (limit per interface is acceptable)
 
 [Services]
 - consider adding support for external web servers (new FCGI service?)
-
-[Transcode]
-- some early end of playback spotted on files. Maybe this is because the stderr of the forked process is not properly closed?
 
 [UI]
 	- handle internationalization
@@ -74,12 +66,8 @@
 	- Make a dedicated audio layout in mobile environment (keep the same layout for videos?)
 	- Handle internal path
 
-[Lms API]
-- Implement partial text search options in the GetXXX messages
-- Make it REST ?
-
 [REST API]
-- Make another dedicated REST API. Maybe use the SubSonic API or Ampache API?
+- Make a dedicated REST API. Maybe use the SubSonic API or Ampache API?
 
 [Logs]
-- Capture transcoder log output to get more information on errors
+- Capture transcoder log output to get more information on errors?

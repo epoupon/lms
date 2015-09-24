@@ -25,8 +25,6 @@
 #include <Wt/WMediaPlayer>
 #include <Wt/WFileResource>
 
-#include "transcode/Parameters.hpp"
-
 #include "LmsApplication.hpp"
 
 #include "VideoDatabaseWidget.hpp"

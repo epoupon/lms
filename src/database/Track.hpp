@@ -97,7 +97,6 @@ class Track
 		enum class CoverType
 		{
 			Embedded,	// Contains embedded cover
-			ExternalFile,	// Cover is in an external file
 			None,		// No local cover available
 		};
 

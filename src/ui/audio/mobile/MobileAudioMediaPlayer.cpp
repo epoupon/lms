@@ -80,17 +80,9 @@ _encoding(encoding)
 }
 
 void
-AudioMediaPlayer::play(Database::Track::id_type trackId, const Transcode::Parameters& parameters)
+AudioMediaPlayer::play(Database::Track::id_type trackId, Av::TranscodeParameters parameters)
 {
-	// FIXME memleak here
-	AvConvTranscodeStreamResource *resource = new AvConvTranscodeStreamResource( parameters, this );
-
-	_player->clearSources();
-	_player->addSource( _encoding, Wt::WLink(resource));
-
-	_player->play();
-
-	_cover->setImageLink( Wt::WLink (LmsApplication::instance()->getCoverResource()->getTrackUrl(trackId, 48)));
+	boost::filesystem::path path;
 
 	{
 		Wt::Dbo::Transaction transaction(DboSession());
@@ -99,7 +91,19 @@ AudioMediaPlayer::play(Database::Track::id_type trackId, const Transcode::Parame
 
 		_track->setText( Wt::WString::fromUTF8(track->getName() ));
 		_artistRelease->setText( Wt::WString::fromUTF8(track->getArtist()->getName()) );
+		path = track->getPath();
 	}
+
+	// FIXME memleak here
+	AvConvTranscodeStreamResource *resource = new AvConvTranscodeStreamResource( path, parameters, this );
+
+	_player->clearSources();
+	_player->addSource( _encoding, Wt::WLink(resource));
+
+	_player->play();
+
+	_cover->setImageLink( Wt::WLink (LmsApplication::instance()->getCoverResource()->getTrackUrl(trackId, 48)));
+
 }
 
 } // namespace UserInterface

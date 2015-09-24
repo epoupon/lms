@@ -23,7 +23,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "av/InputFormatContext.hpp"
+#include "av/AvInfo.hpp"
 
 #include "logger/Logger.hpp"
 
@@ -36,86 +36,75 @@ bool
 AvFormat::parse(const boost::filesystem::path& p, Items& items)
 {
 
-	Av::InputFormatContext input(p);
+	Av::MediaFile mediaFile(p);
 
-	if (!input.findStreamInfo())
+	if (!mediaFile.open())
 		return false;
 
-	std::map<std::string, std::string> metadata;
-	input.getMetadata().get(metadata);
+	if (!mediaFile.scan())
+		return false;
 
-	// HACK or OGG files
-	// If we did not find tags, searched metadata in streams
-	if (metadata.empty())
-	{
-		// Get input streams
-		std::vector<Av::Stream> streams = input.getStreams();
-
-		BOOST_FOREACH(Av::Stream& stream, streams)
-		{
-			stream.getMetadata().get(metadata);
-
-			if (!metadata.empty())
-				break;
-		}
-	}
-
+	std::map<std::string, std::string> metadata = mediaFile.getMetaData();
 
 	// Stream info
 	{
-		std::vector<Av::Stream> avStreams = input.getStreams();
+		std::vector<AudioStream> audioStreams;
 
-		std::vector<AudioStream>	audioStreams;
-		std::vector<VideoStream>	videoStreams;
-		std::vector<SubtitleStream>	subtitleStreams;
+		std::vector<Av::Stream> streams = mediaFile.getStreams(Av::Stream::Type::Audio);
 
-		BOOST_FOREACH(Av::Stream& avStream, avStreams)
+		for (Av::Stream& stream : streams)
 		{
-			switch(avStream.getCodecContext().getType())
-			{
-				case AVMEDIA_TYPE_VIDEO:
-					if (!avStream.hasAttachedPic())
-					{
-						VideoStream stream;
-						stream.bitRate = avStream.getCodecContext().getBitRate();
-						videoStreams.push_back(stream);
-					}
-					break;
+			AudioStream audioStream;
+			audioStream.desc = stream.desc;
+			audioStream.bitRate = stream.bitrate;
 
-				case AVMEDIA_TYPE_AUDIO:
-					{
-						AudioStream stream;
-						stream.nbChannels = avStream.getCodecContext().getNbChannels();
-						stream.bitRate = avStream.getCodecContext().getBitRate();
-						audioStreams.push_back(stream);
-					}
-					break;
+			audioStreams.push_back(audioStream);
+		}
 
-				case AVMEDIA_TYPE_SUBTITLE:
-					{
-						subtitleStreams.push_back( SubtitleStream() );
-					}
-					break;
+		if (!audioStreams.empty())
+			items.insert( std::make_pair(MetaData::Type::AudioStreams, audioStreams));
+	}
 
-				default:
-					break;
-			}
+	{
+		std::vector<VideoStream> videoStreams;
+
+		std::vector<Av::Stream> streams = mediaFile.getStreams(Av::Stream::Type::Video);
+
+		for (Av::Stream& stream : streams)
+		{
+			VideoStream videoStream;
+			videoStream.desc = stream.desc;
+			videoStream.bitRate = stream.bitrate;
+
+			videoStreams.push_back(videoStream);
 		}
 
 		if (!videoStreams.empty())
 			items.insert( std::make_pair(MetaData::Type::VideoStreams, videoStreams));
-		if (!audioStreams.empty())
-			items.insert( std::make_pair(MetaData::Type::AudioStreams, audioStreams));
+	}
+
+	{
+		std::vector<SubtitleStream> subtitleStreams;
+
+		std::vector<Av::Stream> streams = mediaFile.getStreams(Av::Stream::Type::Subtitle);
+
+		for (Av::Stream& stream : streams)
+		{
+			SubtitleStream subtitleStream;
+			subtitleStream.desc = stream.desc;
+
+			subtitleStreams.push_back(subtitleStream);
+		}
+
 		if (!subtitleStreams.empty())
 			items.insert( std::make_pair(MetaData::Type::SubtitleStreams, subtitleStreams));
-
 	}
 
 	// Duration
-	items.insert( std::make_pair(MetaData::Type::Duration, boost::posix_time::time_duration( boost::posix_time::seconds( input.getDurationSecs() )) ));
+	items.insert( std::make_pair(MetaData::Type::Duration, mediaFile.getDuration() ));
 
 	// Cover
-	items.insert( std::make_pair(MetaData::Type::HasCover, input.getNbPictures() > 0));
+	items.insert( std::make_pair(MetaData::Type::HasCover, mediaFile.hasAttachedPictures()));
 
 	// Embedded MetaData
 	// Make sure to convert strings into UTF-8

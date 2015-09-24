@@ -41,29 +41,21 @@ CoverResource:: ~CoverResource()
 	beingDeleted();
 }
 
-const CoverArt::CoverArt&
+const Image::Image&
 CoverResource::getDefaultCover(std::size_t size)
 {
 	auto itCover = _defaultCovers.find(size);
 	if (itCover == _defaultCovers.end())
 	{
 		// Load default cover art for this size
+		Image::Image image;
 
-		CoverArt::CoverArt defaultCover;
+		if (!image.load( Wt::WApplication::instance()->docRoot() + unknownCoverPath ))
+			throw std::runtime_error("Cannot read default cover file");
 
-		std::vector<unsigned char> data;
-		{
-			std::ifstream ist(Wt::WApplication::instance()->docRoot() + unknownCoverPath);
-			char c;
-			while(ist.get(c))
-				data.push_back(c);
-		}
+		image.scale(size);
 
-		defaultCover.setData(data);
-		defaultCover.setMimeType("image/jpeg");
-		defaultCover.scale(size);
-
-		auto res = _defaultCovers.insert(std::make_pair(size, defaultCover));
+		auto res = _defaultCovers.insert(std::make_pair(size, image));
 		itCover = res.first;
 	}
 
@@ -89,11 +81,14 @@ CoverResource::getUnknownTrackUrl(size_t size) const
 }
 
 void
-CoverResource::putCover(Wt::Http::Response& response, const CoverArt::CoverArt& cover)
+CoverResource::putCover(Wt::Http::Response& response, Image::Image cover)
 {
-	response.setMimeType( cover.getMimeType() );
-	BOOST_FOREACH(unsigned char c, cover.getData())
-		response.out().put( c );
+	std::vector<unsigned char> data;
+
+	cover.save(data, Image::Format::JPEG);
+
+	response.setMimeType( Image::format_to_mimeType(Image::Format::JPEG) );
+	response.out().write(reinterpret_cast<const char *>(&data[0]), data.size());
 }
 
 void
@@ -106,7 +101,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 
 	try
 	{
-		std::vector<CoverArt::CoverArt> covers;
+		std::vector<Image::Image> covers;
 
 		// Mandatory parameter size
 		if (!sizeStr)
@@ -142,17 +137,14 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 					covers = CoverArt::Grabber::instance().getFromTrack(path);
 					break;
 
-				case Database::Track::CoverType::ExternalFile:
-					covers = CoverArt::Grabber::instance().getFromDirectory(path.parent_path());
-					break;
-
 				case Database::Track::CoverType::None:
+					covers = CoverArt::Grabber::instance().getFromDirectory(path.parent_path());
 					break;
 			}
 		}
 		else if (releaseIdStr)
 		{
-			Database::Release::id_type releaseId = std::stol(*releaseIdStr); // TODO try catch
+			Database::Release::id_type releaseId = std::stol(*releaseIdStr);
 			// transactions are not thread safe
 			std::unique_lock<std::mutex> lock(_mutex);
 			Wt::Dbo::Transaction transaction(_db.getSession());
@@ -160,7 +152,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 			covers = CoverArt::Grabber::instance().getFromRelease(_db.getSession(), releaseId);
 		}
 
-		for (CoverArt::CoverArt& cover : covers)
+		for (Image::Image& cover : covers)
 		{
 			if (cover.scale(size))
 			{
@@ -175,7 +167,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	}
 	catch (std::invalid_argument& e)
 	{
-		LMS_LOG(MOD_UI, SEV_ERROR) << "Invalid argument: " << e.what();
+		LMS_LOG(UI, ERROR) << "Invalid argument: " << e.what();
 	}
 }
 

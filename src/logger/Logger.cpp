@@ -17,105 +17,36 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/keywords/filter.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/utility/setup/console.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/attributes/constant.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/support/date_time.hpp>
-#include <boost/log/attributes/named_scope.hpp>
-
-#include <boost/date_time/posix_time/ptime.hpp>
-
-#include "config/ConfigReader.hpp"
-
-
 #include "Logger.hpp"
 
-Logger&
-Logger::instance()
+std::string getModuleName(Module mod)
 {
-	static Logger instance;
-	return instance;
-}
-
-Logger::Logger()
-{
-	// Initialiaz loggers
-	static const std::vector<Module> modules =
+	switch (mod)
 	{
-		MOD_AV,
-		MOD_COVER,
-		MOD_DB,
-		MOD_DBUPDATER,
-		MOD_MAIN,
-		MOD_METADATA,
-		MOD_REMOTE,
-		MOD_SERVICE,
-		MOD_TRANSCODE,
-		MOD_UI,
-	};
-
-	for(Module module : modules)
-		_loggers[module].add_attribute("Module", boost::log::attributes::constant< Module >(module));
-}
-
-boost::log::sources::severity_logger< Severity >&
-Logger::get(Module module)
-{
-	return _loggers[module];
-}
-
-void
-Logger::init()
-{
-	boost::log::add_common_attributes();
-
-	boost::log::register_simple_formatter_factory< Severity, char >("Severity");
-
-	if (ConfigReader::instance().getBool("main.logger.file.enable", false))
-	{
-		boost::log::add_file_log
-			(
-			 boost::log::keywords::file_name = ConfigReader::instance().getString("main.logger.file.path") + std::string(".%N"),
-			 boost::log::keywords::rotation_size = 10 * 1024 * 1024,
-			 boost::log::keywords::open_mode = std::ios_base::app,
-			 boost::log::keywords::auto_flush = true,
-			 boost::log::keywords::format = (
-				 boost::log::expressions::stream
-				 << boost::log::expressions::format_date_time< boost::posix_time::ptime >("TimeStamp", "[%Y-%m-%d %H:%M:%S]")
-				 << " [" << boost::log::expressions::attr< Module >("Module") << "]"
-				 << " [" << boost::log::expressions::attr< Severity >("Severity") << "]"
-				 << " " << boost::log::expressions::smessage
-				 )
-			);
+		case Module::AV:		return "AV";
+		case Module::COVER:		return "COVER";
+		case Module::DB:		return "DB";
+		case Module::DBUPDATER:	return "DB UPDATER";
+		case Module::MAIN:		return "MAIN";
+		case Module::METADATA:	return "METADATA";
+		case Module::REMOTE:	return "REMOTE";
+		case Module::SERVICE:	return "SERVICE";
+		case Module::TRANSCODE:	return "TRANSCODE";
+		case Module::UI:		return "UI";
 	}
+	return "";
+}
 
-	if (ConfigReader::instance().getBool("main.logger.console.enable", false))
+std::string getSeverityName(Severity sev)
+{
+	switch (sev)
 	{
-		boost::log::add_console_log(std::cout,
-				boost::log::keywords::format = (
-					boost::log::expressions::stream
-					<< boost::log::expressions::format_date_time< boost::posix_time::ptime >("TimeStamp", "[%Y-%m-%d %H:%M:%S]")
-					<< " [" << boost::log::expressions::attr< Module >("Module") << "]"
-					<< " [" << boost::log::expressions::attr< Severity >("Severity") << "]"
-					<< " " << boost::log::expressions::smessage
-					)
-				);
+		case Severity::FATAL:		return "fatal";
+		case Severity::ERROR:		return "error";
+		case Severity::WARNING:		return "warning";
+		case Severity::INFO:		return "info";
+		case Severity::DEBUG:		return "debug";
 	}
-
-	boost::log::core::get()->set_filter
-		(
-		 boost::log::expressions::attr<Severity>("Severity") <= ConfigReader::instance().getULong("main.logger.level", SEV_DEBUG)
-		);
-
+	return "";
 }
 

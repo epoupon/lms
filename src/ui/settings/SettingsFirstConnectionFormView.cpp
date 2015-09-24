@@ -67,7 +67,7 @@ class FirstConnectionFormModel : public Wt::WFormModel
 				// If it's the case, just do nothing
 				if (!Database::User::getAll(DboSession()).empty())
 				{
-					LMS_LOG(MOD_UI, SEV_ERROR) << "Admin user already created";
+					LMS_LOG(UI, ERROR) << "Admin user already created";
 					error = Wt::WString("Admin user already created!");
 					return false;
 				}
@@ -86,7 +86,7 @@ class FirstConnectionFormModel : public Wt::WFormModel
 			}
 			catch(Wt::Dbo::Exception& exception)
 			{
-				LMS_LOG(MOD_UI, SEV_ERROR) << "Dbo exception: " << exception.what();
+				LMS_LOG(UI, ERROR) << "Dbo exception: " << exception.what();
 				error = Wt::WString(exception.what());
 				return false;
 			}

@@ -20,22 +20,23 @@
 #include <boost/filesystem.hpp>
 
 #include "config/config.h"
-#include "config/ConfigReader.hpp"
-#include "transcode/AvConvTranscoder.hpp"
-#include "av/Common.hpp"
+#include "av/AvInfo.hpp"
+#include "av/AvTranscoder.hpp"
 #include "logger/Logger.hpp"
-#include "cover/CoverArtGrabber.hpp"
+#include "image/Image.hpp"
+
+#include "ui/LmsApplication.hpp"
 
 #include "service/ServiceManager.hpp"
 #include "service/DatabaseUpdateService.hpp"
-#include "service/UserInterfaceService.hpp"
 #if defined HAVE_LMSAPI
 #include "service/LmsAPIServerService.hpp"
 #endif
 
+#include <Wt/WServer>
+
 int main(int argc, char* argv[])
 {
-
 	int res = EXIT_FAILURE;
 
 	assert(argc > 0);
@@ -43,65 +44,61 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		// TODO generate a nice command line help with args
 
-		// Open configuration file
-		boost::filesystem::path configFile("/etc/lms.conf"); // TODO
-		if (argc > 1)
-			configFile = boost::filesystem::path(argv[1]);
+		Wt::WServer server(argv[0]);
+		server.setServerConfiguration (argc, argv);
 
-		if ( !boost::filesystem::exists(configFile))
-		{
-			std::cerr << "Config file '" << configFile << "' does not exist!" << std::endl;
-			return EXIT_FAILURE;
-		}
-		else if (!boost::filesystem::is_regular(configFile))
-		{
-			std::cerr << "Config file '" << configFile << "' is not regular!" << std::endl;
-			return EXIT_FAILURE;
-		}
-
-		ConfigReader::instance().setFile(configFile);
-
-		Logger::instance().init();
-		CoverArt::Grabber::instance().init();
+		Wt::WServer::instance()->logger().configure("*"); // log everything
 
 		Service::ServiceManager& serviceManager = Service::ServiceManager::instance();
 
 		// lib init
+		Image::init(argv[0]);
 		Av::AvInit();
-		Transcode::AvConvTranscoder::init();
+		Av::Transcoder::init();
 		Database::Handler::configureAuth();
 
 		// Initializing a connection pool to the database that will be shared along services
-		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool( Database::Handler::createConnectionPool( ConfigReader::instance().getString("main.database.path") ));
+		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool( Database::Handler::createConnectionPool("/var/lms/lms.db")); // TODO use $datadir from autotools
 
-		LMS_LOG(MOD_MAIN, SEV_INFO) << "Starting services...";
+		serviceManager.add( std::make_shared<Service::DatabaseUpdateService>(*connectionPool));
 
-		serviceManager.startService( std::make_shared<Service::DatabaseUpdateService>(*connectionPool));
-		serviceManager.startService( std::make_shared<Service::UserInterfaceService>(boost::filesystem::path(argv[0]), *connectionPool));
 #if defined HAVE_LMSAPI
-		serviceManager.startService( std::make_shared<Service::LmsAPIService>(*connectionPool));
+		serviceManager.add( std::make_shared<Service::LmsAPIService>(*connectionPool));
 #endif
 
-		LMS_LOG(MOD_MAIN, SEV_NOTICE) << "Now running...";
+		// bind entry point
+		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, boost::ref(*connectionPool)));
 
-		serviceManager.run();
+		// Starting the main server
+		LMS_LOG(MAIN, INFO) << "Starting server...";
+		server.start();
+
+		// Start underlying services
+		LMS_LOG(MAIN, INFO) << "Starting services...";
+		serviceManager.start();
+
+		LMS_LOG(MAIN, INFO) << "Now running...";
+
+		// Waiting for shutdown command
+		Wt::WServer::waitForShutdown(argv[0]);
+
+		LMS_LOG(MAIN, INFO) << "Stopping services...";
+		serviceManager.stop();
+		serviceManager.clear();
+
+		LMS_LOG(MAIN, INFO) << "Stopping server...";
+		server.stop();
 
 		res = EXIT_SUCCESS;
 	}
-	// TODO catch setting not found exception
-	catch( libconfig::ParseException& e)
-	{
-		std::cerr << "Caught libconfig::ParseException! error='" << e.getError() << "', file = '" << e.getFile() << "', line = " << e.getLine() << std::endl;
-	}
 	catch( Wt::WServer::Exception& e)
 	{
-		LMS_LOG(MOD_MAIN, SEV_CRIT) << "Caught a WServer::Exception: " << e.what();
+		LMS_LOG(MAIN, FATAL) << "Caught a WServer::Exception: " << e.what();
 	}
 	catch( std::exception& e)
 	{
-		LMS_LOG(MOD_MAIN, SEV_CRIT) << "Caught std::exception: " << e.what();
+		LMS_LOG(MAIN, FATAL) << "Caught std::exception: " << e.what();
 	}
 
 	return res;

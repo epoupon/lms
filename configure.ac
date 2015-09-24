@@ -8,55 +8,25 @@ AC_LANG_CPLUSPLUS
 # Checks for programs
 AC_PROG_CXX
 
+AC_ARG_ENABLE([video], AS_HELP_STRING([--enable-video],
+				      [Enable Video support. Default to no.])],
+			[enable_video="$enableval"],
+			[enable_video="no"])
 
-AC_ARG_ENABLE(lmsapi, AS_HELP_STRING([--enable-lmsapi],
-	    				[Build with the lmsapi protocol support. Defaults to yes.])],
-		[enable_lmsapi="$enableval"],
-		[enable_lmsapi="yes"])
+AM_CONDITIONAL([VIDEO], [test x$enable_video = xyes])
+AS_IF([test x$enable_video = xyes], [AC_DEFINE(HAVE_VIDEO, [1], [Enable Video support])])
 
-# ProtoBuf compiler.
-# First, specify with --with-protoc=/path/of/protoc.
-# Or, specify with env variable PROTOC.
-# If neither of the above, find it in the path.
-AS_IF([test "$enable_lmsapi" = "yes"],
-      [AC_ARG_WITH([protoc],
-	    [AS_HELP_STRING([--with-protoc=/path/of/protoc],
-			    [Location of the protocol buffers compiler protoc. Defaults to looking on path.])],
-	    [PROTOC="$withval"],
-	    [ AS_IF([test "x${PROTOC}" == "x"],
-		    [AC_PATH_PROG([PROTOC], [protoc], [no])])]
-	  )
-	]
-      	[ AS_IF([test "${PROTOC}" == "no"], [AC_MSG_ERROR([ProtoBuf compiler "protoc" not found.])]) ]
-	[AC_CHECK_LIB(	[protobuf],
-	     	[main],
-		,
-		[AC_MSG_ERROR([libprotobuf not found!])])]
-      [lmsapi=true]
-      ,
-      [lmsapi=false])
+PKG_CHECK_MODULES(IMAGEMAGICKXX, "ImageMagick++", [ HAVE_IMAGEMAGICKXX=yes ], [ ])
+if test -n "$HAVE_IMAGEMAGICKXX"; then
+	MAGICKXX_CFLAGS="$IMAGEMAGICKXX_CFLAGS"
+	MAGICKXX_LIBS="$IMAGEMAGICKXX_LIBS"
+fi
+AC_SUBST(MAGICKXX_CFLAGS)
+AC_SUBST(MAGICKXX_LIBS)
 
-AM_CONDITIONAL([LMSAPI], [test x$lmsapi = xtrue])
-AS_IF([test x$lmsapi = xtrue], [AC_DEFINE(HAVE_LMSAPI, [1], [Enable LMS API support])])
-
-AC_CHECK_HEADERS([Wt/WApplication jpeglib.h],
+AC_CHECK_HEADERS([Wt/WApplication],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
-
-AC_CHECK_LIB([config++],
-	     [main],
-	     ,
-	     [AC_MSG_ERROR([config++ not found!])])
-
-AC_CHECK_LIB([jpeg],
-	     [jpeg_destroy],
-	     ,
-	     [AC_MSG_ERROR([libpthread not found!])])
-
-AC_CHECK_LIB([pthread],
-	     [pthread_create],
-	     ,
-	     [AC_MSG_ERROR([libpthread not found!])])
 
 AC_CHECK_LIB([avutil],
 	     [av_free],
@@ -72,16 +42,6 @@ AC_CHECK_LIB([avformat],
 	     [av_read_frame],
 	     ,
 	     [AC_MSG_ERROR([libavformat not found!])])
-
-AC_CHECK_LIB([ssl],
-	     [SSL_CTX_new],
-	     ,
-	     [AC_MSG_ERROR([libssl not found!])])
-
-AC_CHECK_LIB([crypto],
-	     [ASN1_STRING_to_UTF8],
-	     ,
-	     [AC_MSG_ERROR([libcrypto not found!])])
 
 AC_CHECK_LIB([boost_system],
 		[main],
@@ -117,16 +77,6 @@ AC_CHECK_LIB(	[boost_iostreams],
 		[main],
 		,
 		[AC_MSG_ERROR([libboost_iostreams not found!])])
-
-AC_CHECK_LIB(	[boost_log],
-		[main],
-		,
-		[AC_MSG_ERROR([libboost_log not found!])])
-
-AC_CHECK_LIB(	[boost_log_setup],
-		[main],
-		,
-		[AC_MSG_ERROR([libboost_log_setup not found!])])
 
 # TODO -> PARAMETRIZE THIS
 AC_CHECK_LIB([wthttp],

@@ -18,25 +18,11 @@
  */
 
 #include "logger/Logger.hpp"
-#include "config/ConfigReader.hpp"
-#include "av/InputFormatContext.hpp"
+#include "av/AvInfo.hpp"
 
 #include "CoverArtGrabber.hpp"
 
-
 namespace {
-
-std::vector<std::string> splitStrings(const std::string& source)
-{
-	std::vector<std::string> res;
-	std::istringstream oss(source);
-
-	std::string str;
-	while(oss >> str)
-		res.push_back(str);
-
-	return res;
-}
 
 bool
 isFileSupported(const boost::filesystem::path& file, const std::vector<boost::filesystem::path> extensions)
@@ -56,7 +42,6 @@ isFileSupported(const boost::filesystem::path& file, const std::vector<boost::fi
 namespace CoverArt {
 
 Grabber::Grabber()
-: _maxFileSize(0)
 {
 }
 
@@ -67,40 +52,28 @@ Grabber::instance()
 	return instance;
 }
 
-void
-Grabber::init()
+static std::vector<Image::Image>
+getFromAvMediaFile(const Av::MediaFile& input, std::size_t nbMaxCovers)
 {
-	for (const std::string& extension : splitStrings( ConfigReader::instance().getString("main.cover.file_extensions")))
-		_fileExtensions.push_back("." + extension);
+	std::vector<Image::Image> res;
 
-	_maxFileSize = ConfigReader::instance().getULong("main.cover.file_max_size");
-}
-
-std::vector<CoverArt>
-Grabber::getFromInputFormatContext(const Av::InputFormatContext& input, std::size_t nbMaxCovers) const
-{
-	std::vector<CoverArt> res;
-
-	try
+	for (Av::Picture& picture : input.getAttachedPictures(nbMaxCovers))
 	{
-		std::vector<Av::Picture> pictures = input.getPictures(nbMaxCovers);
+		Image::Image image;
 
-		for (Av::Picture& picture : pictures)
-			res.push_back( CoverArt(picture.mimeType, picture.data) );
-
-	}
-	catch(std::exception& e)
-	{
-		LMS_LOG(MOD_COVER, SEV_ERROR) << "Cannot get pictures: " << e.what();
+		if (image.load(picture.data))
+			res.push_back( image );
+		else
+			LMS_LOG(COVER, ERROR) << "Cannot load embedded cover file in '" << input.getPath() << "'";
 	}
 
 	return res;
 }
 
-std::vector<CoverArt>
+std::vector<Image::Image>
 Grabber::getFromDirectory(const boost::filesystem::path& p, std::size_t nbMaxCovers) const
 {
-	std::vector<CoverArt> res;
+	std::vector<Image::Image> res;
 
 	std::vector<boost::filesystem::path> coverPathes = getCoverPaths(p, nbMaxCovers);
 	for (auto coverPath : coverPathes)
@@ -108,14 +81,12 @@ Grabber::getFromDirectory(const boost::filesystem::path& p, std::size_t nbMaxCov
 		if (res.size() >= nbMaxCovers)
 			break;
 
-		std::vector<unsigned char> data;
-		std::ifstream file(coverPath.string(), std::ios::binary);
-		char c;
-		while (file.get(c))
-			data.push_back(c);
+		Image::Image image;
 
-		// TODO handle other formats
-		res.push_back(CoverArt("image/jpeg", data));
+		if (image.load(coverPath))
+			res.push_back(image);
+		else
+			LMS_LOG(COVER, ERROR) << "Cannot load image in file '" << coverPath << "'";
 	}
 
 	return res;
@@ -143,7 +114,7 @@ Grabber::getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t
 
 		if (boost::filesystem::file_size(path) > _maxFileSize)
 		{
-			LMS_LOG(MOD_COVER, SEV_INFO) << "Cover file '" << path << " is too big (" << boost::filesystem::file_size(path) << "), limit is " << _maxFileSize;
+			LMS_LOG(COVER, INFO) << "Cover file '" << path << " is too big (" << boost::filesystem::file_size(path) << "), limit is " << _maxFileSize;
 			continue;
 		}
 
@@ -155,27 +126,18 @@ Grabber::getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t
 	return res;
 }
 
-std::vector<CoverArt>
+std::vector<Image::Image>
 Grabber::getFromTrack(const boost::filesystem::path& p, std::size_t nbMaxCovers) const
 {
-	std::vector<CoverArt> res;
+	Av::MediaFile input(p);
 
-	try
-	{
-		Av::InputFormatContext input(p);
-
-		res = getFromInputFormatContext(input, nbMaxCovers);
-
-	}
-	catch(std::exception& e)
-	{
-		LMS_LOG(MOD_COVER, SEV_ERROR) << "Cannot get covers from file " << p << ": " << e.what();
-	}
-
-	return res;
+	if (input.open())
+		return getFromAvMediaFile(input, nbMaxCovers);
+	else
+		return std::vector<Image::Image>();
 }
 
-std::vector<CoverArt>
+std::vector<Image::Image>
 Grabber::getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::size_t nbMaxCovers) const
 {
 	using namespace Database;
@@ -184,7 +146,7 @@ Grabber::getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackI
 
 	Track::pointer track = Track::getById(session, trackId);
 	if (!track)
-		return std::vector<CoverArt>();
+		return std::vector<Image::Image>();
 
 	Track::CoverType coverType = track->getCoverType();
 	boost::filesystem::path trackPath = track->getPath();
@@ -195,17 +157,15 @@ Grabber::getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackI
 	{
 		case Track::CoverType::Embedded:
 			return Grabber::getFromTrack(trackPath, nbMaxCovers);
-		case Track::CoverType::ExternalFile:
-			return Grabber::getFromDirectory(trackPath.parent_path(), nbMaxCovers);
 		case Track::CoverType::None:
-			return std::vector<CoverArt>();
+			return Grabber::getFromDirectory(trackPath.parent_path(), nbMaxCovers);
 	}
 
-	return std::vector<CoverArt>();
+	return std::vector<Image::Image>();
 }
 
 
-std::vector<CoverArt>
+std::vector<Image::Image>
 Grabber::getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type releaseId, std::size_t nbMaxCovers) const
 {
 	using namespace Database;
@@ -222,14 +182,14 @@ Grabber::getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type re
 					-1, 1 /* limit result size */);
 
 		if (tracks.empty())
-			return std::vector<CoverArt>();
+			return std::vector<Image::Image>();
 
 		firstTrackPath = tracks.front()->getPath();
 		embeddedCover = (tracks.front()->getCoverType() == Track::CoverType::Embedded);
 	}
 
 	// First, try to get covers from the directory of the release
-	std::vector<CoverArt> res = getFromDirectory( firstTrackPath.parent_path(), nbMaxCovers);
+	std::vector<Image::Image> res = getFromDirectory( firstTrackPath.parent_path(), nbMaxCovers);
 
 	// Fallback on the embedded cover of the first track
 	if (res.empty() && embeddedCover)

@@ -64,7 +64,7 @@ AudioMediaPlayer::AudioMediaPlayer(Wt::WContainerWidget *parent)
 		}
 	}
 
-	LMS_LOG(MOD_UI, SEV_INFO) << "Audio player using encoding " << _encoding;
+	LMS_LOG(UI, INFO) << "Audio player using encoding " << _encoding;
 
 	// Current Media info
 	Wt::WHBoxLayout *currentMediaLayout = new Wt::WHBoxLayout();
@@ -172,85 +172,92 @@ AudioMediaPlayer::AudioMediaPlayer(Wt::WContainerWidget *parent)
 }
 
 void
-AudioMediaPlayer::loadPlayer(void)
+AudioMediaPlayer::loadPlayer(boost::filesystem::path filePath, Av::TranscodeParameters& parameters)
 {
+	_currentFile = filePath;
+	_currentParameters = parameters;
+
 	_mediaPlayer->clearSources();
 
 	if (_mediaResource)
 		delete _mediaResource;
 
-	assert( _currentParameters );
-	_mediaResource = new AvConvTranscodeStreamResource( *_currentParameters, this );
+	_mediaResource = new AvConvTranscodeStreamResource( filePath, parameters, this );
 
 	_mediaPlayer->addSource( getEncoding(), Wt::WLink(_mediaResource));
-}
-
-void
-AudioMediaPlayer::load(Database::Track::id_type trackId)
-{
-	std::size_t bitrate = 0;
-	boost::filesystem::path trackPath;
-
-	{
-		Wt::Dbo::Transaction transaction(DboSession());
-
-		Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
-
-		bitrate = CurrentUser()->getAudioBitrate();
-		trackPath = track->getPath();
-		_mediaTitle->setText ( Wt::WString::fromUTF8(track->getName()) );
-		_mediaArtistRelease->setText ( Wt::WString::fromUTF8(track->getArtist()->getName()) + " - " + Wt::WString::fromUTF8(track->getRelease()->getName()) );
-		_mediaCover->setImageLink( Wt::WLink (LmsApplication::instance()->getCoverResource()->getTrackUrl(trackId, 72)));
-	}
-
-	Transcode::Format::Encoding encoding;
-	switch (_encoding)
-	{
-		case Wt::WMediaPlayer::MP3: encoding = Transcode::Format::MP3; break;
-		case Wt::WMediaPlayer::FLA: encoding = Transcode::Format::FLA; break;
-		case Wt::WMediaPlayer::OGA: encoding = Transcode::Format::OGA; break;
-		case Wt::WMediaPlayer::WEBMA: encoding = Transcode::Format::WEBMA; break;
-		default:
-					      encoding = Transcode::Format::MP3;
-	}
-
-	_timeSlider->setDisabled(false);
-
-	try
-	{
-		Transcode::Parameters parameters(trackPath, Transcode::Format::get(encoding));
-		parameters.setBitrate(Transcode::Stream::Audio, bitrate);
-
-		_currentParameters = std::make_shared<Transcode::Parameters>( parameters );
-	}
-	catch(std::exception &e)
-	{
-		LMS_LOG(MOD_UI, SEV_ERROR) << "Cannot load input file '" << trackPath << "'";
-		return;
-	}
-
-	loadPlayer();
-
-	_timeSlider->setRange(0, _currentParameters->getInputMediaFile().getDuration().total_seconds() );
-	_timeSlider->setValue(0);
-
-	_duration->setText( boost::posix_time::to_simple_string( _currentParameters->getInputMediaFile().getDuration() ));
 
 	// Auto play
 	_mediaPlayer->play();
 }
 
 void
+AudioMediaPlayer::load(Database::Track::id_type trackId)
+{
+	Av::TranscodeParameters parameters;
+
+	boost::filesystem::path path;
+
+	boost::posix_time::time_duration duration;
+
+	{
+		Wt::Dbo::Transaction transaction(DboSession());
+
+		Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
+
+		path = track->getPath();
+		parameters.setBitrate(Av::Stream::Type::Audio, CurrentUser()->getAudioBitrate() );
+
+		duration = track->getDuration();
+
+		_mediaTitle->setText ( Wt::WString::fromUTF8(track->getName()) );
+		_mediaArtistRelease->setText ( Wt::WString::fromUTF8(track->getArtist()->getName()) + " - " + Wt::WString::fromUTF8(track->getRelease()->getName()) );
+		_mediaCover->setImageLink( Wt::WLink (LmsApplication::instance()->getCoverResource()->getTrackUrl(trackId, 72)));
+	}
+
+	Av::MediaFile mediaFile(path);
+
+	if (!mediaFile.open())
+	{
+		// No longer exist ? TODO next?
+		LMS_LOG(UI, INFO) << "Cannot open file '" << path << "'";
+		return;
+	}
+
+	// It seems to be far better to manually map the streams
+	// otherwise, some files may have to be fully transcoded to be played by browser...
+	int audioBestStreamId = mediaFile.getBestStreamId(Av::Stream::Type::Audio);
+	if (audioBestStreamId != -1)
+		parameters.addStream(audioBestStreamId);
+
+	Av::Encoding encoding;
+	switch (_encoding)
+	{
+		case Wt::WMediaPlayer::MP3: encoding = Av::Encoding::MP3; break;
+		case Wt::WMediaPlayer::FLA: encoding = Av::Encoding::FLA; break;
+		case Wt::WMediaPlayer::OGA: encoding = Av::Encoding::OGA; break;
+		case Wt::WMediaPlayer::WEBMA: encoding = Av::Encoding::WEBMA; break;
+		default:
+			encoding = Av::Encoding::MP3;
+	}
+	parameters.setEncoding(encoding);
+
+	_timeSlider->setDisabled(false);
+	_timeSlider->setRange(0, duration.total_seconds() );
+	_timeSlider->setValue(0);
+
+	_duration->setText( boost::posix_time::to_simple_string( duration ));
+
+	loadPlayer(path, parameters);
+}
+
+void
 AudioMediaPlayer::handlePlayOffset(int offsetSecs)
 {
-	if (!_currentParameters)
-		return;
+	Av::TranscodeParameters parameters = _currentParameters;
 
-	_currentParameters->setOffset( boost::posix_time::seconds(offsetSecs) );
+	parameters.setOffset( boost::posix_time::seconds(offsetSecs) );
 
-	loadPlayer();
-
-	_mediaPlayer->play();
+	loadPlayer(_currentFile, parameters);
 }
 
 void
@@ -262,10 +269,7 @@ AudioMediaPlayer::handleTrackEnded(void)
 void
 AudioMediaPlayer::handleTimeUpdated(void)
 {
-	if (!_currentParameters)
-		return;
-
-	boost::posix_time::time_duration currentTime ( boost::posix_time::seconds( _mediaPlayer->currentTime() + _currentParameters->getOffset().total_seconds()));
+	boost::posix_time::time_duration currentTime ( boost::posix_time::seconds( _mediaPlayer->currentTime() + _currentParameters.getOffset().total_seconds()));
 
 	_timeSlider->setValue( currentTime.total_seconds() );
 	_curTime->setText( boost::posix_time::to_simple_string( currentTime) );

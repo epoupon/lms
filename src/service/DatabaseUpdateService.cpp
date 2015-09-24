@@ -19,22 +19,7 @@
 
 #include <boost/thread.hpp>
 
-#include "config/ConfigReader.hpp"
-#include "logger/Logger.hpp"
-
 #include "DatabaseUpdateService.hpp"
-
-static std::vector<std::string> splitStrings(const std::string& source)
-{
-	std::vector<std::string> res;
-	std::istringstream oss(source);
-
-	std::string str;
-	while(oss >> str)
-		res.push_back(str);
-
-	return res;
-}
 
 namespace Service {
 
@@ -42,29 +27,23 @@ DatabaseUpdateService::DatabaseUpdateService(Wt::Dbo::SqlConnectionPool &connect
 : _metadataParser(),
  _databaseUpdater( connectionPool, _metadataParser)
 {
-	_databaseUpdater.setAudioExtensions(splitStrings(ConfigReader::instance().getString("main.database.audio_extensions")));
-	_databaseUpdater.setVideoExtensions(splitStrings(ConfigReader::instance().getString("main.database.video_extensions")));
 }
 
 void
 DatabaseUpdateService::start(void)
 {
-	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "DatabaseUpdateService, starting...";
 	_databaseUpdater.start();
 }
 
 void
 DatabaseUpdateService::stop(void)
 {
-	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "DatabaseUpdateService, stopping...";
 	_databaseUpdater.stop();
-	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "DatabaseUpdateService, stopped";
 }
 
 void
 DatabaseUpdateService::restart(void)
 {
-	LMS_LOG(MOD_SERVICE, SEV_DEBUG) << "DatabaseUpdateService, restart";
 	stop();
 	start();
 }

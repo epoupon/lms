@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,42 +17,44 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LOGGER_HPP__
-#define LOGGER_HPP__
+#pragma once
 
-#include <Wt/WServer>
-#include <Wt/WApplication>
-#include <Wt/WLogger>
+#include <vector>
 
-#include <string>
+#include <boost/filesystem/path.hpp>
 
+#include <Magick++.h>
 
-enum class Severity
+namespace Image
 {
-	FATAL,
-	ERROR,
-	WARNING,
-	INFO,
-	DEBUG,
+
+enum class Format
+{
+	JPEG,
 };
 
-enum class Module
+std::string format_to_mimeType(Format format);
+
+void init(const char *path);
+
+class Image
 {
-	AV,
-	COVER,
-	DB,
-	DBUPDATER,
-	MAIN,
-	METADATA,
-	REMOTE,
-	SERVICE,
-	TRANSCODE,
-	UI,
+	public:
+
+		// input
+		bool	load(const std::vector<unsigned char>& rawData);
+		bool	load(boost::filesystem::path p);
+
+		// Operations
+		bool	scale(std::size_t size);
+
+		// output
+		void	save(std::vector<unsigned char>& rawData, Format format) const;
+
+	private:
+		Magick::Image	_image;
 };
 
-std::string getModuleName(Module mod);
-std::string getSeverityName(Severity sev);
 
-#define LMS_LOG(module, level)	Wt::log(getSeverityName(Severity::level)) << Wt::WLogger::sep << "[" << getModuleName(Module::module) << "]" <<  Wt::WLogger::sep
+} // namespace Image
 
-#endif
