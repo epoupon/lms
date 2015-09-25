@@ -15,6 +15,7 @@ Please note some media files may require significant CPU usage to be transcoded.
 
 ## Dependencies
 ### Debian or Ubuntu packages
+
 ```sh
 $ apt-get install g++ autoconf automake libboost-dev libboost-locale-dev libboost-iostreams-dev libboost-log-dev libavcodec-dev libwtdbosqlite-dev libwthttp-dev libwtdbo-dev libwt-dev libmagick++-dev libavcodec-dev libavformat-dev libavutil
 ```
@@ -34,10 +35,12 @@ $ make -j 4
 ```
 
 ## Install
+
 ```sh
 $ make install
 ```
 This command requires root privileges
+
 ## Running
 
 ```sh
@@ -57,7 +60,7 @@ Generate a self signed certificate:
 ```sh
 $ openssl req -x509 -out cert.pem -keyout privkey.pem -newkey rsa:4096
 ```
-
+Run:
 ```sh
 $ /usr/bin/lms --docroot='/usr/share/lms/docroot/;/resources,/css,/images' --approot=/usr/share/lms/approot --https-address 0.0.0.0 --https-port 5081 --ssl-certificate cert.pem --ssl-private-key privkey.pem --ssl-tmp-dh dh2048.pem
 ```
@@ -68,4 +71,3 @@ Depending on your SSL parameters, you may be asked for the PEM passphrase to unl
 - Wt (http://www.webtoolkit.eu/)
 - bootstrap3 (http://getbootstrap.com/)
 - libav project (https://www.libav.org/).
-                                                                                                                                                                       73,1          Bot
