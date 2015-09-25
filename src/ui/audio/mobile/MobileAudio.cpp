@@ -127,8 +127,7 @@ Audio::Audio(Wt::WContainerWidget *parent)
 		trackSearch->hide();
 		releaseSearch->show();
 
-		releaseSearch->search(SearchFilter::IdMatch({{SearchFilter::Field::Artist, {artistId}}}),
-				20);
+		releaseSearch->search(SearchFilter::ById(SearchFilter::Field::Artist, artistId), 20);
 	}, std::placeholders::_1));
 
 	releaseSearch->moreReleasesSelected().connect(std::bind([=]
@@ -144,8 +143,7 @@ Audio::Audio(Wt::WContainerWidget *parent)
 		releaseSearch->hide();
 		trackSearch->show();
 
-		trackSearch->search(SearchFilter::IdMatch({{SearchFilter::Field::Release, {releaseId}}}),
-				20);
+		trackSearch->search(SearchFilter::ById(SearchFilter::Field::Release, releaseId), 20);
 	}, std::placeholders::_1));
 
 	trackSearch->moreTracksSelected().connect(std::bind([=]

@@ -47,6 +47,7 @@ class SearchFilter
 
 		SearchFilter() {}
 
+		// Helpers
 		static SearchFilter IdMatch( const IdMatchType& _idMatch )
 		{
 			return SearchFilter(_idMatch);
@@ -55,6 +56,12 @@ class SearchFilter
 		static SearchFilter NameLikeMatch( const NameLikeMatchType& _nameLikeMatch )
 		{
 			return SearchFilter(_nameLikeMatch);
+		}
+
+		// Single ID match
+		static SearchFilter ById(Field field, Wt::Dbo::dbo_default_traits::IdType id)
+		{
+			return SearchFilter({{field, {id} }});
 		}
 
 		// The filter is a AND of the following conditions:
