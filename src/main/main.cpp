@@ -87,11 +87,11 @@ int main(int argc, char* argv[])
 	}
 	catch( Wt::WServer::Exception& e)
 	{
-		LMS_LOG(MAIN, FATAL) << "Caught a WServer::Exception: " << e.what();
+		std::cerr << "Caught a WServer::Exception: " << e.what();
 	}
 	catch( std::exception& e)
 	{
-		LMS_LOG(MAIN, FATAL) << "Caught std::exception: " << e.what();
+		std::cerr << "Caught std::exception: " << e.what();
 	}
 
 	return res;
