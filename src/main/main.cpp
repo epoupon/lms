@@ -29,9 +29,6 @@
 
 #include "service/ServiceManager.hpp"
 #include "service/DatabaseUpdateService.hpp"
-#if defined HAVE_LMSAPI
-#include "service/LmsAPIServerService.hpp"
-#endif
 
 #include <Wt/WServer>
 
@@ -62,10 +59,6 @@ int main(int argc, char* argv[])
 		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool( Database::Handler::createConnectionPool("/var/lms/lms.db")); // TODO use $datadir from autotools
 
 		serviceManager.add( std::make_shared<Service::DatabaseUpdateService>(*connectionPool));
-
-#if defined HAVE_LMSAPI
-		serviceManager.add( std::make_shared<Service::LmsAPIService>(*connectionPool));
-#endif
 
 		// bind entry point
 		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, boost::ref(*connectionPool)));

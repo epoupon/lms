@@ -28,6 +28,27 @@ AC_CHECK_HEADERS([Wt/WApplication],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
 
+AC_CHECK_LIB([wt],
+             [main],
+             ,
+             [AC_MSG_ERROR([libwt not found!])])
+
+AC_CHECK_LIB([wtdbo],
+             [main],
+             ,
+             [AC_MSG_ERROR([libwtdbo not found!])])
+
+AC_CHECK_LIB([wtdbosqlite3],
+             [main],
+             ,
+             [AC_MSG_ERROR([libwtdbosqlite3 not found!])])
+
+AC_CHECK_LIB([wthttp],
+	     [main],
+	     ,
+	     [AC_MSG_ERROR([libwthttp not found!])])
+
+
 AC_CHECK_LIB([avutil],
 	     [av_free],
 	     ,
@@ -58,47 +79,15 @@ AC_CHECK_LIB(	[boost_locale],
 		,
 		[AC_MSG_ERROR([libboost_locale not found!])])
 
-AC_CHECK_LIB(	[boost_thread],
- 		[main],
-		,
-		[AC_MSG_ERROR([libboost_thread not found!])])
-
 AC_CHECK_LIB(	[boost_date_time],
 		[main],
 		,
 		[AC_MSG_ERROR([libboost_date_time not found!])])
 
-#AC_CHECK_LIB(	[boost_signals],
-#		[main],
-#		,
-#		[AC_MSG_ERROR([libboost_signals not found!])])
-
 AC_CHECK_LIB(	[boost_iostreams],
 		[main],
 		,
 		[AC_MSG_ERROR([libboost_iostreams not found!])])
-
-# TODO -> PARAMETRIZE THIS
-AC_CHECK_LIB([wthttp],
-	     [main],
-	     ,
-	     [AC_MSG_ERROR([libwthttp not found!])])
-
-AC_CHECK_LIB([wtdbosqlite3],
-             [main],
-             ,
-             [AC_MSG_ERROR([libwtdbosqlite3 not found!])])
-
-AC_CHECK_LIB([wtdbo],
-             [main],
-             ,
-             [AC_MSG_ERROR([libwtdbo not found!])])
-
-AC_CHECK_LIB([wt],
-             [main],
-             ,
-             [AC_MSG_ERROR([libwt not found!])])
-
 
 AC_CONFIG_FILES([Makefile
 		 src/Makefile

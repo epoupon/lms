@@ -113,6 +113,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 		firstConnection = (Database::User::getAll(DboSession()).size() == 0);
 	}
 
+	LMS_LOG(UI, DEBUG) << "Creating root widget. First connection = " << std::boolalpha << firstConnection;
+
 	// If here is no account in the database, launch the first connection wizard
 	if (firstConnection)
 		createFirstConnectionUI();
