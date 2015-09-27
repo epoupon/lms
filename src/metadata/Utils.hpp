@@ -36,7 +36,8 @@ template<typename T>
 static inline bool readAs(const std::string& str, T& data)
 {
 	std::istringstream iss ( str );
-	return iss >> data;
+	iss >> data;
+	return !iss.fail();
 }
 
 
