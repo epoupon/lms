@@ -195,7 +195,8 @@ TrackView::getTracks(std::vector<Track::id_type>& trackIds)
 	LMS_LOG(UI, DEBUG) << "Getting all tracks...";
 
 	Wt::Dbo::Transaction transaction(DboSession());
-	Wt::Dbo::collection<Track::UIQueryResult> results = _queryModel.query();
+	Wt::Dbo::Query<Track::UIQueryResult> query = _queryModel.query();
+	Wt::Dbo::collection<Track::UIQueryResult> results = query.limit(-1).offset(-1);
 
 	for (auto it = results.begin(); it != results.end(); ++it)
 	{
