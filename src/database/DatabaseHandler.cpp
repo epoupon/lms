@@ -108,6 +108,12 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();
 	}
 
+	{
+		Wt::Dbo::Transaction transaction(_session);
+
+		_session.execute("PRAGMA journal_mode=WAL");
+	}
+
 	_users = new UserDatabase(_session);
 }
 
@@ -162,7 +168,7 @@ Handler::createConnectionPool(boost::filesystem::path p)
 	connection->executeSql("pragma journal_mode=WAL");
 
 	//  connection->setProperty("show-queries", "true");
-	return new Wt::Dbo::FixedSqlConnectionPool(connection, 10);
+	return new Wt::Dbo::FixedSqlConnectionPool(connection, 1);
 }
 
 
