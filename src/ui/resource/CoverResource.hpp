@@ -47,7 +47,7 @@ class CoverResource : public Wt::WResource
 
 	private:
 
-		const Image::Image&		getDefaultCover(std::size_t size);
+		Image::Image			getDefaultCover(std::size_t size);
 		void				putCover(Wt::Http::Response& response, Image::Image image);
 
 		std::mutex			_mutex;

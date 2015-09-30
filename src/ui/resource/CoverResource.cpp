@@ -41,9 +41,11 @@ CoverResource:: ~CoverResource()
 	beingDeleted();
 }
 
-const Image::Image&
+Image::Image
 CoverResource::getDefaultCover(std::size_t size)
 {
+	std::unique_lock<std::mutex> lock(_mutex);
+
 	auto itCover = _defaultCovers.find(size);
 	if (itCover == _defaultCovers.end())
 	{
@@ -163,7 +165,6 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 
 		// If no cover found, just send default one
 		putCover(response, getDefaultCover(size));
-
 	}
 	catch (std::invalid_argument& e)
 	{
