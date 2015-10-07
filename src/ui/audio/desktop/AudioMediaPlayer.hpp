@@ -46,7 +46,7 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 		AudioMediaPlayer(Wt::WContainerWidget *parent = 0);
 
 		// Load Media to be played
-		void load(Database::Track::id_type trackId);
+		bool load(Database::Track::id_type trackId);
 
 		// Accessors
 		Wt::WMediaPlayer::Encoding getEncoding() const	{ return _encoding; }

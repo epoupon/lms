@@ -510,7 +510,8 @@ Audio::playTrack(Track::id_type trackId, int pos)
 		CurrentUser().modify()->setCurPlayingTrackPos(pos);
 	}
 
-	_mediaPlayer->load(trackId);
+	if (!_mediaPlayer->load(trackId))
+		_playQueue->playNext();
 }
 
 } // namespace Desktop

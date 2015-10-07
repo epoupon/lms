@@ -190,7 +190,7 @@ AudioMediaPlayer::loadPlayer(boost::filesystem::path filePath, Av::TranscodePara
 	_mediaPlayer->play();
 }
 
-void
+bool
 AudioMediaPlayer::load(Database::Track::id_type trackId)
 {
 	Av::TranscodeParameters parameters;
@@ -203,6 +203,11 @@ AudioMediaPlayer::load(Database::Track::id_type trackId)
 		Wt::Dbo::Transaction transaction(DboSession());
 
 		Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
+		if (!track)
+		{
+			LMS_LOG(UI, INFO) << "Cannot find track id " << trackId;
+			return false;
+		}
 
 		path = track->getPath();
 		parameters.setBitrate(Av::Stream::Type::Audio, CurrentUser()->getAudioBitrate() );
@@ -216,11 +221,10 @@ AudioMediaPlayer::load(Database::Track::id_type trackId)
 
 	Av::MediaFile mediaFile(path);
 
-	if (!mediaFile.open())
+	if (!mediaFile.open() || !mediaFile.scan())
 	{
-		// No longer exist ? TODO next?
 		LMS_LOG(UI, INFO) << "Cannot open file '" << path << "'";
-		return;
+		return false;
 	}
 
 	// It seems to be far better to manually map the streams
@@ -248,6 +252,8 @@ AudioMediaPlayer::load(Database::Track::id_type trackId)
 	_duration->setText( boost::posix_time::to_simple_string( duration ));
 
 	loadPlayer(path, parameters);
+
+	return true;
 }
 
 void
