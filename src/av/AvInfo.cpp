@@ -79,7 +79,7 @@ MediaFile::open(void)
 	int error = avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr);
 	if (error < 0)
 	{
-		LMS_LOG(AV, ERROR) << "Cannot open '" << _p.string() << "', avformat_open_input returned " << averror_to_string(error);
+		LMS_LOG(AV, ERROR) << "Cannot open '" << _p.string() << "': " << averror_to_string(error);
 		return false;
 	}
 
@@ -95,7 +95,7 @@ MediaFile::scan(void)
 	int error = avformat_find_stream_info(_context, nullptr);
 	if (error < 0)
 	{
-		LMS_LOG(AV, ERROR) << "Cannot find stream information: '" << averror_to_string(error);
+		LMS_LOG(AV, ERROR) << "Cannot find stream information on '" << _p.string() << "': " << averror_to_string(error);
 		return false;
 	}
 

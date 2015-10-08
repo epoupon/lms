@@ -77,6 +77,14 @@ Track::create(Wt::Dbo::Session& session, const boost::filesystem::path& p)
 	return session.add(new Track(p) );
 }
 
+std::vector<boost::filesystem::path>
+Track::getAllPaths(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::Transaction transaction(session);
+	Wt::Dbo::collection<std::string> res = session.query<std::string>("SELECT file_path from track");
+	return std::vector<boost::filesystem::path>(res.begin(), res.end());
+}
+
 std::vector< Genre::pointer >
 Track::getGenres(void) const
 {
