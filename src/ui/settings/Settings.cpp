@@ -77,7 +77,7 @@ Settings::Settings(Wt::WContainerWidget* parent)
 
 		DatabaseFormView* databaseFormView = new DatabaseFormView();
 		databaseFormView->changed().connect(this, &Settings::restartDatabaseUpdateService);
-		menu->addItem("Database Update", databaseFormView);
+		menu->addItem("Database", databaseFormView);
 
 		menu->addItem("Users", new Users());
 	}

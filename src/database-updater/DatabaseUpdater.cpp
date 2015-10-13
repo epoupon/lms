@@ -129,20 +129,6 @@ _metadataParser(parser)
 }
 
 void
-Updater::setAudioExtensions(const std::vector<std::string>& extensions)
-{
-	for (const std::string& extension : extensions)
-		_audioExtensions.push_back("." + extension);
-}
-
-void
-Updater::setVideoExtensions(const std::vector<std::string>& extensions)
-{
-	for (const std::string& extension : extensions)
-		_videoExtensions.push_back("." + extension);
-}
-
-void
 Updater::start(void)
 {
 	_running = true;
@@ -233,6 +219,8 @@ Updater::process(boost::system::error_code err)
 {
 	if (!err)
 	{
+		updateFileExtensions();
+
 		Stats stats;
 
 		checkAudioFiles(stats);
@@ -282,6 +270,15 @@ Updater::process(boost::system::error_code err)
 		if (_running)
 			processNextJob();
 	}
+}
+
+void
+Updater::updateFileExtensions()
+{
+	Wt::Dbo::Transaction transaction(_db.getSession());
+
+	_audioFileExtensions = MediaDirectorySettings::get(_db.getSession())->getAudioFileExtensions();
+	_videoFileExtensions = MediaDirectorySettings::get(_db.getSession())->getVideoFileExtensions();
 }
 
 Artist::pointer
@@ -574,13 +571,13 @@ Updater::processRootDirectory(RootDirectory rootDirectory, Stats& stats)
 			switch( rootDirectory.type )
 			{
 				case Database::MediaDirectory::Audio:
-					if (isFileSupported(*itPath, _audioExtensions))
+					if (isFileSupported(*itPath, _audioFileExtensions))
 						processAudioFile( *itPath, stats );
 
 					break;
 
 				case Database::MediaDirectory::Video:
-					if (isFileSupported(*itPath, _videoExtensions))
+					if (isFileSupported(*itPath, _videoFileExtensions))
 						processVideoFile( *itPath, stats);
 					break;
 			}
@@ -655,7 +652,7 @@ Updater::checkAudioFiles( Stats& stats )
 		if (!_running)
 			return;
 
-		if (!checkFile(trackPath, rootDirs, _audioExtensions))
+		if (!checkFile(trackPath, rootDirs, _audioFileExtensions))
 		{
 			Wt::Dbo::Transaction transaction(_db.getSession());
 
@@ -723,7 +720,7 @@ Updater::checkVideoFiles( Stats& stats )
 		if (!_running)
 			return;
 
-		if (!checkFile(videoPath, rootDirs, _videoExtensions))
+		if (!checkFile(videoPath, rootDirs, _videoFileExtensions))
 		{
 			Wt::Dbo::Transaction transaction(_db.getSession());
 

@@ -80,6 +80,7 @@ class Updater
 		Database::Artist::pointer getArtist( const boost::filesystem::path& file, const std::string& name, const std::string& MBID);
 		Database::Release::pointer getRelease( const boost::filesystem::path& file, const std::string& name, const std::string& MBID);
 		std::vector<Database::Genre::pointer> getGenres( const std::list<std::string>& names);
+		void updateFileExtensions();
 
 		// Audio
 		void checkAudioFiles( Stats& stats );
@@ -96,11 +97,8 @@ class Updater
 
 		Database::Handler	_db;
 
-		std::vector<boost::filesystem::path>	_audioExtensions
-			= {".mp3", ".ogg", ".oga", ".aac", ".m4a", ".flac", ".wav", ".wma", ".aif", ".aiff", ".ape", ".mpc", ".shn"}; // TODO parametrize
-
-		std::vector<boost::filesystem::path>	_videoExtensions
-			= {".flv", ".avi", ".mpg", ".mpeg", ".mp4", ".m4v", ".mkv", ".mov", ".wmv", ".ogv", ".divx", ".m2ts"}; // TODO parametrize
+		std::vector<boost::filesystem::path>	_audioFileExtensions;
+		std::vector<boost::filesystem::path>	_videoFileExtensions;
 
 		MetaData::Parser&	_metadataParser;
 

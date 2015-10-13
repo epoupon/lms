@@ -312,6 +312,30 @@
 		</div>
 
 		<div class="form-group">
+			<label class="control-label col-sm-2" for="${id:audio-file-extensions}">
+				Audio file extensions
+			</label>
+			<div class="col-sm-5">
+				${audio-file-extensions}
+			</div>
+			<div class="help-block col-sm-5">
+				${audio-file-extensions-info}
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="control-label col-sm-2" for="${id:video-file-extensions}">
+				Video file extensions
+			</label>
+			<div class="col-sm-5">
+				${video-file-extensions}
+			</div>
+			<div class="help-block col-sm-5">
+				${video-file-extensions-info}
+			</div>
+		</div>
+
+		<div class="form-group">
 			<div class="col-sm-offset-2 col-sm-10">
 				${apply-button} ${discard-button} ${immediate-scan-button}
 			</div>
