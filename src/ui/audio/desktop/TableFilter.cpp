@@ -178,7 +178,7 @@ TableFilterArtist::getConstraint(SearchFilter& filter)
 
 		Artist::id_type id = _queryModel.resultRow( index.row() ).get<0>();
 
-		filter.idMatch[Database::SearchFilter::Field::Artist].push_back(id);
+		filter.idMatch[SearchFilter::Field::Artist].push_back(id);
 	}
 }
 
