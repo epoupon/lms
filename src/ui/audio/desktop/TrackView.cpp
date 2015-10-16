@@ -167,6 +167,7 @@ TrackView::emitStats(const SearchFilter& filter)
 void
 TrackView::refresh(SearchFilter& filter)
 {
+	this->clearSelection();
 	Track::updateUIQueryModel(DboSession(), _queryModel, filter);
 
 	emitStats(filter);

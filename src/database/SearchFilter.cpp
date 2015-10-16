@@ -46,8 +46,6 @@ SqlQuery generatePartialQuery(SearchFilter& filter)
 
 		for (auto nameLikeMatch : nameLikeMatches)
 		{
-
-			// Artist
 			switch (nameLikeMatch.first)
 			{
 				case SearchFilter::Field::Artist:
@@ -75,7 +73,8 @@ SqlQuery generatePartialQuery(SearchFilter& filter)
 	}
 
 	// Process id exact match parameters
-
+	// Id list may be long, we do not bind the parameters
+	// Safe since we already known these are just ints
 	for (auto idMatch : filter.idMatch)
 	{
 		WhereClause idWhereClause;

@@ -85,6 +85,8 @@ TableFilterGenre::layoutSizeChanged (int width, int height)
 void
 TableFilterGenre::refresh(SearchFilter& filter)
 {
+	this->clearSelection();
+
 	Genre::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 
@@ -162,6 +164,7 @@ TableFilterArtist::layoutSizeChanged (int width, int height)
 void
 TableFilterArtist::refresh(SearchFilter& filter)
 {
+	this->clearSelection();
 	Artist::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 
@@ -245,6 +248,7 @@ TableFilterRelease::layoutSizeChanged (int width, int height)
 void
 TableFilterRelease::refresh(SearchFilter& filter)
 {
+	this->clearSelection();
 	Release::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 
