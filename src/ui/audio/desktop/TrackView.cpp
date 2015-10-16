@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <boost/date_time.hpp>
+
 #include <Wt/WItemDelegate>
 #include <Wt/WBreak>
 
@@ -29,6 +31,30 @@ namespace UserInterface {
 namespace Desktop {
 
 using namespace Database;
+
+class DurationItemDelegate : public Wt::WItemDelegate
+{
+	public:
+		DurationItemDelegate(Wt::WObject *parent = 0) : Wt::WItemDelegate(parent) {}
+
+		Wt::WWidget* update(Wt::WWidget *widget, const Wt::WModelIndex &index, Wt::WFlags< Wt::ViewItemRenderFlag > flags)
+		{
+			boost::posix_time::time_duration duration = boost::any_cast<boost::posix_time::time_duration>(index.data(Wt::DisplayRole));
+
+			boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
+
+			if (duration.total_seconds() < 3600)
+				facet->time_duration_format("%M:%S");
+			else
+				facet->time_duration_format("%H:%M:%S");
+
+			std::ostringstream oss;
+			oss.imbue(std::locale(oss.getloc(), facet));
+			oss << duration;
+
+			return new Wt::WText(oss.str(), Wt::PlainText);
+		}
+};
 
 TrackView::TrackView(Wt::WContainerWidget* parent)
 : Wt::WTableView( parent )
@@ -74,8 +100,7 @@ TrackView::TrackView(Wt::WContainerWidget* parent)
 	// Duration display
 	{
 		// TODO better handle 1 hour+ files!
-		Wt::WItemDelegate *delegate = new Wt::WItemDelegate(this);
-		delegate->setTextFormat("mm:ss");
+		DurationItemDelegate *delegate = new DurationItemDelegate(this);
 		this->setItemDelegateForColumn(5, delegate);
 	}
 
