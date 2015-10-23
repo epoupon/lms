@@ -54,6 +54,7 @@
 	- Add a upload button to upload media files in a dedicated directory
 	- Add keyboard shortcuts
 	- Properly handle files that have disappear from the DB (skip)
+	- Files with & in path won't be played
 
 	[Video]
 	- implement a decent mediaplayer
