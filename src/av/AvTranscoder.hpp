@@ -21,15 +21,12 @@
 
 #include <map>
 #include <set>
-#include <iostream>
 
-#include <boost/iostreams/stream.hpp>
-#include <boost/process.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/thread.hpp>
+#include "pstreams/pstream.h"
 
 #include <boost/date_time/posix_time/posix_time_types.hpp> //no i/o just types
 #include <boost/filesystem/path.hpp>
+#include <boost/filesystem.hpp>
 
 #include "AvInfo.hpp"
 
@@ -92,30 +89,19 @@ class Transcoder
 
 		bool start();
 		void process(std::vector<unsigned char>& output, std::size_t maxSize);
-		bool isComplete(void);
+		bool isComplete(void)	{ return _isComplete; }
 
 	private:
-
 		Transcoder();
 
 		boost::filesystem::path	_filePath;
 		TranscodeParameters	_parameters;
 
-		static boost::mutex     _mutex;
+		std::shared_ptr<redi::ipstream>	_child;
 
-		boost::process::pipe _outputPipe;
-		boost::iostreams::file_descriptor_source _source;
-		boost::iostreams::stream_buffer<boost::iostreams::file_descriptor_source> _is;
-		std::istream		_in;
-
-		void waitChild();
-		void killChild();
-
-		std::shared_ptr<boost::process::child>	_child;
-
-		static boost::filesystem::path _avConvPath;
-		bool		_isComplete;
-
+		bool			_isComplete = false;
+		std::size_t		_total = 0;
+		std::size_t		_id;
 };
 
 } // namespace Av

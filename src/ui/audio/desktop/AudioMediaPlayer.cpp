@@ -269,6 +269,7 @@ AudioMediaPlayer::handlePlayOffset(int offsetSecs)
 void
 AudioMediaPlayer::handleTrackEnded(void)
 {
+	LMS_LOG(UI, INFO) << "Track ended!";
 	_playbackEnded.emit();
 }
 

@@ -16,12 +16,18 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <atomic>
+#include <mutex>
+
+#include <boost/tokenizer.hpp>
 
 #include "logger/Logger.hpp"
 
 #include "AvTranscoder.hpp"
 
 namespace Av {
+
+#define LMS_LOG_TRANSCODE(sev)	LMS_LOG(TRANSCODE, INFO) << "[" << _id << "] - "
 
 std::string encoding_to_mimetype(Encoding encoding)
 {
@@ -42,46 +48,65 @@ std::string encoding_to_mimetype(Encoding encoding)
 }
 
 // TODO, parametrize?
-const std::vector<std::string> execNames =
+static const std::vector<std::string> execNames =
 {
 	"avconv",
 	"ffmpeg",
 };
 
-boost::mutex	Transcoder::_mutex;
+static std::mutex		transcoderMutex;
+static boost::filesystem::path	avConvPath = boost::filesystem::path();
+static std::atomic<size_t>	globalId = {0};
 
-boost::filesystem::path	Transcoder::_avConvPath = boost::filesystem::path();
+static std::string searchPath(std::string filename)
+{
+	std::string path;
+
+	path = ::getenv("PATH");
+	if (path.empty())
+		throw std::runtime_error("Environment variable PATH not found");
+
+	std::string result;
+	typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+	boost::char_separator<char> sep(":");
+	tokenizer tok(path, sep);
+	for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
+	{
+		boost::filesystem::path p = *it;
+		p /= filename;
+		if (!::access(p.c_str(), X_OK))
+		{
+			result = p.string();
+			break;
+		}
+	}
+	return result;
+}
 
 void
 Transcoder::init()
 {
 	for (std::string execName : execNames)
 	{
-		const boost::filesystem::path p = boost::process::search_path(execName);
+		boost::filesystem::path p = searchPath(execName);
 		if (!p.empty())
 		{
-			_avConvPath = p;
+			avConvPath = p;
 			break;
 		}
 	}
 
-	if (!_avConvPath.empty())
-		LMS_LOG(TRANSCODE, INFO) << "Using transcoder " << _avConvPath;
+	if (!avConvPath.empty())
+		LMS_LOG(TRANSCODE, INFO) << "Using transcoder " << avConvPath;
 	else
 		throw std::runtime_error("Cannot find any transcoder binary!");
 }
 
-
-//boost::filesystem::path Transcoder::_avConvPath = "";
-
 Transcoder::Transcoder(boost::filesystem::path filePath, TranscodeParameters parameters)
 : _filePath(filePath),
   _parameters(parameters),
-  _outputPipe(boost::process::create_pipe()),
-  _source(_outputPipe.source, boost::iostreams::close_handle),
-  _is(_source),
-  _in(&_is),
-  _isComplete(false)
+  _isComplete(false),
+  _id(globalId++)
 {
 
 }
@@ -94,24 +119,31 @@ Transcoder::start()
 	else if (!boost::filesystem::is_regular( _filePath) )
 		return false;
 
-	LMS_LOG(TRANSCODE, INFO) << "Transcoding file '" << _filePath << "'";
+	LMS_LOG_TRANSCODE(INFO) << "Transcoding file '" << _filePath << "'";
 
-	// Launch a process to handle the conversion
-	boost::iostreams::file_descriptor_sink sink(_outputPipe.sink, boost::iostreams::close_handle);
+	std::vector<std::string> args;
 
-	std::ostringstream oss;
+	args.push_back(avConvPath.string());
 
-	oss << _avConvPath;
+	// Make sure we do not produce anything in the stderr output
+	// in order not to block the whole forked process
+	args.push_back("-loglevel");
+	args.push_back("quiet");
 
 	// input Offset
 	if (_parameters.getOffset().total_seconds() > 0)
-		oss << " -ss " << _parameters.getOffset().total_seconds();		// to be placed before '-i' to speed up seeking?
+	{
+		args.push_back("-ss");
+		args.push_back(std::to_string(_parameters.getOffset().total_seconds()));
+	}
 
 	// Input file
-	oss << " -i " << _filePath;
+	args.push_back("-i");
+	args.push_back(_filePath.string());
 
 	// Output bitrates
-	oss << " -b:a " << _parameters.getBitrate(Stream::Type::Audio) ;
+	args.push_back("-b:a");
+	args.push_back(std::to_string(_parameters.getBitrate(Stream::Type::Audio)));
 //	if (_parameters.getOutputFormat().getType() == Format::Video)
 //		oss << " -b:v " << _parameters.getOutputBitrate(Stream::Video);
 
@@ -119,58 +151,135 @@ Transcoder::start()
 	for (int streamId : _parameters.getSelectedStreamIds())
 	{
 		// 0 means the first input file
-		oss << " -map 0:" << streamId;
+		args.push_back("-map");
+		args.push_back("0:" + std::to_string(streamId));
 	}
 
 	// Codecs and formats
 	switch( _parameters.getEncoding())
 	{
 		case Encoding::MP3:
-			oss << " -f mp3";
+			args.push_back("-f");
+			args.push_back("mp3");
 			break;
+
 		case Encoding::OGA:
-			oss << " -acodec libvorbis -f ogg";
+			args.push_back("-acodec");
+			args.push_back("libvorbis");
+			args.push_back("-f");
+			args.push_back("ogg");
 			break;
+
 		case Encoding::OGV:
-			oss << " -acodec libvorbis -ac 2 -ar 44100 -vcodec libtheora -threads 4 -f ogg";
+			args.push_back("-acodec");
+			args.push_back("libvorbis");
+			args.push_back("-ac");
+			args.push_back("2");
+			args.push_back("-ar");
+			args.push_back("44100");
+			args.push_back("-vcodec");
+			args.push_back("libtheora");
+			args.push_back("-threads");
+			args.push_back("4");
+			args.push_back("-f");
+			args.push_back("ogg");
 			break;
 		case Encoding::WEBMA:
-			oss << " -codec:a libvorbis -f webm";
+			args.push_back("-codec:a");
+			args.push_back("libvorbis");
+			args.push_back("-f");
+			args.push_back("webm");
 			break;
+
 		case Encoding::WEBMV:
-			oss << " -acodec libvorbis -ac 2 -ar 44100 -vcodec libvpx -threads 4 -f webm";
+			args.push_back("-acodec");
+			args.push_back("libvorbis");
+			args.push_back("-ac");
+			args.push_back("2");
+			args.push_back("-ar");
+			args.push_back("44100");
+			args.push_back("-vcodec");
+			args.push_back("libvpx");
+			args.push_back("-threads");
+			args.push_back("4");
+			args.push_back("-f");
+			args.push_back("webm");
 			break;
+
 		case Encoding::M4A:
-			oss << " -acodec aac -f mp4 -strict experimental";
+			args.push_back("-acodec");
+			args.push_back("aac");
+			args.push_back("-f");
+			args.push_back("mp4");
+			args.push_back("-strict");
+			args.push_back("experimental");
 			break;
+
 		case Encoding::M4V:
-			oss << " -acodec aac -strict experimental -ac 2 -ar 44100 -vcodec libx264 -f m4v";
+			args.push_back("-acodec");
+			args.push_back("aac");
+			args.push_back("-strict");
+			args.push_back("experimental");
+			args.push_back("-ac");
+			args.push_back("2");
+			args.push_back("-ar");
+			args.push_back("-44100");
+			args.push_back("-vcodec");
+			args.push_back("libx264");
+			args.push_back("-f");
+			args.push_back("m4v");
 			break;
+
 		case Encoding::FLV:
-			oss << " -acodec libmp3lame -ac 2 -ar 44100 -vcodec libx264 -f flv";
+			args.push_back("-acodec");
+			args.push_back("libmp3lame");
+			args.push_back("-ac");
+			args.push_back("2");
+			args.push_back("-ar");
+			args.push_back("44100");
+			args.push_back("-vcodec");
+			args.push_back("libx264");
+			args.push_back("-f");
+			args.push_back("flv");
 			break;
+
 		case Encoding::FLA:
-			oss << " -acodec libmp3lame -f flv";
+			args.push_back("-acodec");
+			args.push_back("libmp3lame");
+			args.push_back("-f");
+			args.push_back("flv");
 			break;
 		default:
 			return false;
 	}
-	oss << " -";		// output to stdout
 
-	LMS_LOG(TRANSCODE, DEBUG) << "Executing '" << oss.str() << "'";
+	args.push_back("pipe:1");
+
+	LMS_LOG_TRANSCODE(INFO) << "Dumping args (" << args.size() << ")";
+	for (std::string arg : args)
+		LMS_LOG_TRANSCODE(DEBUG) << "Arg = '" << arg << "'";
 
 	// make sure only one thread is executing this part of code
-	// See boost process FAQ
 	{
-		boost::lock_guard<boost::mutex>	lock(_mutex);
+		std::lock_guard<std::mutex> lock(transcoderMutex);
 
-		_child = std::make_shared<boost::process::child>( boost::process::execute(
-					boost::process::initializers::run_exe(_avConvPath),
-					boost::process::initializers::set_cmd_line(oss.str()),
-					boost::process::initializers::bind_stdout(sink),
-					boost::process::initializers::close_fds_if([](int fd) { return fd != STDOUT_FILENO;})
-					)
-				);
+		_child = std::make_shared<redi::ipstream>();
+
+		const redi::pstreams::pmode mode = redi::pstreams::pstdout; // | redi::pstreams::pstderr;
+		_child->open(avConvPath.string(), args, mode);
+		if (!_child->is_open())
+		{
+			LMS_LOG_TRANSCODE(DEBUG) << "Exec failed!";
+			return false;
+		}
+
+		if (_child->out().eof())
+		{
+			LMS_LOG_TRANSCODE(DEBUG) << "Early end of file!";
+			return false;
+		}
+
+		LMS_LOG_TRANSCODE(DEBUG) << "Stream opened!";
 	}
 
 	return true;
@@ -179,77 +288,43 @@ Transcoder::start()
 void
 Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 {
-	std::size_t readDataSize = 0;
-
-	if (_isComplete)
+	if (!_child || _isComplete)
 		return;
 
-	char ch;
-	while(readDataSize < maxSize && _in && _in.get(ch)) {
-		output.push_back(ch);
-		readDataSize++;
-	}
+	output.resize(maxSize);
 
-	if (!_in || _in.fail() || _in.eof()) {
-		LMS_LOG(TRANSCODE, DEBUG) << "Transcode complete!";
+	//Read on the output stream
+	_child->out().read(reinterpret_cast<char*>(&output[0]), maxSize);
+	output.resize(_child->out().gcount());
 
-		waitChild();
+	LMS_LOG_TRANSCODE(DEBUG) << "Read " << output.size() << " bytes";
+
+	if (_child->out().eof())
+	{
+		LMS_LOG_TRANSCODE(DEBUG) << "Stdout EOF!";
+		_child->clear();
+
 		_isComplete = true;
+		_child.reset();
 	}
-}
 
+	_total += output.size();
+
+	LMS_LOG_TRANSCODE(DEBUG) << "nb bytes = " << output.size() << ", total = " << _total;
+}
 
 Transcoder::~Transcoder()
 {
-	LMS_LOG(TRANSCODE, DEBUG) << "~Transcoder called!";
+	LMS_LOG_TRANSCODE(DEBUG) << ", ~Transcoder called! Total produced bytes = " << _total;
 
-	if (_in.eof())
-		waitChild();
-	else
-		killChild();
-}
-
-void
-Transcoder::waitChild()
-{
 	if (_child)
 	{
-		boost::system::error_code ec;
-
-		LMS_LOG(TRANSCODE, DEBUG) << "Waiting for child...";
-		boost::process::wait_for_exit(*_child, ec);
-		LMS_LOG(TRANSCODE, DEBUG) << "Waiting for child: OK";
-
-		if (ec)
-			LMS_LOG(TRANSCODE, ERROR) << "Transcoder::waitChild: error: " << ec.message();
-
-		_child.reset();
+		LMS_LOG_TRANSCODE(DEBUG) << "Child still here!";
+		_child->rdbuf()->kill(SIGKILL);
+		LMS_LOG_TRANSCODE(DEBUG) << "Closing...";
+		_child->rdbuf()->close();
+		LMS_LOG_TRANSCODE(DEBUG) << "Closing DONE";
 	}
-}
-
-void
-Transcoder::killChild()
-{
-	if (_child)
-	{
-		boost::system::error_code ec;
-
-		LMS_LOG(TRANSCODE, DEBUG) << "Killing child! pid = " << _child->pid;
-		boost::process::terminate(*_child, ec);
-		LMS_LOG(TRANSCODE, DEBUG) << "Killing child DONE";
-
-		// If an error occured, force kill the child
-		if (ec)
-			LMS_LOG(TRANSCODE, ERROR) << "Transcoder::killChild: error: " << ec.message();
-
-		_child.reset();
-	}
-}
-
-bool
-Transcoder::isComplete(void)
-{
-	return _isComplete;
 }
 
 } // namespace Transcode
