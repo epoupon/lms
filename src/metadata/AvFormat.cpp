@@ -150,11 +150,13 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 				items.insert( std::make_pair(MetaData::Type::Genres, genres));
 
 		}
-		else if (boost::iequals(it->first, "MusicBrainz Artist Id"))
+		else if (boost::iequals(it->first, "MusicBrainz Artist Id")
+			|| boost::iequals(it->first, "MUSICBRAINZ_ARTISTID"))
 		{
 			items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, string_trim( string_to_utf8(it->second)) ));
 		}
-		else if (boost::iequals(it->first, "MusicBrainz Album Id"))
+		else if (boost::iequals(it->first, "MusicBrainz Album Id")
+			|| boost::iequals(it->first, "MUSICBRAINZ_ALBUMID"))
 		{
 			items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, string_trim( string_to_utf8(it->second)) ));
 		}
