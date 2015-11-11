@@ -48,8 +48,10 @@ TableFilterGenre::TableFilterGenre(Wt::WContainerWidget* parent)
 
 	this->selectionChanged().connect(this, &TableFilterGenre::emitUpdate);
 
+#if WT_VERSION >= 0X03030400
 	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
 	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+#endif
 
 	this->setLayoutSizeAware(true);
 
@@ -83,6 +85,8 @@ TableFilterGenre::layoutSizeChanged (int width, int height)
 void
 TableFilterGenre::refresh(SearchFilter& filter)
 {
+	this->clearSelection();
+
 	Genre::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 
@@ -123,8 +127,10 @@ TableFilterArtist::TableFilterArtist(Wt::WContainerWidget* parent)
 
 	this->selectionChanged().connect(this, &TableFilterArtist::emitUpdate);
 
+#if WT_VERSION >= 0X03030400
 	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
 	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+#endif
 
 	this->setLayoutSizeAware(true);
 
@@ -158,6 +164,7 @@ TableFilterArtist::layoutSizeChanged (int width, int height)
 void
 TableFilterArtist::refresh(SearchFilter& filter)
 {
+	this->clearSelection();
 	Artist::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 
@@ -174,7 +181,7 @@ TableFilterArtist::getConstraint(SearchFilter& filter)
 
 		Artist::id_type id = _queryModel.resultRow( index.row() ).get<0>();
 
-		filter.idMatch[Database::SearchFilter::Field::Artist].push_back(id);
+		filter.idMatch[SearchFilter::Field::Artist].push_back(id);
 	}
 }
 
@@ -204,8 +211,10 @@ TableFilterRelease::TableFilterRelease(Wt::WContainerWidget* parent)
 
 	this->selectionChanged().connect(this, &TableFilterRelease::emitUpdate);
 
+#if WT_VERSION >= 0X03030400
 	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
 	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+#endif
 
 	this->setLayoutSizeAware(true);
 
@@ -239,6 +248,7 @@ TableFilterRelease::layoutSizeChanged (int width, int height)
 void
 TableFilterRelease::refresh(SearchFilter& filter)
 {
+	this->clearSelection();
 	Release::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 

@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <boost/date_time.hpp>
+
 #include <Wt/WItemDelegate>
 #include <Wt/WBreak>
 
@@ -29,6 +31,30 @@ namespace UserInterface {
 namespace Desktop {
 
 using namespace Database;
+
+class DurationItemDelegate : public Wt::WItemDelegate
+{
+	public:
+		DurationItemDelegate(Wt::WObject *parent = 0) : Wt::WItemDelegate(parent) {}
+
+		Wt::WWidget* update(Wt::WWidget *widget, const Wt::WModelIndex &index, Wt::WFlags< Wt::ViewItemRenderFlag > flags)
+		{
+			boost::posix_time::time_duration duration = boost::any_cast<boost::posix_time::time_duration>(index.data(Wt::DisplayRole));
+
+			boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
+
+			if (duration.total_seconds() < 3600)
+				facet->time_duration_format("%M:%S");
+			else
+				facet->time_duration_format("%H:%M:%S");
+
+			std::ostringstream oss;
+			oss.imbue(std::locale(oss.getloc(), facet));
+			oss << duration;
+
+			return new Wt::WText(oss.str(), Wt::PlainText);
+		}
+};
 
 TrackView::TrackView(Wt::WContainerWidget* parent)
 : Wt::WTableView( parent )
@@ -67,13 +93,14 @@ TrackView::TrackView(Wt::WContainerWidget* parent)
 	this->setColumnWidth(6, 70);	// Date
 	this->setColumnWidth(7, 70);	// Original Date
 	this->setColumnWidth(8, 180);	// Genres
+#if WT_VERSION >= 0X03030400
 	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
+#endif
 
 	// Duration display
 	{
 		// TODO better handle 1 hour+ files!
-		Wt::WItemDelegate *delegate = new Wt::WItemDelegate(this);
-		delegate->setTextFormat("mm:ss");
+		DurationItemDelegate *delegate = new DurationItemDelegate(this);
 		this->setItemDelegateForColumn(5, delegate);
 	}
 
@@ -140,6 +167,7 @@ TrackView::emitStats(const SearchFilter& filter)
 void
 TrackView::refresh(SearchFilter& filter)
 {
+	this->clearSelection();
 	Track::updateUIQueryModel(DboSession(), _queryModel, filter);
 
 	emitStats(filter);
@@ -148,7 +176,7 @@ TrackView::refresh(SearchFilter& filter)
 void
 TrackView::getSelectedTracks(std::vector<Track::id_type>& track_ids)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting selected tracks...";
+	LMS_LOG(UI, DEBUG) << "Getting selected tracks...";
 
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
@@ -162,7 +190,7 @@ TrackView::getSelectedTracks(std::vector<Track::id_type>& track_ids)
 		track_ids.push_back(id);
 	}
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all selected tracks: " << track_ids.size();
+	LMS_LOG(UI, DEBUG) << "Getting all selected tracks: " << track_ids.size();
 }
 
 std::size_t
@@ -190,10 +218,11 @@ TrackView::getFirstSelectedTrackPosition(void)
 void
 TrackView::getTracks(std::vector<Track::id_type>& trackIds)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all tracks...";
+	LMS_LOG(UI, DEBUG) << "Getting all tracks...";
 
 	Wt::Dbo::Transaction transaction(DboSession());
-	Wt::Dbo::collection<Track::UIQueryResult> results = _queryModel.query();
+	Wt::Dbo::Query<Track::UIQueryResult> query = _queryModel.query();
+	Wt::Dbo::collection<Track::UIQueryResult> results = query.limit(-1).offset(-1);
 
 	for (auto it = results.begin(); it != results.end(); ++it)
 	{
@@ -201,7 +230,7 @@ TrackView::getTracks(std::vector<Track::id_type>& trackIds)
 		trackIds.push_back(id);
 	}
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Getting all tracks done! " << trackIds.size() << " tracks!";
+	LMS_LOG(UI, DEBUG) << "Getting all tracks done! " << trackIds.size() << " tracks!";
 }
 
 } // namespace Desktop

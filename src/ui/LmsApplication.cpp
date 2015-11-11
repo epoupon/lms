@@ -28,6 +28,8 @@
 #include <Wt/WVBoxLayout>
 #include <Wt/Auth/Identity>
 
+#include "config/config.h"
+
 #include "logger/Logger.hpp"
 
 #include "settings/Settings.hpp"
@@ -36,7 +38,9 @@
 #include "auth/LmsAuth.hpp"
 #include "audio/desktop/DesktopAudio.hpp"
 #include "audio/mobile/MobileAudio.hpp"
+#if HAVE_VIDEO
 #include "video/VideoWidget.hpp"
+#endif
 #include "common/LineEdit.hpp"
 
 #include "LmsApplication.hpp"
@@ -63,13 +67,13 @@ bool agentIsMobile()
 namespace UserInterface {
 
 Wt::WApplication*
-LmsApplication::create(const Wt::WEnvironment& env, boost::filesystem::path dbPath)
+LmsApplication::create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool)
 {
 	/*
 	 * You could read information from the environment to decide whether
 	 * the user has permission to start a new application
 	 */
-	return new LmsApplication(env, dbPath);
+	return new LmsApplication(env, connectionPool);
 }
 
 LmsApplication*
@@ -84,9 +88,9 @@ LmsApplication::instance()
  * constructor so it is typically also an argument for your custom
  * application constructor.
 */
-LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::path dbPath)
+LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool)
 : Wt::WApplication(env),
-  _db(dbPath),
+  _db(connectionPool),
   _coverResource(nullptr)
 {
 
@@ -108,6 +112,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, boost::filesystem::p
 
 		firstConnection = (Database::User::getAll(DboSession()).size() == 0);
 	}
+
+	LMS_LOG(UI, DEBUG) << "Creating root widget. First connection = " << std::boolalpha << firstConnection;
 
 	// If here is no account in the database, launch the first connection wizard
 	if (firstConnection)
@@ -167,21 +173,23 @@ LmsApplication::handleAuthEvent(void)
 {
 	if (DbHandler().getLogin().loggedIn())
 	{
-		LMS_LOG(MOD_UI, SEV_NOTICE) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
+		LMS_LOG(UI, INFO) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
 
 		this->root()->setOverflow(Wt::WContainerWidget::OverflowHidden);
+                setConfirmCloseMessage("Closing LMS. Are you sure?");
 
 		// Create a Vertical layout: top is the nav bar, bottom is the contents
 		Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
 		// Create a navigation bar with a link to a web page.
 		Wt::WNavigationBar *navigation = new Wt::WNavigationBar();
-		navigation->setTitle("LMS");
+		navigation->setTitle("LMS", "https://github.com/epoupon/lms");
 		navigation->setResponsive(true);
 		navigation->addStyleClass("main-nav");
 
 		Wt::WStackedWidget *contentsStack = new Wt::WStackedWidget();
 
 		contentsStack->setOverflow(Wt::WContainerWidget::OverflowAuto);
+		contentsStack->addStyleClass("contents");
 
 		// Setup a Left-aligned menu.
 		Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack);
@@ -194,10 +202,10 @@ LmsApplication::handleAuthEvent(void)
 		else
 			audio = new Desktop::Audio();
 
-		VideoWidget *videoWidget = new VideoWidget();
-
 		leftMenu->addItem("Audio", audio);
-		leftMenu->addItem("Video", videoWidget);
+#if defined HAVE_VIDEO
+		leftMenu->addItem("Video", new VideoWidget());
+#endif
 		leftMenu->addItem("Settings", new Settings::Settings());
 
 		// Setup a Right-aligned menu.
@@ -236,7 +244,7 @@ LmsApplication::handleAuthEvent(void)
 	}
 	else
 	{
-		LMS_LOG(MOD_UI, SEV_NOTICE) << "User logged out, session = " << Wt::WApplication::instance()->sessionId();
+		LMS_LOG(UI, INFO) << "User logged out, session = " << Wt::WApplication::instance()->sessionId();
 
 		quit("");
 		redirect("/");

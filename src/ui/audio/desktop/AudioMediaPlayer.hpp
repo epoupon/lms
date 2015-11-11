@@ -31,7 +31,7 @@
 
 #include "database/Types.hpp"
 
-#include "transcode/Parameters.hpp"
+#include "av/AvTranscoder.hpp"
 #include "resource/AvConvTranscodeStreamResource.hpp"
 #include "resource/CoverResource.hpp"
 
@@ -46,7 +46,7 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 		AudioMediaPlayer(Wt::WContainerWidget *parent = 0);
 
 		// Load Media to be played
-		void load(Database::Track::id_type trackId);
+		bool load(Database::Track::id_type trackId);
 
 		// Accessors
 		Wt::WMediaPlayer::Encoding getEncoding() const	{ return _encoding; }
@@ -70,7 +70,7 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 
 		void handleVolumeSliderMoved(int value);
 
-		void loadPlayer(void);
+		void loadPlayer(boost::filesystem::path filePath, Av::TranscodeParameters& parameters);
 
 		// Signals
 		Wt::Signal<void>	_playbackEnded;
@@ -90,13 +90,16 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 		Wt::WText*		_mediaArtistRelease;
 
 		// Controls
-		std::shared_ptr<Transcode::Parameters>	_currentParameters;
 		Wt::WPushButton* 	_playBtn;
 		Wt::WPushButton* 	_pauseBtn;
 		Wt::WSlider*		_timeSlider;
 		Wt::WSlider*		_volumeSlider;
 		Wt::WText*		_curTime;
 		Wt::WText*		_duration;
+
+		// Transcode
+		boost::filesystem::path	_currentFile;
+		Av::TranscodeParameters	_currentParameters;
 
 };
 

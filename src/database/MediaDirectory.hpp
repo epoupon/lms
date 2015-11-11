@@ -55,6 +55,8 @@ class MediaDirectorySettings
 		void	setUpdateStartTime(boost::posix_time::time_duration dur)	{ _updateStartTime = dur;}
 		void	setLastUpdate(boost::posix_time::ptime time)	{ _lastUpdate = time; }
 		void	setLastScan(boost::posix_time::ptime time)	{ _lastScan = time; }
+		void	setAudioFileExtensions(std::vector<boost::filesystem::path> extensions);
+		void	setVideoFileExtensions(std::vector<boost::filesystem::path> extensions);
 
 		// Read accessors
 		bool				getManualScanRequested(void) const	{ return _manualScanRequested; }
@@ -62,6 +64,8 @@ class MediaDirectorySettings
 		boost::posix_time::time_duration	getUpdateStartTime(void) const	{ return _updateStartTime; }
 		boost::posix_time::ptime	getLastUpdated(void) const		{ return _lastUpdate; }
 		boost::posix_time::ptime	getLastScan(void) const			{ return _lastScan; }
+		std::vector<boost::filesystem::path>	getAudioFileExtensions(void) const;
+		std::vector<boost::filesystem::path>	getVideoFileExtensions(void) const;
 
 		template<class Action>
 			void persist(Action& a)
@@ -69,6 +73,8 @@ class MediaDirectorySettings
 				Wt::Dbo::field(a, _manualScanRequested,	"manual_scan_requested");
 				Wt::Dbo::field(a, _updatePeriod,	"update_period");
 				Wt::Dbo::field(a, _updateStartTime,	"update_start_time");
+				Wt::Dbo::field(a, _audioFileExtensions,	"audio_file_extensions");
+				Wt::Dbo::field(a, _videoFileExtensions,	"video_file_extensions");
 				Wt::Dbo::field(a, _lastUpdate,		"last_update");
 				Wt::Dbo::field(a, _lastScan,		"last_scan");
 				Wt::Dbo::hasMany(a, _mediaDirectories, Wt::Dbo::ManyToOne, "media_directory_settings");
@@ -79,6 +85,8 @@ class MediaDirectorySettings
 		bool					_manualScanRequested;	// Immadiate scan has been requested by user
 		UpdatePeriod				_updatePeriod;		// How long between updates
 		boost::posix_time::time_duration	_updateStartTime;	// Time of day to begin the update
+		std::string				_audioFileExtensions;	// Extension of the audio files to be scanned
+		std::string				_videoFileExtensions;	// Extension of the video files to be scanned
 		boost::posix_time::ptime		_lastUpdate;		// last time the database has changed
 		boost::posix_time::ptime		_lastScan;		// last time the database has been scanned
 		Wt::Dbo::collection< Wt::Dbo::ptr<MediaDirectory> > _mediaDirectories;	// list of media directories

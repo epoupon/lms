@@ -21,11 +21,40 @@
 
 #include "Types.hpp"
 
+static std::string pathsToString(const std::vector<boost::filesystem::path>& paths)
+{
+	std::ostringstream oss;
+
+	bool first = true;
+	for (auto& path : paths)
+	{
+		if (!first)
+			oss << " ";
+
+		oss << path.string();
+		first = false;
+	}
+
+	return oss.str();
+}
+
+static std::vector<boost::filesystem::path> stringToPaths(const std::string value)
+{
+	std::vector<std::string> res;
+	std::istringstream iss(value);
+
+	std::copy(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>(), std::back_inserter(res));
+
+	return std::vector<boost::filesystem::path>(res.begin(), res.end());
+}
+
 namespace Database {
 
 MediaDirectorySettings::MediaDirectorySettings()
 : _manualScanRequested(false),
-_updatePeriod(Never)
+_updatePeriod(Never),
+_audioFileExtensions(".mp3 .ogg .oga .aac .m4a .flac .wav .wma .aif .aiff .ape .mpc .shn"),
+_videoFileExtensions(".flv .avi .mpg .mpeg .mp4 .m4v .mkv .mov .wmv .ogv .divx .m2ts")
 {
 }
 
@@ -47,6 +76,31 @@ MediaDirectorySettings::get(Wt::Dbo::Session& session)
 
 	return res;
 }
+
+std::vector<boost::filesystem::path>
+MediaDirectorySettings::getAudioFileExtensions(void) const
+{
+	return stringToPaths(_audioFileExtensions);
+}
+
+std::vector<boost::filesystem::path>
+MediaDirectorySettings::getVideoFileExtensions(void) const
+{
+	return stringToPaths(_videoFileExtensions);
+}
+
+void
+MediaDirectorySettings::setAudioFileExtensions(std::vector<boost::filesystem::path> extensions)
+{
+	_audioFileExtensions = pathsToString(extensions);
+}
+
+void
+MediaDirectorySettings::setVideoFileExtensions(std::vector<boost::filesystem::path> extensions)
+{
+	_videoFileExtensions = pathsToString(extensions);
+}
+
 
 MediaDirectory::pointer
 MediaDirectory::create(Wt::Dbo::Session& session, boost::filesystem::path p, Type type)
@@ -83,5 +137,6 @@ MediaDirectory::get(Wt::Dbo::Session& session, boost::filesystem::path p, Type t
 {
 	return session.find<MediaDirectory>().where("path = ?").where("type = ?").bind( p.string()).bind(type);
 }
+
 
 } // namespace Database

@@ -25,7 +25,7 @@
 #include <Wt/WImage>
 
 #include "database/DatabaseHandler.hpp"
-#include "transcode/Parameters.hpp"
+#include "av/AvTranscoder.hpp"
 
 namespace UserInterface {
 namespace Mobile {
@@ -38,7 +38,7 @@ class AudioMediaPlayer : public Wt::WContainerWidget
 
 		AudioMediaPlayer(Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent = 0);
 
-		void play(Database::Track::id_type trackId, const Transcode::Parameters& parameters);
+		void play(Database::Track::id_type trackId, Av::TranscodeParameters parameters);
 
 		Wt::WMediaPlayer::Encoding getEncoding() const { return _encoding; }
 

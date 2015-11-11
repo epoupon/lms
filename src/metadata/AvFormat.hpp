@@ -30,7 +30,7 @@ class AvFormat : public Parser
 {
 	public:
 
-		void parse(const boost::filesystem::path& p, Items& items);
+		bool parse(const boost::filesystem::path& p, Items& items);
 
 	private:
 

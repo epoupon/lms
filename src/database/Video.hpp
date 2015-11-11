@@ -43,7 +43,7 @@ class Video
 		// Find utilities
 		static pointer getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
-		static Wt::Dbo::collection< pointer > getByParentPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
+		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session);
 
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p);

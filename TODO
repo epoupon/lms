@@ -3,16 +3,17 @@
 - Make the feature
 
 [Cover]
-- Scaling: find something more "reliable" than GIL and its custom extensions (adobe work, io_new)?
-- Handle several file formats (not only jpg)
 - Handle preferred cover file names
 - Implement a cache and a grabber from some web service (mandatory for artists)
 
 [Database]
 - Optim, use SQL query to get the "genre" orphans
 - Use Inotify like system to watch modified/added files?
-- count scan import errors
 - handle access rights problems (instead of aborting)
+- add a global play counter for tracks. This will help people to spot most popular files
+- rework the exception process in av/metadata/updater in case of bad files
+- Use the WServer::post method to notify the end of the database scan? (with results?)
+- Put more config information in the database, access from the UI
 
 [Metadata]
 - OGG metadata -> properly handle metadata nested in the audio stream
@@ -22,23 +23,18 @@
 
 [Users]
 - Handle login lifetime?
-- Limit multi login from UI and remote interfaces (limit per interface is acceptable)
-
-[ServiceManager]
-- Rework the whole start/stop/try/cach/thread/interrupts things
-- Use our own WIOService
+- Use the WServer::post method to kick users already logged in?
+- Limit multi login from UI and API interfaces (limit per interface is acceptable)
 
 [Services]
 - consider adding support for external web servers (new FCGI service?)
-
-[Transcode]
-- some early end of playback spotted on files. Maybe this is because the stderr of the forked process is not properly closed?
 
 [UI]
 	- handle internationalization
 	[Settings]
 		- logout users that are being changed (loss of admin admin rights), or make sure they are still admin when they make changes
 		- "signal not exposed" problem if a user logout and login again. Bad resource destruction?
+		- add a scroll area in order for settings to work on mobile devices
 		[user/transcoding]
 		- Prefered codecs for video
 		- use a slider instead of a combo box for the bitrates?
@@ -52,9 +48,7 @@
 	[Audio]
 	- Style eveything nicely...
 	- MediaPlayer: move the slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478, http://redmine.emweb.be/boards/2/topics/10994)
-	- TrackView: handle durations > 1 hour
 	- TrackView: Reselect the current selected item when displaying the updated search results
-	- TrackView: display the total duration of the track query
 	- Add covers in the release filter?
 	- Add a download button to get the current playlist in a streamed zip file
 	- Add a upload button to upload media files in a dedicated directory
@@ -69,11 +63,8 @@
 	- Make a dedicated audio layout in mobile environment (keep the same layout for videos?)
 	- Handle internal path
 
-[Lms API]
-- Implement partial text search options in the GetXXX messages
-
 [REST API]
-- Make another dedicated REST API. Maybe use the SubSonic API or Ampache API?
+- Make a dedicated REST API. Maybe use the SubSonic API or Ampache API?
 
 [Logs]
-- Capture transcoder log output to get more information on errors
+- Capture transcoder log output to get more information on errors?

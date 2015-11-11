@@ -81,7 +81,7 @@ class MediaDirectoryFormModel : public Wt::WFormModel
 			}
 			catch(Wt::Dbo::Exception& exception)
 			{
-				LMS_LOG(MOD_UI, SEV_ERROR) << "Dbo exception: " << exception.what();
+				LMS_LOG(UI, ERROR) << "Dbo exception: " << exception.what();
 				return false;
 			}
 
@@ -130,7 +130,7 @@ MediaDirectoryFormView::MediaDirectoryFormView(Wt::WContainerWidget *parent)
 	typeCB->changed().connect(_applyInfo, &Wt::WWidget::hide);
 
 	// Title & Buttons
-	bindString("title", "Add Media Folder");
+	bindString("title", "Add media folder");
 
 	Wt::WPushButton *saveButton = new Wt::WPushButton("Add");
 	saveButton->setStyleClass("btn-primary");

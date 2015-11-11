@@ -19,7 +19,6 @@
 
 
 #include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
 #include <boost/thread.hpp>
 #include <boost/asio/placeholders.hpp>
 
@@ -73,7 +72,7 @@ isFileSupported(const boost::filesystem::path& file, const std::vector<boost::fi
 
 	boost::filesystem::path fileExtension = file.extension();
 
-	BOOST_FOREACH(const boost::filesystem::path extension, extensions)
+	for (auto& extension : extensions)
 	{
 		if (extension == fileExtension)
 			return true;
@@ -85,13 +84,31 @@ isFileSupported(const boost::filesystem::path& file, const std::vector<boost::fi
 std::vector<boost::filesystem::path>
 getRootDirectoriesByType(Wt::Dbo::Session& session, Database::MediaDirectory::Type type)
 {
+	Wt::Dbo::Transaction transaction(session);
+
 	std::vector<boost::filesystem::path> res;
 	std::vector<Database::MediaDirectory::pointer> rootDirs = Database::MediaDirectory::getByType(session, type);
 
-	BOOST_FOREACH(Database::MediaDirectory::pointer rootDir, rootDirs)
+	for (auto rootDir : rootDirs)
 		res.push_back(rootDir->getPath());
 
 	return res;
+}
+
+bool
+isPathInParentPath(const boost::filesystem::path& path, const boost::filesystem::path& parentPath)
+{
+	boost::filesystem::path curPath = path;
+
+	while (curPath.has_parent_path())
+	{
+		curPath = curPath.parent_path();
+
+		if (curPath == parentPath)
+			return true;
+	}
+
+	return false;
 }
 
 } // namespace
@@ -102,27 +119,13 @@ namespace DatabaseUpdater {
 using namespace Database;
 
 
-Updater::Updater(boost::filesystem::path dbPath, MetaData::Parser& parser)
+Updater::Updater(Wt::Dbo::SqlConnectionPool &connectionPool, MetaData::Parser& parser)
  : _running(false),
 _scheduleTimer(_ioService),
-_db(dbPath),
+_db(connectionPool),
 _metadataParser(parser)
 {
 	_ioService.setThreadCount(1);
-}
-
-void
-Updater::setAudioExtensions(const std::vector<std::string>& extensions)
-{
-	BOOST_FOREACH(const std::string& extension, extensions)
-		_audioExtensions.push_back("." + extension);
-}
-
-void
-Updater::setVideoExtensions(const std::vector<std::string>& extensions)
-{
-	BOOST_FOREACH(const std::string& extension, extensions)
-		_videoExtensions.push_back("." + extension);
 }
 
 void
@@ -155,7 +158,7 @@ Updater::processNextJob(void)
 	MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(_db.getSession());
 
 	if (settings->getManualScanRequested()) {
-		LMS_LOG(MOD_DBUPDATER, SEV_NOTICE) << "Manual scan requested!";
+		LMS_LOG(DBUPDATER, INFO) << "Manual scan requested!";
 		scheduleScan( boost::posix_time::seconds(0) );
 	}
 	else
@@ -198,7 +201,7 @@ Updater::processNextJob(void)
 void
 Updater::scheduleScan( boost::posix_time::time_duration duration)
 {
-	LMS_LOG(MOD_DBUPDATER, SEV_NOTICE) << "Scheduling next scan in " << duration;
+	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan in " << duration;
 	_scheduleTimer.expires_from_now(duration);
 	_scheduleTimer.async_wait( boost::bind( &Updater::process, this, boost::asio::placeholders::error) );
 }
@@ -206,7 +209,7 @@ Updater::scheduleScan( boost::posix_time::time_duration duration)
 void
 Updater::scheduleScan( boost::posix_time::ptime time)
 {
-	LMS_LOG(MOD_DBUPDATER, SEV_NOTICE) << "Scheduling next scan at " << time;
+	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan at " << time;
 	_scheduleTimer.expires_at(time);
 	_scheduleTimer.async_wait( boost::bind( &Updater::process, this, boost::asio::placeholders::error) );
 }
@@ -216,24 +219,32 @@ Updater::process(boost::system::error_code err)
 {
 	if (!err)
 	{
+		updateFileExtensions();
+
 		Stats stats;
 
 		checkAudioFiles(stats);
 		checkVideoFiles(stats);
 
-		typedef std::pair<boost::filesystem::path, Database::MediaDirectory::Type> RootDirectory;
 		std::vector<RootDirectory> rootDirectories;
 		{
 			Wt::Dbo::Transaction transaction(_db.getSession());
-			std::vector<MediaDirectory::pointer> mediaDirectories = MediaDirectory::getAll(_db.getSession());
-			BOOST_FOREACH(MediaDirectory::pointer directory, mediaDirectories)
-				rootDirectories.push_back( std::make_pair( directory->getPath(), directory->getType() ));
+
+			for (MediaDirectory::pointer directory : MediaDirectory::getAll(_db.getSession()))
+				rootDirectories.push_back( RootDirectory( directory->getType(), directory->getPath() ));
 		}
 
 		for (RootDirectory rootDirectory : rootDirectories)
-			processDirectory(rootDirectory.first, rootDirectory.first, rootDirectory.second, stats);
+		{
+			if (!_running)
+				break;
 
-		LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Changes = " << stats.nbChanges();
+			LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory.path << "'...";
+			processRootDirectory(rootDirectory, stats);
+			LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory.path << "' DONE";
+		}
+
+		LMS_LOG(DBUPDATER, INFO) << "Scan complete. Changes = " << stats.nbChanges() << ", Errors = " << stats.nbScanErrors;
 
 		// Update database stats
 		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
@@ -259,6 +270,15 @@ Updater::process(boost::system::error_code err)
 		if (_running)
 			processNextJob();
 	}
+}
+
+void
+Updater::updateFileExtensions()
+{
+	Wt::Dbo::Transaction transaction(_db.getSession());
+
+	_audioFileExtensions = MediaDirectorySettings::get(_db.getSession())->getAudioFileExtensions();
+	_videoFileExtensions = MediaDirectorySettings::get(_db.getSession())->getVideoFileExtensions();
 }
 
 Artist::pointer
@@ -358,65 +378,59 @@ Updater::getGenres( const std::list<std::string>& names)
 void
 Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 {
-	try {
-		// Check last update time
-		boost::posix_time::ptime lastWriteTime (boost::posix_time::from_time_t( boost::filesystem::last_write_time( file ) ) );
+	boost::posix_time::ptime lastWriteTime (boost::posix_time::from_time_t( boost::filesystem::last_write_time( file ) ) );
 
+	// Skip file if last write is the same
+	{
 		Wt::Dbo::Transaction transaction(_db.getSession());
 
-		// Skip file if last write is the same
 		Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
 
-		// if the file is the same and embeds covers, no need to update
-		if (track && track->getLastWriteTime() == lastWriteTime
-			&& (track->getCoverType() == Database::Track::CoverType::Embedded))
-			return;
-
-		// Check for external covers
-		std::vector<boost::filesystem::path> externalCovers = CoverArt::Grabber::instance().getCoverPaths(file.parent_path());
 		if (track && track->getLastWriteTime() == lastWriteTime)
-		{
-			// no change since last time we updated
-			// Skip only if no external covers has to be set
-			if (((track->getCoverType() == Database::Track::CoverType::None) && externalCovers.empty())
-				|| ((track->getCoverType() == Database::Track::CoverType::ExternalFile) && !externalCovers.empty()))
 			return;
-		}
+	}
 
-		MetaData::Items items;
-		_metadataParser.parse(file, items);
+	MetaData::Items items;
+	if (!_metadataParser.parse(file, items))
+		return;
 
-		// We estimate this is a audio file if:
-		// - we found a least one audio stream
-		// - the duration is not null
-		if (items.find(MetaData::Type::AudioStreams) == items.end()
-		|| boost::any_cast<std::vector<MetaData::AudioStream> >(items[MetaData::Type::AudioStreams]).empty())
+	Wt::Dbo::Transaction transaction(_db.getSession());
+
+	Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
+
+	// We estimate this is a audio file if:
+	// - we found a least one audio stream
+	// - the duration is not null
+	if (items.find(MetaData::Type::AudioStreams) == items.end()
+			|| boost::any_cast<std::vector<MetaData::AudioStream> >(items[MetaData::Type::AudioStreams]).empty())
+	{
+		LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file << "' (no audio stream found)";
+
+		// If Track exists here, delete it!
+		if (track)
 		{
-			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Skipped '" << file << "' (no audio stream found)";
-
-			// If Track exists here, delete it!
-			if (track) {
-				track.remove();
-				stats.nbRemoved++;
-			}
-			return;
+			track.remove();
+			stats.nbRemoved++;
 		}
-		if (items.find(MetaData::Type::Duration) == items.end()
-		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]).total_seconds() <= 0)
+		return;
+	}
+	if (items.find(MetaData::Type::Duration) == items.end()
+			|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]).total_seconds() <= 0)
+	{
+		LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file << "' (no duration or duration <= 0)";
+
+		// If Track exists here, delete it!
+		if (track)
 		{
-			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Skipped '" << file << "' (no duration or duration <= 0)";
-
-			// If Track exists here, delete it!
-			if (track) {
-				track.remove();
-				stats.nbRemoved++;
-			}
-			return;
+			track.remove();
+			stats.nbRemoved++;
 		}
+		return;
+	}
 
-		// ***** Title
-		std::string title;
-		if (items.find(MetaData::Type::Title) != items.end()) {
+	// ***** Title
+	std::string title;
+	if (items.find(MetaData::Type::Title) != items.end()) {
 			title = boost::any_cast<std::string>(items[MetaData::Type::Title]);
 		}
 		else
@@ -477,12 +491,12 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		{
 			// Create a new song
 			track = Track::create(_db.getSession(), file);
-			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Adding '" << file << "'";
+			LMS_LOG(DBUPDATER, INFO) << "Adding '" << file << "'";
 			stats.nbAdded++;
 		}
 		else
 		{
-			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Updating '" << file << "'";
+			LMS_LOG(DBUPDATER, INFO) << "Updating '" << file << "'";
 			stats.nbModified++;
 		}
 
@@ -531,52 +545,39 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		{
 			bool hasCover = boost::any_cast<bool>(items[MetaData::Type::HasCover]);
 
-			if (hasCover)
-				track.modify()->setCoverType( Track::CoverType::Embedded );
-			else if (!externalCovers.empty())
-				track.modify()->setCoverType( Track::CoverType::ExternalFile );
-			else
-				track.modify()->setCoverType( Track::CoverType::None);
+			track.modify()->setCoverType( hasCover ? Track::CoverType::Embedded : Track::CoverType::None );
 		}
 
 		transaction.commit();
-	}
-	catch( std::exception& e ) {
-		LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Exception while parsing audio file : '" << file << "': '" << e.what() << "' => skipping!";
-	}
 }
 
 
 void
-Updater::processDirectory(const boost::filesystem::path& rootDirectory,
-			const boost::filesystem::path& p,
-			Database::MediaDirectory::Type type,
-			Stats& stats)
+Updater::processRootDirectory(RootDirectory rootDirectory, Stats& stats)
 {
-	if (!_running)
+
+	if (!boost::filesystem::exists(rootDirectory.path) || !boost::filesystem::is_directory(rootDirectory.path))
 		return;
 
-	if (!boost::filesystem::exists(p) || !boost::filesystem::is_directory(p))
-		return;
-
-	boost::filesystem::recursive_directory_iterator itPath(rootDirectory);
+	boost::filesystem::recursive_directory_iterator itPath(rootDirectory.path);
 	boost::filesystem::recursive_directory_iterator itEnd;
 	while (itPath != itEnd)
 	{
 		if (!_running)
 			return;
 
-		if (boost::filesystem::is_regular(*itPath)) {
-			switch( type )
+		if (boost::filesystem::is_regular(*itPath))
+		{
+			switch( rootDirectory.type )
 			{
 				case Database::MediaDirectory::Audio:
-					if (isFileSupported(*itPath, _audioExtensions))
+					if (isFileSupported(*itPath, _audioFileExtensions))
 						processAudioFile( *itPath, stats );
 
 					break;
 
 				case Database::MediaDirectory::Video:
-					if (isFileSupported(*itPath, _videoExtensions))
+					if (isFileSupported(*itPath, _videoFileExtensions))
 						processVideoFile( *itPath, stats);
 					break;
 			}
@@ -589,119 +590,150 @@ Updater::processDirectory(const boost::filesystem::path& rootDirectory,
 bool
 Updater::checkFile(const boost::filesystem::path& p, const std::vector<boost::filesystem::path>& rootDirs, const std::vector<boost::filesystem::path>& extensions)
 {
-	bool status = true;
+	try
+	{
+		bool status = true;
 
-	// For each track, make sure the the file still exists
-	// and still belongs to a root directory
-	if (!boost::filesystem::exists( p )
-			|| !boost::filesystem::is_regular( p ) )
-	{
-		LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Missing file '" << p << "'";
-		status = false;
-	}
-	else
-	{
-		bool foundRoot = false;
-		BOOST_FOREACH(const boost::filesystem::path& rootDir, rootDirs)
+		// For each track, make sure the the file still exists
+		// and still belongs to a root directory
+		if (!boost::filesystem::exists( p )
+				|| !boost::filesystem::is_regular( p ) )
 		{
-			if (p.string().find( rootDir.string() ) != std::string::npos)
+			LMS_LOG(DBUPDATER, INFO) << "Missing file '" << p << "'";
+			status = false;
+		}
+		else
+		{
+
+			bool foundRoot = false;
+			for (auto& rootDir : rootDirs)
 			{
-				foundRoot = true;
-				break;
+				if (isPathInParentPath(p, rootDir))
+				{
+					foundRoot = true;
+					break;
+				}
+			}
+
+			if (!foundRoot)
+			{
+				LMS_LOG(DBUPDATER, INFO) << "Out of root file '" << p << "'";
+				status = false;
+			}
+			else if (!isFileSupported(p, extensions))
+			{
+				LMS_LOG(DBUPDATER, INFO) << "File format no longer supported for '" << p << "'";
+				status = false;
 			}
 		}
 
-		if (!foundRoot)
-		{
-			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Out of root file '" << p << "'";
-			status = false;
-		}
-		else if (!isFileSupported(p, extensions))
-		{
-			LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "File format no longer supported for '" << p << "'";
-			status = false;
-		}
+		return status;
+
+	}
+	catch (boost::filesystem::filesystem_error& e)
+	{
+		LMS_LOG(DBUPDATER, ERROR) << "Caught exception while checking file '" << p << "': " << e.what();
+		return false;
 	}
 
-	return status;
 }
-
 
 void
 Updater::checkAudioFiles( Stats& stats )
 {
+	LMS_LOG(DBUPDATER, INFO) << "Checking audio files...";
 
-	LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Checking audio files...";
-	Wt::Dbo::Transaction transaction(_db.getSession());
-
+	std::vector<boost::filesystem::path> trackPaths = Track::getAllPaths(_db.getSession());;
 	std::vector<boost::filesystem::path> rootDirs = getRootDirectoriesByType(_db.getSession(), Database::MediaDirectory::Audio);
 
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking tracks...";
-	auto tracks = Track::getAll(_db.getSession());
-	for (auto track : tracks)
+	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks...";
+	for (auto& trackPath : trackPaths)
 	{
-		if (!checkFile(track->getPath(), rootDirs, _audioExtensions))
+		if (!_running)
+			return;
+
+		if (!checkFile(trackPath, rootDirs, _audioFileExtensions))
 		{
-			track.remove();
-			stats.nbRemoved++;
+			Wt::Dbo::Transaction transaction(_db.getSession());
+
+			Track::pointer track = Track::getByPath(_db.getSession(), trackPath);
+			if (track)
+			{
+				track.remove();
+				stats.nbRemoved++;
+			}
 		}
 	}
 
-	// Now process orphan Genre (no track)
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking Genres...";
-	auto genres = Genre::getAll(_db.getSession());
-	for (auto genre : genres)
+	LMS_LOG(DBUPDATER, DEBUG) << "Checking Genres...";
 	{
-		if (genre->getTracks().size() == 0)
+		Wt::Dbo::Transaction transaction(_db.getSession());
+
+		// Now process orphan Genre (no track)
+		auto genres = Genre::getAll(_db.getSession());
+		for (auto genre : genres)
 		{
-			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Removing orphan genre '" << genre->getName() << "'";
-			genre.remove();
+			if (genre->getTracks().size() == 0)
+			{
+				LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan genre '" << genre->getName() << "'";
+				genre.remove();
+			}
 		}
 	}
 
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking artists...";
-	auto artists = Artist::getAllOrphans(_db.getSession());
-	for (auto artist : artists)
+	LMS_LOG(DBUPDATER, DEBUG) << "Checking artists...";
 	{
-		LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Removing orphan artist '" << artist->getName() << "'";
-		artist.remove();
+		Wt::Dbo::Transaction transaction(_db.getSession());
+
+		auto artists = Artist::getAllOrphans(_db.getSession());
+		for (auto artist : artists)
+		{
+			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan artist '" << artist->getName() << "'";
+			artist.remove();
+		}
 	}
 
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking releases...";
-	auto releases = Release::getAllOrphans(_db.getSession());
-	for (auto release : releases)
+	LMS_LOG(DBUPDATER, DEBUG) << "Checking releases...";
 	{
-		LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Removing orphan release '" << release->getName() << "'";
-		release.remove();
+		Wt::Dbo::Transaction transaction(_db.getSession());
+
+		auto releases = Release::getAllOrphans(_db.getSession());
+		for (auto release : releases)
+		{
+			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan release '" << release->getName() << "'";
+			release.remove();
+		}
 	}
 
-	LMS_LOG(MOD_DBUPDATER, SEV_INFO) << "Check audio files done!";
+	LMS_LOG(DBUPDATER, INFO) << "Check audio files done!";
 }
 
 void
 Updater::checkVideoFiles( Stats& stats )
 {
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking video files...";
-	Wt::Dbo::Transaction transaction(_db.getSession());
-
 	std::vector<boost::filesystem::path> rootDirs = getRootDirectoriesByType(_db.getSession(), Database::MediaDirectory::Video);
+	std::vector<boost::filesystem::path> videoPaths = Video::getAllPaths(_db.getSession());
 
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Checking videos...";
-	typedef Wt::Dbo::collection< Wt::Dbo::ptr<Video> > Videos;
-	Videos videos = Video::getAll(_db.getSession());
-
-	for (Videos::iterator it = videos.begin(); it != videos.end(); ++it)
+	LMS_LOG(DBUPDATER, DEBUG) << "Checking videos...";
+	for (auto& videoPath : videoPaths)
 	{
-		Video::pointer video = (*it);
+		if (!_running)
+			return;
 
-		if (!checkFile(video->getPath(), rootDirs, _videoExtensions))
+		if (!checkFile(videoPath, rootDirs, _videoFileExtensions))
 		{
-			video.remove();
-			stats.nbRemoved++;
+			Wt::Dbo::Transaction transaction(_db.getSession());
+
+			Video::pointer video = Video::getByPath(_db.getSession(), videoPath);
+			if (video)
+			{
+				video.remove();
+				stats.nbRemoved++;
+			}
 		}
 	}
 
-	LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Check video files done!";
+	LMS_LOG(DBUPDATER, DEBUG) << "Check video files done!";
 }
 void
 Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
@@ -727,7 +759,7 @@ Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 		if (items.find(MetaData::Type::VideoStreams) == items.end()
 		|| boost::any_cast<std::vector<MetaData::VideoStream> >(items[MetaData::Type::VideoStreams]).empty())
 		{
-			LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Skipped '" << file << "' (no video stream found)";
+			LMS_LOG(DBUPDATER, ERROR) << "Skipped '" << file << "' (no video stream found)";
 
 			// If the video exists here, delete it!
 			if (video) {
@@ -739,7 +771,7 @@ Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 		if (items.find(MetaData::Type::Duration) == items.end()
 		|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]).total_seconds() == 0)
 		{
-			LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Skipped '" << file << "' (no duration or duration 0)";
+			LMS_LOG(DBUPDATER, ERROR) << "Skipped '" << file << "' (no duration or duration 0)";
 
 			// If Track exists here, delete it!
 			if (video) {
@@ -755,12 +787,12 @@ Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 		if (!video)
 		{
 			video = Video::create(_db.getSession(), file);
-			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Adding '" << file << "'";
+			LMS_LOG(DBUPDATER, DEBUG) << "Adding '" << file << "'";
 			stats.nbAdded++;
 		}
 		else
 		{
-			LMS_LOG(MOD_DBUPDATER, SEV_DEBUG) << "Updating '" << file << "'";
+			LMS_LOG(DBUPDATER, DEBUG) << "Updating '" << file << "'";
 			stats.nbModified++;
 		}
 
@@ -772,8 +804,10 @@ Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 
 		transaction.commit();
 	}
-	catch( std::exception& e ) {
-		LMS_LOG(MOD_DBUPDATER, SEV_ERROR) << "Exception while parsing video file : '" << file << "': '" << e.what() << "' => skipping!";
+	catch( std::exception& e )
+	{
+		LMS_LOG(DBUPDATER, ERROR) << "Exception while parsing video file : '" << file << "': '" << e.what() << "' => skipping!";
+		stats.nbScanErrors++;
 	}
 }
 

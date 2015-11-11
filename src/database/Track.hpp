@@ -52,8 +52,7 @@ class Genre
 		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer getNone(Wt::Dbo::Session& session);
 		static std::vector<pointer> getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
-		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session);
-
+		static Wt::Dbo::collection<Genre::pointer> getAll(Wt::Dbo::Session& session);
 		// MVC models for the user interface
 		// Genre ID, name, track count
 		typedef boost::tuple<id_type, std::string, int> UIQueryResult;
@@ -97,7 +96,6 @@ class Track
 		enum class CoverType
 		{
 			Embedded,	// Contains embedded cover
-			ExternalFile,	// Cover is in an external file
 			None,		// No local cover available
 		};
 
@@ -107,6 +105,7 @@ class Track
 		static pointer getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
+		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session);
 
 		// Utility fonctions
 		// MVC models for the user interface

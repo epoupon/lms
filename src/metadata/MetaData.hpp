@@ -48,17 +48,21 @@ namespace MetaData
 	};
 
 	// Used by Streams
-	struct AudioStream {
-		std::size_t nbChannels;
+	struct AudioStream
+	{
+		std::string desc;
 		std::size_t bitRate;
 	};
 
-	struct VideoStream {
+	struct VideoStream
+	{
+		std::string desc;
 		std::size_t bitRate;
 	};
 
-	struct SubtitleStream {
-		;
+	struct SubtitleStream
+	{
+		std::string desc;
 	};
 
 	// Type and associated data
@@ -71,7 +75,7 @@ namespace MetaData
 
 			typedef std::shared_ptr<Parser> pointer;
 
-			virtual void parse(const boost::filesystem::path& p, Items& items) = 0;
+			virtual bool parse(const boost::filesystem::path& p, Items& items) = 0;
 
 	};
 

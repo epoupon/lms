@@ -215,7 +215,7 @@ _playQueue(nullptr)
 	_mediaPlayer->loop().connect(boost::bind(&PlayQueue::setLoop,_playQueue, _1));
 
 	_playQueue->tracksUpdated().connect(std::bind([=] () {
-		LMS_LOG(MOD_UI, SEV_INFO) << "Playqueue updated!";
+		LMS_LOG(UI, INFO) << "Playqueue updated!";
 
 		playlistSaveFromPlayqueue(CurrentQueuePlaylistName);
 	}));
@@ -308,14 +308,14 @@ Audio::playlistShowSaveDialog(std::string playlistName)
 void
 Audio::playlistSaveFromPlayqueue(std::string playlistName)
 {
-	LMS_LOG(MOD_UI, SEV_INFO) << "Saving playqueue to playlist '" << playlistName << "'";
+	LMS_LOG(UI, INFO) << "Saving playqueue to playlist '" << playlistName << "'";
 
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	Playlist::pointer playlist = Playlist::get(DboSession(), playlistName, CurrentUser());
 	if (playlist)
 	{
-		LMS_LOG(MOD_UI, SEV_INFO) << "Erasing playlist '" << playlistName << "'";
+		LMS_LOG(UI, INFO) << "Erasing playlist '" << playlistName << "'";
 		playlist.remove();
 	}
 
@@ -333,13 +333,13 @@ Audio::playlistSaveFromPlayqueue(std::string playlistName)
 			PlaylistEntry::create(DboSession(), track, playlist, pos++);
 	}
 
-	LMS_LOG(MOD_UI, SEV_INFO) << "Saving playqueue to playlist '" << playlistName << "' done. Contains " << pos << " entries";
+	LMS_LOG(UI, INFO) << "Saving playqueue to playlist '" << playlistName << "' done. Contains " << pos << " entries";
 }
 
 void
 Audio::playlistLoadToPlayqueue(std::string playlistName)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Loading playlist '" << playlistName << "' to playqueue";
+	LMS_LOG(UI, DEBUG) << "Loading playlist '" << playlistName << "' to playqueue";
 
 	std::vector<Track::id_type> entries;
 
@@ -356,7 +356,7 @@ Audio::playlistLoadToPlayqueue(std::string playlistName)
 	_playQueue->clear();
 	_playQueue->addTracks(entries);
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Loading playlist '" << playlistName << "' to playqueue done. " << entries.size() << " entries";
+	LMS_LOG(UI, DEBUG) << "Loading playlist '" << playlistName << "' to playqueue done. " << entries.size() << " entries";
 }
 
 
@@ -395,7 +395,7 @@ Audio::playlistRefreshMenus()
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	// Clear playlists in each menu
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Save item count: " << _popupMenuSave->count();
+	LMS_LOG(UI, DEBUG) << "Save item count: " << _popupMenuSave->count();
 
 	WPopupMenuClear(_popupMenuDelete);
 	WPopupMenuClear(_popupMenuLoad);
@@ -457,7 +457,7 @@ Audio::playSelectedTracks(PlayQueueAddType addType)
 {
 	std::vector<Track::id_type> trackIds;
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Playing selected tracks... nb selected = " << _trackView->getNbSelectedTracks() << ", add type = " << (addType == PlayQueueAddAllTracks ? "AddAll" : "AddSelected");
+	LMS_LOG(UI, DEBUG) << "Playing selected tracks... nb selected = " << _trackView->getNbSelectedTracks() << ", add type = " << (addType == PlayQueueAddAllTracks ? "AddAll" : "AddSelected");
 
 	_playQueue->clear();
 
@@ -472,7 +472,7 @@ Audio::playSelectedTracks(PlayQueueAddType addType)
 			break;
 		case PlayQueueAddSelectedTracks:
 
-			LMS_LOG(MOD_UI, SEV_DEBUG) << "Adding selected tracks...";
+			LMS_LOG(UI, DEBUG) << "Adding selected tracks...";
 
 			// If nothing selected, get all the track and play everything
 			if (_trackView->getNbSelectedTracks() == 0)
@@ -510,7 +510,8 @@ Audio::playTrack(Track::id_type trackId, int pos)
 		CurrentUser().modify()->setCurPlayingTrackPos(pos);
 	}
 
-	_mediaPlayer->load(trackId);
+	if (!_mediaPlayer->load(trackId))
+		_playQueue->playNext();
 }
 
 } // namespace Desktop

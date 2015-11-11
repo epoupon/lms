@@ -77,7 +77,7 @@ Settings::Settings(Wt::WContainerWidget* parent)
 
 		DatabaseFormView* databaseFormView = new DatabaseFormView();
 		databaseFormView->changed().connect(this, &Settings::restartDatabaseUpdateService);
-		menu->addItem("Database Update", databaseFormView);
+		menu->addItem("Database", databaseFormView);
 
 		menu->addItem("Users", new Users());
 	}
@@ -91,7 +91,7 @@ Settings::Settings(Wt::WContainerWidget* parent)
 void
 Settings::handleDatabaseDirectoriesChanged()
 {
-	LMS_LOG(MOD_UI, SEV_NOTICE) << "Media directories have changed: requesting imediate scan";
+	LMS_LOG(UI, INFO) << "Media directories have changed: requesting imediate scan";
 	// On directory add or delete, request an immediate scan
 	{
 		Wt::Dbo::Transaction transaction(DboSession());
@@ -107,7 +107,7 @@ Settings::restartDatabaseUpdateService()
 	// Restarting the update service
 	boost::lock_guard<boost::mutex> serviceLock (Service::ServiceManager::instance().mutex());
 
-	Service::DatabaseUpdateService::pointer service = Service::ServiceManager::instance().getService<Service::DatabaseUpdateService>();
+	Service::DatabaseUpdateService::pointer service = Service::ServiceManager::instance().get<Service::DatabaseUpdateService>();
 	if (service)
 		service->restart();
 }

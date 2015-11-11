@@ -22,6 +22,8 @@
 #include <Wt/WCheckBox>
 #include <Wt/WComboBox>
 #include <Wt/WMessageBox>
+#include <Wt/WLineEdit>
+#include <Wt/WRegExpValidator>
 
 #include <Wt/WFormModel>
 #include <Wt/WStringListModel>
@@ -37,12 +39,16 @@
 namespace UserInterface {
 namespace Settings {
 
+using namespace Database;
+
 class DatabaseFormModel : public Wt::WFormModel
 {
 	public:
 		// Associate each field with a unique string literal.
 		static const Field UpdatePeriodField;
 		static const Field UpdateStartTimeField;
+		static const Field AudioFileExtensionsField;
+		static const Field VideoFileExtensionsField;
 
 		DatabaseFormModel(Wt::WObject *parent = 0)
 			: Wt::WFormModel(parent)
@@ -51,9 +57,13 @@ class DatabaseFormModel : public Wt::WFormModel
 
 			addField(UpdatePeriodField);
 			addField(UpdateStartTimeField);
+			addField(AudioFileExtensionsField);
+			addField(VideoFileExtensionsField);
 
-			setValidator(UpdatePeriodField, 		createUpdatePeriodValidator());
-			setValidator(UpdateStartTimeField, 		createStartTimeValidator());
+			setValidator(UpdatePeriodField, createUpdatePeriodValidator());
+			setValidator(UpdateStartTimeField, createStartTimeValidator());
+			setValidator(AudioFileExtensionsField, createFileExtensionValidator());
+			setValidator(VideoFileExtensionsField, createFileExtensionValidator());
 
 			// populate the model with initial data
 			loadData();
@@ -67,7 +77,7 @@ class DatabaseFormModel : public Wt::WFormModel
 			Wt::Dbo::Transaction transaction(DboSession());
 
 			// Get refresh settings
-			::Database::MediaDirectorySettings::pointer settings = ::Database::MediaDirectorySettings::get(DboSession());
+			MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(DboSession());
 
 			int periodRow = getUpdatePeriodModelRow( settings->getUpdatePeriod() );
 			if (periodRow != -1)
@@ -77,13 +87,30 @@ class DatabaseFormModel : public Wt::WFormModel
 			if (startTimeRow != -1)
 				setValue(UpdateStartTimeField, updateStartTime( startTimeRow ) );
 
+			std::vector<boost::filesystem::path> audioFileExtensions = settings->getAudioFileExtensions();
+			{
+				std::ostringstream oss;
+				for (auto& fileExtension : audioFileExtensions)
+					oss << fileExtension.string() << " ";
+
+				setValue(AudioFileExtensionsField, oss.str());
+			}
+
+			std::vector<boost::filesystem::path> videoFileExtensions = settings->getVideoFileExtensions();
+			{
+				std::ostringstream oss;
+				for (auto& fileExtension : videoFileExtensions)
+					oss << fileExtension.string() << " ";
+
+				setValue(VideoFileExtensionsField, oss.str());
+			}
 		}
 
 		void saveData()
 		{
 			Wt::Dbo::Transaction transaction(DboSession());
 
-			::Database::MediaDirectorySettings::pointer settings = ::Database::MediaDirectorySettings::get(DboSession());
+			MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(DboSession());
 
 			int periodRow = getUpdatePeriodModelRow( boost::any_cast<Wt::WString>(value(UpdatePeriodField)));
 			assert(periodRow != -1);
@@ -93,20 +120,38 @@ class DatabaseFormModel : public Wt::WFormModel
 			assert(startTimeRow != -1);
 			settings.modify()->setUpdateStartTime( updateStartTimeDuration( startTimeRow ) );
 
+			{
+				std::vector<std::string> res;
+				std::istringstream iss(boost::any_cast<Wt::WString>(value(AudioFileExtensionsField)).toUTF8());
+
+				std::copy(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>(), std::back_inserter(res));
+
+				settings.modify()->setAudioFileExtensions( std::vector<boost::filesystem::path>(res.begin(), res.end()) );
+			}
+
+			{
+				std::vector<std::string> res;
+				std::istringstream iss(boost::any_cast<Wt::WString>(value(VideoFileExtensionsField)).toUTF8());
+
+				std::copy(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>(), std::back_inserter(res));
+
+				settings.modify()->setVideoFileExtensions( std::vector<boost::filesystem::path>(res.begin(), res.end()) );
+			}
 		}
 
 		bool setImmediateScan(Wt::WString& error)
 		{
-			try {
+			try
+			{
 				Wt::Dbo::Transaction transaction( DboSession());
 
-				::Database::MediaDirectorySettings::pointer settings = ::Database::MediaDirectorySettings::get(DboSession() );
+				MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(DboSession() );
 
 				settings.modify()->setManualScanRequested( true );
 			}
 			catch(Wt::Dbo::Exception& exception)
 			{
-				LMS_LOG(MOD_UI, SEV_ERROR) << "Dbo exception: " << exception.what();
+				LMS_LOG(UI, ERROR) << "Dbo exception: " << exception.what();
 				return false;
 			}
 
@@ -123,7 +168,7 @@ class DatabaseFormModel : public Wt::WFormModel
 			return -1;
 		}
 
-		int getUpdatePeriodModelRow(Database::MediaDirectorySettings::UpdatePeriod duration)
+		int getUpdatePeriodModelRow(MediaDirectorySettings::UpdatePeriod duration)
 		{
 			for (int i = 0; i < _updatePeriodModel->rowCount(); ++i)
 			{
@@ -134,8 +179,8 @@ class DatabaseFormModel : public Wt::WFormModel
 			return -1;
 		}
 
-		Database::MediaDirectorySettings::UpdatePeriod updatePeriodDuration(int row) {
-			return boost::any_cast<Database::MediaDirectorySettings::UpdatePeriod>
+		MediaDirectorySettings::UpdatePeriod updatePeriodDuration(int row) {
+			return boost::any_cast<MediaDirectorySettings::UpdatePeriod>
 				(_updatePeriodModel->data(_updatePeriodModel->index(row, 0), Wt::UserRole));
 		}
 
@@ -185,16 +230,16 @@ class DatabaseFormModel : public Wt::WFormModel
 			_updatePeriodModel = new Wt::WStringListModel(this);
 
 			_updatePeriodModel->addString("Never");
-			_updatePeriodModel->setData(0, 0, Database::MediaDirectorySettings::Never, Wt::UserRole);
+			_updatePeriodModel->setData(0, 0, MediaDirectorySettings::Never, Wt::UserRole);
 
 			_updatePeriodModel->addString("Daily");
-			_updatePeriodModel->setData(1, 0, Database::MediaDirectorySettings::Daily, Wt::UserRole);
+			_updatePeriodModel->setData(1, 0, MediaDirectorySettings::Daily, Wt::UserRole);
 
 			_updatePeriodModel->addString("Weekly");
-			_updatePeriodModel->setData(2, 0, Database::MediaDirectorySettings::Weekly, Wt::UserRole);
+			_updatePeriodModel->setData(2, 0, MediaDirectorySettings::Weekly, Wt::UserRole);
 
 			_updatePeriodModel->addString("Monthly");
-			_updatePeriodModel->setData(3, 0, Database::MediaDirectorySettings::Monthly, Wt::UserRole);
+			_updatePeriodModel->setData(3, 0, MediaDirectorySettings::Monthly, Wt::UserRole);
 
 			_updateStartTimeModel = new Wt::WStringListModel(this);
 
@@ -216,18 +261,25 @@ class DatabaseFormModel : public Wt::WFormModel
 
 		}
 
-		Wt::WValidator *createUpdatePeriodValidator() {
+		Wt::WValidator *createUpdatePeriodValidator()
+		{
 			Wt::WValidator* v = new Wt::WValidator();
 			v->setMandatory(true);
 			return v;
 		}
 
-		Wt::WValidator *createStartTimeValidator() {
+		Wt::WValidator *createStartTimeValidator()
+		{
 			Wt::WValidator* v = new Wt::WValidator();
 			v->setMandatory(true);
 			return v;
 		}
 
+		Wt::WValidator *createFileExtensionValidator()
+		{
+			Wt::WRegExpValidator *v = new Wt::WRegExpValidator("(?:\\.\\w+(?:\\s*))+");
+			return v;
+		}
 
 		Wt::WStringListModel*	_updatePeriodModel;
 		Wt::WStringListModel*	_updateStartTimeModel;
@@ -236,6 +288,8 @@ class DatabaseFormModel : public Wt::WFormModel
 
 const Wt::WFormModel::Field DatabaseFormModel::UpdatePeriodField		= "update-period";
 const Wt::WFormModel::Field DatabaseFormModel::UpdateStartTimeField		= "update-start-time";
+const Wt::WFormModel::Field DatabaseFormModel::AudioFileExtensionsField		= "audio-file-extensions";
+const Wt::WFormModel::Field DatabaseFormModel::VideoFileExtensionsField		= "video-file-extensions";
 
 
 DatabaseFormView::DatabaseFormView(Wt::WContainerWidget *parent)
@@ -264,8 +318,18 @@ DatabaseFormView::DatabaseFormView(Wt::WContainerWidget *parent)
 	updateStartTimeCB->setModel(_model->updateStartTimeModel());
 	updateStartTimeCB->changed().connect(_applyInfo, &Wt::WWidget::hide);
 
+	// Audio file extensions
+	Wt::WLineEdit *audioFileExtensionsEdit = new Wt::WLineEdit();
+	setFormWidget(DatabaseFormModel::AudioFileExtensionsField, audioFileExtensionsEdit);
+	audioFileExtensionsEdit->changed().connect(_applyInfo, &Wt::WWidget::hide);
+
+	// Video file extensions
+	Wt::WLineEdit *videoFileExtensionsEdit = new Wt::WLineEdit();
+	setFormWidget(DatabaseFormModel::VideoFileExtensionsField, videoFileExtensionsEdit);
+	videoFileExtensionsEdit->changed().connect(_applyInfo, &Wt::WWidget::hide);
+
 	// Title & Buttons
-	bindString("title", "Media folder settings");
+	bindString("title", "Database settings");
 
 	Wt::WPushButton *saveButton = new Wt::WPushButton("Apply");
 	bindWidget("apply-button", saveButton);

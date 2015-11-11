@@ -48,4 +48,12 @@ Video::getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p)
 	return session.find<Video>().where("path = ?").bind(p.string());
 }
 
+std::vector<boost::filesystem::path>
+Video::getAllPaths(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::Transaction transaction(session);
+	Wt::Dbo::collection<std::string> res = session.query<std::string>("SELECT path from video");
+	return std::vector<boost::filesystem::path>(res.begin(), res.end());
+}
+
 } // namespace Video

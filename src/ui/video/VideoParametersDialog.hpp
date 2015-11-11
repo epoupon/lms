@@ -17,8 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef VIDEO_PARAMETER_DIALOG
-#define VIDEO_PARAMETER_DIALOG
+#pragma once
 
 #include <map>
 
@@ -28,7 +27,7 @@
 #include <Wt/WStringListModel>
 #include <Wt/WString>
 
-#include "transcode/Parameters.hpp"
+#include "av/AvTranscoder.hpp"
 
 namespace UserInterface {
 
@@ -36,13 +35,13 @@ class VideoParametersDialog : public Wt::WDialog
 {
 	public:
 		// parameters to be edited
-		VideoParametersDialog(const Wt::WString &windowTitle, Wt::WDialog* parent = 0);
+		VideoParametersDialog(Wt::WString windowTitle, Wt::WDialog* parent = 0);
 
 		// Populates widget contents using these paramaters
-		void load(const Transcode::Parameters& parameters);
+		void load(const Av::MediaFile& mediaFile, Av::TranscodeParameters currentParameters);
 
 		// Save widgets contents into these parameters
-		void save(Transcode::Parameters& parameters);
+		void save(Av::TranscodeParameters& parameters);
 
 		// Signal to be emitted if parameters are changed
 		Wt::Signal<void>& apply()	{ return _apply; }
@@ -52,19 +51,14 @@ class VideoParametersDialog : public Wt::WDialog
 		void handleApply(void);
 
 		// Stream handling
-		void createStreamWidgets(const Wt::WString& label, Transcode::Stream::Type type, Wt::WTable* layout);
-		void addStreams(Wt::WStringListModel* model, const std::vector<Transcode::Stream>& streams);
-		void selectStream(const Wt::WStringListModel* model, Transcode::Stream::Id streamId, Wt::WComboBox* combo);
+		void createStreamWidgets(const Wt::WString& label, Av::Stream::Type type, Wt::WTable* layout);
+		void addStreams(Wt::WStringListModel* model, const std::vector<Av::Stream>& streams);
+		void selectStream(const Wt::WStringListModel* model, int streamId, Wt::WComboBox* combo);
 
 		Wt::Signal<void>	_apply;
 
-		Wt::WComboBox*						_outputFormat;
-		Wt::WStringListModel*					_outputFormatModel;
-
-		std::map<Transcode::Stream::Type, std::pair<Wt::WComboBox*, Wt::WStringListModel* > >	_streamSelection;
+		std::map<Av::Stream::Type, std::pair<Wt::WComboBox*, Wt::WStringListModel* > >	_streamSelection;
 };
 
 } // namespace UserInterface
-
-#endif
 

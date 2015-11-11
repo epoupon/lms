@@ -28,7 +28,7 @@
 
 #include "VideoParametersDialog.hpp"
 
-#include "transcode/Parameters.hpp"
+#include "av/AvTranscoder.hpp"
 #include "resource/AvConvTranscodeStreamResource.hpp"
 
 namespace UserInterface {
@@ -37,18 +37,16 @@ class VideoMediaPlayerWidget : public Wt::WContainerWidget
 {
 	public:
 
-		VideoMediaPlayerWidget( const Transcode::Parameters& parameters, Wt::WContainerWidget *parent = 0);
-
+		VideoMediaPlayerWidget( const Av::MediaFile& mediaFile, Av::TranscodeParameters parameters, Wt::WContainerWidget *parent = 0);
 
 		Wt::Signal<void>&	close() { return _close; };
-
 
 	private:
 
 		// Signals
 		Wt::Signal<void>	_close;
 
-		void load(const Transcode::Parameters& parameters);
+		void load(Av::TranscodeParameters parameters);
 
 		// Player controls
 		void handlePlayOffset(int offsetSecs);
@@ -62,13 +60,15 @@ class VideoMediaPlayerWidget : public Wt::WContainerWidget
 		void handleParametersEdit(void);
 		void handleParametersDone(Wt::WDialog::DialogCode);
 
+		boost::filesystem::path		_currentFile;
+
 		// Core
 		Wt::WMediaPlayer*		_mediaPlayer;
 		AvConvTranscodeStreamResource*	_mediaResource;
 		Wt::WLink			_mediaInternalLink;
 
 		// Controls
-		Transcode::Parameters	_currentParameters;
+		Av::TranscodeParameters	_currentParameters;
 		Wt::WPushButton* 	_playBtn;
 		Wt::WPushButton* 	_pauseBtn;
 		Wt::WSlider*		_timeSlider;

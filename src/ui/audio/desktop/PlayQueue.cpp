@@ -291,9 +291,10 @@ _trackSelector(new TrackSelector())
 	this->setColumnWidth(COLUMN_ID_NAME, 240);
 
 	this->setLayoutSizeAware(true);
+#if WT_VERSION >= 0X03030400
 	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
 	this->setOverflow(Wt::WContainerWidget::OverflowScroll, Wt::Vertical);
-
+#endif
 	this->setColumnHidden(COLUMN_ID_TRACK_ID, true);
 
 	_itemDelegate = new PlayQueueItemDelegate();
@@ -370,7 +371,7 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 {
 	using namespace Database;
 
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Adding " << trackIds.size() << " tracks to play queue";
+	LMS_LOG(UI, DEBUG) << "Adding " << trackIds.size() << " tracks to play queue";
 
 	// Add tracks to model
 	for (Track::id_type trackId : trackIds)
@@ -388,10 +389,7 @@ PlayQueue::addTracks(const std::vector<Database::Track::id_type>& trackIds)
 			_model->setData(dataRow, COLUMN_ID_TRACK_ID, track.id(), Wt::UserRole);
 
 			std::string coverUrl;
-			if (track->getCoverType() != Track::CoverType::None)
-				coverUrl = LmsApplication::instance()->getCoverResource()->getTrackUrl(track.id(), 64);
-			else
-				coverUrl = LmsApplication::instance()->getCoverResource()->getUnknownTrackUrl(64);
+			coverUrl = LmsApplication::instance()->getCoverResource()->getTrackUrl(track.id(), 64);
 
 			_model->setData(dataRow, COLUMN_ID_COVER, coverUrl, Wt::DecorationRole);
 			_model->setData(dataRow, COLUMN_ID_COVER, std::string("playqueue-cover"), Wt::StyleClassRole);
@@ -464,7 +462,7 @@ PlayQueue::playPrevious(void)
 void
 PlayQueue::readTrack(int rowPos)
 {
-	LMS_LOG(MOD_UI, SEV_DEBUG) << "Reading track at pos " << rowPos << ", row count = " << _model->rowCount();
+	LMS_LOG(UI, DEBUG) << "Reading track at pos " << rowPos << ", row count = " << _model->rowCount();
 
 	if (rowPos < _model->rowCount())
 	{

@@ -22,6 +22,19 @@
 namespace Database
 {
 
+static std::ostream& operator<<(std::ostream& ost, const std::vector< Wt::Dbo::dbo_default_traits::IdType>& ids)
+{
+	const char *sep = "";
+
+	for (auto id : ids)
+	{
+		ost << sep << std::to_string(id);
+		sep = ",";
+	}
+
+	return ost;
+}
+
 SqlQuery generatePartialQuery(SearchFilter& filter)
 {
 	SqlQuery sqlQuery;
@@ -33,8 +46,6 @@ SqlQuery generatePartialQuery(SearchFilter& filter)
 
 		for (auto nameLikeMatch : nameLikeMatches)
 		{
-
-			// Artist
 			switch (nameLikeMatch.first)
 			{
 				case SearchFilter::Field::Artist:
@@ -62,7 +73,8 @@ SqlQuery generatePartialQuery(SearchFilter& filter)
 	}
 
 	// Process id exact match parameters
-
+	// Id list may be long, we do not bind the parameters
+	// Safe since we already known these are just ints
 	for (auto idMatch : filter.idMatch)
 	{
 		WhereClause idWhereClause;
@@ -70,20 +82,32 @@ SqlQuery generatePartialQuery(SearchFilter& filter)
 		switch (idMatch.first)
 		{
 			case SearchFilter::Field::Artist:
-				for (auto id : idMatch.second)
-					idWhereClause.Or( WhereClause("a.id = ?") ).bind( std::to_string(id));
+				{
+					std::ostringstream oss;
+					oss << "a.id IN (" << idMatch.second << ")";
+					idWhereClause.Or(oss.str());
+				}
 				break;
 			case SearchFilter::Field::Release:
-				for (auto id : idMatch.second)
-					idWhereClause.Or( WhereClause("r.id = ?") ).bind( std::to_string(id));
+				{
+					std::ostringstream oss;
+					oss << "r.id IN (" << idMatch.second << ")";
+					idWhereClause.Or(oss.str());
+				}
 				break;
 			case SearchFilter::Field::Genre:
-				for (auto id : idMatch.second)
-					idWhereClause.Or( WhereClause("g.id = ?") ).bind( std::to_string(id));
+				{
+					std::ostringstream oss;
+					oss << "g.id IN (" << idMatch.second << ")";
+					idWhereClause.Or(oss.str());
+				}
 				break;
 			case SearchFilter::Field::Track:
-				for (auto id : idMatch.second)
-					idWhereClause.Or( WhereClause("t.id = ?") ).bind( std::to_string(id));
+				{
+					std::ostringstream oss;
+					oss << "t.id IN (" << idMatch.second << ")";
+					idWhereClause.Or(oss.str());
+				}
 				break;
 		}
 

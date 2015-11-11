@@ -32,7 +32,7 @@ namespace DatabaseUpdater {
 class Updater
 {
 	public:
-		Updater(boost::filesystem::path db, MetaData::Parser& parser);
+		Updater(Wt::Dbo::SqlConnectionPool& connectionPool, MetaData::Parser& parser);
 
 		void setAudioExtensions(const std::vector<std::string>&	extensions);
 		void setVideoExtensions(const std::vector<std::string>&	extensions);
@@ -44,13 +44,20 @@ class Updater
 
 		struct Stats
 		{
-			std::size_t	nbAdded;
-			std::size_t	nbRemoved;
-			std::size_t	nbModified;
-			Stats() : nbAdded(0), nbRemoved(0), nbModified(0) {}
+			std::size_t	nbAdded = 0;
+			std::size_t	nbRemoved = 0;
+			std::size_t	nbModified = 0;
+			std::size_t	nbScanErrors = 0;
 
-			void	clear(void) { nbAdded = 0; nbRemoved = 0; nbModified = 0; }
 			std::size_t nbChanges() const { return nbAdded + nbRemoved + nbModified;}
+		};
+
+		struct RootDirectory
+		{
+			Database::MediaDirectory::Type type;
+			boost::filesystem::path path;
+
+			RootDirectory(Database::MediaDirectory::Type t, boost::filesystem::path p) : type(t), path(p) {}
 		};
 
 		// Job handling
@@ -67,15 +74,13 @@ class Updater
 				const std::vector<boost::filesystem::path>& extensions);
 
 
-		void processDirectory(  const boost::filesystem::path& rootDirectory,
-					const boost::filesystem::path& directory,
-					Database::MediaDirectory::Type type,
-					Stats& stats);
+		void processRootDirectory(  RootDirectory rootDirectory, Stats& stats);
 
 		// Helpers
 		Database::Artist::pointer getArtist( const boost::filesystem::path& file, const std::string& name, const std::string& MBID);
 		Database::Release::pointer getRelease( const boost::filesystem::path& file, const std::string& name, const std::string& MBID);
 		std::vector<Database::Genre::pointer> getGenres( const std::list<std::string>& names);
+		void updateFileExtensions();
 
 		// Audio
 		void checkAudioFiles( Stats& stats );
@@ -92,8 +97,8 @@ class Updater
 
 		Database::Handler	_db;
 
-		std::vector<boost::filesystem::path>	_audioExtensions;
-		std::vector<boost::filesystem::path>	_videoExtensions;
+		std::vector<boost::filesystem::path>	_audioFileExtensions;
+		std::vector<boost::filesystem::path>	_videoFileExtensions;
 
 		MetaData::Parser&	_metadataParser;
 

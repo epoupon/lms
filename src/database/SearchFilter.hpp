@@ -47,6 +47,7 @@ class SearchFilter
 
 		SearchFilter() {}
 
+		// Helpers
 		static SearchFilter IdMatch( const IdMatchType& _idMatch )
 		{
 			return SearchFilter(_idMatch);
@@ -57,12 +58,18 @@ class SearchFilter
 			return SearchFilter(_nameLikeMatch);
 		}
 
+		// Single ID match
+		static SearchFilter ById(Field field, Wt::Dbo::dbo_default_traits::IdType id)
+		{
+			return SearchFilter({{field, {id} }});
+		}
+
 		// The filter is a AND of the following conditions:
 
 		// ((Field1.name LIKE STR1-1 OR Field1.name LIKE STR1-2 ...) OR (Field2.name LIKE STR2-1 OR Field2.name LIKE STR2-2 ...) ...
 		NameLikeMatchType	nameLikeMatch;
 
-		// ((Field1.id = ID1-1 OR Field1.id = ID1-2 ... ) AND ((Field2.id = ID2-1 OR Field2.id = ID2-2 ... ) ...
+		// (Field1.id IN (ID1-1,ID1-2 ... ) AND (Field2.id IN (ID2-1,ID2-2 ... ) ...
 		IdMatchType	idMatch;
 
 	private:

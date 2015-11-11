@@ -23,7 +23,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "av/InputFormatContext.hpp"
+#include "av/AvInfo.hpp"
 
 #include "logger/Logger.hpp"
 
@@ -32,154 +32,135 @@
 namespace MetaData
 {
 
-void
+bool
 AvFormat::parse(const boost::filesystem::path& p, Items& items)
 {
 
-	try {
+	Av::MediaFile mediaFile(p);
 
-		Av::InputFormatContext input(p);
-		input.findStreamInfo(); // needed by input.getDurationSecs
+	if (!mediaFile.open())
+		return false;
 
-		std::map<std::string, std::string> metadata;
-		input.getMetadata().get(metadata);
+	if (!mediaFile.scan())
+		return false;
 
-		// HACK or OGG files
-		// If we did not find tags, searched metadata in streams
-		if (metadata.empty())
+	std::map<std::string, std::string> metadata = mediaFile.getMetaData();
+
+	// Stream info
+	{
+		std::vector<AudioStream> audioStreams;
+
+		std::vector<Av::Stream> streams = mediaFile.getStreams(Av::Stream::Type::Audio);
+
+		for (Av::Stream& stream : streams)
 		{
-			// Get input streams
-			std::vector<Av::Stream> streams = input.getStreams();
+			AudioStream audioStream;
+			audioStream.desc = stream.desc;
+			audioStream.bitRate = stream.bitrate;
 
-			BOOST_FOREACH(Av::Stream& stream, streams)
-			{
-				stream.getMetadata().get(metadata);
-
-				if (!metadata.empty())
-					break;
-			}
+			audioStreams.push_back(audioStream);
 		}
 
+		if (!audioStreams.empty())
+			items.insert( std::make_pair(MetaData::Type::AudioStreams, audioStreams));
+	}
 
-		// Stream info
+	{
+		std::vector<VideoStream> videoStreams;
+
+		std::vector<Av::Stream> streams = mediaFile.getStreams(Av::Stream::Type::Video);
+
+		for (Av::Stream& stream : streams)
 		{
-			std::vector<Av::Stream> avStreams = input.getStreams();
+			VideoStream videoStream;
+			videoStream.desc = stream.desc;
+			videoStream.bitRate = stream.bitrate;
 
-			std::vector<AudioStream>	audioStreams;
-			std::vector<VideoStream>	videoStreams;
-			std::vector<SubtitleStream>	subtitleStreams;
-
-			BOOST_FOREACH(Av::Stream& avStream, avStreams)
-			{
-				switch(avStream.getCodecContext().getType())
-				{
-					case AVMEDIA_TYPE_VIDEO:
-						if (!avStream.hasAttachedPic())
-						{
-							VideoStream stream;
-							stream.bitRate = avStream.getCodecContext().getBitRate();
-							videoStreams.push_back(stream);
-						}
-						break;
-
-					case AVMEDIA_TYPE_AUDIO:
-						{
-							AudioStream stream;
-							stream.nbChannels = avStream.getCodecContext().getNbChannels();
-							stream.bitRate = avStream.getCodecContext().getBitRate();
-							audioStreams.push_back(stream);
-						}
-						break;
-
-					case AVMEDIA_TYPE_SUBTITLE:
-						{
-							subtitleStreams.push_back( SubtitleStream() );
-						}
-						break;
-
-					default:
-						break;
-				}
-			}
-
-			if (!videoStreams.empty())
-				items.insert( std::make_pair(MetaData::Type::VideoStreams, videoStreams));
-			if (!audioStreams.empty())
-				items.insert( std::make_pair(MetaData::Type::AudioStreams, audioStreams));
-			if (!subtitleStreams.empty())
-				items.insert( std::make_pair(MetaData::Type::SubtitleStreams, subtitleStreams));
-
+			videoStreams.push_back(videoStream);
 		}
 
-		// Duration
-		items.insert( std::make_pair(MetaData::Type::Duration, boost::posix_time::time_duration( boost::posix_time::seconds( input.getDurationSecs() )) ));
+		if (!videoStreams.empty())
+			items.insert( std::make_pair(MetaData::Type::VideoStreams, videoStreams));
+	}
 
-		// Cover
-		items.insert( std::make_pair(MetaData::Type::HasCover, input.getNbPictures() > 0));
+	{
+		std::vector<SubtitleStream> subtitleStreams;
 
-		// Embedded MetaData
-		// Make sure to convert strings into UTF-8
-		std::map<std::string, std::string>::const_iterator it;
-		for (it = metadata.begin(); it != metadata.end(); ++it)
+		std::vector<Av::Stream> streams = mediaFile.getStreams(Av::Stream::Type::Subtitle);
+
+		for (Av::Stream& stream : streams)
 		{
-			if (boost::iequals(it->first, "artist"))
-				items.insert( std::make_pair(MetaData::Type::Artist, string_trim( string_to_utf8(it->second)) ));
-			else if (boost::iequals(it->first, "album"))
-				items.insert( std::make_pair(MetaData::Type::Album, string_trim( string_to_utf8(it->second)) ));
-			else if (boost::iequals(it->first, "title"))
-				items.insert( std::make_pair(MetaData::Type::Title, string_trim( string_to_utf8(it->second)) ));
-			else if (boost::iequals(it->first, "track")) {
-				std::size_t number;
-				if (readAs<std::size_t>(it->second, number))
-					items.insert( std::make_pair(MetaData::Type::TrackNumber, number ));
-			}
-			else if (boost::iequals(it->first, "disc"))
-			{
-				std::size_t number;
-				if (readAs<std::size_t>(it->second, number))
-					items.insert( std::make_pair(MetaData::Type::DiscNumber, number ));
-			}
-			else if (boost::iequals(it->first, "date")
+			SubtitleStream subtitleStream;
+			subtitleStream.desc = stream.desc;
+
+			subtitleStreams.push_back(subtitleStream);
+		}
+
+		if (!subtitleStreams.empty())
+			items.insert( std::make_pair(MetaData::Type::SubtitleStreams, subtitleStreams));
+	}
+
+	// Duration
+	items.insert( std::make_pair(MetaData::Type::Duration, mediaFile.getDuration() ));
+
+	// Cover
+	items.insert( std::make_pair(MetaData::Type::HasCover, mediaFile.hasAttachedPictures()));
+
+	// Embedded MetaData
+	// Make sure to convert strings into UTF-8
+	std::map<std::string, std::string>::const_iterator it;
+	for (it = metadata.begin(); it != metadata.end(); ++it)
+	{
+		if (boost::iequals(it->first, "artist"))
+			items.insert( std::make_pair(MetaData::Type::Artist, string_trim( string_to_utf8(it->second)) ));
+		else if (boost::iequals(it->first, "album"))
+			items.insert( std::make_pair(MetaData::Type::Album, string_trim( string_to_utf8(it->second)) ));
+		else if (boost::iequals(it->first, "title"))
+			items.insert( std::make_pair(MetaData::Type::Title, string_trim( string_to_utf8(it->second)) ));
+		else if (boost::iequals(it->first, "track")) {
+			std::size_t number;
+			if (readAs<std::size_t>(it->second, number))
+				items.insert( std::make_pair(MetaData::Type::TrackNumber, number ));
+		}
+		else if (boost::iequals(it->first, "disc"))
+		{
+			std::size_t number;
+			if (readAs<std::size_t>(it->second, number))
+				items.insert( std::make_pair(MetaData::Type::DiscNumber, number ));
+		}
+		else if (boost::iequals(it->first, "date")
 				|| boost::iequals(it->first, "year")
 				|| boost::iequals(it->first, "WM/Year"))
-			{
-				boost::posix_time::ptime p;
-				if (readAsPosixTime(it->second, p))
-					items.insert( std::make_pair(MetaData::Type::Date, p));
-			}
-			else if (boost::iequals(it->first, "TDOR")	// Original release time (ID3v2 2.4)
-				|| boost::iequals(it->first, "TORY"))	// Original release year
-			{
-				boost::posix_time::ptime p;
-				if (readAsPosixTime(it->second, p))
-					items.insert( std::make_pair(MetaData::Type::OriginalDate, p));
-			}
-			else if (boost::iequals(it->first, "genre"))
-			{
-				std::list<std::string> genres;
-				if (readList(it->second, ";,", genres))
-					items.insert( std::make_pair(MetaData::Type::Genres, genres));
-
-			}
-			else if (boost::iequals(it->first, "MusicBrainz Artist Id"))
-			{
-				items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, string_trim( string_to_utf8(it->second)) ));
-			}
-			else if (boost::iequals(it->first, "MusicBrainz Album Id"))
-			{
-				items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, string_trim( string_to_utf8(it->second)) ));
-			}
-/*			else
-				LMS_LOG(MOD_METADATA, SEV_DEBUG) << "key = " << it->first << ", value = " << it->second;
-*/
+		{
+			boost::posix_time::ptime p;
+			if (readAsPosixTime(it->second, p))
+				items.insert( std::make_pair(MetaData::Type::Date, p));
 		}
+		else if (boost::iequals(it->first, "TDOR")	// Original release time (ID3v2 2.4)
+				|| boost::iequals(it->first, "TORY"))	// Original release year
+		{
+			boost::posix_time::ptime p;
+			if (readAsPosixTime(it->second, p))
+				items.insert( std::make_pair(MetaData::Type::OriginalDate, p));
+		}
+		else if (boost::iequals(it->first, "genre"))
+		{
+			std::list<std::string> genres;
+			if (readList(it->second, ";,", genres))
+				items.insert( std::make_pair(MetaData::Type::Genres, genres));
 
-	}
-	catch(std::exception &e)
-	{
-		LMS_LOG(MOD_METADATA, SEV_ERROR) << "Parsing of '" << p << "' failed!";
+		}
+		else if (boost::iequals(it->first, "MusicBrainz Artist Id"))
+		{
+			items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, string_trim( string_to_utf8(it->second)) ));
+		}
+		else if (boost::iequals(it->first, "MusicBrainz Album Id"))
+		{
+			items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, string_trim( string_to_utf8(it->second)) ));
+		}
 	}
 
+	return true;
 }
 
 } // namespace MetaData

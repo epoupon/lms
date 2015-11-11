@@ -17,53 +17,25 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/foreach.hpp>
-
 #include <Wt/WPushButton>
 #include <Wt/WLabel>
 #include <Wt/WTable>
 
 #include "VideoParametersDialog.hpp"
 
-using namespace Transcode;
-
 namespace UserInterface {
 
-static const std::list<Stream::Type> streamTypes = {Stream::Video, Stream::Audio, Stream::Subtitle};
+static const std::list<Av::Stream::Type> streamTypes = {Av::Stream::Type::Video, Av::Stream::Type::Audio, Av::Stream::Type::Subtitle};
 
-VideoParametersDialog::VideoParametersDialog(const Wt::WString &windowTitle, Wt::WDialog* parent)
+VideoParametersDialog::VideoParametersDialog(Wt::WString windowTitle, Wt::WDialog* parent)
 : Wt::WDialog(windowTitle, parent)
 {
 
 	Wt::WTable* layout = new Wt::WTable(contents());
-	int row = 0;
 
-	{
-		Wt::WLabel* label = new Wt::WLabel("Format");
-		_outputFormat = new Wt::WComboBox();
-		label->setBuddy(_outputFormat);
-
-		layout->elementAt(row, 0)->addWidget(label);
-		layout->elementAt(row, 1)->addWidget(_outputFormat);
-
-		_outputFormatModel = new Wt::WStringListModel(_outputFormat);
-
-		std::vector<Format> formats = Format::get( Format::Video );
-
-		for(std::size_t idFormat = 0; idFormat < formats.size(); ++idFormat)
-		{
-			_outputFormatModel->addString(formats[idFormat].getDesc());
-			_outputFormatModel->setData(idFormat, 0, formats[idFormat].getEncoding(), Wt::UserRole);
-		}
-
-		_outputFormat->setModel(_outputFormatModel);
-
-		row++;
-	}
-
-	createStreamWidgets("Video", Stream::Video, layout);
-	createStreamWidgets("Audio", Stream::Audio, layout);
-	createStreamWidgets("Subtitles", Stream::Subtitle, layout);
+	createStreamWidgets("Video", Av::Stream::Type::Video, layout);
+	createStreamWidgets("Audio", Av::Stream::Type::Audio, layout);
+	createStreamWidgets("Subtitles", Av::Stream::Type::Subtitle, layout);
 
 	Wt::WPushButton *ok = new Wt::WPushButton("Apply", contents());
 	ok->clicked().connect(this, &Wt::WDialog::accept);
@@ -73,7 +45,7 @@ VideoParametersDialog::VideoParametersDialog(const Wt::WString &windowTitle, Wt:
 }
 
 void
-VideoParametersDialog::createStreamWidgets(const Wt::WString& labelString, Transcode::Stream::Type type, Wt::WTable* layout)
+VideoParametersDialog::createStreamWidgets(const Wt::WString& labelString, Av::Stream::Type type, Wt::WTable* layout)
 {
 	int row = layout->rowCount();
 
@@ -99,29 +71,21 @@ VideoParametersDialog::handleApply()
 }
 
 void
-VideoParametersDialog::addStreams(Wt::WStringListModel* model, const std::vector<Stream>& streams)
+VideoParametersDialog::addStreams(Wt::WStringListModel* model, const std::vector<Av::Stream>& streams)
 {
-	for (std::size_t idStream = 0; idStream < streams.size(); ++idStream)
+	for (const Av::Stream& stream : streams)
 	{
-		const Stream& stream = streams[idStream];
-
-		std::ostringstream oss;
-		if (!stream.getLanguage().empty())
-			oss << "[" << stream.getLanguage() << "] ";
-
-		oss << stream.getDesc();
-
-		model->addString(oss.str());
-		model->setData(idStream, 0, stream.getId(),  Wt::UserRole);
+		model->addString(stream.desc);
+		model->setData(model->rowCount(), 0, stream.id,  Wt::UserRole);
 	}
 }
 
 void
-VideoParametersDialog::selectStream(const Wt::WStringListModel* model, Stream::Id streamId, Wt::WComboBox* combo)
+VideoParametersDialog::selectStream(const Wt::WStringListModel* model, int streamId, Wt::WComboBox* combo)
 {
 	for (int idStream = 0; idStream < model->rowCount(); ++idStream)
 	{
-		Stream::Id id = boost::any_cast<Stream::Id>( model->data( model->index(idStream, 0), Wt::UserRole));
+		int id = boost::any_cast<int>( model->data( model->index(idStream, 0), Wt::UserRole));
 		if (id == streamId)
 		{
 			combo->setCurrentIndex(idStream);
@@ -132,55 +96,44 @@ VideoParametersDialog::selectStream(const Wt::WStringListModel* model, Stream::I
 
 
 void
-VideoParametersDialog::load(const Transcode::Parameters& parameters)
+VideoParametersDialog::load(const Av::MediaFile& mediaFile, Av::TranscodeParameters currentParameters)
 {
-	// Select proper encoding
-	for (int row = 0; row < _outputFormat->count(); ++row)
-	{
-		Format::Encoding encoding = boost::any_cast<Format::Encoding>( _outputFormatModel->data(_outputFormatModel->index(row,0), Wt::UserRole));
-		if (encoding == parameters.getOutputFormat().getEncoding()) {
-			_outputFormat->setCurrentIndex(row);
-			break;
-		}
-	}
-
-	// Get the current selected input streams
-	Parameters::StreamMap streamMap = parameters.getInputStreams();;
-
 	// Populate the combox with the available streams
 	// And then show the selected one
-	BOOST_FOREACH(Stream::Type streamType, streamTypes)
+	for (Av::Stream::Type streamType : streamTypes)
 	{
 		Wt::WComboBox* combo = _streamSelection[streamType].first;
 		Wt::WStringListModel* model = _streamSelection[streamType].second;
 
-		addStreams(model, parameters.getInputMediaFile().getStreams( streamType ) );
+		addStreams(model, mediaFile.getStreams(streamType) );
 
-		selectStream(model, streamMap[streamType], combo);
+		// Pre Select if necessary
+		std::set<int> selectedStreams = currentParameters.getSelectedStreamIds();
+		for (Av::Stream stream : mediaFile.getStreams(streamType))
+		{
+			if (selectedStreams.find(stream.id) != selectedStreams.end())
+			{
+				selectStream(model, stream.id, combo);
+				break;
+			}
+		}
 	}
-
 }
 
 void
-VideoParametersDialog::save(Transcode::Parameters& parameters)
+VideoParametersDialog::save(Av::TranscodeParameters& parameters)
 {
-	std::cout << "Grabbing user input!" << std::endl;
-
-	// Get encoder used
-	Format::Encoding encoding = boost::any_cast<Format::Encoding>( _outputFormatModel->data(_outputFormatModel->index(_outputFormat->currentIndex(), 0), Wt::UserRole));
-	parameters.setOutputFormat( Format::get(encoding) );
-
 	// Get stream selected, if any
-	BOOST_FOREACH(Stream::Type streamType, streamTypes)
+	for (Av::Stream::Type streamType : streamTypes)
 	{
 		Wt::WComboBox* combo = _streamSelection[streamType].first;
 		Wt::WStringListModel* model = _streamSelection[streamType].second;
 
 		if (combo->currentIndex() >= 0)
 		{
-			Stream::Id streamId = boost::any_cast<Stream::Id>( model->data(model->index(combo->currentIndex(), 0), Wt::UserRole));
+			int streamId = boost::any_cast<int>( model->data(model->index(combo->currentIndex(), 0), Wt::UserRole));
 
-			parameters.selectInputStream(streamType, streamId);
+			parameters.addStream(streamId);
 		}
 
 	}
