@@ -20,6 +20,7 @@
 #include <Wt/WText>
 #include <Wt/WTemplate>
 #include <Wt/WPushButton>
+#include <Wt/WImage>
 
 #include "LmsApplication.hpp"
 
@@ -38,6 +39,11 @@ _resCount(0)
 	title->setTemplateText(Wt::WString::tr("mobile-search-title"));
 
 	title->bindWidget("text", new Wt::WText("Artists", Wt::PlainText));
+
+	Wt::WTemplate* artistWrapper = new Wt::WTemplate(this);
+	artistWrapper->setTemplateText(Wt::WString::tr("wa-artist-wrapper"));
+	_contents = new Wt::WContainerWidget();
+	artistWrapper->bindWidget("contents", _contents );
 }
 
 void
@@ -75,7 +81,13 @@ ArtistSearch::addResults(Database::SearchFilter filter, std::size_t nb)
 	for (Artist::pointer artist : artists)
 	{
 		Wt::WTemplate* res = new Wt::WTemplate(this);
-		res->setTemplateText(Wt::WString::tr("mobile-artist-res"));
+		res->setTemplateText(Wt::WString::tr("wa-artist-res"));
+
+		Wt::WImage *artistImg = new Wt::WImage();
+		artistImg->setStyleClass("center-block"); // TODO move in css?
+		artistImg->setStyleClass("release_res_shadow release_img-responsive"); // TODO move in css?
+
+		res->bindWidget("gif", artistImg);
 
 		Wt::WText *text = new Wt::WText(Wt::WString::fromUTF8(artist->getName()), Wt::PlainText);
 		res->bindWidget("name", text);

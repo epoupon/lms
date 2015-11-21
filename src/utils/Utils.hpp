@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,20 +17,32 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef METADATA_UTILS_HPP
-#define METADATA_UTILS_HPP
+#pragma once
 
 #include <string>
+#include <vector>
 #include <list>
 
 #include <boost/locale.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
-namespace MetaData
-{
+bool
+readAsPosixTime(const std::string& str, boost::posix_time::ptime& time);
 
-bool readAsPosixTime(const std::string& str, boost::posix_time::ptime& time);
+bool
+readList(const std::string& str, const std::string& separators, std::list<std::string>& results);
 
-bool readList(const std::string& str, const std::string& separators, std::list<std::string>& results);
+std::string
+durationToString(boost::posix_time::time_duration duration, std::string format);
+
+std::vector<std::string>
+splitStrings(std::string string, std::string separators);
+
+std::string
+stringTrim(const std::string& str, const std::string& whitespace = " \t");
+
+std::string
+stringToUTF8(const std::string& str);
 
 template<typename T>
 static inline bool readAs(const std::string& str, T& data)
@@ -39,31 +51,4 @@ static inline bool readAs(const std::string& str, T& data)
 	iss >> data;
 	return !iss.fail();
 }
-
-
-
-std::string
-static inline string_trim(const std::string& str,
-		const std::string& whitespace = " \t")
-{
-	const auto strBegin = str.find_first_not_of(whitespace);
-	if (strBegin == std::string::npos)
-		return ""; // no content
-
-	const auto strEnd = str.find_last_not_of(whitespace);
-	const auto strRange = strEnd - strBegin + 1;
-
-	return str.substr(strBegin, strRange);
-}
-
-
-std::string
-static inline string_to_utf8(const std::string& str)
-{
-	return boost::locale::conv::to_utf<char>(str, "UTF-8");
-}
-
-} // namespace MetaData
-
-#endif
 

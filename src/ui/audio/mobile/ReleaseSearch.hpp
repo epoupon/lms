@@ -48,6 +48,7 @@ class ReleaseSearch : public Wt::WContainerWidget
 		void clear(void);
 		void addResults(Database::SearchFilter filter, size_t nb);
 
+		Wt::WContainerWidget* _contents;
 		std::size_t		_resCount;
 };
 

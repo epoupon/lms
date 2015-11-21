@@ -20,7 +20,6 @@ lms_SOURCES = \
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/logger/Logger.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
-	$(srcdir)/metadata/Utils.cpp				\
 	$(srcdir)/service/ServiceManager.cpp			\
 	$(srcdir)/service/DatabaseUpdateService.cpp		\
 	$(srcdir)/ui/LmsApplication.cpp				\
@@ -34,7 +33,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/audio/desktop/TrackView.cpp		\
 	$(srcdir)/ui/audio/mobile/ArtistSearch.cpp		\
 	$(srcdir)/ui/audio/mobile/MobileAudio.cpp		\
-	$(srcdir)/ui/audio/mobile/MobileAudioMediaPlayer.cpp		\
+	$(srcdir)/ui/audio/mobile/MobileAudioMediaPlayer.cpp	\
 	$(srcdir)/ui/audio/mobile/ReleaseSearch.cpp		\
 	$(srcdir)/ui/audio/mobile/TrackSearch.cpp		\
 	$(srcdir)/ui/common/DirectoryValidator.cpp		\
@@ -48,8 +47,9 @@ lms_SOURCES = \
 	$(srcdir)/ui/settings/SettingsFirstConnectionFormView.cpp	\
 	$(srcdir)/ui/settings/SettingsMediaDirectories.cpp	\
 	$(srcdir)/ui/settings/SettingsMediaDirectoryFormView.cpp	\
-	$(srcdir)/ui/settings/SettingsUserFormView.cpp	\
-	$(srcdir)/ui/settings/SettingsUsers.cpp
+	$(srcdir)/ui/settings/SettingsUserFormView.cpp		\
+	$(srcdir)/ui/settings/SettingsUsers.cpp			\
+	$(srcdir)/utils/Utils.cpp
 
 if VIDEO
 lms_SOURCES += \

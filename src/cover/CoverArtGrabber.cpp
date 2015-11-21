@@ -170,23 +170,25 @@ Grabber::getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type re
 {
 	using namespace Database;
 
-	boost::filesystem::path firstTrackPath;
-	bool embeddedCover = false;
+	Wt::Dbo::Transaction transaction(session);
+
+	// If the release does not exist or is the special release "None", do nothing
+	Release::pointer release = Release::getById(session, releaseId);
+	if (!release || release->isNone())
+		return std::vector<Image::Image>();
 
 	// Get the first track of the release
-	{
-		Wt::Dbo::Transaction transaction(session);
+	std::vector<Track::pointer> tracks = Track::getByFilter(session,
+				SearchFilter::ById(SearchFilter::Field::Release, releaseId),
+				-1, 1 /* limit result size */);
 
-		std::vector<Track::pointer> tracks = Track::getByFilter(session,
-					SearchFilter::IdMatch({{SearchFilter::Field::Release, {releaseId}}}),
-					-1, 1 /* limit result size */);
+	if (tracks.empty())
+		return std::vector<Image::Image>();
 
-		if (tracks.empty())
-			return std::vector<Image::Image>();
+	boost::filesystem::path firstTrackPath = tracks.front()->getPath();
+	bool embeddedCover = (tracks.front()->getCoverType() == Track::CoverType::Embedded);
 
-		firstTrackPath = tracks.front()->getPath();
-		embeddedCover = (tracks.front()->getCoverType() == Track::CoverType::Embedded);
-	}
+	transaction.commit();
 
 	// First, try to get covers from the directory of the release
 	std::vector<Image::Image> res = getFromDirectory( firstTrackPath.parent_path(), nbMaxCovers);

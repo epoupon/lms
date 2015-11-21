@@ -48,9 +48,19 @@ class TrackSearch : public Wt::WContainerWidget
 		Wt::Signal<void>	_sigMoreTracksSelected;
 
 		void clear(void);
-		void addResults(Database::SearchFilter filter, size_t nb);
+		void addResults(size_t nb);
 
-		std::size_t		_resCount;
+		Wt::WTemplate*	_showMore;
+
+		Database::SearchFilter _filter;
+		std::size_t	_nbTracks;
+
+		// Main container that holds the releases
+		Wt::WContainerWidget* _releaseContainer;
+
+		// Used to add more results on the fly
+		Database::Release::id_type	_currentReleaseId;
+		Wt::WContainerWidget*		_currentTrackContainer;
 };
 
 } // namespace Mobile

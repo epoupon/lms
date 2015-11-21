@@ -25,7 +25,7 @@
 namespace MetaData
 {
 
-// Implements AVFORMAT library
+// Parse that makes use of AvFormat
 class AvFormat : public Parser
 {
 	public:

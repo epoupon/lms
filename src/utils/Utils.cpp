@@ -21,12 +21,11 @@
 #include <sstream>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/foreach.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "Utils.hpp"
 
-namespace MetaData
-{
 
 bool readAsPosixTime(const std::string& str, boost::posix_time::ptime& time)
 {
@@ -56,11 +55,11 @@ bool readList(const std::string& str, const std::string& separators, std::list<s
 {
 	std::string curStr;
 
-	BOOST_FOREACH(char c, str) {
-
+	for (char c : str)
+	{
 		if (separators.find(c) != std::string::npos) {
 			if (!curStr.empty()) {
-				results.push_back(string_to_utf8(curStr));
+				results.push_back(stringToUTF8(curStr));
 				curStr.clear();
 			}
 		}
@@ -73,11 +72,50 @@ bool readList(const std::string& str, const std::string& separators, std::list<s
 	}
 
 	if (!curStr.empty())
-		results.push_back(string_to_utf8(curStr));
+		results.push_back(stringToUTF8(curStr));
 
 	return !str.empty();
 }
 
+std::string
+durationToString(boost::posix_time::time_duration duration, std::string format)
+{
+	boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
+	facet->time_duration_format(format.c_str());
+	std::ostringstream oss;
+	oss.imbue(std::locale(oss.getloc(), facet));
+	oss << duration;
 
+	return oss.str();
 }
+
+std::vector<std::string>
+splitStrings(std::string string, std::string separators)
+{
+	std::vector<std::string> res;
+
+	boost::algorithm::split(res, string, boost::is_any_of(separators), boost::token_compress_on);
+
+	return res;
+}
+
+std::string
+stringTrim(const std::string& str, const std::string& whitespace)
+{
+	const auto strBegin = str.find_first_not_of(whitespace);
+	if (strBegin == std::string::npos)
+		return ""; // no content
+
+	const auto strEnd = str.find_last_not_of(whitespace);
+	const auto strRange = strEnd - strBegin + 1;
+
+	return str.substr(strBegin, strRange);
+}
+
+std::string
+stringToUTF8(const std::string& str)
+{
+	return boost::locale::conv::to_utf<char>(str, "UTF-8");
+}
+
 

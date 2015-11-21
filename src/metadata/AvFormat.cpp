@@ -19,15 +19,12 @@
 
 #include "AvFormat.hpp"
 
-#include <boost/foreach.hpp>
+#include "logger/Logger.hpp"
+#include "utils/Utils.hpp"
 #include <boost/algorithm/string.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "av/AvInfo.hpp"
 
-#include "logger/Logger.hpp"
-
-#include "Utils.hpp"
 
 namespace MetaData
 {
@@ -112,11 +109,11 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 	for (it = metadata.begin(); it != metadata.end(); ++it)
 	{
 		if (boost::iequals(it->first, "artist"))
-			items.insert( std::make_pair(MetaData::Type::Artist, string_trim( string_to_utf8(it->second)) ));
+			items.insert( std::make_pair(MetaData::Type::Artist, stringTrim( stringToUTF8(it->second)) ));
 		else if (boost::iequals(it->first, "album"))
-			items.insert( std::make_pair(MetaData::Type::Album, string_trim( string_to_utf8(it->second)) ));
+			items.insert( std::make_pair(MetaData::Type::Album, stringTrim( stringToUTF8(it->second)) ));
 		else if (boost::iequals(it->first, "title"))
-			items.insert( std::make_pair(MetaData::Type::Title, string_trim( string_to_utf8(it->second)) ));
+			items.insert( std::make_pair(MetaData::Type::Title, stringTrim( stringToUTF8(it->second)) ));
 		else if (boost::iequals(it->first, "track")) {
 			std::size_t number;
 			if (readAs<std::size_t>(it->second, number))
@@ -145,6 +142,7 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 		}
 		else if (boost::iequals(it->first, "genre"))
 		{
+			// TODO use splitStrings
 			std::list<std::string> genres;
 			if (readList(it->second, ";,", genres))
 				items.insert( std::make_pair(MetaData::Type::Genres, genres));
@@ -153,12 +151,12 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 		else if (boost::iequals(it->first, "MusicBrainz Artist Id")
 			|| boost::iequals(it->first, "MUSICBRAINZ_ARTISTID"))
 		{
-			items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, string_trim( string_to_utf8(it->second)) ));
+			items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, stringTrim( stringToUTF8(it->second)) ));
 		}
 		else if (boost::iequals(it->first, "MusicBrainz Album Id")
 			|| boost::iequals(it->first, "MUSICBRAINZ_ALBUMID"))
 		{
-			items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, string_trim( string_to_utf8(it->second)) ));
+			items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, stringTrim( stringToUTF8(it->second)) ));
 		}
 	}
 

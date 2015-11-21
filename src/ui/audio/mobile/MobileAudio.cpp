@@ -17,9 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/foreach.hpp>
 
 #include <Wt/WContainerWidget>
 #include <Wt/WTemplate>
@@ -27,16 +24,17 @@
 #include <Wt/WText>
 #include <Wt/WTable>
 
-#include "LmsApplication.hpp"
+#include "logger/Logger.hpp"
+#include "utils/Utils.hpp"
 
-#include "MobileAudio.hpp"
+#include "LmsApplication.hpp"
 
 #include "ArtistSearch.hpp"
 #include "ReleaseSearch.hpp"
 #include "TrackSearch.hpp"
 #include "MobileAudioMediaPlayer.hpp"
 
-#include "logger/Logger.hpp"
+#include "MobileAudio.hpp"
 
 namespace UserInterface {
 namespace Mobile {
@@ -87,26 +85,17 @@ Audio::Audio(Wt::WContainerWidget *parent)
 	AudioMediaPlayer* mediaPlayer = new AudioMediaPlayer(encoding);
 	footer->bindWidget("player", mediaPlayer);
 
-	edit->changed().connect(std::bind([=] () {
-		std::string text = edit->text().toUTF8();
-
+	edit->changed().connect(std::bind([=] ()
+	{
 		// When a new search is done, output some results from:
 		// Artist
 		// Release
 		// Song
-		std::vector<std::string> keywords;
-		boost::algorithm::split(keywords, text, boost::is_any_of(" "), boost::token_compress_on);
+		std::vector<std::string> keywords = splitStrings(edit->text().toUTF8(), " ");;
 
-		releaseSearch->search(SearchFilter::NameLikeMatch( {{
-					{ SearchFilter::Field::Artist, keywords },
-					{ SearchFilter::Field::Release, keywords }}}),
-					3);
-
-		artistSearch->search(SearchFilter::NameLikeMatch({{{SearchFilter::Field::Artist, keywords}}}),
-					3);
-
-		trackSearch->search(SearchFilter::NameLikeMatch({{{SearchFilter::Field::Track, keywords}}}),
-					3);
+		releaseSearch->search(SearchFilter::ByName(SearchFilter::Field::Release, keywords), 4);
+		artistSearch->search(SearchFilter::ByName(SearchFilter::Field::Artist, keywords), 4);
+		trackSearch->search(SearchFilter::ByName(SearchFilter::Field::Track, keywords), 4);
 
 		artistSearch->show();
 		releaseSearch->show();

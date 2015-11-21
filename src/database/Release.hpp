@@ -65,8 +65,6 @@ class Release : public Wt::Dbo::Dbo<Release>
 		std::string	getMBID() const		{ return _MBID; }
 		bool		isNone(void) const;
 		boost::posix_time::time_duration getDuration(void) const;
-		std::vector<Wt::Dbo::ptr<Artist> >	getArtists() const;	// Get the artists of this release
-		std::vector<Wt::Dbo::ptr<Track> >	getTracks() const;	// Get the tracks of this release
 
 		void setMBID(std::string mbid) { _MBID = mbid; }
 

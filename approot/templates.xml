@@ -444,4 +444,80 @@
 	</div>
 </message>
 
+<message id="wa-release-wrapper">
+	<div class="section text-center">
+		<div class="container">
+			<div class="row">
+				${contents}
+			</div>
+		</div>
+	</div>
+</message>
+
+<message id="wa-release-res">
+	<div class="col-xs-6 col-md-2">
+		<br/>${cover}
+		<h4 class="release_truncated-name" title="${release_name}">${name}<div style="font-size: 75%"><br/>${artist}<br/></div></h4>
+   </div>
+</message>
+
+<message id="wa-artist-wrapper">
+	<div class="section text-center">
+		<div class="container">
+			<div class="row">
+				${contents}
+			</div>
+		</div>
+	</div>
+</message>
+
+<message id="wa-artist-res">
+	<div class="col-xs-6 col-md-2">
+		<br/>${gif}
+		<h4 class="release_truncated-name" title="${artistname}">${name}<div style="font-size: 75%"></div></h4>
+   </div>
+</message>
+
+<!-- Track container
+
+	Track bar title
+
+	Release1
+		Track1
+		Track2
+		...
+
+	Release2
+		...
+
+	...
+     -->
+<message id="wa-trackview-wrapper">
+	${title}
+	${release-container}
+	${show-more}
+</message>
+
+<message id="wa-trackview-release-container">
+	<div class="container">
+		<div class="col-md-3">
+			<br/>
+			<br/>
+			${cover}
+			<br />
+			<h4>${release-name} <br/>${artist-name} - ${year}</h4>
+		</div>
+		<div class="menu row col-md-9">
+			<br/>
+			<div class="menu-category list-group ">
+				${track-container}
+			</div>
+		</div>
+	</div>
+</message>
+
+<message id="wa-trackview-track">
+	<div class="menu-item list-group-item ">${track-pos}. ${track-name} <span class="badge">${btn}</span><span class="badge">${time}</span></div>
+</message>
+
 </messages>

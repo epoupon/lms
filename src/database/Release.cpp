@@ -44,11 +44,22 @@ Release::getByMBID(Wt::Dbo::Session& session, const std::string& mbid)
 	return session.find<Release>().where("mbid = ?").bind(mbid);
 }
 
+Release::pointer
+Release::getById(Wt::Dbo::Session& session, Release::id_type id)
+{
+	return session.find<Release>().where("id = ?").bind(id);
+}
 
 Release::pointer
 Release::create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID)
 {
 	return session.add(new Release(name, MBID));
+}
+
+bool
+Release::isNone() const
+{
+	return _name == "<None>";
 }
 
 Release::pointer
@@ -127,18 +138,6 @@ Release::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset,
 	Wt::Dbo::collection<pointer> res = getQuery(session, filter).limit(size).offset(offset);
 
 	return std::vector<pointer>(res.begin(), res.end());
-}
-
-std::vector< Wt::Dbo::ptr<Artist> >
-Release::getArtists() const
-{
-	assert(self());
-	assert(self()->id() != Wt::Dbo::dbo_traits<Release>::invalidId() );
-	assert(session());
-
-	Wt::Dbo::collection< Wt::Dbo::ptr<Artist> > res = session()->query<Wt::Dbo::ptr<Artist> >("SELECT a FROM artist a INNER JOIN release r ON r.id = t.release_id INNER JOIN track t ON t.release_id = r.id").where("r.id = ?").bind(id());
-
-	return std::vector< Wt::Dbo::ptr<Artist> > (res.begin(), res.end());
 }
 
 } // namespace Database

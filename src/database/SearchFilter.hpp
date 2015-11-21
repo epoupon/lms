@@ -58,10 +58,16 @@ class SearchFilter
 			return SearchFilter(_nameLikeMatch);
 		}
 
-		// Single ID match
+		// Single Field ID match
 		static SearchFilter ById(Field field, Wt::Dbo::dbo_default_traits::IdType id)
 		{
 			return SearchFilter({{field, {id} }});
+		}
+
+		// Single Field Name match
+		static SearchFilter ByName(Field field, std::vector<std::string> keywords)
+		{
+			return NameLikeMatch({{{field, keywords}}});
 		}
 
 		// The filter is a AND of the following conditions:
