@@ -114,16 +114,43 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 			items.insert( std::make_pair(MetaData::Type::Album, stringTrim( stringToUTF8(it->second)) ));
 		else if (boost::iequals(it->first, "title"))
 			items.insert( std::make_pair(MetaData::Type::Title, stringTrim( stringToUTF8(it->second)) ));
-		else if (boost::iequals(it->first, "track")) {
-			std::size_t number;
-			if (readAs<std::size_t>(it->second, number))
-				items.insert( std::make_pair(MetaData::Type::TrackNumber, number ));
+		else if (boost::iequals(it->first, "track"))
+		{
+			// Expecting 'Number/Total'
+			auto strings = splitString(it->second, "/");
+
+			if (strings.size() > 0)
+			{
+				std::size_t number;
+				if (readAs<std::size_t>(strings[0], number))
+					items.insert( std::make_pair(MetaData::Type::TrackNumber, number ));
+
+				if (strings.size() > 1)
+				{
+					std::size_t totalNumber;
+					if (readAs<std::size_t>(strings[1], totalNumber))
+						items.insert( std::make_pair(MetaData::Type::TotalTrack, totalNumber ));
+				}
+			}
 		}
 		else if (boost::iequals(it->first, "disc"))
 		{
-			std::size_t number;
-			if (readAs<std::size_t>(it->second, number))
-				items.insert( std::make_pair(MetaData::Type::DiscNumber, number ));
+			// Expecting 'Number/Total'
+			auto strings = splitString(it->second, "/");
+
+			if (strings.size() > 0)
+			{
+				std::size_t number;
+				if (readAs<std::size_t>(strings[0], number))
+					items.insert( std::make_pair(MetaData::Type::DiscNumber, number ));
+
+				if (strings.size() > 1)
+				{
+					std::size_t totalNumber;
+					if (readAs<std::size_t>(strings[1], totalNumber))
+						items.insert( std::make_pair(MetaData::Type::TotalDisc, totalNumber ));
+				}
+			}
 		}
 		else if (boost::iequals(it->first, "date")
 				|| boost::iequals(it->first, "year")

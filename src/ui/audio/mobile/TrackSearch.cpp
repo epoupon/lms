@@ -167,7 +167,7 @@ TrackSearch::addResults(size_t nb)
 			trackRes->setCondition("if-has-track-num", true);
 	 		trackRes->bindInt("track-num", track->getTrackNumber());
 
-			if (track->getDiscNumber() > 0)
+			if (track->getDiscNumber() > 0 && track->getTotalDiscNumber() > 1)
 			{	trackRes->setCondition("if-has-disc-num", true);
 				trackRes->bindInt("disc-num", track->getDiscNumber());
 			}

@@ -90,7 +90,7 @@ durationToString(boost::posix_time::time_duration duration, std::string format)
 }
 
 std::vector<std::string>
-splitStrings(std::string string, std::string separators)
+splitString(std::string string, std::string separators)
 {
 	std::vector<std::string> res;
 

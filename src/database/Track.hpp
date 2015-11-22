@@ -136,7 +136,9 @@ class Track
 
 		// Accessors
 		void setTrackNumber(int num)					{ _trackNumber = num; }
+		void setTotalTrackNumber(int num)				{ _totalTrackNumber = num; }
 		void setDiscNumber(int num)					{ _discNumber = num; }
+		void setTotalDiscNumber(int num)				{ _totalDiscNumber = num; }
 		void setName(const std::string& name)				{ _name = std::string(name, 0, _maxNameLength); }
 		void setDuration(boost::posix_time::time_duration duration)	{ _duration = duration; }
 		void setLastWriteTime(boost::posix_time::ptime time)		{ _fileLastWrite = time; }
@@ -146,13 +148,15 @@ class Track
 		void setOriginalDate(const boost::posix_time::ptime& date)	{ _originalDate = date; }
 		void setGenres(const std::string& genreList)			{ _genreList = genreList; }
 		void setCoverType(CoverType coverType)				{ _coverType = coverType; }
-		void setMBID(const std::string& MBID)						{ _MBID = MBID; }
+		void setMBID(const std::string& MBID)				{ _MBID = MBID; }
 		void setArtist(Wt::Dbo::ptr<Artist> artist)			{ _artist = artist; }
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
 		void setGenres(std::vector<Genre::pointer> genres);
 
 		int				getTrackNumber(void) const		{ return _trackNumber; }
+		int				getTotalTrackNumber(void) const		{ return _totalTrackNumber; }
 		int				getDiscNumber(void) const		{ return _discNumber; }
+		int				getTotalDiscNumber(void) const		{ return _totalDiscNumber; }
 		std::string 			getName(void) const			{ return _name; }
 		boost::filesystem::path		getPath(void) const			{ return _filePath; }
 		boost::posix_time::time_duration	getDuration(void) const		{ return _duration; }
@@ -172,7 +176,9 @@ class Track
 			void persist(Action& a)
 			{
 				Wt::Dbo::field(a, _trackNumber,		"track_number");
+				Wt::Dbo::field(a, _totalTrackNumber,	"total_track_number");
 				Wt::Dbo::field(a, _discNumber,		"disc_number");
+				Wt::Dbo::field(a, _totalDiscNumber,	"total_disc_number");
 				Wt::Dbo::field(a, _name,		"name");
 				Wt::Dbo::field(a, _duration,		"duration");
 				Wt::Dbo::field(a, _date,		"date");
@@ -197,7 +203,9 @@ class Track
 		static const std::size_t _maxNameLength = 128;
 
 		int					_trackNumber;
+		int					_totalTrackNumber;
 		int					_discNumber;
+		int					_totalDiscNumber;
 		std::string				_name;
 		std::string				_artistName;
 		std::string				_releaseName;

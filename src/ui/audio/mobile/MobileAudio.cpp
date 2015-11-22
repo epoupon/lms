@@ -93,7 +93,7 @@ Audio::Audio(Wt::WContainerWidget *parent)
 		// Artist
 		// Release
 		// Song
-		std::vector<std::string> keywords = splitStrings(edit->text().toUTF8(), " ");;
+		auto keywords = splitString(edit->text().toUTF8(), " ");;
 
 		releaseSearch->search(SearchFilter::ByName(SearchFilter::Field::Release, keywords), SEARCH_NB_ITEMS);
 		artistSearch->search(SearchFilter::ByName(SearchFilter::Field::Artist, keywords), SEARCH_NB_ITEMS);

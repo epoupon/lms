@@ -1,7 +1,7 @@
 
 TESTS = database-basics database-integrity sql-query database-user
 
-check_PROGRAMS = database-basics database-integrity sql-query database-user test-wt
+check_PROGRAMS = database-basics database-integrity sql-query database-user test-wt test-avmetadata
 
 database_basics_SOURCES = \
 	$(srcdir)/CheckDbBasics.cpp			\
@@ -62,4 +62,15 @@ sql_query_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir)/src
 test_wt_SOURCES = TestWt.cpp
 
 test_wt_CXXFLAGS=-std=c++11 -Wall -Wextra
+
+
+test_avmetadata_SOURCES = TestAvMetadata.cpp 		\
+	$(top_srcdir)/src/logger/Logger.cpp 		\
+	$(top_srcdir)/src/utils/Utils.cpp 		\
+	$(top_srcdir)/src/metadata/AvFormat.cpp		\
+	$(top_srcdir)/src/av/AvInfo.cpp			\
+	$(top_srcdir)/src/av/AvTranscoder.cpp
+
+test_avmetadata_CXXFLAGS=-std=c++11 -Wall -Wextra  -I$(top_srcdir)/src
+
 

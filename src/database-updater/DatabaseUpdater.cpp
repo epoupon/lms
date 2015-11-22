@@ -526,8 +526,14 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		if (items.find(MetaData::Type::TrackNumber) != items.end())
 			track.modify()->setTrackNumber( boost::any_cast<std::size_t>(items[MetaData::Type::TrackNumber]) );
 
+		if (items.find(MetaData::Type::TotalTrack) != items.end())
+			track.modify()->setTotalTrackNumber( boost::any_cast<std::size_t>(items[MetaData::Type::TotalTrack]) );
+
 		if (items.find(MetaData::Type::DiscNumber) != items.end())
 			track.modify()->setDiscNumber( boost::any_cast<std::size_t>(items[MetaData::Type::DiscNumber]) );
+
+		if (items.find(MetaData::Type::TotalDisc) != items.end())
+			track.modify()->setTotalDiscNumber( boost::any_cast<std::size_t>(items[MetaData::Type::TotalDisc]) );
 
 		if (items.find(MetaData::Type::Date) != items.end())
 			track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>(items[MetaData::Type::Date]) );
