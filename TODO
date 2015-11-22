@@ -46,13 +46,21 @@
 		- refresh the audio/video view when the database directories have been updated
 
 	[Audio]
-	- Style eveything nicely...
-	- MediaPlayer: move the slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478, http://redmine.emweb.be/boards/2/topics/10994)
-	- TrackView: Reselect the current selected item when displaying the updated search results
-	- Add covers in the release filter?
-	- Add a download button to get the current playlist in a streamed zip file
-	- Add a upload button to upload media files in a dedicated directory
-	- Add keyboard shortcuts
+		- drop the winamp like interface?
+		- Add a download button to get the current playlist in a streamed zip file
+		- Add a upload button to upload media files in a dedicated directory
+		[desktop]
+		- Better style...
+		- MediaPlayer: move the slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478, http://redmine.emweb.be/boards/2/topics/10994)
+		- TrackView: Reselect the current selected item when displaying the updated search results
+		- Add keyboard shortcuts
+		[mobile]
+		- Covers not always the same height
+		- 'duration' and 'play' tags are broken if title is too long
+		- Remove the extra search widget
+		- Cover loading breaks the vertical alignment
+		- Implement a play queue
+		- Implement a decent player
 
 	[Video]
 	- implement a decent mediaplayer
