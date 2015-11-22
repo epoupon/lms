@@ -30,7 +30,8 @@
 - consider adding support for external web servers (new FCGI service?)
 
 [UI]
-	- handle internationalization
+	- Handle internationalization
+	- Handle internal path
 	[Settings]
 		- logout users that are being changed (loss of admin admin rights), or make sure they are still admin when they make changes
 		- "signal not exposed" problem if a user logout and login again. Bad resource destruction?
@@ -61,15 +62,13 @@
 		- Cover loading breaks the vertical alignment
 		- Implement a play queue
 		- Implement a decent player
+		- Make the release clickable in the Track result view
+		- Search keywords are ORed instead of ANDed
+		- Reorganize the views to ease internal paths?
 
 	[Video]
 	- implement a decent mediaplayer
 	- remove codec choice from parameters
-
-	[Layout]
-	- Style eveything nicely...
-	- Make a dedicated audio layout in mobile environment (keep the same layout for videos?)
-	- Handle internal path
 
 [REST API]
 - Make a dedicated REST API. Maybe use the SubSonic API or Ampache API?
