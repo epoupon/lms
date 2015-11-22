@@ -53,6 +53,9 @@ class Release : public Wt::Dbo::Dbo<Release>
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID = "");
 
+		// Utility functions
+		int getReleaseYear(bool originalDate = false) const; // 0 if unknown or various
+
 		// MVC models for the user interface
 		// ID, Release name, year, track counts
 		typedef boost::tuple<id_type, std::string, boost::posix_time::ptime, int> UIQueryResult;

@@ -54,6 +54,10 @@ TrackSearch::TrackSearch(Wt::WContainerWidget *parent)
 	_showMore->setTemplateText(Wt::WString::tr("mobile-search-more"));
 	_showMore->bindString("text", "Tap to show more results...");
 	_showMore->hide();
+	_showMore->clicked().connect(std::bind([=] {
+		_sigMoreTracksSelected();
+		addResults(20);
+	}));
 }
 
 void
@@ -133,9 +137,9 @@ TrackSearch::addResults(size_t nb)
 			cover->setImageLink(Wt::WLink (LmsApplication::instance()->getCoverResource()->getReleaseUrl(release.id(), 512)));
 
 			releaseContainer->bindWidget("cover", cover);
-			releaseContainer->bindString("artist-name", getArtistNameFromRelease(release));
+			releaseContainer->bindString("artist-name", getArtistNameFromRelease(release), Wt::PlainText);
 			releaseContainer->bindString("release-name", release->getName(), Wt::PlainText);
-			releaseContainer->bindInt("year", 2001);
+			releaseContainer->bindInt("year", release->getReleaseYear());
 
 			_currentTrackContainer = new Wt::WContainerWidget();
 			releaseContainer->bindWidget("track-container", _currentTrackContainer);
@@ -165,13 +169,7 @@ TrackSearch::addResults(size_t nb)
 	}
 
 	if (moreResults)
-	{
-		_showMore->clicked().connect(std::bind([=] {
-			_sigMoreTracksSelected();
-			addResults(20);
-		}));
 		_showMore->show();
-	}
 	else
 		_showMore->hide();
 }

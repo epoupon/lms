@@ -36,6 +36,8 @@
 
 #include "MobileAudio.hpp"
 
+#define SEARCH_NB_ITEMS	4
+
 namespace UserInterface {
 namespace Mobile {
 
@@ -93,9 +95,9 @@ Audio::Audio(Wt::WContainerWidget *parent)
 		// Song
 		std::vector<std::string> keywords = splitStrings(edit->text().toUTF8(), " ");;
 
-		releaseSearch->search(SearchFilter::ByName(SearchFilter::Field::Release, keywords), 4);
-		artistSearch->search(SearchFilter::ByName(SearchFilter::Field::Artist, keywords), 4);
-		trackSearch->search(SearchFilter::ByName(SearchFilter::Field::Track, keywords), 4);
+		releaseSearch->search(SearchFilter::ByName(SearchFilter::Field::Release, keywords), SEARCH_NB_ITEMS);
+		artistSearch->search(SearchFilter::ByName(SearchFilter::Field::Artist, keywords), SEARCH_NB_ITEMS);
+		trackSearch->search(SearchFilter::ByName(SearchFilter::Field::Track, keywords), SEARCH_NB_ITEMS);
 
 		artistSearch->show();
 		releaseSearch->show();
@@ -175,9 +177,9 @@ Audio::Audio(Wt::WContainerWidget *parent)
 
 	// Initially, populate the widgets using an empty search
 	{
-		artistSearch->search(SearchFilter(), 3);
-		releaseSearch->search(SearchFilter(), 3);
-		trackSearch->search(SearchFilter(), 3);
+		artistSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
+		releaseSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
+		trackSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
 	}
 
 }

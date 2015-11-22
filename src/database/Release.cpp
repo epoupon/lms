@@ -140,4 +140,28 @@ Release::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset,
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+int
+Release::getReleaseYear(bool original) const
+{
+	assert(session());
+
+	// TODO something better
+	auto tracks = Track::getByFilter(*session(), SearchFilter::ById(SearchFilter::Field::Release, this->id()), -1, 1);
+
+	if (tracks.empty())
+		return 0;
+
+	boost::gregorian::date date;
+
+	if (original)
+		date = tracks.front()->getOriginalDate().date();
+	else
+		date = tracks.front()->getDate().date();
+
+	if (date.is_special())
+		return 0;
+
+	return date.year();
+}
+
 } // namespace Database
