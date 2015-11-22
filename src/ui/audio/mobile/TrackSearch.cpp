@@ -139,7 +139,19 @@ TrackSearch::addResults(size_t nb)
 			releaseContainer->bindWidget("cover", cover);
 			releaseContainer->bindString("artist-name", getArtistNameFromRelease(release), Wt::PlainText);
 			releaseContainer->bindString("release-name", release->getName(), Wt::PlainText);
-			releaseContainer->bindInt("year", release->getReleaseYear());
+			int year = release->getReleaseYear();
+			if (year > 0)
+			{
+				releaseContainer->setCondition("if-has-year", true);
+				releaseContainer->bindInt("year", year);
+
+				int originalYear = release->getReleaseYear(true);
+				if (originalYear > 0 && originalYear != year)
+				{
+					releaseContainer->setCondition("if-has-orig-year", true);
+					releaseContainer->bindInt("orig-year", originalYear);
+				}
+			}
 
 			_currentTrackContainer = new Wt::WContainerWidget();
 			releaseContainer->bindWidget("track-container", _currentTrackContainer);
@@ -150,8 +162,16 @@ TrackSearch::addResults(size_t nb)
 		Wt::WTemplate* trackRes = new Wt::WTemplate(_currentTrackContainer);
 		trackRes->setTemplateText(Wt::WString::tr("wa-trackview-track"));
 
-		// TODO, do not display track pos for tracks that are not part of a release
- 		trackRes->bindInt("track-pos", track->getTrackNumber());
+		if (track->getTrackNumber() > 0 && !track->getRelease()->isNone())
+		{
+			trackRes->setCondition("if-has-track-num", true);
+	 		trackRes->bindInt("track-num", track->getTrackNumber());
+
+			if (track->getDiscNumber() > 0)
+			{	trackRes->setCondition("if-has-disc-num", true);
+				trackRes->bindInt("disc-num", track->getDiscNumber());
+			}
+		}
  		trackRes->bindString("track-name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
 		// TODO, display artist name for compilation releases?
 
