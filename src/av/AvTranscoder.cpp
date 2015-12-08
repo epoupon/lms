@@ -29,22 +29,55 @@ namespace Av {
 
 #define LMS_LOG_TRANSCODE(sev)	LMS_LOG(TRANSCODE, INFO) << "[" << _id << "] - "
 
+struct EncodingInfo
+{
+	Encoding encoding;
+	std::string mimetype;
+	int id;
+};
+
+static std::vector<EncodingInfo> encodingInfos =
+{
+	{Encoding::MP3,	"audio/mp3", 0},
+	{Encoding::OGA, "audio/ogg", 1},
+	{Encoding::OGV, "video/ogg", 2},
+	{Encoding::WEBMA, "audio/webm", 3},
+	{Encoding::WEBMV, "video/webm", 4},
+	{Encoding::M4A, "audio/mp4", 5},
+	{Encoding::M4V, "video/mp4", 6},
+};
+
 std::string encoding_to_mimetype(Encoding encoding)
 {
-	switch(encoding)
+	for (auto encodingInfo : encodingInfos)
 	{
-		case Encoding::MP3: return "audio/mp3";
-		case Encoding::OGA: return "audio/ogg";
-		case Encoding::OGV: return "video/ogg";
-		case Encoding::WEBMA: return "audio/webm";
-		case Encoding::WEBMV: return "video/webm";
-		case Encoding::FLA: return "audio/x-flv";
-		case Encoding::FLV: return "video/x-flv";
-		case Encoding::M4A: return "audio/mp4";
-		case Encoding::M4V: return "video/mp4";
+		if (encodingInfo.encoding == encoding)
+			return encodingInfo.mimetype;
 	}
 
-	return "";
+	throw std::logic_error("encoding_to_mimetype failed!");
+}
+
+int encoding_to_int(Encoding encoding)
+{
+	for (auto encodingInfo : encodingInfos)
+	{
+		if (encodingInfo.encoding == encoding)
+			return encodingInfo.id;
+	}
+
+	throw std::logic_error("encoding_to_int failed!");
+}
+
+Encoding encoding_from_int(int encodingId)
+{
+	for (auto encodingInfo : encodingInfos)
+	{
+		if (encodingInfo.id == encodingId)
+			return encodingInfo.encoding;
+	}
+
+	throw std::logic_error("encoding_from_int failed!");
 }
 
 // TODO, parametrize?
@@ -129,6 +162,7 @@ Transcoder::start()
 	// in order not to block the whole forked process
 	args.push_back("-loglevel");
 	args.push_back("quiet");
+	args.push_back("-nostdin");
 
 	// input Offset
 	if (_parameters.getOffset().total_seconds() > 0)
@@ -265,8 +299,8 @@ Transcoder::start()
 
 		_child = std::make_shared<redi::ipstream>();
 
-		const redi::pstreams::pmode mode = redi::pstreams::pstdout; // | redi::pstreams::pstderr;
-		_child->open(avConvPath.string(), args, mode);
+		// Caution: stdin must have been closed before
+		_child->open(avConvPath.string(), args);
 		if (!_child->is_open())
 		{
 			LMS_LOG_TRANSCODE(DEBUG) << "Exec failed!";
@@ -279,8 +313,8 @@ Transcoder::start()
 			return false;
 		}
 
-		LMS_LOG_TRANSCODE(DEBUG) << "Stream opened!";
 	}
+	LMS_LOG_TRANSCODE(DEBUG) << "Stream opened!";
 
 	return true;
 }
@@ -291,13 +325,30 @@ Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 	if (!_child || _isComplete)
 		return;
 
+	if (_child->out().fail())
+	{
+		LMS_LOG_TRANSCODE(DEBUG) << "Stdout FAILED 2";
+	}
+
+	if (_child->out().eof())
+	{
+		LMS_LOG_TRANSCODE(DEBUG) << "Stdout ENDED 2";
+	}
+
 	output.resize(maxSize);
+
+	LMS_LOG_TRANSCODE(DEBUG) << "Reading up to " << output.size() << " bytes";
 
 	//Read on the output stream
 	_child->out().read(reinterpret_cast<char*>(&output[0]), maxSize);
 	output.resize(_child->out().gcount());
 
 	LMS_LOG_TRANSCODE(DEBUG) << "Read " << output.size() << " bytes";
+
+	if (_child->out().fail())
+	{
+		LMS_LOG_TRANSCODE(DEBUG) << "Stdout FAILED";
+	}
 
 	if (_child->out().eof())
 	{

@@ -40,6 +40,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/common/LineEdit.cpp			\
 	$(srcdir)/ui/resource/AvConvTranscodeStreamResource.cpp	\
 	$(srcdir)/ui/resource/CoverResource.cpp			\
+	$(srcdir)/ui/resource/TranscodeResource.cpp		\
 	$(srcdir)/ui/settings/Settings.cpp			\
 	$(srcdir)/ui/settings/SettingsAccountFormView.cpp	\
 	$(srcdir)/ui/settings/SettingsAudioFormView.cpp		\
@@ -60,5 +61,4 @@ lms_SOURCES += \
 endif
 
 lms_CXXFLAGS=-std=c++11 -Wall -I$(top_srcdir)/third-party -I$(srcdir)/ui $(MAGICKXX_CFLAGS)
-
 lms_LDADD=$(MAGICKXX_LIBS)
