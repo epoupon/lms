@@ -20,8 +20,6 @@
 #ifndef UI_MOBILE_TRACK_SEARCH_HPP
 #define UI_MOBILE_TRACK_SEARCH_HPP
 
-#include <boost/algorithm/string/split.hpp>
-
 #include <Wt/WContainerWidget>
 #include <Wt/WSignal>
 

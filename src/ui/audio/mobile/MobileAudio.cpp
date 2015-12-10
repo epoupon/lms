@@ -95,9 +95,9 @@ Audio::Audio(Wt::WContainerWidget *parent)
 		// Song
 		auto keywords = splitString(edit->text().toUTF8(), " ");;
 
-		releaseSearch->search(SearchFilter::ByName(SearchFilter::Field::Release, keywords), SEARCH_NB_ITEMS);
-		artistSearch->search(SearchFilter::ByName(SearchFilter::Field::Artist, keywords), SEARCH_NB_ITEMS);
-		trackSearch->search(SearchFilter::ByName(SearchFilter::Field::Track, keywords), SEARCH_NB_ITEMS);
+		releaseSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Release, keywords), SEARCH_NB_ITEMS);
+		artistSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Artist, keywords), SEARCH_NB_ITEMS);
+		trackSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Track, keywords), SEARCH_NB_ITEMS);
 
 		artistSearch->show();
 		releaseSearch->show();

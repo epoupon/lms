@@ -33,7 +33,7 @@ class InputRange : public Wt::WWebWidget
 };
 
 
-Wt::WString MyPlayerTemplate = "${prev} ${play-pause} ${next} ${cover} ${artist} ${track} ${release} ${curtime} ${seekbar} ${duration} ${volume}";
+Wt::WString MyPlayerTemplate = "${shuffle} ${repeat} ${playlist} ${prev} ${play-pause} ${next} ${cover} ${artist} ${track} ${release} ${curtime} ${seekbar} ${duration} ${volume}";
 
 class MyPlayer : public Wt::WContainerWidget
 {
@@ -124,13 +124,22 @@ class MyPlayer : public Wt::WContainerWidget
 		InputRange *volumeSlider = new InputRange();
 		t->bindWidget("volume", volumeSlider);
 
-		Wt::WPushButton *prevBtn = new Wt::WPushButton("<<");
+		Wt::WPushButton *playlistBtn = new Wt::WPushButton("<i class=\"fa fa-list fa-lg\"></i>", Wt::XHTMLText);
+		t->bindWidget("playlist", playlistBtn);
+
+		Wt::WPushButton *repeatBtn = new Wt::WPushButton("<i class=\"fa fa-repeat fa-lg\"></i>", Wt::XHTMLText);
+		t->bindWidget("repeat", repeatBtn);
+
+		Wt::WPushButton *shuffleBtn = new Wt::WPushButton("<i class=\"fa fa-random fa-lg\"></i>", Wt::XHTMLText);
+		t->bindWidget("shuffle", shuffleBtn);
+
+		Wt::WPushButton *prevBtn = new Wt::WPushButton("<i class=\"fa fa-step-backward fa-lg\"></i>", Wt::XHTMLText);
 		t->bindWidget("prev", prevBtn);
 
-		Wt::WPushButton *nextBtn = new Wt::WPushButton(">>");
+		Wt::WPushButton *nextBtn = new Wt::WPushButton("<i class=\"fa fa-step-forward fa-lg\"></i>", Wt::XHTMLText);
 		t->bindWidget("next", nextBtn);
 
-		Wt::WPushButton *playPauseBtn = new Wt::WPushButton("play/pause");
+		Wt::WPushButton *playPauseBtn = new Wt::WPushButton("<i class=\"fa fa-play fa-lg\"></i>", Wt::XHTMLText);
 		t->bindWidget("play-pause", playPauseBtn);
 
 		Wt::WText *trackCurrentTime = new Wt::WText("00:00");
@@ -253,6 +262,8 @@ class TestApplication : public Wt::WApplication
 			bootstrapTheme->setVersion(Wt::WBootstrapTheme::Version3);
 			bootstrapTheme->setResponsive(true);
 			setTheme(bootstrapTheme);
+
+			useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
 
 			Wt::WLineEdit*	trackSelector = new Wt::WLineEdit();
 			MyPlayer*	player = new MyPlayer(_db);

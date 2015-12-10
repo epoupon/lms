@@ -64,10 +64,21 @@ class SearchFilter
 			return SearchFilter({{field, {id} }});
 		}
 
-		// Single Field Name match
-		static SearchFilter ByName(Field field, std::vector<std::string> keywords)
+		// Single Field Name match OR
+		static SearchFilter ByNameOr(Field field, std::vector<std::string> keywords)
 		{
 			return NameLikeMatch({{{field, keywords}}});
+		}
+
+		// Single Field Name match AND
+		static SearchFilter ByNameAnd(Field field, std::vector<std::string> keywords)
+		{
+			NameLikeMatchType nameLikeMatch;
+
+			for (auto keyword : keywords)
+				nameLikeMatch.push_back({{{field, {keyword}}}});
+
+			return NameLikeMatch(nameLikeMatch);
 		}
 
 		// The filter is a AND of the following conditions:
