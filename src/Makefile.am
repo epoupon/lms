@@ -35,6 +35,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/audio/mobile/MobileAudio.cpp		\
 	$(srcdir)/ui/audio/mobile/MobileAudioMediaPlayer.cpp	\
 	$(srcdir)/ui/audio/mobile/ReleaseSearch.cpp		\
+	$(srcdir)/ui/audio/mobile/TrackReleaseView.cpp		\
 	$(srcdir)/ui/audio/mobile/TrackSearch.cpp		\
 	$(srcdir)/ui/common/DirectoryValidator.cpp		\
 	$(srcdir)/ui/common/LineEdit.cpp			\
