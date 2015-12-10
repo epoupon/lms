@@ -478,6 +478,19 @@
    </div>
 </message>
 
+<message id="wa-track-wrapper">
+	${title}
+	<div class="menu-category list-group ">
+		${track-container}
+	</div>
+	${show-more}
+</message>
+
+<message id="wa-track">
+	<div class="menu-item list-group-item ">${track-name}<span class="badge">${btn}</span></div>
+</message>
+
+
 <!-- Track container
 
 	Track bar title

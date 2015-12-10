@@ -17,13 +17,10 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_MOBILE_TRACK_SEARCH_HPP
-#define UI_MOBILE_TRACK_SEARCH_HPP
+#pragma once
 
 #include <Wt/WContainerWidget>
 #include <Wt/WSignal>
-
-#include "resource/CoverResource.hpp"
 
 namespace UserInterface {
 namespace Mobile {
@@ -38,30 +35,23 @@ class TrackSearch : public Wt::WContainerWidget
 
 		// Slots
 		Wt::Signal<Database::Track::id_type>&	trackPlay() { return _sigTrackPlay;}
-		Wt::Signal<void>&		moreTracksSelected() { return _sigMoreTracksSelected;}
+		Wt::Signal<void>& moreSelected() { return _sigMoreSelected;}
 
 	private:
 
 		Wt::Signal<Database::Track::id_type> _sigTrackPlay;
-		Wt::Signal<void>	_sigMoreTracksSelected;
+		Wt::Signal<void> _sigMoreSelected;
 
 		void clear(void);
 		void addResults(size_t nb);
 
 		Wt::WTemplate*	_showMore;
 
-		Database::SearchFilter _filter;
-		std::size_t	_nbTracks;
-
-		// Main container that holds the releases
-		Wt::WContainerWidget* _releaseContainer;
-
-		// Used to add more results on the fly
-		Database::Release::id_type	_currentReleaseId;
-		Wt::WContainerWidget*		_currentTrackContainer;
+		Database::SearchFilter	_filter;
+		std::size_t		_nbTracks;
+		Wt::WContainerWidget*	_container;
 };
 
 } // namespace Mobile
 } // namespace UserInterface
 
-#endif

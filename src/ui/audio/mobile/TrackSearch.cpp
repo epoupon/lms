@@ -37,16 +37,16 @@ TrackSearch::TrackSearch(Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent)
 {
 	Wt::WTemplate* wrapper = new Wt::WTemplate(this);
-	wrapper->setTemplateText(Wt::WString::tr("wa-trackview-wrapper"));
+	wrapper->setTemplateText(Wt::WString::tr("wa-track-wrapper"));
 
 	Wt::WTemplate* title = new Wt::WTemplate(this);
 	wrapper->bindWidget("title", title);
 
 	title->setTemplateText(Wt::WString::tr("mobile-search-title"));
-	title->bindString("text", "Releases", Wt::PlainText);
+	title->bindString("text", "Tracks", Wt::PlainText);
 
-	_releaseContainer = new Wt::WContainerWidget();
-	wrapper->bindWidget("release-container", _releaseContainer);
+	_container = new Wt::WContainerWidget();
+	wrapper->bindWidget("track-container", _container);
 
 	_showMore = new Wt::WTemplate();
 	wrapper->bindWidget("show-more", _showMore);
@@ -55,7 +55,7 @@ TrackSearch::TrackSearch(Wt::WContainerWidget *parent)
 	_showMore->bindString("text", "Tap to show more results...");
 	_showMore->hide();
 	_showMore->clicked().connect(std::bind([=] {
-		_sigMoreTracksSelected();
+		_sigMoreSelected();
 		addResults(20);
 	}));
 }
@@ -64,10 +64,8 @@ void
 TrackSearch::clear()
 {
 	// Flush the release container
-	_releaseContainer->clear();
+	_container->clear();
 
-	// Flush the current context
-	_currentTrackContainer = nullptr;
 	_nbTracks = 0;
 	_showMore->hide();
 }
@@ -98,18 +96,6 @@ getTracks(SearchFilter filter, size_t offset, size_t nb, bool &moreResults)
 	return tracks;
 }
 
-static Wt::WString
-getArtistNameFromRelease(Release::pointer release)
-{
-	auto artists = Artist::getByFilter(DboSession(),
-			SearchFilter::ById(SearchFilter::Field::Release, release.id()), -1, 2);
-
-	if (artists.size() > 1)
-		return Wt::WString::fromUTF8("Various artists", Wt::PlainText);
-	else
-		return Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText);
-}
-
 void
 TrackSearch::addResults(size_t nb)
 {
@@ -120,63 +106,11 @@ TrackSearch::addResults(size_t nb)
 
 	for (Track::pointer track : tracks)
 	{
-		// First check if we need to create a new track container
+		Wt::WTemplate* trackRes = new Wt::WTemplate(_container);
+		trackRes->setTemplateText(Wt::WString::tr("wa-track"));
 
-		// New container if it is the first one or if the released has changed
-		if (!_currentTrackContainer
-			|| _currentReleaseId != track->getRelease().id())
-		{
-			Release::pointer release = track->getRelease();
-
-			Wt::WTemplate *releaseContainer = new Wt::WTemplate(_releaseContainer);
-			releaseContainer->setTemplateText(Wt::WString::tr("wa-trackview-release-container"));
-			_currentReleaseId = release.id();
-
-			Wt::WImage *cover = new Wt::WImage();
-			cover->setStyleClass ("center-block img-responsive"); // TODO move to CSS?
-			cover->setImageLink(Wt::WLink (LmsApplication::instance()->getCoverResource()->getReleaseUrl(release.id(), 512)));
-
-			releaseContainer->bindWidget("cover", cover);
-			releaseContainer->bindString("artist-name", getArtistNameFromRelease(release), Wt::PlainText);
-			releaseContainer->bindString("release-name", release->getName(), Wt::PlainText);
-			int year = release->getReleaseYear();
-			if (year > 0)
-			{
-				releaseContainer->setCondition("if-has-year", true);
-				releaseContainer->bindInt("year", year);
-
-				int originalYear = release->getReleaseYear(true);
-				if (originalYear > 0 && originalYear != year)
-				{
-					releaseContainer->setCondition("if-has-orig-year", true);
-					releaseContainer->bindInt("orig-year", originalYear);
-				}
-			}
-
-			_currentTrackContainer = new Wt::WContainerWidget();
-			releaseContainer->bindWidget("track-container", _currentTrackContainer);
-		}
-
-		assert(_currentTrackContainer != nullptr);
-
-		Wt::WTemplate* trackRes = new Wt::WTemplate(_currentTrackContainer);
-		trackRes->setTemplateText(Wt::WString::tr("wa-trackview-track"));
-
-		if (track->getTrackNumber() > 0 && !track->getRelease()->isNone())
-		{
-			trackRes->setCondition("if-has-track-num", true);
-	 		trackRes->bindInt("track-num", track->getTrackNumber());
-
-			if (track->getDiscNumber() > 0 && track->getTotalDiscNumber() > 1)
-			{	trackRes->setCondition("if-has-disc-num", true);
-				trackRes->bindInt("disc-num", track->getDiscNumber());
-			}
-		}
  		trackRes->bindString("track-name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
 		// TODO, display artist name for compilation releases?
-
-		// TODO handle large duration (> 1 hour)
-		trackRes->bindString("time", durationToString(track->getDuration(), "%M:%S"), Wt::PlainText);
 
 		Wt::WText *playBtn = new Wt::WText("Play", Wt::PlainText);
 		playBtn->setStyleClass("center-block"); // TODO move to CSS?
