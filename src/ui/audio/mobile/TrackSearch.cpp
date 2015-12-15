@@ -109,8 +109,13 @@ TrackSearch::addResults(size_t nb)
 		Wt::WTemplate* trackRes = new Wt::WTemplate(_container);
 		trackRes->setTemplateText(Wt::WString::tr("wa-track"));
 
+		Wt::WImage *cover = new Wt::WImage();
+		cover->setStyleClass ("center-block img-responsive");
+		cover->setImageLink(Wt::WLink(LmsApplication::instance()->getCoverResource()->getTrackUrl(track.id(), 128)));
+		trackRes->bindWidget("cover", cover);
+
  		trackRes->bindString("track-name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
-		// TODO, display artist name for compilation releases?
+ 		trackRes->bindString("artist-name", Wt::WString::fromUTF8(track->getArtist()->getName()), Wt::PlainText);
 
 		Wt::WText *playBtn = new Wt::WText("Play", Wt::PlainText);
 		playBtn->setStyleClass("center-block"); // TODO move to CSS?

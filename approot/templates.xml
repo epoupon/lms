@@ -487,7 +487,15 @@
 </message>
 
 <message id="wa-track">
-	<div class="menu-item list-group-item ">${track-name}<span class="badge">${btn}</span></div>
+	<div class="menu-item list-group-item ">
+		<div class="row">
+			<div class="vertical-align">
+				<div class="col-xs-2" style="margin-top:3px">${cover}</div>
+				<div class="col-xs-8">${artist-name}<br/>${track-name}</div>
+				<div class="col-xs-2" style="margin-top:3px"><span class="badge">${btn}</span></div>
+			</div>
+		</div>
+	</div>
 </message>
 
 
