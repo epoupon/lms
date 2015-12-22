@@ -41,7 +41,6 @@ std::string encodingToString(Database::AudioEncoding encoding)
 		case Database::AudioEncoding::MP3: return "MP3";
 		case Database::AudioEncoding::OGA: return "OGG";
 		case Database::AudioEncoding::WEBMA: return "WebM";
-		case Database::AudioEncoding::FLA: return "Flash";
 	}
 
 	return "?";

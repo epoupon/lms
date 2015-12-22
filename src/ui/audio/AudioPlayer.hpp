@@ -17,43 +17,31 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_AUDIO_MOBILE_MEDIA_PLAYER_HPP
-#define UI_AUDIO_MOBILE_MEDIA_PLAYER_HPP
+#pragma once
 
-#include <Wt/WContainerWidget>
-#include <Wt/WMediaPlayer>
-#include <Wt/WImage>
-
-#include "database/DatabaseHandler.hpp"
-#include "av/AvTranscoder.hpp"
+#include "common/InputRange.hpp"
+#include "database/Types.hpp"
 
 namespace UserInterface {
-namespace Mobile {
 
-class AudioMediaPlayer : public Wt::WContainerWidget
+class AudioPlayer : public Wt::WContainerWidget
 {
 	public:
 
-		static Wt::WMediaPlayer::Encoding getBestEncoding();
+		AudioPlayer(Wt::WContainerWidget *parent = 0);
 
-		AudioMediaPlayer(Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent = 0);
+		void loadTrack(Database::Track::id_type trackId);
 
-		void play(Database::Track::id_type trackId, Av::TranscodeParameters parameters);
-
-		Wt::WMediaPlayer::Encoding getEncoding() const { return _encoding; }
+		// Slots
 
 	private:
 
-		Wt::WMediaPlayer* _player;
-		Wt::WMediaPlayer::Encoding _encoding;
-
-		Wt::WImage* _cover;
-		Wt::WText* _track;
-		Wt::WText* _artistRelease;
-
+		Wt::WAudio*	_audio;
+		Wt::WText*	_trackDuration;
+		Wt::WText*	_trackName;
+		Wt::WText*	_artistName;
+		Wt::WText*	_releaseName;
+		Wt::WImage*	_cover;
 };
 
 } // namespace UserInterface
-} // namespace Mobile
-
-#endif

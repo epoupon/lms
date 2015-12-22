@@ -27,14 +27,13 @@
 #include "logger/Logger.hpp"
 #include "utils/Utils.hpp"
 
+#include "audio/AudioPlayer.hpp"
 #include "LmsApplication.hpp"
 
 #include "ArtistSearch.hpp"
 #include "ReleaseSearch.hpp"
 #include "TrackSearch.hpp"
-
 #include "TrackReleaseView.hpp"
-#include "MobileAudioMediaPlayer.hpp"
 
 #include "MobileAudio.hpp"
 
@@ -45,36 +44,16 @@ namespace Mobile {
 
 using namespace Database;
 
-static void playTrack(AudioMediaPlayer *mediaPlayer, Database::Track::id_type trackId)
+static void playTrack(AudioPlayer *audioPlayer, Database::Track::id_type trackId)
 {
 	LMS_LOG(UI, DEBUG) << "Playing track id " << trackId;
-	// TODO reduce transaction scope here
+
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	Track::pointer track = Track::getById(DboSession(), trackId);
 
 	if (track)
-	{
-		Av::TranscodeParameters parameters;
-
-		// Determine the output format using the encoding of the player
-		Av::Encoding encoding;
-		switch(mediaPlayer->getEncoding())
-		{
-			case Wt::WMediaPlayer::MP3: encoding = Av::Encoding::MP3; break;
-			case Wt::WMediaPlayer::FLA: encoding = Av::Encoding::FLA; break;
-			case Wt::WMediaPlayer::OGA: encoding = Av::Encoding::OGA; break;
-			case Wt::WMediaPlayer::WEBMA: encoding = Av::Encoding::WEBMA; break;
-			default:
-						      encoding = Av::Encoding::MP3;
-		}
-		parameters.setEncoding(encoding);
-
-		// TODO compute parameters using user's profile
-		parameters.setBitrate(Av::Stream::Type::Audio, 96000);
-
-		mediaPlayer->play(track.id(), parameters);
-	}
+		audioPlayer->loadTrack(track.id());
 }
 
 Audio::Audio(Wt::WContainerWidget *parent)
@@ -103,26 +82,8 @@ Audio::Audio(Wt::WContainerWidget *parent)
 	Wt::WTemplate* footer = new Wt::WTemplate(this);
 	footer->setTemplateText(Wt::WString::tr("mobile-audio-footer"));
 
-	// Determine the encoding to be used
-	Wt::WMediaPlayer::Encoding encoding;
-
-	{
-		Wt::Dbo::Transaction transaction (DboSession());
-
-		switch (CurrentUser()->getAudioEncoding())
-		{
-			case AudioEncoding::MP3: encoding = Wt::WMediaPlayer::MP3; break;
-			case AudioEncoding::WEBMA: encoding = Wt::WMediaPlayer::WEBMA; break;
-			case AudioEncoding::OGA: encoding = Wt::WMediaPlayer::OGA; break;
-			case AudioEncoding::FLA: encoding = Wt::WMediaPlayer::FLA; break;
-			case AudioEncoding::AUTO:
-			default:
-			   encoding = AudioMediaPlayer::getBestEncoding();
-		}
-	}
-
-	AudioMediaPlayer* mediaPlayer = new AudioMediaPlayer(encoding);
-	footer->bindWidget("player", mediaPlayer);
+	AudioPlayer* audioPlayer = new AudioPlayer();
+	footer->bindWidget("player", audioPlayer);
 
 	edit->changed().connect(std::bind([=] ()
 	{
@@ -188,12 +149,12 @@ Audio::Audio(Wt::WContainerWidget *parent)
 
 	trackSearch->trackPlay().connect(std::bind([=] (Track::id_type id)
 	{
-		playTrack(mediaPlayer, id);
+		playTrack(audioPlayer, id);
 	}, std::placeholders::_1));
 
 	trackReleaseView->trackPlay().connect(std::bind([=] (Track::id_type id)
 	{
-		playTrack(mediaPlayer, id);
+		playTrack(audioPlayer, id);
 	}, std::placeholders::_1));
 
 	// Initially, populate the widgets using an empty search

@@ -55,7 +55,6 @@ User::audioEncodings =
 	AudioEncoding::MP3,
 	AudioEncoding::OGA,
 	AudioEncoding::WEBMA,
-	AudioEncoding::FLA,
 };
 
 const std::vector<VideoEncoding>

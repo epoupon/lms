@@ -264,25 +264,6 @@ Transcoder::start()
 			args.push_back("m4v");
 			break;
 
-		case Encoding::FLV:
-			args.push_back("-acodec");
-			args.push_back("libmp3lame");
-			args.push_back("-ac");
-			args.push_back("2");
-			args.push_back("-ar");
-			args.push_back("44100");
-			args.push_back("-vcodec");
-			args.push_back("libx264");
-			args.push_back("-f");
-			args.push_back("flv");
-			break;
-
-		case Encoding::FLA:
-			args.push_back("-acodec");
-			args.push_back("libmp3lame");
-			args.push_back("-f");
-			args.push_back("flv");
-			break;
 		default:
 			return false;
 	}

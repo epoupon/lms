@@ -419,31 +419,6 @@
 	</nav>
 </message>
 
-<message id="mobile-audio-player">
-	<div class="container">
-		<div class="row">
-			<div class="col-xs-12">
-				<div class="row">
-					<div class="mobile-audio-footer">
-						<div class="vertical-align mobile-audio-footer">
-							<div class="col-xs-2">${cover}</div>
-							<div class="col-xs-7">
-								<div class="row">
-									<div class="col-xs-12">${track}</div>
-								</div>
-								<div class="row">
-									<div class="col-xs-12">${artist}</div>
-								</div>
-							</div>
-							<div class="col-xs-3">${play}${pause}</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</message>
-
 <message id="wa-release-wrapper">
 	<div class="section text-center">
 		<div class="container">
@@ -539,6 +514,10 @@
 
 <message id="wa-trackview-track">
 	<div class="menu-item list-group-item ">${<if-has-disc-num>}${disc-num}-${</if-has-disc-num>}${<if-has-track-num>}${track-num}. ${</if-has-track-num>}${track-name} <span class="badge">${btn}</span><span class="badge">${time}</span></div>
+</message>
+
+<message id="wa-audio-player">
+	${shuffle} ${repeat} ${playlist} ${prev} ${play-pause} ${next} ${cover} ${artist} ${track} ${release} ${curtime} ${seekbar} ${duration} ${volume}
 </message>
 
 </messages>

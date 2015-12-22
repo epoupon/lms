@@ -27,6 +27,7 @@
 
 #include "database/DatabaseHandler.hpp"
 #include "resource/CoverResource.hpp"
+#include "resource/TranscodeResource.hpp"
 
 namespace UserInterface {
 
@@ -40,6 +41,7 @@ class LmsApplication : public Wt::WApplication
 
 		// Session application data
 		CoverResource* getCoverResource() { return _coverResource; }
+		TranscodeResource* getTranscodeResource() { return _transcodeResource; }
 		Database::Handler& getDbHandler() { return _db;}
 
 	private:
@@ -50,6 +52,7 @@ class LmsApplication : public Wt::WApplication
 
 		Database::Handler	_db;
 		CoverResource*          _coverResource;
+		TranscodeResource*	_transcodeResource;
 };
 
 // Helpers to get session data
@@ -58,6 +61,9 @@ Wt::Dbo::Session& DboSession();
 
 const Wt::Auth::User& CurrentAuthUser();
 Database::User::pointer CurrentUser();
+
+CoverResource *SessionCoverResource();
+TranscodeResource *SessionTranscodeResource();
 
 } // namespace UserInterface
 

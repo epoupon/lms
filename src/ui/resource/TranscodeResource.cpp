@@ -71,11 +71,11 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 		Wt::Http::ResponseContinuation *continuation = request.continuation();
 		if (continuation)
 		{
-			LMS_LOG(UI, DEBUG) << "Continuation!";
+			LMS_LOG(UI, DEBUG) << "Continuation! " << continuation ;
 			transcoder = boost::any_cast<std::shared_ptr<Av::Transcoder> >(continuation->data());
 			if (!transcoder)
 			{
-				LMS_LOG(UI, DEBUG) << "No transcoder set -> abort!";
+				LMS_LOG(UI, ERROR) << "No transcoder set -> abort!";
 				return;
 			}
 		}
@@ -101,18 +101,23 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 			Database::User::pointer user = _db.getCurrentUser();
 			Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
 
-			if (!track/* || !user */)
+			if (!track)
 			{
-				LMS_LOG(UI, ERROR) << "Missing track or user";
+				LMS_LOG(UI, ERROR) << "Missing track";
+				return;
+			}
+
+			if (!user)
+			{
+				LMS_LOG(UI, ERROR) << "Missing user";
 				return;
 			}
 
 			Av::TranscodeParameters parameters;
 
-			// TODO
 			parameters.setOffset(boost::posix_time::seconds(std::stol(*offsetStr)));
 			parameters.setEncoding(Av::encoding_from_int(std::stol(*encodingStr)));
-			parameters.setBitrate(Av::Stream::Type::Audio, 96000);
+			parameters.setBitrate(Av::Stream::Type::Audio, user->getAudioBitrate() );
 			for (std::string strStream: streams)
 			{
 				LMS_LOG(UI, DEBUG) << "Added stream " << std::stol(strStream);
@@ -135,18 +140,14 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 			LMS_LOG(UI, DEBUG) << "Transcoder started";
 		}
 
-		LMS_LOG(UI, DEBUG) << "processing data?";
-
 		if (!transcoder->isComplete())
 		{
 			std::vector<unsigned char> data;
 			data.reserve(_bufferSize);
 
-			LMS_LOG(UI, DEBUG) << "Processing data from transcoder...";
+			LMS_LOG(UI, DEBUG) << "Reading data from transcoder";
 			transcoder->process(data, _bufferSize);
-			LMS_LOG(UI, DEBUG) << "Processing data from transcoder DONE";
 
-			// Give the client all the output data
 			response.out().write(reinterpret_cast<char*>(&data[0]), data.size());
 
 			LMS_LOG(UI, DEBUG) << "Written " << data.size() << " bytes! complete = " << std::boolalpha << transcoder->isComplete();

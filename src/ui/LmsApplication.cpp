@@ -100,6 +100,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	setTheme(bootstrapTheme);
 
 	useStyleSheet("css/lms.css");
+	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
 
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "templates");
@@ -142,6 +143,16 @@ Database::User::pointer CurrentUser()
 	return DbHandler().getCurrentUser();
 }
 
+CoverResource* SessionCoverResource()
+{
+	return LmsApplication::instance()->getCoverResource();
+}
+
+TranscodeResource* SessionTranscodeResource()
+{
+	return LmsApplication::instance()->getTranscodeResource();
+}
+
 void
 LmsApplication::createFirstConnectionUI()
 {
@@ -155,6 +166,8 @@ void
 LmsApplication::createLmsUI()
 {
 	_coverResource = new CoverResource(_db, root());
+	_transcodeResource = new TranscodeResource(_db, root());
+
 	DbHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
 
 	LmsAuth *authWidget = new LmsAuth();

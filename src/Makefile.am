@@ -24,6 +24,7 @@ lms_SOURCES = \
 	$(srcdir)/service/DatabaseUpdateService.cpp		\
 	$(srcdir)/ui/LmsApplication.cpp				\
 	$(srcdir)/ui/auth/LmsAuth.cpp				\
+	$(srcdir)/ui/audio/AudioPlayer.cpp			\
 	$(srcdir)/ui/audio/desktop/DesktopAudio.cpp		\
 	$(srcdir)/ui/audio/desktop/AudioMediaPlayer.cpp		\
 	$(srcdir)/ui/audio/desktop/FilterChain.cpp		\
@@ -33,11 +34,11 @@ lms_SOURCES = \
 	$(srcdir)/ui/audio/desktop/TrackView.cpp		\
 	$(srcdir)/ui/audio/mobile/ArtistSearch.cpp		\
 	$(srcdir)/ui/audio/mobile/MobileAudio.cpp		\
-	$(srcdir)/ui/audio/mobile/MobileAudioMediaPlayer.cpp	\
 	$(srcdir)/ui/audio/mobile/ReleaseSearch.cpp		\
 	$(srcdir)/ui/audio/mobile/TrackReleaseView.cpp		\
 	$(srcdir)/ui/audio/mobile/TrackSearch.cpp		\
 	$(srcdir)/ui/common/DirectoryValidator.cpp		\
+	$(srcdir)/ui/common/InputRange.cpp			\
 	$(srcdir)/ui/common/LineEdit.cpp			\
 	$(srcdir)/ui/resource/AvConvTranscodeStreamResource.cpp	\
 	$(srcdir)/ui/resource/CoverResource.cpp			\

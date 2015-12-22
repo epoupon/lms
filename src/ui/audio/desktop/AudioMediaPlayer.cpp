@@ -20,7 +20,6 @@
 #include <Wt/WMediaPlayer>
 #include <Wt/WProgressBar>
 #include <Wt/WCheckBox>
-#include <Wt/WTemplate>
 #include <Wt/WHBoxLayout>
 #include <Wt/WVBoxLayout>
 
@@ -57,7 +56,6 @@ AudioMediaPlayer::AudioMediaPlayer(Wt::WContainerWidget *parent)
 			case Database::AudioEncoding::MP3: _encoding = Wt::WMediaPlayer::MP3; break;
 			case Database::AudioEncoding::WEBMA: _encoding = Wt::WMediaPlayer::WEBMA; break;
 			case Database::AudioEncoding::OGA: _encoding = Wt::WMediaPlayer::OGA; break;
-			case Database::AudioEncoding::FLA: _encoding = Wt::WMediaPlayer::FLA; break;
 			case Database::AudioEncoding::AUTO:
 			default:
 				_encoding = getBestEncoding();
@@ -237,7 +235,6 @@ AudioMediaPlayer::load(Database::Track::id_type trackId)
 	switch (_encoding)
 	{
 		case Wt::WMediaPlayer::MP3: encoding = Av::Encoding::MP3; break;
-		case Wt::WMediaPlayer::FLA: encoding = Av::Encoding::FLA; break;
 		case Wt::WMediaPlayer::OGA: encoding = Av::Encoding::OGA; break;
 		case Wt::WMediaPlayer::WEBMA: encoding = Av::Encoding::WEBMA; break;
 		default:
