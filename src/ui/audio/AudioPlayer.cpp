@@ -25,6 +25,7 @@
 #include <Wt/WPushButton>
 
 #include "common/InputRange.hpp"
+#include "logger/Logger.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -40,7 +41,7 @@ AudioPlayer::loadTrack(Database::Track::id_type trackId)
 	Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
 	if (!track)
 	{
-		std::cerr << "no track for this id!" << std::endl;
+		LMS_LOG(UI, INFO) << "No track found for id " << trackId;
 		return;
 	}
 
@@ -55,7 +56,7 @@ AudioPlayer::loadTrack(Database::Track::id_type trackId)
 
 	if (!mediaFile.open() || !mediaFile.scan())
 	{
-		std::cerr << "cannot open file '" << track->getPath() << std::endl;
+		LMS_LOG(UI, ERROR) << "Cannot open file '" << track->getPath();
 		return;
 	}
 
@@ -90,6 +91,8 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 	t->setTemplateText(Wt::WString::tr("wa-audio-player"));
 
 	_audio = new Wt::WAudio(this);
+	_audio->setOptions(Wt::WAudio::Autoplay);
+	_audio->setPreloadMode(Wt::WAudio::PreloadAuto);
 
 	_cover = new Wt::WImage();
 	t->bindWidget("cover", _cover);

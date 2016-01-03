@@ -2,6 +2,18 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
+<message id="Wt.WNavigationBar.template">
+	<div>
+		${collapse-button}
+		<div class="navbar-header">
+			${expand-button}
+			${title-link}
+			${search}
+		</div>
+		${contents}
+	</div>
+</message>
+
 <message id="firstConnectionForm-template">
 	<legend>${title}</legend>
 	<div class="form-horizontal">

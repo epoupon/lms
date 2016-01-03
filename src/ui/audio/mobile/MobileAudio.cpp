@@ -20,20 +20,13 @@
 
 #include <Wt/WContainerWidget>
 #include <Wt/WTemplate>
-#include <Wt/WLineEdit>
 #include <Wt/WText>
-#include <Wt/WTable>
 
 #include "logger/Logger.hpp"
 #include "utils/Utils.hpp"
 
 #include "audio/AudioPlayer.hpp"
 #include "LmsApplication.hpp"
-
-#include "ArtistSearch.hpp"
-#include "ReleaseSearch.hpp"
-#include "TrackSearch.hpp"
-#include "TrackReleaseView.hpp"
 
 #include "MobileAudio.hpp"
 
@@ -56,6 +49,26 @@ static void playTrack(AudioPlayer *audioPlayer, Database::Track::id_type trackId
 		audioPlayer->loadTrack(track.id());
 }
 
+void
+Audio::search(std::string text)
+{
+	// When a new search is done, output some results from:
+	// Artist
+	// Release
+	// Song
+	auto keywords = splitString(text, " ");;
+
+	_releaseSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Release, keywords), SEARCH_NB_ITEMS);
+	_artistSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Artist, keywords), SEARCH_NB_ITEMS);
+	_trackSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Track, keywords), SEARCH_NB_ITEMS);
+
+	_artistSearch->show();
+	_releaseSearch->show();
+	_trackSearch->show();
+	_trackReleaseView->hide();
+}
+
+
 Audio::Audio(Wt::WContainerWidget *parent)
 : UserInterface::Audio(parent)
 {
@@ -63,21 +76,12 @@ Audio::Audio(Wt::WContainerWidget *parent)
 	this->setStyleClass("container-fluid");
 	this->setPadding(60, Wt::Bottom);
 
-	Wt::WTemplate* search = new Wt::WTemplate(this);
-	search->setTemplateText(Wt::WString::tr("mobile-search"));
+	_artistSearch = new ArtistSearch(this);
+	_releaseSearch = new ReleaseSearch(this);
+	_trackSearch = new TrackSearch(this);
 
-	Wt::WLineEdit *edit = new Wt::WLineEdit();
-	edit->setEmptyText("Search...");
-
-	search->bindWidget("search", edit);
-	search->setMargin(10);
-
-	ArtistSearch* artistSearch = new ArtistSearch(this);
-	ReleaseSearch* releaseSearch = new ReleaseSearch(this);
-	TrackSearch* trackSearch = new TrackSearch(this);
-
-	TrackReleaseView* trackReleaseView  = new TrackReleaseView(this);
-	trackReleaseView->hide();
+	_trackReleaseView  = new TrackReleaseView(this);
+	_trackReleaseView->hide();
 
 	Wt::WTemplate* footer = new Wt::WTemplate(this);
 	footer->setTemplateText(Wt::WString::tr("mobile-audio-footer"));
@@ -85,83 +89,65 @@ Audio::Audio(Wt::WContainerWidget *parent)
 	AudioPlayer* audioPlayer = new AudioPlayer();
 	footer->bindWidget("player", audioPlayer);
 
-	edit->changed().connect(std::bind([=] ()
+	_artistSearch->moreArtistsSelected().connect(std::bind([=]
 	{
-		// When a new search is done, output some results from:
-		// Artist
-		// Release
-		// Song
-		auto keywords = splitString(edit->text().toUTF8(), " ");;
-
-		releaseSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Release, keywords), SEARCH_NB_ITEMS);
-		artistSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Artist, keywords), SEARCH_NB_ITEMS);
-		trackSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Track, keywords), SEARCH_NB_ITEMS);
-
-		artistSearch->show();
-		releaseSearch->show();
-		trackSearch->show();
-		trackReleaseView->hide();
+		_releaseSearch->hide();
+		_trackSearch->hide();
+		_artistSearch->show();
+		_trackReleaseView->hide();
 	}));
 
-	artistSearch->moreArtistsSelected().connect(std::bind([=]
+	_artistSearch->artistSelected().connect(std::bind([=] (Artist::id_type artistId)
 	{
-		releaseSearch->hide();
-		trackSearch->hide();
-		artistSearch->show();
-		trackReleaseView->hide();
-	}));
+		_artistSearch->hide();
+		_trackSearch->hide();
+		_releaseSearch->show();
+		_trackReleaseView->hide();
 
-	artistSearch->artistSelected().connect(std::bind([=] (Artist::id_type artistId)
-	{
-		artistSearch->hide();
-		trackSearch->hide();
-		releaseSearch->show();
-		trackReleaseView->hide();
-
-		releaseSearch->search(SearchFilter::ById(SearchFilter::Field::Artist, artistId), 20);
+		_releaseSearch->search(SearchFilter::ById(SearchFilter::Field::Artist, artistId), 20);
 	}, std::placeholders::_1));
 
-	releaseSearch->moreReleasesSelected().connect(std::bind([=]
+	_releaseSearch->moreReleasesSelected().connect(std::bind([=]
 	{
-		artistSearch->hide();
-		trackSearch->hide();
-		releaseSearch->show();
-		trackReleaseView->hide();
+		_artistSearch->hide();
+		_trackSearch->hide();
+		_releaseSearch->show();
+		_trackReleaseView->hide();
 	}));
 
-	releaseSearch->releaseSelected().connect(std::bind([=] (Release::id_type releaseId)
+	_releaseSearch->releaseSelected().connect(std::bind([=] (Release::id_type releaseId)
 	{
-		artistSearch->hide();
-		releaseSearch->hide();
-		trackSearch->hide();
-		trackReleaseView->show();
+		_artistSearch->hide();
+		_releaseSearch->hide();
+		_trackSearch->hide();
+		_trackReleaseView->show();
 
-		trackReleaseView->search(SearchFilter::ById(SearchFilter::Field::Release, releaseId), 40);
+		_trackReleaseView->search(SearchFilter::ById(SearchFilter::Field::Release, releaseId), 40);
 	}, std::placeholders::_1));
 
-	trackSearch->moreSelected().connect(std::bind([=]
+	_trackSearch->moreSelected().connect(std::bind([=]
 	{
-		artistSearch->hide();
-		releaseSearch->hide();
-		trackSearch->show();
-		trackReleaseView->hide();
+		_artistSearch->hide();
+		_releaseSearch->hide();
+		_trackSearch->show();
+		_trackReleaseView->hide();
 	}));
 
-	trackSearch->trackPlay().connect(std::bind([=] (Track::id_type id)
+	_trackSearch->trackPlay().connect(std::bind([=] (Track::id_type id)
 	{
 		playTrack(audioPlayer, id);
 	}, std::placeholders::_1));
 
-	trackReleaseView->trackPlay().connect(std::bind([=] (Track::id_type id)
+	_trackReleaseView->trackPlay().connect(std::bind([=] (Track::id_type id)
 	{
 		playTrack(audioPlayer, id);
 	}, std::placeholders::_1));
 
 	// Initially, populate the widgets using an empty search
 	{
-		artistSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
-		releaseSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
-		trackSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
+		_artistSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
+		_releaseSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
+		_trackSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
 	}
 
 }
