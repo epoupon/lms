@@ -206,7 +206,7 @@ LmsApplication::handleAuthEvent(void)
 		Wt::WMenu *menu = new Wt::WMenu(contentsStack);
 		navigation->addMenu(menu, Wt::AlignRight);
 
-		Wt::WLineEdit *searchEdit = new Wt::WLineEdit();
+		LineEdit *searchEdit = new LineEdit(500);
 		navigation->bindWidget("search", searchEdit);
 		searchEdit->setEmptyText("Search...");
 		searchEdit->addStyleClass("navbar-form navbar-nav");
@@ -239,7 +239,7 @@ LmsApplication::handleAuthEvent(void)
 				DbHandler().getLogin().logout();
 		}, std::placeholders::_1));
 
-		searchEdit->changed().connect(std::bind([=] ()
+		searchEdit->timedChanged().connect(std::bind([=] ()
 		{
 			// TODO: check which view is activated and search into it
 			audio->search(searchEdit->text().toUTF8());
