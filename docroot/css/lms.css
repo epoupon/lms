@@ -10,11 +10,6 @@
 	background-color: white;
 }
 
-div.contents {
-	padding: 0px 12px 6px;
-	margin-bottom: 64px;
-}
-
 .playqueue {
 	background-color: #EEE;
 	border-radius: 10px;
@@ -40,15 +35,6 @@ div.contents {
 	height: 64px;
 }
 
-.mediaplayer {
-	background-color: #CCC;
-	border-radius: 10px;
-	min-width: 360px;
-}
-
-.mediaplayer-btn-controls {
-	font-weight: bold;
-}
 
 .mediaplayer-current-cover {
 	width: 72px;
@@ -57,13 +43,34 @@ div.contents {
 	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.5);
 }
 
-.mediaplayer-current-track {
+.mediaplayer-track {
 	font-weight: bold;
 	font-size: 120%;
 }
 
-.mediaplayer-current-artist {
+.mediaplayer-artist {
 	font-style: italic;
+}
+
+.mediaplayer {
+	background-color: #CCC;
+	border-radius: 10px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	height: 72px;
+}
+
+.mediaplayer-btn {
+	margin: 8px;
+}
+
+.mediaplayer-btn:before {
+	cursor: pointer;
+}
+
+.mediaplayer-btn-active {
+	color: #428bca;
 }
 
 .mobile-search-title {
