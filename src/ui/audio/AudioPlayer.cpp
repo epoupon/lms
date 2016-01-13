@@ -177,7 +177,7 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 		_playNext.emit();
 	}));
 
-	Wt::WText *playPauseBtn = new Wt::WText("<i class=\"fa fa-play fa-3x\"></i>", Wt::XHTMLText);
+	Wt::WText *playPauseBtn = new Wt::WText("<i class=\"fa fa-play fa-3x fa-fw\"></i>", Wt::XHTMLText);
 	playPauseBtn->addStyleClass("mediaplayer-btn");
 	bindWidget("play-pause", playPauseBtn);
 
@@ -196,19 +196,29 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 		document.lms.audio.volumeSlider = " + volumeSlider->jsRef() + ";\
 		document.lms.audio.curTimeText = " + trackCurrentTime->jsRef() + ";\
 		document.lms.audio.playPause = " + playPauseBtn->jsRef() + ";\
-		\
+	\
 		document.lms.audio.offset = 0;\
 		document.lms.audio.curTime = 0;\
 		document.lms.audio.state = \"init\";\
 		document.lms.audio.volume = 1;\
-		\
+	\
 		document.lms.audio.seekbar.value = 0;\
 		document.lms.audio.seekbar.disabled = true;\
-		\
+	\
 		document.lms.audio.volumeSlider.min = 0;\
 		document.lms.audio.volumeSlider.max = 100;\
 		document.lms.audio.volumeSlider.value = 100;\
-		\
+	\
+		function updateUIPlaying() { \
+			var icon = document.lms.audio.playPause.getElementsByTagName(\"i\")[0]; \
+			icon.className = \"fa fa-pause fa-3x fa-fw\"; \
+		} \
+	\
+		function updateUIStopped() { \
+			var icon = document.lms.audio.playPause.getElementsByTagName(\"i\")[0]; \
+			icon.className = \"fa fa-play fa-3x fa-fw\"; \
+		} \
+	\
 		function updateUI() {\
 			document.lms.audio.curTimeText.innerHTML = document.lms.audio.curTime;\
 			document.lms.audio.seekbar.value = document.lms.audio.curTime;\
@@ -255,18 +265,22 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 					updateUI();\
 		} \
 	\
-		function playPause() {\
+		function playPause() { \
 			if (document.lms.audio.state == \"init\") \
 				return;\
 	\
-			if (document.lms.audio.audio.paused)\
-				document.lms.audio.audio.play();\
-			else\
+			if (document.lms.audio.audio.paused) \
+				document.lms.audio.audio.play(); \
+			else \
 				document.lms.audio.audio.pause();\
 	\
 		}\
 	\
 		document.lms.audio.audio.addEventListener('timeupdate', updateCurTime); \
+		document.lms.audio.audio.addEventListener('playing', updateUIPlaying); \
+		document.lms.audio.audio.addEventListener('play', updateUIPlaying); \
+		document.lms.audio.audio.addEventListener('pause', updateUIStopped); \
+		document.lms.audio.audio.addEventListener('ended', updateUIStopped); \
 		document.lms.audio.seekbar.addEventListener('change', seek);\
 		document.lms.audio.seekbar.addEventListener('input', seeking);\
 		document.lms.audio.seekbar.addEventListener('mousedown', seekMouseDown);\

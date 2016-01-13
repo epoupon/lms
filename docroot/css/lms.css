@@ -1,5 +1,6 @@
 .main-nav {
 	margin-bottom: 0px;
+	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Wt-hrh2 {
@@ -13,6 +14,7 @@
 .playqueue {
 	background-color: #EEE;
 	border-radius: 10px;
+	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .playqueue-playing {
@@ -35,14 +37,6 @@
 	height: 64px;
 }
 
-
-.mediaplayer-current-cover {
-	width: 72px;
-	height: 72px;
-	border-radius: 8px;
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.5);
-}
-
 .mediaplayer-track {
 	font-weight: bold;
 	font-size: 120%;
@@ -59,14 +53,33 @@
 	justify-content: space-between;
 	align-items: center;
 	height: 72px;
+	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+.mediaplayer-cover {
+	margin: 8px;
+	width: 64px;
+	min-width: 64px;
+	height: 64px;
+	min-height: 64px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.mediaplayer-cover img {
+	border-radius: 8px;
+	border-radius: 8px;
+	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .mediaplayer-btn {
 	margin: 8px;
 }
 
-.mediaplayer-btn:before {
+.mediaplayer-btn i {
 	cursor: pointer;
+	text-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .mediaplayer-btn-active {

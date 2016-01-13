@@ -51,9 +51,9 @@
 		- Add a download button to get the current playlist in a streamed zip file
 		- Add a upload button to upload media files in a dedicated directory
 		- Perform a search for each key pressed (using a timer, in JS)
+		- Save user prefs in local storage (volume, loop, shuffle, current playqueue, etc.)
 		[desktop]
 		- Better style...
-		- MediaPlayer: move the slider using js (http://redmine.webtoolkit.eu/boards/2/topics/7924?r=8478, http://redmine.emweb.be/boards/2/topics/10994)
 		- TrackView: Reselect the current selected item when displaying the updated search results
 		- Add keyboard shortcuts
 		[mobile]

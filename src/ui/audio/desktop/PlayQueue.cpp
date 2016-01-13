@@ -278,10 +278,8 @@ _trackSelector(new TrackSelector())
 	_model = new Wt::WStandardItemModel(0, 3, this);
 
 	// 0 Column is hidden (track id)
-	_model->setHeaderData(COLUMN_ID_TRACK_ID, Wt::WString("#"));
-	_model->setHeaderData(COLUMN_ID_COVER, Wt::WString("Cover"));
-	_model->setHeaderData(COLUMN_ID_NAME, Wt::WString("Track"));
 
+	this->setHeaderHeight(0);
 	this->setModel(_model);
 	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setSortingEnabled(false);

@@ -529,7 +529,11 @@
 </message>
 
 <message id="wa-audio-player">
-	${audio}${prev}${play-pause}${next}${cover}${artist}${track}${release}${curtime}${seekbar}${duration}${volume}${shuffle}${repeat}${playlist}
+	${audio}${prev}${play-pause}${next}
+	<div class="mediaplayer-cover">
+		${cover}
+	</div>
+	${artist}${track}${release}${curtime}${seekbar}${duration}${volume}${shuffle}${repeat}${playlist}
 </message>
 
 </messages>
