@@ -20,6 +20,7 @@
 #include <Wt/Http/Response>
 
 #include "logger/Logger.hpp"
+#include "LmsApplication.hpp"
 
 #include "TranscodeResource.hpp"
 
@@ -94,40 +95,40 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 			Database::Track::id_type trackId = std::stol(*trackIdStr);
 
 			// transactions are not thread safe
-			std::unique_lock<std::mutex> lock(_mutex);
-
-			Wt::Dbo::Transaction transaction(_db.getSession());
-
-			Database::User::pointer user = _db.getCurrentUser();
-			Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
-
-			if (!track)
 			{
-				LMS_LOG(UI, ERROR) << "Missing track";
-				return;
+				Wt::WApplication::UpdateLock lock(LmsApplication::instance());
+
+				Wt::Dbo::Transaction transaction(_db.getSession());
+
+				Database::User::pointer user = _db.getCurrentUser();
+				Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+
+				if (!track)
+				{
+					LMS_LOG(UI, ERROR) << "Missing track";
+					return;
+				}
+
+				if (!user)
+				{
+					LMS_LOG(UI, ERROR) << "Missing user";
+					return;
+				}
+
+				Av::TranscodeParameters parameters;
+
+				parameters.setOffset(boost::posix_time::seconds(std::stol(*offsetStr)));
+				parameters.setEncoding(Av::encoding_from_int(std::stol(*encodingStr)));
+				parameters.setBitrate(Av::Stream::Type::Audio, user->getAudioBitrate() );
+				for (std::string strStream: streams)
+				{
+					LMS_LOG(UI, DEBUG) << "Added stream " << std::stol(strStream);
+					parameters.addStream(std::stol(strStream));
+				}
+
+				LMS_LOG(UI, DEBUG) << "Offset set to " << parameters.getOffset();
+				transcoder = std::make_shared<Av::Transcoder>(track->getPath(), parameters);
 			}
-
-			if (!user)
-			{
-				LMS_LOG(UI, ERROR) << "Missing user";
-				return;
-			}
-
-			Av::TranscodeParameters parameters;
-
-			parameters.setOffset(boost::posix_time::seconds(std::stol(*offsetStr)));
-			parameters.setEncoding(Av::encoding_from_int(std::stol(*encodingStr)));
-			parameters.setBitrate(Av::Stream::Type::Audio, user->getAudioBitrate() );
-			for (std::string strStream: streams)
-			{
-				LMS_LOG(UI, DEBUG) << "Added stream " << std::stol(strStream);
-				parameters.addStream(std::stol(strStream));
-			}
-
-			LMS_LOG(UI, DEBUG) << "Offset set to " << parameters.getOffset();
-			transcoder = std::make_shared<Av::Transcoder>(track->getPath(), parameters);
-
-			transaction.commit();
 
 			LMS_LOG(UI, DEBUG) << "Mime type set to '" << Av::encoding_to_mimetype(Av::Encoding::MP3);
 			response.setMimeType( Av::encoding_to_mimetype(Av::Encoding::MP3) );
