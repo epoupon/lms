@@ -42,7 +42,6 @@ class TranscodeResource : public Wt::WResource
 
 	private:
 
-		std::mutex			_mutex;
 		Database::Handler&		_db;
 
 		static const std::size_t	_bufferSize = 65536;

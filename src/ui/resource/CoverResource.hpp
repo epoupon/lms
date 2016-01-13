@@ -51,6 +51,7 @@ class CoverResource : public Wt::WResource
 		Image::Image			getDefaultCover(std::size_t size);
 		void				putCover(Wt::Http::Response& response, Image::Image image);
 
+		// Used to protect transactions since they are not thread safe
 		std::mutex			_mutex;
 		Database::Handler&		_db;
 

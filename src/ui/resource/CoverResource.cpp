@@ -21,6 +21,7 @@
 #include <Wt/Http/Response>
 
 #include "logger/Logger.hpp"
+#include "LmsApplication.hpp"
 
 #include "cover/CoverArtGrabber.hpp"
 
@@ -36,7 +37,7 @@ _db(db)
 {
 }
 
-CoverResource:: ~CoverResource()
+CoverResource::~CoverResource()
 {
 	beingDeleted();
 }
@@ -121,7 +122,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 
 			{
 				// transactions are not thread safe
-				std::unique_lock<std::mutex> lock(_mutex);
+				Wt::WApplication::UpdateLock lock(LmsApplication::instance());
 
 				Wt::Dbo::Transaction transaction(_db.getSession());
 
@@ -147,8 +148,9 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		else if (releaseIdStr)
 		{
 			Database::Release::id_type releaseId = std::stol(*releaseIdStr);
+
 			// transactions are not thread safe
-			std::unique_lock<std::mutex> lock(_mutex);
+			Wt::WApplication::UpdateLock lock(LmsApplication::instance());
 			Wt::Dbo::Transaction transaction(_db.getSession());
 
 			covers = CoverArt::Grabber::instance().getFromRelease(_db.getSession(), releaseId);
