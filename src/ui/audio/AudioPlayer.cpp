@@ -45,9 +45,8 @@ AudioPlayer::loadTrack(Database::Track::id_type trackId)
 		return false;
 	}
 
-	_trackName->setText(Wt::WString::fromUTF8(track->getName()));
-	_artistName->setText( Wt::WString::fromUTF8(track->getArtist()->getName()));
-	_releaseName->setText( Wt::WString::fromUTF8(track->getRelease()->getName()));
+	bindString("track", Wt::WString::fromUTF8(track->getName()));
+	bindString("artist", Wt::WString::fromUTF8(track->getArtist()->getName()));
 	_cover->setImageLink(SessionCoverResource()->getTrackUrl(trackId, 64));
 	_trackDuration->setText( boost::posix_time::to_simple_string( track->getDuration() ));
 
@@ -111,16 +110,12 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 	InputRange *seekbar = new InputRange();
 	bindWidget("seekbar", seekbar);
 
-	_trackName = new Wt::WText();
-	bindWidget("track", _trackName);
-
-	_artistName = new Wt::WText();
-	bindWidget("artist", _artistName);
-
-	_releaseName = new Wt::WText();
-	bindWidget("release", _releaseName);
+	bindString("track", "Track");
+	bindString("artist", "Artist");
 
 	InputRange *volumeSlider = new InputRange();
+	volumeSlider->addStyleClass("mediaplayer-volume");
+	volumeSlider->setAttributeValue("orient", "vertical"); // firefox
 	bindWidget("volume", volumeSlider);
 
 	Wt::WText *playlistBtn = new Wt::WText("<i class=\"fa fa-list fa-2x\"></i>", Wt::XHTMLText);
@@ -162,7 +157,7 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 	}));
 
 	Wt::WText *prevBtn = new Wt::WText("<i class=\"fa fa-step-backward fa-2x\"></i>", Wt::XHTMLText);
-	prevBtn->addStyleClass("mediaplayer-btn");
+	prevBtn->addStyleClass("mediaplayer-btn hidden-xs");
 	bindWidget("prev", prevBtn);
 	prevBtn->clicked().connect(std::bind([=] ()
 	{
@@ -182,9 +177,11 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 	bindWidget("play-pause", playPauseBtn);
 
 	Wt::WText *trackCurrentTime = new Wt::WText("00:00");
+	trackCurrentTime->addStyleClass("hidden-xs");
 	bindWidget("curtime", trackCurrentTime);
 
 	_trackDuration = new Wt::WText("00:00");
+	_trackDuration->addStyleClass("hidden-xs");
 	bindWidget("duration", _trackDuration);
 
 	this->doJavaScript(

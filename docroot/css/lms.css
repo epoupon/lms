@@ -86,6 +86,26 @@
 	color: #428bca;
 }
 
+.mediaplayer-info-container {
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+	width: 100%;
+	margin: 8px;
+}
+
+.mediaplayer-volume-container {
+	width: 24px;
+	height: 64px;
+	margin: 8px;
+}
+
+.mediaplayer-volume {
+	height: 64px;
+	-webkit-appearance: slider-vertical;
+	writing-mode: bt-lr;
+}
+
 .mobile-search-title {
 	font-weight: bold;
 	height: 32px;

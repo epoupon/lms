@@ -54,8 +54,6 @@ class AudioPlayer : public Wt::WTemplate
 		Wt::WAudio*	_audio;
 		Wt::WText*	_trackDuration;
 		Wt::WText*	_trackName;
-		Wt::WText*	_artistName;
-		Wt::WText*	_releaseName;
 		Wt::WImage*	_cover;
 };
 
