@@ -33,9 +33,19 @@
 
 namespace UserInterface {
 
+
+Av::Encoding
+AudioPlayer::getBestEncoding() const
+{
+	// TODO get the supported formats of the player and pick one
+	return Av::Encoding::MP3;
+}
+
+
 bool
 AudioPlayer::loadTrack(Database::Track::id_type trackId)
 {
+	// TODO reduce this scope
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
@@ -43,6 +53,25 @@ AudioPlayer::loadTrack(Database::Track::id_type trackId)
 	{
 		LMS_LOG(UI, INFO) << "No track found for id " << trackId;
 		return false;
+	}
+
+	Database::User::pointer user = CurrentUser();
+	if (!user)
+	{
+		LMS_LOG(UI, ERROR) << "No user found!";
+		return false;
+	}
+
+	Av::Encoding encoding;
+	switch (user->getAudioEncoding())
+	{
+		case Database::AudioEncoding::MP3: encoding = Av::Encoding::MP3; break;
+		case Database::AudioEncoding::OGA: encoding = Av::Encoding::OGA; break;
+		case Database::AudioEncoding::WEBMA: encoding = Av::Encoding::WEBMA; break;
+		case Database::AudioEncoding::AUTO:
+		default:
+			encoding = getBestEncoding();
+			break;
 	}
 
 	bindString("track", Wt::WString::fromUTF8(track->getName()));
@@ -75,11 +104,13 @@ AudioPlayer::loadTrack(Database::Track::id_type trackId)
 			document.lms.audio.curTime = 0;\
 			");
 
+	LMS_LOG(UI, DEBUG) << "Loading, URL = '" << SessionTranscodeResource()->getUrl(trackId, encoding, 0, streams) << "'";
+
 	//TODO, try to load everything in JS in order to prevent the WriteError bug?
 	_audio->pause();
 	_audio->clearSources();
 	//TODO, encoding
-	_audio->addSource(SessionTranscodeResource()->getUrl(trackId, Av::Encoding::MP3, 0, streams));
+	_audio->addSource(SessionTranscodeResource()->getUrl(trackId, encoding, 0, streams));
 	_audio->setPreloadMode(Wt::WAudio::PreloadAuto);
 	_audio->play();
 

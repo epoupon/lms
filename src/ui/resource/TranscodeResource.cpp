@@ -130,14 +130,17 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 				transcoder = std::make_shared<Av::Transcoder>(track->getPath(), parameters);
 			}
 
-			LMS_LOG(UI, DEBUG) << "Mime type set to '" << Av::encoding_to_mimetype(Av::Encoding::MP3);
-			response.setMimeType( Av::encoding_to_mimetype(Av::Encoding::MP3) );
+			std::string mimeType = Av::encoding_to_mimetype(transcoder->getParameters().getEncoding());
+
+			LMS_LOG(UI, DEBUG) << "Mime type set to '" << mimeType << "'";
+			response.setMimeType(mimeType);
 
 			if (!transcoder->start())
 			{
 				LMS_LOG(UI, ERROR) << "Cannot start transcoder";
 				return;
 			}
+
 			LMS_LOG(UI, DEBUG) << "Transcoder started";
 		}
 
@@ -146,21 +149,20 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 			std::vector<unsigned char> data;
 			data.reserve(_bufferSize);
 
-			LMS_LOG(UI, DEBUG) << "Reading data from transcoder";
 			transcoder->process(data, _bufferSize);
 
 			response.out().write(reinterpret_cast<char*>(&data[0]), data.size());
-
 			LMS_LOG(UI, DEBUG) << "Written " << data.size() << " bytes! complete = " << std::boolalpha << transcoder->isComplete();
 
 			if (!response.out())
+			{
 				LMS_LOG(UI, ERROR) << "Write failed!";
+			}
 		}
 
 		if (!transcoder->isComplete() && response.out()) {
 			continuation = response.createContinuation();
 			continuation->setData(transcoder);
-			LMS_LOG(UI, DEBUG) << "Continuation set to " << continuation;
 		}
 		else
 			LMS_LOG(UI, DEBUG) << "No more data!";

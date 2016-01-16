@@ -24,6 +24,7 @@
 
 #include "common/InputRange.hpp"
 #include "database/Types.hpp"
+#include "av/AvTranscoder.hpp"
 
 namespace UserInterface {
 
@@ -33,6 +34,7 @@ class AudioPlayer : public Wt::WTemplate
 
 		AudioPlayer(Wt::WContainerWidget *parent = 0);
 
+		Av::Encoding getBestEncoding() const;
 		bool loadTrack(Database::Track::id_type trackId);
 
 		// Signals
