@@ -1,10 +1,10 @@
 
 [Book]
-- Make the feature
+- Make the feature?
 
 [Cover]
-- Handle preferred cover file names
-- Implement a cache and a grabber from some web service (mandatory for artists)
+- Handle preferred cover file names ("front.xxx", "cover.xxx", ...)
+- Implement a cache and a grabber from some web service (mandatory for artists?)
 
 [Database]
 - Optim, use SQL query to get the "genre" orphans
@@ -13,7 +13,6 @@
 - add a global play counter for tracks. This will help people to spot most popular files
 - rework the exception process in av/metadata/updater in case of bad files
 - Use the WServer::post method to notify the end of the database scan? (with results?)
-- Put more config information in the database, access from the UI
 
 [Metadata]
 - OGG metadata -> properly handle metadata nested in the audio stream
@@ -33,7 +32,7 @@
 	- Handle internationalization
 	- Handle internal path
 	[Settings]
-		- logout users that are being changed (loss of admin admin rights), or make sure they are still admin when they make changes
+		- logout users that are being changed (loss of admin rights), or make sure they are still admin when they make changes
 		- "signal not exposed" problem if a user logout and login again. Bad resource destruction?
 		- add a scroll area in order for settings to work on mobile devices
 		[user/transcoding]
@@ -57,14 +56,13 @@
 		- TrackView: Reselect the current selected item when displaying the updated search results
 		- Add keyboard shortcuts
 		[mobile]
+		- Reorganize the views to ease internal paths
 		- Covers not always the same height
 		- 'duration' and 'play' tags are broken if title is too long
-		- Remove the extra search widget
 		- Cover loading breaks the vertical alignment
 		- Implement a play queue
 		- Implement a decent player
-		- Make the release clickable in the Track result view
-		- Reorganize the views to ease internal paths?
+		- Make the release/artist clickable when displayed to the user
 
 	[Video]
 	- implement a decent mediaplayer
