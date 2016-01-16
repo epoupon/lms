@@ -91,6 +91,8 @@ class Transcoder
 		void process(std::vector<unsigned char>& output, std::size_t maxSize);
 		bool isComplete(void)	{ return _isComplete; }
 
+		const TranscodeParameters& getParameters() const { return _parameters; }
+
 	private:
 		Transcoder();
 

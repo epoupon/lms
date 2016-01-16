@@ -19,28 +19,43 @@
 
 #pragma once
 
+#include <Wt/WTemplate>
+#include <Wt/WSignal>
+
 #include "common/InputRange.hpp"
 #include "database/Types.hpp"
+#include "av/AvTranscoder.hpp"
 
 namespace UserInterface {
 
-class AudioPlayer : public Wt::WContainerWidget
+class AudioPlayer : public Wt::WTemplate
 {
 	public:
 
 		AudioPlayer(Wt::WContainerWidget *parent = 0);
 
-		void loadTrack(Database::Track::id_type trackId);
+		Av::Encoding getBestEncoding() const;
+		bool loadTrack(Database::Track::id_type trackId);
 
-		// Slots
+		// Signals
+		Wt::Signal<void>&	playbackEnded() {return _playbackEnded;}
+		Wt::Signal<void>&	playNext()	{return _playNext;}
+		Wt::Signal<void>&	playPrevious()	{return _playPrevious;}
+		Wt::Signal<bool>&	shuffle()	{return _shuffle;}
+		Wt::Signal<bool>&	loop()		{return _loop;}
 
 	private:
+
+		// Signals
+		Wt::Signal<void>	_playbackEnded;
+		Wt::Signal<void>	_playNext;
+		Wt::Signal<void>	_playPrevious;
+		Wt::Signal<bool>	_shuffle;
+		Wt::Signal<bool>	_loop;
 
 		Wt::WAudio*	_audio;
 		Wt::WText*	_trackDuration;
 		Wt::WText*	_trackName;
-		Wt::WText*	_artistName;
-		Wt::WText*	_releaseName;
 		Wt::WImage*	_cover;
 };
 

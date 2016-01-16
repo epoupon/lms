@@ -529,7 +529,23 @@
 </message>
 
 <message id="wa-audio-player">
-	${shuffle} ${repeat} ${playlist} ${prev} ${play-pause} ${next} ${cover} ${artist} ${track} ${release} ${curtime} ${seekbar} ${duration} ${volume}
+	${audio}
+	${prev}${play-pause}${next}
+	<div class="mediaplayer-volume-container visible-lg">
+		${volume}
+	</div>
+	<div class="mediaplayer-cover hidden-xs">
+		${cover}
+	</div>
+	<div class="mediaplayer-info-container">
+		<div class="mediaplayer-track-info">
+			<span class="mediaplayer-track">${track}</span> <span class="mediaplayer-artist">${artist}</span>
+		</div>
+		<div class="mediaplayer-progress-container">
+			${curtime}${seekbar}${duration}
+		</div>
+	</div>
+	${shuffle}${repeat}${playlist}
 </message>
 
 </messages>

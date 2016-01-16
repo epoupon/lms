@@ -1,5 +1,6 @@
 .main-nav {
 	margin-bottom: 0px;
+	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Wt-hrh2 {
@@ -10,14 +11,10 @@
 	background-color: white;
 }
 
-div.contents {
-	padding: 0px 12px 6px;
-	margin-bottom: 64px;
-}
-
 .playqueue {
 	background-color: #EEE;
 	border-radius: 10px;
+	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .playqueue-playing {
@@ -40,30 +37,96 @@ div.contents {
 	height: 64px;
 }
 
-.mediaplayer {
-	background-color: #CCC;
-	border-radius: 10px;
-	min-width: 360px;
-}
-
-.mediaplayer-btn-controls {
-	font-weight: bold;
-}
-
-.mediaplayer-current-cover {
-	width: 72px;
-	height: 72px;
-	border-radius: 8px;
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.5);
-}
-
-.mediaplayer-current-track {
+.mediaplayer-track {
 	font-weight: bold;
 	font-size: 120%;
 }
 
-.mediaplayer-current-artist {
+.mediaplayer-artist {
 	font-style: italic;
+}
+
+.mediaplayer {
+	background-color: #CCC;
+	border-radius: 10px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	height: 72px;
+	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+.mediaplayer-cover {
+	margin: 8px;
+	width: 64px;
+	min-width: 64px;
+	height: 64px;
+	min-height: 64px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.mediaplayer-cover img {
+	border-radius: 8px;
+	border-radius: 8px;
+	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+.mediaplayer-btn {
+	margin: 8px;
+}
+
+.mediaplayer-btn i {
+	cursor: pointer;
+	text-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+.mediaplayer-btn-active {
+	color: #428bca;
+}
+
+.mediaplayer-info-container {
+	width: 100%;
+	min-width: 100px;
+	margin: 8px;
+}
+
+.mediaplayer-track-info {
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.mediaplayer-progress-container {
+	display: flex;
+	align-items: center;
+}
+
+.mediaplayer-badge {
+	min-width: initial;
+}
+
+.mediaplayer-current-duration {
+	margin-right: 8px;
+}
+.mediaplayer-total-duration {
+	margin-left: 8px;
+}
+
+.mediaplayer-seekbar {
+}
+
+.mediaplayer-volume-container {
+	width: 24px;
+	height: 64px;
+	margin: 8px;
+}
+
+.mediaplayer-volume {
+	height: 64px;
+	-webkit-appearance: slider-vertical;
+	writing-mode: bt-lr;
 }
 
 .mobile-search-title {

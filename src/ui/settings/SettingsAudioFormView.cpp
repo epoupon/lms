@@ -64,7 +64,7 @@ class AudioFormModel : public Wt::WFormModel
 			initializeModels();
 
 			addField(BitrateField);
-			addField(EncodingField, "Session must be reloaded to apply this setting");
+			addField(EncodingField);
 
 			setValidator(BitrateField, new Wt::WValidator(true)); // mandatory
 			setValidator(EncodingField, new Wt::WValidator(true)); // mandatory

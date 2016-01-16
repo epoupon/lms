@@ -33,21 +33,49 @@
 
 namespace UserInterface {
 
-void
+
+Av::Encoding
+AudioPlayer::getBestEncoding() const
+{
+	// TODO get the supported formats of the player and pick one
+	return Av::Encoding::MP3;
+}
+
+
+bool
 AudioPlayer::loadTrack(Database::Track::id_type trackId)
 {
+	// TODO reduce this scope
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	Database::Track::pointer track = Database::Track::getById(DboSession(), trackId);
 	if (!track)
 	{
 		LMS_LOG(UI, INFO) << "No track found for id " << trackId;
-		return;
+		return false;
 	}
 
-	_trackName->setText(Wt::WString::fromUTF8(track->getName()));
-	_artistName->setText( Wt::WString::fromUTF8(track->getArtist()->getName()));
-	_releaseName->setText( Wt::WString::fromUTF8(track->getRelease()->getName()));
+	Database::User::pointer user = CurrentUser();
+	if (!user)
+	{
+		LMS_LOG(UI, ERROR) << "No user found!";
+		return false;
+	}
+
+	Av::Encoding encoding;
+	switch (user->getAudioEncoding())
+	{
+		case Database::AudioEncoding::MP3: encoding = Av::Encoding::MP3; break;
+		case Database::AudioEncoding::OGA: encoding = Av::Encoding::OGA; break;
+		case Database::AudioEncoding::WEBMA: encoding = Av::Encoding::WEBMA; break;
+		case Database::AudioEncoding::AUTO:
+		default:
+			encoding = getBestEncoding();
+			break;
+	}
+
+	bindString("track", Wt::WString::fromUTF8(track->getName()));
+	bindString("artist", Wt::WString::fromUTF8(track->getArtist()->getName()));
 	_cover->setImageLink(SessionCoverResource()->getTrackUrl(trackId, 64));
 	_trackDuration->setText( boost::posix_time::to_simple_string( track->getDuration() ));
 
@@ -57,7 +85,7 @@ AudioPlayer::loadTrack(Database::Track::id_type trackId)
 	if (!mediaFile.open() || !mediaFile.scan())
 	{
 		LMS_LOG(UI, ERROR) << "Cannot open file '" << track->getPath();
-		return;
+		return false;
 	}
 
 
@@ -76,123 +104,184 @@ AudioPlayer::loadTrack(Database::Track::id_type trackId)
 			document.lms.audio.curTime = 0;\
 			");
 
+	LMS_LOG(UI, DEBUG) << "Loading, URL = '" << SessionTranscodeResource()->getUrl(trackId, encoding, 0, streams) << "'";
+
 	//TODO, try to load everything in JS in order to prevent the WriteError bug?
 	_audio->pause();
 	_audio->clearSources();
-	//TODOencoding
-	_audio->addSource(SessionTranscodeResource()->getUrl(trackId, Av::Encoding::MP3, 0, streams));
+	//TODO, encoding
+	_audio->addSource(SessionTranscodeResource()->getUrl(trackId, encoding, 0, streams));
+	_audio->setPreloadMode(Wt::WAudio::PreloadAuto);
 	_audio->play();
+
+	return true;
 }
 
 AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent)
+: Wt::WTemplate(parent)
 {
-	Wt::WTemplate *t = new Wt::WTemplate(this);
-	t->setTemplateText(Wt::WString::tr("wa-audio-player"));
+	setTemplateText(Wt::WString::tr("wa-audio-player"));
+	addStyleClass("mediaplayer");
 
-	_audio = new Wt::WAudio(this);
+	// TODO potential leak here
+	_audio = new Wt::WAudio();
 	_audio->setOptions(Wt::WAudio::Autoplay);
 	_audio->setPreloadMode(Wt::WAudio::PreloadAuto);
+	bindWidget("audio", _audio);
+
+	_audio->ended().connect(std::bind([=] ()
+	{
+		_playbackEnded.emit();
+	}));
 
 	_cover = new Wt::WImage();
-	t->bindWidget("cover", _cover);
+	bindWidget("cover", _cover);
 	_cover->setImageLink(SessionCoverResource()->getUnknownTrackUrl(64));
 
 	InputRange *seekbar = new InputRange();
-	t->bindWidget("seekbar", seekbar);
+	seekbar->addStyleClass("mediaplayer-seekbar");
+	bindWidget("seekbar", seekbar);
 
-	_trackName = new Wt::WText();
-	t->bindWidget("track", _trackName);
-
-	_artistName = new Wt::WText();
-	t->bindWidget("artist", _artistName);
-
-	_releaseName = new Wt::WText();
-	t->bindWidget("release", _releaseName);
+	bindString("track", "Track");
+	bindString("artist", "Artist");
 
 	InputRange *volumeSlider = new InputRange();
-	t->bindWidget("volume", volumeSlider);
+	volumeSlider->addStyleClass("mediaplayer-volume");
+	volumeSlider->setAttributeValue("orient", "vertical"); // firefox
+	bindWidget("volume", volumeSlider);
 
-	Wt::WPushButton *playlistBtn = new Wt::WPushButton("<i class=\"fa fa-list fa-lg\"></i>", Wt::XHTMLText);
-	t->bindWidget("playlist", playlistBtn);
+	Wt::WText *playlistBtn = new Wt::WText("<i class=\"fa fa-list fa-2x\"></i>", Wt::XHTMLText);
+	playlistBtn->addStyleClass("mediaplayer-btn");
+	bindWidget("playlist", playlistBtn);
 
-	Wt::WPushButton *repeatBtn = new Wt::WPushButton("<i class=\"fa fa-repeat fa-lg\"></i>", Wt::XHTMLText);
-	t->bindWidget("repeat", repeatBtn);
+	Wt::WText *repeatBtn = new Wt::WText("<i class=\"fa fa-repeat fa-2x\"></i>", Wt::XHTMLText);
+	repeatBtn->addStyleClass("mediaplayer-btn");
+	bindWidget("repeat", repeatBtn);
+	repeatBtn->clicked().connect(std::bind([=] ()
+	{
+		if (repeatBtn->hasStyleClass("mediaplayer-btn-active"))
+		{
+			repeatBtn->removeStyleClass("mediaplayer-btn-active");
+			_loop.emit(false);
+		}
+		else
+		{
+			repeatBtn->addStyleClass("mediaplayer-btn-active");
+			_loop.emit(true);
+		}
+	}));
 
-	Wt::WPushButton *shuffleBtn = new Wt::WPushButton("<i class=\"fa fa-random fa-lg\"></i>", Wt::XHTMLText);
-	t->bindWidget("shuffle", shuffleBtn);
+	Wt::WText *shuffleBtn = new Wt::WText("<i class=\"fa fa-random fa-2x\"></i>", Wt::XHTMLText);
+	shuffleBtn->addStyleClass("mediaplayer-btn");
+	bindWidget("shuffle", shuffleBtn);
+	shuffleBtn->clicked().connect(std::bind([=] ()
+	{
+		if (shuffleBtn->hasStyleClass("mediaplayer-btn-active"))
+		{
+			shuffleBtn->removeStyleClass("mediaplayer-btn-active");
+			_shuffle.emit(false);
+		}
+		else
+		{
+			shuffleBtn->addStyleClass("mediaplayer-btn-active");
+			_shuffle.emit(true);
+		}
+	}));
 
-	Wt::WPushButton *prevBtn = new Wt::WPushButton("<i class=\"fa fa-step-backward fa-lg\"></i>", Wt::XHTMLText);
-	t->bindWidget("prev", prevBtn);
+	Wt::WText *prevBtn = new Wt::WText("<i class=\"fa fa-step-backward fa-2x\"></i>", Wt::XHTMLText);
+	prevBtn->addStyleClass("mediaplayer-btn hidden-xs");
+	bindWidget("prev", prevBtn);
+	prevBtn->clicked().connect(std::bind([=] ()
+	{
+		_playPrevious.emit();
+	}));
 
-	Wt::WPushButton *nextBtn = new Wt::WPushButton("<i class=\"fa fa-step-forward fa-lg\"></i>", Wt::XHTMLText);
-	t->bindWidget("next", nextBtn);
+	Wt::WText *nextBtn = new Wt::WText("<i class=\"fa fa-step-forward fa-2x\"></i>", Wt::XHTMLText);
+	nextBtn->addStyleClass("mediaplayer-btn");
+	bindWidget("next", nextBtn);
+	nextBtn->clicked().connect(std::bind([=] ()
+	{
+		_playNext.emit();
+	}));
 
-	Wt::WPushButton *playPauseBtn = new Wt::WPushButton("<i class=\"fa fa-play fa-lg\"></i>", Wt::XHTMLText);
-	t->bindWidget("play-pause", playPauseBtn);
+	Wt::WText *playPauseBtn = new Wt::WText("<i class=\"fa fa-play fa-3x fa-fw\"></i>", Wt::XHTMLText);
+	playPauseBtn->addStyleClass("mediaplayer-btn");
+	bindWidget("play-pause", playPauseBtn);
 
 	Wt::WText *trackCurrentTime = new Wt::WText("00:00");
-	t->bindWidget("curtime", trackCurrentTime);
+	trackCurrentTime->addStyleClass("hidden-xs badge mediaplayer-badge mediaplayer-current-duration");
+	bindWidget("curtime", trackCurrentTime);
 
 	_trackDuration = new Wt::WText("00:00");
-	t->bindWidget("duration", _trackDuration);
+	_trackDuration->addStyleClass("hidden-xs badge mediaplayer-badge mediaplayer-total-duration");
+	bindWidget("duration", _trackDuration);
 
 	this->doJavaScript(
-			"\
-			document.lms = {};\
-			document.lms.audio = {};\
-			document.lms.audio.audio = " + _audio->jsRef() + ";\
-			document.lms.audio.seekbar = " + seekbar->jsRef() +";\
-			document.lms.audio.volumeSlider = " + volumeSlider->jsRef() + ";\
-			document.lms.audio.curTimeText = " + trackCurrentTime->jsRef() + ";\
-			document.lms.audio.playPause = " + playPauseBtn->jsRef() + ";\
-			\
-			document.lms.audio.offset = 0;\
-			document.lms.audio.curTime = 0;\
-			document.lms.audio.state = \"init\";\
-			document.lms.audio.volume = 1;\
-			\
-			document.lms.audio.seekbar.value = 0;\
-			document.lms.audio.seekbar.disabled = true;\
-			\
-			document.lms.audio.volumeSlider.min = 0;\
-			document.lms.audio.volumeSlider.max = 100;\
-			document.lms.audio.volumeSlider.value = 100;\
-			\
-			function updateUI() {\
-				document.lms.audio.curTimeText.innerHTML = document.lms.audio.curTime;\
-					document.lms.audio.seekbar.value = document.lms.audio.curTime;\
-			}\
+	"\
+		document.lms = {};\
+		document.lms.audio = {};\
+		document.lms.audio.audio = " + _audio->jsRef() + ";\
+		document.lms.audio.seekbar = " + seekbar->jsRef() +";\
+		document.lms.audio.volumeSlider = " + volumeSlider->jsRef() + ";\
+		document.lms.audio.curTimeText = " + trackCurrentTime->jsRef() + ";\
+		document.lms.audio.playPause = " + playPauseBtn->jsRef() + ";\
+	\
+		document.lms.audio.offset = 0;\
+		document.lms.audio.curTime = 0;\
+		document.lms.audio.state = \"init\";\
+		document.lms.audio.volume = 1;\
+	\
+		document.lms.audio.seekbar.value = 0;\
+		document.lms.audio.seekbar.disabled = true;\
+	\
+		document.lms.audio.volumeSlider.min = 0;\
+		document.lms.audio.volumeSlider.max = 100;\
+		document.lms.audio.volumeSlider.value = 100;\
+	\
+		function updateUIPlaying() { \
+			var icon = document.lms.audio.playPause.getElementsByTagName(\"i\")[0]; \
+			icon.className = \"fa fa-pause fa-3x fa-fw\"; \
+		} \
+	\
+		function updateUIStopped() { \
+			var icon = document.lms.audio.playPause.getElementsByTagName(\"i\")[0]; \
+			icon.className = \"fa fa-play fa-3x fa-fw\"; \
+		} \
+	\
+		function updateUI() {\
+			document.lms.audio.curTimeText.innerHTML = document.lms.audio.curTime;\
+			document.lms.audio.seekbar.value = document.lms.audio.curTime;\
+		}\
 	\
 		var mouseDown = 0;\
 		function seekMouseDown(e) {\
 			++mouseDown;\
 		}\
-	function seekMouseUp(e) {\
-		--mouseDown;\
-	}\
+		function seekMouseUp(e) {\
+			--mouseDown;\
+		}\
 	\
 		function seeking(e) {\
 			if (document.lms.audio.state == \"init\")\
 				return;\
-					\
-					document.lms.audio.curTimeText.innerHTML = document.lms.audio.seekbar.value;\
+	\
+			document.lms.audio.curTimeText.innerHTML = document.lms.audio.seekbar.value;\
 		}\
 	\
 		function seek(e) {\
 			if (document.lms.audio.state == \"init\")\
 				return;\
-					\
-					document.lms.audio.audio.pause(); \
-					document.lms.audio.offset = parseInt(document.lms.audio.seekbar.value);\
-					document.lms.audio.curTime = document.lms.audio.seekbar.value;\
-					var audioSource = document.lms.audio.audio.getElementsByTagName(\"source\")[0];\
-					var src = audioSource.src;\
-					src = src.slice(0, src.lastIndexOf(\"=\") + 1);\
-					audioSource.src = src + document.lms.audio.seekbar.value;\
-					document.lms.audio.audio.load(); \
-					document.lms.audio.audio.play(); \
-					document.lms.audio.curTimeText.innerHTML = ~~document.lms.audio.curTime + \"        \";\
+	\
+			document.lms.audio.audio.pause(); \
+			document.lms.audio.offset = parseInt(document.lms.audio.seekbar.value);\
+			document.lms.audio.curTime = document.lms.audio.seekbar.value;\
+			var audioSource = document.lms.audio.audio.getElementsByTagName(\"source\")[0];\
+			var src = audioSource.src;\
+			src = src.slice(0, src.lastIndexOf(\"=\") + 1);\
+			audioSource.src = src + document.lms.audio.seekbar.value;\
+			document.lms.audio.audio.load(); \
+			document.lms.audio.audio.play(); \
+			document.lms.audio.curTimeText.innerHTML = ~~document.lms.audio.curTime + \"        \";\
 		}\
 	\
 		function volumeChanged() {\
@@ -205,26 +294,30 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 					updateUI();\
 		} \
 	\
-		function playPause() {\
+		function playPause() { \
 			if (document.lms.audio.state == \"init\") \
 				return;\
-					\
-					if (document.lms.audio.audio.paused)\
-						document.lms.audio.audio.play();\
-					else\
-						document.lms.audio.audio.pause();\
-							\
+	\
+			if (document.lms.audio.audio.paused) \
+				document.lms.audio.audio.play(); \
+			else \
+				document.lms.audio.audio.pause();\
+	\
 		}\
 	\
 		document.lms.audio.audio.addEventListener('timeupdate', updateCurTime); \
+		document.lms.audio.audio.addEventListener('playing', updateUIPlaying); \
+		document.lms.audio.audio.addEventListener('play', updateUIPlaying); \
+		document.lms.audio.audio.addEventListener('pause', updateUIStopped); \
+		document.lms.audio.audio.addEventListener('ended', updateUIStopped); \
 		document.lms.audio.seekbar.addEventListener('change', seek);\
 		document.lms.audio.seekbar.addEventListener('input', seeking);\
 		document.lms.audio.seekbar.addEventListener('mousedown', seekMouseDown);\
 		document.lms.audio.seekbar.addEventListener('mouseup', seekMouseUp);\
 		document.lms.audio.volumeSlider.addEventListener('input', volumeChanged);\
 		document.lms.audio.playPause.addEventListener('click', playPause);\
-		"
-		);
+	"
+	);
 }
 
 

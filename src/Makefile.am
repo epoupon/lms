@@ -26,7 +26,6 @@ lms_SOURCES = \
 	$(srcdir)/ui/auth/LmsAuth.cpp				\
 	$(srcdir)/ui/audio/AudioPlayer.cpp			\
 	$(srcdir)/ui/audio/desktop/DesktopAudio.cpp		\
-	$(srcdir)/ui/audio/desktop/AudioMediaPlayer.cpp		\
 	$(srcdir)/ui/audio/desktop/FilterChain.cpp		\
 	$(srcdir)/ui/audio/desktop/KeywordSearchFilter.cpp	\
 	$(srcdir)/ui/audio/desktop/PlayQueue.cpp		\

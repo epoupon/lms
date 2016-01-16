@@ -17,14 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_AUDIO_DESKTOP_HPP
-#define UI_AUDIO_DESKTOP_HPP
+#pragma once
 
 #include <string>
 
 #include <Wt/WPopupMenu>
 
-#include "AudioMediaPlayer.hpp"
+#include "audio/AudioPlayer.hpp"
 #include "TrackView.hpp"
 #include "PlayQueue.hpp"
 
@@ -66,7 +65,7 @@ class Audio : public UserInterface::Audio
 
 		void handlePlaylistSelected(Wt::WString name);
 
-		AudioMediaPlayer*	_mediaPlayer;
+		AudioPlayer*	_mediaPlayer;
 		TrackView*		_trackView;
 		PlayQueue*		_playQueue;
 
@@ -79,6 +78,4 @@ class Audio : public UserInterface::Audio
 
 } // namespace Desktop
 } // namespace UserInterface
-
-#endif
 
