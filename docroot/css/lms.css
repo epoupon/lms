@@ -87,11 +87,34 @@
 }
 
 .mediaplayer-info-container {
+	width: 100%;
+	min-width: 100px;
+	margin: 8px;
+}
+
+.mediaplayer-track-info {
 	text-overflow: ellipsis;
 	overflow: hidden;
 	white-space: nowrap;
-	width: 100%;
-	margin: 8px;
+}
+
+.mediaplayer-progress-container {
+	display: flex;
+	align-items: center;
+}
+
+.mediaplayer-badge {
+	min-width: initial;
+}
+
+.mediaplayer-current-duration {
+	margin-right: 8px;
+}
+.mediaplayer-total-duration {
+	margin-left: 8px;
+}
+
+.mediaplayer-seekbar {
 }
 
 .mediaplayer-volume-container {

@@ -108,6 +108,7 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 	_cover->setImageLink(SessionCoverResource()->getUnknownTrackUrl(64));
 
 	InputRange *seekbar = new InputRange();
+	seekbar->addStyleClass("mediaplayer-seekbar");
 	bindWidget("seekbar", seekbar);
 
 	bindString("track", "Track");
@@ -177,11 +178,11 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 	bindWidget("play-pause", playPauseBtn);
 
 	Wt::WText *trackCurrentTime = new Wt::WText("00:00");
-	trackCurrentTime->addStyleClass("hidden-xs");
+	trackCurrentTime->addStyleClass("hidden-xs badge mediaplayer-badge mediaplayer-current-duration");
 	bindWidget("curtime", trackCurrentTime);
 
 	_trackDuration = new Wt::WText("00:00");
-	_trackDuration->addStyleClass("hidden-xs");
+	_trackDuration->addStyleClass("hidden-xs badge mediaplayer-badge mediaplayer-total-duration");
 	bindWidget("duration", _trackDuration);
 
 	this->doJavaScript(
