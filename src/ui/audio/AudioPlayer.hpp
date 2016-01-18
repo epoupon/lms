@@ -54,6 +54,7 @@ class AudioPlayer : public Wt::WTemplate
 		Wt::Signal<bool>	_loop;
 
 		Wt::WAudio*	_audio;
+		Wt::WText*	_trackCurTime;
 		Wt::WText*	_trackDuration;
 		Wt::WText*	_trackName;
 		Wt::WImage*	_cover;

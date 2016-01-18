@@ -26,6 +26,7 @@
 
 #include "common/InputRange.hpp"
 #include "logger/Logger.hpp"
+#include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -77,7 +78,11 @@ AudioPlayer::loadTrack(Database::Track::id_type trackId)
 	bindString("track", Wt::WString::fromUTF8(track->getName()));
 	bindString("artist", Wt::WString::fromUTF8(track->getArtist()->getName()));
 	_cover->setImageLink(SessionCoverResource()->getTrackUrl(trackId, 64));
-	_trackDuration->setText( boost::posix_time::to_simple_string( track->getDuration() ));
+
+	std::string durationFormat = track->getDuration().total_seconds() < 3600 ? "%M:%S" : "%H:%M:%S";
+
+	_trackDuration->setText(durationToString(track->getDuration(), durationFormat));
+	_trackCurTime->setText(durationToString(boost::posix_time::seconds(0), durationFormat));
 
 	// Analyse track, select the best media stream
 	Av::MediaFile mediaFile(track->getPath());
@@ -208,11 +213,11 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 	playPauseBtn->addStyleClass("mediaplayer-btn");
 	bindWidget("play-pause", playPauseBtn);
 
-	Wt::WText *trackCurrentTime = new Wt::WText("00:00");
-	trackCurrentTime->addStyleClass("hidden-xs badge mediaplayer-badge mediaplayer-current-duration");
-	bindWidget("curtime", trackCurrentTime);
+	_trackCurTime = new Wt::WText("--:--");
+	_trackCurTime->addStyleClass("hidden-xs badge mediaplayer-badge mediaplayer-current-duration");
+	bindWidget("curtime", _trackCurTime);
 
-	_trackDuration = new Wt::WText("00:00");
+	_trackDuration = new Wt::WText("--:--");
 	_trackDuration->addStyleClass("hidden-xs badge mediaplayer-badge mediaplayer-total-duration");
 	bindWidget("duration", _trackDuration);
 
@@ -223,7 +228,7 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 		document.lms.audio.audio = " + _audio->jsRef() + ";\
 		document.lms.audio.seekbar = " + seekbar->jsRef() +";\
 		document.lms.audio.volumeSlider = " + volumeSlider->jsRef() + ";\
-		document.lms.audio.curTimeText = " + trackCurrentTime->jsRef() + ";\
+		document.lms.audio.curTimeText = " + _trackCurTime->jsRef() + ";\
 		document.lms.audio.playPause = " + playPauseBtn->jsRef() + ";\
 	\
 		document.lms.audio.offset = 0;\
@@ -248,8 +253,22 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 			icon.className = \"fa fa-play fa-3x fa-fw\"; \
 		} \
 	\
+		function durationToString(duration, displayHours) { \
+			var hours = parseInt( duration / 3600 ) % 24; \
+			var minutes = parseInt( duration / 60) % 60; \
+			var seconds = duration % 60; \
+	\
+			var res = \"\"; \
+			if (displayHours) \
+				res = (hours < 10 ? \"0\" + hours : hours) + \":\";  \
+	\
+			res += (minutes < 10 ? \"0\" + minutes : minutes) + \":\"; \
+			res += (seconds  < 10 ? \"0\" + seconds : seconds); \
+			return res; \
+		} \
+	\
 		function updateUI() {\
-			document.lms.audio.curTimeText.innerHTML = document.lms.audio.curTime;\
+			document.lms.audio.curTimeText.innerHTML = durationToString(document.lms.audio.curTime, document.lms.audio.seekbar.max > 3600); \
 			document.lms.audio.seekbar.value = document.lms.audio.curTime;\
 		}\
 	\
@@ -265,7 +284,7 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 			if (document.lms.audio.state == \"init\")\
 				return;\
 	\
-			document.lms.audio.curTimeText.innerHTML = document.lms.audio.seekbar.value;\
+			document.lms.audio.curTimeText.innerHTML = durationToString(document.lms.audio.seekbar.value, document.lms.audio.seekbar.max > 3600); \
 		}\
 	\
 		function seek(e) {\
@@ -281,7 +300,7 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 			audioSource.src = src + document.lms.audio.seekbar.value;\
 			document.lms.audio.audio.load(); \
 			document.lms.audio.audio.play(); \
-			document.lms.audio.curTimeText.innerHTML = ~~document.lms.audio.curTime + \"        \";\
+			document.lms.audio.curTimeText.innerHTML = durationToString(document.lms.audio.curTime, document.lms.audio.seekbar.max > 3600); \
 		}\
 	\
 		function volumeChanged() {\
