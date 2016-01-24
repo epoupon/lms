@@ -2,6 +2,18 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
+<message id="Wt.WNavigationBar.template">
+	<div>
+		${collapse-button}
+		<div class="navbar-header">
+			${expand-button}
+			${title-link}
+			${search}
+		</div>
+		${contents}
+	</div>
+</message>
+
 <message id="firstConnectionForm-template">
 	<legend>${title}</legend>
 	<div class="form-horizontal">
@@ -419,29 +431,121 @@
 	</nav>
 </message>
 
-<message id="mobile-audio-player">
-	<div class="container">
-		<div class="row">
-			<div class="col-xs-12">
-				<div class="row">
-					<div class="mobile-audio-footer">
-						<div class="vertical-align mobile-audio-footer">
-							<div class="col-xs-2">${cover}</div>
-							<div class="col-xs-7">
-								<div class="row">
-									<div class="col-xs-12">${track}</div>
-								</div>
-								<div class="row">
-									<div class="col-xs-12">${artist}</div>
-								</div>
-							</div>
-							<div class="col-xs-3">${play}${pause}</div>
-						</div>
-					</div>
-				</div>
+<message id="wa-release-wrapper">
+	<div class="section text-center">
+		<div class="container">
+			<div class="row">
+				${contents}
 			</div>
 		</div>
 	</div>
+</message>
+
+<message id="wa-release-res">
+	<div class="col-xs-6 col-md-2">
+		<br/>${cover}
+		<h4 class="release_truncated-name" title="${release_name}">${name}<div style="font-size: 75%"><br/>${artist}<br/></div></h4>
+   </div>
+</message>
+
+<message id="wa-artist-wrapper">
+	<div class="section text-center">
+		<div class="container">
+			<div class="row">
+				${contents}
+			</div>
+		</div>
+	</div>
+</message>
+
+<message id="wa-artist-res">
+	<div class="col-xs-6 col-md-2">
+		<br/>${gif}
+		<h4 class="release_truncated-name" title="${artistname}">${name}<div style="font-size: 75%"></div></h4>
+   </div>
+</message>
+
+<message id="wa-track-wrapper">
+	${title}
+	<div class="menu-category list-group ">
+		${track-container}
+	</div>
+	${show-more}
+</message>
+
+<message id="wa-track">
+	<div class="menu-item list-group-item ">
+		<div class="row">
+			<div class="vertical-align">
+				<div class="col-xs-2" style="margin-top:3px">${cover}</div>
+				<div class="col-xs-8">${artist-name}<br/>${track-name}</div>
+				<div class="col-xs-2" style="margin-top:3px"><span class="badge">${btn}</span></div>
+			</div>
+		</div>
+	</div>
+</message>
+
+
+<!-- Track container
+
+	Track bar title
+
+	Release1
+		Track1
+		Track2
+		...
+
+	Release2
+		...
+
+	...
+     -->
+<message id="wa-trackview-wrapper">
+	${title}
+	${release-container}
+	${show-more}
+</message>
+
+<message id="wa-trackview-release-container">
+	<div class="container">
+		<div class="col-md-3">
+			<br/>
+			<br/>
+			${cover}
+			<br />
+			<h4>${release-name} <br/>${artist-name}${<if-has-year>} - ${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</h4>
+		</div>
+		<div class="menu row col-md-9">
+			<br/>
+			<div class="menu-category list-group ">
+				${track-container}
+			</div>
+		</div>
+	</div>
+</message>
+
+<message id="wa-trackview-track">
+	<div class="menu-item list-group-item ">${<if-has-disc-num>}${disc-num}-${</if-has-disc-num>}${<if-has-track-num>}${track-num}. ${</if-has-track-num>}${track-name} <span class="badge">${btn}</span><span class="badge">${time}</span></div>
+</message>
+
+<message id="wa-audio-player">
+	${audio}
+	${prev}${play-pause}${next}
+	<div class="mediaplayer-volume-container visible-lg">
+		${volume}
+	</div>
+	<div class="mediaplayer-cover hidden-xs">
+		${cover}
+	</div>
+	<div class="mediaplayer-info-container">
+		<div class="mediaplayer-track-info">
+			<span class="mediaplayer-track">${track}</span> <span class="mediaplayer-artist">${artist}</span>
+		</div>
+		<div class="mediaplayer-progress-container">
+			${curtime}${seekbar}${duration}
+		</div>
+	</div>
+	${shuffle}${repeat}
 </message>
 
 </messages>

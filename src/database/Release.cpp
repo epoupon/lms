@@ -44,11 +44,22 @@ Release::getByMBID(Wt::Dbo::Session& session, const std::string& mbid)
 	return session.find<Release>().where("mbid = ?").bind(mbid);
 }
 
+Release::pointer
+Release::getById(Wt::Dbo::Session& session, Release::id_type id)
+{
+	return session.find<Release>().where("id = ?").bind(id);
+}
 
 Release::pointer
 Release::create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID)
 {
 	return session.add(new Release(name, MBID));
+}
+
+bool
+Release::isNone() const
+{
+	return _name == "<None>";
 }
 
 Release::pointer
@@ -129,16 +140,28 @@ Release::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset,
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
-std::vector< Wt::Dbo::ptr<Artist> >
-Release::getArtists() const
+int
+Release::getReleaseYear(bool original) const
 {
-	assert(self());
-	assert(self()->id() != Wt::Dbo::dbo_traits<Release>::invalidId() );
 	assert(session());
 
-	Wt::Dbo::collection< Wt::Dbo::ptr<Artist> > res = session()->query<Wt::Dbo::ptr<Artist> >("SELECT a FROM artist a INNER JOIN release r ON r.id = t.release_id INNER JOIN track t ON t.release_id = r.id").where("r.id = ?").bind(id());
+	// TODO something better
+	auto tracks = Track::getByFilter(*session(), SearchFilter::ById(SearchFilter::Field::Release, this->id()), -1, 1);
 
-	return std::vector< Wt::Dbo::ptr<Artist> > (res.begin(), res.end());
+	if (tracks.empty())
+		return 0;
+
+	boost::gregorian::date date;
+
+	if (original)
+		date = tracks.front()->getOriginalDate().date();
+	else
+		date = tracks.front()->getDate().date();
+
+	if (date.is_special())
+		return 0;
+
+	return date.year();
 }
 
 } // namespace Database

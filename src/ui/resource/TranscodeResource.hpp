@@ -17,43 +17,38 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_AUDIO_MOBILE_MEDIA_PLAYER_HPP
-#define UI_AUDIO_MOBILE_MEDIA_PLAYER_HPP
+#pragma once
 
-#include <Wt/WContainerWidget>
-#include <Wt/WMediaPlayer>
-#include <Wt/WImage>
+#include <mutex>
 
-#include "database/DatabaseHandler.hpp"
+#include <Wt/WResource>
+
 #include "av/AvTranscoder.hpp"
 
-namespace UserInterface {
-namespace Mobile {
+#include "database/DatabaseHandler.hpp"
 
-class AudioMediaPlayer : public Wt::WContainerWidget
+namespace UserInterface {
+
+class TranscodeResource : public Wt::WResource
 {
 	public:
+		TranscodeResource(Database::Handler& db, Wt::WObject *parent);
+		~TranscodeResource();
 
-		static Wt::WMediaPlayer::Encoding getBestEncoding();
+		std::string getUrl(Database::Track::id_type trackId, Av::Encoding encoding = Av::Encoding::OGA, size_t offset_secs = 0, std::vector<size_t> streamIds = {}) const;
 
-		AudioMediaPlayer(Wt::WMediaPlayer::Encoding encoding, Wt::WContainerWidget *parent = 0);
-
-		void play(Database::Track::id_type trackId, Av::TranscodeParameters parameters);
-
-		Wt::WMediaPlayer::Encoding getEncoding() const { return _encoding; }
+		void handleRequest(const Wt::Http::Request& request,
+				Wt::Http::Response& response);
 
 	private:
 
-		Wt::WMediaPlayer* _player;
-		Wt::WMediaPlayer::Encoding _encoding;
+		Database::Handler&		_db;
 
-		Wt::WImage* _cover;
-		Wt::WText* _track;
-		Wt::WText* _artistRelease;
-
+		static const std::size_t	_chunkSize = 65536*4;
 };
 
 } // namespace UserInterface
-} // namespace Mobile
 
-#endif
+
+
+

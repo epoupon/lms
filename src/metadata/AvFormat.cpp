@@ -19,15 +19,12 @@
 
 #include "AvFormat.hpp"
 
-#include <boost/foreach.hpp>
+#include "logger/Logger.hpp"
+#include "utils/Utils.hpp"
 #include <boost/algorithm/string.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "av/AvInfo.hpp"
 
-#include "logger/Logger.hpp"
-
-#include "Utils.hpp"
 
 namespace MetaData
 {
@@ -112,21 +109,48 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 	for (it = metadata.begin(); it != metadata.end(); ++it)
 	{
 		if (boost::iequals(it->first, "artist"))
-			items.insert( std::make_pair(MetaData::Type::Artist, string_trim( string_to_utf8(it->second)) ));
+			items.insert( std::make_pair(MetaData::Type::Artist, stringTrim( stringToUTF8(it->second)) ));
 		else if (boost::iequals(it->first, "album"))
-			items.insert( std::make_pair(MetaData::Type::Album, string_trim( string_to_utf8(it->second)) ));
+			items.insert( std::make_pair(MetaData::Type::Album, stringTrim( stringToUTF8(it->second)) ));
 		else if (boost::iequals(it->first, "title"))
-			items.insert( std::make_pair(MetaData::Type::Title, string_trim( string_to_utf8(it->second)) ));
-		else if (boost::iequals(it->first, "track")) {
-			std::size_t number;
-			if (readAs<std::size_t>(it->second, number))
-				items.insert( std::make_pair(MetaData::Type::TrackNumber, number ));
+			items.insert( std::make_pair(MetaData::Type::Title, stringTrim( stringToUTF8(it->second)) ));
+		else if (boost::iequals(it->first, "track"))
+		{
+			// Expecting 'Number/Total'
+			auto strings = splitString(it->second, "/");
+
+			if (strings.size() > 0)
+			{
+				std::size_t number;
+				if (readAs<std::size_t>(strings[0], number))
+					items.insert( std::make_pair(MetaData::Type::TrackNumber, number ));
+
+				if (strings.size() > 1)
+				{
+					std::size_t totalNumber;
+					if (readAs<std::size_t>(strings[1], totalNumber))
+						items.insert( std::make_pair(MetaData::Type::TotalTrack, totalNumber ));
+				}
+			}
 		}
 		else if (boost::iequals(it->first, "disc"))
 		{
-			std::size_t number;
-			if (readAs<std::size_t>(it->second, number))
-				items.insert( std::make_pair(MetaData::Type::DiscNumber, number ));
+			// Expecting 'Number/Total'
+			auto strings = splitString(it->second, "/");
+
+			if (strings.size() > 0)
+			{
+				std::size_t number;
+				if (readAs<std::size_t>(strings[0], number))
+					items.insert( std::make_pair(MetaData::Type::DiscNumber, number ));
+
+				if (strings.size() > 1)
+				{
+					std::size_t totalNumber;
+					if (readAs<std::size_t>(strings[1], totalNumber))
+						items.insert( std::make_pair(MetaData::Type::TotalDisc, totalNumber ));
+				}
+			}
 		}
 		else if (boost::iequals(it->first, "date")
 				|| boost::iequals(it->first, "year")
@@ -145,18 +169,21 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 		}
 		else if (boost::iequals(it->first, "genre"))
 		{
+			// TODO use splitStrings
 			std::list<std::string> genres;
 			if (readList(it->second, ";,", genres))
 				items.insert( std::make_pair(MetaData::Type::Genres, genres));
 
 		}
-		else if (boost::iequals(it->first, "MusicBrainz Artist Id"))
+		else if (boost::iequals(it->first, "MusicBrainz Artist Id")
+			|| boost::iequals(it->first, "MUSICBRAINZ_ARTISTID"))
 		{
-			items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, string_trim( string_to_utf8(it->second)) ));
+			items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, stringTrim( stringToUTF8(it->second)) ));
 		}
-		else if (boost::iequals(it->first, "MusicBrainz Album Id"))
+		else if (boost::iequals(it->first, "MusicBrainz Album Id")
+			|| boost::iequals(it->first, "MUSICBRAINZ_ALBUMID"))
 		{
-			items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, string_trim( string_to_utf8(it->second)) ));
+			items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, stringTrim( stringToUTF8(it->second)) ));
 		}
 	}
 

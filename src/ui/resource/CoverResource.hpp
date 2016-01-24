@@ -41,6 +41,7 @@ class CoverResource : public Wt::WResource
 
 		std::string getReleaseUrl(Database::Release::id_type releaseId, size_t size) const;
 		std::string getTrackUrl(Database::Track::id_type trackId, size_t size) const;
+		std::string getArtistUrl(Database::Artist::id_type artistId, size_t size) const;
 		std::string getUnknownTrackUrl(size_t size) const;
 
 		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
@@ -50,6 +51,7 @@ class CoverResource : public Wt::WResource
 		Image::Image			getDefaultCover(std::size_t size);
 		void				putCover(Wt::Http::Response& response, Image::Image image);
 
+		// Used to protect transactions since they are not thread safe
 		std::mutex			_mutex;
 		Database::Handler&		_db;
 

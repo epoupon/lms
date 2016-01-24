@@ -40,13 +40,13 @@ enum class Encoding
 	MP3,
 	WEBMA,
 	WEBMV,
-	FLA,
-	FLV,
 	M4A,
 	M4V,
 };
 
 std::string encoding_to_mimetype(Encoding encoding);
+int encoding_to_int(Encoding encoding);
+Encoding encoding_from_int(int encoding);
 
 class TranscodeParameters
 {
@@ -90,6 +90,8 @@ class Transcoder
 		bool start();
 		void process(std::vector<unsigned char>& output, std::size_t maxSize);
 		bool isComplete(void)	{ return _isComplete; }
+
+		const TranscodeParameters& getParameters() const { return _parameters; }
 
 	private:
 		Transcoder();

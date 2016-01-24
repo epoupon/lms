@@ -42,7 +42,7 @@ class AvConvTranscodeStreamResource : public Wt::WResource
 		boost::filesystem::path		_filePath;
 		Av::TranscodeParameters		_parameters;
 
-		static const std::size_t	_bufferSize = 8192*16;
+		static const std::size_t	_bufferSize = 8192;
 };
 
 } // namespace UserInterface

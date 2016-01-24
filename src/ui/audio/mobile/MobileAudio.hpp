@@ -24,6 +24,11 @@
 
 #include "audio/Audio.hpp"
 
+#include "ArtistSearch.hpp"
+#include "ReleaseSearch.hpp"
+#include "TrackSearch.hpp"
+#include "TrackReleaseView.hpp"
+
 namespace UserInterface {
 namespace Mobile {
 
@@ -32,10 +37,14 @@ class Audio : public UserInterface::Audio
 	public:
 		Audio(Wt::WContainerWidget *parent = 0);
 
-		void search(std::string text) {}
+		void search(std::string text);
 
 	private:
 
+		ArtistSearch*	_artistSearch;
+		ReleaseSearch*	_releaseSearch;
+		TrackSearch*	_trackSearch;
+		TrackReleaseView*	_trackReleaseView;
 };
 
 } // namespace Mobile

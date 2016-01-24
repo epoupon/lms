@@ -23,6 +23,7 @@
 #include <Wt/WBreak>
 
 #include "logger/Logger.hpp"
+#include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"
 #include "TrackView.hpp"
@@ -41,18 +42,10 @@ class DurationItemDelegate : public Wt::WItemDelegate
 		{
 			boost::posix_time::time_duration duration = boost::any_cast<boost::posix_time::time_duration>(index.data(Wt::DisplayRole));
 
-			boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
+			// TODO bug when redrawn
+			std::string format = duration.total_seconds() < 3600 ? "%M:%S" : "%H:%M:%S";
 
-			if (duration.total_seconds() < 3600)
-				facet->time_duration_format("%M:%S");
-			else
-				facet->time_duration_format("%H:%M:%S");
-
-			std::ostringstream oss;
-			oss.imbue(std::locale(oss.getloc(), facet));
-			oss << duration;
-
-			return new Wt::WText(oss.str(), Wt::PlainText);
+			return new Wt::WText(durationToString(duration, format), Wt::PlainText);
 		}
 };
 

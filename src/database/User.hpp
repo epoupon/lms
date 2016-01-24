@@ -39,7 +39,6 @@ enum class AudioEncoding
 	MP3,
 	OGA,
 	WEBMA,
-	FLA,
 };
 
 enum class VideoEncoding

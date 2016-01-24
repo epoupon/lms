@@ -37,6 +37,8 @@ namespace MetaData
 		Duration,		// boost::posix_time::time_duration
 		TrackNumber,		// size_t
 		DiscNumber,		// size_t
+		TotalTrack,		// size_t
+		TotalDisc,		// size_t
 		Date,			// boost::posix_time::ptime
 		OriginalDate,		// boost::posix_time::ptime
 		HasCover,		// bool

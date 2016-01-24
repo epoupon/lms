@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "logger/Logger.hpp"
+
 #include "SearchFilter.hpp"
 
 namespace Database

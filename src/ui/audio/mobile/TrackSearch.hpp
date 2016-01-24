@@ -17,15 +17,10 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_MOBILE_TRACK_SEARCH_HPP
-#define UI_MOBILE_TRACK_SEARCH_HPP
-
-#include <boost/algorithm/string/split.hpp>
+#pragma once
 
 #include <Wt/WContainerWidget>
 #include <Wt/WSignal>
-
-#include "resource/CoverResource.hpp"
 
 namespace UserInterface {
 namespace Mobile {
@@ -40,20 +35,23 @@ class TrackSearch : public Wt::WContainerWidget
 
 		// Slots
 		Wt::Signal<Database::Track::id_type>&	trackPlay() { return _sigTrackPlay;}
-		Wt::Signal<void>&		moreTracksSelected() { return _sigMoreTracksSelected;}
+		Wt::Signal<void>& moreSelected() { return _sigMoreSelected;}
 
 	private:
 
 		Wt::Signal<Database::Track::id_type> _sigTrackPlay;
-		Wt::Signal<void>	_sigMoreTracksSelected;
+		Wt::Signal<void> _sigMoreSelected;
 
 		void clear(void);
-		void addResults(Database::SearchFilter filter, size_t nb);
+		void addResults(size_t nb);
 
-		std::size_t		_resCount;
+		Wt::WTemplate*	_showMore;
+
+		Database::SearchFilter	_filter;
+		std::size_t		_nbTracks;
+		Wt::WContainerWidget*	_container;
 };
 
 } // namespace Mobile
 } // namespace UserInterface
 
-#endif

@@ -41,6 +41,8 @@ int main(int argc, char* argv[])
 
 	try
 	{
+		// Make pstream work with ffmpeg
+		close(STDIN_FILENO);
 
 		Wt::WServer server(argv[0]);
 		server.setServerConfiguration (argc, argv);

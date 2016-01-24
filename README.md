@@ -49,6 +49,15 @@ $ /usr/bin/lms --docroot='/usr/share/lms/docroot/;/resources,/css,/images' --app
 It is highly recommended to run LMS as a non root user.
 The exectuable needs write accesses to the /var/lms/ directory.
 
+## Mobile
+
+Add the following code in your wt_config.xml file:
+```
+<application-settings location="/usr/bin/lms">
+	<progressive-bootstrap>true</progressive-bootstrap>
+</application-settings>
+```
+
 ## Setting up SSL materials (optional)
 Here is just a self signed certificate example, you could do use a CA if you want.
 
@@ -70,4 +79,5 @@ Depending on your SSL parameters, you may be asked for the PEM passphrase to unl
 
 - Wt (http://www.webtoolkit.eu/)
 - bootstrap3 (http://getbootstrap.com/)
-- libav project (https://www.libav.org/).
+- libav project (https://www.libav.org/)
+- Magick++ (http://www.imagemagick.org/Magick++/)

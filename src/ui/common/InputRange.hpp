@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,26 +17,21 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef METADATA_AVFORMAT_HPP
-#define METADATA_AVFORMAT_HPP
+#pragma once
 
-#include "MetaData.hpp"
+#include <Wt/WContainerWidget>
+#include <Wt/WWebWidget>
 
-namespace MetaData
-{
-
-// Parse that makes use of AvFormat
-class AvFormat : public Parser
+class InputRange : public Wt::WWebWidget
 {
 	public:
+	InputRange(Wt::WContainerWidget *parent = 0);
 
-		bool parse(const boost::filesystem::path& p, Items& items);
+	Wt::DomElementType domElementType() const
+	{
+		return Wt::DomElement_INPUT;
+	}
 
-	private:
-
+	std::string jsRef() const;
 };
 
-
-} // namespace MetaData
-
-#endif

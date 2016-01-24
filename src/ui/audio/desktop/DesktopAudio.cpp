@@ -120,73 +120,72 @@ _playQueue(nullptr)
 	_playQueue = new PlayQueue();
 
 	// Playlist/PlayQueue
+	Wt::WContainerWidget* playQueueContainer = new Wt::WContainerWidget();
+	playQueueContainer->setStyleClass("playqueue");
+	Wt::WVBoxLayout* playQueueLayout = new Wt::WVBoxLayout();
+	playQueueContainer->setLayout(playQueueLayout);
+
+	playQueueLayout->addWidget( _playQueue, 1);
+
+	Wt::WHBoxLayout* playlistControls = new Wt::WHBoxLayout();
+
+	Wt::WPushButton *playlistBtn = new Wt::WPushButton("Playlist");
+	playlistBtn->setStyleClass("btn-sm btn-primary");
+	playlistControls->addWidget(playlistBtn);
+
+	// Playlist menu
+	{
+		Wt::WPopupMenu *popupMain = new Wt::WPopupMenu();
+
+		_popupMenuSave = new Wt::WPopupMenu();
+		popupMain->addMenu("Save", _popupMenuSave);
+
+		_popupMenuLoad = new Wt::WPopupMenu();
+		popupMain->addMenu("Load", _popupMenuLoad);
+
+		_popupMenuDelete = new Wt::WPopupMenu();
+		popupMain->addMenu("Delete", _popupMenuDelete);
+
+		playlistBtn->setMenu(popupMain);
+	}
+
+	Wt::WPushButton *upBtn = new Wt::WPushButton("UP");
+	upBtn->setStyleClass("btn-sm");
+	playlistControls->addWidget(upBtn);
+	Wt::WPushButton *downBtn = new Wt::WPushButton("DO");
+	downBtn->setStyleClass("btn-sm");
+	playlistControls->addWidget(downBtn);
+	Wt::WPushButton *delBtn = new Wt::WPushButton("DEL");
+	delBtn->setStyleClass("btn-sm btn-warning");
+	playlistControls->addWidget(delBtn);
+	Wt::WPushButton *clearBtn = new Wt::WPushButton("CLR");
+	clearBtn->setStyleClass("btn-sm btn-danger");
+	playlistControls->addWidget(clearBtn);
+
+	delBtn->clicked().connect(_playQueue, &PlayQueue::delSelected);
+	upBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedUp);
+	downBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedDown);
+	clearBtn->clicked().connect(_playQueue, &PlayQueue::delAll);
+
+	playQueueLayout->addLayout(playlistControls);
+
+	mainLayout->addWidget(playQueueContainer, 0, 0, 2, 1);
+
+	// Load the last known queue
+	playlistLoadToPlayqueue(CurrentQueuePlaylistName);
+
+	// Select the last known playing track
 	{
 		Wt::Dbo::Transaction transaction(DboSession());
-
-		Wt::WContainerWidget* playQueueContainer = new Wt::WContainerWidget();
-		playQueueContainer->setStyleClass("playqueue");
-		Wt::WVBoxLayout* playQueueLayout = new Wt::WVBoxLayout();
-		playQueueContainer->setLayout(playQueueLayout);
-
-		_mediaPlayer = new AudioMediaPlayer();
-		playQueueLayout->addWidget(_mediaPlayer);
-
-		playQueueLayout->addWidget( _playQueue, 1);
-
-		Wt::WHBoxLayout* playlistControls = new Wt::WHBoxLayout();
-
-		Wt::WPushButton *playlistBtn = new Wt::WPushButton("Playlist");
-		playlistBtn->setStyleClass("btn-sm btn-primary");
-		playlistControls->addWidget(playlistBtn);
-
-		// Playlist menu
-		{
-			Wt::WPopupMenu *popupMain = new Wt::WPopupMenu();
-
-			_popupMenuSave = new Wt::WPopupMenu();
-			popupMain->addMenu("Save", _popupMenuSave);
-
-			_popupMenuLoad = new Wt::WPopupMenu();
-			popupMain->addMenu("Load", _popupMenuLoad);
-
-			_popupMenuDelete = new Wt::WPopupMenu();
-			popupMain->addMenu("Delete", _popupMenuDelete);
-
-			playlistBtn->setMenu(popupMain);
-		}
-
-		Wt::WPushButton *upBtn = new Wt::WPushButton("UP");
-		upBtn->setStyleClass("btn-sm");
-		playlistControls->addWidget(upBtn);
-		Wt::WPushButton *downBtn = new Wt::WPushButton("DO");
-		downBtn->setStyleClass("btn-sm");
-		playlistControls->addWidget(downBtn);
-		Wt::WPushButton *delBtn = new Wt::WPushButton("DEL");
-		delBtn->setStyleClass("btn-sm btn-warning");
-		playlistControls->addWidget(delBtn);
-		Wt::WPushButton *clearBtn = new Wt::WPushButton("CLR");
-		clearBtn->setStyleClass("btn-sm btn-danger");
-		playlistControls->addWidget(clearBtn);
-
-		delBtn->clicked().connect(_playQueue, &PlayQueue::delSelected);
-		upBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedUp);
-		downBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedDown);
-		clearBtn->clicked().connect(_playQueue, &PlayQueue::delAll);
-
-
-		playQueueLayout->addLayout(playlistControls);
-
-		mainLayout->addWidget(playQueueContainer, 0, 0, 2, 1);
-
-		// Load the last known queue
-		playlistLoadToPlayqueue(CurrentQueuePlaylistName);
-		// Select the last known playing track
 		_playQueue->select(CurrentUser()->getCurPlayingTrackPos());
 	}
 
+	_mediaPlayer = new AudioPlayer();
+	mainLayout->addWidget(_mediaPlayer, 2, 0, 1, 4);
+
 	mainLayout->setRowStretch(1, 1);
 	mainLayout->setRowResizable(0, true, Wt::WLength(250, Wt::WLength::Pixel));
-	mainLayout->setColumnResizable(0, true);
+	mainLayout->setColumnResizable(0, true, Wt::WLength(400, Wt::WLength::Pixel));
 
 	// Double click on track
 	// Set the selected tracks to the play queue
@@ -510,7 +509,7 @@ Audio::playTrack(Track::id_type trackId, int pos)
 		CurrentUser().modify()->setCurPlayingTrackPos(pos);
 	}
 
-	if (!_mediaPlayer->load(trackId))
+	if (!_mediaPlayer->loadTrack(trackId))
 		_playQueue->playNext();
 }
 

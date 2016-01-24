@@ -53,6 +53,9 @@ class Release : public Wt::Dbo::Dbo<Release>
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID = "");
 
+		// Utility functions
+		int getReleaseYear(bool originalDate = false) const; // 0 if unknown or various
+
 		// MVC models for the user interface
 		// ID, Release name, year, track counts
 		typedef boost::tuple<id_type, std::string, boost::posix_time::ptime, int> UIQueryResult;
@@ -65,8 +68,6 @@ class Release : public Wt::Dbo::Dbo<Release>
 		std::string	getMBID() const		{ return _MBID; }
 		bool		isNone(void) const;
 		boost::posix_time::time_duration getDuration(void) const;
-		std::vector<Wt::Dbo::ptr<Artist> >	getArtists() const;	// Get the artists of this release
-		std::vector<Wt::Dbo::ptr<Track> >	getTracks() const;	// Get the tracks of this release
 
 		void setMBID(std::string mbid) { _MBID = mbid; }
 

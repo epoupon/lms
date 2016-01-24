@@ -185,8 +185,6 @@ int main(void)
 			assert(res.front().id() == 1);
 			assert(res.front()->getName() == "release01");
 
-			// Make sure release has an artist
-			assert(res.front()->getArtists().size() == 1);
 		}
 
 		// Select genre by name

@@ -17,8 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LOGGER_HPP__
-#define LOGGER_HPP__
+#pragma once
 
 #include <Wt/WServer>
 #include <Wt/WApplication>
@@ -55,4 +54,3 @@ std::string getSeverityName(Severity sev);
 
 #define LMS_LOG(module, level)	Wt::log(getSeverityName(Severity::level)) << Wt::WLogger::sep << "[" << getModuleName(Module::module) << "]" <<  Wt::WLogger::sep
 
-#endif

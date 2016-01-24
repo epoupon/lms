@@ -41,7 +41,6 @@ std::string encodingToString(Database::AudioEncoding encoding)
 		case Database::AudioEncoding::MP3: return "MP3";
 		case Database::AudioEncoding::OGA: return "OGG";
 		case Database::AudioEncoding::WEBMA: return "WebM";
-		case Database::AudioEncoding::FLA: return "Flash";
 	}
 
 	return "?";
@@ -65,7 +64,7 @@ class AudioFormModel : public Wt::WFormModel
 			initializeModels();
 
 			addField(BitrateField);
-			addField(EncodingField, "Session must be reloaded to apply this setting");
+			addField(EncodingField);
 
 			setValidator(BitrateField, new Wt::WValidator(true)); // mandatory
 			setValidator(EncodingField, new Wt::WValidator(true)); // mandatory

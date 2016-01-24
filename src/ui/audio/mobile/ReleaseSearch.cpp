@@ -40,6 +40,11 @@ _resCount(0)
 	title->setTemplateText(Wt::WString::tr("mobile-search-title"));
 
 	title->bindWidget("text", new Wt::WText("Releases", Wt::PlainText));
+
+	Wt::WTemplate* releaseWrapper = new Wt::WTemplate(this);
+	releaseWrapper->setTemplateText(Wt::WString::tr("wa-release-wrapper"));
+	_contents = new Wt::WContainerWidget();
+	releaseWrapper->bindWidget("contents", _contents );
 }
 
 void
@@ -58,9 +63,23 @@ ReleaseSearch::search(Database::SearchFilter filter, size_t max)
 	addResults(filter, max);
 }
 
+static  Wt::WString
+getArtistFromRelease(Release::pointer release)
+{
+	auto artists = Artist::getByFilter(DboSession(),
+			SearchFilter::ById(SearchFilter::Field::Release, release.id()), -1, 2);
+
+	if (artists.size() > 1)
+		return Wt::WString::fromUTF8("Various artists", Wt::PlainText);
+	else
+		return Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText);
+}
+
 void
 ReleaseSearch::addResults(Database::SearchFilter filter, size_t nb)
 {
+	using namespace Database;
+
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	std::vector<Release::pointer> releases = Release::getByFilter(DboSession(), filter, _resCount, nb + 1);
@@ -77,14 +96,17 @@ ReleaseSearch::addResults(Database::SearchFilter filter, size_t nb)
 	for (Release::pointer release : releases)
 	{
 		Wt::WTemplate* releaseWidget = new Wt::WTemplate(this);
-		releaseWidget->setTemplateText(Wt::WString::tr("mobile-release-res"));
+		releaseWidget->setTemplateText(Wt::WString::tr("wa-release-res"));
 
 		Wt::WImage *cover = new Wt::WImage();
 		cover->setStyleClass("center-block");
-		cover->setImageLink( Wt::WLink( LmsApplication::instance()->getCoverResource()->getReleaseUrl(release.id(), 56)));
-		releaseWidget->bindWidget("cover", cover);
+		cover->setImageLink( Wt::WLink( LmsApplication::instance()->getCoverResource()->getReleaseUrl(release.id(), 512)));
+		cover->setStyleClass("release_res_shadow release_img-responsive"); // TODO move?
 
+		releaseWidget->bindWidget("cover", cover);
 		releaseWidget->bindWidget("name", new Wt::WText(Wt::WString::fromUTF8(release->getName()), Wt::PlainText));
+		releaseWidget->bindString("release_name", Wt::WString::fromUTF8(release->getName()), Wt::PlainText);
+		releaseWidget->bindString("artist", getArtistFromRelease(release));
 
 		releaseWidget->clicked().connect(std::bind([=] {
 			_sigReleaseSelected(release.id());

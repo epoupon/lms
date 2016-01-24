@@ -20,7 +20,6 @@
 #ifndef UI_MOBILE_ARTIST_SEARCH_HPP
 #define UI_MOBILE_ARTIST_SEARCH_HPP
 
-#include <boost/algorithm/string/split.hpp>
 #include <Wt/WContainerWidget>
 
 #include "database/Types.hpp"
@@ -48,6 +47,7 @@ class ArtistSearch : public Wt::WContainerWidget
 		void clear(void);
 		void addResults(Database::SearchFilter filter, size_t nb);
 
+		Wt::WContainerWidget* _contents;
 		std::size_t		_resCount;
 };
 

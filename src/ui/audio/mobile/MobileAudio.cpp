@@ -17,31 +17,57 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/foreach.hpp>
 
 #include <Wt/WContainerWidget>
 #include <Wt/WTemplate>
-#include <Wt/WLineEdit>
 #include <Wt/WText>
-#include <Wt/WTable>
 
+#include "logger/Logger.hpp"
+#include "utils/Utils.hpp"
+
+#include "audio/AudioPlayer.hpp"
 #include "LmsApplication.hpp"
 
 #include "MobileAudio.hpp"
 
-#include "ArtistSearch.hpp"
-#include "ReleaseSearch.hpp"
-#include "TrackSearch.hpp"
-#include "MobileAudioMediaPlayer.hpp"
-
-#include "logger/Logger.hpp"
+#define SEARCH_NB_ITEMS	4
 
 namespace UserInterface {
 namespace Mobile {
 
 using namespace Database;
+
+static void playTrack(AudioPlayer *audioPlayer, Database::Track::id_type trackId)
+{
+	LMS_LOG(UI, DEBUG) << "Playing track id " << trackId;
+
+	Wt::Dbo::Transaction transaction(DboSession());
+
+	Track::pointer track = Track::getById(DboSession(), trackId);
+
+	if (track)
+		audioPlayer->loadTrack(track.id());
+}
+
+void
+Audio::search(std::string text)
+{
+	// When a new search is done, output some results from:
+	// Artist
+	// Release
+	// Song
+	auto keywords = splitString(text, " ");;
+
+	_releaseSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Release, keywords), SEARCH_NB_ITEMS);
+	_artistSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Artist, keywords), SEARCH_NB_ITEMS);
+	_trackSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Track, keywords), SEARCH_NB_ITEMS);
+
+	_artistSearch->show();
+	_releaseSearch->show();
+	_trackSearch->show();
+	_trackReleaseView->hide();
+}
+
 
 Audio::Audio(Wt::WContainerWidget *parent)
 : UserInterface::Audio(parent)
@@ -50,145 +76,78 @@ Audio::Audio(Wt::WContainerWidget *parent)
 	this->setStyleClass("container-fluid");
 	this->setPadding(60, Wt::Bottom);
 
-	Wt::WTemplate* search = new Wt::WTemplate(this);
-	search->setTemplateText(Wt::WString::tr("mobile-search"));
+	_artistSearch = new ArtistSearch(this);
+	_releaseSearch = new ReleaseSearch(this);
+	_trackSearch = new TrackSearch(this);
 
-	Wt::WLineEdit *edit = new Wt::WLineEdit();
-	edit->setEmptyText("Search...");
-
-	search->bindWidget("search", edit);
-	search->setMargin(10);
-
-	ArtistSearch* artistSearch = new ArtistSearch(this);
-	ReleaseSearch* releaseSearch = new ReleaseSearch(this);
-	TrackSearch* trackSearch = new TrackSearch(this);
+	_trackReleaseView  = new TrackReleaseView(this);
+	_trackReleaseView->hide();
 
 	Wt::WTemplate* footer = new Wt::WTemplate(this);
 	footer->setTemplateText(Wt::WString::tr("mobile-audio-footer"));
 
-	// Determine the encoding to be used
-	Wt::WMediaPlayer::Encoding encoding;
+	AudioPlayer* audioPlayer = new AudioPlayer();
+	footer->bindWidget("player", audioPlayer);
 
+	_artistSearch->moreArtistsSelected().connect(std::bind([=]
 	{
-		Wt::Dbo::Transaction transaction (DboSession());
-
-		switch (CurrentUser()->getAudioEncoding())
-		{
-			case AudioEncoding::MP3: encoding = Wt::WMediaPlayer::MP3; break;
-			case AudioEncoding::WEBMA: encoding = Wt::WMediaPlayer::WEBMA; break;
-			case AudioEncoding::OGA: encoding = Wt::WMediaPlayer::OGA; break;
-			case AudioEncoding::FLA: encoding = Wt::WMediaPlayer::FLA; break;
-			case AudioEncoding::AUTO:
-			default:
-			   encoding = AudioMediaPlayer::getBestEncoding();
-		}
-	}
-
-	AudioMediaPlayer* mediaPlayer = new AudioMediaPlayer(encoding);
-	footer->bindWidget("player", mediaPlayer);
-
-	edit->changed().connect(std::bind([=] () {
-		std::string text = edit->text().toUTF8();
-
-		// When a new search is done, output some results from:
-		// Artist
-		// Release
-		// Song
-		std::vector<std::string> keywords;
-		boost::algorithm::split(keywords, text, boost::is_any_of(" "), boost::token_compress_on);
-
-		releaseSearch->search(SearchFilter::NameLikeMatch( {{
-					{ SearchFilter::Field::Artist, keywords },
-					{ SearchFilter::Field::Release, keywords }}}),
-					3);
-
-		artistSearch->search(SearchFilter::NameLikeMatch({{{SearchFilter::Field::Artist, keywords}}}),
-					3);
-
-		trackSearch->search(SearchFilter::NameLikeMatch({{{SearchFilter::Field::Track, keywords}}}),
-					3);
-
-		artistSearch->show();
-		releaseSearch->show();
-		trackSearch->show();
-
+		_releaseSearch->hide();
+		_trackSearch->hide();
+		_artistSearch->show();
+		_trackReleaseView->hide();
 	}));
 
-	artistSearch->moreArtistsSelected().connect(std::bind([=]
+	_artistSearch->artistSelected().connect(std::bind([=] (Artist::id_type artistId)
 	{
-		releaseSearch->hide();
-		trackSearch->hide();
-		artistSearch->show();
-	}));
+		_artistSearch->hide();
+		_trackSearch->hide();
+		_releaseSearch->show();
+		_trackReleaseView->hide();
 
-	artistSearch->artistSelected().connect(std::bind([=] (Artist::id_type artistId)
-	{
-		artistSearch->hide();
-		trackSearch->hide();
-		releaseSearch->show();
-
-		releaseSearch->search(SearchFilter::ById(SearchFilter::Field::Artist, artistId), 20);
+		_releaseSearch->search(SearchFilter::ById(SearchFilter::Field::Artist, artistId), 20);
 	}, std::placeholders::_1));
 
-	releaseSearch->moreReleasesSelected().connect(std::bind([=]
+	_releaseSearch->moreReleasesSelected().connect(std::bind([=]
 	{
-		artistSearch->hide();
-		trackSearch->hide();
-		releaseSearch->show();
+		_artistSearch->hide();
+		_trackSearch->hide();
+		_releaseSearch->show();
+		_trackReleaseView->hide();
 	}));
 
-	releaseSearch->releaseSelected().connect(std::bind([=] (Release::id_type releaseId)
+	_releaseSearch->releaseSelected().connect(std::bind([=] (Release::id_type releaseId)
 	{
-		artistSearch->hide();
-		releaseSearch->hide();
-		trackSearch->show();
+		_artistSearch->hide();
+		_releaseSearch->hide();
+		_trackSearch->hide();
+		_trackReleaseView->show();
 
-		trackSearch->search(SearchFilter::ById(SearchFilter::Field::Release, releaseId), 20);
+		_trackReleaseView->search(SearchFilter::ById(SearchFilter::Field::Release, releaseId), 40);
 	}, std::placeholders::_1));
 
-	trackSearch->moreTracksSelected().connect(std::bind([=]
+	_trackSearch->moreSelected().connect(std::bind([=]
 	{
-		artistSearch->hide();
-		releaseSearch->hide();
+		_artistSearch->hide();
+		_releaseSearch->hide();
+		_trackSearch->show();
+		_trackReleaseView->hide();
 	}));
 
-	trackSearch->trackPlay().connect(std::bind([=] (Track::id_type id)
+	_trackSearch->trackPlay().connect(std::bind([=] (Track::id_type id)
 	{
-		LMS_LOG(UI, DEBUG) << "Playing track id " << id;
-		// TODO reduce transaction scope here
-		Wt::Dbo::Transaction transaction(DboSession());
+		playTrack(audioPlayer, id);
+	}, std::placeholders::_1));
 
-		Track::pointer track = Track::getById(DboSession(), id);
-
-		if (track)
-		{
-			Av::TranscodeParameters parameters;
-
-			// Determine the output format using the encoding of the player
-			Av::Encoding encoding;
-			switch(mediaPlayer->getEncoding())
-			{
-			case Wt::WMediaPlayer::MP3: encoding = Av::Encoding::MP3; break;
-			case Wt::WMediaPlayer::FLA: encoding = Av::Encoding::FLA; break;
-			case Wt::WMediaPlayer::OGA: encoding = Av::Encoding::OGA; break;
-			case Wt::WMediaPlayer::WEBMA: encoding = Av::Encoding::WEBMA; break;
-				default:
-					encoding = Av::Encoding::MP3;
-			}
-			parameters.setEncoding(encoding);
-
-			// TODO compute parameters using user's profile
-			parameters.setBitrate(Av::Stream::Type::Audio, 96000);
-
-			mediaPlayer->play(track.id(), parameters);
-		}
-	} , std::placeholders::_1));
+	_trackReleaseView->trackPlay().connect(std::bind([=] (Track::id_type id)
+	{
+		playTrack(audioPlayer, id);
+	}, std::placeholders::_1));
 
 	// Initially, populate the widgets using an empty search
 	{
-		artistSearch->search(SearchFilter(), 3);
-		releaseSearch->search(SearchFilter(), 3);
-		trackSearch->search(SearchFilter(), 3);
+		_artistSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
+		_releaseSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
+		_trackSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
 	}
 
 }

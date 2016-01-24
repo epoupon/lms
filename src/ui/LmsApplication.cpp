@@ -23,7 +23,6 @@
 #include <Wt/WNavigationBar>
 #include <Wt/WStackedWidget>
 #include <Wt/WMenu>
-#include <Wt/WNavigationBar>
 #include <Wt/WPopupMenu>
 #include <Wt/WVBoxLayout>
 #include <Wt/Auth/Identity>
@@ -100,6 +99,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	setTheme(bootstrapTheme);
 
 	useStyleSheet("css/lms.css");
+	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
 
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "templates");
@@ -142,6 +142,16 @@ Database::User::pointer CurrentUser()
 	return DbHandler().getCurrentUser();
 }
 
+CoverResource* SessionCoverResource()
+{
+	return LmsApplication::instance()->getCoverResource();
+}
+
+TranscodeResource* SessionTranscodeResource()
+{
+	return LmsApplication::instance()->getTranscodeResource();
+}
+
 void
 LmsApplication::createFirstConnectionUI()
 {
@@ -155,6 +165,8 @@ void
 LmsApplication::createLmsUI()
 {
 	_coverResource = new CoverResource(_db, root());
+	_transcodeResource = new TranscodeResource(_db, root());
+
 	DbHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
 
 	LmsAuth *authWidget = new LmsAuth();
@@ -191,9 +203,15 @@ LmsApplication::handleAuthEvent(void)
 		contentsStack->setOverflow(Wt::WContainerWidget::OverflowAuto);
 		contentsStack->addStyleClass("contents");
 
-		// Setup a Left-aligned menu.
-		Wt::WMenu *leftMenu = new Wt::WMenu(contentsStack);
-		navigation->addMenu(leftMenu);
+		Wt::WMenu *menu = new Wt::WMenu(contentsStack);
+		navigation->addMenu(menu, Wt::AlignRight);
+
+		LineEdit *searchEdit = new LineEdit(500);
+		navigation->bindWidget("search", searchEdit);
+		searchEdit->setEmptyText("Search...");
+		searchEdit->addStyleClass("navbar-form navbar-nav");
+		searchEdit->setWidth(150);
+		// TODO add a span with a search icon
 
 		Audio *audio;
 
@@ -202,23 +220,18 @@ LmsApplication::handleAuthEvent(void)
 		else
 			audio = new Desktop::Audio();
 
-		leftMenu->addItem("Audio", audio);
+		menu->addItem("Audio", audio);
 #if defined HAVE_VIDEO
-		leftMenu->addItem("Video", new VideoWidget());
+		menu->addItem("Video", new VideoWidget());
 #endif
-		leftMenu->addItem("Settings", new Settings::Settings());
-
-		// Setup a Right-aligned menu.
-		Wt::WMenu *rightMenu = new Wt::WMenu();
-
-		navigation->addMenu(rightMenu, Wt::AlignRight);
+		menu->addItem("Settings", new Settings::Settings());
 
 		Wt::WPopupMenu *popup = new Wt::WPopupMenu();
 		popup->addItem("Logout");
 
 		Wt::WMenuItem *item = new Wt::WMenuItem( CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) );
-			item->setMenu(popup);
-			rightMenu->addItem(item);
+		item->setMenu(popup);
+		menu->addItem(item);
 
 		popup->itemSelected().connect(std::bind([=] (Wt::WMenuItem* item)
 		{
@@ -226,17 +239,12 @@ LmsApplication::handleAuthEvent(void)
 				DbHandler().getLogin().logout();
 		}, std::placeholders::_1));
 
-		// Add a Search control.
-		LineEdit *searchEdit = new LineEdit(500);
-		searchEdit->setEmptyText("Search...");
-
 		searchEdit->timedChanged().connect(std::bind([=] ()
 		{
 			// TODO: check which view is activated and search into it
 			audio->search(searchEdit->text().toUTF8());
 		}));
 
-		navigation->addSearch(searchEdit, Wt::AlignLeft);
 
 		layout->addWidget(navigation);
 		layout->addWidget(contentsStack, 1);
