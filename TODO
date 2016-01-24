@@ -31,6 +31,7 @@
 [UI]
 	- Handle internationalization
 	- Handle internal path
+	- Cannot log again when refreshing the application in firefox (have to close/open a new browser tab)
 	[Settings]
 		- logout users that are being changed (loss of admin rights), or make sure they are still admin when they make changes
 		- "signal not exposed" problem if a user logout and login again. Bad resource destruction?
