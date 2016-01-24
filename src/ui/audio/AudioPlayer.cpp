@@ -114,9 +114,8 @@ AudioPlayer::loadTrack(Database::Track::id_type trackId)
 	//TODO, try to load everything in JS in order to prevent the WriteError bug?
 	_audio->pause();
 	_audio->clearSources();
-	//TODO, encoding
 	_audio->addSource(SessionTranscodeResource()->getUrl(trackId, encoding, 0, streams));
-	_audio->setPreloadMode(Wt::WAudio::PreloadAuto);
+	_audio->setPreloadMode(Wt::WAudio::PreloadNone);
 	_audio->play();
 
 	return true;
@@ -131,7 +130,7 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 	// TODO potential leak here
 	_audio = new Wt::WAudio();
 	_audio->setOptions(Wt::WAudio::Autoplay);
-	_audio->setPreloadMode(Wt::WAudio::PreloadAuto);
+	_audio->setPreloadMode(Wt::WAudio::PreloadNone);
 	bindWidget("audio", _audio);
 
 	_audio->ended().connect(std::bind([=] ()
@@ -154,10 +153,6 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 	volumeSlider->addStyleClass("mediaplayer-volume");
 	volumeSlider->setAttributeValue("orient", "vertical"); // firefox
 	bindWidget("volume", volumeSlider);
-
-	Wt::WText *playlistBtn = new Wt::WText("<i class=\"fa fa-list fa-2x\"></i>", Wt::XHTMLText);
-	playlistBtn->addStyleClass("mediaplayer-btn");
-	bindWidget("playlist", playlistBtn);
 
 	Wt::WText *repeatBtn = new Wt::WText("<i class=\"fa fa-repeat fa-2x\"></i>", Wt::XHTMLText);
 	repeatBtn->addStyleClass("mediaplayer-btn");
