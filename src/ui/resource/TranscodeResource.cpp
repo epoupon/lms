@@ -147,9 +147,9 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 		if (!transcoder->isComplete())
 		{
 			std::vector<unsigned char> data;
-			data.reserve(_bufferSize);
+			data.reserve(_chunkSize);
 
-			transcoder->process(data, _bufferSize);
+			transcoder->process(data, _chunkSize);
 
 			response.out().write(reinterpret_cast<char*>(&data[0]), data.size());
 			LMS_LOG(UI, DEBUG) << "Written " << data.size() << " bytes! complete = " << std::boolalpha << transcoder->isComplete();

@@ -44,7 +44,7 @@ class TranscodeResource : public Wt::WResource
 
 		Database::Handler&		_db;
 
-		static const std::size_t	_bufferSize = 65536;
+		static const std::size_t	_chunkSize = 65536*4;
 };
 
 } // namespace UserInterface
