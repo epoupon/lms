@@ -547,6 +547,11 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 				track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>(items[MetaData::Type::OriginalDate]) );
 		}
 
+		if (items.find(MetaData::Type::MusicBrainzTrackID) != items.end())
+		{
+			track.modify()->setMBID( boost::any_cast<std::string>(items[MetaData::Type::MusicBrainzTrackID]) );
+		}
+
 		if (items.find(MetaData::Type::HasCover) != items.end())
 		{
 			bool hasCover = boost::any_cast<bool>(items[MetaData::Type::HasCover]);
