@@ -23,6 +23,7 @@
 #include <boost/asio/placeholders.hpp>
 
 #include "logger/Logger.hpp"
+#include "utils/Utils.hpp"
 
 #include "database/Types.hpp"
 
@@ -244,7 +245,9 @@ Updater::process(boost::system::error_code err)
 			LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory.path << "' DONE";
 		}
 
-		LMS_LOG(DBUPDATER, INFO) << "Scan complete. Changes = " << stats.nbChanges() << ", Errors = " << stats.nbScanErrors;
+		checkDuplicatedAudioFiles(stats);
+
+		LMS_LOG(DBUPDATER, INFO) << "Scan complete. Changes = " << stats.nbChanges() << "(added = " << stats.nbAdded << ", nbRemoved = " << stats.nbRemoved << ", nbModified = " << stats.nbModified << "), Errors = " << stats.nbScanErrors;
 
 		// Update database stats
 		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
@@ -394,6 +397,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	if (!_metadataParser.parse(file, items))
 		return;
 
+	std::vector<unsigned char> checksum ;
+	computeCrc(file, checksum);
+
 	Wt::Dbo::Transaction transaction(_db.getSession());
 
 	Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
@@ -502,6 +508,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		assert(track);
 
+		track.modify()->setChecksum(checksum);
 		track.modify()->setArtist(artist);
 		track.modify()->setRelease(release);
 		track.modify()->setLastWriteTime(lastWriteTime);
@@ -717,6 +724,29 @@ Updater::checkAudioFiles( Stats& stats )
 	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Check audio files done!";
+}
+
+void
+Updater::checkDuplicatedAudioFiles(Stats& stats)
+{
+	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files";
+
+	Wt::Dbo::Transaction transaction(_db.getSession());
+
+	std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(_db.getSession());
+	for (Track::pointer track : tracks)
+	{
+		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath() << " - " << track->getArtist()->getName() << " - " << track->getName();
+	}
+
+	tracks = Database::Track::getChecksumDuplicates(_db.getSession());
+	for (Track::pointer track : tracks)
+	{
+		LMS_LOG(DBUPDATER, INFO) << "Found duplicated checksum [" << bufferToString(track->getChecksum()) << "], file: " << track->getPath() << " - " << track->getArtist()->getName() << " - " << track->getName();
+	}
+
+
+	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files done!";
 }
 
 void

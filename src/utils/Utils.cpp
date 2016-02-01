@@ -118,4 +118,16 @@ stringToUTF8(const std::string& str)
 	return boost::locale::conv::to_utf<char>(str, "UTF-8");
 }
 
+std::string
+bufferToString(const std::vector<unsigned char>& data)
+{
+	std::ostringstream oss;
+
+	for (unsigned char c : data)
+	{
+		oss << std::setw(2) << std::setfill('0') << std::hex << (int)c;
+	}
+
+	return oss.str();
+}
 

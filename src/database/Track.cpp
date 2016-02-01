@@ -87,6 +87,20 @@ Track::getAllPaths(Wt::Dbo::Session& session)
 	return std::vector<boost::filesystem::path>(res.begin(), res.end());
 }
 
+std::vector<Track::pointer>
+Track::getMBIDDuplicates(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::collection<pointer> res = session.query<pointer>( "SELECT track FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)").orderBy("track.mbid");
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
+std::vector<Track::pointer>
+Track::getChecksumDuplicates(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::collection<pointer> res = session.query<pointer>( "SELECT track FROM track WHERE checksum in (SELECT checksum FROM track WHERE Length(checksum) > 0 GROUP BY checksum HAVING COUNT(*) > 1)").orderBy("track.checksum");
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
 std::vector< Genre::pointer >
 Track::getGenres(void) const
 {
@@ -166,6 +180,7 @@ Track::updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< UIQuer
 	}
 
 }
+
 
 Genre::Genre()
 {

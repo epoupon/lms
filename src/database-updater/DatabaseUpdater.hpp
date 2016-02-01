@@ -84,6 +84,7 @@ class Updater
 
 		// Audio
 		void checkAudioFiles( Stats& stats );
+		void checkDuplicatedAudioFiles( Stats& stats );
 		void processAudioFile( const boost::filesystem::path& file, Stats& stats);
 
 		// Video
