@@ -171,7 +171,7 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 		{
 			// TODO use splitStrings
 			std::list<std::string> genres;
-			if (readList(it->second, ";,", genres))
+			if (readList(it->second, ";,\\", genres))
 				items.insert( std::make_pair(MetaData::Type::Genres, genres));
 
 		}
