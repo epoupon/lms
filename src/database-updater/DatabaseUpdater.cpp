@@ -247,7 +247,7 @@ Updater::process(boost::system::error_code err)
 
 		checkDuplicatedAudioFiles(stats);
 
-		LMS_LOG(DBUPDATER, INFO) << "Scan complete. Changes = " << stats.nbChanges() << "(added = " << stats.nbAdded << ", nbRemoved = " << stats.nbRemoved << ", nbModified = " << stats.nbModified << "), Errors = " << stats.nbScanErrors;
+		LMS_LOG(DBUPDATER, INFO) << "Scan complete. Changes = " << stats.nbChanges() << " (added = " << stats.nbAdded << ", nbRemoved = " << stats.nbRemoved << ", nbModified = " << stats.nbModified << "), Errors = " << stats.nbScanErrors;
 
 		// Update database stats
 		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
@@ -395,7 +395,10 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 	MetaData::Items items;
 	if (!_metadataParser.parse(file, items))
+	{
+		stats.nbScanErrors++;
 		return;
+	}
 
 	std::vector<unsigned char> checksum ;
 	computeCrc(file, checksum);
@@ -418,6 +421,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 			track.remove();
 			stats.nbRemoved++;
 		}
+		stats.nbScanErrors++;
 		return;
 	}
 	if (items.find(MetaData::Type::Duration) == items.end()
@@ -431,6 +435,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 			track.remove();
 			stats.nbRemoved++;
 		}
+		stats.nbScanErrors++;
 		return;
 	}
 
