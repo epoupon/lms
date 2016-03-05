@@ -21,6 +21,7 @@
 
 #include <Wt/WContainerWidget>
 #include <Wt/WSignal>
+#include <Wt/WText>
 
 #include "database/SearchFilter.hpp"
 #include "database/Types.hpp"
@@ -34,22 +35,23 @@ class ReleaseSearch : public Wt::WContainerWidget
 
 		ReleaseSearch(Wt::WContainerWidget *parent = 0);
 
-		void search(Database::SearchFilter filter, size_t nb);
+		void search(Database::SearchFilter filter, std::size_t nb, Wt::WString title);
+		void addResults(std::size_t nb);
 
 		// Slots
-		Wt::Signal<Database::Release::id_type>& releaseSelected() { return _sigReleaseSelected;}
-		Wt::Signal<void>& moreReleasesSelected() { return _sigMoreReleasesSelected;}
+		Wt::Signal<void>& showMore() { return _sigShowMore;}
 
 	private:
 
-		Wt::Signal<Database::Release::id_type> _sigReleaseSelected;
-		Wt::Signal<void> _sigMoreReleasesSelected;
+		Wt::Signal<void> _sigShowMore;
 
 		void clear(void);
-		void addResults(Database::SearchFilter filter, size_t nb);
 
-		Wt::WContainerWidget* _contents;
-		std::size_t		_resCount;
+		Wt::WTemplate*		_showMore;
+		Database::SearchFilter	_filter;
+		Wt::WContainerWidget*	_contents;
+		Wt::WText*		_title;
+		std::size_t		_count;
 };
 
 } // namespace Mobile

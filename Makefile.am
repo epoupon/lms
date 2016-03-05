@@ -13,7 +13,8 @@ lms_css_DATA = \
 		 docroot/css/lms.css
 
 lms_images_DATA = \
-		 docroot/images/unknown-cover.jpg
+		 docroot/images/unknown-cover.jpg	\
+		 docroot/images/unknown-artist.jpg
 
 lms_approot_DATA = \
 		approot/templates.xml

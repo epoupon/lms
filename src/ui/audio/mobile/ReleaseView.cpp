@@ -150,7 +150,7 @@ ReleaseView::addResults(size_t nb)
 
 			Wt::WImage *cover = new Wt::WImage();
 			cover->setStyleClass ("center-block img-responsive"); // TODO move to CSS?
-			cover->setImageLink(Wt::WLink (LmsApplication::instance()->getCoverResource()->getReleaseUrl(release.id(), 512)));
+			cover->setImageLink(Wt::WLink (LmsApp->getImageResource()->getReleaseUrl(release.id(), 512)));
 
 			releaseContainer->bindWidget("cover", cover);
 			releaseContainer->bindString("artist-name", getArtistNameFromRelease(release), Wt::PlainText);
@@ -208,6 +208,12 @@ ReleaseView::addResults(size_t nb)
 		_showMore->show();
 	else
 		_showMore->hide();
+}
+
+Wt::WLink
+ReleaseView::getLink(Database::Release::id_type id)
+{
+	return Wt::WLink(Wt::WLink::InternalPath, "/audio/release/" + std::to_string(id));
 }
 
 } // namespace Mobile

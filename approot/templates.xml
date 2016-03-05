@@ -365,12 +365,6 @@
 	</div>
 </message>
 
-<message id="mobile-search">
-	<div class="row">
-		<div class="col-xs-12">${search}</div>
-	</div>
-</message>
-
 <message id="mobile-search-title">
 	<div class="row">
 		<div class="col-xs-12">
@@ -386,62 +380,45 @@
 	</div>
 </message>
 
-<message id="mobile-artist-res">
-	<div class="row">
-		<div class="col-xs-12">
-			<div class="mobile-search-entry">${name}</div>
-		</div>
-	</div>
-</message>
-
-<message id="mobile-release-res">
-	<div class="row">
-		<div class="col-xs-12">
-			<div class="mobile-search-entry">
-				<div class="row">
-					<div class ="vertical-align">
-						<div class="col-xs-2" style="margin-top:3px">${cover}</div>
-						<div class="col-xs-10">${name}</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</message>
-
-<message id="mobile-track-res">
-	<div class="row">
-		<div class="col-xs-12">
-			<div class="mobile-search-entry">
-				<div class="row">
-					<div class="vertical-align">
-						<div class="col-xs-2" style="margin-top:3px">${cover}</div>
-						<div class="col-xs-7">${name}</div>
-						<div class="col-xs-3">${btn}</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</message>
-
 <message id="mobile-audio-footer">
 	<nav class="navbar navbar-default navbar-fixed-bottom" role="navigation">
 		${player}
 	</nav>
 </message>
 
-<message id="wa-release-wrapper">
-	<div class="section text-center">
-		<div class="container">
-			<div class="row">
-				${contents}
-			</div>
-		</div>
-	</div>
+
+<!--
+     wa-artist-search
+       -> wa-artist-search-res
+       -> wa-artist-search-res
+       -> ...
+-->
+<message id="wa-artist-search">
+	${title}
+	${contents}
+	${show-more}
 </message>
 
-<message id="wa-release-res">
+<message id="wa-artist-search-res">
+	<div class="col-xs-6 col-md-2">
+		<br/>${gif}
+		<h4 class="release_truncated-name" title="${artistname}">${name}<div style="font-size: 75%"></div></h4>
+   </div>
+</message>
+
+<!--
+     wa-release-search
+      -> wa-release-search-res
+      -> wa-release-search-res
+      -> ...
+-->
+<message id="wa-release-search">
+	${title}
+	${contents}
+	${show-more}
+</message>
+
+<message id="wa-release-search-res">
 	<div class="col-xs-6 col-md-2">
 		<br/>${cover}
 		<h4 class="release_truncated-name" title="${release_name}">${name}<div style="font-size: 75%"><br/>${artist}<br/></div></h4>
@@ -449,43 +426,20 @@
 </message>
 
 <!--
-     wa-artist-wrapper
-       -> wa-artist-res
-       -> wa-artist-res
-       -> ...
--->
-<message id="wa-artist-search">
-	${title}
-	${release-container}
-	${show-more}
-</message>
-
-<message id="wa-artist-wrapper">
-	<div class="section text-center">
-		<div class="container">
-			<div class="row">
-				${contents}
-			</div>
-		</div>
-	</div>
-</message>
-
-<message id="wa-artist-res">
-	<div class="col-xs-6 col-md-2">
-		<br/>${gif}
-		<h4 class="release_truncated-name" title="${artistname}">${name}<div style="font-size: 75%"></div></h4>
-   </div>
-</message>
-
-<message id="wa-track-wrapper">
+     wa-track_search
+      -> wa-track-search-res
+      -> wa-track-search-res
+      -> ...
+!-->
+<message id="wa-track-search">
 	${title}
 	<div class="menu-category list-group ">
-		${track-container}
+		${contents}
 	</div>
 	${show-more}
 </message>
 
-<message id="wa-track">
+<message id="wa-track-search-res">
 	<div class="menu-item list-group-item ">
 		<div class="row">
 			<div class="vertical-align">
@@ -498,8 +452,7 @@
 </message>
 
 
-<!-- Track container
-
+<!-- Release view
 	Track bar title
 
 	Release1

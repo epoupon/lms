@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2016 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,24 +20,18 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
-#include <Wt/WLink>
-
-#include "database/Types.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
-class ArtistView : public Wt::WContainerWidget
+class TrackSearchView : public Wt::WContainerWidget
 {
 	public:
 
-		static Wt::WLink getLink(Database::Artist::id_type id);
-
-		ArtistView(Wt::WContainerWidget *parent = 0);
+		TrackSearchView(Wt::WContainerWidget* parent = 0);
 
 };
 
-
-} //namespace Mobile
-} //namespace UserInterface
+} // namespace Mobile
+} // namespace UserInterface
 

@@ -26,6 +26,8 @@
 #include "LmsApplication.hpp"
 
 #include "ReleaseSearch.hpp"
+#include "ReleaseView.hpp"
+#include "ArtistView.hpp"
 
 namespace UserInterface {
 namespace Mobile {
@@ -33,112 +35,94 @@ namespace Mobile {
 using namespace Database;
 
 ReleaseSearch::ReleaseSearch(Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent),
-_resCount(0)
+: Wt::WContainerWidget(parent)
 {
-	Wt::WTemplate* title = new Wt::WTemplate(this);
-	title->setTemplateText(Wt::WString::tr("mobile-search-title"));
+	Wt::WTemplate* t = new Wt::WTemplate(this);
+	t->setTemplateText(Wt::WString::tr("wa-release-search"));
 
-	title->bindWidget("text", new Wt::WText("Releases", Wt::PlainText));
+	Wt::WTemplate *titleTemplate = new Wt::WTemplate(this);
+	titleTemplate->setTemplateText(Wt::WString::tr("mobile-search-title"));
 
-	Wt::WTemplate* releaseWrapper = new Wt::WTemplate(this);
-	releaseWrapper->setTemplateText(Wt::WString::tr("wa-release-wrapper"));
+	_title = new Wt::WText();
+	titleTemplate->bindWidget("text", _title);
+
+	t->bindWidget("title", titleTemplate);
+
 	_contents = new Wt::WContainerWidget();
-	releaseWrapper->bindWidget("contents", _contents );
+	t->bindWidget("contents", _contents );
+
+	_showMore = new Wt::WTemplate();
+	_showMore->setTemplateText(Wt::WString::tr("mobile-search-more"));
+	_showMore->bindString("text", "Tap to show more results...");
+	_showMore->hide();
+	_showMore->clicked().connect(std::bind([=] {
+		_sigShowMore.emit();
+	}));
+
+	t->bindWidget("show-more", _showMore);
 }
 
 void
 ReleaseSearch::clear()
 {
-	while (count() > 1)
-		removeWidget(this->widget(1));
-
-	_resCount = 0;
+	_contents->clear();
+	_showMore->hide();
 }
 
 void
-ReleaseSearch::search(Database::SearchFilter filter, size_t max)
+ReleaseSearch::search(Database::SearchFilter filter, size_t max, Wt::WString title)
 {
+	_filter = filter;
+	_title->setText(title);
+
 	clear();
-	addResults(filter, max);
-}
-
-static  Wt::WString
-getArtistFromRelease(Release::pointer release)
-{
-	auto artists = Artist::getByFilter(DboSession(),
-			SearchFilter::ById(SearchFilter::Field::Release, release.id()), -1, 2);
-
-	if (artists.size() > 1)
-		return Wt::WString::fromUTF8("Various artists", Wt::PlainText);
-	else
-		return Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText);
+	addResults(max);
 }
 
 void
-ReleaseSearch::addResults(Database::SearchFilter filter, size_t nb)
+ReleaseSearch::addResults(size_t nb)
 {
 	using namespace Database;
 
 	Wt::Dbo::Transaction transaction(DboSession());
 
-	std::vector<Release::pointer> releases = Release::getByFilter(DboSession(), filter, _resCount, nb + 1);
-
-	bool expectMoreResults;
-	if (releases.size() == nb + 1)
-	{
-		expectMoreResults = true;
-		releases.pop_back();
-	}
-	else
-		expectMoreResults = false;
+	bool moreResults;
+	std::vector<Release::pointer> releases = Release::getByFilter(DboSession(), _filter, _contents->count(), nb, moreResults);
 
 	for (Release::pointer release : releases)
 	{
-		Wt::WTemplate* releaseWidget = new Wt::WTemplate(this);
-		releaseWidget->setTemplateText(Wt::WString::tr("wa-release-res"));
+		Wt::WTemplate* res = new Wt::WTemplate(_contents);
+		res->setTemplateText(Wt::WString::tr("wa-release-search-res"));
 
-		Wt::WAnchor *coverAnchor = new Wt::WAnchor(Wt::WLink(Wt:: WLink::InternalPath, "/audio/release/" + std::to_string(release.id())));
+		Wt::WAnchor *coverAnchor = new Wt::WAnchor(ReleaseView::getLink(release.id()));
 		Wt::WImage *cover = new Wt::WImage(coverAnchor);
 		cover->setStyleClass("center-block");
-		cover->setImageLink( Wt::WLink( LmsApplication::instance()->getCoverResource()->getReleaseUrl(release.id(), 512)));
+		cover->setImageLink( SessionImageResource()->getReleaseUrl(release.id(), 512));
 		cover->setStyleClass("release_res_shadow release_img-responsive"); // TODO move?
 
-		releaseWidget->bindWidget("cover", coverAnchor);
-		releaseWidget->bindWidget("name", new Wt::WText(Wt::WString::fromUTF8(release->getName()), Wt::PlainText));
-		releaseWidget->bindString("release_name", Wt::WString::fromUTF8(release->getName()), Wt::PlainText);
-
+		res->bindWidget("cover", coverAnchor);
+		res->bindWidget("name", new Wt::WText(Wt::WString::fromUTF8(release->getName()), Wt::PlainText));
+		res->bindString("release_name", Wt::WString::fromUTF8(release->getName()), Wt::PlainText);
 
 		auto artists = Artist::getByFilter(DboSession(),
 			SearchFilter::ById(SearchFilter::Field::Release, release.id()), -1, 2);
 		if (artists.size() == 1)
 		{
-			Wt::WAnchor *artistAnchor = new Wt::WAnchor(Wt::WLink(Wt:: WLink::InternalPath, "/audio/artist/" + std::to_string(artists.front().id())));
+			Wt::WAnchor *artistAnchor = new Wt::WAnchor(ArtistView::getLink(artists.front().id()));
 			Wt::WText *artist = new Wt::WText(artistAnchor);
 			artist->setText(Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText));
-			releaseWidget->bindWidget("artist", artistAnchor);
+			res->bindWidget("artist", artistAnchor);
 		}
 		else
-			releaseWidget->bindWidget("artist", new Wt::WText(Wt::WString::fromUTF8("Various Artists", Wt::PlainText)));
+			res->bindWidget("artist", new Wt::WText(Wt::WString::fromUTF8("Various Artists", Wt::PlainText)));
 
 	}
 
-	_resCount += releases.size();;
+	if (moreResults)
+		_showMore->show();
+	else
+		_showMore->hide();
 
-	if (expectMoreResults)
-	{
-		Wt::WTemplate* moreRes = new Wt::WTemplate(this);
-		moreRes->setTemplateText(Wt::WString::tr("mobile-search-more"));
-
-		moreRes->bindWidget("text", new Wt::WText("Tap to show more results..."));
-
-		moreRes->clicked().connect(std::bind([=] {
-			_sigMoreReleasesSelected();
-			removeWidget(moreRes);
-
-			addResults(filter, 20);
-		}));
-	}
 }
 
 } // namespace Mobile

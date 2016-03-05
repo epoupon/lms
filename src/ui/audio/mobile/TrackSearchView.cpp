@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2016 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,50 +17,44 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "LmsApplication.hpp"
+#include <Wt/WApplication>
+#include <Wt/WText>
 
-#include "utils/Utils.hpp"
+#include "logger/Logger.hpp"
+#include "SearchUtils.hpp"
 
-#include "ReleaseSearch.hpp"
-#include "ArtistView.hpp"
+#include "TrackSearch.hpp"
+
+#include "TrackSearchView.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
+#define SEARCH_NB_ITEMS	20
+
 using namespace Database;
 
-ArtistView::ArtistView(Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent)
+TrackSearchView::TrackSearchView(Wt::WContainerWidget* parent)
 {
-	ReleaseSearch *releases = new ReleaseSearch(this);
+	TrackSearch* trackSearch = new TrackSearch(this);
+	trackSearch->showMore().connect(std::bind([=] {
+		trackSearch->addResults(SEARCH_NB_ITEMS);
+	}));
 
 	wApp->internalPathChanged().connect(std::bind([=] (std::string path)
 	{
-		const std::string pathPrefix = "/audio/artist/";
+		const std::string pathPrefix = "/audio/search/track";
 
 		if (!wApp->internalPathMatches(pathPrefix))
 			return;
 
-		std::string strId = path.substr(pathPrefix.length());
+		std::vector<std::string> keywords = searchPathToSearchKeywords(path.substr(pathPrefix.length()));
 
-		Artist::id_type id;
-		if (readAs(strId, id))
-		{
-			Wt::Dbo::Transaction transaction(DboSession());
-
-			auto artist = Artist::getById(DboSession(), id);
-			releases->search(SearchFilter::ById(SearchFilter::Field::Artist, id), 20, artist ? Wt::WString::fromUTF8(artist->getName()) : "Unknown artist");
-		}
+		trackSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Track, keywords), SEARCH_NB_ITEMS);
 
 	}, std::placeholders::_1));
 }
 
-Wt::WLink
-ArtistView::getLink(Database::Artist::id_type id)
-{
-	return Wt::WLink(Wt::WLink::InternalPath, "/audio/artist/" + std::to_string(id));
-}
-
-} //namespace Mobile
-} //namespace UserInterface
+} // namespace Mobile
+} // namespace UserInterface
 

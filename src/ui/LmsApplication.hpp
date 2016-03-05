@@ -26,7 +26,7 @@
 #include <Wt/Dbo/SqlConnectionPool>
 
 #include "database/DatabaseHandler.hpp"
-#include "resource/CoverResource.hpp"
+#include "resource/ImageResource.hpp"
 #include "resource/TranscodeResource.hpp"
 
 namespace UserInterface {
@@ -40,7 +40,7 @@ class LmsApplication : public Wt::WApplication
 		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool);
 
 		// Session application data
-		CoverResource* getCoverResource() { return _coverResource; }
+		ImageResource* getImageResource() { return _imageResource; }
 		TranscodeResource* getTranscodeResource() { return _transcodeResource; }
 		Database::Handler& getDbHandler() { return _db;}
 
@@ -51,7 +51,7 @@ class LmsApplication : public Wt::WApplication
 		void createLmsUI();
 
 		Database::Handler	_db;
-		CoverResource*          _coverResource;
+		ImageResource*          _imageResource;
 		TranscodeResource*	_transcodeResource;
 };
 
@@ -64,7 +64,7 @@ Wt::Dbo::Session& DboSession();
 const Wt::Auth::User& CurrentAuthUser();
 Database::User::pointer CurrentUser();
 
-CoverResource *SessionCoverResource();
+ImageResource *SessionImageResource();
 TranscodeResource *SessionTranscodeResource();
 
 } // namespace UserInterface

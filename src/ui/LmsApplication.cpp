@@ -48,6 +48,18 @@ namespace skeletons {
 	  extern const char *AuthStrings_xml1;
 }
 
+namespace {
+
+bool agentIsMobile()
+{
+	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
+	return (env.agentIsIEMobile()
+		|| env.agentIsMobileWebKit()
+		|| env.userAgent().find("Mobile") != std::string::npos // Workaround for firefox
+		|| env.userAgent().find("Tablet") != std::string::npos // Workaround for firefox
+		);
+}
+}
 
 namespace UserInterface {
 
@@ -76,9 +88,9 @@ LmsApplication::instance()
 LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool)
 : Wt::WApplication(env),
   _db(connectionPool),
-  _coverResource(nullptr)
+  _imageResource(nullptr),
+  _transcodeResource(nullptr)
 {
-
 	Wt::WBootstrapTheme *bootstrapTheme = new Wt::WBootstrapTheme(this);
 	bootstrapTheme->setVersion(Wt::WBootstrapTheme::Version3);
 	bootstrapTheme->setResponsive(true);
@@ -106,7 +118,6 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 		createFirstConnectionUI();
 	else
 		createLmsUI();
-
 }
 
 Database::Handler& DbHandler()
@@ -128,9 +139,9 @@ Database::User::pointer CurrentUser()
 	return DbHandler().getCurrentUser();
 }
 
-CoverResource* SessionCoverResource()
+ImageResource* SessionImageResource()
 {
-	return LmsApplication::instance()->getCoverResource();
+	return LmsApplication::instance()->getImageResource();
 }
 
 TranscodeResource* SessionTranscodeResource()
@@ -150,7 +161,7 @@ LmsApplication::createFirstConnectionUI()
 void
 LmsApplication::createLmsUI()
 {
-	_coverResource = new CoverResource(_db, root());
+	_imageResource = new ImageResource(_db, root());
 	_transcodeResource = new TranscodeResource(_db, root());
 
 	DbHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
@@ -163,8 +174,6 @@ LmsApplication::createLmsUI()
 	authWidget->processEnvironment();
 
 	root()->addWidget(authWidget);
-
-	setInternalPath("/");
 }
 
 void
@@ -186,7 +195,7 @@ LmsApplication::handleAuthEvent(void)
 	setConfirmCloseMessage("Closing LMS. Are you sure?");
 
 	// Handle internal paths
-//	this->setInternalPath("audio");
+//	setInternalPath("audio");
 
 	// Create a Vertical layout: top is the nav bar, bottom is the contents
 	Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
@@ -207,11 +216,16 @@ LmsApplication::handleAuthEvent(void)
 	LineEdit *searchEdit = new LineEdit(500);
 	navigation->bindWidget("search", searchEdit);
 	searchEdit->setEmptyText("Search...");
-	searchEdit->addStyleClass("navbar-form navbar-nav");
+	AearchEdit->addStyleClass("navbar-form navbar-nav");
 	searchEdit->setWidth(150);
 	// TODO add a span with a search icon
 
-	Mobile::Audio *audio = new Mobile::Audio();
+	Audio *audio;
+
+	if (agentIsMobile())
+		audio = new Mobile::Audio();
+	else
+		audio = new Desktop::Audio();
 
 	menu->addItem("Audio", audio);
 #if defined HAVE_VIDEO

@@ -29,23 +29,19 @@
 namespace UserInterface {
 namespace Mobile {
 
-using namespace Database;
-
 ArtistSearch::ArtistSearch(Wt::WString title, Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent),
-_count(0)
+: Wt::WContainerWidget(parent)
 {
-	Wt::WTemplate* artistSearch = new Wt::WTemplate(this);
-	artistSearch->setTemplateText(Wt::WString::tr("wa-artist-search"));
+	Wt::WTemplate* t = new Wt::WTemplate(this);
+	t->setTemplateText(Wt::WString::tr("wa-artist-search"));
 
 	Wt::WTemplate *titleTemplate = new Wt::WTemplate(this);
 	titleTemplate->setTemplateText(Wt::WString::tr("mobile-search-title"));
 	titleTemplate->bindString("text", title);
-
-	artistSearch->bindWidget("title", titleTemplate);
+	t->bindWidget("title", titleTemplate);
 
 	_contents = new Wt::WContainerWidget();
-	artistSearch->bindWidget("release-container", _contents );
+	t->bindWidget("contents", _contents );
 
 	_showMore = new Wt::WTemplate();
 	_showMore->setTemplateText(Wt::WString::tr("mobile-search-more"));
@@ -54,15 +50,13 @@ _count(0)
 	_showMore->clicked().connect(std::bind([=] {
 		_sigShowMore.emit();
 	}));
-
-	artistSearch->bindWidget("show-more", _showMore);
+	t->bindWidget("show-more", _showMore);
 }
 
 void
 ArtistSearch::clear()
 {
 	_contents->clear();
-	_count = 0;
 	_showMore->hide();
 }
 
@@ -75,46 +69,30 @@ ArtistSearch::search(Database::SearchFilter filter, size_t nb)
 	addResults(nb);
 }
 
-static
-std::vector<Artist::pointer>
-getArtists(SearchFilter filter, size_t offset, size_t nb, bool &moreResults)
-{
-	std::vector<Artist::pointer> artists = Artist::getByFilter(DboSession(), filter, offset, nb + 1);
-
-	if (artists.size() == nb + 1)
-	{
-		moreResults = true;
-		artists.pop_back();
-	}
-	else
-		moreResults = false;
-
-	return artists;
-}
-
 void
 ArtistSearch::addResults(std::size_t nb)
 {
+	using namespace Database;
+
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	bool moreResults;
-	std::vector<Artist::pointer> artists = getArtists(_filter, _count, nb, moreResults);
+	std::vector<Artist::pointer> artists = Artist::getByFilter(DboSession(), _filter, _contents->count(), nb, moreResults);
 
 	for (Artist::pointer artist : artists)
 	{
 		Wt::WTemplate* res = new Wt::WTemplate(_contents);
-		res->setTemplateText(Wt::WString::tr("wa-artist-res"));
+		res->setTemplateText(Wt::WString::tr("wa-artist-search-res"));
 
 		Wt::WAnchor *coverAnchor = new Wt::WAnchor(Wt::WLink(Wt:: WLink::InternalPath, "/audio/artist/" + std::to_string(artist.id())));
 		Wt::WImage *artistImg = new Wt::WImage(coverAnchor);
+		artistImg->setImageLink( SessionImageResource()->getArtistUrl(artist.id(), 512));
 		artistImg->setStyleClass("center-block"); // TODO move in css?
 		artistImg->setStyleClass("release_res_shadow release_img-responsive"); // TODO move in css?
 
 		res->bindWidget("gif", coverAnchor);
 		res->bindString("name", Wt::WString::fromUTF8(artist->getName(), Wt::PlainText));
 	}
-
-	_count += artists.size();
 
 	if (moreResults)
 		_showMore->show();

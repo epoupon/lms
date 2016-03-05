@@ -77,7 +77,7 @@ AudioPlayer::loadTrack(Database::Track::id_type trackId)
 
 	bindString("track", Wt::WString::fromUTF8(track->getName()));
 	bindString("artist", Wt::WString::fromUTF8(track->getArtist()->getName()));
-	_cover->setImageLink(SessionCoverResource()->getTrackUrl(trackId, 64));
+	_cover->setImageLink(SessionImageResource()->getTrackUrl(trackId, 64));
 
 	std::string durationFormat = track->getDuration().total_seconds() < 3600 ? "%M:%S" : "%H:%M:%S";
 
@@ -140,7 +140,7 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 
 	_cover = new Wt::WImage();
 	bindWidget("cover", _cover);
-	_cover->setImageLink(SessionCoverResource()->getUnknownTrackUrl(64));
+	_cover->setImageLink(SessionImageResource()->getUnknownTrackUrl(64));
 
 	InputRange *seekbar = new InputRange();
 	seekbar->addStyleClass("mediaplayer-seekbar");

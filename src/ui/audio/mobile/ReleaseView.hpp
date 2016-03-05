@@ -22,14 +22,14 @@
 #include <Wt/WContainerWidget>
 #include <Wt/WSignal>
 
-#include "resource/CoverResource.hpp"
-
 namespace UserInterface {
 namespace Mobile {
 
 class ReleaseView : public Wt::WContainerWidget
 {
 	public:
+
+		static Wt::WLink getLink(Database::Release::id_type id);
 
 		ReleaseView(Wt::WContainerWidget *parent = 0);
 

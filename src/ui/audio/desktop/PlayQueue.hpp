@@ -25,8 +25,6 @@
 
 #include "database/Types.hpp"
 
-#include "resource/CoverResource.hpp"
-
 namespace UserInterface {
 namespace Desktop {
 

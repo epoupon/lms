@@ -51,6 +51,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static pointer			getNone(Wt::Dbo::Session& session); // Special entry
 		static std::vector<pointer>	getByName(Wt::Dbo::Session& session, const std::string& name);
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
+		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool& moreExpected);
 
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, int offset = -1, int size = -1);
 		static std::vector<pointer>	getAllOrphans(Wt::Dbo::Session& session);

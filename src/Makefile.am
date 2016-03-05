@@ -37,13 +37,15 @@ lms_SOURCES = \
 	$(srcdir)/ui/audio/mobile/MobileAudio.cpp		\
 	$(srcdir)/ui/audio/mobile/PreviewSearchView.cpp		\
 	$(srcdir)/ui/audio/mobile/ReleaseSearch.cpp		\
+	$(srcdir)/ui/audio/mobile/ReleaseSearchView.cpp		\
 	$(srcdir)/ui/audio/mobile/ReleaseView.cpp		\
 	$(srcdir)/ui/audio/mobile/TrackSearch.cpp		\
+	$(srcdir)/ui/audio/mobile/TrackSearchView.cpp		\
 	$(srcdir)/ui/common/DirectoryValidator.cpp		\
 	$(srcdir)/ui/common/InputRange.cpp			\
 	$(srcdir)/ui/common/LineEdit.cpp			\
 	$(srcdir)/ui/resource/AvConvTranscodeStreamResource.cpp	\
-	$(srcdir)/ui/resource/CoverResource.cpp			\
+	$(srcdir)/ui/resource/ImageResource.cpp			\
 	$(srcdir)/ui/resource/TranscodeResource.cpp		\
 	$(srcdir)/ui/settings/Settings.cpp			\
 	$(srcdir)/ui/settings/SettingsAccountFormView.cpp	\

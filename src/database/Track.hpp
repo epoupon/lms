@@ -105,6 +105,7 @@ class Track
 		static pointer getById(Wt::Dbo::Session& session, id_type id);
 		static pointer getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
+		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool &moreResults);
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
 		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session);
 		static std::vector<pointer> getMBIDDuplicates(Wt::Dbo::Session& session);

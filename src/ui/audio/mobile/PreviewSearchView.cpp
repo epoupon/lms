@@ -60,6 +60,14 @@ PreviewSearchView::PreviewSearchView(Wt::WContainerWidget* parent)
 		wApp->setInternalPath(path, true);
 	}));
 
+	trackSearch->showMore().connect(std::bind([=]
+	{
+		std::string path = wApp->internalPath();
+		path.replace(0, pathPrefix.length(), "/audio/search/track");
+
+		wApp->setInternalPath(path, true);
+	}));
+
 	wApp->internalPathChanged().connect(std::bind([=] (std::string path)
 	{
 		if (!wApp->internalPathMatches(pathPrefix))
@@ -68,7 +76,7 @@ PreviewSearchView::PreviewSearchView(Wt::WContainerWidget* parent)
 		std::vector<std::string> keywords = searchPathToSearchKeywords(path.substr(pathPrefix.length()));
 
 		artistSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Artist, keywords), SEARCH_NB_ITEMS);
-		releaseSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Release, keywords), SEARCH_NB_ITEMS);
+		releaseSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Release, keywords), SEARCH_NB_ITEMS, "Releases");
 		trackSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Track, keywords), SEARCH_NB_ITEMS);
 
 	}, std::placeholders::_1));

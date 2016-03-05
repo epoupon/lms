@@ -29,10 +29,11 @@
 #include "audio/AudioPlayer.hpp"
 #include "LmsApplication.hpp"
 
-#include "ArtistSearchView.hpp"
 #include "PreviewSearchView.hpp"
-#include "ReleaseSearch.hpp"
-#include "TrackSearch.hpp"
+#include "ArtistSearchView.hpp"
+#include "ReleaseSearchView.hpp"
+#include "TrackSearchView.hpp"
+
 #include "ArtistView.hpp"
 #include "ReleaseView.hpp"
 
@@ -84,8 +85,8 @@ Audio::Audio(Wt::WContainerWidget *parent)
 	// Same order as WidgetIdxXXX
 	stack->addWidget(new PreviewSearchView());
 	stack->addWidget(new ArtistSearchView());
-	stack->addWidget(new ReleaseSearch());
-	stack->addWidget(new TrackSearch());
+	stack->addWidget(new ReleaseSearchView());
+	stack->addWidget(new TrackSearchView());
 	stack->addWidget(new ArtistView());
 	stack->addWidget(new ReleaseView());
 

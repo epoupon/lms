@@ -159,6 +159,22 @@ Track::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, i
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+std::vector<Track::pointer>
+Track::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool& moreResults)
+{
+	auto res = getByFilter(session, filter, offset, size + 1);
+
+	if (size != -1 && res.size() == static_cast<std::size_t>(size) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
+
+	return res;
+}
+
 void
 Track::updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< UIQueryResult >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
 {

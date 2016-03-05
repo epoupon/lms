@@ -17,50 +17,42 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "LmsApplication.hpp"
+#include <Wt/WApplication>
 
-#include "utils/Utils.hpp"
+#include "SearchUtils.hpp"
 
 #include "ReleaseSearch.hpp"
-#include "ArtistView.hpp"
+
+#include "ReleaseSearchView.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
+#define SEARCH_NB_ITEMS	20
+
 using namespace Database;
 
-ArtistView::ArtistView(Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent)
+ReleaseSearchView::ReleaseSearchView(Wt::WContainerWidget* parent)
 {
-	ReleaseSearch *releases = new ReleaseSearch(this);
+	ReleaseSearch* artistSearch = new ReleaseSearch(this);
+	artistSearch->showMore().connect(std::bind([=] {
+		artistSearch->addResults(SEARCH_NB_ITEMS);
+	}));
 
 	wApp->internalPathChanged().connect(std::bind([=] (std::string path)
 	{
-		const std::string pathPrefix = "/audio/artist/";
+		const std::string pathPrefix = "/audio/search/release";
 
 		if (!wApp->internalPathMatches(pathPrefix))
 			return;
 
-		std::string strId = path.substr(pathPrefix.length());
+		std::vector<std::string> keywords = searchPathToSearchKeywords(path.substr(pathPrefix.length()));
 
-		Artist::id_type id;
-		if (readAs(strId, id))
-		{
-			Wt::Dbo::Transaction transaction(DboSession());
-
-			auto artist = Artist::getById(DboSession(), id);
-			releases->search(SearchFilter::ById(SearchFilter::Field::Artist, id), 20, artist ? Wt::WString::fromUTF8(artist->getName()) : "Unknown artist");
-		}
+		artistSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Release, keywords), SEARCH_NB_ITEMS, "Releases");
 
 	}, std::placeholders::_1));
 }
 
-Wt::WLink
-ArtistView::getLink(Database::Artist::id_type id)
-{
-	return Wt::WLink(Wt::WLink::InternalPath, "/audio/artist/" + std::to_string(id));
-}
-
-} //namespace Mobile
-} //namespace UserInterface
+} // namespace Mobile
+} // namespace UserInterface
 

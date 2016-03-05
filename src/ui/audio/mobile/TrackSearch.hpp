@@ -22,8 +22,8 @@
 #include <Wt/WContainerWidget>
 #include <Wt/WSignal>
 
-#include "database/Types.hpp"
 #include "database/SearchFilter.hpp"
+#include "database/Types.hpp"
 
 namespace UserInterface {
 namespace Mobile {
@@ -34,25 +34,23 @@ class TrackSearch : public Wt::WContainerWidget
 
 		TrackSearch(Wt::WContainerWidget *parent = 0);
 
+		void addResults(size_t nb);
 		void search(Database::SearchFilter filter, size_t nb);
 
 		// Slots
+		Wt::Signal<void>& showMore() { return _sigShowMore;}
 		Wt::Signal<Database::Track::id_type>&	trackPlay() { return _sigTrackPlay;}
-		Wt::Signal<void>& moreSelected() { return _sigMoreSelected;}
 
 	private:
 
+		Wt::Signal<void> _sigShowMore;
 		Wt::Signal<Database::Track::id_type> _sigTrackPlay;
-		Wt::Signal<void> _sigMoreSelected;
 
 		void clear(void);
-		void addResults(size_t nb);
 
-		Wt::WTemplate*	_showMore;
-
+		Wt::WTemplate*		_showMore;
 		Database::SearchFilter	_filter;
-		std::size_t		_nbTracks;
-		Wt::WContainerWidget*	_container;
+		Wt::WContainerWidget*	_contents;
 };
 
 } // namespace Mobile
