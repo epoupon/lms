@@ -28,8 +28,8 @@
 #include <Wt/Auth/Identity>
 
 #include "config/config.h"
-
 #include "logger/Logger.hpp"
+#include "utils/Utils.hpp"
 
 #include "settings/Settings.hpp"
 #include "settings/SettingsFirstConnectionFormView.hpp"
@@ -46,20 +46,6 @@
 
 namespace skeletons {
 	  extern const char *AuthStrings_xml1;
-}
-
-namespace {
-
-bool agentIsMobile()
-{
-	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
-	return (env.agentIsIEMobile()
-		|| env.agentIsMobileWebKit()
-		|| env.userAgent().find("Mobile") != std::string::npos // Workaround for firefox
-		|| env.userAgent().find("Tablet") != std::string::npos // Workaround for firefox
-		);
-}
-
 }
 
 
@@ -177,86 +163,88 @@ LmsApplication::createLmsUI()
 	authWidget->processEnvironment();
 
 	root()->addWidget(authWidget);
-}
 
+	setInternalPath("/");
+}
 
 void
 LmsApplication::handleAuthEvent(void)
 {
-	if (DbHandler().getLogin().loggedIn())
-	{
-		LMS_LOG(UI, INFO) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
-
-		this->root()->setOverflow(Wt::WContainerWidget::OverflowHidden);
-                setConfirmCloseMessage("Closing LMS. Are you sure?");
-
-		// Create a Vertical layout: top is the nav bar, bottom is the contents
-		Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
-		// Create a navigation bar with a link to a web page.
-		Wt::WNavigationBar *navigation = new Wt::WNavigationBar();
-		navigation->setTitle("LMS", "https://github.com/epoupon/lms");
-		navigation->setResponsive(true);
-		navigation->addStyleClass("main-nav");
-
-		Wt::WStackedWidget *contentsStack = new Wt::WStackedWidget();
-
-		contentsStack->setOverflow(Wt::WContainerWidget::OverflowAuto);
-		contentsStack->addStyleClass("contents");
-
-		Wt::WMenu *menu = new Wt::WMenu(contentsStack);
-		navigation->addMenu(menu, Wt::AlignRight);
-
-		LineEdit *searchEdit = new LineEdit(500);
-		navigation->bindWidget("search", searchEdit);
-		searchEdit->setEmptyText("Search...");
-		searchEdit->addStyleClass("navbar-form navbar-nav");
-		searchEdit->setWidth(150);
-		// TODO add a span with a search icon
-
-		Audio *audio;
-
-		if (agentIsMobile())
-			audio = new Mobile::Audio();
-		else
-			audio = new Desktop::Audio();
-
-		menu->addItem("Audio", audio);
-#if defined HAVE_VIDEO
-		menu->addItem("Video", new VideoWidget());
-#endif
-		menu->addItem("Settings", new Settings::Settings());
-
-		Wt::WPopupMenu *popup = new Wt::WPopupMenu();
-		popup->addItem("Logout");
-
-		Wt::WMenuItem *item = new Wt::WMenuItem( CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) );
-		item->setMenu(popup);
-		menu->addItem(item);
-
-		popup->itemSelected().connect(std::bind([=] (Wt::WMenuItem* item)
-		{
-			if (item && item->text() == "Logout")
-				DbHandler().getLogin().logout();
-		}, std::placeholders::_1));
-
-		searchEdit->timedChanged().connect(std::bind([=] ()
-		{
-			// TODO: check which view is activated and search into it
-			audio->search(searchEdit->text().toUTF8());
-		}));
-
-
-		layout->addWidget(navigation);
-		layout->addWidget(contentsStack, 1);
-		layout->setContentsMargins(0, 0, 0, 0);
-	}
-	else
+	if (!DbHandler().getLogin().loggedIn())
 	{
 		LMS_LOG(UI, INFO) << "User logged out, session = " << Wt::WApplication::instance()->sessionId();
 
 		quit("");
 		redirect("/");
+
+		return;
 	}
+
+	LMS_LOG(UI, INFO) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
+
+	this->root()->setOverflow(Wt::WContainerWidget::OverflowHidden);
+	setConfirmCloseMessage("Closing LMS. Are you sure?");
+
+	// Handle internal paths
+//	this->setInternalPath("audio");
+
+	// Create a Vertical layout: top is the nav bar, bottom is the contents
+	Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
+	// Create a navigation bar with a link to a web page.
+	Wt::WNavigationBar *navigation = new Wt::WNavigationBar();
+	navigation->setTitle("LMS", "https://github.com/epoupon/lms");
+	navigation->setResponsive(true);
+	navigation->addStyleClass("main-nav");
+
+	Wt::WStackedWidget *contentsStack = new Wt::WStackedWidget();
+
+	contentsStack->setOverflow(Wt::WContainerWidget::OverflowAuto);
+	contentsStack->addStyleClass("contents");
+
+	Wt::WMenu *menu = new Wt::WMenu(contentsStack);
+	navigation->addMenu(menu, Wt::AlignRight);
+
+	LineEdit *searchEdit = new LineEdit(500);
+	navigation->bindWidget("search", searchEdit);
+	searchEdit->setEmptyText("Search...");
+	searchEdit->addStyleClass("navbar-form navbar-nav");
+	searchEdit->setWidth(150);
+	// TODO add a span with a search icon
+
+	Mobile::Audio *audio = new Mobile::Audio();
+
+	menu->addItem("Audio", audio);
+#if defined HAVE_VIDEO
+	menu->addItem("Video", new VideoWidget());
+#endif
+	menu->addItem("Settings", new Settings::Settings());
+
+
+	Wt::WPopupMenu *popup = new Wt::WPopupMenu();
+	popup->addItem("Logout");
+
+	Wt::WMenuItem *item = new Wt::WMenuItem( CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) );
+	item->setMenu(popup);
+	menu->addItem(item);
+
+	popup->itemSelected().connect(std::bind([=] (Wt::WMenuItem* item)
+	{
+		if (item && item->text() == "Logout")
+			DbHandler().getLogin().logout();
+	}, std::placeholders::_1));
+
+	searchEdit->timedChanged().connect(std::bind([=] ()
+	{
+		// TODO: check which view is activated and search into it
+		audio->search(searchEdit->text().toUTF8());
+	}));
+
+	layout->addWidget(navigation);
+	layout->addWidget(contentsStack, 1);
+	layout->setContentsMargins(0, 0, 0, 0);
+
+	// Set initial path
+	wApp->setInternalPath("/audio/search/preview", true);
 }
 
 } // namespace UserInterface

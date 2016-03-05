@@ -32,9 +32,12 @@ lms_SOURCES = \
 	$(srcdir)/ui/audio/desktop/TableFilter.cpp		\
 	$(srcdir)/ui/audio/desktop/TrackView.cpp		\
 	$(srcdir)/ui/audio/mobile/ArtistSearch.cpp		\
+	$(srcdir)/ui/audio/mobile/ArtistSearchView.cpp		\
+	$(srcdir)/ui/audio/mobile/ArtistView.cpp		\
 	$(srcdir)/ui/audio/mobile/MobileAudio.cpp		\
+	$(srcdir)/ui/audio/mobile/PreviewSearchView.cpp		\
 	$(srcdir)/ui/audio/mobile/ReleaseSearch.cpp		\
-	$(srcdir)/ui/audio/mobile/TrackReleaseView.cpp		\
+	$(srcdir)/ui/audio/mobile/ReleaseView.cpp		\
 	$(srcdir)/ui/audio/mobile/TrackSearch.cpp		\
 	$(srcdir)/ui/common/DirectoryValidator.cpp		\
 	$(srcdir)/ui/common/InputRange.cpp			\

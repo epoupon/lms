@@ -22,6 +22,9 @@
 #include <Wt/WContainerWidget>
 #include <Wt/WSignal>
 
+#include "database/Types.hpp"
+#include "database/SearchFilter.hpp"
+
 namespace UserInterface {
 namespace Mobile {
 

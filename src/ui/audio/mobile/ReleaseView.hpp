@@ -17,8 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_MOBILE_TRACK_SEARCH_HPP
-#define UI_MOBILE_TRACK_SEARCH_HPP
+#pragma once
 
 #include <Wt/WContainerWidget>
 #include <Wt/WSignal>
@@ -28,11 +27,11 @@
 namespace UserInterface {
 namespace Mobile {
 
-class TrackReleaseView : public Wt::WContainerWidget
+class ReleaseView : public Wt::WContainerWidget
 {
 	public:
 
-		TrackReleaseView(Wt::WContainerWidget *parent = 0);
+		ReleaseView(Wt::WContainerWidget *parent = 0);
 
 		void search(Database::SearchFilter filter, size_t nb);
 
@@ -64,4 +63,3 @@ class TrackReleaseView : public Wt::WContainerWidget
 } // namespace Mobile
 } // namespace UserInterface
 
-#endif

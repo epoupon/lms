@@ -98,19 +98,28 @@ ReleaseSearch::addResults(Database::SearchFilter filter, size_t nb)
 		Wt::WTemplate* releaseWidget = new Wt::WTemplate(this);
 		releaseWidget->setTemplateText(Wt::WString::tr("wa-release-res"));
 
-		Wt::WImage *cover = new Wt::WImage();
+		Wt::WAnchor *coverAnchor = new Wt::WAnchor(Wt::WLink(Wt:: WLink::InternalPath, "/audio/release/" + std::to_string(release.id())));
+		Wt::WImage *cover = new Wt::WImage(coverAnchor);
 		cover->setStyleClass("center-block");
 		cover->setImageLink( Wt::WLink( LmsApplication::instance()->getCoverResource()->getReleaseUrl(release.id(), 512)));
 		cover->setStyleClass("release_res_shadow release_img-responsive"); // TODO move?
 
-		releaseWidget->bindWidget("cover", cover);
+		releaseWidget->bindWidget("cover", coverAnchor);
 		releaseWidget->bindWidget("name", new Wt::WText(Wt::WString::fromUTF8(release->getName()), Wt::PlainText));
 		releaseWidget->bindString("release_name", Wt::WString::fromUTF8(release->getName()), Wt::PlainText);
-		releaseWidget->bindString("artist", getArtistFromRelease(release));
 
-		releaseWidget->clicked().connect(std::bind([=] {
-			_sigReleaseSelected(release.id());
-		}));
+
+		auto artists = Artist::getByFilter(DboSession(),
+			SearchFilter::ById(SearchFilter::Field::Release, release.id()), -1, 2);
+		if (artists.size() == 1)
+		{
+			Wt::WAnchor *artistAnchor = new Wt::WAnchor(Wt::WLink(Wt:: WLink::InternalPath, "/audio/artist/" + std::to_string(artists.front().id())));
+			Wt::WText *artist = new Wt::WText(artistAnchor);
+			artist->setText(Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText));
+			releaseWidget->bindWidget("artist", artistAnchor);
+		}
+		else
+			releaseWidget->bindWidget("artist", new Wt::WText(Wt::WString::fromUTF8("Various Artists", Wt::PlainText)));
 
 	}
 

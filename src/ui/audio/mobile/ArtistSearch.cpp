@@ -31,89 +31,95 @@ namespace Mobile {
 
 using namespace Database;
 
-ArtistSearch::ArtistSearch(Wt::WContainerWidget *parent)
+ArtistSearch::ArtistSearch(Wt::WString title, Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent),
-_resCount(0)
+_count(0)
 {
-	Wt::WTemplate *title = new Wt::WTemplate(this);
-	title->setTemplateText(Wt::WString::tr("mobile-search-title"));
+	Wt::WTemplate* artistSearch = new Wt::WTemplate(this);
+	artistSearch->setTemplateText(Wt::WString::tr("wa-artist-search"));
 
-	title->bindWidget("text", new Wt::WText("Artists", Wt::PlainText));
+	Wt::WTemplate *titleTemplate = new Wt::WTemplate(this);
+	titleTemplate->setTemplateText(Wt::WString::tr("mobile-search-title"));
+	titleTemplate->bindString("text", title);
 
-	Wt::WTemplate* artistWrapper = new Wt::WTemplate(this);
-	artistWrapper->setTemplateText(Wt::WString::tr("wa-artist-wrapper"));
+	artistSearch->bindWidget("title", titleTemplate);
+
 	_contents = new Wt::WContainerWidget();
-	artistWrapper->bindWidget("contents", _contents );
+	artistSearch->bindWidget("release-container", _contents );
+
+	_showMore = new Wt::WTemplate();
+	_showMore->setTemplateText(Wt::WString::tr("mobile-search-more"));
+	_showMore->bindString("text", "Tap to show more results...");
+	_showMore->hide();
+	_showMore->clicked().connect(std::bind([=] {
+		_sigShowMore.emit();
+	}));
+
+	artistSearch->bindWidget("show-more", _showMore);
 }
 
 void
 ArtistSearch::clear()
 {
-	while (count() > 1)
-		removeWidget(this->widget(1));
-
-	_resCount = 0;
+	_contents->clear();
+	_count = 0;
+	_showMore->hide();
 }
 
 void
 ArtistSearch::search(Database::SearchFilter filter, size_t nb)
 {
+	_filter = filter;
+
 	clear();
-	addResults(filter, nb);
+	addResults(nb);
 }
 
-void
-ArtistSearch::addResults(Database::SearchFilter filter, std::size_t nb)
+static
+std::vector<Artist::pointer>
+getArtists(SearchFilter filter, size_t offset, size_t nb, bool &moreResults)
 {
-	Wt::Dbo::Transaction transaction(DboSession());
+	std::vector<Artist::pointer> artists = Artist::getByFilter(DboSession(), filter, offset, nb + 1);
 
-	std::vector<Artist::pointer> artists = Artist::getByFilter(DboSession(), filter, _resCount, nb + 1);
-
-	bool expectMoreResults;
 	if (artists.size() == nb + 1)
 	{
-		expectMoreResults = true;
+		moreResults = true;
 		artists.pop_back();
 	}
 	else
-		expectMoreResults = false;
+		moreResults = false;
+
+	return artists;
+}
+
+void
+ArtistSearch::addResults(std::size_t nb)
+{
+	Wt::Dbo::Transaction transaction(DboSession());
+
+	bool moreResults;
+	std::vector<Artist::pointer> artists = getArtists(_filter, _count, nb, moreResults);
 
 	for (Artist::pointer artist : artists)
 	{
-		Wt::WTemplate* res = new Wt::WTemplate(this);
+		Wt::WTemplate* res = new Wt::WTemplate(_contents);
 		res->setTemplateText(Wt::WString::tr("wa-artist-res"));
 
-		Wt::WImage *artistImg = new Wt::WImage();
+		Wt::WAnchor *coverAnchor = new Wt::WAnchor(Wt::WLink(Wt:: WLink::InternalPath, "/audio/artist/" + std::to_string(artist.id())));
+		Wt::WImage *artistImg = new Wt::WImage(coverAnchor);
 		artistImg->setStyleClass("center-block"); // TODO move in css?
 		artistImg->setStyleClass("release_res_shadow release_img-responsive"); // TODO move in css?
 
-		res->bindWidget("gif", artistImg);
-
-		Wt::WText *text = new Wt::WText(Wt::WString::fromUTF8(artist->getName()), Wt::PlainText);
-		res->bindWidget("name", text);
-
-		res->clicked().connect(std::bind([=] {
-			_sigArtistSelected(artist.id());
-		}));
+		res->bindWidget("gif", coverAnchor);
+		res->bindString("name", Wt::WString::fromUTF8(artist->getName(), Wt::PlainText));
 	}
 
-	_resCount += artists.size();;
+	_count += artists.size();
 
-	if (expectMoreResults)
-	{
-		Wt::WTemplate* moreRes = new Wt::WTemplate(this);
-		moreRes->setTemplateText(Wt::WString::tr("mobile-search-more"));
-
-		moreRes->bindWidget("text", new Wt::WText("Tap to show more results..."));
-
-		moreRes->clicked().connect(std::bind([=] {
-			_sigMoreArtistsSelected();
-			removeWidget(moreRes);
-
-			addResults(filter, 20);
-		}));
-	}
-
+	if (moreResults)
+		_showMore->show();
+	else
+		_showMore->hide();
 }
 
 } // namespace Mobile

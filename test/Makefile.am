@@ -1,7 +1,7 @@
 
 TESTS = database-basics database-integrity sql-query database-user
 
-check_PROGRAMS = database-basics database-integrity sql-query database-user test-wt test-avmetadata test-avtranscoder test-wt-audio
+check_PROGRAMS = database-basics database-integrity sql-query database-user test-wt test-avmetadata 
 
 database_basics_SOURCES = \
 	$(srcdir)/CheckDbBasics.cpp			\
@@ -83,7 +83,7 @@ test_wt_audio_SOURCES = TestWtAudio.cpp\
 	$(top_srcdir)/src/ui/resource/CoverResource.cpp	\
 	$(top_srcdir)/src/ui/resource/TranscodeResource.cpp
 
-test_wt_audio_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir)/src $(MAGICKXX_CFLAGS)
+test_wt_audio_CXXFLAGS=-std=c++11 -Wall -Wextra -I$(top_srcdir)/src -I$(top_srcdir)/src/ui $(MAGICKXX_CFLAGS) 
 test_wt_audio_LDADD=$(MAGICKXX_LIBS)
 
 

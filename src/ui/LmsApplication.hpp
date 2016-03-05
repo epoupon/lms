@@ -56,6 +56,8 @@ class LmsApplication : public Wt::WApplication
 };
 
 // Helpers to get session data
+#define LmsApp	LmsApplication::instance()
+
 Database::Handler& DbHandler();
 Wt::Dbo::Session& DboSession();
 

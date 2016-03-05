@@ -26,14 +26,14 @@
 #include "utils/Utils.hpp"
 #include "LmsApplication.hpp"
 
-#include "TrackReleaseView.hpp"
+#include "ReleaseView.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
 using namespace Database;
 
-TrackReleaseView::TrackReleaseView(Wt::WContainerWidget *parent)
+ReleaseView::ReleaseView(Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent)
 {
 	Wt::WTemplate* wrapper = new Wt::WTemplate(this);
@@ -55,13 +55,29 @@ TrackReleaseView::TrackReleaseView(Wt::WContainerWidget *parent)
 	_showMore->bindString("text", "Tap to show more results...");
 	_showMore->hide();
 	_showMore->clicked().connect(std::bind([=] {
-		_sigMoreTracksSelected();
 		addResults(20);
 	}));
+
+	wApp->internalPathChanged().connect(std::bind([=] (std::string path)
+	{
+		const std::string pathPrefix = "/audio/release/";
+
+		if (!wApp->internalPathMatches(pathPrefix))
+			return;
+
+		std::string strId = path.substr(pathPrefix.length());
+
+		Release::id_type id;
+		if (readAs(strId, id))
+		{
+			clear();
+			search(SearchFilter::ById(SearchFilter::Field::Release, id), 20);
+		}
+	}, std::placeholders::_1));
 }
 
 void
-TrackReleaseView::clear()
+ReleaseView::clear()
 {
 	// Flush the release container
 	_releaseContainer->clear();
@@ -73,7 +89,7 @@ TrackReleaseView::clear()
 }
 
 void
-TrackReleaseView::search(SearchFilter filter, size_t nb)
+ReleaseView::search(SearchFilter filter, size_t nb)
 {
 	_filter = filter;
 
@@ -111,7 +127,7 @@ getArtistNameFromRelease(Release::pointer release)
 }
 
 void
-TrackReleaseView::addResults(size_t nb)
+ReleaseView::addResults(size_t nb)
 {
 	Wt::Dbo::Transaction transaction(DboSession());
 
@@ -175,8 +191,8 @@ TrackReleaseView::addResults(size_t nb)
  		trackRes->bindString("track-name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
 		// TODO, display artist name for compilation releases?
 
-		// TODO handle large duration (> 1 hour)
-		trackRes->bindString("time", durationToString(track->getDuration(), "%M:%S"), Wt::PlainText);
+		std::string format = track->getDuration().total_seconds() < 3600 ? "%M:%S" : "%H:%M:%S";
+		trackRes->bindString("time", durationToString(track->getDuration(), format), Wt::PlainText);
 
 		Wt::WText *playBtn = new Wt::WText("Play", Wt::PlainText);
 		playBtn->setStyleClass("center-block"); // TODO move to CSS?

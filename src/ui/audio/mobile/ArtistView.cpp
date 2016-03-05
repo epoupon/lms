@@ -17,27 +17,39 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_AUDIO_MOBILE_HPP
-#define UI_AUDIO_MOBILE_HPP
+#include <Wt/WApplication>
 
-#include <Wt/WContainerWidget>
+#include "utils/Utils.hpp"
 
-#include "audio/Audio.hpp"
+#include "ReleaseSearch.hpp"
+#include "ArtistView.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
-class Audio : public UserInterface::Audio
+using namespace Database;
+
+ArtistView::ArtistView(Wt::WContainerWidget *parent)
+: Wt::WContainerWidget(parent)
 {
-	public:
-		Audio(Wt::WContainerWidget *parent = 0);
+	ReleaseSearch *releases = new ReleaseSearch(this);
 
-		void search(std::string text);
+	wApp->internalPathChanged().connect(std::bind([=] (std::string path)
+	{
+		const std::string pathPrefix = "/audio/artist/";
 
-	private:
-};
+		if (!wApp->internalPathMatches(pathPrefix))
+			return;
 
-} // namespace Mobile
-} // namespace UserInterface
+		std::string strId = path.substr(pathPrefix.length());
 
-#endif
+		Artist::id_type id;
+		if (readAs(strId, id))
+			releases->search(SearchFilter::ById(SearchFilter::Field::Artist, id), 20);
+
+	}, std::placeholders::_1));
+}
+
+} //namespace Mobile
+} //namespace UserInterface
+

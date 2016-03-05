@@ -23,6 +23,7 @@
 #include <Wt/WContainerWidget>
 
 #include "database/Types.hpp"
+#include "database/SearchFilter.hpp"
 
 namespace UserInterface {
 namespace Mobile {
@@ -31,24 +32,25 @@ class ArtistSearch : public Wt::WContainerWidget
 {
 	public:
 
-		ArtistSearch(Wt::WContainerWidget *parent = 0);
+		ArtistSearch(Wt::WString title, Wt::WContainerWidget *parent = 0);
 
 		void search(Database::SearchFilter filter, std::size_t nb);
+		void addResults(std::size_t nb);
 
 		// Slots
-		Wt::Signal<Database::Artist::id_type>&	artistSelected() { return _sigArtistSelected;}
-		Wt::Signal<void>& moreArtistsSelected() { return _sigMoreArtistsSelected;}
+		Wt::Signal<void>& showMore() { return _sigShowMore;}
 
 	private:
 
-		Wt::Signal<Database::Artist::id_type> _sigArtistSelected;
-		Wt::Signal<void> _sigMoreArtistsSelected;
+		Wt::Signal<void> _sigShowMore;
 
 		void clear(void);
-		void addResults(Database::SearchFilter filter, size_t nb);
 
-		Wt::WContainerWidget* _contents;
-		std::size_t		_resCount;
+		Wt::WTemplate*	_showMore;
+
+		Database::SearchFilter	_filter;
+		Wt::WContainerWidget*	_contents;
+		std::size_t		_count;
 };
 
 } // namespace Mobile

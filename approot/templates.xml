@@ -448,6 +448,18 @@
    </div>
 </message>
 
+<!--
+     wa-artist-wrapper
+       -> wa-artist-res
+       -> wa-artist-res
+       -> ...
+-->
+<message id="wa-artist-search">
+	${title}
+	${release-container}
+	${show-more}
+</message>
+
 <message id="wa-artist-wrapper">
 	<div class="section text-center">
 		<div class="container">

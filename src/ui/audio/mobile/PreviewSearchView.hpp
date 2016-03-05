@@ -20,36 +20,16 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
-#include <Wt/WSignal>
-
-#include "database/SearchFilter.hpp"
-#include "database/Types.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
-class ReleaseSearch : public Wt::WContainerWidget
+class PreviewSearchView : public Wt::WContainerWidget
 {
 	public:
 
-		ReleaseSearch(Wt::WContainerWidget *parent = 0);
+		PreviewSearchView(Wt::WContainerWidget* parent = 0);
 
-		void search(Database::SearchFilter filter, size_t nb);
-
-		// Slots
-		Wt::Signal<Database::Release::id_type>& releaseSelected() { return _sigReleaseSelected;}
-		Wt::Signal<void>& moreReleasesSelected() { return _sigMoreReleasesSelected;}
-
-	private:
-
-		Wt::Signal<Database::Release::id_type> _sigReleaseSelected;
-		Wt::Signal<void> _sigMoreReleasesSelected;
-
-		void clear(void);
-		void addResults(Database::SearchFilter filter, size_t nb);
-
-		Wt::WContainerWidget* _contents;
-		std::size_t		_resCount;
 };
 
 } // namespace Mobile

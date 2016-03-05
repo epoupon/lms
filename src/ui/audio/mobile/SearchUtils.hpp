@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2015 Emeric Poupon
  *
@@ -17,27 +18,15 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_AUDIO_MOBILE_HPP
-#define UI_AUDIO_MOBILE_HPP
+#pragma once
 
-#include <Wt/WContainerWidget>
+#include "utils/Utils.hpp"
 
-#include "audio/Audio.hpp"
-
-namespace UserInterface {
-namespace Mobile {
-
-class Audio : public UserInterface::Audio
+static inline std::vector<std::string> searchPathToSearchKeywords(std::string path)
 {
-	public:
-		Audio(Wt::WContainerWidget *parent = 0);
+	if (!path.empty() && path[0] == '/')
+		path.erase(path.begin());
 
-		void search(std::string text);
+	return splitString(path, " \t");
+}
 
-	private:
-};
-
-} // namespace Mobile
-} // namespace UserInterface
-
-#endif
