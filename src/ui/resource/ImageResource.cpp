@@ -179,19 +179,26 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 			}
 		}
 
-		std::vector<Image::Image> covers;
-		switch (coverType)
+		if (!path.empty())
 		{
-			case Database::Track::CoverType::Embedded:
-				covers = CoverArt::Grabber::instance().getFromTrack(path);
-				break;
+			std::vector<Image::Image> covers;
 
-			case Database::Track::CoverType::None:
-				covers = CoverArt::Grabber::instance().getFromDirectory(path.parent_path());
-				break;
+			switch (coverType)
+			{
+				case Database::Track::CoverType::Embedded:
+					covers = CoverArt::Grabber::instance().getFromTrack(path);
+					break;
+
+				case Database::Track::CoverType::None:
+					covers = CoverArt::Grabber::instance().getFromDirectory(path.parent_path());
+					break;
+			}
+
+			putCover(response, covers, size);
+			return;
 		}
 
-		putCover(response, covers, size);
+		putImage(response, getDefaultCover(size));
 		return;
 	}
 	else if (releaseIdStr)

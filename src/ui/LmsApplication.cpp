@@ -195,7 +195,6 @@ LmsApplication::handleAuthEvent(void)
 	setConfirmCloseMessage("Closing LMS. Are you sure?");
 
 	// Handle internal paths
-//	setInternalPath("audio");
 
 	// Create a Vertical layout: top is the nav bar, bottom is the contents
 	Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
@@ -216,7 +215,7 @@ LmsApplication::handleAuthEvent(void)
 	LineEdit *searchEdit = new LineEdit(500);
 	navigation->bindWidget("search", searchEdit);
 	searchEdit->setEmptyText("Search...");
-	AearchEdit->addStyleClass("navbar-form navbar-nav");
+	searchEdit->addStyleClass("navbar-form navbar-nav");
 	searchEdit->setWidth(150);
 	// TODO add a span with a search icon
 
@@ -257,8 +256,11 @@ LmsApplication::handleAuthEvent(void)
 	layout->addWidget(contentsStack, 1);
 	layout->setContentsMargins(0, 0, 0, 0);
 
-	// Set initial path
-	wApp->setInternalPath("/audio/search/preview", true);
+	if (agentIsMobile())
+		setInternalPath("/audio/search/preview", true);
+	else
+		setInternalPath("/audio");
+
 }
 
 } // namespace UserInterface
