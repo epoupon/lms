@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
+#include <Wt/WSignal>
 
 namespace UserInterface {
 namespace Mobile {
@@ -28,7 +29,7 @@ class TrackSearchView : public Wt::WContainerWidget
 {
 	public:
 
-		TrackSearchView(Wt::WContainerWidget* parent = 0);
+		TrackSearchView(PlayQueueEvents& events, Wt::WContainerWidget* parent = 0);
 
 };
 

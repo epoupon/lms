@@ -33,8 +33,9 @@ namespace Mobile {
 
 using namespace Database;
 
-TrackSearch::TrackSearch(Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent)
+TrackSearch::TrackSearch(PlayQueueEvents& events, Wt::WContainerWidget *parent)
+: Wt::WContainerWidget(parent),
+ _events(events)
 {
 	Wt::WTemplate* t = new Wt::WTemplate(this);
 	t->setTemplateText(Wt::WString::tr("wa-track-search"));
@@ -97,7 +98,7 @@ TrackSearch::addResults(size_t nb)
 		Wt::WText *playBtn = new Wt::WText("Play", Wt::PlainText);
 		playBtn->setStyleClass("center-block"); // TODO move to CSS?
 		playBtn->clicked().connect(std::bind([=] {
-			_sigTrackPlay.emit(track.id());
+			_events.trackPlay.emit(track.id());
 		}));
 
 		res->bindWidget("btn", playBtn);

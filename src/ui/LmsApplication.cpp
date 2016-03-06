@@ -194,11 +194,9 @@ LmsApplication::handleAuthEvent(void)
 	this->root()->setOverflow(Wt::WContainerWidget::OverflowHidden);
 	setConfirmCloseMessage("Closing LMS. Are you sure?");
 
-	// Handle internal paths
-
 	// Create a Vertical layout: top is the nav bar, bottom is the contents
 	Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
-	// Create a navigation bar with a link to a web page.
+
 	Wt::WNavigationBar *navigation = new Wt::WNavigationBar();
 	navigation->setTitle("LMS", "https://github.com/epoupon/lms");
 	navigation->setResponsive(true);
@@ -219,19 +217,20 @@ LmsApplication::handleAuthEvent(void)
 	searchEdit->setWidth(150);
 	// TODO add a span with a search icon
 
-	Audio *audio;
+	menu->setInternalPathEnabled();
+	menu->setInternalBasePath("/");
 
+	Audio *audio;
 	if (agentIsMobile())
 		audio = new Mobile::Audio();
 	else
 		audio = new Desktop::Audio();
 
-	menu->addItem("Audio", audio);
+	menu->addItem("Audio", audio)->setPathComponent("audio");;
 #if defined HAVE_VIDEO
-	menu->addItem("Video", new VideoWidget());
+	menu->addItem("Video", new VideoWidget())->setPathComponent("video");
 #endif
-	menu->addItem("Settings", new Settings::Settings());
-
+	menu->addItem("Settings", new Settings::Settings())->setPathComponent("settings");
 
 	Wt::WPopupMenu *popup = new Wt::WPopupMenu();
 	popup->addItem("Logout");

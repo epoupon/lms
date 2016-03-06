@@ -34,9 +34,9 @@ namespace Mobile {
 
 using namespace Database;
 
-TrackSearchView::TrackSearchView(Wt::WContainerWidget* parent)
+TrackSearchView::TrackSearchView(PlayQueueEvents& events, Wt::WContainerWidget* parent)
 {
-	TrackSearch* trackSearch = new TrackSearch(this);
+	TrackSearch* trackSearch = new TrackSearch(events, this);
 	trackSearch->showMore().connect(std::bind([=] {
 		trackSearch->addResults(SEARCH_NB_ITEMS);
 	}));

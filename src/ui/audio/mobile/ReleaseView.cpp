@@ -33,8 +33,9 @@ namespace Mobile {
 
 using namespace Database;
 
-ReleaseView::ReleaseView(Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent)
+ReleaseView::ReleaseView(PlayQueueEvents& events, Wt::WContainerWidget *parent)
+: Wt::WContainerWidget(parent),
+ _events(events)
 {
 	Wt::WTemplate* wrapper = new Wt::WTemplate(this);
 	wrapper->setTemplateText(Wt::WString::tr("wa-trackview-wrapper"));
@@ -97,23 +98,6 @@ ReleaseView::search(SearchFilter filter, size_t nb)
 	addResults(nb);
 }
 
-static
-std::vector<Track::pointer >
-getTracks(SearchFilter filter, size_t offset, size_t nb, bool &moreResults)
-{
-	std::vector<Track::pointer > tracks = Track::getByFilter(DboSession(), filter, offset, nb + 1);
-
-	if (tracks.size() == nb + 1)
-	{
-		moreResults = true;
-		tracks.pop_back();
-	}
-	else
-		moreResults = false;
-
-	return tracks;
-}
-
 static Wt::WString
 getArtistNameFromRelease(Release::pointer release)
 {
@@ -132,7 +116,7 @@ ReleaseView::addResults(size_t nb)
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	bool moreResults;
-	std::vector<Track::pointer > tracks = getTracks(_filter, _nbTracks, nb, moreResults);
+	std::vector<Track::pointer> tracks = Track::getByFilter(DboSession(), _filter, _nbTracks, nb, moreResults);
 
 	for (Track::pointer track : tracks)
 	{
@@ -150,7 +134,7 @@ ReleaseView::addResults(size_t nb)
 
 			Wt::WImage *cover = new Wt::WImage();
 			cover->setStyleClass ("center-block img-responsive"); // TODO move to CSS?
-			cover->setImageLink(Wt::WLink (LmsApp->getImageResource()->getReleaseUrl(release.id(), 512)));
+			cover->setImageLink(Wt::WLink (SessionImageResource()->getReleaseUrl(release.id(), 512)));
 
 			releaseContainer->bindWidget("cover", cover);
 			releaseContainer->bindString("artist-name", getArtistNameFromRelease(release), Wt::PlainText);
@@ -191,16 +175,13 @@ ReleaseView::addResults(size_t nb)
  		trackRes->bindString("track-name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
 		// TODO, display artist name for compilation releases?
 
-		std::string format = track->getDuration().total_seconds() < 3600 ? "%M:%S" : "%H:%M:%S";
-		trackRes->bindString("time", durationToString(track->getDuration(), format), Wt::PlainText);
-
 		Wt::WText *playBtn = new Wt::WText("Play", Wt::PlainText);
 		playBtn->setStyleClass("center-block"); // TODO move to CSS?
 		playBtn->clicked().connect(std::bind([=] {
-			_sigTrackPlay.emit(track.id());
+			_events.trackPlay.emit(track.id());
 		}));
 
-		trackRes->bindWidget("btn", playBtn);
+		trackRes->bindWidget("play-btn", playBtn);
 		_nbTracks++;
 	}
 

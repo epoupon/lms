@@ -22,6 +22,8 @@
 #include <Wt/WContainerWidget>
 #include <Wt/WSignal>
 
+#include "MobilePlayQueueEvents.hpp"
+
 namespace UserInterface {
 namespace Mobile {
 
@@ -31,22 +33,21 @@ class ReleaseView : public Wt::WContainerWidget
 
 		static Wt::WLink getLink(Database::Release::id_type id);
 
-		ReleaseView(Wt::WContainerWidget *parent = 0);
+		ReleaseView(PlayQueueEvents& events, Wt::WContainerWidget *parent = 0);
 
 		void search(Database::SearchFilter filter, size_t nb);
 
 		// Slots
-		Wt::Signal<Database::Track::id_type>&	trackPlay() { return _sigTrackPlay;}
 		Wt::Signal<void>&		moreTracksSelected() { return _sigMoreTracksSelected;}
 
 	private:
 
-		Wt::Signal<Database::Track::id_type> _sigTrackPlay;
 		Wt::Signal<void>	_sigMoreTracksSelected;
 
 		void clear(void);
 		void addResults(size_t nb);
 
+		PlayQueueEvents& _events;
 		Wt::WTemplate*	_showMore;
 
 		Database::SearchFilter _filter;

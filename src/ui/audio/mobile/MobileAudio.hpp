@@ -17,12 +17,14 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_AUDIO_MOBILE_HPP
-#define UI_AUDIO_MOBILE_HPP
+#pragma once
 
 #include <Wt/WContainerWidget>
 
 #include "audio/Audio.hpp"
+
+#include "MobilePlayQueueEvents.hpp"
+
 
 namespace UserInterface {
 namespace Mobile {
@@ -35,9 +37,11 @@ class Audio : public UserInterface::Audio
 		void search(std::string text);
 
 	private:
+
+		PlayQueueEvents _playQueueEvents;
+
 };
 
 } // namespace Mobile
 } // namespace UserInterface
 
-#endif

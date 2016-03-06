@@ -20,7 +20,6 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
-#include <Wt/WSignal>
 #include <Wt/WText>
 
 #include "database/SearchFilter.hpp"

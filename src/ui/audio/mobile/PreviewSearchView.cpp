@@ -36,13 +36,13 @@ namespace Mobile {
 
 using namespace Database;
 
-PreviewSearchView::PreviewSearchView(Wt::WContainerWidget* parent)
+PreviewSearchView::PreviewSearchView(PlayQueueEvents& events, Wt::WContainerWidget* parent)
 {
 	const std::string pathPrefix = "/audio/search/preview";
 
 	ArtistSearch* artistSearch = new ArtistSearch("Artists", this);
 	ReleaseSearch* releaseSearch = new ReleaseSearch(this);
-	TrackSearch* trackSearch = new TrackSearch(this);
+	TrackSearch* trackSearch = new TrackSearch(events, this);
 
 	artistSearch->showMore().connect(std::bind([=]
 	{

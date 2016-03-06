@@ -21,6 +21,8 @@
 
 #include <Wt/WContainerWidget>
 
+#include "MobilePlayQueueEvents.hpp"
+
 namespace UserInterface {
 namespace Mobile {
 
@@ -28,7 +30,7 @@ class PreviewSearchView : public Wt::WContainerWidget
 {
 	public:
 
-		PreviewSearchView(Wt::WContainerWidget* parent = 0);
+		PreviewSearchView(PlayQueueEvents& events, Wt::WContainerWidget* parent = 0);
 
 };
 

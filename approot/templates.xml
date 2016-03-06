@@ -490,7 +490,7 @@
 </message>
 
 <message id="wa-trackview-track">
-	<div class="menu-item list-group-item ">${<if-has-disc-num>}${disc-num}-${</if-has-disc-num>}${<if-has-track-num>}${track-num}. ${</if-has-track-num>}${track-name} <span class="badge">${btn}</span><span class="badge">${time}</span></div>
+	<div class="menu-item list-group-item ">${<if-has-disc-num>}${disc-num}-${</if-has-disc-num>}${<if-has-track-num>}${track-num}. ${</if-has-track-num>}${track-name} <span class="badge">${play-btn}</span></div>
 </message>
 
 <message id="wa-audio-player">

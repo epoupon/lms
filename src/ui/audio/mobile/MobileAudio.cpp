@@ -55,18 +55,6 @@ enum WidgetIdx
 
 using namespace Database;
 
-static void playTrack(AudioPlayer *audioPlayer, Database::Track::id_type trackId)
-{
-	LMS_LOG(UI, DEBUG) << "Playing track id " << trackId;
-
-	Wt::Dbo::Transaction transaction(DboSession());
-
-	Track::pointer track = Track::getById(DboSession(), trackId);
-
-	if (track)
-		audioPlayer->loadTrack(track.id());
-}
-
 void
 Audio::search(std::string text)
 {
@@ -83,12 +71,12 @@ Audio::Audio(Wt::WContainerWidget *parent)
 	Wt::WStackedWidget *stack = new Wt::WStackedWidget(this);
 
 	// Same order as WidgetIdxXXX
-	stack->addWidget(new PreviewSearchView());
+	stack->addWidget(new PreviewSearchView(_playQueueEvents));
 	stack->addWidget(new ArtistSearchView());
 	stack->addWidget(new ReleaseSearchView());
-	stack->addWidget(new TrackSearchView());
+	stack->addWidget(new TrackSearchView(_playQueueEvents));
 	stack->addWidget(new ArtistView());
-	stack->addWidget(new ReleaseView());
+	stack->addWidget(new ReleaseView(_playQueueEvents));
 
 	wApp->internalPathChanged().connect(std::bind([=] (std::string path)
 	{
@@ -117,6 +105,11 @@ Audio::Audio(Wt::WContainerWidget *parent)
 	AudioPlayer* audioPlayer = new AudioPlayer();
 	footer->bindWidget("player", audioPlayer);
 
+	// Connect the events to the player
+	_playQueueEvents.trackPlay.connect(std::bind([=] (Database::Track::id_type id)
+	{
+		audioPlayer->loadTrack(id);
+	}, std::placeholders::_1));
 }
 
 } // namespace Mobile

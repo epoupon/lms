@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2016 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,41 +19,17 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
 #include <Wt/WSignal>
-
-#include "database/SearchFilter.hpp"
 #include "database/Types.hpp"
-
-#include "MobilePlayQueueEvents.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
-class TrackSearch : public Wt::WContainerWidget
+struct PlayQueueEvents
 {
-	public:
-
-		TrackSearch(PlayQueueEvents& events, Wt::WContainerWidget *parent = 0);
-
-		void addResults(size_t nb);
-		void search(Database::SearchFilter filter, size_t nb);
-
-		// Slots
-		Wt::Signal<void>& showMore() { return _sigShowMore;}
-
-	private:
-
-		Wt::Signal<void> _sigShowMore;
-
-		void clear(void);
-
-		PlayQueueEvents&	_events;
-		Wt::WTemplate*		_showMore;
-		Database::SearchFilter	_filter;
-		Wt::WContainerWidget*	_contents;
+	Wt::Signal<Database::Track::id_type>   trackPlay;
 };
+
 
 } // namespace Mobile
 } // namespace UserInterface
-
