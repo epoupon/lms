@@ -585,35 +585,35 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	void
 Updater::processRootDirectory(RootDirectory rootDirectory, Stats& stats)
 {
+	boost::system::error_code ec;
 
-	if (!boost::filesystem::exists(rootDirectory.path) || !boost::filesystem::is_directory(rootDirectory.path))
-		return;
+	boost::filesystem::recursive_directory_iterator itPath(rootDirectory.path, ec);
 
-	boost::filesystem::recursive_directory_iterator itPath(rootDirectory.path);
 	boost::filesystem::recursive_directory_iterator itEnd;
-	while (itPath != itEnd)
+	while (!ec && itPath != itEnd)
 	{
+		boost::filesystem::path path = *itPath;
+		itPath.increment(ec);
+
 		if (!_running)
 			return;
 
-		if (boost::filesystem::is_regular(*itPath))
+		if (boost::filesystem::is_regular(path))
 		{
 			switch( rootDirectory.type )
 			{
 				case Database::MediaDirectory::Audio:
-					if (isFileSupported(*itPath, _audioFileExtensions))
-						processAudioFile( *itPath, stats );
+					if (isFileSupported(path, _audioFileExtensions))
+						processAudioFile(path, stats );
 
 					break;
 
 				case Database::MediaDirectory::Video:
-					if (isFileSupported(*itPath, _videoFileExtensions))
-						processVideoFile( *itPath, stats);
+					if (isFileSupported(path, _videoFileExtensions))
+						processVideoFile(path, stats);
 					break;
 			}
 		}
-
-		++itPath;
 	}
 }
 
