@@ -80,7 +80,7 @@ Audio::Audio(Wt::WContainerWidget *parent)
 
 	wApp->internalPathChanged().connect(std::bind([=] (std::string path)
 	{
-		// order is important
+		// order is important: most specific path first
 		static std::map<std::string, int> indexes =
 		{
 			{ "/audio/search/preview", WidgetIdxSearchPreview},

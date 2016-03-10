@@ -106,8 +106,10 @@ getArtistNameFromRelease(Release::pointer release)
 
 	if (artists.size() > 1)
 		return Wt::WString::fromUTF8("Various artists", Wt::PlainText);
-	else
+	else if (artists.size() == 1)
 		return Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText);
+	else
+		return Wt::WString();
 }
 
 void

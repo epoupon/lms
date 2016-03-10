@@ -104,18 +104,23 @@ ReleaseSearch::addResults(size_t nb)
 		res->bindWidget("name", new Wt::WText(Wt::WString::fromUTF8(release->getName()), Wt::PlainText));
 		res->bindString("release_name", Wt::WString::fromUTF8(release->getName()), Wt::PlainText);
 
+		bool variousArtists;
 		auto artists = Artist::getByFilter(DboSession(),
-			SearchFilter::ById(SearchFilter::Field::Release, release.id()), -1, 2);
-		if (artists.size() == 1)
+			SearchFilter::ById(SearchFilter::Field::Release, release.id()), 0, 1, variousArtists);
+		if (!artists.empty())
 		{
-			Wt::WAnchor *artistAnchor = new Wt::WAnchor(ArtistView::getLink(artists.front().id()));
-			Wt::WText *artist = new Wt::WText(artistAnchor);
-			artist->setText(Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText));
-			res->bindWidget("artist", artistAnchor);
+			if (variousArtists)
+			{
+				res->bindWidget("artist", new Wt::WText(Wt::WString::fromUTF8("Various Artists", Wt::PlainText)));
+			}
+			else
+			{
+				Wt::WAnchor *artistAnchor = new Wt::WAnchor(ArtistView::getLink(artists.front().id()));
+				Wt::WText *artist = new Wt::WText(artistAnchor);
+				artist->setText(Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText));
+				res->bindWidget("artist", artistAnchor);
+			}
 		}
-		else
-			res->bindWidget("artist", new Wt::WText(Wt::WString::fromUTF8("Various Artists", Wt::PlainText)));
-
 	}
 
 	if (moreResults)
