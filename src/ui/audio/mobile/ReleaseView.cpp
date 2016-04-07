@@ -177,13 +177,23 @@ ReleaseView::addResults(size_t nb)
  		trackRes->bindString("track-name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
 		// TODO, display artist name for compilation releases?
 
-		Wt::WText *playBtn = new Wt::WText("Play", Wt::PlainText);
-		playBtn->setStyleClass("center-block"); // TODO move to CSS?
+		Wt::WText *playBtn = new Wt::WText("<i class=\"fa fa-play fa-lg\"></i>", Wt::XHTMLText);
+		trackRes->bindWidget("play-btn", playBtn);
+		playBtn->setStyleClass("mobile-btn");
 		playBtn->clicked().connect(std::bind([=] {
 			_events.trackPlay.emit(track.id());
 		}));
 
-		trackRes->bindWidget("play-btn", playBtn);
+		Wt::WText *addBtn = new Wt::WText("<i class=\"fa fa-plus fa-lg\"></i>", Wt::XHTMLText);
+		trackRes->bindWidget("add-btn", addBtn);
+		addBtn->setStyleClass("mobile-btn");
+		addBtn->clicked().connect(std::bind([=] {
+			_events.trackAdd.emit(track.id());
+		}));
+
+
+
+
 		_nbTracks++;
 	}
 

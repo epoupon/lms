@@ -42,7 +42,6 @@ AudioPlayer::getBestEncoding() const
 	return Av::Encoding::MP3;
 }
 
-
 bool
 AudioPlayer::loadTrack(Database::Track::id_type trackId)
 {
@@ -121,7 +120,7 @@ AudioPlayer::loadTrack(Database::Track::id_type trackId)
 	return true;
 }
 
-AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
+AudioPlayer::AudioPlayer(ControlFlags controls, Wt::WContainerWidget *parent)
 : Wt::WTemplate(parent)
 {
 	setTemplateText(Wt::WString::tr("wa-audio-player"));
@@ -154,42 +153,71 @@ AudioPlayer::AudioPlayer(Wt::WContainerWidget *parent)
 	volumeSlider->setAttributeValue("orient", "vertical"); // firefox
 	bindWidget("volume", volumeSlider);
 
-	Wt::WText *repeatBtn = new Wt::WText("<i class=\"fa fa-repeat fa-2x\"></i>", Wt::XHTMLText);
-	repeatBtn->addStyleClass("mediaplayer-btn");
-	bindWidget("repeat", repeatBtn);
-	repeatBtn->clicked().connect(std::bind([=] ()
+	if (controls & ControlRepeat)
 	{
-		if (repeatBtn->hasStyleClass("mediaplayer-btn-active"))
+		setCondition("if-has-repeat", true);
+		Wt::WText *repeatBtn = new Wt::WText("<i class=\"fa fa-repeat fa-2x\"></i>", Wt::XHTMLText);
+		repeatBtn->addStyleClass("mediaplayer-btn hidden-xs");
+		bindWidget("repeat", repeatBtn);
+		repeatBtn->clicked().connect(std::bind([=] ()
 		{
-			repeatBtn->removeStyleClass("mediaplayer-btn-active");
-			_loop.emit(false);
-		}
-		else
-		{
-			repeatBtn->addStyleClass("mediaplayer-btn-active");
-			_loop.emit(true);
-		}
-	}));
+			if (repeatBtn->hasStyleClass("mediaplayer-btn-active"))
+			{
+				repeatBtn->removeStyleClass("mediaplayer-btn-active");
+				_loop.emit(false);
+			}
+			else
+			{
+				repeatBtn->addStyleClass("mediaplayer-btn-active");
+				_loop.emit(true);
+			}
+		}));
+	}
 
-	Wt::WText *shuffleBtn = new Wt::WText("<i class=\"fa fa-random fa-2x\"></i>", Wt::XHTMLText);
-	shuffleBtn->addStyleClass("mediaplayer-btn");
-	bindWidget("shuffle", shuffleBtn);
-	shuffleBtn->clicked().connect(std::bind([=] ()
+	if (controls & ControlPlayqueue)
 	{
-		if (shuffleBtn->hasStyleClass("mediaplayer-btn-active"))
+		setCondition("if-has-playqueue", true);
+		Wt::WText *playQueueBtn = new Wt::WText("<i class=\"fa fa-list-ul fa-2x\"></i>", Wt::XHTMLText);
+		bindWidget("playqueue", playQueueBtn);
+		playQueueBtn->addStyleClass("mediaplayer-btn");
+		playQueueBtn->clicked().connect(std::bind([=] ()
 		{
-			shuffleBtn->removeStyleClass("mediaplayer-btn-active");
-			_shuffle.emit(false);
-		}
-		else
+			if (playQueueBtn->hasStyleClass("mediaplayer-btn-active"))
+			{
+				playQueueBtn->removeStyleClass("mediaplayer-btn-active");
+				_playQueue.emit(false);
+			}
+			else
+			{
+				playQueueBtn->addStyleClass("mediaplayer-btn-active");
+				_playQueue.emit(true);
+			}
+		}));
+	}
+
+	if (controls & ControlShuffle)
+	{
+		setCondition("if-has-shuffle", true);
+		Wt::WText *shuffleBtn = new Wt::WText("<i class=\"fa fa-random fa-2x\"></i>", Wt::XHTMLText);
+		shuffleBtn->addStyleClass("mediaplayer-btn hidden-xs");
+		bindWidget("shuffle", shuffleBtn);
+		shuffleBtn->clicked().connect(std::bind([=] ()
 		{
-			shuffleBtn->addStyleClass("mediaplayer-btn-active");
-			_shuffle.emit(true);
-		}
-	}));
+			if (shuffleBtn->hasStyleClass("mediaplayer-btn-active"))
+			{
+				shuffleBtn->removeStyleClass("mediaplayer-btn-active");
+				_shuffle.emit(false);
+			}
+			else
+			{
+				shuffleBtn->addStyleClass("mediaplayer-btn-active");
+				_shuffle.emit(true);
+			}
+		}));
+	}
 
 	Wt::WText *prevBtn = new Wt::WText("<i class=\"fa fa-step-backward fa-2x\"></i>", Wt::XHTMLText);
-	prevBtn->addStyleClass("mediaplayer-btn hidden-xs");
+	prevBtn->addStyleClass("mediaplayer-btn");
 	bindWidget("prev", prevBtn);
 	prevBtn->clicked().connect(std::bind([=] ()
 	{

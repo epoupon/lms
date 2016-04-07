@@ -32,7 +32,15 @@ class AudioPlayer : public Wt::WTemplate
 {
 	public:
 
-		AudioPlayer(Wt::WContainerWidget *parent = 0);
+		enum ControlFlags
+		{
+			ControlNone		= 0,
+			ControlShuffle		= 1 << 0,
+			ControlRepeat		= 1 << 1,
+			ControlPlayqueue	= 1 << 2,
+		};
+
+		AudioPlayer(ControlFlags controls, Wt::WContainerWidget *parent = 0);
 
 		Av::Encoding getBestEncoding() const;
 		bool loadTrack(Database::Track::id_type trackId);
@@ -43,6 +51,7 @@ class AudioPlayer : public Wt::WTemplate
 		Wt::Signal<void>&	playPrevious()	{return _playPrevious;}
 		Wt::Signal<bool>&	shuffle()	{return _shuffle;}
 		Wt::Signal<bool>&	loop()		{return _loop;}
+		Wt::Signal<bool>&	showPlayQueue()	{return _playQueue;}
 
 	private:
 
@@ -52,6 +61,7 @@ class AudioPlayer : public Wt::WTemplate
 		Wt::Signal<void>	_playPrevious;
 		Wt::Signal<bool>	_shuffle;
 		Wt::Signal<bool>	_loop;
+		Wt::Signal<bool>	_playQueue;
 
 		Wt::WAudio*	_audio;
 		Wt::WText*	_trackCurTime;
@@ -59,5 +69,8 @@ class AudioPlayer : public Wt::WTemplate
 		Wt::WText*	_trackName;
 		Wt::WImage*	_cover;
 };
+
+constexpr AudioPlayer::ControlFlags operator|(AudioPlayer::ControlFlags f1, AudioPlayer::ControlFlags f2) { return AudioPlayer::ControlFlags(int(f1)|int(f2)); }
+
 
 } // namespace UserInterface

@@ -46,7 +46,7 @@ This command requires root privileges
 ## Running
 Here is a command line example to run on port 5081:
 ```sh
-$ /usr/bin/lms --docroot='/usr/share/lms/docroot/;/resources,/css,/images' --approot=/usr/share/lms/approot --http-address 0.0.0.0 --http-port 5081
+$ /usr/bin/lms --docroot='/usr/share/lms/docroot/;/resources,/css,/images,/favicon.ico' --approot=/usr/share/lms/approot --http-address 0.0.0.0 --http-port 5081
 ```
 It is highly recommended to run LMS as a non root user.
 The exectuable needs write accesses to the /var/lms/ directory.
@@ -75,7 +75,7 @@ $ openssl req -x509 -out cert.pem -keyout privkey.pem -newkey rsa:4096
 ```
 Run (on port 5081):
 ```sh
-$ /usr/bin/lms --docroot='/usr/share/lms/docroot/;/resources,/css,/images' --approot=/usr/share/lms/approot --https-address 0.0.0.0 --https-port 5081 --ssl-certificate cert.pem --ssl-private-key privkey.pem --ssl-tmp-dh dh2048.pem
+$ /usr/bin/lms --docroot='/usr/share/lms/docroot/;/resources,/css,/images,/favicon.ico' --approot=/usr/share/lms/approot --https-address 0.0.0.0 --https-port 5081 --ssl-certificate cert.pem --ssl-private-key privkey.pem --ssl-tmp-dh dh2048.pem
 ```
 Depending on your SSL parameters, you may be asked for the PEM passphrase to unlock the private key.
 

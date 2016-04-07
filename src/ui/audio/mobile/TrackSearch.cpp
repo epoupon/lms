@@ -89,19 +89,27 @@ TrackSearch::addResults(size_t nb)
 		res->setTemplateText(Wt::WString::tr("wa-track-search-res"));
 
 		Wt::WImage *cover = new Wt::WImage();
+		res->bindWidget("cover", cover);
 		cover->setStyleClass ("center-block img-responsive");
 		cover->setImageLink(SessionImageResource()->getTrackUrl(track.id(), 64));
-		res->bindWidget("cover", cover);
  		res->bindString("track-name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
  		res->bindString("artist-name", Wt::WString::fromUTF8(track->getArtist()->getName()), Wt::PlainText);
 
-		Wt::WText *playBtn = new Wt::WText("Play", Wt::PlainText);
-		playBtn->setStyleClass("center-block"); // TODO move to CSS?
+		Wt::WText *playBtn = new Wt::WText("<i class=\"fa fa-play fa-lg\"></i>", Wt::XHTMLText);
+		res->bindWidget("play-btn", playBtn);
+		playBtn->setStyleClass("mobile-btn");
 		playBtn->clicked().connect(std::bind([=] {
 			_events.trackPlay.emit(track.id());
 		}));
 
-		res->bindWidget("btn", playBtn);
+		Wt::WText *addBtn = new Wt::WText("<i class=\"fa fa-plus fa-lg\"></i>", Wt::XHTMLText);
+		res->bindWidget("add-btn", addBtn);
+		addBtn->setStyleClass("mobile-btn");
+		addBtn->clicked().connect(std::bind([=] {
+			_events.trackAdd.emit(track.id());
+		}));
+
+
 	}
 
 	if (moreResults)

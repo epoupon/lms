@@ -37,6 +37,8 @@
 #include "ArtistView.hpp"
 #include "ReleaseView.hpp"
 
+#include "MobilePlayQueue.hpp"
+
 #include "MobileAudio.hpp"
 
 
@@ -51,6 +53,7 @@ enum WidgetIdx
 	WidgetIdxSearchTrack	= 3,
 	WidgetIdxArtist		= 4,
 	WidgetIdxRelease	= 5,
+	WidgetIdxPlayQueue	= 6,
 };
 
 using namespace Database;
@@ -70,6 +73,8 @@ Audio::Audio(Wt::WContainerWidget *parent)
 
 	Wt::WStackedWidget *stack = new Wt::WStackedWidget(this);
 
+	PlayQueue *playQueue = new PlayQueue();
+
 	// Same order as WidgetIdxXXX
 	stack->addWidget(new PreviewSearchView(_playQueueEvents));
 	stack->addWidget(new ArtistSearchView());
@@ -77,6 +82,7 @@ Audio::Audio(Wt::WContainerWidget *parent)
 	stack->addWidget(new TrackSearchView(_playQueueEvents));
 	stack->addWidget(new ArtistView());
 	stack->addWidget(new ReleaseView(_playQueueEvents));
+	stack->addWidget(playQueue);
 
 	wApp->internalPathChanged().connect(std::bind([=] (std::string path)
 	{
@@ -89,6 +95,7 @@ Audio::Audio(Wt::WContainerWidget *parent)
 			{ "/audio/search/track", WidgetIdxSearchTrack},
 			{ "/audio/artist", WidgetIdxArtist},
 			{ "/audio/release", WidgetIdxRelease},
+			{ "/audio/playqueue", WidgetIdxPlayQueue},
 		};
 
 		for (auto index : indexes)
@@ -102,14 +109,48 @@ Audio::Audio(Wt::WContainerWidget *parent)
 	Wt::WTemplate* footer = new Wt::WTemplate(this);
 	footer->setTemplateText(Wt::WString::tr("mobile-audio-footer"));
 
-	AudioPlayer* audioPlayer = new AudioPlayer();
+	AudioPlayer* audioPlayer = new AudioPlayer(AudioPlayer::ControlPlayqueue);
 	footer->bindWidget("player", audioPlayer);
+
+	audioPlayer->showPlayQueue().connect(std::bind([=] (bool state)
+	{
+		if (state)
+			wApp->setInternalPath("/audio/playqueue", true);
+	}, std::placeholders::_1));
+
+	// Connect the audio player events to the playqueue
+	playQueue->playTrack().connect(std::bind([=] (Database::Track::id_type id)
+	{
+		audioPlayer->loadTrack(id);
+	}, std::placeholders::_1));
+	audioPlayer->playNext().connect(std::bind([=]
+	{
+		playQueue->playNext();
+	}));
+	audioPlayer->playPrevious().connect(std::bind([=]
+	{
+		playQueue->playPrevious();
+	}));
+	audioPlayer->playbackEnded().connect(std::bind([=]
+	{
+		playQueue->playNext();
+	}));
+	audioPlayer->shuffle().connect(std::bind(&PlayQueue::setShuffle, playQueue, std::placeholders::_1));
+	audioPlayer->loop().connect(std::bind(&PlayQueue::setLoop, playQueue, std::placeholders::_1));
 
 	// Connect the events to the player
 	_playQueueEvents.trackPlay.connect(std::bind([=] (Database::Track::id_type id)
 	{
-		audioPlayer->loadTrack(id);
+		std::size_t pos = playQueue->addTrack(id);
+		playQueue->play(pos);
 	}, std::placeholders::_1));
+
+	_playQueueEvents.trackAdd.connect(std::bind([=] (Database::Track::id_type id)
+	{
+		playQueue->addTrack(id);
+	}, std::placeholders::_1));
+
+
 }
 
 } // namespace Mobile

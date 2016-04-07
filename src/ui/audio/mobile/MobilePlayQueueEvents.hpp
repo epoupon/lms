@@ -28,6 +28,7 @@ namespace Mobile {
 struct PlayQueueEvents
 {
 	Wt::Signal<Database::Track::id_type>   trackPlay;
+	Wt::Signal<Database::Track::id_type>   trackAdd;
 };
 
 

@@ -149,16 +149,16 @@ _playQueue(nullptr)
 		playlistBtn->setMenu(popupMain);
 	}
 
-	Wt::WPushButton *upBtn = new Wt::WPushButton("UP");
+	Wt::WPushButton *upBtn = new Wt::WPushButton("<i class =\"fa fa-arrow-up fa-lg\"></i>", Wt::XHTMLText);
 	upBtn->setStyleClass("btn-sm");
 	playlistControls->addWidget(upBtn);
-	Wt::WPushButton *downBtn = new Wt::WPushButton("DO");
+	Wt::WPushButton *downBtn = new Wt::WPushButton("<i class =\"fa fa-arrow-down fa-lg\"></i>", Wt::XHTMLText);
 	downBtn->setStyleClass("btn-sm");
 	playlistControls->addWidget(downBtn);
-	Wt::WPushButton *delBtn = new Wt::WPushButton("DEL");
+	Wt::WPushButton *delBtn = new Wt::WPushButton("<i class =\"fa fa-remove fa-lg\"></i>", Wt::XHTMLText);
 	delBtn->setStyleClass("btn-sm btn-warning");
 	playlistControls->addWidget(delBtn);
-	Wt::WPushButton *clearBtn = new Wt::WPushButton("CLR");
+	Wt::WPushButton *clearBtn = new Wt::WPushButton("<i class =\"fa fa-trash fa-lg\"></i>", Wt::XHTMLText);
 	clearBtn->setStyleClass("btn-sm btn-danger");
 	playlistControls->addWidget(clearBtn);
 
@@ -180,7 +180,7 @@ _playQueue(nullptr)
 		_playQueue->select(CurrentUser()->getCurPlayingTrackPos());
 	}
 
-	_mediaPlayer = new AudioPlayer();
+	_mediaPlayer = new AudioPlayer(AudioPlayer::ControlShuffle | AudioPlayer::ControlRepeat);
 	mainLayout->addWidget(_mediaPlayer, 2, 0, 1, 4);
 
 	mainLayout->setRowStretch(1, 1);

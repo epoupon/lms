@@ -55,7 +55,7 @@ TableFilterGenre::TableFilterGenre(Wt::WContainerWidget* parent)
 
 	this->setLayoutSizeAware(true);
 
-	_queryModel.setBatchSize(100);
+	_queryModel.setBatchSize(150);
 
 	// If an item is double clicked, select and emit signal
 	this->doubleClicked().connect( std::bind([=] (Wt::WModelIndex idx, Wt::WMouseEvent evt)
@@ -134,7 +134,7 @@ TableFilterArtist::TableFilterArtist(Wt::WContainerWidget* parent)
 
 	this->setLayoutSizeAware(true);
 
-	_queryModel.setBatchSize(100);
+	_queryModel.setBatchSize(150);
 
 	// If an item is double clicked, select and emit signal
 	this->doubleClicked().connect( std::bind([=] (Wt::WModelIndex idx, Wt::WMouseEvent evt)
@@ -218,7 +218,7 @@ TableFilterRelease::TableFilterRelease(Wt::WContainerWidget* parent)
 
 	this->setLayoutSizeAware(true);
 
-	_queryModel.setBatchSize(100);
+	_queryModel.setBatchSize(150);
 
 	// If an item is double clicked, select and emit signal
 	this->doubleClicked().connect( std::bind([=] (Wt::WModelIndex idx, Wt::WMouseEvent evt)
