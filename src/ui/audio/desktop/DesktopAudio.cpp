@@ -165,7 +165,25 @@ _playQueue(nullptr)
 	delBtn->clicked().connect(_playQueue, &PlayQueue::delSelected);
 	upBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedUp);
 	downBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedDown);
-	clearBtn->clicked().connect(_playQueue, &PlayQueue::delAll);
+	clearBtn->clicked().connect(std::bind([=]
+	{
+		Wt::WMessageBox *messageBox = new Wt::WMessageBox
+			("Clear playqueue",
+			 Wt::WString( "Are you sure?"),
+			 Wt::Question, Wt::Yes | Wt::No);
+
+		messageBox->setModal(true);
+
+		messageBox->buttonClicked().connect(std::bind([=] ()
+		{
+			if (messageBox->buttonResult() == Wt::Yes)
+				_playQueue->delAll();
+
+			delete messageBox;
+		}));
+
+		messageBox->show();
+	}));
 
 	playQueueLayout->addLayout(playlistControls);
 
@@ -431,6 +449,7 @@ Audio::playlistRefreshMenus()
 		}));
 	}
 }
+
 
 void
 Audio::search(std::string searchText)
