@@ -385,7 +385,6 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	boost::posix_time::ptime lastWriteTime (boost::posix_time::from_time_t( boost::filesystem::last_write_time( file ) ) );
 
 	// Skip file if last write is the same
-	// We chose not to compare
 	{
 		Wt::Dbo::Transaction transaction(_db.getSession());
 
@@ -394,8 +393,11 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		if (track && track->getLastWriteTime() == lastWriteTime)
 		{
 			stats.nbSkipped++;
+			transaction.rollback();
 			return;
 		}
+
+		transaction.rollback();
 	}
 
 	MetaData::Items items;
@@ -420,7 +422,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	if (items.find(MetaData::Type::AudioStreams) == items.end()
 			|| boost::any_cast<std::vector<MetaData::AudioStream> >(items[MetaData::Type::AudioStreams]).empty())
 	{
-		LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file << "' (no audio stream found)";
+		LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file << "' (no audio stream found)";
 
 		// If Track exists here, delete it!
 		if (track)
@@ -434,7 +436,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	if (items.find(MetaData::Type::Duration) == items.end()
 			|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]).total_seconds() <= 0)
 	{
-		LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file << "' (no duration or duration <= 0)";
+		LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file << "' (no duration or duration <= 0)";
 
 		// If Track exists here, delete it!
 		if (track)
