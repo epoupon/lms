@@ -17,8 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <map>
 
-#include <Wt/WContainerWidget>
+#include <Wt/WStackedWidget>
 #include <Wt/WTemplate>
 #include <Wt/WText>
 
@@ -28,46 +29,40 @@
 #include "audio/AudioPlayer.hpp"
 #include "LmsApplication.hpp"
 
+#include "PreviewSearchView.hpp"
+#include "ArtistSearchView.hpp"
+#include "ReleaseSearchView.hpp"
+#include "TrackSearchView.hpp"
+
+#include "ArtistView.hpp"
+#include "ReleaseView.hpp"
+
+#include "MobilePlayQueue.hpp"
+
 #include "MobileAudio.hpp"
 
-#define SEARCH_NB_ITEMS	4
 
 namespace UserInterface {
 namespace Mobile {
 
-using namespace Database;
-
-static void playTrack(AudioPlayer *audioPlayer, Database::Track::id_type trackId)
+enum WidgetIdx
 {
-	LMS_LOG(UI, DEBUG) << "Playing track id " << trackId;
+	WidgetIdxSearchPreview	= 0,
+	WidgetIdxSearchArtist	= 1,
+	WidgetIdxSearchRelease	= 2,
+	WidgetIdxSearchTrack	= 3,
+	WidgetIdxArtist		= 4,
+	WidgetIdxRelease	= 5,
+	WidgetIdxPlayQueue	= 6,
+};
 
-	Wt::Dbo::Transaction transaction(DboSession());
-
-	Track::pointer track = Track::getById(DboSession(), trackId);
-
-	if (track)
-		audioPlayer->loadTrack(track.id());
-}
+using namespace Database;
 
 void
 Audio::search(std::string text)
 {
-	// When a new search is done, output some results from:
-	// Artist
-	// Release
-	// Song
-	auto keywords = splitString(text, " ");;
-
-	_releaseSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Release, keywords), SEARCH_NB_ITEMS);
-	_artistSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Artist, keywords), SEARCH_NB_ITEMS);
-	_trackSearch->search(SearchFilter::ByNameAnd(SearchFilter::Field::Track, keywords), SEARCH_NB_ITEMS);
-
-	_artistSearch->show();
-	_releaseSearch->show();
-	_trackSearch->show();
-	_trackReleaseView->hide();
+	wApp->setInternalPath("/audio/search/preview/" + stringToUTF8(text), true);
 }
-
 
 Audio::Audio(Wt::WContainerWidget *parent)
 : UserInterface::Audio(parent)
@@ -76,79 +71,84 @@ Audio::Audio(Wt::WContainerWidget *parent)
 	this->setStyleClass("container-fluid");
 	this->setPadding(60, Wt::Bottom);
 
-	_artistSearch = new ArtistSearch(this);
-	_releaseSearch = new ReleaseSearch(this);
-	_trackSearch = new TrackSearch(this);
+	Wt::WStackedWidget *stack = new Wt::WStackedWidget(this);
 
-	_trackReleaseView  = new TrackReleaseView(this);
-	_trackReleaseView->hide();
+	PlayQueue *playQueue = new PlayQueue();
+
+	// Same order as WidgetIdxXXX
+	stack->addWidget(new PreviewSearchView(_playQueueEvents));
+	stack->addWidget(new ArtistSearchView());
+	stack->addWidget(new ReleaseSearchView());
+	stack->addWidget(new TrackSearchView(_playQueueEvents));
+	stack->addWidget(new ArtistView());
+	stack->addWidget(new ReleaseView(_playQueueEvents));
+	stack->addWidget(playQueue);
+
+	wApp->internalPathChanged().connect(std::bind([=] (std::string path)
+	{
+		// order is important: most specific path first
+		static std::map<std::string, int> indexes =
+		{
+			{ "/audio/search/preview", WidgetIdxSearchPreview},
+			{ "/audio/search/artist", WidgetIdxSearchArtist},
+			{ "/audio/search/release", WidgetIdxSearchRelease},
+			{ "/audio/search/track", WidgetIdxSearchTrack},
+			{ "/audio/artist", WidgetIdxArtist},
+			{ "/audio/release", WidgetIdxRelease},
+			{ "/audio/playqueue", WidgetIdxPlayQueue},
+		};
+
+		for (auto index : indexes)
+		{
+			if (wApp->internalPathMatches(index.first))
+				stack->setCurrentIndex(index.second);
+		}
+
+	}, std::placeholders::_1));
 
 	Wt::WTemplate* footer = new Wt::WTemplate(this);
 	footer->setTemplateText(Wt::WString::tr("mobile-audio-footer"));
 
-	AudioPlayer* audioPlayer = new AudioPlayer();
+	AudioPlayer* audioPlayer = new AudioPlayer(AudioPlayer::ControlPlayqueue);
 	footer->bindWidget("player", audioPlayer);
 
-	_artistSearch->moreArtistsSelected().connect(std::bind([=]
+	audioPlayer->showPlayQueue().connect(std::bind([=]
 	{
-		_releaseSearch->hide();
-		_trackSearch->hide();
-		_artistSearch->show();
-		_trackReleaseView->hide();
+		wApp->setInternalPath("/audio/playqueue", true);
 	}));
 
-	_artistSearch->artistSelected().connect(std::bind([=] (Artist::id_type artistId)
+	// Connect the audio player events to the playqueue
+	playQueue->playTrack().connect(std::bind([=] (Database::Track::id_type id)
 	{
-		_artistSearch->hide();
-		_trackSearch->hide();
-		_releaseSearch->show();
-		_trackReleaseView->hide();
-
-		_releaseSearch->search(SearchFilter::ById(SearchFilter::Field::Artist, artistId), 20);
+		audioPlayer->loadTrack(id);
 	}, std::placeholders::_1));
-
-	_releaseSearch->moreReleasesSelected().connect(std::bind([=]
+	audioPlayer->playNext().connect(std::bind([=]
 	{
-		_artistSearch->hide();
-		_trackSearch->hide();
-		_releaseSearch->show();
-		_trackReleaseView->hide();
+		playQueue->playNext();
 	}));
-
-	_releaseSearch->releaseSelected().connect(std::bind([=] (Release::id_type releaseId)
+	audioPlayer->playPrevious().connect(std::bind([=]
 	{
-		_artistSearch->hide();
-		_releaseSearch->hide();
-		_trackSearch->hide();
-		_trackReleaseView->show();
-
-		_trackReleaseView->search(SearchFilter::ById(SearchFilter::Field::Release, releaseId), 40);
-	}, std::placeholders::_1));
-
-	_trackSearch->moreSelected().connect(std::bind([=]
-	{
-		_artistSearch->hide();
-		_releaseSearch->hide();
-		_trackSearch->show();
-		_trackReleaseView->hide();
+		playQueue->playPrevious();
 	}));
-
-	_trackSearch->trackPlay().connect(std::bind([=] (Track::id_type id)
+	audioPlayer->playbackEnded().connect(std::bind([=]
 	{
-		playTrack(audioPlayer, id);
+		playQueue->playNext();
+	}));
+	audioPlayer->shuffle().connect(std::bind(&PlayQueue::setShuffle, playQueue, std::placeholders::_1));
+	audioPlayer->loop().connect(std::bind(&PlayQueue::setLoop, playQueue, std::placeholders::_1));
+
+	// Connect the events to the player
+	_playQueueEvents.trackPlay.connect(std::bind([=] (Database::Track::id_type id)
+	{
+		std::size_t pos = playQueue->addTrack(id);
+		playQueue->play(pos);
 	}, std::placeholders::_1));
 
-	_trackReleaseView->trackPlay().connect(std::bind([=] (Track::id_type id)
+	_playQueueEvents.trackAdd.connect(std::bind([=] (Database::Track::id_type id)
 	{
-		playTrack(audioPlayer, id);
+		playQueue->addTrack(id);
 	}, std::placeholders::_1));
 
-	// Initially, populate the widgets using an empty search
-	{
-		_artistSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
-		_releaseSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
-		_trackSearch->search(SearchFilter(), SEARCH_NB_ITEMS);
-	}
 
 }
 

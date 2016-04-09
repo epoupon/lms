@@ -33,40 +33,36 @@ namespace Mobile {
 
 using namespace Database;
 
-TrackSearch::TrackSearch(Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent)
+TrackSearch::TrackSearch(PlayQueueEvents& events, Wt::WContainerWidget *parent)
+: Wt::WContainerWidget(parent),
+ _events(events)
 {
-	Wt::WTemplate* wrapper = new Wt::WTemplate(this);
-	wrapper->setTemplateText(Wt::WString::tr("wa-track-wrapper"));
+	Wt::WTemplate* t = new Wt::WTemplate(this);
+	t->setTemplateText(Wt::WString::tr("wa-track-search"));
 
 	Wt::WTemplate* title = new Wt::WTemplate(this);
-	wrapper->bindWidget("title", title);
-
 	title->setTemplateText(Wt::WString::tr("mobile-search-title"));
 	title->bindString("text", "Tracks", Wt::PlainText);
+	t->bindWidget("title", title);
 
-	_container = new Wt::WContainerWidget();
-	wrapper->bindWidget("track-container", _container);
+	_contents = new Wt::WContainerWidget();
+	t->bindWidget("contents", _contents);
 
 	_showMore = new Wt::WTemplate();
-	wrapper->bindWidget("show-more", _showMore);
-
 	_showMore->setTemplateText(Wt::WString::tr("mobile-search-more"));
 	_showMore->bindString("text", "Tap to show more results...");
 	_showMore->hide();
 	_showMore->clicked().connect(std::bind([=] {
-		_sigMoreSelected();
+		_sigShowMore.emit();
 		addResults(20);
 	}));
+	t->bindWidget("show-more", _showMore);
 }
 
 void
 TrackSearch::clear()
 {
-	// Flush the release container
-	_container->clear();
-
-	_nbTracks = 0;
+	_contents->clear();
 	_showMore->hide();
 }
 
@@ -79,52 +75,41 @@ TrackSearch::search(SearchFilter filter, size_t nb)
 	addResults(nb);
 }
 
-static
-std::vector<Track::pointer >
-getTracks(SearchFilter filter, size_t offset, size_t nb, bool &moreResults)
-{
-	std::vector<Track::pointer > tracks = Track::getByFilter(DboSession(), filter, offset, nb + 1);
-
-	if (tracks.size() == nb + 1)
-	{
-		moreResults = true;
-		tracks.pop_back();
-	}
-	else
-		moreResults = false;
-
-	return tracks;
-}
-
 void
 TrackSearch::addResults(size_t nb)
 {
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	bool moreResults;
-	std::vector<Track::pointer > tracks = getTracks(_filter, _nbTracks, nb, moreResults);
+	std::vector<Track::pointer > tracks = Track::getByFilter(DboSession(), _filter, _contents->count(), nb, moreResults);
 
 	for (Track::pointer track : tracks)
 	{
-		Wt::WTemplate* trackRes = new Wt::WTemplate(_container);
-		trackRes->setTemplateText(Wt::WString::tr("wa-track"));
+		Wt::WTemplate* res = new Wt::WTemplate(_contents);
+		res->setTemplateText(Wt::WString::tr("wa-track-search-res"));
 
 		Wt::WImage *cover = new Wt::WImage();
+		res->bindWidget("cover", cover);
 		cover->setStyleClass ("center-block img-responsive");
-		cover->setImageLink(Wt::WLink(LmsApplication::instance()->getCoverResource()->getTrackUrl(track.id(), 128)));
-		trackRes->bindWidget("cover", cover);
+		cover->setImageLink(SessionImageResource()->getTrackUrl(track.id(), 64));
+ 		res->bindString("track-name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
+ 		res->bindString("artist-name", Wt::WString::fromUTF8(track->getArtist()->getName()), Wt::PlainText);
 
- 		trackRes->bindString("track-name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
- 		trackRes->bindString("artist-name", Wt::WString::fromUTF8(track->getArtist()->getName()), Wt::PlainText);
-
-		Wt::WText *playBtn = new Wt::WText("Play", Wt::PlainText);
-		playBtn->setStyleClass("center-block"); // TODO move to CSS?
+		Wt::WText *playBtn = new Wt::WText("<i class=\"fa fa-play fa-lg\"></i>", Wt::XHTMLText);
+		res->bindWidget("play-btn", playBtn);
+		playBtn->setStyleClass("mobile-btn");
 		playBtn->clicked().connect(std::bind([=] {
-			_sigTrackPlay.emit(track.id());
+			_events.trackPlay.emit(track.id());
 		}));
 
-		trackRes->bindWidget("btn", playBtn);
-		_nbTracks++;
+		Wt::WText *addBtn = new Wt::WText("<i class=\"fa fa-plus fa-lg\"></i>", Wt::XHTMLText);
+		res->bindWidget("add-btn", addBtn);
+		addBtn->setStyleClass("mobile-btn");
+		addBtn->clicked().connect(std::bind([=] {
+			_events.trackAdd.emit(track.id());
+		}));
+
+
 	}
 
 	if (moreResults)

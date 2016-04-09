@@ -30,14 +30,13 @@
 namespace UserInterface {
 
 
-class CoverResource : public Wt::WResource
+class ImageResource : public Wt::WResource
 {
 	public:
-		static const std::string unknownCoverPath;
 		static const std::size_t maxSize = 512;
 
-		CoverResource(Database::Handler& db, Wt::WObject *parent = 0);
-		~CoverResource();
+		ImageResource(Database::Handler& db, Wt::WObject *parent = 0);
+		~ImageResource();
 
 		std::string getReleaseUrl(Database::Release::id_type releaseId, size_t size) const;
 		std::string getTrackUrl(Database::Track::id_type trackId, size_t size) const;
@@ -49,7 +48,9 @@ class CoverResource : public Wt::WResource
 	private:
 
 		Image::Image			getDefaultCover(std::size_t size);
-		void				putCover(Wt::Http::Response& response, Image::Image image);
+		Image::Image			getDefaultArtistImage(std::size_t size);
+		void				putImage(Wt::Http::Response& response, Image::Image image);
+		void				putCover(Wt::Http::Response& response, std::vector<Image::Image> covers, std::size_t size);
 
 		// Used to protect transactions since they are not thread safe
 		std::mutex			_mutex;
@@ -57,6 +58,9 @@ class CoverResource : public Wt::WResource
 
 		// Default cover for different sizes
 		std::map<std::size_t, Image::Image>	_defaultCovers;
+
+		// Default artist images for different sizes
+		std::map<std::size_t, Image::Image>	_defaultArtistImages;
 
 		// TODO construct a cache for covers?
 };

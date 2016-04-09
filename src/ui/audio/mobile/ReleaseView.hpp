@@ -17,37 +17,37 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_MOBILE_TRACK_SEARCH_HPP
-#define UI_MOBILE_TRACK_SEARCH_HPP
+#pragma once
 
 #include <Wt/WContainerWidget>
 #include <Wt/WSignal>
 
-#include "resource/CoverResource.hpp"
+#include "MobilePlayQueueEvents.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
-class TrackReleaseView : public Wt::WContainerWidget
+class ReleaseView : public Wt::WContainerWidget
 {
 	public:
 
-		TrackReleaseView(Wt::WContainerWidget *parent = 0);
+		static Wt::WLink getLink(Database::Release::id_type id);
+
+		ReleaseView(PlayQueueEvents& events, Wt::WContainerWidget *parent = 0);
 
 		void search(Database::SearchFilter filter, size_t nb);
 
 		// Slots
-		Wt::Signal<Database::Track::id_type>&	trackPlay() { return _sigTrackPlay;}
 		Wt::Signal<void>&		moreTracksSelected() { return _sigMoreTracksSelected;}
 
 	private:
 
-		Wt::Signal<Database::Track::id_type> _sigTrackPlay;
 		Wt::Signal<void>	_sigMoreTracksSelected;
 
 		void clear(void);
 		void addResults(size_t nb);
 
+		PlayQueueEvents& _events;
 		Wt::WTemplate*	_showMore;
 
 		Database::SearchFilter _filter;
@@ -64,4 +64,3 @@ class TrackReleaseView : public Wt::WContainerWidget
 } // namespace Mobile
 } // namespace UserInterface
 
-#endif

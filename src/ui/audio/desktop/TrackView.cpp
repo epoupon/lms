@@ -70,7 +70,7 @@ TrackView::TrackView(Wt::WContainerWidget* parent)
 
 	Track::updateUIQueryModel(DboSession(), _queryModel, filter, columnNames);
 
-	_queryModel.setBatchSize(300);
+	_queryModel.setBatchSize(500);
 
 	this->setSortingEnabled(true);
 	this->setSelectionMode(Wt::ExtendedSelection);

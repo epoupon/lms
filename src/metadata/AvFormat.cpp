@@ -171,7 +171,7 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 		{
 			// TODO use splitStrings
 			std::list<std::string> genres;
-			if (readList(it->second, ";,", genres))
+			if (readList(it->second, ";,\\", genres))
 				items.insert( std::make_pair(MetaData::Type::Genres, genres));
 
 		}
@@ -184,6 +184,12 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 			|| boost::iequals(it->first, "MUSICBRAINZ_ALBUMID"))
 		{
 			items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, stringTrim( stringToUTF8(it->second)) ));
+		}
+		else if (boost::iequals(it->first, "MusicBrainz Release Track Id")
+			|| boost::iequals(it->first, "MUSICBRAINZ_RELEASETRACKID")
+			|| boost::iequals(it->first, "MUSICBRAINZ_TRACKID"))
+		{
+			items.insert( std::make_pair(MetaData::Type::MusicBrainzTrackID, stringTrim( stringToUTF8(it->second)) ));
 		}
 	}
 

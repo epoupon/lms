@@ -87,6 +87,20 @@ Track::getAllPaths(Wt::Dbo::Session& session)
 	return std::vector<boost::filesystem::path>(res.begin(), res.end());
 }
 
+std::vector<Track::pointer>
+Track::getMBIDDuplicates(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::collection<pointer> res = session.query<pointer>( "SELECT track FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)").orderBy("track.release_id,track.disc_number,track.track_number,track.mbid");
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
+std::vector<Track::pointer>
+Track::getChecksumDuplicates(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::collection<pointer> res = session.query<pointer>( "SELECT track FROM track WHERE checksum in (SELECT checksum FROM track WHERE Length(checksum) > 0 GROUP BY checksum HAVING COUNT(*) > 1)").orderBy("track.release_id,track.disc_number,track.track_number,track.checksum");
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
 std::vector< Genre::pointer >
 Track::getGenres(void) const
 {
@@ -128,7 +142,7 @@ Track::getStats(Wt::Dbo::Session& session, SearchFilter filter)
 {
 	SqlQuery sqlQuery = generatePartialQuery(filter);
 
-	Wt::Dbo::Query<StatsQueryResult> query = session.query<StatsQueryResult>( "SELECT COUNT(DISTINCT t.id), SUM(t.duration) FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN genre g ON g.id = t_g.genre_id INNER JOIN track_genre t_g ON t_g.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get());
+	Wt::Dbo::Query<StatsQueryResult> query = session.query<StatsQueryResult>( "SELECT COUNT(\"id\"), SUM(\"dur\") FROM  (SELECT t.id as \"id\", t.duration as \"dur\" FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN genre g ON g.id = t_g.genre_id INNER JOIN track_genre t_g ON t_g.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get() + " GROUP BY t.id)");
 
 	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
@@ -143,6 +157,22 @@ Track::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, i
 	Wt::Dbo::collection<pointer> res = getQuery(session, filter).limit(size).offset(offset);
 
 	return std::vector<pointer>(res.begin(), res.end());
+}
+
+std::vector<Track::pointer>
+Track::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool& moreResults)
+{
+	auto res = getByFilter(session, filter, offset, size + 1);
+
+	if (size != -1 && res.size() == static_cast<std::size_t>(size) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
+
+	return res;
 }
 
 void
@@ -166,6 +196,7 @@ Track::updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< UIQuer
 	}
 
 }
+
 
 Genre::Genre()
 {

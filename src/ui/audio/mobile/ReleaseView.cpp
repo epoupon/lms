@@ -26,15 +26,16 @@
 #include "utils/Utils.hpp"
 #include "LmsApplication.hpp"
 
-#include "TrackReleaseView.hpp"
+#include "ReleaseView.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
 using namespace Database;
 
-TrackReleaseView::TrackReleaseView(Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent)
+ReleaseView::ReleaseView(PlayQueueEvents& events, Wt::WContainerWidget *parent)
+: Wt::WContainerWidget(parent),
+ _events(events)
 {
 	Wt::WTemplate* wrapper = new Wt::WTemplate(this);
 	wrapper->setTemplateText(Wt::WString::tr("wa-trackview-wrapper"));
@@ -55,13 +56,29 @@ TrackReleaseView::TrackReleaseView(Wt::WContainerWidget *parent)
 	_showMore->bindString("text", "Tap to show more results...");
 	_showMore->hide();
 	_showMore->clicked().connect(std::bind([=] {
-		_sigMoreTracksSelected();
 		addResults(20);
 	}));
+
+	wApp->internalPathChanged().connect(std::bind([=] (std::string path)
+	{
+		const std::string pathPrefix = "/audio/release/";
+
+		if (!wApp->internalPathMatches(pathPrefix))
+			return;
+
+		std::string strId = path.substr(pathPrefix.length());
+
+		Release::id_type id;
+		if (readAs(strId, id))
+		{
+			clear();
+			search(SearchFilter::ById(SearchFilter::Field::Release, id), 20);
+		}
+	}, std::placeholders::_1));
 }
 
 void
-TrackReleaseView::clear()
+ReleaseView::clear()
 {
 	// Flush the release container
 	_releaseContainer->clear();
@@ -73,29 +90,12 @@ TrackReleaseView::clear()
 }
 
 void
-TrackReleaseView::search(SearchFilter filter, size_t nb)
+ReleaseView::search(SearchFilter filter, size_t nb)
 {
 	_filter = filter;
 
 	clear();
 	addResults(nb);
-}
-
-static
-std::vector<Track::pointer >
-getTracks(SearchFilter filter, size_t offset, size_t nb, bool &moreResults)
-{
-	std::vector<Track::pointer > tracks = Track::getByFilter(DboSession(), filter, offset, nb + 1);
-
-	if (tracks.size() == nb + 1)
-	{
-		moreResults = true;
-		tracks.pop_back();
-	}
-	else
-		moreResults = false;
-
-	return tracks;
 }
 
 static Wt::WString
@@ -106,17 +106,19 @@ getArtistNameFromRelease(Release::pointer release)
 
 	if (artists.size() > 1)
 		return Wt::WString::fromUTF8("Various artists", Wt::PlainText);
-	else
+	else if (artists.size() == 1)
 		return Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText);
+	else
+		return Wt::WString();
 }
 
 void
-TrackReleaseView::addResults(size_t nb)
+ReleaseView::addResults(size_t nb)
 {
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	bool moreResults;
-	std::vector<Track::pointer > tracks = getTracks(_filter, _nbTracks, nb, moreResults);
+	std::vector<Track::pointer> tracks = Track::getByFilter(DboSession(), _filter, _nbTracks, nb, moreResults);
 
 	for (Track::pointer track : tracks)
 	{
@@ -134,7 +136,7 @@ TrackReleaseView::addResults(size_t nb)
 
 			Wt::WImage *cover = new Wt::WImage();
 			cover->setStyleClass ("center-block img-responsive"); // TODO move to CSS?
-			cover->setImageLink(Wt::WLink (LmsApplication::instance()->getCoverResource()->getReleaseUrl(release.id(), 512)));
+			cover->setImageLink(Wt::WLink (SessionImageResource()->getReleaseUrl(release.id(), 512)));
 
 			releaseContainer->bindWidget("cover", cover);
 			releaseContainer->bindString("artist-name", getArtistNameFromRelease(release), Wt::PlainText);
@@ -175,16 +177,23 @@ TrackReleaseView::addResults(size_t nb)
  		trackRes->bindString("track-name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
 		// TODO, display artist name for compilation releases?
 
-		// TODO handle large duration (> 1 hour)
-		trackRes->bindString("time", durationToString(track->getDuration(), "%M:%S"), Wt::PlainText);
-
-		Wt::WText *playBtn = new Wt::WText("Play", Wt::PlainText);
-		playBtn->setStyleClass("center-block"); // TODO move to CSS?
+		Wt::WText *playBtn = new Wt::WText("<i class=\"fa fa-play fa-lg\"></i>", Wt::XHTMLText);
+		trackRes->bindWidget("play-btn", playBtn);
+		playBtn->setStyleClass("mobile-btn");
 		playBtn->clicked().connect(std::bind([=] {
-			_sigTrackPlay.emit(track.id());
+			_events.trackPlay.emit(track.id());
 		}));
 
-		trackRes->bindWidget("btn", playBtn);
+		Wt::WText *addBtn = new Wt::WText("<i class=\"fa fa-plus fa-lg\"></i>", Wt::XHTMLText);
+		trackRes->bindWidget("add-btn", addBtn);
+		addBtn->setStyleClass("mobile-btn");
+		addBtn->clicked().connect(std::bind([=] {
+			_events.trackAdd.emit(track.id());
+		}));
+
+
+
+
 		_nbTracks++;
 	}
 
@@ -192,6 +201,12 @@ TrackReleaseView::addResults(size_t nb)
 		_showMore->show();
 	else
 		_showMore->hide();
+}
+
+Wt::WLink
+ReleaseView::getLink(Database::Release::id_type id)
+{
+	return Wt::WLink(Wt::WLink::InternalPath, "/audio/release/" + std::to_string(id));
 }
 
 } // namespace Mobile

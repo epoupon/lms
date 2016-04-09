@@ -46,6 +46,12 @@ Artist::getByMBID(Wt::Dbo::Session& session, const std::string& mbid)
 }
 
 Artist::pointer
+Artist::getById(Wt::Dbo::Session& session, Artist::id_type id)
+{
+	return session.find<Artist>().where("id = ?").bind(id);
+}
+
+Artist::pointer
 Artist::create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID)
 {
 	return session.add(new Artist(name, MBID));
@@ -83,6 +89,24 @@ Artist::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, 
 
 	return std::vector<pointer>(res.begin(), res.end());
 }
+
+std::vector<Artist::pointer>
+Artist::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool& moreResults)
+{
+	auto res = getByFilter(session, filter, offset, size + 1);
+
+	if (size != -1 && res.size() == static_cast<std::size_t>(size) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
+
+	return res;
+}
+
+
 
 std::vector<Wt::Dbo::ptr<Release> >
 Artist::getReleases() const

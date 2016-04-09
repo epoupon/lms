@@ -44,6 +44,9 @@ stringTrim(const std::string& str, const std::string& whitespace = " \t");
 std::string
 stringToUTF8(const std::string& str);
 
+std::string
+bufferToString(const std::vector<unsigned char>& data);
+
 template<typename T>
 static inline bool readAs(const std::string& str, T& data)
 {

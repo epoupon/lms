@@ -49,6 +49,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static std::vector<pointer>	getAllOrphans(Wt::Dbo::Session& session);
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, int offset, int size);
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
+		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool& moreExpected);
 
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID = "");

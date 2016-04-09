@@ -44,10 +44,13 @@ class Updater
 
 		struct Stats
 		{
+			std::size_t	nbSkipped = 0;		// no change since last scan
+			std::size_t	nbScanned = 0;
+			std::size_t	nbScanErrors = 0;	// cannot scan file
+			std::size_t	nbNotImported = 0;	// Not imported (criteria not filled)
 			std::size_t	nbAdded = 0;
 			std::size_t	nbRemoved = 0;
 			std::size_t	nbModified = 0;
-			std::size_t	nbScanErrors = 0;
 
 			std::size_t nbChanges() const { return nbAdded + nbRemoved + nbModified;}
 		};
@@ -84,6 +87,7 @@ class Updater
 
 		// Audio
 		void checkAudioFiles( Stats& stats );
+		void checkDuplicatedAudioFiles( Stats& stats );
 		void processAudioFile( const boost::filesystem::path& file, Stats& stats);
 
 		// Video

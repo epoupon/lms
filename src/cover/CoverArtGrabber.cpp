@@ -96,15 +96,16 @@ std::vector<boost::filesystem::path>
 Grabber::getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t nbMaxCovers) const
 {
 	std::vector<boost::filesystem::path> res;
+	boost::system::error_code ec;
 
 	// TODO handle preferred file names
 
-	boost::filesystem::directory_iterator itPath(directoryPath);
+	boost::filesystem::directory_iterator itPath(directoryPath, ec);
 	boost::filesystem::directory_iterator itEnd;
-	while (itPath != itEnd)
+	while (!ec && itPath != itEnd)
 	{
 		boost::filesystem::path path = *itPath;
-		itPath++;
+		itPath.increment(ec);
 
 		if (!boost::filesystem::is_regular(path))
 			continue;
@@ -122,7 +123,6 @@ Grabber::getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t
 		if (res.size() >= nbMaxCovers)
 			break;
 	}
-
 	return res;
 }
 

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2015 Emeric Poupon
  *
@@ -19,29 +20,13 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
+#include "utils/Utils.hpp"
 
-#include "audio/Audio.hpp"
-
-#include "MobilePlayQueueEvents.hpp"
-
-
-namespace UserInterface {
-namespace Mobile {
-
-class Audio : public UserInterface::Audio
+static inline std::vector<std::string> searchPathToSearchKeywords(std::string path)
 {
-	public:
-		Audio(Wt::WContainerWidget *parent = 0);
+	if (!path.empty() && path[0] == '/')
+		path.erase(path.begin());
 
-		void search(std::string text);
-
-	private:
-
-		PlayQueueEvents _playQueueEvents;
-
-};
-
-} // namespace Mobile
-} // namespace UserInterface
+	return splitString(path, " \t");
+}
 

@@ -53,6 +53,7 @@ class Genre
 		static pointer getNone(Wt::Dbo::Session& session);
 		static std::vector<pointer> getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 		static Wt::Dbo::collection<Genre::pointer> getAll(Wt::Dbo::Session& session);
+
 		// MVC models for the user interface
 		// Genre ID, name, track count
 		typedef boost::tuple<id_type, std::string, int> UIQueryResult;
@@ -104,8 +105,11 @@ class Track
 		static pointer getById(Wt::Dbo::Session& session, id_type id);
 		static pointer getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
+		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool &moreResults);
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
 		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session);
+		static std::vector<pointer> getMBIDDuplicates(Wt::Dbo::Session& session);
+		static std::vector<pointer> getChecksumDuplicates(Wt::Dbo::Session& session);
 
 		// Utility fonctions
 		// MVC models for the user interface

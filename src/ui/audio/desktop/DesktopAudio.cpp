@@ -149,23 +149,41 @@ _playQueue(nullptr)
 		playlistBtn->setMenu(popupMain);
 	}
 
-	Wt::WPushButton *upBtn = new Wt::WPushButton("UP");
+	Wt::WPushButton *upBtn = new Wt::WPushButton("<i class =\"fa fa-arrow-up fa-lg\"></i>", Wt::XHTMLText);
 	upBtn->setStyleClass("btn-sm");
 	playlistControls->addWidget(upBtn);
-	Wt::WPushButton *downBtn = new Wt::WPushButton("DO");
+	Wt::WPushButton *downBtn = new Wt::WPushButton("<i class =\"fa fa-arrow-down fa-lg\"></i>", Wt::XHTMLText);
 	downBtn->setStyleClass("btn-sm");
 	playlistControls->addWidget(downBtn);
-	Wt::WPushButton *delBtn = new Wt::WPushButton("DEL");
+	Wt::WPushButton *delBtn = new Wt::WPushButton("<i class =\"fa fa-remove fa-lg\"></i>", Wt::XHTMLText);
 	delBtn->setStyleClass("btn-sm btn-warning");
 	playlistControls->addWidget(delBtn);
-	Wt::WPushButton *clearBtn = new Wt::WPushButton("CLR");
+	Wt::WPushButton *clearBtn = new Wt::WPushButton("<i class =\"fa fa-trash fa-lg\"></i>", Wt::XHTMLText);
 	clearBtn->setStyleClass("btn-sm btn-danger");
 	playlistControls->addWidget(clearBtn);
 
 	delBtn->clicked().connect(_playQueue, &PlayQueue::delSelected);
 	upBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedUp);
 	downBtn->clicked().connect(_playQueue, &PlayQueue::moveSelectedDown);
-	clearBtn->clicked().connect(_playQueue, &PlayQueue::delAll);
+	clearBtn->clicked().connect(std::bind([=]
+	{
+		Wt::WMessageBox *messageBox = new Wt::WMessageBox
+			("Clear playqueue",
+			 Wt::WString( "Are you sure?"),
+			 Wt::Question, Wt::Yes | Wt::No);
+
+		messageBox->setModal(true);
+
+		messageBox->buttonClicked().connect(std::bind([=] ()
+		{
+			if (messageBox->buttonResult() == Wt::Yes)
+				_playQueue->delAll();
+
+			delete messageBox;
+		}));
+
+		messageBox->show();
+	}));
 
 	playQueueLayout->addLayout(playlistControls);
 
@@ -180,7 +198,7 @@ _playQueue(nullptr)
 		_playQueue->select(CurrentUser()->getCurPlayingTrackPos());
 	}
 
-	_mediaPlayer = new AudioPlayer();
+	_mediaPlayer = new AudioPlayer(AudioPlayer::ControlShuffle | AudioPlayer::ControlRepeat);
 	mainLayout->addWidget(_mediaPlayer, 2, 0, 1, 4);
 
 	mainLayout->setRowStretch(1, 1);
@@ -431,6 +449,7 @@ Audio::playlistRefreshMenus()
 		}));
 	}
 }
+
 
 void
 Audio::search(std::string searchText)

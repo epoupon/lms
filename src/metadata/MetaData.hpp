@@ -47,6 +47,7 @@ namespace MetaData
 		SubtitleStreams,	// vector<SubtitleStream>
 		MusicBrainzArtistID,	// string
 		MusicBrainzAlbumID,	// string
+		MusicBrainzTrackID,	// string
 	};
 
 	// Used by Streams

@@ -55,6 +55,8 @@ Settings::Settings(Wt::WContainerWidget* parent)
 	Wt::WMenu *menu = new Wt::WMenu(contents, Wt::Vertical);
 	menu->setStyleClass("nav nav-pills nav-stacked submenu");
 	menu->setWidth(150);
+	menu->setInternalPathEnabled();
+	menu->setInternalBasePath("/settings/");
 
 	hLayout->addWidget(menu);
 	hLayout->addWidget(contents, 1);
@@ -68,22 +70,22 @@ Settings::Settings(Wt::WContainerWidget* parent)
 		userIsAdmin = CurrentUser()->isAdmin();
 	}
 
-	menu->addItem("Audio", new AudioFormView());
+	menu->addItem("Audio", new AudioFormView())->setPathComponent("audio");
 	if (userIsAdmin)
 	{
-		MediaDirectories* mediaDirectory = new MediaDirectories();
-		mediaDirectory->changed().connect(this, &Settings::handleDatabaseDirectoriesChanged);
-		menu->addItem("Media Folders", mediaDirectory);
+		MediaDirectories* mediaDirectories = new MediaDirectories();
+		mediaDirectories->changed().connect(this, &Settings::handleDatabaseDirectoriesChanged);
+		menu->addItem("Media Folders", mediaDirectories)->setPathComponent("mediadirectories");
 
 		DatabaseFormView* databaseFormView = new DatabaseFormView();
 		databaseFormView->changed().connect(this, &Settings::restartDatabaseUpdateService);
-		menu->addItem("Database", databaseFormView);
+		menu->addItem("Database", databaseFormView)->setPathComponent("database");
 
-		menu->addItem("Users", new Users());
+		menu->addItem("Users", new Users())->setPathComponent("users");
 	}
 	else
 	{
-		menu->addItem("Account", new AccountFormView(userId));
+		menu->addItem("Account", new AccountFormView(userId))->setPathComponent("account");
 	}
 
 }

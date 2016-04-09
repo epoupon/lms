@@ -20,40 +20,24 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
-#include <Wt/WSignal>
+#include <Wt/WLink>
 
-#include "database/SearchFilter.hpp"
 #include "database/Types.hpp"
-
-#include "MobilePlayQueueEvents.hpp"
 
 namespace UserInterface {
 namespace Mobile {
 
-class TrackSearch : public Wt::WContainerWidget
+class ArtistView : public Wt::WContainerWidget
 {
 	public:
 
-		TrackSearch(PlayQueueEvents& events, Wt::WContainerWidget *parent = 0);
+		static Wt::WLink getLink(Database::Artist::id_type id);
 
-		void addResults(size_t nb);
-		void search(Database::SearchFilter filter, size_t nb);
+		ArtistView(Wt::WContainerWidget *parent = 0);
 
-		// Slots
-		Wt::Signal<void>& showMore() { return _sigShowMore;}
-
-	private:
-
-		Wt::Signal<void> _sigShowMore;
-
-		void clear(void);
-
-		PlayQueueEvents&	_events;
-		Wt::WTemplate*		_showMore;
-		Database::SearchFilter	_filter;
-		Wt::WContainerWidget*	_contents;
 };
 
-} // namespace Mobile
-} // namespace UserInterface
+
+} //namespace Mobile
+} //namespace UserInterface
 
