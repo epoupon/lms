@@ -10,9 +10,13 @@ It allows you to access your music and your videos using an https web interface.
  - Multi genre
  - MusicBrainzID support
 
-Please note LMS is still under development and will gain more features in the future.
+Please note LMS is still under development and will gain more features in the future:
+ - Radio function (using AcousticBrainz)
+ - Interface suited for mobile devices
+ - Video support
+ - Subsonic and/or Ampache API
 
-LMS is written entirely in C++. Therefore, it is suitable to run on embedded devices, where space and/or memory are limited.
+LMS is written entirely in C++. Therefore, it is suitable to run on embedded devices, where space and memory are limited.
 Please note some media files may require significant CPU usage to be transcoded.
 
 ## Dependencies

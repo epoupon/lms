@@ -53,9 +53,9 @@
 		- Perform a search for each key pressed (using a timer, in JS)
 		- Save user prefs in local storage (volume, loop, shuffle, current playqueue, etc.)
 		[desktop]
-		- Better style...
 		- TrackView: Reselect the current selected item when displaying the updated search results
 		- Add keyboard shortcuts
+		- playqueue: try to get a single div to display the cover / artist / track name in order to improve style
 		[mobile]
 		- Reorganize the views to ease internal paths
 		- Covers not always the same height
