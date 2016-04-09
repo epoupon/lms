@@ -300,7 +300,7 @@ UserFormView::UserFormView(std::string userId, Wt::WContainerWidget *parent)
 
 	_model = new UserFormModel(userId, this);
 
-	setTemplateText(tr("userForm-template"));
+	setTemplateText(tr("settings-new-user"));
 	addFunction("id", &WTemplate::Functions::id);
 	addFunction("block", &WTemplate::Functions::id);
 

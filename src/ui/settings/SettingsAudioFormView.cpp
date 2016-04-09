@@ -175,7 +175,7 @@ AudioFormView::AudioFormView(Wt::WContainerWidget *parent)
 
 	_model = new AudioFormModel(this);
 
-	setTemplateText(tr("audioForm-template"));
+	setTemplateText(tr("settings-audio"));
 	addFunction("id", &WTemplate::Functions::id);
 	addFunction("block", &WTemplate::Functions::id);
 

@@ -192,7 +192,7 @@ AccountFormView::AccountFormView(std::string userId, Wt::WContainerWidget *paren
 
 	_model = new AccountFormModel(userId, this);
 
-	setTemplateText(tr("userAccountForm-template"));
+	setTemplateText(tr("settings-account"));
 	addFunction("id", &WTemplate::Functions::id);
 	addFunction("block", &WTemplate::Functions::id);
 

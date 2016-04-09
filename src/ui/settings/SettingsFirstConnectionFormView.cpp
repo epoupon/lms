@@ -152,7 +152,7 @@ FirstConnectionFormView::FirstConnectionFormView(Wt::WContainerWidget *parent)
 
 	_model = new FirstConnectionFormModel(this);
 
-	setTemplateText(tr("firstConnectionForm-template"));
+	setTemplateText(tr("settings-first-connection"));
 	addFunction("id", &WTemplate::Functions::id);
 	addFunction("block", &WTemplate::Functions::id);
 

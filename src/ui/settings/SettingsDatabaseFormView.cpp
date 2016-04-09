@@ -297,7 +297,7 @@ DatabaseFormView::DatabaseFormView(Wt::WContainerWidget *parent)
 {
 	_model = new DatabaseFormModel(this);
 
-	setTemplateText(tr("databaseForm-template"));
+	setTemplateText(tr("settings-database"));
 	addFunction("id", &WTemplate::Functions::id);
 	addFunction("block", &WTemplate::Functions::id);
 

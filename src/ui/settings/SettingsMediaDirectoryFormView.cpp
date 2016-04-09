@@ -109,7 +109,7 @@ MediaDirectoryFormView::MediaDirectoryFormView(Wt::WContainerWidget *parent)
 
 	_model = new MediaDirectoryFormModel(this);
 
-	setTemplateText(tr("mediaDirectoryForm-template"));
+	setTemplateText(tr("settings-new-media-directory"));
 	addFunction("id", &WTemplate::Functions::id);
 	addFunction("block", &WTemplate::Functions::id);
 
