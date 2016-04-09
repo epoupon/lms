@@ -51,7 +51,7 @@ class AudioPlayer : public Wt::WTemplate
 		Wt::Signal<void>&	playPrevious()	{return _playPrevious;}
 		Wt::Signal<bool>&	shuffle()	{return _shuffle;}
 		Wt::Signal<bool>&	loop()		{return _loop;}
-		Wt::Signal<bool>&	showPlayQueue()	{return _playQueue;}
+		Wt::Signal<void>&	showPlayQueue()	{return _playQueue;}
 
 	private:
 
@@ -61,7 +61,7 @@ class AudioPlayer : public Wt::WTemplate
 		Wt::Signal<void>	_playPrevious;
 		Wt::Signal<bool>	_shuffle;
 		Wt::Signal<bool>	_loop;
-		Wt::Signal<bool>	_playQueue;
+		Wt::Signal<void>	_playQueue;
 
 		Wt::WAudio*	_audio;
 		Wt::WText*	_trackCurTime;

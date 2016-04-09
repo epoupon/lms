@@ -112,11 +112,10 @@ Audio::Audio(Wt::WContainerWidget *parent)
 	AudioPlayer* audioPlayer = new AudioPlayer(AudioPlayer::ControlPlayqueue);
 	footer->bindWidget("player", audioPlayer);
 
-	audioPlayer->showPlayQueue().connect(std::bind([=] (bool state)
+	audioPlayer->showPlayQueue().connect(std::bind([=]
 	{
-		if (state)
-			wApp->setInternalPath("/audio/playqueue", true);
-	}, std::placeholders::_1));
+		wApp->setInternalPath("/audio/playqueue", true);
+	}));
 
 	// Connect the audio player events to the playqueue
 	playQueue->playTrack().connect(std::bind([=] (Database::Track::id_type id)

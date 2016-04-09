@@ -182,16 +182,7 @@ AudioPlayer::AudioPlayer(ControlFlags controls, Wt::WContainerWidget *parent)
 		playQueueBtn->addStyleClass("mediaplayer-btn");
 		playQueueBtn->clicked().connect(std::bind([=] ()
 		{
-			if (playQueueBtn->hasStyleClass("mediaplayer-btn-active"))
-			{
-				playQueueBtn->removeStyleClass("mediaplayer-btn-active");
-				_playQueue.emit(false);
-			}
-			else
-			{
-				playQueueBtn->addStyleClass("mediaplayer-btn-active");
-				_playQueue.emit(true);
-			}
+			_playQueue.emit();
 		}));
 	}
 
