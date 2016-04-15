@@ -83,6 +83,8 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 	_session.mapClass<Database::Artist>("artist");
 	_session.mapClass<Database::Genre>("genre");
 	_session.mapClass<Database::Track>("track");
+	_session.mapClass<Database::Classification>("classification");
+	_session.mapClass<Database::ClassificationData>("classification_data");
 	_session.mapClass<Database::Playlist>("playlist");
 	_session.mapClass<Database::PlaylistEntry>("playlist_entry");
 	_session.mapClass<Database::Release>("release");

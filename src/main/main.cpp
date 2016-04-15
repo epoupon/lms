@@ -19,18 +19,17 @@
 
 #include <boost/filesystem.hpp>
 
+#include <Wt/WServer>
+
 #include "config/config.h"
 #include "av/AvInfo.hpp"
 #include "av/AvTranscoder.hpp"
 #include "logger/Logger.hpp"
 #include "image/Image.hpp"
 
+#include "database/DatabaseUpdater.hpp"
 #include "ui/LmsApplication.hpp"
 
-#include "service/ServiceManager.hpp"
-#include "service/DatabaseUpdateService.hpp"
-
-#include <Wt/WServer>
 
 int main(int argc, char* argv[])
 {
@@ -49,8 +48,6 @@ int main(int argc, char* argv[])
 
 		Wt::WServer::instance()->logger().configure("*"); // log everything
 
-		Service::ServiceManager& serviceManager = Service::ServiceManager::instance();
-
 		// lib init
 		Image::init(argv[0]);
 		Av::AvInit();
@@ -60,30 +57,29 @@ int main(int argc, char* argv[])
 		// Initializing a connection pool to the database that will be shared along services
 		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool( Database::Handler::createConnectionPool("/var/lms/lms.db")); // TODO use $datadir from autotools
 
-		serviceManager.add( std::make_shared<Service::DatabaseUpdateService>(*connectionPool));
+		Database::Updater::instance().setConnectionPool(*connectionPool);
 
 		// bind entry point
 		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, boost::ref(*connectionPool)));
 
-		// Starting the main server
+		// Start
+		LMS_LOG(MAIN, INFO) << "Starting database updater...";
+		Database::Updater::instance().start();
+
 		LMS_LOG(MAIN, INFO) << "Starting server...";
 		server.start();
 
-		// Start underlying services
-		LMS_LOG(MAIN, INFO) << "Starting services...";
-		serviceManager.start();
-
+		// Wait
 		LMS_LOG(MAIN, INFO) << "Now running...";
-
-		// Waiting for shutdown command
 		Wt::WServer::waitForShutdown(argv[0]);
 
-		LMS_LOG(MAIN, INFO) << "Stopping services...";
-		serviceManager.stop();
-		serviceManager.clear();
-
+		// Stop
 		LMS_LOG(MAIN, INFO) << "Stopping server...";
-		server.stop();
+		Database::Updater::instance().stop();
+
+		LMS_LOG(MAIN, INFO) << "Stopping database updater...";
+		Database::Updater::instance().stop();
+
 
 		res = EXIT_SUCCESS;
 	}

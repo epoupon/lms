@@ -20,28 +20,22 @@
 #ifndef DB_UPDATER_HPP
 #define DB_UPDATER_HPP
 
-#include <boost/asio/deadline_timer.hpp>
 #include <Wt/WIOService>
+#include <Wt/WSignal>
 
-#include "metadata/MetaData.hpp"
+#include <mutex>
+
+#include <boost/asio/deadline_timer.hpp>
+
+#include "metadata/AvFormat.hpp"
 
 #include "database/DatabaseHandler.hpp"
 
-namespace DatabaseUpdater {
+namespace Database {
 
 class Updater
 {
 	public:
-		Updater(Wt::Dbo::SqlConnectionPool& connectionPool, MetaData::Parser& parser);
-
-		void setAudioExtensions(const std::vector<std::string>&	extensions);
-		void setVideoExtensions(const std::vector<std::string>&	extensions);
-
-		void start();
-		void stop();
-
-	private:
-
 		struct Stats
 		{
 			std::size_t	nbSkipped = 0;		// no change since last scan
@@ -54,6 +48,25 @@ class Updater
 
 			std::size_t nbChanges() const { return nbAdded + nbRemoved + nbModified;}
 		};
+
+		static Updater& instance();
+
+		void setConnectionPool(Wt::Dbo::SqlConnectionPool& connectionPool);
+
+		void setAudioExtensions(const std::vector<std::string>&	extensions);
+		void setVideoExtensions(const std::vector<std::string>&	extensions);
+
+		void start();
+		void stop();
+		void restart();
+
+		Wt::Signal<Stats>& changed() { return _sigChanged; }
+
+		std::mutex&	getMutex(void) { return _mutex; }
+
+	private:
+
+		Updater();
 
 		struct RootDirectory
 		{
@@ -96,19 +109,21 @@ class Updater
 
 		bool			_running;
 		Wt::WIOService		_ioService;
+		Wt::Signal<Stats>	_sigChanged;
+		std::mutex		_mutex;
 
 		boost::asio::deadline_timer _scheduleTimer;
 
-		Database::Handler	_db;
+		Database::Handler*	_db = nullptr;
 
 		std::vector<boost::filesystem::path>	_audioFileExtensions;
 		std::vector<boost::filesystem::path>	_videoFileExtensions;
 
-		MetaData::Parser&	_metadataParser;
+		MetaData::AvFormat	_metadataParser;
 
 
 }; // class Updater
 
-} // DatabaseUpdater
+} // Database
 
 #endif

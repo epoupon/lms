@@ -28,11 +28,6 @@ class Settings : public Wt::WContainerWidget
 		Settings(Wt::WContainerWidget* parent = 0);
 
 	private:
-
-		void handleDatabaseDirectoriesChanged();
-
-		void restartDatabaseUpdateService(void);
-
 };
 
 } // namespace Settings

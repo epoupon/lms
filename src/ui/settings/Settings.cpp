@@ -30,8 +30,7 @@
 #include "SettingsUsers.hpp"
 
 #include "logger/Logger.hpp"
-#include "service/ServiceManager.hpp"
-#include "service/DatabaseUpdateService.hpp"
+#include "database/DatabaseUpdater.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -74,11 +73,29 @@ Settings::Settings(Wt::WContainerWidget* parent)
 	if (userIsAdmin)
 	{
 		MediaDirectories* mediaDirectories = new MediaDirectories();
-		mediaDirectories->changed().connect(this, &Settings::handleDatabaseDirectoriesChanged);
+		mediaDirectories->changed().connect(std::bind([=]
+		{
+			LMS_LOG(UI, INFO) << "Media directories have changed: requesting imediate scan";
+
+			// On directory add or delete, request an immediate scan
+			//
+			{
+				Wt::Dbo::Transaction transaction(DboSession());
+				Database::MediaDirectorySettings::get(DboSession()).modify()->setManualScanRequested(true);
+			}
+			{
+				std::lock_guard<std::mutex> lock(Database::Updater::instance().getMutex());
+				Database::Updater::instance().restart();
+			}
+		}));
 		menu->addItem("Media Folders", mediaDirectories)->setPathComponent("mediadirectories");
 
 		DatabaseFormView* databaseFormView = new DatabaseFormView();
-		databaseFormView->changed().connect(this, &Settings::restartDatabaseUpdateService);
+		databaseFormView->changed().connect(std::bind([=]
+		{
+			std::lock_guard<std::mutex> lock(Database::Updater::instance().getMutex());
+			Database::Updater::instance().restart();
+		}));
 		menu->addItem("Database", databaseFormView)->setPathComponent("database");
 
 		menu->addItem("Users", new Users())->setPathComponent("users");
@@ -88,30 +105,6 @@ Settings::Settings(Wt::WContainerWidget* parent)
 		menu->addItem("Account", new AccountFormView(userId))->setPathComponent("account");
 	}
 
-}
-
-void
-Settings::handleDatabaseDirectoriesChanged()
-{
-	LMS_LOG(UI, INFO) << "Media directories have changed: requesting imediate scan";
-	// On directory add or delete, request an immediate scan
-	{
-		Wt::Dbo::Transaction transaction(DboSession());
-		Database::MediaDirectorySettings::get(DboSession()).modify()->setManualScanRequested(true);
-	}
-
-	restartDatabaseUpdateService();
-}
-
-void
-Settings::restartDatabaseUpdateService()
-{
-	// Restarting the update service
-	boost::lock_guard<boost::mutex> serviceLock (Service::ServiceManager::instance().mutex());
-
-	Service::DatabaseUpdateService::pointer service = Service::ServiceManager::instance().get<Service::DatabaseUpdateService>();
-	if (service)
-		service->restart();
 }
 
 } // namespace Settings

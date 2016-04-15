@@ -37,6 +37,8 @@ class Artist;
 class Release;
 class Track;
 class PlaylistEntry;
+class Classification;
+class ClassificationData;
 
 class Genre
 {
@@ -156,6 +158,8 @@ class Track
 		void setArtist(Wt::Dbo::ptr<Artist> artist)			{ _artist = artist; }
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
 		void setGenres(std::vector<Genre::pointer> genres);
+		void addClassifification(Wt::Dbo::ptr<Classification> classification);
+		void addClassifificationData(Wt::Dbo::ptr<ClassificationData> classificationData);
 
 		int				getTrackNumber(void) const		{ return _trackNumber; }
 		int				getTotalTrackNumber(void) const		{ return _totalTrackNumber; }
@@ -175,6 +179,8 @@ class Track
 		Wt::Dbo::ptr<Release>		getRelease(void) const			{ return _release; }
 		std::vector< Genre::pointer >	getGenres(void) const;
 		bool				hasGenre(Genre::pointer genre) const	{ return _genres.count(genre); }
+		std::vector< Wt::Dbo::ptr<Classification> >	getClassifications(void) const;
+		std::vector< Wt::Dbo::ptr<ClassificationData> >	getClassificationData(void) const;
 
 		template<class Action>
 			void persist(Action& a)
@@ -198,6 +204,8 @@ class Track
 				Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _genres, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _playlistEntries, Wt::Dbo::ManyToOne, "track");
+				Wt::Dbo::hasMany(a, _classifications, Wt::Dbo::ManyToOne, "track");
+				Wt::Dbo::hasMany(a, _classificationData, Wt::Dbo::ManyToOne, "track");
 			}
 
 	private:
@@ -228,7 +236,8 @@ class Track
 		Wt::Dbo::ptr<Release>			_release;
 		Wt::Dbo::collection< Genre::pointer >	_genres; // Genres that are related to this track
 		Wt::Dbo::collection< Wt::Dbo::ptr<PlaylistEntry> > _playlistEntries;
-
+		Wt::Dbo::collection< Wt::Dbo::ptr<Classification> > _classifications;
+		Wt::Dbo::collection< Wt::Dbo::ptr<ClassificationData> > _classificationData;
 };
 
 

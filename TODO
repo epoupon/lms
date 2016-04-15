@@ -2,6 +2,9 @@
 [Book]
 - Make the feature?
 
+[Build]
+- Makefile per directory. Use the include flags only where needed?
+
 [Cover]
 - Handle preferred cover file names ("front.xxx", "cover.xxx", ...)
 - Implement a cache and a grabber from some web service (mandatory for artists?)

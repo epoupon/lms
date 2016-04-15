@@ -17,19 +17,19 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdexcept>
 
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/asio/placeholders.hpp>
 
 #include "logger/Logger.hpp"
-#include "utils/Utils.hpp"
-
-#include "database/Types.hpp"
-
-#include "Checksum.hpp"
-#include "DatabaseUpdater.hpp"
 #include "cover/CoverArtGrabber.hpp"
+#include "utils/Utils.hpp"
+#include "utils/Checksum.hpp"
+
+#include "Types.hpp"
+#include "DatabaseUpdater.hpp"
 
 namespace {
 
@@ -115,23 +115,40 @@ isPathInParentPath(const boost::filesystem::path& path, const boost::filesystem:
 } // namespace
 
 
-namespace DatabaseUpdater {
+namespace Database {
 
-using namespace Database;
+Updater& Updater::instance(void)
+{
+	static Updater updater;
+	return updater;
+}
 
-
-Updater::Updater(Wt::Dbo::SqlConnectionPool &connectionPool, MetaData::Parser& parser)
+Updater::Updater()
  : _running(false),
-_scheduleTimer(_ioService),
-_db(connectionPool),
-_metadataParser(parser)
+_scheduleTimer(_ioService)
 {
 	_ioService.setThreadCount(1);
 }
 
 void
+Updater::setConnectionPool(Wt::Dbo::SqlConnectionPool& connectionPool)
+{
+	_db = new Database::Handler(connectionPool);
+}
+
+void
+Updater::restart(void)
+{
+	stop();
+	start();
+}
+
+void
 Updater::start(void)
 {
+	if (_db == nullptr)
+		throw std::logic_error("uninitialized db!");
+
 	_running = true;
 
 	// post some jobs in the io_service
@@ -154,9 +171,9 @@ Updater::stop(void)
 void
 Updater::processNextJob(void)
 {
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	Wt::Dbo::Transaction transaction(_db->getSession());
 
-	MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(_db.getSession());
+	MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(_db->getSession());
 
 	if (settings->getManualScanRequested()) {
 		LMS_LOG(DBUPDATER, INFO) << "Manual scan requested!";
@@ -229,9 +246,9 @@ Updater::process(boost::system::error_code err)
 
 		std::vector<RootDirectory> rootDirectories;
 		{
-			Wt::Dbo::Transaction transaction(_db.getSession());
+			Wt::Dbo::Transaction transaction(_db->getSession());
 
-			for (MediaDirectory::pointer directory : MediaDirectory::getAll(_db.getSession()))
+			for (MediaDirectory::pointer directory : MediaDirectory::getAll(_db->getSession()))
 				rootDirectories.push_back( RootDirectory( directory->getType(), directory->getPath() ));
 		}
 
@@ -253,9 +270,9 @@ Updater::process(boost::system::error_code err)
 		// Update database stats
 		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
 		{
-			Wt::Dbo::Transaction transaction(_db.getSession());
+			Wt::Dbo::Transaction transaction(_db->getSession());
 
-			Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(_db.getSession());
+			Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(_db->getSession());
 
 			if (stats.nbChanges() > 0)
 				settings.modify()->setLastUpdate(now);
@@ -279,10 +296,10 @@ Updater::process(boost::system::error_code err)
 void
 Updater::updateFileExtensions()
 {
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	Wt::Dbo::Transaction transaction(_db->getSession());
 
-	_audioFileExtensions = MediaDirectorySettings::get(_db.getSession())->getAudioFileExtensions();
-	_videoFileExtensions = MediaDirectorySettings::get(_db.getSession())->getVideoFileExtensions();
+	_audioFileExtensions = MediaDirectorySettings::get(_db->getSession())->getAudioFileExtensions();
+	_videoFileExtensions = MediaDirectorySettings::get(_db->getSession())->getVideoFileExtensions();
 }
 
 Artist::pointer
@@ -293,9 +310,9 @@ Updater::getArtist( const boost::filesystem::path& file, const std::string& name
 	// First try to get by MBID
 	if (!mbid.empty())
 	{
-		artist = Artist::getByMBID( _db.getSession(), mbid );
+		artist = Artist::getByMBID( _db->getSession(), mbid );
 		if (!artist)
-			artist = Artist::create( _db.getSession(), name, mbid);
+			artist = Artist::create( _db->getSession(), name, mbid);
 
 		return artist;
 	}
@@ -303,7 +320,7 @@ Updater::getArtist( const boost::filesystem::path& file, const std::string& name
 	// Fall back on artist name (collisions may occur)
 	if (!name.empty())
 	{
-		for (Artist::pointer sameNamedArtist : Artist::getByName( _db.getSession(), name ))
+		for (Artist::pointer sameNamedArtist : Artist::getByName( _db->getSession(), name ))
 		{
 			if (sameNamedArtist->getMBID().empty())
 			{
@@ -314,12 +331,12 @@ Updater::getArtist( const boost::filesystem::path& file, const std::string& name
 
 		// No Artist found with the same name and without MBID -> creating
 		if (!artist)
-			artist = Artist::create( _db.getSession(), name);
+			artist = Artist::create( _db->getSession(), name);
 
 		return artist;
 	}
 
-	return Artist::getNone( _db.getSession() );
+	return Artist::getNone( _db->getSession() );
 }
 
 Release::pointer
@@ -330,9 +347,9 @@ Updater::getRelease( const boost::filesystem::path& file, const std::string& nam
 	// First try to get by MBID
 	if (!mbid.empty())
 	{
-		release = Release::getByMBID( _db.getSession(), mbid );
+		release = Release::getByMBID( _db->getSession(), mbid );
 		if (!release)
-			release = Release::create( _db.getSession(), name, mbid);
+			release = Release::create( _db->getSession(), name, mbid);
 
 		return release;
 	}
@@ -340,7 +357,7 @@ Updater::getRelease( const boost::filesystem::path& file, const std::string& nam
 	// Fall back on release name (collisions may occur)
 	if (!name.empty())
 	{
-		for (Release::pointer sameNamedRelease : Release::getByName( _db.getSession(), name ))
+		for (Release::pointer sameNamedRelease : Release::getByName( _db->getSession(), name ))
 		{
 			if (sameNamedRelease->getMBID().empty())
 			{
@@ -351,12 +368,12 @@ Updater::getRelease( const boost::filesystem::path& file, const std::string& nam
 
 		// No release found with the same name and without MBID -> creating
 		if (!release)
-			release = Release::create( _db.getSession(), name);
+			release = Release::create( _db->getSession(), name);
 
 		return release;
 	}
 
-	return Release::getNone( _db.getSession() );
+	return Release::getNone( _db->getSession() );
 }
 
 std::vector<Genre::pointer>
@@ -366,15 +383,15 @@ Updater::getGenres( const std::list<std::string>& names)
 
 	for (const std::string& name : names)
 	{
-		Genre::pointer genre ( Genre::getByName(_db.getSession(), name) );
+		Genre::pointer genre ( Genre::getByName(_db->getSession(), name) );
 		if (!genre)
-			genre = Genre::create(_db.getSession(), name);
+			genre = Genre::create(_db->getSession(), name);
 
 		genres.push_back( genre );
 	}
 
 	if (genres.empty())
-		genres.push_back( Genre::getNone( _db.getSession() ));
+		genres.push_back( Genre::getNone( _db->getSession() ));
 
 	return genres;
 }
@@ -386,9 +403,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 	// Skip file if last write is the same
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		Wt::Dbo::Transaction transaction(_db->getSession());
 
-		Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
+		Wt::Dbo::ptr<Track> track = Track::getByPath(_db->getSession(), file);
 
 		if (track && track->getLastWriteTime() == lastWriteTime)
 		{
@@ -412,9 +429,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	std::vector<unsigned char> checksum ;
 	computeCrc(file, checksum);
 
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	Wt::Dbo::Transaction transaction(_db->getSession());
 
-	Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
+	Wt::Dbo::ptr<Track> track = Track::getByPath(_db->getSession(), file);
 
 	// We estimate this is a audio file if:
 	// - we found a least one audio stream
@@ -510,7 +527,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	if (!track)
 	{
 		// Create a new song
-		track = Track::create(_db.getSession(), file);
+		track = Track::create(_db->getSession(), file);
 		LMS_LOG(DBUPDATER, INFO) << "Adding '" << file << "'";
 		stats.nbAdded++;
 	}
@@ -675,8 +692,8 @@ Updater::checkAudioFiles( Stats& stats )
 {
 	LMS_LOG(DBUPDATER, INFO) << "Checking audio files...";
 
-	std::vector<boost::filesystem::path> trackPaths = Track::getAllPaths(_db.getSession());;
-	std::vector<boost::filesystem::path> rootDirs = getRootDirectoriesByType(_db.getSession(), Database::MediaDirectory::Audio);
+	std::vector<boost::filesystem::path> trackPaths = Track::getAllPaths(_db->getSession());;
+	std::vector<boost::filesystem::path> rootDirs = getRootDirectoriesByType(_db->getSession(), Database::MediaDirectory::Audio);
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks...";
 	for (auto& trackPath : trackPaths)
@@ -686,9 +703,9 @@ Updater::checkAudioFiles( Stats& stats )
 
 		if (!checkFile(trackPath, rootDirs, _audioFileExtensions))
 		{
-			Wt::Dbo::Transaction transaction(_db.getSession());
+			Wt::Dbo::Transaction transaction(_db->getSession());
 
-			Track::pointer track = Track::getByPath(_db.getSession(), trackPath);
+			Track::pointer track = Track::getByPath(_db->getSession(), trackPath);
 			if (track)
 			{
 				track.remove();
@@ -699,10 +716,10 @@ Updater::checkAudioFiles( Stats& stats )
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking Genres...";
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		Wt::Dbo::Transaction transaction(_db->getSession());
 
 		// Now process orphan Genre (no track)
-		auto genres = Genre::getAll(_db.getSession());
+		auto genres = Genre::getAll(_db->getSession());
 		for (auto genre : genres)
 		{
 			if (genre->getTracks().size() == 0)
@@ -715,9 +732,9 @@ Updater::checkAudioFiles( Stats& stats )
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking artists...";
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		Wt::Dbo::Transaction transaction(_db->getSession());
 
-		auto artists = Artist::getAllOrphans(_db.getSession());
+		auto artists = Artist::getAllOrphans(_db->getSession());
 		for (auto artist : artists)
 		{
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan artist '" << artist->getName() << "'";
@@ -727,9 +744,9 @@ Updater::checkAudioFiles( Stats& stats )
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking releases...";
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		Wt::Dbo::Transaction transaction(_db->getSession());
 
-		auto releases = Release::getAllOrphans(_db.getSession());
+		auto releases = Release::getAllOrphans(_db->getSession());
 		for (auto release : releases)
 		{
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan release '" << release->getName() << "'";
@@ -745,15 +762,15 @@ Updater::checkDuplicatedAudioFiles(Stats& stats)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files";
 
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	Wt::Dbo::Transaction transaction(_db->getSession());
 
-	std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(_db.getSession());
+	std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(_db->getSession());
 	for (Track::pointer track : tracks)
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath() << " - " << track->getArtist()->getName() << " - " << track->getName();
 	}
 
-	tracks = Database::Track::getChecksumDuplicates(_db.getSession());
+	tracks = Database::Track::getChecksumDuplicates(_db->getSession());
 	for (Track::pointer track : tracks)
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Found duplicated checksum [" << bufferToString(track->getChecksum()) << "], file: " << track->getPath() << " - " << track->getArtist()->getName() << " - " << track->getName();
@@ -766,8 +783,8 @@ Updater::checkDuplicatedAudioFiles(Stats& stats)
 void
 Updater::checkVideoFiles( Stats& stats )
 {
-	std::vector<boost::filesystem::path> rootDirs = getRootDirectoriesByType(_db.getSession(), Database::MediaDirectory::Video);
-	std::vector<boost::filesystem::path> videoPaths = Video::getAllPaths(_db.getSession());
+	std::vector<boost::filesystem::path> rootDirs = getRootDirectoriesByType(_db->getSession(), Database::MediaDirectory::Video);
+	std::vector<boost::filesystem::path> videoPaths = Video::getAllPaths(_db->getSession());
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking videos...";
 	for (auto& videoPath : videoPaths)
@@ -777,9 +794,9 @@ Updater::checkVideoFiles( Stats& stats )
 
 		if (!checkFile(videoPath, rootDirs, _videoFileExtensions))
 		{
-			Wt::Dbo::Transaction transaction(_db.getSession());
+			Wt::Dbo::Transaction transaction(_db->getSession());
 
-			Video::pointer video = Video::getByPath(_db.getSession(), videoPath);
+			Video::pointer video = Video::getByPath(_db->getSession(), videoPath);
 			if (video)
 			{
 				video.remove();
@@ -797,10 +814,10 @@ Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 	// Check last update time
 	boost::posix_time::ptime lastWriteTime (boost::posix_time::from_time_t( boost::filesystem::last_write_time( file ) ) );
 
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	Wt::Dbo::Transaction transaction(_db->getSession());
 
 	// Skip file if last write is the same
-	Wt::Dbo::ptr<Video> video = Video::getByPath(_db.getSession(), file);
+	Wt::Dbo::ptr<Video> video = Video::getByPath(_db->getSession(), file);
 	if (video && video->getLastWriteTime() == lastWriteTime)
 		return;
 
@@ -841,7 +858,7 @@ Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 	// Today we are very aggressive, but we could also guess names from path, etc.
 	if (!video)
 	{
-		video = Video::create(_db.getSession(), file);
+		video = Video::create(_db->getSession(), file);
 		LMS_LOG(DBUPDATER, DEBUG) << "Adding '" << file << "'";
 		stats.nbAdded++;
 	}
@@ -860,4 +877,4 @@ Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 	transaction.commit();
 }
 
-} // namespace DatabaseUpdater
+} // namespace Database

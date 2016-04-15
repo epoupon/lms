@@ -7,6 +7,7 @@ lms_SOURCES = \
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
 	$(srcdir)/database/Artist.cpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
+	$(srcdir)/database/DatabaseUpdater.cpp			\
 	$(srcdir)/database/MediaDirectory.cpp			\
 	$(srcdir)/database/Playlist.cpp				\
 	$(srcdir)/database/Release.cpp				\
@@ -15,13 +16,9 @@ lms_SOURCES = \
 	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/User.cpp				\
 	$(srcdir)/database/Video.cpp				\
-	$(srcdir)/database-updater/DatabaseUpdater.cpp		\
-	$(srcdir)/database-updater/Checksum.cpp			\
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/logger/Logger.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
-	$(srcdir)/service/ServiceManager.cpp			\
-	$(srcdir)/service/DatabaseUpdateService.cpp		\
 	$(srcdir)/ui/LmsApplication.cpp				\
 	$(srcdir)/ui/auth/LmsAuth.cpp				\
 	$(srcdir)/ui/audio/AudioPlayer.cpp			\
@@ -57,6 +54,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/settings/SettingsMediaDirectoryFormView.cpp	\
 	$(srcdir)/ui/settings/SettingsUserFormView.cpp		\
 	$(srcdir)/ui/settings/SettingsUsers.cpp			\
+	$(srcdir)/utils/Checksum.cpp				\
 	$(srcdir)/utils/Utils.cpp
 
 if VIDEO
