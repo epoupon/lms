@@ -30,6 +30,8 @@
 
 #include <Wt/WDateTime>
 
+#include "SearchFilter.hpp"
+
 namespace Database {
 
 
@@ -38,7 +40,7 @@ class Release;
 class Track;
 class PlaylistEntry;
 class Classification;
-class ClassificationData;
+class Feature;
 
 class Genre
 {
@@ -109,6 +111,7 @@ class Track
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool &moreResults);
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
+		static std::vector<id_type> getAllIds(Wt::Dbo::Session& session);
 		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session);
 		static std::vector<pointer> getMBIDDuplicates(Wt::Dbo::Session& session);
 		static std::vector<pointer> getChecksumDuplicates(Wt::Dbo::Session& session);
@@ -158,8 +161,8 @@ class Track
 		void setArtist(Wt::Dbo::ptr<Artist> artist)			{ _artist = artist; }
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
 		void setGenres(std::vector<Genre::pointer> genres);
-		void addClassifification(Wt::Dbo::ptr<Classification> classification);
-		void addClassifificationData(Wt::Dbo::ptr<ClassificationData> classificationData);
+		void addClassification(Wt::Dbo::ptr<Classification> classification);
+		void addFeature(Wt::Dbo::ptr<Feature> feature);
 
 		int				getTrackNumber(void) const		{ return _trackNumber; }
 		int				getTotalTrackNumber(void) const		{ return _totalTrackNumber; }
@@ -180,7 +183,7 @@ class Track
 		std::vector< Genre::pointer >	getGenres(void) const;
 		bool				hasGenre(Genre::pointer genre) const	{ return _genres.count(genre); }
 		std::vector< Wt::Dbo::ptr<Classification> >	getClassifications(void) const;
-		std::vector< Wt::Dbo::ptr<ClassificationData> >	getClassificationData(void) const;
+		std::vector< Wt::Dbo::ptr<Feature> >	getFeatures(void) const;
 
 		template<class Action>
 			void persist(Action& a)
@@ -205,7 +208,7 @@ class Track
 				Wt::Dbo::hasMany(a, _genres, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _playlistEntries, Wt::Dbo::ManyToOne, "track");
 				Wt::Dbo::hasMany(a, _classifications, Wt::Dbo::ManyToOne, "track");
-				Wt::Dbo::hasMany(a, _classificationData, Wt::Dbo::ManyToOne, "track");
+				Wt::Dbo::hasMany(a, _features, Wt::Dbo::ManyToOne, "track");
 			}
 
 	private:
@@ -237,7 +240,7 @@ class Track
 		Wt::Dbo::collection< Genre::pointer >	_genres; // Genres that are related to this track
 		Wt::Dbo::collection< Wt::Dbo::ptr<PlaylistEntry> > _playlistEntries;
 		Wt::Dbo::collection< Wt::Dbo::ptr<Classification> > _classifications;
-		Wt::Dbo::collection< Wt::Dbo::ptr<ClassificationData> > _classificationData;
+		Wt::Dbo::collection< Wt::Dbo::ptr<Feature> > _features;
 };
 
 

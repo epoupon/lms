@@ -44,6 +44,13 @@ Track::getAll(Wt::Dbo::Session& session)
 	return session.find<Track>();
 }
 
+std::vector<Track::id_type>
+Track::getAllIds(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::collection<Track::id_type> res = session.query<Track::id_type>("SELECT id from track");
+	return std::vector<Track::id_type>(res.begin(), res.end());
+}
+
 void
 Track::setGenres(std::vector<Genre::pointer> genres)
 {
@@ -107,6 +114,14 @@ Track::getGenres(void) const
 	std::vector< Genre::pointer > genres;
 	std::copy(_genres.begin(), _genres.end(), std::back_inserter(genres));
 	return genres;
+}
+
+std::vector< Wt::Dbo::ptr<Feature> >
+Track::getFeatures(void) const
+{
+	std::vector< Wt::Dbo::ptr<Feature> > features;
+	std::copy(_features.begin(), _features.end(), std::back_inserter(features));
+	return features;
 }
 
 Wt::Dbo::Query< Track::pointer >

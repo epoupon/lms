@@ -22,7 +22,7 @@
 #include <map>
 #include <set>
 
-#include "pstreams/pstream.h"
+#include <pstreams/pstream.h>
 
 #include <boost/date_time/posix_time/posix_time_types.hpp> //no i/o just types
 #include <boost/filesystem/path.hpp>

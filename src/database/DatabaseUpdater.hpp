@@ -17,8 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DB_UPDATER_HPP
-#define DB_UPDATER_HPP
+#pragma once
 
 #include <Wt/WIOService>
 #include <Wt/WSignal>
@@ -36,6 +35,18 @@ namespace Database {
 class Updater
 {
 	public:
+
+		static Updater& instance();
+
+		void setConnectionPool(Wt::Dbo::SqlConnectionPool& connectionPool);
+
+		void setAudioExtensions(const std::vector<std::string>&	extensions);
+		void setVideoExtensions(const std::vector<std::string>&	extensions);
+
+		void start();
+		void stop();
+		void restart();
+
 		struct Stats
 		{
 			std::size_t	nbSkipped = 0;		// no change since last scan
@@ -49,18 +60,12 @@ class Updater
 			std::size_t nbChanges() const { return nbAdded + nbRemoved + nbModified;}
 		};
 
-		static Updater& instance();
+		// Emitted when the whole database has been scanned
+		Wt::Signal<Stats>& scanComplete() { return _sigScanComplete; }
 
-		void setConnectionPool(Wt::Dbo::SqlConnectionPool& connectionPool);
-
-		void setAudioExtensions(const std::vector<std::string>&	extensions);
-		void setVideoExtensions(const std::vector<std::string>&	extensions);
-
-		void start();
-		void stop();
-		void restart();
-
-		Wt::Signal<Stats>& changed() { return _sigChanged; }
+		// Emitted when a track changed
+		// true -> added or modified, false -> to be deleted
+		Wt::Signal<bool, Track::id_type>& trackChanged() { return _sigTrackChanged; }
 
 		std::mutex&	getMutex(void) { return _mutex; }
 
@@ -109,7 +114,10 @@ class Updater
 
 		bool			_running;
 		Wt::WIOService		_ioService;
-		Wt::Signal<Stats>	_sigChanged;
+		Wt::Signal<Stats>	_sigScanComplete;
+		Wt::Signal<bool, Artist::id_type>	_sigArtistChanged;
+		Wt::Signal<bool, Release::id_type>	_sigReleaseChanged;
+		Wt::Signal<bool, Track::id_type>	_sigTrackChanged;
 		std::mutex		_mutex;
 
 		boost::asio::deadline_timer _scheduleTimer;
@@ -126,4 +134,3 @@ class Updater
 
 } // Database
 
-#endif

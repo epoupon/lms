@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2016 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -21,10 +21,36 @@
 #include <stdexcept>
 
 #include <boost/crc.hpp>  // for boost::crc_32_type
+#include <boost/tokenizer.hpp>
 
 #include "logger/Logger.hpp"
 
-#include "Checksum.hpp"
+#include "Path.hpp"
+
+boost::filesystem::path searchExecPath(std::string filename)
+{
+	std::string path;
+
+	path = ::getenv("PATH");
+	if (path.empty())
+		throw std::runtime_error("Environment variable PATH not found");
+
+	std::string result;
+	typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+	boost::char_separator<char> sep(":");
+	tokenizer tok(path, sep);
+	for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
+	{
+		boost::filesystem::path p = *it;
+		p /= filename;
+		if (!::access(p.c_str(), X_OK))
+		{
+			result = p.string();
+			break;
+		}
+	}
+	return result;
+}
 
 typedef boost::crc_32_type crc_type;
 
@@ -60,6 +86,4 @@ void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& cr
 		const unsigned char* data = reinterpret_cast<const unsigned char*>( &checksum );
 		crc.push_back(data[i]);
 	}
-
 }
-

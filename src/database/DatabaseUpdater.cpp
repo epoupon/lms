@@ -26,7 +26,7 @@
 #include "logger/Logger.hpp"
 #include "cover/CoverArtGrabber.hpp"
 #include "utils/Utils.hpp"
-#include "utils/Checksum.hpp"
+#include "utils/Path.hpp"
 
 #include "Types.hpp"
 #include "DatabaseUpdater.hpp"
@@ -287,6 +287,8 @@ Updater::process(boost::system::error_code err)
 				settings.modify()->setManualScanRequested(false);
 
 		}
+
+		scanComplete().emit(stats);
 
 		if (_running)
 			processNextJob();
@@ -597,7 +599,11 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		track.modify()->setCoverType( hasCover ? Track::CoverType::Embedded : Track::CoverType::None );
 	}
 
+	Track::id_type trackId = track.id();
+
 	transaction.commit();
+
+	_sigTrackChanged.emit(true, trackId);
 }
 
 

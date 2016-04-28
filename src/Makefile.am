@@ -6,6 +6,8 @@ lms_SOURCES = \
 	$(srcdir)/av/AvTranscoder.cpp					\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
 	$(srcdir)/database/Artist.cpp				\
+	$(srcdir)/database/Classification.cpp			\
+	$(srcdir)/database/DatabaseClassifier.cpp		\
 	$(srcdir)/database/DatabaseHandler.cpp			\
 	$(srcdir)/database/DatabaseUpdater.cpp			\
 	$(srcdir)/database/MediaDirectory.cpp			\
@@ -16,6 +18,7 @@ lms_SOURCES = \
 	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/User.cpp				\
 	$(srcdir)/database/Video.cpp				\
+	$(srcdir)/feature/FeatureExtractor.cpp			\
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/logger/Logger.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
@@ -54,7 +57,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/settings/SettingsMediaDirectoryFormView.cpp	\
 	$(srcdir)/ui/settings/SettingsUserFormView.cpp		\
 	$(srcdir)/ui/settings/SettingsUsers.cpp			\
-	$(srcdir)/utils/Checksum.cpp				\
+	$(srcdir)/utils/Path.cpp				\
 	$(srcdir)/utils/Utils.cpp
 
 if VIDEO
@@ -65,5 +68,6 @@ lms_SOURCES += \
 	$(srcdir)/ui/video/VideoParametersDialog.cpp
 endif
 
-lms_CXXFLAGS=-std=c++11 -Wall -I$(srcdir)/third-party -I$(srcdir)/ui $(MAGICKXX_CFLAGS)
+lms_CXXFLAGS=-std=c++11 -Wall -I$(srcdir)/third-party -I$(srcdir)/ui $(MAGICKXX_CFLAGS) -D_REENTRANT -DBOOST_SPIRIT_THREADSAFE
 lms_LDADD=$(MAGICKXX_LIBS)
+

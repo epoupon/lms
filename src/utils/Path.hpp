@@ -1,5 +1,6 @@
+
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2016 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,9 +18,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
+#include <string>
 #include <vector>
 #include <boost/filesystem.hpp>
 
-// TODO move to utils
-void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& checksum);
+boost::filesystem::path searchExecPath(std::string filename);
 
+void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& checksum);

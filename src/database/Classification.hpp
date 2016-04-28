@@ -25,12 +25,20 @@ namespace Database {
 
 class Track;
 
-class ClassificationData
+class Feature
 {
 	public:
-		typedef Wt::Dbo::ptr<ClassificationData> pointer;
+		typedef Wt::Dbo::ptr<Feature> pointer;
 
-		ClassificationData() {}
+		Feature() {}
+		Feature(Wt::Dbo::ptr<Track> track, const std::string& type, const std::string& value);
+
+		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, const std::string& type, const std::string& value);
+
+		static std::vector<pointer> getByTrack(Wt::Dbo::Session& session, Track::id_type trackId, const std::string& type);
+
+		std::string getType(void) const { return _type; }
+		std::string getValue(void) const { return _value; }
 
 		template<class Action>
 			void persist(Action& a)

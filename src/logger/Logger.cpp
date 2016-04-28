@@ -26,6 +26,7 @@ std::string getModuleName(Module mod)
 		case Module::AV:		return "AV";
 		case Module::COVER:		return "COVER";
 		case Module::DB:		return "DB";
+		case Module::CLASSIFICATION:	return "CLASSIFICATION";
 		case Module::DBUPDATER:	return "DB UPDATER";
 		case Module::MAIN:		return "MAIN";
 		case Module::METADATA:	return "METADATA";

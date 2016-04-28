@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2016 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,39 +19,37 @@
 
 #pragma once
 
-#include <Wt/WServer>
-#include <Wt/WApplication>
-#include <Wt/WLogger>
+#include <Wt/Dbo/Dbo>
 
-#include <string>
+#include "DatabaseHandler.hpp"
+#include "DatabaseUpdater.hpp"
 
+namespace Database {
 
-enum class Severity
+class ClusterClassifier
 {
-	FATAL,
-	ERROR,
-	WARNING,
-	INFO,
-	DEBUG,
+	public:
+		ClusterClassifier();
+
+
+	private:
+
 };
 
-enum class Module
+
+class Classifier
 {
-	AV,
-	CLASSIFICATION,
-	COVER,
-	DB,
-	DBUPDATER,
-	MAIN,
-	METADATA,
-	REMOTE,
-	SERVICE,
-	TRANSCODE,
-	UI,
+	public:
+		Classifier(Wt::Dbo::SqlConnectionPool& connectionPool);
+
+		void processTrackUpdate(bool added, Track::id_type trackId);
+		void processDatabaseUpdate(Updater::Stats stats);
+
+	private:
+
+		Database::Handler _db;
 };
 
-std::string getModuleName(Module mod);
-std::string getSeverityName(Severity sev);
 
-#define LMS_LOG(module, level)	Wt::log(getSeverityName(Severity::level)) << Wt::WLogger::sep << "[" << getModuleName(Module::module) << "]" <<  Wt::WLogger::sep
+} // namespace Database
 

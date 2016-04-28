@@ -19,7 +19,7 @@
 #include <atomic>
 #include <mutex>
 
-#include <boost/tokenizer.hpp>
+#include "utils/Path.hpp"
 
 #include "logger/Logger.hpp"
 
@@ -91,37 +91,12 @@ static std::mutex		transcoderMutex;
 static boost::filesystem::path	avConvPath = boost::filesystem::path();
 static std::atomic<size_t>	globalId = {0};
 
-static std::string searchPath(std::string filename)
-{
-	std::string path;
-
-	path = ::getenv("PATH");
-	if (path.empty())
-		throw std::runtime_error("Environment variable PATH not found");
-
-	std::string result;
-	typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
-	boost::char_separator<char> sep(":");
-	tokenizer tok(path, sep);
-	for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
-	{
-		boost::filesystem::path p = *it;
-		p /= filename;
-		if (!::access(p.c_str(), X_OK))
-		{
-			result = p.string();
-			break;
-		}
-	}
-	return result;
-}
-
 void
 Transcoder::init()
 {
 	for (std::string execName : execNames)
 	{
-		boost::filesystem::path p = searchPath(execName);
+		boost::filesystem::path p = searchExecPath(execName);
 		if (!p.empty())
 		{
 			avConvPath = p;

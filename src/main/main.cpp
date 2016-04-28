@@ -28,6 +28,8 @@
 #include "image/Image.hpp"
 
 #include "database/DatabaseUpdater.hpp"
+#include "database/DatabaseClassifier.hpp"
+#include "feature/FeatureExtractor.hpp"
 #include "ui/LmsApplication.hpp"
 
 
@@ -53,18 +55,26 @@ int main(int argc, char* argv[])
 		Av::AvInit();
 		Av::Transcoder::init();
 		Database::Handler::configureAuth();
+		Feature::Extractor::init();
 
 		// Initializing a connection pool to the database that will be shared along services
 		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool( Database::Handler::createConnectionPool("/var/lms/lms.db")); // TODO use $datadir from autotools
 
-		Database::Updater::instance().setConnectionPool(*connectionPool);
+		Database::Updater& dbUpdater = Database::Updater::instance();
+		dbUpdater.setConnectionPool(*connectionPool);
+
+		Database::Classifier dbClassifier(*connectionPool);
+
+		// Connect the classifier to the update events
+		dbUpdater.trackChanged().connect(std::bind(&Database::Classifier::processTrackUpdate, &dbClassifier, std::placeholders::_1, std::placeholders::_2));
+		dbUpdater.scanComplete().connect(std::bind(&Database::Classifier::processDatabaseUpdate, &dbClassifier, std::placeholders::_1));
 
 		// bind entry point
 		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, boost::ref(*connectionPool)));
 
 		// Start
 		LMS_LOG(MAIN, INFO) << "Starting database updater...";
-		Database::Updater::instance().start();
+		dbUpdater.start();
 
 		LMS_LOG(MAIN, INFO) << "Starting server...";
 		server.start();
@@ -75,11 +85,10 @@ int main(int argc, char* argv[])
 
 		// Stop
 		LMS_LOG(MAIN, INFO) << "Stopping server...";
-		Database::Updater::instance().stop();
+		server.stop();
 
 		LMS_LOG(MAIN, INFO) << "Stopping database updater...";
-		Database::Updater::instance().stop();
-
+		dbUpdater.stop();
 
 		res = EXIT_SUCCESS;
 	}
