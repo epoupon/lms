@@ -6,7 +6,6 @@ lms_SOURCES = \
 	$(srcdir)/av/AvTranscoder.cpp					\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
 	$(srcdir)/database/Artist.cpp				\
-	$(srcdir)/database/Classification.cpp			\
 	$(srcdir)/database/DatabaseClassifier.cpp		\
 	$(srcdir)/database/DatabaseHandler.cpp			\
 	$(srcdir)/database/DatabaseUpdater.cpp			\

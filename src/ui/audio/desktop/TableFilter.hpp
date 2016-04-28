@@ -30,10 +30,10 @@
 namespace UserInterface {
 namespace Desktop {
 
-class TableFilterGenre : public Wt::WTableView, public Filter
+class TableFilterCluster : public Wt::WTableView, public Filter
 {
 	public:
-		TableFilterGenre(Wt::WContainerWidget* parent = 0);
+		TableFilterCluster(Wt::WContainerWidget* parent = 0);
 
 		// Set constraints on this filter
 		void refresh(Database::SearchFilter& filter);
@@ -51,8 +51,7 @@ class TableFilterGenre : public Wt::WTableView, public Filter
 
 		SigDoubleClicked			_sigDoubleClicked;
 
-		// Name, track count
-		Wt::Dbo::QueryModel<Database::Genre::UIQueryResult>	_queryModel;
+		Wt::Dbo::QueryModel<Database::Cluster::UIQueryResult>	_queryModel;
 };
 
 class TableFilterArtist : public Wt::WTableView, public Filter

@@ -52,7 +52,7 @@ KeywordSearchFilter::getConstraint(Database::SearchFilter& filter)
 			filter.nameLikeMatch.push_back({
 			 {Database::SearchFilter::Field::Artist, {value}},
 			 {Database::SearchFilter::Field::Release, {value}},
-			 {Database::SearchFilter::Field::Genre, {value}},
+			 {Database::SearchFilter::Field::Cluster, {value}},
 			 {Database::SearchFilter::Field::Track, {value}}
 			 });
 		}

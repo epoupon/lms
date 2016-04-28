@@ -81,9 +81,8 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 
 
 	_session.mapClass<Database::Artist>("artist");
-	_session.mapClass<Database::Genre>("genre");
+	_session.mapClass<Database::Cluster>("cluster");
 	_session.mapClass<Database::Track>("track");
-	_session.mapClass<Database::Classification>("classification");
 	_session.mapClass<Database::Feature>("feature");
 	_session.mapClass<Database::Playlist>("playlist");
 	_session.mapClass<Database::PlaylistEntry>("playlist_entry");
@@ -102,10 +101,11 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 
 	        _session.createTables();
 		_session.execute("CREATE INDEX artist_name_idx ON artist(name)");
-		_session.execute("CREATE INDEX genre_name_idx ON genre(name)");
+		_session.execute("CREATE INDEX cluster_name_idx ON cluster(name)");
+		_session.execute("CREATE INDEX cluster_type_idx ON cluster(type)");
 		_session.execute("CREATE INDEX release_name_idx ON release(name)");
 		_session.execute("CREATE INDEX track_name_idx ON track(name)");
-		_session.execute("CREATE INDEX feature_type ON feature(type)");
+		_session.execute("CREATE INDEX feature_type_idx ON feature(type)");
 	}
 	catch(std::exception& e) {
 		LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2013-2016 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -51,17 +51,6 @@ Track::getAllIds(Wt::Dbo::Session& session)
 	return std::vector<Track::id_type>(res.begin(), res.end());
 }
 
-void
-Track::setGenres(std::vector<Genre::pointer> genres)
-{
-	if (_genres.size())
-		_genres.clear();
-
-	for (Genre::pointer genre : genres) {
-		_genres.insert( genre );
-	}
-}
-
 Track::pointer
 Track::getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p)
 {
@@ -108,12 +97,12 @@ Track::getChecksumDuplicates(Wt::Dbo::Session& session)
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
-std::vector< Genre::pointer >
-Track::getGenres(void) const
+std::vector< Cluster::pointer >
+Track::getClusters(void) const
 {
-	std::vector< Genre::pointer > genres;
-	std::copy(_genres.begin(), _genres.end(), std::back_inserter(genres));
-	return genres;
+	std::vector< Cluster::pointer > clusters;
+	std::copy(_clusters.begin(), _clusters.end(), std::back_inserter(clusters));
+	return clusters;
 }
 
 std::vector< Wt::Dbo::ptr<Feature> >
@@ -130,7 +119,7 @@ Track::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
 	SqlQuery sqlQuery = generatePartialQuery(filter);
 
 	Wt::Dbo::Query<pointer> query
-		= session.query<pointer>( "SELECT t FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN genre g ON g.id = t_g.genre_id INNER JOIN track_genre t_g ON t_g.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get()).groupBy("t.id").orderBy("a.name,t.date,r.name,t.disc_number,t.track_number");
+		= session.query<pointer>( "SELECT t FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get()).groupBy("t.id").orderBy("a.name,t.date,r.name,t.disc_number,t.track_number");
 
 	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
@@ -144,7 +133,7 @@ Track::getUIQuery(Wt::Dbo::Session& session, SearchFilter filter)
 	SqlQuery sqlQuery = generatePartialQuery(filter);
 
 	Wt::Dbo::Query<UIQueryResult> query
-		= session.query<UIQueryResult>( "SELECT t.id, a.name, r.name, t.disc_number, t.track_number, t.name, t.duration, t.date, t.original_date, t.genre_list FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN genre g ON g.id = t_g.genre_id INNER JOIN track_genre t_g ON t_g.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get()).groupBy("t.id").orderBy("a.name,t.date,r.name,t.disc_number,t.track_number");
+		= session.query<UIQueryResult>( "SELECT t.id, a.name, r.name, t.disc_number, t.track_number, t.name, t.duration, t.date, t.original_date, t.genre_list FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get()).groupBy("t.id").orderBy("a.name,t.date,r.name,t.disc_number,t.track_number");
 
 	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
@@ -157,7 +146,7 @@ Track::getStats(Wt::Dbo::Session& session, SearchFilter filter)
 {
 	SqlQuery sqlQuery = generatePartialQuery(filter);
 
-	Wt::Dbo::Query<StatsQueryResult> query = session.query<StatsQueryResult>( "SELECT COUNT(\"id\"), SUM(\"dur\") FROM  (SELECT t.id as \"id\", t.duration as \"dur\" FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN genre g ON g.id = t_g.genre_id INNER JOIN track_genre t_g ON t_g.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get() + " GROUP BY t.id)");
+	Wt::Dbo::Query<StatsQueryResult> query = session.query<StatsQueryResult>( "SELECT COUNT(\"id\"), SUM(\"dur\") FROM  (SELECT t.id as \"id\", t.duration as \"dur\" FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get() + " GROUP BY t.id)");
 
 	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
@@ -213,56 +202,58 @@ Track::updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< UIQuer
 }
 
 
-Genre::Genre()
+Cluster::Cluster()
 {
 }
 
-Genre::Genre(const std::string& name)
-: _name( std::string(name, 0, _maxNameLength) )
+Cluster::Cluster(std::string type, std::string name)
+:
+_type( std::string(type, 0, _maxTypeLength)),
+_name( std::string(name, 0, _maxNameLength))
 {
 }
 
-Wt::Dbo::collection<Genre::pointer>
-Genre::getAll(Wt::Dbo::Session& session)
+Wt::Dbo::collection<Cluster::pointer>
+Cluster::getAll(Wt::Dbo::Session& session)
 {
-	return session.find<Genre>();
+	return session.find<Cluster>();
 }
 
-Genre::pointer
-Genre::getByName(Wt::Dbo::Session& session, const std::string& name)
+Cluster::pointer
+Cluster::get(Wt::Dbo::Session& session, std::string type, std::string name)
 {
 	// TODO use like search
-	return session.find<Genre>().where("name = ?").bind( std::string(name, 0, _maxNameLength) );
+	return session.find<Cluster>().where("type = ?").where("name = ?").bind( std::string(type, 0, _maxTypeLength)).bind( std::string(name, 0, _maxNameLength));
 }
 
-Genre::pointer
-Genre::getNone(Wt::Dbo::Session& session)
+Cluster::pointer
+Cluster::getNone(Wt::Dbo::Session& session)
 {
-	pointer res = getByName(session, "<None>");
+	pointer res = get(session, "<None>", "<None>");
 	if (!res)
-		res = create(session, "<None>");
+		res = create(session, "<None>", "<None>");
 	return res;
 }
 
 bool
-Genre::isNone(void) const
+Cluster::isNone(void) const
 {
-	return (_name == "<None>");
+	return (_type == "<None>" && _name == "<None>");
 }
 
-Genre::pointer
-Genre::create(Wt::Dbo::Session& session, const std::string& name)
+Cluster::pointer
+Cluster::create(Wt::Dbo::Session& session, std::string type, std::string name)
 {
-	return session.add(new Genre(name));
+	return session.add(new Cluster(type, name));
 }
 
-Wt::Dbo::Query<Genre::pointer>
-Genre::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
+Wt::Dbo::Query<Cluster::pointer>
+Cluster::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
 {
 	SqlQuery sqlQuery = generatePartialQuery(filter);
 
 	Wt::Dbo::Query<pointer> query
-		= session.query<pointer>( "SELECT g FROM genre g INNER JOIN track_genre t_g ON t_g.genre_id = g.id INNER JOIN artist a ON t.artist_id = a.id INNER JOIN release r ON r.id = t.release_id INNER JOIN track t ON t.id = t_g.track_id " + sqlQuery.where().get()).groupBy("g.name").orderBy("g.name");
+		= session.query<pointer>( "SELECT g FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN artist a ON t.artist_id = a.id INNER JOIN release r ON r.id = t.release_id INNER JOIN track t ON t.id = t_c.track_id " + sqlQuery.where().get()).groupBy("c.name").orderBy("c.name");
 
 	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
@@ -270,13 +261,13 @@ Genre::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
 	return query;
 }
 
-Wt::Dbo::Query<Genre::UIQueryResult>
-Genre::getUIQuery(Wt::Dbo::Session& session, SearchFilter filter)
+Wt::Dbo::Query<Cluster::UIQueryResult>
+Cluster::getUIQuery(Wt::Dbo::Session& session, SearchFilter filter)
 {
 	SqlQuery sqlQuery = generatePartialQuery(filter);
 
 	Wt::Dbo::Query<UIQueryResult> query
-		= session.query<UIQueryResult>( "SELECT g.id, g.name, COUNT(DISTINCT t.id) FROM genre g INNER JOIN track_genre t_g ON t_g.genre_id = g.id INNER JOIN artist a ON t.artist_id = a.id INNER JOIN release r ON r.id = t.release_id INNER JOIN track t ON t.id = t_g.track_id " + sqlQuery.where().get()).groupBy("g.name").orderBy("g.name");
+		= session.query<UIQueryResult>( "SELECT c.id, c.type, c.name, COUNT(DISTINCT t.id) FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN artist a ON t.artist_id = a.id INNER JOIN release r ON r.id = t.release_id INNER JOIN track t ON t.id = t_c.track_id " + sqlQuery.where().get()).groupBy("c.name").orderBy("c.name");
 
 	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
@@ -285,26 +276,48 @@ Genre::getUIQuery(Wt::Dbo::Session& session, SearchFilter filter)
 }
 
 void
-Genre::updateUIQueryModel(Wt::Dbo::Session& session,  Wt::Dbo::QueryModel<UIQueryResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
+Cluster::updateUIQueryModel(Wt::Dbo::Session& session,  Wt::Dbo::QueryModel<UIQueryResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
 {
 	Wt::Dbo::Query<UIQueryResult> query = getUIQuery(session, filter);
 	model.setQuery(query, columnNames.empty() ? true : false);
 
 	// TODO do something better
-	if (columnNames.size() == 2)
+	if (columnNames.size() == 3)
 	{
-		model.addColumn( "g.name", columnNames[0] );
-		model.addColumn( "COUNT(DISTINCT t.id)", columnNames[1] );
+		model.addColumn( "c.type", columnNames[0] );
+		model.addColumn( "c.name", columnNames[1] );
+		model.addColumn( "COUNT(DISTINCT t.id)", columnNames[2] );
 	}
 }
 
-std::vector<Genre::pointer>
-Genre::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
+std::vector<Cluster::pointer>
+Cluster::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
 {
 	Wt::Dbo::collection<pointer> res = getQuery(session, filter).limit(size).offset(offset);
 
 	return std::vector<pointer>(res.begin(), res.end());
 }
+
+Feature::Feature(Wt::Dbo::ptr<Track> track, const std::string& type, const std::string& value)
+: _type(type),
+_value(value),
+_track(track)
+{
+}
+
+Feature::pointer
+Feature::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, const std::string& type, const std::string& value)
+{
+	return session.add(new Feature(track, type, value));
+}
+
+std::vector<Feature::pointer>
+Feature::getByTrack(Wt::Dbo::Session& session, Track::id_type trackId, const std::string& type)
+{
+	Wt::Dbo::collection<pointer> res = session.find<Feature>().where("track_id = ? AND type = ?").bind( trackId).bind(type);
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
 
 } // namespace Database
 

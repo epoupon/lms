@@ -100,7 +100,7 @@ class Updater
 		// Helpers
 		Database::Artist::pointer getArtist( const boost::filesystem::path& file, const std::string& name, const std::string& MBID);
 		Database::Release::pointer getRelease( const boost::filesystem::path& file, const std::string& name, const std::string& MBID);
-		std::vector<Database::Genre::pointer> getGenres( const std::list<std::string>& names);
+		std::vector<Database::Cluster::pointer> getGenreClusters( const std::list<std::string>& names);
 		void updateFileExtensions();
 
 		// Audio

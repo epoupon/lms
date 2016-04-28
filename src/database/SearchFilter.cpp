@@ -60,9 +60,9 @@ SqlQuery generatePartialQuery(SearchFilter& filter)
 						likeWhereClause.Or( WhereClause("r.name LIKE ?") ).bind("%%" + name + "%%");
 					break;
 
-				case SearchFilter::Field::Genre:
+				case SearchFilter::Field::Cluster:
 					for (const std::string& name : nameLikeMatch.second)
-						likeWhereClause.Or( WhereClause("g.name LIKE ?") ).bind("%%" + name + "%%");
+						likeWhereClause.Or( WhereClause("c.name LIKE ?") ).bind("%%" + name + "%%");
 					break;
 
 				case SearchFilter::Field::Track:
@@ -97,10 +97,10 @@ SqlQuery generatePartialQuery(SearchFilter& filter)
 					idWhereClause.Or(oss.str());
 				}
 				break;
-			case SearchFilter::Field::Genre:
+			case SearchFilter::Field::Cluster:
 				{
 					std::ostringstream oss;
-					oss << "g.id IN (" << idMatch.second << ")";
+					oss << "c.id IN (" << idMatch.second << ")";
 					idWhereClause.Or(oss.str());
 				}
 				break;

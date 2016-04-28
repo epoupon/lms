@@ -378,22 +378,22 @@ Updater::getRelease( const boost::filesystem::path& file, const std::string& nam
 	return Release::getNone( _db->getSession() );
 }
 
-std::vector<Genre::pointer>
-Updater::getGenres( const std::list<std::string>& names)
+std::vector<Cluster::pointer>
+Updater::getGenreClusters( const std::list<std::string>& names)
 {
-	std::vector< Genre::pointer > genres;
+	std::vector< Cluster::pointer > genres;
 
 	for (const std::string& name : names)
 	{
-		Genre::pointer genre ( Genre::getByName(_db->getSession(), name) );
+		Cluster::pointer genre ( Cluster::get(_db->getSession(), "Genre", name) );
 		if (!genre)
-			genre = Genre::create(_db->getSession(), name);
+			genre = Cluster::create(_db->getSession(), "Genre", name);
 
 		genres.push_back( genre );
 	}
 
 	if (genres.empty())
-		genres.push_back( Genre::getNone( _db->getSession() ));
+		genres.push_back( Cluster::getNone( _db->getSession() ));
 
 	return genres;
 }
@@ -480,15 +480,16 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		title = file.filename().string();
 	}
 
-	// ***** Genres
-	std::vector< Genre::pointer > genres;
+	// ***** Clusters
+	std::vector< Cluster::pointer > genres;
 	{
 		std::list<std::string> genreList;
 
 		if (items.find(MetaData::Type::Genres) != items.end())
 			genreList = boost::any_cast< std::list<std::string> > (items[MetaData::Type::Genres]);
 
-		genres = getGenres( genreList );
+		// TODO rename
+		genres = getGenreClusters( genreList );
 	}
 	assert( !genres.empty() );
 
@@ -550,18 +551,19 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	track.modify()->setAddedTime( boost::posix_time::second_clock::local_time() );
 
 	{
-		std::string trackGenreList;
+		std::string trackClusterList;
 		// Product genre list
-		for (Genre::pointer genre : genres)
+		for (Cluster::pointer genre : genres)
 		{
-			if (!trackGenreList.empty())
-				trackGenreList += ", ";
-			trackGenreList += genre->getName();
+			if (!trackClusterList.empty())
+				trackClusterList += ", ";
+			trackClusterList += genre->getName();
+
+			genre.modify()->addTrack(track);
 		}
 
-		track.modify()->setGenres( trackGenreList );
+		track.modify()->setGenres( trackClusterList );
 	}
-	track.modify()->setGenres( genres );
 
 	if (items.find(MetaData::Type::TrackNumber) != items.end())
 		track.modify()->setTrackNumber( boost::any_cast<std::size_t>(items[MetaData::Type::TrackNumber]) );
@@ -599,11 +601,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		track.modify()->setCoverType( hasCover ? Track::CoverType::Embedded : Track::CoverType::None );
 	}
 
-	Track::id_type trackId = track.id();
-
 	transaction.commit();
 
-	_sigTrackChanged.emit(true, trackId);
+	_sigTrackChanged.emit(true, track.id());
 }
 
 
@@ -720,12 +720,12 @@ Updater::checkAudioFiles( Stats& stats )
 		}
 	}
 
-	LMS_LOG(DBUPDATER, DEBUG) << "Checking Genres...";
+	LMS_LOG(DBUPDATER, DEBUG) << "Checking Clusters...";
 	{
 		Wt::Dbo::Transaction transaction(_db->getSession());
 
-		// Now process orphan Genre (no track)
-		auto genres = Genre::getAll(_db->getSession());
+		// Now process orphan Cluster (no track)
+		auto genres = Cluster::getAll(_db->getSession());
 		for (auto genre : genres)
 		{
 			if (genre->getTracks().size() == 0)

@@ -71,9 +71,9 @@ _playQueue(nullptr)
 	// Filters
 	Wt::WHBoxLayout *filterLayout = new Wt::WHBoxLayout();
 
-	TableFilterGenre *filterGenre = new TableFilterGenre();
-	filterLayout->addWidget(filterGenre);
-	_filterChain.addFilter(filterGenre);
+	TableFilterCluster *filterCluster = new TableFilterCluster();
+	filterLayout->addWidget(filterCluster);
+	_filterChain.addFilter(filterCluster);
 
 	TableFilterArtist *filterArtist = new TableFilterArtist();
 	filterLayout->addWidget(filterArtist);
@@ -213,7 +213,7 @@ _playQueue(nullptr)
 	// Set the selected tracks to the play queue
 	filterArtist->sigDoubleClicked().connect(boost::bind(&Audio::playSelectedTracks, this, PlayQueueAddAllTracks));
 	filterRelease->sigDoubleClicked().connect(boost::bind(&Audio::playSelectedTracks, this, PlayQueueAddAllTracks));
-	filterGenre->sigDoubleClicked().connect(boost::bind(&Audio::playSelectedTracks, this, PlayQueueAddAllTracks));
+	filterCluster->sigDoubleClicked().connect(boost::bind(&Audio::playSelectedTracks, this, PlayQueueAddAllTracks));
 
 	// Play button
 	// Set the selected tracks to the play queue

@@ -93,7 +93,7 @@ Release::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
 	SqlQuery sqlQuery = generatePartialQuery(filter);
 
 	Wt::Dbo::Query<pointer> query
-		= session.query<pointer>("SELECT r FROM release r INNER JOIN artist a ON a.id = t.artist_id INNER JOIN track t ON t.release_id = r.id INNER JOIN genre g ON g.id = t_g.genre_id INNER JOIN track_genre t_g ON t_g.track_id = t.id " + sqlQuery.where().get()).groupBy("r.id").orderBy("r.name");
+		= session.query<pointer>("SELECT r FROM release r INNER JOIN artist a ON a.id = t.artist_id INNER JOIN track t ON t.release_id = r.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id " + sqlQuery.where().get()).groupBy("r.id").orderBy("r.name");
 
 	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
@@ -108,7 +108,7 @@ Release::getUIQuery(Wt::Dbo::Session& session, SearchFilter filter)
 
 	// TODO DATE of RELEASE
 	Wt::Dbo::Query<UIQueryResult> query
-		= session.query<UIQueryResult>("SELECT r.id, r.name, t.date, COUNT(DISTINCT t.id) FROM release r INNER JOIN track t ON t.release_id = r.id INNER JOIN artist a ON a.id = t.artist_id INNER JOIN genre g ON g.id = t_g.genre_id INNER JOIN track_genre t_g ON t_g.track_id = t.id " + sqlQuery.where().get()).groupBy("r.id").orderBy("r.name");
+		= session.query<UIQueryResult>("SELECT r.id, r.name, t.date, COUNT(DISTINCT t.id) FROM release r INNER JOIN track t ON t.release_id = r.id INNER JOIN artist a ON a.id = t.artist_id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id " + sqlQuery.where().get()).groupBy("r.id").orderBy("r.name");
 
 	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
 		query.bind(bindArg);

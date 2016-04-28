@@ -32,7 +32,7 @@ namespace Database
 {
 
 class Track;
-class Genre;
+class Cluster;
 class Release;
 
 class Artist : public Wt::Dbo::Dbo<Artist>

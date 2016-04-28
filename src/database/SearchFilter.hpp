@@ -38,8 +38,8 @@ class SearchFilter
 		enum class Field {
 			Artist,		// artist
 			Release,	// release
-			Genre,		// genre
 			Track,		// track
+			Cluster,	// cluster
 		};
 
 		typedef std::vector<std::map<Field, std::vector<std::string> > > NameLikeMatchType;

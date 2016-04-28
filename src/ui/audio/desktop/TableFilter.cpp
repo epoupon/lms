@@ -30,23 +30,24 @@ namespace Desktop {
 
 using namespace Database;
 
-TableFilterGenre::TableFilterGenre(Wt::WContainerWidget* parent)
+TableFilterCluster::TableFilterCluster(Wt::WContainerWidget* parent)
 : Wt::WTableView( parent ), Filter()
 {
-	const std::vector<Wt::WString> columnNames = {"Genre", "Tracks"};
+	const std::vector<Wt::WString> columnNames = {"Type", "Name", "Tracks"};
 
 	SearchFilter filter;
 
-	Genre::updateUIQueryModel(DboSession(), _queryModel, filter, columnNames);
+	Cluster::updateUIQueryModel(DboSession(), _queryModel, filter, columnNames);
 
 	this->setSelectionMode(Wt::ExtendedSelection);
 	this->setSortingEnabled(true);
 	this->setAlternatingRowColors(true);
 	this->setModel(&_queryModel);
 
-	this->setColumnWidth(1, 80);
+	this->setColumnWidth(1, 120);
+	this->setColumnWidth(2, 80);
 
-	this->selectionChanged().connect(this, &TableFilterGenre::emitUpdate);
+	this->selectionChanged().connect(this, &TableFilterCluster::emitUpdate);
 
 #if WT_VERSION >= 0X03030400
 	this->setOverflow(Wt::WContainerWidget::OverflowHidden, Wt::Horizontal);
@@ -74,25 +75,25 @@ TableFilterGenre::TableFilterGenre(Wt::WContainerWidget* parent)
 }
 
 void
-TableFilterGenre::layoutSizeChanged (int width, int height)
+TableFilterCluster::layoutSizeChanged (int width, int height)
 {
-	std::size_t trackColumnSize = this->columnWidth(1).toPixels();
+	std::size_t otherColumnSizes = this->columnWidth(1).toPixels() + this->columnWidth(2).toPixels();
 	// Set the remaining size for the name column
-	this->setColumnWidth(0, width - trackColumnSize - (7 * 2) - 2);
+	this->setColumnWidth(0, width - otherColumnSizes - (7 * 3) - 2);
 }
 
 // Set constraints on this filter
 void
-TableFilterGenre::refresh(SearchFilter& filter)
+TableFilterCluster::refresh(SearchFilter& filter)
 {
 	this->clearSelection();
 
-	Genre::updateUIQueryModel(DboSession(), _queryModel, filter);
+	Cluster::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 
 // Get constraint created by this filter
 void
-TableFilterGenre::getConstraint(SearchFilter& filter)
+TableFilterCluster::getConstraint(SearchFilter& filter)
 {
 	Wt::WModelIndexSet indexSet = this->selectedIndexes();
 
@@ -102,9 +103,9 @@ TableFilterGenre::getConstraint(SearchFilter& filter)
 			continue;
 
 		// TODO set invisible track id
-		Database::Genre::id_type id = _queryModel.resultRow( index.row() ).get<0>();
+		Cluster::id_type id = _queryModel.resultRow( index.row() ).get<0>();
 
-		filter.idMatch[Database::SearchFilter::Field::Genre].push_back(id);
+		filter.idMatch[Database::SearchFilter::Field::Cluster].push_back(id);
 	}
 }
 

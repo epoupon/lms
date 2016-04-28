@@ -22,7 +22,6 @@
 #include "Artist.hpp"
 #include "Track.hpp"
 #include "Playlist.hpp"
-#include "Classification.hpp"
 #include "Release.hpp"
 #include "Video.hpp"
 #include "MediaDirectory.hpp"
