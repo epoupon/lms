@@ -55,7 +55,7 @@ class Cluster
 		static pointer getNone(Wt::Dbo::Session& session);
 		static std::vector<pointer> getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session);
-		static Wt::Dbo::collection<pointer> getByType(Wt::Dbo::Session& session, std::stirng type);
+		static std::vector<pointer> getByType(Wt::Dbo::Session& session, std::string type);
 
 		// MVC models for the user interface
 		// ClusterID, type, name, track count
