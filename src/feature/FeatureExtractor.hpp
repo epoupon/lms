@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2016 Emeric Poupon
  *
@@ -17,39 +18,26 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <boost/filesystem.hpp>
+#include <boost/property_tree/ptree.hpp>
+
 #pragma once
 
-#include <Wt/Dbo/Dbo>
+namespace Feature {
 
-#include "DatabaseHandler.hpp"
-#include "DatabaseUpdater.hpp"
-
-namespace Database {
-
-class ClusterClassifier
+class Extractor
 {
 	public:
-		ClusterClassifier();
+		static bool init(void);
 
+		static bool getLowLevel(boost::property_tree::ptree& pt, boost::filesystem::path path);
+		static bool getLowLevel(boost::property_tree::ptree& pt, std::string mbid);
 
-	private:
-
-};
-
-
-class Classifier
-{
-	public:
-		Classifier(Wt::Dbo::SqlConnectionPool& connectionPool);
-
-		void processTrackUpdate(bool added, Track::id_type trackId, std::string mbid, boost::filesystem::path p);
-		void processDatabaseUpdate(Updater::Stats stats);
+		static bool getHighLevel(boost::property_tree::ptree& pt, std::string mbid);
 
 	private:
-
-		Database::Handler _db;
+		Extractor();
 };
 
-
-} // namespace Database
+} // namespace Feature
 

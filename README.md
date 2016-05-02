@@ -23,7 +23,7 @@ Please note some media files may require significant CPU usage to be transcoded.
 ### Debian or Ubuntu packages
 
 ```sh
-$ apt-get install g++ autoconf automake libboost-dev libboost-locale-dev libboost-iostreams-dev libavcodec-dev libwtdbosqlite-dev libwthttp-dev libwtdbo-dev libwt-dev libmagick++-dev libavcodec-dev libavformat-dev libav-tools libpstreams-dev
+$ apt-get install g++ autoconf automake libboost-dev libboost-locale-dev libboost-iostreams-dev libavcodec-dev libwtdbosqlite-dev libwthttp-dev libwtdbo-dev libwt-dev libmagick++-dev libavcodec-dev libavformat-dev libav-tools libpstreams-dev libcurl-dev libcurlpp-dev
 ```
 
 ## Build

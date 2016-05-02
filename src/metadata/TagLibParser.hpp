@@ -19,37 +19,20 @@
 
 #pragma once
 
-#include <Wt/Dbo/Dbo>
+#include "MetaData.hpp"
 
-#include "DatabaseHandler.hpp"
-#include "DatabaseUpdater.hpp"
+namespace MetaData
+{
 
-namespace Database {
-
-class ClusterClassifier
+// Parse that makes use of AvFormat
+class TagLibParser : public Parser
 {
 	public:
-		ClusterClassifier();
-
+		bool parse(const boost::filesystem::path& p, Items& items);
 
 	private:
 
 };
 
-
-class Classifier
-{
-	public:
-		Classifier(Wt::Dbo::SqlConnectionPool& connectionPool);
-
-		void processTrackUpdate(bool added, Track::id_type trackId, std::string mbid, boost::filesystem::path p);
-		void processDatabaseUpdate(Updater::Stats stats);
-
-	private:
-
-		Database::Handler _db;
-};
-
-
-} // namespace Database
+} // namespace MetaData
 

@@ -247,6 +247,13 @@ Cluster::create(Wt::Dbo::Session& session, std::string type, std::string name)
 	return session.add(new Cluster(type, name));
 }
 
+void
+Cluster::removeByType(Wt::Dbo::Session& session, std::string type)
+{
+	session.execute( "DELETE FROM cluster WHERE type = ?").bind(type);
+}
+
+
 Wt::Dbo::Query<Cluster::pointer>
 Cluster::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
 {
@@ -317,7 +324,6 @@ Feature::getByTrack(Wt::Dbo::Session& session, Track::id_type trackId, const std
 	Wt::Dbo::collection<pointer> res = session.find<Feature>().where("track_id = ? AND type = ?").bind( trackId).bind(type);
 	return std::vector<pointer>(res.begin(), res.end());
 }
-
 
 } // namespace Database
 

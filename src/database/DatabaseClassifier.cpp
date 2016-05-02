@@ -34,41 +34,44 @@ Classifier::Classifier(Wt::Dbo::SqlConnectionPool& connectionPool)
 {}
 
 void
-Classifier::processTrackUpdate(bool added, Track::id_type trackId)
+Classifier::processTrackUpdate(bool added, Track::id_type trackId, std::string mbid, boost::filesystem::path path)
 {
 	if (!added)
 		return;
 
-	LMS_LOG(DBUPDATER, DEBUG) << "Processing track id " << trackId;
-
-	boost::filesystem::path path;
-
+	if (mbid.empty())
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
-
-		Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
-		if (!track)
-			return;
-
-		path = track->getPath();
-
-		// Remove outdated features
-		for (auto feature : track->getFeatures())
-			feature.remove();
+		// TODO compute from file
+		LMS_LOG(CLASSIFICATION, INFO) << "File '" << path << "' has no MBID: skipping feature extraction";
+		return;
 	}
 
 	boost::property_tree::ptree pt;
-	if (!::Feature::Extractor::getLowLevel(pt, path))
-		return;
-
-	std::ostringstream oss;
-	boost::property_tree::write_json(oss, pt);
-
+	if (::Feature::Extractor::getLowLevel(pt, mbid))
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		std::ostringstream oss;
+		boost::property_tree::write_json(oss, pt);
 
-		Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
-		Feature::pointer feature = Feature::create( _db.getSession(), track, "low_level", oss.str());
+		{
+			Wt::Dbo::Transaction transaction(_db.getSession());
+
+			Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+			Feature::create( _db.getSession(), track, "low_level", oss.str());
+		}
+	}
+
+	pt.clear();
+	if (::Feature::Extractor::getHighLevel(pt, mbid))
+	{
+		std::ostringstream oss;
+		boost::property_tree::write_json(oss, pt);
+
+		{
+			Wt::Dbo::Transaction transaction(_db.getSession());
+
+			Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+			Feature::create( _db.getSession(), track, "high_level", oss.str());
+		}
 	}
 }
 
@@ -816,11 +819,39 @@ Classifier::processDatabaseUpdate(Updater::Stats stats)
 		trackClusters[coordinates.first][coordinates.second].push_back({trackIds[id], entry, maxValue});
 	}
 
+	// Create clusters
+	LMS_LOG(DBUPDATER, DEBUG) << "Erasing old clusters";
+	{
+		Wt::Dbo::Transaction transaction(_db.getSession());
+		Cluster::removeByType(_db.getSession(), "similarity");
+	}
+
+	LMS_LOG(DBUPDATER, DEBUG) << "Creating new cluster...";
+	for (std::size_t i = 0; i < nbRows; i++)
+	{
+		for (std::size_t j = 0; j < nbColumns; j++)
+		{
+			LMS_LOG(DBUPDATER, DEBUG) << "Creating cluster " << i << " " << j;
+
+			Wt::Dbo::Transaction transaction(_db.getSession());
+
+			Cluster::pointer cluster = Cluster::create(_db.getSession(), "similarity", "cluster_" + std::to_string(i) + "_" + std::to_string(j));
+
+			for (auto track : trackClusters[i][j])
+			{
+				Track::pointer t = Database::Track::getById(_db.getSession(), track.trackId);
+				cluster.modify()->addTrack(t);
+			}
+		}
+	}
+
 
 	for (std::size_t i = 0; i < nbRows; i++)
 	{
 		for (std::size_t j = 0; j < nbColumns; j++)
 		{
+
+
 			std::cout << "Cluster [" << i << "," << j << "] - ";
 
 			// Display the neuron for this cluster

@@ -191,6 +191,7 @@ AvFormat::parse(const boost::filesystem::path& p, Items& items)
 		{
 			items.insert( std::make_pair(MetaData::Type::MusicBrainzTrackID, stringTrim( stringToUTF8(it->second)) ));
 		}
+
 	}
 
 	return true;

@@ -48,6 +48,7 @@ namespace MetaData
 		MusicBrainzArtistID,	// string
 		MusicBrainzAlbumID,	// string
 		MusicBrainzTrackID,	// string
+		MusicBrainzRecordingID,	// string
 	};
 
 	// Used by Streams

@@ -19,14 +19,14 @@
 
 #pragma once
 
-#include <Wt/WIOService>
-#include <Wt/WSignal>
-
 #include <mutex>
 
 #include <boost/asio/deadline_timer.hpp>
 
-#include "metadata/AvFormat.hpp"
+#include <Wt/WIOService>
+#include <Wt/WSignal>
+
+#include "metadata/TagLibParser.hpp"
 
 #include "database/DatabaseHandler.hpp"
 
@@ -65,7 +65,11 @@ class Updater
 
 		// Emitted when a track changed
 		// true -> added or modified, false -> to be deleted
-		Wt::Signal<bool, Track::id_type>& trackChanged() { return _sigTrackChanged; }
+		// id of the track
+		// musicbrainz recordid
+		// path of the track
+		typedef Wt::Signal<bool, Track::id_type, std::string, boost::filesystem::path> SigTrackChanged;
+		SigTrackChanged& trackChanged() { return _sigTrackChanged; }
 
 		std::mutex&	getMutex(void) { return _mutex; }
 
@@ -117,7 +121,7 @@ class Updater
 		Wt::Signal<Stats>	_sigScanComplete;
 		Wt::Signal<bool, Artist::id_type>	_sigArtistChanged;
 		Wt::Signal<bool, Release::id_type>	_sigReleaseChanged;
-		Wt::Signal<bool, Track::id_type>	_sigTrackChanged;
+		SigTrackChanged				_sigTrackChanged;
 		std::mutex		_mutex;
 
 		boost::asio::deadline_timer _scheduleTimer;
@@ -127,7 +131,7 @@ class Updater
 		std::vector<boost::filesystem::path>	_audioFileExtensions;
 		std::vector<boost::filesystem::path>	_videoFileExtensions;
 
-		MetaData::AvFormat	_metadataParser;
+		MetaData::TagLibParser 	_metadataParser;
 
 
 }; // class Updater

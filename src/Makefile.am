@@ -21,6 +21,7 @@ lms_SOURCES = \
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/logger/Logger.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
+	$(srcdir)/metadata/TagLibParser.cpp			\
 	$(srcdir)/ui/LmsApplication.cpp				\
 	$(srcdir)/ui/auth/LmsAuth.cpp				\
 	$(srcdir)/ui/audio/AudioPlayer.cpp			\

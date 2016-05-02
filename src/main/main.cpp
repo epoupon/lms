@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 		Database::Classifier dbClassifier(*connectionPool);
 
 		// Connect the classifier to the update events
-		dbUpdater.trackChanged().connect(std::bind(&Database::Classifier::processTrackUpdate, &dbClassifier, std::placeholders::_1, std::placeholders::_2));
+		dbUpdater.trackChanged().connect(std::bind(&Database::Classifier::processTrackUpdate, &dbClassifier, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 		dbUpdater.scanComplete().connect(std::bind(&Database::Classifier::processDatabaseUpdate, &dbClassifier, std::placeholders::_1));
 
 		// bind entry point

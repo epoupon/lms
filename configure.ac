@@ -94,6 +94,21 @@ AC_CHECK_LIB(	[boost_thread],
 		,
 		[AC_MSG_ERROR([libboost_thread not found!])])
 
+AC_CHECK_LIB(	[curlpp],
+		[main],
+		,
+		[AC_MSG_ERROR([libcurlpp not found!])])
+
+AC_CHECK_LIB(	[curl],
+		[curl_easy_cleanup],
+		,
+		[AC_MSG_ERROR([libcurl not found!])])
+
+AC_CHECK_LIB(	[tag],
+		[main],
+		,
+		[AC_MSG_ERROR([libtag not found!])])
+
 AC_CONFIG_FILES([Makefile
 		 src/Makefile
 		 test/Makefile])

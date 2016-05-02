@@ -55,6 +55,7 @@ class Cluster
 		static pointer getNone(Wt::Dbo::Session& session);
 		static std::vector<pointer> getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session);
+		static Wt::Dbo::collection<pointer> getByType(Wt::Dbo::Session& session, std::stirng type);
 
 		// MVC models for the user interface
 		// ClusterID, type, name, track count
@@ -65,12 +66,16 @@ class Cluster
 		// Create utility
 		static pointer create(Wt::Dbo::Session& session, std::string type, std::string name);
 
+		// Remove utility
+		static void removeByType(Wt::Dbo::Session& session, std::string type);
+
 		// Accessors
 		const std::string& getName(void) const { return _name; }
 		const std::string& getType(void) const { return _type; }
 		bool isNone(void) const;
 		const Wt::Dbo::collection< Wt::Dbo::ptr<Track> >&	getTracks() const { return _tracks;}
 
+		void addTrack(Wt::Dbo::dbo_traits<Track>::IdType trackId);
 		void addTrack(Wt::Dbo::ptr<Track> track) { _tracks.insert(track); }
 
 		template<class Action>

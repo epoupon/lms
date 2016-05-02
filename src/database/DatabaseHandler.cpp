@@ -103,9 +103,11 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		_session.execute("CREATE INDEX artist_name_idx ON artist(name)");
 		_session.execute("CREATE INDEX cluster_name_idx ON cluster(name)");
 		_session.execute("CREATE INDEX cluster_type_idx ON cluster(type)");
+		_session.execute("CREATE INDEX cluster_name_type_idx ON cluster(name, type)");
 		_session.execute("CREATE INDEX release_name_idx ON release(name)");
 		_session.execute("CREATE INDEX track_name_idx ON track(name)");
 		_session.execute("CREATE INDEX feature_type_idx ON feature(type)");
+		_session.execute("CREATE INDEX feature_track_type_idx ON feature(track_id,type)");
 	}
 	catch(std::exception& e) {
 		LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();

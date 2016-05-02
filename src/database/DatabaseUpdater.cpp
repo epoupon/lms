@@ -537,6 +537,14 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	else
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Updating '" << file << "'";
+
+		// TODO Remove the songs from its clusters
+		// TODO Remove the features of this song
+		track.remove();
+		track.flush();
+
+		track = Track::create(_db->getSession(), file);
+
 		stats.nbModified++;
 	}
 
@@ -589,9 +597,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 			track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>(items[MetaData::Type::OriginalDate]) );
 	}
 
-	if (items.find(MetaData::Type::MusicBrainzTrackID) != items.end())
+	if (items.find(MetaData::Type::MusicBrainzRecordingID) != items.end())
 	{
-		track.modify()->setMBID( boost::any_cast<std::string>(items[MetaData::Type::MusicBrainzTrackID]) );
+		track.modify()->setMBID( boost::any_cast<std::string>(items[MetaData::Type::MusicBrainzRecordingID]) );
 	}
 
 	if (items.find(MetaData::Type::HasCover) != items.end())
@@ -603,7 +611,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 	transaction.commit();
 
-	_sigTrackChanged.emit(true, track.id());
+	_sigTrackChanged.emit(true, track.id(), track->getMBID(), track->getPath());
 }
 
 
