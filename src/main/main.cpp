@@ -21,7 +21,7 @@
 
 #include <Wt/WServer>
 
-#include "config/config.h"
+#include "config/Config.hpp"
 #include "av/AvInfo.hpp"
 #include "av/AvTranscoder.hpp"
 #include "logger/Logger.hpp"
@@ -33,22 +33,61 @@
 #include "ui/LmsApplication.hpp"
 
 
+static std::vector<std::string> getWtArgs(std::string path)
+{
+	std::vector<std::string> args;
+
+	args.push_back(path);
+	args.push_back("--docroot=" + Config::instance().getString("docroot"));
+	args.push_back("--approot=" + Config::instance().getString("approot"));
+
+	if (Config::instance().getBool("tls-enable", false))
+	{
+		args.push_back("--https-port=" + std::to_string( Config::instance().getULong("listen-port")));
+		args.push_back("--https-address=" + Config::instance().getString("listen-addr"));
+		args.push_back("--ssl-certificate=" + Config::instance().getString("tls-cert"));
+		args.push_back("--ssl-private-key=" + Config::instance().getString("tls-key"));
+		args.push_back("--ssl-tmp-dh=" + Config::instance().getString("tls-dh"));
+	}
+	else
+	{
+		args.push_back("--http-port=" + std::to_string( Config::instance().getULong("listen-port")));
+		args.push_back("--http-address=" + Config::instance().getString("listen-addr"));
+	}
+
+	return args;
+}
+
 int main(int argc, char* argv[])
 {
+	boost::filesystem::path configFilePath = "/etc/lms.conf";
 	int res = EXIT_FAILURE;
 
 	assert(argc > 0);
 	assert(argv[0] != NULL);
+
+	if (argc >= 2)
+		configFilePath = std::string(argv[1], 0, 256);
 
 	try
 	{
 		// Make pstream work with ffmpeg
 		close(STDIN_FILENO);
 
-		Wt::WServer server(argv[0]);
-		server.setServerConfiguration (argc, argv);
 
-		Wt::WServer::instance()->logger().configure("*"); // log everything
+		Config::instance().setFile(configFilePath);
+
+		std::vector<std::string> wtArgs = getWtArgs(argv[0]);
+
+		// Construct argc/argv for Wt
+		const char* wtArgv[wtArgs.size()];
+		for (std::size_t i = 0; i < wtArgs.size(); ++i)
+			wtArgv[i] = wtArgs[i].c_str();
+
+		Wt::WServer server(argv[0]);
+		server.setServerConfiguration (wtArgs.size(), const_cast<char**>(wtArgv));
+
+		Wt::WServer::instance()->logger().configure("*"); // log everything, TODO configure this
 
 		// lib init
 		Image::init(argv[0]);
@@ -58,7 +97,8 @@ int main(int argc, char* argv[])
 		Feature::Extractor::init();
 
 		// Initializing a connection pool to the database that will be shared along services
-		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool( Database::Handler::createConnectionPool("/var/lms/lms.db")); // TODO use $datadir from autotools
+		std::unique_ptr<Wt::Dbo::SqlConnectionPool>
+			connectionPool( Database::Handler::createConnectionPool(Config::instance().getString("db-path")));
 
 		Database::Updater& dbUpdater = Database::Updater::instance();
 		dbUpdater.setConnectionPool(*connectionPool);
@@ -66,11 +106,14 @@ int main(int argc, char* argv[])
 		Database::Classifier dbClassifier(*connectionPool);
 
 		// Connect the classifier to the update events
-		dbUpdater.trackChanged().connect(std::bind(&Database::Classifier::processTrackUpdate, &dbClassifier, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-		dbUpdater.scanComplete().connect(std::bind(&Database::Classifier::processDatabaseUpdate, &dbClassifier, std::placeholders::_1));
+		dbUpdater.trackChanged().connect(std::bind(&Database::Classifier::processTrackUpdate, &dbClassifier,
+					std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		dbUpdater.scanComplete().connect(std::bind(&Database::Classifier::processDatabaseUpdate, &dbClassifier,
+					std::placeholders::_1));
 
 		// bind entry point
-		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, boost::ref(*connectionPool)));
+		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create,
+					_1, boost::ref(*connectionPool)));
 
 		// Start
 		LMS_LOG(MAIN, INFO) << "Starting database updater...";
@@ -92,13 +135,21 @@ int main(int argc, char* argv[])
 
 		res = EXIT_SUCCESS;
 	}
-	catch( Wt::WServer::Exception& e)
+	catch( libconfig::FileIOException& e)
 	{
-		std::cerr << "Caught a WServer::Exception: " << e.what();
+		std::cerr << "Cannot open config file '" << configFilePath << "'" << std::endl;
 	}
-	catch( std::exception& e)
+	catch( libconfig::ParseException& e)
 	{
-		std::cerr << "Caught std::exception: " << e.what();
+		std::cerr << "Caught libconfig::ParseException! error='" << e.getError() << "', file = '" << e.getFile() << "', line = " << e.getLine() << std::endl;
+	}
+	catch(Wt::WServer::Exception& e)
+	{
+		std::cerr << "Caught a WServer::Exception: " << e.what() << std::endl;
+	}
+	catch(std::exception& e)
+	{
+		std::cerr << "Caught std::exception: " << e.what() << std::endl;
 	}
 
 	return res;

@@ -1,0 +1,22 @@
+# LMS Sample configuration file
+
+# Path to the DB file.
+# Must have write privileges in order to create and modify the file
+db-path = "/var/lms/lms.db";
+
+# Listen port of the web server
+listen-port = 5081;
+
+# Listen address of the web server
+listen-addr = "0.0.0.0";
+
+# If enabled, these files have to exist and have correct permissions
+tls-enable = false;
+tls-cert = "/var/lms/cert.pem";
+tls-key = "/var/lms/privkey.pem";
+tls-dh = "/var/lms/dh2048.pem";
+
+# Path to the resources used by the web interface
+docroot = "/usr/share/lms/docroot/;/resources,/css,/images,/favicon.ico";
+approot = "/usr/share/lms/approot";
+
