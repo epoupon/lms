@@ -3,7 +3,8 @@ bin_PROGRAMS = lms
 lms_SOURCES = \
 	$(srcdir)/main/main.cpp					\
 	$(srcdir)/av/AvInfo.cpp					\
-	$(srcdir)/av/AvTranscoder.cpp					\
+	$(srcdir)/av/AvTranscoder.cpp				\
+	$(srcdir)/config/Config.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
 	$(srcdir)/database/Artist.cpp				\
 	$(srcdir)/database/DatabaseClassifier.cpp		\

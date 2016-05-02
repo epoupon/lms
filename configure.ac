@@ -109,6 +109,11 @@ AC_CHECK_LIB(	[tag],
 		,
 		[AC_MSG_ERROR([libtag not found!])])
 
+AC_CHECK_LIB(	[config++],
+		[main],
+		,
+		[AC_MSG_ERROR([libtag not found!])])
+
 AC_CONFIG_FILES([Makefile
 		 src/Makefile
 		 test/Makefile])
