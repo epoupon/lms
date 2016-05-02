@@ -38,6 +38,7 @@ static std::vector<std::string> getWtArgs(std::string path)
 	std::vector<std::string> args;
 
 	args.push_back(path);
+	args.push_back("-c" + Config::instance().getString("wt-config"));
 	args.push_back("--docroot=" + Config::instance().getString("docroot"));
 	args.push_back("--approot=" + Config::instance().getString("approot"));
 

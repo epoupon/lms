@@ -19,6 +19,9 @@ lms_images_DATA = \
 lms_approot_DATA = \
 		approot/templates.xml
 
+sysconf_DATA = \
+	        $(top_srcdir)/conf/lms.conf
+
 install-data-hook:
 	ln -s $(datadir)/Wt/resources $(lms_docrootdir)/resources || echo "Skipped symlink creation"
 
