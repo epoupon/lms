@@ -1,7 +1,7 @@
 
-TESTS = database-basics database-integrity sql-query database-user
+TESTS = sql-query database-user
 
-check_PROGRAMS = database-basics database-integrity sql-query database-user test-wt test-avmetadata 
+check_PROGRAMS = sql-query database-user test-wt test-avmetadata
 
 database_basics_SOURCES = \
 	$(srcdir)/CheckDbBasics.cpp			\
@@ -91,6 +91,7 @@ test_avmetadata_SOURCES = TestAvMetadata.cpp 		\
 	$(top_srcdir)/src/logger/Logger.cpp 		\
 	$(top_srcdir)/src/utils/Utils.cpp 		\
 	$(top_srcdir)/src/metadata/AvFormat.cpp		\
+	$(top_srcdir)/src/metadata/TagLibParser.cpp	\
 	$(top_srcdir)/src/av/AvInfo.cpp
 
 test_avmetadata_CXXFLAGS=-std=c++11 -Wall -Wextra  -I$(top_srcdir)/src

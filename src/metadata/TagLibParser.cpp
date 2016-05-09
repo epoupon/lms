@@ -20,6 +20,8 @@
 #include <taglib/fileref.h>
 #include <taglib/tag.h>
 #include <taglib/tpropertymap.h>
+#include <taglib/mpegfile.h>
+#include <taglib/id3v2tag.h>
 
 #include "logger/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -48,10 +50,22 @@ TagLibParser::parse(const boost::filesystem::path& p, Items& items)
 
 		boost::posix_time::time_duration duration = boost::posix_time::seconds(properties->length());
 
-		items.insert( std::make_pair(MetaData::Type::Duration,  duration) );
+		items.insert( std::make_pair(MetaData::Type::Duration, duration) );
 
-		MetaData::AudioStream audioStream = { .desc = "", .bitRate = static_cast<std::size_t>(properties->bitrate()) };
+		MetaData::AudioStream audioStream = { .desc = "", .bitRate = static_cast<std::size_t>(properties->bitrate() * 1000) };
 		items.insert( std::make_pair(MetaData::Type::AudioStreams, std::vector<MetaData::AudioStream>(1, audioStream ) ));
+	}
+
+	// Not that good embedded pictures handling
+
+	// MP3
+	if (TagLib::MPEG::File *mp3File = dynamic_cast<TagLib::MPEG::File*>(f.file()))
+	{
+		if (mp3File->ID3v2Tag())
+		{
+			if (!mp3File->ID3v2Tag()->frameListMap()["APIC"].isEmpty())
+				items.insert( std::make_pair(MetaData::Type::HasCover, true));
+		}
 	}
 
 	if (f.tag())
