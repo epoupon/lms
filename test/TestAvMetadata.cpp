@@ -64,7 +64,6 @@ int main(int argc, char *argv[])
 						std::cout << "Duration: " << boost::posix_time::to_simple_string(boost::any_cast<boost::posix_time::time_duration>(item.second)) << std::endl;
 						break;
 
-
 					case MetaData::Type::TrackNumber:
 						std::cout << "Track: " << boost::any_cast<std::size_t>(item.second) << std::endl;
 						break;
@@ -94,12 +93,25 @@ int main(int argc, char *argv[])
 						break;
 
 					case MetaData::Type::AudioStreams:
-						{
-							for (auto& audioStream : boost::any_cast<std::vector<MetaData::AudioStream> >(item.second))
-								std::cout << "Audio stream '" << audioStream.desc << "' - " << audioStream.bitRate << " bps" << std::endl;
+						for (auto& audioStream : boost::any_cast<std::vector<MetaData::AudioStream> >(item.second))
+							std::cout << "Audio stream '" << audioStream.desc << "' - " << audioStream.bitRate << " bps" << std::endl;
+						break;
 
+					case MetaData::Type::MusicBrainzArtistID:
+						std::cout << "MusicBrainzArtistID: " << boost::any_cast<std::string>(item.second) << std::endl;
+						break;
 
-						}
+					case MetaData::Type::MusicBrainzAlbumID:
+						std::cout << "MusicBrainzAlbumID: " << boost::any_cast<std::string>(item.second) << std::endl;
+						break;
+
+					case MetaData::Type::MusicBrainzTrackID:
+						std::cout << "MusicBrainzTrackID: " << boost::any_cast<std::string>(item.second) << std::endl;
+						break;
+
+					case MetaData::Type::MusicBrainzRecordingID:
+						std::cout << "MusicBrainzRecordingID: " << boost::any_cast<std::string>(item.second) << std::endl;
+						break;
 
 					default:
 						break;

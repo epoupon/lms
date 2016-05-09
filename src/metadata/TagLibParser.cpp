@@ -88,7 +88,7 @@ TagLibParser::parse(const boost::filesystem::path& p, Items& items)
 				items.insert( std::make_pair(MetaData::Type::Album, stringTrim( values.front().to8Bit(true))));
 			else if (tag == "TITLE")
 				items.insert( std::make_pair(MetaData::Type::Title, stringTrim( values.front().to8Bit(true))));
-			else if (tag == "MUSICBRAINZ RELEASE TRACK ID")
+			else if (tag == "MUSICBRAINZ_RELEASETRACKID")
 				items.insert( std::make_pair(MetaData::Type::MusicBrainzTrackID, stringTrim( values.front().to8Bit(true))));
 			else if (tag == "MUSICBRAINZ_ARTISTID")
 				items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, stringTrim( values.front().to8Bit(true))));
@@ -167,6 +167,12 @@ TagLibParser::parse(const boost::filesystem::path& p, Items& items)
 					genreList.push_back(itGenre->to8Bit(true));
 
 				items.insert( std::make_pair(MetaData::Type::Genres, genreList) );
+			}
+			else if (tag == "METADATA_BLOCK_PICTURE")
+			{
+				// Only add once
+				if (items.find(MetaData::Type::HasCover) == items.end())
+					items.insert( std::make_pair(MetaData::Type::HasCover, true));
 			}
 		}
 	}
