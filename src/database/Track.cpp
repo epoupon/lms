@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <boost/property_tree/json_parser.hpp>
+
 #include <Wt/Dbo/QueryModel>
 
 #include "logger/Logger.hpp"
@@ -47,6 +49,7 @@ Track::getAll(Wt::Dbo::Session& session)
 std::vector<Track::id_type>
 Track::getAllIds(Wt::Dbo::Session& session)
 {
+	Wt::Dbo::Transaction transaction(session);
 	Wt::Dbo::collection<Track::id_type> res = session.query<Track::id_type>("SELECT id from track");
 	return std::vector<Track::id_type>(res.begin(), res.end());
 }
@@ -103,14 +106,6 @@ Track::getClusters(void) const
 	std::vector< Cluster::pointer > clusters;
 	std::copy(_clusters.begin(), _clusters.end(), std::back_inserter(clusters));
 	return clusters;
-}
-
-std::vector< Wt::Dbo::ptr<Feature> >
-Track::getFeatures(void) const
-{
-	std::vector< Wt::Dbo::ptr<Feature> > features;
-	std::copy(_features.begin(), _features.end(), std::back_inserter(features));
-	return features;
 }
 
 Wt::Dbo::Query< Track::pointer >
@@ -248,11 +243,11 @@ Cluster::create(Wt::Dbo::Session& session, std::string type, std::string name)
 }
 
 void
-Cluster::removeByType(Wt::Dbo::Session& session, std::string type)
+Cluster::remove(Wt::Dbo::Session& session, std::string type)
 {
-	session.execute( "DELETE FROM cluster WHERE type = ?").bind(type);
+	Wt::Dbo::Transaction transaction(session);
+	session.execute("DELETE FROM cluster WHERE type = ?").bind(type);
 }
-
 
 Wt::Dbo::Query<Cluster::pointer>
 Cluster::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
@@ -274,7 +269,7 @@ Cluster::getUIQuery(Wt::Dbo::Session& session, SearchFilter filter)
 	SqlQuery sqlQuery = generatePartialQuery(filter);
 
 	Wt::Dbo::Query<UIQueryResult> query
-		= session.query<UIQueryResult>( "SELECT c.id, c.type, c.name, COUNT(DISTINCT t.id) FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN artist a ON t.artist_id = a.id INNER JOIN release r ON r.id = t.release_id INNER JOIN track t ON t.id = t_c.track_id " + sqlQuery.where().get()).groupBy("c.name").orderBy("c.name");
+		= session.query<UIQueryResult>( "SELECT c.id, c.name, COUNT(DISTINCT t.id) FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN artist a ON t.artist_id = a.id INNER JOIN release r ON r.id = t.release_id INNER JOIN track t ON t.id = t_c.track_id " + sqlQuery.where().get()).groupBy("c.name").orderBy("c.name");
 
 	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
 		query.bind(bindArg);
@@ -289,11 +284,10 @@ Cluster::updateUIQueryModel(Wt::Dbo::Session& session,  Wt::Dbo::QueryModel<UIQu
 	model.setQuery(query, columnNames.empty() ? true : false);
 
 	// TODO do something better
-	if (columnNames.size() == 3)
+	if (columnNames.size() == 2)
 	{
-		model.addColumn( "c.type", columnNames[0] );
-		model.addColumn( "c.name", columnNames[1] );
-		model.addColumn( "COUNT(DISTINCT t.id)", columnNames[2] );
+		model.addColumn( "c.name", columnNames[0] );
+		model.addColumn( "COUNT(DISTINCT t.id)", columnNames[1] );
 	}
 }
 
@@ -305,25 +299,6 @@ Cluster::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset,
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
-Feature::Feature(Wt::Dbo::ptr<Track> track, const std::string& type, const std::string& value)
-: _type(type),
-_value(value),
-_track(track)
-{
-}
-
-Feature::pointer
-Feature::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, const std::string& type, const std::string& value)
-{
-	return session.add(new Feature(track, type, value));
-}
-
-std::vector<Feature::pointer>
-Feature::getByTrack(Wt::Dbo::Session& session, Track::id_type trackId, const std::string& type)
-{
-	Wt::Dbo::collection<pointer> res = session.find<Feature>().where("track_id = ? AND type = ?").bind( trackId).bind(type);
-	return std::vector<pointer>(res.begin(), res.end());
-}
 
 } // namespace Database
 

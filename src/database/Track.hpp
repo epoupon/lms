@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <boost/filesystem.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include <Wt/Dbo/Dbo>
 #include <Wt/Dbo/WtSqlTraits>
@@ -38,7 +39,6 @@ class Artist;
 class Release;
 class Track;
 class PlaylistEntry;
-class Feature;
 
 class Cluster
 {
@@ -59,7 +59,7 @@ class Cluster
 
 		// MVC models for the user interface
 		// ClusterID, type, name, track count
-		typedef boost::tuple<id_type, std::string, std::string, int> UIQueryResult;
+		typedef boost::tuple<id_type, std::string, int> UIQueryResult;
 		static Wt::Dbo::Query<UIQueryResult> getUIQuery(Wt::Dbo::Session& session, SearchFilter filter);
 		static void updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<UIQueryResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
 
@@ -67,7 +67,7 @@ class Cluster
 		static pointer create(Wt::Dbo::Session& session, std::string type, std::string name);
 
 		// Remove utility
-		static void removeByType(Wt::Dbo::Session& session, std::string type);
+		static void remove(Wt::Dbo::Session& session, std::string type); // nested transaction
 
 		// Accessors
 		const std::string& getName(void) const { return _name; }
@@ -75,7 +75,7 @@ class Cluster
 		bool isNone(void) const;
 		const Wt::Dbo::collection< Wt::Dbo::ptr<Track> >&	getTracks() const { return _tracks;}
 
-		void addTrack(Wt::Dbo::dbo_traits<Track>::IdType trackId);
+		void addTrack(Wt::Dbo::Session& session, Wt::Dbo::dbo_traits<Track>::IdType trackId);
 		void addTrack(Wt::Dbo::ptr<Track> track) { _tracks.insert(track); }
 
 		template<class Action>
@@ -121,15 +121,15 @@ class Track
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool &moreResults);
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
-		static std::vector<id_type> getAllIds(Wt::Dbo::Session& session);
-		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session);
+		static std::vector<id_type> getAllIds(Wt::Dbo::Session& session); // nested transaction
+		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session); // nested transaction
 		static std::vector<pointer> getMBIDDuplicates(Wt::Dbo::Session& session);
 		static std::vector<pointer> getChecksumDuplicates(Wt::Dbo::Session& session);
 
 		// Utility fonctions
 		// MVC models for the user interface
 		// ID, Artist name, Release Name, DiscNumber, TrackNumber, Name, duration, date, original date, genre list
-		typedef boost::tuple<id_type,			//ID
+		typedef boost::tuple<id_type,			// ID
 			std::string,				// Artist name
 			std::string,				// Release Name
 			int,					// Disc Number
@@ -153,6 +153,9 @@ class Track
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p);
 
+		// Remove utility
+		static void removeClusters(std::string type);
+
 		// Accessors
 		void setTrackNumber(int num)					{ _trackNumber = num; }
 		void setTotalTrackNumber(int num)				{ _totalTrackNumber = num; }
@@ -170,7 +173,6 @@ class Track
 		void setMBID(const std::string& MBID)				{ _MBID = MBID; }
 		void setArtist(Wt::Dbo::ptr<Artist> artist)			{ _artist = artist; }
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
-		void addFeature(Wt::Dbo::ptr<Feature> feature);
 
 		int				getTrackNumber(void) const		{ return _trackNumber; }
 		int				getTotalTrackNumber(void) const		{ return _totalTrackNumber; }
@@ -189,7 +191,6 @@ class Track
 		Wt::Dbo::ptr<Artist>		getArtist(void) const			{ return _artist; }
 		Wt::Dbo::ptr<Release>		getRelease(void) const			{ return _release; }
 		std::vector< Cluster::pointer >	getClusters(void) const;
-		std::vector< Wt::Dbo::ptr<Feature> >	getFeatures(void) const;
 
 		template<class Action>
 			void persist(Action& a)
@@ -213,7 +214,6 @@ class Track
 				Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _playlistEntries, Wt::Dbo::ManyToOne, "track");
-				Wt::Dbo::hasMany(a, _features, Wt::Dbo::ManyToOne, "track");
 			}
 
 	private:
@@ -242,41 +242,9 @@ class Track
 
 		Wt::Dbo::ptr<Artist>			_artist;
 		Wt::Dbo::ptr<Release>			_release;
-		Wt::Dbo::collection< Wt::Dbo::ptr<Feature> > 	_features;
 		Wt::Dbo::collection< Wt::Dbo::ptr<Cluster> >	_clusters;
 		Wt::Dbo::collection< Wt::Dbo::ptr<PlaylistEntry> >	_playlistEntries;
 
-};
-
-/* A track feature */
-class Feature
-{
-	public:
-		typedef Wt::Dbo::ptr<Feature> pointer;
-
-		Feature() {}
-		Feature(Wt::Dbo::ptr<Track> track, const std::string& type, const std::string& value);
-
-		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, const std::string& type, const std::string& value);
-
-		static std::vector<pointer> getByTrack(Wt::Dbo::Session& session, Track::id_type trackId, const std::string& type);
-
-		std::string getType(void) const { return _type; }
-		std::string getValue(void) const { return _value; }
-
-		template<class Action>
-			void persist(Action& a)
-			{
-				Wt::Dbo::field(a, _type,	"type");
-				Wt::Dbo::field(a, _value,	"value");
-				Wt::Dbo::belongsTo(a,	_track, "track", Wt::Dbo::OnDeleteCascade);
-			}
-
-	private:
-		std::string	_type;
-		std::string	_value;
-
-		Wt::Dbo::ptr<Track>	_track;
 };
 
 } // namespace database
