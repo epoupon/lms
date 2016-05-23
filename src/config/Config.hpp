@@ -22,6 +22,7 @@
 #include <boost/filesystem.hpp>
 #include <libconfig.h++>
 
+// Used to get config values from configuration files
 class Config
 {
 	public:

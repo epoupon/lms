@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2016 Emeric Poupon
  *
@@ -18,28 +17,17 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/filesystem.hpp>
-#include <boost/property_tree/ptree.hpp>
-
 #pragma once
 
-namespace Feature {
+#include "database/DatabaseUpdater.hpp"
 
-typedef boost::property_tree::ptree Type;
+namespace Database {
 
-class Extractor
+class FeatureExtractor
 {
 	public:
-		static bool init(void);
+		void processDatabaseUpdate(Updater::Stats stats);
 
-		static bool getLowLevel(boost::property_tree::ptree& pt, boost::filesystem::path path);
-		static bool getLowLevel(boost::property_tree::ptree& pt, std::string mbid);
-
-		static bool getHighLevel(boost::property_tree::ptree& pt, std::string mbid);
-
-	private:
-		Extractor();
 };
 
-} // namespace Feature
-
+} // namespace Database

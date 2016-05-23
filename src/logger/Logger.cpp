@@ -26,13 +26,13 @@ std::string getModuleName(Module mod)
 		case Module::AV:		return "AV";
 		case Module::COVER:		return "COVER";
 		case Module::DB:		return "DB";
-		case Module::CLASSIFICATION:	return "CLASSIFICATION";
-		case Module::DBUPDATER:	return "DB UPDATER";
+		case Module::DBUPDATER:		return "DB UPDATER";
+		case Module::FEATURE:		return "FEATURE";
 		case Module::MAIN:		return "MAIN";
-		case Module::METADATA:	return "METADATA";
-		case Module::REMOTE:	return "REMOTE";
-		case Module::SERVICE:	return "SERVICE";
-		case Module::TRANSCODE:	return "TRANSCODE";
+		case Module::METADATA:		return "METADATA";
+		case Module::REMOTE:		return "REMOTE";
+		case Module::SERVICE:		return "SERVICE";
+		case Module::TRANSCODE:		return "TRANSCODE";
 		case Module::UI:		return "UI";
 	}
 	return "";

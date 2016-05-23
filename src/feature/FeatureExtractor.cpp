@@ -42,7 +42,7 @@ Extractor::init(void)
 
 	if (extractorPath.empty())
 	{
-		LMS_LOG(CLASSIFICATION, ERROR) << "Failed to find path to " << execName;
+		LMS_LOG(FEATURE, ERROR) << "Failed to find path to " << execName;
 		return false;
 	}
 
@@ -71,17 +71,17 @@ static bool fetchJSONData(boost::property_tree::ptree& pt, std::string url)
 	}
 	catch( curlpp::RuntimeError &e )
 	{
-		LMS_LOG(CLASSIFICATION, ERROR) << "curlpp error: " << e.what();
+		LMS_LOG(FEATURE, ERROR) << "curlpp error: " << e.what();
 		return false;
 	}
 	catch( curlpp::LogicError &e )
 	{
-		LMS_LOG(CLASSIFICATION, ERROR) << "curlpp error: " << e.what();
+		LMS_LOG(FEATURE, ERROR) << "curlpp error: " << e.what();
 		return false;
 	}
 	catch ( boost::property_tree::ptree_error& e)
 	{
-		LMS_LOG(CLASSIFICATION, ERROR) << "JSON paring failed: " << e.what();
+		LMS_LOG(FEATURE, ERROR) << "JSON paring failed: " << e.what();
 		return false;
 	}
 
@@ -92,7 +92,7 @@ static bool fetchJSONData(boost::property_tree::ptree& pt, std::string url)
 bool
 Extractor::getLowLevel(boost::property_tree::ptree& pt, std::string mbid)
 {
-	LMS_LOG(CLASSIFICATION, DEBUG) << "Trying to fetch low level metadata for track '" << mbid << "' on AcousticBrainz";
+	LMS_LOG(FEATURE, DEBUG) << "Trying to fetch low level metadata for track '" << mbid << "' on AcousticBrainz";
 
 	boost::property_tree::ptree res;
 	if (!fetchJSONData(res, "https://acousticbrainz.org/" + mbid + "/low-level"))
@@ -101,14 +101,14 @@ Extractor::getLowLevel(boost::property_tree::ptree& pt, std::string mbid)
 	auto message = res.get_child_optional("message");
 	if (message)
 	{
-		LMS_LOG(CLASSIFICATION, ERROR) << "Cannot get data on AcousticBrainz: " << message->data();
+		LMS_LOG(FEATURE, ERROR) << "Track '" << mbid << "': cannot get data on AcousticBrainz: " << message->data();
 		return false;
 	}
 
 	auto lowlevel = res.get_child_optional("lowlevel");
 	if (!lowlevel)
 	{
-		LMS_LOG(CLASSIFICATION, ERROR) << "Low level data not found!";
+		LMS_LOG(FEATURE, ERROR) << "Track '" << mbid << "': low level data not found!";
 		return false;
 	}
 
@@ -122,7 +122,11 @@ Extractor::getLowLevel(boost::property_tree::ptree& pt, std::string mbid)
 bool
 Extractor::getHighLevel(boost::property_tree::ptree& pt, std::string mbid)
 {
-	LMS_LOG(CLASSIFICATION, DEBUG) << "Trying to fetch high level metadata for track '" << mbid << "' on AcousticBrainz";
+	LMS_LOG(FEATURE, DEBUG) << "Trying to fetch high level metadata for track '" << mbid << "' on AcousticBrainz";
+
+	// TODO check MBID
+	if (mbid.empty())
+		return false;
 
 	boost::property_tree::ptree res;
 	if (!fetchJSONData(res, "https://acousticbrainz.org/" + mbid + "/high-level"))
@@ -131,16 +135,18 @@ Extractor::getHighLevel(boost::property_tree::ptree& pt, std::string mbid)
 	auto message = res.get_child_optional("message");
 	if (message)
 	{
-		LMS_LOG(CLASSIFICATION, ERROR) << "Cannot get data on AcousticBrainz: " << message->data();
+		LMS_LOG(FEATURE, ERROR) << "Track '" << mbid << "': cannot get data on AcousticBrainz: " << message->data();
 		return false;
 	}
 
 	auto lowlevel = res.get_child_optional("highlevel");
 	if (!lowlevel)
 	{
-		LMS_LOG(CLASSIFICATION, ERROR) << "High level data not found!";
+		LMS_LOG(FEATURE, ERROR) << "Track '" << mbid << "': high level data not found!";
 		return false;
 	}
+
+	res.erase("metadata");
 
 	pt = res;
 
@@ -151,7 +157,7 @@ Extractor::getHighLevel(boost::property_tree::ptree& pt, std::string mbid)
 bool
 Extractor::getLowLevel(boost::property_tree::ptree& pt, boost::filesystem::path path)
 {
-	LMS_LOG(CLASSIFICATION, DEBUG) << "Extracting low level data from '" << path << "'";
+	LMS_LOG(FEATURE, DEBUG) << "Extracting low level data from '" << path << "'";
 
 	if (extractorPath.empty())
 		return false;
@@ -168,7 +174,7 @@ Extractor::getLowLevel(boost::property_tree::ptree& pt, boost::filesystem::path 
 		in.open(extractorPath.string(), args);
 		if (!in.is_open())
 		{
-			LMS_LOG(CLASSIFICATION, ERROR) << "Exec failed!";
+			LMS_LOG(FEATURE, ERROR) << "Exec failed!";
 			return false;
 		}
 
@@ -198,7 +204,7 @@ Extractor::getLowLevel(boost::property_tree::ptree& pt, boost::filesystem::path 
 	}
 	catch ( boost::property_tree::ptree_error& e)
 	{
-		LMS_LOG(CLASSIFICATION, ERROR) << "JSON paring failed: " << e.what();
+		LMS_LOG(FEATURE, ERROR) << "JSON parsing failed: " << e.what();
 		return false;
 	}
 

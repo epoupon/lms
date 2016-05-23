@@ -83,13 +83,12 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 	_session.mapClass<Database::Artist>("artist");
 	_session.mapClass<Database::Cluster>("cluster");
 	_session.mapClass<Database::Track>("track");
-	_session.mapClass<Database::Feature>("feature");
 	_session.mapClass<Database::Playlist>("playlist");
 	_session.mapClass<Database::PlaylistEntry>("playlist_entry");
 	_session.mapClass<Database::Release>("release");
 	_session.mapClass<Database::Video>("video");
 	_session.mapClass<Database::MediaDirectory>("media_directory");
-	_session.mapClass<Database::MediaDirectorySettings>("media_directory_settings");
+	_session.mapClass<Database::Setting>("setting");
 
 	_session.mapClass<Database::User>("user");
 	_session.mapClass<Database::AuthInfo>("auth_info");
@@ -101,13 +100,10 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 
 	        _session.createTables();
 		_session.execute("CREATE INDEX artist_name_idx ON artist(name)");
-		_session.execute("CREATE INDEX cluster_name_idx ON cluster(name)");
-		_session.execute("CREATE INDEX cluster_type_idx ON cluster(type)");
-		_session.execute("CREATE INDEX cluster_name_type_idx ON cluster(name, type)");
 		_session.execute("CREATE INDEX release_name_idx ON release(name)");
-		_session.execute("CREATE INDEX track_name_idx ON track(name)");
-		_session.execute("CREATE INDEX feature_type_idx ON feature(type)");
-		_session.execute("CREATE INDEX feature_track_type_idx ON feature(track_id,type)");
+		_session.execute("CREATE INDEX track_artist_idx ON track(artist_id)");
+		_session.execute("CREATE INDEX track_release_idx ON track(release_id)");
+		_session.execute("CREATE INDEX cluster_type_idx ON cluster(type)");
 	}
 	catch(std::exception& e) {
 		LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();

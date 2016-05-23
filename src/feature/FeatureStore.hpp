@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2016 Emeric Poupon
  *
@@ -18,28 +17,34 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/filesystem.hpp>
-#include <boost/property_tree/ptree.hpp>
-
 #pragma once
+
+#include <boost/filesystem/path.hpp>
+
+#include "database/Types.hpp"
+#include "FeatureExtractor.hpp"
 
 namespace Feature {
 
-typedef boost::property_tree::ptree Type;
-
-class Extractor
+class Store
 {
 	public:
-		static bool init(void);
+		Store(const Store&) = delete;
+		Store& operator=(const Store&) = delete;
 
-		static bool getLowLevel(boost::property_tree::ptree& pt, boost::filesystem::path path);
-		static bool getLowLevel(boost::property_tree::ptree& pt, std::string mbid);
+		static Store& instance();
 
-		static bool getHighLevel(boost::property_tree::ptree& pt, std::string mbid);
+		bool	exists(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type);
+		bool	get(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, Type& feature);
 
+		bool	set(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, const Type& feature);
+
+		void reload();
 	private:
-		Extractor();
+		Store();
+
+		boost::filesystem::path	_storePath;
 };
 
-} // namespace Feature
+} // namespace CoverArt
 

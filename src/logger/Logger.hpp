@@ -38,10 +38,10 @@ enum class Severity
 enum class Module
 {
 	AV,
-	CLASSIFICATION,
 	COVER,
 	DB,
 	DBUPDATER,
+	FEATURE,
 	MAIN,
 	METADATA,
 	REMOTE,

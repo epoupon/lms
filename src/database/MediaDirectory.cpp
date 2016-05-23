@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/foreach.hpp>
-
 #include "Types.hpp"
 
 static std::string pathsToString(const std::vector<boost::filesystem::path>& paths)
@@ -111,8 +109,7 @@ MediaDirectory::create(Wt::Dbo::Session& session, boost::filesystem::path p, Typ
 void
 MediaDirectory::eraseAll(Wt::Dbo::Session& session)
 {
-	std::vector<MediaDirectory::pointer> dirs = getAll(session);
-	BOOST_FOREACH(MediaDirectory::pointer dir, dirs)
+	for (auto dir : getAll(session))
 		dir.remove();
 }
 

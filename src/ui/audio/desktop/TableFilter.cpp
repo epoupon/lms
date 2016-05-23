@@ -33,7 +33,7 @@ using namespace Database;
 TableFilterCluster::TableFilterCluster(Wt::WContainerWidget* parent)
 : Wt::WTableView( parent ), Filter()
 {
-	const std::vector<Wt::WString> columnNames = {"Type", "Name", "Tracks"};
+	const std::vector<Wt::WString> columnNames = {"Tag", "Tracks"};
 
 	SearchFilter filter;
 
@@ -44,8 +44,7 @@ TableFilterCluster::TableFilterCluster(Wt::WContainerWidget* parent)
 	this->setAlternatingRowColors(true);
 	this->setModel(&_queryModel);
 
-	this->setColumnWidth(1, 120);
-	this->setColumnWidth(2, 80);
+	this->setColumnWidth(1, 80);
 
 	this->selectionChanged().connect(this, &TableFilterCluster::emitUpdate);
 
@@ -77,9 +76,9 @@ TableFilterCluster::TableFilterCluster(Wt::WContainerWidget* parent)
 void
 TableFilterCluster::layoutSizeChanged (int width, int height)
 {
-	std::size_t otherColumnSizes = this->columnWidth(1).toPixels() + this->columnWidth(2).toPixels();
+	std::size_t trackColumnSize = this->columnWidth(1).toPixels();
 	// Set the remaining size for the name column
-	this->setColumnWidth(0, width - otherColumnSizes - (7 * 3) - 2);
+	this->setColumnWidth(0, width - trackColumnSize - (7 * 2) - 2);
 }
 
 // Set constraints on this filter

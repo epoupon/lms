@@ -162,7 +162,6 @@ Updater::stop(void)
 {
 	_running = false;
 
-	// TODO cancel all jobs (timer, ...)
 	_scheduleTimer.cancel();
 
 	_ioService.stop();
@@ -235,64 +234,67 @@ Updater::scheduleScan( boost::posix_time::ptime time)
 void
 Updater::process(boost::system::error_code err)
 {
-	if (!err)
+	if (err)
+		return;
+
+	updateFileExtensions();
+
+	Stats stats;
+
+	checkAudioFiles(stats);
+	checkVideoFiles(stats);
+
+	std::vector<RootDirectory> rootDirectories;
 	{
-		updateFileExtensions();
+		Wt::Dbo::Transaction transaction(_db->getSession());
 
-		Stats stats;
-
-		checkAudioFiles(stats);
-		checkVideoFiles(stats);
-
-		std::vector<RootDirectory> rootDirectories;
-		{
-			Wt::Dbo::Transaction transaction(_db->getSession());
-
-			for (MediaDirectory::pointer directory : MediaDirectory::getAll(_db->getSession()))
-				rootDirectories.push_back( RootDirectory( directory->getType(), directory->getPath() ));
-		}
-
-		for (RootDirectory rootDirectory : rootDirectories)
-		{
-			if (!_running)
-				break;
-
-			LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory.path << "'...";
-			processRootDirectory(rootDirectory, stats);
-			LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory.path << "' DONE";
-		}
-
-		if (_running)
-			checkDuplicatedAudioFiles(stats);
-
-		LMS_LOG(DBUPDATER, INFO) << "Scan complete. Scanned = " << stats.nbScanned << ", Skipped = " << stats.nbSkipped << ", Changes = " << stats.nbChanges() << " (added = " << stats.nbAdded << ", nbRemoved = " << stats.nbRemoved << ", nbModified = " << stats.nbModified << "), Scan errors = " << stats.nbScanErrors << ", Not imported = " << stats.nbNotImported;
-
-		// Update database stats
-		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-		{
-			Wt::Dbo::Transaction transaction(_db->getSession());
-
-			Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(_db->getSession());
-
-			if (stats.nbChanges() > 0)
-				settings.modify()->setLastUpdate(now);
-
-			// Save the last scan only if it has been completed
-			if (_running)
-				settings.modify()->setLastScan(now);
-
-			// If the manual scan was required we can now set it to done
-			// Update only if the scan is complete!
-			if (settings->getManualScanRequested() && _running)
-				settings.modify()->setManualScanRequested(false);
-
-		}
-
-		scanComplete().emit(stats);
-
-		if (_running)
-			processNextJob();
+		for (MediaDirectory::pointer directory : MediaDirectory::getAll(_db->getSession()))
+			rootDirectories.push_back( RootDirectory( directory->getType(), directory->getPath() ));
 	}
+
+	for (RootDirectory rootDirectory : rootDirectories)
+	{
+		if (!_running)
+			break;
+
+		LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory.path << "'...";
+		processRootDirectory(rootDirectory, stats);
+		LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory.path << "' DONE";
+	}
+
+	if (_running)
+	{
+		checkDuplicatedAudioFiles(stats);
+
+		LMS_LOG(DBUPDATER, INFO) << "Processed all files, now calling listeners...";
+		scanComplete().emit(stats);
+	}
+
+	LMS_LOG(DBUPDATER, INFO) << "Scan complete. Scanned = " << stats.nbScanned << ", Skipped = " << stats.nbSkipped << ", Changes = " << stats.nbChanges() << " (added = " << stats.nbAdded << ", nbRemoved = " << stats.nbRemoved << ", nbModified = " << stats.nbModified << "), Scan errors = " << stats.nbScanErrors << ", Not imported = " << stats.nbNotImported;
+
+	// Update database stats
+	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
+	{
+		Wt::Dbo::Transaction transaction(_db->getSession());
+
+		Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(_db->getSession());
+
+		if (stats.nbChanges() > 0)
+			settings.modify()->setLastUpdate(now);
+
+		// Save the last scan only if it has been completed
+		if (_running)
+			settings.modify()->setLastScan(now);
+
+		// If the manual scan was required we can now set it to done
+		// Update only if the scan is complete!
+		if (settings->getManualScanRequested() && _running)
+			settings.modify()->setManualScanRequested(false);
+
+	}
+
+	if (_running)
+		processNextJob();
 }
 
 void
@@ -538,12 +540,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Updating '" << file << "'";
 
-		// TODO Remove the songs from its clusters
-		// TODO Remove the features of this song
-		track.remove();
-		track.flush();
-
-		track = Track::create(_db->getSession(), file);
+		// Remove the songs from its clusters
+		for (auto cluster : track->getClusters())
+			cluster.remove();
 
 		stats.nbModified++;
 	}
@@ -614,8 +613,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	_sigTrackChanged.emit(true, track.id(), track->getMBID(), track->getPath());
 }
 
-
-	void
+void
 Updater::processRootDirectory(RootDirectory rootDirectory, Stats& stats)
 {
 	boost::system::error_code ec;

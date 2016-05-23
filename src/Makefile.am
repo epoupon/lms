@@ -7,18 +7,21 @@ lms_SOURCES = \
 	$(srcdir)/config/Config.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
 	$(srcdir)/database/Artist.cpp				\
-	$(srcdir)/database/DatabaseClassifier.cpp		\
+	$(srcdir)/database/DatabaseFeatureExtractor.cpp		\
 	$(srcdir)/database/DatabaseHandler.cpp			\
 	$(srcdir)/database/DatabaseUpdater.cpp			\
 	$(srcdir)/database/MediaDirectory.cpp			\
 	$(srcdir)/database/Playlist.cpp				\
 	$(srcdir)/database/Release.cpp				\
 	$(srcdir)/database/SearchFilter.cpp			\
+	$(srcdir)/database/Setting.cpp				\
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/User.cpp				\
 	$(srcdir)/database/Video.cpp				\
+	$(srcdir)/database/cluster/DatabaseHighLevelCluster.cpp	\
 	$(srcdir)/feature/FeatureExtractor.cpp			\
+	$(srcdir)/feature/FeatureStore.cpp			\
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/logger/Logger.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\

@@ -73,6 +73,9 @@ class Updater
 
 		std::mutex&	getMutex(void) { return _mutex; }
 
+		Database::Handler& getDb(void) { return *_db; }
+
+		bool quitRequested(void) const { return !_running;}
 	private:
 
 		Updater();
@@ -133,8 +136,18 @@ class Updater
 
 		MetaData::TagLibParser 	_metadataParser;
 
-
 }; // class Updater
+
+// Helper to get the updater session data
+static inline Wt::Dbo::Session& UpdaterDboSession()
+{
+	return Updater::instance().getDb().getSession();
+}
+
+static inline bool UpdaterQuitRequested()
+{
+	return Updater::instance().quitRequested();
+}
 
 } // Database
 
