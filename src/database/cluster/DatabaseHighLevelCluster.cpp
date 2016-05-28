@@ -17,11 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "DatabaseHighLevelCluster.hpp"
-
-#include "config/Config.hpp"
 #include "logger/Logger.hpp"
+
+#include "database/Setting.hpp"
 #include "feature/FeatureStore.hpp"
+
+#include "DatabaseHighLevelCluster.hpp"
 
 namespace Database {
 
@@ -166,8 +167,7 @@ static std::list<std::string> getClustersFromFeature(Feature::Type& feature)
 void
 HighLevelCluster::processDatabaseUpdate(Updater::Stats stats)
 {
-	bool createTags = Config::instance().getBool("tag-highlevel-acousticbrainz", false);
-
+	bool createTags = Setting::getBool(UpdaterDboSession(), "tags_highlevel_acousticbrainz", false);
 
 	LMS_LOG(DBUPDATER, INFO) << "Creating high level based clusters...";
 
@@ -178,8 +178,6 @@ HighLevelCluster::processDatabaseUpdate(Updater::Stats stats)
 	{
 		if (UpdaterQuitRequested())
 			return;
-
-		LMS_LOG(DBUPDATER, DEBUG) << "Processing track " << trackId;
 
 		// Get current cluster names
 		std::list<std::string> newClusterNames;

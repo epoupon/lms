@@ -124,7 +124,7 @@ Updater& Updater::instance(void)
 }
 
 Updater::Updater()
- : _running(false),
+ : _running(true),
 _scheduleTimer(_ioService)
 {
 	_ioService.setThreadCount(1);
