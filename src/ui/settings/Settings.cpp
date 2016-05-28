@@ -31,6 +31,7 @@
 
 #include "logger/Logger.hpp"
 #include "database/DatabaseUpdater.hpp"
+#include "database/Setting.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -38,6 +39,8 @@
 
 namespace UserInterface {
 namespace Settings {
+
+using namespace Database;
 
 Settings::Settings(Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent)
@@ -65,7 +68,7 @@ Settings::Settings(Wt::WContainerWidget* parent)
 	{
 		Wt::Dbo::Transaction transaction(DboSession());
 
-		userId = Database::User::getId(CurrentUser());
+		userId = User::getId(CurrentUser());
 		userIsAdmin = CurrentUser()->isAdmin();
 	}
 
@@ -77,24 +80,19 @@ Settings::Settings(Wt::WContainerWidget* parent)
 		{
 			LMS_LOG(UI, INFO) << "Media directories have changed: requesting imediate scan";
 
-			// On directory add or delete, request an immediate scan
-			//
-			{
-				Wt::Dbo::Transaction transaction(DboSession());
-				Database::MediaDirectorySettings::get(DboSession()).modify()->setManualScanRequested(true);
-			}
-			{
-				std::lock_guard<std::mutex> lock(Database::Updater::instance().getMutex());
-				Database::Updater::instance().restart();
-			}
+			// On directory change, request an immediate scan
+			std::lock_guard<std::mutex> lock(Updater::instance().getMutex());
+
+			Setting::setBool(DboSession(), "manual_scan_requested", true);
+			Updater::instance().restart();
 		}));
 		menu->addItem("Media Folders", mediaDirectories)->setPathComponent("mediadirectories");
 
 		DatabaseFormView* databaseFormView = new DatabaseFormView();
 		databaseFormView->changed().connect(std::bind([=]
 		{
-			std::lock_guard<std::mutex> lock(Database::Updater::instance().getMutex());
-			Database::Updater::instance().restart();
+			std::lock_guard<std::mutex> lock(Updater::instance().getMutex());
+			Updater::instance().restart();
 		}));
 		menu->addItem("Database", databaseFormView)->setPathComponent("database");
 

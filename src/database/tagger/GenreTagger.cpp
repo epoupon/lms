@@ -18,17 +18,23 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "GenreTagger.hpp"
 
-#include <string>
-#include <vector>
-#include <boost/filesystem.hpp>
+namespace Database {
 
-boost::filesystem::path searchExecPath(std::string filename);
+void
+GenreTagger::processTrackUpdate(bool added, Track::id_type trackId, std::string mbid, boost::filesystem::path p)
+{
 
-void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& checksum);
 
-// Make sure the given path is a directory
-// Create it if needed
-bool ensureDirectory(boost::filesystem::path dir);
+}
 
+void
+GenreTagger::processDatabaseUpdate(Updater::Stats stats)
+{
+
+	// TODO: if disabled, delete all the genre tags
+	// TODO: if enabled, reconstruct all the genre tags from tracks
+}
+
+} // namespace Database

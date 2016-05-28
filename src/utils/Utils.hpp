@@ -39,7 +39,10 @@ std::vector<std::string>
 splitString(std::string string, std::string separators);
 
 std::string
-stringTrim(const std::string& str, const std::string& whitespace = " \t");
+stringTrim(const std::string& str, const std::string& whitespaces = " \t");
+
+std::string
+stringTrimEnd(const std::string& str, const std::string& whitespaces = " \t");
 
 std::string
 stringToUTF8(const std::string& str);

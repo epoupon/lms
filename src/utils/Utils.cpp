@@ -113,6 +113,14 @@ stringTrim(const std::string& str, const std::string& whitespace)
 }
 
 std::string
+stringTrimEnd(const std::string& str, const std::string& whitespace)
+{
+	return str.substr(0, str.find_last_not_of(whitespace)+1);
+}
+
+
+
+std::string
 stringToUTF8(const std::string& str)
 {
 	return boost::locale::conv::to_utf<char>(str, "UTF-8");

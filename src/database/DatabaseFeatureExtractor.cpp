@@ -17,12 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "config/Config.hpp"
 #include "logger/Logger.hpp"
 
 #include "feature/FeatureExtractor.hpp"
 #include "feature/FeatureStore.hpp"
 
+#include "Setting.hpp"
 #include "DatabaseFeatureExtractor.hpp"
 
 namespace Database {
@@ -37,8 +37,8 @@ static std::string getMBID(Track::id_type trackId)
 void
 FeatureExtractor::processDatabaseUpdate(Updater::Stats stats)
 {
-	bool fetchHighLevel = Config::instance().getBool("tag-highlevel-acousticbrainz", false);
-	bool fetchLowLevel = Config::instance().getBool("tag-similarity-acousticbrainz", false);
+	bool fetchHighLevel = Setting::getBool(UpdaterDboSession(), "tags_highlevel_acousticbrainz");
+	bool fetchLowLevel = Setting::getBool(UpdaterDboSession(), "tags_similarity_acousticbrainz");
 
 	if (!fetchHighLevel && !fetchLowLevel)
 	{

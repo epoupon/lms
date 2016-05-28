@@ -348,6 +348,30 @@
 		</div>
 
 		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:tags-highlevel-acousticbrainz}">
+				Create tags from AcousticBrainz High-Level information
+			</label>
+			<div class="col-sm-5">
+				${tags-highlevel-acousticbrainz}
+			</div>
+			<div class="help-block col-sm-5">
+				${tags-highlevel-acousticbrainz-info}
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:tags-similarity-acousticbrainz}">
+				Create tags from AcousticBrainz similarities
+			</label>
+			<div class="col-sm-5">
+				${tags-similarity-acousticbrainz}
+			</div>
+			<div class="help-block col-sm-5">
+				${tags-similarity-acousticbrainz-info}
+			</div>
+		</div>
+
+		<div class="form-group">
 			<div class="col-sm-offset-2 col-sm-10">
 				${apply-button} ${discard-button} ${immediate-scan-button}
 			</div>

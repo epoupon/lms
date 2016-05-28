@@ -42,7 +42,7 @@ Classifier::processTrackUpdate(bool added, Track::id_type trackId, std::string m
 	if (mbid.empty())
 	{
 		// TODO compute from file
-		LMS_LOG(CLASSIFICATION, INFO) << "File '" << path << "' has no MBID: skipping feature extraction";
+		LMS_LOG(DBUPDATER, INFO) << "File '" << path << "' has no MBID: skipping feature extraction";
 		return;
 	}
 
@@ -332,7 +332,7 @@ static std::vector<FeatureDesc> features =
 	{ "lowlevel.spectral_centroid.mean",		1,	1.0 },
 //	{ "lowlevel.spectral_centroid.median",		1,	1.0 },
 //	{ "lowlevel.spectral_centroid.min",		1,	1.0 },
-//	{ "lowlevel.spectral_centroid.var",		1,	1.0 },
+	{ "lowlevel.spectral_centroid.var",		1,	1.0 },
 //	{ "lowlevel.spectral_complexity.dmean",		1,	1.0 },
 //	{ "lowlevel.spectral_complexity.dmean2",	1,	1.0 },
 //	{ "lowlevel.spectral_complexity.dvar",		1,	1.0 },
@@ -341,7 +341,7 @@ static std::vector<FeatureDesc> features =
 	{ "lowlevel.spectral_complexity.mean",		1,	1.0 },
 //	{ "lowlevel.spectral_complexity.median",	1,	1.0 },
 //	{ "lowlevel.spectral_complexity.min",		1,	1.0 },
-//	{ "lowlevel.spectral_complexity.var",		1,	1.0 },
+	{ "lowlevel.spectral_complexity.var",		1,	1.0 },
 //	{ "lowlevel.spectral_decrease.dmean",		1,	1.0 },
 //	{ "lowlevel.spectral_decrease.dmean2",		1,	1.0 },
 //	{ "lowlevel.spectral_decrease.dvar",		1,	1.0 },
@@ -350,7 +350,7 @@ static std::vector<FeatureDesc> features =
 	{ "lowlevel.spectral_decrease.mean",		1,	1.0 },
 //	{ "lowlevel.spectral_decrease.median",		1,	1.0 },
 //	{ "lowlevel.spectral_decrease.min",		1,	1.0 },
-//	{ "lowlevel.spectral_decrease.var",		1,	1.0 },
+	{ "lowlevel.spectral_decrease.var",		1,	1.0 },
 //	{ "lowlevel.spectral_energy.dmean",		1,	1.0 },
 //	{ "lowlevel.spectral_energy.dmean2",		1,	1.0 },
 //	{ "lowlevel.spectral_energy.dvar",		1,	1.0 },
@@ -359,7 +359,7 @@ static std::vector<FeatureDesc> features =
 	{ "lowlevel.spectral_energy.mean",		1,	1.0 },
 //	{ "lowlevel.spectral_energy.median",		1,	1.0 },
 //	{ "lowlevel.spectral_energy.min",		1,	1.0 },
-//	{ "lowlevel.spectral_energy.var",		1,	1.0 },
+	{ "lowlevel.spectral_energy.var",		1,	1.0 },
 //	{ "lowlevel.spectral_energyband_low.dmean",		1,	1.0 },
 //	{ "lowlevel.spectral_energyband_low.dmean2",		1,	1.0 },
 //	{ "lowlevel.spectral_energyband_low.dvar",		1,	1.0 },
@@ -368,7 +368,7 @@ static std::vector<FeatureDesc> features =
 	{ "lowlevel.spectral_energyband_low.mean",		1,	1.0 },
 //	{ "lowlevel.spectral_energyband_low.median",		1,	1.0 },
 //	{ "lowlevel.spectral_energyband_low.min",		1,	1.0 },
-//	{ "lowlevel.spectral_energyband_low.var",		1,	1.0 },
+	{ "lowlevel.spectral_energyband_low.var",		1,	1.0 },
 //	{ "lowlevel.spectral_energyband_middle_high.dmean",	1,	1.0 },
 //	{ "lowlevel.spectral_energyband_middle_high.dmean2",	1,	1.0 },
 //	{ "lowlevel.spectral_energyband_middle_high.dvar",	1,	1.0 },
@@ -377,7 +377,7 @@ static std::vector<FeatureDesc> features =
 	{ "lowlevel.spectral_energyband_middle_high.mean",	1,	1.0 },
 //	{ "lowlevel.spectral_energyband_middle_high.median",	1,	1.0 },
 //	{ "lowlevel.spectral_energyband_middle_high.min",	1,	1.0 },
-//	{ "lowlevel.spectral_energyband_middle_high.var",	1,	1.0 },
+	{ "lowlevel.spectral_energyband_middle_high.var",	1,	1.0 },
 //	{ "lowlevel.spectral_energyband_middle_low.dmean",	1,	1.0 },
 //	{ "lowlevel.spectral_energyband_middle_low.dmean2",	1,	1.0 },
 //	{ "lowlevel.spectral_energyband_middle_low.dvar",	1,	1.0 },
@@ -386,7 +386,7 @@ static std::vector<FeatureDesc> features =
 	{ "lowlevel.spectral_energyband_middle_low.mean",	1,	1.0 },
 //	{ "lowlevel.spectral_energyband_middle_low.median",	1,	1.0 },
 //	{ "lowlevel.spectral_energyband_middle_low.min",	1,	1.0 },
-//	{ "lowlevel.spectral_energyband_middle_low.var",	1,	1.0 },
+	{ "lowlevel.spectral_energyband_middle_low.var",	1,	1.0 },
 //	{ "lowlevel.spectral_entropy.dmean",		1,	1.0 },
 //	{ "lowlevel.spectral_entropy.dmean2",		1,	1.0 },
 //	{ "lowlevel.spectral_entropy.dvar",		1,	1.0 },
@@ -395,7 +395,7 @@ static std::vector<FeatureDesc> features =
 	{ "lowlevel.spectral_entropy.mean",		1,	1.0 },
 //	{ "lowlevel.spectral_entropy.median",		1,	1.0 },
 //	{ "lowlevel.spectral_entropy.min",		1,	1.0 },
-//	{ "lowlevel.spectral_entropy.var",		1,	1.0 },
+	{ "lowlevel.spectral_entropy.var",		1,	1.0 },
 //	{ "lowlevel.spectral_flux.dmean",		1,	1.0 },
 //	{ "lowlevel.spectral_flux.dmean2",		1,	1.0 },
 //	{ "lowlevel.spectral_flux.dvar",		1,	1.0 },
@@ -422,7 +422,7 @@ static std::vector<FeatureDesc> features =
 	{ "lowlevel.spectral_rms.mean",			1,	1.0 },
 //	{ "lowlevel.spectral_rms.median",		1,	1.0 },
 //	{ "lowlevel.spectral_rms.min",			1,	1.0 },
-//	{ "lowlevel.spectral_rms.var",			1,	1.0 },
+	{ "lowlevel.spectral_rms.var",			1,	1.0 },
 //	{ "lowlevel.spectral_rolloff.dmean",		1,	1.0 },
 //	{ "lowlevel.spectral_rolloff.dmean2",		1,	1.0 },
 //	{ "lowlevel.spectral_rolloff.dvar",		1,	1.0 },
@@ -449,7 +449,7 @@ static std::vector<FeatureDesc> features =
 	{ "lowlevel.spectral_spread.mean",		1,	1.0 },
 //	{ "lowlevel.spectral_spread.median",		1,	1.0 },
 //	{ "lowlevel.spectral_spread.min",		1,	1.0 },
-//	{ "lowlevel.spectral_spread.var",		1,	1.0 },
+	{ "lowlevel.spectral_spread.var",		1,	1.0 },
 //	{ "lowlevel.spectral_strongpeak.dmean",		1,	1.0 },
 //	{ "lowlevel.spectral_strongpeak.dmean2",	1,	1.0 },
 //	{ "lowlevel.spectral_strongpeak.dvar",		1,	1.0 },
@@ -458,7 +458,7 @@ static std::vector<FeatureDesc> features =
 	{ "lowlevel.spectral_strongpeak.mean",		1,	1.0 },
 //	{ "lowlevel.spectral_strongpeak.median",	1,	1.0 },
 //	{ "lowlevel.spectral_strongpeak.min",		1,	1.0 },
-//	{ "lowlevel.spectral_strongpeak.var",		1,	1.0 },
+	{ "lowlevel.spectral_strongpeak.var",		1,	1.0 },
 //	{ "lowlevel.zerocrossingrate.dmean",		1,	1.0 },
 //	{ "lowlevel.zerocrossingrate.dmean2",		1,	1.0 },
 //	{ "lowlevel.zerocrossingrate.dvar",		1,	1.0 },
@@ -467,7 +467,7 @@ static std::vector<FeatureDesc> features =
 	{ "lowlevel.zerocrossingrate.mean",		1,	1.0 },
 //	{ "lowlevel.zerocrossingrate.median",		1,	1.0 },
 //	{ "lowlevel.zerocrossingrate.min",		1,	1.0 },
-//	{ "lowlevel.zerocrossingrate.var",		1,	1.0 },
+	{ "lowlevel.zerocrossingrate.var",		1,	1.0 },
 //	{ "rhythm.beats_count",				1,	1.0 },
 //	{ "rhythm.beats_loudness.dmean",		1,	1.0 },
 //	{ "rhythm.beats_loudness.dmean2",		1,	1.0 },
@@ -477,7 +477,7 @@ static std::vector<FeatureDesc> features =
 	{ "rhythm.beats_loudness.mean",			1,	1.0 },
 //	{ "rhythm.beats_loudness.median",		1,	1.0 },
 //	{ "rhythm.beats_loudness.min",			1,	1.0 },
-//	{ "rhythm.beats_loudness.var",			1,	1.0 },
+	{ "rhythm.beats_loudness.var",			1,	1.0 },
 //	{ "rhythm.bpm",					1,	1.0 },
 //	{ "rhythm.bpm_histogram_first_peak_bpm.dmean",		1,	1.0 },
 //	{ "rhythm.bpm_histogram_first_peak_bpm.dmean2",		1,	1.0 },
@@ -664,12 +664,7 @@ Classifier::processDatabaseUpdate(Updater::Stats stats)
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Getting track ids";
 
-	std::vector<Track::id_type> trackIdsAll;
-	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
-
-		trackIdsAll = Database::Track::getAllIds(_db.getSession());
-	}
+	std::vector<Track::id_type> trackIdsAll = Database::Track::getAllIds(_db.getSession());
 
 	::std::random_shuffle ( trackIdsAll.begin(), trackIdsAll.end() );
 

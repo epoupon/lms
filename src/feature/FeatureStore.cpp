@@ -21,6 +21,7 @@
 
 #include "logger/Logger.hpp"
 #include "config/Config.hpp"
+#include "utils/Path.hpp"
 
 #include "FeatureStore.hpp"
 
@@ -40,12 +41,20 @@ Store::instance(void)
 void
 Store::reload(void)
 {
-	_storePath = Config::instance().getString("features-dir-path", "");
+	boost::filesystem::path cacheDir = _storePath = Config::instance().getString("cache-dir-path", "");
 
-	if (!boost::filesystem::is_directory(_storePath))
+	if (!ensureDirectory(cacheDir))
 	{
-		LMS_LOG(DBUPDATER, ERROR) << "Feature directory '" << _storePath << "' not valid!";
-		throw std::runtime_error("Invalid feature directory '" + _storePath.string());
+		LMS_LOG(DBUPDATER, ERROR) << "Cache directory '" << cacheDir << "' not valid";
+		throw std::runtime_error("Cache directory '" + cacheDir.string() + "' not valid!");
+	}
+
+	_storePath = cacheDir / "features";
+
+	if (!ensureDirectory(_storePath))
+	{
+		LMS_LOG(DBUPDATER, ERROR) << "Features directory '" << _storePath << "' not valid";
+		throw std::runtime_error("Features directory '" + _storePath.string() + "' not valid");
 	}
 }
 

@@ -26,10 +26,12 @@
 #include "av/AvTranscoder.hpp"
 #include "logger/Logger.hpp"
 #include "image/Image.hpp"
+#include "feature/FeatureExtractor.hpp"
 
 #include "database/DatabaseUpdater.hpp"
-#include "database/DatabaseClassifier.hpp"
-#include "feature/FeatureExtractor.hpp"
+#include "database/DatabaseFeatureExtractor.hpp"
+#include "database/cluster/DatabaseHighLevelCluster.hpp"
+
 #include "ui/LmsApplication.hpp"
 
 
@@ -44,16 +46,16 @@ static std::vector<std::string> getWtArgs(std::string path)
 
 	if (Config::instance().getBool("tls-enable", false))
 	{
-		args.push_back("--https-port=" + std::to_string( Config::instance().getULong("listen-port")));
-		args.push_back("--https-address=" + Config::instance().getString("listen-addr"));
+		args.push_back("--https-port=" + std::to_string( Config::instance().getULong("listen-port", 5081)));
+		args.push_back("--https-address=" + Config::instance().getString("listen-addr", "0.0.0.0"));
 		args.push_back("--ssl-certificate=" + Config::instance().getString("tls-cert"));
 		args.push_back("--ssl-private-key=" + Config::instance().getString("tls-key"));
 		args.push_back("--ssl-tmp-dh=" + Config::instance().getString("tls-dh"));
 	}
 	else
 	{
-		args.push_back("--http-port=" + std::to_string( Config::instance().getULong("listen-port")));
-		args.push_back("--http-address=" + Config::instance().getString("listen-addr"));
+		args.push_back("--http-port=" + std::to_string( Config::instance().getULong("listen-port", 5081)));
+		args.push_back("--http-address=" + Config::instance().getString("listen-addr", "0.0.0.0"));
 	}
 
 	return args;
@@ -104,13 +106,12 @@ int main(int argc, char* argv[])
 		Database::Updater& dbUpdater = Database::Updater::instance();
 		dbUpdater.setConnectionPool(*connectionPool);
 
-		Database::Classifier dbClassifier(*connectionPool);
+		Database::FeatureExtractor dbFeatureExtractor;
+		Database::HighLevelCluster dbHighLevelCluster;
 
-		// Connect the classifier to the update events
-		dbUpdater.trackChanged().connect(std::bind(&Database::Classifier::processTrackUpdate, &dbClassifier,
-					std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-		dbUpdater.scanComplete().connect(std::bind(&Database::Classifier::processDatabaseUpdate, &dbClassifier,
-					std::placeholders::_1));
+		// Connect to the update events
+		dbUpdater.scanComplete().connect(std::bind(&Database::HighLevelCluster::processDatabaseUpdate, &dbHighLevelCluster, std::placeholders::_1));
+		dbUpdater.scanComplete().connect(std::bind(&Database::FeatureExtractor::processDatabaseUpdate, &dbFeatureExtractor, std::placeholders::_1));
 
 		// bind entry point
 		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create,

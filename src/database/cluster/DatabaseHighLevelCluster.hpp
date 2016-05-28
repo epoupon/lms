@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2016 Emeric Poupon
  *
@@ -20,15 +19,15 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include <boost/filesystem.hpp>
+#include "database/DatabaseUpdater.hpp"
 
-boost::filesystem::path searchExecPath(std::string filename);
+namespace Database {
 
-void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& checksum);
+class HighLevelCluster
+{
+	public:
+		void processDatabaseUpdate(Updater::Stats stats);
 
-// Make sure the given path is a directory
-// Create it if needed
-bool ensureDirectory(boost::filesystem::path dir);
+};
 
+} // namespace Database

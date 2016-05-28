@@ -28,6 +28,8 @@
 #include <Wt/Auth/PasswordStrengthValidator>
 #include <Wt/Auth/PasswordVerifier>
 
+#include "Setting.hpp"
+
 #include "logger/Logger.hpp"
 
 #include "DatabaseHandler.hpp"
@@ -79,7 +81,6 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 {
 	_session.setConnectionPool(connectionPool);
 
-
 	_session.mapClass<Database::Artist>("artist");
 	_session.mapClass<Database::Cluster>("cluster");
 	_session.mapClass<Database::Track>("track");
@@ -99,11 +100,6 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		Wt::Dbo::Transaction transaction(_session);
 
 	        _session.createTables();
-		_session.execute("CREATE INDEX artist_name_idx ON artist(name)");
-		_session.execute("CREATE INDEX release_name_idx ON release(name)");
-		_session.execute("CREATE INDEX track_artist_idx ON track(artist_id)");
-		_session.execute("CREATE INDEX track_release_idx ON track(release_id)");
-		_session.execute("CREATE INDEX cluster_type_idx ON cluster(type)");
 	}
 	catch(std::exception& e) {
 		LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();
@@ -112,7 +108,26 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 	{
 		Wt::Dbo::Transaction transaction(_session);
 
+		// Indexes
 		_session.execute("PRAGMA journal_mode=WAL");
+		_session.execute("CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
+		_session.execute("CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_artist_idx ON track(artist_id)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
+		_session.execute("CREATE INDEX IF NOT EXISTS cluster_type_idx ON cluster(type)");
+
+		// Default values
+		if (!Setting::exists(_session, "audio_file_extensions"))
+			Setting::setString(_session, "audio_file_extensions", ".mp3 .ogg .oga .aac .m4a .flac .wav .wma .aif .aiff .ape .mpc .shn" );
+
+		if (!Setting::exists(_session, "video_file_extensions"))
+			Setting::setString(_session, "video_file_extensions", ".flv .avi .mpg .mpeg .mp4 .m4v .mkv .mov .wmv .ogv .divx .m2ts");
+
+		if (!Setting::exists(_session, "tags_highlevel_acousticbrainz"))
+			Setting::setBool(_session, "tags_highlevel_acousticbrainz", true);
+
+		if (!Setting::exists(_session, "tags_similarity_acousticbrainz"))
+			Setting::setBool(_session,  "tags_similarity_acousticbrain", false);
 	}
 
 	_users = new UserDatabase(_session);

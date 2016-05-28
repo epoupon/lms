@@ -29,7 +29,7 @@
 #include <Wt/WStringListModel>
 
 #include "logger/Logger.hpp"
-#include "database/MediaDirectory.hpp"
+#include "database/Setting.hpp"
 
 #include "common/DirectoryValidator.hpp"
 #include "LmsApplication.hpp"
@@ -49,6 +49,8 @@ class DatabaseFormModel : public Wt::WFormModel
 		static const Field UpdateStartTimeField;
 		static const Field AudioFileExtensionsField;
 		static const Field VideoFileExtensionsField;
+		static const Field TagsHighLevelAcousticBrainz;
+		static const Field TagsSimilarityAcousticBrainz;
 
 		DatabaseFormModel(Wt::WObject *parent = 0)
 			: Wt::WFormModel(parent)
@@ -59,6 +61,8 @@ class DatabaseFormModel : public Wt::WFormModel
 			addField(UpdateStartTimeField);
 			addField(AudioFileExtensionsField);
 			addField(VideoFileExtensionsField);
+			addField(TagsHighLevelAcousticBrainz);
+			addField(TagsSimilarityAcousticBrainz);
 
 			setValidator(UpdatePeriodField, createUpdatePeriodValidator());
 			setValidator(UpdateStartTimeField, createStartTimeValidator());
@@ -74,117 +78,70 @@ class DatabaseFormModel : public Wt::WFormModel
 
 		void loadData()
 		{
-			Wt::Dbo::Transaction transaction(DboSession());
-
-			// Get refresh settings
-			MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(DboSession());
-
-			int periodRow = getUpdatePeriodModelRow( settings->getUpdatePeriod() );
+			int periodRow = getUpdatePeriodModelRow( Setting::getString(DboSession(), "update_period"));
 			if (periodRow != -1)
-				setValue(UpdatePeriodField, updatePeriod(periodRow));
+				setValue(UpdatePeriodField, updatePeriodDisplay(periodRow));
 
-			int startTimeRow = getUpdateStartTimeModelRow( settings->getUpdateStartTime() );
+			int startTimeRow = getUpdateStartTimeModelRow( Setting::getDuration(DboSession(), "update_start_time") );
 			if (startTimeRow != -1)
 				setValue(UpdateStartTimeField, updateStartTime( startTimeRow ) );
 
-			std::vector<boost::filesystem::path> audioFileExtensions = settings->getAudioFileExtensions();
-			{
-				std::ostringstream oss;
-				for (auto& fileExtension : audioFileExtensions)
-					oss << fileExtension.string() << " ";
+			setValue(AudioFileExtensionsField, Setting::getString(DboSession(), "audio_file_extensions"));
+			setValue(VideoFileExtensionsField, Setting::getString(DboSession(), "video_file_extensions"));
 
-				setValue(AudioFileExtensionsField, oss.str());
-			}
-
-			std::vector<boost::filesystem::path> videoFileExtensions = settings->getVideoFileExtensions();
-			{
-				std::ostringstream oss;
-				for (auto& fileExtension : videoFileExtensions)
-					oss << fileExtension.string() << " ";
-
-				setValue(VideoFileExtensionsField, oss.str());
-			}
+			setValue(TagsHighLevelAcousticBrainz, Setting::getBool(DboSession(), "tags_highlevel_acousticbrainz"));
+			setValue(TagsSimilarityAcousticBrainz, Setting::getBool(DboSession(), "tags_similarity_acousticbrainz"));
 		}
 
 		void saveData()
 		{
-			Wt::Dbo::Transaction transaction(DboSession());
-
-			MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(DboSession());
-
 			int periodRow = getUpdatePeriodModelRow( boost::any_cast<Wt::WString>(value(UpdatePeriodField)));
 			assert(periodRow != -1);
-			settings.modify()->setUpdatePeriod( updatePeriodDuration( periodRow ) );
+			Setting::setString(DboSession(), "update_period", updatePeriodSetting( periodRow ) );
 
 			int startTimeRow = getUpdateStartTimeModelRow( boost::any_cast<Wt::WString>(value(UpdateStartTimeField)));
 			assert(startTimeRow != -1);
-			settings.modify()->setUpdateStartTime( updateStartTimeDuration( startTimeRow ) );
+			Setting::setDuration(DboSession(), "update_start_time", updateStartTimeDuration( startTimeRow ) );
 
-			{
-				std::vector<std::string> res;
-				std::istringstream iss(boost::any_cast<Wt::WString>(value(AudioFileExtensionsField)).toUTF8());
+			Setting::setString(DboSession(), "audio_file_extensions", boost::any_cast<Wt::WString>(value(AudioFileExtensionsField)).toUTF8());
+			Setting::setString(DboSession(), "video_file_extensions", boost::any_cast<Wt::WString>(value(VideoFileExtensionsField)).toUTF8());
 
-				std::copy(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>(), std::back_inserter(res));
-
-				settings.modify()->setAudioFileExtensions( std::vector<boost::filesystem::path>(res.begin(), res.end()) );
-			}
-
-			{
-				std::vector<std::string> res;
-				std::istringstream iss(boost::any_cast<Wt::WString>(value(VideoFileExtensionsField)).toUTF8());
-
-				std::copy(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>(), std::back_inserter(res));
-
-				settings.modify()->setVideoFileExtensions( std::vector<boost::filesystem::path>(res.begin(), res.end()) );
-			}
+			Setting::setBool(DboSession(), "tags_highlevel_acousticbrainz", boost::any_cast<bool>(value(TagsHighLevelAcousticBrainz)));
+			Setting::setBool(DboSession(), "tags_similarity_acousticbrainz", boost::any_cast<bool>(value(TagsSimilarityAcousticBrainz)));
 		}
 
-		bool setImmediateScan(Wt::WString& error)
+		void setImmediateScan()
 		{
-			try
-			{
-				Wt::Dbo::Transaction transaction( DboSession());
-
-				MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(DboSession() );
-
-				settings.modify()->setManualScanRequested( true );
-			}
-			catch(Wt::Dbo::Exception& exception)
-			{
-				LMS_LOG(UI, ERROR) << "Dbo exception: " << exception.what();
-				return false;
-			}
-
-			return true;
+			Setting::setBool(DboSession(), "manual_scan_requested", true);
 		}
 
 		int getUpdatePeriodModelRow(Wt::WString value)
 		{
 			for (int i = 0; i < _updatePeriodModel->rowCount(); ++i)
 			{
-				if (updatePeriod(i) == value)
+				if (updatePeriodDisplay(i) == value)
 					return i;
 			}
 			return -1;
 		}
 
-		int getUpdatePeriodModelRow(MediaDirectorySettings::UpdatePeriod duration)
+		int getUpdatePeriodModelRow(std::string value)
 		{
 			for (int i = 0; i < _updatePeriodModel->rowCount(); ++i)
 			{
-				if (updatePeriodDuration(i) == duration)
+				if (updatePeriodSetting(i) == value)
 					return i;
 			}
 
 			return -1;
 		}
 
-		MediaDirectorySettings::UpdatePeriod updatePeriodDuration(int row) {
-			return boost::any_cast<MediaDirectorySettings::UpdatePeriod>
+		std::string updatePeriodSetting(int row) {
+			return boost::any_cast<std::string>
 				(_updatePeriodModel->data(_updatePeriodModel->index(row, 0), Wt::UserRole));
 		}
 
-		Wt::WString updatePeriod(int row) {
+		Wt::WString updatePeriodDisplay(int row) {
 			return boost::any_cast<Wt::WString>
 				(_updatePeriodModel->data(_updatePeriodModel->index(row, 0), Wt::DisplayRole));
 		}
@@ -230,16 +187,16 @@ class DatabaseFormModel : public Wt::WFormModel
 			_updatePeriodModel = new Wt::WStringListModel(this);
 
 			_updatePeriodModel->addString("Never");
-			_updatePeriodModel->setData(0, 0, MediaDirectorySettings::Never, Wt::UserRole);
+			_updatePeriodModel->setData(0, 0, std::string("never"), Wt::UserRole);
 
 			_updatePeriodModel->addString("Daily");
-			_updatePeriodModel->setData(1, 0, MediaDirectorySettings::Daily, Wt::UserRole);
+			_updatePeriodModel->setData(1, 0, std::string("daily"), Wt::UserRole);
 
 			_updatePeriodModel->addString("Weekly");
-			_updatePeriodModel->setData(2, 0, MediaDirectorySettings::Weekly, Wt::UserRole);
+			_updatePeriodModel->setData(2, 0, std::string("weekly"), Wt::UserRole);
 
 			_updatePeriodModel->addString("Monthly");
-			_updatePeriodModel->setData(3, 0, MediaDirectorySettings::Monthly, Wt::UserRole);
+			_updatePeriodModel->setData(3, 0, std::string("monthly"), Wt::UserRole);
 
 			_updateStartTimeModel = new Wt::WStringListModel(this);
 
@@ -290,6 +247,8 @@ const Wt::WFormModel::Field DatabaseFormModel::UpdatePeriodField		= "update-peri
 const Wt::WFormModel::Field DatabaseFormModel::UpdateStartTimeField		= "update-start-time";
 const Wt::WFormModel::Field DatabaseFormModel::AudioFileExtensionsField		= "audio-file-extensions";
 const Wt::WFormModel::Field DatabaseFormModel::VideoFileExtensionsField		= "video-file-extensions";
+const Wt::WFormModel::Field DatabaseFormModel::TagsHighLevelAcousticBrainz	= "tags-highlevel-acousticbrainz";
+const Wt::WFormModel::Field DatabaseFormModel::TagsSimilarityAcousticBrainz	= "tags-similarity-acousticbrainz";
 
 
 DatabaseFormView::DatabaseFormView(Wt::WContainerWidget *parent)
@@ -328,6 +287,12 @@ DatabaseFormView::DatabaseFormView(Wt::WContainerWidget *parent)
 	setFormWidget(DatabaseFormModel::VideoFileExtensionsField, videoFileExtensionsEdit);
 	videoFileExtensionsEdit->changed().connect(_applyInfo, &Wt::WWidget::hide);
 
+	// Tags from AB high level
+	setFormWidget(DatabaseFormModel::TagsHighLevelAcousticBrainz, new Wt::WCheckBox());
+
+	// Tags from AB similarity
+	setFormWidget(DatabaseFormModel::TagsSimilarityAcousticBrainz, new Wt::WCheckBox());
+
 	// Title & Buttons
 	bindString("title", "Database settings");
 
@@ -353,21 +318,14 @@ DatabaseFormView::DatabaseFormView(Wt::WContainerWidget *parent)
 void
 DatabaseFormView::processImmediateScan()
 {
-	Wt::WString error;
+
+	_model->setImmediateScan();
+
+	_applyInfo->setText( Wt::WString::fromUTF8("Media folder scan has been started!" ) );
+	_applyInfo->setStyleClass("alert alert-warning");
 	_applyInfo->show();
 
-	if (_model->setImmediateScan(error))
-	{
-		_applyInfo->setText( Wt::WString::fromUTF8("Media folder scan has been started!" ) );
-		_applyInfo->setStyleClass("alert alert-warning");
-
-		_sigChanged.emit();
-	}
-	else
-	{
-		_applyInfo->setText( error );
-		_applyInfo->setStyleClass("alert alert-danger");
-	}
+	_sigChanged.emit();
 }
 
 void

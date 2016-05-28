@@ -20,15 +20,18 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include <boost/filesystem.hpp>
+#include "database/DatabaseUpdater.hpp"
 
-boost::filesystem::path searchExecPath(std::string filename);
+namespace Database {
 
-void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& checksum);
+class GenreTagger
+{
+	public:
+		void processTrackUpdate(bool added, Track::id_type trackId, std::string mbid, boost::filesystem::path p);
+		void processDatabaseUpdate(Updater::Stats stats);
 
-// Make sure the given path is a directory
-// Create it if needed
-bool ensureDirectory(boost::filesystem::path dir);
+	private:
 
+};
+
+} // namespace Database

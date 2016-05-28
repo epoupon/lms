@@ -87,3 +87,12 @@ void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& cr
 		crc.push_back(data[i]);
 	}
 }
+
+bool ensureDirectory(boost::filesystem::path dir)
+{
+	if (boost::filesystem::exists(dir))
+		return boost::filesystem::is_directory(dir);
+	else
+		return boost::filesystem::create_directory(dir);
+}
+

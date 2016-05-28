@@ -28,6 +28,7 @@
 #include "utils/Utils.hpp"
 #include "utils/Path.hpp"
 
+#include "Setting.hpp"
 #include "Types.hpp"
 #include "DatabaseUpdater.hpp"
 
@@ -70,7 +71,6 @@ getNextFirstOfMonth(const boost::gregorian::date& current)
 bool
 isFileSupported(const boost::filesystem::path& file, const std::vector<boost::filesystem::path> extensions)
 {
-
 	boost::filesystem::path fileExtension = file.extension();
 
 	for (auto& extension : extensions)
@@ -87,9 +87,9 @@ getRootDirectoriesByType(Wt::Dbo::Session& session, Database::MediaDirectory::Ty
 {
 	Wt::Dbo::Transaction transaction(session);
 
-	std::vector<boost::filesystem::path> res;
 	std::vector<Database::MediaDirectory::pointer> rootDirs = Database::MediaDirectory::getByType(session, type);
 
+	std::vector<boost::filesystem::path> res;
 	for (auto rootDir : rootDirs)
 		res.push_back(rootDir->getPath());
 
@@ -170,48 +170,43 @@ Updater::stop(void)
 void
 Updater::processNextJob(void)
 {
-	Wt::Dbo::Transaction transaction(_db->getSession());
-
-	MediaDirectorySettings::pointer settings = MediaDirectorySettings::get(_db->getSession());
-
-	if (settings->getManualScanRequested()) {
+	if (Setting::getBool(_db->getSession(), "manual_scan_requested", false))
+	{
 		LMS_LOG(DBUPDATER, INFO) << "Manual scan requested!";
 		scheduleScan( boost::posix_time::seconds(0) );
 	}
 	else
 	{
 		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-		boost::posix_time::time_duration startTime = settings->getUpdateStartTime();
+		boost::posix_time::time_duration startTime = Setting::getDuration(_db->getSession(), "update_start_time");
 
 		boost::gregorian::date nextScanDate;
 
-		switch( settings->getUpdatePeriod() )
+		std::string updatePeriod = Setting::getString(_db->getSession(), "update_period", "never");
+		if (updatePeriod == "daily")
 		{
-			case Database::MediaDirectorySettings::Never:
-				// Nothing to do
-				break;
-			case Database::MediaDirectorySettings::Daily:
-				if (now.time_of_day() < startTime)
-					nextScanDate = now.date();
-				else
-					nextScanDate = getNextDay(now.date());
-				break;
-			case Database::MediaDirectorySettings::Weekly:
-				if (now.time_of_day() < startTime && now.date().day_of_week() == 1)
-					nextScanDate = now.date();
-				else
-					nextScanDate = getNextMonday(now.date());
-				break;
-			case Database::MediaDirectorySettings::Monthly:
-				if (now.time_of_day() < startTime && now.date().day() == 1)
-					nextScanDate = now.date();
-				else
-					nextScanDate = getNextFirstOfMonth(now.date());
-				break;
+			if (now.time_of_day() < startTime)
+				nextScanDate = now.date();
+			else
+				nextScanDate = getNextDay(now.date());
+		}
+		else if (updatePeriod == "weekly")
+		{
+			if (now.time_of_day() < startTime && now.date().day_of_week() == 1)
+				nextScanDate = now.date();
+			else
+				nextScanDate = getNextMonday(now.date());
+		}
+		else if (updatePeriod == "monthly")
+		{
+			if (now.time_of_day() < startTime && now.date().day() == 1)
+				nextScanDate = now.date();
+			else
+				nextScanDate = getNextFirstOfMonth(now.date());
 		}
 
 		if (!nextScanDate.is_special())
-			scheduleScan( boost::posix_time::ptime (nextScanDate, settings->getUpdateStartTime() ) );
+			scheduleScan( boost::posix_time::ptime (nextScanDate, startTime) );
 	}
 }
 
@@ -274,27 +269,17 @@ Updater::process(boost::system::error_code err)
 
 	// Update database stats
 	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-	{
-		Wt::Dbo::Transaction transaction(_db->getSession());
+	if (stats.nbChanges() > 0)
+		Setting::setTime(_db->getSession(), "last_update", now);
 
-		Database::MediaDirectorySettings::pointer settings = Database::MediaDirectorySettings::get(_db->getSession());
-
-		if (stats.nbChanges() > 0)
-			settings.modify()->setLastUpdate(now);
-
-		// Save the last scan only if it has been completed
-		if (_running)
-			settings.modify()->setLastScan(now);
-
-		// If the manual scan was required we can now set it to done
-		// Update only if the scan is complete!
-		if (settings->getManualScanRequested() && _running)
-			settings.modify()->setManualScanRequested(false);
-
-	}
-
+	// Save the last scan only if it has been completed
 	if (_running)
+	{
+		Setting::setTime(_db->getSession(), "last_scan", now);
+		Setting::setBool(_db->getSession(), "manual_scan_requested", false);
+
 		processNextJob();
+	}
 }
 
 void
@@ -302,8 +287,13 @@ Updater::updateFileExtensions()
 {
 	Wt::Dbo::Transaction transaction(_db->getSession());
 
-	_audioFileExtensions = MediaDirectorySettings::get(_db->getSession())->getAudioFileExtensions();
-	_videoFileExtensions = MediaDirectorySettings::get(_db->getSession())->getVideoFileExtensions();
+	_audioFileExtensions.clear();
+	for (auto extension : splitString(Setting::getString(_db->getSession(), "audio_file_extensions"), " "))
+		_audioFileExtensions.push_back( extension );
+
+	_videoFileExtensions.clear();
+	for (auto extension : splitString(Setting::getString(_db->getSession(), "video_file_extensions"), " "))
+		_videoFileExtensions.push_back( extension );
 }
 
 Artist::pointer
