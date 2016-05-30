@@ -7,18 +7,18 @@
 
 [Cover]
 - Handle preferred cover file names ("front.xxx", "cover.xxx", ...)
-- Implement a cache and a grabber from some web service (mandatory for artists?)
+- Implement a cache and a grabber from some web service (mandatory for artists?) coverartarchive.org
 
 [Database]
+- Make filters using tags (support AND) + optim
 - Optim, use SQL query to get the "genre" orphans
 - Use Inotify like system to watch modified/added files?
 - handle access rights problems (instead of aborting)
 - add a global play counter for tracks. This will help people to spot most popular files
-- rework the exception process in av/metadata/updater in case of bad files
 - Use the WServer::post method to notify the end of the database scan? (with results?)
 
 [Metadata]
-- OGG metadata -> properly handle metadata nested in the audio stream
+- WMA covers: add support
 
 [Playlist]
 - Make public playlists so that users can see what other people are listening to
@@ -59,6 +59,7 @@
 		- TrackView: Reselect the current selected item when displaying the updated search results
 		- Add keyboard shortcuts
 		- playqueue: try to get a single div to display the cover / artist / track name in order to improve style
+		- Add a hint for the user to get the nature of tag (created from genre ? created from audio features?)
 		[mobile]
 		- Reorganize the views to ease internal paths
 		- Covers not always the same height
@@ -67,7 +68,6 @@
 		- Implement a play queue
 		- Implement a decent player
 		- Make the release/artist clickable when displayed to the user
-
 	[Video]
 	- implement a decent mediaplayer
 	- remove codec choice from parameters
