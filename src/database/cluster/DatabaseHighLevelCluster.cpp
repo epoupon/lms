@@ -35,7 +35,7 @@ static Cluster::pointer getCluster(std::string type, std::string value)
 	return cluster;
 }
 
-static std::list<std::string> getClustersFromFeature(Feature::Type& feature)
+static std::list<std::string> getClustersFromFeature(Feature::Type& feature, double minProb)
 {
 	struct HighLevelNodeDesc
 	{
@@ -168,6 +168,7 @@ void
 HighLevelCluster::processDatabaseUpdate(Updater::Stats stats)
 {
 	bool createTags = Setting::getBool(UpdaterDboSession(), "tags_highlevel_acousticbrainz", false);
+	double minProb = Setting::getInt(UpdaterDboSession(), "tags_highlevel_acousticbrainz_min_probability", false) / 100.;
 
 	LMS_LOG(DBUPDATER, INFO) << "Creating high level based clusters...";
 
@@ -187,7 +188,7 @@ HighLevelCluster::processDatabaseUpdate(Updater::Stats stats)
 			if (!Feature::Store::instance().get(UpdaterDboSession(), trackId, "high_level", feature))
 				continue;
 
-			newClusterNames = getClustersFromFeature(feature);
+			newClusterNames = getClustersFromFeature(feature, minProb);
 		}
 
 		Wt::Dbo::Transaction transaction(UpdaterDboSession());

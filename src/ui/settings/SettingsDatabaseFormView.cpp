@@ -23,7 +23,9 @@
 #include <Wt/WComboBox>
 #include <Wt/WMessageBox>
 #include <Wt/WLineEdit>
+#include <Wt/WSpinBox>
 #include <Wt/WRegExpValidator>
+#include <Wt/WIntValidator>
 
 #include <Wt/WFormModel>
 #include <Wt/WStringListModel>
@@ -50,6 +52,7 @@ class DatabaseFormModel : public Wt::WFormModel
 		static const Field AudioFileExtensionsField;
 		static const Field VideoFileExtensionsField;
 		static const Field TagsHighLevelAcousticBrainz;
+		static const Field TagsHighLevelAcousticBrainzMinProbability;
 		static const Field TagsSimilarityAcousticBrainz;
 
 		DatabaseFormModel(Wt::WObject *parent = 0)
@@ -62,12 +65,14 @@ class DatabaseFormModel : public Wt::WFormModel
 			addField(AudioFileExtensionsField);
 			addField(VideoFileExtensionsField);
 			addField(TagsHighLevelAcousticBrainz);
+			addField(TagsHighLevelAcousticBrainzMinProbability);
 			addField(TagsSimilarityAcousticBrainz);
 
 			setValidator(UpdatePeriodField, createUpdatePeriodValidator());
 			setValidator(UpdateStartTimeField, createStartTimeValidator());
 			setValidator(AudioFileExtensionsField, createFileExtensionValidator());
 			setValidator(VideoFileExtensionsField, createFileExtensionValidator());
+			setValidator(TagsHighLevelAcousticBrainzMinProbability, createMinProbabilityValidator());
 
 			// populate the model with initial data
 			loadData();
@@ -90,6 +95,7 @@ class DatabaseFormModel : public Wt::WFormModel
 			setValue(VideoFileExtensionsField, Setting::getString(DboSession(), "video_file_extensions"));
 
 			setValue(TagsHighLevelAcousticBrainz, Setting::getBool(DboSession(), "tags_highlevel_acousticbrainz"));
+			setValue(TagsHighLevelAcousticBrainzMinProbability, Setting::getInt(DboSession(), "tags_highlevel_acousticbrainz_min_probability"));
 			setValue(TagsSimilarityAcousticBrainz, Setting::getBool(DboSession(), "tags_similarity_acousticbrainz"));
 		}
 
@@ -107,6 +113,7 @@ class DatabaseFormModel : public Wt::WFormModel
 			Setting::setString(DboSession(), "video_file_extensions", boost::any_cast<Wt::WString>(value(VideoFileExtensionsField)).toUTF8());
 
 			Setting::setBool(DboSession(), "tags_highlevel_acousticbrainz", boost::any_cast<bool>(value(TagsHighLevelAcousticBrainz)));
+			Setting::setInt(DboSession(), "tags_highlevel_acousticbrainz_min_probability", std::stoi(boost::any_cast<Wt::WString>(value(TagsHighLevelAcousticBrainzMinProbability)).toUTF8()));
 			Setting::setBool(DboSession(), "tags_similarity_acousticbrainz", boost::any_cast<bool>(value(TagsSimilarityAcousticBrainz)));
 		}
 
@@ -238,6 +245,13 @@ class DatabaseFormModel : public Wt::WFormModel
 			return v;
 		}
 
+		Wt::WValidator *createMinProbabilityValidator()
+		{
+			Wt::WIntValidator *v = new Wt::WIntValidator(50, 100);
+			v->setMandatory(true);
+			return v;
+		}
+
 		Wt::WStringListModel*	_updatePeriodModel;
 		Wt::WStringListModel*	_updateStartTimeModel;
 
@@ -248,6 +262,7 @@ const Wt::WFormModel::Field DatabaseFormModel::UpdateStartTimeField		= "update-s
 const Wt::WFormModel::Field DatabaseFormModel::AudioFileExtensionsField		= "audio-file-extensions";
 const Wt::WFormModel::Field DatabaseFormModel::VideoFileExtensionsField		= "video-file-extensions";
 const Wt::WFormModel::Field DatabaseFormModel::TagsHighLevelAcousticBrainz	= "tags-highlevel-acousticbrainz";
+const Wt::WFormModel::Field DatabaseFormModel::TagsHighLevelAcousticBrainzMinProbability	= "tags-highlevel-acousticbrainz-min-probability";
 const Wt::WFormModel::Field DatabaseFormModel::TagsSimilarityAcousticBrainz	= "tags-similarity-acousticbrainz";
 
 
@@ -288,13 +303,24 @@ DatabaseFormView::DatabaseFormView(Wt::WContainerWidget *parent)
 	videoFileExtensionsEdit->changed().connect(_applyInfo, &Wt::WWidget::hide);
 
 	// Tags from AB high level
-	setFormWidget(DatabaseFormModel::TagsHighLevelAcousticBrainz, new Wt::WCheckBox());
+	Wt::WCheckBox* highLevel = new Wt::WCheckBox();
+	setFormWidget(DatabaseFormModel::TagsHighLevelAcousticBrainz, highLevel);
+
+	setFormWidget(DatabaseFormModel::TagsHighLevelAcousticBrainzMinProbability, new Wt::WSpinBox());
+
+	highLevel->changed().connect(std::bind([=] {
+		_model->setReadOnly(DatabaseFormModel::TagsHighLevelAcousticBrainzMinProbability,
+				!(highLevel->checkState() == Wt::Checked));
+		updateModel(_model);
+		updateViewField(_model, DatabaseFormModel::TagsHighLevelAcousticBrainzMinProbability);
+	}));
 
 	// Tags from AB similarity
 	setFormWidget(DatabaseFormModel::TagsSimilarityAcousticBrainz, new Wt::WCheckBox());
 
 	// Title & Buttons
-	bindString("title", "Database settings");
+	bindString("scan-title", "Scan settings");
+	bindString("tags-title", "Tag settings");
 
 	Wt::WPushButton *saveButton = new Wt::WPushButton("Apply");
 	bindWidget("apply-button", saveButton);

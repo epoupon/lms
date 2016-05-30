@@ -126,6 +126,9 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		if (!Setting::exists(_session, "tags_highlevel_acousticbrainz"))
 			Setting::setBool(_session, "tags_highlevel_acousticbrainz", true);
 
+		if (!Setting::exists(_session, "tags_highlevel_acousticbrainz_min_probability"))
+			Setting::setInt(_session, "tags_highlevel_acousticbrainz_min_probability", 90);
+
 		if (!Setting::exists(_session, "tags_similarity_acousticbrainz"))
 			Setting::setBool(_session,  "tags_similarity_acousticbrain", false);
 	}

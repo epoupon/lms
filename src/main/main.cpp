@@ -113,6 +113,8 @@ int main(int argc, char* argv[])
 		dbUpdater.scanComplete().connect(std::bind(&Database::HighLevelCluster::processDatabaseUpdate, &dbHighLevelCluster, std::placeholders::_1));
 		dbUpdater.scanComplete().connect(std::bind(&Database::FeatureExtractor::processDatabaseUpdate, &dbFeatureExtractor, std::placeholders::_1));
 
+//		dbHighLevelCluster.processDatabaseUpdate(Database::Updater::Stats());
+
 		// bind entry point
 		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create,
 					_1, boost::ref(*connectionPool)));
