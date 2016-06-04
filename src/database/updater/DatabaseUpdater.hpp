@@ -20,6 +20,7 @@
 #pragma once
 
 #include <mutex>
+#include <list>
 
 #include <boost/asio/deadline_timer.hpp>
 
@@ -31,6 +32,9 @@
 #include "database/DatabaseHandler.hpp"
 
 namespace Database {
+
+
+class UpdaterEventHandler;
 
 class Updater
 {
@@ -60,7 +64,7 @@ class Updater
 			std::size_t nbChanges() const { return nbAdded + nbRemoved + nbModified;}
 		};
 
-		// Emitted when the whole database has been scanned
+		// Emitted when the whole database has been scanned (and all the event handlers have been called)
 		Wt::Signal<Stats>& scanComplete() { return _sigScanComplete; }
 
 		// Emitted when a track changed
@@ -76,6 +80,9 @@ class Updater
 		Database::Handler& getDb(void) { return *_db; }
 
 		bool quitRequested(void) const { return !_running;}
+
+		void registerEventHandler(std::shared_ptr<UpdaterEventHandler> handler) { _eventHandlers.push_back(handler); }
+
 	private:
 
 		Updater();
@@ -136,6 +143,8 @@ class Updater
 
 		MetaData::TagLibParser 	_metadataParser;
 
+		std::list<std::shared_ptr<UpdaterEventHandler> > _eventHandlers;
+
 }; // class Updater
 
 // Helper to get the updater session data
@@ -148,6 +157,18 @@ static inline bool UpdaterQuitRequested()
 {
 	return Updater::instance().quitRequested();
 }
+
+
+class UpdaterEventHandler
+{
+	public:
+
+		// called when all the files have been scanned by the updater
+		virtual void handleFilesUpdated(void) = 0;
+
+	private:
+
+};
 
 } // Database
 

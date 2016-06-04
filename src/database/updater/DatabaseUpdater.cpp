@@ -28,8 +28,9 @@
 #include "utils/Utils.hpp"
 #include "utils/Path.hpp"
 
-#include "Setting.hpp"
-#include "Types.hpp"
+#include "database/Setting.hpp"
+#include "database/Types.hpp"
+
 #include "DatabaseUpdater.hpp"
 
 namespace {

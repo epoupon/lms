@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2016 Emeric Poupon
  *
@@ -20,17 +19,14 @@
 
 #pragma once
 
-#include "database/DatabaseUpdater.hpp"
+#include "DatabaseUpdater.hpp"
 
 namespace Database {
 
-class GenreTagger
+class HighLevelCluster : public UpdaterEventHandler
 {
 	public:
-		void processTrackUpdate(bool added, Track::id_type trackId, std::string mbid, boost::filesystem::path p);
-		void processDatabaseUpdate(Updater::Stats stats);
-
-	private:
+		void handleFilesUpdated(void);
 
 };
 

@@ -165,7 +165,7 @@ static std::list<std::string> getClustersFromFeature(Feature::Type& feature, dou
 }
 
 void
-HighLevelCluster::processDatabaseUpdate(Updater::Stats stats)
+HighLevelCluster::handleFilesUpdated(void)
 {
 	bool createTags = Setting::getBool(UpdaterDboSession(), "tags_highlevel_acousticbrainz", false);
 	double minProb = Setting::getInt(UpdaterDboSession(), "tags_highlevel_acousticbrainz_min_probability", false) / 100.;

@@ -30,8 +30,8 @@
 #include "SettingsUsers.hpp"
 
 #include "logger/Logger.hpp"
-#include "database/DatabaseUpdater.hpp"
 #include "database/Setting.hpp"
+#include "database/updater/DatabaseUpdater.hpp"
 
 #include "LmsApplication.hpp"
 

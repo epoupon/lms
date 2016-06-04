@@ -28,9 +28,9 @@
 #include "image/Image.hpp"
 #include "feature/FeatureExtractor.hpp"
 
-#include "database/DatabaseUpdater.hpp"
-#include "database/DatabaseFeatureExtractor.hpp"
-#include "database/cluster/DatabaseHighLevelCluster.hpp"
+#include "database/updater/DatabaseUpdater.hpp"
+#include "database/updater/DatabaseFeatureExtractor.hpp"
+#include "database/updater/DatabaseHighLevelCluster.hpp"
 
 #include "ui/LmsApplication.hpp"
 
@@ -106,14 +106,9 @@ int main(int argc, char* argv[])
 		Database::Updater& dbUpdater = Database::Updater::instance();
 		dbUpdater.setConnectionPool(*connectionPool);
 
-		Database::FeatureExtractor dbFeatureExtractor;
-		Database::HighLevelCluster dbHighLevelCluster;
-
-		// Connect to the update events
-		dbUpdater.scanComplete().connect(std::bind(&Database::HighLevelCluster::processDatabaseUpdate, &dbHighLevelCluster, std::placeholders::_1));
-		dbUpdater.scanComplete().connect(std::bind(&Database::FeatureExtractor::processDatabaseUpdate, &dbFeatureExtractor, std::placeholders::_1));
-
-//		dbHighLevelCluster.processDatabaseUpdate(Database::Updater::Stats());
+		// Instanciate the updater's event handler. Order is important
+		dbUpdater.registerEventHandler(std::make_shared<Database::FeatureExtractor>());
+		dbUpdater.registerEventHandler(std::make_shared<Database::HighLevelCluster>());
 
 		// bind entry point
 		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create,

@@ -21,8 +21,8 @@
 
 #include "feature/FeatureExtractor.hpp"
 #include "feature/FeatureStore.hpp"
+#include "database/Setting.hpp"
 
-#include "Setting.hpp"
 #include "DatabaseFeatureExtractor.hpp"
 
 namespace Database {
@@ -35,7 +35,7 @@ static std::string getMBID(Track::id_type trackId)
 }
 
 void
-FeatureExtractor::processDatabaseUpdate(Updater::Stats stats)
+FeatureExtractor::handleFilesUpdated(void)
 {
 	bool fetchHighLevel = Setting::getBool(UpdaterDboSession(), "tags_highlevel_acousticbrainz");
 	bool fetchLowLevel = Setting::getBool(UpdaterDboSession(), "tags_similarity_acousticbrainz");

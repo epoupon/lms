@@ -19,14 +19,14 @@
 
 #pragma once
 
-#include "database/DatabaseUpdater.hpp"
+#include "DatabaseUpdater.hpp"
 
 namespace Database {
 
-class HighLevelCluster
+class FeatureExtractor : public UpdaterEventHandler
 {
 	public:
-		void processDatabaseUpdate(Updater::Stats stats);
+		void handleFilesUpdated(void);
 
 };
 
