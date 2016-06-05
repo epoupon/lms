@@ -1,17 +1,21 @@
 # LMS - Lightweight Media Server
 
 LMS is a self-hosted media streaming software, released under the GPLv3 license.
-It allows you to access your music and your videos using an https web interface.
+It allows you to access your music and your videos using an http(s) web interface.
 
 ## Features
  - Winamp-like interface, suited for large media collections
  - Audio/Video transcode for maximum interoperability and low bandwith requirements
  - User management
- - Multi genre
- - MusicBrainzID support
+ - Playlist support
+ - MusicBrainzID support to handle duplicated artist and release names
+
+Tags are automatically created to facilitate music searching, using:
+ - Multi genre information from metadata
+ - High-level information from AcousticBrainz
 
 Please note LMS is still under development and will gain more features in the future:
- - Radio function (using AcousticBrainz)
+ - Radio function
  - Interface suited for mobile devices
  - Video support
  - Subsonic and/or Ampache API
@@ -58,7 +62,7 @@ By default, LMS will read its configuration in the file '/etc/lms.conf'
 
 ## Running
 ```sh
-$ /usr/bin/lms [/path/to/config/file]
+$ /usr/bin/lms [config_file]
 ```
 LMS needs write access to the directory used for the database.
 It is highly recommended to run LMS as a non root user.
