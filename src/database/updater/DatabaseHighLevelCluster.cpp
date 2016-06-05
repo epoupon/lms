@@ -142,19 +142,16 @@ static std::list<std::string> getClustersFromFeature(Feature::Type& feature, dou
 
 		if (!probability || !value)
 		{
-			LMS_LOG(DBUPDATER, DEBUG) << "Missing " << node.node;
+			LMS_LOG(DBUPDATER, ERROR) << "Missing " << node.node;
 			continue;
 		}
 
-		if (std::stod(probability->data()) < 0.90)
-		{
-			LMS_LOG(DBUPDATER, DEBUG) << "Probability too low for " << node.node << "(" << std::stod(probability->data()) << ")";
+		if (std::stod(probability->data()) < minProb)
 			continue;
-		}
 
 		if (node.valueMapping[value->data()] == "")
 		{
-			LMS_LOG(DBUPDATER, DEBUG) << "Unknown value '" << value->data() << "'";
+			LMS_LOG(DBUPDATER, ERROR) << "Unknown value '" << value->data() << "'";
 			continue;
 		}
 

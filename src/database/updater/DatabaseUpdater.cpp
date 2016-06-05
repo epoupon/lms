@@ -263,10 +263,11 @@ Updater::process(boost::system::error_code err)
 		checkDuplicatedAudioFiles(stats);
 
 		LMS_LOG(DBUPDATER, INFO) << "Processed all files, now calling listeners...";
-		scanComplete().emit(stats);
+		for (auto eventHandler : _eventHandlers)
+			eventHandler->handleFilesUpdated();
 	}
 
-	LMS_LOG(DBUPDATER, INFO) << "Scan complete. Scanned = " << stats.nbScanned << ", Skipped = " << stats.nbSkipped << ", Changes = " << stats.nbChanges() << " (added = " << stats.nbAdded << ", nbRemoved = " << stats.nbRemoved << ", nbModified = " << stats.nbModified << "), Scan errors = " << stats.nbScanErrors << ", Not imported = " << stats.nbNotImported;
+	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.nbAdded << ", removed = " << stats.nbRemoved << ", updated = " << stats.nbUpdated << "), Not changed = " << stats.nbNoChange << ", Scanned = " << stats.nbScanned << " (errors = " << stats.nbScanErrors << ", not imported = " << stats.nbNotImported << ")";
 
 	// Update database stats
 	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
@@ -280,6 +281,8 @@ Updater::process(boost::system::error_code err)
 		Setting::setBool(_db->getSession(), "manual_scan_requested", false);
 
 		processNextJob();
+
+		scanComplete().emit(stats);
 	}
 }
 
@@ -404,12 +407,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		if (track && track->getLastWriteTime() == lastWriteTime)
 		{
-			stats.nbSkipped++;
-			transaction.rollback();
+			stats.nbNoChange++;
 			return;
 		}
-
-		transaction.rollback();
 	}
 
 	MetaData::Items items;
@@ -535,7 +535,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		for (auto cluster : track->getClusters())
 			cluster.remove();
 
-		stats.nbModified++;
+		stats.nbUpdated++;
 	}
 
 	assert(track);
@@ -868,7 +868,7 @@ Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
 	else
 	{
 		LMS_LOG(DBUPDATER, DEBUG) << "Updating '" << file << "'";
-		stats.nbModified++;
+		stats.nbUpdated++;
 	}
 
 	assert(video);

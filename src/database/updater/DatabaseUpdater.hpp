@@ -53,15 +53,15 @@ class Updater
 
 		struct Stats
 		{
-			std::size_t	nbSkipped = 0;		// no change since last scan
-			std::size_t	nbScanned = 0;
+			std::size_t	nbNoChange = 0;		// no change since last scan
+			std::size_t	nbScanned = 0;		// total scanned filed
 			std::size_t	nbScanErrors = 0;	// cannot scan file
-			std::size_t	nbNotImported = 0;	// Not imported (criteria not filled)
-			std::size_t	nbAdded = 0;
-			std::size_t	nbRemoved = 0;
-			std::size_t	nbModified = 0;
+			std::size_t	nbNotImported = 0;	// Scanned, but not imported (criteria not filled)
+			std::size_t	nbAdded = 0;		// Added in DB
+			std::size_t	nbRemoved = 0;		// removed from DB
+			std::size_t	nbUpdated = 0;		// updated file in DB
 
-			std::size_t nbChanges() const { return nbAdded + nbRemoved + nbModified;}
+			std::size_t nbChanges() const { return nbAdded + nbRemoved + nbUpdated;}
 		};
 
 		// Emitted when the whole database has been scanned (and all the event handlers have been called)

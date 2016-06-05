@@ -110,6 +110,7 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 
 		// Indexes
 		_session.execute("PRAGMA journal_mode=WAL");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_path_idx ON track(file_path)");
 		_session.execute("CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_artist_idx ON track(artist_id)");
