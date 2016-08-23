@@ -26,7 +26,7 @@
 #include <Wt/WPushButton>
 #include <Wt/Auth/Identity>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 
 #include "common/Validators.hpp"
 #include "LmsApplication.hpp"

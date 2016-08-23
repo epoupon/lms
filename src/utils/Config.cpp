@@ -30,6 +30,12 @@ Config::Config()
 {
 }
 
+Config::~Config()
+{
+	if (_config)
+		delete _config;
+}
+
 Config&
 Config::instance()
 {

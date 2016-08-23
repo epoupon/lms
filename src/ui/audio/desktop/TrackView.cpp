@@ -22,7 +22,7 @@
 #include <Wt/WItemDelegate>
 #include <Wt/WBreak>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"

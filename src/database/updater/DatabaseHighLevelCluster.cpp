@@ -17,10 +17,10 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "logger/Logger.hpp"
-
 #include "database/Setting.hpp"
 #include "feature/FeatureStore.hpp"
+
+#include "utils/Logger.hpp"
 
 #include "DatabaseHighLevelCluster.hpp"
 

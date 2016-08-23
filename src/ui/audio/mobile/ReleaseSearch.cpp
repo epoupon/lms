@@ -22,7 +22,8 @@
 #include <Wt/WPushButton>
 #include <Wt/WTemplate>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
+
 #include "LmsApplication.hpp"
 
 #include "ReleaseSearch.hpp"

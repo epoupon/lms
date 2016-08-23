@@ -21,10 +21,10 @@
 
 #include <Wt/WServer>
 
-#include "config/Config.hpp"
+#include "utils/Config.hpp"
 #include "av/AvInfo.hpp"
 #include "av/AvTranscoder.hpp"
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 #include "image/Image.hpp"
 #include "feature/FeatureExtractor.hpp"
 

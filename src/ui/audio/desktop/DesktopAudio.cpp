@@ -31,7 +31,8 @@
 #include <Wt/WLineEdit>
 #include <Wt/WLabel>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
+
 #include "LmsApplication.hpp"
 
 #include "TableFilter.hpp"

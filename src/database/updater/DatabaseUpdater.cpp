@@ -23,13 +23,15 @@
 #include <boost/thread.hpp>
 #include <boost/asio/placeholders.hpp>
 
-#include "logger/Logger.hpp"
 #include "cover/CoverArtGrabber.hpp"
-#include "utils/Utils.hpp"
-#include "utils/Path.hpp"
 
 #include "database/Setting.hpp"
 #include "database/Types.hpp"
+
+#include "utils/Logger.hpp"
+#include "utils/Path.hpp"
+#include "utils/Utils.hpp"
+
 
 #include "DatabaseUpdater.hpp"
 

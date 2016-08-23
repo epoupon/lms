@@ -29,7 +29,8 @@
 #include "SettingsMediaDirectories.hpp"
 #include "SettingsUsers.hpp"
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
+
 #include "database/Setting.hpp"
 #include "database/updater/DatabaseUpdater.hpp"
 

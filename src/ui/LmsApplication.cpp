@@ -28,7 +28,7 @@
 #include <Wt/Auth/Identity>
 
 #include "config/config.h"
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
 #include "settings/Settings.hpp"

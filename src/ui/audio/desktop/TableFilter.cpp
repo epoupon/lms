@@ -20,7 +20,8 @@
 #include <Wt/WItemDelegate>
 
 #include "database/Types.hpp"
-#include "logger/Logger.hpp"
+
+#include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"
 #include "TableFilter.hpp"

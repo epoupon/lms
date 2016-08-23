@@ -27,7 +27,7 @@
 #include <Wt/WFileResource>
 #include <Wt/WTheme>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"
 #include "PlayQueue.hpp"

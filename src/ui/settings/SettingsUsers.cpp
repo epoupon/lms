@@ -25,7 +25,7 @@
 
 #include <Wt/Auth/Identity>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 
 #include "SettingsUserFormView.hpp"
 #include "LmsApplication.hpp"

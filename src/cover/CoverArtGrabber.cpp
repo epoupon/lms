@@ -17,8 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "logger/Logger.hpp"
 #include "av/AvInfo.hpp"
+
+#include "utils/Logger.hpp"
 
 #include "CoverArtGrabber.hpp"
 

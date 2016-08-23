@@ -20,7 +20,7 @@
 #include "Types.hpp"
 #include "SqlQuery.hpp"
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 
 namespace Database
 {

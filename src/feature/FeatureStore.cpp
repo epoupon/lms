@@ -19,8 +19,8 @@
 
 #include <boost/property_tree/json_parser.hpp>
 
-#include "logger/Logger.hpp"
-#include "config/Config.hpp"
+#include "utils/Config.hpp"
+#include "utils/Logger.hpp"
 #include "utils/Path.hpp"
 
 #include "FeatureStore.hpp"

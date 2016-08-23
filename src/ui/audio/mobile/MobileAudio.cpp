@@ -23,10 +23,8 @@
 #include <Wt/WTemplate>
 #include <Wt/WText>
 
-#include "logger/Logger.hpp"
-#include "utils/Utils.hpp"
-
 #include "audio/AudioPlayer.hpp"
+
 #include "LmsApplication.hpp"
 
 #include "PreviewSearchView.hpp"
@@ -38,6 +36,9 @@
 #include "ReleaseView.hpp"
 
 #include "MobilePlayQueue.hpp"
+
+#include "utils/Logger.hpp"
+#include "utils/Utils.hpp"
 
 #include "MobileAudio.hpp"
 

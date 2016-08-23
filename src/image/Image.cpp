@@ -16,7 +16,8 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "logger/Logger.hpp"
+
+#include "utils/Logger.hpp"
 
 #include "Image.hpp"
 

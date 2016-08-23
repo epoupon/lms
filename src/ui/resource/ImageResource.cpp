@@ -20,8 +20,9 @@
 #include <Wt/WApplication>
 #include <Wt/Http/Response>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
+
 #include "LmsApplication.hpp"
 
 #include "cover/CoverArtGrabber.hpp"

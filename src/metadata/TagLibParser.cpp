@@ -23,7 +23,7 @@
 #include <taglib/mpegfile.h>
 #include <taglib/id3v2tag.h>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
 #include "TagLibParser.hpp"

@@ -21,7 +21,7 @@
 
 #include <Wt/Dbo/QueryModel>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 
 #include "SqlQuery.hpp"
 

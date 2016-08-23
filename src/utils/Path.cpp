@@ -23,7 +23,7 @@
 #include <boost/crc.hpp>  // for boost::crc_32_type
 #include <boost/tokenizer.hpp>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 
 #include "Path.hpp"
 

@@ -43,6 +43,7 @@ class Config
 	private:
 
 		Config();
+		~Config();
 
 		libconfig::Config	*_config;
 };

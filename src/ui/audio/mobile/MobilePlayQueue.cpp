@@ -22,7 +22,7 @@
 #include <Wt/WText>
 #include <Wt/WPushButton>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"
 

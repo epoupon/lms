@@ -4,7 +4,6 @@ lms_SOURCES = \
 	$(srcdir)/main/main.cpp					\
 	$(srcdir)/av/AvInfo.cpp					\
 	$(srcdir)/av/AvTranscoder.cpp				\
-	$(srcdir)/config/Config.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
 	$(srcdir)/database/Artist.cpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
@@ -23,7 +22,6 @@ lms_SOURCES = \
 	$(srcdir)/feature/FeatureExtractor.cpp			\
 	$(srcdir)/feature/FeatureStore.cpp			\
 	$(srcdir)/image/Image.cpp				\
-	$(srcdir)/logger/Logger.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
 	$(srcdir)/metadata/TagLibParser.cpp			\
 	$(srcdir)/ui/LmsApplication.cpp				\
@@ -61,6 +59,8 @@ lms_SOURCES = \
 	$(srcdir)/ui/settings/SettingsMediaDirectoryFormView.cpp	\
 	$(srcdir)/ui/settings/SettingsUserFormView.cpp		\
 	$(srcdir)/ui/settings/SettingsUsers.cpp			\
+	$(srcdir)/utils/Config.cpp				\
+	$(srcdir)/utils/Logger.cpp				\
 	$(srcdir)/utils/Path.cpp				\
 	$(srcdir)/utils/Utils.cpp
 

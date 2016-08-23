@@ -17,11 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "logger/Logger.hpp"
+#include "database/Setting.hpp"
 
 #include "feature/FeatureExtractor.hpp"
 #include "feature/FeatureStore.hpp"
-#include "database/Setting.hpp"
+
+#include "utils/Logger.hpp"
 
 #include "DatabaseFeatureExtractor.hpp"
 

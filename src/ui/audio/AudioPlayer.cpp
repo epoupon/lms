@@ -17,7 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <Wt/WText>
 #include <Wt/WAudio>
 #include <Wt/WImage>
@@ -25,7 +24,8 @@
 #include <Wt/WPushButton>
 
 #include "common/InputRange.hpp"
-#include "logger/Logger.hpp"
+
+#include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"

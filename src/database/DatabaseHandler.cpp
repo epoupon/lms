@@ -30,7 +30,7 @@
 
 #include "Setting.hpp"
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 
 #include "DatabaseHandler.hpp"
 

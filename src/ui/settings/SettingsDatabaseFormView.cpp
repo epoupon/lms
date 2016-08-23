@@ -30,7 +30,8 @@
 #include <Wt/WFormModel>
 #include <Wt/WStringListModel>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
+
 #include "database/Setting.hpp"
 
 #include "common/DirectoryValidator.hpp"

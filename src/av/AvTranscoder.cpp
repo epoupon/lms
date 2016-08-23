@@ -20,8 +20,7 @@
 #include <mutex>
 
 #include "utils/Path.hpp"
-
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 
 #include "AvTranscoder.hpp"
 

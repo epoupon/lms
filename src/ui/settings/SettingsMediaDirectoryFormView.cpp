@@ -25,7 +25,8 @@
 #include <Wt/WComboBox>
 #include <Wt/WPushButton>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
+
 #include "database/MediaDirectory.hpp"
 
 #include "common/DirectoryValidator.hpp"

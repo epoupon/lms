@@ -24,7 +24,7 @@
 #include <Wt/WComboBox>
 #include <Wt/WPushButton>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
 
 #include "common/Validators.hpp"
 #include "LmsApplication.hpp"

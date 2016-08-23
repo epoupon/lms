@@ -19,7 +19,8 @@
 
 #include <Wt/Http/Response>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
+
 #include "LmsApplication.hpp"
 
 #include "TranscodeResource.hpp"

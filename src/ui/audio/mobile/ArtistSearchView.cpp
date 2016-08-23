@@ -20,7 +20,8 @@
 #include <Wt/WApplication>
 #include <Wt/WText>
 
-#include "logger/Logger.hpp"
+#include "utils/Logger.hpp"
+
 #include "SearchUtils.hpp"
 
 #include "ArtistSearch.hpp"
