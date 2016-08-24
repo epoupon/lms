@@ -18,6 +18,7 @@
  */
 
 #include <boost/filesystem.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 
 #include <Wt/WServer>
 
@@ -34,13 +35,15 @@
 
 #include "ui/LmsApplication.hpp"
 
-
-static std::vector<std::string> getWtArgs(std::string path)
+std::vector<std::string> generateWtConfig(std::string execPath)
 {
 	std::vector<std::string> args;
 
-	args.push_back(path);
-	args.push_back("-c" + Config::instance().getString("wt-config"));
+	boost::filesystem::path wtConfigPath = Config::instance().getPath("working-dir") / "wt_config.xml";
+	boost::filesystem::path wtLogFilePath = Config::instance().getPath("working-dir") / "lms.log";
+
+	args.push_back(execPath);
+	args.push_back("--config=" + wtConfigPath.string());
 	args.push_back("--docroot=" + Config::instance().getString("docroot"));
 	args.push_back("--approot=" + Config::instance().getString("approot"));
 
@@ -58,8 +61,20 @@ static std::vector<std::string> getWtArgs(std::string path)
 		args.push_back("--http-address=" + Config::instance().getString("listen-addr", "0.0.0.0"));
 	}
 
+	// Generate the wt_config.xml file
+	boost::property_tree::ptree pt;
+
+	pt.put("server.application-settings.<xmlattr>.location", "*");
+	pt.put("server.application-settings.log-file", wtLogFilePath.string());
+	pt.put("server.application-settings.behind-reverse-proxy", Config::instance().getBool("behind-reverse-proxy", false));
+	pt.put("server.application-settings.progressive-bootstrap", true);
+
+	std::ofstream oss(wtConfigPath.string().c_str(), std::ios::out);
+	boost::property_tree::xml_parser::write_xml(oss, pt);
+
 	return args;
 }
+
 
 int main(int argc, char* argv[])
 {
@@ -77,18 +92,25 @@ int main(int argc, char* argv[])
 		// Make pstream work with ffmpeg
 		close(STDIN_FILENO);
 
-
 		Config::instance().setFile(configFilePath);
 
-		std::vector<std::string> wtArgs = getWtArgs(argv[0]);
+		// Make sure the working directory exists
+		// TODO check with boost::system::error_code ec;
+		boost::filesystem::create_directories(Config::instance().getPath("working-dir"));
+		boost::filesystem::create_directories(Config::instance().getPath("working-dir") / "features");
 
-		// Construct argc/argv for Wt
-		const char* wtArgv[wtArgs.size()];
-		for (std::size_t i = 0; i < wtArgs.size(); ++i)
-			wtArgv[i] = wtArgs[i].c_str();
+		// Construct WT configuration and get the argc/argv back
+		std::vector<std::string> wtServerArgs = generateWtConfig(argv[0]);
+
+		const char* wtArgv[wtServerArgs.size()];
+		for (std::size_t i = 0; i < wtServerArgs.size(); ++i)
+		{
+			std::cout << "ARG = " << wtServerArgs[i] << std::endl;
+			wtArgv[i] = wtServerArgs[i].c_str();
+		}
 
 		Wt::WServer server(argv[0]);
-		server.setServerConfiguration (wtArgs.size(), const_cast<char**>(wtArgv));
+		server.setServerConfiguration (wtServerArgs.size(), const_cast<char**>(wtArgv));
 
 		Wt::WServer::instance()->logger().configure("*"); // log everything, TODO configure this
 

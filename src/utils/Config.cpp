@@ -66,6 +66,19 @@ Config::getString(std::string setting, std::string def)
 	}
 }
 
+boost::filesystem::path
+Config::getPath(std::string setting, boost::filesystem::path path)
+{
+	try {
+		const char* res = _config->lookup(setting);
+		return boost::filesystem::path(std::string(res));
+	}
+	catch (std::exception &e)
+	{
+		return path;
+	}
+}
+
 unsigned long
 Config::getULong(std::string setting, unsigned long def)
 {

@@ -39,11 +39,8 @@ class Store
 
 		bool	set(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, const Type& feature);
 
-		void reload();
 	private:
 		Store();
-
-		boost::filesystem::path	_storePath;
 };
 
 } // namespace CoverArt

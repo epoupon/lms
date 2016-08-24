@@ -36,6 +36,7 @@ class Config
 
 		// Default values are returned in case of setting not found
 		std::string	getString(std::string setting, std::string def = "");
+		boost::filesystem::path getPath(std::string setting, boost::filesystem::path def = boost::filesystem::path());
 		unsigned long	getULong(std::string setting, unsigned long def = 0);
 		long		getLong(std::string setting, long def = 0);
 		bool		getBool(std::string setting, bool def = false);

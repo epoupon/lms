@@ -38,37 +38,15 @@ Store::instance(void)
 	return instance;
 }
 
-void
-Store::reload(void)
+static boost::filesystem::path
+getPath(std::string mbid, std::string type)
 {
-	boost::filesystem::path cacheDir = _storePath = Config::instance().getString("cache-dir-path", "");
-
-	if (!ensureDirectory(cacheDir))
-	{
-		LMS_LOG(DBUPDATER, ERROR) << "Cache directory '" << cacheDir << "' not valid";
-		throw std::runtime_error("Cache directory '" + cacheDir.string() + "' not valid!");
-	}
-
-	_storePath = cacheDir / "features";
-
-	if (!ensureDirectory(_storePath))
-	{
-		LMS_LOG(DBUPDATER, ERROR) << "Features directory '" << _storePath << "' not valid";
-		throw std::runtime_error("Features directory '" + _storePath.string() + "' not valid");
-	}
-}
-
-boost::filesystem::path getPath(boost::filesystem::path root, std::string mbid, std::string type)
-{
-	return root / (mbid + "_" + type);
+	return Config::instance().getPath("working-dir") / "features" / (mbid + "_" + type);
 }
 
 bool
 Store::exists(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type)
 {
-	if (_storePath.empty())
-		reload();
-
 	Wt::Dbo::Transaction transaction(session);
 
 	auto track = Database::Track::getById(session, trackId);
@@ -79,16 +57,13 @@ Store::exists(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::
 	if (mbid.empty())
 		return false;
 
-	boost::filesystem::path path = getPath(_storePath, mbid, type);
+	boost::filesystem::path path = getPath(mbid, type);
 	return boost::filesystem::exists(path);
 }
 
 bool
 Store::get(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, Type& feature)
 {
-	if (_storePath.empty())
-		reload();
-
 	Wt::Dbo::Transaction transaction(session);
 
 	auto track = Database::Track::getById(session, trackId);
@@ -99,7 +74,7 @@ Store::get(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::str
 	if (mbid.empty())
 		return false;
 
-	boost::filesystem::path path = getPath(_storePath, mbid, type);
+	boost::filesystem::path path = getPath(mbid, type);
 	if (!boost::filesystem::exists(path))
 		return false;
 
@@ -121,9 +96,6 @@ Store::get(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::str
 bool
 Store::set(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, const Type& feature)
 {
-	if (_storePath.empty())
-		reload();
-
 	Wt::Dbo::Transaction transaction(session);
 
 	auto track = Database::Track::getById(session, trackId);
@@ -134,7 +106,7 @@ Store::set(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::str
 	if (mbid.empty())
 		return false;
 
-	boost::filesystem::path path = getPath(_storePath, mbid, type);
+	boost::filesystem::path path = getPath(mbid, type);
 
 	try
 	{
