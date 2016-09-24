@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
 
 		// Initializing a connection pool to the database that will be shared along services
 		std::unique_ptr<Wt::Dbo::SqlConnectionPool>
-			connectionPool( Database::Handler::createConnectionPool(Config::instance().getString("db-path")));
+			connectionPool( Database::Handler::createConnectionPool(Config::instance().getPath("working-dir") / "lms.db"));
 
 		Database::Updater& dbUpdater = Database::Updater::instance();
 		dbUpdater.setConnectionPool(*connectionPool);
