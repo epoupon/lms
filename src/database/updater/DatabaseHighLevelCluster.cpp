@@ -35,7 +35,7 @@ static Cluster::pointer getCluster(std::string type, std::string value)
 	return cluster;
 }
 
-static std::list<std::string> getClustersFromFeature(Feature::Type& feature, double minProb)
+static std::list<std::string> getClustersFromFeature(boost::property_tree::ptree& feature, double minProb)
 {
 	struct HighLevelNodeDesc
 	{
@@ -181,7 +181,7 @@ HighLevelCluster::handleFilesUpdated(void)
 		std::list<std::string> newClusterNames;
 		if (createTags)
 		{
-			Feature::Type feature;
+			boost::property_tree::ptree feature;
 			if (!Feature::Store::instance().get(UpdaterDboSession(), trackId, "high_level", feature))
 				continue;
 

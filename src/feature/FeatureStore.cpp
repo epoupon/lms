@@ -62,7 +62,7 @@ Store::exists(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::
 }
 
 bool
-Store::get(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, Type& feature)
+Store::get(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, boost::property_tree::ptree& feature)
 {
 	Wt::Dbo::Transaction transaction(session);
 
@@ -94,7 +94,7 @@ Store::get(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::str
 
 
 bool
-Store::set(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, const Type& feature)
+Store::set(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, const boost::property_tree::ptree& feature)
 {
 	Wt::Dbo::Transaction transaction(session);
 

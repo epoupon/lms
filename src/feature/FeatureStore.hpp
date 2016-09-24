@@ -20,9 +20,9 @@
 #pragma once
 
 #include <boost/filesystem/path.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include "database/Types.hpp"
-#include "FeatureExtractor.hpp"
 
 namespace Feature {
 
@@ -35,9 +35,9 @@ class Store
 		static Store& instance();
 
 		bool	exists(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type);
-		bool	get(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, Type& feature);
+		bool	get(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, boost::property_tree::ptree& feature);
 
-		bool	set(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, const Type& feature);
+		bool	set(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::string type, const boost::property_tree::ptree& feature);
 
 	private:
 		Store();

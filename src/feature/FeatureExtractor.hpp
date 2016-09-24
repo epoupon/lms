@@ -25,8 +25,6 @@
 
 namespace Feature {
 
-typedef boost::property_tree::ptree Type;
-
 class Extractor
 {
 	public:

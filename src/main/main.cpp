@@ -23,9 +23,9 @@
 #include <Wt/WServer>
 
 #include "utils/Config.hpp"
+#include "utils/Logger.hpp"
 #include "av/AvInfo.hpp"
 #include "av/AvTranscoder.hpp"
-#include "utils/Logger.hpp"
 #include "image/Image.hpp"
 #include "feature/FeatureExtractor.hpp"
 

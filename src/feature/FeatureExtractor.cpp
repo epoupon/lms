@@ -112,7 +112,8 @@ Extractor::getLowLevel(boost::property_tree::ptree& pt, std::string mbid)
 		return false;
 	}
 
-	res.erase("metadata");
+	// Keep metadata to ease debugging
+//	res.erase("metadata");
 
 	pt = res;
 
