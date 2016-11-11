@@ -150,16 +150,34 @@ _playQueue(nullptr)
 		playlistBtn->setMenu(popupMain);
 	}
 
+#if WT_VERSION >= 0X03030400
 	Wt::WPushButton *upBtn = new Wt::WPushButton("<i class =\"fa fa-arrow-up fa-lg\"></i>", Wt::XHTMLText);
+#else
+	Wt::WPushButton *upBtn = new Wt::WPushButton("UP");
+#endif
 	upBtn->setStyleClass("btn-sm");
 	playlistControls->addWidget(upBtn);
+
+#if WT_VERSION >= 0X03030400
 	Wt::WPushButton *downBtn = new Wt::WPushButton("<i class =\"fa fa-arrow-down fa-lg\"></i>", Wt::XHTMLText);
+#else
+	Wt::WPushButton *downBtn = new Wt::WPushButton("DOWN");
+#endif
 	downBtn->setStyleClass("btn-sm");
 	playlistControls->addWidget(downBtn);
+#if WT_VERSION >= 0X03030400
 	Wt::WPushButton *delBtn = new Wt::WPushButton("<i class =\"fa fa-remove fa-lg\"></i>", Wt::XHTMLText);
+#else
+	Wt::WPushButton *delBtn = new Wt::WPushButton("DEL");
+#endif
+
 	delBtn->setStyleClass("btn-sm btn-warning");
 	playlistControls->addWidget(delBtn);
+#if WT_VERSION >= 0X03030400
 	Wt::WPushButton *clearBtn = new Wt::WPushButton("<i class =\"fa fa-trash fa-lg\"></i>", Wt::XHTMLText);
+#else
+	Wt::WPushButton *clearBtn = new Wt::WPushButton("CLR");
+#endif
 	clearBtn->setStyleClass("btn-sm btn-danger");
 	playlistControls->addWidget(clearBtn);
 
