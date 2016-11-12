@@ -21,29 +21,36 @@
 
 #if WT_VERSION < 0X03030500
 #include <Wt/WTemplate>
+#include <Wt/WText>
 #endif
 
 #include "InputRange.hpp"
 
+#if WT_VERSION >= 0X03030500
 InputRange::InputRange(Wt::WContainerWidget *parent)
 : Wt::WWebWidget(parent)
 {
-	//TODO woraround for older Wt versions
-#if WT_VERSION >= 0X03030500
 	setHtmlTagName("input");
 	setAttributeValue("type", "range");
-#else
-	Wt::WTemplate *t = new Wt::WTemplate("<input type=\"range\"></input>", parent);
-#endif
 }
-
 
 std::string
 InputRange::jsRef(void) const
 {
-#if WT_VERSION >= 0X03030500
 	return Wt::WWebWidget::jsRef();
-#else
-	return this->jsRef() + ".getElementsByTagName(\"input\")[0]";
-#endif
 }
+
+#else
+InputRange::InputRange(Wt::WContainerWidget *parent)
+: Wt::WContainerWidget(parent)
+{
+	addWidget(new Wt::WTemplate("<input type=\"range\"></input>"));
+}
+
+std::string
+InputRange::jsRef(void) const
+{
+	return Wt::WWebWidget::jsRef() + ".getElementsByTagName(\"input\")[0]";
+}
+#endif
+

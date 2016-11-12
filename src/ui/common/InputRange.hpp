@@ -22,11 +22,12 @@
 #include <Wt/WContainerWidget>
 #include <Wt/WWebWidget>
 
+#include <Wt/WConfig.h>
+#if WT_VERSION >= 0X03030500
 class InputRange : public Wt::WWebWidget
 {
 	public:
 	InputRange(Wt::WContainerWidget *parent = 0);
-
 	Wt::DomElementType domElementType() const
 	{
 		return Wt::DomElement_INPUT;
@@ -34,4 +35,17 @@ class InputRange : public Wt::WWebWidget
 
 	std::string jsRef() const;
 };
+
+#else
+
+class InputRange : public Wt::WContainerWidget
+{
+	public:
+	InputRange(Wt::WContainerWidget *parent = 0);
+
+	std::string jsRef() const;
+};
+
+#endif
+
 

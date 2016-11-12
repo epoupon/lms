@@ -17,6 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <Wt/WConfig.h>
 #include <Wt/WItemDelegate>
 
 #include "database/Types.hpp"
@@ -86,7 +87,9 @@ TableFilterCluster::layoutSizeChanged (int width, int height)
 void
 TableFilterCluster::refresh(SearchFilter& filter)
 {
+#if WT_VERSION >= 0X03030500
 	this->clearSelection();
+#endif
 
 	Cluster::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
@@ -165,7 +168,9 @@ TableFilterArtist::layoutSizeChanged (int width, int height)
 void
 TableFilterArtist::refresh(SearchFilter& filter)
 {
+#if WT_VERSION >= 0X03030500
 	this->clearSelection();
+#endif
 	Artist::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 
@@ -249,7 +254,9 @@ TableFilterRelease::layoutSizeChanged (int width, int height)
 void
 TableFilterRelease::refresh(SearchFilter& filter)
 {
+#if WT_VERSION >= 0X03030500
 	this->clearSelection();
+#endif
 	Release::updateUIQueryModel(DboSession(), _queryModel, filter);
 }
 

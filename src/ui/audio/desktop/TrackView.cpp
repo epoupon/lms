@@ -19,6 +19,7 @@
 
 #include <boost/date_time.hpp>
 
+#include <Wt/WConfig.h>
 #include <Wt/WItemDelegate>
 #include <Wt/WBreak>
 
@@ -160,7 +161,9 @@ TrackView::emitStats(const SearchFilter& filter)
 void
 TrackView::refresh(SearchFilter& filter)
 {
+#if WT_VERSION >= 0X03030500
 	this->clearSelection();
+#endif
 	Track::updateUIQueryModel(DboSession(), _queryModel, filter);
 
 	emitStats(filter);
