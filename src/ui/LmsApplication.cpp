@@ -19,46 +19,24 @@
 
 #include <Wt/WEnvironment>
 #include <Wt/WBootstrapTheme>
-#include <Wt/WVBoxLayout>
 #include <Wt/WNavigationBar>
 #include <Wt/WStackedWidget>
 #include <Wt/WMenu>
-#include <Wt/WPopupMenu>
-#include <Wt/WVBoxLayout>
-#include <Wt/Auth/Identity>
+#include <Wt/WText>
 
 #include "config/config.h"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
-#include "settings/Settings.hpp"
-#include "settings/SettingsFirstConnectionFormView.hpp"
-
 #include "auth/LmsAuth.hpp"
-#include "audio/desktop/DesktopAudio.hpp"
-#include "audio/mobile/MobileAudio.hpp"
-#if HAVE_VIDEO
-#include "video/VideoWidget.hpp"
-#endif
-#include "common/LineEdit.hpp"
+#include "Explore.hpp"
+#include "HomeView.hpp"
+
 
 #include "LmsApplication.hpp"
 
 namespace skeletons {
 	  extern const char *AuthStrings_xml1;
-}
-
-namespace {
-
-bool agentIsMobile()
-{
-	const Wt::WEnvironment& env = Wt::WApplication::instance()->environment();
-	return (env.agentIsIEMobile()
-		|| env.agentIsMobileWebKit()
-		|| env.userAgent().find("Mobile") != std::string::npos // Workaround for firefox
-		|| env.userAgent().find("Tablet") != std::string::npos // Workaround for firefox
-		);
-}
 }
 
 namespace UserInterface {
@@ -100,7 +78,13 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
 
 	// Add a resource bundle
+	messageResourceBundle().use(appRoot() + "artist");
+	messageResourceBundle().use(appRoot() + "artists");
+	messageResourceBundle().use(appRoot() + "messages");
 	messageResourceBundle().use(appRoot() + "templates");
+	messageResourceBundle().use(appRoot() + "release");
+	messageResourceBundle().use(appRoot() + "releases");
+	messageResourceBundle().use(appRoot() + "tracks");
 
 	setTitle("LMS");
 
@@ -114,9 +98,9 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	LMS_LOG(UI, DEBUG) << "Creating root widget. First connection = " << std::boolalpha << firstConnection;
 
 	// If here is no account in the database, launch the first connection wizard
-	if (firstConnection)
-		createFirstConnectionUI();
-	else
+//	if (firstConnection)
+//		createFirstConnectionUI();
+//	else
 		createLmsUI();
 }
 
@@ -150,12 +134,18 @@ TranscodeResource* SessionTranscodeResource()
 }
 
 void
+LmsApplication::goHome()
+{
+	setInternalPath("/home", true);
+}
+
+void
 LmsApplication::createFirstConnectionUI()
 {
 	// Hack, use the auth widget builtin strings
 	builtinLocalizedStrings().useBuiltin(skeletons::AuthStrings_xml1);
 
-	root()->addWidget( new Settings::FirstConnectionFormView());
+//	root()->addWidget( new Settings::FirstConnectionFormView());
 }
 
 void
@@ -164,6 +154,8 @@ LmsApplication::createLmsUI()
 	_imageResource = new ImageResource(_db, root());
 	_transcodeResource = new TranscodeResource(_db, root());
 
+	handleAuthEvent();
+	/*
 	DbHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
 
 	LmsAuth *authWidget = new LmsAuth();
@@ -174,11 +166,53 @@ LmsApplication::createLmsUI()
 	authWidget->processEnvironment();
 
 	root()->addWidget(authWidget);
+	*/
+}
+
+
+enum IdxRoot
+{
+	IdxHome		= 0,
+	IdxExplore,
+	IdxPlaylist,
+	IdxSettings,
+};
+
+
+
+static void
+handlePathChange(Wt::WStackedWidget* stack)
+{
+	static const std::map<std::string, int> indexes =
+	{
+		{ "/home",		IdxHome },
+		{ "/artists",		IdxExplore },
+		{ "/artist",		IdxExplore },
+		{ "/releases",		IdxExplore },
+		{ "/release",		IdxExplore },
+		{ "/tracks",		IdxExplore },
+		{ "/playlist",		IdxPlaylist },
+		{ "/settings",		IdxSettings },
+	};
+
+	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
+
+	for (auto index : indexes)
+	{
+		if (wApp->internalPathMatches(index.first))
+		{
+			stack->setCurrentIndex(index.second);
+			return;
+		}
+	}
+
+	wApp->setInternalPath("/home", true);
 }
 
 void
 LmsApplication::handleAuthEvent(void)
 {
+	/*
 	if (!DbHandler().getLogin().loggedIn())
 	{
 		LMS_LOG(UI, INFO) << "User logged out, session = " << Wt::WApplication::instance()->sessionId();
@@ -190,76 +224,61 @@ LmsApplication::handleAuthEvent(void)
 	}
 
 	LMS_LOG(UI, INFO) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
+*/
+	setConfirmCloseMessage(Wt::WString::tr("msg-quit-confirm"));
 
-	this->root()->setOverflow(Wt::WContainerWidget::OverflowHidden);
-	setConfirmCloseMessage("Closing LMS. Are you sure?");
+	auto main = new Wt::WTemplate(Wt::WString::tr("template-main"), root());
 
-	// Create a Vertical layout: top is the nav bar, bottom is the contents
-	Wt::WVBoxLayout *layout = new Wt::WVBoxLayout(this->root());
+	// Navbar
+	auto navbar = new Wt::WNavigationBar();
+	navbar->setTitle("LMS", Wt::WLink(Wt::WLink::InternalPath, "/home"));
+	navbar->setResponsive(true);
+//	navbar->setStyleClass("main-nav");
 
-	Wt::WNavigationBar *navigation = new Wt::WNavigationBar();
-	navigation->setTitle("LMS", "https://github.com/epoupon/lms");
-	navigation->setResponsive(true);
-	navigation->addStyleClass("main-nav");
+	main->bindWidget("navbar-top", navbar);
 
-	Wt::WStackedWidget *contentsStack = new Wt::WStackedWidget();
-
-	contentsStack->setOverflow(Wt::WContainerWidget::OverflowAuto);
-	contentsStack->addStyleClass("contents");
-
-	Wt::WMenu *menu = new Wt::WMenu(contentsStack);
-	navigation->addMenu(menu, Wt::AlignRight);
-
-	LineEdit *searchEdit = new LineEdit(500);
-	navigation->bindWidget("search", searchEdit);
-	searchEdit->setEmptyText("Search...");
-	searchEdit->addStyleClass("navbar-form navbar-nav");
-	searchEdit->setWidth(150);
-	// TODO add a span with a search icon
-
-	menu->setInternalPathEnabled();
-	menu->setInternalBasePath("/");
-
-	Audio *audio;
-	if (agentIsMobile())
-		audio = new Mobile::Audio();
-	else
-		audio = new Desktop::Audio();
-
-	menu->addItem("Audio", audio)->setPathComponent("audio");;
-#if defined HAVE_VIDEO
-	menu->addItem("Video", new VideoWidget())->setPathComponent("video");
-#endif
-	menu->addItem("Settings", new Settings::Settings())->setPathComponent("settings");
-
-	Wt::WPopupMenu *popup = new Wt::WPopupMenu();
-	popup->addItem("Logout");
-
-	Wt::WMenuItem *item = new Wt::WMenuItem( CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) );
-	item->setMenu(popup);
-	menu->addItem(item);
-
-	popup->itemSelected().connect(std::bind([=] (Wt::WMenuItem* item)
+	auto menu = new Wt::WMenu();
 	{
-		if (item && item->text() == "Logout")
-			DbHandler().getLogin().logout();
-	}, std::placeholders::_1));
-
-	searchEdit->timedChanged().connect(std::bind([=] ()
+		auto menuItem = menu->insertItem(0, Wt::WString::tr("msg-artists"));
+		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/artists"));
+		menuItem->setSelectable(false);
+	}
 	{
-		// TODO: check which view is activated and search into it
-		audio->search(searchEdit->text().toUTF8());
+		auto menuItem = menu->insertItem(1, Wt::WString::tr("msg-releases"));
+		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/releases"));
+		menuItem->setSelectable(false);
+	}
+	{
+		auto menuItem = menu->insertItem(2, Wt::WString::tr("msg-tracks"));
+		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/tracks"));
+		menuItem->setSelectable(false);
+	}
+	{
+		auto menuItem = menu->insertItem(3, Wt::WString::tr("msg-playlist"));
+		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/playlist"));
+		menuItem->setSelectable(false);
+	}
+	navbar->addMenu(menu);
+
+	// Contents
+	Wt::WStackedWidget* mainStack = new Wt::WStackedWidget();
+	main->bindWidget("contents", mainStack);
+
+	mainStack->addWidget(new Home());
+	mainStack->addWidget(new Explore());
+	mainStack->addWidget(new Wt::WText("PLAYLIST"));
+	mainStack->addWidget(new Wt::WText("SETTINGS"));
+
+	// MediaPlayer
+//	auto player = new AudioPlayer(AudioPlayer::ControlPlayqueue);
+//	main->bindWidget("player", player);
+
+	internalPathChanged().connect(std::bind([=]
+	{
+		handlePathChange(mainStack);
 	}));
 
-	layout->addWidget(navigation);
-	layout->addWidget(contentsStack, 1);
-	layout->setContentsMargins(0, 0, 0, 0);
-
-	if (agentIsMobile())
-		setInternalPath("/audio/search/preview", true);
-	else
-		setInternalPath("/audio");
-
+	handlePathChange(mainStack);
 }
 
 } // namespace UserInterface

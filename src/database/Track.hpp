@@ -24,6 +24,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/optional.hpp>
 
 #include <Wt/Dbo/Dbo>
 #include <Wt/Dbo/WtSqlTraits>
@@ -44,6 +45,12 @@ class Cluster
 {
 	public:
 
+		enum class Type
+		{
+			Genre	= 1,
+			Mood	= 2,
+		};
+
 		typedef Wt::Dbo::ptr<Cluster> pointer;
 		typedef Wt::Dbo::dbo_traits<Cluster>::IdType id_type;
 
@@ -56,12 +63,6 @@ class Cluster
 		static std::vector<pointer> getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session);
 		static std::vector<pointer> getByType(Wt::Dbo::Session& session, std::string type);
-
-		// MVC models for the user interface
-		// ClusterID, type, name, track count
-		typedef boost::tuple<id_type, std::string, int> UIQueryResult;
-		static Wt::Dbo::Query<UIQueryResult> getUIQuery(Wt::Dbo::Session& session, SearchFilter filter);
-		static void updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<UIQueryResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
 
 		// Create utility
 		static pointer create(Wt::Dbo::Session& session, std::string type, std::string name);
@@ -118,8 +119,13 @@ class Track
 		static pointer getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
 		static pointer getById(Wt::Dbo::Session& session, id_type id);
 		static pointer getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
-		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
-		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool &moreResults);
+		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
+							const std::vector<id_type>& clusters,           // tracks that belong to these clusters
+							const std::vector<std::string> keywords,        // name must match all of these keywords
+							int offset,
+							int size,
+							bool& moreExpected);
+
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
 		static std::vector<id_type> getAllIds(Wt::Dbo::Session& session); // nested transaction
 		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session); // nested transaction
@@ -127,22 +133,6 @@ class Track
 		static std::vector<pointer> getChecksumDuplicates(Wt::Dbo::Session& session);
 
 		// Utility fonctions
-		// MVC models for the user interface
-		// ID, Artist name, Release Name, DiscNumber, TrackNumber, Name, duration, date, original date, genre list
-		typedef boost::tuple<id_type,			// ID
-			std::string,				// Artist name
-			std::string,				// Release Name
-			int,					// Disc Number
-			int,					// Track Number
-			std::string,				// Name
-			boost::posix_time::time_duration,	// Duration
-			boost::posix_time::ptime,		// Date
-			boost::posix_time::ptime,		// Original date
-			std::string>				// genre list
-			UIQueryResult;
-		static Wt::Dbo::Query< UIQueryResult > getUIQuery(Wt::Dbo::Session& session, SearchFilter filter);
-		static void updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< UIQueryResult >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
-
 		// Stats for a given search filter
 		typedef boost::tuple<
 				int,		// Total tracks
@@ -174,10 +164,10 @@ class Track
 		void setArtist(Wt::Dbo::ptr<Artist> artist)			{ _artist = artist; }
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
 
-		int				getTrackNumber(void) const		{ return _trackNumber; }
-		int				getTotalTrackNumber(void) const		{ return _totalTrackNumber; }
-		int				getDiscNumber(void) const		{ return _discNumber; }
-		int				getTotalDiscNumber(void) const		{ return _totalDiscNumber; }
+		boost::optional<std::size_t>	getTrackNumber(void) const;
+		boost::optional<std::size_t>	getTotalTrackNumber(void) const;
+		boost::optional<std::size_t>	getDiscNumber(void) const;
+		boost::optional<std::size_t>	getTotalDiscNumber(void) const;
 		std::string 			getName(void) const			{ return _name; }
 		boost::filesystem::path		getPath(void) const			{ return _filePath; }
 		boost::posix_time::time_duration	getDuration(void) const		{ return _duration; }
@@ -217,8 +207,6 @@ class Track
 			}
 
 	private:
-
-		static Wt::Dbo::Query< pointer > getQuery(Wt::Dbo::Session& session, SearchFilter filter);
 
 		static const std::size_t _maxNameLength = 128;
 

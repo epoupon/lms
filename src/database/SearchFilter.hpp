@@ -31,71 +31,37 @@
 namespace Database
 {
 
+typedef Wt::Dbo::dbo_default_traits::IdType id_type;
+
 class SearchFilter
 {
 	public:
 
-		enum class Field {
-			Artist,		// artist
-			Release,	// release
-			Track,		// track
-			Cluster,	// cluster
-		};
-
-		typedef std::vector<std::map<Field, std::vector<std::string> > > NameLikeMatchType;
-		typedef std::map<Field, std::vector< Wt::Dbo::dbo_default_traits::IdType> > IdMatchType;
+		typedef int id_type;
 
 		SearchFilter() {}
 
-		// Helpers
-		static SearchFilter IdMatch( const IdMatchType& _idMatch )
-		{
-			return SearchFilter(_idMatch);
-		}
+		static SearchFilter Artist(std::string name) {return SearchFilter();}
+		static SearchFilter Artist(id_type id) {return SearchFilter();}
 
-		static SearchFilter NameLikeMatch( const NameLikeMatchType& _nameLikeMatch )
-		{
-			return SearchFilter(_nameLikeMatch);
-		}
+		static SearchFilter Release(std::string name) {return SearchFilter();}
+		static SearchFilter Release(id_type id) {return SearchFilter();}
 
-		// Single Field ID match
-		static SearchFilter ById(Field field, Wt::Dbo::dbo_default_traits::IdType id)
-		{
-			return SearchFilter({{field, {id} }});
-		}
+		static SearchFilter Track(std::string name) {return SearchFilter();}
 
-		// Single Field Name match OR
-		static SearchFilter ByNameOr(Field field, std::vector<std::string> keywords)
-		{
-			return NameLikeMatch({{{field, keywords}}});
-		}
+		static SearchFilter Cluster(id_type id) {return SearchFilter();}
 
-		// Single Field Name match AND
-		static SearchFilter ByNameAnd(Field field, std::vector<std::string> keywords)
-		{
-			NameLikeMatchType nameLikeMatch;
+		// Combine search filters by add operation
+		// Caution: multiple filters on different artist/release/track
+		// values may lead to empty results
+		void operator+=(const SearchFilter& filter);
 
-			for (auto keyword : keywords)
-				nameLikeMatch.push_back({{{field, {keyword}}}});
-
-			return NameLikeMatch(nameLikeMatch);
-		}
-
-		// The filter is a AND of the following conditions:
-
-		// ((Field1.name LIKE STR1-1 OR Field1.name LIKE STR1-2 ...) OR (Field2.name LIKE STR2-1 OR Field2.name LIKE STR2-2 ...) ...
-		NameLikeMatchType	nameLikeMatch;
-
-		// (Field1.id IN (ID1-1,ID1-2 ... ) AND (Field2.id IN (ID2-1,ID2-2 ... ) ...
-		IdMatchType	idMatch;
+		SqlQuery generatePartialQuery();
 
 	private:
 
-		SearchFilter(const NameLikeMatchType& _nameLikeMatch) : nameLikeMatch(_nameLikeMatch) {}
-		SearchFilter(const IdMatchType& _idMatch) : idMatch(_idMatch) {}
 };
 
-SqlQuery generatePartialQuery(SearchFilter& filter);
 
 } // namespace Database
 

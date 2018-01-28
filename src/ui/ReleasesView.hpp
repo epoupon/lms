@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,24 +17,22 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/Logger.hpp"
+#pragma once
 
-#include "SearchFilter.hpp"
+#include <Wt/WContainerWidget>
 
-namespace Database
+namespace UserInterface {
+
+class Releases : public Wt::WContainerWidget
 {
+	public:
+		Releases(Wt::WContainerWidget* parent = 0);
 
-void
-SearchFilter::operator+=(const SearchFilter& filter)
-{
-}
+	private:
+		void refresh(std::vector<std::string> searchKeywords = std::vector<std::string>());
 
-SqlQuery
-SearchFilter::generatePartialQuery()
-{
-	SqlQuery sqlQuery;
-	return sqlQuery;
-}
+		Wt::WContainerWidget *_releasesContainer;
+};
 
-} // namespace Database
+} // namespace UserInterface
 

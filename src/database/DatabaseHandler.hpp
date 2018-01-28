@@ -33,6 +33,7 @@
 
 namespace Database {
 
+typedef Wt::Dbo::dbo_default_traits::IdType id_type;
 typedef Wt::Auth::Dbo::UserDatabase<AuthInfo> UserDatabase;
 
 // Session living class handling the database and the login

@@ -17,11 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _DB_RELEASE_HPP_
-#define _DB_RELEASE_HPP_
+#pragma once
+
+#include <boost/optional.hpp>
 
 #include <Wt/Dbo/Dbo>
-#include <Wt/Dbo/QueryModel>
 
 #include "SearchFilter.hpp"
 
@@ -30,6 +30,7 @@ namespace Database
 
 class Track;
 class Release;
+class Artist;
 
 class Release : public Wt::Dbo::Dbo<Release>
 {
@@ -46,29 +47,33 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static std::vector<pointer>	getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer			getById(Wt::Dbo::Session& session, id_type id);
 		static pointer			getNone(Wt::Dbo::Session& session); // Special entry
-		static std::vector<pointer>	getAllOrphans(Wt::Dbo::Session& session);
+		static std::vector<pointer>	getAllOrphans(Wt::Dbo::Session& session); // no track related
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, int offset, int size);
-		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
-		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool& moreExpected);
+
+		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
+							const std::vector<id_type>& clusters,           // at least one track that belongs to these clusters
+							const std::vector<std::string> keywords,        // name must match all of these keywords
+							int offset,
+							int size,
+							bool& moreExpected);
+
+		std::vector<Wt::Dbo::ptr<Track>> getTracks() const;
 
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID = "");
 
 		// Utility functions
-		int getReleaseYear(bool originalDate = false) const; // 0 if unknown or various
+		boost::optional<int> getReleaseYear(bool originalDate = false) const; // 0 if unknown or various
 
-		// MVC models for the user interface
-		// ID, Release name, year, track counts
-		typedef boost::tuple<id_type, std::string, boost::posix_time::ptime, int> UIQueryResult;
-		static Wt::Dbo::Query<UIQueryResult> getUIQuery(Wt::Dbo::Session& session, SearchFilter filter);
-		static void updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< UIQueryResult >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
-
-
-		// Accessosrs
+		// Accessors
 		std::string	getName() const		{ return _name; }
 		std::string	getMBID() const		{ return _MBID; }
 		bool		isNone(void) const;
 		boost::posix_time::time_duration getDuration(void) const;
+
+		// Get the artists of this release
+		std::vector<Wt::Dbo::ptr<Artist> > getArtists() const;
+		bool hasVariousArtists() const;
 
 		void setMBID(std::string mbid) { _MBID = mbid; }
 
@@ -82,8 +87,6 @@ class Release : public Wt::Dbo::Dbo<Release>
 			}
 
 	private:
-		static Wt::Dbo::Query<pointer> getQuery(Wt::Dbo::Session& session, SearchFilter filter);
-
 		static const std::size_t _maxNameLength = 128;
 
 		std::string _name;
@@ -94,5 +97,4 @@ class Release : public Wt::Dbo::Dbo<Release>
 
 } // namespace Database
 
-#endif
 

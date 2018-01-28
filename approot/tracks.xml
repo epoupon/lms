@@ -1,0 +1,33 @@
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="template-tracks">
+	<div class="page-header">
+		<h2>${tr:msg-tracks}</h2>
+	</div>
+	<div class="form-group">
+		<div class="input-group">
+			<span class="input-group-addon"><i class="fa fa-search"></i></span>
+			${search}
+		</div>
+	</div>
+	${tracks class="list-group"}
+</message>
+
+<message id="template-tracks-entry">
+	<div class="media list-group-item">
+		<div class="pull-left media-middle">
+			${cover class="media-object"}
+		</div>
+		<div class="media-body">
+			<h4 class="media-heading">${name}</h4>
+		</div>
+		${<if-has-release>}${release-name}${</if-has-release>}
+		${<if-has-artist>}${artist-name}${</if-has-artist>}
+		${play-btn}${add-btn}
+	</div>
+</message>
+
+</messages>

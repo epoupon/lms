@@ -17,7 +17,13 @@ lms_images_DATA = \
 		 docroot/images/unknown-artist.jpg
 
 lms_approot_DATA = \
-		approot/templates.xml
+		approot/artists.xml	\
+		approot/artist.xml	\
+		approot/messages.xml	\
+		approot/releases.xml	\
+		approot/release.xml	\
+		approot/templates.xml	\
+		approot/tracks.xml
 
 sysconf_DATA = \
 	        $(top_srcdir)/conf/lms.conf

@@ -108,29 +108,42 @@ Track::getClusters(void) const
 	return clusters;
 }
 
+static
 Wt::Dbo::Query< Track::pointer >
-Track::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
+getQuery(Wt::Dbo::Session& session,
+		const std::vector<id_type>& clusterIds,
+		const std::vector<std::string> keywords)
 {
-	SqlQuery sqlQuery = generatePartialQuery(filter);
+	WhereClause where;
 
-	Wt::Dbo::Query<pointer> query
-		= session.query<pointer>( "SELECT t FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get()).groupBy("t.id").orderBy("a.name,t.date,r.name,t.disc_number,t.track_number");
+	std::ostringstream oss;
+	oss << "SELECT t FROM track t";
 
-	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
-		query.bind(bindArg);
+	for (auto keyword : keywords)
+		where.And(WhereClause("t.name LIKE ?")).bind("%%" + keyword + "%%");
 
-	return query;
-}
+	if (!clusterIds.empty())
+	{
+		oss << " INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
 
-Wt::Dbo::Query< Track::UIQueryResult >
-Track::getUIQuery(Wt::Dbo::Session& session, SearchFilter filter)
-{
-	SqlQuery sqlQuery = generatePartialQuery(filter);
+		WhereClause clusterClause;
 
-	Wt::Dbo::Query<UIQueryResult> query
-		= session.query<UIQueryResult>( "SELECT t.id, a.name, r.name, t.disc_number, t.track_number, t.name, t.duration, t.date, t.original_date, t.genre_list FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get()).groupBy("t.id").orderBy("a.name,t.date,r.name,t.disc_number,t.track_number");
+		for (auto id : clusterIds)
+			clusterClause.And(WhereClause("c.id = ?")).bind(std::to_string(id));
 
-	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
+		where.And(clusterClause);
+	}
+
+	oss << " " << where.get();
+
+	if (!clusterIds.empty())
+		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
+
+	oss << " ORDER BY t.name";
+
+	Wt::Dbo::Query<Track::pointer> query = session.query<Track::pointer>( oss.str() );
+
+	for (const std::string& bindArg : where.getBindArgs())
 		query.bind(bindArg);
 
 	return query;
@@ -139,7 +152,7 @@ Track::getUIQuery(Wt::Dbo::Session& session, SearchFilter filter)
 Track::StatsQueryResult
 Track::getStats(Wt::Dbo::Session& session, SearchFilter filter)
 {
-	SqlQuery sqlQuery = generatePartialQuery(filter);
+	SqlQuery sqlQuery = filter.generatePartialQuery();
 
 	Wt::Dbo::Query<StatsQueryResult> query = session.query<StatsQueryResult>( "SELECT COUNT(\"id\"), SUM(\"dur\") FROM  (SELECT t.id as \"id\", t.duration as \"dur\" FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get() + " GROUP BY t.id)");
 
@@ -151,17 +164,14 @@ Track::getStats(Wt::Dbo::Session& session, SearchFilter filter)
 
 
 std::vector<Track::pointer>
-Track::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
+Track::getByFilter(Wt::Dbo::Session& session,
+		const std::vector<id_type>& clusterIds,
+		const std::vector<std::string> keywords,
+		int offset, int size, bool& moreResults)
 {
-	Wt::Dbo::collection<pointer> res = getQuery(session, filter).limit(size).offset(offset);
+	Wt::Dbo::collection<pointer> collection = getQuery(session, clusterIds, keywords).limit(size).offset(offset);
 
-	return std::vector<pointer>(res.begin(), res.end());
-}
-
-std::vector<Track::pointer>
-Track::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool& moreResults)
-{
-	auto res = getByFilter(session, filter, offset, size + 1);
+	auto res = std::vector<pointer>(collection.begin(), collection.end());
 
 	if (size != -1 && res.size() == static_cast<std::size_t>(size) + 1)
 	{
@@ -174,26 +184,28 @@ Track::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, i
 	return res;
 }
 
-void
-Track::updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< UIQueryResult >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
+boost::optional<std::size_t>
+Track::getTrackNumber(void) const
 {
-	Wt::Dbo::Query< UIQueryResult > query = getUIQuery(session, filter);
-	model.setQuery(query, columnNames.empty() ? true : false);
+	return (_trackNumber > 0) ? boost::make_optional<std::size_t>(_trackNumber) : boost::none;
+}
 
-	// TODO do something better
-	if (columnNames.size() == 9)
-	{
-		model.addColumn( "a.name", columnNames[0] );
-		model.addColumn( "r.name", columnNames[1] );
-		model.addColumn( "t.disc_number", columnNames[2] );
-		model.addColumn( "t.track_number", columnNames[3] );
-		model.addColumn( "t.name", columnNames[4] );
-		model.addColumn( "t.duration", columnNames[5] );
-		model.addColumn( "t.date", columnNames[6] );
-		model.addColumn( "t.original_date", columnNames[7] );
-		model.addColumn( "t.genre_list", columnNames[8] );
-	}
+boost::optional<std::size_t>
+Track::getTotalTrackNumber(void) const
+{
+	return (_totalTrackNumber > 0) ? boost::make_optional<std::size_t>(_totalTrackNumber) : boost::none;
+}
 
+boost::optional<std::size_t>
+Track::getDiscNumber(void) const
+{
+	return (_discNumber > 0) ? boost::make_optional<std::size_t>(_discNumber) : boost::none;
+}
+
+boost::optional<std::size_t>
+Track::getTotalDiscNumber(void) const
+{
+	return (_totalDiscNumber > 0) ? boost::make_optional<std::size_t>(_totalDiscNumber) : boost::none;
 }
 
 
@@ -219,6 +231,13 @@ Cluster::get(Wt::Dbo::Session& session, std::string type, std::string name)
 {
 	// TODO use like search
 	return session.find<Cluster>().where("type = ?").where("name = ?").bind( std::string(type, 0, _maxTypeLength)).bind( std::string(name, 0, _maxNameLength));
+}
+
+std::vector<Cluster::pointer>
+Cluster::getByType(Wt::Dbo::Session& session, std::string type)
+{
+	Wt::Dbo::collection<pointer> res = session.find<Cluster>().where("type = ?").bind( std::string(type, 0, _maxTypeLength)).orderBy("name");
+	return std::vector<Cluster::pointer>(res.begin(), res.end());
 }
 
 Cluster::pointer
@@ -252,7 +271,7 @@ Cluster::remove(Wt::Dbo::Session& session, std::string type)
 Wt::Dbo::Query<Cluster::pointer>
 Cluster::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
 {
-	SqlQuery sqlQuery = generatePartialQuery(filter);
+	SqlQuery sqlQuery = filter.generatePartialQuery();
 
 	Wt::Dbo::Query<pointer> query
 		= session.query<pointer>( "SELECT g FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN artist a ON t.artist_id = a.id INNER JOIN release r ON r.id = t.release_id INNER JOIN track t ON t.id = t_c.track_id " + sqlQuery.where().get()).groupBy("c.name").orderBy("c.name");
@@ -261,34 +280,6 @@ Cluster::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
 		query.bind(bindArg);
 
 	return query;
-}
-
-Wt::Dbo::Query<Cluster::UIQueryResult>
-Cluster::getUIQuery(Wt::Dbo::Session& session, SearchFilter filter)
-{
-	SqlQuery sqlQuery = generatePartialQuery(filter);
-
-	Wt::Dbo::Query<UIQueryResult> query
-		= session.query<UIQueryResult>( "SELECT c.id, c.name, COUNT(DISTINCT t.id) FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN artist a ON t.artist_id = a.id INNER JOIN release r ON r.id = t.release_id INNER JOIN track t ON t.id = t_c.track_id " + sqlQuery.where().get()).groupBy("c.name").orderBy("c.name");
-
-	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
-		query.bind(bindArg);
-
-	return query;
-}
-
-void
-Cluster::updateUIQueryModel(Wt::Dbo::Session& session,  Wt::Dbo::QueryModel<UIQueryResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
-{
-	Wt::Dbo::Query<UIQueryResult> query = getUIQuery(session, filter);
-	model.setQuery(query, columnNames.empty() ? true : false);
-
-	// TODO do something better
-	if (columnNames.size() == 2)
-	{
-		model.addColumn( "c.name", columnNames[0] );
-		model.addColumn( "COUNT(DISTINCT t.id)", columnNames[1] );
-	}
 }
 
 std::vector<Cluster::pointer>

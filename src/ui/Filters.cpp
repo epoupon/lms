@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,24 +17,29 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/Logger.hpp"
+#include <Wt/WTemplate>
+#include <Wt/WPushButton>
 
-#include "SearchFilter.hpp"
+#include "Filters.hpp"
 
-namespace Database
+namespace UserInterface {
+
+Filters::Filters(Wt::WContainerWidget *parent)
+: Wt::WContainerWidget(parent)
 {
+	auto container = new Wt::WTemplate(Wt::WString::tr("template-filters"), this);
 
-void
-SearchFilter::operator+=(const SearchFilter& filter)
-{
+	// Filters
+	Wt::WPushButton *addFilterBtn = new Wt::WPushButton(Wt::WText::tr("msg-filter-add"));
+	container->bindWidget("add-filter", addFilterBtn);
+
+	_filters = new Wt::WContainerWidget();
+	container->bindWidget("filters", _filters);
+
+//	_filterIds = {108, 419};
 }
 
-SqlQuery
-SearchFilter::generatePartialQuery()
-{
-	SqlQuery sqlQuery;
-	return sqlQuery;
-}
 
-} // namespace Database
+
+} // namespace UserInterface
 

@@ -187,7 +187,7 @@ Handler::createConnectionPool(boost::filesystem::path p)
 
 	connection->executeSql("pragma journal_mode=WAL");
 
-	//  connection->setProperty("show-queries", "true");
+	connection->setProperty("show-queries", "true");
 	return new Wt::Dbo::FixedSqlConnectionPool(connection, 1);
 }
 

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="template-artists">
+	<div class="page-header">
+		<h2>${tr:msg-artists}</h2>
+	</div>
+	<div class="form-group">
+		<div class="input-group">
+			<span class="input-group-addon"><i class="fa fa-search"></i></span>
+			${search}
+		</div>
+	</div>
+	${artists class="list-group"}
+</message>
+
+<message id="template-artists-entry">
+	<div class="list-group-item">
+		<span class="badge">${nb-release}</span>
+		${name}
+	</div>
+</message>
+
+</messages>

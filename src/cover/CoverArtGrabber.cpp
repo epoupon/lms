@@ -178,11 +178,7 @@ Grabber::getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type re
 	if (!release || release->isNone())
 		return std::vector<Image::Image>();
 
-	// Get the first track of the release
-	std::vector<Track::pointer> tracks = Track::getByFilter(session,
-				SearchFilter::ById(SearchFilter::Field::Release, releaseId),
-				-1, 1 /* limit result size */);
-
+	std::vector<Track::pointer> tracks = release->getTracks();
 	if (tracks.empty())
 		return std::vector<Image::Image>();
 

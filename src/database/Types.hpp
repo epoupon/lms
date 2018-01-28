@@ -19,7 +19,7 @@
 
 // header file aimed to ease database class declarations
 
-#include "Artist.hpp"
+#include "DbArtist.hpp"
 #include "Track.hpp"
 #include "Playlist.hpp"
 #include "Release.hpp"

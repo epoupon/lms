@@ -1,0 +1,25 @@
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="template-release">
+	${cover}
+	<div class="page-header">
+		<h2>${name}</h2>
+		<h4>${artist-name}</h4>
+		<h4>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</h4>
+		 ${play-btn}${add-btn}
+	</div>
+	${tracks}
+</message>
+
+<message id="template-release-entry">
+	${<if-has-disc-number>}${disc-number}-${</if-has-disc-number>}${<if-has-track-number>}${track-number}. ${</if-has-track-number>}
+	${<if-has-artist>}${artist-name} - ${</if-has-artist>}
+	${name}
+	${play-btn}${add-btn}
+</message>
+
+
+</messages>

@@ -44,6 +44,9 @@ class LmsApplication : public Wt::WApplication
 		TranscodeResource* getTranscodeResource() { return _transcodeResource; }
 		Database::Handler& getDbHandler() { return _db;}
 
+		// Utils
+		void goHome();
+
 	private:
 
 		void handleAuthEvent(void);
@@ -66,6 +69,7 @@ Database::User::pointer CurrentUser();
 
 ImageResource *SessionImageResource();
 TranscodeResource *SessionTranscodeResource();
+
 
 } // namespace UserInterface
 

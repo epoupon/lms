@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,24 +17,22 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <Wt/WTemplate>
+
 #include "utils/Logger.hpp"
 
-#include "SearchFilter.hpp"
+#include "LmsApplication.hpp"
 
-namespace Database
-{
+#include "HomeView.hpp"
 
-void
-SearchFilter::operator+=(const SearchFilter& filter)
+namespace UserInterface {
+
+
+Home::Home(Wt::WContainerWidget *parent)
+: Wt::WContainerWidget(parent)
 {
+	addWidget(new Wt::WTemplate(Wt::WString::tr("template-home")));
 }
 
-SqlQuery
-SearchFilter::generatePartialQuery()
-{
-	SqlQuery sqlQuery;
-	return sqlQuery;
-}
-
-} // namespace Database
+} // namespace UserInterface
 

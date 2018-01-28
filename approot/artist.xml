@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="template-artist">
+	<div class="page-header">
+		<h2>${name}</h2>
+	</div>
+	${releases class="list-group"}
+</message>
+
+<message id="template-artist-entry">
+	<div class="media list-group-item">
+		<div class="pull-left media-middle">
+			${cover class="media-object"}
+		</div>
+		<div class="media-body">
+			<h4 class="media-heading">${name}</h4>
+		</div>
+		${<if-has-various-artists>}${tr:msg-various-artists}${</if-has-various-artists>}
+		<h4>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</h4>
+	</div>
+</message>
+
+</messages>

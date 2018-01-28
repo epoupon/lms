@@ -5,7 +5,7 @@ lms_SOURCES = \
 	$(srcdir)/av/AvInfo.cpp					\
 	$(srcdir)/av/AvTranscoder.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
-	$(srcdir)/database/Artist.cpp				\
+	$(srcdir)/database/DbArtist.cpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
 	$(srcdir)/database/MediaDirectory.cpp			\
 	$(srcdir)/database/Playlist.cpp				\
@@ -24,41 +24,22 @@ lms_SOURCES = \
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
 	$(srcdir)/metadata/TagLibParser.cpp			\
+	$(srcdir)/ui/ArtistView.cpp				\
+	$(srcdir)/ui/ArtistsView.cpp				\
+	$(srcdir)/ui/Explore.cpp				\
+	$(srcdir)/ui/Filters.cpp				\
+	$(srcdir)/ui/HomeView.cpp				\
 	$(srcdir)/ui/LmsApplication.cpp				\
+	$(srcdir)/ui/ReleasesView.cpp				\
+	$(srcdir)/ui/ReleaseView.cpp				\
+	$(srcdir)/ui/TracksView.cpp				\
 	$(srcdir)/ui/auth/LmsAuth.cpp				\
-	$(srcdir)/ui/audio/AudioPlayer.cpp			\
-	$(srcdir)/ui/audio/desktop/DesktopAudio.cpp		\
-	$(srcdir)/ui/audio/desktop/FilterChain.cpp		\
-	$(srcdir)/ui/audio/desktop/KeywordSearchFilter.cpp	\
-	$(srcdir)/ui/audio/desktop/PlayQueue.cpp		\
-	$(srcdir)/ui/audio/desktop/TableFilter.cpp		\
-	$(srcdir)/ui/audio/desktop/TrackView.cpp		\
-	$(srcdir)/ui/audio/mobile/ArtistSearch.cpp		\
-	$(srcdir)/ui/audio/mobile/ArtistSearchView.cpp		\
-	$(srcdir)/ui/audio/mobile/ArtistView.cpp		\
-	$(srcdir)/ui/audio/mobile/MobileAudio.cpp		\
-	$(srcdir)/ui/audio/mobile/MobilePlayQueue.cpp		\
-	$(srcdir)/ui/audio/mobile/PreviewSearchView.cpp		\
-	$(srcdir)/ui/audio/mobile/ReleaseSearch.cpp		\
-	$(srcdir)/ui/audio/mobile/ReleaseSearchView.cpp		\
-	$(srcdir)/ui/audio/mobile/ReleaseView.cpp		\
-	$(srcdir)/ui/audio/mobile/TrackSearch.cpp		\
-	$(srcdir)/ui/audio/mobile/TrackSearchView.cpp		\
 	$(srcdir)/ui/common/DirectoryValidator.cpp		\
 	$(srcdir)/ui/common/InputRange.cpp			\
 	$(srcdir)/ui/common/LineEdit.cpp			\
 	$(srcdir)/ui/resource/AvConvTranscodeStreamResource.cpp	\
 	$(srcdir)/ui/resource/ImageResource.cpp			\
 	$(srcdir)/ui/resource/TranscodeResource.cpp		\
-	$(srcdir)/ui/settings/Settings.cpp			\
-	$(srcdir)/ui/settings/SettingsAccountFormView.cpp	\
-	$(srcdir)/ui/settings/SettingsAudioFormView.cpp		\
-	$(srcdir)/ui/settings/SettingsDatabaseFormView.cpp	\
-	$(srcdir)/ui/settings/SettingsFirstConnectionFormView.cpp	\
-	$(srcdir)/ui/settings/SettingsMediaDirectories.cpp	\
-	$(srcdir)/ui/settings/SettingsMediaDirectoryFormView.cpp	\
-	$(srcdir)/ui/settings/SettingsUserFormView.cpp		\
-	$(srcdir)/ui/settings/SettingsUsers.cpp			\
 	$(srcdir)/utils/Config.cpp				\
 	$(srcdir)/utils/Logger.cpp				\
 	$(srcdir)/utils/Path.cpp				\

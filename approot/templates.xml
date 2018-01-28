@@ -2,15 +2,23 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="Wt.WNavigationBar.template">
-	<div>
-		${collapse-button}
-		<div class="navbar-header">
-			${expand-button}
-			${title-link}
-			${search}
-		</div>
-		${contents}
+<message id="template-main">
+	${navbar-top class="main-nav"}
+	${contents class="container"}
+</message>
+
+<message id="template-home">
+	${tr:msg-home-welcome}
+</message>
+
+<message id="template-explore">
+	${filters}
+	${contents}
+</message>
+
+<message id="template-filters">
+	<div class="form-group">
+		${add-filter}${filters}
 	</div>
 </message>
 

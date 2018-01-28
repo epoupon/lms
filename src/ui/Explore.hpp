@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,24 +17,17 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/Logger.hpp"
+#pragma once
 
-#include "SearchFilter.hpp"
+#include <Wt/WContainerWidget>
 
-namespace Database
+namespace UserInterface {
+
+class Explore : public Wt::WContainerWidget
 {
+	public:
+		Explore(Wt::WContainerWidget *parent = 0);
+};
 
-void
-SearchFilter::operator+=(const SearchFilter& filter)
-{
-}
-
-SqlQuery
-SearchFilter::generatePartialQuery()
-{
-	SqlQuery sqlQuery;
-	return sqlQuery;
-}
-
-} // namespace Database
+} // namespace UserInterface
 
