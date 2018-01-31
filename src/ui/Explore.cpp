@@ -83,9 +83,9 @@ Explore::Explore(Wt::WContainerWidget* parent)
 
 	stack->addWidget(new Artists(filters));
 	stack->addWidget(new Artist(filters));
-	stack->addWidget(new Releases(/*filters*/));
-	stack->addWidget(new Release(/*filters*/));
-	stack->addWidget(new Tracks(/*filters*/));
+	stack->addWidget(new Releases(filters));
+	stack->addWidget(new Release(filters));
+	stack->addWidget(new Tracks(filters));
 
 	wApp->internalPathChanged().connect(std::bind([=]
 	{

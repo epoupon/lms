@@ -36,8 +36,9 @@ namespace UserInterface {
 
 using namespace Database;
 
-Releases::Releases(Wt::WContainerWidget* parent)
-: Wt::WContainerWidget(parent)
+Releases::Releases(Filters* filters, Wt::WContainerWidget* parent)
+: Wt::WContainerWidget(parent),
+	_filters(filters)
 {
 	auto releases = new Wt::WTemplate(Wt::WString::tr("template-releases"), this);
 	releases->addFunction("tr", &Wt::WTemplate::Functions::tr);
@@ -63,7 +64,7 @@ Releases::refresh(std::vector<std::string> searchKeywords)
 {
 	_releasesContainer->clear();
 
-	std::vector<Cluster::id_type> clusterIds; // TODO fill
+	auto clusterIds = _filters->getClusterIds();
 
 	Wt::Dbo::Transaction transaction(DboSession());
 
@@ -75,8 +76,8 @@ Releases::refresh(std::vector<std::string> searchKeywords)
 		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-releases-entry"), _releasesContainer);
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
 
-		Wt::WAnchor *coverAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(release.id())));
-		Wt::WImage *cover = new Wt::WImage(coverAnchor);
+		Wt::WAnchor* coverAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(release.id())));
+		Wt::WImage* cover = new Wt::WImage(coverAnchor);
 		cover->setImageLink(SessionImageResource()->getReleaseUrl(release.id(), 128));
 		// Some images may not be square
 		cover->setWidth(128);
@@ -91,8 +92,8 @@ Releases::refresh(std::vector<std::string> searchKeywords)
 		}
 		else
 		{
-			Wt::WAnchor *artistAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(artists.front().id())));
-			Wt::WText *artist = new Wt::WText(artistAnchor);
+			Wt::WAnchor* artistAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(artists.front().id())));
+			Wt::WText* artist = new Wt::WText(artistAnchor);
 			artist->setText(Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText));
 			entry->bindWidget("artist-name", artistAnchor);
 		}

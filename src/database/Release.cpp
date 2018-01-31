@@ -108,7 +108,7 @@ getQuery(Wt::Dbo::Session& session,
 		WhereClause clusterClause;
 
 		for (auto id : clusterIds)
-			clusterClause.And(WhereClause("c.id = ?")).bind(std::to_string(id));
+			clusterClause.Or(WhereClause("c.id = ?")).bind(std::to_string(id));
 
 		where.And(clusterClause);
 	}
@@ -195,17 +195,48 @@ Release::hasVariousArtists() const
 }
 
 std::vector<Wt::Dbo::ptr<Track>>
-Release::getTracks() const
+Release::getTracks(const std::vector<id_type>& clusterIds) const
 {
 	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Release>::invalidId() );
 	assert(session());
 
-	Wt::Dbo::collection<Wt::Dbo::ptr<Track>> res = session()->query<Wt::Dbo::ptr<Track>>(
-			"SELECT t FROM track t INNER JOIN release r ON t.release_id = r.id")
-		.where("r.id = ?")
-		.orderBy("t.disc_number,t.track_number")
-		.bind(id());
+	WhereClause where;
 
-	return std::vector<Wt::Dbo::ptr<Track>>(res.begin(), res.end());
+	std::ostringstream oss;
+	oss << "SELECT t FROM track t INNER JOIN release r ON t.release_id = r.id";
+
+	if (!clusterIds.empty())
+	{
+		oss << " INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
+
+		WhereClause clusterClause;
+
+		for (auto id : clusterIds)
+			clusterClause.Or(WhereClause("c.id = ?")).bind(std::to_string(id));
+
+		where.And(clusterClause);
+	}
+
+	where.And(WhereClause("r.id = ?")).bind(std::to_string(id()));
+
+	oss << " " << where.get();
+
+	if (!clusterIds.empty())
+		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
+
+	oss << " ORDER BY t.disc_number,t.track_number";
+
+	Wt::Dbo::Query<Track::pointer> query = session()->query<Track::pointer>( oss.str() );
+
+	for (const std::string& bindArg : where.getBindArgs())
+	{
+		query.bind(bindArg);
+	}
+
+	Wt::Dbo::collection< Wt::Dbo::ptr<Track> > res = query;
+
+	return std::vector< Wt::Dbo::ptr<Track> > (res.begin(), res.end());
 }
+
 } // namespace Database

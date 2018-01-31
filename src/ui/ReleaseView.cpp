@@ -33,8 +33,9 @@
 
 namespace UserInterface {
 
-Release::Release(Wt::WContainerWidget* parent)
-: Wt::WContainerWidget(parent)
+Release::Release(Filters* filters, Wt::WContainerWidget* parent)
+: Wt::WContainerWidget(parent),
+	_filters(filters)
 {
 	wApp->internalPathChanged().connect(std::bind([=]
 	{
@@ -109,10 +110,9 @@ Release::refresh()
 	auto tracksContainer = new Wt::WContainerWidget();
 	t->bindWidget("tracks", tracksContainer);
 
-	std::vector<Database::Cluster::id_type> clusterIds; // TODO fill
+	auto clusterIds = _filters->getClusterIds();
+	auto tracks = release->getTracks(clusterIds);
 
-//	auto tracks = release->getTracks(clusterIds);
-	auto tracks = release->getTracks();
 	bool variousArtists = release->hasVariousArtists();
 
 	for (auto track : tracks)

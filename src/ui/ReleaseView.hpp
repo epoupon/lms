@@ -21,15 +21,19 @@
 
 #include <Wt/WContainerWidget>
 
+#include "Filters.hpp"
+
 namespace UserInterface {
 
 class Release : public Wt::WContainerWidget
 {
 	public:
-		Release(Wt::WContainerWidget* parent = 0);
+		Release(Filters* filters, Wt::WContainerWidget* parent = 0);
 
 	private:
 		void refresh();
+
+		Filters* _filters;
 };
 
 } // namespace UserInterface

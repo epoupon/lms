@@ -35,8 +35,9 @@ namespace UserInterface {
 
 using namespace Database;
 
-Tracks::Tracks(Wt::WContainerWidget* parent)
-: Wt::WContainerWidget(parent)
+Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
+: Wt::WContainerWidget(parent),
+	_filters(filters)
 {
 	auto tracks = new Wt::WTemplate(Wt::WString::tr("template-tracks"), this);
 	tracks->addFunction("tr", &Wt::WTemplate::Functions::tr);
@@ -62,7 +63,7 @@ Tracks::refresh(std::vector<std::string> searchKeywords)
 {
 	_tracksContainer->clear();
 
-	std::vector<Cluster::id_type> clusterIds; // TODO fill
+	auto clusterIds = _filters->getClusterIds();
 
 	Wt::Dbo::Transaction transaction(DboSession());
 

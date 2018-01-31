@@ -19,7 +19,7 @@ LMS is written entirely in C++. Therefore, it is suitable to run on embedded dev
 ### Debian
 
 ```sh
-$ apt-get install g++ autoconf automake libboost-dev libboost-locale-dev libboost-iostreams-dev libavcodec-dev libwtdbosqlite-dev libwthttp-dev libwtdbo-dev libwt-dev libmagick++-dev libavcodec-dev libavformat-dev libav-tools libpstreams-dev libcurl-dev libcurlpp-dev libconfig++-dev ffmpeg
+$ apt-get install g++ autoconf automake libboost-dev libboost-locale-dev libboost-iostreams-dev libavcodec-dev libavutil-dev libavformat-dev libav-tools libwtdbosqlite-dev libwthttp-dev libwtdbo-dev libwt-dev libmagick++-dev libpstreams-dev libcurlpp-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
 ```
 
 ## Build

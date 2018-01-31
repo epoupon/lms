@@ -21,17 +21,20 @@
 
 #include <Wt/WContainerWidget>
 
+#include "Filters.hpp"
+
 namespace UserInterface {
 
 class Releases : public Wt::WContainerWidget
 {
 	public:
-		Releases(Wt::WContainerWidget* parent = 0);
+		Releases(Filters* filters, Wt::WContainerWidget* parent = 0);
 
 	private:
 		void refresh(std::vector<std::string> searchKeywords = std::vector<std::string>());
 
-		Wt::WContainerWidget *_releasesContainer;
+		Filters* _filters;
+		Wt::WContainerWidget* _releasesContainer;
 };
 
 } // namespace UserInterface

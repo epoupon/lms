@@ -129,7 +129,7 @@ getQuery(Wt::Dbo::Session& session,
 		WhereClause clusterClause;
 
 		for (auto id : clusterIds)
-			clusterClause.And(WhereClause("c.id = ?")).bind(std::to_string(id));
+			clusterClause.Or(WhereClause("c.id = ?")).bind(std::to_string(id));
 
 		where.And(clusterClause);
 	}
