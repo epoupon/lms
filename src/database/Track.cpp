@@ -111,7 +111,7 @@ Track::getClusters(void) const
 static
 Wt::Dbo::Query< Track::pointer >
 getQuery(Wt::Dbo::Session& session,
-		const std::vector<id_type>& clusterIds,
+		const std::set<id_type>& clusterIds,
 		const std::vector<std::string> keywords)
 {
 	WhereClause where;
@@ -165,7 +165,7 @@ Track::getStats(Wt::Dbo::Session& session, SearchFilter filter)
 
 std::vector<Track::pointer>
 Track::getByFilter(Wt::Dbo::Session& session,
-		const std::vector<id_type>& clusterIds,
+		const std::set<id_type>& clusterIds,
 		const std::vector<std::string> keywords,
 		int offset, int size, bool& moreResults)
 {
@@ -280,6 +280,15 @@ Cluster::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
 		query.bind(bindArg);
 
 	return query;
+}
+
+std::vector<std::string>
+Cluster::getAllTypes(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::collection<std::string> res
+		= session.query<std::string>("SELECT type from cluster").groupBy("type").orderBy("type");
+
+	return std::vector<std::string>(res.begin(), res.end());
 }
 
 std::vector<Cluster::pointer>

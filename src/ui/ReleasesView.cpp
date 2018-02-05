@@ -56,6 +56,10 @@ Releases::Releases(Filters* filters, Wt::WContainerWidget* parent)
 	releases->bindWidget("releases", _releasesContainer);
 
 	refresh();
+
+	filters->updated().connect(std::bind([=] {
+		refresh();
+	}));
 }
 
 

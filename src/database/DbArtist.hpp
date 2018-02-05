@@ -51,7 +51,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static pointer			getNone(Wt::Dbo::Session& session); // Special entry
 		static std::vector<pointer>	getByName(Wt::Dbo::Session& session, const std::string& name);
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session,
-								const std::vector<id_type>& clusters,		// at least one track that belongs to  these clusters
+								const std::set<id_type>& clusters,		// at least one track that belongs to  these clusters
 								const std::vector<std::string> keywords,	// name must match all of these keywords
 								int offset,
 								int size,
@@ -65,7 +65,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		std::string getMBID(void) const { return _MBID; }
 
 		// Get the releases that have at least one track for this artist + belongs to optonal cluster filters
-		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::vector<id_type>& clusterIds = std::vector<id_type>()) const;
+		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<id_type>& clusterIds = std::set<id_type>()) const;
 
 		void setMBID(std::string mbid) { _MBID = mbid; }
 

@@ -54,8 +54,11 @@ Artists::Artists(Filters* filters, Wt::WContainerWidget* parent)
 	artists->bindWidget("artists", _artistsContainer);
 
 	refresh();
-}
 
+	filters->updated().connect(std::bind([=] {
+		refresh();
+	}));
+}
 
 void
 Artists::refresh(std::vector<std::string> searchKeywords)

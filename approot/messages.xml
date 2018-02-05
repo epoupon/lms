@@ -10,4 +10,9 @@
 <message id="msg-filter-add">Add filter</message>
 <message id="msg-search-placeholder">Search...</message>
 
+<message id="msg-add">Add</message>
+<message id="msg-cancel">Cancel</message>
+
+<message id="msg-filter-type">Type</message>
+<message id="msg-filter-value">Value</message>
 </messages>

@@ -55,6 +55,10 @@ Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
 	tracks->bindWidget("tracks", _tracksContainer);
 
 	refresh();
+
+	filters->updated().connect(std::bind([=] {
+		refresh();
+	}));
 }
 
 

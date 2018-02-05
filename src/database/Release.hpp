@@ -51,13 +51,13 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, int offset, int size);
 
 		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
-							const std::vector<id_type>& clusters,           // at least one track that belongs to these clusters
+							const std::set<id_type>& clusters,           // at least one track that belongs to these clusters
 							const std::vector<std::string> keywords,        // name must match all of these keywords
 							int offset,
 							int size,
 							bool& moreExpected);
 
-		std::vector<Wt::Dbo::ptr<Track>> getTracks(const std::vector<id_type>& clusters = std::vector<id_type>()) const;
+		std::vector<Wt::Dbo::ptr<Track>> getTracks(const std::set<id_type>& clusters = std::set<id_type>()) const;
 
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID = "");

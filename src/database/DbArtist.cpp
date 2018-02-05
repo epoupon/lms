@@ -91,7 +91,7 @@ Artist::getAllOrphans(Wt::Dbo::Session& session)
 static
 Wt::Dbo::Query<Artist::pointer>
 getQuery(Wt::Dbo::Session& session,
-		const std::vector<id_type>& clusterIds,
+		const std::set<id_type>& clusterIds,
 		const std::vector<std::string>& keywords)
 {
 	WhereClause where;
@@ -132,7 +132,7 @@ getQuery(Wt::Dbo::Session& session,
 
 std::vector<Artist::pointer>
 Artist::getByFilter(Wt::Dbo::Session& session,
-		const std::vector<id_type>& clusters,
+		const std::set<id_type>& clusters,
 		const std::vector<std::string> keywords,
 		int offset, int size, bool& moreResults)
 {
@@ -152,7 +152,7 @@ Artist::getByFilter(Wt::Dbo::Session& session,
 }
 
 std::vector<Wt::Dbo::ptr<Release> >
-Artist::getReleases(const std::vector<id_type>& clusterIds) const
+Artist::getReleases(const std::set<id_type>& clusterIds) const
 {
 	assert(self());
 	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );

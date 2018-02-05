@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
+#include <Wt/WSignal>
 
 #include "database/Types.hpp"
 
@@ -32,12 +33,17 @@ class Filters : public Wt::WContainerWidget
 	public:
 		Filters(Wt::WContainerWidget *parent = 0);
 
-		std::vector<Database::Cluster::id_type> getClusterIds() const { return _filterIds; }
+		std::set<Database::Cluster::id_type> getClusterIds() const { return _filterIds; }
+
+		Wt::Signal<void>& updated() { return _sigUpdated; }
 
 	private:
 
+		void showDialog();
+
 		Wt::WContainerWidget *_filters;
-		std::vector<Database::Cluster::id_type> _filterIds;
+		Wt::Signal<void> _sigUpdated;
+		std::set<Database::Cluster::id_type> _filterIds;
 };
 
 } // namespace UserInterface
