@@ -91,7 +91,10 @@ Filters::showDialog()
 	}));
 
 	dialog->setModal(true);
+#if WT_VERSION >= 0x030307
 	dialog->setMovable(false);
+#endif
+
 	dialog->setResizable(false);
 	dialog->setClosable(false);
 
