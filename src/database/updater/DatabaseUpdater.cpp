@@ -533,10 +533,8 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	assert(track);
 
 	track.modify()->setChecksum(checksum);
-	if (artist)
-		track.modify()->setArtist(artist);
-	if (release)
-		track.modify()->setRelease(release);
+	track.modify()->setArtist(artist);
+	track.modify()->setRelease(release);
 	track.modify()->setLastWriteTime(lastWriteTime);
 	track.modify()->setName(title);
 	track.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]) );
