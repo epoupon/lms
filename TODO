@@ -1,7 +1,4 @@
 
-[Book]
-- Make the feature?
-
 [Build]
 - Makefile per directory. Use the include flags only where needed?
 
@@ -10,7 +7,6 @@
 - Implement a cache and a grabber from some web service (mandatory for artists?) coverartarchive.org
 
 [Database]
-- Make filters using tags (support AND) + optim
 - Optim, use SQL query to get the "genre" orphans
 - Use Inotify like system to watch modified/added files?
 - handle access rights problems (instead of aborting)
@@ -28,49 +24,13 @@
 - Use the WServer::post method to kick users already logged in?
 - Limit multi login from UI and API interfaces (limit per interface is acceptable)
 
-[Services]
-- consider adding support for external web servers (new FCGI service?)
-
 [UI]
-	- Handle internationalization
-	- Handle internal path
-	- Cannot log again when refreshing the application in firefox (have to close/open a new browser tab)
-	[Settings]
-		- logout users that are being changed (loss of admin rights), or make sure they are still admin when they make changes
-		- "signal not exposed" problem if a user logout and login again. Bad resource destruction?
-		- add a scroll area in order for settings to work on mobile devices
-		[user/transcoding]
-		- Prefered codecs for video
-		- use a slider instead of a combo box for the bitrates?
-		[admin/Users]
-		- do not activate the update period/start time when 'admin' is checked
-		- do not activate the bitrate limit when creating a new admin user
-		[admin/Database update]
-		- do not make the update start time field active when update perdiod is "Never"
-		- refresh the audio/video view when the database directories have been updated
-
-	[Audio]
-		- drop the winamp like interface?
-		- Add a download button to get the current playlist in a streamed zip file
-		- Add a upload button to upload media files in a dedicated directory
-		- Perform a search for each key pressed (using a timer, in JS)
-		- Save user prefs in local storage (volume, loop, shuffle, current playqueue, etc.)
-		[desktop]
-		- TrackView: Reselect the current selected item when displaying the updated search results
-		- Add keyboard shortcuts
-		- playqueue: try to get a single div to display the cover / artist / track name in order to improve style
-		- Add a hint for the user to get the nature of tag (created from genre ? created from audio features?)
-		[mobile]
-		- Reorganize the views to ease internal paths
-		- Covers not always the same height
-		- 'duration' and 'play' tags are broken if title is too long
-		- Cover loading breaks the vertical alignment
-		- Implement a play queue
-		- Implement a decent player
-		- Make the release/artist clickable when displayed to the user
-	[Video]
-	- implement a decent mediaplayer
-	- remove codec choice from parameters
+	- Add a download button to get the current playlist in a streamed zip file
+	- Save user prefs in local storage (volume, loop, shuffle, current playqueue, etc.)
+	- Add keyboard shortcuts
+	- Add a hint for the user to get the nature of tag (created from genre ? created from audio features?)
+	- Implement a play queue
+	- Implement a decent player
 
 [REST API]
 - Make a dedicated REST API. Maybe use the SubSonic API or Ampache API?
