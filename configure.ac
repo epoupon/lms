@@ -8,14 +8,6 @@ AC_LANG_CPLUSPLUS
 # Checks for programs
 AC_PROG_CXX
 
-AC_ARG_ENABLE([video], AS_HELP_STRING([--enable-video],
-				      [Enable Video support. Default to no.])],
-			[enable_video="$enableval"],
-			[enable_video="no"])
-
-AM_CONDITIONAL([VIDEO], [test x$enable_video = xyes])
-AS_IF([test x$enable_video = xyes], [AC_DEFINE(HAVE_VIDEO, [1], [Enable Video support])])
-
 PKG_CHECK_MODULES(IMAGEMAGICKXX, "ImageMagick++", [ HAVE_IMAGEMAGICKXX=yes ], [ ])
 if test -n "$HAVE_IMAGEMAGICKXX"; then
 	MAGICKXX_CFLAGS="$IMAGEMAGICKXX_CFLAGS"

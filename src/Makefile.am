@@ -15,7 +15,6 @@ lms_SOURCES = \
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/User.cpp				\
-	$(srcdir)/database/Video.cpp				\
 	$(srcdir)/database/updater/DatabaseUpdater.cpp		\
 	$(srcdir)/database/updater/DatabaseFeatureExtractor.cpp	\
 	$(srcdir)/database/updater/DatabaseHighLevelCluster.cpp	\
@@ -44,14 +43,6 @@ lms_SOURCES = \
 	$(srcdir)/utils/Logger.cpp				\
 	$(srcdir)/utils/Path.cpp				\
 	$(srcdir)/utils/Utils.cpp
-
-if VIDEO
-lms_SOURCES += \
-	$(srcdir)/ui/video/VideoWidget.cpp			\
-	$(srcdir)/ui/video/VideoDatabaseWidget.cpp		\
-	$(srcdir)/ui/video/VideoMediaPlayerWidget.cpp		\
-	$(srcdir)/ui/video/VideoParametersDialog.cpp
-endif
 
 lms_CXXFLAGS=-std=c++11 -Wall -I$(srcdir)/third-party -I$(srcdir)/ui $(MAGICKXX_CFLAGS) -D_REENTRANT -DBOOST_SPIRIT_THREADSAFE
 lms_LDADD=$(MAGICKXX_LIBS)

@@ -173,9 +173,9 @@ Grabber::getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type re
 
 	Wt::Dbo::Transaction transaction(session);
 
-	// If the release does not exist or is the special release "None", do nothing
+	// If the release does not exist, do nothing
 	Release::pointer release = Release::getById(session, releaseId);
-	if (!release || release->isNone())
+	if (!release)
 		return std::vector<Image::Image>();
 
 	std::vector<Track::pointer> tracks = release->getTracks();

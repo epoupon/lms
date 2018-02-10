@@ -57,22 +57,6 @@ Artist::create(Wt::Dbo::Session& session, const std::string& name, const std::st
 	return session.add(new Artist(name, MBID));
 }
 
-Artist::pointer
-Artist::getNone(Wt::Dbo::Session& session)
-{
-	std::vector<pointer> res = getByName(session, "<None>");
-	if (res.empty())
-		return create(session, "<None>");
-
-	return res.front();
-}
-
-bool
-Artist::isNone() const
-{
-	return _name == "<None>";
-}
-
 std::vector<Artist::pointer>
 Artist::getAll(Wt::Dbo::Session& session, int offset, int size)
 {

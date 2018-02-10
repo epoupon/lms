@@ -81,9 +81,6 @@ Artist::refresh()
 	auto releases = artist->getReleases(_filters->getClusterIds());
 	for (auto release : releases)
 	{
-		if (release->isNone())
-			continue;
-
 		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-artist-entry"), releasesContainer);
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
 

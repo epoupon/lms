@@ -87,7 +87,6 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 	_session.mapClass<Database::Playlist>("playlist");
 	_session.mapClass<Database::PlaylistEntry>("playlist_entry");
 	_session.mapClass<Database::Release>("release");
-	_session.mapClass<Database::Video>("video");
 	_session.mapClass<Database::MediaDirectory>("media_directory");
 	_session.mapClass<Database::Setting>("setting");
 

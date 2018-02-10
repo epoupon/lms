@@ -81,7 +81,7 @@ Tracks::refresh(std::vector<std::string> searchKeywords)
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
 
 		auto artist = track->getArtist();
-		if (!artist->isNone())
+		if (artist)
 		{
 			entry->setCondition("if-has-artist", true);
 			Wt::WAnchor *artistAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(track->getArtist().id())));
@@ -91,7 +91,7 @@ Tracks::refresh(std::vector<std::string> searchKeywords)
 		}
 
 		auto release = track->getRelease();
-		if (!release->isNone())
+		if (release)
 		{
 			entry->setCondition("if-has-release", true);
 			// TODO anchor

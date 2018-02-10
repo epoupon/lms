@@ -56,22 +56,6 @@ Release::create(Wt::Dbo::Session& session, const std::string& name, const std::s
 	return session.add(new Release(name, MBID));
 }
 
-bool
-Release::isNone() const
-{
-	return _name == "<None>";
-}
-
-Release::pointer
-Release::getNone(Wt::Dbo::Session& session)
-{
-	std::vector<pointer> res = getByName(session, "<None>");
-	if (res.empty())
-		return create(session, "<None>");
-
-	return res.front();
-}
-
 std::vector<Release::pointer>
 Release::getAll(Wt::Dbo::Session& session, int offset, int size)
 {

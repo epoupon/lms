@@ -36,7 +36,6 @@ class MediaDirectory
 
 		enum Type {
 			Audio = 1,
-			Video = 2,
 		};
 
 		MediaDirectory() {}

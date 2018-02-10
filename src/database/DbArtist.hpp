@@ -48,7 +48,6 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		// Accessors
 		static pointer			getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
 		static pointer			getById(Wt::Dbo::Session& session, id_type id);
-		static pointer			getNone(Wt::Dbo::Session& session); // Special entry
 		static std::vector<pointer>	getByName(Wt::Dbo::Session& session, const std::string& name);
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session,
 								const std::set<id_type>& clusters,		// at least one track that belongs to  these clusters
@@ -72,7 +71,6 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID = "");
 
-		bool	isNone(void) const;
 
 		template<class Action>
 			void persist(Action& a)

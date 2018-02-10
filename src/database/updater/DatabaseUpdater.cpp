@@ -240,7 +240,6 @@ Updater::process(boost::system::error_code err)
 	Stats stats;
 
 	checkAudioFiles(stats);
-	checkVideoFiles(stats);
 
 	std::vector<RootDirectory> rootDirectories;
 	{
@@ -296,10 +295,6 @@ Updater::updateFileExtensions()
 	_audioFileExtensions.clear();
 	for (auto extension : splitString(Setting::getString(_db->getSession(), "audio_file_extensions"), " "))
 		_audioFileExtensions.push_back( extension );
-
-	_videoFileExtensions.clear();
-	for (auto extension : splitString(Setting::getString(_db->getSession(), "video_file_extensions"), " "))
-		_videoFileExtensions.push_back( extension );
 }
 
 Artist::pointer
@@ -336,7 +331,7 @@ Updater::getArtist( const boost::filesystem::path& file, const std::string& name
 		return artist;
 	}
 
-	return Artist::getNone( _db->getSession() );
+	return Artist::pointer();
 }
 
 Release::pointer
@@ -373,7 +368,7 @@ Updater::getRelease( const boost::filesystem::path& file, const std::string& nam
 		return release;
 	}
 
-	return Release::getNone( _db->getSession() );
+	return Release::pointer();
 }
 
 std::vector<Cluster::pointer>
@@ -389,9 +384,6 @@ Updater::getGenreClusters( const std::list<std::string>& names)
 
 		genres.push_back( genre );
 	}
-
-	if (genres.empty())
-		genres.push_back( Cluster::getNone( _db->getSession() ));
 
 	return genres;
 }
@@ -486,7 +478,6 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		// TODO rename
 		genres = getGenreClusters( genreList );
 	}
-	assert( !genres.empty() );
 
 	//  ***** Artist
 	Artist::pointer artist;
@@ -502,7 +493,6 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		artist = getArtist(file, artistName, artistMusicBrainzID);
 	}
-	assert(artist);
 
 	//  ***** Release
 	Release::pointer release;
@@ -543,8 +533,10 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	assert(track);
 
 	track.modify()->setChecksum(checksum);
-	track.modify()->setArtist(artist);
-	track.modify()->setRelease(release);
+	if (artist)
+		track.modify()->setArtist(artist);
+	if (release)
+		track.modify()->setRelease(release);
 	track.modify()->setLastWriteTime(lastWriteTime);
 	track.modify()->setName(title);
 	track.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]) );
@@ -630,11 +622,6 @@ Updater::processRootDirectory(RootDirectory rootDirectory, Stats& stats)
 					if (isFileSupported(path, _audioFileExtensions))
 						processAudioFile(path, stats );
 
-					break;
-
-				case Database::MediaDirectory::Video:
-					if (isFileSupported(path, _videoFileExtensions))
-						processVideoFile(path, stats);
 					break;
 			}
 		}
@@ -785,101 +772,5 @@ Updater::checkDuplicatedAudioFiles(Stats& stats)
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files done!";
 }
 
-void
-Updater::checkVideoFiles( Stats& stats )
-{
-	std::vector<boost::filesystem::path> rootDirs = getRootDirectoriesByType(_db->getSession(), Database::MediaDirectory::Video);
-	std::vector<boost::filesystem::path> videoPaths = Video::getAllPaths(_db->getSession());
-
-	LMS_LOG(DBUPDATER, DEBUG) << "Checking videos...";
-	for (auto& videoPath : videoPaths)
-	{
-		if (!_running)
-			return;
-
-		if (!checkFile(videoPath, rootDirs, _videoFileExtensions))
-		{
-			Wt::Dbo::Transaction transaction(_db->getSession());
-
-			Video::pointer video = Video::getByPath(_db->getSession(), videoPath);
-			if (video)
-			{
-				video.remove();
-				stats.nbRemoved++;
-			}
-		}
-	}
-
-	LMS_LOG(DBUPDATER, DEBUG) << "Check video files done!";
-}
-
-void
-Updater::processVideoFile( const boost::filesystem::path& file, Stats& stats)
-{
-	// Check last update time
-	boost::posix_time::ptime lastWriteTime (boost::posix_time::from_time_t( boost::filesystem::last_write_time( file ) ) );
-
-	Wt::Dbo::Transaction transaction(_db->getSession());
-
-	// Skip file if last write is the same
-	Wt::Dbo::ptr<Video> video = Video::getByPath(_db->getSession(), file);
-	if (video && video->getLastWriteTime() == lastWriteTime)
-		return;
-
-	MetaData::Items items;
-	if (!_metadataParser.parse(file, items))
-		return;
-
-	// We estimate this is a video if:
-	// - we found a least one video stream
-	// - the duration is not null
-	if (items.find(MetaData::Type::VideoStreams) == items.end()
-			|| boost::any_cast<std::vector<MetaData::VideoStream> >(items[MetaData::Type::VideoStreams]).empty())
-	{
-		LMS_LOG(DBUPDATER, ERROR) << "Skipped '" << file << "' (no video stream found)";
-
-		// If the video exists here, delete it!
-		if (video) {
-			video.remove();
-			stats.nbRemoved++;
-		}
-		return;
-	}
-	if (items.find(MetaData::Type::Duration) == items.end()
-			|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]).total_seconds() == 0)
-	{
-		LMS_LOG(DBUPDATER, ERROR) << "Skipped '" << file << "' (no duration or duration 0)";
-
-		// If Track exists here, delete it!
-		if (video) {
-			video.remove();
-			stats.nbRemoved++;
-		}
-		return;
-	}
-
-	// If video already exist, update data
-	// Otherwise, create it
-	// Today we are very aggressive, but we could also guess names from path, etc.
-	if (!video)
-	{
-		video = Video::create(_db->getSession(), file);
-		LMS_LOG(DBUPDATER, DEBUG) << "Adding '" << file << "'";
-		stats.nbAdded++;
-	}
-	else
-	{
-		LMS_LOG(DBUPDATER, DEBUG) << "Updating '" << file << "'";
-		stats.nbUpdated++;
-	}
-
-	assert(video);
-
-	video.modify()->setName( file.filename().string() );
-	video.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]) );
-	video.modify()->setLastWriteTime(lastWriteTime);
-
-	transaction.commit();
-}
 
 } // namespace Database

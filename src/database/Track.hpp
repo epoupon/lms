@@ -59,7 +59,6 @@ class Cluster
 
 		// Find utility
 		static pointer get(Wt::Dbo::Session& session, std::string type, std::string name);
-		static pointer getNone(Wt::Dbo::Session& session);
 		static std::vector<pointer> getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session);
 		static std::vector<std::string> getAllTypes(Wt::Dbo::Session& session);
@@ -74,7 +73,6 @@ class Cluster
 		// Accessors
 		const std::string& getName(void) const { return _name; }
 		const std::string& getType(void) const { return _type; }
-		bool isNone(void) const;
 		const Wt::Dbo::collection< Wt::Dbo::ptr<Track> >&	getTracks() const { return _tracks;}
 
 		void addTrack(Wt::Dbo::Session& session, Wt::Dbo::dbo_traits<Track>::IdType trackId);

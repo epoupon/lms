@@ -241,21 +241,6 @@ Cluster::getByType(Wt::Dbo::Session& session, std::string type)
 }
 
 Cluster::pointer
-Cluster::getNone(Wt::Dbo::Session& session)
-{
-	pointer res = get(session, "<None>", "<None>");
-	if (!res)
-		res = create(session, "<None>", "<None>");
-	return res;
-}
-
-bool
-Cluster::isNone(void) const
-{
-	return (_type == "<None>" && _name == "<None>");
-}
-
-Cluster::pointer
 Cluster::create(Wt::Dbo::Session& session, std::string type, std::string name)
 {
 	return session.add(new Cluster(type, name));

@@ -121,7 +121,7 @@ Release::refresh()
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
 
-		if (variousArtists && !track->getArtist()->isNone())
+		if (variousArtists && track->getArtist())
 		{
 			entry->setCondition("if-has-artist", true);
 			Wt::WAnchor *artistAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(track->getArtist().id())));

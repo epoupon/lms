@@ -46,7 +46,6 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static pointer			getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
 		static std::vector<pointer>	getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer			getById(Wt::Dbo::Session& session, id_type id);
-		static pointer			getNone(Wt::Dbo::Session& session); // Special entry
 		static std::vector<pointer>	getAllOrphans(Wt::Dbo::Session& session); // no track related
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, int offset, int size);
 
@@ -68,7 +67,6 @@ class Release : public Wt::Dbo::Dbo<Release>
 		// Accessors
 		std::string	getName() const		{ return _name; }
 		std::string	getMBID() const		{ return _MBID; }
-		bool		isNone(void) const;
 		boost::posix_time::time_duration getDuration(void) const;
 
 		// Get the artists of this release
