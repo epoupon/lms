@@ -106,6 +106,12 @@ Tracks::refresh(std::vector<std::string> searchKeywords)
 		// Some images may not be square
 		cover->setWidth(64);
 		entry->bindWidget("cover", cover);
+
+		auto playBtn = new Wt::WText(Wt::WString::tr("btn-tracks-play-btn"), Wt::XHTMLText);
+		entry->bindWidget("play-btn", playBtn);
+
+		auto addBtn = new Wt::WText(Wt::WString::tr("btn-tracks-add-btn"), Wt::XHTMLText);
+		entry->bindWidget("add-btn", addBtn);
 	}
 
 }

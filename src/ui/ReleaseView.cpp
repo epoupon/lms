@@ -105,7 +105,15 @@ Release::refresh()
 	cover->setImageLink(Wt::WLink (SessionImageResource()->getReleaseUrl(release.id(), 512)));
 	t->bindWidget("cover", cover);
 
-	// TODO play/add button
+	{
+		auto playBtn = new Wt::WText(Wt::WString::tr("btn-release-play-btn"), Wt::XHTMLText);
+		t->bindWidget("play-btn", playBtn);
+	}
+
+	{
+		auto addBtn = new Wt::WText(Wt::WString::tr("btn-release-add-btn"), Wt::XHTMLText);
+		t->bindWidget("add-btn", addBtn);
+	}
 
 	auto tracksContainer = new Wt::WContainerWidget();
 	t->bindWidget("tracks", tracksContainer);
@@ -144,6 +152,12 @@ Release::refresh()
 			entry->setCondition("if-has-disc-number", true);
 			entry->bindInt("disc-number", *discNumber);
 		}
+
+		auto playBtn = new Wt::WText(Wt::WString::tr("btn-release-play-btn"), Wt::XHTMLText);
+		entry->bindWidget("play-btn", playBtn);
+
+		auto addBtn = new Wt::WText(Wt::WString::tr("btn-release-add-btn"), Wt::XHTMLText);
+		entry->bindWidget("add-btn", addBtn);
 	}
 }
 

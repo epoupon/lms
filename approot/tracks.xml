@@ -16,6 +16,14 @@
 	${tracks class="list-group"}
 </message>
 
+<message id="btn-tracks-play-btn">
+	<i class="fa fa-play"></i>
+</message>
+
+<message id="btn-tracks-add-btn">
+	<i class="fa fa-plus"></i>
+</message>
+
 <message id="template-tracks-entry">
 	<div class="media list-group-item">
 		<div class="pull-left media-middle">

@@ -74,6 +74,15 @@ Artist::refresh()
 	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	t->bindString("name", Wt::WString::fromUTF8(artist->getName()), Wt::PlainText);
+	{
+		auto playBtn = new Wt::WText(Wt::WString::tr("btn-artist-play-btn"), Wt::XHTMLText);
+		t->bindWidget("play-btn", playBtn);
+	}
+
+	{
+		auto addBtn = new Wt::WText(Wt::WString::tr("btn-artist-add-btn"), Wt::XHTMLText);
+		t->bindWidget("add-btn", addBtn);
+	}
 
 	auto releasesContainer = new Wt::WContainerWidget();
 	t->bindWidget("releases", releasesContainer);
@@ -116,6 +125,12 @@ Artist::refresh()
 				entry->bindInt("orig-year", *originalYear);
 			}
 		}
+
+		auto playBtn = new Wt::WText(Wt::WString::tr("btn-artist-play-btn"), Wt::XHTMLText);
+		entry->bindWidget("play-btn", playBtn);
+
+		auto addBtn = new Wt::WText(Wt::WString::tr("btn-artist-add-btn"), Wt::XHTMLText);
+		entry->bindWidget("add-btn", addBtn);
 	}
 }
 
