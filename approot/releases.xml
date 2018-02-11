@@ -16,6 +16,14 @@
 	${releases class="list-group"}
 </message>
 
+<message id="btn-releases-play-btn">
+	<i class="fa fa-play"></i>
+</message>
+
+<message id="btn-releases-add-btn">
+	<i class="fa fa-plus"></i>
+</message>
+
 <message id="template-releases-entry">
 	<div class="media list-group-item">
 		<div class="pull-left media-middle">
@@ -25,6 +33,7 @@
 			<h4 class="media-heading">${release-name}</h4>
 			${artist-name}
 		</div>
+		${play-btn}${add-btn}
 	</div>
 </message>
 

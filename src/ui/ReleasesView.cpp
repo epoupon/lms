@@ -107,6 +107,12 @@ Releases::refresh(std::vector<std::string> searchKeywords)
 			artist->setText(Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText));
 			entry->bindWidget("artist-name", artistAnchor);
 		}
+
+		auto playBtn = new Wt::WText(Wt::WString::tr("btn-releases-play-btn"), Wt::XHTMLText);
+		entry->bindWidget("play-btn", playBtn);
+
+		auto addBtn = new Wt::WText(Wt::WString::tr("btn-releases-add-btn"), Wt::XHTMLText);
+		entry->bindWidget("add-btn", addBtn);
 	}
 }
 
