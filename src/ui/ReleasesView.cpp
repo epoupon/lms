@@ -87,7 +87,13 @@ Releases::refresh(std::vector<std::string> searchKeywords)
 		cover->setWidth(128);
 		entry->bindWidget("cover", coverAnchor);
 
-		entry->bindString("release-name", Wt::WString::fromUTF8(release->getName()), Wt::PlainText);
+		{
+			Wt::WAnchor* releaseAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(release.id())));
+			Wt::WText* releaseName = new Wt::WText(releaseAnchor);
+			releaseName->setText(Wt::WString::fromUTF8(release->getName(), Wt::PlainText));
+			entry->bindWidget("release-name", releaseAnchor);
+		}
+
 
 		auto artists = release->getArtists();
 		if (artists.size() > 1)
