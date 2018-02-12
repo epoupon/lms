@@ -43,6 +43,10 @@ Release::Release(Filters* filters, Wt::WContainerWidget* parent)
 	}));
 
 	refresh();
+
+	filters->updated().connect(std::bind([=] {
+		refresh();
+	}));
 }
 
 void
