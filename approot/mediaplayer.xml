@@ -28,7 +28,7 @@
 
 <message id="template-mediaplayer">
 	${previous} ${play-pause} ${next}
-	${next} ${cover}
+	${cover}
 	${current-time} ${total-time} ${shuffle} ${repeat}
 	${<if-has-artist>}${artist-name}${</if-has-artist>}
 	${<if-has-release>}${release-name}${</if-has-release>}
