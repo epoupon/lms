@@ -5,6 +5,7 @@
 <message id="template-main">
 	${navbar-top class="main-nav"}
 	${contents class="container"}
+	${player}
 </message>
 
 <message id="template-home">

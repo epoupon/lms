@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="btn-mediaplayer-prev">
+	<i class="fa fa-step-backward"></i>
+</message>
+
+<message id="btn-mediaplayer-play">
+	<i class="fa fa-play"></i>
+</message>
+
+<message id="btn-mediaplayer-pause">
+	<i class="fa fa-pause"></i>
+</message>
+
+<message id="btn-mediaplayer-next">
+	<i class="fa fa-step-forward"></i>
+</message>
+
+<message id="btn-mediaplayer-shuffle">
+	<i class="fa fa-random"></i>
+</message>
+
+<message id="btn-mediaplayer-repeat">
+	<i class="fa fa-repeat"></i>
+</message>
+
+<message id="template-mediaplayer">
+	${previous} ${play-pause} ${next}
+	${next} ${cover}
+	${current-time} ${total-time} ${shuffle} ${repeat}
+	${<if-has-artist>}${artist-name}${</if-has-artist>}
+	${<if-has-release>}${release-name}${</if-has-release>}
+	${track-name}
+</message>
+
+</messages>

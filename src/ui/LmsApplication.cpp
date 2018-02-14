@@ -31,7 +31,7 @@
 #include "auth/LmsAuth.hpp"
 #include "Explore.hpp"
 #include "HomeView.hpp"
-
+#include "MediaPlayer.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -81,6 +81,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "artist");
 	messageResourceBundle().use(appRoot() + "artists");
 	messageResourceBundle().use(appRoot() + "messages");
+	messageResourceBundle().use(appRoot() + "mediaplayer");
 	messageResourceBundle().use(appRoot() + "templates");
 	messageResourceBundle().use(appRoot() + "release");
 	messageResourceBundle().use(appRoot() + "releases");
@@ -270,8 +271,8 @@ LmsApplication::handleAuthEvent(void)
 	mainStack->addWidget(new Wt::WText("SETTINGS"));
 
 	// MediaPlayer
-//	auto player = new AudioPlayer(AudioPlayer::ControlPlayqueue);
-//	main->bindWidget("player", player);
+	auto player = new MediaPlayer();
+	main->bindWidget("player", player);
 
 	internalPathChanged().connect(std::bind([=]
 	{
