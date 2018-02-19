@@ -54,7 +54,7 @@ Playlist::get(Wt::Dbo::Session& session, std::string name, Wt::Dbo::ptr<User> us
 }
 
 std::vector<Playlist::pointer>
-Playlist::get(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user)
+Playlist::getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user)
 {
 	Wt::Dbo::collection<Playlist::pointer> res = session.find<Playlist>().where("user_id = ?").bind(user.id()).orderBy("name");
 
@@ -74,7 +74,7 @@ PlaylistEntry::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::
 {
 	return session.add( new PlaylistEntry( track, playlist, pos) );
 }
-
+/*
 std::vector<Track::id_type>
 PlaylistEntry::getEntries(Wt::Dbo::Session& session, Playlist::pointer playlist)
 {
@@ -87,6 +87,6 @@ PlaylistEntry::getEntries(Wt::Dbo::Session& session, Playlist::pointer playlist)
 		res.push_back((*it)->getTrack().id());
 
 	return res;
-}
+}*/
 
 } // namespace Database

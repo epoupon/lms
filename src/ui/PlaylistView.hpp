@@ -21,22 +21,22 @@
 
 #include <Wt/WContainerWidget>
 
+#include "database/Types.hpp"
+
 namespace UserInterface {
 
-class Filters;
-class Tracks : public Wt::WContainerWidget
+class Playlist : public Wt::WContainerWidget
 {
 	public:
-		Tracks(Filters* filters, Wt::WContainerWidget* parent = 0);
+		Playlist(Wt::WContainerWidget* parent = 0);
 
-		Wt::Signal<Database::id_type> trackAdd;
-		Wt::Signal<Database::id_type> trackPlay;
+		void addTracks(const std::vector<Database::id_type>& trackIds);
+		void playTracks(const std::vector<Database::id_type>& trackIds);
 
 	private:
-		void refresh(std::vector<std::string> searchKeywords = std::vector<std::string>());
+		void refresh();
 
-		Wt::WContainerWidget* _tracksContainer;
-		Filters* _filters;
+		Wt::WContainerWidget* _entriesContainer;
 };
 
 } // namespace UserInterface

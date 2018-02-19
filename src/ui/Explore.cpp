@@ -25,6 +25,7 @@
 
 #include "LmsApplication.hpp"
 
+#include "Filters.hpp"
 #include "ArtistsView.hpp"
 #include "ArtistView.hpp"
 #include "ReleasesView.hpp"
@@ -74,18 +75,47 @@ Explore::Explore(Wt::WContainerWidget* parent)
 {
 	auto container = new Wt::WTemplate(Wt::WString::tr("template-explore"), this);
 
-	auto filters = new Filters();
-	container->bindWidget("filters", filters);
+	_filters = new Filters();
+	container->bindWidget("filters", _filters);
 
 	// Contents
 	Wt::WStackedWidget* stack = new Wt::WStackedWidget();
 	container->bindWidget("contents", stack);
 
-	stack->addWidget(new Artists(filters));
-	stack->addWidget(new Artist(filters));
-	stack->addWidget(new Releases(filters));
-	stack->addWidget(new Release(filters));
-	stack->addWidget(new Tracks(filters));
+	auto artists = new Artists(_filters);
+	stack->addWidget(artists);
+
+	artists->artistAdd.connect(this, &Explore::handleArtistAdd);
+	artists->artistPlay.connect(this, &Explore::handleArtistPlay);
+
+	auto artist = new Artist(_filters);
+	stack->addWidget(artist);
+
+	artist->artistAdd.connect(this, &Explore::handleArtistAdd);
+	artist->artistPlay.connect(this, &Explore::handleArtistPlay);
+	artist->releaseAdd.connect(this, &Explore::handleReleaseAdd);
+	artist->releasePlay.connect(this, &Explore::handleReleasePlay);
+
+	auto releases = new Releases(_filters);
+	stack->addWidget(releases);
+
+	releases->releaseAdd.connect(this, &Explore::handleReleaseAdd);
+	releases->releasePlay.connect(this, &Explore::handleReleasePlay);
+
+	auto release = new Release(_filters);
+	stack->addWidget(release);
+
+	release->releaseAdd.connect(this, &Explore::handleReleaseAdd);
+	release->releasePlay.connect(this, &Explore::handleReleasePlay);
+	release->trackAdd.connect(this, &Explore::handleTrackAdd);
+	release->trackPlay.connect(this, &Explore::handleTrackPlay);
+
+	auto tracks = new Tracks(_filters);
+	stack->addWidget(tracks);
+
+	tracks->trackAdd.connect(this, &Explore::handleTrackAdd);
+	tracks->trackPlay.connect(this, &Explore::handleTrackPlay);
+
 
 	wApp->internalPathChanged().connect(std::bind([=]
 	{
@@ -94,5 +124,86 @@ Explore::Explore(Wt::WContainerWidget* parent)
 
 	handlePathChange(stack);
 }
+
+// TODO SQL this?
+static std::vector<Database::id_type> getArtistTracks(Wt::Dbo::Session& session, Database::id_type artistId, std::set<Database::id_type> clusters)
+{
+	std::vector<Database::id_type> res;
+
+	Wt::Dbo::Transaction transaction(session);
+
+	auto artist = Database::Artist::getById(session, artistId);
+	if (!artist)
+		return res;
+
+	auto releases = artist->getReleases(clusters);
+	for (auto release : releases)
+	{
+		auto tracks = release->getTracks(clusters);
+
+		for (auto track : tracks)
+		{
+			res.push_back(track.id());
+		}
+	}
+
+	return res;
+}
+
+static std::vector<Database::id_type> getReleaseTracks(Wt::Dbo::Session& session, Database::id_type releaseId, std::set<Database::id_type> clusters)
+{
+	std::vector<Database::id_type> res;
+
+	Wt::Dbo::Transaction transaction(session);
+
+	auto release = Database::Release::getById(session, releaseId);
+	if (!release)
+		return res;
+
+	auto tracks = release->getTracks(clusters);
+	for (auto track : tracks)
+	{
+		res.push_back(track.id());
+	}
+
+	return res;
+}
+
+void
+Explore::handleArtistAdd(Database::id_type id)
+{
+	tracksAdd.emit(getArtistTracks(DboSession(), id, _filters->getClusterIds()));
+}
+
+void
+Explore::handleArtistPlay(Database::id_type id)
+{
+	tracksPlay.emit(getArtistTracks(DboSession(), id, _filters->getClusterIds()));
+}
+
+void
+Explore::handleReleaseAdd(Database::id_type id)
+{
+	tracksAdd.emit(getReleaseTracks(DboSession(), id, _filters->getClusterIds()));
+}
+
+void
+Explore::handleReleasePlay(Database::id_type id)
+{
+	tracksPlay.emit(getReleaseTracks(DboSession(), id, _filters->getClusterIds()));
+}
+
+void
+Explore::handleTrackAdd(Database::id_type id)
+{
+	tracksAdd.emit(std::vector<Database::id_type>(1, id));
+}
+
+void
+Explore::handleTrackPlay(Database::id_type id)
+{
+	tracksPlay.emit(std::vector<Database::id_type>(1, id));
+}
+
 } // namespace UserInterface
 

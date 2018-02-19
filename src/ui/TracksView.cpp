@@ -29,6 +29,7 @@
 #include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"
+#include "Filters.hpp"
 #include "TracksView.hpp"
 
 namespace UserInterface {
@@ -76,6 +77,7 @@ Tracks::refresh(std::vector<std::string> searchKeywords)
 
 	for (auto track : tracks)
 	{
+		auto trackId = track.id();
 		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-tracks-entry"), _tracksContainer);
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
@@ -109,9 +111,17 @@ Tracks::refresh(std::vector<std::string> searchKeywords)
 
 		auto playBtn = new Wt::WText(Wt::WString::tr("btn-tracks-play-btn"), Wt::XHTMLText);
 		entry->bindWidget("play-btn", playBtn);
+		playBtn->clicked().connect(std::bind([=]
+		{
+			trackPlay.emit(trackId);
+		}));
 
 		auto addBtn = new Wt::WText(Wt::WString::tr("btn-tracks-add-btn"), Wt::XHTMLText);
 		entry->bindWidget("add-btn", addBtn);
+		addBtn->clicked().connect(std::bind([=]
+		{
+			trackAdd.emit(trackId);
+		}));
 	}
 
 }

@@ -21,14 +21,19 @@
 
 #include <Wt/WContainerWidget>
 
-#include "Filters.hpp"
-
 namespace UserInterface {
 
+class Filters;
 class Release : public Wt::WContainerWidget
 {
 	public:
 		Release(Filters* filters, Wt::WContainerWidget* parent = 0);
+
+		Wt::Signal<Database::id_type> releaseAdd;
+		Wt::Signal<Database::id_type> releasePlay;
+
+		Wt::Signal<Database::id_type> trackAdd;
+		Wt::Signal<Database::id_type> trackPlay;
 
 	private:
 		void refresh();

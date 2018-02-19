@@ -32,6 +32,7 @@
 #include "Explore.hpp"
 #include "HomeView.hpp"
 #include "MediaPlayer.hpp"
+#include "PlaylistView.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -80,12 +81,13 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "artist");
 	messageResourceBundle().use(appRoot() + "artists");
-	messageResourceBundle().use(appRoot() + "messages");
 	messageResourceBundle().use(appRoot() + "mediaplayer");
-	messageResourceBundle().use(appRoot() + "templates");
+	messageResourceBundle().use(appRoot() + "messages");
+	messageResourceBundle().use(appRoot() + "playlist");
 	messageResourceBundle().use(appRoot() + "release");
 	messageResourceBundle().use(appRoot() + "releases");
 	messageResourceBundle().use(appRoot() + "tracks");
+	messageResourceBundle().use(appRoot() + "templates");
 
 	setTitle("LMS");
 
@@ -266,9 +268,23 @@ LmsApplication::handleAuthEvent(void)
 	main->bindWidget("contents", mainStack);
 
 	mainStack->addWidget(new Home());
-	mainStack->addWidget(new Explore());
-	mainStack->addWidget(new Wt::WText("PLAYLIST"));
+
+	auto explore = new Explore();
+	mainStack->addWidget(explore);
+
+	auto playlist = new Playlist();
+	mainStack->addWidget(playlist);
 	mainStack->addWidget(new Wt::WText("SETTINGS"));
+
+	explore->tracksAdd.connect(std::bind([=] (std::vector<Database::id_type> tracks)
+	{
+		playlist->addTracks(tracks);
+	}, std::placeholders::_1));
+
+	explore->tracksPlay.connect(std::bind([=] (std::vector<Database::id_type> tracks)
+	{
+		playlist->playTracks(tracks);
+	}, std::placeholders::_1));
 
 	// MediaPlayer
 	auto player = new MediaPlayer();

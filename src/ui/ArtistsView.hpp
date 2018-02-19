@@ -20,15 +20,19 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
-
-#include "Filters.hpp"
+#include <Wt/WSignal>
 
 namespace UserInterface {
+
+class Filters;
 
 class Artists : public Wt::WContainerWidget
 {
 	public:
 		Artists(Filters* filters, Wt::WContainerWidget* parent = 0);
+
+		Wt::Signal<Database::id_type> artistAdd;
+		Wt::Signal<Database::id_type> artistPlay;
 
 	private:
 		void refresh(std::vector<std::string> searchKeywords = std::vector<std::string>());

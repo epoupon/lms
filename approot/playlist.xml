@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="btn-playlist-save-btn">
+	<i class="fa fa-upload"></i>
+</message>
+
+<message id="btn-playlist-load-btn">
+	<i class="fa fa-download"></i>
+</message>
+
+<message id="btn-playlist-clear-btn">
+	<i class="fa fa-times-circle"></i>
+</message>
+
+<message id="template-playlist">
+	<div class="page-header">
+		<h2>${tr:msg-playlist}</h2>
+		 ${save-btn} ${load-btn} ${clear-btn}
+	</div>
+	${entries}
+</message>
+
+<message id="template-playlist-entry">
+	<div class="media">
+		<div class="pull-left media-middle">
+			${cover class="media-object"}
+		</div>
+		<div class="media-body">
+			<h4 class="media-heading">${name}</h4>
+		</div>
+	</div>
+	${<if-has-release>}${release-name}${</if-has-release>}
+	${<if-has-artist>}${artist-name}${</if-has-artist>}
+
+	${play-btn} ${remove-btn}
+</message>
+
+</messages>

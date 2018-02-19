@@ -21,14 +21,17 @@
 
 #include <Wt/WContainerWidget>
 
-#include "Filters.hpp"
-
 namespace UserInterface {
+
+class Filters;
 
 class Releases : public Wt::WContainerWidget
 {
 	public:
 		Releases(Filters* filters, Wt::WContainerWidget* parent = 0);
+
+		Wt::Signal<Database::id_type> releaseAdd;
+		Wt::Signal<Database::id_type> releasePlay;
 
 	private:
 		void refresh(std::vector<std::string> searchKeywords = std::vector<std::string>());

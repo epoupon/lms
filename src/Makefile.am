@@ -30,6 +30,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/HomeView.cpp				\
 	$(srcdir)/ui/LmsApplication.cpp				\
 	$(srcdir)/ui/MediaPlayer.cpp				\
+	$(srcdir)/ui/PlaylistView.cpp				\
 	$(srcdir)/ui/ReleasesView.cpp				\
 	$(srcdir)/ui/ReleaseView.cpp				\
 	$(srcdir)/ui/TracksView.cpp				\

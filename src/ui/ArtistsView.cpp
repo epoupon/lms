@@ -28,6 +28,7 @@
 #include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"
+#include "Filters.hpp"
 #include "ArtistsView.hpp"
 
 namespace UserInterface {

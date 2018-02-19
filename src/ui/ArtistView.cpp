@@ -29,6 +29,7 @@
 #include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"
+#include "Filters.hpp"
 #include "ArtistView.hpp"
 
 namespace UserInterface {
@@ -77,11 +78,21 @@ Artist::refresh()
 	{
 		auto playBtn = new Wt::WText(Wt::WString::tr("btn-artist-play-btn"), Wt::XHTMLText);
 		t->bindWidget("play-btn", playBtn);
+
+		playBtn->clicked().connect(std::bind([=]
+		{
+			artistPlay.emit(artistId);
+		}));
 	}
 
 	{
 		auto addBtn = new Wt::WText(Wt::WString::tr("btn-artist-add-btn"), Wt::XHTMLText);
 		t->bindWidget("add-btn", addBtn);
+
+		addBtn->clicked().connect(std::bind([=]
+		{
+			artistAdd.emit(artistId);
+		}));
 	}
 
 	auto releasesContainer = new Wt::WContainerWidget();
@@ -90,11 +101,13 @@ Artist::refresh()
 	auto releases = artist->getReleases(_filters->getClusterIds());
 	for (auto release : releases)
 	{
+		auto releaseId = release.id();
+
 		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-artist-entry"), releasesContainer);
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
 
 		{
-			Wt::WAnchor* coverAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(release.id())));
+			Wt::WAnchor* coverAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(releaseId)));
 			Wt::WImage* cover = new Wt::WImage(coverAnchor);
 			cover->setImageLink(SessionImageResource()->getReleaseUrl(release.id(), 128));
 			// Some images may not be square
@@ -103,7 +116,7 @@ Artist::refresh()
 		}
 
 		{
-			Wt::WAnchor* releaseAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(release.id())));
+			Wt::WAnchor* releaseAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(releaseId)));
 			Wt::WText* releaseName = new Wt::WText(releaseAnchor);
 			releaseName->setText(Wt::WString::fromUTF8(release->getName(), Wt::PlainText));
 			entry->bindWidget("name", releaseAnchor);
@@ -128,9 +141,17 @@ Artist::refresh()
 
 		auto playBtn = new Wt::WText(Wt::WString::tr("btn-artist-play-btn"), Wt::XHTMLText);
 		entry->bindWidget("play-btn", playBtn);
+		playBtn->clicked().connect(std::bind([=]
+		{
+			releasePlay.emit(releaseId);
+		}));
 
 		auto addBtn = new Wt::WText(Wt::WString::tr("btn-artist-add-btn"), Wt::XHTMLText);
 		entry->bindWidget("add-btn", addBtn);
+		addBtn->clicked().connect(std::bind([=]
+		{
+			releaseAdd.emit(releaseId);
+		}));
 	}
 }
 

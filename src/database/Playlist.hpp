@@ -40,15 +40,22 @@ class Playlist
 
 		// Search utility
 		static pointer	get(Wt::Dbo::Session& session, std::string name, Wt::Dbo::ptr<User> user);
-
-		// ordered by name
-		static std::vector<pointer>	get(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user);
+		static std::vector<pointer> getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user);
 
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, std::string name, bool isPublic, Wt::Dbo::ptr<User> user);
 
 		// Accessors
 		std::string	getName() const { return _name; }
+		bool		isPublic() const { return _isPublic; }
+
+		// Modifiers
+		void addTrack(id_type trackId);
+		void addTracks(const std::vector<id_type>& trackIds);
+		void clear();
+
+		// Get tracks, ordered by position
+		std::vector<Track::id_type> getEntries(Wt::Dbo::Session& session, int offset = -1, int size = -1);
 
 		template<class Action>
 		void persist(Action& a)
@@ -76,11 +83,6 @@ class PlaylistEntry
 
 		PlaylistEntry();
 		PlaylistEntry(Wt::Dbo::ptr<Track> rack, Wt::Dbo::ptr<Playlist> playlist, int position);
-
-		// Search utility
-
-		// Get the position ordered track id list
-		static std::vector<Track::id_type> getEntries(Wt::Dbo::Session& session,Wt::Dbo::ptr<Playlist> playlist);
 
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist, int position);

@@ -20,15 +20,22 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
-
-#include "Filters.hpp"
+#include <Wt/WSignal>
 
 namespace UserInterface {
+
+class Filters;
 
 class Artist : public Wt::WContainerWidget
 {
 	public:
 		Artist(Filters* filters, Wt::WContainerWidget* parent = 0);
+
+		Wt::Signal<Database::id_type> artistAdd;
+		Wt::Signal<Database::id_type> artistPlay;
+
+		Wt::Signal<Database::id_type> releaseAdd;
+		Wt::Signal<Database::id_type> releasePlay;
 
 	private:
 		void refresh();

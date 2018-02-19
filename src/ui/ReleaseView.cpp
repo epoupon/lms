@@ -29,6 +29,7 @@
 #include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"
+#include "Filters.hpp"
 #include "ReleaseView.hpp"
 
 namespace UserInterface {
@@ -112,11 +113,19 @@ Release::refresh()
 	{
 		auto playBtn = new Wt::WText(Wt::WString::tr("btn-release-play-btn"), Wt::XHTMLText);
 		t->bindWidget("play-btn", playBtn);
+		playBtn->clicked().connect(std::bind([=]
+		{
+			releasePlay.emit(releaseId);
+		}));
 	}
 
 	{
 		auto addBtn = new Wt::WText(Wt::WString::tr("btn-release-add-btn"), Wt::XHTMLText);
 		t->bindWidget("add-btn", addBtn);
+		addBtn->clicked().connect(std::bind([=]
+		{
+			releaseAdd.emit(releaseId);
+		}));
 	}
 
 	auto tracksContainer = new Wt::WContainerWidget();
@@ -129,6 +138,8 @@ Release::refresh()
 
 	for (auto track : tracks)
 	{
+		auto trackId = track.id();
+
 		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-release-entry"), tracksContainer);
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
@@ -159,9 +170,17 @@ Release::refresh()
 
 		auto playBtn = new Wt::WText(Wt::WString::tr("btn-release-play-btn"), Wt::XHTMLText);
 		entry->bindWidget("play-btn", playBtn);
+		playBtn->clicked().connect(std::bind([=]
+		{
+			trackPlay.emit(trackId);
+		}));
 
 		auto addBtn = new Wt::WText(Wt::WString::tr("btn-release-add-btn"), Wt::XHTMLText);
 		entry->bindWidget("add-btn", addBtn);
+		addBtn->clicked().connect(std::bind([=]
+		{
+			trackAdd.emit(trackId);
+		}));
 	}
 }
 
