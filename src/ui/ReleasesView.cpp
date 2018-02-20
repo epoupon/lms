@@ -19,7 +19,6 @@
 
 #include <Wt/WApplication>
 #include <Wt/WAnchor>
-#include <Wt/WLineEdit>
 #include <Wt/WImage>
 #include <Wt/WText>
 #include <Wt/WTemplate>
@@ -44,29 +43,25 @@ Releases::Releases(Filters* filters, Wt::WContainerWidget* parent)
 	auto releases = new Wt::WTemplate(Wt::WString::tr("template-releases"), this);
 	releases->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	auto search = new Wt::WLineEdit();
-	releases->bindWidget("search", search);
-	search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
-	search->textInput().connect(std::bind([this, search]
-	{
-		auto keywords = splitString(search->text().toUTF8(), " ");
-		refresh(keywords);
-	}));
+	_search = new Wt::WLineEdit();
+	releases->bindWidget("search", _search);
+	_search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
+	_search->textInput().connect(this, &Releases::refresh);
 
 	_releasesContainer = new Wt::WContainerWidget();
 	releases->bindWidget("releases", _releasesContainer);
 
 	refresh();
 
-	filters->updated().connect(std::bind([=] {
-		refresh();
-	}));
+	filters->updated().connect(this, &Releases::refresh);
 }
 
 
 void
-Releases::refresh(std::vector<std::string> searchKeywords)
+Releases::refresh()
 {
+	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
+
 	_releasesContainer->clear();
 
 	auto clusterIds = _filters->getClusterIds();

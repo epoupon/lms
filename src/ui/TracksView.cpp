@@ -43,29 +43,25 @@ Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
 	auto tracks = new Wt::WTemplate(Wt::WString::tr("template-tracks"), this);
 	tracks->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	auto search = new Wt::WLineEdit();
-	tracks->bindWidget("search", search);
-	search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
-	search->textInput().connect(std::bind([this, search]
-	{
-		auto keywords = splitString(search->text().toUTF8(), " ");
-		refresh(keywords);
-	}));
+	_search = new Wt::WLineEdit();
+	tracks->bindWidget("search", _search);
+	_search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
+	_search->textInput().connect(this, &Tracks::refresh);
 
 	_tracksContainer = new Wt::WContainerWidget();
 	tracks->bindWidget("tracks", _tracksContainer);
 
 	refresh();
 
-	filters->updated().connect(std::bind([=] {
-		refresh();
-	}));
+	filters->updated().connect(this, &Tracks::refresh);
 }
 
 
 void
-Tracks::refresh(std::vector<std::string> searchKeywords)
+Tracks::refresh()
 {
+	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
+
 	_tracksContainer->clear();
 
 	auto clusterIds = _filters->getClusterIds();

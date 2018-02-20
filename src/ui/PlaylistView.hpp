@@ -30,8 +30,8 @@ class Playlist : public Wt::WContainerWidget
 	public:
 		Playlist(Wt::WContainerWidget* parent = 0);
 
-		void addTracks(const std::vector<Database::id_type>& trackIds);
-		void playTracks(const std::vector<Database::id_type>& trackIds);
+		void addTracks(const std::vector<Database::Track::pointer>& tracks);
+		void playTracks(const std::vector<Database::Track::pointer>& tracks);
 
 	private:
 		void refresh();

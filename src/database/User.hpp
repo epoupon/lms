@@ -65,7 +65,7 @@ class User
 		typedef Wt::Dbo::ptr<User>	pointer;
 
 		// accessors
-		static pointer			getById(Wt::Dbo::Session& session, std::string id);
+		static pointer			getById(Wt::Dbo::Session& session, id_type id);
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session);
 		static std::string		getId(pointer user);
 

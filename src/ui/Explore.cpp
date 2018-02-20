@@ -126,11 +126,9 @@ Explore::Explore(Wt::WContainerWidget* parent)
 }
 
 // TODO SQL this?
-static std::vector<Database::id_type> getArtistTracks(Wt::Dbo::Session& session, Database::id_type artistId, std::set<Database::id_type> clusters)
+static std::vector<Database::Track::pointer> getArtistTracks(Wt::Dbo::Session& session, Database::id_type artistId, std::set<Database::id_type> clusters)
 {
-	std::vector<Database::id_type> res;
-
-	Wt::Dbo::Transaction transaction(session);
+	std::vector<Database::Track::pointer> res;
 
 	auto artist = Database::Artist::getById(session, artistId);
 	if (!artist)
@@ -140,31 +138,30 @@ static std::vector<Database::id_type> getArtistTracks(Wt::Dbo::Session& session,
 	for (auto release : releases)
 	{
 		auto tracks = release->getTracks(clusters);
-
-		for (auto track : tracks)
-		{
-			res.push_back(track.id());
-		}
+		res.insert( res.end(), tracks.begin(), tracks.end() );
 	}
 
 	return res;
 }
 
-static std::vector<Database::id_type> getReleaseTracks(Wt::Dbo::Session& session, Database::id_type releaseId, std::set<Database::id_type> clusters)
+static std::vector<Database::Track::pointer> getReleaseTracks(Wt::Dbo::Session& session, Database::id_type releaseId, std::set<Database::id_type> clusters)
 {
-	std::vector<Database::id_type> res;
-
-	Wt::Dbo::Transaction transaction(session);
+	std::vector<Database::Track::pointer> res;
 
 	auto release = Database::Release::getById(session, releaseId);
 	if (!release)
 		return res;
 
-	auto tracks = release->getTracks(clusters);
-	for (auto track : tracks)
-	{
-		res.push_back(track.id());
-	}
+	return release->getTracks(clusters);
+}
+
+static std::vector<Database::Track::pointer> getTrack(Wt::Dbo::Session& session, Database::id_type trackId)
+{
+	std::vector<Database::Track::pointer> res;
+
+	auto track = Database::Track::getById(session, trackId);
+	if (track)
+		res.push_back(track);
 
 	return res;
 }
@@ -172,37 +169,49 @@ static std::vector<Database::id_type> getReleaseTracks(Wt::Dbo::Session& session
 void
 Explore::handleArtistAdd(Database::id_type id)
 {
+	Wt::Dbo::Transaction transaction(DboSession());
+
 	tracksAdd.emit(getArtistTracks(DboSession(), id, _filters->getClusterIds()));
 }
 
 void
 Explore::handleArtistPlay(Database::id_type id)
 {
+	Wt::Dbo::Transaction transaction(DboSession());
+
 	tracksPlay.emit(getArtistTracks(DboSession(), id, _filters->getClusterIds()));
 }
 
 void
 Explore::handleReleaseAdd(Database::id_type id)
 {
+	Wt::Dbo::Transaction transaction(DboSession());
+
 	tracksAdd.emit(getReleaseTracks(DboSession(), id, _filters->getClusterIds()));
 }
 
 void
 Explore::handleReleasePlay(Database::id_type id)
 {
+	Wt::Dbo::Transaction transaction(DboSession());
+
 	tracksPlay.emit(getReleaseTracks(DboSession(), id, _filters->getClusterIds()));
 }
 
 void
 Explore::handleTrackAdd(Database::id_type id)
 {
-	tracksAdd.emit(std::vector<Database::id_type>(1, id));
+	Wt::Dbo::Transaction transaction(DboSession());
+
+	tracksAdd.emit(getTrack(DboSession(), id));
 }
 
 void
 Explore::handleTrackPlay(Database::id_type id)
 {
-	tracksPlay.emit(std::vector<Database::id_type>(1, id));
+	Wt::Dbo::Transaction transaction(DboSession());
+
+	tracksPlay.emit(getTrack(DboSession(), id));
 }
 
 } // namespace UserInterface

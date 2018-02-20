@@ -30,7 +30,7 @@ class PlaylistEntry;
 class User;
 class Track;
 
-class Playlist
+class Playlist : public Wt::Dbo::Dbo<Playlist>
 {
 	public:
 		typedef Wt::Dbo::ptr<Playlist> pointer;
@@ -50,12 +50,11 @@ class Playlist
 		bool		isPublic() const { return _isPublic; }
 
 		// Modifiers
-		void addTrack(id_type trackId);
-		void addTracks(const std::vector<id_type>& trackIds);
-		void clear();
+		void addTrack(Wt::Dbo::ptr<Track> track);
+		void clear() { _entries.clear(); }
 
 		// Get tracks, ordered by position
-		std::vector<Track::id_type> getEntries(Wt::Dbo::Session& session, int offset = -1, int size = -1);
+		std::vector<Wt::Dbo::ptr<Track>> getTracks(int offset = -1, int size = -1) const;
 
 		template<class Action>
 		void persist(Action& a)
@@ -82,7 +81,7 @@ class PlaylistEntry
 		typedef Wt::Dbo::ptr<PlaylistEntry> pointer;
 
 		PlaylistEntry();
-		PlaylistEntry(Wt::Dbo::ptr<Track> rack, Wt::Dbo::ptr<Playlist> playlist, int position);
+		PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist, int position);
 
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist, int position);

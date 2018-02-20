@@ -123,7 +123,8 @@ const Wt::Auth::User& CurrentAuthUser()
 
 Database::User::pointer CurrentUser()
 {
-	return DbHandler().getCurrentUser();
+	return Database::User::getById(DboSession(), 1);
+//	return DbHandler().getCurrentUser();
 }
 
 ImageResource* SessionImageResource()
@@ -276,12 +277,12 @@ LmsApplication::handleAuthEvent(void)
 	mainStack->addWidget(playlist);
 	mainStack->addWidget(new Wt::WText("SETTINGS"));
 
-	explore->tracksAdd.connect(std::bind([=] (std::vector<Database::id_type> tracks)
+	explore->tracksAdd.connect(std::bind([=] (std::vector<Database::Track::pointer> tracks)
 	{
 		playlist->addTracks(tracks);
 	}, std::placeholders::_1));
 
-	explore->tracksPlay.connect(std::bind([=] (std::vector<Database::id_type> tracks)
+	explore->tracksPlay.connect(std::bind([=] (std::vector<Database::Track::pointer> tracks)
 	{
 		playlist->playTracks(tracks);
 	}, std::placeholders::_1));

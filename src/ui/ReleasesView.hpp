@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
+#include <Wt/WLineEdit>
 
 namespace UserInterface {
 
@@ -34,9 +35,10 @@ class Releases : public Wt::WContainerWidget
 		Wt::Signal<Database::id_type> releasePlay;
 
 	private:
-		void refresh(std::vector<std::string> searchKeywords = std::vector<std::string>());
+		void refresh();
 
 		Filters* _filters;
+		Wt::WLineEdit* _search;
 		Wt::WContainerWidget* _releasesContainer;
 };
 

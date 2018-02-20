@@ -22,6 +22,14 @@
 	${entries}
 </message>
 
+<message id="btn-playlist-entry-play-btn">
+	<i class="fa fa-play"></i>
+</message>
+
+<message id="btn-playlist-entry-del-btn">
+	<i class="fa fa-remove"></i>
+</message>
+
 <message id="template-playlist-entry">
 	<div class="media">
 		<div class="pull-left media-middle">
@@ -30,11 +38,12 @@
 		<div class="media-body">
 			<h4 class="media-heading">${name}</h4>
 		</div>
-	</div>
-	${<if-has-release>}${release-name}${</if-has-release>}
-	${<if-has-artist>}${artist-name}${</if-has-artist>}
 
-	${play-btn} ${remove-btn}
+		${<if-has-release>}${release-name}${</if-has-release>}
+		${<if-has-artist>}${artist-name}${</if-has-artist>}
+
+		${play-btn} ${del-btn}
+	</div>
 </message>
 
 </messages>

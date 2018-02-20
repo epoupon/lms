@@ -32,8 +32,8 @@ class Explore : public Wt::WContainerWidget
 	public:
 		Explore(Wt::WContainerWidget *parent = 0);
 
-		Wt::Signal<std::vector<Database::id_type>> tracksAdd;
-		Wt::Signal<std::vector<Database::id_type>> tracksPlay;
+		Wt::Signal<std::vector<Database::Track::pointer>> tracksAdd;
+		Wt::Signal<std::vector<Database::Track::pointer>> tracksPlay;
 
 	private:
 

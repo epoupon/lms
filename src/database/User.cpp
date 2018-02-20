@@ -84,7 +84,7 @@ User::getAll(Wt::Dbo::Session& session)
 }
 
 User::pointer
-User::getById(Wt::Dbo::Session& session, std::string id)
+User::getById(Wt::Dbo::Session& session, id_type id)
 {
 	return session.find<User>().where("id = ?").bind( id );
 }

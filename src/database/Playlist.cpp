@@ -61,6 +61,12 @@ Playlist::getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user)
 	return std::vector<Playlist::pointer>(res.begin(), res.end());
 }
 
+void
+Playlist::addTrack(Wt::Dbo::ptr<Track> track)
+{
+	_entries.insert( PlaylistEntry::create(*session(), track, self(), _entries.size()) );
+}
+
 PlaylistEntry::PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist, int pos)
 : _pos(pos),
  _track(track),
@@ -74,19 +80,23 @@ PlaylistEntry::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::
 {
 	return session.add( new PlaylistEntry( track, playlist, pos) );
 }
-/*
-std::vector<Track::id_type>
-PlaylistEntry::getEntries(Wt::Dbo::Session& session, Playlist::pointer playlist)
+
+
+std::vector<Wt::Dbo::ptr<Track>>
+Playlist::getTracks(int offset, int size) const
 {
-	typedef Wt::Dbo::collection<pointer> Entries;
+	assert(session());
 
-	Entries entries = session.find<PlaylistEntry>().where("playlist_id = ?").bind(playlist.id()).orderBy("pos");
+	Wt::Dbo::collection<Wt::Dbo::ptr<PlaylistEntry>> entries = session()->find<PlaylistEntry>().where("playlist_id = ?").bind(self().id()).orderBy("pos").offset(offset).limit(size);
 
-	std::vector<Track::id_type> res;
-	for (Entries::iterator it = entries.begin(); it != entries.end(); ++it)
-		res.push_back((*it)->getTrack().id());
+	std::vector<Wt::Dbo::ptr<Track>> res;
+
+	for (auto entry : entries)
+	{
+		res.push_back(entry->getTrack());
+	}
 
 	return res;
-}*/
+}
 
 } // namespace Database

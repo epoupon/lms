@@ -42,28 +42,24 @@ Artists::Artists(Filters* filters, Wt::WContainerWidget* parent)
 	auto artists = new Wt::WTemplate(Wt::WString::tr("template-artists"), this);
 	artists->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	auto search = new Wt::WLineEdit();
-	artists->bindWidget("search", search);
-	search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
-	search->textInput().connect(std::bind([this, search]
-	{
-		auto keywords = splitString(search->text().toUTF8(), " ");
-		refresh(keywords);
-	}));
+	_search = new Wt::WLineEdit();
+	artists->bindWidget("search", _search);
+	_search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
+	_search->textInput().connect(this, &Artists::refresh);
 
 	_artistsContainer = new Wt::WContainerWidget();
 	artists->bindWidget("artists", _artistsContainer);
 
 	refresh();
 
-	filters->updated().connect(std::bind([=] {
-		refresh();
-	}));
+	filters->updated().connect(this, &Artists::refresh);
 }
 
 void
-Artists::refresh(std::vector<std::string> searchKeywords)
+Artists::refresh()
 {
+	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
+
 	_artistsContainer->clear();
 
 	auto clusterIds = _filters->getClusterIds();
