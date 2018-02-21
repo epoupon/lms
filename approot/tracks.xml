@@ -14,6 +14,7 @@
 		</div>
 	</div>
 	${tracks class="list-group"}
+	${show-more}
 </message>
 
 <message id="btn-tracks-play-btn">

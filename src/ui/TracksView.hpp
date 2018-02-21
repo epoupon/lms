@@ -21,6 +21,7 @@
 
 #include <Wt/WContainerWidget>
 #include <Wt/WLineEdit>
+#include <Wt/WTemplate>
 
 namespace UserInterface {
 
@@ -35,8 +36,10 @@ class Tracks : public Wt::WContainerWidget
 
 	private:
 		void refresh();
+		void add_some();
 
 		Wt::WContainerWidget* _tracksContainer;
+		Wt::WTemplate* _showMore;
 		Wt::WLineEdit* _search;
 		Filters* _filters;
 };

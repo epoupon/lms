@@ -40,36 +40,49 @@ Releases::Releases(Filters* filters, Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent),
 	_filters(filters)
 {
-	auto releases = new Wt::WTemplate(Wt::WString::tr("template-releases"), this);
-	releases->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	auto container = new Wt::WTemplate(Wt::WString::tr("template-releases"), this);
+	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_search = new Wt::WLineEdit();
-	releases->bindWidget("search", _search);
+	container->bindWidget("search", _search);
 	_search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
 	_search->textInput().connect(this, &Releases::refresh);
 
 	_releasesContainer = new Wt::WContainerWidget();
-	releases->bindWidget("releases", _releasesContainer);
+	container->bindWidget("releases", _releasesContainer);
+
+	_showMore = new Wt::WTemplate(Wt::WString::tr("template-show-more"));
+	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	container->bindWidget("show-more", _showMore);
+
+	_showMore->clicked().connect(std::bind([=]
+	{
+		add_some();
+	}));
 
 	refresh();
 
 	filters->updated().connect(this, &Releases::refresh);
 }
 
-
 void
 Releases::refresh()
 {
-	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
-
 	_releasesContainer->clear();
+	add_some();
+}
+
+void
+Releases::add_some()
+{
+	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
 
 	auto clusterIds = _filters->getClusterIds();
 
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	bool moreResults;
-	auto releases = Release::getByFilter(DboSession(), clusterIds, searchKeywords, 0, 40, moreResults);
+	auto releases = Release::getByFilter(DboSession(), clusterIds, searchKeywords, _releasesContainer->count(), 20, moreResults);
 
 	for (auto release : releases)
 	{
@@ -120,6 +133,10 @@ Releases::refresh()
 			releaseAdd.emit(releaseId);
 		}));
 	}
+
+	std::cerr << "if-show-more = " << moreResults << "\n";
+
+	_showMore->setHidden(!moreResults);
 }
 
 } // namespace UserInterface

@@ -37,8 +37,10 @@ class Artists : public Wt::WContainerWidget
 
 	private:
 		void refresh();
+		void add_some();
 
 		Filters* _filters;
+		Wt::WTemplate* _showMore;
 		Wt::WLineEdit* _search;
 		Wt::WContainerWidget* _artistsContainer;
 };

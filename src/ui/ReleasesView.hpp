@@ -21,6 +21,7 @@
 
 #include <Wt/WContainerWidget>
 #include <Wt/WLineEdit>
+#include <Wt/WText>
 
 namespace UserInterface {
 
@@ -36,8 +37,10 @@ class Releases : public Wt::WContainerWidget
 
 	private:
 		void refresh();
+		void add_some();
 
 		Filters* _filters;
+		Wt::WTemplate* _showMore;
 		Wt::WLineEdit* _search;
 		Wt::WContainerWidget* _releasesContainer;
 };

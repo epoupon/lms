@@ -39,16 +39,25 @@ Artists::Artists(Filters* filters, Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent),
   _filters(filters)
 {
-	auto artists = new Wt::WTemplate(Wt::WString::tr("template-artists"), this);
-	artists->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	auto container = new Wt::WTemplate(Wt::WString::tr("template-artists"), this);
+	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_search = new Wt::WLineEdit();
-	artists->bindWidget("search", _search);
+	container->bindWidget("search", _search);
 	_search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
 	_search->textInput().connect(this, &Artists::refresh);
 
 	_artistsContainer = new Wt::WContainerWidget();
-	artists->bindWidget("artists", _artistsContainer);
+	container->bindWidget("artists", _artistsContainer);
+
+	_showMore = new Wt::WTemplate(Wt::WString::tr("template-show-more"));
+	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	container->bindWidget("show-more", _showMore);
+
+	_showMore->clicked().connect(std::bind([=]
+	{
+		add_some();
+	}));
 
 	refresh();
 
@@ -58,9 +67,14 @@ Artists::Artists(Filters* filters, Wt::WContainerWidget* parent)
 void
 Artists::refresh()
 {
-	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
-
 	_artistsContainer->clear();
+	add_some();
+}
+
+void
+Artists::add_some()
+{
+	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
 
 	auto clusterIds = _filters->getClusterIds();
 
@@ -70,7 +84,7 @@ Artists::refresh()
 	auto artists = Artist::getByFilter(DboSession(),
 			clusterIds,
 			searchKeywords,
-			0, 40, moreResults);
+			_artistsContainer->count(), 20, moreResults);
 
 	for (auto artist : artists)
 	{
@@ -86,6 +100,7 @@ Artists::refresh()
 		}
 	}
 
+	_showMore->setHidden(!moreResults);
 }
 
 } // namespace UserInterface

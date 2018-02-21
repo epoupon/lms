@@ -15,4 +15,6 @@
 
 <message id="msg-filter-type">Type</message>
 <message id="msg-filter-value">Value</message>
+
+<message id="msg-show-more">Show more</message>
 </messages>

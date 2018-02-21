@@ -169,7 +169,7 @@ Track::getByFilter(Wt::Dbo::Session& session,
 		const std::vector<std::string> keywords,
 		int offset, int size, bool& moreResults)
 {
-	Wt::Dbo::collection<pointer> collection = getQuery(session, clusterIds, keywords).limit(size).offset(offset);
+	Wt::Dbo::collection<pointer> collection = getQuery(session, clusterIds, keywords).limit(size + 1).offset(offset);
 
 	auto res = std::vector<pointer>(collection.begin(), collection.end());
 

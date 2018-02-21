@@ -20,7 +20,6 @@
 #include <Wt/WAnchor>
 #include <Wt/WImage>
 #include <Wt/WLineEdit>
-#include <Wt/WTemplate>
 #include <Wt/WText>
 
 #include "database/Types.hpp"
@@ -40,16 +39,25 @@ Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent),
 	_filters(filters)
 {
-	auto tracks = new Wt::WTemplate(Wt::WString::tr("template-tracks"), this);
-	tracks->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	auto container = new Wt::WTemplate(Wt::WString::tr("template-tracks"), this);
+	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_search = new Wt::WLineEdit();
-	tracks->bindWidget("search", _search);
+	container->bindWidget("search", _search);
 	_search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
 	_search->textInput().connect(this, &Tracks::refresh);
 
 	_tracksContainer = new Wt::WContainerWidget();
-	tracks->bindWidget("tracks", _tracksContainer);
+	container->bindWidget("tracks", _tracksContainer);
+
+	_showMore = new Wt::WTemplate(Wt::WString::tr("template-show-more"));
+	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	container->bindWidget("show-more", _showMore);
+
+	_showMore->clicked().connect(std::bind([=]
+	{
+		add_some();
+	}));
 
 	refresh();
 
@@ -60,16 +68,21 @@ Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
 void
 Tracks::refresh()
 {
-	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
-
 	_tracksContainer->clear();
+	add_some();
+}
+
+void
+Tracks::add_some()
+{
+	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
 
 	auto clusterIds = _filters->getClusterIds();
 
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	bool moreResults;
-	auto tracks = Track::getByFilter(DboSession(), clusterIds, searchKeywords, 0, 40, moreResults);
+	auto tracks = Track::getByFilter(DboSession(), clusterIds, searchKeywords, _tracksContainer->count(), 20, moreResults);
 
 	for (auto track : tracks)
 	{
@@ -120,6 +133,7 @@ Tracks::refresh()
 		}));
 	}
 
+	_showMore->setHidden(!moreResults);
 }
 
 } // namespace UserInterface

@@ -17,6 +17,10 @@
 	${contents}
 </message>
 
+<message id="template-show-more">
+	${tr:msg-show-more}
+</message>
+
 <message id="template-filters">
 	<div class="form-group">
 		${add-filter}${filters}
