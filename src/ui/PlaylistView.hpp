@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
+#include <Wt/WTemplate>
 
 #include "database/Types.hpp"
 
@@ -35,8 +36,10 @@ class Playlist : public Wt::WContainerWidget
 
 	private:
 		void refresh();
+		void addSome();
 
 		Wt::WContainerWidget* _entriesContainer;
+		Wt::WTemplate* _showMore;
 };
 
 } // namespace UserInterface

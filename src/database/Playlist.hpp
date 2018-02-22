@@ -54,7 +54,7 @@ class Playlist : public Wt::Dbo::Dbo<Playlist>
 		void clear() { _entries.clear(); }
 
 		// Get tracks, ordered by position
-		std::vector<Wt::Dbo::ptr<Track>> getTracks(int offset = -1, int size = -1) const;
+		std::vector<Wt::Dbo::ptr<Track>> getTracks(int offset, int size, bool& moreResults) const;
 
 		template<class Action>
 		void persist(Action& a)

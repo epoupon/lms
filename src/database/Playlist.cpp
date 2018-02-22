@@ -83,16 +83,24 @@ PlaylistEntry::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::
 
 
 std::vector<Wt::Dbo::ptr<Track>>
-Playlist::getTracks(int offset, int size) const
+Playlist::getTracks(int offset, int size, bool& moreResults) const
 {
 	assert(session());
 
-	Wt::Dbo::collection<Wt::Dbo::ptr<PlaylistEntry>> entries = session()->find<PlaylistEntry>().where("playlist_id = ?").bind(self().id()).orderBy("pos").offset(offset).limit(size);
+	moreResults = false;
+
+	Wt::Dbo::collection<Wt::Dbo::ptr<PlaylistEntry>> entries = session()->find<PlaylistEntry>().where("playlist_id = ?").bind(self().id()).orderBy("pos").offset(offset).limit(size + 1);
 
 	std::vector<Wt::Dbo::ptr<Track>> res;
 
 	for (auto entry : entries)
 	{
+		if (size != -1 && res.size() == static_cast<std::size_t>(size))
+		{
+			moreResults = true;
+			break;
+		}
+
 		res.push_back(entry->getTrack());
 	}
 

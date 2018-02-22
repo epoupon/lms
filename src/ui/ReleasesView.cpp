@@ -57,7 +57,7 @@ Releases::Releases(Filters* filters, Wt::WContainerWidget* parent)
 
 	_showMore->clicked().connect(std::bind([=]
 	{
-		add_some();
+		addSome();
 	}));
 
 	refresh();
@@ -69,11 +69,11 @@ void
 Releases::refresh()
 {
 	_releasesContainer->clear();
-	add_some();
+	addSome();
 }
 
 void
-Releases::add_some()
+Releases::addSome()
 {
 	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
 

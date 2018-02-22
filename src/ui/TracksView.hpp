@@ -36,7 +36,7 @@ class Tracks : public Wt::WContainerWidget
 
 	private:
 		void refresh();
-		void add_some();
+		void addSome();
 
 		Wt::WContainerWidget* _tracksContainer;
 		Wt::WTemplate* _showMore;

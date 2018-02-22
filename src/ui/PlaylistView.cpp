@@ -19,7 +19,6 @@
 
 #include <Wt/WAnchor>
 #include <Wt/WImage>
-#include <Wt/WTemplate>
 #include <Wt/WText>
 
 #include "LmsApplication.hpp"
@@ -32,20 +31,29 @@ static const std::string currentPlaylistName = "__current__playlist__";
 Playlist::Playlist(Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent)
 {
-	auto t = new Wt::WTemplate(Wt::WString::tr("template-playlist"), this);
-	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	auto container = new Wt::WTemplate(Wt::WString::tr("template-playlist"), this);
+	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	auto saveBtn = new Wt::WText(Wt::WString::tr("btn-playlist-save-btn"), Wt::XHTMLText);
-	t->bindWidget("save-btn", saveBtn);
+	container->bindWidget("save-btn", saveBtn);
 
 	auto loadBtn = new Wt::WText(Wt::WString::tr("btn-playlist-load-btn"), Wt::XHTMLText);
-	t->bindWidget("load-btn", loadBtn);
+	container->bindWidget("load-btn", loadBtn);
 
 	auto clearBtn = new Wt::WText(Wt::WString::tr("btn-playlist-clear-btn"), Wt::XHTMLText);
-	t->bindWidget("clear-btn", clearBtn);
+	container->bindWidget("clear-btn", clearBtn);
 
 	_entriesContainer = new Wt::WContainerWidget();
-	t->bindWidget("entries", _entriesContainer);
+	container->bindWidget("entries", _entriesContainer);
+
+	_showMore = new Wt::WTemplate(Wt::WString::tr("template-show-more"));
+	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	container->bindWidget("show-more", _showMore);
+
+	_showMore->clicked().connect(std::bind([=]
+	{
+		addSome();
+	}));
 
 	refresh();
 }
@@ -67,7 +75,7 @@ Playlist::addTracks(const std::vector<Database::Track::pointer>& tracks)
 		playlist.modify()->addTrack(track);
 	}
 
-	refresh();
+	addSome();
 }
 
 void
@@ -86,8 +94,16 @@ Playlist::playTracks(const std::vector<Database::Track::pointer>& tracks)
 	// TODO Immediate play
 }
 
+
 void
 Playlist::refresh()
+{
+	_entriesContainer->clear();
+	addSome();
+}
+
+void
+Playlist::addSome()
 {
 	Wt::Dbo::Transaction transaction (DboSession());
 
@@ -95,7 +111,8 @@ Playlist::refresh()
 	if (!playlist)
 		return;
 
-	auto tracks = playlist->getTracks(_entriesContainer->count(), 20); // TODO
+	bool moreResults;
+	auto tracks = playlist->getTracks(_entriesContainer->count(), 20, moreResults);
 	for (auto track : tracks)
 	{
 		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-playlist-entry"), _entriesContainer);
@@ -136,6 +153,8 @@ Playlist::refresh()
 		entry->bindWidget("del-btn", addBtn);
 		// TODO
 	}
+
+	_showMore->setHidden(!moreResults);
 }
 
 } // namespace UserInterface

@@ -37,7 +37,7 @@ class Artists : public Wt::WContainerWidget
 
 	private:
 		void refresh();
-		void add_some();
+		void addSome();
 
 		Filters* _filters;
 		Wt::WTemplate* _showMore;

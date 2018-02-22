@@ -56,7 +56,7 @@ Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
 
 	_showMore->clicked().connect(std::bind([=]
 	{
-		add_some();
+		addSome();
 	}));
 
 	refresh();
@@ -69,11 +69,11 @@ void
 Tracks::refresh()
 {
 	_tracksContainer->clear();
-	add_some();
+	addSome();
 }
 
 void
-Tracks::add_some()
+Tracks::addSome()
 {
 	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
 
