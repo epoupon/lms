@@ -138,7 +138,11 @@ static std::vector<Database::Track::pointer> getArtistTracks(Wt::Dbo::Session& s
 	for (auto release : releases)
 	{
 		auto tracks = release->getTracks(clusters);
-		res.insert( res.end(), tracks.begin(), tracks.end() );
+		for (auto track : tracks)
+		{
+			if (track->getArtist() && track->getArtist().id() == artistId)
+				res.push_back(track);
+		}
 	}
 
 	return res;
