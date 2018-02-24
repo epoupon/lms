@@ -32,19 +32,7 @@
 </message>
 
 <message id="template-playlist-entry">
-	<div class="media">
-		<div class="pull-left media-middle">
-			${cover class="media-object"}
-		</div>
-		<div class="media-body">
-			<h4 class="media-heading">${name}</h4>
-		</div>
-
-		${<if-has-release>}${release-name}${</if-has-release>}
-		${<if-has-artist>}${artist-name}${</if-has-artist>}
-
-		${play-btn} ${del-btn}
-	</div>
+	${pos} ${name} ${<if-has-release>}${release-name}${</if-has-release>} ${<if-has-artist>}${artist-name}${</if-has-artist>} ${play-btn} ${del-btn}
 </message>
 
 </messages>

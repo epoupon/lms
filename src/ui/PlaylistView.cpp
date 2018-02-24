@@ -117,6 +117,7 @@ Playlist::addSome()
 	{
 		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-playlist-entry"), _entriesContainer);
 
+		entry->bindString("pos", std::to_string(_entriesContainer->count()));
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
 
 		auto artist = track->getArtist();
@@ -138,12 +139,6 @@ Playlist::addSome()
 			releaseText->setText(Wt::WString::fromUTF8(release->getName(), Wt::PlainText));
 			entry->bindWidget("release-name", releaseAnchor);
 		}
-
-		Wt::WImage *cover = new Wt::WImage();
-		cover->setImageLink(SessionImageResource()->getTrackUrl(track.id(), 64));
-		// Some images may not be square
-		cover->setWidth(64);
-		entry->bindWidget("cover", cover);
 
 		auto playBtn = new Wt::WText(Wt::WString::tr("btn-playlist-entry-play-btn"), Wt::XHTMLText);
 		entry->bindWidget("play-btn", playBtn);
