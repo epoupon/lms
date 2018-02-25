@@ -119,6 +119,8 @@ class Track
 		static pointer getById(Wt::Dbo::Session& session, id_type id);
 		static pointer getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
 		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
+							const std::set<id_type>& clusters);           // tracks that belong to these clusters
+		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
 							const std::set<id_type>& clusters,           // tracks that belong to these clusters
 							const std::vector<std::string> keywords,        // name must match all of these keywords
 							int offset,

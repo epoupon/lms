@@ -6,6 +6,7 @@
 <message id="template-tracks">
 	<div class="page-header">
 		<h2>${tr:msg-tracks}</h2>
+		${play-btn}${add-btn}
 	</div>
 	<div class="form-group">
 		<div class="input-group">

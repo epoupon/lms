@@ -34,9 +34,15 @@ class Tracks : public Wt::WContainerWidget
 		Wt::Signal<Database::id_type> trackAdd;
 		Wt::Signal<Database::id_type> trackPlay;
 
+		Wt::Signal<std::vector<Database::Track::pointer>> tracksAdd;
+		Wt::Signal<std::vector<Database::Track::pointer>> tracksPlay;
+
 	private:
 		void refresh();
 		void addSome();
+
+		std::vector<Database::Track::pointer> getTracks(int offset, int size, bool& moreResults);
+		std::vector<Database::Track::pointer> getTracks();
 
 		Wt::WContainerWidget* _tracksContainer;
 		Wt::WTemplate* _showMore;

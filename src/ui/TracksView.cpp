@@ -47,6 +47,20 @@ Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
 	_search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
 	_search->textInput().connect(this, &Tracks::refresh);
 
+	auto playBtn = new Wt::WText(Wt::WString::tr("btn-tracks-play-btn"), Wt::XHTMLText);
+	container->bindWidget("play-btn", playBtn);
+	playBtn->clicked().connect(std::bind([=]
+	{
+		tracksPlay.emit(getTracks());
+	}));
+
+	auto addBtn = new Wt::WText(Wt::WString::tr("btn-tracks-add-btn"), Wt::XHTMLText);
+	container->bindWidget("add-btn", addBtn);
+	addBtn->clicked().connect(std::bind([=]
+	{
+		tracksAdd.emit(getTracks());
+	}));
+
 	_tracksContainer = new Wt::WContainerWidget();
 	container->bindWidget("tracks", _tracksContainer);
 
@@ -64,6 +78,23 @@ Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
 	filters->updated().connect(this, &Tracks::refresh);
 }
 
+std::vector<Database::Track::pointer>
+Tracks::getTracks(int offset, int size, bool& moreResults)
+{
+	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
+	auto clusterIds = _filters->getClusterIds();
+
+	Wt::Dbo::Transaction transaction(DboSession());
+
+	return Track::getByFilter(DboSession(), clusterIds, searchKeywords, offset, size, moreResults);
+}
+
+std::vector<Database::Track::pointer>
+Tracks::getTracks()
+{
+	bool moreResults;
+	return getTracks(-1, -1, moreResults);
+}
 
 void
 Tracks::refresh()
@@ -75,14 +106,10 @@ Tracks::refresh()
 void
 Tracks::addSome()
 {
-	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
-
-	auto clusterIds = _filters->getClusterIds();
-
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	bool moreResults;
-	auto tracks = Track::getByFilter(DboSession(), clusterIds, searchKeywords, _tracksContainer->count(), 20, moreResults);
+	auto tracks = getTracks(_tracksContainer->count(), 20, moreResults);
 
 	for (auto track : tracks)
 	{
@@ -105,7 +132,6 @@ Tracks::addSome()
 		if (release)
 		{
 			entry->setCondition("if-has-release", true);
-			// TODO anchor
 			Wt::WAnchor *releaseAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(track->getRelease().id())));
 			Wt::WText *releaseText = new Wt::WText(releaseAnchor);
 			releaseText->setText(Wt::WString::fromUTF8(release->getName(), Wt::PlainText));

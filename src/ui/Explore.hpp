@@ -43,6 +43,8 @@ class Explore : public Wt::WContainerWidget
 		void handleReleasePlay(Database::id_type id);
 		void handleTrackAdd(Database::id_type id);
 		void handleTrackPlay(Database::id_type id);
+		void handleTracksAdd(std::vector<Database::Track::pointer> tracks);
+		void handleTracksPlay(std::vector<Database::Track::pointer> tracks);
 
 		Filters* _filters;
 };

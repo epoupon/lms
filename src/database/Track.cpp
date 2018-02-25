@@ -169,7 +169,9 @@ Track::getByFilter(Wt::Dbo::Session& session,
 		const std::vector<std::string> keywords,
 		int offset, int size, bool& moreResults)
 {
-	Wt::Dbo::collection<pointer> collection = getQuery(session, clusterIds, keywords).limit(size + 1).offset(offset);
+	Wt::Dbo::collection<pointer> collection = getQuery(session, clusterIds, keywords)
+		.limit(size != -1 ? size + 1 : -1)
+		.offset(offset);
 
 	auto res = std::vector<pointer>(collection.begin(), collection.end());
 
@@ -182,6 +184,15 @@ Track::getByFilter(Wt::Dbo::Session& session,
 		moreResults = false;
 
 	return res;
+}
+
+std::vector<Track::pointer>
+Track::getByFilter(Wt::Dbo::Session& session,
+			const std::set<id_type>& clusters)
+{
+	bool moreResults;
+
+	return getByFilter(session, clusters, std::vector<std::string>(), -1, -1, moreResults);
 }
 
 boost::optional<std::size_t>

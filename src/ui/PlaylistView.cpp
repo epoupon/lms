@@ -70,9 +70,10 @@ Playlist::addTracks(const std::vector<Database::Track::pointer>& tracks)
 		playlist = Database::Playlist::create(DboSession(), currentPlaylistName, false, CurrentUser());
 	}
 
+	std::size_t pos = playlist->getCount();
 	for (auto track : tracks)
 	{
-		playlist.modify()->addTrack(track);
+		Database::PlaylistEntry::create(DboSession(), track, playlist, pos++);
 	}
 
 	addSome();
@@ -133,7 +134,6 @@ Playlist::addSome()
 		if (release)
 		{
 			entry->setCondition("if-has-release", true);
-			// TODO anchor
 			Wt::WAnchor *releaseAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(track->getRelease().id())));
 			Wt::WText *releaseText = new Wt::WText(releaseAnchor);
 			releaseText->setText(Wt::WString::fromUTF8(release->getName(), Wt::PlainText));

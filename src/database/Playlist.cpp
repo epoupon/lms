@@ -61,12 +61,6 @@ Playlist::getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user)
 	return std::vector<Playlist::pointer>(res.begin(), res.end());
 }
 
-void
-Playlist::addTrack(Wt::Dbo::ptr<Track> track)
-{
-	_entries.insert( PlaylistEntry::create(*session(), track, self(), _entries.size()) );
-}
-
 PlaylistEntry::PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist, int pos)
 : _pos(pos),
  _track(track),
@@ -105,6 +99,12 @@ Playlist::getTracks(int offset, int size, bool& moreResults) const
 	}
 
 	return res;
+}
+
+std::size_t
+Playlist::getCount() const
+{
+	return _entries.size();
 }
 
 } // namespace Database

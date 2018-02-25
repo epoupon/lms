@@ -50,10 +50,10 @@ class Playlist : public Wt::Dbo::Dbo<Playlist>
 		bool		isPublic() const { return _isPublic; }
 
 		// Modifiers
-		void addTrack(Wt::Dbo::ptr<Track> track);
 		void clear() { _entries.clear(); }
 
 		// Get tracks, ordered by position
+		std::size_t getCount() const;
 		std::vector<Wt::Dbo::ptr<Track>> getTracks(int offset, int size, bool& moreResults) const;
 
 		template<class Action>

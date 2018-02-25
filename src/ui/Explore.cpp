@@ -115,6 +115,8 @@ Explore::Explore(Wt::WContainerWidget* parent)
 
 	tracks->trackAdd.connect(this, &Explore::handleTrackAdd);
 	tracks->trackPlay.connect(this, &Explore::handleTrackPlay);
+	tracks->tracksAdd.connect(this, &Explore::handleTracksAdd);
+	tracks->tracksPlay.connect(this, &Explore::handleTracksPlay);
 
 
 	wApp->internalPathChanged().connect(std::bind([=]
@@ -216,6 +218,18 @@ Explore::handleTrackPlay(Database::id_type id)
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	tracksPlay.emit(getTrack(DboSession(), id));
+}
+
+void
+Explore::handleTracksAdd(std::vector<Database::Track::pointer> tracks)
+{
+	tracksAdd.emit(tracks);
+}
+
+void
+Explore::handleTracksPlay(std::vector<Database::Track::pointer> tracks)
+{
+	tracksPlay.emit(tracks);
 }
 
 } // namespace UserInterface
