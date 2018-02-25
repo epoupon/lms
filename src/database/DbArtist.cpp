@@ -137,7 +137,7 @@ Artist::getByFilter(Wt::Dbo::Session& session,
 	return res;
 }
 
-std::vector<Wt::Dbo::ptr<Release> >
+std::vector<Wt::Dbo::ptr<Release>>
 Artist::getReleases(const std::set<id_type>& clusterIds) const
 {
 	assert(self());
@@ -181,6 +181,25 @@ Artist::getReleases(const std::set<id_type>& clusterIds) const
 	Wt::Dbo::collection< Wt::Dbo::ptr<Release> > res = query;
 
 	return std::vector< Wt::Dbo::ptr<Release> > (res.begin(), res.end());
+}
+
+std::vector<Wt::Dbo::ptr<Cluster>>
+Artist::getClusters(int size) const
+{
+	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );
+	assert(session());
+
+	Wt::Dbo::Query<Cluster::pointer> query = session()->query<Cluster::pointer>
+		("select c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN artist a ON t.artist_id = a.id")
+		.where("a.id = ?").bind(self()->id())
+		.groupBy("c.id")
+		.orderBy("COUNT(c.id) DESC")
+		.limit(size);
+
+	Wt::Dbo::collection<Cluster::pointer> res = query;
+
+	return std::vector<Cluster::pointer>(res.begin(), res.end());
 }
 
 

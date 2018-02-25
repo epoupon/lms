@@ -63,8 +63,11 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		std::string getName(void) const { return _name; }
 		std::string getMBID(void) const { return _MBID; }
 
-		// Get the releases that have at least one track for this artist + belongs to optonal cluster filters
+		// Get the releases that have at least one track for this artist that belongs to optional cluster filters
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<id_type>& clusterIds = std::set<id_type>()) const;
+
+		// Get the cluster of the tracks made by this artist
+		std::vector<Wt::Dbo::ptr<Cluster>> getClusters(int size) const;
 
 		void setMBID(std::string mbid) { _MBID = mbid; }
 

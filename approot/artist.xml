@@ -13,9 +13,14 @@
 <message id="template-artist">
 	<div class="page-header">
 		<h2>${name}</h2>
+		${tags}
 		${play-btn}${add-btn}
 	</div>
 	${releases class="list-group"}
+</message>
+
+<message id="template-artist-tag-entry">
+	<span class="badge">${name}</span>
 </message>
 
 <message id="template-artist-entry">

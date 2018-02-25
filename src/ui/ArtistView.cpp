@@ -74,6 +74,20 @@ Artist::refresh()
 	auto t = new Wt::WTemplate(Wt::WString::tr("template-artist"), this);
 	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
+	auto clusterContainers = new Wt::WContainerWidget();
+	t->bindWidget("tags", clusterContainers);
+
+	{
+		auto clusters = artist->getClusters(3);
+
+		for (auto cluster : clusters)
+		{
+			auto entry = new Wt::WTemplate(Wt::WString::tr("template-artist-tag-entry"), clusterContainers);
+
+			entry->bindString("name", Wt::WString::fromUTF8(cluster->getName()), Wt::PlainText);
+		}
+	}
+
 	t->bindString("name", Wt::WString::fromUTF8(artist->getName()), Wt::PlainText);
 	{
 		auto playBtn = new Wt::WText(Wt::WString::tr("btn-artist-play-btn"), Wt::XHTMLText);
