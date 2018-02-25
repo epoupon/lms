@@ -57,6 +57,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 							bool& moreExpected);
 
 		std::vector<Wt::Dbo::ptr<Track>> getTracks(const std::set<id_type>& clusters = std::set<id_type>()) const;
+		std::vector<Wt::Dbo::ptr<Cluster>> getClusters(int size) const;
 
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID = "");

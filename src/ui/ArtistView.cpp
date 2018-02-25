@@ -75,14 +75,14 @@ Artist::refresh()
 	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	auto clusterContainers = new Wt::WContainerWidget();
-	t->bindWidget("tags", clusterContainers);
+	t->bindWidget("clusters", clusterContainers);
 
 	{
 		auto clusters = artist->getClusters(3);
 
 		for (auto cluster : clusters)
 		{
-			auto entry = new Wt::WTemplate(Wt::WString::tr("template-artist-tag-entry"), clusterContainers);
+			auto entry = new Wt::WTemplate(Wt::WString::tr("template-artist-cluster-entry"), clusterContainers);
 
 			entry->bindString("name", Wt::WString::fromUTF8(cluster->getName()), Wt::PlainText);
 		}

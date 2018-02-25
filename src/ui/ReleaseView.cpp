@@ -110,6 +110,20 @@ Release::refresh()
 	cover->setImageLink(Wt::WLink (SessionImageResource()->getReleaseUrl(release.id(), 512)));
 	t->bindWidget("cover", cover);
 
+	auto clusterContainers = new Wt::WContainerWidget();
+	t->bindWidget("clusters", clusterContainers);
+
+	{
+		auto clusters = release->getClusters(3);
+
+		for (auto cluster : clusters)
+		{
+			auto entry = new Wt::WTemplate(Wt::WString::tr("template-release-cluster-entry"), clusterContainers);
+
+			entry->bindString("name", Wt::WString::fromUTF8(cluster->getName()), Wt::PlainText);
+		}
+	}
+
 	{
 		auto playBtn = new Wt::WText(Wt::WString::tr("btn-release-play-btn"), Wt::XHTMLText);
 		t->bindWidget("play-btn", playBtn);

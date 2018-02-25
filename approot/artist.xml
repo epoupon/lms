@@ -13,13 +13,13 @@
 <message id="template-artist">
 	<div class="page-header">
 		<h2>${name}</h2>
-		${tags}
+		${clusters}
 		${play-btn}${add-btn}
 	</div>
 	${releases class="list-group"}
 </message>
 
-<message id="template-artist-tag-entry">
+<message id="template-artist-cluster-entry">
 	<span class="badge">${name}</span>
 </message>
 

@@ -202,6 +202,4 @@ Artist::getClusters(int size) const
 	return std::vector<Cluster::pointer>(res.begin(), res.end());
 }
 
-
-
 } // namespace Database

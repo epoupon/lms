@@ -225,4 +225,23 @@ Release::getTracks(const std::set<id_type>& clusterIds) const
 	return std::vector< Wt::Dbo::ptr<Track> > (res.begin(), res.end());
 }
 
+std::vector<Wt::Dbo::ptr<Cluster>>
+Release::getClusters(int size) const
+{
+	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );
+	assert(session());
+
+	Wt::Dbo::Query<Cluster::pointer> query = session()->query<Cluster::pointer>
+		("select c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN release r ON t.release_id = r.id")
+		.where("r.id = ?").bind(self()->id())
+		.groupBy("c.id")
+		.orderBy("COUNT(c.id) DESC")
+		.limit(size);
+
+	Wt::Dbo::collection<Cluster::pointer> res = query;
+
+	return std::vector<Cluster::pointer>(res.begin(), res.end());
+}
+
 } // namespace Database
