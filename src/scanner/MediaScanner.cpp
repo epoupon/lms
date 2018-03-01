@@ -32,8 +32,7 @@
 #include "utils/Path.hpp"
 #include "utils/Utils.hpp"
 
-
-#include "DatabaseUpdater.hpp"
+#include "MediaScanner.hpp"
 
 namespace {
 
@@ -85,20 +84,6 @@ isFileSupported(const boost::filesystem::path& file, const std::vector<boost::fi
 	return false;
 }
 
-std::vector<boost::filesystem::path>
-getRootDirectoriesByType(Wt::Dbo::Session& session, Database::MediaDirectory::Type type)
-{
-	Wt::Dbo::Transaction transaction(session);
-
-	std::vector<Database::MediaDirectory::pointer> rootDirs = Database::MediaDirectory::getByType(session, type);
-
-	std::vector<boost::filesystem::path> res;
-	for (auto rootDir : rootDirs)
-		res.push_back(rootDir->getPath());
-
-	return res;
-}
-
 bool
 isPathInParentPath(const boost::filesystem::path& path, const boost::filesystem::path& parentPath)
 {
@@ -118,40 +103,33 @@ isPathInParentPath(const boost::filesystem::path& path, const boost::filesystem:
 } // namespace
 
 
-namespace Database {
+namespace Scanner {
 
-Updater& Updater::instance(void)
-{
-	static Updater updater;
-	return updater;
-}
+using namespace Database;
 
-Updater::Updater()
- : _running(true),
-_scheduleTimer(_ioService)
+MediaScanner::MediaScanner(Wt::Dbo::SqlConnectionPool& connectionPool)
+ : _running(false),
+_scheduleTimer(_ioService),
+_db(connectionPool)
 {
 	_ioService.setThreadCount(1);
+
+	Wt::Dbo::Transaction transaction(_db.getSession());
+
+	if (!Setting::exists(_db.getSession(), "file_extensions"))
+		Setting::setString(_db.getSession(), "file_extensions", ".mp3 .ogg .oga .aac .m4a .flac .wav .wma .aif .aiff .ape .mpc .shn" );
 }
 
 void
-Updater::setConnectionPool(Wt::Dbo::SqlConnectionPool& connectionPool)
-{
-	_db = new Database::Handler(connectionPool);
-}
-
-void
-Updater::restart(void)
+MediaScanner::restart(void)
 {
 	stop();
 	start();
 }
 
 void
-Updater::start(void)
+MediaScanner::start(void)
 {
-	if (_db == nullptr)
-		throw std::logic_error("uninitialized db!");
-
 	_running = true;
 
 	// post some jobs in the io_service
@@ -161,7 +139,7 @@ Updater::start(void)
 }
 
 void
-Updater::stop(void)
+MediaScanner::stop(void)
 {
 	_running = false;
 
@@ -171,9 +149,9 @@ Updater::stop(void)
 }
 
 void
-Updater::processNextJob(void)
+MediaScanner::processNextJob(void)
 {
-	if (Setting::getBool(_db->getSession(), "manual_scan_requested", false))
+	if (Setting::getBool(_db.getSession(), "manual_scan_requested", false))
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Manual scan requested!";
 		scheduleScan( boost::posix_time::seconds(0) );
@@ -181,11 +159,11 @@ Updater::processNextJob(void)
 	else
 	{
 		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-		boost::posix_time::time_duration startTime = Setting::getDuration(_db->getSession(), "update_start_time");
+		boost::posix_time::time_duration startTime = Setting::getDuration(_db.getSession(), "update_start_time");
 
 		boost::gregorian::date nextScanDate;
 
-		std::string updatePeriod = Setting::getString(_db->getSession(), "update_period", "never");
+		std::string updatePeriod = Setting::getString(_db.getSession(), "update_period", "never");
 		if (updatePeriod == "daily")
 		{
 			if (now.time_of_day() < startTime)
@@ -214,72 +192,58 @@ Updater::processNextJob(void)
 }
 
 void
-Updater::scheduleScan( boost::posix_time::time_duration duration)
+MediaScanner::scheduleScan( boost::posix_time::time_duration duration)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan in " << duration;
 	_scheduleTimer.expires_from_now(duration);
-	_scheduleTimer.async_wait( boost::bind( &Updater::process, this, boost::asio::placeholders::error) );
+	_scheduleTimer.async_wait( boost::bind( &MediaScanner::process, this, boost::asio::placeholders::error) );
 }
 
 void
-Updater::scheduleScan( boost::posix_time::ptime time)
+MediaScanner::scheduleScan( boost::posix_time::ptime time)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan at " << time;
 	_scheduleTimer.expires_at(time);
-	_scheduleTimer.async_wait( boost::bind( &Updater::process, this, boost::asio::placeholders::error) );
+	_scheduleTimer.async_wait( boost::bind( &MediaScanner::process, this, boost::asio::placeholders::error) );
 }
 
 void
-Updater::process(boost::system::error_code err)
+MediaScanner::process(boost::system::error_code err)
 {
 	if (err)
 		return;
 
-	updateFileExtensions();
+	refreshScanSettings();
 
 	Stats stats;
 
 	checkAudioFiles(stats);
 
-	std::vector<RootDirectory> rootDirectories;
-	{
-		Wt::Dbo::Transaction transaction(_db->getSession());
-
-		for (MediaDirectory::pointer directory : MediaDirectory::getAll(_db->getSession()))
-			rootDirectories.push_back( RootDirectory( directory->getType(), directory->getPath() ));
-	}
-
-	for (RootDirectory rootDirectory : rootDirectories)
+	for (auto rootDirectory : _rootDirectories)
 	{
 		if (!_running)
 			break;
 
-		LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory.path << "'...";
+		LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory << "'...";
 		processRootDirectory(rootDirectory, stats);
-		LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory.path << "' DONE";
+		LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory << "' DONE";
 	}
 
 	if (_running)
-	{
 		checkDuplicatedAudioFiles(stats);
-
-		LMS_LOG(DBUPDATER, INFO) << "Processed all files, now calling listeners...";
-		for (auto eventHandler : _eventHandlers)
-			eventHandler->handleFilesUpdated();
-	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.nbAdded << ", removed = " << stats.nbRemoved << ", updated = " << stats.nbUpdated << "), Not changed = " << stats.nbNoChange << ", Scanned = " << stats.nbScanned << " (errors = " << stats.nbScanErrors << ", not imported = " << stats.nbNotImported << ")";
 
 	// Update database stats
 	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
 	if (stats.nbChanges() > 0)
-		Setting::setTime(_db->getSession(), "last_update", now);
+		Setting::setTime(_db.getSession(), "last_update", now);
 
 	// Save the last scan only if it has been completed
 	if (_running)
 	{
-		Setting::setTime(_db->getSession(), "last_scan", now);
-		Setting::setBool(_db->getSession(), "manual_scan_requested", false);
+		Setting::setTime(_db.getSession(), "last_scan", now);
+		Setting::setBool(_db.getSession(), "manual_scan_requested", false);
 
 		processNextJob();
 
@@ -288,26 +252,30 @@ Updater::process(boost::system::error_code err)
 }
 
 void
-Updater::updateFileExtensions()
+MediaScanner::refreshScanSettings()
 {
-	Wt::Dbo::Transaction transaction(_db->getSession());
+	Wt::Dbo::Transaction transaction(_db.getSession());
 
-	_audioFileExtensions.clear();
-	for (auto extension : splitString(Setting::getString(_db->getSession(), "audio_file_extensions"), " "))
-		_audioFileExtensions.push_back( extension );
+	_fileExtensions.clear();
+	for (auto extension : splitString(Setting::getString(_db.getSession(), "file_extensions"), " "))
+		_fileExtensions.push_back( extension );
+
+	_rootDirectories.clear();
+	for (auto rootDir : Database::MediaDirectory::getAll(_db.getSession()))
+		_rootDirectories.push_back(rootDir->getPath());
 }
 
 Artist::pointer
-Updater::getArtist( const boost::filesystem::path& file, const std::string& name, const std::string& mbid)
+MediaScanner::getArtist( const boost::filesystem::path& file, const std::string& name, const std::string& mbid)
 {
 	Artist::pointer artist;
 
 	// First try to get by MBID
 	if (!mbid.empty())
 	{
-		artist = Artist::getByMBID( _db->getSession(), mbid );
+		artist = Artist::getByMBID( _db.getSession(), mbid );
 		if (!artist)
-			artist = Artist::create( _db->getSession(), name, mbid);
+			artist = Artist::create( _db.getSession(), name, mbid);
 
 		return artist;
 	}
@@ -315,7 +283,7 @@ Updater::getArtist( const boost::filesystem::path& file, const std::string& name
 	// Fall back on artist name (collisions may occur)
 	if (!name.empty())
 	{
-		for (Artist::pointer sameNamedArtist : Artist::getByName( _db->getSession(), name ))
+		for (Artist::pointer sameNamedArtist : Artist::getByName( _db.getSession(), name ))
 		{
 			if (sameNamedArtist->getMBID().empty())
 			{
@@ -326,7 +294,7 @@ Updater::getArtist( const boost::filesystem::path& file, const std::string& name
 
 		// No Artist found with the same name and without MBID -> creating
 		if (!artist)
-			artist = Artist::create( _db->getSession(), name);
+			artist = Artist::create( _db.getSession(), name);
 
 		return artist;
 	}
@@ -335,16 +303,16 @@ Updater::getArtist( const boost::filesystem::path& file, const std::string& name
 }
 
 Release::pointer
-Updater::getRelease( const boost::filesystem::path& file, const std::string& name, const std::string& mbid)
+MediaScanner::getRelease( const boost::filesystem::path& file, const std::string& name, const std::string& mbid)
 {
 	Release::pointer release;
 
 	// First try to get by MBID
 	if (!mbid.empty())
 	{
-		release = Release::getByMBID( _db->getSession(), mbid );
+		release = Release::getByMBID( _db.getSession(), mbid );
 		if (!release)
-			release = Release::create( _db->getSession(), name, mbid);
+			release = Release::create( _db.getSession(), name, mbid);
 
 		return release;
 	}
@@ -352,7 +320,7 @@ Updater::getRelease( const boost::filesystem::path& file, const std::string& nam
 	// Fall back on release name (collisions may occur)
 	if (!name.empty())
 	{
-		for (Release::pointer sameNamedRelease : Release::getByName( _db->getSession(), name ))
+		for (Release::pointer sameNamedRelease : Release::getByName( _db.getSession(), name ))
 		{
 			if (sameNamedRelease->getMBID().empty())
 			{
@@ -363,7 +331,7 @@ Updater::getRelease( const boost::filesystem::path& file, const std::string& nam
 
 		// No release found with the same name and without MBID -> creating
 		if (!release)
-			release = Release::create( _db->getSession(), name);
+			release = Release::create( _db.getSession(), name);
 
 		return release;
 	}
@@ -372,32 +340,39 @@ Updater::getRelease( const boost::filesystem::path& file, const std::string& nam
 }
 
 std::vector<Cluster::pointer>
-Updater::getGenreClusters( const std::list<std::string>& names)
+MediaScanner::getClusters( const MetaData::Clusters& clustersNames)
 {
-	std::vector< Cluster::pointer > genres;
+	std::vector< Cluster::pointer > clusters;
 
-	for (const std::string& name : names)
+	for (auto clusterNames : clustersNames)
 	{
-		Cluster::pointer genre ( Cluster::get(_db->getSession(), "Genre", name) );
-		if (!genre)
-			genre = Cluster::create(_db->getSession(), "Genre", name);
+		ClusterType::pointer clusterType = ClusterType::getByName(_db.getSession(), clusterNames.first);
+		if (!clusterType)
+			clusterType = ClusterType::create(_db.getSession(), clusterNames.first);
 
-		genres.push_back( genre );
+		for (auto clusterName : clusterNames.second)
+		{
+			Cluster::pointer cluster = clusterType->getCluster(clusterName);
+			if (!cluster)
+				cluster = Cluster::create(_db.getSession(), clusterType, clusterName);
+
+			clusters.push_back(cluster);
+		}
 	}
 
-	return genres;
+	return clusters;
 }
 
 void
-Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
+MediaScanner::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 {
 	boost::posix_time::ptime lastWriteTime (boost::posix_time::from_time_t( boost::filesystem::last_write_time( file ) ) );
 
 	// Skip file if last write is the same
 	{
-		Wt::Dbo::Transaction transaction(_db->getSession());
+		Wt::Dbo::Transaction transaction(_db.getSession());
 
-		Wt::Dbo::ptr<Track> track = Track::getByPath(_db->getSession(), file);
+		Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
 
 		if (track && track->getLastWriteTime() == lastWriteTime)
 		{
@@ -406,8 +381,8 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		}
 	}
 
-	MetaData::Items items;
-	if (!_metadataParser.parse(file, items))
+	boost::optional<MetaData::Items> items = _metadataParser.parse(file);
+	if (!items)
 	{
 		stats.nbScanErrors++;
 		return;
@@ -418,15 +393,15 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	std::vector<unsigned char> checksum ;
 	computeCrc(file, checksum);
 
-	Wt::Dbo::Transaction transaction(_db->getSession());
+	Wt::Dbo::Transaction transaction(_db.getSession());
 
-	Wt::Dbo::ptr<Track> track = Track::getByPath(_db->getSession(), file);
+	Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
 
 	// We estimate this is a audio file if:
 	// - we found a least one audio stream
 	// - the duration is not null
-	if (items.find(MetaData::Type::AudioStreams) == items.end()
-			|| boost::any_cast<std::vector<MetaData::AudioStream> >(items[MetaData::Type::AudioStreams]).empty())
+	if ((*items).find(MetaData::Type::AudioStreams) == (*items).end()
+			|| boost::any_cast<std::vector<MetaData::AudioStream>> ((*items)[MetaData::Type::AudioStreams]).empty())
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file << "' (no audio stream found)";
 
@@ -439,8 +414,8 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		stats.nbNotImported++;
 		return;
 	}
-	if (items.find(MetaData::Type::Duration) == items.end()
-			|| boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]).total_seconds() <= 0)
+	if ((*items).find(MetaData::Type::Duration) == (*items).end()
+			|| boost::any_cast<boost::posix_time::time_duration>((*items)[MetaData::Type::Duration]).total_seconds() <= 0)
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file << "' (no duration or duration <= 0)";
 
@@ -456,9 +431,9 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 	// ***** Title
 	std::string title;
-	if (items.find(MetaData::Type::Title) != items.end())
+	if ((*items).find(MetaData::Type::Title) != (*items).end())
 	{
-		title = boost::any_cast<std::string>(items[MetaData::Type::Title]);
+		title = boost::any_cast<std::string>((*items)[MetaData::Type::Title]);
 	}
 	else
 	{
@@ -470,13 +445,15 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	// ***** Clusters
 	std::vector< Cluster::pointer > genres;
 	{
-		std::list<std::string> genreList;
+		MetaData::Clusters clusterNames;
 
-		if (items.find(MetaData::Type::Genres) != items.end())
-			genreList = boost::any_cast< std::list<std::string> > (items[MetaData::Type::Genres]);
+		if ((*items).find(MetaData::Type::Clusters) != (*items).end())
+		{
+			clusterNames = boost::any_cast<MetaData::Clusters> ((*items)[MetaData::Type::Clusters]);
+		}
 
 		// TODO rename
-		genres = getGenreClusters( genreList );
+		genres = getClusters( clusterNames );
 	}
 
 	//  ***** Artist
@@ -485,11 +462,11 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		std::string artistName;
 		std::string artistMusicBrainzID;
 
-		if (items.find(MetaData::Type::MusicBrainzArtistID) != items.end())
-			artistMusicBrainzID = boost::any_cast<std::string>(items[MetaData::Type::MusicBrainzArtistID] );
+		if ((*items).find(MetaData::Type::MusicBrainzArtistID) != (*items).end())
+			artistMusicBrainzID = boost::any_cast<std::string>((*items)[MetaData::Type::MusicBrainzArtistID] );
 
-		if (items.find(MetaData::Type::Artist) != items.end())
-			artistName = boost::any_cast<std::string>(items[MetaData::Type::Artist]);
+		if ((*items).find(MetaData::Type::Artist) != (*items).end())
+			artistName = boost::any_cast<std::string>((*items)[MetaData::Type::Artist]);
 
 		artist = getArtist(file, artistName, artistMusicBrainzID);
 	}
@@ -500,11 +477,11 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		std::string releaseName;
 		std::string releaseMusicBrainzID;
 
-		if (items.find(MetaData::Type::MusicBrainzAlbumID) != items.end())
-			releaseMusicBrainzID = boost::any_cast<std::string>(items[MetaData::Type::MusicBrainzAlbumID] );
+		if ((*items).find(MetaData::Type::MusicBrainzAlbumID) != (*items).end())
+			releaseMusicBrainzID = boost::any_cast<std::string>((*items)[MetaData::Type::MusicBrainzAlbumID] );
 
-		if (items.find(MetaData::Type::Album) != items.end())
-			releaseName = boost::any_cast<std::string>(items[MetaData::Type::Album]);
+		if ((*items).find(MetaData::Type::Album) != (*items).end())
+			releaseName = boost::any_cast<std::string>((*items)[MetaData::Type::Album]);
 
 		release = getRelease(file, releaseName, releaseMusicBrainzID);
 	}
@@ -515,7 +492,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	if (!track)
 	{
 		// Create a new song
-		track = Track::create(_db->getSession(), file);
+		track = Track::create(_db.getSession(), file);
 		LMS_LOG(DBUPDATER, INFO) << "Adding '" << file << "'";
 		stats.nbAdded++;
 	}
@@ -537,7 +514,7 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 	track.modify()->setRelease(release);
 	track.modify()->setLastWriteTime(lastWriteTime);
 	track.modify()->setName(title);
-	track.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>(items[MetaData::Type::Duration]) );
+	track.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>((*items)[MetaData::Type::Duration]) );
 	track.modify()->setAddedTime( boost::posix_time::second_clock::local_time() );
 
 	{
@@ -555,53 +532,54 @@ Updater::processAudioFile( const boost::filesystem::path& file, Stats& stats)
 		track.modify()->setGenres( trackClusterList );
 	}
 
-	if (items.find(MetaData::Type::TrackNumber) != items.end())
-		track.modify()->setTrackNumber( boost::any_cast<std::size_t>(items[MetaData::Type::TrackNumber]) );
+	if ((*items).find(MetaData::Type::TrackNumber) != (*items).end())
+		track.modify()->setTrackNumber( boost::any_cast<std::size_t>((*items)[MetaData::Type::TrackNumber]) );
 
-	if (items.find(MetaData::Type::TotalTrack) != items.end())
-		track.modify()->setTotalTrackNumber( boost::any_cast<std::size_t>(items[MetaData::Type::TotalTrack]) );
+	if ((*items).find(MetaData::Type::TotalTrack) != (*items).end())
+		track.modify()->setTotalTrackNumber( boost::any_cast<std::size_t>((*items)[MetaData::Type::TotalTrack]) );
 
-	if (items.find(MetaData::Type::DiscNumber) != items.end())
-		track.modify()->setDiscNumber( boost::any_cast<std::size_t>(items[MetaData::Type::DiscNumber]) );
+	if ((*items).find(MetaData::Type::DiscNumber) != (*items).end())
+		track.modify()->setDiscNumber( boost::any_cast<std::size_t>((*items)[MetaData::Type::DiscNumber]) );
 
-	if (items.find(MetaData::Type::TotalDisc) != items.end())
-		track.modify()->setTotalDiscNumber( boost::any_cast<std::size_t>(items[MetaData::Type::TotalDisc]) );
+	if ((*items).find(MetaData::Type::TotalDisc) != (*items).end())
+		track.modify()->setTotalDiscNumber( boost::any_cast<std::size_t>((*items)[MetaData::Type::TotalDisc]) );
 
-	if (items.find(MetaData::Type::Date) != items.end())
-		track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>(items[MetaData::Type::Date]) );
+	if ((*items).find(MetaData::Type::Date) != (*items).end())
+		track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>((*items)[MetaData::Type::Date]) );
 
-	if (items.find(MetaData::Type::OriginalDate) != items.end())
+	if ((*items).find(MetaData::Type::OriginalDate) != (*items).end())
 	{
-		track.modify()->setOriginalDate( boost::any_cast<boost::posix_time::ptime>(items[MetaData::Type::OriginalDate]) );
+		track.modify()->setOriginalDate( boost::any_cast<boost::posix_time::ptime>((*items)[MetaData::Type::OriginalDate]) );
 
 		// If a file has an OriginalDate but no date, set the date to ease filtering
-		if (items.find(MetaData::Type::Date) == items.end())
-			track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>(items[MetaData::Type::OriginalDate]) );
+		if ((*items).find(MetaData::Type::Date) == (*items).end())
+			track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>((*items)[MetaData::Type::OriginalDate]) );
 	}
 
-	if (items.find(MetaData::Type::MusicBrainzRecordingID) != items.end())
+	if ((*items).find(MetaData::Type::MusicBrainzRecordingID) != (*items).end())
 	{
-		track.modify()->setMBID( boost::any_cast<std::string>(items[MetaData::Type::MusicBrainzRecordingID]) );
+		track.modify()->setMBID( boost::any_cast<std::string>((*items)[MetaData::Type::MusicBrainzRecordingID]) );
 	}
 
-	if (items.find(MetaData::Type::HasCover) != items.end())
+	if ((*items).find(MetaData::Type::HasCover) != (*items).end())
 	{
-		bool hasCover = boost::any_cast<bool>(items[MetaData::Type::HasCover]);
+		bool hasCover = boost::any_cast<bool>((*items)[MetaData::Type::HasCover]);
 
 		track.modify()->setCoverType( hasCover ? Track::CoverType::Embedded : Track::CoverType::None );
 	}
 
-	transaction.commit();
+	// TODO check added/modified
+	_sigAddedTrack.emit(track);
 
-	_sigTrackChanged.emit(true, track.id(), track->getMBID(), track->getPath());
+	transaction.commit();
 }
 
 void
-Updater::processRootDirectory(RootDirectory rootDirectory, Stats& stats)
+MediaScanner::processRootDirectory(boost::filesystem::path rootDirectory, Stats& stats)
 {
 	boost::system::error_code ec;
 
-	boost::filesystem::recursive_directory_iterator itPath(rootDirectory.path, ec);
+	boost::filesystem::recursive_directory_iterator itPath(rootDirectory, ec);
 
 	boost::filesystem::recursive_directory_iterator itEnd;
 	while (!ec && itPath != itEnd)
@@ -614,20 +592,15 @@ Updater::processRootDirectory(RootDirectory rootDirectory, Stats& stats)
 
 		if (boost::filesystem::is_regular(path))
 		{
-			switch( rootDirectory.type )
-			{
-				case Database::MediaDirectory::Audio:
-					if (isFileSupported(path, _audioFileExtensions))
-						processAudioFile(path, stats );
-
-					break;
-			}
+			if (isFileSupported(path, _fileExtensions))
+				processAudioFile(path, stats );
 		}
 	}
 }
 
-bool
-Updater::checkFile(const boost::filesystem::path& p, const std::vector<boost::filesystem::path>& rootDirs, const std::vector<boost::filesystem::path>& extensions)
+// Check if a file exists and is still in a root directory
+static bool
+checkFile(const boost::filesystem::path& p, const std::vector<boost::filesystem::path>& rootDirs, const std::vector<boost::filesystem::path>& extensions)
 {
 	try
 	{
@@ -678,12 +651,11 @@ Updater::checkFile(const boost::filesystem::path& p, const std::vector<boost::fi
 }
 
 void
-Updater::checkAudioFiles( Stats& stats )
+MediaScanner::checkAudioFiles( Stats& stats )
 {
 	LMS_LOG(DBUPDATER, INFO) << "Checking audio files...";
 
-	std::vector<boost::filesystem::path> trackPaths = Track::getAllPaths(_db->getSession());;
-	std::vector<boost::filesystem::path> rootDirs = getRootDirectoriesByType(_db->getSession(), Database::MediaDirectory::Audio);
+	std::vector<boost::filesystem::path> trackPaths = Track::getAllPaths(_db.getSession());;
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks...";
 	for (auto& trackPath : trackPaths)
@@ -691,11 +663,11 @@ Updater::checkAudioFiles( Stats& stats )
 		if (!_running)
 			return;
 
-		if (!checkFile(trackPath, rootDirs, _audioFileExtensions))
+		if (!checkFile(trackPath, _rootDirectories, _fileExtensions))
 		{
-			Wt::Dbo::Transaction transaction(_db->getSession());
+			Wt::Dbo::Transaction transaction(_db.getSession());
 
-			Track::pointer track = Track::getByPath(_db->getSession(), trackPath);
+			Track::pointer track = Track::getByPath(_db.getSession(), trackPath);
 			if (track)
 			{
 				track.remove();
@@ -706,25 +678,25 @@ Updater::checkAudioFiles( Stats& stats )
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking Clusters...";
 	{
-		Wt::Dbo::Transaction transaction(_db->getSession());
+		Wt::Dbo::Transaction transaction(_db.getSession());
 
 		// Now process orphan Cluster (no track)
-		auto genres = Cluster::getAll(_db->getSession());
-		for (auto genre : genres)
+		auto clusters = Cluster::getAll(_db.getSession());
+		for (auto cluster : clusters)
 		{
-			if (genre->getTracks().size() == 0)
+			if (cluster->getTracks().size() == 0)
 			{
-				LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan genre '" << genre->getName() << "'";
-				genre.remove();
+				LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster '" << cluster->getName() << "'";
+				cluster.remove();
 			}
 		}
 	}
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking artists...";
 	{
-		Wt::Dbo::Transaction transaction(_db->getSession());
+		Wt::Dbo::Transaction transaction(_db.getSession());
 
-		auto artists = Artist::getAllOrphans(_db->getSession());
+		auto artists = Artist::getAllOrphans(_db.getSession());
 		for (auto artist : artists)
 		{
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan artist '" << artist->getName() << "'";
@@ -734,9 +706,9 @@ Updater::checkAudioFiles( Stats& stats )
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking releases...";
 	{
-		Wt::Dbo::Transaction transaction(_db->getSession());
+		Wt::Dbo::Transaction transaction(_db.getSession());
 
-		auto releases = Release::getAllOrphans(_db->getSession());
+		auto releases = Release::getAllOrphans(_db.getSession());
 		for (auto release : releases)
 		{
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan release '" << release->getName() << "'";
@@ -748,19 +720,19 @@ Updater::checkAudioFiles( Stats& stats )
 }
 
 void
-Updater::checkDuplicatedAudioFiles(Stats& stats)
+MediaScanner::checkDuplicatedAudioFiles(Stats& stats)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files";
 
-	Wt::Dbo::Transaction transaction(_db->getSession());
+	Wt::Dbo::Transaction transaction(_db.getSession());
 
-	std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(_db->getSession());
+	std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(_db.getSession());
 	for (Track::pointer track : tracks)
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath() << " - " << track->getArtist()->getName() << " - " << track->getName();
 	}
 
-	tracks = Database::Track::getChecksumDuplicates(_db->getSession());
+	tracks = Database::Track::getChecksumDuplicates(_db.getSession());
 	for (Track::pointer track : tracks)
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Found duplicated checksum [" << bufferToString(track->getChecksum()) << "], file: " << track->getPath() << " - " << track->getArtist()->getName() << " - " << track->getName();
@@ -771,4 +743,4 @@ Updater::checkDuplicatedAudioFiles(Stats& stats)
 }
 
 
-} // namespace Database
+} // namespace Scanner

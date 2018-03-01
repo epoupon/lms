@@ -21,6 +21,7 @@
 #define DATABASE_HANDLER_HPP
 
 #include <boost/filesystem.hpp>
+#include <memory>
 
 #include <Wt/Dbo/Dbo>
 #include <Wt/Dbo/SqlConnectionPool>

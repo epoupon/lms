@@ -56,14 +56,15 @@ Filters::showDialog()
 	{
 		Wt::Dbo::Transaction transaction(DboSession());
 
-		auto types = Database::Cluster::getAllTypes(DboSession());
+		auto types = Database::ClusterType::getAll(DboSession());
 
 		for (auto type : types)
-			typeCombo->addItem(Wt::WString::fromUTF8(type));
+			typeCombo->addItem(Wt::WString::fromUTF8(type->getName()));
+
 
 		if (!types.empty())
 		{
-			auto values = Database::Cluster::getByType(DboSession(), types.front());
+			auto values = types.front()->getClusters();
 
 			for (auto value : values)
 			{
@@ -76,13 +77,15 @@ Filters::showDialog()
 
 	typeCombo->changed().connect(std::bind([=]
 	{
-		auto type = typeCombo->valueText().toUTF8();
+		auto name = typeCombo->valueText().toUTF8();
 
 		valueCombo->clear();
 
 		Wt::Dbo::Transaction transaction(DboSession());
 
-		auto values = Database::Cluster::getByType(DboSession(), type);
+		auto clusterType = Database::ClusterType::getByName(DboSession(), name);
+
+		auto values = clusterType->getClusters();
 		for (auto value : values)
 		{
 			if (_filterIds.find(value.id()) == _filterIds.end())
@@ -108,7 +111,11 @@ Filters::showDialog()
 
 		Wt::Dbo::Transaction transaction(DboSession());
 
-		auto cluster = Database::Cluster::get(DboSession(), type, value);
+		auto clusterType = Database::ClusterType::getByName(DboSession(), type);
+		if (!clusterType)
+			return;
+
+		auto cluster = clusterType->getCluster(value);
 		if (!cluster)
 			return;
 

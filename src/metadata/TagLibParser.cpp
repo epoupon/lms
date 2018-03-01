@@ -32,18 +32,25 @@
 namespace MetaData
 {
 
-bool
-TagLibParser::parse(const boost::filesystem::path& p, Items& items)
+TagLibParser::TagLibParser(const std::map<std::string, std::string>& clusterMap)
+: _clusterMap(clusterMap)
+{
+}
+
+boost::optional<Items>
+TagLibParser::parse(const boost::filesystem::path& p)
 {
 	TagLib::FileRef f(p.string().c_str(),
 			true, // read audio properties
 			TagLib::AudioProperties::Average);
 
 	if (f.isNull())
-		return false;
+		return boost::none;
 
 	if (!f.audioProperties())
-		return false;
+		return boost::none;
+
+	Items items;
 
 	{
 		TagLib::AudioProperties *properties = f.audioProperties();
@@ -70,17 +77,26 @@ TagLibParser::parse(const boost::filesystem::path& p, Items& items)
 
 	if (f.tag())
 	{
-		TagLib::PropertyMap tags = f.file()->properties();
+		MetaData::Clusters clusters;
+		TagLib::PropertyMap properties = f.file()->properties();
 
-      		for(TagLib::PropertyMap::ConstIterator itElem = tags.begin(); itElem != tags.end(); ++itElem)
+      		for(auto property : properties)
 		{
-			const std::string tag = itElem->first.to8Bit(true);
-			const TagLib::StringList &values = itElem->second;
+			const std::string tag = property.first.upper().to8Bit(true);
+			const TagLib::StringList& values = property.second;
 
 			if (tag.empty() || values.isEmpty() || values.front().isEmpty())
 				continue;
 
 			// TODO validate MBID format
+
+#if 0
+			std::cout << "TAG = '" << tag << "'" << std::endl;
+			for (auto value : values)
+			{
+				std::cout << "\t'" << value.to8Bit(true) << "'" << std::endl;
+			}
+#endif
 
 			if (tag == "ARTIST")
 				items.insert( std::make_pair(MetaData::Type::Artist, stringTrim( values.front().to8Bit(true))));
@@ -88,14 +104,19 @@ TagLibParser::parse(const boost::filesystem::path& p, Items& items)
 				items.insert( std::make_pair(MetaData::Type::Album, stringTrim( values.front().to8Bit(true))));
 			else if (tag == "TITLE")
 				items.insert( std::make_pair(MetaData::Type::Title, stringTrim( values.front().to8Bit(true))));
-			else if (tag == "MUSICBRAINZ_RELEASETRACKID")
+			else if (tag == "MUSICBRAINZ_RELEASETRACKID"
+				|| tag == "MUSICBRAINZ RELEASE TRACK ID")
+			{
 				items.insert( std::make_pair(MetaData::Type::MusicBrainzTrackID, stringTrim( values.front().to8Bit(true))));
+			}
 			else if (tag == "MUSICBRAINZ_ARTISTID")
 				items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, stringTrim( values.front().to8Bit(true))));
 			else if (tag == "MUSICBRAINZ_ALBUMID")
 				items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, stringTrim( values.front().to8Bit(true))));
 			else if (tag == "MUSICBRAINZ_TRACKID")
-				items.insert( std::make_pair(MetaData::Type::MusicBrainzRecordingID, stringTrim( tags["MUSICBRAINZ_TRACKID"].front().to8Bit(true))));
+				items.insert( std::make_pair(MetaData::Type::MusicBrainzRecordingID, stringTrim( values.front().to8Bit(true))));
+			else if (tag == "ACOUSTID_ID")
+				items.insert( std::make_pair(MetaData::Type::AcoustID, stringTrim( values.front().to8Bit(true))));
 			else if (tag == "TRACKNUMBER")
 			{
 				// Expecting 'Number/Total'
@@ -160,24 +181,29 @@ TagLibParser::parse(const boost::filesystem::path& p, Items& items)
 						items.insert( std::make_pair(MetaData::Type::OriginalDate, p));
 				}
 			}
-			else if (tag == "GENRE")
-			{
-				std::list<std::string> genreList;
-				for (TagLib::StringList::ConstIterator itGenre = values.begin(); itGenre != values.end(); ++itGenre)
-					genreList.push_back(itGenre->to8Bit(true));
-
-				items.insert( std::make_pair(MetaData::Type::Genres, genreList) );
-			}
 			else if (tag == "METADATA_BLOCK_PICTURE")
 			{
 				// Only add once
 				if (items.find(MetaData::Type::HasCover) == items.end())
 					items.insert( std::make_pair(MetaData::Type::HasCover, true));
 			}
+			// Check if a hit a cluster tag
+			else if (_clusterMap.find(tag) != _clusterMap.end())
+			{
+				std::set<std::string> clusterNames;
+				for (const auto& value : values)
+					clusterNames.insert(value.to8Bit(true));
+
+				if (!clusterNames.empty())
+					clusters[_clusterMap[tag]] = clusterNames;
+			}
 		}
+
+		if (!clusters.empty())
+			items.insert( std::make_pair(MetaData::Type::Clusters, clusters) );
 	}
 
-	return true;
+	return items;
 }
 
 } // namespace MetaData

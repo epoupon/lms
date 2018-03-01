@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <boost/make_unique.hpp>
+
 #include <Wt/Dbo/FixedSqlConnectionPool>
 #include <Wt/Dbo/backend/Sqlite3>
 
@@ -83,22 +85,25 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 
 	_session.mapClass<Database::Artist>("artist");
 	_session.mapClass<Database::Cluster>("cluster");
-	_session.mapClass<Database::Track>("track");
+	_session.mapClass<Database::ClusterType>("cluster_type");
+	_session.mapClass<Database::MediaDirectory>("media_directory");
 	_session.mapClass<Database::Playlist>("playlist");
 	_session.mapClass<Database::PlaylistEntry>("playlist_entry");
 	_session.mapClass<Database::Release>("release");
-	_session.mapClass<Database::MediaDirectory>("media_directory");
 	_session.mapClass<Database::Setting>("setting");
+	_session.mapClass<Database::Track>("track");
 
-	_session.mapClass<Database::User>("user");
 	_session.mapClass<Database::AuthInfo>("auth_info");
 	_session.mapClass<Database::AuthInfo::AuthIdentityType>("auth_identity");
 	_session.mapClass<Database::AuthInfo::AuthTokenType>("auth_token");
+	_session.mapClass<Database::User>("user");
 
 	try {
 		Wt::Dbo::Transaction transaction(_session);
 
 	        _session.createTables();
+
+		LMS_LOG(DB, INFO) << "Tables created";
 	}
 	catch(std::exception& e) {
 		LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();
@@ -108,21 +113,17 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		Wt::Dbo::Transaction transaction(_session);
 
 		// Indexes
-		_session.execute("PRAGMA journal_mode=WAL");
+	//	_session.execute("PRAGMA journal_mode=WAL");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_path_idx ON track(file_path)");
 		_session.execute("CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_artist_idx ON track(artist_id)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
-		_session.execute("CREATE INDEX IF NOT EXISTS cluster_type_idx ON cluster(type)");
+		_session.execute("CREATE INDEX IF NOT EXISTS cluster_name_idx ON cluster(name)");
+		_session.execute("CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");
 
+		// TODO move this
 		// Default values
-		if (!Setting::exists(_session, "audio_file_extensions"))
-			Setting::setString(_session, "audio_file_extensions", ".mp3 .ogg .oga .aac .m4a .flac .wav .wma .aif .aiff .ape .mpc .shn" );
-
-		if (!Setting::exists(_session, "video_file_extensions"))
-			Setting::setString(_session, "video_file_extensions", ".flv .avi .mpg .mpeg .mp4 .m4v .mkv .mov .wmv .ogv .divx .m2ts");
-
 		if (!Setting::exists(_session, "tags_highlevel_acousticbrainz"))
 			Setting::setBool(_session, "tags_highlevel_acousticbrainz", true);
 
@@ -184,7 +185,7 @@ Handler::createConnectionPool(boost::filesystem::path p)
 
 	Wt::Dbo::backend::Sqlite3 *connection = new Wt::Dbo::backend::Sqlite3(p.string());
 
-	connection->executeSql("pragma journal_mode=WAL");
+//	connection->executeSql("pragma journal_mode=WAL");
 
 	connection->setProperty("show-queries", "true");
 	return new Wt::Dbo::FixedSqlConnectionPool(connection, 1);

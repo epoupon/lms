@@ -12,6 +12,8 @@
 - handle access rights problems (instead of aborting)
 - add a global play counter for tracks. This will help people to spot most popular files
 - Use the WServer::post method to notify the end of the database scan? (with results?)
+- Make clusters based on different metadata (albumgrouping, genre, mood, etc.). Make it configurable somewhere as it is very difficult to handle them all?
+- Use albumartist when available (useful for compilations)
 
 [Metadata]
 - WMA covers: add support
@@ -31,6 +33,8 @@
 	- Add a hint for the user to get the nature of tag (created from genre ? created from audio features?)
 	- Implement a play queue
 	- Implement a decent player
+	- Tags cloud for artist/release
+	- Dedicate a color for each tag type
 
 [REST API]
 - Make a dedicated REST API. Maybe use the SubSonic API or Ampache API?

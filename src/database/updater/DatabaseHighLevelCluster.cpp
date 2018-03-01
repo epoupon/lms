@@ -26,11 +26,15 @@
 
 namespace Database {
 
-static Cluster::pointer getCluster(std::string type, std::string value)
+static Cluster::pointer getCluster(std::string type, std::string name)
 {
-	Cluster::pointer cluster = ( Cluster::get(UpdaterDboSession(), type, value) );
+	ClusterType::pointer clusterType = ClusterType::getByName(UpdaterDboSession(), type);
+	if (!clusterType)
+		clusterType = ClusterType::create(UpdaterDboSession(), type);
+
+	auto cluster = clusterType->getCluster(name);
 	if (!cluster)
-		cluster = Cluster::create(UpdaterDboSession(), type, value);
+		cluster = Cluster::create(UpdaterDboSession(), clusterType, name);
 
 	return cluster;
 }
@@ -196,7 +200,7 @@ HighLevelCluster::handleFilesUpdated(void)
 		for (auto cluster : clusters)
 		{
 			// Check if removed
-			if (cluster->getType() != "high_level")
+			if (cluster->getType()->getName() != "high_level")
 				continue;
 
 			auto it = std::find(newClusterNames.begin(), newClusterNames.end(), cluster->getName());

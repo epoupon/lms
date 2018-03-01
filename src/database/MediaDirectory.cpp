@@ -23,16 +23,15 @@
 
 namespace Database {
 
-MediaDirectory::MediaDirectory(boost::filesystem::path p, Type type)
-: _type(type),
- _path(stringTrimEnd(p.string(), "/\\"))
+MediaDirectory::MediaDirectory(boost::filesystem::path p)
+: _path(stringTrimEnd(p.string(), "/\\"))
 {
 }
 
 MediaDirectory::pointer
-MediaDirectory::create(Wt::Dbo::Session& session, boost::filesystem::path p, Type type)
+MediaDirectory::create(Wt::Dbo::Session& session, boost::filesystem::path p)
 {
-	return session.add( new MediaDirectory( p, type ) );
+	return session.add( new MediaDirectory(p) );
 }
 
 void
@@ -48,20 +47,6 @@ MediaDirectory::getAll(Wt::Dbo::Session& session)
 	Wt::Dbo::collection< MediaDirectory::pointer > res = session.find<MediaDirectory>();
 
 	return std::vector<MediaDirectory::pointer>(res.begin(), res.end());
-}
-
-std::vector<MediaDirectory::pointer>
-MediaDirectory::getByType(Wt::Dbo::Session& session, Type type)
-{
-	Wt::Dbo::collection< MediaDirectory::pointer > res = session.find<MediaDirectory>().where("type = ?").bind (type);
-
-	return std::vector<MediaDirectory::pointer>(res.begin(), res.end());
-}
-
-MediaDirectory::pointer
-MediaDirectory::get(Wt::Dbo::Session& session, boost::filesystem::path p, Type type)
-{
-	return session.find<MediaDirectory>().where("path = ?").where("type = ?").bind( p.string()).bind(type);
 }
 
 boost::filesystem::path

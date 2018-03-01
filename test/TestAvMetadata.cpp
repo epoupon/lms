@@ -26,20 +26,20 @@ int main(int argc, char *argv[])
 		MetaData::AvFormat avFormatParser;
 		MetaData::TagLibParser tagLibParser;
 
-		std::vector<MetaData::Parser*> parsers = { &avFormatParser, &tagLibParser };
+		std::vector<MetaData::Parser*> parsers = {&avFormatParser, &tagLibParser };
 
 		for (auto& parser : parsers)
 		{
-			MetaData::Items items;
+			boost::optional<MetaData::Items> items = parser->parse(argv[1]);
 
-			if (!parser->parse(argv[1], items))
+			if (!items)
 			{
 				std::cout << "Parsing failed" << std::endl;
 				continue;
 			}
 
 			std::cout << "Items:" << std::endl;
-			for (auto item : items)
+			for (auto item : (*items))
 			{
 				switch (item.first)
 				{
@@ -55,9 +55,15 @@ int main(int argc, char *argv[])
 						std::cout << "Album: " << boost::any_cast<std::string>(item.second) << std::endl;
 						break;
 
-					case MetaData::Type::Genres:
-						for (auto& genre : boost::any_cast<std::list<std::string> >(item.second))
-							std::cout << "Genre: " << genre << std::endl;
+					case MetaData::Type::Clusters:
+						for (const auto& cluster : boost::any_cast<MetaData::Clusters>(item.second))
+						{
+							std::cout << "Cluster: " << cluster.first << std::endl;
+							for (const auto name : cluster.second)
+							{
+								std::cout << "\t" << name << std::endl;
+							}
+						}
 						break;
 
 					case MetaData::Type::Duration:
@@ -111,6 +117,10 @@ int main(int argc, char *argv[])
 
 					case MetaData::Type::MusicBrainzRecordingID:
 						std::cout << "MusicBrainzRecordingID: " << boost::any_cast<std::string>(item.second) << std::endl;
+						break;
+
+					case MetaData::Type::AcoustID:
+						std::cout << "AcoustID: " << boost::any_cast<std::string>(item.second) << std::endl;
 						break;
 
 					default:

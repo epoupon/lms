@@ -15,14 +15,12 @@ lms_SOURCES = \
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/User.cpp				\
-	$(srcdir)/database/updater/DatabaseUpdater.cpp		\
-	$(srcdir)/database/updater/DatabaseFeatureExtractor.cpp	\
-	$(srcdir)/database/updater/DatabaseHighLevelCluster.cpp	\
 	$(srcdir)/feature/FeatureExtractor.cpp			\
 	$(srcdir)/feature/FeatureStore.cpp			\
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
 	$(srcdir)/metadata/TagLibParser.cpp			\
+	$(srcdir)/scanner/MediaScanner.cpp			\
 	$(srcdir)/ui/ArtistView.cpp				\
 	$(srcdir)/ui/ArtistsView.cpp				\
 	$(srcdir)/ui/Explore.cpp				\

@@ -21,8 +21,10 @@
 #define METADATA_HPP
 
 #include <map>
+#include <set>
 
 #include <boost/any.hpp>
+#include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
 
 namespace MetaData
@@ -30,10 +32,11 @@ namespace MetaData
 
 	enum class Type
 	{
+		// Name			Type of the value
 		Artist,			// string
 		Title,			// string
 		Album,			// string
-		Genres,			// list<string>
+		Clusters,		// Clusters, ex: { "genre", {"death metal", "brutal death"} }, { "albumgrouping", {"metal"} }
 		Duration,		// boost::posix_time::time_duration
 		TrackNumber,		// size_t
 		DiscNumber,		// size_t
@@ -43,12 +46,11 @@ namespace MetaData
 		OriginalDate,		// boost::posix_time::ptime
 		HasCover,		// bool
 		AudioStreams,		// vector<AudioStream>
-		VideoStreams,		// vector<VideoStream>
-		SubtitleStreams,	// vector<SubtitleStream>
 		MusicBrainzArtistID,	// string
 		MusicBrainzAlbumID,	// string
 		MusicBrainzTrackID,	// string
 		MusicBrainzRecordingID,	// string
+		AcoustID,		// string
 	};
 
 	// Used by Streams
@@ -58,28 +60,16 @@ namespace MetaData
 		std::size_t bitRate;
 	};
 
-	struct VideoStream
-	{
-		std::string desc;
-		std::size_t bitRate;
-	};
-
-	struct SubtitleStream
-	{
-		std::string desc;
-	};
-
 	// Type and associated data
 	// See enum Type's comments
-	typedef std::map<Type, boost::any>  Items;
+	using Items = std::map<Type, boost::any>;
+	using Clusters = std::map<std::string, std::set<std::string>>;
 
 	class Parser
 	{
 		public:
 
-			typedef std::shared_ptr<Parser> pointer;
-
-			virtual bool parse(const boost::filesystem::path& p, Items& items) = 0;
+			virtual boost::optional<Items> parse(const boost::filesystem::path& p) = 0;
 
 	};
 

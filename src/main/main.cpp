@@ -29,9 +29,9 @@
 #include "image/Image.hpp"
 #include "feature/FeatureExtractor.hpp"
 
-#include "database/updater/DatabaseUpdater.hpp"
-#include "database/updater/DatabaseFeatureExtractor.hpp"
-#include "database/updater/DatabaseHighLevelCluster.hpp"
+#include "scanner/MediaScanner.hpp"
+//#include "database/updater/DatabaseFeatureExtractor.hpp"
+//#include "database/updater/DatabaseHighLevelCluster.hpp"
 
 #include "ui/LmsApplication.hpp"
 
@@ -125,20 +125,19 @@ int main(int argc, char* argv[])
 		std::unique_ptr<Wt::Dbo::SqlConnectionPool>
 			connectionPool( Database::Handler::createConnectionPool(Config::instance().getPath("working-dir") / "lms.db"));
 
-		Database::Updater& dbUpdater = Database::Updater::instance();
-		dbUpdater.setConnectionPool(*connectionPool);
+		Scanner::MediaScanner scanner(*connectionPool);
 
 		// Instanciate the updater's event handler. Order is important
-		dbUpdater.registerEventHandler(std::make_shared<Database::FeatureExtractor>());
-		dbUpdater.registerEventHandler(std::make_shared<Database::HighLevelCluster>());
+//		dbUpdater.registerEventHandler(std::make_shared<Database::FeatureExtractor>());
+//		dbUpdater.registerEventHandler(std::make_shared<Database::HighLevelCluster>());
 
 		// bind entry point
 		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create,
 					_1, boost::ref(*connectionPool)));
 
 		// Start
-		LMS_LOG(MAIN, INFO) << "Starting database updater...";
-		dbUpdater.start();
+		LMS_LOG(MAIN, INFO) << "Starting Media scanner...";
+		scanner.start();
 
 		LMS_LOG(MAIN, INFO) << "Starting server...";
 		server.start();
@@ -152,7 +151,7 @@ int main(int argc, char* argv[])
 		server.stop();
 
 		LMS_LOG(MAIN, INFO) << "Stopping database updater...";
-		dbUpdater.stop();
+		scanner.stop();
 
 		res = EXIT_SUCCESS;
 	}

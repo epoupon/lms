@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <map>
+#include <string>
+
 #include "MetaData.hpp"
 
 namespace MetaData
@@ -28,10 +31,19 @@ namespace MetaData
 class TagLibParser : public Parser
 {
 	public:
-		bool parse(const boost::filesystem::path& p, Items& items);
+
+		// Provide a map for TagLib name -> Cluster name
+		TagLibParser(const std::map<std::string, std::string>& clusterMap
+				= {
+				{"GENRE", "Genre" },
+				{"ALBUMGROUPING", "Group" }
+				});
+
+		boost::optional<Items> parse(const boost::filesystem::path& p);
 
 	private:
 
+		std::map<std::string,std::string> _clusterMap;
 };
 
 } // namespace MetaData

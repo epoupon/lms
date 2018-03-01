@@ -31,39 +31,29 @@ namespace Database {
 class MediaDirectory
 {
 	public:
-
 		typedef Wt::Dbo::ptr<MediaDirectory> pointer;
 
-		enum Type {
-			Audio = 1,
-		};
-
 		MediaDirectory() {}
-		MediaDirectory(boost::filesystem::path p, Type type);
+		MediaDirectory(boost::filesystem::path p);
 
 		// Accessors
-		static pointer create(Wt::Dbo::Session& session, boost::filesystem::path p, Type type);
+		static pointer create(Wt::Dbo::Session& session, boost::filesystem::path p);
 		static std::vector<MediaDirectory::pointer>	getAll(Wt::Dbo::Session& session);
-		static std::vector<MediaDirectory::pointer>	getByType(Wt::Dbo::Session& session, Type type);
-		static pointer get(Wt::Dbo::Session& session, boost::filesystem::path p, Type type);
 
 		static void eraseAll(Wt::Dbo::Session& session);
+		static void eraseByPath(Wt::Dbo::Session& session, boost::filesystem::path p);
 
-		Type			getType(void) const	{ return _type; }
 		boost::filesystem::path	getPath(void) const;
 
 		template<class Action>
 			void persist(Action& a)
 			{
-				Wt::Dbo::field(a, _type,		"type");
 				Wt::Dbo::field(a, _path,		"path");
 			}
 
 	private:
 
-		Type		_type;
 		std::string	_path;
-
 };
 
 } // namespace Database

@@ -1,7 +1,7 @@
 
 TESTS = sql-query database-user
 
-check_PROGRAMS = sql-query database-user test-wt test-avmetadata
+check_PROGRAMS = test-avmetadata
 
 database_basics_SOURCES = \
 	$(srcdir)/CheckDbBasics.cpp			\
@@ -88,7 +88,7 @@ test_wt_audio_LDADD=$(MAGICKXX_LIBS)
 
 
 test_avmetadata_SOURCES = TestAvMetadata.cpp 		\
-	$(top_srcdir)/src/logger/Logger.cpp 		\
+	$(top_srcdir)/src/utils/Logger.cpp 		\
 	$(top_srcdir)/src/utils/Utils.cpp 		\
 	$(top_srcdir)/src/metadata/AvFormat.cpp		\
 	$(top_srcdir)/src/metadata/TagLibParser.cpp	\

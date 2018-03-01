@@ -40,63 +40,88 @@ class Artist;
 class Release;
 class Track;
 class PlaylistEntry;
+class ClusterType;
 
-class Cluster
+class Cluster : public Wt::Dbo::Dbo<Cluster>
 {
 	public:
-
-		enum class Type
-		{
-			Genre	= 1,
-			Mood	= 2,
-		};
-
 		typedef Wt::Dbo::ptr<Cluster> pointer;
 		typedef Wt::Dbo::dbo_traits<Cluster>::IdType id_type;
 
 		Cluster();
-		Cluster(std::string type, std::string name);
+		Cluster(Wt::Dbo::ptr<ClusterType> type, std::string name);
 
 		// Find utility
-		static pointer get(Wt::Dbo::Session& session, std::string type, std::string name);
 		static std::vector<pointer> getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
-		static Wt::Dbo::collection<pointer> getAll(Wt::Dbo::Session& session);
-		static std::vector<std::string> getAllTypes(Wt::Dbo::Session& session);
-		static std::vector<pointer> getByType(Wt::Dbo::Session& session, std::string type);
+		static std::vector<pointer> getAll(Wt::Dbo::Session& session);
 
 		// Create utility
-		static pointer create(Wt::Dbo::Session& session, std::string type, std::string name);
-
-		// Remove utility
-		static void remove(Wt::Dbo::Session& session, std::string type); // nested transaction
+		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name);
 
 		// Accessors
 		const std::string& getName(void) const { return _name; }
-		const std::string& getType(void) const { return _type; }
-		const Wt::Dbo::collection< Wt::Dbo::ptr<Track> >&	getTracks() const { return _tracks;}
+		Wt::Dbo::ptr<ClusterType> getType() const { return _clusterType; }
+		const Wt::Dbo::collection<Wt::Dbo::ptr<Track>>& getTracks() const { return _tracks; }
 
-		void addTrack(Wt::Dbo::Session& session, Wt::Dbo::dbo_traits<Track>::IdType trackId);
 		void addTrack(Wt::Dbo::ptr<Track> track) { _tracks.insert(track); }
 
 		template<class Action>
-			void persist(Action& a)
-			{
-				Wt::Dbo::field(a, _name,	"name");
-				Wt::Dbo::field(a, _type,	"type");
-				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
-			}
+		void persist(Action& a)
+		{
+			Wt::Dbo::field(a, _name,	"name");
+
+			Wt::Dbo::belongsTo(a, _clusterType, "cluster_type", Wt::Dbo::OnDeleteCascade);
+			Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
+		}
 
 	private:
 		static Wt::Dbo::Query<pointer> getQuery(Wt::Dbo::Session& session, SearchFilter filter);
 
 		static const std::size_t _maxNameLength = 128;
-		static const std::size_t _maxTypeLength = 128;
 
-		std::string	_type;
 		std::string	_name;
 
+		Wt::Dbo::ptr<ClusterType> _clusterType;
 		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;
 };
+
+
+class ClusterType : public Wt::Dbo::Dbo<ClusterType>
+{
+	public:
+
+		using pointer = Wt::Dbo::ptr<ClusterType>;
+		using id_type = Wt::Dbo::dbo_traits<ClusterType>::IdType;
+
+		ClusterType() {}
+		ClusterType(std::string name);
+
+		static pointer getByName(Wt::Dbo::Session& session, std::string name);
+		static std::vector<pointer> getAll(Wt::Dbo::Session& session);
+
+		static pointer create(Wt::Dbo::Session& session, std::string name);
+		static void remove(Wt::Dbo::Session& session, std::string name);
+
+		// Accessors
+		const std::string& getName(void) const { return _name; }
+		std::vector<Cluster::pointer> getClusters() const;
+		Cluster::pointer getCluster(std::string name) const;
+
+		template<class Action>
+		void persist(Action& a)
+		{
+			Wt::Dbo::field(a, _name,	"name");
+			Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToOne, "cluster_type");
+		}
+
+	private:
+
+		static const std::size_t _maxNameLength = 128;
+
+		std::string     _name;
+		Wt::Dbo::collection< Wt::Dbo::ptr<Cluster> > _clusters;
+};
+
 
 class Track
 {

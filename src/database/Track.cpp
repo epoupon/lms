@@ -224,44 +224,24 @@ Cluster::Cluster()
 {
 }
 
-Cluster::Cluster(std::string type, std::string name)
-:
-_type( std::string(type, 0, _maxTypeLength)),
-_name( std::string(name, 0, _maxNameLength))
+Cluster::Cluster(Wt::Dbo::ptr<ClusterType> type, std::string name)
+	: _name(std::string(name, 0, _maxNameLength)),
+	_clusterType(type)
 {
-}
-
-Wt::Dbo::collection<Cluster::pointer>
-Cluster::getAll(Wt::Dbo::Session& session)
-{
-	return session.find<Cluster>();
 }
 
 Cluster::pointer
-Cluster::get(Wt::Dbo::Session& session, std::string type, std::string name)
-{
-	// TODO use like search
-	return session.find<Cluster>().where("type = ?").where("name = ?").bind( std::string(type, 0, _maxTypeLength)).bind( std::string(name, 0, _maxNameLength));
-}
-
-std::vector<Cluster::pointer>
-Cluster::getByType(Wt::Dbo::Session& session, std::string type)
-{
-	Wt::Dbo::collection<pointer> res = session.find<Cluster>().where("type = ?").bind( std::string(type, 0, _maxTypeLength)).orderBy("name");
-	return std::vector<Cluster::pointer>(res.begin(), res.end());
-}
-
-Cluster::pointer
-Cluster::create(Wt::Dbo::Session& session, std::string type, std::string name)
+Cluster::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name)
 {
 	return session.add(new Cluster(type, name));
 }
 
-void
-Cluster::remove(Wt::Dbo::Session& session, std::string type)
+std::vector<Cluster::pointer>
+Cluster::getAll(Wt::Dbo::Session& session)
 {
-	Wt::Dbo::Transaction transaction(session);
-	session.execute("DELETE FROM cluster WHERE type = ?").bind(type);
+	Wt::Dbo::collection<Cluster::pointer> res = session.find<Cluster>();
+
+	return std::vector<Cluster::pointer>(res.begin(), res.end());
 }
 
 Wt::Dbo::Query<Cluster::pointer>
@@ -278,15 +258,6 @@ Cluster::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
 	return query;
 }
 
-std::vector<std::string>
-Cluster::getAllTypes(Wt::Dbo::Session& session)
-{
-	Wt::Dbo::collection<std::string> res
-		= session.query<std::string>("SELECT type from cluster").groupBy("type").orderBy("type");
-
-	return std::vector<std::string>(res.begin(), res.end());
-}
-
 std::vector<Cluster::pointer>
 Cluster::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
 {
@@ -295,6 +266,56 @@ Cluster::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset,
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+ClusterType::ClusterType(std::string name)
+	: _name(name)
+{
+}
+
+ClusterType::pointer
+ClusterType::getByName(Wt::Dbo::Session& session, std::string name)
+{
+	return session.find<ClusterType>().where("name = ?").bind(name);
+}
+
+std::vector<ClusterType::pointer>
+ClusterType::getAll(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::collection<pointer> res = session.find<ClusterType>();
+
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
+ClusterType::pointer
+ClusterType::create(Wt::Dbo::Session& session, std::string name)
+{
+	return session.add(new ClusterType(name));
+}
+
+Cluster::pointer
+ClusterType::getCluster(std::string name) const
+{
+	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Release>::invalidId() );
+	assert(session());
+
+	return session()->find<Cluster>()
+		.where("name = ?").bind(name)
+		.where("cluster_type_id = ").bind(self()->id());
+}
+
+std::vector<Cluster::pointer>
+ClusterType::getClusters() const
+{
+	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Release>::invalidId() );
+	assert(session());
+
+	Wt::Dbo::collection<Cluster::pointer> res = session()->find<Cluster>()
+						.where("cluster_type_id = ").bind(self()->id())
+						.orderBy("name");
+
+	return std::vector<Cluster::pointer>(res.begin(), res.end());
+}
 
 } // namespace Database
 
