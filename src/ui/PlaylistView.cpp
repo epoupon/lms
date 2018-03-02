@@ -48,6 +48,7 @@ Playlist::Playlist(Wt::WContainerWidget* parent)
 
 	_showMore = new Wt::WTemplate(Wt::WString::tr("template-show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	_showMore->setHidden(true);
 	container->bindWidget("show-more", _showMore);
 
 	_showMore->clicked().connect(std::bind([=]

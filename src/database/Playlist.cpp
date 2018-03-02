@@ -83,7 +83,12 @@ Playlist::getTracks(int offset, int size, bool& moreResults) const
 
 	moreResults = false;
 
-	Wt::Dbo::collection<Wt::Dbo::ptr<PlaylistEntry>> entries = session()->find<PlaylistEntry>().where("playlist_id = ?").bind(self().id()).orderBy("pos").offset(offset).limit(size + 1);
+	Wt::Dbo::collection<Wt::Dbo::ptr<PlaylistEntry>> entries
+		= session()->find<PlaylistEntry>()
+		.where("playlist_id = ?").bind(self().id())
+		.orderBy("pos")
+		.limit(size != -1 ? size + 1 : -1)
+		.offset(offset);
 
 	std::vector<Wt::Dbo::ptr<Track>> res;
 
