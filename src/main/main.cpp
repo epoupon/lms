@@ -127,10 +127,6 @@ int main(int argc, char* argv[])
 
 		Scanner::MediaScanner scanner(*connectionPool);
 
-		// Instanciate the updater's event handler. Order is important
-//		dbUpdater.registerEventHandler(std::make_shared<Database::FeatureExtractor>());
-//		dbUpdater.registerEventHandler(std::make_shared<Database::HighLevelCluster>());
-
 		// bind entry point
 		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create,
 					_1, boost::ref(*connectionPool)));

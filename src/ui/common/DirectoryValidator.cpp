@@ -38,13 +38,14 @@ DirectoryValidator::validate(const Wt::WString& input) const
 	boost::filesystem::path p(input.toUTF8());
 	boost::system::error_code ec;
 
+	// TODO check rights
 	bool res = boost::filesystem::is_directory(p, ec);
 	if (ec)
-		return Wt::WValidator::Result(Wt::WValidator::Invalid, ec.message());
+		return Wt::WValidator::Result(Wt::WValidator::Invalid, ec.message()); // TODO translate common errors
 	else if (res)
 		return Wt::WValidator::Result(Wt::WValidator::Valid);
 	else
-		return Wt::WValidator::Result(Wt::WValidator::Invalid, "Not a directory");
+		return Wt::WValidator::Result(Wt::WValidator::Invalid, Wt::WString::tr("msg-error-not-a-directory"));
 }
 
 

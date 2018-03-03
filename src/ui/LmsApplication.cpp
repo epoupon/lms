@@ -22,6 +22,7 @@
 #include <Wt/WNavigationBar>
 #include <Wt/WStackedWidget>
 #include <Wt/WMenu>
+#include <Wt/WPopupMenu>
 #include <Wt/WText>
 
 #include "config/config.h"
@@ -33,6 +34,8 @@
 #include "HomeView.hpp"
 #include "MediaPlayer.hpp"
 #include "PlaylistView.hpp"
+
+#include "settings/DatabaseView.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -86,6 +89,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "playlist");
 	messageResourceBundle().use(appRoot() + "release");
 	messageResourceBundle().use(appRoot() + "releases");
+	messageResourceBundle().use(appRoot() + "settings");
 	messageResourceBundle().use(appRoot() + "tracks");
 	messageResourceBundle().use(appRoot() + "templates");
 
@@ -179,7 +183,7 @@ enum IdxRoot
 	IdxHome		= 0,
 	IdxExplore,
 	IdxPlaylist,
-	IdxSettings,
+	IdxSettingsDatabase,
 };
 
 
@@ -196,7 +200,7 @@ handlePathChange(Wt::WStackedWidget* stack)
 		{ "/release",		IdxExplore },
 		{ "/tracks",		IdxExplore },
 		{ "/playlist",		IdxPlaylist },
-		{ "/settings",		IdxSettings },
+		{ "/settings/database",	IdxSettingsDatabase },
 	};
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
@@ -237,7 +241,6 @@ LmsApplication::handleAuthEvent(void)
 	auto navbar = new Wt::WNavigationBar();
 	navbar->setTitle("LMS", Wt::WLink(Wt::WLink::InternalPath, "/home"));
 	navbar->setResponsive(true);
-//	navbar->setStyleClass("main-nav");
 
 	main->bindWidget("navbar-top", navbar);
 
@@ -262,6 +265,18 @@ LmsApplication::handleAuthEvent(void)
 		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/playlist"));
 		menuItem->setSelectable(false);
 	}
+	{
+		auto menuItem = menu->insertItem(4, Wt::WString::tr("msg-settings"));
+		menuItem->setSelectable(false);
+
+		Wt::WPopupMenu *settings = new Wt::WPopupMenu();
+		auto dbSettings = settings->insertItem(0, Wt::WString::tr("msg-settings-database"));
+		dbSettings->setLink(Wt::WLink(Wt::WLink::InternalPath, "/settings/database"));
+		dbSettings->setSelectable(false);
+
+		menuItem->setMenu(settings);
+	}
+
 	navbar->addMenu(menu);
 
 	// Contents
@@ -275,7 +290,9 @@ LmsApplication::handleAuthEvent(void)
 
 	auto playlist = new Playlist();
 	mainStack->addWidget(playlist);
-	mainStack->addWidget(new Wt::WText("SETTINGS"));
+
+	auto databaseSettings = new Settings::DatabaseView();
+	mainStack->addWidget(databaseSettings);
 
 	explore->tracksAdd.connect(std::bind([=] (std::vector<Database::Track::pointer> tracks)
 	{

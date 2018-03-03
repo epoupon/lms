@@ -107,6 +107,28 @@ namespace Scanner {
 
 using namespace Database;
 
+UpdatePeriod
+getUpdatePeriod(Wt::Dbo::Session& session)
+{
+	return static_cast<UpdatePeriod>(Setting::getInt(session, "update_period", static_cast<int>(UpdatePeriod::Never)));
+}
+
+void
+setUpdatePeriod(Wt::Dbo::Session& session, UpdatePeriod updatePeriod)
+{
+	Setting::setInt(session, "update_period", static_cast<int>(updatePeriod));
+}
+
+boost::posix_time::time_duration getUpdateStartTime(Wt::Dbo::Session& session)
+{
+	return Setting::getDuration(session, "update_start_time");
+}
+
+void setUpdateStartTime(Wt::Dbo::Session& session, boost::posix_time::time_duration startTime)
+{
+	Setting::setDuration(session, "update_start_time", startTime);
+}
+
 MediaScanner::MediaScanner(Wt::Dbo::SqlConnectionPool& connectionPool)
  : _running(false),
 _scheduleTimer(_ioService),
@@ -159,31 +181,35 @@ MediaScanner::processNextJob(void)
 	else
 	{
 		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-		boost::posix_time::time_duration startTime = Setting::getDuration(_db.getSession(), "update_start_time");
+		boost::posix_time::time_duration startTime = getUpdateStartTime(_db.getSession());
 
 		boost::gregorian::date nextScanDate;
 
-		std::string updatePeriod = Setting::getString(_db.getSession(), "update_period", "never");
-		if (updatePeriod == "daily")
+		switch ( getUpdatePeriod(_db.getSession()) )
 		{
-			if (now.time_of_day() < startTime)
-				nextScanDate = now.date();
-			else
-				nextScanDate = getNextDay(now.date());
-		}
-		else if (updatePeriod == "weekly")
-		{
-			if (now.time_of_day() < startTime && now.date().day_of_week() == 1)
-				nextScanDate = now.date();
-			else
-				nextScanDate = getNextMonday(now.date());
-		}
-		else if (updatePeriod == "monthly")
-		{
-			if (now.time_of_day() < startTime && now.date().day() == 1)
-				nextScanDate = now.date();
-			else
-				nextScanDate = getNextFirstOfMonth(now.date());
+			case UpdatePeriod::Daily:
+				if (now.time_of_day() < startTime)
+					nextScanDate = now.date();
+				else
+					nextScanDate = getNextDay(now.date());
+				break;
+
+			case UpdatePeriod::Weekly:
+				if (now.time_of_day() < startTime && now.date().day_of_week() == 1)
+					nextScanDate = now.date();
+				else
+					nextScanDate = getNextMonday(now.date());
+				break;
+
+			case UpdatePeriod::Monthly:
+				if (now.time_of_day() < startTime && now.date().day() == 1)
+					nextScanDate = now.date();
+				else
+					nextScanDate = getNextFirstOfMonth(now.date());
+				break;
+
+			case UpdatePeriod::Never:
+				break;
 		}
 
 		if (!nextScanDate.is_special())

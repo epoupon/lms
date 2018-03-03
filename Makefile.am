@@ -24,6 +24,7 @@ lms_approot_DATA = \
 		approot/playlist.xml	\
 		approot/releases.xml	\
 		approot/release.xml	\
+		approot/settings.xml	\
 		approot/templates.xml	\
 		approot/tracks.xml
 

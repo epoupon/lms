@@ -30,6 +30,18 @@
 
 namespace Scanner {
 
+enum class UpdatePeriod {
+	Never = 0,
+	Daily,
+	Weekly,
+	Monthly
+};
+
+UpdatePeriod getUpdatePeriod(Wt::Dbo::Session& session);
+void setUpdatePeriod(Wt::Dbo::Session& session, UpdatePeriod updatePeriod);
+
+boost::posix_time::time_duration getUpdateStartTime(Wt::Dbo::Session& session);
+void setUpdateStartTime(Wt::Dbo::Session& session, boost::posix_time::time_duration);
 
 class MediaScanner
 {
