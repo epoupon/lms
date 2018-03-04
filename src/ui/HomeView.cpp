@@ -31,7 +31,9 @@ namespace UserInterface {
 Home::Home(Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent)
 {
-	addWidget(new Wt::WTemplate(Wt::WString::tr("template-home")));
+	auto t = new Wt::WTemplate(Wt::WString::tr("template-home"), this);
+	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
+
 }
 
 } // namespace UserInterface

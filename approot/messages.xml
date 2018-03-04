@@ -2,6 +2,9 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
+
+<message id="msg-home-welcome"><h2>Welcome!</h2></message>
+
 <message id="msg-various-artists">Various artists</message>
 <message id="msg-artists">Artists</message>
 <message id="msg-releases">Albums</message>
