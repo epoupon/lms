@@ -96,6 +96,7 @@ class ClusterType : public Wt::Dbo::Dbo<ClusterType>
 		ClusterType() {}
 		ClusterType(std::string name);
 
+		static std::vector<pointer> getAllOrphans(Wt::Dbo::Session& session);
 		static pointer getByName(Wt::Dbo::Session& session, std::string name);
 		static std::vector<pointer> getAll(Wt::Dbo::Session& session);
 

@@ -271,6 +271,15 @@ ClusterType::ClusterType(std::string name)
 {
 }
 
+std::vector<ClusterType::pointer>
+ClusterType::getAllOrphans(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::collection<pointer> res = session.query<Wt::Dbo::ptr<ClusterType>>("select c_t from cluster_type c_t LEFT OUTER JOIN cluster c ON c_t.id = c.cluster_type_id WHERE c.id IS NULL");
+
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
+
 ClusterType::pointer
 ClusterType::getByName(Wt::Dbo::Session& session, std::string name)
 {

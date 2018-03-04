@@ -725,6 +725,7 @@ MediaScanner::checkAudioFiles( Stats& stats )
 	{
 		Wt::Dbo::Transaction transaction(_db.getSession());
 
+		// TODO better query for this
 		// Now process orphan Cluster (no track)
 		auto clusters = Cluster::getAll(_db.getSession());
 		for (auto cluster : clusters)
@@ -734,6 +735,14 @@ MediaScanner::checkAudioFiles( Stats& stats )
 				LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster '" << cluster->getName() << "'";
 				cluster.remove();
 			}
+		}
+
+		// Now process orphan cluster types
+		auto clusterTypes = ClusterType::getAllOrphans(_db.getSession());
+		for (auto clusterType : clusterTypes)
+		{
+			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster type '" << clusterType->getName() << "'";
+			clusterType.remove();
 		}
 	}
 
