@@ -84,6 +84,12 @@ User::getAll(Wt::Dbo::Session& session)
 }
 
 User::pointer
+User::create(Wt::Dbo::Session& session)
+{
+	return session.add(new User());
+}
+
+User::pointer
 User::getById(Wt::Dbo::Session& session, id_type id)
 {
 	return session.find<User>().where("id = ?").bind( id );

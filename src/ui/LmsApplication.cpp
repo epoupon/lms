@@ -101,6 +101,10 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 		Wt::Dbo::Transaction transaction(DboSession());
 
 		firstConnection = (Database::User::getAll(DboSession()).size() == 0);
+
+		// Create a fake user
+		// TODO settings
+		Database::User::create(DboSession());
 	}
 
 	LMS_LOG(UI, DEBUG) << "Creating root widget. First connection = " << std::boolalpha << firstConnection;

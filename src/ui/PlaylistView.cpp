@@ -120,7 +120,7 @@ Playlist::addSome()
 		return;
 
 	bool moreResults;
-	auto tracks = playlist->getTracks(_entriesContainer->count(), 20, moreResults);
+	auto tracks = playlist->getTracks(_entriesContainer->count(), 50, moreResults);
 	for (auto track : tracks)
 	{
 		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-playlist-entry"), _entriesContainer);
