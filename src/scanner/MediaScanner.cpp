@@ -385,18 +385,15 @@ MediaScanner::getClusters( const MetaData::Clusters& clustersNames)
 	for (auto clusterNames : clustersNames)
 	{
 		ClusterType::pointer clusterType = ClusterType::getByName(_db.getSession(), clusterNames.first);
-		bool newType = !clusterType;
-
 		if (!clusterType)
+		{
 			clusterType = ClusterType::create(_db.getSession(), clusterNames.first);
+			_db.getSession().flush(); // Make sure the newly createdType has an id
+		}
 
-		std::cout << "Cluster type = " << clusterType.id() << "\n";
 		for (auto clusterName : clusterNames.second)
 		{
-			Cluster::pointer cluster;
-
-			if (!newType)
-				cluster = clusterType->getCluster(clusterName);
+			Cluster::pointer cluster = clusterType->getCluster(clusterName);
 
 			if (!cluster)
 				cluster = Cluster::create(_db.getSession(), clusterType, clusterName);
