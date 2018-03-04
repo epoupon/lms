@@ -318,12 +318,39 @@ LmsApplication::handleAuthEvent(void)
 	auto player = new MediaPlayer();
 	main->bindWidget("player", player);
 
+	// Events from MediaScanner
+	// TODO: only if admin
+	enableUpdates(true);
+	std::string sessionId = this->sessionId();
+	_scanner.scanComplete().connect(std::bind([=] (Scanner::MediaScanner::Stats stats)
+	{
+		Wt::WServer::instance()->post(sessionId, [=]
+		{
+			notify(Wt::WString::tr("msg-notify-scan-complete").arg(stats.nbAdded).arg(stats.nbRemoved));
+			triggerUpdate();
+		});
+//		notify("TEST");
+	}, std::placeholders::_1));
+
+
 	internalPathChanged().connect(std::bind([=]
 	{
 		handlePathChange(mainStack);
 	}));
 
 	handlePathChange(mainStack);
+}
+
+void
+LmsApplication::notify(const Wt::WString& message)
+{
+	LMS_LOG(UI, INFO) << "Notifying message '" << message.toUTF8() << "'";
+	root()->addWidget(new Wt::WText(message));
+}
+
+void notify(const Wt::WString& message)
+{
+	LmsApplication::instance()->notify(message);
 }
 
 } // namespace UserInterface

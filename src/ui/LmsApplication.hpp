@@ -48,6 +48,7 @@ class LmsApplication : public Wt::WApplication
 
 		// Utils
 		void goHome();
+		void notify(const Wt::WString& message);
 
 	private:
 
@@ -76,6 +77,9 @@ ImageResource *SessionImageResource();
 TranscodeResource *SessionTranscodeResource();
 
 Scanner::MediaScanner& MediaScanner();
+
+void notify(const Wt::WString& message);
+
 
 } // namespace UserInterface
 

@@ -270,6 +270,8 @@ DatabaseView::DatabaseView(Wt::WContainerWidget *parent)
 	immScanBtn->clicked().connect(std::bind([=] ()
 	{
 		MediaScanner().scheduleImmediateScan();
+
+		notify(Wt::WString::tr("msg-notify-scan-launched"));
 	}));
 
 	updateView(_model);
@@ -288,11 +290,15 @@ DatabaseView::processSave()
 {
 	updateModel(_model);
 
-	if (_model->validate()) {
+	if (_model->validate())
+	{
 		_model->saveData();
 
 		MediaScanner().reschedule();
+
+		notify(Wt::WString::tr("msg-notify-settings-saved"));
 	}
+
 	// Udate the view: Delete any validation message in the view, etc.
 	updateView(_model);
 }
