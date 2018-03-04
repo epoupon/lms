@@ -26,6 +26,8 @@
 #include <Wt/Dbo/SqlConnectionPool>
 
 #include "database/DatabaseHandler.hpp"
+#include "scanner/MediaScanner.hpp"
+
 #include "resource/ImageResource.hpp"
 #include "resource/TranscodeResource.hpp"
 
@@ -34,26 +36,29 @@ namespace UserInterface {
 class LmsApplication : public Wt::WApplication
 {
 	public:
-		static Wt::WApplication *create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool);
+		static Wt::WApplication *create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner);
 		static LmsApplication* instance();
-
-		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool);
 
 		// Session application data
 		ImageResource* getImageResource() { return _imageResource; }
 		TranscodeResource* getTranscodeResource() { return _transcodeResource; }
 		Database::Handler& getDbHandler() { return _db;}
 
+		Scanner::MediaScanner& getMediaScanner() { return _scanner; }
+
 		// Utils
 		void goHome();
 
 	private:
+
+		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner);
 
 		void handleAuthEvent(void);
 		void createFirstConnectionUI();
 		void createLmsUI();
 
 		Database::Handler	_db;
+		Scanner::MediaScanner&	_scanner;
 		ImageResource*          _imageResource;
 		TranscodeResource*	_transcodeResource;
 };
@@ -70,6 +75,7 @@ Database::User::pointer CurrentUser();
 ImageResource *SessionImageResource();
 TranscodeResource *SessionTranscodeResource();
 
+Scanner::MediaScanner& MediaScanner();
 
 } // namespace UserInterface
 

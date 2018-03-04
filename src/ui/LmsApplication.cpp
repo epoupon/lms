@@ -46,13 +46,13 @@ namespace skeletons {
 namespace UserInterface {
 
 Wt::WApplication*
-LmsApplication::create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool)
+LmsApplication::create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner)
 {
 	/*
 	 * You could read information from the environment to decide whether
 	 * the user has permission to start a new application
 	 */
-	return new LmsApplication(env, connectionPool);
+	return new LmsApplication(env, connectionPool, scanner);
 }
 
 LmsApplication*
@@ -67,9 +67,10 @@ LmsApplication::instance()
  * constructor so it is typically also an argument for your custom
  * application constructor.
 */
-LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool)
+LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner)
 : Wt::WApplication(env),
   _db(connectionPool),
+  _scanner(scanner),
   _imageResource(nullptr),
   _transcodeResource(nullptr)
 {
@@ -139,6 +140,11 @@ ImageResource* SessionImageResource()
 TranscodeResource* SessionTranscodeResource()
 {
 	return LmsApplication::instance()->getTranscodeResource();
+}
+
+Scanner::MediaScanner& MediaScanner()
+{
+	return LmsApplication::instance()->getMediaScanner();
 }
 
 void

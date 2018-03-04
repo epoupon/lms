@@ -30,6 +30,6 @@
 <message id="msg-error-not-a-directory">Not a directory</message>
 <message id="msg-btn-apply">Apply</message>
 <message id="msg-btn-discard">Discard</message>
-
+<message id="msg-btn-immediate-scan">Scan now!</message>
 
 </messages>

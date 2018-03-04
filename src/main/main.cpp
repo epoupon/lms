@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
 
 		// bind entry point
 		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create,
-					_1, boost::ref(*connectionPool)));
+					_1, boost::ref(*connectionPool), boost::ref(scanner)));
 
 		// Start
 		LMS_LOG(MAIN, INFO) << "Starting Media scanner...";
@@ -149,6 +149,7 @@ int main(int argc, char* argv[])
 		LMS_LOG(MAIN, INFO) << "Stopping database updater...";
 		scanner.stop();
 
+		LMS_LOG(MAIN, INFO) << "Clean stop!";
 		res = EXIT_SUCCESS;
 	}
 	catch( libconfig::FileIOException& e)

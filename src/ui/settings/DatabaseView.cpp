@@ -258,13 +258,19 @@ DatabaseView::DatabaseView(Wt::WContainerWidget *parent)
 
 	Wt::WPushButton *saveBtn = new Wt::WPushButton(Wt::WString::tr("msg-btn-apply"));
 	bindWidget("apply-btn", saveBtn);
-	saveBtn->setStyleClass("btn-primary");
 
 	Wt::WPushButton *discardBtn = new Wt::WPushButton(Wt::WString::tr("msg-btn-discard"));
 	bindWidget("discard-btn", discardBtn);
 
+	Wt::WPushButton *immScanBtn = new Wt::WPushButton(Wt::WString::tr("msg-btn-immediate-scan"));
+	bindWidget("immediate-scan-btn", immScanBtn);
+
 	saveBtn->clicked().connect(this, &DatabaseView::processSave);
 	discardBtn->clicked().connect(this, &DatabaseView::processDiscard);
+	immScanBtn->clicked().connect(std::bind([=] ()
+	{
+		MediaScanner().scheduleImmediateScan();
+	}));
 
 	updateView(_model);
 }
@@ -285,7 +291,7 @@ DatabaseView::processSave()
 	if (_model->validate()) {
 		_model->saveData();
 
-//		_sigChanged.emit();
+		MediaScanner().reschedule();
 	}
 	// Udate the view: Delete any validation message in the view, etc.
 	updateView(_model);

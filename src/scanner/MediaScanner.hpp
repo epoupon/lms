@@ -53,6 +53,9 @@ class MediaScanner
 		void stop();
 		void restart();
 
+		void scheduleImmediateScan();
+		void reschedule();
+
 		struct Stats
 		{
 			std::size_t	nbNoChange = 0;		// no change since last scan
@@ -82,14 +85,14 @@ class MediaScanner
 	private:
 
 		// Job handling
-		void processNextJob();
+		void scheduleScan();
 		void scheduleScan(boost::posix_time::time_duration duration);
 		void scheduleScan(boost::posix_time::ptime time);
 
 		// Update database (scheduled callback)
-		void process(boost::system::error_code ec);
+		void scan(boost::system::error_code ec);
 
-		void processRootDirectory( boost::filesystem::path rootDirectory, Stats& stats);
+		void scanRootDirectory( boost::filesystem::path rootDirectory, Stats& stats);
 
 		// Helpers
 		Database::Artist::pointer getArtist( const boost::filesystem::path& file, const std::string& name, const std::string& MBID);
@@ -100,11 +103,7 @@ class MediaScanner
 		// Audio
 		void checkAudioFiles( Stats& stats );
 		void checkDuplicatedAudioFiles( Stats& stats );
-		void processAudioFile( const boost::filesystem::path& file, Stats& stats);
-
-		// Video
-		void checkVideoFiles( Stats& stats );
-		void processVideoFile( const boost::filesystem::path& file, Stats& stats);
+		void scanAudioFile( const boost::filesystem::path& file, Stats& stats);
 
 		bool			_running;
 		Wt::WIOService		_ioService;

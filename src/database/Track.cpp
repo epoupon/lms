@@ -295,12 +295,12 @@ Cluster::pointer
 ClusterType::getCluster(std::string name) const
 {
 	assert(self());
-	assert(self()->id() != Wt::Dbo::dbo_traits<Release>::invalidId() );
+	assert(self()->id() != Wt::Dbo::dbo_traits<ClusterType>::invalidId() );
 	assert(session());
 
 	return session()->find<Cluster>()
 		.where("name = ?").bind(name)
-		.where("cluster_type_id = ").bind(self()->id());
+		.where("cluster_type_id = ?").bind(self()->id());
 }
 
 std::vector<Cluster::pointer>
@@ -311,7 +311,7 @@ ClusterType::getClusters() const
 	assert(session());
 
 	Wt::Dbo::collection<Cluster::pointer> res = session()->find<Cluster>()
-						.where("cluster_type_id = ").bind(self()->id())
+						.where("cluster_type_id = ?").bind(self()->id())
 						.orderBy("name");
 
 	return std::vector<Cluster::pointer>(res.begin(), res.end());

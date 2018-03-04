@@ -155,7 +155,7 @@ MediaScanner::start(void)
 	_running = true;
 
 	// post some jobs in the io_service
-	processNextJob();
+	scheduleScan();
 
 	_ioService.start();
 }
@@ -171,50 +171,63 @@ MediaScanner::stop(void)
 }
 
 void
-MediaScanner::processNextJob(void)
+MediaScanner::scheduleImmediateScan()
 {
-	if (Setting::getBool(_db.getSession(), "manual_scan_requested", false))
+	_ioService.post([=]()
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Manual scan requested!";
+		LMS_LOG(DBUPDATER, INFO) << "Schedule immediate scan";
 		scheduleScan( boost::posix_time::seconds(0) );
-	}
-	else
+	});
+}
+
+void
+MediaScanner::reschedule()
+{
+	_ioService.post([=]()
 	{
-		boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-		boost::posix_time::time_duration startTime = getUpdateStartTime(_db.getSession());
+		LMS_LOG(DBUPDATER, INFO) << "Rescheduling scan";
+		scheduleScan();
+	});
+}
 
-		boost::gregorian::date nextScanDate;
+void
+MediaScanner::scheduleScan()
+{
+	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
+	boost::posix_time::time_duration startTime = getUpdateStartTime(_db.getSession());
 
-		switch ( getUpdatePeriod(_db.getSession()) )
-		{
-			case UpdatePeriod::Daily:
-				if (now.time_of_day() < startTime)
-					nextScanDate = now.date();
-				else
-					nextScanDate = getNextDay(now.date());
-				break;
+	boost::gregorian::date nextScanDate;
 
-			case UpdatePeriod::Weekly:
-				if (now.time_of_day() < startTime && now.date().day_of_week() == 1)
-					nextScanDate = now.date();
-				else
-					nextScanDate = getNextMonday(now.date());
-				break;
+	switch ( getUpdatePeriod(_db.getSession()) )
+	{
+		case UpdatePeriod::Daily:
+			if (now.time_of_day() < startTime)
+				nextScanDate = now.date();
+			else
+				nextScanDate = getNextDay(now.date());
+			break;
 
-			case UpdatePeriod::Monthly:
-				if (now.time_of_day() < startTime && now.date().day() == 1)
-					nextScanDate = now.date();
-				else
-					nextScanDate = getNextFirstOfMonth(now.date());
-				break;
+		case UpdatePeriod::Weekly:
+			if (now.time_of_day() < startTime && now.date().day_of_week() == 1)
+				nextScanDate = now.date();
+			else
+				nextScanDate = getNextMonday(now.date());
+			break;
 
-			case UpdatePeriod::Never:
-				break;
-		}
+		case UpdatePeriod::Monthly:
+			if (now.time_of_day() < startTime && now.date().day() == 1)
+				nextScanDate = now.date();
+			else
+				nextScanDate = getNextFirstOfMonth(now.date());
+			break;
 
-		if (!nextScanDate.is_special())
-			scheduleScan( boost::posix_time::ptime (nextScanDate, startTime) );
+		case UpdatePeriod::Never:
+			LMS_LOG(DBUPDATER, INFO) << "Auto scan disabled!";
+			break;
 	}
+
+	if (!nextScanDate.is_special())
+		scheduleScan( boost::posix_time::ptime (nextScanDate, startTime) );
 }
 
 void
@@ -222,7 +235,7 @@ MediaScanner::scheduleScan( boost::posix_time::time_duration duration)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan in " << duration;
 	_scheduleTimer.expires_from_now(duration);
-	_scheduleTimer.async_wait( boost::bind( &MediaScanner::process, this, boost::asio::placeholders::error) );
+	_scheduleTimer.async_wait( boost::bind( &MediaScanner::scan, this, boost::asio::placeholders::error) );
 }
 
 void
@@ -230,11 +243,11 @@ MediaScanner::scheduleScan( boost::posix_time::ptime time)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan at " << time;
 	_scheduleTimer.expires_at(time);
-	_scheduleTimer.async_wait( boost::bind( &MediaScanner::process, this, boost::asio::placeholders::error) );
+	_scheduleTimer.async_wait( boost::bind( &MediaScanner::scan, this, boost::asio::placeholders::error) );
 }
 
 void
-MediaScanner::process(boost::system::error_code err)
+MediaScanner::scan(boost::system::error_code err)
 {
 	if (err)
 		return;
@@ -250,9 +263,9 @@ MediaScanner::process(boost::system::error_code err)
 		if (!_running)
 			break;
 
-		LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory << "'...";
-		processRootDirectory(rootDirectory, stats);
-		LMS_LOG(DBUPDATER, INFO) << "Processing root directory '" << rootDirectory << "' DONE";
+		LMS_LOG(DBUPDATER, INFO) << "scaning root directory '" << rootDirectory << "'...";
+		scanRootDirectory(rootDirectory, stats);
+		LMS_LOG(DBUPDATER, INFO) << "scaning root directory '" << rootDirectory << "' DONE";
 	}
 
 	if (_running)
@@ -269,9 +282,8 @@ MediaScanner::process(boost::system::error_code err)
 	if (_running)
 	{
 		Setting::setTime(_db.getSession(), "last_scan", now);
-		Setting::setBool(_db.getSession(), "manual_scan_requested", false);
 
-		processNextJob();
+		scheduleScan();
 
 		scanComplete().emit(stats);
 	}
@@ -373,12 +385,19 @@ MediaScanner::getClusters( const MetaData::Clusters& clustersNames)
 	for (auto clusterNames : clustersNames)
 	{
 		ClusterType::pointer clusterType = ClusterType::getByName(_db.getSession(), clusterNames.first);
+		bool newType = !clusterType;
+
 		if (!clusterType)
 			clusterType = ClusterType::create(_db.getSession(), clusterNames.first);
 
+		std::cout << "Cluster type = " << clusterType.id() << "\n";
 		for (auto clusterName : clusterNames.second)
 		{
-			Cluster::pointer cluster = clusterType->getCluster(clusterName);
+			Cluster::pointer cluster;
+
+			if (!newType)
+				cluster = clusterType->getCluster(clusterName);
+
 			if (!cluster)
 				cluster = Cluster::create(_db.getSession(), clusterType, clusterName);
 
@@ -390,7 +409,7 @@ MediaScanner::getClusters( const MetaData::Clusters& clustersNames)
 }
 
 void
-MediaScanner::processAudioFile( const boost::filesystem::path& file, Stats& stats)
+MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 {
 	boost::posix_time::ptime lastWriteTime (boost::posix_time::from_time_t( boost::filesystem::last_write_time( file ) ) );
 
@@ -601,7 +620,7 @@ MediaScanner::processAudioFile( const boost::filesystem::path& file, Stats& stat
 }
 
 void
-MediaScanner::processRootDirectory(boost::filesystem::path rootDirectory, Stats& stats)
+MediaScanner::scanRootDirectory(boost::filesystem::path rootDirectory, Stats& stats)
 {
 	boost::system::error_code ec;
 
@@ -619,7 +638,7 @@ MediaScanner::processRootDirectory(boost::filesystem::path rootDirectory, Stats&
 		if (boost::filesystem::is_regular(path))
 		{
 			if (isFileSupported(path, _fileExtensions))
-				processAudioFile(path, stats );
+				scanAudioFile(path, stats );
 		}
 	}
 }
