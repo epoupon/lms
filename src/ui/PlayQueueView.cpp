@@ -24,25 +24,25 @@
 #include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"
-#include "PlaylistView.hpp"
+#include "PlayQueueView.hpp"
 
 namespace UserInterface {
 
-static const std::string currentPlaylistName = "__current__playlist__";
+static const std::string currentPlayQueueName = "__current__playqueue__";
 
-Playlist::Playlist(Wt::WContainerWidget* parent)
+PlayQueue::PlayQueue(Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent)
 {
-	auto container = new Wt::WTemplate(Wt::WString::tr("template-playlist"), this);
+	auto container = new Wt::WTemplate(Wt::WString::tr("template-playqueue"), this);
 	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	auto saveBtn = new Wt::WText(Wt::WString::tr("btn-playlist-save-btn"), Wt::XHTMLText);
+	auto saveBtn = new Wt::WText(Wt::WString::tr("btn-playqueue-save-btn"), Wt::XHTMLText);
 	container->bindWidget("save-btn", saveBtn);
 
-	auto loadBtn = new Wt::WText(Wt::WString::tr("btn-playlist-load-btn"), Wt::XHTMLText);
+	auto loadBtn = new Wt::WText(Wt::WString::tr("btn-playqueue-load-btn"), Wt::XHTMLText);
 	container->bindWidget("load-btn", loadBtn);
 
-	auto clearBtn = new Wt::WText(Wt::WString::tr("btn-playlist-clear-btn"), Wt::XHTMLText);
+	auto clearBtn = new Wt::WText(Wt::WString::tr("btn-playqueue-clear-btn"), Wt::XHTMLText);
 	container->bindWidget("clear-btn", clearBtn);
 
 	_entriesContainer = new Wt::WContainerWidget();
@@ -62,17 +62,17 @@ Playlist::Playlist(Wt::WContainerWidget* parent)
 }
 
 void
-Playlist::addTracks(const std::vector<Database::Track::pointer>& tracks)
+PlayQueue::addTracks(const std::vector<Database::Track::pointer>& tracks)
 {
-	// Use a "session" playlist in order to store the current playlist
-	// so that the user can disconnect and get its playlist back
+	// Use a "session" playqueue in order to store the current playqueue
+	// so that the user can disconnect and get its playqueue back
 
 	LMS_LOG(UI, DEBUG) << "Adding tracks to the current queue";
 
-	auto playlist = Database::Playlist::get(DboSession(), currentPlaylistName, CurrentUser());
+	auto playlist = Database::Playlist::get(DboSession(), currentPlayQueueName, CurrentUser());
 	if (!playlist)
 	{
-		playlist = Database::Playlist::create(DboSession(), currentPlaylistName, false, CurrentUser());
+		playlist = Database::Playlist::create(DboSession(), currentPlayQueueName, false, CurrentUser());
 	}
 
 	std::size_t pos = playlist->getCount();
@@ -85,15 +85,15 @@ Playlist::addTracks(const std::vector<Database::Track::pointer>& tracks)
 }
 
 void
-Playlist::playTracks(const std::vector<Database::Track::pointer>& tracks)
+PlayQueue::playTracks(const std::vector<Database::Track::pointer>& tracks)
 {
 	LMS_LOG(UI, DEBUG) << "Emptying current queue to play new tracks";
 
 	Wt::Dbo::Transaction transaction(DboSession());
 
-	auto playlist = Database::Playlist::get(DboSession(), currentPlaylistName, CurrentUser());
-	if (playlist)
-		playlist.modify()->clear();
+	auto playqueue = Database::Playlist::get(DboSession(), currentPlayQueueName, CurrentUser());
+	if (playqueue)
+		playqueue.modify()->clear();
 
 	_entriesContainer->clear();
 
@@ -104,18 +104,18 @@ Playlist::playTracks(const std::vector<Database::Track::pointer>& tracks)
 
 
 void
-Playlist::refresh()
+PlayQueue::refresh()
 {
 	_entriesContainer->clear();
 	addSome();
 }
 
 void
-Playlist::addSome()
+PlayQueue::addSome()
 {
 	Wt::Dbo::Transaction transaction (DboSession());
 
-	auto playlist = Database::Playlist::get(DboSession(), currentPlaylistName, CurrentUser());
+	auto playlist = Database::Playlist::get(DboSession(), currentPlayQueueName, CurrentUser());
 	if (!playlist)
 		return;
 
@@ -123,7 +123,7 @@ Playlist::addSome()
 	auto tracks = playlist->getTracks(_entriesContainer->count(), 50, moreResults);
 	for (auto track : tracks)
 	{
-		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-playlist-entry"), _entriesContainer);
+		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-playqueue-entry"), _entriesContainer);
 
 		entry->bindString("pos", std::to_string(_entriesContainer->count()));
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
@@ -147,11 +147,11 @@ Playlist::addSome()
 			entry->bindWidget("release-name", releaseAnchor);
 		}
 
-		auto playBtn = new Wt::WText(Wt::WString::tr("btn-playlist-entry-play-btn"), Wt::XHTMLText);
+		auto playBtn = new Wt::WText(Wt::WString::tr("btn-playqueue-entry-play-btn"), Wt::XHTMLText);
 		entry->bindWidget("play-btn", playBtn);
 		// TODO
 
-		auto addBtn = new Wt::WText(Wt::WString::tr("btn-playlist-entry-del-btn"), Wt::XHTMLText);
+		auto addBtn = new Wt::WText(Wt::WString::tr("btn-playqueue-entry-del-btn"), Wt::XHTMLText);
 		entry->bindWidget("del-btn", addBtn);
 		// TODO
 	}

@@ -6,7 +6,7 @@
 <message id="msg-artists">Artists</message>
 <message id="msg-releases">Albums</message>
 <message id="msg-tracks">Tracks</message>
-<message id="msg-playlist">Playlist</message>
+<message id="msg-playqueue">Play Queue</message>
 <message id="msg-filter-add">Add filter</message>
 <message id="msg-search-placeholder">Search...</message>
 

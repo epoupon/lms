@@ -33,7 +33,7 @@
 #include "Explore.hpp"
 #include "HomeView.hpp"
 #include "MediaPlayer.hpp"
-#include "PlaylistView.hpp"
+#include "PlayQueueView.hpp"
 
 #include "settings/DatabaseView.hpp"
 
@@ -87,7 +87,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "artists");
 	messageResourceBundle().use(appRoot() + "mediaplayer");
 	messageResourceBundle().use(appRoot() + "messages");
-	messageResourceBundle().use(appRoot() + "playlist");
+	messageResourceBundle().use(appRoot() + "playqueue");
 	messageResourceBundle().use(appRoot() + "release");
 	messageResourceBundle().use(appRoot() + "releases");
 	messageResourceBundle().use(appRoot() + "settings");
@@ -192,7 +192,7 @@ enum IdxRoot
 {
 	IdxHome		= 0,
 	IdxExplore,
-	IdxPlaylist,
+	IdxPlayQueue,
 	IdxSettingsDatabase,
 };
 
@@ -209,7 +209,7 @@ handlePathChange(Wt::WStackedWidget* stack)
 		{ "/releases",		IdxExplore },
 		{ "/release",		IdxExplore },
 		{ "/tracks",		IdxExplore },
-		{ "/playlist",		IdxPlaylist },
+		{ "/playqueue",		IdxPlayQueue },
 		{ "/settings/database",	IdxSettingsDatabase },
 	};
 
@@ -271,8 +271,8 @@ LmsApplication::handleAuthEvent(void)
 		menuItem->setSelectable(false);
 	}
 	{
-		auto menuItem = menu->insertItem(3, Wt::WString::tr("msg-playlist"));
-		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/playlist"));
+		auto menuItem = menu->insertItem(3, Wt::WString::tr("msg-playqueue"));
+		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/playqueue"));
 		menuItem->setSelectable(false);
 	}
 	{
@@ -298,20 +298,20 @@ LmsApplication::handleAuthEvent(void)
 	auto explore = new Explore();
 	mainStack->addWidget(explore);
 
-	auto playlist = new Playlist();
-	mainStack->addWidget(playlist);
+	auto playqueue = new PlayQueue();
+	mainStack->addWidget(playqueue);
 
 	auto databaseSettings = new Settings::DatabaseView();
 	mainStack->addWidget(databaseSettings);
 
 	explore->tracksAdd.connect(std::bind([=] (std::vector<Database::Track::pointer> tracks)
 	{
-		playlist->addTracks(tracks);
+		playqueue->addTracks(tracks);
 	}, std::placeholders::_1));
 
 	explore->tracksPlay.connect(std::bind([=] (std::vector<Database::Track::pointer> tracks)
 	{
-		playlist->playTracks(tracks);
+		playqueue->playTracks(tracks);
 	}, std::placeholders::_1));
 
 	// MediaPlayer

@@ -26,10 +26,10 @@
 
 namespace UserInterface {
 
-class Playlist : public Wt::WContainerWidget
+class PlayQueue : public Wt::WContainerWidget
 {
 	public:
-		Playlist(Wt::WContainerWidget* parent = 0);
+		PlayQueue(Wt::WContainerWidget* parent = 0);
 
 		void addTracks(const std::vector<Database::Track::pointer>& tracks);
 		void playTracks(const std::vector<Database::Track::pointer>& tracks);
