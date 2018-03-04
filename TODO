@@ -4,16 +4,16 @@
 
 [Cover]
 - Handle preferred cover file names ("front.xxx", "cover.xxx", ...)
-- Implement a cache and a grabber from some web service (mandatory for artists?) coverartarchive.org
+- Implement a cache to improve speed
 
 [Database]
 - Optim, use SQL query to get the "genre" orphans
 - Use Inotify like system to watch modified/added files?
 - handle access rights problems (instead of aborting)
 - add a global play counter for tracks. This will help people to spot most popular files
-- Use the WServer::post method to notify the end of the database scan? (with results?)
-- Make clusters based on different metadata (albumgrouping, genre, mood, etc.). Make it configurable somewhere as it is very difficult to handle them all?
+- Make cluster scan configurable as it is very difficult to handle them all?
 - Use albumartist when available (useful for compilations)
+- Add AcousticBrainz support to create new kind of clusters
 
 [Metadata]
 - WMA covers: add support
@@ -27,14 +27,20 @@
 - Limit multi login from UI and API interfaces (limit per interface is acceptable)
 
 [UI]
-	- Add a download button to get the current playlist in a streamed zip file
+	- Add a download button to get the current playqueue in a streamed zip file
 	- Save user prefs in local storage (volume, loop, shuffle, current playqueue, etc.)
 	- Add keyboard shortcuts
 	- Add a hint for the user to get the nature of tag (created from genre ? created from audio features?)
 	- Implement a play queue
 	- Implement a decent player
-	- Tags cloud for artist/release
 	- Dedicate a color for each tag type
+	- Display only the most popular cluster of each cluster type?
+
+[Settings]
+	- Add a audio settings: format + bitrate to be used
+	- Add a user management view
+	- Add multi root directories support
+	- Add a first connection wizard
 
 [REST API]
 - Make a dedicated REST API. Maybe use the SubSonic API or Ampache API?
