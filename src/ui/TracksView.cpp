@@ -51,6 +51,7 @@ Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
 	container->bindWidget("play-btn", playBtn);
 	playBtn->clicked().connect(std::bind([=]
 	{
+		Wt::Dbo::Transaction transaction(DboSession());
 		tracksPlay.emit(getTracks());
 	}));
 
@@ -58,6 +59,7 @@ Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
 	container->bindWidget("add-btn", addBtn);
 	addBtn->clicked().connect(std::bind([=]
 	{
+		Wt::Dbo::Transaction transaction(DboSession());
 		tracksAdd.emit(getTracks());
 	}));
 

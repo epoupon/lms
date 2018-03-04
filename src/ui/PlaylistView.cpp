@@ -21,6 +21,8 @@
 #include <Wt/WImage>
 #include <Wt/WText>
 
+#include "utils/Logger.hpp"
+
 #include "LmsApplication.hpp"
 #include "PlaylistView.hpp"
 
@@ -65,6 +67,8 @@ Playlist::addTracks(const std::vector<Database::Track::pointer>& tracks)
 	// Use a "session" playlist in order to store the current playlist
 	// so that the user can disconnect and get its playlist back
 
+	LMS_LOG(UI, DEBUG) << "Adding tracks to the current queue";
+
 	auto playlist = Database::Playlist::get(DboSession(), currentPlaylistName, CurrentUser());
 	if (!playlist)
 	{
@@ -83,6 +87,8 @@ Playlist::addTracks(const std::vector<Database::Track::pointer>& tracks)
 void
 Playlist::playTracks(const std::vector<Database::Track::pointer>& tracks)
 {
+	LMS_LOG(UI, DEBUG) << "Emptying current queue to play new tracks";
+
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	auto playlist = Database::Playlist::get(DboSession(), currentPlaylistName, CurrentUser());
