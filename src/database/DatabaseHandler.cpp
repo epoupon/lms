@@ -113,7 +113,6 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		Wt::Dbo::Transaction transaction(_session);
 
 		// Indexes
-	//	_session.execute("PRAGMA journal_mode=WAL");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_path_idx ON track(file_path)");
 		_session.execute("CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
@@ -185,7 +184,7 @@ Handler::createConnectionPool(boost::filesystem::path p)
 
 	Wt::Dbo::backend::Sqlite3 *connection = new Wt::Dbo::backend::Sqlite3(p.string());
 
-//	connection->executeSql("pragma journal_mode=WAL");
+	connection->executeSql("pragma journal_mode=WAL");
 
 	connection->setProperty("show-queries", "true");
 	return new Wt::Dbo::FixedSqlConnectionPool(connection, 1);
