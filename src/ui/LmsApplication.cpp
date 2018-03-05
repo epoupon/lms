@@ -326,7 +326,12 @@ LmsApplication::handleAuthEvent(void)
 	{
 		Wt::WServer::instance()->post(sessionId, [=]
 		{
-			notify(Wt::WString::tr("msg-notify-scan-complete").arg(stats.nbAdded).arg(stats.nbRemoved));
+			notify(Wt::WString::tr("msg-notify-scan-complete")
+					.arg(stats.nbFiles())
+					.arg(stats.additions)
+					.arg(stats.deletions)
+					.arg(stats.nbDuplicates())
+					.arg(stats.nbErrors()));
 			triggerUpdate();
 		});
 //		notify("TEST");

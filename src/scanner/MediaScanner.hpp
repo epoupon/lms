@@ -58,15 +58,21 @@ class MediaScanner
 
 		struct Stats
 		{
-			std::size_t	nbNoChange = 0;		// no change since last scan
-			std::size_t	nbScanned = 0;		// total scanned filed
-			std::size_t	nbScanErrors = 0;	// cannot scan file
-			std::size_t	nbNotImported = 0;	// Scanned, but not imported (criteria not filled)
-			std::size_t	nbAdded = 0;		// Added in DB
-			std::size_t	nbRemoved = 0;		// removed from DB
-			std::size_t	nbUpdated = 0;		// updated file in DB
+			std::size_t	skips = 0;		// no change since last scan
+			std::size_t	scans = 0;		// actually scanned filed
+			std::size_t	scanErrors = 0;		// cannot scan file
+			std::size_t	incompleteScans = 0;	// Scanned, but not imported (criteria not filled)
+			std::size_t	additions = 0;		// Added in DB
+			std::size_t	deletions = 0;		// removed from DB
+			std::size_t	updates = 0;		// updated file in DB
 
-			std::size_t nbChanges() const { return nbAdded + nbRemoved + nbUpdated;}
+			std::size_t	duplicateHashes = 0;	// Same file hashes
+			std::size_t	duplicateMBID = 0;	// Same MBID
+
+			std::size_t nbFiles() const { return skips + additions + updates; }
+			std::size_t nbChanges() const { return additions + deletions + updates; }
+			std::size_t nbErrors() const { return scanErrors + incompleteScans; }
+			std::size_t nbDuplicates() const { return duplicateHashes + duplicateMBID; }
 		};
 
 

@@ -271,7 +271,7 @@ MediaScanner::scan(boost::system::error_code err)
 	if (_running)
 		checkDuplicatedAudioFiles(stats);
 
-	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.nbAdded << ", removed = " << stats.nbRemoved << ", updated = " << stats.nbUpdated << "), Not changed = " << stats.nbNoChange << ", Scanned = " << stats.nbScanned << " (errors = " << stats.nbScanErrors << ", not imported = " << stats.nbNotImported << ")";
+	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.scanErrors << ", not imported = " << stats.incompleteScans << "), duplicates = " << stats.nbDuplicates() << " (hash = " << stats.duplicateHashes << ", mbid = " << stats.duplicateMBID << ")";
 
 	// Update database stats
 	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
@@ -418,7 +418,7 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		if (track && track->getLastWriteTime() == lastWriteTime)
 		{
-			stats.nbNoChange++;
+			stats.skips++;
 			return;
 		}
 	}
@@ -426,11 +426,11 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 	boost::optional<MetaData::Items> items = _metadataParser.parse(file);
 	if (!items)
 	{
-		stats.nbScanErrors++;
+		stats.scanErrors++;
 		return;
 	}
 
-	stats.nbScanned++;
+	stats.scans++;
 
 	std::vector<unsigned char> checksum ;
 	computeCrc(file, checksum);
@@ -451,9 +451,9 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 		if (track)
 		{
 			track.remove();
-			stats.nbRemoved++;
+			stats.deletions++;
 		}
-		stats.nbNotImported++;
+		stats.incompleteScans++;
 		return;
 	}
 	if ((*items).find(MetaData::Type::Duration) == (*items).end()
@@ -465,9 +465,9 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 		if (track)
 		{
 			track.remove();
-			stats.nbRemoved++;
+			stats.deletions++;
 		}
-		stats.nbNotImported++;
+		stats.incompleteScans++;
 		return;
 	}
 
@@ -536,7 +536,7 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 		// Create a new song
 		track = Track::create(_db.getSession(), file);
 		LMS_LOG(DBUPDATER, INFO) << "Adding '" << file << "'";
-		stats.nbAdded++;
+		stats.additions++;
 	}
 	else
 	{
@@ -546,7 +546,7 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 		for (auto cluster : track->getClusters())
 			cluster.remove();
 
-		stats.nbUpdated++;
+		stats.updates++;
 	}
 
 	assert(track);
@@ -713,7 +713,7 @@ MediaScanner::checkAudioFiles( Stats& stats )
 			if (track)
 			{
 				track.remove();
-				stats.nbRemoved++;
+				stats.deletions++;
 			}
 		}
 	}
@@ -781,12 +781,14 @@ MediaScanner::checkDuplicatedAudioFiles(Stats& stats)
 	for (Track::pointer track : tracks)
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath() << " - " << track->getArtist()->getName() << " - " << track->getName();
+		stats.duplicateMBID++;
 	}
 
 	tracks = Database::Track::getChecksumDuplicates(_db.getSession());
 	for (Track::pointer track : tracks)
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Found duplicated checksum [" << bufferToString(track->getChecksum()) << "], file: " << track->getPath() << " - " << track->getArtist()->getName() << " - " << track->getName();
+		stats.duplicateHashes++;
 	}
 
 

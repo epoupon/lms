@@ -37,6 +37,6 @@
 <message id="msg-btn-immediate-scan">Scan now!</message>
 <message id="msg-notify-scan-launched">Scan launched!</message>
 <message id="msg-notify-settings-saved">New settings saved!</message>
-<message id="msg-notify-scan-complete">Scan finished, {1} imported file(s), {2} removed file(s)!</message>
+<message id="msg-notify-scan-complete">Scan complete: {1} total files, {2} additions, {3} deletions, {4} duplicates, {5} errors</message>
 
 </messages>
