@@ -21,8 +21,6 @@
 
 #include <Wt/WContainerWidget>
 #include <Wt/WTemplateFormView>
-#include <Wt/WText>
-#include <Wt/WSignal>
 
 namespace UserInterface {
 namespace Settings {
@@ -34,17 +32,12 @@ class DatabaseView : public Wt::WTemplateFormView
 	public:
 		DatabaseView(Wt::WContainerWidget *parent = 0);
 
-		Wt::Signal<void>& changed()	{ return _sigChanged; }
-
 	private:
-
-		Wt::Signal<void>	_sigChanged;
 
 		void processSave();
 		void processDiscard();
 		void processImmediateScan();
 
-		Wt::WText		*_applyInfo;
 		DatabaseModel	*_model;
 };
 

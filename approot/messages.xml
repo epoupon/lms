@@ -21,6 +21,14 @@
 
 <message id="msg-show-more">Show more</message>
 
+<message id="msg-login">Login</message>
+<message id="msg-password">Password</message>
+<message id="msg-password-confirm">Verify password</message>
+<message id="msg-create">Create</message>
+
+<message id="msg-settings-admin-account">Administrator account</message>
+<message id="msg-settings-first-connection-done">Account created. Please refresh to continue!</message>
+
 <message id="msg-settings">Settings</message>
 <message id="msg-settings-database">Database</message>
 <message id="msg-settings-media-directory">Media root directory</message>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,17 +17,23 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WValidator>
+#pragma once
+
+#include <Wt/WContainerWidget>
+#include <Wt/WTemplateFormView>
 
 namespace UserInterface {
+namespace Settings {
 
-class DirectoryValidator : public Wt::WValidator
+class FirstConnectionView : public Wt::WTemplateFormView
 {
 	public:
-		DirectoryValidator(Wt::WObject *parent = 0);
-
-		Wt::WValidator::Result validate(const Wt::WString& input) const;
+		FirstConnectionView(Wt::WContainerWidget *parent = 0);
 
 };
 
+
+} // namespace Settings
 } // namespace UserInterface
+
+

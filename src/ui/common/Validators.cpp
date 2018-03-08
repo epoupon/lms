@@ -19,15 +19,30 @@
 
 #include <boost/filesystem.hpp>
 
-#include "DirectoryValidator.hpp"
+#include "Validators.hpp"
 
 namespace UserInterface {
+
+Wt::WValidator* createNameValidator()
+{
+	Wt::WLengthValidator *v = new Wt::WLengthValidator();
+	v->setMandatory(true);
+	v->setMinimumLength(::Database::User::MinNameLength);
+	v->setMaximumLength(::Database::User::MaxNameLength);
+	return v;
+}
+
+Wt::WValidator* createMandatoryValidator()
+{
+	auto v = new Wt::WValidator();
+	v->setMandatory(true);
+	return v;
+}
 
 DirectoryValidator::DirectoryValidator(Wt::WObject *parent)
 : Wt::WValidator(parent)
 {
 }
-
 
 Wt::WValidator::Result
 DirectoryValidator::validate(const Wt::WString& input) const

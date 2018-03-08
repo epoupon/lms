@@ -41,28 +41,20 @@ enum class AudioEncoding
 	WEBMA,
 };
 
-enum class VideoEncoding
-{
-	AUTO,
-};
-
 class User
 {
-
 	public:
+		typedef Wt::Dbo::dbo_traits<User>::IdType id_type;
+		typedef Wt::Dbo::ptr<User>	pointer;
 
+		static const std::size_t MinNameLength = 3;
 		static const std::size_t MaxNameLength = 15;
 
-		// list of audio/video parameters
+		// list of audio parameters
 		static const std::vector<std::size_t> audioBitrates;
 		static const std::vector<AudioEncoding> audioEncodings;
 
-		static const std::vector<std::size_t> videoBitrates;
-		static const std::vector<VideoEncoding> videoEncodings;
-
 		User();
-
-		typedef Wt::Dbo::ptr<User>	pointer;
 
 		// utility
 		static pointer create(Wt::Dbo::Session& session);
@@ -76,32 +68,23 @@ class User
 		void setAdmin(bool admin)	{ _isAdmin = admin; }
 		void setAudioBitrate(std::size_t bitrate);
 		void setAudioEncoding(AudioEncoding encoding)	{ _audioEncoding = encoding; }
-		void setVideoBitrate(std::size_t bitrate);
-		void setVideoEncoding(VideoEncoding encoding)	{ _videoEncoding = encoding; }
 		void setMaxAudioBitrate(std::size_t bitrate);
-		void setMaxVideoBitrate(std::size_t bitrate);
 		void setCurPlayingTrackPos(std::size_t pos) { _curPlayingTrackPos = pos; }
 
 		// read
 		bool isAdmin() const {return _isAdmin;}
 		std::size_t	getAudioBitrate() const;
 		AudioEncoding	getAudioEncoding() const { return _audioEncoding;}
-		std::size_t	getVideoBitrate() const;
-		VideoEncoding	getVideoEncoding() const { return _videoEncoding;}
 		std::size_t	getMaxAudioBitrate() const;
-		std::size_t	getMaxVideoBitrate() const;
 		std::size_t	getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
 
 		template<class Action>
 			void persist(Action& a)
 			{
 				Wt::Dbo::field(a, _maxAudioBitrate, "max_audio_bitrate");
-				Wt::Dbo::field(a, _maxVideoBitrate, "max_video_bitrate");
 				Wt::Dbo::field(a, _isAdmin, "admin");
 				Wt::Dbo::field(a, _audioBitrate, "audio_bitrate");
 				Wt::Dbo::field(a, _audioEncoding, "audio_encoding");
-				Wt::Dbo::field(a, _videoBitrate, "video_bitrate");
-				Wt::Dbo::field(a, _videoEncoding, "video_encoding");
 				// User's dynamic data
 				Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
 				Wt::Dbo::hasMany(a, _playlists, Wt::Dbo::ManyToOne, "user");
@@ -110,21 +93,15 @@ class User
 	private:
 
 		static const std::size_t	maxAudioBitrate = 320000;
-		static const std::size_t	maxVideoBitrate = 2048000;
-
 		static const std::size_t	defaultAudioBitrate = 128000;
-		static const std::size_t	defaultVideoBitrate = 1024000;
 
 		// Admin defined settings
 		int	 	_maxAudioBitrate;
-		int		_maxVideoBitrate;
 		bool		_isAdmin;
 
 		// User defined settings
 		int		_audioBitrate;
 		AudioEncoding	_audioEncoding;
-		int		_videoBitrate;
-		VideoEncoding	_videoEncoding;
 
 		// User's dynamic data
 		int		_curPlayingTrackPos;	// Current track position in queue

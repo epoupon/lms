@@ -36,6 +36,7 @@
 #include "PlayQueueView.hpp"
 
 #include "settings/DatabaseView.hpp"
+#include "settings/FirstConnectionView.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -90,29 +91,26 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "playqueue");
 	messageResourceBundle().use(appRoot() + "release");
 	messageResourceBundle().use(appRoot() + "releases");
-	messageResourceBundle().use(appRoot() + "settings");
+	messageResourceBundle().use(appRoot() + "settings-database");
+	messageResourceBundle().use(appRoot() + "settings-first-connection");
 	messageResourceBundle().use(appRoot() + "tracks");
 	messageResourceBundle().use(appRoot() + "templates");
 
 	setTitle("LMS");
 
+	// If here is no account in the database, launch the first connection wizard
 	bool firstConnection;
 	{
 		Wt::Dbo::Transaction transaction(DboSession());
 
 		firstConnection = (Database::User::getAll(DboSession()).size() == 0);
-
-		// Create a fake user
-		// TODO settings
-		Database::User::create(DboSession());
 	}
 
 	LMS_LOG(UI, DEBUG) << "Creating root widget. First connection = " << std::boolalpha << firstConnection;
 
-	// If here is no account in the database, launch the first connection wizard
-//	if (firstConnection)
-//		createFirstConnectionUI();
-//	else
+	if (firstConnection)
+		createFirstConnectionUI();
+	else
 		createLmsUI();
 }
 
@@ -163,7 +161,7 @@ LmsApplication::createFirstConnectionUI()
 	// Hack, use the auth widget builtin strings
 	builtinLocalizedStrings().useBuiltin(skeletons::AuthStrings_xml1);
 
-//	root()->addWidget( new Settings::FirstConnectionFormView());
+	root()->addWidget(new Settings::FirstConnectionView());
 }
 
 void

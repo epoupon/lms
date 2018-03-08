@@ -1,0 +1,57 @@
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="template-settings-first-connection">
+	<div class="container">
+	<div class="page-header">
+		<h2>${tr:msg-settings-admin-account}</h2>
+	</div>
+	<div class="form-horizontal">
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:admin-login}">
+				${tr:msg-login}
+			</label>
+			<div class="col-sm-5">
+				${admin-login}
+			</div>
+			<div class="help-block col-sm-5">
+				${admin-login-info}
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:password}">
+				${tr:msg-password}
+			</label>
+			<div class="col-sm-5">
+				${password}
+			</div>
+			<div class="help-block col-sm-5">
+				${password-info}
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:password-confirm}">
+				${tr:msg-password-confirm}
+			</label>
+			<div class="col-sm-5">
+				${password-confirm}
+			</div>
+			<div class="help-block col-sm-5">
+				${password-confirm-info}
+			</div>
+		</div>
+
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				${create-btn class="btn-primary"}
+			</div>
+		</div>
+	</div>
+	</div>
+</message>
+
+</messages>

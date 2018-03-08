@@ -26,7 +26,7 @@
 #include <Wt/WFormModel>
 #include <Wt/WStringListModel>
 
-#include "common/DirectoryValidator.hpp"
+#include "common/Validators.hpp"
 #include "database/MediaDirectory.hpp"
 #include "scanner/MediaScanner.hpp"
 #include "utils/Logger.hpp"
@@ -214,12 +214,6 @@ class DatabaseModel : public Wt::WFormModel
 
 		}
 
-		Wt::WValidator *createMandatoryValidator()
-		{
-			Wt::WValidator* v = new Wt::WValidator();
-			v->setMandatory(true);
-			return v;
-		}
 
 		Wt::WStringListModel*	_updatePeriodModel;
 		Wt::WStringListModel*	_updateStartTimeModel;

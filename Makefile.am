@@ -24,7 +24,8 @@ lms_approot_DATA = \
 		approot/playqueue.xml	\
 		approot/releases.xml	\
 		approot/release.xml	\
-		approot/settings.xml	\
+		approot/settings-database.xml	\
+		approot/settings-first-connection.xml	\
 		approot/templates.xml	\
 		approot/tracks.xml
 

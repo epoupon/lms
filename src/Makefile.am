@@ -33,13 +33,14 @@ lms_SOURCES = \
 	$(srcdir)/ui/ReleaseView.cpp				\
 	$(srcdir)/ui/TracksView.cpp				\
 	$(srcdir)/ui/auth/LmsAuth.cpp				\
-	$(srcdir)/ui/common/DirectoryValidator.cpp		\
+	$(srcdir)/ui/common/Validators.cpp			\
 	$(srcdir)/ui/common/InputRange.cpp			\
 	$(srcdir)/ui/common/LineEdit.cpp			\
 	$(srcdir)/ui/resource/AvConvTranscodeStreamResource.cpp	\
 	$(srcdir)/ui/resource/ImageResource.cpp			\
 	$(srcdir)/ui/resource/TranscodeResource.cpp		\
 	$(srcdir)/ui/settings/DatabaseView.cpp			\
+	$(srcdir)/ui/settings/FirstConnectionView.cpp		\
 	$(srcdir)/utils/Config.cpp				\
 	$(srcdir)/utils/Logger.cpp				\
 	$(srcdir)/utils/Path.cpp				\
