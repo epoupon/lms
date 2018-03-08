@@ -25,20 +25,10 @@
 namespace UserInterface {
 namespace Settings {
 
-class DatabaseModel;
-
 class DatabaseView : public Wt::WTemplateFormView
 {
 	public:
 		DatabaseView(Wt::WContainerWidget *parent = 0);
-
-	private:
-
-		void processSave();
-		void processDiscard();
-		void processImmediateScan();
-
-		DatabaseModel	*_model;
 };
 
 

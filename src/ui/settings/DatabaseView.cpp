@@ -228,7 +228,7 @@ const Wt::WFormModel::Field DatabaseModel::UpdateStartTimeField		= "update-start
 DatabaseView::DatabaseView(Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
-	_model = new DatabaseModel(this);
+	auto model = new DatabaseModel(this);
 
 	setTemplateText(tr("template-settings-database"));
 	addFunction("tr", &WTemplate::Functions::tr);
@@ -241,12 +241,12 @@ DatabaseView::DatabaseView(Wt::WContainerWidget *parent)
 	// Update Period
 	Wt::WComboBox *updatePeriodCB = new Wt::WComboBox();
 	setFormWidget(DatabaseModel::UpdatePeriodField, updatePeriodCB);
-	updatePeriodCB->setModel(_model->updatePeriodModel());
+	updatePeriodCB->setModel(model->updatePeriodModel());
 
 	// Update Start Time
 	Wt::WComboBox *updateStartTimeCB = new Wt::WComboBox();
 	setFormWidget(DatabaseModel::UpdateStartTimeField, updateStartTimeCB);
-	updateStartTimeCB->setModel(_model->updateStartTimeModel());
+	updateStartTimeCB->setModel(model->updateStartTimeModel());
 
 	// Buttons
 
@@ -259,8 +259,30 @@ DatabaseView::DatabaseView(Wt::WContainerWidget *parent)
 	Wt::WPushButton *immScanBtn = new Wt::WPushButton(Wt::WString::tr("msg-btn-immediate-scan"));
 	bindWidget("immediate-scan-btn", immScanBtn);
 
-	saveBtn->clicked().connect(this, &DatabaseView::processSave);
-	discardBtn->clicked().connect(this, &DatabaseView::processDiscard);
+	saveBtn->clicked().connect(std::bind([=] ()
+	{
+		updateModel(model);
+
+		if (model->validate())
+		{
+			model->saveData();
+
+			MediaScanner().reschedule();
+
+			notify(Wt::WString::tr("msg-notify-settings-saved"));
+		}
+
+		// Udate the view: Delete any validation message in the view, etc.
+		updateView(model);
+	}));
+
+	discardBtn->clicked().connect(std::bind([=] ()
+	{
+		model->loadData();
+		model->validate();
+		updateView(model);
+	}));
+
 	immScanBtn->clicked().connect(std::bind([=] ()
 	{
 		MediaScanner().scheduleImmediateScan();
@@ -268,35 +290,8 @@ DatabaseView::DatabaseView(Wt::WContainerWidget *parent)
 		notify(Wt::WString::tr("msg-notify-scan-launched"));
 	}));
 
-	updateView(_model);
+	updateView(model);
 }
-
-void
-DatabaseView::processDiscard()
-{
-	_model->loadData();
-	_model->validate();
-	updateView(_model);
-}
-
-void
-DatabaseView::processSave()
-{
-	updateModel(_model);
-
-	if (_model->validate())
-	{
-		_model->saveData();
-
-		MediaScanner().reschedule();
-
-		notify(Wt::WString::tr("msg-notify-settings-saved"));
-	}
-
-	// Udate the view: Delete any validation message in the view, etc.
-	updateView(_model);
-}
-
 
 } // namespace Settings
 } // namespace UserInterface
