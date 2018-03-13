@@ -149,7 +149,7 @@ FirstConnectionView::FirstConnectionView(Wt::WContainerWidget *parent)
 		if (model->validate())
 		{
 			model->saveData();
-			notify(Wt::WString::tr("msg-settings-first-connection-done"));
+			LmsApp->notify(Wt::WString::tr("msg-settings-first-connection-done"));
 			saveButton->setEnabled(false);
 		}
 

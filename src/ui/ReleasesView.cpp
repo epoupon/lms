@@ -91,15 +91,15 @@ Releases::addSome()
 		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-releases-entry"), _releasesContainer);
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
 
-		Wt::WAnchor* coverAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(releaseId)));
+		Wt::WAnchor* coverAnchor = LmsApplication::createReleaseAnchor(releaseId);
 		Wt::WImage* cover = new Wt::WImage(coverAnchor);
-		cover->setImageLink(SessionImageResource()->getReleaseUrl(releaseId, 128));
+		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(releaseId, 128));
 		// Some images may not be square
 		cover->setWidth(128);
 		entry->bindWidget("cover", coverAnchor);
 
 		{
-			Wt::WAnchor* releaseAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(releaseId)));
+			Wt::WAnchor* releaseAnchor = LmsApplication::createReleaseAnchor(releaseId);
 			Wt::WText* releaseName = new Wt::WText(releaseAnchor);
 			releaseName->setText(Wt::WString::fromUTF8(release->getName(), Wt::PlainText));
 			entry->bindWidget("release-name", releaseAnchor);
@@ -113,7 +113,7 @@ Releases::addSome()
 		}
 		else
 		{
-			Wt::WAnchor* artistAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(artists.front().id())));
+			Wt::WAnchor* artistAnchor = LmsApplication::createArtistAnchor(artists.front().id());
 			Wt::WText* artist = new Wt::WText(artistAnchor);
 			artist->setText(Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText));
 			entry->bindWidget("artist-name", artistAnchor);

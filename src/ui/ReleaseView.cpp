@@ -99,7 +99,7 @@ Release::refresh()
 		}
 		else
 		{
-			Wt::WAnchor *artistAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(artists.front().id())));
+			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(artists.front().id());
 			Wt::WText *artist = new Wt::WText(artistAnchor);
 			artist->setText(Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText));
 			t->bindWidget("artist-name", artistAnchor);
@@ -107,7 +107,7 @@ Release::refresh()
 	}
 
 	Wt::WImage *cover = new Wt::WImage();
-	cover->setImageLink(Wt::WLink (SessionImageResource()->getReleaseUrl(release.id(), 512)));
+	cover->setImageLink(Wt::WLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 512)));
 	t->bindWidget("cover", cover);
 
 	auto clusterContainers = new Wt::WContainerWidget();
@@ -161,7 +161,7 @@ Release::refresh()
 		if (variousArtists && track->getArtist())
 		{
 			entry->setCondition("if-has-artist", true);
-			Wt::WAnchor *artistAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(track->getArtist().id())));
+			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(track->getArtist().id());
 			Wt::WText *artistText = new Wt::WText(artistAnchor);
 			artistText->setText(Wt::WString::fromUTF8(track->getArtist()->getName(), Wt::PlainText));
 			entry->bindWidget("artist-name", artistAnchor);

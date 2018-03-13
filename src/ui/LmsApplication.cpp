@@ -17,12 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WEnvironment>
+#include <Wt/WAnchor>
 #include <Wt/WBootstrapTheme>
-#include <Wt/WNavigationBar>
-#include <Wt/WStackedWidget>
+#include <Wt/WEnvironment>
 #include <Wt/WMenu>
+#include <Wt/WNavigationBar>
 #include <Wt/WPopupMenu>
+#include <Wt/WStackedWidget>
 #include <Wt/WText>
 #include <Wt/Auth/Identity>
 
@@ -30,7 +31,6 @@
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
-#include "Auth.hpp"
 #include "Explore.hpp"
 #include "HomeView.hpp"
 #include "MediaPlayer.hpp"
@@ -40,10 +40,6 @@
 #include "settings/FirstConnectionView.hpp"
 
 #include "LmsApplication.hpp"
-
-namespace skeletons {
-	  extern const char *AuthStrings_xml1;
-}
 
 namespace UserInterface {
 
@@ -112,9 +108,6 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 
 	if (firstConnection)
 	{
-		// Hack, use the auth widget builtin strings
-		builtinLocalizedStrings().useBuiltin(skeletons::AuthStrings_xml1);
-
 		root()->addWidget(new Settings::FirstConnectionView());
 	}
 	else
@@ -158,6 +151,18 @@ TranscodeResource* SessionTranscodeResource()
 Scanner::MediaScanner& MediaScanner()
 {
 	return LmsApplication::instance()->getMediaScanner();
+}
+
+Wt::WAnchor*
+LmsApplication::createArtistAnchor(Database::id_type id)
+{
+	return new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(id)));
+}
+
+Wt::WAnchor*
+LmsApplication::createReleaseAnchor(Database::id_type id)
+{
+	return new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(id)));
 }
 
 void

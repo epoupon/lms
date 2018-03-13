@@ -121,16 +121,16 @@ Artist::refresh()
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
 
 		{
-			Wt::WAnchor* coverAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(releaseId)));
+			Wt::WAnchor* coverAnchor = LmsApplication::createReleaseAnchor(releaseId);
 			Wt::WImage* cover = new Wt::WImage(coverAnchor);
-			cover->setImageLink(SessionImageResource()->getReleaseUrl(release.id(), 128));
+			cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
 			// Some images may not be square
 			cover->setWidth(128);
 			entry->bindWidget("cover", coverAnchor);
 		}
 
 		{
-			Wt::WAnchor* releaseAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(releaseId)));
+			Wt::WAnchor* releaseAnchor = LmsApplication::createReleaseAnchor(releaseId);
 			Wt::WText* releaseName = new Wt::WText(releaseAnchor);
 			releaseName->setText(Wt::WString::fromUTF8(release->getName(), Wt::PlainText));
 			entry->bindWidget("name", releaseAnchor);

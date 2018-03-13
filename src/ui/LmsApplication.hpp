@@ -50,6 +50,9 @@ class LmsApplication : public Wt::WApplication
 		void quit();
 		void notify(const Wt::WString& message);
 
+		static Wt::WAnchor* createArtistAnchor(Database::id_type id);
+		static Wt::WAnchor* createReleaseAnchor(Database::id_type id);
+
 	private:
 
 		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner);
@@ -71,14 +74,6 @@ Wt::Dbo::Session& DboSession();
 
 const Wt::Auth::User& CurrentAuthUser();
 Database::User::pointer CurrentUser();
-
-ImageResource *SessionImageResource();
-TranscodeResource *SessionTranscodeResource();
-
-Scanner::MediaScanner& MediaScanner();
-
-void notify(const Wt::WString& message);
-
 
 } // namespace UserInterface
 

@@ -93,7 +93,7 @@ Artists::addSome()
 		entry->bindInt("nb-release", artist->getReleases(clusterIds).size());
 
 		{
-			Wt::WAnchor *artistAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(artist.id())));
+			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(artist.id());
 			Wt::WText *artistText = new Wt::WText(artistAnchor);
 			artistText->setText(Wt::WString::fromUTF8(artist->getName(), Wt::PlainText));
 			entry->bindWidget("name", artistAnchor);

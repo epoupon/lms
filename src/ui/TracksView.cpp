@@ -124,7 +124,7 @@ Tracks::addSome()
 		if (artist)
 		{
 			entry->setCondition("if-has-artist", true);
-			Wt::WAnchor *artistAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(track->getArtist().id())));
+			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(track->getArtist().id());
 			Wt::WText *artistText = new Wt::WText(artistAnchor);
 			artistText->setText(Wt::WString::fromUTF8(artist->getName(), Wt::PlainText));
 			entry->bindWidget("artist-name", artistAnchor);
@@ -134,14 +134,14 @@ Tracks::addSome()
 		if (release)
 		{
 			entry->setCondition("if-has-release", true);
-			Wt::WAnchor *releaseAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(track->getRelease().id())));
+			Wt::WAnchor *releaseAnchor = LmsApplication::createReleaseAnchor(track->getRelease().id());
 			Wt::WText *releaseText = new Wt::WText(releaseAnchor);
 			releaseText->setText(Wt::WString::fromUTF8(release->getName(), Wt::PlainText));
 			entry->bindWidget("release-name", releaseAnchor);
 		}
 
 		Wt::WImage *cover = new Wt::WImage();
-		cover->setImageLink(SessionImageResource()->getTrackUrl(track.id(), 64));
+		cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(track.id(), 64));
 		// Some images may not be square
 		cover->setWidth(64);
 		entry->bindWidget("cover", cover);
