@@ -3,7 +3,7 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="template-settings-first-connection">
+<message id="template-settings-admin-wizard">
 	<div class="container">
 	<div class="page-header">
 		<h2>${tr:msg-settings-admin-account}</h2>

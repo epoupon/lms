@@ -26,7 +26,7 @@ lms_approot_DATA = \
 		approot/releases.xml	\
 		approot/release.xml	\
 		approot/settings-database.xml	\
-		approot/settings-first-connection.xml	\
+		approot/settings-admin-wizard.xml	\
 		approot/templates.xml	\
 		approot/tracks.xml
 

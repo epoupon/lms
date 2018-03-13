@@ -23,17 +23,13 @@
 #include <Wt/WTemplateFormView>
 
 namespace UserInterface {
-namespace Settings {
 
-class FirstConnectionView : public Wt::WTemplateFormView
+class DatabaseSettingsView : public Wt::WTemplateFormView
 {
 	public:
-		FirstConnectionView(Wt::WContainerWidget *parent = 0);
-
+		DatabaseSettingsView(Wt::WContainerWidget *parent = 0);
 };
 
 
-} // namespace Settings
 } // namespace UserInterface
-
 

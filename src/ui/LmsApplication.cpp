@@ -36,8 +36,8 @@
 #include "MediaPlayer.hpp"
 #include "PlayQueueView.hpp"
 
-#include "settings/DatabaseView.hpp"
-#include "settings/FirstConnectionView.hpp"
+#include "settings/DatabaseSettingsView.hpp"
+#include "settings/AdminWizardView.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -90,7 +90,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "release");
 	messageResourceBundle().use(appRoot() + "releases");
 	messageResourceBundle().use(appRoot() + "settings-database");
-	messageResourceBundle().use(appRoot() + "settings-first-connection");
+	messageResourceBundle().use(appRoot() + "settings-admin-wizard");
 	messageResourceBundle().use(appRoot() + "tracks");
 	messageResourceBundle().use(appRoot() + "templates");
 
@@ -108,7 +108,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 
 	if (firstConnection)
 	{
-		root()->addWidget(new Settings::FirstConnectionView());
+		root()->addWidget(new AdminWizardView());
 	}
 	else
 	{
@@ -301,7 +301,7 @@ LmsApplication::handleAuthEvent(void)
 	auto playqueue = new PlayQueue();
 	mainStack->addWidget(playqueue);
 
-	auto databaseSettings = new Settings::DatabaseView();
+	auto databaseSettings = new DatabaseSettingsView();
 	mainStack->addWidget(databaseSettings);
 
 	explore->tracksAdd.connect(std::bind([=] (std::vector<Database::Track::pointer> tracks)

@@ -33,14 +33,13 @@
 
 #include "LmsApplication.hpp"
 
-#include "DatabaseView.hpp"
+#include "DatabaseSettingsView.hpp"
 
 namespace UserInterface {
-namespace Settings {
 
 using namespace Database;
 
-class DatabaseModel : public Wt::WFormModel
+class DatabaseSettingsModel : public Wt::WFormModel
 {
 	public:
 		// Associate each field with a unique string literal.
@@ -48,7 +47,7 @@ class DatabaseModel : public Wt::WFormModel
 		static const Field UpdatePeriodField;
 		static const Field UpdateStartTimeField;
 
-		DatabaseModel(Wt::WObject *parent = 0)
+		DatabaseSettingsModel(Wt::WObject *parent = 0)
 			: Wt::WFormModel(parent)
 		{
 			initializeModels();
@@ -220,15 +219,15 @@ class DatabaseModel : public Wt::WFormModel
 
 };
 
-const Wt::WFormModel::Field DatabaseModel::MediaDirectoryField		= "media-directory";
-const Wt::WFormModel::Field DatabaseModel::UpdatePeriodField		= "update-period";
-const Wt::WFormModel::Field DatabaseModel::UpdateStartTimeField		= "update-start-time";
+const Wt::WFormModel::Field DatabaseSettingsModel::MediaDirectoryField		= "media-directory";
+const Wt::WFormModel::Field DatabaseSettingsModel::UpdatePeriodField		= "update-period";
+const Wt::WFormModel::Field DatabaseSettingsModel::UpdateStartTimeField		= "update-start-time";
 
 
-DatabaseView::DatabaseView(Wt::WContainerWidget *parent)
+DatabaseSettingsView::DatabaseSettingsView(Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
-	auto model = new DatabaseModel(this);
+	auto model = new DatabaseSettingsModel(this);
 
 	setTemplateText(tr("template-settings-database"));
 	addFunction("tr", &WTemplate::Functions::tr);
@@ -236,16 +235,16 @@ DatabaseView::DatabaseView(Wt::WContainerWidget *parent)
 
 	// Media Directory
 	Wt::WLineEdit *mediaDirectoryEdit = new Wt::WLineEdit();
-	setFormWidget(DatabaseModel::MediaDirectoryField, mediaDirectoryEdit);
+	setFormWidget(DatabaseSettingsModel::MediaDirectoryField, mediaDirectoryEdit);
 
 	// Update Period
 	Wt::WComboBox *updatePeriodCB = new Wt::WComboBox();
-	setFormWidget(DatabaseModel::UpdatePeriodField, updatePeriodCB);
+	setFormWidget(DatabaseSettingsModel::UpdatePeriodField, updatePeriodCB);
 	updatePeriodCB->setModel(model->updatePeriodModel());
 
 	// Update Start Time
 	Wt::WComboBox *updateStartTimeCB = new Wt::WComboBox();
-	setFormWidget(DatabaseModel::UpdateStartTimeField, updateStartTimeCB);
+	setFormWidget(DatabaseSettingsModel::UpdateStartTimeField, updateStartTimeCB);
 	updateStartTimeCB->setModel(model->updateStartTimeModel());
 
 	// Buttons
@@ -291,7 +290,6 @@ DatabaseView::DatabaseView(Wt::WContainerWidget *parent)
 	updateView(model);
 }
 
-} // namespace Settings
 } // namespace UserInterface
 
 

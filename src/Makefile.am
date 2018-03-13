@@ -39,8 +39,8 @@ lms_SOURCES = \
 	$(srcdir)/ui/resource/AvConvTranscodeStreamResource.cpp	\
 	$(srcdir)/ui/resource/ImageResource.cpp			\
 	$(srcdir)/ui/resource/TranscodeResource.cpp		\
-	$(srcdir)/ui/settings/DatabaseView.cpp			\
-	$(srcdir)/ui/settings/FirstConnectionView.cpp		\
+	$(srcdir)/ui/settings/DatabaseSettingsView.cpp		\
+	$(srcdir)/ui/settings/AdminWizardView.cpp		\
 	$(srcdir)/utils/Config.cpp				\
 	$(srcdir)/utils/Logger.cpp				\
 	$(srcdir)/utils/Path.cpp				\

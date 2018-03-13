@@ -27,12 +27,11 @@
 #include "common/Validators.hpp"
 #include "LmsApplication.hpp"
 
-#include "FirstConnectionView.hpp"
+#include "AdminWizardView.hpp"
 
 namespace UserInterface {
-namespace Settings {
 
-class FirstConnectionModel : public Wt::WFormModel
+class AdminWizardModel : public Wt::WFormModel
 {
 	public:
 
@@ -41,7 +40,7 @@ class FirstConnectionModel : public Wt::WFormModel
 		static const Field PasswordField;
 		static const Field PasswordConfirmField;
 
-		FirstConnectionModel(Wt::WObject *parent = 0)
+		AdminWizardModel(Wt::WObject *parent = 0)
 			: Wt::WFormModel(parent)
 		{
 			addField(AdminLoginField);
@@ -113,31 +112,31 @@ class FirstConnectionModel : public Wt::WFormModel
 
 };
 
-const Wt::WFormModel::Field FirstConnectionModel::AdminLoginField = "admin-login";
-const Wt::WFormModel::Field FirstConnectionModel::PasswordField = "password";
-const Wt::WFormModel::Field FirstConnectionModel::PasswordConfirmField = "password-confirm";
+const Wt::WFormModel::Field AdminWizardModel::AdminLoginField = "admin-login";
+const Wt::WFormModel::Field AdminWizardModel::PasswordField = "password";
+const Wt::WFormModel::Field AdminWizardModel::PasswordConfirmField = "password-confirm";
 
-FirstConnectionView::FirstConnectionView(Wt::WContainerWidget *parent)
+AdminWizardView::AdminWizardView(Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
-	auto model = new FirstConnectionModel(this);
+	auto model = new AdminWizardModel(this);
 
-	setTemplateText(Wt::WString::tr("template-settings-first-connection"));
+	setTemplateText(Wt::WString::tr("template-settings-admin-wizard"));
 	addFunction("tr", &WTemplate::Functions::tr);
 	addFunction("id", &WTemplate::Functions::id);
 
 	// AdminLogin
 	Wt::WLineEdit* accountEdit = new Wt::WLineEdit();
-	setFormWidget(FirstConnectionModel::AdminLoginField, accountEdit);
+	setFormWidget(AdminWizardModel::AdminLoginField, accountEdit);
 
 	// Password
 	Wt::WLineEdit* passwordEdit = new Wt::WLineEdit();
-	setFormWidget(FirstConnectionModel::PasswordField, passwordEdit );
+	setFormWidget(AdminWizardModel::PasswordField, passwordEdit );
 	passwordEdit->setEchoMode(Wt::WLineEdit::Password);
 
 	// Password confirmation
 	Wt::WLineEdit* passwordConfirmEdit = new Wt::WLineEdit();
-	setFormWidget(FirstConnectionModel::PasswordConfirmField, passwordConfirmEdit);
+	setFormWidget(AdminWizardModel::PasswordConfirmField, passwordConfirmEdit);
 	passwordConfirmEdit->setEchoMode(Wt::WLineEdit::Password);
 
 	auto saveButton = new Wt::WPushButton(Wt::WString::tr("msg-create"));
@@ -159,6 +158,5 @@ FirstConnectionView::FirstConnectionView(Wt::WContainerWidget *parent)
 	updateView(model);
 }
 
-} // namespace Settings
 } // namespace UserInterface
 

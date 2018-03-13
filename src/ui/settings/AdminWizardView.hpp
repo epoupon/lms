@@ -23,15 +23,14 @@
 #include <Wt/WTemplateFormView>
 
 namespace UserInterface {
-namespace Settings {
 
-class DatabaseView : public Wt::WTemplateFormView
+class AdminWizardView : public Wt::WTemplateFormView
 {
 	public:
-		DatabaseView(Wt::WContainerWidget *parent = 0);
+		AdminWizardView(Wt::WContainerWidget *parent = 0);
+
 };
 
-
-} // namespace Settings
 } // namespace UserInterface
+
 
