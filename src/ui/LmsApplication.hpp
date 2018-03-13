@@ -28,6 +28,7 @@
 
 #include "resource/ImageResource.hpp"
 #include "resource/TranscodeResource.hpp"
+#include "Auth.hpp"
 
 namespace UserInterface {
 
@@ -56,6 +57,7 @@ class LmsApplication : public Wt::WApplication
 		void handleAuthEvent(void);
 
 		Database::Handler	_db;
+		Auth*			_auth;
 		Scanner::MediaScanner&	_scanner;
 		ImageResource*          _imageResource;
 		TranscodeResource*	_transcodeResource;

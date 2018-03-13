@@ -21,23 +21,22 @@
 #include <Wt/WLineEdit>
 #include <Wt/WCheckBox>
 #include <Wt/WPushButton>
-#include <Wt/Auth/AuthModel>
 
 #include "utils/Logger.hpp"
 
 #include "common/Validators.hpp"
 #include "LmsApplication.hpp"
 
-#include "LoginView.hpp"
+#include "Auth.hpp"
 
 namespace UserInterface {
 
-LoginView::LoginView(Wt::Auth::Login& login, Wt::WContainerWidget *parent)
+Auth::Auth(Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
-	auto model = new Wt::Auth::AuthModel(DbHandler().getAuthService(), DbHandler().getUserDatabase());
+	_model = new Wt::Auth::AuthModel(DbHandler().getAuthService(), DbHandler().getUserDatabase());
 
-	model->addPasswordAuth(&Database::Handler::getPasswordService());
+	_model->addPasswordAuth(&Database::Handler::getPasswordService());
 
 	setTemplateText(Wt::WString::tr("template-login"));
 	addFunction("tr", &WTemplate::Functions::tr);
@@ -58,14 +57,14 @@ LoginView::LoginView(Wt::Auth::Login& login, Wt::WContainerWidget *parent)
 
 	auto loginBtn = new Wt::WPushButton(Wt::WString::tr("msg-login"));
 	bindWidget("login-btn", loginBtn);
-	loginBtn->clicked().connect(std::bind([=, &login]
+	loginBtn->clicked().connect(std::bind([=]
 	{
-		updateModel(model);
+		updateModel(_model);
 
-		if (model->validate())
-			model->login(login);
+		if (_model->validate())
+			_model->login(DbHandler().getLogin());
 		else
-			updateView(model);
+			updateView(_model);
 	}));
 
 	password->enterPressed().connect(std::bind([=]
@@ -73,16 +72,22 @@ LoginView::LoginView(Wt::Auth::Login& login, Wt::WContainerWidget *parent)
 		loginBtn->clicked().emit(Wt::WMouseEvent());
 	}));
 
-	login.changed().connect(std::bind([=, &login]
+	DbHandler().getLogin().changed().connect(std::bind([=]
 	{
-		if (login.loggedIn())
+		if (DbHandler().getLogin().loggedIn())
 			this->setHidden(true);
 	}));
 
-	Wt::Auth::User user = model->processAuthToken();
-	model->loginUser(login, user, Wt::Auth::WeakLogin);
+	Wt::Auth::User user = _model->processAuthToken();
+	_model->loginUser(DbHandler().getLogin(), user, Wt::Auth::WeakLogin);
 
-	updateView(model);
+	updateView(_model);
+}
+
+void
+Auth::logout()
+{
+	_model->logout(DbHandler().getLogin());
 }
 
 } // namespace UserInterface

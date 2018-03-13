@@ -30,7 +30,7 @@
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
-#include "LoginView.hpp"
+#include "Auth.hpp"
 #include "Explore.hpp"
 #include "HomeView.hpp"
 #include "MediaPlayer.hpp"
@@ -121,8 +121,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	{
 		DbHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
 
-		auto auth = new LoginView(DbHandler().getLogin());
-		root()->addWidget(auth);
+		_auth = new Auth();
+		root()->addWidget(_auth);
 	}
 }
 
@@ -279,7 +279,7 @@ LmsApplication::handleAuthEvent(void)
 		menuItem->triggered().connect(std::bind([=]
 		{
 			setConfirmCloseMessage("");
-			DbHandler().getLogin().logout();
+			_auth->logout();
 		}));
 	}
 	navbar->addMenu(rightMenu, Wt::AlignRight);

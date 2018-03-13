@@ -22,13 +22,19 @@
 #include <Wt/WContainerWidget>
 #include <Wt/WTemplateFormView>
 #include <Wt/Auth/Login>
+#include <Wt/Auth/AuthModel>
 
 namespace UserInterface {
 
-class LoginView : public Wt::WTemplateFormView
+class Auth : public Wt::WTemplateFormView
 {
 	public:
-		LoginView(Wt::Auth::Login& login, Wt::WContainerWidget *parent = 0);
+		Auth(Wt::WContainerWidget *parent = 0);
+
+		void logout();
+
+	private:
+		Wt::Auth::AuthModel* _model;
 };
 
 

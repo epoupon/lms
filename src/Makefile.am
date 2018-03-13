@@ -27,7 +27,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/Filters.cpp				\
 	$(srcdir)/ui/HomeView.cpp				\
 	$(srcdir)/ui/LmsApplication.cpp				\
-	$(srcdir)/ui/LoginView.cpp				\
+	$(srcdir)/ui/Auth.cpp					\
 	$(srcdir)/ui/MediaPlayer.cpp				\
 	$(srcdir)/ui/PlayQueueView.cpp				\
 	$(srcdir)/ui/ReleasesView.cpp				\
