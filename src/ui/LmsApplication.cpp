@@ -24,12 +24,13 @@
 #include <Wt/WMenu>
 #include <Wt/WPopupMenu>
 #include <Wt/WText>
+#include <Wt/Auth/Identity>
 
 #include "config/config.h"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
-#include "auth/LmsAuth.hpp"
+#include "LoginView.hpp"
 #include "Explore.hpp"
 #include "HomeView.hpp"
 #include "MediaPlayer.hpp"
@@ -86,6 +87,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "artist");
 	messageResourceBundle().use(appRoot() + "artists");
+	messageResourceBundle().use(appRoot() + "login");
 	messageResourceBundle().use(appRoot() + "mediaplayer");
 	messageResourceBundle().use(appRoot() + "messages");
 	messageResourceBundle().use(appRoot() + "playqueue");
@@ -109,9 +111,19 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	LMS_LOG(UI, DEBUG) << "Creating root widget. First connection = " << std::boolalpha << firstConnection;
 
 	if (firstConnection)
-		createFirstConnectionUI();
+	{
+		// Hack, use the auth widget builtin strings
+		builtinLocalizedStrings().useBuiltin(skeletons::AuthStrings_xml1);
+
+		root()->addWidget(new Settings::FirstConnectionView());
+	}
 	else
-		createLmsUI();
+	{
+		DbHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
+
+		auto auth = new LoginView(DbHandler().getLogin());
+		root()->addWidget(auth);
+	}
 }
 
 Database::Handler& DbHandler()
@@ -130,8 +142,7 @@ const Wt::Auth::User& CurrentAuthUser()
 
 Database::User::pointer CurrentUser()
 {
-	return Database::User::getById(DboSession(), 1);
-//	return DbHandler().getCurrentUser();
+	return DbHandler().getCurrentUser();
 }
 
 ImageResource* SessionImageResource()
@@ -156,35 +167,11 @@ LmsApplication::goHome()
 }
 
 void
-LmsApplication::createFirstConnectionUI()
+LmsApplication::quit()
 {
-	// Hack, use the auth widget builtin strings
-	builtinLocalizedStrings().useBuiltin(skeletons::AuthStrings_xml1);
-
-	root()->addWidget(new Settings::FirstConnectionView());
+	WApplication::quit("");
+	redirect("/");
 }
-
-void
-LmsApplication::createLmsUI()
-{
-	_imageResource = new ImageResource(_db, root());
-	_transcodeResource = new TranscodeResource(_db, root());
-
-	handleAuthEvent();
-	/*
-	DbHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
-
-	LmsAuth *authWidget = new LmsAuth();
-
-	authWidget->model()->addPasswordAuth(&Database::Handler::getPasswordService());
-	authWidget->setRegistrationEnabled(false);
-
-	authWidget->processEnvironment();
-
-	root()->addWidget(authWidget);
-	*/
-}
-
 
 enum IdxRoot
 {
@@ -193,8 +180,6 @@ enum IdxRoot
 	IdxPlayQueue,
 	IdxSettingsDatabase,
 };
-
-
 
 static void
 handlePathChange(Wt::WStackedWidget* stack)
@@ -228,19 +213,19 @@ handlePathChange(Wt::WStackedWidget* stack)
 void
 LmsApplication::handleAuthEvent(void)
 {
-	/*
 	if (!DbHandler().getLogin().loggedIn())
 	{
 		LMS_LOG(UI, INFO) << "User logged out, session = " << Wt::WApplication::instance()->sessionId();
 
-		quit("");
-		redirect("/");
-
+		quit();
 		return;
 	}
 
 	LMS_LOG(UI, INFO) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
-*/
+
+	_imageResource = new ImageResource(_db, root());
+	_transcodeResource = new TranscodeResource(_db, root());
+
 	setConfirmCloseMessage(Wt::WString::tr("msg-quit-confirm"));
 
 	auto main = new Wt::WTemplate(Wt::WString::tr("template-main"), root());
@@ -273,8 +258,11 @@ LmsApplication::handleAuthEvent(void)
 		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/playqueue"));
 		menuItem->setSelectable(false);
 	}
+	navbar->addMenu(menu);
+
+	auto rightMenu = new Wt::WMenu();
 	{
-		auto menuItem = menu->insertItem(4, Wt::WString::tr("msg-settings"));
+		auto menuItem = rightMenu->insertItem(0, Wt::WString::tr("msg-settings"));
 		menuItem->setSelectable(false);
 
 		Wt::WPopupMenu *settings = new Wt::WPopupMenu();
@@ -285,7 +273,16 @@ LmsApplication::handleAuthEvent(void)
 		menuItem->setMenu(settings);
 	}
 
-	navbar->addMenu(menu);
+	{
+		auto menuItem = rightMenu->insertItem(1, Wt::WString::tr("msg-logout"));
+		menuItem->setSelectable(true);
+		menuItem->triggered().connect(std::bind([=]
+		{
+			setConfirmCloseMessage("");
+			DbHandler().getLogin().logout();
+		}));
+	}
+	navbar->addMenu(rightMenu, Wt::AlignRight);
 
 	// Contents
 	Wt::WStackedWidget* mainStack = new Wt::WStackedWidget();

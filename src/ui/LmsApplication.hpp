@@ -20,9 +20,7 @@
 #ifndef LMS_APPLICATION_HPP
 #define LMS_APPLICATION_HPP
 
-#include <boost/filesystem.hpp>
 #include <Wt/WApplication>
-
 #include <Wt/Dbo/SqlConnectionPool>
 
 #include "database/DatabaseHandler.hpp"
@@ -48,6 +46,7 @@ class LmsApplication : public Wt::WApplication
 
 		// Utils
 		void goHome();
+		void quit();
 		void notify(const Wt::WString& message);
 
 	private:
@@ -55,8 +54,6 @@ class LmsApplication : public Wt::WApplication
 		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner);
 
 		void handleAuthEvent(void);
-		void createFirstConnectionUI();
-		void createLmsUI();
 
 		Database::Handler	_db;
 		Scanner::MediaScanner&	_scanner;

@@ -26,6 +26,7 @@
 #include <Wt/Auth/Dbo/UserDatabase>
 #include <Wt/Auth/AuthService>
 #include <Wt/Auth/HashFunction>
+#include <Wt/Auth/Identity>
 #include <Wt/Auth/PasswordService>
 #include <Wt/Auth/PasswordStrengthValidator>
 #include <Wt/Auth/PasswordVerifier>
@@ -48,7 +49,11 @@ namespace {
 void
 Handler::configureAuth(void)
 {
-	authService.setEmailVerificationEnabled(true);
+	authService.setEmailVerificationEnabled(false);
+	authService.setAuthTokensEnabled(true, "lmsauth");
+	authService.setIdentityPolicy(Wt::Auth::LoginNameIdentity);
+	authService.setRandomTokenLength(32);
+	authService.setTokenHashFunction(new Wt::Auth::BCryptHashFunction(8));
 
 	Wt::Auth::PasswordVerifier *verifier = new Wt::Auth::PasswordVerifier();
 	verifier->addHashFunction(new Wt::Auth::BCryptHashFunction(8));

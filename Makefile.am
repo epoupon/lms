@@ -19,6 +19,7 @@ lms_images_DATA = \
 lms_approot_DATA = \
 		approot/artists.xml	\
 		approot/artist.xml	\
+		approot/login.xml	\
 		approot/mediaplayer.xml	\
 		approot/messages.xml	\
 		approot/playqueue.xml	\

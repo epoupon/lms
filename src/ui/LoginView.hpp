@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,33 +17,21 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_AUTH_HPP
-#define UI_AUTH_HPP
+#pragma once
 
-#include <Wt/Auth/AuthService>
-#include <Wt/Auth/AbstractUserDatabase>
-#include <Wt/Auth/Login>
-#include <Wt/Auth/AuthWidget>
 #include <Wt/WContainerWidget>
+#include <Wt/WTemplateFormView>
+#include <Wt/Auth/Login>
 
 namespace UserInterface {
 
-class LmsAuth : public Wt::Auth::AuthWidget
+class LoginView : public Wt::WTemplateFormView
 {
 	public:
-
-		LmsAuth();
-
-		// LoggedInView is delegated to LmsHome
-		void createLoggedInView () ;
-		void createLoginView ();
-
-	private:
-
-
+		LoginView(Wt::Auth::Login& login, Wt::WContainerWidget *parent = 0);
 };
+
 
 } // namespace UserInterface
 
-#endif
 

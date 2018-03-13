@@ -26,6 +26,10 @@
 <message id="msg-password-confirm">Verify password</message>
 <message id="msg-create">Create</message>
 
+<message id="msg-remember-me">Remember me</message>
+<message id="msg-login-welcome">Welcome!</message>
+<message id="msg-logout">Logout</message>
+
 <message id="msg-settings-admin-account">Administrator account</message>
 <message id="msg-settings-first-connection-done">Account created. Please refresh to continue!</message>
 
