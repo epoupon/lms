@@ -2,15 +2,15 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="btn-release-play-btn">
+<message id="Lms.Explore.Release.play">
 	<i class="fa fa-play"></i>
 </message>
 
-<message id="btn-release-add-btn">
+<message id="Lms.Explore.Release.add">
 	<i class="fa fa-plus"></i>
 </message>
 
-<message id="template-release">
+<message id="Lms.Explore.Release.template">
 	${cover}
 	<div class="page-header">
 		<h2>${name}</h2>
@@ -22,11 +22,11 @@
 	${tracks}
 </message>
 
-<message id="template-release-cluster-entry">
+<message id="Lms.Explore.Release.template.cluster-entry">
 	<span class="badge">${name}</span>
 </message>
 
-<message id="template-release-entry">
+<message id="Lms.Explore.Release.template.entry">
 	${<if-has-disc-number>}${disc-number}-${</if-has-disc-number>}${<if-has-track-number>}${track-number}. ${</if-has-track-number>}
 	${<if-has-artist>}${artist-name} - ${</if-has-artist>}
 	${name}

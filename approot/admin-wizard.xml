@@ -3,15 +3,15 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="template-settings-admin-wizard">
+<message id="Lms.AdminWizard.template">
 	<div class="container">
 	<div class="page-header">
-		<h2>${tr:msg-settings-admin-account}</h2>
+		<h2>${tr:Lms.AdminWizard.header}</h2>
 	</div>
 	<div class="form-horizontal">
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:admin-login}">
-				${tr:msg-login}
+				${tr:Lms.login}
 			</label>
 			<div class="col-sm-5">
 				${admin-login}
@@ -23,7 +23,7 @@
 
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:password}">
-				${tr:msg-password}
+				${tr:Lms.password}
 			</label>
 			<div class="col-sm-5">
 				${password}
@@ -35,7 +35,7 @@
 
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:password-confirm}">
-				${tr:msg-password-confirm}
+				${tr:Lms.password-confirm}
 			</label>
 			<div class="col-sm-5">
 				${password-confirm}

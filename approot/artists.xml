@@ -2,9 +2,9 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="template-artists">
+<message id="Lms.Explore.Artists.template">
 	<div class="page-header">
-		<h2>${tr:msg-artists}</h2>
+		<h2>${tr:Lms.Explore.artists}</h2>
 	</div>
 	<div class="form-group">
 		<div class="input-group">
@@ -16,7 +16,7 @@
 	${show-more}
 </message>
 
-<message id="template-artists-entry">
+<message id="Lms.Explore.Artists.template.entry">
 	<div class="list-group-item">
 		<span class="badge">${nb-release}</span>
 		${name}

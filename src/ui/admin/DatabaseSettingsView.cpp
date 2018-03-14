@@ -181,16 +181,16 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 			_updatePeriodModel = new Wt::WStringListModel(this);
 
-			_updatePeriodModel->addString(Wt::WString::tr("msg-update-period-never"));
+			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.never"));
 			_updatePeriodModel->setData(0, 0, Scanner::UpdatePeriod::Never, Wt::UserRole);
 
-			_updatePeriodModel->addString(Wt::WString::tr("msg-update-period-daily"));
+			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.daily"));
 			_updatePeriodModel->setData(1, 0, Scanner::UpdatePeriod::Daily, Wt::UserRole);
 
-			_updatePeriodModel->addString(Wt::WString::tr("msg-update-period-weekly"));
+			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.weekly"));
 			_updatePeriodModel->setData(2, 0, Scanner::UpdatePeriod::Weekly, Wt::UserRole);
 
-			_updatePeriodModel->addString(Wt::WString::tr("msg-update-period-monthly"));
+			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.monthly"));
 			_updatePeriodModel->setData(3, 0, Scanner::UpdatePeriod::Monthly, Wt::UserRole);
 
 			_updateStartTimeModel = new Wt::WStringListModel(this);
@@ -229,7 +229,7 @@ DatabaseSettingsView::DatabaseSettingsView(Wt::WContainerWidget *parent)
 {
 	auto model = new DatabaseSettingsModel(this);
 
-	setTemplateText(tr("template-settings-database"));
+	setTemplateText(tr("Lms.Admin.Database.template"));
 	addFunction("tr", &WTemplate::Functions::tr);
 	addFunction("id", &WTemplate::Functions::id);
 
@@ -249,13 +249,13 @@ DatabaseSettingsView::DatabaseSettingsView(Wt::WContainerWidget *parent)
 
 	// Buttons
 
-	Wt::WPushButton *saveBtn = new Wt::WPushButton(Wt::WString::tr("msg-btn-apply"));
+	Wt::WPushButton *saveBtn = new Wt::WPushButton(Wt::WString::tr("Lms.apply"));
 	bindWidget("apply-btn", saveBtn);
 
-	Wt::WPushButton *discardBtn = new Wt::WPushButton(Wt::WString::tr("msg-btn-discard"));
+	Wt::WPushButton *discardBtn = new Wt::WPushButton(Wt::WString::tr("Lms.discard"));
 	bindWidget("discard-btn", discardBtn);
 
-	Wt::WPushButton *immScanBtn = new Wt::WPushButton(Wt::WString::tr("msg-btn-immediate-scan"));
+	Wt::WPushButton *immScanBtn = new Wt::WPushButton(Wt::WString::tr("Lms.Admin.Database.immediate-scan"));
 	bindWidget("immediate-scan-btn", immScanBtn);
 
 	saveBtn->clicked().connect(std::bind([=] ()
@@ -267,7 +267,7 @@ DatabaseSettingsView::DatabaseSettingsView(Wt::WContainerWidget *parent)
 			model->saveData();
 
 			LmsApp->getMediaScanner().reschedule();
-			LmsApp->notify(Wt::WString::tr("msg-notify-settings-saved"));
+			LmsApp->notify(Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.
@@ -284,7 +284,7 @@ DatabaseSettingsView::DatabaseSettingsView(Wt::WContainerWidget *parent)
 	immScanBtn->clicked().connect(std::bind([=] ()
 	{
 		LmsApp->getMediaScanner().scheduleImmediateScan();
-		LmsApp->notify(Wt::WString::tr("msg-notify-scan-launched"));
+		LmsApp->notify(Wt::WString::tr("Lms.Admin.Database.scan-launched"));
 	}));
 
 	updateView(model);

@@ -31,7 +31,7 @@ namespace UserInterface {
 Home::Home(Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent)
 {
-	auto t = new Wt::WTemplate(Wt::WString::tr("template-home"), this);
+	auto t = new Wt::WTemplate(Wt::WString::tr("Lms.Home.template"), this);
 	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 }

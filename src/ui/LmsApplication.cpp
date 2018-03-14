@@ -31,13 +31,13 @@
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
-#include "Explore.hpp"
+#include "explore/Explore.hpp"
 #include "HomeView.hpp"
 #include "MediaPlayer.hpp"
 #include "PlayQueueView.hpp"
 
-#include "settings/DatabaseSettingsView.hpp"
-#include "settings/AdminWizardView.hpp"
+#include "admin/DatabaseSettingsView.hpp"
+#include "admin/AdminWizardView.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -81,16 +81,18 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
 
 	// Add a resource bundle
+	messageResourceBundle().use(appRoot() + "admin-database");
+	messageResourceBundle().use(appRoot() + "admin-wizard");
 	messageResourceBundle().use(appRoot() + "artist");
 	messageResourceBundle().use(appRoot() + "artists");
+	messageResourceBundle().use(appRoot() + "home");
+	messageResourceBundle().use(appRoot() + "explore");
 	messageResourceBundle().use(appRoot() + "login");
 	messageResourceBundle().use(appRoot() + "mediaplayer");
 	messageResourceBundle().use(appRoot() + "messages");
 	messageResourceBundle().use(appRoot() + "playqueue");
 	messageResourceBundle().use(appRoot() + "release");
 	messageResourceBundle().use(appRoot() + "releases");
-	messageResourceBundle().use(appRoot() + "settings-database");
-	messageResourceBundle().use(appRoot() + "settings-admin-wizard");
 	messageResourceBundle().use(appRoot() + "tracks");
 	messageResourceBundle().use(appRoot() + "templates");
 
@@ -183,7 +185,7 @@ enum IdxRoot
 	IdxHome		= 0,
 	IdxExplore,
 	IdxPlayQueue,
-	IdxSettingsDatabase,
+	IdxAdminDatabase,
 };
 
 static void
@@ -198,7 +200,7 @@ handlePathChange(Wt::WStackedWidget* stack)
 		{ "/release",		IdxExplore },
 		{ "/tracks",		IdxExplore },
 		{ "/playqueue",		IdxPlayQueue },
-		{ "/settings/database",	IdxSettingsDatabase },
+		{ "/admin/database",	IdxAdminDatabase },
 	};
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
@@ -231,9 +233,9 @@ LmsApplication::handleAuthEvent(void)
 	_imageResource = new ImageResource(_db, root());
 	_transcodeResource = new TranscodeResource(_db, root());
 
-	setConfirmCloseMessage(Wt::WString::tr("msg-quit-confirm"));
+	setConfirmCloseMessage(Wt::WString::tr("Lms.quit-confirm"));
 
-	auto main = new Wt::WTemplate(Wt::WString::tr("template-main"), root());
+	auto main = new Wt::WTemplate(Wt::WString::tr("Lms.template"), root());
 
 	// Navbar
 	auto navbar = new Wt::WNavigationBar();
@@ -244,42 +246,54 @@ LmsApplication::handleAuthEvent(void)
 
 	auto menu = new Wt::WMenu();
 	{
-		auto menuItem = menu->insertItem(0, Wt::WString::tr("msg-artists"));
+		auto menuItem = menu->insertItem(0, Wt::WString::tr("Lms.Explore.artists"));
 		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/artists"));
 		menuItem->setSelectable(false);
 	}
 	{
-		auto menuItem = menu->insertItem(1, Wt::WString::tr("msg-releases"));
+		auto menuItem = menu->insertItem(1, Wt::WString::tr("Lms.Explore.releases"));
 		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/releases"));
 		menuItem->setSelectable(false);
 	}
 	{
-		auto menuItem = menu->insertItem(2, Wt::WString::tr("msg-tracks"));
+		auto menuItem = menu->insertItem(2, Wt::WString::tr("Lms.Explore.tracks"));
 		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/tracks"));
 		menuItem->setSelectable(false);
 	}
 	{
-		auto menuItem = menu->insertItem(3, Wt::WString::tr("msg-playqueue"));
+		auto menuItem = menu->insertItem(3, Wt::WString::tr("Lms.playqueue"));
 		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/playqueue"));
 		menuItem->setSelectable(false);
 	}
 	navbar->addMenu(menu);
 
 	auto rightMenu = new Wt::WMenu();
+	std::size_t itemCounter = 0;
+
 	{
-		auto menuItem = rightMenu->insertItem(0, Wt::WString::tr("msg-settings"));
-		menuItem->setSelectable(false);
+		Wt::Dbo::Transaction transaction (DboSession());
 
-		Wt::WPopupMenu *settings = new Wt::WPopupMenu();
-		auto dbSettings = settings->insertItem(0, Wt::WString::tr("msg-settings-database"));
-		dbSettings->setLink(Wt::WLink(Wt::WLink::InternalPath, "/settings/database"));
-		dbSettings->setSelectable(false);
+		if (CurrentUser()->isAdmin())
+		{
+			auto menuItem = rightMenu->insertItem(itemCounter++, Wt::WString::tr("Lms.administration"));
+			menuItem->setSelectable(false);
 
-		menuItem->setMenu(settings);
+			Wt::WPopupMenu *admin = new Wt::WPopupMenu();
+			auto dbSettings = admin->insertItem(0, Wt::WString::tr("Lms.Admin.Database.database"));
+			dbSettings->setLink(Wt::WLink(Wt::WLink::InternalPath, "/admin/database"));
+			dbSettings->setSelectable(false);
+
+			menuItem->setMenu(admin);
+		}
 	}
 
 	{
-		auto menuItem = rightMenu->insertItem(1, Wt::WString::tr("msg-logout"));
+		auto menuItem = rightMenu->insertItem(itemCounter++, Wt::WString::tr("Lms.settings"));
+		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/settings"));
+		menuItem->setSelectable(false);
+	}
+	{
+		auto menuItem = rightMenu->insertItem(itemCounter++, Wt::WString::tr("Lms.logout"));
 		menuItem->setSelectable(true);
 		menuItem->triggered().connect(std::bind([=]
 		{
@@ -326,7 +340,7 @@ LmsApplication::handleAuthEvent(void)
 	{
 		Wt::WServer::instance()->post(sessionId, [=]
 		{
-			notify(Wt::WString::tr("msg-notify-scan-complete")
+			notify(Wt::WString::tr("Lms.Admin.Database.scan-complete")
 					.arg(stats.nbFiles())
 					.arg(stats.additions)
 					.arg(stats.deletions)

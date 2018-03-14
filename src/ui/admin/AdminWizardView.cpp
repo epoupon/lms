@@ -121,7 +121,7 @@ AdminWizardView::AdminWizardView(Wt::WContainerWidget *parent)
 {
 	auto model = new AdminWizardModel(this);
 
-	setTemplateText(Wt::WString::tr("template-settings-admin-wizard"));
+	setTemplateText(Wt::WString::tr("Lms.AdminWizard.template"));
 	addFunction("tr", &WTemplate::Functions::tr);
 	addFunction("id", &WTemplate::Functions::id);
 
@@ -139,7 +139,7 @@ AdminWizardView::AdminWizardView(Wt::WContainerWidget *parent)
 	setFormWidget(AdminWizardModel::PasswordConfirmField, passwordConfirmEdit);
 	passwordConfirmEdit->setEchoMode(Wt::WLineEdit::Password);
 
-	auto saveButton = new Wt::WPushButton(Wt::WString::tr("msg-create"));
+	auto saveButton = new Wt::WPushButton(Wt::WString::tr("Lms.create"));
 	bindWidget("create-btn", saveButton);
 	saveButton->clicked().connect(std::bind([=]
 	{
@@ -148,7 +148,7 @@ AdminWizardView::AdminWizardView(Wt::WContainerWidget *parent)
 		if (model->validate())
 		{
 			model->saveData();
-			LmsApp->notify(Wt::WString::tr("msg-settings-first-connection-done"));
+			LmsApp->notify(Wt::WString::tr("Lms.AdminWizard.done"));
 			saveButton->setEnabled(false);
 		}
 

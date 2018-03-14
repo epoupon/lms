@@ -73,7 +73,7 @@ handlePathChange(Wt::WStackedWidget* stack)
 Explore::Explore(Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent)
 {
-	auto container = new Wt::WTemplate(Wt::WString::tr("template-explore"), this);
+	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.template"), this);
 
 	_filters = new Filters();
 	container->bindWidget("filters", _filters);

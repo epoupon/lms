@@ -1,11 +1,10 @@
 
 <?xml version="1.0" encoding="UTF-8" ?>
 <messages xmlns:if="Wt.WTemplate.conditions">
-<!--FORMS message blocks-->
 
-<message id="template-releases">
+<message id="Lms.Explore.Releases.template">
 	<div class="page-header">
-		<h2>${tr:msg-releases}</h2>
+		<h2>${tr:Lms.Explore.releases}</h2>
 	</div>
 	<div class="form-group">
 		<div class="input-group">
@@ -17,15 +16,15 @@
 	${show-more}
 </message>
 
-<message id="btn-releases-play-btn">
+<message id="Lms.Explore.Releases.play">
 	<i class="fa fa-play"></i>
 </message>
 
-<message id="btn-releases-add-btn">
+<message id="Lms.Explore.Releases.add">
 	<i class="fa fa-plus"></i>
 </message>
 
-<message id="template-releases-entry">
+<message id="Lms.Explore.Releases.template.entry">
 	<div class="media list-group-item">
 		<div class="pull-left media-middle">
 			${cover class="media-object"}

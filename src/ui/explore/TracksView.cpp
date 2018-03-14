@@ -39,15 +39,15 @@ Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent),
 	_filters(filters)
 {
-	auto container = new Wt::WTemplate(Wt::WString::tr("template-tracks"), this);
+	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Tracks.template"), this);
 	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_search = new Wt::WLineEdit();
 	container->bindWidget("search", _search);
-	_search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
+	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
 	_search->textInput().connect(this, &Tracks::refresh);
 
-	auto playBtn = new Wt::WText(Wt::WString::tr("btn-tracks-play-btn"), Wt::XHTMLText);
+	auto playBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Tracks.play"), Wt::XHTMLText);
 	container->bindWidget("play-btn", playBtn);
 	playBtn->clicked().connect(std::bind([=]
 	{
@@ -55,7 +55,7 @@ Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
 		tracksPlay.emit(getTracks());
 	}));
 
-	auto addBtn = new Wt::WText(Wt::WString::tr("btn-tracks-add-btn"), Wt::XHTMLText);
+	auto addBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Tracks.add"), Wt::XHTMLText);
 	container->bindWidget("add-btn", addBtn);
 	addBtn->clicked().connect(std::bind([=]
 	{
@@ -66,7 +66,7 @@ Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
 	_tracksContainer = new Wt::WContainerWidget();
 	container->bindWidget("tracks", _tracksContainer);
 
-	_showMore = new Wt::WTemplate(Wt::WString::tr("template-show-more"));
+	_showMore = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.template.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
 	container->bindWidget("show-more", _showMore);
 
@@ -116,7 +116,7 @@ Tracks::addSome()
 	for (auto track : tracks)
 	{
 		auto trackId = track.id();
-		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-tracks-entry"), _tracksContainer);
+		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Tracks.template.entry"), _tracksContainer);
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
 
@@ -146,14 +146,14 @@ Tracks::addSome()
 		cover->setWidth(64);
 		entry->bindWidget("cover", cover);
 
-		auto playBtn = new Wt::WText(Wt::WString::tr("btn-tracks-play-btn"), Wt::XHTMLText);
+		auto playBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Tracks.play"), Wt::XHTMLText);
 		entry->bindWidget("play-btn", playBtn);
 		playBtn->clicked().connect(std::bind([=]
 		{
 			trackPlay.emit(trackId);
 		}));
 
-		auto addBtn = new Wt::WText(Wt::WString::tr("btn-tracks-add-btn"), Wt::XHTMLText);
+		auto addBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Tracks.add"), Wt::XHTMLText);
 		entry->bindWidget("add-btn", addBtn);
 		addBtn->clicked().connect(std::bind([=]
 		{

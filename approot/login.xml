@@ -2,15 +2,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <messages xmlns:if="Wt.WTemplate.conditions">
 
-<message id="template-login">
+<message id="Lms.Auth.template">
 	<div class="container">
 	<div class="page-header">
-		<h2>${tr:msg-login-welcome}</h2>
+		<h2>${tr:Lms.Auth.welcome}</h2>
 	</div>
 	<div class="form-horizontal">
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:user-name}">
-				${tr:msg-login}
+				${tr:Lms.login}
 			</label>
 			<div class="col-sm-5">
 				${user-name}
@@ -22,7 +22,7 @@
 
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:password}">
-				${tr:msg-password}
+				${tr:Lms.password}
 			</label>
 			<div class="col-sm-5">
 				${password}
@@ -34,7 +34,7 @@
 
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:remember-me}">
-				${tr:msg-remember-me}
+				${tr:Lms.Auth.remember-me}
 			</label>
 			<div class="col-sm-5">
 				${remember-me}

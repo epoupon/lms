@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Explore.template">
+	${filters}
+	${contents}
+</message>
+
+<message id="Lms.Explore.template.show-more">
+	${tr:Lms.Explore.show-more}
+</message>
+
+<message id="Lms.Explore.template.filters">
+	<div class="form-group">
+		${add-filter}${filters}
+	</div>
+</message>
+
+<message id="Lms.Explore.template.add-filter">
+	<div class="form-horizontal">
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:type}">
+				${tr:Lms.Explore.type}
+			</label>
+			<div class="col-sm-10">
+				${type}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:value}">
+				${tr:Lms.Explore.value}
+			</label>
+			<div class="col-sm-10">
+				${value}
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				${add-btn class="btn-primary"} ${cancel-btn}
+			</div>
+		</div>
+	</div>
+</message>
+
+</messages>

@@ -21,26 +21,26 @@ lms_SOURCES = \
 	$(srcdir)/metadata/AvFormat.cpp				\
 	$(srcdir)/metadata/TagLibParser.cpp			\
 	$(srcdir)/scanner/MediaScanner.cpp			\
-	$(srcdir)/ui/ArtistView.cpp				\
-	$(srcdir)/ui/ArtistsView.cpp				\
-	$(srcdir)/ui/Explore.cpp				\
-	$(srcdir)/ui/Filters.cpp				\
+	$(srcdir)/ui/explore/ArtistView.cpp			\
+	$(srcdir)/ui/explore/ArtistsView.cpp			\
+	$(srcdir)/ui/explore/Explore.cpp			\
+	$(srcdir)/ui/explore/Filters.cpp			\
+	$(srcdir)/ui/explore/ReleasesView.cpp			\
+	$(srcdir)/ui/explore/ReleaseView.cpp			\
+	$(srcdir)/ui/explore/TracksView.cpp			\
+	$(srcdir)/ui/Auth.cpp					\
 	$(srcdir)/ui/HomeView.cpp				\
 	$(srcdir)/ui/LmsApplication.cpp				\
-	$(srcdir)/ui/Auth.cpp					\
 	$(srcdir)/ui/MediaPlayer.cpp				\
 	$(srcdir)/ui/PlayQueueView.cpp				\
-	$(srcdir)/ui/ReleasesView.cpp				\
-	$(srcdir)/ui/ReleaseView.cpp				\
-	$(srcdir)/ui/TracksView.cpp				\
-	$(srcdir)/ui/common/Validators.cpp			\
+	$(srcdir)/ui/admin/DatabaseSettingsView.cpp		\
+	$(srcdir)/ui/admin/AdminWizardView.cpp			\
 	$(srcdir)/ui/common/InputRange.cpp			\
 	$(srcdir)/ui/common/LineEdit.cpp			\
+	$(srcdir)/ui/common/Validators.cpp			\
 	$(srcdir)/ui/resource/AvConvTranscodeStreamResource.cpp	\
 	$(srcdir)/ui/resource/ImageResource.cpp			\
 	$(srcdir)/ui/resource/TranscodeResource.cpp		\
-	$(srcdir)/ui/settings/DatabaseSettingsView.cpp		\
-	$(srcdir)/ui/settings/AdminWizardView.cpp		\
 	$(srcdir)/utils/Config.cpp				\
 	$(srcdir)/utils/Logger.cpp				\
 	$(srcdir)/utils/Path.cpp				\

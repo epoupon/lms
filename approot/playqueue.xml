@@ -16,7 +16,7 @@
 
 <message id="template-playqueue">
 	<div class="page-header">
-		<h2>${tr:msg-playqueue}</h2>
+		<h2>${tr:Lms.playqueue}</h2>
 		 ${save-btn} ${load-btn} ${clear-btn}
 	</div>
 	${entries}

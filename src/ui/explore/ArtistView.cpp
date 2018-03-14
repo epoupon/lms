@@ -71,7 +71,7 @@ Artist::refresh()
 		return;
 	}
 
-	auto t = new Wt::WTemplate(Wt::WString::tr("template-artist"), this);
+	auto t = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artist.template"), this);
 	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	auto clusterContainers = new Wt::WContainerWidget();
@@ -82,7 +82,7 @@ Artist::refresh()
 
 		for (auto cluster : clusters)
 		{
-			auto entry = new Wt::WTemplate(Wt::WString::tr("template-artist-cluster-entry"), clusterContainers);
+			auto entry = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artist.template.cluster-entry"), clusterContainers);
 
 			entry->bindString("name", Wt::WString::fromUTF8(cluster->getName()), Wt::PlainText);
 		}
@@ -90,7 +90,7 @@ Artist::refresh()
 
 	t->bindString("name", Wt::WString::fromUTF8(artist->getName()), Wt::PlainText);
 	{
-		auto playBtn = new Wt::WText(Wt::WString::tr("btn-artist-play-btn"), Wt::XHTMLText);
+		auto playBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Artist.play"), Wt::XHTMLText);
 		t->bindWidget("play-btn", playBtn);
 
 		playBtn->clicked().connect(std::bind([=]
@@ -100,7 +100,7 @@ Artist::refresh()
 	}
 
 	{
-		auto addBtn = new Wt::WText(Wt::WString::tr("btn-artist-add-btn"), Wt::XHTMLText);
+		auto addBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Artist.add"), Wt::XHTMLText);
 		t->bindWidget("add-btn", addBtn);
 
 		addBtn->clicked().connect(std::bind([=]
@@ -117,7 +117,7 @@ Artist::refresh()
 	{
 		auto releaseId = release.id();
 
-		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-artist-entry"), releasesContainer);
+		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artist.template.entry"), releasesContainer);
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
 
 		{
@@ -153,14 +153,14 @@ Artist::refresh()
 			}
 		}
 
-		auto playBtn = new Wt::WText(Wt::WString::tr("btn-artist-play-btn"), Wt::XHTMLText);
+		auto playBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Artist.play"), Wt::XHTMLText);
 		entry->bindWidget("play-btn", playBtn);
 		playBtn->clicked().connect(std::bind([=]
 		{
 			releasePlay.emit(releaseId);
 		}));
 
-		auto addBtn = new Wt::WText(Wt::WString::tr("btn-artist-add-btn"), Wt::XHTMLText);
+		auto addBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Artist.add"), Wt::XHTMLText);
 		entry->bindWidget("add-btn", addBtn);
 		addBtn->clicked().connect(std::bind([=]
 		{

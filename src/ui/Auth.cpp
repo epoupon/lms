@@ -38,7 +38,7 @@ Auth::Auth(Wt::WContainerWidget *parent)
 
 	_model->addPasswordAuth(&Database::Handler::getPasswordService());
 
-	setTemplateText(Wt::WString::tr("template-login"));
+	setTemplateText(Wt::WString::tr("Lms.Auth.template"));
 	addFunction("tr", &WTemplate::Functions::tr);
 	addFunction("id", &WTemplate::Functions::id);
 
@@ -55,7 +55,7 @@ Auth::Auth(Wt::WContainerWidget *parent)
 	auto rememberMe = new Wt::WCheckBox();
 	setFormWidget(Wt::Auth::AuthModel::RememberMeField, rememberMe);
 
-	auto loginBtn = new Wt::WPushButton(Wt::WString::tr("msg-login"));
+	auto loginBtn = new Wt::WPushButton(Wt::WString::tr("Lms.login"));
 	bindWidget("login-btn", loginBtn);
 	loginBtn->clicked().connect(std::bind([=]
 	{

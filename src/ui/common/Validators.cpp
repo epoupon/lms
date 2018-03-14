@@ -60,7 +60,7 @@ DirectoryValidator::validate(const Wt::WString& input) const
 	else if (res)
 		return Wt::WValidator::Result(Wt::WValidator::Valid);
 	else
-		return Wt::WValidator::Result(Wt::WValidator::Invalid, Wt::WString::tr("msg-error-not-a-directory"));
+		return Wt::WValidator::Result(Wt::WValidator::Invalid, Wt::WString::tr("Lms.not-a-directory"));
 }
 
 

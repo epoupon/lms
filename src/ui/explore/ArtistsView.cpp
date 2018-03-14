@@ -39,18 +39,18 @@ Artists::Artists(Filters* filters, Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent),
   _filters(filters)
 {
-	auto container = new Wt::WTemplate(Wt::WString::tr("template-artists"), this);
+	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artists.template"), this);
 	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_search = new Wt::WLineEdit();
 	container->bindWidget("search", _search);
-	_search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
+	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
 	_search->textInput().connect(this, &Artists::refresh);
 
 	_artistsContainer = new Wt::WContainerWidget();
 	container->bindWidget("artists", _artistsContainer);
 
-	_showMore = new Wt::WTemplate(Wt::WString::tr("template-show-more"));
+	_showMore = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.template.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
 	container->bindWidget("show-more", _showMore);
 
@@ -88,7 +88,7 @@ Artists::addSome()
 
 	for (auto artist : artists)
 	{
-		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-artists-entry"), _artistsContainer);
+		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artists.template.entry"), _artistsContainer);
 
 		entry->bindInt("nb-release", artist->getReleases(clusterIds).size());
 

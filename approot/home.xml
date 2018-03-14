@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <messages xmlns:if="Wt.WTemplate.conditions">
 
-<message id="Lms.template">
-	${navbar-top class="main-nav"}
-	${contents class="container"}
-	${player}
+<message id="Lms.Home.template">
+	${tr:Lms.Home.welcome}
 </message>
 
 </messages>
+

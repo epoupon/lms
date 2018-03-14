@@ -2,15 +2,15 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="btn-artist-play-btn">
+<message id="Lms.Explore.Artist.play">
 	<i class="fa fa-play"></i>
 </message>
 
-<message id="btn-artist-add-btn">
+<message id="Lms.Explore.Artist.add">
 	<i class="fa fa-plus"></i>
 </message>
 
-<message id="template-artist">
+<message id="Lms.Explore.Artist.template">
 	<div class="page-header">
 		<h2>${name}</h2>
 		${clusters}
@@ -19,11 +19,11 @@
 	${releases class="list-group"}
 </message>
 
-<message id="template-artist-cluster-entry">
+<message id="Lms.Explore.Artist.template.cluster-entry">
 	<span class="badge">${name}</span>
 </message>
 
-<message id="template-artist-entry">
+<message id="Lms.Explore.Artist.template.entry">
 	<div class="media list-group-item">
 		<div class="pull-left media-middle">
 			${cover class="media-object"}
@@ -31,7 +31,7 @@
 		<div class="media-body">
 			<h4 class="media-heading">${name}</h4>
 		</div>
-		${<if-has-various-artists>}${tr:msg-various-artists}${</if-has-various-artists>}
+		${<if-has-various-artists>}${tr:Lms.Explore.various-artists}${</if-has-various-artists>}
 		<h4>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</h4>
 		${play-btn}${add-btn}
 	</div>

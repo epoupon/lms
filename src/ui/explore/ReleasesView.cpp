@@ -40,18 +40,18 @@ Releases::Releases(Filters* filters, Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent),
 	_filters(filters)
 {
-	auto container = new Wt::WTemplate(Wt::WString::tr("template-releases"), this);
+	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Releases.template"), this);
 	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_search = new Wt::WLineEdit();
 	container->bindWidget("search", _search);
-	_search->setPlaceholderText(Wt::WString::tr("msg-search-placeholder"));
+	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
 	_search->textInput().connect(this, &Releases::refresh);
 
 	_releasesContainer = new Wt::WContainerWidget();
 	container->bindWidget("releases", _releasesContainer);
 
-	_showMore = new Wt::WTemplate(Wt::WString::tr("template-show-more"));
+	_showMore = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
 	container->bindWidget("show-more", _showMore);
 
@@ -88,7 +88,7 @@ Releases::addSome()
 	{
 		auto releaseId = release.id();
 
-		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-releases-entry"), _releasesContainer);
+		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Releases.template.entry"), _releasesContainer);
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
 
 		Wt::WAnchor* coverAnchor = LmsApplication::createReleaseAnchor(releaseId);
@@ -109,7 +109,7 @@ Releases::addSome()
 		auto artists = release->getArtists();
 		if (artists.size() > 1)
 		{
-			entry->bindString("artist-name", Wt::WString::tr("msg-various-artists"));
+			entry->bindString("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
 		}
 		else
 		{
@@ -119,22 +119,20 @@ Releases::addSome()
 			entry->bindWidget("artist-name", artistAnchor);
 		}
 
-		auto playBtn = new Wt::WText(Wt::WString::tr("btn-releases-play-btn"), Wt::XHTMLText);
+		auto playBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Releases.play"), Wt::XHTMLText);
 		entry->bindWidget("play-btn", playBtn);
 		playBtn->clicked().connect(std::bind([=]
 		{
 			releasePlay.emit(releaseId);
 		}));
 
-		auto addBtn = new Wt::WText(Wt::WString::tr("btn-releases-add-btn"), Wt::XHTMLText);
+		auto addBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Releases.add"), Wt::XHTMLText);
 		entry->bindWidget("add-btn", addBtn);
 		addBtn->clicked().connect(std::bind([=]
 		{
 			releaseAdd.emit(releaseId);
 		}));
 	}
-
-	std::cerr << "if-show-more = " << moreResults << "\n";
 
 	_showMore->setHidden(!moreResults);
 }

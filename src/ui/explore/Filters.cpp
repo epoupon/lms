@@ -31,9 +31,9 @@ namespace UserInterface {
 void
 Filters::showDialog()
 {
-	auto dialog = new Wt::WDialog("Go to cell");
+	auto dialog = new Wt::WDialog(Wt::WString::tr("Lms.Explore.add-filter"));
 
-	auto container = new Wt::WTemplate(Wt::WString::tr("template-filter-add"));
+	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.template.add-filter"));
 	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	dialog->contents()->addWidget(container);
@@ -44,12 +44,12 @@ Filters::showDialog()
 	auto valueCombo = new Wt::WComboBox();
 	container->bindWidget("value", valueCombo);
 
-	auto addBtn = new Wt::WPushButton(Wt::WString::tr("msg-add"));
-	container->bindWidget("add", addBtn);
+	auto addBtn = new Wt::WPushButton(Wt::WString::tr("Lms.add"));
+	container->bindWidget("add-btn", addBtn);
 	addBtn->clicked().connect(dialog, &Wt::WDialog::accept);
 
-	auto cancelBtn = new Wt::WPushButton(Wt::WString::tr("msg-cancel"));
-	container->bindWidget("cancel", cancelBtn);
+	auto cancelBtn = new Wt::WPushButton(Wt::WString::tr("Lms.cancel"));
+	container->bindWidget("cancel-btn", cancelBtn);
 	cancelBtn->clicked().connect(dialog, &Wt::WDialog::reject);
 
 	// Populate data
@@ -140,10 +140,10 @@ Filters::showDialog()
 Filters::Filters(Wt::WContainerWidget *parent)
 : Wt::WContainerWidget(parent)
 {
-	auto container = new Wt::WTemplate(Wt::WString::tr("template-filters"), this);
+	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.template.filters"), this);
 
 	// Filters
-	Wt::WPushButton *addFilterBtn = new Wt::WPushButton(Wt::WText::tr("msg-filter-add"));
+	Wt::WPushButton *addFilterBtn = new Wt::WPushButton(Wt::WText::tr("Lms.Explore.add-filter"));
 	container->bindWidget("add-filter", addFilterBtn);
 
 	_filters = new Wt::WContainerWidget();

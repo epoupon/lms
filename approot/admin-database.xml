@@ -3,13 +3,13 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="template-settings-database">
-	<legend>${tr:msg-settings-database}</legend>
+<message id="Lms.Admin.Database.template">
+	<legend>${tr:Lms.Admin.Database.database}</legend>
 	<div class="form-horizontal">
 
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:media-directory}">
-				${tr:msg-settings-media-directory}
+				${tr:Lms.Admin.Database.path}
 			</label>
 			<div class="col-sm-5">
 				${media-directory}
@@ -21,7 +21,7 @@
 
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:update-period}">
-				${tr:msg-settings-update-period}
+				${tr:Lms.Admin.Database.update-period}
 			</label>
 			<div class="col-sm-5">
 				${update-period}
@@ -33,7 +33,7 @@
 
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:update-start-time}">
-				${tr:msg-settings-update-start-time}
+				${tr:Lms.Admin.Database.update-start-time}
 			</label>
 			<div class="col-sm-5">
 				${update-start-time}

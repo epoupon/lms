@@ -1,54 +1,62 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <messages xmlns:if="Wt.WTemplate.conditions">
-<!--FORMS message blocks-->
+
+<!--Common-->
+<message id="Lms.add">Add</message>
+<message id="Lms.apply">Apply</message>
+<message id="Lms.discard">Discard</message>
+<message id="Lms.administration">Administration</message>
+<message id="Lms.cancel">Cancel</message>
+<message id="Lms.create">Create</message>
+<message id="Lms.login">Login</message>
+<message id="Lms.logout">Logout</message>
+<message id="Lms.not-a-directory">Not a directory</message>
+<message id="Lms.password">Password</message>
+<message id="Lms.password-confirm">Confirm password</message>
+<message id="Lms.playqueue">Play Queue</message>
+<message id="Lms.quit-confirm">Are you sure?</message>
+<message id="Lms.settings">Settings</message>
+
+<!--Administration-->
+<message id="Lms.Admin.Database.daily">Daily</message>
+<message id="Lms.Admin.Database.database">Database</message>
+<message id="Lms.Admin.Database.immediate-scan">Scan now!</message>
+<message id="Lms.Admin.Database.monthly">Monthly</message>
+<message id="Lms.Admin.Database.never">Never</message>
+<message id="Lms.Admin.Database.path">Media root directory</message>
+<message id="Lms.Admin.Database.scan-complete">Scan complete: {1} total files, {2} additions, {3} deletions, {4} duplicates, {5} errors</message>
+<message id="Lms.Admin.Database.scan-launched">Scan launched!</message>
+<message id="Lms.Admin.Database.settings-saved">New settings saved!</message>
+<message id="Lms.Admin.Database.update-period">Update period</message>
+<message id="Lms.Admin.Database.update-start-time">Update start time</message>
+<message id="Lms.Admin.Database.weekly">Weekly</message>
 
 
-<message id="msg-home-welcome"><h2>Welcome!</h2></message>
+<!--Admin Wizard-->
+<message id="Lms.AdminWizard.done">Administration account created. Please refresh to continue!</message>
+<message id="Lms.AdminWizard.header">Create administrator account</message>
 
-<message id="msg-various-artists">Various artists</message>
-<message id="msg-artists">Artists</message>
-<message id="msg-releases">Albums</message>
-<message id="msg-tracks">Tracks</message>
-<message id="msg-playqueue">Play Queue</message>
-<message id="msg-filter-add">Add filter</message>
-<message id="msg-search-placeholder">Search...</message>
+<!--Auth-->
+<message id="Lms.Auth.remember-me">Remember me</message>
+<message id="Lms.Auth.welcome">Welcome!</message>
 
-<message id="msg-add">Add</message>
-<message id="msg-cancel">Cancel</message>
+<!--Home-->
+<message id="Lms.Home.welcome"><h2>Welcome!</h2></message>
 
-<message id="msg-filter-type">Type</message>
-<message id="msg-filter-value">Value</message>
+<!--Explore-->
+<message id="Lms.Explore.add-filter">Add filter</message>
+<message id="Lms.Explore.artists">Artists</message>
+<message id="Lms.Explore.releases">Albums</message>
+<message id="Lms.Explore.search-placeholder">Search...</message>
+<message id="Lms.Explore.show-more">Show more</message>
+<message id="Lms.Explore.tracks">Tracks</message>
+<message id="Lms.Explore.type">Type</message>
+<message id="Lms.Explore.value">Value</message>
+<message id="Lms.Explore.various-artists">Various artists</message>
 
-<message id="msg-show-more">Show more</message>
 
-<message id="msg-login">Login</message>
-<message id="msg-password">Password</message>
-<message id="msg-password-confirm">Verify password</message>
-<message id="msg-create">Create</message>
 
-<message id="msg-remember-me">Remember me</message>
-<message id="msg-login-welcome">Welcome!</message>
-<message id="msg-logout">Logout</message>
+<!--Settings-->
 
-<message id="msg-settings-admin-account">Administrator account</message>
-<message id="msg-settings-first-connection-done">Account created. Please refresh to continue!</message>
-
-<message id="msg-settings">Settings</message>
-<message id="msg-settings-database">Database</message>
-<message id="msg-settings-media-directory">Media root directory</message>
-<message id="msg-settings-update-period">Update period</message>
-<message id="msg-settings-update-start-time">Update start time</message>
-<message id="msg-settings-update-start-time">Update start time</message>
-<message id="msg-update-period-never">Never</message>
-<message id="msg-update-period-daily">Daily</message>
-<message id="msg-update-period-weekly">Weekly</message>
-<message id="msg-update-period-monthly">Monthly</message>
-<message id="msg-error-not-a-directory">Not a directory</message>
-<message id="msg-btn-apply">Apply</message>
-<message id="msg-btn-discard">Discard</message>
-<message id="msg-btn-immediate-scan">Scan now!</message>
-<message id="msg-notify-scan-launched">Scan launched!</message>
-<message id="msg-notify-settings-saved">New settings saved!</message>
-<message id="msg-notify-scan-complete">Scan complete: {1} total files, {2} additions, {3} deletions, {4} duplicates, {5} errors</message>
 
 </messages>

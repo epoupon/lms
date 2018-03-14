@@ -3,9 +3,9 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="template-tracks">
+<message id="Lms.Explore.Tracks.template">
 	<div class="page-header">
-		<h2>${tr:msg-tracks}</h2>
+		<h2>${tr:Lms.Explore.tracks}</h2>
 		${play-btn}${add-btn}
 	</div>
 	<div class="form-group">
@@ -18,15 +18,15 @@
 	${show-more}
 </message>
 
-<message id="btn-tracks-play-btn">
+<message id="Lms.Explore.Tracks.play">
 	<i class="fa fa-play"></i>
 </message>
 
-<message id="btn-tracks-add-btn">
+<message id="Lms.Explore.Tracks.add">
 	<i class="fa fa-plus"></i>
 </message>
 
-<message id="template-tracks-entry">
+<message id="Lms.Explore.Tracks.template.entry">
 	<div class="media list-group-item">
 		<div class="pull-left media-middle">
 			${cover class="media-object"}
