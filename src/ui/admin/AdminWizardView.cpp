@@ -97,7 +97,7 @@ class AdminWizardModel : public Wt::WFormModel
 				if (validation(PasswordField).state() == Wt::WValidator::Valid)
 				{
 					if (valueText(PasswordField) != valueText(PasswordConfirmField))
-						error = Wt::WString::tr("Wt.Auth.passwords-dont-match");
+						error = Wt::WString::tr("Lms.passwords-dont-match");
 				}
 			}
 			else

@@ -52,7 +52,6 @@ class User
 
 		// list of audio parameters
 		static const std::vector<std::size_t> audioBitrates;
-		static const std::vector<AudioEncoding> audioEncodings;
 
 		User();
 

@@ -31,15 +31,6 @@ User::audioBitrates =
 	320000,
 };
 
-const std::vector<AudioEncoding>
-User::audioEncodings =
-{
-	AudioEncoding::AUTO,
-	AudioEncoding::MP3,
-	AudioEncoding::OGA,
-	AudioEncoding::WEBMA,
-};
-
 User::User()
 : _maxAudioBitrate(maxAudioBitrate),
 _isAdmin(false),

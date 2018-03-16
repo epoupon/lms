@@ -35,6 +35,7 @@
 #include "HomeView.hpp"
 #include "MediaPlayer.hpp"
 #include "PlayQueueView.hpp"
+#include "SettingsView.hpp"
 
 #include "admin/DatabaseSettingsView.hpp"
 #include "admin/AdminWizardView.hpp"
@@ -93,6 +94,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "playqueue");
 	messageResourceBundle().use(appRoot() + "release");
 	messageResourceBundle().use(appRoot() + "releases");
+	messageResourceBundle().use(appRoot() + "settings");
 	messageResourceBundle().use(appRoot() + "tracks");
 	messageResourceBundle().use(appRoot() + "templates");
 
@@ -185,6 +187,7 @@ enum IdxRoot
 	IdxHome		= 0,
 	IdxExplore,
 	IdxPlayQueue,
+	IdxSettings,
 	IdxAdminDatabase,
 };
 
@@ -200,6 +203,7 @@ handlePathChange(Wt::WStackedWidget* stack)
 		{ "/release",		IdxExplore },
 		{ "/tracks",		IdxExplore },
 		{ "/playqueue",		IdxPlayQueue },
+		{ "/settings",		IdxSettings },
 		{ "/admin/database",	IdxAdminDatabase },
 	};
 
@@ -288,7 +292,7 @@ LmsApplication::handleAuthEvent(void)
 	}
 
 	{
-		auto menuItem = rightMenu->insertItem(itemCounter++, Wt::WString::tr("Lms.settings"));
+		auto menuItem = rightMenu->insertItem(itemCounter++, Wt::WString::tr("Lms.Settings.settings"));
 		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/settings"));
 		menuItem->setSelectable(false);
 	}
@@ -315,6 +319,10 @@ LmsApplication::handleAuthEvent(void)
 	auto playqueue = new PlayQueue();
 	mainStack->addWidget(playqueue);
 
+	auto settings = new SettingsView();
+	mainStack->addWidget(settings);
+
+	// Admin stuff
 	auto databaseSettings = new DatabaseSettingsView();
 	mainStack->addWidget(databaseSettings);
 

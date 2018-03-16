@@ -20,7 +20,6 @@
 #include <Wt/WString>
 #include <Wt/WPushButton>
 #include <Wt/WComboBox>
-#include <Wt/WMessageBox>
 #include <Wt/WLineEdit>
 
 #include <Wt/WFormModel>
@@ -177,7 +176,8 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 	private:
 
-		void initializeModels() {
+		void initializeModels()
+		{
 
 			_updatePeriodModel = new Wt::WStringListModel(this);
 
