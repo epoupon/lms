@@ -55,6 +55,7 @@
 
 <!--Playque-->
 <message id="Lms.PlayQueue.playqueue">Play Queue</message>
+<message id="Lms.PlayQueue.nb-tracks">{1} tracks</message>
 
 <!--Settings-->
 <message id="Lms.Settings.account">Account</message>

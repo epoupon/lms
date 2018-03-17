@@ -21,6 +21,7 @@
 
 #include <Wt/WContainerWidget>
 #include <Wt/WTemplate>
+#include <Wt/WText>
 
 #include "database/Types.hpp"
 
@@ -35,11 +36,12 @@ class PlayQueue : public Wt::WContainerWidget
 		void playTracks(const std::vector<Database::Track::pointer>& tracks);
 
 	private:
-		void refresh();
 		void addSome();
+		void updateInfo();
 
 		Wt::WContainerWidget* _entriesContainer;
 		Wt::WTemplate* _showMore;
+		Wt::WText* _nbTracks;
 };
 
 } // namespace UserInterface

@@ -17,7 +17,8 @@
 <message id="Lms.PlayQueue.template">
 	<div class="page-header">
 		<h2>${tr:Lms.PlayQueue.playqueue}</h2>
-		 ${save-btn} ${load-btn} ${clear-btn}
+		<small>${nb-tracks}</small>
+		${save-btn} ${load-btn} ${clear-btn}
 	</div>
 	${entries}
 	${show-more}

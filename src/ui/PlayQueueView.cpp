@@ -44,6 +44,19 @@ PlayQueue::PlayQueue(Wt::WContainerWidget* parent)
 
 	auto clearBtn = new Wt::WText(Wt::WString::tr("Lms.PlayQueue.clear"), Wt::XHTMLText);
 	container->bindWidget("clear-btn", clearBtn);
+	clearBtn->clicked().connect(std::bind([=]
+	{
+		{
+			Wt::Dbo::Transaction transaction(DboSession());
+
+			auto playlist = Database::Playlist::get(DboSession(), currentPlayQueueName, CurrentUser());
+			playlist.modify()->clear();
+			_showMore->setHidden(true);
+		}
+
+		_entriesContainer->clear();
+		updateInfo();
+	}));
 
 	_entriesContainer = new Wt::WContainerWidget();
 	container->bindWidget("entries", _entriesContainer);
@@ -52,6 +65,9 @@ PlayQueue::PlayQueue(Wt::WContainerWidget* parent)
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
 	_showMore->setHidden(true);
 	container->bindWidget("show-more", _showMore);
+
+	_nbTracks = new Wt::WText();
+	container->bindWidget("nb-tracks", _nbTracks);
 
 	{
 		Wt::Dbo::Transaction transaction (DboSession());
@@ -66,8 +82,17 @@ PlayQueue::PlayQueue(Wt::WContainerWidget* parent)
 		addSome();
 	}));
 
-	refresh();
+	updateInfo();
+	addSome();
+}
 
+void
+PlayQueue::updateInfo()
+{
+	Wt::Dbo::Transaction transaction(DboSession());
+
+	auto playlist = Database::Playlist::get(DboSession(), currentPlayQueueName, CurrentUser());
+	_nbTracks->setText(Wt::WString::tr("Lms.PlayQueue.nb-tracks").arg(playlist->getCount()));
 }
 
 void
@@ -83,6 +108,7 @@ PlayQueue::addTracks(const std::vector<Database::Track::pointer>& tracks)
 	for (auto track : tracks)
 		Database::PlaylistEntry::create(DboSession(), track, playlist);
 
+	updateInfo();
 	addSome();
 }
 
@@ -94,8 +120,7 @@ PlayQueue::playTracks(const std::vector<Database::Track::pointer>& tracks)
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	auto playqueue = Database::Playlist::get(DboSession(), currentPlayQueueName, CurrentUser());
-	if (playqueue)
-		playqueue.modify()->clear();
+	playqueue.modify()->clear();
 
 	_entriesContainer->clear();
 
@@ -104,13 +129,6 @@ PlayQueue::playTracks(const std::vector<Database::Track::pointer>& tracks)
 	// TODO Immediate play
 }
 
-
-void
-PlayQueue::refresh()
-{
-	_entriesContainer->clear();
-	addSome();
-}
 
 void
 PlayQueue::addSome()
@@ -166,6 +184,8 @@ PlayQueue::addSome()
 			}
 
 			_entriesContainer->removeWidget(entry);
+
+			updateInfo();
 		}));
 	}
 
