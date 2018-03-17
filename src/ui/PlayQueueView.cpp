@@ -33,22 +33,22 @@ static const std::string currentPlayQueueName = "__current__playqueue__";
 PlayQueue::PlayQueue(Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent)
 {
-	auto container = new Wt::WTemplate(Wt::WString::tr("template-playqueue"), this);
+	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.PlayQueue.template"), this);
 	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	auto saveBtn = new Wt::WText(Wt::WString::tr("btn-playqueue-save-btn"), Wt::XHTMLText);
+	auto saveBtn = new Wt::WText(Wt::WString::tr("Lms.PlayQueue.save-to-playlist"), Wt::XHTMLText);
 	container->bindWidget("save-btn", saveBtn);
 
-	auto loadBtn = new Wt::WText(Wt::WString::tr("btn-playqueue-load-btn"), Wt::XHTMLText);
+	auto loadBtn = new Wt::WText(Wt::WString::tr("Lms.PlayQueue.load-from-playlist"), Wt::XHTMLText);
 	container->bindWidget("load-btn", loadBtn);
 
-	auto clearBtn = new Wt::WText(Wt::WString::tr("btn-playqueue-clear-btn"), Wt::XHTMLText);
+	auto clearBtn = new Wt::WText(Wt::WString::tr("Lms.PlayQueue.clear"), Wt::XHTMLText);
 	container->bindWidget("clear-btn", clearBtn);
 
 	_entriesContainer = new Wt::WContainerWidget();
 	container->bindWidget("entries", _entriesContainer);
 
-	_showMore = new Wt::WTemplate(Wt::WString::tr("template-show-more"));
+	_showMore = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
 	_showMore->setHidden(true);
 	container->bindWidget("show-more", _showMore);
@@ -123,16 +123,15 @@ PlayQueue::addSome()
 	auto tracks = playlist->getTracks(_entriesContainer->count(), 50, moreResults);
 	for (auto track : tracks)
 	{
-		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("template-playqueue-entry"), _entriesContainer);
+		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("Lms.PlayQueue.template.entry"), _entriesContainer);
 
-		entry->bindString("pos", std::to_string(_entriesContainer->count()));
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
 
 		auto artist = track->getArtist();
 		if (artist)
 		{
 			entry->setCondition("if-has-artist", true);
-			Wt::WAnchor *artistAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(track->getArtist().id())));
+			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(track->getArtist().id());
 			Wt::WText *artistText = new Wt::WText(artistAnchor);
 			artistText->setText(Wt::WString::fromUTF8(artist->getName(), Wt::PlainText));
 			entry->bindWidget("artist-name", artistAnchor);
@@ -141,17 +140,17 @@ PlayQueue::addSome()
 		if (release)
 		{
 			entry->setCondition("if-has-release", true);
-			Wt::WAnchor *releaseAnchor = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(track->getRelease().id())));
+			Wt::WAnchor *releaseAnchor = LmsApplication::createReleaseAnchor(track->getRelease().id());
 			Wt::WText *releaseText = new Wt::WText(releaseAnchor);
 			releaseText->setText(Wt::WString::fromUTF8(release->getName(), Wt::PlainText));
 			entry->bindWidget("release-name", releaseAnchor);
 		}
 
-		auto playBtn = new Wt::WText(Wt::WString::tr("btn-playqueue-entry-play-btn"), Wt::XHTMLText);
+		auto playBtn = new Wt::WText(Wt::WString::tr("Lms.PlayQueue.play"), Wt::XHTMLText);
 		entry->bindWidget("play-btn", playBtn);
 		// TODO
 
-		auto addBtn = new Wt::WText(Wt::WString::tr("btn-playqueue-entry-del-btn"), Wt::XHTMLText);
+		auto addBtn = new Wt::WText(Wt::WString::tr("Lms.PlayQueue.delete"), Wt::XHTMLText);
 		entry->bindWidget("del-btn", addBtn);
 		// TODO
 	}

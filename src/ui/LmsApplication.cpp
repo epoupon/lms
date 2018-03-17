@@ -265,7 +265,7 @@ LmsApplication::handleAuthEvent(void)
 		menuItem->setSelectable(false);
 	}
 	{
-		auto menuItem = menu->insertItem(3, Wt::WString::tr("Lms.playqueue"));
+		auto menuItem = menu->insertItem(3, Wt::WString::tr("Lms.PlayQueue.playqueue"));
 		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/playqueue"));
 		menuItem->setSelectable(false);
 	}
