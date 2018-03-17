@@ -42,9 +42,13 @@ Playlist::create(Wt::Dbo::Session& session, std::string name, bool isPublic, Wt:
 }
 
 PlaylistEntry::PlaylistEntry()
-: _pos(0)
 {
+}
 
+PlaylistEntry::pointer
+PlaylistEntry::getById(Wt::Dbo::Session& session, PlaylistEntry::id_type id)
+{
+	return session.find<PlaylistEntry>().where("id = ?").bind(id);
 }
 
 Playlist::pointer
@@ -61,36 +65,35 @@ Playlist::getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user)
 	return std::vector<Playlist::pointer>(res.begin(), res.end());
 }
 
-PlaylistEntry::PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist, int pos)
-: _pos(pos),
- _track(track),
+PlaylistEntry::PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist)
+: _track(track),
  _playlist(playlist)
 {
 
 }
 
 PlaylistEntry::pointer
-PlaylistEntry::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist, int pos)
+PlaylistEntry::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist)
 {
-	return session.add( new PlaylistEntry( track, playlist, pos) );
+	return session.add( new PlaylistEntry( track, playlist) );
 }
 
 
-std::vector<Wt::Dbo::ptr<Track>>
-Playlist::getTracks(int offset, int size, bool& moreResults) const
+std::vector<Wt::Dbo::ptr<PlaylistEntry>>
+Playlist::getEntries(int offset, int size, bool& moreResults) const
 {
 	assert(session());
 
 	moreResults = false;
 
-	Wt::Dbo::collection<Wt::Dbo::ptr<PlaylistEntry>> entries
-		= session()->find<PlaylistEntry>()
+	Wt::Dbo::collection<Wt::Dbo::ptr<PlaylistEntry>> entries =
+		session()->find<PlaylistEntry>()
 		.where("playlist_id = ?").bind(self().id())
-		.orderBy("pos")
+		.orderBy("id")
 		.limit(size != -1 ? size + 1 : -1)
 		.offset(offset);
 
-	std::vector<Wt::Dbo::ptr<Track>> res;
+	std::vector<Wt::Dbo::ptr<PlaylistEntry>> res;
 
 	for (auto entry : entries)
 	{
@@ -100,7 +103,7 @@ Playlist::getTracks(int offset, int size, bool& moreResults) const
 			break;
 		}
 
-		res.push_back(entry->getTrack());
+		res.push_back(entry);
 	}
 
 	return res;

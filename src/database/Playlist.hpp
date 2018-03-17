@@ -33,7 +33,7 @@ class Track;
 class Playlist : public Wt::Dbo::Dbo<Playlist>
 {
 	public:
-		typedef Wt::Dbo::ptr<Playlist> pointer;
+		using pointer = Wt::Dbo::ptr<Playlist>;
 
 		Playlist();
 		Playlist(std::string name, bool isPublic, Wt::Dbo::ptr<User> user);
@@ -54,7 +54,7 @@ class Playlist : public Wt::Dbo::Dbo<Playlist>
 
 		// Get tracks, ordered by position
 		std::size_t getCount() const;
-		std::vector<Wt::Dbo::ptr<Track>> getTracks(int offset, int size, bool& moreResults) const;
+		std::vector<Wt::Dbo::ptr<PlaylistEntry>> getEntries(int offset, int size, bool& moreResults) const;
 
 		template<class Action>
 		void persist(Action& a)
@@ -78,28 +78,29 @@ class PlaylistEntry
 {
 	public:
 
-		typedef Wt::Dbo::ptr<PlaylistEntry> pointer;
+		using pointer = Wt::Dbo::ptr<PlaylistEntry>;
+		using id_type = Wt::Dbo::dbo_traits<PlaylistEntry>::IdType;
 
 		PlaylistEntry();
-		PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist, int position);
+		PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist);
+
+		static pointer getById(Wt::Dbo::Session& session, id_type id);
 
 		// Create utility
-		static pointer	create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist, int position);
+		static pointer	create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist);
 
-		// Accesors
+		// Accessors
 		Wt::Dbo::ptr<Track>	getTrack() const { return _track; }
 
 		template<class Action>
 		void persist(Action& a)
 		{
-			Wt::Dbo::field(a,	_pos,	"pos");
 			Wt::Dbo::belongsTo(a,	_track, "track", Wt::Dbo::OnDeleteCascade);
 			Wt::Dbo::belongsTo(a,	_playlist, "playlist", Wt::Dbo::OnDeleteCascade);
 		}
 
 	private:
 
-		int			_pos;
 		Wt::Dbo::ptr<Track>	_track;
 		Wt::Dbo::ptr<Playlist>	_playlist;
 };
