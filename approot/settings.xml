@@ -11,7 +11,10 @@
 				${tr:Lms.Settings.bitrate}
 			</label>
 			<div class="col-sm-5">
-				${bitrate}
+				<div class="input-group">
+					${bitrate}
+					<span class="input-group-addon">kbps</span>
+				</div>
 			</div>
 			<div class="help-block col-sm-5">
 				${bitrate-info}
