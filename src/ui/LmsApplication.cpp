@@ -341,24 +341,24 @@ LmsApplication::handleAuthEvent(void)
 	main->bindWidget("player", player);
 
 	// Events from MediaScanner
-	// TODO: only if admin
-	enableUpdates(true);
-	std::string sessionId = this->sessionId();
-	_scanner.scanComplete().connect(std::bind([=] (Scanner::MediaScanner::Stats stats)
+	if (CurrentUser()->isAdmin())
 	{
-		Wt::WServer::instance()->post(sessionId, [=]
+		enableUpdates(true);
+		std::string sessionId = this->sessionId();
+		_scanner.scanComplete().connect(std::bind([=] (Scanner::MediaScanner::Stats stats)
 		{
-			notify(Wt::WString::tr("Lms.Admin.Database.scan-complete")
+			Wt::WServer::instance()->post(sessionId, [=]
+			{
+				notify(Wt::WString::tr("Lms.Admin.Database.scan-complete")
 					.arg(stats.nbFiles())
 					.arg(stats.additions)
 					.arg(stats.deletions)
 					.arg(stats.nbDuplicates())
 					.arg(stats.nbErrors()));
-			triggerUpdate();
-		});
-//		notify("TEST");
-	}, std::placeholders::_1));
-
+				triggerUpdate();
+			});
+		}, std::placeholders::_1));
+	}
 
 	internalPathChanged().connect(std::bind([=]
 	{
