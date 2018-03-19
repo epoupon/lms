@@ -20,8 +20,11 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
+#include <Wt/WSignal>
 #include <Wt/WTemplate>
 #include <Wt/WText>
+
+#include <boost/optional.hpp>
 
 #include "database/Types.hpp"
 
@@ -35,13 +38,27 @@ class PlayQueue : public Wt::WContainerWidget
 		void addTracks(const std::vector<Database::Track::pointer>& tracks);
 		void playTracks(const std::vector<Database::Track::pointer>& tracks);
 
+		// play the next track in the queue
+		void playNext();
+
+		// play the previous track in the queue
+		void playPrevious();
+
+		// Signal emitted when a track is to be played
+		Wt::Signal<Database::Track::id_type> playTrack;
+
 	private:
 		void addSome();
 		void updateInfo();
+		void updateCurrentTrack(bool selected);
+
+		void play(std::size_t pos);
+		void stop();
 
 		Wt::WContainerWidget* _entriesContainer;
 		Wt::WTemplate* _showMore;
 		Wt::WText* _nbTracks;
+		boost::optional<std::size_t> _trackPos;	// current track position, if set
 };
 
 } // namespace UserInterface

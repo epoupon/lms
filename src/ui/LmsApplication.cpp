@@ -340,6 +340,23 @@ LmsApplication::handleAuthEvent(void)
 	auto player = new MediaPlayer();
 	main->bindWidget("player", player);
 
+	// Events from MediaPlayer
+	player->playNext.connect(std::bind([=]
+	{
+		playqueue->playNext();
+	}));
+	player->playPrevious.connect(std::bind([=]
+	{
+		playqueue->playPrevious();
+	}));
+	player->playbackEnded.connect(std::bind([=]
+	{
+		playqueue->playNext();
+	}));
+
+	// Events from the PlayQueue
+	playqueue->playTrack.connect(player, &MediaPlayer::playTrack);
+
 	// Events from MediaScanner
 	if (CurrentUser()->isAdmin())
 	{

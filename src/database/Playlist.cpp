@@ -109,6 +109,19 @@ Playlist::getEntries(int offset, int size, bool& moreResults) const
 	return res;
 }
 
+Wt::Dbo::ptr<PlaylistEntry>
+Playlist::getEntry(std::size_t pos) const
+{
+	Wt::Dbo::ptr<PlaylistEntry> res;
+
+	bool moreResults;
+	auto entries = getEntries(pos, 1, moreResults);
+	if (!entries.empty())
+		res = entries.front();
+
+	return res;
+}
+
 std::size_t
 Playlist::getCount() const
 {

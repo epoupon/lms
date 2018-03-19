@@ -75,6 +75,8 @@ PlayQueue::PlayQueue(Wt::WContainerWidget* parent)
 		auto playlist = Database::Playlist::get(DboSession(), currentPlayQueueName, CurrentUser());
 		if (!playlist)
 			playlist = Database::Playlist::create(DboSession(), currentPlayQueueName, false, CurrentUser());
+
+		_trackPos = CurrentUser()->getCurPlayingTrackPos();
 	}
 
 	_showMore->clicked().connect(std::bind([=]
@@ -87,12 +89,85 @@ PlayQueue::PlayQueue(Wt::WContainerWidget* parent)
 }
 
 void
+PlayQueue::stop()
+{
+	updateCurrentTrack(false);
+	_trackPos.reset();
+}
+
+void
+PlayQueue::play(std::size_t pos)
+{
+	updateCurrentTrack(false);
+
+	Database::Track::id_type trackId;
+	{
+		Wt::Dbo::Transaction transaction(DboSession());
+
+		auto playlist = Database::Playlist::get(DboSession(), currentPlayQueueName, CurrentUser());
+
+		// If out of range, stop playing
+		if (pos >= playlist->getCount())
+		{
+			stop();
+			return;
+		}
+
+		_trackPos = pos;
+		trackId = playlist->getEntry(*_trackPos)->getTrack().id();
+		updateCurrentTrack(true);
+	}
+
+	playTrack.emit(trackId);
+}
+
+void
+PlayQueue::playPrevious()
+{
+	if (!_trackPos)
+		return;
+
+	if (*_trackPos == 0)
+		stop();
+	else
+		play(*_trackPos - 1);
+}
+
+void
+PlayQueue::playNext()
+{
+	if (!_trackPos)
+	{
+		play(0);
+		return;
+	}
+
+	play(*_trackPos + 1);
+}
+
+void
 PlayQueue::updateInfo()
 {
 	Wt::Dbo::Transaction transaction(DboSession());
 
 	auto playlist = Database::Playlist::get(DboSession(), currentPlayQueueName, CurrentUser());
 	_nbTracks->setText(Wt::WString::tr("Lms.PlayQueue.nb-tracks").arg(playlist->getCount()));
+}
+
+void
+PlayQueue::updateCurrentTrack(bool selected)
+{
+	if (!_trackPos || *_trackPos >= static_cast<std::size_t>(_entriesContainer->count()))
+		return;
+
+	auto track = _entriesContainer->widget(*_trackPos);
+	if (track)
+	{
+		if (selected)
+			track->addStyleClass("Lms-playqueue-selected");
+		else
+			track->removeStyleClass("Lms-playqueue-selected");
+	}
 }
 
 void
@@ -169,7 +244,12 @@ PlayQueue::addSome()
 
 		auto playBtn = new Wt::WText(Wt::WString::tr("Lms.PlayQueue.play"), Wt::XHTMLText);
 		entry->bindWidget("play-btn", playBtn);
-		// TODO
+		playBtn->clicked().connect(std::bind([=]
+		{
+			auto pos = _entriesContainer->indexOf(entry);
+			if (pos >= 0)
+				play(pos);
+		}));
 
 		auto delBtn = new Wt::WText(Wt::WString::tr("Lms.PlayQueue.delete"), Wt::XHTMLText);
 		entry->bindWidget("del-btn", delBtn);
@@ -181,6 +261,13 @@ PlayQueue::addSome()
 
 				auto entryToRemove = Database::PlaylistEntry::getById(DboSession(), playlistEntryId);
 				entryToRemove.remove();
+			}
+
+			if (_trackPos)
+			{
+				auto pos = _entriesContainer->indexOf(entry);
+				if (pos > 0 && *_trackPos >= static_cast<std::size_t>(pos))
+					(*_trackPos)--;
 			}
 
 			_entriesContainer->removeWidget(entry);

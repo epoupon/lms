@@ -54,6 +54,7 @@ class Playlist : public Wt::Dbo::Dbo<Playlist>
 
 		// Get tracks, ordered by position
 		std::size_t getCount() const;
+		Wt::Dbo::ptr<PlaylistEntry> getEntry(std::size_t pos) const;
 		std::vector<Wt::Dbo::ptr<PlaylistEntry>> getEntries(int offset, int size, bool& moreResults) const;
 
 		template<class Action>

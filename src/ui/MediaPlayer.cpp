@@ -21,6 +21,8 @@
 #include <Wt/WTemplate>
 #include <Wt/WText>
 
+#include "utils/Logger.hpp"
+
 #include "MediaPlayer.hpp"
 
 namespace UserInterface {
@@ -35,9 +37,17 @@ MediaPlayer::MediaPlayer(Wt::WContainerWidget* parent)
 
 	auto prevBtn = new Wt::WText(Wt::WString::tr("btn-mediaplayer-prev"), Wt::XHTMLText);
 	player->bindWidget("previous", prevBtn);
+	prevBtn->clicked().connect(std::bind([=]
+	{
+		playPrevious.emit();
+	}));
 
 	auto nextBtn = new Wt::WText(Wt::WString::tr("btn-mediaplayer-next"), Wt::XHTMLText);
 	player->bindWidget("next", nextBtn);
+	nextBtn->clicked().connect(std::bind([=]
+	{
+		playNext.emit();
+	}));
 
 	auto shuffleBtn = new Wt::WText(Wt::WString::tr("btn-mediaplayer-shuffle"), Wt::XHTMLText);
 	player->bindWidget("shuffle", shuffleBtn);
@@ -53,7 +63,12 @@ MediaPlayer::MediaPlayer(Wt::WContainerWidget* parent)
 
 	auto trackName = new Wt::WText("---");
 	player->bindWidget("track-name", trackName);
+}
 
+void
+MediaPlayer::playTrack(Database::Track::id_type id)
+{
+	LMS_LOG(UI, DEBUG) << "Playing track ID = " << id;
 }
 
 } // namespace UserInterface
