@@ -201,7 +201,7 @@ PlayQueue::playTracks(const std::vector<Database::Track::pointer>& tracks)
 
 	addTracks(tracks);
 
-	// TODO Immediate play
+	play(0);
 }
 
 
