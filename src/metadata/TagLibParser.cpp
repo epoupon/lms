@@ -59,7 +59,7 @@ TagLibParser::parse(const boost::filesystem::path& p)
 
 		items.insert( std::make_pair(MetaData::Type::Duration, duration) );
 
-		MetaData::AudioStream audioStream = { .desc = "", .bitRate = static_cast<std::size_t>(properties->bitrate() * 1000) };
+		MetaData::AudioStream audioStream = { .bitRate = static_cast<std::size_t>(properties->bitrate() * 1000) };
 		items.insert( std::make_pair(MetaData::Type::AudioStreams, std::vector<MetaData::AudioStream>(1, audioStream ) ));
 	}
 

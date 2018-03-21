@@ -89,21 +89,23 @@ MediaPlayer::playTrack(Database::Track::id_type trackId)
 	transaction.commit();
 
 	// Analyse track, select the best media stream
-	Av::MediaFile mediaFile(track->getPath());
-
-	if (!mediaFile.open() || !mediaFile.scan())
+	try
 	{
-		LMS_LOG(UI, ERROR) << "Cannot open file '" << track->getPath();
-		return;
+		Av::MediaFile mediaFile(track->getPath());
+
+		auto streamId = mediaFile.getBestStream();
+
+		_audio->pause();
+		_audio->clearSources();
+		_audio->addSource(LmsApp->getTranscodeResource()->getUrl(trackId, Av::Encoding::MP3, boost::posix_time::seconds(0), streamId));
+		_audio->setPreloadMode(Wt::WAudio::PreloadNone);
+		_audio->play();
 	}
-
-	auto streamId = mediaFile.getBestStreamId(Av::Stream::Type::Audio);
-
-	_audio->pause();
-	_audio->clearSources();
-	_audio->addSource(LmsApp->getTranscodeResource()->getUrl(trackId, Av::Encoding::MP3, boost::posix_time::seconds(0), streamId));
-	_audio->setPreloadMode(Wt::WAudio::PreloadNone);
-	_audio->play();
+	catch (Av::MediaFileException& e)
+	{
+		LMS_LOG(UI, ERROR) << "MediaFileException: " << e.what();
+		stop();
+	}
 }
 
 void

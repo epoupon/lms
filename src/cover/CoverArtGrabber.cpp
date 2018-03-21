@@ -130,12 +130,18 @@ Grabber::getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t
 std::vector<Image::Image>
 Grabber::getFromTrack(const boost::filesystem::path& p, std::size_t nbMaxCovers) const
 {
-	Av::MediaFile input(p);
+	try
+	{
+		Av::MediaFile input(p);
 
-	if (input.open())
 		return getFromAvMediaFile(input, nbMaxCovers);
-	else
-		return std::vector<Image::Image>();
+	}
+	catch (Av::MediaFileException& e)
+	{
+		LMS_LOG(COVER, ERROR) << "Cannot get covers from track " << p << ": " << e.what();
+	}
+
+	return std::vector<Image::Image>();
 }
 
 std::vector<Image::Image>

@@ -19,8 +19,7 @@
 
 /* This file contains some classes in order to get info from file using the libavconv */
 
-#ifndef AV_INFO_HPP
-#define AV_INFO_HPP
+#pragma once
 
 extern "C"
 {
@@ -39,6 +38,8 @@ extern "C"
 #include <boost/filesystem/path.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp> //no i/o just types
 
+#include "utils/Exception.hpp"
+
 namespace Av
 {
 
@@ -50,25 +51,21 @@ struct Picture
 	std::vector<uint8_t> data;
 };
 
-struct Stream
+struct StreamInfo
 {
-	enum class Type
-	{
-		Audio,
-		Video,
-		Subtitle,
-	};
-
-	int		id;
-	Type		type;
+	size_t		id;
 	std::size_t     bitrate;
-	std::string	desc;		// Description of the stream
+};
+
+class MediaFileException : public LmsException
+{
+	public:
+		MediaFileException(int avError);
 };
 
 class MediaFile
 {
 	public:
-
 		MediaFile(const boost::filesystem::path& p);
 		~MediaFile();
 
@@ -76,16 +73,13 @@ class MediaFile
 		MediaFile(const MediaFile&) = delete;
 		MediaFile& operator=(const MediaFile&) = delete;
 
-		boost::filesystem::path			getPath() const {return _p;};
-
-		bool open(void);
-		bool scan(void);
+		const boost::filesystem::path&		getPath() const {return _p;};
 
 		boost::posix_time::time_duration	getDuration() const;
 		std::map<std::string, std::string>	getMetaData(void);
 
-		std::vector<Stream>	getStreams(Stream::Type type) const;
-		boost::optional<std::size_t>	getBestStreamId(Stream::Type type) const; // none if failure/unknown
+		std::vector<StreamInfo>	getStreamInfo() const;
+		boost::optional<std::size_t>	getBestStream() const; // none if failure/unknown
 		bool			hasAttachedPictures(void) const;
 		std::vector<Picture>	getAttachedPictures(std::size_t nbMaxPictures) const;
 
@@ -96,8 +90,5 @@ class MediaFile
 		AVFormatContext* _context;
 };
 
-
 } // namespace Av
-
-#endif
 

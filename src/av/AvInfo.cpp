@@ -25,18 +25,6 @@
 
 namespace Av {
 
-static std::string streamType_to_string(Stream::Type type)
-{
-	switch (type)
-	{
-		case Stream::Type::Audio: return "audio";
-		case Stream::Type::Video: return "video";
-		case Stream::Type::Subtitle: return "subtitle";
-	}
-
-	return "unknown";
-}
-
 static std::string averror_to_string(int error)
 {
 	std::array<char, 128> buf = {0};
@@ -47,6 +35,10 @@ static std::string averror_to_string(int error)
 		return "Unknown error";
 }
 
+MediaFileException::MediaFileException(int avError)
+: LmsException("MediaFileException: " + averror_to_string(avError))
+{
+}
 
 void AvInit()
 {
@@ -62,52 +54,30 @@ void AvInit()
 MediaFile::MediaFile(const boost::filesystem::path& p)
 : _p(p), _context(nullptr)
 {
+	int error = avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr);
+	if (error < 0)
+	{
+		LMS_LOG(AV, ERROR) << "Cannot open " << _p << ": " << averror_to_string(error);
+		throw MediaFileException(error);
+	}
+
+	error = avformat_find_stream_info(_context, nullptr);
+	if (error < 0)
+	{
+		LMS_LOG(AV, ERROR) << "Cannot find stream information on " << _p << ": " << averror_to_string(error);
+		avformat_close_input(&_context);
+		throw MediaFileException(error);
+	}
 }
 
 MediaFile::~MediaFile()
 {
-	if (_context != nullptr)
-		avformat_close_input(&_context);
-}
-
-bool
-MediaFile::open(void)
-{
-	if (_context != nullptr)
-		throw std::logic_error("inputfile '" + _p.string() + "' already open");
-
-	int error = avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr);
-	if (error < 0)
-	{
-		LMS_LOG(AV, ERROR) << "Cannot open '" << _p.string() << "': " << averror_to_string(error);
-		return false;
-	}
-
-	return true;
-}
-
-bool
-MediaFile::scan(void)
-{
-	if (_context == nullptr)
-		throw std::logic_error("inputfile '" + _p.string() + "' not open");
-
-	int error = avformat_find_stream_info(_context, nullptr);
-	if (error < 0)
-	{
-		LMS_LOG(AV, ERROR) << "Cannot find stream information on '" << _p.string() << "': " << averror_to_string(error);
-		return false;
-	}
-
-	return true;
+	avformat_close_input(&_context);
 }
 
 boost::posix_time::time_duration
 MediaFile::getDuration() const
 {
-	if (_context == nullptr)
-		throw std::logic_error("inputfile '" + _p.string() + "' not open");
-
 	if (static_cast<int>(_context->duration) != AV_NOPTS_VALUE )
 		return boost::posix_time::seconds(_context->duration / AV_TIME_BASE);
 	else
@@ -130,9 +100,6 @@ getMetaDataFromDictionnary(AVDictionary* dictionnary, std::map<std::string, std:
 std::map<std::string, std::string>
 MediaFile::getMetaData(void)
 {
-	if (_context == nullptr)
-		throw std::logic_error("inputfile '" + _p.string() + "' not open");
-
 	std::map<std::string, std::string> res;
 
 	getMetaDataFromDictionnary(_context->metadata, res);
@@ -153,13 +120,10 @@ MediaFile::getMetaData(void)
 	return res;
 }
 
-std::vector<Stream>
-MediaFile::getStreams(Stream::Type type) const
+std::vector<StreamInfo>
+MediaFile::getStreamInfo() const
 {
-	if (_context == nullptr)
-		throw std::logic_error("inputfile '" + _p.string() + "' not open");
-
-	std::vector<Stream> res;
+	std::vector<StreamInfo> res;
 
 	for (std::size_t i = 0; i < _context->nb_streams; ++i)
 	{
@@ -169,66 +133,33 @@ MediaFile::getStreams(Stream::Type type) const
 		if (avstream->disposition & AV_DISPOSITION_ATTACHED_PIC)
 			continue;
 
-		if (avstream->codec == nullptr)
+		if (!avstream->codecpar)
 		{
-			LMS_LOG(AV, ERROR) << "Skipping stream " << i << " since no codec is set";
+			LMS_LOG(AV, ERROR) << "Skipping stream " << i << " since no codecpar is set";
 			continue;
 		}
 
-		if (type == Stream::Type::Audio && avstream->codec->codec_type != AVMEDIA_TYPE_AUDIO)
-			continue;
-		else if (type == Stream::Type::Video && avstream->codec->codec_type != AVMEDIA_TYPE_VIDEO)
-			continue;
-		else if (type == Stream::Type::Subtitle && avstream->codec->codec_type != AVMEDIA_TYPE_SUBTITLE)
+		if (avstream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
 			continue;
 
-		Stream stream;
-
-		stream.id = i; // or use stream->id ?
-		stream.type = type;
-		stream.bitrate = avstream->codec->bit_rate;
-
-		{
-			std::array<char, 256> buf = {0};
-			avcodec_string(buf.data(), buf.size(), avstream->codec, 0);
-
-			stream.desc = buf.data();
-		}
-
-		res.push_back(stream);
+		res.push_back( {.id = i, .bitrate = static_cast<std::size_t>(avstream->codecpar->bit_rate)} );
 	}
 
 	return res;
 }
 
 boost::optional<std::size_t>
-MediaFile::getBestStreamId(Stream::Type type) const
+MediaFile::getBestStream() const
 {
-	if (_context == nullptr)
-		throw std::logic_error("inputfile '" + _p.string() + "' not open");
-
-	enum AVMediaType avMediaType;
-
-	switch (type)
-	{
-		case Stream::Type::Audio: avMediaType = AVMEDIA_TYPE_AUDIO; break;
-		case Stream::Type::Video: avMediaType = AVMEDIA_TYPE_VIDEO; break;
-		case Stream::Type::Subtitle: avMediaType = AVMEDIA_TYPE_SUBTITLE; break;
-		default:
-			return boost::none;
-	}
-
 	int res = av_find_best_stream(_context,
-		avMediaType,
+		AVMEDIA_TYPE_AUDIO,
 		-1,	// Auto
 		-1,	// Auto
 		NULL,
 		0);
+
 	if (res < 0)
-	{
-		LMS_LOG(AV, ERROR) << "Cannot find best stream for type " << streamType_to_string(type);
 		return boost::none;
-	}
 
 	return res;
 }
@@ -248,9 +179,6 @@ MediaFile::hasAttachedPictures(void) const
 std::vector<Picture>
 MediaFile::getAttachedPictures(std::size_t nbMaxPictures) const
 {
-	if (_context == nullptr)
-		throw std::logic_error("inputfile '" + _p.string() + "' not open");
-
 	static const std::map<int, std::string> codecMimeMap =
 	{
 		{ AV_CODEC_ID_BMP, "image/x-bmp" },
@@ -271,15 +199,15 @@ MediaFile::getAttachedPictures(std::size_t nbMaxPictures) const
 		if (!(avstream->disposition & AV_DISPOSITION_ATTACHED_PIC))
 			continue;
 
-		if (avstream->codec == nullptr)
+		if (avstream->codecpar == nullptr)
 		{
-			LMS_LOG(AV, ERROR) << "Skipping stream " << i << " since no codec is set";
+			LMS_LOG(AV, ERROR) << "Skipping stream " << i << " since no codecpar is set";
 			continue;
 		}
 
 		Picture picture;
 
-		auto itMime = codecMimeMap.find(avstream->codec->codec_id);
+		auto itMime = codecMimeMap.find(avstream->codecpar->codec_id);
 		if (itMime != codecMimeMap.end())
 		{
 			picture.mimeType = itMime->second;
@@ -287,7 +215,7 @@ MediaFile::getAttachedPictures(std::size_t nbMaxPictures) const
 		else
 		{
 			picture.mimeType = "application/octet-stream";
-			LMS_LOG(AV, ERROR) << "CODEC ID " << avstream->codec->codec_id << " not handled in mime type conversion";
+			LMS_LOG(AV, ERROR) << "CODEC ID " << avstream->codecpar->codec_id << " not handled in mime type conversion";
 		}
 
 		AVPacket pkt = avstream->attached_pic;

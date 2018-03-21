@@ -56,7 +56,7 @@ namespace MetaData
 	// Used by Streams
 	struct AudioStream
 	{
-		std::string desc;
+		// TODO codec?
 		std::size_t bitRate;
 	};
 
