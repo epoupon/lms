@@ -47,6 +47,9 @@ class PlayQueue : public Wt::WContainerWidget
 		// Signal emitted when a track is to be played
 		Wt::Signal<Database::Track::id_type> playTrack;
 
+		// Signal emitted when play has to be stopped
+		Wt::Signal<void> playbackStop;
+
 	private:
 		void addSome();
 		void updateInfo();

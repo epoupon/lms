@@ -35,6 +35,7 @@ extern "C"
 #include <cstdint>
 #include <map>
 
+#include <boost/optional.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp> //no i/o just types
 
@@ -84,7 +85,7 @@ class MediaFile
 		std::map<std::string, std::string>	getMetaData(void);
 
 		std::vector<Stream>	getStreams(Stream::Type type) const;
-		int			getBestStreamId(Stream::Type type) const; // -1 if failure/unknown
+		boost::optional<std::size_t>	getBestStreamId(Stream::Type type) const; // none if failure/unknown
 		bool			hasAttachedPictures(void) const;
 		std::vector<Picture>	getAttachedPictures(std::size_t nbMaxPictures) const;
 

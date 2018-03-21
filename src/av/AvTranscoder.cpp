@@ -39,11 +39,8 @@ static std::vector<EncodingInfo> encodingInfos =
 {
 	{Encoding::MP3,	"audio/mp3", 0},
 	{Encoding::OGA, "audio/ogg", 1},
-	{Encoding::OGV, "video/ogg", 2},
 	{Encoding::WEBMA, "audio/webm", 3},
-	{Encoding::WEBMV, "video/webm", 4},
 	{Encoding::M4A, "audio/mp4", 5},
-	{Encoding::M4V, "video/mp4", 6},
 };
 
 std::string encoding_to_mimetype(Encoding encoding)
@@ -139,10 +136,10 @@ Transcoder::start()
 	args.push_back("-nostdin");
 
 	// input Offset
-	if (_parameters.getOffset().total_seconds() > 0)
+	if (_parameters.offset.total_seconds() > 0)
 	{
 		args.push_back("-ss");
-		args.push_back(std::to_string(_parameters.getOffset().total_seconds()));
+		args.push_back(std::to_string(_parameters.offset.total_seconds()));
 	}
 
 	// Input file
@@ -151,20 +148,24 @@ Transcoder::start()
 
 	// Output bitrates
 	args.push_back("-b:a");
-	args.push_back(std::to_string(_parameters.getBitrate(Stream::Type::Audio)));
-//	if (_parameters.getOutputFormat().getType() == Format::Video)
-//		oss << " -b:v " << _parameters.getOutputBitrate(Stream::Video);
+	args.push_back(std::to_string(_parameters.bitrate));
 
-	// Stream mapping
-	for (int streamId : _parameters.getSelectedStreamIds())
+	// Stream mapping, if set
+	if (_parameters.stream)
 	{
-		// 0 means the first input file
 		args.push_back("-map");
-		args.push_back("0:" + std::to_string(streamId));
+		args.push_back("0:" + std::to_string(*_parameters.stream));
 	}
 
+	// Strip metadata
+	args.push_back("-map_metadata");
+	args.push_back("-1");
+
+	// Skip video flows (including covers)
+	args.push_back("-vn");
+
 	// Codecs and formats
-	switch( _parameters.getEncoding())
+	switch( _parameters.encoding)
 	{
 		case Encoding::MP3:
 			args.push_back("-f");
@@ -178,38 +179,9 @@ Transcoder::start()
 			args.push_back("ogg");
 			break;
 
-		case Encoding::OGV:
-			args.push_back("-acodec");
-			args.push_back("libvorbis");
-			args.push_back("-ac");
-			args.push_back("2");
-			args.push_back("-ar");
-			args.push_back("44100");
-			args.push_back("-vcodec");
-			args.push_back("libtheora");
-			args.push_back("-threads");
-			args.push_back("4");
-			args.push_back("-f");
-			args.push_back("ogg");
-			break;
 		case Encoding::WEBMA:
 			args.push_back("-codec:a");
 			args.push_back("libvorbis");
-			args.push_back("-f");
-			args.push_back("webm");
-			break;
-
-		case Encoding::WEBMV:
-			args.push_back("-acodec");
-			args.push_back("libvorbis");
-			args.push_back("-ac");
-			args.push_back("2");
-			args.push_back("-ar");
-			args.push_back("44100");
-			args.push_back("-vcodec");
-			args.push_back("libvpx");
-			args.push_back("-threads");
-			args.push_back("4");
 			args.push_back("-f");
 			args.push_back("webm");
 			break;
@@ -221,21 +193,6 @@ Transcoder::start()
 			args.push_back("mp4");
 			args.push_back("-strict");
 			args.push_back("experimental");
-			break;
-
-		case Encoding::M4V:
-			args.push_back("-acodec");
-			args.push_back("aac");
-			args.push_back("-strict");
-			args.push_back("experimental");
-			args.push_back("-ac");
-			args.push_back("2");
-			args.push_back("-ar");
-			args.push_back("-44100");
-			args.push_back("-vcodec");
-			args.push_back("libx264");
-			args.push_back("-f");
-			args.push_back("m4v");
 			break;
 
 		default:

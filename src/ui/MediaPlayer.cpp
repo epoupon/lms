@@ -21,15 +21,29 @@
 #include <Wt/WTemplate>
 #include <Wt/WText>
 
+#include "av/AvInfo.hpp"
 #include "utils/Logger.hpp"
 
+#include "resource/TranscodeResource.hpp"
+
+#include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
+
 
 namespace UserInterface {
 
 MediaPlayer::MediaPlayer(Wt::WContainerWidget* parent)
 : Wt::WContainerWidget(parent)
 {
+	_audio = new Wt::WAudio(this);
+	_audio->setOptions(Wt::WAudio::Autoplay);
+	_audio->setPreloadMode(Wt::WAudio::PreloadNone);
+
+	_audio->ended().connect(std::bind([=] ()
+	{
+		playbackEnded.emit();
+	}));
+
 	auto player = new Wt::WTemplate(Wt::WString::tr("template-mediaplayer"), this);
 
 	auto playPauseBtn = new Wt::WText(Wt::WString::tr("btn-mediaplayer-play"), Wt::XHTMLText);
@@ -66,9 +80,36 @@ MediaPlayer::MediaPlayer(Wt::WContainerWidget* parent)
 }
 
 void
-MediaPlayer::playTrack(Database::Track::id_type id)
+MediaPlayer::playTrack(Database::Track::id_type trackId)
 {
-	LMS_LOG(UI, DEBUG) << "Playing track ID = " << id;
+	LMS_LOG(UI, DEBUG) << "Playing track ID = " << trackId;
+
+	Wt::Dbo::Transaction transaction(DboSession());
+	auto track = Database::Track::getById(DboSession(), trackId);
+	transaction.commit();
+
+	// Analyse track, select the best media stream
+	Av::MediaFile mediaFile(track->getPath());
+
+	if (!mediaFile.open() || !mediaFile.scan())
+	{
+		LMS_LOG(UI, ERROR) << "Cannot open file '" << track->getPath();
+		return;
+	}
+
+	auto streamId = mediaFile.getBestStreamId(Av::Stream::Type::Audio);
+
+	_audio->pause();
+	_audio->clearSources();
+	_audio->addSource(LmsApp->getTranscodeResource()->getUrl(trackId, Av::Encoding::MP3, boost::posix_time::seconds(0), streamId));
+	_audio->setPreloadMode(Wt::WAudio::PreloadNone);
+	_audio->play();
+}
+
+void
+MediaPlayer::stop()
+{
+	_audio->pause();
 }
 
 } // namespace UserInterface

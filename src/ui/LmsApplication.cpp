@@ -40,6 +40,9 @@
 #include "admin/DatabaseSettingsView.hpp"
 #include "admin/AdminWizardView.hpp"
 
+#include "resource/ImageResource.hpp"
+#include "resource/TranscodeResource.hpp"
+
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
@@ -356,6 +359,7 @@ LmsApplication::handleAuthEvent(void)
 
 	// Events from the PlayQueue
 	playqueue->playTrack.connect(player, &MediaPlayer::playTrack);
+	playqueue->playbackStop.connect(player, &MediaPlayer::stop);
 
 	// Events from MediaScanner
 	if (CurrentUser()->isAdmin())

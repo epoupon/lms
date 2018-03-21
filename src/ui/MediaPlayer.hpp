@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/WSignal>
+#include <Wt/WAudio>
 #include <Wt/WContainerWidget>
 
 #include "database/Types.hpp"
@@ -31,6 +32,7 @@ class MediaPlayer : public Wt::WContainerWidget
 	public:
 		MediaPlayer(Wt::WContainerWidget* parent = 0);
 
+		void stop();
 		void playTrack(Database::Track::id_type);
 
 		// Signals
@@ -38,6 +40,8 @@ class MediaPlayer : public Wt::WContainerWidget
 		Wt::Signal<void>	playPrevious;
 		Wt::Signal<void>	playNext;
 
+	private:
+		Wt::WAudio* _audio;
 };
 
 } // namespace UserInterface

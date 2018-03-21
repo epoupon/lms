@@ -27,6 +27,8 @@
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
+#include "resource/ImageResource.hpp"
+
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
 #include "TracksView.hpp"

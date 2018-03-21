@@ -4,7 +4,7 @@
 <message id="Lms.template">
 	${navbar-top class="main-nav"}
 	${contents class="container"}
-	${player}
+	${player class="Lms-player"}
 </message>
 
 </messages>

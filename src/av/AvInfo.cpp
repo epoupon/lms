@@ -201,7 +201,7 @@ MediaFile::getStreams(Stream::Type type) const
 	return res;
 }
 
-int
+boost::optional<std::size_t>
 MediaFile::getBestStreamId(Stream::Type type) const
 {
 	if (_context == nullptr)
@@ -215,7 +215,7 @@ MediaFile::getBestStreamId(Stream::Type type) const
 		case Stream::Type::Video: avMediaType = AVMEDIA_TYPE_VIDEO; break;
 		case Stream::Type::Subtitle: avMediaType = AVMEDIA_TYPE_SUBTITLE; break;
 		default:
-			return -1;
+			return boost::none;
 	}
 
 	int res = av_find_best_stream(_context,
@@ -227,7 +227,7 @@ MediaFile::getBestStreamId(Stream::Type type) const
 	if (res < 0)
 	{
 		LMS_LOG(AV, ERROR) << "Cannot find best stream for type " << streamType_to_string(type);
-		return -1;
+		return boost::none;
 	}
 
 	return res;

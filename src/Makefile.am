@@ -39,7 +39,6 @@ lms_SOURCES = \
 	$(srcdir)/ui/explore/ReleasesView.cpp			\
 	$(srcdir)/ui/explore/ReleaseView.cpp			\
 	$(srcdir)/ui/explore/TracksView.cpp			\
-	$(srcdir)/ui/resource/AvConvTranscodeStreamResource.cpp	\
 	$(srcdir)/ui/resource/ImageResource.cpp			\
 	$(srcdir)/ui/resource/TranscodeResource.cpp		\
 	$(srcdir)/utils/Config.cpp				\

@@ -26,11 +26,12 @@
 #include "database/DatabaseHandler.hpp"
 #include "scanner/MediaScanner.hpp"
 
-#include "resource/ImageResource.hpp"
-#include "resource/TranscodeResource.hpp"
 #include "Auth.hpp"
 
 namespace UserInterface {
+
+class TranscodeResource;
+class ImageResource;
 
 class LmsApplication : public Wt::WApplication
 {

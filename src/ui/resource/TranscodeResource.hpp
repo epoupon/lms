@@ -21,6 +21,8 @@
 
 #include <mutex>
 
+#include <boost/optional.hpp>
+
 #include <Wt/WResource>
 
 #include "av/AvTranscoder.hpp"
@@ -35,7 +37,7 @@ class TranscodeResource : public Wt::WResource
 		TranscodeResource(Database::Handler& db, Wt::WObject *parent);
 		~TranscodeResource();
 
-		std::string getUrl(Database::Track::id_type trackId, Av::Encoding encoding = Av::Encoding::OGA, size_t offset_secs = 0, std::vector<size_t> streamIds = {}) const;
+		std::string getUrl(Database::Track::id_type trackId, Av::Encoding encoding, boost::posix_time::time_duration offset, boost::optional<size_t> stream = boost::none) const;
 
 		void handleRequest(const Wt::Http::Request& request,
 				Wt::Http::Response& response);
