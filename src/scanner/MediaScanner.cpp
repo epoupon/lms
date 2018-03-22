@@ -527,7 +527,6 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 
 		release = getRelease(file, releaseName, releaseMusicBrainzID);
 	}
-	assert(release);
 
 	// If file already exist, update data
 	// Otherwise, create it
@@ -780,14 +779,14 @@ MediaScanner::checkDuplicatedAudioFiles(Stats& stats)
 	std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(_db.getSession());
 	for (Track::pointer track : tracks)
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath() << " - " << track->getArtist()->getName() << " - " << track->getName();
+		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath() << " - " << track->getName();
 		stats.duplicateMBID++;
 	}
 
 	tracks = Database::Track::getChecksumDuplicates(_db.getSession());
 	for (Track::pointer track : tracks)
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Found duplicated checksum [" << bufferToString(track->getChecksum()) << "], file: " << track->getPath() << " - " << track->getArtist()->getName() << " - " << track->getName();
+		LMS_LOG(DBUPDATER, INFO) << "Found duplicated checksum [" << bufferToString(track->getChecksum()) << "], file: " << track->getPath() << " - " << track->getName();
 		stats.duplicateHashes++;
 	}
 
