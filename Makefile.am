@@ -8,13 +8,17 @@ lms_approotdir=$(pkgdatadir)/approot
 
 lms_cssdir=$(lms_docrootdir)/css
 lms_imagesdir=$(lms_docrootdir)/images
+lms_jsdir=$(lms_docrootdir)/js
 
 lms_css_DATA = \
-		 docroot/css/lms.css
+		docroot/css/lms.css
 
 lms_images_DATA = \
-		 docroot/images/unknown-cover.jpg	\
-		 docroot/images/unknown-artist.jpg
+		docroot/images/unknown-cover.jpg	\
+		docroot/images/unknown-artist.jpg
+
+lms_js_DATA = \
+	      	docroot/js/mediaplayer.js
 
 lms_approot_DATA = \
 		approot/admin-database.xml	\

@@ -237,6 +237,8 @@ LmsApplication::handleAuthEvent(void)
 
 	LMS_LOG(UI, INFO) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
 
+	require("/js/mediaplayer.js");
+
 	_imageResource = new ImageResource(_db, root());
 	_transcodeResource = new TranscodeResource(_db, root());
 
