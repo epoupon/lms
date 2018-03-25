@@ -14,7 +14,7 @@
 	${cover}
 	<div class="page-header">
 		<h2>${name}</h2>
-		<h4>${artist-name}</h4>
+		${<if-has-artist>}<h4>${artist-name}</h4>${</if-has-artist>}
 		<h4>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</h4>
 		${clusters}
 		${play-btn}${add-btn}

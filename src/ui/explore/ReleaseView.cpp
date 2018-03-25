@@ -97,10 +97,12 @@ Release::refresh()
 		auto artists = release->getArtists();
 		if (artists.size() > 1)
 		{
+			t->setCondition("if-has-artist", true);
 			t->bindString("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
 		}
-		else
+		else if (artists.size() == 1)
 		{
+			t->setCondition("if-has-artist", true);
 			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(artists.front().id());
 			Wt::WText *artist = new Wt::WText(artistAnchor);
 			artist->setText(Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText));
