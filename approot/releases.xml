@@ -31,7 +31,7 @@
 		</div>
 		<div class="media-body">
 			<h4 class="media-heading">${release-name}</h4>
-			${artist-name}
+			${<if-has-artist>}${artist-name}${</if-has-artist>}
 		</div>
 		${play-btn}${add-btn}
 	</div>
