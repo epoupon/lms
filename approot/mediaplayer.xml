@@ -2,37 +2,18 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="btn-mediaplayer-prev">
-	<i class="fa fa-step-backward"></i>
-</message>
-
-<message id="btn-mediaplayer-play">
-	<i class="fa fa-play"></i>
-</message>
-
-<message id="btn-mediaplayer-pause">
-	<i class="fa fa-pause"></i>
-</message>
-
-<message id="btn-mediaplayer-next">
-	<i class="fa fa-step-forward"></i>
-</message>
-
-<message id="btn-mediaplayer-shuffle">
-	<i class="fa fa-random"></i>
-</message>
-
-<message id="btn-mediaplayer-repeat">
-	<i class="fa fa-repeat"></i>
-</message>
-
 <message id="template-mediaplayer">
-	${previous} ${play-pause} ${next}
-	${cover}
-	${current-time} ${total-time} ${shuffle} ${repeat}
-	${<if-has-artist>}${artist-name}${</if-has-artist>}
-	${<if-has-release>}${release-name}${</if-has-release>}
-	${track-name}
+	<audio id="lms-mp-audio"></audio>
+	<div id="lms-mp-play"><i class="fa fa-play fa-2x"></i></div>
+	<div id="lms-mp-pause" style="display: none"><i class="fa fa-pause fa-2x"></i></div>
+	<div id="lms-mp-title">...</div>
+	<div id="lms-mp-artist"></div>
+	<div id="lms-mp-release"></div>
+	<div id="lms-mp-time">00:00</div>
+	<div id="lms-mp-duration">00:00</div>
+	<div id="lms-mp-cover"></div>
+	<div id="lms-mp-previous"><i class="fa fa-step-backward fa-2x"></i></div>
+	<div id="lms-mp-next"><i class="fa fa-step-forward fa-2x"></i></div>
 </message>
 
 </messages>

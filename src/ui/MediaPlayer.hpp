@@ -19,15 +19,14 @@
 
 #pragma once
 
-#include <Wt/WSignal>
-#include <Wt/WAudio>
-#include <Wt/WContainerWidget>
+#include <Wt/WJavaScript>
+#include <Wt/WTemplate>
 
 #include "database/Types.hpp"
 
 namespace UserInterface {
 
-class MediaPlayer : public Wt::WContainerWidget
+class MediaPlayer : public Wt::WTemplate
 {
 	public:
 		MediaPlayer(Wt::WContainerWidget* parent = 0);
@@ -36,12 +35,12 @@ class MediaPlayer : public Wt::WContainerWidget
 		void playTrack(Database::Track::id_type);
 
 		// Signals
-		Wt::Signal<void>	playbackEnded;
-		Wt::Signal<void>	playPrevious;
-		Wt::Signal<void>	playNext;
+		Wt::JSignal<void>	playbackEnded;
+		Wt::JSignal<void> 	playPrevious;
+		Wt::JSignal<void> 	playNext;
 
 	private:
-		Wt::WAudio* _audio;
+
 };
 
 } // namespace UserInterface

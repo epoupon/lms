@@ -41,11 +41,9 @@ TranscodeResource:: ~TranscodeResource()
 }
 
 std::string
-TranscodeResource::getUrl(Database::Track::id_type trackId, Av::Encoding encoding, boost::posix_time::time_duration offset, boost::optional<std::size_t> streamId) const
+TranscodeResource::getUrl(Database::Track::id_type trackId, Av::Encoding encoding, boost::posix_time::time_duration offset) const
 {
 	std::string res = url()+ "&trackid=" + std::to_string(trackId) + "&encoding=" + std::to_string(Av::encoding_to_int(encoding));
-	if (streamId)
-		res += "&stream=" + std::to_string(*streamId);
 	res += "&offset=" + std::to_string(offset.seconds());
 
 	return res;
