@@ -49,6 +49,10 @@ LMS.mediaplayer = function () {
 		_elems.release = document.getElementById("lms-mp-release");
 		_elems.duration = document.getElementById("lms-mp-duration");
 		_elems.time = document.getElementById("lms-mp-time");
+		// Hack cannot add a img element into the template
+		// since a /img is considered missing!
+		_elems.cover = document.createElement("img");
+		root.appendChild(_elems.cover);
 
 		_elems.play.addEventListener("click", function() {
 			_elems.audio.play();
@@ -89,6 +93,7 @@ LMS.mediaplayer = function () {
 		_elems.audio.src = params.resource;
 		_elems.duration.innerHTML = _durationToString(_duration, _duration > 3600);
 		_elems.time.innerHTML = _durationToString(0, _duration > 3600)
+		_elems.cover.src = params.imgResource;
 
 		if (autoplay)
 			_elems.audio.play();

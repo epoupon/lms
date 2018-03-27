@@ -21,6 +21,7 @@
 #include "av/AvInfo.hpp"
 #include "utils/Logger.hpp"
 
+#include "resource/ImageResource.hpp"
 #include "resource/TranscodeResource.hpp"
 
 #include "LmsApplication.hpp"
@@ -51,12 +52,12 @@ MediaPlayer::playTrack(Database::Track::id_type trackId)
 	Wt::Dbo::Transaction transaction(DboSession());
 	auto track = Database::Track::getById(DboSession(), trackId);
 
-	// Analyse track, select the best media stream
 	try
 	{
 		Av::MediaFile mediaFile(track->getPath());
 
 		auto resource = LmsApp->getTranscodeResource()->getUrl(trackId, Av::Encoding::MP3, boost::posix_time::seconds(0));
+		auto imgResource = LmsApp->getImageResource()->getTrackUrl(trackId, 64);
 
 		std::ostringstream oss;
 		oss
@@ -66,6 +67,7 @@ MediaPlayer::playTrack(Database::Track::id_type trackId)
 			<< " artist: " << (track->getArtist() ? "\"" + escape(track->getArtist()->getName()) + "\"" : "undefined" ) << ","
 			<< " resource: \"" << resource << "\","
 			<< " duration: " << track->getDuration().total_seconds() << ","
+			<< " imgResource: \"" << imgResource << "\","
 			<< "};";
 		oss << "LMS.mediaplayer.loadTrack(params, true)"; // true to autoplay
 
