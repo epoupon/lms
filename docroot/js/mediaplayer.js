@@ -49,10 +49,7 @@ LMS.mediaplayer = function () {
 		_elems.release = document.getElementById("lms-mp-release");
 		_elems.duration = document.getElementById("lms-mp-duration");
 		_elems.time = document.getElementById("lms-mp-time");
-		// Hack cannot add a img element into the template
-		// since a /img is considered missing!
-		_elems.cover = document.createElement("img");
-		root.appendChild(_elems.cover);
+		_elems.cover = document.getElementById("lms-mp-cover");
 
 		_elems.play.addEventListener("click", function() {
 			_elems.audio.play();
@@ -82,7 +79,7 @@ LMS.mediaplayer = function () {
 	}
 
 	var loadTrack = function(params, autoplay) {
-		console.log("Loading track '" + params.name + "', release = '" + params.release + "', artist = '" + params.artist + "', resource = '" + params.resource + "', imgResource = '" + params.imgResource);
+		console.log("Loading track '" + params.name + "', release = '" + params.release + "', artist = '" + params.artist + "', resource = '" + params.resource + "', imgResource = '" + params.imgResource + "'");
 
 		_offset = 0;
 		_duration = params.duration;

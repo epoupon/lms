@@ -11,9 +11,9 @@
 	<div id="lms-mp-release"></div>
 	<div id="lms-mp-time">00:00</div>
 	<div id="lms-mp-duration">00:00</div>
-	<div id="lms-mp-cover"></div>
 	<div id="lms-mp-previous"><i class="fa fa-step-backward fa-2x"></i></div>
 	<div id="lms-mp-next"><i class="fa fa-step-forward fa-2x"></i></div>
+	<img id="lms-mp-cover"/>
 </message>
 
 </messages>
