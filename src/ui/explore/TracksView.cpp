@@ -126,9 +126,7 @@ Tracks::addSome()
 		if (artist)
 		{
 			entry->setCondition("if-has-artist", true);
-			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(track->getArtist().id());
-			Wt::WText *artistText = new Wt::WText(artistAnchor);
-			artistText->setText(Wt::WString::fromUTF8(artist->getName(), Wt::PlainText));
+			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(track->getArtist());
 			entry->bindWidget("artist-name", artistAnchor);
 		}
 
@@ -136,9 +134,7 @@ Tracks::addSome()
 		if (release)
 		{
 			entry->setCondition("if-has-release", true);
-			Wt::WAnchor *releaseAnchor = LmsApplication::createReleaseAnchor(track->getRelease().id());
-			Wt::WText *releaseText = new Wt::WText(releaseAnchor);
-			releaseText->setText(Wt::WString::fromUTF8(release->getName(), Wt::PlainText));
+			Wt::WAnchor *releaseAnchor = LmsApplication::createReleaseAnchor(track->getRelease());
 			entry->bindWidget("release-name", releaseAnchor);
 		}
 

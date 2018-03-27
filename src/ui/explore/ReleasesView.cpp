@@ -93,7 +93,7 @@ Releases::addSome()
 		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Releases.template.entry"), _releasesContainer);
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
 
-		Wt::WAnchor* coverAnchor = LmsApplication::createReleaseAnchor(releaseId);
+		Wt::WAnchor* coverAnchor = LmsApplication::createReleaseAnchor(release, false);
 		Wt::WImage* cover = new Wt::WImage(coverAnchor);
 		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(releaseId, 128));
 		// Some images may not be square
@@ -101,9 +101,7 @@ Releases::addSome()
 		entry->bindWidget("cover", coverAnchor);
 
 		{
-			Wt::WAnchor* releaseAnchor = LmsApplication::createReleaseAnchor(releaseId);
-			Wt::WText* releaseName = new Wt::WText(releaseAnchor);
-			releaseName->setText(Wt::WString::fromUTF8(release->getName(), Wt::PlainText));
+			Wt::WAnchor* releaseAnchor = LmsApplication::createReleaseAnchor(release);
 			entry->bindWidget("release-name", releaseAnchor);
 		}
 
@@ -116,9 +114,7 @@ Releases::addSome()
 		else if (artists.size() == 1)
 		{
 			entry->setCondition("if-has-artist", true);
-			Wt::WAnchor* artistAnchor = LmsApplication::createArtistAnchor(artists.front().id());
-			Wt::WText* artist = new Wt::WText(artistAnchor);
-			artist->setText(Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText));
+			Wt::WAnchor* artistAnchor = LmsApplication::createArtistAnchor(artists.front());
 			entry->bindWidget("artist-name", artistAnchor);
 		}
 

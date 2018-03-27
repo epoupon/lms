@@ -103,9 +103,7 @@ Release::refresh()
 		else if (artists.size() == 1)
 		{
 			t->setCondition("if-has-artist", true);
-			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(artists.front().id());
-			Wt::WText *artist = new Wt::WText(artistAnchor);
-			artist->setText(Wt::WString::fromUTF8(artists.front()->getName(), Wt::PlainText));
+			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(artists.front());
 			t->bindWidget("artist-name", artistAnchor);
 		}
 	}
@@ -165,9 +163,7 @@ Release::refresh()
 		if (variousArtists && track->getArtist())
 		{
 			entry->setCondition("if-has-artist", true);
-			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(track->getArtist().id());
-			Wt::WText *artistText = new Wt::WText(artistAnchor);
-			artistText->setText(Wt::WString::fromUTF8(track->getArtist()->getName(), Wt::PlainText));
+			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(track->getArtist());
 			entry->bindWidget("artist-name", artistAnchor);
 		}
 

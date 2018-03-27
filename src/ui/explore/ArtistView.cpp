@@ -123,7 +123,7 @@ Artist::refresh()
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
 
 		{
-			Wt::WAnchor* coverAnchor = LmsApplication::createReleaseAnchor(releaseId);
+			Wt::WAnchor* coverAnchor = LmsApplication::createReleaseAnchor(release, false);
 			Wt::WImage* cover = new Wt::WImage(coverAnchor);
 			cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
 			// Some images may not be square
@@ -132,9 +132,7 @@ Artist::refresh()
 		}
 
 		{
-			Wt::WAnchor* releaseAnchor = LmsApplication::createReleaseAnchor(releaseId);
-			Wt::WText* releaseName = new Wt::WText(releaseAnchor);
-			releaseName->setText(Wt::WString::fromUTF8(release->getName(), Wt::PlainText));
+			Wt::WAnchor* releaseAnchor = LmsApplication::createReleaseAnchor(release);
 			entry->bindWidget("name", releaseAnchor);
 		}
 

@@ -18,7 +18,6 @@
  */
 
 #include <Wt/WAnchor>
-#include <Wt/WText>
 #include <Wt/WTemplate>
 #include <Wt/WLineEdit>
 
@@ -93,9 +92,7 @@ Artists::addSome()
 		entry->bindInt("nb-release", artist->getReleases(clusterIds).size());
 
 		{
-			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(artist.id());
-			Wt::WText *artistText = new Wt::WText(artistAnchor);
-			artistText->setText(Wt::WString::fromUTF8(artist->getName(), Wt::PlainText));
+			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(artist);
 			entry->bindWidget("name", artistAnchor);
 		}
 	}

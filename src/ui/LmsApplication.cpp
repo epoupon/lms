@@ -161,15 +161,31 @@ Scanner::MediaScanner& MediaScanner()
 }
 
 Wt::WAnchor*
-LmsApplication::createArtistAnchor(Database::id_type id)
+LmsApplication::createArtistAnchor(Database::Artist::pointer artist, bool addText)
 {
-	return new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(id)));
+	auto res = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(artist.id())));
+
+	if (addText)
+	{
+		res->setTextFormat(Wt::PlainText);
+		res->setText(Wt::WString::fromUTF8(artist->getName()));
+	}
+
+	return res;
 }
 
 Wt::WAnchor*
-LmsApplication::createReleaseAnchor(Database::id_type id)
+LmsApplication::createReleaseAnchor(Database::Release::pointer release, bool addText)
 {
-	return new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(id)));
+	auto res = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(release.id())));
+
+	if (addText)
+	{
+		res->setTextFormat(Wt::PlainText);
+		res->setText(Wt::WString::fromUTF8(release->getName()));
+	}
+
+	return res;
 }
 
 void
