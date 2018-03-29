@@ -60,13 +60,6 @@ User::getById(Wt::Dbo::Session& session, id_type id)
 	return session.find<User>().where("id = ?").bind( id );
 }
 
-std::string
-User::getId( pointer user)
-{
-	std::ostringstream oss; oss << user.id();
-	return oss.str();
-}
-
 void
 User::setAudioBitrate(std::size_t bitrate)
 {

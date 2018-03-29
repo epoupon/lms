@@ -20,15 +20,18 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
-#include <Wt/WTemplateFormView>
 
 namespace UserInterface {
 
-class AdminWizardView : public Wt::WTemplateFormView
+class UsersView : public Wt::WContainerWidget
 {
 	public:
-		AdminWizardView(Wt::WContainerWidget *parent = 0);
+		UsersView(Wt::WContainerWidget *parent = 0);
 
+	private:
+		void refresh();
+
+		Wt::WContainerWidget* _container;
 };
 
 } // namespace UserInterface

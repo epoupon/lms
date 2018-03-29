@@ -30,10 +30,15 @@
 <message id="Lms.Admin.Database.update-start-time">Update start time</message>
 <message id="Lms.Admin.Database.weekly">Weekly</message>
 
+<!--Users-->
+<message id="Lms.Admin.Users.add">New user</message>
+<message id="Lms.Admin.Users.del">Delete</message>
+<message id="Lms.Admin.Users.edit">Edit</message>
+<message id="Lms.Admin.Users.users">Users</message>
 
-<!--Admin Wizard-->
-<message id="Lms.AdminWizard.done">Administration account created. Please refresh to continue!</message>
-<message id="Lms.AdminWizard.header">Create administrator account</message>
+<!--Wizard-->
+<message id="Lms.Admin.InitWizard.done">Administration account created. Please refresh to continue!</message>
+<message id="Lms.Admin.InitWizard.header">Create administrator account</message>
 
 <!--Auth-->
 <message id="Lms.Auth.remember-me">Remember me</message>

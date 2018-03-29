@@ -61,7 +61,6 @@ class User
 		// accessors
 		static pointer			getById(Wt::Dbo::Session& session, id_type id);
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session);
-		static std::string		getId(pointer user);
 
 		// write
 		void setAdmin(bool admin)	{ _isAdmin = admin; }

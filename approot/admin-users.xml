@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Admin.Users.template">
+	<div class="page-header">
+		<h2>${tr:Lms.Admin.Users.users}</h2>
+	</div>
+	${users class="list-group"}
+	${add-btn class="btn-primary"}
+</message>
+
+<message id="Lms.Admin.Users.template.entry">
+	<div class="list-group-item">
+		${name} ${<if-edit>}${edit-btn} ${del-btn class="btn-danger"}${</if-edit>}
+	</div>
+</message>
+
+</messages>

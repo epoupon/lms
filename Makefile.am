@@ -22,7 +22,8 @@ lms_js_DATA = \
 
 lms_approot_DATA = \
 		approot/admin-database.xml	\
-		approot/admin-wizard.xml	\
+		approot/admin-users.xml		\
+		approot/admin-initwizard.xml	\
 		approot/artist.xml	\
 		approot/artists.xml	\
 		approot/explore.xml	\

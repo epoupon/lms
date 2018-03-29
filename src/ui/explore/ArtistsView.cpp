@@ -87,7 +87,7 @@ Artists::addSome()
 
 	for (auto artist : artists)
 	{
-		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artists.template.entry"), _artistsContainer);
+		auto entry = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artists.template.entry"), _artistsContainer);
 
 		entry->bindInt("nb-release", artist->getReleases(clusterIds).size());
 

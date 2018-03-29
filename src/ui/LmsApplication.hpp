@@ -65,6 +65,7 @@ class LmsApplication : public Wt::WApplication
 		Scanner::MediaScanner&	_scanner;
 		ImageResource*          _imageResource;
 		TranscodeResource*	_transcodeResource;
+		bool			_isAdmin = false;
 };
 
 // Helpers to get session data

@@ -37,8 +37,9 @@
 #include "PlayQueueView.hpp"
 #include "SettingsView.hpp"
 
+#include "admin/InitWizardView.hpp"
 #include "admin/DatabaseSettingsView.hpp"
-#include "admin/AdminWizardView.hpp"
+#include "admin/UsersView.hpp"
 
 #include "resource/ImageResource.hpp"
 #include "resource/TranscodeResource.hpp"
@@ -86,6 +87,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "admin-database");
+	messageResourceBundle().use(appRoot() + "admin-users");
 	messageResourceBundle().use(appRoot() + "admin-wizard");
 	messageResourceBundle().use(appRoot() + "artist");
 	messageResourceBundle().use(appRoot() + "artists");
@@ -115,7 +117,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 
 	if (firstConnection)
 	{
-		root()->addWidget(new AdminWizardView());
+		root()->addWidget(new InitWizardView());
 	}
 	else
 	{
@@ -208,31 +210,41 @@ enum IdxRoot
 	IdxPlayQueue,
 	IdxSettings,
 	IdxAdminDatabase,
+	IdxAdminUsers,
 };
 
 static void
-handlePathChange(Wt::WStackedWidget* stack)
+handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 {
-	static const std::map<std::string, int> indexes =
+	static const struct
 	{
-		{ "/home",		IdxHome },
-		{ "/artists",		IdxExplore },
-		{ "/artist",		IdxExplore },
-		{ "/releases",		IdxExplore },
-		{ "/release",		IdxExplore },
-		{ "/tracks",		IdxExplore },
-		{ "/playqueue",		IdxPlayQueue },
-		{ "/settings",		IdxSettings },
-		{ "/admin/database",	IdxAdminDatabase },
+		std::string path;
+		int index;
+		bool admin;
+	} views[] =
+	{
+		{ "/home",		IdxHome,		false },
+		{ "/artists",		IdxExplore,		false },
+		{ "/artist",		IdxExplore,		false },
+		{ "/releases",		IdxExplore,		false },
+		{ "/release",		IdxExplore,		false },
+		{ "/tracks",		IdxExplore,		false },
+		{ "/playqueue",		IdxPlayQueue,		false },
+		{ "/settings",		IdxSettings,		false },
+		{ "/admin/database",	IdxAdminDatabase,	true },
+		{ "/admin/users",	IdxAdminUsers,		true },
 	};
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
 
-	for (auto index : indexes)
+	for (auto& view : views)
 	{
-		if (wApp->internalPathMatches(index.first))
+		if (wApp->internalPathMatches(view.path))
 		{
-			stack->setCurrentIndex(index.second);
+			if (view.admin && !isAdmin)
+				break;
+
+			stack->setCurrentIndex(view.index);
 			return;
 		}
 	}
@@ -252,6 +264,11 @@ LmsApplication::handleAuthEvent(void)
 	}
 
 	LMS_LOG(UI, INFO) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
+
+	{
+		Wt::Dbo::Transaction transaction (DboSession());
+		_isAdmin = CurrentUser()->isAdmin();
+	}
 
 	require("/js/mediaplayer.js");
 
@@ -295,21 +312,21 @@ LmsApplication::handleAuthEvent(void)
 	auto rightMenu = new Wt::WMenu();
 	std::size_t itemCounter = 0;
 
+	if (_isAdmin)
 	{
-		Wt::Dbo::Transaction transaction (DboSession());
+		auto menuItem = rightMenu->insertItem(itemCounter++, Wt::WString::tr("Lms.administration"));
+		menuItem->setSelectable(false);
 
-		if (CurrentUser()->isAdmin())
-		{
-			auto menuItem = rightMenu->insertItem(itemCounter++, Wt::WString::tr("Lms.administration"));
-			menuItem->setSelectable(false);
+		Wt::WPopupMenu *admin = new Wt::WPopupMenu();
+		auto dbSettings = admin->insertItem(0, Wt::WString::tr("Lms.Admin.Database.database"));
+		dbSettings->setLink(Wt::WLink(Wt::WLink::InternalPath, "/admin/database"));
+		dbSettings->setSelectable(false);
 
-			Wt::WPopupMenu *admin = new Wt::WPopupMenu();
-			auto dbSettings = admin->insertItem(0, Wt::WString::tr("Lms.Admin.Database.database"));
-			dbSettings->setLink(Wt::WLink(Wt::WLink::InternalPath, "/admin/database"));
-			dbSettings->setSelectable(false);
+		auto usersSettings = admin->insertItem(1, Wt::WString::tr("Lms.Admin.Users.users"));
+		usersSettings->setLink(Wt::WLink(Wt::WLink::InternalPath, "/admin/users"));
+		usersSettings->setSelectable(false);
 
-			menuItem->setMenu(admin);
-		}
+		menuItem->setMenu(admin);
 	}
 
 	{
@@ -344,8 +361,14 @@ LmsApplication::handleAuthEvent(void)
 	mainStack->addWidget(settings);
 
 	// Admin stuff
-	auto databaseSettings = new DatabaseSettingsView();
-	mainStack->addWidget(databaseSettings);
+	if (_isAdmin)
+	{
+		auto databaseSettings = new DatabaseSettingsView();
+		mainStack->addWidget(databaseSettings);
+
+		auto users = new UsersView();
+		mainStack->addWidget(users);
+	}
 
 	explore->tracksAdd.connect(std::bind([=] (std::vector<Database::Track::pointer> tracks)
 	{
@@ -380,7 +403,7 @@ LmsApplication::handleAuthEvent(void)
 	playqueue->playbackStop.connect(player, &MediaPlayer::stop);
 
 	// Events from MediaScanner
-	if (CurrentUser()->isAdmin())
+	if (_isAdmin)
 	{
 		enableUpdates(true);
 		std::string sessionId = this->sessionId();
@@ -401,10 +424,10 @@ LmsApplication::handleAuthEvent(void)
 
 	internalPathChanged().connect(std::bind([=]
 	{
-		handlePathChange(mainStack);
+		handlePathChange(mainStack, _isAdmin);
 	}));
 
-	handlePathChange(mainStack);
+	handlePathChange(mainStack, _isAdmin);
 }
 
 void

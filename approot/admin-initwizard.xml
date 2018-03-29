@@ -1,9 +1,8 @@
-
 <?xml version="1.0" encoding="UTF-8" ?>
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="Lms.AdminWizard.template">
+<message id="Lms.Admin.InitWizard.template">
 	<div class="container">
 	<div class="page-header">
 		<h2>${tr:Lms.AdminWizard.header}</h2>

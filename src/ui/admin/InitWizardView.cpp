@@ -27,11 +27,11 @@
 #include "common/Validators.hpp"
 #include "LmsApplication.hpp"
 
-#include "AdminWizardView.hpp"
+#include "InitWizardView.hpp"
 
 namespace UserInterface {
 
-class AdminWizardModel : public Wt::WFormModel
+class InitWizardModel : public Wt::WFormModel
 {
 	public:
 
@@ -40,7 +40,7 @@ class AdminWizardModel : public Wt::WFormModel
 		static const Field PasswordField;
 		static const Field PasswordConfirmField;
 
-		AdminWizardModel(Wt::WObject *parent = 0)
+		InitWizardModel(Wt::WObject *parent = 0)
 			: Wt::WFormModel(parent)
 		{
 			addField(AdminLoginField);
@@ -112,31 +112,31 @@ class AdminWizardModel : public Wt::WFormModel
 
 };
 
-const Wt::WFormModel::Field AdminWizardModel::AdminLoginField = "admin-login";
-const Wt::WFormModel::Field AdminWizardModel::PasswordField = "password";
-const Wt::WFormModel::Field AdminWizardModel::PasswordConfirmField = "password-confirm";
+const Wt::WFormModel::Field InitWizardModel::AdminLoginField = "admin-login";
+const Wt::WFormModel::Field InitWizardModel::PasswordField = "password";
+const Wt::WFormModel::Field InitWizardModel::PasswordConfirmField = "password-confirm";
 
-AdminWizardView::AdminWizardView(Wt::WContainerWidget *parent)
+InitWizardView::InitWizardView(Wt::WContainerWidget *parent)
 : Wt::WTemplateFormView(parent)
 {
-	auto model = new AdminWizardModel(this);
+	auto model = new InitWizardModel(this);
 
-	setTemplateText(Wt::WString::tr("Lms.AdminWizard.template"));
+	setTemplateText(Wt::WString::tr("Lms.Admin.InitWizard.template"));
 	addFunction("tr", &WTemplate::Functions::tr);
 	addFunction("id", &WTemplate::Functions::id);
 
 	// AdminLogin
 	Wt::WLineEdit* accountEdit = new Wt::WLineEdit();
-	setFormWidget(AdminWizardModel::AdminLoginField, accountEdit);
+	setFormWidget(InitWizardModel::AdminLoginField, accountEdit);
 
 	// Password
 	Wt::WLineEdit* passwordEdit = new Wt::WLineEdit();
-	setFormWidget(AdminWizardModel::PasswordField, passwordEdit );
+	setFormWidget(InitWizardModel::PasswordField, passwordEdit );
 	passwordEdit->setEchoMode(Wt::WLineEdit::Password);
 
 	// Password confirmation
 	Wt::WLineEdit* passwordConfirmEdit = new Wt::WLineEdit();
-	setFormWidget(AdminWizardModel::PasswordConfirmField, passwordConfirmEdit);
+	setFormWidget(InitWizardModel::PasswordConfirmField, passwordConfirmEdit);
 	passwordConfirmEdit->setEchoMode(Wt::WLineEdit::Password);
 
 	auto saveButton = new Wt::WPushButton(Wt::WString::tr("Lms.create"));
@@ -148,7 +148,7 @@ AdminWizardView::AdminWizardView(Wt::WContainerWidget *parent)
 		if (model->validate())
 		{
 			model->saveData();
-			LmsApp->notify(Wt::WString::tr("Lms.AdminWizard.done"));
+			LmsApp->notify(Wt::WString::tr("Lms.Admin.InitWizard.done"));
 			saveButton->setEnabled(false);
 		}
 
