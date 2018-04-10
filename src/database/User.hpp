@@ -41,7 +41,7 @@ enum class AudioEncoding
 	WEBMA,
 };
 
-class User
+class User : public Wt::Dbo::Dbo<User>
 {
 	public:
 		typedef Wt::Dbo::dbo_traits<User>::IdType id_type;
@@ -70,9 +70,9 @@ class User
 		void setCurPlayingTrackPos(std::size_t pos) { _curPlayingTrackPos = pos; }
 
 		// read
-		bool isAdmin() const {return _isAdmin;}
+		bool isAdmin() const { return _isAdmin; }
 		std::size_t	getAudioBitrate() const;
-		AudioEncoding	getAudioEncoding() const { return _audioEncoding;}
+		AudioEncoding	getAudioEncoding() const { return _audioEncoding; }
 		std::size_t	getMaxAudioBitrate() const;
 		std::size_t	getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
 
@@ -90,7 +90,6 @@ class User
 
 	private:
 
-		static const std::size_t	maxAudioBitrate = 320000;
 		static const std::size_t	defaultAudioBitrate = 128000;
 
 		// Admin defined settings

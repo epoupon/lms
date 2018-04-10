@@ -32,7 +32,7 @@ User::audioBitrates =
 };
 
 User::User()
-: _maxAudioBitrate(maxAudioBitrate),
+: _maxAudioBitrate(audioBitrates.back()),
 _isAdmin(false),
 _audioBitrate(defaultAudioBitrate),
 _audioEncoding(AudioEncoding::AUTO),
@@ -63,31 +63,27 @@ User::getById(Wt::Dbo::Session& session, id_type id)
 void
 User::setAudioBitrate(std::size_t bitrate)
 {
-	_audioBitrate = std::min(bitrate, std::min(static_cast<std::size_t>(_maxAudioBitrate), audioBitrates.back()));
+	_audioBitrate = std::min(bitrate, static_cast<std::size_t>(_maxAudioBitrate));
 }
 
 void
 User::setMaxAudioBitrate(std::size_t bitrate)
 {
-	_maxAudioBitrate = std::min(bitrate, static_cast<std::size_t>(_maxAudioBitrate));
+	_maxAudioBitrate = std::min(bitrate, audioBitrates.back());
+	if (_audioBitrate > _maxAudioBitrate)
+		_audioBitrate = _maxAudioBitrate;
 }
 
 std::size_t
 User::getAudioBitrate(void) const
 {
-	if (!isAdmin())
-		return std::min(static_cast<std::size_t>(_audioBitrate), std::min(static_cast<std::size_t>(_maxAudioBitrate), audioBitrates.back()));
-	else
-		return std::min(static_cast<std::size_t>(_audioBitrate), audioBitrates.back());
+	return _audioBitrate;
 }
 
 std::size_t
 User::getMaxAudioBitrate(void) const
 {
-	if (!isAdmin())
-		return std::min(static_cast<std::size_t>(_maxAudioBitrate), audioBitrates.back());
-	else
-		return audioBitrates.back();
+	return _maxAudioBitrate;
 }
 
 } // namespace Database

@@ -15,6 +15,7 @@
 <message id="Lms.password-confirm">Confirm password</message>
 <message id="Lms.passwords-dont-match">Passwords don't match</message>
 <message id="Lms.quit-confirm">Are you sure?</message>
+<message id="Lms.save">Save</message>
 
 <!--Administration-->
 <message id="Lms.Admin.Database.daily">Daily</message>
@@ -35,6 +36,11 @@
 <message id="Lms.Admin.Users.del">Delete</message>
 <message id="Lms.Admin.Users.edit">Edit</message>
 <message id="Lms.Admin.Users.users">Users</message>
+
+<message id="Lms.Admin.User.user-create">New user</message>
+<message id="Lms.Admin.User.user-created">New user created!</message>
+<message id="Lms.Admin.User.user-edit">Edit user {1}</message>
+<message id="Lms.Admin.User.user-updated">User updated!</message>
 
 <!--Wizard-->
 <message id="Lms.Admin.InitWizard.done">Administration account created. Please refresh to continue!</message>

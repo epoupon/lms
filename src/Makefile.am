@@ -29,6 +29,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/SettingsView.cpp				\
 	$(srcdir)/ui/admin/DatabaseSettingsView.cpp		\
 	$(srcdir)/ui/admin/InitWizardView.cpp			\
+	$(srcdir)/ui/admin/UserView.cpp				\
 	$(srcdir)/ui/admin/UsersView.cpp			\
 	$(srcdir)/ui/common/InputRange.cpp			\
 	$(srcdir)/ui/common/LineEdit.cpp			\

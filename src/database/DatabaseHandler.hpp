@@ -48,7 +48,8 @@ class Handler
 		Wt::Dbo::Session& getSession() { return _session; }
 
 		Wt::Dbo::ptr<User> getCurrentUser();	// get the current user, may return empty
-		Wt::Dbo::ptr<User> getUser(const Wt::Auth::User& authUser);	// Get or create the given user
+		Wt::Dbo::ptr<User> getUser(const Wt::Auth::User& authUser);
+		Wt::Dbo::ptr<User> createUser(const Wt::Auth::User& authUser);
 
 		Wt::Auth::AbstractUserDatabase& getUserDatabase();
 		Wt::Auth::Login& getLogin() { return _login; }

@@ -27,6 +27,19 @@
 #include "Utils.hpp"
 
 
+boost::optional<long>
+readLong(const std::string& str)
+{
+	try
+	{
+		return std::stol(str);
+	}
+	catch (std::exception& e)
+	{
+		return boost::none;
+	}
+}
+
 bool readAsPosixTime(const std::string& str, boost::posix_time::ptime& time)
 {
 	const std::locale formats[] = {

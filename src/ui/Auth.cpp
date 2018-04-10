@@ -57,20 +57,8 @@ Auth::Auth(Wt::WContainerWidget *parent)
 
 	auto loginBtn = new Wt::WPushButton(Wt::WString::tr("Lms.login"));
 	bindWidget("login-btn", loginBtn);
-	loginBtn->clicked().connect(std::bind([=]
-	{
-		updateModel(_model);
-
-		if (_model->validate())
-			_model->login(DbHandler().getLogin());
-		else
-			updateView(_model);
-	}));
-
-	password->enterPressed().connect(std::bind([=]
-	{
-		loginBtn->clicked().emit(Wt::WMouseEvent());
-	}));
+	loginBtn->clicked().connect(this, &Auth::processAuth);
+	password->enterPressed().connect(this, &Auth::processAuth);
 
 	DbHandler().getLogin().changed().connect(std::bind([=]
 	{
@@ -82,6 +70,17 @@ Auth::Auth(Wt::WContainerWidget *parent)
 	_model->loginUser(DbHandler().getLogin(), user, Wt::Auth::WeakLogin);
 
 	updateView(_model);
+}
+
+void
+Auth::processAuth()
+{
+	updateModel(_model);
+
+	if (_model->validate())
+		_model->login(DbHandler().getLogin());
+	else
+		updateView(_model);
 }
 
 void

@@ -49,7 +49,7 @@ class LmsApplication : public Wt::WApplication
 		// Utils
 		void goHome();
 		void quit();
-		void notify(const Wt::WString& message);
+		void notifyMsg(const Wt::WString& message);
 
 		static Wt::WAnchor* createArtistAnchor(Database::Artist::pointer artist, bool addText = true);
 		static Wt::WAnchor* createReleaseAnchor(Database::Release::pointer release, bool addText = true);
@@ -59,6 +59,7 @@ class LmsApplication : public Wt::WApplication
 		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner);
 
 		void handleAuthEvent(void);
+		void notify(const Wt::WEvent& event) override;
 
 		Database::Handler	_db;
 		Auth*			_auth;

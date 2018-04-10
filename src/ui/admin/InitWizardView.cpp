@@ -148,7 +148,7 @@ InitWizardView::InitWizardView(Wt::WContainerWidget *parent)
 		if (model->validate())
 		{
 			model->saveData();
-			LmsApp->notify(Wt::WString::tr("Lms.Admin.InitWizard.done"));
+			LmsApp->notifyMsg(Wt::WString::tr("Lms.Admin.InitWizard.done"));
 			saveButton->setEnabled(false);
 		}
 

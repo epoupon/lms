@@ -24,7 +24,12 @@
 #include <list>
 
 #include <boost/locale.hpp>
+#include <boost/optional.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
+
+
+boost::optional<long>
+readLong(const std::string& str);
 
 bool
 readAsPosixTime(const std::string& str, boost::posix_time::ptime& time);

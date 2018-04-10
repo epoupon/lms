@@ -164,7 +164,6 @@ Handler::getCurrentUser()
 User::pointer
 Handler::getUser(const Wt::Auth::User& authUser)
 {
-
 	if (!authUser.isValid()) {
 		LMS_LOG(DB, ERROR) << "Handler::getUser: invalid authUser";
 		return User::pointer();
@@ -172,12 +171,20 @@ Handler::getUser(const Wt::Auth::User& authUser)
 
 	Wt::Dbo::ptr<AuthInfo> authInfo = _users->find(authUser);
 
-	User::pointer user = authInfo->user();
+	return authInfo->user();
+}
 
-	if (!user) {
-		user = _session.add(new User());
-		authInfo.modify()->setUser(user);
+User::pointer
+Handler::createUser(const Wt::Auth::User& authUser)
+{
+	if (!authUser.isValid()) {
+		LMS_LOG(DB, ERROR) << "Handler::getUser: invalid authUser";
+		return User::pointer();
 	}
+
+	User::pointer user = _session.add(new User());
+	Wt::Dbo::ptr<AuthInfo> authInfo = _users->find(authUser);
+	authInfo.modify()->setUser(user);
 
 	return user;
 }

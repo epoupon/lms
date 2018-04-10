@@ -156,13 +156,13 @@ class SettingsModel : public Wt::WFormModel
 		std::size_t bitrate(int row)
 		{
 			return boost::any_cast<std::size_t>
-				(_bitrateModel->data(_encodingModel->index(row, 0), Wt::UserRole));
+				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::UserRole));
 		}
 
 		Wt::WString bitrateString(int row)
 		{
 			return boost::any_cast<Wt::WString>
-				(_bitrateModel->data(_encodingModel->index(row, 0), Wt::DisplayRole));
+				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::DisplayRole));
 		}
 
 		boost::optional<int> getEncodingRow(Wt::WString value)
@@ -207,9 +207,18 @@ class SettingsModel : public Wt::WFormModel
 
 			_bitrateModel = new Wt::WStringListModel(this);
 
+			std::size_t maxAudioBitrate;
+			{
+				Wt::Dbo::Transaction transaction(DboSession());
+				maxAudioBitrate = CurrentUser()->getMaxAudioBitrate();
+			}
+
 			std::size_t id = 0;
 			for (auto bitrate : Database::User::audioBitrates)
 			{
+				if (bitrate > maxAudioBitrate)
+					break;
+
 				_bitrateModel->addString( Wt::WString::fromUTF8(std::to_string(bitrate / 1000)) );
 				_bitrateModel->setData( id++, 0, bitrate, Wt::UserRole);
 			}
@@ -282,7 +291,7 @@ SettingsView::SettingsView(Wt::WContainerWidget *parent)
 		if (model->validate())
 		{
 			model->saveData();
-			LmsApp->notify(Wt::WString::tr("Lms.Settings.settings-saved"));
+			LmsApp->notifyMsg(Wt::WString::tr("Lms.Settings.settings-saved"));
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.

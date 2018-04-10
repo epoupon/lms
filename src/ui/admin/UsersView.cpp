@@ -31,7 +31,6 @@ namespace UserInterface {
 UsersView::UsersView(Wt::WContainerWidget *parent)
  : Wt::WContainerWidget(parent)
 {
-	LMS_LOG(UI, DEBUG) << "TEST";
 	auto t = new Wt::WTemplate(Wt::WString::tr("Lms.Admin.Users.template"), this);
 	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
@@ -41,12 +40,25 @@ UsersView::UsersView(Wt::WContainerWidget *parent)
 	auto addBtn = new Wt::WPushButton(Wt::WString::tr("Lms.Admin.Users.add"));
 	t->bindWidget("add-btn", addBtn);
 
+	addBtn->clicked().connect(std::bind([=]
+	{
+		LmsApp->setInternalPath("/admin/user", true);
+	}));
+
+	wApp->internalPathChanged().connect(std::bind([=]
+	{
+		refresh();
+	}));
+
 	refresh();
 }
 
 void
 UsersView::refresh()
 {
+	if (!wApp->internalPathMatches("/admin/users"))
+		return;
+
 	_container->clear();
 
 	Wt::Dbo::Transaction transaction(DboSession());
@@ -54,9 +66,10 @@ UsersView::refresh()
 	auto users = Database::User::getAll(DboSession());
 	for (auto user : users)
 	{
+		auto userId = std::to_string(user.id());
 		auto entry = new Wt::WTemplate(Wt::WString::tr("Lms.Admin.Users.template.entry"), _container);
 
-		Wt::Auth::User authUser = DbHandler().getUserDatabase().findWithId(std::to_string(user.id()));
+		Wt::Auth::User authUser = DbHandler().getUserDatabase().findWithId(userId);
 
 		if (!authUser.isValid()) {
 			LMS_LOG(UI, ERROR) << "Skipping invalid userId = " << user.id();
@@ -66,15 +79,29 @@ UsersView::refresh()
 		entry->bindString("name", authUser.identity(Wt::Auth::Identity::LoginName), Wt::PlainText);
 
 		// Don't edit ourself this way
-		if (CurrentUser() != user)
-		{
-			entry->setCondition("if-edit", true);
-			auto editBtn = new Wt::WPushButton(Wt::WString::tr("Lms.Admin.Users.edit"));
-			entry->bindWidget("edit-btn", editBtn);
+		if (CurrentUser() == user)
+			continue;
 
-			auto delBtn = new Wt::WPushButton(Wt::WString::tr("Lms.Admin.Users.del"));
-			entry->bindWidget("del-btn", delBtn);
-		}
+		entry->setCondition("if-edit", true);
+		auto editBtn = new Wt::WPushButton(Wt::WString::tr("Lms.Admin.Users.edit"));
+		entry->bindWidget("edit-btn", editBtn);
+		editBtn->clicked().connect(std::bind([=]
+		{
+			LmsApp->setInternalPath("/admin/user/" + std::to_string(user.id()), true);
+		}));
+
+		auto delBtn = new Wt::WPushButton(Wt::WString::tr("Lms.Admin.Users.del"));
+		entry->bindWidget("del-btn", delBtn);
+		delBtn->clicked().connect(std::bind([=]
+		{
+			Wt::Dbo::Transaction transaction(DboSession());
+
+			auto authUser = DbHandler().getUserDatabase().findWithId(userId);
+			auto user = DbHandler().getUser(authUser);
+			DbHandler().getUserDatabase().deleteUser( authUser );
+			user.remove();
+			_container->removeWidget(entry);
+		}));
 	}
 }
 

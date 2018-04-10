@@ -20,25 +20,17 @@
 #pragma once
 
 #include <Wt/WContainerWidget>
-#include <Wt/WTemplateFormView>
-#include <Wt/Auth/Login>
-#include <Wt/Auth/AuthModel>
 
 namespace UserInterface {
 
-class Auth : public Wt::WTemplateFormView
+class UserView : public Wt::WContainerWidget
 {
 	public:
-		Auth(Wt::WContainerWidget *parent = 0);
-
-		void logout();
+		UserView(Wt::WContainerWidget *parent = 0);
 
 	private:
-		void processAuth();
-
-		Wt::Auth::AuthModel* _model;
+		void refresh();
 };
-
 
 } // namespace UserInterface
 

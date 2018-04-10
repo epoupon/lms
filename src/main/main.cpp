@@ -30,8 +30,6 @@
 #include "feature/FeatureExtractor.hpp"
 
 #include "scanner/MediaScanner.hpp"
-//#include "database/updater/DatabaseFeatureExtractor.hpp"
-//#include "database/updater/DatabaseHighLevelCluster.hpp"
 
 #include "ui/LmsApplication.hpp"
 

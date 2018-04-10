@@ -39,6 +39,7 @@
 
 #include "admin/InitWizardView.hpp"
 #include "admin/DatabaseSettingsView.hpp"
+#include "admin/UserView.hpp"
 #include "admin/UsersView.hpp"
 
 #include "resource/ImageResource.hpp"
@@ -87,6 +88,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "admin-database");
+	messageResourceBundle().use(appRoot() + "admin-user");
 	messageResourceBundle().use(appRoot() + "admin-users");
 	messageResourceBundle().use(appRoot() + "admin-wizard");
 	messageResourceBundle().use(appRoot() + "artist");
@@ -102,6 +104,9 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "settings");
 	messageResourceBundle().use(appRoot() + "tracks");
 	messageResourceBundle().use(appRoot() + "templates");
+
+	// Require js here to avoid async problems
+	require("/js/mediaplayer.js");
 
 	setTitle("LMS");
 
@@ -121,7 +126,18 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	}
 	else
 	{
-		DbHandler().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
+		DbHandler().getLogin().changed().connect(std::bind([=]
+		{
+			try
+			{
+				handleAuthEvent();
+			}
+			catch (std::exception& e)
+			{
+				LMS_LOG(UI, ERROR) << "Error while handling auth event: " << e.what();
+				throw std::runtime_error("Internal error");
+			}
+		}));
 
 		_auth = new Auth();
 		root()->addWidget(_auth);
@@ -199,6 +215,7 @@ LmsApplication::goHome()
 void
 LmsApplication::quit()
 {
+	setConfirmCloseMessage("");
 	WApplication::quit("");
 	redirect("/");
 }
@@ -211,6 +228,7 @@ enum IdxRoot
 	IdxSettings,
 	IdxAdminDatabase,
 	IdxAdminUsers,
+	IdxAdminUser,
 };
 
 static void
@@ -233,6 +251,7 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 		{ "/settings",		IdxSettings,		false },
 		{ "/admin/database",	IdxAdminDatabase,	true },
 		{ "/admin/users",	IdxAdminUsers,		true },
+		{ "/admin/user",	IdxAdminUser,		true },
 	};
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
@@ -269,8 +288,6 @@ LmsApplication::handleAuthEvent(void)
 		Wt::Dbo::Transaction transaction (DboSession());
 		_isAdmin = CurrentUser()->isAdmin();
 	}
-
-	require("/js/mediaplayer.js");
 
 	_imageResource = new ImageResource(_db, root());
 	_transcodeResource = new TranscodeResource(_db, root());
@@ -368,6 +385,9 @@ LmsApplication::handleAuthEvent(void)
 
 		auto users = new UsersView();
 		mainStack->addWidget(users);
+
+		auto user = new UserView();
+		mainStack->addWidget(user);
 	}
 
 	explore->tracksAdd.connect(std::bind([=] (std::vector<Database::Track::pointer> tracks)
@@ -411,7 +431,7 @@ LmsApplication::handleAuthEvent(void)
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
-				notify(Wt::WString::tr("Lms.Admin.Database.scan-complete")
+				notifyMsg(Wt::WString::tr("Lms.Admin.Database.scan-complete")
 					.arg(stats.nbFiles())
 					.arg(stats.additions)
 					.arg(stats.deletions)
@@ -431,15 +451,24 @@ LmsApplication::handleAuthEvent(void)
 }
 
 void
-LmsApplication::notify(const Wt::WString& message)
+LmsApplication::notify(const Wt::WEvent& event)
+{
+	try
+	{
+		WApplication::notify(event);
+	}
+	catch (std::exception& e)
+	{
+		LMS_LOG(UI, ERROR) << "Caught exception: " << e.what();
+		throw std::runtime_error("Internal error");
+	}
+}
+
+void
+LmsApplication::notifyMsg(const Wt::WString& message)
 {
 	LMS_LOG(UI, INFO) << "Notifying message '" << message.toUTF8() << "'";
 	root()->addWidget(new Wt::WText(message));
-}
-
-void notify(const Wt::WString& message)
-{
-	LmsApplication::instance()->notify(message);
 }
 
 } // namespace UserInterface
