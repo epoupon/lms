@@ -47,14 +47,14 @@ UsersView::UsersView(Wt::WContainerWidget *parent)
 
 	wApp->internalPathChanged().connect(std::bind([=]
 	{
-		refresh();
+		refreshView();
 	}));
 
-	refresh();
+	refreshView();
 }
 
 void
-UsersView::refresh()
+UsersView::refreshView()
 {
 	if (!wApp->internalPathMatches("/admin/users"))
 		return;

@@ -29,7 +29,7 @@ class UserView : public Wt::WContainerWidget
 		UserView(Wt::WContainerWidget *parent = 0);
 
 	private:
-		void refresh();
+		void refreshView();
 };
 
 } // namespace UserInterface
