@@ -48,7 +48,7 @@ class LmsApplication : public Wt::WApplication
 
 		// Utils
 		void goHome();
-		void quit();
+		void goHomeAndQuit();
 		void notifyMsg(const Wt::WString& message);
 
 		static Wt::WAnchor* createArtistAnchor(Database::Artist::pointer artist, bool addText = true);

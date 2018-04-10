@@ -213,7 +213,7 @@ LmsApplication::goHome()
 }
 
 void
-LmsApplication::quit()
+LmsApplication::goHomeAndQuit()
 {
 	setConfirmCloseMessage("");
 	WApplication::quit("");
@@ -278,7 +278,7 @@ LmsApplication::handleAuthEvent(void)
 	{
 		LMS_LOG(UI, INFO) << "User logged out, session = " << Wt::WApplication::instance()->sessionId();
 
-		quit();
+		goHomeAndQuit();
 		return;
 	}
 
