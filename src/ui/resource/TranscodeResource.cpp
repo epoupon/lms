@@ -40,10 +40,9 @@ TranscodeResource:: ~TranscodeResource()
 }
 
 std::string
-TranscodeResource::getUrl(Database::Track::id_type trackId, Av::Encoding encoding, boost::posix_time::time_duration offset) const
+TranscodeResource::getUrl(Database::Track::id_type trackId, Av::Encoding encoding) const
 {
-	std::string res = url()+ "&trackid=" + std::to_string(trackId) + "&encoding=" + std::to_string(Av::encoding_to_int(encoding));
-	res += "&offset=" + std::to_string(offset.seconds());
+	std::string res = url()+ "&trackid=" + std::to_string(trackId) + "&encoding=" + std::to_string(Av::encodingToInt(encoding));
 
 	return res;
 }
@@ -81,11 +80,11 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 
 			auto offsetStr = request.getParameter("offset");
 			if (offsetStr)
-				parameters.offset = boost::posix_time::seconds(std::stol(*offsetStr));
+				parameters.offset = std::chrono::seconds(std::stol(*offsetStr));
 
 			auto encodingStr = request.getParameter("encoding");
 			if (encodingStr)
-				parameters.encoding = Av::encoding_from_int(std::stol(*encodingStr));
+				parameters.encoding = Av::encodingFromInt(std::stol(*encodingStr));
 
 			auto streamStr = request.getParameter("stream");
 			if (streamStr)
@@ -116,7 +115,7 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 			transcoder = std::make_shared<Av::Transcoder>(track->getPath(), parameters);
 		}
 
-		std::string mimeType = Av::encoding_to_mimetype(transcoder->getParameters().encoding);
+		std::string mimeType = Av::encodingToMimetype(transcoder->getParameters().encoding);
 
 		LMS_LOG(UI, DEBUG) << "Mime type set to '" << mimeType << "'";
 		response.setMimeType(mimeType);

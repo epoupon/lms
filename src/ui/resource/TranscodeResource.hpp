@@ -35,7 +35,7 @@ class TranscodeResource : public Wt::WResource
 		TranscodeResource(Database::Handler& db);
 		~TranscodeResource();
 
-		std::string getUrl(Database::Track::id_type trackId, Av::Encoding encoding, boost::posix_time::time_duration offset) const;
+		std::string getUrl(Database::Track::id_type trackId, Av::Encoding encoding) const;
 
 		void handleRequest(const Wt::Http::Request& request,
 				Wt::Http::Response& response);

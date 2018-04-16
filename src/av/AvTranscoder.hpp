@@ -24,7 +24,6 @@
 
 #include <pstreams/pstream.h>
 
-#include <boost/date_time/posix_time/posix_time_types.hpp> //no i/o just types
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 
@@ -42,16 +41,16 @@ enum class Encoding
 	M4A,
 };
 
-std::string encoding_to_mimetype(Encoding encoding);
-int encoding_to_int(Encoding encoding);
-Encoding encoding_from_int(int encoding);
+std::string encodingToMimetype(Encoding encoding);
+int encodingToInt(Encoding encoding);
+Encoding encodingFromInt(int encoding);
 
 struct TranscodeParameters
 {
 	Encoding	encoding = Encoding::MP3;
-	boost::optional<std::size_t> stream = boost::none; // Id of the stream to be transcoded (auto detect by default)
 	std::size_t	bitrate = 128000;
-	boost::posix_time::time_duration offset = boost::posix_time::seconds(0);
+	boost::optional<std::size_t> stream = boost::none; // Id of the stream to be transcoded (auto detect by default)
+	boost::optional<std::chrono::seconds> offset;
 
 	TranscodeParameters() {}
 };

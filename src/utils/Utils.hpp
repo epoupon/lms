@@ -32,9 +32,6 @@
 bool
 readList(const std::string& str, const std::string& separators, std::list<std::string>& results);
 
-//std::string
-//durationToString(boost::posix_time::time_duration duration, std::string format);
-
 std::vector<std::string>
 splitString(std::string string, std::string separators);
 

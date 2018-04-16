@@ -56,7 +56,7 @@ MediaPlayer::playTrack(Database::Track::id_type trackId)
 	{
 		Av::MediaFile mediaFile(track->getPath());
 
-		auto resource = LmsApp->getTranscodeResource()->getUrl(trackId, Av::Encoding::MP3, boost::posix_time::seconds(0));
+		auto resource = LmsApp->getTranscodeResource()->getUrl(trackId, Av::Encoding::MP3);
 		auto imgResource = LmsApp->getImageResource()->getTrackUrl(trackId, 64);
 
 		std::ostringstream oss;

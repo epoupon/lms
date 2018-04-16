@@ -21,7 +21,6 @@
 #include <sstream>
 #include <iomanip>
 
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -75,18 +74,6 @@ bool readList(const std::string& str, const std::string& separators, std::list<s
 		results.push_back(curStr);
 
 	return !str.empty();
-}
-
-std::string
-durationToString(boost::posix_time::time_duration duration, std::string format)
-{
-	boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
-	facet->time_duration_format(format.c_str());
-	std::ostringstream oss;
-	oss.imbue(std::locale(oss.getloc(), facet));
-	oss << duration;
-
-	return oss.str();
 }
 
 std::vector<std::string>

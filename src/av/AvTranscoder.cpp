@@ -43,7 +43,7 @@ static std::vector<EncodingInfo> encodingInfos =
 	{Encoding::M4A, "audio/mp4", 5},
 };
 
-std::string encoding_to_mimetype(Encoding encoding)
+std::string encodingToMimetype(Encoding encoding)
 {
 	for (auto encodingInfo : encodingInfos)
 	{
@@ -54,7 +54,7 @@ std::string encoding_to_mimetype(Encoding encoding)
 	throw std::logic_error("encoding_to_mimetype failed!");
 }
 
-int encoding_to_int(Encoding encoding)
+int encodingToInt(Encoding encoding)
 {
 	for (auto encodingInfo : encodingInfos)
 	{
@@ -65,7 +65,7 @@ int encoding_to_int(Encoding encoding)
 	throw std::logic_error("encoding_to_int failed!");
 }
 
-Encoding encoding_from_int(int encodingId)
+Encoding encodingFromInt(int encodingId)
 {
 	for (auto encodingInfo : encodingInfos)
 	{
@@ -136,10 +136,10 @@ Transcoder::start()
 	args.push_back("-nostdin");
 
 	// input Offset
-	if (_parameters.offset.total_seconds() > 0)
+	if (_parameters.offset)
 	{
 		args.push_back("-ss");
-		args.push_back(std::to_string(_parameters.offset.total_seconds()));
+		args.push_back(std::to_string((*_parameters.offset).count()));
 	}
 
 	// Input file
