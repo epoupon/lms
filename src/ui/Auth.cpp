@@ -32,15 +32,10 @@
 namespace UserInterface {
 
 Auth::Auth()
-: Wt::WTemplateFormView()
+: Wt::WTemplateFormView(Wt::WString::tr("Lms.Auth.template"))
 {
 	_model = std::make_shared<Wt::Auth::AuthModel>(LmsApp->getDb().getAuthService(), LmsApp->getDb().getUserDatabase());
-
 	_model->addPasswordAuth(&Database::Handler::getPasswordService());
-
-	setTemplateText(Wt::WString::tr("Lms.Auth.template"));
-	addFunction("tr", &WTemplate::Functions::tr);
-	addFunction("id", &WTemplate::Functions::id);
 
 	// LoginName
 	setFormWidget(Wt::Auth::AuthModel::LoginNameField, std::make_unique<Wt::WLineEdit>());
@@ -63,8 +58,9 @@ Auth::Auth()
 			this->setHidden(true);
 	}));
 
-	Wt::Auth::User user = _model->processAuthToken();
-	_model->loginUser(LmsApp->getDb().getLogin(), user, Wt::Auth::LoginState::Weak);
+//	Wt::Auth::User user = _model->processAuthToken();
+//	if (user.isValid())
+//		_model->loginUser(LmsApp->getDb().getLogin(), user, Wt::Auth::LoginState::Weak);
 
 	updateView(_model.get());
 }
