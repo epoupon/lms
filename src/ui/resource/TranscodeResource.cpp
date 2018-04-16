@@ -60,7 +60,7 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 	if (continuation)
 	{
 		LMS_LOG(UI, DEBUG) << "Continuation! " << continuation ;
-		transcoder = boost::any_cast<std::shared_ptr<Av::Transcoder>>(continuation->data());
+		transcoder = Wt::cpp17::any_cast<std::shared_ptr<Av::Transcoder>>(continuation->data());
 	}
 	else
 	{
