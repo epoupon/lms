@@ -19,9 +19,8 @@
 
 #pragma once
 
-#include <Wt/Dbo/Dbo>
-
-#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <Wt/Dbo/Dbo.h>
+#include <Wt/WTime.h>
 
 namespace Database {
 
@@ -29,7 +28,10 @@ namespace Database {
 class Setting
 {
 	public:
+		using pointer = Wt::Dbo::ptr<Setting>;
+
 		Setting() {}
+		Setting(std::string name) : _name(name) {}
 
 		// check if a setting exists or not
 		static bool exists(Wt::Dbo::Session& session, std::string setting);
@@ -38,16 +40,14 @@ class Setting
 		// Nested transactions
 		static std::string getString(Wt::Dbo::Session& session, std::string setting, std::string defaultValue = "");
 		static bool getBool(Wt::Dbo::Session& session, std::string setting, bool defaultValue = false);
-		static boost::posix_time::time_duration getDuration(Wt::Dbo::Session& session, std::string setting, boost::posix_time::time_duration defaultDuration = boost::posix_time::seconds(0) );
-		static boost::posix_time::ptime getTime(Wt::Dbo::Session& session, std::string setting, boost::posix_time::ptime defaultTime = boost::posix_time::ptime());
+		static Wt::WTime getTime(Wt::Dbo::Session& session, std::string setting, Wt::WTime defaultValue = Wt::WTime());
 		static int getInt(Wt::Dbo::Session& session, std::string setting, int defaultValue = 0);
 
 		// Setters
 		// Nested transactions
 		static void setString(Wt::Dbo::Session& session, std::string setting, std::string value);
 		static void setBool(Wt::Dbo::Session& session, std::string setting, bool value);
-		static void setDuration(Wt::Dbo::Session& session, std::string setting, boost::posix_time::time_duration value);
-		static void setTime(Wt::Dbo::Session& session, std::string setting, boost::posix_time::ptime time);
+		static void setTime(Wt::Dbo::Session& session, std::string setting, Wt::WTime value);
 		static void setInt(Wt::Dbo::Session& session, std::string setting, int value);
 
 		template<class Action>
@@ -58,10 +58,6 @@ class Setting
 		}
 
 	private:
-		Setting(std::string name) : _name(name) {}
-
-		typedef Wt::Dbo::ptr<Setting> pointer;
-
 		static pointer getByName(Wt::Dbo::Session& session, std::string name);
 		static pointer create(Wt::Dbo::Session& session, std::string name);
 		static pointer getOrCreateByName(Wt::Dbo::Session& session, std::string name);

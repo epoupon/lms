@@ -21,17 +21,15 @@
 
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include <boost/filesystem.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <boost/optional.hpp>
 
-#include <Wt/Dbo/Dbo>
-#include <Wt/Dbo/WtSqlTraits>
+#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/WtSqlTraits.h>
 
-#include <Wt/WDateTime>
-
-#include "SearchFilter.hpp"
+#include <Wt/WDateTime.h>
 
 namespace Database {
 
@@ -52,7 +50,6 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 		Cluster(Wt::Dbo::ptr<ClusterType> type, std::string name);
 
 		// Find utility
-		static std::vector<pointer> getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
 		static std::vector<pointer> getAll(Wt::Dbo::Session& session);
 
 		// Create utility
@@ -75,7 +72,6 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 		}
 
 	private:
-		static Wt::Dbo::Query<pointer> getQuery(Wt::Dbo::Session& session, SearchFilter filter);
 
 		static const std::size_t _maxNameLength = 128;
 
@@ -159,14 +155,6 @@ class Track
 		static std::vector<pointer> getMBIDDuplicates(Wt::Dbo::Session& session);
 		static std::vector<pointer> getChecksumDuplicates(Wt::Dbo::Session& session);
 
-		// Utility fonctions
-		// Stats for a given search filter
-		typedef boost::tuple<
-				int,		// Total tracks
-				boost::posix_time::time_duration // Total duration
-				> StatsQueryResult;
-		static StatsQueryResult getStats(Wt::Dbo::Session& session, SearchFilter filter);
-
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p);
 
@@ -179,12 +167,12 @@ class Track
 		void setDiscNumber(int num)					{ _discNumber = num; }
 		void setTotalDiscNumber(int num)				{ _totalDiscNumber = num; }
 		void setName(const std::string& name)				{ _name = std::string(name, 0, _maxNameLength); }
-		void setDuration(boost::posix_time::time_duration duration)	{ _duration = duration; }
-		void setLastWriteTime(boost::posix_time::ptime time)		{ _fileLastWrite = time; }
-		void setAddedTime(boost::posix_time::ptime time)		{ _fileAdded = time; }
+		void setDuration(std::chrono::milliseconds duration)		{ _duration = duration; }
+		void setLastWriteTime(Wt::WDateTime time)			{ _fileLastWrite = time; }
+		void setAddedTime(Wt::WDateTime time)				{ _fileAdded = time; }
 		void setChecksum(const std::vector<unsigned char>& checksum)	{ _fileChecksum = checksum; }
-		void setDate(const boost::posix_time::ptime& date)		{ _date = date; }
-		void setOriginalDate(const boost::posix_time::ptime& date)	{ _originalDate = date; }
+		void setDate(Wt::WDate date)					{ _date = date; }
+		void setOriginalDate(Wt::WDate date)				{ _originalDate = date; }
 		void setGenres(const std::string& genreList)			{ _genreList = genreList; }
 		void setCoverType(CoverType coverType)				{ _coverType = coverType; }
 		void setMBID(const std::string& MBID)				{ _MBID = MBID; }
@@ -197,11 +185,11 @@ class Track
 		boost::optional<std::size_t>	getTotalDiscNumber(void) const;
 		std::string 			getName(void) const			{ return _name; }
 		boost::filesystem::path		getPath(void) const			{ return _filePath; }
-		boost::posix_time::time_duration	getDuration(void) const		{ return _duration; }
-		boost::posix_time::ptime	getDate(void) const			{ return _date; }
-		boost::posix_time::ptime	getOriginalDate(void) const		{ return _originalDate; }
-		boost::posix_time::ptime	getLastWriteTime(void) const		{ return _fileLastWrite; }
-		boost::posix_time::ptime	getAddedTime(void) const		{ return _fileAdded; }
+		std::chrono::milliseconds	getDuration(void) const			{ return _duration; }
+		Wt::WDate			getDate(void) const			{ return _date; }
+		Wt::WDate			getOriginalDate(void) const		{ return _originalDate; }
+		Wt::WDateTime			getLastWriteTime(void) const		{ return _fileLastWrite; }
+		Wt::WDateTime			getAddedTime(void) const		{ return _fileAdded; }
 		const std::vector<unsigned char>& getChecksum(void) const		{ return _fileChecksum; }
 		CoverType			getCoverType(void) const		{ return _coverType; }
 		const std::string&		getMBID(void) const			{ return _MBID; }
@@ -244,14 +232,14 @@ class Track
 		std::string				_name;
 		std::string				_artistName;
 		std::string				_releaseName;
-		boost::posix_time::time_duration	_duration;
-		boost::posix_time::ptime		_date;
-		boost::posix_time::ptime		_originalDate; // original date time
+		std::chrono::duration<int, std::milli>	_duration;
+		Wt::WDate				_date;
+		Wt::WDate				_originalDate; // original date time
 		std::string				_genreList;
 		std::string				_filePath;
 		std::vector<unsigned char>		_fileChecksum;
-		boost::posix_time::ptime		_fileLastWrite;
-		boost::posix_time::ptime		_fileAdded;
+		Wt::WDateTime				_fileLastWrite;
+		Wt::WDateTime				_fileAdded;
 		CoverType				_coverType;
 		std::string				_MBID; // Musicbrainz Identifier
 

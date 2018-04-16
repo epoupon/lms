@@ -30,8 +30,8 @@
 
 namespace UserInterface {
 
-MediaPlayer::MediaPlayer(Wt::WContainerWidget* parent)
-: Wt::WTemplate(Wt::WString::tr("template-mediaplayer"), parent),
+MediaPlayer::MediaPlayer()
+: Wt::WTemplate(Wt::WString::tr("template-mediaplayer")),
   playbackEnded(this, "playbackEnded"),
   playPrevious(this, "playPrevious"),
   playNext(this, "playNext")
@@ -49,8 +49,8 @@ MediaPlayer::playTrack(Database::Track::id_type trackId)
 {
 	LMS_LOG(UI, DEBUG) << "Playing track ID = " << trackId;
 
-	Wt::Dbo::Transaction transaction(DboSession());
-	auto track = Database::Track::getById(DboSession(), trackId);
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	auto track = Database::Track::getById(LmsApp->getDboSession(), trackId);
 
 	try
 	{
@@ -66,7 +66,7 @@ MediaPlayer::playTrack(Database::Track::id_type trackId)
 			<< " release: " << (track->getRelease() ? "\"" + escape(track->getRelease()->getName()) + "\"" : "undefined" ) << ","
 			<< " artist: " << (track->getArtist() ? "\"" + escape(track->getArtist()->getName()) + "\"" : "undefined" ) << ","
 			<< " resource: \"" << resource << "\","
-			<< " duration: " << track->getDuration().total_seconds() << ","
+			<< " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
 			<< " imgResource: \"" << imgResource << "\","
 			<< "};";
 		oss << "LMS.mediaplayer.loadTrack(params, true)"; // true to autoplay

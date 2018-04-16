@@ -33,10 +33,10 @@ extern "C"
 #include <string>
 #include <cstdint>
 #include <map>
+#include <chrono>
 
 #include <boost/optional.hpp>
 #include <boost/filesystem/path.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp> //no i/o just types
 
 #include "utils/Exception.hpp"
 
@@ -75,7 +75,7 @@ class MediaFile
 
 		const boost::filesystem::path&		getPath() const {return _p;};
 
-		boost::posix_time::time_duration	getDuration() const;
+		std::chrono::milliseconds		getDuration() const;
 		std::map<std::string, std::string>	getMetaData(void);
 
 		std::vector<StreamInfo>	getStreamInfo() const;

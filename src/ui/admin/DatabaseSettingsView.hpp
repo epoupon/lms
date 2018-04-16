@@ -19,15 +19,14 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
-#include <Wt/WTemplateFormView>
+#include <Wt/WTemplateFormView.h>
 
 namespace UserInterface {
 
 class DatabaseSettingsView : public Wt::WTemplateFormView
 {
 	public:
-		DatabaseSettingsView(Wt::WContainerWidget *parent = 0);
+		DatabaseSettingsView();
 };
 
 

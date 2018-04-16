@@ -19,14 +19,14 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
+#include <Wt/WContainerWidget.h>
 
 namespace UserInterface {
 
-class UsersView : public Wt::WContainerWidget
+class UsersView : public Wt::WTemplate
 {
 	public:
-		UsersView(Wt::WContainerWidget *parent = 0);
+		UsersView();
 
 	private:
 		void refreshView();

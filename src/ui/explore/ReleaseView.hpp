@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
+#include <Wt/WSignal.h>
 
 namespace UserInterface {
 
@@ -27,7 +27,7 @@ class Filters;
 class Release : public Wt::WContainerWidget
 {
 	public:
-		Release(Filters* filters, Wt::WContainerWidget* parent = 0);
+		Release(Filters* filters);
 
 		Wt::Signal<Database::id_type> releaseAdd;
 		Wt::Signal<Database::id_type> releasePlay;

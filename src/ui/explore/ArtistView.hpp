@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
-#include <Wt/WSignal>
+#include <Wt/WContainerWidget.h>
+#include <Wt/WSignal.h>
 
 namespace UserInterface {
 
@@ -29,7 +29,7 @@ class Filters;
 class Artist : public Wt::WContainerWidget
 {
 	public:
-		Artist(Filters* filters, Wt::WContainerWidget* parent = 0);
+		Artist(Filters* filters);
 
 		Wt::Signal<Database::id_type> artistAdd;
 		Wt::Signal<Database::id_type> artistPlay;

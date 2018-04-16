@@ -57,14 +57,14 @@ MediaFile::MediaFile(const boost::filesystem::path& p)
 	int error = avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr);
 	if (error < 0)
 	{
-		LMS_LOG(AV, ERROR) << "Cannot open " << _p << ": " << averror_to_string(error);
+		LMS_LOG(AV, ERROR) << "Cannot open " << _p.string() << ": " << averror_to_string(error);
 		throw MediaFileException(error);
 	}
 
 	error = avformat_find_stream_info(_context, nullptr);
 	if (error < 0)
 	{
-		LMS_LOG(AV, ERROR) << "Cannot find stream information on " << _p << ": " << averror_to_string(error);
+		LMS_LOG(AV, ERROR) << "Cannot find stream information on " << _p.string() << ": " << averror_to_string(error);
 		avformat_close_input(&_context);
 		throw MediaFileException(error);
 	}
@@ -75,13 +75,13 @@ MediaFile::~MediaFile()
 	avformat_close_input(&_context);
 }
 
-boost::posix_time::time_duration
+std::chrono::milliseconds
 MediaFile::getDuration() const
 {
-	if (static_cast<int>(_context->duration) != AV_NOPTS_VALUE )
-		return boost::posix_time::seconds(_context->duration / AV_TIME_BASE);
-	else
-		return boost::posix_time::seconds(0);	// TODO, do something better?
+	if (_context->duration == AV_NOPTS_VALUE)
+		return std::chrono::milliseconds(0); // TODO estimate
+
+	return std::chrono::milliseconds(_context->duration / AV_TIME_BASE * 1000);
 }
 
 void

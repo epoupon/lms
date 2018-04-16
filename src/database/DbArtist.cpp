@@ -54,7 +54,7 @@ Artist::getById(Wt::Dbo::Session& session, Artist::id_type id)
 Artist::pointer
 Artist::create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID)
 {
-	return session.add(new Artist(name, MBID));
+	return session.add(std::make_unique<Artist>(name, MBID));
 }
 
 std::vector<Artist::pointer>
@@ -75,7 +75,7 @@ Artist::getAllOrphans(Wt::Dbo::Session& session)
 static
 Wt::Dbo::Query<Artist::pointer>
 getQuery(Wt::Dbo::Session& session,
-		const std::set<id_type>& clusterIds,
+		const std::set<Artist::id_type>& clusterIds,
 		const std::vector<std::string>& keywords)
 {
 	WhereClause where;

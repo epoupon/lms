@@ -19,6 +19,7 @@
 
 #include <string>
 #include <sstream>
+#include <iomanip>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -26,42 +27,28 @@
 
 #include "Utils.hpp"
 
-
-boost::optional<long>
-readLong(const std::string& str)
+template<>
+boost::optional<Wt::WDate> readAs(const std::string& str)
 {
-	try
-	{
-		return std::stol(str);
-	}
-	catch (std::exception& e)
-	{
-		return boost::none;
-	}
-}
-
-bool readAsPosixTime(const std::string& str, boost::posix_time::ptime& time)
-{
-	const std::locale formats[] = {
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y-%m-%d")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y-%b-%d")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y-%B-%d")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y/%m/%d")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%d.%m.%Y")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y-%m")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y/%m")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y.%m")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y")),
+	const std::vector<std::string> formats = {
+		"yyyy-MM-dd",
+		"yyyy/MM/dd",
+		"yyyy-MM",
+		"yyyy/MM",
+		"yyyy"
 	};
-	for(size_t i=0; i < sizeof(formats)/sizeof(formats[0]); ++i)
+
+	for (auto format : formats)
 	{
-		std::istringstream iss(str);
-		iss.imbue(formats[i]);
-		if (iss >> time)
-			return true;
+		auto date = Wt::WDate::fromString(str, format);
+
+		if (!date.isValid())
+			continue;
+
+		return date;
 	}
 
-	return false;
+	return boost::none;
 }
 
 bool readList(const std::string& str, const std::string& separators, std::list<std::string>& results)
@@ -72,7 +59,7 @@ bool readList(const std::string& str, const std::string& separators, std::list<s
 	{
 		if (separators.find(c) != std::string::npos) {
 			if (!curStr.empty()) {
-				results.push_back(stringToUTF8(curStr));
+				results.push_back(curStr);
 				curStr.clear();
 			}
 		}
@@ -85,7 +72,7 @@ bool readList(const std::string& str, const std::string& separators, std::list<s
 	}
 
 	if (!curStr.empty())
-		results.push_back(stringToUTF8(curStr));
+		results.push_back(curStr);
 
 	return !str.empty();
 }
@@ -129,14 +116,6 @@ std::string
 stringTrimEnd(const std::string& str, const std::string& whitespace)
 {
 	return str.substr(0, str.find_last_not_of(whitespace)+1);
-}
-
-
-
-std::string
-stringToUTF8(const std::string& str)
-{
-	return boost::locale::conv::to_utf<char>(str, "UTF-8");
 }
 
 std::string

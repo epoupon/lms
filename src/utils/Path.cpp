@@ -73,7 +73,7 @@ void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& cr
 	}
 	else
 	{
-		LMS_LOG(DBUPDATER, ERROR) << "Failed to open file '" << p << "'";
+		LMS_LOG(DBUPDATER, ERROR) << "Failed to open file '" << p.string() << "'";
 		throw std::runtime_error("Failed to open file '" + p.string() + "'" );
 	}
 

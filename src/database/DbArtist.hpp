@@ -23,10 +23,8 @@
 #include <string>
 #include <vector>
 
-#include <Wt/Dbo/Dbo>
-#include <Wt/Dbo/QueryModel>
-
-#include "SearchFilter.hpp"
+#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/QueryModel.h>
 
 namespace Database
 {

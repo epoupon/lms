@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <Wt/WJavaScript>
-#include <Wt/WTemplate>
+#include <Wt/WJavaScript.h>
+#include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
 
@@ -29,15 +29,15 @@ namespace UserInterface {
 class MediaPlayer : public Wt::WTemplate
 {
 	public:
-		MediaPlayer(Wt::WContainerWidget* parent = 0);
+		MediaPlayer();
 
 		void stop();
 		void playTrack(Database::Track::id_type);
 
 		// Signals
-		Wt::JSignal<void>	playbackEnded;
-		Wt::JSignal<void> 	playPrevious;
-		Wt::JSignal<void> 	playNext;
+		Wt::JSignal<>	playbackEnded;
+		Wt::JSignal<> 	playPrevious;
+		Wt::JSignal<> 	playNext;
 
 	private:
 

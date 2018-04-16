@@ -17,8 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WTemplate>
-#include <Wt/WPushButton>
+#include <Wt/WTemplate.h>
+#include <Wt/WPushButton.h>
 
 #include "database/Types.hpp"
 #include "utils/Logger.hpp"
@@ -28,18 +28,14 @@
 
 namespace UserInterface {
 
-UsersView::UsersView(Wt::WContainerWidget *parent)
- : Wt::WContainerWidget(parent)
+UsersView::UsersView()
+ : Wt::WTemplate(Wt::WString::tr("Lms.Admin.Users.template"))
 {
-	auto t = new Wt::WTemplate(Wt::WString::tr("Lms.Admin.Users.template"), this);
-	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	_container = new Wt::WContainerWidget();
-	t->bindWidget("users", _container);
+	_container = bindNew<Wt::WContainerWidget>("users");
 
-	auto addBtn = new Wt::WPushButton(Wt::WString::tr("Lms.Admin.Users.add"));
-	t->bindWidget("add-btn", addBtn);
-
+	Wt::WPushButton* addBtn = bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.Admin.Users.add"));
 	addBtn->clicked().connect(std::bind([=]
 	{
 		LmsApp->setInternalPath("/admin/user", true);
@@ -61,44 +57,41 @@ UsersView::refreshView()
 
 	_container->clear();
 
-	Wt::Dbo::Transaction transaction(DboSession());
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	auto users = Database::User::getAll(DboSession());
+	auto users = Database::User::getAll(LmsApp->getDboSession());
 	for (auto user : users)
 	{
 		auto userId = std::to_string(user.id());
-		auto entry = new Wt::WTemplate(Wt::WString::tr("Lms.Admin.Users.template.entry"), _container);
+		Wt::WTemplate* entry = _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry"));
 
-		Wt::Auth::User authUser = DbHandler().getUserDatabase().findWithId(userId);
-
+		Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().findWithId(userId);
 		if (!authUser.isValid()) {
 			LMS_LOG(UI, ERROR) << "Skipping invalid userId = " << user.id();
 			continue;
 		}
 
-		entry->bindString("name", authUser.identity(Wt::Auth::Identity::LoginName), Wt::PlainText);
+		entry->bindString("name", authUser.identity(Wt::Auth::Identity::LoginName), Wt::TextFormat::Plain);
 
 		// Don't edit ourself this way
-		if (CurrentUser() == user)
+		if (LmsApp->getCurrentUser() == user)
 			continue;
 
 		entry->setCondition("if-edit", true);
-		auto editBtn = new Wt::WPushButton(Wt::WString::tr("Lms.Admin.Users.edit"));
-		entry->bindWidget("edit-btn", editBtn);
+		Wt::WPushButton* editBtn = entry->bindNew<Wt::WPushButton>("edit-btn", Wt::WString::tr("Lms.Admin.Users.edit"));
 		editBtn->clicked().connect(std::bind([=]
 		{
 			LmsApp->setInternalPath("/admin/user/" + std::to_string(user.id()), true);
 		}));
 
-		auto delBtn = new Wt::WPushButton(Wt::WString::tr("Lms.Admin.Users.del"));
-		entry->bindWidget("del-btn", delBtn);
+		Wt::WPushButton* delBtn = entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.Admin.Users.del"));
 		delBtn->clicked().connect(std::bind([=]
 		{
-			Wt::Dbo::Transaction transaction(DboSession());
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			auto authUser = DbHandler().getUserDatabase().findWithId(userId);
-			auto user = DbHandler().getUser(authUser);
-			DbHandler().getUserDatabase().deleteUser( authUser );
+			auto authUser = LmsApp->getDb().getUserDatabase().findWithId(userId);
+			auto user = LmsApp->getDb().getUser(authUser);
+			LmsApp->getDb().getUserDatabase().deleteUser( authUser );
 			user.remove();
 			_container->removeWidget(entry);
 		}));

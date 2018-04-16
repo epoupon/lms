@@ -18,7 +18,6 @@
  */
 
 #include "Types.hpp"
-#include "SearchFilter.hpp"
 #include "SqlQuery.hpp"
 
 namespace Database
@@ -53,7 +52,7 @@ Release::getById(Wt::Dbo::Session& session, Release::id_type id)
 Release::pointer
 Release::create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID)
 {
-	return session.add(new Release(name, MBID));
+	return session.add(std::make_unique<Release>(name, MBID));
 }
 
 std::vector<Release::pointer>
@@ -74,7 +73,7 @@ Release::getAllOrphans(Wt::Dbo::Session& session)
 static
 Wt::Dbo::Query<Release::pointer>
 getQuery(Wt::Dbo::Session& session,
-			const std::set<id_type>& clusterIds,
+			const std::set<Release::id_type>& clusterIds,
 			const std::vector<std::string> keywords)
 {
 	WhereClause where;
@@ -140,22 +139,22 @@ Release::getReleaseYear(bool original) const
 {
 	assert(session());
 
-	Wt::Dbo::collection<boost::posix_time::ptime> times = session()->query<boost::posix_time::ptime>(
+	Wt::Dbo::collection<Wt::WDate> dates = session()->query<Wt::WDate>(
 			std::string("SELECT ") + (original ? "t.original_date" : "t.date") + " FROM track t INNER JOIN release r ON r.id = t.release_id")
 		.where("r.id = ?")
 		.groupBy("t.date")
 		.bind(this->id());
 
 	/* various dates, no date */
-	if (times.empty() || times.size() > 1)
+	if (dates.empty() || dates.size() > 1)
 		return boost::none;
 
-	boost::gregorian::date date = times.front().date();
+	auto date = dates.front();
 
-	if (date.is_special())
+	if (!date.isValid())
 		return boost::none;
 
-	return boost::make_optional<int>(date.year());
+	return date.year();
 }
 
 std::vector<Wt::Dbo::ptr<Artist>>

@@ -79,7 +79,7 @@ Image::load(boost::filesystem::path p)
 	}
 	catch (Magick::Exception& e)
 	{
-		LMS_LOG(COVER, ERROR) << "Caught Magick exception while loading image from file '" << p << "': " << e.what();
+		LMS_LOG(COVER, ERROR) << "Caught Magick exception while loading image from file '" << p.string() << "': " << e.what();
 		return false;
 	}
 }

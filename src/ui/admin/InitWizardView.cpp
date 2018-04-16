@@ -17,10 +17,10 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WFormModel>
-#include <Wt/WLineEdit>
-#include <Wt/WPushButton>
-#include <Wt/Auth/Identity>
+#include <Wt/WFormModel.h>
+#include <Wt/WLineEdit.h>
+#include <Wt/WPushButton.h>
+#include <Wt/Auth/Identity.h>
 
 #include "utils/Logger.hpp"
 
@@ -40,8 +40,7 @@ class InitWizardModel : public Wt::WFormModel
 		static const Field PasswordField;
 		static const Field PasswordConfirmField;
 
-		InitWizardModel(Wt::WObject *parent = 0)
-			: Wt::WFormModel(parent)
+		InitWizardModel() : Wt::WFormModel()
 		{
 			addField(AdminLoginField);
 			addField(PasswordField);
@@ -54,16 +53,16 @@ class InitWizardModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			Wt::Dbo::Transaction transaction(DboSession());
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
 			// Check if a user already exist
 			// If it's the case, just do nothing
-			if (!Database::User::getAll(DboSession()).empty())
+			if (!Database::User::getAll(LmsApp->getDboSession()).empty())
 				throw std::runtime_error("Admin user already created");
 
 			// Create user
-			Wt::Auth::User authUser = DbHandler().getUserDatabase().registerNew();
-			Database::User::pointer user = DbHandler().getUser(authUser);
+			Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().registerNew();
+			Database::User::pointer user = LmsApp->getDb().createUser(authUser);
 
 			// Account
 			authUser.setIdentity(Wt::Auth::Identity::LoginName, valueText(AdminLoginField));
@@ -94,7 +93,7 @@ class InitWizardModel : public Wt::WFormModel
 			}
 			else if (field == PasswordConfirmField)
 			{
-				if (validation(PasswordField).state() == Wt::WValidator::Valid)
+				if (validation(PasswordField).state() == Wt::ValidationState::Valid)
 				{
 					if (valueText(PasswordField) != valueText(PasswordConfirmField))
 						error = Wt::WString::tr("Lms.passwords-dont-match");
@@ -105,9 +104,9 @@ class InitWizardModel : public Wt::WFormModel
 				return Wt::WFormModel::validateField(field);
 			}
 
-			setValidation(field, Wt::WValidator::Result( error.empty() ? Wt::WValidator::Valid : Wt::WValidator::Invalid, error));
+			setValidation(field, Wt::WValidator::Result( error.empty() ? Wt::ValidationState::Valid : Wt::ValidationState::Invalid, error));
 
-			return (validation(field).state() == Wt::WValidator::Valid);
+			return (validation(field).state() == Wt::ValidationState::Valid);
 		}
 
 };
@@ -116,34 +115,28 @@ const Wt::WFormModel::Field InitWizardModel::AdminLoginField = "admin-login";
 const Wt::WFormModel::Field InitWizardModel::PasswordField = "password";
 const Wt::WFormModel::Field InitWizardModel::PasswordConfirmField = "password-confirm";
 
-InitWizardView::InitWizardView(Wt::WContainerWidget *parent)
-: Wt::WTemplateFormView(parent)
+InitWizardView::InitWizardView()
+: Wt::WTemplateFormView(Wt::WString::tr("Lms.Admin.InitWizard.template"))
 {
-	auto model = new InitWizardModel(this);
-
-	setTemplateText(Wt::WString::tr("Lms.Admin.InitWizard.template"));
-	addFunction("tr", &WTemplate::Functions::tr);
-	addFunction("id", &WTemplate::Functions::id);
+	auto model = std::make_shared<InitWizardModel>();
 
 	// AdminLogin
-	Wt::WLineEdit* accountEdit = new Wt::WLineEdit();
-	setFormWidget(InitWizardModel::AdminLoginField, accountEdit);
+	setFormWidget(InitWizardModel::AdminLoginField, std::make_unique<Wt::WLineEdit>());
 
 	// Password
-	Wt::WLineEdit* passwordEdit = new Wt::WLineEdit();
-	setFormWidget(InitWizardModel::PasswordField, passwordEdit );
-	passwordEdit->setEchoMode(Wt::WLineEdit::Password);
+	auto passwordEdit = std::make_unique<Wt::WLineEdit>();
+	passwordEdit->setEchoMode(Wt::EchoMode::Password);
+	setFormWidget(InitWizardModel::PasswordField, std::move(passwordEdit) );
 
 	// Password confirmation
-	Wt::WLineEdit* passwordConfirmEdit = new Wt::WLineEdit();
-	setFormWidget(InitWizardModel::PasswordConfirmField, passwordConfirmEdit);
-	passwordConfirmEdit->setEchoMode(Wt::WLineEdit::Password);
+	auto passwordConfirmEdit = std::make_unique<Wt::WLineEdit>();
+	passwordConfirmEdit->setEchoMode(Wt::EchoMode::Password);
+	setFormWidget(InitWizardModel::PasswordConfirmField, std::move(passwordConfirmEdit));
 
-	auto saveButton = new Wt::WPushButton(Wt::WString::tr("Lms.create"));
-	bindWidget("create-btn", saveButton);
+	Wt::WPushButton* saveButton = bindNew<Wt::WPushButton>("create-btn", Wt::WString::tr("Lms.create"));
 	saveButton->clicked().connect(std::bind([=]
 	{
-		updateModel(model);
+		updateModel(model.get());
 
 		if (model->validate())
 		{
@@ -152,10 +145,10 @@ InitWizardView::InitWizardView(Wt::WContainerWidget *parent)
 			saveButton->setEnabled(false);
 		}
 
-		updateView(model);
+		updateView(model.get());
 	}));
 
-	updateView(model);
+	updateView(model.get());
 }
 
 } // namespace UserInterface

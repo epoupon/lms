@@ -19,26 +19,21 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include <chrono>
 #include <list>
+#include <string>
+#include <sstream>
+#include <vector>
 
-#include <boost/locale.hpp>
 #include <boost/optional.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 
-
-boost::optional<long>
-readLong(const std::string& str);
-
-bool
-readAsPosixTime(const std::string& str, boost::posix_time::ptime& time);
+#include <Wt/WDate.h>
 
 bool
 readList(const std::string& str, const std::string& separators, std::list<std::string>& results);
 
-std::string
-durationToString(boost::posix_time::time_duration duration, std::string format);
+//std::string
+//durationToString(boost::posix_time::time_duration duration, std::string format);
 
 std::vector<std::string>
 splitString(std::string string, std::string separators);
@@ -50,16 +45,22 @@ std::string
 stringTrimEnd(const std::string& str, const std::string& whitespaces = " \t");
 
 std::string
-stringToUTF8(const std::string& str);
-
-std::string
 bufferToString(const std::vector<unsigned char>& data);
 
 template<typename T>
-static inline bool readAs(const std::string& str, T& data)
+boost::optional<T> readAs(const std::string& str)
 {
+	T res;
+
 	std::istringstream iss ( str );
-	iss >> data;
-	return !iss.fail();
+	iss >> res;
+	if (iss.fail())
+		return boost::none;
+
+	return res;
 }
+
+template<>
+boost::optional<Wt::WDate> readAs(const std::string& str);
+
 

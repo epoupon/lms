@@ -101,7 +101,7 @@ Transcoder::init()
 	}
 
 	if (!avConvPath.empty())
-		LMS_LOG(TRANSCODE, INFO) << "Using transcoder " << avConvPath;
+		LMS_LOG(TRANSCODE, INFO) << "Using transcoder " << avConvPath.string();
 	else
 		throw std::runtime_error("Cannot find any transcoder binary!");
 }
@@ -123,7 +123,7 @@ Transcoder::start()
 	else if (!boost::filesystem::is_regular( _filePath) )
 		return false;
 
-	LMS_LOG_TRANSCODE(INFO) << "Transcoding file '" << _filePath << "'";
+	LMS_LOG_TRANSCODE(INFO) << "Transcoding file '" << _filePath.string() << "'";
 
 	std::vector<std::string> args;
 

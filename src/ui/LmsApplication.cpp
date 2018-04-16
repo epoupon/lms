@@ -17,15 +17,16 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WAnchor>
-#include <Wt/WBootstrapTheme>
-#include <Wt/WEnvironment>
-#include <Wt/WMenu>
-#include <Wt/WNavigationBar>
-#include <Wt/WPopupMenu>
-#include <Wt/WStackedWidget>
-#include <Wt/WText>
-#include <Wt/Auth/Identity>
+#include <Wt/WAnchor.h>
+#include <Wt/WBootstrapTheme.h>
+#include <Wt/WEnvironment.h>
+#include <Wt/WMenu.h>
+#include <Wt/WNavigationBar.h>
+#include <Wt/WPopupMenu.h>
+#include <Wt/WServer.h>
+#include <Wt/WStackedWidget.h>
+#include <Wt/WText.h>
+#include <Wt/Auth/Identity.h>
 
 #include "config/config.h"
 #include "utils/Logger.hpp"
@@ -49,14 +50,14 @@
 
 namespace UserInterface {
 
-Wt::WApplication*
+std::unique_ptr<Wt::WApplication>
 LmsApplication::create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner)
 {
 	/*
 	 * You could read information from the environment to decide whether
 	 * the user has permission to start a new application
 	 */
-	return new LmsApplication(env, connectionPool, scanner);
+	return std::make_unique<LmsApplication>(env, connectionPool, scanner);
 }
 
 LmsApplication*
@@ -78,10 +79,10 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
   _imageResource(nullptr),
   _transcodeResource(nullptr)
 {
-	Wt::WBootstrapTheme *bootstrapTheme = new Wt::WBootstrapTheme(this);
-	bootstrapTheme->setVersion(Wt::WBootstrapTheme::Version3);
+	auto  bootstrapTheme = std::make_unique<Wt::WBootstrapTheme>();
+	bootstrapTheme->setVersion(Wt::BootstrapVersion::v3);
 	bootstrapTheme->setResponsive(true);
-	setTheme(bootstrapTheme);
+	setTheme(std::move(bootstrapTheme));
 
 	useStyleSheet("css/lms.css");
 	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
@@ -90,7 +91,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "admin-database");
 	messageResourceBundle().use(appRoot() + "admin-user");
 	messageResourceBundle().use(appRoot() + "admin-users");
-	messageResourceBundle().use(appRoot() + "admin-wizard");
+	messageResourceBundle().use(appRoot() + "admin-initwizard");
 	messageResourceBundle().use(appRoot() + "artist");
 	messageResourceBundle().use(appRoot() + "artists");
 	messageResourceBundle().use(appRoot() + "home");
@@ -113,20 +114,22 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	// If here is no account in the database, launch the first connection wizard
 	bool firstConnection;
 	{
-		Wt::Dbo::Transaction transaction(DboSession());
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-		firstConnection = (Database::User::getAll(DboSession()).size() == 0);
+		firstConnection = (Database::User::getAll(LmsApp->getDboSession()).size() == 0);
 	}
 
 	LMS_LOG(UI, DEBUG) << "Creating root widget. First connection = " << std::boolalpha << firstConnection;
 
 	if (firstConnection)
 	{
-		root()->addWidget(new InitWizardView());
+		root()->addWidget(std::make_unique<InitWizardView>());
 	}
 	else
 	{
-		DbHandler().getLogin().changed().connect(std::bind([=]
+		_auth = root()->addNew<Auth>();
+
+		LmsApp->getDb().getLogin().changed().connect(std::bind([=]
 		{
 			try
 			{
@@ -138,68 +141,31 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 				throw std::runtime_error("Internal error");
 			}
 		}));
-
-		_auth = new Auth();
-		root()->addWidget(_auth);
 	}
 }
 
-Database::Handler& DbHandler()
-{
-	return LmsApplication::instance()->getDbHandler();
-}
-Wt::Dbo::Session& DboSession()
-{
-	return DbHandler().getSession();
-}
-
-const Wt::Auth::User& CurrentAuthUser()
-{
-	return DbHandler().getLogin().user();
-}
-
-Database::User::pointer CurrentUser()
-{
-	return DbHandler().getCurrentUser();
-}
-
-ImageResource* SessionImageResource()
-{
-	return LmsApplication::instance()->getImageResource();
-}
-
-TranscodeResource* SessionTranscodeResource()
-{
-	return LmsApplication::instance()->getTranscodeResource();
-}
-
-Scanner::MediaScanner& MediaScanner()
-{
-	return LmsApplication::instance()->getMediaScanner();
-}
-
-Wt::WAnchor*
+std::unique_ptr<Wt::WAnchor>
 LmsApplication::createArtistAnchor(Database::Artist::pointer artist, bool addText)
 {
-	auto res = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/artist/" + std::to_string(artist.id())));
+	auto res = std::make_unique<Wt::WAnchor>(Wt::WLink(Wt::LinkType::InternalPath, "/artist/" + std::to_string(artist.id())));
 
 	if (addText)
 	{
-		res->setTextFormat(Wt::PlainText);
+		res->setTextFormat(Wt::TextFormat::Plain);
 		res->setText(Wt::WString::fromUTF8(artist->getName()));
 	}
 
 	return res;
 }
 
-Wt::WAnchor*
+std::unique_ptr<Wt::WAnchor>
 LmsApplication::createReleaseAnchor(Database::Release::pointer release, bool addText)
 {
-	auto res = new Wt::WAnchor(Wt::WLink(Wt::WLink::InternalPath, "/release/" + std::to_string(release.id())));
+	auto res = std::make_unique<Wt::WAnchor>(Wt::WLink(Wt::LinkType::InternalPath, "/release/" + std::to_string(release.id())));
 
 	if (addText)
 	{
-		res->setTextFormat(Wt::PlainText);
+		res->setTextFormat(Wt::TextFormat::Plain);
 		res->setText(Wt::WString::fromUTF8(release->getName()));
 	}
 
@@ -274,7 +240,7 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 void
 LmsApplication::handleAuthEvent(void)
 {
-	if (!DbHandler().getLogin().loggedIn())
+	if (!LmsApp->getDb().getLogin().loggedIn())
 	{
 		LMS_LOG(UI, INFO) << "User logged out, session = " << Wt::WApplication::instance()->sessionId();
 
@@ -282,73 +248,69 @@ LmsApplication::handleAuthEvent(void)
 		return;
 	}
 
-	LMS_LOG(UI, INFO) << "User '" << CurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().agent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
+	LMS_LOG(UI, INFO) << "User '" << LmsApp->getCurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().userAgent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
 
 	{
-		Wt::Dbo::Transaction transaction (DboSession());
-		_isAdmin = CurrentUser()->isAdmin();
+		Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
+		_isAdmin = LmsApp->getCurrentUser()->isAdmin();
 	}
 
-	_imageResource = new ImageResource(_db, root());
-	_transcodeResource = new TranscodeResource(_db, root());
+	_imageResource = std::make_shared<ImageResource>(_db);
+	_transcodeResource = std::make_shared<TranscodeResource>(_db);
 
 	setConfirmCloseMessage(Wt::WString::tr("Lms.quit-confirm"));
 
-	auto main = new Wt::WTemplate(Wt::WString::tr("Lms.template"), root());
+	Wt::WTemplate* main = root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.template")));
 
 	// Navbar
-	auto navbar = new Wt::WNavigationBar();
-	navbar->setTitle("LMS", Wt::WLink(Wt::WLink::InternalPath, "/home"));
+	Wt::WNavigationBar* navbar = main->bindNew<Wt::WNavigationBar>("navbar-top");
+	navbar->setTitle("LMS", Wt::WLink(Wt::LinkType::InternalPath, "/home"));
 	navbar->setResponsive(true);
 
-	main->bindWidget("navbar-top", navbar);
-
-	auto menu = new Wt::WMenu();
+	Wt::WMenu* menu = navbar->addMenu(std::make_unique<Wt::WMenu>());
 	{
 		auto menuItem = menu->insertItem(0, Wt::WString::tr("Lms.Explore.artists"));
-		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/artists"));
+		menuItem->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/artists"));
 		menuItem->setSelectable(false);
 	}
 	{
 		auto menuItem = menu->insertItem(1, Wt::WString::tr("Lms.Explore.releases"));
-		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/releases"));
+		menuItem->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/releases"));
 		menuItem->setSelectable(false);
 	}
 	{
 		auto menuItem = menu->insertItem(2, Wt::WString::tr("Lms.Explore.tracks"));
-		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/tracks"));
+		menuItem->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/tracks"));
 		menuItem->setSelectable(false);
 	}
 	{
 		auto menuItem = menu->insertItem(3, Wt::WString::tr("Lms.PlayQueue.playqueue"));
-		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/playqueue"));
+		menuItem->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/playqueue"));
 		menuItem->setSelectable(false);
 	}
-	navbar->addMenu(menu);
 
-	auto rightMenu = new Wt::WMenu();
+	Wt::WMenu* rightMenu = navbar->addMenu(std::make_unique<Wt::WMenu>(), Wt::AlignmentFlag::Right);
 	std::size_t itemCounter = 0;
-
 	if (_isAdmin)
 	{
 		auto menuItem = rightMenu->insertItem(itemCounter++, Wt::WString::tr("Lms.administration"));
 		menuItem->setSelectable(false);
 
-		Wt::WPopupMenu *admin = new Wt::WPopupMenu();
+		auto admin = std::make_unique<Wt::WPopupMenu>();
 		auto dbSettings = admin->insertItem(0, Wt::WString::tr("Lms.Admin.Database.database"));
-		dbSettings->setLink(Wt::WLink(Wt::WLink::InternalPath, "/admin/database"));
+		dbSettings->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/admin/database"));
 		dbSettings->setSelectable(false);
 
 		auto usersSettings = admin->insertItem(1, Wt::WString::tr("Lms.Admin.Users.users"));
-		usersSettings->setLink(Wt::WLink(Wt::WLink::InternalPath, "/admin/users"));
+		usersSettings->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/admin/users"));
 		usersSettings->setSelectable(false);
 
-		menuItem->setMenu(admin);
+		menuItem->setMenu(std::move(admin));
 	}
 
 	{
 		auto menuItem = rightMenu->insertItem(itemCounter++, Wt::WString::tr("Lms.Settings.settings"));
-		menuItem->setLink(Wt::WLink(Wt::WLink::InternalPath, "/settings"));
+		menuItem->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/settings"));
 		menuItem->setSelectable(false);
 	}
 	{
@@ -360,34 +322,22 @@ LmsApplication::handleAuthEvent(void)
 			_auth->logout();
 		}));
 	}
-	navbar->addMenu(rightMenu, Wt::AlignRight);
 
 	// Contents
-	Wt::WStackedWidget* mainStack = new Wt::WStackedWidget();
-	main->bindWidget("contents", mainStack);
+	// Order is important in mainStack, see IdxRoot!
+	Wt::WStackedWidget* mainStack = main->bindNew<Wt::WStackedWidget>("contents");
 
-	mainStack->addWidget(new Home());
-
-	auto explore = new Explore();
-	mainStack->addWidget(explore);
-
-	auto playqueue = new PlayQueue();
-	mainStack->addWidget(playqueue);
-
-	auto settings = new SettingsView();
-	mainStack->addWidget(settings);
+	mainStack->addNew<Home>();
+	Explore* explore = mainStack->addNew<Explore>();
+	PlayQueue* playqueue = mainStack->addNew<PlayQueue>();
+	mainStack->addNew<SettingsView>();
 
 	// Admin stuff
 	if (_isAdmin)
 	{
-		auto databaseSettings = new DatabaseSettingsView();
-		mainStack->addWidget(databaseSettings);
-
-		auto users = new UsersView();
-		mainStack->addWidget(users);
-
-		auto user = new UserView();
-		mainStack->addWidget(user);
+		mainStack->addNew<DatabaseSettingsView>();
+		mainStack->addNew<UsersView>();
+		mainStack->addNew<UserView>();
 	}
 
 	explore->tracksAdd.connect(std::bind([=] (std::vector<Database::Track::pointer> tracks)
@@ -400,9 +350,9 @@ LmsApplication::handleAuthEvent(void)
 		playqueue->playTracks(tracks);
 	}, std::placeholders::_1));
 
+
 	// MediaPlayer
-	auto player = new MediaPlayer();
-	main->bindWidget("player", player);
+	MediaPlayer* player = main->bindNew<MediaPlayer>("player");
 
 	// Events from MediaPlayer
 	player->playNext.connect(std::bind([=]
@@ -468,7 +418,7 @@ void
 LmsApplication::notifyMsg(const Wt::WString& message)
 {
 	LMS_LOG(UI, INFO) << "Notifying message '" << message.toUTF8() << "'";
-	root()->addWidget(new Wt::WText(message));
+	root()->addNew<Wt::WText>(message);
 }
 
 } // namespace UserInterface

@@ -17,9 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WAnchor>
-#include <Wt/WTemplate>
-#include <Wt/WLineEdit>
+#include <Wt/WAnchor.h>
+#include <Wt/WTemplate.h>
+#include <Wt/WLineEdit.h>
 
 #include "database/Types.hpp"
 
@@ -34,24 +34,20 @@ namespace UserInterface {
 
 using namespace Database;
 
-Artists::Artists(Filters* filters, Wt::WContainerWidget* parent)
-: Wt::WContainerWidget(parent),
+Artists::Artists(Filters* filters)
+: Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artists.template")),
   _filters(filters)
 {
-	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artists.template"), this);
-	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	_search = new Wt::WLineEdit();
-	container->bindWidget("search", _search);
+	_search = bindNew<Wt::WLineEdit>("search");
 	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
 	_search->textInput().connect(this, &Artists::refresh);
 
-	_artistsContainer = new Wt::WContainerWidget();
-	container->bindWidget("artists", _artistsContainer);
+	_artistsContainer = bindNew<Wt::WContainerWidget>("artists");
 
-	_showMore = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.template.show-more"));
+	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.template.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
-	container->bindWidget("show-more", _showMore);
 
 	_showMore->clicked().connect(std::bind([=]
 	{
@@ -77,24 +73,20 @@ Artists::addSome()
 
 	auto clusterIds = _filters->getClusterIds();
 
-	Wt::Dbo::Transaction transaction(DboSession());
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
 	bool moreResults;
-	auto artists = Artist::getByFilter(DboSession(),
+	auto artists = Artist::getByFilter(LmsApp->getDboSession(),
 			clusterIds,
 			searchKeywords,
 			_artistsContainer->count(), 20, moreResults);
 
 	for (auto artist : artists)
 	{
-		auto entry = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artists.template.entry"), _artistsContainer);
+		Wt::WTemplate* entry = _artistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry"));
 
 		entry->bindInt("nb-release", artist->getReleases(clusterIds).size());
-
-		{
-			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(artist);
-			entry->bindWidget("name", artistAnchor);
-		}
+		entry->bindWidget("name", LmsApplication::createArtistAnchor(artist));
 	}
 
 	_showMore->setHidden(!moreResults);

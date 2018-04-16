@@ -19,18 +19,19 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
-#include <Wt/WLineEdit>
-#include <Wt/WSignal>
+#include <Wt/WContainerWidget.h>
+#include <Wt/WTemplate.h>
+#include <Wt/WLineEdit.h>
+#include <Wt/WSignal.h>
 
 namespace UserInterface {
 
 class Filters;
 
-class Artists : public Wt::WContainerWidget
+class Artists : public Wt::WTemplate
 {
 	public:
-		Artists(Filters* filters, Wt::WContainerWidget* parent = 0);
+		Artists(Filters* filters);
 
 		Wt::Signal<Database::id_type> artistAdd;
 		Wt::Signal<Database::id_type> artistPlay;

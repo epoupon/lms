@@ -20,14 +20,14 @@
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-#include <Wt/WServer>
+#include <Wt/WServer.h>
+#include <Wt/WApplication.h>
 
 #include "utils/Config.hpp"
 #include "utils/Logger.hpp"
 #include "av/AvInfo.hpp"
 #include "av/AvTranscoder.hpp"
 #include "image/Image.hpp"
-#include "feature/FeatureExtractor.hpp"
 
 #include "scanner/MediaScanner.hpp"
 
@@ -117,17 +117,16 @@ int main(int argc, char* argv[])
 		Av::AvInit();
 		Av::Transcoder::init();
 		Database::Handler::configureAuth();
-		Feature::Extractor::init();
 
 		// Initializing a connection pool to the database that will be shared along services
-		std::unique_ptr<Wt::Dbo::SqlConnectionPool>
-			connectionPool( Database::Handler::createConnectionPool(Config::instance().getPath("working-dir") / "lms.db"));
+		auto connectionPool = Database::Handler::createConnectionPool(Config::instance().getPath("working-dir") / "lms.db");
 
 		Scanner::MediaScanner scanner(*connectionPool);
 
 		// bind entry point
-		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create,
-					_1, boost::ref(*connectionPool), boost::ref(scanner)));
+		server.addEntryPoint(Wt::EntryPointType::Application,
+				std::bind(UserInterface::LmsApplication::create,
+					std::placeholders::_1, std::ref(*connectionPool), std::ref(scanner)));
 
 		// Start
 		LMS_LOG(MAIN, INFO) << "Starting Media scanner...";
@@ -138,7 +137,7 @@ int main(int argc, char* argv[])
 
 		// Wait
 		LMS_LOG(MAIN, INFO) << "Now running...";
-		Wt::WServer::waitForShutdown(argv[0]);
+		Wt::WServer::waitForShutdown();
 
 		// Stop
 		LMS_LOG(MAIN, INFO) << "Stopping server...";

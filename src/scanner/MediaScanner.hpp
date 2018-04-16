@@ -19,10 +19,12 @@
 
 #pragma once
 
-#include <boost/asio/deadline_timer.hpp>
+#include <chrono>
 
-#include <Wt/WIOService>
-#include <Wt/WSignal>
+#include <Wt/WIOService.h>
+#include <Wt/WSignal.h>
+
+#include <boost/asio/system_timer.hpp>
 
 #include "metadata/TagLibParser.hpp"
 
@@ -40,8 +42,8 @@ enum class UpdatePeriod {
 UpdatePeriod getUpdatePeriod(Wt::Dbo::Session& session);
 void setUpdatePeriod(Wt::Dbo::Session& session, UpdatePeriod updatePeriod);
 
-boost::posix_time::time_duration getUpdateStartTime(Wt::Dbo::Session& session);
-void setUpdateStartTime(Wt::Dbo::Session& session, boost::posix_time::time_duration);
+Wt::WTime getUpdateStartTime(Wt::Dbo::Session& session);
+void setUpdateStartTime(Wt::Dbo::Session& session, Wt::WTime time);
 
 class MediaScanner
 {
@@ -92,8 +94,8 @@ class MediaScanner
 
 		// Job handling
 		void scheduleScan();
-		void scheduleScan(boost::posix_time::time_duration duration);
-		void scheduleScan(boost::posix_time::ptime time);
+		void scheduleScan(std::chrono::seconds duration);
+		void scheduleScan(std::chrono::system_clock::time_point time);
 
 		// Update database (scheduled callback)
 		void scan(boost::system::error_code ec);
@@ -119,7 +121,7 @@ class MediaScanner
 		Wt::Signal<Database::Track::pointer> _sigAddedTrack;
 		Wt::Signal<Database::Track::pointer> _sigRemovedTrack;
 
-		boost::asio::deadline_timer _scheduleTimer;
+		boost::asio::system_timer _scheduleTimer;
 
 		Database::Handler	_db;
 

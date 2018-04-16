@@ -51,7 +51,7 @@ User::getAll(Wt::Dbo::Session& session)
 User::pointer
 User::create(Wt::Dbo::Session& session)
 {
-	return session.add(new User());
+	return session.add(std::make_unique<User>());
 }
 
 User::pointer

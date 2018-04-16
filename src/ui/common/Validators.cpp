@@ -19,28 +19,31 @@
 
 #include <boost/filesystem.hpp>
 
+#include <Wt/WLengthValidator.h>
+
 #include "Validators.hpp"
 
 namespace UserInterface {
 
-Wt::WValidator* createNameValidator()
+std::shared_ptr<Wt::WValidator>
+createNameValidator()
 {
-	Wt::WLengthValidator *v = new Wt::WLengthValidator();
+	auto v = std::make_shared<Wt::WLengthValidator>();
 	v->setMandatory(true);
 	v->setMinimumLength(::Database::User::MinNameLength);
 	v->setMaximumLength(::Database::User::MaxNameLength);
 	return v;
 }
 
-Wt::WValidator* createMandatoryValidator()
+std::shared_ptr<Wt::WValidator>
+createMandatoryValidator()
 {
-	auto v = new Wt::WValidator();
+	auto v = std::make_shared<Wt::WValidator>();
 	v->setMandatory(true);
 	return v;
 }
 
-DirectoryValidator::DirectoryValidator(Wt::WObject *parent)
-: Wt::WValidator(parent)
+DirectoryValidator::DirectoryValidator() : Wt::WValidator()
 {
 }
 
@@ -56,11 +59,11 @@ DirectoryValidator::validate(const Wt::WString& input) const
 	// TODO check rights
 	bool res = boost::filesystem::is_directory(p, ec);
 	if (ec)
-		return Wt::WValidator::Result(Wt::WValidator::Invalid, ec.message()); // TODO translate common errors
+		return Wt::WValidator::Result(Wt::ValidationState::Invalid, ec.message()); // TODO translate common errors
 	else if (res)
-		return Wt::WValidator::Result(Wt::WValidator::Valid);
+		return Wt::WValidator::Result(Wt::ValidationState::Valid);
 	else
-		return Wt::WValidator::Result(Wt::WValidator::Invalid, Wt::WString::tr("Lms.not-a-directory"));
+		return Wt::WValidator::Result(Wt::ValidationState::Invalid, Wt::WString::tr("Lms.not-a-directory"));
 }
 
 

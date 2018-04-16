@@ -55,8 +55,7 @@ TagLibParser::parse(const boost::filesystem::path& p)
 	{
 		TagLib::AudioProperties *properties = f.audioProperties();
 
-		boost::posix_time::time_duration duration = boost::posix_time::seconds(properties->length());
-
+		std::chrono::milliseconds duration(properties->length() * 1000);
 		items.insert( std::make_pair(MetaData::Type::Duration, duration) );
 
 		MetaData::AudioStream audioStream = { .bitRate = static_cast<std::size_t>(properties->bitrate() * 1000) };
@@ -124,15 +123,15 @@ TagLibParser::parse(const boost::filesystem::path& p)
 
 				if (!strings.empty())
 				{
-					std::size_t number;
-					if (readAs<std::size_t>(strings[0], number))
-						items.insert( std::make_pair(MetaData::Type::TrackNumber, number ));
+					auto number = readAs<std::size_t>(strings[0]);
+					if (number)
+						items.insert( std::make_pair(MetaData::Type::TrackNumber, *number ));
 
 					if (strings.size() > 1)
 					{
-						std::size_t totalNumber;
-						if (readAs<std::size_t>(strings[1], totalNumber))
-							items.insert( std::make_pair(MetaData::Type::TotalTrack, totalNumber ));
+						auto totalNumber = readAs<std::size_t>(strings[1]);
+						if (totalNumber)
+							items.insert( std::make_pair(MetaData::Type::TotalTrack, *totalNumber ));
 					}
 				}
 			}
@@ -143,32 +142,32 @@ TagLibParser::parse(const boost::filesystem::path& p)
 
 				if (!strings.empty())
 				{
-					std::size_t number;
-					if (readAs<std::size_t>(strings[0], number))
-						items.insert( std::make_pair(MetaData::Type::DiscNumber, number ));
+					auto number = readAs<std::size_t>(strings[0]);
+					if (number)
+						items.insert( std::make_pair(MetaData::Type::DiscNumber, *number));
 
 					if (strings.size() > 1)
 					{
-						std::size_t totalNumber;
-						if (readAs<std::size_t>(strings[1], totalNumber))
-							items.insert( std::make_pair(MetaData::Type::TotalDisc, totalNumber ));
+						auto totalNumber = readAs<std::size_t>(strings[1]);
+						if (totalNumber)
+							items.insert( std::make_pair(MetaData::Type::TotalDisc, *totalNumber ));
 					}
 				}
 			}
 			else if (tag == "DATE")
 			{
-				boost::posix_time::ptime p;
-				if (readAsPosixTime(values.front().to8Bit(), p))
-					items.insert( std::make_pair(MetaData::Type::Date, p));
+				auto timePoint = readAs<Wt::WDate>(values.front().to8Bit());
+				if (timePoint)
+					items.insert( std::make_pair(MetaData::Type::Date, *timePoint));
 			}
 			else if (tag == "ORIGINALDATE")
 			{
-				boost::posix_time::ptime p;
-				if (readAsPosixTime(values.front().to8Bit(), p))
+				auto timePoint = readAs<Wt::WDate>(values.front().to8Bit());
+				if (timePoint)
 				{
 					// Take priority on original year
 					items.erase( MetaData::Type::OriginalDate );
-					items.insert( std::make_pair(MetaData::Type::OriginalDate, p));
+					items.insert( std::make_pair(MetaData::Type::OriginalDate, *timePoint));
 				}
 			}
 			else if (tag == "ORIGINALYEAR")
@@ -176,9 +175,9 @@ TagLibParser::parse(const boost::filesystem::path& p)
 				// lower priority than original date
 				if (items.find(MetaData::Type::OriginalDate) == items.end())
 				{
-					boost::posix_time::ptime p;
-					if (readAsPosixTime(values.front().to8Bit(), p))
-						items.insert( std::make_pair(MetaData::Type::OriginalDate, p));
+					auto timePoint = readAs<Wt::WDate>(values.front().to8Bit());
+					if (timePoint)
+						items.insert( std::make_pair(MetaData::Type::OriginalDate, *timePoint));
 				}
 			}
 			else if (tag == "METADATA_BLOCK_PICTURE")

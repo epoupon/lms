@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/Http/Response>
+#include <Wt/Http/Response.h>
 
 #include "utils/Logger.hpp"
 
@@ -27,9 +27,8 @@
 
 namespace UserInterface {
 
-TranscodeResource::TranscodeResource(Database::Handler& db, Wt::WObject *parent)
-:  Wt::WResource(parent),
-_db(db)
+TranscodeResource::TranscodeResource(Database::Handler& db)
+: _db(db)
 {
 	LMS_LOG(UI, DEBUG) << "CONSTRUCTING RESOURCE";
 }

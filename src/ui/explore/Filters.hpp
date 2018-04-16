@@ -19,8 +19,9 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
-#include <Wt/WSignal>
+#include <Wt/WContainerWidget.h>
+#include <Wt/WSignal.h>
+#include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
 
@@ -28,21 +29,21 @@
 
 namespace UserInterface {
 
-class Filters : public Wt::WContainerWidget
+class Filters : public Wt::WTemplate
 {
 	public:
-		Filters(Wt::WContainerWidget *parent = 0);
+		Filters();
 
 		std::set<Database::Cluster::id_type> getClusterIds() const { return _filterIds; }
 
-		Wt::Signal<void>& updated() { return _sigUpdated; }
+		Wt::Signal<>& updated() { return _sigUpdated; }
 
 	private:
 
 		void showDialog();
 
 		Wt::WContainerWidget *_filters;
-		Wt::Signal<void> _sigUpdated;
+		Wt::Signal<> _sigUpdated;
 		std::set<Database::Cluster::id_type> _filterIds;
 };
 

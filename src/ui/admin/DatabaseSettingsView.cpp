@@ -17,13 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WString>
-#include <Wt/WPushButton>
-#include <Wt/WComboBox>
-#include <Wt/WLineEdit>
+#include <Wt/WString.h>
+#include <Wt/WPushButton.h>
+#include <Wt/WComboBox.h>
+#include <Wt/WLineEdit.h>
 
-#include <Wt/WFormModel>
-#include <Wt/WStringListModel>
+#include <Wt/WFormModel.h>
+#include <Wt/WStringListModel.h>
 
 #include "common/Validators.hpp"
 #include "database/MediaDirectory.hpp"
@@ -46,8 +46,8 @@ class DatabaseSettingsModel : public Wt::WFormModel
 		static const Field UpdatePeriodField;
 		static const Field UpdateStartTimeField;
 
-		DatabaseSettingsModel(Wt::WObject *parent = 0)
-			: Wt::WFormModel(parent)
+		DatabaseSettingsModel()
+			: Wt::WFormModel()
 		{
 			initializeModels();
 
@@ -55,7 +55,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			addField(UpdatePeriodField);
 			addField(UpdateStartTimeField);
 
-			DirectoryValidator* dirValidator = new DirectoryValidator();
+			auto dirValidator = std::make_shared<DirectoryValidator>();
 			dirValidator->setMandatory(true);
 			setValidator(MediaDirectoryField, dirValidator);
 
@@ -66,42 +66,42 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			loadData();
 		}
 
-		Wt::WAbstractItemModel *updatePeriodModel() { return _updatePeriodModel; }
-		Wt::WAbstractItemModel *updateStartTimeModel() { return _updateStartTimeModel; }
+		std::shared_ptr<Wt::WAbstractItemModel> updatePeriodModel() { return _updatePeriodModel; }
+		std::shared_ptr<Wt::WAbstractItemModel> updateStartTimeModel() { return _updateStartTimeModel; }
 
 		void loadData()
 		{
 			using namespace Database;
 
-			Wt::Dbo::Transaction transaction(DboSession());
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			std::vector<MediaDirectory::pointer> mediaDirectories = MediaDirectory::getAll(DboSession());
+			std::vector<MediaDirectory::pointer> mediaDirectories = MediaDirectory::getAll(LmsApp->getDboSession());
 			if (!mediaDirectories.empty())
 				setValue(MediaDirectoryField, mediaDirectories.front()->getPath().string());
 
-			auto periodRow = getUpdatePeriodModelRow( Scanner::getUpdatePeriod(DboSession()) );
+			auto periodRow = getUpdatePeriodModelRow( Scanner::getUpdatePeriod(LmsApp->getDboSession()) );
 			if (periodRow)
 				setValue(UpdatePeriodField, updatePeriodString(*periodRow));
 
-			auto startTimeRow = getUpdateStartTimeModelRow( Scanner::getUpdateStartTime(DboSession()) );
+			auto startTimeRow = getUpdateStartTimeModelRow( Scanner::getUpdateStartTime(LmsApp->getDboSession()) );
 			if (startTimeRow)
 				setValue(UpdateStartTimeField, updateStartTimeString(*startTimeRow) );
 		}
 
 		void saveData()
 		{
-			Wt::Dbo::Transaction transaction(DboSession());
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			MediaDirectory::eraseAll(DboSession());
-			MediaDirectory::create(DboSession(), boost::any_cast<Wt::WString>(value(MediaDirectoryField)).toUTF8());
+			MediaDirectory::eraseAll(LmsApp->getDboSession());
+			MediaDirectory::create(LmsApp->getDboSession(), Wt::cpp17::any_cast<Wt::WString>(value(MediaDirectoryField)).toUTF8());
 
-			auto updatePeriodRow = getUpdatePeriodModelRow( boost::any_cast<Wt::WString>(value(UpdatePeriodField)));
+			auto updatePeriodRow = getUpdatePeriodModelRow( Wt::cpp17::any_cast<Wt::WString>(value(UpdatePeriodField)));
 			assert(updatePeriodRow);
-			Scanner::setUpdatePeriod(DboSession(), updatePeriod(*updatePeriodRow));
+			Scanner::setUpdatePeriod(LmsApp->getDboSession(), updatePeriod(*updatePeriodRow));
 
-			auto startTimeRow = getUpdateStartTimeModelRow( boost::any_cast<Wt::WString>(value(UpdateStartTimeField)));
+			auto startTimeRow = getUpdateStartTimeModelRow( Wt::cpp17::any_cast<Wt::WString>(value(UpdateStartTimeField)));
 			assert(startTimeRow);
-			Scanner::setUpdateStartTime(DboSession(), updateStartTime(*startTimeRow));
+			Scanner::setUpdateStartTime(LmsApp->getDboSession(), updateStartTime(*startTimeRow));
 		}
 
 		boost::optional<int> getUpdatePeriodModelRow(Wt::WString value)
@@ -128,14 +128,14 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 		Scanner::UpdatePeriod updatePeriod(int row)
 		{
-			return boost::any_cast<Scanner::UpdatePeriod>
-				(_updatePeriodModel->data(_updatePeriodModel->index(row, 0), Wt::UserRole));
+			return Wt::cpp17::any_cast<Scanner::UpdatePeriod>
+				(_updatePeriodModel->data(_updatePeriodModel->index(row, 0), Wt::ItemDataRole::User));
 		}
 
 		Wt::WString updatePeriodString(int row)
 		{
-			return boost::any_cast<Wt::WString>
-				(_updatePeriodModel->data(_updatePeriodModel->index(row, 0), Wt::DisplayRole));
+			return Wt::cpp17::any_cast<Wt::WString>
+				(_updatePeriodModel->data(_updatePeriodModel->index(row, 0), Wt::ItemDataRole::Display));
 		}
 
 
@@ -150,7 +150,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			return boost::none;
 		}
 
-		boost::optional<int> getUpdateStartTimeModelRow(boost::posix_time::time_duration startTime)
+		boost::optional<int> getUpdateStartTimeModelRow(Wt::WTime startTime)
 		{
 			for (int i = 0; i < _updateStartTimeModel->rowCount(); ++i)
 			{
@@ -161,16 +161,16 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			return boost::none;
 		}
 
-		boost::posix_time::time_duration updateStartTime(int row)
+		Wt::WTime updateStartTime(int row)
 		{
-			return boost::any_cast<boost::posix_time::time_duration>
-				(_updateStartTimeModel->data(_updateStartTimeModel->index(row, 0), Wt::UserRole));
+			return Wt::cpp17::any_cast<Wt::WTime>
+				(_updateStartTimeModel->data(_updateStartTimeModel->index(row, 0), Wt::ItemDataRole::User));
 		}
 
 		Wt::WString updateStartTimeString(int row)
 		{
-			return boost::any_cast<Wt::WString>
-				(_updateStartTimeModel->data(_updateStartTimeModel->index(row, 0), Wt::DisplayRole));
+			return Wt::cpp17::any_cast<Wt::WString>
+				(_updateStartTimeModel->data(_updateStartTimeModel->index(row, 0), Wt::ItemDataRole::Display));
 		}
 
 
@@ -179,43 +179,35 @@ class DatabaseSettingsModel : public Wt::WFormModel
 		void initializeModels()
 		{
 
-			_updatePeriodModel = new Wt::WStringListModel(this);
+			_updatePeriodModel = std::make_shared<Wt::WStringListModel>();
 
 			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.never"));
-			_updatePeriodModel->setData(0, 0, Scanner::UpdatePeriod::Never, Wt::UserRole);
+			_updatePeriodModel->setData(0, 0, Scanner::UpdatePeriod::Never, Wt::ItemDataRole::User);
 
 			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.daily"));
-			_updatePeriodModel->setData(1, 0, Scanner::UpdatePeriod::Daily, Wt::UserRole);
+			_updatePeriodModel->setData(1, 0, Scanner::UpdatePeriod::Daily, Wt::ItemDataRole::User);
 
 			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.weekly"));
-			_updatePeriodModel->setData(2, 0, Scanner::UpdatePeriod::Weekly, Wt::UserRole);
+			_updatePeriodModel->setData(2, 0, Scanner::UpdatePeriod::Weekly, Wt::ItemDataRole::User);
 
 			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.monthly"));
-			_updatePeriodModel->setData(3, 0, Scanner::UpdatePeriod::Monthly, Wt::UserRole);
+			_updatePeriodModel->setData(3, 0, Scanner::UpdatePeriod::Monthly, Wt::ItemDataRole::User);
 
-			_updateStartTimeModel = new Wt::WStringListModel(this);
+			_updateStartTimeModel = std::make_shared<Wt::WStringListModel>();
 
 			for (std::size_t i = 0; i < 24; ++i)
 			{
-				boost::posix_time::time_duration dur = boost::posix_time::hours(i);
+				Wt::WTime time(i, 0);
 
-				boost::posix_time::time_facet* facet = new boost::posix_time::time_facet("%H:%M");
-				facet->time_duration_format("%H:%M");
-
-				std::ostringstream oss;
-				oss.imbue(std::locale(oss.getloc(), facet));
-
-				oss << dur;
-
-				_updateStartTimeModel->addString( oss.str() );
-				_updateStartTimeModel->setData(i, 0, dur, Wt::UserRole);
+				_updateStartTimeModel->addString( time.toString() );
+				_updateStartTimeModel->setData(i, 0, time, Wt::ItemDataRole::User);
 			}
 
 		}
 
 
-		Wt::WStringListModel*	_updatePeriodModel;
-		Wt::WStringListModel*	_updateStartTimeModel;
+		std::shared_ptr<Wt::WStringListModel>	_updatePeriodModel;
+		std::shared_ptr<Wt::WStringListModel>	_updateStartTimeModel;
 
 };
 
@@ -224,43 +216,33 @@ const Wt::WFormModel::Field DatabaseSettingsModel::UpdatePeriodField		= "update-
 const Wt::WFormModel::Field DatabaseSettingsModel::UpdateStartTimeField		= "update-start-time";
 
 
-DatabaseSettingsView::DatabaseSettingsView(Wt::WContainerWidget *parent)
-: Wt::WTemplateFormView(parent)
+DatabaseSettingsView::DatabaseSettingsView()
+: Wt::WTemplateFormView(Wt::WString::tr("Lms.Admin.Database.template"))
 {
-	auto model = new DatabaseSettingsModel(this);
-
-	setTemplateText(tr("Lms.Admin.Database.template"));
-	addFunction("tr", &WTemplate::Functions::tr);
-	addFunction("id", &WTemplate::Functions::id);
+	auto model = std::make_shared<DatabaseSettingsModel>();
 
 	// Media Directory
-	Wt::WLineEdit *mediaDirectoryEdit = new Wt::WLineEdit();
-	setFormWidget(DatabaseSettingsModel::MediaDirectoryField, mediaDirectoryEdit);
+	setFormWidget(DatabaseSettingsModel::MediaDirectoryField, std::make_unique<Wt::WLineEdit>());
 
 	// Update Period
-	Wt::WComboBox *updatePeriodCB = new Wt::WComboBox();
-	setFormWidget(DatabaseSettingsModel::UpdatePeriodField, updatePeriodCB);
-	updatePeriodCB->setModel(model->updatePeriodModel());
+	auto updatePeriod = std::make_unique<Wt::WComboBox>();
+	updatePeriod->setModel(model->updatePeriodModel());
+	setFormWidget(DatabaseSettingsModel::UpdatePeriodField, std::move(updatePeriod));
 
 	// Update Start Time
-	Wt::WComboBox *updateStartTimeCB = new Wt::WComboBox();
-	setFormWidget(DatabaseSettingsModel::UpdateStartTimeField, updateStartTimeCB);
-	updateStartTimeCB->setModel(model->updateStartTimeModel());
+	auto updateStartTime = std::make_unique<Wt::WComboBox>();
+	updateStartTime->setModel(model->updateStartTimeModel());
+	setFormWidget(DatabaseSettingsModel::UpdateStartTimeField, std::move(updateStartTime));
 
 	// Buttons
 
-	Wt::WPushButton *saveBtn = new Wt::WPushButton(Wt::WString::tr("Lms.apply"));
-	bindWidget("apply-btn", saveBtn);
-
-	Wt::WPushButton *discardBtn = new Wt::WPushButton(Wt::WString::tr("Lms.discard"));
-	bindWidget("discard-btn", discardBtn);
-
-	Wt::WPushButton *immScanBtn = new Wt::WPushButton(Wt::WString::tr("Lms.Admin.Database.immediate-scan"));
-	bindWidget("immediate-scan-btn", immScanBtn);
+	Wt::WPushButton *saveBtn = bindWidget("apply-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.apply")));
+	Wt::WPushButton *discardBtn = bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard")));
+	Wt::WPushButton *immScanBtn = bindWidget("immediate-scan-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.Admin.Database.immediate-scan")));
 
 	saveBtn->clicked().connect(std::bind([=] ()
 	{
-		updateModel(model);
+		updateModel(model.get());
 
 		if (model->validate())
 		{
@@ -271,14 +253,14 @@ DatabaseSettingsView::DatabaseSettingsView(Wt::WContainerWidget *parent)
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.
-		updateView(model);
+		updateView(model.get());
 	}));
 
 	discardBtn->clicked().connect(std::bind([=] ()
 	{
 		model->loadData();
 		model->validate();
-		updateView(model);
+		updateView(model.get());
 	}));
 
 	immScanBtn->clicked().connect(std::bind([=] ()
@@ -287,7 +269,7 @@ DatabaseSettingsView::DatabaseSettingsView(Wt::WContainerWidget *parent)
 		LmsApp->notifyMsg(Wt::WString::tr("Lms.Admin.Database.scan-launched"));
 	}));
 
-	updateView(model);
+	updateView(model.get());
 }
 
 } // namespace UserInterface

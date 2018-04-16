@@ -77,11 +77,11 @@ AvFormat::parse(const boost::filesystem::path& p)
 			std::cout << "TAG = " << tag << ", VAL = " << value << std::endl;
 #endif
 			if (tag == "ARTIST")
-				items.insert( std::make_pair(MetaData::Type::Artist, stringTrim( stringToUTF8(value)) ));
+				items.insert( std::make_pair(MetaData::Type::Artist, stringTrim( value) ));
 			else if (tag == "ALBUM")
-				items.insert( std::make_pair(MetaData::Type::Album, stringTrim( stringToUTF8(value)) ));
+				items.insert( std::make_pair(MetaData::Type::Album, stringTrim( value) ));
 			else if (tag == "TITLE")
-				items.insert( std::make_pair(MetaData::Type::Title, stringTrim( stringToUTF8(value)) ));
+				items.insert( std::make_pair(MetaData::Type::Title, stringTrim( value) ));
 			else if (tag == "TRACK")
 			{
 				// Expecting 'Number/Total'
@@ -89,15 +89,15 @@ AvFormat::parse(const boost::filesystem::path& p)
 
 				if (strings.size() > 0)
 				{
-					std::size_t number;
-					if (readAs<std::size_t>(strings[0], number))
-						items.insert( std::make_pair(MetaData::Type::TrackNumber, number ));
+					auto number = readAs<std::size_t>(strings[0]);
+					if (number)
+						items.insert( std::make_pair(MetaData::Type::TrackNumber, *number ));
 
 					if (strings.size() > 1)
 					{
-						std::size_t totalNumber;
-						if (readAs<std::size_t>(strings[1], totalNumber))
-							items.insert( std::make_pair(MetaData::Type::TotalTrack, totalNumber ));
+						auto totalNumber = readAs<std::size_t>(strings[1]);
+						if (totalNumber)
+							items.insert( std::make_pair(MetaData::Type::TotalTrack, *totalNumber ));
 					}
 				}
 			}
@@ -108,15 +108,15 @@ AvFormat::parse(const boost::filesystem::path& p)
 
 				if (strings.size() > 0)
 				{
-					std::size_t number;
-					if (readAs<std::size_t>(strings[0], number))
-						items.insert( std::make_pair(MetaData::Type::DiscNumber, number ));
+					auto number = readAs<std::size_t>(strings[0]);
+					if (number)
+						items.insert( std::make_pair(MetaData::Type::DiscNumber, *number ));
 
 					if (strings.size() > 1)
 					{
-						std::size_t totalNumber;
-						if (readAs<std::size_t>(strings[1], totalNumber))
-							items.insert( std::make_pair(MetaData::Type::TotalDisc, totalNumber ));
+						auto totalNumber = readAs<std::size_t>(strings[1]);
+						if (totalNumber)
+							items.insert( std::make_pair(MetaData::Type::TotalDisc, *totalNumber ));
 					}
 				}
 			}
@@ -124,36 +124,36 @@ AvFormat::parse(const boost::filesystem::path& p)
 					|| tag == "YEAR"
 					|| tag == "WM/Year")
 			{
-				boost::posix_time::ptime p;
-				if (readAsPosixTime(value, p))
-					items.insert( std::make_pair(MetaData::Type::Date, p));
+				auto date = readAs<Wt::WDate>(value);
+				if (date)
+					items.insert( std::make_pair(MetaData::Type::Date, *date));
 			}
 			else if (tag == "TDOR"	// Original release time (ID3v2 2.4)
 					|| tag == "TORY")	// Original release year
 			{
-				boost::posix_time::ptime p;
-				if (readAsPosixTime(value, p))
-					items.insert( std::make_pair(MetaData::Type::OriginalDate, p));
+				auto date = readAs<Wt::WDate>(value);
+				if (date)
+					items.insert( std::make_pair(MetaData::Type::OriginalDate, *date));
 			}
 			else if (tag == "MUSICBRAINZ ARTIST ID"
 					|| tag == "MUSICBRAINZ_ARTISTID")
 			{
-				items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, stringTrim( stringToUTF8(value)) ));
+				items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, stringTrim(value)) );
 			}
 			else if (tag == "MUSICBRAINZ ALBUM ID"
 					|| tag == "MUSICBRAINZ_ALBUMID")
 			{
-				items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, stringTrim( stringToUTF8(value)) ));
+				items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, stringTrim(value)) );
 			}
 			else if (tag == "MUSICBRAINZ RELEASE TRACK ID"
 					|| tag == "MUSICBRAINZ_RELEASETRACKID"
 					|| tag == "MUSICBRAINZ_TRACKID")
 			{
-				items.insert( std::make_pair(MetaData::Type::MusicBrainzTrackID, stringTrim( stringToUTF8(value)) ));
+				items.insert( std::make_pair(MetaData::Type::MusicBrainzTrackID, stringTrim(value)) );
 			}
 			else if (tag == "ACOUSTID ID")
 			{
-				items.insert( std::make_pair(MetaData::Type::AcoustID, stringTrim( stringToUTF8(value)) ));
+				items.insert( std::make_pair(MetaData::Type::AcoustID, stringTrim(value)) );
 			}
 			else if (_clusterMap.find(tag) != _clusterMap.end())
 			{

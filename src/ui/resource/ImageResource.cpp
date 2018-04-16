@@ -17,8 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WApplication>
-#include <Wt/Http/Response>
+#include <Wt/WApplication.h>
+#include <Wt/Http/Response.h>
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -34,9 +34,8 @@ namespace UserInterface {
 static const std::string unknownCoverPath = "/images/unknown-cover.jpg";
 static const std::string unknownArtistImagePath = "/images/unknown-artist.jpg";
 
-ImageResource::ImageResource(Database::Handler& db, Wt::WObject *parent)
-:  Wt::WResource(parent),
-_db(db)
+ImageResource::ImageResource(Database::Handler& db)
+: _db(db)
 {
 }
 
@@ -154,14 +153,14 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	if (!sizeStr)
 		return;
 
-	std::size_t size;
-	if (!readAs(*sizeStr, size) || size > maxSize)
+	auto size = readAs<std::size_t>(*sizeStr);
+	if (!size || *size > maxSize)
 		return;
 
 	if (trackIdStr)
 	{
-		Database::Track::id_type trackId;
-		if (!readAs(*trackIdStr, trackId))
+		auto trackId = readAs<Database::Track::id_type>(*trackIdStr);
+		if (!trackId)
 			return;
 
 		boost::filesystem::path path;
@@ -172,7 +171,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 
 			Wt::Dbo::Transaction transaction(_db.getSession());
 
-			Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+			Database::Track::pointer track = Database::Track::getById(_db.getSession(), *trackId);
 			if (track)
 			{
 				coverType = track->getCoverType();
@@ -195,17 +194,16 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 					break;
 			}
 
-			putCover(response, covers, size);
+			putCover(response, covers, *size);
 			return;
 		}
 
-		putImage(response, getDefaultCover(size));
-		return;
+		putImage(response, getDefaultCover(*size));
 	}
 	else if (releaseIdStr)
 	{
-		Database::Release::id_type releaseId;
-		if (!readAs(*releaseIdStr, releaseId))
+		auto releaseId = readAs<Database::Release::id_type>(*releaseIdStr);
+		if (!releaseId)
 			return;
 
 		std::vector<Image::Image> covers;
@@ -213,21 +211,18 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// transactions are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock(LmsApplication::instance());
-			covers = CoverArt::Grabber::instance().getFromRelease(_db.getSession(), releaseId);
+			covers = CoverArt::Grabber::instance().getFromRelease(_db.getSession(), *releaseId);
 		}
 
-		putCover(response, covers, size);
-		return;
+		putCover(response, covers, *size);
 	}
 	else if (artistIdStr)
 	{
-		putImage(response, getDefaultArtistImage(size));
-		return;
+		putImage(response, getDefaultArtistImage(*size));
 	}
 	else
 	{
-		putImage(response, getDefaultCover(size));
-		return;
+		putImage(response, getDefaultCover(*size));
 	}
 }
 

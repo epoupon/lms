@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WTemplate>
+#include <Wt/WTemplate.h>
 
 #include "utils/Logger.hpp"
 
@@ -28,12 +28,13 @@
 namespace UserInterface {
 
 
-Home::Home(Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent)
+Home::Home()
+: Wt::WContainerWidget()
 {
-	auto t = new Wt::WTemplate(Wt::WString::tr("Lms.Home.template"), this);
+	auto t = std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Home.template"));
 	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
+	this->addWidget(std::move(t));
 }
 
 } // namespace UserInterface

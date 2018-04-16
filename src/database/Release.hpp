@@ -21,9 +21,7 @@
 
 #include <boost/optional.hpp>
 
-#include <Wt/Dbo/Dbo>
-
-#include "SearchFilter.hpp"
+#include <Wt/Dbo/Dbo.h>
 
 namespace Database
 {
@@ -68,7 +66,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		// Accessors
 		std::string	getName() const		{ return _name; }
 		std::string	getMBID() const		{ return _MBID; }
-		boost::posix_time::time_duration getDuration(void) const;
+		std::chrono::seconds getDuration(void) const;
 
 		// Get the artists of this release
 		std::vector<Wt::Dbo::ptr<Artist> > getArtists() const;

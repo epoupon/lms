@@ -38,7 +38,7 @@ Playlist::Playlist(std::string name, bool isPublic, Wt::Dbo::ptr<User> user)
 Playlist::pointer
 Playlist::create(Wt::Dbo::Session& session, std::string name, bool isPublic, Wt::Dbo::ptr<User> user)
 {
-	return session.add( new Playlist(name, isPublic, user) );
+	return session.add( std::make_unique<Playlist>(name, isPublic, user) );
 }
 
 PlaylistEntry::PlaylistEntry()
@@ -75,7 +75,7 @@ PlaylistEntry::PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> p
 PlaylistEntry::pointer
 PlaylistEntry::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist)
 {
-	return session.add( new PlaylistEntry( track, playlist) );
+	return session.add( std::make_unique<PlaylistEntry>( track, playlist) );
 }
 
 

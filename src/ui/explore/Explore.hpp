@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
+#include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
 
@@ -27,22 +27,22 @@ namespace UserInterface {
 
 class Filters;
 
-class Explore : public Wt::WContainerWidget
+class Explore : public Wt::WTemplate
 {
 	public:
-		Explore(Wt::WContainerWidget *parent = 0);
+		Explore();
 
 		Wt::Signal<std::vector<Database::Track::pointer>> tracksAdd;
 		Wt::Signal<std::vector<Database::Track::pointer>> tracksPlay;
 
 	private:
 
-		void handleArtistAdd(Database::id_type id);
-		void handleArtistPlay(Database::id_type id);
-		void handleReleaseAdd(Database::id_type id);
-		void handleReleasePlay(Database::id_type id);
-		void handleTrackAdd(Database::id_type id);
-		void handleTrackPlay(Database::id_type id);
+		void handleArtistAdd(Database::Artist::id_type id);
+		void handleArtistPlay(Database::Artist::id_type id);
+		void handleReleaseAdd(Database::Release::id_type id);
+		void handleReleasePlay(Database::Release::id_type id);
+		void handleTrackAdd(Database::Track::id_type id);
+		void handleTrackPlay(Database::Track::id_type id);
 		void handleTracksAdd(std::vector<Database::Track::pointer> tracks);
 		void handleTracksPlay(std::vector<Database::Track::pointer> tracks);
 

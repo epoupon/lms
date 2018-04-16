@@ -17,15 +17,15 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WApplication>
-#include <Wt/WCheckBox>
-#include <Wt/WComboBox>
-#include <Wt/WLineEdit>
-#include <Wt/WPushButton>
-#include <Wt/WTemplateFormView>
+#include <Wt/WApplication.h>
+#include <Wt/WCheckBox.h>
+#include <Wt/WComboBox.h>
+#include <Wt/WLineEdit.h>
+#include <Wt/WPushButton.h>
+#include <Wt/WTemplateFormView.h>
 
-#include <Wt/WFormModel>
-#include <Wt/WStringListModel>
+#include <Wt/WFormModel.h>
+#include <Wt/WStringListModel.h>
 
 #include "common/Validators.hpp"
 #include "utils/Utils.hpp"
@@ -44,8 +44,8 @@ class UserModel : public Wt::WFormModel
 		static const Field PasswordField;
 		static const Field BitrateLimitField;
 
-		UserModel(boost::optional<Database::User::id_type> userId, Wt::WObject *parent = 0)
-		: Wt::WFormModel(parent),
+		UserModel(boost::optional<Database::User::id_type> userId)
+		: Wt::WFormModel(),
 		_userId(userId)
 		{
 			if (!_userId)
@@ -72,12 +72,12 @@ class UserModel : public Wt::WFormModel
 			if (!_userId)
 				return;
 
-			Wt::Dbo::Transaction transaction(DboSession());
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			Wt::Auth::User authUser = DbHandler().getUserDatabase().findWithId( std::to_string(*_userId) );
-			Database::User::pointer user = DbHandler().getUser(authUser);
+			Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*_userId) );
+			Database::User::pointer user = LmsApp->getDb().getUser(authUser);
 
-			if (user == CurrentUser())
+			if (user == LmsApp->getCurrentUser())
 				throw std::runtime_error("Cannot edit ourselves");
 
 			auto bitrate = getBitrateLimitRow(user->getMaxAudioBitrate());
@@ -87,13 +87,13 @@ class UserModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			Wt::Dbo::Transaction transaction(DboSession());
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
 			if (_userId)
 			{
 				// Update user
-				Wt::Auth::User authUser = DbHandler().getUserDatabase().findWithId( std::to_string(*_userId) );
-				Database::User::pointer user = DbHandler().getUser( authUser );
+				Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*_userId) );
+				Database::User::pointer user = LmsApp->getDb().getUser( authUser );
 
 				// Account
 				if (!valueText(PasswordField).empty())
@@ -106,8 +106,8 @@ class UserModel : public Wt::WFormModel
 			else
 			{
 				// Create user
-				Wt::Auth::User authUser = DbHandler().getUserDatabase().registerNew();
-				Database::User::pointer user = DbHandler().createUser(authUser);
+				Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().registerNew();
+				Database::User::pointer user = LmsApp->getDb().createUser(authUser);
 
 				// Account
 				authUser.setIdentity(Wt::Auth::Identity::LoginName, valueText(LoginField));
@@ -142,35 +142,35 @@ class UserModel : public Wt::WFormModel
 
 		std::size_t bitrateLimit(int row)
 		{
-			return boost::any_cast<std::size_t>
-				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::UserRole));
+			return Wt::cpp17::any_cast<std::size_t>
+				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::ItemDataRole::User));
 		}
 
 		Wt::WString bitrateLimitString(int row)
 		{
-			return boost::any_cast<Wt::WString>
-				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::DisplayRole));
+			return Wt::cpp17::any_cast<Wt::WString>
+				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::ItemDataRole::Display));
 		}
 
-		Wt::WAbstractItemModel *bitrateModel() { return _bitrateModel; }
+		std::shared_ptr<Wt::WAbstractItemModel> bitrateModel() { return _bitrateModel; }
 
 	private:
 
 		void initializeModels()
 		{
-			_bitrateModel = new Wt::WStringListModel(this);
+			_bitrateModel = std::make_shared<Wt::WStringListModel>();
 
 			std::size_t id = 0;
 			for (auto bitrate : Database::User::audioBitrates)
 			{
 				_bitrateModel->addString( Wt::WString::fromUTF8(std::to_string(bitrate / 1000)) );
-				_bitrateModel->setData( id++, 0, bitrate, Wt::UserRole);
+				_bitrateModel->setData( id++, 0, bitrate, Wt::ItemDataRole::User);
 			}
 
 
 		}
 
-		Wt::WStringListModel*	_bitrateModel;
+		std::shared_ptr<Wt::WStringListModel>	_bitrateModel;
 		boost::optional<Database::User::id_type> _userId;
 };
 
@@ -178,8 +178,7 @@ const Wt::WFormModel::Field UserModel::LoginField = "login";
 const Wt::WFormModel::Field UserModel::PasswordField = "password";
 const Wt::WFormModel::Field UserModel::BitrateLimitField = "audio-bitrate-limit";
 
-UserView::UserView(Wt::WContainerWidget* parent)
-: Wt::WContainerWidget(parent)
+UserView::UserView()
 {
 	wApp->internalPathChanged().connect(std::bind([=]
 	{
@@ -195,47 +194,44 @@ UserView::refreshView()
 	if (!wApp->internalPathMatches("/admin/user"))
 		return;
 
-	auto userId = readLong(wApp->internalPathNextPart("/admin/user/"));
+	auto userId = readAs<Database::User::id_type>(wApp->internalPathNextPart("/admin/user/"));
+
+	LMS_LOG(UI, DEBUG) << "userId = " << (userId ? std::to_string(*userId) : "none");
 
 	clear();
 
-	auto t = new Wt::WTemplateFormView(Wt::WString::tr("Lms.Admin.User.template"), this);
+	Wt::WTemplateFormView* t = addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Admin.User.template"));
 
-	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
-	t->addFunction("id", &Wt::WTemplate::Functions::id);
-
-	auto model = new UserModel(userId ? boost::make_optional<Database::User::id_type>(*userId) : boost::none, this);
+	auto model = std::make_shared<UserModel>(userId);
 
 	if (userId)
 	{
-		auto authUser = DbHandler().getUserDatabase().findWithId( std::to_string(*userId) );
+		auto authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*userId) );
 		auto name = authUser.identity(Wt::Auth::Identity::LoginName);
-		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-edit").arg(name), Wt::PlainText);
+		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-edit").arg(name), Wt::TextFormat::Plain);
 	}
 	else
 	{
 		// Login
 		t->setCondition("if-has-login", true);
-		t->setFormWidget(UserModel::LoginField, new Wt::WLineEdit());
+		t->setFormWidget(UserModel::LoginField, std::make_unique<Wt::WLineEdit>());
 		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-create"));
 	}
 
-
 	// Password
-	Wt::WLineEdit* passwordEdit = new Wt::WLineEdit();
-	t->setFormWidget(UserModel::PasswordField, passwordEdit );
-	passwordEdit->setEchoMode(Wt::WLineEdit::Password);
+	auto passwordEdit = std::make_unique<Wt::WLineEdit>();
+	passwordEdit->setEchoMode(Wt::EchoMode::Password);
+	t->setFormWidget(UserModel::PasswordField, std::move(passwordEdit));
 
-	// AudioBitrate
-	Wt::WComboBox *bitrateCB = new Wt::WComboBox();
-	t->setFormWidget(UserModel::BitrateLimitField, bitrateCB);
-	bitrateCB->setModel(model->bitrateModel());
+	// Bitrate
+	auto bitrate = std::make_unique<Wt::WComboBox>();
+	bitrate->setModel(model->bitrateModel());
+	t->setFormWidget(UserModel::BitrateLimitField, std::move(bitrate));
 
-	auto saveBtn = new Wt::WPushButton(Wt::WString::tr(userId ? "Lms.save" : "Lms.create"));
-	t->bindWidget("save-btn", saveBtn);
+	Wt::WPushButton* saveBtn = t->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(userId ? "Lms.save" : "Lms.create"));
 	saveBtn->clicked().connect(std::bind([=]
 	{
-		t->updateModel(model);
+		t->updateModel(model.get());
 
 		if (model->validate())
 		{
@@ -245,12 +241,11 @@ UserView::refreshView()
 		}
 		else
 		{
-			t->updateView(model);
+			t->updateView(model.get());
 		}
 	}));
 
-	t->updateView(model);
-
+	t->updateView(model.get());
 }
 
 } // namespace UserInterface

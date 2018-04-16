@@ -17,10 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/property_tree/json_parser.hpp>
-
-#include <Wt/Dbo/QueryModel>
-
 #include "utils/Logger.hpp"
 
 #include "SqlQuery.hpp"
@@ -75,7 +71,7 @@ Track::getByMBID(Wt::Dbo::Session& session, const std::string& mbid)
 Track::pointer
 Track::create(Wt::Dbo::Session& session, const boost::filesystem::path& p)
 {
-	return session.add(new Track(p) );
+	return session.add(std::make_unique<Track>(p));
 }
 
 std::vector<boost::filesystem::path>
@@ -111,7 +107,7 @@ Track::getClusters(void) const
 static
 Wt::Dbo::Query< Track::pointer >
 getQuery(Wt::Dbo::Session& session,
-		const std::set<id_type>& clusterIds,
+		const std::set<Cluster::id_type>& clusterIds,
 		const std::vector<std::string> keywords)
 {
 	WhereClause where;
@@ -148,20 +144,6 @@ getQuery(Wt::Dbo::Session& session,
 
 	return query;
 }
-
-Track::StatsQueryResult
-Track::getStats(Wt::Dbo::Session& session, SearchFilter filter)
-{
-	SqlQuery sqlQuery = filter.generatePartialQuery();
-
-	Wt::Dbo::Query<StatsQueryResult> query = session.query<StatsQueryResult>( "SELECT COUNT(\"id\"), SUM(\"dur\") FROM  (SELECT t.id as \"id\", t.duration as \"dur\" FROM track t INNER JOIN artist a ON t.artist_id = a.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN release r ON r.id = t.release_id " + sqlQuery.where().get() + " GROUP BY t.id)");
-
-	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
-		query.bind(bindArg);
-
-	return query;
-}
-
 
 std::vector<Track::pointer>
 Track::getByFilter(Wt::Dbo::Session& session,
@@ -233,7 +215,7 @@ Cluster::Cluster(Wt::Dbo::ptr<ClusterType> type, std::string name)
 Cluster::pointer
 Cluster::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name)
 {
-	return session.add(new Cluster(type, name));
+	return session.add(std::make_unique<Cluster>(type, name));
 }
 
 std::vector<Cluster::pointer>
@@ -242,28 +224,6 @@ Cluster::getAll(Wt::Dbo::Session& session)
 	Wt::Dbo::collection<Cluster::pointer> res = session.find<Cluster>();
 
 	return std::vector<Cluster::pointer>(res.begin(), res.end());
-}
-
-Wt::Dbo::Query<Cluster::pointer>
-Cluster::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
-{
-	SqlQuery sqlQuery = filter.generatePartialQuery();
-
-	Wt::Dbo::Query<pointer> query
-		= session.query<pointer>( "SELECT g FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN artist a ON t.artist_id = a.id INNER JOIN release r ON r.id = t.release_id INNER JOIN track t ON t.id = t_c.track_id " + sqlQuery.where().get()).groupBy("c.name").orderBy("c.name");
-
-	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
-		query.bind(bindArg);
-
-	return query;
-}
-
-std::vector<Cluster::pointer>
-Cluster::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
-{
-	Wt::Dbo::collection<pointer> res = getQuery(session, filter).limit(size).offset(offset);
-
-	return std::vector<pointer>(res.begin(), res.end());
 }
 
 ClusterType::ClusterType(std::string name)
@@ -297,7 +257,7 @@ ClusterType::getAll(Wt::Dbo::Session& session)
 ClusterType::pointer
 ClusterType::create(Wt::Dbo::Session& session, std::string name)
 {
-	return session.add(new ClusterType(name));
+	return session.add(std::make_unique<ClusterType>(name));
 }
 
 Cluster::pointer

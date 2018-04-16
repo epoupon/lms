@@ -20,7 +20,7 @@
 #ifndef DATABASE_PLAYLIST_HPP
 #define DATABASE_PLAYLIST_HPP
 
-#include <Wt/Dbo/Dbo>
+#include <Wt/Dbo/Dbo.h>
 
 #include <string>
 

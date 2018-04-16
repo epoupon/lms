@@ -17,10 +17,10 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WFormModel>
-#include <Wt/WLineEdit>
-#include <Wt/WCheckBox>
-#include <Wt/WPushButton>
+#include <Wt/WFormModel.h>
+#include <Wt/WLineEdit.h>
+#include <Wt/WCheckBox.h>
+#include <Wt/WPushButton.h>
 
 #include "utils/Logger.hpp"
 
@@ -31,10 +31,10 @@
 
 namespace UserInterface {
 
-Auth::Auth(Wt::WContainerWidget *parent)
-: Wt::WTemplateFormView(parent)
+Auth::Auth()
+: Wt::WTemplateFormView()
 {
-	_model = new Wt::Auth::AuthModel(DbHandler().getAuthService(), DbHandler().getUserDatabase());
+	_model = std::make_shared<Wt::Auth::AuthModel>(LmsApp->getDb().getAuthService(), LmsApp->getDb().getUserDatabase());
 
 	_model->addPasswordAuth(&Database::Handler::getPasswordService());
 
@@ -43,50 +43,47 @@ Auth::Auth(Wt::WContainerWidget *parent)
 	addFunction("id", &WTemplate::Functions::id);
 
 	// LoginName
-	auto loginName = new Wt::WLineEdit();
-	setFormWidget(Wt::Auth::AuthModel::LoginNameField, loginName);
+	setFormWidget(Wt::Auth::AuthModel::LoginNameField, std::make_unique<Wt::WLineEdit>());
 
 	// Password
-	auto password = new Wt::WLineEdit();
-	setFormWidget(Wt::Auth::AuthModel::PasswordField, password);
-	password->setEchoMode(Wt::WLineEdit::Password);
+	auto password = std::make_unique<Wt::WLineEdit>();
+	password->setEchoMode(Wt::EchoMode::Password);
+	password->enterPressed().connect(this, &Auth::processAuth);
+	setFormWidget(Wt::Auth::AuthModel::PasswordField, std::move(password));
 
 	// Remember Me
-	auto rememberMe = new Wt::WCheckBox();
-	setFormWidget(Wt::Auth::AuthModel::RememberMeField, rememberMe);
+	setFormWidget(Wt::Auth::AuthModel::RememberMeField, std::make_unique<Wt::WCheckBox>());
 
-	auto loginBtn = new Wt::WPushButton(Wt::WString::tr("Lms.login"));
-	bindWidget("login-btn", loginBtn);
+	Wt::WPushButton* loginBtn = bindNew<Wt::WPushButton>("login-btn", Wt::WString::tr("Lms.login"));
 	loginBtn->clicked().connect(this, &Auth::processAuth);
-	password->enterPressed().connect(this, &Auth::processAuth);
 
-	DbHandler().getLogin().changed().connect(std::bind([=]
+	LmsApp->getDb().getLogin().changed().connect(std::bind([=]
 	{
-		if (DbHandler().getLogin().loggedIn())
+		if (LmsApp->getDb().getLogin().loggedIn())
 			this->setHidden(true);
 	}));
 
 	Wt::Auth::User user = _model->processAuthToken();
-	_model->loginUser(DbHandler().getLogin(), user, Wt::Auth::WeakLogin);
+	_model->loginUser(LmsApp->getDb().getLogin(), user, Wt::Auth::LoginState::Weak);
 
-	updateView(_model);
+	updateView(_model.get());
 }
 
 void
 Auth::processAuth()
 {
-	updateModel(_model);
+	updateModel(_model.get());
 
 	if (_model->validate())
-		_model->login(DbHandler().getLogin());
+		_model->login(LmsApp->getDb().getLogin());
 	else
-		updateView(_model);
+		updateView(_model.get());
 }
 
 void
 Auth::logout()
 {
-	_model->logout(DbHandler().getLogin());
+	_model->logout(LmsApp->getDb().getLogin());
 }
 
 } // namespace UserInterface

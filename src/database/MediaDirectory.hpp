@@ -24,8 +24,9 @@
 
 #include <boost/filesystem/path.hpp>
 
-#include <Wt/Dbo/Dbo>
-#include <Wt/Dbo/WtSqlTraits>
+#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/WtSqlTraits.h>
+
 namespace Database {
 
 class MediaDirectory

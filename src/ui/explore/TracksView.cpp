@@ -17,10 +17,10 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WAnchor>
-#include <Wt/WImage>
-#include <Wt/WLineEdit>
-#include <Wt/WText>
+#include <Wt/WAnchor.h>
+#include <Wt/WImage.h>
+#include <Wt/WLineEdit.h>
+#include <Wt/WText.h>
 
 #include "database/Types.hpp"
 
@@ -37,41 +37,34 @@ namespace UserInterface {
 
 using namespace Database;
 
-Tracks::Tracks(Filters* filters, Wt::WContainerWidget* parent)
-: Wt::WContainerWidget(parent),
-	_filters(filters)
+Tracks::Tracks(Filters* filters)
+: Wt::WTemplate(Wt::WString::tr("Lms.Explore.Tracks.template")),
+_filters(filters)
 {
-	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Tracks.template"), this);
-	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	_search = new Wt::WLineEdit();
-	container->bindWidget("search", _search);
+	_search = bindNew<Wt::WLineEdit>("search");
 	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
 	_search->textInput().connect(this, &Tracks::refresh);
 
-	auto playBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Tracks.play"), Wt::XHTMLText);
-	container->bindWidget("play-btn", playBtn);
+	Wt::WText* playBtn = bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.Tracks.play"), Wt::TextFormat::XHTML);
 	playBtn->clicked().connect(std::bind([=]
 	{
-		Wt::Dbo::Transaction transaction(DboSession());
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 		tracksPlay.emit(getTracks());
 	}));
 
-	auto addBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Tracks.add"), Wt::XHTMLText);
-	container->bindWidget("add-btn", addBtn);
+	Wt::WText* addBtn = bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.Tracks.add"), Wt::TextFormat::XHTML);
 	addBtn->clicked().connect(std::bind([=]
 	{
-		Wt::Dbo::Transaction transaction(DboSession());
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 		tracksAdd.emit(getTracks());
 	}));
 
-	_tracksContainer = new Wt::WContainerWidget();
-	container->bindWidget("tracks", _tracksContainer);
+	_tracksContainer = bindNew<Wt::WContainerWidget>("tracks");
 
-	_showMore = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.template.show-more"));
+	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.template.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
-	container->bindWidget("show-more", _showMore);
-
 	_showMore->clicked().connect(std::bind([=]
 	{
 		addSome();
@@ -88,9 +81,9 @@ Tracks::getTracks(int offset, int size, bool& moreResults)
 	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
 	auto clusterIds = _filters->getClusterIds();
 
-	Wt::Dbo::Transaction transaction(DboSession());
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	return Track::getByFilter(DboSession(), clusterIds, searchKeywords, offset, size, moreResults);
+	return Track::getByFilter(LmsApp->getDboSession(), clusterIds, searchKeywords, offset, size, moreResults);
 }
 
 std::vector<Database::Track::pointer>
@@ -110,7 +103,7 @@ Tracks::refresh()
 void
 Tracks::addSome()
 {
-	Wt::Dbo::Transaction transaction(DboSession());
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
 	bool moreResults;
 	auto tracks = getTracks(_tracksContainer->count(), 20, moreResults);
@@ -118,41 +111,35 @@ Tracks::addSome()
 	for (auto track : tracks)
 	{
 		auto trackId = track.id();
-		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Tracks.template.entry"), _tracksContainer);
+		Wt::WTemplate* entry = _tracksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"));
 
-		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::PlainText);
+		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
 		auto artist = track->getArtist();
 		if (artist)
 		{
 			entry->setCondition("if-has-artist", true);
-			Wt::WAnchor *artistAnchor = LmsApplication::createArtistAnchor(track->getArtist());
-			entry->bindWidget("artist-name", artistAnchor);
+			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(track->getArtist()));
 		}
 
 		auto release = track->getRelease();
 		if (release)
 		{
 			entry->setCondition("if-has-release", true);
-			Wt::WAnchor *releaseAnchor = LmsApplication::createReleaseAnchor(track->getRelease());
-			entry->bindWidget("release-name", releaseAnchor);
+			entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(track->getRelease()));
 		}
 
-		Wt::WImage *cover = new Wt::WImage();
-		cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(track.id(), 64));
+		Wt::WImage* cover = entry->bindNew<Wt::WImage>("cover", LmsApp->getImageResource()->getTrackUrl(track.id(), 64));
 		// Some images may not be square
 		cover->setWidth(64);
-		entry->bindWidget("cover", cover);
 
-		auto playBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Tracks.play"), Wt::XHTMLText);
-		entry->bindWidget("play-btn", playBtn);
+		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.Tracks.play"), Wt::TextFormat::XHTML);
 		playBtn->clicked().connect(std::bind([=]
 		{
 			trackPlay.emit(trackId);
 		}));
 
-		auto addBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Tracks.add"), Wt::XHTMLText);
-		entry->bindWidget("add-btn", addBtn);
+		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.Tracks.add"), Wt::TextFormat::XHTML);
 		addBtn->clicked().connect(std::bind([=]
 		{
 			trackAdd.emit(trackId);

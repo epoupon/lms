@@ -37,7 +37,6 @@
 	- Display only the most popular cluster of each cluster type?
 
 [Settings]
-	- Add a audio settings: format + bitrate to be used
 	- Add a user management view
 	- Add multi root directories support
 	- Add a first connection wizard

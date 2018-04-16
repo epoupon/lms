@@ -23,12 +23,12 @@
 #include <boost/filesystem.hpp>
 #include <memory>
 
-#include <Wt/Dbo/Dbo>
-#include <Wt/Dbo/SqlConnectionPool>
+#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/SqlConnectionPool.h>
 
-#include <Wt/Auth/Dbo/UserDatabase>
-#include <Wt/Auth/Login>
-#include <Wt/Auth/PasswordService>
+#include <Wt/Auth/Dbo/UserDatabase.h>
+#include <Wt/Auth/Login.h>
+#include <Wt/Auth/PasswordService.h>
 
 #include "Types.hpp"
 
@@ -60,7 +60,7 @@ class Handler
 		static const Wt::Auth::AuthService& getAuthService();
 		static const Wt::Auth::PasswordService& getPasswordService();
 
-		static Wt::Dbo::SqlConnectionPool*	createConnectionPool(boost::filesystem::path db);
+		static std::unique_ptr<Wt::Dbo::SqlConnectionPool> createConnectionPool(boost::filesystem::path db);
 
 	private:
 

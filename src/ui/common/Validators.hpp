@@ -19,19 +19,19 @@
 
 #pragma once
 
-#include <Wt/WLengthValidator>
+#include <Wt/WValidator.h>
 
 #include "database/User.hpp"
 
 namespace UserInterface {
 
-Wt::WValidator* createNameValidator();
-Wt::WValidator* createMandatoryValidator();
+std::shared_ptr<Wt::WValidator> createNameValidator();
+std::shared_ptr<Wt::WValidator> createMandatoryValidator();
 
 class DirectoryValidator : public Wt::WValidator
 {
 	public:
-		DirectoryValidator(Wt::WObject *parent = 0);
+		DirectoryValidator();
 
 		Wt::WValidator::Result validate(const Wt::WString& input) const override;
 

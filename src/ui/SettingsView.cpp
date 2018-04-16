@@ -17,13 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WString>
-#include <Wt/WPushButton>
-#include <Wt/WComboBox>
-#include <Wt/WLineEdit>
+#include <Wt/WString.h>
+#include <Wt/WPushButton.h>
+#include <Wt/WComboBox.h>
+#include <Wt/WLineEdit.h>
 
-#include <Wt/WFormModel>
-#include <Wt/WStringListModel>
+#include <Wt/WFormModel.h>
+#include <Wt/WStringListModel.h>
 
 #include "common/Validators.hpp"
 
@@ -45,8 +45,8 @@ class SettingsModel : public Wt::WFormModel
 		static const Field PasswordField;
 		static const Field PasswordConfirmField;
 
-		SettingsModel(Wt::WObject *parent = 0)
-			: Wt::WFormModel(parent)
+		SettingsModel()
+			: Wt::WFormModel()
 		{
 			initializeModels();
 
@@ -61,18 +61,18 @@ class SettingsModel : public Wt::WFormModel
 			loadData();
 		}
 
-		Wt::WAbstractItemModel *bitrateModel() { return _bitrateModel; }
-		Wt::WAbstractItemModel *encodingModel() { return _encodingModel; }
+		std::shared_ptr<Wt::WAbstractItemModel> bitrateModel() { return _bitrateModel; }
+		std::shared_ptr<Wt::WAbstractItemModel> encodingModel() { return _encodingModel; }
 
 		void loadData()
 		{
-			Wt::Dbo::Transaction transaction(DboSession());
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			auto bitrate = getBitrateRow(CurrentUser()->getAudioBitrate());
+			auto bitrate = getBitrateRow(LmsApp->getCurrentUser()->getAudioBitrate());
 			if (bitrate)
 				setValue(BitrateField, bitrateString(*bitrate));
 
-			auto encodingRow = getEncodingRow(CurrentUser()->getAudioEncoding());
+			auto encodingRow = getEncodingRow(LmsApp->getCurrentUser()->getAudioEncoding());
 			if (encodingRow)
 				setValue(EncodingField, encodingString(*encodingRow));
 
@@ -80,18 +80,18 @@ class SettingsModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			Wt::Dbo::Transaction transaction(DboSession());
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
 			auto bitrateRow = getBitrateRow(Wt::asString(value(BitrateField)));
 			assert(bitrateRow);
-			CurrentUser().modify()->setAudioBitrate(bitrate(*bitrateRow));
+			LmsApp->getCurrentUser().modify()->setAudioBitrate(bitrate(*bitrateRow));
 
 			auto encodingRow = getEncodingRow(Wt::asString(value(EncodingField)));
-			CurrentUser().modify()->setAudioEncoding(encoding(*encodingRow));
+			LmsApp->getCurrentUser().modify()->setAudioEncoding(encoding(*encodingRow));
 
 			if (!valueText(PasswordField).empty())
 			{
-				Database::Handler::getPasswordService().updatePassword(CurrentAuthUser(), valueText(PasswordField));
+				Database::Handler::getPasswordService().updatePassword(LmsApp->getCurrentAuthUser(), valueText(PasswordField));
 			}
 		}
 
@@ -105,7 +105,7 @@ class SettingsModel : public Wt::WFormModel
 				{
 					// Evaluate the strength of the password
 					auto res = Database::Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField),
-						CurrentAuthUser().identity(Wt::Auth::Identity::LoginName), "");
+						LmsApp->getCurrentAuthUser().identity(Wt::Auth::Identity::LoginName), "");
 
 					if (!res.isValid())
 						error = res.message();
@@ -115,7 +115,7 @@ class SettingsModel : public Wt::WFormModel
 			}
 			else if (field == PasswordConfirmField)
 			{
-				if (validation(PasswordField).state() == Wt::WValidator::Valid)
+				if (validation(PasswordField).state() == Wt::ValidationState::Valid)
 				{
 					if (valueText(PasswordField) != valueText(PasswordConfirmField))
 						error = Wt::WString::tr("Lms.passwords-dont-match");
@@ -126,9 +126,9 @@ class SettingsModel : public Wt::WFormModel
 				return Wt::WFormModel::validateField(field);
 			}
 
-			setValidation(field, Wt::WValidator::Result( error.empty() ? Wt::WValidator::Valid : Wt::WValidator::Invalid, error));
+			setValidation(field, Wt::WValidator::Result( error.empty() ? Wt::ValidationState::Valid : Wt::ValidationState::Invalid, error));
 
-			return (validation(field).state() == Wt::WValidator::Valid);
+			return (validation(field).state() == Wt::ValidationState::Valid);
 		}
 
 		boost::optional<int> getBitrateRow(Wt::WString value)
@@ -155,14 +155,14 @@ class SettingsModel : public Wt::WFormModel
 
 		std::size_t bitrate(int row)
 		{
-			return boost::any_cast<std::size_t>
-				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::UserRole));
+			return Wt::cpp17::any_cast<std::size_t>
+				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::ItemDataRole::User));
 		}
 
 		Wt::WString bitrateString(int row)
 		{
-			return boost::any_cast<Wt::WString>
-				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::DisplayRole));
+			return Wt::cpp17::any_cast<Wt::WString>
+				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::ItemDataRole::Display));
 		}
 
 		boost::optional<int> getEncodingRow(Wt::WString value)
@@ -189,14 +189,14 @@ class SettingsModel : public Wt::WFormModel
 
 		Database::AudioEncoding encoding(int row)
 		{
-			return boost::any_cast<Database::AudioEncoding>
-				(_encodingModel->data(_encodingModel->index(row, 0), Wt::UserRole));
+			return Wt::cpp17::any_cast<Database::AudioEncoding>
+				(_encodingModel->data(_encodingModel->index(row, 0), Wt::ItemDataRole::User));
 		}
 
 		Wt::WString encodingString(int row)
 		{
-			return boost::any_cast<Wt::WString>
-				(_encodingModel->data(_encodingModel->index(row, 0), Wt::DisplayRole));
+			return Wt::cpp17::any_cast<Wt::WString>
+				(_encodingModel->data(_encodingModel->index(row, 0), Wt::ItemDataRole::Display));
 		}
 
 
@@ -204,42 +204,42 @@ class SettingsModel : public Wt::WFormModel
 
 		void initializeModels()
 		{
-
-			_bitrateModel = new Wt::WStringListModel(this);
+			_bitrateModel = std::make_shared<Wt::WStringListModel>();
 
 			std::size_t maxAudioBitrate;
 			{
-				Wt::Dbo::Transaction transaction(DboSession());
-				maxAudioBitrate = CurrentUser()->getMaxAudioBitrate();
+				Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+				maxAudioBitrate = LmsApp->getCurrentUser()->getMaxAudioBitrate();
 			}
 
 			std::size_t id = 0;
-			for (auto bitrate : Database::User::audioBitrates)
+			for (std::size_t bitrate : Database::User::audioBitrates)
 			{
 				if (bitrate > maxAudioBitrate)
 					break;
 
 				_bitrateModel->addString( Wt::WString::fromUTF8(std::to_string(bitrate / 1000)) );
-				_bitrateModel->setData( id++, 0, bitrate, Wt::UserRole);
+				_bitrateModel->setData( id, 0, bitrate, Wt::ItemDataRole::User);
+				id++;
 			}
 
-			_encodingModel = new Wt::WStringListModel(this);
+			_encodingModel = std::make_shared<Wt::WStringListModel>();
 
 			_encodingModel->addString(Wt::WString::tr("Lms.Settings.auto"));
-			_encodingModel->setData(0, 0, Database::AudioEncoding::AUTO, Wt::UserRole);
+			_encodingModel->setData(0, 0, Database::AudioEncoding::AUTO, Wt::ItemDataRole::User);
 
 			_encodingModel->addString(Wt::WString::tr("Lms.Settings.mp3"));
-			_encodingModel->setData(1, 0, Database::AudioEncoding::MP3, Wt::UserRole);
+			_encodingModel->setData(1, 0, Database::AudioEncoding::MP3, Wt::ItemDataRole::User);
 
 			_encodingModel->addString(Wt::WString::tr("Lms.Settings.oga"));
-			_encodingModel->setData(2, 0, Database::AudioEncoding::OGA, Wt::UserRole);
+			_encodingModel->setData(2, 0, Database::AudioEncoding::OGA, Wt::ItemDataRole::User);
 
 			_encodingModel->addString(Wt::WString::tr("Lms.Settings.webma"));
-			_encodingModel->setData(3, 0, Database::AudioEncoding::WEBMA, Wt::UserRole);
+			_encodingModel->setData(3, 0, Database::AudioEncoding::WEBMA, Wt::ItemDataRole::User);
 		}
 
-		Wt::WStringListModel*	_bitrateModel;
-		Wt::WStringListModel*	_encodingModel;
+		std::shared_ptr<Wt::WStringListModel>	_bitrateModel;
+		std::shared_ptr<Wt::WStringListModel>	_encodingModel;
 
 };
 
@@ -248,45 +248,38 @@ const Wt::WFormModel::Field SettingsModel::EncodingField	= "encoding";
 const Wt::WFormModel::Field SettingsModel::PasswordField	= "password";
 const Wt::WFormModel::Field SettingsModel::PasswordConfirmField	= "password-confirm";
 
-SettingsView::SettingsView(Wt::WContainerWidget *parent)
-: Wt::WTemplateFormView(parent)
+SettingsView::SettingsView()
+: Wt::WTemplateFormView(Wt::WString::tr("Lms.Settings.template"))
 {
-	auto model = new SettingsModel(this);
-
-	setTemplateText(tr("Lms.Settings.template"));
-	addFunction("tr", &WTemplate::Functions::tr);
-	addFunction("id", &WTemplate::Functions::id);
+	auto model = std::make_shared<SettingsModel>();
 
 	// Password
-	Wt::WLineEdit *password = new Wt::WLineEdit();
-	setFormWidget(SettingsModel::PasswordField, password);
-	password->setEchoMode(Wt::WLineEdit::Password);
+	auto password = std::make_unique<Wt::WLineEdit>();
+	password->setEchoMode(Wt::EchoMode::Password);
+	setFormWidget(SettingsModel::PasswordField, std::move(password));
 
 	// Password confirm
-	Wt::WLineEdit *passwordConfirm = new Wt::WLineEdit();
-	setFormWidget(SettingsModel::PasswordConfirmField, passwordConfirm);
-	passwordConfirm->setEchoMode(Wt::WLineEdit::Password);
+	auto passwordConfirm = std::make_unique<Wt::WLineEdit>();
+	passwordConfirm->setEchoMode(Wt::EchoMode::Password);
+	setFormWidget(SettingsModel::PasswordConfirmField, std::move(passwordConfirm));
 
 	// Bitrate
-	Wt::WComboBox *bitrate = new Wt::WComboBox();
-	setFormWidget(SettingsModel::BitrateField, bitrate);
+	auto bitrate = std::make_unique<Wt::WComboBox>();
 	bitrate->setModel(model->bitrateModel());
+	setFormWidget(SettingsModel::BitrateField, std::move(bitrate));
 
 	// Encoding
-	Wt::WComboBox *encoding = new Wt::WComboBox();
-	setFormWidget(SettingsModel::EncodingField, encoding);
+	auto encoding = std::make_unique<Wt::WComboBox>();
 	encoding->setModel(model->encodingModel());
+	setFormWidget(SettingsModel::EncodingField, std::move(encoding));
 
 	// Buttons
-	Wt::WPushButton *saveBtn = new Wt::WPushButton(Wt::WString::tr("Lms.apply"));
-	bindWidget("apply-btn", saveBtn);
-
-	Wt::WPushButton *discardBtn = new Wt::WPushButton(Wt::WString::tr("Lms.discard"));
-	bindWidget("discard-btn", discardBtn);
+	Wt::WPushButton *saveBtn = bindWidget("apply-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.apply")));
+	Wt::WPushButton *discardBtn = bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard")));
 
 	saveBtn->clicked().connect(std::bind([=] ()
 	{
-		updateModel(model);
+		updateModel(model.get());
 
 		if (model->validate())
 		{
@@ -295,17 +288,17 @@ SettingsView::SettingsView(Wt::WContainerWidget *parent)
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.
-		updateView(model);
+		updateView(model.get());
 	}));
 
 	discardBtn->clicked().connect(std::bind([=] ()
 	{
 		model->loadData();
 		model->validate();
-		updateView(model);
+		updateView(model.get());
 	}));
 
-	updateView(model);
+	updateView(model.get());
 }
 
 } // namespace UserInterface

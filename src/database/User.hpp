@@ -22,8 +22,8 @@
 
 #include <vector>
 
-#include <Wt/Dbo/Dbo>
-#include <Wt/Auth/Dbo/AuthInfo>
+#include <Wt/Dbo/Dbo.h>
+#include <Wt/Auth/Dbo/AuthInfo.h>
 
 namespace Database {
 

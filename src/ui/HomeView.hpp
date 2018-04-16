@@ -19,14 +19,14 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
+#include <Wt/WContainerWidget.h>
 
 namespace UserInterface {
 
 class Home : public Wt::WContainerWidget
 {
 	public:
-		Home(Wt::WContainerWidget *parent = 0);
+		Home();
 
 	private:
 

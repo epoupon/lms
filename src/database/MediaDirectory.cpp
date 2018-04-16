@@ -31,7 +31,7 @@ MediaDirectory::MediaDirectory(boost::filesystem::path p)
 MediaDirectory::pointer
 MediaDirectory::create(Wt::Dbo::Session& session, boost::filesystem::path p)
 {
-	return session.add( new MediaDirectory(p) );
+	return session.add( std::make_unique<MediaDirectory>(p) );
 }
 
 void

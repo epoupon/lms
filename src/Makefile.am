@@ -10,13 +10,10 @@ lms_SOURCES = \
 	$(srcdir)/database/MediaDirectory.cpp			\
 	$(srcdir)/database/Playlist.cpp				\
 	$(srcdir)/database/Release.cpp				\
-	$(srcdir)/database/SearchFilter.cpp			\
 	$(srcdir)/database/Setting.cpp				\
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/User.cpp				\
-	$(srcdir)/feature/FeatureExtractor.cpp			\
-	$(srcdir)/feature/FeatureStore.cpp			\
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
 	$(srcdir)/metadata/TagLibParser.cpp			\
@@ -31,8 +28,6 @@ lms_SOURCES = \
 	$(srcdir)/ui/admin/InitWizardView.cpp			\
 	$(srcdir)/ui/admin/UserView.cpp				\
 	$(srcdir)/ui/admin/UsersView.cpp			\
-	$(srcdir)/ui/common/InputRange.cpp			\
-	$(srcdir)/ui/common/LineEdit.cpp			\
 	$(srcdir)/ui/common/Validators.cpp			\
 	$(srcdir)/ui/explore/ArtistView.cpp			\
 	$(srcdir)/ui/explore/ArtistsView.cpp			\
@@ -48,6 +43,6 @@ lms_SOURCES = \
 	$(srcdir)/utils/Path.cpp				\
 	$(srcdir)/utils/Utils.cpp
 
-lms_CXXFLAGS=-std=c++11 -Wall -I$(srcdir)/third-party -I$(srcdir)/ui $(MAGICKXX_CFLAGS) -D_REENTRANT -DBOOST_SPIRIT_THREADSAFE
+lms_CXXFLAGS=-std=c++14 -Wall -I$(srcdir)/third-party -I$(srcdir)/ui $(MAGICKXX_CFLAGS) -D_REENTRANT
 lms_LDADD=$(MAGICKXX_LIBS)
 

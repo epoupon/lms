@@ -19,15 +19,14 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
-#include <Wt/WTemplateFormView>
+#include <Wt/WTemplateFormView.h>
 
 namespace UserInterface {
 
 class InitWizardView : public Wt::WTemplateFormView
 {
 	public:
-		InitWizardView(Wt::WContainerWidget *parent = 0);
+		InitWizardView();
 
 };
 

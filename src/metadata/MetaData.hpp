@@ -37,13 +37,13 @@ namespace MetaData
 		Title,			// string
 		Album,			// string
 		Clusters,		// Clusters, ex: { "genre", {"death metal", "brutal death"} }, { "albumgrouping", {"metal"} }
-		Duration,		// boost::posix_time::time_duration
+		Duration,		// std::chrono::milliseconds
 		TrackNumber,		// size_t
 		DiscNumber,		// size_t
 		TotalTrack,		// size_t
 		TotalDisc,		// size_t
-		Date,			// boost::posix_time::ptime
-		OriginalDate,		// boost::posix_time::ptime
+		Date,			// Wt::WDate
+		OriginalDate,		// Wt::WDate
 		HasCover,		// bool
 		AudioStreams,		// vector<AudioStream>
 		MusicBrainzArtistID,	// string

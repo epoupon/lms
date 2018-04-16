@@ -65,7 +65,7 @@ getFromAvMediaFile(const Av::MediaFile& input, std::size_t nbMaxCovers)
 		if (image.load(picture.data))
 			res.push_back( image );
 		else
-			LMS_LOG(COVER, ERROR) << "Cannot load embedded cover file in '" << input.getPath() << "'";
+			LMS_LOG(COVER, ERROR) << "Cannot load embedded cover file in '" << input.getPath().string() << "'";
 	}
 
 	return res;
@@ -87,7 +87,7 @@ Grabber::getFromDirectory(const boost::filesystem::path& p, std::size_t nbMaxCov
 		if (image.load(coverPath))
 			res.push_back(image);
 		else
-			LMS_LOG(COVER, ERROR) << "Cannot load image in file '" << coverPath << "'";
+			LMS_LOG(COVER, ERROR) << "Cannot load image in file '" << coverPath.string() << "'";
 	}
 
 	return res;
@@ -116,7 +116,7 @@ Grabber::getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t
 
 		if (boost::filesystem::file_size(path) > _maxFileSize)
 		{
-			LMS_LOG(COVER, INFO) << "Cover file '" << path << " is too big (" << boost::filesystem::file_size(path) << "), limit is " << _maxFileSize;
+			LMS_LOG(COVER, INFO) << "Cover file '" << path.string() << " is too big (" << boost::filesystem::file_size(path) << "), limit is " << _maxFileSize;
 			continue;
 		}
 
@@ -138,7 +138,7 @@ Grabber::getFromTrack(const boost::filesystem::path& p, std::size_t nbMaxCovers)
 	}
 	catch (Av::MediaFileException& e)
 	{
-		LMS_LOG(COVER, ERROR) << "Cannot get covers from track " << p << ": " << e.what();
+		LMS_LOG(COVER, ERROR) << "Cannot get covers from track " << p.string() << ": " << e.what();
 	}
 
 	return std::vector<Image::Image>();

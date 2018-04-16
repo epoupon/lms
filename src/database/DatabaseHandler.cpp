@@ -19,17 +19,17 @@
 
 #include <boost/make_unique.hpp>
 
-#include <Wt/Dbo/FixedSqlConnectionPool>
-#include <Wt/Dbo/backend/Sqlite3>
+#include <Wt/Dbo/FixedSqlConnectionPool.h>
+#include <Wt/Dbo/backend/Sqlite3.h>
 
-#include <Wt/Auth/Dbo/AuthInfo>
-#include <Wt/Auth/Dbo/UserDatabase>
-#include <Wt/Auth/AuthService>
-#include <Wt/Auth/HashFunction>
-#include <Wt/Auth/Identity>
-#include <Wt/Auth/PasswordService>
-#include <Wt/Auth/PasswordStrengthValidator>
-#include <Wt/Auth/PasswordVerifier>
+#include <Wt/Auth/Dbo/AuthInfo.h>
+#include <Wt/Auth/Dbo/UserDatabase.h>
+#include <Wt/Auth/AuthService.h>
+#include <Wt/Auth/HashFunction.h>
+#include <Wt/Auth/Identity.h>
+#include <Wt/Auth/PasswordService.h>
+#include <Wt/Auth/PasswordStrengthValidator.h>
+#include <Wt/Auth/PasswordVerifier.h>
 
 #include "Setting.hpp"
 
@@ -51,24 +51,24 @@ Handler::configureAuth(void)
 {
 	authService.setEmailVerificationEnabled(false);
 	authService.setAuthTokensEnabled(true, "lmsauth");
-	authService.setIdentityPolicy(Wt::Auth::LoginNameIdentity);
+	authService.setIdentityPolicy(Wt::Auth::IdentityPolicy::LoginName);
 	authService.setRandomTokenLength(32);
 	authService.setTokenHashFunction(new Wt::Auth::BCryptHashFunction(8));
 
-	Wt::Auth::PasswordVerifier *verifier = new Wt::Auth::PasswordVerifier();
-	verifier->addHashFunction(new Wt::Auth::BCryptHashFunction(8));
-	passwordService.setVerifier(verifier);
+	auto verifier = std::make_unique<Wt::Auth::PasswordVerifier>();
+	verifier->addHashFunction(std::make_unique<Wt::Auth::BCryptHashFunction>(8));
+	passwordService.setVerifier(std::move(verifier));
 	passwordService.setAttemptThrottlingEnabled(true);
 
-	Wt::Auth::PasswordStrengthValidator* strengthValidator = new Wt::Auth::PasswordStrengthValidator();
+	auto strengthValidator = std::make_unique<Wt::Auth::PasswordStrengthValidator>();
 	// Reduce some constraints...
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::PassPhrase, 4);
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::OneCharClass, 4);
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::TwoCharClass, 4);
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::ThreeCharClass, 4 );
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::FourCharClass, 4 );
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthType::PassPhrase, 4);
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthType::OneCharClass, 4);
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthType::TwoCharClass, 4);
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthType::ThreeCharClass, 4 );
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthType::FourCharClass, 4 );
 
-	passwordService.setStrengthValidator(strengthValidator);
+	passwordService.setStrengthValidator(std::move(strengthValidator));
 }
 
 const Wt::Auth::AuthService&
@@ -182,24 +182,26 @@ Handler::createUser(const Wt::Auth::User& authUser)
 		return User::pointer();
 	}
 
-	User::pointer user = _session.add(new User());
+	User::pointer user = _session.add(std::make_unique<User>());
 	Wt::Dbo::ptr<AuthInfo> authInfo = _users->find(authUser);
 	authInfo.modify()->setUser(user);
 
 	return user;
 }
 
-Wt::Dbo::SqlConnectionPool*
+std::unique_ptr<Wt::Dbo::SqlConnectionPool>
 Handler::createConnectionPool(boost::filesystem::path p)
 {
-	LMS_LOG(DB, INFO) << "Creating connection pool on file " << p;
+	LMS_LOG(DB, INFO) << "Creating connection pool on file " << p.string();
 
-	Wt::Dbo::backend::Sqlite3 *connection = new Wt::Dbo::backend::Sqlite3(p.string());
-
+	auto connection = std::make_unique<Wt::Dbo::backend::Sqlite3>(p.string());
 	connection->executeSql("pragma journal_mode=WAL");
-
 	connection->setProperty("show-queries", "true");
-	return new Wt::Dbo::FixedSqlConnectionPool(connection, 1);
+
+	auto pool = std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), 1);
+	pool->setTimeout(std::chrono::seconds(1));
+
+	return pool;
 }
 
 

@@ -19,18 +19,19 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
-#include <Wt/WLineEdit>
-#include <Wt/WText>
+#include <Wt/WContainerWidget.h>
+#include <Wt/WLineEdit.h>
+#include <Wt/WText.h>
+#include <Wt/WTemplate.h>
 
 namespace UserInterface {
 
 class Filters;
 
-class Releases : public Wt::WContainerWidget
+class Releases : public Wt::WTemplate
 {
 	public:
-		Releases(Filters* filters, Wt::WContainerWidget* parent = 0);
+		Releases(Filters* filters);
 
 		Wt::Signal<Database::id_type> releaseAdd;
 		Wt::Signal<Database::id_type> releasePlay;

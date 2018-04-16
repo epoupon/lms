@@ -20,8 +20,9 @@
 #include <stdexcept>
 
 #include <boost/filesystem.hpp>
-#include <boost/thread.hpp>
 #include <boost/asio/placeholders.hpp>
+
+#include <Wt/WLocalDateTime.h>
 
 #include "cover/CoverArtGrabber.hpp"
 
@@ -36,39 +37,27 @@
 
 namespace {
 
-boost::gregorian::date
-getNextDay(const boost::gregorian::date& current)
+Wt::WDate
+getNextMonday(Wt::WDate current)
 {
-	boost::gregorian::day_iterator it(current);
-	return *(++it);
+	do
+	{
+		current.addDays(1);
+	} while (current.dayOfWeek() != 1);
+
+	return current;
 }
 
-boost::gregorian::date
-getNextMonday(const boost::gregorian::date& current)
+Wt::WDate
+getNextFirstOfMonth(Wt::WDate current)
 {
-	boost::gregorian::day_iterator it(current);
+	do
+	{
+		current.addDays(1);
+	} while (current.day() != 1);
 
-	++it;
-	// While it's not monday
-	while( it->day_of_week() != 1 )
-		++it;
-
-	return *(it);
+	return current;
 }
-
-boost::gregorian::date
-getNextFirstOfMonth(const boost::gregorian::date& current)
-{
-	boost::gregorian::day_iterator it(current);
-
-	++it;
-	// While it's not the 1st of the month
-	while( it->day() != 1 )
-		++it;
-
-	return (*it);
-}
-
 
 bool
 isFileSupported(const boost::filesystem::path& file, const std::vector<boost::filesystem::path> extensions)
@@ -119,14 +108,14 @@ setUpdatePeriod(Wt::Dbo::Session& session, UpdatePeriod updatePeriod)
 	Setting::setInt(session, "update_period", static_cast<int>(updatePeriod));
 }
 
-boost::posix_time::time_duration getUpdateStartTime(Wt::Dbo::Session& session)
+Wt::WTime getUpdateStartTime(Wt::Dbo::Session& session)
 {
-	return Setting::getDuration(session, "update_start_time");
+	return Setting::getTime(session, "update_start_time");
 }
 
-void setUpdateStartTime(Wt::Dbo::Session& session, boost::posix_time::time_duration startTime)
+void setUpdateStartTime(Wt::Dbo::Session& session, Wt::WTime startTime)
 {
-	Setting::setDuration(session, "update_start_time", startTime);
+	Setting::setTime(session, "update_start_time", startTime);
 }
 
 MediaScanner::MediaScanner(Wt::Dbo::SqlConnectionPool& connectionPool)
@@ -176,7 +165,7 @@ MediaScanner::scheduleImmediateScan()
 	_ioService.post([=]()
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Schedule immediate scan";
-		scheduleScan( boost::posix_time::seconds(0) );
+		scheduleScan(std::chrono::seconds(0));
 	});
 }
 
@@ -193,29 +182,31 @@ MediaScanner::reschedule()
 void
 MediaScanner::scheduleScan()
 {
-	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-	boost::posix_time::time_duration startTime = getUpdateStartTime(_db.getSession());
+	using namespace std::chrono_literals;
 
-	boost::gregorian::date nextScanDate;
+	Wt::WTime startTime = getUpdateStartTime(_db.getSession());
+	Wt::WDateTime now = Wt::WLocalDateTime::currentServerDateTime().toUTC();
+
+	Wt::WDate nextScanDate;
 
 	switch ( getUpdatePeriod(_db.getSession()) )
 	{
 		case UpdatePeriod::Daily:
-			if (now.time_of_day() < startTime)
+			if (now.time() < startTime)
 				nextScanDate = now.date();
 			else
-				nextScanDate = getNextDay(now.date());
+				nextScanDate = now.date().addDays(1);
 			break;
 
 		case UpdatePeriod::Weekly:
-			if (now.time_of_day() < startTime && now.date().day_of_week() == 1)
+			if (now.time() < startTime && now.date().dayOfWeek() == 1)
 				nextScanDate = now.date();
 			else
 				nextScanDate = getNextMonday(now.date());
 			break;
 
 		case UpdatePeriod::Monthly:
-			if (now.time_of_day() < startTime && now.date().day() == 1)
+			if (now.time() < startTime && now.date().day() == 1)
 				nextScanDate = now.date();
 			else
 				nextScanDate = getNextFirstOfMonth(now.date());
@@ -226,24 +217,25 @@ MediaScanner::scheduleScan()
 			break;
 	}
 
-	if (!nextScanDate.is_special())
-		scheduleScan( boost::posix_time::ptime (nextScanDate, startTime) );
+	if (nextScanDate.isValid())
+		scheduleScan( Wt::WDateTime(nextScanDate, startTime).toTimePoint() );
 }
 
 void
-MediaScanner::scheduleScan( boost::posix_time::time_duration duration)
+MediaScanner::scheduleScan(std::chrono::seconds duration)
 {
-	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan in " << duration;
-	_scheduleTimer.expires_from_now(duration);
-	_scheduleTimer.async_wait( boost::bind( &MediaScanner::scan, this, boost::asio::placeholders::error) );
+	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan in " << duration.count() << " seconds";
+	_scheduleTimer.expires_from_now(std::chrono::seconds(5)); //duration);
+	_scheduleTimer.async_wait( std::bind( &MediaScanner::scan, this, std::placeholders::_1) );
 }
 
 void
-MediaScanner::scheduleScan( boost::posix_time::ptime time)
+MediaScanner::scheduleScan(std::chrono::system_clock::time_point timePoint)
 {
-	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan at " << time;
-	_scheduleTimer.expires_at(time);
-	_scheduleTimer.async_wait( boost::bind( &MediaScanner::scan, this, boost::asio::placeholders::error) );
+	std::time_t t = std::chrono::system_clock::to_time_t(timePoint);
+	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan at " << std::string(std::ctime(&t));
+	_scheduleTimer.expires_at(timePoint);
+	_scheduleTimer.async_wait(std::bind(&MediaScanner::scan, this, std::placeholders::_1));
 }
 
 void
@@ -263,9 +255,9 @@ MediaScanner::scan(boost::system::error_code err)
 		if (!_running)
 			break;
 
-		LMS_LOG(DBUPDATER, INFO) << "scaning root directory '" << rootDirectory << "'...";
+		LMS_LOG(DBUPDATER, INFO) << "scaning root directory '" << rootDirectory.string() << "'...";
 		scanRootDirectory(rootDirectory, stats);
-		LMS_LOG(DBUPDATER, INFO) << "scaning root directory '" << rootDirectory << "' DONE";
+		LMS_LOG(DBUPDATER, INFO) << "scaning root directory '" << rootDirectory.string() << "' DONE";
 	}
 
 	if (_running)
@@ -273,16 +265,9 @@ MediaScanner::scan(boost::system::error_code err)
 
 	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.scanErrors << ", not imported = " << stats.incompleteScans << "), duplicates = " << stats.nbDuplicates() << " (hash = " << stats.duplicateHashes << ", mbid = " << stats.duplicateMBID << ")";
 
-	// Update database stats
-	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-	if (stats.nbChanges() > 0)
-		Setting::setTime(_db.getSession(), "last_update", now);
-
 	// Save the last scan only if it has been completed
 	if (_running)
 	{
-		Setting::setTime(_db.getSession(), "last_scan", now);
-
 		scheduleScan();
 
 		scanComplete().emit(stats);
@@ -408,7 +393,7 @@ MediaScanner::getClusters( const MetaData::Clusters& clustersNames)
 void
 MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 {
-	boost::posix_time::ptime lastWriteTime (boost::posix_time::from_time_t( boost::filesystem::last_write_time( file ) ) );
+	auto lastWriteTime = Wt::WDateTime::fromTime_t(boost::filesystem::last_write_time(file));
 
 	// Skip file if last write is the same
 	{
@@ -445,7 +430,7 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 	if ((*items).find(MetaData::Type::AudioStreams) == (*items).end()
 			|| boost::any_cast<std::vector<MetaData::AudioStream>> ((*items)[MetaData::Type::AudioStreams]).empty())
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file << "' (no audio stream found)";
+		LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file.string() << "' (no audio stream found)";
 
 		// If Track exists here, delete it!
 		if (track)
@@ -457,9 +442,9 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 		return;
 	}
 	if ((*items).find(MetaData::Type::Duration) == (*items).end()
-			|| boost::any_cast<boost::posix_time::time_duration>((*items)[MetaData::Type::Duration]).total_seconds() <= 0)
+			|| boost::any_cast<std::chrono::milliseconds>((*items)[MetaData::Type::Duration]).count() <= 0)
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file << "' (no duration or duration <= 0)";
+		LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file.string() << "' (no duration or duration <= 0)";
 
 		// If Track exists here, delete it!
 		if (track)
@@ -534,12 +519,12 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 	{
 		// Create a new song
 		track = Track::create(_db.getSession(), file);
-		LMS_LOG(DBUPDATER, INFO) << "Adding '" << file << "'";
+		LMS_LOG(DBUPDATER, INFO) << "Adding '" << file.string() << "'";
 		stats.additions++;
 	}
 	else
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Updating '" << file << "'";
+		LMS_LOG(DBUPDATER, INFO) << "Updating '" << file.string() << "'";
 
 		// Remove the songs from its clusters
 		for (auto cluster : track->getClusters())
@@ -555,8 +540,8 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 	track.modify()->setRelease(release);
 	track.modify()->setLastWriteTime(lastWriteTime);
 	track.modify()->setName(title);
-	track.modify()->setDuration( boost::any_cast<boost::posix_time::time_duration>((*items)[MetaData::Type::Duration]) );
-	track.modify()->setAddedTime( boost::posix_time::second_clock::local_time() );
+	track.modify()->setDuration( boost::any_cast<std::chrono::milliseconds>((*items)[MetaData::Type::Duration]) );
+	track.modify()->setAddedTime( Wt::WLocalDateTime::currentServerDateTime().toUTC() );
 
 	{
 		std::string trackClusterList;
@@ -586,15 +571,15 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 		track.modify()->setTotalDiscNumber( boost::any_cast<std::size_t>((*items)[MetaData::Type::TotalDisc]) );
 
 	if ((*items).find(MetaData::Type::Date) != (*items).end())
-		track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>((*items)[MetaData::Type::Date]) );
+		track.modify()->setDate( boost::any_cast<Wt::WDate>((*items)[MetaData::Type::Date]) );
 
 	if ((*items).find(MetaData::Type::OriginalDate) != (*items).end())
 	{
-		track.modify()->setOriginalDate( boost::any_cast<boost::posix_time::ptime>((*items)[MetaData::Type::OriginalDate]) );
+		track.modify()->setOriginalDate( boost::any_cast<Wt::WDate>((*items)[MetaData::Type::OriginalDate]) );
 
 		// If a file has an OriginalDate but no date, set the date to ease filtering
 		if ((*items).find(MetaData::Type::Date) == (*items).end())
-			track.modify()->setDate( boost::any_cast<boost::posix_time::ptime>((*items)[MetaData::Type::OriginalDate]) );
+			track.modify()->setDate( boost::any_cast<Wt::WDate>((*items)[MetaData::Type::OriginalDate]) );
 	}
 
 	if ((*items).find(MetaData::Type::MusicBrainzRecordingID) != (*items).end())
@@ -652,7 +637,7 @@ checkFile(const boost::filesystem::path& p, const std::vector<boost::filesystem:
 		if (!boost::filesystem::exists( p )
 				|| !boost::filesystem::is_regular( p ) )
 		{
-			LMS_LOG(DBUPDATER, INFO) << "Missing file '" << p << "'";
+			LMS_LOG(DBUPDATER, INFO) << "Missing file '" << p.string() << "'";
 			status = false;
 		}
 		else
@@ -670,12 +655,12 @@ checkFile(const boost::filesystem::path& p, const std::vector<boost::filesystem:
 
 			if (!foundRoot)
 			{
-				LMS_LOG(DBUPDATER, INFO) << "Out of root file '" << p << "'";
+				LMS_LOG(DBUPDATER, INFO) << "Out of root file '" << p.string() << "'";
 				status = false;
 			}
 			else if (!isFileSupported(p, extensions))
 			{
-				LMS_LOG(DBUPDATER, INFO) << "File format no longer supported for '" << p << "'";
+				LMS_LOG(DBUPDATER, INFO) << "File format no longer supported for '" << p.string() << "'";
 				status = false;
 			}
 		}
@@ -685,7 +670,7 @@ checkFile(const boost::filesystem::path& p, const std::vector<boost::filesystem:
 	}
 	catch (boost::filesystem::filesystem_error& e)
 	{
-		LMS_LOG(DBUPDATER, ERROR) << "Caught exception while checking file '" << p << "': " << e.what();
+		LMS_LOG(DBUPDATER, ERROR) << "Caught exception while checking file '" << p.string() << "': " << e.what();
 		return false;
 	}
 
@@ -779,14 +764,14 @@ MediaScanner::checkDuplicatedAudioFiles(Stats& stats)
 	std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(_db.getSession());
 	for (Track::pointer track : tracks)
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath() << " - " << track->getName();
+		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath().string() << " - " << track->getName();
 		stats.duplicateMBID++;
 	}
 
 	tracks = Database::Track::getChecksumDuplicates(_db.getSession());
 	for (Track::pointer track : tracks)
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Found duplicated checksum [" << bufferToString(track->getChecksum()) << "], file: " << track->getPath() << " - " << track->getName();
+		LMS_LOG(DBUPDATER, INFO) << "Found duplicated checksum [" << bufferToString(track->getChecksum()) << "], file: " << track->getPath().string() << " - " << track->getName();
 		stats.duplicateHashes++;
 	}
 

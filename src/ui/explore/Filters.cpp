@@ -17,10 +17,10 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WComboBox>
-#include <Wt/WDialog>
-#include <Wt/WPushButton>
-#include <Wt/WTemplate>
+#include <Wt/WComboBox.h>
+#include <Wt/WDialog.h>
+#include <Wt/WPushButton.h>
+#include <Wt/WTemplate.h>
 
 #include "Filters.hpp"
 
@@ -31,32 +31,25 @@ namespace UserInterface {
 void
 Filters::showDialog()
 {
-	auto dialog = new Wt::WDialog(Wt::WString::tr("Lms.Explore.add-filter"));
+	auto dialog = std::make_shared<Wt::WDialog>(Wt::WString::tr("Lms.Explore.add-filter"));
 
-	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.template.add-filter"));
+	Wt::WTemplate* container = dialog->contents()->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.template.add-filter"));
 	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	dialog->contents()->addWidget(container);
+	Wt::WComboBox* typeCombo = container->bindNew<Wt::WComboBox>("type");
+	Wt::WComboBox* valueCombo = container->bindNew<Wt::WComboBox>("value");
 
-	auto typeCombo = new Wt::WComboBox();
-	container->bindWidget("type", typeCombo);
+	Wt::WPushButton* addBtn = container->bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.add"));
+	addBtn->clicked().connect(dialog.get(), &Wt::WDialog::accept);
 
-	auto valueCombo = new Wt::WComboBox();
-	container->bindWidget("value", valueCombo);
-
-	auto addBtn = new Wt::WPushButton(Wt::WString::tr("Lms.add"));
-	container->bindWidget("add-btn", addBtn);
-	addBtn->clicked().connect(dialog, &Wt::WDialog::accept);
-
-	auto cancelBtn = new Wt::WPushButton(Wt::WString::tr("Lms.cancel"));
-	container->bindWidget("cancel-btn", cancelBtn);
-	cancelBtn->clicked().connect(dialog, &Wt::WDialog::reject);
+	Wt::WPushButton* cancelBtn = container->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel"));
+	cancelBtn->clicked().connect(dialog.get(), &Wt::WDialog::reject);
 
 	// Populate data
 	{
-		Wt::Dbo::Transaction transaction(DboSession());
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-		auto types = Database::ClusterType::getAll(DboSession());
+		auto types = Database::ClusterType::getAll(LmsApp->getDboSession());
 
 		for (auto type : types)
 			typeCombo->addItem(Wt::WString::fromUTF8(type->getName()));
@@ -81,9 +74,9 @@ Filters::showDialog()
 
 		valueCombo->clear();
 
-		Wt::Dbo::Transaction transaction(DboSession());
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-		auto clusterType = Database::ClusterType::getByName(DboSession(), name);
+		auto clusterType = Database::ClusterType::getByName(LmsApp->getDboSession(), name);
 
 		auto values = clusterType->getClusters();
 		for (auto value : values)
@@ -94,24 +87,22 @@ Filters::showDialog()
 	}));
 
 	dialog->setModal(true);
-#if WT_VERSION >= 0x03030700
 	dialog->setMovable(false);
-#endif
 
 	dialog->setResizable(false);
 	dialog->setClosable(false);
 
 	dialog->finished().connect(std::bind([=]
 	{
-		if (dialog->result() != Wt::WDialog::Accepted)
+		if (dialog->result() != Wt::DialogCode::Accepted)
 			return;
 
 		auto type = typeCombo->valueText().toUTF8();
 		auto value = valueCombo->valueText().toUTF8();
 
-		Wt::Dbo::Transaction transaction(DboSession());
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-		auto clusterType = Database::ClusterType::getByName(DboSession(), type);
+		auto clusterType = Database::ClusterType::getByName(LmsApp->getDboSession(), type);
 		if (!clusterType)
 			return;
 
@@ -123,8 +114,7 @@ Filters::showDialog()
 		_filterIds.insert(clusterId);
 		_sigUpdated.emit();
 
-		auto filterBtn = new Wt::WPushButton(Wt::WString::fromUTF8(value));
-		_filters->addWidget(filterBtn);
+		Wt::WPushButton* filterBtn = _filters->addNew<Wt::WPushButton>(Wt::WString::fromUTF8(value), Wt::TextFormat::Plain);
 
 		filterBtn->clicked().connect(std::bind([=]
 		{
@@ -137,23 +127,14 @@ Filters::showDialog()
 	dialog->show();
 }
 
-Filters::Filters(Wt::WContainerWidget *parent)
-: Wt::WContainerWidget(parent)
+Filters::Filters()
+: Wt::WTemplate(Wt::WString::tr("Lms.Explore.template.filters"))
 {
-	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.template.filters"), this);
-
 	// Filters
-	Wt::WPushButton *addFilterBtn = new Wt::WPushButton(Wt::WText::tr("Lms.Explore.add-filter"));
-	container->bindWidget("add-filter", addFilterBtn);
+	Wt::WPushButton *addFilterBtn = bindNew<Wt::WPushButton>("add-filter", Wt::WText::tr("Lms.Explore.add-filter"));
+	addFilterBtn->clicked().connect(this, &Filters::showDialog);
 
-	_filters = new Wt::WContainerWidget();
-	container->bindWidget("filters", _filters);
-
-	addFilterBtn->clicked().connect(std::bind([this]
-	{
-		showDialog();
-	}));
-
+	_filters = bindNew<Wt::WContainerWidget>("filters");
 }
 
 

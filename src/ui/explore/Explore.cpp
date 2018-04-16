@@ -17,9 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WStackedWidget>
-#include <Wt/WTemplate>
-#include <Wt/WText>
+#include <Wt/WStackedWidget.h>
+#include <Wt/WTemplate.h>
+#include <Wt/WText.h>
 
 #include "utils/Logger.hpp"
 
@@ -70,54 +70,44 @@ handlePathChange(Wt::WStackedWidget* stack)
 	}
 }
 
-Explore::Explore(Wt::WContainerWidget* parent)
-: Wt::WContainerWidget(parent)
+Explore::Explore()
+: Wt::WTemplate(Wt::WString::tr("Lms.Explore.template"))
 {
-	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.template"), this);
-
-	_filters = new Filters();
-	container->bindWidget("filters", _filters);
+	_filters = bindNew<Filters>("filters");
 
 	// Contents
-	Wt::WStackedWidget* stack = new Wt::WStackedWidget();
-	container->bindWidget("contents", stack);
+	Wt::WStackedWidget* stack = bindNew<Wt::WStackedWidget>("contents");
 
-	auto artists = new Artists(_filters);
-	stack->addWidget(artists);
-
+	auto artists = std::make_unique<Artists>(_filters);
 	artists->artistAdd.connect(this, &Explore::handleArtistAdd);
 	artists->artistPlay.connect(this, &Explore::handleArtistPlay);
+	stack->addWidget(std::move(artists));
 
-	auto artist = new Artist(_filters);
-	stack->addWidget(artist);
-
+	auto artist = std::make_unique<Artist>(_filters);
 	artist->artistAdd.connect(this, &Explore::handleArtistAdd);
 	artist->artistPlay.connect(this, &Explore::handleArtistPlay);
 	artist->releaseAdd.connect(this, &Explore::handleReleaseAdd);
 	artist->releasePlay.connect(this, &Explore::handleReleasePlay);
+	stack->addWidget(std::move(artist));
 
-	auto releases = new Releases(_filters);
-	stack->addWidget(releases);
-
+	auto releases = std::make_unique<Releases>(_filters);
 	releases->releaseAdd.connect(this, &Explore::handleReleaseAdd);
 	releases->releasePlay.connect(this, &Explore::handleReleasePlay);
+	stack->addWidget(std::move(releases));
 
-	auto release = new Release(_filters);
-	stack->addWidget(release);
-
+	auto release = std::make_unique<Release>(_filters);
 	release->releaseAdd.connect(this, &Explore::handleReleaseAdd);
 	release->releasePlay.connect(this, &Explore::handleReleasePlay);
 	release->trackAdd.connect(this, &Explore::handleTrackAdd);
 	release->trackPlay.connect(this, &Explore::handleTrackPlay);
+	stack->addWidget(std::move(release));
 
-	auto tracks = new Tracks(_filters);
-	stack->addWidget(tracks);
-
+	auto tracks = std::make_unique<Tracks>(_filters);
 	tracks->trackAdd.connect(this, &Explore::handleTrackAdd);
 	tracks->trackPlay.connect(this, &Explore::handleTrackPlay);
 	tracks->tracksAdd.connect(this, &Explore::handleTracksAdd);
 	tracks->tracksPlay.connect(this, &Explore::handleTracksPlay);
-
+	stack->addWidget(std::move(tracks));
 
 	wApp->internalPathChanged().connect(std::bind([=]
 	{
@@ -175,49 +165,49 @@ static std::vector<Database::Track::pointer> getTrack(Wt::Dbo::Session& session,
 void
 Explore::handleArtistAdd(Database::id_type id)
 {
-	Wt::Dbo::Transaction transaction(DboSession());
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	tracksAdd.emit(getArtistTracks(DboSession(), id, _filters->getClusterIds()));
+	tracksAdd.emit(getArtistTracks(LmsApp->getDboSession(), id, _filters->getClusterIds()));
 }
 
 void
 Explore::handleArtistPlay(Database::id_type id)
 {
-	Wt::Dbo::Transaction transaction(DboSession());
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	tracksPlay.emit(getArtistTracks(DboSession(), id, _filters->getClusterIds()));
+	tracksPlay.emit(getArtistTracks(LmsApp->getDboSession(), id, _filters->getClusterIds()));
 }
 
 void
 Explore::handleReleaseAdd(Database::id_type id)
 {
-	Wt::Dbo::Transaction transaction(DboSession());
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	tracksAdd.emit(getReleaseTracks(DboSession(), id, _filters->getClusterIds()));
+	tracksAdd.emit(getReleaseTracks(LmsApp->getDboSession(), id, _filters->getClusterIds()));
 }
 
 void
 Explore::handleReleasePlay(Database::id_type id)
 {
-	Wt::Dbo::Transaction transaction(DboSession());
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	tracksPlay.emit(getReleaseTracks(DboSession(), id, _filters->getClusterIds()));
+	tracksPlay.emit(getReleaseTracks(LmsApp->getDboSession(), id, _filters->getClusterIds()));
 }
 
 void
 Explore::handleTrackAdd(Database::id_type id)
 {
-	Wt::Dbo::Transaction transaction(DboSession());
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	tracksAdd.emit(getTrack(DboSession(), id));
+	tracksAdd.emit(getTrack(LmsApp->getDboSession(), id));
 }
 
 void
 Explore::handleTrackPlay(Database::id_type id)
 {
-	Wt::Dbo::Transaction transaction(DboSession());
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	tracksPlay.emit(getTrack(DboSession(), id));
+	tracksPlay.emit(getTrack(LmsApp->getDboSession(), id));
 }
 
 void

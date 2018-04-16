@@ -21,7 +21,7 @@
 
 #include <mutex>
 
-#include <Wt/WResource>
+#include <Wt/WResource.h>
 
 #include "av/AvTranscoder.hpp"
 
@@ -32,7 +32,7 @@ namespace UserInterface {
 class TranscodeResource : public Wt::WResource
 {
 	public:
-		TranscodeResource(Database::Handler& db, Wt::WObject *parent);
+		TranscodeResource(Database::Handler& db);
 		~TranscodeResource();
 
 		std::string getUrl(Database::Track::id_type trackId, Av::Encoding encoding, boost::posix_time::time_duration offset) const;

@@ -16,7 +16,7 @@ fi
 AC_SUBST(MAGICKXX_CFLAGS)
 AC_SUBST(MAGICKXX_LIBS)
 
-AC_CHECK_HEADERS([Wt/WApplication pstreams/pstream.h],
+AC_CHECK_HEADERS([Wt/WApplication.h pstreams/pstream.h],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
 
@@ -65,36 +65,6 @@ AC_CHECK_LIB(	[boost_filesystem],
 		[main],
 		,
 		[AC_MSG_ERROR([libboost_filesystem not found!])])
-
-AC_CHECK_LIB(	[boost_locale],
-		[main],
-		,
-		[AC_MSG_ERROR([libboost_locale not found!])])
-
-AC_CHECK_LIB(	[boost_date_time],
-		[main],
-		,
-		[AC_MSG_ERROR([libboost_date_time not found!])])
-
-AC_CHECK_LIB(	[boost_iostreams],
-		[main],
-		,
-		[AC_MSG_ERROR([libboost_iostreams not found!])])
-
-AC_CHECK_LIB(	[boost_thread],
-		[main],
-		,
-		[AC_MSG_ERROR([libboost_thread not found!])])
-
-AC_CHECK_LIB(	[curlpp],
-		[main],
-		,
-		[AC_MSG_ERROR([libcurlpp not found!])])
-
-AC_CHECK_LIB(	[curl],
-		[curl_easy_cleanup],
-		,
-		[AC_MSG_ERROR([libcurl not found!])])
 
 AC_CHECK_LIB(	[tag],
 		[main],

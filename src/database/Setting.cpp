@@ -52,8 +52,8 @@ Setting::getBool(Wt::Dbo::Session& session, std::string setting, bool defaultVal
 	return (res->_value == "true");
 }
 
-boost::posix_time::time_duration
-Setting::getDuration(Wt::Dbo::Session& session, std::string setting, boost::posix_time::time_duration defaultValue)
+Wt::WTime
+Setting::getTime(Wt::Dbo::Session& session, std::string setting, Wt::WTime defaultValue)
 {
 	Wt::Dbo::Transaction transaction(session);
 
@@ -61,19 +61,7 @@ Setting::getDuration(Wt::Dbo::Session& session, std::string setting, boost::posi
 	if (!res)
 		return defaultValue;
 
-	return boost::posix_time::duration_from_string(res->_value);
-}
-
-boost::posix_time::ptime
-Setting::getTime(Wt::Dbo::Session& session, std::string setting, boost::posix_time::ptime defaultValue)
-{
-	Wt::Dbo::Transaction transaction(session);
-
-	pointer res = getByName(session, setting);
-	if (!res)
-		return defaultValue;
-
-	return boost::posix_time::time_from_string(res->_value);
+	return Wt::WTime::fromString(res->_value);
 }
 
 int
@@ -93,7 +81,7 @@ Setting::getInt(Wt::Dbo::Session& session, std::string setting, int defaultValue
 Setting::pointer
 Setting::create(Wt::Dbo::Session& session, std::string name)
 {
-	return session.add<Setting>(new Setting(name));
+	return session.add<Setting>(std::make_unique<Setting>(name));
 }
 
 Setting::pointer
@@ -127,17 +115,10 @@ Setting::setBool(Wt::Dbo::Session& session, std::string setting, bool value)
 }
 
 void
-Setting::setDuration(Wt::Dbo::Session& session, std::string setting, boost::posix_time::time_duration value)
+Setting::setTime(Wt::Dbo::Session& session, std::string setting, Wt::WTime value)
 {
 	Wt::Dbo::Transaction transaction(session);
-	getOrCreateByName(session, setting).modify()->_value = boost::posix_time::to_simple_string(value);
-}
-
-void
-Setting::setTime(Wt::Dbo::Session& session, std::string setting, boost::posix_time::ptime value)
-{
-	Wt::Dbo::Transaction transaction(session);
-	getOrCreateByName(session, setting).modify()->_value = boost::posix_time::to_simple_string(value);
+	getOrCreateByName(session, setting).modify()->_value = value.toString().toUTF8();
 }
 
 void

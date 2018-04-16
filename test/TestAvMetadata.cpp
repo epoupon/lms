@@ -1,10 +1,10 @@
 #include <stdlib.h>
-
-#include <boost/date_time/time_duration.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <chrono>
 
 #include <stdexcept>
 #include <iostream>
+
+#include <Wt/WDate.h>
 
 #include "av/AvInfo.hpp"
 #include "metadata/AvFormat.hpp"
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 						break;
 
 					case MetaData::Type::Duration:
-						std::cout << "Duration: " << boost::posix_time::to_simple_string(boost::any_cast<boost::posix_time::time_duration>(item.second)) << std::endl;
+						std::cout << "Duration: " << boost::any_cast<std::chrono::milliseconds>(item.second).count() / 1000 << "s" << std::endl;
 						break;
 
 					case MetaData::Type::TrackNumber:
@@ -87,11 +87,11 @@ int main(int argc, char *argv[])
 						break;
 
 					case MetaData::Type::Date:
-						std::cout << "Date: " << boost::posix_time::to_simple_string(boost::any_cast<boost::posix_time::ptime>(item.second)) << std::endl;
+						std::cout << "Date: " << boost::any_cast<Wt::WDate>(item.second).toString() << std::endl;
 						break;
 
 					case MetaData::Type::OriginalDate:
-						std::cout << "Original date: " << boost::posix_time::to_simple_string(boost::any_cast<boost::posix_time::ptime>(item.second)) << std::endl;
+						std::cout << "Original date: " << boost::any_cast<Wt::WDate>(item.second).toString() << std::endl;
 						break;
 
 					case MetaData::Type::HasCover:
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
 					case MetaData::Type::AudioStreams:
 						for (auto& audioStream : boost::any_cast<std::vector<MetaData::AudioStream> >(item.second))
-							std::cout << "Audio stream '" << audioStream.desc << "' - " << audioStream.bitRate << " bps" << std::endl;
+							std::cout << "Audio stream: " << audioStream.bitRate << " bps" << std::endl;
 						break;
 
 					case MetaData::Type::MusicBrainzArtistID:

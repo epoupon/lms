@@ -22,7 +22,7 @@
 
 #include <mutex>
 
-#include <Wt/WResource>
+#include <Wt/WResource.h>
 
 #include "database/DatabaseHandler.hpp"
 #include "image/Image.hpp"
@@ -35,7 +35,7 @@ class ImageResource : public Wt::WResource
 	public:
 		static const std::size_t maxSize = 512;
 
-		ImageResource(Database::Handler& db, Wt::WObject *parent = 0);
+		ImageResource(Database::Handler& db);
 		~ImageResource();
 
 		std::string getReleaseUrl(Database::Release::id_type releaseId, size_t size) const;

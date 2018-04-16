@@ -20,8 +20,8 @@
 #ifndef LMS_APPLICATION_HPP
 #define LMS_APPLICATION_HPP
 
-#include <Wt/WApplication>
-#include <Wt/Dbo/SqlConnectionPool>
+#include <Wt/WApplication.h>
+#include <Wt/Dbo/SqlConnectionPool.h>
 
 #include "database/DatabaseHandler.hpp"
 #include "scanner/MediaScanner.hpp"
@@ -36,13 +36,20 @@ class ImageResource;
 class LmsApplication : public Wt::WApplication
 {
 	public:
-		static Wt::WApplication *create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner);
+		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner);
+
+		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env,
+				Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner);
 		static LmsApplication* instance();
 
 		// Session application data
-		ImageResource* getImageResource() { return _imageResource; }
-		TranscodeResource* getTranscodeResource() { return _transcodeResource; }
-		Database::Handler& getDbHandler() { return _db;}
+		std::shared_ptr<ImageResource> getImageResource() { return _imageResource; }
+		std::shared_ptr<TranscodeResource> getTranscodeResource() { return _transcodeResource; }
+		Database::Handler& getDb() { return _db;}
+		Wt::Dbo::Session& getDboSession() { return _db.getSession();}
+
+		const Wt::Auth::User& getCurrentAuthUser() { return _db.getLogin().user(); }
+		Database::User::pointer getCurrentUser() { return _db.getCurrentUser(); }
 
 		Scanner::MediaScanner& getMediaScanner() { return _scanner; }
 
@@ -51,12 +58,10 @@ class LmsApplication : public Wt::WApplication
 		void goHomeAndQuit();
 		void notifyMsg(const Wt::WString& message);
 
-		static Wt::WAnchor* createArtistAnchor(Database::Artist::pointer artist, bool addText = true);
-		static Wt::WAnchor* createReleaseAnchor(Database::Release::pointer release, bool addText = true);
+		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Database::Artist::pointer artist, bool addText = true);
+		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::Release::pointer release, bool addText = true);
 
 	private:
-
-		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner);
 
 		void handleAuthEvent(void);
 		void notify(const Wt::WEvent& event) override;
@@ -64,19 +69,13 @@ class LmsApplication : public Wt::WApplication
 		Database::Handler	_db;
 		Auth*			_auth;
 		Scanner::MediaScanner&	_scanner;
-		ImageResource*          _imageResource;
-		TranscodeResource*	_transcodeResource;
+		std::shared_ptr<ImageResource>	_imageResource;
+		std::shared_ptr<TranscodeResource>	_transcodeResource;
 		bool			_isAdmin = false;
 };
 
-// Helpers to get session data
+// Helper to get session data
 #define LmsApp	LmsApplication::instance()
-
-Database::Handler& DbHandler();
-Wt::Dbo::Session& DboSession();
-
-const Wt::Auth::User& CurrentAuthUser();
-Database::User::pointer CurrentUser();
 
 } // namespace UserInterface
 

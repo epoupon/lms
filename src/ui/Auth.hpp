@@ -19,24 +19,22 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
-#include <Wt/WTemplateFormView>
-#include <Wt/Auth/Login>
-#include <Wt/Auth/AuthModel>
+#include <Wt/WTemplateFormView.h>
+#include <Wt/Auth/AuthModel.h>
 
 namespace UserInterface {
 
 class Auth : public Wt::WTemplateFormView
 {
 	public:
-		Auth(Wt::WContainerWidget *parent = 0);
+		Auth();
 
 		void logout();
 
 	private:
 		void processAuth();
 
-		Wt::Auth::AuthModel* _model;
+		std::shared_ptr<Wt::Auth::AuthModel> _model;
 };
 
 

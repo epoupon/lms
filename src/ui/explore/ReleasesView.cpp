@@ -17,11 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WApplication>
-#include <Wt/WAnchor>
-#include <Wt/WImage>
-#include <Wt/WText>
-#include <Wt/WTemplate>
+#include <Wt/WApplication.h>
+#include <Wt/WAnchor.h>
+#include <Wt/WImage.h>
+#include <Wt/WText.h>
+#include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
 
@@ -38,25 +38,20 @@ namespace UserInterface {
 
 using namespace Database;
 
-Releases::Releases(Filters* filters, Wt::WContainerWidget* parent)
-: Wt::WContainerWidget(parent),
-	_filters(filters)
+Releases::Releases(Filters* filters)
+: Wt::WTemplate(Wt::WString::tr("Lms.Explore.Releases.template")),
+_filters(filters)
 {
-	auto container = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Releases.template"), this);
-	container->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	_search = new Wt::WLineEdit();
-	container->bindWidget("search", _search);
+	_search = bindNew<Wt::WLineEdit>("search");
 	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
 	_search->textInput().connect(this, &Releases::refresh);
 
-	_releasesContainer = new Wt::WContainerWidget();
-	container->bindWidget("releases", _releasesContainer);
+	_releasesContainer = bindNew<Wt::WContainerWidget>("releases");
 
-	_showMore = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.show-more"));
+	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
-	container->bindWidget("show-more", _showMore);
-
 	_showMore->clicked().connect(std::bind([=]
 	{
 		addSome();
@@ -81,29 +76,24 @@ Releases::addSome()
 
 	auto clusterIds = _filters->getClusterIds();
 
-	Wt::Dbo::Transaction transaction(DboSession());
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
 	bool moreResults;
-	auto releases = Release::getByFilter(DboSession(), clusterIds, searchKeywords, _releasesContainer->count(), 20, moreResults);
+	auto releases = Release::getByFilter(LmsApp->getDboSession(), clusterIds, searchKeywords, _releasesContainer->count(), 20, moreResults);
 
 	for (auto release : releases)
 	{
 		auto releaseId = release.id();
 
-		Wt::WTemplate* entry = new Wt::WTemplate(Wt::WString::tr("Lms.Explore.Releases.template.entry"), _releasesContainer);
+		Wt::WTemplate* entry = _releasesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.entry"));
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
 
-		Wt::WAnchor* coverAnchor = LmsApplication::createReleaseAnchor(release, false);
-		Wt::WImage* cover = new Wt::WImage(coverAnchor);
-		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(releaseId, 128));
-		// Some images may not be square
-		cover->setWidth(128);
-		entry->bindWidget("cover", coverAnchor);
+		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
+		auto cover = std::make_unique<Wt::WImage>();
+		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
+		anchor->setImage(std::move(cover));
 
-		{
-			Wt::WAnchor* releaseAnchor = LmsApplication::createReleaseAnchor(release);
-			entry->bindWidget("release-name", releaseAnchor);
-		}
+		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
 
 		auto artists = release->getArtists();
 		if (artists.size() > 1)
@@ -114,19 +104,16 @@ Releases::addSome()
 		else if (artists.size() == 1)
 		{
 			entry->setCondition("if-has-artist", true);
-			Wt::WAnchor* artistAnchor = LmsApplication::createArtistAnchor(artists.front());
-			entry->bindWidget("artist-name", artistAnchor);
+			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
 		}
 
-		auto playBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Releases.play"), Wt::XHTMLText);
-		entry->bindWidget("play-btn", playBtn);
+		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.Releases.play"), Wt::TextFormat::XHTML);
 		playBtn->clicked().connect(std::bind([=]
 		{
 			releasePlay.emit(releaseId);
 		}));
 
-		auto addBtn = new Wt::WText(Wt::WString::tr("Lms.Explore.Releases.add"), Wt::XHTMLText);
-		entry->bindWidget("add-btn", addBtn);
+		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.Releases.add"), Wt::TextFormat::XHTML);
 		addBtn->clicked().connect(std::bind([=]
 		{
 			releaseAdd.emit(releaseId);

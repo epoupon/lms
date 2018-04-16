@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
-#include <Wt/WSignal>
-#include <Wt/WTemplate>
-#include <Wt/WText>
+#include <Wt/WContainerWidget.h>
+#include <Wt/WSignal.h>
+#include <Wt/WTemplate.h>
+#include <Wt/WText.h>
 
 #include <boost/optional.hpp>
 
@@ -30,10 +30,10 @@
 
 namespace UserInterface {
 
-class PlayQueue : public Wt::WContainerWidget
+class PlayQueue : public Wt::WTemplate
 {
 	public:
-		PlayQueue(Wt::WContainerWidget* parent = 0);
+		PlayQueue();
 
 		void addTracks(const std::vector<Database::Track::pointer>& tracks);
 		void playTracks(const std::vector<Database::Track::pointer>& tracks);
@@ -48,7 +48,7 @@ class PlayQueue : public Wt::WContainerWidget
 		Wt::Signal<Database::Track::id_type> playTrack;
 
 		// Signal emitted when play has to be stopped
-		Wt::Signal<void> playbackStop;
+		Wt::Signal<> playbackStop;
 
 	private:
 		void addSome();

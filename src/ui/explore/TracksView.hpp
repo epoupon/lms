@@ -19,17 +19,17 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget>
-#include <Wt/WLineEdit>
-#include <Wt/WTemplate>
+#include <Wt/WContainerWidget.h>
+#include <Wt/WLineEdit.h>
+#include <Wt/WTemplate.h>
 
 namespace UserInterface {
 
 class Filters;
-class Tracks : public Wt::WContainerWidget
+class Tracks : public Wt::WTemplate
 {
 	public:
-		Tracks(Filters* filters, Wt::WContainerWidget* parent = 0);
+		Tracks(Filters* filters);
 
 		Wt::Signal<Database::id_type> trackAdd;
 		Wt::Signal<Database::id_type> trackPlay;
