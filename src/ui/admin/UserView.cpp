@@ -118,6 +118,52 @@ class UserModel : public Wt::WFormModel
 			}
 		}
 
+		Wt::WString getLogin() const
+		{
+			if (_userId)
+			{
+				auto authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*_userId) );
+				return authUser.identity(Wt::Auth::Identity::LoginName);
+			}
+			else
+				return valueText(LoginField);
+		}
+
+		bool validateField(Field field)
+		{
+			Wt::WString error;
+
+			if (field == LoginField)
+			{
+				auto user = LmsApp->getDb().getUserDatabase().findWithIdentity(Wt::Auth::Identity::LoginName, valueText(LoginField));
+				if (user.isValid())
+					error = Wt::WString::tr("Lms.Admin.User.user-already-exists");
+				else
+					return Wt::WFormModel::validateField(field);
+			}
+			else if (field == PasswordField)
+			{
+				if (!valueText(PasswordField).empty())
+				{
+					// Evaluate the strength of the password
+					auto res = Database::Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField), getLogin(), "");
+
+					if (!res.isValid())
+						error = res.message();
+				}
+				else
+					return Wt::WFormModel::validateField(field);
+			}
+			else
+			{
+				return Wt::WFormModel::validateField(field);
+			}
+
+			setValidation(field, Wt::WValidator::Result( error.empty() ? Wt::ValidationState::Valid : Wt::ValidationState::Invalid, error));
+
+			return (validation(field).state() == Wt::ValidationState::Valid);
+		}
+
 		boost::optional<int> getBitrateLimitRow(Wt::WString value)
 		{
 			for (int i = 0; i < _bitrateModel->rowCount(); ++i)

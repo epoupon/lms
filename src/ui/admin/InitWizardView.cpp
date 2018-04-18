@@ -77,12 +77,10 @@ class InitWizardModel : public Wt::WFormModel
 
 			if (field == PasswordField)
 			{
-				// Password is mandatory if we create the user
 				if (!valueText(PasswordField).empty())
 				{
 					// Evaluate the strength of the password
-					Wt::Auth::AbstractPasswordService::StrengthValidatorResult res
-						= Database::Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField),
+					auto res = Database::Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField),
 								valueText(AdminLoginField), "");
 
 					if (!res.isValid())
