@@ -17,6 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <array>
 #include <fstream>
 #include <stdexcept>
 

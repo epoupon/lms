@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/make_unique.hpp>
-
 #include <Wt/Dbo/FixedSqlConnectionPool.h>
 #include <Wt/Dbo/backend/Sqlite3.h>
 
@@ -53,7 +51,12 @@ Handler::configureAuth(void)
 	authService.setAuthTokensEnabled(true, "lmsauth");
 	authService.setIdentityPolicy(Wt::Auth::IdentityPolicy::LoginName);
 	authService.setRandomTokenLength(32);
+
+#if WT_VERSION < 0X04000300
 	authService.setTokenHashFunction(new Wt::Auth::BCryptHashFunction(8));
+#else
+	authService.setTokenHashFunction(std::make_unique<Wt::Auth::BCryptHashFunction>(8));
+#endif
 
 	auto verifier = std::make_unique<Wt::Auth::PasswordVerifier>();
 	verifier->addHashFunction(std::make_unique<Wt::Auth::BCryptHashFunction>(8));

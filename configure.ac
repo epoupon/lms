@@ -74,7 +74,7 @@ AC_CHECK_LIB(	[tag],
 AC_CHECK_LIB(	[config++],
 		[main],
 		,
-		[AC_MSG_ERROR([libtag not found!])])
+		[AC_MSG_ERROR([libconfig++ not found!])])
 
 AC_CONFIG_FILES([Makefile
 		 src/Makefile
