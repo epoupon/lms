@@ -382,11 +382,11 @@ LmsApplication::handleAuthEvent(void)
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
 				notifyMsg(Wt::WString::tr("Lms.Admin.Database.scan-complete")
-					.arg(stats.nbFiles())
-					.arg(stats.additions)
-					.arg(stats.deletions)
-					.arg(stats.nbDuplicates())
-					.arg(stats.nbErrors()));
+					.arg(static_cast<unsigned>(stats.nbFiles()))
+					.arg(static_cast<unsigned>(stats.additions))
+					.arg(static_cast<unsigned>(stats.deletions))
+					.arg(static_cast<unsigned>(stats.nbDuplicates()))
+					.arg(static_cast<unsigned>(stats.nbErrors())));
 				triggerUpdate();
 			});
 		}, std::placeholders::_1));

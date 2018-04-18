@@ -144,7 +144,7 @@ PlayQueue::updateInfo()
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
 	auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
-	_nbTracks->setText(Wt::WString::tr("Lms.PlayQueue.nb-tracks").arg(playlist->getCount()));
+	_nbTracks->setText(Wt::WString::tr("Lms.PlayQueue.nb-tracks").arg(static_cast<unsigned>(playlist->getCount())));
 }
 
 void
