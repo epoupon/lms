@@ -37,6 +37,7 @@
 <message id="Lms.Admin.Users.edit">Edit</message>
 <message id="Lms.Admin.Users.users">Users</message>
 
+<message id="Lms.Admin.User.user-already-exists">User already exists!</message>
 <message id="Lms.Admin.User.user-create">New user</message>
 <message id="Lms.Admin.User.user-created">New user created!</message>
 <message id="Lms.Admin.User.user-edit">Edit user {1}</message>
