@@ -58,11 +58,14 @@ Auth::Auth()
 			this->setHidden(true);
 	}));
 
-//	Wt::Auth::User user = _model->processAuthToken();
-//	if (user.isValid())
-//		_model->loginUser(LmsApp->getDb().getLogin(), user, Wt::Auth::LoginState::Weak);
-
 	updateView(_model.get());
+
+	Wt::Auth::User user = _model->processAuthToken();
+	if (user.isValid())
+	{
+		LMS_LOG(UI, DEBUG) << "Valid user found from auth token (id = " << user.id() << ")";
+		_model->loginUser(LmsApp->getDb().getLogin(), user, Wt::Auth::LoginState::Weak);
+	}
 }
 
 void

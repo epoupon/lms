@@ -119,7 +119,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 		firstConnection = (Database::User::getAll(LmsApp->getDboSession()).size() == 0);
 	}
 
-	LMS_LOG(UI, DEBUG) << "Creating root widget. First connection = " << std::boolalpha << firstConnection;
+	LMS_LOG(UI, DEBUG) << "Creating root widget. First connection = " << firstConnection;
 
 	if (firstConnection)
 	{
@@ -127,8 +127,6 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	}
 	else
 	{
-		_auth = root()->addNew<Auth>();
-
 		LmsApp->getDb().getLogin().changed().connect(std::bind([=]
 		{
 			try
@@ -141,6 +139,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 				throw std::runtime_error("Internal error");
 			}
 		}));
+
+		_auth = root()->addNew<Auth>();
 	}
 }
 
