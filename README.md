@@ -55,7 +55,7 @@ lms [config_file]
 ```
 Logs are output in the working directory, in the file 'lms.log'
 
-To connect to LMS, just open your favorite browser and go to http://localhost:5081
+To connect to LMS, just open your favorite browser and go to http://localhost:5082
 
 ## Credits
 

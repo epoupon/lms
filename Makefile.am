@@ -42,8 +42,3 @@ lms_approot_DATA = \
 sysconf_DATA = \
 	        $(top_srcdir)/conf/lms.conf
 
-install-data-hook:
-	ln -s $(datadir)/Wt/resources $(lms_docrootdir)/resources || echo "Skipped symlink creation"
-
-uninstall-local:
-	cd $(lms_docrootdir) && rm -f -r $(lms_docrootdir)/resources
