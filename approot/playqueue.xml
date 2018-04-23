@@ -2,14 +2,6 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="Lms.PlayQueue.save-to-playlist">
-	<i class="fa fa-upload"></i>
-</message>
-
-<message id="Lms.PlayQueue.load-from-playlist">
-	<i class="fa fa-download"></i>
-</message>
-
 <message id="Lms.PlayQueue.clear">
 	<i class="fa fa-times-circle"></i>
 </message>
@@ -18,7 +10,7 @@
 	<div class="page-header">
 		<h2>${tr:Lms.PlayQueue.playqueue}</h2>
 		<small>${nb-tracks}</small>
-		${save-btn} ${load-btn} ${clear-btn}
+		${clear-btn}
 	</div>
 	${entries}
 	${show-more}

@@ -35,8 +35,6 @@ PlayQueue::PlayQueue()
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	bindNew<Wt::WText>("save-btn", Wt::WString::tr("Lms.PlayQueue.save-to-playlist"), Wt::TextFormat::XHTML);
-	bindNew<Wt::WText>("load-btn", Wt::WString::tr("Lms.PlayQueue.load-from-playlist"), Wt::TextFormat::XHTML);
 	Wt::WText* clearBtn = bindNew<Wt::WText>("clear-btn", Wt::WString::tr("Lms.PlayQueue.clear"), Wt::TextFormat::XHTML);
 
 	_entriesContainer = bindNew<Wt::WContainerWidget>("entries");
