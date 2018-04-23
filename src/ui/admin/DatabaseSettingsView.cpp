@@ -21,6 +21,7 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WComboBox.h>
 #include <Wt/WLineEdit.h>
+#include <Wt/WTemplateFormView.h>
 
 #include <Wt/WFormModel.h>
 #include <Wt/WStringListModel.h>
@@ -217,32 +218,47 @@ const Wt::WFormModel::Field DatabaseSettingsModel::UpdateStartTimeField		= "upda
 
 
 DatabaseSettingsView::DatabaseSettingsView()
-: Wt::WTemplateFormView(Wt::WString::tr("Lms.Admin.Database.template"))
 {
+	wApp->internalPathChanged().connect(std::bind([=]
+	{
+		refreshView();
+	}));
+
+	refreshView();
+}
+
+void
+DatabaseSettingsView::refreshView()
+{
+	if (!wApp->internalPathMatches("/admin/database"))
+		return;
+
+	clear();
+
+	auto t = addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Admin.Database.template"));
 	auto model = std::make_shared<DatabaseSettingsModel>();
 
 	// Media Directory
-	setFormWidget(DatabaseSettingsModel::MediaDirectoryField, std::make_unique<Wt::WLineEdit>());
+	t->setFormWidget(DatabaseSettingsModel::MediaDirectoryField, std::make_unique<Wt::WLineEdit>());
 
 	// Update Period
 	auto updatePeriod = std::make_unique<Wt::WComboBox>();
 	updatePeriod->setModel(model->updatePeriodModel());
-	setFormWidget(DatabaseSettingsModel::UpdatePeriodField, std::move(updatePeriod));
+	t->setFormWidget(DatabaseSettingsModel::UpdatePeriodField, std::move(updatePeriod));
 
 	// Update Start Time
 	auto updateStartTime = std::make_unique<Wt::WComboBox>();
 	updateStartTime->setModel(model->updateStartTimeModel());
-	setFormWidget(DatabaseSettingsModel::UpdateStartTimeField, std::move(updateStartTime));
+	t->setFormWidget(DatabaseSettingsModel::UpdateStartTimeField, std::move(updateStartTime));
 
 	// Buttons
-
-	Wt::WPushButton *saveBtn = bindWidget("apply-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.apply")));
-	Wt::WPushButton *discardBtn = bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard")));
-	Wt::WPushButton *immScanBtn = bindWidget("immediate-scan-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.Admin.Database.immediate-scan")));
+	Wt::WPushButton *saveBtn = t->bindWidget("apply-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.apply")));
+	Wt::WPushButton *discardBtn = t->bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard")));
+	Wt::WPushButton *immScanBtn = t->bindWidget("immediate-scan-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.Admin.Database.immediate-scan")));
 
 	saveBtn->clicked().connect(std::bind([=] ()
 	{
-		updateModel(model.get());
+		t->updateModel(model.get());
 
 		if (model->validate())
 		{
@@ -253,14 +269,14 @@ DatabaseSettingsView::DatabaseSettingsView()
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.
-		updateView(model.get());
+		t->updateView(model.get());
 	}));
 
 	discardBtn->clicked().connect(std::bind([=] ()
 	{
 		model->loadData();
 		model->validate();
-		updateView(model.get());
+		t->updateView(model.get());
 	}));
 
 	immScanBtn->clicked().connect(std::bind([=] ()
@@ -269,7 +285,7 @@ DatabaseSettingsView::DatabaseSettingsView()
 		LmsApp->notifyMsg(Wt::WString::tr("Lms.Admin.Database.scan-launched"));
 	}));
 
-	updateView(model.get());
+	t->updateView(model.get());
 }
 
 } // namespace UserInterface
