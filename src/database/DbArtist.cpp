@@ -168,8 +168,7 @@ Artist::getReleases(const std::set<id_type>& clusterIds) const
 	if (!clusterIds.empty())
 		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
 
-	// TODO order
-	oss << " ORDER BY t.date,r.name";
+	oss << " ORDER BY t.year,r.name";
 
 	Wt::Dbo::Query<Release::pointer> query = session()->query<Release::pointer>( oss.str() );
 

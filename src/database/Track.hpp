@@ -171,8 +171,8 @@ class Track
 		void setLastWriteTime(Wt::WDateTime time)			{ _fileLastWrite = time; }
 		void setAddedTime(Wt::WDateTime time)				{ _fileAdded = time; }
 		void setChecksum(const std::vector<unsigned char>& checksum)	{ _fileChecksum = checksum; }
-		void setDate(Wt::WDate date)					{ _date = date; }
-		void setOriginalDate(Wt::WDate date)				{ _originalDate = date; }
+		void setYear(int year)						{ _year = year; }
+		void setOriginalYear(int year)					{ _originalYear = year; }
 		void setGenres(const std::string& genreList)			{ _genreList = genreList; }
 		void setCoverType(CoverType coverType)				{ _coverType = coverType; }
 		void setMBID(const std::string& MBID)				{ _MBID = MBID; }
@@ -186,8 +186,8 @@ class Track
 		std::string 			getName(void) const			{ return _name; }
 		boost::filesystem::path		getPath(void) const			{ return _filePath; }
 		std::chrono::milliseconds	getDuration(void) const			{ return _duration; }
-		Wt::WDate			getDate(void) const			{ return _date; }
-		Wt::WDate			getOriginalDate(void) const		{ return _originalDate; }
+		boost::optional<int>		getYear(void) const;
+		boost::optional<int>		getOriginalYear(void) const;
 		Wt::WDateTime			getLastWriteTime(void) const		{ return _fileLastWrite; }
 		Wt::WDateTime			getAddedTime(void) const		{ return _fileAdded; }
 		const std::vector<unsigned char>& getChecksum(void) const		{ return _fileChecksum; }
@@ -206,8 +206,8 @@ class Track
 				Wt::Dbo::field(a, _totalDiscNumber,	"total_disc_number");
 				Wt::Dbo::field(a, _name,		"name");
 				Wt::Dbo::field(a, _duration,		"duration");
-				Wt::Dbo::field(a, _date,		"date");
-				Wt::Dbo::field(a, _originalDate,	"original_date");
+				Wt::Dbo::field(a, _year,		"year");
+				Wt::Dbo::field(a, _originalYear,	"original_year");
 				Wt::Dbo::field(a, _genreList,		"genre_list");
 				Wt::Dbo::field(a, _filePath,		"file_path");
 				Wt::Dbo::field(a, _fileLastWrite,	"file_last_write");
@@ -225,23 +225,23 @@ class Track
 
 		static const std::size_t _maxNameLength = 128;
 
-		int					_trackNumber;
-		int					_totalTrackNumber;
-		int					_discNumber;
-		int					_totalDiscNumber;
+		int					_trackNumber = 0;
+		int					_totalTrackNumber = 0;
+		int					_discNumber = 0;
+		int					_totalDiscNumber = 0;
 		std::string				_name;
 		std::string				_artistName;
 		std::string				_releaseName;
 		std::chrono::duration<int, std::milli>	_duration;
-		Wt::WDate				_date;
-		Wt::WDate				_originalDate; // original date time
+		int					_year = 0;
+		int					_originalYear = 0;
 		std::string				_genreList;
 		std::string				_filePath;
 		std::vector<unsigned char>		_fileChecksum;
 		Wt::WDateTime				_fileLastWrite;
 		Wt::WDateTime				_fileAdded;
-		CoverType				_coverType;
-		std::string				_MBID; // Musicbrainz Identifier
+		CoverType				_coverType = CoverType::None;
+		std::string				_MBID = ""; // Musicbrainz Identifier
 
 		Wt::Dbo::ptr<Artist>			_artist;
 		Wt::Dbo::ptr<Release>			_release;

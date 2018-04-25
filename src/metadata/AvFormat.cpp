@@ -124,16 +124,16 @@ AvFormat::parse(const boost::filesystem::path& p)
 					|| tag == "YEAR"
 					|| tag == "WM/Year")
 			{
-				auto date = readAs<Wt::WDate>(value);
+				auto date = readAs<int>(value);
 				if (date)
-					items.insert( std::make_pair(MetaData::Type::Date, *date));
+					items.insert(std::make_pair(MetaData::Type::Year, *date));
 			}
 			else if (tag == "TDOR"	// Original release time (ID3v2 2.4)
 					|| tag == "TORY")	// Original release year
 			{
-				auto date = readAs<Wt::WDate>(value);
+				auto date = readAs<int>(value);
 				if (date)
-					items.insert( std::make_pair(MetaData::Type::OriginalDate, *date));
+					items.insert(std::make_pair(MetaData::Type::OriginalYear, *date));
 			}
 			else if (tag == "MUSICBRAINZ ARTIST ID"
 					|| tag == "MUSICBRAINZ_ARTISTID")

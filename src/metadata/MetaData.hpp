@@ -42,8 +42,8 @@ namespace MetaData
 		DiscNumber,		// size_t
 		TotalTrack,		// size_t
 		TotalDisc,		// size_t
-		Date,			// Wt::WDate
-		OriginalDate,		// Wt::WDate
+		Year,			// int
+		OriginalYear,		// int
 		HasCover,		// bool
 		AudioStreams,		// vector<AudioStream>
 		MusicBrainzArtistID,	// string

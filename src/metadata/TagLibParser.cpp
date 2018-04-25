@@ -156,28 +156,29 @@ TagLibParser::parse(const boost::filesystem::path& p)
 			}
 			else if (tag == "DATE")
 			{
-				auto timePoint = readAs<Wt::WDate>(values.front().to8Bit());
+				auto timePoint = readAs<int>(values.front().to8Bit());
 				if (timePoint)
-					items.insert( std::make_pair(MetaData::Type::Date, *timePoint));
+					items.insert( std::make_pair(MetaData::Type::Year, *timePoint));
 			}
 			else if (tag == "ORIGINALDATE")
 			{
-				auto timePoint = readAs<Wt::WDate>(values.front().to8Bit());
-				if (timePoint)
+				// lower priority than original year
+				if (items.find(MetaData::Type::OriginalYear) == items.end())
 				{
-					// Take priority on original year
-					items.erase( MetaData::Type::OriginalDate );
-					items.insert( std::make_pair(MetaData::Type::OriginalDate, *timePoint));
+					auto timePoint = readAs<int>(values.front().to8Bit());
+					if (timePoint)
+						items.insert( std::make_pair(MetaData::Type::OriginalYear, *timePoint));
 				}
 			}
 			else if (tag == "ORIGINALYEAR")
 			{
-				// lower priority than original date
-				if (items.find(MetaData::Type::OriginalDate) == items.end())
+				auto timePoint = readAs<int>(values.front().to8Bit());
+				if (timePoint)
 				{
-					auto timePoint = readAs<Wt::WDate>(values.front().to8Bit());
-					if (timePoint)
-						items.insert( std::make_pair(MetaData::Type::OriginalDate, *timePoint));
+					// Take priority on original year
+					items[MetaData::Type::OriginalYear] = *timePoint;
+//					items.erase( MetaData::Type::OriginalYear );
+//					items.insert( std::make_pair(MetaData::Type::OriginalYear, *timePoint));
 				}
 			}
 			else if (tag == "METADATA_BLOCK_PICTURE")

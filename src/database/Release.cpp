@@ -139,10 +139,12 @@ Release::getReleaseYear(bool original) const
 {
 	assert(session());
 
-	Wt::Dbo::collection<Wt::WDate> dates = session()->query<Wt::WDate>(
-			std::string("SELECT ") + (original ? "t.original_date" : "t.date") + " FROM track t INNER JOIN release r ON r.id = t.release_id")
+	std::string field = original ? "t.original_year" : "t.year";
+
+	Wt::Dbo::collection<int> dates = session()->query<int>(
+			std::string("SELECT ") + field + " FROM track t INNER JOIN release r ON r.id = t.release_id")
 		.where("r.id = ?")
-		.groupBy("t.date")
+		.groupBy(field)
 		.bind(this->id());
 
 	/* various dates, no date */
@@ -151,10 +153,10 @@ Release::getReleaseYear(bool original) const
 
 	auto date = dates.front();
 
-	if (!date.isValid())
+	if (date > 0)
+		return date;
+	else
 		return boost::none;
-
-	return date.year();
 }
 
 std::vector<Wt::Dbo::ptr<Artist>>

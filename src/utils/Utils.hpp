@@ -57,7 +57,3 @@ boost::optional<T> readAs(const std::string& str)
 	return res;
 }
 
-template<>
-boost::optional<Wt::WDate> readAs(const std::string& str);
-
-

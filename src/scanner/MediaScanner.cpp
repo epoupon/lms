@@ -570,16 +570,16 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 	if ((*items).find(MetaData::Type::TotalDisc) != (*items).end())
 		track.modify()->setTotalDiscNumber( boost::any_cast<std::size_t>((*items)[MetaData::Type::TotalDisc]) );
 
-	if ((*items).find(MetaData::Type::Date) != (*items).end())
-		track.modify()->setDate( boost::any_cast<Wt::WDate>((*items)[MetaData::Type::Date]) );
+	if ((*items).find(MetaData::Type::Year) != (*items).end())
+		track.modify()->setYear( boost::any_cast<int>((*items)[MetaData::Type::Year]) );
 
-	if ((*items).find(MetaData::Type::OriginalDate) != (*items).end())
+	if ((*items).find(MetaData::Type::OriginalYear) != (*items).end())
 	{
-		track.modify()->setOriginalDate( boost::any_cast<Wt::WDate>((*items)[MetaData::Type::OriginalDate]) );
+		track.modify()->setOriginalYear( boost::any_cast<int>((*items)[MetaData::Type::OriginalYear]) );
 
-		// If a file has an OriginalDate but no date, set the date to ease filtering
-		if ((*items).find(MetaData::Type::Date) == (*items).end())
-			track.modify()->setDate( boost::any_cast<Wt::WDate>((*items)[MetaData::Type::OriginalDate]) );
+		// If a file has an OriginalYear but no Year, set it o ease filtering
+		if ((*items).find(MetaData::Type::Year) == (*items).end())
+			track.modify()->setYear( boost::any_cast<int>((*items)[MetaData::Type::OriginalYear]) );
 	}
 
 	if ((*items).find(MetaData::Type::MusicBrainzRecordingID) != (*items).end())

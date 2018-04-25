@@ -23,32 +23,8 @@
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string.hpp>
-
+#include <iostream>
 #include "Utils.hpp"
-
-template<>
-boost::optional<Wt::WDate> readAs(const std::string& str)
-{
-	const std::vector<std::string> formats = {
-		"yyyy-MM-dd",
-		"yyyy/MM/dd",
-		"yyyy-MM",
-		"yyyy/MM",
-		"yyyy"
-	};
-
-	for (auto format : formats)
-	{
-		auto date = Wt::WDate::fromString(str, format);
-
-		if (!date.isValid())
-			continue;
-
-		return date;
-	}
-
-	return boost::none;
-}
 
 bool readList(const std::string& str, const std::string& separators, std::list<std::string>& results)
 {

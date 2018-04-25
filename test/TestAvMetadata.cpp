@@ -86,12 +86,12 @@ int main(int argc, char *argv[])
 						std::cout << "TotalDisc: " << boost::any_cast<std::size_t>(item.second) << std::endl;
 						break;
 
-					case MetaData::Type::Date:
-						std::cout << "Date: " << boost::any_cast<Wt::WDate>(item.second).toString() << std::endl;
+					case MetaData::Type::Year:
+						std::cout << "Year: " << std::to_string(boost::any_cast<int>(item.second)) << std::endl;
 						break;
 
-					case MetaData::Type::OriginalDate:
-						std::cout << "Original date: " << boost::any_cast<Wt::WDate>(item.second).toString() << std::endl;
+					case MetaData::Type::OriginalYear:
+						std::cout << "Original year: " << std::to_string(boost::any_cast<int>(item.second)) << std::endl;
 						break;
 
 					case MetaData::Type::HasCover:

@@ -27,12 +27,7 @@ namespace Database {
 
 Track::Track(const boost::filesystem::path& p)
 :
-_trackNumber(0),
-_totalTrackNumber(0),
-_discNumber(0),
-_totalDiscNumber(0),
-_filePath( p.string() ),
-_coverType(CoverType::None)
+_filePath( p.string() )
 {
 }
 
@@ -201,6 +196,17 @@ Track::getTotalDiscNumber(void) const
 	return (_totalDiscNumber > 0) ? boost::make_optional<std::size_t>(_totalDiscNumber) : boost::none;
 }
 
+boost::optional<int>
+Track::getYear() const
+{
+	return (_year > 0) ? boost::make_optional<int>(_year) : boost::none;
+}
+
+boost::optional<int>
+Track::getOriginalYear() const
+{
+	return (_originalYear > 0) ? boost::make_optional<int>(_originalYear) : boost::none;
+}
 
 Cluster::Cluster()
 {
