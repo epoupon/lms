@@ -32,18 +32,9 @@ class AvFormat : public Parser
 {
 	public:
 
-		AvFormat(const std::map<std::string, std::string>& clusterMap
-				= {
-				{"GENRE", "Genre" },
-				{"ALBUMGROUPING", "Group" }
-				});
-
+		AvFormat(const ClusterTypes& clusterTypes = defaultClusterTypes);
 
 		boost::optional<Items> parse(const boost::filesystem::path& p);
-
-	private:
-
-		std::map<std::string,std::string> _clusterMap;
 };
 
 } // namespace MetaData

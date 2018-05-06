@@ -32,18 +32,9 @@ class TagLibParser : public Parser
 {
 	public:
 
-		// Provide a map for TagLib name -> Cluster name
-		TagLibParser(const std::map<std::string, std::string>& clusterMap
-				= {
-				{"GENRE", "Genre" },
-				{"ALBUMGROUPING", "Group" }
-				});
+		TagLibParser(const ClusterTypes& clusterTypes = defaultClusterTypes);
 
 		boost::optional<Items> parse(const boost::filesystem::path& p);
-
-	private:
-
-		std::map<std::string,std::string> _clusterMap;
 };
 
 } // namespace MetaData

@@ -16,6 +16,7 @@ lms_SOURCES = \
 	$(srcdir)/database/User.cpp				\
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
+	$(srcdir)/metadata/MetaData.cpp				\
 	$(srcdir)/metadata/TagLibParser.cpp			\
 	$(srcdir)/scanner/MediaScanner.cpp			\
 	$(srcdir)/ui/Auth.cpp					\

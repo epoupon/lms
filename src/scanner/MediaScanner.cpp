@@ -59,13 +59,6 @@ const std::vector<std::string> defaultFileExtensions =
 	".shn",
 };
 
-// Caution current implementation prevents spaces with the names
-const std::vector<std::string> defaultClusters =
-{
-	"Genre",
-	"Group",
-};
-
 Wt::WDate
 getNextMonday(Wt::WDate current)
 {
@@ -160,7 +153,12 @@ _db(connectionPool)
 		Setting::setString(_db.getSession(), fileExtensionsSetting, joinStrings(defaultFileExtensions, " "));
 
 	if (!Setting::exists(_db.getSession(), clustersSetting))
-		Setting::setString(_db.getSession(), clustersSetting, joinStrings(defaultClusters, " "));
+	{
+		std::vector<std::string> defaultClusterTypes(MetaData::Parser::defaultClusterTypes.begin(), MetaData::Parser::defaultClusterTypes.end());
+		Setting::setString(_db.getSession(), clustersSetting, joinStrings(defaultClusterTypes, " "));
+	}
+
+	refreshScanSettings();
 }
 
 void
@@ -325,9 +323,11 @@ MediaScanner::refreshScanSettings()
 	for (auto rootDir : Database::MediaDirectory::getAll(_db.getSession()))
 		_rootDirectories.push_back(rootDir->getPath());
 
-	_clusterTypes.clear();
+	MetaData::ClusterTypes clusterTypes;
 	for (auto cluster : splitString(Setting::getString(_db.getSession(), clustersSetting), " "))
-		_clusterTypes.push_back(cluster);
+		clusterTypes.insert(cluster);
+
+	_metadataParser.updateClusterTypes(clusterTypes);
 }
 
 Artist::pointer
@@ -800,8 +800,7 @@ MediaScanner::checkClusters()
 	// Remove no longer desired clusters
 	for (auto clusterType : clusterTypes)
 	{
-		if (std::none_of(_clusterTypes.begin(), _clusterTypes.end(),
-			[&clusterType](std::string clusterTypeName) { return clusterTypeName == clusterType->getName(); }))
+		if (!_metadataParser.isClusterTypeSupported(clusterType->getName()))
 		{
 			LMS_LOG(DBUPDATER, INFO) << "Removing cluster type " << clusterType->getName();
 			clusterType.remove();
@@ -810,7 +809,7 @@ MediaScanner::checkClusters()
 	}
 
 	// Add any missing clusters
-	for (auto clusterTypeName : _clusterTypes)
+	for (auto clusterTypeName : _metadataParser.getClusterTypes())
 	{
 		if (std::none_of(clusterTypes.begin(), clusterTypes.end(),
 			[&clusterTypeName](ClusterType::pointer clusterType) { return (clusterType->getName() == clusterTypeName); }))

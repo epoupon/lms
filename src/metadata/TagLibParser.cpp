@@ -32,8 +32,8 @@
 namespace MetaData
 {
 
-TagLibParser::TagLibParser(const std::map<std::string, std::string>& clusterMap)
-: _clusterMap(clusterMap)
+TagLibParser::TagLibParser(const ClusterTypes& clusterTypes)
+: Parser(clusterTypes)
 {
 }
 
@@ -188,14 +188,14 @@ TagLibParser::parse(const boost::filesystem::path& p)
 					items.insert( std::make_pair(MetaData::Type::HasCover, true));
 			}
 			// Check if a hit a cluster tag
-			else if (_clusterMap.find(tag) != _clusterMap.end())
+			else if (_clusterTypes.find(tag) != _clusterTypes.end())
 			{
 				std::set<std::string> clusterNames;
 				for (const auto& value : values)
 					clusterNames.insert(value.to8Bit(true));
 
 				if (!clusterNames.empty())
-					clusters[_clusterMap[tag]] = clusterNames;
+					clusters[tag] = clusterNames;
 			}
 		}
 

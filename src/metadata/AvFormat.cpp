@@ -30,8 +30,8 @@
 namespace MetaData
 {
 
-AvFormat::AvFormat(const std::map<std::string, std::string>& clusterMap)
-: _clusterMap(clusterMap)
+AvFormat::AvFormat(const ClusterTypes& clusterTypes)
+: Parser(clusterTypes)
 {
 }
 
@@ -155,13 +155,13 @@ AvFormat::parse(const boost::filesystem::path& p)
 			{
 				items.insert( std::make_pair(MetaData::Type::AcoustID, stringTrim(value)) );
 			}
-			else if (_clusterMap.find(tag) != _clusterMap.end())
+			else if (_clusterTypes.find(tag) != _clusterTypes.end())
 			{
 				std::vector<std::string> clusterNames = splitString(value, ";,\\");
 
 				if (!clusterNames.empty())
 				{
-					clusters[_clusterMap[tag]] = std::set<std::string>(clusterNames.begin(), clusterNames.end());
+					clusters[tag] = std::set<std::string>(clusterNames.begin(), clusterNames.end());
 				}
 			}
 

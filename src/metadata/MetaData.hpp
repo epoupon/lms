@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,8 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef METADATA_HPP
-#define METADATA_HPP
+#pragma once
 
 #include <map>
 #include <set>
@@ -63,17 +62,26 @@ namespace MetaData
 	// Type and associated data
 	// See enum Type's comments
 	using Items = std::map<Type, boost::any>;
-	using Clusters = std::map<std::string, std::set<std::string>>;
+	using Clusters = std::map<std::string /* type */, std::set<std::string> /* names */>;
+	using ClusterTypes = std::set<std::string>;
 
 	class Parser
 	{
 		public:
+			static const ClusterTypes defaultClusterTypes;
+
+			// Provide a map for tag name -> Cluster name
+			Parser(const ClusterTypes& clusterTypes) : _clusterTypes(clusterTypes) {}
 
 			virtual boost::optional<Items> parse(const boost::filesystem::path& p) = 0;
 
+			void updateClusterTypes(const ClusterTypes& clusterTypes) { _clusterTypes = clusterTypes; }
+			const ClusterTypes& getClusterTypes() const { return _clusterTypes; }
+			bool isClusterTypeSupported(const std::string& clusterType) const { return _clusterTypes.find(clusterType) != _clusterTypes.end(); }
+
+		protected:
+			ClusterTypes _clusterTypes;
 	};
 
 } // namespace MetaData
-
-#endif
 

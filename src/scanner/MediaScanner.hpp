@@ -126,7 +126,6 @@ class MediaScanner
 		Database::Handler	_db;
 
 		// Scan settings
-		std::vector<std::string>		_clusterTypes;
 		std::vector<boost::filesystem::path>	_fileExtensions;
 		std::vector<boost::filesystem::path>	_rootDirectories;
 
