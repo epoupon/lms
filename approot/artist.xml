@@ -19,10 +19,6 @@
 	${releases class="list-group"}
 </message>
 
-<message id="Lms.Explore.Artist.template.cluster-entry">
-	<span class="badge">${name}</span>
-</message>
-
 <message id="Lms.Explore.Artist.template.entry">
 	<div class="media list-group-item">
 		<div class="pull-left media-middle">

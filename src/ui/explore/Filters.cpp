@@ -54,7 +54,6 @@ Filters::showDialog()
 		for (auto type : types)
 			typeCombo->addItem(Wt::WString::fromUTF8(type->getName()));
 
-
 		if (!types.empty())
 		{
 			auto values = types.front()->getClusters();
@@ -114,11 +113,10 @@ Filters::showDialog()
 		_filterIds.insert(clusterId);
 		_sigUpdated.emit();
 
-		Wt::WPushButton* filterBtn = _filters->addNew<Wt::WPushButton>(Wt::WString::fromUTF8(value), Wt::TextFormat::Plain);
-
-		filterBtn->clicked().connect(std::bind([=]
+		auto filter = _filters->addWidget(LmsApp->createCluster(cluster, true));
+		filter->clicked().connect(std::bind([=]
 		{
-			_filters->removeWidget(filterBtn);
+			_filters->removeWidget(filter);
 			_filterIds.erase(clusterId);
 			_sigUpdated.emit();
 		}));
@@ -134,7 +132,7 @@ Filters::Filters()
 	Wt::WPushButton *addFilterBtn = bindNew<Wt::WPushButton>("add-filter", Wt::WText::tr("Lms.Explore.add-filter"));
 	addFilterBtn->clicked().connect(this, &Filters::showDialog);
 
-	_filters = bindNew<Wt::WContainerWidget>("filters");
+	_filters = bindNew<Wt::WContainerWidget>("clusters");
 }
 
 

@@ -12,8 +12,12 @@
 
 <message id="Lms.Explore.template.filters">
 	<div class="form-group">
-		${add-filter}${filters}
+		${add-filter}${clusters}
 	</div>
+</message>
+
+<message id="Lms.Explore.template.cluster-entry">
+	<span class="badge">${<if-can-delete>}<i class="fa fa-times-circle"></i>${</if-can-delete>} ${name}</span>
 </message>
 
 <message id="Lms.Explore.template.add-filter">

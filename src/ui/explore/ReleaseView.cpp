@@ -112,10 +112,7 @@ Release::refresh()
 		auto clusters = release->getClusters(3);
 
 		for (auto cluster : clusters)
-		{
-			Wt::WTemplate* entry = clusterContainers->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.cluster-entry"));
-			entry->bindString("name", Wt::WString::fromUTF8(cluster->getName()), Wt::TextFormat::Plain);
-		}
+			clusterContainers->addWidget(LmsApp->createCluster(cluster));
 	}
 
 	{

@@ -22,10 +22,6 @@
 	${tracks}
 </message>
 
-<message id="Lms.Explore.Release.template.cluster-entry">
-	<span class="badge">${name}</span>
-</message>
-
 <message id="Lms.Explore.Release.template.entry">
 	${<if-has-disc-number>}${disc-number}-${</if-has-disc-number>}${<if-has-track-number>}${track-number}. ${</if-has-track-number>}
 	${<if-has-artist>}${artist-name} - ${</if-has-artist>}

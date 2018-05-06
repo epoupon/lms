@@ -60,6 +60,7 @@ class LmsApplication : public Wt::WApplication
 
 		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Database::Artist::pointer artist, bool addText = true);
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::Release::pointer release, bool addText = true);
+		static std::unique_ptr<Wt::WTemplate> createCluster(Database::Cluster::pointer cluster, bool canDelete= false);
 
 	private:
 
