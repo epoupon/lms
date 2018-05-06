@@ -20,10 +20,12 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 
 #include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string.hpp>
-#include <iostream>
+
 #include "Utils.hpp"
 
 bool readList(const std::string& str, const std::string& separators, std::list<std::string>& results)
@@ -60,6 +62,12 @@ splitString(std::string string, std::string separators)
 	boost::algorithm::split(res, string, boost::is_any_of(separators), boost::token_compress_on);
 
 	return res;
+}
+
+std::string
+joinStrings(std::vector<std::string> strings, std::string delimiter)
+{
+	return boost::algorithm::join(strings, delimiter);
 }
 
 std::string

@@ -36,6 +36,9 @@ std::vector<std::string>
 splitString(std::string string, std::string separators);
 
 std::string
+joinStrings(std::vector<std::string> strings, std::string delimiter);
+
+std::string
 stringTrim(const std::string& str, const std::string& whitespaces = " \t");
 
 std::string

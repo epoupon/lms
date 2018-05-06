@@ -37,6 +37,35 @@
 
 namespace {
 
+const std::string updatePeriodSetting = "update_period";
+const std::string updateStartTimeSetting = "update_start_time";
+const std::string clustersSetting = "clusters";
+const std::string fileExtensionsSetting = "file_extensions";
+
+const std::vector<std::string> defaultFileExtensions =
+{
+	".mp3",
+	".ogg",
+	".oga",
+	".aac",
+	".m4a",
+	".flac",
+	".wav",
+	".wma",
+	".aif",
+	".aiff",
+	".ape",
+	".mpc",
+	".shn",
+};
+
+// Caution current implementation prevents spaces with the names
+const std::vector<std::string> defaultClusters =
+{
+	"Genre",
+	"Group",
+};
+
 Wt::WDate
 getNextMonday(Wt::WDate current)
 {
@@ -99,23 +128,23 @@ using namespace Database;
 UpdatePeriod
 getUpdatePeriod(Wt::Dbo::Session& session)
 {
-	return static_cast<UpdatePeriod>(Setting::getInt(session, "update_period", static_cast<int>(UpdatePeriod::Never)));
+	return static_cast<UpdatePeriod>(Setting::getInt(session, updatePeriodSetting, static_cast<int>(UpdatePeriod::Never)));
 }
 
 void
 setUpdatePeriod(Wt::Dbo::Session& session, UpdatePeriod updatePeriod)
 {
-	Setting::setInt(session, "update_period", static_cast<int>(updatePeriod));
+	Setting::setInt(session, updatePeriodSetting, static_cast<int>(updatePeriod));
 }
 
 Wt::WTime getUpdateStartTime(Wt::Dbo::Session& session)
 {
-	return Setting::getTime(session, "update_start_time");
+	return Setting::getTime(session, updateStartTimeSetting);
 }
 
 void setUpdateStartTime(Wt::Dbo::Session& session, Wt::WTime startTime)
 {
-	Setting::setTime(session, "update_start_time", startTime);
+	Setting::setTime(session, updateStartTimeSetting, startTime);
 }
 
 MediaScanner::MediaScanner(Wt::Dbo::SqlConnectionPool& connectionPool)
@@ -127,8 +156,11 @@ _db(connectionPool)
 
 	Wt::Dbo::Transaction transaction(_db.getSession());
 
-	if (!Setting::exists(_db.getSession(), "file_extensions"))
-		Setting::setString(_db.getSession(), "file_extensions", ".mp3 .ogg .oga .aac .m4a .flac .wav .wma .aif .aiff .ape .mpc .shn" );
+	if (!Setting::exists(_db.getSession(), fileExtensionsSetting))
+		Setting::setString(_db.getSession(), fileExtensionsSetting, joinStrings(defaultFileExtensions, " "));
+
+	if (!Setting::exists(_db.getSession(), clustersSetting))
+		Setting::setString(_db.getSession(), clustersSetting, joinStrings(defaultClusters, " "));
 }
 
 void
@@ -244,11 +276,17 @@ MediaScanner::scan(boost::system::error_code err)
 	if (err)
 		return;
 
+	LMS_LOG(UI, INFO) << "New scan started!";
+
 	refreshScanSettings();
 
+	bool forceScan = false;
 	Stats stats;
 
 	checkAudioFiles(stats);
+	forceScan = checkClusters();
+
+	LMS_LOG(UI, INFO) << "Checks complete, force scan = " << forceScan;
 
 	for (auto rootDirectory : _rootDirectories)
 	{
@@ -256,7 +294,7 @@ MediaScanner::scan(boost::system::error_code err)
 			break;
 
 		LMS_LOG(DBUPDATER, INFO) << "scaning root directory '" << rootDirectory.string() << "'...";
-		scanRootDirectory(rootDirectory, stats);
+		scanRootDirectory(rootDirectory, forceScan, stats);
 		LMS_LOG(DBUPDATER, INFO) << "scaning root directory '" << rootDirectory.string() << "' DONE";
 	}
 
@@ -280,12 +318,16 @@ MediaScanner::refreshScanSettings()
 	Wt::Dbo::Transaction transaction(_db.getSession());
 
 	_fileExtensions.clear();
-	for (auto extension : splitString(Setting::getString(_db.getSession(), "file_extensions"), " "))
+	for (auto extension : splitString(Setting::getString(_db.getSession(), fileExtensionsSetting), " "))
 		_fileExtensions.push_back( extension );
 
 	_rootDirectories.clear();
 	for (auto rootDir : Database::MediaDirectory::getAll(_db.getSession()))
 		_rootDirectories.push_back(rootDir->getPath());
+
+	_clusterTypes.clear();
+	for (auto cluster : splitString(Setting::getString(_db.getSession(), clustersSetting), " "))
+		_clusterTypes.push_back(cluster);
 }
 
 Artist::pointer
@@ -369,17 +411,13 @@ MediaScanner::getClusters( const MetaData::Clusters& clustersNames)
 
 	for (auto clusterNames : clustersNames)
 	{
-		ClusterType::pointer clusterType = ClusterType::getByName(_db.getSession(), clusterNames.first);
+		auto clusterType = ClusterType::getByName(_db.getSession(), clusterNames.first);
 		if (!clusterType)
-		{
-			clusterType = ClusterType::create(_db.getSession(), clusterNames.first);
-			_db.getSession().flush(); // Make sure the newly createdType has an id
-		}
+			continue;
 
 		for (auto clusterName : clusterNames.second)
 		{
-			Cluster::pointer cluster = clusterType->getCluster(clusterName);
-
+			auto cluster = clusterType->getCluster(clusterName);
 			if (!cluster)
 				cluster = Cluster::create(_db.getSession(), clusterType, clusterName);
 
@@ -391,20 +429,23 @@ MediaScanner::getClusters( const MetaData::Clusters& clustersNames)
 }
 
 void
-MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
+MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan, Stats& stats)
 {
 	auto lastWriteTime = Wt::WDateTime::fromTime_t(boost::filesystem::last_write_time(file));
 
-	// Skip file if last write is the same
+	if (!forceScan)
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
-
-		Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
-
-		if (track && track->getLastWriteTime() == lastWriteTime)
+		// Skip file if last write is the same
 		{
-			stats.skips++;
-			return;
+			Wt::Dbo::Transaction transaction(_db.getSession());
+
+			Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
+
+			if (track && track->getLastWriteTime() == lastWriteTime)
+			{
+				stats.skips++;
+				return;
+			}
 		}
 	}
 
@@ -601,7 +642,7 @@ MediaScanner::scanAudioFile( const boost::filesystem::path& file, Stats& stats)
 }
 
 void
-MediaScanner::scanRootDirectory(boost::filesystem::path rootDirectory, Stats& stats)
+MediaScanner::scanRootDirectory(boost::filesystem::path rootDirectory, bool forceScan, Stats& stats)
 {
 	boost::system::error_code ec;
 
@@ -619,7 +660,7 @@ MediaScanner::scanRootDirectory(boost::filesystem::path rootDirectory, Stats& st
 		if (boost::filesystem::is_regular(path))
 		{
 			if (isFileSupported(path, _fileExtensions))
-				scanAudioFile(path, stats );
+				scanAudioFile(path, forceScan, stats );
 		}
 	}
 }
@@ -702,7 +743,7 @@ MediaScanner::checkAudioFiles( Stats& stats )
 		}
 	}
 
-	LMS_LOG(DBUPDATER, DEBUG) << "Checking Clusters...";
+	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
 	{
 		Wt::Dbo::Transaction transaction(_db.getSession());
 
@@ -717,17 +758,9 @@ MediaScanner::checkAudioFiles( Stats& stats )
 				cluster.remove();
 			}
 		}
-
-		// Now process orphan cluster types
-		auto clusterTypes = ClusterType::getAllOrphans(_db.getSession());
-		for (auto clusterType : clusterTypes)
-		{
-			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster type '" << clusterType->getName() << "'";
-			clusterType.remove();
-		}
 	}
 
-	LMS_LOG(DBUPDATER, DEBUG) << "Checking artists...";
+	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan artists...";
 	{
 		Wt::Dbo::Transaction transaction(_db.getSession());
 
@@ -739,7 +772,7 @@ MediaScanner::checkAudioFiles( Stats& stats )
 		}
 	}
 
-	LMS_LOG(DBUPDATER, DEBUG) << "Checking releases...";
+	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan releases...";
 	{
 		Wt::Dbo::Transaction transaction(_db.getSession());
 
@@ -752,6 +785,45 @@ MediaScanner::checkAudioFiles( Stats& stats )
 	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Check audio files done!";
+}
+
+bool
+MediaScanner::checkClusters()
+{
+	bool hasChanges = false;
+
+	LMS_LOG(DBUPDATER, INFO) << "Checking clusters";
+
+	Wt::Dbo::Transaction transaction(_db.getSession());
+	auto clusterTypes = ClusterType::getAll(_db.getSession());
+
+	// Remove no longer desired clusters
+	for (auto clusterType : clusterTypes)
+	{
+		if (std::none_of(_clusterTypes.begin(), _clusterTypes.end(),
+			[&clusterType](std::string clusterTypeName) { return clusterTypeName == clusterType->getName(); }))
+		{
+			LMS_LOG(DBUPDATER, INFO) << "Removing cluster type " << clusterType->getName();
+			clusterType.remove();
+			hasChanges = true;
+		}
+	}
+
+	// Add any missing clusters
+	for (auto clusterTypeName : _clusterTypes)
+	{
+		if (std::none_of(clusterTypes.begin(), clusterTypes.end(),
+			[&clusterTypeName](ClusterType::pointer clusterType) { return (clusterType->getName() == clusterTypeName); }))
+		{
+			LMS_LOG(DBUPDATER, INFO) << "Creating cluster type " << clusterTypeName;
+			ClusterType::create(_db.getSession(), clusterTypeName);
+			hasChanges = true;
+		}
+	}
+
+	LMS_LOG(DBUPDATER, INFO) << "Checking clusters done!";
+
+	return hasChanges;
 }
 
 void

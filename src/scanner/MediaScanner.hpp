@@ -100,7 +100,7 @@ class MediaScanner
 		// Update database (scheduled callback)
 		void scan(boost::system::error_code ec);
 
-		void scanRootDirectory( boost::filesystem::path rootDirectory, Stats& stats);
+		void scanRootDirectory( boost::filesystem::path rootDirectory, bool forceScan, Stats& stats);
 
 		// Helpers
 		Database::Artist::pointer getArtist( const boost::filesystem::path& file, const std::string& name, const std::string& MBID);
@@ -108,10 +108,10 @@ class MediaScanner
 		std::vector<Database::Cluster::pointer> getClusters( const MetaData::Clusters& names);
 		void refreshScanSettings();
 
-		// Audio
 		void checkAudioFiles( Stats& stats );
+		bool checkClusters();
 		void checkDuplicatedAudioFiles( Stats& stats );
-		void scanAudioFile( const boost::filesystem::path& file, Stats& stats);
+		void scanAudioFile( const boost::filesystem::path& file, bool forceScan, Stats& stats);
 
 		bool			_running;
 		Wt::WIOService		_ioService;
@@ -126,6 +126,7 @@ class MediaScanner
 		Database::Handler	_db;
 
 		// Scan settings
+		std::vector<std::string>		_clusterTypes;
 		std::vector<boost::filesystem::path>	_fileExtensions;
 		std::vector<boost::filesystem::path>	_rootDirectories;
 
