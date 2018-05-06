@@ -128,17 +128,7 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		_session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
 		_session.execute("CREATE INDEX IF NOT EXISTS cluster_name_idx ON cluster(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");
-
-		// TODO move this
-		// Default values
-		if (!Setting::exists(_session, "tags_highlevel_acousticbrainz"))
-			Setting::setBool(_session, "tags_highlevel_acousticbrainz", true);
-
-		if (!Setting::exists(_session, "tags_highlevel_acousticbrainz_min_probability"))
-			Setting::setInt(_session, "tags_highlevel_acousticbrainz_min_probability", 90);
-
-		if (!Setting::exists(_session, "tags_similarity_acousticbrainz"))
-			Setting::setBool(_session,  "tags_similarity_acousticbrain", false);
+		_session.execute("CREATE INDEX IF NOT EXISTS settings_name_idx ON setting(name)");
 	}
 
 	_users = new UserDatabase(_session);
@@ -202,7 +192,7 @@ Handler::createConnectionPool(boost::filesystem::path p)
 	connection->setProperty("show-queries", "true");
 
 	auto pool = std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), 1);
-	pool->setTimeout(std::chrono::seconds(1));
+	pool->setTimeout(std::chrono::seconds(10));
 
 	return pool;
 }
