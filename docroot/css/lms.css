@@ -1,4 +1,44 @@
 
+.Lms-cluster-type-0 {
+	background-color: darkslategrey;
+}
+
+.Lms-cluster-type-1 {
+	background-color: darkblue;
+}
+
+.Lms-cluster-type-2 {
+	background-color: darkgrey;
+}
+
+.Lms-cluster-type-3 {
+	background-color: darkorchid;
+}
+
+.Lms-cluster-type-4 {
+	background-color: darkslateblue;
+}
+
+.Lms-cluster-type-5 {
+	background-color: darkslateblue;
+}
+
+.Lms-cluster-type-6 {
+	background-color: darkolivegreen;
+}
+
+.Lms-cluster-type-7 {
+	background-color: darkred;
+}
+
+.Lms-cluster-type-8 {
+	background-color: darkviolet;
+}
+
+.Lms-cluster-type-9 {
+	background-color: darkturquoise;
+}
+
 .Lms-playqueue-selected {
 	font-weight: bold;
 }

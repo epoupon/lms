@@ -175,15 +175,13 @@ LmsApplication::createReleaseAnchor(Database::Release::pointer release, bool add
 std::unique_ptr<Wt::WTemplate>
 LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete)
 {
-	LMS_LOG(UI, DEBUG) << " Creating cluster for name " << cluster->getName();
-	auto res = std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.template.cluster-entry"));
+	std::string styleClass = "Lms-cluster-type-" + std::to_string(cluster->getType().id() % 10);
+
+	auto res = std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.template.cluster-entry").arg(styleClass));
 	res->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	res->bindString("name", Wt::WString::fromUTF8(cluster->getName()), Wt::TextFormat::Plain);
 	res->setCondition("if-can-delete", canDelete);
-
-	std::string styleClass = "cluster-type-" + std::to_string(cluster->getType().id() % 10);
-	res->setStyleClass(styleClass);
 
 	return res;
 }

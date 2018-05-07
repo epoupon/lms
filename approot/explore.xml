@@ -17,7 +17,7 @@
 </message>
 
 <message id="Lms.Explore.template.cluster-entry">
-	<span class="badge">${<if-can-delete>}<i class="fa fa-times-circle"></i>${</if-can-delete>} ${name}</span>
+	<span class="badge {1}">${<if-can-delete>}<i class="fa fa-times-circle"></i>${</if-can-delete>} ${name}</span>
 </message>
 
 <message id="Lms.Explore.template.add-filter">
