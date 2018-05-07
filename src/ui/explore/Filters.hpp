@@ -34,6 +34,8 @@ class Filters : public Wt::WTemplate
 	public:
 		Filters();
 
+		void add(Database::Cluster::id_type clusterId);
+
 		std::set<Database::Cluster::id_type> getClusterIds() const { return _filterIds; }
 
 		Wt::Signal<>& updated() { return _sigUpdated; }

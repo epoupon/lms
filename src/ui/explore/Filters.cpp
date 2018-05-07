@@ -109,20 +109,34 @@ Filters::showDialog()
 		if (!cluster)
 			return;
 
-		auto clusterId = cluster.id();
-		_filterIds.insert(clusterId);
-		_sigUpdated.emit();
-
-		auto filter = _filters->addWidget(LmsApp->createCluster(cluster, true));
-		filter->clicked().connect(std::bind([=]
-		{
-			_filters->removeWidget(filter);
-			_filterIds.erase(clusterId);
-			_sigUpdated.emit();
-		}));
+		add(cluster.id());
 	}));
 
 	dialog->show();
+}
+
+void
+Filters::add(Database::Cluster::id_type clusterId)
+{
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+	auto cluster = Database::Cluster::getById(LmsApp->getDboSession(), clusterId);
+	if (!cluster)
+		return;
+
+	auto res = _filterIds.insert(clusterId);
+	if (!res.second)
+		return;
+
+	auto filter = _filters->addWidget(LmsApp->createCluster(cluster, true));
+	filter->clicked().connect(std::bind([=]
+	{
+		_filters->removeWidget(filter);
+		_filterIds.erase(clusterId);
+		_sigUpdated.emit();
+	}));
+
+	_sigUpdated.emit();
 }
 
 Filters::Filters()

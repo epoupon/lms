@@ -79,7 +79,14 @@ Artist::refresh()
 		auto clusters = artist->getClusters(3);
 
 		for (auto cluster : clusters)
-			clusterContainers->addWidget(LmsApp->createCluster(cluster));
+		{
+			auto clusterId = cluster.id();
+			auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
+			entry->clicked().connect([=]
+			{
+				_filters->add(clusterId);
+			});
+		}
 	}
 
 	t->bindString("name", Wt::WString::fromUTF8(artist->getName()), Wt::TextFormat::Plain);

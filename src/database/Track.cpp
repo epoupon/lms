@@ -232,6 +232,12 @@ Cluster::getAll(Wt::Dbo::Session& session)
 	return std::vector<Cluster::pointer>(res.begin(), res.end());
 }
 
+Cluster::pointer
+Cluster::getById(Wt::Dbo::Session& session, id_type id)
+{
+	return session.find<Cluster>().where("id = ?").bind(id);
+}
+
 ClusterType::ClusterType(std::string name)
 	: _name(name)
 {

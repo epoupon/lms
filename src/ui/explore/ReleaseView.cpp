@@ -112,7 +112,14 @@ Release::refresh()
 		auto clusters = release->getClusters(3);
 
 		for (auto cluster : clusters)
-			clusterContainers->addWidget(LmsApp->createCluster(cluster));
+		{
+			auto clusterId = cluster.id();
+			auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
+			entry->clicked().connect([=]
+			{
+				_filters->add(clusterId);
+			});
+		}
 	}
 
 	{

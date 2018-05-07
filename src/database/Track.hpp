@@ -51,6 +51,7 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 
 		// Find utility
 		static std::vector<pointer> getAll(Wt::Dbo::Session& session);
+		static pointer getById(Wt::Dbo::Session& session, id_type id);
 
 		// Create utility
 		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name);
