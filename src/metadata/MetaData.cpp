@@ -23,8 +23,11 @@ namespace MetaData {
 
 const ClusterTypes Parser::defaultClusterTypes =
 {
-	{"GENRE"},
-	{"ALBUMGROUPING"},
+	"GENRE",
+	"ALBUMGROUPING",
+	"MOOD",
+	"ALBUMMOOD",
+	"COMMENT:SONGS-DB_OCCASION",
 };
 
 } // namespace MetaData

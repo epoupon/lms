@@ -31,6 +31,7 @@ namespace Database
 
 class Track;
 class Cluster;
+class ClusterType;
 class Release;
 
 class Artist : public Wt::Dbo::Dbo<Artist>
@@ -65,7 +66,9 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<id_type>& clusterIds = std::set<id_type>()) const;
 
 		// Get the cluster of the tracks made by this artist
-		std::vector<Wt::Dbo::ptr<Cluster>> getClusters(int size) const;
+		// Each clusters are grouped by cluster type, sorted by the number of occurence
+		// size is the max number of cluster per cluster type
+		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
 
 		void setMBID(std::string mbid) { _MBID = mbid; }
 

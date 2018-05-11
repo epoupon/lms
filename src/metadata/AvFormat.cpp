@@ -36,7 +36,7 @@ AvFormat::AvFormat(const ClusterTypes& clusterTypes)
 }
 
 boost::optional<Items>
-AvFormat::parse(const boost::filesystem::path& p)
+AvFormat::parse(const boost::filesystem::path& p, bool debug)
 {
 	Items items;
 
@@ -73,9 +73,10 @@ AvFormat::parse(const boost::filesystem::path& p)
 		{
 			const std::string tag = boost::to_upper_copy<std::string>(metadata.first);
 			const std::string value = metadata.second;
-#if 0
-			std::cout << "TAG = " << tag << ", VAL = " << value << std::endl;
-#endif
+
+			if (debug)
+				std::cout << "TAG = " << tag << ", VAL = " << value << std::endl;
+
 			if (tag == "ARTIST")
 				items.insert( std::make_pair(MetaData::Type::Artist, stringTrim( value) ));
 			else if (tag == "ALBUM")

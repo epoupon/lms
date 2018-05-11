@@ -55,7 +55,10 @@ class Release : public Wt::Dbo::Dbo<Release>
 							bool& moreExpected);
 
 		std::vector<Wt::Dbo::ptr<Track>> getTracks(const std::set<id_type>& clusters = std::set<id_type>()) const;
-		std::vector<Wt::Dbo::ptr<Cluster>> getClusters(int size) const;
+		// Get the cluster of the tracks that belong to this release
+		// Each clusters are grouped by cluster type, sorted by the number of occurence
+		// size is the max number of cluster per cluster type
+		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
 
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID = "");

@@ -39,7 +39,7 @@ namespace {
 
 const std::string updatePeriodSetting = "update_period";
 const std::string updateStartTimeSetting = "update_start_time";
-const std::string clustersSetting = "clusters";
+const std::string clusterTypesSetting = "cluster_types";
 const std::string fileExtensionsSetting = "file_extensions";
 
 const std::vector<std::string> defaultFileExtensions =
@@ -152,10 +152,10 @@ _db(connectionPool)
 	if (!Setting::exists(_db.getSession(), fileExtensionsSetting))
 		Setting::setString(_db.getSession(), fileExtensionsSetting, joinStrings(defaultFileExtensions, " "));
 
-	if (!Setting::exists(_db.getSession(), clustersSetting))
+	if (!Setting::exists(_db.getSession(), clusterTypesSetting))
 	{
 		std::vector<std::string> defaultClusterTypes(MetaData::Parser::defaultClusterTypes.begin(), MetaData::Parser::defaultClusterTypes.end());
-		Setting::setString(_db.getSession(), clustersSetting, joinStrings(defaultClusterTypes, " "));
+		Setting::setString(_db.getSession(), clusterTypesSetting, joinStrings(defaultClusterTypes, " "));
 	}
 
 	refreshScanSettings();
@@ -324,7 +324,7 @@ MediaScanner::refreshScanSettings()
 		_rootDirectories.push_back(rootDir->getPath());
 
 	MetaData::ClusterTypes clusterTypes;
-	for (auto cluster : splitString(Setting::getString(_db.getSession(), clustersSetting), " "))
+	for (auto cluster : splitString(Setting::getString(_db.getSession(), clusterTypesSetting), " "))
 		clusterTypes.insert(cluster);
 
 	_metadataParser.updateClusterTypes(clusterTypes);

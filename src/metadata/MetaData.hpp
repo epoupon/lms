@@ -73,7 +73,7 @@ namespace MetaData
 			// Provide a map for tag name -> Cluster name
 			Parser(const ClusterTypes& clusterTypes) : _clusterTypes(clusterTypes) {}
 
-			virtual boost::optional<Items> parse(const boost::filesystem::path& p) = 0;
+			virtual boost::optional<Items> parse(const boost::filesystem::path& p, bool debug = false) = 0;
 
 			void updateClusterTypes(const ClusterTypes& clusterTypes) { _clusterTypes = clusterTypes; }
 			const ClusterTypes& getClusterTypes() const { return _clusterTypes; }

@@ -38,7 +38,7 @@ TagLibParser::TagLibParser(const ClusterTypes& clusterTypes)
 }
 
 boost::optional<Items>
-TagLibParser::parse(const boost::filesystem::path& p)
+TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 {
 	TagLib::FileRef f(p.string().c_str(),
 			true, // read audio properties
@@ -89,13 +89,13 @@ TagLibParser::parse(const boost::filesystem::path& p)
 
 			// TODO validate MBID format
 
-#if 0
-			std::cout << "TAG = '" << tag << "'" << std::endl;
-			for (auto value : values)
+			if (debug)
 			{
-				std::cout << "\t'" << value.to8Bit(true) << "'" << std::endl;
+				std::cout << "TAG = '" << tag << "', VALUES = ";
+				for (auto value : values)
+					std::cout << "'" << value.to8Bit(true) << "',";
+				std::cout << std::endl;
 			}
-#endif
 
 			if (tag == "ARTIST")
 				items.insert( std::make_pair(MetaData::Type::Artist, stringTrim( values.front().to8Bit(true))));

@@ -226,23 +226,48 @@ Release::getTracks(const std::set<id_type>& clusterIds) const
 	return std::vector< Wt::Dbo::ptr<Track> > (res.begin(), res.end());
 }
 
-std::vector<Wt::Dbo::ptr<Cluster>>
-Release::getClusters(int size) const
+std::vector<std::vector<Wt::Dbo::ptr<Cluster>>>
+Release::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::size_t size) const
 {
 	assert(self());
 	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );
 	assert(session());
 
-	Wt::Dbo::Query<Cluster::pointer> query = session()->query<Cluster::pointer>
-		("select c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN release r ON t.release_id = r.id")
-		.where("r.id = ?").bind(self()->id())
-		.groupBy("c.id")
-		.orderBy("COUNT(c.id) DESC")
-		.limit(size);
+	WhereClause where;
 
-	Wt::Dbo::collection<Cluster::pointer> res = query;
+	std::ostringstream oss;
 
-	return std::vector<Cluster::pointer>(res.begin(), res.end());
+	oss << "SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id INNER JOIN release r ON t.release_id = r.id";
+
+	where.And(WhereClause("r.id = ?")).bind(std::to_string(self()->id()));
+	{
+		WhereClause clusterClause;
+		for (auto clusterType : clusterTypes)
+			clusterClause.Or(WhereClause("c_type.id = ?")).bind(std::to_string(clusterType.id()));
+		where.And(clusterClause);
+	}
+	oss << " " << where.get();
+	oss << "GROUP BY c.id ORDER BY COUNT(c.id) DESC";
+
+	Wt::Dbo::Query<Cluster::pointer> query = session()->query<Cluster::pointer>( oss.str() );
+
+	for (const std::string& bindArg : where.getBindArgs())
+		query.bind(bindArg);
+
+	Wt::Dbo::collection<Cluster::pointer> queryRes = query;
+
+	std::map<ClusterType::id_type, std::vector<Cluster::pointer>> clusters;
+	for (auto cluster : queryRes)
+	{
+		if (clusters[cluster->getType().id()].size() < size)
+			clusters[cluster->getType().id()].push_back(cluster);
+	}
+
+	std::vector<std::vector<Cluster::pointer>> res;
+	for (auto cluster_list : clusters)
+		res.push_back(cluster_list.second);
+
+	return res;
 }
 
 } // namespace Database

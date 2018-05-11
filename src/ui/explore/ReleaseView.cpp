@@ -24,6 +24,7 @@
 #include <Wt/WText.h>
 
 #include "database/Types.hpp"
+#include "database/Setting.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -34,11 +35,43 @@
 #include "Filters.hpp"
 #include "ReleaseView.hpp"
 
+using namespace Database;
+
+namespace {
+
+const std::string releaseClusterTypesSetting = "release_cluster_types";
+const std::vector<std::string> defaultReleaseClusterTypes =
+{
+	"GENRE",
+	"ALBUMGROUPING",
+	"ALBUMMOOD",
+	"COMMENT:SONGS-DB_OCCASION",
+};
+
+std::vector<ClusterType::pointer> getReleaseClusterTypes(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::Transaction transaction(session);
+
+	std::vector<ClusterType::pointer> res;
+	for (auto clusterTypeName : splitString(Setting::getString(session, releaseClusterTypesSetting), " "))
+	{
+		auto clusterType = ClusterType::getByName(session, clusterTypeName);
+		if (clusterType)
+			res.push_back(clusterType);
+	}
+
+	return res;
+}
+} // namespace
+
 namespace UserInterface {
 
 Release::Release(Filters* filters)
 : _filters(filters)
 {
+	if (!Setting::exists(LmsApp->getDboSession(), releaseClusterTypesSetting))
+		Setting::setString(LmsApp->getDboSession(), releaseClusterTypesSetting, joinStrings(defaultReleaseClusterTypes, " "));
+
 	wApp->internalPathChanged().connect(std::bind([=]
 	{
 		refresh();
@@ -109,16 +142,20 @@ Release::refresh()
 
 	Wt::WContainerWidget* clusterContainers = t->bindNew<Wt::WContainerWidget>("clusters");
 	{
-		auto clusters = release->getClusters(3);
+		auto clusterTypes = getReleaseClusterTypes(LmsApp->getDboSession());
+		auto clusterGroups = release->getClusterGroups(clusterTypes, 3);
 
-		for (auto cluster : clusters)
+		for (auto clusters : clusterGroups)
 		{
-			auto clusterId = cluster.id();
-			auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
-			entry->clicked().connect([=]
+			for (auto cluster : clusters)
 			{
-				_filters->add(clusterId);
-			});
+				auto clusterId = cluster.id();
+				auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
+				entry->clicked().connect([=]
+				{
+					_filters->add(clusterId);
+				});
+			}
 		}
 	}
 

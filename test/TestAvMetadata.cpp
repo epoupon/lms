@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
 		for (auto& parser : parsers)
 		{
-			boost::optional<MetaData::Items> items = parser->parse(argv[1]);
+			boost::optional<MetaData::Items> items = parser->parse(argv[1], true);
 
 			if (!items)
 			{

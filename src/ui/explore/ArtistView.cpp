@@ -23,6 +23,7 @@
 #include <Wt/WText.h>
 
 #include "database/Types.hpp"
+#include "database/Setting.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -33,11 +34,44 @@
 #include "Filters.hpp"
 #include "ArtistView.hpp"
 
+using namespace Database;
+
+namespace {
+
+const std::string artistClusterTypesSetting = "artist_cluster_types";
+const std::vector<std::string> defaultArtistClusterTypes =
+{
+	"GENRE",
+	"ALBUMGROUPING",
+	"ALBUMMOOD",
+	"COMMENT:SONGS-DB_OCCASION",
+};
+
+std::vector<ClusterType::pointer> getArtistClusterTypes(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::Transaction transaction(session);
+
+	std::vector<ClusterType::pointer> res;
+	for (auto clusterTypeName : splitString(Setting::getString(session, artistClusterTypesSetting), " "))
+	{
+		auto clusterType = ClusterType::getByName(session, clusterTypeName);
+		if (clusterType)
+			res.push_back(clusterType);
+	}
+
+	return res;
+}
+
+} // namespace
+
 namespace UserInterface {
 
 Artist::Artist(Filters* filters)
 : _filters(filters)
 {
+	if (!Setting::exists(LmsApp->getDboSession(), artistClusterTypesSetting))
+		Setting::setString(LmsApp->getDboSession(), artistClusterTypesSetting, joinStrings(defaultArtistClusterTypes, " "));
+
 	wApp->internalPathChanged().connect(std::bind([=]
 	{
 		refresh();
@@ -64,6 +98,7 @@ Artist::refresh()
 
         Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 	auto artist = Database::Artist::getById(LmsApp->getDboSession(), *artistId);
+
 	if (!artist)
 	{
 		LmsApp->goHome();
@@ -76,16 +111,20 @@ Artist::refresh()
 	Wt::WContainerWidget* clusterContainers = t->bindNew<Wt::WContainerWidget>("clusters");
 
 	{
-		auto clusters = artist->getClusters(3);
+		auto clusterTypes = getArtistClusterTypes(LmsApp->getDboSession());
+		auto clusterGroups = artist->getClusterGroups(clusterTypes, 3);
 
-		for (auto cluster : clusters)
+		for (auto clusters : clusterGroups)
 		{
-			auto clusterId = cluster.id();
-			auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
-			entry->clicked().connect([=]
+			for (auto cluster : clusters)
 			{
-				_filters->add(clusterId);
-			});
+				auto clusterId = cluster.id();
+				auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
+				entry->clicked().connect([=]
+				{
+					_filters->add(clusterId);
+				});
+			}
 		}
 	}
 
