@@ -1,7 +1,7 @@
 
 AUTOMAKE_OPTIONS = dist-bzip2 no-dist-gzip
 
-SUBDIRS = test src
+SUBDIRS = test tools src
 
 lms_docrootdir=$(pkgdatadir)/docroot
 lms_approotdir=$(pkgdatadir)/approot

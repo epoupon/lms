@@ -44,6 +44,6 @@ lms_SOURCES = \
 	$(srcdir)/utils/Path.cpp				\
 	$(srcdir)/utils/Utils.cpp
 
-lms_CXXFLAGS=-std=c++14 -Wall -I$(srcdir)/third-party -I$(srcdir)/ui $(MAGICKXX_CFLAGS) -D_REENTRANT
+lms_CXXFLAGS=-std=c++14 -Wall -I$(srcdir)/ui $(MAGICKXX_CFLAGS) -D_REENTRANT
 lms_LDADD=$(MAGICKXX_LIBS)
 

@@ -78,7 +78,9 @@ AC_CHECK_LIB(	[config++],
 
 AC_CONFIG_FILES([Makefile
 		 src/Makefile
-		 test/Makefile])
+		 test/Makefile
+		 tools/Makefile
+		 tools/metadata/Makefile])
 
 AC_OUTPUT
 
