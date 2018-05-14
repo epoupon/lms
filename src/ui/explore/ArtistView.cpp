@@ -22,8 +22,8 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
-#include "database/Types.hpp"
 #include "database/Setting.hpp"
+#include "database/Types.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"

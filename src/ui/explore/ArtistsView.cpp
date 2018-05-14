@@ -21,6 +21,7 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WLineEdit.h>
 
+#include "database/Setting.hpp"
 #include "database/Types.hpp"
 
 #include "utils/Logger.hpp"
@@ -30,14 +31,44 @@
 #include "Filters.hpp"
 #include "ArtistsView.hpp"
 
-namespace UserInterface {
-
 using namespace Database;
+
+namespace {
+
+const std::string artistsClusterTypesSetting = "artists_cluster_types";
+const std::vector<std::string> defaultArtistsClusterTypes =
+{
+	"ALBUMGROUPING",
+	"GENRE",
+	"ALBUMMOOD",
+};
+
+std::vector<ClusterType::pointer> getArtistsClusterTypes(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::Transaction transaction(session);
+
+	std::vector<ClusterType::pointer> res;
+	for (auto clusterTypeName : splitString(Setting::getString(session, artistsClusterTypesSetting), " "))
+	{
+		auto clusterType = ClusterType::getByName(session, clusterTypeName);
+		if (clusterType)
+			res.push_back(clusterType);
+	}
+
+	return res;
+}
+
+}
+
+namespace UserInterface {
 
 Artists::Artists(Filters* filters)
 : Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artists.template")),
   _filters(filters)
 {
+	if (!Setting::exists(LmsApp->getDboSession(), artistsClusterTypesSetting))
+		Setting::setString(LmsApp->getDboSession(), artistsClusterTypesSetting, joinStrings(defaultArtistsClusterTypes, " "));
+
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_search = bindNew<Wt::WLineEdit>("search");
@@ -87,6 +118,26 @@ Artists::addSome()
 
 		entry->bindInt("nb-release", artist->getReleases(clusterIds).size());
 		entry->bindWidget("name", LmsApplication::createArtistAnchor(artist));
+
+
+		Wt::WContainerWidget* clusterContainers = entry->bindNew<Wt::WContainerWidget>("clusters");
+		{
+			auto clusterTypes = getArtistsClusterTypes(LmsApp->getDboSession());
+			auto clusterGroups = artist->getClusterGroups(clusterTypes, 1);
+
+			for (auto clusters : clusterGroups)
+			{
+				for (auto cluster : clusters)
+				{
+					auto clusterId = cluster.id();
+					auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
+					entry->clicked().connect([=]
+					{
+						_filters->add(clusterId);
+					});
+				}
+			}
+		}
 	}
 
 	_showMore->setHidden(!moreResults);

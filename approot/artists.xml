@@ -20,6 +20,7 @@
 	<div class="list-group-item">
 		<span class="badge">${nb-release}</span>
 		${name}
+		${clusters}
 	</div>
 </message>
 

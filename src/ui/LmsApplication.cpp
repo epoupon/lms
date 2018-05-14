@@ -183,6 +183,8 @@ LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete
 	res->bindString("name", Wt::WString::fromUTF8(cluster->getName()), Wt::TextFormat::Plain);
 	res->setCondition("if-can-delete", canDelete);
 
+	res->setStyleClass("Lms-cluster");
+
 	return res;
 }
 
