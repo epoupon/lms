@@ -91,10 +91,11 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 
 			if (debug)
 			{
-				std::cout << "TAG = '" << tag << "', VALUES = ";
+				std::vector<std::string> strs;
 				for (auto value : values)
-					std::cout << "'" << value.to8Bit(true) << "',";
-				std::cout << std::endl;
+					strs.push_back(values.front().to8Bit(true));
+
+				std::cout << "[" << tag << "] = " << joinStrings(strs, ",") << std::endl;
 			}
 
 			if (tag == "ARTIST")
@@ -116,6 +117,12 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 				items.insert( std::make_pair(MetaData::Type::MusicBrainzRecordingID, stringTrim( values.front().to8Bit(true))));
 			else if (tag == "ACOUSTID_ID")
 				items.insert( std::make_pair(MetaData::Type::AcoustID, stringTrim( values.front().to8Bit(true))));
+			else if (tag == "TRACKTOTAL")
+			{
+				auto totalTrack = readAs<std::size_t>(values.front().to8Bit(true));
+				if (totalTrack)
+					items[MetaData::Type::TotalTrack] = *totalTrack;
+			}
 			else if (tag == "TRACKNUMBER")
 			{
 				// Expecting 'Number/Total'
@@ -127,13 +134,20 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 					if (number)
 						items.insert( std::make_pair(MetaData::Type::TrackNumber, *number ));
 
-					if (strings.size() > 1)
+					// Lower priority than TRACKTOTAL
+					if (strings.size() > 1 && items.find(MetaData::Type::TotalTrack) == items.end())
 					{
-						auto totalNumber = readAs<std::size_t>(strings[1]);
-						if (totalNumber)
-							items.insert( std::make_pair(MetaData::Type::TotalTrack, *totalNumber ));
+						auto totalTrack = readAs<std::size_t>(strings[1]);
+						if (totalTrack)
+							items[MetaData::Type::TotalTrack] = *totalTrack;
 					}
 				}
+			}
+			else if (tag == "DISCTOTAL")
+			{
+				auto totalDisc = readAs<std::size_t>(values.front().to8Bit(true));
+				if (totalDisc)
+					items[MetaData::Type::TotalDisc] = *totalDisc;
 			}
 			else if (tag == "DISCNUMBER")
 			{
@@ -146,11 +160,12 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 					if (number)
 						items.insert( std::make_pair(MetaData::Type::DiscNumber, *number));
 
-					if (strings.size() > 1)
+					// Lower priority than DISCTOTAL
+					if (strings.size() > 1 && items.find(MetaData::Type::TotalDisc) == items.end())
 					{
-						auto totalNumber = readAs<std::size_t>(strings[1]);
-						if (totalNumber)
-							items.insert( std::make_pair(MetaData::Type::TotalDisc, *totalNumber ));
+						auto totalDisc = readAs<std::size_t>(strings[1]);
+						if (totalDisc)
+							items[MetaData::Type::TotalDisc] = *totalDisc;
 					}
 				}
 			}
@@ -162,12 +177,12 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 			}
 			else if (tag == "ORIGINALDATE")
 			{
-				// lower priority than original year
+				// Lower priority than original year
 				if (items.find(MetaData::Type::OriginalYear) == items.end())
 				{
 					auto timePoint = readAs<int>(values.front().to8Bit());
 					if (timePoint)
-						items.insert( std::make_pair(MetaData::Type::OriginalYear, *timePoint));
+						items[MetaData::Type::OriginalYear] = *timePoint;
 				}
 			}
 			else if (tag == "ORIGINALYEAR")
@@ -177,8 +192,6 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 				{
 					// Take priority on original year
 					items[MetaData::Type::OriginalYear] = *timePoint;
-//					items.erase( MetaData::Type::OriginalYear );
-//					items.insert( std::make_pair(MetaData::Type::OriginalYear, *timePoint));
 				}
 			}
 			else if (tag == "METADATA_BLOCK_PICTURE")
@@ -187,7 +200,6 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 				if (items.find(MetaData::Type::HasCover) == items.end())
 					items.insert( std::make_pair(MetaData::Type::HasCover, true));
 			}
-			// Check if a hit a cluster tag
 			else if (_clusterTypes.find(tag) != _clusterTypes.end())
 			{
 				std::set<std::string> clusterNames;

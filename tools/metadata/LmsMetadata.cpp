@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 	}
 	catch (std::exception& e)
 	{
-		std::cerr << "Caught exception: " << e.what();
+		std::cerr << "Caught exception: " << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
 
