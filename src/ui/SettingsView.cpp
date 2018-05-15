@@ -249,37 +249,54 @@ const Wt::WFormModel::Field SettingsModel::PasswordField	= "password";
 const Wt::WFormModel::Field SettingsModel::PasswordConfirmField	= "password-confirm";
 
 SettingsView::SettingsView()
-: Wt::WTemplateFormView(Wt::WString::tr("Lms.Settings.template"))
 {
+	wApp->internalPathChanged().connect(std::bind([=]
+	{
+		refreshView();
+	}));
+
+	refreshView();
+}
+
+void
+SettingsView::refreshView()
+{
+	if (!wApp->internalPathMatches("/settings"))
+		return;
+
+	clear();
+
+	auto t = addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Settings.template"));
+
 	auto model = std::make_shared<SettingsModel>();
 
 	// Password
 	auto password = std::make_unique<Wt::WLineEdit>();
 	password->setEchoMode(Wt::EchoMode::Password);
-	setFormWidget(SettingsModel::PasswordField, std::move(password));
+	t->setFormWidget(SettingsModel::PasswordField, std::move(password));
 
 	// Password confirm
 	auto passwordConfirm = std::make_unique<Wt::WLineEdit>();
 	passwordConfirm->setEchoMode(Wt::EchoMode::Password);
-	setFormWidget(SettingsModel::PasswordConfirmField, std::move(passwordConfirm));
+	t->setFormWidget(SettingsModel::PasswordConfirmField, std::move(passwordConfirm));
 
 	// Bitrate
 	auto bitrate = std::make_unique<Wt::WComboBox>();
 	bitrate->setModel(model->bitrateModel());
-	setFormWidget(SettingsModel::BitrateField, std::move(bitrate));
+	t->setFormWidget(SettingsModel::BitrateField, std::move(bitrate));
 
 	// Encoding
 	auto encoding = std::make_unique<Wt::WComboBox>();
 	encoding->setModel(model->encodingModel());
-	setFormWidget(SettingsModel::EncodingField, std::move(encoding));
+	t->setFormWidget(SettingsModel::EncodingField, std::move(encoding));
 
 	// Buttons
-	Wt::WPushButton *saveBtn = bindWidget("apply-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.apply")));
-	Wt::WPushButton *discardBtn = bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard")));
+	Wt::WPushButton *saveBtn = t->bindWidget("apply-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.apply")));
+	Wt::WPushButton *discardBtn = t->bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard")));
 
 	saveBtn->clicked().connect(std::bind([=] ()
 	{
-		updateModel(model.get());
+		t->updateModel(model.get());
 
 		if (model->validate())
 		{
@@ -288,17 +305,17 @@ SettingsView::SettingsView()
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.
-		updateView(model.get());
+		t->updateView(model.get());
 	}));
 
 	discardBtn->clicked().connect(std::bind([=] ()
 	{
 		model->loadData();
 		model->validate();
-		updateView(model.get());
+		t->updateView(model.get());
 	}));
 
-	updateView(model.get());
+	t->updateView(model.get());
 }
 
 } // namespace UserInterface
