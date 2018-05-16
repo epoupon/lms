@@ -16,6 +16,9 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#include "MediaPlayer.hpp"
+
 #include <boost/algorithm/string/replace.hpp>
 
 #include "av/AvInfo.hpp"
@@ -25,8 +28,6 @@
 #include "resource/TranscodeResource.hpp"
 
 #include "LmsApplication.hpp"
-#include "MediaPlayer.hpp"
-
 
 namespace UserInterface {
 

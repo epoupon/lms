@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Auth.hpp"
+
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WCheckBox.h>
@@ -26,8 +28,6 @@
 
 #include "common/Validators.hpp"
 #include "LmsApplication.hpp"
-
-#include "Auth.hpp"
 
 namespace UserInterface {
 

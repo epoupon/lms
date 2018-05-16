@@ -17,14 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/Logger.hpp"
+#include "Track.hpp"
 
-#include "SqlQuery.hpp"
+#include "utils/Logger.hpp"
 
 #include "DbArtist.hpp"
 #include "Release.hpp"
-
-#include "Track.hpp"
+#include "SqlQuery.hpp"
 
 namespace Database {
 

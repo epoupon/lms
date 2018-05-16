@@ -17,13 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "TranscodeResource.hpp"
+
 #include <Wt/Http/Response.h>
 
 #include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"
-
-#include "TranscodeResource.hpp"
 
 namespace UserInterface {
 

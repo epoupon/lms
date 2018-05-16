@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "LmsApplication.hpp"
+
 #include <Wt/WAnchor.h>
 #include <Wt/WBootstrapTheme.h>
 #include <Wt/WEnvironment.h>
@@ -45,8 +47,6 @@
 
 #include "resource/ImageResource.hpp"
 #include "resource/TranscodeResource.hpp"
-
-#include "LmsApplication.hpp"
 
 namespace UserInterface {
 

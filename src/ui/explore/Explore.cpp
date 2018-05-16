@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Explore.hpp"
+
 #include <Wt/WStackedWidget.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
@@ -31,8 +33,6 @@
 #include "ReleasesView.hpp"
 #include "ReleaseView.hpp"
 #include "TracksView.hpp"
-
-#include "Explore.hpp"
 
 namespace UserInterface {
 

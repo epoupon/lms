@@ -16,13 +16,14 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#include "AvTranscoder.hpp"
+
 #include <atomic>
 #include <mutex>
 
 #include "utils/Path.hpp"
 #include "utils/Logger.hpp"
-
-#include "AvTranscoder.hpp"
 
 namespace Av {
 

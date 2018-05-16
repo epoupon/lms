@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "PlayQueueView.hpp"
+
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
 #include <Wt/WText.h>
@@ -26,7 +28,6 @@
 #include "database/Playlist.hpp"
 
 #include "LmsApplication.hpp"
-#include "PlayQueueView.hpp"
 
 namespace UserInterface {
 

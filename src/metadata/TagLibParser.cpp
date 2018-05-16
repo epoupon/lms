@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "TagLibParser.hpp"
+
 #include <taglib/fileref.h>
 #include <taglib/tag.h>
 #include <taglib/tpropertymap.h>
@@ -25,9 +27,6 @@
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
-
-#include "TagLibParser.hpp"
-
 
 namespace MetaData
 {

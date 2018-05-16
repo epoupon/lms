@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "InitWizardView.hpp"
+
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
@@ -26,8 +28,6 @@
 
 #include "common/Validators.hpp"
 #include "LmsApplication.hpp"
-
-#include "InitWizardView.hpp"
 
 namespace UserInterface {
 

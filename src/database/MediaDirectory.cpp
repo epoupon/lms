@@ -17,9 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/Utils.hpp"
-
 #include "MediaDirectory.hpp"
+
+#include "utils/Utils.hpp"
 
 namespace Database {
 

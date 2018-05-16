@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "UserView.hpp"
+
 #include <Wt/WApplication.h>
 #include <Wt/WCheckBox.h>
 #include <Wt/WComboBox.h>
@@ -32,7 +34,6 @@
 #include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"
-#include "UserView.hpp"
 
 namespace UserInterface {
 

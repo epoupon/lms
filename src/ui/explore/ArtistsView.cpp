@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "ArtistsView.hpp"
+
 #include <Wt/WAnchor.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WLineEdit.h>
@@ -29,7 +31,6 @@
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
-#include "ArtistsView.hpp"
 
 using namespace Database;
 

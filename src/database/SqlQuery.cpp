@@ -17,14 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <algorithm>
+#include "SqlQuery.hpp"
 
-#include <boost/foreach.hpp>
+#include <algorithm>
 
 #include <sstream>
 #include <stdexcept>
-
-#include "SqlQuery.hpp"
 
 WhereClause&
 WhereClause::And(const WhereClause& otherClause)
@@ -35,7 +33,8 @@ WhereClause::And(const WhereClause& otherClause)
 		_clause += "(" + otherClause._clause + ")";
 
 		// Add associated bind args
-		BOOST_FOREACH(const std::string& otherBindArg, otherClause._bindArgs) {
+		for (const std::string& otherBindArg : otherClause._bindArgs)
+		{
 			_bindArgs.push_back(otherBindArg);
 		}
 	}
@@ -51,7 +50,8 @@ WhereClause::Or(const WhereClause& otherClause)
 		_clause += "(" + otherClause._clause + ")";
 
 		// Add associated bind args
-		BOOST_FOREACH(const std::string& otherBindArg, otherClause._bindArgs) {
+		for (const std::string& otherBindArg : otherClause._bindArgs)
+		{
 			_bindArgs.push_back(otherBindArg);
 		}
 	}
@@ -147,7 +147,8 @@ FromClause::FromClause(const std::string& clause)
 FromClause&
 FromClause::And(const FromClause& clause)
 {
-	BOOST_FOREACH(const std::string fromClause, clause._clause) {
+	for (const std::string fromClause : clause._clause)
+	{
 		_clause.push_back(fromClause);
 	}
 

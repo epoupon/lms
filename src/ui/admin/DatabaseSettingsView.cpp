@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "DatabaseSettingsView.hpp"
+
 #include <Wt/WString.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WComboBox.h>
@@ -33,8 +35,6 @@
 #include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"
-
-#include "DatabaseSettingsView.hpp"
 
 namespace UserInterface {
 

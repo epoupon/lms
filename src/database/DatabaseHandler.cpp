@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "DatabaseHandler.hpp"
+
 #include <Wt/Dbo/FixedSqlConnectionPool.h>
 #include <Wt/Dbo/backend/Sqlite3.h>
 
@@ -38,8 +40,6 @@
 #include "Playlist.hpp"
 #include "Release.hpp"
 #include "Track.hpp"
-
-#include "DatabaseHandler.hpp"
 
 namespace Database {
 

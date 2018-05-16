@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/WSignal.h>
+#include <Wt/WContainerWidget.h>
 
 #include "database/Types.hpp"
 

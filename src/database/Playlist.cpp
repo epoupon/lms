@@ -16,12 +16,12 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "Playlist.hpp"
+
 #include <cassert>
 
 #include "User.hpp"
 #include "Track.hpp"
-
-#include "Playlist.hpp"
 
 namespace Database {
 

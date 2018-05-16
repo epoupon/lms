@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Path.hpp"
+
 #include <array>
 #include <fstream>
 #include <stdexcept>
@@ -25,8 +27,6 @@
 #include <boost/tokenizer.hpp>
 
 #include "utils/Logger.hpp"
-
-#include "Path.hpp"
 
 boost::filesystem::path searchExecPath(std::string filename)
 {

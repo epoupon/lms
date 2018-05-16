@@ -17,9 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sstream>
-
 #include "Config.hpp"
+
+#include <sstream>
 
 namespace {
 

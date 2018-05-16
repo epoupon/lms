@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "ReleasesView.hpp"
+
 #include <Wt/WApplication.h>
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
@@ -32,7 +34,6 @@
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
-#include "ReleasesView.hpp"
 
 namespace UserInterface {
 

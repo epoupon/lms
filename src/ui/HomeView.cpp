@@ -17,13 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "HomeView.hpp"
+
 #include <Wt/WTemplate.h>
 
 #include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"
-
-#include "HomeView.hpp"
 
 namespace UserInterface {
 

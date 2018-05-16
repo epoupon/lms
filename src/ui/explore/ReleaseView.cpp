@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "ReleaseView.hpp"
+
 #include <Wt/WApplication.h>
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
@@ -33,7 +35,6 @@
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
-#include "ReleaseView.hpp"
 
 using namespace Database;
 

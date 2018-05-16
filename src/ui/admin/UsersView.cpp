@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "UsersView.hpp"
+
 #include <Wt/WTemplate.h>
 #include <Wt/WPushButton.h>
 
@@ -24,7 +26,6 @@
 #include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"
-#include "UsersView.hpp"
 
 namespace UserInterface {
 

@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "ImageResource.hpp"
+
 #include <Wt/WApplication.h>
 #include <Wt/Http/Response.h>
 
@@ -26,8 +28,6 @@
 #include "LmsApplication.hpp"
 
 #include "cover/CoverArtGrabber.hpp"
-
-#include "ImageResource.hpp"
 
 namespace UserInterface {
 

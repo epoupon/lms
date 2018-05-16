@@ -17,11 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "AvInfo.hpp"
+
 #include <array>
 
 #include "utils/Logger.hpp"
-
-#include "AvInfo.hpp"
 
 namespace Av {
 

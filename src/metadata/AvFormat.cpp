@@ -17,15 +17,14 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "AvFormat.hpp"
+
 #include <boost/algorithm/string.hpp>
 
 #include "av/AvInfo.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
-
-#include "AvFormat.hpp"
-
 
 namespace MetaData
 {

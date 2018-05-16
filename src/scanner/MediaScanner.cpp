@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "MediaScanner.hpp"
+
 #include <stdexcept>
 
 #include <boost/filesystem.hpp>
@@ -35,8 +37,6 @@
 #include "utils/Logger.hpp"
 #include "utils/Path.hpp"
 #include "utils/Utils.hpp"
-
-#include "MediaScanner.hpp"
 
 namespace {
 

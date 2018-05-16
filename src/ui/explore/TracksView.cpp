@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "TracksView.hpp"
+
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
 #include <Wt/WLineEdit.h>
@@ -33,7 +35,6 @@
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
-#include "TracksView.hpp"
 
 namespace UserInterface {
 

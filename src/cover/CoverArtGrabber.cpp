@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "CoverArtGrabber.hpp"
+
 #include <boost/filesystem.hpp>
 
 #include "av/AvInfo.hpp"
@@ -25,8 +27,6 @@
 #include "database/Track.hpp"
 
 #include "utils/Logger.hpp"
-
-#include "CoverArtGrabber.hpp"
 
 namespace {
 

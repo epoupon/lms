@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Utils.hpp"
+
 #include <string>
 #include <sstream>
 #include <iomanip>
@@ -25,8 +27,6 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string.hpp>
-
-#include "Utils.hpp"
 
 bool readList(const std::string& str, const std::string& separators, std::list<std::string>& results)
 {

@@ -17,11 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Validators.hpp"
+
 #include <boost/filesystem.hpp>
 
 #include <Wt/WLengthValidator.h>
-
-#include "Validators.hpp"
 
 namespace UserInterface {
 

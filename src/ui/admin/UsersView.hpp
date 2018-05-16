@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/WContainerWidget.h>
+#include <Wt/WTemplate.h>
 
 namespace UserInterface {
 

@@ -17,10 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/Logger.hpp"
-
 #include "Image.hpp"
 
+#include "utils/Logger.hpp"
 
 namespace Image {
 
