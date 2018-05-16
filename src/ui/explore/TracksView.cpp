@@ -22,7 +22,9 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WText.h>
 
-#include "database/Types.hpp"
+#include "database/DbArtist.hpp"
+#include "database/Track.hpp"
+#include "database/Release.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"

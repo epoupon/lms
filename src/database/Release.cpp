@@ -17,8 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Types.hpp"
 #include "SqlQuery.hpp"
+
+#include "DbArtist.hpp"
+#include "Track.hpp"
+
+#include "Release.hpp"
 
 namespace Database
 {
@@ -44,7 +48,7 @@ Release::getByMBID(Wt::Dbo::Session& session, const std::string& mbid)
 }
 
 Release::pointer
-Release::getById(Wt::Dbo::Session& session, Release::id_type id)
+Release::getById(Wt::Dbo::Session& session, IdType id)
 {
 	return session.find<Release>().where("id = ?").bind(id);
 }
@@ -73,7 +77,7 @@ Release::getAllOrphans(Wt::Dbo::Session& session)
 static
 Wt::Dbo::Query<Release::pointer>
 getQuery(Wt::Dbo::Session& session,
-			const std::set<Release::id_type>& clusterIds,
+			const std::set<IdType>& clusterIds,
 			const std::vector<std::string> keywords)
 {
 	WhereClause where;
@@ -113,7 +117,7 @@ getQuery(Wt::Dbo::Session& session,
 
 std::vector<Release::pointer>
 Release::getByFilter(Wt::Dbo::Session& session,
-		const std::set<id_type>& clusterIds,
+		const std::set<IdType>& clusterIds,
 		const std::vector<std::string> keywords,
 		int offset, int size, bool& moreResults)
 {
@@ -182,7 +186,7 @@ Release::hasVariousArtists() const
 }
 
 std::vector<Wt::Dbo::ptr<Track>>
-Release::getTracks(const std::set<id_type>& clusterIds) const
+Release::getTracks(const std::set<IdType>& clusterIds) const
 {
 	assert(self());
 	assert(self()->id() != Wt::Dbo::dbo_traits<Release>::invalidId() );
@@ -256,7 +260,7 @@ Release::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::s
 
 	Wt::Dbo::collection<Cluster::pointer> queryRes = query;
 
-	std::map<ClusterType::id_type, std::vector<Cluster::pointer>> clusters;
+	std::map<IdType, std::vector<Cluster::pointer>> clusters;
 	for (auto cluster : queryRes)
 	{
 		if (clusters[cluster->getType().id()].size() < size)

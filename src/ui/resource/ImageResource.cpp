@@ -90,19 +90,19 @@ ImageResource::getDefaultArtistImage(std::size_t size)
 }
 
 std::string
-ImageResource::getReleaseUrl(Database::Release::id_type releaseId, std::size_t size) const
+ImageResource::getReleaseUrl(Database::IdType releaseId, std::size_t size) const
 {
 	return url() + "&releaseid=" + std::to_string(releaseId) + "&size=" + std::to_string(size);
 }
 
 std::string
-ImageResource::getTrackUrl(Database::Track::id_type trackId, std::size_t size) const
+ImageResource::getTrackUrl(Database::IdType trackId, std::size_t size) const
 {
 	return url() + "&trackid=" + std::to_string(trackId) + "&size=" + std::to_string(size);
 }
 
 std::string
-ImageResource::getArtistUrl(Database::Artist::id_type artistId, std::size_t size) const
+ImageResource::getArtistUrl(Database::IdType artistId, std::size_t size) const
 {
 	return url() + "&artistid=" + std::to_string(artistId) + "&size=" + std::to_string(size);
 }
@@ -159,7 +159,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 
 	if (trackIdStr)
 	{
-		auto trackId = readAs<Database::Track::id_type>(*trackIdStr);
+		auto trackId = readAs<Database::IdType>(*trackIdStr);
 		if (!trackId)
 			return;
 
@@ -202,7 +202,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	}
 	else if (releaseIdStr)
 	{
-		auto releaseId = readAs<Database::Release::id_type>(*releaseIdStr);
+		auto releaseId = readAs<Database::IdType>(*releaseIdStr);
 		if (!releaseId)
 			return;
 

@@ -38,8 +38,8 @@ class Grabber
 		std::vector<boost::filesystem::path>	getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t nbMaxCovers = 1) const;
 		std::vector<Image::Image>	getFromDirectory(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
 		std::vector<Image::Image>	getFromTrack(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
-		std::vector<Image::Image>	getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::size_t nbMaxCovers = 1) const;
-		std::vector<Image::Image>	getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type releaseId, std::size_t nbMaxCovers = 1) const;
+		std::vector<Image::Image>	getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t nbMaxCovers = 1) const;
+		std::vector<Image::Image>	getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t nbMaxCovers = 1) const;
 
 	private:
 		Grabber();

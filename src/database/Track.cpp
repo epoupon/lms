@@ -21,7 +21,10 @@
 
 #include "SqlQuery.hpp"
 
-#include "Types.hpp"
+#include "DbArtist.hpp"
+#include "Release.hpp"
+
+#include "Track.hpp"
 
 namespace Database {
 
@@ -37,12 +40,12 @@ Track::getAll(Wt::Dbo::Session& session)
 	return session.find<Track>();
 }
 
-std::vector<Track::id_type>
+std::vector<IdType>
 Track::getAllIds(Wt::Dbo::Session& session)
 {
 	Wt::Dbo::Transaction transaction(session);
-	Wt::Dbo::collection<Track::id_type> res = session.query<Track::id_type>("SELECT id from track");
-	return std::vector<Track::id_type>(res.begin(), res.end());
+	Wt::Dbo::collection<IdType> res = session.query<IdType>("SELECT id from track");
+	return std::vector<IdType>(res.begin(), res.end());
 }
 
 Track::pointer
@@ -52,7 +55,7 @@ Track::getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p)
 }
 
 Track::pointer
-Track::getById(Wt::Dbo::Session& session, id_type id)
+Track::getById(Wt::Dbo::Session& session, IdType id)
 {
 	return session.find<Track>().where("id = ?").bind(id);
 }
@@ -102,7 +105,7 @@ Track::getClusters(void) const
 static
 Wt::Dbo::Query< Track::pointer >
 getQuery(Wt::Dbo::Session& session,
-		const std::set<Cluster::id_type>& clusterIds,
+		const std::set<IdType>& clusterIds,
 		const std::vector<std::string> keywords)
 {
 	WhereClause where;
@@ -142,7 +145,7 @@ getQuery(Wt::Dbo::Session& session,
 
 std::vector<Track::pointer>
 Track::getByFilter(Wt::Dbo::Session& session,
-		const std::set<id_type>& clusterIds,
+		const std::set<IdType>& clusterIds,
 		const std::vector<std::string> keywords,
 		int offset, int size, bool& moreResults)
 {
@@ -165,7 +168,7 @@ Track::getByFilter(Wt::Dbo::Session& session,
 
 std::vector<Track::pointer>
 Track::getByFilter(Wt::Dbo::Session& session,
-			const std::set<id_type>& clusters)
+			const std::set<IdType>& clusters)
 {
 	bool moreResults;
 
@@ -233,7 +236,7 @@ Cluster::getAll(Wt::Dbo::Session& session)
 }
 
 Cluster::pointer
-Cluster::getById(Wt::Dbo::Session& session, id_type id)
+Cluster::getById(Wt::Dbo::Session& session, IdType id)
 {
 	return session.find<Cluster>().where("id = ?").bind(id);
 }
@@ -288,7 +291,7 @@ std::vector<Cluster::pointer>
 ClusterType::getClusters() const
 {
 	assert(self());
-	assert(self()->id() != Wt::Dbo::dbo_traits<Release>::invalidId() );
+	assert(self()->id() != Wt::Dbo::dbo_traits<ClusterType>::invalidId() );
 	assert(session());
 
 	Wt::Dbo::collection<Cluster::pointer> res = session()->find<Cluster>()
@@ -296,6 +299,12 @@ ClusterType::getClusters() const
 						.orderBy("name");
 
 	return std::vector<Cluster::pointer>(res.begin(), res.end());
+}
+
+void
+Cluster::addTrack(Wt::Dbo::ptr<Track> track)
+{
+	_tracks.insert(track);
 }
 
 } // namespace Database

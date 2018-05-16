@@ -17,8 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DATABASE_USER_HPP
-#define DATABASE_USER_HPP
+#pragma once
 
 #include <vector>
 
@@ -28,7 +27,7 @@
 namespace Database {
 
 class User;
-typedef Wt::Auth::Dbo::AuthInfo<User> AuthInfo;
+using AuthInfo = Wt::Auth::Dbo::AuthInfo<User>;
 
 class Playlist;
 
@@ -109,4 +108,3 @@ class User : public Wt::Dbo::Dbo<User>
 
 } // namespace Databas'
 
-#endif

@@ -17,7 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <boost/filesystem.hpp>
+
 #include "av/AvInfo.hpp"
+
+#include "database/Release.hpp"
+#include "database/Track.hpp"
 
 #include "utils/Logger.hpp"
 
@@ -145,7 +150,7 @@ Grabber::getFromTrack(const boost::filesystem::path& p, std::size_t nbMaxCovers)
 }
 
 std::vector<Image::Image>
-Grabber::getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::size_t nbMaxCovers) const
+Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t nbMaxCovers) const
 {
 	using namespace Database;
 
@@ -173,7 +178,7 @@ Grabber::getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackI
 
 
 std::vector<Image::Image>
-Grabber::getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type releaseId, std::size_t nbMaxCovers) const
+Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t nbMaxCovers) const
 {
 	using namespace Database;
 

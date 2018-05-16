@@ -21,8 +21,8 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WLineEdit.h>
 
+#include "database/DbArtist.hpp"
 #include "database/Setting.hpp"
-#include "database/Types.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"

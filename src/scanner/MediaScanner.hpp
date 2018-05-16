@@ -29,6 +29,9 @@
 #include "metadata/TagLibParser.hpp"
 
 #include "database/DatabaseHandler.hpp"
+#include "database/Track.hpp"
+#include "database/DbArtist.hpp"
+#include "database/Release.hpp"
 
 namespace Scanner {
 

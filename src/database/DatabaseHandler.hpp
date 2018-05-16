@@ -17,8 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DATABASE_HANDLER_HPP
-#define DATABASE_HANDLER_HPP
+#pragma once
 
 #include <boost/filesystem.hpp>
 #include <memory>
@@ -30,12 +29,11 @@
 #include <Wt/Auth/Login.h>
 #include <Wt/Auth/PasswordService.h>
 
-#include "Types.hpp"
+#include "User.hpp"
 
 namespace Database {
 
-typedef Wt::Dbo::dbo_default_traits::IdType id_type;
-typedef Wt::Auth::Dbo::UserDatabase<AuthInfo> UserDatabase;
+using UserDatabase = Wt::Auth::Dbo::UserDatabase<AuthInfo>;
 
 // Session living class handling the database and the login
 class Handler
@@ -72,5 +70,4 @@ class Handler
 
 } // namespace Database
 
-#endif
 

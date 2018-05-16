@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Types.hpp"
+#include "User.hpp"
 
 namespace Database {
 

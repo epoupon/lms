@@ -17,14 +17,15 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _DB_ARTIST_HPP_
-#define _DB_ARTIST_HPP_
+#pragma once
 
 #include <string>
 #include <vector>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/QueryModel.h>
+
+#include "Types.hpp"
 
 namespace Database
 {
@@ -39,17 +40,16 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 	public:
 
 		typedef Wt::Dbo::ptr<Artist> pointer;
-		typedef Wt::Dbo::dbo_traits<Artist>::IdType id_type;
 
 		Artist() {}
 		Artist(const std::string& name, const std::string& MBID = "");
 
 		// Accessors
 		static pointer			getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
-		static pointer			getById(Wt::Dbo::Session& session, id_type id);
+		static pointer			getById(Wt::Dbo::Session& session, IdType id);
 		static std::vector<pointer>	getByName(Wt::Dbo::Session& session, const std::string& name);
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session,
-								const std::set<id_type>& clusters,		// at least one track that belongs to  these clusters
+								const std::set<IdType>& clusters,		// at least one track that belongs to  these clusters
 								const std::vector<std::string> keywords,	// name must match all of these keywords
 								int offset,
 								int size,
@@ -63,7 +63,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		std::string getMBID(void) const { return _MBID; }
 
 		// Get the releases that have at least one track for this artist that belongs to optional cluster filters
-		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<id_type>& clusterIds = std::set<id_type>()) const;
+		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = std::set<IdType>()) const;
 
 		// Get the cluster of the tracks made by this artist
 		// Each clusters are grouped by cluster type, sorted by the number of occurence
@@ -97,4 +97,3 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 
 } // namespace Database
 
-#endif

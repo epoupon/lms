@@ -23,19 +23,22 @@
 
 #include <Wt/Dbo/Dbo.h>
 
+#include "Types.hpp"
+
 namespace Database
 {
 
 class Track;
 class Release;
 class Artist;
+class Cluster;
+class ClusterType;
 
 class Release : public Wt::Dbo::Dbo<Release>
 {
 	public:
 
 		typedef Wt::Dbo::ptr<Release> pointer;
-		typedef Wt::Dbo::dbo_traits<Release>::IdType id_type;
 
 		Release() {}
 		Release(const std::string& name, const std::string& MBID = "");
@@ -43,18 +46,18 @@ class Release : public Wt::Dbo::Dbo<Release>
 		// Accessors
 		static pointer			getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
 		static std::vector<pointer>	getByName(Wt::Dbo::Session& session, const std::string& name);
-		static pointer			getById(Wt::Dbo::Session& session, id_type id);
+		static pointer			getById(Wt::Dbo::Session& session, IdType id);
 		static std::vector<pointer>	getAllOrphans(Wt::Dbo::Session& session); // no track related
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, int offset, int size);
 
 		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
-							const std::set<id_type>& clusters,           // at least one track that belongs to these clusters
+							const std::set<IdType>& clusters,           // at least one track that belongs to these clusters
 							const std::vector<std::string> keywords,        // name must match all of these keywords
 							int offset,
 							int size,
 							bool& moreExpected);
 
-		std::vector<Wt::Dbo::ptr<Track>> getTracks(const std::set<id_type>& clusters = std::set<id_type>()) const;
+		std::vector<Wt::Dbo::ptr<Track>> getTracks(const std::set<IdType>& clusters = std::set<IdType>()) const;
 		// Get the cluster of the tracks that belong to this release
 		// Each clusters are grouped by cluster type, sorted by the number of occurence
 		// size is the max number of cluster per cluster type

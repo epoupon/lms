@@ -20,7 +20,7 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WPushButton.h>
 
-#include "database/Types.hpp"
+#include "database/User.hpp"
 #include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"

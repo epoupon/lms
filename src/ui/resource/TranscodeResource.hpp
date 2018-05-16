@@ -26,6 +26,8 @@
 #include "av/AvTranscoder.hpp"
 
 #include "database/DatabaseHandler.hpp"
+#include "database/Types.hpp"
+
 
 namespace UserInterface {
 
@@ -35,7 +37,7 @@ class TranscodeResource : public Wt::WResource
 		TranscodeResource(Database::Handler& db);
 		~TranscodeResource();
 
-		std::string getUrl(Database::Track::id_type trackId, Av::Encoding encoding) const;
+		std::string getUrl(Database::IdType trackId, Av::Encoding encoding) const;
 
 		void handleRequest(const Wt::Http::Request& request,
 				Wt::Http::Response& response);

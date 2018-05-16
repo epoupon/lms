@@ -34,9 +34,9 @@ class Filters : public Wt::WTemplate
 	public:
 		Filters();
 
-		void add(Database::Cluster::id_type clusterId);
+		void add(Database::IdType clusterId);
 
-		std::set<Database::Cluster::id_type> getClusterIds() const { return _filterIds; }
+		std::set<Database::IdType> getClusterIds() const { return _filterIds; }
 
 		Wt::Signal<>& updated() { return _sigUpdated; }
 
@@ -46,7 +46,7 @@ class Filters : public Wt::WTemplate
 
 		Wt::WContainerWidget *_filters;
 		Wt::Signal<> _sigUpdated;
-		std::set<Database::Cluster::id_type> _filterIds;
+		std::set<Database::IdType> _filterIds;
 };
 
 } // namespace UserInterface

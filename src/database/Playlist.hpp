@@ -17,8 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DATABASE_PLAYLIST_HPP
-#define DATABASE_PLAYLIST_HPP
+#pragma once
 
 #include <Wt/Dbo/Dbo.h>
 
@@ -108,4 +107,3 @@ class PlaylistEntry
 
 } // namespace Database
 
-#endif

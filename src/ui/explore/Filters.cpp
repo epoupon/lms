@@ -116,7 +116,7 @@ Filters::showDialog()
 }
 
 void
-Filters::add(Database::Cluster::id_type clusterId)
+Filters::add(Database::IdType clusterId)
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 

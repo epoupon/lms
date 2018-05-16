@@ -17,8 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SQL_QUERY_HPP___
-#define SQL_QUERY_HPP___
+#pragma once
 
 #include <list>
 #include <string>
@@ -133,6 +132,4 @@ class SqlQuery
 		WhereClause		_whereClause;		// WHERE clause
 		GroupByStatement	_groupByStatement;	// GROUP BY statement
 };
-
-#endif
 

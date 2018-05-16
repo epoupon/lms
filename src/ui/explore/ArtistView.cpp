@@ -22,8 +22,8 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
+#include "database/DbArtist.hpp"
 #include "database/Setting.hpp"
-#include "database/Types.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -92,7 +92,7 @@ Artist::refresh()
 
 	clear();
 
-	auto artistId = readAs<Database::Artist::id_type>(wApp->internalPathNextPart("/artist/"));
+	auto artistId = readAs<Database::IdType>(wApp->internalPathNextPart("/artist/"));
 	if (!artistId)
 		return;
 

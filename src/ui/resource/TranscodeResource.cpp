@@ -40,7 +40,7 @@ TranscodeResource:: ~TranscodeResource()
 }
 
 std::string
-TranscodeResource::getUrl(Database::Track::id_type trackId, Av::Encoding encoding) const
+TranscodeResource::getUrl(Database::IdType trackId, Av::Encoding encoding) const
 {
 	std::string res = url()+ "&trackid=" + std::to_string(trackId) + "&encoding=" + std::to_string(Av::encodingToInt(encoding));
 
@@ -64,7 +64,7 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 	}
 	else
 	{
-		Database::Track::id_type trackId;
+		Database::IdType trackId;
 		Av::TranscodeParameters parameters;
 
 		LMS_LOG(UI, DEBUG) << "No continuation yet";

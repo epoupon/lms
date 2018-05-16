@@ -26,8 +26,11 @@
 
 #include "cover/CoverArtGrabber.hpp"
 
+#include "database/DbArtist.hpp"
+#include "database/Release.hpp"
+#include "database/MediaDirectory.hpp"
+#include "database/Track.hpp"
 #include "database/Setting.hpp"
-#include "database/Types.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Path.hpp"

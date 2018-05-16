@@ -45,7 +45,7 @@ static std::string escape(const std::string& str)
 }
 
 void
-MediaPlayer::playTrack(Database::Track::id_type trackId)
+MediaPlayer::playTrack(Database::IdType trackId)
 {
 	LMS_LOG(UI, DEBUG) << "Playing track ID = " << trackId;
 

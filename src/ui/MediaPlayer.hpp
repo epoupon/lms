@@ -32,7 +32,7 @@ class MediaPlayer : public Wt::WTemplate
 		MediaPlayer();
 
 		void stop();
-		void playTrack(Database::Track::id_type);
+		void playTrack(Database::IdType trackId);
 
 		// Signals
 		Wt::JSignal<>	playbackEnded;

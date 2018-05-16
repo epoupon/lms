@@ -17,12 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// header file aimed to ease database class declarations
+#pragma once
 
-#include "DbArtist.hpp"
-#include "Track.hpp"
-#include "Playlist.hpp"
-#include "Release.hpp"
-#include "MediaDirectory.hpp"
-#include "User.hpp"
+#include <Wt/Dbo/Dbo.h>
+
+namespace Database {
+	using IdType = Wt::Dbo::dbo_default_traits::IdType;
+}
 

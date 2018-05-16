@@ -19,7 +19,7 @@
 
 #include "utils/Utils.hpp"
 
-#include "Types.hpp"
+#include "MediaDirectory.hpp"
 
 namespace Database {
 

@@ -21,6 +21,8 @@
 
 #include <Wt/WSignal.h>
 
+#include "database/Types.hpp"
+
 namespace UserInterface {
 
 class Filters;
@@ -29,11 +31,11 @@ class Release : public Wt::WContainerWidget
 	public:
 		Release(Filters* filters);
 
-		Wt::Signal<Database::id_type> releaseAdd;
-		Wt::Signal<Database::id_type> releasePlay;
+		Wt::Signal<Database::IdType> releaseAdd;
+		Wt::Signal<Database::IdType> releasePlay;
 
-		Wt::Signal<Database::id_type> trackAdd;
-		Wt::Signal<Database::id_type> trackPlay;
+		Wt::Signal<Database::IdType> trackAdd;
+		Wt::Signal<Database::IdType> trackPlay;
 
 	private:
 		void refresh();

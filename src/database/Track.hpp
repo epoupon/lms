@@ -31,6 +31,8 @@
 
 #include <Wt/WDateTime.h>
 
+#include "Types.hpp"
+
 namespace Database {
 
 
@@ -44,14 +46,13 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 {
 	public:
 		typedef Wt::Dbo::ptr<Cluster> pointer;
-		typedef Wt::Dbo::dbo_traits<Cluster>::IdType id_type;
 
 		Cluster();
 		Cluster(Wt::Dbo::ptr<ClusterType> type, std::string name);
 
 		// Find utility
 		static std::vector<pointer> getAll(Wt::Dbo::Session& session);
-		static pointer getById(Wt::Dbo::Session& session, id_type id);
+		static pointer getById(Wt::Dbo::Session& session, IdType id);
 
 		// Create utility
 		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name);
@@ -61,7 +62,7 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 		Wt::Dbo::ptr<ClusterType> getType() const { return _clusterType; }
 		const Wt::Dbo::collection<Wt::Dbo::ptr<Track>>& getTracks() const { return _tracks; }
 
-		void addTrack(Wt::Dbo::ptr<Track> track) { _tracks.insert(track); }
+		void addTrack(Wt::Dbo::ptr<Track> track);
 
 		template<class Action>
 		void persist(Action& a)
@@ -88,7 +89,6 @@ class ClusterType : public Wt::Dbo::Dbo<ClusterType>
 	public:
 
 		using pointer = Wt::Dbo::ptr<ClusterType>;
-		using id_type = Wt::Dbo::dbo_traits<ClusterType>::IdType;
 
 		ClusterType() {}
 		ClusterType(std::string name);
@@ -126,7 +126,6 @@ class Track
 	public:
 
 		typedef Wt::Dbo::ptr<Track> pointer;
-		typedef Wt::Dbo::dbo_traits<Track>::IdType id_type;
 
 		Track() {}
 		Track(const boost::filesystem::path& p);
@@ -139,19 +138,19 @@ class Track
 
 		// Find utility functions
 		static pointer getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
-		static pointer getById(Wt::Dbo::Session& session, id_type id);
+		static pointer getById(Wt::Dbo::Session& session, IdType id);
 		static pointer getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
 		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
-							const std::set<id_type>& clusters);           // tracks that belong to these clusters
+							const std::set<IdType>& clusters);           // tracks that belong to these clusters
 		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
-							const std::set<id_type>& clusters,           // tracks that belong to these clusters
+							const std::set<IdType>& clusters,           // tracks that belong to these clusters
 							const std::vector<std::string> keywords,        // name must match all of these keywords
 							int offset,
 							int size,
 							bool& moreExpected);
 
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
-		static std::vector<id_type> getAllIds(Wt::Dbo::Session& session); // nested transaction
+		static std::vector<IdType> getAllIds(Wt::Dbo::Session& session); // nested transaction
 		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session); // nested transaction
 		static std::vector<pointer> getMBIDDuplicates(Wt::Dbo::Session& session);
 		static std::vector<pointer> getChecksumDuplicates(Wt::Dbo::Session& session);

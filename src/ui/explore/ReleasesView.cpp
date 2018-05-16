@@ -23,7 +23,7 @@
 #include <Wt/WText.h>
 #include <Wt/WTemplate.h>
 
-#include "database/Types.hpp"
+#include "database/Release.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"

@@ -17,8 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DATABASE_MEDIA_DIRECTORY_HPP
-#define DATABASE_MEDIA_DIRECTORY_HPP
+#pragma once
 
 #include <vector>
 
@@ -58,6 +57,4 @@ class MediaDirectory
 };
 
 } // namespace Database
-
-#endif
 

@@ -23,6 +23,9 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WTemplate.h>
 
+#include "database/Types.hpp"
+#include "database/Track.hpp"
+
 namespace UserInterface {
 
 class Filters;
@@ -31,8 +34,8 @@ class Tracks : public Wt::WTemplate
 	public:
 		Tracks(Filters* filters);
 
-		Wt::Signal<Database::id_type> trackAdd;
-		Wt::Signal<Database::id_type> trackPlay;
+		Wt::Signal<Database::IdType> trackAdd;
+		Wt::Signal<Database::IdType> trackPlay;
 
 		Wt::Signal<std::vector<Database::Track::pointer>> tracksAdd;
 		Wt::Signal<std::vector<Database::Track::pointer>> tracksPlay;

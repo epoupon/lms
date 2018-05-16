@@ -118,7 +118,7 @@ Explore::Explore()
 }
 
 // TODO SQL this?
-static std::vector<Database::Track::pointer> getArtistTracks(Wt::Dbo::Session& session, Database::id_type artistId, std::set<Database::id_type> clusters)
+static std::vector<Database::Track::pointer> getArtistTracks(Wt::Dbo::Session& session, Database::IdType artistId, std::set<Database::IdType> clusters)
 {
 	std::vector<Database::Track::pointer> res;
 
@@ -140,7 +140,7 @@ static std::vector<Database::Track::pointer> getArtistTracks(Wt::Dbo::Session& s
 	return res;
 }
 
-static std::vector<Database::Track::pointer> getReleaseTracks(Wt::Dbo::Session& session, Database::id_type releaseId, std::set<Database::id_type> clusters)
+static std::vector<Database::Track::pointer> getReleaseTracks(Wt::Dbo::Session& session, Database::IdType releaseId, std::set<Database::IdType> clusters)
 {
 	std::vector<Database::Track::pointer> res;
 
@@ -151,7 +151,7 @@ static std::vector<Database::Track::pointer> getReleaseTracks(Wt::Dbo::Session& 
 	return release->getTracks(clusters);
 }
 
-static std::vector<Database::Track::pointer> getTrack(Wt::Dbo::Session& session, Database::id_type trackId)
+static std::vector<Database::Track::pointer> getTrack(Wt::Dbo::Session& session, Database::IdType trackId)
 {
 	std::vector<Database::Track::pointer> res;
 
@@ -163,7 +163,7 @@ static std::vector<Database::Track::pointer> getTrack(Wt::Dbo::Session& session,
 }
 
 void
-Explore::handleArtistAdd(Database::id_type id)
+Explore::handleArtistAdd(Database::IdType id)
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
@@ -171,7 +171,7 @@ Explore::handleArtistAdd(Database::id_type id)
 }
 
 void
-Explore::handleArtistPlay(Database::id_type id)
+Explore::handleArtistPlay(Database::IdType id)
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
@@ -179,7 +179,7 @@ Explore::handleArtistPlay(Database::id_type id)
 }
 
 void
-Explore::handleReleaseAdd(Database::id_type id)
+Explore::handleReleaseAdd(Database::IdType id)
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
@@ -187,7 +187,7 @@ Explore::handleReleaseAdd(Database::id_type id)
 }
 
 void
-Explore::handleReleasePlay(Database::id_type id)
+Explore::handleReleasePlay(Database::IdType id)
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
@@ -195,7 +195,7 @@ Explore::handleReleasePlay(Database::id_type id)
 }
 
 void
-Explore::handleTrackAdd(Database::id_type id)
+Explore::handleTrackAdd(Database::IdType id)
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
@@ -203,7 +203,7 @@ Explore::handleTrackAdd(Database::id_type id)
 }
 
 void
-Explore::handleTrackPlay(Database::id_type id)
+Explore::handleTrackPlay(Database::IdType id)
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 

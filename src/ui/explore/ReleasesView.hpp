@@ -24,6 +24,8 @@
 #include <Wt/WText.h>
 #include <Wt/WTemplate.h>
 
+#include "database/Types.hpp"
+
 namespace UserInterface {
 
 class Filters;
@@ -33,8 +35,8 @@ class Releases : public Wt::WTemplate
 	public:
 		Releases(Filters* filters);
 
-		Wt::Signal<Database::id_type> releaseAdd;
-		Wt::Signal<Database::id_type> releasePlay;
+		Wt::Signal<Database::IdType> releaseAdd;
+		Wt::Signal<Database::IdType> releasePlay;
 
 	private:
 		void refresh();

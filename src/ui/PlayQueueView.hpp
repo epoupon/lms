@@ -26,7 +26,7 @@
 
 #include <boost/optional.hpp>
 
-#include "database/Types.hpp"
+#include "database/Track.hpp"
 
 namespace UserInterface {
 
@@ -45,7 +45,7 @@ class PlayQueue : public Wt::WTemplate
 		void playPrevious();
 
 		// Signal emitted when a track is to be played
-		Wt::Signal<Database::Track::id_type> playTrack;
+		Wt::Signal<Database::IdType> playTrack;
 
 		// Signal emitted when play has to be stopped
 		Wt::Signal<> playbackStop;

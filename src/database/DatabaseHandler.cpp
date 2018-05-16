@@ -33,6 +33,12 @@
 
 #include "utils/Logger.hpp"
 
+#include "DbArtist.hpp"
+#include "MediaDirectory.hpp"
+#include "Playlist.hpp"
+#include "Release.hpp"
+#include "Track.hpp"
+
 #include "DatabaseHandler.hpp"
 
 namespace Database {

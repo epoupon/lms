@@ -24,6 +24,8 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WSignal.h>
 
+#include "database/Types.hpp"
+
 namespace UserInterface {
 
 class Filters;
@@ -33,8 +35,8 @@ class Artists : public Wt::WTemplate
 	public:
 		Artists(Filters* filters);
 
-		Wt::Signal<Database::id_type> artistAdd;
-		Wt::Signal<Database::id_type> artistPlay;
+		Wt::Signal<Database::IdType> artistAdd;
+		Wt::Signal<Database::IdType> artistPlay;
 
 	private:
 		void refresh();

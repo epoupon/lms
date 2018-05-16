@@ -21,6 +21,7 @@
 
 #include <Wt/WTemplate.h>
 
+#include "database/Track.hpp"
 #include "database/Types.hpp"
 
 namespace UserInterface {
@@ -37,12 +38,12 @@ class Explore : public Wt::WTemplate
 
 	private:
 
-		void handleArtistAdd(Database::Artist::id_type id);
-		void handleArtistPlay(Database::Artist::id_type id);
-		void handleReleaseAdd(Database::Release::id_type id);
-		void handleReleasePlay(Database::Release::id_type id);
-		void handleTrackAdd(Database::Track::id_type id);
-		void handleTrackPlay(Database::Track::id_type id);
+		void handleArtistAdd(Database::IdType id);
+		void handleArtistPlay(Database::IdType id);
+		void handleReleaseAdd(Database::IdType id);
+		void handleReleasePlay(Database::IdType id);
+		void handleTrackAdd(Database::IdType id);
+		void handleTrackPlay(Database::IdType id);
 		void handleTracksAdd(std::vector<Database::Track::pointer> tracks);
 		void handleTracksPlay(std::vector<Database::Track::pointer> tracks);
 

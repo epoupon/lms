@@ -22,6 +22,8 @@
 #include <Wt/WContainerWidget.h>
 #include <Wt/WSignal.h>
 
+#include "database/Types.hpp"
+
 namespace UserInterface {
 
 class Filters;
@@ -31,11 +33,11 @@ class Artist : public Wt::WContainerWidget
 	public:
 		Artist(Filters* filters);
 
-		Wt::Signal<Database::id_type> artistAdd;
-		Wt::Signal<Database::id_type> artistPlay;
+		Wt::Signal<Database::IdType> artistAdd;
+		Wt::Signal<Database::IdType> artistPlay;
 
-		Wt::Signal<Database::id_type> releaseAdd;
-		Wt::Signal<Database::id_type> releasePlay;
+		Wt::Signal<Database::IdType> releaseAdd;
+		Wt::Signal<Database::IdType> releasePlay;
 
 	private:
 		void refresh();

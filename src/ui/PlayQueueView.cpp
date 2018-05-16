@@ -23,6 +23,8 @@
 
 #include "utils/Logger.hpp"
 
+#include "database/Playlist.hpp"
+
 #include "LmsApplication.hpp"
 #include "PlayQueueView.hpp"
 
@@ -91,7 +93,7 @@ PlayQueue::play(std::size_t pos)
 {
 	updateCurrentTrack(false);
 
-	Database::Track::id_type trackId;
+	Database::IdType trackId;
 	{
 		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 

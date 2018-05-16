@@ -23,7 +23,7 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
-#include "database/Types.hpp"
+#include "database/Release.hpp"
 #include "database/Setting.hpp"
 
 #include "utils/Logger.hpp"
@@ -92,7 +92,7 @@ Release::refresh()
 
 	clear();
 
-	auto releaseId = readAs<Database::Release::id_type>(wApp->internalPathNextPart("/release/"));
+	auto releaseId = readAs<Database::IdType>(wApp->internalPathNextPart("/release/"));
 	if (!releaseId)
 		return;
 
