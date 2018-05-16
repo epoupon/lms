@@ -30,6 +30,7 @@
 #include "database/MediaDirectory.hpp"
 #include "scanner/MediaScanner.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -46,6 +47,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 		static const Field MediaDirectoryField;
 		static const Field UpdatePeriodField;
 		static const Field UpdateStartTimeField;
+		static const Field TagsField;
 
 		DatabaseSettingsModel()
 			: Wt::WFormModel()
@@ -55,6 +57,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			addField(MediaDirectoryField);
 			addField(UpdatePeriodField);
 			addField(UpdateStartTimeField);
+			addField(TagsField);
 
 			auto dirValidator = std::make_shared<DirectoryValidator>();
 			dirValidator->setMandatory(true);
@@ -62,6 +65,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 			setValidator(UpdatePeriodField, createMandatoryValidator());
 			setValidator(UpdateStartTimeField, createMandatoryValidator());
+			setValidator(TagsField, createTagsValidator());
 
 			// populate the model with initial data
 			loadData();
@@ -87,6 +91,10 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			auto startTimeRow = getUpdateStartTimeModelRow( Scanner::getUpdateStartTime(LmsApp->getDboSession()) );
 			if (startTimeRow)
 				setValue(UpdateStartTimeField, updateStartTimeString(*startTimeRow) );
+
+			auto clusterTypes = Scanner::getClusterTypes(LmsApp->getDboSession());
+			if (!clusterTypes.empty())
+				setValue(TagsField, joinStrings(std::vector<std::string>(clusterTypes.begin(), clusterTypes.end()), " "));
 		}
 
 		void saveData()
@@ -94,15 +102,18 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
 			MediaDirectory::eraseAll(LmsApp->getDboSession());
-			MediaDirectory::create(LmsApp->getDboSession(), Wt::cpp17::any_cast<Wt::WString>(value(MediaDirectoryField)).toUTF8());
+			MediaDirectory::create(LmsApp->getDboSession(), valueText(MediaDirectoryField).toUTF8());
 
-			auto updatePeriodRow = getUpdatePeriodModelRow( Wt::cpp17::any_cast<Wt::WString>(value(UpdatePeriodField)));
+			auto updatePeriodRow = getUpdatePeriodModelRow( valueText(UpdatePeriodField));
 			assert(updatePeriodRow);
 			Scanner::setUpdatePeriod(LmsApp->getDboSession(), updatePeriod(*updatePeriodRow));
 
-			auto startTimeRow = getUpdateStartTimeModelRow( Wt::cpp17::any_cast<Wt::WString>(value(UpdateStartTimeField)));
+			auto startTimeRow = getUpdateStartTimeModelRow( valueText(UpdateStartTimeField));
 			assert(startTimeRow);
 			Scanner::setUpdateStartTime(LmsApp->getDboSession(), updateStartTime(*startTimeRow));
+
+			auto clusterTypes = splitString(valueText(TagsField).toUTF8(), " ");
+			Scanner::setClusterTypes(LmsApp->getDboSession(), std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
 		}
 
 		boost::optional<int> getUpdatePeriodModelRow(Wt::WString value)
@@ -177,6 +188,12 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 	private:
 
+		static std::shared_ptr<Wt::WValidator> createTagsValidator()
+		{
+			auto v = std::make_shared<Wt::WValidator>();
+			return v;
+		}
+
 		void initializeModels()
 		{
 
@@ -215,7 +232,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 const Wt::WFormModel::Field DatabaseSettingsModel::MediaDirectoryField		= "media-directory";
 const Wt::WFormModel::Field DatabaseSettingsModel::UpdatePeriodField		= "update-period";
 const Wt::WFormModel::Field DatabaseSettingsModel::UpdateStartTimeField		= "update-start-time";
-
+const Wt::WFormModel::Field DatabaseSettingsModel::TagsField			= "tags";
 
 DatabaseSettingsView::DatabaseSettingsView()
 {
@@ -250,6 +267,9 @@ DatabaseSettingsView::refreshView()
 	auto updateStartTime = std::make_unique<Wt::WComboBox>();
 	updateStartTime->setModel(model->updateStartTimeModel());
 	t->setFormWidget(DatabaseSettingsModel::UpdateStartTimeField, std::move(updateStartTime));
+
+	// Tags
+	t->setFormWidget(DatabaseSettingsModel::TagsField, std::make_unique<Wt::WLineEdit>());
 
 	// Buttons
 	Wt::WPushButton *saveBtn = t->bindWidget("apply-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.apply")));

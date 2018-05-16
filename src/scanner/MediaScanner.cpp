@@ -130,14 +130,33 @@ setUpdatePeriod(Wt::Dbo::Session& session, UpdatePeriod updatePeriod)
 	Setting::setInt(session, updatePeriodSetting, static_cast<int>(updatePeriod));
 }
 
-Wt::WTime getUpdateStartTime(Wt::Dbo::Session& session)
+Wt::WTime
+getUpdateStartTime(Wt::Dbo::Session& session)
 {
 	return Setting::getTime(session, updateStartTimeSetting);
 }
 
-void setUpdateStartTime(Wt::Dbo::Session& session, Wt::WTime startTime)
+void
+setUpdateStartTime(Wt::Dbo::Session& session, Wt::WTime startTime)
 {
 	Setting::setTime(session, updateStartTimeSetting, startTime);
+}
+
+std::set<std::string>
+getClusterTypes(Wt::Dbo::Session& session)
+{
+	MetaData::ClusterTypes clusterTypes;
+
+	for (auto cluster : splitString(Setting::getString(session, clusterTypesSetting), " "))
+		clusterTypes.insert(cluster);
+
+	return clusterTypes;
+}
+
+void setClusterTypes(Wt::Dbo::Session& session, const std::set<std::string> clusterTypes)
+{
+	std::vector<std::string> vecClusterTypes(clusterTypes.begin(), clusterTypes.end());
+	Setting::setString(session, clusterTypesSetting, joinStrings(vecClusterTypes, " "));
 }
 
 MediaScanner::MediaScanner(Wt::Dbo::SqlConnectionPool& connectionPool)
@@ -153,10 +172,7 @@ _db(connectionPool)
 		Setting::setString(_db.getSession(), fileExtensionsSetting, joinStrings(defaultFileExtensions, " "));
 
 	if (!Setting::exists(_db.getSession(), clusterTypesSetting))
-	{
-		std::vector<std::string> defaultClusterTypes(MetaData::Parser::defaultClusterTypes.begin(), MetaData::Parser::defaultClusterTypes.end());
-		Setting::setString(_db.getSession(), clusterTypesSetting, joinStrings(defaultClusterTypes, " "));
-	}
+		setClusterTypes(_db.getSession(), MetaData::Parser::defaultClusterTypes);
 
 	refreshScanSettings();
 }
@@ -323,11 +339,7 @@ MediaScanner::refreshScanSettings()
 	for (auto rootDir : Database::MediaDirectory::getAll(_db.getSession()))
 		_rootDirectories.push_back(rootDir->getPath());
 
-	MetaData::ClusterTypes clusterTypes;
-	for (auto cluster : splitString(Setting::getString(_db.getSession(), clusterTypesSetting), " "))
-		clusterTypes.insert(cluster);
-
-	_metadataParser.updateClusterTypes(clusterTypes);
+	_metadataParser.updateClusterTypes(getClusterTypes(_db.getSession()));
 }
 
 Artist::pointer

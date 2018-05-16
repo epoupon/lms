@@ -45,6 +45,9 @@ void setUpdatePeriod(Wt::Dbo::Session& session, UpdatePeriod updatePeriod);
 Wt::WTime getUpdateStartTime(Wt::Dbo::Session& session);
 void setUpdateStartTime(Wt::Dbo::Session& session, Wt::WTime time);
 
+std::set<std::string> getClusterTypes(Wt::Dbo::Session& session);
+void setClusterTypes(Wt::Dbo::Session& session, const std::set<std::string> clusterTypes);
+
 class MediaScanner
 {
 	public:
