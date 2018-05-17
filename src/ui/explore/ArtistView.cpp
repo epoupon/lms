@@ -34,34 +34,20 @@
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
+#include "ExploreUtils.hpp"
 
 using namespace Database;
 
 namespace {
 
 const std::string artistClusterTypesSetting = "artist_cluster_types";
-const std::vector<std::string> defaultArtistClusterTypes =
+const std::set<std::string> defaultArtistClusterTypes =
 {
 	"GENRE",
 	"ALBUMGROUPING",
 	"ALBUMMOOD",
 	"COMMENT:SONGS-DB_OCCASION",
 };
-
-std::vector<ClusterType::pointer> getArtistClusterTypes(Wt::Dbo::Session& session)
-{
-	Wt::Dbo::Transaction transaction(session);
-
-	std::vector<ClusterType::pointer> res;
-	for (auto clusterTypeName : splitString(Setting::getString(session, artistClusterTypesSetting), " "))
-	{
-		auto clusterType = ClusterType::getByName(session, clusterTypeName);
-		if (clusterType)
-			res.push_back(clusterType);
-	}
-
-	return res;
-}
 
 } // namespace
 
@@ -71,7 +57,7 @@ Artist::Artist(Filters* filters)
 : _filters(filters)
 {
 	if (!Setting::exists(LmsApp->getDboSession(), artistClusterTypesSetting))
-		Setting::setString(LmsApp->getDboSession(), artistClusterTypesSetting, joinStrings(defaultArtistClusterTypes, " "));
+		setClusterTypesToSetting(artistClusterTypesSetting, defaultArtistClusterTypes);
 
 	wApp->internalPathChanged().connect(std::bind([=]
 	{
@@ -112,7 +98,7 @@ Artist::refresh()
 	Wt::WContainerWidget* clusterContainers = t->bindNew<Wt::WContainerWidget>("clusters");
 
 	{
-		auto clusterTypes = getArtistClusterTypes(LmsApp->getDboSession());
+		auto clusterTypes = getClusterTypesFromSetting(artistClusterTypesSetting);
 		auto clusterGroups = artist->getClusterGroups(clusterTypes, 3);
 
 		for (auto clusters : clusterGroups)

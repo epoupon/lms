@@ -33,6 +33,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/explore/ArtistView.cpp			\
 	$(srcdir)/ui/explore/ArtistsView.cpp			\
 	$(srcdir)/ui/explore/Explore.cpp			\
+	$(srcdir)/ui/explore/ExploreUtils.cpp			\
 	$(srcdir)/ui/explore/Filters.cpp			\
 	$(srcdir)/ui/explore/ReleasesView.cpp			\
 	$(srcdir)/ui/explore/ReleaseView.cpp			\

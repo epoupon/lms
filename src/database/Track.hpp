@@ -120,8 +120,7 @@ class ClusterType : public Wt::Dbo::Dbo<ClusterType>
 		Wt::Dbo::collection< Wt::Dbo::ptr<Cluster> > _clusters;
 };
 
-
-class Track
+class Track : public Wt::Dbo::Dbo<Cluster>
 {
 	public:
 
@@ -196,6 +195,8 @@ class Track
 		Wt::Dbo::ptr<Artist>		getArtist(void) const			{ return _artist; }
 		Wt::Dbo::ptr<Release>		getRelease(void) const			{ return _release; }
 		std::vector< Cluster::pointer >	getClusters(void) const;
+
+		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
 
 		template<class Action>
 			void persist(Action& a)

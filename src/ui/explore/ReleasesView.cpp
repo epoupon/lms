@@ -35,32 +35,18 @@
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
+#include "ExploreUtils.hpp"
 
 using namespace Database;
 
 namespace {
 
 const std::string releasesClusterTypesSetting = "releases_cluster_types";
-const std::vector<std::string> defaultReleasesClusterTypes =
+const std::set<std::string> defaultReleasesClusterTypes =
 {
 	"GENRE",
 	"ALBUMGROUPING",
 };
-
-std::vector<ClusterType::pointer> getReleasesClusterTypes(Wt::Dbo::Session& session)
-{
-	Wt::Dbo::Transaction transaction(session);
-
-	std::vector<ClusterType::pointer> res;
-	for (auto clusterTypeName : splitString(Setting::getString(session, releasesClusterTypesSetting), " "))
-	{
-		auto clusterType = ClusterType::getByName(session, clusterTypeName);
-		if (clusterType)
-			res.push_back(clusterType);
-	}
-
-	return res;
-}
 
 } // namespace
 
@@ -71,7 +57,7 @@ Releases::Releases(Filters* filters)
 _filters(filters)
 {
 	if (!Setting::exists(LmsApp->getDboSession(), releasesClusterTypesSetting))
-		Setting::setString(LmsApp->getDboSession(), releasesClusterTypesSetting, joinStrings(defaultReleasesClusterTypes, " "));
+		setClusterTypesToSetting(releasesClusterTypesSetting, defaultReleasesClusterTypes);
 
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
@@ -140,7 +126,7 @@ Releases::addSome()
 
 		Wt::WContainerWidget* clusterContainers = entry->bindNew<Wt::WContainerWidget>("clusters");
 		{
-			auto clusterTypes = getReleasesClusterTypes(LmsApp->getDboSession());
+			auto clusterTypes = getClusterTypesFromSetting(releasesClusterTypesSetting);
 			auto clusterGroups = release->getClusterGroups(clusterTypes, 1);
 
 			for (auto clusters : clusterGroups)

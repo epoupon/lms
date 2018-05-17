@@ -27,6 +27,7 @@
 #include "database/DbArtist.hpp"
 #include "database/Track.hpp"
 #include "database/Release.hpp"
+#include "database/Setting.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -35,15 +36,32 @@
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
-
-namespace UserInterface {
+#include "ExploreUtils.hpp"
 
 using namespace Database;
+
+namespace {
+
+const std::string trackClusterTypesSetting = "track_cluster_types";
+const std::set<std::string> defaultTrackClusterTypes =
+{
+	"GENRE",
+	"ALBUMGROUPING",
+	"ALBUMMOOD",
+	"COMMENT:SONGS-DB_OCCASION",
+};
+
+} // namespace
+
+namespace UserInterface {
 
 Tracks::Tracks(Filters* filters)
 : Wt::WTemplate(Wt::WString::tr("Lms.Explore.Tracks.template")),
 _filters(filters)
 {
+	if (!Setting::exists(LmsApp->getDboSession(), trackClusterTypesSetting))
+		setClusterTypesToSetting(trackClusterTypesSetting, defaultTrackClusterTypes);
+
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_search = bindNew<Wt::WLineEdit>("search");
@@ -135,6 +153,25 @@ Tracks::addSome()
 		Wt::WImage* cover = entry->bindNew<Wt::WImage>("cover", LmsApp->getImageResource()->getTrackUrl(track.id(), 64));
 		// Some images may not be square
 		cover->setWidth(64);
+
+		Wt::WContainerWidget* clusterContainers = entry->bindNew<Wt::WContainerWidget>("clusters");
+		{
+			auto clusterTypes = getClusterTypesFromSetting(trackClusterTypesSetting);
+			auto clusterGroups = release->getClusterGroups(clusterTypes, 1);
+
+			for (auto clusters : clusterGroups)
+			{
+				for (auto cluster : clusters)
+				{
+					auto clusterId = cluster.id();
+					auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
+					entry->clicked().connect([=]
+					{
+						_filters->add(clusterId);
+					});
+				}
+			}
+		}
 
 		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.Tracks.play"), Wt::TextFormat::XHTML);
 		playBtn->clicked().connect(std::bind([=]

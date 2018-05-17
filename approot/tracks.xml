@@ -36,6 +36,7 @@
 		</div>
 		${<if-has-release>}${release-name}${</if-has-release>}
 		${<if-has-artist>}${artist-name}${</if-has-artist>}
+		${clusters}
 		${play-btn}${add-btn}
 	</div>
 </message>

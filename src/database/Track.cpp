@@ -210,6 +210,50 @@ Track::getOriginalYear() const
 	return (_originalYear > 0) ? boost::make_optional<int>(_originalYear) : boost::none;
 }
 
+std::vector<std::vector<Cluster::pointer>>
+Track::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::size_t size) const
+{
+	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );
+	assert(session());
+
+	WhereClause where;
+
+	std::ostringstream oss;
+
+	oss << "SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id";
+
+	where.And(WhereClause("t.id = ?")).bind(std::to_string(self()->id()));
+	{
+		WhereClause clusterClause;
+		for (auto clusterType : clusterTypes)
+			clusterClause.Or(WhereClause("c_type.id = ?")).bind(std::to_string(clusterType.id()));
+		where.And(clusterClause);
+	}
+	oss << " " << where.get();
+	oss << " GROUP BY c.id ORDER BY COUNT(c.id) DESC";
+
+	Wt::Dbo::Query<Cluster::pointer> query = session()->query<Cluster::pointer>( oss.str() );
+
+	for (const std::string& bindArg : where.getBindArgs())
+		query.bind(bindArg);
+
+	Wt::Dbo::collection<Cluster::pointer> queryRes = query;
+
+	std::map<IdType, std::vector<Cluster::pointer>> clusters;
+	for (auto cluster : queryRes)
+	{
+		if (clusters[cluster->getType().id()].size() < size)
+			clusters[cluster->getType().id()].push_back(cluster);
+	}
+
+	std::vector<std::vector<Cluster::pointer>> res;
+	for (auto cluster_list : clusters)
+		res.push_back(cluster_list.second);
+
+	return res;
+}
+
 Cluster::Cluster()
 {
 }
