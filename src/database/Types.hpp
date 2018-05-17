@@ -23,5 +23,10 @@
 
 namespace Database {
 	using IdType = Wt::Dbo::dbo_default_traits::IdType;
+
+	static inline bool IdIsValid(IdType id)
+	{
+		return id != Wt::Dbo::dbo_default_traits::invalidId();
+	}
 }
 

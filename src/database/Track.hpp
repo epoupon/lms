@@ -120,7 +120,7 @@ class ClusterType : public Wt::Dbo::Dbo<ClusterType>
 		Wt::Dbo::collection< Wt::Dbo::ptr<Cluster> > _clusters;
 };
 
-class Track : public Wt::Dbo::Dbo<Cluster>
+class Track : public Wt::Dbo::Dbo<Track>
 {
 	public:
 

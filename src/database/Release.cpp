@@ -166,7 +166,7 @@ std::vector<Wt::Dbo::ptr<Artist>>
 Release::getArtists() const
 {
 	assert(self());
-	assert(self()->id() != Wt::Dbo::dbo_traits<Release>::invalidId() );
+	assert(IdIsValid(self()->id()));
 	assert(session());
 
 	Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> res = session()->query<Wt::Dbo::ptr<Artist>>(

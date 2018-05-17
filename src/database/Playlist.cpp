@@ -87,6 +87,7 @@ std::vector<Wt::Dbo::ptr<PlaylistEntry>>
 Playlist::getEntries(int offset, int size, bool& moreResults) const
 {
 	assert(session());
+	assert(IdIsValid(self()->id()));
 
 	moreResults = false;
 

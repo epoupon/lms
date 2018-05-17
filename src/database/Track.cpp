@@ -214,7 +214,7 @@ std::vector<std::vector<Cluster::pointer>>
 Track::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::size_t size) const
 {
 	assert(self());
-	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );
+	assert(IdIsValid(self()->id()));
 	assert(session());
 
 	WhereClause where;
@@ -322,7 +322,7 @@ Cluster::pointer
 ClusterType::getCluster(std::string name) const
 {
 	assert(self());
-	assert(self()->id() != Wt::Dbo::dbo_traits<ClusterType>::invalidId() );
+	assert(IdIsValid(self()->id()));
 	assert(session());
 
 	return session()->find<Cluster>()
@@ -334,7 +334,7 @@ std::vector<Cluster::pointer>
 ClusterType::getClusters() const
 {
 	assert(self());
-	assert(self()->id() != Wt::Dbo::dbo_traits<ClusterType>::invalidId() );
+	assert(IdIsValid(self()->id()));
 	assert(session());
 
 	Wt::Dbo::collection<Cluster::pointer> res = session()->find<Cluster>()

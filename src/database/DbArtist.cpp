@@ -143,7 +143,7 @@ std::vector<Wt::Dbo::ptr<Release>>
 Artist::getReleases(const std::set<IdType>& clusterIds) const
 {
 	assert(self());
-	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );
+	assert(IdIsValid(self()->id()));
 	assert(session());
 
 	WhereClause where;
@@ -188,7 +188,7 @@ std::vector<std::vector<Wt::Dbo::ptr<Cluster>>>
 Artist::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::size_t size) const
 {
 	assert(self());
-	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );
+	assert(IdIsValid(self()->id()));
 	assert(session());
 
 	WhereClause where;

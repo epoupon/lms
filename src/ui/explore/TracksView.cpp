@@ -136,15 +136,13 @@ Tracks::addSome()
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-		auto artist = track->getArtist();
-		if (artist)
+		if (track->getArtist())
 		{
 			entry->setCondition("if-has-artist", true);
 			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(track->getArtist()));
 		}
 
-		auto release = track->getRelease();
-		if (release)
+		if (track->getRelease())
 		{
 			entry->setCondition("if-has-release", true);
 			entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(track->getRelease()));
@@ -157,7 +155,7 @@ Tracks::addSome()
 		Wt::WContainerWidget* clusterContainers = entry->bindNew<Wt::WContainerWidget>("clusters");
 		{
 			auto clusterTypes = getClusterTypesFromSetting(trackClusterTypesSetting);
-			auto clusterGroups = release->getClusterGroups(clusterTypes, 1);
+			auto clusterGroups = track->getClusterGroups(clusterTypes, 1);
 
 			for (auto clusters : clusterGroups)
 			{
