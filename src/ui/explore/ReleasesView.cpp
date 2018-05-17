@@ -26,6 +26,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Release.hpp"
+#include "database/Setting.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -35,14 +36,43 @@
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
 
-namespace UserInterface {
-
 using namespace Database;
+
+namespace {
+
+const std::string releasesClusterTypesSetting = "releases_cluster_types";
+const std::vector<std::string> defaultReleasesClusterTypes =
+{
+	"GENRE",
+	"ALBUMGROUPING",
+};
+
+std::vector<ClusterType::pointer> getReleasesClusterTypes(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::Transaction transaction(session);
+
+	std::vector<ClusterType::pointer> res;
+	for (auto clusterTypeName : splitString(Setting::getString(session, releasesClusterTypesSetting), " "))
+	{
+		auto clusterType = ClusterType::getByName(session, clusterTypeName);
+		if (clusterType)
+			res.push_back(clusterType);
+	}
+
+	return res;
+}
+
+} // namespace
+
+namespace UserInterface {
 
 Releases::Releases(Filters* filters)
 : Wt::WTemplate(Wt::WString::tr("Lms.Explore.Releases.template")),
 _filters(filters)
 {
+	if (!Setting::exists(LmsApp->getDboSession(), releasesClusterTypesSetting))
+		Setting::setString(LmsApp->getDboSession(), releasesClusterTypesSetting, joinStrings(defaultReleasesClusterTypes, " "));
+
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_search = bindNew<Wt::WLineEdit>("search");
@@ -106,6 +136,25 @@ Releases::addSome()
 		{
 			entry->setCondition("if-has-artist", true);
 			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
+		}
+
+		Wt::WContainerWidget* clusterContainers = entry->bindNew<Wt::WContainerWidget>("clusters");
+		{
+			auto clusterTypes = getReleasesClusterTypes(LmsApp->getDboSession());
+			auto clusterGroups = release->getClusterGroups(clusterTypes, 1);
+
+			for (auto clusters : clusterGroups)
+			{
+				for (auto cluster : clusters)
+				{
+					auto clusterId = cluster.id();
+					auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
+					entry->clicked().connect([=]
+					{
+						_filters->add(clusterId);
+					});
+				}
+			}
 		}
 
 		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.Releases.play"), Wt::TextFormat::XHTML);

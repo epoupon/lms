@@ -33,6 +33,7 @@
 			<h4 class="media-heading">${release-name}</h4>
 			${<if-has-artist>}${artist-name}${</if-has-artist>}
 		</div>
+		${clusters}
 		${play-btn}${add-btn}
 	</div>
 </message>

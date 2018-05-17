@@ -240,7 +240,7 @@ Release::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::s
 
 	std::ostringstream oss;
 
-	oss << "SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id INNER JOIN release r ON t.release_id = r.id";
+	oss << "SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id INNER JOIN release r ON t.release_id = r.id ";
 
 	where.And(WhereClause("r.id = ?")).bind(std::to_string(self()->id()));
 	{
@@ -250,7 +250,7 @@ Release::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::s
 		where.And(clusterClause);
 	}
 	oss << " " << where.get();
-	oss << "GROUP BY c.id ORDER BY COUNT(c.id) DESC";
+	oss << " GROUP BY c.id ORDER BY COUNT(c.id) DESC";
 
 	Wt::Dbo::Query<Cluster::pointer> query = session()->query<Cluster::pointer>( oss.str() );
 
