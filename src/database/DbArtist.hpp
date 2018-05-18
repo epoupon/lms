@@ -23,7 +23,6 @@
 #include <vector>
 
 #include <Wt/Dbo/Dbo.h>
-#include <Wt/Dbo/QueryModel.h>
 
 #include "Types.hpp"
 

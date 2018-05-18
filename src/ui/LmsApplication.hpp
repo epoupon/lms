@@ -26,6 +26,10 @@
 #include "database/DatabaseHandler.hpp"
 #include "scanner/MediaScanner.hpp"
 
+#include "database/Cluster.hpp"
+#include "database/DbArtist.hpp"
+#include "database/Release.hpp"
+
 #include "Auth.hpp"
 
 namespace UserInterface {
@@ -60,7 +64,7 @@ class LmsApplication : public Wt::WApplication
 
 		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Database::Artist::pointer artist, bool addText = true);
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::Release::pointer release, bool addText = true);
-		static std::unique_ptr<Wt::WTemplate> createCluster(Database::Cluster::pointer cluster, bool canDelete= false);
+		static std::unique_ptr<Wt::WTemplate> createCluster(Database::Cluster::pointer cluster, bool canDelete = false);
 
 	private:
 

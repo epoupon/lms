@@ -29,9 +29,6 @@
 #include "metadata/TagLibParser.hpp"
 
 #include "database/DatabaseHandler.hpp"
-#include "database/Track.hpp"
-#include "database/DbArtist.hpp"
-#include "database/Release.hpp"
 
 namespace Scanner {
 
@@ -83,16 +80,6 @@ class MediaScanner
 			std::size_t nbDuplicates() const { return duplicateHashes + duplicateMBID; }
 		};
 
-
-		// Called just after track addition
-		Wt::Signal<Database::Track::pointer>& addedTrack() { return _sigAddedTrack; }
-
-		// Called just before track removal
-		Wt::Signal<Database::Track::pointer>& removedTrack() { return _sigRemovedTrack; }
-
-		// Called just after track modification
-		Wt::Signal<Database::Track::pointer>& modifiedTrack() { return _sigModifiedTrack; }
-
 		// Called just after scan complete
 		Wt::Signal<Stats>& scanComplete() { return _sigScanComplete; }
 
@@ -109,9 +96,6 @@ class MediaScanner
 		void scanRootDirectory( boost::filesystem::path rootDirectory, bool forceScan, Stats& stats);
 
 		// Helpers
-		Database::Artist::pointer getArtist( const boost::filesystem::path& file, const std::string& name, const std::string& MBID);
-		Database::Release::pointer getRelease( const boost::filesystem::path& file, const std::string& name, const std::string& MBID);
-		std::vector<Database::Cluster::pointer> getClusters( const MetaData::Clusters& names);
 		void refreshScanSettings();
 
 		void checkAudioFiles( Stats& stats );
@@ -123,9 +107,6 @@ class MediaScanner
 		Wt::WIOService		_ioService;
 
 		Wt::Signal<Stats>	_sigScanComplete;
-		Wt::Signal<Database::Track::pointer> _sigModifiedTrack;
-		Wt::Signal<Database::Track::pointer> _sigAddedTrack;
-		Wt::Signal<Database::Track::pointer> _sigRemovedTrack;
 
 		boost::asio::system_timer _scheduleTimer;
 

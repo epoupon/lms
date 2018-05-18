@@ -25,6 +25,8 @@
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
+#include "database/Track.hpp"
+
 #include "LmsApplication.hpp"
 
 #include "cover/CoverArtGrabber.hpp"

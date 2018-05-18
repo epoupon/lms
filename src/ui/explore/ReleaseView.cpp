@@ -27,6 +27,7 @@
 
 #include "database/Release.hpp"
 #include "database/Setting.hpp"
+#include "database/Track.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"

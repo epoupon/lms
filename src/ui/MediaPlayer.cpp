@@ -24,6 +24,9 @@
 #include "av/AvInfo.hpp"
 #include "utils/Logger.hpp"
 
+#include "database/Track.hpp"
+
+
 #include "resource/ImageResource.hpp"
 #include "resource/TranscodeResource.hpp"
 

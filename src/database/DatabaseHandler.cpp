@@ -36,6 +36,7 @@
 #include "utils/Logger.hpp"
 
 #include "DbArtist.hpp"
+#include "Cluster.hpp"
 #include "MediaDirectory.hpp"
 #include "Playlist.hpp"
 #include "Release.hpp"

@@ -28,6 +28,7 @@
 
 #include "cover/CoverArtGrabber.hpp"
 
+#include "database/Cluster.hpp"
 #include "database/DbArtist.hpp"
 #include "database/Release.hpp"
 #include "database/MediaDirectory.hpp"
@@ -37,6 +38,8 @@
 #include "utils/Logger.hpp"
 #include "utils/Path.hpp"
 #include "utils/Utils.hpp"
+
+using namespace Database;
 
 namespace {
 
@@ -114,12 +117,107 @@ isPathInParentPath(const boost::filesystem::path& path, const boost::filesystem:
 	return false;
 }
 
+Artist::pointer
+getArtist(Wt::Dbo::Session& session, const std::string& name, const std::string& mbid)
+{
+	Artist::pointer artist;
+
+	// First try to get by MBID
+	if (!mbid.empty())
+	{
+		artist = Artist::getByMBID(session, mbid);
+		if (!artist)
+			artist = Artist::create(session, name, mbid);
+
+		return artist;
+	}
+
+	// Fall back on artist name (collisions may occur)
+	if (!name.empty())
+	{
+		for (Artist::pointer sameNamedArtist : Artist::getByName(session, name))
+		{
+			if (sameNamedArtist->getMBID().empty())
+			{
+				artist = sameNamedArtist;
+				break;
+			}
+		}
+
+		// No Artist found with the same name and without MBID -> creating
+		if (!artist)
+			artist = Artist::create(session, name);
+
+		return artist;
+	}
+
+	return Artist::pointer();
+}
+
+Release::pointer
+getRelease(Wt::Dbo::Session& session, const std::string& name, const std::string& mbid)
+{
+	Release::pointer release;
+
+	// First try to get by MBID
+	if (!mbid.empty())
+	{
+		release = Release::getByMBID(session, mbid );
+		if (!release)
+			release = Release::create(session, name, mbid);
+
+		return release;
+	}
+
+	// Fall back on release name (collisions may occur)
+	if (!name.empty())
+	{
+		for (Release::pointer sameNamedRelease : Release::getByName(session, name))
+		{
+			if (sameNamedRelease->getMBID().empty())
+			{
+				release = sameNamedRelease;
+				break;
+			}
+		}
+
+		// No release found with the same name and without MBID -> creating
+		if (!release)
+			release = Release::create(session, name);
+
+		return release;
+	}
+
+	return Release::pointer();
+}
+
+std::vector<Cluster::pointer>
+getClusters(Wt::Dbo::Session& session, const MetaData::Clusters& clustersNames)
+{
+	std::vector< Cluster::pointer > clusters;
+
+	for (auto clusterNames : clustersNames)
+	{
+		auto clusterType = ClusterType::getByName(session, clusterNames.first);
+		if (!clusterType)
+			continue;
+
+		for (auto clusterName : clusterNames.second)
+		{
+			auto cluster = clusterType->getCluster(clusterName);
+			if (!cluster)
+				cluster = Cluster::create(session, clusterType, clusterName);
+
+			clusters.push_back(cluster);
+		}
+	}
+
+	return clusters;
+}
+
 } // namespace
 
-
 namespace Scanner {
-
-using namespace Database;
 
 UpdatePeriod
 getUpdatePeriod(Wt::Dbo::Session& session)
@@ -345,104 +443,6 @@ MediaScanner::refreshScanSettings()
 	_metadataParser.updateClusterTypes(getClusterTypes(_db.getSession()));
 }
 
-Artist::pointer
-MediaScanner::getArtist( const boost::filesystem::path& file, const std::string& name, const std::string& mbid)
-{
-	Artist::pointer artist;
-
-	// First try to get by MBID
-	if (!mbid.empty())
-	{
-		artist = Artist::getByMBID( _db.getSession(), mbid );
-		if (!artist)
-			artist = Artist::create( _db.getSession(), name, mbid);
-
-		return artist;
-	}
-
-	// Fall back on artist name (collisions may occur)
-	if (!name.empty())
-	{
-		for (Artist::pointer sameNamedArtist : Artist::getByName( _db.getSession(), name ))
-		{
-			if (sameNamedArtist->getMBID().empty())
-			{
-				artist = sameNamedArtist;
-				break;
-			}
-		}
-
-		// No Artist found with the same name and without MBID -> creating
-		if (!artist)
-			artist = Artist::create( _db.getSession(), name);
-
-		return artist;
-	}
-
-	return Artist::pointer();
-}
-
-Release::pointer
-MediaScanner::getRelease( const boost::filesystem::path& file, const std::string& name, const std::string& mbid)
-{
-	Release::pointer release;
-
-	// First try to get by MBID
-	if (!mbid.empty())
-	{
-		release = Release::getByMBID( _db.getSession(), mbid );
-		if (!release)
-			release = Release::create( _db.getSession(), name, mbid);
-
-		return release;
-	}
-
-	// Fall back on release name (collisions may occur)
-	if (!name.empty())
-	{
-		for (Release::pointer sameNamedRelease : Release::getByName( _db.getSession(), name ))
-		{
-			if (sameNamedRelease->getMBID().empty())
-			{
-				release = sameNamedRelease;
-				break;
-			}
-		}
-
-		// No release found with the same name and without MBID -> creating
-		if (!release)
-			release = Release::create( _db.getSession(), name);
-
-		return release;
-	}
-
-	return Release::pointer();
-}
-
-std::vector<Cluster::pointer>
-MediaScanner::getClusters( const MetaData::Clusters& clustersNames)
-{
-	std::vector< Cluster::pointer > clusters;
-
-	for (auto clusterNames : clustersNames)
-	{
-		auto clusterType = ClusterType::getByName(_db.getSession(), clusterNames.first);
-		if (!clusterType)
-			continue;
-
-		for (auto clusterName : clusterNames.second)
-		{
-			auto cluster = clusterType->getCluster(clusterName);
-			if (!cluster)
-				cluster = Cluster::create(_db.getSession(), clusterType, clusterName);
-
-			clusters.push_back(cluster);
-		}
-	}
-
-	return clusters;
-}
-
 void
 MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan, Stats& stats)
 {
@@ -535,8 +535,7 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 			clusterNames = boost::any_cast<MetaData::Clusters> ((*items)[MetaData::Type::Clusters]);
 		}
 
-		// TODO rename
-		genres = getClusters( clusterNames );
+		genres = getClusters(_db.getSession(), clusterNames);
 	}
 
 	//  ***** Artist
@@ -551,7 +550,7 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 		if ((*items).find(MetaData::Type::Artist) != (*items).end())
 			artistName = boost::any_cast<std::string>((*items)[MetaData::Type::Artist]);
 
-		artist = getArtist(file, artistName, artistMusicBrainzID);
+		artist = getArtist(_db.getSession(), artistName, artistMusicBrainzID);
 	}
 
 	//  ***** Release
@@ -566,7 +565,7 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 		if ((*items).find(MetaData::Type::Album) != (*items).end())
 			releaseName = boost::any_cast<std::string>((*items)[MetaData::Type::Album]);
 
-		release = getRelease(file, releaseName, releaseMusicBrainzID);
+		release = getRelease(_db.getSession(), releaseName, releaseMusicBrainzID);
 	}
 
 	// If file already exist, update data
@@ -649,9 +648,6 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 
 		track.modify()->setCoverType( hasCover ? Track::CoverType::Embedded : Track::CoverType::None );
 	}
-
-	// TODO check added/modified
-	_sigAddedTrack.emit(track);
 
 	transaction.commit();
 }

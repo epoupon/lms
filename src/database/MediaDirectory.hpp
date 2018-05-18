@@ -24,7 +24,6 @@
 #include <boost/filesystem/path.hpp>
 
 #include <Wt/Dbo/Dbo.h>
-#include <Wt/Dbo/WtSqlTraits.h>
 
 namespace Database {
 

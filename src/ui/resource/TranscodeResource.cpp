@@ -23,6 +23,8 @@
 
 #include "utils/Logger.hpp"
 
+#include "database/Track.hpp"
+
 #include "LmsApplication.hpp"
 
 namespace UserInterface {

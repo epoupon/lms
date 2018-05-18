@@ -20,6 +20,7 @@
 
 #include "utils/Logger.hpp"
 
+#include "Cluster.hpp"
 #include "Release.hpp"
 #include "SqlQuery.hpp"
 #include "Track.hpp"
