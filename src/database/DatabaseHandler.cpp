@@ -35,7 +35,7 @@
 
 #include "utils/Logger.hpp"
 
-#include "DbArtist.hpp"
+#include "Artist.hpp"
 #include "Cluster.hpp"
 #include "MediaDirectory.hpp"
 #include "Playlist.hpp"
@@ -120,7 +120,8 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 
 		LMS_LOG(DB, INFO) << "Tables created";
 	}
-	catch(std::exception& e) {
+	catch (Wt::Dbo::Exception& e)
+	{
 		LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();
 	}
 

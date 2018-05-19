@@ -19,8 +19,8 @@
 
 #include "Release.hpp"
 
+#include "Artist.hpp"
 #include "Cluster.hpp"
-#include "DbArtist.hpp"
 #include "SqlQuery.hpp"
 #include "Track.hpp"
 

@@ -26,8 +26,8 @@
 #include "database/DatabaseHandler.hpp"
 #include "scanner/MediaScanner.hpp"
 
+#include "database/Artist.hpp"
 #include "database/Cluster.hpp"
-#include "database/DbArtist.hpp"
 #include "database/Release.hpp"
 
 #include "Auth.hpp"

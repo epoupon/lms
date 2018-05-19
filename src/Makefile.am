@@ -5,8 +5,8 @@ lms_SOURCES = \
 	$(srcdir)/av/AvInfo.cpp					\
 	$(srcdir)/av/AvTranscoder.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
+	$(srcdir)/database/Artist.cpp				\
 	$(srcdir)/database/Cluster.cpp				\
-	$(srcdir)/database/DbArtist.cpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
 	$(srcdir)/database/MediaDirectory.cpp			\
 	$(srcdir)/database/Playlist.cpp				\

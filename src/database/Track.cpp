@@ -23,8 +23,8 @@
 
 #include "utils/Logger.hpp"
 
+#include "Artist.hpp"
 #include "Cluster.hpp"
-#include "DbArtist.hpp"
 #include "Release.hpp"
 #include "SqlQuery.hpp"
 

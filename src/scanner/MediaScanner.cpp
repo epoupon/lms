@@ -28,8 +28,8 @@
 
 #include "cover/CoverArtGrabber.hpp"
 
+#include "database/Artist.hpp"
 #include "database/Cluster.hpp"
-#include "database/DbArtist.hpp"
 #include "database/Release.hpp"
 #include "database/MediaDirectory.hpp"
 #include "database/Track.hpp"

@@ -19,7 +19,7 @@
 
 #include "Cluster.hpp"
 
-#include "DbArtist.hpp"
+#include "Artist.hpp"
 #include "Release.hpp"
 #include "SqlQuery.hpp"
 #include "Track.hpp"

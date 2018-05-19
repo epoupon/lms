@@ -24,7 +24,7 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
-#include "database/DbArtist.hpp"
+#include "database/Artist.hpp"
 #include "database/Setting.hpp"
 
 #include "utils/Logger.hpp"

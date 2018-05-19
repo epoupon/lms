@@ -24,10 +24,10 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WText.h>
 
-#include "database/DbArtist.hpp"
-#include "database/Track.hpp"
+#include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Setting.hpp"
+#include "database/Track.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
