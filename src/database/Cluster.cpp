@@ -21,6 +21,7 @@
 
 #include "Artist.hpp"
 #include "Release.hpp"
+#include "ScanSettings.hpp"
 #include "SqlQuery.hpp"
 #include "Track.hpp"
 

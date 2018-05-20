@@ -31,10 +31,7 @@ namespace MetaData
 class AvFormat : public Parser
 {
 	public:
-
-		AvFormat(const ClusterTypes& clusterTypes = defaultClusterTypes);
-
-		boost::optional<Items> parse(const boost::filesystem::path& p, bool debug = false);
+		boost::optional<Items> parse(const boost::filesystem::path& p, bool debug = false) override;
 };
 
 } // namespace MetaData

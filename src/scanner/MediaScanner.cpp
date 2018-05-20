@@ -31,9 +31,8 @@
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
-#include "database/MediaDirectory.hpp"
+#include "database/ScanSettings.hpp"
 #include "database/Track.hpp"
-#include "database/Setting.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Path.hpp"
@@ -42,28 +41,6 @@
 using namespace Database;
 
 namespace {
-
-const std::string updatePeriodSetting = "update_period";
-const std::string updateStartTimeSetting = "update_start_time";
-const std::string clusterTypesSetting = "cluster_types";
-const std::string fileExtensionsSetting = "file_extensions";
-
-const std::vector<std::string> defaultFileExtensions =
-{
-	".mp3",
-	".ogg",
-	".oga",
-	".aac",
-	".m4a",
-	".flac",
-	".wav",
-	".wma",
-	".aif",
-	".aiff",
-	".ape",
-	".mpc",
-	".shn",
-};
 
 Wt::WDate
 getNextMonday(Wt::WDate current)
@@ -88,17 +65,9 @@ getNextFirstOfMonth(Wt::WDate current)
 }
 
 bool
-isFileSupported(const boost::filesystem::path& file, const std::vector<boost::filesystem::path> extensions)
+isFileSupported(const boost::filesystem::path& file, const std::set<boost::filesystem::path>& extensions)
 {
-	boost::filesystem::path fileExtension = file.extension();
-
-	for (auto& extension : extensions)
-	{
-		if (extension == fileExtension)
-			return true;
-	}
-
-	return false;
+	return (extensions.find(file.extension()) != extensions.end());
 }
 
 bool
@@ -219,61 +188,12 @@ getClusters(Wt::Dbo::Session& session, const MetaData::Clusters& clustersNames)
 
 namespace Scanner {
 
-UpdatePeriod
-getUpdatePeriod(Wt::Dbo::Session& session)
-{
-	return static_cast<UpdatePeriod>(Setting::getInt(session, updatePeriodSetting, static_cast<int>(UpdatePeriod::Never)));
-}
-
-void
-setUpdatePeriod(Wt::Dbo::Session& session, UpdatePeriod updatePeriod)
-{
-	Setting::setInt(session, updatePeriodSetting, static_cast<int>(updatePeriod));
-}
-
-Wt::WTime
-getUpdateStartTime(Wt::Dbo::Session& session)
-{
-	return Setting::getTime(session, updateStartTimeSetting);
-}
-
-void
-setUpdateStartTime(Wt::Dbo::Session& session, Wt::WTime startTime)
-{
-	Setting::setTime(session, updateStartTimeSetting, startTime);
-}
-
-std::set<std::string>
-getClusterTypes(Wt::Dbo::Session& session)
-{
-	MetaData::ClusterTypes clusterTypes;
-
-	for (auto cluster : splitString(Setting::getString(session, clusterTypesSetting), " "))
-		clusterTypes.insert(cluster);
-
-	return clusterTypes;
-}
-
-void setClusterTypes(Wt::Dbo::Session& session, const std::set<std::string> clusterTypes)
-{
-	std::vector<std::string> vecClusterTypes(clusterTypes.begin(), clusterTypes.end());
-	Setting::setString(session, clusterTypesSetting, joinStrings(vecClusterTypes, " "));
-}
-
 MediaScanner::MediaScanner(Wt::Dbo::SqlConnectionPool& connectionPool)
  : _running(false),
 _scheduleTimer(_ioService),
 _db(connectionPool)
 {
 	_ioService.setThreadCount(1);
-
-	Wt::Dbo::Transaction transaction(_db.getSession());
-
-	if (!Setting::exists(_db.getSession(), fileExtensionsSetting))
-		Setting::setString(_db.getSession(), fileExtensionsSetting, joinStrings(defaultFileExtensions, " "));
-
-	if (!Setting::exists(_db.getSession(), clusterTypesSetting))
-		setClusterTypes(_db.getSession(), MetaData::Parser::defaultClusterTypes);
 
 	refreshScanSettings();
 }
@@ -329,43 +249,41 @@ MediaScanner::reschedule()
 void
 MediaScanner::scheduleScan()
 {
-	using namespace std::chrono_literals;
+	refreshScanSettings();
 
-	Wt::WTime startTime = getUpdateStartTime(_db.getSession());
 	Wt::WDateTime now = Wt::WLocalDateTime::currentServerDateTime().toUTC();
 
 	Wt::WDate nextScanDate;
-
-	switch ( getUpdatePeriod(_db.getSession()) )
+	switch (_updatePeriod)
 	{
-		case UpdatePeriod::Daily:
-			if (now.time() < startTime)
+		case ScanSettings::UpdatePeriod::Daily:
+			if (now.time() < _startTime)
 				nextScanDate = now.date();
 			else
 				nextScanDate = now.date().addDays(1);
 			break;
 
-		case UpdatePeriod::Weekly:
-			if (now.time() < startTime && now.date().dayOfWeek() == 1)
+		case ScanSettings::UpdatePeriod::Weekly:
+			if (now.time() < _startTime && now.date().dayOfWeek() == 1)
 				nextScanDate = now.date();
 			else
 				nextScanDate = getNextMonday(now.date());
 			break;
 
-		case UpdatePeriod::Monthly:
-			if (now.time() < startTime && now.date().day() == 1)
+		case ScanSettings::UpdatePeriod::Monthly:
+			if (now.time() < _startTime && now.date().day() == 1)
 				nextScanDate = now.date();
 			else
 				nextScanDate = getNextFirstOfMonth(now.date());
 			break;
 
-		case UpdatePeriod::Never:
+		case ScanSettings::UpdatePeriod::Never:
 			LMS_LOG(DBUPDATER, INFO) << "Auto scan disabled!";
 			break;
 	}
 
 	if (nextScanDate.isValid())
-		scheduleScan( Wt::WDateTime(nextScanDate, startTime).toTimePoint() );
+		scheduleScan( Wt::WDateTime(nextScanDate, _startTime).toTimePoint() );
 }
 
 void
@@ -399,19 +317,12 @@ MediaScanner::scan(boost::system::error_code err)
 	Stats stats;
 
 	checkAudioFiles(stats);
-	forceScan = checkClusters();
 
 	LMS_LOG(UI, INFO) << "Checks complete, force scan = " << forceScan;
 
-	for (auto rootDirectory : _rootDirectories)
-	{
-		if (!_running)
-			break;
-
-		LMS_LOG(DBUPDATER, INFO) << "scaning root directory '" << rootDirectory.string() << "'...";
-		scanRootDirectory(rootDirectory, forceScan, stats);
-		LMS_LOG(DBUPDATER, INFO) << "scaning root directory '" << rootDirectory.string() << "' DONE";
-	}
+	LMS_LOG(DBUPDATER, INFO) << "scaning media directory '" << _mediaDirectory.string() << "'...";
+	scanMediaDirectory(_mediaDirectory, forceScan, stats);
+	LMS_LOG(DBUPDATER, INFO) << "scaning media directory '" << _mediaDirectory.string() << "' DONE";
 
 	if (_running)
 		checkDuplicatedAudioFiles(stats);
@@ -432,15 +343,22 @@ MediaScanner::refreshScanSettings()
 {
 	Wt::Dbo::Transaction transaction(_db.getSession());
 
-	_fileExtensions.clear();
-	for (auto extension : splitString(Setting::getString(_db.getSession(), fileExtensionsSetting), " "))
-		_fileExtensions.push_back( extension );
+	auto scanSettings = ScanSettings::get(_db.getSession());
 
-	_rootDirectories.clear();
-	for (auto rootDir : Database::MediaDirectory::getAll(_db.getSession()))
-		_rootDirectories.push_back(rootDir->getPath());
+	_startTime = scanSettings->getUpdateStartTime();
+	_updatePeriod = scanSettings->getUpdatePeriod();
 
-	_metadataParser.updateClusterTypes(getClusterTypes(_db.getSession()));
+	_fileExtensions = scanSettings->getAudioFileExtensions();
+	_mediaDirectory = scanSettings->getMediaDirectory();
+
+	auto clusterTypes = scanSettings->getClusterTypes();
+	std::set<std::string> clusterTypeNames;
+
+	std::transform(clusterTypes.begin(), clusterTypes.end(),
+			std::inserter(clusterTypeNames, clusterTypeNames.begin()),
+			[](ClusterType::pointer clusterType) -> std::string { return clusterType->getName(); });
+
+	_metadataParser.setClusterTypeNames(clusterTypeNames);
 }
 
 void
@@ -653,11 +571,11 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 }
 
 void
-MediaScanner::scanRootDirectory(boost::filesystem::path rootDirectory, bool forceScan, Stats& stats)
+MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool forceScan, Stats& stats)
 {
 	boost::system::error_code ec;
 
-	boost::filesystem::recursive_directory_iterator itPath(rootDirectory, ec);
+	boost::filesystem::recursive_directory_iterator itPath(mediaDirectory, ec);
 
 	boost::filesystem::recursive_directory_iterator itEnd;
 	while (!ec && itPath != itEnd)
@@ -676,38 +594,27 @@ MediaScanner::scanRootDirectory(boost::filesystem::path rootDirectory, bool forc
 	}
 }
 
-// Check if a file exists and is still in a root directory
+// Check if a file exists and is still in a media directory
 static bool
-checkFile(const boost::filesystem::path& p, const std::vector<boost::filesystem::path>& rootDirs, const std::vector<boost::filesystem::path>& extensions)
+checkFile(const boost::filesystem::path& p, boost::filesystem::path mediaDirectory, const std::set<boost::filesystem::path>& extensions)
 {
 	try
 	{
 		bool status = true;
 
 		// For each track, make sure the the file still exists
-		// and still belongs to a root directory
+		// and still belongs to a media directory
 		if (!boost::filesystem::exists( p )
-				|| !boost::filesystem::is_regular( p ) )
+			|| !boost::filesystem::is_regular( p ) )
 		{
 			LMS_LOG(DBUPDATER, INFO) << "Missing file '" << p.string() << "'";
 			status = false;
 		}
 		else
 		{
-
-			bool foundRoot = false;
-			for (auto& rootDir : rootDirs)
+			if (!isPathInParentPath(p, mediaDirectory))
 			{
-				if (isPathInParentPath(p, rootDir))
-				{
-					foundRoot = true;
-					break;
-				}
-			}
-
-			if (!foundRoot)
-			{
-				LMS_LOG(DBUPDATER, INFO) << "Out of root file '" << p.string() << "'";
+				LMS_LOG(DBUPDATER, INFO) << "File '" << p.string() << "' is out of media directory '";
 				status = false;
 			}
 			else if (!isFileSupported(p, extensions))
@@ -741,7 +648,7 @@ MediaScanner::checkAudioFiles( Stats& stats )
 		if (!_running)
 			return;
 
-		if (!checkFile(trackPath, _rootDirectories, _fileExtensions))
+		if (!checkFile(trackPath, _mediaDirectory, _fileExtensions))
 		{
 			Wt::Dbo::Transaction transaction(_db.getSession());
 
@@ -796,44 +703,6 @@ MediaScanner::checkAudioFiles( Stats& stats )
 	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Check audio files done!";
-}
-
-bool
-MediaScanner::checkClusters()
-{
-	bool hasChanges = false;
-
-	LMS_LOG(DBUPDATER, INFO) << "Checking clusters";
-
-	Wt::Dbo::Transaction transaction(_db.getSession());
-	auto clusterTypes = ClusterType::getAll(_db.getSession());
-
-	// Remove no longer desired clusters
-	for (auto clusterType : clusterTypes)
-	{
-		if (!_metadataParser.isClusterTypeSupported(clusterType->getName()))
-		{
-			LMS_LOG(DBUPDATER, INFO) << "Removing cluster type " << clusterType->getName();
-			clusterType.remove();
-			hasChanges = true;
-		}
-	}
-
-	// Add any missing clusters
-	for (auto clusterTypeName : _metadataParser.getClusterTypes())
-	{
-		if (std::none_of(clusterTypes.begin(), clusterTypes.end(),
-			[&clusterTypeName](ClusterType::pointer clusterType) { return (clusterType->getName() == clusterTypeName); }))
-		{
-			LMS_LOG(DBUPDATER, INFO) << "Creating cluster type " << clusterTypeName;
-			ClusterType::create(_db.getSession(), clusterTypeName);
-			hasChanges = true;
-		}
-	}
-
-	LMS_LOG(DBUPDATER, INFO) << "Checking clusters done!";
-
-	return hasChanges;
 }
 
 void

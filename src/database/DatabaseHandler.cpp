@@ -37,9 +37,9 @@
 
 #include "Artist.hpp"
 #include "Cluster.hpp"
-#include "MediaDirectory.hpp"
 #include "Playlist.hpp"
 #include "Release.hpp"
+#include "ScanSettings.hpp"
 #include "Track.hpp"
 
 namespace Database {
@@ -98,20 +98,21 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 {
 	_session.setConnectionPool(connectionPool);
 
-	_session.mapClass<Database::Artist>("artist");
-	_session.mapClass<Database::Cluster>("cluster");
-	_session.mapClass<Database::ClusterType>("cluster_type");
-	_session.mapClass<Database::MediaDirectory>("media_directory");
-	_session.mapClass<Database::Playlist>("playlist");
-	_session.mapClass<Database::PlaylistEntry>("playlist_entry");
-	_session.mapClass<Database::Release>("release");
-	_session.mapClass<Database::Setting>("setting");
-	_session.mapClass<Database::Track>("track");
+	_session.mapClass<Artist>("artist");
+	_session.mapClass<Cluster>("cluster");
+	_session.mapClass<ClusterType>("cluster_type");
+	_session.mapClass<Playlist>("playlist");
+	_session.mapClass<PlaylistEntry>("playlist_entry");
+	_session.mapClass<Release>("release");
+	_session.mapClass<Setting>("setting");
+	_session.mapClass<Track>("track");
 
-	_session.mapClass<Database::AuthInfo>("auth_info");
-	_session.mapClass<Database::AuthInfo::AuthIdentityType>("auth_identity");
-	_session.mapClass<Database::AuthInfo::AuthTokenType>("auth_token");
-	_session.mapClass<Database::User>("user");
+	_session.mapClass<ScanSettings>("scan_settings");
+
+	_session.mapClass<AuthInfo>("auth_info");
+	_session.mapClass<AuthInfo::AuthIdentityType>("auth_identity");
+	_session.mapClass<AuthInfo::AuthTokenType>("auth_token");
+	_session.mapClass<User>("user");
 
 	try {
 		Wt::Dbo::Transaction transaction(_session);

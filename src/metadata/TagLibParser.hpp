@@ -31,10 +31,7 @@ namespace MetaData
 class TagLibParser : public Parser
 {
 	public:
-
-		TagLibParser(const ClusterTypes& clusterTypes = defaultClusterTypes);
-
-		boost::optional<Items> parse(const boost::filesystem::path& p, bool debug = false);
+		boost::optional<Items> parse(const boost::filesystem::path& p, bool debug = false) override;
 };
 
 } // namespace MetaData

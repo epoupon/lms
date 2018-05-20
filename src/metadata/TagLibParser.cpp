@@ -31,11 +31,6 @@
 namespace MetaData
 {
 
-TagLibParser::TagLibParser(const ClusterTypes& clusterTypes)
-: Parser(clusterTypes)
-{
-}
-
 boost::optional<Items>
 TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 {
@@ -199,7 +194,7 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 				if (items.find(MetaData::Type::HasCover) == items.end())
 					items.insert( std::make_pair(MetaData::Type::HasCover, true));
 			}
-			else if (_clusterTypes.find(tag) != _clusterTypes.end())
+			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 			{
 				std::set<std::string> clusterNames;
 				for (const auto& value : values)

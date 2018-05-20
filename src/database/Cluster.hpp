@@ -32,6 +32,7 @@ namespace Database {
 
 class Track;
 class ClusterType;
+class ScanSettings;
 
 class Cluster : public Wt::Dbo::Dbo<Cluster>
 {
@@ -101,6 +102,7 @@ class ClusterType : public Wt::Dbo::Dbo<ClusterType>
 		{
 			Wt::Dbo::field(a, _name,	"name");
 			Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToOne, "cluster_type");
+			Wt::Dbo::belongsTo(a, _scanSettings, "scan_settings", Wt::Dbo::OnDeleteCascade);
 		}
 
 	private:
@@ -109,6 +111,7 @@ class ClusterType : public Wt::Dbo::Dbo<ClusterType>
 
 		std::string     _name;
 		Wt::Dbo::collection< Wt::Dbo::ptr<Cluster> > _clusters;
+		Wt::Dbo::ptr<ScanSettings> _scanSettings;
 };
 
 } // namespace Database

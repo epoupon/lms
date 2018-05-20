@@ -28,25 +28,10 @@
 
 #include "metadata/TagLibParser.hpp"
 
+#include "database/ScanSettings.hpp"
 #include "database/DatabaseHandler.hpp"
 
 namespace Scanner {
-
-enum class UpdatePeriod {
-	Never = 0,
-	Daily,
-	Weekly,
-	Monthly
-};
-
-UpdatePeriod getUpdatePeriod(Wt::Dbo::Session& session);
-void setUpdatePeriod(Wt::Dbo::Session& session, UpdatePeriod updatePeriod);
-
-Wt::WTime getUpdateStartTime(Wt::Dbo::Session& session);
-void setUpdateStartTime(Wt::Dbo::Session& session, Wt::WTime time);
-
-std::set<std::string> getClusterTypes(Wt::Dbo::Session& session);
-void setClusterTypes(Wt::Dbo::Session& session, const std::set<std::string> clusterTypes);
 
 class MediaScanner
 {
@@ -93,13 +78,12 @@ class MediaScanner
 		// Update database (scheduled callback)
 		void scan(boost::system::error_code ec);
 
-		void scanRootDirectory( boost::filesystem::path rootDirectory, bool forceScan, Stats& stats);
+		void scanMediaDirectory( boost::filesystem::path mediaDirectory, bool forceScan, Stats& stats);
 
 		// Helpers
 		void refreshScanSettings();
 
 		void checkAudioFiles( Stats& stats );
-		bool checkClusters();
 		void checkDuplicatedAudioFiles( Stats& stats );
 		void scanAudioFile( const boost::filesystem::path& file, bool forceScan, Stats& stats);
 
@@ -112,9 +96,11 @@ class MediaScanner
 
 		Database::Handler	_db;
 
-		// Scan settings
-		std::vector<boost::filesystem::path>	_fileExtensions;
-		std::vector<boost::filesystem::path>	_rootDirectories;
+		// Current scan settings
+		Wt::WTime _startTime;
+		Database::ScanSettings::UpdatePeriod _updatePeriod;
+		std::set<boost::filesystem::path>	_fileExtensions;
+		boost::filesystem::path			_mediaDirectory;
 
 		MetaData::TagLibParser 	_metadataParser;
 

@@ -29,8 +29,6 @@
 #include <Wt/WStringListModel.h>
 
 #include "common/Validators.hpp"
-#include "database/MediaDirectory.hpp"
-#include "scanner/MediaScanner.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
@@ -80,40 +78,45 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			std::vector<MediaDirectory::pointer> mediaDirectories = MediaDirectory::getAll(LmsApp->getDboSession());
-			if (!mediaDirectories.empty())
-				setValue(MediaDirectoryField, mediaDirectories.front()->getPath().string());
+			auto scanSettings = ScanSettings::get(LmsApp->getDboSession());
 
-			auto periodRow = getUpdatePeriodModelRow( Scanner::getUpdatePeriod(LmsApp->getDboSession()) );
+			setValue(MediaDirectoryField, scanSettings->getMediaDirectory());
+
+			auto periodRow = getUpdatePeriodModelRow( scanSettings->getUpdatePeriod() );
 			if (periodRow)
 				setValue(UpdatePeriodField, updatePeriodString(*periodRow));
 
-			auto startTimeRow = getUpdateStartTimeModelRow( Scanner::getUpdateStartTime(LmsApp->getDboSession()) );
+			auto startTimeRow = getUpdateStartTimeModelRow( scanSettings->getUpdateStartTime() );
 			if (startTimeRow)
 				setValue(UpdateStartTimeField, updateStartTimeString(*startTimeRow) );
 
-			auto clusterTypes = Scanner::getClusterTypes(LmsApp->getDboSession());
+			auto clusterTypes = scanSettings->getClusterTypes();
 			if (!clusterTypes.empty())
-				setValue(TagsField, joinStrings(std::vector<std::string>(clusterTypes.begin(), clusterTypes.end()), " "));
+			{
+				std::vector<std::string> names;
+				std::transform(clusterTypes.begin(), clusterTypes.end(),std::back_inserter(names),  [](auto clusterType) { return clusterType->getName(); });
+				setValue(TagsField, joinStrings(names, " "));
+			}
 		}
 
 		void saveData()
 		{
 			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			MediaDirectory::eraseAll(LmsApp->getDboSession());
-			MediaDirectory::create(LmsApp->getDboSession(), valueText(MediaDirectoryField).toUTF8());
+			auto scanSettings = ScanSettings::get(LmsApp->getDboSession());
+
+			scanSettings.modify()->setMediaDirectory(valueText(MediaDirectoryField).toUTF8());
 
 			auto updatePeriodRow = getUpdatePeriodModelRow( valueText(UpdatePeriodField));
 			assert(updatePeriodRow);
-			Scanner::setUpdatePeriod(LmsApp->getDboSession(), updatePeriod(*updatePeriodRow));
+			scanSettings.modify()->setUpdatePeriod(updatePeriod(*updatePeriodRow));
 
 			auto startTimeRow = getUpdateStartTimeModelRow( valueText(UpdateStartTimeField));
 			assert(startTimeRow);
-			Scanner::setUpdateStartTime(LmsApp->getDboSession(), updateStartTime(*startTimeRow));
+			scanSettings.modify()->setUpdateStartTime(updateStartTime(*startTimeRow));
 
 			auto clusterTypes = splitString(valueText(TagsField).toUTF8(), " ");
-			Scanner::setClusterTypes(LmsApp->getDboSession(), std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
+			scanSettings.modify()->setClusterTypes(std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
 		}
 
 		boost::optional<int> getUpdatePeriodModelRow(Wt::WString value)
@@ -127,7 +130,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			return boost::none;
 		}
 
-		boost::optional<int> getUpdatePeriodModelRow(Scanner::UpdatePeriod period)
+		boost::optional<int> getUpdatePeriodModelRow(ScanSettings::UpdatePeriod period)
 		{
 			for (int i = 0; i < _updatePeriodModel->rowCount(); ++i)
 			{
@@ -138,9 +141,9 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			return boost::none;
 		}
 
-		Scanner::UpdatePeriod updatePeriod(int row)
+		ScanSettings::UpdatePeriod updatePeriod(int row)
 		{
-			return Wt::cpp17::any_cast<Scanner::UpdatePeriod>
+			return Wt::cpp17::any_cast<ScanSettings::UpdatePeriod>
 				(_updatePeriodModel->data(_updatePeriodModel->index(row, 0), Wt::ItemDataRole::User));
 		}
 
@@ -200,16 +203,16 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			_updatePeriodModel = std::make_shared<Wt::WStringListModel>();
 
 			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.never"));
-			_updatePeriodModel->setData(0, 0, Scanner::UpdatePeriod::Never, Wt::ItemDataRole::User);
+			_updatePeriodModel->setData(0, 0, ScanSettings::UpdatePeriod::Never, Wt::ItemDataRole::User);
 
 			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.daily"));
-			_updatePeriodModel->setData(1, 0, Scanner::UpdatePeriod::Daily, Wt::ItemDataRole::User);
+			_updatePeriodModel->setData(1, 0, ScanSettings::UpdatePeriod::Daily, Wt::ItemDataRole::User);
 
 			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.weekly"));
-			_updatePeriodModel->setData(2, 0, Scanner::UpdatePeriod::Weekly, Wt::ItemDataRole::User);
+			_updatePeriodModel->setData(2, 0, ScanSettings::UpdatePeriod::Weekly, Wt::ItemDataRole::User);
 
 			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.monthly"));
-			_updatePeriodModel->setData(3, 0, Scanner::UpdatePeriod::Monthly, Wt::ItemDataRole::User);
+			_updatePeriodModel->setData(3, 0, ScanSettings::UpdatePeriod::Monthly, Wt::ItemDataRole::User);
 
 			_updateStartTimeModel = std::make_shared<Wt::WStringListModel>();
 

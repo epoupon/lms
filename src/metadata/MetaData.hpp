@@ -63,24 +63,16 @@ namespace MetaData
 	// See enum Type's comments
 	using Items = std::map<Type, boost::any>;
 	using Clusters = std::map<std::string /* type */, std::set<std::string> /* names */>;
-	using ClusterTypes = std::set<std::string>;
 
 	class Parser
 	{
 		public:
-			static const ClusterTypes defaultClusterTypes;
-
-			// Provide a map for tag name -> Cluster name
-			Parser(const ClusterTypes& clusterTypes) : _clusterTypes(clusterTypes) {}
-
 			virtual boost::optional<Items> parse(const boost::filesystem::path& p, bool debug = false) = 0;
 
-			void updateClusterTypes(const ClusterTypes& clusterTypes) { _clusterTypes = clusterTypes; }
-			const ClusterTypes& getClusterTypes() const { return _clusterTypes; }
-			bool isClusterTypeSupported(const std::string& clusterType) const { return _clusterTypes.find(clusterType) != _clusterTypes.end(); }
+			void setClusterTypeNames(const std::set<std::string>& clusterTypeNames) { _clusterTypeNames = clusterTypeNames; }
 
 		protected:
-			ClusterTypes _clusterTypes;
+			std::set<std::string> _clusterTypeNames;
 	};
 
 } // namespace MetaData
