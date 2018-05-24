@@ -11,7 +11,6 @@ lms_SOURCES = \
 	$(srcdir)/database/Playlist.cpp				\
 	$(srcdir)/database/Release.cpp				\
 	$(srcdir)/database/ScanSettings.cpp			\
-	$(srcdir)/database/Setting.cpp				\
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/User.cpp				\
@@ -33,7 +32,6 @@ lms_SOURCES = \
 	$(srcdir)/ui/explore/ArtistView.cpp			\
 	$(srcdir)/ui/explore/ArtistsView.cpp			\
 	$(srcdir)/ui/explore/Explore.cpp			\
-	$(srcdir)/ui/explore/ExploreUtils.cpp			\
 	$(srcdir)/ui/explore/Filters.cpp			\
 	$(srcdir)/ui/explore/ReleasesView.cpp			\
 	$(srcdir)/ui/explore/ReleaseView.cpp			\

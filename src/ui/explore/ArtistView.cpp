@@ -34,31 +34,14 @@
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
-#include "ExploreUtils.hpp"
 
 using namespace Database;
-
-namespace {
-
-const std::string artistClusterTypesSetting = "artist_cluster_types";
-const std::set<std::string> defaultArtistClusterTypes =
-{
-	"GENRE",
-	"ALBUMGROUPING",
-	"ALBUMMOOD",
-	"COMMENT:SONGS-DB_OCCASION",
-};
-
-} // namespace
 
 namespace UserInterface {
 
 Artist::Artist(Filters* filters)
 : _filters(filters)
 {
-	if (!Setting::exists(LmsApp->getDboSession(), artistClusterTypesSetting))
-		setClusterTypesToSetting(artistClusterTypesSetting, defaultArtistClusterTypes);
-
 	wApp->internalPathChanged().connect(std::bind([=]
 	{
 		refresh();
@@ -98,7 +81,7 @@ Artist::refresh()
 	Wt::WContainerWidget* clusterContainers = t->bindNew<Wt::WContainerWidget>("clusters");
 
 	{
-		auto clusterTypes = getClusterTypesFromSetting(artistClusterTypesSetting);
+		auto clusterTypes = ScanSettings::get(LmsApp->getDboSession())->getClusterTypes();
 		auto clusterGroups = artist->getClusterGroups(clusterTypes, 3);
 
 		for (auto clusters : clusterGroups)

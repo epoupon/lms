@@ -26,7 +26,6 @@
 
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
-#include "database/Setting.hpp"
 #include "database/Track.hpp"
 
 #include "utils/Logger.hpp"
@@ -36,22 +35,8 @@
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
-#include "ExploreUtils.hpp"
 
 using namespace Database;
-
-namespace {
-
-const std::string trackClusterTypesSetting = "track_cluster_types";
-const std::set<std::string> defaultTrackClusterTypes =
-{
-	"GENRE",
-	"ALBUMGROUPING",
-	"ALBUMMOOD",
-	"COMMENT:SONGS-DB_OCCASION",
-};
-
-} // namespace
 
 namespace UserInterface {
 
@@ -59,9 +44,6 @@ Tracks::Tracks(Filters* filters)
 : Wt::WTemplate(Wt::WString::tr("Lms.Explore.Tracks.template")),
 _filters(filters)
 {
-	if (!Setting::exists(LmsApp->getDboSession(), trackClusterTypesSetting))
-		setClusterTypesToSetting(trackClusterTypesSetting, defaultTrackClusterTypes);
-
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_search = bindNew<Wt::WLineEdit>("search");
@@ -154,7 +136,7 @@ Tracks::addSome()
 
 		Wt::WContainerWidget* clusterContainers = entry->bindNew<Wt::WContainerWidget>("clusters");
 		{
-			auto clusterTypes = getClusterTypesFromSetting(trackClusterTypesSetting);
+			auto clusterTypes = ScanSettings::get(LmsApp->getDboSession())->getClusterTypes();
 			auto clusterGroups = track->getClusterGroups(clusterTypes, 1);
 
 			for (auto clusters : clusterGroups)

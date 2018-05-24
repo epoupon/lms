@@ -26,7 +26,6 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Release.hpp"
-#include "database/Setting.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -35,20 +34,8 @@
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
-#include "ExploreUtils.hpp"
 
 using namespace Database;
-
-namespace {
-
-const std::string releasesClusterTypesSetting = "releases_cluster_types";
-const std::set<std::string> defaultReleasesClusterTypes =
-{
-	"GENRE",
-	"ALBUMGROUPING",
-};
-
-} // namespace
 
 namespace UserInterface {
 
@@ -56,9 +43,6 @@ Releases::Releases(Filters* filters)
 : Wt::WTemplate(Wt::WString::tr("Lms.Explore.Releases.template")),
 _filters(filters)
 {
-	if (!Setting::exists(LmsApp->getDboSession(), releasesClusterTypesSetting))
-		setClusterTypesToSetting(releasesClusterTypesSetting, defaultReleasesClusterTypes);
-
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_search = bindNew<Wt::WLineEdit>("search");
@@ -126,7 +110,7 @@ Releases::addSome()
 
 		Wt::WContainerWidget* clusterContainers = entry->bindNew<Wt::WContainerWidget>("clusters");
 		{
-			auto clusterTypes = getClusterTypesFromSetting(releasesClusterTypesSetting);
+			auto clusterTypes = ScanSettings::get(LmsApp->getDboSession())->getClusterTypes();
 			auto clusterGroups = release->getClusterGroups(clusterTypes, 1);
 
 			for (auto clusters : clusterGroups)

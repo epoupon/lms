@@ -31,21 +31,8 @@
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
-#include "ExploreUtils.hpp"
 
 using namespace Database;
-
-namespace {
-
-const std::string artistsClusterTypesSetting = "artists_cluster_types";
-const std::set<std::string> defaultArtistsClusterTypes =
-{
-	"ALBUMGROUPING",
-	"GENRE",
-	"ALBUMMOOD",
-};
-
-}
 
 namespace UserInterface {
 
@@ -53,9 +40,6 @@ Artists::Artists(Filters* filters)
 : Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artists.template")),
   _filters(filters)
 {
-	if (!Setting::exists(LmsApp->getDboSession(), artistsClusterTypesSetting))
-		setClusterTypesToSetting(artistsClusterTypesSetting, defaultArtistsClusterTypes);
-
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_search = bindNew<Wt::WLineEdit>("search");
@@ -109,7 +93,7 @@ Artists::addSome()
 
 		Wt::WContainerWidget* clusterContainers = entry->bindNew<Wt::WContainerWidget>("clusters");
 		{
-			auto clusterTypes = getClusterTypesFromSetting(artistsClusterTypesSetting);
+			auto clusterTypes = ScanSettings::get(LmsApp->getDboSession())->getClusterTypes();
 			auto clusterGroups = artist->getClusterGroups(clusterTypes, 1);
 
 			for (auto clusters : clusterGroups)

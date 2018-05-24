@@ -27,7 +27,6 @@
 namespace Database {
 
 class ClusterType;
-// class meant to store general settings
 class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 {
 	public:

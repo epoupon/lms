@@ -26,7 +26,6 @@
 #include <Wt/WText.h>
 
 #include "database/Release.hpp"
-#include "database/Setting.hpp"
 #include "database/Track.hpp"
 
 #include "utils/Logger.hpp"
@@ -36,31 +35,14 @@
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
-#include "ExploreUtils.hpp"
 
 using namespace Database;
-
-namespace {
-
-const std::string releaseClusterTypesSetting = "release_cluster_types";
-const std::set<std::string> defaultReleaseClusterTypes =
-{
-	"GENRE",
-	"ALBUMGROUPING",
-	"ALBUMMOOD",
-	"COMMENT:SONGS-DB_OCCASION",
-};
-
-} // namespace
 
 namespace UserInterface {
 
 Release::Release(Filters* filters)
 : _filters(filters)
 {
-	if (!Setting::exists(LmsApp->getDboSession(), releaseClusterTypesSetting))
-		setClusterTypesToSetting(releaseClusterTypesSetting, defaultReleaseClusterTypes);
-
 	wApp->internalPathChanged().connect(std::bind([=]
 	{
 		refresh();
@@ -131,7 +113,7 @@ Release::refresh()
 
 	Wt::WContainerWidget* clusterContainers = t->bindNew<Wt::WContainerWidget>("clusters");
 	{
-		auto clusterTypes = getClusterTypesFromSetting(releaseClusterTypesSetting);
+		auto clusterTypes = ScanSettings::get(LmsApp->getDboSession())->getClusterTypes();
 		auto clusterGroups = release->getClusterGroups(clusterTypes, 3);
 
 		for (auto clusters : clusterGroups)
