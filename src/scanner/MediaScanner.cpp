@@ -345,6 +345,8 @@ MediaScanner::refreshScanSettings()
 
 	auto scanSettings = ScanSettings::get(_db.getSession());
 
+	LMS_LOG(DBUPDATER, INFO) << "Using scan settings version " << scanSettings->getScanVersion();
+
 	_scanVersion = scanSettings->getScanVersion();
 	_startTime = scanSettings->getUpdateStartTime();
 	_updatePeriod = scanSettings->getUpdatePeriod();
@@ -607,21 +609,18 @@ checkFile(const boost::filesystem::path& p, boost::filesystem::path mediaDirecto
 		if (!boost::filesystem::exists( p )
 			|| !boost::filesystem::is_regular( p ) )
 		{
-			LMS_LOG(DBUPDATER, INFO) << "Missing file '" << p.string() << "'";
+			LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': missing";
 			status = false;
 		}
-		else
+		else if (!isPathInParentPath(p, mediaDirectory))
 		{
-			if (!isPathInParentPath(p, mediaDirectory))
-			{
-				LMS_LOG(DBUPDATER, INFO) << "File '" << p.string() << "' is out of media directory '";
-				status = false;
-			}
-			else if (!isFileSupported(p, extensions))
-			{
-				LMS_LOG(DBUPDATER, INFO) << "File format no longer supported for '" << p.string() << "'";
-				status = false;
-			}
+			LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': out of media directory";
+			status = false;
+		}
+		else if (!isFileSupported(p, extensions))
+		{
+			LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': file format no longer handled";
+			status = false;
 		}
 
 		return status;
@@ -632,7 +631,6 @@ checkFile(const boost::filesystem::path& p, boost::filesystem::path mediaDirecto
 		LMS_LOG(DBUPDATER, ERROR) << "Caught exception while checking file '" << p.string() << "': " << e.what();
 		return false;
 	}
-
 }
 
 void

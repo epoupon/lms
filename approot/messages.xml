@@ -24,7 +24,7 @@
 <message id="Lms.Admin.Database.monthly">Monthly</message>
 <message id="Lms.Admin.Database.never">Never</message>
 <message id="Lms.Admin.Database.path">Media root directory</message>
-<message id="Lms.Admin.Database.scan-complete">Scan complete: {1} total files, {2} additions, {3} deletions, {4} duplicates, {5} errors</message>
+<message id="Lms.Admin.Database.scan-complete">Scan complete: {1} total files, {2} additions, {3} updates, {4} deletions, {5} duplicates, {6} errors</message>
 <message id="Lms.Admin.Database.scan-launched">Scan launched!</message>
 <message id="Lms.Admin.Database.scan-options">Scan options</message>
 <message id="Lms.Admin.Database.settings-saved">New settings saved!</message>

@@ -401,6 +401,7 @@ LmsApplication::handleAuthEvent(void)
 				notifyMsg(Wt::WString::tr("Lms.Admin.Database.scan-complete")
 					.arg(static_cast<unsigned>(stats.nbFiles()))
 					.arg(static_cast<unsigned>(stats.additions))
+					.arg(static_cast<unsigned>(stats.updates))
 					.arg(static_cast<unsigned>(stats.deletions))
 					.arg(static_cast<unsigned>(stats.nbDuplicates()))
 					.arg(static_cast<unsigned>(stats.nbErrors())));

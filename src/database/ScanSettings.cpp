@@ -80,10 +80,6 @@ ScanSettings::setClusterTypes(const std::set<std::string>& clusterTypeNames)
 	bool needRescan = false;
 	assert(session());
 
-	// Backup the old list
-	std::vector<ClusterType::pointer> oldClusterTypes(_clusterTypes.begin(), _clusterTypes.end());
-
-	_clusterTypes.clear();
 	// Create any missing cluster type
 	for (auto clusterTypeName : clusterTypeNames)
 	{
@@ -98,13 +94,13 @@ ScanSettings::setClusterTypes(const std::set<std::string>& clusterTypeNames)
 	}
 
 	// Delete no longer existing cluster types
-	for (auto oldClusterType : oldClusterTypes)
+	for (auto clusterType : _clusterTypes)
 	{
 		if (std::none_of(clusterTypeNames.begin(), clusterTypeNames.end(),
-			[oldClusterType](const std::string& name) { return name == oldClusterType->getName(); }))
+			[clusterType](const std::string& name) { return name == clusterType->getName(); }))
 		{
-			LMS_LOG(DB, INFO) << "Deleting cluster type " << oldClusterType->getName();
-			oldClusterType.remove();
+			LMS_LOG(DB, INFO) << "Deleting cluster type " << clusterType->getName();
+			clusterType.remove();
 			needRescan = true;
 		}
 	}
