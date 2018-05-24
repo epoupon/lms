@@ -77,6 +77,7 @@ ScanSettings::setMediaDirectory(boost::filesystem::path p)
 void
 ScanSettings::setClusterTypes(const std::set<std::string>& clusterTypeNames)
 {
+	bool needRescan = false;
 	assert(session());
 
 	// Backup the old list
@@ -91,6 +92,7 @@ ScanSettings::setClusterTypes(const std::set<std::string>& clusterTypeNames)
 		{
 			LMS_LOG(DB, INFO) << "Creating cluster type " << clusterTypeName;
 			clusterType = ClusterType::create(*session(), clusterTypeName);
+			needRescan = true;
 		}
 		_clusterTypes.insert(clusterType);
 	}
@@ -103,8 +105,12 @@ ScanSettings::setClusterTypes(const std::set<std::string>& clusterTypeNames)
 		{
 			LMS_LOG(DB, INFO) << "Deleting cluster type " << oldClusterType->getName();
 			oldClusterType.remove();
+			needRescan = true;
 		}
 	}
+
+	if (needRescan)
+		_scanVersion += 1;
 }
 
 } // namespace Database

@@ -44,6 +44,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		static pointer get(Wt::Dbo::Session& session);
 
 		// Getters
+		std::size_t getScanVersion() const { return _scanVersion; }
 		boost::filesystem::path getMediaDirectory() const { return _mediaDirectory; }
 		Wt::WTime getUpdateStartTime() const { return _startTime; }
 		UpdatePeriod getUpdatePeriod() const { return _updatePeriod; }
@@ -60,6 +61,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		template<class Action>
 		void persist(Action& a)
 		{
+			Wt::Dbo::field(a, _scanVersion,		"scan_version");
 			Wt::Dbo::field(a, _mediaDirectory,	"media_directory");
 			Wt::Dbo::field(a, _startTime,		"start_time");
 			Wt::Dbo::field(a, _updatePeriod,	"update_period");
@@ -69,6 +71,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 
 	private:
 
+		int		_scanVersion = 0;
 		std::string	_mediaDirectory = "";
 		Wt::WTime	_startTime = Wt::WTime(0,0,0);
 		UpdatePeriod	_updatePeriod = UpdatePeriod::Never;

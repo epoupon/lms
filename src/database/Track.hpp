@@ -81,6 +81,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static void removeClusters(std::string type);
 
 		// Accessors
+		void setScanVersion(std::size_t version)			{_scanVersion = version; }
 		void setTrackNumber(int num)					{ _trackNumber = num; }
 		void setTotalTrackNumber(int num)				{ _totalTrackNumber = num; }
 		void setDiscNumber(int num)					{ _discNumber = num; }
@@ -98,29 +99,31 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setArtist(Wt::Dbo::ptr<Artist> artist)			{ _artist = artist; }
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
 
-		boost::optional<std::size_t>	getTrackNumber(void) const;
-		boost::optional<std::size_t>	getTotalTrackNumber(void) const;
-		boost::optional<std::size_t>	getDiscNumber(void) const;
-		boost::optional<std::size_t>	getTotalDiscNumber(void) const;
-		std::string 			getName(void) const			{ return _name; }
-		boost::filesystem::path		getPath(void) const			{ return _filePath; }
-		std::chrono::milliseconds	getDuration(void) const			{ return _duration; }
-		boost::optional<int>		getYear(void) const;
-		boost::optional<int>		getOriginalYear(void) const;
-		Wt::WDateTime			getLastWriteTime(void) const		{ return _fileLastWrite; }
-		Wt::WDateTime			getAddedTime(void) const		{ return _fileAdded; }
-		const std::vector<unsigned char>& getChecksum(void) const		{ return _fileChecksum; }
-		CoverType			getCoverType(void) const		{ return _coverType; }
-		const std::string&		getMBID(void) const			{ return _MBID; }
-		Wt::Dbo::ptr<Artist>		getArtist(void) const			{ return _artist; }
-		Wt::Dbo::ptr<Release>		getRelease(void) const			{ return _release; }
-		std::vector<Wt::Dbo::ptr<Cluster>>	getClusters(void) const;
+		std::size_t 			getScanVersion() const		{ return _scanVersion; }
+		boost::optional<std::size_t>	getTrackNumber() const;
+		boost::optional<std::size_t>	getTotalTrackNumber() const;
+		boost::optional<std::size_t>	getDiscNumber() const;
+		boost::optional<std::size_t>	getTotalDiscNumber() const;
+		std::string 			getName() const			{ return _name; }
+		boost::filesystem::path		getPath() const			{ return _filePath; }
+		std::chrono::milliseconds	getDuration() const		{ return _duration; }
+		boost::optional<int>		getYear() const;
+		boost::optional<int>		getOriginalYear() const;
+		Wt::WDateTime			getLastWriteTime() const	{ return _fileLastWrite; }
+		Wt::WDateTime			getAddedTime() const		{ return _fileAdded; }
+		const std::vector<unsigned char>& getChecksum() const		{ return _fileChecksum; }
+		CoverType			getCoverType() const		{ return _coverType; }
+		const std::string&		getMBID() const			{ return _MBID; }
+		Wt::Dbo::ptr<Artist>		getArtist() const		{ return _artist; }
+		Wt::Dbo::ptr<Release>		getRelease() const		{ return _release; }
+		std::vector<Wt::Dbo::ptr<Cluster>>	getClusters() const;
 
 		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
 
 		template<class Action>
 			void persist(Action& a)
 			{
+				Wt::Dbo::field(a, _scanVersion,		"scan_version");
 				Wt::Dbo::field(a, _trackNumber,		"track_number");
 				Wt::Dbo::field(a, _totalTrackNumber,	"total_track_number");
 				Wt::Dbo::field(a, _discNumber,		"disc_number");
@@ -146,6 +149,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 
 		static const std::size_t _maxNameLength = 128;
 
+		int					_scanVersion = 0;
 		int					_trackNumber = 0;
 		int					_totalTrackNumber = 0;
 		int					_discNumber = 0;

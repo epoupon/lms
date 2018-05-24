@@ -345,6 +345,7 @@ MediaScanner::refreshScanSettings()
 
 	auto scanSettings = ScanSettings::get(_db.getSession());
 
+	_scanVersion = scanSettings->getScanVersion();
 	_startTime = scanSettings->getUpdateStartTime();
 	_updatePeriod = scanSettings->getUpdatePeriod();
 
@@ -369,16 +370,14 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	if (!forceScan)
 	{
 		// Skip file if last write is the same
+		Wt::Dbo::Transaction transaction(_db.getSession());
+
+		Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
+
+		if (track && track->getLastWriteTime() == lastWriteTime && track->getScanVersion() == _scanVersion)
 		{
-			Wt::Dbo::Transaction transaction(_db.getSession());
-
-			Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
-
-			if (track && track->getLastWriteTime() == lastWriteTime)
-			{
-				stats.skips++;
-				return;
-			}
+			stats.skips++;
+			return;
 		}
 	}
 
@@ -508,6 +507,7 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 
 	assert(track);
 
+	track.modify()->setScanVersion(_scanVersion);
 	track.modify()->setChecksum(checksum);
 	track.modify()->setArtist(artist);
 	track.modify()->setRelease(release);

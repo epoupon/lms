@@ -97,6 +97,7 @@ class MediaScanner
 		Database::Handler	_db;
 
 		// Current scan settings
+		std::size_t _scanVersion;
 		Wt::WTime _startTime;
 		Database::ScanSettings::UpdatePeriod _updatePeriod;
 		std::set<boost::filesystem::path>	_fileExtensions;
