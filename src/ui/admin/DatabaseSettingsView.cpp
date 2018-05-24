@@ -80,7 +80,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 			auto scanSettings = ScanSettings::get(LmsApp->getDboSession());
 
-			setValue(MediaDirectoryField, scanSettings->getMediaDirectory());
+			setValue(MediaDirectoryField, scanSettings->getMediaDirectory().string());
 
 			auto periodRow = getUpdatePeriodModelRow( scanSettings->getUpdatePeriod() );
 			if (periodRow)
