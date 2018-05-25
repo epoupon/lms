@@ -165,7 +165,7 @@ PlayQueue::updateCurrentTrack(bool selected)
 }
 
 void
-PlayQueue::addTracks(const std::vector<Database::Track::pointer>& tracks)
+PlayQueue::enqueueTracks(const std::vector<Database::Track::pointer>& tracks)
 {
 	// Use a "session" playqueue in order to store the current playqueue
 	// so that the user can disconnect and get its playqueue back
@@ -182,6 +182,13 @@ PlayQueue::addTracks(const std::vector<Database::Track::pointer>& tracks)
 }
 
 void
+PlayQueue::addTracks(const std::vector<Database::Track::pointer>& tracks)
+{
+	enqueueTracks(tracks);
+	LmsApp->notifyMsg(Wt::WString::tr("Lms.PlayQueue.nb-tracks-added").arg(tracks.size()));
+}
+
+void
 PlayQueue::playTracks(const std::vector<Database::Track::pointer>& tracks)
 {
 	LMS_LOG(UI, DEBUG) << "Emptying current queue to play new tracks";
@@ -193,9 +200,10 @@ PlayQueue::playTracks(const std::vector<Database::Track::pointer>& tracks)
 
 	_entriesContainer->clear();
 
-	addTracks(tracks);
-
+	enqueueTracks(tracks);
 	play(0);
+
+	LmsApp->notifyMsg(Wt::WString::tr("Lms.PlayQueue.nb-tracks-playing").arg(tracks.size()));
 }
 
 

@@ -51,6 +51,7 @@ class PlayQueue : public Wt::WTemplate
 		Wt::Signal<> playbackStop;
 
 	private:
+		void enqueueTracks(const std::vector<Database::Track::pointer>& tracks);
 		void addSome();
 		void updateInfo();
 		void updateCurrentTrack(bool selected);
