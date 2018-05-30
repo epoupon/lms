@@ -20,6 +20,7 @@
 
 #include <cassert>
 
+#include "Cluster.hpp"
 #include "User.hpp"
 #include "Track.hpp"
 
@@ -50,7 +51,7 @@ PlaylistEntry::PlaylistEntry()
 }
 
 PlaylistEntry::pointer
-PlaylistEntry::getById(Wt::Dbo::Session& session, PlaylistEntry::id_type id)
+PlaylistEntry::getById(Wt::Dbo::Session& session, IdType id)
 {
 	return session.find<PlaylistEntry>().where("id = ?").bind(id);
 }
@@ -132,5 +133,32 @@ Playlist::getCount() const
 {
 	return _entries.size();
 }
+
+std::vector<Wt::Dbo::ptr<Cluster>>
+Playlist::getClusters() const
+{
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
+	Wt::Dbo::collection<Cluster::pointer> res = session()->query<Cluster::pointer>("SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN playlist_entry p_e ON p_e.track_id = t.id INNER JOIN playlist p ON p.id = p_e.playlist_id")
+		.where("p.id = ?").bind(self()->id())
+		.groupBy("c.id")
+		.orderBy("COUNT(c.id) DESC");
+
+	return std::vector<Wt::Dbo::ptr<Cluster>>(res.begin(), res.end());
+}
+
+bool
+Playlist::hasTrack(IdType trackId) const
+{
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
+	Wt::Dbo::collection<PlaylistEntry::pointer> res = session()->query<PlaylistEntry::pointer>("SELECT p_e from playlist_entry p_e INNER JOIN playlist p ON p_e.playlist_id = p.id")
+		.where("p_e.track_id = ?").bind(trackId);
+
+	return res.size() > 0;
+}
+
 
 } // namespace Database

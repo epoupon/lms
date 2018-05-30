@@ -11,6 +11,7 @@
 		<h2>${tr:Lms.PlayQueue.playqueue}</h2>
 		<small>${nb-tracks}</small>
 		${clear-btn}
+		${radio-mode}
 	</div>
 	${entries}
 	${show-more}

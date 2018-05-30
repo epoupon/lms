@@ -19,6 +19,8 @@
 
 #include "PlayQueueView.hpp"
 
+#include <random>
+
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
 #include <Wt/WText.h>
@@ -45,6 +47,8 @@ PlayQueue::PlayQueue()
 	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
 	_showMore->setHidden(true);
+
+	_radioMode = bindNew<Wt::WCheckBox>("radio-mode", Wt::WString::tr("Lms.PlayQueue.radio-mode"));
 
 	_nbTracks = bindNew<Wt::WText>("nb-tracks");
 
@@ -106,6 +110,10 @@ PlayQueue::play(std::size_t pos)
 			stop();
 			return;
 		}
+
+		// If last and radio mode, fill the next song
+		if (_radioMode->checkState() == Wt::CheckState::Checked && pos == playlist->getCount() - 1)
+			addRadioTrack();
 
 		_trackPos = pos;
 		trackId = playlist->getEntry(*_trackPos)->getTrack().id();
@@ -179,6 +187,12 @@ PlayQueue::enqueueTracks(const std::vector<Database::Track::pointer>& tracks)
 
 	updateInfo();
 	addSome();
+}
+
+void
+PlayQueue::enqueueTrack(Database::Track::pointer track)
+{
+	enqueueTracks(std::vector<Database::Track::pointer>(1, track));
 }
 
 void
@@ -272,6 +286,44 @@ PlayQueue::addSome()
 	}
 
 	_showMore->setHidden(!moreResults);
+}
+
+void
+PlayQueue::addRadioTrack()
+{
+	auto now = std::chrono::system_clock::now();
+	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
+
+	LMS_LOG(UI, INFO) << "Radio mode: adding track";
+
+	auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
+
+	// Get all the tracks of the playlist, get the cluster that is mostly used
+	// and reuse it to get the next track
+	auto clusters = playlist->getClusters();
+	if (clusters.empty())
+		return;
+
+	for (auto cluster : clusters)
+	{
+		LMS_LOG(UI, DEBUG) << "Processing cluster '" << cluster->getName() << "'";
+
+		auto nbTracks = cluster->getTrackCount();
+		if (nbTracks == 0)
+			continue;
+
+		std::uniform_int_distribution<int> dist(0, nbTracks - 1);
+
+		auto trackToAdd = cluster->getTracks(dist(randGenerator), 1).front();
+
+		if (!playlist->hasTrack(trackToAdd.id()))
+		{
+			enqueueTrack(trackToAdd);
+			return;
+		}
+	}
+
+	LMS_LOG(UI, INFO) << "No more track to be added!";
 }
 
 } // namespace UserInterface

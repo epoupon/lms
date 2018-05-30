@@ -57,6 +57,24 @@ Cluster::getById(Wt::Dbo::Session& session, IdType id)
 	return session.find<Cluster>().where("id = ?").bind(id);
 }
 
+void
+Cluster::addTrack(Wt::Dbo::ptr<Track> track)
+{
+	_tracks.insert(track);
+}
+
+std::vector<Wt::Dbo::ptr<Track>>
+Cluster::getTracks(int offset, int limit) const
+{
+	Wt::Dbo::collection<Track::pointer> res = session()->query<Track::pointer>("select t from track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+						.where("c.id = ?").bind(self()->id())
+						.offset(offset)
+						.limit(limit);
+
+	return std::vector<Wt::Dbo::ptr<Track>>(res.begin(), res.end());
+}
+
+
 ClusterType::ClusterType(std::string name)
 	: _name(name)
 {
@@ -117,11 +135,6 @@ ClusterType::getClusters() const
 	return std::vector<Cluster::pointer>(res.begin(), res.end());
 }
 
-void
-Cluster::addTrack(Wt::Dbo::ptr<Track> track)
-{
-	_tracks.insert(track);
-}
 
 } // namespace Database
 

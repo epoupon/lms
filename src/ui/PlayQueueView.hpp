@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <Wt/WCheckBox.h>
 #include <Wt/WContainerWidget.h>
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
@@ -52,13 +53,16 @@ class PlayQueue : public Wt::WTemplate
 
 	private:
 		void enqueueTracks(const std::vector<Database::Track::pointer>& tracks);
+		void enqueueTrack(Database::Track::pointer track);
 		void addSome();
+		void addRadioTrack();
 		void updateInfo();
 		void updateCurrentTrack(bool selected);
 
 		void play(std::size_t pos);
 		void stop();
 
+		Wt::WCheckBox* _radioMode;
 		Wt::WContainerWidget* _entriesContainer;
 		Wt::WTemplate* _showMore;
 		Wt::WText* _nbTracks;

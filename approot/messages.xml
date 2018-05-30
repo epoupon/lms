@@ -68,10 +68,11 @@
 <message id="Lms.Explore.various-artists">Various artists</message>
 
 <!--Playque-->
-<message id="Lms.PlayQueue.playqueue">Play Queue</message>
 <message id="Lms.PlayQueue.nb-tracks">{1} tracks</message>
 <message id="Lms.PlayQueue.nb-tracks-added">Added {1} tracks</message>
 <message id="Lms.PlayQueue.nb-tracks-playing">Playing {1} tracks</message>
+<message id="Lms.PlayQueue.playqueue">Play Queue</message>
+<message id="Lms.PlayQueue.radio-mode">Radio mode</message>
 
 <!--Settings-->
 <message id="Lms.Settings.account">Account</message>

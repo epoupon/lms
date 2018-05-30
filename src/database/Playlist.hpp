@@ -23,11 +23,14 @@
 
 #include <string>
 
+#include "Types.hpp"
+
 namespace Database {
 
 class PlaylistEntry;
 class User;
 class Track;
+class Cluster;
 
 class Playlist : public Wt::Dbo::Dbo<Playlist>
 {
@@ -56,6 +59,11 @@ class Playlist : public Wt::Dbo::Dbo<Playlist>
 		Wt::Dbo::ptr<PlaylistEntry> getEntry(std::size_t pos) const;
 		std::vector<Wt::Dbo::ptr<PlaylistEntry>> getEntries(int offset, int size, bool& moreResults) const;
 
+		// Get clusters, order by occurence
+		std::vector<Wt::Dbo::ptr<Cluster>> getClusters() const;
+
+		bool hasTrack(IdType trackId) const;
+
 		template<class Action>
 		void persist(Action& a)
 		{
@@ -79,12 +87,11 @@ class PlaylistEntry
 	public:
 
 		using pointer = Wt::Dbo::ptr<PlaylistEntry>;
-		using id_type = Wt::Dbo::dbo_traits<PlaylistEntry>::IdType;
 
 		PlaylistEntry();
 		PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist);
 
-		static pointer getById(Wt::Dbo::Session& session, id_type id);
+		static pointer getById(Wt::Dbo::Session& session, IdType id);
 
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist);
