@@ -178,8 +178,6 @@ PlayQueue::enqueueTracks(const std::vector<Database::Track::pointer>& tracks)
 	// Use a "session" playqueue in order to store the current playqueue
 	// so that the user can disconnect and get its playqueue back
 
-	LMS_LOG(UI, DEBUG) << "Adding tracks to the current queue";
-
 	auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
 
 	for (auto track : tracks)
@@ -205,8 +203,6 @@ PlayQueue::addTracks(const std::vector<Database::Track::pointer>& tracks)
 void
 PlayQueue::playTracks(const std::vector<Database::Track::pointer>& tracks)
 {
-	LMS_LOG(UI, DEBUG) << "Emptying current queue to play new tracks";
-
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
 	auto playqueue = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
@@ -294,9 +290,13 @@ PlayQueue::addRadioTrack()
 	auto now = std::chrono::system_clock::now();
 	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
 
-	LMS_LOG(UI, INFO) << "Radio mode: adding track";
-
 	auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
+
+	std::set<Database::IdType> playlistTrackIds;
+	{
+		auto ids = playlist->getTrackIds();
+		playlistTrackIds = std::set<Database::IdType>(ids.begin(), ids.end());
+	}
 
 	// Get all the tracks of the playlist, get the cluster that is mostly used
 	// and reuse it to get the next track
@@ -306,21 +306,22 @@ PlayQueue::addRadioTrack()
 
 	for (auto cluster : clusters)
 	{
-		LMS_LOG(UI, DEBUG) << "Processing cluster '" << cluster->getName() << "'";
+		std::set<Database::IdType> clusterTrackIds = cluster->getTrackIds();
 
-		auto nbTracks = cluster->getTrackCount();
-		if (nbTracks == 0)
+		std::set<Database::IdType> candidateTrackIds;
+		std::set_difference(clusterTrackIds.begin(), clusterTrackIds.end(),
+				playlistTrackIds.begin(), playlistTrackIds.end(),
+				std::inserter(candidateTrackIds, candidateTrackIds.end()));
+
+		if (candidateTrackIds.empty())
 			continue;
 
-		std::uniform_int_distribution<int> dist(0, nbTracks - 1);
+		std::uniform_int_distribution<int> dist(0, candidateTrackIds.size() - 1);
 
-		auto trackToAdd = cluster->getTracks(dist(randGenerator), 1).front();
+		auto trackToAdd = Database::Track::getById(LmsApp->getDboSession(), *std::next(candidateTrackIds.begin(), dist(randGenerator)));
+		enqueueTrack(trackToAdd);
 
-		if (!playlist->hasTrack(trackToAdd.id()))
-		{
-			enqueueTrack(trackToAdd);
-			return;
-		}
+		return;
 	}
 
 	LMS_LOG(UI, INFO) << "No more track to be added!";

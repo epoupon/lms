@@ -74,6 +74,19 @@ Cluster::getTracks(int offset, int limit) const
 	return std::vector<Wt::Dbo::ptr<Track>>(res.begin(), res.end());
 }
 
+std::set<IdType>
+Cluster::getTrackIds() const
+{
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
+	Wt::Dbo::collection<IdType> res = session()->query<IdType>("SELECT t_c.track_id from track_cluster t_c INNER JOIN cluster c ON c.id = t_c.cluster_id")
+		.where("c.id = ?").bind(self()->id());
+
+	return std::set<IdType>(res.begin(), res.end());
+
+}
+
 
 ClusterType::ClusterType(std::string name)
 	: _name(name)

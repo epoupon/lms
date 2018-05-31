@@ -52,9 +52,9 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 		// Accessors
 		const std::string& getName(void) const { return _name; }
 		Wt::Dbo::ptr<ClusterType> getType() const { return _clusterType; }
-		const Wt::Dbo::collection<Wt::Dbo::ptr<Track>>& getTracks() const { return _tracks; }
-		std::size_t getTrackCount() const { return _tracks.size(); }
+		std::size_t getCount() const { return _tracks.size(); }
 		std::vector<Wt::Dbo::ptr<Track>> getTracks(int offset, int limit) const;
+		std::set<IdType> getTrackIds() const;
 
 		void addTrack(Wt::Dbo::ptr<Track> track);
 

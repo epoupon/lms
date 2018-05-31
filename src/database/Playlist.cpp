@@ -155,9 +155,23 @@ Playlist::hasTrack(IdType trackId) const
 	assert(IdIsValid(self()->id()));
 
 	Wt::Dbo::collection<PlaylistEntry::pointer> res = session()->query<PlaylistEntry::pointer>("SELECT p_e from playlist_entry p_e INNER JOIN playlist p ON p_e.playlist_id = p.id")
-		.where("p_e.track_id = ?").bind(trackId);
+		.where("p_e.track_id = ?").bind(trackId)
+		.where("p.id = ?").bind(self()->id());
 
 	return res.size() > 0;
+}
+
+std::vector<IdType>
+Playlist::getTrackIds() const
+{
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
+	Wt::Dbo::collection<IdType> res = session()->query<IdType>("SELECT p_e.track_id from playlist_entry p_e INNER JOIN playlist p ON p_e.playlist_id = p.id")
+		.where("p.id = ?").bind(self()->id());
+
+	return std::vector<IdType>(res.begin(), res.end());
+
 }
 
 

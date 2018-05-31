@@ -668,7 +668,7 @@ MediaScanner::checkAudioFiles( Stats& stats )
 		auto clusters = Cluster::getAll(_db.getSession());
 		for (auto cluster : clusters)
 		{
-			if (cluster->getTracks().size() == 0)
+			if (cluster->getCount() == 0)
 			{
 				LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster '" << cluster->getName() << "'";
 				cluster.remove();

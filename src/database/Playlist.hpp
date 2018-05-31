@@ -58,6 +58,7 @@ class Playlist : public Wt::Dbo::Dbo<Playlist>
 		std::size_t getCount() const;
 		Wt::Dbo::ptr<PlaylistEntry> getEntry(std::size_t pos) const;
 		std::vector<Wt::Dbo::ptr<PlaylistEntry>> getEntries(int offset, int size, bool& moreResults) const;
+		std::vector<IdType> getTrackIds() const;
 
 		// Get clusters, order by occurence
 		std::vector<Wt::Dbo::ptr<Cluster>> getClusters() const;
