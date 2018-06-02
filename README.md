@@ -5,9 +5,11 @@ It allows you to access your music using an http(s) web interface.
 
 ## Features
  - Audio transcode for maximum interoperability and low bandwith requirements
- - MusicBrainzID support to handle duplicated artist and release names
- - Filter by genre and/or group
  - User management
+ - Browse your audio collection using tag-based filters
+ - Custom tags scan
+ - MusicBrainzID support to handle duplicated artist and release names
+ - Reverse proxy support
 
 LMS is written entirely in C++. Therefore, it is suitable to run on embedded devices, where space and memory are limited.
 
@@ -28,7 +30,7 @@ mkdir build
 cd build
 ../configure --prefix=/usr --sysconfdir=/etc
 ```
-configure will complain if a mandatory library is missing.
+configure will report any missing library.
 
 ```sh
 make

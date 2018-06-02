@@ -7,11 +7,9 @@
 - Implement a cache to improve speed
 
 [Database]
-- Optim, use SQL query to get the "genre" orphans
 - Use Inotify like system to watch modified/added files?
 - handle access rights problems (instead of aborting)
 - add a global play counter for tracks. This will help people to spot most popular files
-- Make cluster scan configurable as it is very difficult to handle them all?
 - Use albumartist when available (useful for compilations)
 - Add AcousticBrainz support to create new kind of clusters
 
@@ -19,27 +17,23 @@
 - WMA covers: add support
 
 [Playlist]
+- Save/Load playlists
 - Make public playlists so that users can see what other people are listening to
 
 [Users]
 - Handle login lifetime?
 - Use the WServer::post method to kick users already logged in?
+- Or save the current playqueue by session (using a cookie)?
 - Limit multi login from UI and API interfaces (limit per interface is acceptable)
 
 [UI]
-	- Add a download button to get the current playqueue in a streamed zip file
-	- Save user prefs in local storage (volume, loop, shuffle, current playqueue, etc.)
-	- Add keyboard shortcuts
-	- Add a hint for the user to get the nature of tag (created from genre ? created from audio features?)
-	- Implement a play queue
-	- Implement a decent player
-	- Dedicate a color for each tag type
-	- Display only the most popular cluster of each cluster type?
+- Add a download button to get the current playqueue in a streamed zip file
+- Save user prefs in local storage (volume, loop, shuffle, current playqueue, etc.)
+- Add keyboard shortcuts
+- Implement a decent player
 
 [Settings]
-	- Add a user management view
-	- Add multi root directories support
-	- Add a first connection wizard
+- Add multi root directories support
 
 [REST API]
 - Make a dedicated REST API. Maybe use the SubSonic API or Ampache API?
