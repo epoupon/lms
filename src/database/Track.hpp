@@ -35,10 +35,11 @@
 namespace Database {
 
 class Artist;
-class Release;
-class PlaylistEntry;
 class Cluster;
 class ClusterType;
+class PlaylistEntry;
+class Release;
+class TrackStats;
 
 class Track : public Wt::Dbo::Dbo<Track>
 {
@@ -143,6 +144,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 				Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _playlistEntries, Wt::Dbo::ManyToOne, "track");
+				Wt::Dbo::hasMany(a, _stats, Wt::Dbo::ManyToOne, "track");
 			}
 
 	private:
@@ -170,8 +172,9 @@ class Track : public Wt::Dbo::Dbo<Track>
 
 		Wt::Dbo::ptr<Artist>			_artist;
 		Wt::Dbo::ptr<Release>			_release;
-		Wt::Dbo::collection< Wt::Dbo::ptr<Cluster> >	_clusters;
-		Wt::Dbo::collection< Wt::Dbo::ptr<PlaylistEntry> >	_playlistEntries;
+		Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;
+		Wt::Dbo::collection<Wt::Dbo::ptr<PlaylistEntry>> _playlistEntries;
+		Wt::Dbo::collection<Wt::Dbo::ptr<TrackStats>> _stats;
 
 };
 

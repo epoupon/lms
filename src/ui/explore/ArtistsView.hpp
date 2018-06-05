@@ -39,6 +39,7 @@ class Artists : public Wt::WTemplate
 		Wt::Signal<Database::IdType> artistPlay;
 
 	private:
+		void refreshMostPlayed();
 		void refresh();
 		void addSome();
 
@@ -46,6 +47,7 @@ class Artists : public Wt::WTemplate
 		Wt::WTemplate* _showMore;
 		Wt::WLineEdit* _search;
 		Wt::WContainerWidget* _artistsContainer;
+		Wt::WContainerWidget* _mostPlayedArtistsContainer;
 };
 
 } // namespace UserInterface

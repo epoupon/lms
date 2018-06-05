@@ -28,6 +28,7 @@
 #include "utils/Logger.hpp"
 
 #include "database/Playlist.hpp"
+#include "database/TrackStats.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -116,7 +117,12 @@ PlayQueue::play(std::size_t pos)
 			addRadioTrack();
 
 		_trackPos = pos;
-		trackId = playlist->getEntry(*_trackPos)->getTrack().id();
+		auto track = playlist->getEntry(*_trackPos)->getTrack();
+
+		trackId = track.id();
+
+		Database::TrackStats::get(LmsApp->getDboSession(), track, LmsApp->getCurrentUser()).modify()->incPlayCount();
+
 		updateCurrentTrack(true);
 	}
 

@@ -41,6 +41,7 @@
 #include "Release.hpp"
 #include "ScanSettings.hpp"
 #include "Track.hpp"
+#include "TrackStats.hpp"
 
 namespace Database {
 
@@ -106,6 +107,7 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 	_session.mapClass<Release>("release");
 	_session.mapClass<Setting>("setting");
 	_session.mapClass<Track>("track");
+	_session.mapClass<TrackStats>("track_stats");
 
 	_session.mapClass<ScanSettings>("scan_settings");
 

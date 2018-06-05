@@ -25,6 +25,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Setting.hpp"
+#include "database/TrackStats.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -47,6 +48,7 @@ Artists::Artists(Filters* filters)
 	_search->textInput().connect(this, &Artists::refresh);
 
 	_artistsContainer = bindNew<Wt::WContainerWidget>("artists");
+	_mostPlayedArtistsContainer = bindNew<Wt::WContainerWidget>("most-played-artists");
 
 	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.template.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
@@ -57,8 +59,25 @@ Artists::Artists(Filters* filters)
 	}));
 
 	refresh();
+	refreshMostPlayed();
 
 	filters->updated().connect(this, &Artists::refresh);
+}
+
+void
+Artists::refreshMostPlayed()
+{
+	_mostPlayedArtistsContainer->clear();
+
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	auto artists = TrackStats::getMostPlayedArtists(LmsApp->getDboSession(), LmsApp->getCurrentUser(), 5);
+
+	for (auto artist : artists)
+	{
+		Wt::WTemplate* entry = _mostPlayedArtistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.most-played-entry"));
+
+		entry->bindWidget("name", LmsApplication::createArtistAnchor(artist));
+	}
 }
 
 void

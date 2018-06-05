@@ -13,6 +13,7 @@ lms_SOURCES = \
 	$(srcdir)/database/ScanSettings.cpp			\
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/Track.cpp				\
+	$(srcdir)/database/TrackStats.cpp				\
 	$(srcdir)/database/User.cpp				\
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
