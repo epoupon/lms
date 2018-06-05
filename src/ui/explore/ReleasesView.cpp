@@ -26,6 +26,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Release.hpp"
+#include "database/TrackStats.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -50,6 +51,7 @@ _filters(filters)
 	_search->textInput().connect(this, &Releases::refresh);
 
 	_releasesContainer = bindNew<Wt::WContainerWidget>("releases");
+	_mostPlayedReleasesContainer = bindNew<Wt::WContainerWidget>("most-played-releases");
 
 	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
@@ -58,9 +60,44 @@ _filters(filters)
 		addSome();
 	}));
 
+	refreshMostPlayed();
 	refresh();
 
 	filters->updated().connect(this, &Releases::refresh);
+}
+
+void
+Releases::refreshMostPlayed()
+{
+	_mostPlayedReleasesContainer->clear();
+
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+	auto releases = TrackStats::getMostPlayedReleases(LmsApp->getDboSession(), LmsApp->getCurrentUser(), 5);
+
+	for (auto release : releases)
+	{
+		Wt::WTemplate* entry = _mostPlayedReleasesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.most-played-entry"));
+
+		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
+
+		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
+		auto cover = std::make_unique<Wt::WImage>();
+		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
+		anchor->setImage(std::move(cover));
+
+		auto artists = release->getArtists();
+		if (artists.size() > 1)
+		{
+			entry->setCondition("if-has-artist", true);
+			entry->bindString("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
+		}
+		else if (artists.size() == 1)
+		{
+			entry->setCondition("if-has-artist", true);
+			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
+		}
+	}
 }
 
 void

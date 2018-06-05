@@ -4,6 +4,10 @@
 
 <message id="Lms.Explore.Releases.template">
 	<div class="page-header">
+		<h2>${tr:Lms.Explore.most-played-releases}</h2>
+	</div>
+	${most-played-releases}
+	<div class="page-header">
 		<h2>${tr:Lms.Explore.releases}</h2>
 	</div>
 	<div class="form-group">
@@ -22,6 +26,12 @@
 
 <message id="Lms.Explore.Releases.add">
 	<i class="fa fa-plus"></i>
+</message>
+
+<message id="Lms.Explore.Releases.template.most-played-entry">
+	${cover}
+	${release-name}
+	${<if-has-artist>}${artist-name}${</if-has-artist>}
 </message>
 
 <message id="Lms.Explore.Releases.template.entry">
