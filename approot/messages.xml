@@ -53,9 +53,6 @@
 <message id="Lms.Auth.remember-me">Remember me</message>
 <message id="Lms.Auth.welcome">Welcome!</message>
 
-<!--Home-->
-<message id="Lms.Home.welcome"><h2>Welcome!</h2></message>
-
 <!--Explore-->
 <message id="Lms.Explore.add-filter">Add filter</message>
 <message id="Lms.Explore.artists">Artists</message>

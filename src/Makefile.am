@@ -20,7 +20,6 @@ lms_SOURCES = \
 	$(srcdir)/metadata/TagLibParser.cpp			\
 	$(srcdir)/scanner/MediaScanner.cpp			\
 	$(srcdir)/ui/Auth.cpp					\
-	$(srcdir)/ui/HomeView.cpp				\
 	$(srcdir)/ui/LmsApplication.cpp				\
 	$(srcdir)/ui/MediaPlayer.cpp				\
 	$(srcdir)/ui/PlayQueueView.cpp				\

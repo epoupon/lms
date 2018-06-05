@@ -28,7 +28,6 @@ lms_approot_DATA = \
 		approot/artist.xml	\
 		approot/artists.xml	\
 		approot/explore.xml	\
-		approot/home.xml	\
 		approot/login.xml	\
 		approot/mediaplayer.xml	\
 		approot/messages.xml	\

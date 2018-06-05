@@ -35,7 +35,6 @@
 #include "utils/Utils.hpp"
 
 #include "explore/Explore.hpp"
-#include "HomeView.hpp"
 #include "MediaPlayer.hpp"
 #include "PlayQueueView.hpp"
 #include "SettingsView.hpp"
@@ -94,7 +93,6 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "admin-initwizard");
 	messageResourceBundle().use(appRoot() + "artist");
 	messageResourceBundle().use(appRoot() + "artists");
-	messageResourceBundle().use(appRoot() + "home");
 	messageResourceBundle().use(appRoot() + "explore");
 	messageResourceBundle().use(appRoot() + "login");
 	messageResourceBundle().use(appRoot() + "mediaplayer");
@@ -192,7 +190,7 @@ LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete
 void
 LmsApplication::goHome()
 {
-	setInternalPath("/home", true);
+	setInternalPath("/artists", true);
 }
 
 void
@@ -205,8 +203,7 @@ LmsApplication::goHomeAndQuit()
 
 enum IdxRoot
 {
-	IdxHome		= 0,
-	IdxExplore,
+	IdxExplore	= 0,
 	IdxPlayQueue,
 	IdxSettings,
 	IdxAdminDatabase,
@@ -224,7 +221,6 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 		bool admin;
 	} views[] =
 	{
-		{ "/home",		IdxHome,		false },
 		{ "/artists",		IdxExplore,		false },
 		{ "/artist",		IdxExplore,		false },
 		{ "/releases",		IdxExplore,		false },
@@ -251,7 +247,7 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 		}
 	}
 
-	wApp->setInternalPath("/home", true);
+	wApp->setInternalPath("/artists", true);
 }
 
 void
@@ -281,7 +277,7 @@ LmsApplication::handleAuthEvent(void)
 
 	// Navbar
 	Wt::WNavigationBar* navbar = main->bindNew<Wt::WNavigationBar>("navbar-top");
-	navbar->setTitle("LMS", Wt::WLink(Wt::LinkType::InternalPath, "/home"));
+	navbar->setTitle("LMS", Wt::WLink(Wt::LinkType::InternalPath, "/artists"));
 	navbar->setResponsive(true);
 
 	Wt::WMenu* menu = navbar->addMenu(std::make_unique<Wt::WMenu>());
@@ -344,7 +340,6 @@ LmsApplication::handleAuthEvent(void)
 	// Order is important in mainStack, see IdxRoot!
 	Wt::WStackedWidget* mainStack = main->bindNew<Wt::WStackedWidget>("contents");
 
-	mainStack->addNew<Home>();
 	Explore* explore = mainStack->addNew<Explore>();
 	PlayQueue* playqueue = mainStack->addNew<PlayQueue>();
 	mainStack->addNew<SettingsView>();
