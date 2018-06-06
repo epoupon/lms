@@ -18,6 +18,8 @@
  */
 #include "Artist.hpp"
 
+#include <Wt/Dbo/WtSqlTraits.h>
+
 #include "utils/Logger.hpp"
 
 #include "Cluster.hpp"
@@ -138,6 +140,18 @@ Artist::getByFilter(Wt::Dbo::Session& session,
 		moreResults = false;
 
 	return res;
+}
+
+std::vector<Artist::pointer>
+Artist::getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int limit)
+{
+	Wt::Dbo::collection<Artist::pointer> res = session.query<Artist::pointer>("SELECT a from artist a INNER JOIN track t ON a.id = t.artist_id")
+		.where("t.file_added > ?").bind(after)
+		.groupBy("a.id")
+		.orderBy("t.file_added DESC")
+		.limit(limit);
+
+	return std::vector<pointer>(res.begin(), res.end());
 }
 
 std::vector<Wt::Dbo::ptr<Release>>

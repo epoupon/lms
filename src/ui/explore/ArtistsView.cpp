@@ -20,8 +20,10 @@
 #include "ArtistsView.hpp"
 
 #include <Wt/WAnchor.h>
-#include <Wt/WTemplate.h>
 #include <Wt/WLineEdit.h>
+#include <Wt/WLocalDateTime.h>
+#include <Wt/WServer.h>
+#include <Wt/WTemplate.h>
 
 #include "database/Artist.hpp"
 #include "database/Setting.hpp"
@@ -35,6 +37,22 @@
 
 using namespace Database;
 
+namespace {
+
+using namespace UserInterface;
+
+void addCompactEntries(Wt::WContainerWidget *container, const std::vector<Artist::pointer>& artists)
+{
+	for (auto artist : artists)
+	{
+		Wt::WTemplate* entry = container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.compact-entry"));
+
+		entry->bindWidget("name", LmsApplication::createArtistAnchor(artist));
+	}
+}
+
+}
+
 namespace UserInterface {
 
 Artists::Artists(Filters* filters)
@@ -47,8 +65,9 @@ Artists::Artists(Filters* filters)
 	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
 	_search->textInput().connect(this, &Artists::refresh);
 
-	_artistsContainer = bindNew<Wt::WContainerWidget>("artists");
-	_mostPlayedArtistsContainer = bindNew<Wt::WContainerWidget>("most-played-artists");
+	_container = bindNew<Wt::WContainerWidget>("artists");
+	_mostPlayedContainer = bindNew<Wt::WContainerWidget>("most-played-artists");
+	_recentlyAddedContainer = bindNew<Wt::WContainerWidget>("recently-added-artists");
 
 	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.template.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
@@ -60,30 +79,50 @@ Artists::Artists(Filters* filters)
 
 	refresh();
 	refreshMostPlayed();
+	refreshRecentlyAdded();
 
 	filters->updated().connect(this, &Artists::refresh);
+
+	std::string sessionId = LmsApp->sessionId();
+	LmsApp->getMediaScanner().scanComplete().connect([=] (Scanner::MediaScanner::Stats stats)
+	{
+		if (stats.nbChanges() > 0)
+		{
+			Wt::WServer::instance()->post(sessionId, [=]
+			{
+				refreshRecentlyAdded();
+				LmsApp->triggerUpdate();
+			});
+		}
+	});
+}
+
+void
+Artists::refreshRecentlyAdded()
+{
+	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1);
+
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	auto artists = Artist::getLastAdded(LmsApp->getDboSession(), after, 5);
+
+	_recentlyAddedContainer->clear();
+	addCompactEntries(_recentlyAddedContainer, artists);
 }
 
 void
 Artists::refreshMostPlayed()
 {
-	_mostPlayedArtistsContainer->clear();
-
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 	auto artists = TrackStats::getMostPlayedArtists(LmsApp->getDboSession(), LmsApp->getCurrentUser(), 5);
 
-	for (auto artist : artists)
-	{
-		Wt::WTemplate* entry = _mostPlayedArtistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.most-played-entry"));
-
-		entry->bindWidget("name", LmsApplication::createArtistAnchor(artist));
-	}
+	_mostPlayedContainer->clear();
+	addCompactEntries(_mostPlayedContainer, artists);
 }
 
 void
 Artists::refresh()
 {
-	_artistsContainer->clear();
+	_container->clear();
 	addSome();
 }
 
@@ -100,11 +139,11 @@ Artists::addSome()
 	auto artists = Artist::getByFilter(LmsApp->getDboSession(),
 			clusterIds,
 			searchKeywords,
-			_artistsContainer->count(), 20, moreResults);
+			_container->count(), 20, moreResults);
 
 	for (auto artist : artists)
 	{
-		Wt::WTemplate* entry = _artistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry"));
+		Wt::WTemplate* entry = _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry"));
 
 		entry->bindInt("nb-release", artist->getReleases(clusterIds).size());
 		entry->bindWidget("name", LmsApplication::createArtistAnchor(artist));

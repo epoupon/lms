@@ -19,9 +19,10 @@
 
 #include "ReleasesView.hpp"
 
-#include <Wt/WApplication.h>
+#include <Wt/WServer.h>
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
+#include <Wt/WLocalDateTime.h>
 #include <Wt/WText.h>
 #include <Wt/WTemplate.h>
 
@@ -38,46 +39,15 @@
 
 using namespace Database;
 
-namespace UserInterface {
+namespace {
 
-Releases::Releases(Filters* filters)
-: Wt::WTemplate(Wt::WString::tr("Lms.Explore.Releases.template")),
-_filters(filters)
+using namespace UserInterface;
+
+void addCompactEntries(Wt::WContainerWidget* container, const std::vector<Release::pointer>& releases)
 {
-	addFunction("tr", &Wt::WTemplate::Functions::tr);
-
-	_search = bindNew<Wt::WLineEdit>("search");
-	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
-	_search->textInput().connect(this, &Releases::refresh);
-
-	_releasesContainer = bindNew<Wt::WContainerWidget>("releases");
-	_mostPlayedReleasesContainer = bindNew<Wt::WContainerWidget>("most-played-releases");
-
-	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
-	_showMore->clicked().connect(std::bind([=]
-	{
-		addSome();
-	}));
-
-	refreshMostPlayed();
-	refresh();
-
-	filters->updated().connect(this, &Releases::refresh);
-}
-
-void
-Releases::refreshMostPlayed()
-{
-	_mostPlayedReleasesContainer->clear();
-
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-	auto releases = TrackStats::getMostPlayedReleases(LmsApp->getDboSession(), LmsApp->getCurrentUser(), 5);
-
 	for (auto release : releases)
 	{
-		Wt::WTemplate* entry = _mostPlayedReleasesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.most-played-entry"));
+		Wt::WTemplate* entry = container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.compact-entry"));
 
 		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
 
@@ -100,10 +70,80 @@ Releases::refreshMostPlayed()
 	}
 }
 
+} // namespace
+
+namespace UserInterface {
+
+Releases::Releases(Filters* filters)
+: Wt::WTemplate(Wt::WString::tr("Lms.Explore.Releases.template")),
+_filters(filters)
+{
+	addFunction("tr", &Wt::WTemplate::Functions::tr);
+
+	_search = bindNew<Wt::WLineEdit>("search");
+	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
+	_search->textInput().connect(this, &Releases::refresh);
+
+	_container = bindNew<Wt::WContainerWidget>("releases");
+	_mostPlayedContainer = bindNew<Wt::WContainerWidget>("most-played-releases");
+	_recentlyAddedContainer = bindNew<Wt::WContainerWidget>("recently-added-releases");
+
+	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
+	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	_showMore->clicked().connect(std::bind([=]
+	{
+		addSome();
+	}));
+
+	refreshRecentlyAdded();
+	refreshMostPlayed();
+	refresh();
+
+	filters->updated().connect(this, &Releases::refresh);
+
+	std::string sessionId = LmsApp->sessionId();
+	LmsApp->getMediaScanner().scanComplete().connect([=] (Scanner::MediaScanner::Stats stats)
+	{
+		if (stats.nbChanges() > 0)
+		{
+			Wt::WServer::instance()->post(sessionId, [=]
+			{
+				refreshRecentlyAdded();
+				LmsApp->triggerUpdate();
+			});
+		}
+	});
+}
+
+void
+Releases::refreshRecentlyAdded()
+{
+	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1);
+
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+	auto releases = Release::getLastAdded(LmsApp->getDboSession(), after, 5);
+
+	_recentlyAddedContainer->clear();
+	addCompactEntries(_recentlyAddedContainer, releases);
+}
+
+void
+Releases::refreshMostPlayed()
+{
+
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+	auto releases = TrackStats::getMostPlayedReleases(LmsApp->getDboSession(), LmsApp->getCurrentUser(), 5);
+
+	_mostPlayedContainer->clear();
+	addCompactEntries(_mostPlayedContainer, releases);
+}
+
 void
 Releases::refresh()
 {
-	_releasesContainer->clear();
+	_container->clear();
 	addSome();
 }
 
@@ -117,13 +157,13 @@ Releases::addSome()
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
 	bool moreResults;
-	auto releases = Release::getByFilter(LmsApp->getDboSession(), clusterIds, searchKeywords, _releasesContainer->count(), 20, moreResults);
+	auto releases = Release::getByFilter(LmsApp->getDboSession(), clusterIds, searchKeywords, _container->count(), 20, moreResults);
 
 	for (auto release : releases)
 	{
 		auto releaseId = release.id();
 
-		Wt::WTemplate* entry = _releasesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.entry"));
+		Wt::WTemplate* entry = _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.entry"));
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
 
 		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));

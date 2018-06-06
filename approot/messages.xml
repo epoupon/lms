@@ -58,6 +58,8 @@
 <message id="Lms.Explore.artists">Artists</message>
 <message id="Lms.Explore.most-played-artists">Most played artists</message>
 <message id="Lms.Explore.most-played-releases">Most played releases</message>
+<message id="Lms.Explore.recently-added-artists">Recently added artists</message>
+<message id="Lms.Explore.recently-added-releases">Recently added releases</message>
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.search-placeholder">Search...</message>
 <message id="Lms.Explore.show-more">Show more</message>

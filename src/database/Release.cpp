@@ -74,6 +74,18 @@ Release::getAllOrphans(Wt::Dbo::Session& session)
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+std::vector<Release::pointer>
+Release::getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int limit)
+{
+	Wt::Dbo::collection<Release::pointer> res = session.query<Release::pointer>("SELECT r from release r INNER JOIN track t ON r.id = t.release_id")
+		.where("t.file_added > ?").bind(after)
+		.groupBy("r.id")
+		.orderBy("t.file_added DESC")
+		.limit(limit);
+
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
 static
 Wt::Dbo::Query<Release::pointer>
 getQuery(Wt::Dbo::Session& session,

@@ -263,6 +263,9 @@ LmsApplication::handleAuthEvent(void)
 
 	LMS_LOG(UI, INFO) << "User '" << LmsApp->getCurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().userAgent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
 
+	// Since we plug into the Media Scanner events, we need to enable updates
+	enableUpdates(true);
+
 	{
 		Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
 		_isAdmin = LmsApp->getCurrentUser()->isAdmin();
@@ -387,7 +390,6 @@ LmsApplication::handleAuthEvent(void)
 	// Events from MediaScanner
 	if (_isAdmin)
 	{
-		enableUpdates(true);
 		std::string sessionId = this->sessionId();
 		_scanner.scanComplete().connect(std::bind([=] (Scanner::MediaScanner::Stats stats)
 		{

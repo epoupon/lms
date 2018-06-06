@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
 #include "Types.hpp"
@@ -56,6 +57,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, int offset = -1, int size = -1);
 		static std::vector<pointer>	getAllOrphans(Wt::Dbo::Session& session); // No track related
+		static std::vector<pointer>	getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int size = 1);
 
 		// Accessors
 		std::string getName(void) const { return _name; }

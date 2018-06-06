@@ -7,6 +7,12 @@
 		<h2>${tr:Lms.Explore.most-played-releases}</h2>
 	</div>
 	${most-played-releases}
+
+	<div class="page-header">
+		<h2>${tr:Lms.Explore.recently-added-releases}</h2>
+	</div>
+	${recently-added-releases}
+
 	<div class="page-header">
 		<h2>${tr:Lms.Explore.releases}</h2>
 	</div>
@@ -28,7 +34,7 @@
 	<i class="fa fa-plus"></i>
 </message>
 
-<message id="Lms.Explore.Releases.template.most-played-entry">
+<message id="Lms.Explore.Releases.template.compact-entry">
 	${cover}
 	${release-name}
 	${<if-has-artist>}${artist-name}${</if-has-artist>}

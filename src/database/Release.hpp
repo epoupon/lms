@@ -21,7 +21,7 @@
 
 #include <boost/optional.hpp>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/WtSqlTraits.h>
 
 #include "Types.hpp"
 
@@ -49,6 +49,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static pointer			getById(Wt::Dbo::Session& session, IdType id);
 		static std::vector<pointer>	getAllOrphans(Wt::Dbo::Session& session); // no track related
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, int offset, int size);
+		static std::vector<pointer>	getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int size = 1);
 
 		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
 							const std::set<IdType>& clusters,           // at least one track that belongs to these clusters
