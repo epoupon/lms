@@ -23,6 +23,7 @@
 
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
+#include <Wt/WLocalDateTime.h>
 #include <Wt/WText.h>
 
 #include "utils/Logger.hpp"
@@ -121,7 +122,10 @@ PlayQueue::play(std::size_t pos)
 
 		trackId = track.id();
 
-		Database::TrackStats::get(LmsApp->getDboSession(), track, LmsApp->getCurrentUser()).modify()->incPlayCount();
+		auto stats = Database::TrackStats::get(LmsApp->getDboSession(), track, LmsApp->getCurrentUser());
+
+		stats.modify()->incPlayCount();
+		stats.modify()->setLastPlayed(Wt::WLocalDateTime::currentServerDateTime().toUTC());
 
 		updateCurrentTrack(true);
 	}

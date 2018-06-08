@@ -22,7 +22,6 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WLocalDateTime.h>
-#include <Wt/WServer.h>
 #include <Wt/WTemplate.h>
 
 #include "database/Artist.hpp"
@@ -68,6 +67,7 @@ Artists::Artists(Filters* filters)
 	_container = bindNew<Wt::WContainerWidget>("artists");
 	_mostPlayedContainer = bindNew<Wt::WContainerWidget>("most-played-artists");
 	_recentlyAddedContainer = bindNew<Wt::WContainerWidget>("recently-added-artists");
+	_recentlyPlayedContainer = bindNew<Wt::WContainerWidget>("recently-played-artists");
 
 	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.template.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
@@ -80,21 +80,9 @@ Artists::Artists(Filters* filters)
 	refresh();
 	refreshMostPlayed();
 	refreshRecentlyAdded();
+	refreshRecentlyPlayed();
 
 	filters->updated().connect(this, &Artists::refresh);
-
-	std::string sessionId = LmsApp->sessionId();
-	LmsApp->getMediaScanner().scanComplete().connect([=] (Scanner::MediaScanner::Stats stats)
-	{
-		if (stats.nbChanges() > 0)
-		{
-			Wt::WServer::instance()->post(sessionId, [=]
-			{
-				refreshRecentlyAdded();
-				LmsApp->triggerUpdate();
-			});
-		}
-	});
 }
 
 void
@@ -108,6 +96,17 @@ Artists::refreshRecentlyAdded()
 	_recentlyAddedContainer->clear();
 	addCompactEntries(_recentlyAddedContainer, artists);
 }
+
+void
+Artists::refreshRecentlyPlayed()
+{
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	auto artists = TrackStats::getLastPlayedArtists(LmsApp->getDboSession(), LmsApp->getCurrentUser(), 5);
+
+	_recentlyPlayedContainer->clear();
+	addCompactEntries(_recentlyPlayedContainer, artists);
+}
+
 
 void
 Artists::refreshMostPlayed()

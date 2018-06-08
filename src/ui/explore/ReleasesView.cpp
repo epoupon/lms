@@ -18,7 +18,6 @@
  */
 
 #include "ReleasesView.hpp"
-
 #include <Wt/WServer.h>
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
@@ -87,6 +86,7 @@ _filters(filters)
 	_container = bindNew<Wt::WContainerWidget>("releases");
 	_mostPlayedContainer = bindNew<Wt::WContainerWidget>("most-played-releases");
 	_recentlyAddedContainer = bindNew<Wt::WContainerWidget>("recently-added-releases");
+	_recentlyPlayedContainer = bindNew<Wt::WContainerWidget>("recently-played-releases");
 
 	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
@@ -96,28 +96,18 @@ _filters(filters)
 	}));
 
 	refreshRecentlyAdded();
+	refreshRecentlyPlayed();
 	refreshMostPlayed();
 	refresh();
 
 	filters->updated().connect(this, &Releases::refresh);
-
-	std::string sessionId = LmsApp->sessionId();
-	LmsApp->getMediaScanner().scanComplete().connect([=] (Scanner::MediaScanner::Stats stats)
-	{
-		if (stats.nbChanges() > 0)
-		{
-			Wt::WServer::instance()->post(sessionId, [=]
-			{
-				refreshRecentlyAdded();
-				LmsApp->triggerUpdate();
-			});
-		}
-	});
 }
 
 void
 Releases::refreshRecentlyAdded()
 {
+	LMS_LOG(UI, DEBUG) << "Refreshing recently added releases";
+
 	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1);
 
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
@@ -129,8 +119,22 @@ Releases::refreshRecentlyAdded()
 }
 
 void
+Releases::refreshRecentlyPlayed()
+{
+	LMS_LOG(UI, DEBUG) << "Refreshing recently played releases";
+
+	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+	auto releases = TrackStats::getLastPlayedReleases(LmsApp->getDboSession(), LmsApp->getCurrentUser(), 5);
+
+	_recentlyPlayedContainer->clear();
+	addCompactEntries(_recentlyPlayedContainer, releases);
+}
+
+void
 Releases::refreshMostPlayed()
 {
+	LMS_LOG(UI, DEBUG) << "Refreshing most played releases";
 
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 

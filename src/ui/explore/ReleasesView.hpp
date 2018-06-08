@@ -38,9 +38,11 @@ class Releases : public Wt::WTemplate
 		Wt::Signal<Database::IdType> releaseAdd;
 		Wt::Signal<Database::IdType> releasePlay;
 
-	private:
 		void refreshRecentlyAdded();
+		void refreshRecentlyPlayed();
 		void refreshMostPlayed();
+
+	private:
 		void refresh();
 		void addSome();
 
@@ -50,6 +52,7 @@ class Releases : public Wt::WTemplate
 		Wt::WContainerWidget* _container;
 		Wt::WContainerWidget* _mostPlayedContainer;
 		Wt::WContainerWidget* _recentlyAddedContainer;
+		Wt::WContainerWidget* _recentlyPlayedContainer;
 };
 
 } // namespace UserInterface

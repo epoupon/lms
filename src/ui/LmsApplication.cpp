@@ -384,16 +384,20 @@ LmsApplication::handleAuthEvent(void)
 	}));
 
 	// Events from the PlayQueue
+	playqueue->playTrack.connect(explore, &Explore::handleTrackPlayed);
+
 	playqueue->playTrack.connect(player, &MediaPlayer::playTrack);
 	playqueue->playbackStop.connect(player, &MediaPlayer::stop);
 
 	// Events from MediaScanner
-	if (_isAdmin)
+	std::string sessionId = this->sessionId();
+	_scanner.scanComplete().connect([=] (Scanner::MediaScanner::Stats stats)
 	{
-		std::string sessionId = this->sessionId();
-		_scanner.scanComplete().connect(std::bind([=] (Scanner::MediaScanner::Stats stats)
+		Wt::WServer::instance()->post(sessionId, [=]
 		{
-			Wt::WServer::instance()->post(sessionId, [=]
+			bool changes = false;
+
+			if (_isAdmin)
 			{
 				notifyMsg(Wt::WString::tr("Lms.Admin.Database.scan-complete")
 					.arg(static_cast<unsigned>(stats.nbFiles()))
@@ -402,10 +406,19 @@ LmsApplication::handleAuthEvent(void)
 					.arg(static_cast<unsigned>(stats.deletions))
 					.arg(static_cast<unsigned>(stats.nbDuplicates()))
 					.arg(static_cast<unsigned>(stats.nbErrors())));
+				changes = true;
+			}
+
+			if (stats.nbChanges() > 0)
+			{
+				explore->handleDbChanged();
+				changes = true;
+			}
+
+			if (changes)
 				triggerUpdate();
-			});
-		}, std::placeholders::_1));
-	}
+		});
+	});
 
 	internalPathChanged().connect(std::bind([=]
 	{

@@ -38,9 +38,11 @@ class Artists : public Wt::WTemplate
 		Wt::Signal<Database::IdType> artistAdd;
 		Wt::Signal<Database::IdType> artistPlay;
 
-	private:
 		void refreshRecentlyAdded();
+		void refreshRecentlyPlayed();
 		void refreshMostPlayed();
+
+	private:
 		void refresh();
 		void addSome();
 
@@ -50,6 +52,7 @@ class Artists : public Wt::WTemplate
 		Wt::WContainerWidget* _container;
 		Wt::WContainerWidget* _mostPlayedContainer;
 		Wt::WContainerWidget* _recentlyAddedContainer;
+		Wt::WContainerWidget* _recentlyPlayedContainer;
 };
 
 } // namespace UserInterface

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/Dbo/Dbo.h>
+#include <Wt/WDateTime.h>
 
 #include <string>
 
@@ -41,17 +42,22 @@ class TrackStats
 		TrackStats(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<User> user);
 
 		static std::vector<Wt::Dbo::ptr<Artist>> getMostPlayedArtists(Wt::Dbo::Session& session, Wt::Dbo::ptr<User>, int limit = 1);
+		static std::vector<Wt::Dbo::ptr<Artist>> getLastPlayedArtists(Wt::Dbo::Session& session, Wt::Dbo::ptr<User>, int limit = 1);
+
 		static std::vector<Wt::Dbo::ptr<Release>> getMostPlayedReleases(Wt::Dbo::Session& session, Wt::Dbo::ptr<User>, int limit = 1);
+		static std::vector<Wt::Dbo::ptr<Release>> getLastPlayedReleases(Wt::Dbo::Session& session, Wt::Dbo::ptr<User>, int limit = 1);
 
 		// Get utility (will create if does not exist)
 		static pointer	get(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<User> user);
 
 		void incPlayCount() { _playCount++; }
+		void setLastPlayed(Wt::WDateTime lastPlayed) { _lastPlayed = lastPlayed; }
 
 		template<class Action>
 		void persist(Action& a)
 		{
 			Wt::Dbo::field(a,	_playCount, "play_count");
+			Wt::Dbo::field(a,	_lastPlayed, "last_played");
 			Wt::Dbo::belongsTo(a,	_track, "track", Wt::Dbo::OnDeleteCascade);
 			Wt::Dbo::belongsTo(a,	_user, "user", Wt::Dbo::OnDeleteCascade);
 		}
@@ -59,6 +65,7 @@ class TrackStats
 	private:
 
 		int _playCount = 0;
+		Wt::WDateTime _lastPlayed;
 		Wt::Dbo::ptr<Track> _track;
 		Wt::Dbo::ptr<User> _user;
 };

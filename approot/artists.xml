@@ -9,6 +9,11 @@
 	${most-played-artists}
 
 	<div class="page-header">
+		<h2>${tr:Lms.Explore.recently-played-artists}</h2>
+	</div>
+	${recently-played-artists}
+
+	<div class="page-header">
 		<h2>${tr:Lms.Explore.recently-added-artists}</h2>
 	</div>
 	${recently-added-artists}

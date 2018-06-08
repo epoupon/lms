@@ -79,6 +79,7 @@ Explore::Explore()
 	Wt::WStackedWidget* stack = bindNew<Wt::WStackedWidget>("contents");
 
 	auto artists = std::make_unique<Artists>(_filters);
+	auto artists_raw = artists.get();
 	artists->artistAdd.connect(this, &Explore::handleArtistAdd);
 	artists->artistPlay.connect(this, &Explore::handleArtistPlay);
 	stack->addWidget(std::move(artists));
@@ -91,6 +92,7 @@ Explore::Explore()
 	stack->addWidget(std::move(artist));
 
 	auto releases = std::make_unique<Releases>(_filters);
+	auto releases_raw = releases.get();
 	releases->releaseAdd.connect(this, &Explore::handleReleaseAdd);
 	releases->releasePlay.connect(this, &Explore::handleReleasePlay);
 	stack->addWidget(std::move(releases));
@@ -101,6 +103,21 @@ Explore::Explore()
 	release->trackAdd.connect(this, &Explore::handleTrackAdd);
 	release->trackPlay.connect(this, &Explore::handleTrackPlay);
 	stack->addWidget(std::move(release));
+
+	_dbChanged.connect([=]
+	{
+		artists_raw->refreshRecentlyAdded();
+		releases_raw->refreshRecentlyAdded();
+	});
+
+	_trackPlayed.connect([=]
+	{
+		artists_raw->refreshMostPlayed();
+		artists_raw->refreshRecentlyPlayed();
+		releases_raw->refreshMostPlayed();
+		releases_raw->refreshRecentlyPlayed();
+
+	});
 
 	auto tracks = std::make_unique<Tracks>(_filters);
 	tracks->trackAdd.connect(this, &Explore::handleTrackAdd);

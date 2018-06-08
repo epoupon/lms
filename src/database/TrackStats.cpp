@@ -44,6 +44,19 @@ TrackStats::getMostPlayedArtists(Wt::Dbo::Session& session, User::pointer user, 
 	return std::vector<Artist::pointer>(res.begin(), res.end());
 }
 
+std::vector<Artist::pointer>
+TrackStats::getLastPlayedArtists(Wt::Dbo::Session& session, User::pointer user, int limit)
+{
+	Wt::Dbo::collection<Artist::pointer> res = session.query<Artist::pointer>
+		("SELECT a FROM artist a INNER JOIN track t ON a.id = t.artist_id INNER JOIN track_stats t_s ON t.id = t_s.track_id")
+		.where("t_s.user_id = ?").bind(user.id())
+		.groupBy("a.id")
+		.orderBy("t_s.last_played DESC")
+		.limit(limit);
+
+	return std::vector<Artist::pointer>(res.begin(), res.end());
+}
+
 std::vector<Release::pointer>
 TrackStats::getMostPlayedReleases(Wt::Dbo::Session& session, User::pointer user, int limit)
 {
@@ -52,6 +65,19 @@ TrackStats::getMostPlayedReleases(Wt::Dbo::Session& session, User::pointer user,
 		.where("t_s.user_id = ?").bind(user.id())
 		.groupBy("r.id")
 		.orderBy("SUM(t_s.play_count) DESC")
+		.limit(limit);
+
+	return std::vector<Release::pointer>(res.begin(), res.end());
+}
+
+std::vector<Release::pointer>
+TrackStats::getLastPlayedReleases(Wt::Dbo::Session& session, User::pointer user, int limit)
+{
+	Wt::Dbo::collection<Release::pointer> res = session.query<Release::pointer>
+		("SELECT r FROM release r INNER JOIN track t ON r.id = t.release_id INNER JOIN track_stats t_s ON t.id = t_s.track_id")
+		.where("t_s.user_id = ?").bind(user.id())
+		.groupBy("r.id")
+		.orderBy("t_s.last_played DESC")
 		.limit(limit);
 
 	return std::vector<Release::pointer>(res.begin(), res.end());
