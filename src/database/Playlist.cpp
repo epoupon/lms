@@ -19,6 +19,7 @@
 #include "Playlist.hpp"
 
 #include <cassert>
+#include <random>
 
 #include "Cluster.hpp"
 #include "User.hpp"
@@ -115,6 +116,13 @@ Playlist::getEntries(int offset, int size, bool& moreResults) const
 	return res;
 }
 
+std::vector<Wt::Dbo::ptr<PlaylistEntry>>
+Playlist::getAllEntries() const
+{
+	bool moreResults;
+	return getEntries(-1, -1, moreResults);
+}
+
 Wt::Dbo::ptr<PlaylistEntry>
 Playlist::getEntry(std::size_t pos) const
 {
@@ -171,8 +179,23 @@ Playlist::getTrackIds() const
 		.where("p.id = ?").bind(self()->id());
 
 	return std::vector<IdType>(res.begin(), res.end());
-
 }
 
+void
+Playlist::shuffle()
+{
+	assert(session());
+
+	auto entries = getAllEntries();
+
+	auto now = std::chrono::system_clock::now();
+	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
+
+	std::shuffle(entries.begin(), entries.end(), randGenerator);
+
+	clear();
+	for (auto entry : entries)
+		PlaylistEntry::create(*session(), entry->getTrack(), self());
+}
 
 } // namespace Database

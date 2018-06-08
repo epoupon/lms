@@ -50,6 +50,7 @@ PlayQueue::PlayQueue()
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
 	_showMore->setHidden(true);
 
+	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.shuffle"), Wt::TextFormat::XHTML);
 	_radioMode = bindNew<Wt::WCheckBox>("radio-mode", Wt::WString::tr("Lms.PlayQueue.radio-mode"));
 
 	_nbTracks = bindNew<Wt::WText>("nb-tracks");
@@ -77,6 +78,18 @@ PlayQueue::PlayQueue()
 		_entriesContainer->clear();
 		updateInfo();
 	}));
+
+	shuffleBtn->clicked().connect([=]
+	{
+		{
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+			auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
+			playlist.modify()->shuffle();
+		}
+		_entriesContainer->clear();
+		addSome();
+	});
 
 	_showMore->clicked().connect(std::bind([=]
 	{

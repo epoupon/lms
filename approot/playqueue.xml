@@ -6,11 +6,16 @@
 	<i class="fa fa-times-circle"></i>
 </message>
 
+<message id="Lms.PlayQueue.shuffle">
+	<i class="fa fa-random"></i>
+</message>
+
 <message id="Lms.PlayQueue.template">
 	<div class="page-header">
 		<h2>${tr:Lms.PlayQueue.playqueue}</h2>
 		<small>${nb-tracks}</small>
 		${clear-btn}
+		${shuffle-btn}
 		${radio-mode}
 	</div>
 	${entries}

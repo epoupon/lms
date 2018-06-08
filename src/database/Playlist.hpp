@@ -53,11 +53,14 @@ class Playlist : public Wt::Dbo::Dbo<Playlist>
 
 		// Modifiers
 		void clear() { _entries.clear(); }
+		void shuffle();
 
 		// Get tracks, ordered by position
 		std::size_t getCount() const;
 		Wt::Dbo::ptr<PlaylistEntry> getEntry(std::size_t pos) const;
 		std::vector<Wt::Dbo::ptr<PlaylistEntry>> getEntries(int offset, int size, bool& moreResults) const;
+		std::vector<Wt::Dbo::ptr<PlaylistEntry>> getAllEntries() const;
+
 		std::vector<IdType> getTrackIds() const;
 
 		// Get clusters, order by occurence
@@ -95,7 +98,7 @@ class PlaylistEntry
 		static pointer getById(Wt::Dbo::Session& session, IdType id);
 
 		// Create utility
-		static pointer	create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist);
+		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist);
 
 		// Accessors
 		Wt::Dbo::ptr<Track>	getTrack() const { return _track; }
