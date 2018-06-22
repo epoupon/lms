@@ -30,6 +30,7 @@
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
 
+#include "LmsApplicationGroup.hpp"
 #include "Auth.hpp"
 
 namespace UserInterface {
@@ -37,13 +38,20 @@ namespace UserInterface {
 class TranscodeResource;
 class ImageResource;
 
+struct GroupEvents
+{
+	Wt::Signal<LmsApplicationInfo> appOpen;
+	Wt::Signal<LmsApplicationInfo> appClosed;
+};
+
 class LmsApplication : public Wt::WApplication
 {
 	public:
-		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner);
+		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroups& appGroups, Scanner::MediaScanner& scanner);
+		~LmsApplication();
 
 		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env,
-				Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner);
+				Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroups& appGroups, Scanner::MediaScanner& scanner);
 		static LmsApplication* instance();
 
 		// Session application data
@@ -52,10 +60,13 @@ class LmsApplication : public Wt::WApplication
 		Database::Handler& getDb() { return _db;}
 		Wt::Dbo::Session& getDboSession() { return _db.getSession();}
 
-		const Wt::Auth::User& getCurrentAuthUser() { return _db.getLogin().user(); }
-		Database::User::pointer getCurrentUser() { return _db.getCurrentUser(); }
+		const Wt::Auth::User& getAuthUser() { return _db.getLogin().user(); }
+		Database::User::pointer getUser() { return _db.getCurrentUser(); }
+		Wt::WString getUserIdentity() { return _userIdentity; }
 
 		Scanner::MediaScanner& getMediaScanner() { return _scanner; }
+
+		GroupEvents& getGroupEvents() { return _groupEvents; }
 
 		// Utils
 		void goHome();
@@ -68,10 +79,18 @@ class LmsApplication : public Wt::WApplication
 
 	private:
 
-		void handleAuthEvent(void);
+		LmsApplicationGroup& getApplicationGroup();
+
+		// Events
+		void handleAuthEvent();
 		void notify(const Wt::WEvent& event) override;
 
+		void createHome();
+
 		Database::Handler	_db;
+		LmsApplicationGroups&   _appGroups;
+		GroupEvents		_groupEvents;
+		Wt::WString		_userIdentity;
 		Auth*			_auth;
 		Scanner::MediaScanner&	_scanner;
 		std::shared_ptr<ImageResource>	_imageResource;
@@ -79,7 +98,8 @@ class LmsApplication : public Wt::WApplication
 		bool			_isAdmin = false;
 };
 
-// Helper to get session data
+
+// Helper to get session instance
 #define LmsApp	LmsApplication::instance()
 
 } // namespace UserInterface

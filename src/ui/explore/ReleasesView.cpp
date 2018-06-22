@@ -125,7 +125,7 @@ Releases::refreshRecentlyPlayed()
 
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	auto releases = TrackStats::getLastPlayedReleases(LmsApp->getDboSession(), LmsApp->getCurrentUser(), 5);
+	auto releases = TrackStats::getLastPlayedReleases(LmsApp->getDboSession(), LmsApp->getUser(), 5);
 
 	_recentlyPlayedContainer->clear();
 	addCompactEntries(_recentlyPlayedContainer, releases);
@@ -138,7 +138,7 @@ Releases::refreshMostPlayed()
 
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	auto releases = TrackStats::getMostPlayedReleases(LmsApp->getDboSession(), LmsApp->getCurrentUser(), 5);
+	auto releases = TrackStats::getMostPlayedReleases(LmsApp->getDboSession(), LmsApp->getUser(), 5);
 
 	_mostPlayedContainer->clear();
 	addCompactEntries(_mostPlayedContainer, releases);

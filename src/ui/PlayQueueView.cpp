@@ -58,11 +58,11 @@ PlayQueue::PlayQueue()
 	{
 		Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
 
-		auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
+		auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getUser());
 		if (!playlist)
-			playlist = Database::Playlist::create(LmsApp->getDboSession(), currentPlayQueueName, false, LmsApp->getCurrentUser());
+			playlist = Database::Playlist::create(LmsApp->getDboSession(), currentPlayQueueName, false, LmsApp->getUser());
 
-		_trackPos = LmsApp->getCurrentUser()->getCurPlayingTrackPos();
+		_trackPos = LmsApp->getUser()->getCurPlayingTrackPos();
 	}
 
 	clearBtn->clicked().connect(std::bind([=]
@@ -70,7 +70,7 @@ PlayQueue::PlayQueue()
 		{
 			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
+			auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getUser());
 			playlist.modify()->clear();
 			_showMore->setHidden(true);
 		}
@@ -84,7 +84,7 @@ PlayQueue::PlayQueue()
 		{
 			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
+			auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getUser());
 			playlist.modify()->shuffle();
 		}
 		_entriesContainer->clear();
@@ -117,7 +117,7 @@ PlayQueue::play(std::size_t pos)
 	{
 		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-		auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
+		auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getUser());
 
 		// If out of range, stop playing
 		if (pos >= playlist->getCount())
@@ -135,7 +135,7 @@ PlayQueue::play(std::size_t pos)
 
 		trackId = track.id();
 
-		auto stats = Database::TrackStats::get(LmsApp->getDboSession(), track, LmsApp->getCurrentUser());
+		auto stats = Database::TrackStats::get(LmsApp->getDboSession(), track, LmsApp->getUser());
 
 		stats.modify()->incPlayCount();
 		stats.modify()->setLastPlayed(Wt::WLocalDateTime::currentServerDateTime().toUTC());
@@ -175,7 +175,7 @@ PlayQueue::updateInfo()
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
+	auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getUser());
 	_nbTracks->setText(Wt::WString::tr("Lms.PlayQueue.nb-tracks").arg(static_cast<unsigned>(playlist->getCount())));
 }
 
@@ -201,7 +201,7 @@ PlayQueue::enqueueTracks(const std::vector<Database::Track::pointer>& tracks)
 	// Use a "session" playqueue in order to store the current playqueue
 	// so that the user can disconnect and get its playqueue back
 
-	auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
+	auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getUser());
 
 	for (auto track : tracks)
 		Database::PlaylistEntry::create(LmsApp->getDboSession(), track, playlist);
@@ -228,7 +228,7 @@ PlayQueue::playTracks(const std::vector<Database::Track::pointer>& tracks)
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	auto playqueue = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
+	auto playqueue = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getUser());
 	playqueue.modify()->clear();
 
 	_entriesContainer->clear();
@@ -245,7 +245,7 @@ PlayQueue::addSome()
 {
 	Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
 
-	auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
+	auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getUser());
 
 	bool moreResults;
 	auto playlistEntries = playlist->getEntries(_entriesContainer->count(), 50, moreResults);
@@ -313,7 +313,7 @@ PlayQueue::addRadioTrack()
 	auto now = std::chrono::system_clock::now();
 	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
 
-	auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getCurrentUser());
+	auto playlist = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getUser());
 
 	std::set<Database::IdType> playlistTrackIds;
 	{

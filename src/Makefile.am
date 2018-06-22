@@ -13,7 +13,7 @@ lms_SOURCES = \
 	$(srcdir)/database/ScanSettings.cpp			\
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/Track.cpp				\
-	$(srcdir)/database/TrackStats.cpp				\
+	$(srcdir)/database/TrackStats.cpp			\
 	$(srcdir)/database/User.cpp				\
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
@@ -21,6 +21,7 @@ lms_SOURCES = \
 	$(srcdir)/scanner/MediaScanner.cpp			\
 	$(srcdir)/ui/Auth.cpp					\
 	$(srcdir)/ui/LmsApplication.cpp				\
+	$(srcdir)/ui/LmsApplicationGroup.cpp			\
 	$(srcdir)/ui/MediaPlayer.cpp				\
 	$(srcdir)/ui/PlayQueueView.cpp				\
 	$(srcdir)/ui/SettingsView.cpp				\

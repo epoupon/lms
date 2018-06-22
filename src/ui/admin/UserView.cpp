@@ -78,7 +78,7 @@ class UserModel : public Wt::WFormModel
 			Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*_userId) );
 			Database::User::pointer user = LmsApp->getDb().getUser(authUser);
 
-			if (user == LmsApp->getCurrentUser())
+			if (user == LmsApp->getUser())
 				throw std::runtime_error("Cannot edit ourselves");
 
 			auto bitrate = getBitrateLimitRow(user->getMaxAudioBitrate());

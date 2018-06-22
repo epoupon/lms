@@ -75,7 +75,7 @@ UsersView::refreshView()
 		entry->bindString("name", authUser.identity(Wt::Auth::Identity::LoginName), Wt::TextFormat::Plain);
 
 		// Don't edit ourself this way
-		if (LmsApp->getCurrentUser() == user)
+		if (LmsApp->getUser() == user)
 			continue;
 
 		entry->setCondition("if-edit", true);

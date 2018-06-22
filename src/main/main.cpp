@@ -122,12 +122,13 @@ int main(int argc, char* argv[])
 		// Initializing a connection pool to the database that will be shared along services
 		auto connectionPool = Database::Handler::createConnectionPool(Config::instance().getPath("working-dir") / "lms.db");
 
+		UserInterface::LmsApplicationGroups appGroups;
 		Scanner::MediaScanner scanner(*connectionPool);
 
 		// bind entry point
 		server.addEntryPoint(Wt::EntryPointType::Application,
 				std::bind(UserInterface::LmsApplication::create,
-					std::placeholders::_1, std::ref(*connectionPool), std::ref(scanner)));
+					std::placeholders::_1, std::ref(*connectionPool), std::ref(appGroups), std::ref(scanner)));
 
 		// Start
 		LMS_LOG(MAIN, INFO) << "Starting Media scanner...";

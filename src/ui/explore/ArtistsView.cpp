@@ -101,7 +101,7 @@ void
 Artists::refreshRecentlyPlayed()
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-	auto artists = TrackStats::getLastPlayedArtists(LmsApp->getDboSession(), LmsApp->getCurrentUser(), 5);
+	auto artists = TrackStats::getLastPlayedArtists(LmsApp->getDboSession(), LmsApp->getUser(), 5);
 
 	_recentlyPlayedContainer->clear();
 	addCompactEntries(_recentlyPlayedContainer, artists);
@@ -112,7 +112,7 @@ void
 Artists::refreshMostPlayed()
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-	auto artists = TrackStats::getMostPlayedArtists(LmsApp->getDboSession(), LmsApp->getCurrentUser(), 5);
+	auto artists = TrackStats::getMostPlayedArtists(LmsApp->getDboSession(), LmsApp->getUser(), 5);
 
 	_mostPlayedContainer->clear();
 	addCompactEntries(_mostPlayedContainer, artists);

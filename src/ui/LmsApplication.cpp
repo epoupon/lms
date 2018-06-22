@@ -50,13 +50,13 @@
 namespace UserInterface {
 
 std::unique_ptr<Wt::WApplication>
-LmsApplication::create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner)
+LmsApplication::create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroups& appGroups, Scanner::MediaScanner& scanner)
 {
 	/*
 	 * You could read information from the environment to decide whether
 	 * the user has permission to start a new application
 	 */
-	return std::make_unique<LmsApplication>(env, connectionPool, scanner);
+	return std::make_unique<LmsApplication>(env, connectionPool, appGroups, scanner);
 }
 
 LmsApplication*
@@ -71,9 +71,10 @@ LmsApplication::instance()
  * constructor so it is typically also an argument for your custom
  * application constructor.
 */
-LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, Scanner::MediaScanner& scanner)
+LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroups& appGroups, Scanner::MediaScanner& scanner)
 : Wt::WApplication(env),
   _db(connectionPool),
+  _appGroups(appGroups),
   _scanner(scanner),
   _imageResource(nullptr),
   _transcodeResource(nullptr)
@@ -125,21 +126,21 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	}
 	else
 	{
-		LmsApp->getDb().getLogin().changed().connect(std::bind([=]
-		{
-			try
-			{
-				handleAuthEvent();
-			}
-			catch (std::exception& e)
-			{
-				LMS_LOG(UI, ERROR) << "Error while handling auth event: " << e.what();
-				throw std::runtime_error("Internal error");
-			}
-		}));
-
+		LmsApp->getDb().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
 		_auth = root()->addNew<Auth>();
 	}
+}
+
+LmsApplication::~LmsApplication()
+{
+	LmsApplicationInfo info = LmsApplicationInfo::fromEnvironment(environment());
+
+	getApplicationGroup().postOthers([info]
+	{
+		LmsApp->getGroupEvents().appClosed(info);
+	});
+
+	getApplicationGroup().leave();
 }
 
 std::unique_ptr<Wt::WAnchor>
@@ -250,25 +251,56 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 	wApp->setInternalPath("/artists", true);
 }
 
-void
-LmsApplication::handleAuthEvent(void)
+LmsApplicationGroup&
+LmsApplication::getApplicationGroup()
 {
-	if (!LmsApp->getDb().getLogin().loggedIn())
+	return _appGroups[_userIdentity];
+}
+
+void
+LmsApplication::handleAuthEvent()
+{
+	try
 	{
-		LMS_LOG(UI, INFO) << "User logged out, session = " << Wt::WApplication::instance()->sessionId();
+		if (!getDb().getLogin().loggedIn())
+		{
+			LMS_LOG(UI, INFO) << "User '" << _userIdentity << " 'logged out, session = " << sessionId();
 
-		goHomeAndQuit();
-		return;
+			goHomeAndQuit();
+			return;
+		}
+		else
+		{
+			_userIdentity = getAuthUser().identity(Wt::Auth::Identity::LoginName);
+			LmsApplicationInfo info = LmsApplicationInfo::fromEnvironment(environment());
+
+			LMS_LOG(UI, INFO) << "User '" << _userIdentity << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent() << ", session = " <<  sessionId();
+			getApplicationGroup().join(info);
+
+			getApplicationGroup().postOthers([info]
+			{
+				LmsApp->getGroupEvents().appOpen(info);
+			});
+
+			createHome();
+		}
 	}
+	catch (std::exception& e)
+	{
+		LMS_LOG(UI, ERROR) << "Error while handling auth event: " << e.what();
+		throw std::runtime_error("Internal error");
+	}
+}
 
-	LMS_LOG(UI, INFO) << "User '" << LmsApp->getCurrentAuthUser().identity(Wt::Auth::Identity::LoginName) << "' logged in from '" << Wt::WApplication::instance()->environment().clientAddress() << "', user agent = " << Wt::WApplication::instance()->environment().userAgent() << ", session = " <<  Wt::WApplication::instance()->sessionId();
-
-	// Since we plug into the Media Scanner events, we need to enable updates
+void
+LmsApplication::createHome()
+{
+	// Handle Media Scanner events and other session events
 	enableUpdates(true);
 
 	{
 		Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
-		_isAdmin = LmsApp->getCurrentUser()->isAdmin();
+		_isAdmin = LmsApp->getUser()->isAdmin();
 	}
 
 	_imageResource = std::make_shared<ImageResource>(_db);
@@ -355,33 +387,33 @@ LmsApplication::handleAuthEvent(void)
 		mainStack->addNew<UserView>();
 	}
 
-	explore->tracksAdd.connect(std::bind([=] (std::vector<Database::Track::pointer> tracks)
+	explore->tracksAdd.connect([=] (std::vector<Database::Track::pointer> tracks)
 	{
 		playqueue->addTracks(tracks);
-	}, std::placeholders::_1));
+	});
 
-	explore->tracksPlay.connect(std::bind([=] (std::vector<Database::Track::pointer> tracks)
+	explore->tracksPlay.connect([=] (std::vector<Database::Track::pointer> tracks)
 	{
 		playqueue->playTracks(tracks);
-	}, std::placeholders::_1));
+	});
 
 
 	// MediaPlayer
 	MediaPlayer* player = main->bindNew<MediaPlayer>("player");
 
 	// Events from MediaPlayer
-	player->playNext.connect(std::bind([=]
+	player->playNext.connect([=]
 	{
 		playqueue->playNext();
-	}));
-	player->playPrevious.connect(std::bind([=]
+	});
+	player->playPrevious.connect([=]
 	{
 		playqueue->playPrevious();
-	}));
-	player->playbackEnded.connect(std::bind([=]
+	});
+	player->playbackEnded.connect([=]
 	{
 		playqueue->playNext();
-	}));
+	});
 
 	// Events from the PlayQueue
 	playqueue->playTrack.connect(explore, &Explore::handleTrackPlayed);
@@ -390,7 +422,7 @@ LmsApplication::handleAuthEvent(void)
 	playqueue->playbackStop.connect(player, &MediaPlayer::stop);
 
 	// Events from MediaScanner
-	std::string sessionId = this->sessionId();
+	std::string sessionId = LmsApp->sessionId();
 	_scanner.scanComplete().connect([=] (Scanner::MediaScanner::Stats stats)
 	{
 		Wt::WServer::instance()->post(sessionId, [=]
@@ -418,6 +450,19 @@ LmsApplication::handleAuthEvent(void)
 			if (changes)
 				triggerUpdate();
 		});
+	});
+
+	// Events from Application group
+	_groupEvents.appOpen.connect([=] (LmsApplicationInfo info)
+	{
+		// Only one active session by user
+		setConfirmCloseMessage("");
+		quit(Wt::WString::tr("Lms.quit-other-session"));
+	});
+
+	_groupEvents.appClosed.connect([=] (LmsApplicationInfo info)
+	{
+		;
 	});
 
 	internalPathChanged().connect(std::bind([=]
@@ -448,6 +493,7 @@ LmsApplication::notifyMsg(const Wt::WString& message)
 	LMS_LOG(UI, INFO) << "Notifying message '" << message.toUTF8() << "'";
 	root()->addNew<Wt::WText>(message);
 }
+
 
 } // namespace UserInterface
 

@@ -68,11 +68,11 @@ class SettingsModel : public Wt::WFormModel
 		{
 			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			auto bitrate = getBitrateRow(LmsApp->getCurrentUser()->getAudioBitrate());
+			auto bitrate = getBitrateRow(LmsApp->getUser()->getAudioBitrate());
 			if (bitrate)
 				setValue(BitrateField, bitrateString(*bitrate));
 
-			auto encodingRow = getEncodingRow(LmsApp->getCurrentUser()->getAudioEncoding());
+			auto encodingRow = getEncodingRow(LmsApp->getUser()->getAudioEncoding());
 			if (encodingRow)
 				setValue(EncodingField, encodingString(*encodingRow));
 
@@ -84,14 +84,14 @@ class SettingsModel : public Wt::WFormModel
 
 			auto bitrateRow = getBitrateRow(Wt::asString(value(BitrateField)));
 			assert(bitrateRow);
-			LmsApp->getCurrentUser().modify()->setAudioBitrate(bitrate(*bitrateRow));
+			LmsApp->getUser().modify()->setAudioBitrate(bitrate(*bitrateRow));
 
 			auto encodingRow = getEncodingRow(Wt::asString(value(EncodingField)));
-			LmsApp->getCurrentUser().modify()->setAudioEncoding(encoding(*encodingRow));
+			LmsApp->getUser().modify()->setAudioEncoding(encoding(*encodingRow));
 
 			if (!valueText(PasswordField).empty())
 			{
-				Database::Handler::getPasswordService().updatePassword(LmsApp->getCurrentAuthUser(), valueText(PasswordField));
+				Database::Handler::getPasswordService().updatePassword(LmsApp->getAuthUser(), valueText(PasswordField));
 			}
 		}
 
@@ -104,8 +104,7 @@ class SettingsModel : public Wt::WFormModel
 				if (!valueText(PasswordField).empty())
 				{
 					// Evaluate the strength of the password
-					auto res = Database::Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField),
-						LmsApp->getCurrentAuthUser().identity(Wt::Auth::Identity::LoginName), "");
+					auto res = Database::Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField), LmsApp->getUserIdentity(), "");
 
 					if (!res.isValid())
 						error = res.message();
@@ -209,7 +208,7 @@ class SettingsModel : public Wt::WFormModel
 			std::size_t maxAudioBitrate;
 			{
 				Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-				maxAudioBitrate = LmsApp->getCurrentUser()->getMaxAudioBitrate();
+				maxAudioBitrate = LmsApp->getUser()->getMaxAudioBitrate();
 			}
 
 			std::size_t id = 0;
