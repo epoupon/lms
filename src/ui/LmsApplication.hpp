@@ -47,11 +47,11 @@ struct GroupEvents
 class LmsApplication : public Wt::WApplication
 {
 	public:
-		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroups& appGroups, Scanner::MediaScanner& scanner);
+		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups, Scanner::MediaScanner& scanner);
 		~LmsApplication();
 
 		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env,
-				Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroups& appGroups, Scanner::MediaScanner& scanner);
+				Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups, Scanner::MediaScanner& scanner);
 		static LmsApplication* instance();
 
 		// Session application data
@@ -88,7 +88,7 @@ class LmsApplication : public Wt::WApplication
 		void createHome();
 
 		Database::Handler	_db;
-		LmsApplicationGroups&   _appGroups;
+		LmsApplicationGroupContainer&   _appGroups;
 		GroupEvents		_groupEvents;
 		Wt::WString		_userIdentity;
 		Auth*			_auth;

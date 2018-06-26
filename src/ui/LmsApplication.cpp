@@ -50,7 +50,7 @@
 namespace UserInterface {
 
 std::unique_ptr<Wt::WApplication>
-LmsApplication::create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroups& appGroups, Scanner::MediaScanner& scanner)
+LmsApplication::create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups, Scanner::MediaScanner& scanner)
 {
 	/*
 	 * You could read information from the environment to decide whether
@@ -71,7 +71,7 @@ LmsApplication::instance()
  * constructor so it is typically also an argument for your custom
  * application constructor.
 */
-LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroups& appGroups, Scanner::MediaScanner& scanner)
+LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups, Scanner::MediaScanner& scanner)
 : Wt::WApplication(env),
   _db(connectionPool),
   _appGroups(appGroups),
@@ -254,7 +254,7 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 LmsApplicationGroup&
 LmsApplication::getApplicationGroup()
 {
-	return _appGroups[_userIdentity];
+	return _appGroups.get(_userIdentity);
 }
 
 void

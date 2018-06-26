@@ -20,6 +20,7 @@
 #pragma once
 
 #include <map>
+#include <mutex>
 
 #include <Wt/WSignal.h>
 #include <Wt/WEnvironment.h>
@@ -41,17 +42,25 @@ class LmsApplicationGroup
 		void join(LmsApplicationInfo info);
 		void leave();
 
-		std::vector<LmsApplicationInfo> list() const;
-
 		void postOthers(std::function<void()> func) const;
 
 	private:
+
+		mutable std::mutex _mutex;
 
 		std::vector<std::string>  getOtherSessionIds() const;
 
 		std::map<std::string, LmsApplicationInfo> _apps;
 };
 
-using LmsApplicationGroups = std::map<Wt::WString, LmsApplicationGroup>;
+class LmsApplicationGroupContainer
+{
+	public:
+		LmsApplicationGroup& get(Wt::WString identity);
+
+	private:
+		std::map<Wt::WString, LmsApplicationGroup> _apps;
+		std::mutex _mutex;
+};
 
 } // UserInterface

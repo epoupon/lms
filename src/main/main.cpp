@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 		// Initializing a connection pool to the database that will be shared along services
 		auto connectionPool = Database::Handler::createConnectionPool(Config::instance().getPath("working-dir") / "lms.db");
 
-		UserInterface::LmsApplicationGroups appGroups;
+		UserInterface::LmsApplicationGroupContainer appGroups;
 		Scanner::MediaScanner scanner(*connectionPool);
 
 		// bind entry point
