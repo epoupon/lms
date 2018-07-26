@@ -52,7 +52,7 @@ std::string encodingToMimetype(Encoding encoding)
 			return encodingInfo.mimetype;
 	}
 
-	throw std::logic_error("encoding_to_mimetype failed!");
+	throw AvException("Invalid encoding");
 }
 
 int encodingToInt(Encoding encoding)
@@ -63,7 +63,7 @@ int encodingToInt(Encoding encoding)
 			return encodingInfo.id;
 	}
 
-	throw std::logic_error("encoding_to_int failed!");
+	throw AvException("Invalid encoding");
 }
 
 Encoding encodingFromInt(int encodingId)
@@ -74,7 +74,7 @@ Encoding encodingFromInt(int encodingId)
 			return encodingInfo.encoding;
 	}
 
-	throw std::logic_error("encoding_from_int failed!");
+	throw AvException("Invalid encodingId");
 }
 
 // TODO, parametrize?
@@ -104,7 +104,7 @@ Transcoder::init()
 	if (!avConvPath.empty())
 		LMS_LOG(TRANSCODE, INFO) << "Using transcoder " << avConvPath.string();
 	else
-		throw std::runtime_error("Cannot find any transcoder binary!");
+		throw AvException("Cannot find any transcoder binary!");
 }
 
 Transcoder::Transcoder(boost::filesystem::path filePath, TranscodeParameters parameters)

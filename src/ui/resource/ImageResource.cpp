@@ -22,6 +22,7 @@
 #include <Wt/WApplication.h>
 #include <Wt/Http/Response.h>
 
+#include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
@@ -58,7 +59,7 @@ ImageResource::getDefaultCover(std::size_t size)
 		Image::Image image;
 
 		if (!image.load( Wt::WApplication::instance()->docRoot() + unknownCoverPath ))
-			throw std::runtime_error("Cannot read default cover file");
+			throw LmsException("Cannot read default cover file");
 
 		image.scale(size);
 
@@ -80,7 +81,7 @@ ImageResource::getDefaultArtistImage(std::size_t size)
 		Image::Image image;
 
 		if (!image.load( Wt::WApplication::instance()->docRoot() + unknownArtistImagePath))
-			throw std::runtime_error("Cannot read default artist image file");
+			throw LmsException("Cannot read default artist image file");
 
 		image.scale(size);
 

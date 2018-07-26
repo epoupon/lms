@@ -36,7 +36,7 @@ static std::string averror_to_string(int error)
 }
 
 MediaFileException::MediaFileException(int avError)
-: LmsException("MediaFileException: " + averror_to_string(avError))
+: AvException("MediaFileException: " + averror_to_string(avError))
 {
 }
 

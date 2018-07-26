@@ -30,8 +30,9 @@
 #include <Wt/WStringListModel.h>
 
 #include "common/Validators.hpp"
-#include "utils/Utils.hpp"
+#include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -79,7 +80,7 @@ class UserModel : public Wt::WFormModel
 			Database::User::pointer user = LmsApp->getDb().getUser(authUser);
 
 			if (user == LmsApp->getUser())
-				throw std::runtime_error("Cannot edit ourselves");
+				throw LmsException("Cannot edit ourselves");
 
 			auto bitrate = getBitrateLimitRow(user->getMaxAudioBitrate());
 			if (bitrate)

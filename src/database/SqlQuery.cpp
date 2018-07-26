@@ -20,9 +20,8 @@
 #include "SqlQuery.hpp"
 
 #include <algorithm>
-
+#include <cassert>
 #include <sstream>
-#include <stdexcept>
 
 WhereClause&
 WhereClause::And(const WhereClause& otherClause)
@@ -70,8 +69,7 @@ WhereClause::get(void) const
 WhereClause&
 WhereClause::bind(const std::string& bindArg)
 {
-	if (_bindArgs.size() >= static_cast<std::size_t>( std::count(_clause.begin(), _clause.end(), '?') ))
-		throw std::runtime_error("Too many bind args!");
+	assert(_bindArgs.size() < static_cast<std::size_t>(std::count(_clause.begin(), _clause.end(), '?')));
 
 	_bindArgs.push_back(bindArg);
 

@@ -21,11 +21,11 @@
 
 #include <array>
 #include <fstream>
-#include <stdexcept>
 
 #include <boost/crc.hpp>  // for boost::crc_32_type
 #include <boost/tokenizer.hpp>
 
+#include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
 boost::filesystem::path searchExecPath(std::string filename)
@@ -34,7 +34,7 @@ boost::filesystem::path searchExecPath(std::string filename)
 
 	path = ::getenv("PATH");
 	if (path.empty())
-		throw std::runtime_error("Environment variable PATH not found");
+		throw LmsException("Environment variable PATH not found");
 
 	std::string result;
 	typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
@@ -75,7 +75,7 @@ void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& cr
 	else
 	{
 		LMS_LOG(DBUPDATER, ERROR) << "Failed to open file '" << p.string() << "'";
-		throw std::runtime_error("Failed to open file '" + p.string() + "'" );
+		throw LmsException("Failed to open file '" + p.string() + "'" );
 	}
 
 	// Copy back result into the vector

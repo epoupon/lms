@@ -57,7 +57,13 @@ struct StreamInfo
 	std::size_t     bitrate;
 };
 
-class MediaFileException : public LmsException
+class AvException : public LmsException
+{
+	public:
+		AvException(const std::string& msg) : LmsException(msg) {}
+};
+
+class MediaFileException : public AvException
 {
 	public:
 		MediaFileException(int avError);

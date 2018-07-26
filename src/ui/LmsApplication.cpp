@@ -288,7 +288,7 @@ LmsApplication::handleAuthEvent()
 	catch (std::exception& e)
 	{
 		LMS_LOG(UI, ERROR) << "Error while handling auth event: " << e.what();
-		throw std::runtime_error("Internal error");
+		throw LmsException("Internal error"); // Do not put details here at it appears on the user rendered html
 	}
 }
 
@@ -483,7 +483,7 @@ LmsApplication::notify(const Wt::WEvent& event)
 	catch (std::exception& e)
 	{
 		LMS_LOG(UI, ERROR) << "Caught exception: " << e.what();
-		throw std::runtime_error("Internal error");
+		throw LmsException("Internal error"); // Do not put details here at it appears on the user rendered html
 	}
 }
 

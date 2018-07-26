@@ -24,6 +24,7 @@
 #include <Wt/WPushButton.h>
 #include <Wt/Auth/Identity.h>
 
+#include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
 #include "common/Validators.hpp"
@@ -58,7 +59,7 @@ class InitWizardModel : public Wt::WFormModel
 			// Check if a user already exist
 			// If it's the case, just do nothing
 			if (!Database::User::getAll(LmsApp->getDboSession()).empty())
-				throw std::runtime_error("Admin user already created");
+				throw LmsException("Admin user already created");
 
 			// Create user
 			Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().registerNew();
