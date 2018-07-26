@@ -45,6 +45,8 @@ LmsApplicationGroup::join(LmsApplicationInfo info)
 void
 LmsApplicationGroup::leave()
 {
+	std::lock_guard<std::mutex> lock(_mutex);
+
 	_apps.erase(wApp->sessionId());
 }
 
