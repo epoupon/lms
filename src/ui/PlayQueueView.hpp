@@ -27,6 +27,7 @@
 
 #include <boost/optional.hpp>
 
+#include "database/Playlist.hpp"
 #include "database/Track.hpp"
 
 namespace UserInterface {
@@ -52,6 +53,9 @@ class PlayQueue : public Wt::WTemplate
 		Wt::Signal<> playbackStop;
 
 	private:
+		Database::Playlist::pointer getPlaylist();
+
+		void clearTracks();
 		void enqueueTracks(const std::vector<Database::Track::pointer>& tracks);
 		void enqueueTrack(Database::Track::pointer track);
 		void addSome();
