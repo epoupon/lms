@@ -33,7 +33,7 @@ User::audioBitrates =
 
 User::User()
 : _maxAudioBitrate(audioBitrates.back()),
-_isAdmin(false),
+_type(Type::REGULAR),
 _audioBitrate(defaultAudioBitrate),
 _audioEncoding(AudioEncoding::AUTO),
 _curPlayingTrackPos(0)
@@ -49,13 +49,20 @@ User::getAll(Wt::Dbo::Session& session)
 }
 
 User::pointer
+User::getDemo(Wt::Dbo::Session& session)
+{
+	pointer res = session.find<User>().where("type = ?").bind(Type::DEMO);
+	return res;
+}
+
+User::pointer
 User::create(Wt::Dbo::Session& session)
 {
 	return session.add(std::make_unique<User>());
 }
 
 User::pointer
-User::getById(Wt::Dbo::Session& session, id_type id)
+User::getById(Wt::Dbo::Session& session, IdType id)
 {
 	return session.find<User>().where("id = ?").bind( id );
 }

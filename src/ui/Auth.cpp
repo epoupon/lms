@@ -40,6 +40,18 @@ Auth::Auth()
 	// LoginName
 	setFormWidget(Wt::Auth::AuthModel::LoginNameField, std::make_unique<Wt::WLineEdit>());
 
+	{
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+		auto demoUser = Database::User::getDemo(LmsApp->getDboSession());
+		if (demoUser)
+		{
+			Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().findWithId(std::to_string(demoUser.id()));
+			_model->setValue(Wt::Auth::AuthModel::LoginNameField, authUser.identity(Wt::Auth::Identity::LoginName));
+			_model->setValue(Wt::Auth::AuthModel::PasswordField, authUser.identity(Wt::Auth::Identity::LoginName));
+		}
+	}
+
 	// Password
 	auto password = std::make_unique<Wt::WLineEdit>();
 	password->setEchoMode(Wt::EchoMode::Password);

@@ -295,6 +295,17 @@ SettingsView::refreshView()
 
 	saveBtn->clicked().connect(std::bind([=] ()
 	{
+
+		{
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+			if (LmsApp->getUser()->isDemo())
+			{
+				LmsApp->notifyMsg(Wt::WString::tr("Lms.Settings.demo-cannot-save"));
+				return;
+			}
+		}
+
 		t->updateModel(model.get());
 
 		if (model->validate())

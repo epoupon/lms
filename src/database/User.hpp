@@ -24,6 +24,8 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Auth/Dbo/AuthInfo.h>
 
+#include "Types.hpp"
+
 namespace Database {
 
 class User;
@@ -43,11 +45,17 @@ enum class AudioEncoding
 class User : public Wt::Dbo::Dbo<User>
 {
 	public:
-		typedef Wt::Dbo::dbo_traits<User>::IdType id_type;
-		typedef Wt::Dbo::ptr<User>	pointer;
+		using pointer = Wt::Dbo::ptr<User>;
 
 		static const std::size_t MinNameLength = 3;
 		static const std::size_t MaxNameLength = 15;
+
+		enum class Type
+		{
+			REGULAR,
+			ADMIN,
+			DEMO
+		};
 
 		// list of audio parameters
 		static const std::vector<std::size_t> audioBitrates;
@@ -58,18 +66,20 @@ class User : public Wt::Dbo::Dbo<User>
 		static pointer create(Wt::Dbo::Session& session);
 
 		// accessors
-		static pointer			getById(Wt::Dbo::Session& session, id_type id);
+		static pointer			getById(Wt::Dbo::Session& session, IdType id);
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session);
+		static pointer			getDemo(Wt::Dbo::Session& session);
 
 		// write
-		void setAdmin(bool admin)	{ _isAdmin = admin; }
+		void setType(Type type)	{ _type = type; }
 		void setAudioBitrate(std::size_t bitrate);
 		void setAudioEncoding(AudioEncoding encoding)	{ _audioEncoding = encoding; }
 		void setMaxAudioBitrate(std::size_t bitrate);
 		void setCurPlayingTrackPos(std::size_t pos) { _curPlayingTrackPos = pos; }
 
 		// read
-		bool isAdmin() const { return _isAdmin; }
+		bool isAdmin() const { return _type == Type::ADMIN; }
+		bool isDemo() const { return _type == Type::DEMO; }
 		std::size_t	getAudioBitrate() const;
 		AudioEncoding	getAudioEncoding() const { return _audioEncoding; }
 		std::size_t	getMaxAudioBitrate() const;
@@ -79,7 +89,7 @@ class User : public Wt::Dbo::Dbo<User>
 			void persist(Action& a)
 			{
 				Wt::Dbo::field(a, _maxAudioBitrate, "max_audio_bitrate");
-				Wt::Dbo::field(a, _isAdmin, "admin");
+				Wt::Dbo::field(a, _type, "type");
 				Wt::Dbo::field(a, _audioBitrate, "audio_bitrate");
 				Wt::Dbo::field(a, _audioEncoding, "audio_encoding");
 				// User's dynamic data
@@ -93,7 +103,7 @@ class User : public Wt::Dbo::Dbo<User>
 
 		// Admin defined settings
 		int	 	_maxAudioBitrate;
-		bool		_isAdmin;
+		Type		_type;
 
 		// User defined settings
 		int		_audioBitrate;

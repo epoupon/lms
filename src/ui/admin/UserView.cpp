@@ -30,6 +30,7 @@
 #include <Wt/WStringListModel.h>
 
 #include "common/Validators.hpp"
+#include "utils/Config.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -45,8 +46,9 @@ class UserModel : public Wt::WFormModel
 		static const Field LoginField;
 		static const Field PasswordField;
 		static const Field BitrateLimitField;
+		static const Field DemoField;
 
-		UserModel(boost::optional<Database::User::id_type> userId)
+		UserModel(boost::optional<Database::IdType> userId)
 		: Wt::WFormModel(),
 		_userId(userId)
 		{
@@ -58,7 +60,7 @@ class UserModel : public Wt::WFormModel
 
 			addField(PasswordField);
 			addField(BitrateLimitField);
-
+			addField(DemoField);
 
 			if (!_userId)
 				setValidator(PasswordField, createMandatoryValidator());
@@ -76,8 +78,8 @@ class UserModel : public Wt::WFormModel
 
 			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*_userId) );
-			Database::User::pointer user = LmsApp->getDb().getUser(authUser);
+			auto authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*_userId) );
+			auto user = LmsApp->getDb().getUser(authUser);
 
 			if (user == LmsApp->getUser())
 				throw LmsException("Cannot edit ourselves");
@@ -117,6 +119,9 @@ class UserModel : public Wt::WFormModel
 
 				auto bitrateLimitRow = getBitrateLimitRow(Wt::asString(value(BitrateLimitField)));
 				user.modify()->setMaxAudioBitrate(bitrateLimit(*bitrateLimitRow));
+
+				if (Wt::asNumber(value(DemoField)))
+					user.modify()->setType(Database::User::Type::DEMO);
 			}
 		}
 
@@ -140,30 +145,41 @@ class UserModel : public Wt::WFormModel
 				auto user = LmsApp->getDb().getUserDatabase().findWithIdentity(Wt::Auth::Identity::LoginName, valueText(LoginField));
 				if (user.isValid())
 					error = Wt::WString::tr("Lms.Admin.User.user-already-exists");
-				else
-					return Wt::WFormModel::validateField(field);
 			}
 			else if (field == PasswordField)
 			{
 				if (!valueText(PasswordField).empty())
 				{
-					// Evaluate the strength of the password
-					auto res = Database::Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField), getLogin(), "");
+					if (Wt::asNumber(value(DemoField)))
+					{
+						//Demo account: password must be the same as the login name
+						if (valueText(PasswordField) != getLogin())
+							error = Wt::WString::tr("Lms.Admin.User.demo-password-invalid");
+					}
+					else
+					{
+						// Evaluate the strength of the password for non demo accounts
+						auto res = Database::Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField), getLogin(), "");
 
-					if (!res.isValid())
-						error = res.message();
+						if (!res.isValid())
+							error = res.message();
+					}
 				}
-				else
-					return Wt::WFormModel::validateField(field);
 			}
-			else
+			else if (field == DemoField)
 			{
-				return Wt::WFormModel::validateField(field);
+				Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+				if (Wt::asNumber(value(DemoField)) && Database::User::getDemo(LmsApp->getDboSession()))
+					error = Wt::WString::tr("Lms.Admin.User.demo-account-already-exists");
 			}
 
-			setValidation(field, Wt::WValidator::Result( error.empty() ? Wt::ValidationState::Valid : Wt::ValidationState::Invalid, error));
+			if (error.empty())
+				return Wt::WFormModel::validateField(field);
 
-			return (validation(field).state() == Wt::ValidationState::Valid);
+			setValidation(field, Wt::WValidator::Result( Wt::ValidationState::Invalid, error));
+
+			return false;
 		}
 
 		boost::optional<int> getBitrateLimitRow(Wt::WString value)
@@ -219,12 +235,13 @@ class UserModel : public Wt::WFormModel
 		}
 
 		std::shared_ptr<Wt::WStringListModel>	_bitrateModel;
-		boost::optional<Database::User::id_type> _userId;
+		boost::optional<Database::IdType> _userId;
 };
 
 const Wt::WFormModel::Field UserModel::LoginField = "login";
 const Wt::WFormModel::Field UserModel::PasswordField = "password";
 const Wt::WFormModel::Field UserModel::BitrateLimitField = "audio-bitrate-limit";
+const Wt::WFormModel::Field UserModel::DemoField = "demo";
 
 UserView::UserView()
 {
@@ -242,7 +259,7 @@ UserView::refreshView()
 	if (!wApp->internalPathMatches("/admin/user"))
 		return;
 
-	auto userId = readAs<Database::User::id_type>(wApp->internalPathNextPart("/admin/user/"));
+	auto userId = readAs<Database::IdType>(wApp->internalPathNextPart("/admin/user/"));
 
 	LMS_LOG(UI, DEBUG) << "userId = " << (userId ? std::to_string(*userId) : "none");
 
@@ -275,6 +292,11 @@ UserView::refreshView()
 	auto bitrate = std::make_unique<Wt::WComboBox>();
 	bitrate->setModel(model->bitrateModel());
 	t->setFormWidget(UserModel::BitrateLimitField, std::move(bitrate));
+
+	// Demo account
+	t->setFormWidget(UserModel::DemoField, std::make_unique<Wt::WCheckBox>());
+	if (!userId && Config::instance().getBool("demo", false))
+		t->setCondition("if-demo", true);
 
 	Wt::WPushButton* saveBtn = t->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(userId ? "Lms.save" : "Lms.create"));
 	saveBtn->clicked().connect(std::bind([=]

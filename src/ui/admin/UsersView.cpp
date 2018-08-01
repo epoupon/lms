@@ -74,6 +74,13 @@ UsersView::refreshView()
 
 		entry->bindString("name", authUser.identity(Wt::Auth::Identity::LoginName), Wt::TextFormat::Plain);
 
+		// Create tag
+		if (user->isAdmin() || user->isDemo())
+		{
+			entry->setCondition("if-tag", true);
+			entry->bindString("tag", Wt::WString::tr(user->isAdmin() ? "Lms.Admin.Users.admin" : "Lms.Admin.Users.demo"));
+		}
+
 		// Don't edit ourself this way
 		if (LmsApp->getUser() == user)
 			continue;

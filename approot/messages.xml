@@ -36,10 +36,17 @@
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">New user</message>
+<message id="Lms.Admin.Users.admin">Admin</message>
 <message id="Lms.Admin.Users.del">Delete</message>
+<message id="Lms.Admin.Users.demo">Demo</message>
 <message id="Lms.Admin.Users.edit">Edit</message>
 <message id="Lms.Admin.Users.users">Users</message>
 
+<!--User-->
+<message id="Lms.Admin.User.audio-bitrate-limit">Audio bitrate limit</message>
+<message id="Lms.Admin.User.demo-account">Demo account</message>
+<message id="Lms.Admin.User.demo-account-already-exists">Demo account already exists!</message>
+<message id="Lms.Admin.User.demo-password-invalid">Demo password must be the login name!</message>
 <message id="Lms.Admin.User.user-already-exists">User already exists!</message>
 <message id="Lms.Admin.User.user-create">New user</message>
 <message id="Lms.Admin.User.user-created">New user created!</message>
@@ -83,6 +90,7 @@
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.auto">Auto</message>
 <message id="Lms.Settings.bitrate">Bitrate</message>
+<message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
 <message id="Lms.Settings.encoding">Encoding</message>
 <message id="Lms.Settings.mp3">MP3</message>
 <message id="Lms.Settings.oga">OGA</message>

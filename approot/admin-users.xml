@@ -11,7 +11,7 @@
 
 <message id="Lms.Admin.Users.template.entry">
 	<div class="list-group-item">
-		${name} ${<if-edit>}${edit-btn} ${del-btn class="btn-danger"}${</if-edit>}
+		${name} ${<if-tag>}<span class="badge">${tag}</span>${</if-tag>} ${<if-edit>}${edit-btn} ${del-btn class="btn-danger"}${</if-edit>}
 	</div>
 </message>
 

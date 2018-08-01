@@ -69,7 +69,7 @@ class InitWizardModel : public Wt::WFormModel
 			authUser.setIdentity(Wt::Auth::Identity::LoginName, valueText(AdminLoginField));
 			Database::Handler::getPasswordService().updatePassword(authUser, valueText(PasswordField));
 
-			user.modify()->setAdmin( true );
+			user.modify()->setType(Database::User::Type::ADMIN);
 		}
 
 		bool validateField(Field field)
