@@ -131,7 +131,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	}
 }
 
-LmsApplication::~LmsApplication()
+void
+LmsApplication::finalize()
 {
 	LmsApplicationInfo info = LmsApplicationInfo::fromEnvironment(environment());
 
@@ -141,6 +142,8 @@ LmsApplication::~LmsApplication()
 	});
 
 	getApplicationGroup().leave();
+
+	preQuit().emit();
 }
 
 std::unique_ptr<Wt::WAnchor>
@@ -456,8 +459,11 @@ LmsApplication::createHome()
 	_groupEvents.appOpen.connect([=] (LmsApplicationInfo info)
 	{
 		// Only one active session by user
-		setConfirmCloseMessage("");
-		quit(Wt::WString::tr("Lms.quit-other-session"));
+		if (!LmsApp->getUser()->isDemo())
+		{
+			setConfirmCloseMessage("");
+			quit(Wt::WString::tr("Lms.quit-other-session"));
+		}
 	});
 
 	_groupEvents.appClosed.connect([=] (LmsApplicationInfo info)

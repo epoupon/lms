@@ -71,6 +71,13 @@ Playlist::getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user)
 	return std::vector<Playlist::pointer>(res.begin(), res.end());
 }
 
+Playlist::pointer
+Playlist::getById(Wt::Dbo::Session& session, IdType id)
+{
+	return session.find<Playlist>().where("id = ?").bind(id);
+}
+
+
 PlaylistEntry::PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist)
 : _track(track),
  _playlist(playlist)

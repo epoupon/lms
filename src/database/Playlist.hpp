@@ -42,6 +42,7 @@ class Playlist : public Wt::Dbo::Dbo<Playlist>
 
 		// Search utility
 		static pointer	get(Wt::Dbo::Session& session, std::string name, Wt::Dbo::ptr<User> user);
+		static pointer	getById(Wt::Dbo::Session& session, IdType playlistId);
 		static std::vector<pointer> getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user);
 
 		// Create utility

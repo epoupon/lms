@@ -48,7 +48,6 @@ class LmsApplication : public Wt::WApplication
 {
 	public:
 		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups, Scanner::MediaScanner& scanner);
-		~LmsApplication();
 
 		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env,
 				Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups, Scanner::MediaScanner& scanner);
@@ -77,6 +76,9 @@ class LmsApplication : public Wt::WApplication
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::Release::pointer release, bool addText = true);
 		static std::unique_ptr<Wt::WTemplate> createCluster(Database::Cluster::pointer cluster, bool canDelete = false);
 
+		// Signal emitted just before the session ends (user may already be logged out)
+		Wt::Signal<>&	preQuit() { return _preQuit; }
+
 	private:
 
 		LmsApplicationGroup& getApplicationGroup();
@@ -84,9 +86,11 @@ class LmsApplication : public Wt::WApplication
 		// Events
 		void handleAuthEvent();
 		void notify(const Wt::WEvent& event) override;
+		void finalize() override;
 
 		void createHome();
 
+		Wt::Signal<>		_preQuit;
 		Database::Handler	_db;
 		LmsApplicationGroupContainer&   _appGroups;
 		GroupEvents		_groupEvents;

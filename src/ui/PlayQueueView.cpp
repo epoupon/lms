@@ -33,6 +33,7 @@
 
 #include "LmsApplication.hpp"
 
+
 namespace UserInterface {
 
 PlayQueue::PlayQueue()
@@ -50,14 +51,7 @@ PlayQueue::PlayQueue()
 
 	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.shuffle"), Wt::TextFormat::XHTML);
 	_radioMode = bindNew<Wt::WCheckBox>("radio-mode", Wt::WString::tr("Lms.PlayQueue.radio-mode"));
-
 	_nbTracks = bindNew<Wt::WText>("nb-tracks");
-
-	{
-		Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
-
-		_trackPos = LmsApp->getUser()->getCurPlayingTrackPos();
-	}
 
 	clearBtn->clicked().connect([=]
 	{
@@ -80,6 +74,20 @@ PlayQueue::PlayQueue()
 		addSome();
 	});
 
+	LmsApp->preQuit().connect([=]
+	{
+		if (_playlistId)
+		{
+			LMS_LOG(UI, DEBUG) << "Removing playlist id " << *_playlistId;
+
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+			auto playlist = Database::Playlist::getById(LmsApp->getDboSession(), *_playlistId);
+			if (playlist)
+				playlist.remove();
+		}
+	});
+
 	updateInfo();
 	addSome();
 }
@@ -88,8 +96,22 @@ Database::Playlist::pointer
 PlayQueue::getPlaylist()
 {
 	static const std::string currentPlayQueueName = "__current__playqueue__";
+	Database::Playlist::pointer res;
 
-	Database::Playlist::pointer res = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getUser());
+	if (LmsApp->getUser()->isDemo())
+	{
+		if (!_playlistId)
+		{
+			res = Database::Playlist::create(LmsApp->getDboSession(), currentPlayQueueName, false, LmsApp->getUser());
+			LmsApp->getDboSession().flush();
+			_playlistId = res.id();
+			return res;
+		}
+
+		return Database::Playlist::getById(LmsApp->getDboSession(), *_playlistId);
+	}
+
+	res = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getUser());
 	if (!res)
 		res = Database::Playlist::create(LmsApp->getDboSession(), currentPlayQueueName, false, LmsApp->getUser());
 
