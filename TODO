@@ -9,7 +9,6 @@
 [Database]
 - Use Inotify like system to watch modified/added files?
 - handle access rights problems (instead of aborting)
-- add a global play counter for tracks. This will help people to spot most popular files
 - Use albumartist when available (useful for compilations)
 - Add AcousticBrainz support to create new kind of clusters
 
@@ -22,15 +21,13 @@
 
 [Users]
 - Handle login lifetime?
-- Use the WServer::post method to kick users already logged in?
-- Or save the current playqueue by session (using a cookie)?
-- Limit multi login from UI and API interfaces (limit per interface is acceptable)
 
 [UI]
 - Add a download button to get the current playqueue in a streamed zip file
-- Save user prefs in local storage (volume, loop, shuffle, current playqueue, etc.)
-- Add keyboard shortcuts
-- Implement a decent player
+- Save user prefs in local storage (volume, loop, radio mode, etc.)
+- Add global keyboard shortcuts
+- scrollbar in player
+- display a play history somewhere
 
 [Settings]
 - Add multi root directories support
