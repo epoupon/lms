@@ -25,8 +25,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Artist.hpp"
-#include "database/Setting.hpp"
-#include "database/TrackStats.hpp"
+#include "database/TrackList.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -80,7 +79,6 @@ Artists::Artists(Filters* filters)
 	refresh();
 	refreshMostPlayed();
 	refreshRecentlyAdded();
-	refreshRecentlyPlayed();
 
 	filters->updated().connect(this, &Artists::refresh);
 }
@@ -98,21 +96,10 @@ Artists::refreshRecentlyAdded()
 }
 
 void
-Artists::refreshRecentlyPlayed()
-{
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-	auto artists = TrackStats::getLastPlayedArtists(LmsApp->getDboSession(), LmsApp->getUser(), 5);
-
-	_recentlyPlayedContainer->clear();
-	addCompactEntries(_recentlyPlayedContainer, artists);
-}
-
-
-void
 Artists::refreshMostPlayed()
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-	auto artists = TrackStats::getMostPlayedArtists(LmsApp->getDboSession(), LmsApp->getUser(), 5);
+	auto artists = LmsApp->getUser()->getPlayedTrackList()->getTopArtists(5);
 
 	_mostPlayedContainer->clear();
 	addCompactEntries(_mostPlayedContainer, artists);

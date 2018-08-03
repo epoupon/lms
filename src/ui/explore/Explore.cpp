@@ -113,10 +113,7 @@ Explore::Explore()
 	_trackPlayed.connect([=]
 	{
 		artists_raw->refreshMostPlayed();
-		artists_raw->refreshRecentlyPlayed();
 		releases_raw->refreshMostPlayed();
-		releases_raw->refreshRecentlyPlayed();
-
 	});
 
 	auto tracks = std::make_unique<Tracks>(_filters);

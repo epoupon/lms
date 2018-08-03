@@ -419,9 +419,15 @@ LmsApplication::createHome()
 	});
 
 	// Events from the PlayQueue
-	playqueue->playTrack.connect(explore, &Explore::handleTrackPlayed);
+	playqueue->playTrack.connect([=](Database::IdType trackId)
+	{
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
+		LmsApp->getUser()->getPlayedTrackList().modify()->add(trackId);
+	});
+	playqueue->playTrack.connect(explore, &Explore::handleTrackPlayed);
 	playqueue->playTrack.connect(player, &MediaPlayer::playTrack);
+
 	playqueue->playbackStop.connect(player, &MediaPlayer::stop);
 
 	// Events from MediaScanner

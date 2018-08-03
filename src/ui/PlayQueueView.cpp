@@ -28,8 +28,7 @@
 
 #include "utils/Logger.hpp"
 
-#include "database/Playlist.hpp"
-#include "database/TrackStats.hpp"
+#include "database/TrackList.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -63,7 +62,7 @@ PlayQueue::PlayQueue()
 		{
 			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			getPlaylist().modify()->shuffle();
+			getTrackList().modify()->shuffle();
 		}
 		_entriesContainer->clear();
 		addSome();
@@ -76,15 +75,15 @@ PlayQueue::PlayQueue()
 
 	LmsApp->preQuit().connect([=]
 	{
-		if (_playlistId)
+		if (_tracklistId)
 		{
-			LMS_LOG(UI, DEBUG) << "Removing playlist id " << *_playlistId;
+			LMS_LOG(UI, DEBUG) << "Removing tracklist id " << *_tracklistId;
 
 			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			auto playlist = Database::Playlist::getById(LmsApp->getDboSession(), *_playlistId);
-			if (playlist)
-				playlist.remove();
+			auto tracklist = Database::TrackList::getById(LmsApp->getDboSession(), *_tracklistId);
+			if (tracklist)
+				tracklist.remove();
 		}
 	});
 
@@ -92,30 +91,26 @@ PlayQueue::PlayQueue()
 	addSome();
 }
 
-Database::Playlist::pointer
-PlayQueue::getPlaylist()
+Database::TrackList::pointer
+PlayQueue::getTrackList()
 {
 	static const std::string currentPlayQueueName = "__current__playqueue__";
-	Database::Playlist::pointer res;
+	Database::TrackList::pointer res;
 
 	if (LmsApp->getUser()->isDemo())
 	{
-		if (!_playlistId)
+		if (!_tracklistId)
 		{
-			res = Database::Playlist::create(LmsApp->getDboSession(), currentPlayQueueName, false, LmsApp->getUser());
+			res = Database::TrackList::create(LmsApp->getDboSession(), currentPlayQueueName, false, LmsApp->getUser());
 			LmsApp->getDboSession().flush();
-			_playlistId = res.id();
+			_tracklistId = res.id();
 			return res;
 		}
 
-		return Database::Playlist::getById(LmsApp->getDboSession(), *_playlistId);
+		return Database::TrackList::getById(LmsApp->getDboSession(), *_tracklistId);
 	}
 
-	res = Database::Playlist::get(LmsApp->getDboSession(), currentPlayQueueName, LmsApp->getUser());
-	if (!res)
-		res = Database::Playlist::create(LmsApp->getDboSession(), currentPlayQueueName, false, LmsApp->getUser());
-
-	return res;
+	return LmsApp->getUser()->getQueuedTrackList();
 }
 
 void
@@ -123,7 +118,7 @@ PlayQueue::clearTracks()
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	getPlaylist().modify()->clear();
+	getTrackList().modify()->clear();
 	_showMore->setHidden(true);
 	_entriesContainer->clear();
 	updateInfo();
@@ -146,28 +141,23 @@ PlayQueue::play(std::size_t pos)
 	{
 		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-		auto playlist = getPlaylist();
+		auto tracklist = getTrackList();
 
 		// If out of range, stop playing
-		if (pos >= playlist->getCount())
+		if (pos >= tracklist->getCount())
 		{
 			stop();
 			return;
 		}
 
 		// If last and radio mode, fill the next song
-		if (_radioMode->checkState() == Wt::CheckState::Checked && pos == playlist->getCount() - 1)
+		if (_radioMode->checkState() == Wt::CheckState::Checked && pos == tracklist->getCount() - 1)
 			addRadioTrack();
 
 		_trackPos = pos;
-		auto track = playlist->getEntry(*_trackPos)->getTrack();
+		auto track = tracklist->getEntry(*_trackPos)->getTrack();
 
 		trackId = track.id();
-
-		auto stats = Database::TrackStats::get(LmsApp->getDboSession(), track, LmsApp->getUser());
-
-		stats.modify()->incPlayCount();
-		stats.modify()->setLastPlayed(Wt::WLocalDateTime::currentServerDateTime().toUTC());
 
 		updateCurrentTrack(true);
 	}
@@ -204,7 +194,7 @@ PlayQueue::updateInfo()
 {
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	_nbTracks->setText(Wt::WString::tr("Lms.PlayQueue.nb-tracks").arg(static_cast<unsigned>(getPlaylist()->getCount())));
+	_nbTracks->setText(Wt::WString::tr("Lms.PlayQueue.nb-tracks").arg(static_cast<unsigned>(getTrackList()->getCount())));
 }
 
 void
@@ -229,10 +219,10 @@ PlayQueue::enqueueTracks(const std::vector<Database::Track::pointer>& tracks)
 	// Use a "session" playqueue in order to store the current playqueue
 	// so that the user can disconnect and get its playqueue back
 
-	auto playlist = getPlaylist();
+	auto tracklist = getTrackList();
 
 	for (auto track : tracks)
-		Database::PlaylistEntry::create(LmsApp->getDboSession(), track, playlist);
+		Database::TrackListEntry::create(LmsApp->getDboSession(), track, tracklist);
 
 	updateInfo();
 	addSome();
@@ -269,14 +259,13 @@ PlayQueue::addSome()
 {
 	Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
 
-	auto playlist = getPlaylist();
+	auto tracklist = getTrackList();
 
-	bool moreResults;
-	auto playlistEntries = playlist->getEntries(_entriesContainer->count(), 50, moreResults);
-	for (auto playlistEntry : playlistEntries)
+	auto tracklistEntries = tracklist->getEntries(_entriesContainer->count(), 50);
+	for (auto tracklistEntry : tracklistEntries)
 	{
-		auto playlistEntryId = playlistEntry.id();
-		auto track = playlistEntry->getTrack();
+		auto tracklistEntryId = tracklistEntry.id();
+		auto track = tracklistEntry->getTrack();
 
 		Wt::WTemplate* entry = _entriesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry"));
 
@@ -310,7 +299,7 @@ PlayQueue::addSome()
 			{
 				Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
 
-				auto entryToRemove = Database::PlaylistEntry::getById(LmsApp->getDboSession(), playlistEntryId);
+				auto entryToRemove = Database::TrackListEntry::getById(LmsApp->getDboSession(), tracklistEntryId);
 				entryToRemove.remove();
 			}
 
@@ -328,7 +317,7 @@ PlayQueue::addSome()
 
 	}
 
-	_showMore->setHidden(!moreResults);
+	_showMore->setHidden(static_cast<std::size_t>(_entriesContainer->count()) >= tracklist->getCount());
 }
 
 void
@@ -337,17 +326,17 @@ PlayQueue::addRadioTrack()
 	auto now = std::chrono::system_clock::now();
 	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
 
-	auto playlist = getPlaylist();
+	auto tracklist = getTrackList();
 
-	std::set<Database::IdType> playlistTrackIds;
+	std::set<Database::IdType> trackIds;
 	{
-		auto ids = playlist->getTrackIds();
-		playlistTrackIds = std::set<Database::IdType>(ids.begin(), ids.end());
+		auto ids = tracklist->getTrackIds();
+		trackIds = std::set<Database::IdType>(ids.begin(), ids.end());
 	}
 
-	// Get all the tracks of the playlist, get the cluster that is mostly used
+	// Get all the tracks of the tracklist, get the cluster that is mostly used
 	// and reuse it to get the next track
-	auto clusters = playlist->getClusters();
+	auto clusters = tracklist->getClusters();
 	if (clusters.empty())
 		return;
 
@@ -357,7 +346,7 @@ PlayQueue::addRadioTrack()
 
 		std::set<Database::IdType> candidateTrackIds;
 		std::set_difference(clusterTrackIds.begin(), clusterTrackIds.end(),
-				playlistTrackIds.begin(), playlistTrackIds.end(),
+				trackIds.begin(), trackIds.end(),
 				std::inserter(candidateTrackIds, candidateTrackIds.end()));
 
 		if (candidateTrackIds.empty())

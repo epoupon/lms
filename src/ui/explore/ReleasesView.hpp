@@ -39,7 +39,6 @@ class Releases : public Wt::WTemplate
 		Wt::Signal<Database::IdType> releasePlay;
 
 		void refreshRecentlyAdded();
-		void refreshRecentlyPlayed();
 		void refreshMostPlayed();
 
 	private:

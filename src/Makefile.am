@@ -8,12 +8,11 @@ lms_SOURCES = \
 	$(srcdir)/database/Artist.cpp				\
 	$(srcdir)/database/Cluster.cpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
-	$(srcdir)/database/Playlist.cpp				\
+	$(srcdir)/database/TrackList.cpp				\
 	$(srcdir)/database/Release.cpp				\
 	$(srcdir)/database/ScanSettings.cpp			\
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/Track.cpp				\
-	$(srcdir)/database/TrackStats.cpp			\
 	$(srcdir)/database/User.cpp				\
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\

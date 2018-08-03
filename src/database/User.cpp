@@ -19,6 +19,8 @@
 
 #include "User.hpp"
 
+#include "TrackList.hpp"
+
 namespace Database {
 
 // must be ordered
@@ -91,6 +93,38 @@ std::size_t
 User::getMaxAudioBitrate(void) const
 {
 	return _maxAudioBitrate;
+}
+
+Wt::Dbo::ptr<TrackList>
+User::getPlayedTrackList() const
+{
+	static const std::string listName = "__played_tracks__";
+
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	auto res = TrackList::get(*session(), listName, self());
+	if (!res)
+		res = TrackList::create(*session(), listName, false, self());
+
+	return res;
+}
+
+Wt::Dbo::ptr<TrackList>
+User::getQueuedTrackList() const
+{
+	static const std::string listName = "__queued_tracks__";
+
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	auto res = TrackList::get(*session(), listName, self());
+	if (!res)
+		res = TrackList::create(*session(), listName, false, self());
+
+	return res;
 }
 
 } // namespace Database

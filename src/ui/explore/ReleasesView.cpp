@@ -26,7 +26,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Release.hpp"
-#include "database/TrackStats.hpp"
+#include "database/TrackList.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -96,7 +96,6 @@ _filters(filters)
 	}));
 
 	refreshRecentlyAdded();
-	refreshRecentlyPlayed();
 	refreshMostPlayed();
 	refresh();
 
@@ -106,8 +105,6 @@ _filters(filters)
 void
 Releases::refreshRecentlyAdded()
 {
-	LMS_LOG(UI, DEBUG) << "Refreshing recently added releases";
-
 	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1);
 
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
@@ -119,26 +116,11 @@ Releases::refreshRecentlyAdded()
 }
 
 void
-Releases::refreshRecentlyPlayed()
-{
-	LMS_LOG(UI, DEBUG) << "Refreshing recently played releases";
-
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-	auto releases = TrackStats::getLastPlayedReleases(LmsApp->getDboSession(), LmsApp->getUser(), 5);
-
-	_recentlyPlayedContainer->clear();
-	addCompactEntries(_recentlyPlayedContainer, releases);
-}
-
-void
 Releases::refreshMostPlayed()
 {
-	LMS_LOG(UI, DEBUG) << "Refreshing most played releases";
-
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	auto releases = TrackStats::getMostPlayedReleases(LmsApp->getDboSession(), LmsApp->getUser(), 5);
+	auto releases = LmsApp->getUser()->getPlayedTrackList()->getTopReleases(5);
 
 	_mostPlayedContainer->clear();
 	addCompactEntries(_mostPlayedContainer, releases);

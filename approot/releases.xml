@@ -9,11 +9,6 @@
 	${most-played-releases}
 
 	<div class="page-header">
-		<h2>${tr:Lms.Explore.recently-played-releases}</h2>
-	</div>
-	${recently-played-releases}
-
-	<div class="page-header">
 		<h2>${tr:Lms.Explore.recently-added-releases}</h2>
 	</div>
 	${recently-added-releases}

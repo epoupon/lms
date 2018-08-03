@@ -31,17 +31,14 @@
 #include <Wt/Auth/PasswordStrengthValidator.h>
 #include <Wt/Auth/PasswordVerifier.h>
 
-#include "Setting.hpp"
-
 #include "utils/Logger.hpp"
 
 #include "Artist.hpp"
 #include "Cluster.hpp"
-#include "Playlist.hpp"
+#include "TrackList.hpp"
 #include "Release.hpp"
 #include "ScanSettings.hpp"
 #include "Track.hpp"
-#include "TrackStats.hpp"
 
 namespace Database {
 
@@ -102,12 +99,10 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 	_session.mapClass<Artist>("artist");
 	_session.mapClass<Cluster>("cluster");
 	_session.mapClass<ClusterType>("cluster_type");
-	_session.mapClass<Playlist>("playlist");
-	_session.mapClass<PlaylistEntry>("playlist_entry");
+	_session.mapClass<TrackList>("tracklist");
+	_session.mapClass<TrackListEntry>("tracklist_entry");
 	_session.mapClass<Release>("release");
-	_session.mapClass<Setting>("setting");
 	_session.mapClass<Track>("track");
-	_session.mapClass<TrackStats>("track_stats");
 
 	_session.mapClass<ScanSettings>("scan_settings");
 
@@ -139,7 +134,7 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		_session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
 		_session.execute("CREATE INDEX IF NOT EXISTS cluster_name_idx ON cluster(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");
-		_session.execute("CREATE INDEX IF NOT EXISTS settings_name_idx ON setting(name)");
+		_session.execute("CREATE INDEX IF NOT EXISTS tracklist_name ON tracklist(name)");
 	}
 
 	_users = new UserDatabase(_session);

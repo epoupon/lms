@@ -39,7 +39,6 @@ class Artists : public Wt::WTemplate
 		Wt::Signal<Database::IdType> artistPlay;
 
 		void refreshRecentlyAdded();
-		void refreshRecentlyPlayed();
 		void refreshMostPlayed();
 
 	private:

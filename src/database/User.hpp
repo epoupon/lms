@@ -31,7 +31,7 @@ namespace Database {
 class User;
 using AuthInfo = Wt::Auth::Dbo::AuthInfo<User>;
 
-class Playlist;
+class TrackList;
 
 // User selectable audio formats
 enum class AudioEncoding
@@ -85,6 +85,9 @@ class User : public Wt::Dbo::Dbo<User>
 		std::size_t	getMaxAudioBitrate() const;
 		std::size_t	getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
 
+		Wt::Dbo::ptr<TrackList> getQueuedTrackList() const;
+		Wt::Dbo::ptr<TrackList> getPlayedTrackList() const;
+
 		template<class Action>
 			void persist(Action& a)
 			{
@@ -94,7 +97,7 @@ class User : public Wt::Dbo::Dbo<User>
 				Wt::Dbo::field(a, _audioEncoding, "audio_encoding");
 				// User's dynamic data
 				Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
-				Wt::Dbo::hasMany(a, _playlists, Wt::Dbo::ManyToOne, "user");
+				Wt::Dbo::hasMany(a, _tracklists, Wt::Dbo::ManyToOne, "user");
 			}
 
 	private:
@@ -112,7 +115,7 @@ class User : public Wt::Dbo::Dbo<User>
 		// User's dynamic data
 		int		_curPlayingTrackPos;	// Current track position in queue
 
-		Wt::Dbo::collection< Wt::Dbo::ptr<Playlist> > _playlists;
+		Wt::Dbo::collection< Wt::Dbo::ptr<TrackList> > _tracklists;
 
 };
 

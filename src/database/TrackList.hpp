@@ -27,22 +27,28 @@
 
 namespace Database {
 
-class PlaylistEntry;
+class Artist;
+class Release;
 class User;
 class Track;
+class TrackListEntry;
 class Cluster;
 
-class Playlist : public Wt::Dbo::Dbo<Playlist>
+class TrackList : public Wt::Dbo::Dbo<TrackList>
 {
 	public:
-		using pointer = Wt::Dbo::ptr<Playlist>;
+		using pointer = Wt::Dbo::ptr<TrackList>;
 
-		Playlist();
-		Playlist(std::string name, bool isPublic, Wt::Dbo::ptr<User> user);
+		TrackList();
+		TrackList(std::string name, bool isPublic, Wt::Dbo::ptr<User> user);
+
+		// Stats utility
+		std::vector<Wt::Dbo::ptr<Artist>> getTopArtists(int limit = 1) const;
+		std::vector<Wt::Dbo::ptr<Release>> getTopReleases(int limit = 1) const;
 
 		// Search utility
 		static pointer	get(Wt::Dbo::Session& session, std::string name, Wt::Dbo::ptr<User> user);
-		static pointer	getById(Wt::Dbo::Session& session, IdType playlistId);
+		static pointer	getById(Wt::Dbo::Session& session, IdType tracklistId);
 		static std::vector<pointer> getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user);
 
 		// Create utility
@@ -53,14 +59,14 @@ class Playlist : public Wt::Dbo::Dbo<Playlist>
 		bool		isPublic() const { return _isPublic; }
 
 		// Modifiers
+		Wt::Dbo::ptr<TrackListEntry> add(IdType trackId);
 		void clear() { _entries.clear(); }
 		void shuffle();
 
 		// Get tracks, ordered by position
 		std::size_t getCount() const;
-		Wt::Dbo::ptr<PlaylistEntry> getEntry(std::size_t pos) const;
-		std::vector<Wt::Dbo::ptr<PlaylistEntry>> getEntries(int offset, int size, bool& moreResults) const;
-		std::vector<Wt::Dbo::ptr<PlaylistEntry>> getAllEntries() const;
+		Wt::Dbo::ptr<TrackListEntry> getEntry(std::size_t pos) const;
+		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntries(int offset = -1, int size = -1) const;
 
 		std::vector<IdType> getTrackIds() const;
 
@@ -75,7 +81,7 @@ class Playlist : public Wt::Dbo::Dbo<Playlist>
 			Wt::Dbo::field(a,	_name,		"name");
 			Wt::Dbo::field(a,	_isPublic,	"public");
 			Wt::Dbo::belongsTo(a,	_user,		"user", Wt::Dbo::OnDeleteCascade);
-			Wt::Dbo::hasMany(a, _entries, Wt::Dbo::ManyToOne, "playlist");
+			Wt::Dbo::hasMany(a, _entries, Wt::Dbo::ManyToOne, "tracklist");
 		}
 
 	private:
@@ -83,23 +89,23 @@ class Playlist : public Wt::Dbo::Dbo<Playlist>
 		std::string		_name;
 		bool			_isPublic;
 		Wt::Dbo::ptr<User>	_user;
-		Wt::Dbo::collection< Wt::Dbo::ptr<PlaylistEntry> > _entries;
+		Wt::Dbo::collection< Wt::Dbo::ptr<TrackListEntry> > _entries;
 
 };
 
-class PlaylistEntry
+class TrackListEntry : public Wt::Dbo::Dbo<TrackListEntry>
 {
 	public:
 
-		using pointer = Wt::Dbo::ptr<PlaylistEntry>;
+		using pointer = Wt::Dbo::ptr<TrackListEntry>;
 
-		PlaylistEntry();
-		PlaylistEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist);
+		TrackListEntry();
+		TrackListEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist);
 
 		static pointer getById(Wt::Dbo::Session& session, IdType id);
 
 		// Create utility
-		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Playlist> playlist);
+		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist);
 
 		// Accessors
 		Wt::Dbo::ptr<Track>	getTrack() const { return _track; }
@@ -108,13 +114,13 @@ class PlaylistEntry
 		void persist(Action& a)
 		{
 			Wt::Dbo::belongsTo(a,	_track, "track", Wt::Dbo::OnDeleteCascade);
-			Wt::Dbo::belongsTo(a,	_playlist, "playlist", Wt::Dbo::OnDeleteCascade);
+			Wt::Dbo::belongsTo(a,	_tracklist, "tracklist", Wt::Dbo::OnDeleteCascade);
 		}
 
 	private:
 
 		Wt::Dbo::ptr<Track>	_track;
-		Wt::Dbo::ptr<Playlist>	_playlist;
+		Wt::Dbo::ptr<TrackList>	_tracklist;
 };
 
 } // namespace Database

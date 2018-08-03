@@ -27,7 +27,7 @@
 
 #include <boost/optional.hpp>
 
-#include "database/Playlist.hpp"
+#include "database/TrackList.hpp"
 #include "database/Track.hpp"
 
 namespace UserInterface {
@@ -53,7 +53,7 @@ class PlayQueue : public Wt::WTemplate
 		Wt::Signal<> playbackStop;
 
 	private:
-		Database::Playlist::pointer getPlaylist();
+		Database::TrackList::pointer getTrackList();
 
 		void clearTracks();
 		void enqueueTracks(const std::vector<Database::Track::pointer>& tracks);
@@ -66,7 +66,7 @@ class PlayQueue : public Wt::WTemplate
 		void play(std::size_t pos);
 		void stop();
 
-		boost::optional<Database::IdType> _playlistId;
+		boost::optional<Database::IdType> _tracklistId;
 		Wt::WCheckBox* _radioMode;
 		Wt::WContainerWidget* _entriesContainer;
 		Wt::WTemplate* _showMore;
