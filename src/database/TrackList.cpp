@@ -102,6 +102,22 @@ TrackList::getEntries(int offset, int size) const
 	return std::vector<Wt::Dbo::ptr<TrackListEntry>>(entries.begin(), entries.end());
 }
 
+std::vector<Wt::Dbo::ptr<TrackListEntry>>
+TrackList::getEntriesReverse(int offset, int size) const
+{
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
+	Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> entries =
+		session()->find<TrackListEntry>()
+		.where("tracklist_id = ?").bind(self().id())
+		.orderBy("id DESC")
+		.limit(size)
+		.offset(offset);
+
+	return std::vector<Wt::Dbo::ptr<TrackListEntry>>(entries.begin(), entries.end());
+}
+
 Wt::Dbo::ptr<TrackListEntry>
 TrackList::getEntry(std::size_t pos) const
 {

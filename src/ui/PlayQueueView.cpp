@@ -22,8 +22,6 @@
 #include <random>
 
 #include <Wt/WAnchor.h>
-#include <Wt/WImage.h>
-#include <Wt/WLocalDateTime.h>
 #include <Wt/WText.h>
 
 #include "utils/Logger.hpp"

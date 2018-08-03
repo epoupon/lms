@@ -31,6 +31,7 @@ lms_approot_DATA = \
 		approot/login.xml	\
 		approot/mediaplayer.xml	\
 		approot/messages.xml	\
+		approot/playhistory.xml	\
 		approot/playqueue.xml	\
 		approot/release.xml	\
 		approot/releases.xml	\

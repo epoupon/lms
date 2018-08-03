@@ -67,6 +67,7 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		std::size_t getCount() const;
 		Wt::Dbo::ptr<TrackListEntry> getEntry(std::size_t pos) const;
 		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntries(int offset = -1, int size = -1) const;
+		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntriesReverse(int offset = -1, int size = -1) const;
 
 		std::vector<IdType> getTrackIds() const;
 

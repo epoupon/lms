@@ -36,6 +36,7 @@
 
 #include "explore/Explore.hpp"
 #include "MediaPlayer.hpp"
+#include "PlayHistoryView.hpp"
 #include "PlayQueueView.hpp"
 #include "SettingsView.hpp"
 
@@ -99,6 +100,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "mediaplayer");
 	messageResourceBundle().use(appRoot() + "messages");
 	messageResourceBundle().use(appRoot() + "playqueue");
+	messageResourceBundle().use(appRoot() + "playhistory");
 	messageResourceBundle().use(appRoot() + "release");
 	messageResourceBundle().use(appRoot() + "releases");
 	messageResourceBundle().use(appRoot() + "settings");
@@ -209,6 +211,7 @@ enum IdxRoot
 {
 	IdxExplore	= 0,
 	IdxPlayQueue,
+	IdxPlayHistory,
 	IdxSettings,
 	IdxAdminDatabase,
 	IdxAdminUsers,
@@ -231,6 +234,7 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 		{ "/release",		IdxExplore,		false },
 		{ "/tracks",		IdxExplore,		false },
 		{ "/playqueue",		IdxPlayQueue,		false },
+		{ "/playhistory",	IdxPlayHistory,		false },
 		{ "/settings",		IdxSettings,		false },
 		{ "/admin/database",	IdxAdminDatabase,	true },
 		{ "/admin/users",	IdxAdminUsers,		true },
@@ -339,6 +343,11 @@ LmsApplication::createHome()
 		menuItem->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/playqueue"));
 		menuItem->setSelectable(false);
 	}
+	{
+		auto menuItem = menu->insertItem(4, Wt::WString::tr("Lms.PlayHistory.playhistory"));
+		menuItem->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/playhistory"));
+		menuItem->setSelectable(false);
+	}
 
 	Wt::WMenu* rightMenu = navbar->addMenu(std::make_unique<Wt::WMenu>(), Wt::AlignmentFlag::Right);
 	std::size_t itemCounter = 0;
@@ -380,6 +389,7 @@ LmsApplication::createHome()
 
 	Explore* explore = mainStack->addNew<Explore>();
 	PlayQueue* playqueue = mainStack->addNew<PlayQueue>();
+	PlayHistory* playhistory = mainStack->addNew<PlayHistory>();
 	mainStack->addNew<SettingsView>();
 
 	// Admin stuff
@@ -419,12 +429,7 @@ LmsApplication::createHome()
 	});
 
 	// Events from the PlayQueue
-	playqueue->playTrack.connect([=](Database::IdType trackId)
-	{
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-		LmsApp->getUser()->getPlayedTrackList().modify()->add(trackId);
-	});
+	playqueue->playTrack.connect(playhistory, &PlayHistory::addTrack);
 	playqueue->playTrack.connect(explore, &Explore::handleTrackPlayed);
 	playqueue->playTrack.connect(player, &MediaPlayer::playTrack);
 

@@ -23,6 +23,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/LmsApplicationGroup.cpp			\
 	$(srcdir)/ui/MediaPlayer.cpp				\
 	$(srcdir)/ui/PlayQueueView.cpp				\
+	$(srcdir)/ui/PlayHistoryView.cpp			\
 	$(srcdir)/ui/SettingsView.cpp				\
 	$(srcdir)/ui/admin/DatabaseSettingsView.cpp		\
 	$(srcdir)/ui/admin/InitWizardView.cpp			\

@@ -64,8 +64,8 @@
 <!--Explore-->
 <message id="Lms.Explore.add-filter">Add filter</message>
 <message id="Lms.Explore.artists">Artists</message>
-<message id="Lms.Explore.most-played-artists">Most played artists</message>
-<message id="Lms.Explore.most-played-releases">Most played albums</message>
+<message id="Lms.Explore.most-played-artists">Top artists</message>
+<message id="Lms.Explore.most-played-releases">Top albums</message>
 <message id="Lms.Explore.recently-added-artists">Recently added artists</message>
 <message id="Lms.Explore.recently-added-releases">Recently added albums</message>
 <message id="Lms.Explore.recently-played-artists">Recently played artists</message>
@@ -84,6 +84,10 @@
 <message id="Lms.PlayQueue.nb-tracks-playing">Playing {1} tracks</message>
 <message id="Lms.PlayQueue.playqueue">Play Queue</message>
 <message id="Lms.PlayQueue.radio-mode">Radio mode</message>
+
+<!--PlayHistory-->
+<message id="Lms.PlayHistory.playhistory">Play History</message>
+
 
 <!--Settings-->
 <message id="Lms.Settings.account">Account</message>
