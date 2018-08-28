@@ -95,6 +95,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "admin-initwizard");
 	messageResourceBundle().use(appRoot() + "artist");
 	messageResourceBundle().use(appRoot() + "artists");
+	messageResourceBundle().use(appRoot() + "artistsinfo");
 	messageResourceBundle().use(appRoot() + "explore");
 	messageResourceBundle().use(appRoot() + "login");
 	messageResourceBundle().use(appRoot() + "mediaplayer");
@@ -103,6 +104,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "playhistory");
 	messageResourceBundle().use(appRoot() + "release");
 	messageResourceBundle().use(appRoot() + "releases");
+	messageResourceBundle().use(appRoot() + "releasesinfo");
 	messageResourceBundle().use(appRoot() + "settings");
 	messageResourceBundle().use(appRoot() + "tracks");
 	messageResourceBundle().use(appRoot() + "templates");

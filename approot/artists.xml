@@ -4,16 +4,6 @@
 
 <message id="Lms.Explore.Artists.template">
 	<div class="page-header">
-		<h2>${tr:Lms.Explore.most-played-artists}</h2>
-	</div>
-	${most-played-artists}
-
-	<div class="page-header">
-		<h2>${tr:Lms.Explore.recently-added-artists}</h2>
-	</div>
-	${recently-added-artists}
-
-	<div class="page-header">
 		<h2>${tr:Lms.Explore.artists}</h2>
 	</div>
 	<div class="form-group">
@@ -24,10 +14,6 @@
 	</div>
 	${artists class="list-group"}
 	${show-more}
-</message>
-
-<message id="Lms.Explore.Artists.template.compact-entry">
-	${name}
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">

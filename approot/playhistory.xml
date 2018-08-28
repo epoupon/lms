@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="Lms.PlayHistory.template">
+	<div class="page-header">
+		<h2>${tr:Lms.PlayHistory.playhistory}</h2>
+	</div>
+	${entries}
+	${show-more}
+</message>
+
+<message id="Lms.PlayHistory.template.entry">
+	${name} ${<if-has-release>}${release-name}${</if-has-release>} ${<if-has-artist>}${artist-name}${</if-has-artist>}
+</message>
+
+</messages>

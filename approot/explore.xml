@@ -2,8 +2,15 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.template">
-	${filters}
-	${contents}
+	<div class="row">
+		<div class="col-sm-3">
+			${filters}
+			${info}
+		</div>
+		<div class="col-sm-8 col-sm-offset-1">
+			${contents}
+		</div>
+	</div>
 </message>
 
 <message id="Lms.Explore.template.show-more">
@@ -12,7 +19,10 @@
 
 <message id="Lms.Explore.template.filters">
 	<div class="form-group">
-		${add-filter}${clusters}
+		<div class="page-header">
+			<h3>${tr:Lms.Explore.filters} ${add-filter class="btn-primary"}</h3>
+		</div>
+		${clusters}
 	</div>
 </message>
 

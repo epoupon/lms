@@ -29,26 +29,29 @@
 
 #include "Filters.hpp"
 #include "ArtistsView.hpp"
+#include "ArtistsInfoView.hpp"
 #include "ArtistView.hpp"
 #include "ReleasesView.hpp"
+#include "ReleasesInfoView.hpp"
 #include "ReleaseView.hpp"
 #include "TracksView.hpp"
 
 namespace UserInterface {
 
+namespace {
 
-enum IdxRoot
+void
+handleContentsPathChange(Wt::WStackedWidget* stack)
 {
-	IdxArtists = 0,
-	IdxArtist,
-	IdxReleases,
-	IdxRelease,
-	IdxTracks,
-};
+	enum Idx
+	{
+		IdxArtists = 0,
+		IdxArtist,
+		IdxReleases,
+		IdxRelease,
+		IdxTracks,
+	};
 
-static void
-handlePathChange(Wt::WStackedWidget* stack)
-{
 	static const std::map<std::string, int> indexes =
 	{
 		{ "/artists",		IdxArtists },
@@ -70,65 +73,114 @@ handlePathChange(Wt::WStackedWidget* stack)
 	}
 }
 
+void
+handleInfoPathChange(Wt::WStackedWidget* stack)
+{
+	enum Idx
+	{
+		IdxArtists = 0,
+		IdxReleases,
+		IdxEmpty,
+	};
+
+	static const std::map<std::string, int> indexes =
+	{
+		{ "/artists",		IdxArtists },
+		{ "/artist",		IdxArtists },
+		{ "/releases",		IdxReleases },
+		{ "/release",		IdxReleases },
+		{ "/tracks",		IdxEmpty },
+	};
+
+	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
+
+	for (auto index : indexes)
+	{
+		if (wApp->internalPathMatches(index.first))
+		{
+			stack->setCurrentIndex(index.second);
+			return;
+		}
+	}
+}
+
+} // namespace
+
 Explore::Explore()
 : Wt::WTemplate(Wt::WString::tr("Lms.Explore.template"))
 {
+	addFunction("tr", &Functions::tr);
+
 	_filters = bindNew<Filters>("filters");
 
 	// Contents
-	Wt::WStackedWidget* stack = bindNew<Wt::WStackedWidget>("contents");
+	Wt::WStackedWidget* contentsStack = bindNew<Wt::WStackedWidget>("contents");
 
 	auto artists = std::make_unique<Artists>(_filters);
-	auto artists_raw = artists.get();
 	artists->artistAdd.connect(this, &Explore::handleArtistAdd);
 	artists->artistPlay.connect(this, &Explore::handleArtistPlay);
-	stack->addWidget(std::move(artists));
+	contentsStack->addWidget(std::move(artists));
 
 	auto artist = std::make_unique<Artist>(_filters);
 	artist->artistAdd.connect(this, &Explore::handleArtistAdd);
 	artist->artistPlay.connect(this, &Explore::handleArtistPlay);
 	artist->releaseAdd.connect(this, &Explore::handleReleaseAdd);
 	artist->releasePlay.connect(this, &Explore::handleReleasePlay);
-	stack->addWidget(std::move(artist));
+	contentsStack->addWidget(std::move(artist));
 
 	auto releases = std::make_unique<Releases>(_filters);
-	auto releases_raw = releases.get();
 	releases->releaseAdd.connect(this, &Explore::handleReleaseAdd);
 	releases->releasePlay.connect(this, &Explore::handleReleasePlay);
-	stack->addWidget(std::move(releases));
+	contentsStack->addWidget(std::move(releases));
 
 	auto release = std::make_unique<Release>(_filters);
 	release->releaseAdd.connect(this, &Explore::handleReleaseAdd);
 	release->releasePlay.connect(this, &Explore::handleReleasePlay);
 	release->trackAdd.connect(this, &Explore::handleTrackAdd);
 	release->trackPlay.connect(this, &Explore::handleTrackPlay);
-	stack->addWidget(std::move(release));
-
-	_dbChanged.connect([=]
-	{
-		artists_raw->refreshRecentlyAdded();
-		releases_raw->refreshRecentlyAdded();
-	});
-
-	_trackPlayed.connect([=]
-	{
-		artists_raw->refreshMostPlayed();
-		releases_raw->refreshMostPlayed();
-	});
+	contentsStack->addWidget(std::move(release));
 
 	auto tracks = std::make_unique<Tracks>(_filters);
 	tracks->trackAdd.connect(this, &Explore::handleTrackAdd);
 	tracks->trackPlay.connect(this, &Explore::handleTrackPlay);
 	tracks->tracksAdd.connect(this, &Explore::handleTracksAdd);
 	tracks->tracksPlay.connect(this, &Explore::handleTracksPlay);
-	stack->addWidget(std::move(tracks));
+	contentsStack->addWidget(std::move(tracks));
+
+	// Info
+	Wt::WStackedWidget* infoStack = bindNew<Wt::WStackedWidget>("info");
+
+	auto artistsInfo = std::make_unique<ArtistsInfo>();
+	auto artistsInfoRaw = artistsInfo.get();
+	infoStack->addWidget(std::move(artistsInfo));
+
+	auto releasesInfo = std::make_unique<ReleasesInfo>();
+	auto releasesInfoRaw = releasesInfo.get();
+	infoStack->addWidget(std::move(releasesInfo));
+
+	infoStack->addWidget(std::make_unique<Wt::WContainerWidget>());
+
+	_dbChanged.connect([=]
+	{
+		artistsInfoRaw->refreshRecentlyAdded();
+		releasesInfoRaw->refreshRecentlyAdded();
+	});
+
+	_trackPlayed.connect([=]
+	{
+		artistsInfoRaw->refreshMostPlayed();
+		releasesInfoRaw->refreshMostPlayed();
+	});
+
 
 	wApp->internalPathChanged().connect(std::bind([=]
 	{
-		handlePathChange(stack);
+		handleContentsPathChange(contentsStack);
+		handleInfoPathChange(infoStack);
 	}));
 
-	handlePathChange(stack);
+	handleContentsPathChange(contentsStack);
+	handleInfoPathChange(infoStack);
 }
 
 // TODO SQL this?

@@ -21,31 +21,20 @@
 
 #include <Wt/WContainerWidget.h>
 #include <Wt/WTemplate.h>
-#include <Wt/WLineEdit.h>
-#include <Wt/WSignal.h>
-
-#include "database/Types.hpp"
 
 namespace UserInterface {
 
-class Filters;
-
-class Artists : public Wt::WTemplate
+class ArtistsInfo : public Wt::WTemplate
 {
 	public:
-		Artists(Filters* filters);
+		ArtistsInfo();
 
-		Wt::Signal<Database::IdType> artistAdd;
-		Wt::Signal<Database::IdType> artistPlay;
+		void refreshRecentlyAdded();
+		void refreshMostPlayed();
 
 	private:
-		void refresh();
-		void addSome();
-
-		Filters* _filters;
-		Wt::WTemplate* _showMore;
-		Wt::WLineEdit* _search;
-		Wt::WContainerWidget* _container;
+		Wt::WContainerWidget* _mostPlayedContainer;
+		Wt::WContainerWidget* _recentlyAddedContainer;
 };
 
 } // namespace UserInterface

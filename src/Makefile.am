@@ -32,9 +32,11 @@ lms_SOURCES = \
 	$(srcdir)/ui/common/Validators.cpp			\
 	$(srcdir)/ui/explore/ArtistView.cpp			\
 	$(srcdir)/ui/explore/ArtistsView.cpp			\
+	$(srcdir)/ui/explore/ArtistsInfoView.cpp		\
 	$(srcdir)/ui/explore/Explore.cpp			\
 	$(srcdir)/ui/explore/Filters.cpp			\
 	$(srcdir)/ui/explore/ReleasesView.cpp			\
+	$(srcdir)/ui/explore/ReleasesInfoView.cpp		\
 	$(srcdir)/ui/explore/ReleaseView.cpp			\
 	$(srcdir)/ui/explore/TracksView.cpp			\
 	$(srcdir)/ui/resource/ImageResource.cpp			\

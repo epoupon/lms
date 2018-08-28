@@ -142,6 +142,8 @@ Filters::add(Database::IdType clusterId)
 Filters::Filters()
 : Wt::WTemplate(Wt::WString::tr("Lms.Explore.template.filters"))
 {
+	addFunction("tr", &Functions::tr);
+
 	// Filters
 	Wt::WPushButton *addFilterBtn = bindNew<Wt::WPushButton>("add-filter", Wt::WText::tr("Lms.Explore.add-filter"));
 	addFilterBtn->clicked().connect(this, &Filters::showDialog);

@@ -18,15 +18,13 @@
  */
 
 #include "ReleasesView.hpp"
-#include <Wt/WServer.h>
+
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
-#include <Wt/WLocalDateTime.h>
 #include <Wt/WText.h>
 #include <Wt/WTemplate.h>
 
 #include "database/Release.hpp"
-#include "database/TrackList.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -37,39 +35,6 @@
 #include "Filters.hpp"
 
 using namespace Database;
-
-namespace {
-
-using namespace UserInterface;
-
-void addCompactEntries(Wt::WContainerWidget* container, const std::vector<Release::pointer>& releases)
-{
-	for (auto release : releases)
-	{
-		Wt::WTemplate* entry = container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.compact-entry"));
-
-		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
-
-		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
-		auto cover = std::make_unique<Wt::WImage>();
-		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
-		anchor->setImage(std::move(cover));
-
-		auto artists = release->getArtists();
-		if (artists.size() > 1)
-		{
-			entry->setCondition("if-has-artist", true);
-			entry->bindString("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
-		}
-		else if (artists.size() == 1)
-		{
-			entry->setCondition("if-has-artist", true);
-			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
-		}
-	}
-}
-
-} // namespace
 
 namespace UserInterface {
 
@@ -84,9 +49,6 @@ _filters(filters)
 	_search->textInput().connect(this, &Releases::refresh);
 
 	_container = bindNew<Wt::WContainerWidget>("releases");
-	_mostPlayedContainer = bindNew<Wt::WContainerWidget>("most-played-releases");
-	_recentlyAddedContainer = bindNew<Wt::WContainerWidget>("recently-added-releases");
-	_recentlyPlayedContainer = bindNew<Wt::WContainerWidget>("recently-played-releases");
 
 	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
@@ -95,35 +57,9 @@ _filters(filters)
 		addSome();
 	}));
 
-	refreshRecentlyAdded();
-	refreshMostPlayed();
 	refresh();
 
 	filters->updated().connect(this, &Releases::refresh);
-}
-
-void
-Releases::refreshRecentlyAdded()
-{
-	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1);
-
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-	auto releases = Release::getLastAdded(LmsApp->getDboSession(), after, 5);
-
-	_recentlyAddedContainer->clear();
-	addCompactEntries(_recentlyAddedContainer, releases);
-}
-
-void
-Releases::refreshMostPlayed()
-{
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-	auto releases = LmsApp->getUser()->getPlayedTrackList()->getTopReleases(5);
-
-	_mostPlayedContainer->clear();
-	addCompactEntries(_mostPlayedContainer, releases);
 }
 
 void

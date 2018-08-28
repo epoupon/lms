@@ -25,7 +25,6 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Artist.hpp"
-#include "database/TrackList.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -34,22 +33,6 @@
 #include "Filters.hpp"
 
 using namespace Database;
-
-namespace {
-
-using namespace UserInterface;
-
-void addCompactEntries(Wt::WContainerWidget *container, const std::vector<Artist::pointer>& artists)
-{
-	for (auto artist : artists)
-	{
-		Wt::WTemplate* entry = container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.compact-entry"));
-
-		entry->bindWidget("name", LmsApplication::createArtistAnchor(artist));
-	}
-}
-
-}
 
 namespace UserInterface {
 
@@ -64,9 +47,6 @@ Artists::Artists(Filters* filters)
 	_search->textInput().connect(this, &Artists::refresh);
 
 	_container = bindNew<Wt::WContainerWidget>("artists");
-	_mostPlayedContainer = bindNew<Wt::WContainerWidget>("most-played-artists");
-	_recentlyAddedContainer = bindNew<Wt::WContainerWidget>("recently-added-artists");
-	_recentlyPlayedContainer = bindNew<Wt::WContainerWidget>("recently-played-artists");
 
 	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.template.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
@@ -77,32 +57,8 @@ Artists::Artists(Filters* filters)
 	}));
 
 	refresh();
-	refreshMostPlayed();
-	refreshRecentlyAdded();
 
 	filters->updated().connect(this, &Artists::refresh);
-}
-
-void
-Artists::refreshRecentlyAdded()
-{
-	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1);
-
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-	auto artists = Artist::getLastAdded(LmsApp->getDboSession(), after, 5);
-
-	_recentlyAddedContainer->clear();
-	addCompactEntries(_recentlyAddedContainer, artists);
-}
-
-void
-Artists::refreshMostPlayed()
-{
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-	auto artists = LmsApp->getUser()->getPlayedTrackList()->getTopArtists(5);
-
-	_mostPlayedContainer->clear();
-	addCompactEntries(_mostPlayedContainer, artists);
 }
 
 void

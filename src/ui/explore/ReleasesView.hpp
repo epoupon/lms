@@ -21,7 +21,6 @@
 
 #include <Wt/WContainerWidget.h>
 #include <Wt/WLineEdit.h>
-#include <Wt/WText.h>
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
@@ -38,9 +37,6 @@ class Releases : public Wt::WTemplate
 		Wt::Signal<Database::IdType> releaseAdd;
 		Wt::Signal<Database::IdType> releasePlay;
 
-		void refreshRecentlyAdded();
-		void refreshMostPlayed();
-
 	private:
 		void refresh();
 		void addSome();
@@ -49,9 +45,6 @@ class Releases : public Wt::WTemplate
 		Wt::WTemplate* _showMore;
 		Wt::WLineEdit* _search;
 		Wt::WContainerWidget* _container;
-		Wt::WContainerWidget* _mostPlayedContainer;
-		Wt::WContainerWidget* _recentlyAddedContainer;
-		Wt::WContainerWidget* _recentlyPlayedContainer;
 };
 
 } // namespace UserInterface

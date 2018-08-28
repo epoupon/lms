@@ -1,0 +1,27 @@
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Explore.ReleasesInfo.template">
+	<div class="hidden-xs">
+		<div class="page-header">
+			<h2>${tr:Lms.Explore.ReleasesInfo.most-played}</h2>
+		</div>
+		${most-played}
+	</div>
+
+	<div class="hidden-xs">
+		<div class="page-header">
+			<h2>${tr:Lms.Explore.ReleasesInfo.recently-added}</h2>
+		</div>
+		${recently-added}
+	</div>
+</message>
+
+<message id="Lms.Explore.ReleasesInfo.template.entry">
+	${cover}
+	${release-name}
+	${<if-has-artist>}${artist-name}${</if-has-artist>}
+</message>
+
+</messages>

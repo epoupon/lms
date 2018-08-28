@@ -27,6 +27,7 @@ lms_approot_DATA = \
 		approot/admin-initwizard.xml	\
 		approot/artist.xml	\
 		approot/artists.xml	\
+		approot/artistsinfo.xml	\
 		approot/explore.xml	\
 		approot/login.xml	\
 		approot/mediaplayer.xml	\
@@ -35,6 +36,7 @@ lms_approot_DATA = \
 		approot/playqueue.xml	\
 		approot/release.xml	\
 		approot/releases.xml	\
+		approot/releasesinfo.xml \
 		approot/settings.xml	\
 		approot/templates.xml	\
 		approot/tracks.xml

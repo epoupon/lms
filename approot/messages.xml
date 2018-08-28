@@ -62,14 +62,9 @@
 <message id="Lms.Auth.welcome">Welcome!</message>
 
 <!--Explore-->
-<message id="Lms.Explore.add-filter">Add filter</message>
+<message id="Lms.Explore.add-filter">Add</message>
 <message id="Lms.Explore.artists">Artists</message>
-<message id="Lms.Explore.most-played-artists">Top artists</message>
-<message id="Lms.Explore.most-played-releases">Top albums</message>
-<message id="Lms.Explore.recently-added-artists">Recently added artists</message>
-<message id="Lms.Explore.recently-added-releases">Recently added albums</message>
-<message id="Lms.Explore.recently-played-artists">Recently played artists</message>
-<message id="Lms.Explore.recently-played-releases">Recently played albums</message>
+<message id="Lms.Explore.filters">Filters</message>
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.search-placeholder">Search...</message>
 <message id="Lms.Explore.show-more">Show more</message>
@@ -77,6 +72,14 @@
 <message id="Lms.Explore.type">Type</message>
 <message id="Lms.Explore.value">Value</message>
 <message id="Lms.Explore.various-artists">Various artists</message>
+
+<!--Explore:Artists-->
+<message id="Lms.Explore.ArtistsInfo.recently-added">Recently added</message>
+<message id="Lms.Explore.ArtistsInfo.most-played">Top artists</message>
+
+<!--Explore:Releases-->
+<message id="Lms.Explore.ReleasesInfo.recently-added">Recently added</message>
+<message id="Lms.Explore.ReleasesInfo.most-played">Top releases</message>
 
 <!--Playque-->
 <message id="Lms.PlayQueue.nb-tracks">{1} tracks</message>
