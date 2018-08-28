@@ -38,11 +38,10 @@ make
 ```sh
 make install
 ```
-This command requires root privileges
+This command requires root privileges.
 
 ## Configuration
-LMS uses a configuration file, installed in '/etc/lms.conf'
-It is recommended to edit this file and change the relevant settings (working directory, listen port, etc.)
+LMS uses a configuration file, installed in '/etc/lms.conf'. It is recommended to edit this file and change the relevant settings (working directory, listen port, etc.)
 
 All other settings are set using the web interface.
 
@@ -81,7 +80,7 @@ server {
 ```sh
 lms [config_file]
 ```
-Logs are output in the working directory, in the file 'lms.log'
+Logs are output in the working directory, in the file 'lms.log'.
 
 To connect to LMS, just open your favorite browser and go to http://localhost:5082
 
