@@ -19,8 +19,10 @@
 
 #pragma once
 
+#include <Wt/WAnchor.h>
 #include <Wt/WJavaScript.h>
 #include <Wt/WTemplate.h>
+#include <Wt/WText.h>
 
 #include "database/Types.hpp"
 
@@ -41,6 +43,9 @@ class MediaPlayer : public Wt::WTemplate
 
 	private:
 
+		Wt::WText*	_title;
+		Wt::WAnchor*	_release;
+		Wt::WAnchor*	_artist;
 };
 
 } // namespace UserInterface

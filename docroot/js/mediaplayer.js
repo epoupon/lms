@@ -44,9 +44,6 @@ LMS.mediaplayer = function () {
 		_elems.pause = document.getElementById("lms-mp-pause");
 		_elems.previous = document.getElementById("lms-mp-previous");
 		_elems.next = document.getElementById("lms-mp-next");
-		_elems.title = document.getElementById("lms-mp-title");
-		_elems.artist = document.getElementById("lms-mp-artist");
-		_elems.release = document.getElementById("lms-mp-release");
 		_elems.duration = document.getElementById("lms-mp-duration");
 		_elems.time = document.getElementById("lms-mp-time");
 		_elems.cover = document.getElementById("lms-mp-cover");
@@ -79,14 +76,11 @@ LMS.mediaplayer = function () {
 	}
 
 	var loadTrack = function(params, autoplay) {
-		console.log("Loading track '" + params.name + "', release = '" + params.release + "', artist = '" + params.artist + "', resource = '" + params.resource + "', imgResource = '" + params.imgResource + "'");
+		console.log("Loading track, resource = '" + params.resource + "', imgResource = '" + params.imgResource + "'");
 
 		_offset = 0;
 		_duration = params.duration;
 
-		_elems.title.innerHTML = params.name;
-		_elems.artist.innerHTML = params.artist;
-		_elems.release.innerHTML = params.release;
 		_elems.audio.src = params.resource;
 		_elems.duration.innerHTML = _durationToString(_duration, _duration > 3600);
 		_elems.time.innerHTML = _durationToString(0, _duration > 3600)

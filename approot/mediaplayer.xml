@@ -2,17 +2,15 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="template-mediaplayer">
+<message id="Lms.MediaPlayer.template">
 	<audio id="lms-mp-audio"></audio>
+	<div id="lms-mp-previous"><i class="fa fa-step-backward fa-2x"></i></div>
 	<div id="lms-mp-play"><i class="fa fa-play fa-2x"></i></div>
 	<div id="lms-mp-pause" style="display: none"><i class="fa fa-pause fa-2x"></i></div>
-	<div id="lms-mp-title">...</div>
-	<div id="lms-mp-artist"></div>
-	<div id="lms-mp-release"></div>
+	<div id="lms-mp-next"><i class="fa fa-step-forward fa-2x"></i></div>
+	${title}${artist}${release}
 	<div id="lms-mp-time">00:00</div>
 	<div id="lms-mp-duration">00:00</div>
-	<div id="lms-mp-previous"><i class="fa fa-step-backward fa-2x"></i></div>
-	<div id="lms-mp-next"><i class="fa fa-step-forward fa-2x"></i></div>
 	<img id="lms-mp-cover"/>
 </message>
 

@@ -72,7 +72,9 @@ class LmsApplication : public Wt::WApplication
 		void goHomeAndQuit();
 		void notifyMsg(const Wt::WString& message);
 
+		static Wt::WLink createArtistLink(Database::Artist::pointer artist);
 		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Database::Artist::pointer artist, bool addText = true);
+		static Wt::WLink createReleaseLink(Database::Release::pointer release);
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::Release::pointer release, bool addText = true);
 		static std::unique_ptr<Wt::WTemplate> createCluster(Database::Cluster::pointer cluster, bool canDelete = false);
 

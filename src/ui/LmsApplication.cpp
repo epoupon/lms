@@ -150,10 +150,16 @@ LmsApplication::finalize()
 	preQuit().emit();
 }
 
+Wt::WLink
+LmsApplication::createArtistLink(Database::Artist::pointer artist)
+{
+	return Wt::WLink(Wt::LinkType::InternalPath, "/artist/" + std::to_string(artist.id()));
+}
+
 std::unique_ptr<Wt::WAnchor>
 LmsApplication::createArtistAnchor(Database::Artist::pointer artist, bool addText)
 {
-	auto res = std::make_unique<Wt::WAnchor>(Wt::WLink(Wt::LinkType::InternalPath, "/artist/" + std::to_string(artist.id())));
+	auto res = std::make_unique<Wt::WAnchor>(createArtistLink(artist));
 
 	if (addText)
 	{
@@ -164,10 +170,16 @@ LmsApplication::createArtistAnchor(Database::Artist::pointer artist, bool addTex
 	return res;
 }
 
+Wt::WLink
+LmsApplication::createReleaseLink(Database::Release::pointer release)
+{
+	return Wt::WLink(Wt::LinkType::InternalPath, "/release/" + std::to_string(release.id()));
+}
+
 std::unique_ptr<Wt::WAnchor>
 LmsApplication::createReleaseAnchor(Database::Release::pointer release, bool addText)
 {
-	auto res = std::make_unique<Wt::WAnchor>(Wt::WLink(Wt::LinkType::InternalPath, "/release/" + std::to_string(release.id())));
+	auto res = std::make_unique<Wt::WAnchor>(createReleaseLink(release));
 
 	if (addText)
 	{

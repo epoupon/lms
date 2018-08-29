@@ -19,8 +19,6 @@
 
 #include "MediaPlayer.hpp"
 
-#include <boost/algorithm/string/replace.hpp>
-
 #include "av/AvInfo.hpp"
 #include "utils/Logger.hpp"
 
@@ -35,17 +33,21 @@
 namespace UserInterface {
 
 MediaPlayer::MediaPlayer()
-: Wt::WTemplate(Wt::WString::tr("template-mediaplayer")),
+: Wt::WTemplate(Wt::WString::tr("Lms.MediaPlayer.template")),
   playbackEnded(this, "playbackEnded"),
   playPrevious(this, "playPrevious"),
   playNext(this, "playNext")
 {
-	wApp->doJavaScript("LMS.mediaplayer.init(" + jsRef() + ")");
-}
+	_title = bindNew<Wt::WText>("title");
+	_title->setTextFormat(Wt::TextFormat::Plain);
 
-static std::string escape(const std::string& str)
-{
-	return boost::replace_all_copy(str, "\"", "\\\"");
+	_artist = bindNew<Wt::WAnchor>("artist");
+	_artist->setTextFormat(Wt::TextFormat::Plain);
+
+	_release = bindNew<Wt::WAnchor>("release");
+	_release->setTextFormat(Wt::TextFormat::Plain);
+
+	wApp->doJavaScript("LMS.mediaplayer.init(" + jsRef() + ")");
 }
 
 void
@@ -66,9 +68,6 @@ MediaPlayer::playTrack(Database::IdType trackId)
 		std::ostringstream oss;
 		oss
 			<< "var params = {"
-			<< " name: \"" << escape(track->getName()) + "\","
-			<< " release: " << (track->getRelease() ? "\"" + escape(track->getRelease()->getName()) + "\"" : "undefined" ) << ","
-			<< " artist: " << (track->getArtist() ? "\"" + escape(track->getArtist()->getName()) + "\"" : "undefined" ) << ","
 			<< " resource: \"" << resource << "\","
 			<< " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
 			<< " imgResource: \"" << imgResource << "\","
@@ -76,6 +75,20 @@ MediaPlayer::playTrack(Database::IdType trackId)
 		oss << "LMS.mediaplayer.loadTrack(params, true)"; // true to autoplay
 
 		LMS_LOG(UI, DEBUG) << "Runing js = '" << oss.str() << "'";
+
+		_title->setText(Wt::WString::fromUTF8(track->getName()));
+
+		if (track->getArtist())
+		{
+			_artist->setText(Wt::WString::fromUTF8(track->getArtist()->getName()));
+			_artist->setLink(LmsApp->createArtistLink(track->getArtist()));
+		}
+
+		if (track->getRelease())
+		{
+			_release->setText(Wt::WString::fromUTF8(track->getRelease()->getName()));
+			_release->setLink(LmsApp->createReleaseLink(track->getRelease()));
+		}
 
 		wApp->doJavaScript(oss.str());
 	}
