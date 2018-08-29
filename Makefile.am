@@ -18,6 +18,8 @@ lms_images_DATA = \
 		docroot/images/unknown-artist.jpg
 
 lms_js_DATA = \
+	      	docroot/js/bootstrap-notify.js	\
+	      	docroot/js/jquery-1.10.2.min.js	\
 	      	docroot/js/mediaplayer.js
 
 lms_approot_DATA = \

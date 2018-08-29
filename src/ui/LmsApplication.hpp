@@ -44,6 +44,14 @@ struct GroupEvents
 	Wt::Signal<LmsApplicationInfo> appClosed;
 };
 
+enum class MsgType
+{
+	Success,
+	Info,
+	Warning,
+	Danger,
+};
+
 class LmsApplication : public Wt::WApplication
 {
 	public:
@@ -70,7 +78,8 @@ class LmsApplication : public Wt::WApplication
 		// Utils
 		void goHome();
 		void goHomeAndQuit();
-		void notifyMsg(const Wt::WString& message);
+
+		void notifyMsg(MsgType type, const Wt::WString& message);
 
 		static Wt::WLink createArtistLink(Database::Artist::pointer artist);
 		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Database::Artist::pointer artist, bool addText = true);

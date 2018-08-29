@@ -301,7 +301,7 @@ SettingsView::refreshView()
 
 			if (LmsApp->getUser()->isDemo())
 			{
-				LmsApp->notifyMsg(Wt::WString::tr("Lms.Settings.demo-cannot-save"));
+				LmsApp->notifyMsg(MsgType::Warning, Wt::WString::tr("Lms.Settings.demo-cannot-save"));
 				return;
 			}
 		}
@@ -311,7 +311,7 @@ SettingsView::refreshView()
 		if (model->validate())
 		{
 			model->saveData();
-			LmsApp->notifyMsg(Wt::WString::tr("Lms.Settings.settings-saved"));
+			LmsApp->notifyMsg(MsgType::Success, Wt::WString::tr("Lms.Settings.settings-saved"));
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.

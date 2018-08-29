@@ -140,7 +140,7 @@ InitWizardView::InitWizardView()
 		if (model->validate())
 		{
 			model->saveData();
-			LmsApp->notifyMsg(Wt::WString::tr("Lms.Admin.InitWizard.done"));
+			LmsApp->notifyMsg(MsgType::Success, Wt::WString::tr("Lms.Admin.InitWizard.done"));
 			saveButton->setEnabled(false);
 		}
 

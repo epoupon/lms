@@ -110,7 +110,9 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "templates");
 
 	// Require js here to avoid async problems
+	requireJQuery("/js/jquery-1.10.2.min.js");
 	require("/js/mediaplayer.js");
+	require("/js/bootstrap-notify.js");
 
 	setTitle("LMS");
 
@@ -459,7 +461,7 @@ LmsApplication::createHome()
 
 			if (_isAdmin)
 			{
-				notifyMsg(Wt::WString::tr("Lms.Admin.Database.scan-complete")
+				notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-complete")
 					.arg(static_cast<unsigned>(stats.nbFiles()))
 					.arg(static_cast<unsigned>(stats.additions))
 					.arg(static_cast<unsigned>(stats.updates))
@@ -518,11 +520,33 @@ LmsApplication::notify(const Wt::WEvent& event)
 	}
 }
 
-void
-LmsApplication::notifyMsg(const Wt::WString& message)
+static std::string msgTypeToString(MsgType type)
 {
-	LMS_LOG(UI, INFO) << "Notifying message '" << message.toUTF8() << "'";
-	root()->addNew<Wt::WText>(message);
+	switch(type)
+	{
+		case MsgType::Success:	return "success";
+		case MsgType::Info:	return "info";
+		case MsgType::Warning:	return "warning";
+		case MsgType::Danger:	return "danger";
+	}
+	return "";
+}
+
+void
+LmsApplication::notifyMsg(MsgType type, const Wt::WString& message)
+{
+	LMS_LOG(UI, INFO) << "Notifying message '" << message.toUTF8() << "' of type '" << msgTypeToString(type);
+
+	std::ostringstream oss;
+
+	oss << "$.notify({"
+			"message: '" << message.toUTF8() << "'"
+		"},{"
+			"type: '" << msgTypeToString(type) << "',"
+			"placement: {from: 'top', align: 'center'}"
+		"});";
+
+	LmsApp->doJavaScript(oss.str());
 }
 
 

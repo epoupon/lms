@@ -288,7 +288,7 @@ DatabaseSettingsView::refreshView()
 			model->saveData();
 
 			LmsApp->getMediaScanner().reschedule();
-			LmsApp->notifyMsg(Wt::WString::tr("Lms.Admin.Database.settings-saved"));
+			LmsApp->notifyMsg(MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.
@@ -305,7 +305,7 @@ DatabaseSettingsView::refreshView()
 	immScanBtn->clicked().connect(std::bind([=] ()
 	{
 		LmsApp->getMediaScanner().scheduleImmediateScan();
-		LmsApp->notifyMsg(Wt::WString::tr("Lms.Admin.Database.scan-launched"));
+		LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
 	}));
 
 	t->updateView(model.get());

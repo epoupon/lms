@@ -236,7 +236,7 @@ void
 PlayQueue::addTracks(const std::vector<Database::Track::pointer>& tracks)
 {
 	enqueueTracks(tracks);
-	LmsApp->notifyMsg(Wt::WString::tr("Lms.PlayQueue.nb-tracks-added").arg(tracks.size()));
+	LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.PlayQueue.nb-tracks-added").arg(tracks.size()));
 }
 
 void
@@ -248,7 +248,7 @@ PlayQueue::playTracks(const std::vector<Database::Track::pointer>& tracks)
 	enqueueTracks(tracks);
 	play(0);
 
-	LmsApp->notifyMsg(Wt::WString::tr("Lms.PlayQueue.nb-tracks-playing").arg(tracks.size()));
+	LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.PlayQueue.nb-tracks-playing").arg(tracks.size()));
 }
 
 

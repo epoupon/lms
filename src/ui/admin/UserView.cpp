@@ -306,7 +306,7 @@ UserView::refreshView()
 		if (model->validate())
 		{
 			model->saveData();
-			LmsApp->notifyMsg(Wt::WString::tr(userId ? "Lms.Admin.User.user-updated" : "Lms.Admin.User.user-created"));
+			LmsApp->notifyMsg(MsgType::Success, Wt::WString::tr(userId ? "Lms.Admin.User.user-updated" : "Lms.Admin.User.user-created"));
 			LmsApp->setInternalPath("/admin/users", true);
 		}
 		else

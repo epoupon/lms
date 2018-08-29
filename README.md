@@ -90,3 +90,4 @@ To connect to LMS, just open your favorite browser and go to http://localhost:50
 - ffmpeg project (https://ffmpeg.org/)
 - Magick++ (http://www.imagemagick.org/Magick++/)
 - MetaBrainz (https://metabrainz.org/)
+- Bootstrap Notify: https://github.com/mouse0270/bootstrap-notify
