@@ -11,11 +11,11 @@ LMS.mediaplayer = function () {
 
 	var _updateControls = function() {
 		if (_elems.audio.paused) {
-			_elems.play.style.display = "block";
+			_elems.play.style.display = "inline";
 			_elems.pause.style.display = "none";
 		}
 		else {
-			_elems.pause.style.display = "block";
+			_elems.pause.style.display = "inline";
 			_elems.play.style.display = "none";
 		}
 	}

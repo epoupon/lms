@@ -83,11 +83,21 @@ MediaPlayer::playTrack(Database::IdType trackId)
 			_artist->setText(Wt::WString::fromUTF8(track->getArtist()->getName()));
 			_artist->setLink(LmsApp->createArtistLink(track->getArtist()));
 		}
+		else
+		{
+			_artist->setText("");
+			_artist->setLink(Wt::WLink());
+		}
 
 		if (track->getRelease())
 		{
 			_release->setText(Wt::WString::fromUTF8(track->getRelease()->getName()));
 			_release->setLink(LmsApp->createReleaseLink(track->getRelease()));
+		}
+		else
+		{
+			_release->setText("");
+			_release->setLink(Wt::WLink());
 		}
 
 		wApp->doJavaScript(oss.str());

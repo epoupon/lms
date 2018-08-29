@@ -4,13 +4,13 @@
 
 <message id="Lms.MediaPlayer.template">
 	<audio id="lms-mp-audio"></audio>
-	<div id="lms-mp-previous"><i class="fa fa-step-backward fa-2x"></i></div>
-	<div id="lms-mp-play"><i class="fa fa-play fa-2x"></i></div>
-	<div id="lms-mp-pause" style="display: none"><i class="fa fa-pause fa-2x"></i></div>
-	<div id="lms-mp-next"><i class="fa fa-step-forward fa-2x"></i></div>
+	<i id="lms-mp-previous" class="fa fa-step-backward fa-2x"></i>
+	<i id="lms-mp-play" class="fa fa-play fa-2x"></i>
+	<i id="lms-mp-pause" class="fa fa-pause fa-2x" style="display: none"></i>
+	<i id="lms-mp-next" class="fa fa-step-forward fa-2x"></i>
 	${title}${artist}${release}
-	<div id="lms-mp-time">00:00</div>
-	<div id="lms-mp-duration">00:00</div>
+	<span id="lms-mp-time">00:00</span>
+	<span id="lms-mp-duration">00:00</span>
 	<img id="lms-mp-cover"/>
 </message>
 
