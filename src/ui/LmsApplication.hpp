@@ -79,7 +79,7 @@ class LmsApplication : public Wt::WApplication
 		void goHome();
 		void goHomeAndQuit();
 
-		void notifyMsg(MsgType type, const Wt::WString& message);
+		void notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds(4000));
 
 		static Wt::WLink createArtistLink(Database::Artist::pointer artist);
 		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Database::Artist::pointer artist, bool addText = true);

@@ -533,7 +533,7 @@ static std::string msgTypeToString(MsgType type)
 }
 
 void
-LmsApplication::notifyMsg(MsgType type, const Wt::WString& message)
+LmsApplication::notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration)
 {
 	LMS_LOG(UI, INFO) << "Notifying message '" << message.toUTF8() << "' of type '" << msgTypeToString(type);
 
@@ -543,7 +543,9 @@ LmsApplication::notifyMsg(MsgType type, const Wt::WString& message)
 			"message: '" << message.toUTF8() << "'"
 		"},{"
 			"type: '" << msgTypeToString(type) << "',"
-			"placement: {from: 'top', align: 'center'}"
+			"placement: {from: 'top', align: 'center'},"
+			"timer: 250,"
+			"delay: " << duration.count() << ""
 		"});";
 
 	LmsApp->doJavaScript(oss.str());
