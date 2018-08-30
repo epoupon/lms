@@ -19,13 +19,13 @@
 </message>
 
 <message id="Lms.Explore.Release.template.entry">
-	<div class="row">
-		<div class="col-xs-9">
+	<div class="row Lms-explore-release-entry Lms-vertical-align">
+		<div class="col-xs-9 Lms-explore-release-entry-name">
 			${<if-has-disc-number>}${disc-number}-${</if-has-disc-number>}${<if-has-track-number>}${track-number}. ${</if-has-track-number>}
 			${<if-has-artist>}${artist-name} - ${</if-has-artist>}
 			${name}
 		</div>
-		<div class="col-xs-3">
+		<div class="col-xs-3 Lms-explore-release-entry-controls">
 			${play-btn}${add-btn}
 		</div>
 	</div>
