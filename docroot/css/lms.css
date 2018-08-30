@@ -1,49 +1,64 @@
+body {
+	margin-bottom: 16px;
+}
+
 .Lms-vertical-align {
 	display: flex;
 	align-items: center;
 }
 
 .Lms-cluster {
+	display: inline;
 }
 
 .Lms-cluster-type-0 {
 	background-color: darkslategrey;
+	margin-bottom: 4px;
 }
 
 .Lms-cluster-type-1 {
 	background-color: darkblue;
+	margin-bottom: 4px;
 }
 
 .Lms-cluster-type-2 {
 	background-color: darkgrey;
+	margin-bottom: 4px;
 }
 
 .Lms-cluster-type-3 {
 	background-color: darkorchid;
+	margin-bottom: 4px;
 }
 
 .Lms-cluster-type-4 {
 	background-color: darkgoldenrod;
+	margin-bottom: 4px;
 }
 
 .Lms-cluster-type-5 {
 	background-color: darkkhaki;
+	margin-bottom: 4px;
 }
 
 .Lms-cluster-type-6 {
 	background-color: darkolivegreen;
+	margin-bottom: 4px;
 }
 
 .Lms-cluster-type-7 {
 	background-color: darkred;
+	margin-bottom: 4px;
 }
 
 .Lms-cluster-type-8 {
 	background-color: darkviolet;
+	margin-bottom: 4px;
 }
 
 .Lms-cluster-type-9 {
 	background-color: darkturquoise;
+	margin-bottom: 4px;
 }
 
 .Lms-playqueue-selected {
@@ -69,6 +84,10 @@
 
 .Lms-explore-release-cover {
 	max-width: 100%;
+}
+
+.Lms-explore-btn {
+	font-size: 22px !important;
 }
 
 .Lms-player {

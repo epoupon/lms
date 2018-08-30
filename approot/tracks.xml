@@ -18,14 +18,6 @@
 	${show-more}
 </message>
 
-<message id="Lms.Explore.Tracks.play">
-	<i class="fa fa-play"></i>
-</message>
-
-<message id="Lms.Explore.Tracks.add">
-	<i class="fa fa-plus"></i>
-</message>
-
 <message id="Lms.Explore.Tracks.template.entry">
 	<div class="media list-group-item">
 		<div class="pull-left media-middle">

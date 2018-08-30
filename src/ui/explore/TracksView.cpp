@@ -50,14 +50,14 @@ _filters(filters)
 	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
 	_search->textInput().connect(this, &Tracks::refresh);
 
-	Wt::WText* playBtn = bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.Tracks.play"), Wt::TextFormat::XHTML);
+	Wt::WText* playBtn = bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 	playBtn->clicked().connect(std::bind([=]
 	{
 		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 		tracksPlay.emit(getTracks());
 	}));
 
-	Wt::WText* addBtn = bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.Tracks.add"), Wt::TextFormat::XHTML);
+	Wt::WText* addBtn = bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 	addBtn->clicked().connect(std::bind([=]
 	{
 		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
@@ -153,13 +153,13 @@ Tracks::addSome()
 			}
 		}
 
-		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.Tracks.play"), Wt::TextFormat::XHTML);
+		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 		playBtn->clicked().connect(std::bind([=]
 		{
 			trackPlay.emit(trackId);
 		}));
 
-		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.Tracks.add"), Wt::TextFormat::XHTML);
+		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 		addBtn->clicked().connect(std::bind([=]
 		{
 			trackAdd.emit(trackId);

@@ -50,9 +50,9 @@ Release::Release(Filters* filters)
 
 	refresh();
 
-	filters->updated().connect(std::bind([=] {
+	filters->updated().connect([=] {
 		refresh();
-	}));
+	});
 }
 
 void
@@ -131,19 +131,19 @@ Release::refresh()
 	}
 
 	{
-		Wt::WText* playBtn = t->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.Release.play"), Wt::TextFormat::XHTML);
-		playBtn->clicked().connect(std::bind([=]
+		Wt::WText* playBtn = t->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
+		playBtn->clicked().connect([=]
 		{
 			releasePlay.emit(*releaseId);
-		}));
+		});
 	}
 
 	{
-		Wt::WText* addBtn =  t->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.Release.add"), Wt::TextFormat::XHTML);
-		addBtn->clicked().connect(std::bind([=]
+		Wt::WText* addBtn =  t->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
+		addBtn->clicked().connect([=]
 		{
 			releaseAdd.emit(*releaseId);
-		}));
+		});
 	}
 
 	Wt::WContainerWidget* tracksContainer = t->bindNew<Wt::WContainerWidget>("tracks");
@@ -181,13 +181,13 @@ Release::refresh()
 			entry->bindInt("disc-number", *discNumber);
 		}
 
-		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.Release.play"), Wt::TextFormat::XHTML);
+		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 		playBtn->clicked().connect(std::bind([=]
 		{
 			trackPlay.emit(trackId);
 		}));
 
-		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.Release.add"), Wt::TextFormat::XHTML);
+		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 		addBtn->clicked().connect(std::bind([=]
 		{
 			trackAdd.emit(trackId);

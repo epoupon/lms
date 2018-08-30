@@ -2,14 +2,6 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="Lms.Explore.Artist.play">
-	<i class="fa fa-play"></i>
-</message>
-
-<message id="Lms.Explore.Artist.add">
-	<i class="fa fa-plus"></i>
-</message>
-
 <message id="Lms.Explore.Artist.template">
 	<div class="page-header">
 		<h2>${name}</h2>

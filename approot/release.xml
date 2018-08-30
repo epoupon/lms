@@ -2,14 +2,6 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="Lms.Explore.Release.play">
-	<i class="fa fa-play"></i>
-</message>
-
-<message id="Lms.Explore.Release.add">
-	<i class="fa fa-plus"></i>
-</message>
-
 <message id="Lms.Explore.Release.template">
 	<div class="row">
 		<div class="col-md-12">
@@ -27,10 +19,17 @@
 </message>
 
 <message id="Lms.Explore.Release.template.entry">
-	${<if-has-disc-number>}${disc-number}-${</if-has-disc-number>}${<if-has-track-number>}${track-number}. ${</if-has-track-number>}
-	${<if-has-artist>}${artist-name} - ${</if-has-artist>}
-	${name}
-	${play-btn}${add-btn}
+	<div class="row">
+		<div class="col-xs-9">
+			${<if-has-disc-number>}${disc-number}-${</if-has-disc-number>}${<if-has-track-number>}${track-number}. ${</if-has-track-number>}
+			${<if-has-artist>}${artist-name} - ${</if-has-artist>}
+			${name}
+		</div>
+		<div class="col-xs-3">
+			${play-btn}${add-btn}
+		</div>
+	</div>
+
 </message>
 
 

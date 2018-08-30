@@ -13,6 +13,14 @@
 	</div>
 </message>
 
+<message id="Lms.Explore.template.add-btn">
+	<i class="fa fa-plus-circle Lms-explore-btn"></i>
+</message>
+
+<message id="Lms.Explore.template.play-btn">
+	<i class="fa fa-play-circle Lms-explore-btn"></i>
+</message>
+
 <message id="Lms.Explore.template.show-more">
 	${tr:Lms.Explore.show-more}
 </message>

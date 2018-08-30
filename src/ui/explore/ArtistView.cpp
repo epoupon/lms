@@ -99,7 +99,7 @@ Artist::refresh()
 
 	t->bindString("name", Wt::WString::fromUTF8(artist->getName()), Wt::TextFormat::Plain);
 	{
-		Wt::WText* playBtn = t->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.Artist.play"), Wt::TextFormat::XHTML);
+		Wt::WText* playBtn = t->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 
 		playBtn->clicked().connect(std::bind([=]
 		{
@@ -108,7 +108,7 @@ Artist::refresh()
 	}
 
 	{
-		Wt::WText* addBtn = t->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.Artist.add"), Wt::TextFormat::XHTML);
+		Wt::WText* addBtn = t->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 
 		addBtn->clicked().connect(std::bind([=]
 		{
@@ -155,13 +155,13 @@ Artist::refresh()
 			}
 		}
 
-		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.Artist.play"), Wt::TextFormat::XHTML);
+		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 		playBtn->clicked().connect(std::bind([=]
 		{
 			releasePlay.emit(releaseId);
 		}));
 
-		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.Artist.add"), Wt::TextFormat::XHTML);
+		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 		addBtn->clicked().connect(std::bind([=]
 		{
 			releaseAdd.emit(releaseId);

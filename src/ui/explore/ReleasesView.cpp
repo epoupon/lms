@@ -52,10 +52,10 @@ _filters(filters)
 
 	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
 	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
-	_showMore->clicked().connect(std::bind([=]
+	_showMore->clicked().connect([=]
 	{
 		addSome();
-	}));
+	});
 
 	refresh();
 
@@ -126,17 +126,17 @@ Releases::addSome()
 			}
 		}
 
-		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.Releases.play"), Wt::TextFormat::XHTML);
-		playBtn->clicked().connect(std::bind([=]
+		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
+		playBtn->clicked().connect([=]
 		{
 			releasePlay.emit(releaseId);
-		}));
+		});
 
-		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.Releases.add"), Wt::TextFormat::XHTML);
-		addBtn->clicked().connect(std::bind([=]
+		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
+		addBtn->clicked().connect([=]
 		{
 			releaseAdd.emit(releaseId);
-		}));
+		});
 	}
 
 	_showMore->setHidden(!moreResults);
