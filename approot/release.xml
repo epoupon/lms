@@ -11,7 +11,11 @@
 </message>
 
 <message id="Lms.Explore.Release.template">
-	${cover}
+	<div class="row">
+		<div class="col-md-12">
+			${cover class="Lms-explore-release-cover"}
+	        </div>
+	</div>
 	<div class="page-header">
 		<h2>${name}</h2>
 		${<if-has-artist>}<h4>${artist-name}</h4>${</if-has-artist>}

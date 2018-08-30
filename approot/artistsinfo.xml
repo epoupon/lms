@@ -3,19 +3,10 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.ArtistsInfo.template">
-	<div class="hidden-xs">
-		<div class="page-header">
-			<h2>${tr:Lms.Explore.ArtistsInfo.most-played}</h2>
-		</div>
-		${most-played}
-	</div>
-
-	<div class="hidden-xs">
-		<div class="page-header hidden-xs">
-			<h2>${tr:Lms.Explore.ArtistsInfo.recently-added}</h2>
-		</div>
-		${recently-added}
-	</div>
+	<h3>${tr:Lms.Explore.ArtistsInfo.most-played}</h3>
+	${most-played}
+	<h3>${tr:Lms.Explore.ArtistsInfo.recently-added}</h3>
+	${recently-added}
 </message>
 
 <message id="Lms.Explore.ArtistsInfo.template.entry">

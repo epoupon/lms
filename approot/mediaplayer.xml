@@ -4,10 +4,10 @@
 
 <message id="Lms.MediaPlayer.template">
 	<audio id="lms-mp-audio"></audio>
-	<i id="lms-mp-previous" class="fa fa-step-backward fa-2x"></i>
-	<i id="lms-mp-play" class="fa fa-play fa-2x"></i>
-	<i id="lms-mp-pause" class="fa fa-pause fa-2x" style="display: none"></i>
-	<i id="lms-mp-next" class="fa fa-step-forward fa-2x"></i>
+	<i id="lms-mp-previous" class="fa fa-step-backward Lms-player-btn"></i>
+	<i id="lms-mp-play" class="fa fa-play Lms-player-btn"></i>
+	<i id="lms-mp-pause" class="fa fa-pause Lms-player-btn" style="display: none"></i>
+	<i id="lms-mp-next" class="fa fa-step-forward Lms-player-btn"></i>
 	${title}${artist}${release}
 	<span id="lms-mp-time">00:00</span>
 	<span id="lms-mp-duration">00:00</span>

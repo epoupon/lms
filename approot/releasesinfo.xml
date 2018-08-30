@@ -3,19 +3,10 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.ReleasesInfo.template">
-	<div class="hidden-xs">
-		<div class="page-header">
-			<h2>${tr:Lms.Explore.ReleasesInfo.most-played}</h2>
-		</div>
-		${most-played}
-	</div>
-
-	<div class="hidden-xs">
-		<div class="page-header">
-			<h2>${tr:Lms.Explore.ReleasesInfo.recently-added}</h2>
-		</div>
-		${recently-added}
-	</div>
+	<h3>${tr:Lms.Explore.ReleasesInfo.most-played}</h3>
+	${most-played}
+	<h3>${tr:Lms.Explore.ReleasesInfo.recently-added}</h3>
+	${recently-added}
 </message>
 
 <message id="Lms.Explore.ReleasesInfo.template.entry">

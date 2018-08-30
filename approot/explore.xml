@@ -4,8 +4,8 @@
 <message id="Lms.Explore.template">
 	<div class="row">
 		<div class="col-sm-3">
-			${filters}
-			${info}
+			${filters class="Lms-explore-filters"}
+			${info class="Lms-explore-info hidden-xs"}
 		</div>
 		<div class="col-sm-8 col-sm-offset-1">
 			${contents}
@@ -18,12 +18,8 @@
 </message>
 
 <message id="Lms.Explore.template.filters">
-	<div class="form-group">
-		<div class="page-header">
-			<h3>${tr:Lms.Explore.filters} ${add-filter class="btn-primary"}</h3>
-		</div>
-		${clusters}
-	</div>
+	<h3>${tr:Lms.Explore.filters} ${add-filter class="btn-primary"}</h3>
+	${clusters}
 </message>
 
 <message id="Lms.Explore.template.cluster-entry">
