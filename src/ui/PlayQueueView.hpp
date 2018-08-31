@@ -21,6 +21,7 @@
 
 #include <Wt/WCheckBox.h>
 #include <Wt/WContainerWidget.h>
+#include <Wt/WPushButton.h>
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
@@ -69,7 +70,7 @@ class PlayQueue : public Wt::WTemplate
 		boost::optional<Database::IdType> _tracklistId;
 		Wt::WCheckBox* _radioMode;
 		Wt::WContainerWidget* _entriesContainer;
-		Wt::WTemplate* _showMore;
+		Wt::WPushButton* _showMore;
 		Wt::WText* _nbTracks;
 		boost::optional<std::size_t> _trackPos;	// current track position, if set
 };

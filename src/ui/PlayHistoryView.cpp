@@ -66,9 +66,7 @@ PlayHistory::PlayHistory()
 
 	_entriesContainer = bindNew<Wt::WContainerWidget>("entries");
 
-	// TODO move "Lms.Explore.show-more"
-	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
 	_showMore->setHidden(true);
 
 	_showMore->clicked().connect([=]

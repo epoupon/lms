@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/WContainerWidget.h>
+#include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
@@ -38,7 +39,7 @@ class PlayHistory : public Wt::WTemplate
 		void addSome();
 
 		Wt::WContainerWidget* _entriesContainer;
-		Wt::WTemplate* _showMore;
+		Wt::WPushButton* _showMore;
 };
 
 } // namespace UserInterface

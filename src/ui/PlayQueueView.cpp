@@ -42,8 +42,7 @@ PlayQueue::PlayQueue()
 
 	_entriesContainer = bindNew<Wt::WContainerWidget>("entries");
 
-	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
 	_showMore->setHidden(true);
 
 	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.shuffle"), Wt::TextFormat::XHTML);

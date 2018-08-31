@@ -21,6 +21,7 @@
 
 #include <Wt/WContainerWidget.h>
 #include <Wt/WLineEdit.h>
+#include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
@@ -42,7 +43,7 @@ class Releases : public Wt::WTemplate
 		void addSome();
 
 		Filters* _filters;
-		Wt::WTemplate* _showMore;
+		Wt::WPushButton* _showMore;
 		Wt::WLineEdit* _search;
 		Wt::WContainerWidget* _container;
 };

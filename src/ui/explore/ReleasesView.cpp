@@ -50,8 +50,7 @@ _filters(filters)
 
 	_container = bindNew<Wt::WContainerWidget>("releases");
 
-	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
 	_showMore->clicked().connect([=]
 	{
 		addSome();

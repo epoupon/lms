@@ -21,6 +21,7 @@
 
 #include <Wt/WContainerWidget.h>
 #include <Wt/WLineEdit.h>
+#include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
@@ -48,7 +49,7 @@ class Tracks : public Wt::WTemplate
 		std::vector<Database::Track::pointer> getTracks();
 
 		Wt::WContainerWidget* _tracksContainer;
-		Wt::WTemplate* _showMore;
+		Wt::WPushButton* _showMore;
 		Wt::WLineEdit* _search;
 		Filters* _filters;
 };

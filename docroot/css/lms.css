@@ -17,6 +17,12 @@ a:hover {
 	align-items: center;
 }
 
+.Lms-horizontal-center {
+	display: flex;
+	justify-content: center;
+}
+
+
 .Lms-cluster {
 	display: inline;
 	cursor: pointer;

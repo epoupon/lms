@@ -21,10 +21,6 @@
 	<i class="fa fa-play-circle Lms-explore-btn"></i>
 </message>
 
-<message id="Lms.Explore.template.show-more">
-	${tr:Lms.Explore.show-more}
-</message>
-
 <message id="Lms.Explore.template.filters">
 	<h3>${tr:Lms.Explore.filters} ${add-filter class="btn-primary"}</h3>
 	${clusters}

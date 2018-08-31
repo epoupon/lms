@@ -13,7 +13,11 @@
 		</div>
 	</div>
 	${artists}
-	${show-more}
+	<div class="row">
+		<div class="col-xs-12 Lms-horizontal-center">
+			${show-more class="btn-primary"}
+		</div>
+	</div>
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">

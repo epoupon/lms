@@ -7,7 +7,11 @@
 		<h2>${tr:Lms.PlayHistory.playhistory}</h2>
 	</div>
 	${entries}
-	${show-more}
+	<div class="row">
+		<div class="col-xs-12 Lms-horizontal-center">
+			${show-more class="btn-primary"}
+		</div>
+	</div>
 </message>
 
 <message id="Lms.PlayHistory.template.entry">

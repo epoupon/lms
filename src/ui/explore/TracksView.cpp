@@ -66,8 +66,7 @@ _filters(filters)
 
 	_tracksContainer = bindNew<Wt::WContainerWidget>("tracks");
 
-	_showMore = bindNew<Wt::WTemplate>("show-more", Wt::WString::tr("Lms.Explore.template.show-more"));
-	_showMore->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
 	_showMore->clicked().connect(std::bind([=]
 	{
 		addSome();

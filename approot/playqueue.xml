@@ -19,15 +19,19 @@
 		${radio-mode}
 	</div>
 	${entries}
-	${show-more}
+	<div class="row">
+		<div class="col-xs-12 Lms-horizontal-center">
+			${show-more class="btn-primary"}
+		</div>
+	</div>
 </message>
 
 <message id="Lms.PlayQueue.play">
-	<i class="fa fa-play Lms-playqueue-btn"></i>
+	<i class="fa fa-play-circle Lms-playqueue-btn"></i>
 </message>
 
 <message id="Lms.PlayQueue.delete">
-	<i class="fa fa-remove Lms-playqueue-btn"></i>
+	<i class="fa fa-times-circle Lms-playqueue-btn"></i>
 </message>
 
 <message id="Lms.PlayQueue.template.entry">
