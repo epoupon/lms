@@ -12,6 +12,10 @@ a:hover {
 	color: #337ab7;
 }
 
+.media:hover {
+	background-color: lightgrey;
+}
+
 .Lms-vertical-align {
 	display: flex;
 	align-items: center;
@@ -119,6 +123,15 @@ a:hover {
 }
 
 .Lms-explore-artists-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-explore-artistsinfo-entry {
+	min-height: 28px;
+	margin: 2px;
+}
+
+.Lms-explore-artistsinfo-entry:hover {
 	background-color: lightgrey;
 }
 

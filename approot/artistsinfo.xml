@@ -10,7 +10,11 @@
 </message>
 
 <message id="Lms.Explore.ArtistsInfo.template.entry">
-	${name}
+	<div class="row Lms-explore-artistsinfo-entry Lms-vertical-align">
+		<div class="col-xs-12">
+			${name}
+		</div>
+	</div>
 </message>
 
 </messages>
