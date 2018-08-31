@@ -115,6 +115,7 @@ Tracks::addSome()
 	{
 		auto trackId = track.id();
 		Wt::WTemplate* entry = _tracksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"));
+		entry->addStyleClass("media");
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
@@ -130,9 +131,9 @@ Tracks::addSome()
 			entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(track->getRelease()));
 		}
 
-		Wt::WImage* cover = entry->bindNew<Wt::WImage>("cover", LmsApp->getImageResource()->getTrackUrl(track.id(), 64));
+		Wt::WImage* cover = entry->bindNew<Wt::WImage>("cover", LmsApp->getImageResource()->getTrackUrl(track.id(), 128));
 		// Some images may not be square
-		cover->setWidth(64);
+		cover->setWidth(128);
 
 		Wt::WContainerWidget* clusterContainers = entry->bindNew<Wt::WContainerWidget>("clusters");
 		{

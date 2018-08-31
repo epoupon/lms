@@ -23,16 +23,24 @@
 </message>
 
 <message id="Lms.PlayQueue.play">
-	<i class="fa fa-play"></i>
+	<i class="fa fa-play Lms-playqueue-btn"></i>
 </message>
 
 <message id="Lms.PlayQueue.delete">
-	<i class="fa fa-remove"></i>
+	<i class="fa fa-remove Lms-playqueue-btn"></i>
 </message>
 
 <message id="Lms.PlayQueue.template.entry">
-	${play-btn} ${del-btn}
-	${name} ${<if-has-release>}${release-name}${</if-has-release>} ${<if-has-artist>}${artist-name}${</if-has-artist>}
+	<div class="row Lms-playqueue-entry Lms-vertical-align">
+		<div class="col-xs-9">
+			<h4>${name}</h4>
+			${<if-has-release>}<div class="hidden-xs" style="display: inline"><small>${release-name}</small></div>${</if-has-release>}
+			${<if-has-artist>}<small><i>${artist-name}</i></small>${</if-has-artist>}
+		</div>
+		<div class="col-xs-3 Lms-playqueue-entry-controls">
+			${play-btn} ${del-btn}
+		</div>
+	</div>
 </message>
 
 </messages>

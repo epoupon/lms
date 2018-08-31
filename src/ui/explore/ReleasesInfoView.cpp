@@ -49,6 +49,7 @@ void addEntries(Wt::WContainerWidget* container, const std::vector<Release::poin
 		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 		auto cover = std::make_unique<Wt::WImage>();
 		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 48));
+		cover->setWidth(48);
 		anchor->setImage(std::move(cover));
 
 		auto artists = release->getArtists();

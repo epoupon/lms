@@ -92,6 +92,8 @@ Releases::addSome()
 		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 		auto cover = std::make_unique<Wt::WImage>();
 		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
+		// Some images may not be square
+		cover->setWidth(128);
 		anchor->setImage(std::move(cover));
 
 		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));

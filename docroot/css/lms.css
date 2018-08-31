@@ -72,10 +72,6 @@ a:hover {
 	margin-bottom: 4px;
 }
 
-.Lms-playqueue-selected {
-	font-weight: bold;
-}
-
 .Lms-contents {
 	margin-bottom: 50px;
 }
@@ -124,6 +120,34 @@ a:hover {
 	font-size: 22px !important;
 	cursor: pointer;
 }
+
+.Lms-playqueue-entry {
+	min-height: 32px;
+	margin-bottom: 2px;
+}
+
+.Lms-playqueue-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-playqueue-entry-controls {
+	text-align: center;
+}
+
+.Lms-playqueue-btn {
+	font-size: 22px !important;
+	cursor: pointer;
+	margin: 2px;
+}
+
+.Lms-playqueue-selected {
+	font-weight: 800;
+}
+
+.Lms-playqueue-selected h4 {
+	font-weight: inherit;
+}
+
 
 .Lms-player {
 	position: fixed;
