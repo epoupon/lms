@@ -17,9 +17,10 @@
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">
-	<div class="Lms-explore-artists-entry Lms-vertical-align">
-		<h4>${name}</h4>
-		<span class="badge Lms-explore-artists-entry-nb-releases">${nb-release}</span>
+	<div class="row">
+		 <div class="col-xs-12 Lms-explore-artists-entry Lms-vertical-align">
+			<h4>${name}</h4>
+		</div>
 	</div>
 </message>
 

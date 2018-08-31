@@ -87,28 +87,7 @@ Artists::addSome()
 	{
 		Wt::WTemplate* entry = _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry"));
 
-		entry->bindInt("nb-release", artist->getReleases(clusterIds).size());
 		entry->bindWidget("name", LmsApplication::createArtistAnchor(artist));
-
-
-		Wt::WContainerWidget* clusterContainers = entry->bindNew<Wt::WContainerWidget>("clusters");
-		{
-			auto clusterTypes = ScanSettings::get(LmsApp->getDboSession())->getClusterTypes();
-			auto clusterGroups = artist->getClusterGroups(clusterTypes, 1);
-
-			for (auto clusters : clusterGroups)
-			{
-				for (auto cluster : clusters)
-				{
-					auto clusterId = cluster.id();
-					auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
-					entry->clicked().connect([=]
-					{
-						_filters->add(clusterId);
-					});
-				}
-			}
-		}
 	}
 
 	_showMore->setHidden(!moreResults);

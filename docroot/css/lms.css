@@ -99,19 +99,13 @@ a:hover {
 	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
-.Lms-explore-release-entry {
-	height: 28px;
+.Lms-explore-release-entry-name {
+	margin-top: 4px;
+	margin-bottom: 4px;
 }
 
 .Lms-explore-release-entry:hover {
 	background-color: lightgrey;
-}
-
-.Lms-explore-release-entry-name {
-	line-height: 28px;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	overflow: hidden;
 }
 
 .Lms-explore-release-entry-controls {
@@ -124,10 +118,6 @@ a:hover {
 
 .Lms-explore-artists-entry:hover {
 	background-color: lightgrey;
-}
-
-.Lms-explore-artists-entry-nb-releases {
-	margin: 8px;
 }
 
 .Lms-explore-btn {
