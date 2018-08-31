@@ -10,9 +10,15 @@
 </message>
 
 <message id="Lms.Explore.ReleasesInfo.template.entry">
-	${cover}
-	${release-name}
-	${<if-has-artist>}${artist-name}${</if-has-artist>}
+	<div class="media-left">
+		${cover class="media-object"}
+	</div>
+	<div class="media-body media-middle">
+		<div class="media-heading">
+			${release-name}
+		</div>
+		${<if-has-artist>}<small><i>${artist-name}</i></small>${</if-has-artist>}
+	</div>
 </message>
 
 </messages>

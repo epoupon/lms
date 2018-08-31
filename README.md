@@ -3,13 +3,15 @@
 LMS is a self-hosted media streaming software, released under the GPLv3 license.
 It allows you to access your music using an http(s) web interface.
 
-## Features
-- Audio transcode for maximum interoperability and low bandwith requirements
-- User management
+## Main features
+- Responsive design
 - Browse your audio collection using tag-based filters
 - Custom tag support
+- User management
+- Persistent play queue
+- Radio mode
 - MusicBrainzID support to handle duplicated artist and release names
-- Reverse proxy support
+- Audio transcode for maximum interoperability and low bandwith requirements
 
 LMS is written entirely in C++. Therefore, it is suitable to run on embedded devices, where space and memory are limited.
 

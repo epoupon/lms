@@ -12,19 +12,19 @@
 			${search}
 		</div>
 	</div>
-	${releases class="list-group"}
+	${releases}
 	${show-more}
 </message>
 
 <message id="Lms.Explore.Releases.template.entry">
-	<div class="media list-group-item">
-		<div class="pull-left media-middle">
-			${cover class="media-object"}
-		</div>
-		<div class="media-body">
-			<h4 class="media-heading">${release-name}</h4>
-			${<if-has-artist>}${artist-name}${</if-has-artist>}
-		</div>
+	<div class="media-left">
+		${cover class="media-object"}
+	</div>
+	<div class="media-body media-middle">
+		<h4 class="media-heading">
+			${release-name}
+		</h4>
+		${<if-has-artist>}<h4><small><i>${artist-name}</i></small></h4>${</if-has-artist>}
 		${clusters}
 		${play-btn}${add-btn}
 	</div>

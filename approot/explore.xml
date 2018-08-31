@@ -3,11 +3,11 @@
 
 <message id="Lms.Explore.template">
 	<div class="row">
-		<div class="col-sm-3">
+		<div class="col-sm-4">
 			${filters class="Lms-explore-filters"}
 			${info class="Lms-explore-info hidden-xs"}
 		</div>
-		<div class="col-sm-8 col-sm-offset-1">
+		<div class="col-sm-8">
 			${contents}
 		</div>
 	</div>

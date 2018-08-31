@@ -12,15 +12,14 @@
 			${search}
 		</div>
 	</div>
-	${artists class="list-group"}
+	${artists}
 	${show-more}
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">
-	<div class="list-group-item">
-		<span class="badge">${nb-release}</span>
-		${name}
-		${clusters}
+	<div class="Lms-explore-artists-entry Lms-vertical-align">
+		<h4>${name}</h4>
+		<span class="badge Lms-explore-artists-entry-nb-releases">${nb-release}</span>
 	</div>
 </message>
 

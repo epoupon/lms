@@ -145,7 +145,7 @@ Filters::Filters()
 	addFunction("tr", &Functions::tr);
 
 	// Filters
-	Wt::WPushButton *addFilterBtn = bindNew<Wt::WPushButton>("add-filter", Wt::WText::tr("Lms.Explore.add-filter"));
+	Wt::WPushButton *addFilterBtn = bindNew<Wt::WPushButton>("add-filter", Wt::WText::tr("Lms.add"));
 	addFilterBtn->clicked().connect(this, &Filters::showDialog);
 
 	_filters = bindNew<Wt::WContainerWidget>("clusters");

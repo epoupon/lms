@@ -62,7 +62,7 @@
 <message id="Lms.Auth.welcome">Welcome!</message>
 
 <!--Explore-->
-<message id="Lms.Explore.add-filter">Add</message>
+<message id="Lms.Explore.add-filter">Add filter</message>
 <message id="Lms.Explore.artists">Artists</message>
 <message id="Lms.Explore.filters">Filters</message>
 <message id="Lms.Explore.releases">Albums</message>

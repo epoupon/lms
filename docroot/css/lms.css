@@ -118,6 +118,18 @@ a:hover {
 	text-align: center;
 }
 
+.Lms-explore-artists-entry {
+	min-height: 48px;
+}
+
+.Lms-explore-artists-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-explore-artists-entry-nb-releases {
+	margin: 8px;
+}
+
 .Lms-explore-btn {
 	font-size: 22px !important;
 	cursor: pointer;

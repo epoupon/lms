@@ -43,11 +43,12 @@ void addEntries(Wt::WContainerWidget* container, const std::vector<Release::poin
 	{
 		Wt::WTemplate* entry = container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.ReleasesInfo.template.entry"));
 
+		entry->setStyleClass("media");
 		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
 
 		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 		auto cover = std::make_unique<Wt::WImage>();
-		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
+		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 48));
 		anchor->setImage(std::move(cover));
 
 		auto artists = release->getArtists();
