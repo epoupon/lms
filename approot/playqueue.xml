@@ -34,7 +34,11 @@
 	<div class="row Lms-playqueue-entry Lms-vertical-align">
 		<div class="col-xs-9">
 			<h4>${name}</h4>
-			${<if-has-release>}<div class="hidden-xs" style="display: inline"><small>${release-name}</small></div>${</if-has-release>}
+		</div>
+		<div class="col-sm-3 hidden-xs">
+			${<if-has-release>}<small>${release-name}</small>${</if-has-release>}
+		</div>
+		<div class="col-sm-3 hidden-xs">
 			${<if-has-artist>}<small><i>${artist-name}</i></small>${</if-has-artist>}
 		</div>
 		<div class="col-xs-3 Lms-playqueue-entry-controls">

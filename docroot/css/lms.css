@@ -148,6 +148,14 @@ a:hover {
 	font-weight: inherit;
 }
 
+.Lms-playhistory-entry {
+	min-height: 32px;
+	margin-bottom: 2px;
+}
+
+.Lms-playhistory-entry:hover {
+	background-color: lightgrey;
+}
 
 .Lms-player {
 	position: fixed;
