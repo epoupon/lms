@@ -43,7 +43,6 @@ void addEntries(Wt::WContainerWidget* container, const std::vector<Release::poin
 	{
 		Wt::WTemplate* entry = container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.ReleasesInfo.template.entry"));
 
-		entry->setStyleClass("media");
 		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
 
 		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));

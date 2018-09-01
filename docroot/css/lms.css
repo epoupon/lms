@@ -12,10 +12,6 @@ a:hover {
 	color: #337ab7;
 }
 
-.media:hover {
-	background-color: lightgrey;
-}
-
 .Lms-vertical-align {
 	display: flex;
 	align-items: center;
@@ -99,6 +95,25 @@ a:hover {
 	border-radius: 8px;
 }
 
+.Lms-explore-releases-entry {
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+.Lms-explore-releases-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-explore-releasesinfo-entry {
+	margin: 0px;
+	padding-top: 4px;
+	padding-bottom: 4px;
+}
+
+.Lms-explore-releasesinfo-entry:hover {
+	background-color: lightgrey;
+}
+
 .Lms-explore-release-cover {
 	max-width: 100%;
 	border-radius: 8px;
@@ -128,10 +143,19 @@ a:hover {
 
 .Lms-explore-artistsinfo-entry {
 	min-height: 28px;
-	margin: 2px;
+	margin: 0px;
 }
 
 .Lms-explore-artistsinfo-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-explore-artist-entry {
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+.Lms-explore-artist-entry:hover {
 	background-color: lightgrey;
 }
 

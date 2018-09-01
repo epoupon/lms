@@ -21,16 +21,22 @@
 </message>
 
 <message id="Lms.Explore.Releases.template.entry">
-	<div class="media-left">
-		${cover class="media-object"}
-	</div>
-	<div class="media-body media-middle">
-		<h4 class="media-heading">
-			${release-name}
-		</h4>
-		${<if-has-artist>}<h4><small><i>${artist-name}</i></small></h4>${</if-has-artist>}
-		${clusters}
-		${play-btn}${add-btn}
+	<div class="row">
+		<div class="col-xs-12 Lms-explore-releases-entry">
+			<div class="media">
+				<div class="media-left media-middle">
+					${cover class="media-object"}
+				</div>
+				<div class="media-body media-middle">
+					<h4 class="media-heading">
+						${release-name}
+					</h4>
+					${<if-has-artist>}<h4><small><i>${artist-name}</i></small></h4>${</if-has-artist>}
+					${clusters}
+					${play-btn}${add-btn}
+				</div>
+			</div>
+		</div>
 	</div>
 </message>
 

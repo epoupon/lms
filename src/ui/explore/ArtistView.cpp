@@ -125,7 +125,6 @@ Artist::refresh()
 
 		Wt::WTemplate* entry = releasesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template.entry"));
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
-		entry->setStyleClass("media");
 
 		{
 			Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
