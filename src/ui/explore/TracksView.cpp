@@ -20,7 +20,6 @@
 #include "TracksView.hpp"
 
 #include <Wt/WAnchor.h>
-#include <Wt/WImage.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WText.h>
 
@@ -114,7 +113,6 @@ Tracks::addSome()
 	{
 		auto trackId = track.id();
 		Wt::WTemplate* entry = _tracksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"));
-		entry->addStyleClass("media");
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
@@ -128,29 +126,6 @@ Tracks::addSome()
 		{
 			entry->setCondition("if-has-release", true);
 			entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(track->getRelease()));
-		}
-
-		Wt::WImage* cover = entry->bindNew<Wt::WImage>("cover", LmsApp->getImageResource()->getTrackUrl(track.id(), 128));
-		// Some images may not be square
-		cover->setWidth(128);
-
-		Wt::WContainerWidget* clusterContainers = entry->bindNew<Wt::WContainerWidget>("clusters");
-		{
-			auto clusterTypes = ScanSettings::get(LmsApp->getDboSession())->getClusterTypes();
-			auto clusterGroups = track->getClusterGroups(clusterTypes, 1);
-
-			for (auto clusters : clusterGroups)
-			{
-				for (auto cluster : clusters)
-				{
-					auto clusterId = cluster.id();
-					auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
-					entry->clicked().connect([=]
-					{
-						_filters->add(clusterId);
-					});
-				}
-			}
 		}
 
 		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);

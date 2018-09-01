@@ -159,6 +159,20 @@ a:hover {
 	background-color: lightgrey;
 }
 
+.Lms-explore-tracks-entry {
+	min-height: 32px;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+
+.Lms-explore-tracks-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-explore-tracks-entry-controls {
+	text-align: center;
+}
+
 .Lms-explore-btn {
 	font-size: 22px !important;
 	cursor: pointer;
@@ -166,7 +180,8 @@ a:hover {
 
 .Lms-playqueue-entry {
 	min-height: 32px;
-	margin-bottom: 2px;
+	padding-top: 2px;
+	padding-bottom: 2px;
 }
 
 .Lms-playqueue-entry:hover {

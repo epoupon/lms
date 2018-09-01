@@ -23,14 +23,19 @@
 </message>
 
 <message id="Lms.Explore.Tracks.template.entry">
-	<div class="media-left">
-			${cover class="media-object"}
-	</div>
-	<div class="media-body media-middle">
-		<h4 class="media-heading">${name}</h4>
-		${<if-has-release>}<h4><small>${release-name}</small></h4>${</if-has-release>}
-		${<if-has-artist>}<h4><small><i>${artist-name}</i></small></h4>${</if-has-artist>}
-		${play-btn}${add-btn}
+	<div class="row Lms-explore-tracks-entry Lms-vertical-align">
+		<div class="col-xs-9">
+			<h4>${name}</h4>
+		</div>
+		<div class="col-sm-3 hidden-xs">
+			${<if-has-release>}<small>${release-name}</small>${</if-has-release>}
+		</div>
+		<div class="col-sm-3 hidden-xs">
+			${<if-has-artist>}<small><i>${artist-name}</i></small>${</if-has-artist>}
+		</div>
+		<div class="col-xs-3 Lms-explore-tracks-entry-controls">
+			${play-btn}${add-btn}
+		</div>
 	</div>
 </message>
 

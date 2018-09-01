@@ -46,7 +46,7 @@
 			${<if-has-artist>}<small><i>${artist-name}</i></small>${</if-has-artist>}
 		</div>
 		<div class="col-xs-3 Lms-playqueue-entry-controls">
-			${play-btn} ${del-btn}
+			${play-btn}${del-btn}
 		</div>
 	</div>
 </message>
