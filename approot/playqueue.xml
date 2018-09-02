@@ -3,20 +3,20 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.PlayQueue.clear">
-	<i class="fa fa-times-circle"></i>
+	<i class="fa fa-times-circle Lms-playqueue-btn"></i>
 </message>
 
 <message id="Lms.PlayQueue.shuffle">
-	<i class="fa fa-random"></i>
+	<i class="fa fa-random Lms-playqueue-btn"></i>
 </message>
 
 <message id="Lms.PlayQueue.template">
 	<div class="page-header">
 		<h2>${tr:Lms.PlayQueue.playqueue}</h2>
-		<small>${nb-tracks}</small>
 		${clear-btn}
 		${shuffle-btn}
 		${radio-mode}
+		<h4><small>${nb-tracks}</small></h4>
 	</div>
 	${entries}
 	<div class="row">

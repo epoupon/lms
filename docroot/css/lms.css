@@ -178,6 +178,10 @@ a:hover {
 	cursor: pointer;
 }
 
+.Lms-explore-btn:hover {
+	color: #337ab7;
+}
+
 .Lms-playqueue-entry {
 	min-height: 32px;
 	padding-top: 2px;
@@ -196,6 +200,10 @@ a:hover {
 	font-size: 22px !important;
 	cursor: pointer;
 	margin: 2px;
+}
+
+.Lms-playqueue-btn:hover {
+	color: #337ab7;
 }
 
 .Lms-playqueue-selected {
@@ -227,6 +235,10 @@ a:hover {
 	font-size: 34px !important;
 	margin: 8px;
 	cursor: pointer;
+}
+
+.Lms-player-btn:hover {
+	color: #337ab7;
 }
 
 
