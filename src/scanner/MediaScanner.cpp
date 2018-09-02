@@ -578,21 +578,31 @@ MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool fo
 	boost::system::error_code ec;
 
 	boost::filesystem::recursive_directory_iterator itPath(mediaDirectory, ec);
+	if (ec)
+	{
+		LMS_LOG(DBUPDATER, ERROR) << "Cannot iterate over '" << mediaDirectory.string() << "': " << ec.message();
+		return;
+	}
 
 	boost::filesystem::recursive_directory_iterator itEnd;
-	while (!ec && itPath != itEnd)
+	while (itPath != itEnd)
 	{
 		boost::filesystem::path path = *itPath;
-		itPath.increment(ec);
 
 		if (!_running)
 			return;
 
-		if (boost::filesystem::is_regular(path))
+		if (ec)
+		{
+			LMS_LOG(DBUPDATER, ERROR) << "Cannot process entry: " << ec.message();
+		}
+		else if (boost::filesystem::is_regular(path))
 		{
 			if (isFileSupported(path, _fileExtensions))
 				scanAudioFile(path, forceScan, stats );
 		}
+
+		itPath.increment(ec);
 	}
 }
 
