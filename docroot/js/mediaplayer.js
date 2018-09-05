@@ -10,6 +10,7 @@ LMS.mediaplayer = function () {
 	var _duration = 0;
 
 	var _updateControls = function() {
+		_elems.progress.classList.toggle("active");
 		if (_elems.audio.paused) {
 			_elems.play.style.display = "inline";
 			_elems.pause.style.display = "none";
@@ -17,6 +18,7 @@ LMS.mediaplayer = function () {
 		else {
 			_elems.pause.style.display = "inline";
 			_elems.play.style.display = "none";
+			_elems.progress.classList.add("active");
 		}
 	}
 
@@ -44,9 +46,7 @@ LMS.mediaplayer = function () {
 		_elems.pause = document.getElementById("lms-mp-pause");
 		_elems.previous = document.getElementById("lms-mp-previous");
 		_elems.next = document.getElementById("lms-mp-next");
-		_elems.duration = document.getElementById("lms-mp-duration");
-		_elems.time = document.getElementById("lms-mp-time");
-		_elems.cover = document.getElementById("lms-mp-cover");
+		_elems.progress = document.getElementById("lms-mp-progress");
 
 		_elems.play.addEventListener("click", function() {
 			_elems.audio.play();
@@ -67,7 +67,7 @@ LMS.mediaplayer = function () {
 		_elems.audio.addEventListener("pause", _updateControls);
 
 		_elems.audio.addEventListener("timeupdate", function() {
-			_elems.time.innerHTML = _durationToString(_offset + _elems.audio.currentTime, _duration > 3600)
+			_elems.progress.style.width = "" + ((_offset + _elems.audio.currentTime) / _duration) * 100 + "%";
 		});
 
 		_elems.audio.addEventListener("ended", function() {
@@ -82,9 +82,6 @@ LMS.mediaplayer = function () {
 		_duration = params.duration;
 
 		_elems.audio.src = params.resource;
-		_elems.duration.innerHTML = _durationToString(_duration, _duration > 3600);
-		_elems.time.innerHTML = _durationToString(0, _duration > 3600)
-		_elems.cover.src = params.imgResource;
 
 		if (autoplay)
 			_elems.audio.play();

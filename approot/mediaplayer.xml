@@ -4,14 +4,44 @@
 
 <message id="Lms.MediaPlayer.template">
 	<audio id="lms-mp-audio"></audio>
-	<i id="lms-mp-previous" class="fa fa-step-backward Lms-player-btn"></i>
-	<i id="lms-mp-play" class="fa fa-play Lms-player-btn"></i>
-	<i id="lms-mp-pause" class="fa fa-pause Lms-player-btn" style="display: none"></i>
-	<i id="lms-mp-next" class="fa fa-step-forward Lms-player-btn"></i>
-	${title}${artist}${release}
-	<span id="lms-mp-time">00:00</span>
-	<span id="lms-mp-duration">00:00</span>
-	<img id="lms-mp-cover"/>
+	<div class="container">
+		<div class="progress Lms-player-progress">
+			<div id="lms-mp-progress" class="progress-bar progress-bar-info progress-bar-striped active" role="progressbar" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+			      <span class="sr-only">20% Complete</span>
+		        </div>
+		</div>
+
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-xs-4 Lms-horizontal-center">
+					<i id="lms-mp-previous" class="fa fa-step-backward Lms-player-btn"></i>
+					<i id="lms-mp-play" class="fa fa-play Lms-player-btn Lms-player-btn-playpause"></i>
+					<i id="lms-mp-pause" class="fa fa-pause Lms-player-btn Lms-player-btn-playpause" style="display: none"></i>
+					<i id="lms-mp-next" class="fa fa-step-forward Lms-player-btn"></i>
+				</div>
+				<div class="col-xs-8 Lms-horizontal-center">
+					<div class="container-fluid">
+						<div class="row">
+							<div class="col-xs-12 Lms-horizontal-center">
+								${title}
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-xs-12 Lms-horizontal-center">
+								<small>
+									<span class="hidden-xs">
+										${release}
+									</span>
+									<i>${artist}</i>
+								</small>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
 </message>
 
 </messages>
