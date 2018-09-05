@@ -246,7 +246,7 @@ a:hover {
 .Lms-player-seek {
 	cursor: pointer;
 	z-index: 1;
-#	touch-action: manipulation;
+	touch-action: manipulation;
 }
 
 .Lms-player-progress {
@@ -257,3 +257,14 @@ a:hover {
 	margin-bottom: 8px;
 }
 
+.Lms-player-controls {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.Lms-player-text {
+	text-align: center;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
