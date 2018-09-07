@@ -108,25 +108,6 @@ Releases::addSome()
 			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
 		}
 
-		Wt::WContainerWidget* clusterContainers = entry->bindNew<Wt::WContainerWidget>("clusters");
-		{
-			auto clusterTypes = ScanSettings::get(LmsApp->getDboSession())->getClusterTypes();
-			auto clusterGroups = release->getClusterGroups(clusterTypes, 1);
-
-			for (auto clusters : clusterGroups)
-			{
-				for (auto cluster : clusters)
-				{
-					auto clusterId = cluster.id();
-					auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
-					entry->clicked().connect([=]
-					{
-						_filters->add(clusterId);
-					});
-				}
-			}
-		}
-
 		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 		playBtn->clicked().connect([=]
 		{

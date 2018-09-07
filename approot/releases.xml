@@ -32,7 +32,6 @@
 						${release-name}
 					</h4>
 					${<if-has-artist>}<h4><small><i>${artist-name}</i></small></h4>${</if-has-artist>}
-					${clusters}
 					${play-btn}${add-btn}
 				</div>
 			</div>
