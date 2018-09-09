@@ -243,18 +243,47 @@ a:hover {
 	margin-right: 8px;
 }
 
+.Lms-player-seek-container {
+	margin-top: 8px;
+	margin-bottom: 8px;
+	position: relative;
+	width: 100%;
+	height: 8px;
+}
+
+.Lms-player-seek-common {
+	position: absolute;
+	width:100%;
+	top: 0px;
+	left: 0px;
+	height: 8px;
+}
+
 .Lms-player-seek {
 	cursor: pointer;
 	z-index: 1;
 	touch-action: manipulation;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	background: transparent;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	height: 0px;
+	width: 0px;
+}
+
+input[type="range"]::-moz-range-thumb {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	height: 0px;
+	width: 0px;
 }
 
 .Lms-player-progress {
-	width: 100%;
 	background-color: darkgrey;
-	height: 12px;
-	margin-top: 8px;
-	margin-bottom: 8px;
 }
 
 .Lms-player-controls {
@@ -262,9 +291,14 @@ a:hover {
 	white-space: nowrap;
 }
 
-.Lms-player-text {
+.Lms-player-text-center {
 	text-align: center;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+
+.Lms-player-text {
+	margin-left:8px;
+	margin-right:8px;
 }

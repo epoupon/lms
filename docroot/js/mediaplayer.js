@@ -8,6 +8,7 @@ LMS.mediaplayer = function () {
 	var _elems = {};
 	var _offset = 0;
 	var _duration = 0;
+	var _audioSrc;
 
 	var _updateControls = function() {
 		_elems.progress.classList.toggle("active");
@@ -38,6 +39,19 @@ LMS.mediaplayer = function () {
 			return res;
 	}
 
+	var _playTrack = function() {
+		var playPromise = _elems.audio.play();
+
+		if (playPromise !== undefined) {
+			playPromise.then(_ => {
+				// Automatic playback started
+			})
+			.catch(error => {
+				// Auto-play was prevented
+			});
+		}
+	}
+
 	var init = function(root) {
 		_root = root;
 
@@ -47,6 +61,7 @@ LMS.mediaplayer = function () {
 		_elems.previous = document.getElementById("lms-mp-previous");
 		_elems.next = document.getElementById("lms-mp-next");
 		_elems.progress = document.getElementById("lms-mp-progress");
+		_elems.seek = document.getElementById("lms-mp-seek");
 
 		_elems.play.addEventListener("click", function() {
 			_elems.audio.play();
@@ -60,6 +75,16 @@ LMS.mediaplayer = function () {
 		});
 		_elems.next.addEventListener("click", function() {
 			Wt.emit(_root, "playNext");
+		});
+		_elems.seek.addEventListener("change", function() {
+			if (_elems.audio.src == undefined)
+				return;
+
+			_offset = parseInt(_elems.seek.value, 10);
+			_elems.audio.src = _audioSrc + "&offset=" + _offset;
+			_elems.audio.load();
+			_playTrack();
+
 		});
 
 		_elems.audio.addEventListener("play", _updateControls);
@@ -80,11 +105,13 @@ LMS.mediaplayer = function () {
 
 		_offset = 0;
 		_duration = params.duration;
+		_audioSrc = params.resource;
 
-		_elems.audio.src = params.resource;
+		_elems.seek.max = _duration;
+		_elems.audio.src = _audioSrc;
 
 		if (autoplay)
-			_elems.audio.play();
+			_playTrack();
 	}
 
 	var stop = function() {
