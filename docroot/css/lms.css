@@ -169,6 +169,16 @@ a:hover {
 	text-align: center;
 }
 
+.Lms-explore-tracksinfo-entry {
+	min-height: 28px;
+	margin: 0px;
+}
+
+.Lms-explore-tracksinfo-entry:hover {
+	background-color: lightgrey;
+}
+
+
 .Lms-explore-btn {
 	font-size: 22px !important;
 	cursor: pointer;

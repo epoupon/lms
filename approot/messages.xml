@@ -81,6 +81,11 @@
 <message id="Lms.Explore.ReleasesInfo.recently-added">Recently added</message>
 <message id="Lms.Explore.ReleasesInfo.most-played">Top releases</message>
 
+<!--Explore:Tracks-->
+<message id="Lms.Explore.TracksInfo.recently-added">Recently added</message>
+<message id="Lms.Explore.TracksInfo.most-played">Top tracks</message>
+
+
 <!--Playque-->
 <message id="Lms.PlayQueue.nb-tracks">{1} tracks</message>
 <message id="Lms.PlayQueue.nb-tracks-added">Added {1} tracks</message>

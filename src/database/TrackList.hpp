@@ -45,6 +45,7 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		// Stats utility
 		std::vector<Wt::Dbo::ptr<Artist>> getTopArtists(int limit = 1) const;
 		std::vector<Wt::Dbo::ptr<Release>> getTopReleases(int limit = 1) const;
+		std::vector<Wt::Dbo::ptr<Track>> getTopTracks(int limit = 1) const;
 
 		// Search utility
 		static pointer	get(Wt::Dbo::Session& session, std::string name, Wt::Dbo::ptr<User> user);

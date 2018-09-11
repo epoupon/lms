@@ -41,7 +41,8 @@ lms_approot_DATA = \
 		approot/releasesinfo.xml \
 		approot/settings.xml	\
 		approot/templates.xml	\
-		approot/tracks.xml
+		approot/tracks.xml	\
+		approot/tracksinfo.xml
 
 sysconf_DATA = \
 	        $(top_srcdir)/conf/lms.conf

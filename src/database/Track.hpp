@@ -27,7 +27,6 @@
 #include <boost/optional.hpp>
 
 #include <Wt/Dbo/Dbo.h>
-
 #include <Wt/WDateTime.h>
 
 #include "Types.hpp"
@@ -74,6 +73,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session); // nested transaction
 		static std::vector<pointer> getMBIDDuplicates(Wt::Dbo::Session& session);
 		static std::vector<pointer> getChecksumDuplicates(Wt::Dbo::Session& session);
+		static std::vector<pointer> getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int size = 1);
 
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p);

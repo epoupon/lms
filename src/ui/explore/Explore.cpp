@@ -27,13 +27,14 @@
 
 #include "LmsApplication.hpp"
 
-#include "Filters.hpp"
-#include "ArtistsView.hpp"
 #include "ArtistsInfoView.hpp"
+#include "ArtistsView.hpp"
 #include "ArtistView.hpp"
-#include "ReleasesView.hpp"
+#include "Filters.hpp"
 #include "ReleasesInfoView.hpp"
+#include "ReleasesView.hpp"
 #include "ReleaseView.hpp"
+#include "TracksInfoView.hpp"
 #include "TracksView.hpp"
 
 namespace UserInterface {
@@ -80,7 +81,7 @@ handleInfoPathChange(Wt::WStackedWidget* stack)
 	{
 		IdxArtists = 0,
 		IdxReleases,
-		IdxEmpty,
+		IdxTracks,
 	};
 
 	static const std::map<std::string, int> indexes =
@@ -89,7 +90,7 @@ handleInfoPathChange(Wt::WStackedWidget* stack)
 		{ "/artist",		IdxArtists },
 		{ "/releases",		IdxReleases },
 		{ "/release",		IdxReleases },
-		{ "/tracks",		IdxEmpty },
+		{ "/tracks",		IdxTracks },
 	};
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
@@ -158,18 +159,22 @@ Explore::Explore()
 	auto releasesInfoRaw = releasesInfo.get();
 	infoStack->addWidget(std::move(releasesInfo));
 
-	infoStack->addWidget(std::make_unique<Wt::WContainerWidget>());
+	auto tracksInfo = std::make_unique<TracksInfo>();
+	auto tracksInfoRaw = tracksInfo.get();
+	infoStack->addWidget(std::move(tracksInfo));
 
 	_dbChanged.connect([=]
 	{
 		artistsInfoRaw->refreshRecentlyAdded();
 		releasesInfoRaw->refreshRecentlyAdded();
+		tracksInfoRaw->refreshRecentlyAdded();
 	});
 
 	_trackPlayed.connect([=]
 	{
 		artistsInfoRaw->refreshMostPlayed();
 		releasesInfoRaw->refreshMostPlayed();
+		tracksInfoRaw->refreshMostPlayed();
 	});
 
 

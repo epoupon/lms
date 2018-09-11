@@ -222,6 +222,21 @@ TrackList::getTopReleases(int limit) const
 	return std::vector<Release::pointer>(res.begin(), res.end());
 }
 
+std::vector<Track::pointer>
+TrackList::getTopTracks(int limit) const
+{
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
+	Wt::Dbo::collection<Track::pointer> res = session()->query<Track::pointer>("SELECT t from track t INNER JOIN tracklist_entry p_e ON p_e.track_id = t.id INNER JOIN tracklist p ON p.id = p_e.tracklist_id")
+		.where("p.id = ?").bind(self()->id())
+		.groupBy("t.id")
+		.orderBy("COUNT(t.id) DESC")
+		.limit(limit);
+
+	return std::vector<Track::pointer>(res.begin(), res.end());
+}
+
 TrackListEntry::TrackListEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist)
 : _track(track),
  _tracklist(tracklist)

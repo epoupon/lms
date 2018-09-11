@@ -106,8 +106,9 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "releases");
 	messageResourceBundle().use(appRoot() + "releasesinfo");
 	messageResourceBundle().use(appRoot() + "settings");
-	messageResourceBundle().use(appRoot() + "tracks");
 	messageResourceBundle().use(appRoot() + "templates");
+	messageResourceBundle().use(appRoot() + "tracks");
+	messageResourceBundle().use(appRoot() + "tracksinfo");
 
 	// Require js here to avoid async problems
 	requireJQuery("/js/jquery-1.10.2.min.js");

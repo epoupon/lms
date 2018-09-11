@@ -96,6 +96,17 @@ Track::getChecksumDuplicates(Wt::Dbo::Session& session)
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+std::vector<Track::pointer>
+Track::getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int limit)
+{
+	Wt::Dbo::collection<Track::pointer> res = session.find<Track>()
+		.where("file_added > ?").bind(after)
+		.orderBy("file_added DESC")
+		.limit(limit);
+
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
 std::vector<Cluster::pointer>
 Track::getClusters(void) const
 {
