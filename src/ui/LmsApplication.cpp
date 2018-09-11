@@ -206,6 +206,7 @@ LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete
 
 	res->setStyleClass("Lms-cluster");
 	res->setToolTip(cluster->getType()->getName(), Wt::TextFormat::Plain);
+	res->setInline(true);
 
 	return res;
 }
