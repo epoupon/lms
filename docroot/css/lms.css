@@ -18,6 +18,10 @@ a:hover {
 	justify-content: center;
 }
 
+.Lms-show-more {
+	margin-top: 8px;
+	margin-bottom: 8px;
+}
 
 .Lms-cluster {
 	display: inline;

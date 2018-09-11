@@ -9,7 +9,7 @@
 	${entries}
 	<div class="row">
 		<div class="col-xs-12 Lms-horizontal-center">
-			${show-more class="btn-primary"}
+			${show-more class="btn-primary Lms-show-more"}
 		</div>
 	</div>
 </message>

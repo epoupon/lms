@@ -535,6 +535,12 @@ static std::string msgTypeToString(MsgType type)
 }
 
 void
+LmsApplication::post(std::function<void()> func)
+{
+	Wt::WServer::instance()->post(LmsApp->sessionId(), func);
+}
+
+void
 LmsApplication::notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration)
 {
 	LMS_LOG(UI, INFO) << "Notifying message '" << message.toUTF8() << "' of type '" << msgTypeToString(type);

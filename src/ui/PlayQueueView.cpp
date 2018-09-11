@@ -86,6 +86,14 @@ PlayQueue::PlayQueue()
 
 	updateInfo();
 	addSome();
+
+	if (!LmsApp->getUser()->isDemo())
+	{
+		LmsApp->post([=]
+		{
+			play(LmsApp->getUser()->getCurPlayingTrackPos());
+		});
+	}
 }
 
 Database::TrackList::pointer
@@ -157,6 +165,9 @@ PlayQueue::play(std::size_t pos)
 		trackId = track.id();
 
 		updateCurrentTrack(true);
+
+		if (!LmsApp->getUser()->isDemo())
+			LmsApp->getUser().modify()->setCurPlayingTrackPos(pos);
 	}
 
 	playTrack.emit(trackId);
