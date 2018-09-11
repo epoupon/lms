@@ -64,7 +64,8 @@ LMS.mediaplayer = function () {
 		_elems.seek = document.getElementById("lms-mp-seek");
 
 		_elems.play.addEventListener("click", function() {
-			_elems.audio.play();
+			if (_elems.audio.hasAttribute("src"))
+				_elems.audio.play();
 		});
 		_elems.pause.addEventListener("click", function() {
 			_elems.audio.pause();
@@ -77,7 +78,7 @@ LMS.mediaplayer = function () {
 			Wt.emit(_root, "playNext");
 		});
 		_elems.seek.addEventListener("change", function() {
-			if (_elems.audio.src == undefined)
+			if (!_elems.audio.hasAttribute("src"))
 				return;
 
 			_offset = parseInt(_elems.seek.value, 10);
