@@ -19,8 +19,9 @@
 
 #include "UsersView.hpp"
 
-#include <Wt/WTemplate.h>
 #include <Wt/WPushButton.h>
+#include <Wt/WMessageBox.h>
+#include <Wt/WTemplate.h>
 
 #include "database/User.hpp"
 #include "utils/Logger.hpp"
@@ -72,7 +73,8 @@ UsersView::refreshView()
 			continue;
 		}
 
-		entry->bindString("name", authUser.identity(Wt::Auth::Identity::LoginName), Wt::TextFormat::Plain);
+		auto login = authUser.identity(Wt::Auth::Identity::LoginName);
+		entry->bindString("name", login, Wt::TextFormat::Plain);
 
 		// Create tag
 		if (user->isAdmin() || user->isDemo())
@@ -93,16 +95,30 @@ UsersView::refreshView()
 		}));
 
 		Wt::WPushButton* delBtn = entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.Admin.Users.del"));
-		delBtn->clicked().connect(std::bind([=]
+		delBtn->clicked().connect([=]
 		{
-			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+			auto msgBox = delBtn->addChild(std::make_unique<Wt::WMessageBox>(Wt::WString::tr("Lms.Admin.Users.del-user"),
+				Wt::WString::tr("Lms.Admin.Users.del-user-name"),
+				Wt::Icon::Warning, Wt::StandardButton::Yes | Wt::StandardButton::No));
 
-			auto authUser = LmsApp->getDb().getUserDatabase().findWithId(userId);
-			auto user = LmsApp->getDb().getUser(authUser);
-			LmsApp->getDb().getUserDatabase().deleteUser( authUser );
-			user.remove();
-			_container->removeWidget(entry);
-		}));
+			msgBox->setModal(true);
+			msgBox->buttonClicked().connect([=] (Wt::StandardButton btn)
+			{
+				if (btn == Wt::StandardButton::Yes)
+				{
+					Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+					auto authUser = LmsApp->getDb().getUserDatabase().findWithId(userId);
+					auto user = LmsApp->getDb().getUser(authUser);
+					LmsApp->getDb().getUserDatabase().deleteUser( authUser );
+					user.remove();
+					_container->removeWidget(entry);
+				}
+				delBtn->removeChild(msgBox);
+			});
+
+			msgBox->show();
+		});
 	}
 }
 

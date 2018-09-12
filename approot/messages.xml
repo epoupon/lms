@@ -38,6 +38,8 @@
 <message id="Lms.Admin.Users.add">New user</message>
 <message id="Lms.Admin.Users.admin">Admin</message>
 <message id="Lms.Admin.Users.del">Delete</message>
+<message id="Lms.Admin.Users.del-user">Delete user</message>
+<message id="Lms.Admin.Users.del-user-name">Delete user?</message>
 <message id="Lms.Admin.Users.demo">Demo</message>
 <message id="Lms.Admin.Users.edit">Edit</message>
 <message id="Lms.Admin.Users.users">Users</message>
