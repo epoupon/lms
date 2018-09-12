@@ -1,223 +1,341 @@
-.main-nav {
-	margin-bottom: 0px;
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
-}
-
-.Wt-hrh2 {
-	background-color: white;
-}
-
-.Wt-vrh2 {
-	background-color: white;
-}
-
-.playqueue {
-	background-color: #EEE;
-	border-radius: 10px;
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
-}
-
-.playqueue-playing {
-	font-weight: bold;
-}
-
-.playqueue-track {
-	font-size: 120%;
-	margin-top: 12px;
-	line-height: normal;
-}
-
-.playqueue-artist {
-	line-height: normal;
-	font-style: italic;
-}
-
-.playqueue-cover {
-	width: 64px;
-	height: 64px;
-}
-
-.mediaplayer-track {
-	font-weight: bold;
-	font-size: 120%;
-}
-
-.mediaplayer-artist {
-	font-style: italic;
-}
-
-.mediaplayer {
-	background-color: #CCC;
-	border-radius: 10px;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	height: 72px;
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
-}
-
-.mediaplayer-cover {
-	margin: 8px;
-	width: 64px;
-	min-width: 64px;
-	height: 64px;
-	min-height: 64px;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-}
-
-.mediaplayer-cover img {
-	border-radius: 8px;
-	border-radius: 8px;
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
-}
-
-.mediaplayer-btn {
-	margin: 8px;
-}
-
-.mediaplayer-btn i {
+a, a:link, a:active, a:visited {
+	color: black;
+	text-decoration: none;
 	cursor: pointer;
-	text-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
-.mediaplayer-btn-active {
-	color: #428bca;
+a:hover {
+	color: #337ab7;
 }
 
-.mediaplayer-info-container {
-	width: 100%;
-	min-width: 100px;
-	margin: 8px;
-}
-
-.mediaplayer-track-info {
-	text-overflow: ellipsis;
-	overflow: hidden;
-	white-space: nowrap;
-}
-
-.mediaplayer-progress-container {
+.Lms-vertical-align {
 	display: flex;
 	align-items: center;
 }
 
-.mediaplayer-badge {
-	min-width: initial;
+.Lms-horizontal-center {
+	display: flex;
+	justify-content: center;
 }
 
-.mediaplayer-current-duration {
-	margin-right: 8px;
+.Lms-show-more {
+	margin-top: 8px;
+	margin-bottom: 8px;
 }
-.mediaplayer-total-duration {
+
+.Lms-admin-users-entry {
+	min-height: 48px;
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+.Lms-admin-users-add-btn {
+	margin-top: 8px;
+	margin-bottom: 8px;
+}
+
+.Lms-admin-users-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-admin-users-entry-role {
 	margin-left: 8px;
 }
 
-.mediaplayer-seekbar {
+.Lms-admin-users-entry-btn {
+	margin-right: 8px;
 }
 
-.mediaplayer-volume-container {
-	width: 24px;
-	height: 64px;
-	margin: 8px;
-}
-
-.mediaplayer-volume {
-	height: 64px;
-	-webkit-appearance: slider-vertical;
-	writing-mode: bt-lr;
-}
-
-.mobile-btn {
-	margin: 8px;
-}
-
-.mobile-btn-active {
-	color: #428bca;
-}
-
-.mobile-btn i {
+.Lms-cluster {
+	display: inline;
 	cursor: pointer;
-	text-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
-.mobile-search-title {
-	font-weight: bold;
-	height: 32px;
-	line-height: 32px;
-	background-color: grey;
-	color: white;
+.Lms-cluster-type-0 {
+	background-color: darkslategrey;
+	margin-bottom: 4px;
+}
+
+.Lms-cluster-type-1 {
+	background-color: darkblue;
+	margin-bottom: 4px;
+}
+
+.Lms-cluster-type-2 {
+	background-color: darkgrey;
+	margin-bottom: 4px;
+}
+
+.Lms-cluster-type-3 {
+	background-color: darkorchid;
+	margin-bottom: 4px;
+}
+
+.Lms-cluster-type-4 {
+	background-color: darkgoldenrod;
+	margin-bottom: 4px;
+}
+
+.Lms-cluster-type-5 {
+	background-color: darkkhaki;
+	margin-bottom: 4px;
+}
+
+.Lms-cluster-type-6 {
+	background-color: darkolivegreen;
+	margin-bottom: 4px;
+}
+
+.Lms-cluster-type-7 {
+	background-color: darkred;
+	margin-bottom: 4px;
+}
+
+.Lms-cluster-type-8 {
+	background-color: darkviolet;
+	margin-bottom: 4px;
+}
+
+.Lms-cluster-type-9 {
+	background-color: darkturquoise;
+	margin-bottom: 4px;
+}
+
+.Lms-contents {
+	margin-bottom: 78px;
+}
+
+.Lms-explore-filters {
+	background-color: #f5f5f5;
+	padding: 8px;
+	border-radius: 8px;
+	margin-bottom: 16px;
+}
+
+.Lms-explore-info {
+	background-color: #f5f5f5;
+	padding: 8px;
+	border-radius: 8px;
+}
+
+.Lms-explore-releases-entry {
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+.Lms-explore-releases-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-explore-releasesinfo-entry {
+	margin: 0px;
+	padding-top: 4px;
+	padding-bottom: 4px;
+}
+
+.Lms-explore-releasesinfo-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-explore-release-cover {
+	max-width: 100%;
+	border-radius: 8px;
+	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+.Lms-explore-release-entry-name {
+	margin-top: 4px;
+	margin-bottom: 4px;
+}
+
+.Lms-explore-release-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-explore-release-entry-controls {
 	text-align: center;
 }
 
-.mobile-search-entry {
-	min-height: 64px;
-	border-bottom: 1px solid lightgray;
+.Lms-explore-artists-entry {
+	min-height: 48px;
+}
+
+.Lms-explore-artists-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-explore-artistsinfo-entry {
+	min-height: 28px;
+	margin: 0px;
+}
+
+.Lms-explore-artistsinfo-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-explore-artist-entry {
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+.Lms-explore-artist-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-explore-tracks-entry {
+	min-height: 32px;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+
+.Lms-explore-tracks-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-explore-tracks-entry-controls {
+	text-align: center;
+}
+
+.Lms-explore-tracksinfo-entry {
+	min-height: 28px;
+	margin: 0px;
+}
+
+.Lms-explore-tracksinfo-entry:hover {
+	background-color: lightgrey;
+}
+
+
+.Lms-explore-btn {
+	font-size: 22px !important;
+	cursor: pointer;
+}
+
+.Lms-explore-btn:hover {
+	color: #337ab7;
+}
+
+.Lms-playqueue-entry {
+	min-height: 32px;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+
+.Lms-playqueue-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-playqueue-entry-controls {
+	text-align: center;
+}
+
+.Lms-playqueue-btn {
+	font-size: 22px !important;
+	cursor: pointer;
+	margin: 2px;
+}
+
+.Lms-playqueue-btn:hover {
+	color: #337ab7;
+}
+
+.Lms-playqueue-selected {
+	font-weight: 800;
+}
+
+.Lms-playqueue-selected h4 {
+	font-weight: inherit;
+}
+
+.Lms-playhistory-entry {
+	min-height: 32px;
+	margin-bottom: 2px;
+}
+
+.Lms-playhistory-entry:hover {
+	background-color: lightgrey;
+}
+
+.Lms-player {
+	position: fixed;
+	bottom: 0;
+	width: 100%;
+	height: 70px;
+	background-color: #f5f5f5;
+	box-shadow: 0px -2px 8px #f5f5f5;
+}
+
+.Lms-player-btn {
+	font-size: 34px !important;
+	cursor: pointer;
+}
+
+.Lms-player-btn:hover {
+	color: #337ab7;
+}
+
+.Lms-player-btn-playpause {
+	width: 32px;
+	margin-left: 8px;
+	margin-right: 8px;
+}
+
+.Lms-player-seek-container {
+	margin-top: 8px;
+	margin-bottom: 8px;
+	position: relative;
+	width: 100%;
+	height: 8px;
+}
+
+.Lms-player-seek-common {
+	position: absolute;
+	width:100%;
+	top: 0px;
+	left: 0px;
+	height: 8px;
+}
+
+.Lms-player-seek {
+	cursor: pointer;
+	z-index: 1;
+	touch-action: manipulation;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	background: transparent;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	height: 0px;
+	width: 0px;
+}
+
+input[type="range"]::-moz-range-thumb {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	height: 0px;
+	width: 0px;
+}
+
+.Lms-player-progress {
+	background-color: darkgrey;
+}
+
+.Lms-player-controls {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.Lms-player-text-center {
+	text-align: center;
+	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
-.mobile-search-entry:active {
-	background-color: lightgrey;
-}
-
-.mobile-search-more {
-	height: 64px;
-	border-bottom: 1px solid lightgray;
-}
-
-.mobile-search-more:active {
-	background-color: lightgrey;
-}
-
-.mobile-track {
-	font-weight: bold;
-}
-
-.mobile-artist {
-	font-style: italic;
-}
-
-.vertical-align {
-	display: flex;
-	align-items: center;
-}
-
-.mobile-audio-footer {
-	background-color: #f5f5f5;
-	height: 60px;
-}
-
-.mobile-audio-player-cover {
-	width:	48px;
-	height:	48px;
-}
-
-.release_res_shadow {
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.5)
-}
-
-.release_truncated-name {
-		    white-space: nowrap;
-		    overflow: hidden;
-			overflow-x: hidden;
-			overflow-y: hidden;
-		    text-overflow: ellipsis;
-}
-
-.release_img-responsive {
-    display: block;
-    max-width: 100%;
-    height: auto;
-}
-
-.release-search-cover {
-	width: 512px;
-	min-width: 512px;
-	height: 512px;
-	min-height: 512px;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
+.Lms-player-text {
+	margin-left:8px;
+	margin-right:8px;
 }

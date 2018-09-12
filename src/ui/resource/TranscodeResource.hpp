@@ -21,21 +21,23 @@
 
 #include <mutex>
 
-#include <Wt/WResource>
+#include <Wt/WResource.h>
 
 #include "av/AvTranscoder.hpp"
 
 #include "database/DatabaseHandler.hpp"
+#include "database/Types.hpp"
+
 
 namespace UserInterface {
 
 class TranscodeResource : public Wt::WResource
 {
 	public:
-		TranscodeResource(Database::Handler& db, Wt::WObject *parent);
+		TranscodeResource(Database::Handler& db);
 		~TranscodeResource();
 
-		std::string getUrl(Database::Track::id_type trackId, Av::Encoding encoding = Av::Encoding::OGA, size_t offset_secs = 0, std::vector<size_t> streamIds = {}) const;
+		std::string getUrl(Database::IdType trackId, Av::Encoding encoding) const;
 
 		void handleRequest(const Wt::Http::Request& request,
 				Wt::Http::Response& response);

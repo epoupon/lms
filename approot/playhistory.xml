@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="Lms.PlayHistory.template">
+	<div class="page-header">
+		<h2>${tr:Lms.PlayHistory.playhistory}</h2>
+	</div>
+	${entries}
+	<div class="row">
+		<div class="col-xs-12 Lms-horizontal-center">
+			${show-more class="btn-primary Lms-show-more"}
+		</div>
+	</div>
+</message>
+
+<message id="Lms.PlayHistory.template.entry">
+	<div class="row Lms-playhistory-entry Lms-vertical-align">
+		<div class="col-xs-9">
+			<h4>${name}</h4>
+		</div>
+		<div class="col-sm-3 hidden-xs">
+			${<if-has-release>}<small>${release-name}</small>${</if-has-release>}
+		</div>
+		<div class="col-sm-3 hidden-xs">
+			${<if-has-artist>}<small><i>${artist-name}</i></small>${</if-has-artist>}
+		</div>
+	</div>
+</message>
+
+</messages>

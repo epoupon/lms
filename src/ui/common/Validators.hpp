@@ -19,26 +19,23 @@
 
 #pragma once
 
-#include <Wt/WRegExpValidator>
-#include <Wt/WLengthValidator>
+#include <Wt/WValidator.h>
 
 #include "database/User.hpp"
 
 namespace UserInterface {
 
-static inline Wt::WValidator *createEmailValidator()
-{
-	Wt::WValidator *res = new Wt::WRegExpValidator("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}");
-	res->setMandatory(true);
-	return res;
-}
+std::shared_ptr<Wt::WValidator> createNameValidator();
+std::shared_ptr<Wt::WValidator> createMandatoryValidator();
 
-static inline Wt::WValidator *createNameValidator() {
-	Wt::WLengthValidator *v = new Wt::WLengthValidator();
-	v->setMandatory(true);
-	v->setMinimumLength(3);
-	v->setMaximumLength(::Database::User::MaxNameLength);
-	return v;
-}
+class DirectoryValidator : public Wt::WValidator
+{
+	public:
+		DirectoryValidator();
+
+		Wt::WValidator::Result validate(const Wt::WString& input) const override;
+
+};
 
 } // namespace UserInterface
+

@@ -1,93 +1,95 @@
-# LMS - Lightweight Media Server
+# LMS - Lightweight Music Server
 
 LMS is a self-hosted media streaming software, released under the GPLv3 license.
-It allows you to access your music and your videos using an https web interface.
+It allows you to access your music using an http(s) web interface.
 
-## Features
- - Winamp-like interface, suited for large media collections
- - Audio/Video transcode for maximum interoperability and low bandwith requirements
- - User management
- - Multi genre
- - MusicBrainzID support
-
-Please note LMS is still under development and will gain more features in the future:
- - Radio function (using AcousticBrainz)
- - Interface suited for mobile devices
- - Video support
- - Subsonic and/or Ampache API
+## Main features
+- Responsive design
+- Browse your audio collection using tag-based filters
+- Custom tag support
+- User management
+- Persistent play queue
+- Radio mode
+- MusicBrainzID support to handle duplicated artist and release names
+- Audio transcode for maximum interoperability and low bandwith requirements
 
 LMS is written entirely in C++. Therefore, it is suitable to run on embedded devices, where space and memory are limited.
-Please note some media files may require significant CPU usage to be transcoded.
 
-## Dependencies
-### Debian or Ubuntu packages
-
+## Installation
+Here are the required packages to build on Debian Stretch:
 ```sh
-$ apt-get install g++ autoconf automake libboost-dev libboost-locale-dev libboost-iostreams-dev libavcodec-dev libwtdbosqlite-dev libwthttp-dev libwtdbo-dev libwt-dev libmagick++-dev libavcodec-dev libavformat-dev libav-tools libpstreams-dev
+apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavcodec-dev libavutil-dev libavformat-dev libav-tools libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
 ```
 
-## Build
+You also need wt4, that is not packaged yet on Debian. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).
 
 ```sh
-$ autoreconf -vfi
-$ mkdir build
-$ cd build
-$ ../configure --prefix=/usr
+git clone https://github.com/epoupon/lms.git lms
+cd lms
+autoreconf -vfi
+mkdir build
+cd build
+../configure --prefix=/usr --sysconfdir=/etc
 ```
-configure will complain if a mandatory library is missing.
+configure will report any missing library.
 
 ```sh
-$ make -j 4
+make
 ```
-
-## Install
 
 ```sh
-$ make install
+make install
 ```
-This command requires root privileges
+This command requires root privileges.
+
+## Configuration
+LMS uses a configuration file, installed in '/etc/lms.conf'. It is recommended to edit this file and change the relevant settings (working directory, listen port, etc.)
+
+All other settings are set using the web interface.
+
+It is highly recommended to run LMS as a non root user. Therefore make sure the user has write permissions on the working directory.
+
+## Reverse proxy settings
+You have to set the 'behind-reverse-proxy' option to 'true' in the configuration file.
+
+Here is an example to make LMS properly work on myserver.org using nginx.
+```
+server {
+    listen 80;
+
+    server_name myserver.org;
+
+    access_log            /var/log/nginx/myserver.access.log;
+
+    proxy_request_buffering off;
+    proxy_buffering off;
+    proxy_buffer_size 4k;
+
+    location / {
+
+      proxy_set_header        Host $host;
+      proxy_set_header        X-Real-IP $remote_addr;
+      proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header        X-Forwarded-Proto $scheme;
+
+      proxy_pass          http://localhost:5091;
+      proxy_read_timeout  120;
+    }
+}
+```
 
 ## Running
-Here is a command line example to run on port 5081:
 ```sh
-$ /usr/bin/lms --docroot='/usr/share/lms/docroot/;/resources,/css,/images,/favicon.ico' --approot=/usr/share/lms/approot --http-address 0.0.0.0 --http-port 5081
+lms [config_file]
 ```
-It is highly recommended to run LMS as a non root user.
-The exectuable needs write accesses to the /var/lms/ directory.
+Logs are output in the working directory, in the file 'lms.log'.
 
-To connect to LMS, just open your favorite browser and go to http://localhost:5081
-
-## Mobile
-
-Add the following code in your wt_config.xml file:
-```
-<application-settings location="/usr/bin/lms">
-	<progressive-bootstrap>true</progressive-bootstrap>
-</application-settings>
-```
-
-## Setting up SSL materials (optional)
-Here is just a self signed certificate example, you could do use a CA if you want.
-
-Generate a dh file:
-```sh
-$ openssl dhparam -out dh2048.pem 2048
-```
-Generate a self signed certificate:
-```sh
-$ openssl req -x509 -out cert.pem -keyout privkey.pem -newkey rsa:4096
-```
-Run (on port 5081):
-```sh
-$ /usr/bin/lms --docroot='/usr/share/lms/docroot/;/resources,/css,/images,/favicon.ico' --approot=/usr/share/lms/approot --https-address 0.0.0.0 --https-port 5081 --ssl-certificate cert.pem --ssl-private-key privkey.pem --ssl-tmp-dh dh2048.pem
-```
-Depending on your SSL parameters, you may be asked for the PEM passphrase to unlock the private key.
-
-To connect to LMS, just open your favorite browser and go to https://localhost:5081
+To connect to LMS, just open your favorite browser and go to http://localhost:5082
 
 ## Credits
-
 - Wt (http://www.webtoolkit.eu/)
 - bootstrap3 (http://getbootstrap.com/)
-- libav project (https://www.libav.org/)
+- ffmpeg project (https://ffmpeg.org/)
 - Magick++ (http://www.imagemagick.org/Magick++/)
+- MetaBrainz (https://metabrainz.org/)
+- Bootstrap Notify: https://github.com/mouse0270/bootstrap-notify

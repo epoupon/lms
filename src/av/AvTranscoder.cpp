@@ -16,14 +16,14 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#include "AvTranscoder.hpp"
+
 #include <atomic>
 #include <mutex>
 
-#include <boost/tokenizer.hpp>
-
-#include "logger/Logger.hpp"
-
-#include "AvTranscoder.hpp"
+#include "utils/Path.hpp"
+#include "utils/Logger.hpp"
 
 namespace Av {
 
@@ -40,14 +40,11 @@ static std::vector<EncodingInfo> encodingInfos =
 {
 	{Encoding::MP3,	"audio/mp3", 0},
 	{Encoding::OGA, "audio/ogg", 1},
-	{Encoding::OGV, "video/ogg", 2},
 	{Encoding::WEBMA, "audio/webm", 3},
-	{Encoding::WEBMV, "video/webm", 4},
 	{Encoding::M4A, "audio/mp4", 5},
-	{Encoding::M4V, "video/mp4", 6},
 };
 
-std::string encoding_to_mimetype(Encoding encoding)
+std::string encodingToMimetype(Encoding encoding)
 {
 	for (auto encodingInfo : encodingInfos)
 	{
@@ -55,10 +52,10 @@ std::string encoding_to_mimetype(Encoding encoding)
 			return encodingInfo.mimetype;
 	}
 
-	throw std::logic_error("encoding_to_mimetype failed!");
+	throw AvException("Invalid encoding");
 }
 
-int encoding_to_int(Encoding encoding)
+int encodingToInt(Encoding encoding)
 {
 	for (auto encodingInfo : encodingInfos)
 	{
@@ -66,10 +63,10 @@ int encoding_to_int(Encoding encoding)
 			return encodingInfo.id;
 	}
 
-	throw std::logic_error("encoding_to_int failed!");
+	throw AvException("Invalid encoding");
 }
 
-Encoding encoding_from_int(int encodingId)
+Encoding encodingFromInt(int encodingId)
 {
 	for (auto encodingInfo : encodingInfos)
 	{
@@ -77,7 +74,7 @@ Encoding encoding_from_int(int encodingId)
 			return encodingInfo.encoding;
 	}
 
-	throw std::logic_error("encoding_from_int failed!");
+	throw AvException("Invalid encodingId");
 }
 
 // TODO, parametrize?
@@ -91,37 +88,12 @@ static std::mutex		transcoderMutex;
 static boost::filesystem::path	avConvPath = boost::filesystem::path();
 static std::atomic<size_t>	globalId = {0};
 
-static std::string searchPath(std::string filename)
-{
-	std::string path;
-
-	path = ::getenv("PATH");
-	if (path.empty())
-		throw std::runtime_error("Environment variable PATH not found");
-
-	std::string result;
-	typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
-	boost::char_separator<char> sep(":");
-	tokenizer tok(path, sep);
-	for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
-	{
-		boost::filesystem::path p = *it;
-		p /= filename;
-		if (!::access(p.c_str(), X_OK))
-		{
-			result = p.string();
-			break;
-		}
-	}
-	return result;
-}
-
 void
 Transcoder::init()
 {
 	for (std::string execName : execNames)
 	{
-		boost::filesystem::path p = searchPath(execName);
+		boost::filesystem::path p = searchExecPath(execName);
 		if (!p.empty())
 		{
 			avConvPath = p;
@@ -130,9 +102,9 @@ Transcoder::init()
 	}
 
 	if (!avConvPath.empty())
-		LMS_LOG(TRANSCODE, INFO) << "Using transcoder " << avConvPath;
+		LMS_LOG(TRANSCODE, INFO) << "Using transcoder " << avConvPath.string();
 	else
-		throw std::runtime_error("Cannot find any transcoder binary!");
+		throw AvException("Cannot find any transcoder binary!");
 }
 
 Transcoder::Transcoder(boost::filesystem::path filePath, TranscodeParameters parameters)
@@ -152,7 +124,7 @@ Transcoder::start()
 	else if (!boost::filesystem::is_regular( _filePath) )
 		return false;
 
-	LMS_LOG_TRANSCODE(INFO) << "Transcoding file '" << _filePath << "'";
+	LMS_LOG_TRANSCODE(INFO) << "Transcoding file '" << _filePath.string() << "'";
 
 	std::vector<std::string> args;
 
@@ -165,10 +137,10 @@ Transcoder::start()
 	args.push_back("-nostdin");
 
 	// input Offset
-	if (_parameters.getOffset().total_seconds() > 0)
+	if (_parameters.offset)
 	{
 		args.push_back("-ss");
-		args.push_back(std::to_string(_parameters.getOffset().total_seconds()));
+		args.push_back(std::to_string((*_parameters.offset).count()));
 	}
 
 	// Input file
@@ -177,20 +149,24 @@ Transcoder::start()
 
 	// Output bitrates
 	args.push_back("-b:a");
-	args.push_back(std::to_string(_parameters.getBitrate(Stream::Type::Audio)));
-//	if (_parameters.getOutputFormat().getType() == Format::Video)
-//		oss << " -b:v " << _parameters.getOutputBitrate(Stream::Video);
+	args.push_back(std::to_string(_parameters.bitrate));
 
-	// Stream mapping
-	for (int streamId : _parameters.getSelectedStreamIds())
+	// Stream mapping, if set
+	if (_parameters.stream)
 	{
-		// 0 means the first input file
 		args.push_back("-map");
-		args.push_back("0:" + std::to_string(streamId));
+		args.push_back("0:" + std::to_string(*_parameters.stream));
 	}
 
+	// Strip metadata
+	args.push_back("-map_metadata");
+	args.push_back("-1");
+
+	// Skip video flows (including covers)
+	args.push_back("-vn");
+
 	// Codecs and formats
-	switch( _parameters.getEncoding())
+	switch( _parameters.encoding)
 	{
 		case Encoding::MP3:
 			args.push_back("-f");
@@ -204,38 +180,9 @@ Transcoder::start()
 			args.push_back("ogg");
 			break;
 
-		case Encoding::OGV:
-			args.push_back("-acodec");
-			args.push_back("libvorbis");
-			args.push_back("-ac");
-			args.push_back("2");
-			args.push_back("-ar");
-			args.push_back("44100");
-			args.push_back("-vcodec");
-			args.push_back("libtheora");
-			args.push_back("-threads");
-			args.push_back("4");
-			args.push_back("-f");
-			args.push_back("ogg");
-			break;
 		case Encoding::WEBMA:
 			args.push_back("-codec:a");
 			args.push_back("libvorbis");
-			args.push_back("-f");
-			args.push_back("webm");
-			break;
-
-		case Encoding::WEBMV:
-			args.push_back("-acodec");
-			args.push_back("libvorbis");
-			args.push_back("-ac");
-			args.push_back("2");
-			args.push_back("-ar");
-			args.push_back("44100");
-			args.push_back("-vcodec");
-			args.push_back("libvpx");
-			args.push_back("-threads");
-			args.push_back("4");
 			args.push_back("-f");
 			args.push_back("webm");
 			break;
@@ -247,21 +194,6 @@ Transcoder::start()
 			args.push_back("mp4");
 			args.push_back("-strict");
 			args.push_back("experimental");
-			break;
-
-		case Encoding::M4V:
-			args.push_back("-acodec");
-			args.push_back("aac");
-			args.push_back("-strict");
-			args.push_back("experimental");
-			args.push_back("-ac");
-			args.push_back("2");
-			args.push_back("-ar");
-			args.push_back("-44100");
-			args.push_back("-vcodec");
-			args.push_back("libx264");
-			args.push_back("-f");
-			args.push_back("m4v");
 			break;
 
 		default:

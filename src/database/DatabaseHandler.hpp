@@ -17,23 +17,23 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DATABASE_HANDLER_HPP
-#define DATABASE_HANDLER_HPP
+#pragma once
 
 #include <boost/filesystem.hpp>
+#include <memory>
 
-#include <Wt/Dbo/Dbo>
-#include <Wt/Dbo/SqlConnectionPool>
+#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/SqlConnectionPool.h>
 
-#include <Wt/Auth/Dbo/UserDatabase>
-#include <Wt/Auth/Login>
-#include <Wt/Auth/PasswordService>
+#include <Wt/Auth/Dbo/UserDatabase.h>
+#include <Wt/Auth/Login.h>
+#include <Wt/Auth/PasswordService.h>
 
-#include "Types.hpp"
+#include "User.hpp"
 
 namespace Database {
 
-typedef Wt::Auth::Dbo::UserDatabase<AuthInfo> UserDatabase;
+using UserDatabase = Wt::Auth::Dbo::UserDatabase<AuthInfo>;
 
 // Session living class handling the database and the login
 class Handler
@@ -46,7 +46,8 @@ class Handler
 		Wt::Dbo::Session& getSession() { return _session; }
 
 		Wt::Dbo::ptr<User> getCurrentUser();	// get the current user, may return empty
-		Wt::Dbo::ptr<User> getUser(const Wt::Auth::User& authUser);	// Get or create the given user
+		Wt::Dbo::ptr<User> getUser(const Wt::Auth::User& authUser);
+		Wt::Dbo::ptr<User> createUser(const Wt::Auth::User& authUser);
 
 		Wt::Auth::AbstractUserDatabase& getUserDatabase();
 		Wt::Auth::Login& getLogin() { return _login; }
@@ -57,7 +58,7 @@ class Handler
 		static const Wt::Auth::AuthService& getAuthService();
 		static const Wt::Auth::PasswordService& getPasswordService();
 
-		static Wt::Dbo::SqlConnectionPool*	createConnectionPool(boost::filesystem::path db);
+		static std::unique_ptr<Wt::Dbo::SqlConnectionPool> createConnectionPool(boost::filesystem::path db);
 
 	private:
 
@@ -69,5 +70,4 @@ class Handler
 
 } // namespace Database
 
-#endif
 

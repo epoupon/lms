@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Explore.template">
+	<div class="row">
+		<div class="col-lg-4 col-lg-push-8">
+			${filters class="Lms-explore-filters"}
+			${info class="Lms-explore-info hidden-md hidden-xs"}
+		</div>
+		<div class="col-lg-8 col-lg-pull-4">
+			${contents}
+		</div>
+	</div>
+</message>
+
+<message id="Lms.Explore.template.add-btn">
+	<i class="fa fa-plus-circle Lms-explore-btn"></i>
+</message>
+
+<message id="Lms.Explore.template.play-btn">
+	<i class="fa fa-play-circle Lms-explore-btn"></i>
+</message>
+
+<message id="Lms.Explore.template.filters">
+	<h3>${tr:Lms.Explore.filters} ${add-filter class="btn-primary"}</h3>
+	${clusters}
+</message>
+
+<message id="Lms.Explore.template.cluster-entry">
+	<span class="badge {1}">${<if-can-delete>}<i class="fa fa-times-circle"></i> ${</if-can-delete>}${name}</span>
+</message>
+
+<message id="Lms.Explore.template.add-filter">
+	<div class="form-horizontal">
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:type}">
+				${tr:Lms.Explore.type}
+			</label>
+			<div class="col-sm-10">
+				${type}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:value}">
+				${tr:Lms.Explore.value}
+			</label>
+			<div class="col-sm-10">
+				${value}
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				${add-btn class="btn-primary"} ${cancel-btn}
+			</div>
+		</div>
+	</div>
+</message>
+
+</messages>

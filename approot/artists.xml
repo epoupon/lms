@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="Lms.Explore.Artists.template">
+	<div class="page-header">
+		<h2>${tr:Lms.Explore.artists}</h2>
+	</div>
+	<div class="form-group">
+		<div class="input-group">
+			<span class="input-group-addon"><i class="fa fa-search"></i></span>
+			${search}
+		</div>
+	</div>
+	${artists}
+	<div class="row">
+		<div class="col-xs-12 Lms-horizontal-center">
+			${show-more class="btn-primary Lms-show-more"}
+		</div>
+	</div>
+</message>
+
+<message id="Lms.Explore.Artists.template.entry">
+	<div class="row">
+		 <div class="col-xs-12 Lms-explore-artists-entry Lms-vertical-align">
+			<h4>${name}</h4>
+		</div>
+	</div>
+</message>
+
+</messages>

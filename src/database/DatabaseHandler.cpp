@@ -17,20 +17,28 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/Dbo/FixedSqlConnectionPool>
-#include <Wt/Dbo/backend/Sqlite3>
-
-#include <Wt/Auth/Dbo/AuthInfo>
-#include <Wt/Auth/Dbo/UserDatabase>
-#include <Wt/Auth/AuthService>
-#include <Wt/Auth/HashFunction>
-#include <Wt/Auth/PasswordService>
-#include <Wt/Auth/PasswordStrengthValidator>
-#include <Wt/Auth/PasswordVerifier>
-
-#include "logger/Logger.hpp"
-
 #include "DatabaseHandler.hpp"
+
+#include <Wt/Dbo/FixedSqlConnectionPool.h>
+#include <Wt/Dbo/backend/Sqlite3.h>
+
+#include <Wt/Auth/Dbo/AuthInfo.h>
+#include <Wt/Auth/Dbo/UserDatabase.h>
+#include <Wt/Auth/AuthService.h>
+#include <Wt/Auth/HashFunction.h>
+#include <Wt/Auth/Identity.h>
+#include <Wt/Auth/PasswordService.h>
+#include <Wt/Auth/PasswordStrengthValidator.h>
+#include <Wt/Auth/PasswordVerifier.h>
+
+#include "utils/Logger.hpp"
+
+#include "Artist.hpp"
+#include "Cluster.hpp"
+#include "TrackList.hpp"
+#include "Release.hpp"
+#include "ScanSettings.hpp"
+#include "Track.hpp"
 
 namespace Database {
 
@@ -44,22 +52,31 @@ namespace {
 void
 Handler::configureAuth(void)
 {
-	authService.setEmailVerificationEnabled(true);
+	authService.setEmailVerificationEnabled(false);
+	authService.setAuthTokensEnabled(true, "lmsauth");
+	authService.setIdentityPolicy(Wt::Auth::IdentityPolicy::LoginName);
+	authService.setRandomTokenLength(32);
 
-	Wt::Auth::PasswordVerifier *verifier = new Wt::Auth::PasswordVerifier();
-	verifier->addHashFunction(new Wt::Auth::BCryptHashFunction(8));
-	passwordService.setVerifier(verifier);
+#if WT_VERSION < 0X04000300
+	authService.setTokenHashFunction(new Wt::Auth::BCryptHashFunction(8));
+#else
+	authService.setTokenHashFunction(std::make_unique<Wt::Auth::BCryptHashFunction>(8));
+#endif
+
+	auto verifier = std::make_unique<Wt::Auth::PasswordVerifier>();
+	verifier->addHashFunction(std::make_unique<Wt::Auth::BCryptHashFunction>(8));
+	passwordService.setVerifier(std::move(verifier));
 	passwordService.setAttemptThrottlingEnabled(true);
 
-	Wt::Auth::PasswordStrengthValidator* strengthValidator = new Wt::Auth::PasswordStrengthValidator();
+	auto strengthValidator = std::make_unique<Wt::Auth::PasswordStrengthValidator>();
 	// Reduce some constraints...
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::PassPhrase, 4);
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::OneCharClass, 4);
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::TwoCharClass, 4);
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::ThreeCharClass, 4 );
-	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthValidator::FourCharClass, 4  );
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthType::PassPhrase, 4);
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthType::OneCharClass, 4);
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthType::TwoCharClass, 4);
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthType::ThreeCharClass, 4 );
+	strengthValidator->setMinimumLength( Wt::Auth::PasswordStrengthType::FourCharClass, 4 );
 
-	passwordService.setStrengthValidator(strengthValidator);
+	passwordService.setStrengthValidator(std::move(strengthValidator));
 }
 
 const Wt::Auth::AuthService&
@@ -79,39 +96,45 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 {
 	_session.setConnectionPool(connectionPool);
 
+	_session.mapClass<Artist>("artist");
+	_session.mapClass<Cluster>("cluster");
+	_session.mapClass<ClusterType>("cluster_type");
+	_session.mapClass<TrackList>("tracklist");
+	_session.mapClass<TrackListEntry>("tracklist_entry");
+	_session.mapClass<Release>("release");
+	_session.mapClass<Track>("track");
 
-	_session.mapClass<Database::Artist>("artist");
-	_session.mapClass<Database::Genre>("genre");
-	_session.mapClass<Database::Track>("track");
-	_session.mapClass<Database::Playlist>("playlist");
-	_session.mapClass<Database::PlaylistEntry>("playlist_entry");
-	_session.mapClass<Database::Release>("release");
-	_session.mapClass<Database::Video>("video");
-	_session.mapClass<Database::MediaDirectory>("media_directory");
-	_session.mapClass<Database::MediaDirectorySettings>("media_directory_settings");
+	_session.mapClass<ScanSettings>("scan_settings");
 
-	_session.mapClass<Database::User>("user");
-	_session.mapClass<Database::AuthInfo>("auth_info");
-	_session.mapClass<Database::AuthInfo::AuthIdentityType>("auth_identity");
-	_session.mapClass<Database::AuthInfo::AuthTokenType>("auth_token");
+	_session.mapClass<AuthInfo>("auth_info");
+	_session.mapClass<AuthInfo::AuthIdentityType>("auth_identity");
+	_session.mapClass<AuthInfo::AuthTokenType>("auth_token");
+	_session.mapClass<User>("user");
 
 	try {
 		Wt::Dbo::Transaction transaction(_session);
 
 	        _session.createTables();
-		_session.execute("CREATE INDEX artist_name_idx ON artist(name)");
-		_session.execute("CREATE INDEX genre_name_idx ON genre(name)");
-		_session.execute("CREATE INDEX release_name_idx ON release(name)");
-		_session.execute("CREATE INDEX track_name_idx ON track(name)");
+
+		LMS_LOG(DB, INFO) << "Tables created";
 	}
-	catch(std::exception& e) {
+	catch (Wt::Dbo::Exception& e)
+	{
 		LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();
 	}
 
 	{
 		Wt::Dbo::Transaction transaction(_session);
 
-		_session.execute("PRAGMA journal_mode=WAL");
+		// Indexes
+		_session.execute("CREATE INDEX IF NOT EXISTS track_path_idx ON track(file_path)");
+		_session.execute("CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
+		_session.execute("CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_artist_idx ON track(artist_id)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
+		_session.execute("CREATE INDEX IF NOT EXISTS cluster_name_idx ON cluster(name)");
+		_session.execute("CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");
+		_session.execute("CREATE INDEX IF NOT EXISTS tracklist_name ON tracklist(name)");
 	}
 
 	_users = new UserDatabase(_session);
@@ -140,7 +163,6 @@ Handler::getCurrentUser()
 User::pointer
 Handler::getUser(const Wt::Auth::User& authUser)
 {
-
 	if (!authUser.isValid()) {
 		LMS_LOG(DB, ERROR) << "Handler::getUser: invalid authUser";
 		return User::pointer();
@@ -148,27 +170,37 @@ Handler::getUser(const Wt::Auth::User& authUser)
 
 	Wt::Dbo::ptr<AuthInfo> authInfo = _users->find(authUser);
 
-	User::pointer user = authInfo->user();
+	return authInfo->user();
+}
 
-	if (!user) {
-		user = _session.add(new User());
-		authInfo.modify()->setUser(user);
+User::pointer
+Handler::createUser(const Wt::Auth::User& authUser)
+{
+	if (!authUser.isValid()) {
+		LMS_LOG(DB, ERROR) << "Handler::getUser: invalid authUser";
+		return User::pointer();
 	}
+
+	User::pointer user = _session.add(std::make_unique<User>());
+	Wt::Dbo::ptr<AuthInfo> authInfo = _users->find(authUser);
+	authInfo.modify()->setUser(user);
 
 	return user;
 }
 
-Wt::Dbo::SqlConnectionPool*
+std::unique_ptr<Wt::Dbo::SqlConnectionPool>
 Handler::createConnectionPool(boost::filesystem::path p)
 {
-	LMS_LOG(DB, INFO) << "Creating connection pool on file " << p;
+	LMS_LOG(DB, INFO) << "Creating connection pool on file " << p.string();
 
-	Wt::Dbo::backend::Sqlite3 *connection = new Wt::Dbo::backend::Sqlite3(p.string());
-
+	auto connection = std::make_unique<Wt::Dbo::backend::Sqlite3>(p.string());
 	connection->executeSql("pragma journal_mode=WAL");
+	connection->setProperty("show-queries", "true");
 
-	//  connection->setProperty("show-queries", "true");
-	return new Wt::Dbo::FixedSqlConnectionPool(connection, 1);
+	auto pool = std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), 1);
+	pool->setTimeout(std::chrono::seconds(10));
+
+	return pool;
 }
 
 

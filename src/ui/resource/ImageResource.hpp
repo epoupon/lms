@@ -22,9 +22,11 @@
 
 #include <mutex>
 
-#include <Wt/WResource>
+#include <Wt/WResource.h>
 
 #include "database/DatabaseHandler.hpp"
+#include "database/Types.hpp"
+
 #include "image/Image.hpp"
 
 namespace UserInterface {
@@ -35,12 +37,12 @@ class ImageResource : public Wt::WResource
 	public:
 		static const std::size_t maxSize = 512;
 
-		ImageResource(Database::Handler& db, Wt::WObject *parent = 0);
+		ImageResource(Database::Handler& db);
 		~ImageResource();
 
-		std::string getReleaseUrl(Database::Release::id_type releaseId, size_t size) const;
-		std::string getTrackUrl(Database::Track::id_type trackId, size_t size) const;
-		std::string getArtistUrl(Database::Artist::id_type artistId, size_t size) const;
+		std::string getReleaseUrl(Database::IdType releaseId, size_t size) const;
+		std::string getTrackUrl(Database::IdType trackId, size_t size) const;
+		std::string getArtistUrl(Database::IdType artistId, size_t size) const;
 		std::string getUnknownTrackUrl(size_t size) const;
 
 		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);

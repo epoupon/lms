@@ -17,39 +17,16 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string>
-#include <sstream>
-
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string.hpp>
-
 #include "Utils.hpp"
 
+#include <string>
+#include <sstream>
+#include <iomanip>
+#include <iostream>
 
-bool readAsPosixTime(const std::string& str, boost::posix_time::ptime& time)
-{
-	const std::locale formats[] = {
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y-%m-%d")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y-%b-%d")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y-%B-%d")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y/%m/%d")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%d.%m.%Y")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y-%m")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y/%m")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y.%m")),
-			std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("%Y")),
-	};
-	for(size_t i=0; i < sizeof(formats)/sizeof(formats[0]); ++i)
-	{
-		std::istringstream iss(str);
-		iss.imbue(formats[i]);
-		if (iss >> time)
-			return true;
-	}
-
-	return false;
-}
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string.hpp>
 
 bool readList(const std::string& str, const std::string& separators, std::list<std::string>& results)
 {
@@ -59,7 +36,7 @@ bool readList(const std::string& str, const std::string& separators, std::list<s
 	{
 		if (separators.find(c) != std::string::npos) {
 			if (!curStr.empty()) {
-				results.push_back(stringToUTF8(curStr));
+				results.push_back(curStr);
 				curStr.clear();
 			}
 		}
@@ -72,21 +49,9 @@ bool readList(const std::string& str, const std::string& separators, std::list<s
 	}
 
 	if (!curStr.empty())
-		results.push_back(stringToUTF8(curStr));
+		results.push_back(curStr);
 
 	return !str.empty();
-}
-
-std::string
-durationToString(boost::posix_time::time_duration duration, std::string format)
-{
-	boost::posix_time::time_facet* facet = new boost::posix_time::time_facet();
-	facet->time_duration_format(format.c_str());
-	std::ostringstream oss;
-	oss.imbue(std::locale(oss.getloc(), facet));
-	oss << duration;
-
-	return oss.str();
 }
 
 std::vector<std::string>
@@ -97,6 +62,12 @@ splitString(std::string string, std::string separators)
 	boost::algorithm::split(res, string, boost::is_any_of(separators), boost::token_compress_on);
 
 	return res;
+}
+
+std::string
+joinStrings(std::vector<std::string> strings, std::string delimiter)
+{
+	return boost::algorithm::join(strings, delimiter);
 }
 
 std::string
@@ -113,9 +84,9 @@ stringTrim(const std::string& str, const std::string& whitespace)
 }
 
 std::string
-stringToUTF8(const std::string& str)
+stringTrimEnd(const std::string& str, const std::string& whitespace)
 {
-	return boost::locale::conv::to_utf<char>(str, "UTF-8");
+	return str.substr(0, str.find_last_not_of(whitespace)+1);
 }
 
 std::string

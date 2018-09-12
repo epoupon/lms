@@ -20,52 +20,103 @@
 #ifndef LMS_APPLICATION_HPP
 #define LMS_APPLICATION_HPP
 
-#include <boost/filesystem.hpp>
-#include <Wt/WApplication>
-
-#include <Wt/Dbo/SqlConnectionPool>
+#include <Wt/WApplication.h>
+#include <Wt/Dbo/SqlConnectionPool.h>
 
 #include "database/DatabaseHandler.hpp"
-#include "resource/ImageResource.hpp"
-#include "resource/TranscodeResource.hpp"
+#include "scanner/MediaScanner.hpp"
+
+#include "database/Artist.hpp"
+#include "database/Cluster.hpp"
+#include "database/Release.hpp"
+
+#include "LmsApplicationGroup.hpp"
+#include "Auth.hpp"
 
 namespace UserInterface {
+
+class TranscodeResource;
+class ImageResource;
+
+struct GroupEvents
+{
+	Wt::Signal<LmsApplicationInfo> appOpen;
+	Wt::Signal<LmsApplicationInfo> appClosed;
+};
+
+enum class MsgType
+{
+	Success,
+	Info,
+	Warning,
+	Danger,
+};
 
 class LmsApplication : public Wt::WApplication
 {
 	public:
-		static Wt::WApplication *create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool);
+		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups, Scanner::MediaScanner& scanner);
+
+		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env,
+				Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups, Scanner::MediaScanner& scanner);
 		static LmsApplication* instance();
 
-		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool);
-
 		// Session application data
-		ImageResource* getImageResource() { return _imageResource; }
-		TranscodeResource* getTranscodeResource() { return _transcodeResource; }
-		Database::Handler& getDbHandler() { return _db;}
+		std::shared_ptr<ImageResource> getImageResource() { return _imageResource; }
+		std::shared_ptr<TranscodeResource> getTranscodeResource() { return _transcodeResource; }
+		Database::Handler& getDb() { return _db;}
+		Wt::Dbo::Session& getDboSession() { return _db.getSession();}
+
+		const Wt::Auth::User& getAuthUser() { return _db.getLogin().user(); }
+		Database::User::pointer getUser() { return _db.getCurrentUser(); }
+		Wt::WString getUserIdentity() { return _userIdentity; }
+
+		Scanner::MediaScanner& getMediaScanner() { return _scanner; }
+
+		GroupEvents& getGroupEvents() { return _groupEvents; }
+
+		// Utils
+		void goHome();
+		void goHomeAndQuit();
+
+		void post(std::function<void()> func);
+		void notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds(4000));
+
+		static Wt::WLink createArtistLink(Database::Artist::pointer artist);
+		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Database::Artist::pointer artist, bool addText = true);
+		static Wt::WLink createReleaseLink(Database::Release::pointer release);
+		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::Release::pointer release, bool addText = true);
+		static std::unique_ptr<Wt::WTemplate> createCluster(Database::Cluster::pointer cluster, bool canDelete = false);
+
+		// Signal emitted just before the session ends (user may already be logged out)
+		Wt::Signal<>&	preQuit() { return _preQuit; }
 
 	private:
 
-		void handleAuthEvent(void);
-		void createFirstConnectionUI();
-		void createLmsUI();
+		LmsApplicationGroup& getApplicationGroup();
 
+		// Events
+		void handleAuthEvent();
+		void notify(const Wt::WEvent& event) override;
+		void finalize() override;
+
+		void createHome();
+
+		Wt::Signal<>		_preQuit;
 		Database::Handler	_db;
-		ImageResource*          _imageResource;
-		TranscodeResource*	_transcodeResource;
+		LmsApplicationGroupContainer&   _appGroups;
+		GroupEvents		_groupEvents;
+		Wt::WString		_userIdentity;
+		Auth*			_auth;
+		Scanner::MediaScanner&	_scanner;
+		std::shared_ptr<ImageResource>	_imageResource;
+		std::shared_ptr<TranscodeResource>	_transcodeResource;
+		bool			_isAdmin = false;
 };
 
-// Helpers to get session data
+
+// Helper to get session instance
 #define LmsApp	LmsApplication::instance()
-
-Database::Handler& DbHandler();
-Wt::Dbo::Session& DboSession();
-
-const Wt::Auth::User& CurrentAuthUser();
-Database::User::pointer CurrentUser();
-
-ImageResource *SessionImageResource();
-TranscodeResource *SessionTranscodeResource();
 
 } // namespace UserInterface
 

@@ -16,10 +16,10 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "logger/Logger.hpp"
 
 #include "Image.hpp"
 
+#include "utils/Logger.hpp"
 
 namespace Image {
 
@@ -78,7 +78,7 @@ Image::load(boost::filesystem::path p)
 	}
 	catch (Magick::Exception& e)
 	{
-		LMS_LOG(COVER, ERROR) << "Caught Magick exception while loading image from file '" << p << "': " << e.what();
+		LMS_LOG(COVER, ERROR) << "Caught Magick exception while loading image from file '" << p.string() << "': " << e.what();
 		return false;
 	}
 }

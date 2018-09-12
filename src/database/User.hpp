@@ -17,20 +17,21 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DATABASE_USER_HPP
-#define DATABASE_USER_HPP
+#pragma once
 
 #include <vector>
 
-#include <Wt/Dbo/Dbo>
-#include <Wt/Auth/Dbo/AuthInfo>
+#include <Wt/Dbo/Dbo.h>
+#include <Wt/Auth/Dbo/AuthInfo.h>
+
+#include "Types.hpp"
 
 namespace Database {
 
 class User;
-typedef Wt::Auth::Dbo::AuthInfo<User> AuthInfo;
+using AuthInfo = Wt::Auth::Dbo::AuthInfo<User>;
 
-class Playlist;
+class TrackList;
 
 // User selectable audio formats
 enum class AudioEncoding
@@ -41,95 +42,82 @@ enum class AudioEncoding
 	WEBMA,
 };
 
-enum class VideoEncoding
+class User : public Wt::Dbo::Dbo<User>
 {
-	AUTO,
-};
-
-class User
-{
-
 	public:
+		using pointer = Wt::Dbo::ptr<User>;
 
+		static const std::size_t MinNameLength = 3;
 		static const std::size_t MaxNameLength = 15;
 
-		// list of audio/video parameters
-		static const std::vector<std::size_t> audioBitrates;
-		static const std::vector<AudioEncoding> audioEncodings;
+		enum class Type
+		{
+			REGULAR,
+			ADMIN,
+			DEMO
+		};
 
-		static const std::vector<std::size_t> videoBitrates;
-		static const std::vector<VideoEncoding> videoEncodings;
+		// list of audio parameters
+		static const std::vector<std::size_t> audioBitrates;
 
 		User();
 
-		typedef Wt::Dbo::ptr<User>	pointer;
+		// utility
+		static pointer create(Wt::Dbo::Session& session);
 
 		// accessors
-		static pointer			getById(Wt::Dbo::Session& session, std::string id);
+		static pointer			getById(Wt::Dbo::Session& session, IdType id);
 		static std::vector<pointer>	getAll(Wt::Dbo::Session& session);
-		static std::string		getId(pointer user);
+		static pointer			getDemo(Wt::Dbo::Session& session);
 
 		// write
-		void setAdmin(bool admin)	{ _isAdmin = admin; }
+		void setType(Type type)	{ _type = type; }
 		void setAudioBitrate(std::size_t bitrate);
 		void setAudioEncoding(AudioEncoding encoding)	{ _audioEncoding = encoding; }
-		void setVideoBitrate(std::size_t bitrate);
-		void setVideoEncoding(VideoEncoding encoding)	{ _videoEncoding = encoding; }
 		void setMaxAudioBitrate(std::size_t bitrate);
-		void setMaxVideoBitrate(std::size_t bitrate);
 		void setCurPlayingTrackPos(std::size_t pos) { _curPlayingTrackPos = pos; }
 
 		// read
-		bool isAdmin() const {return _isAdmin;}
+		bool isAdmin() const { return _type == Type::ADMIN; }
+		bool isDemo() const { return _type == Type::DEMO; }
 		std::size_t	getAudioBitrate() const;
-		AudioEncoding	getAudioEncoding() const { return _audioEncoding;}
-		std::size_t	getVideoBitrate() const;
-		VideoEncoding	getVideoEncoding() const { return _videoEncoding;}
+		AudioEncoding	getAudioEncoding() const { return _audioEncoding; }
 		std::size_t	getMaxAudioBitrate() const;
-		std::size_t	getMaxVideoBitrate() const;
 		std::size_t	getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
+
+		Wt::Dbo::ptr<TrackList> getQueuedTrackList() const;
+		Wt::Dbo::ptr<TrackList> getPlayedTrackList() const;
 
 		template<class Action>
 			void persist(Action& a)
 			{
 				Wt::Dbo::field(a, _maxAudioBitrate, "max_audio_bitrate");
-				Wt::Dbo::field(a, _maxVideoBitrate, "max_video_bitrate");
-				Wt::Dbo::field(a, _isAdmin, "admin");
+				Wt::Dbo::field(a, _type, "type");
 				Wt::Dbo::field(a, _audioBitrate, "audio_bitrate");
 				Wt::Dbo::field(a, _audioEncoding, "audio_encoding");
-				Wt::Dbo::field(a, _videoBitrate, "video_bitrate");
-				Wt::Dbo::field(a, _videoEncoding, "video_encoding");
 				// User's dynamic data
 				Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
-				Wt::Dbo::hasMany(a, _playlists, Wt::Dbo::ManyToOne, "user");
+				Wt::Dbo::hasMany(a, _tracklists, Wt::Dbo::ManyToOne, "user");
 			}
 
 	private:
 
-		static const std::size_t	maxAudioBitrate = 320000;
-		static const std::size_t	maxVideoBitrate = 2048000;
-
 		static const std::size_t	defaultAudioBitrate = 128000;
-		static const std::size_t	defaultVideoBitrate = 1024000;
 
 		// Admin defined settings
 		int	 	_maxAudioBitrate;
-		int		_maxVideoBitrate;
-		bool		_isAdmin;
+		Type		_type;
 
 		// User defined settings
 		int		_audioBitrate;
 		AudioEncoding	_audioEncoding;
-		int		_videoBitrate;
-		VideoEncoding	_videoEncoding;
 
 		// User's dynamic data
 		int		_curPlayingTrackPos;	// Current track position in queue
 
-		Wt::Dbo::collection< Wt::Dbo::ptr<Playlist> > _playlists;
+		Wt::Dbo::collection< Wt::Dbo::ptr<TrackList> > _tracklists;
 
 };
 
 } // namespace Databas'
 
-#endif

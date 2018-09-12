@@ -17,10 +17,16 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "logger/Logger.hpp"
+#include "CoverArtGrabber.hpp"
+
+#include <boost/filesystem.hpp>
+
 #include "av/AvInfo.hpp"
 
-#include "CoverArtGrabber.hpp"
+#include "database/Release.hpp"
+#include "database/Track.hpp"
+
+#include "utils/Logger.hpp"
 
 namespace {
 
@@ -64,7 +70,7 @@ getFromAvMediaFile(const Av::MediaFile& input, std::size_t nbMaxCovers)
 		if (image.load(picture.data))
 			res.push_back( image );
 		else
-			LMS_LOG(COVER, ERROR) << "Cannot load embedded cover file in '" << input.getPath() << "'";
+			LMS_LOG(COVER, ERROR) << "Cannot load embedded cover file in '" << input.getPath().string() << "'";
 	}
 
 	return res;
@@ -86,7 +92,7 @@ Grabber::getFromDirectory(const boost::filesystem::path& p, std::size_t nbMaxCov
 		if (image.load(coverPath))
 			res.push_back(image);
 		else
-			LMS_LOG(COVER, ERROR) << "Cannot load image in file '" << coverPath << "'";
+			LMS_LOG(COVER, ERROR) << "Cannot load image in file '" << coverPath.string() << "'";
 	}
 
 	return res;
@@ -115,7 +121,7 @@ Grabber::getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t
 
 		if (boost::filesystem::file_size(path) > _maxFileSize)
 		{
-			LMS_LOG(COVER, INFO) << "Cover file '" << path << " is too big (" << boost::filesystem::file_size(path) << "), limit is " << _maxFileSize;
+			LMS_LOG(COVER, INFO) << "Cover file '" << path.string() << " is too big (" << boost::filesystem::file_size(path) << "), limit is " << _maxFileSize;
 			continue;
 		}
 
@@ -129,16 +135,22 @@ Grabber::getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t
 std::vector<Image::Image>
 Grabber::getFromTrack(const boost::filesystem::path& p, std::size_t nbMaxCovers) const
 {
-	Av::MediaFile input(p);
+	try
+	{
+		Av::MediaFile input(p);
 
-	if (input.open())
 		return getFromAvMediaFile(input, nbMaxCovers);
-	else
-		return std::vector<Image::Image>();
+	}
+	catch (Av::MediaFileException& e)
+	{
+		LMS_LOG(COVER, ERROR) << "Cannot get covers from track " << p.string() << ": " << e.what();
+	}
+
+	return std::vector<Image::Image>();
 }
 
 std::vector<Image::Image>
-Grabber::getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackId, std::size_t nbMaxCovers) const
+Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t nbMaxCovers) const
 {
 	using namespace Database;
 
@@ -166,22 +178,18 @@ Grabber::getFromTrack(Wt::Dbo::Session& session, Database::Track::id_type trackI
 
 
 std::vector<Image::Image>
-Grabber::getFromRelease(Wt::Dbo::Session& session, Database::Release::id_type releaseId, std::size_t nbMaxCovers) const
+Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t nbMaxCovers) const
 {
 	using namespace Database;
 
 	Wt::Dbo::Transaction transaction(session);
 
-	// If the release does not exist or is the special release "None", do nothing
+	// If the release does not exist, do nothing
 	Release::pointer release = Release::getById(session, releaseId);
-	if (!release || release->isNone())
+	if (!release)
 		return std::vector<Image::Image>();
 
-	// Get the first track of the release
-	std::vector<Track::pointer> tracks = Track::getByFilter(session,
-				SearchFilter::ById(SearchFilter::Field::Release, releaseId),
-				-1, 1 /* limit result size */);
-
+	std::vector<Track::pointer> tracks = release->getTracks();
 	if (tracks.empty())
 		return std::vector<Image::Image>();
 

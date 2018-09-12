@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Admin.User.template">
+	<div class="page-header">
+		<h2>${title}</h2>
+	</div>
+	<div class="form-horizontal">
+		${<if-has-login>}
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:login}">
+				${tr:Lms.login}
+			</label>
+			<div class="col-sm-5">
+				${login}
+			</div>
+			<div class="help-block col-sm-5">
+				${login-info}
+			</div>
+		</div>
+		${</if-has-login>}
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:password}">
+				${tr:Lms.password}
+			</label>
+			<div class="col-sm-5">
+				${password}
+			</div>
+			<div class="help-block col-sm-5">
+				${password-info}
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:audio-bitrate-limit}">
+				${tr:Lms.Admin.User.audio-bitrate-limit}
+			</label>
+			<div class="col-sm-5">
+				<div class="input-group">
+					${audio-bitrate-limit}
+					<span class="input-group-addon">kbps</span>
+				</div>
+			</div>
+			<div class="help-block col-sm-5">
+				${audio-bitrate-limit-info}
+			</div>
+		</div>
+		${<if-demo>}
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:demo}">
+				${tr:Lms.Admin.User.demo-account}
+			</label>
+			<div class="col-sm-5">
+				${demo}
+			</div>
+			<div class="help-block col-sm-5">
+				${demo-info}
+			</div>
+		</div>
+		${</if-demo>}
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				${save-btn class="btn-primary"}
+			</div>
+		</div>
+	</div>
+</message>
+
+</messages>

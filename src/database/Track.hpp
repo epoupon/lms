@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2013-2016 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,79 +17,34 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _AUDIO_TYPES_HPP_
-#define _AUDIO_TYPES_HPP_
+#pragma once
 
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include <boost/filesystem.hpp>
+#include <boost/optional.hpp>
 
-#include <Wt/Dbo/Dbo>
-#include <Wt/Dbo/WtSqlTraits>
+#include <Wt/Dbo/Dbo.h>
+#include <Wt/WDateTime.h>
 
-#include <Wt/WDateTime>
+#include "Types.hpp"
 
 namespace Database {
 
-
 class Artist;
+class Cluster;
+class ClusterType;
+class TrackListEntry;
 class Release;
-class Track;
-class PlaylistEntry;
+class TrackStats;
 
-class Genre
-{
-	public:
-
-		typedef Wt::Dbo::ptr<Genre> pointer;
-		typedef Wt::Dbo::dbo_traits<Genre>::IdType id_type;
-
-		Genre();
-		Genre(const std::string& name);
-
-		// Find utility
-		static pointer getByName(Wt::Dbo::Session& session, const std::string& name);
-		static pointer getNone(Wt::Dbo::Session& session);
-		static std::vector<pointer> getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
-		static Wt::Dbo::collection<Genre::pointer> getAll(Wt::Dbo::Session& session);
-
-		// MVC models for the user interface
-		// Genre ID, name, track count
-		typedef boost::tuple<id_type, std::string, int> UIQueryResult;
-		static Wt::Dbo::Query<UIQueryResult> getUIQuery(Wt::Dbo::Session& session, SearchFilter filter);
-		static void updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<UIQueryResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
-
-		// Create utility
-		static pointer create(Wt::Dbo::Session& session, const std::string& name);
-
-		// Accessors
-		const std::string& getName(void) const { return _name; }
-		bool isNone(void) const;
-		const Wt::Dbo::collection< Wt::Dbo::ptr<Track> >&	getTracks() const { return _tracks;}
-
-		template<class Action>
-			void persist(Action& a)
-			{
-				Wt::Dbo::field(a, _name,	"name");
-				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
-			}
-
-	private:
-		static Wt::Dbo::Query<pointer> getQuery(Wt::Dbo::Session& session, SearchFilter filter);
-
-		static const std::size_t _maxNameLength = 128;
-		std::string	_name;
-
-		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;
-};
-
-class Track
+class Track : public Wt::Dbo::Dbo<Track>
 {
 	public:
 
 		typedef Wt::Dbo::ptr<Track> pointer;
-		typedef Wt::Dbo::dbo_traits<Track>::IdType id_type;
 
 		Track() {}
 		Track(const boost::filesystem::path& p);
@@ -102,91 +57,82 @@ class Track
 
 		// Find utility functions
 		static pointer getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
-		static pointer getById(Wt::Dbo::Session& session, id_type id);
+		static pointer getById(Wt::Dbo::Session& session, IdType id);
 		static pointer getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
-		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset = -1, int size = -1);
-		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool &moreResults);
+		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
+							const std::set<IdType>& clusters);           // tracks that belong to these clusters
+		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
+							const std::set<IdType>& clusters,           // tracks that belong to these clusters
+							const std::vector<std::string> keywords,        // name must match all of these keywords
+							int offset,
+							int size,
+							bool& moreExpected);
+
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
-		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session);
+		static std::vector<IdType> getAllIds(Wt::Dbo::Session& session); // nested transaction
+		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session); // nested transaction
 		static std::vector<pointer> getMBIDDuplicates(Wt::Dbo::Session& session);
 		static std::vector<pointer> getChecksumDuplicates(Wt::Dbo::Session& session);
-
-		// Utility fonctions
-		// MVC models for the user interface
-		// ID, Artist name, Release Name, DiscNumber, TrackNumber, Name, duration, date, original date, genre list
-		typedef boost::tuple<id_type,			//ID
-			std::string,				// Artist name
-			std::string,				// Release Name
-			int,					// Disc Number
-			int,					// Track Number
-			std::string,				// Name
-			boost::posix_time::time_duration,	// Duration
-			boost::posix_time::ptime,		// Date
-			boost::posix_time::ptime,		// Original date
-			std::string>				// genre list
-			UIQueryResult;
-		static Wt::Dbo::Query< UIQueryResult > getUIQuery(Wt::Dbo::Session& session, SearchFilter filter);
-		static void updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel< UIQueryResult >& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames = std::vector<Wt::WString>());
-
-		// Stats for a given search filter
-		typedef boost::tuple<
-				int,		// Total tracks
-				boost::posix_time::time_duration // Total duration
-				> StatsQueryResult;
-		static StatsQueryResult getStats(Wt::Dbo::Session& session, SearchFilter filter);
+		static std::vector<pointer> getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int size = 1);
 
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p);
 
+		// Remove utility
+		static void removeClusters(std::string type);
+
 		// Accessors
+		void setScanVersion(std::size_t version)			{_scanVersion = version; }
 		void setTrackNumber(int num)					{ _trackNumber = num; }
 		void setTotalTrackNumber(int num)				{ _totalTrackNumber = num; }
 		void setDiscNumber(int num)					{ _discNumber = num; }
 		void setTotalDiscNumber(int num)				{ _totalDiscNumber = num; }
 		void setName(const std::string& name)				{ _name = std::string(name, 0, _maxNameLength); }
-		void setDuration(boost::posix_time::time_duration duration)	{ _duration = duration; }
-		void setLastWriteTime(boost::posix_time::ptime time)		{ _fileLastWrite = time; }
-		void setAddedTime(boost::posix_time::ptime time)		{ _fileAdded = time; }
+		void setDuration(std::chrono::milliseconds duration)		{ _duration = duration; }
+		void setLastWriteTime(Wt::WDateTime time)			{ _fileLastWrite = time; }
+		void setAddedTime(Wt::WDateTime time)				{ _fileAdded = time; }
 		void setChecksum(const std::vector<unsigned char>& checksum)	{ _fileChecksum = checksum; }
-		void setDate(const boost::posix_time::ptime& date)		{ _date = date; }
-		void setOriginalDate(const boost::posix_time::ptime& date)	{ _originalDate = date; }
+		void setYear(int year)						{ _year = year; }
+		void setOriginalYear(int year)					{ _originalYear = year; }
 		void setGenres(const std::string& genreList)			{ _genreList = genreList; }
 		void setCoverType(CoverType coverType)				{ _coverType = coverType; }
 		void setMBID(const std::string& MBID)				{ _MBID = MBID; }
 		void setArtist(Wt::Dbo::ptr<Artist> artist)			{ _artist = artist; }
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
-		void setGenres(std::vector<Genre::pointer> genres);
 
-		int				getTrackNumber(void) const		{ return _trackNumber; }
-		int				getTotalTrackNumber(void) const		{ return _totalTrackNumber; }
-		int				getDiscNumber(void) const		{ return _discNumber; }
-		int				getTotalDiscNumber(void) const		{ return _totalDiscNumber; }
-		std::string 			getName(void) const			{ return _name; }
-		boost::filesystem::path		getPath(void) const			{ return _filePath; }
-		boost::posix_time::time_duration	getDuration(void) const		{ return _duration; }
-		boost::posix_time::ptime	getDate(void) const			{ return _date; }
-		boost::posix_time::ptime	getOriginalDate(void) const		{ return _originalDate; }
-		boost::posix_time::ptime	getLastWriteTime(void) const		{ return _fileLastWrite; }
-		boost::posix_time::ptime	getAddedTime(void) const		{ return _fileAdded; }
-		const std::vector<unsigned char>& getChecksum(void) const		{ return _fileChecksum; }
-		CoverType			getCoverType(void) const		{ return _coverType; }
-		const std::string&		getMBID(void) const			{ return _MBID; }
-		Wt::Dbo::ptr<Artist>		getArtist(void) const			{ return _artist; }
-		Wt::Dbo::ptr<Release>		getRelease(void) const			{ return _release; }
-		std::vector< Genre::pointer >	getGenres(void) const;
-		bool				hasGenre(Genre::pointer genre) const	{ return _genres.count(genre); }
+		std::size_t 			getScanVersion() const		{ return _scanVersion; }
+		boost::optional<std::size_t>	getTrackNumber() const;
+		boost::optional<std::size_t>	getTotalTrackNumber() const;
+		boost::optional<std::size_t>	getDiscNumber() const;
+		boost::optional<std::size_t>	getTotalDiscNumber() const;
+		std::string 			getName() const			{ return _name; }
+		boost::filesystem::path		getPath() const			{ return _filePath; }
+		std::chrono::milliseconds	getDuration() const		{ return _duration; }
+		boost::optional<int>		getYear() const;
+		boost::optional<int>		getOriginalYear() const;
+		Wt::WDateTime			getLastWriteTime() const	{ return _fileLastWrite; }
+		Wt::WDateTime			getAddedTime() const		{ return _fileAdded; }
+		const std::vector<unsigned char>& getChecksum() const		{ return _fileChecksum; }
+		CoverType			getCoverType() const		{ return _coverType; }
+		const std::string&		getMBID() const			{ return _MBID; }
+		Wt::Dbo::ptr<Artist>		getArtist() const		{ return _artist; }
+		Wt::Dbo::ptr<Release>		getRelease() const		{ return _release; }
+		std::vector<Wt::Dbo::ptr<Cluster>>	getClusters() const;
+
+		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
 
 		template<class Action>
 			void persist(Action& a)
 			{
+				Wt::Dbo::field(a, _scanVersion,		"scan_version");
 				Wt::Dbo::field(a, _trackNumber,		"track_number");
 				Wt::Dbo::field(a, _totalTrackNumber,	"total_track_number");
 				Wt::Dbo::field(a, _discNumber,		"disc_number");
 				Wt::Dbo::field(a, _totalDiscNumber,	"total_disc_number");
 				Wt::Dbo::field(a, _name,		"name");
 				Wt::Dbo::field(a, _duration,		"duration");
-				Wt::Dbo::field(a, _date,		"date");
-				Wt::Dbo::field(a, _originalDate,	"original_date");
+				Wt::Dbo::field(a, _year,		"year");
+				Wt::Dbo::field(a, _originalYear,	"original_year");
 				Wt::Dbo::field(a, _genreList,		"genre_list");
 				Wt::Dbo::field(a, _filePath,		"file_path");
 				Wt::Dbo::field(a, _fileLastWrite,	"file_last_write");
@@ -196,46 +142,40 @@ class Track
 				Wt::Dbo::field(a, _MBID,		"mbid");
 				Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
-				Wt::Dbo::hasMany(a, _genres, Wt::Dbo::ManyToMany, "track_genre", "", Wt::Dbo::OnDeleteCascade);
+				Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _playlistEntries, Wt::Dbo::ManyToOne, "track");
 			}
 
 	private:
 
-		static Wt::Dbo::Query< pointer > getQuery(Wt::Dbo::Session& session, SearchFilter filter);
-
 		static const std::size_t _maxNameLength = 128;
 
-		int					_trackNumber;
-		int					_totalTrackNumber;
-		int					_discNumber;
-		int					_totalDiscNumber;
+		int					_scanVersion = 0;
+		int					_trackNumber = 0;
+		int					_totalTrackNumber = 0;
+		int					_discNumber = 0;
+		int					_totalDiscNumber = 0;
 		std::string				_name;
 		std::string				_artistName;
 		std::string				_releaseName;
-		boost::posix_time::time_duration	_duration;
-		boost::posix_time::ptime		_date;
-		boost::posix_time::ptime		_originalDate; // original date time
+		std::chrono::duration<int, std::milli>	_duration;
+		int					_year = 0;
+		int					_originalYear = 0;
 		std::string				_genreList;
 		std::string				_filePath;
 		std::vector<unsigned char>		_fileChecksum;
-		boost::posix_time::ptime		_fileLastWrite;
-		boost::posix_time::ptime		_fileAdded;
-		CoverType				_coverType;
-		std::string				_MBID; // Musicbrainz Identifier
+		Wt::WDateTime				_fileLastWrite;
+		Wt::WDateTime				_fileAdded;
+		CoverType				_coverType = CoverType::None;
+		std::string				_MBID = ""; // Musicbrainz Identifier
 
 		Wt::Dbo::ptr<Artist>			_artist;
 		Wt::Dbo::ptr<Release>			_release;
-		Wt::Dbo::collection< Genre::pointer >	_genres; // Genres that are related to this track
-		Wt::Dbo::collection< Wt::Dbo::ptr<PlaylistEntry> > _playlistEntries;
+		Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;
+		Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _playlistEntries;
 
 };
 
-
-
-
-
 } // namespace database
 
-#endif
 

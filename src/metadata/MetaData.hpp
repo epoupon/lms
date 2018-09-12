@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,12 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef METADATA_HPP
-#define METADATA_HPP
+#pragma once
 
 #include <map>
+#include <set>
 
 #include <boost/any.hpp>
+#include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
 
 namespace MetaData
@@ -30,59 +31,49 @@ namespace MetaData
 
 	enum class Type
 	{
+		// Name			Type of the value
 		Artist,			// string
 		Title,			// string
 		Album,			// string
-		Genres,			// list<string>
-		Duration,		// boost::posix_time::time_duration
+		Clusters,		// Clusters, ex: { "genre", {"death metal", "brutal death"} }, { "albumgrouping", {"metal"} }
+		Duration,		// std::chrono::milliseconds
 		TrackNumber,		// size_t
 		DiscNumber,		// size_t
 		TotalTrack,		// size_t
 		TotalDisc,		// size_t
-		Date,			// boost::posix_time::ptime
-		OriginalDate,		// boost::posix_time::ptime
+		Year,			// int
+		OriginalYear,		// int
 		HasCover,		// bool
 		AudioStreams,		// vector<AudioStream>
-		VideoStreams,		// vector<VideoStream>
-		SubtitleStreams,	// vector<SubtitleStream>
 		MusicBrainzArtistID,	// string
 		MusicBrainzAlbumID,	// string
 		MusicBrainzTrackID,	// string
+		MusicBrainzRecordingID,	// string
+		AcoustID,		// string
 	};
 
 	// Used by Streams
 	struct AudioStream
 	{
-		std::string desc;
+		// TODO codec?
 		std::size_t bitRate;
-	};
-
-	struct VideoStream
-	{
-		std::string desc;
-		std::size_t bitRate;
-	};
-
-	struct SubtitleStream
-	{
-		std::string desc;
 	};
 
 	// Type and associated data
 	// See enum Type's comments
-	typedef std::map<Type, boost::any>  Items;
+	using Items = std::map<Type, boost::any>;
+	using Clusters = std::map<std::string /* type */, std::set<std::string> /* names */>;
 
 	class Parser
 	{
 		public:
+			virtual boost::optional<Items> parse(const boost::filesystem::path& p, bool debug = false) = 0;
 
-			typedef std::shared_ptr<Parser> pointer;
+			void setClusterTypeNames(const std::set<std::string>& clusterTypeNames) { _clusterTypeNames = clusterTypeNames; }
 
-			virtual bool parse(const boost::filesystem::path& p, Items& items) = 0;
-
+		protected:
+			std::set<std::string> _clusterTypeNames;
 	};
 
 } // namespace MetaData
-
-#endif
 

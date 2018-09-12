@@ -17,25 +17,28 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Wt/WApplication>
-#include <Wt/Http/Response>
+#include "ImageResource.hpp"
 
-#include "logger/Logger.hpp"
+#include <Wt/WApplication.h>
+#include <Wt/Http/Response.h>
+
+#include "utils/Exception.hpp"
+#include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
+
+#include "database/Track.hpp"
+
 #include "LmsApplication.hpp"
 
 #include "cover/CoverArtGrabber.hpp"
-
-#include "ImageResource.hpp"
 
 namespace UserInterface {
 
 static const std::string unknownCoverPath = "/images/unknown-cover.jpg";
 static const std::string unknownArtistImagePath = "/images/unknown-artist.jpg";
 
-ImageResource::ImageResource(Database::Handler& db, Wt::WObject *parent)
-:  Wt::WResource(parent),
-_db(db)
+ImageResource::ImageResource(Database::Handler& db)
+: _db(db)
 {
 }
 
@@ -56,7 +59,7 @@ ImageResource::getDefaultCover(std::size_t size)
 		Image::Image image;
 
 		if (!image.load( Wt::WApplication::instance()->docRoot() + unknownCoverPath ))
-			throw std::runtime_error("Cannot read default cover file");
+			throw LmsException("Cannot read default cover file");
 
 		image.scale(size);
 
@@ -78,7 +81,7 @@ ImageResource::getDefaultArtistImage(std::size_t size)
 		Image::Image image;
 
 		if (!image.load( Wt::WApplication::instance()->docRoot() + unknownArtistImagePath))
-			throw std::runtime_error("Cannot read default artist image file");
+			throw LmsException("Cannot read default artist image file");
 
 		image.scale(size);
 
@@ -90,19 +93,19 @@ ImageResource::getDefaultArtistImage(std::size_t size)
 }
 
 std::string
-ImageResource::getReleaseUrl(Database::Release::id_type releaseId, std::size_t size) const
+ImageResource::getReleaseUrl(Database::IdType releaseId, std::size_t size) const
 {
 	return url() + "&releaseid=" + std::to_string(releaseId) + "&size=" + std::to_string(size);
 }
 
 std::string
-ImageResource::getTrackUrl(Database::Track::id_type trackId, std::size_t size) const
+ImageResource::getTrackUrl(Database::IdType trackId, std::size_t size) const
 {
 	return url() + "&trackid=" + std::to_string(trackId) + "&size=" + std::to_string(size);
 }
 
 std::string
-ImageResource::getArtistUrl(Database::Artist::id_type artistId, std::size_t size) const
+ImageResource::getArtistUrl(Database::IdType artistId, std::size_t size) const
 {
 	return url() + "&artistid=" + std::to_string(artistId) + "&size=" + std::to_string(size);
 }
@@ -153,14 +156,14 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	if (!sizeStr)
 		return;
 
-	std::size_t size;
-	if (!readAs(*sizeStr, size) || size > maxSize)
+	auto size = readAs<std::size_t>(*sizeStr);
+	if (!size || *size > maxSize)
 		return;
 
 	if (trackIdStr)
 	{
-		Database::Track::id_type trackId;
-		if (!readAs(*trackIdStr, trackId))
+		auto trackId = readAs<Database::IdType>(*trackIdStr);
+		if (!trackId)
 			return;
 
 		boost::filesystem::path path;
@@ -171,7 +174,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 
 			Wt::Dbo::Transaction transaction(_db.getSession());
 
-			Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+			Database::Track::pointer track = Database::Track::getById(_db.getSession(), *trackId);
 			if (track)
 			{
 				coverType = track->getCoverType();
@@ -194,17 +197,16 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 					break;
 			}
 
-			putCover(response, covers, size);
+			putCover(response, covers, *size);
 			return;
 		}
 
-		putImage(response, getDefaultCover(size));
-		return;
+		putImage(response, getDefaultCover(*size));
 	}
 	else if (releaseIdStr)
 	{
-		Database::Release::id_type releaseId;
-		if (!readAs(*releaseIdStr, releaseId))
+		auto releaseId = readAs<Database::IdType>(*releaseIdStr);
+		if (!releaseId)
 			return;
 
 		std::vector<Image::Image> covers;
@@ -212,21 +214,18 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// transactions are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock(LmsApplication::instance());
-			covers = CoverArt::Grabber::instance().getFromRelease(_db.getSession(), releaseId);
+			covers = CoverArt::Grabber::instance().getFromRelease(_db.getSession(), *releaseId);
 		}
 
-		putCover(response, covers, size);
-		return;
+		putCover(response, covers, *size);
 	}
 	else if (artistIdStr)
 	{
-		putImage(response, getDefaultArtistImage(size));
-		return;
+		putImage(response, getDefaultArtistImage(*size));
 	}
 	else
 	{
-		putImage(response, getDefaultCover(size));
-		return;
+		putImage(response, getDefaultCover(*size));
 	}
 }
 

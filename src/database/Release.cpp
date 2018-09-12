@@ -17,9 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Types.hpp"
-#include "SearchFilter.hpp"
+#include "Release.hpp"
+
+#include "Artist.hpp"
+#include "Cluster.hpp"
 #include "SqlQuery.hpp"
+#include "Track.hpp"
 
 namespace Database
 {
@@ -45,7 +48,7 @@ Release::getByMBID(Wt::Dbo::Session& session, const std::string& mbid)
 }
 
 Release::pointer
-Release::getById(Wt::Dbo::Session& session, Release::id_type id)
+Release::getById(Wt::Dbo::Session& session, IdType id)
 {
 	return session.find<Release>().where("id = ?").bind(id);
 }
@@ -53,23 +56,7 @@ Release::getById(Wt::Dbo::Session& session, Release::id_type id)
 Release::pointer
 Release::create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID)
 {
-	return session.add(new Release(name, MBID));
-}
-
-bool
-Release::isNone() const
-{
-	return _name == "<None>";
-}
-
-Release::pointer
-Release::getNone(Wt::Dbo::Session& session)
-{
-	std::vector<pointer> res = getByName(session, "<None>");
-	if (res.empty())
-		return create(session, "<None>");
-
-	return res.front();
+	return session.add(std::make_unique<Release>(name, MBID));
 }
 
 std::vector<Release::pointer>
@@ -82,68 +69,75 @@ Release::getAll(Wt::Dbo::Session& session, int offset, int size)
 std::vector<Release::pointer>
 Release::getAllOrphans(Wt::Dbo::Session& session)
 {
-	Wt::Dbo::collection<Release::pointer> res = session.query< Wt::Dbo::ptr<Release> >("select r from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL");
+	Wt::Dbo::collection<Release::pointer> res = session.query<Wt::Dbo::ptr<Release>>("select r from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL");
 
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+std::vector<Release::pointer>
+Release::getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int limit)
+{
+	Wt::Dbo::collection<Release::pointer> res = session.query<Release::pointer>("SELECT r from release r INNER JOIN track t ON r.id = t.release_id")
+		.where("t.file_added > ?").bind(after)
+		.groupBy("r.id")
+		.orderBy("t.file_added DESC")
+		.limit(limit);
+
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
+static
 Wt::Dbo::Query<Release::pointer>
-Release::getQuery(Wt::Dbo::Session& session, SearchFilter filter)
+getQuery(Wt::Dbo::Session& session,
+			const std::set<IdType>& clusterIds,
+			const std::vector<std::string> keywords)
 {
-	SqlQuery sqlQuery = generatePartialQuery(filter);
+	WhereClause where;
 
-	Wt::Dbo::Query<pointer> query
-		= session.query<pointer>("SELECT r FROM release r INNER JOIN artist a ON a.id = t.artist_id INNER JOIN track t ON t.release_id = r.id INNER JOIN genre g ON g.id = t_g.genre_id INNER JOIN track_genre t_g ON t_g.track_id = t.id " + sqlQuery.where().get()).groupBy("r.id").orderBy("r.name");
+        std::ostringstream oss;
+	oss << "SELECT DISTINCT r FROM release r";
 
-	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
-		query.bind(bindArg);
+	for (auto keyword : keywords)
+		where.And(WhereClause("r.name LIKE ?")).bind("%%" + keyword + "%%");
 
-	return query;
-}
-
-Wt::Dbo::Query<Release::UIQueryResult>
-Release::getUIQuery(Wt::Dbo::Session& session, SearchFilter filter)
-{
-	SqlQuery sqlQuery = generatePartialQuery(filter);
-
-	// TODO DATE of RELEASE
-	Wt::Dbo::Query<UIQueryResult> query
-		= session.query<UIQueryResult>("SELECT r.id, r.name, t.date, COUNT(DISTINCT t.id) FROM release r INNER JOIN track t ON t.release_id = r.id INNER JOIN artist a ON a.id = t.artist_id INNER JOIN genre g ON g.id = t_g.genre_id INNER JOIN track_genre t_g ON t_g.track_id = t.id " + sqlQuery.where().get()).groupBy("r.id").orderBy("r.name");
-
-	for (const std::string& bindArg : sqlQuery.where().getBindArgs())
-		query.bind(bindArg);
-
-	return query;
-}
-
-void
-Release::updateUIQueryModel(Wt::Dbo::Session& session, Wt::Dbo::QueryModel<UIQueryResult>& model, SearchFilter filter, const std::vector<Wt::WString>& columnNames)
-{
-	Wt::Dbo::Query<UIQueryResult> query = getUIQuery(session, filter);
-
-	model.setQuery(query, columnNames.empty() ? true : false);
-
-	// TODO do something better
-	if (columnNames.size() == 3)
+	if (!clusterIds.empty())
 	{
-		model.addColumn( "r.name", columnNames[0]);
-		model.addColumn( "t.date", columnNames[1]);
-		model.addColumn( "COUNT(DISTINCT t.id)", columnNames[2]);
+		oss << " INNER JOIN track t ON t.release_id = r.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
+
+		WhereClause clusterClause;
+
+		for (auto id : clusterIds)
+			clusterClause.Or(WhereClause("c.id = ?")).bind(std::to_string(id));
+
+		where.And(clusterClause);
 	}
+
+	oss << " " << where.get();
+
+	if (!clusterIds.empty())
+		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
+
+	oss << " ORDER BY r.name";
+
+	Wt::Dbo::Query<Release::pointer> query = session.query<Release::pointer>( oss.str() );
+
+	for (const std::string& bindArg : where.getBindArgs())
+		query.bind(bindArg);
+
+	return query;
 }
 
 std::vector<Release::pointer>
-Release::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size)
+Release::getByFilter(Wt::Dbo::Session& session,
+		const std::set<IdType>& clusterIds,
+		const std::vector<std::string> keywords,
+		int offset, int size, bool& moreResults)
 {
-	Wt::Dbo::collection<pointer> res = getQuery(session, filter).limit(size).offset(offset);
+	Wt::Dbo::collection<pointer> collection = getQuery(session, clusterIds, keywords)
+		.limit(size != -1 ? size + 1 : -1)
+		.offset(offset);
 
-	return std::vector<pointer>(res.begin(), res.end());
-}
-
-std::vector<Release::pointer>
-Release::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset, int size, bool& moreResults)
-{
-	auto res = getByFilter(session, filter, offset, size + 1);
+	auto res = std::vector<pointer>(collection.begin(), collection.end());
 
 	if (size != -1 && res.size() == static_cast<std::size_t>(size) + 1)
 	{
@@ -156,28 +150,140 @@ Release::getByFilter(Wt::Dbo::Session& session, SearchFilter filter, int offset,
 	return res;
 }
 
-int
+boost::optional<int>
 Release::getReleaseYear(bool original) const
 {
 	assert(session());
 
-	// TODO something better
-	auto tracks = Track::getByFilter(*session(), SearchFilter::ById(SearchFilter::Field::Release, this->id()), -1, 1);
+	std::string field = original ? "t.original_year" : "t.year";
 
-	if (tracks.empty())
-		return 0;
+	Wt::Dbo::collection<int> dates = session()->query<int>(
+			std::string("SELECT ") + field + " FROM track t INNER JOIN release r ON r.id = t.release_id")
+		.where("r.id = ?")
+		.groupBy(field)
+		.bind(this->id());
 
-	boost::gregorian::date date;
+	/* various dates, no date */
+	if (dates.empty() || dates.size() > 1)
+		return boost::none;
 
-	if (original)
-		date = tracks.front()->getOriginalDate().date();
+	auto date = dates.front();
+
+	if (date > 0)
+		return date;
 	else
-		date = tracks.front()->getDate().date();
+		return boost::none;
+}
 
-	if (date.is_special())
-		return 0;
+std::vector<Wt::Dbo::ptr<Artist>>
+Release::getArtists() const
+{
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
 
-	return date.year();
+	Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> res = session()->query<Wt::Dbo::ptr<Artist>>(
+			"SELECT DISTINCT a FROM artist a INNER JOIN release r ON t.artist_id = a.id INNER JOIN track t ON t.release_id = r.id")
+		.where("r.id = ?")
+		.bind(id());
+
+	return std::vector<Wt::Dbo::ptr<Artist>>(res.begin(), res.end());
+}
+
+bool
+Release::hasVariousArtists() const
+{
+	// TODO optimize
+	return getArtists().size() > 1;
+}
+
+std::vector<Wt::Dbo::ptr<Track>>
+Release::getTracks(const std::set<IdType>& clusterIds) const
+{
+	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Release>::invalidId() );
+	assert(session());
+
+	WhereClause where;
+
+	std::ostringstream oss;
+	oss << "SELECT t FROM track t INNER JOIN release r ON t.release_id = r.id";
+
+	if (!clusterIds.empty())
+	{
+		oss << " INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
+
+		WhereClause clusterClause;
+
+		for (auto id : clusterIds)
+			clusterClause.Or(WhereClause("c.id = ?")).bind(std::to_string(id));
+
+		where.And(clusterClause);
+	}
+
+	where.And(WhereClause("r.id = ?")).bind(std::to_string(id()));
+
+	oss << " " << where.get();
+
+	if (!clusterIds.empty())
+		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
+
+	oss << " ORDER BY t.disc_number,t.track_number";
+
+	Wt::Dbo::Query<Track::pointer> query = session()->query<Track::pointer>( oss.str() );
+
+	for (const std::string& bindArg : where.getBindArgs())
+	{
+		query.bind(bindArg);
+	}
+
+	Wt::Dbo::collection< Wt::Dbo::ptr<Track> > res = query;
+
+	return std::vector< Wt::Dbo::ptr<Track> > (res.begin(), res.end());
+}
+
+std::vector<std::vector<Wt::Dbo::ptr<Cluster>>>
+Release::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::size_t size) const
+{
+	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );
+	assert(session());
+
+	WhereClause where;
+
+	std::ostringstream oss;
+
+	oss << "SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id INNER JOIN release r ON t.release_id = r.id ";
+
+	where.And(WhereClause("r.id = ?")).bind(std::to_string(self()->id()));
+	{
+		WhereClause clusterClause;
+		for (auto clusterType : clusterTypes)
+			clusterClause.Or(WhereClause("c_type.id = ?")).bind(std::to_string(clusterType.id()));
+		where.And(clusterClause);
+	}
+	oss << " " << where.get();
+	oss << " GROUP BY c.id ORDER BY COUNT(c.id) DESC";
+
+	Wt::Dbo::Query<Cluster::pointer> query = session()->query<Cluster::pointer>( oss.str() );
+
+	for (const std::string& bindArg : where.getBindArgs())
+		query.bind(bindArg);
+
+	Wt::Dbo::collection<Cluster::pointer> queryRes = query;
+
+	std::map<IdType, std::vector<Cluster::pointer>> clusters;
+	for (auto cluster : queryRes)
+	{
+		if (clusters[cluster->getType().id()].size() < size)
+			clusters[cluster->getType().id()].push_back(cluster);
+	}
+
+	std::vector<std::vector<Cluster::pointer>> res;
+	for (auto cluster_list : clusters)
+		res.push_back(cluster_list.second);
+
+	return res;
 }
 
 } // namespace Database

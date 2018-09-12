@@ -22,11 +22,10 @@
 #include <map>
 #include <set>
 
-#include "pstreams/pstream.h"
+#include <pstreams/pstream.h>
 
-#include <boost/date_time/posix_time/posix_time_types.hpp> //no i/o just types
-#include <boost/filesystem/path.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/optional.hpp>
 
 #include "AvInfo.hpp"
 
@@ -39,41 +38,22 @@ enum class Encoding
 	OGV,
 	MP3,
 	WEBMA,
-	WEBMV,
 	M4A,
-	M4V,
 };
 
-std::string encoding_to_mimetype(Encoding encoding);
-int encoding_to_int(Encoding encoding);
-Encoding encoding_from_int(int encoding);
+std::string encodingToMimetype(Encoding encoding);
+int encodingToInt(Encoding encoding);
+Encoding encodingFromInt(int encoding);
 
-class TranscodeParameters
+struct TranscodeParameters
 {
-	public:
+	Encoding	encoding = Encoding::MP3;
+	std::size_t	bitrate = 128000;
+	boost::optional<std::size_t> stream = boost::none; // Id of the stream to be transcoded (auto detect by default)
+	boost::optional<std::chrono::seconds> offset;
 
-		// Setters
-		void setEncoding(Encoding encoding)			{ _encoding = encoding; }
-		void setOffset(boost::posix_time::time_duration offset)	{_offset = offset; }
-		void setBitrate(Stream::Type type, std::size_t bitrate)	{ _outputBitrate[type] = bitrate; }
-
-		// Manually add the streams to be transcoded
-		// If no stream is added, input streams are selected automatically
-		void addStream(int inputStreamId)	{ _selectedStreams.insert(inputStreamId); }
-
-		// Getters
-		Encoding				getEncoding(void) const { return _encoding; }
-		boost::posix_time::time_duration	getOffset(void) const { return _offset; }
-		std::set<int>				getSelectedStreamIds(void) const { return _selectedStreams; }
-		std::size_t				getBitrate(Stream::Type type) { return _outputBitrate[type]; }
-
-	private:
-		Encoding				_encoding = Encoding::MP3;
-		boost::posix_time::time_duration	_offset = boost::posix_time::seconds(0);
-		std::set<int>				_selectedStreams;
-		std::map<Stream::Type, std::size_t>	_outputBitrate = { {Stream::Type::Audio, 0}, { Stream::Type::Video, 0}, { Stream::Type::Subtitle, 0} };
+	TranscodeParameters() {}
 };
-
 
 class Transcoder
 {
@@ -89,7 +69,7 @@ class Transcoder
 
 		bool start();
 		void process(std::vector<unsigned char>& output, std::size_t maxSize);
-		bool isComplete(void)	{ return _isComplete; }
+		bool isComplete(void) const { return _isComplete; }
 
 		const TranscodeParameters& getParameters() const { return _parameters; }
 

@@ -17,14 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <algorithm>
-
-#include <boost/foreach.hpp>
-
-#include <sstream>
-#include <stdexcept>
-
 #include "SqlQuery.hpp"
+
+#include <algorithm>
+#include <cassert>
+#include <sstream>
 
 WhereClause&
 WhereClause::And(const WhereClause& otherClause)
@@ -35,7 +32,8 @@ WhereClause::And(const WhereClause& otherClause)
 		_clause += "(" + otherClause._clause + ")";
 
 		// Add associated bind args
-		BOOST_FOREACH(const std::string& otherBindArg, otherClause._bindArgs) {
+		for (const std::string& otherBindArg : otherClause._bindArgs)
+		{
 			_bindArgs.push_back(otherBindArg);
 		}
 	}
@@ -51,7 +49,8 @@ WhereClause::Or(const WhereClause& otherClause)
 		_clause += "(" + otherClause._clause + ")";
 
 		// Add associated bind args
-		BOOST_FOREACH(const std::string& otherBindArg, otherClause._bindArgs) {
+		for (const std::string& otherBindArg : otherClause._bindArgs)
+		{
 			_bindArgs.push_back(otherBindArg);
 		}
 	}
@@ -70,8 +69,7 @@ WhereClause::get(void) const
 WhereClause&
 WhereClause::bind(const std::string& bindArg)
 {
-	if (_bindArgs.size() >= static_cast<std::size_t>( std::count(_clause.begin(), _clause.end(), '?') ))
-		throw std::runtime_error("Too many bind args!");
+	assert(_bindArgs.size() < static_cast<std::size_t>(std::count(_clause.begin(), _clause.end(), '?')));
 
 	_bindArgs.push_back(bindArg);
 
@@ -147,7 +145,8 @@ FromClause::FromClause(const std::string& clause)
 FromClause&
 FromClause::And(const FromClause& clause)
 {
-	BOOST_FOREACH(const std::string fromClause, clause._clause) {
+	for (const std::string fromClause : clause._clause)
+	{
 		_clause.push_back(fromClause);
 	}
 

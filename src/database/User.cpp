@@ -17,7 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Types.hpp"
+#include "User.hpp"
+
+#include "TrackList.hpp"
 
 namespace Database {
 
@@ -26,51 +28,16 @@ const std::vector<std::size_t>
 User::audioBitrates =
 {
 	64000,
-	96000,
 	128000,
-	160000,
 	192000,
-	224000,
-	256000,
 	320000,
-	512000
-};
-
-
-const std::vector<std::size_t>
-User::videoBitrates =
-{
-	256000,
-	512000,
-	1024000,
-	2048000,
-	4096000,
-	8192000
-};
-
-const std::vector<AudioEncoding>
-User::audioEncodings =
-{
-	AudioEncoding::AUTO,
-	AudioEncoding::MP3,
-	AudioEncoding::OGA,
-	AudioEncoding::WEBMA,
-};
-
-const std::vector<VideoEncoding>
-User::videoEncodings =
-{
-	VideoEncoding::AUTO,
 };
 
 User::User()
-: _maxAudioBitrate(maxAudioBitrate),
- _maxVideoBitrate(maxVideoBitrate),
-_isAdmin(false),
+: _maxAudioBitrate(audioBitrates.back()),
+_type(Type::REGULAR),
 _audioBitrate(defaultAudioBitrate),
 _audioEncoding(AudioEncoding::AUTO),
-_videoBitrate(defaultVideoBitrate),
-_videoEncoding(VideoEncoding::AUTO),
 _curPlayingTrackPos(0)
 {
 
@@ -84,76 +51,80 @@ User::getAll(Wt::Dbo::Session& session)
 }
 
 User::pointer
-User::getById(Wt::Dbo::Session& session, std::string id)
+User::getDemo(Wt::Dbo::Session& session)
 {
-	return session.find<User>().where("id = ?").bind( id );
+	pointer res = session.find<User>().where("type = ?").bind(Type::DEMO);
+	return res;
 }
 
-std::string
-User::getId( pointer user)
+User::pointer
+User::create(Wt::Dbo::Session& session)
 {
-	std::ostringstream oss; oss << user.id();
-	return oss.str();
+	return session.add(std::make_unique<User>());
+}
+
+User::pointer
+User::getById(Wt::Dbo::Session& session, IdType id)
+{
+	return session.find<User>().where("id = ?").bind( id );
 }
 
 void
 User::setAudioBitrate(std::size_t bitrate)
 {
-	_audioBitrate = std::min(bitrate, std::min(static_cast<std::size_t>(_maxAudioBitrate), audioBitrates.back()));
-}
-
-void
-User::setVideoBitrate(std::size_t bitrate)
-{
-	_videoBitrate = std::min(bitrate, std::min(static_cast<std::size_t>(_maxVideoBitrate), videoBitrates.back()));
+	_audioBitrate = std::min(bitrate, static_cast<std::size_t>(_maxAudioBitrate));
 }
 
 void
 User::setMaxAudioBitrate(std::size_t bitrate)
 {
-	_maxAudioBitrate = std::min(bitrate, static_cast<std::size_t>(_maxAudioBitrate));
-}
-
-void
-User::setMaxVideoBitrate(std::size_t bitrate)
-{
-	_maxVideoBitrate = std::min(bitrate, static_cast<std::size_t>(_maxVideoBitrate));
+	_maxAudioBitrate = std::min(bitrate, audioBitrates.back());
+	if (_audioBitrate > _maxAudioBitrate)
+		_audioBitrate = _maxAudioBitrate;
 }
 
 std::size_t
 User::getAudioBitrate(void) const
 {
-	if (!isAdmin())
-		return std::min(static_cast<std::size_t>(_audioBitrate), std::min(static_cast<std::size_t>(_maxAudioBitrate), audioBitrates.back()));
-	else
-		return std::min(static_cast<std::size_t>(_audioBitrate), audioBitrates.back());
-}
-
-std::size_t
-User::getVideoBitrate(void) const
-{
-	if (!isAdmin())
-		return std::min(static_cast<std::size_t>(_videoBitrate), std::min(static_cast<std::size_t>(_maxVideoBitrate), videoBitrates.back()));
-	else
-		return std::min(static_cast<std::size_t>(_videoBitrate), videoBitrates.back());
+	return _audioBitrate;
 }
 
 std::size_t
 User::getMaxAudioBitrate(void) const
 {
-	if (!isAdmin())
-		return std::min(static_cast<std::size_t>(_maxAudioBitrate), audioBitrates.back());
-	else
-		return audioBitrates.back();
+	return _maxAudioBitrate;
 }
 
-std::size_t
-User::getMaxVideoBitrate(void) const
+Wt::Dbo::ptr<TrackList>
+User::getPlayedTrackList() const
 {
-	if (!isAdmin())
-		return std::min(static_cast<std::size_t>(_maxVideoBitrate), videoBitrates.back());
-	else
-		return videoBitrates.back();
+	static const std::string listName = "__played_tracks__";
+
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	auto res = TrackList::get(*session(), listName, self());
+	if (!res)
+		res = TrackList::create(*session(), listName, false, self());
+
+	return res;
+}
+
+Wt::Dbo::ptr<TrackList>
+User::getQueuedTrackList() const
+{
+	static const std::string listName = "__queued_tracks__";
+
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	auto res = TrackList::get(*session(), listName, self());
+	if (!res)
+		res = TrackList::create(*session(), listName, false, self());
+
+	return res;
 }
 
 } // namespace Database

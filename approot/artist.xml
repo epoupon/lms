@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="Lms.Explore.Artist.template">
+	<div class="page-header">
+		<h2>${name}</h2>
+		${clusters}
+		${play-btn}${add-btn}
+	</div>
+	${releases}
+</message>
+
+<message id="Lms.Explore.Artist.template.entry">
+	<div class="row">
+		<div class="col-xs-12 Lms-explore-artist-entry">
+			<div class="media">
+				<div class="media-left media-middle">
+					${cover class="media-object"}
+				</div>
+				<div class="media-body media-middle">
+					<h4 class="media-heading">
+						${name}
+					</h4>
+					${<if-has-various-artists>}<h4><small><i>${tr:Lms.Explore.various-artists}</i></small></h4>${</if-has-various-artists>}
+					<h4><small>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</small></h4>
+					${play-btn}${add-btn}
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+</messages>

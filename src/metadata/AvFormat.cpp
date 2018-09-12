@@ -19,181 +19,158 @@
 
 #include "AvFormat.hpp"
 
-#include "logger/Logger.hpp"
-#include "utils/Utils.hpp"
 #include <boost/algorithm/string.hpp>
 
 #include "av/AvInfo.hpp"
 
+#include "utils/Logger.hpp"
+#include "utils/Utils.hpp"
 
 namespace MetaData
 {
 
-bool
-AvFormat::parse(const boost::filesystem::path& p, Items& items)
+boost::optional<Items>
+AvFormat::parse(const boost::filesystem::path& p, bool debug)
 {
+	Items items;
 
-	Av::MediaFile mediaFile(p);
-
-	if (!mediaFile.open())
-		return false;
-
-	if (!mediaFile.scan())
-		return false;
-
-	std::map<std::string, std::string> metadata = mediaFile.getMetaData();
-
-	// Stream info
+	try
 	{
-		std::vector<AudioStream> audioStreams;
+		Av::MediaFile mediaFile(p);
 
-		std::vector<Av::Stream> streams = mediaFile.getStreams(Av::Stream::Type::Audio);
-
-		for (Av::Stream& stream : streams)
+		// Stream info
 		{
-			AudioStream audioStream;
-			audioStream.desc = stream.desc;
-			audioStream.bitRate = stream.bitrate;
+			std::vector<AudioStream> audioStreams;
 
-			audioStreams.push_back(audioStream);
+			auto streams = mediaFile.getStreamInfo();
+
+			for (auto stream : streams)
+				audioStreams.push_back( {.bitRate = stream.bitrate } );
+
+			if (!audioStreams.empty())
+				items.insert( std::make_pair(MetaData::Type::AudioStreams, audioStreams));
 		}
 
-		if (!audioStreams.empty())
-			items.insert( std::make_pair(MetaData::Type::AudioStreams, audioStreams));
-	}
+		// Duration
+		items.insert( std::make_pair(MetaData::Type::Duration, mediaFile.getDuration() ));
 
-	{
-		std::vector<VideoStream> videoStreams;
+		// Cover
+		items.insert( std::make_pair(MetaData::Type::HasCover, mediaFile.hasAttachedPictures()));
 
-		std::vector<Av::Stream> streams = mediaFile.getStreams(Av::Stream::Type::Video);
+		// Embedded MetaData
+		// Make sure to convert strings into UTF-8
 
-		for (Av::Stream& stream : streams)
+		MetaData::Clusters clusters;
+
+		std::map<std::string, std::string> metadataMap = mediaFile.getMetaData();
+		for (auto metadata : metadataMap)
 		{
-			VideoStream videoStream;
-			videoStream.desc = stream.desc;
-			videoStream.bitRate = stream.bitrate;
+			const std::string tag = boost::to_upper_copy<std::string>(metadata.first);
+			const std::string value = metadata.second;
 
-			videoStreams.push_back(videoStream);
-		}
+			if (debug)
+				std::cout << "TAG = " << tag << ", VAL = " << value << std::endl;
 
-		if (!videoStreams.empty())
-			items.insert( std::make_pair(MetaData::Type::VideoStreams, videoStreams));
-	}
-
-	{
-		std::vector<SubtitleStream> subtitleStreams;
-
-		std::vector<Av::Stream> streams = mediaFile.getStreams(Av::Stream::Type::Subtitle);
-
-		for (Av::Stream& stream : streams)
-		{
-			SubtitleStream subtitleStream;
-			subtitleStream.desc = stream.desc;
-
-			subtitleStreams.push_back(subtitleStream);
-		}
-
-		if (!subtitleStreams.empty())
-			items.insert( std::make_pair(MetaData::Type::SubtitleStreams, subtitleStreams));
-	}
-
-	// Duration
-	items.insert( std::make_pair(MetaData::Type::Duration, mediaFile.getDuration() ));
-
-	// Cover
-	items.insert( std::make_pair(MetaData::Type::HasCover, mediaFile.hasAttachedPictures()));
-
-	// Embedded MetaData
-	// Make sure to convert strings into UTF-8
-	std::map<std::string, std::string>::const_iterator it;
-	for (it = metadata.begin(); it != metadata.end(); ++it)
-	{
-		if (boost::iequals(it->first, "artist"))
-			items.insert( std::make_pair(MetaData::Type::Artist, stringTrim( stringToUTF8(it->second)) ));
-		else if (boost::iequals(it->first, "album"))
-			items.insert( std::make_pair(MetaData::Type::Album, stringTrim( stringToUTF8(it->second)) ));
-		else if (boost::iequals(it->first, "title"))
-			items.insert( std::make_pair(MetaData::Type::Title, stringTrim( stringToUTF8(it->second)) ));
-		else if (boost::iequals(it->first, "track"))
-		{
-			// Expecting 'Number/Total'
-			auto strings = splitString(it->second, "/");
-
-			if (strings.size() > 0)
+			if (tag == "ARTIST")
+				items.insert( std::make_pair(MetaData::Type::Artist, stringTrim( value) ));
+			else if (tag == "ALBUM")
+				items.insert( std::make_pair(MetaData::Type::Album, stringTrim( value) ));
+			else if (tag == "TITLE")
+				items.insert( std::make_pair(MetaData::Type::Title, stringTrim( value) ));
+			else if (tag == "TRACK")
 			{
-				std::size_t number;
-				if (readAs<std::size_t>(strings[0], number))
-					items.insert( std::make_pair(MetaData::Type::TrackNumber, number ));
+				// Expecting 'Number/Total'
+				auto strings = splitString(value, "/");
 
-				if (strings.size() > 1)
+				if (strings.size() > 0)
 				{
-					std::size_t totalNumber;
-					if (readAs<std::size_t>(strings[1], totalNumber))
-						items.insert( std::make_pair(MetaData::Type::TotalTrack, totalNumber ));
+					auto number = readAs<std::size_t>(strings[0]);
+					if (number)
+						items.insert( std::make_pair(MetaData::Type::TrackNumber, *number ));
+
+					if (strings.size() > 1)
+					{
+						auto totalNumber = readAs<std::size_t>(strings[1]);
+						if (totalNumber)
+							items.insert( std::make_pair(MetaData::Type::TotalTrack, *totalNumber ));
+					}
 				}
 			}
-		}
-		else if (boost::iequals(it->first, "disc"))
-		{
-			// Expecting 'Number/Total'
-			auto strings = splitString(it->second, "/");
-
-			if (strings.size() > 0)
+			else if (tag == "DISC")
 			{
-				std::size_t number;
-				if (readAs<std::size_t>(strings[0], number))
-					items.insert( std::make_pair(MetaData::Type::DiscNumber, number ));
+				// Expecting 'Number/Total'
+				auto strings = splitString(value, "/");
 
-				if (strings.size() > 1)
+				if (strings.size() > 0)
 				{
-					std::size_t totalNumber;
-					if (readAs<std::size_t>(strings[1], totalNumber))
-						items.insert( std::make_pair(MetaData::Type::TotalDisc, totalNumber ));
+					auto number = readAs<std::size_t>(strings[0]);
+					if (number)
+						items.insert( std::make_pair(MetaData::Type::DiscNumber, *number ));
+
+					if (strings.size() > 1)
+					{
+						auto totalNumber = readAs<std::size_t>(strings[1]);
+						if (totalNumber)
+							items.insert( std::make_pair(MetaData::Type::TotalDisc, *totalNumber ));
+					}
 				}
 			}
-		}
-		else if (boost::iequals(it->first, "date")
-				|| boost::iequals(it->first, "year")
-				|| boost::iequals(it->first, "WM/Year"))
-		{
-			boost::posix_time::ptime p;
-			if (readAsPosixTime(it->second, p))
-				items.insert( std::make_pair(MetaData::Type::Date, p));
-		}
-		else if (boost::iequals(it->first, "TDOR")	// Original release time (ID3v2 2.4)
-				|| boost::iequals(it->first, "TORY"))	// Original release year
-		{
-			boost::posix_time::ptime p;
-			if (readAsPosixTime(it->second, p))
-				items.insert( std::make_pair(MetaData::Type::OriginalDate, p));
-		}
-		else if (boost::iequals(it->first, "genre"))
-		{
-			// TODO use splitStrings
-			std::list<std::string> genres;
-			if (readList(it->second, ";,\\", genres))
-				items.insert( std::make_pair(MetaData::Type::Genres, genres));
+			else if (tag == "DATE"
+					|| tag == "YEAR"
+					|| tag == "WM/Year")
+			{
+				auto date = readAs<int>(value);
+				if (date)
+					items.insert(std::make_pair(MetaData::Type::Year, *date));
+			}
+			else if (tag == "TDOR"	// Original release time (ID3v2 2.4)
+					|| tag == "TORY")	// Original release year
+			{
+				auto date = readAs<int>(value);
+				if (date)
+					items.insert(std::make_pair(MetaData::Type::OriginalYear, *date));
+			}
+			else if (tag == "MUSICBRAINZ ARTIST ID"
+					|| tag == "MUSICBRAINZ_ARTISTID")
+			{
+				items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, stringTrim(value)) );
+			}
+			else if (tag == "MUSICBRAINZ ALBUM ID"
+					|| tag == "MUSICBRAINZ_ALBUMID")
+			{
+				items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, stringTrim(value)) );
+			}
+			else if (tag == "MUSICBRAINZ RELEASE TRACK ID"
+					|| tag == "MUSICBRAINZ_RELEASETRACKID"
+					|| tag == "MUSICBRAINZ_TRACKID")
+			{
+				items.insert( std::make_pair(MetaData::Type::MusicBrainzTrackID, stringTrim(value)) );
+			}
+			else if (tag == "ACOUSTID ID")
+			{
+				items.insert( std::make_pair(MetaData::Type::AcoustID, stringTrim(value)) );
+			}
+			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
+			{
+				std::vector<std::string> clusterNames = splitString(value, ";,\\");
+
+				if (!clusterNames.empty())
+				{
+					clusters[tag] = std::set<std::string>(clusterNames.begin(), clusterNames.end());
+				}
+			}
 
 		}
-		else if (boost::iequals(it->first, "MusicBrainz Artist Id")
-			|| boost::iequals(it->first, "MUSICBRAINZ_ARTISTID"))
-		{
-			items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, stringTrim( stringToUTF8(it->second)) ));
-		}
-		else if (boost::iequals(it->first, "MusicBrainz Album Id")
-			|| boost::iequals(it->first, "MUSICBRAINZ_ALBUMID"))
-		{
-			items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, stringTrim( stringToUTF8(it->second)) ));
-		}
-		else if (boost::iequals(it->first, "MusicBrainz Release Track Id")
-			|| boost::iequals(it->first, "MUSICBRAINZ_RELEASETRACKID")
-			|| boost::iequals(it->first, "MUSICBRAINZ_TRACKID"))
-		{
-			items.insert( std::make_pair(MetaData::Type::MusicBrainzTrackID, stringTrim( stringToUTF8(it->second)) ));
-		}
+
+		if (!clusters.empty())
+			items.insert( std::make_pair(MetaData::Type::Clusters, clusters) );
+	}
+	catch(Av::MediaFileException& e)
+	{
+		return items;
 	}
 
-	return true;
+	return items;
 }
 
 } // namespace MetaData

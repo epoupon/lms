@@ -1,0 +1,42 @@
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Explore.Releases.template">
+	<div class="page-header">
+		<h2>${tr:Lms.Explore.releases}</h2>
+	</div>
+	<div class="form-group">
+		<div class="input-group">
+			<span class="input-group-addon"><i class="fa fa-search"></i></span>
+			${search}
+		</div>
+	</div>
+	${releases}
+	<div class="row">
+		<div class="col-xs-12 Lms-horizontal-center">
+			${show-more class="btn-primary Lms-show-more"}
+		</div>
+	</div>
+</message>
+
+<message id="Lms.Explore.Releases.template.entry">
+	<div class="row">
+		<div class="col-xs-12 Lms-explore-releases-entry">
+			<div class="media">
+				<div class="media-left media-middle">
+					${cover class="media-object"}
+				</div>
+				<div class="media-body media-middle">
+					<h4 class="media-heading">
+						${release-name}
+					</h4>
+					${<if-has-artist>}<h4><small><i>${artist-name}</i></small></h4>${</if-has-artist>}
+					${play-btn}${add-btn}
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+</messages>

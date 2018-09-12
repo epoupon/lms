@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,8 +17,10 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef METADATA_AVFORMAT_HPP
-#define METADATA_AVFORMAT_HPP
+#pragma once
+
+#include <map>
+#include <string>
 
 #include "MetaData.hpp"
 
@@ -29,14 +31,8 @@ namespace MetaData
 class AvFormat : public Parser
 {
 	public:
-
-		bool parse(const boost::filesystem::path& p, Items& items);
-
-	private:
-
+		boost::optional<Items> parse(const boost::filesystem::path& p, bool debug = false) override;
 };
-
 
 } // namespace MetaData
 
-#endif

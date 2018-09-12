@@ -18,38 +18,100 @@
  */
 
 #include <boost/filesystem.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 
-#include "config/config.h"
+#include <Wt/WServer.h>
+#include <Wt/WApplication.h>
+
+#include "utils/Config.hpp"
+#include "utils/Logger.hpp"
 #include "av/AvInfo.hpp"
 #include "av/AvTranscoder.hpp"
-#include "logger/Logger.hpp"
 #include "image/Image.hpp"
+
+#include "scanner/MediaScanner.hpp"
 
 #include "ui/LmsApplication.hpp"
 
-#include "service/ServiceManager.hpp"
-#include "service/DatabaseUpdateService.hpp"
+std::vector<std::string> generateWtConfig(std::string execPath)
+{
+	std::vector<std::string> args;
 
-#include <Wt/WServer>
+	boost::filesystem::path wtConfigPath = Config::instance().getPath("working-dir") / "wt_config.xml";
+	boost::filesystem::path wtLogFilePath = Config::instance().getPath("working-dir") / "lms.log";
+
+	args.push_back(execPath);
+	args.push_back("--config=" + wtConfigPath.string());
+	args.push_back("--docroot=" + Config::instance().getString("docroot"));
+	args.push_back("--approot=" + Config::instance().getString("approot"));
+	args.push_back("--resources-dir=" + Config::instance().getString("wt-resources"));
+
+	if (Config::instance().getBool("tls-enable", false))
+	{
+		args.push_back("--https-port=" + std::to_string( Config::instance().getULong("listen-port", 5081)));
+		args.push_back("--https-address=" + Config::instance().getString("listen-addr", "0.0.0.0"));
+		args.push_back("--ssl-certificate=" + Config::instance().getString("tls-cert"));
+		args.push_back("--ssl-private-key=" + Config::instance().getString("tls-key"));
+		args.push_back("--ssl-tmp-dh=" + Config::instance().getString("tls-dh"));
+	}
+	else
+	{
+		args.push_back("--http-port=" + std::to_string( Config::instance().getULong("listen-port", 5081)));
+		args.push_back("--http-address=" + Config::instance().getString("listen-addr", "0.0.0.0"));
+	}
+
+	// Generate the wt_config.xml file
+	boost::property_tree::ptree pt;
+
+	pt.put("server.application-settings.<xmlattr>.location", "*");
+	pt.put("server.application-settings.log-file", wtLogFilePath.string());
+	pt.put("server.application-settings.behind-reverse-proxy", Config::instance().getBool("behind-reverse-proxy", false));
+	pt.put("server.application-settings.progressive-bootstrap", true);
+
+	std::ofstream oss(wtConfigPath.string().c_str(), std::ios::out);
+	boost::property_tree::xml_parser::write_xml(oss, pt);
+
+	return args;
+}
+
 
 int main(int argc, char* argv[])
 {
+	boost::filesystem::path configFilePath = "/etc/lms.conf";
 	int res = EXIT_FAILURE;
 
 	assert(argc > 0);
 	assert(argv[0] != NULL);
+
+	if (argc >= 2)
+		configFilePath = std::string(argv[1], 0, 256);
 
 	try
 	{
 		// Make pstream work with ffmpeg
 		close(STDIN_FILENO);
 
+		Config::instance().setFile(configFilePath);
+
+		// Make sure the working directory exists
+		// TODO check with boost::system::error_code ec;
+		boost::filesystem::create_directories(Config::instance().getPath("working-dir"));
+		boost::filesystem::create_directories(Config::instance().getPath("working-dir") / "features");
+
+		// Construct WT configuration and get the argc/argv back
+		std::vector<std::string> wtServerArgs = generateWtConfig(argv[0]);
+
+		const char* wtArgv[wtServerArgs.size()];
+		for (std::size_t i = 0; i < wtServerArgs.size(); ++i)
+		{
+			std::cout << "ARG = " << wtServerArgs[i] << std::endl;
+			wtArgv[i] = wtServerArgs[i].c_str();
+		}
+
 		Wt::WServer server(argv[0]);
-		server.setServerConfiguration (argc, argv);
+		server.setServerConfiguration (wtServerArgs.size(), const_cast<char**>(wtArgv));
 
-		Wt::WServer::instance()->logger().configure("*"); // log everything
-
-		Service::ServiceManager& serviceManager = Service::ServiceManager::instance();
+		Wt::WServer::instance()->logger().configure("*"); // log everything, TODO configure this
 
 		// lib init
 		Image::init(argv[0]);
@@ -58,42 +120,52 @@ int main(int argc, char* argv[])
 		Database::Handler::configureAuth();
 
 		// Initializing a connection pool to the database that will be shared along services
-		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool( Database::Handler::createConnectionPool("/var/lms/lms.db")); // TODO use $datadir from autotools
+		auto connectionPool = Database::Handler::createConnectionPool(Config::instance().getPath("working-dir") / "lms.db");
 
-		serviceManager.add( std::make_shared<Service::DatabaseUpdateService>(*connectionPool));
+		UserInterface::LmsApplicationGroupContainer appGroups;
+		Scanner::MediaScanner scanner(*connectionPool);
 
 		// bind entry point
-		server.addEntryPoint(Wt::Application, boost::bind(UserInterface::LmsApplication::create, _1, boost::ref(*connectionPool)));
+		server.addEntryPoint(Wt::EntryPointType::Application,
+				std::bind(UserInterface::LmsApplication::create,
+					std::placeholders::_1, std::ref(*connectionPool), std::ref(appGroups), std::ref(scanner)));
 
-		// Starting the main server
+		// Start
+		LMS_LOG(MAIN, INFO) << "Starting Media scanner...";
+		scanner.start();
+
 		LMS_LOG(MAIN, INFO) << "Starting server...";
 		server.start();
 
-		// Start underlying services
-		LMS_LOG(MAIN, INFO) << "Starting services...";
-		serviceManager.start();
-
+		// Wait
 		LMS_LOG(MAIN, INFO) << "Now running...";
+		Wt::WServer::waitForShutdown();
 
-		// Waiting for shutdown command
-		Wt::WServer::waitForShutdown(argv[0]);
-
-		LMS_LOG(MAIN, INFO) << "Stopping services...";
-		serviceManager.stop();
-		serviceManager.clear();
-
+		// Stop
 		LMS_LOG(MAIN, INFO) << "Stopping server...";
 		server.stop();
 
+		LMS_LOG(MAIN, INFO) << "Stopping database updater...";
+		scanner.stop();
+
+		LMS_LOG(MAIN, INFO) << "Clean stop!";
 		res = EXIT_SUCCESS;
 	}
-	catch( Wt::WServer::Exception& e)
+	catch( libconfig::FileIOException& e)
 	{
-		std::cerr << "Caught a WServer::Exception: " << e.what();
+		std::cerr << "Cannot open config file '" << configFilePath << "'" << std::endl;
 	}
-	catch( std::exception& e)
+	catch( libconfig::ParseException& e)
 	{
-		std::cerr << "Caught std::exception: " << e.what();
+		std::cerr << "Caught libconfig::ParseException! error='" << e.getError() << "', file = '" << e.getFile() << "', line = " << e.getLine() << std::endl;
+	}
+	catch(Wt::WServer::Exception& e)
+	{
+		std::cerr << "Caught a WServer::Exception: " << e.what() << std::endl;
+	}
+	catch(std::exception& e)
+	{
+		std::cerr << "Caught std::exception: " << e.what() << std::endl;
 	}
 
 	return res;

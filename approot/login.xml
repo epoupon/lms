@@ -1,0 +1,56 @@
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Auth.template">
+	<div class="container">
+	<div class="page-header">
+		<h2>${tr:Lms.Auth.welcome}</h2>
+	</div>
+	<div class="form-horizontal">
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:user-name}">
+				${tr:Lms.login}
+			</label>
+			<div class="col-sm-5">
+				${user-name}
+			</div>
+			<div class="help-block col-sm-5">
+				${user-name-info}
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:password}">
+				${tr:Lms.password}
+			</label>
+			<div class="col-sm-5">
+				${password}
+			</div>
+			<div class="help-block col-sm-5">
+				${password-info}
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:remember-me}">
+				${tr:Lms.Auth.remember-me}
+			</label>
+			<div class="col-sm-5">
+				${remember-me}
+			</div>
+			<div class="help-block col-sm-5">
+				${remember-me-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				${login-btn class="btn-primary"}
+			</div>
+		</div>
+	</div>
+	</div>
+</message>
+
+
+</messages>
