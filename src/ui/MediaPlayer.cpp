@@ -51,7 +51,7 @@ MediaPlayer::MediaPlayer()
 }
 
 void
-MediaPlayer::playTrack(Database::IdType trackId)
+MediaPlayer::loadTrack(Database::IdType trackId, bool play)
 {
 	LMS_LOG(UI, DEBUG) << "Playing track ID = " << trackId;
 
@@ -72,7 +72,7 @@ MediaPlayer::playTrack(Database::IdType trackId)
 			<< " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
 			<< " imgResource: \"" << imgResource << "\","
 			<< "};";
-		oss << "LMS.mediaplayer.loadTrack(params, true)"; // true to autoplay
+		oss << "LMS.mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay
 
 		LMS_LOG(UI, DEBUG) << "Runing js = '" << oss.str() << "'";
 

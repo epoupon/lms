@@ -447,9 +447,17 @@ LmsApplication::createHome()
 	});
 
 	// Events from the PlayQueue
-	playqueue->playTrack.connect(playhistory, &PlayHistory::addTrack);
-	playqueue->playTrack.connect(explore, &Explore::handleTrackPlayed);
-	playqueue->playTrack.connect(player, &MediaPlayer::playTrack);
+	playqueue->loadTrack.connect([=](Database::IdType trackId, bool play)
+	{
+		playhistory->addTrack(trackId);
+	});
+
+	playqueue->loadTrack.connect([=](Database::IdType trackId, bool play)
+	{
+		explore->handleTrackPlayed(trackId);
+	});
+
+	playqueue->loadTrack.connect(player, &MediaPlayer::loadTrack);
 
 	playqueue->playbackStop.connect(player, &MediaPlayer::stop);
 
