@@ -68,6 +68,7 @@ PlayQueue::PlayQueue()
 	_showMore->clicked().connect([=]
 	{
 		addSome();
+		updateCurrentTrack(true);
 	});
 
 	LmsApp->preQuit().connect([=]
