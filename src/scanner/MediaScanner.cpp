@@ -47,7 +47,7 @@ getNextMonday(Wt::WDate current)
 {
 	do
 	{
-		current.addDays(1);
+		current = current.addDays(1);
 	} while (current.dayOfWeek() != 1);
 
 	return current;
@@ -58,7 +58,7 @@ getNextFirstOfMonth(Wt::WDate current)
 {
 	do
 	{
-		current.addDays(1);
+		current = current.addDays(1);
 	} while (current.day() != 1);
 
 	return current;
