@@ -51,6 +51,10 @@ a:hover {
 	cursor: pointer;
 }
 
+.Lms-cluster:hover {
+	filter: brightness(85%);
+}
+
 .Lms-cluster-type-0 {
 	background-color: darkslategrey;
 	margin-bottom: 4px;
