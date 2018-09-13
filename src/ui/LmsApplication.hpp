@@ -47,6 +47,7 @@ struct Events
 
 	// A track is being loaded
 	Wt::Signal<Database::IdType /* trackId */, bool /* play */> trackLoaded;
+	boost::optional<Database::IdType> lastLoadedTrackId;
 	// Unload current track
 	Wt::Signal<> trackUnloaded;
 

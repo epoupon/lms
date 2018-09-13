@@ -146,6 +146,7 @@ a:hover {
 .Lms-explore-release-entry-name {
 	margin-top: 4px;
 	margin-bottom: 4px;
+	font-weight: inherit;
 }
 
 .Lms-explore-release-entry:hover {
@@ -154,6 +155,10 @@ a:hover {
 
 .Lms-explore-release-entry-controls {
 	text-align: center;
+}
+
+.Lms-explore-release-entry-playing {
+	font-weight: bold;
 }
 
 .Lms-explore-artists-entry {

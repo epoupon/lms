@@ -62,7 +62,6 @@ Release::refresh()
 		return;
 
 	clear();
-
 	auto releaseId = readAs<Database::IdType>(wApp->internalPathNextPart("/release/"));
 	if (!releaseId)
 		return;
@@ -192,6 +191,14 @@ Release::refresh()
 		{
 			trackAdd.emit(trackId);
 		}));
+
+		LmsApp->getEvents().trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId, bool /*play*/)
+		{
+			entry->toggleStyleClass("Lms-explore-release-entry-playing", loadedTrackId == trackId);
+		});
+
+		if (LmsApp->getEvents().lastLoadedTrackId && *LmsApp->getEvents().lastLoadedTrackId == trackId)
+			entry->addStyleClass("Lms-explore-release-entry-playing");
 	}
 }
 

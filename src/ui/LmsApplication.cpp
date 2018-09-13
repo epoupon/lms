@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -448,11 +448,13 @@ LmsApplication::createHome()
 
 	playqueue->loadTrack.connect([=] (Database::IdType trackId, bool play)
 	{
+		_events.lastLoadedTrackId = trackId;
 		_events.trackLoaded(trackId, play);
 	});
 
 	playqueue->trackUnload.connect([=]
 	{
+		_events.lastLoadedTrackId.reset();
 		_events.trackUnloaded();
 	});
 
