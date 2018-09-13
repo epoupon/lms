@@ -152,31 +152,13 @@ Explore::Explore()
 	Wt::WStackedWidget* infoStack = bindNew<Wt::WStackedWidget>("info");
 
 	auto artistsInfo = std::make_unique<ArtistsInfo>();
-	auto artistsInfoRaw = artistsInfo.get();
 	infoStack->addWidget(std::move(artistsInfo));
 
 	auto releasesInfo = std::make_unique<ReleasesInfo>();
-	auto releasesInfoRaw = releasesInfo.get();
 	infoStack->addWidget(std::move(releasesInfo));
 
 	auto tracksInfo = std::make_unique<TracksInfo>();
-	auto tracksInfoRaw = tracksInfo.get();
 	infoStack->addWidget(std::move(tracksInfo));
-
-	_dbChanged.connect([=]
-	{
-		artistsInfoRaw->refreshRecentlyAdded();
-		releasesInfoRaw->refreshRecentlyAdded();
-		tracksInfoRaw->refreshRecentlyAdded();
-	});
-
-	_trackPlayed.connect([=]
-	{
-		artistsInfoRaw->refreshMostPlayed();
-		releasesInfoRaw->refreshMostPlayed();
-		tracksInfoRaw->refreshMostPlayed();
-	});
-
 
 	wApp->internalPathChanged().connect(std::bind([=]
 	{

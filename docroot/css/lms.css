@@ -51,6 +51,10 @@ a:hover {
 	cursor: pointer;
 }
 
+.Lms-cluster:hover {
+	filter: brightness(85%);
+}
+
 .Lms-cluster-type-0 {
 	background-color: darkslategrey;
 	margin-bottom: 4px;
@@ -146,6 +150,7 @@ a:hover {
 .Lms-explore-release-entry-name {
 	margin-top: 4px;
 	margin-bottom: 4px;
+	font-weight: inherit;
 }
 
 .Lms-explore-release-entry:hover {
@@ -154,6 +159,10 @@ a:hover {
 
 .Lms-explore-release-entry-controls {
 	text-align: center;
+}
+
+.Lms-explore-release-entry-playing {
+	font-weight: bold;
 }
 
 .Lms-explore-artists-entry {

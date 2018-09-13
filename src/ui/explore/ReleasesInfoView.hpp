@@ -29,10 +29,10 @@ class ReleasesInfo : public Wt::WTemplate
 	public:
 		ReleasesInfo();
 
+	private:
 		void refreshRecentlyAdded();
 		void refreshMostPlayed();
 
-	private:
 		Wt::WContainerWidget* _mostPlayedContainer;
 		Wt::WContainerWidget* _recentlyAddedContainer;
 };

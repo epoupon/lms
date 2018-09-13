@@ -47,11 +47,11 @@ class PlayQueue : public Wt::WTemplate
 		// play the previous track in the queue
 		void playPrevious();
 
-		// Signal emitted when a track is to be played
-		Wt::Signal<Database::IdType> playTrack;
+		// Signal emitted when a track is to be load(and optionally played)
+		Wt::Signal<Database::IdType /*trackId*/, bool /*play*/> loadTrack;
 
 		// Signal emitted when play has to be stopped
-		Wt::Signal<> playbackStop;
+		Wt::Signal<> trackUnload;
 
 	private:
 		Database::TrackList::pointer getTrackList();
@@ -64,7 +64,7 @@ class PlayQueue : public Wt::WTemplate
 		void updateInfo();
 		void updateCurrentTrack(bool selected);
 
-		void play(std::size_t pos);
+		void load(std::size_t pos, bool play);
 		void stop();
 
 		boost::optional<Database::IdType> _tracklistId;
