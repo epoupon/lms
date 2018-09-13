@@ -51,7 +51,7 @@ class PlayQueue : public Wt::WTemplate
 		Wt::Signal<Database::IdType /*trackId*/, bool /*play*/> loadTrack;
 
 		// Signal emitted when play has to be stopped
-		Wt::Signal<> playbackStop;
+		Wt::Signal<> trackUnload;
 
 	private:
 		Database::TrackList::pointer getTrackList();

@@ -33,15 +33,14 @@ class MediaPlayer : public Wt::WTemplate
 	public:
 		MediaPlayer();
 
-		void stop();
-		void loadTrack(Database::IdType trackId, bool play);
-
 		// Signals
 		Wt::JSignal<>	playbackEnded;
 		Wt::JSignal<> 	playPrevious;
 		Wt::JSignal<> 	playNext;
 
 	private:
+		void stop();
+		void loadTrack(Database::IdType trackId, bool play);
 
 		Wt::WText*	_title;
 		Wt::WAnchor*	_release;

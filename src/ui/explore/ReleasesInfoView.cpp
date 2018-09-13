@@ -77,6 +77,16 @@ ReleasesInfo::ReleasesInfo()
 	_mostPlayedContainer = bindNew<Wt::WContainerWidget>("most-played");
 	_recentlyAddedContainer = bindNew<Wt::WContainerWidget>("recently-added");
 
+	LmsApp->getEvents().dbScanned.connect([=]
+	{
+		refreshRecentlyAdded();
+	});
+
+	LmsApp->getEvents().trackLoaded.connect([=]
+	{
+		refreshMostPlayed();
+	});
+
 	refreshRecentlyAdded();
 	refreshMostPlayed();
 }

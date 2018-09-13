@@ -145,7 +145,7 @@ LmsApplication::finalize()
 
 	getApplicationGroup().postOthers([info]
 	{
-		LmsApp->getGroupEvents().appClosed(info);
+		LmsApp->getEvents().appClosed(info);
 	});
 
 	getApplicationGroup().leave();
@@ -304,7 +304,7 @@ LmsApplication::handleAuthEvent()
 
 			getApplicationGroup().postOthers([info]
 			{
-				LmsApp->getGroupEvents().appOpen(info);
+				LmsApp->getEvents().appOpen(info);
 			});
 
 			createHome();
@@ -407,7 +407,7 @@ LmsApplication::createHome()
 
 	Explore* explore = mainStack->addNew<Explore>();
 	PlayQueue* playqueue = mainStack->addNew<PlayQueue>();
-	PlayHistory* playhistory = mainStack->addNew<PlayHistory>();
+	mainStack->addNew<PlayHistory>();
 	mainStack->addNew<SettingsView>();
 
 	// Admin stuff
@@ -446,54 +446,44 @@ LmsApplication::createHome()
 		playqueue->playNext();
 	});
 
-	// Events from the PlayQueue
-	playqueue->loadTrack.connect([=](Database::IdType trackId, bool play)
+	playqueue->loadTrack.connect([=] (Database::IdType trackId, bool play)
 	{
-		playhistory->addTrack(trackId);
+		_events.trackLoaded(trackId, play);
 	});
 
-	playqueue->loadTrack.connect([=](Database::IdType trackId, bool play)
+	playqueue->trackUnload.connect([=]
 	{
-		explore->handleTrackPlayed(trackId);
+		_events.trackUnloaded();
 	});
-
-	playqueue->loadTrack.connect(player, &MediaPlayer::loadTrack);
-
-	playqueue->playbackStop.connect(player, &MediaPlayer::stop);
 
 	// Events from MediaScanner
 	std::string sessionId = LmsApp->sessionId();
 	_scanner.scanComplete().connect([=] (Scanner::MediaScanner::Stats stats)
 	{
+		// Runs from media scanner context
 		Wt::WServer::instance()->post(sessionId, [=]
 		{
-			bool changes = false;
-
-			if (_isAdmin)
-			{
-				notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-complete")
-					.arg(static_cast<unsigned>(stats.nbFiles()))
-					.arg(static_cast<unsigned>(stats.additions))
-					.arg(static_cast<unsigned>(stats.updates))
-					.arg(static_cast<unsigned>(stats.deletions))
-					.arg(static_cast<unsigned>(stats.nbDuplicates()))
-					.arg(static_cast<unsigned>(stats.nbErrors())));
-				changes = true;
-			}
-
-			if (stats.nbChanges() > 0)
-			{
-				explore->handleDbChanged();
-				changes = true;
-			}
-
-			if (changes)
-				triggerUpdate();
+			_events.dbScanned.emit(stats);
+			triggerUpdate();
 		});
 	});
 
+	_events.dbScanned.connect([=] (Scanner::MediaScanner::Stats stats)
+	{
+		if (_isAdmin)
+		{
+			notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-complete")
+				.arg(static_cast<unsigned>(stats.nbFiles()))
+				.arg(static_cast<unsigned>(stats.additions))
+				.arg(static_cast<unsigned>(stats.updates))
+				.arg(static_cast<unsigned>(stats.deletions))
+				.arg(static_cast<unsigned>(stats.nbDuplicates()))
+				.arg(static_cast<unsigned>(stats.nbErrors())));
+		}
+	});
+
 	// Events from Application group
-	_groupEvents.appOpen.connect([=] (LmsApplicationInfo info)
+	_events.appOpen.connect([=] (LmsApplicationInfo info)
 	{
 		// Only one active session by user
 		if (!LmsApp->getUser()->isDemo())
@@ -501,11 +491,6 @@ LmsApplication::createHome()
 			setConfirmCloseMessage("");
 			quit(Wt::WString::tr("Lms.quit-other-session"));
 		}
-	});
-
-	_groupEvents.appClosed.connect([=] (LmsApplicationInfo info)
-	{
-		;
 	});
 
 	internalPathChanged().connect(std::bind([=]

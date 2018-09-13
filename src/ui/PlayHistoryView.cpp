@@ -74,18 +74,16 @@ PlayHistory::PlayHistory()
 		addSome();
 	});
 
+	LmsApp->getEvents().trackLoaded.connect([=](Database::IdType trackId, bool /* play */)
+	{
+		Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
+
+		auto trackEntry = LmsApp->getUser()->getPlayedTrackList().modify()->add(trackId);
+		_entriesContainer->insertWidget(0, createEntry(trackEntry->getTrack()));
+	});
+
 	addSome();
 }
-
-void
-PlayHistory::addTrack(Database::IdType trackId)
-{
-	Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
-
-	auto trackEntry = LmsApp->getUser()->getPlayedTrackList().modify()->add(trackId);
-	_entriesContainer->insertWidget(0, createEntry(trackEntry->getTrack()));
-}
-
 
 void
 PlayHistory::addSome()

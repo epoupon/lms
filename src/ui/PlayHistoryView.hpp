@@ -32,8 +32,6 @@ class PlayHistory : public Wt::WTemplate
 	public:
 		PlayHistory();
 
-		void addTrack(Database::IdType trackId);
-
 	private:
 
 		void addSome();

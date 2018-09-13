@@ -48,6 +48,9 @@ MediaPlayer::MediaPlayer()
 	_release->setTextFormat(Wt::TextFormat::Plain);
 
 	wApp->doJavaScript("LMS.mediaplayer.init(" + jsRef() + ")");
+
+	LmsApp->getEvents().trackLoaded.connect(this, &MediaPlayer::loadTrack);
+	LmsApp->getEvents().trackUnloaded.connect(this, &MediaPlayer::stop);
 }
 
 void

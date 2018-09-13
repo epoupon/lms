@@ -38,12 +38,23 @@ namespace UserInterface {
 class TranscodeResource;
 class ImageResource;
 
-struct GroupEvents
+// Events that can be listen to anywhere in the application
+struct Events
 {
+	// Events relative to group
 	Wt::Signal<LmsApplicationInfo> appOpen;
 	Wt::Signal<LmsApplicationInfo> appClosed;
+
+	// A track is being loaded
+	Wt::Signal<Database::IdType /* trackId */, bool /* play */> trackLoaded;
+	// Unload current track
+	Wt::Signal<> trackUnloaded;
+
+	// A database scan is complete
+	Wt::Signal<Scanner::MediaScanner::Stats> dbScanned;
 };
 
+// Used to classify the message sent to the user
 enum class MsgType
 {
 	Success,
@@ -73,7 +84,7 @@ class LmsApplication : public Wt::WApplication
 
 		Scanner::MediaScanner& getMediaScanner() { return _scanner; }
 
-		GroupEvents& getGroupEvents() { return _groupEvents; }
+		Events& getEvents() { return _events; }
 
 		// Utils
 		void goHome();
@@ -105,7 +116,7 @@ class LmsApplication : public Wt::WApplication
 		Wt::Signal<>		_preQuit;
 		Database::Handler	_db;
 		LmsApplicationGroupContainer&   _appGroups;
-		GroupEvents		_groupEvents;
+		Events			_events;
 		Wt::WString		_userIdentity;
 		Auth*			_auth;
 		Scanner::MediaScanner&	_scanner;

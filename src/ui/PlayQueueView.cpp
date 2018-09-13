@@ -135,7 +135,7 @@ PlayQueue::stop()
 {
 	updateCurrentTrack(false);
 	_trackPos.reset();
-	playbackStop.emit();
+	trackUnload.emit();
 }
 
 void

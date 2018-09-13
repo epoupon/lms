@@ -36,9 +36,6 @@ class Explore : public Wt::WTemplate
 		Wt::Signal<std::vector<Database::Track::pointer>> tracksAdd;
 		Wt::Signal<std::vector<Database::Track::pointer>> tracksPlay;
 
-		void handleDbChanged() { _dbChanged.emit(); };
-		void handleTrackPlayed(Database::IdType trackId) { _trackPlayed.emit(); }
-
 	private:
 
 		void handleArtistAdd(Database::IdType id);
@@ -51,9 +48,6 @@ class Explore : public Wt::WTemplate
 		void handleTracksPlay(std::vector<Database::Track::pointer> tracks);
 
 		Filters* _filters;
-
-		Wt::Signal<> _dbChanged;
-		Wt::Signal<> _trackPlayed;
 };
 
 } // namespace UserInterface
