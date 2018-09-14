@@ -29,15 +29,9 @@
 
 namespace UserInterface {
 
-TranscodeResource::TranscodeResource(Database::Handler& db)
-: _db(db)
-{
-	LMS_LOG(UI, DEBUG) << "CONSTRUCTING RESOURCE";
-}
 
 TranscodeResource:: ~TranscodeResource()
 {
-	LMS_LOG(UI, DEBUG) << "DESTRUCTING RESOURCE";
 	beingDeleted();
 }
 
@@ -100,12 +94,11 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 
 		// transactions are not thread safe
 		{
-			Wt::WApplication::UpdateLock lock(LmsApplication::instance());
+			Wt::WApplication::UpdateLock lock(LmsApp);
 
-			Wt::Dbo::Transaction transaction(_db.getSession());
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			Database::User::pointer user = _db.getCurrentUser();
-			Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+			Database::Track::pointer track = Database::Track::getById(LmsApp->getDboSession(), trackId);
 
 			if (!track)
 			{
@@ -113,7 +106,7 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 				return;
 			}
 
-			parameters.bitrate = user->getAudioBitrate();
+			parameters.bitrate = LmsApp->getUser()->getAudioBitrate();
 			transcoder = std::make_shared<Av::Transcoder>(track->getPath(), parameters);
 		}
 

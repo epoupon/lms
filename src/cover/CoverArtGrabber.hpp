@@ -35,18 +35,25 @@ class Grabber
 
 		static Grabber& instance();
 
-		std::vector<boost::filesystem::path>	getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t nbMaxCovers = 1) const;
-		std::vector<Image::Image>	getFromDirectory(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
-		std::vector<Image::Image>	getFromTrack(const boost::filesystem::path& path, std::size_t nbMaxCovers = 1) const;
-		std::vector<Image::Image>	getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t nbMaxCovers = 1) const;
-		std::vector<Image::Image>	getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t nbMaxCovers = 1) const;
+		Image::Image		getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t size) const;
+		Image::Image		getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t size) const;
 
 	private:
+
 		Grabber();
+
+		boost::optional<Image::Image>		getFromTrack(const boost::filesystem::path& path) const;
+		std::vector<boost::filesystem::path>	getCoverPaths(const boost::filesystem::path& directoryPath) const;
+		boost::optional<Image::Image>		getFromDirectory(const boost::filesystem::path& path) const;
+
+
+		Image::Image _defaultCover;
 
 		std::vector<boost::filesystem::path> _fileExtensions
 			= {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize
+
 		std::size_t _maxFileSize = 5000000;
+
 		std::vector<boost::filesystem::path> _preferredFileNames
 			= {"cover", "front"}; // TODO parametrize
 };

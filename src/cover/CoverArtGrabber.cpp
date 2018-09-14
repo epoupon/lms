@@ -43,12 +43,15 @@ isFileSupported(const boost::filesystem::path& file, const std::vector<boost::fi
 
 	return false;
 }
+
 } // namespace
 
 namespace CoverArt {
 
 Grabber::Grabber()
 {
+	if (!_defaultCover.load( Wt::WApplication::instance()->docRoot() + "/images/unknown-cover.jpg"))
+		throw LmsException("Cannot read default cover file");
 }
 
 Grabber&
@@ -58,48 +61,42 @@ Grabber::instance()
 	return instance;
 }
 
-static std::vector<Image::Image>
-getFromAvMediaFile(const Av::MediaFile& input, std::size_t nbMaxCovers)
+static boost::optional<Image::Image>
+getFromAvMediaFile(const Av::MediaFile& input)
 {
 	std::vector<Image::Image> res;
 
-	for (Av::Picture& picture : input.getAttachedPictures(nbMaxCovers))
+	for (auto& picture : input.getAttachedPictures(2))
 	{
 		Image::Image image;
 
 		if (image.load(picture.data))
-			res.push_back( image );
+			return image;
 		else
 			LMS_LOG(COVER, ERROR) << "Cannot load embedded cover file in '" << input.getPath().string() << "'";
 	}
 
-	return res;
+	return boost::none;
 }
 
-std::vector<Image::Image>
-Grabber::getFromDirectory(const boost::filesystem::path& p, std::size_t nbMaxCovers) const
+boost::optional<Image::Image>
+Grabber::getFromDirectory(const boost::filesystem::path& p) const
 {
-	std::vector<Image::Image> res;
-
-	std::vector<boost::filesystem::path> coverPathes = getCoverPaths(p, nbMaxCovers);
-	for (auto coverPath : coverPathes)
+	for (auto coverPath : getCoverPaths(p))
 	{
-		if (res.size() >= nbMaxCovers)
-			break;
-
 		Image::Image image;
 
 		if (image.load(coverPath))
-			res.push_back(image);
+			return image;
 		else
 			LMS_LOG(COVER, ERROR) << "Cannot load image in file '" << coverPath.string() << "'";
 	}
 
-	return res;
+	return boost::none;
 }
 
 std::vector<boost::filesystem::path>
-Grabber::getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t nbMaxCovers) const
+Grabber::getCoverPaths(const boost::filesystem::path& directoryPath) const
 {
 	std::vector<boost::filesystem::path> res;
 	boost::system::error_code ec;
@@ -126,86 +123,94 @@ Grabber::getCoverPaths(const boost::filesystem::path& directoryPath, std::size_t
 		}
 
 		res.push_back(path);
-		if (res.size() >= nbMaxCovers)
-			break;
 	}
+
 	return res;
 }
 
-std::vector<Image::Image>
-Grabber::getFromTrack(const boost::filesystem::path& p, std::size_t nbMaxCovers) const
+boost::optional<Image::Image>
+Grabber::getFromTrack(const boost::filesystem::path& p) const
 {
 	try
 	{
 		Av::MediaFile input(p);
 
-		return getFromAvMediaFile(input, nbMaxCovers);
+		return getFromAvMediaFile(input);
 	}
 	catch (Av::MediaFileException& e)
 	{
 		LMS_LOG(COVER, ERROR) << "Cannot get covers from track " << p.string() << ": " << e.what();
+		return boost::none;
 	}
-
-	return std::vector<Image::Image>();
 }
 
-std::vector<Image::Image>
-Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t nbMaxCovers) const
+Image::Image
+Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t size) const
 {
 	using namespace Database;
 
-	Wt::Dbo::Transaction transaction(session);
+	boost::optional<Image::Image> cover;
 
-	Track::pointer track = Track::getById(session, trackId);
-	if (!track)
-		return std::vector<Image::Image>();
-
-	Track::CoverType coverType = track->getCoverType();
-	boost::filesystem::path trackPath = track->getPath();
-
-	transaction.commit();
-
-	switch (coverType)
 	{
-		case Track::CoverType::Embedded:
-			return Grabber::getFromTrack(trackPath, nbMaxCovers);
-		case Track::CoverType::None:
-			return Grabber::getFromDirectory(trackPath.parent_path(), nbMaxCovers);
+		Wt::Dbo::Transaction transaction(session);
+
+		Track::pointer track = Track::getById(session, trackId);
+		if (track)
+		{
+			Track::CoverType coverType = track->getCoverType();
+			boost::filesystem::path trackPath = track->getPath();
+
+			transaction.commit();
+
+			switch (coverType)
+			{
+				case Track::CoverType::Embedded:
+					cover = getFromTrack(trackPath);
+				case Track::CoverType::None:
+					cover = getFromDirectory(trackPath.parent_path());
+			}
+		}
 	}
 
-	return std::vector<Image::Image>();
+	if (!cover)
+		cover = _defaultCover;
+
+	cover->scale(size);
+
+	return *cover;
 }
 
 
-std::vector<Image::Image>
-Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t nbMaxCovers) const
+Image::Image
+Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t size) const
 {
 	using namespace Database;
 
-	Wt::Dbo::Transaction transaction(session);
+	boost::optional<Image::Image> cover;
 
-	// If the release does not exist, do nothing
-	Release::pointer release = Release::getById(session, releaseId);
-	if (!release)
-		return std::vector<Image::Image>();
+	{
+		Wt::Dbo::Transaction transaction(session);
 
-	std::vector<Track::pointer> tracks = release->getTracks();
-	if (tracks.empty())
-		return std::vector<Image::Image>();
+		auto release = Release::getById(session, releaseId);
+		if (release)
+		{
+			auto tracks = release->getTracks();
+			if (!tracks.empty())
+			{
+				auto trackId = tracks.front().id();
+				transaction.commit();
 
-	boost::filesystem::path firstTrackPath = tracks.front()->getPath();
-	bool embeddedCover = (tracks.front()->getCoverType() == Track::CoverType::Embedded);
+				return getFromTrack(session, trackId, size);
+			}
+		}
+	}
 
-	transaction.commit();
+	if (!cover)
+		cover = _defaultCover;
 
-	// First, try to get covers from the directory of the release
-	std::vector<Image::Image> res = getFromDirectory( firstTrackPath.parent_path(), nbMaxCovers);
+	cover->scale(size);
 
-	// Fallback on the embedded cover of the first track
-	if (res.empty() && embeddedCover)
-		res = getFromTrack( firstTrackPath, nbMaxCovers);
-
-	return res;
+	return *cover;
 }
 
 } // namespace CoverArt

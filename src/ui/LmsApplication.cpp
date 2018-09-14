@@ -328,8 +328,8 @@ LmsApplication::createHome()
 		_isAdmin = LmsApp->getUser()->isAdmin();
 	}
 
-	_imageResource = std::make_shared<ImageResource>(_db);
-	_transcodeResource = std::make_shared<TranscodeResource>(_db);
+	_imageResource = std::make_shared<ImageResource>();
+	_transcodeResource = std::make_shared<TranscodeResource>();
 
 	setConfirmCloseMessage(Wt::WString::tr("Lms.quit-confirm"));
 

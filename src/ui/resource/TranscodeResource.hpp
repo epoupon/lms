@@ -34,7 +34,6 @@ namespace UserInterface {
 class TranscodeResource : public Wt::WResource
 {
 	public:
-		TranscodeResource(Database::Handler& db);
 		~TranscodeResource();
 
 		std::string getUrl(Database::IdType trackId, Av::Encoding encoding) const;
@@ -43,8 +42,6 @@ class TranscodeResource : public Wt::WResource
 				Wt::Http::Response& response);
 
 	private:
-
-		Database::Handler&		_db;
 
 		static const std::size_t	_chunkSize = 65536*4;
 };
