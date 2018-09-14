@@ -54,29 +54,6 @@ ImageResource::getTrackUrl(Database::IdType trackId, std::size_t size) const
 	return url() + "&trackid=" + std::to_string(trackId) + "&size=" + std::to_string(size);
 }
 
-std::string
-ImageResource::getArtistUrl(Database::IdType artistId, std::size_t size) const
-{
-	return url() + "&artistid=" + std::to_string(artistId) + "&size=" + std::to_string(size);
-}
-
-std::string
-ImageResource::getUnknownTrackUrl(size_t size) const
-{
-	return url() + "&size=" + std::to_string(size);
-}
-
-void
-ImageResource::putImage(Wt::Http::Response& response, Image::Image cover)
-{
-	std::vector<unsigned char> data;
-
-	cover.save(data, Image::Format::JPEG);
-
-	response.setMimeType( Image::format_to_mimeType(Image::Format::JPEG) );
-	response.out().write(reinterpret_cast<const char *>(&data[0]), data.size());
-}
-
 void
 ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
 {
@@ -93,7 +70,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	if (!size || *size > maxSize)
 		return;
 
-	Image::Image cover;
+	std::vector<uint8_t> cover;
 
 	if (trackIdStr)
 	{
@@ -104,7 +81,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// transactions are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock(LmsApp);
-			cover = CoverArt::Grabber::instance().getFromTrack(LmsApp->getDboSession(), *trackId, *size);
+			cover = CoverArt::Grabber::instance().getFromTrack(LmsApp->getDboSession(), *trackId, Image::Format::JPEG, *size);
 		}
 	}
 	else if (releaseIdStr)
@@ -116,13 +93,14 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// transactions are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock(LmsApp);
-			cover = CoverArt::Grabber::instance().getFromRelease(LmsApp->getDboSession(), *releaseId, *size);
+			cover = CoverArt::Grabber::instance().getFromRelease(LmsApp->getDboSession(), *releaseId, Image::Format::JPEG, *size);
 		}
 	}
 	else
 		return;
 
-	putImage(response, cover);
+	response.setMimeType( Image::format_to_mimeType(Image::Format::JPEG) );
+	response.out().write(reinterpret_cast<const char *>(&cover[0]), cover.size());
 }
 
 } // namespace UserInterface

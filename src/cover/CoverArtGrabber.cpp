@@ -213,5 +213,21 @@ Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, s
 	return *cover;
 }
 
+std::vector<uint8_t>
+Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, Image::Format format, std::size_t size) const
+{
+	Image::Image cover = getFromTrack(session, trackId, size);
+
+	return cover.save(Image::Format::JPEG);
+}
+
+std::vector<uint8_t>
+Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, Image::Format format, std::size_t size) const
+{
+	Image::Image cover = getFromRelease(session, releaseId, size);
+
+	return cover.save(Image::Format::JPEG);
+}
+
 } // namespace CoverArt
 

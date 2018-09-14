@@ -35,12 +35,15 @@ class Grabber
 
 		static Grabber& instance();
 
-		Image::Image		getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t size) const;
-		Image::Image		getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t size) const;
+		std::vector<uint8_t>	getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, Image::Format format, std::size_t size) const;
+		std::vector<uint8_t>	getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, Image::Format format, std::size_t size) const;
 
 	private:
 
 		Grabber();
+
+		Image::Image		getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t size) const;
+		Image::Image		getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t size) const;
 
 		boost::optional<Image::Image>		getFromTrack(const boost::filesystem::path& path) const;
 		std::vector<boost::filesystem::path>	getCoverPaths(const boost::filesystem::path& directoryPath) const;

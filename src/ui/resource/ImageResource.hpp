@@ -41,15 +41,8 @@ class ImageResource : public Wt::WResource
 
 		std::string getReleaseUrl(Database::IdType releaseId, size_t size) const;
 		std::string getTrackUrl(Database::IdType trackId, size_t size) const;
-		std::string getArtistUrl(Database::IdType artistId, size_t size) const;
-		std::string getUnknownTrackUrl(size_t size) const;
 
 		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
-
-	private:
-
-		void				putImage(Wt::Http::Response& response, Image::Image image);
-		void				putCover(Wt::Http::Response& response, std::vector<Image::Image> covers, std::size_t size);
 
 };
 
