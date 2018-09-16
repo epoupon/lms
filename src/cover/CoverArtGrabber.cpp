@@ -76,6 +76,7 @@ getFromAvMediaFile(const Av::MediaFile& input)
 			LMS_LOG(COVER, ERROR) << "Cannot load embedded cover file in '" << input.getPath().string() << "'";
 	}
 
+	LMS_LOG(COVER, DEBUG) << "No cover found in media file '" << input.getPath().string() << "'";
 	return boost::none;
 }
 
@@ -92,6 +93,7 @@ Grabber::getFromDirectory(const boost::filesystem::path& p) const
 			LMS_LOG(COVER, ERROR) << "Cannot load image in file '" << coverPath.string() << "'";
 	}
 
+	LMS_LOG(COVER, DEBUG) << "No cover found in directory '" << p.string() << "'";
 	return boost::none;
 }
 
@@ -162,13 +164,11 @@ Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::
 
 			transaction.commit();
 
-			switch (coverType)
-			{
-				case Track::CoverType::Embedded:
-					cover = getFromTrack(trackPath);
-				case Track::CoverType::None:
-					cover = getFromDirectory(trackPath.parent_path());
-			}
+			if (coverType == Track::CoverType::Embedded)
+				cover = getFromTrack(trackPath);
+
+			if (!cover)
+				cover = getFromDirectory(trackPath.parent_path());
 		}
 	}
 
