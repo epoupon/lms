@@ -41,7 +41,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/explore/TracksInfoView.cpp			\
 	$(srcdir)/ui/explore/TracksView.cpp			\
 	$(srcdir)/ui/resource/ImageResource.cpp			\
-	$(srcdir)/ui/resource/TranscodeResource.cpp		\
+	$(srcdir)/ui/resource/AudioResource.cpp			\
 	$(srcdir)/utils/Config.cpp				\
 	$(srcdir)/utils/Logger.cpp				\
 	$(srcdir)/utils/Path.cpp				\

@@ -26,7 +26,7 @@
 
 
 #include "resource/ImageResource.hpp"
-#include "resource/TranscodeResource.hpp"
+#include "resource/AudioResource.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -65,7 +65,7 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play)
 	{
 		Av::MediaFile mediaFile(track->getPath());
 
-		auto resource = LmsApp->getTranscodeResource()->getUrl(trackId, Av::Encoding::MP3);
+		auto resource = LmsApp->getAudioResource()->getUrl(trackId);
 		auto imgResource = LmsApp->getImageResource()->getTrackUrl(trackId, 64);
 
 		std::ostringstream oss;
@@ -77,7 +77,7 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play)
 			<< "};";
 		oss << "LMS.mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay
 
-		LMS_LOG(UI, DEBUG) << "Runing js = '" << oss.str() << "'";
+		LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
 
 		_title->setText(Wt::WString::fromUTF8(track->getName()));
 

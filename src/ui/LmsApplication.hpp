@@ -35,7 +35,7 @@
 
 namespace UserInterface {
 
-class TranscodeResource;
+class AudioResource;
 class ImageResource;
 
 // Events that can be listen to anywhere in the application
@@ -75,7 +75,7 @@ class LmsApplication : public Wt::WApplication
 
 		// Session application data
 		std::shared_ptr<ImageResource> getImageResource() { return _imageResource; }
-		std::shared_ptr<TranscodeResource> getTranscodeResource() { return _transcodeResource; }
+		std::shared_ptr<AudioResource> getAudioResource() { return _audioResource; }
 		Database::Handler& getDb() { return _db;}
 		Wt::Dbo::Session& getDboSession() { return _db.getSession();}
 
@@ -122,7 +122,7 @@ class LmsApplication : public Wt::WApplication
 		Auth*			_auth;
 		Scanner::MediaScanner&	_scanner;
 		std::shared_ptr<ImageResource>	_imageResource;
-		std::shared_ptr<TranscodeResource>	_transcodeResource;
+		std::shared_ptr<AudioResource>	_audioResource;
 		bool			_isAdmin = false;
 };
 

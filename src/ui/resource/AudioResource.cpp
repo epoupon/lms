@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "TranscodeResource.hpp"
+#include "AudioResource.hpp"
 
 #include <Wt/Http/Response.h>
 
@@ -30,21 +30,21 @@
 namespace UserInterface {
 
 
-TranscodeResource:: ~TranscodeResource()
+AudioResource:: ~AudioResource()
 {
 	beingDeleted();
 }
 
 std::string
-TranscodeResource::getUrl(Database::IdType trackId, Av::Encoding encoding) const
+AudioResource::getUrl(Database::IdType trackId) const
 {
-	std::string res = url()+ "&trackid=" + std::to_string(trackId) + "&encoding=" + std::to_string(Av::encodingToInt(encoding));
+	std::string res = url()+ "&trackid=" + std::to_string(trackId);
 
 	return res;
 }
 
 void
-TranscodeResource::handleRequest(const Wt::Http::Request& request,
+AudioResource::handleRequest(const Wt::Http::Request& request,
 		Wt::Http::Response& response)
 {
 	std::shared_ptr<Av::Transcoder> transcoder;
@@ -77,14 +77,6 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 			auto offsetStr = request.getParameter("offset");
 			if (offsetStr)
 				parameters.offset = std::chrono::seconds(std::stol(*offsetStr));
-
-			auto encodingStr = request.getParameter("encoding");
-			if (encodingStr)
-				parameters.encoding = Av::encodingFromInt(std::stol(*encodingStr));
-
-			auto streamStr = request.getParameter("stream");
-			if (streamStr)
-				parameters.stream = std::stol(*streamStr);
 		}
 		catch (std::exception &e)
 		{
@@ -107,6 +99,22 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 			}
 
 			parameters.bitrate = LmsApp->getUser()->getAudioBitrate();
+
+			switch (LmsApp->getUser()->getAudioEncoding())
+			{
+				case Database::AudioEncoding::OGA:
+					parameters.encoding = Av::Encoding::OGA;
+					break;
+				case Database::AudioEncoding::WEBMA:
+					parameters.encoding = Av::Encoding::WEBMA;
+					break;
+				case Database::AudioEncoding::MP3:
+					parameters.encoding = Av::Encoding::MP3;
+					break;
+				case Database::AudioEncoding::AUTO:
+				default:
+					parameters.encoding = Av::Encoding::MP3;
+			}
 			transcoder = std::make_shared<Av::Transcoder>(track->getPath(), parameters);
 		}
 
