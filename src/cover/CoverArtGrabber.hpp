@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <map>
+#include <mutex>
 #include <vector>
 
 #include "database/Types.hpp"
@@ -35,22 +37,26 @@ class Grabber
 
 		static Grabber& instance();
 
-		std::vector<uint8_t>	getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, Image::Format format, std::size_t size) const;
-		std::vector<uint8_t>	getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, Image::Format format, std::size_t size) const;
+		std::vector<uint8_t>	getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, Image::Format format, std::size_t size);
+		std::vector<uint8_t>	getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, Image::Format format, std::size_t size);
 
 	private:
 
 		Grabber();
 
-		Image::Image		getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t size) const;
-		Image::Image		getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t size) const;
+		Image::Image		getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t size);
+		Image::Image		getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t size);
 
 		boost::optional<Image::Image>		getFromTrack(const boost::filesystem::path& path) const;
 		std::vector<boost::filesystem::path>	getCoverPaths(const boost::filesystem::path& directoryPath) const;
 		boost::optional<Image::Image>		getFromDirectory(const boost::filesystem::path& path) const;
 
+		Image::Image	getDefaultCover(std::size_t size);
 
 		Image::Image _defaultCover;
+
+		std::mutex _mutex;
+		std::map<std::size_t /* size */, Image::Image> _defaultCovers;
 
 		std::vector<boost::filesystem::path> _fileExtensions
 			= {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize

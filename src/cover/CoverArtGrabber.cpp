@@ -61,6 +61,25 @@ Grabber::instance()
 	return instance;
 }
 
+Image::Image
+Grabber::getDefaultCover(std::size_t size)
+{
+	std::unique_lock<std::mutex> lock(_mutex);
+
+	auto it = _defaultCovers.find(size);
+	if (it == _defaultCovers.end())
+	{
+		Image::Image cover = _defaultCover;
+
+		cover.scale(size);
+		auto res = _defaultCovers.insert(std::make_pair(size, cover));
+		assert(res.second);
+		it = res.first;
+	}
+
+	return it->second;
+}
+
 static boost::optional<Image::Image>
 getFromAvMediaFile(const Av::MediaFile& input)
 {
@@ -147,7 +166,7 @@ Grabber::getFromTrack(const boost::filesystem::path& p) const
 }
 
 Image::Image
-Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t size) const
+Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t size)
 {
 	using namespace Database;
 
@@ -173,16 +192,16 @@ Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::
 	}
 
 	if (!cover)
-		cover = _defaultCover;
-
-	cover->scale(size);
+		cover = getDefaultCover(size);
+	else
+		cover->scale(size);
 
 	return *cover;
 }
 
 
 Image::Image
-Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t size) const
+Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t size)
 {
 	using namespace Database;
 
@@ -206,15 +225,15 @@ Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, s
 	}
 
 	if (!cover)
-		cover = _defaultCover;
-
-	cover->scale(size);
+		cover = getDefaultCover(size);
+	else
+		cover->scale(size);
 
 	return *cover;
 }
 
 std::vector<uint8_t>
-Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, Image::Format format, std::size_t size) const
+Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, Image::Format format, std::size_t size)
 {
 	Image::Image cover = getFromTrack(session, trackId, size);
 
@@ -222,7 +241,7 @@ Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, Image
 }
 
 std::vector<uint8_t>
-Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, Image::Format format, std::size_t size) const
+Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, Image::Format format, std::size_t size)
 {
 	Image::Image cover = getFromRelease(session, releaseId, size);
 
