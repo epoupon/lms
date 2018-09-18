@@ -97,13 +97,13 @@ Image::scale(std::size_t size)
 	}
 	catch (Magick::Exception& e)
 	{
-		LMS_LOG(COVER, ERROR) << "Caught Magick exception: " << e.what();
+		LMS_LOG(COVER, ERROR) << "Caught Magick exception during scale: " << e.what();
 		return false;
 	}
 }
 
-void
-Image::save(std::vector<unsigned char>& data, Format format) const
+std::vector<uint8_t>
+Image::save(Format format) const
 {
 	Magick::Image outputImage(_image);
 
@@ -112,8 +112,9 @@ Image::save(std::vector<unsigned char>& data, Format format) const
 	Magick::Blob blob;
 	outputImage.write(&blob);
 
-	unsigned char *charBuf = (unsigned char*)blob.data();
-	data.assign( charBuf, charBuf + blob.length() );
+	auto begin = static_cast<const uint8_t*>(blob.data());
+
+	return std::vector<uint8_t>(begin, begin + blob.length());
 }
 
 } // namespace Image

@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "TranscodeResource.hpp"
+#include "AudioResource.hpp"
 
 #include <Wt/Http/Response.h>
 
@@ -29,28 +29,22 @@
 
 namespace UserInterface {
 
-TranscodeResource::TranscodeResource(Database::Handler& db)
-: _db(db)
-{
-	LMS_LOG(UI, DEBUG) << "CONSTRUCTING RESOURCE";
-}
 
-TranscodeResource:: ~TranscodeResource()
+AudioResource:: ~AudioResource()
 {
-	LMS_LOG(UI, DEBUG) << "DESTRUCTING RESOURCE";
 	beingDeleted();
 }
 
 std::string
-TranscodeResource::getUrl(Database::IdType trackId, Av::Encoding encoding) const
+AudioResource::getUrl(Database::IdType trackId) const
 {
-	std::string res = url()+ "&trackid=" + std::to_string(trackId) + "&encoding=" + std::to_string(Av::encodingToInt(encoding));
+	std::string res = url()+ "&trackid=" + std::to_string(trackId);
 
 	return res;
 }
 
 void
-TranscodeResource::handleRequest(const Wt::Http::Request& request,
+AudioResource::handleRequest(const Wt::Http::Request& request,
 		Wt::Http::Response& response)
 {
 	std::shared_ptr<Av::Transcoder> transcoder;
@@ -83,14 +77,6 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 			auto offsetStr = request.getParameter("offset");
 			if (offsetStr)
 				parameters.offset = std::chrono::seconds(std::stol(*offsetStr));
-
-			auto encodingStr = request.getParameter("encoding");
-			if (encodingStr)
-				parameters.encoding = Av::encodingFromInt(std::stol(*encodingStr));
-
-			auto streamStr = request.getParameter("stream");
-			if (streamStr)
-				parameters.stream = std::stol(*streamStr);
 		}
 		catch (std::exception &e)
 		{
@@ -100,12 +86,11 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 
 		// transactions are not thread safe
 		{
-			Wt::WApplication::UpdateLock lock(LmsApplication::instance());
+			Wt::WApplication::UpdateLock lock(LmsApp);
 
-			Wt::Dbo::Transaction transaction(_db.getSession());
+			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-			Database::User::pointer user = _db.getCurrentUser();
-			Database::Track::pointer track = Database::Track::getById(_db.getSession(), trackId);
+			Database::Track::pointer track = Database::Track::getById(LmsApp->getDboSession(), trackId);
 
 			if (!track)
 			{
@@ -113,7 +98,23 @@ TranscodeResource::handleRequest(const Wt::Http::Request& request,
 				return;
 			}
 
-			parameters.bitrate = user->getAudioBitrate();
+			parameters.bitrate = LmsApp->getUser()->getAudioBitrate();
+
+			switch (LmsApp->getUser()->getAudioEncoding())
+			{
+				case Database::AudioEncoding::OGA:
+					parameters.encoding = Av::Encoding::OGA;
+					break;
+				case Database::AudioEncoding::WEBMA:
+					parameters.encoding = Av::Encoding::WEBMA;
+					break;
+				case Database::AudioEncoding::MP3:
+					parameters.encoding = Av::Encoding::MP3;
+					break;
+				case Database::AudioEncoding::AUTO:
+				default:
+					parameters.encoding = Av::Encoding::MP3;
+			}
 			transcoder = std::make_shared<Av::Transcoder>(track->getPath(), parameters);
 		}
 

@@ -88,12 +88,15 @@
 <message id="Lms.Explore.TracksInfo.most-played">Top tracks</message>
 
 
-<!--Playque-->
+<!--Playqueue-->
+<message id="Lms.PlayQueue.clear">Clear</message>
 <message id="Lms.PlayQueue.nb-tracks">{1} tracks</message>
 <message id="Lms.PlayQueue.nb-tracks-added">Added {1} tracks</message>
 <message id="Lms.PlayQueue.nb-tracks-playing">Playing {1} tracks</message>
 <message id="Lms.PlayQueue.playqueue">Play Queue</message>
 <message id="Lms.PlayQueue.radio-mode">Radio mode</message>
+<message id="Lms.PlayQueue.repeat">Repeat</message>
+<message id="Lms.PlayQueue.shuffle">Shuffle</message>
 
 <!--PlayHistory-->
 <message id="Lms.PlayHistory.playhistory">Play History</message>

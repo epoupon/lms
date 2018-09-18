@@ -42,8 +42,6 @@ enum class Encoding
 };
 
 std::string encodingToMimetype(Encoding encoding);
-int encodingToInt(Encoding encoding);
-Encoding encodingFromInt(int encoding);
 
 struct TranscodeParameters
 {

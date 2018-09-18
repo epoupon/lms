@@ -28,6 +28,7 @@ const std::vector<std::size_t>
 User::audioBitrates =
 {
 	64000,
+	96000,
 	128000,
 	192000,
 	320000,

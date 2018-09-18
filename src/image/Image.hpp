@@ -49,7 +49,7 @@ class Image
 		bool	scale(std::size_t size);
 
 		// output
-		void	save(std::vector<unsigned char>& rawData, Format format) const;
+		std::vector<uint8_t> save(Format format) const;
 
 	private:
 		Magick::Image	_image;

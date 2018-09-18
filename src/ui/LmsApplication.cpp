@@ -46,7 +46,7 @@
 #include "admin/UsersView.hpp"
 
 #include "resource/ImageResource.hpp"
-#include "resource/TranscodeResource.hpp"
+#include "resource/AudioResource.hpp"
 
 namespace UserInterface {
 
@@ -78,7 +78,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
   _appGroups(appGroups),
   _scanner(scanner),
   _imageResource(nullptr),
-  _transcodeResource(nullptr)
+  _audioResource(nullptr)
 {
 	auto  bootstrapTheme = std::make_unique<Wt::WBootstrapTheme>();
 	bootstrapTheme->setVersion(Wt::BootstrapVersion::v3);
@@ -328,8 +328,8 @@ LmsApplication::createHome()
 		_isAdmin = LmsApp->getUser()->isAdmin();
 	}
 
-	_imageResource = std::make_shared<ImageResource>(_db);
-	_transcodeResource = std::make_shared<TranscodeResource>(_db);
+	_imageResource = std::make_shared<ImageResource>();
+	_audioResource = std::make_shared<AudioResource>();
 
 	setConfirmCloseMessage(Wt::WString::tr("Lms.quit-confirm"));
 

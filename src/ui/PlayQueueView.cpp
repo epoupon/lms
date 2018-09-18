@@ -38,22 +38,25 @@ PlayQueue::PlayQueue()
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	Wt::WText* clearBtn = bindNew<Wt::WText>("clear-btn", Wt::WString::tr("Lms.PlayQueue.clear"), Wt::TextFormat::XHTML);
-
-	_entriesContainer = bindNew<Wt::WContainerWidget>("entries");
-
-	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->setHidden(true);
-
-	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.shuffle"), Wt::TextFormat::XHTML);
-	_radioMode = bindNew<Wt::WCheckBox>("radio-mode", Wt::WString::tr("Lms.PlayQueue.radio-mode"));
-	_nbTracks = bindNew<Wt::WText>("nb-tracks");
-
+	Wt::WText* clearBtn = bindNew<Wt::WText>("clear-btn", Wt::WString::tr("Lms.PlayQueue.template.clear-btn"), Wt::TextFormat::XHTML);
+	clearBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.clear"));
 	clearBtn->clicked().connect([=]
 	{
 		clearTracks();
 	});
 
+	_entriesContainer = bindNew<Wt::WContainerWidget>("entries");
+
+	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
+	_showMore->setHidden(true);
+	_showMore->clicked().connect([=]
+	{
+		addSome();
+		updateCurrentTrack(true);
+	});
+
+	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.template.shuffle-btn"), Wt::TextFormat::XHTML);
+	shuffleBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.shuffle"));
 	shuffleBtn->clicked().connect([=]
 	{
 		{
@@ -65,11 +68,23 @@ PlayQueue::PlayQueue()
 		addSome();
 	});
 
-	_showMore->clicked().connect([=]
+	Wt::WText* repeatBtn = bindNew<Wt::WText>("repeat-btn", Wt::WString::tr("Lms.PlayQueue.template.repeat-btn"), Wt::TextFormat::XHTML);
+	repeatBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.repeat"));
+	repeatBtn->clicked().connect([=]
 	{
-		addSome();
-		updateCurrentTrack(true);
+		_repeatAll = !_repeatAll;
+		repeatBtn->toggleStyleClass("Lms-playqueue-btn-selected", _repeatAll);
 	});
+
+	Wt::WText* radioBtn = bindNew<Wt::WText>("radio-btn", Wt::WString::tr("Lms.PlayQueue.template.radio-btn"));
+	radioBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.radio-mode"));
+	radioBtn->clicked().connect([=]
+	{
+		_radioMode = !_radioMode;
+		radioBtn->toggleStyleClass("Lms-playqueue-btn-selected", _radioMode);
+	});
+
+	_nbTracks = bindNew<Wt::WText>("nb-tracks");
 
 	LmsApp->preQuit().connect([=]
 	{
@@ -152,12 +167,17 @@ PlayQueue::load(std::size_t pos, bool play)
 		// If out of range, stop playing
 		if (pos >= tracklist->getCount())
 		{
-			stop();
-			return;
+			if (!_repeatAll)
+			{
+				stop();
+				return;
+			}
+
+			pos = 0;
 		}
 
 		// If last and radio mode, fill the next song
-		if (_radioMode->checkState() == Wt::CheckState::Checked && pos == tracklist->getCount() - 1)
+		if (_radioMode && pos == tracklist->getCount() - 1)
 			addRadioTrack();
 
 		_trackPos = pos;
@@ -293,7 +313,7 @@ PlayQueue::addSome()
 			entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(track->getRelease()));
 		}
 
-		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.play"), Wt::TextFormat::XHTML);
+		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.template.play-btn"), Wt::TextFormat::XHTML);
 		playBtn->clicked().connect(std::bind([=]
 		{
 			auto pos = _entriesContainer->indexOf(entry);
@@ -301,7 +321,7 @@ PlayQueue::addSome()
 				load(pos, true);
 		}));
 
-		Wt::WText* delBtn = entry->bindNew<Wt::WText>("del-btn", Wt::WString::tr("Lms.PlayQueue.delete"), Wt::TextFormat::XHTML);
+		Wt::WText* delBtn = entry->bindNew<Wt::WText>("del-btn", Wt::WString::tr("Lms.PlayQueue.template.delete-btn"), Wt::TextFormat::XHTML);
 		delBtn->clicked().connect(std::bind([=]
 		{
 			// Remove the entry n both the widget tree and the playqueue

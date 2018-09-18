@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <mutex>
-
 #include <Wt/WResource.h>
 
 #include "av/AvTranscoder.hpp"
@@ -31,20 +29,17 @@
 
 namespace UserInterface {
 
-class TranscodeResource : public Wt::WResource
+class AudioResource : public Wt::WResource
 {
 	public:
-		TranscodeResource(Database::Handler& db);
-		~TranscodeResource();
+		~AudioResource();
 
-		std::string getUrl(Database::IdType trackId, Av::Encoding encoding) const;
+		std::string getUrl(Database::IdType trackId) const;
 
 		void handleRequest(const Wt::Http::Request& request,
 				Wt::Http::Response& response);
 
 	private:
-
-		Database::Handler&		_db;
 
 		static const std::size_t	_chunkSize = 65536*4;
 };
