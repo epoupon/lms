@@ -67,8 +67,9 @@ class PlayQueue : public Wt::WTemplate
 		void load(std::size_t pos, bool play);
 		void stop();
 
+		bool _repeatAll = false;
+		bool _radioMode = false;
 		boost::optional<Database::IdType> _tracklistId;
-		Wt::WCheckBox* _radioMode;
 		Wt::WContainerWidget* _entriesContainer;
 		Wt::WPushButton* _showMore;
 		Wt::WText* _nbTracks;

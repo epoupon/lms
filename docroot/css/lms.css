@@ -248,6 +248,10 @@ a:hover {
 	color: #337ab7;
 }
 
+.Lms-playqueue-btn-selected {
+	color: #337ab7;
+}
+
 .Lms-playqueue-selected {
 	font-weight: 800;
 }
