@@ -19,6 +19,8 @@
 
 #include "Release.hpp"
 
+#include "utils/Logger.hpp"
+
 #include "Artist.hpp"
 #include "Cluster.hpp"
 #include "SqlQuery.hpp"
@@ -163,7 +165,7 @@ Release::getReleaseYear(bool original) const
 		.groupBy(field)
 		.bind(this->id());
 
-	/* various dates, no date */
+	// various dates => no date
 	if (dates.empty() || dates.size() > 1)
 		return boost::none;
 
@@ -173,6 +175,46 @@ Release::getReleaseYear(bool original) const
 		return date;
 	else
 		return boost::none;
+}
+
+boost::optional<std::string>
+Release::getCopyright() const
+{
+	assert(session());
+
+	Wt::Dbo::collection<std::string> copyrights = session()->query<std::string>
+		("SELECT copyright FROM track t INNER JOIN release r ON r.id = t.release_id")
+		.where("r.id = ?")
+		.groupBy("copyright")
+		.bind(this->id());
+
+	std::vector<std::string> values(copyrights.begin(), copyrights.end());
+
+	// various copyrights => no copyright
+	if (values.empty() || values.size() > 1 || values.front().empty())
+		return boost::none;
+
+	return values.front();
+}
+
+boost::optional<std::string>
+Release::getCopyrightURL() const
+{
+	assert(session());
+
+	Wt::Dbo::collection<std::string> copyrights = session()->query<std::string>
+		("SELECT copyright_url FROM track t INNER JOIN release r ON r.id = t.release_id")
+		.where("r.id = ?")
+		.groupBy("copyright_url")
+		.bind(this->id());
+
+	std::vector<std::string> values(copyrights.begin(), copyrights.end());
+
+	// various copyright URLs => no copyright URL
+	if (values.empty() || values.size() > 1 || values.front().empty())
+		return boost::none;
+
+	return values.front();
 }
 
 std::vector<Wt::Dbo::ptr<Artist>>

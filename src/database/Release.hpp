@@ -69,6 +69,8 @@ class Release : public Wt::Dbo::Dbo<Release>
 
 		// Utility functions
 		boost::optional<int> getReleaseYear(bool originalDate = false) const; // 0 if unknown or various
+		boost::optional<std::string> getCopyright() const;
+		boost::optional<std::string> getCopyrightURL() const;
 
 		// Accessors
 		std::string	getName() const		{ return _name; }

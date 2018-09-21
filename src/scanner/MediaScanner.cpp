@@ -566,7 +566,18 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	{
 		bool hasCover = boost::any_cast<bool>((*items)[MetaData::Type::HasCover]);
 
-		track.modify()->setCoverType( hasCover ? Track::CoverType::Embedded : Track::CoverType::None );
+		track.modify()->setHasCover(hasCover);
+	}
+
+	if ((*items).find(MetaData::Type::Copyright) != (*items).end())
+	{
+
+		track.modify()->setCopyright( boost::any_cast<std::string>((*items)[MetaData::Type::Copyright]) );
+	}
+
+	if ((*items).find(MetaData::Type::CopyrightURL) != (*items).end())
+	{
+		track.modify()->setCopyrightURL( boost::any_cast<std::string>((*items)[MetaData::Type::CopyrightURL]) );
 	}
 
 	transaction.commit();

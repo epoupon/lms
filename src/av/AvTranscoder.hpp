@@ -48,9 +48,9 @@ struct TranscodeParameters
 	Encoding	encoding = Encoding::MP3;
 	std::size_t	bitrate = 128000;
 	boost::optional<std::size_t> stream = boost::none; // Id of the stream to be transcoded (auto detect by default)
-	boost::optional<std::chrono::seconds> offset;
+	boost::optional<std::chrono::seconds> offset = boost::none;;
 
-	TranscodeParameters() {}
+	TranscodeParameters() = default;
 };
 
 class Transcoder

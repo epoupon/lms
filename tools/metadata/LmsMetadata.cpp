@@ -112,6 +112,14 @@ int main(int argc, char *argv[])
 					std::cout << "AcoustID: " << boost::any_cast<std::string>(item.second) << std::endl;
 					break;
 
+				case MetaData::Type::Copyright:
+					std::cout << "Copyright: " << boost::any_cast<std::string>(item.second) << std::endl;
+					break;
+
+				case MetaData::Type::CopyrightURL:
+					std::cout << "CopyrightURL: " << boost::any_cast<std::string>(item.second) << std::endl;
+					break;
+
 				default:
 					break;
 			}

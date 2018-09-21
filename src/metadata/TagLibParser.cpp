@@ -194,6 +194,14 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 				if (items.find(MetaData::Type::HasCover) == items.end())
 					items.insert( std::make_pair(MetaData::Type::HasCover, true));
 			}
+			else if (tag == "COPYRIGHT")
+			{
+				items.insert(std::make_pair(MetaData::Type::Copyright, values.front().to8Bit()));
+			}
+			else if (tag == "COPYRIGHTURL")
+			{
+				items.insert(std::make_pair(MetaData::Type::CopyrightURL, values.front().to8Bit()));
+			}
 			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 			{
 				std::set<std::string> clusterNames;
