@@ -94,6 +94,28 @@ Release::refresh()
 		}
 	}
 
+	boost::optional<std::string> copyright = release->getCopyright();
+	boost::optional<std::string> copyrightURL = release->getCopyrightURL();
+
+	t->setCondition("if-has-copyright-or-copyright-url", copyright || copyrightURL);
+
+	if (copyrightURL)
+	{
+		t->setCondition("if-has-copyright-url", true);
+
+		Wt::WLink link(*copyrightURL);
+		link.setTarget(Wt::LinkTarget::NewWindow);
+		Wt::WAnchor* anchor = t->bindNew<Wt::WAnchor>("copyright-url", link);
+		anchor->setTextFormat(Wt::TextFormat::Plain);
+		anchor->setText(Wt::WString::fromUTF8(*copyrightURL));
+	}
+
+	if (copyright)
+	{
+		t->setCondition("if-has-copyright", true);
+		t->bindString("copyright", Wt::WString::fromUTF8(*copyright), Wt::TextFormat::Plain);
+	}
+
 	{
 		auto artists = release->getArtists();
 		if (artists.size() > 1)

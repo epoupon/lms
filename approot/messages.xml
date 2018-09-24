@@ -79,6 +79,9 @@
 <message id="Lms.Explore.ArtistsInfo.recently-added">Recently added</message>
 <message id="Lms.Explore.ArtistsInfo.most-played">Top artists</message>
 
+<!--Explore:Release-->
+<message id="Lms.Explore.Release.copyright">Copyright</message>
+
 <!--Explore:Releases-->
 <message id="Lms.Explore.ReleasesInfo.recently-added">Recently added</message>
 <message id="Lms.Explore.ReleasesInfo.most-played">Top releases</message>

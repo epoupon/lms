@@ -290,7 +290,7 @@ void
 MediaScanner::scheduleScan(std::chrono::seconds duration)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan in " << duration.count() << " seconds";
-	_scheduleTimer.expires_from_now(std::chrono::seconds(5)); //duration);
+	_scheduleTimer.expires_from_now(duration);
 	_scheduleTimer.async_wait( std::bind( &MediaScanner::scan, this, std::placeholders::_1) );
 }
 
@@ -316,7 +316,7 @@ MediaScanner::scan(boost::system::error_code err)
 	bool forceScan = false;
 	Stats stats;
 
-	checkAudioFiles(stats);
+	removeMissingTracks(stats);
 
 	LMS_LOG(UI, INFO) << "Checks complete, force scan = " << forceScan;
 
@@ -325,7 +325,10 @@ MediaScanner::scan(boost::system::error_code err)
 	LMS_LOG(DBUPDATER, INFO) << "scaning media directory '" << _mediaDirectory.string() << "' DONE";
 
 	if (_running)
+	{
+		removeOrphanEntries();
 		checkDuplicatedAudioFiles(stats);
+	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.scanErrors << ", not imported = " << stats.incompleteScans << "), duplicates = " << stats.nbDuplicates() << " (hash = " << stats.duplicateHashes << ", mbid = " << stats.duplicateMBID << ")";
 
@@ -566,7 +569,18 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	{
 		bool hasCover = boost::any_cast<bool>((*items)[MetaData::Type::HasCover]);
 
-		track.modify()->setCoverType( hasCover ? Track::CoverType::Embedded : Track::CoverType::None );
+		track.modify()->setHasCover(hasCover);
+	}
+
+	if ((*items).find(MetaData::Type::Copyright) != (*items).end())
+	{
+
+		track.modify()->setCopyright( boost::any_cast<std::string>((*items)[MetaData::Type::Copyright]) );
+	}
+
+	if ((*items).find(MetaData::Type::CopyrightURL) != (*items).end())
+	{
+		track.modify()->setCopyrightURL( boost::any_cast<std::string>((*items)[MetaData::Type::CopyrightURL]) );
 	}
 
 	transaction.commit();
@@ -644,10 +658,8 @@ checkFile(const boost::filesystem::path& p, boost::filesystem::path mediaDirecto
 }
 
 void
-MediaScanner::checkAudioFiles( Stats& stats )
+MediaScanner::removeMissingTracks(Stats& stats)
 {
-	LMS_LOG(DBUPDATER, INFO) << "Checking audio files...";
-
 	std::vector<boost::filesystem::path> trackPaths = Track::getAllPaths(_db.getSession());;
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks...";
@@ -668,7 +680,11 @@ MediaScanner::checkAudioFiles( Stats& stats )
 			}
 		}
 	}
+}
 
+void
+MediaScanner::removeOrphanEntries()
+{
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
 	{
 		Wt::Dbo::Transaction transaction(_db.getSession());

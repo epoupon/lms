@@ -49,12 +49,6 @@ class Track : public Wt::Dbo::Dbo<Track>
 		Track() {}
 		Track(const boost::filesystem::path& p);
 
-		enum class CoverType
-		{
-			Embedded,	// Contains embedded cover
-			None,		// No local cover available
-		};
-
 		// Find utility functions
 		static pointer getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
 		static pointer getById(Wt::Dbo::Session& session, IdType id);
@@ -95,8 +89,10 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setYear(int year)						{ _year = year; }
 		void setOriginalYear(int year)					{ _originalYear = year; }
 		void setGenres(const std::string& genreList)			{ _genreList = genreList; }
-		void setCoverType(CoverType coverType)				{ _coverType = coverType; }
+		void setHasCover(bool hasCover)					{ _hasCover = hasCover; }
 		void setMBID(const std::string& MBID)				{ _MBID = MBID; }
+		void setCopyright(const std::string& copyright)			{ _copyright = std::string(copyright, 0, _maxCopyrightLength); }
+		void setCopyrightURL(const std::string& copyrightURL)		{ _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
 		void setArtist(Wt::Dbo::ptr<Artist> artist)			{ _artist = artist; }
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
 
@@ -113,8 +109,10 @@ class Track : public Wt::Dbo::Dbo<Track>
 		Wt::WDateTime			getLastWriteTime() const	{ return _fileLastWrite; }
 		Wt::WDateTime			getAddedTime() const		{ return _fileAdded; }
 		const std::vector<unsigned char>& getChecksum() const		{ return _fileChecksum; }
-		CoverType			getCoverType() const		{ return _coverType; }
+		bool				hasCover() const		{ return _hasCover; }
 		const std::string&		getMBID() const			{ return _MBID; }
+		boost::optional<std::string>	getCopyright() const;
+		boost::optional<std::string>	getCopyrightURL() const;
 		Wt::Dbo::ptr<Artist>		getArtist() const		{ return _artist; }
 		Wt::Dbo::ptr<Release>		getRelease() const		{ return _release; }
 		std::vector<Wt::Dbo::ptr<Cluster>>	getClusters() const;
@@ -138,8 +136,10 @@ class Track : public Wt::Dbo::Dbo<Track>
 				Wt::Dbo::field(a, _fileLastWrite,	"file_last_write");
 				Wt::Dbo::field(a, _fileAdded,		"file_added");
 				Wt::Dbo::field(a, _fileChecksum,	"checksum");
-				Wt::Dbo::field(a, _coverType,		"cover_type");
+				Wt::Dbo::field(a, _hasCover,		"has_cover");
 				Wt::Dbo::field(a, _MBID,		"mbid");
+				Wt::Dbo::field(a, _copyright,		"copyright");
+				Wt::Dbo::field(a, _copyrightURL,	"copyright_url");
 				Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
@@ -149,6 +149,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 	private:
 
 		static const std::size_t _maxNameLength = 128;
+		static const std::size_t _maxCopyrightLength = 128;
+		static const std::size_t _maxCopyrightURLLength = 128;
 
 		int					_scanVersion = 0;
 		int					_trackNumber = 0;
@@ -166,8 +168,10 @@ class Track : public Wt::Dbo::Dbo<Track>
 		std::vector<unsigned char>		_fileChecksum;
 		Wt::WDateTime				_fileLastWrite;
 		Wt::WDateTime				_fileAdded;
-		CoverType				_coverType = CoverType::None;
-		std::string				_MBID = ""; // Musicbrainz Identifier
+		bool					_hasCover = false;
+		std::string				_MBID; // Musicbrainz Identifier
+		std::string				_copyright;
+		std::string				_copyrightURL;
 
 		Wt::Dbo::ptr<Artist>			_artist;
 		Wt::Dbo::ptr<Release>			_release;

@@ -146,7 +146,7 @@ getQuery(Wt::Dbo::Session& session,
 	if (!clusterIds.empty())
 		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
 
-	oss << " ORDER BY t.name";
+	oss << " ORDER BY t.name COLLATE NOCASE";
 
 	Wt::Dbo::Query<Track::pointer> query = session.query<Track::pointer>( oss.str() );
 
@@ -222,6 +222,18 @@ boost::optional<int>
 Track::getOriginalYear() const
 {
 	return (_originalYear > 0) ? boost::make_optional<int>(_originalYear) : boost::none;
+}
+
+boost::optional<std::string>
+Track::getCopyright() const
+{
+	return _copyright != "" ? boost::make_optional<std::string>(_copyright) : boost::none;
+}
+
+boost::optional<std::string>
+Track::getCopyrightURL() const
+{
+	return _copyrightURL != "" ? boost::make_optional<std::string>(_copyrightURL) : boost::none;
 }
 
 std::vector<std::vector<Cluster::pointer>>

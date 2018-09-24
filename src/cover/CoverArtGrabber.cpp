@@ -178,12 +178,12 @@ Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::
 		Track::pointer track = Track::getById(session, trackId);
 		if (track)
 		{
-			Track::CoverType coverType = track->getCoverType();
+			bool hasCover = track->hasCover();
 			boost::filesystem::path trackPath = track->getPath();
 
 			transaction.commit();
 
-			if (coverType == Track::CoverType::Embedded)
+			if (hasCover)
 				cover = getFromTrack(trackPath);
 
 			if (!cover)

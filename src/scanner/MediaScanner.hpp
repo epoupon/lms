@@ -83,7 +83,8 @@ class MediaScanner
 		// Helpers
 		void refreshScanSettings();
 
-		void checkAudioFiles( Stats& stats );
+		void removeMissingTracks( Stats& stats );
+		void removeOrphanEntries();
 		void checkDuplicatedAudioFiles( Stats& stats );
 		void scanAudioFile( const boost::filesystem::path& file, bool forceScan, Stats& stats);
 

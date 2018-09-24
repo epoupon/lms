@@ -50,6 +50,8 @@ namespace MetaData
 		MusicBrainzTrackID,	// string
 		MusicBrainzRecordingID,	// string
 		AcoustID,		// string
+		Copyright,		// string
+		CopyrightURL,		// string
 	};
 
 	// Used by Streams
