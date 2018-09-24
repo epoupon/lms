@@ -106,8 +106,8 @@ Release::refresh()
 		Wt::WLink link(*copyrightURL);
 		link.setTarget(Wt::LinkTarget::NewWindow);
 		Wt::WAnchor* anchor = t->bindNew<Wt::WAnchor>("copyright-url", link);
-		anchor->setTextFormat(Wt::TextFormat::Plain);
-		anchor->setText(Wt::WString::fromUTF8(*copyrightURL));
+		anchor->setTextFormat(Wt::TextFormat::XHTML);
+		anchor->setText(Wt::WString::tr("Lms.Explore.Release.template.link-btn"));
 	}
 
 	if (copyright)

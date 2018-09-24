@@ -2,6 +2,10 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
+<message id="Lms.Explore.Release.template.link-btn">
+	<i class="fa fa-external-link"></i>
+</message>
+
 <message id="Lms.Explore.Release.template">
 	<div class="row">
 		<div class="col-md-12">
