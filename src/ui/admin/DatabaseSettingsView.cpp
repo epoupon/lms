@@ -279,7 +279,7 @@ DatabaseSettingsView::refreshView()
 	Wt::WPushButton *discardBtn = t->bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard")));
 	Wt::WPushButton *immScanBtn = t->bindWidget("immediate-scan-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.Admin.Database.immediate-scan")));
 
-	saveBtn->clicked().connect(std::bind([=] ()
+	saveBtn->clicked().connect([=] ()
 	{
 		t->updateModel(model.get());
 
@@ -293,20 +293,20 @@ DatabaseSettingsView::refreshView()
 
 		// Udate the view: Delete any validation message in the view, etc.
 		t->updateView(model.get());
-	}));
+	});
 
-	discardBtn->clicked().connect(std::bind([=] ()
+	discardBtn->clicked().connect([=] ()
 	{
 		model->loadData();
 		model->validate();
 		t->updateView(model.get());
-	}));
+	});
 
-	immScanBtn->clicked().connect(std::bind([=] ()
+	immScanBtn->clicked().connect([=] ()
 	{
 		LmsApp->getMediaScanner().scheduleImmediateScan();
 		LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
-	}));
+	});
 
 	t->updateView(model.get());
 }

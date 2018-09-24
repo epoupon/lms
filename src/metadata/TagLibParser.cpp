@@ -205,8 +205,13 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 			{
 				std::set<std::string> clusterNames;
-				for (const auto& value : values)
-					clusterNames.insert(value.to8Bit(true));
+				for (const auto& valueList : values)
+				{
+					auto values = splitString(valueList.to8Bit(), "/,;");
+
+					for (auto value : values)
+						clusterNames.insert(value);
+				}
 
 				if (!clusterNames.empty())
 					clusters[tag] = clusterNames;

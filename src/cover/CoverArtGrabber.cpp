@@ -185,7 +185,8 @@ Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::
 
 			if (hasCover)
 				cover = getFromTrack(trackPath);
-			else
+
+			if (!cover)
 				cover = getFromDirectory(trackPath.parent_path());
 		}
 	}

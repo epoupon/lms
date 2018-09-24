@@ -168,7 +168,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		std::vector<unsigned char>		_fileChecksum;
 		Wt::WDateTime				_fileLastWrite;
 		Wt::WDateTime				_fileAdded;
-		bool					_hasCover;
+		bool					_hasCover = false;
 		std::string				_MBID; // Musicbrainz Identifier
 		std::string				_copyright;
 		std::string				_copyrightURL;
