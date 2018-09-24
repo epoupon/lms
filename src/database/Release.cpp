@@ -119,7 +119,7 @@ getQuery(Wt::Dbo::Session& session,
 	if (!clusterIds.empty())
 		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
 
-	oss << " ORDER BY r.name";
+	oss << " ORDER BY r.name COLLATE NOCASE";
 
 	Wt::Dbo::Query<Release::pointer> query = session.query<Release::pointer>( oss.str() );
 

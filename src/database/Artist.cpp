@@ -65,7 +65,7 @@ Artist::create(Wt::Dbo::Session& session, const std::string& name, const std::st
 std::vector<Artist::pointer>
 Artist::getAll(Wt::Dbo::Session& session, int offset, int size)
 {
-	Wt::Dbo::collection<pointer> res = session.find<Artist>().orderBy("LOWER(name)").offset(offset).limit(size);
+	Wt::Dbo::collection<pointer> res = session.find<Artist>().offset(offset).limit(size);
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
@@ -107,7 +107,7 @@ getQuery(Wt::Dbo::Session& session,
 	if (!clusterIds.empty())
 		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
 
-	oss << " ORDER BY a.name";
+	oss << " ORDER BY a.name COLLATE NOCASE";
 
 	Wt::Dbo::Query<Artist::pointer> query = session.query<Artist::pointer>( oss.str() );
 
