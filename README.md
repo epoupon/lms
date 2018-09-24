@@ -1,7 +1,6 @@
 # LMS - Lightweight Music Server
 
-LMS is a self-hosted music streaming software, released under the GPLv3 license.
-It allows you to access your music using a web interface.
+LMS is a self-hosted music streaming software: access your music files from anywhere using a web interface!
 
 A [demo](http://lms.demo.poupon.io) instance is available, with the following limitations:
 - Settings cannot be saved
@@ -10,8 +9,8 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 ## Main features
 - Responsive design
 - Browse your audio collection using tag-based filters
-- User management
 - Persistent play queue
+- User management
 - Radio mode
 - MusicBrainzID support to handle duplicated artist and release names
 - Audio transcode for maximum interoperability and low bandwith requirements
