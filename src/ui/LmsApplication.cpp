@@ -85,6 +85,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	bootstrapTheme->setResponsive(true);
 	setTheme(std::move(bootstrapTheme));
 
+	addMetaHeader(Wt::MetaHeaderType::Meta, "viewport", "width=device-width, user-scalable=no");
+
 	useStyleSheet("css/lms.css");
 	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
 
