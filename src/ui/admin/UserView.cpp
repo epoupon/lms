@@ -274,6 +274,11 @@ UserView::refreshView()
 		auto authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*userId) );
 		auto name = authUser.identity(Wt::Auth::Identity::LoginName);
 		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-edit").arg(name), Wt::TextFormat::Plain);
+		t->setCondition("if-has-last-login-attempt", true);
+
+		Wt::WLineEdit *lastLoginAttempt = t->bindNew<Wt::WLineEdit>("last-login-attempt");
+		lastLoginAttempt->setText(authUser.lastLoginAttempt().toString());
+		lastLoginAttempt->setEnabled(false);
 	}
 	else
 	{
