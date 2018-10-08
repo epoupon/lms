@@ -63,6 +63,8 @@ class PlayQueue : public Wt::WTemplate
 		void addRadioTrack();
 		void updateInfo();
 		void updateCurrentTrack(bool selected);
+		void updateRepeatBtn();
+		void updateRadioBtn();
 
 		void load(std::size_t pos, bool play);
 		void stop();
@@ -70,9 +72,11 @@ class PlayQueue : public Wt::WTemplate
 		bool _repeatAll = false;
 		bool _radioMode = false;
 		boost::optional<Database::IdType> _tracklistId;
-		Wt::WContainerWidget* _entriesContainer;
-		Wt::WPushButton* _showMore;
-		Wt::WText* _nbTracks;
+		Wt::WContainerWidget* _entriesContainer = nullptr;
+		Wt::WPushButton* _showMore = nullptr;
+		Wt::WText* _nbTracks = nullptr;
+		Wt::WText* _repeatBtn = nullptr;
+		Wt::WText* _radioBtn = nullptr;
 		boost::optional<std::size_t> _trackPos;	// current track position, if set
 };
 
