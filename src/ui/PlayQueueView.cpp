@@ -81,7 +81,9 @@ PlayQueue::PlayQueue()
 		updateRepeatBtn();
 
 		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-		LmsApp->getUser().modify()->setRepeatAll(_repeatAll);
+
+		if (!LmsApp->getUser()->isDemo())
+			LmsApp->getUser().modify()->setRepeatAll(_repeatAll);
 	});
 	updateRepeatBtn();
 
@@ -93,7 +95,9 @@ PlayQueue::PlayQueue()
 		updateRadioBtn();
 
 		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-		LmsApp->getUser().modify()->setRadio(_radioMode);
+
+		if (!LmsApp->getUser()->isDemo())
+			LmsApp->getUser().modify()->setRadio(_radioMode);
 	});
 	updateRadioBtn();
 
@@ -116,12 +120,16 @@ PlayQueue::PlayQueue()
 	updateInfo();
 	addSome();
 
-	if (!LmsApp->getUser()->isDemo())
 	{
-		LmsApp->post([=]
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+		if (!LmsApp->getUser()->isDemo())
 		{
-			load(LmsApp->getUser()->getCurPlayingTrackPos(), false);
-		});
+			LmsApp->post([=]
+			{
+				load(LmsApp->getUser()->getCurPlayingTrackPos(), false);
+			});
+		}
 	}
 }
 
