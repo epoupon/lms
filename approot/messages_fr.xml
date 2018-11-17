@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<!--Common-->
+<message id="Lms.add">Ajouter</message>
+<message id="Lms.apply">Appliquer</message>
+<message id="Lms.discard">Annuler</message>
+<message id="Lms.administration">Administration</message>
+<message id="Lms.cancel">Annuler</message>
+<message id="Lms.create">Créer</message>
+<message id="Lms.login">Login</message>
+<message id="Lms.logout">Logout</message>
+<message id="Lms.not-a-directory">N'est pas un répertoire</message>
+<message id="Lms.password">Mot de passe</message>
+<message id="Lms.password-confirm">Confirmation du mot de passe</message>
+<message id="Lms.passwords-dont-match">Les mots de passe ne correspondent pas</message>
+<message id="Lms.quit-confirm">Êtes-vous sûr ?</message>
+<message id="Lms.quit-other-session">Une autre session a été ouverte. Reouvrir celle-ci ?</message>
+<message id="Lms.save">Sauvegarder</message>
+
+<!--Administration-->
+<message id="Lms.Admin.Database.daily">Tous les jours</message>
+<message id="Lms.Admin.Database.database">Base de données</message>
+<message id="Lms.Admin.Database.immediate-scan">Scanner maintenant !</message>
+<message id="Lms.Admin.Database.monthly">Tous les mois</message>
+<message id="Lms.Admin.Database.never">Jamais</message>
+<message id="Lms.Admin.Database.path">Dossier racine des fichiers de musique</message>
+<message id="Lms.Admin.Database.scan-complete">Scan terminé : {1} fichiers, {2} ajouts, {3} mises à jour, {4} suppressions, {5} duplicatas, {6} erreurs</message>
+<message id="Lms.Admin.Database.scan-launched">Scan lancé !</message>
+<message id="Lms.Admin.Database.scan-options">Options </message>
+<message id="Lms.Admin.Database.settings-saved">Nouveaux paramètres sauvegardés !</message>
+<message id="Lms.Admin.Database.tags">Tags</message>
+<message id="Lms.Admin.Database.update-period">Périodicité des mises à jour</message>
+<message id="Lms.Admin.Database.update-start-time">Heure de départ de la mise à jour</message>
+<message id="Lms.Admin.Database.weekly">Toutes les semaines</message>
+
+<!--Users-->
+<message id="Lms.Admin.Users.add">Ajouter</message>
+<message id="Lms.Admin.Users.admin">Admin</message>
+<message id="Lms.Admin.Users.del">Supprimer</message>
+<message id="Lms.Admin.Users.del-user">Supprimer l'utilisateur</message>
+<message id="Lms.Admin.Users.del-user-name">Supprimer l'utilisateur ?</message>
+<message id="Lms.Admin.Users.demo">Demo</message>
+<message id="Lms.Admin.Users.edit">Editer</message>
+<message id="Lms.Admin.Users.users">Utilisateurs</message>
+
+<!--User-->
+<message id="Lms.Admin.User.audio-bitrate-limit">Limite du bitrate</message>
+<message id="Lms.Admin.User.demo-account">Compte de démonstration</message>
+<message id="Lms.Admin.User.demo-account-already-exists">Le compte de démonstration existe déjà !</message>
+<message id="Lms.Admin.User.demo-password-invalid">Le password doit être égal au login !</message>
+<message id="Lms.Admin.User.last-login-attempt">Dernière tentative de login</message>
+<message id="Lms.Admin.User.user-already-exists">L'utilisateur existe déjà !</message>
+<message id="Lms.Admin.User.user-create">Nouvel utilisateur</message>
+<message id="Lms.Admin.User.user-created">Nouvel utilisateur créé !</message>
+<message id="Lms.Admin.User.user-edit">Utilisateur {1}</message>
+<message id="Lms.Admin.User.user-updated">L'utilisateur a été mis à jour !</message>
+
+<!--Wizard-->
+<message id="Lms.Admin.InitWizard.done">Le compte d'administration a été créé. Rafraichissez la page pour continuer !</message>
+<message id="Lms.Admin.InitWizard.header">Creation du compte administrateur</message>
+
+<!--Auth-->
+<message id="Lms.Auth.remember-me">Se souvenir de moi</message>
+<message id="Lms.Auth.welcome">Bienvenue !</message>
+
+<!--Explore-->
+<message id="Lms.Explore.add-filter">Ajouter filtre</message>
+<message id="Lms.Explore.artists">Artistes</message>
+<message id="Lms.Explore.filters">Filtres</message>
+<message id="Lms.Explore.releases">Albums</message>
+<message id="Lms.Explore.search-placeholder">Rechercher...</message>
+<message id="Lms.Explore.show-more">Montrer plus</message>
+<message id="Lms.Explore.tracks">Pistes</message>
+<message id="Lms.Explore.type">Type</message>
+<message id="Lms.Explore.value">Valeur</message>
+<message id="Lms.Explore.various-artists">Artistes divers</message>
+
+<!--Explore:Artists-->
+<message id="Lms.Explore.ArtistsInfo.recently-added">Ajouts récents</message>
+<message id="Lms.Explore.ArtistsInfo.most-played">Artistes populaires</message>
+
+<!--Explore:Release-->
+<message id="Lms.Explore.Release.copyright">Copyright</message>
+
+<!--Explore:Releases-->
+<message id="Lms.Explore.ReleasesInfo.recently-added">Ajouts récents</message>
+<message id="Lms.Explore.ReleasesInfo.most-played">Albums populaires</message>
+
+<!--Explore:Tracks-->
+<message id="Lms.Explore.TracksInfo.recently-added">Ajouts récents</message>
+<message id="Lms.Explore.TracksInfo.most-played">Pistes populaires</message>
+
+
+<!--Playqueue-->
+<message id="Lms.PlayQueue.clear">Effacer</message>
+<message id="Lms.PlayQueue.nb-tracks">{1} pistes</message>
+<message id="Lms.PlayQueue.nb-tracks-added">{1} pistes ajoutées</message>
+<message id="Lms.PlayQueue.nb-tracks-playing">{1} pistes ajouées</message>
+<message id="Lms.PlayQueue.playqueue">Liste de lecture</message>
+<message id="Lms.PlayQueue.radio-mode">Mode radio</message>
+<message id="Lms.PlayQueue.repeat">Repéter</message>
+<message id="Lms.PlayQueue.shuffle">Mélanger</message>
+
+<!--PlayHistory-->
+<message id="Lms.PlayHistory.playhistory">Historique de lecture</message>
+
+
+<!--Settings-->
+<message id="Lms.Settings.account">Compte</message>
+<message id="Lms.Settings.audio">Audio</message>
+<message id="Lms.Settings.auto">Auto</message>
+<message id="Lms.Settings.bitrate">Bitrate</message>
+<message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
+<message id="Lms.Settings.encoding">Encodage</message>
+<message id="Lms.Settings.mp3">MP3</message>
+<message id="Lms.Settings.oga">OGA</message>
+<message id="Lms.Settings.settings">Paramètres</message>
+<message id="Lms.Settings.webma">WEBMA</message>
+<message id="Lms.Settings.settings-saved">Paramètres sauvegardés !</message>
+
+<!--Wt-->
+<message id="Wt.WMessageBox.Yes">Oui</message>
+<message id="Wt.WMessageBox.No">Non</message>
+
+<message id="Wt.Auth.valid"></message>
+<message id="Wt.Auth.user-name-info"></message>
+<message id="Wt.Auth.user-name-invalid">Invalide</message>
+<message id="Wt.Auth.password-info"></message>
+<message id="Wt.Auth.password-invalid">Mot de passe invalide</message>
+
+</messages>

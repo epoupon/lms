@@ -76,6 +76,8 @@ class User : public Wt::Dbo::Dbo<User>
 		void setAudioEncoding(AudioEncoding encoding)	{ _audioEncoding = encoding; }
 		void setMaxAudioBitrate(std::size_t bitrate);
 		void setCurPlayingTrackPos(std::size_t pos) { _curPlayingTrackPos = pos; }
+		void setRadio(bool val) { _radio = val; }
+		void setRepeatAll(bool val) { _repeatAll = val; }
 
 		// read
 		bool isAdmin() const { return _type == Type::ADMIN; }
@@ -84,6 +86,8 @@ class User : public Wt::Dbo::Dbo<User>
 		AudioEncoding	getAudioEncoding() const { return _audioEncoding; }
 		std::size_t	getMaxAudioBitrate() const;
 		std::size_t	getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
+		bool		isRepeatAllSet() const { return _repeatAll; }
+		bool		isRadioSet() const { return _radio; }
 
 		Wt::Dbo::ptr<TrackList> getQueuedTrackList() const;
 		Wt::Dbo::ptr<TrackList> getPlayedTrackList() const;
@@ -97,6 +101,8 @@ class User : public Wt::Dbo::Dbo<User>
 				Wt::Dbo::field(a, _audioEncoding, "audio_encoding");
 				// User's dynamic data
 				Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
+				Wt::Dbo::field(a, _repeatAll, "repeat_all");
+				Wt::Dbo::field(a, _radio, "radio");
 				Wt::Dbo::hasMany(a, _tracklists, Wt::Dbo::ManyToOne, "user");
 			}
 
@@ -106,14 +112,16 @@ class User : public Wt::Dbo::Dbo<User>
 
 		// Admin defined settings
 		int	 	_maxAudioBitrate;
-		Type		_type;
+		Type		_type = Type::REGULAR;
 
 		// User defined settings
-		int		_audioBitrate;
-		AudioEncoding	_audioEncoding;
+		int		_audioBitrate = defaultAudioBitrate;
+		AudioEncoding	_audioEncoding = AudioEncoding::AUTO;
 
 		// User's dynamic data
-		int		_curPlayingTrackPos;	// Current track position in queue
+		int		_curPlayingTrackPos = 0; // Current track position in queue
+		bool		_repeatAll = false;
+		bool		_radio = false;
 
 		Wt::Dbo::collection< Wt::Dbo::ptr<TrackList> > _tracklists;
 

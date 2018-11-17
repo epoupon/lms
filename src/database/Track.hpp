@@ -95,6 +95,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setCopyrightURL(const std::string& copyrightURL)		{ _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
 		void setArtist(Wt::Dbo::ptr<Artist> artist)			{ _artist = artist; }
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
+		void eraseClusters()						{ _clusters.clear(); }
 
 		std::size_t 			getScanVersion() const		{ return _scanVersion; }
 		boost::optional<std::size_t>	getTrackNumber() const;

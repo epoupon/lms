@@ -30,13 +30,18 @@
 
 #include "LmsApplication.hpp"
 
-
 namespace UserInterface {
 
 PlayQueue::PlayQueue()
 : Wt::WTemplate(Wt::WString::tr("Lms.PlayQueue.template"))
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
+
+	{
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+		_repeatAll = LmsApp->getUser()->isRepeatAllSet();
+		_radioMode = LmsApp->getUser()->isRadioSet();
+	}
 
 	Wt::WText* clearBtn = bindNew<Wt::WText>("clear-btn", Wt::WString::tr("Lms.PlayQueue.template.clear-btn"), Wt::TextFormat::XHTML);
 	clearBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.clear"));
@@ -68,21 +73,33 @@ PlayQueue::PlayQueue()
 		addSome();
 	});
 
-	Wt::WText* repeatBtn = bindNew<Wt::WText>("repeat-btn", Wt::WString::tr("Lms.PlayQueue.template.repeat-btn"), Wt::TextFormat::XHTML);
-	repeatBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.repeat"));
-	repeatBtn->clicked().connect([=]
+	_repeatBtn = bindNew<Wt::WText>("repeat-btn", Wt::WString::tr("Lms.PlayQueue.template.repeat-btn"), Wt::TextFormat::XHTML);
+	_repeatBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.repeat"));
+	_repeatBtn->clicked().connect([=]
 	{
 		_repeatAll = !_repeatAll;
-		repeatBtn->toggleStyleClass("Lms-playqueue-btn-selected", _repeatAll);
-	});
+		updateRepeatBtn();
 
-	Wt::WText* radioBtn = bindNew<Wt::WText>("radio-btn", Wt::WString::tr("Lms.PlayQueue.template.radio-btn"));
-	radioBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.radio-mode"));
-	radioBtn->clicked().connect([=]
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+		if (!LmsApp->getUser()->isDemo())
+			LmsApp->getUser().modify()->setRepeatAll(_repeatAll);
+	});
+	updateRepeatBtn();
+
+	_radioBtn = bindNew<Wt::WText>("radio-btn", Wt::WString::tr("Lms.PlayQueue.template.radio-btn"));
+	_radioBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.radio-mode"));
+	_radioBtn->clicked().connect([=]
 	{
 		_radioMode = !_radioMode;
-		radioBtn->toggleStyleClass("Lms-playqueue-btn-selected", _radioMode);
+		updateRadioBtn();
+
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+		if (!LmsApp->getUser()->isDemo())
+			LmsApp->getUser().modify()->setRadio(_radioMode);
 	});
+	updateRadioBtn();
 
 	_nbTracks = bindNew<Wt::WText>("nb-tracks");
 
@@ -103,13 +120,29 @@ PlayQueue::PlayQueue()
 	updateInfo();
 	addSome();
 
-	if (!LmsApp->getUser()->isDemo())
 	{
-		LmsApp->post([=]
+		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+
+		if (!LmsApp->getUser()->isDemo())
 		{
-			load(LmsApp->getUser()->getCurPlayingTrackPos(), false);
-		});
+			LmsApp->post([=]
+			{
+				load(LmsApp->getUser()->getCurPlayingTrackPos(), false);
+			});
+		}
 	}
+}
+
+void
+PlayQueue::updateRepeatBtn()
+{
+	_repeatBtn->toggleStyleClass("Lms-playqueue-btn-selected", _repeatAll);
+}
+
+void
+PlayQueue::updateRadioBtn()
+{
+	_radioBtn->toggleStyleClass("Lms-playqueue-btn-selected",_radioMode);
 }
 
 Database::TrackList::pointer

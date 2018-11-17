@@ -20,6 +20,8 @@ int main(int argc, char *argv[])
 	{
 		MetaData::TagLibParser parser;
 
+		parser.setClusterTypeNames( {"MOOD", "GENRE"} );
+
 		boost::optional<MetaData::Items> items = parser.parse(argv[1], true);
 		if (!items)
 		{

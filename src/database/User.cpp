@@ -35,11 +35,7 @@ User::audioBitrates =
 };
 
 User::User()
-: _maxAudioBitrate(audioBitrates.back()),
-_type(Type::REGULAR),
-_audioBitrate(defaultAudioBitrate),
-_audioEncoding(AudioEncoding::AUTO),
-_curPlayingTrackPos(0)
+: _maxAudioBitrate(audioBitrates.back())
 {
 
 }

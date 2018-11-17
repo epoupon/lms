@@ -504,8 +504,7 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 		LMS_LOG(DBUPDATER, INFO) << "Updating '" << file.string() << "'";
 
 		// Remove the songs from its clusters
-		for (auto cluster : track->getClusters())
-			cluster.remove();
+		track.modify()->eraseClusters();
 
 		stats.updates++;
 	}

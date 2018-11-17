@@ -49,6 +49,7 @@
 <message id="Lms.Admin.User.demo-account">Demo account</message>
 <message id="Lms.Admin.User.demo-account-already-exists">Demo account already exists!</message>
 <message id="Lms.Admin.User.demo-password-invalid">Demo password must be the login name!</message>
+<message id="Lms.Admin.User.last-login-attempt">Last login attempt</message>
 <message id="Lms.Admin.User.user-already-exists">User already exists!</message>
 <message id="Lms.Admin.User.user-create">New user</message>
 <message id="Lms.Admin.User.user-created">New user created!</message>
@@ -84,7 +85,7 @@
 
 <!--Explore:Releases-->
 <message id="Lms.Explore.ReleasesInfo.recently-added">Recently added</message>
-<message id="Lms.Explore.ReleasesInfo.most-played">Top releases</message>
+<message id="Lms.Explore.ReleasesInfo.most-played">Top albums</message>
 
 <!--Explore:Tracks-->
 <message id="Lms.Explore.TracksInfo.recently-added">Recently added</message>
@@ -117,5 +118,10 @@
 <message id="Lms.Settings.settings">Settings</message>
 <message id="Lms.Settings.webma">WEBMA</message>
 <message id="Lms.Settings.settings-saved">New settings saved!</message>
+
+<!--Wt-->
+<message id="Wt.Auth.valid"></message>
+<message id="Wt.Auth.user-name-info"></message>
+<message id="Wt.Auth.password-info"></message>
 
 </messages>
