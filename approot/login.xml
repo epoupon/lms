@@ -39,9 +39,6 @@
 			<div class="col-sm-5">
 				${remember-me}
 			</div>
-			<div class="help-block col-sm-5">
-				${remember-me-info}
-			</div>
 		</div>
 		<div class="form-group">
 			<div class="col-sm-offset-2 col-sm-10">

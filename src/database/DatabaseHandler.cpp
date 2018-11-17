@@ -54,6 +54,7 @@ Handler::configureAuth(void)
 {
 	authService.setEmailVerificationEnabled(false);
 	authService.setAuthTokensEnabled(true, "lmsauth");
+	authService.setAuthTokenValidity(24 * 60 * 365); // A year
 	authService.setIdentityPolicy(Wt::Auth::IdentityPolicy::LoginName);
 	authService.setRandomTokenLength(32);
 
