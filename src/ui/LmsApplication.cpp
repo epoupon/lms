@@ -537,6 +537,11 @@ LmsApplication::post(std::function<void()> func)
 	Wt::WServer::instance()->post(LmsApp->sessionId(), func);
 }
 
+static std::string escape(std::string str)
+{
+	return replaceInString(std::move(str), "\'", "\\\'");
+}
+
 void
 LmsApplication::notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration)
 {
@@ -545,7 +550,7 @@ LmsApplication::notifyMsg(MsgType type, const Wt::WString& message, std::chrono:
 	std::ostringstream oss;
 
 	oss << "$.notify({"
-			"message: '" << message.toUTF8() << "'"
+			"message: '" << escape(message.toUTF8()) << "'"
 		"},{"
 			"type: '" << msgTypeToString(type) << "',"
 			"placement: {from: 'top', align: 'center'},"

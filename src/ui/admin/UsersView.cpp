@@ -114,7 +114,8 @@ UsersView::refreshView()
 					user.remove();
 					_container->removeWidget(entry);
 				}
-				delBtn->removeChild(msgBox);
+				else
+					delBtn->removeChild(msgBox);
 			});
 
 			msgBox->show();

@@ -128,5 +128,12 @@
 <message id="Wt.Auth.user-name-invalid">Invalide</message>
 <message id="Wt.Auth.password-info"></message>
 <message id="Wt.Auth.password-invalid">Mot de passe invalide</message>
+<message id="Wt.Auth.passwdqc.reason-short">Trop court</message>
+<message id="Wt.Auth.passwdqc.reason-long">Trop long</message>
+<message id="Wt.Auth.passwdqc.reason-simpleshort">Pas assez de caractères ou de classes différentes pour cette longueur de mot de passe</message>
+<message id="Wt.Auth.passwdqc.reason-simple">Pas assez de caractères ou de classes différentes</message>
+<message id="Wt.Auth.passwdqc.reason-personal">Basé sur des informations personnelles</message>
+<message id="Wt.Auth.passwdqc.reason-word">Basé sur un mot de dictionnaire</message>
+<message id="Wt.Auth.passwdqc.reason-seq">Basé sur une séquence de caractères</message>
 
 </messages>
