@@ -60,3 +60,6 @@ boost::optional<T> readAs(const std::string& str)
 	return res;
 }
 
+std::string
+replaceInString(std::string str, const std::string& from, const std::string& to);
+
