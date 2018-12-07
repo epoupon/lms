@@ -1,2 +1,2 @@
-SUBDIRS = metadata
+SUBDIRS = metadata classifier
 

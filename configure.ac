@@ -80,7 +80,8 @@ AC_CONFIG_FILES([Makefile
 		 src/Makefile
 		 test/Makefile
 		 tools/Makefile
-		 tools/metadata/Makefile])
+		 tools/metadata/Makefile
+		 tools/classifier/Makefile])
 
 AC_OUTPUT
 
