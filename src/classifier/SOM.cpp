@@ -50,13 +50,16 @@ defaultLearningFactor(Network::Progress progress)
 }
 
 InputVector::value_type
-euclidianSquareDistance(const InputVector& a, const InputVector& b)
+euclidianSquareDistance(const InputVector& a, const InputVector& b, const InputVector& weights)
 {
+	checkSameDimensions(a, b);
+	checkSameDimensions(a, weights);
+
 	InputVector::value_type res = 0;
 
 	for (std::size_t i = 0; i < a.size(); ++i)
 	{
-		res += (a[i] - b[i]) * (a[i] - b[i]);
+		res += (a[i] - b[i]) * (a[i] - b[i]) * weights[i];
 	}
 
 	return res;
@@ -159,6 +162,7 @@ Network::Network(std::size_t width, std::size_t height, std::size_t inputDimCoun
 : _width(width),
 _height(height),
 _inputDimCount(inputDimCount),
+_weights(inputDimCount, static_cast<InputVector::value_type>(1)),
 _distanceFunc(euclidianSquareDistance),
 _learningFactorFunc(defaultLearningFactor),
 _neighborhoodFunc(defaultNeighborhoodFunc)
@@ -180,6 +184,13 @@ _neighborhoodFunc(defaultNeighborhoodFunc)
 	}
 }
 
+void
+Network::setDataWeights(const InputVector& weights)
+{
+	checkSameDimensions(weights, _inputDimCount);
+
+	_weights = weights;
+}
 
 InputVector&
 Network::getRefVector(std::size_t x, std::size_t y)
@@ -217,7 +228,7 @@ Network::getClosestRefVector(const InputVector& data) const
 	auto it = std::min_element(_refVectors.begin(), _refVectors.end(),
 			[&](const auto& a, const auto& b)
 			{
-				return (_distanceFunc(a, data) < _distanceFunc(b, data));
+				return (_distanceFunc(a, data, _weights) < _distanceFunc(b, data, _weights));
 			});
 
 	auto index = std::distance(_refVectors.begin(), it);
@@ -271,12 +282,12 @@ Network::train(const std::vector<InputVector>& inputData, std::size_t nbIteratio
 		inputDataShuffled.push_back(&input);
 	}
 
-	std::random_device randomDevice;
-	std::mt19937 generator(randomDevice());
+	auto now = std::chrono::system_clock::now();
+	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
 
 	for (std::size_t i = 0; i < nbIterations; ++i)
 	{
-		std::shuffle(inputDataShuffled.begin(), inputDataShuffled.end(), generator);
+		std::shuffle(inputDataShuffled.begin(), inputDataShuffled.end(), randGenerator);
 
 		for (auto input : inputDataShuffled)
 		{

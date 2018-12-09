@@ -52,6 +52,9 @@ class Network
 
 		Network(std::size_t width, std::size_t height, std::size_t inputDimCount);
 
+		// Set weight for each dimension (default is 1 for each weight)
+		void setDataWeights(const InputVector& weights);
+
 		// data must be normalized
 		void train(const std::vector<InputVector>& dataSamples, std::size_t nbIterations);
 
@@ -64,7 +67,7 @@ class Network
 		// i is the current iteration
 		// refVector(i+1) = refVector(i) + LearningFactor(i) * NeighborhoodFunc(i) * (MatchingRefVector - refVector)
 
-		using DistanceFunc = std::function<InputVector::value_type(const InputVector&, const InputVector&)>;
+		using DistanceFunc = std::function<InputVector::value_type(const InputVector& /* a */, const InputVector& /* b */, const InputVector& /* weights */)>;
 		void setDistanceFunc(DistanceFunc distanceFunc);
 
 		struct Progress
@@ -91,7 +94,8 @@ class Network
 		std::size_t _height;
 		std::size_t _inputDimCount;
 
-		std::vector<InputVector> _refVectors; // indexed reference vectors
+		InputVector _weights;
+		std::vector<InputVector> _refVectors; // reference vectors
 
 		DistanceFunc _distanceFunc;
 		LearningFactorFunc _learningFactorFunc;
