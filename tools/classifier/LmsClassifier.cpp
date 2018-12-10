@@ -6,9 +6,11 @@
 
 #include "classifier/SOM.hpp"
 #include "classifier/DataNormalizer.hpp"
+#include "classifier/Clusterer.hpp"
 
 int main(int argc, char *argv[])
 {
+
 	if (argc != 2)
 	{
 		std::cerr << "Usage: <file>" << std::endl;
@@ -17,64 +19,25 @@ int main(int argc, char *argv[])
 
 	auto iterationCount = std::stoul(argv[1]);
 
-	using namespace SOM;
-
-	SOM::Network network(5, 5, 2);
-
-	network.dump(std::cout);
-
-	std::vector< std::vector<double> > inputValues =
+	std::vector< std::pair<std::vector<SOM::InputVector::value_type>, std::string> > inputValues =
 	{
-		{ 160, 1 },
-		{ 80, -1 },
-		{ 80, -0.75 },
-		{ 240, 0.5 },
-		{ 240, -0.5 },
-		{ 120, -0.5 },
-		{ 140, -0.5 },
+		{{ 160, 1 }, { "banane" }},
+		{{ 80, -1 }, { "poire" }},
+		{{ 80, -0.75 }, {"pocolat"}},
+		{{ 240, 0.5 }, {"abricot"}},
+		{{ 240, -0.5 }, {"peche"}},
+		{{ 120, -0.5 }, {"fraise"}},
+		{{ 140, -0.5 }, {"myrtille"}},
 	};
 
-	std::cout << "Before normalization:" << std::endl;
-	for (const auto& inputValue : inputValues)
-	{
-		std::cout << inputValue << std::endl;
-	}
-	std::cout << std::endl;
+	Clusterer<std::string> classifier(inputValues, 2, iterationCount);
 
-	std::cout << "After normalization:" << std::endl;
+	std::cout << "Clusterer :" << std::endl;
+	classifier.dump(std::cout);
 
-	SOM::DataNormalizer normalizer(2);
-
-	normalizer.computeNormalizationFactors(inputValues);
-
-	for (auto& inputValue : inputValues)
-		normalizer.normalizeData(inputValue);
-
-	for (const auto& inputValue : inputValues)
-	{
-		std::cout << inputValue << std::endl;
-	}
-
-	std::cout << std::endl;
-
-	for (const auto& inputValue : inputValues)
-	{
-		auto res = network.classify(inputValue);
-		std::cout << "Found at " << res.x << ", " << res.y << std::endl;
-	}
-
-	std::cout << "Training network for " << iterationCount << " iterations" << std::endl;
-
-	network.train(inputValues, iterationCount);
-
-	network.dump(std::cout);
-	std::cout << "OK" << std::endl;
-
-	for (const auto& inputValue : inputValues)
-	{
-		auto res = network.classify(inputValue);
-		std::cout << "Found at " << res.x << ", " << res.y << std::endl;
-	}
+	std::cout << "Classify 195, 0.35 = " << std::endl;
+	for (const auto& val : classifier.getClusterValues({195, 0.35}))
+		std::cout << val << " " << std::endl;
 
 	return EXIT_SUCCESS;
 }
