@@ -19,22 +19,42 @@
 
 #include "DataNormalizer.hpp"
 
-#include <iostream>
-
 #include <algorithm>
+#include <numeric>
 
 namespace SOM
 {
+
+template<typename T>
+static
+T
+variance(const std::vector<T>& vec)
+{
+	std::size_t size = vec.size();
+
+	if (size == 1)
+		return T{0.};
+
+	T mean = std::accumulate(vec.begin(), vec.end(), T{0.}) / size;
+
+	return std::accumulate(vec.begin(), vec.end(), T{0.},
+		[mean, size] (T accumulator, const T& val)
+		{
+			return accumulator + ((val - mean) * (val - mean) / (size - 1));
+		});
+}
 
 DataNormalizer::DataNormalizer(std::size_t inputDimCount)
 : _inputDimCount(inputDimCount)
 {
 }
 
-
 void
 DataNormalizer::computeNormalizationFactors(const std::vector<InputVector>& inputVectors)
 {
+	if (inputVectors.empty())
+		throw SOMException("Empty input vectors");
+
 	// For each dimension of the input, compute the min/max
 	_minmax.clear();
 	_minmax.resize(_inputDimCount);
@@ -54,6 +74,18 @@ DataNormalizer::computeNormalizationFactors(const std::vector<InputVector>& inpu
 	}
 }
 
+InputVector::value_type
+DataNormalizer::normalizeValue(InputVector::value_type value, std::size_t dimId) const
+{
+	// clamp
+	if (value > _minmax[dimId].max)
+		value = _minmax[dimId].max;
+	else if (value < _minmax[dimId].min)
+		value = _minmax[dimId].min;
+
+	return (value - _minmax[dimId].min) / (_minmax[dimId].max - _minmax[dimId].min);
+}
+
 void
 DataNormalizer::normalizeData(InputVector& a) const
 {
@@ -61,14 +93,15 @@ DataNormalizer::normalizeData(InputVector& a) const
 
 	for (std::size_t dimId = 0; dimId < _inputDimCount; ++dimId)
 	{
-		// clamp
-		if (a[dimId] > _minmax[dimId].max)
-			a[dimId] = _minmax[dimId].max;
-		else if (a[dimId] < _minmax[dimId].min)
-			a[dimId] = _minmax[dimId].min;
-
-		a[dimId] = (a[dimId] - _minmax[dimId].min) / (_minmax[dimId].max - _minmax[dimId].min);
+		a[dimId] = normalizeValue(a[dimId], dimId);
 	}
+}
+
+void
+DataNormalizer::dump(std::ostream& os) const
+{
+	for (std::size_t i = 0; i < _inputDimCount; ++i)
+		os << "(" << _minmax[i].min << ", " << _minmax[i].max << ")";
 }
 
 } // namespace SOM

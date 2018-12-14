@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <vector>
+#include <ostream>
+
 #include "SOM.hpp"
 
 namespace SOM
@@ -33,7 +36,11 @@ class DataNormalizer
 
 		void normalizeData(InputVector& data) const;
 
+		void dump(std::ostream& os) const;
+
 	private:
+		InputVector::value_type normalizeValue(InputVector::value_type value, std::size_t dimensionId) const;
+
 		std::size_t _inputDimCount;
 
 		struct minmax

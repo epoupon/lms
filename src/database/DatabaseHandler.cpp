@@ -196,7 +196,7 @@ Handler::createConnectionPool(boost::filesystem::path p)
 
 	auto connection = std::make_unique<Wt::Dbo::backend::Sqlite3>(p.string());
 	connection->executeSql("pragma journal_mode=WAL");
-	connection->setProperty("show-queries", "true");
+//	connection->setProperty("show-queries", "true");
 
 	auto pool = std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), 1);
 	pool->setTimeout(std::chrono::seconds(10));

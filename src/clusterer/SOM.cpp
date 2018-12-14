@@ -204,7 +204,6 @@ Network::getRefVector(std::size_t x, std::size_t y) const
 	return _refVectors[x + y*_width];
 }
 
-
 void
 Network::dump(std::ostream& os) const
 {
@@ -240,6 +239,44 @@ Coords
 Network::classify(const InputVector& data) const
 {
 	return getClosestRefVector(data);
+}
+
+std::vector<Coords>
+Network::classify(const InputVector& data, std::size_t size) const
+{
+	struct Entry
+	{
+		Coords coords;
+		InputVector refVector;
+	};
+	std::vector<Entry> sortedEntries;
+
+	for (std::size_t x = 0; x < _width; ++x)
+	{
+		for (std::size_t y = 0; y < _height; ++y)
+		{
+			sortedEntries.push_back( Entry{{x, y}, getRefVector(x, y)} );
+		}
+	}
+
+	const InputVector& closestRefVector = getRefVector(getClosestRefVector(data));
+
+	std::sort(sortedEntries.begin(), sortedEntries.end(),
+		[&](const Entry& a, const Entry& b)
+		{
+			return _distanceFunc(a.refVector, closestRefVector, _weights) < _distanceFunc(b.refVector, closestRefVector, _weights);
+		});
+
+	std::vector<Coords> res;
+	for (const Entry& entry : sortedEntries)
+	{
+		res.push_back(entry.coords);
+
+		if (res.size() == size)
+			break;
+	}
+
+	return res;
 }
 
 static InputVector::value_type

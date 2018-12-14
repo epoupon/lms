@@ -61,6 +61,9 @@ class Network
 		// data must be normalized
 		Coords classify(const InputVector& data) const;
 
+		// ordered from closest to farthest
+		std::vector<Coords> classify(const InputVector& data, std::size_t size) const;
+
 		void dump(std::ostream& os) const;
 
 		// For each ref vector, update formula is:
@@ -86,6 +89,7 @@ class Network
 
 		InputVector& getRefVector(std::size_t x, std::size_t y);
 		const InputVector& getRefVector(std::size_t x, std::size_t y) const;
+		const InputVector& getRefVector(Coords coords) const { return getRefVector(coords.x, coords.y); }
 		Coords getClosestRefVector(const InputVector& data) const;
 
 		void updateRefVectors(Coords closestRefVectorCoords, const InputVector& input, Progress progress);

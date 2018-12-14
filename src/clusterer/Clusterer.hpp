@@ -19,7 +19,7 @@
 
 #pragma once
 
-
+#include <cmath>
 #include "SOM.hpp"
 #include "DataNormalizer.hpp"
 
@@ -31,9 +31,16 @@ class Clusterer
 {
 	public:
 		using SampleType = std::pair<SOM::InputVector /* key */, T /* value*/ >;
+		using Cluster = std::vector<T>;
+
 		Clusterer(const std::vector<SampleType>& samples, std::size_t inputDimCount, std::size_t iterationCount);
 
-		const std::vector<T>& getClusterValues(const SOM::InputVector& data) const;
+		const Cluster& getCluster(const SOM::InputVector& data) const;
+
+		// Sorted results (best first)
+		std::vector<Cluster> getClusters(const SOM::InputVector& data, std::size_t nbClusters) const;
+
+		const std::vector<Cluster>& getAllClusters() const;
 
 		void dump(std::ostream& os) const;
 
@@ -55,8 +62,8 @@ class Clusterer
 template<typename T>
 Clusterer<T>::Clusterer(const std::vector<SampleType>& samples, std::size_t inputDimCount, std::size_t iterationCount)
 :
-_width(3),
-_height(3),
+_width(std::sqrt(samples.size()/20)),
+_height(std::sqrt(samples.size()/20)),
 _dataNormalizer(inputDimCount),
 _network(_width, _height, inputDimCount)
 {
@@ -116,8 +123,8 @@ Clusterer<T>::train(const std::vector<std::pair<SOM::InputVector, T>>& samples, 
 }
 
 template<typename T>
-const std::vector<T>&
-Clusterer<T>::getClusterValues(const SOM::InputVector& inputVector) const
+const typename Clusterer<T>::Cluster&
+Clusterer<T>::getCluster(const SOM::InputVector& inputVector) const
 {
 	auto inputVectorNormalized = inputVector;
 	_dataNormalizer.normalizeData(inputVectorNormalized);
@@ -126,15 +133,41 @@ Clusterer<T>::getClusterValues(const SOM::InputVector& inputVector) const
 }
 
 template<typename T>
+std::vector<typename Clusterer<T>::Cluster>
+Clusterer<T>::getClusters(const SOM::InputVector& inputVector, std::size_t nbClusters) const
+{
+	auto inputVectorNormalized = inputVector;
+	_dataNormalizer.normalizeData(inputVectorNormalized);
+
+	std::vector<typename Clusterer<T>::Cluster> res;
+	for (auto& cluster : _network.classify(inputVectorNormalized, nbClusters))
+	{
+		res.push_back(getValues(cluster));
+	}
+
+	return res;
+}
+
+template<typename T>
+const std::vector<typename Clusterer<T>::Cluster>&
+Clusterer<T>::getAllClusters() const
+{
+	return _values;
+}
+
+template<typename T>
 void
 Clusterer<T>::dump(std::ostream& os) const
 {
+	os << "Normalizer:" << std::endl;
+	_dataNormalizer.dump(os);
+	os << std::endl;
 	os << "Internal network:" << std::endl;
 	_network.dump(os);
 	os << "Values: " << std::endl;
-	for (std::size_t x = 0; x < _width; ++x)
+	for (std::size_t y = 0; y < _height; ++y)
 	{
-		for (std::size_t y = 0; y < _height; ++y)
+		for (std::size_t x = 0; x < _width; ++x)
 		{
 			os << "[";
 			for (const auto& value : getValues({x, y}))
@@ -145,5 +178,4 @@ Clusterer<T>::dump(std::ostream& os) const
 	}
 
 }
-
 
