@@ -18,6 +18,10 @@ a:hover {
 	justify-content: center;
 }
 
+.Lms-contents {
+	margin-bottom: 78px;
+}
+
 .Lms-show-more {
 	margin-top: 8px;
 	margin-bottom: 8px;
@@ -105,8 +109,8 @@ a:hover {
 	margin-bottom: 4px;
 }
 
-.Lms-contents {
-	margin-bottom: 78px;
+.Lms-explore-contents {
+	margin-bottom: 24px;
 }
 
 .Lms-explore-filters {
@@ -128,16 +132,6 @@ a:hover {
 }
 
 .Lms-explore-releases-entry:hover {
-	background-color: lightgrey;
-}
-
-.Lms-explore-releasesinfo-entry {
-	margin: 0px;
-	padding-top: 4px;
-	padding-bottom: 4px;
-}
-
-.Lms-explore-releasesinfo-entry:hover {
 	background-color: lightgrey;
 }
 
@@ -165,20 +159,22 @@ a:hover {
 	font-weight: bold;
 }
 
+.Lms-explore-releaselink {
+	margin: 0px;
+	padding-top: 4px;
+	padding-bottom: 4px;
+}
+
+.Lms-explore-releaselink:hover {
+	background-color: lightgrey;
+}
+
+
 .Lms-explore-artists-entry {
 	min-height: 48px;
 }
 
 .Lms-explore-artists-entry:hover {
-	background-color: lightgrey;
-}
-
-.Lms-explore-artistsinfo-entry {
-	min-height: 28px;
-	margin: 0px;
-}
-
-.Lms-explore-artistsinfo-entry:hover {
 	background-color: lightgrey;
 }
 
@@ -190,6 +186,16 @@ a:hover {
 .Lms-explore-artist-entry:hover {
 	background-color: lightgrey;
 }
+
+.Lms-explore-artistlink {
+	min-height: 28px;
+	margin: 0px;
+}
+
+.Lms-explore-artistlink:hover {
+	background-color: lightgrey;
+}
+
 
 .Lms-explore-tracks-entry {
 	min-height: 32px;

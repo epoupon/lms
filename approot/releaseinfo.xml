@@ -1,0 +1,10 @@
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Explore.ReleaseInfo.template">
+	<h3>${tr:Lms.Explore.ReleaseInfo.similar-releases}</h3>
+	${similar-releases}
+</message>
+
+</messages>

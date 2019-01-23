@@ -199,6 +199,12 @@ Artist::getReleases(const std::set<IdType>& clusterIds) const
 	return std::vector< Wt::Dbo::ptr<Release> > (res.begin(), res.end());
 }
 
+std::vector<Wt::Dbo::ptr<Track>>
+Artist::getTracks() const
+{
+	return std::vector<Wt::Dbo::ptr<Track>>(_tracks.begin(), _tracks.end());
+}
+
 std::vector<std::vector<Wt::Dbo::ptr<Cluster>>>
 Artist::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::size_t size) const
 {

@@ -32,6 +32,7 @@ std::string getModuleName(Module mod)
 		case Module::METADATA:		return "METADATA";
 		case Module::REMOTE:		return "REMOTE";
 		case Module::SERVICE:		return "SERVICE";
+		case Module::SIMILARITY:	return "SIMILARITY";
 		case Module::TRANSCODE:		return "TRANSCODE";
 		case Module::UI:		return "UI";
 	}

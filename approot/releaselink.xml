@@ -1,0 +1,23 @@
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Explore.ReleaseLink.template">
+	<div class="row Lms-explore-releaselink">
+		<div class="col-xs-12">
+			<div class="media">
+				<div class="media-left media-middle">
+					${cover class="media-object"}
+				</div>
+				<div class="media-body media-middle">
+					<div class="media-heading">
+						${release-name}
+					</div>
+					${<if-has-artist>}<small><i>${artist-name}</i></small>${</if-has-artist>}
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+</messages>

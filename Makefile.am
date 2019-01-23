@@ -28,6 +28,8 @@ lms_approot_DATA = \
 		approot/admin-users.xml		\
 		approot/admin-initwizard.xml	\
 		approot/artist.xml	\
+		approot/artistinfo.xml	\
+		approot/artistlink.xml	\
 		approot/artists.xml	\
 		approot/artistsinfo.xml	\
 		approot/explore.xml	\
@@ -38,6 +40,8 @@ lms_approot_DATA = \
 		approot/playhistory.xml	\
 		approot/playqueue.xml	\
 		approot/release.xml	\
+		approot/releaseinfo.xml	\
+		approot/releaselink.xml	\
 		approot/releases.xml	\
 		approot/releasesinfo.xml \
 		approot/settings.xml	\

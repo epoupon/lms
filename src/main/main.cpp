@@ -23,15 +23,17 @@
 #include <Wt/WServer.h>
 #include <Wt/WApplication.h>
 
-#include "utils/Config.hpp"
-#include "utils/Logger.hpp"
 #include "av/AvInfo.hpp"
 #include "av/AvTranscoder.hpp"
+#include "cover/CoverArtGrabber.hpp"
 #include "image/Image.hpp"
-
 #include "scanner/MediaScanner.hpp"
-
+#include "similarity/som/SimilaritySOMScannerAddon.hpp"
+#include "similarity/SimilaritySearcher.hpp"
 #include "ui/LmsApplication.hpp"
+#include "utils/Config.hpp"
+#include "utils/Logger.hpp"
+#include "Services.hpp"
 
 std::vector<std::string> generateWtConfig(std::string execPath)
 {
@@ -123,16 +125,24 @@ int main(int argc, char* argv[])
 		auto connectionPool = Database::Handler::createConnectionPool(Config::instance().getPath("working-dir") / "lms.db");
 
 		UserInterface::LmsApplicationGroupContainer appGroups;
-		Scanner::MediaScanner scanner(*connectionPool);
+
+		// Service initialization order is important
+		getServices().mediaScanner = std::make_unique<Scanner::MediaScanner>(*connectionPool);
+
+		Similarity::SOMScannerAddon similaritySOMScannerAddon(*connectionPool);
+
+		getServices().mediaScanner->setAddon(similaritySOMScannerAddon);
+		getServices().coverArtGrabber = std::make_unique<CoverArt::Grabber>();
+		getServices().similaritySearcher = std::make_unique<Similarity::Searcher>(similaritySOMScannerAddon);
 
 		// bind entry point
 		server.addEntryPoint(Wt::EntryPointType::Application,
 				std::bind(UserInterface::LmsApplication::create,
-					std::placeholders::_1, std::ref(*connectionPool), std::ref(appGroups), std::ref(scanner)));
+					std::placeholders::_1, std::ref(*connectionPool), std::ref(appGroups)));
 
 		// Start
-		LMS_LOG(MAIN, INFO) << "Starting Media scanner...";
-		scanner.start();
+		LMS_LOG(MAIN, INFO) << "Starting media scanner...";
+		getServices().mediaScanner->start();
 
 		LMS_LOG(MAIN, INFO) << "Starting server...";
 		server.start();
@@ -145,8 +155,8 @@ int main(int argc, char* argv[])
 		LMS_LOG(MAIN, INFO) << "Stopping server...";
 		server.stop();
 
-		LMS_LOG(MAIN, INFO) << "Stopping database updater...";
-		scanner.stop();
+		LMS_LOG(MAIN, INFO) << "Stopping media scanner...";
+		getServices().mediaScanner->stop();
 
 		LMS_LOG(MAIN, INFO) << "Clean stop!";
 		res = EXIT_SUCCESS;

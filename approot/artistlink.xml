@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="Lms.Explore.ArtistLink.template">
+	<div class="row Lms-explore-artistlink Lms-vertical-align">
+		<div class="col-xs-12">
+			${name}
+		</div>
+	</div>
+</message>
+
+</messages>

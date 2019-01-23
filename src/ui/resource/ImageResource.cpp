@@ -22,15 +22,14 @@
 #include <Wt/WApplication.h>
 #include <Wt/Http/Response.h>
 
+#include "cover/CoverArtGrabber.hpp"
+#include "database/Track.hpp"
+#include "main/Services.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
-#include "database/Track.hpp"
-
 #include "LmsApplication.hpp"
-
-#include "cover/CoverArtGrabber.hpp"
 
 namespace UserInterface {
 
@@ -81,7 +80,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// transactions are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock(LmsApp);
-			cover = CoverArt::Grabber::instance().getFromTrack(LmsApp->getDboSession(), *trackId, Image::Format::JPEG, *size);
+			cover = getServices().coverArtGrabber->getFromTrack(LmsApp->getDboSession(), *trackId, Image::Format::JPEG, *size);
 		}
 	}
 	else if (releaseIdStr)
@@ -93,7 +92,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// transactions are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock(LmsApp);
-			cover = CoverArt::Grabber::instance().getFromRelease(LmsApp->getDboSession(), *releaseId, Image::Format::JPEG, *size);
+			cover = getServices().coverArtGrabber->getFromRelease(LmsApp->getDboSession(), *releaseId, Image::Format::JPEG, *size);
 		}
 	}
 	else

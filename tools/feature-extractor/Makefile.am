@@ -1,12 +1,11 @@
-bin_PROGRAMS = lms-clusterer
+bin_PROGRAMS = lms-feature-extractor
 
-lms_clusterer_SOURCES = \
-	$(srcdir)/LmsClusterer.cpp			\
-	$(top_srcdir)/src/clusterer/DataNormalizer.cpp	\
-	$(top_srcdir)/src/clusterer/SOM.cpp		\
+lms_feature_extractor_SOURCES = \
+	$(srcdir)/LmsFeatureExtractor.cpp		\
 	$(top_srcdir)/src/database/Artist.cpp		\
 	$(top_srcdir)/src/database/Cluster.cpp		\
 	$(top_srcdir)/src/database/DatabaseHandler.cpp	\
+	$(top_srcdir)/src/database/TrackFeature.cpp	\
 	$(top_srcdir)/src/database/TrackList.cpp	\
 	$(top_srcdir)/src/database/Release.cpp		\
 	$(top_srcdir)/src/database/ScanSettings.cpp	\
@@ -17,5 +16,5 @@ lms_clusterer_SOURCES = \
 	$(top_srcdir)/src/utils/Logger.cpp 		\
 	$(top_srcdir)/src/utils/Utils.cpp
 
-lms_clusterer_CXXFLAGS=-std=c++14 -Wall -I$(top_srcdir)/src -D_REENTRANT
+lms_feature_extractor_CXXFLAGS=-std=c++14 -Wall -I$(top_srcdir)/src -D_REENTRANT
 

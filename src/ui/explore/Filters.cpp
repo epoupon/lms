@@ -24,6 +24,8 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
+#include "database/Cluster.hpp"
+
 #include "LmsApplication.hpp"
 
 namespace UserInterface {

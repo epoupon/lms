@@ -25,6 +25,7 @@
 #include <Wt/WText.h>
 
 #include "database/Artist.hpp"
+#include "database/Release.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"

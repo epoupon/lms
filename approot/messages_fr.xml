@@ -70,17 +70,21 @@
 <message id="Lms.Explore.filters">Filtres</message>
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.search-placeholder">Rechercher...</message>
-<message id="Lms.Explore.show-more">Montrer plus</message>
+<message id="Lms.Explore.show-more">Voir plus</message>
 <message id="Lms.Explore.tracks">Pistes</message>
 <message id="Lms.Explore.type">Type</message>
 <message id="Lms.Explore.value">Valeur</message>
 <message id="Lms.Explore.various-artists">Artistes divers</message>
+
+<!--Explore:Artist-->
+<message id="Lms.Explore.ArtistInfo.similar-artists">Artists similaires</message>
 
 <!--Explore:Artists-->
 <message id="Lms.Explore.ArtistsInfo.recently-added">Ajouts récents</message>
 <message id="Lms.Explore.ArtistsInfo.most-played">Artistes populaires</message>
 
 <!--Explore:Release-->
+<message id="Lms.Explore.ReleaseInfo.similar-releases">Albums similaires</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 
 <!--Explore:Releases-->

@@ -50,15 +50,13 @@ namespace CoverArt {
 
 Grabber::Grabber()
 {
-	if (!_defaultCover.load( Wt::WApplication::instance()->docRoot() + "/images/unknown-cover.jpg"))
-		throw LmsException("Cannot read default cover file");
 }
 
-Grabber&
-Grabber::instance()
+void
+Grabber::setDefaultCover(boost::filesystem::path p)
 {
-	static Grabber instance;
-	return instance;
+	if (!_defaultCover.load(p))
+		throw LmsException("Cannot read default cover file '" + p.string() + "'");
 }
 
 Image::Image

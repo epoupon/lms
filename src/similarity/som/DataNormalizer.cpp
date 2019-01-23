@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include <sstream>
 
 namespace SOM
 {
@@ -47,6 +48,11 @@ variance(const std::vector<T>& vec)
 DataNormalizer::DataNormalizer(std::size_t inputDimCount)
 : _inputDimCount(inputDimCount)
 {
+}
+
+DataNormalizer::DataNormalizer(const std::string& data)
+{
+	serializeFrom(data);
 }
 
 void
@@ -95,6 +101,34 @@ DataNormalizer::normalizeData(InputVector& a) const
 	{
 		a[dimId] = normalizeValue(a[dimId], dimId);
 	}
+}
+
+std::string
+DataNormalizer::serializeTo() const
+{
+	std::ostringstream oss;
+
+	oss << _inputDimCount << " ";
+	for (std::size_t i = 0; i < _inputDimCount; ++i)
+		oss << _minmax[i].min << " " << _minmax[i].max;
+
+	return oss.str();
+}
+
+void
+DataNormalizer::serializeFrom(const std::string& data)
+{
+	std::istringstream iss(data);
+
+	iss >> _inputDimCount;
+	_minmax.resize(_inputDimCount);
+
+	for (std::size_t i = 0; i < _inputDimCount; ++i)
+	{
+		iss >> _minmax[i].min;
+		iss >> _minmax[i].max;
+	}
+
 }
 
 void

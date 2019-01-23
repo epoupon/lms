@@ -19,33 +19,15 @@
 
 #include "ArtistsInfoView.hpp"
 
-#include <Wt/WAnchor.h>
 #include <Wt/WLocalDateTime.h>
 
 #include "database/Artist.hpp"
 #include "database/TrackList.hpp"
-
 #include "utils/Utils.hpp"
-
+#include "ArtistLink.hpp"
 #include "LmsApplication.hpp"
 
 using namespace Database;
-
-namespace {
-
-using namespace UserInterface;
-
-void addEntries(Wt::WContainerWidget *container, const std::vector<Artist::pointer>& artists)
-{
-	for (auto artist : artists)
-	{
-		Wt::WTemplate* entry = container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.ArtistsInfo.template.entry"));
-
-		entry->bindWidget("name", LmsApplication::createArtistAnchor(artist));
-	}
-}
-
-}
 
 namespace UserInterface {
 
@@ -80,7 +62,8 @@ ArtistsInfo::refreshRecentlyAdded()
 	auto artists = Artist::getLastAdded(LmsApp->getDboSession(), after, 5);
 
 	_recentlyAddedContainer->clear();
-	addEntries(_recentlyAddedContainer, artists);
+	for (auto artist : artists)
+		_recentlyAddedContainer->addNew<ArtistLink>(artist);
 }
 
 void
@@ -90,7 +73,8 @@ ArtistsInfo::refreshMostPlayed()
 	auto artists = LmsApp->getUser()->getPlayedTrackList()->getTopArtists(5);
 
 	_mostPlayedContainer->clear();
-	addEntries(_mostPlayedContainer, artists);
+	for (auto artist : artists)
+		_mostPlayedContainer->addNew<ArtistLink>(artist);
 }
 
 } // namespace UserInterface

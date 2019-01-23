@@ -19,19 +19,20 @@
 
 #include "DatabaseSettingsView.hpp"
 
-#include <Wt/WString.h>
-#include <Wt/WPushButton.h>
 #include <Wt/WComboBox.h>
+#include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
+#include <Wt/WPushButton.h>
+#include <Wt/WString.h>
+#include <Wt/WStringListModel.h>
 #include <Wt/WTemplateFormView.h>
 
-#include <Wt/WFormModel.h>
-#include <Wt/WStringListModel.h>
-
-#include "common/Validators.hpp"
+#include "database/Cluster.hpp"
+#include "main/Services.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
+#include "common/Validators.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
@@ -287,7 +288,7 @@ DatabaseSettingsView::refreshView()
 		{
 			model->saveData();
 
-			LmsApp->getMediaScanner().reschedule();
+			getServices().mediaScanner->reschedule();
 			LmsApp->notifyMsg(MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}
 
@@ -304,7 +305,7 @@ DatabaseSettingsView::refreshView()
 
 	immScanBtn->clicked().connect([=] ()
 	{
-		LmsApp->getMediaScanner().scheduleImmediateScan();
+		getServices().mediaScanner->scheduleImmediateScan();
 		LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
 	});
 

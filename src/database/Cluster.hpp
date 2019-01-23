@@ -37,7 +37,7 @@ class ScanSettings;
 class Cluster : public Wt::Dbo::Dbo<Cluster>
 {
 	public:
-		typedef Wt::Dbo::ptr<Cluster> pointer;
+		using pointer = Wt::Dbo::ptr<Cluster>;
 
 		Cluster();
 		Cluster(Wt::Dbo::ptr<ClusterType> type, std::string name);
@@ -50,7 +50,7 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name);
 
 		// Accessors
-		const std::string& getName(void) const { return _name; }
+		const std::string& getName() const { return _name; }
 		Wt::Dbo::ptr<ClusterType> getType() const { return _clusterType; }
 		std::size_t getCount() const { return _tracks.size(); }
 		std::vector<Wt::Dbo::ptr<Track>> getTracks(int offset, int limit) const;

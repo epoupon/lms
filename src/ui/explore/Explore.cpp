@@ -23,14 +23,18 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
+#include "database/Artist.hpp"
+#include "database/Release.hpp"
 #include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"
 
+#include "ArtistInfoView.hpp"
 #include "ArtistsInfoView.hpp"
 #include "ArtistsView.hpp"
 #include "ArtistView.hpp"
 #include "Filters.hpp"
+#include "ReleaseInfoView.hpp"
 #include "ReleasesInfoView.hpp"
 #include "ReleasesView.hpp"
 #include "ReleaseView.hpp"
@@ -79,7 +83,9 @@ handleInfoPathChange(Wt::WStackedWidget* stack)
 {
 	enum Idx
 	{
-		IdxArtists = 0,
+		IdxArtist = 0,
+		IdxArtists,
+		IdxRelease,
 		IdxReleases,
 		IdxTracks,
 	};
@@ -87,9 +93,9 @@ handleInfoPathChange(Wt::WStackedWidget* stack)
 	static const std::map<std::string, int> indexes =
 	{
 		{ "/artists",		IdxArtists },
-		{ "/artist",		IdxArtists },
+		{ "/artist",		IdxArtist },
 		{ "/releases",		IdxReleases },
-		{ "/release",		IdxReleases },
+		{ "/release",		IdxRelease },
 		{ "/tracks",		IdxTracks },
 	};
 
@@ -151,8 +157,14 @@ Explore::Explore()
 	// Info
 	Wt::WStackedWidget* infoStack = bindNew<Wt::WStackedWidget>("info");
 
+	auto artistInfo = std::make_unique<ArtistInfo>();
+	infoStack->addWidget(std::move(artistInfo));
+
 	auto artistsInfo = std::make_unique<ArtistsInfo>();
 	infoStack->addWidget(std::move(artistsInfo));
+
+	auto releaseInfo = std::make_unique<ReleaseInfo>();
+	infoStack->addWidget(std::move(releaseInfo));
 
 	auto releasesInfo = std::make_unique<ReleasesInfo>();
 	infoStack->addWidget(std::move(releasesInfo));

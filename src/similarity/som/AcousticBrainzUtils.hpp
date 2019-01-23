@@ -19,36 +19,13 @@
 
 #pragma once
 
-#include <vector>
-#include <ostream>
+#include <map>
+#include <set>
+#include <string>
 
-#include "SOM.hpp"
-
-namespace SOM
+namespace AcousticBrainz
 {
 
-class DataNormalizer
-{
-	public:
-		DataNormalizer(std::size_t inputDimCount);
+	bool extractFeatures(const std::string& MBID, const std::set<std::string>& featuresName, std::map<std::string, double>& features);
+}
 
-		void computeNormalizationFactors(const std::vector<InputVector>& dataSamples);
-
-		void normalizeData(InputVector& data) const;
-
-		void dump(std::ostream& os) const;
-
-	private:
-		InputVector::value_type normalizeValue(InputVector::value_type value, std::size_t dimensionId) const;
-
-		std::size_t _inputDimCount;
-
-		struct minmax
-		{
-			InputVector::value_type min;
-			InputVector::value_type max;
-		};
-		std::vector<minmax> _minmax; // Indexed min/max used to normalize data
-};
-
-} // namespace SOM

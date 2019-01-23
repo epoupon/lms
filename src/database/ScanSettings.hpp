@@ -27,6 +27,7 @@
 namespace Database {
 
 class ClusterType;
+
 class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 {
 	public:
@@ -38,8 +39,6 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 			Weekly,
 			Monthly
 		};
-
-		ScanSettings() {}
 
 		static pointer get(Wt::Dbo::Session& session);
 

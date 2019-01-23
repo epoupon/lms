@@ -19,53 +19,15 @@
 
 #include "ReleasesInfoView.hpp"
 
-#include <Wt/WAnchor.h>
-#include <Wt/WImage.h>
 #include <Wt/WLocalDateTime.h>
-#include <Wt/WTemplate.h>
 
 #include "database/Release.hpp"
 #include "database/TrackList.hpp"
-
 #include "resource/ImageResource.hpp"
-
+#include "ReleaseLink.hpp"
 #include "LmsApplication.hpp"
 
 using namespace Database;
-
-namespace {
-
-using namespace UserInterface;
-
-void addEntries(Wt::WContainerWidget* container, const std::vector<Release::pointer>& releases)
-{
-	for (auto release : releases)
-	{
-		Wt::WTemplate* entry = container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.ReleasesInfo.template.entry"));
-
-		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
-
-		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
-		auto cover = std::make_unique<Wt::WImage>();
-		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 48));
-		cover->setWidth(48);
-		anchor->setImage(std::move(cover));
-
-		auto artists = release->getArtists();
-		if (artists.size() > 1)
-		{
-			entry->setCondition("if-has-artist", true);
-			entry->bindString("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
-		}
-		else if (artists.size() == 1)
-		{
-			entry->setCondition("if-has-artist", true);
-			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
-		}
-	}
-}
-
-} // namespace
 
 namespace UserInterface {
 
@@ -101,7 +63,8 @@ ReleasesInfo::refreshRecentlyAdded()
 	auto releases = Release::getLastAdded(LmsApp->getDboSession(), after, 5);
 
 	_recentlyAddedContainer->clear();
-	addEntries(_recentlyAddedContainer, releases);
+	for (auto release : releases)
+		_recentlyAddedContainer->addNew<ReleaseLink>(release);
 }
 
 void
@@ -112,7 +75,8 @@ ReleasesInfo::refreshMostPlayed()
 	auto releases = LmsApp->getUser()->getPlayedTrackList()->getTopReleases(5);
 
 	_mostPlayedContainer->clear();
-	addEntries(_mostPlayedContainer, releases);
+	for (auto release : releases)
+		_mostPlayedContainer->addNew<ReleaseLink>(release);
 }
 
 } // namespace UserInterface

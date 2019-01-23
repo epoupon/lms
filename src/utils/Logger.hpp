@@ -44,6 +44,7 @@ enum class Module
 	METADATA,
 	REMOTE,
 	SERVICE,
+	SIMILARITY,
 	TRANSCODE,
 	UI,
 };

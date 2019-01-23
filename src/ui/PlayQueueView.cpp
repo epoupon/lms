@@ -19,15 +19,12 @@
 
 #include "PlayQueueView.hpp"
 
-#include <random>
-
-#include <Wt/WAnchor.h>
 #include <Wt/WText.h>
 
-#include "utils/Logger.hpp"
-
 #include "database/TrackList.hpp"
-
+#include "main/Services.hpp"
+#include "similarity/SimilaritySearcher.hpp"
+#include "utils/Logger.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
@@ -385,45 +382,26 @@ PlayQueue::addSome()
 void
 PlayQueue::addRadioTrack()
 {
-	auto now = std::chrono::system_clock::now();
-	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
-
 	auto tracklist = getTrackList();
 
-	std::set<Database::IdType> trackIds;
-	{
-		auto ids = tracklist->getTrackIds();
-		trackIds = std::set<Database::IdType>(ids.begin(), ids.end());
-	}
-
-	// Get all the tracks of the tracklist, get the cluster that is mostly used
-	// and reuse it to get the next track
-	auto clusters = tracklist->getClusters();
-	if (clusters.empty())
+	std::vector<Database::IdType> trackIds = getTrackList()->getTrackIds();
+	if (trackIds.empty())
 		return;
 
-	for (auto cluster : clusters)
+	auto res = getServices().similaritySearcher->getSimilarTracks(trackIds, 1);
+	for (auto trackId : res)
 	{
-		std::set<Database::IdType> clusterTrackIds = cluster->getTrackIds();
-
-		std::set<Database::IdType> candidateTrackIds;
-		std::set_difference(clusterTrackIds.begin(), clusterTrackIds.end(),
-				trackIds.begin(), trackIds.end(),
-				std::inserter(candidateTrackIds, candidateTrackIds.end()));
-
-		if (candidateTrackIds.empty())
-			continue;
-
-		std::uniform_int_distribution<int> dist(0, candidateTrackIds.size() - 1);
-
-		auto trackToAdd = Database::Track::getById(LmsApp->getDboSession(), *std::next(candidateTrackIds.begin(), dist(randGenerator)));
+		auto trackToAdd = Database::Track::getById(LmsApp->getDboSession(), trackId);
 		enqueueTrack(trackToAdd);
-
-		return;
 	}
 
-	LMS_LOG(UI, INFO) << "No more track to be added!";
 }
+
+void addRadioTrackFromSimilarity(std::shared_ptr<Similarity::Searcher> similaritySearcher)
+{
+
+}
+
 
 } // namespace UserInterface
 

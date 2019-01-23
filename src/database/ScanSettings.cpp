@@ -45,7 +45,7 @@ namespace Database {
 ScanSettings::pointer
 ScanSettings::get(Wt::Dbo::Session& session)
 {
-	ScanSettings::pointer settings = session.find<ScanSettings>();
+	pointer settings = session.find<ScanSettings>();
 	if (!settings)
 	{
 		settings = session.add(std::make_unique<ScanSettings>());
@@ -81,16 +81,17 @@ ScanSettings::setClusterTypes(const std::set<std::string>& clusterTypeNames)
 	assert(session());
 
 	// Create any missing cluster type
-	for (auto clusterTypeName : clusterTypeNames)
+	for (const auto& clusterTypeName : clusterTypeNames)
 	{
 		auto clusterType = ClusterType::getByName(*session(), clusterTypeName);
 		if (!clusterType)
 		{
 			LMS_LOG(DB, INFO) << "Creating cluster type " << clusterTypeName;
 			clusterType = ClusterType::create(*session(), clusterTypeName);
+			_clusterTypes.insert(clusterType);
+
 			needRescan = true;
 		}
-		_clusterTypes.insert(clusterType);
 	}
 
 	// Delete no longer existing cluster types
@@ -101,13 +102,13 @@ ScanSettings::setClusterTypes(const std::set<std::string>& clusterTypeNames)
 		{
 			LMS_LOG(DB, INFO) << "Deleting cluster type " << clusterType->getName();
 			clusterType.remove();
-			needRescan = true;
 		}
 	}
 
 	if (needRescan)
 		_scanVersion += 1;
 }
+
 
 } // namespace Database
 

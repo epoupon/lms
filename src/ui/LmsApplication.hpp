@@ -20,25 +20,29 @@
 #ifndef LMS_APPLICATION_HPP
 #define LMS_APPLICATION_HPP
 
+#include <boost/optional.hpp>
+
 #include <Wt/WApplication.h>
 #include <Wt/Dbo/SqlConnectionPool.h>
 
 #include "database/DatabaseHandler.hpp"
 #include "scanner/MediaScanner.hpp"
 
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Release.hpp"
-
 #include "LmsApplicationGroup.hpp"
 #include "Auth.hpp"
+
+namespace Database {
+	class Artist;
+	class Cluster;
+	class Release;
+}
 
 namespace UserInterface {
 
 class AudioResource;
 class ImageResource;
 
-// Events that can be listen to anywhere in the application
+// Events that can be listen from anywhere in the application
 struct Events
 {
 	// Events relative to group
@@ -67,10 +71,10 @@ enum class MsgType
 class LmsApplication : public Wt::WApplication
 {
 	public:
-		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups, Scanner::MediaScanner& scanner);
+		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups);
 
 		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env,
-				Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups, Scanner::MediaScanner& scanner);
+				Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups);
 		static LmsApplication* instance();
 
 		// Session application data
@@ -83,8 +87,6 @@ class LmsApplication : public Wt::WApplication
 		Database::User::pointer getUser() { return _db.getCurrentUser(); }
 		Wt::WString getUserIdentity() { return _userIdentity; }
 
-		Scanner::MediaScanner& getMediaScanner() { return _scanner; }
-
 		Events& getEvents() { return _events; }
 
 		// Utils
@@ -94,11 +96,11 @@ class LmsApplication : public Wt::WApplication
 		void post(std::function<void()> func);
 		void notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds(4000));
 
-		static Wt::WLink createArtistLink(Database::Artist::pointer artist);
-		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Database::Artist::pointer artist, bool addText = true);
-		static Wt::WLink createReleaseLink(Database::Release::pointer release);
-		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::Release::pointer release, bool addText = true);
-		static std::unique_ptr<Wt::WTemplate> createCluster(Database::Cluster::pointer cluster, bool canDelete = false);
+		static Wt::WLink createArtistLink(Wt::Dbo::ptr<Database::Artist> artist);
+		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Wt::Dbo::ptr<Database::Artist> artist, bool addText = true);
+		static Wt::WLink createReleaseLink(Wt::Dbo::ptr<Database::Release> release);
+		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Wt::Dbo::ptr<Database::Release> release, bool addText = true);
+		static std::unique_ptr<Wt::WTemplate> createCluster(Wt::Dbo::ptr<Database::Cluster> cluster, bool canDelete = false);
 
 		// Signal emitted just before the session ends (user may already be logged out)
 		Wt::Signal<>&	preQuit() { return _preQuit; }
@@ -119,8 +121,7 @@ class LmsApplication : public Wt::WApplication
 		LmsApplicationGroupContainer&   _appGroups;
 		Events			_events;
 		Wt::WString		_userIdentity;
-		Auth*			_auth;
-		Scanner::MediaScanner&	_scanner;
+		Auth*			_auth = nullptr;
 		std::shared_ptr<ImageResource>	_imageResource;
 		std::shared_ptr<AudioResource>	_audioResource;
 		bool			_isAdmin = false;

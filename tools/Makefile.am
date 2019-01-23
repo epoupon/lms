@@ -1,2 +1,2 @@
-SUBDIRS = metadata clusterer
+SUBDIRS = feature-extractor metadata
 

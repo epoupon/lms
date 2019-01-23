@@ -26,10 +26,11 @@
 
 #include <boost/asio/system_timer.hpp>
 
-#include "metadata/TagLibParser.hpp"
-
 #include "database/ScanSettings.hpp"
 #include "database/DatabaseHandler.hpp"
+#include "metadata/TagLibParser.hpp"
+
+#include "MediaScannerAddon.hpp"
 
 namespace Scanner {
 
@@ -38,6 +39,8 @@ class MediaScanner
 	public:
 
 		MediaScanner(Wt::Dbo::SqlConnectionPool& connectionPool);
+
+		void setAddon(MediaScannerAddon& addon);
 
 		void start();
 		void stop();
@@ -83,10 +86,10 @@ class MediaScanner
 		// Helpers
 		void refreshScanSettings();
 
-		void removeMissingTracks( Stats& stats );
+		void removeMissingTracks(Stats& stats);
 		void removeOrphanEntries();
-		void checkDuplicatedAudioFiles( Stats& stats );
-		void scanAudioFile( const boost::filesystem::path& file, bool forceScan, Stats& stats);
+		void checkDuplicatedAudioFiles(Stats& stats);
+		void scanAudioFile(const boost::filesystem::path& file, bool forceScan, Stats& stats);
 
 		bool			_running;
 		Wt::WIOService		_ioService;
@@ -105,6 +108,8 @@ class MediaScanner
 		boost::filesystem::path			_mediaDirectory;
 
 		MetaData::TagLibParser 	_metadataParser;
+
+		std::vector<MediaScannerAddon*> _addons;
 
 }; // class MediaScanner
 

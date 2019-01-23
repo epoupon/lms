@@ -31,6 +31,11 @@
 #include "database/TrackList.hpp"
 #include "database/Track.hpp"
 
+namespace Similarity
+{
+	class Finder;
+}
+
 namespace UserInterface {
 
 class PlayQueue : public Wt::WTemplate
@@ -68,6 +73,9 @@ class PlayQueue : public Wt::WTemplate
 
 		void load(std::size_t pos, bool play);
 		void stop();
+
+		void addRadioTrackFromSimilarity(std::shared_ptr<Similarity::Finder> similarityFinder);
+		void addRadioTrackFromClusters();
 
 		bool _repeatAll = false;
 		bool _radioMode = false;

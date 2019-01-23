@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <list>
+#include <map>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -62,4 +63,35 @@ boost::optional<T> readAs(const std::string& str)
 
 std::string
 replaceInString(std::string str, const std::string& from, const std::string& to);
+
+// warning: not efficient
+template<class In, class Out, class U = typename std::iterator_traits<In>::value_type>
+void uniqueAndSortedByOccurence(In first, In last, Out out)
+{
+	std::map<U, std::size_t> occurencesMap;
+
+	for (In it = first; it != last; ++it)
+	{
+		if (occurencesMap.find(*it) == occurencesMap.end())
+			occurencesMap[*it] = 0;
+
+		occurencesMap[*it]++;
+	}
+
+	struct Item
+	{
+		U elem;
+		std::size_t count;
+	};
+
+	std::vector<Item> occurencesVector;
+	for (const auto& occurence : occurencesMap)
+		occurencesVector.emplace_back(Item{occurence.first, occurence.second});
+
+	std::sort(occurencesVector.begin(), occurencesVector.end(), [](const auto& a, const auto& b) { return a.count > b.count;});
+
+	for (const auto& occurence : occurencesVector)
+		*out++ = occurence.elem;
+}
+
 

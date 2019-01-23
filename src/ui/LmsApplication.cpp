@@ -31,33 +31,33 @@
 #include <Wt/Auth/Identity.h>
 
 #include "config/config.h"
+#include "cover/CoverArtGrabber.hpp"
+#include "database/Artist.hpp"
+#include "database/Cluster.hpp"
+#include "database/Release.hpp"
+#include "explore/Explore.hpp"
+#include "main/Services.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
-
-#include "explore/Explore.hpp"
-#include "MediaPlayer.hpp"
-#include "PlayHistoryView.hpp"
-#include "PlayQueueView.hpp"
-#include "SettingsView.hpp"
 
 #include "admin/InitWizardView.hpp"
 #include "admin/DatabaseSettingsView.hpp"
 #include "admin/UserView.hpp"
 #include "admin/UsersView.hpp"
-
 #include "resource/ImageResource.hpp"
 #include "resource/AudioResource.hpp"
+#include "MediaPlayer.hpp"
+#include "PlayHistoryView.hpp"
+#include "PlayQueueView.hpp"
+#include "SettingsView.hpp"
+
 
 namespace UserInterface {
 
 std::unique_ptr<Wt::WApplication>
-LmsApplication::create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups, Scanner::MediaScanner& scanner)
+LmsApplication::create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups)
 {
-	/*
-	 * You could read information from the environment to decide whether
-	 * the user has permission to start a new application
-	 */
-	return std::make_unique<LmsApplication>(env, connectionPool, appGroups, scanner);
+	return std::make_unique<LmsApplication>(env, connectionPool, appGroups);
 }
 
 LmsApplication*
@@ -66,19 +66,12 @@ LmsApplication::instance()
 	return reinterpret_cast<LmsApplication*>(Wt::WApplication::instance());
 }
 
-/*
- * The env argument contains information about the new session, and
- * the initial request. It must be passed to the Wt::WApplication
- * constructor so it is typically also an argument for your custom
- * application constructor.
-*/
-LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups, Scanner::MediaScanner& scanner)
+LmsApplication::LmsApplication(const Wt::WEnvironment& env,
+		Wt::Dbo::SqlConnectionPool& connectionPool,
+		LmsApplicationGroupContainer& appGroups)
 : Wt::WApplication(env),
   _db(connectionPool),
-  _appGroups(appGroups),
-  _scanner(scanner),
-  _imageResource(nullptr),
-  _audioResource(nullptr)
+  _appGroups(appGroups)
 {
 	auto  bootstrapTheme = std::make_unique<Wt::WBootstrapTheme>();
 	bootstrapTheme->setVersion(Wt::BootstrapVersion::v3);
@@ -96,6 +89,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "admin-users");
 	messageResourceBundle().use(appRoot() + "admin-initwizard");
 	messageResourceBundle().use(appRoot() + "artist");
+	messageResourceBundle().use(appRoot() + "artistinfo");
+	messageResourceBundle().use(appRoot() + "artistlink");
 	messageResourceBundle().use(appRoot() + "artists");
 	messageResourceBundle().use(appRoot() + "artistsinfo");
 	messageResourceBundle().use(appRoot() + "explore");
@@ -105,12 +100,17 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnecti
 	messageResourceBundle().use(appRoot() + "playqueue");
 	messageResourceBundle().use(appRoot() + "playhistory");
 	messageResourceBundle().use(appRoot() + "release");
+	messageResourceBundle().use(appRoot() + "releaseinfo");
+	messageResourceBundle().use(appRoot() + "releaselink");
 	messageResourceBundle().use(appRoot() + "releases");
 	messageResourceBundle().use(appRoot() + "releasesinfo");
 	messageResourceBundle().use(appRoot() + "settings");
 	messageResourceBundle().use(appRoot() + "templates");
 	messageResourceBundle().use(appRoot() + "tracks");
 	messageResourceBundle().use(appRoot() + "tracksinfo");
+
+	// hack since Server does not expose the docRoot
+	getServices().coverArtGrabber->setDefaultCover(Wt::WApplication::instance()->docRoot() + "/images/unknown-cover.jpg");
 
 	// Require js here to avoid async problems
 	requireJQuery("/js/jquery-1.10.2.min.js");
@@ -462,7 +462,7 @@ LmsApplication::createHome()
 
 	// Events from MediaScanner
 	std::string sessionId = LmsApp->sessionId();
-	_scanner.scanComplete().connect([=] (Scanner::MediaScanner::Stats stats)
+	getServices().mediaScanner->scanComplete().connect([=] (Scanner::MediaScanner::Stats stats)
 	{
 		// Runs from media scanner context
 		Wt::WServer::instance()->post(sessionId, [=]

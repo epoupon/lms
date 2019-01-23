@@ -76,11 +76,15 @@
 <message id="Lms.Explore.value">Value</message>
 <message id="Lms.Explore.various-artists">Various artists</message>
 
+<!--Explore:Artist-->
+<message id="Lms.Explore.ArtistInfo.similar-artists">Similar artists</message>
+
 <!--Explore:Artists-->
 <message id="Lms.Explore.ArtistsInfo.recently-added">Recently added</message>
 <message id="Lms.Explore.ArtistsInfo.most-played">Top artists</message>
 
 <!--Explore:Release-->
+<message id="Lms.Explore.ReleaseInfo.similar-releases">Similar albums</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 
 <!--Explore:Releases-->

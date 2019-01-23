@@ -32,17 +32,18 @@ namespace CoverArt {
 class Grabber
 {
 	public:
+		Grabber();
 		Grabber(const Grabber&) = delete;
 		Grabber& operator=(const Grabber&) = delete;
+		Grabber(Grabber&&) = delete;
+		Grabber& operator=(Grabber&&) = delete;
 
-		static Grabber& instance();
+		void			setDefaultCover(boost::filesystem::path defaultCoverPath);
 
 		std::vector<uint8_t>	getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, Image::Format format, std::size_t size);
 		std::vector<uint8_t>	getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, Image::Format format, std::size_t size);
 
 	private:
-
-		Grabber();
 
 		Image::Image		getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t size);
 		Image::Image		getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t size);

@@ -23,6 +23,8 @@
 #include <ostream>
 #include <functional>
 
+#include "Matrix.hpp"
+
 #include "utils/Exception.hpp"
 
 namespace SOM
@@ -39,19 +41,20 @@ class SOMException : public LmsException
 		SOMException(const std::string& msg) : LmsException(msg) {}
 };
 
-// Top Left is (0,0)
-struct Coords
-{
-	std::size_t x;
-	std::size_t y;
-};
 
 class Network
 {
 	public:
 
+		// Init a network with random values
 		Network(std::size_t width, std::size_t height, std::size_t inputDimCount);
 
+		// Init a network with serialized values
+		Network(const std::string& data);
+
+		std::size_t getWidth() const { return _refVectors.getWidth(); }
+		std::size_t getHeight() const { return _refVectors.getHeight(); }
+		std::size_t getInputDimCount() const {return _inputDimCount;}
 		// Set weight for each dimension (default is 1 for each weight)
 		void setDataWeights(const InputVector& weights);
 
@@ -85,21 +88,19 @@ class Network
 		using NeighborhoodFunc = std::function<InputVector::value_type(InputVector::value_type /* norm(Coords - CoordMatchingRefVector) */, Progress)>;
 		void setNeighborhoodFunc(NeighborhoodFunc neighborhoodFunc);
 
+		std::string serializeTo() const;
+
 	private:
 
-		InputVector& getRefVector(std::size_t x, std::size_t y);
-		const InputVector& getRefVector(std::size_t x, std::size_t y) const;
-		const InputVector& getRefVector(Coords coords) const { return getRefVector(coords.x, coords.y); }
+		void serializeFrom(const std::string& data);
+
 		Coords getClosestRefVector(const InputVector& data) const;
 
 		void updateRefVectors(Coords closestRefVectorCoords, const InputVector& input, Progress progress);
 
-		std::size_t _width;
-		std::size_t _height;
 		std::size_t _inputDimCount;
-
-		InputVector _weights;
-		std::vector<InputVector> _refVectors; // reference vectors
+		InputVector _weights;	// weight for each dimension
+		Matrix<InputVector> _refVectors;
 
 		DistanceFunc _distanceFunc;
 		LearningFactorFunc _learningFactorFunc;

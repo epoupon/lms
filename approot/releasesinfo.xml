@@ -9,22 +9,4 @@
 	${recently-added}
 </message>
 
-<message id="Lms.Explore.ReleasesInfo.template.entry">
-	<div class="row Lms-explore-releasesinfo-entry">
-		<div class="col-xs-12">
-			<div class="media">
-				<div class="media-left media-middle">
-					${cover class="media-object"}
-				</div>
-				<div class="media-body media-middle">
-					<div class="media-heading">
-						${release-name}
-					</div>
-					${<if-has-artist>}<small><i>${artist-name}</i></small>${</if-has-artist>}
-				</div>
-			</div>
-		</div>
-	</div>
-</message>
-
 </messages>

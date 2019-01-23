@@ -26,6 +26,7 @@
 #include "Artist.hpp"
 #include "Cluster.hpp"
 #include "Release.hpp"
+#include "TrackFeature.hpp"
 #include "SqlQuery.hpp"
 
 namespace Database {
@@ -107,12 +108,37 @@ Track::getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int limit)
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+std::vector<Track::pointer>
+Track::getAllWithMBIDAndMissingFeatures(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::collection<pointer> res = session.query<pointer>
+		("SELECT t FROM track t")
+		.where("LENGTH(t.mbid) > 0")
+		.where("NOT EXISTS (SELECT * FROM track_feature t_f WHERE t_f.track_id = t.id)");
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
+std::vector<Track::pointer>
+Track::getAllWithFeatures(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::collection<pointer> res = session.query<pointer>
+		("SELECT t FROM track t")
+		.where("EXISTS (SELECT * from track_feature t_f WHERE t_f.track_id = t.id)");
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
 std::vector<Cluster::pointer>
 Track::getClusters(void) const
 {
 	std::vector< Cluster::pointer > clusters;
 	std::copy(_clusters.begin(), _clusters.end(), std::back_inserter(clusters));
 	return clusters;
+}
+
+bool
+Track::hasTrackFeatures() const
+{
+	return !_trackFeatures.empty();
 }
 
 static
@@ -234,6 +260,18 @@ boost::optional<std::string>
 Track::getCopyrightURL() const
 {
 	return _copyrightURL != "" ? boost::make_optional<std::string>(_copyrightURL) : boost::none;
+}
+
+Wt::Dbo::ptr<TrackFeature>
+Track::getTrackFeature(Wt::Dbo::ptr<TrackFeatureType> type) const
+{
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	return session()->find<TrackFeature>()
+		.where("type_id = ?").bind(type.id())
+		.where("track_id = ?").bind(self()->id());
 }
 
 std::vector<std::vector<Cluster::pointer>>

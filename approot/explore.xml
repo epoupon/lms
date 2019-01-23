@@ -3,12 +3,12 @@
 
 <message id="Lms.Explore.template">
 	<div class="row">
-		<div class="col-lg-4 col-lg-push-8">
-			${filters class="Lms-explore-filters"}
-			${info class="Lms-explore-info hidden-md hidden-xs"}
+		<div class="col-lg-8">
+			${contents class="Lms-explore-contents"}
 		</div>
-		<div class="col-lg-8 col-lg-pull-4">
-			${contents}
+		<div class="col-lg-4">
+			${filters class="Lms-explore-filters"}
+			${info class="Lms-explore-info"}
 		</div>
 	</div>
 </message>

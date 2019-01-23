@@ -27,13 +27,11 @@
 #include <Wt/WLocalDateTime.h>
 
 #include "cover/CoverArtGrabber.hpp"
-
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Track.hpp"
-
 #include "utils/Logger.hpp"
 #include "utils/Path.hpp"
 #include "utils/Utils.hpp"
@@ -199,6 +197,12 @@ _db(connectionPool)
 }
 
 void
+MediaScanner::setAddon(MediaScannerAddon& addon)
+{
+	_addons.push_back(&addon);
+}
+
+void
 MediaScanner::restart(void)
 {
 	stop();
@@ -332,9 +336,11 @@ MediaScanner::scan(boost::system::error_code err)
 
 	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.scanErrors << ", not imported = " << stats.incompleteScans << "), duplicates = " << stats.nbDuplicates() << " (hash = " << stats.duplicateHashes << ", mbid = " << stats.duplicateMBID << ")";
 
-	// Save the last scan only if it has been completed
 	if (_running)
 	{
+		for (auto& addon : _addons)
+			addon->preScanComplete();
+
 		scheduleScan();
 
 		scanComplete().emit(stats);
@@ -365,6 +371,11 @@ MediaScanner::refreshScanSettings()
 			[](ClusterType::pointer clusterType) -> std::string { return clusterType->getName(); });
 
 	_metadataParser.setClusterTypeNames(clusterTypeNames);
+
+	transaction.commit();
+
+	for (auto& addon : _addons)
+		addon->refreshSettings();
 }
 
 void
@@ -492,12 +503,14 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 
 	// If file already exist, update data
 	// Otherwise, create it
+	bool trackAdded = false;
 	if (!track)
 	{
 		// Create a new song
 		track = Track::create(_db.getSession(), file);
 		LMS_LOG(DBUPDATER, INFO) << "Adding '" << file.string() << "'";
 		stats.additions++;
+		trackAdded = true;
 	}
 	else
 	{
@@ -583,6 +596,14 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	}
 
 	transaction.commit();
+
+	for (auto& addon : _addons)
+	{
+		if (trackAdded)
+			addon->trackAdded(track.id());
+		else
+			addon->trackUpdated(track.id());
+	}
 }
 
 void
@@ -752,6 +773,5 @@ MediaScanner::checkDuplicatedAudioFiles(Stats& stats)
 
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files done!";
 }
-
 
 } // namespace Scanner

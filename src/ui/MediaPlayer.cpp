@@ -22,8 +22,9 @@
 #include "av/AvInfo.hpp"
 #include "utils/Logger.hpp"
 
+#include "database/Artist.hpp"
+#include "database/Release.hpp"
 #include "database/Track.hpp"
-
 
 #include "resource/ImageResource.hpp"
 #include "resource/AudioResource.hpp"
