@@ -7,7 +7,7 @@ lms_SOURCES = \
 	$(srcdir)/database/Artist.cpp				\
 	$(srcdir)/database/Cluster.cpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
-	$(srcdir)/database/TrackFeature.cpp			\
+	$(srcdir)/database/TrackFeatures.cpp			\
 	$(srcdir)/database/TrackList.cpp			\
 	$(srcdir)/database/Release.cpp				\
 	$(srcdir)/database/ScanSettings.cpp			\
@@ -23,11 +23,11 @@ lms_SOURCES = \
 	$(srcdir)/scanner/MediaScanner.cpp			\
 	$(srcdir)/similarity/SimilaritySearcher.cpp		\
 	$(srcdir)/similarity/cluster/SimilarityClusterSearcher.cpp \
-	$(srcdir)/similarity/som/AcousticBrainzUtils.cpp	\
-	$(srcdir)/similarity/som/DataNormalizer.cpp		\
-	$(srcdir)/similarity/som/Network.cpp			\
-	$(srcdir)/similarity/som/SimilaritySOMScannerAddon.cpp	\
-	$(srcdir)/similarity/som/SimilaritySOMSearcher.cpp	\
+	$(srcdir)/similarity/features/SimilarityFeaturesScannerAddon.cpp	\
+	$(srcdir)/similarity/features/SimilarityFeaturesSearcher.cpp	\
+	$(srcdir)/similarity/features/som/AcousticBrainzUtils.cpp	\
+	$(srcdir)/similarity/features/som/DataNormalizer.cpp		\
+	$(srcdir)/similarity/features/som/Network.cpp			\
 	$(srcdir)/ui/Auth.cpp					\
 	$(srcdir)/ui/LmsApplication.cpp				\
 	$(srcdir)/ui/LmsApplicationGroup.cpp			\

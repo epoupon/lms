@@ -32,7 +32,6 @@ class DataNormalizer
 	public:
 
 		DataNormalizer(std::size_t inputDimCount);
-		DataNormalizer(const std::string& data);
 
 		void computeNormalizationFactors(const std::vector<InputVector>& dataSamples);
 

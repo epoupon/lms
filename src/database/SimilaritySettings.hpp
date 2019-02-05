@@ -23,42 +23,75 @@
 
 namespace Database {
 
-class TrackFeature;
-class TrackFeatureType;
+class SimilaritySettings;
 
-class SimilaritySettings : public Wt::Dbo::Dbo<SimilaritySettings>
+class SimilaritySettingsFeature :  public Wt::Dbo::Dbo<SimilaritySettingsFeature>
 {
 	public:
-		using pointer = Wt::Dbo::ptr<SimilaritySettings>;
+		using pointer = Wt::Dbo::ptr<SimilaritySettingsFeature>;
 
-		static pointer get(Wt::Dbo::Session& session);
+		SimilaritySettingsFeature() = default;
+		SimilaritySettingsFeature(Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight);
 
-		std::size_t getVersion() const { return _scanVersion; }
+		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight = 1);
 
-		std::vector<Wt::Dbo::ptr<TrackFeatureType>> getTrackFeatureTypes() const;
-		void setTrackFeatureTypes(const std::set<std::string>& featureTypeNames);
-
-		void setNetworkData(std::string data) { _refFeaturesData = data; }
-		const std::string& getNetworkData() const { return _refFeaturesData; }
-
-		void setNormalizationData(std::string data) { _normalizationData = data; }
-		const std::string& getNormalizationData() const { return _normalizationData; }
+		const std::string&	getName() const { return _name; } ;
+		std::size_t 		getNbDimensions() const { return static_cast<std::size_t>(_nbDimensions); }
+		double			getWeight() const { return _weight; }
 
 		template<class Action>
 		void persist(Action& a)
 		{
-			Wt::Dbo::field(a, _scanVersion,		"settings_version");
-			Wt::Dbo::field(a, _normalizationData,	"normalization_data");
-			Wt::Dbo::field(a, _refFeaturesData,	"ref_features_data");
-			Wt::Dbo::hasMany(a, _trackFeatureTypes, Wt::Dbo::ManyToOne, "similarity_settings");
+			Wt::Dbo::field(a, _name,		"name");
+			Wt::Dbo::field(a, _nbDimensions,	"dimension_count");
+			Wt::Dbo::field(a, _weight,		"weight");
+
+			Wt::Dbo::belongsTo(a, _settings, "similarity_settings", Wt::Dbo::OnDeleteCascade);
+		}
+
+	private:
+		std::string	_name;
+		int 		_nbDimensions;
+		double		_weight;
+
+		Wt::Dbo::ptr<SimilaritySettings> _settings;
+};
+
+class SimilaritySettings : public Wt::Dbo::Dbo<SimilaritySettings>
+{
+	public:
+
+		enum class PreferredMethod
+		{
+			Auto,
+			Features,
+			Clusters,
+		};
+
+		using pointer = Wt::Dbo::ptr<SimilaritySettings>;
+
+		// Utils
+		static pointer get(Wt::Dbo::Session& session);
+
+		// Accessors
+		std::size_t getVersion() const { return _settingsVersion; }
+		PreferredMethod getPreferredMethod() const { return _preferredMethod; }
+		std::vector<Wt::Dbo::ptr<SimilaritySettingsFeature>> getFeatures() const;
+
+		template<class Action>
+		void persist(Action& a)
+		{
+			Wt::Dbo::field(a, _settingsVersion,		"settings_version");
+			Wt::Dbo::field(a, _preferredMethod,		"preferred_method");
+
+			Wt::Dbo::hasMany(a, _features, Wt::Dbo::ManyToOne, "similarity_settings");
 		}
 
 	private:
 
-		int		_scanVersion = 0;
-		std::string	_normalizationData;
-		std::string	_refFeaturesData;
-		Wt::Dbo::collection<Wt::Dbo::ptr<TrackFeatureType>>	_trackFeatureTypes;
+		int			_settingsVersion = 0;
+		PreferredMethod		_preferredMethod = PreferredMethod::Auto;
+		Wt::Dbo::collection<Wt::Dbo::ptr<SimilaritySettingsFeature>> _features;
 };
 
 

@@ -388,7 +388,7 @@ PlayQueue::addRadioTrack()
 	if (trackIds.empty())
 		return;
 
-	auto res = getServices().similaritySearcher->getSimilarTracks(trackIds, 1);
+	auto res = getServices().similaritySearcher->getSimilarTracks(LmsApp->getDboSession(), std::set<Database::IdType>(trackIds.begin(), trackIds.end()), 1);
 	for (auto trackId : res)
 	{
 		auto trackToAdd = Database::Track::getById(LmsApp->getDboSession(), trackId);

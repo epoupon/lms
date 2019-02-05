@@ -19,25 +19,28 @@
 
 #pragma once
 
+#include <set>
 #include <Wt/Dbo/Session.h>
 
 #include "database/Types.hpp"
-#include "som/SimilaritySOMScannerAddon.hpp"
 
 namespace Similarity {
+
+class FeaturesScannerAddon;
 
 class Searcher
 {
 	public:
-		Searcher(SOMScannerAddon& somAddon);
+		Searcher(FeaturesScannerAddon& somAddon);
 
-		std::vector<Database::IdType> getSimilarTracks(const std::vector<Database::IdType>& tracksId, std::size_t maxCount);
+		// Closest results first
+		std::vector<Database::IdType> getSimilarTracks(Wt::Dbo::Session& session, const std::set<Database::IdType>& tracksId, std::size_t maxCount);
 		std::vector<Database::IdType> getSimilarReleases(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t maxCount);
 		std::vector<Database::IdType> getSimilarArtists(Wt::Dbo::Session& session, Database::IdType artistId, std::size_t maxCount);
 
 	private:
 
-		SOMScannerAddon& _somAddon;
+		FeaturesScannerAddon& _somAddon;
 };
 
 } // ns Similarity

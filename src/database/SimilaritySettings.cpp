@@ -22,53 +22,42 @@
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
-#include "TrackFeature.hpp"
-
-namespace {
-
-std::set<std::string> defaultTrackFeaturesNames =
-{
-	"lowlevel.average_loudness",
-	"lowlevel.barkbands_flatness_db.mean",
-	"lowlevel.dissonance.mean",
-	"lowlevel.dynamic_complexity",
-	"lowlevel.hfc.mean",				// GOOD
-	"lowlevel.melbands_crest.mean",
-	"lowlevel.melbands_kurtosis.mean",
-	"lowlevel.melbands_skewness.mean",
-	"lowlevel.melbands_spread.mean",
-	"lowlevel.pitch_salience.mean",
-	"lowlevel.pitch_salience.var",
-	"lowlevel.silence_rate_30dB.mean",
-	"lowlevel.silence_rate_60dB.mean",
-	"lowlevel.spectral_centroid.mean",
-	"lowlevel.spectral_complexity.mean",
-	"lowlevel.spectral_decrease.mean",
-	"lowlevel.spectral_energy.mean",
-	"lowlevel.spectral_energyband_high.mean",
-	"lowlevel.spectral_energyband_low.mean",
-	"lowlevel.spectral_energyband_middle_high.mean",
-	"lowlevel.spectral_energyband_middle_low.mean",
-	"lowlevel.spectral_entropy.mean",
-	"lowlevel.spectral_flux.mean",
-	"lowlevel.spectral_kurtosis.mean",
-	"lowlevel.spectral_rms.mean",
-	"lowlevel.spectral_skewness.mean",
-	"lowlevel.spectral_spread.mean",
-	"lowlevel.spectral_strongpeak.mean",
-	"lowlevel.zerocrossingrate.mean",
-	"rhythm.beats_loudness.mean",		// BAD
-	"rhythm.bpm",
-	"tonal.chords_changes_rate",		// OK
-	"tonal.chords_number_rate",		// BAD
-	"tonal.chords_strength.mean",		// OK
-	"tonal.hpcp_entropy.mean",		// GOOD
-};
-
-} // namespace
+#include "TrackFeatures.hpp"
 
 namespace Database {
 
+struct TrackFeatureInfo
+{
+	std::string	name;
+	std::size_t	nbDimensions;
+	double		weight;
+};
+
+static std::vector<TrackFeatureInfo> defaultFeatures =
+{
+	{ "lowlevel.spectral_contrast_coeffs.median",	6,	1. },
+	{ "lowlevel.erbbands.median",			40,	1. },
+	{ "tonal.hpcp.median",				36,	1. },
+	{ "lowlevel.melbands.median",			40,	1. },
+	{ "lowlevel.barkbands.median",			27,	1. },
+	{ "lowlevel.mfcc.mean",				13,	1. },
+	{ "lowlevel.gfcc.mean",				13,	1. },
+};
+
+
+SimilaritySettingsFeature::SimilaritySettingsFeature(Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight)
+: _name(name),
+_nbDimensions(nbDimensions),
+_weight(weight),
+_settings(settings)
+{
+}
+
+SimilaritySettingsFeature::pointer
+SimilaritySettingsFeature::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight)
+{
+	return session.add(std::make_unique<SimilaritySettingsFeature>(settings, name, nbDimensions, weight));
+}
 
 SimilaritySettings::pointer
 SimilaritySettings::get(Wt::Dbo::Session& session)
@@ -77,53 +66,19 @@ SimilaritySettings::get(Wt::Dbo::Session& session)
 	if (!settings)
 	{
 		settings = session.add(std::make_unique<SimilaritySettings>());
-		settings.modify()->setTrackFeatureTypes(defaultTrackFeaturesNames);
+
+		for (const auto& feature : defaultFeatures)
+			SimilaritySettingsFeature::create(session, settings, feature.name, feature.nbDimensions, feature.weight);
 	}
 
 	return settings;
 }
 
-std::vector<Wt::Dbo::ptr<TrackFeatureType>>
-SimilaritySettings::getTrackFeatureTypes() const
+std::vector<Wt::Dbo::ptr<SimilaritySettingsFeature>>
+SimilaritySettings::getFeatures() const
 {
-	return std::vector<Wt::Dbo::ptr<TrackFeatureType>>(_trackFeatureTypes.begin(), _trackFeatureTypes.end());
+	return std::vector<Wt::Dbo::ptr<SimilaritySettingsFeature>>(_features.begin(), _features.end());
 }
-
-void
-SimilaritySettings::setTrackFeatureTypes(const std::set<std::string>& featuresNames)
-{
-	bool needRescan = false;
-	assert(session());
-
-	// Create any missing feature type
-	for (const auto& featureName : featuresNames)
-	{
-		auto featureType = TrackFeatureType::getByName(*session(), featureName);
-		if (!featureType)
-		{
-			LMS_LOG(DB, INFO) << "Creating feature type " << featureName;
-			featureType = TrackFeatureType::create(*session(), featureName);
-			_trackFeatureTypes.insert(featureType);
-
-			needRescan = true;
-		}
-	}
-
-	// Delete no longer existing feature type
-	for (auto trackFeatureType : _trackFeatureTypes)
-	{
-		if (std::none_of(featuresNames.begin(), featuresNames.end(),
-			[trackFeatureType](const std::string& name) { return name == trackFeatureType->getName(); }))
-		{
-			LMS_LOG(DB, INFO) << "Deleting track feature type " << trackFeatureType->getName();
-			trackFeatureType.remove();
-		}
-	}
-
-	if (needRescan)
-		_scanVersion += 1;
-}
-
 
 
 } // namespace Database

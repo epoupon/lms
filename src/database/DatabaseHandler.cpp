@@ -40,7 +40,7 @@
 #include "SimilaritySettings.hpp"
 #include "Track.hpp"
 #include "TrackList.hpp"
-#include "TrackFeature.hpp"
+#include "TrackFeatures.hpp"
 
 namespace Database {
 
@@ -106,11 +106,11 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 	_session.mapClass<TrackListEntry>("tracklist_entry");
 	_session.mapClass<Release>("release");
 	_session.mapClass<Track>("track");
-	_session.mapClass<TrackFeature>("track_feature");
-	_session.mapClass<TrackFeatureType>("track_feature_type");
+	_session.mapClass<TrackFeatures>("track_features");
 
 	_session.mapClass<ScanSettings>("scan_settings");
 	_session.mapClass<SimilaritySettings>("similarity_settings");
+	_session.mapClass<SimilaritySettingsFeature>("similarity_settings_feature");
 
 	_session.mapClass<AuthInfo>("auth_info");
 	_session.mapClass<AuthInfo::AuthIdentityType>("auth_identity");
@@ -142,10 +142,7 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		_session.execute("CREATE INDEX IF NOT EXISTS cluster_name_idx ON cluster(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS tracklist_name_idx ON tracklist(name)");
-		_session.execute("CREATE INDEX IF NOT EXISTS track_feature_type_name_idx ON track_feature_type(name)");
-		_session.execute("CREATE INDEX IF NOT EXISTS track_feature_type_idx ON track_feature(type_id)");
-		_session.execute("CREATE INDEX IF NOT EXISTS track_feature_track_idx ON track_feature(track_id)");
-		_session.execute("CREATE INDEX IF NOT EXISTS track_feature_type_track_idx ON track_feature(type_id, track_id)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_features_track_idx ON track_features(track_id)");
 	}
 
 	_users = new UserDatabase(_session);

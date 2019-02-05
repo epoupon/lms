@@ -22,19 +22,24 @@
 #include <random>
 #include <chrono>
 
+#include "database/Artist.hpp"
 #include "database/Cluster.hpp"
+#include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "utils/Utils.hpp"
 
 namespace Similarity {
+namespace ClusterSearcher {
 
 std::vector<Database::IdType>
-ClusterSearcher::getSimilarTracks(Wt::Dbo::Session& session, const std::vector<Database::IdType>& tracksId, std::size_t maxCount)
+getSimilarTracks(Wt::Dbo::Session& session, const std::set<Database::IdType>& trackIds, std::size_t maxCount)
 {
+	std::vector<Database::IdType> res;
+
 	Wt::Dbo::Transaction transaction(session);
 
 	std::vector<Database::IdType> clusterIds;
-	for (auto trackId : tracksId)
+	for (auto trackId : trackIds)
 	{
 		auto track = Database::Track::getById(session, trackId);
 		if (!track)
@@ -51,26 +56,12 @@ ClusterSearcher::getSimilarTracks(Wt::Dbo::Session& session, const std::vector<D
 	std::vector<Database::IdType> sortedClusterIds;
 	uniqueAndSortedByOccurence(clusterIds.begin(), clusterIds.end(), std::back_inserter(sortedClusterIds));
 
-
-#if 0
-	auto now = std::chrono::system_clock::now();
-	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
-
-
-	std::set<Database::IdType> trackIds;
+	for (auto clusterId : clusterIds)
 	{
-		auto ids = tracklist->getTrackIds();
-		trackIds = std::set<Database::IdType>(ids.begin(), ids.end());
-	}
+		auto cluster = Database::Cluster::getById(session, clusterId);
+		if (!cluster)
+			continue;
 
-	// Get all the tracks of the tracklist, get the cluster that is mostly used
-	// and reuse it to get the next track
-	auto clusters = tracklist->getClusters();
-	if (clusters.empty())
-		return;
-
-	for (auto cluster : clusters)
-	{
 		std::set<Database::IdType> clusterTrackIds = cluster->getTrackIds();
 
 		std::set<Database::IdType> candidateTrackIds;
@@ -81,30 +72,102 @@ ClusterSearcher::getSimilarTracks(Wt::Dbo::Session& session, const std::vector<D
 		if (candidateTrackIds.empty())
 			continue;
 
-		std::uniform_int_distribution<int> dist(0, candidateTrackIds.size() - 1);
+		for (auto trackId : candidateTrackIds)
+		{
+			if (res.size() >= maxCount)
+				break;
 
-		auto trackToAdd = Database::Track::getById(LmsApp->getDboSession(), *std::next(candidateTrackIds.begin(), dist(randGenerator)));
-		enqueueTrack(trackToAdd);
+			res.push_back(trackId);
+		}
 
-		return;
+		if (res.size() >= maxCount)
+			break;
 	}
 
-	LMS_LOG(UI, INFO) << "No more track to be added!";
-#endif
-	return {};
+	return res;
 }
 
 std::vector<Database::IdType>
-ClusterSearcher::getSimilarReleases(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t maxCount)
+getSimilarReleases(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t maxCount)
 {
+	std::vector<Database::IdType> res;
 
-	return {};
+	Wt::Dbo::Transaction transaction(session);
+
+	auto release = Database::Release::getById(session, releaseId);
+	if (!release)
+		return res;
+
+	auto releaseTracks = release->getTracks();
+	std::set<Database::IdType> releaseTrackIds;
+
+	for (const auto& releaseTrack : releaseTracks)
+		releaseTrackIds.insert(releaseTrack.id());
+
+	auto trackIds = getSimilarTracks(session, releaseTrackIds, maxCount * 5);
+
+	for (auto trackId : trackIds)
+	{
+		auto track = Database::Track::getById(session, trackId);
+		if (!track)
+			continue;
+
+		auto trackRelease = track->getRelease();
+		if (!trackRelease || trackRelease.id() == releaseId)
+			continue;
+
+		if (std::find(res.begin(), res.end(), trackRelease.id()) != res.end())
+			continue;
+
+		res.push_back(trackRelease.id());
+
+		if (res.size() == maxCount)
+			break;
+	}
+
+	return res;
 }
 
 std::vector<Database::IdType>
-ClusterSearcher::getSimilarArtists(Wt::Dbo::Session& session, Database::IdType artistId, std::size_t maxCount)
+getSimilarArtists(Wt::Dbo::Session& session, Database::IdType artistId, std::size_t maxCount)
 {
-	return {};
+	std::vector<Database::IdType> res;
+
+	Wt::Dbo::Transaction transaction(session);
+
+	auto artist = Database::Artist::getById(session, artistId);
+	if (!artist)
+		return res;
+
+	auto artistTracks = artist->getTracks();
+	std::set<Database::IdType> artistTrackIds;
+
+	for (const auto& artistTrack : artistTracks)
+		artistTrackIds.insert(artistTrack.id());
+
+	auto trackIds = getSimilarTracks(session, artistTrackIds, maxCount * 5);
+
+	for (auto trackId : trackIds)
+	{
+		auto track = Database::Track::getById(session, trackId);
+		if (!track)
+			continue;
+
+		auto trackArtist = track->getArtist();
+		if (!trackArtist || trackArtist.id() == artistId)
+			continue;
+
+		if (std::find(res.begin(), res.end(), trackArtist.id()) != res.end())
+			continue;
+
+		res.push_back(trackArtist.id());
+
+		if (res.size() == maxCount)
+			break;
+	}
+
+	return res;
 }
 
+} // namespace ClusterSearcher
 } // namespace Similarity

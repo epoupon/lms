@@ -34,7 +34,15 @@ struct Coords
 
 	bool operator<(const Coords& other) const
 	{
-		return x < other.x && y < other.y;
+		if (x == other.x)
+			return y < other.y;
+		else
+			return x < other.x;
+	}
+
+	bool operator==(const Coords& other) const
+	{
+		return x == other.x && y == other.y;
 	}
 };
 
@@ -42,6 +50,8 @@ template <typename T>
 class Matrix
 {
 	public:
+
+		Matrix() = default;
 
 		Matrix(std::size_t width, std::size_t height)
 		: _width(width),
@@ -71,7 +81,6 @@ class Matrix
 		{
 			assert(coords.x < _width);
 			assert(coords.y < _height);
-
 			return _values[coords.x + _width*coords.y];
 		}
 
@@ -88,6 +97,8 @@ class Matrix
 		template <typename Func>
 		Coords getCoordsMinElement(Func func) const
 		{
+			assert(!_values.empty());
+
 			auto it = std::min_element(_values.begin(), _values.end(), func);
 			auto index = std::distance(_values.begin(), it);
 
@@ -96,8 +107,8 @@ class Matrix
 
 	private:
 
-		std::size_t _width;
-		std::size_t _height;
+		std::size_t _width = 0;
+		std::size_t _height = 0;
 		std::vector<T> _values;
 };
 

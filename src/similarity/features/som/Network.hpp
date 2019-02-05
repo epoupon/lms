@@ -20,8 +20,11 @@
 #pragma once
 
 #include <vector>
+#include <set>
 #include <ostream>
 #include <functional>
+
+#include <boost/optional.hpp>
 
 #include "Matrix.hpp"
 
@@ -58,45 +61,43 @@ class Network
 		// Set weight for each dimension (default is 1 for each weight)
 		void setDataWeights(const InputVector& weights);
 
-		// data must be normalized
+		// <!> data must be normalized
 		void train(const std::vector<InputVector>& dataSamples, std::size_t nbIterations);
 
-		// data must be normalized
-		Coords classify(const InputVector& data) const;
+		Coords getClosestRefVectorCoords(const InputVector& data) const;
+		boost::optional<Coords> getClosestRefVectorCoords(const InputVector& data, double maxDistance) const;
 
-		// ordered from closest to farthest
-		std::vector<Coords> classify(const InputVector& data, std::size_t size) const;
+		boost::optional<Coords> getClosestRefVectorCoords(const std::set<Coords>& refVectorsCoords, double maxDistance) const;
+
+		double getRefVectorsDistance(Coords coords1, Coords coords2) const;
+
+		double computeRefVectorsDistanceMean() const;
+		double computeRefVectorsDistanceMedian() const;
 
 		void dump(std::ostream& os) const;
 
 		// For each ref vector, update formula is:
 		// i is the current iteration
-		// refVector(i+1) = refVector(i) + LearningFactor(i) * NeighborhoodFunc(i) * (MatchingRefVector - refVector)
+		// refVector(i+1) = refVector(i) + LearningFactor(i) * NeighbourhoodFunc(i) * (MatchingRefVector - refVector)
 
 		using DistanceFunc = std::function<InputVector::value_type(const InputVector& /* a */, const InputVector& /* b */, const InputVector& /* weights */)>;
 		void setDistanceFunc(DistanceFunc distanceFunc);
 
-		struct Progress
+		struct CurrentIteration
 		{
 			std::size_t idIteration;
 			std::size_t iterationCount;
 		};
 
-		using LearningFactorFunc = std::function<InputVector::value_type(Progress)>;
+		using LearningFactorFunc = std::function<InputVector::value_type(CurrentIteration)>;
 		void setLearningFactorFunc(LearningFactorFunc learningFactorFunc);
 
-		using NeighborhoodFunc = std::function<InputVector::value_type(InputVector::value_type /* norm(Coords - CoordMatchingRefVector) */, Progress)>;
-		void setNeighborhoodFunc(NeighborhoodFunc neighborhoodFunc);
-
-		std::string serializeTo() const;
+		using NeighbourhoodFunc = std::function<InputVector::value_type(InputVector::value_type /* norm(Coords - CoordMatchingRefVector) */, CurrentIteration)>;
+		void setNeighbourhoodFunc(NeighbourhoodFunc neighbourhoodFunc);
 
 	private:
 
-		void serializeFrom(const std::string& data);
-
-		Coords getClosestRefVector(const InputVector& data) const;
-
-		void updateRefVectors(Coords closestRefVectorCoords, const InputVector& input, Progress progress);
+		void updateRefVectors(Coords closestRefVectorCoords, const InputVector& input, CurrentIteration iteration);
 
 		std::size_t _inputDimCount;
 		InputVector _weights;	// weight for each dimension
@@ -104,7 +105,7 @@ class Network
 
 		DistanceFunc _distanceFunc;
 		LearningFactorFunc _learningFactorFunc;
-		NeighborhoodFunc _neighborhoodFunc;
+		NeighbourhoodFunc _neighbourhoodFunc;
 };
 
 } // namespace SOM

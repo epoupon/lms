@@ -25,7 +25,6 @@
 
 namespace AcousticBrainz
 {
-
-	bool extractFeatures(const std::string& MBID, const std::set<std::string>& featuresName, std::map<std::string, double>& features);
+	std::string extractLowLevelFeatures(const std::string& MBID);
 }
 

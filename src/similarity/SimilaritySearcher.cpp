@@ -19,40 +19,68 @@
 
 #include "SimilaritySearcher.hpp"
 
+#include "features/SimilarityFeaturesScannerAddon.hpp"
+#include "cluster/SimilarityClusterSearcher.hpp"
+
+#include "database/SimilaritySettings.hpp"
+
 namespace Similarity {
 
-Searcher::Searcher(SOMScannerAddon& somAddon)
+Searcher::Searcher(FeaturesScannerAddon& somAddon)
 : _somAddon(somAddon)
 {}
 
-std::vector<Database::IdType>
-Searcher::getSimilarTracks(const std::vector<Database::IdType>& tracksId, std::size_t maxCount)
+static
+Database::SimilaritySettings::PreferredMethod getPreferredMethod(Wt::Dbo::Session& session)
 {
-	auto somSearcher = _somAddon.getSearcher();
-	if (!somSearcher)
-		return {};
+	Wt::Dbo::Transaction transaction(session);
+	return Database::SimilaritySettings::get(session)->getPreferredMethod();
+}
 
-	return somSearcher->getSimilarTracks(tracksId, maxCount);
+std::vector<Database::IdType>
+Searcher::getSimilarTracks(Wt::Dbo::Session& session, const std::set<Database::IdType>& trackIds, std::size_t maxCount)
+{
+
+	auto method = getPreferredMethod(session);
+	auto somSearcher = _somAddon.getSearcher();
+
+	if (method == Database::SimilaritySettings::PreferredMethod::Features
+		|| (method == Database::SimilaritySettings::PreferredMethod::Auto && somSearcher))
+	{
+		return somSearcher->getSimilarTracks(trackIds, maxCount);
+	}
+	else
+		return ClusterSearcher::getSimilarTracks(session, trackIds, maxCount);
 }
 
 std::vector<Database::IdType>
 Searcher::getSimilarReleases(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t maxCount)
 {
+	auto method = getPreferredMethod(session);
 	auto somSearcher = _somAddon.getSearcher();
-	if (!somSearcher)
-		return {};
 
-	return somSearcher->getSimilarReleases(session, releaseId, maxCount);
+	if (method == Database::SimilaritySettings::PreferredMethod::Features
+		|| (method == Database::SimilaritySettings::PreferredMethod::Auto && somSearcher))
+	{
+		return somSearcher->getSimilarReleases(releaseId, maxCount);
+	}
+	else
+		return ClusterSearcher::getSimilarReleases(session, releaseId, maxCount);
 }
 
 std::vector<Database::IdType>
 Searcher::getSimilarArtists(Wt::Dbo::Session& session, Database::IdType artistId, std::size_t maxCount)
 {
+	auto method = getPreferredMethod(session);
 	auto somSearcher = _somAddon.getSearcher();
-	if (!somSearcher)
-		return {};
 
-	return somSearcher->getSimilarArtists(session, artistId, maxCount);
+	if (method == Database::SimilaritySettings::PreferredMethod::Features
+		|| (method == Database::SimilaritySettings::PreferredMethod::Auto && somSearcher))
+	{
+		return somSearcher->getSimilarArtists(artistId, maxCount);
+	}
+	else
+		return ClusterSearcher::getSimilarArtists(session, artistId, maxCount);
 }
 
 } // ns Similarity

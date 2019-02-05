@@ -40,31 +40,6 @@ static size_t writeToOStringStream(void *buffer, size_t size, size_t nmemb, void
 	return size * nmemb;
 }
 
-static bool
-getFeaturesFromJsonData(const std::string& jsonData, const std::set<std::string>& featuresName, std::map<std::string, double>& features)
-{
-	try
-	{
-		boost::property_tree::ptree root;
-
-		std::istringstream iss(jsonData);
-
-		boost::property_tree::read_json(iss, root);
-
-		for (const auto& featureName : featuresName)
-		{
-			features[featureName] = root.get<double>(featureName);
-		}
-
-		return true;
-	}
-	catch (std::exception& e)
-	{
-		LMS_LOG(DBUPDATER, ERROR) << "Cannot extract feature: " << e.what();
-		return false;
-	}
-}
-
 static std::string
 getJsonData(const std::string& mbid)
 {
@@ -79,7 +54,7 @@ getJsonData(const std::string& mbid)
 	curl = curl_easy_init();
 	if (!curl)
 	{
-		LMS_LOG(DBUPDATER, ERROR) << "CURL init failed";
+		LMS_LOG(SIMILARITY, ERROR) << "CURL init failed";
 		return data;
 	}
 
@@ -92,7 +67,7 @@ getJsonData(const std::string& mbid)
 	res = curl_easy_perform(curl);
 	if (res != CURLE_OK)
 	{
-		LMS_LOG(DBUPDATER, ERROR) << "CURL perform failed: " << curl_easy_strerror(res);
+		LMS_LOG(SIMILARITY, ERROR) << "CURL perform failed: " << curl_easy_strerror(res);
 		return data;
 	}
 
@@ -103,10 +78,10 @@ getJsonData(const std::string& mbid)
 	return data;
 }
 
-bool
-extractFeatures(const std::string& mbid, const std::set<std::string>& featuresName, std::map<std::string, double>& features)
+std::string
+extractLowLevelFeatures(const std::string& mbid)
 {
-	return getFeaturesFromJsonData(getJsonData(mbid), featuresName, features);
+	return getJsonData(mbid);
 }
 
 } // namespace Scanner::AcousticBrainz

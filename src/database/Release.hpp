@@ -59,6 +59,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 							bool& moreExpected);
 
 		std::vector<Wt::Dbo::ptr<Track>> getTracks(const std::set<IdType>& clusters = std::set<IdType>()) const;
+
 		// Get the cluster of the tracks that belong to this release
 		// Each clusters are grouped by cluster type, sorted by the number of occurence
 		// size is the max number of cluster per cluster type

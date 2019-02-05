@@ -28,7 +28,7 @@
 #include "cover/CoverArtGrabber.hpp"
 #include "image/Image.hpp"
 #include "scanner/MediaScanner.hpp"
-#include "similarity/som/SimilaritySOMScannerAddon.hpp"
+#include "similarity/features/SimilarityFeaturesScannerAddon.hpp"
 #include "similarity/SimilaritySearcher.hpp"
 #include "ui/LmsApplication.hpp"
 #include "utils/Config.hpp"
@@ -129,11 +129,11 @@ int main(int argc, char* argv[])
 		// Service initialization order is important
 		getServices().mediaScanner = std::make_unique<Scanner::MediaScanner>(*connectionPool);
 
-		Similarity::SOMScannerAddon similaritySOMScannerAddon(*connectionPool);
+		Similarity::FeaturesScannerAddon similarityFeaturesScannerAddon(*connectionPool);
 
-		getServices().mediaScanner->setAddon(similaritySOMScannerAddon);
+		getServices().mediaScanner->setAddon(similarityFeaturesScannerAddon);
 		getServices().coverArtGrabber = std::make_unique<CoverArt::Grabber>();
-		getServices().similaritySearcher = std::make_unique<Similarity::Searcher>(similaritySOMScannerAddon);
+		getServices().similaritySearcher = std::make_unique<Similarity::Searcher>(similarityFeaturesScannerAddon);
 
 		// bind entry point
 		server.addEntryPoint(Wt::EntryPointType::Application,

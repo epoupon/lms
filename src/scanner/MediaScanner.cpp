@@ -642,32 +642,32 @@ MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool fo
 
 // Check if a file exists and is still in a media directory
 static bool
-checkFile(const boost::filesystem::path& p, boost::filesystem::path mediaDirectory, const std::set<boost::filesystem::path>& extensions)
+checkFile(const boost::filesystem::path& p, const boost::filesystem::path& mediaDirectory, const std::set<boost::filesystem::path>& extensions)
 {
 	try
 	{
-		bool status = true;
-
 		// For each track, make sure the the file still exists
 		// and still belongs to a media directory
 		if (!boost::filesystem::exists( p )
 			|| !boost::filesystem::is_regular( p ) )
 		{
 			LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': missing";
-			status = false;
-		}
-		else if (!isPathInParentPath(p, mediaDirectory))
-		{
-			LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': out of media directory";
-			status = false;
-		}
-		else if (!isFileSupported(p, extensions))
-		{
-			LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': file format no longer handled";
-			status = false;
+			return false;
 		}
 
-		return status;
+		if (!isPathInParentPath(p, mediaDirectory))
+		{
+			LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': out of media directory";
+			return false;
+		}
+
+		if (!isFileSupported(p, extensions))
+		{
+			LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': file format no longer handled";
+			return false;
+		}
+
+		return true;
 
 	}
 	catch (boost::filesystem::filesystem_error& e)
@@ -683,7 +683,7 @@ MediaScanner::removeMissingTracks(Stats& stats)
 	std::vector<boost::filesystem::path> trackPaths = Track::getAllPaths(_db.getSession());;
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks...";
-	for (auto& trackPath : trackPaths)
+	for (const auto& trackPath : trackPaths)
 	{
 		if (!_running)
 			return;

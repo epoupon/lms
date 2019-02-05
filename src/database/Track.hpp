@@ -37,8 +37,7 @@ class Artist;
 class Cluster;
 class ClusterType;
 class Release;
-class TrackFeature;
-class TrackFeatureType;
+class TrackFeatures;
 class TrackListEntry;
 class TrackStats;
 
@@ -81,7 +80,6 @@ class Track : public Wt::Dbo::Dbo<Track>
 
 		// Accessors
 		void setScanVersion(std::size_t version)			{ _scanVersion = version; }
-		void setSimilarityScanVersion(std::size_t version)		{ _similarityScanVersion = version; }
 		void setTrackNumber(int num)					{ _trackNumber = num; }
 		void setTotalTrackNumber(int num)				{ _totalTrackNumber = num; }
 		void setDiscNumber(int num)					{ _discNumber = num; }
@@ -101,10 +99,9 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setArtist(Wt::Dbo::ptr<Artist> artist)			{ _artist = artist; }
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
 		void eraseClusters()						{ _clusters.clear(); }
-		void eraseFeatures()						{ _trackFeatures.clear(); }
+		void eraseFeatures()						{ /*_trackFeatures.reset();*/ }
 
 		std::size_t 			getScanVersion() const		{ return _scanVersion; }
-		std::size_t 			getSimilarityScanVersion() const	{ return _similarityScanVersion; }
 		boost::optional<std::size_t>	getTrackNumber() const;
 		boost::optional<std::size_t>	getTotalTrackNumber() const;
 		boost::optional<std::size_t>	getDiscNumber() const;
@@ -124,9 +121,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 		Wt::Dbo::ptr<Artist>		getArtist() const		{ return _artist; }
 		Wt::Dbo::ptr<Release>		getRelease() const		{ return _release; }
 		std::vector<Wt::Dbo::ptr<Cluster>>	getClusters() const;
-		std::vector<Wt::Dbo::ptr<TrackFeature>>	getTrackFeatures() const;	// ordered by feature's name
 		bool				hasTrackFeatures() const;
-		Wt::Dbo::ptr<TrackFeature>	getTrackFeature(Wt::Dbo::ptr<TrackFeatureType> type) const;
+		Wt::Dbo::ptr<TrackFeatures>	getTrackFeatures() const;
 
 		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
 
@@ -134,7 +130,6 @@ class Track : public Wt::Dbo::Dbo<Track>
 			void persist(Action& a)
 			{
 				Wt::Dbo::field(a, _scanVersion,		"scan_version");
-				Wt::Dbo::field(a, _similarityScanVersion,	"similarity_version");
 				Wt::Dbo::field(a, _trackNumber,		"track_number");
 				Wt::Dbo::field(a, _totalTrackNumber,	"total_track_number");
 				Wt::Dbo::field(a, _discNumber,		"disc_number");
@@ -156,7 +151,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 				Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _playlistEntries, Wt::Dbo::ManyToOne, "track");
-				Wt::Dbo::hasMany(a, _trackFeatures, Wt::Dbo::ManyToOne, "track");
+				Wt::Dbo::hasOne(a, _trackFeatures);
 			}
 
 	private:
@@ -166,7 +161,6 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static const std::size_t _maxCopyrightURLLength = 128;
 
 		int					_scanVersion = 0;
-		int					_similarityScanVersion = 0;
 		int					_trackNumber = 0;
 		int					_totalTrackNumber = 0;
 		int					_discNumber = 0;
@@ -191,7 +185,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		Wt::Dbo::ptr<Release>			_release;
 		Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _playlistEntries;
-		Wt::Dbo::collection<Wt::Dbo::ptr<TrackFeature>> _trackFeatures;
+		Wt::Dbo::weak_ptr<TrackFeatures> _trackFeatures;
 
 };
 

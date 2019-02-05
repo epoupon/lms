@@ -24,20 +24,21 @@
 #include "database/DatabaseHandler.hpp"
 #include "scanner/MediaScannerAddon.hpp"
 
-#include "SimilaritySOMSearcher.hpp"
+#include "SimilarityFeaturesSearcher.hpp"
 
 namespace Similarity {
 
-class SOMScannerAddon : public Scanner::MediaScannerAddon
+class FeaturesScannerAddon final : public Scanner::MediaScannerAddon
 {
 	public:
 
-		SOMScannerAddon(Wt::Dbo::SqlConnectionPool& connectionPool);
+		FeaturesScannerAddon(Wt::Dbo::SqlConnectionPool& connectionPool);
 
-		std::shared_ptr<SOMSearcher> getSearcher();
+		std::shared_ptr<FeaturesSearcher> getSearcher();
 
 	private:
-		void refreshSettings() override;
+
+		void refreshSettings() override {}
 		void trackAdded(Database::IdType trackId) override {}
 		void trackToRemove(Database::IdType trackId) override {}
 		void trackUpdated(Database::IdType trackId) override;
@@ -45,17 +46,14 @@ class SOMScannerAddon : public Scanner::MediaScannerAddon
 
 		bool fetchFeatures(Database::IdType trackId, const std::string& MBID);
 
-		void clusterize();
+		void updateSearcher();
 
-		std::size_t 		_settingsVersion;
-		std::set<std::string>	_featuresName;
-		Database::Handler	_db;
-
-		std::shared_ptr<SOMSearcher> _finder;
+		Database::Handler			_db;
+		std::shared_ptr<FeaturesSearcher>		_searcher;
 };
 
-SOMScannerAddon* setSOMScannerAddon(SOMScannerAddon addon);
-SOMScannerAddon* getSOMScannerAddon();
+FeaturesScannerAddon* setFeaturesScannerAddon(FeaturesScannerAddon addon);
+FeaturesScannerAddon* getFeaturesScannerAddon();
 
 } // namespace Similarity
 

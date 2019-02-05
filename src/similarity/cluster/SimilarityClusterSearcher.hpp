@@ -19,18 +19,17 @@
 
 #pragma once
 
-#include <vector>
+#include <set>
 
 #include "database/Types.hpp"
 
 namespace Similarity {
 
-class ClusterSearcher
+namespace ClusterSearcher
 {
-	public:
-		std::vector<Database::IdType> getSimilarTracks(Wt::Dbo::Session& session, const std::vector<Database::IdType>& tracksId, std::size_t maxCount);
-		std::vector<Database::IdType> getSimilarReleases(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t maxCount);
-		std::vector<Database::IdType> getSimilarArtists(Wt::Dbo::Session& session, Database::IdType artistId, std::size_t maxCount);
+	std::vector<Database::IdType> getSimilarTracks(Wt::Dbo::Session& session, const std::set<Database::IdType>& tracksId, std::size_t maxCount);
+	std::vector<Database::IdType> getSimilarReleases(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t maxCount);
+	std::vector<Database::IdType> getSimilarArtists(Wt::Dbo::Session& session, Database::IdType artistId, std::size_t maxCount);
 };
 
 } // namespace Similarity
