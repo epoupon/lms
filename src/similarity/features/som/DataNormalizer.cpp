@@ -50,6 +50,18 @@ DataNormalizer::DataNormalizer(std::size_t inputDimCount)
 {
 }
 
+const DataNormalizer::MinMax&
+DataNormalizer::getValue(std::size_t index) const
+{
+	return _minmax[index];
+}
+
+void
+DataNormalizer::setValue(std::size_t index, const MinMax& minMax)
+{
+	_minmax[index] = minMax;
+}
+
 void
 DataNormalizer::computeNormalizationFactors(const std::vector<InputVector>& inputVectors)
 {

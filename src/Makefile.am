@@ -23,11 +23,11 @@ lms_SOURCES = \
 	$(srcdir)/scanner/MediaScanner.cpp			\
 	$(srcdir)/similarity/SimilaritySearcher.cpp		\
 	$(srcdir)/similarity/cluster/SimilarityClusterSearcher.cpp \
+	$(srcdir)/similarity/features/AcousticBrainzUtils.cpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesScannerAddon.cpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesSearcher.cpp	\
-	$(srcdir)/similarity/features/som/AcousticBrainzUtils.cpp	\
-	$(srcdir)/similarity/features/som/DataNormalizer.cpp		\
-	$(srcdir)/similarity/features/som/Network.cpp			\
+	$(srcdir)/similarity/features/som/DataNormalizer.cpp	\
+	$(srcdir)/similarity/features/som/Network.cpp		\
 	$(srcdir)/ui/Auth.cpp					\
 	$(srcdir)/ui/LmsApplication.cpp				\
 	$(srcdir)/ui/LmsApplicationGroup.cpp			\

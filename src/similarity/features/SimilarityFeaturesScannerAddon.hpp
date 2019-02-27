@@ -39,6 +39,7 @@ class FeaturesScannerAddon final : public Scanner::MediaScannerAddon
 	private:
 
 		void refreshSettings() override {}
+		void requestStop() override;
 		void trackAdded(Database::IdType trackId) override {}
 		void trackToRemove(Database::IdType trackId) override {}
 		void trackUpdated(Database::IdType trackId) override;
@@ -49,7 +50,8 @@ class FeaturesScannerAddon final : public Scanner::MediaScannerAddon
 		void updateSearcher();
 
 		Database::Handler			_db;
-		std::shared_ptr<FeaturesSearcher>		_searcher;
+		std::shared_ptr<FeaturesSearcher>	_searcher;
+		bool					_stopRequested{false};
 };
 
 FeaturesScannerAddon* setFeaturesScannerAddon(FeaturesScannerAddon addon);

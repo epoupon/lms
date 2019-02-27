@@ -96,9 +96,8 @@ int main(int argc, char* argv[])
 		Config::instance().setFile(configFilePath);
 
 		// Make sure the working directory exists
-		// TODO check with boost::system::error_code ec;
 		boost::filesystem::create_directories(Config::instance().getPath("working-dir"));
-		boost::filesystem::create_directories(Config::instance().getPath("working-dir") / "features");
+		boost::filesystem::create_directories(Config::instance().getPath("working-dir") / "cache");
 
 		// Construct WT configuration and get the argc/argv back
 		std::vector<std::string> wtServerArgs = generateWtConfig(argv[0]);

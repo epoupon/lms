@@ -44,21 +44,21 @@ checkSameDimensions(const InputVector& a, std::size_t inputDimCount)
 		throw SOMException("Bad data dimension count");
 }
 
-static InputVector::value_type
+static FeatureType
 defaultLearningFactor(Network::CurrentIteration iteration)
 {
-	constexpr InputVector::value_type initialValue = 1;
+	constexpr FeatureType initialValue = 1;
 
-	return initialValue * exp(-((iteration.idIteration + 1) / static_cast<InputVector::value_type>(iteration.iterationCount)));
+	return initialValue * exp(-((iteration.idIteration + 1) / static_cast<FeatureType>(iteration.iterationCount)));
 }
 
-static InputVector::value_type
+static FeatureType
 euclidianSquareDistance(const InputVector& a, const InputVector& b, const InputVector& weights)
 {
 	checkSameDimensions(a, b);
 	checkSameDimensions(a, weights);
 
-	InputVector::value_type res = 0;
+	FeatureType res = 0;
 
 	for (std::size_t i = 0; i < a.size(); ++i)
 	{
@@ -69,17 +69,17 @@ euclidianSquareDistance(const InputVector& a, const InputVector& b, const InputV
 }
 
 static
-InputVector::value_type
+FeatureType
 sigmaFunc(Network::CurrentIteration iteration)
 {
-	constexpr InputVector::value_type sigma0 = 1;
+	constexpr FeatureType sigma0 = 1;
 
-	return sigma0 * exp(- ((iteration.idIteration + 1) / static_cast<InputVector::value_type>(iteration.iterationCount)));
+	return sigma0 * std::exp(- ((iteration.idIteration + 1) / static_cast<FeatureType>(iteration.iterationCount)));
 }
 
 static
-InputVector::value_type
-defaultNeighbourhoodFunc(InputVector::value_type norm, Network::CurrentIteration iteration)
+FeatureType
+defaultNeighbourhoodFunc(FeatureType norm, Network::CurrentIteration iteration)
 {
 	auto sigma = sigmaFunc(iteration);
 
@@ -102,17 +102,15 @@ operator<<(std::ostream& os, const InputVector& a)
 
 
 static
-InputVector::value_type
+FeatureType
 norm(const InputVector& a)
 {
-	InputVector::value_type res = 0;
+	FeatureType res = 0;
 
-	for (const auto& val : a)
-	{
+	for (auto val : a)
 		res += val * val;
-	}
 
-	return sqrt(res);
+	return std::sqrt(res);
 }
 
 static
@@ -121,12 +119,11 @@ operator+(const InputVector& a, const InputVector& b)
 {
 	checkSameDimensions(a, b);
 
-	InputVector res(a.size(), 0);
+	InputVector res;
+	res.reserve(a.size());
 
 	for (std::size_t dimId = 0; dimId < a.size(); ++dimId)
-	{
-		res[dimId] = a[dimId] + b[dimId];
-	}
+		res.push_back(a[dimId] + b[dimId]);
 
 	return res;
 }
@@ -137,34 +134,32 @@ operator-(const InputVector& a, const InputVector& b)
 {
 	checkSameDimensions(a, b);
 
-	InputVector res(a.size(), 0);
+	InputVector res;
+	res.reserve(a.size());
 
 	for (std::size_t dimId = 0; dimId < a.size(); ++dimId)
-	{
-		res[dimId] = a[dimId] - b[dimId];
-	}
+		res.push_back(a[dimId] - b[dimId]);
 
 	return res;
 }
 
 static
 InputVector
-operator*(const InputVector& a, InputVector::value_type factor)
+operator*(const InputVector& a, FeatureType factor)
 {
-	InputVector res(a.size(), 0);
+	InputVector res;
+	res.reserve(a.size());
 
 	for (std::size_t dimId = 0; dimId < a.size(); ++dimId)
-	{
-		res[dimId] = a[dimId] * factor;
-	}
+		res.push_back(a[dimId] * factor);
 
 	return res;
 }
 
-Network::Network(std::size_t width, std::size_t height, std::size_t inputDimCount)
+Network::Network(Coordinate width, Coordinate height, std::size_t inputDimCount)
 :
 _inputDimCount(inputDimCount),
-_weights(inputDimCount, static_cast<InputVector::value_type>(1)),
+_weights(inputDimCount, static_cast<FeatureType>(1)),
 _refVectors(width, height),
 _distanceFunc(euclidianSquareDistance),
 _learningFactorFunc(defaultLearningFactor),
@@ -174,11 +169,11 @@ _neighbourhoodFunc(defaultNeighbourhoodFunc)
 	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
 
 	// init each vector with a random normalized value
-	std::uniform_real_distribution<InputVector::value_type> dist(0, 1);
+	std::uniform_real_distribution<FeatureType> dist(0, 1);
 
-	for (std::size_t y = 0; y < _refVectors.getHeight(); ++y)
+	for (Coordinate y = 0; y < _refVectors.getHeight(); ++y)
 	{
-		for (std::size_t x = 0; x < _refVectors.getWidth(); ++x)
+		for (Coordinate x = 0; x < _refVectors.getWidth(); ++x)
 		{
 			auto& refVector = _refVectors.get({x,y});
 			refVector.resize(_inputDimCount);
@@ -196,10 +191,18 @@ Network::setDataWeights(const InputVector& weights)
 	_weights = weights;
 }
 
-double
-Network::getRefVectorsDistance(Coords coords1, Coords coords2) const
+void
+Network::setRefVector(const Position& position, const InputVector& data)
 {
-	return _distanceFunc(_refVectors.get(coords1), _refVectors.get(coords2), _weights);
+	checkSameDimensions(data, _inputDimCount);
+
+	_refVectors[position] = data;
+}
+
+double
+Network::getRefVectorsDistance(const Position& position1, const Position& position2) const
+{
+	return _distanceFunc(_refVectors.get(position1), _refVectors.get(position2), _weights);
 }
 
 double
@@ -207,9 +210,9 @@ Network::computeRefVectorsDistanceMean() const
 {
 	std::vector<double> values;
 	values.reserve(2*_refVectors.getHeight()*_refVectors.getWidth() - _refVectors.getWidth() - _refVectors.getHeight());
-	for (std::size_t y = 0; y < _refVectors.getHeight(); ++y)
+	for (Coordinate y = 0; y < _refVectors.getHeight(); ++y)
 	{
-		for (std::size_t x = 0; x < _refVectors.getWidth(); ++x)
+		for (Coordinate x = 0; x < _refVectors.getWidth(); ++x)
 		{
 			if (x != _refVectors.getWidth() - 1)
 				values.push_back(getRefVectorsDistance( {x, y}, {x + 1, y}));
@@ -226,9 +229,9 @@ Network::computeRefVectorsDistanceMedian() const
 {
 	std::vector<double> values;
 	values.reserve(2*_refVectors.getHeight()*_refVectors.getWidth() - _refVectors.getWidth() - _refVectors.getHeight());
-	for (std::size_t y = 0; y < _refVectors.getHeight(); ++y)
+	for (Coordinate y = 0; y < _refVectors.getHeight(); ++y)
 	{
-		for (std::size_t x = 0; x < _refVectors.getWidth(); ++x)
+		for (Coordinate x = 0; x < _refVectors.getWidth(); ++x)
 		{
 			if (x != _refVectors.getWidth() - 1)
 				values.push_back(getRefVectorsDistance( {x, y}, {x + 1, y}));
@@ -245,9 +248,9 @@ Network::dump(std::ostream& os) const
 {
 	os << "Width: " << _refVectors.getWidth() << ", Height: " << _refVectors.getHeight() << std::endl;;
 
-	for (std::size_t y = 0; y < _refVectors.getHeight(); ++y)
+	for (Coordinate y = 0; y < _refVectors.getHeight(); ++y)
 	{
-		for (std::size_t x = 0; x < _refVectors.getWidth(); ++x)
+		for (Coordinate x = 0; x < _refVectors.getWidth(); ++x)
 		{
 			os << _refVectors.get({x, y}) << " ";
 		}
@@ -257,73 +260,73 @@ Network::dump(std::ostream& os) const
 	os << std::endl;
 }
 
-Coords
-Network::getClosestRefVectorCoords(const InputVector& data) const
+Position
+Network::getClosestRefVectorPosition(const InputVector& data) const
 {
-	return _refVectors.getCoordsMinElement([&](const auto& a, const auto& b)
+	return _refVectors.getPositionMinElement([&](const auto& a, const auto& b)
 			{
 				return (_distanceFunc(a, data, _weights) < _distanceFunc(b, data, _weights));
 			});
 }
 
-boost::optional<Coords>
-Network::getClosestRefVectorCoords(const InputVector& data, double maxDistance) const
+boost::optional<Position>
+Network::getClosestRefVectorPosition(const InputVector& data, double maxDistance) const
 {
-	Coords coords = _refVectors.getCoordsMinElement([&](const auto& a, const auto& b)
+	Position position = _refVectors.getPositionMinElement([&](const auto& a, const auto& b)
 			{
 				return (_distanceFunc(a, data, _weights) < _distanceFunc(b, data, _weights));
 			});
 
-	if (_distanceFunc(data, _refVectors.get(coords), _weights) > maxDistance)
+	if (_distanceFunc(data, _refVectors.get(position), _weights) > maxDistance)
 		return boost::none;
 
-	return coords;
+	return position;
 }
 
-boost::optional<Coords>
-Network::getClosestRefVectorCoords(const std::set<Coords>& refVectorsCoords, double maxDistance) const
+boost::optional<Position>
+Network::getClosestRefVectorPosition(const std::set<Position>& refVectorsPosition, double maxDistance) const
 {
-	std::set<Coords> neighboursCoords;
-	for (const Coords& refVectorCoords : refVectorsCoords)
+	std::set<Position> neighboursPosition;
+	for (const Position& refVectorPosition : refVectorsPosition)
 	{
-		if (refVectorCoords.y > 0)
-			neighboursCoords.insert({ refVectorCoords.x, refVectorCoords.y - 1 });
-		if (refVectorCoords.y < _refVectors.getHeight() - 1)
-			neighboursCoords.insert({ refVectorCoords.x, refVectorCoords.y + 1 });
-		if (refVectorCoords.x > 0)
-			neighboursCoords.insert({ refVectorCoords.x - 1, refVectorCoords.y });
-		if (refVectorCoords.x < _refVectors.getWidth() - 1)
-			neighboursCoords.insert({ refVectorCoords.x + 1, refVectorCoords.y });
+		if (refVectorPosition.y > 0)
+			neighboursPosition.insert({ refVectorPosition.x, refVectorPosition.y - 1 });
+		if (refVectorPosition.y < _refVectors.getHeight() - 1)
+			neighboursPosition.insert({ refVectorPosition.x, refVectorPosition.y + 1 });
+		if (refVectorPosition.x > 0)
+			neighboursPosition.insert({ refVectorPosition.x - 1, refVectorPosition.y });
+		if (refVectorPosition.x < _refVectors.getWidth() - 1)
+			neighboursPosition.insert({ refVectorPosition.x + 1, refVectorPosition.y });
 	}
 
-	// remove coords that are in the input coords
-	for (const auto& refVectorCoords : refVectorsCoords)
-		neighboursCoords.erase(refVectorCoords);
+	// remove position that are in the input position
+	for (const auto& refVectorPosition : refVectorsPosition)
+		neighboursPosition.erase(refVectorPosition);
 
-	if (neighboursCoords.empty())
+	if (neighboursPosition.empty())
 		return boost::none;
 
 	// Now compute the distance for each neighbour
 	struct NeighbourInfo
 	{
-		Coords coords;
+		Position position;
 		double distance;
 	};
 
 	std::vector<NeighbourInfo> neighboursInfo;
-	for (const Coords& neighbourCoords : neighboursCoords)
+	for (const Position& neighbourPosition : neighboursPosition)
 	{
-		auto min = std::min_element(refVectorsCoords.begin(), refVectorsCoords.end(),
-				[this, neighbourCoords](const auto& a, const auto& b)
+		auto min = std::min_element(refVectorsPosition.begin(), refVectorsPosition.end(),
+				[this, neighbourPosition](const auto& a, const auto& b)
 				{
-					return (this->getRefVectorsDistance(a, neighbourCoords) < this->getRefVectorsDistance(b, neighbourCoords));
+					return (this->getRefVectorsDistance(a, neighbourPosition) < this->getRefVectorsDistance(b, neighbourPosition));
 				});
 
-		double distance = getRefVectorsDistance(neighbourCoords, *min);
+		double distance = getRefVectorsDistance(neighbourPosition, *min);
 		if (distance > maxDistance)
 			continue;
 
-		neighboursInfo.push_back({neighbourCoords, distance});
+		neighboursInfo.push_back({neighbourPosition, distance});
 	}
 
 	if (neighboursInfo.empty())
@@ -336,63 +339,80 @@ Network::getClosestRefVectorCoords(const std::set<Coords>& refVectorsCoords, dou
 		});
 
 
-	return min->coords;
+	return min->position;
 }
 
-static InputVector::value_type
-computeCoordsNorm(Coords c1, Coords c2)
+static FeatureType
+computePositionNorm(Position c1, Position c2)
 {
-	std::vector<InputVector::value_type> a = { static_cast<InputVector::value_type>(c1.x), static_cast<InputVector::value_type>(c1.y) };
-	std::vector<InputVector::value_type> b = { static_cast<InputVector::value_type>(c2.x), static_cast<InputVector::value_type>(c2.y) };
+	std::vector<FeatureType> a { static_cast<FeatureType>(c1.x), static_cast<FeatureType>(c1.y) };
+	std::vector<FeatureType> b { static_cast<FeatureType>(c2.x), static_cast<FeatureType>(c2.y) };
 
 	return norm(a - b);
 }
 
 
 void
-Network::updateRefVectors(Coords closestRefVectorCoords, const InputVector& input, CurrentIteration iteration)
+Network::updateRefVectors(const Position& closestRefVectorPosition, const InputVector& input, FeatureType learningFactor, const CurrentIteration& iteration)
 {
-	for (std::size_t y = 0; y < _refVectors.getHeight(); ++y)
+	for (Coordinate y = 0; y < _refVectors.getHeight(); ++y)
 	{
-		for (std::size_t x = 0; x < _refVectors.getWidth(); ++x)
+		for (Coordinate x = 0; x < _refVectors.getWidth(); ++x)
 		{
 			auto& refVector = _refVectors.get({x, y});
 
 			auto delta = input - refVector;
-			auto n = computeCoordsNorm({x, y}, closestRefVectorCoords);
+			auto n = computePositionNorm({x, y}, closestRefVectorPosition);
 
-			auto oldRefVector = refVector;
-			refVector = refVector + delta * (_learningFactorFunc(iteration) * _neighbourhoodFunc(n, iteration));
+			refVector = refVector + delta * (learningFactor * _neighbourhoodFunc(n, iteration));
 		}
 	}
 }
 
 void
-Network::train(const std::vector<InputVector>& inputData, std::size_t nbIterations)
+Network::train(const std::vector<InputVector>& inputData, std::size_t nbIterations, ProgressCallback progressCallback, RequestStopCallback requestStopCallback)
 {
-
+	bool stopRequested{false};
 	std::vector<const InputVector*> inputDataShuffled;
 	inputDataShuffled.reserve(inputData.size());
 
 	for (const auto& input : inputData)
-	{
 		inputDataShuffled.push_back(&input);
-	}
 
 	auto now = std::chrono::system_clock::now();
 	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
 
 	for (std::size_t i = 0; i < nbIterations; ++i)
 	{
+		CurrentIteration curIter{i, nbIterations};
+
+		if (progressCallback)
+			progressCallback(curIter);
+
 		std::shuffle(inputDataShuffled.begin(), inputDataShuffled.end(), randGenerator);
 
-		for (auto input : inputDataShuffled)
-		{
-			Coords closestRefVectorCoords = getClosestRefVectorCoords(*input);
+		const auto learningFactor = _learningFactorFunc(curIter);
 
-			updateRefVectors(closestRefVectorCoords, *input, {i, nbIterations});
+		for (const InputVector* input : inputDataShuffled)
+		{
+			if (requestStopCallback)
+			{
+				stopRequested = requestStopCallback();
+				break;
+			}
+
+			updateRefVectors(getClosestRefVectorPosition(*input), *input, learningFactor, curIter);
 		}
+
+		if (stopRequested)
+			break;
 	}
+}
+
+const InputVector&
+Network::getRefVector(const Position& position) const
+{
+	return _refVectors[position];
 }
 
 

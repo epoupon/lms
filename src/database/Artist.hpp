@@ -39,7 +39,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 {
 	public:
 
-		typedef Wt::Dbo::ptr<Artist> pointer;
+		using pointer = Wt::Dbo::ptr<Artist>;
 
 		Artist() {}
 		Artist(const std::string& name, const std::string& MBID = "");

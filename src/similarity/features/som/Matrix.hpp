@@ -27,12 +27,14 @@
 namespace SOM
 {
 
-struct Coords
-{
-	std::size_t x;
-	std::size_t y;
+using Coordinate = unsigned;
 
-	bool operator<(const Coords& other) const
+struct Position
+{
+	Coordinate x;
+	Coordinate y;
+
+	bool operator<(const Position& other) const
 	{
 		if (x == other.x)
 			return y < other.y;
@@ -40,7 +42,7 @@ struct Coords
 			return x < other.x;
 	}
 
-	bool operator==(const Coords& other) const
+	bool operator==(const Position& other) const
 	{
 		return x == other.x && y == other.y;
 	}
@@ -53,7 +55,7 @@ class Matrix
 
 		Matrix() = default;
 
-		Matrix(std::size_t width, std::size_t height)
+		Matrix(Coordinate width, Coordinate height)
 		: _width(width),
 		_height(height)
 		{
@@ -74,42 +76,42 @@ class Matrix
 			_values.swap(values);
 		}
 
-		std::size_t getHeight() const { return _height; }
-		std::size_t getWidth() const { return _width; }
+		Coordinate getHeight() const { return _height; }
+		Coordinate getWidth() const { return _width; }
 
-		T& get(Coords coords)
+		T& get(const Position& position)
 		{
-			assert(coords.x < _width);
-			assert(coords.y < _height);
-			return _values[coords.x + _width*coords.y];
+			assert(position.x < _width);
+			assert(position.y < _height);
+			return _values[position.x + _width*position.y];
 		}
 
-		const T& get(Coords coords) const
+		const T& get(const Position& position) const
 		{
-			assert(coords.x < _width);
-			assert(coords.y < _height);
-			return _values[coords.x + _width*coords.y];
+			assert(position.x < _width);
+			assert(position.y < _height);
+			return _values[position.x + _width*position.y];
 		}
 
-		T& operator[](Coords coords) { return get(coords); }
-		const T& operator[](Coords coords) const { return get(coords); }
+		T& operator[](const Position& position) { return get(position); }
+		const T& operator[](const Position& position) const { return get(position); }
 
 		template <typename Func>
-		Coords getCoordsMinElement(Func func) const
+		Position getPositionMinElement(Func func) const
 		{
 			assert(!_values.empty());
 
 			auto it = std::min_element(_values.begin(), _values.end(), func);
-			auto index = std::distance(_values.begin(), it);
+			auto index = static_cast<Coordinate>(std::distance(_values.begin(), it));
 
 			return {index % _height, index / _height};
 		}
 
 	private:
 
-		std::size_t _width = 0;
-		std::size_t _height = 0;
-		std::vector<T> _values;
+		Coordinate	_width = 0;
+		Coordinate	_height = 0;
+		std::vector<T>	_values;
 };
 
 } // ns SOM

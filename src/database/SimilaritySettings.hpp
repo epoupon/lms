@@ -73,10 +73,11 @@ class SimilaritySettings : public Wt::Dbo::Dbo<SimilaritySettings>
 		// Utils
 		static pointer get(Wt::Dbo::Session& session);
 
-		// Accessors
-		std::size_t getVersion() const { return _settingsVersion; }
-		PreferredMethod getPreferredMethod() const { return _preferredMethod; }
+		// Accessors Read
+		std::size_t		getVersion() const { return _settingsVersion; }
+		PreferredMethod		getPreferredMethod() const { return _preferredMethod; }
 		std::vector<Wt::Dbo::ptr<SimilaritySettingsFeature>> getFeatures() const;
+
 
 		template<class Action>
 		void persist(Action& a)
@@ -91,6 +92,7 @@ class SimilaritySettings : public Wt::Dbo::Dbo<SimilaritySettings>
 
 		int			_settingsVersion = 0;
 		PreferredMethod		_preferredMethod = PreferredMethod::Auto;
+
 		Wt::Dbo::collection<Wt::Dbo::ptr<SimilaritySettingsFeature>> _features;
 };
 

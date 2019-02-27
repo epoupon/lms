@@ -38,7 +38,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 {
 	public:
 
-		typedef Wt::Dbo::ptr<Release> pointer;
+		using pointer = Wt::Dbo::ptr<Release>;
 
 		Release() {}
 		Release(const std::string& name, const std::string& MBID = "");

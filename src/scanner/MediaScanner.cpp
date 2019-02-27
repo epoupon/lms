@@ -225,6 +225,9 @@ MediaScanner::stop(void)
 {
 	_running = false;
 
+	for (auto& addon : _addons)
+		addon->requestStop();
+
 	_scheduleTimer.cancel();
 
 	_ioService.stop();

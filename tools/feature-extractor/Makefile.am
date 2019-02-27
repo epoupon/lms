@@ -12,7 +12,6 @@ lms_feature_extractor_SOURCES = \
 	$(top_srcdir)/src/database/SqlQuery.cpp		\
 	$(top_srcdir)/src/database/Track.cpp		\
 	$(top_srcdir)/src/database/User.cpp		\
-	$(top_srcdir)/src/similarity/features/som/AcousticBrainzUtils.cpp	\
 	$(top_srcdir)/src/similarity/features/som/DataNormalizer.cpp		\
 	$(top_srcdir)/src/similarity/features/som/Network.cpp			\
 	$(top_srcdir)/src/utils/Config.cpp 		\

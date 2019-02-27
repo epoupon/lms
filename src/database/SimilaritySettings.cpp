@@ -44,7 +44,6 @@ static std::vector<TrackFeatureInfo> defaultFeatures =
 	{ "lowlevel.gfcc.mean",				13,	1. },
 };
 
-
 SimilaritySettingsFeature::SimilaritySettingsFeature(Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight)
 : _name(name),
 _nbDimensions(nbDimensions),
@@ -79,7 +78,6 @@ SimilaritySettings::getFeatures() const
 {
 	return std::vector<Wt::Dbo::ptr<SimilaritySettingsFeature>>(_features.begin(), _features.end());
 }
-
 
 } // namespace Database
 

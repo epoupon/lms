@@ -22,8 +22,10 @@
 
 #include "database/Track.hpp"
 #include "database/TrackFeatures.hpp"
-#include "som/AcousticBrainzUtils.hpp"
+#include "utils/Config.hpp"
 #include "utils/Logger.hpp"
+
+#include "AcousticBrainzUtils.hpp"
 
 
 namespace Similarity {
@@ -55,12 +57,23 @@ getTracksWithMBIDAndMissingFeatures(Wt::Dbo::Session& session)
 FeaturesScannerAddon::FeaturesScannerAddon(Wt::Dbo::SqlConnectionPool& connectionPool)
 : _db(connectionPool)
 {
+	boost::filesystem::create_directories(Config::instance().getPath("working-dir") / "cache" / "features");
+
+	auto searcher = std::make_shared<Similarity::FeaturesSearcher>();
+	if (searcher->initFromCache(_db.getSession()))
+		std::atomic_store(&_searcher, searcher);
 }
 
 std::shared_ptr<Similarity::FeaturesSearcher>
 FeaturesScannerAddon::getSearcher()
 {
 	return std::atomic_load(&_searcher);
+}
+
+void
+FeaturesScannerAddon::requestStop()
+{
+	_stopRequested = true;
 }
 
 void
@@ -85,14 +98,15 @@ FeaturesScannerAddon::preScanComplete()
 	for (const auto& trackInfo : tracksInfo)
 		fetchFeatures(trackInfo.id, trackInfo.mbid);
 
+	FeaturesSearcher::invalidateCache();
 	updateSearcher();
 }
 
 void
 FeaturesScannerAddon::updateSearcher()
 {
-	Wt::Dbo::Transaction transaction(_db.getSession());
-	auto tracks = Database::Track::getAllWithFeatures(_db.getSession());
+	Wt::Dbo::Transaction transaction {_db.getSession()};
+	auto tracks {Database::Track::getAllWithFeatures(_db.getSession())};
 	transaction.commit();
 
 	if (tracks.empty())
@@ -102,9 +116,10 @@ FeaturesScannerAddon::updateSearcher()
 		return;
 	}
 
-	auto searcher = std::make_shared<Similarity::FeaturesSearcher>(_db.getSession());
+	auto searcher {std::make_shared<Similarity::FeaturesSearcher>()};
+	if (searcher->init(_db.getSession(), _stopRequested))
+		std::atomic_store(&_searcher, searcher);
 
-	std::atomic_store(&_searcher, searcher);
 	LMS_LOG(DBUPDATER, INFO) << "New features similarity searcher instanciated";
 }
 

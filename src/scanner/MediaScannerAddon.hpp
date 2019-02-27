@@ -28,6 +28,7 @@ class MediaScannerAddon
 	public:
 
 		virtual void refreshSettings() = 0;
+		virtual void requestStop() = 0;
 
 		virtual void trackAdded(Database::IdType trackId) = 0;
 		virtual void trackToRemove(Database::IdType trackId) = 0;

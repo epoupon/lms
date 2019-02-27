@@ -24,6 +24,7 @@
 
 #include "database/DatabaseHandler.hpp"
 #include "database/Types.hpp"
+#include "som/DataNormalizer.hpp"
 #include "som/Network.hpp"
 
 namespace Similarity {
@@ -32,7 +33,10 @@ class FeaturesSearcher
 {
 	public:
 
-		FeaturesSearcher(Wt::Dbo::Session& session);
+		bool init(Wt::Dbo::Session& session, bool& stopRequested);
+		bool initFromCache(Wt::Dbo::Session& session);
+
+		static void invalidateCache();
 
 		std::vector<Database::IdType> getSimilarTracks(const std::set<Database::IdType>& tracksId, std::size_t maxCount) const;
 		std::vector<Database::IdType> getSimilarReleases(Database::IdType releaseId, std::size_t maxCount) const;
@@ -42,22 +46,29 @@ class FeaturesSearcher
 
 	private:
 
+		void init(Wt::Dbo::Session& session,
+				SOM::Network network,
+				std::map<Database::IdType, std::set<SOM::Position>> tracksPosition);
+
+		void saveToCache() const;
+		void clearCache() const;
+
 		std::vector<Database::IdType> getSimilarObjects(const std::set<Database::IdType>& ids,
 				const SOM::Matrix<std::set<Database::IdType>>& objectsMap,
-				const std::map<Database::IdType, std::set<SOM::Coords>>& objectCoords,
+				const std::map<Database::IdType, std::set<SOM::Position>>& objectPosition,
 				std::size_t maxCount) const;
 
-		std::unique_ptr<SOM::Network>	_network;
-		double				_networkRefVectorsDistanceMedian = 0;
+		SOM::Network	_network;
+		double		_networkRefVectorsDistanceMedian = 0;
 
 		SOM::Matrix<std::set<Database::IdType>> 		_artistsMap;
-		std::map<Database::IdType, std::set<SOM::Coords>>	_artistCoords;
+		std::map<Database::IdType, std::set<SOM::Position>>	_artistPosition;
 
 		SOM::Matrix<std::set<Database::IdType>> 		_releasesMap;
-		std::map<Database::IdType, std::set<SOM::Coords>>	_releaseCoords;
+		std::map<Database::IdType, std::set<SOM::Position>>	_releasePosition;
 
 		SOM::Matrix<std::set<Database::IdType>> 		_tracksMap;
-		std::map<Database::IdType, std::set<SOM::Coords>>	_trackCoords;
+		std::map<Database::IdType, std::set<SOM::Position>>	_trackPosition;
 
 };
 

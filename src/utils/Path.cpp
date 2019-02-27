@@ -37,7 +37,7 @@ boost::filesystem::path searchExecPath(std::string filename)
 		throw LmsException("Environment variable PATH not found");
 
 	std::string result;
-	typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+	using tokenizer = boost::tokenizer<boost::char_separator<char>>;
 	boost::char_separator<char> sep(":");
 	tokenizer tok(path, sep);
 	for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
@@ -53,11 +53,10 @@ boost::filesystem::path searchExecPath(std::string filename)
 	return result;
 }
 
-typedef boost::crc_32_type crc_type;
-
 void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& crc)
 {
-	crc_type	result;
+	using crc_type = boost::crc_32_type;
+	crc_type result;
 
 	std::ifstream  ifs( p.string().c_str(), std::ios_base::binary );
 
@@ -78,7 +77,6 @@ void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& cr
 		throw LmsException("Failed to open file '" + p.string() + "'" );
 	}
 
-	// Copy back result into the vector
 
 	// Copy the result into a vector of unsigned char
 	const crc_type::value_type checksum = result.checksum();

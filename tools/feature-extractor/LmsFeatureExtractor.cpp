@@ -5,9 +5,6 @@
 #include <chrono>
 #include <random>
 
-#include <curl/curl.h>
-
-
 #include "database/DatabaseHandler.hpp"
 #include "database/Track.hpp"
 #include "database/Artist.hpp"
@@ -17,7 +14,6 @@
 #include "utils/Config.hpp"
 #include "similarity/features/som/DataNormalizer.hpp"
 #include "similarity/features/som/Network.hpp"
-#include "similarity/features/som/AcousticBrainzUtils.hpp"
 
 static
 std::ostream& operator<<(std::ostream& os, const Database::Track::pointer& track)
@@ -73,14 +69,11 @@ int main(int argc, char *argv[])
 {
 	try
 	{
-		constexpr std::size_t width = 10;
-		constexpr std::size_t height = 10;
-//		constexpr std::size_t nbTracks = 80;
-		constexpr std::size_t nbIterations = 100;
+		const std::size_t width = 15;
+		const std::size_t height = 15;
+		const std::size_t nbIterations = 2;
+		const std::size_t nbTracks = 5000;
 
-//		std::vector<std::string> items = { "lowlevel.barkbands.median", "lowlevel.erbbands.median", "lowlevel.melbands.median"};
-//		constexpr std::size_t nbDims = 27 + 40 + 40;
-		//std::vector<std::string> items = { "tonal.hpcp.median"};
 		const std::map<std::string, std::size_t> featuresSettings =
 		{
 //			{ "lowlevel.average_loudness",			1 },
@@ -111,41 +104,20 @@ int main(int argc, char *argv[])
 		std::cout << "Getting all features..." << std::endl;
 		Wt::Dbo::Transaction transaction(db.getSession());
 
-		auto tracks = Database::Track::getAll(db.getSession());
-
-		std::vector<Database::Track::pointer> trainingTracks;
-		for (auto track : tracks)
-		{
-			if (track->getMBID().empty())
-				continue;
-
-			if (!track->hasTrackFeatures())
-			{
-				std::string features = AcousticBrainz::extractLowLevelFeatures(track->getMBID());
-
-				if (features.empty())
-					continue;
-
-				Database::TrackFeatures::create(db.getSession(), track, features);
-			}
-
-			trainingTracks.push_back(track);
-		}
+		auto tracks = Database::Track::getAllWithFeatures(db.getSession());
 
 		std::cout << "Getting all features DONE" << std::endl;
 
 /*		auto now = std::chrono::system_clock::now();
 		std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
-		std::shuffle(trainingTracks.begin(), trainingTracks.end(), randGenerator);
-
-		trainingTracks.resize(nbTracks);
+		std::shuffle(tracks.begin(), tracks.end(), randGenerator);
 */
-		std::cout << "Getting all features DONE" << std::endl;
+		tracks.resize(nbTracks);
 
 		std::cout << "Reading features..." << std::endl;
 		std::vector< std::vector<double> > tracksFeatures;
 
-		for (auto track : trainingTracks)
+		for (auto track : tracks)
 		{
 			auto features = getTrackFeatures(db.getSession(), track, featuresSettings);
 
@@ -188,10 +160,11 @@ int main(int argc, char *argv[])
 		auto medianDistance = network.computeRefVectorsDistanceMedian();
 		std::cout << "MEDIAN distance = " << medianDistance << std::endl;
 
+#if 0
 		std::cout << "Classifying tracks..." << std::endl;
 
 		SOM::Matrix< std::vector<Database::Track::pointer> > tracksMap(width, height);
-		for (auto track : trainingTracks)
+		for (auto track : tracks)
 		{
 			auto features = getTrackFeatures(db.getSession(), track, featuresSettings);
 
@@ -200,17 +173,17 @@ int main(int argc, char *argv[])
 
 			normalizer.normalizeData(features);
 
-			auto coords = network.getClosestRefVectorCoords(features);
-			tracksMap[coords].push_back(track);
+			auto position = network.getClosestRefVectorPosition(features);
+			tracksMap[position].push_back(track);
 		}
 
 		std::cout << "Classifying tracks DONE" << std::endl;
 
 		// Dump tracks
 
-		for (std::size_t y = 0; y < tracksMap.getHeight(); ++y)
+		for (SOM::Coordinate y = 0; y < tracksMap.getHeight(); ++y)
 		{
-			for (std::size_t x = 0; x < tracksMap.getWidth(); ++x)
+			for (SOM::Coordinate x = 0; x < tracksMap.getWidth(); ++x)
 			{
 				std::cout << "{" << x << ", " << y << "}" << std::endl;
 				const auto& tracks = tracksMap[{x, y}];
@@ -223,7 +196,7 @@ int main(int argc, char *argv[])
 		}
 
 		// For each track, get the nearest tracks
-		for (auto track : trainingTracks)
+		for (auto track : tracks)
 		{
 			auto features = getTrackFeatures(db.getSession(), track, featuresSettings);
 
@@ -232,27 +205,28 @@ int main(int argc, char *argv[])
 
 			normalizer.normalizeData(features);
 
-			auto refVectorCoords = network.getClosestRefVectorCoords(features);
+			auto refVectorPosition = network.getClosestRefVectorPosition(features);
 
-			std::cout << "Getting nearest songs for track " << track << " in {" << refVectorCoords.x << ", " << refVectorCoords.y << "}:" << std::endl;
-			for (auto similarTrack : tracksMap[refVectorCoords])
+			std::cout << "Getting nearest songs for track " << track << " in {" << refVectorPosition.x << ", " << refVectorPosition.y << "}:" << std::endl;
+			for (auto similarTrack : tracksMap[refVectorPosition])
 				std::cout << " - " << similarTrack << std::endl;
 
-			std::set<SOM::Coords> neighbourCoords = {refVectorCoords};
+			std::set<SOM::Position> neighbourPosition = {refVectorPosition};
 			for (std::size_t i = 0; i < 5; ++i)
 			{
-				auto coords = network.getClosestRefVectorCoords(neighbourCoords, medianDistance);
-				if (!coords)
+				auto position = network.getClosestRefVectorPosition(neighbourPosition, medianDistance);
+				if (!position)
 					break;
 
-				std::cout << " - in {" << coords->x << ", " << coords->y << "}, dist = " << network.getRefVectorsDistance(*coords, refVectorCoords) << std::endl;
-				for (auto similarTrack : tracksMap[*coords])
+				std::cout << " - in {" << position->x << ", " << position->y << "}, dist = " << network.getRefVectorsDistance(*position, refVectorPosition) << std::endl;
+				for (auto similarTrack : tracksMap[*position])
 					std::cout << "    - " << similarTrack << std::endl;
 
-				neighbourCoords.insert(*coords);
+				neighbourPosition.insert(*position);
 			}
 
 		}
+#endif
 
 		std::cout << "Classifying tracks DONE" << std::endl;
 	}

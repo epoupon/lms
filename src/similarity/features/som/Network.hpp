@@ -33,7 +33,8 @@
 namespace SOM
 {
 
-using InputVector = std::vector<double>;
+using FeatureType = double;
+using InputVector = std::vector<FeatureType>;
 void checkSameDimensions(const InputVector& a, const InputVector& b);
 void checkSameDimensions(const InputVector& a, std::size_t inputDimCount);
 std::ostream& operator<<(std::ostream& os, const InputVector& a);
@@ -49,27 +50,42 @@ class Network
 {
 	public:
 
+		Network() = default;
+
 		// Init a network with random values
-		Network(std::size_t width, std::size_t height, std::size_t inputDimCount);
+		Network(Coordinate width, Coordinate height, std::size_t inputDimCount);
 
 		// Init a network with serialized values
 		Network(const std::string& data);
 
 		std::size_t getWidth() const { return _refVectors.getWidth(); }
 		std::size_t getHeight() const { return _refVectors.getHeight(); }
-		std::size_t getInputDimCount() const {return _inputDimCount;}
+		std::size_t getInputDimCount() const { return _inputDimCount; }
+		const InputVector& getDataWeights() const { return _weights; }
+
 		// Set weight for each dimension (default is 1 for each weight)
 		void setDataWeights(const InputVector& weights);
 
+		// use this to manually construct a network without training
+		void setRefVector(const Position& position, const InputVector& data);
+
 		// <!> data must be normalized
-		void train(const std::vector<InputVector>& dataSamples, std::size_t nbIterations);
+		struct CurrentIteration
+		{
+			std::size_t idIteration;
+			std::size_t iterationCount;
+		};
+		using ProgressCallback = std::function<void(const CurrentIteration&)>;
+		using RequestStopCallback = std::function<bool()>;
+		void train(const std::vector<InputVector>& dataSamples, std::size_t nbIterations, ProgressCallback = ProgressCallback{}, RequestStopCallback = RequestStopCallback{});
 
-		Coords getClosestRefVectorCoords(const InputVector& data) const;
-		boost::optional<Coords> getClosestRefVectorCoords(const InputVector& data, double maxDistance) const;
+		const InputVector& getRefVector(const Position& position) const;
+		Position getClosestRefVectorPosition(const InputVector& data) const;
+		boost::optional<Position> getClosestRefVectorPosition(const InputVector& data, double maxDistance) const;
 
-		boost::optional<Coords> getClosestRefVectorCoords(const std::set<Coords>& refVectorsCoords, double maxDistance) const;
+		boost::optional<Position> getClosestRefVectorPosition(const std::set<Position>& refVectorsPosition, double maxDistance) const;
 
-		double getRefVectorsDistance(Coords coords1, Coords coords2) const;
+		double getRefVectorsDistance(const Position& position1, const Position& position2) const;
 
 		double computeRefVectorsDistanceMean() const;
 		double computeRefVectorsDistanceMedian() const;
@@ -80,26 +96,20 @@ class Network
 		// i is the current iteration
 		// refVector(i+1) = refVector(i) + LearningFactor(i) * NeighbourhoodFunc(i) * (MatchingRefVector - refVector)
 
-		using DistanceFunc = std::function<InputVector::value_type(const InputVector& /* a */, const InputVector& /* b */, const InputVector& /* weights */)>;
+		using DistanceFunc = std::function<FeatureType(const InputVector& /* a */, const InputVector& /* b */, const InputVector& /* weights */)>;
 		void setDistanceFunc(DistanceFunc distanceFunc);
 
-		struct CurrentIteration
-		{
-			std::size_t idIteration;
-			std::size_t iterationCount;
-		};
-
-		using LearningFactorFunc = std::function<InputVector::value_type(CurrentIteration)>;
+		using LearningFactorFunc = std::function<FeatureType(const CurrentIteration&)>;
 		void setLearningFactorFunc(LearningFactorFunc learningFactorFunc);
 
-		using NeighbourhoodFunc = std::function<InputVector::value_type(InputVector::value_type /* norm(Coords - CoordMatchingRefVector) */, CurrentIteration)>;
+		using NeighbourhoodFunc = std::function<FeatureType(FeatureType /* norm(Position - CoordMatchingRefVector) */, const CurrentIteration&)>;
 		void setNeighbourhoodFunc(NeighbourhoodFunc neighbourhoodFunc);
 
 	private:
 
-		void updateRefVectors(Coords closestRefVectorCoords, const InputVector& input, CurrentIteration iteration);
+		void updateRefVectors(const Position& closestRefVectorPosition, const InputVector& input, FeatureType learningFactor, const CurrentIteration& iteration);
 
-		std::size_t _inputDimCount;
+		std::size_t _inputDimCount = 0;
 		InputVector _weights;	// weight for each dimension
 		Matrix<InputVector> _refVectors;
 
