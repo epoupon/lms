@@ -26,40 +26,29 @@
 
 #include <boost/optional.hpp>
 
-#include "Matrix.hpp"
-
 #include "utils/Exception.hpp"
+#include "InputVector.hpp"
+#include "Matrix.hpp"
 
 namespace SOM
 {
 
-using FeatureType = double;
-using InputVector = std::vector<FeatureType>;
+using LearningFactor = InputVector::value_type;
+
 void checkSameDimensions(const InputVector& a, const InputVector& b);
 void checkSameDimensions(const InputVector& a, std::size_t inputDimCount);
 std::ostream& operator<<(std::ostream& os, const InputVector& a);
-
-class SOMException : public LmsException
-{
-	public:
-		SOMException(const std::string& msg) : LmsException(msg) {}
-};
 
 
 class Network
 {
 	public:
 
-		Network() = default;
-
 		// Init a network with random values
 		Network(Coordinate width, Coordinate height, std::size_t inputDimCount);
 
-		// Init a network with serialized values
-		Network(const std::string& data);
-
-		std::size_t getWidth() const { return _refVectors.getWidth(); }
-		std::size_t getHeight() const { return _refVectors.getHeight(); }
+		Coordinate getWidth() const { return _refVectors.getWidth(); }
+		Coordinate getHeight() const { return _refVectors.getHeight(); }
 		std::size_t getInputDimCount() const { return _inputDimCount; }
 		const InputVector& getDataWeights() const { return _weights; }
 
@@ -81,14 +70,14 @@ class Network
 
 		const InputVector& getRefVector(const Position& position) const;
 		Position getClosestRefVectorPosition(const InputVector& data) const;
-		boost::optional<Position> getClosestRefVectorPosition(const InputVector& data, double maxDistance) const;
+		boost::optional<Position> getClosestRefVectorPosition(const InputVector& data, InputVector::Distance maxDistance) const;
 
-		boost::optional<Position> getClosestRefVectorPosition(const std::set<Position>& refVectorsPosition, double maxDistance) const;
+		boost::optional<Position> getClosestRefVectorPosition(const std::set<Position>& refVectorsPosition, InputVector::Distance maxDistance) const;
 
-		double getRefVectorsDistance(const Position& position1, const Position& position2) const;
+		InputVector::Distance getRefVectorsDistance(const Position& position1, const Position& position2) const;
 
-		double computeRefVectorsDistanceMean() const;
-		double computeRefVectorsDistanceMedian() const;
+		InputVector::Distance computeRefVectorsDistanceMean() const;
+		InputVector::Distance computeRefVectorsDistanceMedian() const;
 
 		void dump(std::ostream& os) const;
 
@@ -96,20 +85,21 @@ class Network
 		// i is the current iteration
 		// refVector(i+1) = refVector(i) + LearningFactor(i) * NeighbourhoodFunc(i) * (MatchingRefVector - refVector)
 
-		using DistanceFunc = std::function<FeatureType(const InputVector& /* a */, const InputVector& /* b */, const InputVector& /* weights */)>;
+		using DistanceFunc = std::function<InputVector::Distance(const InputVector& /* a */, const InputVector& /* b */, const InputVector& /* weights */)>;
 		void setDistanceFunc(DistanceFunc distanceFunc);
+		DistanceFunc getDistanceFunc() { return _distanceFunc; }
 
-		using LearningFactorFunc = std::function<FeatureType(const CurrentIteration&)>;
+		using LearningFactorFunc = std::function<LearningFactor(const CurrentIteration&)>;
 		void setLearningFactorFunc(LearningFactorFunc learningFactorFunc);
 
-		using NeighbourhoodFunc = std::function<FeatureType(FeatureType /* norm(Position - CoordMatchingRefVector) */, const CurrentIteration&)>;
+		using NeighbourhoodFunc = std::function<InputVector::value_type(Norm /* norm(Position - CoordMatchingRefVector) */, const CurrentIteration&)>;
 		void setNeighbourhoodFunc(NeighbourhoodFunc neighbourhoodFunc);
 
 	private:
 
-		void updateRefVectors(const Position& closestRefVectorPosition, const InputVector& input, FeatureType learningFactor, const CurrentIteration& iteration);
+		void updateRefVectors(const Position& closestRefVectorPosition, const InputVector& input, LearningFactor learningFactor, const CurrentIteration& iteration);
 
-		std::size_t _inputDimCount = 0;
+		std::size_t _inputDimCount {};
 		InputVector _weights;	// weight for each dimension
 		Matrix<InputVector> _refVectors;
 

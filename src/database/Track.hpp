@@ -70,7 +70,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static std::vector<pointer> getChecksumDuplicates(Wt::Dbo::Session& session);
 		static std::vector<pointer> getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int size = 1);
 		static std::vector<pointer> getAllWithMBIDAndMissingFeatures(Wt::Dbo::Session& session); // nested transaction
-		static std::vector<pointer> getAllWithFeatures(Wt::Dbo::Session& session); // nested transaction
+		static std::vector<pointer> getAllWithFeatures(Wt::Dbo::Session& session, boost::optional<std::size_t> limit = {}); // nested transaction
 
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p);

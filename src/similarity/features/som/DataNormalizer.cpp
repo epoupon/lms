@@ -31,14 +31,14 @@ static
 T
 variance(const std::vector<T>& vec)
 {
-	std::size_t size = vec.size();
+	std::size_t size {vec.size()};
 
 	if (size == 1)
-		return T{0.};
+		return T {};
 
-	T mean = std::accumulate(vec.begin(), vec.end(), T{0.}) / size;
+	const T mean {std::accumulate(vec.begin(), vec.end(), T{}) / size};
 
-	return std::accumulate(vec.begin(), vec.end(), T{0.},
+	return std::accumulate(vec.begin(), vec.end(), T {},
 		[mean, size] (T accumulator, const T& val)
 		{
 			return accumulator + ((val - mean) * (val - mean) / (size - 1));
@@ -46,7 +46,7 @@ variance(const std::vector<T>& vec)
 }
 
 DataNormalizer::DataNormalizer(std::size_t inputDimCount)
-: _inputDimCount(inputDimCount)
+: _inputDimCount{inputDimCount}
 {
 }
 
@@ -66,13 +66,13 @@ void
 DataNormalizer::computeNormalizationFactors(const std::vector<InputVector>& inputVectors)
 {
 	if (inputVectors.empty())
-		throw SOMException("Empty input vectors");
+		throw Exception("Empty input vectors");
 
 	// For each dimension of the input, compute the min/max
 	_minmax.clear();
 	_minmax.resize(_inputDimCount);
 
-	for (std::size_t dimId = 0; dimId < _inputDimCount; ++dimId)
+	for (std::size_t dimId {}; dimId < _inputDimCount; ++dimId)
 	{
 		std::vector<InputVector::value_type> values;
 
@@ -82,7 +82,7 @@ DataNormalizer::computeNormalizationFactors(const std::vector<InputVector>& inpu
 			values.push_back(inputVector[dimId]);
 		}
 
-		auto result = std::minmax_element(values.begin(), values.end());
+		auto result {std::minmax_element(values.begin(), values.end())};
 		_minmax[dimId] = {*result.first, *result.second};
 	}
 }
@@ -104,7 +104,7 @@ DataNormalizer::normalizeData(InputVector& a) const
 {
 	checkSameDimensions(a, _inputDimCount);
 
-	for (std::size_t dimId = 0; dimId < _inputDimCount; ++dimId)
+	for (std::size_t dimId {}; dimId < _inputDimCount; ++dimId)
 	{
 		a[dimId] = normalizeValue(a[dimId], dimId);
 	}
@@ -113,7 +113,7 @@ DataNormalizer::normalizeData(InputVector& a) const
 void
 DataNormalizer::dump(std::ostream& os) const
 {
-	for (std::size_t i = 0; i < _inputDimCount; ++i)
+	for (std::size_t i {}; i < _inputDimCount; ++i)
 		os << "(" << _minmax[i].min << ", " << _minmax[i].max << ")";
 }
 

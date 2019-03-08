@@ -34,11 +34,9 @@ std::ostream& operator<<(std::ostream& os, const Database::Track::pointer& track
 }
 
 static
-std::vector<double>
-getTrackFeatures(Wt::Dbo::Session &session, Database::Track::pointer track, const std::map<std::string, std::size_t>& featuresSettings)
+bool
+getTrackFeatures(Wt::Dbo::Session &session, const Database::Track::pointer& track, const std::map<std::string, std::size_t>& featuresSettings, SOM::InputVector& res)
 {
-	std::vector<double> res;
-
 	std::map<std::string, std::vector<double>> features;
 	for (const auto& featureSettings : featuresSettings)
 		features[featureSettings.first] = {};
@@ -46,22 +44,21 @@ getTrackFeatures(Wt::Dbo::Session &session, Database::Track::pointer track, cons
 	if (!track->getTrackFeatures()->getFeatures(features))
 	{
 		std::cout << "Skipping track '" << track->getMBID() << "': missing item" << std::endl;
-		return res;
+		return false;
 	};
 
+	std::size_t index {};
 	for (const auto& feature : features)
 	{
 		auto it = featuresSettings.find(feature.first);
 		if (it == featuresSettings.end() || (feature.second.size() != it->second))
-		{
-			res.clear();
-			break;
-		}
+			return false;
 
-		res.insert( res.end(), feature.second.begin(), feature.second.end() );
+		for (double value : feature.second)
+			res[index++] = value;
 	}
 
-	return res;
+	return true;
 }
 
 
@@ -69,10 +66,10 @@ int main(int argc, char *argv[])
 {
 	try
 	{
-		const std::size_t width = 15;
-		const std::size_t height = 15;
-		const std::size_t nbIterations = 2;
-		const std::size_t nbTracks = 5000;
+		const std::size_t width = 10;
+		const std::size_t height = 10;
+		const std::size_t nbIterations = 20;
+		std::size_t nbTracks = 5000;
 
 		const std::map<std::string, std::size_t> featuresSettings =
 		{
@@ -91,7 +88,6 @@ int main(int argc, char *argv[])
 			nbDims += featureSettings.second;
 
 		boost::filesystem::path configFilePath = "/etc/lms.conf";
-
 		if (argc >= 2)
 			configFilePath = std::string(argv[1], 0, 256);
 
@@ -104,38 +100,32 @@ int main(int argc, char *argv[])
 		std::cout << "Getting all features..." << std::endl;
 		Wt::Dbo::Transaction transaction(db.getSession());
 
-		auto tracks = Database::Track::getAllWithFeatures(db.getSession());
+		auto tracks = Database::Track::getAllWithFeatures(db.getSession(), nbTracks);
 
-		std::cout << "Getting all features DONE" << std::endl;
-
-/*		auto now = std::chrono::system_clock::now();
-		std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
-		std::shuffle(tracks.begin(), tracks.end(), randGenerator);
-*/
-		tracks.resize(nbTracks);
+		nbTracks = tracks.size();
+		std::cout << "Getting features DONE (" << nbTracks << " tracks)" << std::endl;
 
 		std::cout << "Reading features..." << std::endl;
-		std::vector< std::vector<double> > tracksFeatures;
+		std::vector<SOM::InputVector> tracksFeatures;
 
-		for (auto track : tracks)
+		for (const auto& track : tracks)
 		{
-			auto features = getTrackFeatures(db.getSession(), track, featuresSettings);
-
-			if (features.empty())
+			SOM::InputVector features {nbDims};
+			if (!getTrackFeatures(db.getSession(), track, featuresSettings, features))
 				continue;
 
 			tracksFeatures.emplace_back(std::move(features));
 		}
 		std::cout << "Reading features DONE" << std::endl;
 
-		SOM::Network network(width, height, nbDims);
-		SOM::DataNormalizer normalizer(nbDims);
+		SOM::Network network {width, height, nbDims};
+		SOM::DataNormalizer normalizer {nbDims};
 
-		std::vector<double> weights;
+		SOM::InputVector weights {nbDims};
 		for (const auto& featureSettings : featuresSettings)
 		{
-			for (std::size_t i = 0; i < featureSettings.second; ++i)
-				weights.push_back(1. / featureSettings.second);
+			for (std::size_t i {}; i < featureSettings.second; ++i)
+				weights[i] = SOM::InputVector::value_type{1. / featureSettings.second};
 		}
 
 		network.setDataWeights(weights);
@@ -147,12 +137,17 @@ int main(int argc, char *argv[])
 		normalizer.dump(std::cout);
 		std::cout << "Dumping normalizer DONE" << std::endl;
 
-		for (auto& features : tracksFeatures)
+		for (SOM::InputVector& features : tracksFeatures)
 			normalizer.normalizeData(features);
 		std::cout << "Normalizing DONE" << std::endl;
 
+		auto progress {[](const SOM::Network::CurrentIteration& iteration)
+		{
+			std::cout << "Iteration " << iteration.idIteration + 1 << " of " << iteration.iterationCount << std::endl;;
+		}};
+
 		std::cout << "Training..." << std::endl;
-		network.train(tracksFeatures, nbIterations);
+		network.train(tracksFeatures, nbIterations, progress);
 		std::cout << "Training DONE" << std::endl;
 
 		auto meanDistance = network.computeRefVectorsDistanceMean();
@@ -160,20 +155,18 @@ int main(int argc, char *argv[])
 		auto medianDistance = network.computeRefVectorsDistanceMedian();
 		std::cout << "MEDIAN distance = " << medianDistance << std::endl;
 
-#if 0
 		std::cout << "Classifying tracks..." << std::endl;
 
 		SOM::Matrix< std::vector<Database::Track::pointer> > tracksMap(width, height);
 		for (auto track : tracks)
 		{
-			auto features = getTrackFeatures(db.getSession(), track, featuresSettings);
-
-			if (features.empty())
+			SOM::InputVector features {nbDims};
+			if (!getTrackFeatures(db.getSession(), track, featuresSettings, features))
 				continue;
 
 			normalizer.normalizeData(features);
 
-			auto position = network.getClosestRefVectorPosition(features);
+			SOM::Position position = network.getClosestRefVectorPosition(features);
 			tracksMap[position].push_back(track);
 		}
 
@@ -188,7 +181,7 @@ int main(int argc, char *argv[])
 				std::cout << "{" << x << ", " << y << "}" << std::endl;
 				const auto& tracks = tracksMap[{x, y}];
 
-				for (auto track : tracks)
+				for (const auto& track : tracks)
 				{
 					std::cout << " - " << track << std::endl;
 				}
@@ -196,39 +189,35 @@ int main(int argc, char *argv[])
 		}
 
 		// For each track, get the nearest tracks
-		for (auto track : tracks)
+		for (const auto& track : tracks)
 		{
-			auto features = getTrackFeatures(db.getSession(), track, featuresSettings);
-
-			if (features.empty())
+			SOM::InputVector features {nbDims};
+			if (!getTrackFeatures(db.getSession(), track, featuresSettings, features))
 				continue;
 
 			normalizer.normalizeData(features);
 
-			auto refVectorPosition = network.getClosestRefVectorPosition(features);
+			SOM::Position refVectorPosition {network.getClosestRefVectorPosition(features)};
 
 			std::cout << "Getting nearest songs for track " << track << " in {" << refVectorPosition.x << ", " << refVectorPosition.y << "}:" << std::endl;
 			for (auto similarTrack : tracksMap[refVectorPosition])
 				std::cout << " - " << similarTrack << std::endl;
 
-			std::set<SOM::Position> neighbourPosition = {refVectorPosition};
-			for (std::size_t i = 0; i < 5; ++i)
+			std::set<SOM::Position> neighbourPosition {refVectorPosition};
+			for (std::size_t i {}; i < 3; ++i)
 			{
 				auto position = network.getClosestRefVectorPosition(neighbourPosition, medianDistance);
 				if (!position)
 					break;
 
 				std::cout << " - in {" << position->x << ", " << position->y << "}, dist = " << network.getRefVectorsDistance(*position, refVectorPosition) << std::endl;
-				for (auto similarTrack : tracksMap[*position])
+				for (const auto& similarTrack : tracksMap[*position])
 					std::cout << "    - " << similarTrack << std::endl;
 
 				neighbourPosition.insert(*position);
 			}
 
 		}
-#endif
-
-		std::cout << "Classifying tracks DONE" << std::endl;
 	}
 	catch( std::exception& e)
 	{

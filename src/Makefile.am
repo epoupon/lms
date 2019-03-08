@@ -24,6 +24,7 @@ lms_SOURCES = \
 	$(srcdir)/similarity/SimilaritySearcher.cpp		\
 	$(srcdir)/similarity/cluster/SimilarityClusterSearcher.cpp \
 	$(srcdir)/similarity/features/AcousticBrainzUtils.cpp	\
+	$(srcdir)/similarity/features/SimilarityFeaturesCache.cpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesScannerAddon.cpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesSearcher.cpp	\
 	$(srcdir)/similarity/features/som/DataNormalizer.cpp	\

@@ -1,2 +1,2 @@
-SUBDIRS = feature-extractor metadata
+SUBDIRS = similarity metadata
 

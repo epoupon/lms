@@ -20,8 +20,6 @@
 #include "SimilarityFeaturesSearcher.hpp"
 
 #include <random>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
 
 #include "database/Artist.hpp"
 #include "database/SimilaritySettings.hpp"
@@ -29,237 +27,82 @@
 #include "database/Track.hpp"
 #include "database/TrackFeatures.hpp"
 #include "som/DataNormalizer.hpp"
-#include "utils/Config.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
 
 namespace Similarity {
 
-static
-boost::filesystem::path getCacheDirectory()
+struct FeatureInfo
 {
-	return Config::instance().getPath("working-dir") / "cache" / "features";
-}
-
-static boost::filesystem::path getCacheNetworkFilePath()
-{
-	return getCacheDirectory() / "network";
+	std::size_t	nbDimensions;
+	double		weight;
 };
 
-static boost::filesystem::path getCacheTrackPositionsFilePath()
+using FeatureInfoMap = std::map<std::string, FeatureInfo>;
+
+static
+FeatureInfoMap
+getFeatureInfoMap(Wt::Dbo::Session& session)
 {
-	return getCacheDirectory() / "track_positions";
+	Wt::Dbo::Transaction transaction {session};
+
+	auto settings {Database::SimilaritySettings::get(session)};
+
+	std::map<std::string, FeatureInfo> featuresInfo;
+	for (auto feature : settings->getFeatures())
+	{
+		LMS_LOG(SIMILARITY, DEBUG) << "Feature '" << feature->getName() << "', nbDimns = " << feature->getNbDimensions() << ", weight = " << feature->getWeight() ;
+		featuresInfo[feature->getName()] = { feature->getNbDimensions(), feature->getWeight() };
+	}
+
+	return featuresInfo;
 }
 
 static
-bool
-networkToCacheFile(const SOM::Network& network, boost::filesystem::path path)
+std::size_t
+getFeatureInfoMapNbDimensions(const FeatureInfoMap& featureInfoMap)
 {
-	try
-	{
-		boost::property_tree::ptree root;
-
-		root.put("width", network.getWidth());
-		root.put("height", network.getHeight());
-		root.put("dim_count", network.getInputDimCount());
-
-		for (auto weight : network.getDataWeights())
-			root.add("weights.weight", weight);
-
-		for (SOM::Coordinate x = 0; x < network.getWidth(); ++x)
-		{
-			for (SOM::Coordinate y = 0; y < network.getWidth(); ++y)
-			{
-				const auto& refVector = network.getRefVector({x, y});
-
-				boost::property_tree::ptree node;
-				for (auto value : refVector)
-					node.add("values.value", value);
-
-				node.put("coord_x", x);
-				node.put("coord_y", y);
-
-				root.add_child("ref_vectors.ref_vector", node);
-			}
-		}
-
-		boost::property_tree::write_xml(path.string(), root);
-
-		LMS_LOG(SIMILARITY, DEBUG) << "Created network cache";
-		return true;
-	}
-	catch (boost::property_tree::ptree_error& error)
-	{
-		LMS_LOG(SIMILARITY, ERROR) << "Cannot create network cache: " << error.what();
-		return false;
-	}
+	return std::accumulate(featureInfoMap.begin(), featureInfoMap.end(), 0, [](std::size_t sum, auto it) { return sum + it.second.nbDimensions; });
 }
 
-static
-boost::optional<SOM::Network>
-createNetworkFromCacheFile(boost::filesystem::path path)
-{
-	try
-	{
-		boost::property_tree::ptree root;
-
-		boost::property_tree::read_xml(path.string(), root);
-
-		auto width = root.get<double>("width");
-		auto height = root.get<double>("height");
-		auto dimCount = root.get<std::size_t>("dim_count");
-
-		SOM::Network res(width, height, dimCount);
-
-		SOM::InputVector weights;
-		for (const auto& val : root.get_child("weights"))
-			weights.push_back(val.second.get_value<double>());
-
-		res.setDataWeights(weights);
-
-		for (const auto& node : root.get_child("ref_vectors"))
-		{
-			auto x = node.second.get<SOM::Coordinate>("coord_x");
-			auto y = node.second.get<SOM::Coordinate>("coord_y");
-
-			std::vector<double> values;
-			for (const auto& val : node.second.get_child("values"))
-				values.push_back(val.second.get_value<double>());
-
-			res.setRefVector({x, y}, values);
-		}
-
-		LMS_LOG(SIMILARITY, DEBUG) << "Successfully read network from cache";
-
-		return res;
-	}
-	catch (boost::property_tree::ptree_error& error)
-	{
-		LMS_LOG(SIMILARITY, ERROR) << "Cannot read network cache: " << error.what();
-		return boost::none;
-	}
-}
-
-static
-bool
-objectPositionToCacheFile(const std::map<Database::IdType, std::set<SOM::Position>>& objectsPosition, boost::filesystem::path path)
-{
-	try
-	{
-		boost::property_tree::ptree root;
-
-		for (const auto& objectPosition : objectsPosition)
-		{
-			boost::property_tree::ptree node;
-
-			node.put("id", objectPosition.first);
-
-			for (const auto& position : objectPosition.second)
-			{
-				boost::property_tree::ptree positionNode;
-				positionNode.put("x", position.x);
-				positionNode.put("y", position.y);
-
-				node.add_child("position.position", positionNode);
-			}
-
-			root.add_child("objects.object", node);
-		}
-
-		boost::property_tree::write_xml(path.string(), root);
-		return true;
-	}
-	catch (boost::property_tree::ptree_error& error)
-	{
-		LMS_LOG(SIMILARITY, ERROR) << "Cannot cache object position: " << error.what();
-		return false;
-	}
-}
-
-static
-boost::optional<std::map<Database::IdType, std::set<SOM::Position>>>
-createObjectPositionsFromCacheFile(boost::filesystem::path path)
-{
-	try
-	{
-		boost::property_tree::ptree root;
-
-		boost::property_tree::read_xml(path.string(), root);
-
-		std::map<Database::IdType, std::set<SOM::Position>> res;
-
-		for (const auto& object : root.get_child("objects"))
-		{
-			auto id = object.second.get<Database::IdType>("id");
-			for (const auto& position : object.second.get_child("position"))
-			{
-				auto x = position.second.get<SOM::Coordinate>("x");
-				auto y = position.second.get<SOM::Coordinate>("y");
-
-				res[id].insert({x, y});
-			}
-		}
-
-		LMS_LOG(SIMILARITY, DEBUG) << "Successfully read object position from cache";
-
-		return res;
-	}
-	catch (boost::property_tree::ptree_error& error)
-	{
-		LMS_LOG(SIMILARITY, ERROR) << "Cannot create object position from cache file: " << error.what();
-		return boost::none;
-	}
-}
-
-bool
-FeaturesSearcher::init(Wt::Dbo::Session& session, bool& stopRequested)
+FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequested)
 {
 	Wt::Dbo::Transaction transaction(session);
 
-	auto settings = Database::SimilaritySettings::get(session);
+	FeatureInfoMap featuresInfo {getFeatureInfoMap(session)};
+	std::size_t nbDimensions {getFeatureInfoMapNbDimensions(featuresInfo)};
 
-	struct FeatureInfo
-	{
-		std::size_t	nbDimensions;
-		double		weight;
-	};
-
-	std::map<std::string, FeatureInfo> featuresInfo;
-	std::size_t nbDimensions = 0;
-	for (auto feature : settings->getFeatures())
-	{
-		featuresInfo[feature->getName()] = { feature->getNbDimensions(), feature->getWeight() };
-		nbDimensions += feature->getNbDimensions();
-	}
+	LMS_LOG(SIMILARITY, DEBUG) << "Features dimension = " << nbDimensions;
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features...";
-	auto tracks = Database::Track::getAllWithFeatures(session);
+	auto tracks {Database::Track::getAllWithFeatures(session)};
 	LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features DONE";
 
 	std::vector<SOM::InputVector> samples;
 	std::vector<Database::IdType> tracksIds;
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Extracting features...";
-	for (auto track : tracks)
+	for (const Database::Track::pointer& track : tracks)
 	{
 		if (stopRequested)
-			return false;
+			return;
 
-		SOM::InputVector sample;
+		SOM::InputVector sample {nbDimensions};
 
 		std::map<std::string, std::vector<double>> features;
-		for (const auto& featureInfo : featuresInfo)
-			features[featureInfo.first] = {};
+		for (auto itFeatureInfo : featuresInfo)
+			features[itFeatureInfo.first] = {};
 
 		if (!track->getTrackFeatures()->getFeatures(features))
 			continue;
 
-		// Check dimensions for each feature
-		bool ok = true;
+		bool ok {true};
+		std::size_t i {};
 		for (const auto& feature : features)
 		{
-			auto it = featuresInfo.find(feature.first);
+			// Check dimensions for each feature
+			auto it {featuresInfo.find(feature.first)};
 			if (it == featuresInfo.end() || it->second.nbDimensions != feature.second.size())
 			{
 				LMS_LOG(SIMILARITY, WARNING) << "Dimension mismatch for feature '" << feature.first << "'. Expected " << it->second.nbDimensions << ", got " << feature.second.size();
@@ -267,7 +110,8 @@ FeaturesSearcher::init(Wt::Dbo::Session& session, bool& stopRequested)
 				break;
 			}
 
-			sample.insert( sample.end(), feature.second.begin(), feature.second.end() );
+			for (double val : feature.second)
+				sample[i++] = val;
 		}
 
 		if (!ok)
@@ -283,7 +127,7 @@ FeaturesSearcher::init(Wt::Dbo::Session& session, bool& stopRequested)
 	if (tracksIds.empty())
 	{
 		LMS_LOG(SIMILARITY, INFO) << "Nothing to classify!";
-		return false;
+		return;
 	}
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Normalizing data...";
@@ -293,17 +137,21 @@ FeaturesSearcher::init(Wt::Dbo::Session& session, bool& stopRequested)
 	for (auto& sample : samples)
 		dataNormalizer.normalizeData(sample);
 
-	std::size_t size = std::sqrt(samples.size()/2);
-	LMS_LOG(SIMILARITY, INFO) << "Found " << samples.size() << " tracks, constructing a " << size << "*" << size << " network";
-
-	std::vector<double> weights;
-	for (const auto& featureInfo : featuresInfo)
+	SOM::InputVector weights {nbDimensions};
 	{
-		for (std::size_t i = 0; i < featureInfo.second.nbDimensions; ++i)
-			weights.push_back(1. / featureInfo.second.nbDimensions * featureInfo.second.weight);
+		std::size_t index {};
+		for (const auto& featureInfo : featuresInfo)
+		{
+			for (std::size_t i {}; i < featureInfo.second.nbDimensions; ++i)
+				weights[index++] = (1. / featureInfo.second.nbDimensions * featureInfo.second.weight);
+		}
 	}
 
-	SOM::Network network(size, size, nbDimensions);
+	SOM::Coordinate size {static_cast<SOM::Coordinate>(std::sqrt(samples.size() / 4))};
+	LMS_LOG(SIMILARITY, INFO) << "Found " << samples.size() << " tracks, constructing a " << size << "*" << size << " network";
+
+	SOM::Network network {size, size, nbDimensions};
+	std::cout << "Weights = '" << weights << "'";
 	network.setDataWeights(weights);
 
 	auto progressIndicator{[](const auto& iter)
@@ -314,116 +162,100 @@ FeaturesSearcher::init(Wt::Dbo::Session& session, bool& stopRequested)
 	auto stopper{[&]() { return stopRequested; }};
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Training network...";
-	network.train(samples, 1, progressIndicator, stopper);
+	network.train(samples, 10, progressIndicator, stopper);
 	LMS_LOG(SIMILARITY, DEBUG) << "Training network DONE";
 
 	if (stopRequested)
-		return false;
+		return;
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Classifying tracks...";
-	std::map<Database::IdType, std::set<SOM::Position>> trackPosition;
-	for (std::size_t i = 0; i < samples.size(); ++i)
+	std::map<Database::IdType, std::set<SOM::Position>> trackPositions;
+	for (std::size_t i {}; i < samples.size(); ++i)
 	{
 		if (stopRequested)
-			return false;
+			return;
 
-		Wt::Dbo::Transaction transaction(session);
+		Wt::Dbo::Transaction transaction {session};
 
 		const auto& sample = samples[i];
 		auto trackId = tracksIds[i];
 		auto position = network.getClosestRefVectorPosition(sample);
 
-		trackPosition[trackId].insert(position);
+		trackPositions[trackId].insert(position);
 	}
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Classifying tracks DONE";
 
-	init(session, std::move(network), std::move(trackPosition));
+	init(session, std::move(network), std::move(trackPositions));
+}
 
-	saveToCache();
+FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, FeaturesCache cache)
+{
+	init(session, std::move(cache._network), std::move(cache._trackPositions));
 
-	return true;
+	LMS_LOG(SIMILARITY, DEBUG) << "Init from cache DONE";
 }
 
 bool
-FeaturesSearcher::initFromCache(Wt::Dbo::Session& session)
+FeaturesSearcher::isValid() const
 {
-	auto network{createNetworkFromCacheFile(getCacheNetworkFilePath())};
-	if (!network)
-	{
-		clearCache();
-		return false;
-	}
-
-	auto trackPositions{createObjectPositionsFromCacheFile(getCacheTrackPositionsFilePath())};
-	if (!trackPositions)
-	{
-		clearCache();
-		return false;
-	}
-
-	init(session, std::move(*network), std::move(*trackPositions));
-
-	LMS_LOG(SIMILARITY, DEBUG) << "Init from cache OK";
-
-	return true;
-}
-
-void
-FeaturesSearcher::invalidateCache()
-{
-	boost::filesystem::remove(getCacheNetworkFilePath());
-	boost::filesystem::remove(getCacheTrackPositionsFilePath());
+	return _network.get() != nullptr;
 }
 
 std::vector<Database::IdType>
 FeaturesSearcher::getSimilarTracks(const std::set<Database::IdType>& tracksIds, std::size_t maxCount) const
 {
-	return getSimilarObjects(tracksIds, _tracksMap, _trackPosition, maxCount);
+	return getSimilarObjects(tracksIds, _tracksMap, _trackPositions, maxCount);
 }
 
 std::vector<Database::IdType>
 FeaturesSearcher::getSimilarReleases(Database::IdType releaseId, std::size_t maxCount) const
 {
-	return getSimilarObjects({releaseId}, _releasesMap, _releasePosition, maxCount);
+	return getSimilarObjects({releaseId}, _releasesMap, _releasePositions, maxCount);
 }
 
 std::vector<Database::IdType>
 FeaturesSearcher::getSimilarArtists(Database::IdType artistId, std::size_t maxCount) const
 {
-	return getSimilarObjects({artistId}, _artistsMap, _artistPosition, maxCount);
+	return getSimilarObjects({artistId}, _artistsMap, _artistPositions, maxCount);
 }
 
 void
 FeaturesSearcher::dump(Wt::Dbo::Session& session, std::ostream& os) const
 {
-	os << "Number of tracks classified: " << _trackPosition.size() << std::endl;
-	os << "Network size: " << _network.getWidth() << " * " << _network.getHeight() << std::endl;
+	if (!isValid())
+	{
+		os << "Invalid searcher" << std::endl;
+		return;
+	}
+
+	os << "Number of tracks classified: " << _trackPositions.size() << std::endl;
+	os << "Network size: " << _network->getWidth() << " * " << _network->getHeight() << std::endl;
 	os << "Ref vectors median distance = " << _networkRefVectorsDistanceMedian << std::endl;
 
 	Wt::Dbo::Transaction transaction(session);
 
-	for (SOM::Coordinate y = 0; y < _network.getHeight(); ++y)
+	for (SOM::Coordinate y {}; y < _network->getHeight(); ++y)
 	{
-		for (SOM::Coordinate x = 0; x < _network.getWidth(); ++x)
+		for (SOM::Coordinate x {}; x < _network->getWidth(); ++x)
 		{
-			const auto& trackIds = _tracksMap[{x, y}];
+			const auto& trackIds {_tracksMap[{x, y}]};
 
 			os << "{" << x << ", " << y << "}";
 
 			if (y > 0)
-				os << " - {" << x << ", " << y - 1 << "}: " << _network.getRefVectorsDistance({x, y}, {x, y - 1});
+				os << " - {" << x << ", " << y - 1 << "}: " << _network->getRefVectorsDistance({x, y}, {x, y - 1});
 			if (x > 0)
-				os << " - {" << x - 1 << ", " << y << "}: " << _network.getRefVectorsDistance({x, y}, {x - 1, y});
-			if (y !=  _network.getHeight() - 1)
-				os << " - {" << x << ", " << y + 1 << "}: " << _network.getRefVectorsDistance({x, y}, {x, y + 1});
-			if (x !=  _network.getWidth() - 1)
-				os << " - {" << x + 1 << ", " << y << "}: " << _network.getRefVectorsDistance({x, y}, {x + 1, y});
+				os << " - {" << x - 1 << ", " << y << "}: " << _network->getRefVectorsDistance({x, y}, {x - 1, y});
+			if (y !=  _network->getHeight() - 1)
+				os << " - {" << x << ", " << y + 1 << "}: " << _network->getRefVectorsDistance({x, y}, {x, y + 1});
+			if (x !=  _network->getWidth() - 1)
+				os << " - {" << x + 1 << ", " << y << "}: " << _network->getRefVectorsDistance({x, y}, {x + 1, y});
 			os << std::endl;
 
-			for (auto trackId : trackIds)
+			for (Database::IdType trackId : trackIds)
 			{
-				auto track = Database::Track::getById(session, trackId);
+				auto track {Database::Track::getById(session, trackId)};
 				if (!track)
 					continue;
 
@@ -440,48 +272,52 @@ FeaturesSearcher::dump(Wt::Dbo::Session& session, std::ostream& os) const
 	}
 }
 
+FeaturesCache
+FeaturesSearcher::toCache() const
+{
+	return FeaturesCache{*_network, _trackPositions};
+}
 
 void
 FeaturesSearcher::init(Wt::Dbo::Session& session,
 			SOM::Network network,
 			std::map<Database::IdType, std::set<SOM::Position>> tracksPosition)
 {
-	_network = std::move(network);
-
-	_networkRefVectorsDistanceMedian = _network.computeRefVectorsDistanceMedian();
+	_network = std::make_unique<SOM::Network>(std::move(network));
+	_networkRefVectorsDistanceMedian = _network->computeRefVectorsDistanceMedian();
 	LMS_LOG(SIMILARITY, DEBUG) << "Median distance betweend ref vectors = " << _networkRefVectorsDistanceMedian;
 
-	auto width = _network.getWidth();
-	auto height = _network.getHeight();
+	SOM::Coordinate width {_network->getWidth()};
+	SOM::Coordinate height {_network->getHeight()};
 
 	_artistsMap = SOM::Matrix<std::set<Database::IdType>>(width, height);
 	_releasesMap = SOM::Matrix<std::set<Database::IdType>>(width, height);
 	_tracksMap = SOM::Matrix<std::set<Database::IdType>>(width, height);
 
-	Wt::Dbo::Transaction transaction(session);
+	Wt::Dbo::Transaction transaction {session};
 
 	for (auto itTrackCoord : tracksPosition)
 	{
-		auto trackId = itTrackCoord.first;
-		const auto& positionSet = itTrackCoord.second;
+		Database::IdType trackId {itTrackCoord.first};
+		const std::set<SOM::Position>& positionSet {itTrackCoord.second};
 
-		auto track = Database::Track::getById(session, trackId);
+		auto track {Database::Track::getById(session, trackId)};
 		if (!track)
 			continue;
 
-		for (const auto& position : positionSet)
+		for (const SOM::Position& position : positionSet)
 		{
 			_tracksMap[position].insert(trackId);
-			_trackPosition[trackId].insert(position);
+			_trackPositions[trackId].insert(position);
 
 			if (track->getRelease())
 			{
-				_releasePosition[track->getRelease().id()].insert(position);
+				_releasePositions[track->getRelease().id()].insert(position);
 				_releasesMap[position].insert(track->getRelease().id());
 			}
 			if (track->getArtist())
 			{
-				_artistPosition[track->getArtist().id()].insert(position);
+				_artistPositions[track->getArtist().id()].insert(position);
 				_artistsMap[position].insert(track->getArtist().id());
 			}
 		}
@@ -490,25 +326,6 @@ FeaturesSearcher::init(Wt::Dbo::Session& session,
 	LMS_LOG(SIMILARITY, DEBUG) << "Classifying tracks DONE";
 
 }
-
-void
-FeaturesSearcher::saveToCache() const
-{
-	if (!networkToCacheFile(_network, getCacheNetworkFilePath())
-		|| !objectPositionToCacheFile(_trackPosition, getCacheTrackPositionsFilePath()))
-	{
-		LMS_LOG(SIMILARITY, ERROR) << "Failed cache data";
-		clearCache();
-	}
-}
-
-void
-FeaturesSearcher::clearCache() const
-{
-	for (boost::filesystem::directory_iterator itEnd, it(getCacheDirectory()); it != itEnd; ++it)
-		boost::filesystem::remove_all(it->path());
-}
-
 
 static
 std::set<SOM::Position>
@@ -555,16 +372,19 @@ FeaturesSearcher::getSimilarObjects(const std::set<Database::IdType>& ids,
 {
 	std::vector<Database::IdType> res;
 
-	auto now = std::chrono::system_clock::now();
-	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
+	if (!isValid())
+		return res;
 
-	std::set<SOM::Position> searchedRefVectorsPosition = getMatchingRefVectorsPosition(ids, objectPosition);
+	auto now {std::chrono::system_clock::now()};
+	std::mt19937 randGenerator{static_cast<std::mt19937::result_type>(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count())};
+
+	std::set<SOM::Position> searchedRefVectorsPosition {getMatchingRefVectorsPosition(ids, objectPosition)};
 	if (searchedRefVectorsPosition.empty())
 		return res;
 
 	while (1)
 	{
-		std::set<Database::IdType> closestObjectIds = getObjectsIds(searchedRefVectorsPosition, objectsMap);
+		std::set<Database::IdType> closestObjectIds {getObjectsIds(searchedRefVectorsPosition, objectsMap)};
 
 		// Remove objects that are already in input or already reported
 		for (auto id : ids)
@@ -574,8 +394,7 @@ FeaturesSearcher::getSimilarObjects(const std::set<Database::IdType>& ids,
 			closestObjectIds.erase(id);
 
 		{
-			std::vector<Database::IdType> objectIdsToAdd(closestObjectIds.begin(), closestObjectIds.end());
-
+			std::vector<Database::IdType> objectIdsToAdd {closestObjectIds.begin(), closestObjectIds.end()};
 			std::shuffle(objectIdsToAdd.begin(), objectIdsToAdd.end(), randGenerator);
 			std::copy(objectIdsToAdd.begin(), objectIdsToAdd.end(), std::back_inserter(res));
 		}
@@ -587,7 +406,7 @@ FeaturesSearcher::getSimilarObjects(const std::set<Database::IdType>& ids,
 			break;
 
 		// If there is not enough objects, try again with closest neighbour until there is too much distance
-		auto closestRefVectorPosition = _network.getClosestRefVectorPosition(searchedRefVectorsPosition, _networkRefVectorsDistanceMedian * 0.75);
+		boost::optional<SOM::Position> closestRefVectorPosition {_network->getClosestRefVectorPosition(searchedRefVectorsPosition, _networkRefVectorsDistanceMedian * 0.75)};
 		if (!closestRefVectorPosition)
 			break;
 

@@ -85,7 +85,7 @@ AC_CONFIG_FILES([Makefile
 		 src/Makefile
 		 test/Makefile
 		 tools/Makefile
-		 tools/feature-extractor/Makefile
+		 tools/similarity/Makefile
 		 tools/metadata/Makefile])
 
 AC_OUTPUT

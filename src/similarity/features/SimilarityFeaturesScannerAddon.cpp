@@ -19,14 +19,12 @@
 
 #include "SimilarityFeaturesScannerAddon.hpp"
 
-
+#include "AcousticBrainzUtils.hpp"
 #include "database/Track.hpp"
 #include "database/TrackFeatures.hpp"
+#include "similarity/features/SimilarityFeaturesCache.hpp"
 #include "utils/Config.hpp"
 #include "utils/Logger.hpp"
-
-#include "AcousticBrainzUtils.hpp"
-
 
 namespace Similarity {
 
@@ -45,8 +43,8 @@ getTracksWithMBIDAndMissingFeatures(Wt::Dbo::Session& session)
 
 	Wt::Dbo::Transaction transaction(session);
 
-	auto tracks = Database::Track::getAllWithMBIDAndMissingFeatures(session);
-	for (auto track : tracks)
+	auto tracks {Database::Track::getAllWithMBIDAndMissingFeatures(session)};
+	for (const Database::Track::pointer& track : tracks)
 		res.push_back({track.id(), track->getMBID()});
 
 	return res;
@@ -57,11 +55,13 @@ getTracksWithMBIDAndMissingFeatures(Wt::Dbo::Session& session)
 FeaturesScannerAddon::FeaturesScannerAddon(Wt::Dbo::SqlConnectionPool& connectionPool)
 : _db(connectionPool)
 {
-	boost::filesystem::create_directories(Config::instance().getPath("working-dir") / "cache" / "features");
-
-	auto searcher = std::make_shared<Similarity::FeaturesSearcher>();
-	if (searcher->initFromCache(_db.getSession()))
-		std::atomic_store(&_searcher, searcher);
+	boost::optional<Similarity::FeaturesCache> cache {Similarity::FeaturesCache::read()};
+	if (cache)
+	{
+		auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_db.getSession(), *cache)};
+		if (searcher->isValid())
+			std::atomic_store(&_searcher, searcher);
+	}
 }
 
 std::shared_ptr<Similarity::FeaturesSearcher>
@@ -92,13 +92,13 @@ void
 FeaturesScannerAddon::preScanComplete()
 {
 	LMS_LOG(DBUPDATER, DEBUG) << "Getting tracks with missing Features...";
-	auto tracksInfo = getTracksWithMBIDAndMissingFeatures(_db.getSession());
+	std::vector<TrackInfo> tracksInfo {getTracksWithMBIDAndMissingFeatures(_db.getSession())};
 	LMS_LOG(DBUPDATER, DEBUG) << "Getting tracks with missing Features DONE (found " << tracksInfo.size() << ")";
 
-	for (const auto& trackInfo : tracksInfo)
+	for (const TrackInfo& trackInfo : tracksInfo)
 		fetchFeatures(trackInfo.id, trackInfo.mbid);
 
-	FeaturesSearcher::invalidateCache();
+	Similarity::FeaturesCache::invalidate();
 	updateSearcher();
 }
 
@@ -112,15 +112,24 @@ FeaturesScannerAddon::updateSearcher()
 	if (tracks.empty())
 	{
 		LMS_LOG(DBUPDATER, INFO) << "No track suitable for features similarity clustering";
-		std::atomic_store(&_searcher, std::shared_ptr<FeaturesSearcher>());
+		std::atomic_store(&_searcher, std::shared_ptr<FeaturesSearcher>{});
 		return;
 	}
 
-	auto searcher {std::make_shared<Similarity::FeaturesSearcher>()};
-	if (searcher->init(_db.getSession(), _stopRequested))
+	auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_db.getSession(), _stopRequested)};
+	if (searcher->isValid())
+	{
 		std::atomic_store(&_searcher, searcher);
+		FeaturesCache cache{searcher->toCache()};
+		cache.write();
 
-	LMS_LOG(DBUPDATER, INFO) << "New features similarity searcher instanciated";
+		searcher->dump(_db.getSession(), std::cout);
+
+		LMS_LOG(DBUPDATER, INFO) << "New features similarity searcher instanciated";
+	}
+	else
+		std::atomic_store(&_searcher, std::shared_ptr<FeaturesSearcher>{});
+
 }
 
 bool
@@ -129,7 +138,7 @@ FeaturesScannerAddon::fetchFeatures(Database::IdType trackId, const std::string&
 	std::map<std::string, double> features;
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Fetching low level features for track '" << MBID << "'";
-	std::string data = AcousticBrainz::extractLowLevelFeatures(MBID);
+	std::string data {AcousticBrainz::extractLowLevelFeatures(MBID)};
 
 	if (data.empty())
 	{
@@ -139,9 +148,9 @@ FeaturesScannerAddon::fetchFeatures(Database::IdType trackId, const std::string&
 
 	// TODO check if the expected features are here
 
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	Wt::Dbo::Transaction transaction{_db.getSession()};
 
-	Wt::Dbo::ptr<Database::Track> track = Database::Track::getById(_db.getSession(), trackId);
+	Wt::Dbo::ptr<Database::Track> track {Database::Track::getById(_db.getSession(), trackId)};
 	if (!track)
 		return false;
 

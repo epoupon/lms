@@ -28,6 +28,7 @@ namespace SOM
 {
 
 using Coordinate = unsigned;
+using Norm = InputVector::value_type;
 
 struct Position
 {
@@ -56,18 +57,18 @@ class Matrix
 		Matrix() = default;
 
 		Matrix(Coordinate width, Coordinate height)
-		: _width(width),
-		_height(height)
+		: _width{width},
+		_height{height}
 		{
 			_values.resize(_width*_height);
 		}
 
-		Matrix(std::size_t width, std::size_t height, std::vector<T> values)
-		: _width(width),
-		_height(height),
-		_values(std::move(values))
+		template<typename... CtArgs>
+		Matrix(Coordinate width, Coordinate height, CtArgs... args)
+		: _width{width},
+		_height{height}
 		{
-			assert(_values.size() == _width * _height);
+			 _values.resize(_width*_height, T{args...});
 		}
 
 		void clear()
@@ -101,17 +102,17 @@ class Matrix
 		{
 			assert(!_values.empty());
 
-			auto it = std::min_element(_values.begin(), _values.end(), func);
-			auto index = static_cast<Coordinate>(std::distance(_values.begin(), it));
+			auto it {std::min_element(_values.begin(), _values.end(), std::move(func))};
+			auto index {static_cast<Coordinate>(std::distance(_values.begin(), it))};
 
 			return {index % _height, index / _height};
 		}
 
 	private:
 
-		Coordinate	_width = 0;
-		Coordinate	_height = 0;
-		std::vector<T>	_values;
+		Coordinate		_width {};
+		Coordinate		_height {};
+		std::vector<T>		_values;
 };
 
 } // ns SOM

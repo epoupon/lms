@@ -26,17 +26,22 @@
 #include "database/Types.hpp"
 #include "som/DataNormalizer.hpp"
 #include "som/Network.hpp"
+#include "SimilarityFeaturesCache.hpp"
 
 namespace Similarity {
+
 
 class FeaturesSearcher
 {
 	public:
 
-		bool init(Wt::Dbo::Session& session, bool& stopRequested);
-		bool initFromCache(Wt::Dbo::Session& session);
+		// Use cache
+		FeaturesSearcher(Wt::Dbo::Session& session, FeaturesCache cache);
 
-		static void invalidateCache();
+		// Use training (may be very slow)
+		FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequested);
+
+		bool isValid() const;
 
 		std::vector<Database::IdType> getSimilarTracks(const std::set<Database::IdType>& tracksId, std::size_t maxCount) const;
 		std::vector<Database::IdType> getSimilarReleases(Database::IdType releaseId, std::size_t maxCount) const;
@@ -44,31 +49,32 @@ class FeaturesSearcher
 
 		void dump(Wt::Dbo::Session& session, std::ostream& os) const;
 
+		FeaturesCache toCache() const;
+
 	private:
+
+		using ObjectPositions = std::map<Database::IdType, std::set<SOM::Position>>;
 
 		void init(Wt::Dbo::Session& session,
 				SOM::Network network,
-				std::map<Database::IdType, std::set<SOM::Position>> tracksPosition);
-
-		void saveToCache() const;
-		void clearCache() const;
+				ObjectPositions tracksPosition);
 
 		std::vector<Database::IdType> getSimilarObjects(const std::set<Database::IdType>& ids,
 				const SOM::Matrix<std::set<Database::IdType>>& objectsMap,
-				const std::map<Database::IdType, std::set<SOM::Position>>& objectPosition,
+				const ObjectPositions& objectPosition,
 				std::size_t maxCount) const;
 
-		SOM::Network	_network;
-		double		_networkRefVectorsDistanceMedian = 0;
+		std::unique_ptr<SOM::Network>	_network;
+		double				_networkRefVectorsDistanceMedian {};
 
-		SOM::Matrix<std::set<Database::IdType>> 		_artistsMap;
-		std::map<Database::IdType, std::set<SOM::Position>>	_artistPosition;
+		SOM::Matrix<std::set<Database::IdType>> 	_artistsMap;
+		ObjectPositions					_artistPositions;
 
-		SOM::Matrix<std::set<Database::IdType>> 		_releasesMap;
-		std::map<Database::IdType, std::set<SOM::Position>>	_releasePosition;
+		SOM::Matrix<std::set<Database::IdType>> 	_releasesMap;
+		ObjectPositions					_releasePositions;
 
-		SOM::Matrix<std::set<Database::IdType>> 		_tracksMap;
-		std::map<Database::IdType, std::set<SOM::Position>>	_trackPosition;
+		SOM::Matrix<std::set<Database::IdType>> 	_tracksMap;
+		ObjectPositions					_trackPositions;
 
 };
 

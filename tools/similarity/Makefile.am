@@ -1,7 +1,7 @@
-bin_PROGRAMS = lms-feature-extractor
+bin_PROGRAMS = lms-similarity
 
-lms_feature_extractor_SOURCES = \
-	$(srcdir)/LmsFeatureExtractor.cpp		\
+lms_similarity_SOURCES = \
+	$(srcdir)/LmsSimilarity.cpp			\
 	$(top_srcdir)/src/database/Artist.cpp		\
 	$(top_srcdir)/src/database/Cluster.cpp		\
 	$(top_srcdir)/src/database/DatabaseHandler.cpp	\
@@ -18,5 +18,5 @@ lms_feature_extractor_SOURCES = \
 	$(top_srcdir)/src/utils/Logger.cpp 		\
 	$(top_srcdir)/src/utils/Utils.cpp
 
-lms_feature_extractor_CXXFLAGS=-std=c++14 -Wall -I$(top_srcdir)/src -D_REENTRANT
+lms_similarity_CXXFLAGS=-std=c++14 -Wall -I$(top_srcdir)/src -D_REENTRANT
 

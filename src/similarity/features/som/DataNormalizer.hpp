@@ -53,7 +53,7 @@ class DataNormalizer
 	private:
 		InputVector::value_type normalizeValue(InputVector::value_type value, std::size_t dimensionId) const;
 
-		std::size_t _inputDimCount;
+		const std::size_t _inputDimCount;
 
 		std::vector<MinMax> _minmax; // Indexed min/max used to normalize data
 };
