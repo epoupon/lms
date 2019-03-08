@@ -20,13 +20,6 @@
 		${play-btn}${add-btn}
 	</div>
 	${tracks}
-	${<if-has-copyright-or-copyright-url>}
-	<div class="page-header">
-		<h4><small>${tr:Lms.Explore.Release.copyright}</small></h4>
-	</div>
-	${<if-has-copyright>}<small>${copyright}</small>${</if-has-copyright>}
-	${<if-has-copyright-url>}<small>${copyright-url}</small>${</if-has-copyright-url>}
-	${</if-has-copyright-or-copyright-url>}
 </message>
 
 <message id="Lms.Explore.Release.template.entry">

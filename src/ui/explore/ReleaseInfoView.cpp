@@ -19,6 +19,8 @@
 
 #include "ReleaseInfoView.hpp"
 
+#include <Wt/WAnchor.h>
+
 #include "database/Release.hpp"
 #include "main/Services.hpp"
 #include "similarity/SimilaritySearcher.hpp"
@@ -55,29 +57,59 @@ void
 ReleaseInfo::refresh()
 {
 	_similarReleasesContainer->clear();
+	setCondition("if-has-copyright-or-copyright-url", false);
+	setCondition("if-has-copyright-url", false);
+	setCondition("if-has-copyright", false);
 
 	if (!wApp->internalPathMatches("/release/"))
 		return;
 
-	auto releaseId = readAs<Database::IdType>(wApp->internalPathNextPart("/release/"));
+	auto releaseId {readAs<Database::IdType>(wApp->internalPathNextPart("/release/"))};
 	if (!releaseId)
 		return;
 
-	auto releasesIds = getServices().similaritySearcher->getSimilarReleases(LmsApp->getDboSession(), *releaseId, 5);
+	std::vector<Database::IdType> releasesIds {getServices().similaritySearcher->getSimilarReleases(LmsApp->getDboSession(), *releaseId, 5)};
 
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
 
-	std::vector<Database::Release::pointer> releases;
-	for (auto releaseId : releasesIds)
+	Database::Release::pointer release {Database::Release::getById(LmsApp->getDboSession(), *releaseId)};
+	if (!release)
+		return;
+
+	boost::optional<std::string> copyright {release->getCopyright()};
+	boost::optional<std::string> copyrightURL {release->getCopyrightURL()};
+
+	setCondition("if-has-copyright-or-copyright-url", copyright || copyrightURL);
+
+	if (copyrightURL)
 	{
-		auto release = Database::Release::getById(LmsApp->getDboSession(), releaseId);
+		setCondition("if-has-copyright-url", true);
 
-		if (release)
-			releases.push_back(release);
+		Wt::WLink link {*copyrightURL};
+		link.setTarget(Wt::LinkTarget::NewWindow);
+
+		Wt::WAnchor* anchor {bindNew<Wt::WAnchor>("copyright-url", link)};
+		anchor->setTextFormat(Wt::TextFormat::XHTML);
+		anchor->setText(Wt::WString::tr("Lms.Explore.Release.template.link-btn"));
 	}
 
-	for (auto release : releases)
-		_similarReleasesContainer->addNew<ReleaseLink>(release);
+	if (copyright)
+	{
+		setCondition("if-has-copyright", true);
+		bindString("copyright", Wt::WString::fromUTF8(*copyright), Wt::TextFormat::Plain);
+	}
+
+	std::vector<Database::Release::pointer> similarReleases;
+	for (Database::IdType id : releasesIds)
+	{
+		Database::Release::pointer similarRelease {Database::Release::getById(LmsApp->getDboSession(), id)};
+
+		if (similarRelease)
+			similarReleases.emplace_back(similarRelease);
+	}
+
+	for (const auto& similarRelease : similarReleases)
+		_similarReleasesContainer->addNew<ReleaseLink>(similarRelease);
 }
 
 } // namespace UserInterface

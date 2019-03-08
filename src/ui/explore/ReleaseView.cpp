@@ -19,8 +19,8 @@
 
 #include "ReleaseView.hpp"
 
-#include <Wt/WApplication.h>
 #include <Wt/WAnchor.h>
+#include <Wt/WApplication.h>
 #include <Wt/WImage.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
@@ -92,28 +92,6 @@ Release::refresh()
 			t->setCondition("if-has-orig-year", true);
 			t->bindInt("orig-year", *originalYear);
 		}
-	}
-
-	boost::optional<std::string> copyright = release->getCopyright();
-	boost::optional<std::string> copyrightURL = release->getCopyrightURL();
-
-	t->setCondition("if-has-copyright-or-copyright-url", copyright || copyrightURL);
-
-	if (copyrightURL)
-	{
-		t->setCondition("if-has-copyright-url", true);
-
-		Wt::WLink link(*copyrightURL);
-		link.setTarget(Wt::LinkTarget::NewWindow);
-		Wt::WAnchor* anchor = t->bindNew<Wt::WAnchor>("copyright-url", link);
-		anchor->setTextFormat(Wt::TextFormat::XHTML);
-		anchor->setText(Wt::WString::tr("Lms.Explore.Release.template.link-btn"));
-	}
-
-	if (copyright)
-	{
-		t->setCondition("if-has-copyright", true);
-		t->bindString("copyright", Wt::WString::fromUTF8(*copyright), Wt::TextFormat::Plain);
 	}
 
 	{
