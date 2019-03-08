@@ -7,14 +7,21 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 - No persistent playqueue
 
 ## Main features
+LMS provides several ways to help you find the music you like:
+- Tag-based filters
+- Recommendations for similar artists and albums
+- Radio mode
+- Searches in album, artist and track names
+
+Conventional features include:
 - Responsive design
-- Browse your audio collection using tag-based filters
 - Persistent play queue
 - User management
-- Radio mode
 - MusicBrainzID support to handle duplicated artist and release names
 - Audio transcode for maximum interoperability and low bandwith requirements
 - Custom tag support
+
+The recommendation engine makes use of [Self-Organizing Maps](https://en.wikipedia.org/wiki/Self-organizing_map). Please note it may require some significant computation time on large datasets.
 
 ## Installation
 Here are the required packages to build on Debian Stretch:
