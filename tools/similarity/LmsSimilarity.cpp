@@ -66,9 +66,9 @@ int main(int argc, char *argv[])
 {
 	try
 	{
-		const std::size_t width = 10;
-		const std::size_t height = 10;
-		const std::size_t nbIterations = 20;
+		const std::size_t width = 5;
+		const std::size_t height = 5;
+		const std::size_t nbIterations = 10;
 		std::size_t nbTracks = 5000;
 
 		const std::map<std::string, std::size_t> featuresSettings =
@@ -122,13 +122,18 @@ int main(int argc, char *argv[])
 		SOM::DataNormalizer normalizer {nbDims};
 
 		SOM::InputVector weights {nbDims};
-		for (const auto& featureSettings : featuresSettings)
 		{
-			for (std::size_t i {}; i < featureSettings.second; ++i)
-				weights[i] = SOM::InputVector::value_type{1. / featureSettings.second};
+			std::size_t index {};
+			for (const auto& featureSettings : featuresSettings)
+			{
+				for (std::size_t i {}; i < featureSettings.second; ++i)
+					weights[index++] = SOM::InputVector::value_type{1. / featureSettings.second};
+			}
 		}
 
 		network.setDataWeights(weights);
+
+		std::cout << "Weights: " << weights << std::endl;
 
 		std::cout << "Normalizing..." << std::endl;
 		normalizer.computeNormalizationFactors(tracksFeatures);

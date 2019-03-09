@@ -289,8 +289,8 @@ Network::train(const std::vector<InputVector>& inputData, std::size_t nbIteratio
 {
 	bool stopRequested {false};
 	std::vector<const InputVector*> inputDataShuffled;
-	inputDataShuffled.reserve(inputData.size());
 
+	inputDataShuffled.reserve(inputData.size());
 	for (const auto& input : inputData)
 		inputDataShuffled.push_back(&input);
 
@@ -311,16 +311,16 @@ Network::train(const std::vector<InputVector>& inputData, std::size_t nbIteratio
 		for (const InputVector* input : inputDataShuffled)
 		{
 			if (requestStopCallback)
-			{
 				stopRequested = requestStopCallback();
-				break;
-			}
+
+			if (stopRequested)
+				return;
 
 			updateRefVectors(getClosestRefVectorPosition(*input), *input, learningFactor, curIter);
 		}
 
 		if (stopRequested)
-			break;
+			return;
 	}
 }
 

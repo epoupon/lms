@@ -66,9 +66,56 @@ getFeatureInfoMapNbDimensions(const FeatureInfoMap& featureInfoMap)
 	return std::accumulate(featureInfoMap.begin(), featureInfoMap.end(), 0, [](std::size_t sum, auto it) { return sum + it.second.nbDimensions; });
 }
 
+static
+boost::optional<SOM::InputVector>
+getInputVectorFromTrack(const Database::Track::pointer& track, const FeatureInfoMap& featuresInfo, std::size_t nbDimensions)
+{
+	boost::optional<SOM::InputVector> res {SOM::InputVector {nbDimensions}};
+
+	std::map<std::string, std::vector<double>> features;
+	for (auto itFeatureInfo : featuresInfo)
+		features[itFeatureInfo.first] = {};
+
+	if (!track->getTrackFeatures()->getFeatures(features))
+		return res;
+
+	std::size_t i {};
+	for (const auto& feature : features)
+	{
+		// Check dimensions for each feature
+		auto it {featuresInfo.find(feature.first)};
+		if (it == featuresInfo.end() || it->second.nbDimensions != feature.second.size())
+		{
+			LMS_LOG(SIMILARITY, WARNING) << "Dimension mismatch for feature '" << feature.first << "'. Expected " << it->second.nbDimensions << ", got " << feature.second.size();
+			res.reset();
+			break;
+		}
+
+		for (double val : feature.second)
+			(*res)[i++] = val;
+	}
+
+	return res;
+}
+
+static
+SOM::InputVector
+getInputVectorWeights(const FeatureInfoMap& featuresInfo, std::size_t nbDimensions)
+{
+	SOM::InputVector weights {nbDimensions};
+	std::size_t index {};
+	for (const auto& featureInfo : featuresInfo)
+	{
+		for (std::size_t i {}; i < featureInfo.second.nbDimensions; ++i)
+			weights[index++] = (1. / featureInfo.second.nbDimensions * featureInfo.second.weight);
+	}
+
+	return weights;
+}
+
 FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequested)
 {
-	Wt::Dbo::Transaction transaction(session);
+	Wt::Dbo::Transaction transaction{session};
 
 	FeatureInfoMap featuresInfo {getFeatureInfoMap(session)};
 	std::size_t nbDimensions {getFeatureInfoMapNbDimensions(featuresInfo)};
@@ -82,42 +129,18 @@ FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequeste
 	std::vector<SOM::InputVector> samples;
 	std::vector<Database::IdType> tracksIds;
 
+	samples.reserve(tracks.size());
+	tracksIds.reserve(tracks.size());
+
 	LMS_LOG(SIMILARITY, DEBUG) << "Extracting features...";
 	for (const Database::Track::pointer& track : tracks)
 	{
 		if (stopRequested)
 			return;
 
-		SOM::InputVector sample {nbDimensions};
+		boost::optional<SOM::InputVector> inputVector {getInputVectorFromTrack(track, featuresInfo, nbDimensions)};
 
-		std::map<std::string, std::vector<double>> features;
-		for (auto itFeatureInfo : featuresInfo)
-			features[itFeatureInfo.first] = {};
-
-		if (!track->getTrackFeatures()->getFeatures(features))
-			continue;
-
-		bool ok {true};
-		std::size_t i {};
-		for (const auto& feature : features)
-		{
-			// Check dimensions for each feature
-			auto it {featuresInfo.find(feature.first)};
-			if (it == featuresInfo.end() || it->second.nbDimensions != feature.second.size())
-			{
-				LMS_LOG(SIMILARITY, WARNING) << "Dimension mismatch for feature '" << feature.first << "'. Expected " << it->second.nbDimensions << ", got " << feature.second.size();
-				ok = false;
-				break;
-			}
-
-			for (double val : feature.second)
-				sample[i++] = val;
-		}
-
-		if (!ok)
-			continue;
-
-		samples.emplace_back(std::move(sample));
+		samples.emplace_back(std::move(*inputVector));
 		tracksIds.emplace_back(track.id());
 	}
 	LMS_LOG(SIMILARITY, DEBUG) << "Extracting features DONE";
@@ -131,27 +154,18 @@ FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequeste
 	}
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Normalizing data...";
-	SOM::DataNormalizer dataNormalizer(nbDimensions);
+	SOM::DataNormalizer dataNormalizer {nbDimensions};
 
 	dataNormalizer.computeNormalizationFactors(samples);
 	for (auto& sample : samples)
 		dataNormalizer.normalizeData(sample);
 
-	SOM::InputVector weights {nbDimensions};
-	{
-		std::size_t index {};
-		for (const auto& featureInfo : featuresInfo)
-		{
-			for (std::size_t i {}; i < featureInfo.second.nbDimensions; ++i)
-				weights[index++] = (1. / featureInfo.second.nbDimensions * featureInfo.second.weight);
-		}
-	}
-
 	SOM::Coordinate size {static_cast<SOM::Coordinate>(std::sqrt(samples.size() / 4))};
 	LMS_LOG(SIMILARITY, INFO) << "Found " << samples.size() << " tracks, constructing a " << size << "*" << size << " network";
 
 	SOM::Network network {size, size, nbDimensions};
-	std::cout << "Weights = '" << weights << "'";
+
+	SOM::InputVector weights {getInputVectorWeights(featuresInfo, nbDimensions)};
 	network.setDataWeights(weights);
 
 	auto progressIndicator{[](const auto& iter)
@@ -175,13 +189,9 @@ FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequeste
 		if (stopRequested)
 			return;
 
-		Wt::Dbo::Transaction transaction {session};
+		const SOM::Position position {network.getClosestRefVectorPosition(samples[i])};
 
-		const auto& sample = samples[i];
-		auto trackId = tracksIds[i];
-		auto position = network.getClosestRefVectorPosition(sample);
-
-		trackPositions[trackId].insert(position);
+		trackPositions[tracksIds[i]].insert(position);
 	}
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Classifying tracks DONE";
@@ -290,9 +300,9 @@ FeaturesSearcher::init(Wt::Dbo::Session& session,
 	SOM::Coordinate width {_network->getWidth()};
 	SOM::Coordinate height {_network->getHeight()};
 
-	_artistsMap = SOM::Matrix<std::set<Database::IdType>>(width, height);
-	_releasesMap = SOM::Matrix<std::set<Database::IdType>>(width, height);
-	_tracksMap = SOM::Matrix<std::set<Database::IdType>>(width, height);
+	_artistsMap = SOM::Matrix<std::set<Database::IdType>>{width, height};
+	_releasesMap = SOM::Matrix<std::set<Database::IdType>>{width, height};
+	_tracksMap = SOM::Matrix<std::set<Database::IdType>>{width, height};
 
 	Wt::Dbo::Transaction transaction {session};
 
@@ -301,7 +311,7 @@ FeaturesSearcher::init(Wt::Dbo::Session& session,
 		Database::IdType trackId {itTrackCoord.first};
 		const std::set<SOM::Position>& positionSet {itTrackCoord.second};
 
-		auto track {Database::Track::getById(session, trackId)};
+		Database::Track::pointer track {Database::Track::getById(session, trackId)};
 		if (!track)
 			continue;
 

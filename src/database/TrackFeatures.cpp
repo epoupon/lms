@@ -84,8 +84,7 @@ TrackFeatures::getFeatures(std::map<std::string /*name*/, std::vector<double> /*
 	}
 	catch (boost::property_tree::ptree_error& error)
 	{
-		LMS_LOG(DB, ERROR) << "ptree exception: " << error.what();
-		std::cout << "ptree exception: " << error.what() << std::endl;
+		LMS_LOG(SIMILARITY, ERROR) << "Track " << _track.id() << ": ptree exception: " << error.what();
 		return false;
 	}
 }

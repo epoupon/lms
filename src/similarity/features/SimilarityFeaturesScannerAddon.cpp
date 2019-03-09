@@ -123,8 +123,6 @@ FeaturesScannerAddon::updateSearcher()
 		FeaturesCache cache{searcher->toCache()};
 		cache.write();
 
-		searcher->dump(_db.getSession(), std::cout);
-
 		LMS_LOG(DBUPDATER, INFO) << "New features similarity searcher instanciated";
 	}
 	else
@@ -139,14 +137,11 @@ FeaturesScannerAddon::fetchFeatures(Database::IdType trackId, const std::string&
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Fetching low level features for track '" << MBID << "'";
 	std::string data {AcousticBrainz::extractLowLevelFeatures(MBID)};
-
 	if (data.empty())
 	{
 		LMS_LOG(DBUPDATER, ERROR) << "Cannot extract features using AcousticBrainz!";
 		return false;
 	}
-
-	// TODO check if the expected features are here
 
 	Wt::Dbo::Transaction transaction{_db.getSession()};
 
