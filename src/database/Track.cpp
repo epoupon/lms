@@ -266,6 +266,12 @@ Track::getCopyrightURL() const
 	return _copyrightURL != "" ? boost::make_optional<std::string>(_copyrightURL) : boost::none;
 }
 
+std::vector<Wt::Dbo::ptr<Artist>>
+Track::getArtists() const
+{
+	return std::vector<Wt::Dbo::ptr<Artist>>(_artists.begin(), _artists.end());
+}
+
 Wt::Dbo::ptr<TrackFeatures>
 Track::getTrackFeatures() const
 {

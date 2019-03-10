@@ -475,7 +475,7 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	}
 
 	//  ***** Artist
-	Artist::pointer artist;
+	std::set<Artist::pointer> artists;
 	{
 		std::string artistName;
 		std::string artistMusicBrainzID;

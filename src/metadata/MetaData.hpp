@@ -22,54 +22,57 @@
 #include <map>
 #include <set>
 
-#include <boost/any.hpp>
 #include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
 
 namespace MetaData
 {
+	using Clusters = std::map<std::string /* type */, std::set<std::string> /* names */>;
 
-	enum class Type
+	struct Artist
 	{
-		// Name			Type of the value
-		Artist,			// string
-		Title,			// string
-		Album,			// string
-		Clusters,		// Clusters, ex: { "genre", {"death metal", "brutal death"} }, { "albumgrouping", {"metal"} }
-		Duration,		// std::chrono::milliseconds
-		TrackNumber,		// size_t
-		DiscNumber,		// size_t
-		TotalTrack,		// size_t
-		TotalDisc,		// size_t
-		Year,			// int
-		OriginalYear,		// int
-		HasCover,		// bool
-		AudioStreams,		// vector<AudioStream>
-		MusicBrainzArtistID,	// string
-		MusicBrainzAlbumID,	// string
-		MusicBrainzTrackID,	// string
-		MusicBrainzRecordingID,	// string
-		AcoustID,		// string
-		Copyright,		// string
-		CopyrightURL,		// string
+		std::string name;
+		std::string musicBrainzArtistID;
 	};
 
-	// Used by Streams
+	struct Album
+	{
+		std::string name;
+		std::string musicBrainzAlbumID;
+	}
+
 	struct AudioStream
 	{
-		// TODO codec?
-		std::size_t bitRate;
+		unsigned bitRate;
 	};
 
-	// Type and associated data
-	// See enum Type's comments
-	using Items = std::map<Type, boost::any>;
-	using Clusters = std::map<std::string /* type */, std::set<std::string> /* names */>;
+	struct Track
+	{
+		std::vector<Artist>		artists;
+		boost::optional<Artist>		albumArtist;
+		std::string			title;
+		std::string			musicBrainzTrackID;
+		std::string			musicBrainzRecordID;
+		boost::optional<Album>		album;
+		Clusters			clusters;
+		std::chrono::milliseconds 	duration {};
+		boost::optional<std::size_t>	trackNumber;
+		boost::optional<std::size_t>	totalTrack;
+		boost::optional<std::size_t>	discNumber;
+		boost::optional<std::size_t>	totalDisc;
+		boost::optional<int>		year;
+		boost::optional<int>		originalYear;
+		bool				hasCover {false};
+		std::vector<AudioStream>	audioStreams;
+		std::string			acoustId;
+		std::string			copyright;
+		std::string			copyrightURL;
+	};
 
 	class Parser
 	{
 		public:
-			virtual boost::optional<Items> parse(const boost::filesystem::path& p, bool debug = false) = 0;
+			virtual boost::optional<Track> parse(const boost::filesystem::path& p, bool debug = false) = 0;
 
 			void setClusterTypeNames(const std::set<std::string>& clusterTypeNames) { _clusterTypeNames = clusterTypeNames; }
 

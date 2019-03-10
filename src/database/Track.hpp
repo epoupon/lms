@@ -96,33 +96,33 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setMBID(const std::string& MBID)				{ _MBID = MBID; }
 		void setCopyright(const std::string& copyright)			{ _copyright = std::string(copyright, 0, _maxCopyrightLength); }
 		void setCopyrightURL(const std::string& copyrightURL)		{ _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
-		void setArtist(Wt::Dbo::ptr<Artist> artist)			{ _artist = artist; }
+		void setArtists(std::vector<Wt::Dbo::ptr<Artist>>& artists);
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
 		void eraseClusters()						{ _clusters.clear(); }
 		void eraseFeatures()						{ /*_trackFeatures.reset();*/ }
 
-		std::size_t 			getScanVersion() const		{ return _scanVersion; }
-		boost::optional<std::size_t>	getTrackNumber() const;
-		boost::optional<std::size_t>	getTotalTrackNumber() const;
-		boost::optional<std::size_t>	getDiscNumber() const;
-		boost::optional<std::size_t>	getTotalDiscNumber() const;
-		std::string 			getName() const			{ return _name; }
-		boost::filesystem::path		getPath() const			{ return _filePath; }
-		std::chrono::milliseconds	getDuration() const		{ return _duration; }
-		boost::optional<int>		getYear() const;
-		boost::optional<int>		getOriginalYear() const;
-		Wt::WDateTime			getLastWriteTime() const	{ return _fileLastWrite; }
-		Wt::WDateTime			getAddedTime() const		{ return _fileAdded; }
-		const std::vector<unsigned char>& getChecksum() const		{ return _fileChecksum; }
-		bool				hasCover() const		{ return _hasCover; }
-		const std::string&		getMBID() const			{ return _MBID; }
-		boost::optional<std::string>	getCopyright() const;
-		boost::optional<std::string>	getCopyrightURL() const;
-		Wt::Dbo::ptr<Artist>		getArtist() const		{ return _artist; }
-		Wt::Dbo::ptr<Release>		getRelease() const		{ return _release; }
+		std::size_t 				getScanVersion() const		{ return _scanVersion; }
+		boost::optional<std::size_t>		getTrackNumber() const;
+		boost::optional<std::size_t>		getTotalTrackNumber() const;
+		boost::optional<std::size_t>		getDiscNumber() const;
+		boost::optional<std::size_t>		getTotalDiscNumber() const;
+		std::string 				getName() const			{ return _name; }
+		boost::filesystem::path			getPath() const			{ return _filePath; }
+		std::chrono::milliseconds		getDuration() const		{ return _duration; }
+		boost::optional<int>			getYear() const;
+		boost::optional<int>			getOriginalYear() const;
+		Wt::WDateTime				getLastWriteTime() const	{ return _fileLastWrite; }
+		Wt::WDateTime				getAddedTime() const		{ return _fileAdded; }
+		const std::vector<unsigned char>&	getChecksum() const		{ return _fileChecksum; }
+		bool					hasCover() const		{ return _hasCover; }
+		const std::string&			getMBID() const			{ return _MBID; }
+		boost::optional<std::string>		getCopyright() const;
+		boost::optional<std::string>		getCopyrightURL() const;
+		std::vector<Wt::Dbo::ptr<Artist>>	getArtists() const;
+		Wt::Dbo::ptr<Release>			getRelease() const		{ return _release; }
 		std::vector<Wt::Dbo::ptr<Cluster>>	getClusters() const;
-		bool				hasTrackFeatures() const;
-		Wt::Dbo::ptr<TrackFeatures>	getTrackFeatures() const;
+		bool					hasTrackFeatures() const;
+		Wt::Dbo::ptr<TrackFeatures>		getTrackFeatures() const;
 
 		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
 
@@ -148,7 +148,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 				Wt::Dbo::field(a, _copyright,		"copyright");
 				Wt::Dbo::field(a, _copyrightURL,	"copyright_url");
 				Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
-				Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
+				Wt::Dbo::hasMany(a, _artists, Wt::Dbo::ManyToMany, "track_artist", "", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _playlistEntries, Wt::Dbo::ManyToOne, "track");
 				Wt::Dbo::hasOne(a, _trackFeatures);
@@ -181,11 +181,11 @@ class Track : public Wt::Dbo::Dbo<Track>
 		std::string				_copyright;
 		std::string				_copyrightURL;
 
-		Wt::Dbo::ptr<Artist>			_artist;
-		Wt::Dbo::ptr<Release>			_release;
-		Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;
+		Wt::Dbo::ptr<Release>				_release;
+		Wt::Dbo::collection<Wt::Dbo::ptr<Artist>>	_artists;
+		Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> 	_clusters;
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _playlistEntries;
-		Wt::Dbo::weak_ptr<TrackFeatures> _trackFeatures;
+		Wt::Dbo::weak_ptr<TrackFeatures>		_trackFeatures;
 
 };
 

@@ -34,9 +34,9 @@ namespace MetaData
 boost::optional<Items>
 TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 {
-	TagLib::FileRef f(p.string().c_str(),
+	TagLib::FileRef f {p.string().c_str(),
 			true, // read audio properties
-			TagLib::AudioProperties::Average);
+			TagLib::AudioProperties::Average};
 
 	if (f.isNull())
 		return boost::none;
@@ -47,13 +47,12 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 	Items items;
 
 	{
-		TagLib::AudioProperties *properties = f.audioProperties();
+		const TagLib::AudioProperties *properties {f.audioProperties() };
 
-		std::chrono::milliseconds duration(properties->length() * 1000);
-		items.insert( std::make_pair(MetaData::Type::Duration, duration) );
+		items[MetaData::Type::Duration] = std::chrono::milliseconds {properties->length() * 1000};
 
-		MetaData::AudioStream audioStream = { .bitRate = static_cast<std::size_t>(properties->bitrate() * 1000) };
-		items.insert( std::make_pair(MetaData::Type::AudioStreams, std::vector<MetaData::AudioStream>(1, audioStream ) ));
+		MetaData::AudioStream audioStream {.bitRate = static_cast<std::size_t>(properties->bitrate() * 1000)};
+		items[MetaData::Type::AudioStreams] = std::vector<MetaData::AudioStream> {audioStream};
 	}
 
 	// Not that good embedded pictures handling
@@ -71,7 +70,7 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 	if (f.tag())
 	{
 		MetaData::Clusters clusters;
-		TagLib::PropertyMap properties = f.file()->properties();
+		const TagLib::PropertyMap& properties {f.file()->properties()};
 
       		for(auto property : properties)
 		{
@@ -93,7 +92,23 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 			}
 
 			if (tag == "ARTIST")
-				items.insert( std::make_pair(MetaData::Type::Artist, stringTrim( values.front().to8Bit(true))));
+			{
+				// Lower priority than ARTISTS
+				if (items.find(MetaData::Type::Artists) == items.end())
+					items[MetaData::Type::Artists] = std::vector<std::string>{ stringTrim( values.front().to8Bit(true)) };
+			}
+			else if (tag == "ARTISTS")
+			{
+				// Higher priority than ARTISTS
+				std::vector<std::string> strings {splitString(values.front().to8Bit(), "/;")};  // Picard separator is '/'
+
+				std::vector<std::string> artists;
+				for (const std::string& string : strings)
+					artists.emplace_back(stringTrim(string));
+
+				items[MetaData::Type::Artists] = std::move(artists);
+			}
+
 			else if (tag == "ALBUM")
 				items.insert( std::make_pair(MetaData::Type::Album, stringTrim( values.front().to8Bit(true))));
 			else if (tag == "TITLE")
@@ -104,7 +119,15 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 				items.insert( std::make_pair(MetaData::Type::MusicBrainzTrackID, stringTrim( values.front().to8Bit(true))));
 			}
 			else if (tag == "MUSICBRAINZ_ARTISTID")
-				items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, stringTrim( values.front().to8Bit(true))));
+			{
+				std::vector<std::string> strings {splitString(values.front().to8Bit(), "/")};  // Picard separator is '/'
+
+				std::vector<std::string> mbids;
+				for (const std::string& string : strings)
+					mbids.emplace_back(stringTrim(string));
+
+				items[MetaData::Type::MusicBrainzArtistID] = std::move(mbids);
+			}
 			else if (tag == "MUSICBRAINZ_ALBUMID")
 				items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, stringTrim( values.front().to8Bit(true))));
 			else if (tag == "MUSICBRAINZ_TRACKID")
@@ -113,25 +136,25 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 				items.insert( std::make_pair(MetaData::Type::AcoustID, stringTrim( values.front().to8Bit(true))));
 			else if (tag == "TRACKTOTAL")
 			{
-				auto totalTrack = readAs<std::size_t>(values.front().to8Bit(true));
+				auto totalTrack {readAs<std::size_t>(values.front().to8Bit(true)) };
 				if (totalTrack)
 					items[MetaData::Type::TotalTrack] = *totalTrack;
 			}
 			else if (tag == "TRACKNUMBER")
 			{
 				// Expecting 'Number/Total'
-				auto strings = splitString(values.front().to8Bit(), "/");
+				std::vector<std::string> strings {splitString(values.front().to8Bit(), "/")};
 
 				if (!strings.empty())
 				{
-					auto number = readAs<std::size_t>(strings[0]);
+					auto number {readAs<std::size_t>(strings[0])};
 					if (number)
 						items.insert( std::make_pair(MetaData::Type::TrackNumber, *number ));
 
 					// Lower priority than TRACKTOTAL
 					if (strings.size() > 1 && items.find(MetaData::Type::TotalTrack) == items.end())
 					{
-						auto totalTrack = readAs<std::size_t>(strings[1]);
+						auto totalTrack {readAs<std::size_t>(strings[1])};
 						if (totalTrack)
 							items[MetaData::Type::TotalTrack] = *totalTrack;
 					}

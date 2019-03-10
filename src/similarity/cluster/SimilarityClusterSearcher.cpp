@@ -153,14 +153,16 @@ getSimilarArtists(Wt::Dbo::Session& session, Database::IdType artistId, std::siz
 		if (!track)
 			continue;
 
-		auto trackArtist = track->getArtist();
-		if (!trackArtist || trackArtist.id() == artistId)
-			continue;
+		for (auto trackArtist : track->getArtists())
+		{
+			if (!trackArtist || trackArtist.id() == artistId)
+				continue;
 
-		if (std::find(res.begin(), res.end(), trackArtist.id()) != res.end())
-			continue;
+			if (std::find(res.begin(), res.end(), trackArtist.id()) != res.end())
+				continue;
 
-		res.push_back(trackArtist.id());
+			res.push_back(trackArtist.id());
+		}
 
 		if (res.size() == maxCount)
 			break;

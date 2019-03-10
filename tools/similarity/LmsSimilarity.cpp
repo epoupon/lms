@@ -24,8 +24,8 @@ std::ostream& operator<<(std::ostream& os, const Database::Track::pointer& track
 	auto genreClusters = track->getClusterGroups({genreClusterType}, 1);
 	for (auto genreCluster : genreClusters)
 		os << genreCluster.front()->getName() << " - ";
-	if (track->getArtist())
-		os << track->getArtist()->getName() << " - ";
+	for (auto artist : track->getArtists())
+		os << artist->getName() << " - ";
 	if (track->getRelease())
 		os << track->getRelease()->getName() << " - ";
 	os << track->getName() << "]";

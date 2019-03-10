@@ -72,7 +72,20 @@ AvFormat::parse(const boost::filesystem::path& p, bool debug)
 				std::cout << "TAG = " << tag << ", VAL = " << value << std::endl;
 
 			if (tag == "ARTIST")
-				items.insert( std::make_pair(MetaData::Type::Artist, stringTrim( value) ));
+			{
+				if (items.find(MetaData::Type::Artists) == items.end())
+					items[MetaData::Type::Artists] = std::set<std::string>{ stringTrim( value) };
+			}
+			else if (tag == "ARTISTS")
+			{
+				std::vector<std::string> strings {splitString(value, "/;")};  // Picard separator is '/'
+
+				std::set<std::string> artists;
+				for (const std::string& string : strings)
+					artists.insert(stringTrim(string));
+
+				items[MetaData::Type::Artists] = std::move(artists);
+			}
 			else if (tag == "ALBUM")
 				items.insert( std::make_pair(MetaData::Type::Album, stringTrim( value) ));
 			else if (tag == "TITLE")
@@ -133,7 +146,13 @@ AvFormat::parse(const boost::filesystem::path& p, bool debug)
 			else if (tag == "MUSICBRAINZ ARTIST ID"
 					|| tag == "MUSICBRAINZ_ARTISTID")
 			{
-				items.insert( std::make_pair(MetaData::Type::MusicBrainzArtistID, stringTrim(value)) );
+				std::vector<std::string> strings {splitString(value, "/")};
+
+				std::set<std::string> mbids;
+				for (const std::string& string : strings)
+					mbids.insert(stringTrim(string));
+
+				items[MetaData::Type::MusicBrainzArtistID] = std::move(mbids);
 			}
 			else if (tag == "MUSICBRAINZ ALBUM ID"
 					|| tag == "MUSICBRAINZ_ALBUMID")
@@ -152,7 +171,7 @@ AvFormat::parse(const boost::filesystem::path& p, bool debug)
 			}
 			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 			{
-				std::vector<std::string> clusterNames = splitString(value, ";,\\");
+				std::vector<std::string> clusterNames = splitString(value, "/,;");
 
 				if (!clusterNames.empty())
 				{
@@ -167,7 +186,7 @@ AvFormat::parse(const boost::filesystem::path& p, bool debug)
 	}
 	catch(Av::MediaFileException& e)
 	{
-		return items;
+		return boost::none;
 	}
 
 	return items;

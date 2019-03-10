@@ -55,7 +55,7 @@ bool readList(const std::string& str, const std::string& separators, std::list<s
 }
 
 std::vector<std::string>
-splitString(std::string string, std::string separators)
+splitString(const std::string& string, const std::string& separators)
 {
 	std::vector<std::string> res;
 
@@ -65,7 +65,7 @@ splitString(std::string string, std::string separators)
 }
 
 std::string
-joinStrings(std::vector<std::string> strings, std::string delimiter)
+joinStrings(const std::vector<std::string>& strings, const std::string& delimiter)
 {
 	return boost::algorithm::join(strings, delimiter);
 }

@@ -34,10 +34,10 @@ bool
 readList(const std::string& str, const std::string& separators, std::list<std::string>& results);
 
 std::vector<std::string>
-splitString(std::string string, std::string separators);
+splitString(const std::string& string, const std::string& separators);
 
 std::string
-joinStrings(std::vector<std::string> strings, std::string delimiter);
+joinStrings(const std::vector<std::string>& strings, const std::string& delimiter);
 
 std::string
 stringTrim(const std::string& str, const std::string& whitespaces = " \t");
