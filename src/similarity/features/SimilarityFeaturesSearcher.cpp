@@ -205,6 +205,7 @@ FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequeste
 	LMS_LOG(SIMILARITY, DEBUG) << "Classifying tracks DONE";
 
 	init(session, std::move(network), std::move(trackPositions));
+
 }
 
 FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, FeaturesCache cache)
@@ -277,12 +278,12 @@ FeaturesSearcher::dump(Wt::Dbo::Session& session, std::ostream& os) const
 				if (!track)
 					continue;
 
-				os << "\t - " << track->getName() << " - ";
+				os << "\t";
 				if (track->getArtist())
 					os << track->getArtist()->getName() << " - ";
 				if (track->getRelease())
-					os << track->getRelease()->getName();
-				os << std::endl;
+					os << track->getRelease()->getName() << " - ";
+				os << track->getName() << std::endl;
 			}
 
 		}
