@@ -118,17 +118,17 @@ Track::getAllWithMBIDAndMissingFeatures(Wt::Dbo::Session& session)
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
-std::vector<Track::pointer>
-Track::getAllWithFeatures(Wt::Dbo::Session& session, boost::optional<std::size_t> limit)
+std::vector<IdType>
+Track::getAllIdsWithFeatures(Wt::Dbo::Session& session, boost::optional<std::size_t> limit)
 {
 	int size {limit ? static_cast<int>(*limit) : -1};
 
-	Wt::Dbo::collection<pointer> res = session.query<pointer>
-		("SELECT t FROM track t")
+	Wt::Dbo::collection<IdType> res = session.query<IdType>
+		("SELECT t.id FROM track t")
 		.where("EXISTS (SELECT * from track_features t_f WHERE t_f.track_id = t.id)")
 		.limit(size);
 
-	return std::vector<pointer>(res.begin(), res.end());
+	return std::vector<IdType>(res.begin(), res.end());
 }
 
 std::vector<Cluster::pointer>

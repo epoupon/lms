@@ -100,16 +100,20 @@ int main(int argc, char *argv[])
 		std::cout << "Getting all features..." << std::endl;
 		Wt::Dbo::Transaction transaction(db.getSession());
 
-		auto tracks = Database::Track::getAllWithFeatures(db.getSession(), nbTracks);
+		std::vector<Database::IdType> trackIds {Database::Track::getAllIdsWithFeatures(db.getSession(), nbTracks)};
 
-		nbTracks = tracks.size();
+		nbTracks = trackIds.size();
 		std::cout << "Getting features DONE (" << nbTracks << " tracks)" << std::endl;
 
 		std::cout << "Reading features..." << std::endl;
 		std::vector<SOM::InputVector> tracksFeatures;
 
-		for (const auto& track : tracks)
+		for (Database::IdType trackId : trackIds)
 		{
+			Database::Track::pointer track {Database::Track::getById(db.getSession(), trackId)};
+			if (!track)
+				continue;
+
 			SOM::InputVector features {nbDims};
 			if (!getTrackFeatures(db.getSession(), track, featuresSettings, features))
 				continue;
@@ -163,8 +167,12 @@ int main(int argc, char *argv[])
 		std::cout << "Classifying tracks..." << std::endl;
 
 		SOM::Matrix< std::vector<Database::Track::pointer> > tracksMap(width, height);
-		for (auto track : tracks)
+		for (Database::IdType trackId : trackIds)
 		{
+			Database::Track::pointer track {Database::Track::getById(db.getSession(), trackId)};
+			if (!track)
+				continue;
+
 			SOM::InputVector features {nbDims};
 			if (!getTrackFeatures(db.getSession(), track, featuresSettings, features))
 				continue;
@@ -194,8 +202,12 @@ int main(int argc, char *argv[])
 		}
 
 		// For each track, get the nearest tracks
-		for (const auto& track : tracks)
+		for (Database::IdType trackId : trackIds)
 		{
+			Database::Track::pointer track {Database::Track::getById(db.getSession(), trackId)};
+			if (!track)
+				continue;
+
 			SOM::InputVector features {nbDims};
 			if (!getTrackFeatures(db.getSession(), track, featuresSettings, features))
 				continue;

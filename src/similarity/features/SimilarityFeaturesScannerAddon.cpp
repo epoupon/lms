@@ -106,10 +106,10 @@ void
 FeaturesScannerAddon::updateSearcher()
 {
 	Wt::Dbo::Transaction transaction {_db.getSession()};
-	auto tracks {Database::Track::getAllWithFeatures(_db.getSession())};
+	std::vector<Database::IdType> trackIds {Database::Track::getAllIdsWithFeatures(_db.getSession())};
 	transaction.commit();
 
-	if (tracks.empty())
+	if (trackIds.empty())
 	{
 		LMS_LOG(DBUPDATER, INFO) << "No track suitable for features similarity clustering";
 		std::atomic_store(&_searcher, std::shared_ptr<FeaturesSearcher>{});

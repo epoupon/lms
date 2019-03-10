@@ -68,13 +68,19 @@ getFeatureInfoMapNbDimensions(const FeatureInfoMap& featureInfoMap)
 
 static
 boost::optional<SOM::InputVector>
-getInputVectorFromTrack(const Database::Track::pointer& track, const FeatureInfoMap& featuresInfo, std::size_t nbDimensions)
+getInputVectorFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, const FeatureInfoMap& featuresInfo, std::size_t nbDimensions)
 {
 	boost::optional<SOM::InputVector> res {SOM::InputVector {nbDimensions}};
 
 	std::map<std::string, std::vector<double>> features;
 	for (auto itFeatureInfo : featuresInfo)
 		features[itFeatureInfo.first] = {};
+
+	Wt::Dbo::Transaction transaction {session};
+
+	Database::Track::pointer track {Database::Track::getById(session, trackId)};
+	if (!track)
+		return res;
 
 	if (!track->getTrackFeatures()->getFeatures(features))
 		return res;
@@ -115,7 +121,7 @@ getInputVectorWeights(const FeatureInfoMap& featuresInfo, std::size_t nbDimensio
 
 FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequested)
 {
-	Wt::Dbo::Transaction transaction{session};
+	Wt::Dbo::Transaction transaction {session};
 
 	FeatureInfoMap featuresInfo {getFeatureInfoMap(session)};
 	std::size_t nbDimensions {getFeatureInfoMapNbDimensions(featuresInfo)};
@@ -123,31 +129,33 @@ FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequeste
 	LMS_LOG(SIMILARITY, DEBUG) << "Features dimension = " << nbDimensions;
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features...";
-	auto tracks {Database::Track::getAllWithFeatures(session)};
+	std::vector<Database::IdType> trackIds {Database::Track::getAllIdsWithFeatures(session)};
 	LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features DONE";
 
-	std::vector<SOM::InputVector> samples;
-	std::vector<Database::IdType> tracksIds;
+	transaction.commit();
 
-	samples.reserve(tracks.size());
-	tracksIds.reserve(tracks.size());
+	std::vector<SOM::InputVector> samples;
+	std::vector<Database::IdType> samplesTrackIds;
+
+	samples.reserve(trackIds.size());
+	samplesTrackIds.reserve(trackIds.size());
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Extracting features...";
-	for (const Database::Track::pointer& track : tracks)
+	for (Database::IdType trackId : trackIds)
 	{
 		if (stopRequested)
 			return;
 
-		boost::optional<SOM::InputVector> inputVector {getInputVectorFromTrack(track, featuresInfo, nbDimensions)};
+		boost::optional<SOM::InputVector> inputVector {getInputVectorFromTrack(session, trackId, featuresInfo, nbDimensions)};
+		if (!inputVector)
+			continue;
 
 		samples.emplace_back(std::move(*inputVector));
-		tracksIds.emplace_back(track.id());
+		samplesTrackIds.emplace_back(trackId);
 	}
 	LMS_LOG(SIMILARITY, DEBUG) << "Extracting features DONE";
 
-	transaction.commit();
-
-	if (tracksIds.empty())
+	if (samples.empty())
 	{
 		LMS_LOG(SIMILARITY, INFO) << "Nothing to classify!";
 		return;
@@ -191,7 +199,7 @@ FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequeste
 
 		const SOM::Position position {network.getClosestRefVectorPosition(samples[i])};
 
-		trackPositions[tracksIds[i]].insert(position);
+		trackPositions[samplesTrackIds[i]].insert(position);
 	}
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Classifying tracks DONE";

@@ -81,6 +81,12 @@ getJsonData(const std::string& mbid)
 std::string
 extractLowLevelFeatures(const std::string& mbid)
 {
+	if (boost::filesystem::exists("/storage/emeric/lms-dev/features/" + mbid))
+	{
+		std::ifstream ifs{std::string{"/storage/emeric/lms-dev/features/" + mbid}.c_str()};
+		return std::string {std::istreambuf_iterator<char>{ifs}, std::istreambuf_iterator<char>{}};
+	}
+
 	return getJsonData(mbid);
 }
 
