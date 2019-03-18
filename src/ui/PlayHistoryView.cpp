@@ -39,11 +39,11 @@ std::unique_ptr<Wt::WTemplate> createEntry(Database::Track::pointer track)
 
 	entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-	auto artist = track->getArtist();
-	if (artist)
+	auto artists {track->getArtists()};
+	if (!artists.empty())
 	{
 		entry->setCondition("if-has-artist", true);
-		entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(track->getArtist()));
+		entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
 	}
 	auto release = track->getRelease();
 	if (release)

@@ -218,6 +218,28 @@ Track::getByFilter(Wt::Dbo::Session& session,
 	return getByFilter(session, clusters, std::vector<std::string>(), -1, -1, moreResults);
 }
 
+void
+Track::setArtists(const std::vector<Wt::Dbo::ptr<Artist>>& artists)
+{
+	_artists.clear();
+	for (const Wt::Dbo::ptr<Artist>& artist : artists)
+		_artists.insert(artist);
+}
+
+void
+Track::setClusters(const std::vector<Wt::Dbo::ptr<Cluster>>& clusters)
+{
+	_clusters.clear();
+	for (const Wt::Dbo::ptr<Cluster>& cluster : clusters)
+		_clusters.insert(cluster);
+}
+
+void
+Track::setFeatures(const Wt::Dbo::ptr<TrackFeatures>& features)
+{
+	_trackFeatures = features;
+}
+
 boost::optional<std::size_t>
 Track::getTrackNumber(void) const
 {

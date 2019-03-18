@@ -5,7 +5,7 @@
 <message id="Lms.Explore.ArtistLink.template">
 	<div class="row Lms-explore-artistlink Lms-vertical-align">
 		<div class="col-xs-12">
-			${name}
+			${name class="Lms-explore-artistname Lms-explore-artistlink-name"}
 		</div>
 	</div>
 </message>

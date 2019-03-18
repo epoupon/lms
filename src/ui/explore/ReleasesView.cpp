@@ -100,7 +100,7 @@ Releases::addSome()
 		if (artists.size() > 1)
 		{
 			entry->setCondition("if-has-artist", true);
-			entry->bindString("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
+			entry->bindNew<Wt::WText>("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
 		}
 		else if (artists.size() == 1)
 		{

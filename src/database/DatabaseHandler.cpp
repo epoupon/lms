@@ -137,7 +137,6 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		_session.execute("CREATE INDEX IF NOT EXISTS track_name_idx ON track(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
-		_session.execute("CREATE INDEX IF NOT EXISTS track_artist_idx ON track(artist_id)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
 		_session.execute("CREATE INDEX IF NOT EXISTS cluster_name_idx ON cluster(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");

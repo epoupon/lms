@@ -116,10 +116,11 @@ Tracks::addSome()
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-		if (track->getArtist())
+		auto artists {track->getArtists()};
+		if (!artists.empty())
 		{
 			entry->setCondition("if-has-artist", true);
-			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(track->getArtist()));
+			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
 		}
 
 		if (track->getRelease())

@@ -191,16 +191,7 @@ static std::vector<Database::Track::pointer> getArtistTracks(Wt::Dbo::Session& s
 	if (!artist)
 		return res;
 
-	auto releases = artist->getReleases(clusters);
-	for (auto release : releases)
-	{
-		auto tracks = release->getTracks(clusters);
-		for (auto track : tracks)
-		{
-			if (track->getArtist() && track->getArtist().id() == artistId)
-				res.push_back(track);
-		}
-	}
+	res = artist->getTracks();
 
 	return res;
 }
@@ -213,7 +204,9 @@ static std::vector<Database::Track::pointer> getReleaseTracks(Wt::Dbo::Session& 
 	if (!release)
 		return res;
 
-	return release->getTracks(clusters);
+	res = release->getTracks(clusters);
+
+	return res;
 }
 
 static std::vector<Database::Track::pointer> getTrack(Wt::Dbo::Session& session, Database::IdType trackId)

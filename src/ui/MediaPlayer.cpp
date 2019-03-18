@@ -82,10 +82,11 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play)
 
 		_title->setText(Wt::WString::fromUTF8(track->getName()));
 
-		if (track->getArtist())
+		auto artists = track->getArtists();
+		if (!artists.empty())
 		{
-			_artist->setText(Wt::WString::fromUTF8(track->getArtist()->getName()));
-			_artist->setLink(LmsApp->createArtistLink(track->getArtist()));
+			_artist->setText(Wt::WString::fromUTF8(artists.front()->getName()));
+			_artist->setLink(LmsApp->createArtistLink(artists.front()));
 		}
 		else
 		{

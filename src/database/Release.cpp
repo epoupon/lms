@@ -225,7 +225,7 @@ Release::getArtists() const
 	assert(session());
 
 	Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> res = session()->query<Wt::Dbo::ptr<Artist>>(
-			"SELECT DISTINCT a FROM artist a INNER JOIN release r ON t.artist_id = a.id INNER JOIN track t ON t.release_id = r.id")
+			"SELECT DISTINCT a FROM artist a INNER JOIN release r ON t.id = t_a.track_id INNER JOIN track_artist t_a ON t_a.artist_id = a.id INNER JOIN track t ON t.release_id = r.id")
 		.where("r.id = ?")
 		.bind(id());
 

@@ -14,7 +14,7 @@
 	</div>
 	<div class="page-header">
 		<h3>${name}</h3>
-		${<if-has-artist>}<h4><i>${artist-name}</i></h4>${</if-has-artist>}
+		${<if-has-artist>}<h4><i>${artist-name class="Lms-explore-artistname"}</i></h4>${</if-has-artist>}
 		<h4><small>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</small></h4>
 		${clusters}
 		${play-btn}${add-btn}
@@ -24,17 +24,24 @@
 
 <message id="Lms.Explore.Release.template.entry">
 	<div class="row Lms-explore-release-entry Lms-vertical-align">
-		<div class="col-xs-9 Lms-explore-release-entry-name">
-			${<if-has-disc-number>}${disc-number}-${</if-has-disc-number>}${<if-has-track-number>}${track-number}. ${</if-has-track-number>}
-			${<if-has-artist>}<i>${artist-name}</i> - ${</if-has-artist>}
+		<div class="col-xs-1 Lms-explore-release-entry-tracknumber">
+			${<if-has-disc-number>}${disc-number}-${</if-has-disc-number>}${<if-has-track-number>}${track-number}${</if-has-track-number>}
+		</div>
+		<div class="col-xs-8 Lms-explore-release-entry-name">
 			${name}
+			${<if-has-artists>}<small>${artists}</small>${</if-has-artists>}
 		</div>
 		<div class="col-xs-3 Lms-explore-release-entry-controls">
 			${play-btn}${add-btn}
 		</div>
 	</div>
-
 </message>
+
+<message id="Lms.Explore.Release.template.entry-artist">
+	${artist class="Lms-explore-artistname Lms-explore-release-entry-artist"}
+</message>
+
+
 
 
 </messages>

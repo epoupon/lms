@@ -60,8 +60,8 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static std::vector<pointer>	getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int size = 1);
 
 		// Accessors
-		std::string getName(void) const { return _name; }
-		std::string getMBID(void) const { return _MBID; }
+		const std::string& getName(void) const { return _name; }
+		const std::string& getMBID(void) const { return _MBID; }
 
 		// Get the releases that have at least one track for this artist that belongs to optional cluster filters
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = std::set<IdType>()) const;
@@ -84,7 +84,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 				Wt::Dbo::field(a, _name, "name");
 				Wt::Dbo::field(a, _MBID, "mbid");
 
-				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "artist");
+				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_artist", "", Wt::Dbo::OnDeleteCascade);
 			}
 
 	private:

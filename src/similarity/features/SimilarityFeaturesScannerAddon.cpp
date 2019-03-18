@@ -79,13 +79,13 @@ FeaturesScannerAddon::requestStop()
 void
 FeaturesScannerAddon::trackUpdated(Database::IdType trackId)
 {
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	Wt::Dbo::Transaction transaction {_db.getSession()};
 
-	auto track = Database::Track::getById(_db.getSession(), trackId);
+	auto track {Database::Track::getById(_db.getSession(), trackId)};
 	if (!track)
 		return;
 
-	track.modify()->eraseFeatures();
+	track.modify()->setFeatures({});
 }
 
 void

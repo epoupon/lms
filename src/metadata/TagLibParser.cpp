@@ -31,7 +31,95 @@
 namespace MetaData
 {
 
-boost::optional<Items>
+static
+std::vector<std::string>
+splitAndTrimString(const std::string& str, const std::string& delimiters)
+{
+	std::vector<std::string> res;
+
+	std::vector<std::string> strings {splitString(str, delimiters)};
+	for (const std::string& s : strings)
+		res.emplace_back(stringTrim(s));
+
+	return res;
+}
+
+static
+std::vector<std::string>
+getMusicBrainzArtistID(const TagLib::PropertyMap& properties)
+{
+	if (!properties.contains("MUSICBRAINZ_ARTISTID"))
+		return {};
+
+	const auto& values {properties["MUSICBRAINZ_ARTISTID"]};
+
+	return splitAndTrimString(values.front().to8Bit(true), "/");  // Picard separator is '/'
+}
+
+static
+std::vector<Artist>
+getArtists(const TagLib::PropertyMap& properties)
+{
+	std::vector<Artist> res;
+
+	if (properties.contains("ARTISTS"))
+	{
+		const TagLib::StringList& values {properties["ARTISTS"]};
+
+		std::vector<std::string> artists {splitAndTrimString(values.front().to8Bit(true), "/;")};  // Picard separator is '/'
+		std::vector<std::string> artistsMBID {getMusicBrainzArtistID(properties)};
+
+		for (std::size_t i {}; i < artists.size(); ++i)
+			res.emplace_back(Artist{artists[i], artistsMBID.size() == artists.size() ? artistsMBID[i] : ""});
+
+		return res;
+	}
+	else if (properties.contains("ARTIST"))
+	{
+		const auto& value {properties["ARTIST"]};
+
+		res.emplace_back(Artist{value.front().to8Bit(true), ""});
+	}
+
+	return res;
+}
+
+static
+boost::optional<Artist>
+getAlbumArtist(const TagLib::PropertyMap& properties)
+{
+	boost::optional<Artist> res;
+
+	if (!properties.contains("ALBUMARTIST"))
+		return res;
+
+	res = Artist{stringTrim(properties["ALBUMARTIST"].front().to8Bit(true)), ""};
+
+	if (properties.contains("MUSICBRAINZ_ALBUMARTISTID"))
+		res->musicBrainzArtistID = stringTrim(properties["MUSICBRAINZ_ALBUMARTISTID"].front().to8Bit(true));
+
+	return res;
+}
+
+
+static
+boost::optional<Album>
+getAlbum(const TagLib::PropertyMap& properties)
+{
+	boost::optional<Album> res;
+
+	if (!properties.contains("ALBUM"))
+		return res;
+
+	res = Album{stringTrim(properties["ALBUM"].front().to8Bit(true)), ""};
+
+	if (properties.contains("MUSICBRAINZ_ALBUMID"))
+		res->musicBrainzAlbumID = properties["MUSICBRAINZ_ALBUMID"].front().to8Bit(true);
+
+	return res;
+}
+
+boost::optional<Track>
 TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 {
 	TagLib::FileRef f {p.string().c_str(),
@@ -44,26 +132,26 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 	if (!f.audioProperties())
 		return boost::none;
 
-	Items items;
+	Track track;
 
 	{
 		const TagLib::AudioProperties *properties {f.audioProperties() };
 
-		items[MetaData::Type::Duration] = std::chrono::milliseconds {properties->length() * 1000};
+		track.duration = std::chrono::milliseconds {properties->length() * 1000};
 
-		MetaData::AudioStream audioStream {.bitRate = static_cast<std::size_t>(properties->bitrate() * 1000)};
-		items[MetaData::Type::AudioStreams] = std::vector<MetaData::AudioStream> {audioStream};
+		MetaData::AudioStream audioStream {.bitRate = static_cast<unsigned>(properties->bitrate() * 1000)};
+		track.audioStreams = {std::move(audioStream)};
 	}
 
 	// Not that good embedded pictures handling
 
 	// MP3
-	if (TagLib::MPEG::File *mp3File = dynamic_cast<TagLib::MPEG::File*>(f.file()))
+	if (TagLib::MPEG::File *mp3File {dynamic_cast<TagLib::MPEG::File*>(f.file())})
 	{
 		if (mp3File->ID3v2Tag())
 		{
 			if (!mp3File->ID3v2Tag()->frameListMap()["APIC"].isEmpty())
-				items.insert( std::make_pair(MetaData::Type::HasCover, true));
+				track.hasCover = true;
 		}
 	}
 
@@ -71,6 +159,10 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 	{
 		MetaData::Clusters clusters;
 		const TagLib::PropertyMap& properties {f.file()->properties()};
+
+		track.artists = getArtists(properties);
+		track.albumArtist = getAlbumArtist(properties);
+		track.album = getAlbum(properties);
 
       		for(auto property : properties)
 		{
@@ -80,172 +172,108 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 			if (tag.empty() || values.isEmpty() || values.front().isEmpty())
 				continue;
 
+			std::string value {stringTrim(values.front().to8Bit(true))};
+
 			// TODO validate MBID format
 
 			if (debug)
 			{
 				std::vector<std::string> strs;
-				for (auto value : values)
-					strs.push_back(values.front().to8Bit(true));
+				std::transform(values.begin(), values.end(), std::back_inserter(strs), [](const auto& value) { return value.to8Bit(true); });
 
 				std::cout << "[" << tag << "] = " << joinStrings(strs, ",") << std::endl;
 			}
 
-			if (tag == "ARTIST")
-			{
-				// Lower priority than ARTISTS
-				if (items.find(MetaData::Type::Artists) == items.end())
-					items[MetaData::Type::Artists] = std::vector<std::string>{ stringTrim( values.front().to8Bit(true)) };
-			}
-			else if (tag == "ARTISTS")
-			{
-				// Higher priority than ARTISTS
-				std::vector<std::string> strings {splitString(values.front().to8Bit(), "/;")};  // Picard separator is '/'
-
-				std::vector<std::string> artists;
-				for (const std::string& string : strings)
-					artists.emplace_back(stringTrim(string));
-
-				items[MetaData::Type::Artists] = std::move(artists);
-			}
-
-			else if (tag == "ALBUM")
-				items.insert( std::make_pair(MetaData::Type::Album, stringTrim( values.front().to8Bit(true))));
-			else if (tag == "TITLE")
-				items.insert( std::make_pair(MetaData::Type::Title, stringTrim( values.front().to8Bit(true))));
+			if (tag == "TITLE")
+				track.title = value;
 			else if (tag == "MUSICBRAINZ_RELEASETRACKID"
 				|| tag == "MUSICBRAINZ RELEASE TRACK ID")
 			{
-				items.insert( std::make_pair(MetaData::Type::MusicBrainzTrackID, stringTrim( values.front().to8Bit(true))));
+				track.musicBrainzTrackID = value;
 			}
-			else if (tag == "MUSICBRAINZ_ARTISTID")
-			{
-				std::vector<std::string> strings {splitString(values.front().to8Bit(), "/")};  // Picard separator is '/'
-
-				std::vector<std::string> mbids;
-				for (const std::string& string : strings)
-					mbids.emplace_back(stringTrim(string));
-
-				items[MetaData::Type::MusicBrainzArtistID] = std::move(mbids);
-			}
-			else if (tag == "MUSICBRAINZ_ALBUMID")
-				items.insert( std::make_pair(MetaData::Type::MusicBrainzAlbumID, stringTrim( values.front().to8Bit(true))));
 			else if (tag == "MUSICBRAINZ_TRACKID")
-				items.insert( std::make_pair(MetaData::Type::MusicBrainzRecordingID, stringTrim( values.front().to8Bit(true))));
+				track.musicBrainzRecordID = value;
 			else if (tag == "ACOUSTID_ID")
-				items.insert( std::make_pair(MetaData::Type::AcoustID, stringTrim( values.front().to8Bit(true))));
+				track.acoustID = value;
 			else if (tag == "TRACKTOTAL")
 			{
-				auto totalTrack {readAs<std::size_t>(values.front().to8Bit(true)) };
+				auto totalTrack = readAs<std::size_t>(value);
 				if (totalTrack)
-					items[MetaData::Type::TotalTrack] = *totalTrack;
+					track.totalTrack = totalTrack;
 			}
 			else if (tag == "TRACKNUMBER")
 			{
 				// Expecting 'Number/Total'
-				std::vector<std::string> strings {splitString(values.front().to8Bit(), "/")};
+				std::vector<std::string> strings {splitAndTrimString(value, "/")};
 
 				if (!strings.empty())
 				{
-					auto number {readAs<std::size_t>(strings[0])};
-					if (number)
-						items.insert( std::make_pair(MetaData::Type::TrackNumber, *number ));
+					track.trackNumber = readAs<std::size_t>(strings[0]);
 
 					// Lower priority than TRACKTOTAL
-					if (strings.size() > 1 && items.find(MetaData::Type::TotalTrack) == items.end())
-					{
-						auto totalTrack {readAs<std::size_t>(strings[1])};
-						if (totalTrack)
-							items[MetaData::Type::TotalTrack] = *totalTrack;
-					}
+					if (strings.size() > 1 && !track.totalTrack)
+						track.totalTrack = readAs<std::size_t>(strings[1]);
 				}
 			}
 			else if (tag == "DISCTOTAL")
 			{
-				auto totalDisc = readAs<std::size_t>(values.front().to8Bit(true));
+				auto totalDisc = readAs<std::size_t>(value);
 				if (totalDisc)
-					items[MetaData::Type::TotalDisc] = *totalDisc;
+					track.totalDisc = totalDisc;
 			}
 			else if (tag == "DISCNUMBER")
 			{
 				// Expecting 'Number/Total'
-				auto strings = splitString(values.front().to8Bit(), "/");
+				std::vector<std::string> strings {splitString(value, "/")};
 
 				if (!strings.empty())
 				{
-					auto number = readAs<std::size_t>(strings[0]);
-					if (number)
-						items.insert( std::make_pair(MetaData::Type::DiscNumber, *number));
+					track.discNumber = readAs<std::size_t>(strings[0]);
 
 					// Lower priority than DISCTOTAL
-					if (strings.size() > 1 && items.find(MetaData::Type::TotalDisc) == items.end())
-					{
-						auto totalDisc = readAs<std::size_t>(strings[1]);
-						if (totalDisc)
-							items[MetaData::Type::TotalDisc] = *totalDisc;
-					}
+					if (strings.size() > 1 && !track.totalDisc)
+						track.totalDisc = readAs<std::size_t>(strings[1]);
 				}
 			}
 			else if (tag == "DATE")
+				track.year = readAs<int>(value);
+			else if (tag == "ORIGINALDATE" && !track.originalYear)
 			{
-				auto timePoint = readAs<int>(values.front().to8Bit());
-				if (timePoint)
-					items.insert( std::make_pair(MetaData::Type::Year, *timePoint));
-			}
-			else if (tag == "ORIGINALDATE")
-			{
-				// Lower priority than original year
-				if (items.find(MetaData::Type::OriginalYear) == items.end())
-				{
-					auto timePoint = readAs<int>(values.front().to8Bit());
-					if (timePoint)
-						items[MetaData::Type::OriginalYear] = *timePoint;
-				}
+				// Lower priority than ORIGINALYEAR
+				track.originalYear = readAs<int>(value);
 			}
 			else if (tag == "ORIGINALYEAR")
 			{
-				auto timePoint = readAs<int>(values.front().to8Bit());
-				if (timePoint)
-				{
-					// Take priority on original year
-					items[MetaData::Type::OriginalYear] = *timePoint;
-				}
+				// Higher priority than ORIGINALDATE
+				auto originalYear = readAs<int>(value);
+				if (originalYear)
+					track.originalYear = originalYear;
 			}
 			else if (tag == "METADATA_BLOCK_PICTURE")
-			{
-				// Only add once
-				if (items.find(MetaData::Type::HasCover) == items.end())
-					items.insert( std::make_pair(MetaData::Type::HasCover, true));
-			}
+				track.hasCover = true;
 			else if (tag == "COPYRIGHT")
-			{
-				items.insert(std::make_pair(MetaData::Type::Copyright, values.front().to8Bit()));
-			}
+				track.copyright = value;
 			else if (tag == "COPYRIGHTURL")
-			{
-				items.insert(std::make_pair(MetaData::Type::CopyrightURL, values.front().to8Bit()));
-			}
+				track.copyrightURL = value;
 			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 			{
 				std::set<std::string> clusterNames;
 				for (const auto& valueList : values)
 				{
-					auto values = splitString(valueList.to8Bit(), "/,;");
+					auto values = splitAndTrimString(valueList.to8Bit(true), "/,;");
 
-					for (auto value : values)
+					for (const auto& value : values)
 						clusterNames.insert(value);
 				}
 
 				if (!clusterNames.empty())
-					clusters[tag] = clusterNames;
+					track.clusters[tag] = clusterNames;
 			}
 		}
 
-		if (!clusters.empty())
-			items.insert( std::make_pair(MetaData::Type::Clusters, clusters) );
 	}
 
-	return items;
+	return track;
 }
 
 } // namespace MetaData

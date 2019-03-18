@@ -75,9 +75,6 @@ class Track : public Wt::Dbo::Dbo<Track>
 		// Create utility
 		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p);
 
-		// Remove utility
-		static void removeClusters(std::string type);
-
 		// Accessors
 		void setScanVersion(std::size_t version)			{ _scanVersion = version; }
 		void setTrackNumber(int num)					{ _trackNumber = num; }
@@ -91,15 +88,14 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setChecksum(const std::vector<unsigned char>& checksum)	{ _fileChecksum = checksum; }
 		void setYear(int year)						{ _year = year; }
 		void setOriginalYear(int year)					{ _originalYear = year; }
-		void setGenres(const std::string& genreList)			{ _genreList = genreList; }
 		void setHasCover(bool hasCover)					{ _hasCover = hasCover; }
 		void setMBID(const std::string& MBID)				{ _MBID = MBID; }
 		void setCopyright(const std::string& copyright)			{ _copyright = std::string(copyright, 0, _maxCopyrightLength); }
 		void setCopyrightURL(const std::string& copyrightURL)		{ _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
-		void setArtists(std::vector<Wt::Dbo::ptr<Artist>>& artists);
+		void setArtists(const std::vector<Wt::Dbo::ptr<Artist>>& artists);
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
-		void eraseClusters()						{ _clusters.clear(); }
-		void eraseFeatures()						{ /*_trackFeatures.reset();*/ }
+		void setClusters(const std::vector<Wt::Dbo::ptr<Cluster>>& clusters );
+		void setFeatures(const Wt::Dbo::ptr<TrackFeatures>& features);
 
 		std::size_t 				getScanVersion() const		{ return _scanVersion; }
 		boost::optional<std::size_t>		getTrackNumber() const;
@@ -138,7 +134,6 @@ class Track : public Wt::Dbo::Dbo<Track>
 				Wt::Dbo::field(a, _duration,		"duration");
 				Wt::Dbo::field(a, _year,		"year");
 				Wt::Dbo::field(a, _originalYear,	"original_year");
-				Wt::Dbo::field(a, _genreList,		"genre_list");
 				Wt::Dbo::field(a, _filePath,		"file_path");
 				Wt::Dbo::field(a, _fileLastWrite,	"file_last_write");
 				Wt::Dbo::field(a, _fileAdded,		"file_added");
@@ -171,7 +166,6 @@ class Track : public Wt::Dbo::Dbo<Track>
 		std::chrono::duration<int, std::milli>	_duration;
 		int					_year = 0;
 		int					_originalYear = 0;
-		std::string				_genreList;
 		std::string				_filePath;
 		std::vector<unsigned char>		_fileChecksum;
 		Wt::WDateTime				_fileLastWrite;

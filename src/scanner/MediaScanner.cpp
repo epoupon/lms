@@ -84,62 +84,69 @@ isPathInParentPath(const boost::filesystem::path& path, const boost::filesystem:
 	return false;
 }
 
-Artist::pointer
-getArtist(Wt::Dbo::Session& session, const std::string& name, const std::string& mbid)
+std::vector<Artist::pointer>
+getArtists(Wt::Dbo::Session& session, const std::vector<MetaData::Artist>& artistsInfo)
 {
-	Artist::pointer artist;
+	std::vector<Artist::pointer> artists;
 
-	// First try to get by MBID
-	if (!mbid.empty())
+	for (const MetaData::Artist& artistInfo : artistsInfo)
 	{
-		artist = Artist::getByMBID(session, mbid);
-		if (!artist)
-			artist = Artist::create(session, name, mbid);
+		Artist::pointer artist;
 
-		return artist;
-	}
-
-	// Fall back on artist name (collisions may occur)
-	if (!name.empty())
-	{
-		for (Artist::pointer sameNamedArtist : Artist::getByName(session, name))
+		// First try to get by MBID
+		if (!artistInfo.musicBrainzArtistID.empty())
 		{
-			if (sameNamedArtist->getMBID().empty())
-			{
-				artist = sameNamedArtist;
-				break;
-			}
+			artist = Artist::getByMBID(session, artistInfo.musicBrainzArtistID);
+			if (!artist)
+				artist = Artist::create(session, artistInfo.name, artistInfo.musicBrainzArtistID);
+
+			artists.emplace_back(std::move(artist));
+			continue;
 		}
 
-		// No Artist found with the same name and without MBID -> creating
-		if (!artist)
-			artist = Artist::create(session, name);
+		// Fall back on artist name (collisions may occur)
+		if (!artistInfo.name.empty())
+		{
+			for (const Artist::pointer& sameNamedArtist : Artist::getByName(session, artistInfo.name))
+			{
+				if (sameNamedArtist->getMBID().empty())
+				{
+					artist = sameNamedArtist;
+					break;
+				}
+			}
 
-		return artist;
+			// No Artist found with the same name and without MBID -> creating
+			if (!artist)
+				artist = Artist::create(session, artistInfo.name);
+
+			artists.emplace_back(std::move(artist));
+			continue;
+		}
 	}
 
-	return Artist::pointer();
+	return artists;
 }
 
 Release::pointer
-getRelease(Wt::Dbo::Session& session, const std::string& name, const std::string& mbid)
+getRelease(Wt::Dbo::Session& session, const MetaData::Album& album)
 {
 	Release::pointer release;
 
 	// First try to get by MBID
-	if (!mbid.empty())
+	if (!album.musicBrainzAlbumID.empty())
 	{
-		release = Release::getByMBID(session, mbid );
+		release = Release::getByMBID(session, album.musicBrainzAlbumID);
 		if (!release)
-			release = Release::create(session, name, mbid);
+			release = Release::create(session, album.name, album.musicBrainzAlbumID);
 
 		return release;
 	}
 
 	// Fall back on release name (collisions may occur)
-	if (!name.empty())
+	if (!album.name.empty())
 	{
-		for (Release::pointer sameNamedRelease : Release::getByName(session, name))
+		for (const Release::pointer& sameNamedRelease : Release::getByName(session, album.name))
 		{
 			if (sameNamedRelease->getMBID().empty())
 			{
@@ -150,12 +157,12 @@ getRelease(Wt::Dbo::Session& session, const std::string& name, const std::string
 
 		// No release found with the same name and without MBID -> creating
 		if (!release)
-			release = Release::create(session, name);
+			release = Release::create(session, album.name);
 
 		return release;
 	}
 
-	return Release::pointer();
+	return Release::pointer{};
 }
 
 std::vector<Cluster::pointer>
@@ -400,8 +407,8 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 		}
 	}
 
-	boost::optional<MetaData::Items> items = _metadataParser.parse(file);
-	if (!items)
+	boost::optional<MetaData::Track> trackInfo {_metadataParser.parse(file)};
+	if (!trackInfo)
 	{
 		stats.scanErrors++;
 		return;
@@ -412,15 +419,14 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	std::vector<unsigned char> checksum ;
 	computeCrc(file, checksum);
 
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	Wt::Dbo::Transaction transaction {_db.getSession()};
 
-	Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
+	Wt::Dbo::ptr<Track> track {Track::getByPath(_db.getSession(), file) };
 
 	// We estimate this is a audio file if:
 	// - we found a least one audio stream
 	// - the duration is not null
-	if ((*items).find(MetaData::Type::AudioStreams) == (*items).end()
-			|| boost::any_cast<std::vector<MetaData::AudioStream>> ((*items)[MetaData::Type::AudioStreams]).empty())
+	if (trackInfo->audioStreams.empty())
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file.string() << "' (no audio stream found)";
 
@@ -433,10 +439,9 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 		stats.incompleteScans++;
 		return;
 	}
-	if ((*items).find(MetaData::Type::Duration) == (*items).end()
-			|| boost::any_cast<std::chrono::milliseconds>((*items)[MetaData::Type::Duration]).count() <= 0)
+	if (trackInfo->duration == std::chrono::milliseconds::zero())
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file.string() << "' (no duration or duration <= 0)";
+		LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file.string() << "' (duration is 0)";
 
 		// If Track exists here, delete it!
 		if (track)
@@ -450,10 +455,8 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 
 	// ***** Title
 	std::string title;
-	if ((*items).find(MetaData::Type::Title) != (*items).end())
-	{
-		title = boost::any_cast<std::string>((*items)[MetaData::Type::Title]);
-	}
+	if (!trackInfo->title.empty())
+		title = trackInfo->title;
 	else
 	{
 		// TODO parse file name guess track etc.
@@ -462,51 +465,19 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	}
 
 	// ***** Clusters
-	std::vector< Cluster::pointer > genres;
-	{
-		MetaData::Clusters clusterNames;
+	std::vector<Cluster::pointer> clusters {getClusters(_db.getSession(), trackInfo->clusters)};
 
-		if ((*items).find(MetaData::Type::Clusters) != (*items).end())
-		{
-			clusterNames = boost::any_cast<MetaData::Clusters> ((*items)[MetaData::Type::Clusters]);
-		}
-
-		genres = getClusters(_db.getSession(), clusterNames);
-	}
-
-	//  ***** Artist
-	std::set<Artist::pointer> artists;
-	{
-		std::string artistName;
-		std::string artistMusicBrainzID;
-
-		if ((*items).find(MetaData::Type::MusicBrainzArtistID) != (*items).end())
-			artistMusicBrainzID = boost::any_cast<std::string>((*items)[MetaData::Type::MusicBrainzArtistID] );
-
-		if ((*items).find(MetaData::Type::Artist) != (*items).end())
-			artistName = boost::any_cast<std::string>((*items)[MetaData::Type::Artist]);
-
-		artist = getArtist(_db.getSession(), artistName, artistMusicBrainzID);
-	}
+	//  ***** Artists
+	std::vector<Artist::pointer> artists {getArtists(_db.getSession(), trackInfo->artists)};
 
 	//  ***** Release
 	Release::pointer release;
-	{
-		std::string releaseName;
-		std::string releaseMusicBrainzID;
-
-		if ((*items).find(MetaData::Type::MusicBrainzAlbumID) != (*items).end())
-			releaseMusicBrainzID = boost::any_cast<std::string>((*items)[MetaData::Type::MusicBrainzAlbumID] );
-
-		if ((*items).find(MetaData::Type::Album) != (*items).end())
-			releaseName = boost::any_cast<std::string>((*items)[MetaData::Type::Album]);
-
-		release = getRelease(_db.getSession(), releaseName, releaseMusicBrainzID);
-	}
+	if (trackInfo->album)
+		release = getRelease(_db.getSession(), *trackInfo->album);
 
 	// If file already exist, update data
 	// Otherwise, create it
-	bool trackAdded = false;
+	bool trackAdded {false};
 	if (!track)
 	{
 		// Create a new song
@@ -519,9 +490,6 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Updating '" << file.string() << "'";
 
-		// Remove the songs from its clusters
-		track.modify()->eraseClusters();
-
 		stats.updates++;
 	}
 
@@ -529,74 +497,28 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 
 	track.modify()->setScanVersion(_scanVersion);
 	track.modify()->setChecksum(checksum);
-	track.modify()->setArtist(artist);
+	track.modify()->setArtists(artists);
 	track.modify()->setRelease(release);
+	track.modify()->setClusters(clusters);
 	track.modify()->setLastWriteTime(lastWriteTime);
 	track.modify()->setName(title);
-	track.modify()->setDuration( boost::any_cast<std::chrono::milliseconds>((*items)[MetaData::Type::Duration]) );
-	track.modify()->setAddedTime( Wt::WLocalDateTime::currentServerDateTime().toUTC() );
+	track.modify()->setDuration(trackInfo->duration);
+	track.modify()->setAddedTime(Wt::WLocalDateTime::currentServerDateTime().toUTC());
+	track.modify()->setTrackNumber(trackInfo->trackNumber ? *trackInfo->trackNumber : 0);
+	track.modify()->setTotalTrackNumber(trackInfo->totalTrack ? *trackInfo->totalTrack : 0);
+	track.modify()->setDiscNumber(trackInfo->discNumber ? *trackInfo->discNumber : 0);
+	track.modify()->setTotalDiscNumber(trackInfo->totalDisc ? *trackInfo->totalDisc : 0);
+	track.modify()->setYear(trackInfo->year ? *trackInfo->year : 0);
+	track.modify()->setOriginalYear(trackInfo->originalYear ? *trackInfo->originalYear : 0);
 
-	{
-		std::string trackClusterList;
-		// Product genre list
-		for (Cluster::pointer genre : genres)
-		{
-			if (!trackClusterList.empty())
-				trackClusterList += ", ";
-			trackClusterList += genre->getName();
+	// If a file has an OriginalYear but no Year, set it to ease filtering
+	if (!trackInfo->year && trackInfo->originalYear)
+		track.modify()->setYear(*trackInfo->originalYear);
 
-			genre.modify()->addTrack(track);
-		}
-
-		track.modify()->setGenres( trackClusterList );
-	}
-
-	if ((*items).find(MetaData::Type::TrackNumber) != (*items).end())
-		track.modify()->setTrackNumber( boost::any_cast<std::size_t>((*items)[MetaData::Type::TrackNumber]) );
-
-	if ((*items).find(MetaData::Type::TotalTrack) != (*items).end())
-		track.modify()->setTotalTrackNumber( boost::any_cast<std::size_t>((*items)[MetaData::Type::TotalTrack]) );
-
-	if ((*items).find(MetaData::Type::DiscNumber) != (*items).end())
-		track.modify()->setDiscNumber( boost::any_cast<std::size_t>((*items)[MetaData::Type::DiscNumber]) );
-
-	if ((*items).find(MetaData::Type::TotalDisc) != (*items).end())
-		track.modify()->setTotalDiscNumber( boost::any_cast<std::size_t>((*items)[MetaData::Type::TotalDisc]) );
-
-	if ((*items).find(MetaData::Type::Year) != (*items).end())
-		track.modify()->setYear( boost::any_cast<int>((*items)[MetaData::Type::Year]) );
-
-	if ((*items).find(MetaData::Type::OriginalYear) != (*items).end())
-	{
-		track.modify()->setOriginalYear( boost::any_cast<int>((*items)[MetaData::Type::OriginalYear]) );
-
-		// If a file has an OriginalYear but no Year, set it o ease filtering
-		if ((*items).find(MetaData::Type::Year) == (*items).end())
-			track.modify()->setYear( boost::any_cast<int>((*items)[MetaData::Type::OriginalYear]) );
-	}
-
-	if ((*items).find(MetaData::Type::MusicBrainzRecordingID) != (*items).end())
-	{
-		track.modify()->setMBID( boost::any_cast<std::string>((*items)[MetaData::Type::MusicBrainzRecordingID]) );
-	}
-
-	if ((*items).find(MetaData::Type::HasCover) != (*items).end())
-	{
-		bool hasCover = boost::any_cast<bool>((*items)[MetaData::Type::HasCover]);
-
-		track.modify()->setHasCover(hasCover);
-	}
-
-	if ((*items).find(MetaData::Type::Copyright) != (*items).end())
-	{
-
-		track.modify()->setCopyright( boost::any_cast<std::string>((*items)[MetaData::Type::Copyright]) );
-	}
-
-	if ((*items).find(MetaData::Type::CopyrightURL) != (*items).end())
-	{
-		track.modify()->setCopyrightURL( boost::any_cast<std::string>((*items)[MetaData::Type::CopyrightURL]) );
-	}
+	track.modify()->setMBID(trackInfo->musicBrainzRecordID);
+	track.modify()->setHasCover(trackInfo->hasCover);
+	track.modify()->setCopyright(trackInfo->copyright);
+	track.modify()->setCopyrightURL(trackInfo->copyrightURL);
 
 	transaction.commit();
 

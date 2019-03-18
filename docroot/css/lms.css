@@ -1,11 +1,24 @@
 a, a:link, a:active, a:visited {
-	color: black;
 	text-decoration: none;
 	cursor: pointer;
 }
 
 a:hover {
 	color: #337ab7;
+}
+
+/* Base style for artist names */
+.Lms-explore-artistname
+{
+	color: darkgrey;
+    	font-style: italic;
+}
+
+/* Base style for release names */
+.Lms-explore-releasename
+{
+	color: black;
+	font-style: normal;
 }
 
 .Lms-vertical-align {
@@ -141,10 +154,22 @@ a:hover {
 	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
+.Lms-explore-release-entry-tracknumber {
+	color: darkgrey;
+	text-align: center;
+	white-space: nowrap;
+}
+
 .Lms-explore-release-entry-name {
 	margin-top: 4px;
 	margin-bottom: 4px;
 	font-weight: inherit;
+}
+
+.Lms-explore-release-entry {
+	border-bottom-style: solid;
+	border-bottom-color: lightgrey;
+	border-bottom-width: thin;
 }
 
 .Lms-explore-release-entry:hover {
@@ -159,6 +184,10 @@ a:hover {
 	font-weight: bold;
 }
 
+.Lms-explore-release-entry-artist {
+	display: inline-block;
+}
+
 .Lms-explore-releaselink {
 	margin: 0px;
 	padding-top: 4px;
@@ -169,6 +198,9 @@ a:hover {
 	background-color: lightgrey;
 }
 
+.Lms-explore-releaselink-artist {
+	color: dimgrey;
+}
 
 .Lms-explore-artists-entry {
 	min-height: 48px;
@@ -176,6 +208,11 @@ a:hover {
 
 .Lms-explore-artists-entry:hover {
 	background-color: lightgrey;
+}
+
+.Lms-explore-artists-entry-name {
+	color: black;
+	font-style: normal;
 }
 
 .Lms-explore-artist-entry {
@@ -196,6 +233,10 @@ a:hover {
 	background-color: lightgrey;
 }
 
+.Lms-explore-artistlink-name {
+	color: black;
+	font-style: normal;
+}
 
 .Lms-explore-tracks-entry {
 	min-height: 32px;

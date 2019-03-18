@@ -21,6 +21,7 @@
 
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
+#include <Wt/WText.h>
 
 #include "database/Release.hpp"
 #include "resource/ImageResource.hpp"
@@ -47,7 +48,7 @@ ReleaseLink::ReleaseLink(Database::Release::pointer release)
 	if (artists.size() > 1)
 	{
 		setCondition("if-has-artist", true);
-		bindString("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
+		bindNew<Wt::WText>("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
 	}
 	else if (artists.size() == 1)
 	{

@@ -50,7 +50,8 @@ Release::Release(Filters* filters)
 
 	refresh();
 
-	filters->updated().connect([=] {
+	filters->updated().connect([=]
+	{
 		refresh();
 	});
 }
@@ -62,31 +63,31 @@ Release::refresh()
 		return;
 
 	clear();
-	auto releaseId = readAs<Database::IdType>(wApp->internalPathNextPart("/release/"));
+	auto releaseId {readAs<Database::IdType>(wApp->internalPathNextPart("/release/"))};
 	if (!releaseId)
 		return;
 
-        Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+        Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
 
-	auto release = Database::Release::getById(LmsApp->getDboSession(), *releaseId);
+	auto release {Database::Release::getById(LmsApp->getDboSession(), *releaseId)};
 	if (!release)
 	{
 		LmsApp->goHome();
 		return;
 	}
 
-	Wt::WTemplate* t = addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template"));
+	Wt::WTemplate* t {addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template"))};
 	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	t->bindString("name", Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
 
-	boost::optional<int> year = release->getReleaseYear();
+	boost::optional<int> year {release->getReleaseYear()};
 	if (year)
 	{
 		t->setCondition("if-has-year", true);
 		t->bindInt("year", *year);
 
-		boost::optional<int> originalYear = release->getReleaseYear(true);
+		boost::optional<int> originalYear {release->getReleaseYear(true)};
 		if (originalYear && *originalYear != *year)
 		{
 			t->setCondition("if-has-orig-year", true);
@@ -95,11 +96,11 @@ Release::refresh()
 	}
 
 	{
-		auto artists = release->getArtists();
+		auto artists {release->getArtists()};
 		if (artists.size() > 1)
 		{
 			t->setCondition("if-has-artist", true);
-			t->bindString("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
+			t->bindNew<Wt::WText>("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
 		}
 		else if (artists.size() == 1)
 		{
@@ -110,17 +111,17 @@ Release::refresh()
 
 	t->bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 512)));
 
-	Wt::WContainerWidget* clusterContainers = t->bindNew<Wt::WContainerWidget>("clusters");
+	Wt::WContainerWidget* clusterContainers {t->bindNew<Wt::WContainerWidget>("clusters")};
 	{
-		auto clusterTypes = ScanSettings::get(LmsApp->getDboSession())->getClusterTypes();
-		auto clusterGroups = release->getClusterGroups(clusterTypes, 3);
+		auto clusterTypes {ScanSettings::get(LmsApp->getDboSession())->getClusterTypes()};
+		auto clusterGroups {release->getClusterGroups(clusterTypes, 3)};
 
 		for (auto clusters : clusterGroups)
 		{
 			for (auto cluster : clusters)
 			{
-				auto clusterId = cluster.id();
-				auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
+				auto clusterId {cluster.id()};
+				auto entry {clusterContainers->addWidget(LmsApp->createCluster(cluster))};
 				entry->clicked().connect([=]
 				{
 					_filters->add(clusterId);
@@ -130,7 +131,7 @@ Release::refresh()
 	}
 
 	{
-		Wt::WText* playBtn = t->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
+		Wt::WText* playBtn {t->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([=]
 		{
 			releasePlay.emit(*releaseId);
@@ -138,55 +139,62 @@ Release::refresh()
 	}
 
 	{
-		Wt::WText* addBtn =  t->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
+		Wt::WText* addBtn {t->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
 		addBtn->clicked().connect([=]
 		{
 			releaseAdd.emit(*releaseId);
 		});
 	}
 
-	Wt::WContainerWidget* tracksContainer = t->bindNew<Wt::WContainerWidget>("tracks");
+	Wt::WContainerWidget* tracksContainer {t->bindNew<Wt::WContainerWidget>("tracks")};
 
-	auto clusterIds = _filters->getClusterIds();
-	auto tracks = release->getTracks(clusterIds);
+	auto clusterIds {_filters->getClusterIds()};
+	auto tracks {release->getTracks(clusterIds)};
 
-	bool variousArtists = release->hasVariousArtists();
+	bool variousArtists {release->hasVariousArtists()};
 
-	for (auto track : tracks)
+	for (const auto& track : tracks)
 	{
-		auto trackId = track.id();
+		auto trackId {track.id()};
 
-		Wt::WTemplate* entry = tracksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry"));
+		Wt::WTemplate* entry {tracksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry"))};
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-		if (variousArtists && track->getArtist())
+		auto artists {track->getArtists()};
+		if (variousArtists && !artists.empty())
 		{
-			entry->setCondition("if-has-artist", true);
-			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(track->getArtist()));
+			entry->setCondition("if-has-artists", true);
+
+			Wt::WContainerWidget* artistsContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
+			for (const auto& artist : artists)
+			{
+				Wt::WTemplate *t {artistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-artist"))};
+				t->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
+			}
 		}
 
-		auto trackNumber = track->getTrackNumber();
+		auto trackNumber {track->getTrackNumber()};
 		if (trackNumber)
 		{
 			entry->setCondition("if-has-track-number", true);
 			entry->bindInt("track-number", *trackNumber);
 		}
 
-		auto discNumber = track->getDiscNumber();
-		auto totalDiscNumber = track->getTotalDiscNumber();
+		auto discNumber {track->getDiscNumber()};
+		auto totalDiscNumber {track->getTotalDiscNumber()};
 		if (discNumber && totalDiscNumber && *totalDiscNumber > 1)
 		{
 			entry->setCondition("if-has-disc-number", true);
 			entry->bindInt("disc-number", *discNumber);
 		}
 
-		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
+		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect(std::bind([=]
 		{
 			trackPlay.emit(trackId);
 		}));
 
-		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
+		Wt::WText* addBtn {entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
 		addBtn->clicked().connect(std::bind([=]
 		{
 			trackAdd.emit(trackId);

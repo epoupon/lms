@@ -31,7 +31,7 @@ namespace MetaData
 class TagLibParser : public Parser
 {
 	public:
-		boost::optional<Items> parse(const boost::filesystem::path& p, bool debug = false) override;
+		boost::optional<Track> parse(const boost::filesystem::path& p, bool debug = false) override;
 };
 
 } // namespace MetaData

@@ -279,8 +279,8 @@ FeaturesSearcher::dump(Wt::Dbo::Session& session, std::ostream& os) const
 					continue;
 
 				os << "\t";
-				if (track->getArtist())
-					os << track->getArtist()->getName() << " - ";
+				for (auto artist : track->getArtists())
+					os << artist->getName() << " - ";
 				if (track->getRelease())
 					os << track->getRelease()->getName() << " - ";
 				os << track->getName() << std::endl;
@@ -334,10 +334,10 @@ FeaturesSearcher::init(Wt::Dbo::Session& session,
 				_releasePositions[track->getRelease().id()].insert(position);
 				_releasesMap[position].insert(track->getRelease().id());
 			}
-			if (track->getArtist())
+			for (const auto& artist : track->getArtists())
 			{
-				_artistPositions[track->getArtist().id()].insert(position);
-				_artistsMap[position].insert(track->getArtist().id());
+				_artistPositions[artist.id()].insert(position);
+				_artistsMap[position].insert(artist.id());
 			}
 		}
 	}

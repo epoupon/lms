@@ -21,7 +21,10 @@ Conventional features include:
 - Audio transcode for maximum interoperability and low bandwith requirements
 - Custom tag support
 
-The recommendation engine makes use of [Self-Organizing Maps](https://en.wikipedia.org/wiki/Self-organizing_map). Please note it may require some significant computation time on large datasets.
+The recommendation engine makes use of [Self-Organizing Maps](https://en.wikipedia.org/wiki/Self-organizing_map)</br>
+Please note this engine:
+- may require some significant computation time on large datasets.
+- makes use of computed data available on [AcousticBrainz](https://acousticbrainz.org/). Therefore your music must contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) for the recommendation engine to work.
 
 ## Installation
 Here are the required packages to build on Debian Stretch:

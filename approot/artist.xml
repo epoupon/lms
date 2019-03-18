@@ -20,7 +20,7 @@
 				</div>
 				<div class="media-body media-middle">
 					<h4 class="media-heading">
-						${name}
+						${name class="Lms-explore-releasename"}
 					</h4>
 					${<if-has-various-artists>}<h4><small><i>${tr:Lms.Explore.various-artists}</i></small></h4>${</if-has-various-artists>}
 					<h4><small>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</small></h4>

@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <map>
 #include <set>
 
@@ -39,7 +40,7 @@ namespace MetaData
 	{
 		std::string name;
 		std::string musicBrainzAlbumID;
-	}
+	};
 
 	struct AudioStream
 	{
@@ -64,7 +65,7 @@ namespace MetaData
 		boost::optional<int>		originalYear;
 		bool				hasCover {false};
 		std::vector<AudioStream>	audioStreams;
-		std::string			acoustId;
+		std::string			acoustID;
 		std::string			copyright;
 		std::string			copyrightURL;
 	};

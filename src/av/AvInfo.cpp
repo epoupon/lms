@@ -19,6 +19,8 @@
 
 #include "AvInfo.hpp"
 
+#include <boost/algorithm/string.hpp>
+
 #include <array>
 
 #include "utils/Logger.hpp"
@@ -93,7 +95,7 @@ getMetaDataFromDictionnary(AVDictionary* dictionnary, std::map<std::string, std:
 	AVDictionaryEntry *tag = NULL;
 	while ((tag = av_dict_get(dictionnary, "", tag, AV_DICT_IGNORE_SUFFIX)))
 	{
-		res.insert( std::make_pair(tag->key, tag->value));
+		res[boost::to_upper_copy<std::string>(tag->key)] = tag->value;
 	}
 }
 
