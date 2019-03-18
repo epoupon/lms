@@ -94,7 +94,7 @@ getArtists(const MetadataMap& metadataMap)
 	}
 	else if (metadataMap.find("ARTIST") != metadataMap.end())
 	{
-		artistNames = {metadataMap.find("ARTISTS")->second};
+		artistNames = {metadataMap.find("ARTIST")->second};
 	}
 
 	std::vector<std::string> artistMBIDs;
@@ -143,9 +143,6 @@ AvFormat::parse(const boost::filesystem::path& p, bool debug)
 		MetaData::Clusters clusters;
 
 		const std::map<std::string, std::string> metadataMap {mediaFile.getMetaData()};
-		track.artists = getArtists(metadataMap);
-		track.album = getAlbum(metadataMap);
-		track.albumArtist = getAlbumArtist(metadataMap);
 
 		for (const auto& metadata : metadataMap)
 		{
@@ -213,6 +210,10 @@ AvFormat::parse(const boost::filesystem::path& p, bool debug)
 			}
 
 		}
+
+		track.artists = getArtists(metadataMap);
+		track.album = getAlbum(metadataMap);
+		track.albumArtist = getAlbumArtist(metadataMap);
 	}
 	catch(Av::MediaFileException& e)
 	{

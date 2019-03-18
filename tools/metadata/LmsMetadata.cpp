@@ -111,27 +111,33 @@ void parse(MetaData::Parser& parser, const boost::filesystem::path& file)
 
 int main(int argc, char *argv[])
 {
-	if (argc != 2)
+	if (argc == 1)
 	{
-		std::cerr << "Usage: <file>" << std::endl;
+		std::cerr << "Usage: <file> [<file> ...]" << std::endl;
 		return EXIT_FAILURE;
 	}
 
 	try
 	{
 		Av::AvInit();
-		boost::filesystem::path file {argv[1]};
 
+		for (std::size_t  i {}; i < static_cast<std::size_t>(argc - 1); ++i)
 		{
-			std::cout << "Using av:" << std::endl;
-			MetaData::AvFormat parser;
-			parse(parser, file);
-		}
+			boost::filesystem::path file {argv[i + 1]};
 
-		{
-			std::cout << "Using TagLib:" << std::endl;
-			MetaData::TagLibParser parser;
-			parse(parser, file);
+			std::cout << "Parsing file '" << file << "'" << std::endl;
+
+			{
+				std::cout << "Using av:" << std::endl;
+				MetaData::AvFormat parser;
+				parse(parser, file);
+			}
+
+			{
+				std::cout << "Using TagLib:" << std::endl;
+				MetaData::TagLibParser parser;
+				parse(parser, file);
+			}
 		}
 
 	}
