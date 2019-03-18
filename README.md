@@ -15,10 +15,11 @@ LMS provides several ways to help you find the music you like:
 
 Conventional features include:
 - Responsive design
-- Persistent play queue
+- Persistent play queue across sessions
 - User management
 - MusicBrainzID support to handle duplicated artist and release names
 - Audio transcode for maximum interoperability and low bandwith requirements
+- Multi value tags
 - Custom tag support
 
 The recommendation engine makes use of [Self-Organizing Maps](https://en.wikipedia.org/wiki/Self-organizing_map)</br>
