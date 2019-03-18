@@ -170,6 +170,7 @@ a:hover {
 	border-bottom-style: solid;
 	border-bottom-color: lightgrey;
 	border-bottom-width: thin;
+	min-height: 32px;
 }
 
 .Lms-explore-release-entry:hover {
