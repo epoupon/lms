@@ -38,10 +38,7 @@
 </message>
 
 <message id="Lms.Explore.Release.template.entry-artist">
-	${artist class="Lms-explore-artistname Lms-explore-release-entry-artist"}
+	${artist class="Lms-explore-artistname"}
 </message>
-
-
-
 
 </messages>

@@ -24,19 +24,21 @@
 
 <message id="Lms.Explore.Tracks.template.entry">
 	<div class="row Lms-explore-tracks-entry Lms-vertical-align">
-		<div class="col-xs-9">
+		<div class="col-xs-9 Lms-explore-tracks-entry-name">
 			<h4>${name}</h4>
-		</div>
-		<div class="col-sm-3 hidden-xs">
-			${<if-has-release>}<small>${release-name class="Lms-explore-releasename"}</small>${</if-has-release>}
-		</div>
-		<div class="col-sm-3 hidden-xs">
-			${<if-has-artist>}<small>${artist-name class="Lms-explore-artistname"}</small>${</if-has-artist>}
+			${<if-has-artists-or-release>}
+			${<if-has-release>}<small>${release class="Lms-explore-releasename"}</small>${</if-has-release>}
+			${<if-has-artists>}<small>${artists}</small>${</if-has-artists>}
+			${</if-has-artists-or-release>}
 		</div>
 		<div class="col-xs-3 Lms-explore-tracks-entry-controls">
 			${play-btn}${add-btn}
 		</div>
 	</div>
+</message>
+
+<message id="Lms.Explore.Tracks.template.entry-artist">
+	${artist class="Lms-explore-artistname"}
 </message>
 
 </messages>

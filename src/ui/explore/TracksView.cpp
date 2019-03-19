@@ -117,16 +117,27 @@ Tracks::addSome()
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
 		auto artists {track->getArtists()};
+		auto release {track->getRelease()};
+
+		if (!artists.empty() || release)
+			entry->setCondition("if-has-artists-or-release", true);
+
 		if (!artists.empty())
 		{
-			entry->setCondition("if-has-artist", true);
-			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
+			entry->setCondition("if-has-artists", true);
+
+			Wt::WContainerWidget* artistContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
+			for (const auto& artist : artists)
+			{
+				Wt::WTemplate* a {artistContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry-artist"))};
+				a->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
+			}
 		}
 
 		if (track->getRelease())
 		{
 			entry->setCondition("if-has-release", true);
-			entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(track->getRelease()));
+			entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
 		}
 
 		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);

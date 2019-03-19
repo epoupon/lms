@@ -185,10 +185,6 @@ a:hover {
 	font-weight: bold;
 }
 
-.Lms-explore-release-entry-artist {
-	display: inline-block;
-}
-
 .Lms-explore-releaselink {
 	margin: 0px;
 	padding-top: 4px;
@@ -241,8 +237,14 @@ a:hover {
 
 .Lms-explore-tracks-entry {
 	min-height: 32px;
-	padding-top: 2px;
-	padding-bottom: 2px;
+	border-bottom-style: solid;
+	border-bottom-color: lightgrey;
+	border-bottom-width: thin;
+}
+
+.Lms-explore-tracks-entry-name {
+	margin-top: 4px;
+	margin-bottom: 4px;
 }
 
 .Lms-explore-tracks-entry:hover {
@@ -273,13 +275,19 @@ a:hover {
 }
 
 .Lms-playqueue-entry {
+	border-bottom-style: solid;
+	border-bottom-color: lightgrey;
+	border-bottom-width: thin;
 	min-height: 32px;
-	padding-top: 2px;
-	padding-bottom: 2px;
 }
 
 .Lms-playqueue-entry:hover {
 	background-color: lightgrey;
+}
+
+.Lms-playqueue-entry-name {
+	margin-top: 4px;
+	margin-bottom: 4px;
 }
 
 .Lms-playqueue-entry-controls {
@@ -309,12 +317,19 @@ a:hover {
 }
 
 .Lms-playhistory-entry {
+	border-bottom-style: solid;
+	border-bottom-color: lightgrey;
+	border-bottom-width: thin;
 	min-height: 32px;
-	margin-bottom: 2px;
 }
 
 .Lms-playhistory-entry:hover {
 	background-color: lightgrey;
+}
+
+.Lms-playhistory-entry-name {
+	margin-top: 4px;
+	margin-bottom: 4px;
 }
 
 .Lms-player {
