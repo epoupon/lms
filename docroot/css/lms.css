@@ -326,6 +326,10 @@ a:hover {
 	box-shadow: 0px -2px 8px #f5f5f5;
 }
 
+.Lms-player-artistname {
+	color: dimgrey;
+}
+
 .Lms-player-btn {
 	font-size: 34px !important;
 	cursor: pointer;

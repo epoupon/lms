@@ -25,7 +25,7 @@
 					${title class="Lms-player-text"}
 				</div>
 				<div class="Lms-player-text-center">
-					<small><span class="hidden-xs">${release class="Lms-player-text"}</span><i>${artist class="Lms-player-text"}</i></small>
+					<small><span class="hidden-xs">${release class="Lms-player-text Lms-explore-releasename"}</span>${artist class="Lms-player-text Lms-explore-artistname Lms-player-artistname"}</small>
 				</div>
 			</div>
 		</div>
