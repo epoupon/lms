@@ -43,6 +43,9 @@ class FeaturesSearcher
 
 		bool isValid() const;
 
+		bool isReleaseClassified(Database::IdType releaseId) const;
+		bool isArtistClassified(Database::IdType releaseId) const;
+
 		std::vector<Database::IdType> getSimilarTracks(const std::set<Database::IdType>& tracksId, std::size_t maxCount) const;
 		std::vector<Database::IdType> getSimilarReleases(Database::IdType releaseId, std::size_t maxCount) const;
 		std::vector<Database::IdType> getSimilarArtists(Database::IdType artistId, std::size_t maxCount) const;

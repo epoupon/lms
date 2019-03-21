@@ -60,7 +60,9 @@ Searcher::getSimilarReleases(Wt::Dbo::Session& session, Database::IdType release
 	auto somSearcher = _somAddon.getSearcher();
 
 	if (method == Database::SimilaritySettings::PreferredMethod::Features
-		|| (method == Database::SimilaritySettings::PreferredMethod::Auto && somSearcher))
+		|| (method == Database::SimilaritySettings::PreferredMethod::Auto
+			&& somSearcher
+			&& somSearcher->isReleaseClassified(releaseId)))
 	{
 		return somSearcher->getSimilarReleases(releaseId, maxCount);
 	}
@@ -75,7 +77,9 @@ Searcher::getSimilarArtists(Wt::Dbo::Session& session, Database::IdType artistId
 	auto somSearcher = _somAddon.getSearcher();
 
 	if (method == Database::SimilaritySettings::PreferredMethod::Features
-		|| (method == Database::SimilaritySettings::PreferredMethod::Auto && somSearcher))
+		|| (method == Database::SimilaritySettings::PreferredMethod::Auto
+			&& somSearcher
+			&& somSearcher->isArtistClassified(artistId)))
 	{
 		return somSearcher->getSimilarArtists(artistId, maxCount);
 	}

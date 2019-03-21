@@ -221,6 +221,18 @@ FeaturesSearcher::isValid() const
 	return _network.get() != nullptr;
 }
 
+bool
+FeaturesSearcher::isReleaseClassified(Database::IdType releaseId) const
+{
+	return (_releasePositions.find(releaseId) != _releasePositions.end());
+}
+
+bool
+FeaturesSearcher::isArtistClassified(Database::IdType artistId) const
+{
+	return (_artistPositions.find(artistId) != _artistPositions.end());
+}
+
 std::vector<Database::IdType>
 FeaturesSearcher::getSimilarTracks(const std::set<Database::IdType>& tracksIds, std::size_t maxCount) const
 {
