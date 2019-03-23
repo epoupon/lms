@@ -31,18 +31,15 @@
 namespace MetaData
 {
 
-boost::optional<std::string>
-getPropertyValue(const TagLib::PropertyMap& properties, const std::string& key)
+std::vector<std::string>
+getPropertyValues(const TagLib::PropertyMap& properties, const std::string& key)
 {
-	boost::optional<std::string> res;
+	std::vector<std::string> res;
 
 	const TagLib::StringList& values {properties[key]};
-	if (values.isEmpty())
-		return res;
 
-	res = stringTrim(values.front().to8Bit(true));
-	if (res->empty())
-		res.reset();
+	res.reserve(values.size());
+	std::transform(std::cbegin(values), std::cend(values), std::back_inserter(res), [](const auto& value) { return stringTrim(value.to8Bit(true)); });
 
 	return res;
 }
@@ -61,65 +58,59 @@ splitAndTrimString(const std::string& str, const std::string& delimiters)
 }
 
 static
-std::vector<std::string>
-getMusicBrainzArtistID(const TagLib::PropertyMap& properties)
-{
-	boost::optional<std::string> value {getPropertyValue(properties, "MUSICBRAINZ_ARTISTID")};
-
-	if (!value)
-		return {};
-
-	return splitAndTrimString(*value, "/");  // Picard separator is '/'
-}
-
-static
 std::vector<Artist>
 getArtists(const TagLib::PropertyMap& properties)
 {
 	std::vector<Artist> res;
 
-	boost::optional<std::string> value;
+	std::vector<std::string> artistNames {getPropertyValues(properties, "ARTISTS")};
+	if (artistNames.empty())
+		artistNames = getPropertyValues(properties, "ARTIST");
 
-	value = getPropertyValue(properties, "ARTISTS");
-	if (value)
-	{
-		std::vector<std::string> artists {splitAndTrimString(*value, "/;")};  // Picard separator is '/'
-		std::vector<std::string> artistsMBID {getMusicBrainzArtistID(properties)};
-
-		for (std::size_t i {}; i < artists.size(); ++i)
-			res.emplace_back(Artist{std::move(artists[i]), artistsMBID.size() == artists.size() ? std::move(artistsMBID[i]) : ""});
-
+	if (artistNames.empty())
 		return res;
-	}
 
-	value = getPropertyValue(properties, "ARTIST");
-	if (value)
-		res.emplace_back(Artist{std::move(*value), ""});
+	const std::vector<std::string> artistsMBID {getPropertyValues(properties, "MUSICBRAINZ_ARTISTID")};
+
+	if (artistNames.size() == artistsMBID.size())
+	{
+		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::cbegin(artistsMBID), std::back_inserter(res),
+				[&](const std::string& name, const std::string& mbid) { return Artist{name, mbid}; });
+	}
+	else
+	{
+		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(res),
+				[&](const std::string& name) { return Artist{name, ""}; });
+	}
 
 	return res;
 }
 
 static
-boost::optional<Artist>
-getAlbumArtist(const TagLib::PropertyMap& properties)
+std::vector<Artist>
+getAlbumArtists(const TagLib::PropertyMap& properties)
 {
-	boost::optional<Artist> res;
+	std::vector<Artist> res;
 
-	boost::optional<std::string> value;
-
-	value = getPropertyValue(properties, "ALBUMARTIST");
-	if (!value)
+	std::vector<std::string> artistNames {getPropertyValues(properties, "ALBUMARTIST")};
+	if (artistNames.empty())
 		return res;
 
-	res = Artist{std::move(*value), ""};
+	const std::vector<std::string> artistsMBID {getPropertyValues(properties, "MUSICBRAINZ_ALBUMARTISTID")};
 
-	value = getPropertyValue(properties, "MUSICBRAINZ_ALBUMARTISTID");
-	if (value)
-		res->musicBrainzArtistID = std::move(*value);
+	if (artistNames.size() == artistsMBID.size())
+	{
+		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::cbegin(artistsMBID), std::back_inserter(res),
+				[&](const std::string& name, const std::string& mbid) { return Artist{name, mbid}; });
+	}
+	else
+	{
+		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(res),
+				[&](const std::string& name) { return Artist{name, ""}; });
+	}
 
 	return res;
 }
-
 
 static
 boost::optional<Album>
@@ -127,15 +118,16 @@ getAlbum(const TagLib::PropertyMap& properties)
 {
 	boost::optional<Album> res;
 
-	boost::optional<std::string> value {getPropertyValue(properties, "ALBUM")};
-	if (!value)
+	std::vector<std::string> albumName {getPropertyValues(properties, "ALBUM")};
+	if (albumName.empty())
 		return res;
 
-	res = Album{std::move(*value), ""};
+	std::vector<std::string> albumMBID {getPropertyValues(properties, "MUSICBRAINZ_ALBUMID")};
 
-	boost::optional<std::string> mbid {getPropertyValue(properties, "MUSICBRAINZ_ALBUMID")};
-	if (mbid)
-		res->musicBrainzAlbumID = std::move(*mbid);
+	res = Album{std::move(albumName.front()), ""};
+
+	if (!albumMBID.empty())
+		res->musicBrainzAlbumID = std::move(albumMBID.front());
 
 	return res;
 }
@@ -192,7 +184,7 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 				std::vector<std::string> strs;
 				std::transform(values.begin(), values.end(), std::back_inserter(strs), [](const auto& value) { return value.to8Bit(true); });
 
-				std::cout << "[" << tag << "] = " << joinStrings(strs, ",") << std::endl;
+				std::cout << "[" << tag << "] = " << joinStrings(strs, "*SEP*") << std::endl;
 			}
 
 			if (tag.empty() || values.isEmpty() || values.front().isEmpty())
@@ -288,7 +280,7 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 		}
 
 		track.artists = getArtists(properties);
-		track.albumArtist = getAlbumArtist(properties);
+		track.albumArtists = getAlbumArtists(properties);
 		track.album = getAlbum(properties);
 
 	}

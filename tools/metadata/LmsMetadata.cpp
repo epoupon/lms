@@ -49,8 +49,8 @@ void parse(MetaData::Parser& parser, const boost::filesystem::path& file)
 	for (const Artist& artist : track->artists)
 		std::cout << "Artist: " << artist << std::endl;
 
-	if (track->albumArtist)
-		std::cout << "Album artist: " << *track->albumArtist << std::endl;
+	for (const Artist& artist: track->albumArtists)
+		std::cout << "Album artist: " << artist << std::endl;
 
 	if (track->album)
 		std::cout << "Album: " << *track->album << std::endl;

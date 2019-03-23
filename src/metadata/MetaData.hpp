@@ -50,7 +50,7 @@ namespace MetaData
 	struct Track
 	{
 		std::vector<Artist>		artists;
-		boost::optional<Artist>		albumArtist;
+		std::vector<Artist>		albumArtists;
 		std::string			title;
 		std::string			musicBrainzTrackID;
 		std::string			musicBrainzRecordID;

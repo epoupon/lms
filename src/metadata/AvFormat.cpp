@@ -61,24 +61,22 @@ getAlbum(const MetadataMap& metadataMap)
 }
 
 static
-boost::optional<Artist>
-getAlbumArtist(const MetadataMap& metadataMap)
+std::vector<Artist>
+getAlbumArtists(const MetadataMap& metadataMap)
 {
-	boost::optional<Artist> res;
+	std::vector<Artist> res;
 
-	auto artist {findFirstValueOf(metadataMap, {"ALBUM_ARTIST"})};
-	if (!artist)
+	auto name {findFirstValueOf(metadataMap, {"ALBUM_ARTIST"})};
+	if (!name)
 		return res;
 
-	res = Artist{*artist, ""};
+	Artist artist {*name, ""};
 
-	auto artistMBID {findFirstValueOf(metadataMap, {"MUSICBRAINZ ALBUM ARTIST ID"})};
-	if (!artistMBID)
-		return res;
+	auto mbid {findFirstValueOf(metadataMap, {"MUSICBRAINZ ALBUM ARTIST ID"})};
+	if (mbid)
+		artist.musicBrainzArtistID = *mbid;
 
-	res->musicBrainzArtistID = *artistMBID;
-
-	return res;
+	return {std::move(artist)};
 }
 
 static
@@ -213,7 +211,7 @@ AvFormat::parse(const boost::filesystem::path& p, bool debug)
 
 		track.artists = getArtists(metadataMap);
 		track.album = getAlbum(metadataMap);
-		track.albumArtist = getAlbumArtist(metadataMap);
+		track.albumArtists = getAlbumArtists(metadataMap);
 	}
 	catch(Av::MediaFileException& e)
 	{
