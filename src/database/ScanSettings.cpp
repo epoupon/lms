@@ -34,7 +34,6 @@ std::set<std::string> defaultClusterTypeNames =
 	"ALBUMGROUPING",
 	"MOOD",
 	"ALBUMMOOD",
-	"COMMENT:SONGS-DB_OCCASION",
 };
 
 }

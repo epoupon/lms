@@ -61,7 +61,7 @@ AudioResource::handleRequest(const Wt::Http::Request& request,
 	else
 	{
 		Database::IdType trackId;
-		Av::TranscodeParameters parameters;
+		Av::TranscodeParameters parameters {};
 
 		LMS_LOG(UI, DEBUG) << "No continuation yet";
 		try
