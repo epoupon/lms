@@ -62,6 +62,7 @@ Grabber::setDefaultCover(boost::filesystem::path p)
 Image::Image
 Grabber::getDefaultCover(std::size_t size)
 {
+	LMS_LOG(COVER, DEBUG) << "Getting a default cover using size = " << size;
 	std::unique_lock<std::mutex> lock(_mutex);
 
 	auto it = _defaultCovers.find(size);
@@ -69,7 +70,11 @@ Grabber::getDefaultCover(std::size_t size)
 	{
 		Image::Image cover = _defaultCover;
 
-		cover.scale(size);
+		LMS_LOG(COVER, DEBUG) << "default cover size = " << cover.getSize().width << " x " << cover.getSize().height;
+
+		LMS_LOG(COVER, DEBUG) << "Scaling cover to size = " << size;
+		cover.scale(Image::Geometry{size, size});
+		LMS_LOG(COVER, DEBUG) << "Scaling DONE";
 		auto res = _defaultCovers.insert(std::make_pair(size, cover));
 		assert(res.second);
 		it = res.first;
@@ -192,7 +197,7 @@ Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::
 	if (!cover)
 		cover = getDefaultCover(size);
 	else
-		cover->scale(size);
+		cover->scale(Image::Geometry {size, size});
 
 	return *cover;
 }
@@ -225,7 +230,7 @@ Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, s
 	if (!cover)
 		cover = getDefaultCover(size);
 	else
-		cover->scale(size);
+		cover->scale(Image::Geometry {size, size});
 
 	return *cover;
 }

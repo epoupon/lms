@@ -60,7 +60,7 @@ ReleasesInfo::refreshRecentlyAdded()
 
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
-	auto releases = Release::getLastAdded(LmsApp->getDboSession(), after, 5);
+	auto releases {Release::getLastAdded(LmsApp->getDboSession(), after, 0, 5)};
 
 	_recentlyAddedContainer->clear();
 	for (auto release : releases)

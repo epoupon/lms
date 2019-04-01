@@ -63,7 +63,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 							int size,
 							bool& moreExpected);
 
-		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session);
+		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> limit = {});
+		static std::vector<pointer>	getAllRandom(Wt::Dbo::Session& session, boost::optional<std::size_t> limit = {});
 		static std::vector<IdType>	getAllIds(Wt::Dbo::Session& session); // nested transaction
 		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session); // nested transaction
 		static std::vector<pointer>	getMBIDDuplicates(Wt::Dbo::Session& session);

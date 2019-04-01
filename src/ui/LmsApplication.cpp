@@ -109,9 +109,6 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	messageResourceBundle().use(appRoot() + "tracks");
 	messageResourceBundle().use(appRoot() + "tracksinfo");
 
-	// hack since Server does not expose the docRoot
-	getServices().coverArtGrabber->setDefaultCover(Wt::WApplication::instance()->docRoot() + "/images/unknown-cover.jpg");
-
 	// Require js here to avoid async problems
 	requireJQuery("/js/jquery-1.10.2.min.js");
 	require("/js/mediaplayer.js");

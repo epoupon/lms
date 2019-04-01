@@ -38,9 +38,21 @@ _filePath( p.string() )
 }
 
 Wt::Dbo::collection< Track::pointer >
-Track::getAll(Wt::Dbo::Session& session)
+Track::getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> limit)
 {
-	return session.find<Track>();
+	int size {limit ? static_cast<int>(*limit) : -1};
+
+	return session.find<Track>().limit(size);
+}
+
+std::vector<Track::pointer>
+Track::getAllRandom(Wt::Dbo::Session& session, boost::optional<std::size_t> limit)
+{
+	Wt::Dbo::collection<Track::pointer> res {session.find<Track>()
+		.limit(limit ? static_cast<int>(*limit) : -1)
+		.orderBy("RANDOM()")};
+
+	return std::vector<Track::pointer>(std::cbegin(res), std::cend(res));
 }
 
 std::vector<IdType>

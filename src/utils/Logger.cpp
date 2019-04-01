@@ -23,6 +23,7 @@ std::string getModuleName(Module mod)
 {
 	switch (mod)
 	{
+		case Module::API_SUBSONIC:	return "API_SUBSONIC";
 		case Module::AV:		return "AV";
 		case Module::COVER:		return "COVER";
 		case Module::DB:		return "DB";

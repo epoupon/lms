@@ -61,10 +61,30 @@ Release::create(Wt::Dbo::Session& session, const std::string& name, const std::s
 	return session.add(std::make_unique<Release>(name, MBID));
 }
 
-std::vector<Release::pointer>
-Release::getAll(Wt::Dbo::Session& session, int offset, int size)
+std::size_t
+Release::getCount(Wt::Dbo::Session& session)
 {
-	Wt::Dbo::collection<pointer> res = session.find<Release>().offset(offset).limit(size);
+	Wt::Dbo::collection<pointer> releases {session.find<Release>()};
+	return releases.size();
+}
+
+std::vector<Release::pointer>
+Release::getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> offset, boost::optional<std::size_t> size)
+{
+	Wt::Dbo::collection<pointer> res = session.find<Release>()
+		.offset(offset ? static_cast<int>(*offset) : -1)
+		.limit(size ? static_cast<int>(*size) : - 1);
+
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
+std::vector<Release::pointer>
+Release::getAllRandom(Wt::Dbo::Session& session, boost::optional<std::size_t> size)
+{
+	Wt::Dbo::collection<pointer> res = session.find<Release>()
+		.limit(size ? static_cast<int>(*size) : - 1)
+		.orderBy("RANDOM()");
+
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
@@ -77,13 +97,14 @@ Release::getAllOrphans(Wt::Dbo::Session& session)
 }
 
 std::vector<Release::pointer>
-Release::getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int limit)
+Release::getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, boost::optional<std::size_t> offset, boost::optional<std::size_t> limit)
 {
 	Wt::Dbo::collection<Release::pointer> res = session.query<Release::pointer>("SELECT r from release r INNER JOIN track t ON r.id = t.release_id")
 		.where("t.file_added > ?").bind(after)
 		.groupBy("r.id")
 		.orderBy("t.file_added DESC")
-		.limit(limit);
+		.offset(offset ? static_cast<int>(*offset) : -1)
+		.limit(limit ? static_cast<int>(*limit) : -1);
 
 	return std::vector<pointer>(res.begin(), res.end());
 }

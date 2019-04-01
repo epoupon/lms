@@ -37,6 +37,12 @@ std::string format_to_mimeType(Format format);
 
 void init(const char *path);
 
+struct Geometry
+{
+	std::size_t width;
+	std::size_t height;
+};
+
 class Image
 {
 	public:
@@ -45,8 +51,10 @@ class Image
 		bool	load(const std::vector<unsigned char>& rawData);
 		bool	load(boost::filesystem::path p);
 
+		Geometry	getSize() const;
+
 		// Operations
-		bool	scale(std::size_t size);
+		bool	scale(Geometry geometry);
 
 		// output
 		std::vector<uint8_t> save(Format format) const;

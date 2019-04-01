@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2019 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -16,42 +16,30 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-#include <string>
+#include <boost/optional.hpp>
 
-#include <Wt/WApplication.h>
-#include <Wt/WLogger.h>
+#include <Wt/WResource.h>
+#include <Wt/Http/Response.h>
 
-enum class Severity
+#include "database/DatabaseHandler.hpp"
+
+namespace API::Subsonic
 {
-	FATAL,
-	ERROR,
-	WARNING,
-	INFO,
-	DEBUG,
+
+class SubsonicResource final : public Wt::WResource
+{
+	public:
+		SubsonicResource(Wt::Dbo::SqlConnectionPool& connectionPool);
+
+		static std::vector<std::string> getPaths();
+	private:
+
+
+		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;
+
+		Database::Handler	_db;
 };
 
-enum class Module
-{
-	API_SUBSONIC,
-	AV,
-	COVER,
-	DB,
-	DBUPDATER,
-	FEATURE,
-	MAIN,
-	METADATA,
-	REMOTE,
-	SERVICE,
-	SIMILARITY,
-	TRANSCODE,
-	UI,
-};
-
-std::string getModuleName(Module mod);
-std::string getSeverityName(Severity sev);
-
-#define LMS_LOG(module, level)	Wt::log(getSeverityName(Severity::level)) << Wt::WLogger::sep << "[" << getModuleName(Module::module) << "]" <<  Wt::WLogger::sep
-
+} // namespace

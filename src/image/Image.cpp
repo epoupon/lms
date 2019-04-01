@@ -83,15 +83,22 @@ Image::load(boost::filesystem::path p)
 	}
 }
 
-bool
-Image::scale(std::size_t size)
+Geometry
+Image::getSize() const
 {
-	if (!size)
+	Magick::Geometry geometry {_image.size()};
+	return {geometry.width(), geometry.height()};
+}
+
+bool
+Image::scale(Geometry geometry)
+{
+	if (geometry.width == 0 || geometry.height == 0)
 		return false;
 
 	try
 	{
-		_image.resize( Magick::Geometry(size, size ) );
+		_image.resize( Magick::Geometry(geometry.width, geometry.height ) );
 
 		return true;
 	}
@@ -105,16 +112,27 @@ Image::scale(std::size_t size)
 std::vector<uint8_t>
 Image::save(Format format) const
 {
-	Magick::Image outputImage(_image);
+	std::vector<uint8_t> res;
 
-	outputImage.magick( format_to_magick(format));
+	try
+	{
+		Magick::Image outputImage(_image);
 
-	Magick::Blob blob;
-	outputImage.write(&blob);
+		outputImage.magick( format_to_magick(format));
 
-	auto begin = static_cast<const uint8_t*>(blob.data());
+		Magick::Blob blob;
+		outputImage.write(&blob);
 
-	return std::vector<uint8_t>(begin, begin + blob.length());
+		auto begin = static_cast<const uint8_t*>(blob.data());
+		std::copy(begin, begin + blob.length(), std::back_inserter(res));
+		return res;
+	}
+	catch (Magick::Exception& e)
+	{
+		LMS_LOG(COVER, ERROR) << "Caught Magick exception during save:" << e.what();
+		res.clear();
+		return res;
+	}
 }
 
 } // namespace Image

@@ -23,6 +23,7 @@
 #include <Wt/WServer.h>
 #include <Wt/WApplication.h>
 
+#include "api/subsonic/SubsonicResource.hpp"
 #include "av/AvInfo.hpp"
 #include "av/AvTranscoder.hpp"
 #include "cover/CoverArtGrabber.hpp"
@@ -132,9 +133,17 @@ int main(int argc, char* argv[])
 
 		getServices().mediaScanner->setAddon(similarityFeaturesScannerAddon);
 		getServices().coverArtGrabber = std::make_unique<CoverArt::Grabber>();
+		getServices().coverArtGrabber->setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
+
 		getServices().similaritySearcher = std::make_unique<Similarity::Searcher>(similarityFeaturesScannerAddon);
 
-		// bind entry point
+		API::Subsonic::SubsonicResource subsonicResource {*connectionPool};
+
+		// bind API resources
+		for (const std::string& path : API::Subsonic::SubsonicResource::getPaths())
+			server.addResource(&subsonicResource, path);
+
+		// bind UI entry point
 		server.addEntryPoint(Wt::EntryPointType::Application,
 				std::bind(UserInterface::LmsApplication::create,
 					std::placeholders::_1, std::ref(*connectionPool), std::ref(appGroups)));

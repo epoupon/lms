@@ -1,6 +1,9 @@
 bin_PROGRAMS = lms
 
 lms_SOURCES = \
+	$(srcdir)/api/subsonic/SubsonicId.cpp			\
+	$(srcdir)/api/subsonic/SubsonicResource.cpp		\
+	$(srcdir)/api/subsonic/SubsonicResponse.cpp		\
 	$(srcdir)/av/AvInfo.cpp					\
 	$(srcdir)/av/AvTranscoder.cpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2019 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,41 +17,27 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <boost/optional.hpp>
 
-#include <string>
+#include "database/Types.hpp"
 
-#include <Wt/WApplication.h>
-#include <Wt/WLogger.h>
-
-enum class Severity
+namespace API::Subsonic
 {
-	FATAL,
-	ERROR,
-	WARNING,
-	INFO,
-	DEBUG,
+
+struct Id
+{
+	enum class Type
+	{
+		Track,
+		Release,
+		Artist,
+	};
+
+	Type 			type;
+	Database::IdType	id;
 };
 
-enum class Module
-{
-	API_SUBSONIC,
-	AV,
-	COVER,
-	DB,
-	DBUPDATER,
-	FEATURE,
-	MAIN,
-	METADATA,
-	REMOTE,
-	SERVICE,
-	SIMILARITY,
-	TRANSCODE,
-	UI,
-};
+boost::optional<Id>	IdFromString(const std::string& id);
+std::string		IdToString(const Id& id);
 
-std::string getModuleName(Module mod);
-std::string getSeverityName(Severity sev);
-
-#define LMS_LOG(module, level)	Wt::log(getSeverityName(Severity::level)) << Wt::WLogger::sep << "[" << getModuleName(Module::module) << "]" <<  Wt::WLogger::sep
-
+} // namespace API::Subsonic

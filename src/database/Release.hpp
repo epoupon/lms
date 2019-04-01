@@ -44,12 +44,14 @@ class Release : public Wt::Dbo::Dbo<Release>
 		Release(const std::string& name, const std::string& MBID = "");
 
 		// Accessors
+		static std::size_t		getCount(Wt::Dbo::Session& session);
 		static pointer			getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
 		static std::vector<pointer>	getByName(Wt::Dbo::Session& session, const std::string& name);
 		static pointer			getById(Wt::Dbo::Session& session, IdType id);
 		static std::vector<pointer>	getAllOrphans(Wt::Dbo::Session& session); // no track related
-		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, int offset, int size);
-		static std::vector<pointer>	getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int size = 1);
+		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
+		static std::vector<pointer>	getAllRandom(Wt::Dbo::Session& session, boost::optional<std::size_t> size = {});
+		static std::vector<pointer>	getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
 
 		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
 							const std::set<IdType>& clusters,           // at least one track that belongs to these clusters
