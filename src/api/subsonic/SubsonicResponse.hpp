@@ -60,20 +60,25 @@ class Error
 class Response
 {
 	public:
-		struct Node
+		class Node
 		{
-			std::map<std::string, std::string> attributes;
-			std::map<std::string, std::vector<Node>> children;
-			std::map<std::string, std::vector<Node>> childrenArrays;
+			public:
+				void setAttribute(const std::string& key, const std::string& value);
 
-			// Helpers
-			void setAttribute(const std::string& key, const std::string& value);
+				// A Node has either a value or some children
+				void setValue(const std::string& value);
+				Node& createChild(const std::string& key);
+				Node& createArrayChild(const std::string& key);
 
-			Node& createChild(const std::string& key);
-			Node& createArrayChild(const std::string& key);
+				void addChild(const std::string& key, Node node);
+				void addArrayChild(const std::string& key, Node node);
 
-			void addChild(const std::string& key, Node node);
-			void addArrayChild(const std::string& key, Node node);
+			private:
+				friend class Response;
+				std::map<std::string, std::string> _attributes;
+				std::string _value;
+				std::map<std::string, std::vector<Node>> _children;
+				std::map<std::string, std::vector<Node>> _childrenArrays;
 		};
 
 		static Response createOkResponse();
@@ -86,9 +91,10 @@ class Response
 		Response& operator=(Response&&) = default;
 
 		Node& createNode(const std::string& key);
+		Node& createArrayNode(const std::string& key);
 
+		void write(std::ostream& os, ResponseFormat format);
 	private:
-		friend void responseToStream(const Response& response, ResponseFormat format, std::ostream& os);
 
 		Response() = default;
 		Node _root;

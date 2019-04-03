@@ -94,4 +94,11 @@ void uniqueAndSortedByOccurence(In first, In last, Out out)
 		*out++ = occurence.elem;
 }
 
+template<class T, class Compare = std::less<>>
+constexpr const T& clamp( T v, T lo, T hi, Compare comp = {})
+{
+	assert(!comp(hi, lo));
+	return comp(v, lo) ? lo : comp(hi, v) ? hi : v;
+}
+
 

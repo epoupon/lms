@@ -22,6 +22,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
+#include "utils/Exception.hpp"
+
 #define API_VERSION	"1.12.0"
 
 namespace API::Subsonic
@@ -75,36 +77,51 @@ _message {message}
 }
 
 void
+Response::Node::setValue(const std::string& value)
+{
+	if (!_children.empty() || !_childrenArrays.empty())
+		throw LmsException {"Node already has children"};
+
+	_value = value;
+}
+
+void
 Response::Node::setAttribute(const std::string& key, const std::string& value)
 {
-	attributes[key] = value;
+	_attributes[key] = value;
 }
 
 void
 Response::Node::addChild(const std::string& key, Node node)
 {
-	children[key].emplace_back(std::move(node));
+	if (!_value.empty())
+		throw LmsException {"Node already has a value"};
+
+	_children[key].emplace_back(std::move(node));
 }
 
 void
 Response::Node::addArrayChild(const std::string& key, Node node)
 {
-	childrenArrays[key].emplace_back(std::move(node));
+	if (!_value.empty())
+		throw LmsException {"Node already has a value"};
+
+	_childrenArrays[key].emplace_back(std::move(node));
 }
 
 
 Response::Node&
 Response::Node::createChild(const std::string& key)
 {
-	children[key].emplace_back();
-	return children[key].back();
+	_children[key].emplace_back();
+	return _children[key].back();
 }
 
 Response::Node&
 Response::Node::createArrayChild(const std::string& key)
 {
-	childrenArrays[key].emplace_back();
-	return childrenArrays[key].back();
+	_childrenArrays[key].emplace_back();
+	return _childrenArrays[key].back();
 }
 
 Response
@@ -138,55 +155,71 @@ Response::createFailedResponse(const Error& error)
 Response::Node&
 Response::createNode(const std::string& key)
 {
-	return _root.children["subsonic-response"].front().createChild(key);
+	return _root._children["subsonic-response"].front().createChild(key);
 }
 
-boost::property_tree::ptree
-NodeToPropertyTree(const Response::Node& node, ResponseFormat format)
+Response::Node&
+Response::createArrayNode(const std::string& key)
 {
-	boost::property_tree::ptree res;
+	return _root._children["subsonic-response"].front().createArrayChild(key);
+}
 
-	for (auto itChildNode : node.children)
+void
+Response::write(std::ostream& os, ResponseFormat format)
+{
+	std::function<boost::property_tree::ptree(const Response::Node&, ResponseFormat)> nodeToPropertyTree = [&] (const Response::Node& node, ResponseFormat format)
 	{
-		for (const Response::Node& childNode : itChildNode.second)
-			res.add_child(itChildNode.first, NodeToPropertyTree(childNode, format));
-	}
+		boost::property_tree::ptree res;
 
-	for (auto itChildArrayNode : node.childrenArrays)
-	{
-		const std::vector<Response::Node>& childArrayNodes {itChildArrayNode .second};
-
-		if (format == ResponseFormat::json)
+		for (auto itAttribute : node._attributes)
 		{
-			boost::property_tree::ptree array;
+			std::string key {format == ResponseFormat::xml ? "<xmlattr>." : ""};
 
-			for (const Response::Node& childNode : childArrayNodes )
-				array.push_back(std::make_pair("", NodeToPropertyTree(childNode, format)));
+			key += itAttribute.first;
 
-			res.add_child(itChildArrayNode.first, array);
+			res.put(key, itAttribute.second);
+		}
+		if (!node._value.empty())
+		{
+			if (format == ResponseFormat::json)
+				res.put("value", node._value);
+			else
+				res.put_value(node._value);
 		}
 		else
 		{
-			for (const Response::Node& childNode : childArrayNodes )
-				res.add_child(itChildArrayNode.first, NodeToPropertyTree(childNode, format));
+			for (auto itChildNode : node._children)
+			{
+				for (const Response::Node& childNode : itChildNode.second)
+					res.add_child(itChildNode.first, nodeToPropertyTree(childNode, format));
+			}
+
+			for (auto itChildArrayNode : node._childrenArrays)
+			{
+				const std::vector<Response::Node>& childArrayNodes {itChildArrayNode .second};
+
+				if (format == ResponseFormat::json)
+				{
+					boost::property_tree::ptree array;
+
+					for (const Response::Node& childNode : childArrayNodes )
+						array.push_back(std::make_pair("", nodeToPropertyTree(childNode, format)));
+
+					res.add_child(itChildArrayNode.first, array);
+				}
+				else
+				{
+					for (const Response::Node& childNode : childArrayNodes )
+						res.add_child(itChildArrayNode.first, nodeToPropertyTree(childNode, format));
+				}
+			}
 		}
-	}
 
-	for (auto itAttribute : node.attributes)
-	{
-		std::string key {format == ResponseFormat::xml ? "<xmlattr>." : ""};
+		return res;
+	};
 
-		key += itAttribute.first;
 
-		res.put(key, itAttribute.second);
-	}
-
-	return res;
-}
-
-void responseToStream(const Response& response, ResponseFormat format, std::ostream& os)
-{
-	boost::property_tree::ptree root {NodeToPropertyTree(response._root, format)};
+	boost::property_tree::ptree root {nodeToPropertyTree(_root, format)};
 
 	switch (format)
 	{

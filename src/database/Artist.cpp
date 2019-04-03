@@ -63,9 +63,13 @@ Artist::create(Wt::Dbo::Session& session, const std::string& name, const std::st
 }
 
 std::vector<Artist::pointer>
-Artist::getAll(Wt::Dbo::Session& session, int offset, int size)
+Artist::getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> offset, boost::optional<std::size_t> size)
 {
-	Wt::Dbo::collection<pointer> res = session.find<Artist>().offset(offset).limit(size);
+	Wt::Dbo::collection<pointer> res = session.find<Artist>()
+		.offset(offset ? static_cast<int>(*offset) : -1)
+		.limit(size ? static_cast<int>(*size) : -1)
+		.orderBy("name COLLATE NOCASE");
+
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
@@ -123,15 +127,17 @@ std::vector<Artist::pointer>
 Artist::getByFilter(Wt::Dbo::Session& session,
 		const std::set<IdType>& clusters,
 		const std::vector<std::string> keywords,
-		int offset, int size, bool& moreResults)
+		boost::optional<std::size_t> offset,
+		boost::optional<std::size_t> size,
+		bool& moreResults)
 {
 	Wt::Dbo::collection<Artist::pointer> collection = getQuery(session, clusters, keywords)
-		.limit(size != -1 ? size + 1 : -1)
-		.offset(offset);
+		.limit(size ? static_cast<int>(*size) + 1 : -1)
+		.offset(offset ? static_cast<int>(*offset) : -1);
 
-	auto res = std::vector<pointer>(collection.begin(), collection.end());
+	auto res {std::vector<pointer>(collection.begin(), collection.end())};
 
-	if (size != -1 && res.size() == static_cast<std::size_t>(size) + 1)
+	if (size && res.size() == static_cast<std::size_t>(*size) + 1)
 	{
 		moreResults = true;
 		res.pop_back();
@@ -143,13 +149,13 @@ Artist::getByFilter(Wt::Dbo::Session& session,
 }
 
 std::vector<Artist::pointer>
-Artist::getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int limit)
+Artist::getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, boost::optional<std::size_t> limit)
 {
 	Wt::Dbo::collection<Artist::pointer> res = session.query<Artist::pointer>("SELECT a from artist a INNER JOIN track_artist t_a ON t_a.artist_id = a.id INNER JOIN track t ON t.id = t_a.track_id")
 		.where("t.file_added > ?").bind(after)
 		.groupBy("a.id")
 		.orderBy("t.file_added DESC")
-		.limit(limit);
+		.limit(limit ? static_cast<int>(*limit) : -1);
 
 	return std::vector<pointer>(res.begin(), res.end());
 }

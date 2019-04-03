@@ -27,6 +27,7 @@
 #include "av/AvTranscoder.hpp"
 #include "cover/CoverArtGrabber.hpp"
 #include "database/Artist.hpp"
+#include "database/Cluster.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "main/Services.hpp"
@@ -40,11 +41,16 @@
 #define GET_LICENSE_URL		"/rest/getLicense.view"
 #define GET_RANDOM_SONGS_URL	"/rest/getRandomSongs.view"
 #define GET_ALBUM_LIST_URL	"/rest/getAlbumList.view"
+#define GET_ALBUM_LIST2_URL	"/rest/getAlbumList2.view"
 #define GET_MUSIC_DIRECTORY_URL	"/rest/getMusicDirectory.view"
-#define GET_STARRED_URL		"/rest/getStarred.view"
 #define GET_MUSIC_FOLDERS_URL	"/rest/getMusicFolders.view"
+#define GET_GENRES_URL		"/rest/getGenres.view"
 #define GET_INDEXES_URL		"/rest/getIndexes.view"
 #define GET_ARTISTS_URL		"/rest/getArtists.view"
+#define GET_STARRED_URL		"/rest/getStarred.view"
+#define GET_STARRED2_URL	"/rest/getStarred2.view"
+#define GET_PLAYLISTS_URL	"/rest/getPlaylists.view"
+#define GET_SONGS_BY_GENRE_URL	"/rest/getSongsByGenre.view"
 
 // MediaRetrievals
 #define STREAM_URL		"/rest/stream.view"
@@ -59,10 +65,16 @@ static Response handlePingRequest(const Wt::Http::ParameterMap& request, Databas
 static Response handleGetLicenseRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetRandomSongsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetAlbumListRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
+static Response handleGetAlbumList2Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetMusicFoldersRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
+static Response handleGetGenresRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetIndexesRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetArtistsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
+static Response handleGetStarredRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
+static Response handleGetStarred2Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
+static Response handleGetPlaylistsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
+static Response handleGetSongsByGenreRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
 
 // MediaRetrievals
 using MediaRetrivalHandlerFunc = std::function<void(const Wt::Http::Request&, Database::Handler&, Wt::Http::Response& response)>;
@@ -75,11 +87,16 @@ static std::map<std::string, RequestHandlerFunc> requestHandlers
 	{GET_LICENSE_URL,		handleGetLicenseRequest},
 	{GET_RANDOM_SONGS_URL,		handleGetRandomSongsRequest},
 	{GET_ALBUM_LIST_URL,		handleGetAlbumListRequest},
+	{GET_ALBUM_LIST2_URL,		handleGetAlbumList2Request},
 	{GET_MUSIC_DIRECTORY_URL,	handleGetMusicDirectoryRequest},
-	{GET_STARRED_URL,		handlePingRequest}, // TODO
 	{GET_MUSIC_FOLDERS_URL,		handleGetMusicFoldersRequest},
+	{GET_GENRES_URL,		handleGetGenresRequest},
 	{GET_INDEXES_URL,		handleGetIndexesRequest},
 	{GET_ARTISTS_URL,		handleGetArtistsRequest},
+	{GET_STARRED_URL,		handleGetStarredRequest},
+	{GET_STARRED2_URL,		handleGetStarred2Request},
+	{GET_PLAYLISTS_URL,		handleGetPlaylistsRequest},
+	{GET_SONGS_BY_GENRE_URL,	handleGetSongsByGenreRequest},
 };
 
 static std::map<std::string, MediaRetrivalHandlerFunc> mediaRetrievalHandlers
@@ -104,6 +121,21 @@ getParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& pa
 	return readAs<T>(it->second.front());
 }
 
+template<>
+boost::optional<std::string>
+getParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
+{
+	boost::optional<std::string> res;
+
+	auto it = parameterMap.find(param);
+	if (it == parameterMap.end())
+		return res;
+
+	if (it->second.size() != 1)
+		return res;
+
+	return it->second.front();
+}
 
 struct ClientInfo
 {
@@ -195,7 +227,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		if (itHandler != requestHandlers.end())
 		{
 			Response resp {(itHandler->second)(request.getParameterMap(), _db)};
-			responseToStream(resp, clientInfo->format, response.out());
+			resp.write(response.out(), clientInfo->format);
 			response.setMimeType(ResponseFormatToMimeType(clientInfo->format));
 			return;
 		}
@@ -213,7 +245,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 	catch (const Error& e)
 	{
 		Response resp {Response::createFailedResponse(e)};
-		responseToStream(resp, clientInfo->format, response.out());
+		resp.write(response.out(), clientInfo->format);
 		response.setMimeType(ResponseFormatToMimeType(clientInfo->format));
 	}
 }
@@ -301,15 +333,30 @@ static
 Response::Node
 artistToResponseNode(const Database::Artist::pointer& artist)
 {
-	Response::Node artistResponse;
+	Response::Node artistNode;
 
-	artistResponse.setAttribute("id", IdToString({Id::Type::Artist, artist.id()}));
-	artistResponse.setAttribute("name", artist->getName());
-	artistResponse.setAttribute("albumCount", std::to_string(artist->getReleases().size()));
+	artistNode.setAttribute("id", IdToString({Id::Type::Artist, artist.id()}));
+	artistNode.setAttribute("name", artist->getName());
+	artistNode.setAttribute("albumCount", std::to_string(artist->getReleases().size()));
 
-	return artistResponse;
+	return artistNode;
 }
 
+static
+Response::Node
+clusterToResponseNode(const Database::Cluster::pointer& cluster)
+{
+	Response::Node clusterNode;
+
+	clusterNode.setValue(cluster->getName());
+	clusterNode.setAttribute("songCount", std::to_string(cluster->getTrackIds().size()));
+	{
+		auto releases {Database::Release::getByFilter(*cluster.session(), {cluster.id()})};
+		clusterNode.setAttribute("albumCount", std::to_string(releases.size()));
+	}
+
+	return clusterNode;
+}
 
 // Handlers
 Response
@@ -338,6 +385,8 @@ handleGetRandomSongsRequest(const Wt::Http::ParameterMap& parameters, Database::
 	auto size {getParameterAs<std::size_t>(parameters, "size")};
 	if (!size)
 		size = 50;
+
+	*size = std::min(*size, std::size_t {500});
 
 	Wt::Dbo::Transaction transaction {db.getSession()};
 
@@ -419,6 +468,10 @@ handleGetAlbumListRequest(const Wt::Http::ParameterMap& request, Database::Handl
 		auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1)};
 		releases = Database::Release::getLastAdded(db.getSession(), after, offset, size);
 	}
+	else if (*type == "alphabeticalByName")
+	{
+		releases = Database::Release::getAll(db.getSession(), offset, size);
+	}
 	else
 		throw Error {"Unsupported request"};
 
@@ -429,6 +482,15 @@ handleGetAlbumListRequest(const Wt::Http::ParameterMap& request, Database::Handl
 
 	for (const Database::Release::pointer& release : releases)
 		albumListNode.addArrayChild("album", releaseToResponseNode(release));
+
+	return response;
+}
+
+Response
+handleGetAlbumList2Request(const Wt::Http::ParameterMap& request, Database::Handler& db)
+{
+	Response response {Response::createOkResponse()};
+	response.createNode("albumList2");
 
 	return response;
 }
@@ -445,8 +507,6 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 	if (!id)
 		throw Error {"Bad id"};
 
-	Wt::Dbo::Transaction transaction {db.getSession()};
-
 	Response response {Response::createOkResponse()};
 	Response::Node& directoryNode {response.createNode("directory")};
 
@@ -454,6 +514,8 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 	{
 		case Id::Type::Artist:
 		{
+			Wt::Dbo::Transaction transaction {db.getSession()};
+
 			auto artist {Database::Artist::getById(db.getSession(), id->id)};
 			if (!artist)
 				throw Error {Error::Code::RequestedDataNotFound};
@@ -467,6 +529,8 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 
 		case Id::Type::Release:
 		{
+			Wt::Dbo::Transaction transaction {db.getSession()};
+
 			auto release {Database::Release::getById(db.getSession(), id->id)};
 			if (!release)
 				throw Error {Error::Code::RequestedDataNotFound};
@@ -499,14 +563,36 @@ handleGetMusicFoldersRequest(const Wt::Http::ParameterMap& request, Database::Ha
 }
 
 Response
-handleGetIndexesRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetGenresRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
 {
+	Response response {Response::createOkResponse()};
+
+	Response::Node& genresNode {response.createNode("genres")};
+
 	Wt::Dbo::Transaction transaction {db.getSession()};
 
+	auto clusterType {Database::ClusterType::getByName(db.getSession(), "GENRE")};
+	if (clusterType)
+	{
+		auto clusters {clusterType->getClusters()};
+
+		for (const Database::Cluster::pointer& cluster : clusters)
+			genresNode.addArrayChild("genre", clusterToResponseNode(cluster));
+	}
+
+	return response;
+}
+
+Response
+handleGetIndexesRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+{
 	Response response {Response::createOkResponse()};
 	Response::Node& artistsNode {response.createNode("indexes")};
 
 	Response::Node& indexNode {artistsNode.createArrayChild("index")};
+	indexNode.setAttribute("name", "?");
+
+	Wt::Dbo::Transaction transaction {db.getSession()};
 
 	auto artists {Database::Artist::getAll(db.getSession())};
 	for (const Database::Artist::pointer& artist : artists)
@@ -519,15 +605,86 @@ handleGetIndexesRequest(const Wt::Http::ParameterMap& request, Database::Handler
 Response
 handleGetArtistsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
 {
-	Wt::Dbo::Transaction transaction {db.getSession()};
-
-	// TODO factorize with handleGetIndexesRequest
 	Response response {Response::createOkResponse()};
 	Response::Node& artistsNode {response.createNode("artists")};
 
+	Response::Node& indexNode {artistsNode.createArrayChild("index")};
+	indexNode.setAttribute("name", "?");
+
+	Wt::Dbo::Transaction transaction {db.getSession()};
+
 	auto artists {Database::Artist::getAll(db.getSession())};
 	for (const Database::Artist::pointer& artist : artists)
-		artistsNode.addArrayChild("artist", artistToResponseNode(artist));
+		indexNode.addArrayChild("artist", artistToResponseNode(artist));
+
+	return response;
+}
+
+Response
+handleGetStarredRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+{
+	Response response {Response::createOkResponse()};
+	response.createArrayNode("starred");
+
+	return response;
+}
+
+Response
+handleGetStarred2Request(const Wt::Http::ParameterMap& request, Database::Handler& db)
+{
+	Response response {Response::createOkResponse()};
+	response.createArrayNode("starred2");
+
+	return response;
+}
+
+Response
+handleGetPlaylistsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+{
+	Response response {Response::createOkResponse()};
+	response.createArrayNode("playlists");
+
+	return response;
+}
+
+Response
+handleGetSongsByGenreRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+{
+	// Mandatory params
+	auto genre {getParameterAs<std::string>(request, "genre")};
+	if (!genre)
+		throw Error {Error::Code::RequiredParameterMissing};
+
+	// Optional params
+	auto size {getParameterAs<std::size_t>(request, "count")};
+	if (!size)
+		size = 10;
+
+	*size = std::min(*size, std::size_t {500});
+
+	auto offset {getParameterAs<std::size_t>(request, "offset")};
+	if (!offset)
+		offset = 0;
+
+	LMS_LOG(API_SUBSONIC, DEBUG) << "genre ='" << *genre << "'";
+
+	Wt::Dbo::Transaction transaction {db.getSession()};
+
+	auto clusterType {Database::ClusterType::getByName(db.getSession(), "GENRE")};
+	if (!clusterType)
+		throw Error {Error::Code::RequestedDataNotFound};
+
+	auto cluster {clusterType->getCluster(*genre)};
+	if (!cluster)
+		throw Error {Error::Code::RequestedDataNotFound};
+
+	Response response {Response::createOkResponse()};
+	Response::Node& songsByGenreNode {response.createNode("songsByGenre")};
+
+	bool more;
+	auto tracks {Database::Track::getByFilter(db.getSession(), {cluster.id()}, {}, offset, size, more)};
+	for (const Database::Track::pointer& track : tracks)
+		songsByGenreNode.addArrayChild("song", trackToResponseNode(track));
 
 	return response;
 }
@@ -545,6 +702,13 @@ createTranscoder(const Wt::Http::ParameterMap& request, Database::Handler& db)
 	if (!id || id->type != Id::Type::Track)
 		throw Error {"bad id format"};
 
+	// Optional params
+	auto maxBitRate {getParameterAs<std::size_t>(request, "maxBitRate")};
+	if (!maxBitRate)
+		maxBitRate = 128;
+
+	*maxBitRate = clamp(*maxBitRate, std::size_t {48}, std::size_t {320});
+
 	boost::filesystem::path trackPath;
 	{
 		Wt::Dbo::Transaction transaction {db.getSession()};
@@ -561,7 +725,7 @@ createTranscoder(const Wt::Http::ParameterMap& request, Database::Handler& db)
 
 	Av::TranscodeParameters parameters {};
 
-	parameters.bitrate = 128000;
+	parameters.bitrate = *maxBitRate * 1000;
 	parameters.encoding = Av::Encoding::MP3;
 
 	return std::make_shared<Av::Transcoder>(trackPath, parameters);
@@ -572,6 +736,7 @@ handleStream(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::
 {
 	LMS_LOG(API_SUBSONIC, DEBUG) << "STREAM";
 
+	// TODO store only weak ptrs and use a ring container to store shared_ptr?
 	std::shared_ptr<Av::Transcoder> transcoder;
 
 	Wt::Http::ResponseContinuation* continuation {request.continuation()};
@@ -583,7 +748,7 @@ handleStream(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::
 	}
 	else
 	{
-		LMS_LOG(UI, DEBUG) << "Continuation! ";
+		LMS_LOG(UI, DEBUG) << "Continuation!";
 		transcoder = Wt::cpp17::any_cast<std::shared_ptr<Av::Transcoder>>(continuation->data());
 	}
 
@@ -633,8 +798,10 @@ handleGetCoverArt(const Wt::Http::Request& request, Database::Handler& db, Wt::H
 		throw Error {"bad id format"};
 
 	auto size {getParameterAs<std::size_t>(request.getParameterMap(), "size")};
-	if (!size || *size == 0)
+	if (!size)
 		size = 256;
+
+	*size = clamp(*size, std::size_t {32}, std::size_t {1024});
 
 	std::vector<uint8_t> cover;
 	switch (id->type)

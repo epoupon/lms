@@ -59,8 +59,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
 							const std::set<IdType>& clusters,           // tracks that belong to these clusters
 							const std::vector<std::string> keywords,        // name must match all of these keywords
-							int offset,
-							int size,
+							boost::optional<std::size_t> offset,
+							boost::optional<std::size_t> size,
 							bool& moreExpected);
 
 		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> limit = {});
