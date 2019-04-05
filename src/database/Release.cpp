@@ -315,6 +315,21 @@ Release::getTracks(const std::set<IdType>& clusterIds) const
 	return std::vector< Wt::Dbo::ptr<Track> > (res.begin(), res.end());
 }
 
+std::chrono::milliseconds
+Release::getDuration() const
+{
+	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );
+	assert(session());
+
+	using milli = std::chrono::duration<int, std::milli>;
+
+	Wt::Dbo::Query<milli> query {session()->query<milli>("SELECT SUM(duration) FROM track t INNER JOIN release r ON t.release_id = r.id WHERE r.id = ?")
+			.bind(self()->id())};
+
+	return query.resultValue();
+}
+
 std::vector<std::vector<Wt::Dbo::ptr<Cluster>>>
 Release::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::size_t size) const
 {

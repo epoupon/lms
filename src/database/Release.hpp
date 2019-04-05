@@ -79,7 +79,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		// Accessors
 		std::string	getName() const		{ return _name; }
 		std::string	getMBID() const		{ return _MBID; }
-		std::chrono::seconds getDuration(void) const;
+		std::chrono::milliseconds	getDuration() const;
 
 		// Get the artists of this release
 		std::vector<Wt::Dbo::ptr<Artist> > getArtists() const;

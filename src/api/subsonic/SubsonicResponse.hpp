@@ -90,6 +90,7 @@ class Response
 		Response(Response&&) = default;
 		Response& operator=(Response&&) = default;
 
+		void addNode(const std::string& key, Node node);
 		Node& createNode(const std::string& key);
 		Node& createArrayNode(const std::string& key);
 

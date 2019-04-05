@@ -154,6 +154,12 @@ Response::createFailedResponse(const Error& error)
 	return response;
 }
 
+void
+Response::addNode(const std::string& key, Node node)
+{
+	return _root._children["subsonic-response"].front().addChild(key, std::move(node));
+}
+
 Response::Node&
 Response::createNode(const std::string& key)
 {
