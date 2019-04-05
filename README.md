@@ -7,6 +7,16 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 - No persistent playqueue
 
 ## Main features
+- Persistent play queue across sessions
+- User management
+- Recommendation engine
+- Audio transcode for maximum interoperability and low bandwith requirements
+- Subsonic API
+- Multi-value tags
+- Custom tag support (ex: "mood", "genre", "albummood", "albumgrouping", ...)
+- MusicBrainzID support to handle duplicated artist and release names
+
+## Recommendation engine
 LMS provides several ways to help you find the music you like:
 - Tag-based filters (ex: "Metal" and "Aggressive", "Electronic" and "Relaxed", ...)
 - Recommendations for similar artists and albums
@@ -14,19 +24,18 @@ LMS provides several ways to help you find the music you like:
 - Searches in album, artist and track names
 - Most played/Recently added music
 
-Conventional features include:
-- Responsive design
-- Persistent play queue across sessions
-- User management
-- MusicBrainzID support to handle duplicated artist and release names
-- Audio transcode for maximum interoperability and low bandwith requirements
-- Multi-value tags
-- Custom tag support (ex: "mood", "genre", "albummood", "albumgrouping", ...)
-
 The recommendation engine makes use of [Self-Organizing Maps](https://en.wikipedia.org/wiki/Self-organizing_map).</br>
 Please note this engine:
 - may require some significant computation time on very large datasets
 - makes use of computed data available on [AcousticBrainz](https://acousticbrainz.org/). Therefore your music must contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) for the recommendation engine to work properly
+
+## Subsonic API
+For now, the API version implemented is 1.12.0 and has been tested using the official Android application and Ultrasonic.
+
+Please note some commands are not implemented (stars, shares, playlists).
+As LMS uses metadata tags to organize data, a compatibility mode is used to navigate through the collection using the directory browsing commands.
+
+The Subsonic API is enabled by default.
 
 ## Installation
 Here are the required packages to build on Debian Stretch:
