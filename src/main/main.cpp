@@ -140,8 +140,11 @@ int main(int argc, char* argv[])
 		API::Subsonic::SubsonicResource subsonicResource {*connectionPool};
 
 		// bind API resources
-		for (const std::string& path : API::Subsonic::SubsonicResource::getPaths())
-			server.addResource(&subsonicResource, path);
+		if (Config::instance().getBool("api-subsonic", true))
+		{
+			for (const std::string& path : API::Subsonic::SubsonicResource::getPaths())
+				server.addResource(&subsonicResource, path);
+		}
 
 		// bind UI entry point
 		server.addEntryPoint(Wt::EntryPointType::Application,
