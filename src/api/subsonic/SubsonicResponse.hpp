@@ -93,6 +93,7 @@ class Response
 		Node& createNode(const std::string& key);
 		Node& createArrayNode(const std::string& key);
 
+		void writeJson(std::ostream& os);
 		void write(std::ostream& os, ResponseFormat format);
 	private:
 

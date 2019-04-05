@@ -64,6 +64,9 @@ boost::optional<T> readAs(const std::string& str)
 std::string
 replaceInString(std::string str, const std::string& from, const std::string& to);
 
+boost::optional<std::string>
+stringFromHex(const std::string& str);
+
 // warning: not efficient
 template<class In, class Out, class U = typename std::iterator_traits<In>::value_type>
 void uniqueAndSortedByOccurence(In first, In last, Out out)

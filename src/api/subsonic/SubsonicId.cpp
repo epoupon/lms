@@ -28,6 +28,9 @@ namespace API::Subsonic
 boost::optional<Id>
 IdFromString(const std::string& id)
 {
+	if (id == "root")
+		return Id{Id::Type::Root};
+
 	std::vector<std::string> values {splitString(id, "-")};
 	if (values.size() != 2)
 	{
@@ -69,6 +72,8 @@ IdToString(const Id& id)
 
 	switch (id.type)
 	{
+		case Id::Type::Root:
+			return "root";
 		case Id::Type::Artist:
 			res = "artist-";
 			break;

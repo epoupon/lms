@@ -47,7 +47,7 @@ namespace Database {
 
 namespace {
 	Wt::Auth::AuthService authService;
-	Wt::Auth::PasswordService passwordService(authService);
+	Wt::Auth::PasswordService passwordService {authService};
 }
 
 

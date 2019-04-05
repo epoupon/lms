@@ -116,4 +116,36 @@ replaceInString(std::string str, const std::string& from, const std::string& to)
     return str;
 }
 
+boost::optional<std::string>
+stringFromHex(const std::string& str)
+{
+	static const char lut[] {"0123456789ABCDEF"};
+
+	if (str.length() % 2 != 0)
+		return boost::none;
+
+	std::string res;
+	res.reserve(str.length() / 2);
+
+	auto it {std::cbegin(str)};
+	while (it != std::cend(str))
+	{
+		unsigned val {};
+
+		auto itHigh {std::lower_bound(std::cbegin(lut), std::cend(lut), std::toupper(*(it++)))};
+		auto itLow {std::lower_bound(std::cbegin(lut), std::cend(lut), std::toupper(*(it++)))};
+
+		if (itHigh == std::cend(lut) || itLow == std::cend(lut))
+			return {};
+
+		val = std::distance(std::cbegin(lut), itHigh) << 4;
+		val += std::distance(std::cbegin(lut), itLow );
+
+		res.push_back(static_cast<char>(val));
+	}
+
+	return res;
+
+}
+
 

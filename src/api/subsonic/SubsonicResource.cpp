@@ -22,6 +22,7 @@
 #include <numeric>
 #include <random>
 
+#include <Wt/Auth/Identity.h>
 #include <Wt/WLocalDateTime.h>
 
 #include "av/AvTranscoder.hpp"
@@ -164,6 +165,13 @@ getClientInfo(const Wt::Http::ParameterMap& parameters)
 	param = getParameterAs<std::string>(parameters, "p");
 	if (!param)
 		return {};
+
+	if (param->find("enc:") == 0)
+	{
+		param = stringFromHex(param->substr(4));
+		if (!param)
+			return {};
+	}
 	res->password = *param;
 
 	// Optional parameters
@@ -171,6 +179,20 @@ getClientInfo(const Wt::Http::ParameterMap& parameters)
 	res->format = (param ? ResponseFormat::json : ResponseFormat::xml); // TODO
 
 	return res;
+}
+
+static
+bool
+checkPassword(Database::Handler& db, const ClientInfo& clientInfo)
+{
+	auto authUser {db.getUserDatabase().findWithIdentity(Wt::Auth::Identity::LoginName, clientInfo.user)};
+	if (!authUser.isValid())
+	{
+		LMS_LOG(API_SUBSONIC, ERROR) << "Cannot find user '" << clientInfo.user << "'";
+		return false;
+	}
+
+	return db.getPasswordService().verifyPassword(authUser, clientInfo.password) == Wt::Auth::PasswordResult::PasswordValid;
 }
 
 SubsonicResource::SubsonicResource(Wt::Dbo::SqlConnectionPool& connectionPool)
@@ -206,10 +228,6 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 			LMS_LOG(API_SUBSONIC, DEBUG) << "\t'" << value << "'";
 	}
 
-	std::string s{std::istreambuf_iterator<char>(request.in()), {}};
-
-	LMS_LOG(API_SUBSONIC, DEBUG) << "BODY = '" << s << "'";
-
 	auto clientInfo {getClientInfo(parameters)};
 	if (!clientInfo)
 	{
@@ -222,6 +240,9 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		static std::mutex mutex;
 
 		std::unique_lock<std::mutex> lock{mutex}; // For now just handle request s one by one
+
+		if (!checkPassword(_db, *clientInfo))
+			throw Error {Error::Code::WrongUsernameOrPassword};
 
 		auto itHandler {requestHandlers.find(request.path())};
 		if (itHandler != requestHandlers.end())
@@ -321,9 +342,15 @@ releaseToResponseNode(const Database::Release::pointer& release)
 	if (!artists.empty())
 	{
 		if (artists.size() > 1)
+		{
 			albumNode.setAttribute("artist", "Various Artists");
+			albumNode.setAttribute("parent", IdToString({Id::Type::Root}));
+		}
 		else
+		{
 			albumNode.setAttribute("artist", artists.front()->getName());
+			albumNode.setAttribute("parent", IdToString({Id::Type::Artist, artists.front().id()}));
+		}
 	}
 
 	return albumNode;
@@ -338,6 +365,7 @@ artistToResponseNode(const Database::Artist::pointer& artist)
 	artistNode.setAttribute("id", IdToString({Id::Type::Artist, artist.id()}));
 	artistNode.setAttribute("name", artist->getName());
 	artistNode.setAttribute("albumCount", std::to_string(artist->getReleases().size()));
+	artistNode.setAttribute("parent", IdToString({Id::Type::Root}));
 
 	return artistNode;
 }
@@ -512,6 +540,19 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 
 	switch (id->type)
 	{
+		case Id::Type::Root:
+		{
+			Wt::Dbo::Transaction transaction {db.getSession()};
+
+			directoryNode.setAttribute("name", "Music");
+
+			auto artists {Database::Artist::getAll(db.getSession())};
+			for (const Database::Artist::pointer& artist : artists)
+				directoryNode.addArrayChild("child", artistToResponseNode(artist));
+
+			break;
+		}
+
 		case Id::Type::Artist:
 		{
 			Wt::Dbo::Transaction transaction {db.getSession()};
@@ -519,6 +560,8 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 			auto artist {Database::Artist::getById(db.getSession(), id->id)};
 			if (!artist)
 				throw Error {Error::Code::RequestedDataNotFound};
+
+			directoryNode.setAttribute("name", artist->getName());
 
 			auto releases {artist->getReleases()};
 			for (const Database::Release::pointer& release : releases)
@@ -534,6 +577,8 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 			auto release {Database::Release::getById(db.getSession(), id->id)};
 			if (!release)
 				throw Error {Error::Code::RequestedDataNotFound};
+
+			directoryNode.setAttribute("name", release->getName());
 
 			auto tracks {release->getTracks()};
 			for (const Database::Track::pointer& track : tracks)
@@ -556,7 +601,7 @@ handleGetMusicFoldersRequest(const Wt::Http::ParameterMap& request, Database::Ha
 	Response::Node& musicFoldersNode {response.createNode("musicFolders")};
 
 	Response::Node& musicFolderNode {musicFoldersNode.createArrayChild("musicFolder")};
-	musicFolderNode.setAttribute("id", "1");
+	musicFolderNode.setAttribute("id", IdToString({Id::Type::Root}));
 	musicFolderNode.setAttribute("name", "Music");
 
 	return response;
@@ -624,7 +669,7 @@ Response
 handleGetStarredRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
 {
 	Response response {Response::createOkResponse()};
-	response.createArrayNode("starred");
+	response.createNode("starred");
 
 	return response;
 }
@@ -633,7 +678,7 @@ Response
 handleGetStarred2Request(const Wt::Http::ParameterMap& request, Database::Handler& db)
 {
 	Response response {Response::createOkResponse()};
-	response.createArrayNode("starred2");
+	response.createNode("starred2");
 
 	return response;
 }
@@ -642,7 +687,7 @@ Response
 handleGetPlaylistsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
 {
 	Response response {Response::createOkResponse()};
-	response.createArrayNode("playlists");
+	response.createNode("playlists");
 
 	return response;
 }
@@ -813,7 +858,7 @@ handleGetCoverArt(const Wt::Http::Request& request, Database::Handler& db, Wt::H
 			cover = getServices().coverArtGrabber->getFromRelease(db.getSession(), id->id, Image::Format::JPEG, *size);
 			break;
 		default:
-			throw Error {"bad id format"};
+			throw Error {"Bad id format"};
 	}
 
 	response.setMimeType( Image::format_to_mimeType(Image::Format::JPEG) );

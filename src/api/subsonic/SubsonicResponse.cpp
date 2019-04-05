@@ -19,6 +19,8 @@
 
 #include "SubsonicResponse.hpp"
 
+#include <regex>
+
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
@@ -227,9 +229,13 @@ Response::write(std::ostream& os, ResponseFormat format)
 			boost::property_tree::write_xml(os, root);
 			break;
 		case ResponseFormat::json:
-			boost::property_tree::write_json(os, root);
+		{
+			// property_tree does not support empty json array
+			std::ostringstream oss;
+			boost::property_tree::write_json(oss, root);
+			os << std::regex_replace(oss.str(), std::regex {R"(\[[\r\n]*\s*\"\"[\r\n]*\s*\])"}, R"(\{\})");
 			break;
-
+		}
 	}
 }
 

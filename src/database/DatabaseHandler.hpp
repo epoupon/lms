@@ -50,7 +50,7 @@ class Handler
 		Wt::Dbo::ptr<User> createUser(const Wt::Auth::User& authUser);
 
 		Wt::Auth::AbstractUserDatabase& getUserDatabase();
-		Wt::Auth::Login& getLogin() { return _login; }
+		Wt::Auth::Login& getLogin() { return _login; } // TODO move
 
 		// Long living shared associated services
 		static void configureAuth();

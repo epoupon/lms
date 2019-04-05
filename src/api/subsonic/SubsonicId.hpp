@@ -28,13 +28,14 @@ struct Id
 {
 	enum class Type
 	{
+		Root,	// Where all artists artistless albums reside
 		Track,
 		Release,
 		Artist,
 	};
 
 	Type 			type;
-	Database::IdType	id;
+	Database::IdType	id {};
 };
 
 boost::optional<Id>	IdFromString(const std::string& id);
