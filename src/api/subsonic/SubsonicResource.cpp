@@ -909,6 +909,7 @@ createTranscoder(const Wt::Http::ParameterMap& request, Database::Handler& db)
 
 	Av::TranscodeParameters parameters {};
 
+	parameters.stripMetadata = false; // Since it can be cached and some players read the metadata from the downloaded file
 	parameters.bitrate = maxBitRate * 1000;
 	parameters.encoding = Av::Encoding::MP3;
 
