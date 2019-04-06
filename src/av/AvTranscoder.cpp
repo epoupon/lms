@@ -158,9 +158,12 @@ Transcoder::start()
 		args.push_back("0:" + std::to_string(*_parameters.stream));
 	}
 
-	// Strip metadata
-	args.push_back("-map_metadata");
-	args.push_back("-1");
+	if (_parameters.stripMetadata)
+	{
+		// Strip metadata
+		args.push_back("-map_metadata");
+		args.push_back("-1");
+	}
 
 	// Skip video flows (including covers)
 	args.push_back("-vn");
