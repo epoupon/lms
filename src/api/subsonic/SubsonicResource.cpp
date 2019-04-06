@@ -54,6 +54,8 @@
 #define GET_STARRED2_URL	"/rest/getStarred2.view"
 #define GET_PLAYLISTS_URL	"/rest/getPlaylists.view"
 #define GET_SONGS_BY_GENRE_URL	"/rest/getSongsByGenre.view"
+#define SEARCH2_URL		"/rest/search2.view"
+#define SEARCH3_URL		"/rest/search3.view"
 
 // MediaRetrievals
 #define STREAM_URL		"/rest/stream.view"
@@ -80,6 +82,8 @@ static Response handleGetStarredRequest(const Wt::Http::ParameterMap& request, D
 static Response handleGetStarred2Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetPlaylistsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetSongsByGenreRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
+static Response handleSearch2Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
+static Response handleSearch3Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
 
 // MediaRetrievals
 using MediaRetrivalHandlerFunc = std::function<void(const Wt::Http::Request&, Database::Handler&, Wt::Http::Response& response)>;
@@ -104,6 +108,8 @@ static std::map<std::string, RequestHandlerFunc> requestHandlers
 	{GET_STARRED2_URL,		handleGetStarred2Request},
 	{GET_PLAYLISTS_URL,		handleGetPlaylistsRequest},
 	{GET_SONGS_BY_GENRE_URL,	handleGetSongsByGenreRequest},
+	{SEARCH2_URL,			handleSearch2Request},
+	{SEARCH3_URL,			handleSearch3Request},
 };
 
 static std::map<std::string, MediaRetrivalHandlerFunc> mediaRetrievalHandlers
@@ -238,16 +244,9 @@ SubsonicResource::getPaths()
 void
 SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response)
 {
-	LMS_LOG(API_SUBSONIC, DEBUG) << "REQUEST. Path = '" << request.path() << "', pathInfo = '" << request.pathInfo() << "', queryString = '" << request.queryString() << "'";
+	LMS_LOG(API_SUBSONIC, DEBUG) << "REQUEST " << request.path();
 
 	const Wt::Http::ParameterMap parameters {request.getParameterMap()};
-
-	for (const auto it : parameters)
-	{
-		LMS_LOG(API_SUBSONIC, DEBUG) << "Found param '" << it.first << "'";
-		for (const std::string& value : it.second)
-			LMS_LOG(API_SUBSONIC, DEBUG) << "\t'" << value << "'";
-	}
 
 	auto clientInfo {getClientInfo(parameters)};
 	if (!clientInfo)
@@ -286,6 +285,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 	}
 	catch (const Error& e)
 	{
+		LMS_LOG(API_SUBSONIC, ERROR) << "Error while processing command. code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'";
 		Response resp {Response::createFailedResponse(e)};
 		resp.write(response.out(), clientInfo->format);
 		response.setMimeType(ResponseFormatToMimeType(clientInfo->format));
@@ -463,17 +463,12 @@ Response
 handleGetRandomSongsRequest(const Wt::Http::ParameterMap& parameters, Database::Handler& db)
 {
 	// Optional params
-	auto size {getParameterAs<std::size_t>(parameters, "size")};
-	if (!size)
-		size = 50;
-
-	*size = std::min(*size, std::size_t {500});
+	std::size_t size {getParameterAs<std::size_t>(parameters, "size").get_value_or(50)};
+	size = std::min(size, std::size_t {500});
 
 	Wt::Dbo::Transaction transaction {db.getSession()};
 
-	auto tracks {Database::Track::getAllRandom(db.getSession(), *size)};
-
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Got " << tracks.size() << " tracks";
+	auto tracks {Database::Track::getAllRandom(db.getSession(), size)};
 
 	Response response {Response::createOkResponse()};
 
@@ -527,13 +522,8 @@ handleGetAlbumListRequestCommon(const Wt::Http::ParameterMap& request, Database:
 		throw Error {Error::Code::RequiredParameterMissing};
 
 	// Optional params
-	auto size {getParameterAs<std::size_t>(request, "size")};
-	if (!size)
-		size = 10;
-
-	auto offset {getParameterAs<std::size_t>(request, "offset")};
-	if (!offset)
-		offset = 0;
+	std::size_t size {getParameterAs<std::size_t>(request, "size").get_value_or(10)};
+	std::size_t offset {getParameterAs<std::size_t>(request, "offset").get_value_or(0)};
 
 	std::vector<Database::Release::pointer> releases;
 
@@ -541,11 +531,11 @@ handleGetAlbumListRequestCommon(const Wt::Http::ParameterMap& request, Database:
 
 	if (*type == "random")
 	{
-		releases = getRandomAlbums(db.getSession(), *offset, *size);
+		releases = getRandomAlbums(db.getSession(), offset, size);
 	}
 	else if (*type == "newest")
 	{
-		auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1)};
+		auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-6)};
 		releases = Database::Release::getLastAdded(db.getSession(), after, offset, size);
 	}
 	else if (*type == "alphabeticalByName")
@@ -554,8 +544,6 @@ handleGetAlbumListRequestCommon(const Wt::Http::ParameterMap& request, Database:
 	}
 	else
 		throw Error {"Unsupported request"};
-
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Got " << releases.size() << " albums";
 
 	Response response {Response::createOkResponse()};
 	Response::Node& albumListNode {response.createNode(id3 ? "albumList2" : "albumList")};
@@ -805,17 +793,10 @@ handleGetSongsByGenreRequest(const Wt::Http::ParameterMap& request, Database::Ha
 		throw Error {Error::Code::RequiredParameterMissing};
 
 	// Optional params
-	auto size {getParameterAs<std::size_t>(request, "count")};
-	if (!size)
-		size = 10;
+	std::size_t size {getParameterAs<std::size_t>(request, "count").get_value_or(10)};
+	size = std::min(size, std::size_t {500});
 
-	*size = std::min(*size, std::size_t {500});
-
-	auto offset {getParameterAs<std::size_t>(request, "offset")};
-	if (!offset)
-		offset = 0;
-
-	LMS_LOG(API_SUBSONIC, DEBUG) << "genre ='" << *genre << "'";
+	std::size_t offset {getParameterAs<std::size_t>(request, "offset").get_value_or(0)};
 
 	Wt::Dbo::Transaction transaction {db.getSession()};
 
@@ -838,6 +819,64 @@ handleGetSongsByGenreRequest(const Wt::Http::ParameterMap& request, Database::Ha
 	return response;
 }
 
+Response
+handleSearchRequestCommon(const Wt::Http::ParameterMap& request, Database::Handler& db, bool id3)
+{
+	// Mandatory params
+	auto query {getParameterAs<std::string>(request, "query")};
+	if (!query)
+		throw Error {Error::Code::RequiredParameterMissing};
+
+	std::vector<std::string> keywords {splitString(*query, " ")};
+
+	// Optional params
+	std::size_t artistCount {getParameterAs<std::size_t>(request, "artistCount").get_value_or(20)};
+	std::size_t artistOffset {getParameterAs<std::size_t>(request, "artistOffset").get_value_or(0)};
+	std::size_t albumCount {getParameterAs<std::size_t>(request, "albumCount").get_value_or(20)};
+	std::size_t albumOffset {getParameterAs<std::size_t>(request, "albumOffset").get_value_or(0)};
+	std::size_t songCount {getParameterAs<std::size_t>(request, "songCount").get_value_or(20)};
+	std::size_t songOffset {getParameterAs<std::size_t>(request, "songOffset").get_value_or(0)};
+
+	Wt::Dbo::Transaction transaction {db.getSession()};
+
+	Response response {Response::createOkResponse()};
+	Response::Node& searchResult2Node {response.createNode(id3 ? "searchResult3" : "searchResult2")};
+
+	bool more;
+	{
+		auto artists {Database::Artist::getByFilter(db.getSession(), {}, keywords, artistOffset, artistCount, more)};
+		for (const Database::Artist::pointer& artist : artists)
+			searchResult2Node.addArrayChild("artist", artistToResponseNode(artist, id3));
+	}
+
+	{
+		auto releases {Database::Release::getByFilter(db.getSession(), {}, keywords, albumOffset, albumCount, more)};
+		for (const Database::Release::pointer& release : releases)
+			searchResult2Node.addArrayChild("album", releaseToResponseNode(release, id3));
+	}
+
+	{
+		auto tracks {Database::Track::getByFilter(db.getSession(), {}, keywords, songOffset, songCount, more)};
+		for (const Database::Track::pointer& track : tracks)
+			searchResult2Node.addArrayChild("song", trackToResponseNode(track, id3));
+	}
+
+	return response;
+}
+
+Response
+handleSearch2Request(const Wt::Http::ParameterMap& request, Database::Handler& db)
+{
+	return handleSearchRequestCommon(request, db, false /* no id3 */);
+}
+
+Response
+handleSearch3Request(const Wt::Http::ParameterMap& request, Database::Handler& db)
+{
+	return handleSearchRequestCommon(request, db, true /* id3 */);
+}
+
+
 static
 std::shared_ptr<Av::Transcoder>
 createTranscoder(const Wt::Http::ParameterMap& request, Database::Handler& db)
@@ -846,11 +885,8 @@ createTranscoder(const Wt::Http::ParameterMap& request, Database::Handler& db)
 	Id id {getParameterAsId(request, "id")};
 
 	// Optional params
-	auto maxBitRate {getParameterAs<std::size_t>(request, "maxBitRate")};
-	if (!maxBitRate)
-		maxBitRate = 128;
-
-	*maxBitRate = clamp(*maxBitRate, std::size_t {48}, std::size_t {320});
+	std::size_t maxBitRate {getParameterAs<std::size_t>(request, "maxBitRate").get_value_or(128)};
+	maxBitRate = clamp(maxBitRate, std::size_t {48}, std::size_t {320});
 
 	boost::filesystem::path trackPath;
 	{
@@ -858,17 +894,14 @@ createTranscoder(const Wt::Http::ParameterMap& request, Database::Handler& db)
 
 		auto track {Database::Track::getById(db.getSession(), id.id)};
 		if (!track)
-		{
-			LMS_LOG(API_SUBSONIC, ERROR) << "Bad track id";
 			throw Error {Error::Code::RequestedDataNotFound};
-		}
 
 		trackPath = track->getPath();
 	}
 
 	Av::TranscodeParameters parameters {};
 
-	parameters.bitrate = *maxBitRate * 1000;
+	parameters.bitrate = maxBitRate * 1000;
 	parameters.encoding = Av::Encoding::MP3;
 
 	return std::make_shared<Av::Transcoder>(trackPath, parameters);
@@ -877,8 +910,6 @@ createTranscoder(const Wt::Http::ParameterMap& request, Database::Handler& db)
 void
 handleStream(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::Response& response)
 {
-	LMS_LOG(API_SUBSONIC, DEBUG) << "STREAM";
-
 	// TODO store only weak ptrs and use a ring container to store shared_ptr?
 	std::shared_ptr<Av::Transcoder> transcoder;
 
@@ -891,7 +922,6 @@ handleStream(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::
 	}
 	else
 	{
-		LMS_LOG(UI, DEBUG) << "Continuation!";
 		transcoder = Wt::cpp17::any_cast<std::shared_ptr<Av::Transcoder>>(continuation->data());
 	}
 
@@ -907,7 +937,6 @@ handleStream(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::
 
 		transcoder->process(data, chunkSize);
 
-		LMS_LOG(API_SUBSONIC, DEBUG) << "Writing " << data.size() << " bytes...";
 		response.out().write(reinterpret_cast<char*>(&data[0]), data.size());
 
 		if (!response.out())
@@ -922,15 +951,11 @@ handleStream(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::
 		continuation = response.createContinuation();
 		continuation->setData(transcoder);
 	}
-	else
-		LMS_LOG(API_SUBSONIC, DEBUG) << "No more data!";
 }
 
 void
 handleGetCoverArt(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::Response& response)
 {
-	LMS_LOG(API_SUBSONIC, DEBUG) << "STREAM";
-
 	// Mandatory params
 	Id id {getParameterAsId(request.getParameterMap(), "id")};
 

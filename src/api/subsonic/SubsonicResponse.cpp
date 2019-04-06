@@ -239,7 +239,7 @@ Response::write(std::ostream& os, ResponseFormat format)
 			// property_tree does not support empty json array
 			std::ostringstream oss;
 			boost::property_tree::write_json(oss, root);
-			os << std::regex_replace(oss.str(), std::regex {R"(\[[\r\n]*\s*\"\"[\r\n]*\s*\])"}, R"(\{\})");
+			os << std::regex_replace(oss.str(), std::regex {R"(\[[\r\n]*\s*\"\"[\r\n]*\s*\])"}, R"({})");
 			break;
 		}
 	}

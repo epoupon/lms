@@ -52,7 +52,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static std::vector<pointer>	getByName(Wt::Dbo::Session& session, const std::string& name);
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session,
 								const std::set<IdType>& clusters,		// at least one track that belongs to  these clusters
-								const std::vector<std::string> keywords,	// name must match all of these keywords
+								const std::vector<std::string>& keywords,	// name must match all of these keywords
 								boost::optional<std::size_t> offset,
 								boost::optional<std::size_t> size,
 								bool& moreExpected);

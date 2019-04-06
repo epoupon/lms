@@ -126,7 +126,7 @@ getQuery(Wt::Dbo::Session& session,
 std::vector<Artist::pointer>
 Artist::getByFilter(Wt::Dbo::Session& session,
 		const std::set<IdType>& clusters,
-		const std::vector<std::string> keywords,
+		const std::vector<std::string>& keywords,
 		boost::optional<std::size_t> offset,
 		boost::optional<std::size_t> size,
 		bool& moreResults)
