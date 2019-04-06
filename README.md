@@ -30,10 +30,9 @@ Please note this engine:
 - makes use of computed data available on [AcousticBrainz](https://acousticbrainz.org/). Therefore your music must contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) for the recommendation engine to work properly
 
 ## Subsonic API
-For now, the API version implemented is 1.12.0 and has been tested using the official Android application and Ultrasonic.
+For now, the API version implemented is 1.12.0 and has been tested using the official application and Ultrasonic on Android.
 
-Please note some commands are not implemented (stars, shares, playlists).
-As LMS uses metadata tags to organize data, a compatibility mode is used to navigate through the collection using the directory browsing commands.
+As LMS does not aim to implement all the features of Subsonic, some commands are missing. Since LMS uses metadata tags to organize data, a compatibility mode is used to navigate through the collection using the directory browsing commands.
 
 The Subsonic API is enabled by default.
 

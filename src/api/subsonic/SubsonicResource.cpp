@@ -37,6 +37,9 @@
 #include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
 
+#define CLUSTER_TYPE_GENRE	"GENRE"
+#define REPORTED_BITRATE	128
+
 // Requests
 #define PING_URL 		"/rest/ping.view"
 #define GET_LICENSE_URL		"/rest/getLicense.view"
@@ -294,7 +297,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 static
 std::string
-getArtistNames(const std::vector<Database::Artist::pointer> artists)
+getArtistNames(const std::vector<Database::Artist::pointer>& artists)
 {
 	if (artists.size() == 1)
 		return artists.front()->getName();
@@ -313,16 +316,21 @@ getArtistNames(const std::vector<Database::Artist::pointer> artists)
 
 static
 Response::Node
-trackToResponseNode(const Database::Track::pointer& track, bool id3)
+trackToResponseNode(const Database::Track::pointer& track)
 {
 	Response::Node trackResponse;
 
-	trackResponse.setAttribute("title", track->getName());
-
-	if (!id3)
-		trackResponse.setAttribute("isDir", "false");
-
 	trackResponse.setAttribute("id", IdToString({Id::Type::Track, track.id()}));
+	trackResponse.setAttribute("isDir", "false");
+	trackResponse.setAttribute("title", track->getName());
+	if (track->getTrackNumber())
+		trackResponse.setAttribute("track", std::to_string(*track->getTrackNumber()));
+	if (track->getDiscNumber())
+		trackResponse.setAttribute("discNumber", std::to_string(*track->getDiscNumber()));
+	if (track->getYear())
+		trackResponse.setAttribute("year", std::to_string(*track->getYear()));
+	trackResponse.setAttribute("size", std::to_string(REPORTED_BITRATE*1000/8 * std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count()));
+
 	trackResponse.setAttribute("coverArt", IdToString({Id::Type::Track, track.id()}));
 
 	auto artists {track->getArtists()};
@@ -330,31 +338,31 @@ trackToResponseNode(const Database::Track::pointer& track, bool id3)
 	{
 		trackResponse.setAttribute("artist", getArtistNames(artists));
 
-		if (artists.size() == 1 && id3)
+		if (artists.size() == 1)
 			trackResponse.setAttribute("artistId", IdToString({Id::Type::Artist, artists.front().id()}));
 	}
 
+	if (track->getRelease())
+	{
+		trackResponse.setAttribute("album", track->getRelease()->getName());
+		trackResponse.setAttribute("albumId", IdToString({Id::Type::Release, track->getRelease().id()}));
+		trackResponse.setAttribute("parent", IdToString({Id::Type::Release, track->getRelease().id()}));
+	}
+
 	trackResponse.setAttribute("path",  track->getName() + ".mp3");
-	trackResponse.setAttribute("bitRate", "128");
+	trackResponse.setAttribute("bitRate", std::to_string(REPORTED_BITRATE));
 	trackResponse.setAttribute("duration", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count()));
 	trackResponse.setAttribute("suffix", "mp3");
 	trackResponse.setAttribute("contentType", "audio/mpeg");
-	trackResponse.setAttribute("size", std::to_string(128000/8 * std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count()));
+	trackResponse.setAttribute("type", "music");
 
-	if (track->getYear())
-		trackResponse.setAttribute("year", std::to_string(*track->getYear()));
-
-	if (track->getTrackNumber())
-		trackResponse.setAttribute("track", std::to_string(*track->getTrackNumber()));
-
-	if (track->getRelease())
+	// Report the first GENRE for this track
+	Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(*track.session(), CLUSTER_TYPE_GENRE)};
+	if (clusterType)
 	{
-		if (id3)
-			trackResponse.setAttribute("albumId", IdToString({Id::Type::Release, track->getRelease().id()}));
-		else
-			trackResponse.setAttribute("parent", IdToString({Id::Type::Release, track->getRelease().id()}));
-
-		trackResponse.setAttribute("album", track->getRelease()->getName());
+		auto clusters {track->getClusterGroups({clusterType}, 1)};
+		if (!clusters.empty() && !clusters.front().empty())
+			trackResponse.setAttribute("genre", clusters.front().front()->getName());
 	}
 
 	return trackResponse;
@@ -474,7 +482,7 @@ handleGetRandomSongsRequest(const Wt::Http::ParameterMap& parameters, Database::
 
 	Response::Node& randomSongsNode {response.createNode("randomSongs")};
 	for (const Database::Track::pointer& track : tracks)
-		randomSongsNode.addArrayChild("song", trackToResponseNode(track, true));
+		randomSongsNode.addArrayChild("song", trackToResponseNode(track));
 
 	return response;
 }
@@ -586,7 +594,7 @@ handleGetAlbumRequest(const Wt::Http::ParameterMap& request, Database::Handler& 
 
 	auto tracks {release->getTracks()};
 	for (const Database::Track::pointer& track : tracks)
-		releaseNode.addArrayChild("song", trackToResponseNode(track, true /* id3 */));
+		releaseNode.addArrayChild("song", trackToResponseNode(track));
 
 	response.addNode("album", std::move(releaseNode));
 
@@ -692,7 +700,7 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 
 			auto tracks {release->getTracks()};
 			for (const Database::Track::pointer& track : tracks)
-				directoryNode.addArrayChild("child", trackToResponseNode(track, false));
+				directoryNode.addArrayChild("child", trackToResponseNode(track));
 
 			break;
 		}
@@ -726,7 +734,7 @@ handleGetGenresRequest(const Wt::Http::ParameterMap& request, Database::Handler&
 
 	Wt::Dbo::Transaction transaction {db.getSession()};
 
-	auto clusterType {Database::ClusterType::getByName(db.getSession(), "GENRE")};
+	auto clusterType {Database::ClusterType::getByName(db.getSession(), CLUSTER_TYPE_GENRE)};
 	if (clusterType)
 	{
 		auto clusters {clusterType->getClusters()};
@@ -800,7 +808,7 @@ handleGetSongsByGenreRequest(const Wt::Http::ParameterMap& request, Database::Ha
 
 	Wt::Dbo::Transaction transaction {db.getSession()};
 
-	auto clusterType {Database::ClusterType::getByName(db.getSession(), "GENRE")};
+	auto clusterType {Database::ClusterType::getByName(db.getSession(), CLUSTER_TYPE_GENRE)};
 	if (!clusterType)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -814,7 +822,7 @@ handleGetSongsByGenreRequest(const Wt::Http::ParameterMap& request, Database::Ha
 	bool more;
 	auto tracks {Database::Track::getByFilter(db.getSession(), {cluster.id()}, {}, offset, size, more)};
 	for (const Database::Track::pointer& track : tracks)
-		songsByGenreNode.addArrayChild("song", trackToResponseNode(track, true));
+		songsByGenreNode.addArrayChild("song", trackToResponseNode(track));
 
 	return response;
 }
@@ -858,7 +866,7 @@ handleSearchRequestCommon(const Wt::Http::ParameterMap& request, Database::Handl
 	{
 		auto tracks {Database::Track::getByFilter(db.getSession(), {}, keywords, songOffset, songCount, more)};
 		for (const Database::Track::pointer& track : tracks)
-			searchResult2Node.addArrayChild("song", trackToResponseNode(track, id3));
+			searchResult2Node.addArrayChild("song", trackToResponseNode(track));
 	}
 
 	return response;
