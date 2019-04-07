@@ -187,42 +187,32 @@ getMandatoryParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::s
 struct ClientInfo
 {
 	std::string		name;
-	ResponseFormat		format;
 	std::string		user;
 	std::string		password;
 };
 
-boost::optional<ClientInfo>
+ClientInfo
 getClientInfo(const Wt::Http::ParameterMap& parameters)
 {
-	boost::optional<ClientInfo> res {ClientInfo {}};
+	ClientInfo res;
 
 	// Mandatory parameters
-	auto param {getParameterAs<std::string>(parameters, "c")};
-	if (!param)
-		return {};
-	res->name = *param;
+	res.name = getMandatoryParameterAs<std::string>(parameters, "c");
+	res.user = getMandatoryParameterAs<std::string>(parameters, "u");
 
-	param = getParameterAs<std::string>(parameters, "u");
-	if (!param)
-		return {};
-	res->user = *param;
-
-	param = getParameterAs<std::string>(parameters, "p");
-	if (!param)
-		return {};
-
-	if (param->find("enc:") == 0)
 	{
-		param = stringFromHex(param->substr(4));
-		if (!param)
-			return {};
-	}
-	res->password = *param;
+		std::string password {getMandatoryParameterAs<std::string>(parameters, "p")};
+		if (password.find("enc:") == 0)
+		{
+			auto decodedPassword {stringFromHex(password.substr(4))};
+			if (!decodedPassword)
+				throw Error {Error::Code::WrongUsernameOrPassword};
 
-	// Optional parameters
-	param = getParameterAs<std::string>(parameters, "f");
-	res->format = (param ? ResponseFormat::json : ResponseFormat::xml); // TODO
+			res.password = *decodedPassword;
+		}
+		else
+			res.password = password;
+	}
 
 	return res;
 }
@@ -265,30 +255,28 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 {
 	LMS_LOG(API_SUBSONIC, DEBUG) << "REQUEST " << request.path();
 
-	const Wt::Http::ParameterMap parameters {request.getParameterMap()};
+	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
 
-	auto clientInfo {getClientInfo(parameters)};
-	if (!clientInfo)
-	{
-		LMS_LOG(API_SUBSONIC, ERROR) << "Failed to parse client info";
-		return;
-	}
+	// Optional parameters
+	ResponseFormat format {getParameterAs<std::string>(parameters, "f").get_value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml};
 
 	try
 	{
 		static std::mutex mutex;
 
+		ClientInfo clientInfo {getClientInfo(parameters)};
+
 		std::unique_lock<std::mutex> lock{mutex}; // For now just handle request s one by one
 
-		if (!checkPassword(_db, *clientInfo))
+		if (!checkPassword(_db, clientInfo))
 			throw Error {Error::Code::WrongUsernameOrPassword};
 
 		auto itHandler {requestHandlers.find(request.path())};
 		if (itHandler != requestHandlers.end())
 		{
 			Response resp {(itHandler->second)(request.getParameterMap(), _db)};
-			resp.write(response.out(), clientInfo->format);
-			response.setMimeType(ResponseFormatToMimeType(clientInfo->format));
+			resp.write(response.out(), format);
+			response.setMimeType(ResponseFormatToMimeType(format));
 			return;
 		}
 
@@ -306,8 +294,8 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 	{
 		LMS_LOG(API_SUBSONIC, ERROR) << "Error while processing command. code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'";
 		Response resp {Response::createFailedResponse(e)};
-		resp.write(response.out(), clientInfo->format);
-		response.setMimeType(ResponseFormatToMimeType(clientInfo->format));
+		resp.write(response.out(), format);
+		response.setMimeType(ResponseFormatToMimeType(format));
 	}
 }
 
