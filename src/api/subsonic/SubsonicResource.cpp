@@ -121,6 +121,13 @@ static std::map<std::string, MediaRetrivalHandlerFunc> mediaRetrievalHandlers
 	{GET_COVER_ART_URL,		handleGetCoverArt},
 };
 
+static
+std::string
+makeNameFilesystemCompatible(const std::string& name)
+{
+	return replaceInString(name, "/", "_");
+}
+
 template<typename T>
 boost::optional<T>
 getParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
@@ -315,6 +322,34 @@ getArtistNames(const std::vector<Database::Artist::pointer>& artists)
 }
 
 static
+std::string
+getTrackPath(const Database::Track::pointer& track)
+{
+	std::string path;
+
+	// TODO encode '/'?
+
+	if (track->getRelease())
+	{
+		auto artists {track->getRelease()->getArtists()};
+
+		if (artists.size() > 1)
+			path = "Various Artists/";
+		else if (artists.size() == 1)
+			path = makeNameFilesystemCompatible(artists.front()->getName()) + "/";
+
+		path += makeNameFilesystemCompatible(track->getRelease()->getName()) + "/";
+	}
+
+	if (track->getDiscNumber())
+		path += *track->getDiscNumber() + "-";
+	if (track->getTrackNumber())
+		path += *track->getTrackNumber() + "-";
+
+	return path + makeNameFilesystemCompatible(track->getName()) + ".mp3";
+}
+
+static
 Response::Node
 trackToResponseNode(const Database::Track::pointer& track)
 {
@@ -349,7 +384,7 @@ trackToResponseNode(const Database::Track::pointer& track)
 		trackResponse.setAttribute("parent", IdToString({Id::Type::Release, track->getRelease().id()}));
 	}
 
-	trackResponse.setAttribute("path",  track->getName() + ".mp3");
+	trackResponse.setAttribute("path", getTrackPath(track));
 	trackResponse.setAttribute("bitRate", std::to_string(REPORTED_BITRATE));
 	trackResponse.setAttribute("duration", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count()));
 	trackResponse.setAttribute("suffix", "mp3");
@@ -392,7 +427,11 @@ releaseToResponseNode(const Database::Release::pointer& release, bool id3)
 		albumNode.setAttribute("year", std::to_string(*release->getReleaseYear()));
 
 	auto artists {release->getArtists()};
-	if (!artists.empty())
+	if (artists.empty() && !id3)
+	{
+		albumNode.setAttribute("parent", IdToString({Id::Type::Root}));
+	}
+	else if (!artists.empty())
 	{
 		if (artists.size() > 1)
 		{
@@ -412,6 +451,18 @@ releaseToResponseNode(const Database::Release::pointer& release, bool id3)
 		}
 	}
 
+	if (id3)
+	{
+		// Report the first GENRE for this track
+		Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(*release.session(), CLUSTER_TYPE_GENRE)};
+		if (clusterType)
+		{
+			auto clusters {release->getClusterGroups({clusterType}, 1)};
+			if (!clusters.empty() && !clusters.front().empty())
+				albumNode.setAttribute("genre", clusters.front().front()->getName());
+		}
+	}
+
 	return albumNode;
 }
 
@@ -423,10 +474,9 @@ artistToResponseNode(const Database::Artist::pointer& artist, bool id3)
 
 	artistNode.setAttribute("id", IdToString({Id::Type::Artist, artist.id()}));
 	artistNode.setAttribute("name", artist->getName());
-	artistNode.setAttribute("albumCount", std::to_string(artist->getReleases().size()));
 
-	if (!id3)
-		artistNode.setAttribute("parent", IdToString({Id::Type::Root}));
+	if (id3)
+		artistNode.setAttribute("albumCount", std::to_string(artist->getReleases().size()));
 
 	return artistNode;
 }
@@ -656,6 +706,8 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 	Response response {Response::createOkResponse()};
 	Response::Node& directoryNode {response.createNode("directory")};
 
+	directoryNode.setAttribute("id", IdToString(id));
+
 	switch (id.type)
 	{
 		case Id::Type::Root:
@@ -679,7 +731,7 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 			if (!artist)
 				throw Error {Error::Code::RequestedDataNotFound};
 
-			directoryNode.setAttribute("name", artist->getName());
+			directoryNode.setAttribute("name", makeNameFilesystemCompatible(artist->getName()));
 
 			auto releases {artist->getReleases()};
 			for (const Database::Release::pointer& release : releases)
@@ -696,7 +748,7 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 			if (!release)
 				throw Error {Error::Code::RequestedDataNotFound};
 
-			directoryNode.setAttribute("name", release->getName());
+			directoryNode.setAttribute("name", makeNameFilesystemCompatible(release->getName()));
 
 			auto tracks {release->getTracks()};
 			for (const Database::Track::pointer& track : tracks)
