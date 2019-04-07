@@ -46,8 +46,15 @@ class Error
 			RequestedDataNotFound = 70,
 		};
 
+		enum class CustomType
+		{
+			BadId,
+			NotImplemented,
+			InternalError,
+		};
+
 		Error(Code code);
-		Error(const std::string& message);
+		Error(CustomType customType);
 
 		Code getCode() const { return _code; }
 		const std::string& getMessage() const { return _message; }

@@ -160,20 +160,29 @@ getParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& pa
 	return it->second.front();
 }
 
-Id
-getParameterAsId(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
+template<>
+boost::optional<Id>
+getParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
 {
+	boost::optional<Id> res;
+
 	auto idParam {getParameterAs<std::string>(parameterMap, "id")};
 	if (!idParam)
-		throw Error {Error::Code::RequiredParameterMissing};
+		return res;
 
-	auto id {IdFromString(*idParam)};
-	if (!id)
-		throw Error {"Bad id"};
-
-	return *id;
+	return IdFromString(*idParam);
 }
 
+template<typename T>
+T
+getMandatoryParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
+{
+	auto res {getParameterAs<T>(parameterMap, param)};
+	if (!res)
+		throw Error {Error::Code::RequiredParameterMissing};
+
+	return *res;
+}
 
 struct ClientInfo
 {
@@ -601,7 +610,7 @@ handleGetAlbumListRequestCommon(const Wt::Http::ParameterMap& request, Database:
 		releases = Database::Release::getAll(db.getSession(), offset, size);
 	}
 	else
-		throw Error {"Unsupported request"};
+		throw Error {Error::CustomType::NotImplemented};
 
 	Response response {Response::createOkResponse()};
 	Response::Node& albumListNode {response.createNode(id3 ? "albumList2" : "albumList")};
@@ -628,10 +637,10 @@ Response
 handleGetAlbumRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
 {
 	// Mandatory params
-	Id id {getParameterAsId(request, "id")};
+	Id id {getMandatoryParameterAs<Id>(request, "id")};
 
 	if (id.type != Id::Type::Release)
-		throw Error {"Unexpected id type"};
+		throw Error {Error::CustomType::BadId};
 
 	Wt::Dbo::Transaction transaction {db.getSession()};
 
@@ -655,10 +664,10 @@ Response
 handleGetArtistRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
 {
 	// Mandatory params
-	Id id {getParameterAsId(request, "id")};
+	Id id {getMandatoryParameterAs<Id>(request, "id")};
 
 	if (id.type != Id::Type::Artist)
-		throw Error {"Unexpected id type"};
+		throw Error {Error::CustomType::BadId};
 
 	Wt::Dbo::Transaction transaction {db.getSession()};
 
@@ -701,7 +710,7 @@ Response
 handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
 {
 	// Mandatory params
-	Id id {getParameterAsId(request, "id")};
+	Id id {getMandatoryParameterAs<Id>(request, "id")};
 
 	Response response {Response::createOkResponse()};
 	Response::Node& directoryNode {response.createNode("directory")};
@@ -758,7 +767,7 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 		}
 
 		default:
-			throw Error {"Unexpected id type"};
+			throw Error {Error::CustomType::BadId};
 	}
 
 	return response;
@@ -820,28 +829,19 @@ handleGetIndexesRequest(const Wt::Http::ParameterMap& request, Database::Handler
 Response
 handleGetStarredRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
 {
-	Response response {Response::createOkResponse()};
-	response.createNode("starred");
-
-	return response;
+	throw Error{Error::CustomType::NotImplemented};
 }
 
 Response
 handleGetStarred2Request(const Wt::Http::ParameterMap& request, Database::Handler& db)
 {
-	Response response {Response::createOkResponse()};
-	response.createNode("starred2");
-
-	return response;
+	throw Error{Error::CustomType::NotImplemented};
 }
 
 Response
 handleGetPlaylistsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
 {
-	Response response {Response::createOkResponse()};
-	response.createNode("playlists");
-
-	return response;
+	throw Error{Error::CustomType::NotImplemented};
 }
 
 Response
@@ -942,7 +942,7 @@ std::shared_ptr<Av::Transcoder>
 createTranscoder(const Wt::Http::ParameterMap& request, Database::Handler& db)
 {
 	// Mandatory params
-	Id id {getParameterAsId(request, "id")};
+	Id id {getMandatoryParameterAs<Id>(request, "id")};
 
 	// Optional params
 	std::size_t maxBitRate {getParameterAs<std::size_t>(request, "maxBitRate").get_value_or(128)};
@@ -987,7 +987,7 @@ handleStream(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::
 	}
 
 	if (!transcoder)
-		throw Error {"transcoding failed"};
+		throw Error {Error::CustomType::InternalError};
 
 	if (!transcoder->isComplete())
 	{
@@ -1018,7 +1018,7 @@ void
 handleGetCoverArt(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::Response& response)
 {
 	// Mandatory params
-	Id id {getParameterAsId(request.getParameterMap(), "id")};
+	Id id {getMandatoryParameterAs<Id>(request.getParameterMap(), "id")};
 
 	auto size {getParameterAs<std::size_t>(request.getParameterMap(), "size")};
 	if (!size)
@@ -1036,7 +1036,7 @@ handleGetCoverArt(const Wt::Http::Request& request, Database::Handler& db, Wt::H
 			cover = getServices().coverArtGrabber->getFromRelease(db.getSession(), id.id, Image::Format::JPEG, *size);
 			break;
 		default:
-			throw Error {"Unexpected id type"};
+			throw Error {Error::CustomType::BadId};
 	}
 
 	response.setMimeType( Image::format_to_mimeType(Image::Format::JPEG) );

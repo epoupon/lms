@@ -66,15 +66,32 @@ ErrorCodeToString(Error::Code error)
 	}
 }
 
+static
+const char*
+CustomTypeToString(Error::CustomType type)
+{
+	switch (type)
+	{
+		case Error::CustomType::BadId:
+			return "Bad id";
+		case Error::CustomType::NotImplemented:
+			return "Not implemented";
+		case Error::CustomType::InternalError:
+			return "Internal error";
+		default:
+			return "Unknown custom error";
+	}
+}
+
 Error::Error(Code code)
 : _code {code},
 _message {ErrorCodeToString(code)}
 {
 }
 
-Error::Error(const std::string& message)
+Error::Error(Error::CustomType type)
 : _code {Code::Generic},
-_message {message}
+_message {CustomTypeToString(type)}
 {
 }
 
