@@ -101,9 +101,11 @@ class Response
 		Node& createNode(const std::string& key);
 		Node& createArrayNode(const std::string& key);
 
-		void writeJson(std::ostream& os);
 		void write(std::ostream& os, ResponseFormat format);
 	private:
+
+		void writeJSON(std::ostream& os);
+		void writeXML(std::ostream& os);
 
 		Response() = default;
 		Node _root;

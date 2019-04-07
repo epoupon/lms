@@ -19,7 +19,10 @@
 
 #include "SubsonicResponse.hpp"
 
-#include <regex>
+#include <Wt/Json/Array.h>
+#include <Wt/Json/Object.h>
+#include <Wt/Json/Value.h>
+#include <Wt/Json/Serializer.h>
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -192,74 +195,96 @@ Response::createArrayNode(const std::string& key)
 void
 Response::write(std::ostream& os, ResponseFormat format)
 {
-	std::function<boost::property_tree::ptree(const Response::Node&, ResponseFormat)> nodeToPropertyTree = [&] (const Response::Node& node, ResponseFormat format)
+	switch (format)
+	{
+		case ResponseFormat::xml:
+			writeXML(os);
+			break;
+		case ResponseFormat::json:
+			writeJSON(os);
+			break;
+	}
+}
+
+void
+Response::writeXML(std::ostream& os)
+{
+	std::function<boost::property_tree::ptree(const Response::Node&)> nodeToPropertyTree = [&] (const Response::Node& node)
 	{
 		boost::property_tree::ptree res;
 
 		for (auto itAttribute : node._attributes)
-		{
-			std::string key {format == ResponseFormat::xml ? "<xmlattr>." : ""};
+			res.put("<xmlattr>." + itAttribute.first, itAttribute.second);
 
-			key += itAttribute.first;
-
-			res.put(key, itAttribute.second);
-		}
 		if (!node._value.empty())
 		{
-			if (format == ResponseFormat::json)
-				res.put("value", node._value);
-			else
-				res.put_value(node._value);
+			res.put_value(node._value);
 		}
 		else
 		{
 			for (auto itChildNode : node._children)
 			{
 				for (const Response::Node& childNode : itChildNode.second)
-					res.add_child(itChildNode.first, nodeToPropertyTree(childNode, format));
+					res.add_child(itChildNode.first, nodeToPropertyTree(childNode));
 			}
 
 			for (auto itChildArrayNode : node._childrenArrays)
 			{
 				const std::vector<Response::Node>& childArrayNodes {itChildArrayNode .second};
 
-				if (format == ResponseFormat::json)
-				{
-					boost::property_tree::ptree array;
-
-					for (const Response::Node& childNode : childArrayNodes )
-						array.push_back(std::make_pair("", nodeToPropertyTree(childNode, format)));
-
-					res.add_child(itChildArrayNode.first, array);
-				}
-				else
-				{
-					for (const Response::Node& childNode : childArrayNodes )
-						res.add_child(itChildArrayNode.first, nodeToPropertyTree(childNode, format));
-				}
+				for (const Response::Node& childNode : childArrayNodes )
+					res.add_child(itChildArrayNode.first, nodeToPropertyTree(childNode));
 			}
 		}
 
 		return res;
 	};
 
+	boost::property_tree::ptree root {nodeToPropertyTree(_root)};
+	boost::property_tree::write_xml(os, root);
+}
 
-	boost::property_tree::ptree root {nodeToPropertyTree(_root, format)};
+void
+Response::writeJSON(std::ostream& os)
+{
+	namespace Json = Wt::Json;
 
-	switch (format)
+	std::function<Json::Object(const Response::Node&)> nodeToJsonObject = [&] (const Response::Node& node)
 	{
-		case ResponseFormat::xml:
-			boost::property_tree::write_xml(os, root);
-			break;
-		case ResponseFormat::json:
+		Json::Object res;
+
+		for (auto itAttribute : node._attributes)
+			res[itAttribute.first] = Json::Value {itAttribute.second};
+
+		if (!node._value.empty())
 		{
-			// property_tree does not support empty json array
-			std::ostringstream oss;
-			boost::property_tree::write_json(oss, root);
-			os << std::regex_replace(oss.str(), std::regex {R"(\[[\r\n]*\s*\"\"[\r\n]*\s*\])"}, R"({})");
-			break;
+			res["value"] = Json::Value {node._value};
 		}
-	}
+		else
+		{
+			for (auto itChildNode : node._children)
+			{
+				for (const Response::Node& childNode : itChildNode.second)
+					res[itChildNode.first] = nodeToJsonObject(childNode);
+			}
+
+			for (auto itChildArrayNode : node._childrenArrays)
+			{
+				const std::vector<Response::Node>& childArrayNodes {itChildArrayNode .second};
+
+				Json::Array array;
+				for (const Response::Node& childNode : childArrayNodes )
+					array.emplace_back(nodeToJsonObject(childNode));
+
+				res[itChildArrayNode.first] = std::move(array);
+			}
+		}
+
+		return res;
+	};
+
+	Json::Object root {nodeToJsonObject(_root)};
+	os << Json::serialize(root);
 }
 
 } // namespace
