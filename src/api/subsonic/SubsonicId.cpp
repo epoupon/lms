@@ -60,7 +60,7 @@ IdFromString(const std::string& id)
 		return {};
 	}
 
-	res.id = *optId;
+	res.value = *optId;
 
 	return res;
 }
@@ -85,7 +85,7 @@ IdToString(const Id& id)
 			break;
 	}
 
-	return res + std::to_string(id.id);
+	return res + std::to_string(id.value);
 }
 
 } // namespace API::Subsonic

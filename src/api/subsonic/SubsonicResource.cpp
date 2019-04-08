@@ -32,6 +32,7 @@
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "main/Services.hpp"
+#include "similarity/SimilaritySearcher.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 #include "SubsonicId.hpp"
@@ -48,6 +49,8 @@
 #define GET_ALBUM_LIST2_URL	"/rest/getAlbumList2.view"
 #define GET_ALBUM_URL		"/rest/getAlbum.view"
 #define GET_ARTIST_URL		"/rest/getArtist.view"
+#define GET_ARTIST_INFO_URL	"/rest/getArtistInfo.view"
+#define GET_ARTIST_INFO2_URL	"/rest/getArtistInfo2.view"
 #define GET_ARTISTS_URL		"/rest/getArtists.view"
 #define GET_MUSIC_DIRECTORY_URL	"/rest/getMusicDirectory.view"
 #define GET_MUSIC_FOLDERS_URL	"/rest/getMusicFolders.view"
@@ -76,6 +79,8 @@ static Response handleGetAlbumListRequest(const Wt::Http::ParameterMap& request,
 static Response handleGetAlbumList2Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetAlbumRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetArtistRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
+static Response handleGetArtistInfoRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
+static Response handleGetArtistInfo2Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetArtistsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
 static Response handleGetMusicFoldersRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
@@ -102,6 +107,8 @@ static std::map<std::string, RequestHandlerFunc> requestHandlers
 	{GET_ALBUM_LIST2_URL,		handleGetAlbumList2Request},
 	{GET_ALBUM_URL,			handleGetAlbumRequest},
 	{GET_ARTIST_URL,		handleGetArtistRequest},
+	{GET_ARTIST_INFO_URL,		handleGetArtistInfoRequest},
+	{GET_ARTIST_INFO2_URL,		handleGetArtistInfo2Request},
 	{GET_ARTISTS_URL,		handleGetArtistsRequest},
 	{GET_MUSIC_DIRECTORY_URL,	handleGetMusicDirectoryRequest},
 	{GET_MUSIC_FOLDERS_URL,		handleGetMusicFoldersRequest},
@@ -572,9 +579,7 @@ Response
 handleGetAlbumListRequestCommon(const Wt::Http::ParameterMap& request, Database::Handler& db, bool id3)
 {
 	// Mandatory params
-	auto type {getParameterAs<std::string>(request, "type")};
-	if (!type)
-		throw Error {Error::Code::RequiredParameterMissing};
+	std::string type {getMandatoryParameterAs<std::string>(request, "type")};
 
 	// Optional params
 	std::size_t size {getParameterAs<std::size_t>(request, "size").get_value_or(10)};
@@ -584,18 +589,34 @@ handleGetAlbumListRequestCommon(const Wt::Http::ParameterMap& request, Database:
 
 	Wt::Dbo::Transaction transaction {db.getSession()};
 
-	if (*type == "random")
+	if (type == "random")
 	{
 		releases = getRandomAlbums(db.getSession(), offset, size);
 	}
-	else if (*type == "newest")
+	else if (type == "newest")
 	{
 		auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-6)};
 		releases = Database::Release::getLastAdded(db.getSession(), after, offset, size);
 	}
-	else if (*type == "alphabeticalByName")
+	else if (type == "alphabeticalByName")
 	{
 		releases = Database::Release::getAll(db.getSession(), offset, size);
+	}
+	else if (type == "byGenre")
+	{
+		// Mandatory param
+		std::string genre {getMandatoryParameterAs<std::string>(request, "genre")};
+
+		Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(db.getSession(), CLUSTER_TYPE_GENRE)};
+		if (clusterType)
+		{
+			Database::Cluster::pointer cluster {clusterType->getCluster(genre)};
+			if (cluster)
+			{
+				bool more;
+				releases = Database::Release::getByFilter(db.getSession(), {cluster.id()}, {}, offset, size, more);
+			}
+		}
 	}
 	else
 		throw Error {Error::CustomType::NotImplemented};
@@ -632,7 +653,7 @@ handleGetAlbumRequest(const Wt::Http::ParameterMap& request, Database::Handler& 
 
 	Wt::Dbo::Transaction transaction {db.getSession()};
 
-	Database::Release::pointer release {Database::Release::getById(db.getSession(), id.id)};
+	Database::Release::pointer release {Database::Release::getById(db.getSession(), id.value)};
 	if (!release)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -659,7 +680,7 @@ handleGetArtistRequest(const Wt::Http::ParameterMap& request, Database::Handler&
 
 	Wt::Dbo::Transaction transaction {db.getSession()};
 
-	Database::Artist::pointer artist {Database::Artist::getById(db.getSession(), id.id)};
+	Database::Artist::pointer artist {Database::Artist::getById(db.getSession(), id.value)};
 	if (!artist)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -673,6 +694,51 @@ handleGetArtistRequest(const Wt::Http::ParameterMap& request, Database::Handler&
 	response.addNode("artist", std::move(artistNode));
 
 	return response;
+}
+
+static
+
+Response handleGetArtistInfoRequestCommon(const Wt::Http::ParameterMap& request, Database::Handler& db, bool id3)
+{
+	// Mandatory params
+	Id id {getMandatoryParameterAs<Id>(request, "id")};
+	if (id.type != Id::Type::Artist)
+		throw Error {Error::CustomType::BadId};
+
+	// Optional params
+	std::size_t count {getParameterAs<std::size_t>(request, "count").get_value_or(10)};
+
+	Wt::Dbo::Transaction transaction {db.getSession()};
+
+	Database::Artist::pointer artist {Database::Artist::getById(db.getSession(), id.value)};
+	if (!artist)
+		throw Error {Error::Code::RequestedDataNotFound};
+
+	Response response {Response::createOkResponse()};
+	Response::Node& artistInfoNode {response.createNode(id3 ? "artistInfo2" : "artistInfo")};
+
+	if (!artist->getMBID().empty())
+		artistInfoNode.createChild("musicBrainzId").setValue(artist->getMBID());
+
+	auto similarArtistsId {getServices().similaritySearcher->getSimilarArtists(db.getSession(), artist.id(), count)};
+	for ( const auto& similarArtistId : similarArtistsId )
+	{
+		Database::Artist::pointer similarArtist {Database::Artist::getById(db.getSession(), similarArtistId)};
+
+		if (similarArtist)
+			artistInfoNode.addArrayChild("similarArtist", artistToResponseNode(similarArtist, id3));
+	}
+
+	return response;
+}
+
+Response handleGetArtistInfoRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+{
+	return handleGetArtistInfoRequestCommon(request, db, false /* no id3 */);
+}
+static Response handleGetArtistInfo2Request(const Wt::Http::ParameterMap& request, Database::Handler& db)
+{
+	return handleGetArtistInfoRequestCommon(request, db, true /* id3 */);
 }
 
 Response
@@ -724,7 +790,7 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 		{
 			Wt::Dbo::Transaction transaction {db.getSession()};
 
-			auto artist {Database::Artist::getById(db.getSession(), id.id)};
+			auto artist {Database::Artist::getById(db.getSession(), id.value)};
 			if (!artist)
 				throw Error {Error::Code::RequestedDataNotFound};
 
@@ -741,7 +807,7 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 		{
 			Wt::Dbo::Transaction transaction {db.getSession()};
 
-			auto release {Database::Release::getById(db.getSession(), id.id)};
+			auto release {Database::Release::getById(db.getSession(), id.value)};
 			if (!release)
 				throw Error {Error::Code::RequestedDataNotFound};
 
@@ -940,7 +1006,7 @@ createTranscoder(const Wt::Http::ParameterMap& request, Database::Handler& db)
 	{
 		Wt::Dbo::Transaction transaction {db.getSession()};
 
-		auto track {Database::Track::getById(db.getSession(), id.id)};
+		auto track {Database::Track::getById(db.getSession(), id.value)};
 		if (!track)
 			throw Error {Error::Code::RequestedDataNotFound};
 
@@ -1018,10 +1084,10 @@ handleGetCoverArt(const Wt::Http::Request& request, Database::Handler& db, Wt::H
 	switch (id.type)
 	{
 		case Id::Type::Track:
-			cover = getServices().coverArtGrabber->getFromTrack(db.getSession(), id.id, Image::Format::JPEG, *size);
+			cover = getServices().coverArtGrabber->getFromTrack(db.getSession(), id.value, Image::Format::JPEG, *size);
 			break;
 		case Id::Type::Release:
-			cover = getServices().coverArtGrabber->getFromRelease(db.getSession(), id.id, Image::Format::JPEG, *size);
+			cover = getServices().coverArtGrabber->getFromRelease(db.getSession(), id.value, Image::Format::JPEG, *size);
 			break;
 		default:
 			throw Error {Error::CustomType::BadId};

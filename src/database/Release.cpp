@@ -188,10 +188,10 @@ Release::getReleaseYear(bool original) const
 {
 	assert(session());
 
-	std::string field = original ? "t.original_year" : "t.year";
+	const std::string field {original ? "original_year" : "year"};
 
 	Wt::Dbo::collection<int> dates = session()->query<int>(
-			std::string("SELECT ") + field + " FROM track t INNER JOIN release r ON r.id = t.release_id")
+			std::string{"SELECT "} + "t." + field + " FROM track t INNER JOIN release r ON r.id = t.release_id")
 		.where("r.id = ?")
 		.groupBy(field)
 		.bind(this->id());
@@ -200,7 +200,7 @@ Release::getReleaseYear(bool original) const
 	if (dates.empty() || dates.size() > 1)
 		return boost::none;
 
-	auto date = dates.front();
+	auto date {dates.front()};
 
 	if (date > 0)
 		return date;

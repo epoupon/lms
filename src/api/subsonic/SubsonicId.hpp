@@ -35,7 +35,7 @@ struct Id
 	};
 
 	Type 			type;
-	Database::IdType	id {};
+	Database::IdType	value {};
 };
 
 boost::optional<Id>	IdFromString(const std::string& id);
