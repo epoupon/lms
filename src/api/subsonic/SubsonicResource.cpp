@@ -94,7 +94,7 @@ static Response handleSearch2Request(const Wt::Http::ParameterMap& request, Data
 static Response handleSearch3Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
 
 // MediaRetrievals
-using MediaRetrivalHandlerFunc = std::function<void(const Wt::Http::Request&, Database::Handler&, Wt::Http::Response& response)>;
+using MediaRetrievalHandlerFunc = std::function<void(const Wt::Http::Request&, Database::Handler&, Wt::Http::Response& response)>;
 void handleStream(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::Response& response);
 void handleGetCoverArt(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::Response& response);
 
@@ -122,7 +122,7 @@ static std::map<std::string, RequestHandlerFunc> requestHandlers
 	{SEARCH3_URL,			handleSearch3Request},
 };
 
-static std::map<std::string, MediaRetrivalHandlerFunc> mediaRetrievalHandlers
+static std::map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
 {
 	{STREAM_URL,			handleStream},
 	{GET_COVER_ART_URL,		handleGetCoverArt},
@@ -257,10 +257,43 @@ SubsonicResource::getPaths()
 	return paths;
 }
 
+static
+std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap)
+{
+	auto censorValue = [](const std::string& type, const std::string& value)
+	{
+		if (type == "p")
+			return std::string {"CENSORED"};
+		else
+			return value;
+	};
+
+	std::string res;
+
+	for (const auto& params : parameterMap)
+	{
+		res += "{" + params.first + "=";
+		if (params.second.size() == 1)
+		{
+			res += censorValue(params.first, params.second.front());
+		}
+		else
+		{
+			res += "{";
+			for (const std::string& param : params.second)
+				res += censorValue(params.first, param) + ",";
+			res += "}";
+		}
+		res += "}, ";
+	}
+
+	return res;
+}
+
 void
 SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response)
 {
-	LMS_LOG(API_SUBSONIC, DEBUG) << "REQUEST " << request.path();
+	LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request '" << request.path() << "', params = " << parameterMapToDebugString(request.getParameterMap());
 
 	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
 

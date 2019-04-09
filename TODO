@@ -32,8 +32,5 @@
 [Settings]
 - Add multi root directories support
 
-[REST API]
-- Make a dedicated REST API. Maybe use the SubSonic API or Ampache API?
-
 [Logs]
 - Capture transcoder log output to get more information on errors?
