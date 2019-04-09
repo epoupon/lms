@@ -31,8 +31,9 @@ namespace Database
 {
 
 Artist::Artist(const std::string& name, const std::string& MBID)
-: _name{std::string(name, 0 , _maxNameLength)},
-_MBID{MBID}
+: _name {std::string(name, 0 , _maxNameLength)},
+_sortName {_name},
+_MBID {MBID}
 {
 
 }
@@ -68,7 +69,7 @@ Artist::getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> offset, b
 	Wt::Dbo::collection<pointer> res = session.find<Artist>()
 		.offset(offset ? static_cast<int>(*offset) : -1)
 		.limit(size ? static_cast<int>(*size) : -1)
-		.orderBy("name COLLATE NOCASE");
+		.orderBy("sort_name COLLATE NOCASE");
 
 	return std::vector<pointer>(res.begin(), res.end());
 }
@@ -111,7 +112,7 @@ getQuery(Wt::Dbo::Session& session,
 	if (!clusterIds.empty())
 		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
 
-	oss << " ORDER BY a.name COLLATE NOCASE";
+	oss << " ORDER BY a.sort_name COLLATE NOCASE";
 
 	Wt::Dbo::Query<Artist::pointer> query = session.query<Artist::pointer>( oss.str() );
 
@@ -253,6 +254,12 @@ Artist::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::si
 		res.push_back(cluster_list.second);
 
 	return res;
+}
+
+void
+Artist::setSortName(const std::string& sortName)
+{
+	_sortName = std::string(sortName, 0 , _maxNameLength);
 }
 
 } // namespace Database

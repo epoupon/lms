@@ -74,7 +74,8 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		// size is the max number of cluster per cluster type
 		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
 
-		void setMBID(std::string mbid) { _MBID = mbid; }
+		void setMBID(const std::string& mbid) { _MBID = mbid; }
+		void setSortName(const std::string& sortName);
 
 		// Create
 		static pointer create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID = "");
@@ -84,6 +85,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 			void persist(Action& a)
 			{
 				Wt::Dbo::field(a, _name, "name");
+				Wt::Dbo::field(a, _name, "sort_name");
 				Wt::Dbo::field(a, _MBID, "mbid");
 
 				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_artist", "", Wt::Dbo::OnDeleteCascade);
@@ -94,6 +96,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static const std::size_t _maxNameLength = 128;
 
 		std::string _name;
+		std::string _sortName;
 		std::string _MBID;	// Musicbrainz Identifier
 
 		Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks; // Tracks of this artist

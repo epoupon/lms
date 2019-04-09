@@ -1,4 +1,4 @@
-bin_PROGRAMS = lms-similarity
+noinst_PROGRAMS = lms-similarity
 
 lms_similarity_SOURCES = \
 	$(srcdir)/LmsSimilarity.cpp			\
