@@ -181,9 +181,20 @@ Handler::getUser(const Wt::Auth::User& authUser)
 }
 
 User::pointer
+Handler::getUser(const std::string& loginName)
+{
+	auto authUser {getUserDatabase().findWithIdentity(Wt::Auth::Identity::LoginName, loginName)};
+	if (!authUser.isValid())
+		return User::pointer {};
+
+	return getUser(authUser);
+}
+
+User::pointer
 Handler::createUser(const Wt::Auth::User& authUser)
 {
-	if (!authUser.isValid()) {
+	if (!authUser.isValid())
+	{
 		LMS_LOG(DB, ERROR) << "Handler::getUser: invalid authUser";
 		return User::pointer();
 	}

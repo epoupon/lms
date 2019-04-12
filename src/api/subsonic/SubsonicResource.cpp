@@ -31,6 +31,7 @@
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
+#include "database/TrackList.hpp"
 #include "main/Services.hpp"
 #include "similarity/SimilaritySearcher.hpp"
 #include "utils/Logger.hpp"
@@ -43,6 +44,8 @@
 
 // Requests
 #define PING_URL 		"/rest/ping.view"
+#define CREATE_PLAYLIST_URL	"/rest/createPlaylist.view"
+#define DELETE_PLAYLIST_URL	"/rest/deletePlaylist.view"
 #define GET_LICENSE_URL		"/rest/getLicense.view"
 #define GET_RANDOM_SONGS_URL	"/rest/getRandomSongs.view"
 #define GET_ALBUM_LIST_URL	"/rest/getAlbumList.view"
@@ -58,49 +61,89 @@
 #define GET_INDEXES_URL		"/rest/getIndexes.view"
 #define GET_STARRED_URL		"/rest/getStarred.view"
 #define GET_STARRED2_URL	"/rest/getStarred2.view"
+#define GET_PLAYLIST_URL	"/rest/getPlaylist.view"
 #define GET_PLAYLISTS_URL	"/rest/getPlaylists.view"
 #define GET_SONGS_BY_GENRE_URL	"/rest/getSongsByGenre.view"
 #define SEARCH2_URL		"/rest/search2.view"
 #define SEARCH3_URL		"/rest/search3.view"
+#define UPDATE_PLAYLIST_URL	"/rest/updatePlaylist.view"
 
 // MediaRetrievals
 #define STREAM_URL		"/rest/stream.view"
 #define GET_COVER_ART_URL	"/rest/getCoverArt.view"
 
+template<>
+boost::optional<API::Subsonic::Id>
+readAs(const std::string& str)
+{
+	return API::Subsonic::IdFromString(str);
+}
+
+template<>
+boost::optional<bool>
+readAs(const std::string& str)
+{
+	if (str == "true")
+		return true;
+	else if (str == "false")
+		return false;
+
+	return {};
+}
+
 namespace API::Subsonic
 {
+struct ClientInfo
+{
+	std::string name;
+	std::string user;
+	std::string password;
+};
+
+struct RequestContext
+{
+	const Wt::Http::ParameterMap& parameters;
+	Database::Handler& db;
+	std::string userName;
+};
 
 // requests
-using RequestHandlerFunc = std::function<Response(const Wt::Http::ParameterMap&, Database::Handler&)>;
-static Response handlePingRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetLicenseRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetRandomSongsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetAlbumListRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetAlbumList2Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetAlbumRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetArtistRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetArtistInfoRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetArtistInfo2Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetArtistsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetMusicFoldersRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetGenresRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetIndexesRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetStarredRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetStarred2Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetPlaylistsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleGetSongsByGenreRequest(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleSearch2Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
-static Response handleSearch3Request(const Wt::Http::ParameterMap& request, Database::Handler& db);
+using RequestHandlerFunc = std::function<Response(RequestContext& context)>;
+static Response handlePingRequest(RequestContext& context);
+static Response handleCreatePlaylistRequest(RequestContext& context);
+static Response handleDeletePlaylistRequest(RequestContext& context);
+static Response handleGetLicenseRequest(RequestContext& context);
+static Response handleGetRandomSongsRequest(RequestContext& context);
+static Response handleGetAlbumListRequest(RequestContext& context);
+static Response handleGetAlbumList2Request(RequestContext& context);
+static Response handleGetAlbumRequest(RequestContext& context);
+static Response handleGetArtistRequest(RequestContext& context);
+static Response handleGetArtistInfoRequest(RequestContext& context);
+static Response handleGetArtistInfo2Request(RequestContext& context);
+static Response handleGetArtistsRequest(RequestContext& context);
+static Response handleGetMusicDirectoryRequest(RequestContext& context);
+static Response handleGetMusicFoldersRequest(RequestContext& context);
+static Response handleGetGenresRequest(RequestContext& context);
+static Response handleGetIndexesRequest(RequestContext& context);
+static Response handleGetStarredRequest(RequestContext& context);
+static Response handleGetStarred2Request(RequestContext& context);
+static Response handleGetPlaylistRequest(RequestContext& context);
+static Response handleGetPlaylistsRequest(RequestContext& context);
+static Response handleGetSongsByGenreRequest(RequestContext& context);
+static Response handleSearch2Request(RequestContext& context);
+static Response handleSearch3Request(RequestContext& context);
+static Response handleUpdatePlaylistRequest(RequestContext& context);
 
 // MediaRetrievals
-using MediaRetrievalHandlerFunc = std::function<void(const Wt::Http::Request&, Database::Handler&, Wt::Http::Response& response)>;
-void handleStream(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::Response& response);
-void handleGetCoverArt(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::Response& response);
+using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, Wt::Http::ResponseContinuation*, Wt::Http::Response& response)>;
+void handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuation, Wt::Http::Response& response);
+void handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation* continuation, Wt::Http::Response& response);
 
 static std::map<std::string, RequestHandlerFunc> requestHandlers
 {
 	{PING_URL,			handlePingRequest},
+	{CREATE_PLAYLIST_URL,		handleCreatePlaylistRequest},
+	{DELETE_PLAYLIST_URL,		handleDeletePlaylistRequest},
 	{GET_LICENSE_URL,		handleGetLicenseRequest},
 	{GET_RANDOM_SONGS_URL,		handleGetRandomSongsRequest},
 	{GET_ALBUM_LIST_URL,		handleGetAlbumListRequest},
@@ -116,10 +159,12 @@ static std::map<std::string, RequestHandlerFunc> requestHandlers
 	{GET_INDEXES_URL,		handleGetIndexesRequest},
 	{GET_STARRED_URL,		handleGetStarredRequest},
 	{GET_STARRED2_URL,		handleGetStarred2Request},
+	{GET_PLAYLIST_URL,		handleGetPlaylistRequest},
 	{GET_PLAYLISTS_URL,		handleGetPlaylistsRequest},
 	{GET_SONGS_BY_GENRE_URL,	handleGetSongsByGenreRequest},
 	{SEARCH2_URL,			handleSearch2Request},
 	{SEARCH3_URL,			handleSearch3Request},
+	{UPDATE_PLAYLIST_URL,		handleUpdatePlaylistRequest},
 };
 
 static std::map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
@@ -136,48 +181,51 @@ makeNameFilesystemCompatible(const std::string& name)
 }
 
 template<typename T>
+std::vector<T>
+getMultiParametersAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
+{
+	std::vector<T> res;
+
+	auto it = parameterMap.find(param);
+	if (it == parameterMap.end())
+		return res;
+
+	for (const std::string& param : it->second)
+	{
+		auto val {readAs<T>(param)};
+		if (!val)
+		{
+			res.clear();
+			return res;
+		}
+
+		res.emplace_back(std::move(*val));
+	}
+
+	return res;
+}
+
+template<typename T>
+std::vector<T>
+getMandatoryMultiParametersAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
+{
+	std::vector<T> res {getMultiParametersAs<T>(parameterMap, param)};
+	if (res.empty())
+		throw Error {Error::Code::RequiredParameterMissing};
+
+	return res;
+}
+
+template<typename T>
 boost::optional<T>
 getParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
 {
-	boost::optional<T> res;
+	std::vector<T> params {getMultiParametersAs<T>(parameterMap, param)};
 
-	auto it = parameterMap.find(param);
-	if (it == parameterMap.end())
-		return res;
+	if (params.size() != 1)
+		return {};
 
-	if (it->second.size() != 1)
-		return res;
-
-	return readAs<T>(it->second.front());
-}
-
-template<>
-boost::optional<std::string>
-getParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
-{
-	boost::optional<std::string> res;
-
-	auto it = parameterMap.find(param);
-	if (it == parameterMap.end())
-		return res;
-
-	if (it->second.size() != 1)
-		return res;
-
-	return it->second.front();
-}
-
-template<>
-boost::optional<Id>
-getParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
-{
-	boost::optional<Id> res;
-
-	auto idParam {getParameterAs<std::string>(parameterMap, "id")};
-	if (!idParam)
-		return res;
-
-	return IdFromString(*idParam);
+	return T { std::move(params.front()) };
 }
 
 template<typename T>
@@ -190,13 +238,6 @@ getMandatoryParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::s
 
 	return *res;
 }
-
-struct ClientInfo
-{
-	std::string		name;
-	std::string		user;
-	std::string		password;
-};
 
 ClientInfo
 getClientInfo(const Wt::Http::ParameterMap& parameters)
@@ -311,10 +352,12 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		if (!checkPassword(_db, clientInfo))
 			throw Error {Error::Code::WrongUsernameOrPassword};
 
+		RequestContext requestContext {.parameters = parameters, .db = _db, .userName = clientInfo.user};
+
 		auto itHandler {requestHandlers.find(request.path())};
 		if (itHandler != requestHandlers.end())
 		{
-			Response resp {(itHandler->second)(request.getParameterMap(), _db)};
+			Response resp {(itHandler->second)(requestContext)};
 			resp.write(response.out(), format);
 			response.setMimeType(ResponseFormatToMimeType(format));
 			return;
@@ -323,7 +366,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		auto itStreamHandler {mediaRetrievalHandlers.find(request.path())};
 		if (itStreamHandler != mediaRetrievalHandlers.end())
 		{
-			itStreamHandler->second(request, _db, response);
+			itStreamHandler->second(requestContext, request.continuation(), response);
 			return;
 		}
 
@@ -536,13 +579,94 @@ clusterToResponseNode(const Database::Cluster::pointer& cluster)
 
 // Handlers
 Response
-handlePingRequest(const Wt::Http::ParameterMap &parameters, Database::Handler& handler)
+handlePingRequest(RequestContext& context)
 {
 	return Response::createOkResponse();
 }
 
 Response
-handleGetLicenseRequest(const Wt::Http::ParameterMap &parameters, Database::Handler& handler)
+handleCreatePlaylistRequest(RequestContext& context)
+{
+	// Optional params
+	auto id {getParameterAs<Id>(context.parameters, "playlistId")};
+	if (id && id->type != Id::Type::Playlist)
+		throw Error {Error::CustomType::BadId};
+
+	auto name {getParameterAs<std::string>(context.parameters, "name")};
+
+	std::vector<Id> trackIds {getMultiParametersAs<Id>(context.parameters, "songId")};
+	if (!std::all_of(std::cbegin(trackIds), std::cend(trackIds ), [](const Id& id) { return id.type == Id::Type::Track; }))
+		throw Error {Error::CustomType::BadId};
+
+	if (!name && !id)
+		throw Error {Error::Code::RequiredParameterMissing};
+
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
+
+	Database::User::pointer user {context.db.getUser(context.userName)};
+	if (!user)
+		throw Error {Error::Code::RequestedDataNotFound};
+
+	Database::TrackList::pointer tracklist;
+	if (id)
+	{
+		tracklist = Database::TrackList::getById(context.db.getSession(), id->value);
+		if (!tracklist
+			|| tracklist->getUser() != user
+			|| tracklist->getType() != Database::TrackList::Type::Playlist)
+		{
+			throw Error {Error::Code::RequestedDataNotFound};
+		}
+
+		if (name)
+			tracklist.modify()->setName(*name);
+	}
+	else
+	{
+		tracklist = Database::TrackList::create(context.db.getSession(), *name, Database::TrackList::Type::Playlist, false, user);
+	}
+
+	for (const Id& trackId : trackIds)
+	{
+		Database::Track::pointer track {Database::Track::getById(context.db.getSession(), trackId.value)};
+		if (!track)
+			continue;
+
+		Database::TrackListEntry::create(context.db.getSession(), track, tracklist );
+	}
+
+	return Response::createOkResponse();
+}
+
+Response
+handleDeletePlaylistRequest(RequestContext& context)
+{
+	// Optional params
+	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
+	if (id.type != Id::Type::Playlist)
+		throw Error {Error::CustomType::BadId};
+
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
+
+	Database::User::pointer user {context.db.getUser(context.userName)};
+	if (!user)
+		throw Error {Error::Code::RequestedDataNotFound};
+
+	Database::TrackList::pointer tracklist {Database::TrackList::getById(context.db.getSession(), id.value)};
+	if (!tracklist
+		|| tracklist->getUser() != user
+		|| tracklist->getType() != Database::TrackList::Type::Playlist)
+	{
+		throw Error {Error::Code::RequestedDataNotFound};
+	}
+
+	tracklist.remove();
+
+	return Response::createOkResponse();
+}
+
+Response
+handleGetLicenseRequest(RequestContext& context)
 {
 	Response response {Response::createOkResponse()};
 
@@ -555,15 +679,15 @@ handleGetLicenseRequest(const Wt::Http::ParameterMap &parameters, Database::Hand
 }
 
 Response
-handleGetRandomSongsRequest(const Wt::Http::ParameterMap& parameters, Database::Handler& db)
+handleGetRandomSongsRequest(RequestContext& context)
 {
 	// Optional params
-	std::size_t size {getParameterAs<std::size_t>(parameters, "size").get_value_or(50)};
+	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").get_value_or(50)};
 	size = std::min(size, std::size_t {500});
 
-	Wt::Dbo::Transaction transaction {db.getSession()};
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-	auto tracks {Database::Track::getAllRandom(db.getSession(), size)};
+	auto tracks {Database::Track::getAllRandom(context.db.getSession(), size)};
 
 	Response response {Response::createOkResponse()};
 
@@ -609,45 +733,45 @@ std::vector<Database::Release::pointer> getRandomAlbums(Wt::Dbo::Session& sessio
 
 static
 Response
-handleGetAlbumListRequestCommon(const Wt::Http::ParameterMap& request, Database::Handler& db, bool id3)
+handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 {
 	// Mandatory params
-	std::string type {getMandatoryParameterAs<std::string>(request, "type")};
+	std::string type {getMandatoryParameterAs<std::string>(context.parameters, "type")};
 
 	// Optional params
-	std::size_t size {getParameterAs<std::size_t>(request, "size").get_value_or(10)};
-	std::size_t offset {getParameterAs<std::size_t>(request, "offset").get_value_or(0)};
+	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").get_value_or(10)};
+	std::size_t offset {getParameterAs<std::size_t>(context.parameters, "offset").get_value_or(0)};
 
 	std::vector<Database::Release::pointer> releases;
 
-	Wt::Dbo::Transaction transaction {db.getSession()};
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
 	if (type == "random")
 	{
-		releases = getRandomAlbums(db.getSession(), offset, size);
+		releases = getRandomAlbums(context.db.getSession(), offset, size);
 	}
 	else if (type == "newest")
 	{
 		auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-6)};
-		releases = Database::Release::getLastAdded(db.getSession(), after, offset, size);
+		releases = Database::Release::getLastAdded(context.db.getSession(), after, offset, size);
 	}
 	else if (type == "alphabeticalByName")
 	{
-		releases = Database::Release::getAll(db.getSession(), offset, size);
+		releases = Database::Release::getAll(context.db.getSession(), offset, size);
 	}
 	else if (type == "byGenre")
 	{
 		// Mandatory param
-		std::string genre {getMandatoryParameterAs<std::string>(request, "genre")};
+		std::string genre {getMandatoryParameterAs<std::string>(context.parameters, "genre")};
 
-		Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(db.getSession(), CLUSTER_TYPE_GENRE)};
+		Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(context.db.getSession(), CLUSTER_TYPE_GENRE)};
 		if (clusterType)
 		{
 			Database::Cluster::pointer cluster {clusterType->getCluster(genre)};
 			if (cluster)
 			{
 				bool more;
-				releases = Database::Release::getByFilter(db.getSession(), {cluster.id()}, {}, offset, size, more);
+				releases = Database::Release::getByFilter(context.db.getSession(), {cluster.id()}, {}, offset, size, more);
 			}
 		}
 	}
@@ -664,29 +788,29 @@ handleGetAlbumListRequestCommon(const Wt::Http::ParameterMap& request, Database:
 }
 
 Response
-handleGetAlbumListRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetAlbumListRequest(RequestContext& context)
 {
-	return handleGetAlbumListRequestCommon(request, db, false /* no id3 */);
+	return handleGetAlbumListRequestCommon(context, false /* no id3 */);
 }
 
 Response
-handleGetAlbumList2Request(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetAlbumList2Request(RequestContext& context)
 {
-	return handleGetAlbumListRequestCommon(request, db, true /* id3 */);
+	return handleGetAlbumListRequestCommon(context, true /* id3 */);
 }
 
 Response
-handleGetAlbumRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetAlbumRequest(RequestContext& context)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(request, "id")};
+	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 
 	if (id.type != Id::Type::Release)
 		throw Error {Error::CustomType::BadId};
 
-	Wt::Dbo::Transaction transaction {db.getSession()};
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-	Database::Release::pointer release {Database::Release::getById(db.getSession(), id.value)};
+	Database::Release::pointer release {Database::Release::getById(context.db.getSession(), id.value)};
 	if (!release)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -703,17 +827,17 @@ handleGetAlbumRequest(const Wt::Http::ParameterMap& request, Database::Handler& 
 }
 
 Response
-handleGetArtistRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetArtistRequest(RequestContext& context)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(request, "id")};
+	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 
 	if (id.type != Id::Type::Artist)
 		throw Error {Error::CustomType::BadId};
 
-	Wt::Dbo::Transaction transaction {db.getSession()};
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-	Database::Artist::pointer artist {Database::Artist::getById(db.getSession(), id.value)};
+	Database::Artist::pointer artist {Database::Artist::getById(context.db.getSession(), id.value)};
 	if (!artist)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -731,19 +855,19 @@ handleGetArtistRequest(const Wt::Http::ParameterMap& request, Database::Handler&
 
 static
 
-Response handleGetArtistInfoRequestCommon(const Wt::Http::ParameterMap& request, Database::Handler& db, bool id3)
+Response handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(request, "id")};
+	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 	if (id.type != Id::Type::Artist)
 		throw Error {Error::CustomType::BadId};
 
 	// Optional params
-	std::size_t count {getParameterAs<std::size_t>(request, "count").get_value_or(10)};
+	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").get_value_or(10)};
 
-	Wt::Dbo::Transaction transaction {db.getSession()};
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-	Database::Artist::pointer artist {Database::Artist::getById(db.getSession(), id.value)};
+	Database::Artist::pointer artist {Database::Artist::getById(context.db.getSession(), id.value)};
 	if (!artist)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -753,10 +877,10 @@ Response handleGetArtistInfoRequestCommon(const Wt::Http::ParameterMap& request,
 	if (!artist->getMBID().empty())
 		artistInfoNode.createChild("musicBrainzId").setValue(artist->getMBID());
 
-	auto similarArtistsId {getServices().similaritySearcher->getSimilarArtists(db.getSession(), artist.id(), count)};
+	auto similarArtistsId {getServices().similaritySearcher->getSimilarArtists(context.db.getSession(), artist.id(), count)};
 	for ( const auto& similarArtistId : similarArtistsId )
 	{
-		Database::Artist::pointer similarArtist {Database::Artist::getById(db.getSession(), similarArtistId)};
+		Database::Artist::pointer similarArtist {Database::Artist::getById(context.db.getSession(), similarArtistId)};
 
 		if (similarArtist)
 			artistInfoNode.addArrayChild("similarArtist", artistToResponseNode(similarArtist, id3));
@@ -765,17 +889,17 @@ Response handleGetArtistInfoRequestCommon(const Wt::Http::ParameterMap& request,
 	return response;
 }
 
-Response handleGetArtistInfoRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+Response handleGetArtistInfoRequest(RequestContext& context)
 {
-	return handleGetArtistInfoRequestCommon(request, db, false /* no id3 */);
+	return handleGetArtistInfoRequestCommon(context, false /* no id3 */);
 }
-static Response handleGetArtistInfo2Request(const Wt::Http::ParameterMap& request, Database::Handler& db)
+static Response handleGetArtistInfo2Request(RequestContext& context)
 {
-	return handleGetArtistInfoRequestCommon(request, db, true /* id3 */);
+	return handleGetArtistInfoRequestCommon(context, true /* id3 */);
 }
 
 Response
-handleGetArtistsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetArtistsRequest(RequestContext& context)
 {
 	Response response {Response::createOkResponse()};
 	Response::Node& artistsNode {response.createNode("artists")};
@@ -783,9 +907,9 @@ handleGetArtistsRequest(const Wt::Http::ParameterMap& request, Database::Handler
 	Response::Node& indexNode {artistsNode.createArrayChild("index")};
 	indexNode.setAttribute("name", "?");
 
-	Wt::Dbo::Transaction transaction {db.getSession()};
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-	auto artists {Database::Artist::getAll(db.getSession())};
+	auto artists {Database::Artist::getAll(context.db.getSession())};
 	for (const Database::Artist::pointer& artist : artists)
 		indexNode.addArrayChild("artist", artistToResponseNode(artist, true /* id3 */));
 
@@ -794,10 +918,10 @@ handleGetArtistsRequest(const Wt::Http::ParameterMap& request, Database::Handler
 
 
 Response
-handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetMusicDirectoryRequest(RequestContext& context)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(request, "id")};
+	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 
 	Response response {Response::createOkResponse()};
 	Response::Node& directoryNode {response.createNode("directory")};
@@ -808,11 +932,11 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 	{
 		case Id::Type::Root:
 		{
-			Wt::Dbo::Transaction transaction {db.getSession()};
+			Wt::Dbo::Transaction transaction {context.db.getSession()};
 
 			directoryNode.setAttribute("name", "Music");
 
-			auto artists {Database::Artist::getAll(db.getSession())};
+			auto artists {Database::Artist::getAll(context.db.getSession())};
 			for (const Database::Artist::pointer& artist : artists)
 				directoryNode.addArrayChild("child", artistToResponseNode(artist, false /* no id3 */));
 
@@ -821,9 +945,9 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 
 		case Id::Type::Artist:
 		{
-			Wt::Dbo::Transaction transaction {db.getSession()};
+			Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-			auto artist {Database::Artist::getById(db.getSession(), id.value)};
+			auto artist {Database::Artist::getById(context.db.getSession(), id.value)};
 			if (!artist)
 				throw Error {Error::Code::RequestedDataNotFound};
 
@@ -838,9 +962,9 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 
 		case Id::Type::Release:
 		{
-			Wt::Dbo::Transaction transaction {db.getSession()};
+			Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-			auto release {Database::Release::getById(db.getSession(), id.value)};
+			auto release {Database::Release::getById(context.db.getSession(), id.value)};
 			if (!release)
 				throw Error {Error::Code::RequestedDataNotFound};
 
@@ -861,7 +985,7 @@ handleGetMusicDirectoryRequest(const Wt::Http::ParameterMap& request, Database::
 }
 
 Response
-handleGetMusicFoldersRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetMusicFoldersRequest(RequestContext& context)
 {
 	Response response {Response::createOkResponse()};
 	Response::Node& musicFoldersNode {response.createNode("musicFolders")};
@@ -874,15 +998,15 @@ handleGetMusicFoldersRequest(const Wt::Http::ParameterMap& request, Database::Ha
 }
 
 Response
-handleGetGenresRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetGenresRequest(RequestContext& context)
 {
 	Response response {Response::createOkResponse()};
 
 	Response::Node& genresNode {response.createNode("genres")};
 
-	Wt::Dbo::Transaction transaction {db.getSession()};
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-	auto clusterType {Database::ClusterType::getByName(db.getSession(), CLUSTER_TYPE_GENRE)};
+	auto clusterType {Database::ClusterType::getByName(context.db.getSession(), CLUSTER_TYPE_GENRE)};
 	if (clusterType)
 	{
 		auto clusters {clusterType->getClusters()};
@@ -895,7 +1019,7 @@ handleGetGenresRequest(const Wt::Http::ParameterMap& request, Database::Handler&
 }
 
 Response
-handleGetIndexesRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetIndexesRequest(RequestContext& context)
 {
 	Response response {Response::createOkResponse()};
 	Response::Node& artistsNode {response.createNode("indexes")};
@@ -903,9 +1027,9 @@ handleGetIndexesRequest(const Wt::Http::ParameterMap& request, Database::Handler
 	Response::Node& indexNode {artistsNode.createArrayChild("index")};
 	indexNode.setAttribute("name", "?");
 
-	Wt::Dbo::Transaction transaction {db.getSession()};
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-	auto artists {Database::Artist::getAll(db.getSession())};
+	auto artists {Database::Artist::getAll(context.db.getSession())};
 	for (const Database::Artist::pointer& artist : artists)
 		indexNode.addArrayChild("artist", artistToResponseNode(artist, false /* no id3 */));
 
@@ -914,44 +1038,109 @@ handleGetIndexesRequest(const Wt::Http::ParameterMap& request, Database::Handler
 
 
 Response
-handleGetStarredRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetStarredRequest(RequestContext& context)
 {
 	throw Error{Error::CustomType::NotImplemented};
 }
 
 Response
-handleGetStarred2Request(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetStarred2Request(RequestContext& context)
 {
 	throw Error{Error::CustomType::NotImplemented};
 }
 
-Response
-handleGetPlaylistsRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+Response::Node
+tracklistToResponseNode(const Database::TrackList::pointer& tracklist, Database::Handler& db)
 {
-	throw Error{Error::CustomType::NotImplemented};
+	Response::Node playlistNode;
+
+	playlistNode.setAttribute("id", IdToString({Id::Type::Playlist, tracklist.id()}));
+	playlistNode.setAttribute("name", tracklist->getName());
+	playlistNode.setAttribute("songCount", std::to_string(tracklist->getCount()));
+	playlistNode.setAttribute("duration", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(tracklist->getDuration()).count()));
+	playlistNode.setAttribute("public", tracklist->isPublic() ? "true" : "false");
+	playlistNode.setAttribute("created", "");
+	{
+		std::string userId {std::to_string(tracklist->getUser().id())};
+
+		Wt::Auth::User authUser { db.getUserDatabase().findWithId(userId)};
+		if (!authUser.isValid())
+			throw Error {Error::CustomType::InternalError};
+
+		playlistNode.setAttribute("owner", authUser.identity(Wt::Auth::Identity::LoginName).toUTF8());
+	}
+
+	return playlistNode;
 }
 
 Response
-handleGetSongsByGenreRequest(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleGetPlaylistRequest(RequestContext& context)
 {
 	// Mandatory params
-	auto genre {getParameterAs<std::string>(request, "genre")};
-	if (!genre)
-		throw Error {Error::Code::RequiredParameterMissing};
+	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
+	if (id.type != Id::Type::Playlist)
+		throw Error {Error::CustomType::BadId};
+
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
+
+	Database::User::pointer user {context.db.getUser(context.userName)};
+	if (!user)
+		throw Error {Error::Code::RequestedDataNotFound};
+
+	Database::TrackList::pointer tracklist {Database::TrackList::getById(context.db.getSession(), id.value)};
+	if (!tracklist)
+		throw Error {Error::Code::RequestedDataNotFound};
+
+	Response response {Response::createOkResponse()};
+	Response::Node playlistNode {tracklistToResponseNode(tracklist, context.db)};
+
+	auto entries {tracklist->getEntries()};
+	for (const Database::TrackListEntry::pointer& entry : entries)
+		playlistNode.addArrayChild("entry", trackToResponseNode(entry->getTrack()));
+
+	response.addNode("playlist", playlistNode );
+
+	return response;
+}
+
+Response
+handleGetPlaylistsRequest(RequestContext& context)
+{
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
+
+	Database::User::pointer user {context.db.getUser(context.userName)};
+	if (!user)
+		throw Error {Error::Code::RequestedDataNotFound};
+
+	Response response {Response::createOkResponse()};
+	Response::Node& playlistsNode {response.createNode("playlists")};
+
+	auto tracklists {Database::TrackList::getAll(context.db.getSession(), user, Database::TrackList::Type::Playlist)};
+	for (const Database::TrackList::pointer& tracklist : tracklists)
+		playlistsNode.addArrayChild("playlist", tracklistToResponseNode(tracklist, context.db));
+
+	return response;
+}
+
+Response
+handleGetSongsByGenreRequest(RequestContext& context)
+{
+	// Mandatory params
+	std::string genre {getMandatoryParameterAs<std::string>(context.parameters, "genre")};
 
 	// Optional params
-	std::size_t size {getParameterAs<std::size_t>(request, "count").get_value_or(10)};
+	std::size_t size {getParameterAs<std::size_t>(context.parameters, "count").get_value_or(10)};
 	size = std::min(size, std::size_t {500});
 
-	std::size_t offset {getParameterAs<std::size_t>(request, "offset").get_value_or(0)};
+	std::size_t offset {getParameterAs<std::size_t>(context.parameters, "offset").get_value_or(0)};
 
-	Wt::Dbo::Transaction transaction {db.getSession()};
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-	auto clusterType {Database::ClusterType::getByName(db.getSession(), CLUSTER_TYPE_GENRE)};
+	auto clusterType {Database::ClusterType::getByName(context.db.getSession(), CLUSTER_TYPE_GENRE)};
 	if (!clusterType)
 		throw Error {Error::Code::RequestedDataNotFound};
 
-	auto cluster {clusterType->getCluster(*genre)};
+	auto cluster {clusterType->getCluster(genre)};
 	if (!cluster)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -959,7 +1148,7 @@ handleGetSongsByGenreRequest(const Wt::Http::ParameterMap& request, Database::Ha
 	Response::Node& songsByGenreNode {response.createNode("songsByGenre")};
 
 	bool more;
-	auto tracks {Database::Track::getByFilter(db.getSession(), {cluster.id()}, {}, offset, size, more)};
+	auto tracks {Database::Track::getByFilter(context.db.getSession(), {cluster.id()}, {}, offset, size, more)};
 	for (const Database::Track::pointer& track : tracks)
 		songsByGenreNode.addArrayChild("song", trackToResponseNode(track));
 
@@ -967,43 +1156,41 @@ handleGetSongsByGenreRequest(const Wt::Http::ParameterMap& request, Database::Ha
 }
 
 Response
-handleSearchRequestCommon(const Wt::Http::ParameterMap& request, Database::Handler& db, bool id3)
+handleSearchRequestCommon(RequestContext& context, bool id3)
 {
 	// Mandatory params
-	auto query {getParameterAs<std::string>(request, "query")};
-	if (!query)
-		throw Error {Error::Code::RequiredParameterMissing};
+	std::string query {getMandatoryParameterAs<std::string>(context.parameters, "query")};
 
-	std::vector<std::string> keywords {splitString(*query, " ")};
+	std::vector<std::string> keywords {splitString(query, " ")};
 
 	// Optional params
-	std::size_t artistCount {getParameterAs<std::size_t>(request, "artistCount").get_value_or(20)};
-	std::size_t artistOffset {getParameterAs<std::size_t>(request, "artistOffset").get_value_or(0)};
-	std::size_t albumCount {getParameterAs<std::size_t>(request, "albumCount").get_value_or(20)};
-	std::size_t albumOffset {getParameterAs<std::size_t>(request, "albumOffset").get_value_or(0)};
-	std::size_t songCount {getParameterAs<std::size_t>(request, "songCount").get_value_or(20)};
-	std::size_t songOffset {getParameterAs<std::size_t>(request, "songOffset").get_value_or(0)};
+	std::size_t artistCount {getParameterAs<std::size_t>(context.parameters, "artistCount").get_value_or(20)};
+	std::size_t artistOffset {getParameterAs<std::size_t>(context.parameters, "artistOffset").get_value_or(0)};
+	std::size_t albumCount {getParameterAs<std::size_t>(context.parameters, "albumCount").get_value_or(20)};
+	std::size_t albumOffset {getParameterAs<std::size_t>(context.parameters, "albumOffset").get_value_or(0)};
+	std::size_t songCount {getParameterAs<std::size_t>(context.parameters, "songCount").get_value_or(20)};
+	std::size_t songOffset {getParameterAs<std::size_t>(context.parameters, "songOffset").get_value_or(0)};
 
-	Wt::Dbo::Transaction transaction {db.getSession()};
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
 	Response response {Response::createOkResponse()};
 	Response::Node& searchResult2Node {response.createNode(id3 ? "searchResult3" : "searchResult2")};
 
 	bool more;
 	{
-		auto artists {Database::Artist::getByFilter(db.getSession(), {}, keywords, artistOffset, artistCount, more)};
+		auto artists {Database::Artist::getByFilter(context.db.getSession(), {}, keywords, artistOffset, artistCount, more)};
 		for (const Database::Artist::pointer& artist : artists)
 			searchResult2Node.addArrayChild("artist", artistToResponseNode(artist, id3));
 	}
 
 	{
-		auto releases {Database::Release::getByFilter(db.getSession(), {}, keywords, albumOffset, albumCount, more)};
+		auto releases {Database::Release::getByFilter(context.db.getSession(), {}, keywords, albumOffset, albumCount, more)};
 		for (const Database::Release::pointer& release : releases)
 			searchResult2Node.addArrayChild("album", releaseToResponseNode(release, id3));
 	}
 
 	{
-		auto tracks {Database::Track::getByFilter(db.getSession(), {}, keywords, songOffset, songCount, more)};
+		auto tracks {Database::Track::getByFilter(context.db.getSession(), {}, keywords, songOffset, songCount, more)};
 		for (const Database::Track::pointer& track : tracks)
 			searchResult2Node.addArrayChild("song", trackToResponseNode(track));
 	}
@@ -1012,34 +1199,107 @@ handleSearchRequestCommon(const Wt::Http::ParameterMap& request, Database::Handl
 }
 
 Response
-handleSearch2Request(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleSearch2Request(RequestContext& context)
 {
-	return handleSearchRequestCommon(request, db, false /* no id3 */);
+	return handleSearchRequestCommon(context, false /* no id3 */);
 }
 
 Response
-handleSearch3Request(const Wt::Http::ParameterMap& request, Database::Handler& db)
+handleSearch3Request(RequestContext& context)
 {
-	return handleSearchRequestCommon(request, db, true /* id3 */);
+	return handleSearchRequestCommon(context, true /* id3 */);
 }
 
+Response
+handleUpdatePlaylistRequest(RequestContext& context)
+{
+	// Mandatory params
+	Id id {getMandatoryParameterAs<Id>(context.parameters, "playlistId")};
+	if (id.type != Id::Type::Playlist)
+		throw Error {Error::CustomType::BadId};
+
+	// Optional parameters
+	auto name {getParameterAs<std::string>(context.parameters, "name")};
+	auto isPublic {getParameterAs<bool>(context.parameters, "public")};
+
+	std::vector<Id> trackIdsToAdd {getMultiParametersAs<Id>(context.parameters, "songIdToAdd")};
+	if (!std::all_of(std::cbegin(trackIdsToAdd), std::cend(trackIdsToAdd), [](const Id& id) { return id.type == Id::Type::Track; }))
+		throw Error {Error::CustomType::BadId};
+
+	std::vector<Id> trackIdsToRemove {getMultiParametersAs<Id>(context.parameters, "songIdToRemove")};
+	if (!std::all_of(std::cbegin(trackIdsToRemove), std::cend(trackIdsToRemove), [](const Id& id) { return id.type == Id::Type::Track; }))
+		throw Error {Error::CustomType::BadId};
+
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
+
+	Database::User::pointer user {context.db.getUser(context.userName)};
+	if (!user)
+		throw Error {Error::Code::RequestedDataNotFound};
+
+	Database::TrackList::pointer tracklist {Database::TrackList::getById(context.db.getSession(), id.value)};
+	if (!tracklist
+		|| tracklist->getUser() != user
+		|| tracklist->getType() != Database::TrackList::Type::Playlist)
+	{
+		throw Error {Error::Code::RequestedDataNotFound};
+	}
+
+	if (name)
+		tracklist.modify()->setName(*name);
+
+	if (isPublic)
+		tracklist.modify()->setIsPublic(*isPublic);
+
+	// Remove tracks (remove all the instances found, since it is not position based)
+	{
+		auto entries {tracklist->getEntries()};
+
+		for (const Id& trackIdToRemove : trackIdsToRemove)
+		{
+			auto it {std::remove_if(std::begin(entries), std::end(entries), [&trackIdToRemove](const auto& entry)
+					{
+						return entry->getTrack().id() == trackIdToRemove.value;
+					})};
+
+			std::for_each(it, std::end(entries), [](auto entry)
+					{
+						entry.remove();
+					});
+
+			entries.erase(it, std::end(entries));
+		}
+
+	}
+
+	// Add tracks
+	for (const Id& trackIdToAdd : trackIdsToAdd)
+	{
+		Database::Track::pointer track {Database::Track::getById(context.db.getSession(), trackIdToAdd.value)};
+		if (!track)
+			continue;
+
+		Database::TrackListEntry::create(context.db.getSession(), track, tracklist );
+	}
+
+	return Response::createOkResponse();
+}
 
 static
 std::shared_ptr<Av::Transcoder>
-createTranscoder(const Wt::Http::ParameterMap& request, Database::Handler& db)
+createTranscoder(RequestContext& context)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(request, "id")};
+	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 
 	// Optional params
-	std::size_t maxBitRate {getParameterAs<std::size_t>(request, "maxBitRate").get_value_or(128)};
+	std::size_t maxBitRate {getParameterAs<std::size_t>(context.parameters, "maxBitRate").get_value_or(128)};
 	maxBitRate = clamp(maxBitRate, std::size_t {48}, std::size_t {320});
 
 	boost::filesystem::path trackPath;
 	{
-		Wt::Dbo::Transaction transaction {db.getSession()};
+		Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-		auto track {Database::Track::getById(db.getSession(), id.value)};
+		auto track {Database::Track::getById(context.db.getSession(), id.value)};
 		if (!track)
 			throw Error {Error::Code::RequestedDataNotFound};
 
@@ -1056,15 +1316,14 @@ createTranscoder(const Wt::Http::ParameterMap& request, Database::Handler& db)
 }
 
 void
-handleStream(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::Response& response)
+handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuation, Wt::Http::Response& response)
 {
 	// TODO store only weak ptrs and use a ring container to store shared_ptr?
 	std::shared_ptr<Av::Transcoder> transcoder;
 
-	Wt::Http::ResponseContinuation* continuation {request.continuation()};
 	if (!continuation)
 	{
-		transcoder = createTranscoder(request.getParameterMap(), db);
+		transcoder = createTranscoder(context);
 		response.setMimeType(Av::encodingToMimetype(Av::Encoding::MP3));
 		transcoder->start();
 	}
@@ -1102,25 +1361,23 @@ handleStream(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::
 }
 
 void
-handleGetCoverArt(const Wt::Http::Request& request, Database::Handler& db, Wt::Http::Response& response)
+handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation* continuation, Wt::Http::Response& response)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(request.getParameterMap(), "id")};
+	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 
-	auto size {getParameterAs<std::size_t>(request.getParameterMap(), "size")};
-	if (!size)
-		size = 256;
+	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").get_value_or(256)};
 
-	*size = clamp(*size, std::size_t {32}, std::size_t {1024});
+	size = clamp(size, std::size_t {32}, std::size_t {1024});
 
 	std::vector<uint8_t> cover;
 	switch (id.type)
 	{
 		case Id::Type::Track:
-			cover = getServices().coverArtGrabber->getFromTrack(db.getSession(), id.value, Image::Format::JPEG, *size);
+			cover = getServices().coverArtGrabber->getFromTrack(context.db.getSession(), id.value, Image::Format::JPEG, size);
 			break;
 		case Id::Type::Release:
-			cover = getServices().coverArtGrabber->getFromRelease(db.getSession(), id.value, Image::Format::JPEG, *size);
+			cover = getServices().coverArtGrabber->getFromRelease(context.db.getSession(), id.value, Image::Format::JPEG, size);
 			break;
 		default:
 			throw Error {Error::CustomType::BadId};

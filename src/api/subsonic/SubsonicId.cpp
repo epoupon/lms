@@ -41,12 +41,14 @@ IdFromString(const std::string& id)
 	Id res;
 
 	std::string type {std::move(values[0])};
-	if (type == "artist")
+	if (type == "ar")
 		res.type = Id::Type::Artist;
-	else if (type == "album")
+	else if (type == "al")
 		res.type = Id::Type::Release;
-	else if (type == "track")
+	else if (type == "tr")
 		res.type = Id::Type::Track;
+	else if (type == "pl")
+		res.type = Id::Type::Playlist;
 	else
 	{
 		LMS_LOG(API_SUBSONIC, ERROR) << "Bad id format";
@@ -75,13 +77,16 @@ IdToString(const Id& id)
 		case Id::Type::Root:
 			return "root";
 		case Id::Type::Artist:
-			res = "artist-";
+			res = "ar-";
 			break;
 		case Id::Type::Release:
-			res = "album-";
+			res = "al-";
 			break;
 		case Id::Type::Track:
-			res = "track-";
+			res = "tr-";
+			break;
+		case Id::Type::Playlist:
+			res = "pl-";
 			break;
 	}
 

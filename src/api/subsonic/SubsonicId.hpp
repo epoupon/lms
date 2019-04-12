@@ -32,6 +32,7 @@ struct Id
 		Track,
 		Release,
 		Artist,
+		Playlist,
 	};
 
 	Type 			type;

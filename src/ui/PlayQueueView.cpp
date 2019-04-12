@@ -145,14 +145,15 @@ PlayQueue::updateRadioBtn()
 Database::TrackList::pointer
 PlayQueue::getTrackList()
 {
-	static const std::string currentPlayQueueName = "__current__playqueue__";
 	Database::TrackList::pointer res;
 
 	if (LmsApp->getUser()->isDemo())
 	{
+		static const std::string currentPlayQueueName = "__current__playqueue__";
+
 		if (!_tracklistId)
 		{
-			res = Database::TrackList::create(LmsApp->getDboSession(), currentPlayQueueName, false, LmsApp->getUser());
+			res = Database::TrackList::create(LmsApp->getDboSession(), currentPlayQueueName, Database::TrackList::Type::Internal, false, LmsApp->getUser());
 			LmsApp->getDboSession().flush();
 			_tracklistId = res.id();
 			return res;

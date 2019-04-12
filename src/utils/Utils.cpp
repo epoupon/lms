@@ -54,6 +54,13 @@ bool readList(const std::string& str, const std::string& separators, std::list<s
 	return !str.empty();
 }
 
+template<>
+boost::optional<std::string>
+readAs(const std::string& str)
+{
+	return str;
+}
+
 std::vector<std::string>
 splitString(const std::string& string, const std::string& separators)
 {

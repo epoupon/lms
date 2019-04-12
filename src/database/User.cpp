@@ -101,9 +101,9 @@ User::getPlayedTrackList() const
 	assert(IdIsValid(self()->id()));
 	assert(session());
 
-	auto res = TrackList::get(*session(), listName, self());
+	auto res = TrackList::get(*session(), listName, TrackList::Type::Internal, self());
 	if (!res)
-		res = TrackList::create(*session(), listName, false, self());
+		res = TrackList::create(*session(), listName, TrackList::Type::Internal, false, self());
 
 	return res;
 }
@@ -117,9 +117,9 @@ User::getQueuedTrackList() const
 	assert(IdIsValid(self()->id()));
 	assert(session());
 
-	auto res = TrackList::get(*session(), listName, self());
+	auto res = TrackList::get(*session(), listName, TrackList::Type::Internal, self());
 	if (!res)
-		res = TrackList::create(*session(), listName, false, self());
+		res = TrackList::create(*session(), listName, TrackList::Type::Internal, false, self());
 
 	return res;
 }

@@ -31,26 +31,21 @@
 
 namespace Database {
 
-TrackList::TrackList()
-: _isPublic(false)
-{
-
-}
-
-TrackList::TrackList(std::string name, bool isPublic, Wt::Dbo::ptr<User> user)
-: _name(name),
- _isPublic(isPublic),
- _user(user)
+TrackList::TrackList(const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user)
+: _name {name},
+ _type {type},
+ _isPublic {isPublic},
+ _user {user}
 {
 
 }
 
 TrackList::pointer
-TrackList::create(Wt::Dbo::Session& session, std::string name, bool isPublic, Wt::Dbo::ptr<User> user)
+TrackList::create(Wt::Dbo::Session& session, const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user)
 {
 	assert(user);
 
-	auto res = session.add( std::make_unique<TrackList>(name, isPublic, user) );
+	auto res = session.add( std::make_unique<TrackList>(name, type, isPublic, user) );
 	session.flush();
 
 	return res;
@@ -66,15 +61,31 @@ TrackList::add(IdType trackId)
 }
 
 TrackList::pointer
-TrackList::get(Wt::Dbo::Session& session, std::string name, Wt::Dbo::ptr<User> user)
+TrackList::get(Wt::Dbo::Session& session, const std::string& name, Type type, Wt::Dbo::ptr<User> user)
 {
-	return session.find<TrackList>().where("name = ? AND user_id = ?").bind(name).bind(user.id());
+	return session.find<TrackList>()
+		.where("name = ?").bind(name)
+		.where("type = ?").bind(type)
+		.where("user_id = ?").bind(user.id());
 }
 
 std::vector<TrackList::pointer>
 TrackList::getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user)
 {
-	Wt::Dbo::collection<TrackList::pointer> res = session.find<TrackList>().where("user_id = ?").bind(user.id()).orderBy("name");
+	Wt::Dbo::collection<TrackList::pointer> res = session.find<TrackList>()
+		.where("user_id = ?").bind(user.id())
+		.orderBy("name COLLATE NOCASE");
+
+	return std::vector<TrackList::pointer>(res.begin(), res.end());
+}
+
+std::vector<TrackList::pointer>
+TrackList::getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user, Type type)
+{
+	Wt::Dbo::collection<TrackList::pointer> res = session.find<TrackList>()
+		.where("user_id = ?").bind(user.id())
+		.where("type = ?").bind(type)
+		.orderBy("name COLLATE NOCASE");
 
 	return std::vector<TrackList::pointer>(res.begin(), res.end());
 }
@@ -87,7 +98,7 @@ TrackList::getById(Wt::Dbo::Session& session, IdType id)
 
 
 std::vector<Wt::Dbo::ptr<TrackListEntry>>
-TrackList::getEntries(int offset, int size) const
+TrackList::getEntries(boost::optional<std::size_t> offset, boost::optional<std::size_t> size) const
 {
 	assert(session());
 	assert(IdIsValid(self()->id()));
@@ -96,14 +107,14 @@ TrackList::getEntries(int offset, int size) const
 		session()->find<TrackListEntry>()
 		.where("tracklist_id = ?").bind(self().id())
 		.orderBy("id")
-		.limit(size)
-		.offset(offset);
+		.limit(size ? static_cast<int>(*size) : -1)
+		.offset(offset ? static_cast<int>(*offset) : -1);
 
 	return std::vector<Wt::Dbo::ptr<TrackListEntry>>(entries.begin(), entries.end());
 }
 
 std::vector<Wt::Dbo::ptr<TrackListEntry>>
-TrackList::getEntriesReverse(int offset, int size) const
+TrackList::getEntriesReverse(boost::optional<std::size_t> offset, boost::optional<std::size_t> size) const
 {
 	assert(session());
 	assert(IdIsValid(self()->id()));
@@ -112,8 +123,8 @@ TrackList::getEntriesReverse(int offset, int size) const
 		session()->find<TrackListEntry>()
 		.where("tracklist_id = ?").bind(self().id())
 		.orderBy("id DESC")
-		.limit(size)
-		.offset(offset);
+		.limit(size ? static_cast<int>(*size) : -1)
+		.offset(offset ? static_cast<int>(*offset) : -1);
 
 	return std::vector<Wt::Dbo::ptr<TrackListEntry>>(entries.begin(), entries.end());
 }
@@ -175,6 +186,20 @@ TrackList::getTrackIds() const
 	return std::vector<IdType>(res.begin(), res.end());
 }
 
+std::chrono::milliseconds
+TrackList::getDuration() const
+{
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
+	using milli = std::chrono::duration<int, std::milli>;
+
+	Wt::Dbo::Query<milli> query {session()->query<milli>("SELECT SUM(duration) FROM track t INNER JOIN tracklist_entry p_e ON t.id = p_e.track_id")
+			.where("p_e.tracklist_id = ?").bind(self()->id())};
+
+	return query.resultValue();
+}
+
 void
 TrackList::shuffle()
 {
@@ -193,7 +218,7 @@ TrackList::shuffle()
 }
 
 std::vector<Artist::pointer>
-TrackList::getTopArtists(int limit) const
+TrackList::getTopArtists(std::size_t limit) const
 {
 	assert(session());
 	assert(IdIsValid(self()->id()));
@@ -202,13 +227,13 @@ TrackList::getTopArtists(int limit) const
 		.where("p.id = ?").bind(self()->id())
 		.groupBy("a.id")
 		.orderBy("COUNT(a.id) DESC")
-		.limit(limit);
+		.limit(static_cast<int>(limit));
 
 	return std::vector<Artist::pointer>(res.begin(), res.end());
 }
 
 std::vector<Release::pointer>
-TrackList::getTopReleases(int limit) const
+TrackList::getTopReleases(std::size_t limit) const
 {
 	assert(session());
 	assert(IdIsValid(self()->id()));
@@ -217,13 +242,13 @@ TrackList::getTopReleases(int limit) const
 		.where("p.id = ?").bind(self()->id())
 		.groupBy("r.id")
 		.orderBy("COUNT(r.id) DESC")
-		.limit(limit);
+		.limit(static_cast<int>(limit));
 
 	return std::vector<Release::pointer>(res.begin(), res.end());
 }
 
 std::vector<Track::pointer>
-TrackList::getTopTracks(int limit) const
+TrackList::getTopTracks(std::size_t limit) const
 {
 	assert(session());
 	assert(IdIsValid(self()->id()));
@@ -232,7 +257,7 @@ TrackList::getTopTracks(int limit) const
 		.where("p.id = ?").bind(self()->id())
 		.groupBy("t.id")
 		.orderBy("COUNT(t.id) DESC")
-		.limit(limit);
+		.limit(static_cast<int>(limit));
 
 	return std::vector<Track::pointer>(res.begin(), res.end());
 }

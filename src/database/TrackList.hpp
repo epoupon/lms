@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <boost/optional.hpp>
+
 #include <Wt/Dbo/Dbo.h>
 
 #include <string>
@@ -39,27 +41,38 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 	public:
 		using pointer = Wt::Dbo::ptr<TrackList>;
 
-		TrackList();
-		TrackList(std::string name, bool isPublic, Wt::Dbo::ptr<User> user);
+		enum class Type
+		{
+			Playlist,  // user controlled playlists
+			Internal,  // current playqueue, history
+		};
+
+		TrackList() = default;
+		TrackList(const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user);
 
 		// Stats utility
-		std::vector<Wt::Dbo::ptr<Artist>> getTopArtists(int limit = 1) const;
-		std::vector<Wt::Dbo::ptr<Release>> getTopReleases(int limit = 1) const;
-		std::vector<Wt::Dbo::ptr<Track>> getTopTracks(int limit = 1) const;
+		std::vector<Wt::Dbo::ptr<Artist>> getTopArtists(std::size_t limit = 1) const;
+		std::vector<Wt::Dbo::ptr<Release>> getTopReleases(std::size_t limit = 1) const;
+		std::vector<Wt::Dbo::ptr<Track>> getTopTracks(std::size_t limit = 1) const;
 
 		// Search utility
-		static pointer	get(Wt::Dbo::Session& session, std::string name, Wt::Dbo::ptr<User> user);
+		static pointer	get(Wt::Dbo::Session& session, const std::string& name, Type type, Wt::Dbo::ptr<User> user);
 		static pointer	getById(Wt::Dbo::Session& session, IdType tracklistId);
 		static std::vector<pointer> getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user);
+		static std::vector<pointer> getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user, Type type);
 
 		// Create utility
-		static pointer	create(Wt::Dbo::Session& session, std::string name, bool isPublic, Wt::Dbo::ptr<User> user);
+		static pointer	create(Wt::Dbo::Session& session, const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user);
 
 		// Accessors
 		std::string	getName() const { return _name; }
 		bool		isPublic() const { return _isPublic; }
+		Type		getType() const { return _type; }
+		Wt::Dbo::ptr<User> getUser() const { return _user; }
 
 		// Modifiers
+		void		setName(const std::string& name) { _name = name; }
+		void		setIsPublic(bool isPublic) { _isPublic = isPublic; }
 		Wt::Dbo::ptr<TrackListEntry> add(IdType trackId);
 		void clear() { _entries.clear(); }
 		void shuffle();
@@ -67,10 +80,12 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		// Get tracks, ordered by position
 		std::size_t getCount() const;
 		Wt::Dbo::ptr<TrackListEntry> getEntry(std::size_t pos) const;
-		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntries(int offset = -1, int size = -1) const;
-		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntriesReverse(int offset = -1, int size = -1) const;
+		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntries(boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {}) const;
+		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntriesReverse(boost::optional<std::size_t>  offset = {}, boost::optional<std::size_t> size = {}) const;
 
 		std::vector<IdType> getTrackIds() const;
+
+		std::chrono::milliseconds getDuration() const;
 
 		// Get clusters, order by occurence
 		std::vector<Wt::Dbo::ptr<Cluster>> getClusters() const;
@@ -81,7 +96,9 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		void persist(Action& a)
 		{
 			Wt::Dbo::field(a,	_name,		"name");
+			Wt::Dbo::field(a,	_type,		"type");
 			Wt::Dbo::field(a,	_isPublic,	"public");
+
 			Wt::Dbo::belongsTo(a,	_user,		"user", Wt::Dbo::OnDeleteCascade);
 			Wt::Dbo::hasMany(a, _entries, Wt::Dbo::ManyToOne, "tracklist");
 		}
@@ -89,7 +106,9 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 	private:
 
 		std::string		_name;
-		bool			_isPublic;
+		Type			_type {Type::Playlist};
+		bool			_isPublic {false};
+
 		Wt::Dbo::ptr<User>	_user;
 		Wt::Dbo::collection< Wt::Dbo::ptr<TrackListEntry> > _entries;
 
