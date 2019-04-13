@@ -1282,6 +1282,11 @@ createTranscoder(RequestContext& context)
 
 	// Optional params
 	std::size_t maxBitRate {getParameterAs<std::size_t>(context.parameters, "maxBitRate").get_value_or(128)};
+
+	// "If set to zero, no limit is imposed"
+	if (maxBitRate == 0)
+		maxBitRate = 128;
+
 	maxBitRate = clamp(maxBitRate, std::size_t {48}, std::size_t {320});
 
 	boost::filesystem::path trackPath;
