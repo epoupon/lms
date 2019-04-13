@@ -15,6 +15,7 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 - Multi-value tags
 - Custom tag support (ex: "mood", "genre", "albummood", "albumgrouping", ...)
 - MusicBrainzID support to handle duplicated artist and release names
+- Playlists (only using Subsonic API for now)
 
 ## Recommendation engine
 LMS provides several ways to help you find the music you like:
