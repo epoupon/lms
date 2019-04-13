@@ -1226,9 +1226,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 	if (!std::all_of(std::cbegin(trackIdsToAdd), std::cend(trackIdsToAdd), [](const Id& id) { return id.type == Id::Type::Track; }))
 		throw Error {Error::CustomType::BadId};
 
-	std::vector<Id> trackIdsToRemove {getMultiParametersAs<Id>(context.parameters, "songIdToRemove")};
-	if (!std::all_of(std::cbegin(trackIdsToRemove), std::cend(trackIdsToRemove), [](const Id& id) { return id.type == Id::Type::Track; }))
-		throw Error {Error::CustomType::BadId};
+	std::vector<std::size_t> trackPositionsToRemove {getMultiParametersAs<std::size_t>(context.parameters, "songIndexToRemove")};
 
 	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
@@ -1250,25 +1248,16 @@ handleUpdatePlaylistRequest(RequestContext& context)
 	if (isPublic)
 		tracklist.modify()->setIsPublic(*isPublic);
 
-	// Remove tracks (remove all the instances found, since it is not position based)
 	{
-		auto entries {tracklist->getEntries()};
+		// Remove from end to make indexes stable
+		std::sort(std::begin(trackPositionsToRemove), std::end(trackPositionsToRemove), std::greater<std::size_t>());
 
-		for (const Id& trackIdToRemove : trackIdsToRemove)
+		for (std::size_t trackPositionToRemove : trackPositionsToRemove)
 		{
-			auto it {std::remove_if(std::begin(entries), std::end(entries), [&trackIdToRemove](const auto& entry)
-					{
-						return entry->getTrack().id() == trackIdToRemove.value;
-					})};
-
-			std::for_each(it, std::end(entries), [](auto entry)
-					{
-						entry.remove();
-					});
-
-			entries.erase(it, std::end(entries));
+			auto entry {tracklist->getEntry(trackPositionToRemove)};
+			if (entry)
+				entry.remove();
 		}
-
 	}
 
 	// Add tracks
