@@ -1281,17 +1281,21 @@ createTranscoder(RequestContext& context)
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 
 	// Optional params
-	std::size_t maxBitRate {getParameterAs<std::size_t>(context.parameters, "maxBitRate").get_value_or(128)};
-
-	// "If set to zero, no limit is imposed"
-	if (maxBitRate == 0)
-		maxBitRate = 128;
-
-	maxBitRate = clamp(maxBitRate, std::size_t {48}, std::size_t {320});
+	boost::optional<std::size_t> maxBitRate {getParameterAs<std::size_t>(context.parameters, "maxBitRate")};
 
 	boost::filesystem::path trackPath;
 	{
 		Wt::Dbo::Transaction transaction {context.db.getSession()};
+
+		Database::User::pointer user {context.db.getUser(context.userName)};
+		if (!user)
+			throw Error {Error::Code::RequestedDataNotFound};
+
+		// "If set to zero, no limit is imposed"
+		if (!maxBitRate || *maxBitRate == 0)
+			maxBitRate = user->getAudioBitrate() / 1000;
+
+		*maxBitRate = clamp(*maxBitRate, std::size_t {48}, user->getMaxAudioBitrate() / 1000);
 
 		auto track {Database::Track::getById(context.db.getSession(), id.value)};
 		if (!track)
@@ -1303,7 +1307,7 @@ createTranscoder(RequestContext& context)
 	Av::TranscodeParameters parameters {};
 
 	parameters.stripMetadata = false; // Since it can be cached and some players read the metadata from the downloaded file
-	parameters.bitrate = maxBitRate * 1000;
+	parameters.bitrate = *maxBitRate * 1000;
 	parameters.encoding = Av::Encoding::MP3;
 
 	return std::make_shared<Av::Transcoder>(trackPath, parameters);
