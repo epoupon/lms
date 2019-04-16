@@ -1059,8 +1059,6 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	// "Returns a random collection of songs from the given artist and similar artists"
 	auto tracks {artist->getRandomTracks(count / 2)};
 
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Now have " << tracks.size() << " tracks";
-
 	auto similarArtistsId {getServices().similaritySearcher->getSimilarArtists(context.db.getSession(), artist.id(), 5)};
 	for ( const auto& similarArtistId : similarArtistsId )
 	{
@@ -1070,8 +1068,6 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 
 		auto similarArtistTracks {similarArtist->getRandomTracks((count / 2) / 5)};
 
-		LMS_LOG(API_SUBSONIC, DEBUG) << "Added " << similarArtistTracks.size() << " similar tracks from artist " << similarArtist->getName();
-
 		tracks.insert(tracks.end(),
 				std::make_move_iterator(std::begin(similarArtistTracks)),
 				std::make_move_iterator(std::end(similarArtistTracks)));
@@ -1080,8 +1076,6 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	auto now {std::chrono::system_clock::now()};
 	std::mt19937 randGenerator {static_cast<std::mt19937::result_type>(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count())};
 	std::shuffle(std::begin(tracks), std::end(tracks), randGenerator);
-
-	LMS_LOG(API_SUBSONIC, DEBUG) << "FINAL Now have " << tracks.size() << " tracks";
 
 	Response response {Response::createOkResponse()};
 	Response::Node& similarSongsNode {response.createNode(id3 ? "similarSongs2" : "similarSongs")};

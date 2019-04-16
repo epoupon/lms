@@ -209,7 +209,11 @@ Artist::getReleases(const std::set<IdType>& clusterIds) const
 std::vector<Wt::Dbo::ptr<Track>>
 Artist::getTracks() const
 {
-	return std::vector<Wt::Dbo::ptr<Track>>(_tracks.begin(), _tracks.end());
+	Wt::Dbo::collection<Wt::Dbo::ptr<Track>> tracks {session()->query<Wt::Dbo::ptr<Track>>("SELECT t from Track t INNER JOIN artist a ON t_a.artist_id = a.id INNER JOIN track_artist t_a ON t_a.track_id = t.id INNER JOIN release r ON r.id = t.release_id")
+		.where("a.id = ?").bind(self()->id())
+		.orderBy("t.year,r.name,t.disc_number,t.track_number")};
+
+	return std::vector<Wt::Dbo::ptr<Track>>(tracks.begin(), tracks.end());
 }
 
 std::vector<Wt::Dbo::ptr<Track>>
