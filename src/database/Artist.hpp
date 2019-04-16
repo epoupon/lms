@@ -68,6 +68,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		// Get the releases that have at least one track for this artist that belongs to optional cluster filters
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = std::set<IdType>()) const;
 		std::vector<Wt::Dbo::ptr<Track>>	getTracks() const;
+		std::vector<Wt::Dbo::ptr<Track>>	getRandomTracks(boost::optional<std::size_t> count) const;
 
 		// Get the cluster of the tracks made by this artist
 		// Each clusters are grouped by cluster type, sorted by the number of occurence

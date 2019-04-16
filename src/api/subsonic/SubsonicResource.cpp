@@ -59,6 +59,8 @@
 #define GET_MUSIC_FOLDERS_URL	"/rest/getMusicFolders.view"
 #define GET_GENRES_URL		"/rest/getGenres.view"
 #define GET_INDEXES_URL		"/rest/getIndexes.view"
+#define GET_SIMILAR_SONGS_URL	"/rest/getSimilarSongs.view"
+#define GET_SIMILAR_SONGS2_URL	"/rest/getSimilarSongs2.view"
 #define GET_STARRED_URL		"/rest/getStarred.view"
 #define GET_STARRED2_URL	"/rest/getStarred2.view"
 #define GET_PLAYLIST_URL	"/rest/getPlaylist.view"
@@ -125,6 +127,8 @@ static Response handleGetMusicDirectoryRequest(RequestContext& context);
 static Response handleGetMusicFoldersRequest(RequestContext& context);
 static Response handleGetGenresRequest(RequestContext& context);
 static Response handleGetIndexesRequest(RequestContext& context);
+static Response handleGetSimilarSongsRequest(RequestContext& context);
+static Response handleGetSimilarSongs2Request(RequestContext& context);
 static Response handleGetStarredRequest(RequestContext& context);
 static Response handleGetStarred2Request(RequestContext& context);
 static Response handleGetPlaylistRequest(RequestContext& context);
@@ -157,6 +161,8 @@ static std::map<std::string, RequestHandlerFunc> requestHandlers
 	{GET_MUSIC_FOLDERS_URL,		handleGetMusicFoldersRequest},
 	{GET_GENRES_URL,		handleGetGenresRequest},
 	{GET_INDEXES_URL,		handleGetIndexesRequest},
+	{GET_SIMILAR_SONGS_URL,		handleGetSimilarSongsRequest},
+	{GET_SIMILAR_SONGS2_URL,	handleGetSimilarSongs2Request},
 	{GET_STARRED_URL,		handleGetStarredRequest},
 	{GET_STARRED2_URL,		handleGetStarred2Request},
 	{GET_PLAYLIST_URL,		handleGetPlaylistRequest},
@@ -407,8 +413,6 @@ getTrackPath(const Database::Track::pointer& track)
 {
 	std::string path;
 
-	// TODO encode '/'?
-
 	if (track->getRelease())
 	{
 		auto artists {track->getRelease()->getArtists()};
@@ -422,9 +426,9 @@ getTrackPath(const Database::Track::pointer& track)
 	}
 
 	if (track->getDiscNumber())
-		path += *track->getDiscNumber() + "-";
+		path += std::to_string(*track->getDiscNumber()) + "-";
 	if (track->getTrackNumber())
-		path += *track->getTrackNumber() + "-";
+		path += std::to_string(*track->getTrackNumber()) + "-";
 
 	return path + makeNameFilesystemCompatible(track->getName()) + ".mp3";
 }
@@ -715,7 +719,6 @@ std::vector<Database::Release::pointer> getRandomAlbums(Wt::Dbo::Session& sessio
 	std::iota(std::begin(indexes), std::end(indexes), 1);
 
 	// As random results are paginated, we need to set a seed for it
-	std::random_device r;
 	std::seed_seq seed {1337};
 	std::mt19937 generator{seed};
 
@@ -1036,6 +1039,70 @@ handleGetIndexesRequest(RequestContext& context)
 	return response;
 }
 
+Response
+handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
+{
+	// Mandatory params
+	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
+	if (id.type != Id::Type::Artist)
+		throw Error {Error::CustomType::BadId};
+
+	// Optional params
+	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").get_value_or(50)};
+
+	Wt::Dbo::Transaction transaction {context.db.getSession()};
+
+	Database::Artist::pointer artist {Database::Artist::getById(context.db.getSession(), id.value)};
+	if (!artist)
+		throw Error {Error::Code::RequestedDataNotFound};
+
+	// "Returns a random collection of songs from the given artist and similar artists"
+	auto tracks {artist->getRandomTracks(count / 2)};
+
+	LMS_LOG(API_SUBSONIC, DEBUG) << "Now have " << tracks.size() << " tracks";
+
+	auto similarArtistsId {getServices().similaritySearcher->getSimilarArtists(context.db.getSession(), artist.id(), 5)};
+	for ( const auto& similarArtistId : similarArtistsId )
+	{
+		Database::Artist::pointer similarArtist {Database::Artist::getById(context.db.getSession(), similarArtistId)};
+		if (!similarArtist)
+			continue;
+
+		auto similarArtistTracks {similarArtist->getRandomTracks((count / 2) / 5)};
+
+		LMS_LOG(API_SUBSONIC, DEBUG) << "Added " << similarArtistTracks.size() << " similar tracks from artist " << similarArtist->getName();
+
+		tracks.insert(tracks.end(),
+				std::make_move_iterator(std::begin(similarArtistTracks)),
+				std::make_move_iterator(std::end(similarArtistTracks)));
+	}
+
+	auto now {std::chrono::system_clock::now()};
+	std::mt19937 randGenerator {static_cast<std::mt19937::result_type>(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count())};
+	std::shuffle(std::begin(tracks), std::end(tracks), randGenerator);
+
+	LMS_LOG(API_SUBSONIC, DEBUG) << "FINAL Now have " << tracks.size() << " tracks";
+
+	Response response {Response::createOkResponse()};
+	Response::Node& similarSongsNode {response.createNode(id3 ? "similarSongs2" : "similarSongs")};
+	for (const Database::Track::pointer& track : tracks)
+		similarSongsNode.addArrayChild("song", trackToResponseNode(track));
+
+	return response;
+}
+
+Response
+handleGetSimilarSongsRequest(RequestContext& context)
+{
+	return handleGetSimilarSongsRequestCommon(context, false /* no id3 */);
+}
+
+Response
+handleGetSimilarSongs2Request(RequestContext& context)
+{
+	return handleGetSimilarSongsRequestCommon(context, true /* id3 */);
+
+}
 
 Response
 handleGetStarredRequest(RequestContext& context)

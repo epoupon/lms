@@ -212,6 +212,21 @@ Artist::getTracks() const
 	return std::vector<Wt::Dbo::ptr<Track>>(_tracks.begin(), _tracks.end());
 }
 
+std::vector<Wt::Dbo::ptr<Track>>
+Artist::getRandomTracks(boost::optional<std::size_t> count) const
+{
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	Wt::Dbo::collection<Wt::Dbo::ptr<Track>> tracks {session()->query<Wt::Dbo::ptr<Track>>("SELECT t from Track t INNER JOIN artist a ON t_a.artist_id = a.id INNER JOIN track_artist t_a ON t_a.track_id = t.id")
+		.where("a.id = ?").bind(self()->id())
+		.orderBy("RANDOM()")
+		.limit(count ? static_cast<int>(*count) : -1)};
+
+	return std::vector<Wt::Dbo::ptr<Track>>(tracks.begin(), tracks.end());
+}
+
 std::vector<std::vector<Wt::Dbo::ptr<Cluster>>>
 Artist::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::size_t size) const
 {
