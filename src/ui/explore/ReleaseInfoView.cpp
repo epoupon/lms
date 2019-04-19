@@ -22,7 +22,7 @@
 #include <Wt/WAnchor.h>
 
 #include "database/Release.hpp"
-#include "main/Services.hpp"
+#include "main/Service.hpp"
 #include "similarity/SimilaritySearcher.hpp"
 #include "utils/Utils.hpp"
 
@@ -68,7 +68,7 @@ ReleaseInfo::refresh()
 	if (!releaseId)
 		return;
 
-	std::vector<Database::IdType> releasesIds {getServices().similaritySearcher->getSimilarReleases(LmsApp->getDboSession(), *releaseId, 5)};
+	std::vector<Database::IdType> releasesIds {getService<Similarity::Searcher>()->getSimilarReleases(LmsApp->getDboSession(), *releaseId, 5)};
 
 	Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
 

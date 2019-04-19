@@ -32,7 +32,7 @@
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
-#include "main/Services.hpp"
+#include "main/Service.hpp"
 #include "similarity/SimilaritySearcher.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -880,7 +880,7 @@ Response handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 	if (!artist->getMBID().empty())
 		artistInfoNode.createChild("musicBrainzId").setValue(artist->getMBID());
 
-	auto similarArtistsId {getServices().similaritySearcher->getSimilarArtists(context.db.getSession(), artist.id(), count)};
+	auto similarArtistsId {getService<Similarity::Searcher>()->getSimilarArtists(context.db.getSession(), artist.id(), count)};
 	for ( const auto& similarArtistId : similarArtistsId )
 	{
 		Database::Artist::pointer similarArtist {Database::Artist::getById(context.db.getSession(), similarArtistId)};
@@ -1059,7 +1059,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	// "Returns a random collection of songs from the given artist and similar artists"
 	auto tracks {artist->getRandomTracks(count / 2)};
 
-	auto similarArtistsId {getServices().similaritySearcher->getSimilarArtists(context.db.getSession(), artist.id(), 5)};
+	auto similarArtistsId {getService<Similarity::Searcher>()->getSimilarArtists(context.db.getSession(), artist.id(), 5)};
 	for ( const auto& similarArtistId : similarArtistsId )
 	{
 		Database::Artist::pointer similarArtist {Database::Artist::getById(context.db.getSession(), similarArtistId)};
@@ -1433,10 +1433,10 @@ handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation* conti
 	switch (id.type)
 	{
 		case Id::Type::Track:
-			cover = getServices().coverArtGrabber->getFromTrack(context.db.getSession(), id.value, Image::Format::JPEG, size);
+			cover = getService<CoverArt::Grabber>()->getFromTrack(context.db.getSession(), id.value, Image::Format::JPEG, size);
 			break;
 		case Id::Type::Release:
-			cover = getServices().coverArtGrabber->getFromRelease(context.db.getSession(), id.value, Image::Format::JPEG, size);
+			cover = getService<CoverArt::Grabber>()->getFromRelease(context.db.getSession(), id.value, Image::Format::JPEG, size);
 			break;
 		default:
 			throw Error {Error::CustomType::BadId};

@@ -19,26 +19,36 @@
 
 #include <memory>
 
-namespace CoverArt
+template <typename T>
+class ServiceProvider
 {
-	class Grabber;
-}
+	public:
 
-namespace Scanner {
-	class MediaScanner;
-}
+		template <class ...Args>
+		static
+		T&
+		create(Args&&... args)
+		{
+			assign(std::make_unique<T>(std::forward<Args>(args)...));
+			return *get();
+		}
+		static void assign(std::unique_ptr<T> service) { _service = std::move(service); }
+		static void clear() { _service.reset(); }
 
-namespace Similarity {
-	class Searcher;
-}
+		static T* get() { return _service.get(); }
 
-
-struct Services
-{
-	std::unique_ptr<CoverArt::Grabber>	coverArtGrabber;
-	std::unique_ptr<Scanner::MediaScanner>	mediaScanner;
-	std::unique_ptr<Similarity::Searcher>	similaritySearcher;
+	private:
+		static std::unique_ptr<T> _service;
 };
 
-Services& getServices();
+template <typename T>
+std::unique_ptr<T> ServiceProvider<T>::_service = {};
+
+template <typename T>
+T*
+getService()
+{
+	return ServiceProvider<T>::get();
+}
+
 

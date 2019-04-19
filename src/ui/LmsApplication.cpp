@@ -36,7 +36,7 @@
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
 #include "explore/Explore.hpp"
-#include "main/Services.hpp"
+#include "main/Service.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
@@ -459,7 +459,7 @@ LmsApplication::createHome()
 
 	// Events from MediaScanner
 	std::string sessionId = LmsApp->sessionId();
-	getServices().mediaScanner->scanComplete().connect([=] (Scanner::MediaScanner::Stats stats)
+	getService<Scanner::MediaScanner>()->scanComplete().connect([=] (Scanner::MediaScanner::Stats stats)
 	{
 		// Runs from media scanner context
 		Wt::WServer::instance()->post(sessionId, [=]

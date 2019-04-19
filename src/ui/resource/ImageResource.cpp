@@ -24,7 +24,7 @@
 
 #include "cover/CoverArtGrabber.hpp"
 #include "database/Track.hpp"
-#include "main/Services.hpp"
+#include "main/Service.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -80,7 +80,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// transactions are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock(LmsApp);
-			cover = getServices().coverArtGrabber->getFromTrack(LmsApp->getDboSession(), *trackId, Image::Format::JPEG, *size);
+			cover = getService<CoverArt::Grabber>()->getFromTrack(LmsApp->getDboSession(), *trackId, Image::Format::JPEG, *size);
 		}
 	}
 	else if (releaseIdStr)
@@ -92,7 +92,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// transactions are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock(LmsApp);
-			cover = getServices().coverArtGrabber->getFromRelease(LmsApp->getDboSession(), *releaseId, Image::Format::JPEG, *size);
+			cover = getService<CoverArt::Grabber>()->getFromRelease(LmsApp->getDboSession(), *releaseId, Image::Format::JPEG, *size);
 		}
 	}
 	else

@@ -34,7 +34,7 @@
 #include "ui/LmsApplication.hpp"
 #include "utils/Config.hpp"
 #include "utils/Logger.hpp"
-#include "Services.hpp"
+#include "Service.hpp"
 
 std::vector<std::string> generateWtConfig(std::string execPath)
 {
@@ -127,15 +127,16 @@ int main(int argc, char* argv[])
 		UserInterface::LmsApplicationGroupContainer appGroups;
 
 		// Service initialization order is important
-		getServices().mediaScanner = std::make_unique<Scanner::MediaScanner>(*connectionPool);
+		Scanner::MediaScanner& mediaScanner {ServiceProvider<Scanner::MediaScanner>::create(*connectionPool)};
 
 		Similarity::FeaturesScannerAddon similarityFeaturesScannerAddon(*connectionPool);
 
-		getServices().mediaScanner->setAddon(similarityFeaturesScannerAddon);
-		getServices().coverArtGrabber = std::make_unique<CoverArt::Grabber>();
-		getServices().coverArtGrabber->setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
+		mediaScanner.setAddon(similarityFeaturesScannerAddon);
 
-		getServices().similaritySearcher = std::make_unique<Similarity::Searcher>(similarityFeaturesScannerAddon);
+		CoverArt::Grabber& coverArtGrabber {ServiceProvider<CoverArt::Grabber>::create()};
+		coverArtGrabber.setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
+
+		ServiceProvider<Similarity::Searcher>::create(similarityFeaturesScannerAddon);
 
 		API::Subsonic::SubsonicResource subsonicResource {*connectionPool};
 
@@ -153,7 +154,7 @@ int main(int argc, char* argv[])
 
 		// Start
 		LMS_LOG(MAIN, INFO) << "Starting media scanner...";
-		getServices().mediaScanner->start();
+		mediaScanner.start();
 
 		LMS_LOG(MAIN, INFO) << "Starting server...";
 		server.start();
@@ -167,7 +168,7 @@ int main(int argc, char* argv[])
 		server.stop();
 
 		LMS_LOG(MAIN, INFO) << "Stopping media scanner...";
-		getServices().mediaScanner->stop();
+		mediaScanner.stop();
 
 		LMS_LOG(MAIN, INFO) << "Clean stop!";
 		res = EXIT_SUCCESS;

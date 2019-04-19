@@ -22,7 +22,7 @@
 #include <Wt/WText.h>
 
 #include "database/TrackList.hpp"
-#include "main/Services.hpp"
+#include "main/Service.hpp"
 #include "similarity/SimilaritySearcher.hpp"
 #include "utils/Logger.hpp"
 #include "LmsApplication.hpp"
@@ -399,7 +399,7 @@ PlayQueue::addRadioTrack()
 	if (trackIds.empty())
 		return;
 
-	auto res = getServices().similaritySearcher->getSimilarTracks(LmsApp->getDboSession(), std::set<Database::IdType>(trackIds.begin(), trackIds.end()), 1);
+	auto res = getService<Similarity::Searcher>()->getSimilarTracks(LmsApp->getDboSession(), std::set<Database::IdType>(trackIds.begin(), trackIds.end()), 1);
 	for (auto trackId : res)
 	{
 		auto trackToAdd = Database::Track::getById(LmsApp->getDboSession(), trackId);

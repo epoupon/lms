@@ -20,7 +20,7 @@
 #include "ArtistInfoView.hpp"
 
 #include "database/Artist.hpp"
-#include "main/Services.hpp"
+#include "main/Service.hpp"
 #include "similarity/SimilaritySearcher.hpp"
 #include "utils/Utils.hpp"
 
@@ -63,7 +63,7 @@ ArtistInfo::refresh()
 	if (!artistId)
 		return;
 
-	auto artistsIds = getServices().similaritySearcher->getSimilarArtists(LmsApp->getDboSession(), *artistId, 5);
+	auto artistsIds = getService<Similarity::Searcher>()->getSimilarArtists(LmsApp->getDboSession(), *artistId, 5);
 
 	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 
