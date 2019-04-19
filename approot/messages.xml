@@ -67,6 +67,7 @@
 <!--Explore-->
 <message id="Lms.Explore.add-filter">Add filter</message>
 <message id="Lms.Explore.artists">Artists</message>
+<message id="Lms.Explore.filter-added">Filter added</message>
 <message id="Lms.Explore.filters">Filters</message>
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.search-placeholder">Search...</message>
