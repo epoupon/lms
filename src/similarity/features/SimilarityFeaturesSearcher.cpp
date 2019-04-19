@@ -222,6 +222,12 @@ FeaturesSearcher::isValid() const
 }
 
 bool
+FeaturesSearcher::isTrackClassified(Database::IdType trackId) const
+{
+	return (_trackPositions.find(trackId) != _trackPositions.end());
+}
+
+bool
 FeaturesSearcher::isReleaseClassified(Database::IdType releaseId) const
 {
 	return (_releasePositions.find(releaseId) != _releasePositions.end());

@@ -45,7 +45,9 @@ Searcher::getSimilarTracks(Wt::Dbo::Session& session, const std::set<Database::I
 	auto somSearcher = _somAddon.getSearcher();
 
 	if (method == Database::SimilaritySettings::PreferredMethod::Features
-		|| (method == Database::SimilaritySettings::PreferredMethod::Auto && somSearcher))
+		|| (method == Database::SimilaritySettings::PreferredMethod::Auto
+			&& somSearcher
+			&& std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return somSearcher->isTrackClassified(trackId); } )))
 	{
 		return somSearcher->getSimilarTracks(trackIds, maxCount);
 	}
