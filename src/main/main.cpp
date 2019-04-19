@@ -51,7 +51,7 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 
 	if (Config::instance().getBool("tls-enable", false))
 	{
-		args.push_back("--https-port=" + std::to_string( Config::instance().getULong("listen-port", 5081)));
+		args.push_back("--https-port=" + std::to_string( Config::instance().getULong("listen-port", 5082)));
 		args.push_back("--https-address=" + Config::instance().getString("listen-addr", "0.0.0.0"));
 		args.push_back("--ssl-certificate=" + Config::instance().getString("tls-cert"));
 		args.push_back("--ssl-private-key=" + Config::instance().getString("tls-key"));
@@ -59,7 +59,7 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 	}
 	else
 	{
-		args.push_back("--http-port=" + std::to_string( Config::instance().getULong("listen-port", 5081)));
+		args.push_back("--http-port=" + std::to_string( Config::instance().getULong("listen-port", 5082)));
 		args.push_back("--http-address=" + Config::instance().getString("listen-addr", "0.0.0.0"));
 	}
 

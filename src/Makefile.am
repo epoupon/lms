@@ -2,67 +2,135 @@ bin_PROGRAMS = lms
 
 lms_SOURCES = \
 	$(srcdir)/api/subsonic/SubsonicId.cpp			\
+	$(srcdir)/api/subsonic/SubsonicId.hpp			\
 	$(srcdir)/api/subsonic/SubsonicResource.cpp		\
+	$(srcdir)/api/subsonic/SubsonicResource.hpp		\
 	$(srcdir)/api/subsonic/SubsonicResponse.cpp		\
+	$(srcdir)/api/subsonic/SubsonicResponse.hpp		\
 	$(srcdir)/av/AvInfo.cpp					\
+	$(srcdir)/av/AvInfo.hpp					\
 	$(srcdir)/av/AvTranscoder.cpp				\
+	$(srcdir)/av/AvTranscoder.hpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
+	$(srcdir)/cover/CoverArtGrabber.hpp			\
 	$(srcdir)/database/Artist.cpp				\
+	$(srcdir)/database/Artist.hpp				\
 	$(srcdir)/database/Cluster.cpp				\
+	$(srcdir)/database/Cluster.hpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
+	$(srcdir)/database/DatabaseHandler.hpp			\
 	$(srcdir)/database/TrackFeatures.cpp			\
+	$(srcdir)/database/TrackFeatures.hpp			\
 	$(srcdir)/database/TrackList.cpp			\
+	$(srcdir)/database/TrackList.hpp			\
+	$(srcdir)/database/Types.hpp				\
 	$(srcdir)/database/Release.cpp				\
+	$(srcdir)/database/Release.hpp				\
 	$(srcdir)/database/ScanSettings.cpp			\
+	$(srcdir)/database/ScanSettings.hpp			\
 	$(srcdir)/database/SimilaritySettings.cpp		\
+	$(srcdir)/database/SimilaritySettings.hpp		\
 	$(srcdir)/database/SqlQuery.cpp				\
+	$(srcdir)/database/SqlQuery.hpp				\
 	$(srcdir)/database/Track.cpp				\
+	$(srcdir)/database/Track.hpp				\
 	$(srcdir)/database/User.cpp				\
+	$(srcdir)/database/User.hpp				\
 	$(srcdir)/image/Image.cpp				\
+	$(srcdir)/image/Image.hpp				\
 	$(srcdir)/main/main.cpp					\
+	$(srcdir)/main/Service.hpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
+	$(srcdir)/metadata/AvFormat.hpp				\
+	$(srcdir)/metadata/MetaData.hpp				\
 	$(srcdir)/metadata/TagLibParser.cpp			\
+	$(srcdir)/metadata/TagLibParser.hpp			\
 	$(srcdir)/scanner/MediaScanner.cpp			\
+	$(srcdir)/scanner/MediaScanner.hpp			\
+	$(srcdir)/scanner/MediaScannerAddon.hpp			\
 	$(srcdir)/similarity/SimilaritySearcher.cpp		\
+	$(srcdir)/similarity/SimilaritySearcher.hpp		\
 	$(srcdir)/similarity/cluster/SimilarityClusterSearcher.cpp \
+	$(srcdir)/similarity/cluster/SimilarityClusterSearcher.hpp \
 	$(srcdir)/similarity/features/AcousticBrainzUtils.cpp	\
+	$(srcdir)/similarity/features/AcousticBrainzUtils.hpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesCache.cpp	\
+	$(srcdir)/similarity/features/SimilarityFeaturesCache.hpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesScannerAddon.cpp	\
+	$(srcdir)/similarity/features/SimilarityFeaturesScannerAddon.hpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesSearcher.cpp	\
+	$(srcdir)/similarity/features/SimilarityFeaturesSearcher.hpp	\
 	$(srcdir)/similarity/features/som/DataNormalizer.cpp	\
+	$(srcdir)/similarity/features/som/DataNormalizer.hpp	\
+	$(srcdir)/similarity/features/som/InputVector.hpp	\
+	$(srcdir)/similarity/features/som/Matrix.hpp		\
 	$(srcdir)/similarity/features/som/Network.cpp		\
+	$(srcdir)/similarity/features/som/Network.hpp		\
 	$(srcdir)/ui/Auth.cpp					\
+	$(srcdir)/ui/Auth.hpp					\
 	$(srcdir)/ui/LmsApplication.cpp				\
+	$(srcdir)/ui/LmsApplication.hpp				\
 	$(srcdir)/ui/LmsApplicationGroup.cpp			\
+	$(srcdir)/ui/LmsApplicationGroup.hpp			\
 	$(srcdir)/ui/MediaPlayer.cpp				\
+	$(srcdir)/ui/MediaPlayer.hpp				\
 	$(srcdir)/ui/PlayQueueView.cpp				\
+	$(srcdir)/ui/PlayQueueView.hpp				\
 	$(srcdir)/ui/PlayHistoryView.cpp			\
+	$(srcdir)/ui/PlayHistoryView.hpp			\
 	$(srcdir)/ui/SettingsView.cpp				\
+	$(srcdir)/ui/SettingsView.hpp				\
 	$(srcdir)/ui/admin/DatabaseSettingsView.cpp		\
+	$(srcdir)/ui/admin/DatabaseSettingsView.hpp		\
 	$(srcdir)/ui/admin/InitWizardView.cpp			\
+	$(srcdir)/ui/admin/InitWizardView.hpp			\
 	$(srcdir)/ui/admin/UserView.cpp				\
+	$(srcdir)/ui/admin/UserView.hpp				\
 	$(srcdir)/ui/admin/UsersView.cpp			\
+	$(srcdir)/ui/admin/UsersView.hpp			\
 	$(srcdir)/ui/common/Validators.cpp			\
+	$(srcdir)/ui/common/Validators.hpp			\
 	$(srcdir)/ui/explore/ArtistInfoView.cpp			\
+	$(srcdir)/ui/explore/ArtistInfoView.hpp			\
 	$(srcdir)/ui/explore/ArtistLink.cpp			\
+	$(srcdir)/ui/explore/ArtistLink.hpp			\
 	$(srcdir)/ui/explore/ArtistsInfoView.cpp		\
+	$(srcdir)/ui/explore/ArtistsInfoView.hpp		\
 	$(srcdir)/ui/explore/ArtistView.cpp			\
+	$(srcdir)/ui/explore/ArtistView.hpp			\
 	$(srcdir)/ui/explore/ArtistsView.cpp			\
+	$(srcdir)/ui/explore/ArtistsView.hpp			\
 	$(srcdir)/ui/explore/Explore.cpp			\
+	$(srcdir)/ui/explore/Explore.hpp			\
 	$(srcdir)/ui/explore/Filters.cpp			\
+	$(srcdir)/ui/explore/Filters.hpp			\
 	$(srcdir)/ui/explore/ReleaseInfoView.cpp		\
+	$(srcdir)/ui/explore/ReleaseInfoView.hpp		\
 	$(srcdir)/ui/explore/ReleaseLink.cpp			\
+	$(srcdir)/ui/explore/ReleaseLink.hpp			\
 	$(srcdir)/ui/explore/ReleasesInfoView.cpp		\
+	$(srcdir)/ui/explore/ReleasesInfoView.hpp		\
 	$(srcdir)/ui/explore/ReleasesView.cpp			\
+	$(srcdir)/ui/explore/ReleasesView.hpp			\
 	$(srcdir)/ui/explore/ReleaseView.cpp			\
+	$(srcdir)/ui/explore/ReleaseView.hpp			\
 	$(srcdir)/ui/explore/TracksInfoView.cpp			\
+	$(srcdir)/ui/explore/TracksInfoView.hpp			\
 	$(srcdir)/ui/explore/TracksView.cpp			\
+	$(srcdir)/ui/explore/TracksView.hpp			\
 	$(srcdir)/ui/resource/ImageResource.cpp			\
+	$(srcdir)/ui/resource/ImageResource.hpp			\
 	$(srcdir)/ui/resource/AudioResource.cpp			\
+	$(srcdir)/ui/resource/AudioResource.hpp			\
 	$(srcdir)/utils/Config.cpp				\
+	$(srcdir)/utils/Config.hpp				\
+	$(srcdir)/utils/Exception.hpp				\
 	$(srcdir)/utils/Logger.cpp				\
+	$(srcdir)/utils/Logger.hpp				\
 	$(srcdir)/utils/Path.cpp				\
-	$(srcdir)/utils/Utils.cpp
+	$(srcdir)/utils/Path.hpp				\
+	$(srcdir)/utils/Utils.cpp				\
+	$(srcdir)/utils/Utils.hpp
 
 lms_CXXFLAGS=-std=c++14 -Wall -I$(srcdir)/ui $(MAGICKXX_CFLAGS) -D_REENTRANT
 lms_LDADD=$(MAGICKXX_LIBS)

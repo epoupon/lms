@@ -5,12 +5,13 @@ LMS is a self-hosted music streaming software: access your music files from anyw
 A [demo](http://lms.demo.poupon.io) instance is available, with the following limitations:
 - Settings cannot be saved
 - No persistent playqueue
+- No administration panel
 
 ## Main features
-- Persistent play queue across sessions
 - User management
 - Recommendation engine
 - Audio transcode for maximum interoperability and low bandwith requirements
+- Persistent play queue across sessions
 - Subsonic API
 - Multi-value tags
 - Custom tag support (ex: "mood", "genre", "albummood", "albumgrouping", ...)
@@ -28,7 +29,7 @@ LMS provides several ways to help you find the music you like:
 The recommendation engine makes use of [Self-Organizing Maps](https://en.wikipedia.org/wiki/Self-organizing_map).</br>
 Please note this engine:
 - may require some significant computation time on very large datasets
-- makes use of computed data available on [AcousticBrainz](https://acousticbrainz.org/). Therefore your music must contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) for the recommendation engine to work properly
+- makes use of computed data available on [AcousticBrainz](https://acousticbrainz.org/). Therefore your music must contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) for the recommendation engine to work properly (otherwise, only tag-based recommendations are provided)
 
 ## Subsonic API
 For now, the API version implemented is 1.12.0 and has been tested on Android using the official application, Ultrasonic and DSub.
@@ -38,7 +39,7 @@ As LMS does not aim to implement all the features of Subsonic, some commands are
 The Subsonic API is enabled by default.
 
 ## Installation
-Here are the required packages to build on Debian Stretch:
+Here are the required packages to build LMS on Debian Stretch:
 ```sh
 apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavcodec-dev libavutil-dev libavformat-dev libav-tools libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
 ```
@@ -94,7 +95,7 @@ server {
       proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header        X-Forwarded-Proto $scheme;
 
-      proxy_pass          http://localhost:5091;
+      proxy_pass          http://localhost:5082;
       proxy_read_timeout  120;
     }
 }

@@ -10,19 +10,19 @@ lms_cssdir=$(lms_docrootdir)/css
 lms_jsdir=$(lms_docrootdir)/js
 lms_imagesdir=$(lms_approotdir)/images
 
-lms_css_DATA = \
+dist_lms_css_DATA = \
 		docroot/css/lms.css
 
-lms_js_DATA = \
+dist_lms_js_DATA = \
 	      	docroot/js/bootstrap-notify.js	\
 	      	docroot/js/jquery-1.10.2.min.js	\
 	      	docroot/js/mediaplayer.js
 
-lms_images_DATA = \
+dist_lms_images_DATA = \
 		approot/images/unknown-cover.jpg	\
 		approot/images/unknown-artist.jpg
 
-lms_approot_DATA = \
+dist_lms_approot_DATA = \
 		approot/admin-database.xml	\
 		approot/admin-user.xml		\
 		approot/admin-users.xml		\
@@ -49,6 +49,6 @@ lms_approot_DATA = \
 		approot/tracks.xml	\
 		approot/tracksinfo.xml
 
-sysconf_DATA = \
+dist_sysconf_DATA = \
 	        $(top_srcdir)/conf/lms.conf
 
