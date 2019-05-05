@@ -224,17 +224,20 @@ class SettingsModel : public Wt::WFormModel
 
 			_encodingModel = std::make_shared<Wt::WStringListModel>();
 
-			_encodingModel->addString(Wt::WString::tr("Lms.Settings.auto"));
+			_encodingModel->addString(Wt::WString::tr("Lms.Settings.encoding.auto"));
 			_encodingModel->setData(0, 0, Database::AudioEncoding::AUTO, Wt::ItemDataRole::User);
 
-			_encodingModel->addString(Wt::WString::tr("Lms.Settings.mp3"));
+			_encodingModel->addString(Wt::WString::tr("Lms.Settings.encoding.mp3"));
 			_encodingModel->setData(1, 0, Database::AudioEncoding::MP3, Wt::ItemDataRole::User);
 
-			_encodingModel->addString(Wt::WString::tr("Lms.Settings.oga"));
-			_encodingModel->setData(2, 0, Database::AudioEncoding::OGA, Wt::ItemDataRole::User);
+			_encodingModel->addString(Wt::WString::tr("Lms.Settings.encoding.ogg_opus"));
+			_encodingModel->setData(2, 0, Database::AudioEncoding::OGG_OPUS, Wt::ItemDataRole::User);
 
-			_encodingModel->addString(Wt::WString::tr("Lms.Settings.webma"));
-			_encodingModel->setData(3, 0, Database::AudioEncoding::WEBMA, Wt::ItemDataRole::User);
+			_encodingModel->addString(Wt::WString::tr("Lms.Settings.encoding.ogg_vorbis"));
+			_encodingModel->setData(3, 0, Database::AudioEncoding::OGG_VORBIS, Wt::ItemDataRole::User);
+
+			_encodingModel->addString(Wt::WString::tr("Lms.Settings.encoding.webm_vorbis"));
+			_encodingModel->setData(4, 0, Database::AudioEncoding::WEBM_VORBIS, Wt::ItemDataRole::User);
 		}
 
 		std::shared_ptr<Wt::WStringListModel>	_bitrateModel;

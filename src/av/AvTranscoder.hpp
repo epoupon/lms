@@ -28,20 +28,11 @@
 #include <boost/optional.hpp>
 
 #include "AvInfo.hpp"
+#include "AvTypes.hpp"
 
 namespace Av {
 
 
-enum class Encoding
-{
-	OGA,
-	OGV,
-	MP3,
-	WEBMA,
-	M4A,
-};
-
-std::string encodingToMimetype(Encoding encoding);
 
 struct TranscodeParameters
 {

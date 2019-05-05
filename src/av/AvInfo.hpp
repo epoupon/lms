@@ -38,7 +38,7 @@ extern "C"
 #include <boost/optional.hpp>
 #include <boost/filesystem/path.hpp>
 
-#include "utils/Exception.hpp"
+#include "AvTypes.hpp"
 
 namespace Av
 {
@@ -55,12 +55,6 @@ struct StreamInfo
 {
 	size_t		id;
 	std::size_t     bitrate;
-};
-
-class AvException : public LmsException
-{
-	public:
-		AvException(const std::string& msg) : LmsException(msg) {}
 };
 
 class MediaFileException : public AvException

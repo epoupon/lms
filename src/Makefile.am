@@ -11,6 +11,8 @@ lms_SOURCES = \
 	$(srcdir)/av/AvInfo.hpp					\
 	$(srcdir)/av/AvTranscoder.cpp				\
 	$(srcdir)/av/AvTranscoder.hpp				\
+	$(srcdir)/av/AvTypes.cpp				\
+	$(srcdir)/av/AvTypes.hpp				\
 	$(srcdir)/cover/CoverArtGrabber.cpp			\
 	$(srcdir)/cover/CoverArtGrabber.hpp			\
 	$(srcdir)/database/Artist.cpp				\

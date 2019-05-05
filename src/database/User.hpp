@@ -36,10 +36,11 @@ class TrackList;
 // User selectable audio formats
 enum class AudioEncoding
 {
-	AUTO,
-	MP3,
-	OGA,
-	WEBMA,
+	AUTO		= 0,
+	MP3		= 1,
+	OGG_OPUS	= 2,
+	OGG_VORBIS	= 3,
+	WEBM_VORBIS	= 4,
 };
 
 class User : public Wt::Dbo::Dbo<User>

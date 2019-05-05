@@ -118,10 +118,12 @@
 <message id="Lms.Settings.bitrate">Bitrate</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
 <message id="Lms.Settings.encoding">Encodage</message>
-<message id="Lms.Settings.mp3">MP3</message>
-<message id="Lms.Settings.oga">OGA</message>
+<message id="Lms.Settings.encoding.auto">Auto</message>
+<message id="Lms.Settings.encoding.mp3">MP3</message>
+<message id="Lms.Settings.encoding.ogg_opus">Ogg/Opus</message>
+<message id="Lms.Settings.encoding.ogg_vorbis">Ogg/Vorbis</message>
+<message id="Lms.Settings.encoding.webm_vorbis">WebM/Vorbis</message>
 <message id="Lms.Settings.settings">Paramètres</message>
-<message id="Lms.Settings.webma">WEBMA</message>
 <message id="Lms.Settings.settings-saved">Paramètres sauvegardés !</message>
 
 <!--Wt-->

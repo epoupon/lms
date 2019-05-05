@@ -29,54 +29,6 @@ namespace Av {
 
 #define LMS_LOG_TRANSCODE(sev)	LMS_LOG(TRANSCODE, INFO) << "[" << _id << "] - "
 
-struct EncodingInfo
-{
-	Encoding encoding;
-	std::string mimetype;
-	int id;
-};
-
-static std::vector<EncodingInfo> encodingInfos =
-{
-	{Encoding::MP3,	"audio/mp3", 0},
-	{Encoding::OGA, "audio/ogg", 1},
-	{Encoding::WEBMA, "audio/webm", 3},
-	{Encoding::M4A, "audio/mp4", 5},
-};
-
-std::string encodingToMimetype(Encoding encoding)
-{
-	for (auto encodingInfo : encodingInfos)
-	{
-		if (encodingInfo.encoding == encoding)
-			return encodingInfo.mimetype;
-	}
-
-	throw AvException("Invalid encoding");
-}
-
-int encodingToInt(Encoding encoding)
-{
-	for (auto encodingInfo : encodingInfos)
-	{
-		if (encodingInfo.encoding == encoding)
-			return encodingInfo.id;
-	}
-
-	throw AvException("Invalid encoding");
-}
-
-Encoding encodingFromInt(int encodingId)
-{
-	for (auto encodingInfo : encodingInfos)
-	{
-		if (encodingInfo.id == encodingId)
-			return encodingInfo.encoding;
-	}
-
-	throw AvException("Invalid encodingId");
-}
-
 // TODO, parametrize?
 static const std::vector<std::string> execNames =
 {
@@ -176,28 +128,27 @@ Transcoder::start()
 			args.push_back("mp3");
 			break;
 
-		case Encoding::OGA:
+		case Encoding::OGG_OPUS:
+			args.push_back("-acodec");
+			args.push_back("libopus");
+			args.push_back("-f");
+			args.push_back("ogg");
+			break;
+
+		case Encoding::OGG_VORBIS:
 			args.push_back("-acodec");
 			args.push_back("libvorbis");
 			args.push_back("-f");
 			args.push_back("ogg");
 			break;
 
-		case Encoding::WEBMA:
-			args.push_back("-codec:a");
+		case Encoding::WEBM_VORBIS:
+			args.push_back("-acodec");
 			args.push_back("libvorbis");
 			args.push_back("-f");
 			args.push_back("webm");
 			break;
 
-		case Encoding::M4A:
-			args.push_back("-acodec");
-			args.push_back("aac");
-			args.push_back("-f");
-			args.push_back("mp4");
-			args.push_back("-strict");
-			args.push_back("experimental");
-			break;
 
 		default:
 			return false;

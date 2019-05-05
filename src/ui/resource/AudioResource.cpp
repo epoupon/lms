@@ -102,18 +102,22 @@ AudioResource::handleRequest(const Wt::Http::Request& request,
 
 			switch (LmsApp->getUser()->getAudioEncoding())
 			{
-				case Database::AudioEncoding::OGA:
-					parameters.encoding = Av::Encoding::OGA;
-					break;
-				case Database::AudioEncoding::WEBMA:
-					parameters.encoding = Av::Encoding::WEBMA;
-					break;
+				case Database::AudioEncoding::AUTO:
 				case Database::AudioEncoding::MP3:
 					parameters.encoding = Av::Encoding::MP3;
 					break;
-				case Database::AudioEncoding::AUTO:
+				case Database::AudioEncoding::OGG_OPUS:
+					parameters.encoding = Av::Encoding::OGG_OPUS;
+					break;
+				case Database::AudioEncoding::OGG_VORBIS:
+					parameters.encoding = Av::Encoding::OGG_VORBIS;
+					break;
+				case Database::AudioEncoding::WEBM_VORBIS:
+					parameters.encoding = Av::Encoding::WEBM_VORBIS;
+					break;
 				default:
 					parameters.encoding = Av::Encoding::MP3;
+					break;
 			}
 			transcoder = std::make_shared<Av::Transcoder>(track->getPath(), parameters);
 		}
