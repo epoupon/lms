@@ -70,11 +70,11 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 
 	private:
 
-		int		_scanVersion = 0;
-		std::string	_mediaDirectory = "";
-		Wt::WTime	_startTime = Wt::WTime(0,0,0);
-		UpdatePeriod	_updatePeriod = UpdatePeriod::Never;
-		std::string	_audioFileExtensions = ".mp3 .ogg .oga .aac .m4a .flac .wav .wma .aif .aiff .ape .mpc .shn";
+		int		_scanVersion {};
+		std::string	_mediaDirectory;
+		Wt::WTime	_startTime = Wt::WTime {0,0,0};
+		UpdatePeriod	_updatePeriod {UpdatePeriod::Never};
+		std::string	_audioFileExtensions {".mp3 .ogg .oga .aac .m4a .flac .wav .wma .aif .aiff .ape .mpc .shn .opus"};
 		Wt::Dbo::collection<Wt::Dbo::ptr<ClusterType>>	_clusterTypes;
 };
 
