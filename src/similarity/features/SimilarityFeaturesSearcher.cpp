@@ -331,10 +331,12 @@ FeaturesSearcher::init(Wt::Dbo::Session& session,
 	_releasesMap = SOM::Matrix<std::set<Database::IdType>>{width, height};
 	_tracksMap = SOM::Matrix<std::set<Database::IdType>>{width, height};
 
-	Wt::Dbo::Transaction transaction {session};
+	LMS_LOG(SIMILARITY, DEBUG) << "Constructing maps...";
 
 	for (auto itTrackCoord : tracksPosition)
 	{
+		Wt::Dbo::Transaction transaction {session};
+
 		Database::IdType trackId {itTrackCoord.first};
 		const std::set<SOM::Position>& positionSet {itTrackCoord.second};
 
@@ -360,7 +362,7 @@ FeaturesSearcher::init(Wt::Dbo::Session& session,
 		}
 	}
 
-	LMS_LOG(SIMILARITY, DEBUG) << "Classifying tracks DONE";
+	LMS_LOG(SIMILARITY, DEBUG) << "Constructing maps... DONE";
 
 }
 
