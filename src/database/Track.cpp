@@ -37,12 +37,13 @@ _filePath( p.string() )
 {
 }
 
-Wt::Dbo::collection< Track::pointer >
+std::vector<Track::pointer>
 Track::getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> limit)
 {
-	int size {limit ? static_cast<int>(*limit) : -1};
+	Wt::Dbo::collection<Track::pointer> res {session.find<Track>()
+		.limit(limit ? static_cast<int>(*limit) : -1)};
 
-	return session.find<Track>().limit(size);
+	return std::vector<Track::pointer>(std::cbegin(res), std::cend(res));
 }
 
 std::vector<Track::pointer>
@@ -229,15 +230,24 @@ Track::getByFilter(Wt::Dbo::Session& session,
 {
 	bool moreResults;
 
-	return getByFilter(session, clusters, std::vector<std::string>{}, -1, -1, moreResults);
+	return getByFilter(session,
+			clusters,
+			std::vector<std::string> {},
+			boost::optional<std::size_t> {},
+			boost::optional<std::size_t> {},
+			moreResults);
 }
 
 void
-Track::setArtists(const std::vector<Wt::Dbo::ptr<Artist>>& artists)
+Track::clearArtistLinks()
 {
-	_artists.clear();
-	for (const Wt::Dbo::ptr<Artist>& artist : artists)
-		_artists.insert(artist);
+	_trackArtistLinks.clear();
+}
+
+void
+Track::addArtistLink(const Wt::Dbo::ptr<TrackArtistLink>& artistLink)
+{
+	_trackArtistLinks.insert(artistLink);
 }
 
 void
@@ -261,21 +271,9 @@ Track::getTrackNumber(void) const
 }
 
 boost::optional<std::size_t>
-Track::getTotalTrackNumber(void) const
-{
-	return (_totalTrackNumber > 0) ? boost::make_optional<std::size_t>(_totalTrackNumber) : boost::none;
-}
-
-boost::optional<std::size_t>
 Track::getDiscNumber(void) const
 {
 	return (_discNumber > 0) ? boost::make_optional<std::size_t>(_discNumber) : boost::none;
-}
-
-boost::optional<std::size_t>
-Track::getTotalDiscNumber(void) const
-{
-	return (_totalDiscNumber > 0) ? boost::make_optional<std::size_t>(_totalDiscNumber) : boost::none;
 }
 
 boost::optional<int>
@@ -303,9 +301,23 @@ Track::getCopyrightURL() const
 }
 
 std::vector<Wt::Dbo::ptr<Artist>>
-Track::getArtists() const
+Track::getArtists(TrackArtistLink::Type type) const
 {
-	return std::vector<Wt::Dbo::ptr<Artist>>(_artists.begin(), _artists.end());
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> artists {session()->query<Artist::pointer>("SELECT a from artist a INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id INNER JOIN track t ON t.id = t_a_l.track_id")
+		.where("t.id = ?").bind(self()->id())
+		.where("t_a_l.type = ?").bind(type)};
+
+	return std::vector<Wt::Dbo::ptr<Artist>>(artists.begin(), artists.end());
+}
+
+std::vector<Wt::Dbo::ptr<TrackArtistLink>>
+Track::getArtistLinks() const
+{
+	return std::vector<Wt::Dbo::ptr<TrackArtistLink>>(_trackArtistLinks.begin(), _trackArtistLinks.end());
 }
 
 Wt::Dbo::ptr<TrackFeatures>

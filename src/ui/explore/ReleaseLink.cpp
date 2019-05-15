@@ -44,7 +44,10 @@ ReleaseLink::ReleaseLink(Database::Release::pointer release)
 	cover->setWidth(48);
 	anchor->setImage(std::move(cover));
 
-	auto artists = release->getArtists();
+	auto artists = release->getReleaseArtists();
+	if (artists.empty())
+		artists = release->getArtists();
+
 	if (artists.size() > 1)
 	{
 		setCondition("if-has-artist", true);

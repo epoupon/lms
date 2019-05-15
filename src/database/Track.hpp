@@ -29,6 +29,7 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
+#include "TrackArtistLink.hpp"
 #include "Types.hpp"
 
 namespace Database {
@@ -63,7 +64,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 							boost::optional<std::size_t> size,
 							bool& moreExpected);
 
-		static Wt::Dbo::collection< pointer > getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> limit = {});
+		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> limit = {});
 		static std::vector<pointer>	getAllRandom(Wt::Dbo::Session& session, boost::optional<std::size_t> limit = {});
 		static std::vector<IdType>	getAllIds(Wt::Dbo::Session& session); // nested transaction
 		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session); // nested transaction
@@ -79,9 +80,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		// Accessors
 		void setScanVersion(std::size_t version)			{ _scanVersion = version; }
 		void setTrackNumber(int num)					{ _trackNumber = num; }
-		void setTotalTrackNumber(int num)				{ _totalTrackNumber = num; }
 		void setDiscNumber(int num)					{ _discNumber = num; }
-		void setTotalDiscNumber(int num)				{ _totalDiscNumber = num; }
 		void setName(const std::string& name)				{ _name = std::string(name, 0, _maxNameLength); }
 		void setDuration(std::chrono::milliseconds duration)		{ _duration = duration; }
 		void setLastWriteTime(Wt::WDateTime time)			{ _fileLastWrite = time; }
@@ -93,16 +92,15 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setMBID(const std::string& MBID)				{ _MBID = MBID; }
 		void setCopyright(const std::string& copyright)			{ _copyright = std::string(copyright, 0, _maxCopyrightLength); }
 		void setCopyrightURL(const std::string& copyrightURL)		{ _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
-		void setArtists(const std::vector<Wt::Dbo::ptr<Artist>>& artists);
+		void clearArtistLinks();
+		void addArtistLink(const Wt::Dbo::ptr<TrackArtistLink>& artistLink);
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
 		void setClusters(const std::vector<Wt::Dbo::ptr<Cluster>>& clusters );
 		void setFeatures(const Wt::Dbo::ptr<TrackFeatures>& features);
 
 		std::size_t 				getScanVersion() const		{ return _scanVersion; }
 		boost::optional<std::size_t>		getTrackNumber() const;
-		boost::optional<std::size_t>		getTotalTrackNumber() const;
 		boost::optional<std::size_t>		getDiscNumber() const;
-		boost::optional<std::size_t>		getTotalDiscNumber() const;
 		std::string 				getName() const			{ return _name; }
 		boost::filesystem::path			getPath() const			{ return _filePath; }
 		std::chrono::milliseconds		getDuration() const		{ return _duration; }
@@ -115,7 +113,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 		const std::string&			getMBID() const			{ return _MBID; }
 		boost::optional<std::string>		getCopyright() const;
 		boost::optional<std::string>		getCopyrightURL() const;
-		std::vector<Wt::Dbo::ptr<Artist>>	getArtists() const;
+		std::vector<Wt::Dbo::ptr<Artist>>	getArtists(TrackArtistLink::Type type = {TrackArtistLink::Type::Artist}) const;
+		std::vector<Wt::Dbo::ptr<TrackArtistLink>>	getArtistLinks() const;
 		Wt::Dbo::ptr<Release>			getRelease() const		{ return _release; }
 		std::vector<Wt::Dbo::ptr<Cluster>>	getClusters() const;
 		bool					hasTrackFeatures() const;
@@ -128,9 +127,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 			{
 				Wt::Dbo::field(a, _scanVersion,		"scan_version");
 				Wt::Dbo::field(a, _trackNumber,		"track_number");
-				Wt::Dbo::field(a, _totalTrackNumber,	"total_track_number");
 				Wt::Dbo::field(a, _discNumber,		"disc_number");
-				Wt::Dbo::field(a, _totalDiscNumber,	"total_disc_number");
 				Wt::Dbo::field(a, _name,		"name");
 				Wt::Dbo::field(a, _duration,		"duration");
 				Wt::Dbo::field(a, _year,		"year");
@@ -144,7 +141,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 				Wt::Dbo::field(a, _copyright,		"copyright");
 				Wt::Dbo::field(a, _copyrightURL,	"copyright_url");
 				Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
-				Wt::Dbo::hasMany(a, _artists, Wt::Dbo::ManyToMany, "track_artist", "", Wt::Dbo::OnDeleteCascade);
+				Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "track");
 				Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _playlistEntries, Wt::Dbo::ManyToOne, "track");
 				Wt::Dbo::hasOne(a, _trackFeatures);
@@ -158,9 +155,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 
 		int					_scanVersion = 0;
 		int					_trackNumber = 0;
-		int					_totalTrackNumber = 0;
 		int					_discNumber = 0;
-		int					_totalDiscNumber = 0;
 		std::string				_name;
 		std::string				_artistName;
 		std::string				_releaseName;
@@ -177,7 +172,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		std::string				_copyrightURL;
 
 		Wt::Dbo::ptr<Release>				_release;
-		Wt::Dbo::collection<Wt::Dbo::ptr<Artist>>	_artists;
+		Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks;
 		Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> 	_clusters;
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _playlistEntries;
 		Wt::Dbo::weak_ptr<TrackFeatures>		_trackFeatures;

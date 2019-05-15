@@ -120,6 +120,7 @@ Artist::refresh()
 	Wt::WContainerWidget* releasesContainer = t->bindNew<Wt::WContainerWidget>("releases");
 
 	auto releases = artist->getReleases(_filters->getClusterIds());
+
 	for (auto release : releases)
 	{
 		auto releaseId = release.id();
@@ -139,8 +140,27 @@ Artist::refresh()
 
 		entry->bindWidget("name", LmsApplication::createReleaseAnchor(release));
 
-		if (release->hasVariousArtists())
-			entry->setCondition("if-has-various-artists", true);
+		auto artists {release->getReleaseArtists()};
+		LMS_LOG(UI, DEBUG) << "Found " << artists.size() << " release artists";
+
+		for (auto artist : artists)
+			LMS_LOG(UI, DEBUG) << "\tArtist = '" << artist->getName() << "'";
+
+		if (artists.empty())
+			artists = release->getArtists();
+
+		bool isSameArtist {(std::find(std::cbegin(artists), std::cend(artists), artist) != artists.end())};
+
+		if (artists.size() > 1)
+		{
+			entry->setCondition("if-has-artist", true);
+			entry->bindNew<Wt::WText>("artist", Wt::WString::tr("Lms.Explore.various-artists"));
+		}
+		else if (artists.size() == 1 && !isSameArtist)
+		{
+			entry->setCondition("if-has-artist", true);
+			entry->bindWidget("artist", LmsApplication::createArtistAnchor(artists.front()));
+		}
 
 		boost::optional<int> year = release->getReleaseYear();
 		if (year)

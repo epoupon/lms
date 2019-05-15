@@ -77,7 +77,7 @@ Artist::getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> offset, b
 std::vector<Artist::pointer>
 Artist::getAllOrphans(Wt::Dbo::Session& session)
 {
-	Wt::Dbo::collection<Artist::pointer> res = session.query< Wt::Dbo::ptr<Artist> >("SELECT DISTINCT a FROM artist a WHERE NOT EXISTS(SELECT 1 FROM track t INNER JOIN track_artist t_a ON t_a.artist_id = a.id WHERE t.id = t_a.track_id)");
+	Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> res {session.query<Wt::Dbo::ptr<Artist>>("SELECT DISTINCT a FROM artist a WHERE NOT EXISTS(SELECT 1 FROM track t INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id WHERE t.id = t_a_l.track_id)")};
 
 	return std::vector<pointer>(res.begin(), res.end());
 }
@@ -98,7 +98,7 @@ getQuery(Wt::Dbo::Session& session,
 
 	if (!clusterIds.empty())
 	{
-		oss << " INNER JOIN track t ON t_a.track_id = t.id INNER JOIN track_artist t_a ON t_a.artist_id = a.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
+		oss << " INNER JOIN track t ON t.id = t_a_l.track_id INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
 
 		WhereClause clusterClause;
 
@@ -110,7 +110,7 @@ getQuery(Wt::Dbo::Session& session,
 	oss << " " << where.get();
 
 	if (!clusterIds.empty())
-		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
+		oss << " GROUP BY t.id HAVING COUNT(DISTINCT c.id) = " << clusterIds.size();
 
 	oss << " ORDER BY a.sort_name COLLATE NOCASE";
 
@@ -122,6 +122,13 @@ getQuery(Wt::Dbo::Session& session,
 	}
 
 	return query;
+}
+
+std::vector<Artist::pointer>
+Artist::getByFilter(Wt::Dbo::Session& session, const std::set<IdType>& clusters)
+{
+	bool more;
+	return getByFilter(session, clusters, {}, {}, {}, more);
 }
 
 std::vector<Artist::pointer>
@@ -152,7 +159,7 @@ Artist::getByFilter(Wt::Dbo::Session& session,
 std::vector<Artist::pointer>
 Artist::getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, boost::optional<std::size_t> limit)
 {
-	Wt::Dbo::collection<Artist::pointer> res = session.query<Artist::pointer>("SELECT a from artist a INNER JOIN track_artist t_a ON t_a.artist_id = a.id INNER JOIN track t ON t.id = t_a.track_id")
+	Wt::Dbo::collection<Artist::pointer> res = session.query<Artist::pointer>("SELECT a from artist a INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id INNER JOIN track t ON t.id = t_a_l.track_id")
 		.where("t.file_added > ?").bind(after)
 		.groupBy("a.id")
 		.orderBy("t.file_added DESC")
@@ -171,7 +178,8 @@ Artist::getReleases(const std::set<IdType>& clusterIds) const
 	WhereClause where;
 
 	std::ostringstream oss;
-	oss << "SELECT DISTINCT r FROM release r INNER JOIN artist a ON t_a.artist_id = a.id INNER JOIN track_artist t_a ON t_a.track_id = t.id INNER JOIN track t ON t.release_id = r.id";
+
+	oss << "SELECT DISTINCT r FROM release r INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id INNER JOIN track t ON t.release_id = r.id";
 
 	if (!clusterIds.empty())
 	{
@@ -190,31 +198,53 @@ Artist::getReleases(const std::set<IdType>& clusterIds) const
 	oss << " " << where.get();
 
 	if (!clusterIds.empty())
-		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
+		oss << " GROUP BY t.id HAVING COUNT(DISTINCT c.id) = " << clusterIds.size();
 
 	oss << " ORDER BY t.year,r.name";
 
 	Wt::Dbo::Query<Release::pointer> query = session()->query<Release::pointer>( oss.str() );
 
 	for (const std::string& bindArg : where.getBindArgs())
-	{
 		query.bind(bindArg);
-	}
 
-	Wt::Dbo::collection< Wt::Dbo::ptr<Release> > res = query;
+	Wt::Dbo::collection<Wt::Dbo::ptr<Release>> res = query;
 
-	return std::vector< Wt::Dbo::ptr<Release> > (res.begin(), res.end());
+	return std::vector<Wt::Dbo::ptr<Release>>(res.begin(), res.end());
 }
 
 std::vector<Wt::Dbo::ptr<Track>>
-Artist::getTracks() const
+Artist::getTracks(boost::optional<TrackArtistLink::Type> linkType) const
 {
-	Wt::Dbo::collection<Wt::Dbo::ptr<Track>> tracks {session()->query<Wt::Dbo::ptr<Track>>("SELECT t from Track t INNER JOIN artist a ON t_a.artist_id = a.id INNER JOIN track_artist t_a ON t_a.track_id = t.id INNER JOIN release r ON r.id = t.release_id")
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	auto query {session()->query<Wt::Dbo::ptr<Track>>("SELECT DISTINCT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id")
+		.where("a.id = ?").bind(self()->id())
+		.orderBy("t.year,t.release_id,t.disc_number,t.track_number")};
+
+	if (linkType)
+		query.where("t_a_l.type = ?").bind(*linkType);
+
+	Wt::Dbo::collection<Wt::Dbo::ptr<Track>> tracks {query.resultList()};
+
+	return std::vector<Wt::Dbo::ptr<Track>>(tracks.begin(), tracks.end());
+}
+
+std::vector<Wt::Dbo::ptr<Track>>
+Artist::getTracksWithRelease(boost::optional<TrackArtistLink::Type> linkType) const
+{
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	Wt::Dbo::collection<Wt::Dbo::ptr<Track>> tracks {session()->query<Wt::Dbo::ptr<Track>>("SELECT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id INNER JOIN release r ON r.id = t.release_id")
 		.where("a.id = ?").bind(self()->id())
 		.orderBy("t.year,r.name,t.disc_number,t.track_number")};
 
 	return std::vector<Wt::Dbo::ptr<Track>>(tracks.begin(), tracks.end());
 }
+
 
 std::vector<Wt::Dbo::ptr<Track>>
 Artist::getRandomTracks(boost::optional<std::size_t> count) const
@@ -223,7 +253,7 @@ Artist::getRandomTracks(boost::optional<std::size_t> count) const
 	assert(IdIsValid(self()->id()));
 	assert(session());
 
-	Wt::Dbo::collection<Wt::Dbo::ptr<Track>> tracks {session()->query<Wt::Dbo::ptr<Track>>("SELECT t from Track t INNER JOIN artist a ON t_a.artist_id = a.id INNER JOIN track_artist t_a ON t_a.track_id = t.id")
+	Wt::Dbo::collection<Wt::Dbo::ptr<Track>> tracks {session()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id")
 		.where("a.id = ?").bind(self()->id())
 		.orderBy("RANDOM()")
 		.limit(count ? static_cast<int>(*count) : -1)};
@@ -241,7 +271,7 @@ Artist::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::si
 	WhereClause where;
 
 	std::ostringstream oss;
-	oss << "SELECT  c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id INNER JOIN artist a ON t_a.artist_id = a.id INNER JOIN track_artist t_a ON t_a.track_id = t.id";
+	oss << "SELECT c FROM cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id INNER JOIN artist a ON t_a_l.artist_id = a.id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id";
 
 	where.And(WhereClause("a.id = ?")).bind(std::to_string(self()->id()));
 	{
@@ -252,7 +282,7 @@ Artist::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::si
 		where.And(clusterClause);
 	}
 	oss << " " << where.get();
-	oss << "GROUP BY c.id ORDER BY COUNT(c.id) DESC";
+	oss << "GROUP BY c.id ORDER BY COUNT(DISTINCT c.id) DESC";
 
 	Wt::Dbo::Query<Cluster::pointer> query = session()->query<Cluster::pointer>( oss.str() );
 

@@ -27,15 +27,16 @@
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
+#include "TrackArtistLink.hpp"
 #include "Types.hpp"
 
 namespace Database
 {
 
-class Track;
 class Cluster;
 class ClusterType;
 class Release;
+class Track;
 
 class Artist : public Wt::Dbo::Dbo<Artist>
 {
@@ -51,6 +52,8 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static pointer			getById(Wt::Dbo::Session& session, IdType id);
 		static std::vector<pointer>	getByName(Wt::Dbo::Session& session, const std::string& name);
 		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session,
+								const std::set<IdType>& clusters);		// at least one track that belongs to  these clusters
+		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session,
 								const std::set<IdType>& clusters,		// at least one track that belongs to  these clusters
 								const std::vector<std::string>& keywords,	// name must match all of these keywords
 								boost::optional<std::size_t> offset,
@@ -65,9 +68,9 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		const std::string& getName(void) const { return _name; }
 		const std::string& getMBID(void) const { return _MBID; }
 
-		// Get the releases that have at least one track for this artist that belongs to optional cluster filters
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = std::set<IdType>()) const;
-		std::vector<Wt::Dbo::ptr<Track>>	getTracks() const;
+		std::vector<Wt::Dbo::ptr<Track>>	getTracks(boost::optional<TrackArtistLink::Type> linkType = {}) const;
+		std::vector<Wt::Dbo::ptr<Track>>	getTracksWithRelease(boost::optional<TrackArtistLink::Type> linkType = {}) const;
 		std::vector<Wt::Dbo::ptr<Track>>	getRandomTracks(boost::optional<std::size_t> count) const;
 
 		// Get the cluster of the tracks made by this artist
@@ -89,7 +92,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 				Wt::Dbo::field(a, _name, "sort_name");
 				Wt::Dbo::field(a, _MBID, "mbid");
 
-				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_artist", "", Wt::Dbo::OnDeleteCascade);
+				Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "artist");
 			}
 
 	private:
@@ -100,7 +103,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		std::string _sortName;
 		std::string _MBID;	// Musicbrainz Identifier
 
-		Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks; // Tracks of this artist
+		Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks; // Tracks involving this artist
 };
 
 } // namespace Database

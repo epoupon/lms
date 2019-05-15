@@ -96,16 +96,21 @@ Release::refresh()
 	}
 
 	{
-		auto artists {release->getArtists()};
+		std::vector<Wt::Dbo::ptr<Database::Artist>> artists;
+
+		artists = release->getReleaseArtists();
+		if (artists.empty())
+			artists = release->getArtists();
+
 		if (artists.size() > 1)
 		{
 			t->setCondition("if-has-artist", true);
-			t->bindNew<Wt::WText>("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
+			t->bindNew<Wt::WText>("artist", Wt::WString::tr("Lms.Explore.various-artists"));
 		}
 		else if (artists.size() == 1)
 		{
 			t->setCondition("if-has-artist", true);
-			t->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
+			t->bindWidget("artist", LmsApplication::createArtistAnchor(artists.front()));
 		}
 	}
 
@@ -181,7 +186,7 @@ Release::refresh()
 		}
 
 		auto discNumber {track->getDiscNumber()};
-		auto totalDiscNumber {track->getTotalDiscNumber()};
+		auto totalDiscNumber {release->getTotalDiscNumber()};
 		if (discNumber && totalDiscNumber && *totalDiscNumber > 1)
 		{
 			entry->setCondition("if-has-disc-number", true);

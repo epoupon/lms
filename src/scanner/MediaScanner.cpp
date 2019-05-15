@@ -85,7 +85,7 @@ isPathInParentPath(const boost::filesystem::path& path, const boost::filesystem:
 }
 
 std::vector<Artist::pointer>
-getArtists(Wt::Dbo::Session& session, const std::vector<MetaData::Artist>& artistsInfo)
+getOrCreateArtists(Wt::Dbo::Session& session, const std::vector<MetaData::Artist>& artistsInfo)
 {
 	std::vector<Artist::pointer> artists;
 
@@ -129,7 +129,7 @@ getArtists(Wt::Dbo::Session& session, const std::vector<MetaData::Artist>& artis
 }
 
 Release::pointer
-getRelease(Wt::Dbo::Session& session, const MetaData::Album& album)
+getOrCreateRelease(Wt::Dbo::Session& session, const MetaData::Album& album)
 {
 	Release::pointer release;
 
@@ -166,7 +166,7 @@ getRelease(Wt::Dbo::Session& session, const MetaData::Album& album)
 }
 
 std::vector<Cluster::pointer>
-getClusters(Wt::Dbo::Session& session, const MetaData::Clusters& clustersNames)
+getOrCreateClusters(Wt::Dbo::Session& session, const MetaData::Clusters& clustersNames)
 {
 	std::vector< Cluster::pointer > clusters;
 
@@ -465,15 +465,18 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	}
 
 	// ***** Clusters
-	std::vector<Cluster::pointer> clusters {getClusters(_db.getSession(), trackInfo->clusters)};
+	std::vector<Cluster::pointer> clusters {getOrCreateClusters(_db.getSession(), trackInfo->clusters)};
 
 	//  ***** Artists
-	std::vector<Artist::pointer> artists {getArtists(_db.getSession(), trackInfo->artists)};
+	std::vector<Artist::pointer> artists {getOrCreateArtists(_db.getSession(), trackInfo->artists)};
+
+	//  ***** Release artists
+	std::vector<Artist::pointer> releaseArtists {getOrCreateArtists(_db.getSession(), trackInfo->albumArtists)};
 
 	//  ***** Release
 	Release::pointer release;
 	if (trackInfo->album)
-		release = getRelease(_db.getSession(), *trackInfo->album);
+		release = getOrCreateRelease(_db.getSession(), *trackInfo->album);
 
 	// If file already exist, update data
 	// Otherwise, create it
@@ -493,11 +496,25 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 		stats.updates++;
 	}
 
+	// Release related data
+	if (release)
+	{
+		release.modify()->setTotalTrackNumber(trackInfo->totalTrack ? *trackInfo->totalTrack : 0);
+		release.modify()->setTotalDiscNumber(trackInfo->totalDisc ? *trackInfo->totalDisc : 0);
+	}
+
+	// Track related data
 	assert(track);
+
+	track.modify()->clearArtistLinks();
+	for (const auto& artist : artists)
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(_db.getSession(), track, artist, Database::TrackArtistLink::Type::Artist));
+
+	for (const auto& releaseArtist : releaseArtists)
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(_db.getSession(), track, releaseArtist, Database::TrackArtistLink::Type::ReleaseArtist));
 
 	track.modify()->setScanVersion(_scanVersion);
 	track.modify()->setChecksum(checksum);
-	track.modify()->setArtists(artists);
 	track.modify()->setRelease(release);
 	track.modify()->setClusters(clusters);
 	track.modify()->setLastWriteTime(lastWriteTime);
@@ -505,9 +522,7 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	track.modify()->setDuration(trackInfo->duration);
 	track.modify()->setAddedTime(Wt::WLocalDateTime::currentServerDateTime().toUTC());
 	track.modify()->setTrackNumber(trackInfo->trackNumber ? *trackInfo->trackNumber : 0);
-	track.modify()->setTotalTrackNumber(trackInfo->totalTrack ? *trackInfo->totalTrack : 0);
 	track.modify()->setDiscNumber(trackInfo->discNumber ? *trackInfo->discNumber : 0);
-	track.modify()->setTotalDiscNumber(trackInfo->totalDisc ? *trackInfo->totalDisc : 0);
 	track.modify()->setYear(trackInfo->year ? *trackInfo->year : 0);
 	track.modify()->setOriginalYear(trackInfo->originalYear ? *trackInfo->originalYear : 0);
 

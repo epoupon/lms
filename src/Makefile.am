@@ -21,6 +21,8 @@ lms_SOURCES = \
 	$(srcdir)/database/Cluster.hpp				\
 	$(srcdir)/database/DatabaseHandler.cpp			\
 	$(srcdir)/database/DatabaseHandler.hpp			\
+	$(srcdir)/database/TrackArtistLink.cpp			\
+	$(srcdir)/database/TrackArtistLink.hpp			\
 	$(srcdir)/database/TrackFeatures.cpp			\
 	$(srcdir)/database/TrackFeatures.hpp			\
 	$(srcdir)/database/TrackList.cpp			\

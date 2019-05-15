@@ -23,6 +23,7 @@
 
 #include <Wt/Dbo/WtSqlTraits.h>
 
+#include "TrackArtistLink.hpp"
 #include "Types.hpp"
 
 namespace Database
@@ -76,13 +77,20 @@ class Release : public Wt::Dbo::Dbo<Release>
 		boost::optional<std::string> getCopyright() const;
 		boost::optional<std::string> getCopyrightURL() const;
 
+		// Modifiers
+		void setTotalDiscNumber(std::size_t num)	{ _totalDiscNumber = static_cast<int>(num); }
+		void setTotalTrackNumber(std::size_t num)	{ _totalTrackNumber = static_cast<int>(num); }
+
 		// Accessors
-		std::string	getName() const		{ return _name; }
-		std::string	getMBID() const		{ return _MBID; }
+		std::string			getName() const		{ return _name; }
+		std::string			getMBID() const		{ return _MBID; }
+		boost::optional<std::size_t>	getTotalTrackNumber() const;
+		boost::optional<std::size_t>	getTotalDiscNumber() const;
 		std::chrono::milliseconds	getDuration() const;
 
 		// Get the artists of this release
-		std::vector<Wt::Dbo::ptr<Artist> > getArtists() const;
+		std::vector<Wt::Dbo::ptr<Artist> > getArtists(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;
+		std::vector<Wt::Dbo::ptr<Artist> > getReleaseArtists() const { return getArtists(TrackArtistLink::Type::ReleaseArtist); }
 		bool hasVariousArtists() const;
 
 		void setMBID(std::string mbid) { _MBID = mbid; }
@@ -92,17 +100,21 @@ class Release : public Wt::Dbo::Dbo<Release>
 			{
 				Wt::Dbo::field(a, _name, "name");
 				Wt::Dbo::field(a, _MBID, "mbid");
+				Wt::Dbo::field(a, _totalDiscNumber,	"total_disc_number");
+				Wt::Dbo::field(a, _totalTrackNumber,	"total_track_number");
 
 				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
 			}
 
 	private:
-		static const std::size_t _maxNameLength = 128;
+		static const std::size_t _maxNameLength {128};
 
-		std::string _name;
-		std::string _MBID;
+		std::string	_name;
+		std::string	_MBID;
+		int		_totalDiscNumber {};
+		int		_totalTrackNumber {};
 
-		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks; // Tracks in the release
+		Wt::Dbo::collection<Wt::Dbo::ptr<Track>>	_tracks; // Tracks in the release
 };
 
 } // namespace Database

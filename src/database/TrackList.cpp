@@ -223,7 +223,7 @@ TrackList::getTopArtists(std::size_t limit) const
 	assert(session());
 	assert(IdIsValid(self()->id()));
 
-	Wt::Dbo::collection<Artist::pointer> res = session()->query<Artist::pointer>("SELECT a from artist a INNER JOIN track t ON t.id = t_a.track_id INNER JOIN track_artist t_a ON t_a.artist_id = a.id INNER JOIN tracklist_entry p_e ON p_e.track_id = t.id INNER JOIN tracklist p ON p.id = p_e.tracklist_id")
+	Wt::Dbo::collection<Artist::pointer> res = session()->query<Artist::pointer>("SELECT a from artist a INNER JOIN track t ON t.id = t_a_l.track_id INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id INNER JOIN tracklist_entry p_e ON p_e.track_id = t.id INNER JOIN tracklist p ON p.id = p_e.tracklist_id")
 		.where("p.id = ?").bind(self()->id())
 		.groupBy("a.id")
 		.orderBy("COUNT(a.id) DESC")

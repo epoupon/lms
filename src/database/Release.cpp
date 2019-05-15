@@ -73,7 +73,7 @@ Release::getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> offset, 
 {
 	Wt::Dbo::collection<pointer> res = session.find<Release>()
 		.offset(offset ? static_cast<int>(*offset) : -1)
-		.limit(size ? static_cast<int>(*size) : - 1)
+		.limit(size ? static_cast<int>(*size) : -1)
 		.orderBy("name COLLATE NOCASE");
 
 	return std::vector<pointer>(res.begin(), res.end());
@@ -83,7 +83,7 @@ std::vector<Release::pointer>
 Release::getAllRandom(Wt::Dbo::Session& session, boost::optional<std::size_t> size)
 {
 	Wt::Dbo::collection<pointer> res = session.find<Release>()
-		.limit(size ? static_cast<int>(*size) : - 1)
+		.limit(size ? static_cast<int>(*size) : -1)
 		.orderBy("RANDOM()");
 
 	return std::vector<pointer>(res.begin(), res.end());
@@ -183,6 +183,18 @@ Release::getByFilter(Wt::Dbo::Session& session,
 	return res;
 }
 
+boost::optional<std::size_t>
+Release::getTotalTrackNumber(void) const
+{
+	return (_totalTrackNumber > 0) ? boost::make_optional<std::size_t>(_totalTrackNumber) : boost::none;
+}
+
+boost::optional<std::size_t>
+Release::getTotalDiscNumber(void) const
+{
+	return (_totalDiscNumber > 0) ? boost::make_optional<std::size_t>(_totalDiscNumber) : boost::none;
+}
+
 boost::optional<int>
 Release::getReleaseYear(bool original) const
 {
@@ -249,16 +261,16 @@ Release::getCopyrightURL() const
 }
 
 std::vector<Wt::Dbo::ptr<Artist>>
-Release::getArtists() const
+Release::getArtists(TrackArtistLink::Type linkType) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));
 	assert(session());
 
 	Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> res = session()->query<Wt::Dbo::ptr<Artist>>(
-			"SELECT DISTINCT a FROM artist a INNER JOIN release r ON t.id = t_a.track_id INNER JOIN track_artist t_a ON t_a.artist_id = a.id INNER JOIN track t ON t.release_id = r.id")
-		.where("r.id = ?")
-		.bind(id());
+			"SELECT DISTINCT a FROM artist a INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id INNER JOIN track t ON t.id = t_a_l.track_id INNER JOIN release r ON r.id = t.release_id")
+		.where("r.id = ?").bind(self()->id())
+		.where("t_a_l.type = ?").bind(linkType);
 
 	return std::vector<Wt::Dbo::ptr<Artist>>(res.begin(), res.end());
 }

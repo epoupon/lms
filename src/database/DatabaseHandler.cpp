@@ -39,6 +39,7 @@
 #include "ScanSettings.hpp"
 #include "SimilaritySettings.hpp"
 #include "Track.hpp"
+#include "TrackArtistLink.hpp"
 #include "TrackList.hpp"
 #include "TrackFeatures.hpp"
 
@@ -106,6 +107,7 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 	_session.mapClass<TrackListEntry>("tracklist_entry");
 	_session.mapClass<Release>("release");
 	_session.mapClass<Track>("track");
+	_session.mapClass<TrackArtistLink>("track_artist_link");
 	_session.mapClass<TrackFeatures>("track_features");
 
 	_session.mapClass<ScanSettings>("scan_settings");

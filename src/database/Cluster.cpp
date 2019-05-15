@@ -108,6 +108,12 @@ ClusterType::getByName(Wt::Dbo::Session& session, std::string name)
 	return session.find<ClusterType>().where("name = ?").bind(name);
 }
 
+ClusterType::pointer
+ClusterType::getById(Wt::Dbo::Session& session, IdType id)
+{
+	return session.find<ClusterType>().where("id= ?").bind(id);
+}
+
 std::vector<ClusterType::pointer>
 ClusterType::getAll(Wt::Dbo::Session& session)
 {

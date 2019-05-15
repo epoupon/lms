@@ -96,7 +96,10 @@ Releases::addSome()
 
 		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
 
-		auto artists = release->getArtists();
+		auto artists = release->getReleaseArtists();
+		if (artists.empty())
+			artists = release->getArtists();
+
 		if (artists.size() > 1)
 		{
 			entry->setCondition("if-has-artist", true);

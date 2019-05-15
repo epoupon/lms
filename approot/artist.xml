@@ -22,7 +22,7 @@
 					<h4 class="media-heading">
 						${name class="Lms-explore-releasename"}
 					</h4>
-					${<if-has-various-artists>}<h4><small><i>${tr:Lms.Explore.various-artists}</i></small></h4>${</if-has-various-artists>}
+					${<if-has-artist>}<h4><small>${artist class="Lms-explore-artistname"}</small></h4>${</if-has-artist>}
 					<h4><small>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</small></h4>
 					${play-btn}${add-btn}
 				</div>
