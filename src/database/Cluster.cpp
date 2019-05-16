@@ -51,6 +51,14 @@ Cluster::getAll(Wt::Dbo::Session& session)
 	return std::vector<Cluster::pointer>(res.begin(), res.end());
 }
 
+std::vector<Cluster::pointer>
+Cluster::getAllOrphans(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::collection<Cluster::pointer> res {session.query<Cluster::pointer>("SELECT DISTINCT c FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track t INNER JOIN track_cluster t_c ON t.id = t_c.track_id)")};
+
+	return std::vector<Cluster::pointer>(res.begin(), res.end());
+}
+
 Cluster::pointer
 Cluster::getById(Wt::Dbo::Session& session, IdType id)
 {

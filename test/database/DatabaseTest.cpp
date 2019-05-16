@@ -39,11 +39,6 @@ class ScopedFileDeleter final
 		boost::filesystem::path _path;
 };
 
-/*static void check(bool cond)
-{
-	if (!cond)
-}*/
-
 #define CHECK(PRED)  \
 { \
 	if (!(PRED)) \
@@ -172,9 +167,16 @@ testSingleCluster(Wt::Dbo::Session& session)
 		CHECK(clusters.front().id() == clusterId);
 		CHECK(clusters.front()->getType().id() == clusterTypeId);
 
+		clusters = Cluster::getAllOrphans(session);
+		CHECK(clusters.size() == 1);
+		CHECK(clusters.front().id() == clusterId);
+
 		auto clusterTypes {ClusterType::getAll(session)};
 		CHECK(clusterTypes.size() == 1);
 		CHECK(clusterTypes.front().id() == clusterTypeId);
+
+		clusterTypes = ClusterType::getAllOrphans(session);
+		CHECK(clusterTypes.empty());
 	}
 
 	{
@@ -182,11 +184,18 @@ testSingleCluster(Wt::Dbo::Session& session)
 
 		auto cluster {Cluster::getById(session, clusterId)};
 		CHECK(cluster);
-		CHECK(cluster->getType().id() == clusterTypeId);
+		cluster.remove();
+
+		auto clusterTypes {ClusterType::getAllOrphans(session)};
+		CHECK(clusterTypes.size() == 1);
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
 		auto clusterType {ClusterType::getById(session, clusterTypeId)};
 		CHECK(clusterType);
 
-		cluster.remove();
 		clusterType.remove();
 	}
 }
@@ -214,6 +223,11 @@ testSingleTrackSingleArtist(Wt::Dbo::Session& session)
 
 	{
 		Wt::Dbo::Transaction transaction {session};
+		CHECK(Artist::getAllOrphans(session).empty());
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
 
 		auto track {Track::getById(session, trackId)};
 		CHECK(track);
@@ -229,7 +243,7 @@ testSingleTrackSingleArtist(Wt::Dbo::Session& session)
 		CHECK(artistLink->getArtist().id() == artistId);
 
 		CHECK(track->getArtists(TrackArtistLink::Type::Artist).size() == 1);
-		CHECK(track->getArtists(TrackArtistLink::Type::ReleaseArtist).size() == 0);
+		CHECK(track->getArtists(TrackArtistLink::Type::ReleaseArtist).empty());
 	}
 
 	{
@@ -242,7 +256,7 @@ testSingleTrackSingleArtist(Wt::Dbo::Session& session)
 		auto track {tracks.front()};
 		CHECK(track.id() == trackId);
 
-		CHECK(artist->getTracks(TrackArtistLink::Type::ReleaseArtist).size() == 0);
+		CHECK(artist->getTracks(TrackArtistLink::Type::ReleaseArtist).empty());
 		CHECK(artist->getTracks(TrackArtistLink::Type::Artist).size() == 1);
 
 		track.remove();
@@ -269,6 +283,11 @@ testSingleTrackSingleArtistMultiRoles(Wt::Dbo::Session& session)
 		session.flush();
 		trackId = track.id();
 		artistId = artist.id();
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+		CHECK(Artist::getAllOrphans(session).empty());
 	}
 
 	{
@@ -333,6 +352,11 @@ testSingleTrackMultiArtists(Wt::Dbo::Session& session)
 
 	{
 		Wt::Dbo::Transaction transaction {session};
+		CHECK(Artist::getAllOrphans(session).empty());
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
 
 		auto track {Track::getById(session, trackId)};
 		CHECK(track);
@@ -343,7 +367,7 @@ testSingleTrackMultiArtists(Wt::Dbo::Session& session)
 			|| (artists[0].id() == artist2Id && artists[1].id() == artist1Id));
 
 		CHECK(track->getArtists(TrackArtistLink::Type::Artist).size() == 2);
-		CHECK(track->getArtists(TrackArtistLink::Type::ReleaseArtist).size() == 0);
+		CHECK(track->getArtists(TrackArtistLink::Type::ReleaseArtist).empty());
 		CHECK(Artist::getAll(session).size() == 2);
 	}
 
@@ -361,9 +385,9 @@ testSingleTrackMultiArtists(Wt::Dbo::Session& session)
 		CHECK(artist2->getTracks().front() == track);
 
 
-		CHECK(artist1->getTracks(TrackArtistLink::Type::ReleaseArtist).size() == 0);
+		CHECK(artist1->getTracks(TrackArtistLink::Type::ReleaseArtist).empty());
 		CHECK(artist1->getTracks(TrackArtistLink::Type::Artist).size() == 1);
-		CHECK(artist2->getTracks(TrackArtistLink::Type::ReleaseArtist).size() == 0);
+		CHECK(artist2->getTracks(TrackArtistLink::Type::ReleaseArtist).empty());
 		CHECK(artist2->getTracks(TrackArtistLink::Type::Artist).size() == 1);
 
 		track.remove();
@@ -395,18 +419,32 @@ testSingleTrackSingleRelease(Wt::Dbo::Session& session)
 
 	{
 		Wt::Dbo::Transaction transaction {session};
-
-		auto track {Track::getById(session, trackId)};
-		CHECK(track);
-		CHECK(track->getRelease());
-		CHECK(track->getRelease().id() == releaseId);
+		CHECK(Release::getAllOrphans(session).empty());
 
 		auto release {Release::getById(session, releaseId)};
 		CHECK(release);
 		CHECK(release->getTracks().size() == 1);
 		CHECK(release->getTracks().front().id() == trackId);
+	}
 
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto track {Track::getById(session, trackId)};
+		CHECK(track);
+		CHECK(track->getRelease());
+		CHECK(track->getRelease().id() == releaseId);
 		track.remove();
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		CHECK(Release::getAllOrphans(session).size() == 1);
+		auto release {Release::getById(session, releaseId)};
+		CHECK(release);
+		CHECK(release->getTracks().empty());
+
 		release.remove();
 	}
 }
@@ -431,6 +469,11 @@ testSingleTrackSingleCluster(Wt::Dbo::Session& session)
 		trackId = track.id();
 		clusterTypeId = clusterType.id();
 		clusterId = cluster.id();
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+		CHECK(Cluster::getAllOrphans(session).empty());
 	}
 
 	{
@@ -478,6 +521,12 @@ testSingleTrackSingleReleaseSingleCluster(Wt::Dbo::Session& session)
 		releaseId = release.id();
 		clusterTypeId = clusterType.id();
 		clusterId = cluster.id();
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+		CHECK(Cluster::getAllOrphans(session).empty());
+		CHECK(Release::getAllOrphans(session).empty());
 	}
 
 	{
@@ -534,13 +583,20 @@ testSingleTrackSingleArtistMultiClusters(Wt::Dbo::Session& session)
 
 	{
 		Wt::Dbo::Transaction transaction {session};
+		CHECK(Cluster::getAllOrphans(session).empty());
+		CHECK(Release::getAllOrphans(session).empty());
+		CHECK(Artist::getAllOrphans(session).empty());
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
 
 		auto artists {Artist::getByFilter(session, {cluster1Id})};
 		CHECK(artists.size() == 1);
 		CHECK(artists.front().id() == artistId);
 
 		artists = Artist::getByFilter(session, {cluster2Id});
-		CHECK(artists.size() == 0);
+		CHECK(artists.empty());
 
 		auto cluster2 {Cluster::getById(session, cluster2Id)};
 		auto track {Track::getById(session, trackId)};
@@ -609,6 +665,13 @@ testSingleTrackSingleArtistMultiRolesMultiClusters(Wt::Dbo::Session& session)
 
 	{
 		Wt::Dbo::Transaction transaction {session};
+		CHECK(Cluster::getAllOrphans(session).empty());
+		CHECK(Release::getAllOrphans(session).empty());
+		CHECK(Artist::getAllOrphans(session).empty());
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
 
 		auto artists {Artist::getByFilter(session, {clusterId})};
 		CHECK(artists.size() == 1);
@@ -661,6 +724,12 @@ testMultiTracksSingleArtistMultiClusters(Wt::Dbo::Session& session)
 		session.flush();
 		artistId = artist.id();
 		clusterTypeId = clusterType.id();
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+		CHECK(Cluster::getAllOrphans(session).empty());
+		CHECK(Artist::getAllOrphans(session).empty());
 	}
 
 	{
@@ -776,6 +845,13 @@ testSingleTrackSingleReleaseSingleArtistSingleCluster(Wt::Dbo::Session& session)
 
 	{
 		Wt::Dbo::Transaction transaction {session};
+		CHECK(Cluster::getAllOrphans(session).empty());
+		CHECK(Artist::getAllOrphans(session).empty());
+		CHECK(Release::getAllOrphans(session).empty());
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
 
 		auto artists {Artist::getByFilter(session, {clusterId})};
 		CHECK(artists.size() == 1);
@@ -882,11 +958,11 @@ testDatabaseEmpty(Wt::Dbo::Session& session)
 {
 	Wt::Dbo::Transaction transaction {session};
 
-	CHECK(Artist::getAll(session).size() == 0);
-	CHECK(Cluster::getAll(session).size() == 0);
-	CHECK(ClusterType::getAll(session).size() == 0);
-	CHECK(Release::getAll(session).size() == 0);
-	CHECK(Track::getAll(session).size() == 0);
+	CHECK(Artist::getAll(session).empty());
+	CHECK(Cluster::getAll(session).empty());
+	CHECK(ClusterType::getAll(session).empty());
+	CHECK(Release::getAll(session).empty());
+	CHECK(Track::getAll(session).empty());
 }
 
 int main(int argc, char* argv[])

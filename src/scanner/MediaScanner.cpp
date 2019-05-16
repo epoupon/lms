@@ -649,16 +649,12 @@ MediaScanner::removeOrphanEntries()
 	{
 		Wt::Dbo::Transaction transaction(_db.getSession());
 
-		// TODO better query for this
 		// Now process orphan Cluster (no track)
-		auto clusters = Cluster::getAll(_db.getSession());
+		auto clusters = Cluster::getAllOrphans(_db.getSession());
 		for (auto cluster : clusters)
 		{
-			if (cluster->getCount() == 0)
-			{
-				LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster '" << cluster->getName() << "'";
-				cluster.remove();
-			}
+			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster '" << cluster->getName() << "'";
+			cluster.remove();
 		}
 	}
 

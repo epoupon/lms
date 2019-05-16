@@ -44,6 +44,7 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 
 		// Find utility
 		static std::vector<pointer> getAll(Wt::Dbo::Session& session);
+		static std::vector<pointer> getAllOrphans(Wt::Dbo::Session& session);
 		static pointer getById(Wt::Dbo::Session& session, IdType id);
 
 		// Create utility
