@@ -31,6 +31,7 @@
 #include <Wt/Auth/PasswordStrengthValidator.h>
 #include <Wt/Auth/PasswordVerifier.h>
 
+#include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
 #include "Artist.hpp"
@@ -45,11 +46,41 @@
 
 namespace Database {
 
+#define LMS_DATABASE_VERSION	1
 
 namespace {
 	Wt::Auth::AuthService authService;
 	Wt::Auth::PasswordService passwordService {authService};
 }
+
+using Version = std::size_t;
+
+class VersionInfo
+{
+	public:
+		using pointer = Wt::Dbo::ptr<VersionInfo>;
+
+		static VersionInfo::pointer get(Wt::Dbo::Session& session)
+		{
+			pointer versionInfo {session.find<VersionInfo>()};
+			if (!versionInfo)
+				versionInfo = session.add(std::make_unique<VersionInfo>());
+
+			return versionInfo;
+		}
+
+		Version getVersion() const { return _version; }
+		void setVersion(Version version) { _version = static_cast<int>(version); }
+
+		template<class Action>
+		void persist(Action& a)
+		{
+			Wt::Dbo::field(a, _version, "db_version");
+		}
+
+	private:
+		int _version {LMS_DATABASE_VERSION};
+};
 
 
 void
@@ -100,6 +131,7 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 {
 	_session.setConnectionPool(connectionPool);
 
+	_session.mapClass<VersionInfo>("version_info");
 	_session.mapClass<Artist>("artist");
 	_session.mapClass<Cluster>("cluster");
 	_session.mapClass<ClusterType>("cluster_type");
@@ -120,7 +152,7 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 	_session.mapClass<User>("user");
 
 	try {
-		Wt::Dbo::Transaction transaction(_session);
+		Wt::Dbo::Transaction transaction {_session};
 
 	        _session.createTables();
 
@@ -131,8 +163,21 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();
 	}
 
+	try
 	{
-		Wt::Dbo::Transaction transaction(_session);
+		Wt::Dbo::Transaction transaction {_session};
+
+		Version version {VersionInfo::get(_session)->getVersion()};
+		if (version != LMS_DATABASE_VERSION)
+			throw LmsException {"Outdated database, please rebuild it (database migration not yet implemented)"};
+	}
+	catch (std::exception& e)
+	{
+		throw LmsException {"Cannot get database version, please rebuild it (database migration not yet implemented)"};
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {_session};
 
 		// Indexes
 		_session.execute("CREATE INDEX IF NOT EXISTS track_path_idx ON track(file_path)");
