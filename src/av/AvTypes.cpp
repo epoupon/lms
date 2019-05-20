@@ -27,10 +27,10 @@ std::string encodingToMimetype(Encoding encoding)
 {
 	static const std::map<Encoding, std::string> encodings
 	{
-		{Encoding::MP3,		"audio/mp3"},
-			{Encoding::OGG_VORBIS,	"audio/ogg"},
-			{Encoding::OGG_OPUS,	"audio/opus"},
-			{Encoding::WEBM_VORBIS,	"audio/webm"},
+		{Encoding::MP3,		"audio/mpeg"},
+		{Encoding::OGG_VORBIS,	"audio/ogg"},
+		{Encoding::OGG_OPUS,	"audio/opus"},
+		{Encoding::WEBM_VORBIS,	"audio/webm"},
 	};
 
 	auto it {encodings.find(encoding)};
@@ -38,11 +38,6 @@ std::string encodingToMimetype(Encoding encoding)
 		throw AvException("Invalid encoding");
 
 	return it->second;
-}
-
-Encoding guessEncoding(const boost::filesystem::path& file)
-{
-
 }
 
 }

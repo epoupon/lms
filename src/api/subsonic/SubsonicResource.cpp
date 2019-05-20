@@ -39,8 +39,13 @@
 #include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
 
-#define CLUSTER_TYPE_GENRE	"GENRE"
-#define REPORTED_BITRATE	128
+static const std::string	genreClusterName {"GENRE"};
+// Files are always reported to be in the same format
+static const std::size_t	reportedBitrate {128};
+static const std::string	reportedFileSuffix {"mp3"};
+static const Av::Encoding	reportedEncoding {Av::Encoding::MP3};
+static const Av::Encoding	transcodeEncoding {Av::Encoding::MP3};
+
 
 // Requests
 #define PING_URL 		"/rest/ping.view"
@@ -413,9 +418,12 @@ getTrackPath(const Database::Track::pointer& track)
 {
 	std::string path;
 
-	if (track->getRelease())
+	auto release {track->getRelease()};
+	if (release)
 	{
-		auto artists {track->getRelease()->getArtists()};
+		auto artists {release->getReleaseArtists()};
+		if (artists.empty())
+			artists = release->getArtists();
 
 		if (artists.size() > 1)
 			path = "Various Artists/";
@@ -430,7 +438,7 @@ getTrackPath(const Database::Track::pointer& track)
 	if (track->getTrackNumber())
 		path += std::to_string(*track->getTrackNumber()) + "-";
 
-	return path + makeNameFilesystemCompatible(track->getName()) + ".mp3";
+	return path + makeNameFilesystemCompatible(track->getName()) + "." + reportedFileSuffix;
 }
 
 static
@@ -448,7 +456,7 @@ trackToResponseNode(const Database::Track::pointer& track)
 		trackResponse.setAttribute("discNumber", std::to_string(*track->getDiscNumber()));
 	if (track->getYear())
 		trackResponse.setAttribute("year", std::to_string(*track->getYear()));
-	trackResponse.setAttribute("size", std::to_string(REPORTED_BITRATE*1000/8 * std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count()));
+	trackResponse.setAttribute("size", std::to_string(reportedBitrate * 1000 / 8 * std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count()));
 
 	trackResponse.setAttribute("coverArt", IdToString({Id::Type::Track, track.id()}));
 
@@ -469,14 +477,14 @@ trackToResponseNode(const Database::Track::pointer& track)
 	}
 
 	trackResponse.setAttribute("path", getTrackPath(track));
-	trackResponse.setAttribute("bitRate", std::to_string(REPORTED_BITRATE));
+	trackResponse.setAttribute("bitRate", std::to_string(reportedBitrate));
 	trackResponse.setAttribute("duration", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count()));
-	trackResponse.setAttribute("suffix", "mp3");
-	trackResponse.setAttribute("contentType", "audio/mpeg");
+	trackResponse.setAttribute("suffix", reportedFileSuffix);
+	trackResponse.setAttribute("contentType", Av::encodingToMimetype(reportedEncoding));
 	trackResponse.setAttribute("type", "music");
 
 	// Report the first GENRE for this track
-	Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(*track.session(), CLUSTER_TYPE_GENRE)};
+	Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(*track.session(), genreClusterName)};
 	if (clusterType)
 	{
 		auto clusters {track->getClusterGroups({clusterType}, 1)};
@@ -510,7 +518,10 @@ releaseToResponseNode(const Database::Release::pointer& release, bool id3)
 	if (release->getReleaseYear())
 		albumNode.setAttribute("year", std::to_string(*release->getReleaseYear()));
 
-	auto artists {release->getArtists()};
+	auto artists {release->getReleaseArtists()};
+	if (artists.empty())
+		artists = release->getArtists();
+
 	if (artists.empty() && !id3)
 	{
 		albumNode.setAttribute("parent", IdToString({Id::Type::Root}));
@@ -538,7 +549,7 @@ releaseToResponseNode(const Database::Release::pointer& release, bool id3)
 	if (id3)
 	{
 		// Report the first GENRE for this track
-		Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(*release.session(), CLUSTER_TYPE_GENRE)};
+		Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(*release.session(), genreClusterName)};
 		if (clusterType)
 		{
 			auto clusters {release->getClusterGroups({clusterType}, 1)};
@@ -767,7 +778,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 		// Mandatory param
 		std::string genre {getMandatoryParameterAs<std::string>(context.parameters, "genre")};
 
-		Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(context.db.getSession(), CLUSTER_TYPE_GENRE)};
+		Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(context.db.getSession(), genreClusterName)};
 		if (clusterType)
 		{
 			Database::Cluster::pointer cluster {clusterType->getCluster(genre)};
@@ -1009,7 +1020,7 @@ handleGetGenresRequest(RequestContext& context)
 
 	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-	auto clusterType {Database::ClusterType::getByName(context.db.getSession(), CLUSTER_TYPE_GENRE)};
+	auto clusterType {Database::ClusterType::getByName(context.db.getSession(), genreClusterName)};
 	if (clusterType)
 	{
 		auto clusters {clusterType->getClusters()};
@@ -1197,7 +1208,7 @@ handleGetSongsByGenreRequest(RequestContext& context)
 
 	Wt::Dbo::Transaction transaction {context.db.getSession()};
 
-	auto clusterType {Database::ClusterType::getByName(context.db.getSession(), CLUSTER_TYPE_GENRE)};
+	auto clusterType {Database::ClusterType::getByName(context.db.getSession(), genreClusterName)};
 	if (!clusterType)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -1369,7 +1380,7 @@ createTranscoder(RequestContext& context)
 
 	parameters.stripMetadata = false; // Since it can be cached and some players read the metadata from the downloaded file
 	parameters.bitrate = *maxBitRate * 1000;
-	parameters.encoding = Av::Encoding::MP3;
+	parameters.encoding = transcodeEncoding;
 
 	return std::make_shared<Av::Transcoder>(trackPath, parameters);
 }
@@ -1383,8 +1394,10 @@ handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuati
 	if (!continuation)
 	{
 		transcoder = createTranscoder(context);
-		response.setMimeType(Av::encodingToMimetype(Av::Encoding::MP3));
 		transcoder->start();
+
+		response.setMimeType(transcoder->getOutputMimeType());
+		LMS_LOG(API_SUBSONIC, DEBUG) << "Mime type set to '" << transcoder->getOutputMimeType() << "'";
 	}
 	else
 	{
@@ -1407,7 +1420,7 @@ handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuati
 
 		if (!response.out())
 		{
-			LMS_LOG(UI, ERROR) << "Write failed!";
+			LMS_LOG(API_SUBSONIC, ERROR) << "Write failed!";
 			return;
 		}
 	}
