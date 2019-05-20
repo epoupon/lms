@@ -63,7 +63,7 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 		args.push_back("--http-address=" + Config::instance().getString("listen-addr", "0.0.0.0"));
 	}
 
-	args.push_back("--gdb");
+	// args.push_back("--gdb");
 
 	// Generate the wt_config.xml file
 	boost::property_tree::ptree pt;

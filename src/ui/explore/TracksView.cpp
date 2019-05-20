@@ -77,12 +77,12 @@ _filters(filters)
 }
 
 std::vector<Database::Track::pointer>
-Tracks::getTracks(int offset, int size, bool& moreResults)
+Tracks::getTracks(boost::optional<std::size_t> offset, boost::optional<std::size_t> size, bool& moreResults)
 {
-	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
-	auto clusterIds = _filters->getClusterIds();
+	auto searchKeywords {splitString(_search->text().toUTF8(), " ")};
+	auto clusterIds {_filters->getClusterIds()};
 
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
 
 	return Track::getByFilter(LmsApp->getDboSession(), clusterIds, searchKeywords, offset, size, moreResults);
 }
@@ -91,7 +91,7 @@ std::vector<Database::Track::pointer>
 Tracks::getTracks()
 {
 	bool moreResults;
-	return getTracks(-1, -1, moreResults);
+	return getTracks({}, {}, moreResults);
 }
 
 void
@@ -104,15 +104,15 @@ Tracks::refresh()
 void
 Tracks::addSome()
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
 
 	bool moreResults;
-	auto tracks = getTracks(_tracksContainer->count(), 20, moreResults);
+	auto tracks {getTracks(_tracksContainer->count(), 20, moreResults)};
 
 	for (auto track : tracks)
 	{
-		auto trackId = track.id();
-		Wt::WTemplate* entry = _tracksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"));
+		auto trackId {track.id()};
+		Wt::WTemplate* entry {_tracksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 

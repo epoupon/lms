@@ -23,9 +23,8 @@
 
 namespace Database {
 
-// must be ordered
-const std::vector<std::size_t>
-User::audioBitrates =
+const std::set<Bitrate>
+User::audioTranscodeAllowedBitrates =
 {
 	64000,
 	96000,
@@ -35,7 +34,7 @@ User::audioBitrates =
 };
 
 User::User()
-: _maxAudioBitrate(audioBitrates.back())
+: _maxAudioTranscodeBitrate{static_cast<int>(*audioTranscodeAllowedBitrates.rbegin())}
 {
 
 }
@@ -67,29 +66,29 @@ User::getById(Wt::Dbo::Session& session, IdType id)
 }
 
 void
-User::setAudioBitrate(std::size_t bitrate)
+User::setAudioTranscodeBitrate(Bitrate bitrate)
 {
-	_audioBitrate = std::min(bitrate, static_cast<std::size_t>(_maxAudioBitrate));
+	_audioTranscodeBitrate = std::min(bitrate, static_cast<Bitrate>(_maxAudioTranscodeBitrate));
 }
 
 void
-User::setMaxAudioBitrate(std::size_t bitrate)
+User::setMaxAudioTranscodeBitrate(Bitrate bitrate)
 {
-	_maxAudioBitrate = std::min(bitrate, audioBitrates.back());
-	if (_audioBitrate > _maxAudioBitrate)
-		_audioBitrate = _maxAudioBitrate;
+	_maxAudioTranscodeBitrate = std::min(bitrate, *audioTranscodeAllowedBitrates.rbegin());
+	if (_audioTranscodeBitrate > _maxAudioTranscodeBitrate)
+		_audioTranscodeBitrate = _maxAudioTranscodeBitrate;
+}
+
+Bitrate
+User::getAudioTranscodeBitrate(void) const
+{
+	return _audioTranscodeBitrate;
 }
 
 std::size_t
-User::getAudioBitrate(void) const
+User::getMaxAudioTranscodeBitrate(void) const
 {
-	return _audioBitrate;
-}
-
-std::size_t
-User::getMaxAudioBitrate(void) const
-{
-	return _maxAudioBitrate;
+	return _maxAudioTranscodeBitrate;
 }
 
 Wt::Dbo::ptr<TrackList>

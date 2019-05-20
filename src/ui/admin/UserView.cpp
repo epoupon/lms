@@ -45,7 +45,7 @@ class UserModel : public Wt::WFormModel
 	public:
 		static const Field LoginField;
 		static const Field PasswordField;
-		static const Field BitrateLimitField;
+		static const Field AudioTranscodeBitrateLimitField;
 		static const Field DemoField;
 
 		UserModel(boost::optional<Database::IdType> userId)
@@ -59,7 +59,7 @@ class UserModel : public Wt::WFormModel
 			}
 
 			addField(PasswordField);
-			addField(BitrateLimitField);
+			addField(AudioTranscodeBitrateLimitField);
 			addField(DemoField);
 
 			if (!_userId)
@@ -76,7 +76,7 @@ class UserModel : public Wt::WFormModel
 			if (!_userId)
 				return;
 
-			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
 
 			auto authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*_userId) );
 			auto user = LmsApp->getDb().getUser(authUser);
@@ -84,14 +84,14 @@ class UserModel : public Wt::WFormModel
 			if (user == LmsApp->getUser())
 				throw LmsException("Cannot edit ourselves");
 
-			auto bitrate = getBitrateLimitRow(user->getMaxAudioBitrate());
+			auto bitrate {getTranscodeBitrateLimitRow(user->getMaxAudioTranscodeBitrate())};
 			if (bitrate)
-				setValue(BitrateLimitField, bitrateLimitString(*bitrate));
+				setValue(AudioTranscodeBitrateLimitField, transcodeBitrateLimitString(*bitrate));
 		}
 
 		void saveData()
 		{
-			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
 
 			if (_userId)
 			{
@@ -103,9 +103,9 @@ class UserModel : public Wt::WFormModel
 				if (!valueText(PasswordField).empty())
 					Database::Handler::getPasswordService().updatePassword(authUser, valueText(PasswordField));
 
-				auto bitrateLimitRow = getBitrateLimitRow(Wt::asString(value(BitrateLimitField)));
-				user.modify()->setMaxAudioBitrate(bitrateLimit(*bitrateLimitRow));
-				LMS_LOG(UI, DEBUG) << "Max audio bitrate set to " << bitrateLimit(*bitrateLimitRow);
+				auto transcodeBitrateLimitRow = getTranscodeBitrateLimitRow(Wt::asString(value(AudioTranscodeBitrateLimitField)));
+				user.modify()->setMaxAudioTranscodeBitrate(transcodeBitrateLimit(*transcodeBitrateLimitRow));
+				LMS_LOG(UI, DEBUG) << "Max audio bitrate set to " << transcodeBitrateLimit(*transcodeBitrateLimitRow);
 			}
 			else
 			{
@@ -117,8 +117,8 @@ class UserModel : public Wt::WFormModel
 				authUser.setIdentity(Wt::Auth::Identity::LoginName, valueText(LoginField));
 				Database::Handler::getPasswordService().updatePassword(authUser, valueText(PasswordField));
 
-				auto bitrateLimitRow = getBitrateLimitRow(Wt::asString(value(BitrateLimitField)));
-				user.modify()->setMaxAudioBitrate(bitrateLimit(*bitrateLimitRow));
+				auto transcodeBitrateLimitRow = getTranscodeBitrateLimitRow(Wt::asString(value(AudioTranscodeBitrateLimitField)));
+				user.modify()->setMaxAudioTranscodeBitrate(transcodeBitrateLimit(*transcodeBitrateLimitRow));
 
 				if (Wt::asNumber(value(DemoField)))
 					user.modify()->setType(Database::User::Type::DEMO);
@@ -168,7 +168,7 @@ class UserModel : public Wt::WFormModel
 			}
 			else if (field == DemoField)
 			{
-				Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+				Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
 
 				if (Wt::asNumber(value(DemoField)) && Database::User::getDemo(LmsApp->getDboSession()))
 					error = Wt::WString::tr("Lms.Admin.User.demo-account-already-exists");
@@ -182,35 +182,35 @@ class UserModel : public Wt::WFormModel
 			return false;
 		}
 
-		boost::optional<int> getBitrateLimitRow(Wt::WString value)
+		boost::optional<int> getTranscodeBitrateLimitRow(Wt::WString value)
 		{
 			for (int i = 0; i < _bitrateModel->rowCount(); ++i)
 			{
-				if (bitrateLimitString(i) == value)
+				if (transcodeBitrateLimitString(i) == value)
 					return i;
 			}
 
 			return boost::none;
 		}
 
-		boost::optional<int> getBitrateLimitRow(std::size_t value)
+		boost::optional<int> getTranscodeBitrateLimitRow(std::size_t value)
 		{
 			for (int i = 0; i < _bitrateModel->rowCount(); ++i)
 			{
-				if (bitrateLimit(i) == value)
+				if (transcodeBitrateLimit(i) == value)
 					return i;
 			}
 
 			return boost::none;
 		}
 
-		std::size_t bitrateLimit(int row)
+		std::size_t transcodeBitrateLimit(int row)
 		{
 			return Wt::cpp17::any_cast<std::size_t>
 				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::ItemDataRole::User));
 		}
 
-		Wt::WString bitrateLimitString(int row)
+		Wt::WString transcodeBitrateLimitString(int row)
 		{
 			return Wt::cpp17::any_cast<Wt::WString>
 				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::ItemDataRole::Display));
@@ -225,7 +225,7 @@ class UserModel : public Wt::WFormModel
 			_bitrateModel = std::make_shared<Wt::WStringListModel>();
 
 			std::size_t id = 0;
-			for (auto bitrate : Database::User::audioBitrates)
+			for (auto bitrate : Database::User::audioTranscodeAllowedBitrates)
 			{
 				_bitrateModel->addString( Wt::WString::fromUTF8(std::to_string(bitrate / 1000)) );
 				_bitrateModel->setData( id++, 0, bitrate, Wt::ItemDataRole::User);
@@ -240,7 +240,7 @@ class UserModel : public Wt::WFormModel
 
 const Wt::WFormModel::Field UserModel::LoginField = "login";
 const Wt::WFormModel::Field UserModel::PasswordField = "password";
-const Wt::WFormModel::Field UserModel::BitrateLimitField = "audio-bitrate-limit";
+const Wt::WFormModel::Field UserModel::AudioTranscodeBitrateLimitField = "audio-transcode-bitrate-limit";
 const Wt::WFormModel::Field UserModel::DemoField = "demo";
 
 UserView::UserView()
@@ -293,10 +293,10 @@ UserView::refreshView()
 	passwordEdit->setEchoMode(Wt::EchoMode::Password);
 	t->setFormWidget(UserModel::PasswordField, std::move(passwordEdit));
 
-	// Bitrate
+	// Transcode bitrate limit
 	auto bitrate = std::make_unique<Wt::WComboBox>();
 	bitrate->setModel(model->bitrateModel());
-	t->setFormWidget(UserModel::BitrateLimitField, std::move(bitrate));
+	t->setFormWidget(UserModel::AudioTranscodeBitrateLimitField, std::move(bitrate));
 
 	// Demo account
 	t->setFormWidget(UserModel::DemoField, std::make_unique<Wt::WCheckBox>());

@@ -19,15 +19,13 @@
 
 #pragma once
 
-#include <map>
-#include <set>
+#include <chrono>
 
 #include <pstreams/pstream.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 
-#include "AvInfo.hpp"
 #include "AvTypes.hpp"
 
 namespace Av {
@@ -36,11 +34,11 @@ namespace Av {
 
 struct TranscodeParameters
 {
-	Encoding	encoding {Encoding::MP3};
-	std::size_t	bitrate {128000};
-	boost::optional<std::size_t> stream; // Id of the stream to be transcoded (auto detect by default)
-	boost::optional<std::chrono::seconds> offset;
-	bool stripMetadata {true};
+	boost::optional<Encoding>		encoding; // If not set, no transcoding is performed
+	std::size_t				bitrate {128000};
+	boost::optional<std::size_t>		stream; // Id of the stream to be transcoded (auto detect by default)
+	boost::optional<std::chrono::seconds>	offset {};
+	bool 					stripMetadata {true};
 };
 
 class Transcoder
@@ -56,10 +54,12 @@ class Transcoder
 		Transcoder& operator=(const Transcoder&) = delete;
 
 		bool start();
+		const std::string& getOutputMimeType() const { return _outputMimeType; }
 		void process(std::vector<unsigned char>& output, std::size_t maxSize);
 		bool isComplete(void) const { return _isComplete; }
 
 		const TranscodeParameters& getParameters() const { return _parameters; }
+
 
 	private:
 		Transcoder();
@@ -72,6 +72,7 @@ class Transcoder
 		bool			_isComplete = false;
 		std::size_t		_total = 0;
 		std::size_t		_id;
+		std::string		_outputMimeType;
 };
 
 } // namespace Av

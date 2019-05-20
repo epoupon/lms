@@ -46,7 +46,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	1
+#define LMS_DATABASE_VERSION	2
 
 namespace {
 	Wt::Auth::AuthService authService;

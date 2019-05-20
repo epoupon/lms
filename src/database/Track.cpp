@@ -211,9 +211,9 @@ Track::getByFilter(Wt::Dbo::Session& session,
 		.limit(size ? static_cast<int>(*size) + 1 : -1)
 		.offset(offset ? static_cast<int>(*offset) : -1);
 
-	auto res = std::vector<pointer>(collection.begin(), collection.end());
+	std::vector<pointer> res(collection.begin(), collection.end());
 
-	if (size && res.size() == static_cast<std::size_t>(*size) + 1)
+	if (size && (res.size() == static_cast<std::size_t>(*size) + 1))
 	{
 		moreResults = true;
 		res.pop_back();

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string>
+#include <boost/filesystem.hpp>
 
 #include "utils/Exception.hpp"
 
@@ -34,10 +35,10 @@ class AvException : public LmsException
 enum class Encoding
 {
 	// Values are important and must not be changed
-	MP3 = 0,
-	OGG_OPUS = 1,
-	OGG_VORBIS = 2,
-	WEBM_VORBIS = 3,
+	MP3		= 0,
+	OGG_OPUS	= 1,
+	OGG_VORBIS	= 2,
+	WEBM_VORBIS	= 3,
 };
 
 std::string encodingToMimetype(Encoding encoding);

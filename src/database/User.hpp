@@ -34,14 +34,16 @@ using AuthInfo = Wt::Auth::Dbo::AuthInfo<User>;
 class TrackList;
 
 // User selectable audio formats
-enum class AudioEncoding
+// Do not change values
+enum class AudioFormat
 {
-	AUTO		= 0,
 	MP3		= 1,
 	OGG_OPUS	= 2,
 	OGG_VORBIS	= 3,
 	WEBM_VORBIS	= 4,
 };
+
+using Bitrate = std::size_t;
 
 class User : public Wt::Dbo::Dbo<User>
 {
@@ -59,7 +61,7 @@ class User : public Wt::Dbo::Dbo<User>
 		};
 
 		// list of audio parameters
-		static const std::vector<std::size_t> audioBitrates;
+		static const std::set<Bitrate> audioTranscodeAllowedBitrates;
 
 		User();
 
@@ -72,23 +74,25 @@ class User : public Wt::Dbo::Dbo<User>
 		static pointer			getDemo(Wt::Dbo::Session& session);
 
 		// write
-		void setType(Type type)	{ _type = type; }
-		void setAudioBitrate(std::size_t bitrate);
-		void setAudioEncoding(AudioEncoding encoding)	{ _audioEncoding = encoding; }
-		void setMaxAudioBitrate(std::size_t bitrate);
-		void setCurPlayingTrackPos(std::size_t pos) { _curPlayingTrackPos = pos; }
-		void setRadio(bool val) { _radio = val; }
-		void setRepeatAll(bool val) { _repeatAll = val; }
+		void setType(Type type)					{ _type = type; }
+		void setAudioTranscodeEnable(bool value) 		{ _audioTranscodeEnable = value; }
+		void setAudioTranscodeFormat(AudioFormat format)	{ _audioTranscodeFormat = format; }
+		void setAudioTranscodeBitrate(Bitrate bitrate);
+		void setMaxAudioTranscodeBitrate(Bitrate bitrate);
+		void setCurPlayingTrackPos(std::size_t pos)		{ _curPlayingTrackPos = pos; }
+		void setRadio(bool val)					{ _radio = val; }
+		void setRepeatAll(bool val)				{ _repeatAll = val; }
 
 		// read
-		bool isAdmin() const { return _type == Type::ADMIN; }
-		bool isDemo() const { return _type == Type::DEMO; }
-		std::size_t	getAudioBitrate() const;
-		AudioEncoding	getAudioEncoding() const { return _audioEncoding; }
-		std::size_t	getMaxAudioBitrate() const;
-		std::size_t	getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
-		bool		isRepeatAllSet() const { return _repeatAll; }
-		bool		isRadioSet() const { return _radio; }
+		bool			isAdmin() const { return _type == Type::ADMIN; }
+		bool			isDemo() const { return _type == Type::DEMO; }
+		bool			getAudioTranscodeEnable() const { return _audioTranscodeEnable; }
+		Bitrate			getAudioTranscodeBitrate() const;
+		AudioFormat		getAudioTranscodeFormat() const { return _audioTranscodeFormat; }
+		Bitrate			getMaxAudioTranscodeBitrate() const;
+		std::size_t		getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
+		bool			isRepeatAllSet() const { return _repeatAll; }
+		bool			isRadioSet() const { return _radio; }
 
 		Wt::Dbo::ptr<TrackList> getQueuedTrackList() const;
 		Wt::Dbo::ptr<TrackList> getPlayedTrackList() const;
@@ -96,10 +100,11 @@ class User : public Wt::Dbo::Dbo<User>
 		template<class Action>
 			void persist(Action& a)
 			{
-				Wt::Dbo::field(a, _maxAudioBitrate, "max_audio_bitrate");
 				Wt::Dbo::field(a, _type, "type");
-				Wt::Dbo::field(a, _audioBitrate, "audio_bitrate");
-				Wt::Dbo::field(a, _audioEncoding, "audio_encoding");
+				Wt::Dbo::field(a, _maxAudioTranscodeBitrate, "max_audio_bitrate");
+				Wt::Dbo::field(a, _audioTranscodeEnable, "audio_transcode_enable");
+				Wt::Dbo::field(a, _audioTranscodeBitrate, "audio_transcode_bitrate");
+				Wt::Dbo::field(a, _audioTranscodeFormat, "audio_transcode_format");
 				// User's dynamic data
 				Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
 				Wt::Dbo::field(a, _repeatAll, "repeat_all");
@@ -109,20 +114,23 @@ class User : public Wt::Dbo::Dbo<User>
 
 	private:
 
-		static const std::size_t	defaultAudioBitrate = 128000;
+		static const bool		defaultAudioTranscodeEnable {true};
+		static const AudioFormat	defaultAudioTranscodeFormat {AudioFormat::OGG_OPUS};
+		static const Bitrate		defaultAudioTranscodeBitrate {128000};
 
 		// Admin defined settings
-		int	 	_maxAudioBitrate;
-		Type		_type = Type::REGULAR;
+		int	 	_maxAudioTranscodeBitrate;
+		Type		_type {Type::REGULAR};
 
 		// User defined settings
-		int		_audioBitrate = defaultAudioBitrate;
-		AudioEncoding	_audioEncoding = AudioEncoding::AUTO;
+		bool			_audioTranscodeEnable {defaultAudioTranscodeEnable};
+		AudioFormat		_audioTranscodeFormat {defaultAudioTranscodeFormat};
+		int			_audioTranscodeBitrate {defaultAudioTranscodeBitrate};
 
 		// User's dynamic data
-		int		_curPlayingTrackPos = 0; // Current track position in queue
-		bool		_repeatAll = false;
-		bool		_radio = false;
+		int		_curPlayingTrackPos {}; // Current track position in queue
+		bool		_repeatAll {};
+		bool		_radio {};
 
 		Wt::Dbo::collection< Wt::Dbo::ptr<TrackList> > _tracklists;
 

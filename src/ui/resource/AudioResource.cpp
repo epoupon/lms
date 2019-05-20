@@ -49,8 +49,6 @@ AudioResource::handleRequest(const Wt::Http::Request& request,
 {
 	std::shared_ptr<Av::Transcoder> transcoder;
 
-	LMS_LOG(UI, DEBUG) << "Handling new request...";
-
 	// First, see if this request is for a continuation
 	Wt::Http::ResponseContinuation *continuation = request.continuation();
 	if (continuation)
@@ -62,8 +60,9 @@ AudioResource::handleRequest(const Wt::Http::Request& request,
 	{
 		Database::IdType trackId;
 		Av::TranscodeParameters parameters {};
+		parameters.stripMetadata = true;
 
-		LMS_LOG(UI, DEBUG) << "No continuation yet";
+		LMS_LOG(UI, DEBUG) << "First request: creating transcoder";
 		try
 		{
 			auto trackIdStr = request.getParameter("trackid");
@@ -75,8 +74,7 @@ AudioResource::handleRequest(const Wt::Http::Request& request,
 			trackId = std::stol(*request.getParameter("trackid"));
 
 			auto offsetStr = request.getParameter("offset");
-			if (offsetStr)
-				parameters.offset = std::chrono::seconds(std::stol(*offsetStr));
+			parameters.offset = std::chrono::seconds(offsetStr ? std::stol(*offsetStr) : 0);
 		}
 		catch (std::exception &e)
 		{
@@ -98,34 +96,35 @@ AudioResource::handleRequest(const Wt::Http::Request& request,
 				return;
 			}
 
-			parameters.bitrate = LmsApp->getUser()->getAudioBitrate();
-
-			switch (LmsApp->getUser()->getAudioEncoding())
+			if (LmsApp->getUser()->getAudioTranscodeEnable())
 			{
-				case Database::AudioEncoding::AUTO:
-				case Database::AudioEncoding::MP3:
-					parameters.encoding = Av::Encoding::MP3;
-					break;
-				case Database::AudioEncoding::OGG_OPUS:
-					parameters.encoding = Av::Encoding::OGG_OPUS;
-					break;
-				case Database::AudioEncoding::OGG_VORBIS:
-					parameters.encoding = Av::Encoding::OGG_VORBIS;
-					break;
-				case Database::AudioEncoding::WEBM_VORBIS:
-					parameters.encoding = Av::Encoding::WEBM_VORBIS;
-					break;
-				default:
-					parameters.encoding = Av::Encoding::MP3;
-					break;
+				parameters.bitrate = LmsApp->getUser()->getAudioTranscodeBitrate();
+
+				switch (LmsApp->getUser()->getAudioTranscodeFormat())
+				{
+					case Database::AudioFormat::MP3:
+						parameters.encoding = Av::Encoding::MP3;
+						break;
+					case Database::AudioFormat::OGG_OPUS:
+						parameters.encoding = Av::Encoding::OGG_OPUS;
+						break;
+					case Database::AudioFormat::OGG_VORBIS:
+						parameters.encoding = Av::Encoding::OGG_VORBIS;
+						break;
+					case Database::AudioFormat::WEBM_VORBIS:
+						parameters.encoding = Av::Encoding::WEBM_VORBIS;
+						break;
+					default:
+						parameters.encoding = Av::Encoding::OGG_OPUS;
+						break;
+				}
 			}
+			else
+				parameters.bitrate = 0;
+
 			transcoder = std::make_shared<Av::Transcoder>(track->getPath(), parameters);
 		}
 
-		std::string mimeType = Av::encodingToMimetype(transcoder->getParameters().encoding);
-
-		LMS_LOG(UI, DEBUG) << "Mime type set to '" << mimeType << "'";
-		response.setMimeType(mimeType);
 
 		if (!transcoder->start())
 		{
@@ -134,6 +133,11 @@ AudioResource::handleRequest(const Wt::Http::Request& request,
 		}
 
 		LMS_LOG(UI, DEBUG) << "Transcoder started";
+
+		std::string mimeType {transcoder->getOutputMimeType()};
+		response.setMimeType(mimeType);
+		LMS_LOG(UI, DEBUG) << "Mime type set to '" << mimeType << "'";
+
 	}
 
 	if (!transcoder->isComplete())
@@ -144,7 +148,7 @@ AudioResource::handleRequest(const Wt::Http::Request& request,
 		transcoder->process(data, _chunkSize);
 
 		response.out().write(reinterpret_cast<char*>(&data[0]), data.size());
-		LMS_LOG(UI, DEBUG) << "Written " << data.size() << " bytes! complete = " << std::boolalpha << transcoder->isComplete();
+		LMS_LOG(UI, DEBUG) << "Written " << data.size() << " bytes! complete = " << (transcoder->isComplete() ? "true" : "false");
 
 		if (!response.out())
 		{

@@ -45,7 +45,7 @@
 <message id="Lms.Admin.Users.users">Users</message>
 
 <!--User-->
-<message id="Lms.Admin.User.audio-bitrate-limit">Audio bitrate limit</message>
+<message id="Lms.Admin.User.audio-transcode-bitrate-limit">Audio transcode bitrate limit</message>
 <message id="Lms.Admin.User.demo-account">Demo account</message>
 <message id="Lms.Admin.User.demo-account-already-exists">Demo account already exists!</message>
 <message id="Lms.Admin.User.demo-password-invalid">Demo password must be the login name!</message>
@@ -114,14 +114,15 @@
 <!--Settings-->
 <message id="Lms.Settings.account">Account</message>
 <message id="Lms.Settings.audio">Audio</message>
-<message id="Lms.Settings.bitrate">Bitrate</message>
 <message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
-<message id="Lms.Settings.encoding">Encoding</message>
-<message id="Lms.Settings.encoding.auto">Auto</message>
-<message id="Lms.Settings.encoding.mp3">MP3</message>
-<message id="Lms.Settings.encoding.ogg_opus">Ogg/Opus</message>
-<message id="Lms.Settings.encoding.ogg_vorbis">Ogg/Vorbis</message>
-<message id="Lms.Settings.encoding.webm_vorbis">WebM/Vorbis</message>
+<message id="Lms.Settings.transcoding">Transcoding</message>
+<message id="Lms.Settings.transcoding-bitrate">Transcode bitrate</message>
+<message id="Lms.Settings.transcoding-format">Transcode format</message>
+<message id="Lms.Settings.transcoding-enable">Enable transcoding</message>
+<message id="Lms.Settings.transcoding.mp3">MP3</message>
+<message id="Lms.Settings.transcoding.ogg_opus">Ogg/Opus</message>
+<message id="Lms.Settings.transcoding.ogg_vorbis">Ogg/Vorbis</message>
+<message id="Lms.Settings.transcoding.webm_vorbis">WebM/Vorbis</message>
 <message id="Lms.Settings.settings">Settings</message>
 <message id="Lms.Settings.settings-saved">New settings saved!</message>
 

@@ -45,7 +45,7 @@ class Tracks : public Wt::WTemplate
 		void refresh();
 		void addSome();
 
-		std::vector<Database::Track::pointer> getTracks(int offset, int size, bool& moreResults);
+		std::vector<Database::Track::pointer> getTracks(boost::optional<std::size_t> offset, boost::optional<std::size_t> size, bool& moreResults);
 		std::vector<Database::Track::pointer> getTracks();
 
 		Wt::WContainerWidget* _tracksContainer;

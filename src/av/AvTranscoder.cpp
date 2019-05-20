@@ -22,6 +22,7 @@
 #include <atomic>
 #include <mutex>
 
+#include "AvInfo.hpp"
 #include "utils/Path.hpp"
 #include "utils/Logger.hpp"
 
@@ -99,10 +100,6 @@ Transcoder::start()
 	args.push_back("-i");
 	args.push_back(_filePath.string());
 
-	// Output bitrates
-	args.push_back("-b:a");
-	args.push_back(std::to_string(_parameters.bitrate));
-
 	// Stream mapping, if set
 	if (_parameters.stream)
 	{
@@ -121,37 +118,63 @@ Transcoder::start()
 	args.push_back("-vn");
 
 	// Codecs and formats
-	switch( _parameters.encoding)
+	if (_parameters.encoding)
 	{
-		case Encoding::MP3:
-			args.push_back("-f");
-			args.push_back("mp3");
-			break;
+		// Output bitrates
+		args.push_back("-b:a");
+		args.push_back(std::to_string(_parameters.bitrate));
 
-		case Encoding::OGG_OPUS:
-			args.push_back("-acodec");
-			args.push_back("libopus");
-			args.push_back("-f");
-			args.push_back("ogg");
-			break;
+		switch (*_parameters.encoding)
+		{
+			case Encoding::MP3:
+				args.push_back("-f");
+				args.push_back("mp3");
+				break;
 
-		case Encoding::OGG_VORBIS:
-			args.push_back("-acodec");
-			args.push_back("libvorbis");
-			args.push_back("-f");
-			args.push_back("ogg");
-			break;
+			case Encoding::OGG_OPUS:
+				args.push_back("-acodec");
+				args.push_back("libopus");
+				args.push_back("-f");
+				args.push_back("ogg");
+				break;
 
-		case Encoding::WEBM_VORBIS:
-			args.push_back("-acodec");
-			args.push_back("libvorbis");
-			args.push_back("-f");
-			args.push_back("webm");
-			break;
+			case Encoding::OGG_VORBIS:
+				args.push_back("-acodec");
+				args.push_back("libvorbis");
+				args.push_back("-f");
+				args.push_back("ogg");
+				break;
+
+			case Encoding::WEBM_VORBIS:
+				args.push_back("-acodec");
+				args.push_back("libvorbis");
+				args.push_back("-f");
+				args.push_back("webm");
+				break;
 
 
-		default:
+			default:
+				return false;
+		}
+
+		_outputMimeType = encodingToMimetype(*_parameters.encoding);
+	}
+	else
+	{
+		auto mediaFileFormat {guessMediaFileFormat(_filePath)};
+
+		if (!mediaFileFormat)
+		{
+			LMS_LOG(AV, ERROR) << "Cannot guess media file format for '" << _filePath.string() << "'";
 			return false;
+		}
+
+		args.push_back("-acodec");
+		args.push_back("copy");
+		args.push_back("-f");
+		args.push_back(mediaFileFormat->format);
+
+		_outputMimeType = mediaFileFormat->mimeType;
 	}
 
 	args.push_back("pipe:1");
@@ -204,13 +227,9 @@ Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 
 	output.resize(maxSize);
 
-	LMS_LOG_TRANSCODE(DEBUG) << "Reading up to " << output.size() << " bytes";
-
 	//Read on the output stream
 	_child->out().read(reinterpret_cast<char*>(&output[0]), maxSize);
 	output.resize(_child->out().gcount());
-
-	LMS_LOG_TRANSCODE(DEBUG) << "Read " << output.size() << " bytes";
 
 	if (_child->out().fail())
 	{

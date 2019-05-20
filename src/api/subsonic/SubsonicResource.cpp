@@ -1354,9 +1354,9 @@ createTranscoder(RequestContext& context)
 
 		// "If set to zero, no limit is imposed"
 		if (!maxBitRate || *maxBitRate == 0)
-			maxBitRate = user->getAudioBitrate() / 1000;
+			maxBitRate = user->getAudioTranscodeBitrate() / 1000;
 
-		*maxBitRate = clamp(*maxBitRate, std::size_t {48}, user->getMaxAudioBitrate() / 1000);
+		*maxBitRate = clamp(*maxBitRate, std::size_t {48}, user->getMaxAudioTranscodeBitrate() / 1000);
 
 		auto track {Database::Track::getById(context.db.getSession(), id.value)};
 		if (!track)

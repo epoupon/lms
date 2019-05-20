@@ -45,7 +45,7 @@
 <message id="Lms.Admin.Users.users">Utilisateurs</message>
 
 <!--User-->
-<message id="Lms.Admin.User.audio-bitrate-limit">Limite du bitrate</message>
+<message id="Lms.Admin.User.audio-transcode-bitrate-limit">Limite du bitrate pour le transcodage</message>
 <message id="Lms.Admin.User.demo-account">Compte de démonstration</message>
 <message id="Lms.Admin.User.demo-account-already-exists">Le compte de démonstration existe déjà !</message>
 <message id="Lms.Admin.User.demo-password-invalid">Le password doit être égal au login !</message>
@@ -101,7 +101,7 @@
 <message id="Lms.PlayQueue.clear">Effacer</message>
 <message id="Lms.PlayQueue.nb-tracks">{1} pistes</message>
 <message id="Lms.PlayQueue.nb-tracks-added">{1} pistes ajoutées</message>
-<message id="Lms.PlayQueue.nb-tracks-playing">{1} pistes ajouées</message>
+<message id="Lms.PlayQueue.nb-tracks-playing">{1} pistes ajoutées</message>
 <message id="Lms.PlayQueue.playqueue">Liste de lecture</message>
 <message id="Lms.PlayQueue.radio-mode">Mode radio</message>
 <message id="Lms.PlayQueue.repeat">Repéter</message>
@@ -115,14 +115,15 @@
 <message id="Lms.Settings.account">Compte</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.auto">Auto</message>
-<message id="Lms.Settings.bitrate">Bitrate</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
-<message id="Lms.Settings.encoding">Encodage</message>
-<message id="Lms.Settings.encoding.auto">Auto</message>
-<message id="Lms.Settings.encoding.mp3">MP3</message>
-<message id="Lms.Settings.encoding.ogg_opus">Ogg/Opus</message>
-<message id="Lms.Settings.encoding.ogg_vorbis">Ogg/Vorbis</message>
-<message id="Lms.Settings.encoding.webm_vorbis">WebM/Vorbis</message>
+<message id="Lms.Settings.transcoding">Transcodage</message>
+<message id="Lms.Settings.transcoding-bitrate">Bitrate du transcodage</message>
+<message id="Lms.Settings.transcoding-format">Format du transcodage</message>
+<message id="Lms.Settings.transcoding-enable">Activer le transcodage</message>
+<message id="Lms.Settings.transcoding.mp3">MP3</message>
+<message id="Lms.Settings.transcoding.ogg_opus">Ogg/Opus</message>
+<message id="Lms.Settings.transcoding.ogg_vorbis">Ogg/Vorbis</message>
+<message id="Lms.Settings.transcoding.webm_vorbis">WebM/Vorbis</message>
 <message id="Lms.Settings.settings">Paramètres</message>
 <message id="Lms.Settings.settings-saved">Paramètres sauvegardés !</message>
 

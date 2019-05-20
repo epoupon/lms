@@ -40,5 +40,10 @@ std::string encodingToMimetype(Encoding encoding)
 	return it->second;
 }
 
+Encoding guessEncoding(const boost::filesystem::path& file)
+{
+
+}
+
 }
 

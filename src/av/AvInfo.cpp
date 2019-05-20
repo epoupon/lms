@@ -24,6 +24,7 @@
 #include <array>
 
 #include "utils/Logger.hpp"
+#include "utils/Utils.hpp"
 
 namespace Av {
 
@@ -51,10 +52,8 @@ void AvInit()
 }
 
 
-
-
 MediaFile::MediaFile(const boost::filesystem::path& p)
-: _p(p), _context(nullptr)
+: _p {p}
 {
 	int error = avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr);
 	if (error < 0)
@@ -75,6 +74,12 @@ MediaFile::MediaFile(const boost::filesystem::path& p)
 MediaFile::~MediaFile()
 {
 	avformat_close_input(&_context);
+}
+
+std::string
+MediaFile::getFormatName() const
+{
+	return _context->iformat->name;
 }
 
 std::chrono::milliseconds
@@ -127,9 +132,9 @@ MediaFile::getStreamInfo() const
 {
 	std::vector<StreamInfo> res;
 
-	for (std::size_t i = 0; i < _context->nb_streams; ++i)
+	for (std::size_t i {}; i < _context->nb_streams; ++i)
 	{
-		AVStream*	avstream = _context->streams[i];
+		AVStream* avstream { _context->streams[i]};
 
 		// Skip attached pics
 		if (avstream->disposition & AV_DISPOSITION_ATTACHED_PIC)
@@ -231,6 +236,32 @@ MediaFile::getAttachedPictures(std::size_t nbMaxPictures) const
 	}
 
 	return pictures;
+}
+
+boost::optional<MediaFileFormat> guessMediaFileFormat(const boost::filesystem::path& file)
+{
+	AVOutputFormat* format {av_guess_format(NULL,file.string().c_str(),NULL)};
+	if (!format || !format->name)
+		return {};
+
+	auto formats {splitString(format->name, ",")};
+	if (formats.size() > 1)
+		LMS_LOG(AV, INFO) << "File '" << file.string() << "' reported several formats: '" << format->name << "'";
+
+	std::vector<std::string> mimeTypes;
+	if (format->mime_type)
+		mimeTypes = splitString(format->mime_type, ",");
+
+	if (mimeTypes.empty())
+		LMS_LOG(AV, INFO) << "File '" << file.string() << "', no mime type found!";
+	else if (mimeTypes.size() > 1)
+		LMS_LOG(AV, INFO) << "File '" << file.string() << "' reported several mime types: '" << format->mime_type << "'";
+
+	MediaFileFormat res;
+	res.format = formats.front();
+	res.mimeType = mimeTypes.empty() ? "application/octet-stream" : mimeTypes.front();
+
+	return res;
 }
 
 } // namespace Av

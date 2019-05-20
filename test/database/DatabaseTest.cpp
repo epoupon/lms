@@ -482,6 +482,10 @@ testSingleTrackSingleCluster(Wt::Dbo::Session& session)
 		auto tracks {Track::getByFilter(session, {clusterId})};
 		CHECK(tracks.size() == 1);
 		CHECK(tracks.front().id() == trackId);
+
+		tracks = Track::getByFilter(session, {});
+		CHECK(tracks.size() == 1);
+		CHECK(tracks.front().id() == trackId);
 	}
 
 	{
@@ -533,6 +537,10 @@ testSingleTrackSingleReleaseSingleCluster(Wt::Dbo::Session& session)
 		Wt::Dbo::Transaction transaction {session};
 
 		auto releases {Release::getByFilter(session, {clusterId})};
+		CHECK(releases.size() == 1);
+		CHECK(releases.front().id() == releaseId);
+
+		releases = Release::getByFilter(session, {clusterId});
 		CHECK(releases.size() == 1);
 		CHECK(releases.front().id() == releaseId);
 	}
@@ -592,6 +600,10 @@ testSingleTrackSingleArtistMultiClusters(Wt::Dbo::Session& session)
 		Wt::Dbo::Transaction transaction {session};
 
 		auto artists {Artist::getByFilter(session, {cluster1Id})};
+		CHECK(artists.size() == 1);
+		CHECK(artists.front().id() == artistId);
+
+		artists = Artist::getByFilter(session, {});
 		CHECK(artists.size() == 1);
 		CHECK(artists.front().id() == artistId);
 
