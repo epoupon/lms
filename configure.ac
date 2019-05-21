@@ -88,6 +88,12 @@ AC_CONFIG_FILES([Makefile
 		 tools/similarity/Makefile
 		 tools/metadata/Makefile])
 
-AC_OUTPUT
+AC_ARG_ENABLE([tools],
+	      [AC_HELP_STRING([--enable-tools], [Build the tools])],
+	      [:],
+	      [enable_tools=no])
 
+AM_CONDITIONAL([BUILD_TOOLS], [test "$enable_tools" = "yes"])
+
+AC_OUTPUT
 
