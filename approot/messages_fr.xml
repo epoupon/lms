@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<messages xmlns:if="Wt.WTemplate.conditions">
+<messages xmlns:if="Wt.WTemplate.conditions"
+	nplurals="2" plural="n > 1 ? 1 : 0">
 
 <!--Common-->
 <message id="Lms.add">Ajouter</message>
@@ -100,8 +101,14 @@
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">Effacer</message>
 <message id="Lms.PlayQueue.nb-tracks">{1} pistes</message>
-<message id="Lms.PlayQueue.nb-tracks-added">{1} pistes ajoutées</message>
-<message id="Lms.PlayQueue.nb-tracks-playing">{1} pistes ajoutées</message>
+<message id="Lms.PlayQueue.nb-tracks-playing">
+	<plural case="0">{1} piste ajoutée</plural>
+	<plural case="1">{1} pistes ajoutées</plural>
+</message>
+<message id="Lms.PlayQueue.nb-tracks-added">
+	<plural case="0">{1} piste ajoutée</plural>
+	<plural case="1">{1} pistes ajoutées</plural>
+</message>
 <message id="Lms.PlayQueue.playqueue">Liste de lecture</message>
 <message id="Lms.PlayQueue.radio-mode">Mode radio</message>
 <message id="Lms.PlayQueue.repeat">Repéter</message>

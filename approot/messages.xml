@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<messages xmlns:if="Wt.WTemplate.conditions">
+<messages xmlns:if="Wt.WTemplate.conditions"
+	nplurals="2" plural="n > 1 ? 1 : 0">
 
 <!--Common-->
 <message id="Lms.add">Add</message>
@@ -100,8 +101,14 @@
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">Clear</message>
 <message id="Lms.PlayQueue.nb-tracks">{1} tracks</message>
-<message id="Lms.PlayQueue.nb-tracks-added">Added {1} tracks</message>
-<message id="Lms.PlayQueue.nb-tracks-playing">Playing {1} tracks</message>
+<message id="Lms.PlayQueue.nb-tracks-added">
+	<plural case="0">Added {1} track</plural>
+	<plural case="1">Added {1} tracks</plural>
+</message>
+<message id="Lms.PlayQueue.nb-tracks-playing">
+	<plural case="0">Playing {1} track</plural>
+	<plural case="1">Playing {1} tracks</plural>
+</message>
 <message id="Lms.PlayQueue.playqueue">Play Queue</message>
 <message id="Lms.PlayQueue.radio-mode">Radio mode</message>
 <message id="Lms.PlayQueue.repeat">Repeat</message>
@@ -132,3 +139,4 @@
 <message id="Wt.Auth.password-info"></message>
 
 </messages>
+
