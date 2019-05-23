@@ -61,11 +61,10 @@ class SimilaritySettings : public Wt::Dbo::Dbo<SimilaritySettings>
 {
 	public:
 
-		enum class PreferredMethod
+		enum class EngineType
 		{
-			Auto,
-			Features,
-			Clusters,
+			Features = 0,
+			Clusters = 1,
 		};
 
 		using pointer = Wt::Dbo::ptr<SimilaritySettings>;
@@ -75,23 +74,25 @@ class SimilaritySettings : public Wt::Dbo::Dbo<SimilaritySettings>
 
 		// Accessors Read
 		std::size_t		getVersion() const { return _settingsVersion; }
-		PreferredMethod		getPreferredMethod() const { return _preferredMethod; }
+		EngineType		getEngineType() const { return _engineType; }
 		std::vector<Wt::Dbo::ptr<SimilaritySettingsFeature>> getFeatures() const;
 
+		// Setters
+		void	setEngineType(EngineType type) { _engineType = type; }
 
 		template<class Action>
 		void persist(Action& a)
 		{
-			Wt::Dbo::field(a, _settingsVersion,		"settings_version");
-			Wt::Dbo::field(a, _preferredMethod,		"preferred_method");
+			Wt::Dbo::field(a, _settingsVersion,	"settings_version");
+			Wt::Dbo::field(a, _engineType,		"engine_type");
 
 			Wt::Dbo::hasMany(a, _features, Wt::Dbo::ManyToOne, "similarity_settings");
 		}
 
 	private:
 
-		int			_settingsVersion = 0;
-		PreferredMethod		_preferredMethod = PreferredMethod::Auto;
+		int		_settingsVersion {};
+		EngineType	_engineType {EngineType::Features};
 
 		Wt::Dbo::collection<Wt::Dbo::ptr<SimilaritySettingsFeature>> _features;
 };

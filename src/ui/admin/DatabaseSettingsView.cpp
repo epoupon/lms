@@ -24,20 +24,22 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WString.h>
-#include <Wt/WStringListModel.h>
 #include <Wt/WTemplateFormView.h>
 
 #include "database/Cluster.hpp"
+#include "database/SimilaritySettings.hpp"
 #include "main/Service.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
 #include "common/Validators.hpp"
+#include "common/ValueStringModel.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
 
 using namespace Database;
+
 
 class DatabaseSettingsModel : public Wt::WFormModel
 {
@@ -46,6 +48,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 		static const Field MediaDirectoryField;
 		static const Field UpdatePeriodField;
 		static const Field UpdateStartTimeField;
+		static const Field SimilarityEngineTypeField;
 		static const Field TagsField;
 
 		DatabaseSettingsModel()
@@ -56,6 +59,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			addField(MediaDirectoryField);
 			addField(UpdatePeriodField);
 			addField(UpdateStartTimeField);
+			addField(SimilarityEngineTypeField);
 			addField(TagsField);
 
 			auto dirValidator = std::make_shared<DirectoryValidator>();
@@ -64,6 +68,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 			setValidator(UpdatePeriodField, createMandatoryValidator());
 			setValidator(UpdateStartTimeField, createMandatoryValidator());
+			setValidator(SimilarityEngineTypeField, createMandatoryValidator());
 			setValidator(TagsField, createTagsValidator());
 
 			// populate the model with initial data
@@ -72,26 +77,30 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 		std::shared_ptr<Wt::WAbstractItemModel> updatePeriodModel() { return _updatePeriodModel; }
 		std::shared_ptr<Wt::WAbstractItemModel> updateStartTimeModel() { return _updateStartTimeModel; }
+		std::shared_ptr<Wt::WAbstractItemModel> similarityEngineTypeModel() { return _similarityEngineTypeModel; }
 
 		void loadData()
 		{
-			using namespace Database;
+			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
 
-			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-			auto scanSettings = ScanSettings::get(LmsApp->getDboSession());
+			auto scanSettings {ScanSettings::get(LmsApp->getDboSession())};
+			auto similaritySettings {SimilaritySettings::get(LmsApp->getDboSession())};
 
 			setValue(MediaDirectoryField, scanSettings->getMediaDirectory().string());
 
-			auto periodRow = getUpdatePeriodModelRow( scanSettings->getUpdatePeriod() );
+			auto periodRow {_updatePeriodModel->getRowFromValue(scanSettings->getUpdatePeriod())};
 			if (periodRow)
-				setValue(UpdatePeriodField, updatePeriodString(*periodRow));
+				setValue(UpdatePeriodField, _updatePeriodModel->getString(*periodRow));
 
-			auto startTimeRow = getUpdateStartTimeModelRow( scanSettings->getUpdateStartTime() );
+			auto startTimeRow {_updateStartTimeModel->getRowFromValue(scanSettings->getUpdateStartTime())};
 			if (startTimeRow)
-				setValue(UpdateStartTimeField, updateStartTimeString(*startTimeRow) );
+				setValue(UpdateStartTimeField, _updateStartTimeModel->getString(*startTimeRow));
 
-			auto clusterTypes = scanSettings->getClusterTypes();
+			auto similarityEngineTypeRow {_similarityEngineTypeModel->getRowFromValue(similaritySettings->getEngineType())};
+			if (similarityEngineTypeRow)
+				setValue(SimilarityEngineTypeField, _similarityEngineTypeModel->getString(*similarityEngineTypeRow));
+
+			auto clusterTypes {scanSettings->getClusterTypes()};
 			if (!clusterTypes.empty())
 			{
 				std::vector<std::string> names;
@@ -102,93 +111,28 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
 
-			auto scanSettings = ScanSettings::get(LmsApp->getDboSession());
+			auto scanSettings {ScanSettings::get(LmsApp->getDboSession())};
+			auto similaritySettings {SimilaritySettings::get(LmsApp->getDboSession())};
 
 			scanSettings.modify()->setMediaDirectory(valueText(MediaDirectoryField).toUTF8());
 
-			auto updatePeriodRow = getUpdatePeriodModelRow( valueText(UpdatePeriodField));
-			assert(updatePeriodRow);
-			scanSettings.modify()->setUpdatePeriod(updatePeriod(*updatePeriodRow));
+			auto updatePeriodRow {_updatePeriodModel->getRowFromString(valueText(UpdatePeriodField))};
+			if (updatePeriodRow)
+				scanSettings.modify()->setUpdatePeriod(_updatePeriodModel->getValue(*updatePeriodRow));
 
-			auto startTimeRow = getUpdateStartTimeModelRow( valueText(UpdateStartTimeField));
-			assert(startTimeRow);
-			scanSettings.modify()->setUpdateStartTime(updateStartTime(*startTimeRow));
+			auto startTimeRow {_updateStartTimeModel->getRowFromString(valueText(UpdateStartTimeField))};
+			if (startTimeRow)
+				scanSettings.modify()->setUpdateStartTime(_updateStartTimeModel->getValue(*startTimeRow));
 
-			auto clusterTypes = splitString(valueText(TagsField).toUTF8(), " ");
+			auto similarityEngineTypeRow {_similarityEngineTypeModel->getRowFromString(valueText(SimilarityEngineTypeField))};
+			if (similarityEngineTypeRow)
+				similaritySettings.modify()->setEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
+
+			auto clusterTypes {splitString(valueText(TagsField).toUTF8(), " ")};
 			scanSettings.modify()->setClusterTypes(std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
 		}
-
-		boost::optional<int> getUpdatePeriodModelRow(Wt::WString value)
-		{
-			for (int i = 0; i < _updatePeriodModel->rowCount(); ++i)
-			{
-				if (updatePeriodString(i) == value)
-					return i;
-			}
-
-			return boost::none;
-		}
-
-		boost::optional<int> getUpdatePeriodModelRow(ScanSettings::UpdatePeriod period)
-		{
-			for (int i = 0; i < _updatePeriodModel->rowCount(); ++i)
-			{
-				if (updatePeriod(i) == period)
-					return i;
-			}
-
-			return boost::none;
-		}
-
-		ScanSettings::UpdatePeriod updatePeriod(int row)
-		{
-			return Wt::cpp17::any_cast<ScanSettings::UpdatePeriod>
-				(_updatePeriodModel->data(_updatePeriodModel->index(row, 0), Wt::ItemDataRole::User));
-		}
-
-		Wt::WString updatePeriodString(int row)
-		{
-			return Wt::cpp17::any_cast<Wt::WString>
-				(_updatePeriodModel->data(_updatePeriodModel->index(row, 0), Wt::ItemDataRole::Display));
-		}
-
-
-		boost::optional<int> getUpdateStartTimeModelRow(Wt::WString value)
-		{
-			for (int i = 0; i < _updateStartTimeModel->rowCount(); ++i)
-			{
-				if (updateStartTimeString(i) == value)
-					return i;
-			}
-
-			return boost::none;
-		}
-
-		boost::optional<int> getUpdateStartTimeModelRow(Wt::WTime startTime)
-		{
-			for (int i = 0; i < _updateStartTimeModel->rowCount(); ++i)
-			{
-				if (updateStartTime(i) == startTime)
-					return i;
-			}
-
-			return boost::none;
-		}
-
-		Wt::WTime updateStartTime(int row)
-		{
-			return Wt::cpp17::any_cast<Wt::WTime>
-				(_updateStartTimeModel->data(_updateStartTimeModel->index(row, 0), Wt::ItemDataRole::User));
-		}
-
-		Wt::WString updateStartTimeString(int row)
-		{
-			return Wt::cpp17::any_cast<Wt::WString>
-				(_updateStartTimeModel->data(_updateStartTimeModel->index(row, 0), Wt::ItemDataRole::Display));
-		}
-
 
 	private:
 
@@ -200,42 +144,34 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 		void initializeModels()
 		{
+			_updatePeriodModel = std::make_shared<ValueStringModel<ScanSettings::UpdatePeriod>>();
+			_updatePeriodModel->add(Wt::WString::tr("Lms.Admin.Database.never"), ScanSettings::UpdatePeriod::Never);
+			_updatePeriodModel->add(Wt::WString::tr("Lms.Admin.Database.daily"), ScanSettings::UpdatePeriod::Daily);
+			_updatePeriodModel->add(Wt::WString::tr("Lms.Admin.Database.weekly"), ScanSettings::UpdatePeriod::Weekly);
+			_updatePeriodModel->add(Wt::WString::tr("Lms.Admin.Database.monthly"), ScanSettings::UpdatePeriod::Monthly);
 
-			_updatePeriodModel = std::make_shared<Wt::WStringListModel>();
-
-			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.never"));
-			_updatePeriodModel->setData(0, 0, ScanSettings::UpdatePeriod::Never, Wt::ItemDataRole::User);
-
-			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.daily"));
-			_updatePeriodModel->setData(1, 0, ScanSettings::UpdatePeriod::Daily, Wt::ItemDataRole::User);
-
-			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.weekly"));
-			_updatePeriodModel->setData(2, 0, ScanSettings::UpdatePeriod::Weekly, Wt::ItemDataRole::User);
-
-			_updatePeriodModel->addString(Wt::WString::tr("Lms.Admin.Database.monthly"));
-			_updatePeriodModel->setData(3, 0, ScanSettings::UpdatePeriod::Monthly, Wt::ItemDataRole::User);
-
-			_updateStartTimeModel = std::make_shared<Wt::WStringListModel>();
-
+			_updateStartTimeModel = std::make_shared<ValueStringModel<Wt::WTime>>();
 			for (std::size_t i = 0; i < 24; ++i)
 			{
-				Wt::WTime time(i, 0);
-
-				_updateStartTimeModel->addString( time.toString() );
-				_updateStartTimeModel->setData(i, 0, time, Wt::ItemDataRole::User);
+				Wt::WTime time {static_cast<int>(i), 0};
+				_updateStartTimeModel->add(time.toString(), time);
 			}
 
+			_similarityEngineTypeModel = std::make_shared<ValueStringModel<SimilaritySettings::EngineType>>();
+			_similarityEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.similarity-engine-type.clusters"), SimilaritySettings::EngineType::Clusters);
+			_similarityEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.similarity-engine-type.features"), SimilaritySettings::EngineType::Features);
 		}
 
-
-		std::shared_ptr<Wt::WStringListModel>	_updatePeriodModel;
-		std::shared_ptr<Wt::WStringListModel>	_updateStartTimeModel;
+		std::shared_ptr<ValueStringModel<ScanSettings::UpdatePeriod>>		_updatePeriodModel;
+		std::shared_ptr<ValueStringModel<Wt::WTime>>				_updateStartTimeModel;
+		std::shared_ptr<ValueStringModel<SimilaritySettings::EngineType>>	_similarityEngineTypeModel;
 
 };
 
 const Wt::WFormModel::Field DatabaseSettingsModel::MediaDirectoryField		= "media-directory";
 const Wt::WFormModel::Field DatabaseSettingsModel::UpdatePeriodField		= "update-period";
 const Wt::WFormModel::Field DatabaseSettingsModel::UpdateStartTimeField		= "update-start-time";
+const Wt::WFormModel::Field DatabaseSettingsModel::SimilarityEngineTypeField	= "similarity-engine-type";
 const Wt::WFormModel::Field DatabaseSettingsModel::TagsField			= "tags";
 
 DatabaseSettingsView::DatabaseSettingsView()
@@ -256,21 +192,26 @@ DatabaseSettingsView::refreshView()
 
 	clear();
 
-	auto t = addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Admin.Database.template"));
-	auto model = std::make_shared<DatabaseSettingsModel>();
+	auto t {addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Admin.Database.template"))};
+	auto model {std::make_shared<DatabaseSettingsModel>()};
 
 	// Media Directory
 	t->setFormWidget(DatabaseSettingsModel::MediaDirectoryField, std::make_unique<Wt::WLineEdit>());
 
 	// Update Period
-	auto updatePeriod = std::make_unique<Wt::WComboBox>();
+	auto updatePeriod {std::make_unique<Wt::WComboBox>()};
 	updatePeriod->setModel(model->updatePeriodModel());
 	t->setFormWidget(DatabaseSettingsModel::UpdatePeriodField, std::move(updatePeriod));
 
 	// Update Start Time
-	auto updateStartTime = std::make_unique<Wt::WComboBox>();
+	auto updateStartTime {std::make_unique<Wt::WComboBox>()};
 	updateStartTime->setModel(model->updateStartTimeModel());
 	t->setFormWidget(DatabaseSettingsModel::UpdateStartTimeField, std::move(updateStartTime));
+
+	// Similarity engine type
+	auto similarityEngineType {std::make_unique<Wt::WComboBox>()};
+	similarityEngineType->setModel(model->similarityEngineTypeModel());
+	t->setFormWidget(DatabaseSettingsModel::SimilarityEngineTypeField, std::move(similarityEngineType));
 
 	// Tags
 	t->setFormWidget(DatabaseSettingsModel::TagsField, std::make_unique<Wt::WLineEdit>());

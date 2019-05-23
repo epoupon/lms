@@ -31,23 +31,22 @@ Searcher::Searcher(FeaturesScannerAddon& somAddon)
 {}
 
 static
-Database::SimilaritySettings::PreferredMethod getPreferredMethod(Wt::Dbo::Session& session)
+Database::SimilaritySettings::EngineType getEngineType(Wt::Dbo::Session& session)
 {
-	Wt::Dbo::Transaction transaction(session);
-	return Database::SimilaritySettings::get(session)->getPreferredMethod();
+	Wt::Dbo::Transaction transaction{session};
+	return Database::SimilaritySettings::get(session)->getEngineType();
 }
 
 std::vector<Database::IdType>
 Searcher::getSimilarTracks(Wt::Dbo::Session& session, const std::set<Database::IdType>& trackIds, std::size_t maxCount)
 {
 
-	auto method = getPreferredMethod(session);
-	auto somSearcher = _somAddon.getSearcher();
+	auto engineType {getEngineType(session)};
+	auto somSearcher {_somAddon.getSearcher()};
 
-	if (method == Database::SimilaritySettings::PreferredMethod::Features
-		|| (method == Database::SimilaritySettings::PreferredMethod::Auto
-			&& somSearcher
-			&& std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return somSearcher->isTrackClassified(trackId); } )))
+	if (engineType == Database::SimilaritySettings::EngineType::Features
+		&& somSearcher
+		&& std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return somSearcher->isTrackClassified(trackId); } ))
 	{
 		return somSearcher->getSimilarTracks(trackIds, maxCount);
 	}
@@ -58,13 +57,12 @@ Searcher::getSimilarTracks(Wt::Dbo::Session& session, const std::set<Database::I
 std::vector<Database::IdType>
 Searcher::getSimilarReleases(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t maxCount)
 {
-	auto method = getPreferredMethod(session);
-	auto somSearcher = _somAddon.getSearcher();
+	auto engineType {getEngineType(session)};
+	auto somSearcher {_somAddon.getSearcher()};
 
-	if (method == Database::SimilaritySettings::PreferredMethod::Features
-		|| (method == Database::SimilaritySettings::PreferredMethod::Auto
-			&& somSearcher
-			&& somSearcher->isReleaseClassified(releaseId)))
+	if (engineType == Database::SimilaritySettings::EngineType::Features
+		&& somSearcher
+		&& somSearcher->isReleaseClassified(releaseId))
 	{
 		return somSearcher->getSimilarReleases(releaseId, maxCount);
 	}
@@ -75,13 +73,12 @@ Searcher::getSimilarReleases(Wt::Dbo::Session& session, Database::IdType release
 std::vector<Database::IdType>
 Searcher::getSimilarArtists(Wt::Dbo::Session& session, Database::IdType artistId, std::size_t maxCount)
 {
-	auto method = getPreferredMethod(session);
-	auto somSearcher = _somAddon.getSearcher();
+	auto engineType {getEngineType(session)};
+	auto somSearcher {_somAddon.getSearcher()};
 
-	if (method == Database::SimilaritySettings::PreferredMethod::Features
-		|| (method == Database::SimilaritySettings::PreferredMethod::Auto
-			&& somSearcher
-			&& somSearcher->isArtistClassified(artistId)))
+	if (engineType == Database::SimilaritySettings::EngineType::Features
+		&& somSearcher
+		&& somSearcher->isArtistClassified(artistId))
 	{
 		return somSearcher->getSimilarArtists(artistId, maxCount);
 	}

@@ -26,9 +26,9 @@
 #include <Wt/WLineEdit.h>
 
 #include <Wt/WFormModel.h>
-#include <Wt/WStringListModel.h>
 
 #include "common/Validators.hpp"
+#include "common/ValueStringModel.hpp"
 
 #include "utils/Logger.hpp"
 #include "LmsApplication.hpp"
@@ -67,6 +67,24 @@ class SettingsModel : public Wt::WFormModel
 		std::shared_ptr<Wt::WAbstractItemModel> transcodeBitrateModel() { return _transcodeBitrateModel; }
 		std::shared_ptr<Wt::WAbstractItemModel> transcodeFormatModel() { return _transcodeFormatModel; }
 
+		void saveData()
+		{
+			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+
+			LmsApp->getUser().modify()->setAudioTranscodeEnable(Wt::asNumber(value(TranscodeEnableField)));
+
+			auto transcodeBitrateRow {_transcodeBitrateModel->getRowFromString(valueText(TranscodeBitrateField))};
+			if (transcodeBitrateRow)
+				LmsApp->getUser().modify()->setAudioTranscodeBitrate(_transcodeBitrateModel->getValue(*transcodeBitrateRow));
+
+			auto transcodeFormatRow {_transcodeFormatModel->getRowFromString(valueText(TranscodeFormatField))};
+			if (transcodeFormatRow)
+				LmsApp->getUser().modify()->setAudioTranscodeFormat(_transcodeFormatModel->getValue(*transcodeFormatRow));
+
+			if (!valueText(PasswordField).empty())
+				Handler::getPasswordService().updatePassword(LmsApp->getAuthUser(), valueText(PasswordField));
+		}
+
 		void loadData()
 		{
 			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
@@ -78,32 +96,16 @@ class SettingsModel : public Wt::WFormModel
 				setReadOnly(TranscodeBitrateField, true);
 			}
 
-			auto transcodeBitrateRow {getTranscodeBitrateRow(LmsApp->getUser()->getAudioTranscodeBitrate())};
+			auto transcodeBitrateRow {_transcodeBitrateModel->getRowFromValue(LmsApp->getUser()->getAudioTranscodeBitrate())};
 			if (transcodeBitrateRow)
-				setValue(TranscodeBitrateField, transcodeBitrateString(*transcodeBitrateRow));
+				setValue(TranscodeBitrateField, _transcodeBitrateModel->getString(*transcodeBitrateRow));
 
-			auto transcodeFormatRow {getTranscodeFormatRow(LmsApp->getUser()->getAudioTranscodeFormat())};
+			auto transcodeFormatRow {_transcodeFormatModel->getRowFromValue(LmsApp->getUser()->getAudioTranscodeFormat())};
 			if (transcodeFormatRow)
-				setValue(TranscodeFormatField, transcodeFormatString(*transcodeFormatRow));
+				setValue(TranscodeFormatField, _transcodeFormatModel->getString(*transcodeFormatRow));
 		}
 
-		void saveData()
-		{
-			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
-
-			LmsApp->getUser().modify()->setAudioTranscodeEnable(Wt::asNumber(value(TranscodeEnableField)));
-
-			auto transcodeBitrateRow {getTranscodeBitrateRow(Wt::asString(value(TranscodeBitrateField)))};
-			if (transcodeBitrateRow)
-				LmsApp->getUser().modify()->setAudioTranscodeBitrate(transcodeBitrate(*transcodeBitrateRow));
-
-			auto transcodeFormatRow {getTranscodeFormatRow(Wt::asString(value(TranscodeFormatField)))};
-			if (transcodeFormatRow)
-				LmsApp->getUser().modify()->setAudioTranscodeFormat(transcodeFormat(*transcodeFormatRow));
-
-			if (!valueText(PasswordField).empty())
-				Database::Handler::getPasswordService().updatePassword(LmsApp->getAuthUser(), valueText(PasswordField));
-		}
+	private:
 
 		bool validateField(Field field)
 		{
@@ -114,7 +116,7 @@ class SettingsModel : public Wt::WFormModel
 				if (!valueText(PasswordField).empty())
 				{
 					// Evaluate the strength of the password
-					auto res = Database::Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField), LmsApp->getUserIdentity(), "");
+					auto res = Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField), LmsApp->getUserIdentity(), "");
 
 					if (!res.isValid())
 						error = res.message();
@@ -140,115 +142,34 @@ class SettingsModel : public Wt::WFormModel
 			return (validation(field).state() == Wt::ValidationState::Valid);
 		}
 
-		boost::optional<int> getTranscodeBitrateRow(Wt::WString value)
-		{
-			for (int i = 0; i < _transcodeBitrateModel->rowCount(); ++i)
-			{
-				if (transcodeBitrateString(i) == value)
-					return i;
-			}
-
-			return boost::none;
-		}
-
-		boost::optional<int> getTranscodeBitrateRow(std::size_t value)
-		{
-			for (int i = 0; i < _transcodeBitrateModel->rowCount(); ++i)
-			{
-				if (transcodeBitrate(i) == value)
-					return i;
-			}
-
-			return boost::none;
-		}
-
-		std::size_t transcodeBitrate(int row)
-		{
-			return Wt::cpp17::any_cast<std::size_t>
-				(_transcodeBitrateModel->data(_transcodeBitrateModel->index(row, 0), Wt::ItemDataRole::User));
-		}
-
-		Wt::WString transcodeBitrateString(int row)
-		{
-			return Wt::cpp17::any_cast<Wt::WString>
-				(_transcodeBitrateModel->data(_transcodeBitrateModel->index(row, 0), Wt::ItemDataRole::Display));
-		}
-
-		boost::optional<int> getTranscodeFormatRow(Wt::WString value)
-		{
-			for (int i = 0; i < _transcodeFormatModel->rowCount(); ++i)
-			{
-				if (transcodeFormatString(i) == value)
-					return i;
-			}
-
-			return boost::none;
-		}
-
-		boost::optional<int> getTranscodeFormatRow(Database::AudioFormat format)
-		{
-			for (int i = 0; i < _transcodeFormatModel->rowCount(); ++i)
-			{
-				if (transcodeFormat(i) == format)
-					return i;
-			}
-
-			return boost::none;
-		}
-
-		Database::AudioFormat transcodeFormat(int row)
-		{
-			return Wt::cpp17::any_cast<Database::AudioFormat>
-				(_transcodeFormatModel->data(_transcodeFormatModel->index(row, 0), Wt::ItemDataRole::User));
-		}
-
-		Wt::WString transcodeFormatString(int row)
-		{
-			return Wt::cpp17::any_cast<Wt::WString>
-				(_transcodeFormatModel->data(_transcodeFormatModel->index(row, 0), Wt::ItemDataRole::Display));
-		}
-
-
 	private:
 
 		void initializeModels()
 		{
-			_transcodeBitrateModel = std::make_shared<Wt::WStringListModel>();
-
-			Database::Bitrate maxAudioBitrate;
+			Bitrate maxAudioBitrate;
 			{
 				Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
 				maxAudioBitrate = LmsApp->getUser()->getMaxAudioTranscodeBitrate();
 			}
 
-			std::size_t id = 0;
-			for (Database::Bitrate bitrate : Database::User::audioTranscodeAllowedBitrates)
+			_transcodeBitrateModel = std::make_shared<ValueStringModel<Bitrate>>();
+			for (Bitrate bitrate : User::audioTranscodeAllowedBitrates)
 			{
 				if (bitrate > maxAudioBitrate)
 					break;
 
-				_transcodeBitrateModel->addString( Wt::WString::fromUTF8(std::to_string(bitrate / 1000)) );
-				_transcodeBitrateModel->setData( id, 0, bitrate, Wt::ItemDataRole::User);
-				id++;
+				_transcodeBitrateModel->add(Wt::WString::fromUTF8(std::to_string(bitrate / 1000)), bitrate);
 			}
 
-			_transcodeFormatModel = std::make_shared<Wt::WStringListModel>();
-
-			_transcodeFormatModel->addString(Wt::WString::tr("Lms.Settings.transcoding.mp3"));
-			_transcodeFormatModel->setData(0, 0, Database::AudioFormat::MP3, Wt::ItemDataRole::User);
-
-			_transcodeFormatModel->addString(Wt::WString::tr("Lms.Settings.transcoding.ogg_opus"));
-			_transcodeFormatModel->setData(1, 0, Database::AudioFormat::OGG_OPUS, Wt::ItemDataRole::User);
-
-			_transcodeFormatModel->addString(Wt::WString::tr("Lms.Settings.transcoding.ogg_vorbis"));
-			_transcodeFormatModel->setData(2, 0, Database::AudioFormat::OGG_VORBIS, Wt::ItemDataRole::User);
-
-			_transcodeFormatModel->addString(Wt::WString::tr("Lms.Settings.transcoding.webm_vorbis"));
-			_transcodeFormatModel->setData(3, 0, Database::AudioFormat::WEBM_VORBIS, Wt::ItemDataRole::User);
+			_transcodeFormatModel = std::make_shared<ValueStringModel<AudioFormat>>();
+			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding.mp3"), AudioFormat::MP3);
+			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding.ogg_opus"), AudioFormat::OGG_OPUS);
+			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding.ogg_vorbis"), AudioFormat::OGG_VORBIS);
+			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding.webm_vorbis"), AudioFormat::WEBM_VORBIS);
 		}
 
-		std::shared_ptr<Wt::WStringListModel>	_transcodeBitrateModel;
-		std::shared_ptr<Wt::WStringListModel>	_transcodeFormatModel;
+		std::shared_ptr<ValueStringModel<Bitrate>>	_transcodeBitrateModel;
+		std::shared_ptr<ValueStringModel<AudioFormat>>	_transcodeFormatModel;
 
 };
 

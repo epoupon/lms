@@ -27,21 +27,24 @@
 #include <Wt/WTemplateFormView.h>
 
 #include <Wt/WFormModel.h>
-#include <Wt/WStringListModel.h>
 
-#include "common/Validators.hpp"
+#include "database/User.hpp"
 #include "utils/Config.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
+#include "common/Validators.hpp"
+#include "common/ValueStringModel.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
 
+using namespace Database;
 
 class UserModel : public Wt::WFormModel
 {
+
 	public:
 		static const Field LoginField;
 		static const Field PasswordField;
@@ -71,23 +74,7 @@ class UserModel : public Wt::WFormModel
 			loadData();
 		}
 
-		void loadData()
-		{
-			if (!_userId)
-				return;
-
-			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
-
-			auto authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*_userId) );
-			auto user = LmsApp->getDb().getUser(authUser);
-
-			if (user == LmsApp->getUser())
-				throw LmsException("Cannot edit ourselves");
-
-			auto bitrate {getTranscodeBitrateLimitRow(user->getMaxAudioTranscodeBitrate())};
-			if (bitrate)
-				setValue(AudioTranscodeBitrateLimitField, transcodeBitrateLimitString(*bitrate));
-		}
+		std::shared_ptr<Wt::WAbstractItemModel> bitrateModel() { return _bitrateModel; }
 
 		void saveData()
 		{
@@ -103,9 +90,9 @@ class UserModel : public Wt::WFormModel
 				if (!valueText(PasswordField).empty())
 					Database::Handler::getPasswordService().updatePassword(authUser, valueText(PasswordField));
 
-				auto transcodeBitrateLimitRow = getTranscodeBitrateLimitRow(Wt::asString(value(AudioTranscodeBitrateLimitField)));
-				user.modify()->setMaxAudioTranscodeBitrate(transcodeBitrateLimit(*transcodeBitrateLimitRow));
-				LMS_LOG(UI, DEBUG) << "Max audio bitrate set to " << transcodeBitrateLimit(*transcodeBitrateLimitRow);
+				auto transcodeBitrateLimitRow {_bitrateModel->getRowFromString(valueText(AudioTranscodeBitrateLimitField))};
+				if (transcodeBitrateLimitRow)
+					user.modify()->setMaxAudioTranscodeBitrate(_bitrateModel->getValue(*transcodeBitrateLimitRow));
 			}
 			else
 			{
@@ -117,12 +104,33 @@ class UserModel : public Wt::WFormModel
 				authUser.setIdentity(Wt::Auth::Identity::LoginName, valueText(LoginField));
 				Database::Handler::getPasswordService().updatePassword(authUser, valueText(PasswordField));
 
-				auto transcodeBitrateLimitRow = getTranscodeBitrateLimitRow(Wt::asString(value(AudioTranscodeBitrateLimitField)));
-				user.modify()->setMaxAudioTranscodeBitrate(transcodeBitrateLimit(*transcodeBitrateLimitRow));
+				auto transcodeBitrateLimitRow {_bitrateModel->getRowFromString(valueText(AudioTranscodeBitrateLimitField))};
+				if (transcodeBitrateLimitRow )
+					user.modify()->setMaxAudioTranscodeBitrate(_bitrateModel->getValue(*transcodeBitrateLimitRow));
 
 				if (Wt::asNumber(value(DemoField)))
 					user.modify()->setType(Database::User::Type::DEMO);
 			}
+		}
+
+	private:
+
+		void loadData()
+		{
+			if (!_userId)
+				return;
+
+			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+
+			auto authUser {LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*_userId) )};
+			auto user {LmsApp->getDb().getUser(authUser)};
+
+			if (user == LmsApp->getUser())
+				throw LmsException("Cannot edit ourselves");
+
+			auto transcodeBitrateLimitRow {_bitrateModel->getRowFromValue(user->getMaxAudioTranscodeBitrate())};
+			if (transcodeBitrateLimitRow)
+				setValue(AudioTranscodeBitrateLimitField, _bitrateModel->getString(*transcodeBitrateLimitRow));
 		}
 
 		Wt::WString getLogin() const
@@ -182,59 +190,16 @@ class UserModel : public Wt::WFormModel
 			return false;
 		}
 
-		boost::optional<int> getTranscodeBitrateLimitRow(Wt::WString value)
-		{
-			for (int i = 0; i < _bitrateModel->rowCount(); ++i)
-			{
-				if (transcodeBitrateLimitString(i) == value)
-					return i;
-			}
-
-			return boost::none;
-		}
-
-		boost::optional<int> getTranscodeBitrateLimitRow(std::size_t value)
-		{
-			for (int i = 0; i < _bitrateModel->rowCount(); ++i)
-			{
-				if (transcodeBitrateLimit(i) == value)
-					return i;
-			}
-
-			return boost::none;
-		}
-
-		std::size_t transcodeBitrateLimit(int row)
-		{
-			return Wt::cpp17::any_cast<std::size_t>
-				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::ItemDataRole::User));
-		}
-
-		Wt::WString transcodeBitrateLimitString(int row)
-		{
-			return Wt::cpp17::any_cast<Wt::WString>
-				(_bitrateModel->data(_bitrateModel->index(row, 0), Wt::ItemDataRole::Display));
-		}
-
-		std::shared_ptr<Wt::WAbstractItemModel> bitrateModel() { return _bitrateModel; }
-
-	private:
 
 		void initializeModels()
 		{
-			_bitrateModel = std::make_shared<Wt::WStringListModel>();
+			_bitrateModel = std::make_shared<ValueStringModel<Bitrate>>();
 
-			std::size_t id = 0;
 			for (auto bitrate : Database::User::audioTranscodeAllowedBitrates)
-			{
-				_bitrateModel->addString( Wt::WString::fromUTF8(std::to_string(bitrate / 1000)) );
-				_bitrateModel->setData( id++, 0, bitrate, Wt::ItemDataRole::User);
-			}
-
-
+				_bitrateModel->add( Wt::WString::fromUTF8(std::to_string(bitrate / 1000)), bitrate );
 		}
 
-		std::shared_ptr<Wt::WStringListModel>	_bitrateModel;
+		std::shared_ptr<ValueStringModel<Bitrate>>	_bitrateModel;
 		boost::optional<Database::IdType> _userId;
 };
 

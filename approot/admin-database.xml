@@ -45,6 +45,19 @@
 	</div>
 	<legend>${tr:Lms.Admin.Database.scan-options}</legend>
 	<div class="form-horizontal">
+
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:similarity-engine-type}">
+				${tr:Lms.Admin.Database.similarity-engine-type}
+			</label>
+			<div class="col-sm-5">
+				${similarity-engine-type}
+			</div>
+			<div class="help-block col-sm-5">
+				${similarity-engine-type-info}
+			</div>
+		</div>
+
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:tags}">
 				${tr:Lms.Admin.Database.tags}
