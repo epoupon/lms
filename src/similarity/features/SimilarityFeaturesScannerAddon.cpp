@@ -21,6 +21,7 @@
 
 #include "AcousticBrainzUtils.hpp"
 #include "database/Track.hpp"
+#include "database/SimilaritySettings.hpp"
 #include "database/TrackFeatures.hpp"
 #include "similarity/features/SimilarityFeaturesCache.hpp"
 #include "utils/Config.hpp"
@@ -41,7 +42,7 @@ getTracksWithMBIDAndMissingFeatures(Wt::Dbo::Session& session)
 {
 	std::vector<TrackInfo> res;
 
-	Wt::Dbo::Transaction transaction(session);
+	Wt::Dbo::Transaction transaction {session};
 
 	auto tracks {Database::Track::getAllWithMBIDAndMissingFeatures(session)};
 	for (const Database::Track::pointer& track : tracks)
@@ -91,6 +92,16 @@ FeaturesScannerAddon::trackUpdated(Database::IdType trackId)
 void
 FeaturesScannerAddon::preScanComplete()
 {
+	{
+		Wt::Dbo::Transaction transaction {_db.getSession()};
+
+		if (Database::SimilaritySettings::get(_db.getSession())->getEngineType() != Database::SimilaritySettings::EngineType::Features)
+		{
+			LMS_LOG(DBUPDATER, INFO) << "Do not fetch features since the engine type does not make use of them";
+			return;
+		}
+	}
+
 	LMS_LOG(DBUPDATER, DEBUG) << "Getting tracks with missing Features...";
 	std::vector<TrackInfo> tracksInfo {getTracksWithMBIDAndMissingFeatures(_db.getSession())};
 	LMS_LOG(DBUPDATER, DEBUG) << "Getting tracks with missing Features DONE (found " << tracksInfo.size() << ")";
