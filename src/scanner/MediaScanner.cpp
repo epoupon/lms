@@ -194,9 +194,7 @@ getOrCreateClusters(Wt::Dbo::Session& session, const MetaData::Clusters& cluster
 namespace Scanner {
 
 MediaScanner::MediaScanner(Wt::Dbo::SqlConnectionPool& connectionPool)
- : _running(false),
-_scheduleTimer(_ioService),
-_db(connectionPool)
+: _db {connectionPool}
 {
 	_ioService.setThreadCount(1);
 
@@ -221,8 +219,7 @@ MediaScanner::start(void)
 {
 	_running = true;
 
-	// post some jobs in the io_service
-	scheduleScan();
+	scheduleNextScan();
 
 	_ioService.start();
 }
@@ -241,27 +238,41 @@ MediaScanner::stop(void)
 }
 
 void
-MediaScanner::scheduleImmediateScan()
+MediaScanner::requestImmediateScan()
 {
 	_ioService.post([=]()
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Schedule immediate scan";
-		scheduleScan(std::chrono::seconds(0));
-	});
-}
-
-void
-MediaScanner::reschedule()
-{
-	_ioService.post([=]()
-	{
-		LMS_LOG(DBUPDATER, INFO) << "Rescheduling scan";
 		scheduleScan();
 	});
 }
 
 void
-MediaScanner::scheduleScan()
+MediaScanner::requestReschedule()
+{
+	_ioService.post([=]()
+	{
+		LMS_LOG(DBUPDATER, INFO) << "Rescheduling scan";
+		scheduleNextScan();
+	});
+}
+
+MediaScanner::Status
+MediaScanner::getStatus()
+{
+	Status res;
+
+	std::unique_lock<std::mutex> lock {_statusMutex};
+	res.currentState = _curState;
+	res.nextScheduledScan = _nextScheduledScan;
+	res.lastScanStats = _lastScanStats;
+	res.inProgressStats = _inProgressStats;
+
+	return res;
+}
+
+void
+MediaScanner::scheduleNextScan()
 {
 	refreshScanSettings();
 
@@ -296,25 +307,71 @@ MediaScanner::scheduleScan()
 			break;
 	}
 
+	Wt::WDateTime nextScanDateTime;
+
 	if (nextScanDate.isValid())
-		scheduleScan( Wt::WDateTime(nextScanDate, _startTime).toTimePoint() );
+	{
+		nextScanDateTime = Wt::WDateTime {nextScanDate, _startTime};
+		scheduleScan(nextScanDateTime);
+	}
+
+	{
+		std::unique_lock<std::mutex> lock {_statusMutex};
+		_curState = nextScanDateTime.isValid() ? State::Scheduled : State::NotScheduled;
+		_nextScheduledScan = nextScanDateTime;
+	}
+
+	_sigScheduled.emit(_nextScheduledScan);
 }
 
 void
-MediaScanner::scheduleScan(std::chrono::seconds duration)
+MediaScanner::countAllFiles(Stats& stats)
 {
-	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan in " << duration.count() << " seconds";
-	_scheduleTimer.expires_from_now(duration);
-	_scheduleTimer.async_wait( std::bind( &MediaScanner::scan, this, std::placeholders::_1) );
+	boost::system::error_code ec;
+
+	stats.totalFiles = 0;
+
+	boost::filesystem::recursive_directory_iterator itPath(_mediaDirectory, ec);
+	if (ec)
+	{
+		LMS_LOG(DBUPDATER, ERROR) << "Cannot iterate over '" << _mediaDirectory.string() << "': " << ec.message();
+		return;
+	}
+
+	boost::filesystem::recursive_directory_iterator itEnd;
+	while (itPath != itEnd && _running)
+	{
+		if (stats.totalFiles % 250 == 0)
+			notifyInProgressIfNeeded(stats);
+
+		const boost::filesystem::path& path {*itPath++};
+
+		if (!_running)
+			break;
+
+		if (boost::filesystem::is_regular(path)	&& isFileSupported(path, _fileExtensions))
+			stats.totalFiles++;
+	}
 }
 
 void
-MediaScanner::scheduleScan(std::chrono::system_clock::time_point timePoint)
+MediaScanner::scheduleScan(const Wt::WDateTime& dateTime)
 {
-	std::time_t t = std::chrono::system_clock::to_time_t(timePoint);
-	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan at " << std::string(std::ctime(&t));
-	_scheduleTimer.expires_at(timePoint);
-	_scheduleTimer.async_wait(std::bind(&MediaScanner::scan, this, std::placeholders::_1));
+	if (dateTime.isNull())
+	{
+		LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan right now";
+		_scheduleTimer.expires_from_now(std::chrono::seconds(0));
+		_scheduleTimer.async_wait(std::bind(&MediaScanner::scan, this, std::placeholders::_1));
+	}
+	else
+	{
+		std::chrono::system_clock::time_point timePoint {dateTime.toTimePoint()};
+		std::time_t t {std::chrono::system_clock::to_time_t(timePoint)};
+
+		LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan at " << std::string(std::ctime(&t));
+		_scheduleTimer.expires_at(timePoint);
+		_scheduleTimer.async_wait(std::bind(&MediaScanner::scan, this, std::placeholders::_1));
+	}
 }
 
 void
@@ -323,12 +380,25 @@ MediaScanner::scan(boost::system::error_code err)
 	if (err)
 		return;
 
+	{
+		std::unique_lock<std::mutex> lock {_statusMutex};
+		_curState = State::InProgress;
+		_nextScheduledScan = {};
+		_inProgressStats = Stats{};
+		_inProgressStats->startTime = Wt::WLocalDateTime::currentDateTime().toUTC();
+	}
+
+	Stats& stats {*_inProgressStats};
+
 	LMS_LOG(UI, INFO) << "New scan started!";
 
 	refreshScanSettings();
 
-	bool forceScan = false;
-	Stats stats;
+	bool forceScan {false};
+
+	LMS_LOG(DBUPDATER, DEBUG) << "Counting files in media directory '" << _mediaDirectory.string() << "'...";
+	countAllFiles(stats);
+	LMS_LOG(DBUPDATER, DEBUG) << "-> Nb files = " << stats.totalFiles;
 
 	removeMissingTracks(stats);
 
@@ -351,9 +421,22 @@ MediaScanner::scan(boost::system::error_code err)
 		for (auto& addon : _addons)
 			addon->preScanComplete();
 
-		scheduleScan();
+		stats.stopTime = Wt::WLocalDateTime::currentDateTime().toUTC();
+		{
+			std::unique_lock<std::mutex> lock {_statusMutex};
+			_lastScanStats = std::move(_inProgressStats);
+			_inProgressStats.reset();
+		}
+
+		scheduleNextScan();
 
 		scanComplete().emit(stats);
+	}
+	else
+	{
+		std::unique_lock<std::mutex> lock {_statusMutex};
+		_curState = State::NotScheduled;
+		_inProgressStats.reset();
 	}
 }
 
@@ -388,9 +471,22 @@ MediaScanner::refreshScanSettings()
 		addon->refreshSettings();
 }
 
+void MediaScanner::notifyInProgressIfNeeded(Stats& stats)
+{
+	std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
+
+	if (std::chrono::duration_cast<std::chrono::seconds>(now - _lastScanInProgressEmit).count() > 2)
+	{
+		_sigScanInProgress(stats);
+		_lastScanInProgressEmit = now;
+	}
+}
+
 void
 MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan, Stats& stats)
 {
+	notifyInProgressIfNeeded(stats);
+
 	auto lastWriteTime = Wt::WDateTime::fromTime_t(boost::filesystem::last_write_time(file));
 
 	if (!forceScan)
@@ -561,7 +657,7 @@ MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool fo
 	boost::filesystem::recursive_directory_iterator itEnd;
 	while (itPath != itEnd)
 	{
-		boost::filesystem::path path = *itPath;
+		const boost::filesystem::path& path {*itPath};
 
 		if (!_running)
 			return;

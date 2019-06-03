@@ -458,16 +458,36 @@ LmsApplication::createHome()
 	});
 
 	// Events from MediaScanner
-	std::string sessionId = LmsApp->sessionId();
-	getService<Scanner::MediaScanner>()->scanComplete().connect([=] (Scanner::MediaScanner::Stats stats)
 	{
-		// Runs from media scanner context
-		Wt::WServer::instance()->post(sessionId, [=]
+		std::string sessionId = LmsApp->sessionId();
+		getService<Scanner::MediaScanner>()->scanComplete().connect(this, [=] (Scanner::MediaScanner::Stats stats)
 		{
-			_events.dbScanned.emit(stats);
-			triggerUpdate();
+			Wt::WServer::instance()->post(sessionId, [=]
+			{
+				_events.dbScanned.emit(stats);
+				triggerUpdate();
+			});
 		});
-	});
+
+		getService<Scanner::MediaScanner>()->scanInProgress().connect(this, [=] (Scanner::MediaScanner::Stats stats)
+		{
+			Wt::WServer::instance()->post(sessionId, [=]
+			{
+				_events.dbScanInProgress.emit(stats);
+				triggerUpdate();
+			});
+		});
+
+		getService<Scanner::MediaScanner>()->scheduled().connect(this, [=] (Wt::WDateTime dateTime)
+		{
+			Wt::WServer::instance()->post(sessionId, [=]
+			{
+				_events.dbScanScheduled.emit(dateTime);
+				triggerUpdate();
+			});
+		});
+
+	}
 
 	_events.dbScanned.connect([=] (Scanner::MediaScanner::Stats stats)
 	{

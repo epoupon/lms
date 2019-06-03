@@ -55,8 +55,10 @@ struct Events
 	// Unload current track
 	Wt::Signal<> trackUnloaded;
 
-	// A database scan is complete
+	// Database events
 	Wt::Signal<Scanner::MediaScanner::Stats> dbScanned;
+	Wt::Signal<Scanner::MediaScanner::Stats> dbScanInProgress;
+	Wt::Signal<Wt::WDateTime> dbScanScheduled;
 };
 
 // Used to classify the message sent to the user

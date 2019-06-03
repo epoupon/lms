@@ -38,6 +38,14 @@
 <message id="Lms.Admin.Database.update-start-time">Update start time</message>
 <message id="Lms.Admin.Database.weekly">Weekly</message>
 
+<message id="Lms.Admin.Database.Status.status">Status</message>
+<message id="Lms.Admin.Database.Status.last-scan">Last scan</message>
+<message id="Lms.Admin.Database.Status.last-scan-not-available">Not available</message>
+<message id="Lms.Admin.Database.Status.last-scan-status">Scanned {1} files in {2} on {3} ({4} errors)</message>
+<message id="Lms.Admin.Database.Status.status-not-scheduled">Not scheduled</message>
+<message id="Lms.Admin.Database.Status.status-scheduled">Scheduled on {1}</message>
+<message id="Lms.Admin.Database.Status.status-in-progress">Scanning {1} of {2} files ({3} %)</message>
+
 <!--Users-->
 <message id="Lms.Admin.Users.add">New user</message>
 <message id="Lms.Admin.Users.admin">Admin</message>
