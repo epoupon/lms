@@ -144,9 +144,15 @@ static Response handleSearch3Request(RequestContext& context);
 static Response handleUpdatePlaylistRequest(RequestContext& context);
 
 // MediaRetrievals
-using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, Wt::Http::ResponseContinuation*, Wt::Http::Response& response)>;
-void handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuation, Wt::Http::Response& response);
-void handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation* continuation, Wt::Http::Response& response);
+struct MediaRetrievalResult
+{
+	std::string mimeType;
+	std::vector<uint8_t> data;
+	Wt::cpp17::any continuationData;
+};
+using MediaRetrievalHandlerFunc = std::function<MediaRetrievalResult(RequestContext&, Wt::Http::ResponseContinuation*)>;
+MediaRetrievalResult handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuation);
+MediaRetrievalResult handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation* continuation);
 
 static std::map<std::string, RequestHandlerFunc> requestHandlers
 {
@@ -369,6 +375,9 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		if (itHandler != requestHandlers.end())
 		{
 			Response resp {(itHandler->second)(requestContext)};
+
+			lock.unlock();
+
 			resp.write(response.out(), format);
 			response.setMimeType(ResponseFormatToMimeType(format));
 			return;
@@ -377,12 +386,31 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		auto itStreamHandler {mediaRetrievalHandlers.find(request.path())};
 		if (itStreamHandler != mediaRetrievalHandlers.end())
 		{
-			itStreamHandler->second(requestContext, request.continuation(), response);
-			return;
+			MediaRetrievalResult res {itStreamHandler->second(requestContext, request.continuation())};
+
+			lock.unlock();
+
+			if (!res.mimeType.empty())
+				response.setMimeType(res.mimeType);
+			if (!res.data.empty())
+			{
+				response.out().write(reinterpret_cast<const char *>(&res.data[0]), res.data.size());
+				if (!response.out())
+				{
+					LMS_LOG(API_SUBSONIC, ERROR) << "Write failed!";
+					return;
+				}
+			}
+
+			if (res.continuationData.has_value())
+			{
+				auto continuation {response.createContinuation()};
+				continuation->setData(std::move(res.continuationData));
+				return;
+			}
 		}
 
 		LMS_LOG(API_SUBSONIC, ERROR) << "Unhandled command '" << request.path() << "'";
-
 	}
 	catch (const Error& e)
 	{
@@ -1385,9 +1413,11 @@ createTranscoder(RequestContext& context)
 	return std::make_shared<Av::Transcoder>(trackPath, parameters);
 }
 
-void
-handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuation, Wt::Http::Response& response)
+MediaRetrievalResult
+handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuation)
 {
+	MediaRetrievalResult res;
+
 	// TODO store only weak ptrs and use a ring container to store shared_ptr?
 	std::shared_ptr<Av::Transcoder> transcoder;
 
@@ -1396,7 +1426,7 @@ handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuati
 		transcoder = createTranscoder(context);
 		transcoder->start();
 
-		response.setMimeType(transcoder->getOutputMimeType());
+		res.mimeType = transcoder->getOutputMimeType();
 		LMS_LOG(API_SUBSONIC, DEBUG) << "Mime type set to '" << transcoder->getOutputMimeType() << "'";
 	}
 	else
@@ -1410,53 +1440,44 @@ handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuati
 	if (!transcoder->isComplete())
 	{
 		static constexpr std::size_t chunkSize {65536*4};
+		res.data.reserve(chunkSize);
 
-		std::vector<unsigned char> data;
-		data.reserve(chunkSize);
+		transcoder->process(res.data, chunkSize);
 
-		transcoder->process(data, chunkSize);
-
-		response.out().write(reinterpret_cast<char*>(&data[0]), data.size());
-
-		if (!response.out())
-		{
-			LMS_LOG(API_SUBSONIC, ERROR) << "Write failed!";
-			return;
-		}
 	}
 
 	if (!transcoder->isComplete())
-	{
-		continuation = response.createContinuation();
-		continuation->setData(transcoder);
-	}
+		res.continuationData = std::move(transcoder);
+
+	return res;
 }
 
-void
-handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation* continuation, Wt::Http::Response& response)
+MediaRetrievalResult
+handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation*)
 {
 	// Mandatory params
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 
 	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").get_value_or(256)};
-
 	size = clamp(size, std::size_t {32}, std::size_t {1024});
 
-	std::vector<uint8_t> cover;
+	MediaRetrievalResult res;
+
 	switch (id.type)
 	{
 		case Id::Type::Track:
-			cover = getService<CoverArt::Grabber>()->getFromTrack(context.db.getSession(), id.value, Image::Format::JPEG, size);
+			res.data = getService<CoverArt::Grabber>()->getFromTrack(context.db.getSession(), id.value, Image::Format::JPEG, size);
 			break;
 		case Id::Type::Release:
-			cover = getService<CoverArt::Grabber>()->getFromRelease(context.db.getSession(), id.value, Image::Format::JPEG, size);
+			res.data = getService<CoverArt::Grabber>()->getFromRelease(context.db.getSession(), id.value, Image::Format::JPEG, size);
 			break;
 		default:
 			throw Error {Error::CustomType::BadId};
 	}
 
-	response.setMimeType( Image::format_to_mimeType(Image::Format::JPEG) );
-	response.out().write(reinterpret_cast<const char *>(&cover[0]), cover.size());
+	res.mimeType = Image::format_to_mimeType(Image::Format::JPEG);
+
+	return res;
 }
 
 } // namespace api::subsonic
