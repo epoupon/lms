@@ -21,20 +21,8 @@
 
 #include <sstream>
 
-namespace {
+#include "utils/Logger.hpp"
 
-}
-
-Config::Config()
-: _config (nullptr)
-{
-}
-
-Config::~Config()
-{
-	if (_config)
-		delete _config;
-}
 
 Config&
 Config::instance()
@@ -44,21 +32,25 @@ Config::instance()
 }
 
 void
-Config::setFile(boost::filesystem::path p)
+Config::setFile(const boost::filesystem::path& p)
 {
-	if (_config != nullptr)
-		delete _config;
-
-	_config = new libconfig::Config();
-
+	_config = std::make_unique<libconfig::Config>();
 	_config->readFile(p.string().c_str());
 }
 
 std::string
-Config::getString(std::string setting, std::string def)
+Config::getString(const std::string& setting, const std::string& def, const std::set<std::string>& allowedValues)
 {
 	try {
-		return _config->lookup(setting);
+		std::string res {(const char*)_config->lookup(setting)};
+
+		if (!allowedValues.empty() && allowedValues.find(res) == allowedValues.end())
+		{
+			LMS_LOG(MAIN, ERROR) << "Invalid setting for '" << setting << "', using default value '" << def << "'";
+			return def;
+		}
+
+		return res;
 	}
 	catch (std::exception &e)
 	{
@@ -67,7 +59,7 @@ Config::getString(std::string setting, std::string def)
 }
 
 boost::filesystem::path
-Config::getPath(std::string setting, boost::filesystem::path path)
+Config::getPath(const std::string& setting, const boost::filesystem::path& path)
 {
 	try {
 		const char* res = _config->lookup(setting);
@@ -80,7 +72,7 @@ Config::getPath(std::string setting, boost::filesystem::path path)
 }
 
 unsigned long
-Config::getULong(std::string setting, unsigned long def)
+Config::getULong(const std::string& setting, unsigned long def)
 {
 	try {
 		return static_cast<unsigned int>(_config->lookup(setting));
@@ -92,7 +84,7 @@ Config::getULong(std::string setting, unsigned long def)
 }
 
 long
-Config::getLong(std::string setting, long def)
+Config::getLong(const std::string& setting, long def)
 {
 	try {
 		return _config->lookup(setting);
@@ -104,7 +96,7 @@ Config::getLong(std::string setting, long def)
 }
 
 bool
-Config::getBool(std::string setting, bool def)
+Config::getBool(const std::string& setting, bool def)
 {
 	try {
 		return _config->lookup(setting);

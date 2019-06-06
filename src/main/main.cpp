@@ -70,6 +70,7 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 
 	pt.put("server.application-settings.<xmlattr>.location", "*");
 	pt.put("server.application-settings.log-file", wtLogFilePath.string());
+	pt.put("server.application-settings.log-config", Config::instance().getString("log-level", "info -info:WebRequest"));
 	pt.put("server.application-settings.behind-reverse-proxy", Config::instance().getBool("behind-reverse-proxy", false));
 	pt.put("server.application-settings.progressive-bootstrap", true);
 
@@ -114,8 +115,6 @@ int main(int argc, char* argv[])
 
 		Wt::WServer server(argv[0]);
 		server.setServerConfiguration (wtServerArgs.size(), const_cast<char**>(wtArgv));
-
-		Wt::WServer::instance()->logger().configure("*"); // log everything, TODO configure this
 
 		// lib init
 		Image::init(argv[0]);

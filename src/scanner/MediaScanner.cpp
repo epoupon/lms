@@ -242,7 +242,6 @@ MediaScanner::requestImmediateScan()
 {
 	_ioService.post([=]()
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Schedule immediate scan";
 		scheduleScan();
 	});
 }
@@ -252,7 +251,6 @@ MediaScanner::requestReschedule()
 {
 	_ioService.post([=]()
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Rescheduling scan";
 		scheduleNextScan();
 	});
 }
@@ -274,6 +272,8 @@ MediaScanner::getStatus()
 void
 MediaScanner::scheduleNextScan()
 {
+	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan";
+
 	refreshScanSettings();
 
 	Wt::WDateTime now = Wt::WLocalDateTime::currentServerDateTime().toUTC();

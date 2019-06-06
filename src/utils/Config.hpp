@@ -18,34 +18,36 @@
  */
 #pragma once
 
+#include <set>
 
 #include <boost/filesystem.hpp>
 #include <libconfig.h++>
 
 // Used to get config values from configuration files
-class Config
+class Config final
 {
 	public:
 
 		Config(const Config&) = delete;
 		Config& operator=(const Config&) = delete;
+		Config(Config&&) = delete;
+		Config& operator=(Config&&) = delete;
 
 		static Config& instance();
 
-		void		setFile(boost::filesystem::path p);
+		void		setFile(const boost::filesystem::path& p);
 
 		// Default values are returned in case of setting not found
-		std::string	getString(std::string setting, std::string def = "");
-		boost::filesystem::path getPath(std::string setting, boost::filesystem::path def = boost::filesystem::path());
-		unsigned long	getULong(std::string setting, unsigned long def = 0);
-		long		getLong(std::string setting, long def = 0);
-		bool		getBool(std::string setting, bool def = false);
+		std::string	getString(const std::string& setting, const std::string& def = "", const std::set<std::string>& allowedValues = {});
+		boost::filesystem::path getPath(const std::string& setting, const boost::filesystem::path& def = boost::filesystem::path());
+		unsigned long	getULong(const std::string& setting, unsigned long def = 0);
+		long		getLong(const std::string& setting, long def = 0);
+		bool		getBool(const std::string& setting, bool def = false);
 
 	private:
 
-		Config();
-		~Config();
+		Config() = default;
 
-		libconfig::Config	*_config;
+		std::unique_ptr<libconfig::Config> _config;
 };
 

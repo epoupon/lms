@@ -28,7 +28,7 @@
 
 namespace Av {
 
-#define LMS_LOG_TRANSCODE(sev)	LMS_LOG(TRANSCODE, INFO) << "[" << _id << "] - "
+#define LMS_LOG_TRANSCODE(sev)	LMS_LOG(TRANSCODE, sev) << "[" << _id << "] - "
 
 // TODO, parametrize?
 static const std::vector<std::string> execNames =
@@ -179,7 +179,7 @@ Transcoder::start()
 
 	args.push_back("pipe:1");
 
-	LMS_LOG_TRANSCODE(INFO) << "Dumping args (" << args.size() << ")";
+	LMS_LOG_TRANSCODE(DEBUG) << "Dumping args (" << args.size() << ")";
 	for (std::string arg : args)
 		LMS_LOG_TRANSCODE(DEBUG) << "Arg = '" << arg << "'";
 
