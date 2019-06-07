@@ -40,8 +40,9 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 {
 	std::vector<std::string> args;
 
-	boost::filesystem::path wtConfigPath = Config::instance().getPath("working-dir") / "wt_config.xml";
-	boost::filesystem::path wtLogFilePath = Config::instance().getPath("working-dir") / "lms.log";
+	const boost::filesystem::path wtConfigPath {Config::instance().getPath("working-dir") / "wt_config.xml"};
+	const boost::filesystem::path wtLogFilePath {Config::instance().getPath("working-dir") / "lms.log"};
+	const boost::filesystem::path wtAccessLogFilePath {Config::instance().getPath("working-dir") / "lms.access.log"};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
@@ -63,7 +64,7 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 		args.push_back("--http-address=" + Config::instance().getString("listen-addr", "0.0.0.0"));
 	}
 
-	args.push_back("--gdb");
+	args.push_back("--accesslog=" + wtAccessLogFilePath.string());
 
 	// Generate the wt_config.xml file
 	boost::property_tree::ptree pt;
