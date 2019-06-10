@@ -71,7 +71,7 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 
 	pt.put("server.application-settings.<xmlattr>.location", "*");
 	pt.put("server.application-settings.log-file", wtLogFilePath.string());
-	pt.put("server.application-settings.log-config", Config::instance().getString("log-level", "info -info:WebRequest"));
+	pt.put("server.application-settings.log-config", Config::instance().getString("log-config", "* -debug -info:WebRequest"));
 	pt.put("server.application-settings.behind-reverse-proxy", Config::instance().getBool("behind-reverse-proxy", false));
 	pt.put("server.application-settings.progressive-bootstrap", true);
 
