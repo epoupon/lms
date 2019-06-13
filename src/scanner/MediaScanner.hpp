@@ -121,6 +121,7 @@ class MediaScanner
 		void checkDuplicatedAudioFiles(Stats& stats);
 		void scanAudioFile(const boost::filesystem::path& file, bool forceScan, Stats& stats);
 		void notifyInProgressIfNeeded(Stats& stats);
+		void notifyInProgress(Stats& stats);
 
 		bool			_running {false};
 		Wt::WIOService		_ioService;

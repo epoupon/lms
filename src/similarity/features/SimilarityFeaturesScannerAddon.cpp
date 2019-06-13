@@ -59,7 +59,7 @@ FeaturesScannerAddon::FeaturesScannerAddon(Wt::Dbo::SqlConnectionPool& connectio
 	boost::optional<Similarity::FeaturesCache> cache {Similarity::FeaturesCache::read()};
 	if (cache)
 	{
-		auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_db.getSession(), *cache)};
+		auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_db.getSession(), *cache, [&]() { return _stopRequested; })};
 		if (searcher->isValid())
 			std::atomic_store(&_searcher, searcher);
 	}
@@ -107,7 +107,12 @@ FeaturesScannerAddon::preScanComplete()
 	LMS_LOG(DBUPDATER, DEBUG) << "Getting tracks with missing Features DONE (found " << tracksInfo.size() << ")";
 
 	for (const TrackInfo& trackInfo : tracksInfo)
+	{
+		if (_stopRequested)
+			return;
+
 		fetchFeatures(trackInfo.id, trackInfo.mbid);
+	}
 
 	Similarity::FeaturesCache::invalidate();
 	updateSearcher();
@@ -116,9 +121,13 @@ FeaturesScannerAddon::preScanComplete()
 void
 FeaturesScannerAddon::updateSearcher()
 {
-	Wt::Dbo::Transaction transaction {_db.getSession()};
-	std::vector<Database::IdType> trackIds {Database::Track::getAllIdsWithFeatures(_db.getSession())};
-	transaction.commit();
+	LMS_LOG(SIMILARITY, INFO) << "Updating searcher...";
+
+	std::vector<Database::IdType> trackIds;
+	{
+		Wt::Dbo::Transaction transaction {_db.getSession()};
+		trackIds = Database::Track::getAllIdsWithFeatures(_db.getSession());
+	}
 
 	if (trackIds.empty())
 	{
@@ -127,7 +136,7 @@ FeaturesScannerAddon::updateSearcher()
 		return;
 	}
 
-	auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_db.getSession(), _stopRequested)};
+	auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_db.getSession(), [&]() { return _stopRequested; })};
 	if (searcher->isValid())
 	{
 		std::atomic_store(&_searcher, searcher);
@@ -137,8 +146,10 @@ FeaturesScannerAddon::updateSearcher()
 		LMS_LOG(DBUPDATER, INFO) << "New features similarity searcher instanciated";
 	}
 	else
+	{
+		LMS_LOG(DBUPDATER, ERROR) << "Cannot set up a valid features similarity searcher!";
 		std::atomic_store(&_searcher, std::shared_ptr<FeaturesSearcher>{});
-
+	}
 }
 
 bool
@@ -150,7 +161,7 @@ FeaturesScannerAddon::fetchFeatures(Database::IdType trackId, const std::string&
 	std::string data {AcousticBrainz::extractLowLevelFeatures(MBID)};
 	if (data.empty())
 	{
-		LMS_LOG(DBUPDATER, ERROR) << "Cannot extract features using AcousticBrainz!";
+		LMS_LOG(DBUPDATER, ERROR) << "Track " << trackId << ", MBID = '" << MBID << "': cannot extract features using AcousticBrainz";
 		return false;
 	}
 

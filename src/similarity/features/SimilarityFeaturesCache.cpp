@@ -95,6 +95,8 @@ createNetworkFromCacheFile(boost::filesystem::path path)
 {
 	try
 	{
+		LMS_LOG(SIMILARITY, INFO) << "Reading network from cache...";
+
 		boost::property_tree::ptree root;
 
 		boost::property_tree::read_xml(path.string(), root);
@@ -127,7 +129,7 @@ createNetworkFromCacheFile(boost::filesystem::path path)
 			res.setRefVector({x, y}, refVector);
 		}
 
-		LMS_LOG(SIMILARITY, DEBUG) << "Successfully read network from cache";
+		LMS_LOG(SIMILARITY, INFO) << "Successfully read network from cache";
 
 		return res;
 	}
@@ -180,6 +182,8 @@ createObjectPositionsFromCacheFile(boost::filesystem::path path)
 {
 	try
 	{
+		LMS_LOG(SIMILARITY, INFO) << "Reading object position from cache...";
+
 		boost::property_tree::ptree root;
 
 		boost::property_tree::read_xml(path.string(), root);
@@ -198,7 +202,7 @@ createObjectPositionsFromCacheFile(boost::filesystem::path path)
 			}
 		}
 
-		LMS_LOG(SIMILARITY, DEBUG) << "Successfully read object position from cache";
+		LMS_LOG(SIMILARITY, INFO) << "Successfully read object position from cache";
 
 		return res;
 	}

@@ -420,7 +420,10 @@ MediaScanner::scan(boost::system::error_code err)
 	{
 		for (auto& addon : _addons)
 			addon->preScanComplete();
+	}
 
+	if (_running)
+	{
 		stats.stopTime = Wt::WLocalDateTime::currentDateTime().toUTC();
 		{
 			std::unique_lock<std::mutex> lock {_statusMutex};
@@ -469,6 +472,13 @@ MediaScanner::refreshScanSettings()
 
 	for (auto& addon : _addons)
 		addon->refreshSettings();
+}
+
+void MediaScanner::notifyInProgress(Stats& stats)
+{
+	std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
+	_sigScanInProgress(stats);
+	_lastScanInProgressEmit = now;
 }
 
 void MediaScanner::notifyInProgressIfNeeded(Stats& stats)
@@ -674,6 +684,8 @@ MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool fo
 
 		itPath.increment(ec);
 	}
+
+	notifyInProgress(stats);
 }
 
 // Check if a file exists and is still in a media directory

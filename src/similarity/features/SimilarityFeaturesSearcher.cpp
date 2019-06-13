@@ -119,8 +119,10 @@ getInputVectorWeights(const FeatureInfoMap& featuresInfo, std::size_t nbDimensio
 	return weights;
 }
 
-FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequested)
+FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, std::function<bool()> stopRequested)
 {
+	LMS_LOG(SIMILARITY, INFO) << "Constructing features searcher...";
+
 	Wt::Dbo::Transaction transaction {session};
 
 	FeatureInfoMap featuresInfo {getFeatureInfoMap(session)};
@@ -143,7 +145,7 @@ FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequeste
 	LMS_LOG(SIMILARITY, DEBUG) << "Extracting features...";
 	for (Database::IdType trackId : trackIds)
 	{
-		if (stopRequested)
+		if (stopRequested())
 			return;
 
 		boost::optional<SOM::InputVector> inputVector {getInputVectorFromTrack(session, trackId, featuresInfo, nbDimensions)};
@@ -181,20 +183,18 @@ FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequeste
 			LMS_LOG(SIMILARITY, DEBUG) << "Current pass = " << iter.idIteration << " / " << iter.iterationCount;
 		}};
 
-	auto stopper{[&]() { return stopRequested; }};
-
 	LMS_LOG(SIMILARITY, DEBUG) << "Training network...";
-	network.train(samples, 10, progressIndicator, stopper);
+	network.train(samples, 10, progressIndicator, stopRequested);
 	LMS_LOG(SIMILARITY, DEBUG) << "Training network DONE";
 
-	if (stopRequested)
+	if (stopRequested())
 		return;
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Classifying tracks...";
 	std::map<Database::IdType, std::set<SOM::Position>> trackPositions;
 	for (std::size_t i {}; i < samples.size(); ++i)
 	{
-		if (stopRequested)
+		if (stopRequested())
 			return;
 
 		const SOM::Position position {network.getClosestRefVectorPosition(samples[i])};
@@ -204,15 +204,18 @@ FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequeste
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Classifying tracks DONE";
 
-	init(session, std::move(network), std::move(trackPositions));
+	init(session, std::move(network), std::move(trackPositions), stopRequested);
 
+	LMS_LOG(SIMILARITY, INFO) << "Successfully constructed features searcher";
 }
 
-FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, FeaturesCache cache)
+FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, FeaturesCache cache, std::function<bool()> stopRequested)
 {
-	init(session, std::move(cache._network), std::move(cache._trackPositions));
+	LMS_LOG(SIMILARITY, INFO) << "Constructing features searcher from cache...";
 
-	LMS_LOG(SIMILARITY, DEBUG) << "Init from cache DONE";
+	init(session, std::move(cache._network), std::move(cache._trackPositions), stopRequested);
+
+	LMS_LOG(SIMILARITY, INFO) << "Successfully constructed features searcher from cache";
 }
 
 bool
@@ -318,14 +321,15 @@ FeaturesSearcher::toCache() const
 void
 FeaturesSearcher::init(Wt::Dbo::Session& session,
 			SOM::Network network,
-			std::map<Database::IdType, std::set<SOM::Position>> tracksPosition)
+			std::map<Database::IdType,
+			std::set<SOM::Position>> tracksPosition,
+			std::function<bool()> stopRequested)
 {
-	_network = std::make_unique<SOM::Network>(std::move(network));
-	_networkRefVectorsDistanceMedian = _network->computeRefVectorsDistanceMedian();
+	_networkRefVectorsDistanceMedian = network.computeRefVectorsDistanceMedian();
 	LMS_LOG(SIMILARITY, DEBUG) << "Median distance betweend ref vectors = " << _networkRefVectorsDistanceMedian;
 
-	SOM::Coordinate width {_network->getWidth()};
-	SOM::Coordinate height {_network->getHeight()};
+	SOM::Coordinate width {network.getWidth()};
+	SOM::Coordinate height {network.getHeight()};
 
 	_artistsMap = SOM::Matrix<std::set<Database::IdType>>{width, height};
 	_releasesMap = SOM::Matrix<std::set<Database::IdType>>{width, height};
@@ -335,6 +339,9 @@ FeaturesSearcher::init(Wt::Dbo::Session& session,
 
 	for (auto itTrackCoord : tracksPosition)
 	{
+		if (stopRequested())
+			return;
+
 		Wt::Dbo::Transaction transaction {session};
 
 		Database::IdType trackId {itTrackCoord.first};
@@ -361,6 +368,8 @@ FeaturesSearcher::init(Wt::Dbo::Session& session,
 			}
 		}
 	}
+
+	_network = std::make_unique<SOM::Network>(std::move(network));
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Constructing maps... DONE";
 

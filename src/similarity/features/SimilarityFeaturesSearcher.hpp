@@ -36,10 +36,10 @@ class FeaturesSearcher
 	public:
 
 		// Use cache
-		FeaturesSearcher(Wt::Dbo::Session& session, FeaturesCache cache);
+		FeaturesSearcher(Wt::Dbo::Session& session, FeaturesCache cache, std::function<bool()> stopRequested);
 
 		// Use training (may be very slow)
-		FeaturesSearcher(Wt::Dbo::Session& session, bool& stopRequested);
+		FeaturesSearcher(Wt::Dbo::Session& session, std::function<bool()> stopRequested);
 
 		bool isValid() const;
 
@@ -61,7 +61,8 @@ class FeaturesSearcher
 
 		void init(Wt::Dbo::Session& session,
 				SOM::Network network,
-				ObjectPositions tracksPosition);
+				ObjectPositions tracksPosition,
+				std::function<bool()> stopRequested);
 
 		std::vector<Database::IdType> getSimilarObjects(const std::set<Database::IdType>& ids,
 				const SOM::Matrix<std::set<Database::IdType>>& objectsMap,
