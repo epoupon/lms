@@ -26,6 +26,7 @@
 #include "Release.hpp"
 #include "SqlQuery.hpp"
 #include "Track.hpp"
+#include "User.hpp"
 
 namespace Database
 {

@@ -31,7 +31,10 @@ namespace Database {
 class User;
 using AuthInfo = Wt::Auth::Dbo::AuthInfo<User>;
 
+class Artist;
+class Release;
 class TrackList;
+class Track;
 
 // User selectable audio formats
 // Do not change values
@@ -97,6 +100,21 @@ class User : public Wt::Dbo::Dbo<User>
 		Wt::Dbo::ptr<TrackList> getQueuedTrackList() const;
 		Wt::Dbo::ptr<TrackList> getPlayedTrackList() const;
 
+		void			starArtist(Wt::Dbo::ptr<Artist> artist);
+		void			unstarArtist(Wt::Dbo::ptr<Artist> artist);
+		bool			hasStarredArtist(Wt::Dbo::ptr<Artist> artist) const;
+		std::vector<Wt::Dbo::ptr<Artist>> getStarredArtists() const;
+
+		void			starRelease(Wt::Dbo::ptr<Release> release);
+		void			unstarRelease(Wt::Dbo::ptr<Release> release);
+		bool			hasStarredRelease(Wt::Dbo::ptr<Release> release) const;
+		std::vector<Wt::Dbo::ptr<Release>> getStarredReleases() const;
+
+		void			starTrack(Wt::Dbo::ptr<Track> track);
+		void			unstarTrack(Wt::Dbo::ptr<Track> track);
+		bool			hasStarredTrack(Wt::Dbo::ptr<Track> track) const;
+		std::vector<Wt::Dbo::ptr<Track>> getStarredTracks() const;
+
 		template<class Action>
 			void persist(Action& a)
 			{
@@ -110,6 +128,9 @@ class User : public Wt::Dbo::Dbo<User>
 				Wt::Dbo::field(a, _repeatAll, "repeat_all");
 				Wt::Dbo::field(a, _radio, "radio");
 				Wt::Dbo::hasMany(a, _tracklists, Wt::Dbo::ManyToOne, "user");
+				Wt::Dbo::hasMany(a, _starredArtists, Wt::Dbo::ManyToMany, "user_artist_starred", "", Wt::Dbo::OnDeleteCascade);
+				Wt::Dbo::hasMany(a, _starredReleases, Wt::Dbo::ManyToMany, "user_release_starred", "", Wt::Dbo::OnDeleteCascade);
+				Wt::Dbo::hasMany(a, _starredTracks, Wt::Dbo::ManyToMany, "user_track_starred", "", Wt::Dbo::OnDeleteCascade);
 			}
 
 	private:
@@ -132,7 +153,10 @@ class User : public Wt::Dbo::Dbo<User>
 		bool		_repeatAll {};
 		bool		_radio {};
 
-		Wt::Dbo::collection< Wt::Dbo::ptr<TrackList> > _tracklists;
+		Wt::Dbo::collection<Wt::Dbo::ptr<TrackList>> _tracklists;
+		Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> _starredArtists;
+		Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _starredReleases;
+		Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _starredTracks;
 
 };
 

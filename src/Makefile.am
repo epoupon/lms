@@ -94,6 +94,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/admin/UsersView.hpp			\
 	$(srcdir)/ui/common/Validators.cpp			\
 	$(srcdir)/ui/common/Validators.hpp			\
+	$(srcdir)/ui/common/ValueStringModel.hpp		\
 	$(srcdir)/ui/explore/ArtistInfoView.cpp			\
 	$(srcdir)/ui/explore/ArtistInfoView.hpp			\
 	$(srcdir)/ui/explore/ArtistLink.cpp			\

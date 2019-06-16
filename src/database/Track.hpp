@@ -41,6 +41,7 @@ class Release;
 class TrackFeatures;
 class TrackListEntry;
 class TrackStats;
+class User;
 
 class Track : public Wt::Dbo::Dbo<Track>
 {
@@ -144,6 +145,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 				Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "track");
 				Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _playlistEntries, Wt::Dbo::ManyToOne, "track");
+				Wt::Dbo::hasMany(a, _starringUsers, Wt::Dbo::ManyToMany, "user_track_starred", "", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasOne(a, _trackFeatures);
 			}
 
@@ -175,6 +177,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks;
 		Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> 	_clusters;
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _playlistEntries;
+		Wt::Dbo::collection<Wt::Dbo::ptr<User>>		_starringUsers;
 		Wt::Dbo::weak_ptr<TrackFeatures>		_trackFeatures;
 
 };

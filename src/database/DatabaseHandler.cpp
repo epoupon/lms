@@ -46,7 +46,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	3
+#define LMS_DATABASE_VERSION	4
 
 namespace {
 	Wt::Auth::AuthService authService;
@@ -81,6 +81,67 @@ class VersionInfo
 	private:
 		int _version {LMS_DATABASE_VERSION};
 };
+
+static
+void
+doDatabaseMigrationIfNeeded(Wt::Dbo::Session& session)
+{
+	Wt::Dbo::Transaction transaction {session};
+
+	static const std::string outdatedMsg {"Outdated database, please rebuild it (delete the .db file and restart)"};
+
+	Version version;
+	try
+	{
+		version = VersionInfo::get(session)->getVersion();
+		if (version == LMS_DATABASE_VERSION)
+			return;
+	}
+	catch (std::exception& e)
+	{
+		LMS_LOG(DB, ERROR) << "Cannot get database version info: " << e.what();
+		throw LmsException {outdatedMsg};
+	}
+
+	switch (version)
+	{
+		case 3:
+
+			LMS_LOG(DB, INFO) << "Migrating database from version 3...";
+
+			session.execute(R"(CREATE TABLE IF NOT EXISTS "user_artist_starred" (
+	"user_id" bigint,
+	"artist_id" bigint,
+	primary key ("user_id", "artist_id"),
+	constraint "fk_user_artist_starred_key1" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred,
+	constraint "fk_user_artist_starred_key2" foreign key ("artist_id") references "artist" ("id") deferrable initially deferred);)");
+			session.execute(R"(CREATE INDEX "user_artist_starred_user" on "user_artist_starred" ("user_id");)");
+			session.execute(R"(CREATE INDEX "user_artist_starred_artist" on "user_artist_starred" ("artist_id");)");
+			session.execute(R"(CREATE TABLE IF NOT EXISTS "user_release_starred" (
+	"user_id" bigint,
+	"release_id" bigint,
+	primary key ("user_id", "release_id"),
+	constraint "fk_user_release_starred_key1" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred,
+	constraint "fk_user_release_starred_key2" foreign key ("release_id") references "release" ("id") on delete cascade deferrable initially deferred);)");
+			session.execute(R"(CREATE INDEX "user_release_starred_user" on "user_release_starred" ("user_id");)");
+			session.execute(R"(CREATE INDEX "user_release_starred_release" on "user_release_starred" ("release_id");)");
+			session.execute(R"(CREATE TABLE IF NOT EXISTS "user_track_starred" (
+	"user_id" bigint,
+	"track_id" bigint,
+	primary key ("user_id", "track_id"),
+	constraint "fk_user_track_starred_key1" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred,
+	constraint "fk_user_track_starred_key2" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred);)");
+			session.execute(R"(CREATE INDEX "user_track_starred_user" on "user_track_starred" ("user_id");)");
+			session.execute(R"(CREATE INDEX "user_track_starred_track" on "user_track_starred" ("track_id");)");
+		break;
+
+		default:
+			LMS_LOG(DB, ERROR) << "Database version " << version << " cannot be handled using migration";
+			throw LmsException {outdatedMsg};
+	}
+
+	VersionInfo::get(session).modify()->setVersion(LMS_DATABASE_VERSION);
+}
 
 
 void
@@ -163,18 +224,7 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();
 	}
 
-	try
-	{
-		Wt::Dbo::Transaction transaction {_session};
-
-		Version version {VersionInfo::get(_session)->getVersion()};
-		if (version != LMS_DATABASE_VERSION)
-			throw LmsException {"Outdated database, please rebuild it (database migration not yet implemented)"};
-	}
-	catch (std::exception& e)
-	{
-		throw LmsException {"Cannot get database version, please rebuild it (database migration not yet implemented)"};
-	}
+	doDatabaseMigrationIfNeeded(_session);
 
 	{
 		Wt::Dbo::Transaction transaction {_session};

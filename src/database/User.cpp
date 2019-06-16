@@ -19,6 +19,9 @@
 
 #include "User.hpp"
 
+#include "Artist.hpp"
+#include "Release.hpp"
+#include "Track.hpp"
 #include "TrackList.hpp"
 
 namespace Database {
@@ -121,6 +124,85 @@ User::getQueuedTrackList() const
 		res = TrackList::create(*session(), listName, TrackList::Type::Internal, false, self());
 
 	return res;
+}
+
+void
+User::starArtist(Wt::Dbo::ptr<Artist> artist)
+{
+	if (_starredArtists.count(artist) == 0)
+		_starredArtists.insert(artist);
+}
+
+void
+User::unstarArtist(Wt::Dbo::ptr<Artist> artist)
+{
+	if (_starredArtists.count(artist) != 0)
+		_starredArtists.erase(artist);
+}
+
+bool
+User::hasStarredArtist(Wt::Dbo::ptr<Artist> artist) const
+{
+	return _starredArtists.count(artist) != 0;
+}
+
+std::vector<Wt::Dbo::ptr<Artist>>
+User::getStarredArtists() const
+{
+	return std::vector<Wt::Dbo::ptr<Artist>>(_starredArtists.begin(), _starredArtists.end());
+}
+
+void
+User::starRelease(Wt::Dbo::ptr<Release> release)
+{
+	if (_starredReleases.count(release) == 0)
+		_starredReleases.insert(release);
+}
+
+void
+User::unstarRelease(Wt::Dbo::ptr<Release> release)
+{
+	if (_starredReleases.count(release) != 0)
+		_starredReleases.erase(release);
+}
+
+bool
+User::hasStarredRelease(Wt::Dbo::ptr<Release> release) const
+{
+	return _starredReleases.count(release) != 0;
+}
+
+std::vector<Wt::Dbo::ptr<Release>>
+User::getStarredReleases() const
+{
+	return std::vector<Wt::Dbo::ptr<Release>>(_starredReleases.begin(), _starredReleases.end());
+}
+
+
+void
+User::starTrack(Wt::Dbo::ptr<Track> track)
+{
+	if (_starredTracks.count(track) == 0)
+		_starredTracks.insert(track);
+}
+
+void
+User::unstarTrack(Wt::Dbo::ptr<Track> track)
+{
+	if (_starredTracks.count(track) != 0)
+		_starredTracks.erase(track);
+}
+
+bool
+User::hasStarredTrack(Wt::Dbo::ptr<Track> track) const
+{
+	return _starredTracks.count(track) != 0;
+}
+
+std::vector<Wt::Dbo::ptr<Track>>
+User::getStarredTracks() const
+{
+	return std::vector<Wt::Dbo::ptr<Track>>(_starredTracks.begin(), _starredTracks.end());
 }
 
 } // namespace Database

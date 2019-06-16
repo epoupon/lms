@@ -37,6 +37,7 @@ class Cluster;
 class ClusterType;
 class Release;
 class Track;
+class User;
 
 class Artist : public Wt::Dbo::Dbo<Artist>
 {
@@ -93,6 +94,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 				Wt::Dbo::field(a, _MBID, "mbid");
 
 				Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "artist");
+				Wt::Dbo::hasMany(a, _starringUsers, Wt::Dbo::ManyToMany, "user_release_starred", "", Wt::Dbo::OnDeleteCascade);
 			}
 
 	private:
@@ -104,6 +106,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		std::string _MBID;	// Musicbrainz Identifier
 
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks; // Tracks involving this artist
+		Wt::Dbo::collection<Wt::Dbo::ptr<User>>		_starringUsers; // Users that starred this artist
 };
 
 } // namespace Database

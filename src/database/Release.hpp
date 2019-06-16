@@ -29,11 +29,12 @@
 namespace Database
 {
 
-class Track;
-class Release;
 class Artist;
 class Cluster;
 class ClusterType;
+class Release;
+class Track;
+class User;
 
 class Release : public Wt::Dbo::Dbo<Release>
 {
@@ -104,6 +105,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 				Wt::Dbo::field(a, _totalTrackNumber,	"total_track_number");
 
 				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
+				Wt::Dbo::hasMany(a, _starringUsers, Wt::Dbo::ManyToMany, "user_release_starred", "", Wt::Dbo::OnDeleteCascade);
 			}
 
 	private:
@@ -115,6 +117,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		int		_totalTrackNumber {};
 
 		Wt::Dbo::collection<Wt::Dbo::ptr<Track>>	_tracks; // Tracks in the release
+		Wt::Dbo::collection<Wt::Dbo::ptr<User>>		_starringUsers; // Users that starred this release
 };
 
 } // namespace Database

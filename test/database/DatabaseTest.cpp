@@ -966,6 +966,174 @@ testSingleTrackSingleReleaseSingleArtistMultiClusters(Wt::Dbo::Session& session)
 
 static
 void
+testSingleStarredArtist(Wt::Dbo::Session& session)
+{
+	IdType artistId {};
+	IdType userId {};
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto artist {Artist::create(session, "MyArtist")};
+		CHECK(artist);
+		auto user {User::create(session)};
+		CHECK(user);
+
+		session.flush();
+		artistId = artist.id();
+		userId = user.id();
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto user {User::getById(session, userId)};
+		CHECK(user);
+		auto artist {Artist::getById(session, artistId)};
+		CHECK(artist);
+
+		user.modify()->starArtist(artist);
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto user {User::getById(session, userId)};
+		CHECK(user);
+		auto artists {user->getStarredArtists()};
+		CHECK(artists.size() == 1);
+		CHECK(artists.front().id() == artistId);
+
+		auto artist {Artist::getById(session, artistId)};
+		CHECK(user->hasStarredArtist(artist));
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto user {User::getById(session, userId)};
+		CHECK(user);
+		auto artist {Artist::getById(session, artistId)};
+		CHECK(artist);
+
+		user.remove();
+		artist.remove();
+	}
+}
+
+static
+void
+testSingleStarredRelease(Wt::Dbo::Session& session)
+{
+	IdType releaseId {};
+	IdType userId {};
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto release {Release::create(session, "MyRelease")};
+		CHECK(release);
+		auto user {User::create(session)};
+		CHECK(user);
+
+		session.flush();
+		releaseId = release.id();
+		userId = user.id();
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto user {User::getById(session, userId)};
+		CHECK(user);
+		auto release {Release::getById(session, releaseId)};
+		CHECK(release);
+
+		user.modify()->starRelease(release);
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto user {User::getById(session, userId)};
+		CHECK(user);
+		auto releases {user->getStarredReleases()};
+		CHECK(releases.size() == 1);
+		CHECK(releases.front().id() == releaseId);
+
+		auto release {Release::getById(session, releaseId)};
+		CHECK(user->hasStarredRelease(release));
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto user {User::getById(session, userId)};
+		CHECK(user);
+		auto release {Release::getById(session, releaseId)};
+		CHECK(release);
+
+		user.remove();
+		release.remove();
+	}
+}
+
+static
+void
+testSingleStarredTrack(Wt::Dbo::Session& session)
+{
+	IdType trackId {};
+	IdType userId {};
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto track {Track::create(session, "MyTrackFile")};
+		CHECK(track);
+		auto user {User::create(session)};
+		CHECK(user);
+
+		session.flush();
+		trackId = track.id();
+		userId = user.id();
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto user {User::getById(session, userId)};
+		CHECK(user);
+		auto track {Track::getById(session, trackId)};
+		CHECK(track);
+
+		user.modify()->starTrack(track);
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto user {User::getById(session, userId)};
+		CHECK(user);
+		auto tracks {user->getStarredTracks()};
+		CHECK(tracks.size() == 1);
+		CHECK(tracks.front().id() == trackId);
+
+		auto track {Track::getById(session, trackId)};
+		CHECK(user->hasStarredTrack(track));
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto user {User::getById(session, userId)};
+		CHECK(user);
+		auto track {Track::getById(session, trackId)};
+		CHECK(track);
+
+		user.remove();
+		track.remove();
+	}
+}
+
+static
+void
 testDatabaseEmpty(Wt::Dbo::Session& session)
 {
 	Wt::Dbo::Transaction transaction {session};
@@ -1025,6 +1193,9 @@ int main(int argc, char* argv[])
 		RUN_TEST(testSingleTrackSingleReleaseSingleArtistSingleCluster);
 		RUN_TEST(testSingleTrackSingleReleaseSingleArtistMultiClusters);
 
+		RUN_TEST(testSingleStarredArtist);
+		RUN_TEST(testSingleStarredRelease);
+		RUN_TEST(testSingleStarredTrack);
 	}
 	catch (std::exception& e)
 	{
