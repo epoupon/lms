@@ -213,6 +213,18 @@ Artist::getReleases(const std::set<IdType>& clusterIds) const
 	return std::vector<Wt::Dbo::ptr<Release>>(res.begin(), res.end());
 }
 
+std::size_t
+Artist::getReleaseCount() const
+{
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	int res = session()->query<int>("SELECT COUNT(DISTINCT r.id) FROM release r INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id INNER JOIN track t ON t.release_id = r.id")
+		.where("a.id = ?").bind(self()->id());
+	return res;
+}
+
 std::vector<Wt::Dbo::ptr<Track>>
 Artist::getTracks(boost::optional<TrackArtistLink::Type> linkType) const
 {

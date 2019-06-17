@@ -70,6 +70,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		const std::string& getMBID(void) const { return _MBID; }
 
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = std::set<IdType>()) const;
+		std::size_t				getReleaseCount() const;
 		std::vector<Wt::Dbo::ptr<Track>>	getTracks(boost::optional<TrackArtistLink::Type> linkType = {}) const;
 		std::vector<Wt::Dbo::ptr<Track>>	getTracksWithRelease(boost::optional<TrackArtistLink::Type> linkType = {}) const;
 		std::vector<Wt::Dbo::ptr<Track>>	getRandomTracks(boost::optional<std::size_t> count) const;

@@ -617,7 +617,7 @@ artistToResponseNode(const Database::User::pointer& user, const Database::Artist
 	artistNode.setAttribute("name", artist->getName());
 
 	if (id3)
-		artistNode.setAttribute("albumCount", std::to_string(artist->getReleases().size()));
+		artistNode.setAttribute("albumCount", std::to_string(artist->getReleaseCount()));
 
 	if (user->hasStarredArtist(artist))
 		artistNode.setAttribute("starred", reportedStarredDate);

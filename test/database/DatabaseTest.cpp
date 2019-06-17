@@ -237,6 +237,8 @@ testSingleTrackSingleArtist(Wt::Dbo::Session& session)
 		auto artist {artists.front()};
 		CHECK(artist.id() == artistId);
 
+		CHECK(artist->getReleaseCount() == 0);
+
 		CHECK(track->getArtistLinks().size() == 1);
 		auto artistLink {track->getArtistLinks().front()};
 		CHECK(artistLink->getTrack().id() == trackId);
@@ -779,6 +781,65 @@ testMultiTracksSingleArtistMultiClusters(Wt::Dbo::Session& session)
 
 static
 void
+testMultiTracksSingleArtistSingleRelease(Wt::Dbo::Session& session)
+{
+	const std::size_t nbTracks {10};
+	IdType artistId {};
+	IdType releaseId {};
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto artist {Artist::create(session, "MyArtist")};
+		auto release {Release::create(session, "MyRelease")};
+
+		for (std::size_t i {}; i < nbTracks; ++i)
+		{
+			auto track {Track::create(session, "MyTrackFile")};
+			TrackArtistLink::create(session, track, artist, TrackArtistLink::Type::Artist);
+			track.modify()->setRelease(release);
+		}
+
+		session.flush();
+		artistId = artist.id();
+		releaseId = release.id();
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+		CHECK(Release::getAllOrphans(session).empty());
+		CHECK(Artist::getAllOrphans(session).empty());
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto artist {Artist::getById(session, artistId)};
+		CHECK(artist);
+		CHECK(artist->getReleaseCount() == 1);
+		CHECK(artist->getReleases().size() == 1);
+		CHECK(artist->getReleases().front().id() == releaseId);
+
+		auto release {Release::getById(session, releaseId)};
+		CHECK(release);
+		CHECK(release->getTracks().size() == nbTracks);
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		std::vector<Track::pointer> tracks {Track::getAll(session)};
+		for (auto& track : tracks)
+			track.remove();
+
+		auto artist {Artist::getById(session, artistId)};
+		auto release {Release::getById(session, releaseId)};
+		artist.remove();
+		release.remove();
+	}
+}
+
+static
+void
 testSingleTrackSingleReleaseSingleArtist(Wt::Dbo::Session& session)
 {
 	IdType trackId {};
@@ -808,6 +869,8 @@ testSingleTrackSingleReleaseSingleArtist(Wt::Dbo::Session& session)
 		auto releases {artist->getReleases()};
 		CHECK(releases.size() == 1);
 		CHECK(releases.front().id() == releaseId);
+
+		CHECK(artist->getReleaseCount() == 1);
 
 		auto release {Release::getById(session, releaseId)};
 		CHECK(release);
@@ -1187,6 +1250,7 @@ int main(int argc, char* argv[])
 		RUN_TEST(testSingleTrackSingleArtistMultiClusters);
 		RUN_TEST(testSingleTrackSingleArtistMultiRolesMultiClusters);
 		RUN_TEST(testMultiTracksSingleArtistMultiClusters);
+		RUN_TEST(testMultiTracksSingleArtistSingleRelease);
 
 		RUN_TEST(testSingleTrackSingleReleaseSingleArtist);
 
