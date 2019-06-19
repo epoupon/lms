@@ -21,8 +21,8 @@
 </message>
 
 <message id="Lms.Explore.Releases.template.entry">
-	<div class="row">
-		<div class="col-xs-12 Lms-explore-releases-entry">
+	<div class="row Lms-explore-releases-entry">
+		<div class="col-xs-12">
 			<div class="media">
 				<div class="media-left media-middle">
 					${cover class="media-object"}

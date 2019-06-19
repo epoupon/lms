@@ -12,8 +12,8 @@
 </message>
 
 <message id="Lms.Explore.Artist.template.entry">
-	<div class="row">
-		<div class="col-xs-12 Lms-explore-artist-entry">
+	<div class="row Lms-explore-artist-entry">
+		<div class="col-xs-12">
 			<div class="media">
 				<div class="media-left media-middle">
 					${cover class="media-object"}

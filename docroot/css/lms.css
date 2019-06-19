@@ -44,6 +44,7 @@ a:hover {
 	min-height: 48px;
 	padding-top: 8px;
 	padding-bottom: 8px;
+	margin: 0px;
 }
 
 .Lms-admin-users-add-btn {
@@ -142,6 +143,7 @@ a:hover {
 .Lms-explore-releases-entry {
 	padding-top: 8px;
 	padding-bottom: 8px;
+	margin: 0px;
 }
 
 .Lms-explore-releases-entry:hover {
@@ -171,7 +173,9 @@ a:hover {
 	border-bottom-color: lightgrey;
 	border-bottom-width: thin;
 	min-height: 32px;
+	margin: 0px;
 }
+
 
 .Lms-explore-release-entry:hover {
 	background-color: lightgrey;
@@ -201,6 +205,7 @@ a:hover {
 
 .Lms-explore-artists-entry {
 	min-height: 48px;
+	margin: 0px;
 }
 
 .Lms-explore-artists-entry:hover {
@@ -215,6 +220,7 @@ a:hover {
 .Lms-explore-artist-entry {
 	padding-top: 8px;
 	padding-bottom: 8px;
+	margin: 0px;
 }
 
 .Lms-explore-artist-entry:hover {
@@ -240,15 +246,16 @@ a:hover {
 	border-bottom-style: solid;
 	border-bottom-color: lightgrey;
 	border-bottom-width: thin;
+	margin: 0px;
+}
+
+.Lms-explore-tracks-entry:hover {
+	background-color: lightgrey;
 }
 
 .Lms-explore-tracks-entry-name {
 	margin-top: 4px;
 	margin-bottom: 4px;
-}
-
-.Lms-explore-tracks-entry:hover {
-	background-color: lightgrey;
 }
 
 .Lms-explore-tracks-entry-controls {
@@ -279,6 +286,7 @@ a:hover {
 	border-bottom-color: lightgrey;
 	border-bottom-width: thin;
 	min-height: 32px;
+	margin: 0px;
 }
 
 .Lms-playqueue-entry:hover {
@@ -321,6 +329,7 @@ a:hover {
 	border-bottom-color: lightgrey;
 	border-bottom-width: thin;
 	min-height: 32px;
+	margin: 0px;
 }
 
 .Lms-playhistory-entry:hover {
