@@ -45,6 +45,8 @@ class Handler
 
 		Wt::Dbo::Session& getSession() { return _session; }
 
+		void optimize();
+
 		Wt::Dbo::ptr<User> getCurrentUser();	// get the current user, may return empty
 		Wt::Dbo::ptr<User> getUser(const std::string& loginName);
 		Wt::Dbo::ptr<User> getUser(const Wt::Auth::User& authUser);

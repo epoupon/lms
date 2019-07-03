@@ -18,6 +18,7 @@
  */
 #include "SubsonicResource.hpp"
 
+#include <atomic>
 #include <mutex>
 #include <numeric>
 #include <random>
@@ -357,7 +358,11 @@ std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap
 void
 SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response)
 {
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request '" << request.path() << "', params = " << parameterMapToDebugString(request.getParameterMap());
+	static std::atomic<std::size_t> curRequestId{};
+
+	const std::size_t requestId {curRequestId++};
+
+	LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request " << requestId << " '" << request.path() << "', params = " << parameterMapToDebugString(request.getParameterMap());
 
 	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
 
@@ -387,7 +392,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 			resp.write(response.out(), format);
 			response.setMimeType(ResponseFormatToMimeType(format));
 
-			LMS_LOG(API_SUBSONIC, DEBUG) << "Request '" << request.path() << "' handled!";
+			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << request.path() << "' handled!";
 			return;
 		}
 
@@ -416,7 +421,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 				continuation->setData(std::move(res.continuationData));
 			}
 
-			LMS_LOG(API_SUBSONIC, DEBUG) << "Request '" << request.path() << "' handled!";
+			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId  << " '" << request.path() << "' handled!";
 			return;
 		}
 
@@ -547,7 +552,7 @@ releaseToResponseNode(const Database::User::pointer& user, const Database::Relea
 	if (id3)
 	{
 		albumNode.setAttribute("name", release->getName());
-		albumNode.setAttribute("songCount", std::to_string(release->getTracks().size()));
+		albumNode.setAttribute("songCount", std::to_string(release->getTracksCount()));
 		albumNode.setAttribute("duration", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(release->getDuration()).count()));
 	}
 	else
@@ -558,8 +563,9 @@ releaseToResponseNode(const Database::User::pointer& user, const Database::Relea
 
 	albumNode.setAttribute("id", IdToString({Id::Type::Release, release.id()}));
 	albumNode.setAttribute("coverArt", IdToString({Id::Type::Release, release.id()}));
-	if (release->getReleaseYear())
-		albumNode.setAttribute("year", std::to_string(*release->getReleaseYear()));
+	auto releaseYear {release->getReleaseYear()};
+	if (releaseYear)
+		albumNode.setAttribute("year", std::to_string(*releaseYear));
 
 	auto artists {release->getReleaseArtists()};
 	if (artists.empty())
@@ -632,11 +638,8 @@ clusterToResponseNode(const Database::Cluster::pointer& cluster)
 	Response::Node clusterNode;
 
 	clusterNode.setValue(cluster->getName());
-	clusterNode.setAttribute("songCount", std::to_string(cluster->getTrackIds().size()));
-	{
-		auto releases {Database::Release::getByFilter(*cluster.session(), {cluster.id()})};
-		clusterNode.setAttribute("albumCount", std::to_string(releases.size()));
-	}
+	clusterNode.setAttribute("songCount", std::to_string(cluster->getTracksCount()));
+	clusterNode.setAttribute("albumCount", std::to_string(cluster->getReleasesCount()));
 
 	return clusterNode;
 }

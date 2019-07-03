@@ -104,13 +104,6 @@ Track::getMBIDDuplicates(Wt::Dbo::Session& session)
 }
 
 std::vector<Track::pointer>
-Track::getChecksumDuplicates(Wt::Dbo::Session& session)
-{
-	Wt::Dbo::collection<pointer> res = session.query<pointer>( "SELECT track FROM track WHERE checksum in (SELECT checksum FROM track WHERE Length(checksum) > 0 GROUP BY checksum HAVING COUNT(*) > 1)").orderBy("track.release_id,track.disc_number,track.track_number,track.checksum");
-	return std::vector<pointer>(res.begin(), res.end());
-}
-
-std::vector<Track::pointer>
 Track::getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int limit)
 {
 	Wt::Dbo::collection<Track::pointer> res = session.find<Track>()

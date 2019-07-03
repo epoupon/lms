@@ -269,7 +269,10 @@ Release::getArtists(TrackArtistLink::Type linkType) const
 	assert(session());
 
 	Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> res = session()->query<Wt::Dbo::ptr<Artist>>(
-			"SELECT DISTINCT a FROM artist a INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id INNER JOIN track t ON t.id = t_a_l.track_id INNER JOIN release r ON r.id = t.release_id")
+			"SELECT DISTINCT a FROM artist a"
+			" INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id"
+			" INNER JOIN track t ON t.id = t_a_l.track_id"
+			" INNER JOIN release r ON r.id = t.release_id")
 		.where("r.id = ?").bind(self()->id())
 		.where("t_a_l.type = ?").bind(linkType);
 
@@ -328,6 +331,12 @@ Release::getTracks(const std::set<IdType>& clusterIds) const
 	return std::vector< Wt::Dbo::ptr<Track> > (res.begin(), res.end());
 }
 
+std::size_t
+Release::getTracksCount() const
+{
+	return _tracks.size();
+}
+
 std::chrono::milliseconds
 Release::getDuration() const
 {
@@ -337,8 +346,8 @@ Release::getDuration() const
 
 	using milli = std::chrono::duration<int, std::milli>;
 
-	Wt::Dbo::Query<milli> query {session()->query<milli>("SELECT SUM(duration) FROM track t INNER JOIN release r ON t.release_id = r.id WHERE r.id = ?")
-			.bind(self()->id())};
+	Wt::Dbo::Query<milli> query {session()->query<milli>("SELECT SUM(duration) FROM track t INNER JOIN release r ON t.release_id = r.id")
+			.where("r.id = ?").bind(self()->id())};
 
 	return query.resultValue();
 }

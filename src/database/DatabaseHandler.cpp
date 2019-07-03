@@ -231,15 +231,21 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 
 		// Indexes
 		_session.execute("CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
+		_session.execute("CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)");
 		_session.execute("CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)");
 		_session.execute("CREATE INDEX IF NOT EXISTS cluster_name_idx ON cluster(name)");
+		_session.execute("CREATE INDEX IF NOT EXISTS cluster_cluster_type_idx ON cluster(cluster_type_id)");
 		_session.execute("CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
+		_session.execute("CREATE INDEX IF NOT EXISTS release_name_nocase_idx ON release(name COLLATE NOCASE)");
 		_session.execute("CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_path_idx ON track(file_path)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_name_idx ON track(name)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_year_idx ON track(year)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_original_year_idx ON track(original_year)");
 		_session.execute("CREATE INDEX IF NOT EXISTS tracklist_name_idx ON tracklist(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS tracklist_user_idx ON tracklist(user_id)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_features_track_idx ON track_features(track_id)");
@@ -255,6 +261,13 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 Handler::~Handler()
 {
 	delete _users;
+}
+
+void
+Handler::optimize()
+{
+	Wt::Dbo::Transaction transaction {_session};
+	_session.execute("ANALYZE");
 }
 
 Wt::Auth::AbstractUserDatabase&

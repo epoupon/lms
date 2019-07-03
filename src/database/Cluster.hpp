@@ -51,11 +51,12 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name);
 
 		// Accessors
-		const std::string& getName() const { return _name; }
-		Wt::Dbo::ptr<ClusterType> getType() const { return _clusterType; }
-		std::size_t getCount() const { return _tracks.size(); }
+		const std::string& getName() const		{ return _name; }
+		Wt::Dbo::ptr<ClusterType> getType() const	{ return _clusterType; }
+		std::size_t getTracksCount() const		{ return _tracks.size(); }
 		std::vector<Wt::Dbo::ptr<Track>> getTracks(int offset, int limit) const;
 		std::set<IdType> getTrackIds() const;
+		std::size_t getReleasesCount() const;
 
 		void addTrack(Wt::Dbo::ptr<Track> track);
 

@@ -441,6 +441,10 @@ MediaScanner::scan(boost::system::error_code err)
 		_curState = State::NotScheduled;
 		_inProgressStats.reset();
 	}
+
+	LMS_LOG(DBUPDATER, INFO) << "Optimizing db...";
+	_db.optimize();
+	LMS_LOG(DBUPDATER, INFO) << "Optimize db done!";
 }
 
 void
@@ -522,14 +526,11 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 
 	stats.scans++;
 
-	std::vector<unsigned char> checksum ;
-	computeCrc(file, checksum);
-
 	Wt::Dbo::Transaction transaction {_db.getSession()};
 
 	Wt::Dbo::ptr<Track> track {Track::getByPath(_db.getSession(), file) };
 
-	// We estimate this is a audio file if:
+	// We estimate this is an audio file if:
 	// - we found a least one audio stream
 	// - the duration is not null
 	if (trackInfo->audioStreams.empty())
@@ -620,7 +621,6 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_db.getSession(), track, releaseArtist, Database::TrackArtistLink::Type::ReleaseArtist));
 
 	track.modify()->setScanVersion(_scanVersion);
-	track.modify()->setChecksum(checksum);
 	track.modify()->setRelease(release);
 	track.modify()->setClusters(clusters);
 	track.modify()->setLastWriteTime(lastWriteTime);
@@ -806,14 +806,6 @@ MediaScanner::checkDuplicatedAudioFiles(Stats& stats)
 		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath().string() << " - " << track->getName();
 		stats.duplicateMBID++;
 	}
-
-	tracks = Database::Track::getChecksumDuplicates(_db.getSession());
-	for (Track::pointer track : tracks)
-	{
-		LMS_LOG(DBUPDATER, INFO) << "Found duplicated checksum [" << bufferToString(track->getChecksum()) << "], file: " << track->getPath().string() << " - " << track->getName();
-		stats.duplicateHashes++;
-	}
-
 
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files done!";
 }

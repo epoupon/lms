@@ -427,6 +427,7 @@ testSingleTrackSingleRelease(Wt::Dbo::Session& session)
 		CHECK(release);
 		CHECK(release->getTracks().size() == 1);
 		CHECK(release->getTracks().front().id() == trackId);
+		CHECK(release->getTracksCount() == 1);
 	}
 
 	{
@@ -545,6 +546,14 @@ testSingleTrackSingleReleaseSingleCluster(Wt::Dbo::Session& session)
 		releases = Release::getByFilter(session, {clusterId});
 		CHECK(releases.size() == 1);
 		CHECK(releases.front().id() == releaseId);
+	}
+
+	{
+		Wt::Dbo::Transaction transaction {session};
+
+		auto cluster {Cluster::getById(session, clusterId)};
+		CHECK(cluster->getReleasesCount() == 1);
+		CHECK(cluster->getTracksCount() == 1);
 	}
 
 	{

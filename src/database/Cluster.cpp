@@ -74,7 +74,7 @@ Cluster::addTrack(Wt::Dbo::ptr<Track> track)
 std::vector<Wt::Dbo::ptr<Track>>
 Cluster::getTracks(int offset, int limit) const
 {
-	Wt::Dbo::collection<Track::pointer> res = session()->query<Track::pointer>("select t from track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+	Wt::Dbo::collection<Track::pointer> res = session()->query<Track::pointer>("SELECT t FROM track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
 						.where("c.id = ?").bind(self()->id())
 						.offset(offset)
 						.limit(limit);
@@ -88,10 +88,21 @@ Cluster::getTrackIds() const
 	assert(session());
 	assert(IdIsValid(self()->id()));
 
-	Wt::Dbo::collection<IdType> res = session()->query<IdType>("SELECT t_c.track_id from track_cluster t_c INNER JOIN cluster c ON c.id = t_c.cluster_id")
+	Wt::Dbo::collection<IdType> res = session()->query<IdType>("SELECT t_c.track_id FROM track_cluster t_c INNER JOIN cluster c ON c.id = t_c.cluster_id")
 		.where("c.id = ?").bind(self()->id());
 
 	return std::set<IdType>(res.begin(), res.end());
+
+}
+
+std::size_t
+Cluster::getReleasesCount() const
+{
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
+	return session()->query<int>("SELECT COUNT(DISTINCT r.id) FROM release r INNER JOIN track t on t.release_id = r.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+		.where("c.id = ?").bind(self()->id());
 
 }
 

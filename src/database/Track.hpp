@@ -70,7 +70,6 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static std::vector<IdType>	getAllIds(Wt::Dbo::Session& session); // nested transaction
 		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session); // nested transaction
 		static std::vector<pointer>	getMBIDDuplicates(Wt::Dbo::Session& session);
-		static std::vector<pointer>	getChecksumDuplicates(Wt::Dbo::Session& session);
 		static std::vector<pointer>	getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int size = 1);
 		static std::vector<pointer>	getAllWithMBIDAndMissingFeatures(Wt::Dbo::Session& session); // nested transaction
 		static std::vector<IdType>	getAllIdsWithFeatures(Wt::Dbo::Session& session, boost::optional<std::size_t> limit = {}); // nested transaction
@@ -86,7 +85,6 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setDuration(std::chrono::milliseconds duration)		{ _duration = duration; }
 		void setLastWriteTime(Wt::WDateTime time)			{ _fileLastWrite = time; }
 		void setAddedTime(Wt::WDateTime time)				{ _fileAdded = time; }
-		void setChecksum(const std::vector<unsigned char>& checksum)	{ _fileChecksum = checksum; }
 		void setYear(int year)						{ _year = year; }
 		void setOriginalYear(int year)					{ _originalYear = year; }
 		void setHasCover(bool hasCover)					{ _hasCover = hasCover; }
@@ -109,7 +107,6 @@ class Track : public Wt::Dbo::Dbo<Track>
 		boost::optional<int>			getOriginalYear() const;
 		Wt::WDateTime				getLastWriteTime() const	{ return _fileLastWrite; }
 		Wt::WDateTime				getAddedTime() const		{ return _fileAdded; }
-		const std::vector<unsigned char>&	getChecksum() const		{ return _fileChecksum; }
 		bool					hasCover() const		{ return _hasCover; }
 		const std::string&			getMBID() const			{ return _MBID; }
 		boost::optional<std::string>		getCopyright() const;
@@ -136,7 +133,6 @@ class Track : public Wt::Dbo::Dbo<Track>
 				Wt::Dbo::field(a, _filePath,		"file_path");
 				Wt::Dbo::field(a, _fileLastWrite,	"file_last_write");
 				Wt::Dbo::field(a, _fileAdded,		"file_added");
-				Wt::Dbo::field(a, _fileChecksum,	"checksum");
 				Wt::Dbo::field(a, _hasCover,		"has_cover");
 				Wt::Dbo::field(a, _MBID,		"mbid");
 				Wt::Dbo::field(a, _copyright,		"copyright");
@@ -165,7 +161,6 @@ class Track : public Wt::Dbo::Dbo<Track>
 		int					_year = 0;
 		int					_originalYear = 0;
 		std::string				_filePath;
-		std::vector<unsigned char>		_fileChecksum;
 		Wt::WDateTime				_fileLastWrite;
 		Wt::WDateTime				_fileAdded;
 		bool					_hasCover = false;
