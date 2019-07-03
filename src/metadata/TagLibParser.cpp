@@ -150,7 +150,7 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 {
 	TagLib::FileRef f {p.string().c_str(),
 			true, // read audio properties
-			TagLib::AudioProperties::Average};
+			TagLib::AudioProperties::Fast};
 
 	if (f.isNull())
 	{
