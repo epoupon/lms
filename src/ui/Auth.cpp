@@ -34,21 +34,21 @@ namespace UserInterface {
 Auth::Auth()
 : Wt::WTemplateFormView(Wt::WString::tr("Lms.Auth.template"))
 {
-	_model = std::make_shared<Wt::Auth::AuthModel>(LmsApp->getDb().getAuthService(), LmsApp->getDb().getUserDatabase());
-	_model->addPasswordAuth(&Database::Handler::getPasswordService());
+	_model = std::make_shared<Wt::Auth::AuthModel>(LmsApp->getDbSession().getAuthService(), LmsApp->getDbSession().getUserDatabase());
+	_model->addPasswordAuth(&Database::Session::getPasswordService());
 
 	// LoginName
 	setFormWidget(Wt::Auth::AuthModel::LoginNameField, std::make_unique<Wt::WLineEdit>());
 
 	{
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		auto demoUser = Database::User::getDemo(LmsApp->getDboSession());
+		auto demoUser = Database::User::getDemo(LmsApp->getDbSession());
 		if (demoUser)
 		{
-			Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().findWithId(std::to_string(demoUser.id()));
-			_model->setValue(Wt::Auth::AuthModel::LoginNameField, authUser.identity(Wt::Auth::Identity::LoginName));
-			_model->setValue(Wt::Auth::AuthModel::PasswordField, authUser.identity(Wt::Auth::Identity::LoginName));
+			const std::string userName {LmsApp->getDbSession().getUserLoginName(demoUser)};
+			_model->setValue(Wt::Auth::AuthModel::LoginNameField, userName );
+			_model->setValue(Wt::Auth::AuthModel::PasswordField, userName);
 		}
 	}
 
@@ -64,9 +64,9 @@ Auth::Auth()
 	Wt::WPushButton* loginBtn = bindNew<Wt::WPushButton>("login-btn", Wt::WString::tr("Lms.login"));
 	loginBtn->clicked().connect(this, &Auth::processAuth);
 
-	LmsApp->getDb().getLogin().changed().connect(std::bind([=]
+	LmsApp->getDbSession().getLogin().changed().connect(std::bind([=]
 	{
-		if (LmsApp->getDb().getLogin().loggedIn())
+		if (LmsApp->getDbSession().getLogin().loggedIn())
 			this->setHidden(true);
 	}));
 
@@ -76,7 +76,7 @@ Auth::Auth()
 	if (user.isValid())
 	{
 		LMS_LOG(UI, DEBUG) << "Valid user found from auth token (id = " << user.id() << ")";
-		_model->loginUser(LmsApp->getDb().getLogin(), user, Wt::Auth::LoginState::Weak);
+		_model->loginUser(LmsApp->getDbSession().getLogin(), user, Wt::Auth::LoginState::Weak);
 	}
 }
 
@@ -86,7 +86,7 @@ Auth::processAuth()
 	updateModel(_model.get());
 
 	if (_model->validate())
-		_model->login(LmsApp->getDb().getLogin());
+		_model->login(LmsApp->getDbSession().getLogin());
 	else
 		updateView(_model.get());
 }
@@ -94,7 +94,7 @@ Auth::processAuth()
 void
 Auth::logout()
 {
-	_model->logout(LmsApp->getDb().getLogin());
+	_model->logout(LmsApp->getDbSession().getLogin());
 }
 
 } // namespace UserInterface

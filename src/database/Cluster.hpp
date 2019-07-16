@@ -33,6 +33,7 @@ namespace Database {
 class Track;
 class ClusterType;
 class ScanSettings;
+class Session;
 
 class Cluster : public Wt::Dbo::Dbo<Cluster>
 {
@@ -43,12 +44,12 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 		Cluster(Wt::Dbo::ptr<ClusterType> type, std::string name);
 
 		// Find utility
-		static std::vector<pointer> getAll(Wt::Dbo::Session& session);
-		static std::vector<pointer> getAllOrphans(Wt::Dbo::Session& session);
-		static pointer getById(Wt::Dbo::Session& session, IdType id);
+		static std::vector<pointer> getAll(Session& session);
+		static std::vector<pointer> getAllOrphans(Session& session);
+		static pointer getById(Session& session, IdType id);
 
 		// Create utility
-		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name);
+		static pointer create(Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name);
 
 		// Accessors
 		const std::string& getName() const		{ return _name; }
@@ -89,13 +90,13 @@ class ClusterType : public Wt::Dbo::Dbo<ClusterType>
 		ClusterType() {}
 		ClusterType(std::string name);
 
-		static std::vector<pointer> getAllOrphans(Wt::Dbo::Session& session);
-		static pointer getByName(Wt::Dbo::Session& session, std::string name);
-		static pointer getById(Wt::Dbo::Session& session, IdType id);
-		static std::vector<pointer> getAll(Wt::Dbo::Session& session);
+		static std::vector<pointer> getAllOrphans(Session& session);
+		static pointer getByName(Session& session, std::string name);
+		static pointer getById(Session& session, IdType id);
+		static std::vector<pointer> getAll(Session& session);
 
-		static pointer create(Wt::Dbo::Session& session, std::string name);
-		static void remove(Wt::Dbo::Session& session, std::string name);
+		static pointer create(Session& session, std::string name);
+		static void remove(Session& session, std::string name);
 
 		// Accessors
 		const std::string& getName(void) const { return _name; }

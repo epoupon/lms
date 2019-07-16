@@ -85,10 +85,10 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 		void loadData()
 		{
-			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-			auto scanSettings {ScanSettings::get(LmsApp->getDboSession())};
-			auto similaritySettings {SimilaritySettings::get(LmsApp->getDboSession())};
+			const ScanSettings::pointer scanSettings {ScanSettings::get(LmsApp->getDbSession())};
+			const SimilaritySettings::pointer similaritySettings {SimilaritySettings::get(LmsApp->getDbSession())};
 
 			setValue(MediaDirectoryField, scanSettings->getMediaDirectory().string());
 
@@ -108,17 +108,17 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			if (!clusterTypes.empty())
 			{
 				std::vector<std::string> names;
-				std::transform(clusterTypes.begin(), clusterTypes.end(),std::back_inserter(names),  [](auto clusterType) { return clusterType->getName(); });
+				std::transform(clusterTypes.begin(), clusterTypes.end(), std::back_inserter(names),  [](auto clusterType) { return clusterType->getName(); });
 				setValue(TagsField, joinStrings(names, " "));
 			}
 		}
 
 		void saveData()
 		{
-			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-			auto scanSettings {ScanSettings::get(LmsApp->getDboSession())};
-			auto similaritySettings {SimilaritySettings::get(LmsApp->getDboSession())};
+			ScanSettings::pointer scanSettings {ScanSettings::get(LmsApp->getDbSession())};
+			SimilaritySettings::pointer similaritySettings {SimilaritySettings::get(LmsApp->getDbSession())};
 
 			scanSettings.modify()->setMediaDirectory(valueText(MediaDirectoryField).toUTF8());
 
@@ -135,7 +135,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 				similaritySettings.modify()->setEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
 
 			auto clusterTypes {splitString(valueText(TagsField).toUTF8(), " ")};
-			scanSettings.modify()->setClusterTypes(std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
+			scanSettings.modify()->setClusterTypes(LmsApp->getDbSession(), std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
 		}
 
 	private:

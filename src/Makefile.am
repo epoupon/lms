@@ -19,8 +19,8 @@ lms_SOURCES = \
 	$(srcdir)/database/Artist.hpp				\
 	$(srcdir)/database/Cluster.cpp				\
 	$(srcdir)/database/Cluster.hpp				\
-	$(srcdir)/database/DatabaseHandler.cpp			\
-	$(srcdir)/database/DatabaseHandler.hpp			\
+	$(srcdir)/database/Database.cpp				\
+	$(srcdir)/database/Database.hpp				\
 	$(srcdir)/database/TrackArtistLink.cpp			\
 	$(srcdir)/database/TrackArtistLink.hpp			\
 	$(srcdir)/database/TrackFeatures.cpp			\
@@ -32,6 +32,8 @@ lms_SOURCES = \
 	$(srcdir)/database/Release.hpp				\
 	$(srcdir)/database/ScanSettings.cpp			\
 	$(srcdir)/database/ScanSettings.hpp			\
+	$(srcdir)/database/Session.cpp				\
+	$(srcdir)/database/Session.hpp				\
 	$(srcdir)/database/SimilaritySettings.cpp		\
 	$(srcdir)/database/SimilaritySettings.hpp		\
 	$(srcdir)/database/SqlQuery.cpp				\

@@ -36,6 +36,7 @@ namespace Database
 class Cluster;
 class ClusterType;
 class Release;
+class Session;
 class Track;
 class User;
 
@@ -49,21 +50,21 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		Artist(const std::string& name, const std::string& MBID = "");
 
 		// Accessors
-		static pointer			getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
-		static pointer			getById(Wt::Dbo::Session& session, IdType id);
-		static std::vector<pointer>	getByName(Wt::Dbo::Session& session, const std::string& name);
-		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session,
+		static pointer			getByMBID(Session& session, const std::string& MBID);
+		static pointer			getById(Session& session, IdType id);
+		static std::vector<pointer>	getByName(Session& session, const std::string& name);
+		static std::vector<pointer> 	getByFilter(Session& session,
 								const std::set<IdType>& clusters);		// at least one track that belongs to  these clusters
-		static std::vector<pointer> 	getByFilter(Wt::Dbo::Session& session,
+		static std::vector<pointer> 	getByFilter(Session& session,
 								const std::set<IdType>& clusters,		// at least one track that belongs to  these clusters
 								const std::vector<std::string>& keywords,	// name must match all of these keywords
 								boost::optional<std::size_t> offset,
 								boost::optional<std::size_t> size,
 								bool& moreExpected);
 
-		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
-		static std::vector<pointer>	getAllOrphans(Wt::Dbo::Session& session); // No track related
-		static std::vector<pointer>	getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, boost::optional<std::size_t> size = {});
+		static std::vector<pointer>	getAll(Session& session, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
+		static std::vector<pointer>	getAllOrphans(Session& session); // No track related
+		static std::vector<pointer>	getLastAdded(Session& session, Wt::WDateTime after, boost::optional<std::size_t> size = {});
 
 		// Accessors
 		const std::string& getName(void) const { return _name; }
@@ -84,8 +85,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		void setSortName(const std::string& sortName);
 
 		// Create
-		static pointer create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID = "");
-
+		static pointer create(Session& session, const std::string& name, const std::string& MBID = "");
 
 		template<class Action>
 			void persist(Action& a)

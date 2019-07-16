@@ -68,11 +68,11 @@ ReleaseInfo::refresh()
 	if (!releaseId)
 		return;
 
-	std::vector<Database::IdType> releasesIds {getService<Similarity::Searcher>()->getSimilarReleases(LmsApp->getDboSession(), *releaseId, 5)};
+	const std::vector<Database::IdType> releasesIds {getService<Similarity::Searcher>()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 5)};
 
-	Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	Database::Release::pointer release {Database::Release::getById(LmsApp->getDboSession(), *releaseId)};
+	Database::Release::pointer release {Database::Release::getById(LmsApp->getDbSession(), *releaseId)};
 	if (!release)
 		return;
 
@@ -102,13 +102,13 @@ ReleaseInfo::refresh()
 	std::vector<Database::Release::pointer> similarReleases;
 	for (Database::IdType id : releasesIds)
 	{
-		Database::Release::pointer similarRelease {Database::Release::getById(LmsApp->getDboSession(), id)};
+		Database::Release::pointer similarRelease {Database::Release::getById(LmsApp->getDbSession(), id)};
 
 		if (similarRelease)
 			similarReleases.emplace_back(similarRelease);
 	}
 
-	for (const auto& similarRelease : similarReleases)
+	for (const Database::Release::pointer& similarRelease : similarReleases)
 		_similarReleasesContainer->addNew<ReleaseLink>(similarRelease);
 }
 

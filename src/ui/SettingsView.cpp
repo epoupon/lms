@@ -69,7 +69,7 @@ class SettingsModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
 			LmsApp->getUser().modify()->setAudioTranscodeEnable(Wt::asNumber(value(TranscodeEnableField)));
 
@@ -82,12 +82,12 @@ class SettingsModel : public Wt::WFormModel
 				LmsApp->getUser().modify()->setAudioTranscodeFormat(_transcodeFormatModel->getValue(*transcodeFormatRow));
 
 			if (!valueText(PasswordField).empty())
-				Handler::getPasswordService().updatePassword(LmsApp->getAuthUser(), valueText(PasswordField));
+				Session::getPasswordService().updatePassword(LmsApp->getAuthUser(), valueText(PasswordField));
 		}
 
 		void loadData()
 		{
-			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 			setValue(TranscodeEnableField, LmsApp->getUser()->getAudioTranscodeEnable());
 			if (!LmsApp->getUser()->getAudioTranscodeEnable())
@@ -116,7 +116,7 @@ class SettingsModel : public Wt::WFormModel
 				if (!valueText(PasswordField).empty())
 				{
 					// Evaluate the strength of the password
-					auto res = Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField), LmsApp->getUserIdentity(), "");
+					auto res = Session::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField), LmsApp->getUserIdentity(), "");
 
 					if (!res.isValid())
 						error = res.message();
@@ -148,12 +148,12 @@ class SettingsModel : public Wt::WFormModel
 		{
 			Bitrate maxAudioBitrate;
 			{
-				Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 				maxAudioBitrate = LmsApp->getUser()->getMaxAudioTranscodeBitrate();
 			}
 
 			_transcodeBitrateModel = std::make_shared<ValueStringModel<Bitrate>>();
-			for (Bitrate bitrate : User::audioTranscodeAllowedBitrates)
+			for (const Bitrate bitrate : User::audioTranscodeAllowedBitrates)
 			{
 				if (bitrate > maxAudioBitrate)
 					break;
@@ -243,7 +243,7 @@ SettingsView::refreshView()
 	{
 
 		{
-			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 			if (LmsApp->getUser()->isDemo())
 			{

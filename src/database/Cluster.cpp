@@ -22,6 +22,7 @@
 #include "Artist.hpp"
 #include "Release.hpp"
 #include "ScanSettings.hpp"
+#include "Session.hpp"
 #include "SqlQuery.hpp"
 #include "Track.hpp"
 
@@ -38,31 +39,42 @@ Cluster::Cluster(Wt::Dbo::ptr<ClusterType> type, std::string name)
 }
 
 Cluster::pointer
-Cluster::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name)
+Cluster::create(Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name)
 {
-	return session.add(std::make_unique<Cluster>(type, name));
+	session.checkUniqueLocked();
+
+	Cluster::pointer res {session.getDboSession().add(std::make_unique<Cluster>(type, name))};
+	session.getDboSession().flush();
+
+	return res;
 }
 
 std::vector<Cluster::pointer>
-Cluster::getAll(Wt::Dbo::Session& session)
+Cluster::getAll(Session& session)
 {
-	Wt::Dbo::collection<Cluster::pointer> res = session.find<Cluster>();
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<Cluster::pointer> res {session.getDboSession().find<Cluster>()};
 
 	return std::vector<Cluster::pointer>(res.begin(), res.end());
 }
 
 std::vector<Cluster::pointer>
-Cluster::getAllOrphans(Wt::Dbo::Session& session)
+Cluster::getAllOrphans(Session& session)
 {
-	Wt::Dbo::collection<Cluster::pointer> res {session.query<Cluster::pointer>("SELECT DISTINCT c FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track t INNER JOIN track_cluster t_c ON t.id = t_c.track_id)")};
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<Cluster::pointer> res {session.getDboSession().query<Cluster::pointer>("SELECT DISTINCT c FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track t INNER JOIN track_cluster t_c ON t.id = t_c.track_id)")};
 
 	return std::vector<Cluster::pointer>(res.begin(), res.end());
 }
 
 Cluster::pointer
-Cluster::getById(Wt::Dbo::Session& session, IdType id)
+Cluster::getById(Session& session, IdType id)
 {
-	return session.find<Cluster>().where("id = ?").bind(id);
+	session.checkSharedLocked();
+
+	return session.getDboSession().find<Cluster>().where("id = ?").bind(id);
 }
 
 void
@@ -74,6 +86,9 @@ Cluster::addTrack(Wt::Dbo::ptr<Track> track)
 std::vector<Wt::Dbo::ptr<Track>>
 Cluster::getTracks(int offset, int limit) const
 {
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
 	Wt::Dbo::collection<Track::pointer> res = session()->query<Track::pointer>("SELECT t FROM track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
 						.where("c.id = ?").bind(self()->id())
 						.offset(offset)
@@ -113,38 +128,51 @@ ClusterType::ClusterType(std::string name)
 }
 
 std::vector<ClusterType::pointer>
-ClusterType::getAllOrphans(Wt::Dbo::Session& session)
+ClusterType::getAllOrphans(Session& session)
 {
-	Wt::Dbo::collection<pointer> res = session.query<Wt::Dbo::ptr<ClusterType>>("select c_t from cluster_type c_t LEFT OUTER JOIN cluster c ON c_t.id = c.cluster_type_id WHERE c.id IS NULL");
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<pointer> res = session.getDboSession().query<Wt::Dbo::ptr<ClusterType>>("select c_t from cluster_type c_t LEFT OUTER JOIN cluster c ON c_t.id = c.cluster_type_id WHERE c.id IS NULL");
 
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
 
 ClusterType::pointer
-ClusterType::getByName(Wt::Dbo::Session& session, std::string name)
+ClusterType::getByName(Session& session, std::string name)
 {
-	return session.find<ClusterType>().where("name = ?").bind(name);
+	session.checkSharedLocked();
+
+	return session.getDboSession().find<ClusterType>().where("name = ?").bind(name);
 }
 
 ClusterType::pointer
-ClusterType::getById(Wt::Dbo::Session& session, IdType id)
+ClusterType::getById(Session& session, IdType id)
 {
-	return session.find<ClusterType>().where("id= ?").bind(id);
+	session.checkSharedLocked();
+
+	return session.getDboSession().find<ClusterType>().where("id= ?").bind(id);
 }
 
 std::vector<ClusterType::pointer>
-ClusterType::getAll(Wt::Dbo::Session& session)
+ClusterType::getAll(Session& session)
 {
-	Wt::Dbo::collection<pointer> res = session.find<ClusterType>();
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<pointer> res = session.getDboSession().find<ClusterType>();
 
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
 ClusterType::pointer
-ClusterType::create(Wt::Dbo::Session& session, std::string name)
+ClusterType::create(Session& session, std::string name)
 {
-	return session.add(std::make_unique<ClusterType>(name));
+	session.checkUniqueLocked();
+
+	ClusterType::pointer res {session.getDboSession().add(std::make_unique<ClusterType>(name))};
+	session.getDboSession().flush();
+
+	return res;
 }
 
 Cluster::pointer

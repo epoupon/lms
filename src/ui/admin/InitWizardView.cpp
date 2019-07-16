@@ -54,21 +54,14 @@ class InitWizardModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+			auto transaction(LmsApp->getDbSession().createUniqueTransaction());
 
 			// Check if a user already exist
 			// If it's the case, just do nothing
-			if (!Database::User::getAll(LmsApp->getDboSession()).empty())
+			if (!Database::User::getAll(LmsApp->getDbSession()).empty())
 				throw LmsException("Admin user already created");
 
-			// Create user
-			Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().registerNew();
-			Database::User::pointer user = LmsApp->getDb().createUser(authUser);
-
-			// Account
-			authUser.setIdentity(Wt::Auth::Identity::LoginName, valueText(AdminLoginField));
-			Database::Handler::getPasswordService().updatePassword(authUser, valueText(PasswordField));
-
+			Database::User::pointer user {LmsApp->getDbSession().createUser(valueText(AdminLoginField).toUTF8(), valueText(PasswordField).toUTF8())};
 			user.modify()->setType(Database::User::Type::ADMIN);
 		}
 
@@ -81,7 +74,7 @@ class InitWizardModel : public Wt::WFormModel
 				if (!valueText(PasswordField).empty())
 				{
 					// Evaluate the strength of the password
-					auto res = Database::Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField),
+					auto res = Database::Session::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField),
 								valueText(AdminLoginField), "");
 
 					if (!res.isValid())

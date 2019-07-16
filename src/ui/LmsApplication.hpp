@@ -23,9 +23,8 @@
 #include <boost/optional.hpp>
 
 #include <Wt/WApplication.h>
-#include <Wt/Dbo/SqlConnectionPool.h>
 
-#include "database/DatabaseHandler.hpp"
+#include "database/Database.hpp"
 #include "scanner/MediaScanner.hpp"
 
 #include "LmsApplicationGroup.hpp"
@@ -35,6 +34,7 @@ namespace Database {
 	class Artist;
 	class Cluster;
 	class Release;
+	class User;
 }
 
 namespace UserInterface {
@@ -73,20 +73,18 @@ enum class MsgType
 class LmsApplication : public Wt::WApplication
 {
 	public:
-		LmsApplication(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups);
+		LmsApplication(const Wt::WEnvironment& env, std::unique_ptr<Database::Session> dbSession, LmsApplicationGroupContainer& appGroups);
 
-		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env,
-				Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups);
+		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, Database::Database& db, LmsApplicationGroupContainer& appGroups);
 		static LmsApplication* instance();
 
 		// Session application data
 		std::shared_ptr<ImageResource> getImageResource() { return _imageResource; }
 		std::shared_ptr<AudioResource> getAudioResource() { return _audioResource; }
-		Database::Handler& getDb() { return _db;}
-		Wt::Dbo::Session& getDboSession() { return _db.getSession();}
+		Database::Session& getDbSession() { return *_dbSession.get();}
 
-		const Wt::Auth::User& getAuthUser() { return _db.getLogin().user(); }
-		Database::User::pointer getUser() { return _db.getCurrentUser(); }
+		const Wt::Auth::User& getAuthUser() { return getDbSession().getLogin().user(); }
+		Wt::Dbo::ptr<Database::User> getUser() { return getDbSession().getLoggedUser(); }
 		Wt::WString getUserIdentity() { return _userIdentity; }
 
 		Events& getEvents() { return _events; }
@@ -118,15 +116,15 @@ class LmsApplication : public Wt::WApplication
 
 		void createHome();
 
-		Wt::Signal<>		_preQuit;
-		Database::Handler	_db;
-		LmsApplicationGroupContainer&   _appGroups;
-		Events			_events;
-		Wt::WString		_userIdentity;
-		Auth*			_auth = nullptr;
-		std::shared_ptr<ImageResource>	_imageResource;
-		std::shared_ptr<AudioResource>	_audioResource;
-		bool			_isAdmin = false;
+		Wt::Signal<>				_preQuit;
+		std::unique_ptr<Database::Session>	_dbSession;
+		LmsApplicationGroupContainer&   	_appGroups;
+		Events					_events;
+		Wt::WString				_userIdentity;
+		Auth*					_auth {};
+		std::shared_ptr<ImageResource>		_imageResource;
+		std::shared_ptr<AudioResource>		_audioResource;
+		bool					_isAdmin {};
 };
 
 

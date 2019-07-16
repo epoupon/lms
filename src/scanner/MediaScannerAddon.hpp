@@ -29,11 +29,12 @@ class MediaScannerAddon
 
 		virtual void refreshSettings() = 0;
 		virtual void requestStop() = 0;
+		virtual void preScanComplete() = 0;
 
 		virtual void trackAdded(Database::IdType trackId) = 0;
 		virtual void trackToRemove(Database::IdType trackId) = 0;
 		virtual void trackUpdated(Database::IdType trackId) = 0;
-		virtual void preScanComplete() = 0;
+
 };
 
 } // ns Scanner

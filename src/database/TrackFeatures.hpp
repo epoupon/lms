@@ -27,6 +27,7 @@
 
 namespace Database {
 
+class Session;
 class Track;
 
 class TrackFeatures : public Wt::Dbo::Dbo<TrackFeatures>
@@ -39,7 +40,7 @@ class TrackFeatures : public Wt::Dbo::Dbo<TrackFeatures>
 		TrackFeatures(Wt::Dbo::ptr<Track> track, const std::string& jsonEncodedFeatures);
 
 		// Create utility
-		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, const std::string& jsonEncodedFeatures);
+		static pointer create(Session& session, Wt::Dbo::ptr<Track> track, const std::string& jsonEncodedFeatures);
 
 		std::vector<double> getFeatures(const std::string& featureNode) const;
 		bool getFeatures(std::map<std::string /*featureNode*/, std::vector<double> /*values*/>& featureNodes) const;

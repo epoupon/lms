@@ -20,6 +20,11 @@ AC_CHECK_HEADERS([Wt/WApplication.h pstreams/pstream.h curl/curl.h],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
 
+AC_CHECK_LIB(	[pthread],
+		[pthread_rwlock_unlock],
+		,
+		[AC_MSG_ERROR([libpthread not found!])])
+
 AC_CHECK_LIB([wt],
              [main],
              ,

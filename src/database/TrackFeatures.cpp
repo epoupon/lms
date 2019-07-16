@@ -23,6 +23,7 @@
 #include <boost/property_tree/json_parser.hpp>
 
 #include "utils/Logger.hpp"
+#include "Session.hpp"
 #include "Track.hpp"
 
 namespace Database {
@@ -34,9 +35,10 @@ _track(track)
 }
 
 TrackFeatures::pointer
-TrackFeatures::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, const std::string& jsonEncodedFeatures)
+TrackFeatures::create(Session& session, Wt::Dbo::ptr<Track> track, const std::string& jsonEncodedFeatures)
 {
-	return session.add(std::make_unique<TrackFeatures>(track, jsonEncodedFeatures));
+	session.checkUniqueLocked();
+	return session.getDboSession().add(std::make_unique<TrackFeatures>(track, jsonEncodedFeatures));
 }
 
 std::vector<double>

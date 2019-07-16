@@ -67,9 +67,9 @@ Release::refresh()
 	if (!releaseId)
 		return;
 
-        Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+        auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto release {Database::Release::getById(LmsApp->getDboSession(), *releaseId)};
+	const Database::Release::pointer release {Database::Release::getById(LmsApp->getDbSession(), *releaseId)};
 	if (!release)
 	{
 		LmsApp->goHome();
@@ -118,12 +118,12 @@ Release::refresh()
 
 	Wt::WContainerWidget* clusterContainers {t->bindNew<Wt::WContainerWidget>("clusters")};
 	{
-		auto clusterTypes {ScanSettings::get(LmsApp->getDboSession())->getClusterTypes()};
-		auto clusterGroups {release->getClusterGroups(clusterTypes, 3)};
+		const auto clusterTypes {ScanSettings::get(LmsApp->getDbSession())->getClusterTypes()};
+		const auto clusterGroups {release->getClusterGroups(clusterTypes, 3)};
 
-		for (auto clusters : clusterGroups)
+		for (const auto& clusters : clusterGroups)
 		{
-			for (auto cluster : clusters)
+			for (const auto& cluster : clusters)
 			{
 				auto clusterId {cluster.id()};
 				auto entry {clusterContainers->addWidget(LmsApp->createCluster(cluster))};

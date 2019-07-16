@@ -78,17 +78,16 @@ class UserModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
 			if (_userId)
 			{
 				// Update user
-				Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*_userId) );
-				Database::User::pointer user = LmsApp->getDb().getUser( authUser );
+				Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
 
 				// Account
 				if (!valueText(PasswordField).empty())
-					Database::Handler::getPasswordService().updatePassword(authUser, valueText(PasswordField));
+					LmsApp->getDbSession().updateUserPassword(user, valueText(PasswordField).toUTF8());
 
 				auto transcodeBitrateLimitRow {_bitrateModel->getRowFromString(valueText(AudioTranscodeBitrateLimitField))};
 				if (transcodeBitrateLimitRow)
@@ -97,12 +96,7 @@ class UserModel : public Wt::WFormModel
 			else
 			{
 				// Create user
-				Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().registerNew();
-				Database::User::pointer user = LmsApp->getDb().createUser(authUser);
-
-				// Account
-				authUser.setIdentity(Wt::Auth::Identity::LoginName, valueText(LoginField));
-				Database::Handler::getPasswordService().updatePassword(authUser, valueText(PasswordField));
+				Database::User::pointer user = LmsApp->getDbSession().createUser(valueText(LoginField).toUTF8(), valueText(PasswordField).toUTF8());
 
 				auto transcodeBitrateLimitRow {_bitrateModel->getRowFromString(valueText(AudioTranscodeBitrateLimitField))};
 				if (transcodeBitrateLimitRow )
@@ -120,11 +114,9 @@ class UserModel : public Wt::WFormModel
 			if (!_userId)
 				return;
 
-			Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-			auto authUser {LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*_userId) )};
-			auto user {LmsApp->getDb().getUser(authUser)};
-
+			const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
 			if (user == LmsApp->getUser())
 				throw LmsException("Cannot edit ourselves");
 
@@ -133,12 +125,14 @@ class UserModel : public Wt::WFormModel
 				setValue(AudioTranscodeBitrateLimitField, _bitrateModel->getString(*transcodeBitrateLimitRow));
 		}
 
-		Wt::WString getLogin() const
+		Wt::WString getLoginName() const
 		{
 			if (_userId)
 			{
-				auto authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*_userId) );
-				return authUser.identity(Wt::Auth::Identity::LoginName);
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
+				return LmsApp->getDbSession().getUserLoginName(user);
 			}
 			else
 				return valueText(LoginField);
@@ -150,8 +144,8 @@ class UserModel : public Wt::WFormModel
 
 			if (field == LoginField)
 			{
-				auto user = LmsApp->getDb().getUserDatabase().findWithIdentity(Wt::Auth::Identity::LoginName, valueText(LoginField));
-				if (user.isValid())
+				const Database::User::pointer user {LmsApp->getDbSession().getUser(valueText(LoginField).toUTF8())};
+				if (user)
 					error = Wt::WString::tr("Lms.Admin.User.user-already-exists");
 			}
 			else if (field == PasswordField)
@@ -161,13 +155,13 @@ class UserModel : public Wt::WFormModel
 					if (Wt::asNumber(value(DemoField)))
 					{
 						//Demo account: password must be the same as the login name
-						if (valueText(PasswordField) != getLogin())
+						if (valueText(PasswordField) != getLoginName())
 							error = Wt::WString::tr("Lms.Admin.User.demo-password-invalid");
 					}
 					else
 					{
 						// Evaluate the strength of the password for non demo accounts
-						auto res = Database::Handler::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField), getLogin(), "");
+						auto res = Database::Session::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField), getLoginName(), "");
 
 						if (!res.isValid())
 							error = res.message();
@@ -176,9 +170,9 @@ class UserModel : public Wt::WFormModel
 			}
 			else if (field == DemoField)
 			{
-				Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-				if (Wt::asNumber(value(DemoField)) && Database::User::getDemo(LmsApp->getDboSession()))
+				if (Wt::asNumber(value(DemoField)) && Database::User::getDemo(LmsApp->getDbSession()))
 					error = Wt::WString::tr("Lms.Admin.User.demo-account-already-exists");
 			}
 
@@ -226,23 +220,23 @@ UserView::refreshView()
 
 	auto userId = readAs<Database::IdType>(wApp->internalPathNextPart("/admin/user/"));
 
-	LMS_LOG(UI, DEBUG) << "userId = " << (userId ? std::to_string(*userId) : "none");
-
 	clear();
 
-	Wt::WTemplateFormView* t = addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Admin.User.template"));
+	Wt::WTemplateFormView* t {addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Admin.User.template"))};
 
-	auto model = std::make_shared<UserModel>(userId);
+	auto model {std::make_shared<UserModel>(userId)};
 
 	if (userId)
 	{
-		auto authUser = LmsApp->getDb().getUserDatabase().findWithId( std::to_string(*userId) );
-		auto name = authUser.identity(Wt::Auth::Identity::LoginName);
-		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-edit").arg(name), Wt::TextFormat::Plain);
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+		const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *userId)};
+		const std::string loginName {LmsApp->getDbSession().getUserLoginName(user)};
+		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-edit").arg(loginName), Wt::TextFormat::Plain);
 		t->setCondition("if-has-last-login-attempt", true);
 
-		Wt::WLineEdit *lastLoginAttempt = t->bindNew<Wt::WLineEdit>("last-login-attempt");
-		lastLoginAttempt->setText(authUser.lastLoginAttempt().toString());
+		Wt::WLineEdit *lastLoginAttempt {t->bindNew<Wt::WLineEdit>("last-login-attempt")};
+		lastLoginAttempt->setText(LmsApp->getDbSession().getUserLastLoginAttempt(user).toString());
 		lastLoginAttempt->setEnabled(false);
 	}
 	else

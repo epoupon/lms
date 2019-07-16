@@ -53,29 +53,29 @@ class Track : public Wt::Dbo::Dbo<Track>
 		Track(const boost::filesystem::path& p);
 
 		// Find utility functions
-		static pointer getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p);
-		static pointer getById(Wt::Dbo::Session& session, IdType id);
-		static pointer getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
-		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
+		static pointer getByPath(Session& session, const boost::filesystem::path& p);
+		static pointer getById(Session& session, IdType id);
+		static pointer getByMBID(Session& session, const std::string& MBID);
+		static std::vector<pointer>	getByFilter(Session& session,
 							const std::set<IdType>& clusters);           // tracks that belong to these clusters
-		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
-							const std::set<IdType>& clusters,           // tracks that belong to these clusters
-							const std::vector<std::string> keywords,        // name must match all of these keywords
+		static std::vector<pointer>	getByFilter(Session& session,
+							const std::set<IdType>& clusters,            // tracks that belong to these clusters
+							const std::vector<std::string>& keywords,    // name must match all of these keywords
 							boost::optional<std::size_t> offset,
 							boost::optional<std::size_t> size,
 							bool& moreExpected);
 
-		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> limit = {});
-		static std::vector<pointer>	getAllRandom(Wt::Dbo::Session& session, boost::optional<std::size_t> limit = {});
-		static std::vector<IdType>	getAllIds(Wt::Dbo::Session& session); // nested transaction
-		static std::vector<boost::filesystem::path> getAllPaths(Wt::Dbo::Session& session); // nested transaction
-		static std::vector<pointer>	getMBIDDuplicates(Wt::Dbo::Session& session);
-		static std::vector<pointer>	getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int size = 1);
-		static std::vector<pointer>	getAllWithMBIDAndMissingFeatures(Wt::Dbo::Session& session); // nested transaction
-		static std::vector<IdType>	getAllIdsWithFeatures(Wt::Dbo::Session& session, boost::optional<std::size_t> limit = {}); // nested transaction
+		static std::vector<pointer>	getAll(Session& session, boost::optional<std::size_t> limit = {});
+		static std::vector<pointer>	getAllRandom(Session& session, boost::optional<std::size_t> limit = {});
+		static std::vector<IdType>	getAllIds(Session& session); // nested transaction
+		static std::vector<boost::filesystem::path> getAllPaths(Session& session); // nested transaction
+		static std::vector<pointer>	getMBIDDuplicates(Session& session);
+		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, boost::optional<std::size_t> size = 1);
+		static std::vector<pointer>	getAllWithMBIDAndMissingFeatures(Session& session);
+		static std::vector<IdType>	getAllIdsWithFeatures(Session& session, boost::optional<std::size_t> limit = {});
 
 		// Create utility
-		static pointer	create(Wt::Dbo::Session& session, const boost::filesystem::path& p);
+		static pointer	create(Session& session, const boost::filesystem::path& p);
 
 		// Accessors
 		void setScanVersion(std::size_t version)			{ _scanVersion = version; }

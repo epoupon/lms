@@ -21,7 +21,6 @@
 
 #include <Wt/WTemplate.h>
 
-#include "database/Track.hpp"
 #include "database/Types.hpp"
 
 namespace UserInterface {
@@ -33,19 +32,19 @@ class Explore : public Wt::WTemplate
 	public:
 		Explore();
 
-		Wt::Signal<std::vector<Database::Track::pointer>> tracksAdd;
-		Wt::Signal<std::vector<Database::Track::pointer>> tracksPlay;
+		Wt::Signal<std::vector<Database::IdType>> tracksAdd;
+		Wt::Signal<std::vector<Database::IdType>> tracksPlay;
 
 	private:
 
-		void handleArtistAdd(Database::IdType id);
-		void handleArtistPlay(Database::IdType id);
-		void handleReleaseAdd(Database::IdType id);
-		void handleReleasePlay(Database::IdType id);
-		void handleTrackAdd(Database::IdType id);
-		void handleTrackPlay(Database::IdType id);
-		void handleTracksAdd(std::vector<Database::Track::pointer> tracks);
-		void handleTracksPlay(std::vector<Database::Track::pointer> tracks);
+		void handleArtistAdd(Database::IdType artistId);
+		void handleArtistPlay(Database::IdType artistId);
+		void handleReleaseAdd(Database::IdType releaseId);
+		void handleReleasePlay(Database::IdType releaseId);
+		void handleTrackAdd(Database::IdType trackId);
+		void handleTrackPlay(Database::IdType trackId);
+		void handleTracksAdd(const std::vector<Database::IdType>& trackIds);
+		void handleTracksPlay(const std::vector<Database::IdType>& trackIds);
 
 		Filters* _filters;
 };

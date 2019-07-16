@@ -121,17 +121,17 @@ int main(int argc, char* argv[])
 		Image::init(argv[0]);
 		Av::AvInit();
 		Av::Transcoder::init();
-		Database::Handler::configureAuth();
+		Database::Session::configureAuth();
 
 		// Initializing a connection pool to the database that will be shared along services
-		auto connectionPool = Database::Handler::createConnectionPool(Config::instance().getPath("working-dir") / "lms.db");
+		Database::Database database {Config::instance().getPath("working-dir") / "lms.db"};
 
 		UserInterface::LmsApplicationGroupContainer appGroups;
 
 		// Service initialization order is important
-		Scanner::MediaScanner& mediaScanner {ServiceProvider<Scanner::MediaScanner>::create(*connectionPool)};
+		Scanner::MediaScanner& mediaScanner {ServiceProvider<Scanner::MediaScanner>::create(database.createSession())};
 
-		Similarity::FeaturesScannerAddon similarityFeaturesScannerAddon(*connectionPool);
+		Similarity::FeaturesScannerAddon similarityFeaturesScannerAddon {database.createSession()};
 
 		mediaScanner.setAddon(similarityFeaturesScannerAddon);
 
@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
 
 		ServiceProvider<Similarity::Searcher>::create(similarityFeaturesScannerAddon);
 
-		API::Subsonic::SubsonicResource subsonicResource {*connectionPool};
+		API::Subsonic::SubsonicResource subsonicResource {database};
 
 		// bind API resources
 		if (Config::instance().getBool("api-subsonic", true))
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
 		// bind UI entry point
 		server.addEntryPoint(Wt::EntryPointType::Application,
 				std::bind(UserInterface::LmsApplication::create,
-					std::placeholders::_1, std::ref(*connectionPool), std::ref(appGroups)));
+					std::placeholders::_1, std::ref(database), std::ref(appGroups)));
 
 		// Start
 		LMS_LOG(MAIN, INFO) << "Starting media scanner...";

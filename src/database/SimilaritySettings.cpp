@@ -22,6 +22,7 @@
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
+#include "Session.hpp"
 #include "TrackFeatures.hpp"
 
 namespace Database {
@@ -33,7 +34,7 @@ struct TrackFeatureInfo
 	double		weight;
 };
 
-static std::vector<TrackFeatureInfo> defaultFeatures =
+static const std::vector<TrackFeatureInfo> defaultFeatures =
 {
 	{ "lowlevel.spectral_contrast_coeffs.median",	6,	1. },
 	{ "lowlevel.erbbands.median",			40,	1. },
@@ -53,24 +54,37 @@ _settings(settings)
 }
 
 SimilaritySettingsFeature::pointer
-SimilaritySettingsFeature::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight)
+SimilaritySettingsFeature::create(Session& session, Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight)
 {
-	return session.add(std::make_unique<SimilaritySettingsFeature>(settings, name, nbDimensions, weight));
+	session.checkUniqueLocked();
+
+	SimilaritySettingsFeature::pointer res {session.getDboSession().add(std::make_unique<SimilaritySettingsFeature>(settings, name, nbDimensions, weight))};
+	session.getDboSession().flush();
+
+	return res;
 }
 
-SimilaritySettings::pointer
-SimilaritySettings::get(Wt::Dbo::Session& session)
+void
+SimilaritySettings::init(Session& session)
 {
-	pointer settings = session.find<SimilaritySettings>();
-	if (!settings)
-	{
-		settings = session.add(std::make_unique<SimilaritySettings>());
+	session.checkUniqueLocked();
 
-		for (const auto& feature : defaultFeatures)
-			SimilaritySettingsFeature::create(session, settings, feature.name, feature.nbDimensions, feature.weight);
-	}
+	pointer settings {session.getDboSession().find<SimilaritySettings>()};
+	if (settings)
+		return;
 
-	return settings;
+	settings = session.getDboSession().add(std::make_unique<SimilaritySettings>());
+	for (const auto& feature : defaultFeatures)
+		SimilaritySettingsFeature::create(session, settings, feature.name, feature.nbDimensions, feature.weight);
+}
+
+
+SimilaritySettings::pointer
+SimilaritySettings::get(Session& session)
+{
+	session.checkSharedLocked();
+
+	return session.getDboSession().find<SimilaritySettings>();
 }
 
 std::vector<Wt::Dbo::ptr<SimilaritySettingsFeature>>

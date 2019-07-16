@@ -70,7 +70,7 @@ std::unique_ptr<Wt::WTemplate> createEntry(Database::Track::pointer track)
 namespace UserInterface {
 
 PlayHistory::PlayHistory()
-: Wt::WTemplate(Wt::WString::tr("Lms.PlayHistory.template"))
+: Wt::WTemplate {Wt::WString::tr("Lms.PlayHistory.template")}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
@@ -86,10 +86,14 @@ PlayHistory::PlayHistory()
 
 	LmsApp->getEvents().trackLoaded.connect([=](Database::IdType trackId, bool /* play */)
 	{
-		Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
+		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-		auto trackEntry = LmsApp->getUser()->getPlayedTrackList().modify()->add(trackId);
-		_entriesContainer->insertWidget(0, createEntry(trackEntry->getTrack()));
+		Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+		if (track)
+		{
+			Database::TrackListEntry::create(LmsApp->getDbSession(), track, LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession()));
+			_entriesContainer->insertWidget(0, createEntry(track));
+		}
 	});
 
 	addSome();
@@ -98,11 +102,11 @@ PlayHistory::PlayHistory()
 void
 PlayHistory::addSome()
 {
-	Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto trackList = LmsApp->getUser()->getPlayedTrackList();
-	auto trackEntries = trackList->getEntriesReverse(_entriesContainer->count(), 50);
-	for (auto trackEntry : trackEntries)
+	const Database::TrackList::pointer trackList {LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession())};
+	auto trackEntries {trackList->getEntriesReverse(_entriesContainer->count(), 50)};
+	for (const auto& trackEntry : trackEntries)
 		_entriesContainer->addWidget(createEntry(trackEntry->getTrack()));
 
 	_showMore->setHidden(static_cast<std::size_t>(_entriesContainer->count()) >= trackList->getCount());

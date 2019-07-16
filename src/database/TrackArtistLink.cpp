@@ -20,6 +20,7 @@
 #include "TrackArtistLink.hpp"
 
 #include "Artist.hpp"
+#include "Session.hpp"
 #include "Track.hpp"
 
 namespace Database {
@@ -32,9 +33,14 @@ _artist {artist}
 }
 
 TrackArtistLink::pointer
-TrackArtistLink::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist,Type type)
+TrackArtistLink::create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist,Type type)
 {
-	return session.add(std::make_unique<TrackArtistLink>(track, artist, type));
+	session.checkUniqueLocked();
+
+	TrackArtistLink::pointer res {session.getDboSession().add(std::make_unique<TrackArtistLink>(track, artist, type))};
+	session.getDboSession().flush();
+
+	return res;
 }
 
 }

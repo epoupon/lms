@@ -71,18 +71,17 @@ Releases::refresh()
 void
 Releases::addSome()
 {
-	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
+	const auto searchKeywords {splitString(_search->text().toUTF8(), " ")};
+	const auto clusterIds {_filters->getClusterIds()};
 
-	auto clusterIds = _filters->getClusterIds();
-
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 	bool moreResults;
-	auto releases = Release::getByFilter(LmsApp->getDboSession(), clusterIds, searchKeywords, _container->count(), 20, moreResults);
+	const auto releases {Release::getByFilter(LmsApp->getDbSession(), clusterIds, searchKeywords, _container->count(), 20, moreResults)};
 
-	for (auto release : releases)
+	for (const Database::Release::pointer& release : releases)
 	{
-		auto releaseId = release.id();
+		const Database::IdType releaseId {release.id()};
 
 		Wt::WTemplate* entry = _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.entry"));
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);

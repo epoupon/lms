@@ -27,6 +27,7 @@
 #include "Cluster.hpp"
 #include "Release.hpp"
 #include "TrackFeatures.hpp"
+#include "Session.hpp"
 #include "SqlQuery.hpp"
 
 namespace Database {
@@ -38,18 +39,22 @@ _filePath( p.string() )
 }
 
 std::vector<Track::pointer>
-Track::getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> limit)
+Track::getAll(Session& session, boost::optional<std::size_t> limit)
 {
-	Wt::Dbo::collection<Track::pointer> res {session.find<Track>()
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<Track::pointer> res {session.getDboSession().find<Track>()
 		.limit(limit ? static_cast<int>(*limit) : -1)};
 
 	return std::vector<Track::pointer>(std::cbegin(res), std::cend(res));
 }
 
 std::vector<Track::pointer>
-Track::getAllRandom(Wt::Dbo::Session& session, boost::optional<std::size_t> limit)
+Track::getAllRandom(Session& session, boost::optional<std::size_t> limit)
 {
-	Wt::Dbo::collection<Track::pointer> res {session.find<Track>()
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<Track::pointer> res {session.getDboSession().find<Track>()
 		.limit(limit ? static_cast<int>(*limit) : -1)
 		.orderBy("RANDOM()")};
 
@@ -57,67 +62,88 @@ Track::getAllRandom(Wt::Dbo::Session& session, boost::optional<std::size_t> limi
 }
 
 std::vector<IdType>
-Track::getAllIds(Wt::Dbo::Session& session)
+Track::getAllIds(Session& session)
 {
-	Wt::Dbo::Transaction transaction(session);
-	Wt::Dbo::collection<IdType> res = session.query<IdType>("SELECT id from track");
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<IdType> res = session.getDboSession().query<IdType>("SELECT id FROM track");
 	return std::vector<IdType>(res.begin(), res.end());
 }
 
 Track::pointer
-Track::getByPath(Wt::Dbo::Session& session, const boost::filesystem::path& p)
+Track::getByPath(Session& session, const boost::filesystem::path& p)
 {
-	return session.find<Track>().where("file_path = ?").bind(p.string());
+	session.checkSharedLocked();
+
+	return session.getDboSession().find<Track>().where("file_path = ?").bind(p.string());
 }
 
 Track::pointer
-Track::getById(Wt::Dbo::Session& session, IdType id)
+Track::getById(Session& session, IdType id)
 {
-	return session.find<Track>().where("id = ?").bind(id);
+	session.checkSharedLocked();
+
+	return session.getDboSession().find<Track>()
+		.where("id = ?").bind(id);
 }
 
 Track::pointer
-Track::getByMBID(Wt::Dbo::Session& session, const std::string& mbid)
+Track::getByMBID(Session& session, const std::string& mbid)
 {
-	return session.find<Track>().where("mbid = ?").bind(mbid);
+	session.checkSharedLocked();
+
+	return session.getDboSession().find<Track>()
+		.where("mbid = ?").bind(mbid);
 }
 
 Track::pointer
-Track::create(Wt::Dbo::Session& session, const boost::filesystem::path& p)
+Track::create(Session& session, const boost::filesystem::path& p)
 {
-	return session.add(std::make_unique<Track>(p));
+	session.checkUniqueLocked();
+
+	Track::pointer res {session.getDboSession().add(std::make_unique<Track>(p))};
+	session.getDboSession().flush();
+
+	return res;
 }
 
 std::vector<boost::filesystem::path>
-Track::getAllPaths(Wt::Dbo::Session& session)
+Track::getAllPaths(Session& session)
 {
-	Wt::Dbo::Transaction transaction(session);
-	Wt::Dbo::collection<std::string> res = session.query<std::string>("SELECT file_path from track");
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<std::string> res = session.getDboSession().query<std::string>("SELECT file_path FROM track");
 	return std::vector<boost::filesystem::path>(res.begin(), res.end());
 }
 
 std::vector<Track::pointer>
-Track::getMBIDDuplicates(Wt::Dbo::Session& session)
+Track::getMBIDDuplicates(Session& session)
 {
-	Wt::Dbo::collection<pointer> res = session.query<pointer>( "SELECT track FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)").orderBy("track.release_id,track.disc_number,track.track_number,track.mbid");
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<pointer> res = session.getDboSession().query<pointer>( "SELECT track FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)").orderBy("track.release_id,track.disc_number,track.track_number,track.mbid");
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
 std::vector<Track::pointer>
-Track::getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, int limit)
+Track::getLastAdded(Session& session, const Wt::WDateTime& after, boost::optional<std::size_t> limit)
 {
-	Wt::Dbo::collection<Track::pointer> res = session.find<Track>()
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<Track::pointer> res = session.getDboSession().find<Track>()
 		.where("file_added > ?").bind(after)
 		.orderBy("file_added DESC")
-		.limit(limit);
+		.limit(limit ? static_cast<int>(*limit) : -1);
 
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
 std::vector<Track::pointer>
-Track::getAllWithMBIDAndMissingFeatures(Wt::Dbo::Session& session)
+Track::getAllWithMBIDAndMissingFeatures(Session& session)
 {
-	Wt::Dbo::collection<pointer> res = session.query<pointer>
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<pointer> res = session.getDboSession().query<pointer>
 		("SELECT t FROM track t")
 		.where("LENGTH(t.mbid) > 0")
 		.where("NOT EXISTS (SELECT * FROM track_features t_f WHERE t_f.track_id = t.id)");
@@ -125,14 +151,14 @@ Track::getAllWithMBIDAndMissingFeatures(Wt::Dbo::Session& session)
 }
 
 std::vector<IdType>
-Track::getAllIdsWithFeatures(Wt::Dbo::Session& session, boost::optional<std::size_t> limit)
+Track::getAllIdsWithFeatures(Session& session, boost::optional<std::size_t> limit)
 {
-	int size {limit ? static_cast<int>(*limit) : -1};
+	session.checkSharedLocked();
 
-	Wt::Dbo::collection<IdType> res = session.query<IdType>
+	Wt::Dbo::collection<IdType> res = session.getDboSession().query<IdType>
 		("SELECT t.id FROM track t")
 		.where("EXISTS (SELECT * from track_features t_f WHERE t_f.track_id = t.id)")
-		.limit(size);
+		.limit(limit ? static_cast<int>(*limit) : -1);
 
 	return std::vector<IdType>(res.begin(), res.end());
 }
@@ -153,10 +179,12 @@ Track::hasTrackFeatures() const
 
 static
 Wt::Dbo::Query< Track::pointer >
-getQuery(Wt::Dbo::Session& session,
+getQuery(Session& session,
 		const std::set<IdType>& clusterIds,
-		const std::vector<std::string> keywords)
+		const std::vector<std::string>& keywords)
 {
+	session.checkSharedLocked();
+
 	WhereClause where;
 
 	std::ostringstream oss;
@@ -184,7 +212,7 @@ getQuery(Wt::Dbo::Session& session,
 
 	oss << " ORDER BY t.name COLLATE NOCASE";
 
-	Wt::Dbo::Query<Track::pointer> query = session.query<Track::pointer>( oss.str() );
+	Wt::Dbo::Query<Track::pointer> query = session.getDboSession().query<Track::pointer>( oss.str() );
 
 	for (const std::string& bindArg : where.getBindArgs())
 		query.bind(bindArg);
@@ -193,13 +221,15 @@ getQuery(Wt::Dbo::Session& session,
 }
 
 std::vector<Track::pointer>
-Track::getByFilter(Wt::Dbo::Session& session,
+Track::getByFilter(Session& session,
 		const std::set<IdType>& clusterIds,
-		const std::vector<std::string> keywords,
+		const std::vector<std::string>& keywords,
 		boost::optional<std::size_t> offset,
 		boost::optional<std::size_t> size,
 		bool& moreResults)
 {
+	session.checkSharedLocked();
+
 	Wt::Dbo::collection<pointer> collection = getQuery(session, clusterIds, keywords)
 		.limit(size ? static_cast<int>(*size) + 1 : -1)
 		.offset(offset ? static_cast<int>(*offset) : -1);
@@ -218,16 +248,18 @@ Track::getByFilter(Wt::Dbo::Session& session,
 }
 
 std::vector<Track::pointer>
-Track::getByFilter(Wt::Dbo::Session& session,
+Track::getByFilter(Session& session,
 			const std::set<IdType>& clusters)
 {
+	session.checkSharedLocked();
+
 	bool moreResults;
 
 	return getByFilter(session,
 			clusters,
-			std::vector<std::string> {},
-			boost::optional<std::size_t> {},
-			boost::optional<std::size_t> {},
+			{},
+			{},
+			{},
 			moreResults);
 }
 

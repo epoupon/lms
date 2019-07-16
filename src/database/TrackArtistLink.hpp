@@ -26,6 +26,7 @@
 namespace Database {
 
 class Artist;
+class Session;
 class Track;
 
 class TrackArtistLink
@@ -51,7 +52,7 @@ class TrackArtistLink
 		TrackArtistLink() = default;
 		TrackArtistLink(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist, Type type);
 
-		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist,Type type);
+		static pointer create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist,Type type);
 
 		Wt::Dbo::ptr<Track>	getTrack() const { return _track; }
 		Wt::Dbo::ptr<Artist>	getArtist() const { return _artist; }

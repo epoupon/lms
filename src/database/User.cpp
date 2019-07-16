@@ -21,10 +21,14 @@
 
 #include "Artist.hpp"
 #include "Release.hpp"
+#include "Session.hpp"
 #include "Track.hpp"
 #include "TrackList.hpp"
 
 namespace Database {
+
+static const std::string playedListName {"__played_tracks__"};
+static const std::string queuedListName {"__queued_tracks__"};
 
 const std::set<Bitrate>
 User::audioTranscodeAllowedBitrates =
@@ -37,35 +41,48 @@ User::audioTranscodeAllowedBitrates =
 };
 
 User::User()
-: _maxAudioTranscodeBitrate{static_cast<int>(*audioTranscodeAllowedBitrates.rbegin())}
+: _maxAudioTranscodeBitrate {static_cast<int>(*audioTranscodeAllowedBitrates.rbegin())}
 {
 
 }
 
 std::vector<User::pointer>
-User::getAll(Wt::Dbo::Session& session)
+User::getAll(Session& session)
 {
-	Wt::Dbo::collection<pointer> res = session.find<User>();
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<pointer> res = session.getDboSession().find<User>();
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
 User::pointer
-User::getDemo(Wt::Dbo::Session& session)
+User::getDemo(Session& session)
 {
-	pointer res = session.find<User>().where("type = ?").bind(Type::DEMO);
+	session.checkSharedLocked();
+
+	pointer res = session.getDboSession().find<User>().where("type = ?").bind(Type::DEMO);
 	return res;
 }
 
 User::pointer
-User::create(Wt::Dbo::Session& session)
+User::create(Session& session)
 {
-	return session.add(std::make_unique<User>());
+	session.checkUniqueLocked();
+
+	User::pointer user {session.getDboSession().add(std::make_unique<User>())};
+
+	TrackList::create(session, playedListName, TrackList::Type::Internal, false, user);
+	TrackList::create(session, queuedListName, TrackList::Type::Internal, false, user);
+
+	session.getDboSession().flush();
+
+	return user;
 }
 
 User::pointer
-User::getById(Wt::Dbo::Session& session, IdType id)
+User::getById(Session& session, IdType id)
 {
-	return session.find<User>().where("id = ?").bind( id );
+	return session.getDboSession().find<User>().where("id = ?").bind( id );
 }
 
 void
@@ -95,35 +112,21 @@ User::getMaxAudioTranscodeBitrate(void) const
 }
 
 Wt::Dbo::ptr<TrackList>
-User::getPlayedTrackList() const
+User::getPlayedTrackList(Session& session) const
 {
-	static const std::string listName = "__played_tracks__";
-
 	assert(self());
-	assert(IdIsValid(self()->id()));
-	assert(session());
+	session.checkSharedLocked();
 
-	auto res = TrackList::get(*session(), listName, TrackList::Type::Internal, self());
-	if (!res)
-		res = TrackList::create(*session(), listName, TrackList::Type::Internal, false, self());
-
-	return res;
+	return TrackList::get(session, playedListName, TrackList::Type::Internal, self());
 }
 
 Wt::Dbo::ptr<TrackList>
-User::getQueuedTrackList() const
+User::getQueuedTrackList(Session& session) const
 {
-	static const std::string listName = "__queued_tracks__";
-
 	assert(self());
-	assert(IdIsValid(self()->id()));
-	assert(session());
+	session.checkSharedLocked();
 
-	auto res = TrackList::get(*session(), listName, TrackList::Type::Internal, self());
-	if (!res)
-		res = TrackList::create(*session(), listName, TrackList::Type::Internal, false, self());
-
-	return res;
+	return TrackList::get(session, queuedListName, TrackList::Type::Internal, self());
 }
 
 void

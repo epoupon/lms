@@ -19,9 +19,7 @@
 
 #pragma once
 
-#include <Wt/Dbo/SqlConnectionPool.h>
-
-#include "database/DatabaseHandler.hpp"
+#include "database/Session.hpp"
 #include "scanner/MediaScannerAddon.hpp"
 
 #include "SimilarityFeaturesSearcher.hpp"
@@ -32,7 +30,7 @@ class FeaturesScannerAddon final : public Scanner::MediaScannerAddon
 {
 	public:
 
-		FeaturesScannerAddon(Wt::Dbo::SqlConnectionPool& connectionPool);
+		FeaturesScannerAddon(std::unique_ptr<Database::Session> dbSession);
 
 		std::shared_ptr<FeaturesSearcher> getSearcher();
 
@@ -40,18 +38,19 @@ class FeaturesScannerAddon final : public Scanner::MediaScannerAddon
 
 		void refreshSettings() override {}
 		void requestStop() override;
+		void preScanComplete() override;
+
 		void trackAdded(Database::IdType trackId) override {}
 		void trackToRemove(Database::IdType trackId) override {}
 		void trackUpdated(Database::IdType trackId) override;
-		void preScanComplete() override;
 
 		bool fetchFeatures(Database::IdType trackId, const std::string& MBID);
 
 		void updateSearcher();
 
-		Database::Handler			_db;
+		std::unique_ptr<Database::Session>	_dbSession;
 		std::shared_ptr<FeaturesSearcher>	_searcher;
-		bool					_stopRequested{false};
+		bool					_stopRequested {};
 };
 
 FeaturesScannerAddon* setFeaturesScannerAddon(FeaturesScannerAddon addon);

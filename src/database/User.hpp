@@ -22,17 +22,15 @@
 #include <vector>
 
 #include <Wt/Dbo/Dbo.h>
-#include <Wt/Auth/Dbo/AuthInfo.h>
 
 #include "Types.hpp"
 
 namespace Database {
 
-class User;
-using AuthInfo = Wt::Auth::Dbo::AuthInfo<User>;
 
 class Artist;
 class Release;
+class Session;
 class TrackList;
 class Track;
 
@@ -69,12 +67,13 @@ class User : public Wt::Dbo::Dbo<User>
 		User();
 
 		// utility
-		static pointer create(Wt::Dbo::Session& session);
+		static pointer create(Session& session);
 
 		// accessors
-		static pointer			getById(Wt::Dbo::Session& session, IdType id);
-		static std::vector<pointer>	getAll(Wt::Dbo::Session& session);
-		static pointer			getDemo(Wt::Dbo::Session& session);
+		static pointer			getById(Session& session, IdType id);
+		static pointer			getByLoginName(const std::string& loginName);
+		static std::vector<pointer>	getAll(Session& session);
+		static pointer			getDemo(Session& session);
 
 		// write
 		void setType(Type type)					{ _type = type; }
@@ -97,8 +96,8 @@ class User : public Wt::Dbo::Dbo<User>
 		bool			isRepeatAllSet() const { return _repeatAll; }
 		bool			isRadioSet() const { return _radio; }
 
-		Wt::Dbo::ptr<TrackList> getQueuedTrackList() const;
-		Wt::Dbo::ptr<TrackList> getPlayedTrackList() const;
+		Wt::Dbo::ptr<TrackList>	getPlayedTrackList(Session& session) const;
+		Wt::Dbo::ptr<TrackList>	getQueuedTrackList(Session& session) const;
 
 		void			starArtist(Wt::Dbo::ptr<Artist> artist);
 		void			unstarArtist(Wt::Dbo::ptr<Artist> artist);

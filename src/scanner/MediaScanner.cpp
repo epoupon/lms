@@ -85,7 +85,7 @@ isPathInParentPath(const boost::filesystem::path& path, const boost::filesystem:
 }
 
 std::vector<Artist::pointer>
-getOrCreateArtists(Wt::Dbo::Session& session, const std::vector<MetaData::Artist>& artistsInfo)
+getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artistsInfo)
 {
 	std::vector<Artist::pointer> artists;
 
@@ -129,7 +129,7 @@ getOrCreateArtists(Wt::Dbo::Session& session, const std::vector<MetaData::Artist
 }
 
 Release::pointer
-getOrCreateRelease(Wt::Dbo::Session& session, const MetaData::Album& album)
+getOrCreateRelease(Session& session, const MetaData::Album& album)
 {
 	Release::pointer release;
 
@@ -166,7 +166,7 @@ getOrCreateRelease(Wt::Dbo::Session& session, const MetaData::Album& album)
 }
 
 std::vector<Cluster::pointer>
-getOrCreateClusters(Wt::Dbo::Session& session, const MetaData::Clusters& clustersNames)
+getOrCreateClusters(Session& session, const MetaData::Clusters& clustersNames)
 {
 	std::vector< Cluster::pointer > clusters;
 
@@ -193,8 +193,8 @@ getOrCreateClusters(Wt::Dbo::Session& session, const MetaData::Clusters& cluster
 
 namespace Scanner {
 
-MediaScanner::MediaScanner(Wt::Dbo::SqlConnectionPool& connectionPool)
-: _db {connectionPool}
+MediaScanner::MediaScanner(std::unique_ptr<Database::Session> dbSession)
+: _dbSession {std::move(dbSession)}
 {
 	_ioService.setThreadCount(1);
 
@@ -443,36 +443,36 @@ MediaScanner::scan(boost::system::error_code err)
 	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Optimizing db...";
-	_db.optimize();
+	_dbSession->optimize();
 	LMS_LOG(DBUPDATER, INFO) << "Optimize db done!";
 }
 
 void
 MediaScanner::refreshScanSettings()
 {
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	{
+		auto transaction {_dbSession->createSharedTransaction()};
 
-	auto scanSettings = ScanSettings::get(_db.getSession());
+		ScanSettings::pointer scanSettings {ScanSettings::get(*_dbSession)};
 
-	LMS_LOG(DBUPDATER, INFO) << "Using scan settings version " << scanSettings->getScanVersion();
+		LMS_LOG(DBUPDATER, INFO) << "Using scan settings version " << scanSettings->getScanVersion();
 
-	_scanVersion = scanSettings->getScanVersion();
-	_startTime = scanSettings->getUpdateStartTime();
-	_updatePeriod = scanSettings->getUpdatePeriod();
+		_scanVersion = scanSettings->getScanVersion();
+		_startTime = scanSettings->getUpdateStartTime();
+		_updatePeriod = scanSettings->getUpdatePeriod();
 
-	_fileExtensions = scanSettings->getAudioFileExtensions();
-	_mediaDirectory = scanSettings->getMediaDirectory();
+		_fileExtensions = scanSettings->getAudioFileExtensions();
+		_mediaDirectory = scanSettings->getMediaDirectory();
 
-	auto clusterTypes = scanSettings->getClusterTypes();
-	std::set<std::string> clusterTypeNames;
+		auto clusterTypes = scanSettings->getClusterTypes();
+		std::set<std::string> clusterTypeNames;
 
-	std::transform(clusterTypes.begin(), clusterTypes.end(),
-			std::inserter(clusterTypeNames, clusterTypeNames.begin()),
-			[](ClusterType::pointer clusterType) -> std::string { return clusterType->getName(); });
+		std::transform(std::cbegin(clusterTypes), std::cend(clusterTypes),
+				std::inserter(clusterTypeNames, clusterTypeNames.begin()),
+				[](ClusterType::pointer clusterType) { return clusterType->getName(); });
 
-	_metadataParser.setClusterTypeNames(clusterTypeNames);
-
-	transaction.commit();
+		_metadataParser.setClusterTypeNames(clusterTypeNames);
+	}
 
 	for (auto& addon : _addons)
 		addon->refreshSettings();
@@ -506,9 +506,9 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	if (!forceScan)
 	{
 		// Skip file if last write is the same
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		auto transaction {_dbSession->createSharedTransaction()};
 
-		Wt::Dbo::ptr<Track> track = Track::getByPath(_db.getSession(), file);
+		Track::pointer track {Track::getByPath(*_dbSession, file)};
 
 		if (track && track->getLastWriteTime() == lastWriteTime && track->getScanVersion() == _scanVersion)
 		{
@@ -526,9 +526,9 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 
 	stats.scans++;
 
-	Wt::Dbo::Transaction transaction {_db.getSession()};
+	auto uniqueTransaction {_dbSession->createUniqueTransaction()};
 
-	Wt::Dbo::ptr<Track> track {Track::getByPath(_db.getSession(), file) };
+	Track::pointer track {Track::getByPath(*_dbSession, file) };
 
 	// We estimate this is an audio file if:
 	// - we found a least one audio stream
@@ -572,29 +572,27 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	}
 
 	// ***** Clusters
-	std::vector<Cluster::pointer> clusters {getOrCreateClusters(_db.getSession(), trackInfo->clusters)};
+	std::vector<Cluster::pointer> clusters {getOrCreateClusters(*_dbSession, trackInfo->clusters)};
 
 	//  ***** Artists
-	std::vector<Artist::pointer> artists {getOrCreateArtists(_db.getSession(), trackInfo->artists)};
+	std::vector<Artist::pointer> artists {getOrCreateArtists(*_dbSession, trackInfo->artists)};
 
 	//  ***** Release artists
-	std::vector<Artist::pointer> releaseArtists {getOrCreateArtists(_db.getSession(), trackInfo->albumArtists)};
+	std::vector<Artist::pointer> releaseArtists {getOrCreateArtists(*_dbSession, trackInfo->albumArtists)};
 
 	//  ***** Release
 	Release::pointer release;
 	if (trackInfo->album)
-		release = getOrCreateRelease(_db.getSession(), *trackInfo->album);
+		release = getOrCreateRelease(*_dbSession, *trackInfo->album);
 
 	// If file already exist, update data
 	// Otherwise, create it
-	bool trackAdded {false};
 	if (!track)
 	{
 		// Create a new song
-		track = Track::create(_db.getSession(), file);
+		track = Track::create(*_dbSession, file);
 		LMS_LOG(DBUPDATER, INFO) << "Adding '" << file.string() << "'";
 		stats.additions++;
-		trackAdded = true;
 	}
 	else
 	{
@@ -615,10 +613,10 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 
 	track.modify()->clearArtistLinks();
 	for (const auto& artist : artists)
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(_db.getSession(), track, artist, Database::TrackArtistLink::Type::Artist));
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(*_dbSession, track, artist, Database::TrackArtistLink::Type::Artist));
 
 	for (const auto& releaseArtist : releaseArtists)
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(_db.getSession(), track, releaseArtist, Database::TrackArtistLink::Type::ReleaseArtist));
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(*_dbSession, track, releaseArtist, Database::TrackArtistLink::Type::ReleaseArtist));
 
 	track.modify()->setScanVersion(_scanVersion);
 	track.modify()->setRelease(release);
@@ -640,19 +638,9 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	track.modify()->setHasCover(trackInfo->hasCover);
 	track.modify()->setCopyright(trackInfo->copyright);
 	track.modify()->setCopyrightURL(trackInfo->copyrightURL);
-
-	transaction.commit();
-
-	for (auto& addon : _addons)
-	{
-		if (trackAdded)
-			addon->trackAdded(track.id());
-		else
-			addon->trackUpdated(track.id());
-	}
 }
 
-void
+	void
 MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool forceScan, Stats& stats)
 {
 	boost::system::error_code ec;
@@ -728,7 +716,11 @@ checkFile(const boost::filesystem::path& p, const boost::filesystem::path& media
 void
 MediaScanner::removeMissingTracks(Stats& stats)
 {
-	std::vector<boost::filesystem::path> trackPaths = Track::getAllPaths(_db.getSession());;
+	std::vector<boost::filesystem::path> trackPaths;
+	{
+		auto transaction {_dbSession->createSharedTransaction()};
+		trackPaths = Track::getAllPaths(*_dbSession);;
+	}
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks...";
 	for (const auto& trackPath : trackPaths)
@@ -738,9 +730,9 @@ MediaScanner::removeMissingTracks(Stats& stats)
 
 		if (!checkFile(trackPath, _mediaDirectory, _fileExtensions))
 		{
-			Wt::Dbo::Transaction transaction(_db.getSession());
+			auto transaction {_dbSession->createUniqueTransaction()};
 
-			Track::pointer track = Track::getByPath(_db.getSession(), trackPath);
+			Track::pointer track {Track::getByPath(*_dbSession, trackPath)};
 			if (track)
 			{
 				track.remove();
@@ -755,11 +747,11 @@ MediaScanner::removeOrphanEntries()
 {
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		auto transaction {_dbSession->createUniqueTransaction()};
 
 		// Now process orphan Cluster (no track)
-		auto clusters = Cluster::getAllOrphans(_db.getSession());
-		for (auto cluster : clusters)
+		auto clusters {Cluster::getAllOrphans(*_dbSession)};
+		for (auto& cluster : clusters)
 		{
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster '" << cluster->getName() << "'";
 			cluster.remove();
@@ -768,10 +760,10 @@ MediaScanner::removeOrphanEntries()
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan artists...";
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		auto transaction {_dbSession->createUniqueTransaction()};
 
-		auto artists = Artist::getAllOrphans(_db.getSession());
-		for (auto artist : artists)
+		auto artists {Artist::getAllOrphans(*_dbSession)};
+		for (auto& artist : artists)
 		{
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan artist '" << artist->getName() << "'";
 			artist.remove();
@@ -780,10 +772,10 @@ MediaScanner::removeOrphanEntries()
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan releases...";
 	{
-		Wt::Dbo::Transaction transaction(_db.getSession());
+		auto transaction {_dbSession->createUniqueTransaction()};
 
-		auto releases = Release::getAllOrphans(_db.getSession());
-		for (auto release : releases)
+		auto releases {Release::getAllOrphans(*_dbSession)};
+		for (auto& release : releases)
 		{
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan release '" << release->getName() << "'";
 			release.remove();
@@ -798,10 +790,10 @@ MediaScanner::checkDuplicatedAudioFiles(Stats& stats)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files";
 
-	Wt::Dbo::Transaction transaction(_db.getSession());
+	auto transaction {_dbSession->createSharedTransaction()};
 
-	std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(_db.getSession());
-	for (Track::pointer track : tracks)
+	const std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(*_dbSession);
+	for (const Track::pointer& track : tracks)
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath().string() << " - " << track->getName();
 		stats.duplicateMBID++;

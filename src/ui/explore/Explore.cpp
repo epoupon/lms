@@ -25,6 +25,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
+#include "database/Track.hpp"
 #include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"
@@ -66,9 +67,7 @@ handleContentsPathChange(Wt::WStackedWidget* stack)
 		{ "/tracks",		IdxTracks },
 	};
 
-	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
-
-	for (auto index : indexes)
+	for (const auto& index : indexes)
 	{
 		if (wApp->internalPathMatches(index.first))
 		{
@@ -182,102 +181,104 @@ Explore::Explore()
 	handleInfoPathChange(infoStack);
 }
 
-// TODO SQL this?
-static std::vector<Database::Track::pointer> getArtistTracks(Wt::Dbo::Session& session, Database::IdType artistId, std::set<Database::IdType> clusters)
+static
+std::vector<Database::IdType>
+getArtistTracks(Database::Session& session, Database::IdType artistId, const std::set<Database::IdType>& clusters)
 {
-	std::vector<Database::Track::pointer> res;
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto artist = Database::Artist::getById(session, artistId);
+	Database::Artist::pointer artist {Database::Artist::getById(session, artistId)};
 	if (!artist)
-		return res;
+		return {};
 
-	res = artist->getTracks();
+	// TODO handle clusters here
+	const std::vector<Database::Track::pointer> tracks {artist->getTracks()};
 
+	std::vector<Database::IdType> res;
+	res.reserve(tracks.size());
+
+	std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Database::Track::pointer& track) { return track.id(); });
 	return res;
 }
 
-static std::vector<Database::Track::pointer> getReleaseTracks(Wt::Dbo::Session& session, Database::IdType releaseId, std::set<Database::IdType> clusters)
+static
+std::vector<Database::IdType>
+getReleaseTracks(Database::Session& session, Database::IdType releaseId, std::set<Database::IdType> clusters)
 {
-	std::vector<Database::Track::pointer> res;
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto release = Database::Release::getById(session, releaseId);
+	Database::Release::pointer release {Database::Release::getById(session, releaseId)};
 	if (!release)
-		return res;
+		return {};
 
-	res = release->getTracks(clusters);
+	const std::vector<Database::Track::pointer> tracks {release->getTracks(clusters)};
 
+	std::vector<Database::IdType> res;
+	res.reserve(tracks.size());
+
+	std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Database::Track::pointer& track) { return track.id(); });
 	return res;
 }
 
-static std::vector<Database::Track::pointer> getTrack(Wt::Dbo::Session& session, Database::IdType trackId)
+static
+std::vector<Database::IdType>
+getTrack(Database::Session& session, Database::IdType trackId)
 {
-	std::vector<Database::Track::pointer> res;
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto track = Database::Track::getById(session, trackId);
-	if (track)
-		res.push_back(track);
+	Database::Track::pointer track {Database::Track::getById(session, trackId)};
+	if (!track)
+		return {};
 
-	return res;
+	return {track.id()};
 }
 
 void
 Explore::handleArtistAdd(Database::IdType id)
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-	tracksAdd.emit(getArtistTracks(LmsApp->getDboSession(), id, _filters->getClusterIds()));
+	tracksAdd.emit(getArtistTracks(LmsApp->getDbSession(), id, _filters->getClusterIds()));
 }
 
 void
 Explore::handleArtistPlay(Database::IdType id)
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-	tracksPlay.emit(getArtistTracks(LmsApp->getDboSession(), id, _filters->getClusterIds()));
+	tracksPlay.emit(getArtistTracks(LmsApp->getDbSession(), id, _filters->getClusterIds()));
 }
 
 void
 Explore::handleReleaseAdd(Database::IdType id)
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-	tracksAdd.emit(getReleaseTracks(LmsApp->getDboSession(), id, _filters->getClusterIds()));
+	tracksAdd.emit(getReleaseTracks(LmsApp->getDbSession(), id, _filters->getClusterIds()));
 }
 
 void
 Explore::handleReleasePlay(Database::IdType id)
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-	tracksPlay.emit(getReleaseTracks(LmsApp->getDboSession(), id, _filters->getClusterIds()));
+	tracksPlay.emit(getReleaseTracks(LmsApp->getDbSession(), id, _filters->getClusterIds()));
 }
 
 void
 Explore::handleTrackAdd(Database::IdType id)
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-	tracksAdd.emit(getTrack(LmsApp->getDboSession(), id));
+	tracksAdd.emit(getTrack(LmsApp->getDbSession(), id));
 }
 
 void
 Explore::handleTrackPlay(Database::IdType id)
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-	tracksPlay.emit(getTrack(LmsApp->getDboSession(), id));
+	tracksPlay.emit(getTrack(LmsApp->getDbSession(), id));
 }
 
 void
-Explore::handleTracksAdd(std::vector<Database::Track::pointer> tracks)
+Explore::handleTracksAdd(const std::vector<Database::IdType>& trackIds)
 {
-	tracksAdd.emit(tracks);
+	tracksAdd.emit(trackIds);
 }
 
 void
-Explore::handleTracksPlay(std::vector<Database::Track::pointer> tracks)
+Explore::handleTracksPlay(const std::vector<Database::IdType>& trackIds)
 {
-	tracksPlay.emit(tracks);
+	tracksPlay.emit(trackIds);
 }
 
 } // namespace UserInterface

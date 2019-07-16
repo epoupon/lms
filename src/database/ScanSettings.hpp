@@ -27,6 +27,7 @@
 namespace Database {
 
 class ClusterType;
+class Session;
 
 class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 {
@@ -40,7 +41,9 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 			Monthly
 		};
 
-		static pointer get(Wt::Dbo::Session& session);
+		static void init(Session& session);
+
+		static pointer get(Session& session);
 
 		// Getters
 		std::size_t getScanVersion() const { return _scanVersion; }
@@ -54,7 +57,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		void setMediaDirectory(boost::filesystem::path p);
 		void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
 		void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
-		void setClusterTypes(const std::set<std::string>& clusterTypeNames);
+		void setClusterTypes(Session& session, const std::set<std::string>& clusterTypeNames);
 		void setAudioFileExtensions(std::set<boost::filesystem::path> fileExtensions);
 
 		template<class Action>

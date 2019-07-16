@@ -58,22 +58,23 @@ ArtistsInfo::refreshRecentlyAdded()
 {
 	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1);
 
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-	auto artists = Artist::getLastAdded(LmsApp->getDboSession(), after, 5);
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	const std::vector<Database::Artist::pointer> artists {Artist::getLastAdded(LmsApp->getDbSession(), after, 5)};
 
 	_recentlyAddedContainer->clear();
-	for (auto artist : artists)
+	for (const Database::Artist::pointer& artist : artists)
 		_recentlyAddedContainer->addNew<ArtistLink>(artist);
 }
 
 void
 ArtistsInfo::refreshMostPlayed()
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-	auto artists = LmsApp->getUser()->getPlayedTrackList()->getTopArtists(5);
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	const std::vector<Database::Artist::pointer> artists {LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession())->getTopArtists(5)};
 
 	_mostPlayedContainer->clear();
-	for (auto artist : artists)
+	for (const Database::Artist::pointer& artist : artists)
 		_mostPlayedContainer->addNew<ArtistLink>(artist);
 }
 

@@ -22,24 +22,27 @@
 #include <map>
 #include <set>
 
-#include "database/DatabaseHandler.hpp"
 #include "database/Types.hpp"
 #include "som/DataNormalizer.hpp"
 #include "som/Network.hpp"
 #include "SimilarityFeaturesCache.hpp"
 
-namespace Similarity {
+namespace Database
+{
+	class Session;
+}
 
+namespace Similarity {
 
 class FeaturesSearcher
 {
 	public:
 
 		// Use cache
-		FeaturesSearcher(Wt::Dbo::Session& session, FeaturesCache cache, std::function<bool()> stopRequested);
+		FeaturesSearcher(Database::Session& session, FeaturesCache cache, std::function<bool()> stopRequested);
 
 		// Use training (may be very slow)
-		FeaturesSearcher(Wt::Dbo::Session& session, std::function<bool()> stopRequested);
+		FeaturesSearcher(Database::Session& session, std::function<bool()> stopRequested);
 
 		bool isValid() const;
 
@@ -51,7 +54,7 @@ class FeaturesSearcher
 		std::vector<Database::IdType> getSimilarReleases(Database::IdType releaseId, std::size_t maxCount) const;
 		std::vector<Database::IdType> getSimilarArtists(Database::IdType artistId, std::size_t maxCount) const;
 
-		void dump(Wt::Dbo::Session& session, std::ostream& os) const;
+		void dump(Database::Session& session, std::ostream& os) const;
 
 		FeaturesCache toCache() const;
 
@@ -59,7 +62,7 @@ class FeaturesSearcher
 
 		using ObjectPositions = std::map<Database::IdType, std::set<SOM::Position>>;
 
-		void init(Wt::Dbo::Session& session,
+		void init(Database::Session& session,
 				SOM::Network network,
 				ObjectPositions tracksPosition,
 				std::function<bool()> stopRequested);

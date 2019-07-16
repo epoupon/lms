@@ -66,22 +66,22 @@ Artist::refresh()
 	if (!artistId)
 		return;
 
-        Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-	auto artist = Database::Artist::getById(LmsApp->getDboSession(), *artistId);
+        auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
+	const Database::Artist::pointer artist = Database::Artist::getById(LmsApp->getDbSession(), *artistId);
 	if (!artist)
 	{
 		LmsApp->goHome();
 		return;
 	}
 
-	Wt::WTemplate* t = addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template"));
+	Wt::WTemplate* t {addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template"))};
 	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	Wt::WContainerWidget* clusterContainers = t->bindNew<Wt::WContainerWidget>("clusters");
 
 	{
-		auto clusterTypes = ScanSettings::get(LmsApp->getDboSession())->getClusterTypes();
+		auto clusterTypes = ScanSettings::get(LmsApp->getDbSession())->getClusterTypes();
 		auto clusterGroups = artist->getClusterGroups(clusterTypes, 3);
 
 		for (auto clusters : clusterGroups)

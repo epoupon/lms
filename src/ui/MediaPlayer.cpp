@@ -59,12 +59,12 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play)
 {
 	LMS_LOG(UI, DEBUG) << "Playing track ID = " << trackId;
 
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-	auto track = Database::Track::getById(LmsApp->getDboSession(), trackId);
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	const auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
 
 	try
 	{
-		Av::MediaFile mediaFile(track->getPath());
+		const Av::MediaFile mediaFile {track->getPath()};
 
 		auto resource = LmsApp->getAudioResource()->getUrl(trackId);
 		auto imgResource = LmsApp->getImageResource()->getTrackUrl(trackId, 64);

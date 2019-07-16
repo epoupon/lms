@@ -24,6 +24,7 @@
 #include "av/AvInfo.hpp"
 
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 
 #include "utils/Logger.hpp"
@@ -169,30 +170,31 @@ Grabber::getFromTrack(const boost::filesystem::path& p) const
 }
 
 Image::Image
-Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t size)
+Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, std::size_t size)
 {
 	using namespace Database;
 
 	boost::optional<Image::Image> cover;
 
-	{
-		Wt::Dbo::Transaction transaction(session);
+	bool hasCover {};
+	boost::filesystem::path trackPath;
 
-		Track::pointer track = Track::getById(session, trackId);
+	{
+		auto transaction {dbSession.createSharedTransaction()};
+
+		Track::pointer track = Track::getById(dbSession, trackId);
 		if (track)
 		{
-			bool hasCover = track->hasCover();
-			boost::filesystem::path trackPath = track->getPath();
-
-			transaction.commit();
-
-			if (hasCover)
-				cover = getFromTrack(trackPath);
-
-			if (!cover)
-				cover = getFromDirectory(trackPath.parent_path());
+			hasCover = track->hasCover();
+			trackPath = track->getPath();
 		}
 	}
+
+	if (hasCover)
+		cover = getFromTrack(trackPath);
+
+	if (!cover)
+		cover = getFromDirectory(trackPath.parent_path());
 
 	if (!cover)
 		cover = getDefaultCover(size);
@@ -204,28 +206,25 @@ Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::
 
 
 Image::Image
-Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t size)
+Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, std::size_t size)
 {
-	using namespace Database;
-
 	boost::optional<Image::Image> cover;
 
+	boost::optional<Database::IdType> trackId;
 	{
-		Wt::Dbo::Transaction transaction(session);
+		auto transaction {session.createSharedTransaction()};
 
-		auto release = Release::getById(session, releaseId);
+		auto release {Database::Release::getById(session, releaseId)};
 		if (release)
 		{
-			auto tracks = release->getTracks();
+			auto tracks {release->getTracks()};
 			if (!tracks.empty())
-			{
-				auto trackId = tracks.front().id();
-				transaction.commit();
-
-				return getFromTrack(session, trackId, size);
-			}
+				trackId = tracks.front().id();
 		}
 	}
+
+	if (trackId)
+		return getFromTrack(session, *trackId, size);
 
 	if (!cover)
 		cover = getDefaultCover(size);
@@ -236,17 +235,17 @@ Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, s
 }
 
 std::vector<uint8_t>
-Grabber::getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, Image::Format format, std::size_t size)
+Grabber::getFromTrack(Database::Session& session, Database::IdType trackId, Image::Format format, std::size_t size)
 {
-	Image::Image cover = getFromTrack(session, trackId, size);
+	const Image::Image cover {getFromTrack(session, trackId, size)};
 
 	return cover.save(Image::Format::JPEG);
 }
 
 std::vector<uint8_t>
-Grabber::getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, Image::Format format, std::size_t size)
+Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, Image::Format format, std::size_t size)
 {
-	Image::Image cover = getFromRelease(session, releaseId, size);
+	const Image::Image cover {getFromRelease(session, releaseId, size)};
 
 	return cover.save(Image::Format::JPEG);
 }

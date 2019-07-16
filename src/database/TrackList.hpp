@@ -30,11 +30,12 @@
 namespace Database {
 
 class Artist;
+class Cluster;
 class Release;
-class User;
+class Session;
 class Track;
 class TrackListEntry;
-class Cluster;
+class User;
 
 class TrackList : public Wt::Dbo::Dbo<TrackList>
 {
@@ -56,13 +57,13 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		std::vector<Wt::Dbo::ptr<Track>> getTopTracks(std::size_t limit = 1) const;
 
 		// Search utility
-		static pointer	get(Wt::Dbo::Session& session, const std::string& name, Type type, Wt::Dbo::ptr<User> user);
-		static pointer	getById(Wt::Dbo::Session& session, IdType tracklistId);
-		static std::vector<pointer> getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user);
-		static std::vector<pointer> getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user, Type type);
+		static pointer	get(Session& session, const std::string& name, Type type, Wt::Dbo::ptr<User> user);
+		static pointer	getById(Session& session, IdType tracklistId);
+		static std::vector<pointer> getAll(Session& session, Wt::Dbo::ptr<User> user);
+		static std::vector<pointer> getAll(Session& session, Wt::Dbo::ptr<User> user, Type type);
 
 		// Create utility
-		static pointer	create(Wt::Dbo::Session& session, const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user);
+		static pointer	create(Session& session, const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user);
 
 		// Accessors
 		std::string	getName() const { return _name; }
@@ -73,9 +74,7 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		// Modifiers
 		void		setName(const std::string& name) { _name = name; }
 		void		setIsPublic(bool isPublic) { _isPublic = isPublic; }
-		Wt::Dbo::ptr<TrackListEntry> add(IdType trackId);
-		void clear() { _entries.clear(); }
-		void shuffle();
+		void		clear() { _entries.clear(); }
 
 		// Get tracks, ordered by position
 		std::size_t getCount() const;
@@ -120,13 +119,13 @@ class TrackListEntry : public Wt::Dbo::Dbo<TrackListEntry>
 
 		using pointer = Wt::Dbo::ptr<TrackListEntry>;
 
-		TrackListEntry();
+		TrackListEntry() = default;
 		TrackListEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist);
 
-		static pointer getById(Wt::Dbo::Session& session, IdType id);
+		static pointer getById(Session& session, IdType id);
 
 		// Create utility
-		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist);
+		static pointer create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist);
 
 		// Accessors
 		Wt::Dbo::ptr<Track>	getTrack() const { return _track; }

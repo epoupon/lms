@@ -38,9 +38,7 @@ AudioResource:: ~AudioResource()
 std::string
 AudioResource::getUrl(Database::IdType trackId) const
 {
-	std::string res = url()+ "&trackid=" + std::to_string(trackId);
-
-	return res;
+	return url()+ "&trackid=" + std::to_string(trackId);
 }
 
 void
@@ -82,14 +80,12 @@ AudioResource::handleRequest(const Wt::Http::Request& request,
 			return;
 		}
 
-		// transactions are not thread safe
+		// DbSession are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock(LmsApp);
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-			Database::Track::pointer track = Database::Track::getById(LmsApp->getDboSession(), trackId);
-
+			const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
 			if (!track)
 			{
 				LMS_LOG(UI, ERROR) << "Missing track";

@@ -24,7 +24,6 @@
 
 #include <Wt/WResource.h>
 
-#include "database/DatabaseHandler.hpp"
 #include "database/Types.hpp"
 
 #include "image/Image.hpp"
@@ -35,7 +34,7 @@ namespace UserInterface {
 class ImageResource : public Wt::WResource
 {
 	public:
-		static const std::size_t maxSize = 512;
+		static const std::size_t maxSize {512};
 
 		~ImageResource();
 

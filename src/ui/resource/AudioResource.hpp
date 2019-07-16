@@ -23,7 +23,6 @@
 
 #include "av/AvTranscoder.hpp"
 
-#include "database/DatabaseHandler.hpp"
 #include "database/Types.hpp"
 
 

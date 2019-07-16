@@ -38,13 +38,13 @@ struct TrackInfo
 };
 
 std::vector<TrackInfo>
-getTracksWithMBIDAndMissingFeatures(Wt::Dbo::Session& session)
+getTracksWithMBIDAndMissingFeatures(Database::Session& dbSession)
 {
 	std::vector<TrackInfo> res;
 
-	Wt::Dbo::Transaction transaction {session};
+	auto transaction {dbSession.createSharedTransaction()};
 
-	auto tracks {Database::Track::getAllWithMBIDAndMissingFeatures(session)};
+	auto tracks {Database::Track::getAllWithMBIDAndMissingFeatures(dbSession)};
 	for (const Database::Track::pointer& track : tracks)
 		res.push_back({track.id(), track->getMBID()});
 
@@ -53,13 +53,13 @@ getTracksWithMBIDAndMissingFeatures(Wt::Dbo::Session& session)
 
 } // namespace
 
-FeaturesScannerAddon::FeaturesScannerAddon(Wt::Dbo::SqlConnectionPool& connectionPool)
-: _db(connectionPool)
+FeaturesScannerAddon::FeaturesScannerAddon(std::unique_ptr<Database::Session> dbSession)
+: _dbSession {std::move(dbSession)}
 {
 	boost::optional<Similarity::FeaturesCache> cache {Similarity::FeaturesCache::read()};
 	if (cache)
 	{
-		auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_db.getSession(), *cache, [&]() { return _stopRequested; })};
+		auto searcher {std::make_shared<Similarity::FeaturesSearcher>(*_dbSession.get(), *cache, [&]() { return _stopRequested; })};
 		if (searcher->isValid())
 			std::atomic_store(&_searcher, searcher);
 	}
@@ -80,9 +80,9 @@ FeaturesScannerAddon::requestStop()
 void
 FeaturesScannerAddon::trackUpdated(Database::IdType trackId)
 {
-	Wt::Dbo::Transaction transaction {_db.getSession()};
+	auto uniqueTransaction {_dbSession->createUniqueTransaction()};
 
-	auto track {Database::Track::getById(_db.getSession(), trackId)};
+	auto track {Database::Track::getById(*_dbSession, trackId)};
 	if (!track)
 		return;
 
@@ -93,9 +93,9 @@ void
 FeaturesScannerAddon::preScanComplete()
 {
 	{
-		Wt::Dbo::Transaction transaction {_db.getSession()};
+		auto transaction {_dbSession->createSharedTransaction()};
 
-		if (Database::SimilaritySettings::get(_db.getSession())->getEngineType() != Database::SimilaritySettings::EngineType::Features)
+		if (Database::SimilaritySettings::get(*_dbSession)->getEngineType() != Database::SimilaritySettings::EngineType::Features)
 		{
 			LMS_LOG(DBUPDATER, INFO) << "Do not fetch features since the engine type does not make use of them";
 			return;
@@ -103,8 +103,11 @@ FeaturesScannerAddon::preScanComplete()
 	}
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Getting tracks with missing Features...";
-	std::vector<TrackInfo> tracksInfo {getTracksWithMBIDAndMissingFeatures(_db.getSession())};
+	const std::vector<TrackInfo> tracksInfo {getTracksWithMBIDAndMissingFeatures(*_dbSession)};
 	LMS_LOG(DBUPDATER, DEBUG) << "Getting tracks with missing Features DONE (found " << tracksInfo.size() << ")";
+
+	if (!tracksInfo.empty())
+		Similarity::FeaturesCache::invalidate();
 
 	for (const TrackInfo& trackInfo : tracksInfo)
 	{
@@ -114,7 +117,6 @@ FeaturesScannerAddon::preScanComplete()
 		fetchFeatures(trackInfo.id, trackInfo.mbid);
 	}
 
-	Similarity::FeaturesCache::invalidate();
 	updateSearcher();
 }
 
@@ -125,8 +127,8 @@ FeaturesScannerAddon::updateSearcher()
 
 	std::vector<Database::IdType> trackIds;
 	{
-		Wt::Dbo::Transaction transaction {_db.getSession()};
-		trackIds = Database::Track::getAllIdsWithFeatures(_db.getSession());
+		auto transaction {_dbSession->createSharedTransaction()};
+		trackIds = Database::Track::getAllIdsWithFeatures(*_dbSession);
 	}
 
 	if (trackIds.empty())
@@ -136,7 +138,7 @@ FeaturesScannerAddon::updateSearcher()
 		return;
 	}
 
-	auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_db.getSession(), [&]() { return _stopRequested; })};
+	auto searcher {std::make_shared<Similarity::FeaturesSearcher>(*_dbSession, [&]() { return _stopRequested; })};
 	if (searcher->isValid())
 	{
 		std::atomic_store(&_searcher, searcher);
@@ -165,15 +167,15 @@ FeaturesScannerAddon::fetchFeatures(Database::IdType trackId, const std::string&
 		return false;
 	}
 
-	Wt::Dbo::Transaction transaction{_db.getSession()};
+	auto uniqueTransaction {_dbSession->createUniqueTransaction()};
 
-	Wt::Dbo::ptr<Database::Track> track {Database::Track::getById(_db.getSession(), trackId)};
+	Wt::Dbo::ptr<Database::Track> track {Database::Track::getById(*_dbSession, trackId)};
 	if (!track)
 		return false;
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Successfully extracted AcousticBrainz lowlevel features for track '" << track->getPath().string() << "'";
 
-	Database::TrackFeatures::create(_db.getSession(), track, data);
+	Database::TrackFeatures::create(*_dbSession, track, data);
 
 	return true;
 }

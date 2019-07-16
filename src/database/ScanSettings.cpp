@@ -25,10 +25,11 @@
 #include "utils/Utils.hpp"
 
 #include "Cluster.hpp"
+#include "Session.hpp"
 
 namespace {
 
-std::set<std::string> defaultClusterTypeNames =
+const std::set<std::string> defaultClusterTypeNames =
 {
 	"GENRE",
 	"ALBUMGROUPING",
@@ -40,31 +41,38 @@ std::set<std::string> defaultClusterTypeNames =
 
 namespace Database {
 
+void
+ScanSettings::init(Session& session)
+{
+	session.checkUniqueLocked();
+
+	pointer settings {get(session)};
+	if (settings)
+		return;
+
+	settings = session.getDboSession().add(std::make_unique<ScanSettings>());
+	settings.modify()->setClusterTypes(session, defaultClusterTypeNames );
+}
 
 ScanSettings::pointer
-ScanSettings::get(Wt::Dbo::Session& session)
+ScanSettings::get(Session& session)
 {
-	pointer settings = session.find<ScanSettings>();
-	if (!settings)
-	{
-		settings = session.add(std::make_unique<ScanSettings>());
-		settings.modify()->setClusterTypes(defaultClusterTypeNames);
-	}
+	session.checkSharedLocked();
 
-	return settings;
+	return session.getDboSession().find<ScanSettings>();
 }
 
 std::set<boost::filesystem::path>
 ScanSettings::getAudioFileExtensions() const
 {
 	auto extensions = splitString(_audioFileExtensions, " ");
-	return std::set<boost::filesystem::path>(extensions.begin(), extensions.end());
+	return std::set<boost::filesystem::path>(std::cbegin(extensions), std::cend(extensions));
 }
 
 std::vector<ClusterType::pointer>
 ScanSettings::getClusterTypes() const
 {
-	return std::vector<ClusterType::pointer>(_clusterTypes.begin(), _clusterTypes.end());
+	return std::vector<ClusterType::pointer>(std::cbegin(_clusterTypes), std::cend(_clusterTypes));
 }
 
 void
@@ -73,20 +81,34 @@ ScanSettings::setMediaDirectory(boost::filesystem::path p)
 	_mediaDirectory = stringTrimEnd(p.string(), "/\\");
 }
 
-void
-ScanSettings::setClusterTypes(const std::set<std::string>& clusterTypeNames)
+template <typename It>
+std::set<std::string> getNames(It begin, It end)
 {
-	bool needRescan = false;
-	assert(session());
+	std::set<std::string> names;
+	std::transform(begin, end, std::inserter(names, std::begin(names)),
+		[](const ClusterType::pointer& clusterType)
+		{
+			return clusterType->getName();
+		});
+
+	return names;
+}
+
+void
+ScanSettings::setClusterTypes(Session& session, const std::set<std::string>& clusterTypeNames)
+{
+	session.checkUniqueLocked();
+
+	bool needRescan {};
 
 	// Create any missing cluster type
-	for (const auto& clusterTypeName : clusterTypeNames)
+	for (const std::string& clusterTypeName : clusterTypeNames)
 	{
-		auto clusterType = ClusterType::getByName(*session(), clusterTypeName);
+		auto clusterType {ClusterType::getByName(session, clusterTypeName)};
 		if (!clusterType)
 		{
 			LMS_LOG(DB, INFO) << "Creating cluster type " << clusterTypeName;
-			clusterType = ClusterType::create(*session(), clusterTypeName);
+			clusterType = ClusterType::create(session, clusterTypeName);
 			_clusterTypes.insert(clusterType);
 
 			needRescan = true;
@@ -94,7 +116,7 @@ ScanSettings::setClusterTypes(const std::set<std::string>& clusterTypeNames)
 	}
 
 	// Delete no longer existing cluster types
-	for (auto clusterType : _clusterTypes)
+	for (ClusterType::pointer& clusterType : _clusterTypes)
 	{
 		if (std::none_of(clusterTypeNames.begin(), clusterTypeNames.end(),
 			[clusterType](const std::string& name) { return name == clusterType->getName(); }))
@@ -107,7 +129,6 @@ ScanSettings::setClusterTypes(const std::set<std::string>& clusterTypeNames)
 	if (needRescan)
 		_scanVersion += 1;
 }
-
 
 } // namespace Database
 

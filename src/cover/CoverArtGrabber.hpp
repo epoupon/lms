@@ -23,9 +23,15 @@
 #include <mutex>
 #include <vector>
 
+#include <boost/optional.hpp>
+
 #include "database/Types.hpp"
 
 #include "image/Image.hpp"
+
+namespace Database {
+	class Session;
+}
 
 namespace CoverArt {
 
@@ -40,13 +46,13 @@ class Grabber
 
 		void			setDefaultCover(boost::filesystem::path defaultCoverPath);
 
-		std::vector<uint8_t>	getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, Image::Format format, std::size_t size);
-		std::vector<uint8_t>	getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, Image::Format format, std::size_t size);
+		std::vector<uint8_t>	getFromTrack(Database::Session& dbSession, Database::IdType trackId, Image::Format format, std::size_t size);
+		std::vector<uint8_t>	getFromRelease(Database::Session& dbSession, Database::IdType releaseId, Image::Format format, std::size_t size);
 
 	private:
 
-		Image::Image		getFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, std::size_t size);
-		Image::Image		getFromRelease(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t size);
+		Image::Image		getFromTrack(Database::Session& dbSession, Database::IdType trackId, std::size_t size);
+		Image::Image		getFromRelease(Database::Session& dbSession, Database::IdType releaseId, std::size_t size);
 
 		boost::optional<Image::Image>		getFromTrack(const boost::filesystem::path& path) const;
 		std::vector<boost::filesystem::path>	getCoverPaths(const boost::filesystem::path& directoryPath) const;

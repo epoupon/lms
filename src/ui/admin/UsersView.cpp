@@ -59,22 +59,16 @@ UsersView::refreshView()
 
 	_container->clear();
 
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto users = Database::User::getAll(LmsApp->getDboSession());
-	for (auto user : users)
+	auto users = Database::User::getAll(LmsApp->getDbSession());
+	for (const auto& user : users)
 	{
-		auto userId = std::to_string(user.id());
-		Wt::WTemplate* entry = _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry"));
+		const Database::IdType userId {user.id()};
 
-		Wt::Auth::User authUser = LmsApp->getDb().getUserDatabase().findWithId(userId);
-		if (!authUser.isValid()) {
-			LMS_LOG(UI, ERROR) << "Skipping invalid userId = " << user.id();
-			continue;
-		}
+		Wt::WTemplate* entry {_container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry"))};
 
-		auto login = authUser.identity(Wt::Auth::Identity::LoginName);
-		entry->bindString("name", login, Wt::TextFormat::Plain);
+		entry->bindString("name", LmsApp->getDbSession().getUserLoginName(user), Wt::TextFormat::Plain);
 
 		// Create tag
 		if (user->isAdmin() || user->isDemo())
@@ -106,16 +100,18 @@ UsersView::refreshView()
 			{
 				if (btn == Wt::StandardButton::Yes)
 				{
-					Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+					auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-					auto authUser = LmsApp->getDb().getUserDatabase().findWithId(userId);
-					auto user = LmsApp->getDb().getUser(authUser);
-					LmsApp->getDb().getUserDatabase().deleteUser( authUser );
-					user.remove();
+					Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), userId)};
+					if (user)
+						LmsApp->getDbSession().removeUser(user);
+
 					_container->removeWidget(entry);
 				}
 				else
+				{
 					delBtn->removeChild(msgBox);
+				}
 			});
 
 			msgBox->show();

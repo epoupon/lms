@@ -26,6 +26,7 @@
 #include "Artist.hpp"
 #include "Cluster.hpp"
 #include "Release.hpp"
+#include "Session.hpp"
 #include "User.hpp"
 #include "Track.hpp"
 
@@ -41,38 +42,35 @@ TrackList::TrackList(const std::string& name, Type type, bool isPublic, Wt::Dbo:
 }
 
 TrackList::pointer
-TrackList::create(Wt::Dbo::Session& session, const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user)
+TrackList::create(Session& session, const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user)
 {
+	session.checkUniqueLocked();
 	assert(user);
 
-	auto res = session.add( std::make_unique<TrackList>(name, type, isPublic, user) );
-	session.flush();
+	auto res = session.getDboSession().add( std::make_unique<TrackList>(name, type, isPublic, user) );
+	session.getDboSession().flush();
 
 	return res;
 }
 
-TrackListEntry::pointer
-TrackList::add(IdType trackId)
-{
-	assert(session());
-	assert(self());
-
-	return TrackListEntry::create(*session(), Database::Track::getById(*session(), trackId), self());
-}
-
 TrackList::pointer
-TrackList::get(Wt::Dbo::Session& session, const std::string& name, Type type, Wt::Dbo::ptr<User> user)
+TrackList::get(Session& session, const std::string& name, Type type, Wt::Dbo::ptr<User> user)
 {
-	return session.find<TrackList>()
+	session.checkSharedLocked();
+	assert(user);
+
+	return session.getDboSession().find<TrackList>()
 		.where("name = ?").bind(name)
 		.where("type = ?").bind(type)
 		.where("user_id = ?").bind(user.id());
 }
 
 std::vector<TrackList::pointer>
-TrackList::getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user)
+TrackList::getAll(Session& session, Wt::Dbo::ptr<User> user)
 {
-	Wt::Dbo::collection<TrackList::pointer> res = session.find<TrackList>()
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<TrackList::pointer> res = session.getDboSession().find<TrackList>()
 		.where("user_id = ?").bind(user.id())
 		.orderBy("name COLLATE NOCASE");
 
@@ -80,9 +78,11 @@ TrackList::getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user)
 }
 
 std::vector<TrackList::pointer>
-TrackList::getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user, Type type)
+TrackList::getAll(Session& session, Wt::Dbo::ptr<User> user, Type type)
 {
-	Wt::Dbo::collection<TrackList::pointer> res = session.find<TrackList>()
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<TrackList::pointer> res = session.getDboSession().find<TrackList>()
 		.where("user_id = ?").bind(user.id())
 		.where("type = ?").bind(type)
 		.orderBy("name COLLATE NOCASE");
@@ -91,9 +91,11 @@ TrackList::getAll(Wt::Dbo::Session& session, Wt::Dbo::ptr<User> user, Type type)
 }
 
 TrackList::pointer
-TrackList::getById(Wt::Dbo::Session& session, IdType id)
+TrackList::getById(Session& session, IdType id)
 {
-	return session.find<TrackList>().where("id = ?").bind(id);
+	session.checkSharedLocked();
+
+	return session.getDboSession().find<TrackList>().where("id = ?").bind(id);
 }
 
 
@@ -200,23 +202,6 @@ TrackList::getDuration() const
 	return query.resultValue();
 }
 
-void
-TrackList::shuffle()
-{
-	assert(session());
-
-	auto entries = getEntries();
-
-	auto now = std::chrono::system_clock::now();
-	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
-
-	std::shuffle(entries.begin(), entries.end(), randGenerator);
-
-	clear();
-	for (auto entry : entries)
-		TrackListEntry::create(*session(), entry->getTrack(), self());
-}
-
 std::vector<Artist::pointer>
 TrackList::getTopArtists(std::size_t limit) const
 {
@@ -269,26 +254,25 @@ TrackListEntry::TrackListEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList
 
 }
 
-TrackListEntry::TrackListEntry()
-{
-}
-
 TrackListEntry::pointer
-TrackListEntry::create(Wt::Dbo::Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist)
+TrackListEntry::create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist)
 {
+	session.checkUniqueLocked();
 	assert(track);
 	assert(tracklist);
 
-	auto res = session.add( std::make_unique<TrackListEntry>( track, tracklist) );
-	session.flush();
+	auto res = session.getDboSession().add( std::make_unique<TrackListEntry>( track, tracklist) );
+	session.getDboSession().flush();
 
 	return res;
 }
 
 TrackListEntry::pointer
-TrackListEntry::getById(Wt::Dbo::Session& session, IdType id)
+TrackListEntry::getById(Session& session, IdType id)
 {
-	return session.find<TrackListEntry>().where("id = ?").bind(id);
+	session.checkSharedLocked();
+
+	return session.getDboSession().find<TrackListEntry>().where("id = ?").bind(id);
 }
 
 } // namespace Database

@@ -73,17 +73,17 @@ Artists::addSome()
 
 	auto clusterIds = _filters->getClusterIds();
 
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	bool moreResults;
-	auto artists = Artist::getByFilter(LmsApp->getDboSession(),
+	bool moreResults {};
+	const std::vector<Artist::pointer> artists {Artist::getByFilter(LmsApp->getDbSession(),
 			clusterIds,
 			searchKeywords,
-			_container->count(), 20, moreResults);
+			_container->count(), 20, moreResults)};
 
-	for (auto artist : artists)
+	for (const auto& artist : artists)
 	{
-		Wt::WTemplate* entry = _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry"));
+		Wt::WTemplate* entry {_container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry"))};
 
 		entry->bindWidget("name", LmsApplication::createArtistAnchor(artist));
 	}

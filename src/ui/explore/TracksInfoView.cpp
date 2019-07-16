@@ -74,10 +74,10 @@ TracksInfo::TracksInfo()
 void
 TracksInfo::refreshRecentlyAdded()
 {
-	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1);
+	const auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1)};
 
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-	auto tracks = Track::getLastAdded(LmsApp->getDboSession(), after, 5);
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	const auto tracks {Track::getLastAdded(LmsApp->getDbSession(), after, 5)};
 
 	_recentlyAddedContainer->clear();
 	addEntries(_recentlyAddedContainer, tracks);
@@ -86,8 +86,8 @@ TracksInfo::refreshRecentlyAdded()
 void
 TracksInfo::refreshMostPlayed()
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-	auto tracks = LmsApp->getUser()->getPlayedTrackList()->getTopTracks(5);
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	const auto tracks {LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession())->getTopTracks(5)};
 
 	_mostPlayedContainer->clear();
 	addEntries(_mostPlayedContainer, tracks);

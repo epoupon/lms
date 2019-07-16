@@ -24,6 +24,7 @@
 #include "database/Artist.hpp"
 #include "database/SimilaritySettings.hpp"
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackFeatures.hpp"
 #include "som/DataNormalizer.hpp"
@@ -43,9 +44,9 @@ using FeatureInfoMap = std::map<std::string, FeatureInfo>;
 
 static
 FeatureInfoMap
-getFeatureInfoMap(Wt::Dbo::Session& session)
+getFeatureInfoMap(Database::Session& session)
 {
-	Wt::Dbo::Transaction transaction {session};
+	auto transaction {session.createSharedTransaction()};
 
 	auto settings {Database::SimilaritySettings::get(session)};
 
@@ -68,7 +69,7 @@ getFeatureInfoMapNbDimensions(const FeatureInfoMap& featureInfoMap)
 
 static
 boost::optional<SOM::InputVector>
-getInputVectorFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, const FeatureInfoMap& featuresInfo, std::size_t nbDimensions)
+getInputVectorFromTrack(Database::Session& session, Database::IdType trackId, const FeatureInfoMap& featuresInfo, std::size_t nbDimensions)
 {
 	boost::optional<SOM::InputVector> res {SOM::InputVector {nbDimensions}};
 
@@ -76,7 +77,7 @@ getInputVectorFromTrack(Wt::Dbo::Session& session, Database::IdType trackId, con
 	for (auto itFeatureInfo : featuresInfo)
 		features[itFeatureInfo.first] = {};
 
-	Wt::Dbo::Transaction transaction {session};
+	auto transaction {session.createSharedTransaction()};
 
 	Database::Track::pointer track {Database::Track::getById(session, trackId)};
 	if (!track)
@@ -119,22 +120,27 @@ getInputVectorWeights(const FeatureInfoMap& featuresInfo, std::size_t nbDimensio
 	return weights;
 }
 
-FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, std::function<bool()> stopRequested)
+FeaturesSearcher::FeaturesSearcher(Database::Session& session, std::function<bool()> stopRequested)
 {
 	LMS_LOG(SIMILARITY, INFO) << "Constructing features searcher...";
 
-	Wt::Dbo::Transaction transaction {session};
+	std::size_t nbDimensions;
+	FeatureInfoMap featuresInfo;
+	std::vector<Database::IdType> trackIds;
 
-	FeatureInfoMap featuresInfo {getFeatureInfoMap(session)};
-	std::size_t nbDimensions {getFeatureInfoMapNbDimensions(featuresInfo)};
+	{
+		auto transaction {session.createSharedTransaction()};
 
-	LMS_LOG(SIMILARITY, DEBUG) << "Features dimension = " << nbDimensions;
+		featuresInfo = getFeatureInfoMap(session);
+		nbDimensions = getFeatureInfoMapNbDimensions(featuresInfo);
 
-	LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features...";
-	std::vector<Database::IdType> trackIds {Database::Track::getAllIdsWithFeatures(session)};
-	LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features DONE";
+		LMS_LOG(SIMILARITY, DEBUG) << "Features dimension = " << nbDimensions;
 
-	transaction.commit();
+		LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features...";
+		trackIds = Database::Track::getAllIdsWithFeatures(session);
+		LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features DONE";
+
+	}
 
 	std::vector<SOM::InputVector> samples;
 	std::vector<Database::IdType> samplesTrackIds;
@@ -209,7 +215,7 @@ FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, std::function<bool
 	LMS_LOG(SIMILARITY, INFO) << "Successfully constructed features searcher";
 }
 
-FeaturesSearcher::FeaturesSearcher(Wt::Dbo::Session& session, FeaturesCache cache, std::function<bool()> stopRequested)
+FeaturesSearcher::FeaturesSearcher(Database::Session& session, FeaturesCache cache, std::function<bool()> stopRequested)
 {
 	LMS_LOG(SIMILARITY, INFO) << "Constructing features searcher from cache...";
 
@@ -261,7 +267,7 @@ FeaturesSearcher::getSimilarArtists(Database::IdType artistId, std::size_t maxCo
 }
 
 void
-FeaturesSearcher::dump(Wt::Dbo::Session& session, std::ostream& os) const
+FeaturesSearcher::dump(Database::Session& session, std::ostream& os) const
 {
 	if (!isValid())
 	{
@@ -273,7 +279,7 @@ FeaturesSearcher::dump(Wt::Dbo::Session& session, std::ostream& os) const
 	os << "Network size: " << _network->getWidth() << " * " << _network->getHeight() << std::endl;
 	os << "Ref vectors median distance = " << _networkRefVectorsDistanceMedian << std::endl;
 
-	Wt::Dbo::Transaction transaction(session);
+	auto transaction {session.createSharedTransaction()};
 
 	for (SOM::Coordinate y {}; y < _network->getHeight(); ++y)
 	{
@@ -319,7 +325,7 @@ FeaturesSearcher::toCache() const
 }
 
 void
-FeaturesSearcher::init(Wt::Dbo::Session& session,
+FeaturesSearcher::init(Database::Session& session,
 			SOM::Network network,
 			std::map<Database::IdType,
 			std::set<SOM::Position>> tracksPosition,
@@ -342,12 +348,12 @@ FeaturesSearcher::init(Wt::Dbo::Session& session,
 		if (stopRequested())
 			return;
 
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		Database::IdType trackId {itTrackCoord.first};
 		const std::set<SOM::Position>& positionSet {itTrackCoord.second};
 
-		Database::Track::pointer track {Database::Track::getById(session, trackId)};
+		const Database::Track::pointer track {Database::Track::getById(session, trackId)};
 		if (!track)
 			continue;
 

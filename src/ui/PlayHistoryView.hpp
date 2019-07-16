@@ -23,8 +23,6 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
-#include "database/Types.hpp"
-
 namespace UserInterface {
 
 class PlayHistory : public Wt::WTemplate

@@ -23,6 +23,7 @@
 
 namespace Database {
 
+class Session;
 class SimilaritySettings;
 
 class SimilaritySettingsFeature :  public Wt::Dbo::Dbo<SimilaritySettingsFeature>
@@ -33,7 +34,7 @@ class SimilaritySettingsFeature :  public Wt::Dbo::Dbo<SimilaritySettingsFeature
 		SimilaritySettingsFeature() = default;
 		SimilaritySettingsFeature(Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight);
 
-		static pointer create(Wt::Dbo::Session& session, Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight = 1);
+		static pointer create(Session& session, Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight = 1);
 
 		const std::string&	getName() const { return _name; } ;
 		std::size_t 		getNbDimensions() const { return static_cast<std::size_t>(_nbDimensions); }
@@ -70,7 +71,8 @@ class SimilaritySettings : public Wt::Dbo::Dbo<SimilaritySettings>
 		using pointer = Wt::Dbo::ptr<SimilaritySettings>;
 
 		// Utils
-		static pointer get(Wt::Dbo::Session& session);
+		static void init(Session& session);
+		static pointer get(Session& session);
 
 		// Accessors Read
 		std::size_t		getVersion() const { return _settingsVersion; }

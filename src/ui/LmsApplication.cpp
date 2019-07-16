@@ -55,9 +55,9 @@
 namespace UserInterface {
 
 std::unique_ptr<Wt::WApplication>
-LmsApplication::create(const Wt::WEnvironment& env, Wt::Dbo::SqlConnectionPool& connectionPool, LmsApplicationGroupContainer& appGroups)
+LmsApplication::create(const Wt::WEnvironment& env, Database::Database& db, LmsApplicationGroupContainer& appGroups)
 {
-	return std::make_unique<LmsApplication>(env, connectionPool, appGroups);
+	return std::make_unique<LmsApplication>(env, db.createSession(), appGroups);
 }
 
 LmsApplication*
@@ -67,11 +67,11 @@ LmsApplication::instance()
 }
 
 LmsApplication::LmsApplication(const Wt::WEnvironment& env,
-		Wt::Dbo::SqlConnectionPool& connectionPool,
+		std::unique_ptr<Database::Session> dbSession,
 		LmsApplicationGroupContainer& appGroups)
-: Wt::WApplication(env),
-  _db(connectionPool),
-  _appGroups(appGroups)
+: Wt::WApplication {env},
+  _dbSession {std::move(dbSession)},
+  _appGroups {appGroups}
 {
 	auto  bootstrapTheme = std::make_unique<Wt::WBootstrapTheme>();
 	bootstrapTheme->setVersion(Wt::BootstrapVersion::v3);
@@ -116,12 +116,14 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 
 	setTitle("LMS");
 
-	// If here is no account in the database, launch the first connection wizard
-	bool firstConnection;
-	{
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	// Handle Media Scanner events and other session events
+	enableUpdates(true);
 
-		firstConnection = (Database::User::getAll(LmsApp->getDboSession()).size() == 0);
+	// If here is no account in the database, launch the first connection wizard
+	bool firstConnection {};
+	{
+		auto transaction {_dbSession->createSharedTransaction()};
+		firstConnection = Database::User::getAll(*_dbSession).empty();
 	}
 
 	LMS_LOG(UI, DEBUG) << "Creating root widget. First connection = " << firstConnection;
@@ -132,7 +134,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	}
 	else
 	{
-		LmsApp->getDb().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
+		LmsApp->getDbSession().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
 		_auth = root()->addNew<Auth>();
 	}
 }
@@ -260,7 +262,7 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
 
-	for (auto& view : views)
+	for (const auto& view : views)
 	{
 		if (wApp->internalPathMatches(view.path))
 		{
@@ -284,46 +286,46 @@ LmsApplication::getApplicationGroup()
 void
 LmsApplication::handleAuthEvent()
 {
+	if (!getDbSession().getLogin().loggedIn())
+	{
+		LMS_LOG(UI, INFO) << "User '" << _userIdentity << " 'logged out, session = " << sessionId();
+
+		goHomeAndQuit();
+		return;
+	}
+
 	try
 	{
-		if (!getDb().getLogin().loggedIn())
+//	post([this]
+//	{
+		_userIdentity = getAuthUser().identity(Wt::Auth::Identity::LoginName);
+		const LmsApplicationInfo info {LmsApplicationInfo::fromEnvironment(environment())};
+
+		LMS_LOG(UI, INFO) << "User '" << _userIdentity << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent() << ", session = " <<  sessionId();
+		getApplicationGroup().join(info);
+
+		getApplicationGroup().postOthers([info]
 		{
-			LMS_LOG(UI, INFO) << "User '" << _userIdentity << " 'logged out, session = " << sessionId();
+			LmsApp->getEvents().appOpen(info);
+		});
 
-			goHomeAndQuit();
-			return;
-		}
-		else
-		{
-			_userIdentity = getAuthUser().identity(Wt::Auth::Identity::LoginName);
-			LmsApplicationInfo info = LmsApplicationInfo::fromEnvironment(environment());
-
-			LMS_LOG(UI, INFO) << "User '" << _userIdentity << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent() << ", session = " <<  sessionId();
-			getApplicationGroup().join(info);
-
-			getApplicationGroup().postOthers([info]
-			{
-				LmsApp->getEvents().appOpen(info);
-			});
-
-			createHome();
-		}
+		createHome();
+		triggerUpdate();
+//	});
 	}
 	catch (std::exception& e)
 	{
 		LMS_LOG(UI, ERROR) << "Error while handling auth event: " << e.what();
-		throw LmsException("Internal error"); // Do not put details here at it appears on the user rendered html
+		throw LmsException {"Internal error"}; // Do not put details here at it appears on the user rendered html
 	}
 }
 
 void
 LmsApplication::createHome()
 {
-	// Handle Media Scanner events and other session events
-	enableUpdates(true);
 
 	{
-		Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
+		auto transaction {_dbSession->createSharedTransaction()};
 		_isAdmin = LmsApp->getUser()->isAdmin();
 	}
 
@@ -332,14 +334,14 @@ LmsApplication::createHome()
 
 	setConfirmCloseMessage(Wt::WString::tr("Lms.quit-confirm"));
 
-	Wt::WTemplate* main = root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.template")));
+	Wt::WTemplate* main {root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.template")))};
 
 	// Navbar
 	Wt::WNavigationBar* navbar = main->bindNew<Wt::WNavigationBar>("navbar-top");
 	navbar->setTitle("LMS", Wt::WLink(Wt::LinkType::InternalPath, "/artists"));
 	navbar->setResponsive(true);
 
-	Wt::WMenu* menu = navbar->addMenu(std::make_unique<Wt::WMenu>());
+	Wt::WMenu* menu {navbar->addMenu(std::make_unique<Wt::WMenu>())};
 	{
 		auto menuItem = menu->insertItem(0, Wt::WString::tr("Lms.Explore.artists"));
 		menuItem->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/artists"));
@@ -417,14 +419,14 @@ LmsApplication::createHome()
 		mainStack->addNew<UserView>();
 	}
 
-	explore->tracksAdd.connect([=] (std::vector<Database::Track::pointer> tracks)
+	explore->tracksAdd.connect([=] (const std::vector<Database::IdType>& trackIds)
 	{
-		playqueue->addTracks(tracks);
+		playqueue->addTracks(trackIds);
 	});
 
-	explore->tracksPlay.connect([=] (std::vector<Database::Track::pointer> tracks)
+	explore->tracksPlay.connect([=] (const std::vector<Database::IdType>& trackIds)
 	{
-		playqueue->playTracks(tracks);
+		playqueue->playTracks(trackIds);
 	});
 
 
@@ -459,7 +461,7 @@ LmsApplication::createHome()
 
 	// Events from MediaScanner
 	{
-		std::string sessionId = LmsApp->sessionId();
+		const std::string sessionId {LmsApp->sessionId()};
 		getService<Scanner::MediaScanner>()->scanComplete().connect(this, [=] (Scanner::MediaScanner::Stats stats)
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
@@ -551,7 +553,7 @@ static std::string msgTypeToString(MsgType type)
 void
 LmsApplication::post(std::function<void()> func)
 {
-	Wt::WServer::instance()->post(LmsApp->sessionId(), func);
+	Wt::WServer::instance()->post(LmsApp->sessionId(), std::move(func));
 }
 
 static std::string escape(std::string str)

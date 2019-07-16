@@ -22,6 +22,7 @@
 #include <chrono>
 #include <list>
 #include <map>
+#include <random>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -104,4 +105,12 @@ constexpr const T& clamp( T v, T lo, T hi, Compare comp = {})
 	return comp(v, lo) ? lo : comp(hi, v) ? hi : v;
 }
 
+template <typename Container>
+void
+shuffleContainer(Container& container)
+{
+	auto now {std::chrono::system_clock::now()};
+	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
+	std::shuffle(std::begin(container), std::end(container), randGenerator);
+}
 

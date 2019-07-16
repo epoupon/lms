@@ -49,43 +49,41 @@ Filters::showDialog()
 
 	// Populate data
 	{
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		auto types = Database::ClusterType::getAll(LmsApp->getDboSession());
-
-		for (auto type : types)
+		const auto types {Database::ClusterType::getAll(LmsApp->getDbSession())};
+		for (const Database::ClusterType::pointer& type : types)
 			typeCombo->addItem(Wt::WString::fromUTF8(type->getName()));
 
 		if (!types.empty())
 		{
-			auto values = types.front()->getClusters();
+			const auto values {types.front()->getClusters()};
 
-			for (auto value : values)
+			for (const Database::Cluster::pointer& value : values)
 			{
 				if (_filterIds.find(value.id()) == _filterIds.end())
 					valueCombo->addItem(Wt::WString::fromUTF8(value->getName()));
 			}
 		}
-
 	}
 
-	typeCombo->changed().connect(std::bind([=]
+	typeCombo->changed().connect([=]
 	{
-		auto name = typeCombo->valueText().toUTF8();
+		const std::string name {typeCombo->valueText().toUTF8()};
 
 		valueCombo->clear();
 
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		auto clusterType = Database::ClusterType::getByName(LmsApp->getDboSession(), name);
+		auto clusterType = Database::ClusterType::getByName(LmsApp->getDbSession(), name);
 
-		auto values = clusterType->getClusters();
-		for (auto value : values)
+		const auto values = clusterType->getClusters();
+		for (const Database::Cluster::pointer& value : values)
 		{
 			if (_filterIds.find(value.id()) == _filterIds.end())
 				valueCombo->addItem(Wt::WString::fromUTF8(value->getName()));
 		}
-	}));
+	});
 
 	dialog->setModal(true);
 	dialog->setMovable(false);
@@ -93,26 +91,26 @@ Filters::showDialog()
 	dialog->setResizable(false);
 	dialog->setClosable(false);
 
-	dialog->finished().connect(std::bind([=]
+	dialog->finished().connect([=]
 	{
 		if (dialog->result() != Wt::DialogCode::Accepted)
 			return;
 
-		auto type = typeCombo->valueText().toUTF8();
-		auto value = valueCombo->valueText().toUTF8();
+		const std::string type {typeCombo->valueText().toUTF8()};
+		const std::string value {valueCombo->valueText().toUTF8()};
 
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		auto clusterType = Database::ClusterType::getByName(LmsApp->getDboSession(), type);
+		Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(LmsApp->getDbSession(), type)};
 		if (!clusterType)
 			return;
 
-		auto cluster = clusterType->getCluster(value);
+		Database::Cluster::pointer cluster {clusterType->getCluster(value)};
 		if (!cluster)
 			return;
 
 		add(cluster.id());
-	}));
+	});
 
 	dialog->show();
 }
@@ -120,17 +118,17 @@ Filters::showDialog()
 void
 Filters::add(Database::IdType clusterId)
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto cluster = Database::Cluster::getById(LmsApp->getDboSession(), clusterId);
+	Database::Cluster::pointer cluster {Database::Cluster::getById(LmsApp->getDbSession(), clusterId)};
 	if (!cluster)
 		return;
 
-	auto res = _filterIds.insert(clusterId);
+	auto res {_filterIds.insert(clusterId)};
 	if (!res.second)
 		return;
 
-	auto filter = _filters->addWidget(LmsApp->createCluster(cluster, true));
+	auto filter {_filters->addWidget(LmsApp->createCluster(cluster, true))};
 	filter->clicked().connect(std::bind([=]
 	{
 		_filters->removeWidget(filter);

@@ -23,7 +23,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
-#include "database/DatabaseHandler.hpp"
+#include "database/Database.hpp"
 #include "database/TrackList.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
@@ -50,20 +50,33 @@ class ScopedFileDeleter final
 
 static
 void
-testSingleTrack(Wt::Dbo::Session& session)
+testRemoveDefaultEntries(Session& session)
+{
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		auto clusterTypes {ClusterType::getAll(session)};
+		for (auto& clusterType : clusterTypes)
+			clusterType.remove();
+	}
+}
+
+static
+void
+testSingleTrack(Session& session)
 {
 	IdType trackId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "MyTrackFile")};
 		CHECK(track);
-		session.flush();
+		CHECK(IdIsValid(track.id()));
 		trackId = track.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::getById(session, trackId)};
 		CHECK(track);
@@ -75,20 +88,19 @@ testSingleTrack(Wt::Dbo::Session& session)
 
 static
 void
-testSingleArtist(Wt::Dbo::Session& session)
+testSingleArtist(Session& session)
 {
 	IdType artistId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto artist {Artist::create(session, "MyArtist")};
 		CHECK(artist);
-		session.flush();
 		artistId = artist.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		CHECK(Artist::getAll(session).size() == 1);
 
@@ -98,7 +110,7 @@ testSingleArtist(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto artist {Artist::getById(session, artistId)};
 		CHECK(artist);
@@ -108,20 +120,19 @@ testSingleArtist(Wt::Dbo::Session& session)
 
 static
 void
-testSingleRelease(Wt::Dbo::Session& session)
+testSingleRelease(Session& session)
 {
 	IdType releaseId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto release {Release::create(session, "MyRelease")};
 		CHECK(release);
-		session.flush();
 		releaseId = release.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto releases {Release::getAllOrphans(session)};
 		CHECK(releases.size() == 1);
@@ -133,7 +144,7 @@ testSingleRelease(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto release {Release::getById(session, releaseId)};
 		CHECK(release);
@@ -143,24 +154,23 @@ testSingleRelease(Wt::Dbo::Session& session)
 
 static
 void
-testSingleCluster(Wt::Dbo::Session& session)
+testSingleCluster(Session& session)
 {
 	IdType clusterTypeId {};
 	IdType clusterId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto clusterType {ClusterType::create(session, "MyType")};
 		CHECK(clusterType);
 		auto cluster {Cluster::create(session, clusterType, "MyCluster")};
 		CHECK(cluster);
-		session.flush();
 		clusterTypeId = clusterType.id();
 		clusterId = cluster.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto clusters {Cluster::getAll(session)};
 		CHECK(clusters.size() == 1);
@@ -180,7 +190,7 @@ testSingleCluster(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto cluster {Cluster::getById(session, clusterId)};
 		CHECK(cluster);
@@ -191,7 +201,7 @@ testSingleCluster(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto clusterType {ClusterType::getById(session, clusterTypeId)};
 		CHECK(clusterType);
@@ -202,12 +212,12 @@ testSingleCluster(Wt::Dbo::Session& session)
 
 static
 void
-testSingleTrackSingleArtist(Wt::Dbo::Session& session)
+testSingleTrackSingleArtist(Session& session)
 {
 	IdType trackId {};
 	IdType artistId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "dummy")};
 		CHECK(track);
@@ -216,18 +226,17 @@ testSingleTrackSingleArtist(Wt::Dbo::Session& session)
 
 		auto trackArtistLink {TrackArtistLink::create(session, track, artist, TrackArtistLink::Type::Artist)};
 
-		session.flush();
 		trackId = track.id();
 		artistId = artist.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 		CHECK(Artist::getAllOrphans(session).empty());
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto track {Track::getById(session, trackId)};
 		CHECK(track);
@@ -249,7 +258,7 @@ testSingleTrackSingleArtist(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto artist {Artist::getById(session, artistId)};
 		CHECK(artist);
@@ -268,12 +277,12 @@ testSingleTrackSingleArtist(Wt::Dbo::Session& session)
 
 static
 void
-testSingleTrackSingleArtistMultiRoles(Wt::Dbo::Session& session)
+testSingleTrackSingleArtistMultiRoles(Session& session)
 {
 	IdType trackId {};
 	IdType artistId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "MyTrack")};
 		auto artist {Artist::create(session, "MyArtist")};
@@ -282,18 +291,17 @@ testSingleTrackSingleArtistMultiRoles(Wt::Dbo::Session& session)
 		TrackArtistLink::create(session, track, artist, TrackArtistLink::Type::ReleaseArtist);
 		TrackArtistLink::create(session, track, artist, TrackArtistLink::Type::Writer);
 
-		session.flush();
 		trackId = track.id();
 		artistId = artist.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 		CHECK(Artist::getAllOrphans(session).empty());
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto track {Track::getById(session, trackId)};
 		CHECK(track);
@@ -317,7 +325,7 @@ testSingleTrackSingleArtistMultiRoles(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto artist {Artist::getById(session, artistId)};
 		auto track {Track::getById(session, trackId)};
@@ -329,13 +337,13 @@ testSingleTrackSingleArtistMultiRoles(Wt::Dbo::Session& session)
 
 static
 void
-testSingleTrackMultiArtists(Wt::Dbo::Session& session)
+testSingleTrackMultiArtists(Session& session)
 {
 	IdType trackId {};
 	IdType artist1Id {};
 	IdType artist2Id {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "dummy")};
 		auto artist1 {Artist::create(session, "artist1")};
@@ -344,7 +352,6 @@ testSingleTrackMultiArtists(Wt::Dbo::Session& session)
 		TrackArtistLink::create(session, track, artist1, TrackArtistLink::Type::Artist);
 		TrackArtistLink::create(session, track, artist2, TrackArtistLink::Type::Artist);
 
-		session.flush();
 		trackId = track.id();
 		artist1Id = artist1.id();
 		artist2Id = artist2.id();
@@ -353,12 +360,12 @@ testSingleTrackMultiArtists(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 		CHECK(Artist::getAllOrphans(session).empty());
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto track {Track::getById(session, trackId)};
 		CHECK(track);
@@ -374,7 +381,7 @@ testSingleTrackMultiArtists(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto artist1 {Artist::getById(session, artist1Id)};
 		CHECK(artist1);
@@ -385,7 +392,6 @@ testSingleTrackMultiArtists(Wt::Dbo::Session& session)
 		auto artist2 {Artist::getById(session, artist2Id)};
 		CHECK(artist2);
 		CHECK(artist2->getTracks().front() == track);
-
 
 		CHECK(artist1->getTracks(TrackArtistLink::Type::ReleaseArtist).empty());
 		CHECK(artist1->getTracks(TrackArtistLink::Type::Artist).size() == 1);
@@ -400,12 +406,12 @@ testSingleTrackMultiArtists(Wt::Dbo::Session& session)
 
 static
 void
-testSingleTrackSingleRelease(Wt::Dbo::Session& session)
+testSingleTrackSingleRelease(Session& session)
 {
 	IdType trackId {};
 	IdType releaseId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "dummy")};
 		CHECK(track);
@@ -414,13 +420,12 @@ testSingleTrackSingleRelease(Wt::Dbo::Session& session)
 
 		track.modify()->setRelease(release);
 
-		session.flush();
 		trackId = track.id();
 		releaseId = release.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 		CHECK(Release::getAllOrphans(session).empty());
 
 		auto release {Release::getById(session, releaseId)};
@@ -431,7 +436,7 @@ testSingleTrackSingleRelease(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::getById(session, trackId)};
 		CHECK(track);
@@ -441,7 +446,7 @@ testSingleTrackSingleRelease(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		CHECK(Release::getAllOrphans(session).size() == 1);
 		auto release {Release::getById(session, releaseId)};
@@ -454,13 +459,13 @@ testSingleTrackSingleRelease(Wt::Dbo::Session& session)
 
 static
 void
-testSingleTrackSingleCluster(Wt::Dbo::Session& session)
+testSingleTrackSingleCluster(Session& session)
 {
 	IdType trackId {};
 	IdType clusterId {};
 	IdType clusterTypeId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "dummy")};
 		auto clusterType {ClusterType::create(session, "MyType")};
@@ -468,19 +473,18 @@ testSingleTrackSingleCluster(Wt::Dbo::Session& session)
 
 		cluster.modify()->addTrack(track);
 
-		session.flush();
 		trackId = track.id();
 		clusterTypeId = clusterType.id();
 		clusterId = cluster.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 		CHECK(Cluster::getAllOrphans(session).empty());
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto tracks {Track::getByFilter(session, {clusterId})};
 		CHECK(tracks.size() == 1);
@@ -492,7 +496,7 @@ testSingleTrackSingleCluster(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::getById(session, trackId)};
 		auto cluster {Cluster::getById(session, clusterId)};
@@ -506,14 +510,14 @@ testSingleTrackSingleCluster(Wt::Dbo::Session& session)
 
 static
 void
-testSingleTrackSingleReleaseSingleCluster(Wt::Dbo::Session& session)
+testSingleTrackSingleReleaseSingleCluster(Session& session)
 {
 	IdType trackId {};
 	IdType releaseId {};
 	IdType clusterId {};
 	IdType clusterTypeId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "MyTrackFile")};
 		auto release {Release::create(session, "MyRelease")};
@@ -523,7 +527,6 @@ testSingleTrackSingleReleaseSingleCluster(Wt::Dbo::Session& session)
 		track.modify()->setRelease(release);
 		cluster.modify()->addTrack(track);
 
-		session.flush();
 		trackId = track.id();
 		releaseId = release.id();
 		clusterTypeId = clusterType.id();
@@ -531,13 +534,13 @@ testSingleTrackSingleReleaseSingleCluster(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 		CHECK(Cluster::getAllOrphans(session).empty());
 		CHECK(Release::getAllOrphans(session).empty());
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto releases {Release::getByFilter(session, {clusterId})};
 		CHECK(releases.size() == 1);
@@ -549,7 +552,7 @@ testSingleTrackSingleReleaseSingleCluster(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto cluster {Cluster::getById(session, clusterId)};
 		CHECK(cluster->getReleasesCount() == 1);
@@ -557,7 +560,7 @@ testSingleTrackSingleReleaseSingleCluster(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::getById(session, trackId)};
 		auto release {Release::getById(session, releaseId)};
@@ -573,7 +576,7 @@ testSingleTrackSingleReleaseSingleCluster(Wt::Dbo::Session& session)
 
 static
 void
-testSingleTrackSingleArtistMultiClusters(Wt::Dbo::Session& session)
+testSingleTrackSingleArtistMultiClusters(Session& session)
 {
 	IdType trackId {};
 	IdType artistId {};
@@ -581,7 +584,7 @@ testSingleTrackSingleArtistMultiClusters(Wt::Dbo::Session& session)
 	IdType cluster2Id {};
 	IdType clusterTypeId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "MyTrackFile")};
 		auto artist {Artist::create(session, "MyArtist")};
@@ -592,7 +595,6 @@ testSingleTrackSingleArtistMultiClusters(Wt::Dbo::Session& session)
 		auto trackArtistLink {TrackArtistLink::create(session, track, artist, TrackArtistLink::Type::Artist)};
 		cluster1.modify()->addTrack(track);
 
-		session.flush();
 		trackId = track.id();
 		artistId = artist.id();
 		clusterTypeId = clusterType.id();
@@ -601,14 +603,14 @@ testSingleTrackSingleArtistMultiClusters(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 		CHECK(Cluster::getAllOrphans(session).empty());
 		CHECK(Release::getAllOrphans(session).empty());
 		CHECK(Artist::getAllOrphans(session).empty());
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto artists {Artist::getByFilter(session, {cluster1Id})};
 		CHECK(artists.size() == 1);
@@ -627,7 +629,7 @@ testSingleTrackSingleArtistMultiClusters(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto artists {Artist::getByFilter(session, {cluster1Id})};
 		CHECK(artists.size() == 1);
@@ -643,7 +645,7 @@ testSingleTrackSingleArtistMultiClusters(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::getById(session, trackId)};
 		auto artist {Artist::getById(session, artistId)};
@@ -661,14 +663,14 @@ testSingleTrackSingleArtistMultiClusters(Wt::Dbo::Session& session)
 
 static
 void
-testSingleTrackSingleArtistMultiRolesMultiClusters(Wt::Dbo::Session& session)
+testSingleTrackSingleArtistMultiRolesMultiClusters(Session& session)
 {
 	IdType trackId {};
 	IdType artistId {};
 	IdType clusterId {};
 	IdType clusterTypeId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "MyTrackFile")};
 		auto artist {Artist::create(session, "MyArtist")};
@@ -679,7 +681,6 @@ testSingleTrackSingleArtistMultiRolesMultiClusters(Wt::Dbo::Session& session)
 		TrackArtistLink::create(session, track, artist, TrackArtistLink::Type::ReleaseArtist);
 		cluster.modify()->addTrack(track);
 
-		session.flush();
 		trackId = track.id();
 		artistId = artist.id();
 		clusterTypeId = clusterType.id();
@@ -687,14 +688,14 @@ testSingleTrackSingleArtistMultiRolesMultiClusters(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 		CHECK(Cluster::getAllOrphans(session).empty());
 		CHECK(Release::getAllOrphans(session).empty());
 		CHECK(Artist::getAllOrphans(session).empty());
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto artists {Artist::getByFilter(session, {clusterId})};
 		CHECK(artists.size() == 1);
@@ -702,7 +703,7 @@ testSingleTrackSingleArtistMultiRolesMultiClusters(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::getById(session, trackId)};
 		auto artist {Artist::getById(session, artistId)};
@@ -718,14 +719,14 @@ testSingleTrackSingleArtistMultiRolesMultiClusters(Wt::Dbo::Session& session)
 
 static
 void
-testMultiTracksSingleArtistMultiClusters(Wt::Dbo::Session& session)
+testMultiTracksSingleArtistMultiClusters(Session& session)
 {
 	const std::size_t nbTracks {10};
 	const std::size_t nbClusters {5};
 	IdType artistId {};
 	IdType clusterTypeId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto artist {Artist::create(session, "MyArtist")};
 
@@ -744,19 +745,18 @@ testMultiTracksSingleArtistMultiClusters(Wt::Dbo::Session& session)
 				cluster.modify()->addTrack(track);
 		}
 
-		session.flush();
 		artistId = artist.id();
 		clusterTypeId = clusterType.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 		CHECK(Cluster::getAllOrphans(session).empty());
 		CHECK(Artist::getAllOrphans(session).empty());
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		std::vector<Cluster::pointer> clusters {Cluster::getAll(session)};
 		CHECK(clusters.size() == nbClusters);
@@ -770,7 +770,7 @@ testMultiTracksSingleArtistMultiClusters(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		std::vector<Cluster::pointer> clusters {Cluster::getAll(session)};
 		for (auto& cluster : clusters)
@@ -790,13 +790,13 @@ testMultiTracksSingleArtistMultiClusters(Wt::Dbo::Session& session)
 
 static
 void
-testMultiTracksSingleArtistSingleRelease(Wt::Dbo::Session& session)
+testMultiTracksSingleArtistSingleRelease(Session& session)
 {
 	const std::size_t nbTracks {10};
 	IdType artistId {};
 	IdType releaseId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto artist {Artist::create(session, "MyArtist")};
 		auto release {Release::create(session, "MyRelease")};
@@ -808,19 +808,18 @@ testMultiTracksSingleArtistSingleRelease(Wt::Dbo::Session& session)
 			track.modify()->setRelease(release);
 		}
 
-		session.flush();
 		artistId = artist.id();
 		releaseId = release.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 		CHECK(Release::getAllOrphans(session).empty());
 		CHECK(Artist::getAllOrphans(session).empty());
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto artist {Artist::getById(session, artistId)};
 		CHECK(artist);
@@ -834,7 +833,7 @@ testMultiTracksSingleArtistSingleRelease(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		std::vector<Track::pointer> tracks {Track::getAll(session)};
 		for (auto& track : tracks)
@@ -849,13 +848,13 @@ testMultiTracksSingleArtistSingleRelease(Wt::Dbo::Session& session)
 
 static
 void
-testSingleTrackSingleReleaseSingleArtist(Wt::Dbo::Session& session)
+testSingleTrackSingleReleaseSingleArtist(Session& session)
 {
 	IdType trackId {};
 	IdType releaseId {};
 	IdType artistId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "dummy")};
 		auto release {Release::create(session, "dummy")};
@@ -864,14 +863,13 @@ testSingleTrackSingleReleaseSingleArtist(Wt::Dbo::Session& session)
 		auto trackArtistLink {TrackArtistLink::create(session, track, artist, TrackArtistLink::Type::Artist)};
 		track.modify()->setRelease(release);
 
-		session.flush();
 		trackId = track.id();
 		releaseId = release.id();
 		artistId = artist.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto artist {Artist::getById(session, artistId)};
 		CHECK(artist);
@@ -897,7 +895,7 @@ testSingleTrackSingleReleaseSingleArtist(Wt::Dbo::Session& session)
 
 static
 void
-testSingleTrackSingleReleaseSingleArtistSingleCluster(Wt::Dbo::Session& session)
+testSingleTrackSingleReleaseSingleArtistSingleCluster(Session& session)
 {
 	IdType trackId {};
 	IdType releaseId {};
@@ -906,7 +904,7 @@ testSingleTrackSingleReleaseSingleArtistSingleCluster(Wt::Dbo::Session& session)
 	IdType clusterTypeId {};
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "MyTrackFile")};
 		auto release {Release::create(session, "MyRelease")};
@@ -919,7 +917,6 @@ testSingleTrackSingleReleaseSingleArtistSingleCluster(Wt::Dbo::Session& session)
 		track.modify()->setRelease(release);
 		cluster.modify()->addTrack(track);
 
-		session.flush();
 		trackId = track.id();
 		releaseId = release.id();
 		artistId = artist.id();
@@ -928,14 +925,15 @@ testSingleTrackSingleReleaseSingleArtistSingleCluster(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
+
 		CHECK(Cluster::getAllOrphans(session).empty());
 		CHECK(Artist::getAllOrphans(session).empty());
 		CHECK(Release::getAllOrphans(session).empty());
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto artists {Artist::getByFilter(session, {clusterId})};
 		CHECK(artists.size() == 1);
@@ -952,7 +950,7 @@ testSingleTrackSingleReleaseSingleArtistSingleCluster(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto artist {Artist::getById(session, artistId)};
 		auto release {Release::getById(session, releaseId)};
@@ -970,7 +968,7 @@ testSingleTrackSingleReleaseSingleArtistSingleCluster(Wt::Dbo::Session& session)
 
 static
 void
-testSingleTrackSingleReleaseSingleArtistMultiClusters(Wt::Dbo::Session& session)
+testSingleTrackSingleReleaseSingleArtistMultiClusters(Session& session)
 {
 	IdType trackId {};
 	IdType releaseId {};
@@ -980,7 +978,7 @@ testSingleTrackSingleReleaseSingleArtistMultiClusters(Wt::Dbo::Session& session)
 	IdType clusterTypeId {};
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "MyTrackFile")};
 		auto release {Release::create(session, "MyRelease")};
@@ -995,7 +993,6 @@ testSingleTrackSingleReleaseSingleArtistMultiClusters(Wt::Dbo::Session& session)
 		cluster1.modify()->addTrack(track);
 		cluster2.modify()->addTrack(track);
 
-		session.flush();
 		trackId = track.id();
 		releaseId = release.id();
 		artistId = artist.id();
@@ -1005,7 +1002,7 @@ testSingleTrackSingleReleaseSingleArtistMultiClusters(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto artist {Artist::getById(session, artistId)};
 		auto releases {artist->getReleases()};
@@ -1018,7 +1015,7 @@ testSingleTrackSingleReleaseSingleArtistMultiClusters(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto artist {Artist::getById(session, artistId)};
 		auto release {Release::getById(session, releaseId)};
@@ -1038,25 +1035,59 @@ testSingleTrackSingleReleaseSingleArtistMultiClusters(Wt::Dbo::Session& session)
 
 static
 void
-testSingleStarredArtist(Wt::Dbo::Session& session)
+testSingleUser(Session& session)
+{
+	IdType userId {};
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		auto user {User::create(session)};
+		CHECK(user);
+
+		userId = user.id();
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		auto user {User::getById(session, userId)};
+		CHECK(user);
+		CHECK(user->getPlayedTrackList(session)->getCount() == 0);
+		CHECK(user->getPlayedTrackList(session)->getTopTracks(1).empty());
+		CHECK(user->getPlayedTrackList(session)->getTopArtists(1).empty());
+		CHECK(user->getPlayedTrackList(session)->getTopReleases(1).empty());
+		CHECK(user->getQueuedTrackList(session)->getCount() == 0);
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		auto user {User::getById(session, userId)};
+		CHECK(user);
+		user.remove();
+	}
+}
+
+static
+void
+testSingleStarredArtist(Session& session)
 {
 	IdType artistId {};
 	IdType userId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto artist {Artist::create(session, "MyArtist")};
 		CHECK(artist);
 		auto user {User::create(session)};
 		CHECK(user);
 
-		session.flush();
 		artistId = artist.id();
 		userId = user.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto user {User::getById(session, userId)};
 		CHECK(user);
@@ -1067,7 +1098,7 @@ testSingleStarredArtist(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto user {User::getById(session, userId)};
 		CHECK(user);
@@ -1080,7 +1111,7 @@ testSingleStarredArtist(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto user {User::getById(session, userId)};
 		CHECK(user);
@@ -1094,25 +1125,24 @@ testSingleStarredArtist(Wt::Dbo::Session& session)
 
 static
 void
-testSingleStarredRelease(Wt::Dbo::Session& session)
+testSingleStarredRelease(Session& session)
 {
 	IdType releaseId {};
 	IdType userId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto release {Release::create(session, "MyRelease")};
 		CHECK(release);
 		auto user {User::create(session)};
 		CHECK(user);
 
-		session.flush();
 		releaseId = release.id();
 		userId = user.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto user {User::getById(session, userId)};
 		CHECK(user);
@@ -1123,7 +1153,7 @@ testSingleStarredRelease(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto user {User::getById(session, userId)};
 		CHECK(user);
@@ -1136,7 +1166,7 @@ testSingleStarredRelease(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto user {User::getById(session, userId)};
 		CHECK(user);
@@ -1150,25 +1180,24 @@ testSingleStarredRelease(Wt::Dbo::Session& session)
 
 static
 void
-testSingleStarredTrack(Wt::Dbo::Session& session)
+testSingleStarredTrack(Session& session)
 {
 	IdType trackId {};
 	IdType userId {};
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto track {Track::create(session, "MyTrackFile")};
 		CHECK(track);
 		auto user {User::create(session)};
 		CHECK(user);
 
-		session.flush();
 		trackId = track.id();
 		userId = user.id();
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto user {User::getById(session, userId)};
 		CHECK(user);
@@ -1179,7 +1208,7 @@ testSingleStarredTrack(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createSharedTransaction()};
 
 		auto user {User::getById(session, userId)};
 		CHECK(user);
@@ -1192,7 +1221,7 @@ testSingleStarredTrack(Wt::Dbo::Session& session)
 	}
 
 	{
-		Wt::Dbo::Transaction transaction {session};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto user {User::getById(session, userId)};
 		CHECK(user);
@@ -1206,9 +1235,9 @@ testSingleStarredTrack(Wt::Dbo::Session& session)
 
 static
 void
-testDatabaseEmpty(Wt::Dbo::Session& session)
+testDatabaseEmpty(Session& session)
 {
-	Wt::Dbo::Transaction transaction {session};
+	auto uniqueTransaction {session.createUniqueTransaction()};
 
 	CHECK(Artist::getAll(session).empty());
 	CHECK(Cluster::getAll(session).empty());
@@ -1222,53 +1251,60 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		boost::filesystem::path tmpFile {boost::filesystem::temp_directory_path() / boost::filesystem::unique_path()};
+		const boost::filesystem::path tmpFile {boost::filesystem::temp_directory_path() / boost::filesystem::unique_path()};
 		ScopedFileDeleter tmpFileDeleter {tmpFile};
 
 		std::cout << "Database test file: '" << tmpFile.string() << "'" << std::endl;
 
-		std::unique_ptr<Wt::Dbo::SqlConnectionPool> connectionPool{ Handler::createConnectionPool(tmpFile) };
-
-		Handler db {*connectionPool};
-		Wt::Dbo::Session& session {db.getSession()};
-
-		auto runTest = [&session](const std::string& name, std::function<void(Wt::Dbo::Session&)> testFunc)
+		for (std::size_t i = 0; i < 2; ++i)
 		{
-			std::cout << "Running test '" << name << "'..." << std::endl;
-			testFunc(session);
-			testDatabaseEmpty(session);
-			std::cout << "Running test '" << name << "': SUCCESS" << std::endl;
-		};
+			Database::Database db {tmpFile};
+			std::unique_ptr<Session> session {db.createSession()};
+
+			auto runTest = [&session](const std::string& name, std::function<void(Session&)> testFunc)
+			{
+				std::cout << "Running test '" << name << "'..." << std::endl;
+				testFunc(*session);
+				testDatabaseEmpty(*session);
+				std::cout << "Running test '" << name << "': SUCCESS" << std::endl;
+			};
 
 #define RUN_TEST(test)	runTest(#test, test)
 
-		RUN_TEST(testSingleTrack);
-		RUN_TEST(testSingleArtist);
-		RUN_TEST(testSingleRelease);
-		RUN_TEST(testSingleCluster);
+			// Special test to remove any default created entries
+			RUN_TEST(testRemoveDefaultEntries);
 
-		RUN_TEST(testSingleTrackSingleArtist);
-		RUN_TEST(testSingleTrackSingleArtistMultiRoles);
-		RUN_TEST(testSingleTrackMultiArtists);
+			RUN_TEST(testSingleTrack);
+			RUN_TEST(testSingleArtist);
+			RUN_TEST(testSingleRelease);
+			RUN_TEST(testSingleCluster);
 
-		RUN_TEST(testSingleTrackSingleRelease);
+			RUN_TEST(testSingleTrackSingleArtist);
+			RUN_TEST(testSingleTrackSingleArtistMultiRoles);
+			RUN_TEST(testSingleTrackMultiArtists);
 
-		RUN_TEST(testSingleTrackSingleCluster);
+			RUN_TEST(testSingleTrackSingleRelease);
 
-		RUN_TEST(testSingleTrackSingleReleaseSingleCluster);
-		RUN_TEST(testSingleTrackSingleArtistMultiClusters);
-		RUN_TEST(testSingleTrackSingleArtistMultiRolesMultiClusters);
-		RUN_TEST(testMultiTracksSingleArtistMultiClusters);
-		RUN_TEST(testMultiTracksSingleArtistSingleRelease);
+			RUN_TEST(testSingleTrackSingleCluster);
 
-		RUN_TEST(testSingleTrackSingleReleaseSingleArtist);
+			RUN_TEST(testSingleTrackSingleReleaseSingleCluster);
+			RUN_TEST(testSingleTrackSingleArtistMultiClusters);
+			RUN_TEST(testSingleTrackSingleArtistMultiRolesMultiClusters);
+			RUN_TEST(testMultiTracksSingleArtistMultiClusters);
+			RUN_TEST(testMultiTracksSingleArtistSingleRelease);
 
-		RUN_TEST(testSingleTrackSingleReleaseSingleArtistSingleCluster);
-		RUN_TEST(testSingleTrackSingleReleaseSingleArtistMultiClusters);
+			RUN_TEST(testSingleTrackSingleReleaseSingleArtist);
 
-		RUN_TEST(testSingleStarredArtist);
-		RUN_TEST(testSingleStarredRelease);
-		RUN_TEST(testSingleStarredTrack);
+			RUN_TEST(testSingleTrackSingleReleaseSingleArtistSingleCluster);
+			RUN_TEST(testSingleTrackSingleReleaseSingleArtistMultiClusters);
+
+			RUN_TEST(testSingleUser);
+
+			RUN_TEST(testSingleStarredArtist);
+			RUN_TEST(testSingleStarredRelease);
+			RUN_TEST(testSingleStarredTrack);
+
+		}
 	}
 	catch (std::exception& e)
 	{

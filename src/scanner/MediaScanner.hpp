@@ -29,7 +29,7 @@
 #include <boost/asio/system_timer.hpp>
 
 #include "database/ScanSettings.hpp"
-#include "database/DatabaseHandler.hpp"
+#include "database/Session.hpp"
 #include "metadata/TagLibParser.hpp"
 
 #include "MediaScannerAddon.hpp"
@@ -39,7 +39,7 @@ namespace Scanner {
 class MediaScanner
 {
 	public:
-		MediaScanner(Wt::Dbo::SqlConnectionPool& connectionPool);
+		MediaScanner(std::unique_ptr<Database::Session> dbSession);
 
 		void setAddon(MediaScannerAddon& addon);
 
@@ -120,6 +120,7 @@ class MediaScanner
 		void removeOrphanEntries();
 		void checkDuplicatedAudioFiles(Stats& stats);
 		void scanAudioFile(const boost::filesystem::path& file, bool forceScan, Stats& stats);
+		Database::IdType doScanAudioFile(const boost::filesystem::path& file, Stats& stats);
 		void notifyInProgressIfNeeded(Stats& stats);
 		void notifyInProgress(Stats& stats);
 
@@ -130,7 +131,7 @@ class MediaScanner
 		Wt::Signal<Stats>	_sigScanInProgress;
 		std::chrono::system_clock::time_point _lastScanInProgressEmit {};
 		Wt::Signal<Wt::WDateTime> _sigScheduled;
-		Database::Handler	_db;
+		std::unique_ptr<Database::Session>	_dbSession;
 		MetaData::TagLibParser 	_metadataParser;
 		std::vector<MediaScannerAddon*> _addons;
 

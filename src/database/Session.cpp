@@ -17,10 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "DatabaseHandler.hpp"
-
-#include <Wt/Dbo/FixedSqlConnectionPool.h>
-#include <Wt/Dbo/backend/Sqlite3.h>
+#include "Session.hpp"
 
 #include <Wt/Auth/Dbo/AuthInfo.h>
 #include <Wt/Auth/Dbo/UserDatabase.h>
@@ -43,6 +40,7 @@
 #include "TrackArtistLink.hpp"
 #include "TrackList.hpp"
 #include "TrackFeatures.hpp"
+#include "User.hpp"
 
 namespace Database {
 
@@ -60,13 +58,22 @@ class VersionInfo
 	public:
 		using pointer = Wt::Dbo::ptr<VersionInfo>;
 
-		static VersionInfo::pointer get(Wt::Dbo::Session& session)
+		static VersionInfo::pointer getOrCreate(Session& session)
 		{
-			pointer versionInfo {session.find<VersionInfo>()};
+			session.checkUniqueLocked();
+
+			pointer versionInfo {session.getDboSession().find<VersionInfo>()};
 			if (!versionInfo)
-				versionInfo = session.add(std::make_unique<VersionInfo>());
+				return session.getDboSession().add(std::make_unique<VersionInfo>());
 
 			return versionInfo;
+		}
+
+		static VersionInfo::pointer get(Session& session)
+		{
+			session.checkSharedLocked();
+
+			return session.getDboSession().find<VersionInfo>();
 		}
 
 		Version getVersion() const { return _version; }
@@ -82,18 +89,18 @@ class VersionInfo
 		int _version {LMS_DATABASE_VERSION};
 };
 
-static
 void
-doDatabaseMigrationIfNeeded(Wt::Dbo::Session& session)
+Session::doDatabaseMigrationIfNeeded()
 {
-	Wt::Dbo::Transaction transaction {session};
+	auto uniqueTransaction {createUniqueTransaction()};
 
 	static const std::string outdatedMsg {"Outdated database, please rebuild it (delete the .db file and restart)"};
 
 	Version version;
 	try
 	{
-		version = VersionInfo::get(session)->getVersion();
+		version = VersionInfo::getOrCreate(*this)->getVersion();
+		LMS_LOG(DB, INFO) << "Database version = " << version;
 		if (version == LMS_DATABASE_VERSION)
 			return;
 	}
@@ -109,30 +116,30 @@ doDatabaseMigrationIfNeeded(Wt::Dbo::Session& session)
 
 			LMS_LOG(DB, INFO) << "Migrating database from version 3...";
 
-			session.execute(R"(CREATE TABLE IF NOT EXISTS "user_artist_starred" (
+			_session.execute(R"(CREATE TABLE IF NOT EXISTS "user_artist_starred" (
 	"user_id" bigint,
 	"artist_id" bigint,
 	primary key ("user_id", "artist_id"),
 	constraint "fk_user_artist_starred_key1" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred,
 	constraint "fk_user_artist_starred_key2" foreign key ("artist_id") references "artist" ("id") deferrable initially deferred);)");
-			session.execute(R"(CREATE INDEX "user_artist_starred_user" on "user_artist_starred" ("user_id");)");
-			session.execute(R"(CREATE INDEX "user_artist_starred_artist" on "user_artist_starred" ("artist_id");)");
-			session.execute(R"(CREATE TABLE IF NOT EXISTS "user_release_starred" (
+			_session.execute(R"(CREATE INDEX "user_artist_starred_user" on "user_artist_starred" ("user_id");)");
+			_session.execute(R"(CREATE INDEX "user_artist_starred_artist" on "user_artist_starred" ("artist_id");)");
+			_session.execute(R"(CREATE TABLE IF NOT EXISTS "user_release_starred" (
 	"user_id" bigint,
 	"release_id" bigint,
 	primary key ("user_id", "release_id"),
 	constraint "fk_user_release_starred_key1" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred,
 	constraint "fk_user_release_starred_key2" foreign key ("release_id") references "release" ("id") on delete cascade deferrable initially deferred);)");
-			session.execute(R"(CREATE INDEX "user_release_starred_user" on "user_release_starred" ("user_id");)");
-			session.execute(R"(CREATE INDEX "user_release_starred_release" on "user_release_starred" ("release_id");)");
-			session.execute(R"(CREATE TABLE IF NOT EXISTS "user_track_starred" (
+			_session.execute(R"(CREATE INDEX "user_release_starred_user" on "user_release_starred" ("user_id");)");
+			_session.execute(R"(CREATE INDEX "user_release_starred_release" on "user_release_starred" ("release_id");)");
+			_session.execute(R"(CREATE TABLE IF NOT EXISTS "user_track_starred" (
 	"user_id" bigint,
 	"track_id" bigint,
 	primary key ("user_id", "track_id"),
 	constraint "fk_user_track_starred_key1" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred,
 	constraint "fk_user_track_starred_key2" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred);)");
-			session.execute(R"(CREATE INDEX "user_track_starred_user" on "user_track_starred" ("user_id");)");
-			session.execute(R"(CREATE INDEX "user_track_starred_track" on "user_track_starred" ("track_id");)");
+			_session.execute(R"(CREATE INDEX "user_track_starred_user" on "user_track_starred" ("user_id");)");
+			_session.execute(R"(CREATE INDEX "user_track_starred_track" on "user_track_starred" ("track_id");)");
 		break;
 
 		default:
@@ -140,12 +147,12 @@ doDatabaseMigrationIfNeeded(Wt::Dbo::Session& session)
 			throw LmsException {outdatedMsg};
 	}
 
-	VersionInfo::get(session).modify()->setVersion(LMS_DATABASE_VERSION);
+	VersionInfo::get(*this).modify()->setVersion(LMS_DATABASE_VERSION);
 }
 
 
 void
-Handler::configureAuth(void)
+Session::configureAuth(void)
 {
 	authService.setEmailVerificationEnabled(false);
 	authService.setAuthTokensEnabled(true, "lmsauth");
@@ -176,19 +183,20 @@ Handler::configureAuth(void)
 }
 
 const Wt::Auth::AuthService&
-Handler::getAuthService()
+Session::getAuthService()
 {
 	return authService;
 }
 
 const Wt::Auth::PasswordService&
-Handler::getPasswordService()
+Session::getPasswordService()
 {
 	return passwordService;
 }
 
 
-Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
+Session::Session(std::shared_timed_mutex& mutex, Wt::Dbo::SqlConnectionPool& connectionPool)
+: _mutex {mutex}
 {
 	_session.setConnectionPool(connectionPool);
 
@@ -212,9 +220,76 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 	_session.mapClass<AuthInfo::AuthTokenType>("auth_token");
 	_session.mapClass<User>("user");
 
-	try {
-		Wt::Dbo::Transaction transaction {_session};
+	_users = std::make_unique<UserDatabase>(_session);
+}
 
+// TODO make this per database
+static thread_local bool hasSharedLock {false};
+static thread_local bool hasUniqueLock {false};
+
+UniqueTransaction::UniqueTransaction(std::shared_timed_mutex& mutex, Wt::Dbo::Session& session)
+: _lock {mutex},
+ _transaction {session}
+{
+	assert(!hasSharedLock);
+	assert(!hasUniqueLock);
+	hasUniqueLock = true;
+	LMS_LOG(DB, DEBUG) << "UniqueTransaction ACQUIRED";
+}
+
+UniqueTransaction::~UniqueTransaction()
+{
+	assert(hasUniqueLock);
+	hasUniqueLock = false;
+	LMS_LOG(DB, DEBUG) << "UniqueTransaction RELEASED";
+}
+
+SharedTransaction::SharedTransaction(std::shared_timed_mutex& mutex, Wt::Dbo::Session& session)
+: _lock {mutex},
+ _transaction {session}
+{
+	assert(!hasSharedLock);
+	assert(!hasUniqueLock);
+	hasSharedLock = true;
+	LMS_LOG(DB, DEBUG) << "SharedTransaction ACQUIRED";
+}
+
+SharedTransaction::~SharedTransaction()
+{
+	assert(hasSharedLock);
+	hasSharedLock = false;
+	LMS_LOG(DB, DEBUG) << "SharedTransaction RELEASED";
+}
+
+void
+Session::checkUniqueLocked()
+{
+	assert(hasUniqueLock);
+}
+
+void
+Session::checkSharedLocked()
+{
+	assert(hasUniqueLock || hasSharedLock);
+}
+
+std::unique_ptr<UniqueTransaction>
+Session::createUniqueTransaction()
+{
+	return std::unique_ptr<UniqueTransaction>(new UniqueTransaction{_mutex, _session});
+}
+
+std::unique_ptr<SharedTransaction>
+Session::createSharedTransaction()
+{
+	return std::unique_ptr<SharedTransaction>(new SharedTransaction{_mutex, _session});
+}
+
+void
+Session::prepareTables()
+{
+	// Creation case
+	try {
 	        _session.createTables();
 
 		LMS_LOG(DB, INFO) << "Tables created";
@@ -224,12 +299,11 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();
 	}
 
-	doDatabaseMigrationIfNeeded(_session);
+	doDatabaseMigrationIfNeeded();
 
+	// Indexes
 	{
-		Wt::Dbo::Transaction transaction {_session};
-
-		// Indexes
+		auto uniqueTransaction {createUniqueTransaction()};
 		_session.execute("CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)");
 		_session.execute("CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)");
@@ -255,29 +329,101 @@ Handler::Handler(Wt::Dbo::SqlConnectionPool& connectionPool)
 		_session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_type_idx ON track_artist_link(type)");
 	}
 
-	_users = new UserDatabase(_session);
-}
+	// Initial settings tables
+	{
+		auto uniqueTransaction {createUniqueTransaction()};
 
-Handler::~Handler()
-{
-	delete _users;
+		ScanSettings::init(*this);
+		SimilaritySettings::init(*this);
+	}
 }
 
 void
-Handler::optimize()
+Session::optimize()
 {
-	Wt::Dbo::Transaction transaction {_session};
+	auto uniqueTransaction {createUniqueTransaction()};
+
 	_session.execute("ANALYZE");
 }
 
+std::string
+Session::getUserLoginName(Wt::Dbo::ptr<User> user)
+{
+	const Wt::Auth::User authUser {_users->findWithId(std::to_string(user.id()))};
+	if (!authUser.isValid())
+		throw LmsException {"Invalid user state"};
+
+	return authUser.identity(Wt::Auth::Identity::LoginName).toUTF8();
+}
+
+bool
+Session::checkUserPassword(const std::string& loginName, const std::string& password)
+{
+	auto transaction {createUniqueTransaction()};
+
+	auto authUser {_users->findWithIdentity(Wt::Auth::Identity::LoginName, loginName)};
+	if (!authUser.isValid())
+		return false;	// TODO const time?
+
+	return passwordService.verifyPassword(authUser, password) == Wt::Auth::PasswordResult::PasswordValid;
+}
+
+void
+Session::updateUserPassword(Wt::Dbo::ptr<User> user, const std::string& password)
+{
+	const Wt::Auth::User authUser {_users->findWithId(std::to_string(user.id()))};
+	if (!authUser.isValid())
+		throw LmsException {"Bad user state"};
+	passwordService.updatePassword(authUser, password);
+}
+
+Wt::WDateTime
+Session::getUserLastLoginAttempt(Wt::Dbo::ptr<User> user)
+{
+	const Wt::Auth::User authUser {_users->findWithId(std::to_string(user.id()))};
+	if (!authUser.isValid())
+		throw LmsException {"Bad user state"};
+
+	return authUser.lastLoginAttempt();
+}
+
+void
+Session::removeUser(Database::User::pointer user)
+{
+	checkUniqueLocked();
+
+	auto authUser = _users->findWithId(std::to_string(user.id()));
+	_users->deleteUser(authUser);
+	user.remove();
+}
+
 Wt::Auth::AbstractUserDatabase&
-Handler::getUserDatabase()
+Session::getUserDatabase()
 {
 	return *_users;
 }
 
 User::pointer
-Handler::getCurrentUser()
+Session::createUser(const std::string& loginName, const std::string& password)
+{
+	Wt::Auth::User authUser {_users->registerNew()};
+	if (!authUser.isValid())
+	{
+		LMS_LOG(DB, ERROR) << "Invalid authUser";
+		return {};
+	}
+	User::pointer user {User::create(*this)};
+	Wt::Dbo::ptr<AuthInfo> authInfo = _users->find(authUser);
+	authInfo.modify()->setUser(user);
+
+	authUser.setIdentity(Wt::Auth::Identity::LoginName, loginName);
+	passwordService.updatePassword(authUser, password);
+
+	return user;
+}
+
+User::pointer
+Session::getLoggedUser()
 {
 	if (_login.loggedIn())
 		return getUser(_login.user());
@@ -286,10 +432,10 @@ Handler::getCurrentUser()
 }
 
 User::pointer
-Handler::getUser(const Wt::Auth::User& authUser)
+Session::getUser(const Wt::Auth::User& authUser)
 {
 	if (!authUser.isValid()) {
-		LMS_LOG(DB, ERROR) << "Handler::getUser: invalid authUser";
+		LMS_LOG(DB, ERROR) << "Session::getUser: invalid authUser";
 		return User::pointer();
 	}
 
@@ -299,7 +445,7 @@ Handler::getUser(const Wt::Auth::User& authUser)
 }
 
 User::pointer
-Handler::getUser(const std::string& loginName)
+Session::getUser(const std::string& loginName)
 {
 	auto authUser {getUserDatabase().findWithIdentity(Wt::Auth::Identity::LoginName, loginName)};
 	if (!authUser.isValid())
@@ -307,37 +453,5 @@ Handler::getUser(const std::string& loginName)
 
 	return getUser(authUser);
 }
-
-User::pointer
-Handler::createUser(const Wt::Auth::User& authUser)
-{
-	if (!authUser.isValid())
-	{
-		LMS_LOG(DB, ERROR) << "Handler::getUser: invalid authUser";
-		return User::pointer();
-	}
-
-	User::pointer user = _session.add(std::make_unique<User>());
-	Wt::Dbo::ptr<AuthInfo> authInfo = _users->find(authUser);
-	authInfo.modify()->setUser(user);
-
-	return user;
-}
-
-std::unique_ptr<Wt::Dbo::SqlConnectionPool>
-Handler::createConnectionPool(boost::filesystem::path p)
-{
-	LMS_LOG(DB, INFO) << "Creating connection pool on file " << p.string();
-
-	auto connection = std::make_unique<Wt::Dbo::backend::Sqlite3>(p.string());
-	connection->executeSql("pragma journal_mode=WAL");
-//	connection->setProperty("show-queries", "true");
-
-	auto pool = std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), 1);
-	pool->setTimeout(std::chrono::seconds(10));
-
-	return pool;
-}
-
 
 } // namespace Database

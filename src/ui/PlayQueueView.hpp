@@ -19,21 +19,21 @@
 
 #pragma once
 
-#include <Wt/WCheckBox.h>
 #include <Wt/WContainerWidget.h>
 #include <Wt/WPushButton.h>
-#include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
 #include <boost/optional.hpp>
 
-#include "database/TrackList.hpp"
-#include "database/Track.hpp"
+#include "database/Types.hpp"
 
-namespace Similarity
-{
+namespace Similarity {
 	class Finder;
+}
+
+namespace Database {
+	class TrackList;
 }
 
 namespace UserInterface {
@@ -43,8 +43,8 @@ class PlayQueue : public Wt::WTemplate
 	public:
 		PlayQueue();
 
-		void addTracks(const std::vector<Database::Track::pointer>& tracks);
-		void playTracks(const std::vector<Database::Track::pointer>& tracks);
+		void addTracks(const std::vector<Database::IdType>& trackIds);
+		void playTracks(const std::vector<Database::IdType>& trackIds);
 
 		// play the next track in the queue
 		void playNext();
@@ -59,13 +59,13 @@ class PlayQueue : public Wt::WTemplate
 		Wt::Signal<> trackUnload;
 
 	private:
-		Database::TrackList::pointer getTrackList();
+		Wt::Dbo::ptr<Database::TrackList> getTrackList();
 
 		void clearTracks();
-		void enqueueTracks(const std::vector<Database::Track::pointer>& tracks);
-		void enqueueTrack(Database::Track::pointer track);
+		void enqueueTracks(const std::vector<Database::IdType>& trackIds);
+		void enqueueTrack(Database::IdType trackId);
 		void addSome();
-		void addRadioTrack();
+		void enqueueRadioTrack();
 		void updateInfo();
 		void updateCurrentTrack(bool selected);
 		void updateRepeatBtn();
@@ -77,14 +77,14 @@ class PlayQueue : public Wt::WTemplate
 		void addRadioTrackFromSimilarity(std::shared_ptr<Similarity::Finder> similarityFinder);
 		void addRadioTrackFromClusters();
 
-		bool _repeatAll = false;
-		bool _radioMode = false;
-		boost::optional<Database::IdType> _tracklistId;
-		Wt::WContainerWidget* _entriesContainer = nullptr;
-		Wt::WPushButton* _showMore = nullptr;
-		Wt::WText* _nbTracks = nullptr;
-		Wt::WText* _repeatBtn = nullptr;
-		Wt::WText* _radioBtn = nullptr;
+		bool _repeatAll {};
+		bool _radioMode {};
+		Database::IdType _tracklistId {};
+		Wt::WContainerWidget* _entriesContainer {};
+		Wt::WPushButton* _showMore {};
+		Wt::WText* _nbTracks {};
+		Wt::WText* _repeatBtn {};
+		Wt::WText* _radioBtn {};
 		boost::optional<std::size_t> _trackPos;	// current track position, if set
 };
 

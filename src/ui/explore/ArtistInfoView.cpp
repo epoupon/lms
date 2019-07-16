@@ -63,21 +63,18 @@ ArtistInfo::refresh()
 	if (!artistId)
 		return;
 
-	auto artistsIds = getService<Similarity::Searcher>()->getSimilarArtists(LmsApp->getDboSession(), *artistId, 5);
+	const std::vector<Database::IdType> artistsIds {getService<Similarity::Searcher>()->getSimilarArtists(LmsApp->getDbSession(), *artistId, 5)};
 
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	std::vector<Database::Artist::pointer> artists;
-	for (auto artistId : artistsIds)
+	for (Database::IdType artistId : artistsIds)
 	{
-		auto artist = Database::Artist::getById(LmsApp->getDboSession(), artistId);
+		Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), artistId)};
+		if (!artist)
+			continue;
 
-		if (artist)
-			artists.push_back(artist);
-	}
-
-	for (auto artist : artists)
 		_similarArtistsContainer->addNew<ArtistLink>(artist);
+	}
 }
 
 } // namespace UserInterface

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2019 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,21 +19,30 @@
 
 #pragma once
 
-#include <set>
+#include <shared_mutex>
 
-#include "database/Types.hpp"
+#include <boost/filesystem.hpp>
+
+#include <Wt/Dbo/SqlConnectionPool.h>
+
+#include "Session.hpp"
 
 namespace Database {
-	class Session;
-}
 
-namespace Similarity {
-
-namespace ClusterSearcher
+// Session living class handling the database and the login
+class Database
 {
-	std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::set<Database::IdType>& tracksId, std::size_t maxCount);
-	std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount);
-	std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount);
+	public:
+
+		Database(const boost::filesystem::path& dbPath);
+
+		std::unique_ptr<Session> createSession();
+
+	private:
+		std::shared_timed_mutex		_sharedMutex;
+		std::unique_ptr<Wt::Dbo::SqlConnectionPool> _connectionPool;
 };
 
-} // namespace Similarity
+} // namespace Database
+
+

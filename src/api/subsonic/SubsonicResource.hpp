@@ -23,7 +23,7 @@
 #include <Wt/WResource.h>
 #include <Wt/Http/Response.h>
 
-#include "database/DatabaseHandler.hpp"
+#include "database/Database.hpp"
 
 namespace API::Subsonic
 {
@@ -31,15 +31,15 @@ namespace API::Subsonic
 class SubsonicResource final : public Wt::WResource
 {
 	public:
-		SubsonicResource(Wt::Dbo::SqlConnectionPool& connectionPool);
+		SubsonicResource(Database::Database& db);
+		~SubsonicResource();
 
 		static std::vector<std::string> getPaths();
 	private:
 
-
 		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;
 
-		Database::Handler	_db;
+		Database::Database& _db;
 };
 
 } // namespace

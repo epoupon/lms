@@ -19,13 +19,14 @@
 
 #pragma once
 
+#include <boost/optional.hpp>
+
 #include <Wt/WContainerWidget.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
-#include "database/Track.hpp"
 
 namespace UserInterface {
 
@@ -38,15 +39,15 @@ class Tracks : public Wt::WTemplate
 		Wt::Signal<Database::IdType> trackAdd;
 		Wt::Signal<Database::IdType> trackPlay;
 
-		Wt::Signal<std::vector<Database::Track::pointer>> tracksAdd;
-		Wt::Signal<std::vector<Database::Track::pointer>> tracksPlay;
+		Wt::Signal<std::vector<Database::IdType>> tracksAdd;
+		Wt::Signal<std::vector<Database::IdType>> tracksPlay;
 
 	private:
 		void refresh();
 		void addSome();
 
-		std::vector<Database::Track::pointer> getTracks(boost::optional<std::size_t> offset, boost::optional<std::size_t> size, bool& moreResults);
-		std::vector<Database::Track::pointer> getTracks();
+		std::vector<Database::IdType> getTracks(boost::optional<std::size_t> offset, boost::optional<std::size_t> size, bool& moreResults);
+		std::vector<Database::IdType> getTracks();
 
 		Wt::WContainerWidget* _tracksContainer;
 		Wt::WPushButton* _showMore;

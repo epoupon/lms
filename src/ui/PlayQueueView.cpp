@@ -20,11 +20,14 @@
 #include "PlayQueueView.hpp"
 
 #include <Wt/WText.h>
+#include <Wt/WText.h>
 
+#include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "main/Service.hpp"
 #include "similarity/SimilaritySearcher.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Utils.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
@@ -35,7 +38,7 @@ PlayQueue::PlayQueue()
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	{
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 		_repeatAll = LmsApp->getUser()->isRepeatAllSet();
 		_radioMode = LmsApp->getUser()->isRadioSet();
 	}
@@ -62,9 +65,15 @@ PlayQueue::PlayQueue()
 	shuffleBtn->clicked().connect([=]
 	{
 		{
-			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-			getTrackList().modify()->shuffle();
+			Database::TrackList::pointer trackList {getTrackList()};
+			auto entries {trackList->getEntries()};
+			shuffleContainer(entries);
+
+			getTrackList().modify()->clear();
+			for (const auto& entry : entries)
+				Database::TrackListEntry::create(LmsApp->getDbSession(), entry->getTrack(), trackList);
 		}
 		_entriesContainer->clear();
 		addSome();
@@ -77,7 +86,7 @@ PlayQueue::PlayQueue()
 		_repeatAll = !_repeatAll;
 		updateRepeatBtn();
 
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
 		if (!LmsApp->getUser()->isDemo())
 			LmsApp->getUser().modify()->setRepeatAll(_repeatAll);
@@ -91,7 +100,7 @@ PlayQueue::PlayQueue()
 		_radioMode = !_radioMode;
 		updateRadioBtn();
 
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
 		if (!LmsApp->getUser()->isDemo())
 			LmsApp->getUser().modify()->setRadio(_radioMode);
@@ -102,23 +111,21 @@ PlayQueue::PlayQueue()
 
 	LmsApp->preQuit().connect([=]
 	{
-		if (_tracklistId)
+		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+		if (LmsApp->getUser()->isDemo())
 		{
-			LMS_LOG(UI, DEBUG) << "Removing tracklist id " << *_tracklistId;
-
-			Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
-			auto tracklist = Database::TrackList::getById(LmsApp->getDboSession(), *_tracklistId);
+			LMS_LOG(UI, DEBUG) << "Removing tracklist id " << _tracklistId;
+			auto tracklist = Database::TrackList::getById(LmsApp->getDbSession(), _tracklistId);
 			if (tracklist)
 				tracklist.remove();
 		}
 	});
 
-	updateInfo();
-	addSome();
-
 	{
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+		Database::TrackList::pointer trackList;
 
 		if (!LmsApp->getUser()->isDemo())
 		{
@@ -126,8 +133,19 @@ PlayQueue::PlayQueue()
 			{
 				load(LmsApp->getUser()->getCurPlayingTrackPos(), false);
 			});
+			trackList = LmsApp->getUser()->getQueuedTrackList(LmsApp->getDbSession());
 		}
+		else
+		{
+			static const std::string currentPlayQueueName {"__current__playqueue__"};
+			trackList = Database::TrackList::create(LmsApp->getDbSession(), currentPlayQueueName, Database::TrackList::Type::Internal, false, LmsApp->getUser());
+		}
+
+		_tracklistId = trackList.id();
 	}
+
+	updateInfo();
+	addSome();
 }
 
 void
@@ -145,32 +163,17 @@ PlayQueue::updateRadioBtn()
 Database::TrackList::pointer
 PlayQueue::getTrackList()
 {
-	Database::TrackList::pointer res;
-
-	if (LmsApp->getUser()->isDemo())
-	{
-		static const std::string currentPlayQueueName = "__current__playqueue__";
-
-		if (!_tracklistId)
-		{
-			res = Database::TrackList::create(LmsApp->getDboSession(), currentPlayQueueName, Database::TrackList::Type::Internal, false, LmsApp->getUser());
-			LmsApp->getDboSession().flush();
-			_tracklistId = res.id();
-			return res;
-		}
-
-		return Database::TrackList::getById(LmsApp->getDboSession(), *_tracklistId);
-	}
-
-	return LmsApp->getUser()->getQueuedTrackList();
+	return Database::TrackList::getById(LmsApp->getDbSession(), _tracklistId);
 }
 
 void
 PlayQueue::clearTracks()
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	{
+		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+		getTrackList().modify()->clear();
+	}
 
-	getTrackList().modify()->clear();
 	_showMore->setHidden(true);
 	_entriesContainer->clear();
 	updateInfo();
@@ -189,11 +192,12 @@ PlayQueue::load(std::size_t pos, bool play)
 {
 	updateCurrentTrack(false);
 
-	Database::IdType trackId;
+	Database::IdType trackId {};
+	bool addRadioTrack {};
 	{
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		auto tracklist = getTrackList();
+		Database::TrackList::pointer tracklist {getTrackList()};
 
 		// If out of range, stop playing
 		if (pos >= tracklist->getCount())
@@ -209,18 +213,21 @@ PlayQueue::load(std::size_t pos, bool play)
 
 		// If last and radio mode, fill the next song
 		if (_radioMode && pos == tracklist->getCount() - 1)
-			addRadioTrack();
+			addRadioTrack = true;
 
 		_trackPos = pos;
 		auto track = tracklist->getEntry(*_trackPos)->getTrack();
 
 		trackId = track.id();
 
-		updateCurrentTrack(true);
-
 		if (!LmsApp->getUser()->isDemo())
 			LmsApp->getUser().modify()->setCurPlayingTrackPos(pos);
 	}
+
+	if (addRadioTrack)
+		enqueueRadioTrack();
+
+	updateCurrentTrack(true);
 
 	loadTrack.emit(trackId, play);
 }
@@ -252,7 +259,7 @@ PlayQueue::playNext()
 void
 PlayQueue::updateInfo()
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 	_nbTracks->setText(Wt::WString::tr("Lms.PlayQueue.nb-tracks").arg(static_cast<unsigned>(getTrackList()->getCount())));
 }
@@ -274,55 +281,58 @@ PlayQueue::updateCurrentTrack(bool selected)
 }
 
 void
-PlayQueue::enqueueTracks(const std::vector<Database::Track::pointer>& tracks)
+PlayQueue::enqueueTracks(const std::vector<Database::IdType>& trackIds)
 {
-	// Use a "session" playqueue in order to store the current playqueue
-	// so that the user can disconnect and get its playqueue back
+	{
+		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-	auto tracklist = getTrackList();
+		auto tracklist = getTrackList();
+		for (Database::IdType trackId : trackIds)
+		{
+			Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+			if (!track)
+				continue;
 
-	for (auto track : tracks)
-		Database::TrackListEntry::create(LmsApp->getDboSession(), track, tracklist);
+			Database::TrackListEntry::create(LmsApp->getDbSession(), track, tracklist);
+		}
+	}
 
 	updateInfo();
 	addSome();
 }
 
 void
-PlayQueue::enqueueTrack(Database::Track::pointer track)
+PlayQueue::enqueueTrack(Database::IdType trackId)
 {
-	enqueueTracks(std::vector<Database::Track::pointer>(1, track));
+	enqueueTracks({trackId});
 }
 
 void
-PlayQueue::addTracks(const std::vector<Database::Track::pointer>& tracks)
+PlayQueue::addTracks(const std::vector<Database::IdType>& trackIds)
 {
-	enqueueTracks(tracks);
-	LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", tracks.size()).arg(tracks.size()), std::chrono::milliseconds(2000));
+	enqueueTracks(trackIds);
+	LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
 }
 
 void
-PlayQueue::playTracks(const std::vector<Database::Track::pointer>& tracks)
+PlayQueue::playTracks(const std::vector<Database::IdType>& trackIds)
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
-
 	clearTracks();
-	enqueueTracks(tracks);
+	enqueueTracks(trackIds);
 	load(0, true);
 
-	LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-playing", tracks.size()).arg(tracks.size()), std::chrono::milliseconds(2000));
+	LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-playing", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
 }
-
 
 void
 PlayQueue::addSome()
 {
-	Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 	auto tracklist = getTrackList();
 
 	auto tracklistEntries = tracklist->getEntries(_entriesContainer->count(), 50);
-	for (auto tracklistEntry : tracklistEntries)
+	for (const Database::TrackListEntry::pointer& tracklistEntry : tracklistEntries)
 	{
 		auto tracklistEntryId = tracklistEntry.id();
 		auto track = tracklistEntry->getTrack();
@@ -367,15 +377,15 @@ PlayQueue::addSome()
 		{
 			// Remove the entry n both the widget tree and the playqueue
 			{
-				Wt::Dbo::Transaction transaction (LmsApp->getDboSession());
+				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-				auto entryToRemove = Database::TrackListEntry::getById(LmsApp->getDboSession(), tracklistEntryId);
+				Database::TrackListEntry::pointer entryToRemove {Database::TrackListEntry::getById(LmsApp->getDbSession(), tracklistEntryId)};
 				entryToRemove.remove();
 			}
 
 			if (_trackPos)
 			{
-				auto pos = _entriesContainer->indexOf(entry);
+				auto pos {_entriesContainer->indexOf(entry)};
 				if (pos > 0 && *_trackPos >= static_cast<std::size_t>(pos))
 					(*_trackPos)--;
 			}
@@ -391,28 +401,23 @@ PlayQueue::addSome()
 }
 
 void
-PlayQueue::addRadioTrack()
+PlayQueue::enqueueRadioTrack()
 {
-	auto tracklist = getTrackList();
+	std::vector<Database::IdType> trackIds;
 
-	std::vector<Database::IdType> trackIds = getTrackList()->getTrackIds();
+	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		Database::TrackList::pointer tracklist {getTrackList()};
+
+		trackIds = getTrackList()->getTrackIds();
+	}
+
 	if (trackIds.empty())
 		return;
 
-	auto res = getService<Similarity::Searcher>()->getSimilarTracks(LmsApp->getDboSession(), std::set<Database::IdType>(trackIds.begin(), trackIds.end()), 1);
-	for (auto trackId : res)
-	{
-		auto trackToAdd = Database::Track::getById(LmsApp->getDboSession(), trackId);
-		enqueueTrack(trackToAdd);
-	}
-
+	const std::vector<Database::IdType> trackToAddIds {getService<Similarity::Searcher>()->getSimilarTracks(LmsApp->getDbSession(), std::set<Database::IdType>(std::cbegin(trackIds), std::cend(trackIds)), 1)};
+	enqueueTracks(trackToAddIds);
 }
-
-void addRadioTrackFromSimilarity(std::shared_ptr<Similarity::Searcher> similaritySearcher)
-{
-
-}
-
 
 } // namespace UserInterface
 

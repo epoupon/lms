@@ -65,7 +65,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	if (!sizeStr)
 		return;
 
-	auto size = readAs<std::size_t>(*sizeStr);
+	const auto size {readAs<std::size_t>(*sizeStr)};
 	if (!size || *size > maxSize)
 		return;
 
@@ -73,26 +73,26 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 
 	if (trackIdStr)
 	{
-		auto trackId = readAs<Database::IdType>(*trackIdStr);
+		const auto trackId {readAs<Database::IdType>(*trackIdStr)};
 		if (!trackId)
 			return;
 
-		// transactions are not thread safe
+		// DbSession are not thread safe
 		{
-			Wt::WApplication::UpdateLock lock(LmsApp);
-			cover = getService<CoverArt::Grabber>()->getFromTrack(LmsApp->getDboSession(), *trackId, Image::Format::JPEG, *size);
+			Wt::WApplication::UpdateLock lock {LmsApp};
+			cover = getService<CoverArt::Grabber>()->getFromTrack(LmsApp->getDbSession(), *trackId, Image::Format::JPEG, *size);
 		}
 	}
 	else if (releaseIdStr)
 	{
-		auto releaseId = readAs<Database::IdType>(*releaseIdStr);
+		const auto releaseId {readAs<Database::IdType>(*releaseIdStr)};
 		if (!releaseId)
 			return;
 
-		// transactions are not thread safe
+		// DbSession are not thread safe
 		{
-			Wt::WApplication::UpdateLock lock(LmsApp);
-			cover = getService<CoverArt::Grabber>()->getFromRelease(LmsApp->getDboSession(), *releaseId, Image::Format::JPEG, *size);
+			Wt::WApplication::UpdateLock lock {LmsApp};
+			cover = getService<CoverArt::Grabber>()->getFromRelease(LmsApp->getDbSession(), *releaseId, Image::Format::JPEG, *size);
 		}
 	}
 	else

@@ -58,24 +58,24 @@ ReleasesInfo::refreshRecentlyAdded()
 {
 	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1);
 
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto releases {Release::getLastAdded(LmsApp->getDboSession(), after, 0, 5)};
+	const auto releases {Release::getLastAdded(LmsApp->getDbSession(), after, 0, 5)};
 
 	_recentlyAddedContainer->clear();
-	for (auto release : releases)
+	for (const Database::Release::pointer& release : releases)
 		_recentlyAddedContainer->addNew<ReleaseLink>(release);
 }
 
 void
 ReleasesInfo::refreshMostPlayed()
 {
-	Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto releases = LmsApp->getUser()->getPlayedTrackList()->getTopReleases(5);
+	const auto releases {LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession())->getTopReleases(5)};
 
 	_mostPlayedContainer->clear();
-	for (auto release : releases)
+	for (const Database::Release::pointer& release : releases)
 		_mostPlayedContainer->addNew<ReleaseLink>(release);
 }
 

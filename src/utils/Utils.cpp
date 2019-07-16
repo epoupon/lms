@@ -64,9 +64,10 @@ readAs(const std::string& str)
 std::vector<std::string>
 splitString(const std::string& string, const std::string& separators)
 {
-	std::vector<std::string> res;
+	std::string str {stringTrim(string, separators)};
 
-	boost::algorithm::split(res, string, boost::is_any_of(separators), boost::token_compress_on);
+	std::vector<std::string> res;
+	boost::algorithm::split(res, str, boost::is_any_of(separators), boost::token_compress_on);
 
 	return res;
 }

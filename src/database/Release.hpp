@@ -46,19 +46,19 @@ class Release : public Wt::Dbo::Dbo<Release>
 		Release(const std::string& name, const std::string& MBID = "");
 
 		// Accessors
-		static std::size_t		getCount(Wt::Dbo::Session& session);
-		static pointer			getByMBID(Wt::Dbo::Session& session, const std::string& MBID);
-		static std::vector<pointer>	getByName(Wt::Dbo::Session& session, const std::string& name);
-		static pointer			getById(Wt::Dbo::Session& session, IdType id);
-		static std::vector<pointer>	getAllOrphans(Wt::Dbo::Session& session); // no track related
-		static std::vector<pointer>	getAll(Wt::Dbo::Session& session, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
-		static std::vector<pointer>	getAllRandom(Wt::Dbo::Session& session, boost::optional<std::size_t> size = {});
-		static std::vector<pointer>	getLastAdded(Wt::Dbo::Session& session, Wt::WDateTime after, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
+		static std::size_t		getCount(Session& session);
+		static pointer			getByMBID(Session& session, const std::string& MBID);
+		static std::vector<pointer>	getByName(Session& session, const std::string& name);
+		static pointer			getById(Session& session, IdType id);
+		static std::vector<pointer>	getAllOrphans(Session& session); // no track related
+		static std::vector<pointer>	getAll(Session& session, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
+		static std::vector<pointer>	getAllRandom(Session& session, boost::optional<std::size_t> size = {});
+		static std::vector<pointer>	getLastAdded(Session& session, Wt::WDateTime after, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
 
-		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session, const std::set<IdType>& clusters);
-		static std::vector<pointer>	getByFilter(Wt::Dbo::Session& session,
+		static std::vector<pointer>	getByFilter(Session& session, const std::set<IdType>& clusters);
+		static std::vector<pointer>	getByFilter(Session& session,
 							const std::set<IdType>& clusters,           // at least one track that belongs to these clusters
-							const std::vector<std::string> keywords,        // name must match all of these keywords
+							const std::vector<std::string>& keywords,        // name must match all of these keywords
 							boost::optional<std::size_t> offset,
 							boost::optional<std::size_t> size,
 							bool& moreExpected);
@@ -72,7 +72,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
 
 		// Create
-		static pointer create(Wt::Dbo::Session& session, const std::string& name, const std::string& MBID = "");
+		static pointer create(Session& session, const std::string& name, const std::string& MBID = "");
 
 		// Utility functions
 		boost::optional<int> getReleaseYear(bool originalDate = false) const; // 0 if unknown or various

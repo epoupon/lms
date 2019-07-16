@@ -25,23 +25,21 @@
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "utils/Utils.hpp"
 
 namespace Similarity {
 namespace ClusterSearcher {
 
+static
 std::vector<Database::IdType>
-getSimilarTracks(Wt::Dbo::Session& session, const std::set<Database::IdType>& trackIds, std::size_t maxCount)
+getSimilarTracksLocked(Database::Session& dbSession, const std::set<Database::IdType>& trackIds, std::size_t maxCount)
 {
-	std::vector<Database::IdType> res;
-
-	Wt::Dbo::Transaction transaction(session);
-
 	std::vector<Database::IdType> clusterIds;
 	for (auto trackId : trackIds)
 	{
-		auto track = Database::Track::getById(session, trackId);
+		auto track {Database::Track::getById(dbSession, trackId)};
 		if (!track)
 			continue;
 
@@ -56,9 +54,10 @@ getSimilarTracks(Wt::Dbo::Session& session, const std::set<Database::IdType>& tr
 	std::vector<Database::IdType> sortedClusterIds;
 	uniqueAndSortedByOccurence(clusterIds.begin(), clusterIds.end(), std::back_inserter(sortedClusterIds));
 
+	std::vector<Database::IdType> res;
 	for (auto clusterId : clusterIds)
 	{
-		auto cluster = Database::Cluster::getById(session, clusterId);
+		auto cluster {Database::Cluster::getById(dbSession, clusterId)};
 		if (!cluster)
 			continue;
 
@@ -88,13 +87,21 @@ getSimilarTracks(Wt::Dbo::Session& session, const std::set<Database::IdType>& tr
 }
 
 std::vector<Database::IdType>
-getSimilarReleases(Wt::Dbo::Session& session, Database::IdType releaseId, std::size_t maxCount)
+getSimilarTracks(Database::Session& dbSession, const std::set<Database::IdType>& trackIds, std::size_t maxCount)
+{
+	auto transaction {dbSession.createSharedTransaction()};
+
+	return getSimilarTracksLocked(dbSession, trackIds, maxCount);
+}
+
+std::vector<Database::IdType>
+getSimilarReleases(Database::Session& dbSession, Database::IdType releaseId, std::size_t maxCount)
 {
 	std::vector<Database::IdType> res;
 
-	Wt::Dbo::Transaction transaction(session);
+	auto transaction {dbSession.createSharedTransaction()};
 
-	auto release = Database::Release::getById(session, releaseId);
+	auto release {Database::Release::getById(dbSession, releaseId)};
 	if (!release)
 		return res;
 
@@ -104,11 +111,10 @@ getSimilarReleases(Wt::Dbo::Session& session, Database::IdType releaseId, std::s
 	for (const auto& releaseTrack : releaseTracks)
 		releaseTrackIds.insert(releaseTrack.id());
 
-	auto trackIds = getSimilarTracks(session, releaseTrackIds, maxCount * 5);
-
+	auto trackIds {getSimilarTracksLocked(dbSession, releaseTrackIds, maxCount * 5)};
 	for (auto trackId : trackIds)
 	{
-		auto track = Database::Track::getById(session, trackId);
+		auto track {Database::Track::getById(dbSession, trackId)};
 		if (!track)
 			continue;
 
@@ -129,31 +135,30 @@ getSimilarReleases(Wt::Dbo::Session& session, Database::IdType releaseId, std::s
 }
 
 std::vector<Database::IdType>
-getSimilarArtists(Wt::Dbo::Session& session, Database::IdType artistId, std::size_t maxCount)
+getSimilarArtists(Database::Session& dbSession, Database::IdType artistId, std::size_t maxCount)
 {
 	std::vector<Database::IdType> res;
 
-	Wt::Dbo::Transaction transaction(session);
+	auto transaction {dbSession.createSharedTransaction()};
 
-	auto artist = Database::Artist::getById(session, artistId);
+	auto artist {Database::Artist::getById(dbSession, artistId)};
 	if (!artist)
 		return res;
 
-	auto artistTracks = artist->getTracks();
+	auto artistTracks {artist->getTracks()};
 	std::set<Database::IdType> artistTrackIds;
 
 	for (const auto& artistTrack : artistTracks)
 		artistTrackIds.insert(artistTrack.id());
 
-	auto trackIds = getSimilarTracks(session, artistTrackIds, maxCount * 5);
-
+	auto trackIds {getSimilarTracksLocked(dbSession, artistTrackIds, maxCount * 5)};
 	for (auto trackId : trackIds)
 	{
-		auto track = Database::Track::getById(session, trackId);
+		auto track {Database::Track::getById(dbSession, trackId)};
 		if (!track)
 			continue;
 
-		for (auto trackArtist : track->getArtists())
+		for (const auto& trackArtist : track->getArtists())
 		{
 			if (!trackArtist || trackArtist.id() == artistId)
 				continue;

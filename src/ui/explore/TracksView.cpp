@@ -52,14 +52,12 @@ _filters(filters)
 	Wt::WText* playBtn = bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 	playBtn->clicked().connect(std::bind([=]
 	{
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 		tracksPlay.emit(getTracks());
 	}));
 
 	Wt::WText* addBtn = bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 	addBtn->clicked().connect(std::bind([=]
 	{
-		Wt::Dbo::Transaction transaction(LmsApp->getDboSession());
 		tracksAdd.emit(getTracks());
 	}));
 
@@ -76,18 +74,24 @@ _filters(filters)
 	filters->updated().connect(this, &Tracks::refresh);
 }
 
-std::vector<Database::Track::pointer>
+std::vector<Database::IdType>
 Tracks::getTracks(boost::optional<std::size_t> offset, boost::optional<std::size_t> size, bool& moreResults)
 {
-	auto searchKeywords {splitString(_search->text().toUTF8(), " ")};
-	auto clusterIds {_filters->getClusterIds()};
+	const auto searchKeywords {splitString(_search->text().toUTF8(), " ")};
+	const auto clusterIds {_filters->getClusterIds()};
 
-	Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	return Track::getByFilter(LmsApp->getDboSession(), clusterIds, searchKeywords, offset, size, moreResults);
+	const auto tracks {Track::getByFilter(LmsApp->getDbSession(), clusterIds, searchKeywords, offset, size, moreResults)};
+	std::vector<Database::IdType> res;
+	res.reserve(tracks.size());
+	std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Database::Track::pointer& track) { return track.id(); });
+
+	return res;
+
 }
 
-std::vector<Database::Track::pointer>
+std::vector<Database::IdType>
 Tracks::getTracks()
 {
 	bool moreResults;
@@ -104,14 +108,15 @@ Tracks::refresh()
 void
 Tracks::addSome()
 {
-	Wt::Dbo::Transaction transaction {LmsApp->getDboSession()};
-
 	bool moreResults;
-	auto tracks {getTracks(_tracksContainer->count(), 20, moreResults)};
+	const std::vector<Database::IdType> trackIds {getTracks(_tracksContainer->count(), 20, moreResults)};
 
-	for (auto track : tracks)
+	for (const Database::IdType trackId : trackIds)
 	{
-		auto trackId {track.id()};
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+		const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+
 		Wt::WTemplate* entry {_tracksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
