@@ -98,8 +98,6 @@ handleInfoPathChange(Wt::WStackedWidget* stack)
 		{ "/tracks",		IdxTracks },
 	};
 
-	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
-
 	for (auto index : indexes)
 	{
 		if (wApp->internalPathMatches(index.first))
