@@ -50,6 +50,7 @@ class Error
 		{
 			BadId,
 			NotImplemented,
+			LoginThrottled,
 			InternalError,
 		};
 

@@ -24,6 +24,7 @@
 
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
+#include "database/User.hpp"
 #include "main/Service.hpp"
 #include "similarity/SimilaritySearcher.hpp"
 #include "utils/Logger.hpp"
@@ -131,7 +132,14 @@ PlayQueue::PlayQueue()
 		{
 			LmsApp->post([=]
 			{
-				load(LmsApp->getUser()->getCurPlayingTrackPos(), false);
+				std::size_t trackPos {};
+
+				{
+					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+					trackPos = LmsApp->getUser()->getCurPlayingTrackPos();
+				}
+
+				load(trackPos, false);
 			});
 			trackList = LmsApp->getUser()->getQueuedTrackList(LmsApp->getDbSession());
 		}

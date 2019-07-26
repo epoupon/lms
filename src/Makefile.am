@@ -7,6 +7,10 @@ lms_SOURCES = \
 	$(srcdir)/api/subsonic/SubsonicResource.hpp		\
 	$(srcdir)/api/subsonic/SubsonicResponse.cpp		\
 	$(srcdir)/api/subsonic/SubsonicResponse.hpp		\
+	$(srcdir)/auth/AuthService.cpp				\
+	$(srcdir)/auth/AuthService.hpp				\
+	$(srcdir)/auth/LoginThrottler.cpp			\
+	$(srcdir)/auth/LoginThrottler.hpp			\
 	$(srcdir)/av/AvInfo.cpp					\
 	$(srcdir)/av/AvInfo.hpp					\
 	$(srcdir)/av/AvTranscoder.cpp				\
@@ -134,6 +138,8 @@ lms_SOURCES = \
 	$(srcdir)/utils/Exception.hpp				\
 	$(srcdir)/utils/Logger.cpp				\
 	$(srcdir)/utils/Logger.hpp				\
+	$(srcdir)/utils/NetAddress.cpp				\
+	$(srcdir)/utils/NetAddress.hpp				\
 	$(srcdir)/utils/Path.cpp				\
 	$(srcdir)/utils/Path.hpp				\
 	$(srcdir)/utils/Utils.cpp				\

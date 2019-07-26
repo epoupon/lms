@@ -24,9 +24,9 @@
 #include <random>
 #include <thread>
 
-#include <Wt/Auth/Identity.h>
 #include <Wt/WLocalDateTime.h>
 
+#include "auth/AuthService.hpp"
 #include "av/AvTranscoder.hpp"
 #include "cover/CoverArtGrabber.hpp"
 #include "database/Artist.hpp"
@@ -41,6 +41,8 @@
 #include "utils/Utils.hpp"
 #include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
+
+using namespace Database;
 
 static const std::string	genreClusterName {"GENRE"};
 // Files are always reported to be in the same format
@@ -115,33 +117,41 @@ struct ClientInfo
 struct RequestContext
 {
 	const Wt::Http::ParameterMap& parameters;
-	Database::Session& dbSession;
+	Session& dbSession;
 	std::string userName;
 };
 
-// TODO handle multiple databases
-static thread_local std::map<std::thread::id, std::unique_ptr<Database::Session>> dbSessions;
+using SessionMap = std::map<Database::Database*, std::unique_ptr<Session>>;
+static std::map<std::thread::id, SessionMap> dbSessions;
 
 static
-Database::Session&
+Session&
 getOrCreateDbSession(Database::Database& db)
 {
 	static std::mutex mutex;
 
-	std::unique_lock<std::mutex> lock {mutex};
+	SessionMap* sessionMap {};
 
-	auto it {dbSessions.find(std::this_thread::get_id())};
-	if (it != dbSessions.end())
+	{
+		std::unique_lock<std::mutex> lock {mutex};
+		sessionMap = &dbSessions[std::this_thread::get_id()];
+	}
+
+	auto it {sessionMap->find(&db)};
+	if (it != std::end(*sessionMap))
 		return *it->second;
 
-	auto res {dbSessions.emplace(std::this_thread::get_id(), db.createSession())};
+	auto res {sessionMap->emplace(&db, db.createSession())};
 	assert(res.second);
+
+	LMS_LOG(API_SUBSONIC, DEBUG) << "Created db session";
+
 	return *(res.first->second);
 }
 
 static
 void
-cleanDbSessions()
+clearDbSessions()
 {
 	dbSessions.clear();
 }
@@ -326,7 +336,7 @@ SubsonicResource::SubsonicResource(Database::Database& db)
 SubsonicResource::~SubsonicResource()
 {
 	LMS_LOG(API_SUBSONIC, DEBUG) << "Cleaning db sessions...";
-	cleanDbSessions();
+	clearDbSessions();
 }
 
 std::vector<std::string>
@@ -379,7 +389,7 @@ std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap
 void
 SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response)
 {
-	static std::atomic<std::size_t> curRequestId{};
+	static std::atomic<std::size_t> curRequestId {};
 
 	const std::size_t requestId {curRequestId++};
 
@@ -392,12 +402,21 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 	try
 	{
-		Database::Session& dbSession {getOrCreateDbSession(_db)};
+		Session& dbSession {getOrCreateDbSession(_db)};
 
 		const ClientInfo clientInfo {getClientInfo(parameters)};
 
-		if (!dbSession.checkUserPassword(clientInfo.user, clientInfo.password))
-			throw Error {Error::Code::WrongUsernameOrPassword};
+		switch (getService<Auth::AuthService>()->checkUserPassword(dbSession,
+					boost::asio::ip::address::from_string(request.clientAddress()),
+					clientInfo.user, clientInfo.password))
+		{
+			case Auth::AuthService::PasswordCheckResult::Match:
+				break;
+			case Auth::AuthService::PasswordCheckResult::Mismatch:
+				throw Error {Error::Code::WrongUsernameOrPassword};
+			case Auth::AuthService::PasswordCheckResult::Throttled:
+				throw Error {Error::CustomType::LoginThrottled};
+		}
 
 		RequestContext requestContext {.parameters = parameters, .dbSession = dbSession, .userName = clientInfo.user};
 
@@ -455,7 +474,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 static
 std::string
-getArtistNames(const std::vector<Database::Artist::pointer>& artists)
+getArtistNames(const std::vector<Artist::pointer>& artists)
 {
 	if (artists.size() == 1)
 		return artists.front()->getName();
@@ -464,7 +483,7 @@ getArtistNames(const std::vector<Database::Artist::pointer>& artists)
 	names.resize(artists.size());
 
 	std::transform(std::cbegin(artists), std::cend(artists), std::begin(names),
-			[](const Database::Artist::pointer& artist)
+			[](const Artist::pointer& artist)
 			{
 				return artist->getName();
 			});
@@ -474,7 +493,7 @@ getArtistNames(const std::vector<Database::Artist::pointer>& artists)
 
 static
 std::string
-getTrackPath(const Database::Track::pointer& track)
+getTrackPath(const Track::pointer& track)
 {
 	std::string path;
 
@@ -503,7 +522,7 @@ getTrackPath(const Database::Track::pointer& track)
 
 static
 Response::Node
-trackToResponseNode(const Database::Track::pointer& track, Database::Session& dbSession, const Database::User::pointer& user)
+trackToResponseNode(const Track::pointer& track, Session& dbSession, const User::pointer& user)
 {
 	Response::Node trackResponse;
 
@@ -547,7 +566,7 @@ trackToResponseNode(const Database::Track::pointer& track, Database::Session& db
 		trackResponse.setAttribute("starred", reportedStarredDate);
 
 	// Report the first GENRE for this track
-	Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(dbSession, genreClusterName)};
+	ClusterType::pointer clusterType {ClusterType::getByName(dbSession, genreClusterName)};
 	if (clusterType)
 	{
 		auto clusters {track->getClusterGroups({clusterType}, 1)};
@@ -560,7 +579,7 @@ trackToResponseNode(const Database::Track::pointer& track, Database::Session& db
 
 static
 Response::Node
-releaseToResponseNode(const Database::Release::pointer& release, Database::Session& dbSession, const Database::User::pointer& user, bool id3)
+releaseToResponseNode(const Release::pointer& release, Session& dbSession, const User::pointer& user, bool id3)
 {
 	Response::Node albumNode;
 
@@ -613,7 +632,7 @@ releaseToResponseNode(const Database::Release::pointer& release, Database::Sessi
 	if (id3)
 	{
 		// Report the first GENRE for this track
-		Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(dbSession, genreClusterName)};
+		ClusterType::pointer clusterType {ClusterType::getByName(dbSession, genreClusterName)};
 		if (clusterType)
 		{
 			auto clusters {release->getClusterGroups({clusterType}, 1)};
@@ -630,7 +649,7 @@ releaseToResponseNode(const Database::Release::pointer& release, Database::Sessi
 
 static
 Response::Node
-artistToResponseNode(const Database::User::pointer& user, const Database::Artist::pointer& artist, bool id3)
+artistToResponseNode(const User::pointer& user, const Artist::pointer& artist, bool id3)
 {
 	Response::Node artistNode;
 
@@ -648,7 +667,7 @@ artistToResponseNode(const Database::User::pointer& user, const Database::Artist
 
 static
 Response::Node
-clusterToResponseNode(const Database::Cluster::pointer& cluster)
+clusterToResponseNode(const Cluster::pointer& cluster)
 {
 	Response::Node clusterNode;
 
@@ -683,19 +702,19 @@ handleCreatePlaylistRequest(RequestContext& context)
 	if (!name && !id)
 		throw Error {Error::Code::RequiredParameterMissing};
 
-	auto transaction {context.dbSession.createSharedTransaction()};
+	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
-	Database::TrackList::pointer tracklist;
+	TrackList::pointer tracklist;
 	if (id)
 	{
-		tracklist = Database::TrackList::getById(context.dbSession, id->value);
+		tracklist = TrackList::getById(context.dbSession, id->value);
 		if (!tracklist
 			|| tracklist->getUser() != user
-			|| tracklist->getType() != Database::TrackList::Type::Playlist)
+			|| tracklist->getType() != TrackList::Type::Playlist)
 		{
 			throw Error {Error::Code::RequestedDataNotFound};
 		}
@@ -705,16 +724,16 @@ handleCreatePlaylistRequest(RequestContext& context)
 	}
 	else
 	{
-		tracklist = Database::TrackList::create(context.dbSession, *name, Database::TrackList::Type::Playlist, false, user);
+		tracklist = TrackList::create(context.dbSession, *name, TrackList::Type::Playlist, false, user);
 	}
 
 	for (const Id& trackId : trackIds)
 	{
-		Database::Track::pointer track {Database::Track::getById(context.dbSession, trackId.value)};
+		Track::pointer track {Track::getById(context.dbSession, trackId.value)};
 		if (!track)
 			continue;
 
-		Database::TrackListEntry::create(context.dbSession, track, tracklist );
+		TrackListEntry::create(context.dbSession, track, tracklist );
 	}
 
 	return Response::createOkResponse();
@@ -730,14 +749,14 @@ handleDeletePlaylistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
-	Database::TrackList::pointer tracklist {Database::TrackList::getById(context.dbSession, id.value)};
+	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id.value)};
 	if (!tracklist
 		|| tracklist->getUser() != user
-		|| tracklist->getType() != Database::TrackList::Type::Playlist)
+		|| tracklist->getType() != TrackList::Type::Playlist)
 	{
 		throw Error {Error::Code::RequestedDataNotFound};
 	}
@@ -769,51 +788,19 @@ handleGetRandomSongsRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
-	auto tracks {Database::Track::getAllRandom(context.dbSession, size)};
+	auto tracks {Track::getAllRandom(context.dbSession, size)};
 
 	Response response {Response::createOkResponse()};
 
 	Response::Node& randomSongsNode {response.createNode("randomSongs")};
-	for (const Database::Track::pointer& track : tracks)
+	for (const Track::pointer& track : tracks)
 		randomSongsNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 
 	return response;
-}
-
-static
-std::vector<Database::Release::pointer> getRandomAlbums(Database::Session& dbSession, std::size_t offset, std::size_t size)
-{
-	std::vector<Database::Release::pointer> res;
-
-	std::size_t nbReleases {Database::Release::getCount(dbSession)};
-	if (offset > nbReleases)
-		return res;
-
-	if (offset + size > nbReleases)
-		size = nbReleases - offset;
-
-	std::vector<size_t> indexes;
-	indexes.resize(nbReleases);
-	std::iota(std::begin(indexes), std::end(indexes), 1);
-
-	// As random results are paginated, we need to set a seed for it
-	std::seed_seq seed {1337};
-	std::mt19937 generator{seed};
-
-	std::shuffle(std::begin(indexes), std::end(indexes), generator);
-	std::for_each(std::next(std::begin(indexes), offset), std::next(std::begin(indexes), offset + size),
-		[&](std::size_t offset)
-		{
-			auto release {Database::Release::getAll(dbSession, offset, 1)};
-			if (!release.empty())
-				res.emplace_back(release.front());
-		});
-
-	return res;
 }
 
 static
@@ -827,40 +814,41 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").get_value_or(10)};
 	std::size_t offset {getParameterAs<std::size_t>(context.parameters, "offset").get_value_or(0)};
 
-	std::vector<Database::Release::pointer> releases;
+	std::vector<Release::pointer> releases;
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
 	if (type == "random")
 	{
-		releases = getRandomAlbums(context.dbSession, offset, size);
+		// Random results are paginated, but there is no acceptable way to handle the pagination params without repeating some albums
+		releases = Release::getAllRandom(context.dbSession, size);
 	}
 	else if (type == "newest")
 	{
 		auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-6)};
-		releases = Database::Release::getLastAdded(context.dbSession, after, offset, size);
+		releases = Release::getLastAdded(context.dbSession, after, offset, size);
 	}
 	else if (type == "alphabeticalByName")
 	{
-		releases = Database::Release::getAll(context.dbSession, offset, size);
+		releases = Release::getAll(context.dbSession, offset, size);
 	}
 	else if (type == "byGenre")
 	{
 		// Mandatory param
 		std::string genre {getMandatoryParameterAs<std::string>(context.parameters, "genre")};
 
-		Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(context.dbSession, genreClusterName)};
+		ClusterType::pointer clusterType {ClusterType::getByName(context.dbSession, genreClusterName)};
 		if (clusterType)
 		{
-			Database::Cluster::pointer cluster {clusterType->getCluster(genre)};
+			Cluster::pointer cluster {clusterType->getCluster(genre)};
 			if (cluster)
 			{
 				bool more;
-				releases = Database::Release::getByFilter(context.dbSession, {cluster.id()}, {}, offset, size, more);
+				releases = Release::getByFilter(context.dbSession, {cluster.id()}, {}, offset, size, more);
 			}
 		}
 	}
@@ -870,7 +858,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	Response response {Response::createOkResponse()};
 	Response::Node& albumListNode {response.createNode(id3 ? "albumList2" : "albumList")};
 
-	for (const Database::Release::pointer& release : releases)
+	for (const Release::pointer& release : releases)
 		albumListNode.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
 
 	return response;
@@ -899,11 +887,11 @@ handleGetAlbumRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::Release::pointer release {Database::Release::getById(context.dbSession, id.value)};
+	Release::pointer release {Release::getById(context.dbSession, id.value)};
 	if (!release)
 		throw Error {Error::Code::RequestedDataNotFound};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -911,7 +899,7 @@ handleGetAlbumRequest(RequestContext& context)
 	Response::Node releaseNode {releaseToResponseNode(release, context.dbSession, user, true /* id3 */)};
 
 	auto tracks {release->getTracks()};
-	for (const Database::Track::pointer& track : tracks)
+	for (const Track::pointer& track : tracks)
 		releaseNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 
 	response.addNode("album", std::move(releaseNode));
@@ -930,8 +918,8 @@ handleGetArtistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::Artist::pointer artist {Database::Artist::getById(context.dbSession, id.value)};
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 
 	if (!artist || !user)
 		throw Error {Error::Code::RequestedDataNotFound};
@@ -940,7 +928,7 @@ handleGetArtistRequest(RequestContext& context)
 	Response::Node artistNode {artistToResponseNode(user, artist, true /* id3 */)};
 
 	auto releases {artist->getReleases()};
-	for (const Database::Release::pointer& release : releases)
+	for (const Release::pointer& release : releases)
 		artistNode.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, true /* id3 */));
 
 	response.addNode("artist", std::move(artistNode));
@@ -960,27 +948,35 @@ Response handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").get_value_or(10)};
 
-	auto transaction {context.dbSession.createSharedTransaction()};
-
-	Database::Artist::pointer artist {Database::Artist::getById(context.dbSession, id.value)};
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
-
-	if (!artist || !user)
-		throw Error {Error::Code::RequestedDataNotFound};
-
 	Response response {Response::createOkResponse()};
 	Response::Node& artistInfoNode {response.createNode(id3 ? "artistInfo2" : "artistInfo")};
 
-	if (!artist->getMBID().empty())
-		artistInfoNode.createChild("musicBrainzId").setValue(artist->getMBID());
-
-	auto similarArtistsId {getService<Similarity::Searcher>()->getSimilarArtists(context.dbSession, artist.id(), count)};
-	for ( const auto& similarArtistId : similarArtistsId )
 	{
-		Database::Artist::pointer similarArtist {Database::Artist::getById(context.dbSession, similarArtistId)};
+		auto transaction {context.dbSession.createSharedTransaction()};
 
-		if (similarArtist)
-			artistInfoNode.addArrayChild("similarArtist", artistToResponseNode(user, similarArtist, id3));
+		Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
+		if (!artist)
+			throw Error {Error::Code::RequestedDataNotFound};
+
+		if (!artist->getMBID().empty())
+			artistInfoNode.createChild("musicBrainzId").setValue(artist->getMBID());
+	}
+
+	auto similarArtistsId {getService<Similarity::Searcher>()->getSimilarArtists(context.dbSession, id.value, count)};
+
+	{
+		auto transaction {context.dbSession.createSharedTransaction()};
+
+		User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+		if (!user)
+			throw Error {Error::Code::RequestedDataNotFound};
+
+		for ( const auto& similarArtistId : similarArtistsId )
+		{
+			Artist::pointer similarArtist {Artist::getById(context.dbSession, similarArtistId)};
+			if (similarArtist)
+				artistInfoNode.addArrayChild("similarArtist", artistToResponseNode(user, similarArtist, id3));
+		}
 	}
 
 	return response;
@@ -1006,12 +1002,12 @@ handleGetArtistsRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
-	auto artists {Database::Artist::getAll(context.dbSession)};
-	for (const Database::Artist::pointer& artist : artists)
+	auto artists {Artist::getAll(context.dbSession)};
+	for (const Artist::pointer& artist : artists)
 		indexNode.addArrayChild("artist", artistToResponseNode(user, artist, true /* id3 */));
 
 	return response;
@@ -1031,7 +1027,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -1041,8 +1037,8 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		{
 			directoryNode.setAttribute("name", "Music");
 
-			auto artists {Database::Artist::getAll(context.dbSession)};
-			for (const Database::Artist::pointer& artist : artists)
+			auto artists {Artist::getAll(context.dbSession)};
+			for (const Artist::pointer& artist : artists)
 				directoryNode.addArrayChild("child", artistToResponseNode(user, artist, false /* no id3 */));
 
 			break;
@@ -1050,14 +1046,14 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 		case Id::Type::Artist:
 		{
-			auto artist {Database::Artist::getById(context.dbSession, id.value)};
+			auto artist {Artist::getById(context.dbSession, id.value)};
 			if (!artist)
 				throw Error {Error::Code::RequestedDataNotFound};
 
 			directoryNode.setAttribute("name", makeNameFilesystemCompatible(artist->getName()));
 
 			auto releases {artist->getReleases()};
-			for (const Database::Release::pointer& release : releases)
+			for (const Release::pointer& release : releases)
 				directoryNode.addArrayChild("child", releaseToResponseNode(release, context.dbSession, user, false /* no id3 */));
 
 			break;
@@ -1065,14 +1061,14 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 		case Id::Type::Release:
 		{
-			auto release {Database::Release::getById(context.dbSession, id.value)};
+			auto release {Release::getById(context.dbSession, id.value)};
 			if (!release)
 				throw Error {Error::Code::RequestedDataNotFound};
 
 			directoryNode.setAttribute("name", makeNameFilesystemCompatible(release->getName()));
 
 			auto tracks {release->getTracks()};
-			for (const Database::Track::pointer& track : tracks)
+			for (const Track::pointer& track : tracks)
 				directoryNode.addArrayChild("child", trackToResponseNode(track, context.dbSession, user));
 
 			break;
@@ -1107,12 +1103,12 @@ handleGetGenresRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	auto clusterType {Database::ClusterType::getByName(context.dbSession, genreClusterName)};
+	auto clusterType {ClusterType::getByName(context.dbSession, genreClusterName)};
 	if (clusterType)
 	{
 		auto clusters {clusterType->getClusters()};
 
-		for (const Database::Cluster::pointer& cluster : clusters)
+		for (const Cluster::pointer& cluster : clusters)
 			genresNode.addArrayChild("genre", clusterToResponseNode(cluster));
 	}
 
@@ -1130,12 +1126,12 @@ handleGetIndexesRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
-	auto artists {Database::Artist::getAll(context.dbSession)};
-	for (const Database::Artist::pointer& artist : artists)
+	auto artists {Artist::getAll(context.dbSession)};
+	for (const Artist::pointer& artist : artists)
 		indexNode.addArrayChild("artist", artistToResponseNode(user, artist, false /* no id3 */));
 
 	return response;
@@ -1154,8 +1150,8 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::Artist::pointer artist {Database::Artist::getById(context.dbSession, id.value)};
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 
 	if (!user || !artist)
 		throw Error {Error::Code::RequestedDataNotFound};
@@ -1166,7 +1162,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	auto similarArtistsId {getService<Similarity::Searcher>()->getSimilarArtists(context.dbSession, artist.id(), 5)};
 	for ( const auto& similarArtistId : similarArtistsId )
 	{
-		Database::Artist::pointer similarArtist {Database::Artist::getById(context.dbSession, similarArtistId)};
+		Artist::pointer similarArtist {Artist::getById(context.dbSession, similarArtistId)};
 		if (!similarArtist)
 			continue;
 
@@ -1183,7 +1179,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 
 	Response response {Response::createOkResponse()};
 	Response::Node& similarSongsNode {response.createNode(id3 ? "similarSongs2" : "similarSongs")};
-	for (const Database::Track::pointer& track : tracks)
+	for (const Track::pointer& track : tracks)
 		similarSongsNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 
 	return response;
@@ -1208,7 +1204,7 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -1217,19 +1213,19 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 
 	{
 		auto artists {user->getStarredArtists()};
-		for (const Database::Artist::pointer& artist : artists)
+		for (const Artist::pointer& artist : artists)
 			starredNode.addArrayChild("artist", artistToResponseNode(user, artist, id3));
 	}
 
 	{
 		auto releases {user->getStarredReleases()};
-		for (const Database::Release::pointer& release : releases)
+		for (const Release::pointer& release : releases)
 			starredNode.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
 	}
 
 	{
 		auto tracks {user->getStarredTracks()};
-		for (const Database::Track::pointer& track : tracks)
+		for (const Track::pointer& track : tracks)
 			starredNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 	}
 
@@ -1250,7 +1246,7 @@ handleGetStarred2Request(RequestContext& context)
 }
 
 Response::Node
-tracklistToResponseNode(const Database::TrackList::pointer& tracklist, Database::Session& dbSession)
+tracklistToResponseNode(const TrackList::pointer& tracklist, Session& dbSession)
 {
 	Response::Node playlistNode;
 
@@ -1260,7 +1256,7 @@ tracklistToResponseNode(const Database::TrackList::pointer& tracklist, Database:
 	playlistNode.setAttribute("duration", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(tracklist->getDuration()).count()));
 	playlistNode.setAttribute("public", tracklist->isPublic() ? "true" : "false");
 	playlistNode.setAttribute("created", "");
-	playlistNode.setAttribute("owner", dbSession.getUserLoginName(tracklist->getUser()));
+	playlistNode.setAttribute("owner", tracklist->getUser()->getLoginName());
 
 	return playlistNode;
 }
@@ -1275,8 +1271,8 @@ handleGetPlaylistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
-	Database::TrackList::pointer tracklist {Database::TrackList::getById(context.dbSession, id.value)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id.value)};
 	if (!user || !tracklist)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -1284,7 +1280,7 @@ handleGetPlaylistRequest(RequestContext& context)
 	Response::Node playlistNode {tracklistToResponseNode(tracklist, context.dbSession)};
 
 	auto entries {tracklist->getEntries()};
-	for (const Database::TrackListEntry::pointer& entry : entries)
+	for (const TrackListEntry::pointer& entry : entries)
 		playlistNode.addArrayChild("entry", trackToResponseNode(entry->getTrack(), context.dbSession, user));
 
 	response.addNode("playlist", playlistNode );
@@ -1297,15 +1293,15 @@ handleGetPlaylistsRequest(RequestContext& context)
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
 	Response response {Response::createOkResponse()};
 	Response::Node& playlistsNode {response.createNode("playlists")};
 
-	auto tracklists {Database::TrackList::getAll(context.dbSession, user, Database::TrackList::Type::Playlist)};
-	for (const Database::TrackList::pointer& tracklist : tracklists)
+	auto tracklists {TrackList::getAll(context.dbSession, user, TrackList::Type::Playlist)};
+	for (const TrackList::pointer& tracklist : tracklists)
 		playlistsNode.addArrayChild("playlist", tracklistToResponseNode(tracklist, context.dbSession));
 
 	return response;
@@ -1325,7 +1321,7 @@ handleGetSongsByGenreRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	auto clusterType {Database::ClusterType::getByName(context.dbSession, genreClusterName)};
+	auto clusterType {ClusterType::getByName(context.dbSession, genreClusterName)};
 	if (!clusterType)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -1333,7 +1329,7 @@ handleGetSongsByGenreRequest(RequestContext& context)
 	if (!cluster)
 		throw Error {Error::Code::RequestedDataNotFound};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -1341,8 +1337,8 @@ handleGetSongsByGenreRequest(RequestContext& context)
 	Response::Node& songsByGenreNode {response.createNode("songsByGenre")};
 
 	bool more;
-	auto tracks {Database::Track::getByFilter(context.dbSession, {cluster.id()}, {}, offset, size, more)};
-	for (const Database::Track::pointer& track : tracks)
+	auto tracks {Track::getByFilter(context.dbSession, {cluster.id()}, {}, offset, size, more)};
+	for (const Track::pointer& track : tracks)
 		songsByGenreNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 
 	return response;
@@ -1367,7 +1363,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
@@ -1376,20 +1372,20 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 
 	bool more;
 	{
-		auto artists {Database::Artist::getByFilter(context.dbSession, {}, keywords, artistOffset, artistCount, more)};
-		for (const Database::Artist::pointer& artist : artists)
+		auto artists {Artist::getByFilter(context.dbSession, {}, keywords, artistOffset, artistCount, more)};
+		for (const Artist::pointer& artist : artists)
 			searchResult2Node.addArrayChild("artist", artistToResponseNode(user, artist, id3));
 	}
 
 	{
-		auto releases {Database::Release::getByFilter(context.dbSession, {}, keywords, albumOffset, albumCount, more)};
-		for (const Database::Release::pointer& release : releases)
+		auto releases {Release::getByFilter(context.dbSession, {}, keywords, albumOffset, albumCount, more)};
+		for (const Release::pointer& release : releases)
 			searchResult2Node.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
 	}
 
 	{
-		auto tracks {Database::Track::getByFilter(context.dbSession, {}, keywords, songOffset, songCount, more)};
-		for (const Database::Track::pointer& track : tracks)
+		auto tracks {Track::getByFilter(context.dbSession, {}, keywords, songOffset, songCount, more)};
+		for (const Track::pointer& track : tracks)
 			searchResult2Node.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 	}
 
@@ -1448,13 +1444,13 @@ handleStarRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
 	for (const Id& id : params.artistIds)
 	{
-		Database::Artist::pointer artist {Database::Artist::getById(context.dbSession, id.value)};
+		Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
 		if (!artist)
 			continue;
 
@@ -1463,7 +1459,7 @@ handleStarRequest(RequestContext& context)
 
 	for (const Id& id : params.releaseIds)
 	{
-		Database::Release::pointer release {Database::Release::getById(context.dbSession, id.value)};
+		Release::pointer release {Release::getById(context.dbSession, id.value)};
 		if (!release)
 			continue;
 
@@ -1472,7 +1468,7 @@ handleStarRequest(RequestContext& context)
 
 	for (const Id& id : params.trackIds)
 	{
-		Database::Track::pointer track {Database::Track::getById(context.dbSession, id.value)};
+		Track::pointer track {Track::getById(context.dbSession, id.value)};
 		if (!track)
 			continue;
 
@@ -1501,13 +1497,13 @@ handleUnstarRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
 	for (const Id& id : params.artistIds)
 	{
-		Database::Artist::pointer artist {Database::Artist::getById(context.dbSession, id.value)};
+		Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
 		if (!artist)
 			continue;
 
@@ -1516,7 +1512,7 @@ handleUnstarRequest(RequestContext& context)
 
 	for (const Id& id : params.releaseIds)
 	{
-		Database::Release::pointer release {Database::Release::getById(context.dbSession, id.value)};
+		Release::pointer release {Release::getById(context.dbSession, id.value)};
 		if (!release)
 			continue;
 
@@ -1525,7 +1521,7 @@ handleUnstarRequest(RequestContext& context)
 
 	for (const Id& id : params.trackIds)
 	{
-		Database::Track::pointer track {Database::Track::getById(context.dbSession, id.value)};
+		Track::pointer track {Track::getById(context.dbSession, id.value)};
 		if (!track)
 			continue;
 
@@ -1556,14 +1552,14 @@ handleUpdatePlaylistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Database::User::pointer user {context.dbSession.getUser(context.userName)};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw Error {Error::Code::RequestedDataNotFound};
 
-	Database::TrackList::pointer tracklist {Database::TrackList::getById(context.dbSession, id.value)};
+	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id.value)};
 	if (!tracklist
 		|| tracklist->getUser() != user
-		|| tracklist->getType() != Database::TrackList::Type::Playlist)
+		|| tracklist->getType() != TrackList::Type::Playlist)
 	{
 		throw Error {Error::Code::RequestedDataNotFound};
 	}
@@ -1589,11 +1585,11 @@ handleUpdatePlaylistRequest(RequestContext& context)
 	// Add tracks
 	for (const Id& trackIdToAdd : trackIdsToAdd)
 	{
-		Database::Track::pointer track {Database::Track::getById(context.dbSession, trackIdToAdd.value)};
+		Track::pointer track {Track::getById(context.dbSession, trackIdToAdd.value)};
 		if (!track)
 			continue;
 
-		Database::TrackListEntry::create(context.dbSession, track, tracklist );
+		TrackListEntry::create(context.dbSession, track, tracklist );
 	}
 
 	return Response::createOkResponse();
@@ -1613,7 +1609,7 @@ createTranscoder(RequestContext& context)
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
 
-		Database::User::pointer user {context.dbSession.getUser(context.userName)};
+		User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 		if (!user)
 			throw Error {Error::Code::RequestedDataNotFound};
 
@@ -1623,7 +1619,7 @@ createTranscoder(RequestContext& context)
 
 		*maxBitRate = clamp(*maxBitRate, std::size_t {48}, user->getMaxAudioTranscodeBitrate() / 1000);
 
-		auto track {Database::Track::getById(context.dbSession, id.value)};
+		auto track {Track::getById(context.dbSession, id.value)};
 		if (!track)
 			throw Error {Error::Code::RequestedDataNotFound};
 

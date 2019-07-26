@@ -156,4 +156,3 @@ stringFromHex(const std::string& str)
 
 }
 
-

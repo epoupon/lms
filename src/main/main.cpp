@@ -26,6 +26,7 @@
 #include "api/subsonic/SubsonicResource.hpp"
 #include "av/AvInfo.hpp"
 #include "av/AvTranscoder.hpp"
+#include "auth/AuthService.hpp"
 #include "cover/CoverArtGrabber.hpp"
 #include "image/Image.hpp"
 #include "scanner/MediaScanner.hpp"
@@ -121,7 +122,6 @@ int main(int argc, char* argv[])
 		Image::init(argv[0]);
 		Av::AvInit();
 		Av::Transcoder::init();
-		Database::Session::configureAuth();
 
 		// Initializing a connection pool to the database that will be shared along services
 		Database::Database database {Config::instance().getPath("working-dir") / "lms.db"};
@@ -129,6 +129,7 @@ int main(int argc, char* argv[])
 		UserInterface::LmsApplicationGroupContainer appGroups;
 
 		// Service initialization order is important
+		ServiceProvider<Auth::AuthService>::create(Config::instance().getULong("login-throttler-max-entriees", 10000));
 		Scanner::MediaScanner& mediaScanner {ServiceProvider<Scanner::MediaScanner>::create(database.createSession())};
 
 		Similarity::FeaturesScannerAddon similarityFeaturesScannerAddon {database.createSession()};

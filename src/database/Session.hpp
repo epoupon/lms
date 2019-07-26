@@ -26,18 +26,8 @@
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/SqlConnectionPool.h>
-#include <Wt/Auth/Dbo/AuthInfo.h>
-
-#include <Wt/Auth/Dbo/UserDatabase.h>
-#include <Wt/Auth/Login.h>
-#include <Wt/Auth/PasswordService.h>
-
-#include "User.hpp"
 
 namespace Database {
-
-using AuthInfo = Wt::Auth::Dbo::AuthInfo<User>;
-using UserDatabase = Wt::Auth::Dbo::UserDatabase<AuthInfo>;
 
 class UniqueTransaction
 {
@@ -81,24 +71,6 @@ class Session
 
 		void optimize();
 
-		// User management
-		Wt::Dbo::ptr<User>	getLoggedUser();	// get the current user, may return empty
-		Wt::Dbo::ptr<User>	getUser(const std::string& loginName);
-		std::string		getUserLoginName(Wt::Dbo::ptr<User> user);
-		Wt::Dbo::ptr<User>	createUser(const std::string& loginName, const std::string& password);
-		void			removeUser(Wt::Dbo::ptr<User> user);
-		bool			checkUserPassword(const std::string& loginName, const std::string& password);
-		void			updateUserPassword(Wt::Dbo::ptr<User> user, const std::string& password);
-		Wt::WDateTime		getUserLastLoginAttempt(Wt::Dbo::ptr<User> user);
-
-		Wt::Auth::AbstractUserDatabase& getUserDatabase();
-		Wt::Auth::Login& getLogin() { return _login; } // TODO move
-
-		// Long living shared associated services
-		static void configureAuth();
-		static const Wt::Auth::AuthService& getAuthService();
-		static const Wt::Auth::PasswordService& getPasswordService();
-
 		Wt::Dbo::Session& getDboSession() { return _session; }
 
 	private:
@@ -109,13 +81,8 @@ class Session
 		void doDatabaseMigrationIfNeeded();
 		void prepareTables(); // need to run only once at startup
 
-		 Wt::Dbo::ptr<User> getUser(const Wt::Auth::User& authUser);
-
 		std::shared_timed_mutex&	_mutex;
 		Wt::Dbo::Session		_session;
-		std::unique_ptr<UserDatabase>	_users;
-		Wt::Auth::Login 		_login;
-
 };
 
 } // namespace Database

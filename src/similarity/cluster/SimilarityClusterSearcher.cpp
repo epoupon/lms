@@ -167,6 +167,9 @@ getSimilarArtists(Database::Session& dbSession, Database::IdType artistId, std::
 				continue;
 
 			res.push_back(trackArtist.id());
+
+			if (res.size() == maxCount)
+				break;
 		}
 
 		if (res.size() == maxCount)

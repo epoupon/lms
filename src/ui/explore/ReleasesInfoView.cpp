@@ -23,6 +23,7 @@
 
 #include "database/Release.hpp"
 #include "database/TrackList.hpp"
+#include "database/User.hpp"
 #include "resource/ImageResource.hpp"
 #include "ReleaseLink.hpp"
 #include "LmsApplication.hpp"

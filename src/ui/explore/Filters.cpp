@@ -99,17 +99,24 @@ Filters::showDialog()
 		const std::string type {typeCombo->valueText().toUTF8()};
 		const std::string value {valueCombo->valueText().toUTF8()};
 
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		// TODO use a model to store the cluster.id() values
+		Database::IdType clusterId {};
 
-		Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(LmsApp->getDbSession(), type)};
-		if (!clusterType)
-			return;
+		{
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		Database::Cluster::pointer cluster {clusterType->getCluster(value)};
-		if (!cluster)
-			return;
+			Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(LmsApp->getDbSession(), type)};
+			if (!clusterType)
+				return;
 
-		add(cluster.id());
+			Database::Cluster::pointer cluster {clusterType->getCluster(value)};
+			if (!cluster)
+				return;
+
+			clusterId = cluster.id();
+		}
+
+		add(clusterId);
 	});
 
 	dialog->show();
@@ -118,23 +125,29 @@ Filters::showDialog()
 void
 Filters::add(Database::IdType clusterId)
 {
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	Database::Cluster::pointer cluster {Database::Cluster::getById(LmsApp->getDbSession(), clusterId)};
-	if (!cluster)
-		return;
+	Wt::WTemplate* filter {};
 
-	auto res {_filterIds.insert(clusterId)};
-	if (!res.second)
-		return;
+	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto filter {_filters->addWidget(LmsApp->createCluster(cluster, true))};
-	filter->clicked().connect(std::bind([=]
+		Database::Cluster::pointer cluster {Database::Cluster::getById(LmsApp->getDbSession(), clusterId)};
+		if (!cluster)
+			return;
+
+		auto res {_filterIds.insert(clusterId)};
+		if (!res.second)
+			return;
+
+		filter = _filters->addWidget(LmsApp->createCluster(cluster, true));
+	}
+
+	filter->clicked().connect([=]
 	{
 		_filters->removeWidget(filter);
 		_filterIds.erase(clusterId);
 		_sigUpdated.emit();
-	}));
+	});
 
 	LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Explore.filter-added"), std::chrono::seconds {2});
 

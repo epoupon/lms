@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2019 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,29 +17,15 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <boost/asio/ip/address.hpp>
 
-#include <boost/optional.hpp>
-
-#include <Wt/WTemplateFormView.h>
-
-#include "database/Types.hpp"
-
-namespace UserInterface {
-
-
-// If success, returns the authenticated user id
-boost::optional<Database::IdType> processAuthToken(const Wt::WEnvironment& env);
-
-class Auth : public Wt::WTemplateFormView
+namespace std
 {
-	public:
-		Auth();
+	template<> struct hash<boost::asio::ip::address>
+	{
+		std::size_t operator()(const boost::asio::ip::address& ipAddr) const;
+	};
 
-		Wt::Signal<Database::IdType /*userId*/> userLoggedIn;
-};
-
-
-} // namespace UserInterface
+}
 
 

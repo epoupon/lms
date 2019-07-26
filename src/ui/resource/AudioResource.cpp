@@ -24,6 +24,7 @@
 #include "utils/Logger.hpp"
 
 #include "database/Track.hpp"
+#include "database/User.hpp"
 
 #include "LmsApplication.hpp"
 

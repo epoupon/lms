@@ -24,12 +24,15 @@
 #include <Wt/WCheckBox.h>
 #include <Wt/WComboBox.h>
 #include <Wt/WLineEdit.h>
+#include <Wt/WTemplateFormView.h>
 
 #include <Wt/WFormModel.h>
 
 #include "common/Validators.hpp"
 #include "common/ValueStringModel.hpp"
 
+#include "auth/AuthService.hpp"
+#include "main/Service.hpp"
 #include "utils/Logger.hpp"
 #include "LmsApplication.hpp"
 
@@ -69,20 +72,27 @@ class SettingsModel : public Wt::WFormModel
 
 		void saveData()
 		{
+			Database::User::PasswordHash passwordHash;
+
+			if (!valueText(PasswordField).empty())
+				passwordHash = getService<::Auth::AuthService>()->hashPassword(valueText(PasswordField).toUTF8());
+
 			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-			LmsApp->getUser().modify()->setAudioTranscodeEnable(Wt::asNumber(value(TranscodeEnableField)));
+			Database::User::pointer user {LmsApp->getUser()};
+
+			user.modify()->setAudioTranscodeEnable(Wt::asNumber(value(TranscodeEnableField)));
 
 			auto transcodeBitrateRow {_transcodeBitrateModel->getRowFromString(valueText(TranscodeBitrateField))};
 			if (transcodeBitrateRow)
-				LmsApp->getUser().modify()->setAudioTranscodeBitrate(_transcodeBitrateModel->getValue(*transcodeBitrateRow));
+				user.modify()->setAudioTranscodeBitrate(_transcodeBitrateModel->getValue(*transcodeBitrateRow));
 
 			auto transcodeFormatRow {_transcodeFormatModel->getRowFromString(valueText(TranscodeFormatField))};
 			if (transcodeFormatRow)
-				LmsApp->getUser().modify()->setAudioTranscodeFormat(_transcodeFormatModel->getValue(*transcodeFormatRow));
+				user.modify()->setAudioTranscodeFormat(_transcodeFormatModel->getValue(*transcodeFormatRow));
 
 			if (!valueText(PasswordField).empty())
-				Session::getPasswordService().updatePassword(LmsApp->getAuthUser(), valueText(PasswordField));
+				user.modify()->setPasswordHash(passwordHash);
 		}
 
 		void loadData()
@@ -115,11 +125,8 @@ class SettingsModel : public Wt::WFormModel
 			{
 				if (!valueText(PasswordField).empty())
 				{
-					// Evaluate the strength of the password
-					auto res = Session::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField), LmsApp->getUserIdentity(), "");
-
-					if (!res.isValid())
-						error = res.message();
+					if (!getService<::Auth::AuthService>()->evaluatePasswordStrength(LmsApp->getUserLoginName(), valueText(PasswordField).toUTF8()))
+						error = Wt::WString::tr("Lms.password-too-weak");
 				}
 				else
 					return Wt::WFormModel::validateField(field);

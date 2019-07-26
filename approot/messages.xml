@@ -13,7 +13,10 @@
 <message id="Lms.logout">Logout</message>
 <message id="Lms.not-a-directory">Not a directory</message>
 <message id="Lms.password">Password</message>
+<message id="Lms.password-bad-login-combination">Bad login / password combination</message>
+<message id="Lms.password-client-throttled">Login throttled, please try again later</message>
 <message id="Lms.password-confirm">Confirm password</message>
+<message id="Lms.password-too-weak">Password too weak</message>
 <message id="Lms.passwords-dont-match">Passwords don't match</message>
 <message id="Lms.quit-confirm">Are you sure?</message>
 <message id="Lms.quit-other-session">Another session has been open. Reopen this one?</message>
@@ -61,7 +64,7 @@
 <message id="Lms.Admin.User.demo-account">Demo account</message>
 <message id="Lms.Admin.User.demo-account-already-exists">Demo account already exists!</message>
 <message id="Lms.Admin.User.demo-password-invalid">Demo password must be the login name!</message>
-<message id="Lms.Admin.User.last-login-attempt">Last login attempt</message>
+<message id="Lms.Admin.User.last-login">Last login</message>
 <message id="Lms.Admin.User.user-already-exists">User already exists!</message>
 <message id="Lms.Admin.User.user-create">New user</message>
 <message id="Lms.Admin.User.user-created">New user created!</message>
@@ -143,11 +146,6 @@
 <message id="Lms.Settings.transcoding.webm_vorbis">WebM/Vorbis</message>
 <message id="Lms.Settings.settings">Settings</message>
 <message id="Lms.Settings.settings-saved">New settings saved!</message>
-
-<!--Wt-->
-<message id="Wt.Auth.valid"></message>
-<message id="Wt.Auth.user-name-info"></message>
-<message id="Wt.Auth.password-info"></message>
 
 </messages>
 

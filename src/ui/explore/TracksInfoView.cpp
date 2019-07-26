@@ -24,6 +24,7 @@
 
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
+#include "database/User.hpp"
 
 #include "utils/Utils.hpp"
 

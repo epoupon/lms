@@ -68,7 +68,7 @@ UsersView::refreshView()
 
 		Wt::WTemplate* entry {_container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry"))};
 
-		entry->bindString("name", LmsApp->getDbSession().getUserLoginName(user), Wt::TextFormat::Plain);
+		entry->bindString("name", user->getLoginName(), Wt::TextFormat::Plain);
 
 		// Create tag
 		if (user->isAdmin() || user->isDemo())
@@ -104,7 +104,7 @@ UsersView::refreshView()
 
 					Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), userId)};
 					if (user)
-						LmsApp->getDbSession().removeUser(user);
+						user.remove();
 
 					_container->removeWidget(entry);
 				}

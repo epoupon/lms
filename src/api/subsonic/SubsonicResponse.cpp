@@ -52,6 +52,8 @@ ErrorCodeToString(Error::Code error)
 {
 	switch (error)
 	{
+		case Error::Code::Generic:
+			return "Generic Error.";
 		case Error::Code::RequiredParameterMissing:
 			return "Required parameter is missing.";
 		case Error::Code::ClientMustUpgrade:
@@ -64,9 +66,9 @@ ErrorCodeToString(Error::Code error)
 			return "User is not authorized for the given operation.";
 		case Error::Code::RequestedDataNotFound:
 			return "The requested data was not found.";
-		default:
-			return "Unknown error";
 	}
+
+	return "Unknown error";
 }
 
 static
@@ -81,9 +83,11 @@ CustomTypeToString(Error::CustomType type)
 			return "Not implemented";
 		case Error::CustomType::InternalError:
 			return "Internal error";
-		default:
-			return "Unknown custom error";
+		case Error::CustomType::LoginThrottled:
+			return "Login throttled, too many attempts";
 	}
+
+	return "Unknown custom error";
 }
 
 Error::Error(Code code)

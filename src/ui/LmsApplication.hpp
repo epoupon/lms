@@ -28,7 +28,6 @@
 #include "scanner/MediaScanner.hpp"
 
 #include "LmsApplicationGroup.hpp"
-#include "Auth.hpp"
 
 namespace Database {
 	class Artist;
@@ -41,6 +40,7 @@ namespace UserInterface {
 
 class AudioResource;
 class ImageResource;
+class Auth;
 
 // Events that can be listen from anywhere in the application
 struct Events
@@ -83,9 +83,10 @@ class LmsApplication : public Wt::WApplication
 		std::shared_ptr<AudioResource> getAudioResource() { return _audioResource; }
 		Database::Session& getDbSession() { return *_dbSession.get();}
 
-		const Wt::Auth::User& getAuthUser() { return getDbSession().getLogin().user(); }
-		Wt::Dbo::ptr<Database::User> getUser() { return getDbSession().getLoggedUser(); }
-		Wt::WString getUserIdentity() { return _userIdentity; }
+		Wt::Dbo::ptr<Database::User> getUser() const;
+		bool isUserAdmin() const; // user must be logged in prior this call
+		bool isUserDemo() const; // user must be logged in prior this call
+		std::string getUserLoginName() const; // user must be logged in prior this call
 
 		Events& getEvents() { return _events; }
 
@@ -109,8 +110,10 @@ class LmsApplication : public Wt::WApplication
 
 		LmsApplicationGroup& getApplicationGroup();
 
-		// Events
-		void handleAuthEvent();
+		// Signal slots
+		void handleUserLoggedOut();
+		void handleUserLoggedIn(Database::IdType userId);
+
 		void notify(const Wt::WEvent& event) override;
 		void finalize() override;
 
@@ -120,11 +123,9 @@ class LmsApplication : public Wt::WApplication
 		std::unique_ptr<Database::Session>	_dbSession;
 		LmsApplicationGroupContainer&   	_appGroups;
 		Events					_events;
-		Wt::WString				_userIdentity;
-		Auth*					_auth {};
+		boost::optional<Database::IdType>	_userId {};
 		std::shared_ptr<ImageResource>		_imageResource;
 		std::shared_ptr<AudioResource>		_audioResource;
-		bool					_isAdmin {};
 };
 
 

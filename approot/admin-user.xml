@@ -6,16 +6,16 @@
 		<h2>${title}</h2>
 	</div>
 	<div class="form-horizontal">
-		${<if-has-last-login-attempt>}
+		${<if-has-last-login>}
 		<div class="form-group">
-			<label class="control-label col-sm-2" for="{id:last-login-attempt}">
-				${tr:Lms.Admin.User.last-login-attempt}
+			<label class="control-label col-sm-2" for="{id:last-login}">
+				${tr:Lms.Admin.User.last-login}
 			</label>
 			<div class="col-sm-5">
-				${last-login-attempt}
+				${last-login}
 			</div>
 		</div>
-		${</if-has-last-login-attempt>}
+		${</if-has-last-login>}
 		${<if-has-login>}
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:login}">

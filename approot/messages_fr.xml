@@ -13,7 +13,10 @@
 <message id="Lms.logout">Logout</message>
 <message id="Lms.not-a-directory">N'est pas un répertoire</message>
 <message id="Lms.password">Mot de passe</message>
+<message id="Lms.password-bad-login-combination">Mauvaise combinaison login / mot de passe</message>
+<message id="Lms.password-client-throttled">Trop de tentatives de connexion, veuillez réessayer plus tard</message>
 <message id="Lms.password-confirm">Confirmation du mot de passe</message>
+<message id="Lms.password-too-weak">Mot de passe trop faible</message>
 <message id="Lms.passwords-dont-match">Les mots de passe ne correspondent pas</message>
 <message id="Lms.quit-confirm">Êtes-vous sûr ?</message>
 <message id="Lms.quit-other-session">Une autre session a été ouverte. Reouvrir celle-ci ?</message>
@@ -61,7 +64,7 @@
 <message id="Lms.Admin.User.demo-account">Compte de démonstration</message>
 <message id="Lms.Admin.User.demo-account-already-exists">Le compte de démonstration existe déjà !</message>
 <message id="Lms.Admin.User.demo-password-invalid">Le password doit être égal au login !</message>
-<message id="Lms.Admin.User.last-login-attempt">Dernière tentative de login</message>
+<message id="Lms.Admin.User.last-login">Date du dernier login</message>
 <message id="Lms.Admin.User.user-already-exists">L'utilisateur existe déjà !</message>
 <message id="Lms.Admin.User.user-create">Nouvel utilisateur</message>
 <message id="Lms.Admin.User.user-created">Nouvel utilisateur créé !</message>
@@ -90,7 +93,7 @@
 <message id="Lms.Explore.various-artists">Artistes divers</message>
 
 <!--Explore:Artist-->
-<message id="Lms.Explore.ArtistInfo.similar-artists">Artists similaires</message>
+<message id="Lms.Explore.ArtistInfo.similar-artists">Artistes similaires</message>
 
 <!--Explore:Artists-->
 <message id="Lms.Explore.ArtistsInfo.recently-added">Ajouts récents</message>
@@ -148,18 +151,5 @@
 <!--Wt-->
 <message id="Wt.WMessageBox.Yes">Oui</message>
 <message id="Wt.WMessageBox.No">Non</message>
-
-<message id="Wt.Auth.valid"></message>
-<message id="Wt.Auth.user-name-info"></message>
-<message id="Wt.Auth.user-name-invalid">Invalide</message>
-<message id="Wt.Auth.password-info"></message>
-<message id="Wt.Auth.password-invalid">Mot de passe invalide</message>
-<message id="Wt.Auth.passwdqc.reason-short">Trop court</message>
-<message id="Wt.Auth.passwdqc.reason-long">Trop long</message>
-<message id="Wt.Auth.passwdqc.reason-simpleshort">Pas assez de caractères ou de classes différentes pour cette longueur de mot de passe</message>
-<message id="Wt.Auth.passwdqc.reason-simple">Pas assez de caractères ou de classes différentes</message>
-<message id="Wt.Auth.passwdqc.reason-personal">Basé sur des informations personnelles</message>
-<message id="Wt.Auth.passwdqc.reason-word">Basé sur un mot de dictionnaire</message>
-<message id="Wt.Auth.passwdqc.reason-seq">Basé sur une séquence de caractères</message>
 
 </messages>

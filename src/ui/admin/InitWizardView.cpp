@@ -22,8 +22,9 @@
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
-#include <Wt/Auth/Identity.h>
 
+#include "auth/AuthService.hpp"
+#include "main/Service.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
@@ -54,6 +55,8 @@ class InitWizardModel : public Wt::WFormModel
 
 		void saveData()
 		{
+			const Database::User::PasswordHash passwordHash {getService<::Auth::AuthService>()->hashPassword(valueText(PasswordField).toUTF8())};
+
 			auto transaction(LmsApp->getDbSession().createUniqueTransaction());
 
 			// Check if a user already exist
@@ -61,7 +64,7 @@ class InitWizardModel : public Wt::WFormModel
 			if (!Database::User::getAll(LmsApp->getDbSession()).empty())
 				throw LmsException("Admin user already created");
 
-			Database::User::pointer user {LmsApp->getDbSession().createUser(valueText(AdminLoginField).toUTF8(), valueText(PasswordField).toUTF8())};
+			Database::User::pointer user {Database::User::create(LmsApp->getDbSession(), valueText(AdminLoginField).toUTF8(), passwordHash)};
 			user.modify()->setType(Database::User::Type::ADMIN);
 		}
 
@@ -74,11 +77,8 @@ class InitWizardModel : public Wt::WFormModel
 				if (!valueText(PasswordField).empty())
 				{
 					// Evaluate the strength of the password
-					auto res = Database::Session::getPasswordService().strengthValidator()->evaluateStrength(valueText(PasswordField),
-								valueText(AdminLoginField), "");
-
-					if (!res.isValid())
-						error = res.message();
+					if (!getService<::Auth::AuthService>()->evaluatePasswordStrength(valueText(AdminLoginField).toUTF8(), valueText(PasswordField).toUTF8()))
+						error = Wt::WString::tr("Lms.password-too-weak");
 				}
 				else
 					return Wt::WFormModel::validateField(field);
@@ -126,7 +126,7 @@ InitWizardView::InitWizardView()
 	setFormWidget(InitWizardModel::PasswordConfirmField, std::move(passwordConfirmEdit));
 
 	Wt::WPushButton* saveButton = bindNew<Wt::WPushButton>("create-btn", Wt::WString::tr("Lms.create"));
-	saveButton->clicked().connect(std::bind([=]
+	saveButton->clicked().connect([=]
 	{
 		updateModel(model.get());
 
@@ -138,7 +138,7 @@ InitWizardView::InitWizardView()
 		}
 
 		updateView(model.get());
-	}));
+	});
 
 	updateView(model.get());
 }

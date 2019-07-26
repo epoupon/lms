@@ -36,6 +36,7 @@ enum class Severity
 enum class Module
 {
 	API_SUBSONIC,
+	AUTH,
 	AV,
 	COVER,
 	DB,

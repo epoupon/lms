@@ -28,13 +28,13 @@
 #include <Wt/WServer.h>
 #include <Wt/WStackedWidget.h>
 #include <Wt/WText.h>
-#include <Wt/Auth/Identity.h>
 
 #include "config/config.h"
 #include "cover/CoverArtGrabber.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
+#include "database/User.hpp"
 #include "explore/Explore.hpp"
 #include "main/Service.hpp"
 #include "utils/Logger.hpp"
@@ -46,6 +46,7 @@
 #include "admin/UsersView.hpp"
 #include "resource/ImageResource.hpp"
 #include "resource/AudioResource.hpp"
+#include "Auth.hpp"
 #include "MediaPlayer.hpp"
 #include "PlayHistoryView.hpp"
 #include "PlayQueueView.hpp"
@@ -64,6 +65,39 @@ LmsApplication*
 LmsApplication::instance()
 {
 	return reinterpret_cast<LmsApplication*>(Wt::WApplication::instance());
+}
+
+Wt::Dbo::ptr<Database::User>
+LmsApplication::getUser() const
+{
+	if (!_userId)
+		return {};
+
+	return Database::User::getById(*_dbSession, *_userId);
+}
+
+bool
+LmsApplication::isUserAdmin() const
+{
+	auto transaction {_dbSession->createSharedTransaction()};
+
+	return getUser()->isAdmin();
+}
+
+bool
+LmsApplication::isUserDemo() const
+{
+	auto transaction {_dbSession->createSharedTransaction()};
+
+	return getUser()->isDemo();
+}
+
+std::string
+LmsApplication::getUserLoginName() const
+{
+	auto transaction {_dbSession->createSharedTransaction()};
+
+	return getUser()->getLoginName();
 }
 
 LmsApplication::LmsApplication(const Wt::WEnvironment& env,
@@ -131,25 +165,35 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	if (firstConnection)
 	{
 		root()->addWidget(std::make_unique<InitWizardView>());
+		return;
+	}
+
+	auto userId {processAuthToken(env)};
+	if (userId)
+	{
+		handleUserLoggedIn(*userId);
 	}
 	else
 	{
-		LmsApp->getDbSession().getLogin().changed().connect(this, &LmsApplication::handleAuthEvent);
-		_auth = root()->addNew<Auth>();
+		Auth* auth {root()->addNew<Auth>()};
+		auth->userLoggedIn.connect(this, &LmsApplication::handleUserLoggedIn);
 	}
 }
 
 void
 LmsApplication::finalize()
 {
-	LmsApplicationInfo info = LmsApplicationInfo::fromEnvironment(environment());
-
-	getApplicationGroup().postOthers([info]
+	if (_userId)
 	{
-		LmsApp->getEvents().appClosed(info);
-	});
+		LmsApplicationInfo info = LmsApplicationInfo::fromEnvironment(environment());
 
-	getApplicationGroup().leave();
+		getApplicationGroup().postOthers([info]
+		{
+			LmsApp->getEvents().appClosed(info);
+		});
+
+		getApplicationGroup().leave();
+	}
 
 	preQuit().emit();
 }
@@ -280,28 +324,37 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 LmsApplicationGroup&
 LmsApplication::getApplicationGroup()
 {
-	return _appGroups.get(_userIdentity);
+	return _appGroups.get(*_userId);
 }
 
 void
-LmsApplication::handleAuthEvent()
+LmsApplication::handleUserLoggedOut()
 {
-	if (!getDbSession().getLogin().loggedIn())
-	{
-		LMS_LOG(UI, INFO) << "User '" << _userIdentity << " 'logged out, session = " << sessionId();
+	LMS_LOG(UI, INFO) << "User '" << getUserLoginName() << " 'logged out";
 
-		goHomeAndQuit();
-		return;
+	{
+		auto transaction {_dbSession->createUniqueTransaction()};
+		getUser().modify()->clearAuthTokens();
 	}
+
+	setConfirmCloseMessage("");
+	goHomeAndQuit();
+}
+
+void
+LmsApplication::handleUserLoggedIn(Database::IdType userId)
+{
+	_userId = userId;
+
+	root()->clear();
 
 	try
 	{
 //	post([this]
 //	{
-		_userIdentity = getAuthUser().identity(Wt::Auth::Identity::LoginName);
 		const LmsApplicationInfo info {LmsApplicationInfo::fromEnvironment(environment())};
 
-		LMS_LOG(UI, INFO) << "User '" << _userIdentity << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent() << ", session = " <<  sessionId();
+		LMS_LOG(UI, INFO) << "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent();
 		getApplicationGroup().join(info);
 
 		getApplicationGroup().postOthers([info]
@@ -310,7 +363,8 @@ LmsApplication::handleAuthEvent()
 		});
 
 		createHome();
-		triggerUpdate();
+
+//		triggerUpdate();
 //	});
 	}
 	catch (std::exception& e)
@@ -323,12 +377,6 @@ LmsApplication::handleAuthEvent()
 void
 LmsApplication::createHome()
 {
-
-	{
-		auto transaction {_dbSession->createSharedTransaction()};
-		_isAdmin = LmsApp->getUser()->isAdmin();
-	}
-
 	_imageResource = std::make_shared<ImageResource>();
 	_audioResource = std::make_shared<AudioResource>();
 
@@ -337,8 +385,8 @@ LmsApplication::createHome()
 	Wt::WTemplate* main {root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.template")))};
 
 	// Navbar
-	Wt::WNavigationBar* navbar = main->bindNew<Wt::WNavigationBar>("navbar-top");
-	navbar->setTitle("LMS", Wt::WLink(Wt::LinkType::InternalPath, "/artists"));
+	Wt::WNavigationBar* navbar {main->bindNew<Wt::WNavigationBar>("navbar-top")};
+	navbar->setTitle("LMS", Wt::WLink {Wt::LinkType::InternalPath, "/artists"});
 	navbar->setResponsive(true);
 
 	Wt::WMenu* menu {navbar->addMenu(std::make_unique<Wt::WMenu>())};
@@ -370,7 +418,7 @@ LmsApplication::createHome()
 
 	Wt::WMenu* rightMenu = navbar->addMenu(std::make_unique<Wt::WMenu>(), Wt::AlignmentFlag::Right);
 	std::size_t itemCounter = 0;
-	if (_isAdmin)
+	if (isUserAdmin())
 	{
 		auto menuItem = rightMenu->insertItem(itemCounter++, Wt::WString::tr("Lms.administration"));
 		menuItem->setSelectable(false);
@@ -395,11 +443,7 @@ LmsApplication::createHome()
 	{
 		auto menuItem = rightMenu->insertItem(itemCounter++, Wt::WString::tr("Lms.logout"));
 		menuItem->setSelectable(true);
-		menuItem->triggered().connect(std::bind([=]
-		{
-			setConfirmCloseMessage("");
-			_auth->logout();
-		}));
+		menuItem->triggered().connect(this, &LmsApplication::handleUserLoggedOut);
 	}
 
 	// Contents
@@ -412,7 +456,7 @@ LmsApplication::createHome()
 	mainStack->addNew<SettingsView>();
 
 	// Admin stuff
-	if (_isAdmin)
+	if (isUserAdmin())
 	{
 		mainStack->addNew<DatabaseSettingsView>();
 		mainStack->addNew<UsersView>();
@@ -493,7 +537,7 @@ LmsApplication::createHome()
 
 	_events.dbScanned.connect([=] (Scanner::MediaScanner::Stats stats)
 	{
-		if (_isAdmin)
+		if (isUserAdmin())
 		{
 			notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-complete")
 				.arg(static_cast<unsigned>(stats.nbFiles()))
@@ -509,7 +553,7 @@ LmsApplication::createHome()
 	_events.appOpen.connect([=] (LmsApplicationInfo info)
 	{
 		// Only one active session by user
-		if (!LmsApp->getUser()->isDemo())
+		if (!LmsApp->isUserDemo())
 		{
 			setConfirmCloseMessage("");
 			quit(Wt::WString::tr("Lms.quit-other-session"));
@@ -518,10 +562,10 @@ LmsApplication::createHome()
 
 	internalPathChanged().connect(std::bind([=]
 	{
-		handlePathChange(mainStack, _isAdmin);
+		handlePathChange(mainStack, isUserAdmin());
 	}));
 
-	handlePathChange(mainStack, _isAdmin);
+	handlePathChange(mainStack, isUserAdmin());
 }
 
 void

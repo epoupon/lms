@@ -37,7 +37,7 @@ LmsApplicationInfo::fromEnvironment(const Wt::WEnvironment& env)
 void
 LmsApplicationGroup::join(LmsApplicationInfo info)
 {
-	std::lock_guard<std::mutex> lock(_mutex);
+	std::unique_lock<std::mutex> lock {_mutex};
 
 	_apps.emplace(wApp->sessionId(), std::move(info));
 }
@@ -45,7 +45,7 @@ LmsApplicationGroup::join(LmsApplicationInfo info)
 void
 LmsApplicationGroup::leave()
 {
-	std::lock_guard<std::mutex> lock(_mutex);
+	std::unique_lock<std::mutex> lock {_mutex};
 
 	_apps.erase(wApp->sessionId());
 }
@@ -55,7 +55,7 @@ LmsApplicationGroup::getOtherSessionIds() const
 {
 	std::vector<std::string> res;
 
-	std::lock_guard<std::mutex> lock(_mutex);
+	std::unique_lock<std::mutex> lock {_mutex};
 	for (auto const& app : _apps)
 	{
 		if (app.first != wApp->sessionId())
@@ -79,11 +79,11 @@ LmsApplicationGroup::postOthers(std::function<void()> func) const
 }
 
 LmsApplicationGroup&
-LmsApplicationGroupContainer::get(Wt::WString identity)
+LmsApplicationGroupContainer::get(Database::IdType userId)
 {
-	std::lock_guard<std::mutex> lock(_mutex);
+	std::unique_lock<std::mutex> lock {_mutex};
 
-	return _apps[identity];
+	return _apps[userId];
 }
 
 } // UserInterface

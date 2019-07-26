@@ -408,11 +408,10 @@ MediaScanner::scan(boost::system::error_code err)
 	scanMediaDirectory(_mediaDirectory, forceScan, stats);
 	LMS_LOG(DBUPDATER, INFO) << "scaning media directory '" << _mediaDirectory.string() << "' DONE";
 
+	removeOrphanEntries();
+
 	if (_running)
-	{
-		removeOrphanEntries();
 		checkDuplicatedAudioFiles(stats);
-	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.scanErrors << ", not imported = " << stats.incompleteScans << "), duplicates = " << stats.nbDuplicates() << " (hash = " << stats.duplicateHashes << ", mbid = " << stats.duplicateMBID << ")";
 

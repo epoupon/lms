@@ -25,6 +25,8 @@
 #include <Wt/WSignal.h>
 #include <Wt/WEnvironment.h>
 
+#include "database/Types.hpp"
+
 namespace UserInterface {
 
 
@@ -56,10 +58,10 @@ class LmsApplicationGroup
 class LmsApplicationGroupContainer
 {
 	public:
-		LmsApplicationGroup& get(Wt::WString identity);
+		LmsApplicationGroup& get(Database::IdType userId);
 
 	private:
-		std::map<Wt::WString, LmsApplicationGroup> _apps;
+		std::map<Database::IdType /* userId */, LmsApplicationGroup> _apps;
 		std::mutex _mutex;
 };
 

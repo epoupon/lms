@@ -114,3 +114,29 @@ shuffleContainer(Container& container)
 	std::shuffle(std::begin(container), std::end(container), randGenerator);
 }
 
+template <typename Container>
+void
+fillRandom(Container& container)
+{
+	using value_type = typename Container::value_type;
+	static_assert(std::is_integral<value_type>::value, "Integral required");
+
+	std::random_device rd;
+	std::mt19937_64 randGenerator {rd()};
+	std::uniform_int_distribution<> dist {std::numeric_limits<value_type>::min(), std::numeric_limits<value_type>::max()};
+
+	std::for_each(std::begin(container), std::end(container), [&](auto& elem) { elem = dist(randGenerator); });
+}
+
+template <typename Container>
+typename Container::iterator
+pickRandom(Container& container)
+{
+	auto now {std::chrono::system_clock::now()};
+	std::mt19937 randGenerator (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
+	std::uniform_int_distribution<> dist {0, static_cast<int>(container.size())};
+
+	return std::next(std::begin(container), dist(randGenerator ));
+}
+
+

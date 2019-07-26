@@ -19,6 +19,7 @@
 
 #include "User.hpp"
 
+#include "utils/Logger.hpp"
 #include "Artist.hpp"
 #include "Release.hpp"
 #include "Session.hpp"
@@ -26,6 +27,36 @@
 #include "TrackList.hpp"
 
 namespace Database {
+
+
+AuthToken::AuthToken(const std::string& value, const Wt::WDateTime& expiry, Wt::Dbo::ptr<User> user)
+: _value {value}
+, _expiry {expiry}
+, _user {user}
+{
+
+}
+
+AuthToken::pointer
+AuthToken::create(Session& session, const std::string& value, const Wt::WDateTime& expiry, Wt::Dbo::ptr<User> user)
+{
+	session.checkUniqueLocked();
+
+	auto res {session.getDboSession().add(std::make_unique<AuthToken>(value, expiry, user))};
+
+	session.getDboSession().flush();
+
+	return res;
+}
+
+AuthToken::pointer
+AuthToken::getByValue(Session& session, const std::string& value)
+{
+	session.checkSharedLocked();
+
+	return session.getDboSession().find<AuthToken>()
+		.where("value = ?").bind(value);
+}
 
 static const std::string playedListName {"__played_tracks__"};
 static const std::string queuedListName {"__queued_tracks__"};
@@ -44,6 +75,14 @@ User::User()
 : _maxAudioTranscodeBitrate {static_cast<int>(*audioTranscodeAllowedBitrates.rbegin())}
 {
 
+}
+
+User::User(const std::string& loginName, const PasswordHash& passwordHash)
+: User()
+{
+	_loginName = loginName;
+	_passwordHash = passwordHash.hash;
+	_passwordSalt  = passwordHash.salt;
 }
 
 std::vector<User::pointer>
@@ -65,11 +104,11 @@ User::getDemo(Session& session)
 }
 
 User::pointer
-User::create(Session& session)
+User::create(Session& session, const std::string& loginName, const PasswordHash& passwordHash)
 {
 	session.checkUniqueLocked();
 
-	User::pointer user {session.getDboSession().add(std::make_unique<User>())};
+	User::pointer user {session.getDboSession().add(std::make_unique<User>(loginName, passwordHash))};
 
 	TrackList::create(session, playedListName, TrackList::Type::Internal, false, user);
 	TrackList::create(session, queuedListName, TrackList::Type::Internal, false, user);
@@ -85,6 +124,13 @@ User::getById(Session& session, IdType id)
 	return session.getDboSession().find<User>().where("id = ?").bind( id );
 }
 
+User::pointer
+User::getByLoginName(Session& session, const std::string& name)
+{
+	return session.getDboSession().find<User>()
+		.where("login_name = ?").bind(name);
+}
+
 void
 User::setAudioTranscodeBitrate(Bitrate bitrate)
 {
@@ -97,6 +143,12 @@ User::setMaxAudioTranscodeBitrate(Bitrate bitrate)
 	_maxAudioTranscodeBitrate = std::min(bitrate, *audioTranscodeAllowedBitrates.rbegin());
 	if (_audioTranscodeBitrate > _maxAudioTranscodeBitrate)
 		_audioTranscodeBitrate = _maxAudioTranscodeBitrate;
+}
+
+void
+User::clearAuthTokens()
+{
+	_authTokens.clear();
 }
 
 Bitrate
