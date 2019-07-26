@@ -60,15 +60,21 @@ createAuthToken(Database::IdType userId)
 
 	const std::string secret {createSecret()};
 	const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
-	const Wt::WDateTime expiry {now.addYears(1)};
+	Wt::WDateTime expiry;
 
 	{
 		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
 		Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), userId)};
+		if (!user)
+			return;
+
+		expiry = user->isDemo() ? now.addDays(7) : now.addYears(1);
 		Database::AuthToken::create(LmsApp->getDbSession(), secret, expiry, user);
 
 		LMS_LOG(UI, DEBUG) << "Created auth token for user '" << user->getLoginName() << "', expiry = " << expiry.toString();
+
+		Database::AuthToken::removeExpiredTokens(LmsApp->getDbSession(), now);
 	}
 
 	LmsApp->setCookie(authCookieName,
