@@ -124,22 +124,18 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session, std::function<boo
 {
 	LMS_LOG(SIMILARITY, INFO) << "Constructing features searcher...";
 
-	std::size_t nbDimensions;
-	FeatureInfoMap featuresInfo;
-	std::vector<Database::IdType> trackIds;
+	const FeatureInfoMap featuresInfo {getFeatureInfoMap(session)};
+	const std::size_t nbDimensions {getFeatureInfoMapNbDimensions(featuresInfo)};
 
+	LMS_LOG(SIMILARITY, DEBUG) << "Features dimension = " << nbDimensions;
+
+	std::vector<Database::IdType> trackIds;
 	{
 		auto transaction {session.createSharedTransaction()};
-
-		featuresInfo = getFeatureInfoMap(session);
-		nbDimensions = getFeatureInfoMapNbDimensions(featuresInfo);
-
-		LMS_LOG(SIMILARITY, DEBUG) << "Features dimension = " << nbDimensions;
 
 		LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features...";
 		trackIds = Database::Track::getAllIdsWithFeatures(session);
 		LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features DONE";
-
 	}
 
 	std::vector<SOM::InputVector> samples;
