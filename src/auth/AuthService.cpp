@@ -21,10 +21,9 @@
 
 #include "AuthService.hpp"
 
-#include <iomanip>
 #include <Wt/Auth/HashFunction.h>
 #include <Wt/Auth/PasswordStrengthValidator.h>
-#include <Wt/Utils.h>
+#include <Wt/WRandom.h>
 
 #include "database/Session.hpp"
 #include "utils/Utils.hpp"
@@ -73,14 +72,7 @@ AuthService::checkUserPassword(Database::Session& session, const boost::asio::ip
 Database::User::PasswordHash
 AuthService::hashPassword(const std::string& password) const
 {
-	std::array<std::uint8_t, 16> buffer;
-	fillRandom(buffer);
-
-	std::ostringstream oss;
-	for (std::uint8_t b : buffer)
-		oss << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(b);
-
-	const std::string salt {Wt::Utils::base64Encode(oss.str(), false)};
+	const std::string salt {Wt::WRandom::generateId(32)};
 
 	const Wt::Auth::BCryptHashFunction hashFunc {6};
 	return {salt, hashFunc.compute(password, salt)};

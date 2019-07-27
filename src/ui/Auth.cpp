@@ -25,11 +25,11 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WCheckBox.h>
 #include <Wt/WPushButton.h>
+#include <Wt/WRandom.h>
 
 #include "auth/AuthService.hpp"
 #include "main/Service.hpp"
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
 
 #include "common/Validators.hpp"
 #include "LmsApplication.hpp"
@@ -39,26 +39,11 @@ namespace UserInterface {
 static const std::string authCookieName {"LmsAuth"};
 
 static
-std::string
-createSecret()
-{
-	std::array<std::uint8_t, 32> buffer;
-	fillRandom(buffer);
-
-	std::ostringstream oss;
-	for (std::uint8_t b : buffer)
-		oss << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(b);
-
-	return oss.str();
-}
-
-
-static
 void
 createAuthToken(Database::IdType userId)
 {
 
-	const std::string secret {createSecret()};
+	const std::string secret {Wt::WRandom::generateId(48)};
 	const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
 	Wt::WDateTime expiry;
 
