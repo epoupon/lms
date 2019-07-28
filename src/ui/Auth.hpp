@@ -27,9 +27,8 @@
 
 namespace UserInterface {
 
-
-// If success, returns the authenticated user id
-boost::optional<Database::IdType> processAuthToken(const Wt::WEnvironment& env);
+boost::optional<Database::IdType>
+processAuthToken(const Wt::WEnvironment& env);
 
 class Auth : public Wt::WTemplateFormView
 {

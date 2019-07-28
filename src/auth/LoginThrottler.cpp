@@ -54,7 +54,7 @@ LoginThrottler::removeOutdatedEntries()
 
 	for (auto it {std::begin(_attemptsInfo)}; it != std::end(_attemptsInfo); )
 	{
-		if (it->second.nextValidAttempt <= now)
+		if (it->second <= now)
 			it = _attemptsInfo.erase(it);
 		else
 			++it;
@@ -68,40 +68,20 @@ LoginThrottler::onBadClientAttempt(const boost::asio::ip::address& address)
 
 	const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
 
-	std::unique_lock<std::shared_timed_mutex> lock {_mutex};
-
 	if (_attemptsInfo.size() >= _maxEntries)
 		removeOutdatedEntries();
-	// If still full, kill one random entry
 	if (_attemptsInfo.size() >= _maxEntries)
 		_attemptsInfo.erase(pickRandom(_attemptsInfo));
 
-	AttemptsInfo& attemptsInfo {_attemptsInfo[address]};
+	_attemptsInfo[address] = now.addSecs(3);
 
-	attemptsInfo.nbSuccessiveBadAttempts++;
-
-	if (attemptsInfo.nbSuccessiveBadAttempts >= 50)
-		attemptsInfo.nextValidAttempt = now.addSecs(60);
-	if (attemptsInfo.nbSuccessiveBadAttempts >= 20)
-		attemptsInfo.nextValidAttempt = now.addSecs(10);
-	else if (attemptsInfo.nbSuccessiveBadAttempts >= 10)
-		attemptsInfo.nextValidAttempt = now.addSecs(5);
-	else if (attemptsInfo.nbSuccessiveBadAttempts >= 5)
-		attemptsInfo.nextValidAttempt = now.addSecs(2);
-	else if (attemptsInfo.nbSuccessiveBadAttempts >= 2)
-		attemptsInfo.nextValidAttempt = now.addSecs(1);
-	else
-		attemptsInfo.nextValidAttempt = now;
-
-	LMS_LOG(AUTH, INFO) << "Registering bad attempt for '" << clientAddress.to_string() << "' (" << attemptsInfo.nbSuccessiveBadAttempts << " successive bad attempts)";
+	LMS_LOG(AUTH, INFO) << "Registering bad attempt for '" << clientAddress.to_string() << "'";
 }
 
 void
 LoginThrottler::onGoodClientAttempt(const boost::asio::ip::address& address)
 {
 	const boost::asio::ip::address clientAddress {getAddressToThrottle(address)};
-
-	std::unique_lock<std::shared_timed_mutex> lock {_mutex};
 
 	_attemptsInfo.erase(address);
 }
@@ -111,13 +91,11 @@ LoginThrottler::isClientThrottled(const boost::asio::ip::address& address) const
 {
 	const boost::asio::ip::address clientAddress {getAddressToThrottle(address)};
 
-	std::shared_lock<std::shared_timed_mutex> lock {_mutex};
-
 	auto it {_attemptsInfo.find(address)};
 	if (it == _attemptsInfo.end())
 		return false;
 
-	return it->second.nextValidAttempt > Wt::WDateTime::currentDateTime();
+	return it->second > Wt::WDateTime::currentDateTime();
 }
 
 } // Auth

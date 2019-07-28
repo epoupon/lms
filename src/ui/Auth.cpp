@@ -40,31 +40,13 @@ static const std::string authCookieName {"LmsAuth"};
 
 static
 void
-createAuthToken(Database::IdType userId)
+createAuthToken(Database::IdType userId, const Wt::WDateTime& expiry)
 {
-
-	const std::string secret {Wt::WRandom::generateId(48)};
-	const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
-	Wt::WDateTime expiry;
-
-	{
-		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
-
-		Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), userId)};
-		if (!user)
-			return;
-
-		expiry = user->isDemo() ? now.addDays(7) : now.addYears(1);
-		Database::AuthToken::create(LmsApp->getDbSession(), secret, expiry, user);
-
-		LMS_LOG(UI, DEBUG) << "Created auth token for user '" << user->getLoginName() << "', expiry = " << expiry.toString();
-
-		Database::AuthToken::removeExpiredTokens(LmsApp->getDbSession(), now);
-	}
+	const std::string secret {getService<::Auth::AuthService>()->createAuthToken(LmsApp->getDbSession(), userId, expiry)};
 
 	LmsApp->setCookie(authCookieName,
 			secret,
-			expiry.toTime_t() - now.toTime_t(),
+			expiry.toTime_t() - Wt::WDateTime::currentDateTime().toTime_t(),
 			"",
 			"",
 			LmsApp->environment().urlScheme() == "https");
@@ -78,33 +60,20 @@ processAuthToken(const Wt::WEnvironment& env)
 	if (!authCookie)
 		return boost::none;
 
-	Database::IdType userId {};
+	const auto res {getService<::Auth::AuthService>()->processAuthToken(LmsApp->getDbSession(), boost::asio::ip::address::from_string(env.clientAddress()), *authCookie)};
+	switch (res.state)
 	{
-		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
-
-		Database::AuthToken::pointer authToken {Database::AuthToken::getByValue(LmsApp->getDbSession(), *authCookie)};
-		if (!authToken)
-		{
-			LMS_LOG(UI, INFO) << "Client '" << env.clientAddress() << "' presented a token that has not been found";
+		case ::Auth::AuthService::AuthTokenProcessResult::State::NotFound:
+		case ::Auth::AuthService::AuthTokenProcessResult::State::Throttled:
+			LmsApp->setCookie(authCookieName, std::string {}, 0, "", "", env.urlScheme() == "https");
 			return boost::none;
-		}
 
-		if (authToken->getExpiry() < Wt::WDateTime::currentDateTime())
-		{
-			LMS_LOG(UI, INFO) << "Expired auth token for user '" << authToken->getUser()->getLoginName() << "'!";
-			authToken.remove();
-			return boost::none;
-		}
-
-		LMS_LOG(UI, DEBUG) << "Found auth token for user '" << authToken->getUser()->getLoginName() << "'!";
-		userId = authToken->getUser().id();
-
-		authToken.remove();
+		case ::Auth::AuthService::AuthTokenProcessResult::State::Found:
+			createAuthToken(res.authTokenInfo->userId, res.authTokenInfo->expiry);
+			break;
 	}
 
-	createAuthToken(userId);
-
-	return userId;
+	return res.authTokenInfo->userId;
 }
 
 class AuthModel : public Wt::WFormModel
@@ -129,16 +98,24 @@ class AuthModel : public Wt::WFormModel
 
 		void saveData()
 		{
+			bool isDemo;
 			{
 				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
 				Database::User::pointer user {Database::User::getByLoginName(LmsApp->getDbSession(), valueText(LoginNameField).toUTF8())};
 				user.modify()->setLastLogin(Wt::WDateTime::currentDateTime());
 				_userId = user.id();
+
+				const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
+				isDemo = user->isDemo();
 			}
 
 			if (Wt::asNumber(value(RememberMeField)))
-				createAuthToken(*_userId);
+			{
+				const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
+
+				createAuthToken(*_userId, isDemo ? now.addDays(3) : now.addYears(1));
+			}
 		}
 
 		bool validateField(Field field)

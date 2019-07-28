@@ -23,10 +23,12 @@
 
 #include <string>
 
+#include <boost/optional.hpp>
 #include <boost/asio/ip/address.hpp>
 
 #include "LoginThrottler.hpp"
 #include "database/User.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {
@@ -62,9 +64,37 @@ namespace Auth {
 			Database::User::PasswordHash	hashPassword(const std::string& password) const;
 			bool				evaluatePasswordStrength(const std::string& loginName, const std::string& password) const;
 
+			// Auth Token services
+			struct AuthTokenProcessResult
+			{
+				enum class State
+				{
+					Found,
+					Throttled,
+					NotFound,
+				};
+
+				struct AuthTokenInfo
+				{
+					Database::IdType userId;
+					Wt::WDateTime expiry;
+				};
+
+				State state;
+				boost::optional<AuthTokenInfo>	authTokenInfo;
+			};
+
+			// Removed if found
+			AuthTokenProcessResult	processAuthToken(Database::Session& session, const boost::asio::ip::address& clientAddress, const std::string& tokenValue);
+			std::string		createAuthToken(Database::Session& session, Database::IdType userid, const Wt::WDateTime& expiry);
+
 		private:
 
-			LoginThrottler _loginThrottler;
+			std::shared_timed_mutex	_passwordCheckMutex;
+			std::shared_timed_mutex	_tokenCheckMutex;
+
+			LoginThrottler	_passwordLoginThrottler;
+			LoginThrottler	_tokenLoginThrottler;
 	};
 
 }

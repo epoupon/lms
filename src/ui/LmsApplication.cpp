@@ -168,7 +168,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 		return;
 	}
 
-	auto userId {processAuthToken(env)};
+	const auto userId {processAuthToken(env)};
 	if (userId)
 	{
 		handleUserLoggedIn(*userId);

@@ -37,6 +37,7 @@ class LoginThrottler
 	public:
 		LoginThrottler(std::size_t maxEntries) : _maxEntries {maxEntries} {}
 
+		// user must lock these calls to avoid races
 		bool isClientThrottled(const boost::asio::ip::address& address) const;
 		void onBadClientAttempt(const boost::asio::ip::address& address);
 		void onGoodClientAttempt(const boost::asio::ip::address& address);
@@ -45,16 +46,9 @@ class LoginThrottler
 
 		void removeOutdatedEntries();
 
-		struct AttemptsInfo
-		{
-			std::size_t	nbSuccessiveBadAttempts {};
-			Wt::WDateTime	nextValidAttempt;
-		};
-
 		const std::size_t _maxEntries;
 
-		mutable std::shared_timed_mutex					_mutex;
-		std::unordered_map<boost::asio::ip::address, AttemptsInfo>	_attemptsInfo;
+		std::unordered_map<boost::asio::ip::address, Wt::WDateTime>	_attemptsInfo;
 };
 
 

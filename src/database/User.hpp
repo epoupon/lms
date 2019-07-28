@@ -61,10 +61,12 @@ class AuthToken
 		static pointer create(Session& session, const std::string& value, const Wt::WDateTime&expiry, Wt::Dbo::ptr<User> user);
 		static void removeExpiredTokens(Session& session, Wt::WDateTime now);
 		static pointer getByValue(Session& session, const std::string& value);
+		static pointer getById(Session& session, IdType tokenId);
 
 		// Accessors
-		Wt::Dbo::ptr<User>	getUser() const { return _user; }
 		const Wt::WDateTime&	getExpiry() const { return _expiry; }
+		Wt::Dbo::ptr<User>	getUser() const { return _user; }
+		const std::string&	getValue() const { return _value; }
 
 		template<class Action>
 		void persist(Action& a)
@@ -121,6 +123,7 @@ class User : public Wt::Dbo::Dbo<User>
 		const std::string& getLoginName() const { return _loginName; }
 		PasswordHash getPasswordHash() const { return PasswordHash {_passwordSalt, _passwordHash}; }
 		Wt::WDateTime getLastLogin() const { return _lastLogin; }
+		std::size_t getAuthTokensCount() const { return _authTokens.size(); }
 
 		// write
 		void setLastLogin(const Wt::WDateTime& dateTime)	{ _lastLogin = dateTime; }

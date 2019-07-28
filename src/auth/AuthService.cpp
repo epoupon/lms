@@ -26,46 +26,66 @@
 #include <Wt/WRandom.h>
 
 #include "database/Session.hpp"
+#include "utils/Exception.hpp"
 #include "utils/Utils.hpp"
 #include "utils/Logger.hpp"
 
 namespace Auth {
 
 AuthService::AuthService(std::size_t maxThrottlerEntries)
-: _loginThrottler {maxThrottlerEntries}
+: _passwordLoginThrottler {maxThrottlerEntries}
+, _tokenLoginThrottler {maxThrottlerEntries}
 {
 }
 
-AuthService::PasswordCheckResult
-AuthService::checkUserPassword(Database::Session& session, const boost::asio::ip::address& clientAddress, const std::string& loginName, const std::string& password)
+static
+bool
+checkUserPassword(Database::Session& session, const std::string& loginName, const std::string& password)
 {
-	if (_loginThrottler.isClientThrottled(clientAddress))
-		return PasswordCheckResult::Throttled;
-
 	Database::User::PasswordHash passwordHash;
 	{
 		auto transaction {session.createSharedTransaction()};
 
 		const Database::User::pointer user {Database::User::getByLoginName(session, loginName)};
 		if (!user)
-		{
-			_loginThrottler.onBadClientAttempt(clientAddress);
-			return PasswordCheckResult::Mismatch;
-		}
+			return false;
 
 		passwordHash = user->getPasswordHash();
 	}
 
 	const Wt::Auth::BCryptHashFunction hashFunc {6};
-	if (hashFunc.verify(password, passwordHash.salt, passwordHash.hash))
+	return hashFunc.verify(password, passwordHash.salt, passwordHash.hash);
+}
+
+
+AuthService::PasswordCheckResult
+AuthService::checkUserPassword(Database::Session& session, const boost::asio::ip::address& clientAddress, const std::string& loginName, const std::string& password)
+{
+	// Do not waste too much resource on brute force attacks (optim)
 	{
-		_loginThrottler.onGoodClientAttempt(clientAddress);
-		return PasswordCheckResult::Match;
+		std::shared_lock<std::shared_timed_mutex> lock {_passwordCheckMutex};
+
+		if (_passwordLoginThrottler.isClientThrottled(clientAddress))
+			return PasswordCheckResult::Throttled;
 	}
-	else
+
+	const bool match {Auth::checkUserPassword(session, loginName, password)};
 	{
-		_loginThrottler.onBadClientAttempt(clientAddress);
-		return PasswordCheckResult::Mismatch;
+		std::unique_lock<std::shared_timed_mutex> lock {_passwordCheckMutex};
+
+		if (_passwordLoginThrottler.isClientThrottled(clientAddress))
+			return PasswordCheckResult::Throttled;
+
+		if (match)
+		{
+			_passwordLoginThrottler.onGoodClientAttempt(clientAddress);
+			return PasswordCheckResult::Match;
+		}
+		else
+		{
+			_passwordLoginThrottler.onBadClientAttempt(clientAddress);
+			return PasswordCheckResult::Mismatch;
+		}
 	}
 }
 
@@ -92,6 +112,83 @@ AuthService::evaluatePasswordStrength(const std::string& loginName, const std::s
 
 	return validator.evaluateStrength(password, loginName, "").isValid();
 }
+
+
+std::string
+AuthService::createAuthToken(Database::Session& session, Database::IdType userId, const Wt::WDateTime& expiry)
+{
+	const std::string secret {Wt::WRandom::generateId(64)};
+
+	auto transaction {session.createUniqueTransaction()};
+
+	Database::User::pointer user {Database::User::getById(session, userId)};
+	if (!user)
+		throw LmsException {"User deleted"};
+
+	Database::AuthToken::pointer authToken {Database::AuthToken::create(session, secret, expiry, user)};
+
+	LMS_LOG(UI, DEBUG) << "Created auth token for user '" << user->getLoginName() << "', expiry = " << expiry.toString();
+
+	if (user->getAuthTokensCount() >= 50)
+		Database::AuthToken::removeExpiredTokens(session, Wt::WDateTime::currentDateTime());
+
+	return secret;
+}
+
+static
+boost::optional<AuthService::AuthTokenProcessResult::AuthTokenInfo>
+processAuthToken(Database::Session& session, const std::string& tokenValue)
+{
+	auto transaction {session.createUniqueTransaction()};
+
+	Database::AuthToken::pointer authToken {Database::AuthToken::getByValue(session, tokenValue)};
+	if (!authToken)
+		return boost::none;
+
+	if (authToken->getExpiry() < Wt::WDateTime::currentDateTime())
+	{
+		authToken.remove();
+		return boost::none;
+	}
+
+	LMS_LOG(UI, DEBUG) << "Found auth token for user '" << authToken->getUser()->getLoginName() << "'!";
+
+	AuthService::AuthTokenProcessResult::AuthTokenInfo res {authToken->getUser().id(), authToken->getExpiry()};
+	authToken.remove();
+
+	return res;
+}
+
+
+AuthService::AuthTokenProcessResult
+AuthService::processAuthToken(Database::Session& session, const boost::asio::ip::address& clientAddress, const std::string& tokenValue)
+{
+	// Do not waste too much resource on brute force attacks (optim)
+	{
+		std::shared_lock<std::shared_timed_mutex> lock {_tokenCheckMutex};
+
+		if (_tokenLoginThrottler.isClientThrottled(clientAddress))
+			return AuthTokenProcessResult {AuthTokenProcessResult::State::Throttled};
+	}
+
+	auto res {Auth::processAuthToken(session, tokenValue)};
+	{
+		std::unique_lock<std::shared_timed_mutex> lock {_tokenCheckMutex};
+
+		if (_tokenLoginThrottler.isClientThrottled(clientAddress))
+			return AuthTokenProcessResult {AuthTokenProcessResult::State::Throttled};
+
+		if (!res)
+		{
+			_tokenLoginThrottler.onBadClientAttempt(clientAddress);
+			return AuthTokenProcessResult {AuthTokenProcessResult::State::NotFound};
+		}
+
+		_tokenLoginThrottler.onGoodClientAttempt(clientAddress);
+		return AuthTokenProcessResult {AuthTokenProcessResult::State::Found, std::move(*res)};
+	}
+}
+
 
 } // namespace Auth
 
