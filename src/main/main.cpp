@@ -41,28 +41,28 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 {
 	std::vector<std::string> args;
 
-	const boost::filesystem::path wtConfigPath {Config::instance().getPath("working-dir") / "wt_config.xml"};
-	const boost::filesystem::path wtLogFilePath {Config::instance().getPath("working-dir") / "lms.log"};
-	const boost::filesystem::path wtAccessLogFilePath {Config::instance().getPath("working-dir") / "lms.access.log"};
+	const boost::filesystem::path wtConfigPath {getService<Config>()->getPath("working-dir") / "wt_config.xml"};
+	const boost::filesystem::path wtLogFilePath {getService<Config>()->getPath("working-dir") / "lms.log"};
+	const boost::filesystem::path wtAccessLogFilePath {getService<Config>()->getPath("working-dir") / "lms.access.log"};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
-	args.push_back("--docroot=" + Config::instance().getString("docroot"));
-	args.push_back("--approot=" + Config::instance().getString("approot"));
-	args.push_back("--resources-dir=" + Config::instance().getString("wt-resources"));
+	args.push_back("--docroot=" + getService<Config>()->getString("docroot"));
+	args.push_back("--approot=" + getService<Config>()->getString("approot"));
+	args.push_back("--resources-dir=" + getService<Config>()->getString("wt-resources"));
 
-	if (Config::instance().getBool("tls-enable", false))
+	if (getService<Config>()->getBool("tls-enable", false))
 	{
-		args.push_back("--https-port=" + std::to_string( Config::instance().getULong("listen-port", 5082)));
-		args.push_back("--https-address=" + Config::instance().getString("listen-addr", "0.0.0.0"));
-		args.push_back("--ssl-certificate=" + Config::instance().getString("tls-cert"));
-		args.push_back("--ssl-private-key=" + Config::instance().getString("tls-key"));
-		args.push_back("--ssl-tmp-dh=" + Config::instance().getString("tls-dh"));
+		args.push_back("--https-port=" + std::to_string( getService<Config>()->getULong("listen-port", 5082)));
+		args.push_back("--https-address=" + getService<Config>()->getString("listen-addr", "0.0.0.0"));
+		args.push_back("--ssl-certificate=" + getService<Config>()->getString("tls-cert"));
+		args.push_back("--ssl-private-key=" + getService<Config>()->getString("tls-key"));
+		args.push_back("--ssl-tmp-dh=" + getService<Config>()->getString("tls-dh"));
 	}
 	else
 	{
-		args.push_back("--http-port=" + std::to_string( Config::instance().getULong("listen-port", 5082)));
-		args.push_back("--http-address=" + Config::instance().getString("listen-addr", "0.0.0.0"));
+		args.push_back("--http-port=" + std::to_string( getService<Config>()->getULong("listen-port", 5082)));
+		args.push_back("--http-address=" + getService<Config>()->getString("listen-addr", "0.0.0.0"));
 	}
 
 	args.push_back("--accesslog=" + wtAccessLogFilePath.string());
@@ -72,8 +72,8 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 
 	pt.put("server.application-settings.<xmlattr>.location", "*");
 	pt.put("server.application-settings.log-file", wtLogFilePath.string());
-	pt.put("server.application-settings.log-config", Config::instance().getString("log-config", "* -debug -info:WebRequest"));
-	pt.put("server.application-settings.behind-reverse-proxy", Config::instance().getBool("behind-reverse-proxy", false));
+	pt.put("server.application-settings.log-config", getService<Config>()->getString("log-config", "* -debug -info:WebRequest"));
+	pt.put("server.application-settings.behind-reverse-proxy", getService<Config>()->getBool("behind-reverse-proxy", false));
 	pt.put("server.application-settings.progressive-bootstrap", true);
 
 	std::ofstream oss(wtConfigPath.string().c_str(), std::ios::out);
@@ -99,11 +99,11 @@ int main(int argc, char* argv[])
 		// Make pstream work with ffmpeg
 		close(STDIN_FILENO);
 
-		Config::instance().setFile(configFilePath);
+		ServiceProvider<Config>::create(configFilePath);
 
 		// Make sure the working directory exists
-		boost::filesystem::create_directories(Config::instance().getPath("working-dir"));
-		boost::filesystem::create_directories(Config::instance().getPath("working-dir") / "cache");
+		boost::filesystem::create_directories(getService<Config>()->getPath("working-dir"));
+		boost::filesystem::create_directories(getService<Config>()->getPath("working-dir") / "cache");
 
 		// Construct WT configuration and get the argc/argv back
 		std::vector<std::string> wtServerArgs = generateWtConfig(argv[0]);
@@ -124,12 +124,12 @@ int main(int argc, char* argv[])
 		Av::Transcoder::init();
 
 		// Initializing a connection pool to the database that will be shared along services
-		Database::Database database {Config::instance().getPath("working-dir") / "lms.db"};
+		Database::Database database {getService<Config>()->getPath("working-dir") / "lms.db"};
 
 		UserInterface::LmsApplicationGroupContainer appGroups;
 
 		// Service initialization order is important
-		ServiceProvider<Auth::AuthService>::create(Config::instance().getULong("login-throttler-max-entriees", 10000));
+		ServiceProvider<Auth::AuthService>::create(getService<Config>()->getULong("login-throttler-max-entriees", 10000));
 		Scanner::MediaScanner& mediaScanner {ServiceProvider<Scanner::MediaScanner>::create(database.createSession())};
 
 		Similarity::FeaturesScannerAddon similarityFeaturesScannerAddon {database.createSession()};
@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
 		API::Subsonic::SubsonicResource subsonicResource {database};
 
 		// bind API resources
-		if (Config::instance().getBool("api-subsonic", true))
+		if (getService<Config>()->getBool("api-subsonic", true))
 		{
 			for (const std::string& path : API::Subsonic::SubsonicResource::getPaths())
 				server.addResource(&subsonicResource, path);

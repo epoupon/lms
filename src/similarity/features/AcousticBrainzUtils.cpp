@@ -23,6 +23,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <curl/curl.h>
 
+#include "main/Service.hpp"
 #include "utils/Config.hpp"
 #include "utils/Logger.hpp"
 
@@ -46,7 +47,7 @@ getJsonData(const std::string& mbid)
 	static const std::string defaultAPIURL = "https://acousticbrainz.org/api/v1/";
 
 	std::string data;
-	std::string url = Config::instance().getString("acousticbrainz-api-url", defaultAPIURL) + mbid + "/low-level";
+	std::string url = getService<Config>()->getString("acousticbrainz-api-url", defaultAPIURL) + mbid + "/low-level";
 
 	CURL *curl;
 	CURLcode res;

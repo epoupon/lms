@@ -267,7 +267,7 @@ UserView::refreshView()
 
 	// Demo account
 	t->setFormWidget(UserModel::DemoField, std::make_unique<Wt::WCheckBox>());
-	if (!userId && Config::instance().getBool("demo", false))
+	if (!userId && getService<Config>()->getBool("demo", false))
 		t->setCondition("if-demo", true);
 
 	Wt::WPushButton* saveBtn = t->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(userId ? "Lms.save" : "Lms.create"));

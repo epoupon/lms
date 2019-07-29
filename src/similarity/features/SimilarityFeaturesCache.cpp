@@ -22,6 +22,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
+#include "main/Service.hpp"
 #include "utils/Config.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -32,7 +33,7 @@ namespace Similarity {
 static
 boost::filesystem::path getCacheDirectory()
 {
-	return Config::instance().getPath("working-dir") / "cache" / "features";
+	return getService<Config>()->getPath("working-dir") / "cache" / "features";
 }
 
 static boost::filesystem::path getCacheNetworkFilePath()
@@ -239,7 +240,7 @@ FeaturesCache::read()
 void
 FeaturesCache::write()
 {
-	boost::filesystem::create_directories(Config::instance().getPath("working-dir") / "cache" / "features");
+	boost::filesystem::create_directories(getService<Config>()->getPath("working-dir") / "cache" / "features");
 
 	if (!networkToCacheFile(_network, getCacheNetworkFilePath())
 		|| !objectPositionToCacheFile(_trackPositions, getCacheTrackPositionsFilePath()))

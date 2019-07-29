@@ -24,25 +24,16 @@
 #include "utils/Logger.hpp"
 
 
-Config&
-Config::instance()
+Config::Config(const boost::filesystem::path& p)
 {
-	static Config instance;
-	return instance;
-}
-
-void
-Config::setFile(const boost::filesystem::path& p)
-{
-	_config = std::make_unique<libconfig::Config>();
-	_config->readFile(p.string().c_str());
+	_config.readFile(p.string().c_str());
 }
 
 std::string
 Config::getString(const std::string& setting, const std::string& def, const std::set<std::string>& allowedValues)
 {
 	try {
-		std::string res {(const char*)_config->lookup(setting)};
+		std::string res {(const char*)_config.lookup(setting)};
 
 		if (!allowedValues.empty() && allowedValues.find(res) == allowedValues.end())
 		{
@@ -62,7 +53,7 @@ boost::filesystem::path
 Config::getPath(const std::string& setting, const boost::filesystem::path& path)
 {
 	try {
-		const char* res = _config->lookup(setting);
+		const char* res = _config.lookup(setting);
 		return boost::filesystem::path(std::string(res));
 	}
 	catch (std::exception &e)
@@ -75,7 +66,7 @@ unsigned long
 Config::getULong(const std::string& setting, unsigned long def)
 {
 	try {
-		return static_cast<unsigned int>(_config->lookup(setting));
+		return static_cast<unsigned int>(_config.lookup(setting));
 	}
 	catch (...)
 	{
@@ -87,7 +78,7 @@ long
 Config::getLong(const std::string& setting, long def)
 {
 	try {
-		return _config->lookup(setting);
+		return _config.lookup(setting);
 	}
 	catch (...)
 	{
@@ -99,7 +90,7 @@ bool
 Config::getBool(const std::string& setting, bool def)
 {
 	try {
-		return _config->lookup(setting);
+		return _config.lookup(setting);
 	}
 	catch (...)
 	{

@@ -27,15 +27,13 @@
 class Config final
 {
 	public:
+		Config(const boost::filesystem::path& p);
+		~Config() = default;
 
 		Config(const Config&) = delete;
 		Config& operator=(const Config&) = delete;
 		Config(Config&&) = delete;
 		Config& operator=(Config&&) = delete;
-
-		static Config& instance();
-
-		void		setFile(const boost::filesystem::path& p);
 
 		// Default values are returned in case of setting not found
 		std::string	getString(const std::string& setting, const std::string& def = "", const std::set<std::string>& allowedValues = {});
@@ -46,8 +44,6 @@ class Config final
 
 	private:
 
-		Config() = default;
-
-		std::unique_ptr<libconfig::Config> _config;
+		libconfig::Config _config;
 };
 
