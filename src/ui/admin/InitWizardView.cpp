@@ -23,7 +23,7 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
-#include "auth/AuthService.hpp"
+#include "auth/PasswordService.hpp"
 #include "main/Service.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
@@ -55,7 +55,7 @@ class InitWizardModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			const Database::User::PasswordHash passwordHash {getService<::Auth::AuthService>()->hashPassword(valueText(PasswordField).toUTF8())};
+			const Database::User::PasswordHash passwordHash {getService<::Auth::PasswordService>()->hashPassword(valueText(PasswordField).toUTF8())};
 
 			auto transaction(LmsApp->getDbSession().createUniqueTransaction());
 
@@ -77,7 +77,7 @@ class InitWizardModel : public Wt::WFormModel
 				if (!valueText(PasswordField).empty())
 				{
 					// Evaluate the strength of the password
-					if (!getService<::Auth::AuthService>()->evaluatePasswordStrength(valueText(AdminLoginField).toUTF8(), valueText(PasswordField).toUTF8()))
+					if (!getService<::Auth::PasswordService>()->evaluatePasswordStrength(valueText(AdminLoginField).toUTF8(), valueText(PasswordField).toUTF8()))
 						error = Wt::WString::tr("Lms.password-too-weak");
 				}
 				else

@@ -28,7 +28,7 @@
 
 #include <Wt/WFormModel.h>
 
-#include "auth/AuthService.hpp"
+#include "auth/PasswordService.hpp"
 #include "database/User.hpp"
 #include "main/Service.hpp"
 #include "utils/Config.hpp"
@@ -82,7 +82,7 @@ class UserModel : public Wt::WFormModel
 		{
 			boost::optional<Database::User::PasswordHash> passwordHash;
 			if (!valueText(PasswordField).empty())
-				passwordHash = getService<::Auth::AuthService>()->hashPassword(valueText(PasswordField).toUTF8());
+				passwordHash = getService<::Auth::PasswordService>()->hashPassword(valueText(PasswordField).toUTF8());
 
 			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
@@ -172,7 +172,7 @@ class UserModel : public Wt::WFormModel
 					else
 					{
 						// Evaluate the strength of the password for non demo accounts
-						if (!getService<::Auth::AuthService>()->evaluatePasswordStrength(getLoginName(), valueText(PasswordField).toUTF8()))
+						if (!getService<::Auth::PasswordService>()->evaluatePasswordStrength(getLoginName(), valueText(PasswordField).toUTF8()))
 							error = Wt::WString::tr("Lms.password-too-weak");
 					}
 				}

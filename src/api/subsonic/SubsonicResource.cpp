@@ -26,7 +26,7 @@
 
 #include <Wt/WLocalDateTime.h>
 
-#include "auth/AuthService.hpp"
+#include "auth/PasswordService.hpp"
 #include "av/AvTranscoder.hpp"
 #include "cover/CoverArtGrabber.hpp"
 #include "database/Artist.hpp"
@@ -406,15 +406,15 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 		const ClientInfo clientInfo {getClientInfo(parameters)};
 
-		switch (getService<Auth::AuthService>()->checkUserPassword(dbSession,
+		switch (getService<Auth::PasswordService>()->checkUserPassword(dbSession,
 					boost::asio::ip::address::from_string(request.clientAddress()),
 					clientInfo.user, clientInfo.password))
 		{
-			case Auth::AuthService::PasswordCheckResult::Match:
+			case Auth::PasswordService::PasswordCheckResult::Match:
 				break;
-			case Auth::AuthService::PasswordCheckResult::Mismatch:
+			case Auth::PasswordService::PasswordCheckResult::Mismatch:
 				throw Error {Error::Code::WrongUsernameOrPassword};
-			case Auth::AuthService::PasswordCheckResult::Throttled:
+			case Auth::PasswordService::PasswordCheckResult::Throttled:
 				throw Error {Error::CustomType::LoginThrottled};
 		}
 

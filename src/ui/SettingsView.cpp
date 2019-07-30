@@ -31,7 +31,7 @@
 #include "common/Validators.hpp"
 #include "common/ValueStringModel.hpp"
 
-#include "auth/AuthService.hpp"
+#include "auth/PasswordService.hpp"
 #include "main/Service.hpp"
 #include "utils/Logger.hpp"
 #include "LmsApplication.hpp"
@@ -75,7 +75,7 @@ class SettingsModel : public Wt::WFormModel
 			Database::User::PasswordHash passwordHash;
 
 			if (!valueText(PasswordField).empty())
-				passwordHash = getService<::Auth::AuthService>()->hashPassword(valueText(PasswordField).toUTF8());
+				passwordHash = getService<::Auth::PasswordService>()->hashPassword(valueText(PasswordField).toUTF8());
 
 			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
@@ -125,7 +125,7 @@ class SettingsModel : public Wt::WFormModel
 			{
 				if (!valueText(PasswordField).empty())
 				{
-					if (!getService<::Auth::AuthService>()->evaluatePasswordStrength(LmsApp->getUserLoginName(), valueText(PasswordField).toUTF8()))
+					if (!getService<::Auth::PasswordService>()->evaluatePasswordStrength(LmsApp->getUserLoginName(), valueText(PasswordField).toUTF8()))
 						error = Wt::WString::tr("Lms.password-too-weak");
 				}
 				else

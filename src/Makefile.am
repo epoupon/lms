@@ -7,8 +7,10 @@ lms_SOURCES = \
 	$(srcdir)/api/subsonic/SubsonicResource.hpp		\
 	$(srcdir)/api/subsonic/SubsonicResponse.cpp		\
 	$(srcdir)/api/subsonic/SubsonicResponse.hpp		\
-	$(srcdir)/auth/AuthService.cpp				\
-	$(srcdir)/auth/AuthService.hpp				\
+	$(srcdir)/auth/AuthTokenService.cpp			\
+	$(srcdir)/auth/AuthTokenService.hpp			\
+	$(srcdir)/auth/PasswordService.cpp			\
+	$(srcdir)/auth/PasswordService.hpp			\
 	$(srcdir)/auth/LoginThrottler.cpp			\
 	$(srcdir)/auth/LoginThrottler.hpp			\
 	$(srcdir)/av/AvInfo.cpp					\

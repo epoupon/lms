@@ -26,7 +26,8 @@
 #include "api/subsonic/SubsonicResource.hpp"
 #include "av/AvInfo.hpp"
 #include "av/AvTranscoder.hpp"
-#include "auth/AuthService.hpp"
+#include "auth/AuthTokenService.hpp"
+#include "auth/PasswordService.hpp"
 #include "cover/CoverArtGrabber.hpp"
 #include "image/Image.hpp"
 #include "scanner/MediaScanner.hpp"
@@ -129,7 +130,8 @@ int main(int argc, char* argv[])
 		UserInterface::LmsApplicationGroupContainer appGroups;
 
 		// Service initialization order is important
-		ServiceProvider<Auth::AuthService>::create(getService<Config>()->getULong("login-throttler-max-entriees", 10000));
+		ServiceProvider<Auth::AuthTokenService>::create(getService<Config>()->getULong("login-throttler-max-entriees", 10000));
+		ServiceProvider<Auth::PasswordService>::create(getService<Config>()->getULong("login-throttler-max-entriees", 10000));
 		Scanner::MediaScanner& mediaScanner {ServiceProvider<Scanner::MediaScanner>::create(database.createSession())};
 
 		Similarity::FeaturesScannerAddon similarityFeaturesScannerAddon {database.createSession()};

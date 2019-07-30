@@ -27,7 +27,8 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WRandom.h>
 
-#include "auth/AuthService.hpp"
+#include "auth/AuthTokenService.hpp"
+#include "auth/PasswordService.hpp"
 #include "main/Service.hpp"
 #include "utils/Logger.hpp"
 
@@ -42,7 +43,7 @@ static
 void
 createAuthToken(Database::IdType userId, const Wt::WDateTime& expiry)
 {
-	const std::string secret {getService<::Auth::AuthService>()->createAuthToken(LmsApp->getDbSession(), userId, expiry)};
+	const std::string secret {getService<::Auth::AuthTokenService>()->createAuthToken(LmsApp->getDbSession(), userId, expiry)};
 
 	LmsApp->setCookie(authCookieName,
 			secret,
@@ -60,15 +61,15 @@ processAuthToken(const Wt::WEnvironment& env)
 	if (!authCookie)
 		return boost::none;
 
-	const auto res {getService<::Auth::AuthService>()->processAuthToken(LmsApp->getDbSession(), boost::asio::ip::address::from_string(env.clientAddress()), *authCookie)};
+	const auto res {getService<::Auth::AuthTokenService>()->processAuthToken(LmsApp->getDbSession(), boost::asio::ip::address::from_string(env.clientAddress()), *authCookie)};
 	switch (res.state)
 	{
-		case ::Auth::AuthService::AuthTokenProcessResult::State::NotFound:
-		case ::Auth::AuthService::AuthTokenProcessResult::State::Throttled:
+		case ::Auth::AuthTokenService::AuthTokenProcessResult::State::NotFound:
+		case ::Auth::AuthTokenService::AuthTokenProcessResult::State::Throttled:
 			LmsApp->setCookie(authCookieName, std::string {}, 0, "", "", env.urlScheme() == "https");
 			return boost::none;
 
-		case ::Auth::AuthService::AuthTokenProcessResult::State::Found:
+		case ::Auth::AuthTokenService::AuthTokenProcessResult::State::Found:
 			createAuthToken(res.authTokenInfo->userId, res.authTokenInfo->expiry);
 			break;
 	}
@@ -124,18 +125,18 @@ class AuthModel : public Wt::WFormModel
 
 			if (field == PasswordField)
 			{
-				switch (getService<::Auth::AuthService>()->checkUserPassword(
+				switch (getService<::Auth::PasswordService>()->checkUserPassword(
 							LmsApp->getDbSession(),
 							boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
 							valueText(LoginNameField).toUTF8(),
 							valueText(PasswordField).toUTF8()))
 				{
-					case ::Auth::AuthService::PasswordCheckResult::Match:
+					case ::Auth::PasswordService::PasswordCheckResult::Match:
 						break;
-					case ::Auth::AuthService::PasswordCheckResult::Mismatch:
+					case ::Auth::PasswordService::PasswordCheckResult::Mismatch:
 						error = Wt::WString::tr("Lms.password-bad-login-combination");
 						break;
-					case ::Auth::AuthService::PasswordCheckResult::Throttled:
+					case ::Auth::PasswordService::PasswordCheckResult::Throttled:
 						error = Wt::WString::tr("Lms.password-client-throttled");
 						break;
 				}

@@ -38,19 +38,19 @@ namespace Database
 
 namespace Auth {
 
-	class AuthService
+	class PasswordService
 	{
 		public:
 
-			AuthService(std::size_t maxThrottlerEntries);
+			PasswordService(std::size_t maxThrottlerEntries);
 
-			AuthService() = default;
-			~AuthService() = default;
+			PasswordService() = default;
+			~PasswordService() = default;
 
-			AuthService(const AuthService&) = delete;
-			AuthService& operator=(const AuthService&) = delete;
-			AuthService(AuthService&&) = delete;
-			AuthService& operator=(AuthService&&) = delete;
+			PasswordService(const PasswordService&) = delete;
+			PasswordService& operator=(const PasswordService&) = delete;
+			PasswordService(PasswordService&&) = delete;
+			PasswordService& operator=(PasswordService&&) = delete;
 
 
 			// Password services
@@ -90,11 +90,8 @@ namespace Auth {
 
 		private:
 
-			std::shared_timed_mutex	_passwordCheckMutex;
-			std::shared_timed_mutex	_tokenCheckMutex;
-
-			LoginThrottler	_passwordLoginThrottler;
-			LoginThrottler	_tokenLoginThrottler;
+			std::shared_timed_mutex	_mutex;
+			LoginThrottler	_loginThrottler;
 	};
 
 }
