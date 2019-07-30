@@ -27,6 +27,7 @@
 #include "database/TrackList.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
+#include "database/User.hpp"
 
 using namespace Database;
 
@@ -1041,7 +1042,7 @@ testSingleUser(Session& session)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		auto user {User::create(session)};
+		auto user {User::create(session, "", {})};
 		CHECK(user);
 
 		userId = user.id();
@@ -1079,7 +1080,7 @@ testSingleStarredArtist(Session& session)
 
 		auto artist {Artist::create(session, "MyArtist")};
 		CHECK(artist);
-		auto user {User::create(session)};
+		auto user {User::create(session, "", {})};
 		CHECK(user);
 
 		artistId = artist.id();
@@ -1134,7 +1135,7 @@ testSingleStarredRelease(Session& session)
 
 		auto release {Release::create(session, "MyRelease")};
 		CHECK(release);
-		auto user {User::create(session)};
+		auto user {User::create(session, "", {})};
 		CHECK(user);
 
 		releaseId = release.id();
@@ -1189,7 +1190,7 @@ testSingleStarredTrack(Session& session)
 
 		auto track {Track::create(session, "MyTrackFile")};
 		CHECK(track);
-		auto user {User::create(session)};
+		auto user {User::create(session, "", {})};
 		CHECK(user);
 
 		trackId = track.id();

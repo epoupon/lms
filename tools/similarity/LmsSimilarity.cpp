@@ -5,12 +5,14 @@
 #include <chrono>
 #include <random>
 
-#include "database/DatabaseHandler.hpp"
+#include "database/Database.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
 #include "database/TrackFeatures.hpp"
+#include "main/Service.hpp"
 #include "utils/Config.hpp"
 #include "similarity/features/som/DataNormalizer.hpp"
 #include "similarity/features/som/Network.hpp"
@@ -18,12 +20,7 @@
 static
 std::ostream& operator<<(std::ostream& os, const Database::Track::pointer& track)
 {
-	auto genreClusterType = Database::ClusterType::getByName(*track->session(), "GENRE");
-
 	os << "[";
-	auto genreClusters = track->getClusterGroups({genreClusterType}, 1);
-	for (auto genreCluster : genreClusters)
-		os << genreCluster.front()->getName() << " - ";
 	for (auto artist : track->getArtists())
 		os << artist->getName() << " - ";
 	if (track->getRelease())
@@ -35,7 +32,7 @@ std::ostream& operator<<(std::ostream& os, const Database::Track::pointer& track
 
 static
 bool
-getTrackFeatures(Wt::Dbo::Session &session, const Database::Track::pointer& track, const std::map<std::string, std::size_t>& featuresSettings, SOM::InputVector& res)
+getTrackFeatures(Database::Session &session, const Database::Track::pointer& track, const std::map<std::string, std::size_t>& featuresSettings, SOM::InputVector& res)
 {
 	std::map<std::string, std::vector<double>> features;
 	for (const auto& featureSettings : featuresSettings)
@@ -91,16 +88,15 @@ int main(int argc, char *argv[])
 		if (argc >= 2)
 			configFilePath = std::string(argv[1], 0, 256);
 
-		Config::instance().setFile(configFilePath);
+		ServiceProvider<Config>::create(configFilePath);
 
-		Database::Handler::configureAuth();
-		auto connectionPool = Database::Handler::createConnectionPool(Config::instance().getPath("working-dir") / "lms.db");
-		Database::Handler db(*connectionPool);
+		Database::Database db {getService<Config>()->getPath("working-dir") / "lms.db"};
+		auto session {db.createSession()};
 
 		std::cout << "Getting all features..." << std::endl;
-		Wt::Dbo::Transaction transaction(db.getSession());
+		auto transaction {session->createUniqueTransaction()};
 
-		std::vector<Database::IdType> trackIds {Database::Track::getAllIdsWithFeatures(db.getSession(), nbTracks)};
+		std::vector<Database::IdType> trackIds {Database::Track::getAllIdsWithFeatures(*session, nbTracks)};
 
 		nbTracks = trackIds.size();
 		std::cout << "Getting features DONE (" << nbTracks << " tracks)" << std::endl;
@@ -110,12 +106,12 @@ int main(int argc, char *argv[])
 
 		for (Database::IdType trackId : trackIds)
 		{
-			Database::Track::pointer track {Database::Track::getById(db.getSession(), trackId)};
+			Database::Track::pointer track {Database::Track::getById(*session, trackId)};
 			if (!track)
 				continue;
 
 			SOM::InputVector features {nbDims};
-			if (!getTrackFeatures(db.getSession(), track, featuresSettings, features))
+			if (!getTrackFeatures(*session, track, featuresSettings, features))
 				continue;
 
 			tracksFeatures.emplace_back(std::move(features));
@@ -169,12 +165,12 @@ int main(int argc, char *argv[])
 		SOM::Matrix< std::vector<Database::Track::pointer> > tracksMap(width, height);
 		for (Database::IdType trackId : trackIds)
 		{
-			Database::Track::pointer track {Database::Track::getById(db.getSession(), trackId)};
+			Database::Track::pointer track {Database::Track::getById(*session, trackId)};
 			if (!track)
 				continue;
 
 			SOM::InputVector features {nbDims};
-			if (!getTrackFeatures(db.getSession(), track, featuresSettings, features))
+			if (!getTrackFeatures(*session, track, featuresSettings, features))
 				continue;
 
 			normalizer.normalizeData(features);
@@ -204,12 +200,12 @@ int main(int argc, char *argv[])
 		// For each track, get the nearest tracks
 		for (Database::IdType trackId : trackIds)
 		{
-			Database::Track::pointer track {Database::Track::getById(db.getSession(), trackId)};
+			Database::Track::pointer track {Database::Track::getById(*session, trackId)};
 			if (!track)
 				continue;
 
 			SOM::InputVector features {nbDims};
-			if (!getTrackFeatures(db.getSession(), track, featuresSettings, features))
+			if (!getTrackFeatures(*session, track, featuresSettings, features))
 				continue;
 
 			normalizer.normalizeData(features);
