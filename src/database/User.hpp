@@ -59,7 +59,7 @@ class AuthToken
 
 		// Utility
 		static pointer create(Session& session, const std::string& value, const Wt::WDateTime&expiry, Wt::Dbo::ptr<User> user);
-		static void removeExpiredTokens(Session& session, Wt::WDateTime now);
+		static void removeExpiredTokens(Session& session, const Wt::WDateTime& now);
 		static pointer getByValue(Session& session, const std::string& value);
 		static pointer getById(Session& session, IdType tokenId);
 

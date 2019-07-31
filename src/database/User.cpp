@@ -50,18 +50,12 @@ AuthToken::create(Session& session, const std::string& value, const Wt::WDateTim
 }
 
 void
-AuthToken::removeExpiredTokens(Session& session, Wt::WDateTime now)
+AuthToken::removeExpiredTokens(Session& session, const Wt::WDateTime& now)
 {
 	session.checkUniqueLocked();
 
-	Wt::Dbo::collection<AuthToken::pointer> res = session.getDboSession().find<AuthToken>();
-
-	std::vector<AuthToken::pointer> expiredTokens;
-	for (auto& token : res)
-	{
-		if (token->_expiry < now)
-			token.remove();
-	}
+	session.getDboSession().execute
+		("DELETE FROM auth_token WHERE expiry < ?").bind(now);
 }
 
 AuthToken::pointer
