@@ -53,7 +53,8 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static std::vector<pointer>	getAllOrphans(Session& session); // no track related
 		static std::vector<pointer>	getAll(Session& session, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
 		static std::vector<pointer>	getAllRandom(Session& session, boost::optional<std::size_t> size = {});
-		static std::vector<pointer>	getLastAdded(Session& session, Wt::WDateTime after, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
+		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
+		static std::vector<pointer>	getByYear(Session& session, int yearFrom, int yearTo, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
 
 		static std::vector<pointer>	getByFilter(Session& session, const std::set<IdType>& clusters);
 		static std::vector<pointer>	getByFilter(Session& session,

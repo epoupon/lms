@@ -836,6 +836,13 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	{
 		releases = Release::getAll(context.dbSession, offset, size);
 	}
+	else if (type == "byYear")
+	{
+		int fromYear {getMandatoryParameterAs<int>(context.parameters, "fromYear")};
+		int toYear {getMandatoryParameterAs<int>(context.parameters, "toYear")};
+
+		releases = Release::getByYear(context.dbSession, fromYear, toYear, offset, size);
+	}
 	else if (type == "byGenre")
 	{
 		// Mandatory param

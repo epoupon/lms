@@ -119,7 +119,7 @@ Release::getAllOrphans(Session& session)
 }
 
 std::vector<Release::pointer>
-Release::getLastAdded(Session& session, Wt::WDateTime after, boost::optional<std::size_t> offset, boost::optional<std::size_t> limit)
+Release::getLastAdded(Session& session, const Wt::WDateTime& after, boost::optional<std::size_t> offset, boost::optional<std::size_t> limit)
 {
 	session.checkSharedLocked();
 
@@ -127,6 +127,20 @@ Release::getLastAdded(Session& session, Wt::WDateTime after, boost::optional<std
 		.where("t.file_added > ?").bind(after)
 		.groupBy("r.id")
 		.orderBy("t.file_added DESC")
+		.offset(offset ? static_cast<int>(*offset) : -1)
+		.limit(limit ? static_cast<int>(*limit) : -1);
+
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
+std::vector<Release::pointer>
+Release::getByYear(Session& session, int yearFrom, int yearTo, boost::optional<std::size_t> offset, boost::optional<std::size_t> limit)
+{
+	Wt::Dbo::collection<Release::pointer> res = session.getDboSession().query<Release::pointer>
+		("SELECT DISTINCT r from release r INNER JOIN track t ON r.id = t.release_id")
+		.where("t.year >= ?").bind(yearFrom)
+		.where("t.year <= ?").bind(yearTo)
+		.orderBy("t.year, r.name COLLATE NOCASE")
 		.offset(offset ? static_cast<int>(*offset) : -1)
 		.limit(limit ? static_cast<int>(*limit) : -1);
 
