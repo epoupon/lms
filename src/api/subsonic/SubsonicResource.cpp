@@ -642,12 +642,11 @@ static
 Response
 handleDeletePlaylistRequest(RequestContext& context)
 {
-	// Optional params
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 	if (id.type != Id::Type::Playlist)
 		throw Error {Error::CustomType::BadIdFormat};
 
-	auto transaction {context.dbSession.createSharedTransaction()};
+	auto transaction {context.dbSession.createUniqueTransaction()};
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
@@ -662,6 +661,26 @@ handleDeletePlaylistRequest(RequestContext& context)
 	}
 
 	tracklist.remove();
+
+	return Response::createOkResponse();
+}
+
+static
+Response
+handleDeleteUserRequest(RequestContext& context)
+{
+	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
+
+	if (username == context.userName)
+		throw Error {Error::Code::UserNotAuthorized};
+
+	auto transaction {context.dbSession.createUniqueTransaction()};
+
+	User::pointer user {User::getByLoginName(context.dbSession, username)};
+	if (!user)
+		throw Error {Error::Code::RequestedDataNotFound};
+
+	user.remove();
 
 	return Response::createOkResponse();
 }
@@ -1731,6 +1750,7 @@ static std::map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"/rest/createUser.view",		{handleCreateUserRequest,		true}},
 	{"/rest/deletePlaylist.view",		{handleDeletePlaylistRequest,		false}},
 	{"/rest/deleteShare.view",		{handleNotImplementedRequest,		false}},
+	{"/rest/deleteUser.view",		{handleDeleteUserRequest,		true}},
 	{"/rest/getAvatar.view",		{handleNotImplementedRequest,		false}},
 	{"/rest/getAlbumList.view",		{handleGetAlbumListRequest,		false}},
 	{"/rest/getAlbumList2.view",		{handleGetAlbumList2Request,		false}},
