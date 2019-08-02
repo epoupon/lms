@@ -91,17 +91,17 @@ class ClusterType : public Wt::Dbo::Dbo<ClusterType>
 		ClusterType(std::string name);
 
 		static std::vector<pointer> getAllOrphans(Session& session);
-		static pointer getByName(Session& session, std::string name);
+		static pointer getByName(Session& session, const std::string& name);
 		static pointer getById(Session& session, IdType id);
 		static std::vector<pointer> getAll(Session& session);
 
-		static pointer create(Session& session, std::string name);
-		static void remove(Session& session, std::string name);
+		static pointer create(Session& session, const std::string& name);
+		static void remove(Session& session, const std::string& name);
 
 		// Accessors
 		const std::string& getName(void) const { return _name; }
 		std::vector<Cluster::pointer> getClusters() const;
-		Cluster::pointer getCluster(std::string name) const;
+		Cluster::pointer getCluster(const std::string& name) const;
 
 		template<class Action>
 		void persist(Action& a)

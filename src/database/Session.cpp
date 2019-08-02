@@ -213,6 +213,7 @@ Session::prepareTables()
 		_session.execute("CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)");
 		_session.execute("CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)");
 		_session.execute("CREATE INDEX IF NOT EXISTS auth_token_user_idx ON auth_token(user_id)");
+		_session.execute("CREATE INDEX IF NOT EXISTS auth_token_expiry_idx ON auth_token(expiry)");
 		_session.execute("CREATE INDEX IF NOT EXISTS auth_token_value_idx ON auth_token(value)");
 		_session.execute("CREATE INDEX IF NOT EXISTS cluster_name_idx ON cluster(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS cluster_cluster_type_idx ON cluster(cluster_type_id)");

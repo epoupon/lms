@@ -139,7 +139,7 @@ ClusterType::getAllOrphans(Session& session)
 
 
 ClusterType::pointer
-ClusterType::getByName(Session& session, std::string name)
+ClusterType::getByName(Session& session, const std::string& name)
 {
 	session.checkSharedLocked();
 
@@ -165,7 +165,7 @@ ClusterType::getAll(Session& session)
 }
 
 ClusterType::pointer
-ClusterType::create(Session& session, std::string name)
+ClusterType::create(Session& session, const std::string& name)
 {
 	session.checkUniqueLocked();
 
@@ -176,7 +176,7 @@ ClusterType::create(Session& session, std::string name)
 }
 
 Cluster::pointer
-ClusterType::getCluster(std::string name) const
+ClusterType::getCluster(const std::string& name) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));

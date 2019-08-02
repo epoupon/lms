@@ -1024,10 +1024,10 @@ handleGetGenresRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	auto clusterType {ClusterType::getByName(context.dbSession, genreClusterName)};
+	const ClusterType::pointer clusterType {ClusterType::getByName(context.dbSession, genreClusterName)};
 	if (clusterType)
 	{
-		auto clusters {clusterType->getClusters()};
+		const auto clusters {clusterType->getClusters()};
 
 		for (const Cluster::pointer& cluster : clusters)
 			genresNode.addArrayChild("genre", clusterToResponseNode(cluster));
@@ -1759,6 +1759,7 @@ static std::map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"/rest/getUser.view",			{handleGetUserRequest,			false}},
 	{"/rest/getUsers.view",			{handleGetUsersRequest,			true}},
 	{"/rest/ping.view",			{handlePingRequest,			false}},
+	{"/rest/savePlayQueue.view",		{handleNotImplementedRequest,		false}},
 	{"/rest/scrobble.view",			{handleNotImplementedRequest,		false}},
 	{"/rest/search2.view",			{handleSearch2Request,			false}},
 	{"/rest/search3.view",			{handleSearch3Request,			false}},
@@ -1784,7 +1785,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 	const std::size_t requestId {curRequestId++};
 
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request " << requestId << " '" << request.path() << "', params = " << parameterMapToDebugString(request.getParameterMap());
+	LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request " << requestId << " '" << request.path() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap());
 
 	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
 
