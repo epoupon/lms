@@ -1767,7 +1767,7 @@ static std::map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"/rest/unstar.view",			{handleUnstarRequest,			false}},
 	{"/rest/updateShare.view",		{handleNotImplementedRequest,		false}},
 	{"/rest/updateUser.view",		{handleUpdateUserRequest,		true}},
-	{"/rest/updatePlayslist.view",		{handleUpdatePlaylistRequest,		false}},
+	{"/rest/updatePlaylist.view",		{handleUpdatePlaylistRequest,		false}},
 };
 
 using MediaRetrievalHandlerFunc = std::function<MediaRetrievalResult(RequestContext&, Wt::Http::ResponseContinuation*)>;
