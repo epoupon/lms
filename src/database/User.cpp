@@ -147,9 +147,19 @@ User::setAudioTranscodeBitrate(Bitrate bitrate)
 }
 
 void
-User::setMaxAudioTranscodeBitrate(Bitrate bitrate)
+User::setMaxAudioTranscodeBitrate(Bitrate requestedBitrate)
 {
-	_maxAudioTranscodeBitrate = std::min(bitrate, *audioTranscodeAllowedBitrates.rbegin());
+	Bitrate bitrate {*audioTranscodeAllowedBitrates.begin()};
+
+	for (auto allowedBitrate : audioTranscodeAllowedBitrates)
+	{
+		if (requestedBitrate < allowedBitrate)
+			break;
+
+		bitrate = allowedBitrate;
+	}
+
+	_maxAudioTranscodeBitrate = bitrate;
 	if (_audioTranscodeBitrate > _maxAudioTranscodeBitrate)
 		_audioTranscodeBitrate = _maxAudioTranscodeBitrate;
 }

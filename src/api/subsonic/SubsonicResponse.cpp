@@ -77,14 +77,20 @@ CustomTypeToString(Error::CustomType type)
 {
 	switch (type)
 	{
-		case Error::CustomType::BadId:
-			return "Bad id";
-		case Error::CustomType::NotImplemented:
-			return "Not implemented";
-		case Error::CustomType::InternalError:
+		case Error::CustomType::BadIdFormat:
+			return "Bad id format";
+		case Error::CustomType::BadPasswordFormat:
 			return "Internal error";
+		case Error::CustomType::InternalError:
+			return "Bad password format";
 		case Error::CustomType::LoginThrottled:
 			return "Login throttled, too many attempts";
+		case Error::CustomType::NotImplemented:
+			return "Not implemented";
+		case Error::CustomType::PasswordTooWeak:
+			return "Password too weak";
+		case Error::CustomType::UserAlreadyExists:
+			return "User already exists";
 	}
 
 	return "Unknown custom error";

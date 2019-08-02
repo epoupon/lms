@@ -48,10 +48,13 @@ class Error
 
 		enum class CustomType
 		{
-			BadId,
-			NotImplemented,
-			LoginThrottled,
+			BadIdFormat,
+			BadPasswordFormat,
 			InternalError,
+			LoginThrottled,
+			NotImplemented,
+			PasswordTooWeak,
+			UserAlreadyExists,
 		};
 
 		Error(Code code);

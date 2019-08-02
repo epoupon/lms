@@ -98,6 +98,12 @@ stringTrimEnd(const std::string& str, const std::string& whitespace)
 }
 
 std::string
+stringToLower(const std::string& str)
+{
+	return boost::algorithm::to_lower_copy(str);
+}
+
+std::string
 bufferToString(const std::vector<unsigned char>& data)
 {
 	std::ostringstream oss;

@@ -47,6 +47,9 @@ std::string
 stringTrimEnd(const std::string& str, const std::string& whitespaces = " \t");
 
 std::string
+stringToLower(const std::string& str);
+
+std::string
 bufferToString(const std::vector<unsigned char>& data);
 
 template<typename T>
