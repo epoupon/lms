@@ -512,6 +512,10 @@ userToResponseNode(const User::pointer& user)
 	userNode.setAttribute("jukeboxRole", "false");
 	userNode.setAttribute("shareRole", "false");
 
+	Response::Node folder;
+	folder.setValue("0");
+	userNode.addArrayChild("folder", std::move(folder));
+
 	return userNode;
 }
 
@@ -1004,7 +1008,7 @@ handleGetMusicFoldersRequest(RequestContext& context)
 	Response::Node& musicFoldersNode {response.createNode("musicFolders")};
 
 	Response::Node& musicFolderNode {musicFoldersNode.createArrayChild("musicFolder")};
-	musicFolderNode.setAttribute("id", IdToString({Id::Type::Root}));
+	musicFolderNode.setAttribute("id", "0");
 	musicFolderNode.setAttribute("name", "Music");
 
 	return response;
@@ -1751,7 +1755,7 @@ static std::map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"/rest/getStarred2.view",		{handleGetStarred2Request,		false}},
 	{"/rest/getPlaylist.view",		{handleGetPlaylistRequest,		false}},
 	{"/rest/getPlaylists.view",		{handleGetPlaylistsRequest,		false}},
-	{"/rest/getSongsBygenre.view",		{handleGetSongsByGenreRequest,		false}},
+	{"/rest/getSongsByGenre.view",		{handleGetSongsByGenreRequest,		false}},
 	{"/rest/getUser.view",			{handleGetUserRequest,			false}},
 	{"/rest/getUsers.view",			{handleGetUsersRequest,			true}},
 	{"/rest/ping.view",			{handlePingRequest,			false}},
