@@ -21,6 +21,8 @@
 
 #include <vector>
 
+#include <boost/optional.hpp>
+
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
@@ -160,7 +162,7 @@ class User : public Wt::Dbo::Dbo<User>
 		void			starRelease(Wt::Dbo::ptr<Release> release);
 		void			unstarRelease(Wt::Dbo::ptr<Release> release);
 		bool			hasStarredRelease(Wt::Dbo::ptr<Release> release) const;
-		std::vector<Wt::Dbo::ptr<Release>> getStarredReleases() const;
+		std::vector<Wt::Dbo::ptr<Release>> getStarredReleases(boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {}) const;
 
 		void			starTrack(Wt::Dbo::ptr<Track> track);
 		void			unstarTrack(Wt::Dbo::ptr<Track> track);

@@ -29,8 +29,6 @@
 
 #include "utils/Exception.hpp"
 
-#define API_VERSION	"1.12.0"
-
 namespace API::Subsonic
 {
 
@@ -163,7 +161,7 @@ Response::createOkResponse()
 	Node& responseNode {response._root.createChild("subsonic-response")};
 
 	responseNode.setAttribute("status", "ok");
-	responseNode.setAttribute("version", API_VERSION);
+	responseNode.setAttribute("version", API_VERSION_STR);
 
 	return response;
 }
@@ -175,7 +173,7 @@ Response::createFailedResponse(const Error& error)
 	Node& responseNode {response._root.createChild("subsonic-response")};
 
 	responseNode.setAttribute("status", "failed");
-	responseNode.setAttribute("version", API_VERSION);
+	responseNode.setAttribute("version", API_VERSION_STR);
 
 	Node& errorNode {responseNode.createChild("error")};
 	errorNode.setAttribute("code", std::to_string(static_cast<int>(error.getCode())));

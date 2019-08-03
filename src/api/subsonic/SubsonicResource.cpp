@@ -73,11 +73,54 @@ readAs(const std::string& str)
 
 namespace API::Subsonic
 {
+struct ClientVersion
+{
+	unsigned major;
+	unsigned minor;
+	unsigned patch;
+};
+}
+
+template<>
+boost::optional<API::Subsonic::ClientVersion>
+readAs(const std::string& str)
+{
+	// Expects "X.Y.Z"
+	const auto numbers {splitString(str, ".")};
+	if (numbers.size() != 3)
+		return boost::none;
+
+	API::Subsonic::ClientVersion version;
+
+	auto number {readAs<unsigned>(numbers[0])};
+	if (!number)
+		return boost::none;
+	version.major = *number;
+
+	number = {readAs<unsigned>(numbers[1])};
+	if (!number)
+		return boost::none;
+	version.minor = *number;
+
+	number = {readAs<unsigned>(numbers[2])};
+	if (!number)
+		return boost::none;
+	version.patch = *number;
+
+
+	return version;
+}
+
+
+namespace API::Subsonic
+{
+
 struct ClientInfo
 {
 	std::string name;
 	std::string user;
 	std::string password;
+	ClientVersion version;
 };
 
 struct RequestContext
@@ -215,6 +258,7 @@ getClientInfo(const Wt::Http::ParameterMap& parameters)
 	res.name = getMandatoryParameterAs<std::string>(parameters, "c");
 	res.user = getMandatoryParameterAs<std::string>(parameters, "u");
 	res.password = decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(parameters, "p"));
+	res.version = getMandatoryParameterAs<ClientVersion>(parameters, "v");
 
 	return res;
 }
@@ -757,12 +801,20 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	{
 		releases = Release::getAll(context.dbSession, offset, size);
 	}
+	else if (type == "alphabeticalByArtist")
+	{
+		releases = Release::getAllOrderedByArtist(context.dbSession, offset, size);
+	}
 	else if (type == "byYear")
 	{
 		int fromYear {getMandatoryParameterAs<int>(context.parameters, "fromYear")};
 		int toYear {getMandatoryParameterAs<int>(context.parameters, "toYear")};
 
 		releases = Release::getByYear(context.dbSession, fromYear, toYear, offset, size);
+	}
+	else if (type == "starred")
+	{
+		releases = user->getStarredReleases(offset, size);
 	}
 	else if (type == "byGenre")
 	{
@@ -878,7 +930,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 		throw Error {Error::CustomType::BadIdFormat};
 
 	// Optional params
-	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").get_value_or(10)};
+	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").get_value_or(20)};
 
 	Response response {Response::createOkResponse()};
 	Response::Node& artistInfoNode {response.createNode(id3 ? "artistInfo2" : "artistInfo")};
@@ -1814,9 +1866,16 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 	try
 	{
-		Session& dbSession {getOrCreateDbSession(_db)};
-
+		// Mandatory parameters
 		const ClientInfo clientInfo {getClientInfo(parameters)};
+		if (clientInfo.version.major > API_VERSION_MAJOR)
+			throw Error {Error::Code::ServerMustUpgrade};
+		if (clientInfo.version.major < API_VERSION_MAJOR)
+			throw Error {Error::Code::ClientMustUpgrade};
+		if (clientInfo.version.minor > API_VERSION_MINOR)
+			throw Error {Error::Code::ServerMustUpgrade};
+
+		Session& dbSession {getOrCreateDbSession(_db)};
 
 		switch (getService<Auth::PasswordService>()->checkUserPassword(dbSession,
 					boost::asio::ip::address::from_string(request.clientAddress()),

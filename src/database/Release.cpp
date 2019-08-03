@@ -97,6 +97,23 @@ Release::getAll(Session& session, boost::optional<std::size_t> offset, boost::op
 }
 
 std::vector<Release::pointer>
+Release::getAllOrderedByArtist(Session& session, boost::optional<std::size_t> offset, boost::optional<std::size_t> size)
+{
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<pointer> res = session.getDboSession().query<Wt::Dbo::ptr<Release>>(
+			"SELECT DISTINCT r FROM release r"
+			" INNER JOIN track t ON r.id = t.release_id"
+			" INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id"
+			" INNER JOIN artist a ON t_a_l.artist_id = a.id")
+		 .offset(offset ? static_cast<int>(*offset) : -1)
+		 .limit(size ? static_cast<int>(*size) : -1)
+		 .orderBy("a.name COLLATE NOCASE, r.name COLLATE NOCASE");
+
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
+std::vector<Release::pointer>
 Release::getAllRandom(Session& session, boost::optional<std::size_t> size)
 {
 	session.checkSharedLocked();

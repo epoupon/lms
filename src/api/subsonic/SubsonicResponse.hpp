@@ -21,8 +21,14 @@
 #include <string>
 #include <vector>
 
+
 namespace API::Subsonic
 {
+
+#define API_VERSION_MAJOR	1
+#define API_VERSION_MINOR	12
+#define API_VERSION_PATCH	0
+#define API_VERSION_STR		"1.12.0"
 
 enum class ResponseFormat
 {
