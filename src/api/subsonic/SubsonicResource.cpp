@@ -1850,6 +1850,10 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 	LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request " << requestId << " '" << request.pathInfo() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap());
 
+	std::string requestPath {request.pathInfo()};
+	if (stringEndsWith(requestPath, ".view"))
+		requestPath.resize(requestPath.length() - 5);
+
 	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
 
 	// Optional parameters
@@ -1857,9 +1861,6 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 	try
 	{
-		std::string requestPath {request.pathInfo()};
-		if (stringEndsWith(requestPath, ".view"))
-			requestPath.resize(requestPath.length() - 5);
 
 		// Mandatory parameters
 		const ClientInfo clientInfo {getClientInfo(parameters)};
@@ -1900,7 +1901,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 			resp.write(response.out(), format);
 			response.setMimeType(ResponseFormatToMimeType(format));
 
-			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << request.path() << "' handled!";
+			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << requestPath << "' handled!";
 			return;
 		}
 
@@ -1927,16 +1928,16 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 				continuation->setData(std::move(res.continuationData));
 			}
 
-			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId  << " '" << request.path() << "' handled!";
+			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId  << " '" << requestPath << "' handled!";
 			return;
 		}
 
-		LMS_LOG(API_SUBSONIC, ERROR) << "Unhandled command '" << request.path() << "'";
+		LMS_LOG(API_SUBSONIC, ERROR) << "Unhandled command '" << requestPath << "'";
 		throw Error {Error::CustomType::NotImplemented};
 	}
 	catch (const Error& e)
 	{
-		LMS_LOG(API_SUBSONIC, ERROR) << "Error while processing request '" << request.path() << "'"
+		LMS_LOG(API_SUBSONIC, ERROR) << "Error while processing request '" << requestPath << "'"
 			<< ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
 			<< ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'";
 		Response resp {Response::createFailedResponse(e)};
