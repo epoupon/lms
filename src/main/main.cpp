@@ -147,10 +147,7 @@ int main(int argc, char* argv[])
 
 		// bind API resources
 		if (getService<Config>()->getBool("api-subsonic", true))
-		{
-			for (const std::string& path : API::Subsonic::SubsonicResource::getPaths())
-				server.addResource(&subsonicResource, path);
-		}
+			server.addResource(&subsonicResource, subsonicResource.getPath());
 
 		// bind UI entry point
 		server.addEntryPoint(Wt::EntryPointType::Application,

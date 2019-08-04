@@ -78,9 +78,9 @@ CustomTypeToString(Error::CustomType type)
 		case Error::CustomType::BadIdFormat:
 			return "Bad id format";
 		case Error::CustomType::BadPasswordFormat:
-			return "Internal error";
-		case Error::CustomType::InternalError:
 			return "Bad password format";
+		case Error::CustomType::InternalError:
+			return "Internal error";
 		case Error::CustomType::LoginThrottled:
 			return "Login throttled, too many attempts";
 		case Error::CustomType::NotImplemented:

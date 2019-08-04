@@ -117,17 +117,24 @@ bufferToString(const std::vector<unsigned char>& data)
 }
 
 std::string
-replaceInString(std::string str, const std::string& from, const std::string& to)
+replaceInString(const std::string& str, const std::string& from, const std::string& to)
 {
-    size_t pos = 0;
+	std::string res {str};
+	size_t pos = 0;
 
-    while ((pos = str.find(from, pos)) != std::string::npos)
-    {
-         str.replace(pos, from.length(), to);
-         pos += to.length();
-    }
+	while ((pos = res.find(from, pos)) != std::string::npos)
+	{
+		res.replace(pos, from.length(), to);
+		pos += to.length();
+	}
 
-    return str;
+	return res;
+}
+
+bool
+stringEndsWith(const std::string& str, const std::string& ending)
+{
+	return boost::algorithm::ends_with(str, ending);
 }
 
 boost::optional<std::string>

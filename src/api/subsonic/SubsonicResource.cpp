@@ -75,9 +75,9 @@ namespace API::Subsonic
 {
 struct ClientVersion
 {
-	unsigned major;
-	unsigned minor;
-	unsigned patch;
+	unsigned major {};
+	unsigned minor {};
+	unsigned patch {};
 };
 }
 
@@ -87,7 +87,7 @@ readAs(const std::string& str)
 {
 	// Expects "X.Y.Z"
 	const auto numbers {splitString(str, ".")};
-	if (numbers.size() != 3)
+	if (numbers.size() < 2 || numbers.size() > 3)
 		return boost::none;
 
 	API::Subsonic::ClientVersion version;
@@ -102,11 +102,13 @@ readAs(const std::string& str)
 		return boost::none;
 	version.minor = *number;
 
-	number = {readAs<unsigned>(numbers[2])};
-	if (!number)
-		return boost::none;
-	version.patch = *number;
-
+	if (numbers.size() == 3)
+	{
+		number = {readAs<unsigned>(numbers[2])};
+		if (!number)
+			return boost::none;
+		version.patch = *number;
+	}
 
 	return version;
 }
@@ -255,10 +257,17 @@ getClientInfo(const Wt::Http::ParameterMap& parameters)
 	ClientInfo res;
 
 	// Mandatory parameters
+	res.version = getMandatoryParameterAs<ClientVersion>(parameters, "v");
+	if (res.version.major > API_VERSION_MAJOR)
+		throw Error {Error::Code::ServerMustUpgrade};
+	if (res.version.major < API_VERSION_MAJOR)
+		throw Error {Error::Code::ClientMustUpgrade};
+	if (res.version.minor > API_VERSION_MINOR)
+		throw Error {Error::Code::ServerMustUpgrade};
+
 	res.name = getMandatoryParameterAs<std::string>(parameters, "c");
 	res.user = getMandatoryParameterAs<std::string>(parameters, "u");
 	res.password = decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(parameters, "p"));
-	res.version = getMandatoryParameterAs<ClientVersion>(parameters, "v");
 
 	return res;
 }
@@ -561,13 +570,6 @@ userToResponseNode(const User::pointer& user)
 	userNode.addArrayChild("folder", std::move(folder));
 
 	return userNode;
-}
-
-static
-Response
-handleNotImplementedRequest(RequestContext& context)
-{
-	throw Error {Error::CustomType::NotImplemented};
 }
 
 static
@@ -1796,58 +1798,47 @@ struct RequestEntryPointInfo
 
 static std::map<std::string, RequestEntryPointInfo> requestEntryPoints
 {
-	{"/rest/changePassword.view",		{handleChangePassword,			false}},
-	{"/rest/createPlaylist.view",		{handleCreatePlaylistRequest,		false}},
-	{"/rest/createShare.view",		{handleNotImplementedRequest,		false}},
-	{"/rest/createUser.view",		{handleCreateUserRequest,		true}},
-	{"/rest/deletePlaylist.view",		{handleDeletePlaylistRequest,		false}},
-	{"/rest/deleteShare.view",		{handleNotImplementedRequest,		false}},
-	{"/rest/deleteUser.view",		{handleDeleteUserRequest,		true}},
-	{"/rest/getAvatar.view",		{handleNotImplementedRequest,		false}},
-	{"/rest/getAlbumList.view",		{handleGetAlbumListRequest,		false}},
-	{"/rest/getAlbumList2.view",		{handleGetAlbumList2Request,		false}},
-	{"/rest/getAlbum.view",			{handleGetAlbumRequest,			false}},
-	{"/rest/getArtist.view",		{handleGetArtistRequest,		false}},
-	{"/rest/getArtistInfo.view",		{handleGetArtistInfoRequest,		false}},
-	{"/rest/getArtistInfo2.view",		{handleGetArtistInfo2Request,		false}},
-	{"/rest/getArtists.view",		{handleGetArtistsRequest,		false}},
-	{"/rest/getBookmarks.view",		{handleNotImplementedRequest,		false}},
-	{"/rest/getGenres.view",		{handleGetGenresRequest,		false}},
-	{"/rest/getIndexes.view",		{handleGetIndexesRequest,		false}},
-	{"/rest/getLicense.view",		{handleGetLicenseRequest,		false}},
-	{"/rest/getLyrics.view",		{handleNotImplementedRequest,		false}},
-	{"/rest/getMusicDirectory.view",	{handleGetMusicDirectoryRequest,	false}},
-	{"/rest/getMusicFolders.view",		{handleGetMusicFoldersRequest,		false}},
-	{"/rest/getNowPlaying.view",		{handleNotImplementedRequest,		false}},
-	{"/rest/getRandomSongs.view",		{handleGetRandomSongsRequest,		false}},
-	{"/rest/getShares.view",		{handleNotImplementedRequest,		false}},
-	{"/rest/getSimilarSongs.view",		{handleGetSimilarSongsRequest,		false}},
-	{"/rest/getSimilarSongs2.view",		{handleGetSimilarSongs2Request,		false}},
-	{"/rest/getStarred.view",		{handleGetStarredRequest,		false}},
-	{"/rest/getStarred2.view",		{handleGetStarred2Request,		false}},
-	{"/rest/getPlaylist.view",		{handleGetPlaylistRequest,		false}},
-	{"/rest/getPlaylists.view",		{handleGetPlaylistsRequest,		false}},
-	{"/rest/getSongsByGenre.view",		{handleGetSongsByGenreRequest,		false}},
-	{"/rest/getUser.view",			{handleGetUserRequest,			false}},
-	{"/rest/getUsers.view",			{handleGetUsersRequest,			true}},
-	{"/rest/ping.view",			{handlePingRequest,			false}},
-	{"/rest/savePlayQueue.view",		{handleNotImplementedRequest,		false}},
-	{"/rest/scrobble.view",			{handleNotImplementedRequest,		false}},
-	{"/rest/search2.view",			{handleSearch2Request,			false}},
-	{"/rest/search3.view",			{handleSearch3Request,			false}},
-	{"/rest/setRating.view",		{handleNotImplementedRequest,		false}},
-	{"/rest/star.view",			{handleStarRequest,			false}},
-	{"/rest/unstar.view",			{handleUnstarRequest,			false}},
-	{"/rest/updateShare.view",		{handleNotImplementedRequest,		false}},
-	{"/rest/updateUser.view",		{handleUpdateUserRequest,		true}},
-	{"/rest/updatePlaylist.view",		{handleUpdatePlaylistRequest,		false}},
+	{"changePassword",	{handleChangePassword,			false}},
+	{"createPlaylist",	{handleCreatePlaylistRequest,		false}},
+	{"createUser",		{handleCreateUserRequest,		true}},
+	{"deletePlaylist",	{handleDeletePlaylistRequest,		false}},
+	{"deleteUser",		{handleDeleteUserRequest,		true}},
+	{"getAlbumList",	{handleGetAlbumListRequest,		false}},
+	{"getAlbumList2",	{handleGetAlbumList2Request,		false}},
+	{"getAlbum",		{handleGetAlbumRequest,			false}},
+	{"getArtist",		{handleGetArtistRequest,		false}},
+	{"getArtistInfo",	{handleGetArtistInfoRequest,		false}},
+	{"getArtistInfo2",	{handleGetArtistInfo2Request,		false}},
+	{"getArtists",		{handleGetArtistsRequest,		false}},
+	{"getGenres",		{handleGetGenresRequest,		false}},
+	{"getIndexes",		{handleGetIndexesRequest,		false}},
+	{"getLicense",		{handleGetLicenseRequest,		false}},
+	{"getMusicDirectory",	{handleGetMusicDirectoryRequest,	false}},
+	{"getMusicFolders",	{handleGetMusicFoldersRequest,		false}},
+	{"getRandomSongs",	{handleGetRandomSongsRequest,		false}},
+	{"getSimilarSongs",	{handleGetSimilarSongsRequest,		false}},
+	{"getSimilarSongs2",	{handleGetSimilarSongs2Request,		false}},
+	{"getStarred",		{handleGetStarredRequest,		false}},
+	{"getStarred2",		{handleGetStarred2Request,		false}},
+	{"getPlaylist",		{handleGetPlaylistRequest,		false}},
+	{"getPlaylists",	{handleGetPlaylistsRequest,		false}},
+	{"getSongsByGenre",	{handleGetSongsByGenreRequest,		false}},
+	{"getUser",		{handleGetUserRequest,			false}},
+	{"getUsers",		{handleGetUsersRequest,			true}},
+	{"ping",		{handlePingRequest,			false}},
+	{"search2",		{handleSearch2Request,			false}},
+	{"search3",		{handleSearch3Request,			false}},
+	{"star",		{handleStarRequest,			false}},
+	{"unstar",		{handleUnstarRequest,			false}},
+	{"updateUser",		{handleUpdateUserRequest,		true}},
+	{"updatePlaylist",	{handleUpdatePlaylistRequest,		false}},
 };
 
 using MediaRetrievalHandlerFunc = std::function<MediaRetrievalResult(RequestContext&, Wt::Http::ResponseContinuation*)>;
 static std::map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
 {
-	{"/rest/stream.view",		handleStream},
-	{"/rest/getCoverArt.view",	handleGetCoverArt},
+	{"/rest/stream",		handleStream},
+	{"/rest/getCoverArt",	handleGetCoverArt},
 };
 
 void
@@ -1857,7 +1848,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 	const std::size_t requestId {curRequestId++};
 
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request " << requestId << " '" << request.path() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap());
+	LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request " << requestId << " '" << request.pathInfo() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap());
 
 	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
 
@@ -1866,14 +1857,12 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 	try
 	{
+		std::string requestPath {request.pathInfo()};
+		if (stringEndsWith(requestPath, ".view"))
+			requestPath.resize(requestPath.length() - 5);
+
 		// Mandatory parameters
 		const ClientInfo clientInfo {getClientInfo(parameters)};
-		if (clientInfo.version.major > API_VERSION_MAJOR)
-			throw Error {Error::Code::ServerMustUpgrade};
-		if (clientInfo.version.major < API_VERSION_MAJOR)
-			throw Error {Error::Code::ClientMustUpgrade};
-		if (clientInfo.version.minor > API_VERSION_MINOR)
-			throw Error {Error::Code::ServerMustUpgrade};
 
 		Session& dbSession {getOrCreateDbSession(_db)};
 
@@ -1891,7 +1880,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 		RequestContext requestContext {.parameters = parameters, .dbSession = dbSession, .userName = clientInfo.user};
 
-		auto itEntryPoint {requestEntryPoints.find(request.path())};
+		auto itEntryPoint {requestEntryPoints.find(requestPath)};
 		if (itEntryPoint != requestEntryPoints.end())
 		{
 			if (itEntryPoint->second.mustBeAdmin)
@@ -1915,7 +1904,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 			return;
 		}
 
-		auto itStreamHandler {mediaRetrievalHandlers.find(request.path())};
+		auto itStreamHandler {mediaRetrievalHandlers.find(requestPath)};
 		if (itStreamHandler != mediaRetrievalHandlers.end())
 		{
 			MediaRetrievalResult res {itStreamHandler->second(requestContext, request.continuation())};
@@ -1943,7 +1932,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		}
 
 		LMS_LOG(API_SUBSONIC, ERROR) << "Unhandled command '" << request.path() << "'";
-		throw Error {Error::CustomType::InternalError};
+		throw Error {Error::CustomType::NotImplemented};
 	}
 	catch (const Error& e)
 	{
@@ -1954,20 +1943,6 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		resp.write(response.out(), format);
 		response.setMimeType(ResponseFormatToMimeType(format));
 	}
-}
-
-std::vector<std::string>
-SubsonicResource::getPaths()
-{
-	std::vector<std::string> paths;
-
-	for (auto it : requestEntryPoints)
-		paths.emplace_back(it.first);
-
-	for (auto it : mediaRetrievalHandlers)
-		paths.emplace_back(it.first);
-
-	return paths;
 }
 
 } // namespace api::subsonic

@@ -66,7 +66,10 @@ boost::optional<T> readAs(const std::string& str)
 }
 
 std::string
-replaceInString(std::string str, const std::string& from, const std::string& to);
+replaceInString(const std::string& str, const std::string& from, const std::string& to);
+
+bool
+stringEndsWith(const std::string& str, const std::string& ending);
 
 boost::optional<std::string>
 stringFromHex(const std::string& str);
