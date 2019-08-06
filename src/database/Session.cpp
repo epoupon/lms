@@ -100,7 +100,7 @@ Session::doDatabaseMigrationIfNeeded()
 	{
 		default:
 			LMS_LOG(DB, ERROR) << "Database version " << version << " cannot be handled using migration";
-			throw LmsException {outdatedMsg};
+			throw LmsException { LMS_DATABASE_VERSION > version  ? outdatedMsg : "Server binary outdated, please upgrade it to handle this database"};
 	}
 
 	VersionInfo::get(*this).modify()->setVersion(LMS_DATABASE_VERSION);

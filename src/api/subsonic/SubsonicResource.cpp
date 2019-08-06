@@ -1837,8 +1837,8 @@ static std::map<std::string, RequestEntryPointInfo> requestEntryPoints
 using MediaRetrievalHandlerFunc = std::function<MediaRetrievalResult(RequestContext&, Wt::Http::ResponseContinuation*)>;
 static std::map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
 {
-	{"/rest/stream",		handleStream},
-	{"/rest/getCoverArt",	handleGetCoverArt},
+	{"stream",		handleStream},
+	{"getCoverArt",		handleGetCoverArt},
 };
 
 void
