@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <boost/optional.hpp>
+
 #include <Wt/WContainerWidget.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
@@ -35,12 +37,15 @@ class Releases : public Wt::WTemplate
 	public:
 		Releases(Filters* filters);
 
-		Wt::Signal<Database::IdType> releaseAdd;
-		Wt::Signal<Database::IdType> releasePlay;
+		Wt::Signal<const std::vector<Database::IdType>&> releasesAdd;
+		Wt::Signal<const std::vector<Database::IdType>&> releasesPlay;
 
 	private:
 		void refresh();
 		void addSome();
+
+		std::vector<Database::IdType> getReleases(boost::optional<std::size_t> offset, boost::optional<std::size_t> limit, bool& moreResults) const;
+		std::vector<Database::IdType> getReleases() const;
 
 		Filters* _filters;
 		Wt::WPushButton* _showMore;

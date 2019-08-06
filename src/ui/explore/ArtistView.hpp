@@ -33,11 +33,11 @@ class Artist : public Wt::WContainerWidget
 	public:
 		Artist(Filters* filters);
 
-		Wt::Signal<Database::IdType> artistAdd;
-		Wt::Signal<Database::IdType> artistPlay;
+		Wt::Signal<const std::vector<Database::IdType>&> artistsAdd;
+		Wt::Signal<const std::vector<Database::IdType>&> artistsPlay;
 
-		Wt::Signal<Database::IdType> releaseAdd;
-		Wt::Signal<Database::IdType> releasePlay;
+		Wt::Signal<const std::vector<Database::IdType>&> releasesAdd;
+		Wt::Signal<const std::vector<Database::IdType>&> releasesPlay;
 
 	private:
 		void refresh();

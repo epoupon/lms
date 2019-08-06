@@ -48,10 +48,21 @@ _filters(filters)
 	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
 	_search->textInput().connect(this, &Releases::refresh);
 
+	Wt::WText* playBtn {bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
+	playBtn->clicked().connect([this]
+	{
+		releasesPlay.emit(getReleases());
+	});
+	Wt::WText* addBtn {bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
+	addBtn->clicked().connect([this]
+	{
+		releasesAdd.emit(getReleases());
+	});
+
 	_container = bindNew<Wt::WContainerWidget>("releases");
 
 	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->clicked().connect([=]
+	_showMore->clicked().connect([this]
 	{
 		addSome();
 	});
@@ -71,17 +82,14 @@ Releases::refresh()
 void
 Releases::addSome()
 {
-	const auto searchKeywords {splitString(_search->text().toUTF8(), " ")};
-	const auto clusterIds {_filters->getClusterIds()};
+	bool moreResults {};
 
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-	bool moreResults;
-	const auto releases {Release::getByFilter(LmsApp->getDbSession(), clusterIds, searchKeywords, _container->count(), 20, moreResults)};
-
-	for (const Database::Release::pointer& release : releases)
+	const auto releasesId {getReleases(_container->count(), 20, moreResults)};
+	for (const Database::IdType releaseId : releasesId )
 	{
-		const Database::IdType releaseId {release.id()};
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+		const Database::Release::pointer release {Database::Release::getById(LmsApp->getDbSession(), releaseId)};
 
 		Wt::WTemplate* entry = _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.entry"));
 		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
@@ -113,17 +121,40 @@ Releases::addSome()
 		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 		playBtn->clicked().connect([=]
 		{
-			releasePlay.emit(releaseId);
+			releasesPlay.emit({releaseId});
 		});
 
 		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 		addBtn->clicked().connect([=]
 		{
-			releaseAdd.emit(releaseId);
+			releasesAdd.emit({releaseId});
 		});
 	}
 
 	_showMore->setHidden(!moreResults);
+}
+
+std::vector<Database::IdType>
+Releases::getReleases(boost::optional<std::size_t> offset, boost::optional<std::size_t> limit, bool& moreResults) const
+{
+	const auto searchKeywords {splitString(_search->text().toUTF8(), " ")};
+
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	const auto releases {Release::getByFilter(LmsApp->getDbSession(), _filters->getClusterIds(), searchKeywords, offset, limit, moreResults)};
+
+	std::vector<Database::IdType> res;
+	for (const Database::Release::pointer& release : releases)
+		res.push_back(release.id());
+
+	return res;
+}
+
+std::vector<Database::IdType>
+Releases::getReleases() const
+{
+	bool moreResults;
+	return getReleases({}, {}, moreResults);
 }
 
 } // namespace UserInterface

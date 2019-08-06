@@ -36,11 +36,8 @@ class Tracks : public Wt::WTemplate
 	public:
 		Tracks(Filters* filters);
 
-		Wt::Signal<Database::IdType> trackAdd;
-		Wt::Signal<Database::IdType> trackPlay;
-
-		Wt::Signal<std::vector<Database::IdType>> tracksAdd;
-		Wt::Signal<std::vector<Database::IdType>> tracksPlay;
+		Wt::Signal<const std::vector<Database::IdType>&> tracksAdd;
+		Wt::Signal<const std::vector<Database::IdType>&> tracksPlay;
 
 	private:
 		void refresh();

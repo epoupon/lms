@@ -36,8 +36,8 @@ class Artists : public Wt::WTemplate
 	public:
 		Artists(Filters* filters);
 
-		Wt::Signal<Database::IdType> artistAdd;
-		Wt::Signal<Database::IdType> artistPlay;
+		Wt::Signal<const std::vector<Database::IdType>&> artistsAdd;
+		Wt::Signal<const std::vector<Database::IdType>&> artistsPlay;
 
 	private:
 		void refresh();

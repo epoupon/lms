@@ -121,32 +121,30 @@ Explore::Explore()
 	Wt::WStackedWidget* contentsStack = bindNew<Wt::WStackedWidget>("contents");
 
 	auto artists = std::make_unique<Artists>(_filters);
-	artists->artistAdd.connect(this, &Explore::handleArtistAdd);
-	artists->artistPlay.connect(this, &Explore::handleArtistPlay);
+	artists->artistsAdd.connect(this, &Explore::handleArtistsAdd);
+	artists->artistsPlay.connect(this, &Explore::handleArtistsPlay);
 	contentsStack->addWidget(std::move(artists));
 
 	auto artist = std::make_unique<Artist>(_filters);
-	artist->artistAdd.connect(this, &Explore::handleArtistAdd);
-	artist->artistPlay.connect(this, &Explore::handleArtistPlay);
-	artist->releaseAdd.connect(this, &Explore::handleReleaseAdd);
-	artist->releasePlay.connect(this, &Explore::handleReleasePlay);
+	artist->artistsAdd.connect(this, &Explore::handleArtistsAdd);
+	artist->artistsPlay.connect(this, &Explore::handleArtistsPlay);
+	artist->releasesAdd.connect(this, &Explore::handleReleasesAdd);
+	artist->releasesPlay.connect(this, &Explore::handleReleasesPlay);
 	contentsStack->addWidget(std::move(artist));
 
 	auto releases = std::make_unique<Releases>(_filters);
-	releases->releaseAdd.connect(this, &Explore::handleReleaseAdd);
-	releases->releasePlay.connect(this, &Explore::handleReleasePlay);
+	releases->releasesAdd.connect(this, &Explore::handleReleasesAdd);
+	releases->releasesPlay.connect(this, &Explore::handleReleasesPlay);
 	contentsStack->addWidget(std::move(releases));
 
 	auto release = std::make_unique<Release>(_filters);
-	release->releaseAdd.connect(this, &Explore::handleReleaseAdd);
-	release->releasePlay.connect(this, &Explore::handleReleasePlay);
-	release->trackAdd.connect(this, &Explore::handleTrackAdd);
-	release->trackPlay.connect(this, &Explore::handleTrackPlay);
+	release->releasesAdd.connect(this, &Explore::handleReleasesAdd);
+	release->releasesPlay.connect(this, &Explore::handleReleasesPlay);
+	release->tracksAdd.connect(this, &Explore::handleTracksAdd);
+	release->tracksPlay.connect(this, &Explore::handleTracksPlay);
 	contentsStack->addWidget(std::move(release));
 
 	auto tracks = std::make_unique<Tracks>(_filters);
-	tracks->trackAdd.connect(this, &Explore::handleTrackAdd);
-	tracks->trackPlay.connect(this, &Explore::handleTrackPlay);
 	tracks->tracksAdd.connect(this, &Explore::handleTracksAdd);
 	tracks->tracksPlay.connect(this, &Explore::handleTracksPlay);
 	contentsStack->addWidget(std::move(tracks));
@@ -181,102 +179,85 @@ Explore::Explore()
 
 static
 std::vector<Database::IdType>
-getArtistTracks(Database::Session& session, Database::IdType artistId, const std::set<Database::IdType>& clusters)
+getArtistsTracks(Database::Session& session, const std::vector<Database::IdType>& artistsId, const std::set<Database::IdType>& clusters)
 {
+	std::vector<Database::IdType> res;
+
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	Database::Artist::pointer artist {Database::Artist::getById(session, artistId)};
-	if (!artist)
-		return {};
+	for (Database::IdType artistId : artistsId)
+	{
+		Database::Artist::pointer artist {Database::Artist::getById(session, artistId)};
+		if (!artist)
+			continue;
 
-	// TODO handle clusters here
-	const std::vector<Database::Track::pointer> tracks {artist->getTracks()};
+		// TODO handle clusters here
+		const std::vector<Database::Track::pointer> tracks {artist->getTracks()};
 
-	std::vector<Database::IdType> res;
-	res.reserve(tracks.size());
+		res.reserve(res.size() + tracks.size());
+		std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Database::Track::pointer& track) { return track.id(); });
+	}
 
-	std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Database::Track::pointer& track) { return track.id(); });
 	return res;
 }
 
 static
 std::vector<Database::IdType>
-getReleaseTracks(Database::Session& session, Database::IdType releaseId, std::set<Database::IdType> clusters)
+getReleasesTracks(Database::Session& session, const std::vector<Database::IdType>& releasesId, const std::set<Database::IdType>& clusters)
 {
+	std::vector<Database::IdType> res;
+
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	Database::Release::pointer release {Database::Release::getById(session, releaseId)};
-	if (!release)
-		return {};
+	for (Database::IdType releaseId : releasesId)
+	{
+		Database::Release::pointer release {Database::Release::getById(session, releaseId)};
+		if (!release)
+			continue;
 
-	const std::vector<Database::Track::pointer> tracks {release->getTracks(clusters)};
+		const std::vector<Database::Track::pointer> tracks {release->getTracks(clusters)};
 
-	std::vector<Database::IdType> res;
-	res.reserve(tracks.size());
+		res.reserve(res.size() + tracks.size());
+		std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Database::Track::pointer& track) { return track.id(); });
+	}
 
-	std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Database::Track::pointer& track) { return track.id(); });
 	return res;
 }
 
-static
-std::vector<Database::IdType>
-getTrack(Database::Session& session, Database::IdType trackId)
+void
+Explore::handleArtistsAdd(const std::vector<Database::IdType>& artistsId)
 {
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-	Database::Track::pointer track {Database::Track::getById(session, trackId)};
-	if (!track)
-		return {};
-
-	return {track.id()};
+	tracksAdd.emit(getArtistsTracks(LmsApp->getDbSession(), artistsId, _filters->getClusterIds()));
 }
 
 void
-Explore::handleArtistAdd(Database::IdType id)
+Explore::handleArtistsPlay(const std::vector<Database::IdType>& artistsId)
 {
-	tracksAdd.emit(getArtistTracks(LmsApp->getDbSession(), id, _filters->getClusterIds()));
+	tracksPlay.emit(getArtistsTracks(LmsApp->getDbSession(), artistsId, _filters->getClusterIds()));
 }
 
 void
-Explore::handleArtistPlay(Database::IdType id)
+Explore::handleReleasesAdd(const std::vector<Database::IdType>& releasesId)
 {
-	tracksPlay.emit(getArtistTracks(LmsApp->getDbSession(), id, _filters->getClusterIds()));
+	tracksAdd.emit(getReleasesTracks(LmsApp->getDbSession(), releasesId, _filters->getClusterIds()));
 }
 
 void
-Explore::handleReleaseAdd(Database::IdType id)
+Explore::handleReleasesPlay(const std::vector<Database::IdType>& releasesId)
 {
-	tracksAdd.emit(getReleaseTracks(LmsApp->getDbSession(), id, _filters->getClusterIds()));
+	tracksPlay.emit(getReleasesTracks(LmsApp->getDbSession(), releasesId, _filters->getClusterIds()));
 }
 
 void
-Explore::handleReleasePlay(Database::IdType id)
+Explore::handleTracksAdd(const std::vector<Database::IdType>& tracksId)
 {
-	tracksPlay.emit(getReleaseTracks(LmsApp->getDbSession(), id, _filters->getClusterIds()));
+	tracksAdd.emit(tracksId);
 }
 
 void
-Explore::handleTrackAdd(Database::IdType id)
+Explore::handleTracksPlay(const std::vector<Database::IdType>& tracksId)
 {
-	tracksAdd.emit(getTrack(LmsApp->getDbSession(), id));
-}
-
-void
-Explore::handleTrackPlay(Database::IdType id)
-{
-	tracksPlay.emit(getTrack(LmsApp->getDbSession(), id));
-}
-
-void
-Explore::handleTracksAdd(const std::vector<Database::IdType>& trackIds)
-{
-	tracksAdd.emit(trackIds);
-}
-
-void
-Explore::handleTracksPlay(const std::vector<Database::IdType>& trackIds)
-{
-	tracksPlay.emit(trackIds);
+	tracksPlay.emit(tracksId);
 }
 
 } // namespace UserInterface

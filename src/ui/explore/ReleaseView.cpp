@@ -139,7 +139,7 @@ Release::refresh()
 		Wt::WText* playBtn {t->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([=]
 		{
-			releasePlay.emit(*releaseId);
+			releasesPlay.emit({*releaseId});
 		});
 	}
 
@@ -147,7 +147,7 @@ Release::refresh()
 		Wt::WText* addBtn {t->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
 		addBtn->clicked().connect([=]
 		{
-			releaseAdd.emit(*releaseId);
+			releasesAdd.emit({*releaseId});
 		});
 	}
 
@@ -196,13 +196,13 @@ Release::refresh()
 		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect(std::bind([=]
 		{
-			trackPlay.emit(trackId);
+			tracksPlay.emit({trackId});
 		}));
 
 		Wt::WText* addBtn {entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
 		addBtn->clicked().connect(std::bind([=]
 		{
-			trackAdd.emit(trackId);
+			tracksAdd.emit({trackId});
 		}));
 
 		LmsApp->getEvents().trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId, bool /*play*/)

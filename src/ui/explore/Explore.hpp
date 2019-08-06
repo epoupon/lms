@@ -37,14 +37,12 @@ class Explore : public Wt::WTemplate
 
 	private:
 
-		void handleArtistAdd(Database::IdType artistId);
-		void handleArtistPlay(Database::IdType artistId);
-		void handleReleaseAdd(Database::IdType releaseId);
-		void handleReleasePlay(Database::IdType releaseId);
-		void handleTrackAdd(Database::IdType trackId);
-		void handleTrackPlay(Database::IdType trackId);
-		void handleTracksAdd(const std::vector<Database::IdType>& trackIds);
-		void handleTracksPlay(const std::vector<Database::IdType>& trackIds);
+		void handleArtistsAdd(const std::vector<Database::IdType>& artistsId);
+		void handleArtistsPlay(const std::vector<Database::IdType>& artistsId);
+		void handleReleasesAdd(const std::vector<Database::IdType>& releasesId);
+		void handleReleasesPlay(const std::vector<Database::IdType>& releasesId);
+		void handleTracksAdd(const std::vector<Database::IdType>& tracksId);
+		void handleTracksPlay(const std::vector<Database::IdType>& tracksId);
 
 		Filters* _filters;
 };

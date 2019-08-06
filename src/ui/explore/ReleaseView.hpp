@@ -32,11 +32,11 @@ class Release : public Wt::WContainerWidget
 	public:
 		Release(Filters* filters);
 
-		Wt::Signal<Database::IdType> releaseAdd;
-		Wt::Signal<Database::IdType> releasePlay;
+		Wt::Signal<const std::vector<Database::IdType>&> releasesAdd;
+		Wt::Signal<const std::vector<Database::IdType>&> releasesPlay;
 
-		Wt::Signal<Database::IdType> trackAdd;
-		Wt::Signal<Database::IdType> trackPlay;
+		Wt::Signal<const std::vector<Database::IdType>&> tracksAdd;
+		Wt::Signal<const std::vector<Database::IdType>&> tracksPlay;
 
 	private:
 		void refresh();
