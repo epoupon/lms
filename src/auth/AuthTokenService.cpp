@@ -32,6 +32,8 @@
 
 namespace Auth {
 
+static const Wt::Auth::SHA1HashFunction sha1Function;
+
 AuthTokenService::AuthTokenService(std::size_t maxThrottlerEntries)
 : _loginThrottler {maxThrottlerEntries}
 {
@@ -40,7 +42,8 @@ AuthTokenService::AuthTokenService(std::size_t maxThrottlerEntries)
 std::string
 AuthTokenService::createAuthToken(Database::Session& session, Database::IdType userId, const Wt::WDateTime& expiry)
 {
-	const std::string secret {Wt::WRandom::generateId(64)};
+	const std::string secret {Wt::WRandom::generateId(32)};
+	const std::string secretHash {sha1Function.compute(secret, {})};
 
 	auto transaction {session.createUniqueTransaction()};
 
@@ -48,7 +51,7 @@ AuthTokenService::createAuthToken(Database::Session& session, Database::IdType u
 	if (!user)
 		throw LmsException {"User deleted"};
 
-	Database::AuthToken::pointer authToken {Database::AuthToken::create(session, secret, expiry, user)};
+	Database::AuthToken::pointer authToken {Database::AuthToken::create(session, secretHash, expiry, user)};
 
 	LMS_LOG(UI, DEBUG) << "Created auth token for user '" << user->getLoginName() << "', expiry = " << expiry.toString();
 
@@ -60,11 +63,13 @@ AuthTokenService::createAuthToken(Database::Session& session, Database::IdType u
 
 static
 boost::optional<AuthTokenService::AuthTokenProcessResult::AuthTokenInfo>
-processAuthToken(Database::Session& session, const std::string& tokenValue)
+processAuthToken(Database::Session& session, const std::string& secret)
 {
+	const std::string secretHash {sha1Function.compute(secret, {})};
+
 	auto transaction {session.createUniqueTransaction()};
 
-	Database::AuthToken::pointer authToken {Database::AuthToken::getByValue(session, tokenValue)};
+	Database::AuthToken::pointer authToken {Database::AuthToken::getByValue(session, secretHash)};
 	if (!authToken)
 		return boost::none;
 

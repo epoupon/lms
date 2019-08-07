@@ -35,7 +35,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	5
+#define LMS_DATABASE_VERSION	6
 
 using Version = std::size_t;
 
@@ -98,6 +98,10 @@ Session::doDatabaseMigrationIfNeeded()
 
 	switch (version)
 	{
+		case 5:
+			LMS_LOG(DB, INFO) << "Migrating database from version 5...";
+			_session.execute("DELETE FROM auth_token"); // format has changed
+			break;
 		default:
 			LMS_LOG(DB, ERROR) << "Database version " << version << " cannot be handled using migration";
 			throw LmsException { LMS_DATABASE_VERSION > version  ? outdatedMsg : "Server binary outdated, please upgrade it to handle this database"};
