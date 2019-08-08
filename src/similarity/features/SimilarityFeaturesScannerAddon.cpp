@@ -160,22 +160,22 @@ FeaturesScannerAddon::fetchFeatures(Database::IdType trackId, const std::string&
 	std::map<std::string, double> features;
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Fetching low level features for track '" << MBID << "'";
-	std::string data {AcousticBrainz::extractLowLevelFeatures(MBID)};
+	const std::string data {AcousticBrainz::extractLowLevelFeatures(MBID)};
 	if (data.empty())
 	{
 		LMS_LOG(DBUPDATER, ERROR) << "Track " << trackId << ", MBID = '" << MBID << "': cannot extract features using AcousticBrainz";
 		return false;
 	}
 
-	auto uniqueTransaction {_dbSession->createUniqueTransaction()};
+	{
+		auto uniqueTransaction {_dbSession->createUniqueTransaction()};
 
-	Wt::Dbo::ptr<Database::Track> track {Database::Track::getById(*_dbSession, trackId)};
-	if (!track)
-		return false;
+		Wt::Dbo::ptr<Database::Track> track {Database::Track::getById(*_dbSession, trackId)};
+		if (!track)
+			return false;
 
-	LMS_LOG(DBUPDATER, DEBUG) << "Successfully extracted AcousticBrainz lowlevel features for track '" << track->getPath().string() << "'";
-
-	Database::TrackFeatures::create(*_dbSession, track, data);
+		Database::TrackFeatures::create(*_dbSession, track, data);
+	}
 
 	return true;
 }

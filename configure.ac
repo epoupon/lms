@@ -16,7 +16,7 @@ fi
 AC_SUBST(MAGICKXX_CFLAGS)
 AC_SUBST(MAGICKXX_LIBS)
 
-AC_CHECK_HEADERS([Wt/WApplication.h pstreams/pstream.h curl/curl.h],
+AC_CHECK_HEADERS([Wt/WApplication.h pstreams/pstream.h],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
 
@@ -80,11 +80,6 @@ AC_CHECK_LIB(	[config++],
 		[main],
 		,
 		[AC_MSG_ERROR([libconfig++ not found!])])
-
-AC_CHECK_LIB(	[curl],
-		[curl_easy_init],
-		,
-		[AC_MSG_ERROR([libcurl not found!])])
 
 AC_CONFIG_FILES([Makefile
 		 src/Makefile

@@ -21,7 +21,9 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <curl/curl.h>
+
+#include <Wt/WIOService.h>
+#include <Wt/Http/Client.h>
 
 #include "main/Service.hpp"
 #include "utils/Config.hpp"
@@ -31,63 +33,52 @@
 namespace AcousticBrainz
 {
 
-
-static size_t writeToOStringStream(void *buffer, size_t size, size_t nmemb, void* ctx)
-{
-	std::ostringstream& oss = *reinterpret_cast<std::ostringstream*>(ctx);
-
-	oss.write(reinterpret_cast<char*>(buffer), size * nmemb);
-
-	return size * nmemb;
-}
-
 static std::string
 getJsonData(const std::string& mbid)
 {
 	static const std::string defaultAPIURL = "https://acousticbrainz.org/api/v1/";
 
-	std::string data;
-	std::string url = getService<Config>()->getString("acousticbrainz-api-url", defaultAPIURL) + mbid + "/low-level";
+	const std::string url {getService<Config>()->getString("acousticbrainz-api-url", defaultAPIURL) + mbid + "/low-level"};
 
-	CURL *curl;
-	CURLcode res;
+	boost::asio::io_service ioService;
 
-	curl = curl_easy_init();
-	if (!curl)
+	Wt::Http::Client client {ioService};
+	client.setFollowRedirect(true);
+	client.setSslCertificateVerificationEnabled(true);
+	client.setMaximumResponseSize(256*1024);
+
+	if (!client.get(url))
 	{
-		LMS_LOG(SIMILARITY, ERROR) << "CURL init failed";
-		return data;
+		LMS_LOG(SIMILARITY, ERROR) << "Cannot perform a GET request to url '" << url << "'";
+		return {};
 	}
 
-	std::ostringstream oss;
-
-	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeToOStringStream);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &oss);
-
-	res = curl_easy_perform(curl);
-	if (res != CURLE_OK)
+	std::string response;
+	client.done().connect([&](Wt::AsioWrapper::error_code ec, const Wt::Http::Message &msg)
 	{
-		LMS_LOG(SIMILARITY, ERROR) << "CURL perform failed: " << curl_easy_strerror(res);
-		return data;
-	}
+		if (ec)
+		{
+			LMS_LOG(SIMILARITY, ERROR) << "GET request to url '" << url << "' failed: " << ec.message();
+			return;
+		}
 
-	curl_easy_cleanup(curl);
+		if (msg.status() != 200)
+		{
+			LMS_LOG(SIMILARITY, ERROR) << "GET request to url '" << url << "' failed: status = " << msg.status() << ", body = " << msg.body();
+			return;
+		}
 
-	data = std::move(oss.str());
+		response = msg.body();
+	});
 
-	return data;
+	ioService.run();
+
+	return response;
 }
 
 std::string
 extractLowLevelFeatures(const std::string& mbid)
 {
-	if (boost::filesystem::exists("/storage/emeric/lms-dev/features/" + mbid))
-	{
-		std::ifstream ifs{std::string{"/storage/emeric/lms-dev/features/" + mbid}.c_str()};
-		return std::string {std::istreambuf_iterator<char>{ifs}, std::istreambuf_iterator<char>{}};
-	}
-
 	return getJsonData(mbid);
 }
 

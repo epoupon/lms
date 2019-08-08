@@ -44,7 +44,7 @@ The Subsonic API is enabled by default.
 ## Installation
 Here are the required packages to build LMS on Debian Stretch:
 ```sh
-apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavcodec-dev libavutil-dev libavformat-dev libav-tools libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev libcurl4-openssl-dev
+apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavcodec-dev libavutil-dev libavformat-dev libav-tools libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
 ```
 
 You also need wt4, that is not packaged yet on Debian. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html). You may need to build Wt4 in "Release" mode if you want to compile it natively on a Raspberry Pi3B+.
