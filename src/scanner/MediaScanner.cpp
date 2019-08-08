@@ -331,7 +331,7 @@ MediaScanner::countAllFiles(Stats& stats)
 
 	stats.totalFiles = 0;
 
-	boost::filesystem::recursive_directory_iterator itPath(_mediaDirectory, ec);
+	boost::filesystem::recursive_directory_iterator itPath {_mediaDirectory, ec};
 	if (ec)
 	{
 		LMS_LOG(DBUPDATER, ERROR) << "Cannot iterate over '" << _mediaDirectory.string() << "': " << ec.message();
@@ -339,18 +339,20 @@ MediaScanner::countAllFiles(Stats& stats)
 	}
 
 	boost::filesystem::recursive_directory_iterator itEnd;
-	while (itPath != itEnd && _running)
+	while (_running && itPath != itEnd)
 	{
-		if (stats.totalFiles % 250 == 0)
-			notifyInProgressIfNeeded(stats);
+		const boost::filesystem::path& path {*itPath};
 
-		const boost::filesystem::path& path {*itPath++};
+		if (!ec)
+		{
+			if (boost::filesystem::is_regular(path)	&& isFileSupported(path, _fileExtensions))
+				stats.totalFiles++;
 
-		if (!_running)
-			break;
+			if (stats.totalFiles % 250 == 0)
+				notifyInProgressIfNeeded(stats);
+		}
 
-		if (boost::filesystem::is_regular(path)	&& isFileSupported(path, _fileExtensions))
-			stats.totalFiles++;
+		itPath.increment(ec);
 	}
 }
 
@@ -639,7 +641,7 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 	track.modify()->setCopyrightURL(trackInfo->copyrightURL);
 }
 
-	void
+void
 MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool forceScan, Stats& stats)
 {
 	boost::system::error_code ec;
@@ -652,16 +654,13 @@ MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool fo
 	}
 
 	boost::filesystem::recursive_directory_iterator itEnd;
-	while (itPath != itEnd)
+	while (_running && itPath != itEnd)
 	{
 		const boost::filesystem::path& path {*itPath};
 
-		if (!_running)
-			return;
-
 		if (ec)
 		{
-			LMS_LOG(DBUPDATER, ERROR) << "Cannot process entry: " << ec.message();
+			LMS_LOG(DBUPDATER, ERROR) << "Cannot process entry '" << path.string() << "': " << ec.message();
 		}
 		else if (boost::filesystem::is_regular(path))
 		{
