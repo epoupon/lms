@@ -1144,6 +1144,8 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").get_value_or(50)};
 
+	auto similarArtistsId {getService<Similarity::Searcher>()->getSimilarArtists(context.dbSession, id.value, 5)};
+
 	auto transaction {context.dbSession.createSharedTransaction()};
 
 	Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
@@ -1154,8 +1156,6 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 
 	// "Returns a random collection of songs from the given artist and similar artists"
 	auto tracks {artist->getRandomTracks(count / 2)};
-
-	auto similarArtistsId {getService<Similarity::Searcher>()->getSimilarArtists(context.dbSession, artist.id(), 5)};
 	for ( const auto& similarArtistId : similarArtistsId )
 	{
 		Artist::pointer similarArtist {Artist::getById(context.dbSession, similarArtistId)};
