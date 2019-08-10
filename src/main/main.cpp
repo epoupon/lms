@@ -43,8 +43,8 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 	std::vector<std::string> args;
 
 	const boost::filesystem::path wtConfigPath {getService<Config>()->getPath("working-dir") / "wt_config.xml"};
-	const boost::filesystem::path wtLogFilePath {getService<Config>()->getPath("working-dir") / "lms.log"};
-	const boost::filesystem::path wtAccessLogFilePath {getService<Config>()->getPath("working-dir") / "lms.access.log"};
+	const boost::filesystem::path wtLogFilePath {getService<Config>()->getPath("log-file")};
+	const boost::filesystem::path wtAccessLogFilePath {getService<Config>()->getPath("access-log-file")};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());

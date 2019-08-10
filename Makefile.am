@@ -10,6 +10,9 @@ lms_cssdir=$(lms_docrootdir)/css
 lms_jsdir=$(lms_docrootdir)/js
 lms_imagesdir=$(lms_approotdir)/images
 
+systemdunit_DATA = \
+		systemd/lms.service
+
 dist_lms_css_DATA = \
 		docroot/css/lms.css
 

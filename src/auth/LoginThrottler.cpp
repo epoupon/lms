@@ -75,7 +75,7 @@ LoginThrottler::onBadClientAttempt(const boost::asio::ip::address& address)
 
 	_attemptsInfo[address] = now.addSecs(3);
 
-	LMS_LOG(AUTH, INFO) << "Registering bad attempt for '" << clientAddress.to_string() << "'";
+	LMS_LOG(AUTH, DEBUG) << "Registering bad attempt for '" << clientAddress.to_string() << "'";
 }
 
 void

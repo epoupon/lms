@@ -1,0 +1,16 @@
+[Unit]
+Description=Lightweight Music Server
+After=network.target
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=1
+WorkingDirectory=/var/lms
+ExecStart=/usr/bin/lms
+User=lms
+Group=lms
+
+[Install]
+WantedBy=multi-user.target
+
