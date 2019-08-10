@@ -650,6 +650,7 @@ MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool fo
 	if (ec)
 	{
 		LMS_LOG(DBUPDATER, ERROR) << "Cannot iterate over '" << mediaDirectory.string() << "': " << ec.message();
+		stats.scanErrors++;
 		return;
 	}
 
@@ -661,6 +662,7 @@ MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool fo
 		if (ec)
 		{
 			LMS_LOG(DBUPDATER, ERROR) << "Cannot process entry '" << path.string() << "': " << ec.message();
+			stats.scanErrors++;
 		}
 		else if (boost::filesystem::is_regular(path))
 		{

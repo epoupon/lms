@@ -21,7 +21,7 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 * MusicBrainzID support to handle duplicated artist and release names
 * Playlists (only using Subsonic API for now)
 * Starred Album/Artist/Tracks (only using Subsonic API for now)
-* Systemd integration
+* _Systemd_ integration
 
 ## Recommendation engine
 
@@ -34,11 +34,11 @@ _LMS_ provides several ways to help you find the music you like:
 
 The recommendation engine makes use of [Self-Organizing Maps](https://en.wikipedia.org/wiki/Self-organizing_map).</br>
 Please note this engine:
-- may require some significant computation time on large collections (ex: half a hour per 40k tracks)
-- makes use of computed data available on [AcousticBrainz](https://acousticbrainz.org/). Therefore your music files must contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) for the recommendation engine to work properly (otherwise, only tag-based recommendations are provided)
+* may require some significant computation time on large collections (ex: half a hour for 40k tracks)
+* makes use of computed data available on [AcousticBrainz](https://acousticbrainz.org/). Therefore your music files must contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) for the recommendation engine to work properly (otherwise, only tag-based recommendations are provided)
 
 ## Subsonic API
-The API version implemented is 1.12.0 and has been tested on Android using the official application, _Ultrasonic_ and _DSub_.
+The API version implemented is 1.12.0 and has been tested on _Android_ using the official application, _Ultrasonic_ and _DSub_.
 
 Since _LMS_ uses metadata tags to organize music, a compatibility mode is used to navigate through the collection using the directory browsing commands.
 
@@ -46,7 +46,7 @@ The Subsonic API is enabled by default.
 
 ## Installation
 
-This installation process and the default values of the configuration file and the systemd service file have been written for Debian Stretch.
+This installation process and the default values of the configuration file and the _systemd_ service file have been written for _Debian Stretch_.
 
 Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
 
@@ -55,7 +55,7 @@ Therefore, you may have to adapt commands and/or paths in order to fit to your d
 apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavcodec-dev libavutil-dev libavformat-dev libav-tools libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
 ```
 
-You also need wt4, that is not packaged yet on Debian. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html). Due to memory limitations, you may need to build _Wt4_ in _Release_ mode if you want to compile it natively on a Raspberry Pi3B+.
+You also need _W4_, that is not packaged yet on _Debian_. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).
 
 ### Build
 
@@ -75,6 +75,12 @@ make
 ```
 Note: you can use `make -jN` to speed up compilation time (N is the number of compilation workers to spawn)
 
+### Raspberry 3 build notes
+
+Due to memory limitations, you may need to build _Wt4_ in _Release_ mode if you want to compile it natively on a Raspberry Pi3B+.
+
+Note: the build process is really long (roughly 1 hour for _Wt4_ + _LMS_)
+
 ### Deployment
 
 The following commands require root privileges.
@@ -84,13 +90,13 @@ make install
 ```
 In order to customize the installation directories, you have to:
 * use the following options of the `configure` script:
-** --prefix (default to `/usr/local`)
-** --sysconfigdir (/default to `/usr/local/etc`)
-** --with-systemdunitdir (default to `/lib/systemd/system`)
+  * --prefix (default to `/usr/local`)
+  * --sysconfigdir (/default to `/usr/local/etc`)
+  * --with-systemdunitdir (default to `/lib/systemd/system`)
 * edit the `/etc/lms.conf` file
 * edit the `/lib/systemd/system/lms.service` file
 
-Create a dedicated lms system user:
+Create a dedicated system user:
 ```sh
 useradd --system lms
 ```
@@ -103,15 +109,17 @@ touch /var/log/lms.access.log
 chown lms:lms /var/lms /var/log/lms.log /var/log/lms.access.log
 ```
 
+Note: don't forget to give the _lms_ user read access to the music directory you want to scan
+
 ### Configuration
 _LMS_ uses a configuration file, installed in '/etc/lms.conf'. It is recommended to edit this file and change relevant settings (listen address, listen port, working directory, Subsonic API activation, ...)
 
-All other settings are set using the web interface.
+All other settings are set using the web interface (user management, scan  settings, transcode settings, ...)
 
 ### Reverse proxy settings
-_LMS_ is shipped with an embedded web server, but it is recommended to deploy behind a reverse proxy. You have to set the 'behind-reverse-proxy' option to 'true' in the configuration file.
+_LMS_ is shipped with an embedded web server, but it is recommended to deploy behind a reverse proxy. You have to set the _behind-reverse-proxy_ option to _true_ in the `lms.conf` configuration file.
 
-Here is an example to make _LMS_ properly work on myserver.org using nginx.
+Here is an example to make _LMS_ properly work on _myserver.org_ using _nginx_.
 ```
 server {
     listen 80;
@@ -139,21 +147,23 @@ server {
 
 ## Running
 ```sh
-service lms start
+systemctl start lms
 ```
-Logs are output in `/var/log/lms.log` and `/var/log/lms.access.log`
+Two log files are used:
+* `/var/log/lms.log`: logs of the daemon
+* `/var/log/lms.access.log`: access logs of the embedded web server
 
 To connect to _LMS_, just open your favorite browser and go to http://localhost:5082
 
 To make _LMS_ run automatically during startup:
 ```sh
-service lms enable
+systemctl enable lms
 ```
 
 ## Credits
-- Wt (http://www.webtoolkit.eu/)
-- bootstrap3 (http://getbootstrap.com/)
-- ffmpeg project (https://ffmpeg.org/)
-- Magick++ (http://www.imagemagick.org/Magick++/)
-- MetaBrainz (https://metabrainz.org/)
-- Bootstrap Notify: https://github.com/mouse0270/bootstrap-notify
+* Wt (http://www.webtoolkit.eu/)
+* bootstrap3 (http://getbootstrap.com/)
+* ffmpeg project (https://ffmpeg.org/)
+* Magick++ (http://www.imagemagick.org/Magick++/)
+* MetaBrainz (https://metabrainz.org/)
+* Bootstrap Notify: https://github.com/mouse0270/bootstrap-notify
