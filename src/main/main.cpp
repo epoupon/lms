@@ -43,8 +43,8 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 	std::vector<std::string> args;
 
 	const boost::filesystem::path wtConfigPath {getService<Config>()->getPath("working-dir") / "wt_config.xml"};
-	const boost::filesystem::path wtLogFilePath {getService<Config>()->getPath("log-file")};
-	const boost::filesystem::path wtAccessLogFilePath {getService<Config>()->getPath("access-log-file")};
+	const boost::filesystem::path wtLogFilePath {getService<Config>()->getPath("log-file", "/var/log/lms.log")};
+	const boost::filesystem::path wtAccessLogFilePath {getService<Config>()->getPath("access-log-file", "/var/log/lms.access.log")};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
@@ -86,14 +86,21 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 
 int main(int argc, char* argv[])
 {
-	boost::filesystem::path configFilePath = "/etc/lms.conf";
+	boost::filesystem::path configFilePath {"/etc/lms.conf"};
 	int res = EXIT_FAILURE;
 
 	assert(argc > 0);
 	assert(argv[0] != NULL);
 
-	if (argc >= 2)
+	if (argc == 2)
 		configFilePath = std::string(argv[1], 0, 256);
+	else if (argc > 2)
+	{
+		std::cerr << "Usage:\t" << argv[0] << "\t[conf_file]\n\n"
+			<< "Options:\n"
+			<< "\tconf_file:\t path to the LMS configuration file (defaults to " << configFilePath << ")\n\n";
+		return EXIT_FAILURE;
+	}
 
 	try
 	{

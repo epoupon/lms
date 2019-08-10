@@ -16,10 +16,10 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 * Persistent play queue across sessions
 * Subsonic API
 * Album artist
-* Multi-value tags (artists, genres, ...)
+* Multi-value tags: artists, genres, ...
 * Custom tags (ex: _mood_, _genre_, _albummood_, _albumgrouping_, ...)
 * MusicBrainzID support to handle duplicated artist and release names
-* Playlists (only using Subsonic API for now)
+* Playlists, (only using Subsonic API for now)
 * Starred Album/Artist/Tracks (only using Subsonic API for now)
 * _Systemd_ integration
 
@@ -44,11 +44,11 @@ Since _LMS_ uses metadata tags to organize music, a compatibility mode is used t
 
 The Subsonic API is enabled by default.
 
+__Note__: since _LMS_ stores hashed and salted passwords, it cannot handle the __token authentication__ method defined from 1.13.0.
+
 ## Installation
 
-This installation process and the default values of the configuration file and the _systemd_ service file have been written for _Debian Stretch_.
-
-Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
+__Note__: this installation process and the default values of the configuration file and the _systemd_ service file have been written for _Debian Stretch_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
 
 ### Build dependencies
 ```sh
@@ -59,46 +59,49 @@ You also need _W4_, that is not packaged yet on _Debian_. See [installation inst
 
 ### Build
 
-Get the latest stable release and build it this way:
+Get the latest stable release and build it:
 ```sh
 git clone https://github.com/epoupon/lms.git lms
 cd lms
 autoreconf -vfi
 mkdir build
 cd build
-../configure --prefix=/usr --sysconfdir=/etc
+../configure --prefix=/usr
 ```
 configure will report any missing library.
+
+__Note__: in order to customize the installation directories, you can use the following options of the `configure` script:
+* _--prefix_ (defaults to `/usr/local`).
+* _--bindir_ (defaults to `$PREFIX/bin`).
 
 ```sh
 make
 ```
-Note: you can use `make -jN` to speed up compilation time (N is the number of compilation workers to spawn)
+__Note__: you can use `make -jN` to speed up compilation time (N is the number of compilation workers to spawn).
 
-### Raspberry 3 build notes
+#### Raspberry 3 build notes
 
 Due to memory limitations, you may need to build _Wt4_ in _Release_ mode if you want to compile it natively on a Raspberry Pi3B+.
 
-Note: the build process is really long (roughly 1 hour for _Wt4_ + _LMS_)
+__Note__: the build process is really long, roughly 1 hour to build _Wt4_ + _LMS_.
 
 ### Deployment
 
-The following commands require root privileges.
+__Note__: the commands of this section require root privileges.
 
 ```sh
 make install
 ```
-In order to customize the installation directories, you have to:
-* use the following options of the `configure` script:
-  * --prefix (default to `/usr/local`)
-  * --sysconfigdir (/default to `/usr/local/etc`)
-  * --with-systemdunitdir (default to `/lib/systemd/system`)
-* edit the `/etc/lms.conf` file
-* edit the `/lib/systemd/system/lms.service` file
 
 Create a dedicated system user:
 ```sh
 useradd --system lms
+```
+
+Copy the configuration files:
+```sh
+cp /usr/share/lms/default.conf /etc/lms.conf
+cp /usr/share/lms/default.service /lib/systemd/system/lms.service
 ```
 
 Create working directories and give access to the _lms_ user:
@@ -109,12 +112,12 @@ touch /var/log/lms.access.log
 chown lms:lms /var/lms /var/log/lms.log /var/log/lms.access.log
 ```
 
-Note: don't forget to give the _lms_ user read access to the music directory you want to scan
+__Note__: don't forget to give the _lms_ user read access to the music directory you want to scan.
 
 ### Configuration
-_LMS_ uses a configuration file, installed in '/etc/lms.conf'. It is recommended to edit this file and change relevant settings (listen address, listen port, working directory, Subsonic API activation, ...)
+_LMS_ uses a configuration file, installed by default in `/etc/lms.conf`. It is recommended to edit this file and change relevant settings (listen address, listen port, working directory, Subsonic API activation, ...).
 
-All other settings are set using the web interface (user management, scan  settings, transcode settings, ...)
+All other settings are set using the web interface (user management, scan  settings, transcode settings, ...).
 
 ### Reverse proxy settings
 _LMS_ is shipped with an embedded web server, but it is recommended to deploy behind a reverse proxy. You have to set the _behind-reverse-proxy_ option to _true_ in the `lms.conf` configuration file.
@@ -145,12 +148,12 @@ server {
 }
 ```
 
-## Running
+## Run
 ```sh
 systemctl start lms
 ```
 Two log files are used:
-* `/var/log/lms.log`: logs of the daemon
+* `/var/log/lms.log`: logs of the `lms` daemon
 * `/var/log/lms.access.log`: access logs of the embedded web server
 
 To connect to _LMS_, just open your favorite browser and go to http://localhost:5082
@@ -159,6 +162,25 @@ To make _LMS_ run automatically during startup:
 ```sh
 systemctl enable lms
 ```
+
+## Upgrade
+
+To upgrade `LMS`, you need to update the master branch and rebuild/install it:
+```sh
+cd build
+git pull
+make
+```
+
+Then using root privileges:
+```sh
+make install
+systemctl lms restart
+```
+
+Read the [release notes](https://github.com/epoupon/lms/releases) to check if any relevant setting has been added into the configuration file.
+
+Any change in the database schema is made automatically by the application during startup.
 
 ## Credits
 * Wt (http://www.webtoolkit.eu/)

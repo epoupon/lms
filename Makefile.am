@@ -10,8 +10,10 @@ lms_cssdir=$(lms_docrootdir)/css
 lms_jsdir=$(lms_docrootdir)/js
 lms_imagesdir=$(lms_approotdir)/images
 
-systemdunit_DATA = \
-		systemd/lms.service
+dist_pkgdata_DATA = \
+		systemd/default.service	\
+	        conf/default.conf
+
 
 dist_lms_css_DATA = \
 		docroot/css/lms.css
@@ -51,7 +53,4 @@ dist_lms_approot_DATA = \
 		approot/templates.xml	\
 		approot/tracks.xml	\
 		approot/tracksinfo.xml
-
-dist_sysconf_DATA = \
-	        $(top_srcdir)/conf/lms.conf
 

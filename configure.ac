@@ -16,13 +16,6 @@ fi
 AC_SUBST(MAGICKXX_CFLAGS)
 AC_SUBST(MAGICKXX_LIBS)
 
-AC_ARG_WITH(systemdunitdir,
-	    AC_HELP_STRING([--with-systemdunitdir=DIR],
-			   [install systemd unit files in dir [[/lib/systemd/system]]]),
-			   systemdunitdir=$withval,systemdunitdir=/lib/systemd/system)
-
-AC_SUBST(systemdunitdir)
-
 AC_CHECK_HEADERS([Wt/WApplication.h pstreams/pstream.h],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
