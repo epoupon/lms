@@ -33,9 +33,9 @@ _LMS_ provides several ways to help you find the music you like:
 * Most played/Recently added music
 
 The recommendation engine makes use of [Self-Organizing Maps](https://en.wikipedia.org/wiki/Self-organizing_map).</br>
-Please note this engine:
-* may require some significant computation time on large collections (ex: half a hour for 40k tracks)
-* makes use of computed data available on [AcousticBrainz](https://acousticbrainz.org/). Therefore your music files must contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) for the recommendation engine to work properly (otherwise, only tag-based recommendations are provided)
+__Notes__:
+* constructing the map requires significant computation time on large collections (ex: half an hour for 40k tracks)
+* audio data is pulled from [AcousticBrainz](https://acousticbrainz.org/). Therefore your music files must contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) for the recommendation engine to work properly (otherwise, only tag-based recommendations are provided)
 
 ## Subsonic API
 The API version implemented is 1.12.0 and has been tested on _Android_ using the official application, _Ultrasonic_ and _DSub_.
@@ -44,7 +44,7 @@ Since _LMS_ uses metadata tags to organize music, a compatibility mode is used t
 
 The Subsonic API is enabled by default.
 
-__Note__: since _LMS_ stores hashed and salted passwords, it cannot handle the __token authentication__ method defined from 1.13.0.
+__Note__: since _LMS_ stores hashed and salted passwords, it cannot handle the __token authentication__ method defined from version 1.13.0.
 
 ## Installation
 
@@ -83,7 +83,7 @@ __Note__: you can use `make -jN` to speed up compilation time (N is the number o
 
 Due to memory limitations, you may need to build _Wt4_ in _Release_ mode if you want to compile it natively on a Raspberry Pi3B+.
 
-__Note__: the build process is really long, roughly 1 hour to build _Wt4_ + _LMS_.
+The build process is really long, roughly 1 hour to build _Wt4_ + _LMS_.
 
 ### Deployment
 
@@ -119,10 +119,12 @@ _LMS_ uses a configuration file, installed by default in `/etc/lms.conf`. It is 
 
 All other settings are set using the web interface (user management, scan  settings, transcode settings, ...).
 
+If a setting is not present in the configuration file, a hardcoded default value is used (the same as in the [default.conf](https://github.com/epoupon/lms/blob/master/conf/default.conf) file)
+
 ### Reverse proxy settings
 _LMS_ is shipped with an embedded web server, but it is recommended to deploy behind a reverse proxy. You have to set the _behind-reverse-proxy_ option to _true_ in the `lms.conf` configuration file.
 
-Here is an example to make _LMS_ properly work on _myserver.org_ using _nginx_.
+Here is an example to make _LMS_ properly work on _myserver.org_ using _nginx_:
 ```
 server {
     listen 80;
@@ -175,7 +177,7 @@ make
 Then using root privileges:
 ```sh
 make install
-systemctl lms restart
+systemctl restart lms
 ```
 
 Read the [release notes](https://github.com/epoupon/lms/releases) to check if any relevant setting has been added into the configuration file.
