@@ -47,17 +47,22 @@ class SettingsModel : public Wt::WFormModel
 		static const Field TranscodeEnableField;
 		static const Field TranscodeFormatField;
 		static const Field TranscodeBitrateField;
+		static const Field PasswordOldField;
 		static const Field PasswordField;
 		static const Field PasswordConfirmField;
 
-		SettingsModel()
-			: Wt::WFormModel()
+		SettingsModel(bool withOldPassword)
+			: _withOldPassword {withOldPassword}
 		{
 			initializeModels();
 
 			addField(TranscodeEnableField);
 			addField(TranscodeBitrateField);
 			addField(TranscodeFormatField);
+
+			if (_withOldPassword)
+				addField(PasswordOldField);
+
 			addField(PasswordField);
 			addField(PasswordConfirmField);
 
@@ -92,7 +97,10 @@ class SettingsModel : public Wt::WFormModel
 				user.modify()->setAudioTranscodeFormat(_transcodeFormatModel->getValue(*transcodeFormatRow));
 
 			if (!valueText(PasswordField).empty())
+			{
 				user.modify()->setPasswordHash(passwordHash);
+				user.modify()->clearAuthTokens();
+			}
 		}
 
 		void loadData()
@@ -121,7 +129,35 @@ class SettingsModel : public Wt::WFormModel
 		{
 			Wt::WString error;
 
-			if (field == PasswordField)
+			if (field == PasswordOldField)
+			{
+				if (!valueText(PasswordOldField).empty())
+				{
+					switch (getService<::Auth::PasswordService>()->checkUserPassword(
+							LmsApp->getDbSession(),
+							boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
+							LmsApp->getUserLoginName(),
+							valueText(PasswordOldField).toUTF8()))
+					{
+						case ::Auth::PasswordService::PasswordCheckResult::Match:
+							break;
+						case ::Auth::PasswordService::PasswordCheckResult::Mismatch:
+							error = Wt::WString::tr("Lms.Settings.password-bad");
+							break;
+						case ::Auth::PasswordService::PasswordCheckResult::Throttled:
+							error = Wt::WString::tr("Lms.password-client-throttled");
+							break;
+					}
+				}
+				else
+				{
+					if (!valueText(PasswordField).empty())
+						error = Wt::WString::tr("Lms.Settings.password-must-fill-old-password");
+					else
+						return Wt::WFormModel::validateField(field);
+				}
+			}
+			else if (field == PasswordField)
 			{
 				if (!valueText(PasswordField).empty())
 				{
@@ -129,7 +165,12 @@ class SettingsModel : public Wt::WFormModel
 						error = Wt::WString::tr("Lms.password-too-weak");
 				}
 				else
-					return Wt::WFormModel::validateField(field);
+				{
+					if (!valueText(PasswordOldField).empty())
+						error = Wt::WString::tr("Wt.WValidator.Invalid");
+					else
+						return Wt::WFormModel::validateField(field);
+				}
 			}
 			else if (field == PasswordConfirmField)
 			{
@@ -175,14 +216,16 @@ class SettingsModel : public Wt::WFormModel
 			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding.webm_vorbis"), AudioFormat::WEBM_VORBIS);
 		}
 
+		bool _withOldPassword {};
+
 		std::shared_ptr<ValueStringModel<Bitrate>>	_transcodeBitrateModel;
 		std::shared_ptr<ValueStringModel<AudioFormat>>	_transcodeFormatModel;
-
 };
 
 const Wt::WFormModel::Field SettingsModel::TranscodeEnableField		= "transcoding-enable";
 const Wt::WFormModel::Field SettingsModel::TranscodeBitrateField	= "transcoding-bitrate";
 const Wt::WFormModel::Field SettingsModel::TranscodeFormatField		= "transcoding-format";
+const Wt::WFormModel::Field SettingsModel::PasswordOldField		= "password-old";
 const Wt::WFormModel::Field SettingsModel::PasswordField		= "password";
 const Wt::WFormModel::Field SettingsModel::PasswordConfirmField		= "password-confirm";
 
@@ -206,7 +249,16 @@ SettingsView::refreshView()
 
 	auto t {addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Settings.template"))};
 
-	auto model {std::make_shared<SettingsModel>()};
+	auto model {std::make_shared<SettingsModel>(!LmsApp->isUserAuthStrong())};
+
+	// Old password
+	if (!LmsApp->isUserAuthStrong())
+	{
+		t->setCondition("if-has-old-password", true);
+		auto oldPassword {std::make_unique<Wt::WLineEdit>()};
+		oldPassword->setEchoMode(Wt::EchoMode::Password);
+		t->setFormWidget(SettingsModel::PasswordOldField, std::move(oldPassword));
+	}
 
 	// Password
 	auto password {std::make_unique<Wt::WLineEdit>()};

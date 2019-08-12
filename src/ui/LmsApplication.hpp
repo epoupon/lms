@@ -84,6 +84,7 @@ class LmsApplication : public Wt::WApplication
 		Database::Session& getDbSession() { return *_dbSession.get();}
 
 		Wt::Dbo::ptr<Database::User> getUser() const;
+		bool isUserAuthStrong() const; // user must be logged in prior this call
 		bool isUserAdmin() const; // user must be logged in prior this call
 		bool isUserDemo() const; // user must be logged in prior this call
 		std::string getUserLoginName() const; // user must be logged in prior this call
@@ -112,7 +113,7 @@ class LmsApplication : public Wt::WApplication
 
 		// Signal slots
 		void handleUserLoggedOut();
-		void handleUserLoggedIn(Database::IdType userId);
+		void handleUserLoggedIn(Database::IdType userId, bool strongAuth);
 
 		void notify(const Wt::WEvent& event) override;
 		void finalize() override;
@@ -123,7 +124,8 @@ class LmsApplication : public Wt::WApplication
 		std::unique_ptr<Database::Session>	_dbSession;
 		LmsApplicationGroupContainer&   	_appGroups;
 		Events					_events;
-		boost::optional<Database::IdType>	_userId {};
+		boost::optional<Database::IdType>	_userId;
+		boost::optional<bool>			_userAuthStrong;
 		std::shared_ptr<ImageResource>		_imageResource;
 		std::shared_ptr<AudioResource>		_audioResource;
 };

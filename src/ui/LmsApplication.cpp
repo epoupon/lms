@@ -77,6 +77,12 @@ LmsApplication::getUser() const
 }
 
 bool
+LmsApplication::isUserAuthStrong() const
+{
+	return *_userAuthStrong;
+}
+
+bool
 LmsApplication::isUserAdmin() const
 {
 	auto transaction {_dbSession->createSharedTransaction()};
@@ -171,12 +177,15 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	const auto userId {processAuthToken(env)};
 	if (userId)
 	{
-		handleUserLoggedIn(*userId);
+		handleUserLoggedIn(*userId, false);
 	}
 	else
 	{
 		Auth* auth {root()->addNew<Auth>()};
-		auth->userLoggedIn.connect(this, &LmsApplication::handleUserLoggedIn);
+		auth->userLoggedIn.connect(this, [this](Database::IdType userId)
+		{
+			handleUserLoggedIn(userId, true);
+		});
 	}
 }
 
@@ -342,16 +351,15 @@ LmsApplication::handleUserLoggedOut()
 }
 
 void
-LmsApplication::handleUserLoggedIn(Database::IdType userId)
+LmsApplication::handleUserLoggedIn(Database::IdType userId, bool strongAuth)
 {
 	_userId = userId;
+	_userAuthStrong = strongAuth;
 
 	root()->clear();
 
 	try
 	{
-//	post([this]
-//	{
 		const LmsApplicationInfo info {LmsApplicationInfo::fromEnvironment(environment())};
 
 		LMS_LOG(UI, INFO) << "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent();
@@ -363,9 +371,6 @@ LmsApplication::handleUserLoggedIn(Database::IdType userId)
 		});
 
 		createHome();
-
-//		triggerUpdate();
-//	});
 	}
 	catch (std::exception& e)
 	{
