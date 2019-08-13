@@ -44,68 +44,6 @@ ResponseFormatToMimeType(ResponseFormat format)
 	return "";
 }
 
-static
-const char*
-ErrorCodeToString(Error::Code error)
-{
-	switch (error)
-	{
-		case Error::Code::Generic:
-			return "Generic Error.";
-		case Error::Code::RequiredParameterMissing:
-			return "Required parameter is missing.";
-		case Error::Code::ClientMustUpgrade:
-			return "Incompatible Subsonic REST protocol version. Client must upgrade.";
-		case Error::Code::ServerMustUpgrade:
-			return "Incompatible Subsonic REST protocol version. Server must upgrade.";
-		case Error::Code::WrongUsernameOrPassword:
-			return "Wrong username or password.";
-		case Error::Code::UserNotAuthorized:
-			return "User is not authorized for the given operation.";
-		case Error::Code::RequestedDataNotFound:
-			return "The requested data was not found.";
-	}
-
-	return "Unknown error";
-}
-
-static
-const char*
-CustomTypeToString(Error::CustomType type)
-{
-	switch (type)
-	{
-		case Error::CustomType::BadIdFormat:
-			return "Bad id format";
-		case Error::CustomType::BadPasswordFormat:
-			return "Bad password format";
-		case Error::CustomType::InternalError:
-			return "Internal error";
-		case Error::CustomType::LoginThrottled:
-			return "Login throttled, too many attempts";
-		case Error::CustomType::NotImplemented:
-			return "Not implemented";
-		case Error::CustomType::PasswordTooWeak:
-			return "Password too weak";
-		case Error::CustomType::UserAlreadyExists:
-			return "User already exists";
-	}
-
-	return "Unknown custom error";
-}
-
-Error::Error(Code code)
-: _code {code},
-_message {ErrorCodeToString(code)}
-{
-}
-
-Error::Error(Error::CustomType type)
-: _code {Code::Generic},
-_message {CustomTypeToString(type)}
-{
-}
-
 void
 Response::Node::setValue(const std::string& value)
 {

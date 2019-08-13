@@ -19,6 +19,8 @@
 
 #include "SubsonicId.hpp"
 
+#include "SubsonicResponse.hpp"
+
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
@@ -29,18 +31,15 @@ boost::optional<Id>
 IdFromString(const std::string& id)
 {
 	if (id == "root")
-		return Id{Id::Type::Root};
+		return Id {Id::Type::Root};
 
 	std::vector<std::string> values {splitString(id, "-")};
 	if (values.size() != 2)
-	{
-		LMS_LOG(API_SUBSONIC, ERROR) << "Bad id format";
-		return {};
-	}
+		return boost::none;
 
 	Id res;
 
-	std::string type {std::move(values[0])};
+	const std::string type {std::move(values[0])};
 	if (type == "ar")
 		res.type = Id::Type::Artist;
 	else if (type == "al")
@@ -50,17 +49,11 @@ IdFromString(const std::string& id)
 	else if (type == "pl")
 		res.type = Id::Type::Playlist;
 	else
-	{
-		LMS_LOG(API_SUBSONIC, ERROR) << "Bad id format";
-		return {};
-	}
+		return boost::none;
 
 	auto optId {readAs<Database::IdType>(values[1])};
 	if (!optId)
-	{
-		LMS_LOG(API_SUBSONIC, ERROR) << "Bad id format";
-		return {};
-	}
+		return boost::none;
 
 	res.value = *optId;
 

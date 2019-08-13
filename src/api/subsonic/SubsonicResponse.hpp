@@ -52,26 +52,119 @@ class Error
 			RequestedDataNotFound = 70,
 		};
 
-		enum class CustomType
-		{
-			BadIdFormat,
-			BadPasswordFormat,
-			InternalError,
-			LoginThrottled,
-			NotImplemented,
-			PasswordTooWeak,
-			UserAlreadyExists,
-		};
+		Error(Code code) : _code {code} {}
 
-		Error(Code code);
-		Error(CustomType customType);
+		virtual std::string getMessage() const = 0;
 
 		Code getCode() const { return _code; }
-		const std::string& getMessage() const { return _message; }
 
 	private:
-		Code _code;
-		std::string _message;
+		const Code _code;
+};
+
+class GenericError : public Error
+{
+	public:
+		GenericError() : Error {Code::Generic} {}
+};
+
+class RequiredParameterMissingError : public Error
+{
+	public:
+		RequiredParameterMissingError() : Error {Code::RequiredParameterMissing} {}
+	private:
+		std::string getMessage() const override { return "Required parameter is missing."; }
+};
+
+class ClientMustUpgradeError : public Error
+{
+	public:
+		ClientMustUpgradeError() : Error {Code::ClientMustUpgrade} {}
+	private:
+		std::string getMessage() const override { return "Incompatible Subsonic REST protocol version. Client must upgrade."; }
+};
+
+class ServerMustUpgradeError : public Error
+{
+	public:
+		ServerMustUpgradeError() : Error {Code::ServerMustUpgrade} {}
+	private:
+		std::string getMessage() const override { return "Incompatible Subsonic REST protocol version. Server must upgrade."; }
+};
+
+class WrongUsernameOrPasswordError : public Error
+{
+	public:
+		WrongUsernameOrPasswordError() : Error {Code::WrongUsernameOrPassword} {}
+	private:
+		std::string getMessage() const override { return "Wrong username or password."; }
+};
+
+class UserNotAuthorizedError : public Error
+{
+	public:
+		UserNotAuthorizedError () : Error {Code::UserNotAuthorized} {}
+	private:
+		std::string getMessage() const override { return "User is not authorized for the given operation."; }
+};
+
+class RequestedDataNotFoundError : public Error
+{
+	public:
+		RequestedDataNotFoundError() : Error {Code::RequestedDataNotFound} {}
+	private:
+		std::string getMessage() const override { return "The requested data was not found."; }
+};
+
+class InternalErrorGenericError : public GenericError
+{
+	public:
+		InternalErrorGenericError(const std::string& message) : _message {message} {}
+	private:
+		std::string getMessage() const override { return "Internal error: " + _message; }
+		const std::string _message;
+};
+
+class LoginThrottledGenericError : public GenericError
+{
+	std::string getMessage() const override { return "Login throttled, too many attempts"; }
+};
+
+class NotImplementedGenericError : public GenericError
+{
+	std::string getMessage() const override { return "Not implemented"; }
+};
+
+class PasswordTooWeakGenericError : public GenericError
+{
+	std::string getMessage() const override { return "Password too weak"; }
+};
+
+class UserAlreadyExistsGenericError : public GenericError
+{
+	std::string getMessage() const override { return "User already exists"; }
+};
+
+class BadParameterGenericError : public GenericError
+{
+	public:
+		BadParameterGenericError(const std::string& parameterName) : _parameterName {parameterName} {}
+
+	private:
+		std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad value"; }
+
+		const std::string _parameterName;
+};
+
+class BadParameterFormatGenericError : public GenericError
+{
+	public:
+		BadParameterFormatGenericError(const std::string& parameterName) : _parameterName {parameterName} {}
+
+	private:
+		std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad format"; }
+
+		const std::string _parameterName;
 };
 
 class Response

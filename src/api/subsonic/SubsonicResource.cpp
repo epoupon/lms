@@ -187,14 +187,11 @@ getMultiParametersAs(const Wt::Http::ParameterMap& parameterMap, const std::stri
 
 	for (const std::string& param : it->second)
 	{
-		auto val {readAs<T>(param)};
-		if (!val)
-		{
-			res.clear();
-			return res;
-		}
+		auto value {readAs<T>(param)};
+		if (!value)
+			throw BadParameterFormatGenericError {paramName};
 
-		res.emplace_back(std::move(*val));
+		res.emplace_back(std::move(*value));
 	}
 
 	return res;
@@ -206,7 +203,7 @@ getMandatoryMultiParametersAs(const Wt::Http::ParameterMap& parameterMap, const 
 {
 	std::vector<T> res {getMultiParametersAs<T>(parameterMap, param)};
 	if (res.empty())
-		throw Error {Error::Code::RequiredParameterMissing};
+		throw RequiredParameterMissingError {};
 
 	return res;
 }
@@ -229,7 +226,7 @@ getMandatoryParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::s
 {
 	auto res {getParameterAs<T>(parameterMap, param)};
 	if (!res)
-		throw Error {Error::Code::RequiredParameterMissing};
+		throw RequiredParameterMissingError {};
 
 	return *res;
 }
@@ -242,7 +239,7 @@ decodePasswordIfNeeded(const std::string& password)
 	{
 		auto decodedPassword {stringFromHex(password.substr(4))};
 		if (!decodedPassword)
-			throw Error {Error::CustomType::BadPasswordFormat};
+			return password; // fallback on plain password
 
 		return *decodedPassword;
 	}
@@ -259,11 +256,11 @@ getClientInfo(const Wt::Http::ParameterMap& parameters)
 	// Mandatory parameters
 	res.version = getMandatoryParameterAs<ClientVersion>(parameters, "v");
 	if (res.version.major > API_VERSION_MAJOR)
-		throw Error {Error::Code::ServerMustUpgrade};
+		throw ServerMustUpgradeError {};
 	if (res.version.major < API_VERSION_MAJOR)
-		throw Error {Error::Code::ClientMustUpgrade};
+		throw ClientMustUpgradeError {};
 	if (res.version.minor > API_VERSION_MINOR)
-		throw Error {Error::Code::ServerMustUpgrade};
+		throw ServerMustUpgradeError {};
 
 	res.name = getMandatoryParameterAs<std::string>(parameters, "c");
 	res.user = getMandatoryParameterAs<std::string>(parameters, "u");
@@ -332,10 +329,10 @@ checkUserIsMySelfOrAdmin(RequestContext& context, const std::string& username)
 	{
 		User::pointer currentUser {User::getByLoginName(context.dbSession, context.userName)};
 		if (!currentUser)
-			throw Error {Error::Code::RequestedDataNotFound};
+			throw RequestedDataNotFoundError {};
 
 		if (!currentUser->isAdmin())
-			throw Error {Error::Code::UserNotAuthorized};
+			throw UserNotAuthorizedError {};
 	}
 }
 
@@ -587,7 +584,7 @@ handleChangePassword(RequestContext& context)
 	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
 
 	if (!getService<Auth::PasswordService>()->evaluatePasswordStrength(username, password))
-		throw Error {Error::CustomType::PasswordTooWeak};
+		throw PasswordTooWeakGenericError {};
 
 	const User::PasswordHash hash {getService<Auth::PasswordService>()->hashPassword(password)};
 
@@ -597,7 +594,7 @@ handleChangePassword(RequestContext& context)
 
 	User::pointer user {User::getByLoginName(context.dbSession, username)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	user.modify()->setPasswordHash(hash);
 	user.modify()->clearAuthTokens();
@@ -612,22 +609,22 @@ handleCreatePlaylistRequest(RequestContext& context)
 	// Optional params
 	auto id {getParameterAs<Id>(context.parameters, "playlistId")};
 	if (id && id->type != Id::Type::Playlist)
-		throw Error {Error::CustomType::BadIdFormat};
+		throw BadParameterGenericError {"playlistId"};
 
 	auto name {getParameterAs<std::string>(context.parameters, "name")};
 
 	std::vector<Id> trackIds {getMultiParametersAs<Id>(context.parameters, "songId")};
 	if (!std::all_of(std::cbegin(trackIds), std::cend(trackIds ), [](const Id& id) { return id.type == Id::Type::Track; }))
-		throw Error {Error::CustomType::BadIdFormat};
+		throw BadParameterGenericError {"songId"};
 
 	if (!name && !id)
-		throw Error {Error::Code::RequiredParameterMissing};
+		throw RequiredParameterMissingError {};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	TrackList::pointer tracklist;
 	if (id)
@@ -637,7 +634,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 			|| tracklist->getUser() != user
 			|| tracklist->getType() != TrackList::Type::Playlist)
 		{
-			throw Error {Error::Code::RequestedDataNotFound};
+			throw RequestedDataNotFoundError {};
 		}
 
 		if (name)
@@ -669,14 +666,14 @@ handleCreateUserRequest(RequestContext& context)
 	// Just ignore all the other fields as we don't handle them
 
 	if (!getService<Auth::PasswordService>()->evaluatePasswordStrength(username, password))
-		throw Error {Error::CustomType::PasswordTooWeak};
+		throw PasswordTooWeakGenericError {};
 
 	const User::PasswordHash hash {getService<Auth::PasswordService>()->hashPassword(password)};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
 	if (User::getByLoginName(context.dbSession, username) != User::pointer{})
-		throw Error {Error::CustomType::UserAlreadyExists};
+		throw UserAlreadyExistsGenericError {};
 
 	User::pointer user {User::create(context.dbSession, username, hash)};
 	user.modify()->setMaxAudioTranscodeBitrate(128000);
@@ -690,20 +687,20 @@ handleDeletePlaylistRequest(RequestContext& context)
 {
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 	if (id.type != Id::Type::Playlist)
-		throw Error {Error::CustomType::BadIdFormat};
+		throw BadParameterGenericError {"id"};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id.value)};
 	if (!tracklist
 		|| tracklist->getUser() != user
 		|| tracklist->getType() != TrackList::Type::Playlist)
 	{
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw RequestedDataNotFoundError {};
 	}
 
 	tracklist.remove();
@@ -717,14 +714,15 @@ handleDeleteUserRequest(RequestContext& context)
 {
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
 
+	// cannot delete ourself
 	if (username == context.userName)
-		throw Error {Error::Code::UserNotAuthorized};
+		throw UserNotAuthorizedError {};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
 	User::pointer user {User::getByLoginName(context.dbSession, username)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw RequestedDataNotFoundError {};
 
 	user.remove();
 
@@ -757,7 +755,7 @@ handleGetRandomSongsRequest(RequestContext& context)
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	auto tracks {Track::getAllRandom(context.dbSession, size)};
 
@@ -787,7 +785,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	if (type == "random")
 	{
@@ -835,7 +833,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 		}
 	}
 	else
-		throw Error {Error::CustomType::NotImplemented};
+		throw NotImplementedGenericError {};
 
 	Response response {Response::createOkResponse()};
 	Response::Node& albumListNode {response.createNode(id3 ? "albumList2" : "albumList")};
@@ -868,17 +866,17 @@ handleGetAlbumRequest(RequestContext& context)
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 
 	if (id.type != Id::Type::Release)
-		throw Error {Error::CustomType::BadIdFormat};
+		throw BadParameterGenericError {"id"};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
 	Release::pointer release {Release::getById(context.dbSession, id.value)};
 	if (!release)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw RequestedDataNotFoundError {};
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse()};
 	Response::Node releaseNode {releaseToResponseNode(release, context.dbSession, user, true /* id3 */)};
@@ -900,15 +898,17 @@ handleGetArtistRequest(RequestContext& context)
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 
 	if (id.type != Id::Type::Artist)
-		throw Error {Error::CustomType::BadIdFormat};
+		throw BadParameterGenericError {"id"};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
 	Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	if (!artist)
+		throw RequestedDataNotFoundError {};
 
-	if (!artist || !user)
-		throw Error {Error::Code::RequestedDataNotFound};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	if (!user)
+		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse()};
 	Response::Node artistNode {artistToResponseNode(user, artist, true /* id3 */)};
@@ -929,7 +929,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 	// Mandatory params
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 	if (id.type != Id::Type::Artist)
-		throw Error {Error::CustomType::BadIdFormat};
+		throw BadParameterGenericError {"id"};
 
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").get_value_or(20)};
@@ -942,7 +942,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 
 		Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
 		if (!artist)
-			throw Error {Error::Code::RequestedDataNotFound};
+			throw RequestedDataNotFoundError {};
 
 		if (!artist->getMBID().empty())
 			artistInfoNode.createChild("musicBrainzId").setValue(artist->getMBID());
@@ -955,7 +955,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 
 		User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 		if (!user)
-			throw Error {Error::Code::RequestedDataNotFound};
+			throw UserNotAuthorizedError {};
 
 		for ( const auto& similarArtistId : similarArtistsId )
 		{
@@ -996,7 +996,7 @@ handleGetArtistsRequest(RequestContext& context)
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	auto artists {Artist::getAll(context.dbSession)};
 	for (const Artist::pointer& artist : artists)
@@ -1021,7 +1021,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	switch (id.type)
 	{
@@ -1040,7 +1040,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		{
 			auto artist {Artist::getById(context.dbSession, id.value)};
 			if (!artist)
-				throw Error {Error::Code::RequestedDataNotFound};
+				throw RequestedDataNotFoundError {};
 
 			directoryNode.setAttribute("name", makeNameFilesystemCompatible(artist->getName()));
 
@@ -1055,7 +1055,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		{
 			auto release {Release::getById(context.dbSession, id.value)};
 			if (!release)
-				throw Error {Error::Code::RequestedDataNotFound};
+				throw RequestedDataNotFoundError {};
 
 			directoryNode.setAttribute("name", makeNameFilesystemCompatible(release->getName()));
 
@@ -1067,7 +1067,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		}
 
 		default:
-			throw Error {Error::CustomType::BadIdFormat};
+			throw BadParameterGenericError {"id"};
 	}
 
 	return response;
@@ -1123,7 +1123,7 @@ handleGetIndexesRequest(RequestContext& context)
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	auto artists {Artist::getAll(context.dbSession)};
 	for (const Artist::pointer& artist : artists)
@@ -1139,7 +1139,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	// Mandatory params
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 	if (id.type != Id::Type::Artist)
-		throw Error {Error::CustomType::BadIdFormat};
+		throw BadParameterGenericError {"id"};
 
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").get_value_or(50)};
@@ -1149,10 +1149,12 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	auto transaction {context.dbSession.createSharedTransaction()};
 
 	Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	if (!artist)
+		throw RequestedDataNotFoundError {};
 
-	if (!user || !artist)
-		throw Error {Error::Code::RequestedDataNotFound};
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	if (!user)
+		throw UserNotAuthorizedError {};
 
 	// "Returns a random collection of songs from the given artist and similar artists"
 	auto tracks {artist->getRandomTracks(count / 2)};
@@ -1203,7 +1205,7 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse()};
 	Response::Node& starredNode {response.createNode(id3 ? "starred2" : "starred")};
@@ -1268,14 +1270,17 @@ handleGetPlaylistRequest(RequestContext& context)
 	// Mandatory params
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 	if (id.type != Id::Type::Playlist)
-		throw Error {Error::CustomType::BadIdFormat};
+		throw BadParameterGenericError {"id"};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	if (!user)
+		throw UserNotAuthorizedError {};
+
 	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id.value)};
-	if (!user || !tracklist)
-		throw Error {Error::Code::RequestedDataNotFound};
+	if (!tracklist)
+		throw RequestedDataNotFoundError {};
 
 	Response response {Response::createOkResponse()};
 	Response::Node playlistNode {tracklistToResponseNode(tracklist, context.dbSession)};
@@ -1297,7 +1302,7 @@ handleGetPlaylistsRequest(RequestContext& context)
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse()};
 	Response::Node& playlistsNode {response.createNode("playlists")};
@@ -1326,15 +1331,15 @@ handleGetSongsByGenreRequest(RequestContext& context)
 
 	auto clusterType {ClusterType::getByName(context.dbSession, genreClusterName)};
 	if (!clusterType)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw RequestedDataNotFoundError {};
 
 	auto cluster {clusterType->getCluster(genre)};
 	if (!cluster)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw RequestedDataNotFoundError {};
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse()};
 	Response::Node& songsByGenreNode {response.createNode("songsByGenre")};
@@ -1359,7 +1364,7 @@ handleGetUserRequest(RequestContext& context)
 
 	const User::pointer user {User::getByLoginName(context.dbSession, username)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw RequestedDataNotFoundError {};
 
 	Response response {Response::createOkResponse()};
 	response.addNode("user", userToResponseNode(user));
@@ -1404,7 +1409,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse()};
 	Response::Node& searchResult2Node {response.createNode(id3 ? "searchResult3" : "searchResult2")};
@@ -1449,10 +1454,10 @@ getStarParameters(const Wt::Http::ParameterMap& parameters)
 	res.releaseIds = getMultiParametersAs<Id>(parameters, "albumId");
 
 	if (!std::all_of(std::cbegin(res.releaseIds ), std::cend(res.releaseIds ), [](const Id& id) { return id.type == Id::Type::Release; }))
-		throw Error {Error::CustomType::BadIdFormat};
+		throw BadParameterGenericError {"albumId"};
 
 	if (!std::all_of(std::cbegin(res.artistIds ), std::cend(res.artistIds ), [](const Id& id) { return id.type == Id::Type::Artist; }))
-		throw Error {Error::CustomType::BadIdFormat};
+		throw BadParameterGenericError {"artistId"};
 
 	// Redispatch the old "id" parameter in new lists
 	for (const Id& id : ids)
@@ -1469,7 +1474,7 @@ getStarParameters(const Wt::Http::ParameterMap& parameters)
 				res.trackIds.emplace_back(id);
 				break;
 			default:
-				throw Error {Error::CustomType::BadIdFormat};
+				throw BadParameterGenericError {"id"};
 		}
 	}
 
@@ -1486,7 +1491,7 @@ handleStarRequest(RequestContext& context)
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	for (const Id& id : params.artistIds)
 	{
@@ -1542,7 +1547,7 @@ handleUnstarRequest(RequestContext& context)
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw RequestedDataNotFoundError {};
 
 	for (const Id& id : params.artistIds)
 	{
@@ -1588,7 +1593,7 @@ handleUpdateUserRequest(RequestContext& context)
 	{
 		*password = decodePasswordIfNeeded(*password);
 		if (!getService<Auth::PasswordService>()->evaluatePasswordStrength(username, *password))
-			throw Error {Error::CustomType::PasswordTooWeak};
+			throw PasswordTooWeakGenericError {};
 
 		hash = getService<Auth::PasswordService>()->hashPassword(*password);
 	}
@@ -1597,7 +1602,7 @@ handleUpdateUserRequest(RequestContext& context)
 
 	User::pointer user {User::getByLoginName(context.dbSession, username)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	if (maxBitRate)
 	{
@@ -1623,7 +1628,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 	// Mandatory params
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "playlistId")};
 	if (id.type != Id::Type::Playlist)
-		throw Error {Error::CustomType::BadIdFormat};
+		throw BadParameterGenericError {"playlistId"};
 
 	// Optional parameters
 	auto name {getParameterAs<std::string>(context.parameters, "name")};
@@ -1631,7 +1636,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 
 	std::vector<Id> trackIdsToAdd {getMultiParametersAs<Id>(context.parameters, "songIdToAdd")};
 	if (!std::all_of(std::cbegin(trackIdsToAdd), std::cend(trackIdsToAdd), [](const Id& id) { return id.type == Id::Type::Track; }))
-		throw Error {Error::CustomType::BadIdFormat};
+		throw BadParameterGenericError {"songIdToAdd"};
 
 	std::vector<std::size_t> trackPositionsToRemove {getMultiParametersAs<std::size_t>(context.parameters, "songIndexToRemove")};
 
@@ -1639,14 +1644,14 @@ handleUpdatePlaylistRequest(RequestContext& context)
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw UserNotAuthorizedError {};
 
 	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id.value)};
 	if (!tracklist
 		|| tracklist->getUser() != user
 		|| tracklist->getType() != TrackList::Type::Playlist)
 	{
-		throw Error {Error::Code::RequestedDataNotFound};
+		throw RequestedDataNotFoundError {};
 	}
 
 	if (name)
@@ -1696,7 +1701,7 @@ createTranscoder(RequestContext& context)
 
 		User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 		if (!user)
-			throw Error {Error::Code::RequestedDataNotFound};
+			throw UserNotAuthorizedError {};
 
 		// "If set to zero, no limit is imposed"
 		if (!maxBitRate || *maxBitRate == 0)
@@ -1706,7 +1711,7 @@ createTranscoder(RequestContext& context)
 
 		auto track {Track::getById(context.dbSession, id.value)};
 		if (!track)
-			throw Error {Error::Code::RequestedDataNotFound};
+			throw RequestedDataNotFoundError {};
 
 		trackPath = track->getPath();
 	}
@@ -1743,7 +1748,7 @@ handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuati
 	}
 
 	if (!transcoder)
-		throw Error {Error::CustomType::InternalError};
+		throw InternalErrorGenericError {"Cannot create transcoder"};
 
 	if (!transcoder->isComplete())
 	{
@@ -1751,7 +1756,6 @@ handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuati
 		res.data.reserve(chunkSize);
 
 		transcoder->process(res.data, chunkSize);
-
 	}
 
 	if (!transcoder->isComplete())
@@ -1781,7 +1785,7 @@ handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation*)
 			res.data = getService<CoverArt::Grabber>()->getFromRelease(context.dbSession, id.value, Image::Format::JPEG, size);
 			break;
 		default:
-			throw Error {Error::CustomType::BadIdFormat};
+			throw BadParameterGenericError {"id"};
 	}
 
 	res.mimeType = Image::format_to_mimeType(Image::Format::JPEG);
@@ -1874,9 +1878,9 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 			case Auth::PasswordService::PasswordCheckResult::Match:
 				break;
 			case Auth::PasswordService::PasswordCheckResult::Mismatch:
-				throw Error {Error::Code::WrongUsernameOrPassword};
+				throw WrongUsernameOrPasswordError {};
 			case Auth::PasswordService::PasswordCheckResult::Throttled:
-				throw Error {Error::CustomType::LoginThrottled};
+				throw LoginThrottledGenericError {};
 		}
 
 		RequestContext requestContext {.parameters = parameters, .dbSession = dbSession, .userName = clientInfo.user};
@@ -1889,11 +1893,8 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 				auto transaction {dbSession.createSharedTransaction()};
 
 				User::pointer user {User::getByLoginName(dbSession, clientInfo.user)};
-				if (!user)
-					throw Error {Error::Code::RequestedDataNotFound};
-
-				if (!user->isAdmin())
-					throw Error {Error::Code::UserNotAuthorized};
+				if (!user || !user->isAdmin())
+					throw UserNotAuthorizedError {};
 			}
 
 			Response resp {(itEntryPoint->second.func)(requestContext)};
@@ -1933,7 +1934,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		}
 
 		LMS_LOG(API_SUBSONIC, ERROR) << "Unhandled command '" << requestPath << "'";
-		throw Error {Error::CustomType::NotImplemented};
+		throw NotImplementedGenericError {};
 	}
 	catch (const Error& e)
 	{
