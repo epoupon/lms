@@ -53,7 +53,7 @@ class UserModel : public Wt::WFormModel
 		static const Field AudioTranscodeBitrateLimitField;
 		static const Field DemoField;
 
-		UserModel(boost::optional<Database::IdType> userId)
+		UserModel(std::optional<Database::IdType> userId)
 		: Wt::WFormModel(),
 		_userId(userId)
 		{
@@ -80,7 +80,7 @@ class UserModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			boost::optional<Database::User::PasswordHash> passwordHash;
+			std::optional<Database::User::PasswordHash> passwordHash;
 			if (!valueText(PasswordField).empty())
 				passwordHash = getService<::Auth::PasswordService>()->hashPassword(valueText(PasswordField).toUTF8());
 
@@ -203,7 +203,7 @@ class UserModel : public Wt::WFormModel
 		}
 
 		std::shared_ptr<ValueStringModel<Bitrate>>	_bitrateModel;
-		boost::optional<Database::IdType> _userId;
+		std::optional<Database::IdType> _userId;
 };
 
 const Wt::WFormModel::Field UserModel::LoginField = "login";

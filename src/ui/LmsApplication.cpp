@@ -33,6 +33,7 @@
 #include "cover/CoverArtGrabber.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
+#include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/User.hpp"
 #include "explore/Explore.hpp"
@@ -56,7 +57,7 @@
 namespace UserInterface {
 
 std::unique_ptr<Wt::WApplication>
-LmsApplication::create(const Wt::WEnvironment& env, Database::Database& db, LmsApplicationGroupContainer& appGroups)
+LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups)
 {
 	return std::make_unique<LmsApplication>(env, db.createSession(), appGroups);
 }
@@ -496,13 +497,13 @@ LmsApplication::createHome()
 		playqueue->playNext();
 	});
 
-	playqueue->loadTrack.connect([=] (Database::IdType trackId, bool play)
+	playqueue->trackSelected.connect([=] (Database::IdType trackId, bool play)
 	{
 		_events.lastLoadedTrackId = trackId;
 		_events.trackLoaded(trackId, play);
 	});
 
-	playqueue->trackUnload.connect([=]
+	playqueue->trackUnselected.connect([=]
 	{
 		_events.lastLoadedTrackId.reset();
 		_events.trackUnloaded();
@@ -555,7 +556,7 @@ LmsApplication::createHome()
 	});
 
 	// Events from Application group
-	_events.appOpen.connect([=] (LmsApplicationInfo info)
+	_events.appOpen.connect([=] (LmsApplicationInfo)
 	{
 		// Only one active session by user
 		if (!LmsApp->isUserDemo())
@@ -565,10 +566,10 @@ LmsApplication::createHome()
 		}
 	});
 
-	internalPathChanged().connect(std::bind([=]
+	internalPathChanged().connect([=]
 	{
 		handlePathChange(mainStack, isUserAdmin());
-	}));
+	});
 
 	handlePathChange(mainStack, isUserAdmin());
 }

@@ -19,11 +19,10 @@
 
 #pragma once
 
-#include <boost/optional.hpp>
+#include <optional>
+#include <string>
 
 #include <Wt/Dbo/Dbo.h>
-
-#include <string>
 
 #include "Types.hpp"
 
@@ -79,8 +78,8 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		// Get tracks, ordered by position
 		std::size_t getCount() const;
 		Wt::Dbo::ptr<TrackListEntry> getEntry(std::size_t pos) const;
-		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntries(boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {}) const;
-		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntriesReverse(boost::optional<std::size_t>  offset = {}, boost::optional<std::size_t> size = {}) const;
+		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntries(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
+		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntriesReverse(std::optional<std::size_t>  offset = {}, std::optional<std::size_t> size = {}) const;
 
 		std::vector<IdType> getTrackIds() const;
 

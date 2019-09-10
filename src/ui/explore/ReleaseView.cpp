@@ -81,13 +81,13 @@ Release::refresh()
 
 	t->bindString("name", Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
 
-	boost::optional<int> year {release->getReleaseYear()};
+	std::optional<int> year {release->getReleaseYear()};
 	if (year)
 	{
 		t->setCondition("if-has-year", true);
 		t->bindInt("year", *year);
 
-		boost::optional<int> originalYear {release->getReleaseYear(true)};
+		std::optional<int> originalYear {release->getReleaseYear(true)};
 		if (originalYear && *originalYear != *year)
 		{
 			t->setCondition("if-has-orig-year", true);

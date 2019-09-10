@@ -31,24 +31,24 @@ namespace Similarity {
 
 
 static
-boost::filesystem::path getCacheDirectory()
+std::filesystem::path getCacheDirectory()
 {
 	return getService<Config>()->getPath("working-dir") / "cache" / "features";
 }
 
-static boost::filesystem::path getCacheNetworkFilePath()
+static std::filesystem::path getCacheNetworkFilePath()
 {
 	return getCacheDirectory() / "network";
 };
 
-static boost::filesystem::path getCacheTrackPositionsFilePath()
+static std::filesystem::path getCacheTrackPositionsFilePath()
 {
 	return getCacheDirectory() / "track_positions";
 }
 
 static
 bool
-networkToCacheFile(const SOM::Network& network, boost::filesystem::path path)
+networkToCacheFile(const SOM::Network& network, std::filesystem::path path)
 {
 	try
 	{
@@ -91,8 +91,8 @@ networkToCacheFile(const SOM::Network& network, boost::filesystem::path path)
 }
 
 static
-boost::optional<SOM::Network>
-createNetworkFromCacheFile(boost::filesystem::path path)
+std::optional<SOM::Network>
+createNetworkFromCacheFile(std::filesystem::path path)
 {
 	try
 	{
@@ -137,13 +137,13 @@ createNetworkFromCacheFile(boost::filesystem::path path)
 	catch (boost::property_tree::ptree_error& error)
 	{
 		LMS_LOG(SIMILARITY, ERROR) << "Cannot read network cache: " << error.what();
-		return boost::none;
+		return std::nullopt;
 	}
 }
 
 static
 bool
-objectPositionToCacheFile(const std::map<Database::IdType, std::set<SOM::Position>>& objectsPosition, boost::filesystem::path path)
+objectPositionToCacheFile(const std::map<Database::IdType, std::set<SOM::Position>>& objectsPosition, std::filesystem::path path)
 {
 	try
 	{
@@ -178,8 +178,8 @@ objectPositionToCacheFile(const std::map<Database::IdType, std::set<SOM::Positio
 }
 
 static
-boost::optional<std::map<Database::IdType, std::set<SOM::Position>>>
-createObjectPositionsFromCacheFile(boost::filesystem::path path)
+std::optional<std::map<Database::IdType, std::set<SOM::Position>>>
+createObjectPositionsFromCacheFile(std::filesystem::path path)
 {
 	try
 	{
@@ -210,21 +210,21 @@ createObjectPositionsFromCacheFile(boost::filesystem::path path)
 	catch (boost::property_tree::ptree_error& error)
 	{
 		LMS_LOG(SIMILARITY, ERROR) << "Cannot create object position from cache file: " << error.what();
-		return boost::none;
+		return std::nullopt;
 	}
 }
 
 void
 FeaturesCache::invalidate()
 {
-	boost::filesystem::remove(getCacheNetworkFilePath());
-	boost::filesystem::remove(getCacheTrackPositionsFilePath());
+	std::filesystem::remove(getCacheNetworkFilePath());
+	std::filesystem::remove(getCacheTrackPositionsFilePath());
 }
 
-boost::optional<FeaturesCache>
+std::optional<FeaturesCache>
 FeaturesCache::read()
 {
-	boost::optional<FeaturesCache> res;
+	std::optional<FeaturesCache> res;
 
 	auto network{createNetworkFromCacheFile(getCacheNetworkFilePath())};
 	if (!network)
@@ -240,7 +240,7 @@ FeaturesCache::read()
 void
 FeaturesCache::write()
 {
-	boost::filesystem::create_directories(getService<Config>()->getPath("working-dir") / "cache" / "features");
+	std::filesystem::create_directories(getService<Config>()->getPath("working-dir") / "cache" / "features");
 
 	if (!networkToCacheFile(_network, getCacheNetworkFilePath())
 		|| !objectPositionToCacheFile(_trackPositions, getCacheTrackPositionsFilePath()))
@@ -250,8 +250,8 @@ FeaturesCache::write()
 }
 
 FeaturesCache::FeaturesCache(SOM::Network network, ObjectPositions trackPositions)
-: _network{std::move(network)},
-_trackPositions{std::move(trackPositions)}
+: _network {std::move(network)},
+_trackPositions {std::move(trackPositions)}
 {
 }
 

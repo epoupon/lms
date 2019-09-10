@@ -22,12 +22,11 @@
 #include <chrono>
 #include <list>
 #include <map>
+#include <optional>
 #include <random>
 #include <string>
 #include <sstream>
 #include <vector>
-
-#include <boost/optional.hpp>
 
 #include <Wt/WDate.h>
 
@@ -53,14 +52,14 @@ std::string
 bufferToString(const std::vector<unsigned char>& data);
 
 template<typename T>
-boost::optional<T> readAs(const std::string& str)
+std::optional<T> readAs(const std::string& str)
 {
 	T res;
 
 	std::istringstream iss ( str );
 	iss >> res;
 	if (iss.fail())
-		return boost::none;
+		return std::nullopt;
 
 	return res;
 }
@@ -71,7 +70,7 @@ replaceInString(const std::string& str, const std::string& from, const std::stri
 bool
 stringEndsWith(const std::string& str, const std::string& ending);
 
-boost::optional<std::string>
+std::optional<std::string>
 stringFromHex(const std::string& str);
 
 // warning: not efficient
@@ -105,7 +104,7 @@ void uniqueAndSortedByOccurence(In first, In last, Out out)
 }
 
 template<class T, class Compare = std::less<>>
-constexpr const T& clamp( T v, T lo, T hi, Compare comp = {})
+constexpr T clamp(T v, T lo, T hi, Compare comp = {})
 {
 	assert(!comp(hi, lo));
 	return comp(v, lo) ? lo : comp(hi, v) ? hi : v;

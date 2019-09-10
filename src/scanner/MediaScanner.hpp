@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <mutex>
+#include <optional>
 
 #include <Wt/WDateTime.h>
 #include <Wt/WIOService.h>
@@ -86,8 +87,8 @@ class MediaScanner
 		{
 			State				currentState {State::NotScheduled};
 			Wt::WDateTime			nextScheduledScan;
-			boost::optional<Stats>		lastScanStats;
-			boost::optional<Stats>		inProgressStats;
+			std::optional<Stats>		lastScanStats;
+			std::optional<Stats>		inProgressStats;
 		};
 
 		Status getStatus();
@@ -110,7 +111,7 @@ class MediaScanner
 		// Update database (scheduled callback)
 		void scan(boost::system::error_code ec);
 
-		void scanMediaDirectory( boost::filesystem::path mediaDirectory, bool forceScan, Stats& stats);
+		void scanMediaDirectory( const std::filesystem::path& mediaDirectory, bool forceScan, Stats& stats);
 
 		// Helpers
 		void refreshScanSettings();
@@ -119,8 +120,8 @@ class MediaScanner
 		void removeMissingTracks(Stats& stats);
 		void removeOrphanEntries();
 		void checkDuplicatedAudioFiles(Stats& stats);
-		void scanAudioFile(const boost::filesystem::path& file, bool forceScan, Stats& stats);
-		Database::IdType doScanAudioFile(const boost::filesystem::path& file, Stats& stats);
+		void scanAudioFile(const std::filesystem::path& file, bool forceScan, Stats& stats);
+		Database::IdType doScanAudioFile(const std::filesystem::path& file, Stats& stats);
 		void notifyInProgressIfNeeded(Stats& stats);
 		void notifyInProgress(Stats& stats);
 
@@ -137,16 +138,16 @@ class MediaScanner
 
 		std::mutex		_statusMutex;
 		State			_curState {State::NotScheduled};
-		boost::optional<Stats>	_inProgressStats;
-		boost::optional<Stats> 	_lastScanStats;
+		std::optional<Stats>	_inProgressStats;
+		std::optional<Stats> 	_lastScanStats;
 		Wt::WDateTime		_nextScheduledScan;
 
 		// Current scan settings
 		std::size_t _scanVersion {};
 		Wt::WTime _startTime;
 		Database::ScanSettings::UpdatePeriod 	_updatePeriod {Database::ScanSettings::UpdatePeriod::Never};
-		std::set<boost::filesystem::path>	_fileExtensions;
-		boost::filesystem::path			_mediaDirectory;
+		std::set<std::filesystem::path>		_fileExtensions;
+		std::filesystem::path			_mediaDirectory;
 
 
 }; // class MediaScanner

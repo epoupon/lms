@@ -19,11 +19,11 @@
 
 #include <cstdlib>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
-#include "database/Database.hpp"
+#include "database/Db.hpp"
 #include "database/TrackList.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
@@ -34,10 +34,10 @@ using namespace Database;
 class ScopedFileDeleter final
 {
 	public:
-		ScopedFileDeleter(const boost::filesystem::path& path) : _path {path} {}
-		~ScopedFileDeleter() { boost::filesystem::remove(_path); }
+		ScopedFileDeleter(const std::filesystem::path& path) : _path {path} {}
+		~ScopedFileDeleter() { std::filesystem::remove(_path); }
 	private:
-		boost::filesystem::path _path;
+		std::filesystem::path _path;
 };
 
 #define CHECK(PRED)  \
@@ -1247,19 +1247,19 @@ testDatabaseEmpty(Session& session)
 	CHECK(Track::getAll(session).empty());
 }
 
-int main(int argc, char* argv[])
+int main()
 {
 
 	try
 	{
-		const boost::filesystem::path tmpFile {boost::filesystem::temp_directory_path() / boost::filesystem::unique_path()};
+		const std::filesystem::path tmpFile {std::tmpnam(nullptr)};
 		ScopedFileDeleter tmpFileDeleter {tmpFile};
 
 		std::cout << "Database test file: '" << tmpFile.string() << "'" << std::endl;
 
 		for (std::size_t i = 0; i < 2; ++i)
 		{
-			Database::Database db {tmpFile};
+			Database::Db db {tmpFile};
 			std::unique_ptr<Session> session {db.createSession()};
 
 			auto runTest = [&session](const std::string& name, std::function<void(Session&)> testFunc)

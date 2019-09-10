@@ -19,9 +19,8 @@
 
 #pragma once
 
+#include <filesystem>
 #include <vector>
-
-#include <boost/filesystem/path.hpp>
 
 #include <Magick++.h>
 
@@ -49,7 +48,7 @@ class Image
 
 		// input
 		bool	load(const std::vector<unsigned char>& rawData);
-		bool	load(boost::filesystem::path p);
+		bool	load(const std::filesystem::path& p);
 
 		Geometry	getSize() const;
 

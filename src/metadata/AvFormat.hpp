@@ -19,9 +19,6 @@
 
 #pragma once
 
-#include <map>
-#include <string>
-
 #include "MetaData.hpp"
 
 namespace MetaData
@@ -31,7 +28,7 @@ namespace MetaData
 class AvFormat : public Parser
 {
 	public:
-		boost::optional<Track> parse(const boost::filesystem::path& p, bool debug = false) override;
+		std::optional<Track> parse(const std::filesystem::path& p, bool debug = false) override;
 };
 
 } // namespace MetaData

@@ -23,7 +23,6 @@
 
 #include <string>
 
-#include <boost/optional.hpp>
 #include <boost/asio/ip/address.hpp>
 
 #include "LoginThrottler.hpp"
@@ -81,7 +80,7 @@ namespace Auth {
 				};
 
 				State state;
-				boost::optional<AuthTokenInfo>	authTokenInfo;
+				std::optional<AuthTokenInfo>	authTokenInfo;
 			};
 
 			// Removed if found

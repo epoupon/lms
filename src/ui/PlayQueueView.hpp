@@ -19,12 +19,12 @@
 
 #pragma once
 
+#include <optional>
+
 #include <Wt/WContainerWidget.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
-
-#include <boost/optional.hpp>
 
 #include "database/Types.hpp"
 
@@ -53,10 +53,10 @@ class PlayQueue : public Wt::WTemplate
 		void playPrevious();
 
 		// Signal emitted when a track is to be load(and optionally played)
-		Wt::Signal<Database::IdType /*trackId*/, bool /*play*/> loadTrack;
+		Wt::Signal<Database::IdType /*trackId*/, bool /*play*/> trackSelected;
 
-		// Signal emitted when play has to be stopped
-		Wt::Signal<> trackUnload;
+		// Signal emitted when track is unselected (has to be stopped)
+		Wt::Signal<> trackUnselected;
 
 	private:
 		Wt::Dbo::ptr<Database::TrackList> getTrackList();
@@ -71,7 +71,7 @@ class PlayQueue : public Wt::WTemplate
 		void updateRepeatBtn();
 		void updateRadioBtn();
 
-		void load(std::size_t pos, bool play);
+		void loadTrack(std::size_t pos, bool play);
 		void stop();
 
 		void addRadioTrackFromSimilarity(std::shared_ptr<Similarity::Finder> similarityFinder);
@@ -85,7 +85,7 @@ class PlayQueue : public Wt::WTemplate
 		Wt::WText* _nbTracks {};
 		Wt::WText* _repeatBtn {};
 		Wt::WText* _radioBtn {};
-		boost::optional<std::size_t> _trackPos;	// current track position, if set
+		std::optional<std::size_t> _trackPos;	// current track position, if set
 };
 
 } // namespace UserInterface

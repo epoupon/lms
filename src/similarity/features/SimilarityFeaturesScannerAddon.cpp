@@ -56,7 +56,7 @@ getTracksWithMBIDAndMissingFeatures(Database::Session& dbSession)
 FeaturesScannerAddon::FeaturesScannerAddon(std::unique_ptr<Database::Session> dbSession)
 : _dbSession {std::move(dbSession)}
 {
-	boost::optional<Similarity::FeaturesCache> cache {Similarity::FeaturesCache::read()};
+	std::optional<Similarity::FeaturesCache> cache {Similarity::FeaturesCache::read()};
 	if (cache)
 	{
 		auto searcher {std::make_shared<Similarity::FeaturesSearcher>(*_dbSession.get(), *cache, [&]() { return _stopRequested; })};

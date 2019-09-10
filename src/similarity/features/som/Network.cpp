@@ -189,10 +189,10 @@ Network::getClosestRefVectorPosition(const InputVector& data) const
 			});
 }
 
-boost::optional<Position>
+std::optional<Position>
 Network::getClosestRefVectorPosition(const InputVector& data, InputVector::Distance maxDistance) const
 {
-	boost::optional<Position> position {getClosestRefVectorPosition(data)};
+	std::optional<Position> position {getClosestRefVectorPosition(data)};
 
 	if (_distanceFunc(data, _refVectors.get(*position), _weights) > maxDistance)
 		position.reset();
@@ -200,7 +200,7 @@ Network::getClosestRefVectorPosition(const InputVector& data, InputVector::Dista
 	return position;
 }
 
-boost::optional<Position>
+std::optional<Position>
 Network::getClosestRefVectorPosition(const std::set<Position>& refVectorsPosition, InputVector::Distance maxDistance) const
 {
 	std::set<Position> neighboursPosition;
@@ -221,7 +221,7 @@ Network::getClosestRefVectorPosition(const std::set<Position>& refVectorsPositio
 		neighboursPosition.erase(refVectorPosition);
 
 	if (neighboursPosition.empty())
-		return boost::none;
+		return std::nullopt;
 
 	// Now compute the distance for each neighbour
 	struct NeighbourInfo
@@ -247,9 +247,9 @@ Network::getClosestRefVectorPosition(const std::set<Position>& refVectorsPositio
 	}
 
 	if (neighboursInfo.empty())
-		return boost::none;
+		return std::nullopt;
 
-	auto min {std::min_element(neighboursInfo.begin(), neighboursInfo.end(),
+	auto min {std::min_element(std::cbegin(neighboursInfo), std::cend(neighboursInfo),
 		[&](const auto& a, const auto& b)
 		{
 			return a.distance < b.distance;

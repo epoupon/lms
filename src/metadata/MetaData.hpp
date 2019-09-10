@@ -20,11 +20,10 @@
 #pragma once
 
 #include <chrono>
+#include <filesystem>
 #include <map>
+#include <optional>
 #include <set>
-
-#include <boost/optional.hpp>
-#include <boost/filesystem.hpp>
 
 namespace MetaData
 {
@@ -54,15 +53,15 @@ namespace MetaData
 		std::string			title;
 		std::string			musicBrainzTrackID;
 		std::string			musicBrainzRecordID;
-		boost::optional<Album>		album;
+		std::optional<Album>		album;
 		Clusters			clusters;
 		std::chrono::milliseconds 	duration {};
-		boost::optional<std::size_t>	trackNumber;
-		boost::optional<std::size_t>	totalTrack;
-		boost::optional<std::size_t>	discNumber;
-		boost::optional<std::size_t>	totalDisc;
-		boost::optional<int>		year;
-		boost::optional<int>		originalYear;
+		std::optional<std::size_t>	trackNumber;
+		std::optional<std::size_t>	totalTrack;
+		std::optional<std::size_t>	discNumber;
+		std::optional<std::size_t>	totalDisc;
+		std::optional<int>		year;
+		std::optional<int>		originalYear;
 		bool				hasCover {false};
 		std::vector<AudioStream>	audioStreams;
 		std::string			acoustID;
@@ -73,7 +72,7 @@ namespace MetaData
 	class Parser
 	{
 		public:
-			virtual boost::optional<Track> parse(const boost::filesystem::path& p, bool debug = false) = 0;
+			virtual std::optional<Track> parse(const std::filesystem::path& p, bool debug = false) = 0;
 
 			void setClusterTypeNames(const std::set<std::string>& clusterTypeNames) { _clusterTypeNames = clusterTypeNames; }
 

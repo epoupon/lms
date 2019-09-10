@@ -19,8 +19,6 @@
 
 #include "CoverArtGrabber.hpp"
 
-#include <boost/filesystem.hpp>
-
 #include "av/AvInfo.hpp"
 
 #include "database/Release.hpp"
@@ -32,9 +30,9 @@
 namespace {
 
 bool
-isFileSupported(const boost::filesystem::path& file, const std::vector<boost::filesystem::path> extensions)
+isFileSupported(const std::filesystem::path& file, const std::vector<std::filesystem::path> extensions)
 {
-	boost::filesystem::path fileExtension = file.extension();
+	std::filesystem::path fileExtension = file.extension();
 
 	for (auto extension : extensions)
 	{
@@ -54,7 +52,7 @@ Grabber::Grabber()
 }
 
 void
-Grabber::setDefaultCover(boost::filesystem::path p)
+Grabber::setDefaultCover(const std::filesystem::path& p)
 {
 	if (!_defaultCover.load(p))
 		throw LmsException("Cannot read default cover file '" + p.string() + "'");
@@ -84,7 +82,7 @@ Grabber::getDefaultCover(std::size_t size)
 	return it->second;
 }
 
-static boost::optional<Image::Image>
+static std::optional<Image::Image>
 getFromAvMediaFile(const Av::MediaFile& input)
 {
 	std::vector<Image::Image> res;
@@ -100,11 +98,11 @@ getFromAvMediaFile(const Av::MediaFile& input)
 	}
 
 	LMS_LOG(COVER, DEBUG) << "No cover found in media file '" << input.getPath().string() << "'";
-	return boost::none;
+	return std::nullopt;
 }
 
-boost::optional<Image::Image>
-Grabber::getFromDirectory(const boost::filesystem::path& p) const
+std::optional<Image::Image>
+Grabber::getFromDirectory(const std::filesystem::path& p) const
 {
 	for (auto coverPath : getCoverPaths(p))
 	{
@@ -117,33 +115,33 @@ Grabber::getFromDirectory(const boost::filesystem::path& p) const
 	}
 
 	LMS_LOG(COVER, DEBUG) << "No cover found in directory '" << p.string() << "'";
-	return boost::none;
+	return std::nullopt;
 }
 
-std::vector<boost::filesystem::path>
-Grabber::getCoverPaths(const boost::filesystem::path& directoryPath) const
+std::vector<std::filesystem::path>
+Grabber::getCoverPaths(const std::filesystem::path& directoryPath) const
 {
-	std::vector<boost::filesystem::path> res;
-	boost::system::error_code ec;
+	std::vector<std::filesystem::path> res;
+	std::error_code ec;
 
 	// TODO handle preferred file names
 
-	boost::filesystem::directory_iterator itPath(directoryPath, ec);
-	boost::filesystem::directory_iterator itEnd;
+	std::filesystem::directory_iterator itPath(directoryPath, ec);
+	std::filesystem::directory_iterator itEnd;
 	while (!ec && itPath != itEnd)
 	{
-		boost::filesystem::path path = *itPath;
+		std::filesystem::path path = *itPath;
 		itPath.increment(ec);
 
-		if (!boost::filesystem::is_regular(path))
+		if (!std::filesystem::is_regular_file(path))
 			continue;
 
 		if (!isFileSupported(path, _fileExtensions))
 			continue;
 
-		if (boost::filesystem::file_size(path) > _maxFileSize)
+		if (std::filesystem::file_size(path) > _maxFileSize)
 		{
-			LMS_LOG(COVER, INFO) << "Cover file '" << path.string() << " is too big (" << boost::filesystem::file_size(path) << "), limit is " << _maxFileSize;
+			LMS_LOG(COVER, INFO) << "Cover file '" << path.string() << " is too big (" << std::filesystem::file_size(path) << "), limit is " << _maxFileSize;
 			continue;
 		}
 
@@ -153,8 +151,8 @@ Grabber::getCoverPaths(const boost::filesystem::path& directoryPath) const
 	return res;
 }
 
-boost::optional<Image::Image>
-Grabber::getFromTrack(const boost::filesystem::path& p) const
+std::optional<Image::Image>
+Grabber::getFromTrack(const std::filesystem::path& p) const
 {
 	try
 	{
@@ -165,7 +163,7 @@ Grabber::getFromTrack(const boost::filesystem::path& p) const
 	catch (Av::MediaFileException& e)
 	{
 		LMS_LOG(COVER, ERROR) << "Cannot get covers from track " << p.string() << ": " << e.what();
-		return boost::none;
+		return std::nullopt;
 	}
 }
 
@@ -174,10 +172,10 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 {
 	using namespace Database;
 
-	boost::optional<Image::Image> cover;
+	std::optional<Image::Image> cover;
 
 	bool hasCover {};
-	boost::filesystem::path trackPath;
+	std::filesystem::path trackPath;
 
 	{
 		auto transaction {dbSession.createSharedTransaction()};
@@ -208,9 +206,9 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 Image::Image
 Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, std::size_t size)
 {
-	boost::optional<Image::Image> cover;
+	std::optional<Image::Image> cover;
 
-	boost::optional<Database::IdType> trackId;
+	std::optional<Database::IdType> trackId;
 	{
 		auto transaction {session.createSharedTransaction()};
 
@@ -239,7 +237,8 @@ Grabber::getFromTrack(Database::Session& session, Database::IdType trackId, Imag
 {
 	const Image::Image cover {getFromTrack(session, trackId, size)};
 
-	return cover.save(Image::Format::JPEG);
+	assert(format == Image::Format::JPEG);
+	return cover.save(format);
 }
 
 std::vector<uint8_t>
@@ -247,7 +246,8 @@ Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, 
 {
 	const Image::Image cover {getFromRelease(session, releaseId, size)};
 
-	return cover.save(Image::Format::JPEG);
+	assert(format == Image::Format::JPEG);
+	return cover.save(format);
 }
 
 } // namespace CoverArt

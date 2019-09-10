@@ -21,10 +21,9 @@
 
 #include <vector>
 #include <set>
+#include <optional>
 #include <ostream>
 #include <functional>
-
-#include <boost/optional.hpp>
 
 #include "utils/Exception.hpp"
 #include "InputVector.hpp"
@@ -70,9 +69,9 @@ class Network
 
 		const InputVector& getRefVector(const Position& position) const;
 		Position getClosestRefVectorPosition(const InputVector& data) const;
-		boost::optional<Position> getClosestRefVectorPosition(const InputVector& data, InputVector::Distance maxDistance) const;
+		std::optional<Position> getClosestRefVectorPosition(const InputVector& data, InputVector::Distance maxDistance) const;
 
-		boost::optional<Position> getClosestRefVectorPosition(const std::set<Position>& refVectorsPosition, InputVector::Distance maxDistance) const;
+		std::optional<Position> getClosestRefVectorPosition(const std::set<Position>& refVectorsPosition, InputVector::Distance maxDistance) const;
 
 		InputVector::Distance getRefVectorsDistance(const Position& position1, const Position& position2) const;
 

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <boost/optional.hpp>
+#include <optional>
 
 #include <Wt/Dbo/WtSqlTraits.h>
 
@@ -51,18 +51,18 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static std::vector<pointer>	getByName(Session& session, const std::string& name);
 		static pointer			getById(Session& session, IdType id);
 		static std::vector<pointer>	getAllOrphans(Session& session); // no track related
-		static std::vector<pointer>	getAll(Session& session, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
-		static std::vector<pointer>	getAllOrderedByArtist(Session& session, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
-		static std::vector<pointer>	getAllRandom(Session& session, boost::optional<std::size_t> size = {});
-		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
-		static std::vector<pointer>	getByYear(Session& session, int yearFrom, int yearTo, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
+		static std::vector<pointer>	getAll(Session& session, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getAllOrderedByArtist(Session& session, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getAllRandom(Session& session, std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getByYear(Session& session, int yearFrom, int yearTo, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
 
 		static std::vector<pointer>	getByFilter(Session& session, const std::set<IdType>& clusters);
 		static std::vector<pointer>	getByFilter(Session& session,
 							const std::set<IdType>& clusters,           // at least one track that belongs to these clusters
 							const std::vector<std::string>& keywords,        // name must match all of these keywords
-							boost::optional<std::size_t> offset,
-							boost::optional<std::size_t> size,
+							std::optional<std::size_t> offset,
+							std::optional<std::size_t> size,
 							bool& moreExpected);
 
 		std::vector<Wt::Dbo::ptr<Track>> getTracks(const std::set<IdType>& clusters = std::set<IdType>()) const;
@@ -77,9 +77,9 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static pointer create(Session& session, const std::string& name, const std::string& MBID = "");
 
 		// Utility functions
-		boost::optional<int> getReleaseYear(bool originalDate = false) const; // 0 if unknown or various
-		boost::optional<std::string> getCopyright() const;
-		boost::optional<std::string> getCopyrightURL() const;
+		std::optional<int> getReleaseYear(bool originalDate = false) const; // 0 if unknown or various
+		std::optional<std::string> getCopyright() const;
+		std::optional<std::string> getCopyrightURL() const;
 
 		// Modifiers
 		void setTotalDiscNumber(std::size_t num)	{ _totalDiscNumber = static_cast<int>(num); }
@@ -88,8 +88,8 @@ class Release : public Wt::Dbo::Dbo<Release>
 		// Accessors
 		std::string			getName() const		{ return _name; }
 		std::string			getMBID() const		{ return _MBID; }
-		boost::optional<std::size_t>	getTotalTrackNumber() const;
-		boost::optional<std::size_t>	getTotalDiscNumber() const;
+		std::optional<std::size_t>	getTotalTrackNumber() const;
+		std::optional<std::size_t>	getTotalDiscNumber() const;
 		std::chrono::milliseconds	getDuration() const;
 
 		// Get the artists of this release

@@ -40,8 +40,8 @@ class FeaturesScannerAddon final : public Scanner::MediaScannerAddon
 		void requestStop() override;
 		void preScanComplete() override;
 
-		void trackAdded(Database::IdType trackId) override {}
-		void trackToRemove(Database::IdType trackId) override {}
+		void trackAdded(Database::IdType) override {}
+		void trackToRemove(Database::IdType) override {}
 		void trackUpdated(Database::IdType trackId) override;
 
 		bool fetchFeatures(Database::IdType trackId, const std::string& MBID);

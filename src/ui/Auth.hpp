@@ -19,15 +19,13 @@
 
 #pragma once
 
-#include <boost/optional.hpp>
-
 #include <Wt/WTemplateFormView.h>
 
 #include "database/Types.hpp"
 
 namespace UserInterface {
 
-boost::optional<Database::IdType>
+std::optional<Database::IdType>
 processAuthToken(const Wt::WEnvironment& env);
 
 class Auth : public Wt::WTemplateFormView

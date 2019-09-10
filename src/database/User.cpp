@@ -247,7 +247,7 @@ User::hasStarredRelease(Wt::Dbo::ptr<Release> release) const
 }
 
 std::vector<Wt::Dbo::ptr<Release>>
-User::getStarredReleases(boost::optional<std::size_t> offset, boost::optional<std::size_t> limit) const
+User::getStarredReleases(std::optional<std::size_t> offset, std::optional<std::size_t> limit) const
 {
 	Wt::Dbo::collection<Wt::Dbo::ptr<Release>> res = _starredReleases.find()
 		.offset(offset ? static_cast<int>(*offset) : -1)

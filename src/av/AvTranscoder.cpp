@@ -37,16 +37,15 @@ static const std::vector<std::string> execNames =
 	"ffmpeg",
 };
 
-static std::mutex		transcoderMutex;
-static boost::filesystem::path	avConvPath = boost::filesystem::path();
+static std::filesystem::path	avConvPath = std::filesystem::path();
 static std::atomic<size_t>	globalId = {0};
 
 void
 Transcoder::init()
 {
-	for (std::string execName : execNames)
+	for (const std::string& execName : execNames)
 	{
-		boost::filesystem::path p = searchExecPath(execName);
+		const std::filesystem::path p {searchExecPath(execName)};
 		if (!p.empty())
 		{
 			avConvPath = p;
@@ -60,11 +59,10 @@ Transcoder::init()
 		throw AvException("Cannot find any transcoder binary!");
 }
 
-Transcoder::Transcoder(boost::filesystem::path filePath, TranscodeParameters parameters)
-: _filePath(filePath),
-  _parameters(parameters),
-  _isComplete(false),
-  _id(globalId++)
+Transcoder::Transcoder(const std::filesystem::path& filePath, const TranscodeParameters& parameters)
+: _filePath {filePath},
+  _parameters {parameters},
+  _id {globalId++}
 {
 
 }
@@ -72,84 +70,84 @@ Transcoder::Transcoder(boost::filesystem::path filePath, TranscodeParameters par
 bool
 Transcoder::start()
 {
-	if (!boost::filesystem::exists(_filePath))
+	if (!std::filesystem::exists(_filePath))
 		return false;
-	else if (!boost::filesystem::is_regular( _filePath) )
+	else if (!std::filesystem::is_regular_file( _filePath) )
 		return false;
 
 	LMS_LOG_TRANSCODE(INFO) << "Transcoding file '" << _filePath.string() << "'";
 
 	std::vector<std::string> args;
 
-	args.push_back(avConvPath.string());
+	args.emplace_back(avConvPath.string());
 
 	// Make sure we do not produce anything in the stderr output
 	// in order not to block the whole forked process
-	args.push_back("-loglevel");
-	args.push_back("quiet");
-	args.push_back("-nostdin");
+	args.emplace_back("-loglevel");
+	args.emplace_back("quiet");
+	args.emplace_back("-nostdin");
 
 	// input Offset
 	if (_parameters.offset)
 	{
-		args.push_back("-ss");
-		args.push_back(std::to_string((*_parameters.offset).count()));
+		args.emplace_back("-ss");
+		args.emplace_back(std::to_string((*_parameters.offset).count()));
 	}
 
 	// Input file
-	args.push_back("-i");
-	args.push_back(_filePath.string());
+	args.emplace_back("-i");
+	args.emplace_back(_filePath.string());
 
 	// Stream mapping, if set
 	if (_parameters.stream)
 	{
-		args.push_back("-map");
-		args.push_back("0:" + std::to_string(*_parameters.stream));
+		args.emplace_back("-map");
+		args.emplace_back("0:" + std::to_string(*_parameters.stream));
 	}
 
 	if (_parameters.stripMetadata)
 	{
 		// Strip metadata
-		args.push_back("-map_metadata");
-		args.push_back("-1");
+		args.emplace_back("-map_metadata");
+		args.emplace_back("-1");
 	}
 
 	// Skip video flows (including covers)
-	args.push_back("-vn");
+	args.emplace_back("-vn");
 
 	// Codecs and formats
 	if (_parameters.encoding)
 	{
 		// Output bitrates
-		args.push_back("-b:a");
-		args.push_back(std::to_string(_parameters.bitrate));
+		args.emplace_back("-b:a");
+		args.emplace_back(std::to_string(_parameters.bitrate));
 
 		switch (*_parameters.encoding)
 		{
 			case Encoding::MP3:
-				args.push_back("-f");
-				args.push_back("mp3");
+				args.emplace_back("-f");
+				args.emplace_back("mp3");
 				break;
 
 			case Encoding::OGG_OPUS:
-				args.push_back("-acodec");
-				args.push_back("libopus");
-				args.push_back("-f");
-				args.push_back("ogg");
+				args.emplace_back("-acodec");
+				args.emplace_back("libopus");
+				args.emplace_back("-f");
+				args.emplace_back("ogg");
 				break;
 
 			case Encoding::OGG_VORBIS:
-				args.push_back("-acodec");
-				args.push_back("libvorbis");
-				args.push_back("-f");
-				args.push_back("ogg");
+				args.emplace_back("-acodec");
+				args.emplace_back("libvorbis");
+				args.emplace_back("-f");
+				args.emplace_back("ogg");
 				break;
 
 			case Encoding::WEBM_VORBIS:
-				args.push_back("-acodec");
-				args.push_back("libvorbis");
-				args.push_back("-f");
-				args.push_back("webm");
+				args.emplace_back("-acodec");
+				args.emplace_back("libvorbis");
+				args.emplace_back("-f");
+				args.emplace_back("webm");
 				break;
 
 
@@ -169,23 +167,25 @@ Transcoder::start()
 			return false;
 		}
 
-		args.push_back("-acodec");
-		args.push_back("copy");
-		args.push_back("-f");
-		args.push_back(mediaFileFormat->format);
+		args.emplace_back("-acodec");
+		args.emplace_back("copy");
+		args.emplace_back("-f");
+		args.emplace_back(mediaFileFormat->format);
 
 		_outputMimeType = mediaFileFormat->mimeType;
 	}
 
-	args.push_back("pipe:1");
+	args.emplace_back("pipe:1");
 
 	LMS_LOG_TRANSCODE(DEBUG) << "Dumping args (" << args.size() << ")";
-	for (std::string arg : args)
+	for (const std::string& arg : args)
 		LMS_LOG_TRANSCODE(DEBUG) << "Arg = '" << arg << "'";
 
 	// make sure only one thread is executing this part of code
 	{
-		std::lock_guard<std::mutex> lock(transcoderMutex);
+		static std::mutex transcoderMutex;
+
+		std::lock_guard<std::mutex> lock {transcoderMutex};
 
 		_child = std::make_shared<redi::ipstream>();
 

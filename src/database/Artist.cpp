@@ -75,7 +75,7 @@ Artist::create(Session& session, const std::string& name, const std::string& MBI
 }
 
 std::vector<Artist::pointer>
-Artist::getAll(Session& session, boost::optional<std::size_t> offset, boost::optional<std::size_t> size)
+Artist::getAll(Session& session, std::optional<std::size_t> offset, std::optional<std::size_t> size)
 {
 	session.checkSharedLocked();
 	Wt::Dbo::collection<pointer> res = session.getDboSession().find<Artist>()
@@ -151,8 +151,8 @@ std::vector<Artist::pointer>
 Artist::getByFilter(Session& session,
 		const std::set<IdType>& clusters,
 		const std::vector<std::string>& keywords,
-		boost::optional<std::size_t> offset,
-		boost::optional<std::size_t> size,
+		std::optional<std::size_t> offset,
+		std::optional<std::size_t> size,
 		bool& moreResults)
 {
 	session.checkSharedLocked();
@@ -174,7 +174,7 @@ Artist::getByFilter(Session& session,
 }
 
 std::vector<Artist::pointer>
-Artist::getLastAdded(Session& session, Wt::WDateTime after, boost::optional<std::size_t> limit)
+Artist::getLastAdded(Session& session, Wt::WDateTime after, std::optional<std::size_t> limit)
 {
 	session.checkSharedLocked();
 	Wt::Dbo::collection<Artist::pointer> res = session.getDboSession().query<Artist::pointer>("SELECT a from artist a INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id INNER JOIN track t ON t.id = t_a_l.track_id")
@@ -243,7 +243,7 @@ Artist::getReleaseCount() const
 }
 
 std::vector<Wt::Dbo::ptr<Track>>
-Artist::getTracks(boost::optional<TrackArtistLink::Type> linkType) const
+Artist::getTracks(std::optional<TrackArtistLink::Type> linkType) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));
@@ -262,22 +262,27 @@ Artist::getTracks(boost::optional<TrackArtistLink::Type> linkType) const
 }
 
 std::vector<Wt::Dbo::ptr<Track>>
-Artist::getTracksWithRelease(boost::optional<TrackArtistLink::Type> linkType) const
+Artist::getTracksWithRelease(std::optional<TrackArtistLink::Type> linkType) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));
 	assert(session());
 
-	Wt::Dbo::collection<Wt::Dbo::ptr<Track>> tracks {session()->query<Wt::Dbo::ptr<Track>>("SELECT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id INNER JOIN release r ON r.id = t.release_id")
+	auto query {session()->query<Wt::Dbo::ptr<Track>>("SELECT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id INNER JOIN release r ON r.id = t.release_id")
 		.where("a.id = ?").bind(self()->id())
 		.orderBy("t.year,r.name,t.disc_number,t.track_number")};
+
+	if (linkType)
+		query.where("t_a_l.type = ?").bind(*linkType);
+
+	Wt::Dbo::collection<Wt::Dbo::ptr<Track>> tracks {query.resultList()};
 
 	return std::vector<Wt::Dbo::ptr<Track>>(tracks.begin(), tracks.end());
 }
 
 
 std::vector<Wt::Dbo::ptr<Track>>
-Artist::getRandomTracks(boost::optional<std::size_t> count) const
+Artist::getRandomTracks(std::optional<std::size_t> count) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));

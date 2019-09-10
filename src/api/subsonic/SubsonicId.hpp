@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/optional.hpp>
+#include <optional>
 
 #include "database/Types.hpp"
 
@@ -39,7 +39,7 @@ struct Id
 	Database::IdType	value {};
 };
 
-boost::optional<Id>	IdFromString(const std::string& id);
+std::optional<Id>	IdFromString(const std::string& id);
 std::string		IdToString(const Id& id);
 
 } // namespace API::Subsonic

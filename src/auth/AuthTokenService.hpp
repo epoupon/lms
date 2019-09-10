@@ -21,9 +21,9 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 
-#include <boost/optional.hpp>
 #include <boost/asio/ip/address.hpp>
 
 #include "LoginThrottler.hpp"
@@ -69,8 +69,8 @@ namespace Auth {
 					Wt::WDateTime expiry;
 				};
 
-				State state;
-				boost::optional<AuthTokenInfo>	authTokenInfo;
+				State state {State::NotFound};
+				std::optional<AuthTokenInfo>	authTokenInfo {};
 			};
 
 			// Removed if found

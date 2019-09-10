@@ -76,8 +76,8 @@ ReleaseInfo::refresh()
 	if (!release)
 		return;
 
-	boost::optional<std::string> copyright {release->getCopyright()};
-	boost::optional<std::string> copyrightURL {release->getCopyrightURL()};
+	std::optional<std::string> copyright {release->getCopyright()};
+	std::optional<std::string> copyrightURL {release->getCopyrightURL()};
 
 	setCondition("if-has-copyright-or-copyright-url", copyright || copyrightURL);
 

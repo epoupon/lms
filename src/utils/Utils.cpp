@@ -55,7 +55,7 @@ bool readList(const std::string& str, const std::string& separators, std::list<s
 }
 
 template<>
-boost::optional<std::string>
+std::optional<std::string>
 readAs(const std::string& str)
 {
 	return str;
@@ -137,13 +137,13 @@ stringEndsWith(const std::string& str, const std::string& ending)
 	return boost::algorithm::ends_with(str, ending);
 }
 
-boost::optional<std::string>
+std::optional<std::string>
 stringFromHex(const std::string& str)
 {
 	static const char lut[] {"0123456789ABCDEF"};
 
 	if (str.length() % 2 != 0)
-		return boost::none;
+		return std::nullopt;
 
 	std::string res;
 	res.reserve(str.length() / 2);

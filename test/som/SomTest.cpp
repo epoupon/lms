@@ -26,7 +26,7 @@
 
 using namespace SOM;
 
-int main(int argc, char* argv[])
+int main()
 {
 	static const InputVector::value_type EPSILON = 0.01;
 	{

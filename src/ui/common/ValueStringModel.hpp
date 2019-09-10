@@ -20,7 +20,8 @@
 
 #pragma once
 
-#include <boost/optional.hpp>
+#include <optional>
+
 #include <Wt/WStringListModel.h>
 
 namespace UserInterface {
@@ -41,7 +42,7 @@ class ValueStringModel : public Wt::WStringListModel
 			return Wt::cpp17::any_cast<Wt::WString>(data(index(static_cast<int>(row), 0), Wt::ItemDataRole::Display));
 		}
 
-		boost::optional<std::size_t>
+		std::optional<std::size_t>
 		getRowFromString(const Wt::WString& value)
 		{
 			for (std::size_t i{}; i < static_cast<std::size_t>(rowCount()); ++i)
@@ -50,10 +51,10 @@ class ValueStringModel : public Wt::WStringListModel
 					return i;
 			}
 
-			return boost::none;
+			return std::nullopt;
 		}
 
-		boost::optional<std::size_t>
+		std::optional<std::size_t>
 		getRowFromValue(const T& value)
 		{
 			for (std::size_t i{}; i < static_cast<std::size_t>(rowCount()); ++i)
@@ -62,7 +63,7 @@ class ValueStringModel : public Wt::WStringListModel
 					return i;
 			}
 
-			return boost::none;
+			return std::nullopt;
 		}
 
 		void

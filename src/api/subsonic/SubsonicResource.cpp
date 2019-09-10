@@ -31,6 +31,7 @@
 #include "cover/CoverArtGrabber.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
+#include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
@@ -53,14 +54,14 @@ static const Av::Encoding	transcodeEncoding {Av::Encoding::MP3};
 static const std::string	reportedStarredDate {"2000-01-01T00:00:00"};
 
 template<>
-boost::optional<API::Subsonic::Id>
+std::optional<API::Subsonic::Id>
 readAs(const std::string& str)
 {
 	return API::Subsonic::IdFromString(str);
 }
 
 template<>
-boost::optional<bool>
+std::optional<bool>
 readAs(const std::string& str)
 {
 	if (str == "true")
@@ -82,31 +83,31 @@ struct ClientVersion
 }
 
 template<>
-boost::optional<API::Subsonic::ClientVersion>
+std::optional<API::Subsonic::ClientVersion>
 readAs(const std::string& str)
 {
 	// Expects "X.Y.Z"
 	const auto numbers {splitString(str, ".")};
 	if (numbers.size() < 2 || numbers.size() > 3)
-		return boost::none;
+		return std::nullopt;
 
 	API::Subsonic::ClientVersion version;
 
 	auto number {readAs<unsigned>(numbers[0])};
 	if (!number)
-		return boost::none;
+		return std::nullopt;
 	version.major = *number;
 
 	number = {readAs<unsigned>(numbers[1])};
 	if (!number)
-		return boost::none;
+		return std::nullopt;
 	version.minor = *number;
 
 	if (numbers.size() == 3)
 	{
 		number = {readAs<unsigned>(numbers[2])};
 		if (!number)
-			return boost::none;
+			return std::nullopt;
 		version.patch = *number;
 	}
 
@@ -132,12 +133,12 @@ struct RequestContext
 	std::string userName;
 };
 
-using SessionMap = std::map<Database::Database*, std::unique_ptr<Session>>;
+using SessionMap = std::map<Db*, std::unique_ptr<Session>>;
 static std::map<std::thread::id, SessionMap> dbSessions;
 
 static
 Session&
-getOrCreateDbSession(Database::Database& db)
+getOrCreateDbSession(Db& db)
 {
 	static std::mutex mutex;
 
@@ -152,12 +153,12 @@ getOrCreateDbSession(Database::Database& db)
 	if (it != std::end(*sessionMap))
 		return *it->second;
 
-	auto res {sessionMap->emplace(&db, db.createSession())};
+	auto res { sessionMap->try_emplace(&db, db.createSession())};
 	assert(res.second);
 
 	LMS_LOG(API_SUBSONIC, DEBUG) << "Created db session";
 
-	return *(res.first->second);
+	return *res.first->second;
 }
 
 static
@@ -209,7 +210,7 @@ getMandatoryMultiParametersAs(const Wt::Http::ParameterMap& parameterMap, const 
 }
 
 template<typename T>
-boost::optional<T>
+std::optional<T>
 getParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
 {
 	std::vector<T> params {getMultiParametersAs<T>(parameterMap, param)};
@@ -277,7 +278,7 @@ struct MediaRetrievalResult
 	Wt::cpp17::any continuationData;
 };
 
-SubsonicResource::SubsonicResource(Database::Database& db)
+SubsonicResource::SubsonicResource(Db& db)
 : _db {db}
 {
 }
@@ -571,7 +572,7 @@ userToResponseNode(const User::pointer& user)
 
 static
 Response
-handlePingRequest(RequestContext& context)
+handlePingRequest(RequestContext&)
 {
 	return Response::createOkResponse();
 }
@@ -731,12 +732,12 @@ handleDeleteUserRequest(RequestContext& context)
 
 static
 Response
-handleGetLicenseRequest(RequestContext& context)
+handleGetLicenseRequest(RequestContext&)
 {
 	Response response {Response::createOkResponse()};
 
 	Response::Node& licenseNode {response.createNode("license")};
-	licenseNode.setAttribute("licenseExpires", "2019-09-03T14:46:43");
+	licenseNode.setAttribute("licenseExpires", "2025-09-03T14:46:43");
 	licenseNode.setAttribute("email", "foo@bar.com");
 	licenseNode.setAttribute("valid", "true");
 
@@ -748,7 +749,7 @@ Response
 handleGetRandomSongsRequest(RequestContext& context)
 {
 	// Optional params
-	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").get_value_or(50)};
+	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(50)};
 	size = std::min(size, std::size_t {500});
 
 	auto transaction {context.dbSession.createSharedTransaction()};
@@ -776,8 +777,8 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	std::string type {getMandatoryParameterAs<std::string>(context.parameters, "type")};
 
 	// Optional params
-	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").get_value_or(10)};
-	std::size_t offset {getParameterAs<std::size_t>(context.parameters, "offset").get_value_or(0)};
+	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(10)};
+	std::size_t offset {getParameterAs<std::size_t>(context.parameters, "offset").value_or(0)};
 
 	std::vector<Release::pointer> releases;
 
@@ -932,7 +933,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 		throw BadParameterGenericError {"id"};
 
 	// Optional params
-	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").get_value_or(20)};
+	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(20)};
 
 	Response response {Response::createOkResponse()};
 	Response::Node& artistInfoNode {response.createNode(id3 ? "artistInfo2" : "artistInfo")};
@@ -1075,7 +1076,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 static
 Response
-handleGetMusicFoldersRequest(RequestContext& context)
+handleGetMusicFoldersRequest(RequestContext&)
 {
 	Response response {Response::createOkResponse()};
 	Response::Node& musicFoldersNode {response.createNode("musicFolders")};
@@ -1142,7 +1143,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 		throw BadParameterGenericError {"id"};
 
 	// Optional params
-	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").get_value_or(50)};
+	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(50)};
 
 	auto similarArtistsId {getService<Similarity::Searcher>()->getSimilarArtists(context.dbSession, id.value, 5)};
 
@@ -1248,7 +1249,7 @@ handleGetStarred2Request(RequestContext& context)
 
 static
 Response::Node
-tracklistToResponseNode(const TrackList::pointer& tracklist, Session& dbSession)
+tracklistToResponseNode(const TrackList::pointer& tracklist, Session&)
 {
 	Response::Node playlistNode;
 
@@ -1322,10 +1323,10 @@ handleGetSongsByGenreRequest(RequestContext& context)
 	std::string genre {getMandatoryParameterAs<std::string>(context.parameters, "genre")};
 
 	// Optional params
-	std::size_t size {getParameterAs<std::size_t>(context.parameters, "count").get_value_or(10)};
+	std::size_t size {getParameterAs<std::size_t>(context.parameters, "count").value_or(10)};
 	size = std::min(size, std::size_t {500});
 
-	std::size_t offset {getParameterAs<std::size_t>(context.parameters, "offset").get_value_or(0)};
+	std::size_t offset {getParameterAs<std::size_t>(context.parameters, "offset").value_or(0)};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -1398,12 +1399,12 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 	std::vector<std::string> keywords {splitString(query, " ")};
 
 	// Optional params
-	std::size_t artistCount {getParameterAs<std::size_t>(context.parameters, "artistCount").get_value_or(20)};
-	std::size_t artistOffset {getParameterAs<std::size_t>(context.parameters, "artistOffset").get_value_or(0)};
-	std::size_t albumCount {getParameterAs<std::size_t>(context.parameters, "albumCount").get_value_or(20)};
-	std::size_t albumOffset {getParameterAs<std::size_t>(context.parameters, "albumOffset").get_value_or(0)};
-	std::size_t songCount {getParameterAs<std::size_t>(context.parameters, "songCount").get_value_or(20)};
-	std::size_t songOffset {getParameterAs<std::size_t>(context.parameters, "songOffset").get_value_or(0)};
+	std::size_t artistCount {getParameterAs<std::size_t>(context.parameters, "artistCount").value_or(20)};
+	std::size_t artistOffset {getParameterAs<std::size_t>(context.parameters, "artistOffset").value_or(0)};
+	std::size_t albumCount {getParameterAs<std::size_t>(context.parameters, "albumCount").value_or(20)};
+	std::size_t albumOffset {getParameterAs<std::size_t>(context.parameters, "albumOffset").value_or(0)};
+	std::size_t songCount {getParameterAs<std::size_t>(context.parameters, "songCount").value_or(20)};
+	std::size_t songOffset {getParameterAs<std::size_t>(context.parameters, "songOffset").value_or(0)};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -1585,8 +1586,8 @@ Response
 handleUpdateUserRequest(RequestContext& context)
 {
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
-	boost::optional<std::string> password {getParameterAs<std::string>(context.parameters, "password")};
-	boost::optional<Bitrate> maxBitRate {getParameterAs<Bitrate>(context.parameters, "maxBitRate")};
+	std::optional<std::string> password {getParameterAs<std::string>(context.parameters, "password")};
+	std::optional<Bitrate> maxBitRate {getParameterAs<Bitrate>(context.parameters, "maxBitRate")};
 
 	User::PasswordHash hash;
 	if (password)
@@ -1693,9 +1694,9 @@ createTranscoder(RequestContext& context)
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 
 	// Optional params
-	boost::optional<std::size_t> maxBitRate {getParameterAs<std::size_t>(context.parameters, "maxBitRate")};
+	std::optional<std::size_t> maxBitRate {getParameterAs<std::size_t>(context.parameters, "maxBitRate")};
 
-	boost::filesystem::path trackPath;
+	std::filesystem::path trackPath;
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -1771,7 +1772,7 @@ handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation*)
 	// Mandatory params
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 
-	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").get_value_or(256)};
+	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(256)};
 	size = clamp(size, std::size_t {32}, std::size_t {1024});
 
 	MediaRetrievalResult res;
@@ -1861,7 +1862,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
 
 	// Optional parameters
-	ResponseFormat format {getParameterAs<std::string>(parameters, "f").get_value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml};
+	const ResponseFormat format {getParameterAs<std::string>(parameters, "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml};
 
 	try
 	{

@@ -19,9 +19,8 @@
 
 #pragma once
 
+#include <filesystem>
 #include <shared_mutex>
-
-#include <boost/filesystem.hpp>
 
 #include <Wt/Dbo/SqlConnectionPool.h>
 
@@ -30,17 +29,17 @@
 namespace Database {
 
 // Session living class handling the database and the login
-class Database
+class Db
 {
 	public:
 
-		Database(const boost::filesystem::path& dbPath);
+		Db(const std::filesystem::path& dbPath);
 
 		std::unique_ptr<Session> createSession();
 
 	private:
-		std::shared_timed_mutex		_sharedMutex;
-		std::unique_ptr<Wt::Dbo::SqlConnectionPool> _connectionPool;
+		std::shared_mutex				_sharedMutex;
+		std::unique_ptr<Wt::Dbo::SqlConnectionPool>	_connectionPool;
 };
 
 } // namespace Database

@@ -62,11 +62,11 @@ ScanSettings::get(Session& session)
 	return session.getDboSession().find<ScanSettings>();
 }
 
-std::set<boost::filesystem::path>
+std::set<std::filesystem::path>
 ScanSettings::getAudioFileExtensions() const
 {
 	auto extensions = splitString(_audioFileExtensions, " ");
-	return std::set<boost::filesystem::path>(std::cbegin(extensions), std::cend(extensions));
+	return std::set<std::filesystem::path>(std::cbegin(extensions), std::cend(extensions));
 }
 
 std::vector<ClusterType::pointer>
@@ -76,7 +76,7 @@ ScanSettings::getClusterTypes() const
 }
 
 void
-ScanSettings::setMediaDirectory(boost::filesystem::path p)
+ScanSettings::setMediaDirectory(std::filesystem::path p)
 {
 	_mediaDirectory = stringTrimEnd(p.string(), "/\\");
 }
@@ -85,7 +85,7 @@ template <typename It>
 std::set<std::string> getNames(It begin, It end)
 {
 	std::set<std::string> names;
-	std::transform(begin, end, std::inserter(names, std::begin(names)),
+	std::transform(begin, end, std::inserter(names, std::cbegin(names)),
 		[](const ClusterType::pointer& clusterType)
 		{
 			return clusterType->getName();

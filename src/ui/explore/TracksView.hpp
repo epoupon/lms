@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <boost/optional.hpp>
+#include <optional>
 
 #include <Wt/WContainerWidget.h>
 #include <Wt/WLineEdit.h>
@@ -43,7 +43,7 @@ class Tracks : public Wt::WTemplate
 		void refresh();
 		void addSome();
 
-		std::vector<Database::IdType> getTracks(boost::optional<std::size_t> offset, boost::optional<std::size_t> size, bool& moreResults);
+		std::vector<Database::IdType> getTracks(std::optional<std::size_t> offset, std::optional<std::size_t> size, bool& moreResults);
 		std::vector<Database::IdType> getTracks();
 
 		Wt::WContainerWidget* _tracksContainer;

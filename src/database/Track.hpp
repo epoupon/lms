@@ -19,12 +19,11 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <chrono>
-
-#include <boost/filesystem.hpp>
-#include <boost/optional.hpp>
+#include <filesystem>
+#include <optional>
+#include <vector>
+#include <string>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
@@ -50,10 +49,10 @@ class Track : public Wt::Dbo::Dbo<Track>
 		using pointer = Wt::Dbo::ptr<Track>;
 
 		Track() {}
-		Track(const boost::filesystem::path& p);
+		Track(const std::filesystem::path& p);
 
 		// Find utility functions
-		static pointer getByPath(Session& session, const boost::filesystem::path& p);
+		static pointer getByPath(Session& session, const std::filesystem::path& p);
 		static pointer getById(Session& session, IdType id);
 		static pointer getByMBID(Session& session, const std::string& MBID);
 		static std::vector<pointer>	getByFilter(Session& session,
@@ -61,21 +60,21 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static std::vector<pointer>	getByFilter(Session& session,
 							const std::set<IdType>& clusters,            // tracks that belong to these clusters
 							const std::vector<std::string>& keywords,    // name must match all of these keywords
-							boost::optional<std::size_t> offset,
-							boost::optional<std::size_t> size,
+							std::optional<std::size_t> offset,
+							std::optional<std::size_t> size,
 							bool& moreExpected);
 
-		static std::vector<pointer>	getAll(Session& session, boost::optional<std::size_t> limit = {});
-		static std::vector<pointer>	getAllRandom(Session& session, boost::optional<std::size_t> limit = {});
+		static std::vector<pointer>	getAll(Session& session, std::optional<std::size_t> limit = {});
+		static std::vector<pointer>	getAllRandom(Session& session, std::optional<std::size_t> limit = {});
 		static std::vector<IdType>	getAllIds(Session& session); // nested transaction
-		static std::vector<boost::filesystem::path> getAllPaths(Session& session); // nested transaction
+		static std::vector<std::filesystem::path> getAllPaths(Session& session); // nested transaction
 		static std::vector<pointer>	getMBIDDuplicates(Session& session);
-		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, boost::optional<std::size_t> size = 1);
+		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> size = 1);
 		static std::vector<pointer>	getAllWithMBIDAndMissingFeatures(Session& session);
-		static std::vector<IdType>	getAllIdsWithFeatures(Session& session, boost::optional<std::size_t> limit = {});
+		static std::vector<IdType>	getAllIdsWithFeatures(Session& session, std::optional<std::size_t> limit = {});
 
 		// Create utility
-		static pointer	create(Session& session, const boost::filesystem::path& p);
+		static pointer	create(Session& session, const std::filesystem::path& p);
 
 		// Accessors
 		void setScanVersion(std::size_t version)			{ _scanVersion = version; }
@@ -98,20 +97,20 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setFeatures(const Wt::Dbo::ptr<TrackFeatures>& features);
 
 		std::size_t 				getScanVersion() const		{ return _scanVersion; }
-		boost::optional<std::size_t>		getTrackNumber() const;
-		boost::optional<std::size_t>		getDiscNumber() const;
+		std::optional<std::size_t>		getTrackNumber() const;
+		std::optional<std::size_t>		getDiscNumber() const;
 		std::string 				getName() const			{ return _name; }
-		boost::filesystem::path			getPath() const			{ return _filePath; }
+		std::filesystem::path			getPath() const			{ return _filePath; }
 		std::chrono::milliseconds		getDuration() const		{ return _duration; }
-		boost::optional<int>			getYear() const;
-		boost::optional<int>			getOriginalYear() const;
+		std::optional<int>			getYear() const;
+		std::optional<int>			getOriginalYear() const;
 		Wt::WDateTime				getLastWriteTime() const	{ return _fileLastWrite; }
 		Wt::WDateTime				getAddedTime() const		{ return _fileAdded; }
 		bool					hasCover() const		{ return _hasCover; }
 		const std::string&			getMBID() const			{ return _MBID; }
-		boost::optional<std::string>		getCopyright() const;
-		boost::optional<std::string>		getCopyrightURL() const;
-		std::vector<Wt::Dbo::ptr<Artist>>	getArtists(TrackArtistLink::Type type = {TrackArtistLink::Type::Artist}) const;
+		std::optional<std::string>		getCopyright() const;
+		std::optional<std::string>		getCopyrightURL() const;
+		std::vector<Wt::Dbo::ptr<Artist>>	getArtists(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;
 		std::vector<Wt::Dbo::ptr<TrackArtistLink>>	getArtistLinks() const;
 		Wt::Dbo::ptr<Release>			getRelease() const		{ return _release; }
 		std::vector<Wt::Dbo::ptr<Cluster>>	getClusters() const;

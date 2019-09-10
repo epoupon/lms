@@ -100,7 +100,7 @@ TrackList::getById(Session& session, IdType id)
 
 
 std::vector<Wt::Dbo::ptr<TrackListEntry>>
-TrackList::getEntries(boost::optional<std::size_t> offset, boost::optional<std::size_t> size) const
+TrackList::getEntries(std::optional<std::size_t> offset, std::optional<std::size_t> size) const
 {
 	assert(session());
 	assert(IdIsValid(self()->id()));
@@ -116,7 +116,7 @@ TrackList::getEntries(boost::optional<std::size_t> offset, boost::optional<std::
 }
 
 std::vector<Wt::Dbo::ptr<TrackListEntry>>
-TrackList::getEntriesReverse(boost::optional<std::size_t> offset, boost::optional<std::size_t> size) const
+TrackList::getEntriesReverse(std::optional<std::size_t> offset, std::optional<std::size_t> size) const
 {
 	assert(session());
 	assert(IdIsValid(self()->id()));

@@ -19,10 +19,9 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
-
-#include <boost/optional.hpp>
 
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
@@ -58,13 +57,13 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static std::vector<pointer> 	getByFilter(Session& session,
 								const std::set<IdType>& clusters,		// at least one track that belongs to  these clusters
 								const std::vector<std::string>& keywords,	// name must match all of these keywords
-								boost::optional<std::size_t> offset,
-								boost::optional<std::size_t> size,
+								std::optional<std::size_t> offset,
+								std::optional<std::size_t> size,
 								bool& moreExpected);
 
-		static std::vector<pointer>	getAll(Session& session, boost::optional<std::size_t> offset = {}, boost::optional<std::size_t> size = {});
+		static std::vector<pointer>	getAll(Session& session, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
 		static std::vector<pointer>	getAllOrphans(Session& session); // No track related
-		static std::vector<pointer>	getLastAdded(Session& session, Wt::WDateTime after, boost::optional<std::size_t> size = {});
+		static std::vector<pointer>	getLastAdded(Session& session, Wt::WDateTime after, std::optional<std::size_t> size = {});
 
 		// Accessors
 		const std::string& getName(void) const { return _name; }
@@ -72,9 +71,9 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = std::set<IdType>()) const;
 		std::size_t				getReleaseCount() const;
-		std::vector<Wt::Dbo::ptr<Track>>	getTracks(boost::optional<TrackArtistLink::Type> linkType = {}) const;
-		std::vector<Wt::Dbo::ptr<Track>>	getTracksWithRelease(boost::optional<TrackArtistLink::Type> linkType = {}) const;
-		std::vector<Wt::Dbo::ptr<Track>>	getRandomTracks(boost::optional<std::size_t> count) const;
+		std::vector<Wt::Dbo::ptr<Track>>	getTracks(std::optional<TrackArtistLink::Type> linkType = {}) const;
+		std::vector<Wt::Dbo::ptr<Track>>	getTracksWithRelease(std::optional<TrackArtistLink::Type> linkType = {}) const;
+		std::vector<Wt::Dbo::ptr<Track>>	getRandomTracks(std::optional<std::size_t> count) const;
 
 		// Get the cluster of the tracks made by this artist
 		// Each clusters are grouped by cluster type, sorted by the number of occurence

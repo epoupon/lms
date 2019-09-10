@@ -21,7 +21,6 @@
 
 #include <stdexcept>
 
-#include <boost/filesystem.hpp>
 #include <boost/asio/placeholders.hpp>
 
 #include <Wt/WLocalDateTime.h>
@@ -63,15 +62,15 @@ getNextFirstOfMonth(Wt::WDate current)
 }
 
 bool
-isFileSupported(const boost::filesystem::path& file, const std::set<boost::filesystem::path>& extensions)
+isFileSupported(const std::filesystem::path& file, const std::set<std::filesystem::path>& extensions)
 {
 	return (extensions.find(file.extension()) != extensions.end());
 }
 
 bool
-isPathInParentPath(const boost::filesystem::path& path, const boost::filesystem::path& parentPath)
+isPathInParentPath(const std::filesystem::path& path, const std::filesystem::path& parentPath)
 {
-	boost::filesystem::path curPath = path;
+	std::filesystem::path curPath = path;
 
 	while (curPath.has_parent_path())
 	{
@@ -327,25 +326,25 @@ MediaScanner::scheduleNextScan()
 void
 MediaScanner::countAllFiles(Stats& stats)
 {
-	boost::system::error_code ec;
+	std::error_code ec;
 
 	stats.totalFiles = 0;
 
-	boost::filesystem::recursive_directory_iterator itPath {_mediaDirectory, ec};
+	std::filesystem::recursive_directory_iterator itPath {_mediaDirectory, ec};
 	if (ec)
 	{
 		LMS_LOG(DBUPDATER, ERROR) << "Cannot iterate over '" << _mediaDirectory.string() << "': " << ec.message();
 		return;
 	}
 
-	boost::filesystem::recursive_directory_iterator itEnd;
+	std::filesystem::recursive_directory_iterator itEnd;
 	while (_running && itPath != itEnd)
 	{
-		const boost::filesystem::path& path {*itPath};
+		const std::filesystem::path& path {*itPath};
 
 		if (!ec)
 		{
-			if (boost::filesystem::is_regular(path)	&& isFileSupported(path, _fileExtensions))
+			if (std::filesystem::is_regular_file(path) && isFileSupported(path, _fileExtensions))
 				stats.totalFiles++;
 
 			if (stats.totalFiles % 250 == 0)
@@ -498,11 +497,11 @@ void MediaScanner::notifyInProgressIfNeeded(Stats& stats)
 }
 
 void
-MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan, Stats& stats)
+MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, Stats& stats)
 {
 	notifyInProgressIfNeeded(stats);
 
-	auto lastWriteTime = Wt::WDateTime::fromTime_t(boost::filesystem::last_write_time(file));
+	const auto lastWriteTime {Wt::WDateTime::fromTimePoint(std::filesystem::last_write_time(file))};
 
 	if (!forceScan)
 	{
@@ -518,7 +517,7 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 		}
 	}
 
-	boost::optional<MetaData::Track> trackInfo {_metadataParser.parse(file)};
+	std::optional<MetaData::Track> trackInfo {_metadataParser.parse(file)};
 	if (!trackInfo)
 	{
 		stats.scanErrors++;
@@ -642,11 +641,11 @@ MediaScanner::scanAudioFile(const boost::filesystem::path& file, bool forceScan,
 }
 
 void
-MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool forceScan, Stats& stats)
+MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, Stats& stats)
 {
-	boost::system::error_code ec;
+	std::error_code ec;
 
-	boost::filesystem::recursive_directory_iterator itPath(mediaDirectory, ec);
+	std::filesystem::recursive_directory_iterator itPath {mediaDirectory, ec};
 	if (ec)
 	{
 		LMS_LOG(DBUPDATER, ERROR) << "Cannot iterate over '" << mediaDirectory.string() << "': " << ec.message();
@@ -654,17 +653,17 @@ MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool fo
 		return;
 	}
 
-	boost::filesystem::recursive_directory_iterator itEnd;
+	std::filesystem::recursive_directory_iterator itEnd;
 	while (_running && itPath != itEnd)
 	{
-		const boost::filesystem::path& path {*itPath};
+		const std::filesystem::path& path {*itPath};
 
 		if (ec)
 		{
 			LMS_LOG(DBUPDATER, ERROR) << "Cannot process entry '" << path.string() << "': " << ec.message();
 			stats.scanErrors++;
 		}
-		else if (boost::filesystem::is_regular(path))
+		else if (std::filesystem::is_regular_file(path))
 		{
 			if (isFileSupported(path, _fileExtensions))
 				scanAudioFile(path, forceScan, stats );
@@ -678,14 +677,14 @@ MediaScanner::scanMediaDirectory(boost::filesystem::path mediaDirectory, bool fo
 
 // Check if a file exists and is still in a media directory
 static bool
-checkFile(const boost::filesystem::path& p, const boost::filesystem::path& mediaDirectory, const std::set<boost::filesystem::path>& extensions)
+checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDirectory, const std::set<std::filesystem::path>& extensions)
 {
 	try
 	{
 		// For each track, make sure the the file still exists
 		// and still belongs to a media directory
-		if (!boost::filesystem::exists( p )
-			|| !boost::filesystem::is_regular( p ) )
+		if (!std::filesystem::exists( p )
+			|| !std::filesystem::is_regular_file( p ) )
 		{
 			LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': missing";
 			return false;
@@ -706,7 +705,7 @@ checkFile(const boost::filesystem::path& p, const boost::filesystem::path& media
 		return true;
 
 	}
-	catch (boost::filesystem::filesystem_error& e)
+	catch (std::filesystem::filesystem_error& e)
 	{
 		LMS_LOG(DBUPDATER, ERROR) << "Caught exception while checking file '" << p.string() << "': " << e.what();
 		return false;
@@ -716,7 +715,7 @@ checkFile(const boost::filesystem::path& p, const boost::filesystem::path& media
 void
 MediaScanner::removeMissingTracks(Stats& stats)
 {
-	std::vector<boost::filesystem::path> trackPaths;
+	std::vector<std::filesystem::path> trackPaths;
 	{
 		auto transaction {_dbSession->createSharedTransaction()};
 		trackPaths = Track::getAllPaths(*_dbSession);;

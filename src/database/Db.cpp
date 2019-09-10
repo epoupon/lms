@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Database.hpp"
+#include "Db.hpp"
 
 #include <Wt/Dbo/FixedSqlConnectionPool.h>
 #include <Wt/Dbo/backend/Sqlite3.h>
@@ -28,7 +28,7 @@
 namespace Database {
 
 // Session living class handling the database and the login
-Database::Database(const boost::filesystem::path& dbPath)
+Db::Db(const std::filesystem::path& dbPath)
 {
 	LMS_LOG(DB, INFO) << "Creating connection pool on file " << dbPath.string();
 
@@ -49,9 +49,9 @@ Database::Database(const boost::filesystem::path& dbPath)
 }
 
 std::unique_ptr<Session>
-Database::createSession()
+Db::createSession()
 {
-	return std::unique_ptr<Session>{new Session {_sharedMutex, *_connectionPool.get()}};
+	return std::unique_ptr<Session>(new Session {_sharedMutex, *_connectionPool.get()});
 }
 
 } // namespace Database

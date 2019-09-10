@@ -25,8 +25,8 @@ lms_SOURCES = \
 	$(srcdir)/database/Artist.hpp				\
 	$(srcdir)/database/Cluster.cpp				\
 	$(srcdir)/database/Cluster.hpp				\
-	$(srcdir)/database/Database.cpp				\
-	$(srcdir)/database/Database.hpp				\
+	$(srcdir)/database/Db.cpp				\
+	$(srcdir)/database/Db.hpp				\
 	$(srcdir)/database/TrackArtistLink.cpp			\
 	$(srcdir)/database/TrackArtistLink.hpp			\
 	$(srcdir)/database/TrackFeatures.cpp			\
@@ -147,6 +147,6 @@ lms_SOURCES = \
 	$(srcdir)/utils/Utils.cpp				\
 	$(srcdir)/utils/Utils.hpp
 
-lms_CXXFLAGS=-std=c++14 -Wall -I$(srcdir)/ui $(MAGICKXX_CFLAGS) -D_REENTRANT
+lms_CXXFLAGS=-std=c++17 -I$(srcdir)/ui $(MAGICKXX_CFLAGS) -D_REENTRANT
 lms_LDADD=$(MAGICKXX_LIBS)
 

@@ -19,11 +19,11 @@
 
 #pragma once
 
+#include <filesystem>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <vector>
-
-#include <boost/optional.hpp>
 
 #include "database/Types.hpp"
 
@@ -44,7 +44,7 @@ class Grabber
 		Grabber(Grabber&&) = delete;
 		Grabber& operator=(Grabber&&) = delete;
 
-		void			setDefaultCover(boost::filesystem::path defaultCoverPath);
+		void			setDefaultCover(const std::filesystem::path& defaultCoverPath);
 
 		std::vector<uint8_t>	getFromTrack(Database::Session& dbSession, Database::IdType trackId, Image::Format format, std::size_t size);
 		std::vector<uint8_t>	getFromRelease(Database::Session& dbSession, Database::IdType releaseId, Image::Format format, std::size_t size);
@@ -54,9 +54,9 @@ class Grabber
 		Image::Image		getFromTrack(Database::Session& dbSession, Database::IdType trackId, std::size_t size);
 		Image::Image		getFromRelease(Database::Session& dbSession, Database::IdType releaseId, std::size_t size);
 
-		boost::optional<Image::Image>		getFromTrack(const boost::filesystem::path& path) const;
-		std::vector<boost::filesystem::path>	getCoverPaths(const boost::filesystem::path& directoryPath) const;
-		boost::optional<Image::Image>		getFromDirectory(const boost::filesystem::path& path) const;
+		std::optional<Image::Image>		getFromTrack(const std::filesystem::path& path) const;
+		std::vector<std::filesystem::path>	getCoverPaths(const std::filesystem::path& directoryPath) const;
+		std::optional<Image::Image>		getFromDirectory(const std::filesystem::path& path) const;
 
 		Image::Image	getDefaultCover(std::size_t size);
 
@@ -65,12 +65,12 @@ class Grabber
 		std::mutex _mutex;
 		std::map<std::size_t /* size */, Image::Image> _defaultCovers;
 
-		std::vector<boost::filesystem::path> _fileExtensions
+		std::vector<std::filesystem::path> _fileExtensions
 			= {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize
 
 		std::size_t _maxFileSize = 5000000;
 
-		std::vector<boost::filesystem::path> _preferredFileNames
+		std::vector<std::filesystem::path> _preferredFileNames
 			= {"cover", "front"}; // TODO parametrize
 };
 

@@ -19,15 +19,15 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <vector>
-#include <boost/filesystem.hpp>
 
-boost::filesystem::path searchExecPath(std::string filename);
+std::filesystem::path searchExecPath(std::string filename);
 
-void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& checksum);
+void computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& checksum);
 
 // Make sure the given path is a directory
 // Create it if needed
-bool ensureDirectory(boost::filesystem::path dir);
+bool ensureDirectory(const std::filesystem::path& dir);
 

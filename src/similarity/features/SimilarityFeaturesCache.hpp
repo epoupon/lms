@@ -20,6 +20,7 @@
 #pragma once
 
 #include <map>
+#include <optional>
 #include <set>
 
 #include "database/Types.hpp"
@@ -33,7 +34,7 @@ class FeaturesCache
 
 		static void invalidate();
 
-		static boost::optional<FeaturesCache> read();
+		static std::optional<FeaturesCache> read();
 		void write();
 
 	private:

@@ -68,10 +68,10 @@ getFeatureInfoMapNbDimensions(const FeatureInfoMap& featureInfoMap)
 }
 
 static
-boost::optional<SOM::InputVector>
+std::optional<SOM::InputVector>
 getInputVectorFromTrack(Database::Session& session, Database::IdType trackId, const FeatureInfoMap& featuresInfo, std::size_t nbDimensions)
 {
-	boost::optional<SOM::InputVector> res {SOM::InputVector {nbDimensions}};
+	std::optional<SOM::InputVector> res {SOM::InputVector {nbDimensions}};
 
 	std::map<std::string, std::vector<double>> features;
 	for (auto itFeatureInfo : featuresInfo)
@@ -150,7 +150,7 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session, std::function<boo
 		if (stopRequested())
 			return;
 
-		boost::optional<SOM::InputVector> inputVector {getInputVectorFromTrack(session, trackId, featuresInfo, nbDimensions)};
+		std::optional<SOM::InputVector> inputVector {getInputVectorFromTrack(session, trackId, featuresInfo, nbDimensions)};
 		if (!inputVector)
 			continue;
 
@@ -456,7 +456,7 @@ FeaturesSearcher::getSimilarObjects(const std::set<Database::IdType>& ids,
 			break;
 
 		// If there is not enough objects, try again with closest neighbour until there is too much distance
-		boost::optional<SOM::Position> closestRefVectorPosition {_network->getClosestRefVectorPosition(searchedRefVectorsPosition, _networkRefVectorsDistanceMedian * 0.75)};
+		std::optional<SOM::Position> closestRefVectorPosition {_network->getClosestRefVectorPosition(searchedRefVectorsPosition, _networkRefVectorsDistanceMedian * 0.75)};
 		if (!closestRefVectorPosition)
 			break;
 

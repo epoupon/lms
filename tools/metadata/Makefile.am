@@ -8,5 +8,5 @@ lms_metadata_SOURCES = \
 	$(top_srcdir)/src/utils/Logger.cpp 		\
 	$(top_srcdir)/src/utils/Utils.cpp
 
-lms_metadata_CXXFLAGS=-std=c++14 -Wall -I$(top_srcdir)/src -D_REENTRANT
+lms_metadata_CXXFLAGS=-std=c++17 -I$(top_srcdir)/src -D_REENTRANT
 

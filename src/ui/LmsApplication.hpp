@@ -17,14 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LMS_APPLICATION_HPP
-#define LMS_APPLICATION_HPP
+#pragma once
 
-#include <boost/optional.hpp>
+#include <optional>
 
 #include <Wt/WApplication.h>
 
-#include "database/Database.hpp"
 #include "scanner/MediaScanner.hpp"
 
 #include "LmsApplicationGroup.hpp"
@@ -32,6 +30,7 @@
 namespace Database {
 	class Artist;
 	class Cluster;
+	class Db;
 	class Release;
 	class User;
 }
@@ -51,7 +50,7 @@ struct Events
 
 	// A track is being loaded
 	Wt::Signal<Database::IdType /* trackId */, bool /* play */> trackLoaded;
-	boost::optional<Database::IdType> lastLoadedTrackId;
+	std::optional<Database::IdType> lastLoadedTrackId;
 	// Unload current track
 	Wt::Signal<> trackUnloaded;
 
@@ -75,7 +74,7 @@ class LmsApplication : public Wt::WApplication
 	public:
 		LmsApplication(const Wt::WEnvironment& env, std::unique_ptr<Database::Session> dbSession, LmsApplicationGroupContainer& appGroups);
 
-		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, Database::Database& db, LmsApplicationGroupContainer& appGroups);
+		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups);
 		static LmsApplication* instance();
 
 		// Session application data
@@ -124,8 +123,8 @@ class LmsApplication : public Wt::WApplication
 		std::unique_ptr<Database::Session>	_dbSession;
 		LmsApplicationGroupContainer&   	_appGroups;
 		Events					_events;
-		boost::optional<Database::IdType>	_userId;
-		boost::optional<bool>			_userAuthStrong;
+		std::optional<Database::IdType>	_userId;
+		std::optional<bool>			_userAuthStrong;
 		std::shared_ptr<ImageResource>		_imageResource;
 		std::shared_ptr<AudioResource>		_audioResource;
 };
@@ -135,6 +134,4 @@ class LmsApplication : public Wt::WApplication
 #define LmsApp	LmsApplication::instance()
 
 } // namespace UserInterface
-
-#endif
 

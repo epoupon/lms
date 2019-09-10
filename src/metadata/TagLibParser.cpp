@@ -126,10 +126,10 @@ getAlbumArtists(const TagLib::PropertyMap& properties)
 }
 
 static
-boost::optional<Album>
+std::optional<Album>
 getAlbum(const TagLib::PropertyMap& properties)
 {
-	boost::optional<Album> res;
+	std::optional<Album> res;
 
 	std::vector<std::string> albumName {getPropertyValues(properties, "ALBUM")};
 	if (albumName.empty())
@@ -145,8 +145,8 @@ getAlbum(const TagLib::PropertyMap& properties)
 	return res;
 }
 
-boost::optional<Track>
-TagLibParser::parse(const boost::filesystem::path& p, bool debug)
+std::optional<Track>
+TagLibParser::parse(const std::filesystem::path& p, bool debug)
 {
 	TagLib::FileRef f {p.string().c_str(),
 			true, // read audio properties
@@ -155,13 +155,13 @@ TagLibParser::parse(const boost::filesystem::path& p, bool debug)
 	if (f.isNull())
 	{
 		LMS_LOG(METADATA, ERROR) << "File '" << p.string() << "': parsing failed";
-		return boost::none;
+		return std::nullopt;
 	}
 
 	if (!f.audioProperties())
 	{
 		LMS_LOG(METADATA, INFO) << "File '" << p.string() << "': no audio properties";
-		return boost::none;
+		return std::nullopt;
 	}
 
 	Track track;

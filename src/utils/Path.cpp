@@ -28,7 +28,7 @@
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
-boost::filesystem::path searchExecPath(std::string filename)
+std::filesystem::path searchExecPath(std::string filename)
 {
 	std::string path;
 
@@ -42,7 +42,7 @@ boost::filesystem::path searchExecPath(std::string filename)
 	tokenizer tok(path, sep);
 	for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
 	{
-		boost::filesystem::path p = *it;
+		std::filesystem::path p = *it;
 		p /= filename;
 		if (!::access(p.c_str(), X_OK))
 		{
@@ -53,7 +53,7 @@ boost::filesystem::path searchExecPath(std::string filename)
 	return result;
 }
 
-void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& crc)
+void computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& crc)
 {
 	using crc_type = boost::crc_32_type;
 	crc_type result;
@@ -87,11 +87,11 @@ void computeCrc(const boost::filesystem::path& p, std::vector<unsigned char>& cr
 	}
 }
 
-bool ensureDirectory(boost::filesystem::path dir)
+bool ensureDirectory(const std::filesystem::path& dir)
 {
-	if (boost::filesystem::exists(dir))
-		return boost::filesystem::is_directory(dir);
+	if (std::filesystem::exists(dir))
+		return std::filesystem::is_directory(dir);
 	else
-		return boost::filesystem::create_directory(dir);
+		return std::filesystem::create_directory(dir);
 }
 

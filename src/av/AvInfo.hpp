@@ -29,14 +29,12 @@ extern "C"
 #include <libavutil/error.h>
 }
 
-#include <vector>
-#include <string>
-#include <cstdint>
-#include <map>
 #include <chrono>
-
-#include <boost/optional.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
+#include <map>
+#include <optional>
+#include <string>
+#include <vector>
 
 #include "AvTypes.hpp"
 
@@ -66,7 +64,7 @@ class MediaFileException : public AvException
 class MediaFile
 {
 	public:
-		MediaFile(const boost::filesystem::path& p);
+		MediaFile(const std::filesystem::path& p);
 		~MediaFile();
 
 		MediaFile(const MediaFile&) = delete;
@@ -76,19 +74,19 @@ class MediaFile
 
 		std::string		getFormatName() const;
 
-		const boost::filesystem::path&		getPath() const {return _p;};
+		const std::filesystem::path&		getPath() const {return _p;};
 
 		std::chrono::milliseconds		getDuration() const;
 		std::map<std::string, std::string>	getMetaData(void);
 
 		std::vector<StreamInfo>	getStreamInfo() const;
-		boost::optional<std::size_t>	getBestStream() const; // none if failure/unknown
+		std::optional<std::size_t>	getBestStream() const; // none if failure/unknown
 		bool			hasAttachedPictures(void) const;
 		std::vector<Picture>	getAttachedPictures(std::size_t nbMaxPictures) const;
 
 	private:
 
-		boost::filesystem::path	_p;
+		std::filesystem::path	_p;
 		AVFormatContext* _context {};
 };
 
@@ -99,7 +97,7 @@ struct MediaFileFormat
 	std::string format;
 };
 
-boost::optional<MediaFileFormat> guessMediaFileFormat(const boost::filesystem::path& file);
+std::optional<MediaFileFormat> guessMediaFileFormat(const std::filesystem::path& file);
 
 } // namespace Av
 

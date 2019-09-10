@@ -5,7 +5,6 @@ AC_CONFIG_HEADER(src/config/config.h)
 
 AC_LANG_CPLUSPLUS
 
-# Checks for programs
 AC_PROG_CXX
 
 PKG_CHECK_MODULES(IMAGEMAGICKXX, "ImageMagick++", [ HAVE_IMAGEMAGICKXX=yes ], [ ])
@@ -20,10 +19,15 @@ AC_CHECK_HEADERS([Wt/WApplication.h pstreams/pstream.h],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
 
-AC_CHECK_LIB(	[pthread],
-		[pthread_rwlock_unlock],
-		,
-		[AC_MSG_ERROR([libpthread not found!])])
+AC_CHECK_LIB([stdc++fs],
+             [main],
+             ,
+	     [AC_MSG_ERROR([lib filesystem not found!])])
+
+AC_CHECK_LIB([pthread],
+             [pthread_rwlock_unlock],
+             ,
+             [AC_MSG_ERROR([libpthread not found!])])
 
 AC_CHECK_LIB([wt],
              [main],
@@ -65,11 +69,6 @@ AC_CHECK_LIB([boost_system],
 		[main],
 		,
 		[AC_MSG_ERROR([libboost_system not found!])])
-
-AC_CHECK_LIB(	[boost_filesystem],
-		[main],
-		,
-		[AC_MSG_ERROR([libboost_filesystem not found!])])
 
 AC_CHECK_LIB(	[tag],
 		[main],

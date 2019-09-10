@@ -17,7 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/filesystem.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
 #include <Wt/WServer.h>
@@ -29,6 +28,7 @@
 #include "auth/AuthTokenService.hpp"
 #include "auth/PasswordService.hpp"
 #include "cover/CoverArtGrabber.hpp"
+#include "database/Db.hpp"
 #include "image/Image.hpp"
 #include "scanner/MediaScanner.hpp"
 #include "similarity/features/SimilarityFeaturesScannerAddon.hpp"
@@ -42,9 +42,9 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 {
 	std::vector<std::string> args;
 
-	const boost::filesystem::path wtConfigPath {getService<Config>()->getPath("working-dir") / "wt_config.xml"};
-	const boost::filesystem::path wtLogFilePath {getService<Config>()->getPath("log-file", "/var/log/lms.log")};
-	const boost::filesystem::path wtAccessLogFilePath {getService<Config>()->getPath("access-log-file", "/var/log/lms.access.log")};
+	const std::filesystem::path wtConfigPath {getService<Config>()->getPath("working-dir") / "wt_config.xml"};
+	const std::filesystem::path wtLogFilePath {getService<Config>()->getPath("log-file", "/var/log/lms.log")};
+	const std::filesystem::path wtAccessLogFilePath {getService<Config>()->getPath("access-log-file", "/var/log/lms.access.log")};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
@@ -86,7 +86,7 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 
 int main(int argc, char* argv[])
 {
-	boost::filesystem::path configFilePath {"/etc/lms.conf"};
+	std::filesystem::path configFilePath {"/etc/lms.conf"};
 	int res = EXIT_FAILURE;
 
 	assert(argc > 0);
@@ -110,8 +110,8 @@ int main(int argc, char* argv[])
 		ServiceProvider<Config>::create(configFilePath);
 
 		// Make sure the working directory exists
-		boost::filesystem::create_directories(getService<Config>()->getPath("working-dir"));
-		boost::filesystem::create_directories(getService<Config>()->getPath("working-dir") / "cache");
+		std::filesystem::create_directories(getService<Config>()->getPath("working-dir"));
+		std::filesystem::create_directories(getService<Config>()->getPath("working-dir") / "cache");
 
 		// Construct WT configuration and get the argc/argv back
 		std::vector<std::string> wtServerArgs = generateWtConfig(argv[0]);
@@ -128,11 +128,10 @@ int main(int argc, char* argv[])
 
 		// lib init
 		Image::init(argv[0]);
-		Av::AvInit();
 		Av::Transcoder::init();
 
 		// Initializing a connection pool to the database that will be shared along services
-		Database::Database database {getService<Config>()->getPath("working-dir") / "lms.db"};
+		Database::Db database {getService<Config>()->getPath("working-dir") / "lms.db"};
 
 		UserInterface::LmsApplicationGroupContainer appGroups;
 

@@ -19,7 +19,7 @@
 
 #include "Validators.hpp"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <Wt/WLengthValidator.h>
 
@@ -53,11 +53,11 @@ DirectoryValidator::validate(const Wt::WString& input) const
 	if (input.empty())
 		return Wt::WValidator::validate(input);
 
-	boost::filesystem::path p(input.toUTF8());
-	boost::system::error_code ec;
+	const std::filesystem::path p {input.toUTF8()};
+	std::error_code ec;
 
 	// TODO check rights
-	bool res = boost::filesystem::is_directory(p, ec);
+	bool res = std::filesystem::is_directory(p, ec);
 	if (ec)
 		return Wt::WValidator::Result(Wt::ValidationState::Invalid, ec.message()); // TODO translate common errors
 	else if (res)

@@ -83,7 +83,7 @@ LoginThrottler::onGoodClientAttempt(const boost::asio::ip::address& address)
 {
 	const boost::asio::ip::address clientAddress {getAddressToThrottle(address)};
 
-	_attemptsInfo.erase(address);
+	_attemptsInfo.erase(clientAddress);
 }
 
 bool
@@ -91,7 +91,7 @@ LoginThrottler::isClientThrottled(const boost::asio::ip::address& address) const
 {
 	const boost::asio::ip::address clientAddress {getAddressToThrottle(address)};
 
-	auto it {_attemptsInfo.find(address)};
+	auto it {_attemptsInfo.find(clientAddress)};
 	if (it == _attemptsInfo.end())
 		return false;
 

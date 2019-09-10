@@ -30,7 +30,7 @@ namespace UserInterface {
 LmsApplicationInfo
 LmsApplicationInfo::fromEnvironment(const Wt::WEnvironment& env)
 {
-	LmsApplicationInfo info = {.userAgent = wApp->environment().agent()};
+	LmsApplicationInfo info = {.userAgent = env.agent()};
 	return info;
 }
 

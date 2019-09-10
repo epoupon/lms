@@ -40,8 +40,8 @@ using namespace Database;
 namespace UserInterface {
 
 Tracks::Tracks(Filters* filters)
-: Wt::WTemplate(Wt::WString::tr("Lms.Explore.Tracks.template")),
-_filters(filters)
+: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Tracks.template")},
+_filters {filters}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
@@ -56,18 +56,18 @@ _filters(filters)
 	});
 
 	Wt::WText* addBtn = bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
-	addBtn->clicked().connect(std::bind([=]
+	addBtn->clicked().connect([=]
 	{
 		tracksAdd.emit(getTracks());
-	}));
+	});
 
 	_tracksContainer = bindNew<Wt::WContainerWidget>("tracks");
 
 	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->clicked().connect(std::bind([=]
+	_showMore->clicked().connect([=]
 	{
 		addSome();
-	}));
+	});
 
 	refresh();
 
@@ -75,7 +75,7 @@ _filters(filters)
 }
 
 std::vector<Database::IdType>
-Tracks::getTracks(boost::optional<std::size_t> offset, boost::optional<std::size_t> size, bool& moreResults)
+Tracks::getTracks(std::optional<std::size_t> offset, std::optional<std::size_t> size, bool& moreResults)
 {
 	const auto searchKeywords {splitString(_search->text().toUTF8(), " ")};
 	const auto clusterIds {_filters->getClusterIds()};

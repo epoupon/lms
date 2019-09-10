@@ -139,7 +139,7 @@ PlayQueue::PlayQueue()
 					trackPos = LmsApp->getUser()->getCurPlayingTrackPos();
 				}
 
-				load(trackPos, false);
+				loadTrack(trackPos, false);
 			});
 			trackList = LmsApp->getUser()->getQueuedTrackList(LmsApp->getDbSession());
 		}
@@ -192,11 +192,11 @@ PlayQueue::stop()
 {
 	updateCurrentTrack(false);
 	_trackPos.reset();
-	trackUnload.emit();
+	trackUnselected.emit();
 }
 
 void
-PlayQueue::load(std::size_t pos, bool play)
+PlayQueue::loadTrack(std::size_t pos, bool play)
 {
 	updateCurrentTrack(false);
 
@@ -237,7 +237,7 @@ PlayQueue::load(std::size_t pos, bool play)
 
 	updateCurrentTrack(true);
 
-	loadTrack.emit(trackId, play);
+	trackSelected.emit(trackId, play);
 }
 
 void
@@ -249,7 +249,7 @@ PlayQueue::playPrevious()
 	if (*_trackPos == 0)
 		stop();
 	else
-		load(*_trackPos - 1, true);
+		loadTrack(*_trackPos - 1, true);
 }
 
 void
@@ -257,11 +257,11 @@ PlayQueue::playNext()
 {
 	if (!_trackPos)
 	{
-		load(0, true);
+		loadTrack(0, true);
 		return;
 	}
 
-	load(*_trackPos + 1, true);
+	loadTrack(*_trackPos + 1, true);
 }
 
 void
@@ -327,7 +327,7 @@ PlayQueue::playTracks(const std::vector<Database::IdType>& trackIds)
 {
 	clearTracks();
 	enqueueTracks(trackIds);
-	load(0, true);
+	loadTrack(0, true);
 
 	LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-playing", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
 }
@@ -377,7 +377,7 @@ PlayQueue::addSome()
 		{
 			auto pos = _entriesContainer->indexOf(entry);
 			if (pos >= 0)
-				load(pos, true);
+				loadTrack(pos, true);
 		}));
 
 		Wt::WText* delBtn = entry->bindNew<Wt::WText>("del-btn", Wt::WString::tr("Lms.PlayQueue.template.delete-btn"), Wt::TextFormat::XHTML);

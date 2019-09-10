@@ -4,7 +4,7 @@ lms_similarity_SOURCES = \
 	$(srcdir)/LmsSimilarity.cpp			\
 	$(top_srcdir)/src/database/Artist.cpp		\
 	$(top_srcdir)/src/database/Cluster.cpp		\
-	$(top_srcdir)/src/database/Database.cpp		\
+	$(top_srcdir)/src/database/Db.cpp		\
 	$(top_srcdir)/src/database/TrackFeatures.cpp	\
 	$(top_srcdir)/src/database/TrackList.cpp	\
 	$(top_srcdir)/src/database/Release.cpp		\
@@ -20,5 +20,5 @@ lms_similarity_SOURCES = \
 	$(top_srcdir)/src/utils/Logger.cpp 		\
 	$(top_srcdir)/src/utils/Utils.cpp
 
-lms_similarity_CXXFLAGS=-std=c++14 -Wall -I$(top_srcdir)/src -D_REENTRANT
+lms_similarity_CXXFLAGS=-std=c++17 -I$(top_srcdir)/src -D_REENTRANT
 

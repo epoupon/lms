@@ -27,7 +27,7 @@
 namespace API::Subsonic
 {
 
-boost::optional<Id>
+std::optional<Id>
 IdFromString(const std::string& id)
 {
 	if (id == "root")
@@ -35,7 +35,7 @@ IdFromString(const std::string& id)
 
 	std::vector<std::string> values {splitString(id, "-")};
 	if (values.size() != 2)
-		return boost::none;
+		return std::nullopt;
 
 	Id res;
 
@@ -49,11 +49,11 @@ IdFromString(const std::string& id)
 	else if (type == "pl")
 		res.type = Id::Type::Playlist;
 	else
-		return boost::none;
+		return std::nullopt;
 
 	auto optId {readAs<Database::IdType>(values[1])};
 	if (!optId)
-		return boost::none;
+		return std::nullopt;
 
 	res.value = *optId;
 

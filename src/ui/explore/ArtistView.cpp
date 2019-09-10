@@ -42,16 +42,16 @@ namespace UserInterface {
 Artist::Artist(Filters* filters)
 : _filters(filters)
 {
-	wApp->internalPathChanged().connect(std::bind([=]
+	wApp->internalPathChanged().connect([=]
 	{
 		refresh();
-	}));
+	});
 
 	refresh();
 
-	filters->updated().connect(std::bind([=] {
+	filters->updated().connect([=] {
 		refresh();
-	}));
+	});
 }
 
 void
@@ -162,13 +162,13 @@ Artist::refresh()
 			entry->bindWidget("artist", LmsApplication::createArtistAnchor(artists.front()));
 		}
 
-		boost::optional<int> year = release->getReleaseYear();
+		std::optional<int> year {release->getReleaseYear()};
 		if (year)
 		{
 			entry->setCondition("if-has-year", true);
 			entry->bindInt("year", *year);
 
-			boost::optional<int> originalYear = release->getReleaseYear(true);
+			std::optional<int> originalYear {release->getReleaseYear(true)};
 			if (originalYear && *originalYear != *year)
 			{
 				entry->setCondition("if-has-orig-year", true);
@@ -177,16 +177,16 @@ Artist::refresh()
 		}
 
 		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
-		playBtn->clicked().connect(std::bind([=]
+		playBtn->clicked().connect([=]
 		{
 			releasesPlay.emit({releaseId});
-		}));
+		});
 
 		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
-		addBtn->clicked().connect(std::bind([=]
+		addBtn->clicked().connect([=]
 		{
 			releasesAdd.emit({releaseId});
-		}));
+		});
 	}
 }
 

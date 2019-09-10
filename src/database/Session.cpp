@@ -110,7 +110,7 @@ Session::doDatabaseMigrationIfNeeded()
 	VersionInfo::get(*this).modify()->setVersion(LMS_DATABASE_VERSION);
 }
 
-Session::Session(std::shared_timed_mutex& mutex, Wt::Dbo::SqlConnectionPool& connectionPool)
+Session::Session(std::shared_mutex& mutex, Wt::Dbo::SqlConnectionPool& connectionPool)
 : _mutex {mutex}
 {
 	_session.setConnectionPool(connectionPool);
@@ -140,9 +140,9 @@ enum class OwnedLock
 	Unique,
 };
 
-static thread_local std::map<std::shared_timed_mutex*, OwnedLock> lockDebug;
+static thread_local std::map<std::shared_mutex*, OwnedLock> lockDebug;
 
-UniqueTransaction::UniqueTransaction(std::shared_timed_mutex& mutex, Wt::Dbo::Session& session)
+UniqueTransaction::UniqueTransaction(std::shared_mutex& mutex, Wt::Dbo::Session& session)
 : _lock {mutex},
  _transaction {session}
 {
@@ -156,7 +156,7 @@ UniqueTransaction::~UniqueTransaction()
 	lockDebug[_lock.mutex()] = OwnedLock::None;
 }
 
-SharedTransaction::SharedTransaction(std::shared_timed_mutex& mutex, Wt::Dbo::Session& session)
+SharedTransaction::SharedTransaction(std::shared_mutex& mutex, Wt::Dbo::Session& session)
 : _lock {mutex},
  _transaction {session}
 {
@@ -182,16 +182,16 @@ Session::checkSharedLocked()
 	assert(lockDebug[&_mutex] != OwnedLock::None);
 }
 
-std::unique_ptr<UniqueTransaction>
+UniqueTransaction
 Session::createUniqueTransaction()
 {
-	return std::unique_ptr<UniqueTransaction>(new UniqueTransaction{_mutex, _session});
+	return UniqueTransaction{_mutex, _session};
 }
 
-std::unique_ptr<SharedTransaction>
+SharedTransaction
 Session::createSharedTransaction()
 {
-	return std::unique_ptr<SharedTransaction>(new SharedTransaction{_mutex, _session});
+	return SharedTransaction{_mutex, _session};
 }
 
 void

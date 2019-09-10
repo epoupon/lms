@@ -84,7 +84,7 @@ Release::getCount(Session& session)
 }
 
 std::vector<Release::pointer>
-Release::getAll(Session& session, boost::optional<std::size_t> offset, boost::optional<std::size_t> size)
+Release::getAll(Session& session, std::optional<std::size_t> offset, std::optional<std::size_t> size)
 {
 	session.checkSharedLocked();
 
@@ -97,7 +97,7 @@ Release::getAll(Session& session, boost::optional<std::size_t> offset, boost::op
 }
 
 std::vector<Release::pointer>
-Release::getAllOrderedByArtist(Session& session, boost::optional<std::size_t> offset, boost::optional<std::size_t> size)
+Release::getAllOrderedByArtist(Session& session, std::optional<std::size_t> offset, std::optional<std::size_t> size)
 {
 	session.checkSharedLocked();
 
@@ -114,7 +114,7 @@ Release::getAllOrderedByArtist(Session& session, boost::optional<std::size_t> of
 }
 
 std::vector<Release::pointer>
-Release::getAllRandom(Session& session, boost::optional<std::size_t> size)
+Release::getAllRandom(Session& session, std::optional<std::size_t> size)
 {
 	session.checkSharedLocked();
 
@@ -136,7 +136,7 @@ Release::getAllOrphans(Session& session)
 }
 
 std::vector<Release::pointer>
-Release::getLastAdded(Session& session, const Wt::WDateTime& after, boost::optional<std::size_t> offset, boost::optional<std::size_t> limit)
+Release::getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> offset, std::optional<std::size_t> limit)
 {
 	session.checkSharedLocked();
 
@@ -151,7 +151,7 @@ Release::getLastAdded(Session& session, const Wt::WDateTime& after, boost::optio
 }
 
 std::vector<Release::pointer>
-Release::getByYear(Session& session, int yearFrom, int yearTo, boost::optional<std::size_t> offset, boost::optional<std::size_t> limit)
+Release::getByYear(Session& session, int yearFrom, int yearTo, std::optional<std::size_t> offset, std::optional<std::size_t> limit)
 {
 	Wt::Dbo::collection<Release::pointer> res = session.getDboSession().query<Release::pointer>
 		("SELECT DISTINCT r from release r INNER JOIN track t ON r.id = t.release_id")
@@ -216,8 +216,8 @@ std::vector<Release::pointer>
 Release::getByFilter(Session& session,
 		const std::set<IdType>& clusterIds,
 		const std::vector<std::string>& keywords,
-		boost::optional<std::size_t> offset,
-		boost::optional<std::size_t> size,
+		std::optional<std::size_t> offset,
+		std::optional<std::size_t> size,
 		bool& moreResults)
 {
 	Wt::Dbo::collection<pointer> collection = getQuery(session, clusterIds, keywords)
@@ -237,19 +237,19 @@ Release::getByFilter(Session& session,
 	return res;
 }
 
-boost::optional<std::size_t>
+std::optional<std::size_t>
 Release::getTotalTrackNumber(void) const
 {
-	return (_totalTrackNumber > 0) ? boost::make_optional<std::size_t>(_totalTrackNumber) : boost::none;
+	return (_totalTrackNumber > 0) ? std::make_optional<std::size_t>(_totalTrackNumber) : std::nullopt;
 }
 
-boost::optional<std::size_t>
+std::optional<std::size_t>
 Release::getTotalDiscNumber(void) const
 {
-	return (_totalDiscNumber > 0) ? boost::make_optional<std::size_t>(_totalDiscNumber) : boost::none;
+	return (_totalDiscNumber > 0) ? std::make_optional<std::size_t>(_totalDiscNumber) : std::nullopt;
 }
 
-boost::optional<int>
+std::optional<int>
 Release::getReleaseYear(bool original) const
 {
 	assert(session());
@@ -264,17 +264,17 @@ Release::getReleaseYear(bool original) const
 
 	// various dates => no date
 	if (dates.empty() || dates.size() > 1)
-		return boost::none;
+		return std::nullopt;
 
 	auto date {dates.front()};
 
 	if (date > 0)
 		return date;
 	else
-		return boost::none;
+		return std::nullopt;
 }
 
-boost::optional<std::string>
+std::optional<std::string>
 Release::getCopyright() const
 {
 	assert(session());
@@ -289,12 +289,12 @@ Release::getCopyright() const
 
 	// various copyrights => no copyright
 	if (values.empty() || values.size() > 1 || values.front().empty())
-		return boost::none;
+		return std::nullopt;
 
 	return values.front();
 }
 
-boost::optional<std::string>
+std::optional<std::string>
 Release::getCopyrightURL() const
 {
 	assert(session());
@@ -309,7 +309,7 @@ Release::getCopyrightURL() const
 
 	// various copyright URLs => no copyright URL
 	if (values.empty() || values.size() > 1 || values.front().empty())
-		return boost::none;
+		return std::nullopt;
 
 	return values.front();
 }

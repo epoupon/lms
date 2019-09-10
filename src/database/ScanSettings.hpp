@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WTime.h>
@@ -47,18 +47,18 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 
 		// Getters
 		std::size_t getScanVersion() const { return _scanVersion; }
-		boost::filesystem::path getMediaDirectory() const { return _mediaDirectory; }
+		std::filesystem::path getMediaDirectory() const { return _mediaDirectory; }
 		Wt::WTime getUpdateStartTime() const { return _startTime; }
 		UpdatePeriod getUpdatePeriod() const { return _updatePeriod; }
 		std::vector<Wt::Dbo::ptr<ClusterType>> getClusterTypes() const;
-		std::set<boost::filesystem::path> getAudioFileExtensions() const;
+		std::set<std::filesystem::path> getAudioFileExtensions() const;
 
 		// Setters
-		void setMediaDirectory(boost::filesystem::path p);
+		void setMediaDirectory(std::filesystem::path p);
 		void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
 		void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
 		void setClusterTypes(Session& session, const std::set<std::string>& clusterTypeNames);
-		void setAudioFileExtensions(std::set<boost::filesystem::path> fileExtensions);
+		void setAudioFileExtensions(std::set<std::filesystem::path> fileExtensions);
 
 		template<class Action>
 		void persist(Action& a)

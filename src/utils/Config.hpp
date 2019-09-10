@@ -18,16 +18,16 @@
  */
 #pragma once
 
+#include <filesystem>
 #include <set>
 
-#include <boost/filesystem.hpp>
 #include <libconfig.h++>
 
 // Used to get config values from configuration files
 class Config final
 {
 	public:
-		Config(const boost::filesystem::path& p);
+		Config(const std::filesystem::path& p);
 		~Config() = default;
 
 		Config(const Config&) = delete;
@@ -37,7 +37,7 @@ class Config final
 
 		// Default values are returned in case of setting not found
 		std::string	getString(const std::string& setting, const std::string& def = "", const std::set<std::string>& allowedValues = {});
-		boost::filesystem::path getPath(const std::string& setting, const boost::filesystem::path& def = boost::filesystem::path());
+		std::filesystem::path getPath(const std::string& setting, const std::filesystem::path& def = std::filesystem::path());
 		unsigned long	getULong(const std::string& setting, unsigned long def = 0);
 		long		getLong(const std::string& setting, long def = 0);
 		bool		getBool(const std::string& setting, bool def = false);

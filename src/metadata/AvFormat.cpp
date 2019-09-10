@@ -29,21 +29,21 @@ namespace MetaData
 
 using MetadataMap = std::map<std::string, std::string>;
 
-boost::optional<std::string>
+std::optional<std::string>
 findFirstValueOf(const MetadataMap& metadataMap, std::initializer_list<std::string> tags)
 {
 	auto it = std::find_first_of(std::cbegin(metadataMap), std::cend(metadataMap), std::cbegin(tags), std::cend(tags), [](const auto& it, const auto& str) { return it.first == str; });
 	if (it == std::cend(metadataMap))
-		return boost::none;
+		return std::nullopt;
 
 	return stringTrim(it->second);
 }
 
 static
-boost::optional<Album>
+std::optional<Album>
 getAlbum(const MetadataMap& metadataMap)
 {
-	boost::optional<Album> res;
+	std::optional<Album> res;
 
 	auto album {findFirstValueOf(metadataMap, {"ALBUM"})};
 	if (!album)
@@ -115,8 +115,8 @@ getArtists(const MetadataMap& metadataMap)
 	return artists;
 }
 
-boost::optional<Track>
-AvFormat::parse(const boost::filesystem::path& p, bool debug)
+std::optional<Track>
+AvFormat::parse(const std::filesystem::path& p, bool debug)
 {
 	Track track;
 
@@ -215,7 +215,7 @@ AvFormat::parse(const boost::filesystem::path& p, bool debug)
 	}
 	catch(Av::MediaFileException& e)
 	{
-		return boost::none;
+		return std::nullopt;
 	}
 
 	return track;

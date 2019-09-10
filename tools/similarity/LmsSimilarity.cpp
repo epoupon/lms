@@ -1,11 +1,11 @@
-#include <stdlib.h>
-#include <stdexcept>
-#include <iostream>
-#include <string>
 #include <chrono>
-#include <random>
+#include <filesystem>
+#include <iostream>
+#include <stdexcept>
+#include <stdlib.h>
+#include <string>
 
-#include "database/Database.hpp"
+#include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/Artist.hpp"
@@ -32,7 +32,7 @@ std::ostream& operator<<(std::ostream& os, const Database::Track::pointer& track
 
 static
 bool
-getTrackFeatures(Database::Session &session, const Database::Track::pointer& track, const std::map<std::string, std::size_t>& featuresSettings, SOM::InputVector& res)
+getTrackFeatures(Database::Session&, const Database::Track::pointer& track, const std::map<std::string, std::size_t>& featuresSettings, SOM::InputVector& res)
 {
 	std::map<std::string, std::vector<double>> features;
 	for (const auto& featureSettings : featuresSettings)
@@ -84,13 +84,13 @@ int main(int argc, char *argv[])
 		for (const auto& featureSettings : featuresSettings)
 			nbDims += featureSettings.second;
 
-		boost::filesystem::path configFilePath = "/etc/lms.conf";
+		std::filesystem::path configFilePath {"/etc/lms.conf"};
 		if (argc >= 2)
 			configFilePath = std::string(argv[1], 0, 256);
 
 		ServiceProvider<Config>::create(configFilePath);
 
-		Database::Database db {getService<Config>()->getPath("working-dir") / "lms.db"};
+		Database::Db db {getService<Config>()->getPath("working-dir") / "lms.db"};
 		auto session {db.createSession()};
 
 		std::cout << "Getting all features..." << std::endl;

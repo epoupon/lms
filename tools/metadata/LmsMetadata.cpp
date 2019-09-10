@@ -1,4 +1,5 @@
 #include <chrono>
+#include <optional>
 #include <stdexcept>
 #include <stdlib.h>
 #include <iostream>
@@ -31,13 +32,13 @@ std::ostream& operator<<(std::ostream& os, const MetaData::Album& album)
 
 
 
-void parse(MetaData::Parser& parser, const boost::filesystem::path& file)
+void parse(MetaData::Parser& parser, const std::filesystem::path& file)
 {
 	using namespace MetaData;
 
 	parser.setClusterTypeNames( {"MOOD", "GENRE"} );
 
-	boost::optional<Track> track {parser.parse(file, true)};
+	std::optional<Track> track {parser.parse(file, true)};
 	if (!track)
 	{
 		std::cerr << "Parsing failed" << std::endl;
@@ -119,11 +120,9 @@ int main(int argc, char *argv[])
 
 	try
 	{
-		Av::AvInit();
-
 		for (std::size_t  i {}; i < static_cast<std::size_t>(argc - 1); ++i)
 		{
-			boost::filesystem::path file {argv[i + 1]};
+			std::filesystem::path file {argv[i + 1]};
 
 			std::cout << "Parsing file '" << file << "'" << std::endl;
 

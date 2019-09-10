@@ -18,12 +18,13 @@
  */
 #pragma once
 
-#include <boost/optional.hpp>
-
 #include <Wt/WResource.h>
 #include <Wt/Http/Response.h>
 
-#include "database/Database.hpp"
+namespace Database
+{
+	class Db;
+}
 
 namespace API::Subsonic
 {
@@ -31,7 +32,7 @@ namespace API::Subsonic
 class SubsonicResource final : public Wt::WResource
 {
 	public:
-		SubsonicResource(Database::Database& db);
+		SubsonicResource(Database::Db& db);
 		~SubsonicResource();
 
 		static std::string getPath() { return "/rest/"; }
@@ -39,7 +40,7 @@ class SubsonicResource final : public Wt::WResource
 
 		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;
 
-		Database::Database& _db;
+		Database::Db& _db;
 };
 
 } // namespace

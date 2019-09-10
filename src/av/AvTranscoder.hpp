@@ -20,11 +20,10 @@
 #pragma once
 
 #include <chrono>
+#include <filesystem>
+#include <optional>
 
 #include <pstreams/pstream.h>
-
-#include <boost/filesystem.hpp>
-#include <boost/optional.hpp>
 
 #include "AvTypes.hpp"
 
@@ -34,10 +33,10 @@ namespace Av {
 
 struct TranscodeParameters
 {
-	boost::optional<Encoding>		encoding; // If not set, no transcoding is performed
+	std::optional<Encoding>		encoding; // If not set, no transcoding is performed
 	std::size_t				bitrate {128000};
-	boost::optional<std::size_t>		stream; // Id of the stream to be transcoded (auto detect by default)
-	boost::optional<std::chrono::seconds>	offset {};
+	std::optional<std::size_t>		stream; // Id of the stream to be transcoded (auto detect by default)
+	std::optional<std::chrono::seconds>	offset {};
 	bool 					stripMetadata {true};
 };
 
@@ -46,32 +45,30 @@ class Transcoder
 	public:
 		static void init();
 
-		Transcoder(boost::filesystem::path file, TranscodeParameters parameters);
+		Transcoder(const std::filesystem::path& file, const TranscodeParameters& parameters);
 		~Transcoder();
 
-		// non copyable
 		Transcoder(const Transcoder&) = delete;
 		Transcoder& operator=(const Transcoder&) = delete;
+		Transcoder(Transcoder&&) = delete;
+		Transcoder& operator=(Transcoder&&) = delete;
 
-		bool start();
-		const std::string& getOutputMimeType() const { return _outputMimeType; }
-		void process(std::vector<unsigned char>& output, std::size_t maxSize);
-		bool isComplete(void) const { return _isComplete; }
+		bool			start();
+		const std::string&	getOutputMimeType() const { return _outputMimeType; }
+		void			process(std::vector<unsigned char>& output, std::size_t maxSize);
+		bool			isComplete(void) const { return _isComplete; }
 
 		const TranscodeParameters& getParameters() const { return _parameters; }
 
-
 	private:
-		Transcoder();
-
-		boost::filesystem::path	_filePath;
-		TranscodeParameters	_parameters;
+		const std::filesystem::path	_filePath;
+		const TranscodeParameters	_parameters;
 
 		std::shared_ptr<redi::ipstream>	_child;
 
-		bool			_isComplete = false;
-		std::size_t		_total = 0;
-		std::size_t		_id;
+		bool			_isComplete {};
+		std::size_t		_total {};
+		const std::size_t	_id {};
 		std::string		_outputMimeType;
 };
 

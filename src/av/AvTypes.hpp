@@ -20,7 +20,6 @@
 #pragma once
 
 #include <string>
-#include <boost/filesystem.hpp>
 
 #include "utils/Exception.hpp"
 

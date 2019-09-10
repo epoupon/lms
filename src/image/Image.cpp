@@ -68,7 +68,7 @@ Image::load(const std::vector<unsigned char>& rawData)
 }
 
 bool
-Image::load(boost::filesystem::path p)
+Image::load(const std::filesystem::path& p)
 {
 	try
 	{

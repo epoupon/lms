@@ -135,7 +135,7 @@ Releases::addSome()
 }
 
 std::vector<Database::IdType>
-Releases::getReleases(boost::optional<std::size_t> offset, boost::optional<std::size_t> limit, bool& moreResults) const
+Releases::getReleases(std::optional<std::size_t> offset, std::optional<std::size_t> limit, bool& moreResults) const
 {
 	const auto searchKeywords {splitString(_search->text().toUTF8(), " ")};
 

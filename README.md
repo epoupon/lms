@@ -48,9 +48,11 @@ __Note__: since _LMS_ stores hashed and salted passwords, it cannot handle the _
 
 ## Installation
 
-__Note__: this installation process and the default values of the configuration file and the _systemd_ service file have been written for _Debian Stretch_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
+__Note__: this installation process and the default values of the configuration file and the _systemd_ service file have been written for _Debian Buster_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
 
 ### Build dependencies
+
+__Note__: a C++17 compiler is needed to compile _LMS_
 ```sh
 apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavcodec-dev libavutil-dev libavformat-dev libav-tools libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
 ```

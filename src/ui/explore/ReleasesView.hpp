@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <boost/optional.hpp>
+#include <optional>
 
 #include <Wt/WContainerWidget.h>
 #include <Wt/WLineEdit.h>
@@ -44,7 +44,7 @@ class Releases : public Wt::WTemplate
 		void refresh();
 		void addSome();
 
-		std::vector<Database::IdType> getReleases(boost::optional<std::size_t> offset, boost::optional<std::size_t> limit, bool& moreResults) const;
+		std::vector<Database::IdType> getReleases(std::optional<std::size_t> offset, std::optional<std::size_t> limit, bool& moreResults) const;
 		std::vector<Database::IdType> getReleases() const;
 
 		Filters* _filters;

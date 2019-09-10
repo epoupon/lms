@@ -32,14 +32,14 @@
 
 namespace Database {
 
-Track::Track(const boost::filesystem::path& p)
+Track::Track(const std::filesystem::path& p)
 :
 _filePath( p.string() )
 {
 }
 
 std::vector<Track::pointer>
-Track::getAll(Session& session, boost::optional<std::size_t> limit)
+Track::getAll(Session& session, std::optional<std::size_t> limit)
 {
 	session.checkSharedLocked();
 
@@ -50,7 +50,7 @@ Track::getAll(Session& session, boost::optional<std::size_t> limit)
 }
 
 std::vector<Track::pointer>
-Track::getAllRandom(Session& session, boost::optional<std::size_t> limit)
+Track::getAllRandom(Session& session, std::optional<std::size_t> limit)
 {
 	session.checkSharedLocked();
 
@@ -71,7 +71,7 @@ Track::getAllIds(Session& session)
 }
 
 Track::pointer
-Track::getByPath(Session& session, const boost::filesystem::path& p)
+Track::getByPath(Session& session, const std::filesystem::path& p)
 {
 	session.checkSharedLocked();
 
@@ -97,7 +97,7 @@ Track::getByMBID(Session& session, const std::string& mbid)
 }
 
 Track::pointer
-Track::create(Session& session, const boost::filesystem::path& p)
+Track::create(Session& session, const std::filesystem::path& p)
 {
 	session.checkUniqueLocked();
 
@@ -107,13 +107,13 @@ Track::create(Session& session, const boost::filesystem::path& p)
 	return res;
 }
 
-std::vector<boost::filesystem::path>
+std::vector<std::filesystem::path>
 Track::getAllPaths(Session& session)
 {
 	session.checkSharedLocked();
 
 	Wt::Dbo::collection<std::string> res = session.getDboSession().query<std::string>("SELECT file_path FROM track");
-	return std::vector<boost::filesystem::path>(res.begin(), res.end());
+	return std::vector<std::filesystem::path>(res.begin(), res.end());
 }
 
 std::vector<Track::pointer>
@@ -126,7 +126,7 @@ Track::getMBIDDuplicates(Session& session)
 }
 
 std::vector<Track::pointer>
-Track::getLastAdded(Session& session, const Wt::WDateTime& after, boost::optional<std::size_t> limit)
+Track::getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> limit)
 {
 	session.checkSharedLocked();
 
@@ -151,7 +151,7 @@ Track::getAllWithMBIDAndMissingFeatures(Session& session)
 }
 
 std::vector<IdType>
-Track::getAllIdsWithFeatures(Session& session, boost::optional<std::size_t> limit)
+Track::getAllIdsWithFeatures(Session& session, std::optional<std::size_t> limit)
 {
 	session.checkSharedLocked();
 
@@ -224,8 +224,8 @@ std::vector<Track::pointer>
 Track::getByFilter(Session& session,
 		const std::set<IdType>& clusterIds,
 		const std::vector<std::string>& keywords,
-		boost::optional<std::size_t> offset,
-		boost::optional<std::size_t> size,
+		std::optional<std::size_t> offset,
+		std::optional<std::size_t> size,
 		bool& moreResults)
 {
 	session.checkSharedLocked();
@@ -289,40 +289,40 @@ Track::setFeatures(const Wt::Dbo::ptr<TrackFeatures>& features)
 	_trackFeatures = features;
 }
 
-boost::optional<std::size_t>
+std::optional<std::size_t>
 Track::getTrackNumber(void) const
 {
-	return (_trackNumber > 0) ? boost::make_optional<std::size_t>(_trackNumber) : boost::none;
+	return (_trackNumber > 0) ? std::make_optional<std::size_t>(_trackNumber) : std::nullopt;
 }
 
-boost::optional<std::size_t>
+std::optional<std::size_t>
 Track::getDiscNumber(void) const
 {
-	return (_discNumber > 0) ? boost::make_optional<std::size_t>(_discNumber) : boost::none;
+	return (_discNumber > 0) ? std::make_optional<std::size_t>(_discNumber) : std::nullopt;
 }
 
-boost::optional<int>
+std::optional<int>
 Track::getYear() const
 {
-	return (_year > 0) ? boost::make_optional<int>(_year) : boost::none;
+	return (_year > 0) ? std::make_optional<int>(_year) : std::nullopt;
 }
 
-boost::optional<int>
+std::optional<int>
 Track::getOriginalYear() const
 {
-	return (_originalYear > 0) ? boost::make_optional<int>(_originalYear) : boost::none;
+	return (_originalYear > 0) ? std::make_optional<int>(_originalYear) : std::nullopt;
 }
 
-boost::optional<std::string>
+std::optional<std::string>
 Track::getCopyright() const
 {
-	return _copyright != "" ? boost::make_optional<std::string>(_copyright) : boost::none;
+	return _copyright != "" ? std::make_optional<std::string>(_copyright) : std::nullopt;
 }
 
-boost::optional<std::string>
+std::optional<std::string>
 Track::getCopyrightURL() const
 {
-	return _copyrightURL != "" ? boost::make_optional<std::string>(_copyrightURL) : boost::none;
+	return _copyrightURL != "" ? std::make_optional<std::string>(_copyrightURL) : std::nullopt;
 }
 
 std::vector<Wt::Dbo::ptr<Artist>>

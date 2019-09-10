@@ -21,7 +21,6 @@
 
 #include <shared_mutex>
 #include <mutex>
-#include <boost/filesystem.hpp>
 #include <memory>
 
 #include <Wt/Dbo/Dbo.h>
@@ -36,9 +35,9 @@ class UniqueTransaction
 
 	private:
 		friend class Session;
-		UniqueTransaction(std::shared_timed_mutex& mutex, Wt::Dbo::Session& session);
+		UniqueTransaction(std::shared_mutex& mutex, Wt::Dbo::Session& session);
 
-		std::unique_lock<std::shared_timed_mutex> _lock;
+		std::unique_lock<std::shared_mutex> _lock;
 		Wt::Dbo::Transaction _transaction;
 };
 
@@ -49,9 +48,9 @@ class SharedTransaction
 
 	private:
 		friend class Session;
-		SharedTransaction(std::shared_timed_mutex& mutex, Wt::Dbo::Session& session);
+		SharedTransaction(std::shared_mutex& mutex, Wt::Dbo::Session& session);
 
-		std::shared_lock<std::shared_timed_mutex> _lock;
+		std::shared_lock<std::shared_mutex> _lock;
 		Wt::Dbo::Transaction _transaction;
 };
 
@@ -63,8 +62,8 @@ class Session
 		Session& operator=(const Session&) = delete;
 		Session& operator=(Session&&) = delete;
 
-		std::unique_ptr<UniqueTransaction> createUniqueTransaction();
-		std::unique_ptr<SharedTransaction> createSharedTransaction();
+		UniqueTransaction createUniqueTransaction();
+		SharedTransaction createSharedTransaction();
 
 		void checkUniqueLocked();
 		void checkSharedLocked();
@@ -74,15 +73,15 @@ class Session
 		Wt::Dbo::Session& getDboSession() { return _session; }
 
 	private:
-		friend class Database;
+		friend class Db;
 
-		Session(std::shared_timed_mutex& mutex, Wt::Dbo::SqlConnectionPool& connectionPool);
+		Session(std::shared_mutex& mutex, Wt::Dbo::SqlConnectionPool& connectionPool);
 
 		void doDatabaseMigrationIfNeeded();
 		void prepareTables(); // need to run only once at startup
 
-		std::shared_timed_mutex&	_mutex;
-		Wt::Dbo::Session		_session;
+		std::shared_mutex&	_mutex;
+		Wt::Dbo::Session	_session;
 };
 
 } // namespace Database

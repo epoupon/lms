@@ -43,16 +43,8 @@ MediaFileException::MediaFileException(int avError)
 {
 }
 
-void AvInit()
-{
-       /* register all the codecs */
-       avcodec_register_all();
-       av_register_all();
-       LMS_LOG(AV, INFO) << "avcodec version = " << avcodec_version();
-}
 
-
-MediaFile::MediaFile(const boost::filesystem::path& p)
+MediaFile::MediaFile(const std::filesystem::path& p)
 : _p {p}
 {
 	int error = avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr);
@@ -155,7 +147,7 @@ MediaFile::getStreamInfo() const
 	return res;
 }
 
-boost::optional<std::size_t>
+std::optional<std::size_t>
 MediaFile::getBestStream() const
 {
 	int res = av_find_best_stream(_context,
@@ -166,7 +158,7 @@ MediaFile::getBestStream() const
 		0);
 
 	if (res < 0)
-		return boost::none;
+		return std::nullopt;
 
 	return res;
 }
@@ -238,7 +230,7 @@ MediaFile::getAttachedPictures(std::size_t nbMaxPictures) const
 	return pictures;
 }
 
-boost::optional<MediaFileFormat> guessMediaFileFormat(const boost::filesystem::path& file)
+std::optional<MediaFileFormat> guessMediaFileFormat(const std::filesystem::path& file)
 {
 	AVOutputFormat* format {av_guess_format(NULL,file.string().c_str(),NULL)};
 	if (!format || !format->name)

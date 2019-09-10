@@ -62,7 +62,7 @@ AuthTokenService::createAuthToken(Database::Session& session, Database::IdType u
 }
 
 static
-boost::optional<AuthTokenService::AuthTokenProcessResult::AuthTokenInfo>
+std::optional<AuthTokenService::AuthTokenProcessResult::AuthTokenInfo>
 processAuthToken(Database::Session& session, const std::string& secret)
 {
 	const std::string secretHash {sha1Function.compute(secret, {})};
@@ -71,12 +71,12 @@ processAuthToken(Database::Session& session, const std::string& secret)
 
 	Database::AuthToken::pointer authToken {Database::AuthToken::getByValue(session, secretHash)};
 	if (!authToken)
-		return boost::none;
+		return std::nullopt;
 
 	if (authToken->getExpiry() < Wt::WDateTime::currentDateTime())
 	{
 		authToken.remove();
-		return boost::none;
+		return std::nullopt;
 	}
 
 	LMS_LOG(UI, DEBUG) << "Found auth token for user '" << authToken->getUser()->getLoginName() << "'!";

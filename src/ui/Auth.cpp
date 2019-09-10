@@ -54,12 +54,12 @@ createAuthToken(Database::IdType userId, const Wt::WDateTime& expiry)
 }
 
 
-boost::optional<Database::IdType>
+std::optional<Database::IdType>
 processAuthToken(const Wt::WEnvironment& env)
 {
 	const std::string* authCookie {env.getCookie(authCookieName)};
 	if (!authCookie)
-		return boost::none;
+		return std::nullopt;
 
 	const auto res {getService<::Auth::AuthTokenService>()->processAuthToken(LmsApp->getDbSession(), boost::asio::ip::address::from_string(env.clientAddress()), *authCookie)};
 	switch (res.state)
@@ -67,7 +67,7 @@ processAuthToken(const Wt::WEnvironment& env)
 		case ::Auth::AuthTokenService::AuthTokenProcessResult::State::NotFound:
 		case ::Auth::AuthTokenService::AuthTokenProcessResult::State::Throttled:
 			LmsApp->setCookie(authCookieName, std::string {}, 0, "", "", env.urlScheme() == "https");
-			return boost::none;
+			return std::nullopt;
 
 		case ::Auth::AuthTokenService::AuthTokenProcessResult::State::Found:
 			createAuthToken(res.authTokenInfo->userId, res.authTokenInfo->expiry);
@@ -107,7 +107,6 @@ class AuthModel : public Wt::WFormModel
 				user.modify()->setLastLogin(Wt::WDateTime::currentDateTime());
 				_userId = user.id();
 
-				const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
 				isDemo = user->isDemo();
 			}
 
@@ -151,11 +150,11 @@ class AuthModel : public Wt::WFormModel
 			return (validation(field).state() == Wt::ValidationState::Valid);
 		}
 
-		boost::optional<Database::IdType> getUserId() const { return _userId; }
+		std::optional<Database::IdType> getUserId() const { return _userId; }
 
 	private:
 
-		boost::optional<Database::IdType> _userId;
+		std::optional<Database::IdType> _userId;
 };
 
 const AuthModel::Field AuthModel::LoginNameField {"login-name"};

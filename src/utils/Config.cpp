@@ -19,12 +19,10 @@
 
 #include "Config.hpp"
 
-#include <sstream>
-
 #include "utils/Logger.hpp"
 
 
-Config::Config(const boost::filesystem::path& p)
+Config::Config(const std::filesystem::path& p)
 {
 	_config.readFile(p.string().c_str());
 }
@@ -35,7 +33,7 @@ Config::getString(const std::string& setting, const std::string& def, const std:
 	try {
 		std::string res {(const char*)_config.lookup(setting)};
 
-		if (!allowedValues.empty() && allowedValues.find(res) == allowedValues.end())
+		if (!allowedValues.empty() && allowedValues.find(res) == std::cend(allowedValues))
 		{
 			LMS_LOG(MAIN, ERROR) << "Invalid setting for '" << setting << "', using default value '" << def << "'";
 			return def;
@@ -49,12 +47,12 @@ Config::getString(const std::string& setting, const std::string& def, const std:
 	}
 }
 
-boost::filesystem::path
-Config::getPath(const std::string& setting, const boost::filesystem::path& path)
+std::filesystem::path
+Config::getPath(const std::string& setting, const std::filesystem::path& path)
 {
 	try {
 		const char* res = _config.lookup(setting);
-		return boost::filesystem::path(std::string(res));
+		return std::filesystem::path {std::string(res)};
 	}
 	catch (std::exception &e)
 	{
