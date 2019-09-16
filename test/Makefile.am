@@ -1,17 +1,17 @@
 
-TESTS = som database
+TESTS = test-som test-database
 
-check_PROGRAMS = som database
+check_PROGRAMS = test-som test-database
 
-som_SOURCES = \
+test_som_SOURCES = \
 	$(srcdir)/som/SomTest.cpp					\
 	$(top_srcdir)/src/similarity/features/som/DataNormalizer.cpp	\
 	$(top_srcdir)/src/similarity/features/som/Network.cpp
 
-som_CXXFLAGS=-std=c++17 -I${top_srcdir}/src/ -I${top_srcdir}/src/similarity/features/som/
+test_som_CXXFLAGS=-std=c++17 -I${top_srcdir}/src/ -I${top_srcdir}/src/similarity/features/som/
 
 
-database_SOURCES = \
+test_database_SOURCES = \
 	$(srcdir)/database/DatabaseTest.cpp			\
 	$(top_srcdir)/src/database/Artist.cpp			\
 	$(top_srcdir)/src/database/Cluster.cpp			\
@@ -29,5 +29,5 @@ database_SOURCES = \
 	$(top_srcdir)/src/utils/Logger.cpp			\
 	$(top_srcdir)/src/utils/Utils.cpp
 
-database_CXXFLAGS=-std=c++17 -I${top_srcdir}/src/
+test_database_CXXFLAGS=-std=c++17 -I${top_srcdir}/src/
 

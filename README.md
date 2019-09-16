@@ -48,18 +48,45 @@ __Note__: since _LMS_ stores hashed and salted passwords, it cannot handle the _
 
 ## Installation
 
-__Note__: this installation process and the default values of the configuration file and the _systemd_ service file have been written for _Debian Buster_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
+### From packages
 
-### Build dependencies
+#### Debian Buster packages
+
+_Buster_ packages are provided for _amd64_ and _armhf_ architectures.
+
+As root, trust the following debian package provider and add it in your list of repositories:
+```sh
+wget -O - https://debian.poupon.io/apt/debian/epoupon.gpg.key | apt-key add -
+echo "deb https://debian.poupon.io/apt/debian buster main" > /etc/apt/sources.list.d/epoupon.list
+```
+
+To install _LMS_:
+```sh
+apt-get update
+apt-get install lms
+```
+
+To upgrade _LMS_:
+```sh
+apt-get update
+apt-get install lms
+```
+
+By default, the _lms_ service is started just after the package installation. You may want to refer to [Deployment](#deployment) for further configuration options.
+
+### From Sources
+__Note__: this installation process and the default values of the configuration files have been written for _Debian Buster_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
+
+#### Build dependencies
 
 __Note__: a C++17 compiler is needed to compile _LMS_
 ```sh
-apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavcodec-dev libavutil-dev libavformat-dev libav-tools libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
+apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavutil-dev libavformat-dev libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
 ```
 
 You also need _W4_, that is not packaged yet on _Debian_. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).
 
-### Build
+#### Build
 
 Get the latest stable release and build it:
 ```sh
@@ -81,13 +108,7 @@ make
 ```
 __Note__: you can use `make -jN` to speed up compilation time (N is the number of compilation workers to spawn).
 
-#### Raspberry 3 build notes
-
-Due to memory limitations, you may need to build _Wt4_ in _Release_ mode if you want to compile it natively on a Raspberry Pi3B+.
-
-The build process is really long, roughly 1 hour to build _Wt4_ + _LMS_.
-
-### Deployment
+#### Installation
 
 __Note__: the commands of this section require root privileges.
 
@@ -106,20 +127,40 @@ cp /usr/share/lms/default.conf /etc/lms.conf
 cp /usr/share/lms/default.service /lib/systemd/system/lms.service
 ```
 
-Create working directories and give access to the _lms_ user:
+Create the working directory and give it access to the _lms_ user:
 ```sh
 mkdir /var/lms
-touch /var/log/lms.log
-touch /var/log/lms.access.log
-chown lms:lms /var/lms /var/log/lms.log /var/log/lms.access.log
+chown lms:lms /var/lms
 ```
+
+To make _LMS_ run automatically during startup:
+```sh
+systemctl enable lms
+```
+
+#### Upgrade
+
+To upgrade `LMS` from sources, you need to update the master branch and rebuild/install it:
+```sh
+cd build
+git pull
+make
+```
+
+Then using root privileges:
+```sh
+make install
+systemctl restart lms
+```
+
+## Deployment
 
 __Note__: don't forget to give the _lms_ user read access to the music directory you want to scan.
 
 ### Configuration
 _LMS_ uses a configuration file, installed by default in `/etc/lms.conf`. It is recommended to edit this file and change relevant settings (listen address, listen port, working directory, Subsonic API activation, ...).
 
-All other settings are set using the web interface (user management, scan  settings, transcode settings, ...).
+All other settings are set using the web interface (user management, scan settings, transcode settings, ...).
 
 If a setting is not present in the configuration file, a hardcoded default value is used (the same as in the [default.conf](https://github.com/epoupon/lms/blob/master/conf/default.conf) file)
 
@@ -156,35 +197,13 @@ server {
 ```sh
 systemctl start lms
 ```
-Two log files are used:
-* `/var/log/lms.log`: logs of the `lms` daemon
-* `/var/log/lms.access.log`: access logs of the embedded web server
+
+Log traces can be accessed using journactl:
+```sh
+journalctl -u lms.service
+```
 
 To connect to _LMS_, just open your favorite browser and go to http://localhost:5082
-
-To make _LMS_ run automatically during startup:
-```sh
-systemctl enable lms
-```
-
-## Upgrade
-
-To upgrade `LMS`, you need to update the master branch and rebuild/install it:
-```sh
-cd build
-git pull
-make
-```
-
-Then using root privileges:
-```sh
-make install
-systemctl restart lms
-```
-
-Read the [release notes](https://github.com/epoupon/lms/releases) to check if any relevant setting has been added into the configuration file.
-
-Any change in the database schema is made automatically by the application during startup.
 
 ## Credits
 * Wt (http://www.webtoolkit.eu/)

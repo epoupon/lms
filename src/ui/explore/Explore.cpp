@@ -179,7 +179,7 @@ Explore::Explore()
 
 static
 std::vector<Database::IdType>
-getArtistsTracks(Database::Session& session, const std::vector<Database::IdType>& artistsId, const std::set<Database::IdType>& clusters)
+getArtistsTracks(Database::Session& session, const std::vector<Database::IdType>& artistsId, const std::set<Database::IdType>&)
 {
 	std::vector<Database::IdType> res;
 

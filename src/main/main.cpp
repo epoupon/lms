@@ -66,7 +66,8 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 		args.push_back("--http-address=" + getService<Config>()->getString("listen-addr", "0.0.0.0"));
 	}
 
-	args.push_back("--accesslog=" + wtAccessLogFilePath.string());
+	if (!wtAccessLogFilePath.empty())
+		args.push_back("--accesslog=" + wtAccessLogFilePath.string());
 
 	// Generate the wt_config.xml file
 	boost::property_tree::ptree pt;

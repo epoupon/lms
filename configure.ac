@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT(lms, 2.2.0, test@test)
+AC_INIT(lms, 3.0.0, test@test)
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER(src/config/config.h)
 
@@ -29,6 +29,11 @@ AC_CHECK_LIB([pthread],
              ,
              [AC_MSG_ERROR([libpthread not found!])])
 
+AC_CHECK_LIB([boost_system],
+		[main],
+		,
+		[AC_MSG_ERROR([libboost_system not found!])])
+
 AC_CHECK_LIB([wt],
              [main],
              ,
@@ -55,20 +60,10 @@ AC_CHECK_LIB([avutil],
 	     ,
 	     [AC_MSG_ERROR([libavutil not found!])])
 
-AC_CHECK_LIB([avcodec],
-	     [avcodec_find_decoder],
-	     ,
-	     [AC_MSG_ERROR([libavcodec not found!])])
-
 AC_CHECK_LIB([avformat],
 	     [av_read_frame],
 	     ,
 	     [AC_MSG_ERROR([libavformat not found!])])
-
-AC_CHECK_LIB([boost_system],
-		[main],
-		,
-		[AC_MSG_ERROR([libboost_system not found!])])
 
 AC_CHECK_LIB(	[tag],
 		[main],
