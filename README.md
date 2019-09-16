@@ -60,21 +60,16 @@ wget -O - https://debian.poupon.io/apt/debian/epoupon.gpg.key | apt-key add -
 echo "deb https://debian.poupon.io/apt/debian buster main" > /etc/apt/sources.list.d/epoupon.list
 ```
 
-To install _LMS_:
+To install or upgrade _LMS_:
 ```sh
-apt-get update
-apt-get install lms
+apt update
+apt install lms
 ```
 
-To upgrade _LMS_:
-```sh
-apt-get update
-apt-get install lms
-```
+The _lms_ service is started just after the package installation, run by a dedicated _lms_ system user.</br>
+Please refer to [Deployment](#deployment) for further configuration options.
 
-By default, the _lms_ service is started just after the package installation. You may want to refer to [Deployment](#deployment) for further configuration options.
-
-### From Sources
+### From source
 __Note__: this installation process and the default values of the configuration files have been written for _Debian Buster_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
 
 #### Build dependencies
@@ -140,7 +135,7 @@ systemctl enable lms
 
 #### Upgrade
 
-To upgrade `LMS` from sources, you need to update the master branch and rebuild/install it:
+To upgrade _LMS_ from sources, you need to update the master branch and rebuild/install it:
 ```sh
 cd build
 git pull
