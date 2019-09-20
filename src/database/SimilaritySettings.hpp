@@ -94,7 +94,7 @@ class SimilaritySettings : public Wt::Dbo::Dbo<SimilaritySettings>
 	private:
 
 		int		_settingsVersion {};
-		EngineType	_engineType {EngineType::Features};
+		EngineType	_engineType {EngineType::Clusters};
 
 		Wt::Dbo::collection<Wt::Dbo::ptr<SimilaritySettingsFeature>> _features;
 };

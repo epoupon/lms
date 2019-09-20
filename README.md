@@ -36,6 +36,7 @@ The recommendation engine makes use of [Self-Organizing Maps](https://en.wikiped
 __Notes__:
 * constructing the map requires significant computation time on large collections (ex: half an hour for 40k tracks)
 * audio data is pulled from [AcousticBrainz](https://acousticbrainz.org/). Therefore your music files must contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) for the recommendation engine to work properly (otherwise, only tag-based recommendations are provided)
+* to use the _self-organizing map_ based engine, you have to enable it first in the settings panel.
 
 ## Subsonic API
 The API version implemented is 1.12.0 and has been tested on _Android_ using the official application, _Ultrasonic_ and _DSub_.
