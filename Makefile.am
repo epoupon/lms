@@ -12,8 +12,7 @@ lms_imagesdir=$(lms_approotdir)/images
 
 dist_pkgdata_DATA = \
 		systemd/default.service	\
-	        conf/default.conf
-
+	        conf/lms.conf
 
 dist_lms_css_DATA = \
 		docroot/css/lms.css

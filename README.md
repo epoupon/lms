@@ -80,7 +80,7 @@ __Note__: a C++17 compiler is needed to compile _LMS_
 apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavutil-dev libavformat-dev libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
 ```
 
-You also need _W4_, that is not packaged yet on _Debian_. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).
+You also need _Wt4_, that is not packaged yet on _Debian_. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).
 
 #### Build
 
@@ -114,13 +114,13 @@ make install
 
 Create a dedicated system user:
 ```sh
-useradd --system lms
+useradd --system --group lms
 ```
 
 Copy the configuration files:
 ```sh
-cp /usr/share/lms/default.conf /etc/lms.conf
-cp /usr/share/lms/default.service /lib/systemd/system/lms.service
+cp /usr/share/lms/lms.conf /etc/lms.conf
+cp /usr/share/lms/lms.service /lib/systemd/system/lms.service
 ```
 
 Create the working directory and give it access to the _lms_ user:
@@ -158,7 +158,7 @@ _LMS_ uses a configuration file, installed by default in `/etc/lms.conf`. It is 
 
 All other settings are set using the web interface (user management, scan settings, transcode settings, ...).
 
-If a setting is not present in the configuration file, a hardcoded default value is used (the same as in the [default.conf](https://github.com/epoupon/lms/blob/master/conf/default.conf) file)
+If a setting is not present in the configuration file, a hardcoded default value is used (the same as in the [default.conf](https://github.com/epoupon/lms/blob/master/conf/lms.conf) file)
 
 ### Reverse proxy settings
 _LMS_ is shipped with an embedded web server, but it is recommended to deploy behind a reverse proxy. You have to set the _behind-reverse-proxy_ option to _true_ in the `lms.conf` configuration file.
