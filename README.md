@@ -1,5 +1,7 @@
 # LMS - Lightweight Music Server
 
+[![Build Status](https://travis-ci.org/epoupon/lms.svg?branch=master)](https://travis-ci.org/epoupon/lms)
+
 _LMS_ is a self-hosted music streaming software: access your music collection from anywhere using a web interface!
 
 A [demo](http://lms.demo.poupon.io) instance is available, with the following limitations:

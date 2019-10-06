@@ -1,0 +1,30 @@
+language: cpp
+sudo: required
+dist: bionic
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+      env:
+        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
+      compiler:
+        - gcc
+before_install:
+- eval "${MATRIX_EVAL}"
+- sudo apt-get install build-essential autoconf automake cmake libboost-all-dev libconfig++-dev libavcodec-dev libavutil-dev libavformat-dev ffmpeg libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev libtag1-dev
+- git clone https://github.com/emweb/wt.git wt
+- pushd wt;
+- git checkout 4.1.0
+- cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr && sudo make install
+- popd
+script: autoreconf -vfi && CXXFLAGS="-Wall -Wextra -Werror" ./configure && make distcheck
+env:
+  global:
+    - MAKEFLAGS="-j 2"
+after_failure:
+  - cat config.log
