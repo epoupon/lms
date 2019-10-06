@@ -36,6 +36,7 @@ dist_lms_approot_DATA = \
 		approot/artistlink.xml	\
 		approot/artists.xml	\
 		approot/artistsinfo.xml	\
+		approot/error.xml	\
 		approot/explore.xml	\
 		approot/login.xml	\
 		approot/mediaplayer.xml	\

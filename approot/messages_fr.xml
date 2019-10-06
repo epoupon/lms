@@ -16,6 +16,7 @@
 <message id="Lms.password-bad-login-combination">Mauvaise combinaison login / mot de passe</message>
 <message id="Lms.password-client-throttled">Trop de tentatives de connexion, veuillez réessayer plus tard</message>
 <message id="Lms.password-confirm">Confirmation du mot de passe</message>
+<message id="Lms.password-new">Nouveau mot de passe</message>
 <message id="Lms.password-old">Ancien mot de passe</message>
 <message id="Lms.password-too-weak">Mot de passe trop faible</message>
 <message id="Lms.passwords-dont-match">Les mots de passe ne correspondent pas</message>
@@ -23,9 +24,17 @@
 <message id="Lms.quit-other-session">Une autre session a été ouverte. Reouvrir celle-ci ?</message>
 <message id="Lms.save">Sauvegarder</message>
 
+<!--Errors-->
+<message id="Lms.Error.artist-not-found">Cet artiste n'existe pas</message>
+<message id="Lms.Error.error-occurred">Une erreur est survenue!</message>
+<message id="Lms.Error.go-home">Retour à l'accueil</message>
+<message id="Lms.Error.release-not-found">Cet album n'existe pas</message>
+<message id="Lms.Error.user-not-allowed">Vous n'avez pas les droits pour effectuer cette opération</message>
+<message id="Lms.Error.user-not-found">L'utilisateur n'existe pas</message>
+
 <!--Administration-->
 <message id="Lms.Admin.Database.daily">Tous les jours</message>
-<message id="Lms.Admin.Database.database">Base de données</message>
+<message id="Lms.Admin.Database.database">Collection de musiques</message>
 <message id="Lms.Admin.Database.immediate-scan">Scanner maintenant !</message>
 <message id="Lms.Admin.Database.monthly">Tous les mois</message>
 <message id="Lms.Admin.Database.never">Jamais</message>
@@ -134,9 +143,8 @@
 
 
 <!--Settings-->
-<message id="Lms.Settings.account">Compte</message>
 <message id="Lms.Settings.audio">Audio</message>
-<message id="Lms.Settings.auto">Auto</message>
+<message id="Lms.Settings.change-password">Changement de mot de passe</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
 <message id="Lms.Settings.password-bad">Mauvais mot de passe</message>
 <message id="Lms.Settings.password-must-fill-old-password">L'ancien mot de passe doit être renseigné</message>

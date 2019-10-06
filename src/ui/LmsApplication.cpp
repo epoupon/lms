@@ -48,6 +48,7 @@
 #include "resource/ImageResource.hpp"
 #include "resource/AudioResource.hpp"
 #include "Auth.hpp"
+#include "LmsApplicationException.hpp"
 #include "MediaPlayer.hpp"
 #include "PlayHistoryView.hpp"
 #include "PlayQueueView.hpp"
@@ -134,6 +135,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	messageResourceBundle().use(appRoot() + "artistlink");
 	messageResourceBundle().use(appRoot() + "artists");
 	messageResourceBundle().use(appRoot() + "artistsinfo");
+	messageResourceBundle().use(appRoot() + "error");
 	messageResourceBundle().use(appRoot() + "explore");
 	messageResourceBundle().use(appRoot() + "login");
 	messageResourceBundle().use(appRoot() + "mediaplayer");
@@ -178,7 +180,20 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	const auto userId {processAuthToken(env)};
 	if (userId)
 	{
-		handleUserLoggedIn(*userId, false);
+		try
+		{
+			handleUserLoggedIn(*userId, false);
+		}
+		catch (LmsApplicationException& e)
+		{
+			LMS_LOG(UI, WARNING) << "Caught a LmsApplication exception: " << e.what();
+			handleException(e);
+		}
+		catch (std::exception& e)
+		{
+			LMS_LOG(UI, ERROR) << "Caught exception: " << e.what();
+			throw LmsException {"Internal error"}; // Do not put details here at it may appear on the user rendered html
+		}
 	}
 	else
 	{
@@ -267,9 +282,19 @@ LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete
 }
 
 void
-LmsApplication::goHome()
+LmsApplication::handleException(LmsApplicationException& e)
 {
-	setInternalPath("/artists", true);
+	root()->clear();
+	Wt::WTemplate* t {root()->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Error.template"))};
+	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
+
+	t->bindString("error", e.what());
+	Wt::WPushButton* btn {t->bindNew<Wt::WPushButton>("btn-go-home", Wt::WString::tr("Lms.Error.go-home"))};
+	btn->clicked().connect([this]()
+	{
+		setConfirmCloseMessage("");
+		redirect("/");
+	});
 }
 
 void
@@ -359,25 +384,17 @@ LmsApplication::handleUserLoggedIn(Database::IdType userId, bool strongAuth)
 
 	root()->clear();
 
-	try
+	const LmsApplicationInfo info {LmsApplicationInfo::fromEnvironment(environment())};
+
+	LMS_LOG(UI, INFO) << "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent();
+	getApplicationGroup().join(info);
+
+	getApplicationGroup().postOthers([info]
 	{
-		const LmsApplicationInfo info {LmsApplicationInfo::fromEnvironment(environment())};
+		LmsApp->getEvents().appOpen(info);
+	});
 
-		LMS_LOG(UI, INFO) << "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent();
-		getApplicationGroup().join(info);
-
-		getApplicationGroup().postOthers([info]
-		{
-			LmsApp->getEvents().appOpen(info);
-		});
-
-		createHome();
-	}
-	catch (std::exception& e)
-	{
-		LMS_LOG(UI, ERROR) << "Error while handling auth event: " << e.what();
-		throw LmsException {"Internal error"}; // Do not put details here at it appears on the user rendered html
-	}
+	createHome();
 }
 
 void
@@ -581,10 +598,15 @@ LmsApplication::notify(const Wt::WEvent& event)
 	{
 		WApplication::notify(event);
 	}
+	catch (LmsApplicationException& e)
+	{
+		LMS_LOG(UI, WARNING) << "Caught a LmsApplication exception: " << e.what();
+		handleException(e);
+	}
 	catch (std::exception& e)
 	{
 		LMS_LOG(UI, ERROR) << "Caught exception: " << e.what();
-		throw LmsException("Internal error"); // Do not put details here at it appears on the user rendered html
+		throw LmsException {"Internal error"}; // Do not put details here at it may appear on the user rendered html
 	}
 }
 
@@ -606,7 +628,9 @@ LmsApplication::post(std::function<void()> func)
 	Wt::WServer::instance()->post(LmsApp->sessionId(), std::move(func));
 }
 
-static std::string escape(std::string str)
+static
+std::string
+escape(const std::string& str)
 {
 	return replaceInString(std::move(str), "\'", "\\\'");
 }

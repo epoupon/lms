@@ -12,7 +12,9 @@
 				${tr:Lms.Admin.User.last-login}
 			</label>
 			<div class="col-sm-5">
-				${last-login}
+				<div class="well well-sm">
+					${last-login}
+				</div>
 			</div>
 		</div>
 		${</if-has-last-login>}
@@ -31,7 +33,7 @@
 		${</if-has-login>}
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:password}">
-				${tr:Lms.password}
+				${tr:Lms.password-new}
 			</label>
 			<div class="col-sm-5">
 				${password}

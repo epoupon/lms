@@ -33,6 +33,7 @@
 #include "resource/ImageResource.hpp"
 
 #include "LmsApplication.hpp"
+#include "LmsApplicationException.hpp"
 #include "Filters.hpp"
 
 using namespace Database;
@@ -70,10 +71,7 @@ Artist::refresh()
 
 	const Database::Artist::pointer artist = Database::Artist::getById(LmsApp->getDbSession(), *artistId);
 	if (!artist)
-	{
-		LmsApp->goHome();
-		return;
-	}
+		throw ArtistNotFoundException {*artistId};
 
 	Wt::WTemplate* t {addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template"))};
 	t->addFunction("tr", &Wt::WTemplate::Functions::tr);

@@ -16,6 +16,7 @@
 <message id="Lms.password-bad-login-combination">Bad login / password combination</message>
 <message id="Lms.password-client-throttled">Login throttled, please try again later</message>
 <message id="Lms.password-confirm">Confirm password</message>
+<message id="Lms.password-new">New password</message>
 <message id="Lms.password-old">Old password</message>
 <message id="Lms.password-too-weak">Password too weak</message>
 <message id="Lms.passwords-dont-match">Passwords don't match</message>
@@ -23,9 +24,17 @@
 <message id="Lms.quit-other-session">Another session has been open. Reopen this one?</message>
 <message id="Lms.save">Save</message>
 
+<!--Errors-->
+<message id="Lms.Error.artist-not-found">Artist not found</message>
+<message id="Lms.Error.error-occurred">Error occured!</message>
+<message id="Lms.Error.go-home">Go home</message>
+<message id="Lms.Error.release-not-found">Release not found</message>
+<message id="Lms.Error.user-not-allowed">You are not allowed to perform this operation</message>
+<message id="Lms.Error.user-not-found">User not found</message>
+
 <!--Administration-->
 <message id="Lms.Admin.Database.daily">Daily</message>
-<message id="Lms.Admin.Database.database">Database</message>
+<message id="Lms.Admin.Database.database">Music collection</message>
 <message id="Lms.Admin.Database.immediate-scan">Scan now!</message>
 <message id="Lms.Admin.Database.monthly">Monthly</message>
 <message id="Lms.Admin.Database.never">Never</message>
@@ -134,8 +143,8 @@
 
 
 <!--Settings-->
-<message id="Lms.Settings.account">Account</message>
 <message id="Lms.Settings.audio">Audio</message>
+<message id="Lms.Settings.change-password">Change password</message>
 <message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
 <message id="Lms.Settings.password-bad">Bad password</message>
 <message id="Lms.Settings.password-must-fill-old-password">Old password must be filled in</message>

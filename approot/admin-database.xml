@@ -86,16 +86,20 @@
 			<label class="control-label col-sm-2" for="${id:last-scan}">
 				${tr:Lms.Admin.Database.Status.last-scan}
 			</label>
-			<div class="col-sm-5 well well-sm">
-				${last-scan}
+			<div class="col-sm-5">
+				<div class="well well-sm">
+					${last-scan}
+				</div>
 			</div>
 		</div>
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:status}">
 				${tr:Lms.Admin.Database.Status.status}
 			</label>
-			<div class="col-sm-5 well well-sm">
-				${status}
+			<div class="col-sm-5">
+				<div class="well well-sm">
+					${status}
+				</div>
 			</div>
 		</div>
 	</div>

@@ -39,6 +39,7 @@
 #include "common/Validators.hpp"
 #include "common/ValueStringModel.hpp"
 #include "LmsApplication.hpp"
+#include "LmsApplicationException.hpp"
 
 namespace UserInterface {
 
@@ -54,8 +55,7 @@ class UserModel : public Wt::WFormModel
 		static const Field DemoField;
 
 		UserModel(std::optional<Database::IdType> userId)
-		: Wt::WFormModel(),
-		_userId(userId)
+		: _userId {userId}
 		{
 			if (!_userId)
 			{
@@ -126,8 +126,10 @@ class UserModel : public Wt::WFormModel
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 			const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
-			if (user == LmsApp->getUser())
-				throw LmsException("Cannot edit ourselves");
+			if (!user)
+				throw UserNotFoundException {*_userId};
+			else if (user == LmsApp->getUser())
+				throw UserNotAllowedException {};
 
 			auto transcodeBitrateLimitRow {_bitrateModel->getRowFromValue(user->getMaxAudioTranscodeBitrate())};
 			if (transcodeBitrateLimitRow)
@@ -240,12 +242,13 @@ UserView::refreshView()
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 		const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *userId)};
+		if (!user)
+			throw UserNotFoundException {*userId};
+
 		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-edit").arg(user->getLoginName()), Wt::TextFormat::Plain);
 		t->setCondition("if-has-last-login", true);
 
-		Wt::WLineEdit *lastLogin {t->bindNew<Wt::WLineEdit>("last-login")};
-		lastLogin->setText(user->getLastLogin().toString());
-		lastLogin->setEnabled(false);
+		t->bindString("last-login", user->getLastLogin().toString(), Wt::TextFormat::Plain);
 	}
 	else
 	{

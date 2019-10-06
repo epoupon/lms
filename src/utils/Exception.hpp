@@ -25,6 +25,6 @@
 class LmsException : public std::runtime_error
 {
 	public:
-		LmsException(const std::string& error) : std::runtime_error(error) {}
+		LmsException(const std::string& error = "") : std::runtime_error {error} {}
 };
 

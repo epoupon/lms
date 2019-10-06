@@ -92,8 +92,11 @@ networkToCacheFile(const SOM::Network& network, std::filesystem::path path)
 
 static
 std::optional<SOM::Network>
-createNetworkFromCacheFile(std::filesystem::path path)
+createNetworkFromCacheFile(const std::filesystem::path& path)
 {
+	if (!std::filesystem::exists(path))
+		return std::nullopt;
+
 	try
 	{
 		LMS_LOG(SIMILARITY, INFO) << "Reading network from cache...";

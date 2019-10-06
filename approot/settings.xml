@@ -43,7 +43,7 @@
 			</div>
 		</div>
 	</div>
-	<legend>${tr:Lms.Settings.account}</legend>
+	<legend>${tr:Lms.Settings.change-password}</legend>
 	<div class="form-horizontal">
 		${<if-has-old-password>}
 		<div class="form-group">
@@ -60,7 +60,7 @@
 		${</if-has-old-password>}
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:password}">
-				${tr:Lms.password}
+				${tr:Lms.password-new}
 			</label>
 			<div class="col-sm-5">
 				${password}

@@ -34,6 +34,7 @@
 #include "resource/ImageResource.hpp"
 
 #include "LmsApplication.hpp"
+#include "LmsApplicationException.hpp"
 #include "Filters.hpp"
 
 using namespace Database;
@@ -71,10 +72,7 @@ Release::refresh()
 
 	const Database::Release::pointer release {Database::Release::getById(LmsApp->getDbSession(), *releaseId)};
 	if (!release)
-	{
-		LmsApp->goHome();
-		return;
-	}
+		throw ReleaseNotFoundException {*releaseId};
 
 	Wt::WTemplate* t {addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template"))};
 	t->addFunction("tr", &Wt::WTemplate::Functions::tr);

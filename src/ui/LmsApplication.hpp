@@ -38,8 +38,9 @@ namespace Database {
 namespace UserInterface {
 
 class AudioResource;
-class ImageResource;
 class Auth;
+class ImageResource;
+class LmsApplicationException;
 
 // Events that can be listen from anywhere in the application
 struct Events
@@ -91,9 +92,6 @@ class LmsApplication : public Wt::WApplication
 		Events& getEvents() { return _events; }
 
 		// Utils
-		void goHome();
-		void goHomeAndQuit();
-
 		void post(std::function<void()> func);
 		void notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds(4000));
 
@@ -107,6 +105,9 @@ class LmsApplication : public Wt::WApplication
 		Wt::Signal<>&	preQuit() { return _preQuit; }
 
 	private:
+
+		void handleException(LmsApplicationException& e);
+		void goHomeAndQuit();
 
 		LmsApplicationGroup& getApplicationGroup();
 

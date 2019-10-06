@@ -82,6 +82,7 @@ lms_SOURCES = \
 	$(srcdir)/ui/Auth.hpp					\
 	$(srcdir)/ui/LmsApplication.cpp				\
 	$(srcdir)/ui/LmsApplication.hpp				\
+	$(srcdir)/ui/LmsApplicationException.hpp		\
 	$(srcdir)/ui/LmsApplicationGroup.cpp			\
 	$(srcdir)/ui/LmsApplicationGroup.hpp			\
 	$(srcdir)/ui/MediaPlayer.cpp				\

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Error.template">
+	<div class="container">
+		<div class="page-header">
+			<h2>${tr:Lms.Error.error-occurred}</h2>
+		</div>
+		<p><strong>${error}</strong></p>
+		${btn-go-home class="btn btn-primary"}
+	</div>
+</message>
+
+</messages>
