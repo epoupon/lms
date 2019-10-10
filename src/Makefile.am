@@ -59,6 +59,8 @@ lms_SOURCES = \
 	$(srcdir)/metadata/TagLibParser.hpp			\
 	$(srcdir)/scanner/MediaScanner.cpp			\
 	$(srcdir)/scanner/MediaScanner.hpp			\
+	$(srcdir)/scanner/MediaScannerStats.cpp			\
+	$(srcdir)/scanner/MediaScannerStats.hpp			\
 	$(srcdir)/scanner/MediaScannerAddon.hpp			\
 	$(srcdir)/similarity/SimilaritySearcher.cpp		\
 	$(srcdir)/similarity/SimilaritySearcher.hpp		\
@@ -95,6 +97,8 @@ lms_SOURCES = \
 	$(srcdir)/ui/SettingsView.hpp				\
 	$(srcdir)/ui/admin/DatabaseSettingsView.cpp		\
 	$(srcdir)/ui/admin/DatabaseSettingsView.hpp		\
+	$(srcdir)/ui/admin/DatabaseStatus.cpp			\
+	$(srcdir)/ui/admin/DatabaseStatus.hpp			\
 	$(srcdir)/ui/admin/InitWizardView.cpp			\
 	$(srcdir)/ui/admin/InitWizardView.hpp			\
 	$(srcdir)/ui/admin/UserView.cpp				\

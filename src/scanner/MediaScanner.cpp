@@ -19,8 +19,6 @@
 
 #include "MediaScanner.hpp"
 
-#include <stdexcept>
-
 #include <boost/asio/placeholders.hpp>
 
 #include <Wt/WLocalDateTime.h>
@@ -72,7 +70,7 @@ isPathInParentPath(const std::filesystem::path& path, const std::filesystem::pat
 {
 	std::filesystem::path curPath = path;
 
-	while (curPath.has_parent_path())
+	while (curPath.parent_path() != curPath)
 	{
 		curPath = curPath.parent_path();
 
@@ -260,10 +258,11 @@ MediaScanner::getStatus()
 	Status res;
 
 	std::unique_lock<std::mutex> lock {_statusMutex};
+
 	res.currentState = _curState;
 	res.nextScheduledScan = _nextScheduledScan;
-	res.lastScanStats = _lastScanStats;
-	res.inProgressStats = _inProgressStats;
+	res.lastCompleteScanStats = _lastCompleteScanStats;
+	res.inProgressScanStats = _inProgressScanStats;
 
 	return res;
 }
@@ -275,7 +274,7 @@ MediaScanner::scheduleNextScan()
 
 	refreshScanSettings();
 
-	Wt::WDateTime now = Wt::WLocalDateTime::currentServerDateTime().toUTC();
+	Wt::WDateTime now {Wt::WLocalDateTime::currentServerDateTime().toUTC()};
 
 	Wt::WDate nextScanDate;
 	switch (_updatePeriod)
@@ -324,11 +323,11 @@ MediaScanner::scheduleNextScan()
 }
 
 void
-MediaScanner::countAllFiles(Stats& stats)
+MediaScanner::countAllFiles(ScanStats& stats)
 {
 	std::error_code ec;
 
-	stats.totalFiles = 0;
+	stats.filesToScan = 0;
 
 	std::filesystem::recursive_directory_iterator itPath {_mediaDirectory, ec};
 	if (ec)
@@ -345,9 +344,9 @@ MediaScanner::countAllFiles(Stats& stats)
 		if (!ec)
 		{
 			if (std::filesystem::is_regular_file(path) && isFileSupported(path, _fileExtensions))
-				stats.totalFiles++;
+				stats.filesToScan ++;
 
-			if (stats.totalFiles % 250 == 0)
+			if (stats.filesToScan % 250 == 0)
 				notifyInProgressIfNeeded(stats);
 		}
 
@@ -385,11 +384,10 @@ MediaScanner::scan(boost::system::error_code err)
 		std::unique_lock<std::mutex> lock {_statusMutex};
 		_curState = State::InProgress;
 		_nextScheduledScan = {};
-		_inProgressStats = Stats{};
-		_inProgressStats->startTime = Wt::WLocalDateTime::currentDateTime().toUTC();
 	}
 
-	Stats& stats {*_inProgressStats};
+	ScanStats stats;
+	stats.startTime = Wt::WLocalDateTime::currentDateTime().toUTC();
 
 	LMS_LOG(UI, INFO) << "New scan started!";
 
@@ -399,7 +397,7 @@ MediaScanner::scan(boost::system::error_code err)
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Counting files in media directory '" << _mediaDirectory.string() << "'...";
 	countAllFiles(stats);
-	LMS_LOG(DBUPDATER, DEBUG) << "-> Nb files = " << stats.totalFiles;
+	LMS_LOG(DBUPDATER, DEBUG) << "-> Nb files = " << stats.filesToScan;
 
 	removeMissingTracks(stats);
 
@@ -414,7 +412,7 @@ MediaScanner::scan(boost::system::error_code err)
 	if (_running)
 		checkDuplicatedAudioFiles(stats);
 
-	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.scanErrors << ", not imported = " << stats.incompleteScans << "), duplicates = " << stats.nbDuplicates() << " (hash = " << stats.duplicateHashes << ", mbid = " << stats.duplicateMBID << ")";
+	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), duplicates = " << stats.duplicates.size();
 
 	if (_running)
 	{
@@ -427,19 +425,21 @@ MediaScanner::scan(boost::system::error_code err)
 		stats.stopTime = Wt::WLocalDateTime::currentDateTime().toUTC();
 		{
 			std::unique_lock<std::mutex> lock {_statusMutex};
-			_lastScanStats = std::move(_inProgressStats);
-			_inProgressStats.reset();
+
+			_lastCompleteScanStats = std::move(stats);
+			_inProgressScanStats.reset();
 		}
 
 		scheduleNextScan();
 
-		scanComplete().emit(stats);
+		scanComplete().emit();
 	}
 	else
 	{
 		std::unique_lock<std::mutex> lock {_statusMutex};
+
 		_curState = State::NotScheduled;
-		_inProgressStats.reset();
+		_inProgressScanStats.reset();
 	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Optimizing db...";
@@ -478,39 +478,44 @@ MediaScanner::refreshScanSettings()
 		addon->refreshSettings();
 }
 
-void MediaScanner::notifyInProgress(Stats& stats)
+void
+MediaScanner::notifyInProgress(const ScanStats& stats)
 {
+	{
+		std::unique_lock<std::mutex> lock {_statusMutex};
+		_inProgressScanStats = stats.toProgressStats();
+	}
+
 	std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
-	_sigScanInProgress(stats);
+	_sigScanInProgress(*_inProgressScanStats);
 	_lastScanInProgressEmit = now;
 }
 
-void MediaScanner::notifyInProgressIfNeeded(Stats& stats)
+void
+MediaScanner::notifyInProgressIfNeeded(const ScanStats& stats)
 {
 	std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
 
 	if (std::chrono::duration_cast<std::chrono::seconds>(now - _lastScanInProgressEmit).count() > 2)
-	{
-		_sigScanInProgress(stats);
-		_lastScanInProgressEmit = now;
-	}
+		notifyInProgress(stats);
 }
 
 void
-MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, Stats& stats)
+MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanStats& stats)
 {
 	notifyInProgressIfNeeded(stats);
 
-	const auto lastWriteTime {Wt::WDateTime::fromTimePoint(std::filesystem::last_write_time(file))};
+	const Wt::WDateTime lastWriteTime {std::filesystem::last_write_time(file)};
 
 	if (!forceScan)
 	{
 		// Skip file if last write is the same
 		auto transaction {_dbSession->createSharedTransaction()};
 
-		Track::pointer track {Track::getByPath(*_dbSession, file)};
+		const Track::pointer track {Track::getByPath(*_dbSession, file)};
 
-		if (track && track->getLastWriteTime() == lastWriteTime && track->getScanVersion() == _scanVersion)
+		if (track && track->getLastWriteTime().toTime_t() == lastWriteTime.toTime_t()
+				&& track->getScanVersion() == _scanVersion)
 		{
 			stats.skips++;
 			return;
@@ -520,7 +525,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	std::optional<MetaData::Track> trackInfo {_metadataParser.parse(file)};
 	if (!trackInfo)
 	{
-		stats.scanErrors++;
+		stats.errors.emplace_back(file, ScanErrorType::CannotParseFile);
 		return;
 	}
 
@@ -543,7 +548,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 			track.remove();
 			stats.deletions++;
 		}
-		stats.incompleteScans++;
+		stats.errors.emplace_back(ScanError {file, ScanErrorType::NoAudioTrack});
 		return;
 	}
 	if (trackInfo->duration == std::chrono::milliseconds::zero())
@@ -556,7 +561,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 			track.remove();
 			stats.deletions++;
 		}
-		stats.incompleteScans++;
+		stats.errors.emplace_back(ScanError {file, ScanErrorType::BadDuration});
 		return;
 	}
 
@@ -641,7 +646,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 }
 
 void
-MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, Stats& stats)
+MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats)
 {
 	std::error_code ec;
 
@@ -649,7 +654,7 @@ MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bo
 	if (ec)
 	{
 		LMS_LOG(DBUPDATER, ERROR) << "Cannot iterate over '" << mediaDirectory.string() << "': " << ec.message();
-		stats.scanErrors++;
+		stats.errors.emplace_back(ScanError {mediaDirectory, ScanErrorType::CannotReadFile, ec.message()});
 		return;
 	}
 
@@ -661,7 +666,7 @@ MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bo
 		if (ec)
 		{
 			LMS_LOG(DBUPDATER, ERROR) << "Cannot process entry '" << path.string() << "': " << ec.message();
-			stats.scanErrors++;
+			stats.errors.emplace_back(ScanError {path, ScanErrorType::CannotReadFile, ec.message()});
 		}
 		else if (std::filesystem::is_regular_file(path))
 		{
@@ -713,7 +718,7 @@ checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDire
 }
 
 void
-MediaScanner::removeMissingTracks(Stats& stats)
+MediaScanner::removeMissingTracks(ScanStats& stats)
 {
 	std::vector<std::filesystem::path> trackPaths;
 	{
@@ -785,7 +790,7 @@ MediaScanner::removeOrphanEntries()
 }
 
 void
-MediaScanner::checkDuplicatedAudioFiles(Stats& stats)
+MediaScanner::checkDuplicatedAudioFiles(ScanStats& stats)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files";
 
@@ -795,7 +800,7 @@ MediaScanner::checkDuplicatedAudioFiles(Stats& stats)
 	for (const Track::pointer& track : tracks)
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath().string() << " - " << track->getName();
-		stats.duplicateMBID++;
+		stats.duplicates.emplace_back(ScanDuplicate {track->getPath(), DuplicateReason::SameMBID});
 	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files done!";

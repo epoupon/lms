@@ -529,16 +529,16 @@ LmsApplication::createHome()
 	// Events from MediaScanner
 	{
 		const std::string sessionId {LmsApp->sessionId()};
-		getService<Scanner::MediaScanner>()->scanComplete().connect(this, [=] (Scanner::MediaScanner::Stats stats)
+		getService<Scanner::MediaScanner>()->scanComplete().connect(this, [=] ()
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
-				_events.dbScanned.emit(stats);
+				_events.dbScanned.emit();
 				triggerUpdate();
 			});
 		});
 
-		getService<Scanner::MediaScanner>()->scanInProgress().connect(this, [=] (Scanner::MediaScanner::Stats stats)
+		getService<Scanner::MediaScanner>()->scanInProgress().connect(this, [=] (Scanner::ScanProgressStats stats)
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
@@ -558,17 +558,19 @@ LmsApplication::createHome()
 
 	}
 
-	_events.dbScanned.connect([=] (Scanner::MediaScanner::Stats stats)
+	_events.dbScanned.connect([=] ()
 	{
 		if (isUserAdmin())
 		{
+			const auto& stats {*getService<Scanner::MediaScanner>()->getStatus().lastCompleteScanStats};
+
 			notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-complete")
 				.arg(static_cast<unsigned>(stats.nbFiles()))
 				.arg(static_cast<unsigned>(stats.additions))
 				.arg(static_cast<unsigned>(stats.updates))
 				.arg(static_cast<unsigned>(stats.deletions))
-				.arg(static_cast<unsigned>(stats.nbDuplicates()))
-				.arg(static_cast<unsigned>(stats.nbErrors())));
+				.arg(static_cast<unsigned>(stats.duplicates.size()))
+				.arg(static_cast<unsigned>(stats.errors.size())));
 		}
 	});
 

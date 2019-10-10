@@ -34,6 +34,7 @@
 #include "metadata/TagLibParser.hpp"
 
 #include "MediaScannerAddon.hpp"
+#include "MediaScannerStats.hpp"
 
 namespace Scanner {
 
@@ -52,29 +53,6 @@ class MediaScanner
 		void requestImmediateScan();
 		void requestReschedule();
 
-		struct Stats
-		{
-			Wt::WDateTime	startTime;
-			Wt::WDateTime	stopTime;
-			std::size_t	skips = 0;		// no change since last scan
-			std::size_t	scans = 0;		// actually scanned filed
-			std::size_t	scanErrors = 0;		// cannot scan file
-			std::size_t	incompleteScans = 0;	// Scanned, but not imported (criteria not filled)
-			std::size_t	additions = 0;		// Added in DB
-			std::size_t	deletions = 0;		// removed from DB
-			std::size_t	updates = 0;		// updated file in DB
-
-			std::size_t	duplicateHashes = 0;	// Same file hashes
-			std::size_t	duplicateMBID = 0;	// Same MBID
-
-			std::size_t	totalFiles = 0;		// Total number of files to be scanned
-
-			std::size_t nbFiles() const { return skips + additions + updates; }
-			std::size_t nbChanges() const { return additions + deletions + updates; }
-			std::size_t nbErrors() const { return scanErrors + incompleteScans; }
-			std::size_t nbDuplicates() const { return duplicateHashes + duplicateMBID; }
-			float progress() const { return (nbFiles() - totalFiles) / static_cast<float>(totalFiles); }
-		};
 
 		enum class State
 		{
@@ -85,19 +63,19 @@ class MediaScanner
 
 		struct Status
 		{
-			State				currentState {State::NotScheduled};
-			Wt::WDateTime			nextScheduledScan;
-			std::optional<Stats>		lastScanStats;
-			std::optional<Stats>		inProgressStats;
+			State					currentState {State::NotScheduled};
+			Wt::WDateTime				nextScheduledScan;
+			std::optional<ScanStats>		lastCompleteScanStats;
+			std::optional<ScanProgressStats>	inProgressScanStats;
 		};
 
 		Status getStatus();
 
 		// Called just after scan complete
-		Wt::Signal<Stats>& scanComplete() { return _sigScanComplete; }
+		Wt::Signal<>& scanComplete() { return _sigScanComplete; }
 
 		// Called during scan in progress
-		Wt::Signal<Stats>& scanInProgress() { return _sigScanInProgress; }
+		Wt::Signal<ScanProgressStats>& scanInProgress() { return _sigScanInProgress; }
 
 		// Called after a schedule
 		Wt::Signal<Wt::WDateTime>& scheduled() { return _sigScheduled; }
@@ -111,36 +89,36 @@ class MediaScanner
 		// Update database (scheduled callback)
 		void scan(boost::system::error_code ec);
 
-		void scanMediaDirectory( const std::filesystem::path& mediaDirectory, bool forceScan, Stats& stats);
+		void scanMediaDirectory( const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats);
 
 		// Helpers
 		void refreshScanSettings();
 
-		void countAllFiles(Stats& stats);
-		void removeMissingTracks(Stats& stats);
+		void countAllFiles(ScanStats& stats);
+		void removeMissingTracks(ScanStats& stats);
 		void removeOrphanEntries();
-		void checkDuplicatedAudioFiles(Stats& stats);
-		void scanAudioFile(const std::filesystem::path& file, bool forceScan, Stats& stats);
-		Database::IdType doScanAudioFile(const std::filesystem::path& file, Stats& stats);
-		void notifyInProgressIfNeeded(Stats& stats);
-		void notifyInProgress(Stats& stats);
+		void checkDuplicatedAudioFiles(ScanStats& stats);
+		void scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanStats& stats);
+		Database::IdType doScanAudioFile(const std::filesystem::path& file, ScanStats& stats);
+		void notifyInProgressIfNeeded(const ScanStats& stats);
+		void notifyInProgress(const ScanStats& stats);
 
-		bool			_running {false};
-		Wt::WIOService		_ioService;
-		boost::asio::system_timer _scheduleTimer {_ioService};
-		Wt::Signal<Stats>	_sigScanComplete;
-		Wt::Signal<Stats>	_sigScanInProgress;
-		std::chrono::system_clock::time_point _lastScanInProgressEmit {};
-		Wt::Signal<Wt::WDateTime> _sigScheduled;
+		bool					_running {false};
+		Wt::WIOService				_ioService;
+		boost::asio::system_timer		_scheduleTimer {_ioService};
+		Wt::Signal<>				_sigScanComplete;
+		Wt::Signal<ScanProgressStats>		_sigScanInProgress;
+		std::chrono::system_clock::time_point	_lastScanInProgressEmit {};
+		Wt::Signal<Wt::WDateTime>		_sigScheduled;
 		std::unique_ptr<Database::Session>	_dbSession;
-		MetaData::TagLibParser 	_metadataParser;
-		std::vector<MediaScannerAddon*> _addons;
+		MetaData::TagLibParser 			_metadataParser;
+		std::vector<MediaScannerAddon*> 	_addons;
 
-		std::mutex		_statusMutex;
-		State			_curState {State::NotScheduled};
-		std::optional<Stats>	_inProgressStats;
-		std::optional<Stats> 	_lastScanStats;
-		Wt::WDateTime		_nextScheduledScan;
+		std::mutex				_statusMutex;
+		State					_curState {State::NotScheduled};
+		std::optional<ScanStats> 		_lastCompleteScanStats;
+		std::optional<ScanProgressStats> 	_inProgressScanStats;
+		Wt::WDateTime				_nextScheduledScan;
 
 		// Current scan settings
 		std::size_t _scanVersion {};

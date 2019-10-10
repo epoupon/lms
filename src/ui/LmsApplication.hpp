@@ -56,8 +56,8 @@ struct Events
 	Wt::Signal<> trackUnloaded;
 
 	// Database events
-	Wt::Signal<Scanner::MediaScanner::Stats> dbScanned;
-	Wt::Signal<Scanner::MediaScanner::Stats> dbScanInProgress;
+	Wt::Signal<> dbScanned;
+	Wt::Signal<Scanner::ScanProgressStats> dbScanInProgress;
 	Wt::Signal<Wt::WDateTime> dbScanScheduled;
 };
 

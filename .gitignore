@@ -1,4 +1,5 @@
 *.sw?
+*.*~
 *.in
 build/
 Makefile.in

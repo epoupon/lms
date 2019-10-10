@@ -19,14 +19,10 @@
 
 #include "DatabaseSettingsView.hpp"
 
-#include <ostream>
-#include <iomanip>
-
 #include <Wt/WComboBox.h>
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
-#include <Wt/WServer.h>
 #include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
 
@@ -38,6 +34,7 @@
 
 #include "common/Validators.hpp"
 #include "common/ValueStringModel.hpp"
+#include "DatabaseStatus.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
@@ -177,85 +174,6 @@ const Wt::WFormModel::Field DatabaseSettingsModel::UpdatePeriodField		= "update-
 const Wt::WFormModel::Field DatabaseSettingsModel::UpdateStartTimeField		= "update-start-time";
 const Wt::WFormModel::Field DatabaseSettingsModel::SimilarityEngineTypeField	= "similarity-engine-type";
 const Wt::WFormModel::Field DatabaseSettingsModel::TagsField			= "tags";
-
-static
-std::string durationToString(const Wt::WDateTime& begin, const Wt::WDateTime& end)
-{
-	auto secs {std::chrono::duration_cast<std::chrono::seconds>(end.toTimePoint() - begin.toTimePoint()).count()};
-
-	std::ostringstream oss;
-
-	if (secs >= 3600)
-		oss << secs/3600 << "h";
-	if (secs >= 60)
-		oss << std::setw(2) << std::setfill('0') << (secs % 3600) / 60 << "m";
-	oss << std::setw(2) << std::setfill('0') << (secs % 60) << "s";
-
-	return oss.str();
-}
-
-class DatabaseStatus : public Wt::WTemplate
-{
-	public:
-
-		DatabaseStatus(): WTemplate {Wt::WString::tr("Lms.Admin.Database.Status.template")}
-		{
-			addFunction("tr", &Wt::WTemplate::Functions::tr);
-
-			using namespace Scanner;
-
-			auto onDbEvent = [&]() { refreshContents(); };
-
-			LmsApp->getEvents().dbScanned.connect(this, onDbEvent);
-			LmsApp->getEvents().dbScanInProgress.connect(this, onDbEvent);
-			LmsApp->getEvents().dbScanScheduled.connect(this, onDbEvent);
-
-			refreshContents();
-		}
-
-	private:
-		void refreshContents()
-		{
-			using namespace Scanner;
-
-			MediaScanner::Status status {getService<MediaScanner>()->getStatus()};
-
-			if (status.lastScanStats)
-			{
-				bindString("last-scan", Wt::WString::tr("Lms.Admin.Database.Status.last-scan-status")
-					.arg(status.lastScanStats->totalFiles)
-					.arg(durationToString(status.lastScanStats->startTime, status.lastScanStats->stopTime))
-					.arg(status.lastScanStats->stopTime.toString())
-					.arg(status.lastScanStats->nbErrors())
-					);
-			}
-			else
-			{
-				bindString("last-scan", Wt::WString::tr("Lms.Admin.Database.Status.last-scan-not-available"));
-			}
-
-			switch (status.currentState)
-			{
-				case MediaScanner::State::NotScheduled:
-					bindString("status", Wt::WString::tr("Lms.Admin.Database.Status.status-not-scheduled"));
-					break;
-				case MediaScanner::State::Scheduled:
-					bindString("status", Wt::WString::tr("Lms.Admin.Database.Status.status-scheduled")
-							.arg(status.nextScheduledScan.toString()));
-					break;
-				case MediaScanner::State::InProgress:
-				{
-					std::ostringstream oss;
-					bindString("status", Wt::WString::tr("Lms.Admin.Database.Status.status-in-progress")
-							.arg(status.inProgressStats->nbFiles())
-							.arg(status.inProgressStats->totalFiles)
-							.arg(static_cast<int>(status.inProgressStats->nbFiles() / static_cast<float>(status.inProgressStats->totalFiles ? status.inProgressStats->totalFiles : 1) * 100)));
-				}
-					break;
-			}
-		}
-	private:
-};
 
 DatabaseSettingsView::DatabaseSettingsView()
 {
