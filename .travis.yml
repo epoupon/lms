@@ -22,7 +22,7 @@ before_install:
 - git checkout 4.1.0
 - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr && sudo make install
 - popd
-script: autoreconf -vfi && CXXFLAGS="-Wall -Wextra -Werror" ./configure && make distcheck
+script: autoreconf -vfi && CXXFLAGS="-Wall -Wextra -Werror" ./configure --enable-tools && make distcheck
 env:
   global:
     - MAKEFLAGS="-j 2"
