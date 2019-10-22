@@ -63,8 +63,7 @@ std::vector<Cluster::pointer>
 Cluster::getAllOrphans(Session& session)
 {
 	session.checkSharedLocked();
-
-	Wt::Dbo::collection<Cluster::pointer> res {session.getDboSession().query<Cluster::pointer>("SELECT DISTINCT c FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track t INNER JOIN track_cluster t_c ON t.id = t_c.track_id)")};
+	Wt::Dbo::collection<Cluster::pointer> res {session.getDboSession().query<Cluster::pointer>("SELECT DISTINCT c FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track_cluster t_c WHERE t_c.cluster_id = c.id)")};
 
 	return std::vector<Cluster::pointer>(res.begin(), res.end());
 }
@@ -84,15 +83,16 @@ Cluster::addTrack(Wt::Dbo::ptr<Track> track)
 }
 
 std::vector<Wt::Dbo::ptr<Track>>
-Cluster::getTracks(int offset, int limit) const
+Cluster::getTracks(std::optional<std::size_t> offset, std::optional<std::size_t> limit) const
 {
 	assert(session());
 	assert(IdIsValid(self()->id()));
 
-	Wt::Dbo::collection<Track::pointer> res = session()->query<Track::pointer>("SELECT t FROM track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
-						.where("c.id = ?").bind(self()->id())
-						.offset(offset)
-						.limit(limit);
+	Wt::Dbo::collection<Track::pointer> res
+		{session()->query<Track::pointer>("SELECT t FROM track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+			.where("c.id = ?").bind(self()->id())
+			.offset(offset ? static_cast<int>(*offset) : -1)
+			.limit(limit ? static_cast<int>(*limit) : -1)};
 
 	return std::vector<Wt::Dbo::ptr<Track>>(res.begin(), res.end());
 }

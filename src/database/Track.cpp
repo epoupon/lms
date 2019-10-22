@@ -248,9 +248,47 @@ Track::getByFilter(Session& session,
 }
 
 std::vector<Track::pointer>
-Track::getByFilter(Session& session,
+Track::getSimilarTracks(Session& session,
+				const std::set<IdType>& tracks,
+				std::optional<std::size_t> offset,
+				std::optional<std::size_t> size)
+{
+	assert(!tracks.empty());
+	session.checkSharedLocked();
+
+	std::ostringstream oss;
+	for (std::size_t i {}; i < tracks.size(); ++i)
+	{
+		if (!oss.str().empty())
+			oss << ", ";
+		oss << "?";
+	}
+
+	Wt::Dbo::Query<pointer> query {session.getDboSession().query<pointer>(
+			"SELECT t FROM track t"
+			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
+					" AND t_c.cluster_id IN (SELECT c.id FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id WHERE t_c.track_id IN (" + oss.str() + "))"
+					" AND t.id NOT IN (" + oss.str() + ")")
+		.groupBy("t.id")
+		.orderBy("COUNT(*) DESC")
+		.limit(size ? static_cast<int>(*size) : -1)
+		.offset(offset ? static_cast<int>(*offset) : -1)};
+
+	for (IdType trackId : tracks)
+		query.bind(trackId );
+
+	for (IdType trackId : tracks)
+		query.bind(trackId );
+
+	Wt::Dbo::collection<pointer> res = query;
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
+std::vector<Track::pointer>
+Track::getByClusters(Session& session,
 			const std::set<IdType>& clusters)
 {
+	assert(!clusters.empty());
 	session.checkSharedLocked();
 
 	bool moreResults;

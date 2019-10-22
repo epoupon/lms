@@ -23,6 +23,7 @@
 #include "cluster/SimilarityClusterSearcher.hpp"
 
 #include "database/SimilaritySettings.hpp"
+#include "database/TrackList.hpp"
 
 namespace Similarity {
 
@@ -35,6 +36,36 @@ Database::SimilaritySettings::EngineType getEngineType(Database::Session& dbSess
 {
 	auto transaction {dbSession.createSharedTransaction()};
 	return Database::SimilaritySettings::get(dbSession)->getEngineType();
+}
+
+std::vector<Database::IdType>
+Searcher::getSimilarTracksFromTrackList(Database::Session& session, Database::IdType trackListId, std::size_t maxCount)
+{
+	auto engineType {getEngineType(session)};
+	auto somSearcher {_somAddon.getSearcher()};
+
+	std::set<Database::IdType> trackIds;
+	{
+		auto transaction {session.createSharedTransaction()};
+		Database::TrackList::pointer trackList {Database::TrackList::getById(session, trackListId)};
+		if (trackList)
+		{
+			const std::vector<Database::IdType> orderedTrackIds {trackList->getTrackIds()};
+			trackIds = std::set<Database::IdType> {std::cbegin(orderedTrackIds), std::cend(orderedTrackIds)};
+		}
+	}
+
+	if (trackIds.empty())
+		return {};
+
+	if (engineType == Database::SimilaritySettings::EngineType::Features
+			&& somSearcher
+			&& std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return somSearcher->isTrackClassified(trackId); } ))
+	{
+		return somSearcher->getSimilarTracks(trackIds, maxCount);
+	}
+	else
+		return ClusterSearcher::getSimilarTracksFromTrackList(session, trackListId, maxCount);
 }
 
 std::vector<Database::IdType>

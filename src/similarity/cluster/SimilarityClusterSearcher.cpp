@@ -27,71 +27,42 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackList.hpp"
 #include "utils/Utils.hpp"
 
 namespace Similarity {
 namespace ClusterSearcher {
-
-static
-std::vector<Database::IdType>
-getSimilarTracksLocked(Database::Session& dbSession, const std::set<Database::IdType>& trackIds, std::size_t maxCount)
-{
-	std::vector<Database::IdType> clusterIds;
-	for (auto trackId : trackIds)
-	{
-		auto track {Database::Track::getById(dbSession, trackId)};
-		if (!track)
-			continue;
-
-		auto clusters = track->getClusters();
-		if (clusters.empty())
-			continue;
-
-		for (const auto& cluster : clusters)
-			clusterIds.push_back(cluster.id());
-	}
-
-	std::vector<Database::IdType> sortedClusterIds;
-	uniqueAndSortedByOccurence(clusterIds.begin(), clusterIds.end(), std::back_inserter(sortedClusterIds));
-
-	std::vector<Database::IdType> res;
-	for (auto clusterId : clusterIds)
-	{
-		auto cluster {Database::Cluster::getById(dbSession, clusterId)};
-		if (!cluster)
-			continue;
-
-		std::set<Database::IdType> clusterTrackIds = cluster->getTrackIds();
-
-		std::set<Database::IdType> candidateTrackIds;
-		std::set_difference(clusterTrackIds.begin(), clusterTrackIds.end(),
-				trackIds.begin(), trackIds.end(),
-				std::inserter(candidateTrackIds, candidateTrackIds.end()));
-
-		if (candidateTrackIds.empty())
-			continue;
-
-		for (auto trackId : candidateTrackIds)
-		{
-			if (res.size() >= maxCount)
-				break;
-
-			res.push_back(trackId);
-		}
-
-		if (res.size() >= maxCount)
-			break;
-	}
-
-	return res;
-}
 
 std::vector<Database::IdType>
 getSimilarTracks(Database::Session& dbSession, const std::set<Database::IdType>& trackIds, std::size_t maxCount)
 {
 	auto transaction {dbSession.createSharedTransaction()};
 
-	return getSimilarTracksLocked(dbSession, trackIds, maxCount);
+	auto tracks {Database::Track::getSimilarTracks(dbSession, trackIds, 0, maxCount)};
+	std::vector<Database::IdType> res;
+	res.reserve(tracks.size());
+
+	std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const auto& track) { return track.id(); });
+	return res;
+}
+
+std::vector<Database::IdType>
+getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount)
+{
+	std::vector<Database::IdType> res;
+
+	auto transaction {session.createSharedTransaction()};
+
+	const Database::TrackList::pointer trackList {Database::TrackList::getById(session, tracklistId)};
+	if (!trackList)
+		return res;
+
+	const std::vector<Database::Track::pointer> tracks {trackList->getSimilarTracks(0, maxCount)};
+	res.reserve(tracks.size());
+	std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res),
+			[](const Database::Track::pointer& track) { return track.id(); });
+
+	return res;
 }
 
 std::vector<Database::IdType>
@@ -105,31 +76,9 @@ getSimilarReleases(Database::Session& dbSession, Database::IdType releaseId, std
 	if (!release)
 		return res;
 
-	auto releaseTracks = release->getTracks();
-	std::set<Database::IdType> releaseTrackIds;
-
-	for (const auto& releaseTrack : releaseTracks)
-		releaseTrackIds.insert(releaseTrack.id());
-
-	auto trackIds {getSimilarTracksLocked(dbSession, releaseTrackIds, maxCount * 5)};
-	for (auto trackId : trackIds)
-	{
-		auto track {Database::Track::getById(dbSession, trackId)};
-		if (!track)
-			continue;
-
-		auto trackRelease = track->getRelease();
-		if (!trackRelease || trackRelease.id() == releaseId)
-			continue;
-
-		if (std::find(res.begin(), res.end(), trackRelease.id()) != res.end())
-			continue;
-
-		res.push_back(trackRelease.id());
-
-		if (res.size() == maxCount)
-			break;
-	}
+	const auto releases {release->getSimilarReleases(0, maxCount)};
+	res.reserve(releases.size());
+	std::transform(std::cbegin(releases), std::cend(releases), std::back_inserter(res), [](const auto& release) { return release.id(); });
 
 	return res;
 }
@@ -145,36 +94,9 @@ getSimilarArtists(Database::Session& dbSession, Database::IdType artistId, std::
 	if (!artist)
 		return res;
 
-	auto artistTracks {artist->getTracks()};
-	std::set<Database::IdType> artistTrackIds;
-
-	for (const auto& artistTrack : artistTracks)
-		artistTrackIds.insert(artistTrack.id());
-
-	auto trackIds {getSimilarTracksLocked(dbSession, artistTrackIds, maxCount * 5)};
-	for (auto trackId : trackIds)
-	{
-		auto track {Database::Track::getById(dbSession, trackId)};
-		if (!track)
-			continue;
-
-		for (const auto& trackArtist : track->getArtists())
-		{
-			if (!trackArtist || trackArtist.id() == artistId)
-				continue;
-
-			if (std::find(res.begin(), res.end(), trackArtist.id()) != res.end())
-				continue;
-
-			res.push_back(trackArtist.id());
-
-			if (res.size() == maxCount)
-				break;
-		}
-
-		if (res.size() == maxCount)
-			break;
-	}
+	const auto artists {artist->getSimilarArtists(0, maxCount)};
+	res.reserve(artists.size());
+	std::transform(std::cbegin(artists), std::cend(artists), std::back_inserter(res), [](const auto& artist) { return artist.id(); });
 
 	return res;
 }

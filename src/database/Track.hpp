@@ -55,11 +55,15 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static pointer getByPath(Session& session, const std::filesystem::path& p);
 		static pointer getById(Session& session, IdType id);
 		static pointer getByMBID(Session& session, const std::string& MBID);
-		static std::vector<pointer>	getByFilter(Session& session,
+		static std::vector<pointer>	getSimilarTracks(Session& session,
+							const std::set<IdType>& trackIds,
+							std::optional<std::size_t> offset = {},
+							std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getByClusters(Session& session,
 							const std::set<IdType>& clusters);           // tracks that belong to these clusters
 		static std::vector<pointer>	getByFilter(Session& session,
-							const std::set<IdType>& clusters,            // tracks that belong to these clusters
-							const std::vector<std::string>& keywords,    // name must match all of these keywords
+							const std::set<IdType>& clusters,            // if non empty, tracks that belong to these clusters
+							const std::vector<std::string>& keywords,    // if non empty, name must match all of these keywords
 							std::optional<std::size_t> offset,
 							std::optional<std::size_t> size,
 							bool& moreExpected);

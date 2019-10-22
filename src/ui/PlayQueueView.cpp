@@ -22,6 +22,7 @@
 #include <Wt/WText.h>
 #include <Wt/WText.h>
 
+#include "database/Cluster.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
@@ -411,19 +412,7 @@ PlayQueue::addSome()
 void
 PlayQueue::enqueueRadioTrack()
 {
-	std::vector<Database::IdType> trackIds;
-
-	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-		Database::TrackList::pointer tracklist {getTrackList()};
-
-		trackIds = getTrackList()->getTrackIds();
-	}
-
-	if (trackIds.empty())
-		return;
-
-	const std::vector<Database::IdType> trackToAddIds {getService<Similarity::Searcher>()->getSimilarTracks(LmsApp->getDbSession(), std::set<Database::IdType>(std::cbegin(trackIds), std::cend(trackIds)), 1)};
+	const std::vector<Database::IdType> trackToAddIds {getService<Similarity::Searcher>()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 1)};
 	enqueueTracks(trackToAddIds);
 }
 

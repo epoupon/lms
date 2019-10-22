@@ -58,6 +58,7 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		// Search utility
 		static pointer	get(Session& session, const std::string& name, Type type, Wt::Dbo::ptr<User> user);
 		static pointer	getById(Session& session, IdType tracklistId);
+		static std::vector<pointer> getAll(Session& session);
 		static std::vector<pointer> getAll(Session& session, Wt::Dbo::ptr<User> user);
 		static std::vector<pointer> getAll(Session& session, Wt::Dbo::ptr<User> user, Type type);
 
@@ -89,6 +90,9 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		std::vector<Wt::Dbo::ptr<Cluster>> getClusters() const;
 
 		bool hasTrack(IdType trackId) const;
+
+		// Ordered from most clusters in common
+		std::vector<Wt::Dbo::ptr<Track>> getSimilarTracks(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
 
 		template<class Action>
 		void persist(Action& a)

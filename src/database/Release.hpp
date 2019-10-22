@@ -57,10 +57,10 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
 		static std::vector<pointer>	getByYear(Session& session, int yearFrom, int yearTo, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
 
-		static std::vector<pointer>	getByFilter(Session& session, const std::set<IdType>& clusters);
+		static std::vector<pointer>	getByClusters(Session& session, const std::set<IdType>& clusters);
 		static std::vector<pointer>	getByFilter(Session& session,
-							const std::set<IdType>& clusters,           // at least one track that belongs to these clusters
-							const std::vector<std::string>& keywords,        // name must match all of these keywords
+							const std::set<IdType>& clusters,		// if non empty, at least one release that belongs to these clusters
+							const std::vector<std::string>& keywords,	// if non empty, name must match all of these keywords
 							std::optional<std::size_t> offset,
 							std::optional<std::size_t> size,
 							bool& moreExpected);
@@ -96,6 +96,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		std::vector<Wt::Dbo::ptr<Artist> > getArtists(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;
 		std::vector<Wt::Dbo::ptr<Artist> > getReleaseArtists() const { return getArtists(TrackArtistLink::Type::ReleaseArtist); }
 		bool hasVariousArtists() const;
+		std::vector<pointer>		getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
 
 		void setMBID(std::string mbid) { _MBID = mbid; }
 

@@ -39,6 +39,7 @@ class Searcher
 		Searcher(FeaturesScannerAddon& somAddon);
 
 		// Closest results first
+		std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount);
 		std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::set<Database::IdType>& tracksId, std::size_t maxCount);
 		std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount);
 		std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount);

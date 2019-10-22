@@ -206,10 +206,14 @@ getQuery(Session& session,
 }
 
 std::vector<Release::pointer>
-Release::getByFilter(Session& session, const std::set<IdType>& clusterIds)
+Release::getByClusters(Session& session, const std::set<IdType>& clusters)
 {
+	assert(!clusters.empty());
+
+	session.checkSharedLocked();
+
 	bool moreResults;
-	return getByFilter(session, clusterIds, {}, {}, {}, moreResults);
+	return getByFilter(session, clusters, {}, {}, {}, moreResults);
 }
 
 std::vector<Release::pointer>
@@ -220,6 +224,8 @@ Release::getByFilter(Session& session,
 		std::optional<std::size_t> size,
 		bool& moreResults)
 {
+	session.checkSharedLocked();
+
 	Wt::Dbo::collection<pointer> collection = getQuery(session, clusterIds, keywords)
 		.limit(size ? static_cast<int>(*size) + 1 : -1)
 		.offset(offset ? static_cast<int>(*offset) : -1);
@@ -330,6 +336,32 @@ Release::getArtists(TrackArtistLink::Type linkType) const
 		.where("t_a_l.type = ?").bind(linkType);
 
 	return std::vector<Wt::Dbo::ptr<Artist>>(res.begin(), res.end());
+}
+
+std::vector<Release::pointer>
+Release::getSimilarReleases(std::optional<std::size_t> offset, std::optional<std::size_t> count) const
+{
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	Wt::Dbo::Query<pointer> query {session()->query<pointer>(
+			"SELECT r FROM release r"
+			" INNER JOIN track t ON t.release_id = r.id"
+			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
+				" WHERE "
+					" t_c.cluster_id IN (SELECT c.id from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN release r ON r.id = t.release_id WHERE r.id = ?)"
+					" AND r.id <> ?"
+				)
+		.bind(self()->id())
+		.bind(self()->id())
+		.groupBy("r.id")
+		.orderBy("COUNT(*) DESC")
+		.limit(count ? static_cast<int>(*count) : -1)
+		.offset(offset ? static_cast<int>(*offset) : -1)};
+
+	Wt::Dbo::collection<pointer> res = query;
+	return std::vector<pointer>(res.begin(), res.end());
 }
 
 bool

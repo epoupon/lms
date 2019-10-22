@@ -140,8 +140,10 @@ getQuery(Session& session,
 }
 
 std::vector<Artist::pointer>
-Artist::getByFilter(Session& session, const std::set<IdType>& clusters)
+Artist::getByClusters(Session& session, const std::set<IdType>& clusters)
 {
+	assert(!clusters.empty());
+
 	session.checkSharedLocked();
 	bool more;
 	return getByFilter(session, clusters, {}, {}, {}, more);
@@ -294,6 +296,33 @@ Artist::getRandomTracks(std::optional<std::size_t> count) const
 		.limit(count ? static_cast<int>(*count) : -1)};
 
 	return std::vector<Wt::Dbo::ptr<Track>>(tracks.begin(), tracks.end());
+}
+
+std::vector<Wt::Dbo::ptr<Artist>>
+Artist::getSimilarArtists(std::optional<std::size_t> offset, std::optional<std::size_t> count) const
+{
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	Wt::Dbo::Query<pointer> query {session()->query<pointer>(
+			"SELECT a FROM artist a"
+			" INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id"
+			" INNER JOIN track t ON t.id = t_a_l.track_id"
+			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
+				" WHERE "
+					" t_c.cluster_id IN (SELECT c.id from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id WHERE a.id = ?)"
+					" AND a.id <> ?"
+				)
+		.bind(self()->id())
+		.bind(self()->id())
+		.groupBy("a.id")
+		.orderBy("COUNT(*) DESC")
+		.limit(count ? static_cast<int>(*count) : -1)
+		.offset(offset ? static_cast<int>(*offset) : -1)};
+
+	Wt::Dbo::collection<pointer> res = query;
+	return std::vector<pointer>(res.begin(), res.end());
 }
 
 std::vector<std::vector<Wt::Dbo::ptr<Cluster>>>

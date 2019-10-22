@@ -55,7 +55,7 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 		const std::string& getName() const		{ return _name; }
 		Wt::Dbo::ptr<ClusterType> getType() const	{ return _clusterType; }
 		std::size_t getTracksCount() const		{ return _tracks.size(); }
-		std::vector<Wt::Dbo::ptr<Track>> getTracks(int offset, int limit) const;
+		std::vector<Wt::Dbo::ptr<Track>> getTracks(std::optional<std::size_t> offset = {}, std::optional<std::size_t> limit = {}) const;
 		std::set<IdType> getTrackIds() const;
 		std::size_t getReleasesCount() const;
 

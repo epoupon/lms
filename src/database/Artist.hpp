@@ -52,11 +52,11 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static pointer			getByMBID(Session& session, const std::string& MBID);
 		static pointer			getById(Session& session, IdType id);
 		static std::vector<pointer>	getByName(Session& session, const std::string& name);
-		static std::vector<pointer> 	getByFilter(Session& session,
+		static std::vector<pointer> 	getByClusters(Session& session,
 								const std::set<IdType>& clusters);		// at least one track that belongs to  these clusters
 		static std::vector<pointer> 	getByFilter(Session& session,
-								const std::set<IdType>& clusters,		// at least one track that belongs to  these clusters
-								const std::vector<std::string>& keywords,	// name must match all of these keywords
+								const std::set<IdType>& clusters,		// if non empty, at least one artist that belongs to these clusters
+								const std::vector<std::string>& keywords,	// if non empty, name must match all of these keywords
 								std::optional<std::size_t> offset,
 								std::optional<std::size_t> size,
 								bool& moreExpected);
@@ -69,11 +69,12 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		const std::string& getName(void) const { return _name; }
 		const std::string& getMBID(void) const { return _MBID; }
 
-		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = std::set<IdType>()) const;
+		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
 		std::size_t				getReleaseCount() const;
 		std::vector<Wt::Dbo::ptr<Track>>	getTracks(std::optional<TrackArtistLink::Type> linkType = {}) const;
 		std::vector<Wt::Dbo::ptr<Track>>	getTracksWithRelease(std::optional<TrackArtistLink::Type> linkType = {}) const;
 		std::vector<Wt::Dbo::ptr<Track>>	getRandomTracks(std::optional<std::size_t> count) const;
+		std::vector<pointer>			getSimilarArtists(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
 
 		// Get the cluster of the tracks made by this artist
 		// Each clusters are grouped by cluster type, sorted by the number of occurence

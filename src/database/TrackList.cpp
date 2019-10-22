@@ -66,6 +66,15 @@ TrackList::get(Session& session, const std::string& name, Type type, Wt::Dbo::pt
 }
 
 std::vector<TrackList::pointer>
+TrackList::getAll(Session& session)
+{
+	session.checkSharedLocked();
+	Wt::Dbo::collection<TrackList::pointer> res = session.getDboSession().find<TrackList>();
+
+	return std::vector<TrackList::pointer>(res.begin(), res.end());
+}
+
+std::vector<TrackList::pointer>
 TrackList::getAll(Session& session, Wt::Dbo::ptr<User> user)
 {
 	session.checkSharedLocked();
@@ -174,6 +183,30 @@ TrackList::hasTrack(IdType trackId) const
 		.where("p.id = ?").bind(self()->id());
 
 	return res.size() > 0;
+}
+
+std::vector<Track::pointer>
+TrackList::getSimilarTracks(std::optional<std::size_t> offset, std::optional<std::size_t> size) const
+{
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
+	Wt::Dbo::Query<Track::pointer> query {session()->query<Track::pointer>(
+			"SELECT t FROM track t"
+			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
+				" WHERE "
+					" (t_c.cluster_id IN (SELECT c.id from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN tracklist_entry p_e ON p_e.track_id = t.id INNER JOIN tracklist p ON p.id = p_e.tracklist_id WHERE p.id = ?)"
+					" AND t.id NOT IN (SELECT tracklist_t.id FROM track tracklist_t INNER JOIN tracklist_entry t_e ON t_e.track_id = tracklist_t.id WHERE t_e.tracklist_id = ?))"
+				)
+		.bind(self()->id())
+		.bind(self()->id())
+		.groupBy("t.id")
+		.orderBy("COUNT(*) DESC")
+		.limit(size ? static_cast<int>(*size) : -1)
+		.offset(offset ? static_cast<int>(*offset) : -1)};
+
+	Wt::Dbo::collection<Track::pointer> tracks = query;
+	return std::vector<Track::pointer>(tracks.begin(), tracks.end());
 }
 
 std::vector<IdType>
