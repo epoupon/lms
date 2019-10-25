@@ -76,13 +76,15 @@ Please refer to [Deployment](#deployment) for further configuration options.
 __Note__: this installation process and the default values of the configuration files have been written for _Debian Buster_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
 
 #### Build dependencies
-
-__Note__: a C++17 compiler is needed to compile _LMS_
+__Notes__:
+* a C++17 compiler is needed
+* ffmpeg version 4 minimum is required
 ```sh
 apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavutil-dev libavformat-dev libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
 ```
 
 You also need _Wt4_, that is not packaged yet on _Debian_. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).
+No optional requirement is required, except openSSL if you plan not to deploy behind a reverse proxy
 
 #### Build
 
