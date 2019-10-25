@@ -1,6 +1,6 @@
 AC_PREREQ(2.59)
 AC_INIT(lms, 3.1.0, test@test)
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 AC_CONFIG_HEADER(src/config/config.h)
 
 AC_LANG_CPLUSPLUS
