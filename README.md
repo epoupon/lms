@@ -83,8 +83,8 @@ __Notes__:
 apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavutil-dev libavformat-dev libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
 ```
 
-You also need _Wt4_, that is not packaged yet on _Debian_. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).
-No optional requirement is required, except openSSL if you plan not to deploy behind a reverse proxy
+You also need _Wt4_, which is not packaged yet on _Debian_. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).</br>
+No optional requirement is needed, except openSSL if you plan not to deploy behind a reverse proxy (which is not recommended).
 
 #### Build
 
