@@ -28,31 +28,6 @@
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
-std::filesystem::path searchExecPath(std::string filename)
-{
-	std::string path;
-
-	path = ::getenv("PATH");
-	if (path.empty())
-		throw LmsException("Environment variable PATH not found");
-
-	std::string result;
-	using tokenizer = boost::tokenizer<boost::char_separator<char>>;
-	boost::char_separator<char> sep(":");
-	tokenizer tok(path, sep);
-	for (tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
-	{
-		std::filesystem::path p = *it;
-		p /= filename;
-		if (!::access(p.c_str(), X_OK))
-		{
-			result = p.string();
-			break;
-		}
-	}
-	return result;
-}
-
 void computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& crc)
 {
 	using crc_type = boost::crc_32_type;

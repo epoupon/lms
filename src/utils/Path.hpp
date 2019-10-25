@@ -23,8 +23,6 @@
 #include <string>
 #include <vector>
 
-std::filesystem::path searchExecPath(std::string filename);
-
 void computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& checksum);
 
 // Make sure the given path is a directory

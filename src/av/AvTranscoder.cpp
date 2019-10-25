@@ -22,7 +22,9 @@
 #include <atomic>
 #include <mutex>
 
+#include "main/Service.hpp"
 #include "AvInfo.hpp"
+#include "utils/Config.hpp"
 #include "utils/Path.hpp"
 #include "utils/Logger.hpp"
 
@@ -30,33 +32,15 @@ namespace Av {
 
 #define LMS_LOG_TRANSCODE(sev)	LMS_LOG(TRANSCODE, sev) << "[" << _id << "] - "
 
-// TODO, parametrize?
-static const std::vector<std::string> execNames =
-{
-	"avconv",
-	"ffmpeg",
-};
-
-static std::filesystem::path	avConvPath = std::filesystem::path();
-static std::atomic<size_t>	globalId = {0};
+static std::atomic<size_t>	globalId {};
+static std::filesystem::path	ffmpegPath;
 
 void
 Transcoder::init()
 {
-	for (const std::string& execName : execNames)
-	{
-		const std::filesystem::path p {searchExecPath(execName)};
-		if (!p.empty())
-		{
-			avConvPath = p;
-			break;
-		}
-	}
-
-	if (!avConvPath.empty())
-		LMS_LOG(TRANSCODE, INFO) << "Using transcoder " << avConvPath.string();
-	else
-		throw AvException("Cannot find any transcoder binary!");
+	ffmpegPath = getService<Config>()->getPath("ffmpeg-file", "/usr/bin/ffmpeg");
+	if (!std::filesystem::exists(ffmpegPath))
+		throw LmsException {"File '" + ffmpegPath.string() + "' does not exist!"};
 }
 
 Transcoder::Transcoder(const std::filesystem::path& filePath, const TranscodeParameters& parameters)
@@ -79,7 +63,7 @@ Transcoder::start()
 
 	std::vector<std::string> args;
 
-	args.emplace_back(avConvPath.string());
+	args.emplace_back(ffmpegPath.string());
 
 	// Make sure we do not produce anything in the stderr output
 	// in order not to block the whole forked process
@@ -190,7 +174,7 @@ Transcoder::start()
 		_child = std::make_shared<redi::ipstream>();
 
 		// Caution: stdin must have been closed before
-		_child->open(avConvPath.string(), args);
+		_child->open(ffmpegPath.string(), args);
 		if (!_child->is_open())
 		{
 			LMS_LOG_TRANSCODE(DEBUG) << "Exec failed!";
