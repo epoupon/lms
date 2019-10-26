@@ -30,17 +30,9 @@
 namespace {
 
 bool
-isFileSupported(const std::filesystem::path& file, const std::vector<std::filesystem::path> extensions)
+isFileSupported(const std::filesystem::path& file, const std::vector<std::filesystem::path>& extensions)
 {
-	std::filesystem::path fileExtension = file.extension();
-
-	for (auto extension : extensions)
-	{
-		if (extension == fileExtension)
-			return true;
-	}
-
-	return false;
+	return (std::find(std::cbegin(extensions), std::cend(extensions), file.extension()) != std::cend(extensions));
 }
 
 } // namespace
@@ -130,7 +122,7 @@ Grabber::getCoverPaths(const std::filesystem::path& directoryPath) const
 	std::filesystem::directory_iterator itEnd;
 	while (!ec && itPath != itEnd)
 	{
-		std::filesystem::path path = *itPath;
+		const std::filesystem::path path {*itPath};
 		itPath.increment(ec);
 
 		if (!std::filesystem::is_regular_file(path))
@@ -175,6 +167,7 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 	std::optional<Image::Image> cover;
 
 	bool hasCover {};
+	bool isMultiDisc {};
 	std::filesystem::path trackPath;
 
 	{
@@ -185,6 +178,10 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 		{
 			hasCover = track->hasCover();
 			trackPath = track->getPath();
+
+			auto release {track->getRelease()};
+			if (release && release->getTotalDiscNumber() > 1)
+				isMultiDisc = true;
 		}
 	}
 
@@ -193,6 +190,12 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 
 	if (!cover)
 		cover = getFromDirectory(trackPath.parent_path());
+
+	if (!cover && isMultiDisc)
+	{
+		if (trackPath.parent_path().has_parent_path())
+			cover = getFromDirectory(trackPath.parent_path().parent_path());
+	}
 
 	if (!cover)
 		cover = getDefaultCover(size);

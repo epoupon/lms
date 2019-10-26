@@ -65,13 +65,11 @@ class Grabber
 		std::mutex _mutex;
 		std::map<std::size_t /* size */, Image::Image> _defaultCovers;
 
-		std::vector<std::filesystem::path> _fileExtensions
-			= {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize
+		static inline const std::vector<std::filesystem::path> _fileExtensions {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize
 
-		std::size_t _maxFileSize = 5000000;
+		static inline const std::size_t _maxFileSize {10000000};
 
-		std::vector<std::filesystem::path> _preferredFileNames
-			= {"cover", "front"}; // TODO parametrize
+		static inline const std::vector<std::filesystem::path> _preferredFileNames {"cover", "front"}; // TODO parametrize
 };
 
 } // namespace CoverArt
