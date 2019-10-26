@@ -22,6 +22,7 @@
 #include <taglib/fileref.h>
 #include <taglib/tag.h>
 #include <taglib/tpropertymap.h>
+#include <taglib/asffile.h>
 #include <taglib/mpegfile.h>
 #include <taglib/id3v2tag.h>
 
@@ -177,8 +178,15 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 
 	// Not that good embedded pictures handling
 
+	// WMA
+	if (TagLib::ASF::File *asfFile {dynamic_cast<TagLib::ASF::File*>(f.file())})
+	{
+		const TagLib::ASF::Tag* tag {static_cast<TagLib::ASF::Tag*>(asfFile->tag())};
+		if (tag && tag->attributeListMap().contains("WM/Picture"))
+			track.hasCover = true;
+	}
 	// MP3
-	if (TagLib::MPEG::File *mp3File {dynamic_cast<TagLib::MPEG::File*>(f.file())})
+	else if (TagLib::MPEG::File *mp3File {dynamic_cast<TagLib::MPEG::File*>(f.file())})
 	{
 		if (mp3File->ID3v2Tag())
 		{

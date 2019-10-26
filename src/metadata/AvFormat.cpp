@@ -51,7 +51,7 @@ getAlbum(const MetadataMap& metadataMap)
 
 	res = Album{*album, ""};
 
-	auto albumMBID {findFirstValueOf(metadataMap, {"MUSICBRAINZ ALBUM ID", "MUSICBRAINZ_ALBUMID"})};
+	auto albumMBID {findFirstValueOf(metadataMap, {"MUSICBRAINZ ALBUM ID", "MUSICBRAINZ_ALBUMID", "MUSICBRAINZ/ALBUM ID"})};
 	if (!albumMBID)
 		return res;
 
@@ -72,7 +72,7 @@ getAlbumArtists(const MetadataMap& metadataMap)
 
 	Artist artist {*name, ""};
 
-	auto mbid {findFirstValueOf(metadataMap, {"MUSICBRAINZ ALBUM ARTIST ID"})};
+	auto mbid {findFirstValueOf(metadataMap, {"MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"})};
 	if (mbid)
 		artist.musicBrainzArtistID = *mbid;
 
@@ -97,7 +97,7 @@ getArtists(const MetadataMap& metadataMap)
 
 	std::vector<std::string> artistMBIDs;
 	{
-		auto mbids {findFirstValueOf(metadataMap, {"MUSICBRAINZ ARTIST ID", "MUSICBRAINZ_ARTISTID"})};
+		auto mbids {findFirstValueOf(metadataMap, {"MUSICBRAINZ ARTIST ID", "MUSICBRAINZ_ARTISTID", "MUSICBRAINZ/ARTIST ID"})};
 		if (mbids)
 			artistMBIDs = splitString(*mbids, "/");
 	}
@@ -195,7 +195,8 @@ AvFormat::parse(const std::filesystem::path& p, bool debug)
 			}
 			else if (tag == "MUSICBRAINZ RELEASE TRACK ID"
 					|| tag == "MUSICBRAINZ_RELEASETRACKID"
-					|| tag == "MUSICBRAINZ_TRACKID")
+					|| tag == "MUSICBRAINZ_TRACKID"
+					|| tag == "MUSICBRAINZ/TRACK ID")
 			{
 				track.musicBrainzTrackID = value;
 			}

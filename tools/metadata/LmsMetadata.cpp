@@ -38,12 +38,16 @@ void parse(MetaData::Parser& parser, const std::filesystem::path& file)
 
 	parser.setClusterTypeNames( {"MOOD", "GENRE"} );
 
+	const auto start {std::chrono::steady_clock::now()};
 	std::optional<Track> track {parser.parse(file, true)};
 	if (!track)
 	{
 		std::cerr << "Parsing failed" << std::endl;
 		return;
 	}
+	const auto end {std::chrono::steady_clock::now()};
+
+	std::cout << "Parsing time: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000. << "ms" << std::endl;
 
 	std::cout << "Track metadata:" << std::endl;
 
