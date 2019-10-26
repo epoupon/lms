@@ -130,5 +130,11 @@ ScanSettings::setClusterTypes(Session& session, const std::set<std::string>& clu
 		_scanVersion += 1;
 }
 
+void
+ScanSettings::incScanVersion()
+{
+	_scanVersion += 1;
+}
+
 } // namespace Database
 

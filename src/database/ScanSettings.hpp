@@ -58,7 +58,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
 		void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
 		void setClusterTypes(Session& session, const std::set<std::string>& clusterTypeNames);
-		void setAudioFileExtensions(std::set<std::filesystem::path> fileExtensions);
+		void incScanVersion();
 
 		template<class Action>
 		void persist(Action& a)

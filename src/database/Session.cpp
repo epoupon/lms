@@ -35,7 +35,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	6
+#define LMS_DATABASE_VERSION	7
 
 using Version = std::size_t;
 
@@ -102,6 +102,12 @@ Session::doDatabaseMigrationIfNeeded()
 			LMS_LOG(DB, INFO) << "Migrating database from version 5...";
 			_session.execute("DELETE FROM auth_token"); // format has changed
 			break;
+		case 6:
+			LMS_LOG(DB, INFO) << "Migrating database from version 6...";
+			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+			ScanSettings::get(*this).modify()->incScanVersion();
+			break;
+
 		default:
 			LMS_LOG(DB, ERROR) << "Database version " << version << " cannot be handled using migration";
 			throw LmsException { LMS_DATABASE_VERSION > version  ? outdatedMsg : "Server binary outdated, please upgrade it to handle this database"};
