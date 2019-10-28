@@ -12,8 +12,8 @@
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
 #include "database/TrackFeatures.hpp"
-#include "main/Service.hpp"
 #include "utils/Config.hpp"
+#include "utils/Service.hpp"
 #include "similarity/features/som/DataNormalizer.hpp"
 #include "similarity/features/som/Network.hpp"
 
