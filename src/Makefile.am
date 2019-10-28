@@ -51,7 +51,6 @@ lms_SOURCES = \
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/image/Image.hpp				\
 	$(srcdir)/main/main.cpp					\
-	$(srcdir)/main/Service.hpp				\
 	$(srcdir)/metadata/AvFormat.cpp				\
 	$(srcdir)/metadata/AvFormat.hpp				\
 	$(srcdir)/metadata/MetaData.hpp				\
@@ -149,6 +148,7 @@ lms_SOURCES = \
 	$(srcdir)/utils/NetAddress.hpp				\
 	$(srcdir)/utils/Path.cpp				\
 	$(srcdir)/utils/Path.hpp				\
+	$(srcdir)/utils/Service.hpp				\
 	$(srcdir)/utils/Utils.cpp				\
 	$(srcdir)/utils/Utils.hpp
 
