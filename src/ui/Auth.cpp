@@ -29,8 +29,8 @@
 
 #include "auth/AuthTokenService.hpp"
 #include "auth/PasswordService.hpp"
-#include "main/Service.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Service.hpp"
 
 #include "common/Validators.hpp"
 #include "LmsApplication.hpp"

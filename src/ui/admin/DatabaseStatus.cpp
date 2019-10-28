@@ -26,7 +26,7 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
 
-#include "main/Service.hpp"
+#include "utils/Service.hpp"
 #include "scanner/MediaScanner.hpp"
 #include "LmsApplication.hpp"
 

@@ -22,11 +22,11 @@
 #include <atomic>
 #include <mutex>
 
-#include "main/Service.hpp"
 #include "AvInfo.hpp"
 #include "utils/Config.hpp"
 #include "utils/Path.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Service.hpp"
 
 namespace Av {
 

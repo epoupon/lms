@@ -37,8 +37,8 @@
 #include "database/Release.hpp"
 #include "database/User.hpp"
 #include "explore/Explore.hpp"
-#include "main/Service.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Service.hpp"
 #include "utils/Utils.hpp"
 
 #include "admin/InitWizardView.hpp"

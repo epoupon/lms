@@ -20,8 +20,8 @@
 #include "ArtistInfoView.hpp"
 
 #include "database/Artist.hpp"
-#include "main/Service.hpp"
 #include "similarity/SimilaritySearcher.hpp"
+#include "utils/Service.hpp"
 #include "utils/Utils.hpp"
 
 #include "ArtistLink.hpp"

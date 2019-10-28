@@ -25,9 +25,9 @@
 #include <Wt/WIOService.h>
 #include <Wt/Http/Client.h>
 
-#include "main/Service.hpp"
 #include "utils/Config.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Service.hpp"
 
 
 namespace AcousticBrainz

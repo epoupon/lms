@@ -30,10 +30,10 @@
 
 #include "auth/PasswordService.hpp"
 #include "database/User.hpp"
-#include "main/Service.hpp"
 #include "utils/Config.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Service.hpp"
 #include "utils/Utils.hpp"
 
 #include "common/Validators.hpp"

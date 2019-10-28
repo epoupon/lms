@@ -28,8 +28,8 @@
 
 #include "database/Cluster.hpp"
 #include "database/SimilaritySettings.hpp"
-#include "main/Service.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Service.hpp"
 #include "utils/Utils.hpp"
 
 #include "common/Validators.hpp"

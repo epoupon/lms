@@ -36,7 +36,7 @@
 #include "ui/LmsApplication.hpp"
 #include "utils/Config.hpp"
 #include "utils/Logger.hpp"
-#include "Service.hpp"
+#include "utils/Service.hpp"
 
 std::vector<std::string> generateWtConfig(std::string execPath)
 {

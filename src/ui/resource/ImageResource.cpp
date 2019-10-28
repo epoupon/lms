@@ -24,9 +24,9 @@
 
 #include "cover/CoverArtGrabber.hpp"
 #include "database/Track.hpp"
-#include "main/Service.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Service.hpp"
 #include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"

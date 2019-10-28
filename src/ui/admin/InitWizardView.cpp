@@ -24,9 +24,9 @@
 #include <Wt/WPushButton.h>
 
 #include "auth/PasswordService.hpp"
-#include "main/Service.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Service.hpp"
 
 #include "common/Validators.hpp"
 #include "LmsApplication.hpp"

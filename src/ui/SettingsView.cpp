@@ -19,21 +19,21 @@
 
 #include "SettingsView.hpp"
 
-#include <Wt/WString.h>
-#include <Wt/WPushButton.h>
 #include <Wt/WCheckBox.h>
 #include <Wt/WComboBox.h>
-#include <Wt/WLineEdit.h>
-#include <Wt/WTemplateFormView.h>
-
 #include <Wt/WFormModel.h>
+#include <Wt/WLineEdit.h>
+#include <Wt/WPushButton.h>
+#include <Wt/WString.h>
+#include <Wt/WTemplateFormView.h>
 
 #include "common/Validators.hpp"
 #include "common/ValueStringModel.hpp"
 
 #include "auth/PasswordService.hpp"
-#include "main/Service.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Service.hpp"
+
 #include "LmsApplication.hpp"
 
 namespace UserInterface {

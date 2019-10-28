@@ -22,9 +22,9 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-#include "main/Service.hpp"
 #include "utils/Config.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Service.hpp"
 #include "utils/Utils.hpp"
 
 namespace Similarity {
