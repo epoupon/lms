@@ -76,7 +76,7 @@ ensureDirectory(const std::filesystem::path& dir)
 		return std::filesystem::create_directory(dir);
 }
 
-std::time_t
+Wt::WDateTime
 getLastWriteTime(const std::filesystem::path& file)
 {
 	struct stat sb {};
@@ -84,6 +84,6 @@ getLastWriteTime(const std::filesystem::path& file)
 	if (stat(file.string().c_str(), &sb) == -1)
 		throw LmsException("Failed to get stats on file '" + file.string() + "'" );
 
-	return sb.st_mtime;
+	return Wt::WDateTime::fromTime_t(sb.st_mtime);
 }
 

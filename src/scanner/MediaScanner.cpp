@@ -506,7 +506,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 {
 	notifyInProgressIfNeeded(stats);
 
-	time_t lastWriteTime {};
+	Wt::WDateTime lastWriteTime;
 	try
 	{
 		lastWriteTime = getLastWriteTime(file);
@@ -525,7 +525,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 
 		const Track::pointer track {Track::getByPath(*_dbSession, file)};
 
-		if (track && track->getLastWriteTime().toTime_t() == lastWriteTime
+		if (track && track->getLastWriteTime().toTime_t() == lastWriteTime.toTime_t()
 				&& track->getScanVersion() == _scanVersion)
 		{
 			stats.skips++;
@@ -637,7 +637,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	track.modify()->setScanVersion(_scanVersion);
 	track.modify()->setRelease(release);
 	track.modify()->setClusters(clusters);
-	track.modify()->setLastWriteTime(Wt::WDateTime {std::chrono::system_clock::from_time_t(lastWriteTime)});
+	track.modify()->setLastWriteTime(lastWriteTime);
 	track.modify()->setName(title);
 	track.modify()->setDuration(trackInfo->duration);
 	track.modify()->setAddedTime(Wt::WLocalDateTime::currentServerDateTime().toUTC());

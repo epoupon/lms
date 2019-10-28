@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 
+#include <Wt/WDateTime.h>
+
 void computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& checksum);
 
 // Make sure the given path is a directory
@@ -30,5 +32,5 @@ void computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& chec
 bool ensureDirectory(const std::filesystem::path& dir);
 
 // Get the last write time since Epoch
-std::time_t getLastWriteTime(const std::filesystem::path& dir);
+Wt::WDateTime getLastWriteTime(const std::filesystem::path& dir);
 
