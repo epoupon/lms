@@ -29,3 +29,6 @@ void computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& chec
 // Create it if needed
 bool ensureDirectory(const std::filesystem::path& dir);
 
+// Get the last write time since Epoch
+std::time_t getLastWriteTime(const std::filesystem::path& dir);
+

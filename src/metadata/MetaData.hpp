@@ -24,6 +24,7 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <vector>
 
 namespace MetaData
 {

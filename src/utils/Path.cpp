@@ -19,6 +19,10 @@
 
 #include "Path.hpp"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <array>
 #include <fstream>
 
@@ -28,7 +32,8 @@
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
-void computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& crc)
+void
+computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& crc)
 {
 	using crc_type = boost::crc_32_type;
 	crc_type result;
@@ -62,11 +67,23 @@ void computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& crc)
 	}
 }
 
-bool ensureDirectory(const std::filesystem::path& dir)
+bool
+ensureDirectory(const std::filesystem::path& dir)
 {
 	if (std::filesystem::exists(dir))
 		return std::filesystem::is_directory(dir);
 	else
 		return std::filesystem::create_directory(dir);
+}
+
+std::time_t
+getLastWriteTime(const std::filesystem::path& file)
+{
+	struct stat sb {};
+
+	if (stat(file.string().c_str(), &sb) == -1)
+		throw LmsException("Failed to get stats on file '" + file.string() + "'" );
+
+	return sb.st_mtime;
 }
 

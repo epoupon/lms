@@ -29,6 +29,7 @@
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Track.hpp"
+#include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Path.hpp"
 #include "utils/Utils.hpp"
@@ -505,7 +506,17 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 {
 	notifyInProgressIfNeeded(stats);
 
-	const Wt::WDateTime lastWriteTime {std::filesystem::last_write_time(file)};
+	time_t lastWriteTime {};
+	try
+	{
+		lastWriteTime = getLastWriteTime(file);
+	}
+	catch (LmsException& e)
+	{
+		LMS_LOG(DBUPDATER, ERROR) << e.what();
+		stats.skips++;
+		return;
+	}
 
 	if (!forceScan)
 	{
@@ -514,7 +525,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 
 		const Track::pointer track {Track::getByPath(*_dbSession, file)};
 
-		if (track && track->getLastWriteTime().toTime_t() == lastWriteTime.toTime_t()
+		if (track && track->getLastWriteTime().toTime_t() == lastWriteTime
 				&& track->getScanVersion() == _scanVersion)
 		{
 			stats.skips++;
@@ -626,7 +637,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	track.modify()->setScanVersion(_scanVersion);
 	track.modify()->setRelease(release);
 	track.modify()->setClusters(clusters);
-	track.modify()->setLastWriteTime(lastWriteTime);
+	track.modify()->setLastWriteTime(Wt::WDateTime {std::chrono::system_clock::from_time_t(lastWriteTime)});
 	track.modify()->setName(title);
 	track.modify()->setDuration(trackInfo->duration);
 	track.modify()->setAddedTime(Wt::WLocalDateTime::currentServerDateTime().toUTC());
