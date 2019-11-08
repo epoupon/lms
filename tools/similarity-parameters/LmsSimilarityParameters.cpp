@@ -1,0 +1,49 @@
+
+#include <iostream>
+#include <filesystem>
+#include <string>
+
+#include "database/Db.hpp"
+#include "utils/Config.hpp"
+#include "utils/Service.hpp"
+
+
+int main(int argc, char *argv[])
+{
+	try
+	{
+		std::filesystem::path configFilePath {"/etc/lms.conf"};
+		if (argc >= 2)
+			configFilePath = std::string(argv[1], 0, 256);
+
+		ServiceProvider<Config>::create(configFilePath);
+
+		Database::Db db {getService<Config>()->getPath("working-dir") / "lms.db"};
+		auto session {db.createSession()};
+
+/*		const FeatureSettings
+		{
+			{ "lowlevel.average_loudness",			1 },
+			{ "lowlevel.dynamic_complexity",		1 },
+			{ "lowlevel.spectral_contrast_coeffs.median",	6 },
+			{ "lowlevel.erbbands.median",			40 },
+			{ "tonal.hpcp.median",				36 },
+			{ "lowlevel.melbands.median",			40 },
+			{ "lowlevel.barkbands.median",			27 },
+			{ "lowlevel.mfcc.mean",				13 },
+			{ "lowlevel.gfcc.mean",				13 },
+		};
+
+		const TrackFeaturesMap trackFeaturesMap {getAllTrackFeatures(*session)};
+
+		std::cout << "Found " << trackFeaturesMap.size() << " tracks with features!" << std::endl;*/
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << "Caught exception: " << e.what() << std::endl;
+	}
+
+	return EXIT_SUCCESS;
+}
+
+

@@ -69,6 +69,8 @@ lms_SOURCES = \
 	$(srcdir)/similarity/features/AcousticBrainzUtils.hpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesCache.cpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesCache.hpp	\
+	$(srcdir)/similarity/features/SimilarityFeaturesDefs.cpp	\
+	$(srcdir)/similarity/features/SimilarityFeaturesDefs.hpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesScannerAddon.cpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesScannerAddon.hpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesSearcher.cpp	\

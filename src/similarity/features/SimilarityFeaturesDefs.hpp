@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2019 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,45 +20,27 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
+#include <vector>
 
-#include <Wt/WApplication.h>
-#include <Wt/WLogger.h>
+namespace Similarity {
 
-enum class Severity
+using FeatureName = std::string;
+using FeatureValue = double;
+using FeatureValues = std::vector<FeatureValue>;
+using FeatureValuesMap = std::unordered_map<FeatureName, FeatureValues>;
+
+struct FeatureDef
 {
-	FATAL,
-	ERROR,
-	WARNING,
-	INFO,
-	DEBUG,
+	std::size_t nbDimensions {};
 };
 
-enum class Module
+FeatureDef getFeatureDef(const FeatureName& featureName);
+
+struct FeatureSettings
 {
-	API_SUBSONIC,
-	AUTH,
-	AV,
-	COVER,
-	DB,
-	DBUPDATER,
-	FEATURE,
-	MAIN,
-	METADATA,
-	REMOTE,
-	SERVICE,
-	SIMILARITY,
-	TRANSCODE,
-	UI,
+	double weight {};
 };
+using FeatureSettingsMap = std::unordered_map<FeatureName, FeatureSettings>;
 
-const char* getModuleName(Module mod);
-const char* getSeverityName(Severity sev);
-
-
-TODO class logger
-TODO class log entry
-
-TODO configure logger to redirect to either Wt's logger or to a ostream
-
-#define LMS_LOG(module, level)	Wt::log(getSeverityName(Severity::level)) << Wt::WLogger::sep << "[" << getModuleName(Module::module) << "]" <<  Wt::WLogger::sep
-
+} // namespace Similarity

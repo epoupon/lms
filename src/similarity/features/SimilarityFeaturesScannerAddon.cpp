@@ -29,7 +29,27 @@
 
 namespace Similarity {
 
-namespace {
+static
+FeatureSettingsMap
+getFeatureSettings(Database::Session& session)
+{
+	FeatureSettingsMap res;
+
+	auto transaction {session.createSharedTransaction()};
+
+	for (const auto& feature : Database::SimilaritySettings::get(session)->getFeatures())
+		res[feature->getName()] = {feature->getWeight()};
+
+	return res;
+}
+
+static
+bool
+hasAtLeastOneTrackWithFeatures(Database::Session& session)
+{
+	auto transaction {session.createSharedTransaction()};
+	return !Database::Track::getAllIdsWithFeatures(session).empty();
+}
 
 struct TrackInfo
 {
@@ -37,6 +57,7 @@ struct TrackInfo
 	std::string mbid;
 };
 
+static
 std::vector<TrackInfo>
 getTracksWithMBIDAndMissingFeatures(Database::Session& dbSession)
 {
@@ -50,8 +71,6 @@ getTracksWithMBIDAndMissingFeatures(Database::Session& dbSession)
 
 	return res;
 }
-
-} // namespace
 
 FeaturesScannerAddon::FeaturesScannerAddon(std::unique_ptr<Database::Session> dbSession)
 : _dbSession {std::move(dbSession)}
@@ -125,20 +144,16 @@ FeaturesScannerAddon::updateSearcher()
 {
 	LMS_LOG(SIMILARITY, INFO) << "Updating searcher...";
 
-	std::vector<Database::IdType> trackIds;
-	{
-		auto transaction {_dbSession->createSharedTransaction()};
-		trackIds = Database::Track::getAllIdsWithFeatures(*_dbSession);
-	}
-
-	if (trackIds.empty())
+	if (hasAtLeastOneTrackWithFeatures(*_dbSession))
 	{
 		LMS_LOG(DBUPDATER, INFO) << "No track suitable for features similarity clustering";
 		std::atomic_store(&_searcher, std::shared_ptr<FeaturesSearcher>{});
 		return;
 	}
 
-	auto searcher {std::make_shared<Similarity::FeaturesSearcher>(*_dbSession, [&]() { return _stopRequested; })};
+	const auto features {getFeatureSettings(*_dbSession)};
+
+	auto searcher {std::make_shared<Similarity::FeaturesSearcher>(*_dbSession, features, [&]() { return _stopRequested; })};
 	if (searcher->isValid())
 	{
 		std::atomic_store(&_searcher, searcher);

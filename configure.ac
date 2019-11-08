@@ -80,6 +80,7 @@ AC_CONFIG_FILES([Makefile
 		 test/Makefile
 		 tools/Makefile
 		 tools/similarity/Makefile
+		 tools/similarity-parameters/Makefile
 		 tools/metadata/Makefile])
 
 AC_ARG_ENABLE([tools],

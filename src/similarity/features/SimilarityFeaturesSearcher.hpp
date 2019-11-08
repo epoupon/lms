@@ -21,11 +21,13 @@
 
 #include <map>
 #include <set>
+#include <string>
 
 #include "database/Types.hpp"
 #include "som/DataNormalizer.hpp"
 #include "som/Network.hpp"
 #include "SimilarityFeaturesCache.hpp"
+#include "SimilarityFeaturesDefs.hpp"
 
 namespace Database
 {
@@ -34,15 +36,19 @@ namespace Database
 
 namespace Similarity {
 
+using FeatureWeight = double;
+
 class FeaturesSearcher
 {
 	public:
 
+		using StopRequestedFunction = std::function<bool()>; // return true if stop requested
+
 		// Use cache
-		FeaturesSearcher(Database::Session& session, FeaturesCache cache, std::function<bool()> stopRequested);
+		FeaturesSearcher(Database::Session& session, FeaturesCache cache, StopRequestedFunction stopRequested);
 
 		// Use training (may be very slow)
-		FeaturesSearcher(Database::Session& session, std::function<bool()> stopRequested);
+		FeaturesSearcher(Database::Session& session, const FeatureSettingsMap& featuresSettingsMap, StopRequestedFunction stopRequested = {});
 
 		bool isValid() const;
 
@@ -65,7 +71,7 @@ class FeaturesSearcher
 		void init(Database::Session& session,
 				SOM::Network network,
 				ObjectPositions tracksPosition,
-				std::function<bool()> stopRequested);
+				StopRequestedFunction stopRequested);
 
 		std::vector<Database::IdType> getSimilarObjects(const std::set<Database::IdType>& ids,
 				const SOM::Matrix<std::set<Database::IdType>>& objectsMap,

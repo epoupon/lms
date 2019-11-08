@@ -19,7 +19,7 @@
 
 #include "Logger.hpp"
 
-std::string getModuleName(Module mod)
+const char* getModuleName(Module mod)
 {
 	switch (mod)
 	{
@@ -41,7 +41,7 @@ std::string getModuleName(Module mod)
 	return "";
 }
 
-std::string getSeverityName(Severity sev)
+const char* getSeverityName(Severity sev)
 {
 	switch (sev)
 	{

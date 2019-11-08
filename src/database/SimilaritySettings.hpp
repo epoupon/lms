@@ -32,19 +32,17 @@ class SimilaritySettingsFeature :  public Wt::Dbo::Dbo<SimilaritySettingsFeature
 		using pointer = Wt::Dbo::ptr<SimilaritySettingsFeature>;
 
 		SimilaritySettingsFeature() = default;
-		SimilaritySettingsFeature(Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight);
+		SimilaritySettingsFeature(Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, double weight);
 
-		static pointer create(Session& session, Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight = 1);
+		static pointer create(Session& session, Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, double weight = 1);
 
 		const std::string&	getName() const { return _name; } ;
-		std::size_t 		getNbDimensions() const { return static_cast<std::size_t>(_nbDimensions); }
 		double			getWeight() const { return _weight; }
 
 		template<class Action>
 		void persist(Action& a)
 		{
 			Wt::Dbo::field(a, _name,		"name");
-			Wt::Dbo::field(a, _nbDimensions,	"dimension_count");
 			Wt::Dbo::field(a, _weight,		"weight");
 
 			Wt::Dbo::belongsTo(a, _settings, "similarity_settings", Wt::Dbo::OnDeleteCascade);
@@ -52,8 +50,7 @@ class SimilaritySettingsFeature :  public Wt::Dbo::Dbo<SimilaritySettingsFeature
 
 	private:
 		std::string	_name;
-		int 		_nbDimensions;
-		double		_weight;
+		double		_weight {1};
 
 		Wt::Dbo::ptr<SimilaritySettings> _settings;
 };
@@ -75,8 +72,8 @@ class SimilaritySettings : public Wt::Dbo::Dbo<SimilaritySettings>
 		static pointer get(Session& session);
 
 		// Accessors Read
-		std::size_t		getVersion() const { return _settingsVersion; }
-		EngineType		getEngineType() const { return _engineType; }
+		std::size_t		getVersion() const	{ return _settingsVersion; }
+		EngineType		getEngineType() const	{ return _engineType; }
 		std::vector<Wt::Dbo::ptr<SimilaritySettingsFeature>> getFeatures() const;
 
 		// Setters

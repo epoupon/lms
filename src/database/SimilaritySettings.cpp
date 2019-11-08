@@ -27,38 +27,30 @@
 
 namespace Database {
 
-struct TrackFeatureInfo
+static const std::map<std::string, double> defaultFeatures =
 {
-	std::string	name;
-	std::size_t	nbDimensions;
-	double		weight;
+	{ "lowlevel.spectral_contrast_coeffs.median",	1. },
+	{ "lowlevel.erbbands.median",			1. },
+	{ "tonal.hpcp.median",				1. },
+	{ "lowlevel.melbands.median",			1. },
+	{ "lowlevel.barkbands.median",			1. },
+	{ "lowlevel.mfcc.mean",				1. },
+	{ "lowlevel.gfcc.mean",				1. },
 };
 
-static const std::vector<TrackFeatureInfo> defaultFeatures =
-{
-	{ "lowlevel.spectral_contrast_coeffs.median",	6,	1. },
-	{ "lowlevel.erbbands.median",			40,	1. },
-	{ "tonal.hpcp.median",				36,	1. },
-	{ "lowlevel.melbands.median",			40,	1. },
-	{ "lowlevel.barkbands.median",			27,	1. },
-	{ "lowlevel.mfcc.mean",				13,	1. },
-	{ "lowlevel.gfcc.mean",				13,	1. },
-};
-
-SimilaritySettingsFeature::SimilaritySettingsFeature(Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight)
-: _name(name),
-_nbDimensions(nbDimensions),
-_weight(weight),
-_settings(settings)
+SimilaritySettingsFeature::SimilaritySettingsFeature(Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, double weight)
+: _name {name},
+_weight {weight},
+_settings {settings}
 {
 }
 
 SimilaritySettingsFeature::pointer
-SimilaritySettingsFeature::create(Session& session, Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, std::size_t nbDimensions, double weight)
+SimilaritySettingsFeature::create(Session& session, Wt::Dbo::ptr<SimilaritySettings> settings, const std::string& name, double weight)
 {
 	session.checkUniqueLocked();
 
-	SimilaritySettingsFeature::pointer res {session.getDboSession().add(std::make_unique<SimilaritySettingsFeature>(settings, name, nbDimensions, weight))};
+	SimilaritySettingsFeature::pointer res {session.getDboSession().add(std::make_unique<SimilaritySettingsFeature>(settings, name, weight))};
 	session.getDboSession().flush();
 
 	return res;
@@ -74,8 +66,8 @@ SimilaritySettings::init(Session& session)
 		return;
 
 	settings = session.getDboSession().add(std::make_unique<SimilaritySettings>());
-	for (const auto& feature : defaultFeatures)
-		SimilaritySettingsFeature::create(session, settings, feature.name, feature.nbDimensions, feature.weight);
+	for (const auto& [feature, weight] : defaultFeatures)
+		SimilaritySettingsFeature::create(session, settings, feature, weight);
 }
 
 
