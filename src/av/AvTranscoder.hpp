@@ -33,10 +33,10 @@ namespace Av {
 
 struct TranscodeParameters
 {
-	std::optional<Encoding>		encoding; // If not set, no transcoding is performed
+	std::optional<Encoding>			encoding; // If not set, no transcoding is performed
 	std::size_t				bitrate {128000};
 	std::optional<std::size_t>		stream; // Id of the stream to be transcoded (auto detect by default)
-	std::optional<std::chrono::seconds>	offset {};
+	std::optional<std::chrono::seconds>	offset;
 	bool 					stripMetadata {true};
 };
 

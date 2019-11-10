@@ -212,6 +212,7 @@ class SettingsModel : public Wt::WFormModel
 			_transcodeFormatModel = std::make_shared<ValueStringModel<AudioFormat>>();
 			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding.mp3"), AudioFormat::MP3);
 			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding.ogg_opus"), AudioFormat::OGG_OPUS);
+			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding.matroska_opus"), AudioFormat::MATROSKA_OPUS);
 			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding.ogg_vorbis"), AudioFormat::OGG_VORBIS);
 			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding.webm_vorbis"), AudioFormat::WEBM_VORBIS);
 		}

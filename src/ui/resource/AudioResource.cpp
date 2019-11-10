@@ -105,6 +105,9 @@ AudioResource::handleRequest(const Wt::Http::Request& request,
 					case Database::AudioFormat::OGG_OPUS:
 						parameters.encoding = Av::Encoding::OGG_OPUS;
 						break;
+					case Database::AudioFormat::MATROSKA_OPUS:
+						parameters.encoding = Av::Encoding::MATROSKA_OPUS;
+						break;
 					case Database::AudioFormat::OGG_VORBIS:
 						parameters.encoding = Av::Encoding::OGG_VORBIS;
 						break;

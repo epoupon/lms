@@ -120,6 +120,13 @@ Transcoder::start()
 				args.emplace_back("ogg");
 				break;
 
+			case Encoding::MATROSKA_OPUS:
+				args.emplace_back("-acodec");
+				args.emplace_back("libopus");
+				args.emplace_back("-f");
+				args.emplace_back("matroska");
+				break;
+
 			case Encoding::OGG_VORBIS:
 				args.emplace_back("-acodec");
 				args.emplace_back("libvorbis");
@@ -133,7 +140,6 @@ Transcoder::start()
 				args.emplace_back("-f");
 				args.emplace_back("webm");
 				break;
-
 
 			default:
 				return false;
