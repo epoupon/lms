@@ -23,21 +23,18 @@
 
 namespace Av {
 
-std::string encodingToMimetype(Encoding encoding)
+const char* encodingToMimetype(Encoding encoding)
 {
-	static const std::map<Encoding, std::string> encodings
+	switch (encoding)
 	{
-		{Encoding::MP3,		"audio/mpeg"},
-		{Encoding::OGG_VORBIS,	"audio/ogg"},
-		{Encoding::OGG_OPUS,	"audio/opus"},
-		{Encoding::WEBM_VORBIS,	"audio/webm"},
-	};
+		case Encoding::MP3: 		return "audio/mpeg";
+		case Encoding::OGG_OPUS:	return "audio/opus";
+		case Encoding::MATROSKA_OPUS:	return "audio/x-matroska";
+		case Encoding::OGG_VORBIS:	return "audio/ogg";
+		case Encoding::WEBM_VORBIS:	return "audio/webm";
+	}
 
-	auto it {encodings.find(encoding)};
-	if (it == encodings.end())
-		throw AvException("Invalid encoding");
-
-	return it->second;
+	throw AvException("Invalid encoding");
 }
 
 }

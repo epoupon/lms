@@ -1,6 +1,6 @@
 # LMS - Lightweight Music Server
 
-[![Build Status](https://travis-ci.org/epoupon/lms.svg?branch=master)](https://travis-ci.org/epoupon/lms)
+[![Build Status](https://travis-ci.org/epoupon/lms.svg?branch=master)](https://travis-ci.org/epoupon/lms) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/epoupon/lms)
 
 _LMS_ is a self-hosted music streaming software: access your music collection from anywhere using a web interface!
 
@@ -51,10 +51,10 @@ __Note__: since _LMS_ stores hashed and salted passwords, it cannot handle the _
 
 ## Installation
 
-### From packages
+### Docker
+_Docker_ images are available, please see detailed instructions on https://hub.docker.com/r/epoupon/lms.
 
-#### Debian Buster packages
-
+### Debian Buster packages
 _Buster_ packages are provided for _amd64_ and _armhf_ architectures.
 
 As root, trust the following debian package provider and add it in your list of repositories:

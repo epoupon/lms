@@ -161,6 +161,7 @@
 <message id="Lms.Settings.transcoding-bitrate">Transcode bitrate</message>
 <message id="Lms.Settings.transcoding-format">Transcode format</message>
 <message id="Lms.Settings.transcoding-enable">Enable transcoding</message>
+<message id="Lms.Settings.transcoding.matroska_opus">Matroska/Opus</message>
 <message id="Lms.Settings.transcoding.mp3">MP3</message>
 <message id="Lms.Settings.transcoding.ogg_opus">Ogg/Opus</message>
 <message id="Lms.Settings.transcoding.ogg_vorbis">Ogg/Vorbis</message>

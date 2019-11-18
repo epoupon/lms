@@ -34,13 +34,14 @@ class AvException : public LmsException
 enum class Encoding
 {
 	// Values are important and must not be changed
-	MP3		= 0,
-	OGG_OPUS	= 1,
-	OGG_VORBIS	= 2,
-	WEBM_VORBIS	= 3,
+	MP3,
+	OGG_OPUS,
+	MATROSKA_OPUS,
+	OGG_VORBIS,
+	WEBM_VORBIS,
 };
 
-std::string encodingToMimetype(Encoding encoding);
+const char* encodingToMimetype(Encoding encoding);
 
 }
 

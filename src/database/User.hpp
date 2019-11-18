@@ -44,6 +44,7 @@ enum class AudioFormat
 	OGG_OPUS	= 2,
 	OGG_VORBIS	= 3,
 	WEBM_VORBIS	= 4,
+	MATROSKA_OPUS	= 5,
 };
 
 using Bitrate = std::size_t;

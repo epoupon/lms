@@ -46,11 +46,6 @@
 using namespace Database;
 
 static const std::string	genreClusterName {"GENRE"};
-// Files are always reported to be in the same format
-static const std::size_t	reportedBitrate {128};
-static const std::string	reportedFileSuffix {"mp3"};
-static const Av::Encoding	reportedEncoding {Av::Encoding::MP3};
-static const Av::Encoding	transcodeEncoding {Av::Encoding::MP3};
 static const std::string	reportedStarredDate {"2000-01-01T00:00:00"};
 
 template<>
@@ -362,7 +357,9 @@ getTrackPath(const Track::pointer& track)
 {
 	std::string path;
 
-	auto release {track->getRelease()};
+	// The track path has to be relative from the root
+
+	const auto release {track->getRelease()};
 	if (release)
 	{
 		auto artists {release->getReleaseArtists()};
@@ -382,7 +379,12 @@ getTrackPath(const Track::pointer& track)
 	if (track->getTrackNumber())
 		path += std::to_string(*track->getTrackNumber()) + "-";
 
-	return path + makeNameFilesystemCompatible(track->getName()) + "." + reportedFileSuffix;
+	path += makeNameFilesystemCompatible(track->getName());
+
+	if (track->getPath().has_extension())
+		path += track->getPath().extension();
+
+	return path;
 }
 
 static
@@ -400,7 +402,20 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 		trackResponse.setAttribute("discNumber", std::to_string(*track->getDiscNumber()));
 	if (track->getYear())
 		trackResponse.setAttribute("year", std::to_string(*track->getYear()));
-	trackResponse.setAttribute("size", std::to_string(reportedBitrate * 1000 / 8 * std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count()));
+
+	trackResponse.setAttribute("path", getTrackPath(track));
+	{
+		std::error_code ec;
+		const auto fileSize {std::filesystem::file_size(track->getPath(), ec)};
+		if (!ec)
+			trackResponse.setAttribute("size", std::to_string(fileSize));
+	}
+
+	if (track->getPath().has_extension())
+	{
+		auto extension {track->getPath().extension()};
+		trackResponse.setAttribute("suffix", extension.string().substr(1));
+	}
 
 	trackResponse.setAttribute("coverArt", IdToString({Id::Type::Track, track.id()}));
 
@@ -420,11 +435,7 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 		trackResponse.setAttribute("parent", IdToString({Id::Type::Release, track->getRelease().id()}));
 	}
 
-	trackResponse.setAttribute("path", getTrackPath(track));
-	trackResponse.setAttribute("bitRate", std::to_string(reportedBitrate));
 	trackResponse.setAttribute("duration", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count()));
-	trackResponse.setAttribute("suffix", reportedFileSuffix);
-	trackResponse.setAttribute("contentType", Av::encodingToMimetype(reportedEncoding));
 	trackResponse.setAttribute("type", "music");
 
 	if (user->hasStarredTrack(track))
@@ -1687,6 +1698,21 @@ handleUpdatePlaylistRequest(RequestContext& context)
 }
 
 static
+Av::Encoding
+userTranscodeFormatToAvEncoding(AudioFormat format)
+{
+	switch (format)
+	{
+		case AudioFormat::MP3:			return Av::Encoding::MP3;
+		case AudioFormat::OGG_OPUS:		return Av::Encoding::OGG_OPUS;
+		case AudioFormat::MATROSKA_OPUS:	return Av::Encoding::MATROSKA_OPUS;
+		case AudioFormat::OGG_VORBIS:		return Av::Encoding::OGG_VORBIS;
+		case AudioFormat::WEBM_VORBIS:		return Av::Encoding::WEBM_VORBIS;
+		default:				return Av::Encoding::OGG_OPUS;
+	}
+}
+
+static
 std::shared_ptr<Av::Transcoder>
 createTranscoder(RequestContext& context)
 {
@@ -1695,33 +1721,43 @@ createTranscoder(RequestContext& context)
 
 	// Optional params
 	std::optional<std::size_t> maxBitRate {getParameterAs<std::size_t>(context.parameters, "maxBitRate")};
+	std::optional<std::string> format {getParameterAs<std::string>(context.parameters, "format")};
+
+	Av::TranscodeParameters parameters {};
+	parameters.stripMetadata = false; // Since it can be cached and some players read the metadata from the downloaded file
 
 	std::filesystem::path trackPath;
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
 
-		User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
-		if (!user)
-			throw UserNotAuthorizedError {};
+		{
+			auto track {Track::getById(context.dbSession, id.value)};
+			if (!track)
+				throw RequestedDataNotFoundError {};
 
-		// "If set to zero, no limit is imposed"
-		if (!maxBitRate || *maxBitRate == 0)
-			maxBitRate = user->getAudioTranscodeBitrate() / 1000;
+			trackPath = track->getPath();
+		}
 
-		*maxBitRate = clamp(*maxBitRate, std::size_t {48}, user->getMaxAudioTranscodeBitrate() / 1000);
+		{
+			const User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+			if (!user)
+				throw UserNotAuthorizedError {};
 
-		auto track {Track::getById(context.dbSession, id.value)};
-		if (!track)
-			throw RequestedDataNotFoundError {};
+			// format = "raw" => no transcode. Other format values will be ignored
+			const bool transcode {(!format || (format && *format != "raw")) && user->getAudioTranscodeEnable()};
+			if (transcode)
+			{
+				// "If set to zero, no limit is imposed"
+				if (!maxBitRate || *maxBitRate == 0)
+					maxBitRate = user->getAudioTranscodeBitrate() / 1000;
 
-		trackPath = track->getPath();
+				*maxBitRate = clamp(*maxBitRate, std::size_t {48}, user->getMaxAudioTranscodeBitrate() / 1000);
+
+				parameters.bitrate = *maxBitRate * 1000;
+				parameters.encoding = userTranscodeFormatToAvEncoding(user->getAudioTranscodeFormat());
+			}
+		}
 	}
-
-	Av::TranscodeParameters parameters {};
-
-	parameters.stripMetadata = false; // Since it can be cached and some players read the metadata from the downloaded file
-	parameters.bitrate = *maxBitRate * 1000;
-	parameters.encoding = transcodeEncoding;
 
 	return std::make_shared<Av::Transcoder>(trackPath, parameters);
 }
