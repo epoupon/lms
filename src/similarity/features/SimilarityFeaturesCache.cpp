@@ -33,7 +33,7 @@ namespace Similarity {
 static
 std::filesystem::path getCacheDirectory()
 {
-	return getService<Config>()->getPath("working-dir") / "cache" / "features";
+	return ServiceProvider<Config>::get()->getPath("working-dir") / "cache" / "features";
 }
 
 static std::filesystem::path getCacheNetworkFilePath()
@@ -243,7 +243,7 @@ FeaturesCache::read()
 void
 FeaturesCache::write()
 {
-	std::filesystem::create_directories(getService<Config>()->getPath("working-dir") / "cache" / "features");
+	std::filesystem::create_directories(ServiceProvider<Config>::get()->getPath("working-dir") / "cache" / "features");
 
 	if (!networkToCacheFile(_network, getCacheNetworkFilePath())
 		|| !objectPositionToCacheFile(_trackPositions, getCacheTrackPositionsFilePath()))

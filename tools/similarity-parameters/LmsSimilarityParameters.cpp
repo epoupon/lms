@@ -6,19 +6,23 @@
 #include "database/Db.hpp"
 #include "utils/Config.hpp"
 #include "utils/Service.hpp"
+#include "utils/StreamLogger.hpp"
 
 
 int main(int argc, char *argv[])
 {
 	try
 	{
+		// log to stdout
+		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
+
 		std::filesystem::path configFilePath {"/etc/lms.conf"};
 		if (argc >= 2)
 			configFilePath = std::string(argv[1], 0, 256);
 
 		ServiceProvider<Config>::create(configFilePath);
 
-		Database::Db db {getService<Config>()->getPath("working-dir") / "lms.db"};
+		Database::Db db {ServiceProvider<Config>::get()->getPath("working-dir") / "lms.db"};
 		auto session {db.createSession()};
 
 /*		const FeatureSettings

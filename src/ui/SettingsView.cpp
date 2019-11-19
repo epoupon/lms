@@ -80,7 +80,7 @@ class SettingsModel : public Wt::WFormModel
 			Database::User::PasswordHash passwordHash;
 
 			if (!valueText(PasswordField).empty())
-				passwordHash = getService<::Auth::PasswordService>()->hashPassword(valueText(PasswordField).toUTF8());
+				passwordHash = ServiceProvider<::Auth::PasswordService>::get()->hashPassword(valueText(PasswordField).toUTF8());
 
 			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
@@ -133,7 +133,7 @@ class SettingsModel : public Wt::WFormModel
 			{
 				if (!valueText(PasswordOldField).empty())
 				{
-					switch (getService<::Auth::PasswordService>()->checkUserPassword(
+					switch (ServiceProvider<::Auth::PasswordService>::get()->checkUserPassword(
 							LmsApp->getDbSession(),
 							boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
 							LmsApp->getUserLoginName(),
@@ -161,7 +161,7 @@ class SettingsModel : public Wt::WFormModel
 			{
 				if (!valueText(PasswordField).empty())
 				{
-					if (!getService<::Auth::PasswordService>()->evaluatePasswordStrength(LmsApp->getUserLoginName(), valueText(PasswordField).toUTF8()))
+					if (!ServiceProvider<::Auth::PasswordService>::get()->evaluatePasswordStrength(LmsApp->getUserLoginName(), valueText(PasswordField).toUTF8()))
 						error = Wt::WString::tr("Lms.password-too-weak");
 				}
 				else

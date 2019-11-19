@@ -18,6 +18,7 @@ lms_similarity_parameters_SOURCES = \
 	$(top_srcdir)/src/similarity/features/som/Network.cpp			\
 	$(top_srcdir)/src/utils/Config.cpp 		\
 	$(top_srcdir)/src/utils/Logger.cpp 		\
+	$(top_srcdir)/src/utils/StreamLogger.cpp 	\
 	$(top_srcdir)/src/utils/Utils.cpp
 
 lms_similarity_parameters_CXXFLAGS=-std=c++17 -I$(top_srcdir)/src -D_REENTRANT

@@ -232,7 +232,7 @@ DatabaseSettingsView::refreshView()
 		{
 			model->saveData();
 
-			getService<Scanner::MediaScanner>()->requestReschedule();
+			ServiceProvider<Scanner::MediaScanner>::get()->requestReschedule();
 			LmsApp->notifyMsg(MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}
 
@@ -249,7 +249,7 @@ DatabaseSettingsView::refreshView()
 
 	immScanBtn->clicked().connect([=] ()
 	{
-		getService<Scanner::MediaScanner>()->requestImmediateScan();
+		ServiceProvider<Scanner::MediaScanner>::get()->requestImmediateScan();
 		LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
 	});
 

@@ -30,6 +30,8 @@
 #include "database/Track.hpp"
 #include "database/User.hpp"
 
+#include "utils/StreamLogger.hpp"
+
 using namespace Database;
 
 #define CHECK(PRED)  \
@@ -1253,6 +1255,9 @@ int main()
 
 	try
 	{
+		// log to stdout
+		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
+
 		const std::filesystem::path tmpFile {std::tmpnam(nullptr)};
 		ScopedFileDeleter tmpFileDeleter {tmpFile};
 

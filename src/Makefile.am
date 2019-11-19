@@ -151,8 +151,12 @@ lms_SOURCES = \
 	$(srcdir)/utils/Path.cpp				\
 	$(srcdir)/utils/Path.hpp				\
 	$(srcdir)/utils/Service.hpp				\
+	$(srcdir)/utils/StreamLogger.cpp			\
+	$(srcdir)/utils/StreamLogger.hpp			\
 	$(srcdir)/utils/Utils.cpp				\
-	$(srcdir)/utils/Utils.hpp
+	$(srcdir)/utils/Utils.hpp				\
+	$(srcdir)/utils/WtLogger.cpp				\
+	$(srcdir)/utils/WtLogger.hpp
 
 lms_CXXFLAGS=-std=c++17 -I$(srcdir)/ui $(MAGICKXX_CFLAGS) -D_REENTRANT
 lms_LDADD=$(MAGICKXX_LIBS)

@@ -54,3 +54,21 @@ const char* getSeverityName(Severity sev)
 	return "";
 }
 
+Log::Log(Logger* logger, Module module, Severity severity)
+	: _module {module},
+	_severity {severity},
+	_logger {logger}
+{}
+
+Log::~Log()
+{
+	if (_logger)
+		_logger->processLog(*this);
+}
+
+std::string
+Log::getMessage() const
+{
+	return _oss.str();
+}
+

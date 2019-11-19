@@ -7,6 +7,7 @@
 #include "database/Session.hpp"
 #include "utils/Config.hpp"
 #include "utils/Service.hpp"
+#include "utils/StreamLogger.hpp"
 #include "similarity/features/SimilarityFeaturesSearcher.hpp"
 
 int main(int argc, char *argv[])
@@ -14,6 +15,9 @@ int main(int argc, char *argv[])
 	try
 	{
 		using namespace Similarity;
+
+		// log to stdout
+		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
 
 		const FeatureSettingsMap featuresSettings
 		{
@@ -34,7 +38,7 @@ int main(int argc, char *argv[])
 
 		ServiceProvider<Config>::create(configFilePath);
 
-		Database::Db db {getService<Config>()->getPath("working-dir") / "lms.db"};
+		Database::Db db {ServiceProvider<Config>::get()->getPath("working-dir") / "lms.db"};
 		auto session {db.createSession()};
 
 		std::cout << "Getting all features..." << std::endl;

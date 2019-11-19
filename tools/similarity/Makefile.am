@@ -21,6 +21,7 @@ lms_similarity_SOURCES = \
 	$(top_srcdir)/src/similarity/features/SimilarityFeaturesDefs.cpp	\
 	$(top_srcdir)/src/utils/Config.cpp 		\
 	$(top_srcdir)/src/utils/Logger.cpp 		\
+	$(top_srcdir)/src/utils/StreamLogger.cpp 	\
 	$(top_srcdir)/src/utils/Utils.cpp
 
 lms_similarity_CXXFLAGS=-std=c++17 -I$(top_srcdir)/src -D_REENTRANT

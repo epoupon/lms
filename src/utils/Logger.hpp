@@ -20,9 +20,9 @@
 #pragma once
 
 #include <string>
+#include <sstream>
 
-#include <Wt/WApplication.h>
-#include <Wt/WLogger.h>
+#include "Service.hpp"
 
 enum class Severity
 {
@@ -54,11 +54,31 @@ enum class Module
 const char* getModuleName(Module mod);
 const char* getSeverityName(Severity sev);
 
+class Logger;
+class Log
+{
+	public:
+		Log(Logger* logger, Module module, Severity severity);
+		~Log();
 
-TODO class logger
-TODO class log entry
+		Module getModule() const { return _module; }
+		Severity getSeverity() const { return _severity; }
+		std::string getMessage() const;
 
-TODO configure logger to redirect to either Wt's logger or to a ostream
+		std::ostringstream& getOstream() { return _oss; }
 
-#define LMS_LOG(module, level)	Wt::log(getSeverityName(Severity::level)) << Wt::WLogger::sep << "[" << getModuleName(Module::module) << "]" <<  Wt::WLogger::sep
+	private:
+		Module _module;
+		Severity _severity;
+		std::ostringstream _oss;
+		Logger* _logger {};
+};
+
+class Logger
+{
+	public:
+		virtual void processLog(const Log& log) = 0;
+};
+
+#define LMS_LOG(module, severity)	Log(ServiceProvider<Logger>::get(), Module::module, Severity::severity).getOstream()
 

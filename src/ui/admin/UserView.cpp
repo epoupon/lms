@@ -82,7 +82,7 @@ class UserModel : public Wt::WFormModel
 		{
 			std::optional<Database::User::PasswordHash> passwordHash;
 			if (!valueText(PasswordField).empty())
-				passwordHash = getService<::Auth::PasswordService>()->hashPassword(valueText(PasswordField).toUTF8());
+				passwordHash = ServiceProvider<::Auth::PasswordService>::get()->hashPassword(valueText(PasswordField).toUTF8());
 
 			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
@@ -174,7 +174,7 @@ class UserModel : public Wt::WFormModel
 					else
 					{
 						// Evaluate the strength of the password for non demo accounts
-						if (!getService<::Auth::PasswordService>()->evaluatePasswordStrength(getLoginName(), valueText(PasswordField).toUTF8()))
+						if (!ServiceProvider<::Auth::PasswordService>::get()->evaluatePasswordStrength(getLoginName(), valueText(PasswordField).toUTF8()))
 							error = Wt::WString::tr("Lms.password-too-weak");
 					}
 				}
@@ -270,7 +270,7 @@ UserView::refreshView()
 
 	// Demo account
 	t->setFormWidget(UserModel::DemoField, std::make_unique<Wt::WCheckBox>());
-	if (!userId && getService<Config>()->getBool("demo", false))
+	if (!userId && ServiceProvider<Config>::get()->getBool("demo", false))
 		t->setCondition("if-demo", true);
 
 	Wt::WPushButton* saveBtn = t->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(userId ? "Lms.save" : "Lms.create"));

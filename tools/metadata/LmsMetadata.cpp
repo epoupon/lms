@@ -9,6 +9,7 @@
 #include "av/AvInfo.hpp"
 #include "metadata/AvFormat.hpp"
 #include "metadata/TagLibParser.hpp"
+#include "utils/StreamLogger.hpp"
 
 std::ostream& operator<<(std::ostream& os, const MetaData::Artist& artist)
 {
@@ -124,6 +125,9 @@ int main(int argc, char *argv[])
 
 	try
 	{
+		// log to stdout
+		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
+
 		for (std::size_t  i {}; i < static_cast<std::size_t>(argc - 1); ++i)
 		{
 			std::filesystem::path file {argv[i + 1]};

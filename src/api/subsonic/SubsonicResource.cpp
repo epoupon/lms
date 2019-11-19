@@ -595,10 +595,10 @@ handleChangePassword(RequestContext& context)
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
 	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
 
-	if (!getService<Auth::PasswordService>()->evaluatePasswordStrength(username, password))
+	if (!ServiceProvider<Auth::PasswordService>::get()->evaluatePasswordStrength(username, password))
 		throw PasswordTooWeakGenericError {};
 
-	const User::PasswordHash hash {getService<Auth::PasswordService>()->hashPassword(password)};
+	const User::PasswordHash hash {ServiceProvider<Auth::PasswordService>::get()->hashPassword(password)};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
@@ -677,10 +677,10 @@ handleCreateUserRequest(RequestContext& context)
 	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
 	// Just ignore all the other fields as we don't handle them
 
-	if (!getService<Auth::PasswordService>()->evaluatePasswordStrength(username, password))
+	if (!ServiceProvider<Auth::PasswordService>::get()->evaluatePasswordStrength(username, password))
 		throw PasswordTooWeakGenericError {};
 
-	const User::PasswordHash hash {getService<Auth::PasswordService>()->hashPassword(password)};
+	const User::PasswordHash hash {ServiceProvider<Auth::PasswordService>::get()->hashPassword(password)};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
@@ -960,7 +960,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 			artistInfoNode.createChild("musicBrainzId").setValue(artist->getMBID());
 	}
 
-	auto similarArtistsId {getService<Similarity::Searcher>()->getSimilarArtists(context.dbSession, id.value, count)};
+	auto similarArtistsId {ServiceProvider<Similarity::Searcher>::get()->getSimilarArtists(context.dbSession, id.value, count)};
 
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
@@ -1156,7 +1156,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(50)};
 
-	auto similarArtistsId {getService<Similarity::Searcher>()->getSimilarArtists(context.dbSession, id.value, 5)};
+	auto similarArtistsId {ServiceProvider<Similarity::Searcher>::get()->getSimilarArtists(context.dbSession, id.value, 5)};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -1604,10 +1604,10 @@ handleUpdateUserRequest(RequestContext& context)
 	if (password)
 	{
 		*password = decodePasswordIfNeeded(*password);
-		if (!getService<Auth::PasswordService>()->evaluatePasswordStrength(username, *password))
+		if (!ServiceProvider<Auth::PasswordService>::get()->evaluatePasswordStrength(username, *password))
 			throw PasswordTooWeakGenericError {};
 
-		hash = getService<Auth::PasswordService>()->hashPassword(*password);
+		hash = ServiceProvider<Auth::PasswordService>::get()->hashPassword(*password);
 	}
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
@@ -1816,10 +1816,10 @@ handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation*)
 	switch (id.type)
 	{
 		case Id::Type::Track:
-			res.data = getService<CoverArt::Grabber>()->getFromTrack(context.dbSession, id.value, Image::Format::JPEG, size);
+			res.data = ServiceProvider<CoverArt::Grabber>::get()->getFromTrack(context.dbSession, id.value, Image::Format::JPEG, size);
 			break;
 		case Id::Type::Release:
-			res.data = getService<CoverArt::Grabber>()->getFromRelease(context.dbSession, id.value, Image::Format::JPEG, size);
+			res.data = ServiceProvider<CoverArt::Grabber>::get()->getFromRelease(context.dbSession, id.value, Image::Format::JPEG, size);
 			break;
 		default:
 			throw BadParameterGenericError {"id"};
@@ -1908,7 +1908,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 		Session& dbSession {getOrCreateDbSession(_db)};
 
-		switch (getService<Auth::PasswordService>()->checkUserPassword(dbSession,
+		switch (ServiceProvider<Auth::PasswordService>::get()->checkUserPassword(dbSession,
 					boost::asio::ip::address::from_string(request.clientAddress()),
 					clientInfo.user, clientInfo.password))
 		{
