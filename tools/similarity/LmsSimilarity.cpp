@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "database/Artist.hpp"
+#include "database/Cluster.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -44,12 +45,9 @@ int main(int argc, char *argv[])
 		Database::Db db {ServiceProvider<Config>::get()->getPath("working-dir") / "lms.db"};
 		Database::Session session {db};
 
-		std::cout << "Getting all features..." << std::endl;
-
 		std::cout << "Classifying tracks..." << std::endl;
 		// may be long...
 		FeaturesSearcher searcher {session, featuresSettings};
-
 		std::cout << "Classifying tracks DONE" << std::endl;
 
 		const std::vector<Database::IdType> trackIds = std::invoke([&]()
@@ -68,11 +66,12 @@ int main(int argc, char *argv[])
 				Database::Track::pointer track {Database::Track::getById(session, trackId)};
 
 				res += track->getName();
-				auto artists {track->getArtists()};
-				for (auto artist : artists )
-					res += " - " + artist->getName();
 				if (track->getRelease())
 					res += " [" + track->getRelease()->getName() + "]";
+				for (auto artist : track->getArtists())
+					res += " - " + artist->getName();
+				for (auto cluster : track->getClusters())
+					res += " {" + cluster->getType()->getName() + "-"+ cluster->getName() + "}";
 
 				return res;
 			};
