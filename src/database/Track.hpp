@@ -70,8 +70,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 
 		static std::vector<pointer>	getAll(Session& session, std::optional<std::size_t> limit = {});
 		static std::vector<pointer>	getAllRandom(Session& session, std::optional<std::size_t> limit = {});
-		static std::vector<IdType>	getAllIds(Session& session); // nested transaction
-		static std::vector<std::filesystem::path> getAllPaths(Session& session); // nested transaction
+		static std::vector<IdType>	getAllIds(Session& session);
+		static std::vector<std::filesystem::path> getAllPaths(Session& session);
 		static std::vector<pointer>	getMBIDDuplicates(Session& session);
 		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> size = 1);
 		static std::vector<pointer>	getAllWithMBIDAndMissingFeatures(Session& session);

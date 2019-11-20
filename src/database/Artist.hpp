@@ -62,6 +62,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 								bool& moreExpected);
 
 		static std::vector<pointer>	getAll(Session& session, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
+		static std::vector<IdType>	getAllIds(Session& session);
 		static std::vector<pointer>	getAllOrphans(Session& session); // No track related
 		static std::vector<pointer>	getLastAdded(Session& session, Wt::WDateTime after, std::optional<std::size_t> size = {});
 

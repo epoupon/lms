@@ -52,6 +52,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static pointer			getById(Session& session, IdType id);
 		static std::vector<pointer>	getAllOrphans(Session& session); // no track related
 		static std::vector<pointer>	getAll(Session& session, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
+		static std::vector<IdType>	getAllIds(Session& session);
 		static std::vector<pointer>	getAllOrderedByArtist(Session& session, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
 		static std::vector<pointer>	getAllRandom(Session& session, std::optional<std::size_t> size = {});
 		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
