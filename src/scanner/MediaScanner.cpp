@@ -191,8 +191,8 @@ getOrCreateClusters(Session& session, const MetaData::Clusters& clustersNames)
 
 namespace Scanner {
 
-MediaScanner::MediaScanner(std::unique_ptr<Database::Session> dbSession)
-: _dbSession {std::move(dbSession)}
+MediaScanner::MediaScanner(Database::Db& db)
+: _dbSession {db}
 {
 	_ioService.setThreadCount(1);
 
@@ -444,7 +444,7 @@ MediaScanner::scan(boost::system::error_code err)
 	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Optimizing db...";
-	_dbSession->optimize();
+	_dbSession.optimize();
 	LMS_LOG(DBUPDATER, INFO) << "Optimize db done!";
 }
 
@@ -452,9 +452,9 @@ void
 MediaScanner::refreshScanSettings()
 {
 	{
-		auto transaction {_dbSession->createSharedTransaction()};
+		auto transaction {_dbSession.createSharedTransaction()};
 
-		ScanSettings::pointer scanSettings {ScanSettings::get(*_dbSession)};
+		ScanSettings::pointer scanSettings {ScanSettings::get(_dbSession)};
 
 		LMS_LOG(DBUPDATER, INFO) << "Using scan settings version " << scanSettings->getScanVersion();
 
@@ -521,9 +521,9 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	if (!forceScan)
 	{
 		// Skip file if last write is the same
-		auto transaction {_dbSession->createSharedTransaction()};
+		auto transaction {_dbSession.createSharedTransaction()};
 
-		const Track::pointer track {Track::getByPath(*_dbSession, file)};
+		const Track::pointer track {Track::getByPath(_dbSession, file)};
 
 		if (track && track->getLastWriteTime().toTime_t() == lastWriteTime.toTime_t()
 				&& track->getScanVersion() == _scanVersion)
@@ -542,9 +542,9 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 
 	stats.scans++;
 
-	auto uniqueTransaction {_dbSession->createUniqueTransaction()};
+	auto uniqueTransaction {_dbSession.createUniqueTransaction()};
 
-	Track::pointer track {Track::getByPath(*_dbSession, file) };
+	Track::pointer track {Track::getByPath(_dbSession, file) };
 
 	// We estimate this is an audio file if:
 	// - we found a least one audio stream
@@ -588,25 +588,25 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	}
 
 	// ***** Clusters
-	std::vector<Cluster::pointer> clusters {getOrCreateClusters(*_dbSession, trackInfo->clusters)};
+	std::vector<Cluster::pointer> clusters {getOrCreateClusters(_dbSession, trackInfo->clusters)};
 
 	//  ***** Artists
-	std::vector<Artist::pointer> artists {getOrCreateArtists(*_dbSession, trackInfo->artists)};
+	std::vector<Artist::pointer> artists {getOrCreateArtists(_dbSession, trackInfo->artists)};
 
 	//  ***** Release artists
-	std::vector<Artist::pointer> releaseArtists {getOrCreateArtists(*_dbSession, trackInfo->albumArtists)};
+	std::vector<Artist::pointer> releaseArtists {getOrCreateArtists(_dbSession, trackInfo->albumArtists)};
 
 	//  ***** Release
 	Release::pointer release;
 	if (trackInfo->album)
-		release = getOrCreateRelease(*_dbSession, *trackInfo->album);
+		release = getOrCreateRelease(_dbSession, *trackInfo->album);
 
 	// If file already exist, update data
 	// Otherwise, create it
 	if (!track)
 	{
 		// Create a new song
-		track = Track::create(*_dbSession, file);
+		track = Track::create(_dbSession, file);
 		LMS_LOG(DBUPDATER, INFO) << "Adding '" << file.string() << "'";
 		stats.additions++;
 	}
@@ -629,10 +629,10 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 
 	track.modify()->clearArtistLinks();
 	for (const auto& artist : artists)
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(*_dbSession, track, artist, Database::TrackArtistLink::Type::Artist));
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, artist, Database::TrackArtistLink::Type::Artist));
 
 	for (const auto& releaseArtist : releaseArtists)
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(*_dbSession, track, releaseArtist, Database::TrackArtistLink::Type::ReleaseArtist));
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, releaseArtist, Database::TrackArtistLink::Type::ReleaseArtist));
 
 	track.modify()->setScanVersion(_scanVersion);
 	track.modify()->setRelease(release);
@@ -733,8 +733,8 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 {
 	std::vector<std::filesystem::path> trackPaths;
 	{
-		auto transaction {_dbSession->createSharedTransaction()};
-		trackPaths = Track::getAllPaths(*_dbSession);;
+		auto transaction {_dbSession.createSharedTransaction()};
+		trackPaths = Track::getAllPaths(_dbSession);;
 	}
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks...";
@@ -745,9 +745,9 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 
 		if (!checkFile(trackPath, _mediaDirectory, _fileExtensions))
 		{
-			auto transaction {_dbSession->createUniqueTransaction()};
+			auto transaction {_dbSession.createUniqueTransaction()};
 
-			Track::pointer track {Track::getByPath(*_dbSession, trackPath)};
+			Track::pointer track {Track::getByPath(_dbSession, trackPath)};
 			if (track)
 			{
 				track.remove();
@@ -762,10 +762,10 @@ MediaScanner::removeOrphanEntries()
 {
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
 	{
-		auto transaction {_dbSession->createUniqueTransaction()};
+		auto transaction {_dbSession.createUniqueTransaction()};
 
 		// Now process orphan Cluster (no track)
-		auto clusters {Cluster::getAllOrphans(*_dbSession)};
+		auto clusters {Cluster::getAllOrphans(_dbSession)};
 		for (auto& cluster : clusters)
 		{
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster '" << cluster->getName() << "'";
@@ -775,9 +775,9 @@ MediaScanner::removeOrphanEntries()
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan artists...";
 	{
-		auto transaction {_dbSession->createUniqueTransaction()};
+		auto transaction {_dbSession.createUniqueTransaction()};
 
-		auto artists {Artist::getAllOrphans(*_dbSession)};
+		auto artists {Artist::getAllOrphans(_dbSession)};
 		for (auto& artist : artists)
 		{
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan artist '" << artist->getName() << "'";
@@ -787,9 +787,9 @@ MediaScanner::removeOrphanEntries()
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan releases...";
 	{
-		auto transaction {_dbSession->createUniqueTransaction()};
+		auto transaction {_dbSession.createUniqueTransaction()};
 
-		auto releases {Release::getAllOrphans(*_dbSession)};
+		auto releases {Release::getAllOrphans(_dbSession)};
 		for (auto& release : releases)
 		{
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan release '" << release->getName() << "'";
@@ -805,9 +805,9 @@ MediaScanner::checkDuplicatedAudioFiles(ScanStats& stats)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files";
 
-	auto transaction {_dbSession->createSharedTransaction()};
+	auto transaction {_dbSession.createSharedTransaction()};
 
-	const std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(*_dbSession);
+	const std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(_dbSession);
 	for (const Track::pointer& track : tracks)
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath().string() << " - " << track->getName();

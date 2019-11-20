@@ -33,6 +33,7 @@
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
@@ -128,7 +129,7 @@ struct RequestContext
 	std::string userName;
 };
 
-using SessionMap = std::map<Db*, std::unique_ptr<Session>>;
+using SessionMap = std::map<Db*, Session>;
 static std::map<std::thread::id, SessionMap> dbSessions;
 
 static
@@ -146,14 +147,14 @@ getOrCreateDbSession(Db& db)
 
 	auto it {sessionMap->find(&db)};
 	if (it != std::end(*sessionMap))
-		return *it->second;
+		return it->second;
 
-	auto res { sessionMap->try_emplace(&db, db.createSession())};
+	auto res { sessionMap->try_emplace(&db, db)};
 	assert(res.second);
 
 	LMS_LOG(API_SUBSONIC, DEBUG) << "Created db session";
 
-	return *res.first->second;
+	return res.first->second;
 }
 
 static

@@ -24,6 +24,7 @@
 
 #include "Artist.hpp"
 #include "Cluster.hpp"
+#include "Db.hpp"
 #include "Release.hpp"
 #include "ScanSettings.hpp"
 #include "SimilaritySettings.hpp"
@@ -116,10 +117,10 @@ Session::doDatabaseMigrationIfNeeded()
 	VersionInfo::get(*this).modify()->setVersion(LMS_DATABASE_VERSION);
 }
 
-Session::Session(std::shared_mutex& mutex, Wt::Dbo::SqlConnectionPool& connectionPool)
-: _mutex {mutex}
+Session::Session(Db& db)
+: _db {db}
 {
-	_session.setConnectionPool(connectionPool);
+	_session.setConnectionPool(_db.getConnectionPool());
 
 	_session.mapClass<VersionInfo>("version_info");
 	_session.mapClass<Artist>("artist");
@@ -179,25 +180,25 @@ SharedTransaction::~SharedTransaction()
 void
 Session::checkUniqueLocked()
 {
-	assert(lockDebug[&_mutex] == OwnedLock::Unique);
+	assert(lockDebug[&_db.getMutex()] == OwnedLock::Unique);
 }
 
 void
 Session::checkSharedLocked()
 {
-	assert(lockDebug[&_mutex] != OwnedLock::None);
+	assert(lockDebug[&_db.getMutex()] != OwnedLock::None);
 }
 
 UniqueTransaction
 Session::createUniqueTransaction()
 {
-	return UniqueTransaction{_mutex, _session};
+	return UniqueTransaction{_db.getMutex(), _session};
 }
 
 SharedTransaction
 Session::createSharedTransaction()
 {
-	return SharedTransaction{_mutex, _session};
+	return SharedTransaction{_db.getMutex(), _session};
 }
 
 void

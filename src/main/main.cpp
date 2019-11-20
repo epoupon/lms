@@ -134,15 +134,19 @@ int main(int argc, char* argv[])
 
 		// Initializing a connection pool to the database that will be shared along services
 		Database::Db database {ServiceProvider<Config>::get()->getPath("working-dir") / "lms.db"};
+		{
+			Database::Session session {database};
+			session.prepareTables();
+		}
 
 		UserInterface::LmsApplicationGroupContainer appGroups;
 
 		// Service initialization order is important
 		ServiceProvider<Auth::AuthTokenService>::create(ServiceProvider<Config>::get()->getULong("login-throttler-max-entriees", 10000));
 		ServiceProvider<Auth::PasswordService>::create(ServiceProvider<Config>::get()->getULong("login-throttler-max-entriees", 10000));
-		Scanner::MediaScanner& mediaScanner {ServiceProvider<Scanner::MediaScanner>::create(database.createSession())};
+		Scanner::MediaScanner& mediaScanner {ServiceProvider<Scanner::MediaScanner>::create(database)};
 
-		Similarity::FeaturesScannerAddon similarityFeaturesScannerAddon {database.createSession()};
+		Similarity::FeaturesScannerAddon similarityFeaturesScannerAddon {database};
 
 		mediaScanner.setAddon(similarityFeaturesScannerAddon);
 

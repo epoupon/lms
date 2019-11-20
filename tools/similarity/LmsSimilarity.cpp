@@ -39,13 +39,13 @@ int main(int argc, char *argv[])
 		ServiceProvider<Config>::create(configFilePath);
 
 		Database::Db db {ServiceProvider<Config>::get()->getPath("working-dir") / "lms.db"};
-		auto session {db.createSession()};
+		Database::Session session {db};
 
 		std::cout << "Getting all features..." << std::endl;
 
 		std::cout << "Classifying tracks..." << std::endl;
 		// may be long...
-		FeaturesSearcher searcher {*session, featuresSettings};
+		FeaturesSearcher searcher {session, featuresSettings};
 
 		std::cout << "Classifying tracks DONE" << std::endl;
 	}

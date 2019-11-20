@@ -54,9 +54,12 @@ class SharedTransaction
 		Wt::Dbo::Transaction _transaction;
 };
 
+class Db;
 class Session
 {
 	public:
+		Session (Db& database);
+
 		Session(const Session&) = delete;
 		Session(Session&&) = delete;
 		Session& operator=(const Session&) = delete;
@@ -70,17 +73,16 @@ class Session
 
 		void optimize();
 
+		void prepareTables(); // need to run only once at startup
+
 		Wt::Dbo::Session& getDboSession() { return _session; }
 
 	private:
-		friend class Db;
-
 		Session(std::shared_mutex& mutex, Wt::Dbo::SqlConnectionPool& connectionPool);
 
 		void doDatabaseMigrationIfNeeded();
-		void prepareTables(); // need to run only once at startup
 
-		std::shared_mutex&	_mutex;
+		Db&			_db;
 		Wt::Dbo::Session	_session;
 };
 

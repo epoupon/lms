@@ -24,13 +24,17 @@
 
 #include "SimilarityFeaturesSearcher.hpp"
 
+namespace Database {
+	class Db;
+}
+
 namespace Similarity {
 
 class FeaturesScannerAddon final : public Scanner::MediaScannerAddon
 {
 	public:
 
-		FeaturesScannerAddon(std::unique_ptr<Database::Session> dbSession);
+		FeaturesScannerAddon(Database::Db& db);
 
 		std::shared_ptr<FeaturesSearcher> getSearcher();
 
@@ -48,7 +52,7 @@ class FeaturesScannerAddon final : public Scanner::MediaScannerAddon
 
 		void updateSearcher();
 
-		std::unique_ptr<Database::Session>	_dbSession;
+		Database::Session			_dbSession;
 		std::shared_ptr<FeaturesSearcher>	_searcher;
 		bool					_stopRequested {};
 };

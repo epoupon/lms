@@ -4,6 +4,7 @@
 #include <string>
 
 #include "database/Db.hpp"
+#include "database/Session.hpp"
 #include "utils/Config.hpp"
 #include "utils/Service.hpp"
 #include "utils/StreamLogger.hpp"
@@ -23,7 +24,7 @@ int main(int argc, char *argv[])
 		ServiceProvider<Config>::create(configFilePath);
 
 		Database::Db db {ServiceProvider<Config>::get()->getPath("working-dir") / "lms.db"};
-		auto session {db.createSession()};
+		Database::Session session {db};
 
 /*		const FeatureSettings
 		{

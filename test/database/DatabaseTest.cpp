@@ -25,9 +25,10 @@
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
-#include "database/TrackList.hpp"
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackList.hpp"
 #include "database/User.hpp"
 
 #include "utils/StreamLogger.hpp"
@@ -1266,13 +1267,14 @@ int main()
 		for (std::size_t i = 0; i < 2; ++i)
 		{
 			Database::Db db {tmpFile};
-			std::unique_ptr<Session> session {db.createSession()};
+			Database::Session session {db};
+			session.prepareTables();
 
 			auto runTest = [&session](const std::string& name, std::function<void(Session&)> testFunc)
 			{
 				std::cout << "Running test '" << name << "'..." << std::endl;
-				testFunc(*session);
-				testDatabaseEmpty(*session);
+				testFunc(session);
+				testDatabaseEmpty(session);
 				std::cout << "Running test '" << name << "': SUCCESS" << std::endl;
 			};
 

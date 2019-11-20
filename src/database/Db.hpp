@@ -24,8 +24,6 @@
 
 #include <Wt/Dbo/SqlConnectionPool.h>
 
-#include "Session.hpp"
-
 namespace Database {
 
 // Session living class handling the database and the login
@@ -35,9 +33,12 @@ class Db
 
 		Db(const std::filesystem::path& dbPath);
 
-		std::unique_ptr<Session> createSession();
-
 	private:
+		friend class Session;
+
+		std::shared_mutex&		getMutex() { return _sharedMutex; }
+		Wt::Dbo::SqlConnectionPool&	getConnectionPool() { return *_connectionPool; }
+
 		std::shared_mutex				_sharedMutex;
 		std::unique_ptr<Wt::Dbo::SqlConnectionPool>	_connectionPool;
 };

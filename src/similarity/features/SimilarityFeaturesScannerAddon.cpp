@@ -72,13 +72,13 @@ getTracksWithMBIDAndMissingFeatures(Database::Session& dbSession)
 	return res;
 }
 
-FeaturesScannerAddon::FeaturesScannerAddon(std::unique_ptr<Database::Session> dbSession)
-: _dbSession {std::move(dbSession)}
+FeaturesScannerAddon::FeaturesScannerAddon(Database::Db& db)
+: _dbSession {db}
 {
 	std::optional<Similarity::FeaturesCache> cache {Similarity::FeaturesCache::read()};
 	if (cache)
 	{
-		auto searcher {std::make_shared<Similarity::FeaturesSearcher>(*_dbSession.get(), *cache, [&]() { return _stopRequested; })};
+		auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_dbSession, *cache, [&]() { return _stopRequested; })};
 		if (searcher->isValid())
 			std::atomic_store(&_searcher, searcher);
 	}
@@ -99,9 +99,9 @@ FeaturesScannerAddon::requestStop()
 void
 FeaturesScannerAddon::trackUpdated(Database::IdType trackId)
 {
-	auto uniqueTransaction {_dbSession->createUniqueTransaction()};
+	auto uniqueTransaction {_dbSession.createUniqueTransaction()};
 
-	auto track {Database::Track::getById(*_dbSession, trackId)};
+	auto track {Database::Track::getById(_dbSession, trackId)};
 	if (!track)
 		return;
 
@@ -112,9 +112,9 @@ void
 FeaturesScannerAddon::preScanComplete()
 {
 	{
-		auto transaction {_dbSession->createSharedTransaction()};
+		auto transaction {_dbSession.createSharedTransaction()};
 
-		if (Database::SimilaritySettings::get(*_dbSession)->getEngineType() != Database::SimilaritySettings::EngineType::Features)
+		if (Database::SimilaritySettings::get(_dbSession)->getEngineType() != Database::SimilaritySettings::EngineType::Features)
 		{
 			LMS_LOG(DBUPDATER, INFO) << "Do not fetch features since the engine type does not make use of them";
 			return;
@@ -122,7 +122,7 @@ FeaturesScannerAddon::preScanComplete()
 	}
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Getting tracks with missing Features...";
-	const std::vector<TrackInfo> tracksInfo {getTracksWithMBIDAndMissingFeatures(*_dbSession)};
+	const std::vector<TrackInfo> tracksInfo {getTracksWithMBIDAndMissingFeatures(_dbSession)};
 	LMS_LOG(DBUPDATER, DEBUG) << "Getting tracks with missing Features DONE (found " << tracksInfo.size() << ")";
 
 	if (!tracksInfo.empty())
@@ -144,16 +144,16 @@ FeaturesScannerAddon::updateSearcher()
 {
 	LMS_LOG(SIMILARITY, INFO) << "Updating searcher...";
 
-	if (hasAtLeastOneTrackWithFeatures(*_dbSession))
+	if (hasAtLeastOneTrackWithFeatures(_dbSession))
 	{
 		LMS_LOG(DBUPDATER, INFO) << "No track suitable for features similarity clustering";
 		std::atomic_store(&_searcher, std::shared_ptr<FeaturesSearcher>{});
 		return;
 	}
 
-	const auto features {getFeatureSettings(*_dbSession)};
+	const auto features {getFeatureSettings(_dbSession)};
 
-	auto searcher {std::make_shared<Similarity::FeaturesSearcher>(*_dbSession, features, [&]() { return _stopRequested; })};
+	auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_dbSession, features, [&]() { return _stopRequested; })};
 	if (searcher->isValid())
 	{
 		std::atomic_store(&_searcher, searcher);
@@ -183,13 +183,13 @@ FeaturesScannerAddon::fetchFeatures(Database::IdType trackId, const std::string&
 	}
 
 	{
-		auto uniqueTransaction {_dbSession->createUniqueTransaction()};
+		auto uniqueTransaction {_dbSession.createUniqueTransaction()};
 
-		Wt::Dbo::ptr<Database::Track> track {Database::Track::getById(*_dbSession, trackId)};
+		Wt::Dbo::ptr<Database::Track> track {Database::Track::getById(_dbSession, trackId)};
 		if (!track)
 			return false;
 
-		Database::TrackFeatures::create(*_dbSession, track, data);
+		Database::TrackFeatures::create(_dbSession, track, data);
 	}
 
 	return true;

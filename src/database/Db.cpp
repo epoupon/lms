@@ -40,18 +40,6 @@ Db::Db(const std::filesystem::path& dbPath)
 	connectionPool->setTimeout(std::chrono::seconds(10));
 
 	_connectionPool = std::move(connectionPool);
-
-	{
-		auto session {createSession()};
-		session->prepareTables();
-	}
-
-}
-
-std::unique_ptr<Session>
-Db::createSession()
-{
-	return std::unique_ptr<Session>(new Session {_sharedMutex, *_connectionPool.get()});
 }
 
 } // namespace Database
