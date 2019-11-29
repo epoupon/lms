@@ -21,6 +21,8 @@
 #include <Wt/WResource.h>
 #include <Wt/Http/Response.h>
 
+#include "database/SessionPool.hpp"
+
 namespace Database
 {
 	class Db;
@@ -33,14 +35,13 @@ class SubsonicResource final : public Wt::WResource
 {
 	public:
 		SubsonicResource(Database::Db& db);
-		~SubsonicResource();
 
 		static std::string getPath() { return "/rest/"; }
 	private:
 
 		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;
 
-		Database::Db& _db;
+		Database::SessionPool _sessionPool;
 };
 
 } // namespace

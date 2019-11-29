@@ -19,6 +19,10 @@
 
 #include "Session.hpp"
 
+#include <map>
+#include <mutex>
+#include <thread>
+
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 

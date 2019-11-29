@@ -48,7 +48,12 @@ class FeaturesSearcher
 		FeaturesSearcher(Database::Session& session, FeaturesCache cache, StopRequestedFunction stopRequested);
 
 		// Use training (may be very slow)
-		FeaturesSearcher(Database::Session& session, const FeatureSettingsMap& featuresSettingsMap, StopRequestedFunction stopRequested = {});
+		struct TrainSettings
+		{
+			std::size_t nbIterations {10};
+			FeatureSettingsMap featureSettingsMap;
+		};
+		FeaturesSearcher(Database::Session& session, const TrainSettings& trainSettings, StopRequestedFunction stopRequested = {});
 
 		bool isValid() const;
 

@@ -19,9 +19,11 @@
 
 #pragma once
 
-#include <shared_mutex>
 #include <mutex>
+#include <map>
 #include <memory>
+#include <shared_mutex>
+#include <vector>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/SqlConnectionPool.h>

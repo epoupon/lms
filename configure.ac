@@ -15,7 +15,7 @@ fi
 AC_SUBST(MAGICKXX_CFLAGS)
 AC_SUBST(MAGICKXX_LIBS)
 
-AC_CHECK_HEADERS([Wt/WApplication.h pstreams/pstream.h],
+AC_CHECK_HEADERS([Wt/WApplication.h pstreams/pstream.h boost/asio.hpp],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
 

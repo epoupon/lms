@@ -1,3 +1,22 @@
+/*
+ * Copyright (C) 2019 Emeric Poupon
+ *
+ * This file is part of LMS.
+ *
+ * LMS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * LMS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -25,8 +44,8 @@ int main(int argc, char *argv[])
 
 		const FeatureSettingsMap featuresSettings
 		{
-//			{ "lowlevel.average_loudness",			1 },
-//			{ "lowlevel.dynamic_complexity",		1 },
+/*			{ "lowlevel.average_loudness",			1 },
+			{ "lowlevel.dynamic_complexity",		1 },
 			{ "lowlevel.spectral_contrast_coeffs.median",	{1} },
 			{ "lowlevel.erbbands.median",			{1} },
 			{ "tonal.hpcp.median",				{1} },
@@ -34,6 +53,41 @@ int main(int argc, char *argv[])
 			{ "lowlevel.barkbands.median",			{1} },
 			{ "lowlevel.mfcc.mean",				{1} },
 			{ "lowlevel.gfcc.mean",				{1} },
+*/
+			{ "lowlevel.spectral_kurtosis.median",	{1}},
+			{ "lowlevel.spectral_kurtosis.mean",	{1}},
+			{ "lowlevel.spectral_complexity.var",	{1}},
+			{ "lowlevel.barkbands.median",	{1}},
+			{ "lowlevel.barkbands_kurtosis.mean",	{1}},
+				/*
+				   {"lowlevel.spectral_centroid.dvar2",		{1} },
+				   {"lowlevel.barkbands.median",		{1} },
+				   {        "lowlevel.barkbands.dvar",		{1} },
+				{        "lowlevel.spectral_complexity.min",		{1} },
+				{        "lowlevel.pitch_salience.dmean2",		{1} },
+				{        "lowlevel.spectral_contrast_valleys.dmean",		{1} },
+				{        "lowlevel.pitch_salience.max",		{1} },
+				{        "lowlevel.barkbands.mean",		{1} },
+				{        "lowlevel.spectral_complexity.mean",		{1} },
+				{        "lowlevel.dissonance.dvar",		{1} },
+				*/
+/*
+			{ "lowlevel.spectral_energy.dvar",		{1} },
+			{ "lowlevel.barkbands.min",			{1} },
+			{ "lowlevel.spectral_centroid.median",		{1} },
+			{"lowlevel.barkbands_kurtosis.median",		{1} },
+			{"lowlevel.spectral_energy.median",		{1} },
+			{"lowlevel.barkbands.max",		{1} },
+			{"lowlevel.barkbands_spread.var",		{1} },
+			{"lowlevel.spectral_decrease.var",		{1} },
+			{"lowlevel.spectral_contrast_valleys.dmean",		{1} },
+			{"lowlevel.barkbands_crest.mean",		{1} },
+			{"lowlevel.spectral_entropy.var",		{1} },
+			{"lowlevel.barkbands_crest.max",		{1} },
+			{"lowlevel.hfc.dvar",		{1} },
+			{"lowlevel.barkbands_skewness.dvar2",		{1} },
+			{"lowlevel.spectral_centroid.max",		{1} },
+			*/
 		};
 
 		std::filesystem::path configFilePath {"/etc/lms.conf"};
@@ -47,7 +101,10 @@ int main(int argc, char *argv[])
 
 		std::cout << "Classifying tracks..." << std::endl;
 		// may be long...
-		FeaturesSearcher searcher {session, featuresSettings};
+		struct FeaturesSearcher::TrainSettings trainSettings;
+		trainSettings.nbIterations = 10;
+		trainSettings.featureSettingsMap = featuresSettings;
+		FeaturesSearcher searcher {session, trainSettings};
 		std::cout << "Classifying tracks DONE" << std::endl;
 
 		const std::vector<Database::IdType> trackIds = std::invoke([&]()

@@ -115,9 +115,11 @@ class Track : public Wt::Dbo::Dbo<Track>
 		std::optional<std::string>		getCopyright() const;
 		std::optional<std::string>		getCopyrightURL() const;
 		std::vector<Wt::Dbo::ptr<Artist>>	getArtists(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;
+		std::vector<IdType>			getArtistIds(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;
 		std::vector<Wt::Dbo::ptr<TrackArtistLink>>	getArtistLinks() const;
 		Wt::Dbo::ptr<Release>			getRelease() const		{ return _release; }
 		std::vector<Wt::Dbo::ptr<Cluster>>	getClusters() const;
+		std::vector<IdType>			getClusterIds() const;
 		bool					hasTrackFeatures() const;
 		Wt::Dbo::ptr<TrackFeatures>		getTrackFeatures() const;
 

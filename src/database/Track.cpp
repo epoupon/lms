@@ -171,6 +171,20 @@ Track::getClusters(void) const
 	return clusters;
 }
 
+std::vector<IdType>
+Track::getClusterIds(void) const
+{
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	Wt::Dbo::collection<IdType> res = session()->query<IdType>
+		("SELECT DISTINCT c.id FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN track t ON t.id = t_c.track_id")
+		.where("t.id = ?").bind(self()->id());
+
+	return std::vector<IdType>(res.begin(), res.end());
+}
+
 bool
 Track::hasTrackFeatures() const
 {
@@ -375,6 +389,20 @@ Track::getArtists(TrackArtistLink::Type type) const
 		.where("t_a_l.type = ?").bind(type)};
 
 	return std::vector<Wt::Dbo::ptr<Artist>>(artists.begin(), artists.end());
+}
+
+std::vector<IdType>
+Track::getArtistIds(TrackArtistLink::Type type) const
+{
+	assert(self());
+	assert(IdIsValid(self()->id()));
+	assert(session());
+
+	Wt::Dbo::collection<IdType> artists {session()->query<IdType>("SELECT a.id from artist a INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id INNER JOIN track t ON t.id = t_a_l.track_id")
+		.where("t.id = ?").bind(self()->id())
+		.where("t_a_l.type = ?").bind(type)};
+
+	return std::vector<IdType>(artists.begin(), artists.end());
 }
 
 std::vector<Wt::Dbo::ptr<TrackArtistLink>>

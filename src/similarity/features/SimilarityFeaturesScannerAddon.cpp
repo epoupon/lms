@@ -151,9 +151,10 @@ FeaturesScannerAddon::updateSearcher()
 		return;
 	}
 
-	const auto features {getFeatureSettings(_dbSession)};
+	Similarity::FeaturesSearcher::TrainSettings trainSettings;
+	trainSettings.featureSettingsMap = getFeatureSettings(_dbSession);
 
-	auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_dbSession, features, [&]() { return _stopRequested; })};
+	auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_dbSession, trainSettings, [&]() { return _stopRequested; })};
 	if (searcher->isValid())
 	{
 		std::atomic_store(&_searcher, searcher);

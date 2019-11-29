@@ -110,24 +110,27 @@ constexpr T clamp(T v, T lo, T hi, Compare comp = {})
 	return comp(v, lo) ? lo : comp(hi, v) ? hi : v;
 }
 
+using RandGenerator = std::mt19937;
+RandGenerator& getRandGenerator();
+
+int
+getRandom(int min, int max);
+
 template <typename Container>
 void
 shuffleContainer(Container& container)
 {
-	auto now {std::chrono::system_clock::now()};
-	std::mt19937 randGenerator(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
-	std::shuffle(std::begin(container), std::end(container), randGenerator);
+	std::shuffle(std::begin(container), std::end(container), getRandGenerator());
 }
 
 template <typename Container>
-typename Container::iterator
-pickRandom(Container& container)
+typename Container::const_iterator
+pickRandom(const Container& container)
 {
-	auto now {std::chrono::system_clock::now()};
-	std::mt19937 randGenerator (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
-	std::uniform_int_distribution<> dist {0, static_cast<int>(container.size())};
+	if (container.empty())
+		return std::end(container);
 
-	return std::next(std::begin(container), dist(randGenerator ));
+	return std::next(std::begin(container), getRandom(0, static_cast<int>(container.size() - 1)));
 }
 
 

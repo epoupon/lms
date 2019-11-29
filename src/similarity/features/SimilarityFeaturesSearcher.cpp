@@ -99,13 +99,13 @@ getInputVectorWeights(const FeatureSettingsMap& featureSettingsMap, std::size_t 
 }
 
 FeaturesSearcher::FeaturesSearcher(Database::Session& session,
-		const FeatureSettingsMap& featureSettingsMap,
+		const TrainSettings& trainSettings,
 		StopRequestedFunction stopRequested)
 {
 	LMS_LOG(SIMILARITY, INFO) << "Constructing features searcher...";
 
 	std::unordered_set<FeatureName> featureNames;
-	std::transform(std::cbegin(featureSettingsMap), std::cend(featureSettingsMap), std::inserter(featureNames, std::begin(featureNames)),
+	std::transform(std::cbegin(trainSettings.featureSettingsMap), std::cend(trainSettings.featureSettingsMap), std::inserter(featureNames, std::begin(featureNames)),
 		[](const auto& itFeatureSetting) { return itFeatureSetting.first; });
 
 	const std::size_t nbDimensions {std::accumulate(std::cbegin(featureNames), std::cend(featureNames), std::size_t {0},
@@ -161,7 +161,7 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session,
 
 	SOM::Network network {size, size, nbDimensions};
 
-	SOM::InputVector weights {getInputVectorWeights(featureSettingsMap, nbDimensions)};
+	SOM::InputVector weights {getInputVectorWeights(trainSettings.featureSettingsMap, nbDimensions)};
 	network.setDataWeights(weights);
 
 	auto progressIndicator{[](const auto& iter)
@@ -170,7 +170,7 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session,
 		}};
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Training network...";
-	network.train(samples, 10, progressIndicator, stopRequested);
+	network.train(samples, trainSettings.nbIterations, progressIndicator, stopRequested);
 	LMS_LOG(SIMILARITY, DEBUG) << "Training network DONE";
 
 	if (stopRequested && stopRequested())

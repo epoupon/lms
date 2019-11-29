@@ -80,7 +80,7 @@ TrackFeatures::getFeatureValuesMap(const std::unordered_set<FeatureName>& featur
 	}
 	catch (boost::property_tree::ptree_error& error)
 	{
-		LMS_LOG(SIMILARITY, ERROR) << "Track " << _track.id() << ": ptree exception: " << error.what();
+		LMS_LOG(DB, ERROR) << "Track " << _track.id() << ": ptree exception: " << error.what();
 		return {};
 	}
 }

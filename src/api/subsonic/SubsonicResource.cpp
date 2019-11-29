@@ -129,42 +129,6 @@ struct RequestContext
 	std::string userName;
 };
 
-using SessionMap = std::map<Db*, Session>;
-static std::map<std::thread::id, SessionMap> dbSessions;
-
-static
-Session&
-getOrCreateDbSession(Db& db)
-{
-	static std::mutex mutex;
-
-	SessionMap* sessionMap {};
-
-	{
-		std::unique_lock<std::mutex> lock {mutex};
-		sessionMap = &dbSessions[std::this_thread::get_id()];
-	}
-
-	auto it {sessionMap->find(&db)};
-	if (it != std::end(*sessionMap))
-		return it->second;
-
-	auto res { sessionMap->try_emplace(&db, db)};
-	assert(res.second);
-
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Created db session";
-
-	return res.first->second;
-}
-
-static
-void
-clearDbSessions()
-{
-	dbSessions.clear();
-}
-
-
 static
 std::string
 makeNameFilesystemCompatible(const std::string& name)
@@ -275,14 +239,8 @@ struct MediaRetrievalResult
 };
 
 SubsonicResource::SubsonicResource(Db& db)
-: _db {db}
+: _sessionPool {db}
 {
-}
-
-SubsonicResource::~SubsonicResource()
-{
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Cleaning db sessions...";
-	clearDbSessions();
 }
 
 static
@@ -1907,9 +1865,9 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		// Mandatory parameters
 		const ClientInfo clientInfo {getClientInfo(parameters)};
 
-		Session& dbSession {getOrCreateDbSession(_db)};
+		SessionPool::ScopedSession dbSession {_sessionPool};
 
-		switch (ServiceProvider<Auth::PasswordService>::get()->checkUserPassword(dbSession,
+		switch (ServiceProvider<Auth::PasswordService>::get()->checkUserPassword(dbSession.get(),
 					boost::asio::ip::address::from_string(request.clientAddress()),
 					clientInfo.user, clientInfo.password))
 		{
@@ -1921,16 +1879,16 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 				throw LoginThrottledGenericError {};
 		}
 
-		RequestContext requestContext {.parameters = parameters, .dbSession = dbSession, .userName = clientInfo.user};
+		RequestContext requestContext {.parameters = parameters, .dbSession = dbSession.get(), .userName = clientInfo.user};
 
 		auto itEntryPoint {requestEntryPoints.find(requestPath)};
 		if (itEntryPoint != requestEntryPoints.end())
 		{
 			if (itEntryPoint->second.mustBeAdmin)
 			{
-				auto transaction {dbSession.createSharedTransaction()};
+				auto transaction {dbSession.get().createSharedTransaction()};
 
-				User::pointer user {User::getByLoginName(dbSession, clientInfo.user)};
+				User::pointer user {User::getByLoginName(dbSession.get(), clientInfo.user)};
 				if (!user || !user->isAdmin())
 					throw UserNotAuthorizedError {};
 			}

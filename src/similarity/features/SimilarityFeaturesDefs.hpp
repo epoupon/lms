@@ -21,11 +21,13 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace Similarity {
 
 using FeatureName = std::string;
+using FeatureNames = std::unordered_set<FeatureName>;
 using FeatureValue = double;
 using FeatureValues = std::vector<FeatureValue>;
 using FeatureValuesMap = std::unordered_map<FeatureName, FeatureValues>;
@@ -36,6 +38,7 @@ struct FeatureDef
 };
 
 FeatureDef getFeatureDef(const FeatureName& featureName);
+FeatureNames getFeatureNames();
 
 struct FeatureSettings
 {
