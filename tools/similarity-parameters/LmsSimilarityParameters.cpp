@@ -210,15 +210,12 @@ computeTrackScore(Database::Session& session, Database::IdType track1Id, Databas
 
 static
 SimilarityScore
-computeSimilarityScore(Database::Session& session, const FeatureSettingsMap& featuresSettings)
+computeSimilarityScore(Database::Session& session, FeaturesSearcher::TrainSettings trainSettings, const FeatureSettingsMap& featuresSettings)
 {
 	std::cout << "Compute score of: ";
 	printFeatureSettingsMap(featuresSettings);
 	std::cout << std::endl;
 
-	FeaturesSearcher::TrainSettings trainSettings;
-	trainSettings.nbIterations = 10;
-	trainSettings.featureSettingsMap = featuresSettings;
 	FeaturesSearcher searcher {session, trainSettings};
 
 	const std::vector<Database::IdType> trackIds = std::invoke([&]()
@@ -230,16 +227,17 @@ computeSimilarityScore(Database::Session& session, const FeatureSettingsMap& fea
 	SimilarityScore score {};
 	for (Database::IdType trackId : trackIds)
 	{
-//		std::cout << "Processing track '" << trackToString(session, trackId) << "'" << std::endl;
+		constexpr std::size_t nbSimilarTracks {3};
+		std::cout << "Processing track '" << trackToString(session, trackId) << "'" << std::endl;
 		SimilarityScore factor {1};		
-		for (Database::IdType similarTrackId : searcher.getSimilarTracks({trackId}, 3))
+		for (Database::IdType similarTrackId : searcher.getSimilarTracks({trackId}, nbSimilarTracks))
 		{
 			SimilarityScore trackScore {computeTrackScore(session, trackId, similarTrackId)};
-//			std::cout << "\tScore = " << trackScore << " (*" << factor << ") with track '" << trackToString(session, similarTrackId) << "'" << std::endl;
+			std::cout << "\tScore = " << trackScore << " (*" << factor << ") with track '" << trackToString(session, similarTrackId) << "'" << std::endl;
 			trackScore *= factor;
 			score += trackScore;
 
-			factor -= (SimilarityScore {1}/3);
+			factor -= (SimilarityScore {1}/nbSimilarTracks );
 		}
 	}
 
@@ -323,6 +321,7 @@ int main(int argc, char *argv[])
 			initialPopulation.emplace_back(std::move(settings));
 		}
 
+
 		GeneticAlgorithm<FeatureSettingsMap>::Params params;
 		params.nbWorkers = nbWorkers;
 		params.nbGenerations = 300;
@@ -332,8 +331,13 @@ int main(int argc, char *argv[])
 		params.scoreFunction =
 			[&](const FeatureSettingsMap& settings)
 			{
+				FeaturesSearcher::TrainSettings trainSettings;
+				trainSettings.iterationCount = 10;
+				trainSettings.sampleCountPerNeuron = 1.5;
+				trainSettings.featureSettingsMap = settings;
+
 				Database::SessionPool::ScopedSession scopedSession {sessionPool};
-				return computeSimilarityScore(scopedSession.get(), settings);
+				return computeSimilarityScore(scopedSession.get(), trainSettings, settings);
 			};
 
 		GeneticAlgorithm<FeatureSettingsMap> geneticAlgorithm {params};

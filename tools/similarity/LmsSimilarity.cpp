@@ -102,7 +102,6 @@ int main(int argc, char *argv[])
 		std::cout << "Classifying tracks..." << std::endl;
 		// may be long...
 		struct FeaturesSearcher::TrainSettings trainSettings;
-		trainSettings.nbIterations = 10;
 		trainSettings.featureSettingsMap = featuresSettings;
 		FeaturesSearcher searcher {session, trainSettings};
 		std::cout << "Classifying tracks DONE" << std::endl;

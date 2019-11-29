@@ -156,7 +156,7 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session,
 	for (auto& sample : samples)
 		dataNormalizer.normalizeData(sample);
 
-	SOM::Coordinate size {static_cast<SOM::Coordinate>(std::sqrt(samples.size() / 4))};
+	SOM::Coordinate size {static_cast<SOM::Coordinate>(std::sqrt(samples.size() / trainSettings.sampleCountPerNeuron))};
 	LMS_LOG(SIMILARITY, INFO) << "Found " << samples.size() << " tracks, constructing a " << size << "*" << size << " network";
 
 	SOM::Network network {size, size, nbDimensions};
@@ -170,7 +170,7 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session,
 		}};
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Training network...";
-	network.train(samples, trainSettings.nbIterations, progressIndicator, stopRequested);
+	network.train(samples, trainSettings.iterationCount, progressIndicator, stopRequested);
 	LMS_LOG(SIMILARITY, DEBUG) << "Training network DONE";
 
 	if (stopRequested && stopRequested())

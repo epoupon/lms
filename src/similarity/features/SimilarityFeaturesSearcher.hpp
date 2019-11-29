@@ -50,7 +50,8 @@ class FeaturesSearcher
 		// Use training (may be very slow)
 		struct TrainSettings
 		{
-			std::size_t nbIterations {10};
+			std::size_t iterationCount {10};
+			float sampleCountPerNeuron {4};
 			FeatureSettingsMap featureSettingsMap;
 		};
 		FeaturesSearcher(Database::Session& session, const TrainSettings& trainSettings, StopRequestedFunction stopRequested = {});
