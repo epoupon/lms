@@ -36,43 +36,52 @@
 namespace Similarity {
 
 static
-std::optional<SOM::InputVector>
-getInputVectorFromTrack(Database::Session& session, Database::IdType trackId, const std::unordered_set<FeatureName>& featureNames, std::size_t nbDimensions)
+std::optional<FeatureValuesMap>
+getTrackFeatureValues(FeaturesSearcher::FeaturesFetchFunc func, Database::IdType trackId, const std::unordered_set<FeatureName>& featureNames)
 {
-	FeatureValuesMap featureValuesMap;
+	return func(trackId, featureNames);
+}
 
+static
+std::optional<FeatureValuesMap>
+getTrackFeatureValuesFromDb(Database::Session& session, Database::IdType trackId, const std::unordered_set<FeatureName>& featureNames)
+{
+	auto func = [&](Database::IdType trackId, const std::unordered_set<FeatureName>& featureNames)
 	{
+		std::optional<FeatureValuesMap> res;
+
 		auto transaction {session.createSharedTransaction()};
 
 		Database::Track::pointer track {Database::Track::getById(session, trackId)};
 		if (!track)
-			return std::nullopt;
+			return res;
 
-		featureValuesMap = track->getTrackFeatures()->getFeatureValuesMap(featureNames);
-		if (featureValuesMap.empty())
-			return std::nullopt;
-	}
+		res = track->getTrackFeatures()->getFeatureValuesMap(featureNames);
+		if (res->empty())
+			res.reset();
 
+		return res;
+	};
+
+	return getTrackFeatureValues(func, trackId, featureNames);
+}
+
+static
+std::optional<SOM::InputVector>
+convertFeatureValuesMapToInputVector(const FeatureValuesMap& featureValuesMap, std::size_t nbDimensions)
+{
 	std::size_t i {};
 	std::optional<SOM::InputVector> res {SOM::InputVector {nbDimensions}};
-	for (const auto& featureName : featureNames)
+	for (const auto& [featureName, values] : featureValuesMap)
 	{
-		const auto it {featureValuesMap.find(featureName)};
-		if (it == std::cend(featureValuesMap))
+		if (values.size() != getFeatureDef(featureName).nbDimensions)
 		{
-			LMS_LOG(SIMILARITY, WARNING) << "Cannot find feature '" << featureName << "' for track id'" << trackId << "'";
+			LMS_LOG(SIMILARITY, WARNING) << "Dimension mismatch for feature '" << featureName << "'. Expected " << getFeatureDef(featureName).nbDimensions << ", got " << values.size();
 			res.reset();
 			break;
 		}
 
-		if (it->second.size() != getFeatureDef(featureName).nbDimensions)
-		{
-			LMS_LOG(SIMILARITY, WARNING) << "Dimension mismatch for feature '" << featureName << "'. Expected " << getFeatureDef(featureName).nbDimensions << ", got " << it->second.size() << ", trackId = " << trackId;
-			res.reset();
-			break;
-		}
-
-		for (double val : it->second)
+		for (double val : values)
 			(*res)[i++] = val;
 	}
 
@@ -134,7 +143,17 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session,
 		if (stopRequested && stopRequested())
 			return;
 
-		std::optional<SOM::InputVector> inputVector {getInputVectorFromTrack(session, trackId, featureNames, nbDimensions)};
+		std::optional<FeatureValuesMap> featureValuesMap;
+
+		if (_featuresFetchFunc)
+			featureValuesMap = getTrackFeatureValues(_featuresFetchFunc, trackId, featureNames);
+		else
+			featureValuesMap = getTrackFeatureValuesFromDb(session, trackId, featureNames);
+
+		if (!featureValuesMap)
+			continue;
+
+		std::optional<SOM::InputVector> inputVector {convertFeatureValuesMapToInputVector(*featureValuesMap, nbDimensions)};
 		if (!inputVector)
 			continue;
 

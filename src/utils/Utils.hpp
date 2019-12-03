@@ -113,8 +113,21 @@ constexpr T clamp(T v, T lo, T hi, Compare comp = {})
 using RandGenerator = std::mt19937;
 RandGenerator& getRandGenerator();
 
-int
-getRandom(int min, int max);
+template <typename T>
+T
+getRandom(T min, T max)
+{
+	std::uniform_int_distribution<> dist {min, max};
+	return dist (getRandGenerator());
+}
+
+template <typename T>
+T
+getRealRandom(T min, T max)
+{
+	std::uniform_real_distribution<> dist {min, max};
+	return dist (getRandGenerator());
+}
 
 template <typename Container>
 void

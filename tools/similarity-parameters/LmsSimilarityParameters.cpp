@@ -27,6 +27,7 @@
 #include "database/Release.hpp"
 #include "database/SessionPool.hpp"
 #include "database/Track.hpp"
+#include "database/TrackFeatures.hpp"
 #include "similarity/features/SimilarityFeaturesSearcher.hpp"
 #include "utils/Config.hpp"
 #include "utils/Service.hpp"
@@ -136,6 +137,56 @@ const FeatureSettingsMap featuresSettings
 	{ "lowlevel.zerocrossingrate.var",		{1}},
 };
 
+static
+std::unordered_map<Database::IdType, FeatureValuesMap>
+constructFeaturesCache(Database::Session& session, const FeatureSettingsMap& featureSettings)
+{
+	std::unordered_map<Database::IdType, FeatureValuesMap> cache;
+
+	std::unordered_set<FeatureName> names;
+	std::transform(std::cbegin(featureSettings), std::cend(featureSettings), std::inserter(names, std::begin(names)),
+			[](const auto& itFeature) { return itFeature.first; });
+
+	auto transaction {session.createSharedTransaction()};
+
+	for (auto trackId : Database::Track::getAllIdsWithFeatures(session))
+	{
+		const Database::Track::pointer track {Database::Track::getById(session, trackId)};
+		const Database::TrackFeatures::pointer trackFeatures {track->getTrackFeatures()};
+
+		cache[trackId] = trackFeatures->getFeatureValuesMap(names);
+	}
+
+	return cache;
+}
+
+static
+std::optional<FeatureValuesMap>
+getFeaturesFromCache(const std::unordered_map<Database::IdType, FeatureValuesMap>& cache, Database::IdType trackId, const FeatureNames& names)
+{
+	std::optional<FeatureValuesMap> res;
+
+	auto it {cache.find(trackId)};
+	if (it == std::cend(cache))
+		return res;
+
+	res = FeatureValuesMap{};
+
+	const FeatureValuesMap& trackFeatures {it->second};
+	for (const FeatureName& name : names)
+	{
+		auto itFeatures {trackFeatures.find(name)};
+		if (itFeatures == std::cend(trackFeatures))
+		{
+			res.reset();
+			break;
+		}
+
+		res->emplace(name, itFeatures ->second);
+	}
+
+	return res;
+}
 
 static
 void
@@ -228,12 +279,12 @@ computeSimilarityScore(Database::Session& session, FeaturesSearcher::TrainSettin
 	for (Database::IdType trackId : trackIds)
 	{
 		constexpr std::size_t nbSimilarTracks {3};
-		std::cout << "Processing track '" << trackToString(session, trackId) << "'" << std::endl;
+//		std::cout << "Processing track '" << trackToString(session, trackId) << "'" << std::endl;
 		SimilarityScore factor {1};		
 		for (Database::IdType similarTrackId : searcher.getSimilarTracks({trackId}, nbSimilarTracks))
 		{
 			SimilarityScore trackScore {computeTrackScore(session, trackId, similarTrackId)};
-			std::cout << "\tScore = " << trackScore << " (*" << factor << ") with track '" << trackToString(session, similarTrackId) << "'" << std::endl;
+//			std::cout << "\tScore = " << trackScore << " (*" << factor << ") with track '" << trackToString(session, similarTrackId) << "'" << std::endl;
 			trackScore *= factor;
 			score += trackScore;
 
@@ -286,7 +337,7 @@ int main(int argc, char *argv[])
 	{
 
 		// log to stdout
-		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
+//		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
 
 		if (argc != 3)
 		{
@@ -302,10 +353,21 @@ int main(int argc, char *argv[])
 		Database::Db db {ServiceProvider<Config>::get()->getPath("working-dir") / "lms.db"};
 		Database::SessionPool sessionPool {db, nbWorkers};
 
+		std::cout << "Caching all features..." << std::endl;
+		// Cache all the features of all the music in order to speed up the multiple trainings
+		const auto cachedFeatures { constructFeaturesCache(Database::SessionPool::ScopedSession {sessionPool}.get(), featuresSettings) };
+		std::cout << "Caching all features DONE" << std::endl;
+
+		FeaturesSearcher::setFeaturesFetchFunc(
+				[&](Database::IdType trackId, const FeatureNames& featureNames)
+				{
+					return getFeaturesFromCache(cachedFeatures, trackId, featureNames);
+				});
+
 		// Create some random settings (i.e random population)
 		std::vector<FeatureSettingsMap> initialPopulation;
 
-		constexpr std::size_t populationSize {100};
+		constexpr std::size_t populationSize {10};
 		constexpr std::size_t nbFeatures {5};
 
 		for (std::size_t i {}; i < populationSize; ++i)
@@ -324,7 +386,8 @@ int main(int argc, char *argv[])
 
 		GeneticAlgorithm<FeatureSettingsMap>::Params params;
 		params.nbWorkers = nbWorkers;
-		params.nbGenerations = 300;
+		params.nbGenerations = 5;
+		params.crossoverRatio = 0.78;
 		params.mutationProbability = 0.2;
 		params.breedFunction = breedFeatureSettingsMap;
 		params.mutateFunction = mutateFeatureSettingsMap;
@@ -332,7 +395,7 @@ int main(int argc, char *argv[])
 			[&](const FeatureSettingsMap& settings)
 			{
 				FeaturesSearcher::TrainSettings trainSettings;
-				trainSettings.iterationCount = 10;
+				trainSettings.iterationCount = 8;
 				trainSettings.sampleCountPerNeuron = 1.5;
 				trainSettings.featureSettingsMap = settings;
 
@@ -346,6 +409,7 @@ int main(int argc, char *argv[])
 			<< "\tnb generations = " << params.nbGenerations << "\n"
 			<< "\tpopulationSize = " << populationSize << "\n"
 			<< "\tnbFeatures = " << nbFeatures << "\n"
+			<< "\tcrossoverRatio = " << params.crossoverRatio << "\n"
 			<< "\tmutationProbability = " << params.mutationProbability << "\n"
 			<< std::endl;
 			

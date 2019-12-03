@@ -36,6 +36,7 @@ class GeneticAlgorithm
 		{
 			std::size_t		nbWorkers {1};
 			std::size_t		nbGenerations;
+			float			crossoverRatio {0.5};
 			float			mutationProbability {0.05};
 			BreedFunction	breedFunction;
 			MutateFunction		mutateFunction;
@@ -56,6 +57,8 @@ class GeneticAlgorithm
 		};
 
 		void scoreAndSortPopulation(std::vector<ScoredIndividual>& population);
+		Score getTotalScore(const std::vector<ScoredIndividual>& population) const;
+		typename std::vector<ScoredIndividual>::const_iterator pickRandomRouletteWheel(const std::vector<ScoredIndividual>& population);
 
 		Params _params;
 };
@@ -66,10 +69,12 @@ GeneticAlgorithm<Individual>::GeneticAlgorithm(const Params& params)
 {
 }
 
+
 template<typename Individual>
 Individual
 GeneticAlgorithm<Individual>::simulate(const std::vector<Individual>& initialPopulation)
 {
+	const std::size_t childrenCountPerGeneration {static_cast<std::size_t>(initialPopulation.size() * _params.crossoverRatio)};
 	if (initialPopulation.size() < 10)
 		throw std::runtime_error("Initial population must has at least 10 elements");
 
@@ -83,36 +88,42 @@ GeneticAlgorithm<Individual>::simulate(const std::vector<Individual>& initialPop
 
 	for (std::size_t currentGeneration {}; currentGeneration  < _params.nbGenerations; ++currentGeneration)
 	{
+		assert(scoredPopulation.size() == initialPopulation.size());
 		std::cout << "Processing generation " << currentGeneration << "..." << std::endl;
-		// parent selection (elitist selection)
-		scoredPopulation.resize(scoredPopulation.size() / 2);
 
-		// breed the remaining individuals
+		// breed
 		std::vector<ScoredIndividual> children;
-		children.reserve(initialPopulation.size() - scoredPopulation.size());
+		children.reserve(childrenCountPerGeneration);
 
-		while (children.size() + scoredPopulation.size() < initialPopulation.size())
+		while (children.size() < childrenCountPerGeneration)
 		{
-			// Select two random parents
-			const auto itParent1 {pickRandom(scoredPopulation)};
-			const auto itParent2 {pickRandom(scoredPopulation)};
+			// Select two random parents using their score as weight
+			const auto itParent1 {pickRandomRouletteWheel(scoredPopulation)};
+			const auto itParent2 {pickRandomRouletteWheel(scoredPopulation)};
 
 			if (itParent1 == itParent2)
 				continue;
 
+			std::cout << "Parent1 = " << std::distance(std::cbegin(scoredPopulation), itParent1) << std::endl;
+			std::cout << "Parent2 = " << std::distance(std::cbegin(scoredPopulation), itParent2) << std::endl;
+
 			ScoredIndividual child {_params.breedFunction(itParent1->individual, itParent2->individual)};
 			
-			if (getRandom(0, 100) <= _params.mutationProbability * 100)
+			if (getRealRandom(float {}, float {1}) <= _params.mutationProbability)
 				_params.mutateFunction(child.individual);
 
-			children.emplace_back(std::move(child ));
+			children.emplace_back(std::move(child));
 		}
+
+		// Elitist selection
+		scoredPopulation.resize(initialPopulation.size() - childrenCountPerGeneration);
 
 		scoredPopulation.insert(std::end(scoredPopulation), std::make_move_iterator(std::begin(children)), std::make_move_iterator(std::end(children)));
 		assert(scoredPopulation.size() == initialPopulation.size());
 
 		scoreAndSortPopulation(scoredPopulation);
 
+		std::cout << "Mean score = " << getTotalScore(scoredPopulation) / scoredPopulation.size() << std::endl;
 		std::cout << "Current best score = " << *scoredPopulation.front().score << std::endl;
 	}
 
@@ -134,4 +145,32 @@ GeneticAlgorithm<Individual>::scoreAndSortPopulation(std::vector<ScoredIndividua
 
 	std::sort(std::begin(scoredPopulation), std::end(scoredPopulation), [](const ScoredIndividual& a, const ScoredIndividual& b) { return a.score > b.score; });
 }
+
+template<typename Individual>
+typename GeneticAlgorithm<Individual>::Score
+GeneticAlgorithm<Individual>::getTotalScore(const std::vector<ScoredIndividual>& scoredPopulation) const
+{
+	return std::accumulate(std::cbegin(scoredPopulation), std::cend(scoredPopulation), Score {}, [](Score score, const ScoredIndividual& individual) { return score + *individual.score; });
+}
+
+template<typename Individual>
+typename std::vector<typename GeneticAlgorithm<Individual>::ScoredIndividual>::const_iterator
+GeneticAlgorithm<Individual>::pickRandomRouletteWheel(const std::vector<ScoredIndividual>& population)
+{
+	const Score randomScore {getRealRandom(Score {}, getTotalScore(population))};
+
+	std::cout << "Random = " << randomScore << ", total = " << getTotalScore(population) << std::endl;
+
+	Score curScore{};
+	for (auto itScoredIndividual {std::cbegin(population)}; itScoredIndividual != std::cend(population); ++itScoredIndividual )
+	{
+		if (curScore + *itScoredIndividual->score > randomScore)
+			return itScoredIndividual;
+
+		curScore += *itScoredIndividual->score;
+	}
+
+	throw std::runtime_error("bad random or empty population");
+}
+
 

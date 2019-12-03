@@ -20,6 +20,7 @@
 #pragma once
 
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 
@@ -70,6 +71,11 @@ class FeaturesSearcher
 
 		FeaturesCache toCache() const;
 
+		using FeaturesFetchFunc = std::function<std::optional<std::unordered_map<std::string, std::vector<double>>>(Database::IdType /*trackId*/, const std::unordered_set<std::string>& /*features*/)>;
+		// Default is to retrieve the features from the database (may be slow).
+		// Use this only if you want to train different searchers with the same data
+		static void setFeaturesFetchFunc(FeaturesFetchFunc func) { _featuresFetchFunc = func; }
+
 	private:
 
 		using ObjectPositions = std::map<Database::IdType, std::set<SOM::Position>>;
@@ -96,6 +102,7 @@ class FeaturesSearcher
 		SOM::Matrix<std::set<Database::IdType>> 	_tracksMap;
 		ObjectPositions					_trackPositions;
 
+		static inline FeaturesFetchFunc _featuresFetchFunc;
 };
 
 } // ns Similarity
