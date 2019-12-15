@@ -58,7 +58,7 @@ class GeneticAlgorithm
 
 		void scoreAndSortPopulation(std::vector<ScoredIndividual>& population);
 		Score getTotalScore(const std::vector<ScoredIndividual>& population) const;
-		typename std::vector<ScoredIndividual>::const_iterator pickRandomRouletteWheel(const std::vector<ScoredIndividual>& population);
+		typename std::vector<ScoredIndividual>::const_iterator pickRandomRouletteWheel(const std::vector<ScoredIndividual>& population, Score totalScore);
 
 		Params _params;
 };
@@ -90,22 +90,21 @@ GeneticAlgorithm<Individual>::simulate(const std::vector<Individual>& initialPop
 	{
 		assert(scoredPopulation.size() == initialPopulation.size());
 		std::cout << "Processing generation " << currentGeneration << "..." << std::endl;
+		std::cout << "Need to create " << childrenCountPerGeneration << " new children" << std::endl;
 
 		// breed
+		const Score populationTotalScore {getTotalScore(scoredPopulation)};
 		std::vector<ScoredIndividual> children;
 		children.reserve(childrenCountPerGeneration);
 
 		while (children.size() < childrenCountPerGeneration)
 		{
 			// Select two random parents using their score as weight
-			const auto itParent1 {pickRandomRouletteWheel(scoredPopulation)};
-			const auto itParent2 {pickRandomRouletteWheel(scoredPopulation)};
+			const auto itParent1 {pickRandomRouletteWheel(scoredPopulation, populationTotalScore)};
+			const auto itParent2 {pickRandomRouletteWheel(scoredPopulation, populationTotalScore)};
 
 			if (itParent1 == itParent2)
 				continue;
-
-			std::cout << "Parent1 = " << std::distance(std::cbegin(scoredPopulation), itParent1) << std::endl;
-			std::cout << "Parent2 = " << std::distance(std::cbegin(scoredPopulation), itParent2) << std::endl;
 
 			ScoredIndividual child {_params.breedFunction(itParent1->individual, itParent2->individual)};
 			
@@ -155,11 +154,9 @@ GeneticAlgorithm<Individual>::getTotalScore(const std::vector<ScoredIndividual>&
 
 template<typename Individual>
 typename std::vector<typename GeneticAlgorithm<Individual>::ScoredIndividual>::const_iterator
-GeneticAlgorithm<Individual>::pickRandomRouletteWheel(const std::vector<ScoredIndividual>& population)
+GeneticAlgorithm<Individual>::pickRandomRouletteWheel(const std::vector<ScoredIndividual>& population, Score totalScore)
 {
-	const Score randomScore {getRealRandom(Score {}, getTotalScore(population))};
-
-	std::cout << "Random = " << randomScore << ", total = " << getTotalScore(population) << std::endl;
+	const Score randomScore {getRealRandom(Score {}, totalScore)};
 
 	Score curScore{};
 	for (auto itScoredIndividual {std::cbegin(population)}; itScoredIndividual != std::cend(population); ++itScoredIndividual )

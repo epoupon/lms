@@ -76,11 +76,34 @@ const FeatureSettingsMap featuresSettings
 	{ "lowlevel.hfc.median",			{1}},
 	{ "lowlevel.hfc.var",				{1}},
 	{ "tonal.hpcp.median",				{1}},
+	{ "lowlevel.melbands.mean",			{1}},
 	{ "lowlevel.melbands.median",			{1}},
+	{ "lowlevel.melbands.var",			{1}},
+	{ "lowlevel.melbands_crest.mean",		{1}},
+	{ "lowlevel.melbands_crest.median",		{1}},
+	{ "lowlevel.melbands_crest.var",		{1}},
+	{ "lowlevel.melbands_flatness_db.mean",		{1}},
+	{ "lowlevel.melbands_flatness_db.median",	{1}},
+	{ "lowlevel.melbands_flatness_db.var",		{1}},
+	{ "lowlevel.melbands_kurtosis.mean",		{1}},
+	{ "lowlevel.melbands_kurtosis.median",		{1}},
+	{ "lowlevel.melbands_kurtosis.var",		{1}},
+	{ "lowlevel.melbands_skewness.mean",		{1}},
+	{ "lowlevel.melbands_skewness.median",		{1}},
+	{ "lowlevel.melbands_skewness.var",		{1}},
+	{ "lowlevel.melbands_spread.mean",		{1}},
+	{ "lowlevel.melbands_spread.median",		{1}},
+	{ "lowlevel.melbands_spread.var",		{1}},
 	{ "lowlevel.mfcc.mean",				{1}},
 	{ "lowlevel.pitch_salience.mean",		{1}},
 	{ "lowlevel.pitch_salience.median",		{1}},
 	{ "lowlevel.pitch_salience.var",		{1}},
+	{ "lowlevel.silence_rate_30dB.mean",		{1}},
+	{ "lowlevel.silence_rate_30dB.median",		{1}},
+	{ "lowlevel.silence_rate_30dB.var",		{1}},
+	{ "lowlevel.silence_rate_60dB.mean",		{1}},
+	{ "lowlevel.silence_rate_60dB.median",		{1}},
+	{ "lowlevel.silence_rate_60dB.var",		{1}},
 	{ "lowlevel.spectral_centroid.mean",		{1}},
 	{ "lowlevel.spectral_centroid.median",		{1}},
 	{ "lowlevel.spectral_centroid.var",		{1}},
@@ -261,10 +284,10 @@ computeTrackScore(Database::Session& session, Database::IdType track1Id, Databas
 
 static
 SimilarityScore
-computeSimilarityScore(Database::Session& session, FeaturesSearcher::TrainSettings trainSettings, const FeatureSettingsMap& featuresSettings)
+computeSimilarityScore(Database::Session& session, FeaturesSearcher::TrainSettings trainSettings)
 {
 	std::cout << "Compute score of: ";
-	printFeatureSettingsMap(featuresSettings);
+	printFeatureSettingsMap(trainSettings.featureSettingsMap);
 	std::cout << std::endl;
 
 	FeaturesSearcher searcher {session, trainSettings};
@@ -272,7 +295,7 @@ computeSimilarityScore(Database::Session& session, FeaturesSearcher::TrainSettin
 	const std::vector<Database::IdType> trackIds = std::invoke([&]()
 			{
 				auto transaction {session.createSharedTransaction()};
-				return Database::Track::getAllIds(session);
+				return Database::Track::getAllIdsWithFeatures(session);
 			});
 
 	SimilarityScore score {};
@@ -296,6 +319,32 @@ computeSimilarityScore(Database::Session& session, FeaturesSearcher::TrainSettin
 
 	return score;
 }
+
+static
+void
+printBadlyClassifiedTracks(Database::Session& session, FeaturesSearcher::TrainSettings trainSettings)
+{
+	
+	FeaturesSearcher searcher {session, trainSettings};
+
+	const std::vector<Database::IdType> trackIds = std::invoke([&]()
+			{
+				auto transaction {session.createSharedTransaction()};
+				return Database::Track::getAllIdsWithFeatures(session);
+			});
+
+	for (Database::IdType trackId : trackIds)
+	{
+		constexpr std::size_t nbSimilarTracks {3};
+		for (Database::IdType similarTrackId : searcher.getSimilarTracks({trackId}, nbSimilarTracks))
+		{
+			SimilarityScore trackScore {computeTrackScore(session, trackId, similarTrackId)};
+			if (trackScore == 0)
+				std::cout << "Badly classified tracks: '" << trackToString(session, trackId) << "'\n\twith track '" << trackToString(session, similarTrackId) << "'" <<std::endl;
+		}
+	}
+}
+
 
 static
 FeatureSettingsMap 
@@ -367,7 +416,7 @@ int main(int argc, char *argv[])
 		// Create some random settings (i.e random population)
 		std::vector<FeatureSettingsMap> initialPopulation;
 
-		constexpr std::size_t populationSize {10};
+		constexpr std::size_t populationSize {200};
 		constexpr std::size_t nbFeatures {5};
 
 		for (std::size_t i {}; i < populationSize; ++i)
@@ -383,29 +432,31 @@ int main(int argc, char *argv[])
 			initialPopulation.emplace_back(std::move(settings));
 		}
 
+		FeaturesSearcher::TrainSettings trainSettings;
+		trainSettings.iterationCount = 8;
+		trainSettings.sampleCountPerNeuron = 1.5;
 
 		GeneticAlgorithm<FeatureSettingsMap>::Params params;
 		params.nbWorkers = nbWorkers;
-		params.nbGenerations = 5;
+		params.nbGenerations = 1;
 		params.crossoverRatio = 0.78;
 		params.mutationProbability = 0.2;
 		params.breedFunction = breedFeatureSettingsMap;
 		params.mutateFunction = mutateFeatureSettingsMap;
 		params.scoreFunction =
-			[&](const FeatureSettingsMap& settings)
+			[&](const FeatureSettingsMap& featureSettings)
 			{
-				FeaturesSearcher::TrainSettings trainSettings;
-				trainSettings.iterationCount = 8;
-				trainSettings.sampleCountPerNeuron = 1.5;
-				trainSettings.featureSettingsMap = settings;
+				FeaturesSearcher::TrainSettings settings {trainSettings};
+				settings.featureSettingsMap = featureSettings;
 
 				Database::SessionPool::ScopedSession scopedSession {sessionPool};
-				return computeSimilarityScore(scopedSession.get(), trainSettings, settings);
+				return computeSimilarityScore(scopedSession.get(), settings);
 			};
 
 		GeneticAlgorithm<FeatureSettingsMap> geneticAlgorithm {params};
 
 		std::cout << "Parameters:\n"
+			<< "\tnb total settings = "<< featuresSettings.size() << "\n"
 			<< "\tnb generations = " << params.nbGenerations << "\n"
 			<< "\tpopulationSize = " << populationSize << "\n"
 			<< "\tnbFeatures = " << nbFeatures << "\n"
@@ -417,6 +468,15 @@ int main(int argc, char *argv[])
 		const FeatureSettingsMap selectedSettings {geneticAlgorithm.simulate(initialPopulation)};
 		std::cout << "Simulation complete! Best result:" << std::endl;
 		printFeatureSettingsMap(selectedSettings);
+
+		// print all badly classified tracks
+		{
+			FeaturesSearcher::TrainSettings settings {trainSettings};
+			settings.featureSettingsMap = selectedSettings;
+
+			Database::SessionPool::ScopedSession scopedSession {sessionPool};
+			printBadlyClassifiedTracks(scopedSession.get(), settings);
+		}
 	}
 	catch (std::exception& e)
 	{

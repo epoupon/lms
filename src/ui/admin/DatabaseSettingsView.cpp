@@ -27,7 +27,6 @@
 #include <Wt/WTemplateFormView.h>
 
 #include "database/Cluster.hpp"
-#include "database/SimilaritySettings.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/Utils.hpp"
@@ -85,7 +84,6 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 			const ScanSettings::pointer scanSettings {ScanSettings::get(LmsApp->getDbSession())};
-			const SimilaritySettings::pointer similaritySettings {SimilaritySettings::get(LmsApp->getDbSession())};
 
 			setValue(MediaDirectoryField, scanSettings->getMediaDirectory().string());
 
@@ -97,7 +95,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			if (startTimeRow)
 				setValue(UpdateStartTimeField, _updateStartTimeModel->getString(*startTimeRow));
 
-			auto similarityEngineTypeRow {_similarityEngineTypeModel->getRowFromValue(similaritySettings->getEngineType())};
+			auto similarityEngineTypeRow {_similarityEngineTypeModel->getRowFromValue(scanSettings->getSimilarityEngineType())};
 			if (similarityEngineTypeRow)
 				setValue(SimilarityEngineTypeField, _similarityEngineTypeModel->getString(*similarityEngineTypeRow));
 
@@ -115,7 +113,6 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
 			ScanSettings::pointer scanSettings {ScanSettings::get(LmsApp->getDbSession())};
-			SimilaritySettings::pointer similaritySettings {SimilaritySettings::get(LmsApp->getDbSession())};
 
 			scanSettings.modify()->setMediaDirectory(valueText(MediaDirectoryField).toUTF8());
 
@@ -129,7 +126,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 			auto similarityEngineTypeRow {_similarityEngineTypeModel->getRowFromString(valueText(SimilarityEngineTypeField))};
 			if (similarityEngineTypeRow)
-				similaritySettings.modify()->setEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
+				scanSettings.modify()->setSimilarityEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
 
 			auto clusterTypes {splitString(valueText(TagsField).toUTF8(), " ")};
 			scanSettings.modify()->setClusterTypes(LmsApp->getDbSession(), std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
@@ -158,14 +155,14 @@ class DatabaseSettingsModel : public Wt::WFormModel
 				_updateStartTimeModel->add(time.toString(), time);
 			}
 
-			_similarityEngineTypeModel = std::make_shared<ValueStringModel<SimilaritySettings::EngineType>>();
-			_similarityEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.similarity-engine-type.clusters"), SimilaritySettings::EngineType::Clusters);
-			_similarityEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.similarity-engine-type.features"), SimilaritySettings::EngineType::Features);
+			_similarityEngineTypeModel = std::make_shared<ValueStringModel<ScanSettings::SimilarityEngineType>>();
+			_similarityEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.similarity-engine-type.clusters"), ScanSettings::SimilarityEngineType::Clusters);
+			_similarityEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.similarity-engine-type.features"), ScanSettings::SimilarityEngineType::Features);
 		}
 
 		std::shared_ptr<ValueStringModel<ScanSettings::UpdatePeriod>>		_updatePeriodModel;
 		std::shared_ptr<ValueStringModel<Wt::WTime>>				_updateStartTimeModel;
-		std::shared_ptr<ValueStringModel<SimilaritySettings::EngineType>>	_similarityEngineTypeModel;
+		std::shared_ptr<ValueStringModel<ScanSettings::SimilarityEngineType>>	_similarityEngineTypeModel;
 
 };
 

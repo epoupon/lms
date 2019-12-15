@@ -20,8 +20,8 @@
 #include "SimilarityFeaturesScannerAddon.hpp"
 
 #include "AcousticBrainzUtils.hpp"
+#include "database/ScanSettings.hpp"
 #include "database/Track.hpp"
-#include "database/SimilaritySettings.hpp"
 #include "database/TrackFeatures.hpp"
 #include "similarity/features/SimilarityFeaturesCache.hpp"
 #include "utils/Config.hpp"
@@ -30,25 +30,11 @@
 namespace Similarity {
 
 static
-FeatureSettingsMap
-getFeatureSettings(Database::Session& session)
-{
-	FeatureSettingsMap res;
-
-	auto transaction {session.createSharedTransaction()};
-
-	for (const auto& feature : Database::SimilaritySettings::get(session)->getFeatures())
-		res[feature->getName()] = {feature->getWeight()};
-
-	return res;
-}
-
-static
 bool
 hasAtLeastOneTrackWithFeatures(Database::Session& session)
 {
 	auto transaction {session.createSharedTransaction()};
-	return !Database::Track::getAllIdsWithFeatures(session).empty();
+	return !Database::Track::getAllIdsWithFeatures(session, 1).empty();
 }
 
 struct TrackInfo
@@ -114,7 +100,7 @@ FeaturesScannerAddon::preScanComplete()
 	{
 		auto transaction {_dbSession.createSharedTransaction()};
 
-		if (Database::SimilaritySettings::get(_dbSession)->getEngineType() != Database::SimilaritySettings::EngineType::Features)
+		if (Database::ScanSettings::get(_dbSession)->getSimilarityEngineType() != Database::ScanSettings::SimilarityEngineType::Features)
 		{
 			LMS_LOG(DBUPDATER, INFO) << "Do not fetch features since the engine type does not make use of them";
 			return;
@@ -144,17 +130,17 @@ FeaturesScannerAddon::updateSearcher()
 {
 	LMS_LOG(SIMILARITY, INFO) << "Updating searcher...";
 
-	if (hasAtLeastOneTrackWithFeatures(_dbSession))
+	if (!hasAtLeastOneTrackWithFeatures(_dbSession))
 	{
-		LMS_LOG(DBUPDATER, INFO) << "No track suitable for features similarity clustering";
+		LMS_LOG(DBUPDATER, INFO) << "No track found with features!";
 		std::atomic_store(&_searcher, std::shared_ptr<FeaturesSearcher>{});
 		return;
 	}
 
 	Similarity::FeaturesSearcher::TrainSettings trainSettings;
-	trainSettings.featureSettingsMap = getFeatureSettings(_dbSession);
+	trainSettings.featureSettingsMap = FeaturesSearcher::getDefaultTrainFeatureSettings();
 
-	auto searcher {std::make_shared<Similarity::FeaturesSearcher>(_dbSession, trainSettings, [&]() { return _stopRequested; })};
+	auto searcher {std::make_shared<FeaturesSearcher>(_dbSession, trainSettings, [&]() { return _stopRequested; })};
 	if (searcher->isValid())
 	{
 		std::atomic_store(&_searcher, searcher);

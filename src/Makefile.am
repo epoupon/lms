@@ -40,10 +40,8 @@ lms_SOURCES = \
 	$(srcdir)/database/ScanSettings.hpp			\
 	$(srcdir)/database/Session.cpp				\
 	$(srcdir)/database/Session.hpp				\
-	$(srcdir)/database/SessionPool.cpp				\
-	$(srcdir)/database/SessionPool.hpp				\
-	$(srcdir)/database/SimilaritySettings.cpp		\
-	$(srcdir)/database/SimilaritySettings.hpp		\
+	$(srcdir)/database/SessionPool.cpp			\
+	$(srcdir)/database/SessionPool.hpp			\
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/SqlQuery.hpp				\
 	$(srcdir)/database/Track.cpp				\

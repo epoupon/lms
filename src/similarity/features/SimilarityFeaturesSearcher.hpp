@@ -57,6 +57,8 @@ class FeaturesSearcher
 		};
 		FeaturesSearcher(Database::Session& session, const TrainSettings& trainSettings, StopRequestedFunction stopRequested = {});
 
+		static const FeatureSettingsMap& getDefaultTrainFeatureSettings();
+
 		bool isValid() const;
 
 		bool isTrackClassified(Database::IdType trackId) const;

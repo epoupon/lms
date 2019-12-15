@@ -22,7 +22,7 @@
 #include "features/SimilarityFeaturesScannerAddon.hpp"
 #include "cluster/SimilarityClusterSearcher.hpp"
 
-#include "database/SimilaritySettings.hpp"
+#include "database/ScanSettings.hpp"
 #include "database/TrackList.hpp"
 
 namespace Similarity {
@@ -32,10 +32,11 @@ Searcher::Searcher(FeaturesScannerAddon& somAddon)
 {}
 
 static
-Database::SimilaritySettings::EngineType getEngineType(Database::Session& dbSession)
+Database::ScanSettings::SimilarityEngineType
+getEngineType(Database::Session& dbSession)
 {
 	auto transaction {dbSession.createSharedTransaction()};
-	return Database::SimilaritySettings::get(dbSession)->getEngineType();
+	return Database::ScanSettings::get(dbSession)->getSimilarityEngineType();
 }
 
 std::vector<Database::IdType>
@@ -58,7 +59,7 @@ Searcher::getSimilarTracksFromTrackList(Database::Session& session, Database::Id
 	if (trackIds.empty())
 		return {};
 
-	if (engineType == Database::SimilaritySettings::EngineType::Features
+	if (engineType == Database::ScanSettings::SimilarityEngineType::Features
 			&& somSearcher
 			&& std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return somSearcher->isTrackClassified(trackId); } ))
 	{
@@ -74,7 +75,7 @@ Searcher::getSimilarTracks(Database::Session& dbSession, const std::set<Database
 	auto engineType {getEngineType(dbSession)};
 	auto somSearcher {_somAddon.getSearcher()};
 
-	if (engineType == Database::SimilaritySettings::EngineType::Features
+	if (engineType == Database::ScanSettings::SimilarityEngineType::Features
 		&& somSearcher
 		&& std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return somSearcher->isTrackClassified(trackId); } ))
 	{
@@ -90,7 +91,7 @@ Searcher::getSimilarReleases(Database::Session& dbSession, Database::IdType rele
 	auto engineType {getEngineType(dbSession)};
 	auto somSearcher {_somAddon.getSearcher()};
 
-	if (engineType == Database::SimilaritySettings::EngineType::Features
+	if (engineType == Database::ScanSettings::SimilarityEngineType::Features
 		&& somSearcher
 		&& somSearcher->isReleaseClassified(releaseId))
 	{
@@ -106,7 +107,7 @@ Searcher::getSimilarArtists(Database::Session& dbSession, Database::IdType artis
 	auto engineType {getEngineType(dbSession)};
 	auto somSearcher {_somAddon.getSearcher()};
 
-	if (engineType == Database::SimilaritySettings::EngineType::Features
+	if (engineType == Database::ScanSettings::SimilarityEngineType::Features
 		&& somSearcher
 		&& somSearcher->isArtistClassified(artistId))
 	{

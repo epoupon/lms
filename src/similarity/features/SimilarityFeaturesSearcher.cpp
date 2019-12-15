@@ -23,7 +23,6 @@
 #include <unordered_map>
 
 #include "database/Artist.hpp"
-#include "database/SimilaritySettings.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -34,6 +33,21 @@
 
 
 namespace Similarity {
+
+const FeatureSettingsMap&
+FeaturesSearcher::getDefaultTrainFeatureSettings()
+{
+	static FeatureSettingsMap defaultTrainFeatureSettings
+	{
+		{ "lowlevel.spectral_energyband_high.mean",	{1}},
+		{ "lowlevel.spectral_rolloff.median",		{1}},
+		{ "lowlevel.spectral_contrast_valleys.var",	{1}},
+		{ "lowlevel.erbbands.mean",			{1}},
+		{ "lowlevel.gfcc.mean",				{1}},
+	};
+
+	return defaultTrainFeatureSettings;
+}
 
 static
 std::optional<FeatureValuesMap>
@@ -128,7 +142,7 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session,
 
 		LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features...";
 		trackIds = Database::Track::getAllIdsWithFeatures(session);
-		LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features DONE";
+		LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features DONE (found " << trackIds.size() << " tracks)";
 	}
 
 	std::vector<SOM::InputVector> samples;

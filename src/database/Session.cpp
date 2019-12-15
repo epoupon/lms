@@ -31,7 +31,6 @@
 #include "Db.hpp"
 #include "Release.hpp"
 #include "ScanSettings.hpp"
-#include "SimilaritySettings.hpp"
 #include "Track.hpp"
 #include "TrackArtistLink.hpp"
 #include "TrackList.hpp"
@@ -40,7 +39,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	7
+#define LMS_DATABASE_VERSION	8
 
 using Version = std::size_t;
 
@@ -101,21 +100,32 @@ Session::doDatabaseMigrationIfNeeded()
 		throw LmsException {outdatedMsg};
 	}
 
-	switch (version)
+	while (version < LMS_DATABASE_VERSION)
 	{
-		case 5:
-			LMS_LOG(DB, INFO) << "Migrating database from version 5...";
+		LMS_LOG(DB, INFO) << "Migrating database from version " << version << "...";
+
+		if (version == 5)
+		{
 			_session.execute("DELETE FROM auth_token"); // format has changed
-			break;
-		case 6:
-			LMS_LOG(DB, INFO) << "Migrating database from version 6...";
+		}
+		else if (version == 6)
+		{
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
-			break;
-
-		default:
+		}
+		else if (version == 7)
+		{
+			_session.execute("DROP TABLE similarity_settings");
+			_session.execute("DROP TABLE similarity_settings_feature");
+			_session.execute("ALTER TABLE scan_settings ADD similarity_engine_type INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(ScanSettings::SimilarityEngineType::Clusters)) + ")");
+		}
+		else
+		{
 			LMS_LOG(DB, ERROR) << "Database version " << version << " cannot be handled using migration";
 			throw LmsException { LMS_DATABASE_VERSION > version  ? outdatedMsg : "Server binary outdated, please upgrade it to handle this database"};
+		}
+
+		++version;
 	}
 
 	VersionInfo::get(*this).modify()->setVersion(LMS_DATABASE_VERSION);
@@ -133,8 +143,6 @@ Session::Session(Db& db)
 	_session.mapClass<ClusterType>("cluster_type");
 	_session.mapClass<Release>("release");
 	_session.mapClass<ScanSettings>("scan_settings");
-	_session.mapClass<SimilaritySettings>("similarity_settings");
-	_session.mapClass<SimilaritySettingsFeature>("similarity_settings_feature");
 	_session.mapClass<Track>("track");
 	_session.mapClass<TrackArtistLink>("track_artist_link");
 	_session.mapClass<TrackFeatures>("track_features");
@@ -257,7 +265,6 @@ Session::prepareTables()
 		auto uniqueTransaction {createUniqueTransaction()};
 
 		ScanSettings::init(*this);
-		SimilaritySettings::init(*this);
 	}
 }
 
