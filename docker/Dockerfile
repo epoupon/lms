@@ -74,7 +74,7 @@ RUN \
 	--disable-everything \
 	--enable-decoder=aac*,ac3*,flac,mp3*,libopus,pcm*,libvorbis,wavpack,wma*,libopenjpg,png,tiff \
 	--enable-encoder=libmp3lame,libopus,libvorbis \
-	--enable-demuxer=aac,aiff,asf,flac,ipod,ogg,matroska,mp3,mp4,wav,wv,webm \
+	--enable-demuxer=aac,aiff,asf,flac,ipod,ogg,matroska,mov,mp3,mp4,wav,wv,webm \
 	--enable-muxer=ogg,matroska,mp3,webm \
 	--enable-protocol=file,pipe \
 	--enable-filter=aresample \
