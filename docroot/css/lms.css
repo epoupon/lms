@@ -176,17 +176,32 @@ a:hover {
 	margin: 0px;
 }
 
-
 .Lms-explore-release-entry:hover {
 	background-color: lightgrey;
 }
 
+.Lms-explore-release-entry:hover .Lms-explore-release-entry-controls {
+	display: block;
+}
+
+.Lms-explore-release-entry:hover .Lms-explore-release-entry-track-duration {
+	display: none;
+}
+
 .Lms-explore-release-entry-controls {
 	text-align: right;
+	display: none;
 }
 
 .Lms-explore-release-entry-playing {
 	font-weight: bold;
+}
+
+.Lms-explore-release-entry-track-duration {
+	color: darkgrey;
+	text-align: right;
+	white-space: nowrap;
+	display: block;
 }
 
 .Lms-explore-releaselink {
@@ -253,6 +268,14 @@ a:hover {
 	background-color: lightgrey;
 }
 
+.Lms-explore-tracks-entry:hover .Lms-explore-tracks-entry-controls {
+	display: block;
+}
+
+.Lms-explore-tracks-entry:hover .Lms-explore-tracks-entry-duration {
+	display: none;
+}
+
 .Lms-explore-tracks-entry-name {
 	margin-top: 4px;
 	margin-bottom: 4px;
@@ -260,6 +283,14 @@ a:hover {
 
 .Lms-explore-tracks-entry-controls {
 	text-align: right;
+	display: none;
+}
+
+.Lms-explore-tracks-entry-duration {
+	color: darkgrey;
+	text-align: right;
+	white-space: nowrap;
+	display: block;
 }
 
 .Lms-explore-tracksinfo-entry {
@@ -293,13 +324,12 @@ a:hover {
 	background-color: lightgrey;
 }
 
-.Lms-playqueue-entry-name {
-	margin-top: 4px;
-	margin-bottom: 4px;
+.Lms-playqueue-entry:hover .Lms-playqueue-entry-controls {
+	display: block;
 }
 
-.Lms-playqueue-entry-controls {
-	text-align: right;
+.Lms-playqueue-entry:hover .Lms-playqueue-entry-duration {
+	display: none;
 }
 
 .Lms-playqueue-btn {
@@ -314,6 +344,23 @@ a:hover {
 
 .Lms-playqueue-btn-selected {
 	color: #337ab7;
+}
+
+.Lms-playqueue-entry-controls {
+	text-align: right;
+	display: none;
+}
+
+.Lms-playqueue-entry-duration {
+	color: darkgrey;
+	text-align: right;
+	white-space: nowrap;
+	display: block;
+}
+
+.Lms-playqueue-entry-name {
+	margin-top: 4px;
+	margin-bottom: 4px;
 }
 
 .Lms-playqueue-selected {

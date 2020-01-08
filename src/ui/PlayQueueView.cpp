@@ -30,6 +30,7 @@
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/Utils.hpp"
+#include "TrackStringUtils.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
@@ -372,6 +373,8 @@ PlayQueue::addSome()
 			entry->setCondition("if-has-release", true);
 			entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
 		}
+
+		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.template.play-btn"), Wt::TextFormat::XHTML);
 		playBtn->clicked().connect(std::bind([=]

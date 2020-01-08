@@ -49,8 +49,13 @@
 			${<if-has-artists>}<small>${artists}</small>${</if-has-artists>}
 			${</if-has-artists-or-release>}
 		</div>
-		<div class="col-xs-3 Lms-playqueue-entry-controls">
-			${play-btn}${del-btn}
+		<div class="col-xs-3">
+			<div class="Lms-playqueue-entry-controls">
+				${play-btn}${del-btn}
+			</div>
+			<div class="Lms-playqueue-entry-duration">
+				${duration}
+			</div>
 		</div>
 	</div>
 </message>

@@ -33,9 +33,10 @@
 
 #include "resource/ImageResource.hpp"
 
+#include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
-#include "Filters.hpp"
+#include "TrackStringUtils.hpp"
 
 using namespace Database;
 
@@ -202,6 +203,8 @@ Release::refresh()
 		{
 			tracksAdd.emit({trackId});
 		}));
+
+		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 		LmsApp->getEvents().trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId, bool /*play*/)
 		{

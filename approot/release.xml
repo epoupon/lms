@@ -31,8 +31,13 @@
 			${name}
 			${<if-has-artists>}<small>${artists}</small>${</if-has-artists>}
 		</div>
-		<div class="col-xs-3 Lms-explore-release-entry-controls">
-			${play-btn}${add-btn}
+		<div class="col-xs-3">
+			<div class="Lms-explore-release-entry-controls">
+				${play-btn}${add-btn}
+			</div>
+			<div class="Lms-explore-release-entry-track-duration">
+				${duration}
+			</div>
 		</div>
 	</div>
 </message>

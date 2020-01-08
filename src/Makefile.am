@@ -94,6 +94,8 @@ lms_SOURCES = \
 	$(srcdir)/ui/PlayHistoryView.hpp			\
 	$(srcdir)/ui/SettingsView.cpp				\
 	$(srcdir)/ui/SettingsView.hpp				\
+	$(srcdir)/ui/TrackStringUtils.cpp			\
+	$(srcdir)/ui/TrackStringUtils.hpp			\
 	$(srcdir)/ui/admin/DatabaseSettingsView.cpp		\
 	$(srcdir)/ui/admin/DatabaseSettingsView.hpp		\
 	$(srcdir)/ui/admin/DatabaseStatus.cpp			\
