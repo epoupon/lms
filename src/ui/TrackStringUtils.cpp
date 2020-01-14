@@ -28,7 +28,7 @@ trackDurationToString(std::chrono::milliseconds	msDuration)
 	const std::chrono::seconds duration {std::chrono::duration_cast<std::chrono::seconds>(msDuration)};
 
 	std::ostringstream oss;
-	oss << std::setfill('0') << std::setw(2) << (duration.count() / 60)
+	oss << (duration.count() / 60)
 		<< ":"
 		<< std::setfill('0') << std::setw(2) << duration.count() % 60;
 
