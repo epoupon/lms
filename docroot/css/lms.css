@@ -402,7 +402,7 @@ a:hover {
 }
 
 .Lms-player-btn {
-	font-size: 34px !important;
+	font-size: 40px !important;
 	cursor: pointer;
 }
 
@@ -411,9 +411,16 @@ a:hover {
 }
 
 .Lms-player-btn-playpause {
-	width: 32px;
+	width: 40px;
 	margin-left: 8px;
 	margin-right: 8px;
+}
+
+.Lms-player-duration {
+	line-height: 40px;
+	text-align: center;
+	color: darkgrey;
+	white-space: nowrap;
 }
 
 .Lms-player-seek-container {

@@ -14,11 +14,18 @@
 		</div>
 
 		<div class="row">
-			<div class="col-xs-4 Lms-player-controls">
-				<i id="lms-mp-previous" class="fa fa-step-backward Lms-player-btn"></i>
-				<i id="lms-mp-play" class="fa fa-play Lms-player-btn Lms-player-btn-playpause"></i>
-				<i id="lms-mp-pause" class="fa fa-pause Lms-player-btn Lms-player-btn-playpause" style="display: none"></i>
-				<i id="lms-mp-next" class="fa fa-step-forward Lms-player-btn"></i>
+			<div class="col-xs-4">
+				<div class="row">
+					<div class="col-sm-6 col-xs-12 Lms-player-controls">
+						<i id="lms-mp-previous" class="fa fa-step-backward Lms-player-btn"></i>
+						<i id="lms-mp-play" class="fa fa-play Lms-player-btn Lms-player-btn-playpause"></i>
+						<i id="lms-mp-pause" class="fa fa-pause Lms-player-btn Lms-player-btn-playpause" style="display: none"></i>
+						<i id="lms-mp-next" class="fa fa-step-forward Lms-player-btn"></i>
+					</div>
+					<div class="hidden-xs col-sm-6 Lms-player-duration">
+						<span id="lms-mp-curtime">--</span> / <span id="lms-mp-duration">--</span>
+					</div>
+				</div>
 			</div>
 			<div class="col-xs-8">
 				<div class="Lms-player-text-center">

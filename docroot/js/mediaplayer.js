@@ -23,17 +23,13 @@ LMS.mediaplayer = function () {
 		}
 	}
 
-	var _durationToString = function (duration, displayHours) {
-			var hours = parseInt(duration / 3600, 10) % 24;
-			var minutes = parseInt(duration / 60, 10) % 60;
+	var _durationToString = function (duration) {
+			var minutes = parseInt(duration / 60, 10);
 			var seconds = parseInt(duration, 10) % 60;
 
 			var res = "";
 
-			if (displayHours)
-				res += (hours < 10 ? "0" + hours : hours) + ":";
-
-			res += (minutes < 10 ? "0" + minutes : minutes) + ":";
+			res += minutes + ":";
 			res += (seconds  < 10 ? "0" + seconds : seconds);
 
 			return res;
@@ -62,6 +58,8 @@ LMS.mediaplayer = function () {
 		_elems.next = document.getElementById("lms-mp-next");
 		_elems.progress = document.getElementById("lms-mp-progress");
 		_elems.seek = document.getElementById("lms-mp-seek");
+		_elems.curtime = document.getElementById("lms-mp-curtime");
+		_elems.duration = document.getElementById("lms-mp-duration");
 
 		_elems.play.addEventListener("click", function() {
 			if (_elems.audio.hasAttribute("src"))
@@ -94,6 +92,7 @@ LMS.mediaplayer = function () {
 
 		_elems.audio.addEventListener("timeupdate", function() {
 			_elems.progress.style.width = "" + ((_offset + _elems.audio.currentTime) / _duration) * 100 + "%";
+			_elems.curtime.innerHTML = _durationToString(_offset + _elems.audio.currentTime);
 		});
 
 		_elems.audio.addEventListener("ended", function() {
@@ -110,6 +109,9 @@ LMS.mediaplayer = function () {
 
 		_elems.seek.max = _duration;
 		_elems.audio.src = _audioSrc;
+
+		_elems.curtime.innerHTML = _durationToString(_offset);
+		_elems.duration.innerHTML = _durationToString(_duration);
 
 		if (autoplay)
 			_playTrack();
