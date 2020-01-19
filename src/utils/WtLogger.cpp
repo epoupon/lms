@@ -27,6 +27,6 @@
 void
 WtLogger::processLog(const Log& log)
 {
-	Wt::log(getSeverityName(log.getSeverity())) << Wt::WLogger::sep << "[" << getModuleName(log.getModule()) << "]" << log.getMessage();
+	Wt::log(getSeverityName(log.getSeverity())) << Wt::WLogger::sep << "[" << getModuleName(log.getModule()) << "]" << Wt::WLogger::sep << log.getMessage();
 }
 
