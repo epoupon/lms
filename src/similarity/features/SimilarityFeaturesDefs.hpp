@@ -16,32 +16,34 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
-#include <Wt/WResource.h>
-#include <Wt/Http/Response.h>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
-#include "database/SessionPool.hpp"
+namespace Similarity {
 
-namespace Database
+using FeatureName = std::string;
+using FeatureNames = std::unordered_set<FeatureName>;
+using FeatureValue = double;
+using FeatureValues = std::vector<FeatureValue>;
+using FeatureValuesMap = std::unordered_map<FeatureName, FeatureValues>;
+
+struct FeatureDef
 {
-	class Db;
-}
-
-namespace API::Subsonic
-{
-
-class SubsonicResource final : public Wt::WResource
-{
-	public:
-		SubsonicResource(Database::Db& db);
-
-		static std::string getPath() { return "/rest/"; }
-	private:
-
-		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;
-
-		Database::SessionPool _sessionPool;
+	std::size_t nbDimensions {};
 };
 
-} // namespace
+FeatureDef getFeatureDef(const FeatureName& featureName);
+FeatureNames getFeatureNames();
+
+struct FeatureSettings
+{
+	double weight {};
+};
+using FeatureSettingsMap = std::unordered_map<FeatureName, FeatureSettings>;
+
+} // namespace Similarity

@@ -415,7 +415,7 @@ PlayQueue::addSome()
 void
 PlayQueue::enqueueRadioTrack()
 {
-	const std::vector<Database::IdType> trackToAddIds {getService<Similarity::Searcher>()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 1)};
+	const std::vector<Database::IdType> trackToAddIds {ServiceProvider<Similarity::Searcher>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 1)};
 	enqueueTracks(trackToAddIds);
 }
 

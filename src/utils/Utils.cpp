@@ -166,6 +166,13 @@ stringFromHex(const std::string& str)
 	}
 
 	return res;
+}
 
+RandGenerator& getRandGenerator()
+{
+	static thread_local std::random_device rd;
+	static thread_local std::mt19937 randGenerator(rd());
+
+	return randGenerator;
 }
 

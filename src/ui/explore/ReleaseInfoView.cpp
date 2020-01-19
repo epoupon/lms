@@ -68,7 +68,7 @@ ReleaseInfo::refresh()
 	if (!releaseId)
 		return;
 
-	const std::vector<Database::IdType> releasesIds {getService<Similarity::Searcher>()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 5)};
+	const std::vector<Database::IdType> releasesIds {ServiceProvider<Similarity::Searcher>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 5)};
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 

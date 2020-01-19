@@ -38,7 +38,7 @@ static std::filesystem::path	ffmpegPath;
 void
 Transcoder::init()
 {
-	ffmpegPath = getService<Config>()->getPath("ffmpeg-file", "/usr/bin/ffmpeg");
+	ffmpegPath = ServiceProvider<Config>::get()->getPath("ffmpeg-file", "/usr/bin/ffmpeg");
 	if (!std::filesystem::exists(ffmpegPath))
 		throw LmsException {"File '" + ffmpegPath.string() + "' does not exist!"};
 }

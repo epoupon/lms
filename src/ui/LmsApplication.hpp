@@ -23,6 +23,8 @@
 
 #include <Wt/WApplication.h>
 
+#include "database/Db.hpp"
+#include "database/Session.hpp"
 #include "scanner/MediaScanner.hpp"
 
 #include "LmsApplicationGroup.hpp"
@@ -73,7 +75,7 @@ enum class MsgType
 class LmsApplication : public Wt::WApplication
 {
 	public:
-		LmsApplication(const Wt::WEnvironment& env, std::unique_ptr<Database::Session> dbSession, LmsApplicationGroupContainer& appGroups);
+		LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups);
 
 		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups);
 		static LmsApplication* instance();
@@ -81,13 +83,13 @@ class LmsApplication : public Wt::WApplication
 		// Session application data
 		std::shared_ptr<ImageResource> getImageResource() { return _imageResource; }
 		std::shared_ptr<AudioResource> getAudioResource() { return _audioResource; }
-		Database::Session& getDbSession() { return *_dbSession.get();}
+		Database::Session& getDbSession() { return _dbSession;}
 
-		Wt::Dbo::ptr<Database::User> getUser() const;
+		Wt::Dbo::ptr<Database::User> getUser();
 		bool isUserAuthStrong() const; // user must be logged in prior this call
-		bool isUserAdmin() const; // user must be logged in prior this call
-		bool isUserDemo() const; // user must be logged in prior this call
-		std::string getUserLoginName() const; // user must be logged in prior this call
+		bool isUserAdmin(); // user must be logged in prior this call
+		bool isUserDemo(); // user must be logged in prior this call
+		std::string getUserLoginName(); // user must be logged in prior this call
 
 		Events& getEvents() { return _events; }
 
@@ -121,7 +123,7 @@ class LmsApplication : public Wt::WApplication
 		void createHome();
 
 		Wt::Signal<>				_preQuit;
-		std::unique_ptr<Database::Session>	_dbSession;
+		Database::Session			_dbSession;
 		LmsApplicationGroupContainer&   	_appGroups;
 		Events					_events;
 		std::optional<Database::IdType>	_userId;

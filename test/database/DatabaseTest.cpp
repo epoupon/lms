@@ -25,10 +25,13 @@
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
-#include "database/TrackList.hpp"
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackList.hpp"
 #include "database/User.hpp"
+
+#include "utils/StreamLogger.hpp"
 
 using namespace Database;
 
@@ -434,6 +437,8 @@ testSingleTrackSingleCluster(Session& session)
 		auto transaction {session.createSharedTransaction()};
 		auto clusters {Cluster::getAllOrphans(session)};
 		CHECK(clusters.size() == 2);
+		CHECK(track->getClusters().empty());
+		CHECK(track->getClusterIds().empty());
 	}
 
 	{
@@ -460,6 +465,18 @@ testSingleTrackSingleCluster(Session& session)
 
 		tracks = Track::getByClusters(session, {cluster2.getId()});
 		CHECK(tracks.empty());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		auto clusters {track->getClusters()};
+		CHECK(clusters.size() == 1);
+		CHECK(clusters.front().id() == cluster1.getId());
+
+		auto clusterIds {track->getClusterIds()};
+		CHECK(clusterIds.size() == 1);
+		CHECK(clusterIds.front() == cluster1.getId());
 	}
 }
 
@@ -635,6 +652,12 @@ testSingleTrackSingleArtistMultiClusters(Session& session)
 		CHECK(Cluster::getAllOrphans(session).size() == 2);
 		CHECK(Release::getAllOrphans(session).empty());
 		CHECK(Artist::getAllOrphans(session).empty());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		CHECK(track->getClusters().size() == 1);
+		CHECK(track->getClusterIds().size() == 1);
 	}
 
 	{
@@ -1253,6 +1276,9 @@ int main()
 
 	try
 	{
+		// log to stdout
+		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
+
 		const std::filesystem::path tmpFile {std::tmpnam(nullptr)};
 		ScopedFileDeleter tmpFileDeleter {tmpFile};
 
@@ -1261,13 +1287,14 @@ int main()
 		for (std::size_t i = 0; i < 2; ++i)
 		{
 			Database::Db db {tmpFile};
-			std::unique_ptr<Session> session {db.createSession()};
+			Database::Session session {db};
+			session.prepareTables();
 
 			auto runTest = [&session](const std::string& name, std::function<void(Session&)> testFunc)
 			{
 				std::cout << "Running test '" << name << "'..." << std::endl;
-				testFunc(*session);
-				testDatabaseEmpty(*session);
+				testFunc(session);
+				testDatabaseEmpty(session);
 				std::cout << "Running test '" << name << "': SUCCESS" << std::endl;
 			};
 

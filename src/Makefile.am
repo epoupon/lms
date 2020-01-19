@@ -40,8 +40,8 @@ lms_SOURCES = \
 	$(srcdir)/database/ScanSettings.hpp			\
 	$(srcdir)/database/Session.cpp				\
 	$(srcdir)/database/Session.hpp				\
-	$(srcdir)/database/SimilaritySettings.cpp		\
-	$(srcdir)/database/SimilaritySettings.hpp		\
+	$(srcdir)/database/SessionPool.cpp			\
+	$(srcdir)/database/SessionPool.hpp			\
 	$(srcdir)/database/SqlQuery.cpp				\
 	$(srcdir)/database/SqlQuery.hpp				\
 	$(srcdir)/database/Track.cpp				\
@@ -69,6 +69,8 @@ lms_SOURCES = \
 	$(srcdir)/similarity/features/AcousticBrainzUtils.hpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesCache.cpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesCache.hpp	\
+	$(srcdir)/similarity/features/SimilarityFeaturesDefs.cpp	\
+	$(srcdir)/similarity/features/SimilarityFeaturesDefs.hpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesScannerAddon.cpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesScannerAddon.hpp	\
 	$(srcdir)/similarity/features/SimilarityFeaturesSearcher.cpp	\
@@ -151,8 +153,12 @@ lms_SOURCES = \
 	$(srcdir)/utils/Path.cpp				\
 	$(srcdir)/utils/Path.hpp				\
 	$(srcdir)/utils/Service.hpp				\
+	$(srcdir)/utils/StreamLogger.cpp			\
+	$(srcdir)/utils/StreamLogger.hpp			\
 	$(srcdir)/utils/Utils.cpp				\
-	$(srcdir)/utils/Utils.hpp
+	$(srcdir)/utils/Utils.hpp				\
+	$(srcdir)/utils/WtLogger.cpp				\
+	$(srcdir)/utils/WtLogger.hpp
 
 lms_CXXFLAGS=-std=c++17 -I$(srcdir)/ui $(MAGICKXX_CFLAGS) -D_REENTRANT
 lms_LDADD=$(MAGICKXX_LIBS)

@@ -16,32 +16,17 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
 
-#include <Wt/WResource.h>
-#include <Wt/Http/Response.h>
+#include "StreamLogger.hpp"
 
-#include "database/SessionPool.hpp"
-
-namespace Database
+StreamLogger::StreamLogger(std::ostream& os)
+: _os {os}
 {
-	class Db;
 }
 
-namespace API::Subsonic
+void
+StreamLogger::processLog(const Log& log)
 {
+	_os << "[" << getSeverityName(log.getSeverity()) << "] [" << getModuleName(log.getModule()) << "] " << log.getMessage() << std::endl;
+}
 
-class SubsonicResource final : public Wt::WResource
-{
-	public:
-		SubsonicResource(Database::Db& db);
-
-		static std::string getPath() { return "/rest/"; }
-	private:
-
-		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;
-
-		Database::SessionPool _sessionPool;
-};
-
-} // namespace

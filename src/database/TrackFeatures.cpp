@@ -41,53 +41,47 @@ TrackFeatures::create(Session& session, Wt::Dbo::ptr<Track> track, const std::st
 	return session.getDboSession().add(std::make_unique<TrackFeatures>(track, jsonEncodedFeatures));
 }
 
-std::vector<double>
-TrackFeatures::getFeatures(const std::string& featureNode) const
+FeatureValues
+TrackFeatures::getFeatureValues(const FeatureName& featureNode) const
 {
-	std::vector<double> res;
-
-	std::map<std::string, std::vector<double>> features = { {featureNode, {}} };
-	if (!getFeatures( features ))
-		return res;
-
-	res = std::move(features[featureNode]);
-
-	return res;
+	FeatureValuesMap featuresValuesMap {getFeatureValuesMap({featureNode})};
+	return std::move(featuresValuesMap[featureNode]);
 }
 
-bool
-TrackFeatures::getFeatures(std::map<std::string /*name*/, std::vector<double> /*values*/>& features) const
+FeatureValuesMap
+TrackFeatures::getFeatureValuesMap(const std::unordered_set<FeatureName>& featureNames) const
 {
 	try
 	{
+		std::istringstream iss {_data};
 		boost::property_tree::ptree root;
 
-		std::istringstream iss(_data);
 		boost::property_tree::read_json(iss, root);
 
-		for (auto& featureNode : features)
+		FeatureValuesMap res;
+		for (const FeatureName& featureName : featureNames)
 		{
-			auto node = root.get_child(featureNode.first);
+			FeatureValues& featureValues {res[featureName]};
+
+			auto node {root.get_child(featureName)};
 
 			bool hasChildren = false;
 			for (const auto& child : node.get_child(""))
 			{
 				hasChildren = true;
-				featureNode.second.push_back(child.second.get_value<double>());
+				featureValues.push_back(child.second.get_value<double>());
 			}
 
 			if (!hasChildren)
-			{
-				featureNode.second.push_back(node.get_value<double>());
-			}
+				featureValues.push_back(node.get_value<double>());
 		}
 
-		return true;
+		return res;
 	}
 	catch (boost::property_tree::ptree_error& error)
 	{
-		LMS_LOG(SIMILARITY, ERROR) << "Track " << _track.id() << ": ptree exception: " << error.what();
-		return false;
+		LMS_LOG(DB, ERROR) << "Track " << _track.id() << ": ptree exception: " << error.what();
+		return {};
 	}
 }
 

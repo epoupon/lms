@@ -20,9 +20,9 @@
 #include "SimilarityFeaturesSearcher.hpp"
 
 #include <random>
+#include <unordered_map>
 
 #include "database/Artist.hpp"
-#include "database/SimilaritySettings.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -34,71 +34,68 @@
 
 namespace Similarity {
 
-struct FeatureInfo
+const FeatureSettingsMap&
+FeaturesSearcher::getDefaultTrainFeatureSettings()
 {
-	std::size_t	nbDimensions;
-	double		weight;
-};
-
-using FeatureInfoMap = std::map<std::string, FeatureInfo>;
-
-static
-FeatureInfoMap
-getFeatureInfoMap(Database::Session& session)
-{
-	auto transaction {session.createSharedTransaction()};
-
-	auto settings {Database::SimilaritySettings::get(session)};
-
-	std::map<std::string, FeatureInfo> featuresInfo;
-	for (auto feature : settings->getFeatures())
+	static FeatureSettingsMap defaultTrainFeatureSettings
 	{
-		LMS_LOG(SIMILARITY, DEBUG) << "Feature '" << feature->getName() << "', nbDimns = " << feature->getNbDimensions() << ", weight = " << feature->getWeight() ;
-		featuresInfo[feature->getName()] = { feature->getNbDimensions(), feature->getWeight() };
-	}
+		{ "lowlevel.spectral_energyband_high.mean",	{1}},
+		{ "lowlevel.spectral_rolloff.median",		{1}},
+		{ "lowlevel.spectral_contrast_valleys.var",	{1}},
+		{ "lowlevel.erbbands.mean",			{1}},
+		{ "lowlevel.gfcc.mean",				{1}},
+	};
 
-	return featuresInfo;
+	return defaultTrainFeatureSettings;
 }
 
 static
-std::size_t
-getFeatureInfoMapNbDimensions(const FeatureInfoMap& featureInfoMap)
+std::optional<FeatureValuesMap>
+getTrackFeatureValues(FeaturesSearcher::FeaturesFetchFunc func, Database::IdType trackId, const std::unordered_set<FeatureName>& featureNames)
 {
-	return std::accumulate(featureInfoMap.begin(), featureInfoMap.end(), 0, [](std::size_t sum, auto it) { return sum + it.second.nbDimensions; });
+	return func(trackId, featureNames);
+}
+
+static
+std::optional<FeatureValuesMap>
+getTrackFeatureValuesFromDb(Database::Session& session, Database::IdType trackId, const std::unordered_set<FeatureName>& featureNames)
+{
+	auto func = [&](Database::IdType trackId, const std::unordered_set<FeatureName>& featureNames)
+	{
+		std::optional<FeatureValuesMap> res;
+
+		auto transaction {session.createSharedTransaction()};
+
+		Database::Track::pointer track {Database::Track::getById(session, trackId)};
+		if (!track)
+			return res;
+
+		res = track->getTrackFeatures()->getFeatureValuesMap(featureNames);
+		if (res->empty())
+			res.reset();
+
+		return res;
+	};
+
+	return getTrackFeatureValues(func, trackId, featureNames);
 }
 
 static
 std::optional<SOM::InputVector>
-getInputVectorFromTrack(Database::Session& session, Database::IdType trackId, const FeatureInfoMap& featuresInfo, std::size_t nbDimensions)
+convertFeatureValuesMapToInputVector(const FeatureValuesMap& featureValuesMap, std::size_t nbDimensions)
 {
-	std::optional<SOM::InputVector> res {SOM::InputVector {nbDimensions}};
-
-	std::map<std::string, std::vector<double>> features;
-	for (auto itFeatureInfo : featuresInfo)
-		features[itFeatureInfo.first] = {};
-
-	auto transaction {session.createSharedTransaction()};
-
-	Database::Track::pointer track {Database::Track::getById(session, trackId)};
-	if (!track)
-		return res;
-
-	if (!track->getTrackFeatures()->getFeatures(features))
-		return res;
-
 	std::size_t i {};
-	for (const auto& feature : features)
+	std::optional<SOM::InputVector> res {SOM::InputVector {nbDimensions}};
+	for (const auto& [featureName, values] : featureValuesMap)
 	{
-		// Check dimensions for each feature
-		auto it {featuresInfo.find(feature.first)};
-		if (it == featuresInfo.end() || it->second.nbDimensions != feature.second.size())
+		if (values.size() != getFeatureDef(featureName).nbDimensions)
 		{
-			LMS_LOG(SIMILARITY, WARNING) << "Dimension mismatch for feature '" << feature.first << "'. Expected " << it->second.nbDimensions << ", got " << feature.second.size();
+			LMS_LOG(SIMILARITY, WARNING) << "Dimension mismatch for feature '" << featureName << "'. Expected " << getFeatureDef(featureName).nbDimensions << ", got " << values.size();
 			res.reset();
 			break;
 		}
 
-		for (double val : feature.second)
+		for (double val : values)
 			(*res)[i++] = val;
 	}
 
@@ -107,25 +104,35 @@ getInputVectorFromTrack(Database::Session& session, Database::IdType trackId, co
 
 static
 SOM::InputVector
-getInputVectorWeights(const FeatureInfoMap& featuresInfo, std::size_t nbDimensions)
+getInputVectorWeights(const FeatureSettingsMap& featureSettingsMap, std::size_t nbDimensions)
 {
 	SOM::InputVector weights {nbDimensions};
 	std::size_t index {};
-	for (const auto& featureInfo : featuresInfo)
+	for (const auto& [featureName, featureSettings] : featureSettingsMap)
 	{
-		for (std::size_t i {}; i < featureInfo.second.nbDimensions; ++i)
-			weights[index++] = (1. / featureInfo.second.nbDimensions * featureInfo.second.weight);
+		const std::size_t featureNbDimensions {getFeatureDef(featureName).nbDimensions};
+
+		for (std::size_t i {}; i < featureNbDimensions; ++i)
+			weights[index++] = (1. / featureNbDimensions * featureSettings.weight);
 	}
+
+	assert(index == nbDimensions);
 
 	return weights;
 }
 
-FeaturesSearcher::FeaturesSearcher(Database::Session& session, std::function<bool()> stopRequested)
+FeaturesSearcher::FeaturesSearcher(Database::Session& session,
+		const TrainSettings& trainSettings,
+		StopRequestedFunction stopRequested)
 {
 	LMS_LOG(SIMILARITY, INFO) << "Constructing features searcher...";
 
-	const FeatureInfoMap featuresInfo {getFeatureInfoMap(session)};
-	const std::size_t nbDimensions {getFeatureInfoMapNbDimensions(featuresInfo)};
+	std::unordered_set<FeatureName> featureNames;
+	std::transform(std::cbegin(trainSettings.featureSettingsMap), std::cend(trainSettings.featureSettingsMap), std::inserter(featureNames, std::begin(featureNames)),
+		[](const auto& itFeatureSetting) { return itFeatureSetting.first; });
+
+	const std::size_t nbDimensions {std::accumulate(std::cbegin(featureNames), std::cend(featureNames), std::size_t {0},
+			[](std::size_t sum, const FeatureName& featureName) { return sum + getFeatureDef(featureName).nbDimensions; })};
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Features dimension = " << nbDimensions;
 
@@ -135,7 +142,7 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session, std::function<boo
 
 		LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features...";
 		trackIds = Database::Track::getAllIdsWithFeatures(session);
-		LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features DONE";
+		LMS_LOG(SIMILARITY, DEBUG) << "Getting Tracks with features DONE (found " << trackIds.size() << " tracks)";
 	}
 
 	std::vector<SOM::InputVector> samples;
@@ -147,10 +154,20 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session, std::function<boo
 	LMS_LOG(SIMILARITY, DEBUG) << "Extracting features...";
 	for (Database::IdType trackId : trackIds)
 	{
-		if (stopRequested())
+		if (stopRequested && stopRequested())
 			return;
 
-		std::optional<SOM::InputVector> inputVector {getInputVectorFromTrack(session, trackId, featuresInfo, nbDimensions)};
+		std::optional<FeatureValuesMap> featureValuesMap;
+
+		if (_featuresFetchFunc)
+			featureValuesMap = getTrackFeatureValues(_featuresFetchFunc, trackId, featureNames);
+		else
+			featureValuesMap = getTrackFeatureValuesFromDb(session, trackId, featureNames);
+
+		if (!featureValuesMap)
+			continue;
+
+		std::optional<SOM::InputVector> inputVector {convertFeatureValuesMapToInputVector(*featureValuesMap, nbDimensions)};
 		if (!inputVector)
 			continue;
 
@@ -172,12 +189,12 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session, std::function<boo
 	for (auto& sample : samples)
 		dataNormalizer.normalizeData(sample);
 
-	SOM::Coordinate size {static_cast<SOM::Coordinate>(std::sqrt(samples.size() / 4))};
+	SOM::Coordinate size {static_cast<SOM::Coordinate>(std::sqrt(samples.size() / trainSettings.sampleCountPerNeuron))};
 	LMS_LOG(SIMILARITY, INFO) << "Found " << samples.size() << " tracks, constructing a " << size << "*" << size << " network";
 
 	SOM::Network network {size, size, nbDimensions};
 
-	SOM::InputVector weights {getInputVectorWeights(featuresInfo, nbDimensions)};
+	SOM::InputVector weights {getInputVectorWeights(trainSettings.featureSettingsMap, nbDimensions)};
 	network.setDataWeights(weights);
 
 	auto progressIndicator{[](const auto& iter)
@@ -186,17 +203,17 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session, std::function<boo
 		}};
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Training network...";
-	network.train(samples, 10, progressIndicator, stopRequested);
+	network.train(samples, trainSettings.iterationCount, progressIndicator, stopRequested);
 	LMS_LOG(SIMILARITY, DEBUG) << "Training network DONE";
 
-	if (stopRequested())
+	if (stopRequested && stopRequested())
 		return;
 
 	LMS_LOG(SIMILARITY, DEBUG) << "Classifying tracks...";
 	std::map<Database::IdType, std::set<SOM::Position>> trackPositions;
 	for (std::size_t i {}; i < samples.size(); ++i)
 	{
-		if (stopRequested())
+		if (stopRequested && stopRequested())
 			return;
 
 		const SOM::Position position {network.getClosestRefVectorPosition(samples[i])};
@@ -211,7 +228,7 @@ FeaturesSearcher::FeaturesSearcher(Database::Session& session, std::function<boo
 	LMS_LOG(SIMILARITY, INFO) << "Successfully constructed features searcher";
 }
 
-FeaturesSearcher::FeaturesSearcher(Database::Session& session, FeaturesCache cache, std::function<bool()> stopRequested)
+FeaturesSearcher::FeaturesSearcher(Database::Session& session, FeaturesCache cache, StopRequestedFunction stopRequested)
 {
 	LMS_LOG(SIMILARITY, INFO) << "Constructing features searcher from cache...";
 
@@ -341,7 +358,7 @@ FeaturesSearcher::init(Database::Session& session,
 
 	for (auto itTrackCoord : tracksPosition)
 	{
-		if (stopRequested())
+		if (stopRequested && stopRequested())
 			return;
 
 		auto transaction {session.createSharedTransaction()};

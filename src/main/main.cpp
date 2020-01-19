@@ -35,35 +35,35 @@
 #include "similarity/SimilaritySearcher.hpp"
 #include "ui/LmsApplication.hpp"
 #include "utils/Config.hpp"
-#include "utils/Logger.hpp"
 #include "utils/Service.hpp"
+#include "utils/WtLogger.hpp"
 
 std::vector<std::string> generateWtConfig(std::string execPath)
 {
 	std::vector<std::string> args;
 
-	const std::filesystem::path wtConfigPath {getService<Config>()->getPath("working-dir") / "wt_config.xml"};
-	const std::filesystem::path wtLogFilePath {getService<Config>()->getPath("log-file", "/var/log/lms.log")};
-	const std::filesystem::path wtAccessLogFilePath {getService<Config>()->getPath("access-log-file", "/var/log/lms.access.log")};
+	const std::filesystem::path wtConfigPath {ServiceProvider<Config>::get()->getPath("working-dir") / "wt_config.xml"};
+	const std::filesystem::path wtLogFilePath {ServiceProvider<Config>::get()->getPath("log-file", "/var/log/lms.log")};
+	const std::filesystem::path wtAccessLogFilePath {ServiceProvider<Config>::get()->getPath("access-log-file", "/var/log/lms.access.log")};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
-	args.push_back("--docroot=" + getService<Config>()->getString("docroot"));
-	args.push_back("--approot=" + getService<Config>()->getString("approot"));
-	args.push_back("--resources-dir=" + getService<Config>()->getString("wt-resources"));
+	args.push_back("--docroot=" + ServiceProvider<Config>::get()->getString("docroot"));
+	args.push_back("--approot=" + ServiceProvider<Config>::get()->getString("approot"));
+	args.push_back("--resources-dir=" + ServiceProvider<Config>::get()->getString("wt-resources"));
 
-	if (getService<Config>()->getBool("tls-enable", false))
+	if (ServiceProvider<Config>::get()->getBool("tls-enable", false))
 	{
-		args.push_back("--https-port=" + std::to_string( getService<Config>()->getULong("listen-port", 5082)));
-		args.push_back("--https-address=" + getService<Config>()->getString("listen-addr", "0.0.0.0"));
-		args.push_back("--ssl-certificate=" + getService<Config>()->getString("tls-cert"));
-		args.push_back("--ssl-private-key=" + getService<Config>()->getString("tls-key"));
-		args.push_back("--ssl-tmp-dh=" + getService<Config>()->getString("tls-dh"));
+		args.push_back("--https-port=" + std::to_string( ServiceProvider<Config>::get()->getULong("listen-port", 5082)));
+		args.push_back("--https-address=" + ServiceProvider<Config>::get()->getString("listen-addr", "0.0.0.0"));
+		args.push_back("--ssl-certificate=" + ServiceProvider<Config>::get()->getString("tls-cert"));
+		args.push_back("--ssl-private-key=" + ServiceProvider<Config>::get()->getString("tls-key"));
+		args.push_back("--ssl-tmp-dh=" + ServiceProvider<Config>::get()->getString("tls-dh"));
 	}
 	else
 	{
-		args.push_back("--http-port=" + std::to_string( getService<Config>()->getULong("listen-port", 5082)));
-		args.push_back("--http-address=" + getService<Config>()->getString("listen-addr", "0.0.0.0"));
+		args.push_back("--http-port=" + std::to_string( ServiceProvider<Config>::get()->getULong("listen-port", 5082)));
+		args.push_back("--http-address=" + ServiceProvider<Config>::get()->getString("listen-addr", "0.0.0.0"));
 	}
 
 	if (!wtAccessLogFilePath.empty())
@@ -74,8 +74,8 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 
 	pt.put("server.application-settings.<xmlattr>.location", "*");
 	pt.put("server.application-settings.log-file", wtLogFilePath.string());
-	pt.put("server.application-settings.log-config", getService<Config>()->getString("log-config", "* -debug -info:WebRequest"));
-	pt.put("server.application-settings.behind-reverse-proxy", getService<Config>()->getBool("behind-reverse-proxy", false));
+	pt.put("server.application-settings.log-config", ServiceProvider<Config>::get()->getString("log-config", "* -debug -info:WebRequest"));
+	pt.put("server.application-settings.behind-reverse-proxy", ServiceProvider<Config>::get()->getBool("behind-reverse-proxy", false));
 	pt.put("server.application-settings.progressive-bootstrap", true);
 
 	std::ofstream oss(wtConfigPath.string().c_str(), std::ios::out);
@@ -109,10 +109,11 @@ int main(int argc, char* argv[])
 		close(STDIN_FILENO);
 
 		ServiceProvider<Config>::create(configFilePath);
+		ServiceProvider<Logger>::create<WtLogger>();
 
 		// Make sure the working directory exists
-		std::filesystem::create_directories(getService<Config>()->getPath("working-dir"));
-		std::filesystem::create_directories(getService<Config>()->getPath("working-dir") / "cache");
+		std::filesystem::create_directories(ServiceProvider<Config>::get()->getPath("working-dir"));
+		std::filesystem::create_directories(ServiceProvider<Config>::get()->getPath("working-dir") / "cache");
 
 		// Construct WT configuration and get the argc/argv back
 		std::vector<std::string> wtServerArgs = generateWtConfig(argv[0]);
@@ -132,16 +133,20 @@ int main(int argc, char* argv[])
 		Av::Transcoder::init();
 
 		// Initializing a connection pool to the database that will be shared along services
-		Database::Db database {getService<Config>()->getPath("working-dir") / "lms.db"};
+		Database::Db database {ServiceProvider<Config>::get()->getPath("working-dir") / "lms.db"};
+		{
+			Database::Session session {database};
+			session.prepareTables();
+		}
 
 		UserInterface::LmsApplicationGroupContainer appGroups;
 
 		// Service initialization order is important
-		ServiceProvider<Auth::AuthTokenService>::create(getService<Config>()->getULong("login-throttler-max-entriees", 10000));
-		ServiceProvider<Auth::PasswordService>::create(getService<Config>()->getULong("login-throttler-max-entriees", 10000));
-		Scanner::MediaScanner& mediaScanner {ServiceProvider<Scanner::MediaScanner>::create(database.createSession())};
+		ServiceProvider<Auth::AuthTokenService>::create(ServiceProvider<Config>::get()->getULong("login-throttler-max-entriees", 10000));
+		ServiceProvider<Auth::PasswordService>::create(ServiceProvider<Config>::get()->getULong("login-throttler-max-entriees", 10000));
+		Scanner::MediaScanner& mediaScanner {ServiceProvider<Scanner::MediaScanner>::create(database)};
 
-		Similarity::FeaturesScannerAddon similarityFeaturesScannerAddon {database.createSession()};
+		Similarity::FeaturesScannerAddon similarityFeaturesScannerAddon {database};
 
 		mediaScanner.setAddon(similarityFeaturesScannerAddon);
 
@@ -153,7 +158,7 @@ int main(int argc, char* argv[])
 		API::Subsonic::SubsonicResource subsonicResource {database};
 
 		// bind API resources
-		if (getService<Config>()->getBool("api-subsonic", true))
+		if (ServiceProvider<Config>::get()->getBool("api-subsonic", true))
 			server.addResource(&subsonicResource, subsonicResource.getPath());
 
 		// bind UI entry point

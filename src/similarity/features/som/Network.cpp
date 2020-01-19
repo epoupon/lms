@@ -279,7 +279,7 @@ Network::updateRefVectors(const Position& closestRefVectorPosition, const InputV
 			InputVector delta {input - refVector};
 			delta *= (learningFactor * _neighbourhoodFunc(norm, iteration));
 
-			refVector += delta; // * (learningFactor * _neighbourhoodFunc(norm, iteration));
+			refVector += delta;
 		}
 	}
 }

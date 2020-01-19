@@ -34,11 +34,19 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 	public:
 		using pointer = Wt::Dbo::ptr<ScanSettings>;
 
+		// Do not modify values (just add)
 		enum class UpdatePeriod {
 			Never = 0,
 			Daily,
 			Weekly,
 			Monthly
+		};
+
+		// Do not modify values (just add)
+		enum class SimilarityEngineType
+		{
+			Clusters = 0,
+			Features,
 		};
 
 		static void init(Session& session);
@@ -52,12 +60,14 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		UpdatePeriod getUpdatePeriod() const { return _updatePeriod; }
 		std::vector<Wt::Dbo::ptr<ClusterType>> getClusterTypes() const;
 		std::set<std::filesystem::path> getAudioFileExtensions() const;
+		SimilarityEngineType getSimilarityEngineType() const { return _similarityEngineType; }
 
 		// Setters
 		void setMediaDirectory(std::filesystem::path p);
 		void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
 		void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
 		void setClusterTypes(Session& session, const std::set<std::string>& clusterTypeNames);
+		void setSimilarityEngineType(SimilarityEngineType type) { _similarityEngineType = type; }
 		void incScanVersion();
 
 		template<class Action>
@@ -68,6 +78,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 			Wt::Dbo::field(a, _startTime,		"start_time");
 			Wt::Dbo::field(a, _updatePeriod,	"update_period");
 			Wt::Dbo::field(a, _audioFileExtensions,	"audio_file_extensions");
+			Wt::Dbo::field(a, _similarityEngineType,"similarity_engine_type");
 			Wt::Dbo::hasMany(a, _clusterTypes, Wt::Dbo::ManyToOne, "scan_settings");
 		}
 
@@ -77,6 +88,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		std::string	_mediaDirectory;
 		Wt::WTime	_startTime = Wt::WTime {0,0,0};
 		UpdatePeriod	_updatePeriod {UpdatePeriod::Never};
+		SimilarityEngineType _similarityEngineType {SimilarityEngineType::Clusters};
 		std::string	_audioFileExtensions {".mp3 .ogg .oga .aac .m4a .flac .wav .wma .aif .aiff .ape .mpc .shn .opus"};
 		Wt::Dbo::collection<Wt::Dbo::ptr<ClusterType>>	_clusterTypes;
 };

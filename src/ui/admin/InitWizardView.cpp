@@ -55,7 +55,7 @@ class InitWizardModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			const Database::User::PasswordHash passwordHash {getService<::Auth::PasswordService>()->hashPassword(valueText(PasswordField).toUTF8())};
+			const Database::User::PasswordHash passwordHash {ServiceProvider<::Auth::PasswordService>::get()->hashPassword(valueText(PasswordField).toUTF8())};
 
 			auto transaction(LmsApp->getDbSession().createUniqueTransaction());
 
@@ -77,7 +77,7 @@ class InitWizardModel : public Wt::WFormModel
 				if (!valueText(PasswordField).empty())
 				{
 					// Evaluate the strength of the password
-					if (!getService<::Auth::PasswordService>()->evaluatePasswordStrength(valueText(AdminLoginField).toUTF8(), valueText(PasswordField).toUTF8()))
+					if (!ServiceProvider<::Auth::PasswordService>::get()->evaluatePasswordStrength(valueText(AdminLoginField).toUTF8(), valueText(PasswordField).toUTF8()))
 						error = Wt::WString::tr("Lms.password-too-weak");
 				}
 				else

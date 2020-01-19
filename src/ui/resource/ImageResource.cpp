@@ -80,7 +80,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// DbSession are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock {LmsApp};
-			cover = getService<CoverArt::Grabber>()->getFromTrack(LmsApp->getDbSession(), *trackId, Image::Format::JPEG, *size);
+			cover = ServiceProvider<CoverArt::Grabber>::get()->getFromTrack(LmsApp->getDbSession(), *trackId, Image::Format::JPEG, *size);
 		}
 	}
 	else if (releaseIdStr)
@@ -92,7 +92,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// DbSession are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock {LmsApp};
-			cover = getService<CoverArt::Grabber>()->getFromRelease(LmsApp->getDbSession(), *releaseId, Image::Format::JPEG, *size);
+			cover = ServiceProvider<CoverArt::Grabber>::get()->getFromRelease(LmsApp->getDbSession(), *releaseId, Image::Format::JPEG, *size);
 		}
 	}
 	else

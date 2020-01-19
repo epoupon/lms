@@ -19,39 +19,16 @@
 
 #pragma once
 
-#include <memory>
-#include <type_traits>
+#include "Logger.hpp"
 
-template <typename Class>
-class ServiceProvider
+class StreamLogger final : public Logger
 {
 	public:
-		template <class DerivedClass, class ...Args>
-		static
-		Class&
-		create(Args&&... args)
-		{
-			static_assert(std::is_base_of<Class, DerivedClass>::value);
+		StreamLogger(std::ostream& oss);
 
-			assign(std::make_unique<DerivedClass>(std::forward<Args>(args)...));
-			return *get();
-		}
-
-		template <class ...Args>
-		static
-		Class&
-		create(Args&&... args)
-		{
-			assign(std::make_unique<Class>(std::forward<Args>(args)...));
-			return *get();
-		}
-
-		static void assign(std::unique_ptr<Class> service) { _service = std::move(service); }
-		static void clear() { _service.reset(); }
-
-		static Class* get() { return _service.get(); }
+		void processLog(const Log& log);
 
 	private:
-		static inline std::unique_ptr<Class> _service;
+		std::ostream& _os;
 };
 

@@ -20,6 +20,9 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 #include <Wt/Dbo/Dbo.h>
 
@@ -29,6 +32,10 @@ namespace Database {
 
 class Session;
 class Track;
+
+using FeatureName = std::string;
+using FeatureValues  = std::vector<double>;
+using FeatureValuesMap = std::unordered_map<FeatureName, FeatureValues>;
 
 class TrackFeatures : public Wt::Dbo::Dbo<TrackFeatures>
 {
@@ -42,8 +49,8 @@ class TrackFeatures : public Wt::Dbo::Dbo<TrackFeatures>
 		// Create utility
 		static pointer create(Session& session, Wt::Dbo::ptr<Track> track, const std::string& jsonEncodedFeatures);
 
-		std::vector<double> getFeatures(const std::string& featureNode) const;
-		bool getFeatures(std::map<std::string /*featureNode*/, std::vector<double> /*values*/>& featureNodes) const;
+		FeatureValues		getFeatureValues(const FeatureName& feature) const;
+		FeatureValuesMap	getFeatureValuesMap(const std::unordered_set<FeatureName>& featureNames) const;
 
 		template<class Action>
 		void persist(Action& a)

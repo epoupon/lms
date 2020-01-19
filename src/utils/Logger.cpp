@@ -19,7 +19,7 @@
 
 #include "Logger.hpp"
 
-std::string getModuleName(Module mod)
+const char* getModuleName(Module mod)
 {
 	switch (mod)
 	{
@@ -41,7 +41,7 @@ std::string getModuleName(Module mod)
 	return "";
 }
 
-std::string getSeverityName(Severity sev)
+const char* getSeverityName(Severity sev)
 {
 	switch (sev)
 	{
@@ -52,5 +52,23 @@ std::string getSeverityName(Severity sev)
 		case Severity::DEBUG:		return "debug";
 	}
 	return "";
+}
+
+Log::Log(Logger* logger, Module module, Severity severity)
+	: _module {module},
+	_severity {severity},
+	_logger {logger}
+{}
+
+Log::~Log()
+{
+	if (_logger)
+		_logger->processLog(*this);
+}
+
+std::string
+Log::getMessage() const
+{
+	return _oss.str();
 }
 

@@ -1,4 +1,4 @@
 if BUILD_TOOLS
-SUBDIRS = similarity metadata
+SUBDIRS = similarity similarity-parameters metadata
 endif
 

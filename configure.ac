@@ -15,7 +15,7 @@ fi
 AC_SUBST(MAGICKXX_CFLAGS)
 AC_SUBST(MAGICKXX_LIBS)
 
-AC_CHECK_HEADERS([Wt/WApplication.h pstreams/pstream.h],
+AC_CHECK_HEADERS([Wt/WApplication.h pstreams/pstream.h boost/asio.hpp],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
 
@@ -80,6 +80,7 @@ AC_CONFIG_FILES([Makefile
 		 test/Makefile
 		 tools/Makefile
 		 tools/similarity/Makefile
+		 tools/similarity-parameters/Makefile
 		 tools/metadata/Makefile])
 
 AC_ARG_ENABLE([tools],

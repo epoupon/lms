@@ -96,6 +96,15 @@ Release::getAll(Session& session, std::optional<std::size_t> offset, std::option
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+std::vector<IdType>
+Release::getAllIds(Session& session)
+{
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<IdType> res = session.getDboSession().query<IdType>("SELECT id FROM release");
+	return std::vector<IdType>(res.begin(), res.end());
+}
+
 std::vector<Release::pointer>
 Release::getAllOrderedByArtist(Session& session, std::optional<std::size_t> offset, std::optional<std::size_t> size)
 {

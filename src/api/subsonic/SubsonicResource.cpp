@@ -33,6 +33,7 @@
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
@@ -127,42 +128,6 @@ struct RequestContext
 	Session& dbSession;
 	std::string userName;
 };
-
-using SessionMap = std::map<Db*, std::unique_ptr<Session>>;
-static std::map<std::thread::id, SessionMap> dbSessions;
-
-static
-Session&
-getOrCreateDbSession(Db& db)
-{
-	static std::mutex mutex;
-
-	SessionMap* sessionMap {};
-
-	{
-		std::unique_lock<std::mutex> lock {mutex};
-		sessionMap = &dbSessions[std::this_thread::get_id()];
-	}
-
-	auto it {sessionMap->find(&db)};
-	if (it != std::end(*sessionMap))
-		return *it->second;
-
-	auto res { sessionMap->try_emplace(&db, db.createSession())};
-	assert(res.second);
-
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Created db session";
-
-	return *res.first->second;
-}
-
-static
-void
-clearDbSessions()
-{
-	dbSessions.clear();
-}
-
 
 static
 std::string
@@ -274,14 +239,8 @@ struct MediaRetrievalResult
 };
 
 SubsonicResource::SubsonicResource(Db& db)
-: _db {db}
+: _sessionPool {db}
 {
-}
-
-SubsonicResource::~SubsonicResource()
-{
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Cleaning db sessions...";
-	clearDbSessions();
 }
 
 static
@@ -595,10 +554,10 @@ handleChangePassword(RequestContext& context)
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
 	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
 
-	if (!getService<Auth::PasswordService>()->evaluatePasswordStrength(username, password))
+	if (!ServiceProvider<Auth::PasswordService>::get()->evaluatePasswordStrength(username, password))
 		throw PasswordTooWeakGenericError {};
 
-	const User::PasswordHash hash {getService<Auth::PasswordService>()->hashPassword(password)};
+	const User::PasswordHash hash {ServiceProvider<Auth::PasswordService>::get()->hashPassword(password)};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
@@ -677,10 +636,10 @@ handleCreateUserRequest(RequestContext& context)
 	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
 	// Just ignore all the other fields as we don't handle them
 
-	if (!getService<Auth::PasswordService>()->evaluatePasswordStrength(username, password))
+	if (!ServiceProvider<Auth::PasswordService>::get()->evaluatePasswordStrength(username, password))
 		throw PasswordTooWeakGenericError {};
 
-	const User::PasswordHash hash {getService<Auth::PasswordService>()->hashPassword(password)};
+	const User::PasswordHash hash {ServiceProvider<Auth::PasswordService>::get()->hashPassword(password)};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
@@ -960,7 +919,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 			artistInfoNode.createChild("musicBrainzId").setValue(artist->getMBID());
 	}
 
-	auto similarArtistsId {getService<Similarity::Searcher>()->getSimilarArtists(context.dbSession, id.value, count)};
+	auto similarArtistsId {ServiceProvider<Similarity::Searcher>::get()->getSimilarArtists(context.dbSession, id.value, count)};
 
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
@@ -1156,7 +1115,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(50)};
 
-	auto similarArtistsId {getService<Similarity::Searcher>()->getSimilarArtists(context.dbSession, id.value, 5)};
+	auto similarArtistsId {ServiceProvider<Similarity::Searcher>::get()->getSimilarArtists(context.dbSession, id.value, 5)};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -1604,10 +1563,10 @@ handleUpdateUserRequest(RequestContext& context)
 	if (password)
 	{
 		*password = decodePasswordIfNeeded(*password);
-		if (!getService<Auth::PasswordService>()->evaluatePasswordStrength(username, *password))
+		if (!ServiceProvider<Auth::PasswordService>::get()->evaluatePasswordStrength(username, *password))
 			throw PasswordTooWeakGenericError {};
 
-		hash = getService<Auth::PasswordService>()->hashPassword(*password);
+		hash = ServiceProvider<Auth::PasswordService>::get()->hashPassword(*password);
 	}
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
@@ -1816,10 +1775,10 @@ handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation*)
 	switch (id.type)
 	{
 		case Id::Type::Track:
-			res.data = getService<CoverArt::Grabber>()->getFromTrack(context.dbSession, id.value, Image::Format::JPEG, size);
+			res.data = ServiceProvider<CoverArt::Grabber>::get()->getFromTrack(context.dbSession, id.value, Image::Format::JPEG, size);
 			break;
 		case Id::Type::Release:
-			res.data = getService<CoverArt::Grabber>()->getFromRelease(context.dbSession, id.value, Image::Format::JPEG, size);
+			res.data = ServiceProvider<CoverArt::Grabber>::get()->getFromRelease(context.dbSession, id.value, Image::Format::JPEG, size);
 			break;
 		default:
 			throw BadParameterGenericError {"id"};
@@ -1906,9 +1865,9 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		// Mandatory parameters
 		const ClientInfo clientInfo {getClientInfo(parameters)};
 
-		Session& dbSession {getOrCreateDbSession(_db)};
+		SessionPool::ScopedSession dbSession {_sessionPool};
 
-		switch (getService<Auth::PasswordService>()->checkUserPassword(dbSession,
+		switch (ServiceProvider<Auth::PasswordService>::get()->checkUserPassword(dbSession.get(),
 					boost::asio::ip::address::from_string(request.clientAddress()),
 					clientInfo.user, clientInfo.password))
 		{
@@ -1920,16 +1879,16 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 				throw LoginThrottledGenericError {};
 		}
 
-		RequestContext requestContext {.parameters = parameters, .dbSession = dbSession, .userName = clientInfo.user};
+		RequestContext requestContext {.parameters = parameters, .dbSession = dbSession.get(), .userName = clientInfo.user};
 
 		auto itEntryPoint {requestEntryPoints.find(requestPath)};
 		if (itEntryPoint != requestEntryPoints.end())
 		{
 			if (itEntryPoint->second.mustBeAdmin)
 			{
-				auto transaction {dbSession.createSharedTransaction()};
+				auto transaction {dbSession.get().createSharedTransaction()};
 
-				User::pointer user {User::getByLoginName(dbSession, clientInfo.user)};
+				User::pointer user {User::getByLoginName(dbSession.get(), clientInfo.user)};
 				if (!user || !user->isAdmin())
 					throw UserNotAuthorizedError {};
 			}

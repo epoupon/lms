@@ -86,6 +86,15 @@ Artist::getAll(Session& session, std::optional<std::size_t> offset, std::optiona
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+std::vector<IdType>
+Artist::getAllIds(Session& session)
+{
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<IdType> res = session.getDboSession().query<IdType>("SELECT id FROM artist");
+	return std::vector<IdType>(res.begin(), res.end());
+}
+
 std::vector<Artist::pointer>
 Artist::getAllOrphans(Session& session)
 {

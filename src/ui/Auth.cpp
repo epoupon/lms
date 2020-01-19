@@ -43,7 +43,7 @@ static
 void
 createAuthToken(Database::IdType userId, const Wt::WDateTime& expiry)
 {
-	const std::string secret {getService<::Auth::AuthTokenService>()->createAuthToken(LmsApp->getDbSession(), userId, expiry)};
+	const std::string secret {ServiceProvider<::Auth::AuthTokenService>::get()->createAuthToken(LmsApp->getDbSession(), userId, expiry)};
 
 	LmsApp->setCookie(authCookieName,
 			secret,
@@ -61,7 +61,7 @@ processAuthToken(const Wt::WEnvironment& env)
 	if (!authCookie)
 		return std::nullopt;
 
-	const auto res {getService<::Auth::AuthTokenService>()->processAuthToken(LmsApp->getDbSession(), boost::asio::ip::address::from_string(env.clientAddress()), *authCookie)};
+	const auto res {ServiceProvider<::Auth::AuthTokenService>::get()->processAuthToken(LmsApp->getDbSession(), boost::asio::ip::address::from_string(env.clientAddress()), *authCookie)};
 	switch (res.state)
 	{
 		case ::Auth::AuthTokenService::AuthTokenProcessResult::State::NotFound:
@@ -124,7 +124,7 @@ class AuthModel : public Wt::WFormModel
 
 			if (field == PasswordField)
 			{
-				switch (getService<::Auth::PasswordService>()->checkUserPassword(
+				switch (ServiceProvider<::Auth::PasswordService>::get()->checkUserPassword(
 							LmsApp->getDbSession(),
 							boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
 							valueText(LoginNameField).toUTF8(),

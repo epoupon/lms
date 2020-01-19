@@ -136,7 +136,7 @@ DatabaseStatus::refreshContents()
 
 	Wt::WPushButton* reportBtn {bindNew<Wt::WPushButton>("btn-report", Wt::WString::tr("Lms.Admin.Database.Status.get-report"))};
 
-	const MediaScanner::Status status {getService<MediaScanner>()->getStatus()};
+	const MediaScanner::Status status {ServiceProvider<MediaScanner>::get()->getStatus()};
 	if (status.lastCompleteScanStats)
 	{
 		bindString("last-scan", Wt::WString::tr("Lms.Admin.Database.Status.last-scan-status")

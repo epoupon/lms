@@ -41,7 +41,7 @@ namespace Scanner {
 class MediaScanner
 {
 	public:
-		MediaScanner(std::unique_ptr<Database::Session> dbSession);
+		MediaScanner(Database::Db& db);
 
 		void setAddon(MediaScannerAddon& addon);
 
@@ -110,7 +110,7 @@ class MediaScanner
 		Wt::Signal<ScanProgressStats>		_sigScanInProgress;
 		std::chrono::system_clock::time_point	_lastScanInProgressEmit {};
 		Wt::Signal<Wt::WDateTime>		_sigScheduled;
-		std::unique_ptr<Database::Session>	_dbSession;
+		Database::Session			_dbSession;
 		MetaData::TagLibParser 			_metadataParser;
 		std::vector<MediaScannerAddon*> 	_addons;
 
