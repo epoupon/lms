@@ -11,14 +11,14 @@ LMS.mediaplayer = function () {
 	var _audioSrc;
 
 	var _updateControls = function() {
-		_elems.progress.classList.toggle("active");
 		if (_elems.audio.paused) {
-			_elems.play.style.display = "inline";
-			_elems.pause.style.display = "none";
+			_elems.playpause.classList.remove("fa-pause");
+			_elems.playpause.classList.add("fa-play");
+			_elems.progress.classList.remove("active");
 		}
 		else {
-			_elems.pause.style.display = "inline";
-			_elems.play.style.display = "none";
+			_elems.playpause.classList.remove("fa-play");
+			_elems.playpause.classList.add("fa-pause");
 			_elems.progress.classList.add("active");
 		}
 	}
@@ -52,21 +52,23 @@ LMS.mediaplayer = function () {
 		_root = root;
 
 		_elems.audio = document.getElementById("lms-mp-audio");
-		_elems.play = document.getElementById("lms-mp-play");
-		_elems.pause = document.getElementById("lms-mp-pause");
+		_elems.playpause = document.getElementById("lms-mp-playpause");
 		_elems.previous = document.getElementById("lms-mp-previous");
 		_elems.next = document.getElementById("lms-mp-next");
 		_elems.progress = document.getElementById("lms-mp-progress");
 		_elems.seek = document.getElementById("lms-mp-seek");
 		_elems.curtime = document.getElementById("lms-mp-curtime");
 		_elems.duration = document.getElementById("lms-mp-duration");
+		_elems.volume = document.getElementById("lms-mp-volume");
+		_elems.volumeslider = document.getElementById("lms-mp-volume-slider");
 
-		_elems.play.addEventListener("click", function() {
-			if (_elems.audio.hasAttribute("src"))
-				_elems.audio.play();
-		});
-		_elems.pause.addEventListener("click", function() {
-			_elems.audio.pause();
+		_elems.playpause.addEventListener("click", function() {
+			if (_elems.audio.paused) {
+				if (_elems.audio.hasAttribute("src"))
+					_elems.audio.play();
+			}
+			else
+				_elems.audio.pause();
 		});
 
 		_elems.previous.addEventListener("click", function() {
@@ -98,6 +100,39 @@ LMS.mediaplayer = function () {
 		_elems.audio.addEventListener("ended", function() {
 			Wt.emit(_root, "playbackEnded");
 		});
+
+		_elems.audio.volume = _elems.volumeslider.value;
+		_elems.lastvolume = _elems.volumeslider.value;
+		_elems.volumeslider.addEventListener("input", function() {
+			_elems.audio.volume = _elems.volumeslider.value;
+			_elems.lastvolume = _elems.volumeslider.value;
+		});
+
+		_elems.volume.addEventListener("click", function () {
+			if (_elems.audio.volume != 0)
+			{
+				_elems.audio.volume = 0;
+				_elems.volumeslider.value = 0;
+			}
+			else
+			{
+				_elems.audio.volume = _elems.lastvolume;
+				_elems.volumeslider.value = _elems.lastvolume;
+			}
+		});
+		_elems.audio.addEventListener("volumechange", function() {
+			if (_elems.audio.volume != 0)
+			{
+				_elems.volume.classList.remove("fa-volume-off");
+				_elems.volume.classList.add("fa-volume-up");
+			}
+			else
+			{
+				_elems.volume.classList.remove("fa-volume-up");
+				_elems.volume.classList.add("fa-volume-off");
+			}
+		});
+
 	}
 
 	var loadTrack = function(params, autoplay) {
