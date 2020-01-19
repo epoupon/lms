@@ -86,7 +86,7 @@ Session::doDatabaseMigrationIfNeeded()
 	try
 	{
 		version = VersionInfo::getOrCreate(*this)->getVersion();
-		LMS_LOG(DB, INFO) << "Database version = " << version;
+		LMS_LOG(DB, INFO) << "Database version = " << version << ", LMS binary version = " << LMS_DATABASE_VERSION;
 		if (version == LMS_DATABASE_VERSION)
 			return;
 	}
