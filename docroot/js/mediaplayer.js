@@ -48,6 +48,14 @@ LMS.mediaplayer = function () {
 		}
 	}
 
+	var _requestPreviousTrack = function() {
+		Wt.emit(_root, "playNext");
+	}
+
+	var _requestNextTrack = function() {
+		Wt.emit(_root, "playNext");
+	}
+
 	var init = function(root) {
 		_root = root;
 
@@ -72,10 +80,10 @@ LMS.mediaplayer = function () {
 		});
 
 		_elems.previous.addEventListener("click", function() {
-			Wt.emit(_root, "playPrevious");
+			_requestPreviousTrack();
 		});
 		_elems.next.addEventListener("click", function() {
-			Wt.emit(_root, "playNext");
+			_requestNextTrack();
 		});
 		_elems.seek.addEventListener("change", function() {
 			if (!_elems.audio.hasAttribute("src"))
@@ -133,11 +141,18 @@ LMS.mediaplayer = function () {
 			}
 		});
 
+		if ('mediaSession' in navigator) {
+			navigator.mediaSession.setActionHandler("previoustrack", function() {
+				_requestPreviousTrack();
+			});
+			navigator.mediaSession.setActionHandler("nexttrack", function() {
+				_requestNextTrack();
+			});
+		}
+
 	}
 
 	var loadTrack = function(params, autoplay) {
-		console.log("Loading track, resource = '" + params.resource + "', imgResource = '" + params.imgResource + "'");
-
 		_offset = 0;
 		_duration = params.duration;
 		_audioSrc = params.resource;
@@ -150,6 +165,15 @@ LMS.mediaplayer = function () {
 
 		if (autoplay)
 			_playTrack();
+
+		if ('mediaSession' in navigator) {
+			navigator.mediaSession.metadata = new MediaMetadata({
+				title: params.title,
+				artist: params.artist,
+				album: params.release,
+				artwork: params.artwork,
+			});
+		}
 	}
 
 	var stop = function() {

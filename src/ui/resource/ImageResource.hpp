@@ -41,6 +41,8 @@ class ImageResource : public Wt::WResource
 		std::string getReleaseUrl(Database::IdType releaseId, size_t size) const;
 		std::string getTrackUrl(Database::IdType trackId, size_t size) const;
 
+		static std::string getMimeType();
+
 		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
 
 };

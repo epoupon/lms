@@ -131,6 +131,12 @@ replaceInString(const std::string& str, const std::string& from, const std::stri
 	return res;
 }
 
+std::string
+jsEscape(const std::string& str)
+{
+	return replaceInString(str, "\'", "\\\'");
+}
+
 bool
 stringEndsWith(const std::string& str, const std::string& ending)
 {

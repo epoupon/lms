@@ -98,8 +98,15 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	else
 		return;
 
-	response.setMimeType( Image::format_to_mimeType(Image::Format::JPEG) );
+	response.setMimeType(getMimeType());
+
 	response.out().write(reinterpret_cast<const char *>(&cover[0]), cover.size());
+}
+
+std::string
+ImageResource::getMimeType()
+{
+	return Image::format_to_mimeType(Image::Format::JPEG);
 }
 
 } // namespace UserInterface

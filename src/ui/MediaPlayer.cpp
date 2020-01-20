@@ -29,6 +29,8 @@
 #include "resource/ImageResource.hpp"
 #include "resource/AudioResource.hpp"
 
+#include "utils/Utils.hpp"
+
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
@@ -66,15 +68,24 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play)
 	{
 		const Av::MediaFile mediaFile {track->getPath()};
 
-		auto resource = LmsApp->getAudioResource()->getUrl(trackId);
-		auto imgResource = LmsApp->getImageResource()->getTrackUrl(trackId, 64);
+		const std::string resource {LmsApp->getAudioResource()->getUrl(trackId)};
+		const std::string imgResourceMimeType {LmsApp->getImageResource()->getMimeType()};
+
+		const auto artists {track->getArtists()};
 
 		std::ostringstream oss;
 		oss
 			<< "var params = {"
 			<< " resource: \"" << resource << "\","
 			<< " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
-			<< " imgResource: \"" << imgResource << "\","
+			<< " title: \"" << jsEscape(track->getName()) << "\","
+			<< " artist: \"" << (!artists.empty() ? jsEscape(artists.front()->getName()) : "") << "\","
+			<< " release: \"" << (track->getRelease() ? jsEscape(track->getRelease()->getName()) : "") << "\","
+			<< " artwork: ["
+			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 96) << "\",  sizes: \"96x96\",	type: \"" << imgResourceMimeType << "\" },"
+			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 256) << "\", sizes: \"256x256\",	type: \"" << imgResourceMimeType << "\" },"
+			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 512) << "\", sizes: \"512x512\",	type: \"" << imgResourceMimeType << "\" },"
+			<< " ]"
 			<< "};";
 		oss << "LMS.mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay
 
@@ -82,7 +93,6 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play)
 
 		_title->setText(Wt::WString::fromUTF8(track->getName()));
 
-		auto artists = track->getArtists();
 		if (!artists.empty())
 		{
 			_artist->setText(Wt::WString::fromUTF8(artists.front()->getName()));
