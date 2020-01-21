@@ -19,12 +19,13 @@
 
 #include "TagLibParser.hpp"
 
+#include <taglib/asffile.h>
+#include <taglib/id3v2tag.h>
 #include <taglib/fileref.h>
+#include <taglib/flacfile.h>
+#include <taglib/mpegfile.h>
 #include <taglib/tag.h>
 #include <taglib/tpropertymap.h>
-#include <taglib/asffile.h>
-#include <taglib/mpegfile.h>
-#include <taglib/id3v2tag.h>
 
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
@@ -179,20 +180,26 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 	// Not that good embedded pictures handling
 
 	// WMA
-	if (TagLib::ASF::File *asfFile {dynamic_cast<TagLib::ASF::File*>(f.file())})
+	if (TagLib::ASF::File* asfFile {dynamic_cast<TagLib::ASF::File*>(f.file())})
 	{
-		const TagLib::ASF::Tag* tag {static_cast<TagLib::ASF::Tag*>(asfFile->tag())};
+		const TagLib::ASF::Tag* tag {asfFile->tag()};
 		if (tag && tag->attributeListMap().contains("WM/Picture"))
 			track.hasCover = true;
 	}
 	// MP3
-	else if (TagLib::MPEG::File *mp3File {dynamic_cast<TagLib::MPEG::File*>(f.file())})
+	else if (TagLib::MPEG::File* mp3File {dynamic_cast<TagLib::MPEG::File*>(f.file())})
 	{
 		if (mp3File->ID3v2Tag())
 		{
 			if (!mp3File->ID3v2Tag()->frameListMap()["APIC"].isEmpty())
 				track.hasCover = true;
 		}
+	}
+	// FLAC
+	else if (TagLib::FLAC::File* flacFile {dynamic_cast<TagLib::FLAC::File*>(f.file())})
+	{
+		if (!flacFile->pictureList().isEmpty())
+			track.hasCover = true;
 	}
 
 	if (f.tag())

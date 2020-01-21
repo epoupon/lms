@@ -39,7 +39,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	8
+#define LMS_DATABASE_VERSION	9
 
 using Version = std::size_t;
 
@@ -119,6 +119,12 @@ Session::doDatabaseMigrationIfNeeded()
 			_session.execute("DROP TABLE similarity_settings_feature");
 			_session.execute("ALTER TABLE scan_settings ADD similarity_engine_type INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(ScanSettings::SimilarityEngineType::Clusters)) + ")");
 		}
+		else if (version == 8)
+		{
+			// Better cover handling, need to rescan the whole files
+			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+			ScanSettings::get(*this).modify()->incScanVersion();
+		}
 		else
 		{
 			LMS_LOG(DB, ERROR) << "Database version " << version << " cannot be handled using migration";
@@ -126,9 +132,9 @@ Session::doDatabaseMigrationIfNeeded()
 		}
 
 		++version;
-	}
 
-	VersionInfo::get(*this).modify()->setVersion(LMS_DATABASE_VERSION);
+		VersionInfo::get(*this).modify()->setVersion(LMS_DATABASE_VERSION);
+	}
 }
 
 Session::Session(Db& db)
