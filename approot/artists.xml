@@ -6,10 +6,17 @@
 	<div class="page-header">
 		<h2>${tr:Lms.Explore.artists}</h2>
 	</div>
-	<div class="form-group">
-		<div class="input-group">
-			<span class="input-group-addon"><i class="fa fa-search"></i></span>
-			${search}
+	<div class="row">
+		<div class="col-xs-12 col-sm-3">
+			<div class="Lms-explore-artists-input">
+				${link-type}
+			</div>
+		</div>
+		<div class="col-xs-12 col-sm-9">
+			<div class="input-group Lms-explore-artists-input">
+				<span class="input-group-addon"><i class="fa fa-search"></i></span>
+				${search}
+			</div>
 		</div>
 	</div>
 	${artists}

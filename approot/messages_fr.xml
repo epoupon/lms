@@ -115,6 +115,9 @@
 <message id="Lms.Explore.ArtistInfo.similar-artists">Artistes similaires</message>
 
 <!--Explore:Artists-->
+<message id="Lms.Explore.Artists.linktype-all">Tous les artistes</message>
+<message id="Lms.Explore.Artists.linktype-artist">Artiste de piste</message>
+<message id="Lms.Explore.Artists.linktype-releaseartist">Artiste d'album</message>
 <message id="Lms.Explore.ArtistsInfo.recently-added">Ajouts récents</message>
 <message id="Lms.Explore.ArtistsInfo.most-played">Artistes populaires</message>
 

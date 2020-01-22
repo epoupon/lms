@@ -308,6 +308,16 @@ testSingleTrackSingleArtistMultiRoles(Session& session)
 
 	{
 		auto transaction {session.createSharedTransaction()};
+		bool hasMore{};
+		CHECK(Artist::getByFilter(session, {}, {}, {}, {}, {}, hasMore).size() == 1);
+		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::Artist, {}, {}, hasMore).size() == 1);
+		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::ReleaseArtist, {}, {}, hasMore).size() == 1);
+		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::Writer, {}, {}, hasMore).size() == 1);
+		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::Composer, {}, {}, hasMore).empty());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
 
 		auto artists {track->getArtists(TrackArtistLink::Type::Artist)};
 		CHECK(artists.size() == 1);

@@ -1387,7 +1387,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 
 	bool more;
 	{
-		auto artists {Artist::getByFilter(context.dbSession, {}, keywords, artistOffset, artistCount, more)};
+		auto artists {Artist::getByFilter(context.dbSession, {}, keywords, {}, artistOffset, artistCount, more)};
 		for (const Artist::pointer& artist : artists)
 			searchResult2Node.addArrayChild("artist", artistToResponseNode(user, artist, id3));
 	}

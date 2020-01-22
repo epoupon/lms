@@ -232,6 +232,10 @@ a:hover {
 	font-style: normal;
 }
 
+.Lms-explore-artists-input {
+	margin-bottom: 10px;
+}
+
 .Lms-explore-artist-entry {
 	padding-top: 8px;
 	padding-bottom: 8px;

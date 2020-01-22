@@ -19,13 +19,15 @@
 
 #include "ArtistsView.hpp"
 
+#include <optional>
+
 #include <Wt/WAnchor.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WLocalDateTime.h>
 #include <Wt/WTemplate.h>
 
+#include "common/ValueStringModel.hpp"
 #include "database/Artist.hpp"
-
 #include "utils/Logger.hpp"
 #include "utils/Utils.hpp"
 
@@ -36,6 +38,8 @@ using namespace Database;
 
 namespace UserInterface {
 
+using ArtistLinkModel = ValueStringModel<std::optional<TrackArtistLink::Type>>;
+
 Artists::Artists(Filters* filters)
 : Wt::WTemplate(Wt::WString::tr("Lms.Explore.Artists.template")),
   _filters(filters)
@@ -45,6 +49,16 @@ Artists::Artists(Filters* filters)
 	_search = bindNew<Wt::WLineEdit>("search");
 	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
 	_search->textInput().connect(this, &Artists::refresh);
+
+	_linkType = bindNew<Wt::WComboBox>("link-type");
+	{
+		auto linkTypeModel {std::make_shared<ArtistLinkModel>()};
+		linkTypeModel->add(Wt::WString::tr("Lms.Explore.Artists.linktype-all"), {});
+		linkTypeModel->add(Wt::WString::tr("Lms.Explore.Artists.linktype-artist"), TrackArtistLink::Type::Artist);
+		linkTypeModel->add(Wt::WString::tr("Lms.Explore.Artists.linktype-releaseartist"), TrackArtistLink::Type::ReleaseArtist);
+		_linkType->setModel(linkTypeModel);
+	}
+	_linkType->changed().connect(this, &Artists::refresh);
 
 	_container = bindNew<Wt::WContainerWidget>("artists");
 
@@ -72,6 +86,7 @@ Artists::addSome()
 	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
 
 	auto clusterIds = _filters->getClusterIds();
+	auto linkModel = static_cast<ArtistLinkModel*>(_linkType->model().get());
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -79,6 +94,7 @@ Artists::addSome()
 	const std::vector<Artist::pointer> artists {Artist::getByFilter(LmsApp->getDbSession(),
 			clusterIds,
 			searchKeywords,
+			linkModel->getValue(_linkType->currentIndex()),
 			_container->count(), 20, moreResults)};
 
 	for (const auto& artist : artists)
