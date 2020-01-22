@@ -49,7 +49,7 @@ LMS.mediaplayer = function () {
 	}
 
 	var _requestPreviousTrack = function() {
-		Wt.emit(_root, "playNext");
+		Wt.emit(_root, "playPrevious");
 	}
 
 	var _requestNextTrack = function() {
