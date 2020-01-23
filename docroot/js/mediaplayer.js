@@ -56,6 +56,42 @@ LMS.mediaplayer = function () {
 		Wt.emit(_root, "playNext");
 	}
 
+	var _initVolume = function() {
+		if (typeof(Storage) !== "undefined" && localStorage.volume) {
+			_elems.volumeslider.value = Number(localStorage.volume);
+		}
+
+		_setVolume(_elems.volumeslider.value);
+	}
+
+	var _setVolume = function(volume) {
+		_elems.lastvolume = _elems.audio.volume;
+
+		_elems.audio.volume = volume;
+		_elems.volumeslider.value = volume;
+
+		if (volume > 0.5) {
+			_elems.volume.classList.remove("fa-volume-off");
+			_elems.volume.classList.remove("fa-volume-down");
+			_elems.volume.classList.add("fa-volume-up");
+		}
+		else if (volume > 0) {
+			_elems.volume.classList.remove("fa-volume-off");
+			_elems.volume.classList.remove("fa-volume-up");
+			_elems.volume.classList.add("fa-volume-down");
+
+		}
+		else {
+			_elems.volume.classList.remove("fa-volume-up");
+			_elems.volume.classList.remove("fa-volume-down");
+			_elems.volume.classList.add("fa-volume-off");
+		}
+
+		if (typeof(Storage) !== "undefined") {
+			localStorage.volume = volume;
+		}
+	}
+
 	var init = function(root) {
 		_root = root;
 
@@ -109,35 +145,18 @@ LMS.mediaplayer = function () {
 			Wt.emit(_root, "playbackEnded");
 		});
 
-		_elems.audio.volume = _elems.volumeslider.value;
-		_elems.lastvolume = _elems.volumeslider.value;
+		_initVolume();
+
 		_elems.volumeslider.addEventListener("input", function() {
-			_elems.audio.volume = _elems.volumeslider.value;
-			_elems.lastvolume = _elems.volumeslider.value;
+			_setVolume(_elems.volumeslider.value);
 		});
 
 		_elems.volume.addEventListener("click", function () {
-			if (_elems.audio.volume != 0)
-			{
-				_elems.audio.volume = 0;
-				_elems.volumeslider.value = 0;
+			if (_elems.audio.volume != 0) {
+				_setVolume(0);
 			}
-			else
-			{
-				_elems.audio.volume = _elems.lastvolume;
-				_elems.volumeslider.value = _elems.lastvolume;
-			}
-		});
-		_elems.audio.addEventListener("volumechange", function() {
-			if (_elems.audio.volume != 0)
-			{
-				_elems.volume.classList.remove("fa-volume-off");
-				_elems.volume.classList.add("fa-volume-up");
-			}
-			else
-			{
-				_elems.volume.classList.remove("fa-volume-up");
-				_elems.volume.classList.add("fa-volume-off");
+			else {
+				_setVolume(_elems.lastvolume);
 			}
 		});
 
