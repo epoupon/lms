@@ -135,6 +135,11 @@ class NotImplementedGenericError : public GenericError
 	std::string getMessage() const override { return "Not implemented"; }
 };
 
+class UnknownEntryPointGenericError : public GenericError
+{
+	std::string getMessage() const override { return "Unknown API method"; }
+};
+
 class PasswordTooWeakGenericError : public GenericError
 {
 	std::string getMessage() const override { return "Password too weak"; }

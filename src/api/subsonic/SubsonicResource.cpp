@@ -1657,6 +1657,13 @@ handleUpdatePlaylistRequest(RequestContext& context)
 }
 
 static
+Response
+handleNotImplemented(RequestContext&)
+{
+	throw NotImplementedGenericError {};
+}
+
+static
 Av::Encoding
 userTranscodeFormatToAvEncoding(AudioFormat format)
 {
@@ -1796,49 +1803,118 @@ struct RequestEntryPointInfo
 	bool			mustBeAdmin;
 };
 
-static std::map<std::string, RequestEntryPointInfo> requestEntryPoints
+static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 {
-	{"changePassword",	{handleChangePassword,			false}},
-	{"createPlaylist",	{handleCreatePlaylistRequest,		false}},
-	{"createUser",		{handleCreateUserRequest,		true}},
-	{"deletePlaylist",	{handleDeletePlaylistRequest,		false}},
-	{"deleteUser",		{handleDeleteUserRequest,		true}},
-	{"getAlbumList",	{handleGetAlbumListRequest,		false}},
-	{"getAlbumList2",	{handleGetAlbumList2Request,		false}},
-	{"getAlbum",		{handleGetAlbumRequest,			false}},
+	// System
+	{"ping",		{handlePingRequest,			false}},
+	{"getLicense",		{handleGetLicenseRequest,		false}},
+
+	// Browsing
+	{"getMusicFolders",	{handleGetMusicFoldersRequest,		false}},
+	{"getIndexes",		{handleGetIndexesRequest,		false}},
+	{"getMusicDirectory",	{handleGetMusicDirectoryRequest,	false}},
+	{"getGenres",		{handleGetGenresRequest,		false}},
+	{"getArtists",		{handleGetArtistsRequest,		false}},
 	{"getArtist",		{handleGetArtistRequest,		false}},
+	{"getAlbum",		{handleGetAlbumRequest,			false}},
+	{"getSong",		{handleNotImplemented,			false}},
+	{"getVideos",		{handleNotImplemented,			false}},
 	{"getArtistInfo",	{handleGetArtistInfoRequest,		false}},
 	{"getArtistInfo2",	{handleGetArtistInfo2Request,		false}},
-	{"getArtists",		{handleGetArtistsRequest,		false}},
-	{"getGenres",		{handleGetGenresRequest,		false}},
-	{"getIndexes",		{handleGetIndexesRequest,		false}},
-	{"getLicense",		{handleGetLicenseRequest,		false}},
-	{"getMusicDirectory",	{handleGetMusicDirectoryRequest,	false}},
-	{"getMusicFolders",	{handleGetMusicFoldersRequest,		false}},
-	{"getRandomSongs",	{handleGetRandomSongsRequest,		false}},
+	{"getAlbumInfo",	{handleNotImplemented,			false}},
+	{"getAlbumInfo2",	{handleNotImplemented,			false}},
 	{"getSimilarSongs",	{handleGetSimilarSongsRequest,		false}},
 	{"getSimilarSongs2",	{handleGetSimilarSongs2Request,		false}},
+	{"getTopSongs",		{handleNotImplemented,			false}},
+
+	// Album/song lists
+	{"getAlbumList",	{handleGetAlbumListRequest,		false}},
+	{"getAlbumList2",	{handleGetAlbumList2Request,		false}},
+	{"getRandomSongs",	{handleGetRandomSongsRequest,		false}},
+	{"getSongsByGenre",	{handleGetSongsByGenreRequest,		false}},
+	{"getNowPlaying",	{handleNotImplemented,			false}},
 	{"getStarred",		{handleGetStarredRequest,		false}},
 	{"getStarred2",		{handleGetStarred2Request,		false}},
-	{"getPlaylist",		{handleGetPlaylistRequest,		false}},
-	{"getPlaylists",	{handleGetPlaylistsRequest,		false}},
-	{"getSongsByGenre",	{handleGetSongsByGenreRequest,		false}},
-	{"getUser",		{handleGetUserRequest,			false}},
-	{"getUsers",		{handleGetUsersRequest,			true}},
-	{"ping",		{handlePingRequest,			false}},
+
+	// Searching
+	{"search",		{handleNotImplemented,			false}},
 	{"search2",		{handleSearch2Request,			false}},
 	{"search3",		{handleSearch3Request,			false}},
+	
+	// Playlists
+	{"getPlaylists",	{handleGetPlaylistsRequest,		false}},
+	{"getPlaylist",		{handleGetPlaylistRequest,		false}},
+	{"createPlaylist",	{handleCreatePlaylistRequest,		false}},
+	{"updatePlaylist",	{handleUpdatePlaylistRequest,		false}},
+	{"deletePlaylist",	{handleDeletePlaylistRequest,		false}},
+
+	// Media retrieval
+	{"download",		{handleNotImplemented,			false}},
+	{"hls",			{handleNotImplemented,			false}},
+	{"getCaptions",		{handleNotImplemented,			false}},
+	{"getLyrics",		{handleNotImplemented,			false}},
+	{"getAvatar",		{handleNotImplemented,			false}},
+
+	// Media annotation
 	{"star",		{handleStarRequest,			false}},
 	{"unstar",		{handleUnstarRequest,			false}},
+	{"setRating",		{handleNotImplemented,			false}},
+	{"scrobble",		{handleNotImplemented,			false}},
+
+	// Sharing
+	{"getShares",		{handleNotImplemented,			false}},
+	{"createShares",	{handleNotImplemented,			false}},
+	{"updateShare",		{handleNotImplemented,			false}},
+	{"deleteShare",		{handleNotImplemented,			false}},
+
+	// Podcast
+	{"getPodcasts",			{handleNotImplemented,			false}},
+	{"getNewestPodcasts",		{handleNotImplemented,			false}},
+	{"refreshPodcasts",		{handleNotImplemented,			false}},
+	{"createPodcastChannel",	{handleNotImplemented,			false}},
+	{"deletePodcastChannel",	{handleNotImplemented,			false}},
+	{"deletePodcastEpisode",	{handleNotImplemented,			false}},
+	{"downloadPodcastEpisode",	{handleNotImplemented,			false}},
+
+	// Jukebox
+	{"jukeboxControl",	{handleNotImplemented,			false}},
+
+	// Internet radio
+	{"getInternetRadioStations",	{handleNotImplemented,			false}},
+	{"createInternetRadioStation",	{handleNotImplemented,			false}},
+	{"updateInternetRadioStation",	{handleNotImplemented,			false}},
+	{"deleteInternetRadioStation",	{handleNotImplemented,			false}},
+	
+	// Chat
+	{"getChatMessages",	{handleNotImplemented,			false}},
+	{"addChatMessages",	{handleNotImplemented,			false}},
+
+	// User management
+	{"getUser",		{handleGetUserRequest,			false}},
+	{"getUsers",		{handleGetUsersRequest,			true}},
+	{"createUser",		{handleCreateUserRequest,		true}},
 	{"updateUser",		{handleUpdateUserRequest,		true}},
-	{"updatePlaylist",	{handleUpdatePlaylistRequest,		false}},
+	{"deleteUser",		{handleDeleteUserRequest,		true}},
+	{"changePassword",	{handleChangePassword,			false}},
+
+	// Bookmarks
+	{"getBookmarks",	{handleNotImplemented,			false}},
+	{"createBookmarks",	{handleNotImplemented,			false}},
+	{"deleteBookmarks",	{handleNotImplemented,			false}},
+	{"getPlayQueue",	{handleNotImplemented,			false}},
+	{"savePlayQueue",	{handleNotImplemented,			false}},
+
+	// Media library scanning
+	{"getScanStatus",	{handleNotImplemented,			true}},
+	{"startScan",		{handleNotImplemented,			true}},
 };
 
 using MediaRetrievalHandlerFunc = std::function<MediaRetrievalResult(RequestContext&, Wt::Http::ResponseContinuation*)>;
-static std::map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
+static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
 {
-	{"stream",		handleStream},
+	// Media retrieval
 	{"getCoverArt",		handleGetCoverArt},
+	{"stream",		handleStream},
 };
 
 void
@@ -1930,7 +2006,16 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		}
 
 		LMS_LOG(API_SUBSONIC, ERROR) << "Unhandled command '" << requestPath << "'";
-		throw NotImplementedGenericError {};
+		throw UnknownEntryPointGenericError {};
+	}
+	catch (const NotImplementedGenericError& e)
+	{
+		LMS_LOG(API_SUBSONIC, INFO) << "Command '" << requestPath << "'"
+			<< ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
+			<< ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << static_cast<const Error&>(e).getMessage() << "'";
+		Response resp {Response::createFailedResponse(e)};
+		resp.write(response.out(), format);
+		response.setMimeType(ResponseFormatToMimeType(format));
 	}
 	catch (const Error& e)
 	{
