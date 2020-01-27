@@ -330,7 +330,7 @@ MediaScanner::countAllFiles(ScanStats& stats)
 
 	stats.filesToScan = 0;
 
-	std::filesystem::recursive_directory_iterator itPath {_mediaDirectory, ec};
+	std::filesystem::recursive_directory_iterator itPath {_mediaDirectory, std::filesystem::directory_options::follow_directory_symlink, ec};
 	if (ec)
 	{
 		LMS_LOG(DBUPDATER, ERROR) << "Cannot iterate over '" << _mediaDirectory.string() << "': " << ec.message();
@@ -661,7 +661,7 @@ MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bo
 {
 	std::error_code ec;
 
-	std::filesystem::recursive_directory_iterator itPath {mediaDirectory, ec};
+	std::filesystem::recursive_directory_iterator itPath {_mediaDirectory, std::filesystem::directory_options::follow_directory_symlink, ec};
 	if (ec)
 	{
 		LMS_LOG(DBUPDATER, ERROR) << "Cannot iterate over '" << mediaDirectory.string() << "': " << ec.message();
