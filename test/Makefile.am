@@ -24,6 +24,7 @@ test_database_SOURCES = \
 	$(top_srcdir)/src/database/Session.cpp			\
 	$(top_srcdir)/src/database/SqlQuery.cpp			\
 	$(top_srcdir)/src/database/Track.cpp			\
+	$(top_srcdir)/src/database/TrackBookmark.cpp		\
 	$(top_srcdir)/src/database/User.cpp			\
 	$(top_srcdir)/src/utils/Logger.cpp			\
 	$(top_srcdir)/src/utils/StreamLogger.cpp		\

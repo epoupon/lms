@@ -19,6 +19,7 @@
 
 #include <map>
 #include <string>
+#include <string_view>
 #include <vector>
 
 
@@ -178,7 +179,7 @@ class Response
 		class Node
 		{
 			public:
-				void setAttribute(const std::string& key, const std::string& value);
+				void setAttribute(std::string_view key, std::string_view value);
 
 				// A Node has either a value or some children
 				void setValue(const std::string& value);

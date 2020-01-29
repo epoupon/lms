@@ -46,6 +46,8 @@ lms_SOURCES = \
 	$(srcdir)/database/SqlQuery.hpp				\
 	$(srcdir)/database/Track.cpp				\
 	$(srcdir)/database/Track.hpp				\
+	$(srcdir)/database/TrackBookmark.cpp			\
+	$(srcdir)/database/TrackBookmark.hpp			\
 	$(srcdir)/database/User.cpp				\
 	$(srcdir)/database/User.hpp				\
 	$(srcdir)/image/Image.cpp				\

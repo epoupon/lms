@@ -28,6 +28,7 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackBookmark.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 
@@ -131,6 +132,7 @@ using ScopedCluster = ScopedEntity<Cluster>;
 using ScopedClusterType = ScopedEntity<ClusterType>;
 using ScopedRelease = ScopedEntity<Release>;
 using ScopedTrack = ScopedEntity<Track>;
+using ScopedTrackBookmark = ScopedEntity<TrackBookmark>;
 using ScopedTrackList = ScopedEntity<TrackList>;
 using ScopedUser = ScopedEntity<User>;
 
@@ -1268,6 +1270,42 @@ testMultipleTracksMultipleReleasesMultiClusters(Session& session)
 
 static
 void
+testSingleTrackSingleUserSingleBookmark(Session& session)
+{
+	ScopedTrack track {session, "MyTrack"};
+	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedTrackBookmark bookmark {session, user.lockAndGet(), track.lockAndGet()};
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		bookmark.get().modify()->setComment("MyComment");
+		bookmark.get().modify()->setOffset(std::chrono::milliseconds {5});
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		CHECK(TrackBookmark::getAll(session).size() == 1);
+
+		const auto bookmarks {TrackBookmark::getByUser(session, user.get())};
+		CHECK(bookmarks.size() == 1);
+		CHECK(bookmarks.back() == bookmark.get());
+	}
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		auto userBookmark {TrackBookmark::getByUser(session, user.get(), track.get())};
+		CHECK(userBookmark);
+		CHECK(userBookmark == bookmark.get());
+
+		CHECK(userBookmark->getOffset() == std::chrono::milliseconds {5});
+		CHECK(userBookmark->getComment() == "MyComment");
+	}
+}
+
+static
+void
 testDatabaseEmpty(Session& session)
 {
 	auto uniqueTransaction {session.createUniqueTransaction()};
@@ -1277,6 +1315,7 @@ testDatabaseEmpty(Session& session)
 	CHECK(ClusterType::getAll(session).empty());
 	CHECK(Release::getAll(session).empty());
 	CHECK(Track::getAll(session).empty());
+	CHECK(TrackBookmark::getAll(session).empty());
 	CHECK(TrackList::getAll(session).empty());
 	CHECK(User::getAll(session).empty());
 }
@@ -1353,6 +1392,8 @@ int main()
 			RUN_TEST(testSingleTrackListMultipleTrackMultiClusters);
 			RUN_TEST(testMultipleTracksMultipleArtistsMultiClusters);
 			RUN_TEST(testMultipleTracksMultipleReleasesMultiClusters);
+
+			RUN_TEST(testSingleTrackSingleUserSingleBookmark);
 		}
 	}
 	catch (std::exception& e)

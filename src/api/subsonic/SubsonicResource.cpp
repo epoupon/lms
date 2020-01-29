@@ -35,6 +35,7 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackBookmark.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 #include "similarity/SimilaritySearcher.hpp"
@@ -48,6 +49,8 @@ using namespace Database;
 
 static const std::string	genreClusterName {"GENRE"};
 static const std::string	reportedStarredDate {"2000-01-01T00:00:00"};
+static const std::string	reportedCreatedBookmarkDate {"2000-01-01T00:00:00"};
+static const std::string	reportedChangedBookmarkDate {"2000-01-01T00:00:00"};
 
 template<>
 std::optional<API::Subsonic::Id>
@@ -410,6 +413,22 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 	}
 
 	return trackResponse;
+}
+
+static
+Response::Node
+trackBookmarkToResponseNode(const TrackBookmark::pointer& trackBookmark)
+{
+	Response::Node trackBookmarkNode;
+
+	trackBookmarkNode.setAttribute("position", std::to_string(trackBookmark->getOffset().count()));
+	if (!trackBookmark->getComment().empty())
+		trackBookmarkNode.setAttribute("comment", trackBookmark->getComment());
+	trackBookmarkNode.setAttribute("created", reportedCreatedBookmarkDate);
+	trackBookmarkNode.setAttribute("changed", reportedChangedBookmarkDate);
+	trackBookmarkNode.setAttribute("username", trackBookmark->getUser()->getLoginName());
+
+	return trackBookmarkNode;
 }
 
 static
@@ -1658,6 +1677,94 @@ handleUpdatePlaylistRequest(RequestContext& context)
 
 static
 Response
+handleGetBookmarks(RequestContext& context)
+{
+	auto transaction {context.dbSession.createSharedTransaction()};
+
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	if (!user)
+		throw UserNotAuthorizedError {};
+
+	const auto bookmarks {TrackBookmark::getByUser(context.dbSession, user)};
+
+	Response response {Response::createOkResponse()};
+	Response::Node& bookmarksNode {response.createNode("bookmarks")};
+
+	for (const TrackBookmark::pointer& bookmark : bookmarks)
+	{
+		Response::Node bookmarkNode {trackBookmarkToResponseNode(bookmark)};
+		bookmarkNode.addArrayChild("entry", trackToResponseNode(bookmark->getTrack(), context.dbSession, user));
+
+		bookmarksNode.addArrayChild("bookmark", std::move(bookmarkNode));
+	}
+
+	return response ;
+}
+
+static
+Response
+handleCreateBookmark(RequestContext& context)
+{
+	// Mandatory params
+	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
+	if (id.type != Id::Type::Track)
+		throw BadParameterGenericError {"id"};
+
+	unsigned long position {getMandatoryParameterAs<unsigned long>(context.parameters, "position")};
+	const std::optional<std::string> comment {getParameterAs<std::string>(context.parameters, "comment")};
+
+	auto transaction {context.dbSession.createUniqueTransaction()};
+
+	const User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	if (!user)
+		throw UserNotAuthorizedError {};
+
+	const Track::pointer track {Track::getById(context.dbSession, id.value)};
+	if (!track)
+		throw RequestedDataNotFoundError {};
+
+	// Replace any existing bookmark
+	auto bookmark {TrackBookmark::getByUser(context.dbSession, user, track)};
+	if (!bookmark)
+		bookmark = TrackBookmark::create(context.dbSession, user, track);
+
+	bookmark.modify()->setOffset(std::chrono::milliseconds {position});
+	if (comment)
+		bookmark.modify()->setComment(*comment);
+
+	return Response::createOkResponse();
+}
+
+static
+Response
+handleDeleteBookmark(RequestContext& context)
+{
+	// Mandatory params
+	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
+	if (id.type != Id::Type::Track)
+		throw BadParameterGenericError {"id"};
+
+	auto transaction {context.dbSession.createUniqueTransaction()};
+
+	const User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	if (!user)
+		throw UserNotAuthorizedError {};
+
+	const Track::pointer track {Track::getById(context.dbSession, id.value)};
+	if (!track)
+		throw RequestedDataNotFoundError {};
+
+	auto bookmark {TrackBookmark::getByUser(context.dbSession, user, track)};
+	if (!bookmark)
+		throw RequestedDataNotFoundError {};
+
+	bookmark.remove();
+
+	return Response::createOkResponse();
+}
+
+static
+Response
 handleNotImplemented(RequestContext&)
 {
 	throw NotImplementedGenericError {};
@@ -1898,9 +2005,9 @@ static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"changePassword",	{handleChangePassword,			false}},
 
 	// Bookmarks
-	{"getBookmarks",	{handleNotImplemented,			false}},
-	{"createBookmarks",	{handleNotImplemented,			false}},
-	{"deleteBookmarks",	{handleNotImplemented,			false}},
+	{"getBookmarks",	{handleGetBookmarks,			false}},
+	{"createBookmark",	{handleCreateBookmark,			false}},
+	{"deleteBookmark",	{handleDeleteBookmark,			false}},
 	{"getPlayQueue",	{handleNotImplemented,			false}},
 	{"savePlayQueue",	{handleNotImplemented,			false}},
 

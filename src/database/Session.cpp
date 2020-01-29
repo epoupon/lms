@@ -32,6 +32,7 @@
 #include "Release.hpp"
 #include "ScanSettings.hpp"
 #include "Track.hpp"
+#include "TrackBookmark.hpp"
 #include "TrackArtistLink.hpp"
 #include "TrackList.hpp"
 #include "TrackFeatures.hpp"
@@ -39,7 +40,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	9
+#define LMS_DATABASE_VERSION	10
 
 using Version = std::size_t;
 
@@ -125,6 +126,20 @@ Session::doDatabaseMigrationIfNeeded()
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
 		}
+		else if (version == 9)
+		{
+			_session.execute(R"(
+CREATE TABLE IF NOT EXISTS "track_bookmark" (
+	"id" integer primary key autoincrement,
+	"version" integer not null,
+	"offset" integer,
+	"comment" text not null,
+	"track_id" bigint,
+	"user_id" bigint,
+	constraint "fk_track_bookmark_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred,
+	constraint "fk_track_bookmark_user" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred
+);)");
+		}
 		else
 		{
 			LMS_LOG(DB, ERROR) << "Database version " << version << " cannot be handled using migration";
@@ -150,6 +165,7 @@ Session::Session(Db& db)
 	_session.mapClass<Release>("release");
 	_session.mapClass<ScanSettings>("scan_settings");
 	_session.mapClass<Track>("track");
+	_session.mapClass<TrackBookmark>("track_bookmark");
 	_session.mapClass<TrackArtistLink>("track_artist_link");
 	_session.mapClass<TrackFeatures>("track_features");
 	_session.mapClass<TrackList>("tracklist");
@@ -264,6 +280,8 @@ Session::prepareTables()
 		_session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_name_idx ON track_artist_link(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_track_idx ON track_artist_link(track_id)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_type_idx ON track_artist_link(type)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_bookmark_user_idx ON track_bookmark(user_id)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_bookmark_user_track_idx ON track_bookmark(user_id,track_id)");
 	}
 
 	// Initial settings tables

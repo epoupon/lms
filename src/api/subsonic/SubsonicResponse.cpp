@@ -54,9 +54,9 @@ Response::Node::setValue(const std::string& value)
 }
 
 void
-Response::Node::setAttribute(const std::string& key, const std::string& value)
+Response::Node::setAttribute(std::string_view key, std::string_view value)
 {
-	_attributes[key] = value;
+	_attributes[std::string {key}] = value;
 }
 
 void
