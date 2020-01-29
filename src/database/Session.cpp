@@ -40,7 +40,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	10
+#define LMS_DATABASE_VERSION	11
 
 using Version = std::size_t;
 
@@ -139,6 +139,10 @@ CREATE TABLE IF NOT EXISTS "track_bookmark" (
 	constraint "fk_track_bookmark_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred,
 	constraint "fk_track_bookmark_user" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred
 );)");
+		}
+		else if (version == 10)
+		{
+			ScanSettings::get(*this).modify()->addAudioFileExtension(".m4b");
 		}
 		else
 		{

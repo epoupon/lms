@@ -63,7 +63,8 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		SimilarityEngineType getSimilarityEngineType() const { return _similarityEngineType; }
 
 		// Setters
-		void setMediaDirectory(std::filesystem::path p);
+		void addAudioFileExtension(const std::filesystem::path& ext);
+		void setMediaDirectory(const std::filesystem::path& p);
 		void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
 		void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
 		void setClusterTypes(Session& session, const std::set<std::string>& clusterTypeNames);
@@ -89,7 +90,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		Wt::WTime	_startTime = Wt::WTime {0,0,0};
 		UpdatePeriod	_updatePeriod {UpdatePeriod::Never};
 		SimilarityEngineType _similarityEngineType {SimilarityEngineType::Clusters};
-		std::string	_audioFileExtensions {".mp3 .ogg .oga .aac .m4a .flac .wav .wma .aif .aiff .ape .mpc .shn .opus"};
+		std::string	_audioFileExtensions {".mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus"};
 		Wt::Dbo::collection<Wt::Dbo::ptr<ClusterType>>	_clusterTypes;
 };
 

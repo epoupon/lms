@@ -69,6 +69,12 @@ ScanSettings::getAudioFileExtensions() const
 	return std::set<std::filesystem::path>(std::cbegin(extensions), std::cend(extensions));
 }
 
+void
+ScanSettings::addAudioFileExtension(const std::filesystem::path& ext)
+{
+	_audioFileExtensions += " " + ext.string();
+}
+
 std::vector<ClusterType::pointer>
 ScanSettings::getClusterTypes() const
 {
@@ -76,7 +82,7 @@ ScanSettings::getClusterTypes() const
 }
 
 void
-ScanSettings::setMediaDirectory(std::filesystem::path p)
+ScanSettings::setMediaDirectory(const std::filesystem::path& p)
 {
 	_mediaDirectory = stringTrimEnd(p.string(), "/\\");
 }
