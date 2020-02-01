@@ -143,6 +143,7 @@ CREATE TABLE IF NOT EXISTS "track_bookmark" (
 		else if (version == 10)
 		{
 			ScanSettings::get(*this).modify()->addAudioFileExtension(".m4b");
+			ScanSettings::get(*this).modify()->addAudioFileExtension(".alac");
 		}
 		else
 		{

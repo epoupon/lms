@@ -90,7 +90,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		Wt::WTime	_startTime = Wt::WTime {0,0,0};
 		UpdatePeriod	_updatePeriod {UpdatePeriod::Never};
 		SimilarityEngineType _similarityEngineType {SimilarityEngineType::Clusters};
-		std::string	_audioFileExtensions {".mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus"};
+		std::string	_audioFileExtensions {".alac .mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus"};
 		Wt::Dbo::collection<Wt::Dbo::ptr<ClusterType>>	_clusterTypes;
 };
 

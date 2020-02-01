@@ -7,7 +7,7 @@ ARG	FFMPEG_VERSION=4.1.4
 ARG	WT_VERSION=4.2.0
 ARG	IMAGEMAGICK6_VERSION=6.9.10-71
 ARG	PSTREAMS_VERSION=1.0.1
-ARG	LMS_VERSION=3.2.0
+ARG	LMS_VERSION=3.5.0
 
 ARG	PREFIX="/tmp/install"
 
@@ -72,7 +72,7 @@ RUN \
 	--enable-libopus \
 	--enable-libvorbis \
 	--disable-everything \
-	--enable-decoder=aac*,ac3*,flac,mp3*,libopus,pcm*,libvorbis,wavpack,wma*,libopenjpg,png,tiff \
+	--enable-decoder=aac*,ac3*,alac,als,flac,mp3*,libopus,pcm*,libvorbis,wavpack,wma*,libopenjpg,png,tiff \
 	--enable-encoder=libmp3lame,libopus,libvorbis \
 	--enable-demuxer=aac,aiff,asf,flac,ipod,ogg,matroska,mov,mp3,mp4,wav,wv,webm \
 	--enable-muxer=ogg,matroska,mp3,webm \
