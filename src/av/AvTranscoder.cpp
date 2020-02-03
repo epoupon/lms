@@ -20,10 +20,12 @@
 #include "AvTranscoder.hpp"
 
 #include <atomic>
+#include <thread>
 #include <mutex>
 
 #include "AvInfo.hpp"
 #include "utils/Config.hpp"
+#include "utils/IChildProcessManager.hpp"
 #include "utils/Path.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
@@ -43,12 +45,12 @@ Transcoder::init()
 		throw LmsException {"File '" + ffmpegPath.string() + "' does not exist!"};
 }
 
-Transcoder::Transcoder(const std::filesystem::path& filePath, const TranscodeParameters& parameters)
-: _filePath {filePath},
-  _parameters {parameters},
-  _id {globalId++}
+Transcoder::Transcoder(const std::filesystem::path& filePath, const TranscodeParameters& parameters, std::size_t bufferSize)
+: _id {globalId++},
+_filePath {filePath},
+_parameters {parameters}
 {
-
+	_buffer.resize(bufferSize, 0);
 }
 
 bool
@@ -66,7 +68,7 @@ Transcoder::start()
 	args.emplace_back(ffmpegPath.string());
 
 	// Make sure we do not produce anything in the stderr output
-	// in order not to block the whole forked process
+	// and we not rely on input in order not to block the whole child process
 	args.emplace_back("-loglevel");
 	args.emplace_back("quiet");
 	args.emplace_back("-nostdin");
@@ -103,31 +105,43 @@ Transcoder::start()
 	if (_parameters.encoding)
 	{
 		// Output bitrates
-		args.emplace_back("-b:a");
-		args.emplace_back(std::to_string(_parameters.bitrate));
+		if (_parameters.bitrate)
+		{
+			args.emplace_back("-b:a");
+			args.emplace_back(std::to_string(*_parameters.bitrate));
+		}
 
 		switch (*_parameters.encoding)
 		{
-			case Encoding::MP3:
-				args.emplace_back("-f");
-				args.emplace_back("mp3");
-				break;
-
-			case Encoding::OGG_OPUS:
-				args.emplace_back("-acodec");
-				args.emplace_back("libopus");
-				args.emplace_back("-f");
-				args.emplace_back("ogg");
-				break;
-
 			case Encoding::MATROSKA_OPUS:
+				assert(_parameters.bitrate);
 				args.emplace_back("-acodec");
 				args.emplace_back("libopus");
 				args.emplace_back("-f");
 				args.emplace_back("matroska");
 				break;
 
+			case Encoding::MP3:
+				assert(_parameters.bitrate);
+				args.emplace_back("-f");
+				args.emplace_back("mp3");
+				break;
+			
+			case Encoding::PCM_SIGNED_16_LE:
+				args.emplace_back("-f");
+				args.emplace_back("s16le");
+				break;
+
+			case Encoding::OGG_OPUS:
+				assert(_parameters.bitrate);
+				args.emplace_back("-acodec");
+				args.emplace_back("libopus");
+				args.emplace_back("-f");
+				args.emplace_back("ogg");
+				break;
+
 			case Encoding::OGG_VORBIS:
+				assert(_parameters.bitrate);
 				args.emplace_back("-acodec");
 				args.emplace_back("libvorbis");
 				args.emplace_back("-f");
@@ -135,6 +149,7 @@ Transcoder::start()
 				break;
 
 			case Encoding::WEBM_VORBIS:
+				assert(_parameters.bitrate);
 				args.emplace_back("-acodec");
 				args.emplace_back("libvorbis");
 				args.emplace_back("-f");
@@ -171,87 +186,58 @@ Transcoder::start()
 	for (const std::string& arg : args)
 		LMS_LOG_TRANSCODE(DEBUG) << "Arg = '" << arg << "'";
 
-	// make sure only one thread is executing this part of code
+	try
 	{
-		static std::mutex transcoderMutex;
+		_child = ServiceProvider<IChildProcessManager>::get()->spawnChildProcess(ffmpegPath, args);
 
-		std::lock_guard<std::mutex> lock {transcoderMutex};
-
-		_child = std::make_shared<redi::ipstream>();
-
-		// Caution: stdin must have been closed before
-		_child->open(ffmpegPath.string(), args);
-		if (!_child->is_open())
-		{
-			LMS_LOG_TRANSCODE(DEBUG) << "Exec failed!";
-			return false;
-		}
-
-		if (_child->out().eof())
-		{
-			LMS_LOG_TRANSCODE(DEBUG) << "Early end of file!";
-			return false;
-		}
-
+		LMS_LOG_TRANSCODE(DEBUG) << "Stream opened!";
+		return true;
 	}
-	LMS_LOG_TRANSCODE(DEBUG) << "Stream opened!";
-
-	return true;
+	catch (LmsException& e)
+	{
+		LMS_LOG_TRANSCODE(ERROR) << "Unable to create transcoder: " << e.what();
+		return false;
+	}
 }
 
 void
-Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
+Transcoder::asyncWaitForData(WaitCallback cb)
 {
-	if (!_child || _isComplete)
-		return;
+	assert(_child);
+	assert(!_readPending);
 
-	if (_child->out().fail())
+	_readPending = true;
+
+	LMS_LOG_TRANSCODE(DEBUG) << "Want to read data, _writeOffset = " << _writeOffset;
+
+	_child->asyncRead(&_buffer[_writeOffset], _buffer.size() - _writeOffset, [this, cb = std::move(cb)](IChildProcess::ReadResult result, std::size_t nbBytes)
 	{
-		LMS_LOG_TRANSCODE(DEBUG) << "Stdout FAILED 2";
-	}
+		assert(_readPending);
+		_readPending = false;
 
-	if (_child->out().eof())
-	{
-		LMS_LOG_TRANSCODE(DEBUG) << "Stdout ENDED 2";
-	}
+		if (result != IChildProcess::ReadResult::Success)
+			_finished = true;
 
-	output.resize(maxSize);
-
-	//Read on the output stream
-	_child->out().read(reinterpret_cast<char*>(&output[0]), maxSize);
-	output.resize(_child->out().gcount());
-
-	if (_child->out().fail())
-	{
-		LMS_LOG_TRANSCODE(DEBUG) << "Stdout FAILED";
-	}
-
-	if (_child->out().eof())
-	{
-		LMS_LOG_TRANSCODE(DEBUG) << "Stdout EOF!";
-		_child->clear();
-
-		_isComplete = true;
-		_child.reset();
-	}
-
-	_total += output.size();
-
-	LMS_LOG_TRANSCODE(DEBUG) << "nb bytes = " << output.size() << ", total = " << _total;
+		_writeOffset += nbBytes;
+		cb();
+	});
 }
 
-Transcoder::~Transcoder()
+void
+Transcoder::consumeData(ConsumeDataCallback cb)
 {
-	LMS_LOG_TRANSCODE(DEBUG) << ", ~Transcoder called! Total produced bytes = " << _total;
+	const std::size_t consumed {cb(&_buffer[0], _writeOffset)};
+	LMS_LOG_TRANSCODE(DEBUG) << "CONSUMED " << consumed  << " bytes";
+	assert(consumed <= _writeOffset);
 
-	if (_child)
-	{
-		LMS_LOG_TRANSCODE(DEBUG) << "Child still here!";
-		_child->rdbuf()->kill(SIGKILL);
-		LMS_LOG_TRANSCODE(DEBUG) << "Closing...";
-		_child->rdbuf()->close();
-		LMS_LOG_TRANSCODE(DEBUG) << "Closing DONE";
-	}
+	memmove(&_buffer[0], &_buffer[consumed], _writeOffset - consumed);
+	_writeOffset -= consumed;
+}
+
+bool
+Transcoder::finished() const
+{
+	return _finished;
 }
 
 } // namespace Transcode

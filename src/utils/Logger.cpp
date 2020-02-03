@@ -26,10 +26,12 @@ const char* getModuleName(Module mod)
 		case Module::API_SUBSONIC:	return "API_SUBSONIC";
 		case Module::AUTH:		return "AUTH";
 		case Module::AV:		return "AV";
+		case Module::CHILDPROCESS:	return "CHILDPROCESS";
 		case Module::COVER:		return "COVER";
 		case Module::DB:		return "DB";
 		case Module::DBUPDATER:		return "DB UPDATER";
 		case Module::FEATURE:		return "FEATURE";
+		case Module::LOCALPLAYER:	return "LOCALPLAYER";
 		case Module::MAIN:		return "MAIN";
 		case Module::METADATA:		return "METADATA";
 		case Module::REMOTE:		return "REMOTE";

@@ -17,20 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "Exception.hpp"
 
-#include <stdexcept>
-#include <string>
+#include <cstring>
+#include <cerrno>
 
-class LmsException : public std::runtime_error
-{
-	public:
-		LmsException(const std::string& error = "") : std::runtime_error {error} {}
-};
+SystemException::SystemException(int err, const std::string& errMsg)
+	: LmsException {errMsg + ": " + strerror(err)}
+{}
 
-class SystemException : public LmsException
-{
-	public:
-		SystemException(int err, const std::string& errMsg);
-
-};

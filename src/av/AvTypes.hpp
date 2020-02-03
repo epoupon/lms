@@ -33,10 +33,10 @@ class AvException : public LmsException
 
 enum class Encoding
 {
-	// Values are important and must not be changed
-	MP3,
-	OGG_OPUS,
 	MATROSKA_OPUS,
+	MP3,
+	PCM_SIGNED_16_LE,
+	OGG_OPUS,
 	OGG_VORBIS,
 	WEBM_VORBIS,
 };

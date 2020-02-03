@@ -203,7 +203,8 @@ ARG	RUNTIME_PACKAGES=" \
 	boost-thread \
 	libconfig++ \
 	taglib \
-	libgomp"
+	libgomp \
+	libpulse"
 
 ARG	LMS_USER=lms
 ARG	LMS_GROUP=lms

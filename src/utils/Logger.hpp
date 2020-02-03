@@ -39,9 +39,11 @@ enum class Module
 	AUTH,
 	AV,
 	COVER,
+	CHILDPROCESS,
 	DB,
 	DBUPDATER,
 	FEATURE,
+	LOCALPLAYER,
 	MAIN,
 	METADATA,
 	REMOTE,
@@ -77,6 +79,8 @@ class Log
 class Logger
 {
 	public:
+		virtual ~Logger() {}
+
 		virtual void processLog(const Log& log) = 0;
 };
 

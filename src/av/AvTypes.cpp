@@ -27,11 +27,12 @@ const char* encodingToMimetype(Encoding encoding)
 {
 	switch (encoding)
 	{
-		case Encoding::MP3: 		return "audio/mpeg";
-		case Encoding::OGG_OPUS:	return "audio/opus";
-		case Encoding::MATROSKA_OPUS:	return "audio/x-matroska";
-		case Encoding::OGG_VORBIS:	return "audio/ogg";
-		case Encoding::WEBM_VORBIS:	return "audio/webm";
+		case Encoding::MATROSKA_OPUS:		return "audio/x-matroska";
+		case Encoding::MP3: 			return "audio/mpeg";
+		case Encoding::PCM_SIGNED_16_LE:	return "audio/L16";
+		case Encoding::OGG_OPUS:		return "audio/opus";
+		case Encoding::OGG_VORBIS:		return "audio/ogg";
+		case Encoding::WEBM_VORBIS:		return "audio/webm";
 	}
 
 	throw AvException("Invalid encoding");

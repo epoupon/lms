@@ -52,6 +52,9 @@ lms_SOURCES = \
 	$(srcdir)/database/User.hpp				\
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/image/Image.hpp				\
+	$(srcdir)/localplayer/LocalPlayer.hpp			\
+	$(srcdir)/localplayer/pulseaudio/PulseAudioPlayer.cpp	\
+	$(srcdir)/localplayer/pulseaudio/PulseAudioPlayer.hpp	\
 	$(srcdir)/main/main.cpp					\
 	$(srcdir)/metadata/AvFormat.cpp				\
 	$(srcdir)/metadata/AvFormat.hpp				\
@@ -145,9 +148,17 @@ lms_SOURCES = \
 	$(srcdir)/ui/resource/ImageResource.hpp			\
 	$(srcdir)/ui/resource/AudioResource.cpp			\
 	$(srcdir)/ui/resource/AudioResource.hpp			\
+	$(srcdir)/utils/ChildProcess.cpp			\
+	$(srcdir)/utils/ChildProcess.hpp			\
+	$(srcdir)/utils/ChildProcessManager.cpp			\
+	$(srcdir)/utils/ChildProcessManager.hpp			\
+	$(srcdir)/utils/Config.hpp				\
 	$(srcdir)/utils/Config.cpp				\
 	$(srcdir)/utils/Config.hpp				\
+	$(srcdir)/utils/Exception.cpp				\
 	$(srcdir)/utils/Exception.hpp				\
+	$(srcdir)/utils/IChildProcess.hpp			\
+	$(srcdir)/utils/IChildProcessManager.hpp		\
 	$(srcdir)/utils/Logger.cpp				\
 	$(srcdir)/utils/Logger.hpp				\
 	$(srcdir)/utils/NetAddress.cpp				\

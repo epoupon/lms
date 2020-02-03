@@ -233,14 +233,6 @@ getClientInfo(const Wt::Http::ParameterMap& parameters)
 	return res;
 }
 
-// MediaRetrievals
-struct MediaRetrievalResult
-{
-	std::string mimeType;
-	std::vector<uint8_t> data;
-	Wt::cpp17::any continuationData;
-};
-
 SubsonicResource::SubsonicResource(Db& db)
 : _sessionPool {db}
 {
@@ -549,7 +541,7 @@ userToResponseNode(const User::pointer& user)
 	userNode.setAttribute("commentRole", "false");
 	userNode.setAttribute("podcastRole", "false");
 	userNode.setAttribute("streamRole", "true");
-	userNode.setAttribute("jukeboxRole", "false");
+	userNode.setAttribute("jukeboxRole", "true"); // TODO
 	userNode.setAttribute("shareRole", "false");
 
 	Response::Node folder;
@@ -1786,7 +1778,7 @@ userTranscodeFormatToAvEncoding(AudioFormat format)
 }
 
 static
-std::shared_ptr<Av::Transcoder>
+std::unique_ptr<Av::Transcoder>
 createTranscoder(RequestContext& context)
 {
 	// Mandatory params
@@ -1832,51 +1824,63 @@ createTranscoder(RequestContext& context)
 		}
 	}
 
-	return std::make_shared<Av::Transcoder>(trackPath, parameters);
+	return std::make_unique<Av::Transcoder>(trackPath, parameters, 65536);
 }
 
 static
-MediaRetrievalResult
-handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuation)
+void
+handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
 {
-	MediaRetrievalResult res;
-
-	// TODO store only weak ptrs and use a ring container to store shared_ptr?
 	std::shared_ptr<Av::Transcoder> transcoder;
 
+	auto waitForMoreData = [](std::shared_ptr<Av::Transcoder> transcoder, Wt::Http::ResponseContinuation& continuation)
+	{
+		transcoder->asyncWaitForData([&]()
+		{
+			continuation.haveMoreData();
+		});
+		continuation.waitForMoreData();
+	};
+
+	Wt::Http::ResponseContinuation *continuation = request.continuation();
 	if (!continuation)
 	{
 		transcoder = createTranscoder(context);
-		transcoder->start();
+		if (!transcoder)
+			throw InternalErrorGenericError {"Cannot create transcoder"};
 
-		res.mimeType = transcoder->getOutputMimeType();
+		if (!transcoder->start())
+			throw InternalErrorGenericError {"Cannot create transcoder"};
+
+		response.setMimeType(transcoder->getOutputMimeType());
 		LMS_LOG(API_SUBSONIC, DEBUG) << "Mime type set to '" << transcoder->getOutputMimeType() << "'";
 	}
 	else
 	{
 		transcoder = Wt::cpp17::any_cast<std::shared_ptr<Av::Transcoder>>(continuation->data());
+
+		if (!transcoder)
+			throw InternalErrorGenericError {"Cannot retrieve transcoder"};
+
+		transcoder->consumeData([&](const unsigned char* data, std::size_t size)
+		{
+			response.out().write(reinterpret_cast<const char*>(data), size);
+			return size;
+		});
 	}
 
-	if (!transcoder)
-		throw InternalErrorGenericError {"Cannot create transcoder"};
-
-	if (!transcoder->isComplete())
+	if (!transcoder->finished())
 	{
-		static constexpr std::size_t chunkSize {65536*4};
-		res.data.reserve(chunkSize);
+		continuation = response.createContinuation();
+		continuation->setData(transcoder);
 
-		transcoder->process(res.data, chunkSize);
+		waitForMoreData(transcoder, *continuation);		
 	}
-
-	if (!transcoder->isComplete())
-		res.continuationData = std::move(transcoder);
-
-	return res;
 }
 
 static
-MediaRetrievalResult
-handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation*)
+void
+handleGetCoverArt(RequestContext& context, const Wt::Http::Request&, Wt::Http::Response& response)
 {
 	// Mandatory params
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
@@ -1884,23 +1888,21 @@ handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation*)
 	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(256)};
 	size = clamp(size, std::size_t {32}, std::size_t {1024});
 
-	MediaRetrievalResult res;
-
+	std::vector<unsigned char> data;
 	switch (id.type)
 	{
 		case Id::Type::Track:
-			res.data = ServiceProvider<CoverArt::Grabber>::get()->getFromTrack(context.dbSession, id.value, Image::Format::JPEG, size);
+			data = ServiceProvider<CoverArt::Grabber>::get()->getFromTrack(context.dbSession, id.value, Image::Format::JPEG, size);
 			break;
 		case Id::Type::Release:
-			res.data = ServiceProvider<CoverArt::Grabber>::get()->getFromRelease(context.dbSession, id.value, Image::Format::JPEG, size);
+			data = ServiceProvider<CoverArt::Grabber>::get()->getFromRelease(context.dbSession, id.value, Image::Format::JPEG, size);
 			break;
 		default:
 			throw BadParameterGenericError {"id"};
 	}
 
-	res.mimeType = Image::format_to_mimeType(Image::Format::JPEG);
-
-	return res;
+	response.out().write(reinterpret_cast<const char*>(&data[0]), data.size());
+	response.setMimeType(Image::format_to_mimeType(Image::Format::JPEG));
 }
 
 using RequestHandlerFunc = std::function<Response(RequestContext& context)>;
@@ -2016,7 +2018,7 @@ static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"startScan",		{handleNotImplemented,			true}},
 };
 
-using MediaRetrievalHandlerFunc = std::function<MediaRetrievalResult(RequestContext&, Wt::Http::ResponseContinuation*)>;
+using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
 static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
 {
 	// Media retrieval
@@ -2088,26 +2090,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		auto itStreamHandler {mediaRetrievalHandlers.find(requestPath)};
 		if (itStreamHandler != mediaRetrievalHandlers.end())
 		{
-			MediaRetrievalResult res {itStreamHandler->second(requestContext, request.continuation())};
-
-			if (!res.mimeType.empty())
-				response.setMimeType(res.mimeType);
-			if (!res.data.empty())
-			{
-				response.out().write(reinterpret_cast<const char *>(&res.data[0]), res.data.size());
-				if (!response.out())
-				{
-					LMS_LOG(API_SUBSONIC, ERROR) << "Write failed!";
-					return;
-				}
-			}
-
-			if (res.continuationData.has_value())
-			{
-				auto continuation {response.createContinuation()};
-				continuation->setData(std::move(res.continuationData));
-			}
-
+			itStreamHandler->second(requestContext, request, response);
 			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId  << " '" << requestPath << "' handled!";
 			return;
 		}

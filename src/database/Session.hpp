@@ -20,10 +20,8 @@
 #pragma once
 
 #include <mutex>
-#include <map>
 #include <memory>
 #include <shared_mutex>
-#include <vector>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/SqlConnectionPool.h>
