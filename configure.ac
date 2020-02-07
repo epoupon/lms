@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT(lms, 3.6.0, test@test)
+AC_INIT(lms, 3.6.1, test@test)
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER(src/config/config.h)
 
