@@ -42,13 +42,8 @@ MediaPlayer::MediaPlayer()
   playNext(this, "playNext")
 {
 	_title = bindNew<Wt::WText>("title");
-	_title->setTextFormat(Wt::TextFormat::Plain);
-
 	_artist = bindNew<Wt::WAnchor>("artist");
-	_artist->setTextFormat(Wt::TextFormat::Plain);
-
 	_release = bindNew<Wt::WAnchor>("release");
-	_release->setTextFormat(Wt::TextFormat::Plain);
 
 	wApp->doJavaScript("LMS.mediaplayer.init(" + jsRef() + ")");
 
@@ -91,28 +86,31 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play)
 
 		LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
 
+		_title->setTextFormat(Wt::TextFormat::Plain);
 		_title->setText(Wt::WString::fromUTF8(track->getName()));
 
 		if (!artists.empty())
 		{
+			_artist->setTextFormat(Wt::TextFormat::Plain);
 			_artist->setText(Wt::WString::fromUTF8(artists.front()->getName()));
 			_artist->setLink(LmsApp->createArtistLink(artists.front()));
 		}
 		else
 		{
 			_artist->setText("");
-			_artist->setLink(Wt::WLink());
+			_artist->setLink({});
 		}
 
 		if (track->getRelease())
 		{
+			_release->setTextFormat(Wt::TextFormat::Plain);
 			_release->setText(Wt::WString::fromUTF8(track->getRelease()->getName()));
 			_release->setLink(LmsApp->createReleaseLink(track->getRelease()));
 		}
 		else
 		{
 			_release->setText("");
-			_release->setLink(Wt::WLink());
+			_release->setLink({});
 		}
 
 		wApp->doJavaScript(oss.str());

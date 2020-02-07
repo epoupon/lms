@@ -134,7 +134,31 @@ replaceInString(const std::string& str, const std::string& from, const std::stri
 std::string
 jsEscape(const std::string& str)
 {
-	return replaceInString(str, "\'", "\\\'");
+	static const std::unordered_map<char, std::string_view> escapeMap
+	{
+		{ '\\', "\\\\" },
+		{ '\n', "\\n" },
+		{ '\r', "\\r" },
+		{ '\t', "\\t" },
+		{ '"', "\\\"" },
+	};
+
+	std::string escaped;
+	escaped.reserve(str.length());
+
+	for (const char c : str)
+	{
+		auto it {escapeMap.find(c)};
+		if (it == std::cend(escapeMap))
+		{
+			escaped += c;
+			continue;
+		}
+
+		escaped += it->second;
+	}
+
+	return escaped;
 }
 
 bool
