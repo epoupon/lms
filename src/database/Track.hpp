@@ -28,6 +28,8 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
+#include "utils/UUID.hpp"
+
 #include "TrackArtistLink.hpp"
 #include "Types.hpp"
 
@@ -54,7 +56,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		// Find utility functions
 		static pointer getByPath(Session& session, const std::filesystem::path& p);
 		static pointer getById(Session& session, IdType id);
-		static pointer getByMBID(Session& session, const std::string& MBID);
+		static pointer getByMBID(Session& session, const UUID& MBID);
 		static std::vector<pointer>	getSimilarTracks(Session& session,
 							const std::set<IdType>& trackIds,
 							std::optional<std::size_t> offset = {},
@@ -91,7 +93,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setYear(int year)						{ _year = year; }
 		void setOriginalYear(int year)					{ _originalYear = year; }
 		void setHasCover(bool hasCover)					{ _hasCover = hasCover; }
-		void setMBID(const std::string& MBID)				{ _MBID = MBID; }
+		void setMBID(const std::optional<UUID>& MBID)			{ _MBID = MBID ? MBID->getAsString() : ""; }
 		void setCopyright(const std::string& copyright)			{ _copyright = std::string(copyright, 0, _maxCopyrightLength); }
 		void setCopyrightURL(const std::string& copyrightURL)		{ _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
 		void clearArtistLinks();
@@ -111,7 +113,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		Wt::WDateTime				getLastWriteTime() const	{ return _fileLastWrite; }
 		Wt::WDateTime				getAddedTime() const		{ return _fileAdded; }
 		bool					hasCover() const		{ return _hasCover; }
-		const std::string&			getMBID() const			{ return _MBID; }
+		std::optional<UUID>			getMBID() const			{ return readAs<UUID>(_MBID); }
 		std::optional<std::string>		getCopyright() const;
 		std::optional<std::string>		getCopyrightURL() const;
 		std::vector<Wt::Dbo::ptr<Artist>>	getArtists(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;

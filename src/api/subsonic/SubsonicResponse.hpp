@@ -182,7 +182,7 @@ class Response
 				void setAttribute(std::string_view key, std::string_view value);
 
 				// A Node has either a value or some children
-				void setValue(const std::string& value);
+				void setValue(std::string_view value);
 				Node& createChild(const std::string& key);
 				Node& createArrayChild(const std::string& key);
 

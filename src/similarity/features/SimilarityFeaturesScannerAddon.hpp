@@ -22,7 +22,10 @@
 #include "database/Session.hpp"
 #include "scanner/MediaScannerAddon.hpp"
 
+#include "utils/UUID.hpp"
+
 #include "SimilarityFeaturesSearcher.hpp"
+
 
 namespace Database {
 	class Db;
@@ -48,7 +51,7 @@ class FeaturesScannerAddon final : public Scanner::MediaScannerAddon
 		void trackToRemove(Database::IdType) override {}
 		void trackUpdated(Database::IdType trackId) override;
 
-		bool fetchFeatures(Database::IdType trackId, const std::string& MBID);
+		bool fetchFeatures(Database::IdType trackId, const UUID& MBID);
 
 		void updateSearcher();
 

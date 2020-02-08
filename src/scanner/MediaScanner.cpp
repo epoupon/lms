@@ -92,9 +92,9 @@ getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artist
 		Artist::pointer artist;
 
 		// First try to get by MBID
-		if (!artistInfo.musicBrainzArtistID.empty())
+		if (artistInfo.musicBrainzArtistID)
 		{
-			artist = Artist::getByMBID(session, artistInfo.musicBrainzArtistID);
+			artist = Artist::getByMBID(session, *artistInfo.musicBrainzArtistID);
 			if (!artist)
 				artist = Artist::create(session, artistInfo.name, artistInfo.musicBrainzArtistID);
 
@@ -107,7 +107,8 @@ getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artist
 		{
 			for (const Artist::pointer& sameNamedArtist : Artist::getByName(session, artistInfo.name))
 			{
-				if (sameNamedArtist->getMBID().empty())
+				// Do not fallback on artist that is correctly tagged
+				if (!sameNamedArtist->getMBID())
 				{
 					artist = sameNamedArtist;
 					break;
@@ -132,9 +133,9 @@ getOrCreateRelease(Session& session, const MetaData::Album& album)
 	Release::pointer release;
 
 	// First try to get by MBID
-	if (!album.musicBrainzAlbumID.empty())
+	if (album.musicBrainzAlbumID)
 	{
-		release = Release::getByMBID(session, album.musicBrainzAlbumID);
+		release = Release::getByMBID(session, *album.musicBrainzAlbumID);
 		if (!release)
 			release = Release::create(session, album.name, album.musicBrainzAlbumID);
 
@@ -146,7 +147,8 @@ getOrCreateRelease(Session& session, const MetaData::Album& album)
 	{
 		for (const Release::pointer& sameNamedRelease : Release::getByName(session, album.name))
 		{
-			if (sameNamedRelease->getMBID().empty())
+			// do not fallback on properly tagged releases
+			if (!sameNamedRelease->getMBID())
 			{
 				release = sameNamedRelease;
 				break;
@@ -810,8 +812,11 @@ MediaScanner::checkDuplicatedAudioFiles(ScanStats& stats)
 	const std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(_dbSession);
 	for (const Track::pointer& track : tracks)
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID() << "], file: " << track->getPath().string() << " - " << track->getName();
-		stats.duplicates.emplace_back(ScanDuplicate {track->getPath(), DuplicateReason::SameMBID});
+		if (track->getMBID())
+		{
+			LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID()->getAsString() << "], file: " << track->getPath().string() << " - " << track->getName();
+			stats.duplicates.emplace_back(ScanDuplicate {track->getPath(), DuplicateReason::SameMBID});
+		}
 	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files done!";

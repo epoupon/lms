@@ -34,8 +34,8 @@ std::ostream& operator<<(std::ostream& os, const MetaData::Artist& artist)
 {
 	os << artist.name;
 
-	if (!artist.musicBrainzArtistID.empty())
-		os << " (" << artist.musicBrainzArtistID << ")";
+	if (artist.musicBrainzArtistID)
+		os << " (" << artist.musicBrainzArtistID->getAsString() << ")";
 
 	return os;
 }
@@ -44,8 +44,8 @@ std::ostream& operator<<(std::ostream& os, const MetaData::Album& album)
 {
 	os << album.name;
 
-	if (!album.musicBrainzAlbumID.empty())
-		os << " (" << album.musicBrainzAlbumID << ")";
+	if (album.musicBrainzAlbumID)
+		os << " (" << album.musicBrainzAlbumID->getAsString() << ")";
 
 	return os;
 }
@@ -82,11 +82,11 @@ void parse(MetaData::Parser& parser, const std::filesystem::path& file)
 
 	std::cout << "Title: " << track->title << std::endl;
 
-	if (!track->musicBrainzTrackID.empty())
-		std::cout << "MB TrackID = " << track->musicBrainzTrackID << std::endl;
+	if (track->musicBrainzTrackID)
+		std::cout << "MB TrackID = " << track->musicBrainzTrackID->getAsString() << std::endl;
 
-	if (!track->musicBrainzRecordID.empty())
-		std::cout << "MB RecordID = " << track->musicBrainzRecordID << std::endl;
+	if (track->musicBrainzRecordID)
+		std::cout << "MB RecordID = " << track->musicBrainzRecordID->getAsString() << std::endl;
 
 	for (const auto& cluster : track->clusters)
 	{
@@ -122,8 +122,8 @@ void parse(MetaData::Parser& parser, const std::filesystem::path& file)
 	for (const auto& audioStream : track->audioStreams)
 		std::cout << "Audio stream: " << audioStream.bitRate << " bps" << std::endl;
 
-	if (!track->acoustID.empty())
-		std::cout << "AcoustID: " << track->acoustID << std::endl;
+	if (track->acoustID)
+		std::cout << "AcoustID: " << track->acoustID->getAsString() << std::endl;
 
 	if (!track->copyright.empty())
 		std::cout << "Copyright: " << track->copyright << std::endl;

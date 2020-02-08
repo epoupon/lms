@@ -26,6 +26,9 @@
 #include <set>
 #include <vector>
 
+#include "utils/Utils.hpp"
+#include "utils/UUID.hpp"
+
 namespace MetaData
 {
 	using Clusters = std::map<std::string /* type */, std::set<std::string> /* names */>;
@@ -33,13 +36,13 @@ namespace MetaData
 	struct Artist
 	{
 		std::string name;
-		std::string musicBrainzArtistID;
+		std::optional<UUID> musicBrainzArtistID;
 	};
 
 	struct Album
 	{
 		std::string name;
-		std::string musicBrainzAlbumID;
+		std::optional<UUID> musicBrainzAlbumID;
 	};
 
 	struct AudioStream
@@ -52,8 +55,8 @@ namespace MetaData
 		std::vector<Artist>		artists;
 		std::vector<Artist>		albumArtists;
 		std::string			title;
-		std::string			musicBrainzTrackID;
-		std::string			musicBrainzRecordID;
+		std::optional<UUID>		musicBrainzTrackID;
+		std::optional<UUID>		musicBrainzRecordID;
 		std::optional<Album>		album;
 		Clusters			clusters;
 		std::chrono::milliseconds 	duration {};
@@ -65,7 +68,7 @@ namespace MetaData
 		std::optional<int>		originalYear;
 		bool				hasCover {false};
 		std::vector<AudioStream>	audioStreams;
-		std::string			acoustID;
+		std::optional<UUID>		acoustID;
 		std::string			copyright;
 		std::string			copyrightURL;
 	};

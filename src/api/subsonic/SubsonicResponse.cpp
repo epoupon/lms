@@ -45,7 +45,7 @@ ResponseFormatToMimeType(ResponseFormat format)
 }
 
 void
-Response::Node::setValue(const std::string& value)
+Response::Node::setValue(std::string_view value)
 {
 	if (!_children.empty() || !_childrenArrays.empty())
 		throw LmsException {"Node already has children"};

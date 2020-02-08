@@ -934,8 +934,9 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 		if (!artist)
 			throw RequestedDataNotFoundError {};
 
-		if (!artist->getMBID().empty())
-			artistInfoNode.createChild("musicBrainzId").setValue(artist->getMBID());
+		std::optional<UUID> artistMBID {artist->getMBID()};
+		if (artistMBID)
+			artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
 	}
 
 	auto similarArtistsId {ServiceProvider<Similarity::Searcher>::get()->getSimilarArtists(context.dbSession, id.value, count)};

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,11 +20,26 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
-#include "utils/UUID.hpp"
+#include "Utils.hpp"
 
-namespace AcousticBrainz
+class UUID
 {
-	std::string extractLowLevelFeatures(const UUID& MBID);
-}
+	public:
+
+		std::string_view getAsString() const { return _value; }
+
+	private:
+
+		template <typename UUID>
+		friend std::optional<UUID> readAs(const std::string& str);
+
+		UUID(std::string_view value) : _value {value} {}
+		std::string _value;
+};
+
+template<>
+std::optional<UUID>
+readAs(const std::string& str);
 

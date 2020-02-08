@@ -55,6 +55,7 @@ lms_SOURCES = \
 	$(srcdir)/main/main.cpp					\
 	$(srcdir)/metadata/AvFormat.cpp				\
 	$(srcdir)/metadata/AvFormat.hpp				\
+	$(srcdir)/metadata/MetaData.cpp				\
 	$(srcdir)/metadata/MetaData.hpp				\
 	$(srcdir)/metadata/TagLibParser.cpp			\
 	$(srcdir)/metadata/TagLibParser.hpp			\
@@ -159,6 +160,8 @@ lms_SOURCES = \
 	$(srcdir)/utils/StreamLogger.hpp			\
 	$(srcdir)/utils/Utils.cpp				\
 	$(srcdir)/utils/Utils.hpp				\
+	$(srcdir)/utils/UUID.cpp				\
+	$(srcdir)/utils/UUID.hpp				\
 	$(srcdir)/utils/WtLogger.cpp				\
 	$(srcdir)/utils/WtLogger.hpp
 

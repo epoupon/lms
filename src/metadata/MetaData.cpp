@@ -17,14 +17,14 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "MetaData.hpp"
 
-#include <string>
+#include "utils/Utils.hpp"
 
-#include "utils/UUID.hpp"
-
-namespace AcousticBrainz
+namespace MetaData
 {
-	std::string extractLowLevelFeatures(const UUID& MBID);
-}
+
+
+
+} // namespace MetaData
 

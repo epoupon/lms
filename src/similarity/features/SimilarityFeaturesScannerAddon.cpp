@@ -40,7 +40,7 @@ hasAtLeastOneTrackWithFeatures(Database::Session& session)
 struct TrackInfo
 {
 	Database::IdType id;
-	std::string mbid;
+	std::optional<UUID> mbid;
 };
 
 static
@@ -119,7 +119,8 @@ FeaturesScannerAddon::preScanComplete()
 		if (_stopRequested)
 			return;
 
-		fetchFeatures(trackInfo.id, trackInfo.mbid);
+		if (trackInfo.mbid)
+			fetchFeatures(trackInfo.id, *trackInfo.mbid);
 	}
 
 	updateSearcher();
@@ -157,15 +158,15 @@ FeaturesScannerAddon::updateSearcher()
 }
 
 bool
-FeaturesScannerAddon::fetchFeatures(Database::IdType trackId, const std::string& MBID)
+FeaturesScannerAddon::fetchFeatures(Database::IdType trackId, const UUID& MBID)
 {
 	std::map<std::string, double> features;
 
-	LMS_LOG(DBUPDATER, DEBUG) << "Fetching low level features for track '" << MBID << "'";
+	LMS_LOG(DBUPDATER, DEBUG) << "Fetching low level features for track '" << MBID.getAsString() << "'";
 	const std::string data {AcousticBrainz::extractLowLevelFeatures(MBID)};
 	if (data.empty())
 	{
-		LMS_LOG(DBUPDATER, ERROR) << "Track " << trackId << ", MBID = '" << MBID << "': cannot extract features using AcousticBrainz";
+		LMS_LOG(DBUPDATER, ERROR) << "Track " << trackId << ", MBID = '" << MBID.getAsString() << "': cannot extract features using AcousticBrainz";
 		return false;
 	}
 

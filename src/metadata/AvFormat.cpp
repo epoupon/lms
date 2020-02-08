@@ -29,15 +29,40 @@ namespace MetaData
 
 using MetadataMap = std::map<std::string, std::string>;
 
-std::optional<std::string>
-findFirstValueOf(const MetadataMap& metadataMap, std::initializer_list<std::string> tags)
+template <typename T>
+std::optional<T>
+findFirstValueOfAs(const MetadataMap& metadataMap, std::initializer_list<std::string> tags)
 {
 	auto it = std::find_first_of(std::cbegin(metadataMap), std::cend(metadataMap), std::cbegin(tags), std::cend(tags), [](const auto& it, const auto& str) { return it.first == str; });
 	if (it == std::cend(metadataMap))
 		return std::nullopt;
 
-	return stringTrim(it->second);
+	return readAs<T>(stringTrim(it->second));
 }
+
+template <>
+std::optional<std::vector<UUID>>
+findFirstValueOfAs(const MetadataMap& metadataMap, std::initializer_list<std::string> tags)
+{
+	std::optional<std::string> str {findFirstValueOfAs<std::string>(metadataMap, tags)};
+	if (!str)
+		return std::nullopt;
+
+	std::vector<std::string> strUuids = splitString(*str, "/");
+	std::vector<UUID> res;
+
+	for (const std::string strUuid : strUuids)
+	{
+		std::optional<UUID> uuid {readAs<UUID>(strUuid)};
+		if (!uuid)
+			return std::nullopt;
+
+		res.push_back(std::move(*uuid));
+	}
+
+	return res;
+}
+
 
 static
 std::optional<Album>
@@ -45,19 +70,13 @@ getAlbum(const MetadataMap& metadataMap)
 {
 	std::optional<Album> res;
 
-	auto album {findFirstValueOf(metadataMap, {"ALBUM"})};
+	auto album {findFirstValueOfAs<std::string>(metadataMap, {"ALBUM"})};
 	if (!album)
 		return res;
 
-	res = Album{*album, ""};
+	auto albumMBID {findFirstValueOfAs<UUID>(metadataMap, {"MUSICBRAINZ ALBUM ID", "MUSICBRAINZ_ALBUMID", "MUSICBRAINZ/ALBUM ID"})};
 
-	auto albumMBID {findFirstValueOf(metadataMap, {"MUSICBRAINZ ALBUM ID", "MUSICBRAINZ_ALBUMID", "MUSICBRAINZ/ALBUM ID"})};
-	if (!albumMBID)
-		return res;
-
-	res->musicBrainzAlbumID = *albumMBID;
-
-	return res;
+	return Album{*album, albumMBID};
 }
 
 static
@@ -66,17 +85,13 @@ getAlbumArtists(const MetadataMap& metadataMap)
 {
 	std::vector<Artist> res;
 
-	auto name {findFirstValueOf(metadataMap, {"ALBUM_ARTIST"})};
+	auto name {findFirstValueOfAs<std::string>(metadataMap, {"ALBUM_ARTIST"})};
 	if (!name)
 		return res;
 
-	Artist artist {*name, ""};
+	auto mbid {findFirstValueOfAs<UUID>(metadataMap, {"MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"})};
 
-	auto mbid {findFirstValueOf(metadataMap, {"MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"})};
-	if (mbid)
-		artist.musicBrainzArtistID = *mbid;
-
-	return {std::move(artist)};
+	return {Artist {*name, mbid} };
 }
 
 static
@@ -95,21 +110,14 @@ getArtists(const MetadataMap& metadataMap)
 		artistNames = {metadataMap.find("ARTIST")->second};
 	}
 
-	std::vector<std::string> artistMBIDs;
-	{
-		auto mbids {findFirstValueOf(metadataMap, {"MUSICBRAINZ ARTIST ID", "MUSICBRAINZ_ARTISTID", "MUSICBRAINZ/ARTIST ID"})};
-		if (mbids)
-			artistMBIDs = splitString(*mbids, "/");
-	}
+	auto artistMBIDs {findFirstValueOfAs<std::vector<UUID>>(metadataMap, {"MUSICBRAINZ ARTIST ID", "MUSICBRAINZ_ARTISTID", "MUSICBRAINZ/ARTIST ID"})};
 
 	for (std::size_t i {}; i < artistNames.size(); ++i)
 	{
-		Artist artist{std::move(artistNames[i]), ""};
-
-		if (artistNames.size() == artistMBIDs.size())
-			artist.musicBrainzArtistID = std::move(artistMBIDs[i]);
-
-		artists.emplace_back(std::move(artist));
+		if (artistMBIDs && artistNames.size() == artistMBIDs->size())
+			artists.emplace_back(Artist {artistNames[i], (*artistMBIDs)[i]});
+		else
+			artists.emplace_back(Artist {artistNames[i], {}});
 	}
 
 	return artists;
@@ -191,14 +199,14 @@ AvFormat::parse(const std::filesystem::path& p, bool debug)
 			}
 			else if (tag == "ACOUSTID ID")
 			{
-				track.acoustID = value;
+				track.acoustID = readAs<UUID>(value);
 			}
 			else if (tag == "MUSICBRAINZ RELEASE TRACK ID"
 					|| tag == "MUSICBRAINZ_RELEASETRACKID"
 					|| tag == "MUSICBRAINZ_TRACKID"
 					|| tag == "MUSICBRAINZ/TRACK ID")
 			{
-				track.musicBrainzTrackID = value;
+				track.musicBrainzTrackID = readAs<UUID>(value);
 			}
 			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 			{

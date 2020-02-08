@@ -23,6 +23,7 @@
 
 #include <Wt/Dbo/WtSqlTraits.h>
 
+#include "utils/UUID.hpp"
 #include "TrackArtistLink.hpp"
 #include "Types.hpp"
 
@@ -43,11 +44,11 @@ class Release : public Wt::Dbo::Dbo<Release>
 		using pointer = Wt::Dbo::ptr<Release>;
 
 		Release() {}
-		Release(const std::string& name, const std::string& MBID = "");
+		Release(const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Accessors
 		static std::size_t		getCount(Session& session);
-		static pointer			getByMBID(Session& session, const std::string& MBID);
+		static pointer			getByMBID(Session& session, const UUID& MBID);
 		static std::vector<pointer>	getByName(Session& session, const std::string& name);
 		static pointer			getById(Session& session, IdType id);
 		static std::vector<pointer>	getAllOrphans(Session& session); // no track related
@@ -75,7 +76,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
 
 		// Create
-		static pointer create(Session& session, const std::string& name, const std::string& MBID = "");
+		static pointer create(Session& session, const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Utility functions
 		std::optional<int> getReleaseYear(bool originalDate = false) const; // 0 if unknown or various
@@ -88,7 +89,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 
 		// Accessors
 		std::string			getName() const		{ return _name; }
-		std::string			getMBID() const		{ return _MBID; }
+		std::optional<UUID>		getMBID() const		{ return readAs<UUID>(_MBID); }
 		std::optional<std::size_t>	getTotalTrackNumber() const;
 		std::optional<std::size_t>	getTotalDiscNumber() const;
 		std::chrono::milliseconds	getDuration() const;
@@ -99,7 +100,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		bool hasVariousArtists() const;
 		std::vector<pointer>		getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
 
-		void setMBID(std::string mbid) { _MBID = mbid; }
+		void setMBID(const std::optional<UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
 
 		template<class Action>
 			void persist(Action& a)

@@ -31,9 +31,9 @@
 namespace Database
 {
 
-Release::Release(const std::string& name, const std::string& MBID)
-: _name(std::string(name, 0 , _maxNameLength)),
-_MBID(MBID)
+Release::Release(const std::string& name, const std::optional<UUID>& MBID)
+: _name {std::string(name, 0 , _maxNameLength)},
+_MBID {MBID ? MBID->getAsString() : ""}
 {
 
 }
@@ -48,11 +48,11 @@ Release::getByName(Session& session, const std::string& name)
 }
 
 Release::pointer
-Release::getByMBID(Session& session, const std::string& mbid)
+Release::getByMBID(Session& session, const UUID& mbid)
 {
 	session.checkSharedLocked();
 
-	return session.getDboSession().find<Release>().where("mbid = ?").bind(mbid);
+	return session.getDboSession().find<Release>().where("mbid = ?").bind(std::string {mbid.getAsString()});
 }
 
 Release::pointer
@@ -64,7 +64,7 @@ Release::getById(Session& session, IdType id)
 }
 
 Release::pointer
-Release::create(Session& session, const std::string& name, const std::string& MBID)
+Release::create(Session& session, const std::string& name, const std::optional<UUID>& MBID)
 {
 	session.checkSharedLocked();
 

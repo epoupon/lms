@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,14 +17,29 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "UUID.hpp"
 
-#include <string>
+#include <regex>
 
-#include "utils/UUID.hpp"
+#include "Utils.hpp"
 
-namespace AcousticBrainz
+static
+bool
+stringIsUUID(const std::string& str)
 {
-	std::string extractLowLevelFeatures(const UUID& MBID);
+	static const std::regex re { R"([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})"};
+
+	return std::regex_match(str, re);
+}
+
+
+template<>
+std::optional<UUID>
+readAs(const std::string& str)
+{
+	if (!stringIsUUID(str))
+		return std::nullopt;
+
+	return UUID {str};
 }
 

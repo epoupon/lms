@@ -33,10 +33,11 @@
 namespace MetaData
 {
 
-std::vector<std::string>
-getPropertyValuesFirstMatch(const TagLib::PropertyMap& properties, const std::set<std::string>& keys)
+template<typename T>
+std::vector<T>
+getPropertyValuesFirstMatchAs(const TagLib::PropertyMap& properties, const std::set<std::string>& keys)
 {
-	std::vector<std::string> res;
+	std::vector<T> res;
 
 	for (const std::string& key : keys)
 	{
@@ -45,7 +46,15 @@ getPropertyValuesFirstMatch(const TagLib::PropertyMap& properties, const std::se
 			continue;
 
 		res.reserve(values.size());
-		std::transform(std::cbegin(values), std::cend(values), std::back_inserter(res), [](const auto& value) { return stringTrim(value.to8Bit(true)); });
+
+		for (const auto& value : values)
+		{
+			auto val {readAs<T>(stringTrim(value.to8Bit(true)))};
+			if (!val)
+				continue;
+
+			res.emplace_back(std::move(*val));
+		}
 
 		break;
 	}
@@ -53,10 +62,11 @@ getPropertyValuesFirstMatch(const TagLib::PropertyMap& properties, const std::se
 	return res;
 }
 
-std::vector<std::string>
-getPropertyValues(const TagLib::PropertyMap& properties, const std::string& key)
+template <typename T>
+std::vector<T>
+getPropertyValuesAs(const TagLib::PropertyMap& properties, const std::string& key)
 {
-	return getPropertyValuesFirstMatch(properties, {std::move(key)});
+	return getPropertyValuesFirstMatchAs<T>(properties, {std::move(key)});
 }
 
 static
@@ -78,24 +88,24 @@ getArtists(const TagLib::PropertyMap& properties)
 {
 	std::vector<Artist> res;
 
-	std::vector<std::string> artistNames {getPropertyValues(properties, "ARTISTS")};
+	std::vector<std::string> artistNames {getPropertyValuesAs<std::string>(properties, "ARTISTS")};
 	if (artistNames.empty())
-		artistNames = getPropertyValues(properties, "ARTIST");
+		artistNames = getPropertyValuesAs<std::string>(properties, "ARTIST");
 
 	if (artistNames.empty())
 		return res;
 
-	const std::vector<std::string> artistsMBID {getPropertyValuesFirstMatch(properties, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"})};
+	const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"})};
 
 	if (artistNames.size() == artistsMBID.size())
 	{
 		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::cbegin(artistsMBID), std::back_inserter(res),
-				[&](const std::string& name, const std::string& mbid) { return Artist{name, mbid}; });
+				[&](const std::string& name, const UUID& mbid) { return Artist {name, mbid}; });
 	}
 	else
 	{
 		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(res),
-				[&](const std::string& name) { return Artist{name, ""}; });
+				[&](const std::string& name) { return Artist{name, {}}; });
 	}
 
 	return res;
@@ -107,21 +117,21 @@ getAlbumArtists(const TagLib::PropertyMap& properties)
 {
 	std::vector<Artist> res;
 
-	std::vector<std::string> artistNames {getPropertyValues(properties, "ALBUMARTIST")};
+	std::vector<std::string> artistNames {getPropertyValuesAs<std::string>(properties, "ALBUMARTIST")};
 	if (artistNames.empty())
 		return res;
 
-	const std::vector<std::string> artistsMBID {getPropertyValuesFirstMatch(properties, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"})};
+	const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"})};
 
 	if (artistNames.size() == artistsMBID.size())
 	{
 		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::cbegin(artistsMBID), std::back_inserter(res),
-				[&](const std::string& name, const std::string& mbid) { return Artist{name, mbid}; });
+				[&](const std::string& name, const UUID& mbid) { return Artist{name, mbid}; });
 	}
 	else
 	{
 		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(res),
-				[&](const std::string& name) { return Artist{name, ""}; });
+				[&](const std::string& name) { return Artist{name, {}}; });
 	}
 
 	return res;
@@ -131,20 +141,16 @@ static
 std::optional<Album>
 getAlbum(const TagLib::PropertyMap& properties)
 {
-	std::optional<Album> res;
-
-	std::vector<std::string> albumName {getPropertyValues(properties, "ALBUM")};
+	std::vector<std::string> albumName {getPropertyValuesAs<std::string>(properties, "ALBUM")};
 	if (albumName.empty())
-		return res;
+		return std::nullopt;
 
-	std::vector<std::string> albumMBID {getPropertyValuesFirstMatch(properties, {"MUSICBRAINZ_ALBUMID", "MUSICBRAINZ ALBUM ID"})};
+	const std::vector<UUID> albumMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ALBUMID", "MUSICBRAINZ ALBUM ID"})};
 
-	res = Album{std::move(albumName.front()), ""};
-
-	if (!albumMBID.empty())
-		res->musicBrainzAlbumID = std::move(albumMBID.front());
-
-	return res;
+	if (albumMBID.empty())
+		return Album {std::move(albumName.front()), {}};
+	else
+		return Album {std::move(albumName.front()), albumMBID.front()};
 }
 
 std::optional<Track>
@@ -231,13 +237,13 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 			else if (tag == "MUSICBRAINZ_RELEASETRACKID"
 				|| tag == "MUSICBRAINZ RELEASE TRACK ID")
 			{
-				track.musicBrainzTrackID = value;
+				track.musicBrainzTrackID = readAs<UUID>(value);
 			}
 			else if (tag == "MUSICBRAINZ_TRACKID"
 				|| tag == "MUSICBRAINZ TRACK ID")
-				track.musicBrainzRecordID = value;
+				track.musicBrainzRecordID = readAs<UUID>(value);
 			else if (tag == "ACOUSTID_ID")
-				track.acoustID = value;
+				track.acoustID = readAs<UUID>(value);
 			else if (tag == "TRACKTOTAL")
 			{
 				auto totalTrack = readAs<std::size_t>(value);

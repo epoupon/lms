@@ -32,10 +32,10 @@
 namespace Database
 {
 
-Artist::Artist(const std::string& name, const std::string& MBID)
+Artist::Artist(const std::string& name, const std::optional<UUID>& MBID)
 : _name {std::string(name, 0 , _maxNameLength)},
 _sortName {_name},
-_MBID {MBID}
+_MBID {MBID ? MBID->getAsString() : ""}
 {
 
 }
@@ -50,10 +50,10 @@ Artist::getByName(Session& session, const std::string& name)
 }
 
 Artist::pointer
-Artist::getByMBID(Session& session, const std::string& mbid)
+Artist::getByMBID(Session& session, const UUID& mbid)
 {
 	session.checkSharedLocked();
-	return session.getDboSession().find<Artist>().where("mbid = ?").bind(mbid);
+	return session.getDboSession().find<Artist>().where("mbid = ?").bind(std::string {mbid.getAsString()});
 }
 
 Artist::pointer
@@ -64,7 +64,7 @@ Artist::getById(Session& session, IdType id)
 }
 
 Artist::pointer
-Artist::create(Session& session, const std::string& name, const std::string& MBID)
+Artist::create(Session& session, const std::string& name, const std::optional<UUID>& MBID)
 {
 	session.checkUniqueLocked();
 

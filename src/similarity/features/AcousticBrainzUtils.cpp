@@ -33,12 +33,13 @@
 namespace AcousticBrainz
 {
 
-static std::string
-getJsonData(const std::string& mbid)
+static
+std::string
+getJsonData(const UUID& mbid)
 {
 	static const std::string defaultAPIURL = "https://acousticbrainz.org/api/v1/";
 
-	const std::string url {ServiceProvider<Config>::get()->getString("acousticbrainz-api-url", defaultAPIURL) + mbid + "/low-level"};
+	const std::string url {ServiceProvider<Config>::get()->getString("acousticbrainz-api-url", defaultAPIURL) + std::string {mbid.getAsString()} + "/low-level"};
 
 	boost::asio::io_service ioService;
 
@@ -77,7 +78,7 @@ getJsonData(const std::string& mbid)
 }
 
 std::string
-extractLowLevelFeatures(const std::string& mbid)
+extractLowLevelFeatures(const UUID& mbid)
 {
 	return getJsonData(mbid);
 }

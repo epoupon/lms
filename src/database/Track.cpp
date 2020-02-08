@@ -88,12 +88,12 @@ Track::getById(Session& session, IdType id)
 }
 
 Track::pointer
-Track::getByMBID(Session& session, const std::string& mbid)
+Track::getByMBID(Session& session, const UUID& mbid)
 {
 	session.checkSharedLocked();
 
 	return session.getDboSession().find<Track>()
-		.where("mbid = ?").bind(mbid);
+		.where("mbid = ?").bind(std::string {mbid.getAsString()});
 }
 
 Track::pointer

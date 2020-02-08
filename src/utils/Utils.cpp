@@ -20,6 +20,7 @@
 #include "Utils.hpp"
 
 #include <string>
+#include <regex>
 #include <sstream>
 #include <iomanip>
 #include <iostream>
@@ -28,7 +29,8 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string.hpp>
 
-bool readList(const std::string& str, const std::string& separators, std::list<std::string>& results)
+bool
+readList(const std::string& str, const std::string& separators, std::list<std::string>& results)
 {
 	std::string curStr;
 

@@ -26,6 +26,8 @@
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
+#include "utils/UUID.hpp"
+
 #include "TrackArtistLink.hpp"
 #include "Types.hpp"
 
@@ -46,10 +48,10 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		using pointer = Wt::Dbo::ptr<Artist>;
 
 		Artist() {}
-		Artist(const std::string& name, const std::string& MBID = "");
+		Artist(const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Accessors
-		static pointer			getByMBID(Session& session, const std::string& MBID);
+		static pointer			getByMBID(Session& session, const UUID& MBID);
 		static pointer			getById(Session& session, IdType id);
 		static std::vector<pointer>	getByName(Session& session, const std::string& name);
 		static std::vector<pointer> 	getByClusters(Session& session,
@@ -69,7 +71,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 
 		// Accessors
 		const std::string& getName(void) const { return _name; }
-		const std::string& getMBID(void) const { return _MBID; }
+		std::optional<UUID> getMBID(void) const { return readAs<UUID>(_MBID); }
 
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
 		std::size_t				getReleaseCount() const;
@@ -83,11 +85,11 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		// size is the max number of cluster per cluster type
 		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
 
-		void setMBID(const std::string& mbid) { _MBID = mbid; }
+		void setMBID(const std::optional<UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
 		void setSortName(const std::string& sortName);
 
 		// Create
-		static pointer create(Session& session, const std::string& name, const std::string& MBID = "");
+		static pointer create(Session& session, const std::string& name, const std::optional<UUID>& UUID = {});
 
 		template<class Action>
 			void persist(Action& a)
