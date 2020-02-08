@@ -113,7 +113,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		Wt::WDateTime				getLastWriteTime() const	{ return _fileLastWrite; }
 		Wt::WDateTime				getAddedTime() const		{ return _fileAdded; }
 		bool					hasCover() const		{ return _hasCover; }
-		std::optional<UUID>			getMBID() const			{ return readAs<UUID>(_MBID); }
+		std::optional<UUID>			getMBID() const			{ return UUID::fromString(_MBID); }
 		std::optional<std::string>		getCopyright() const;
 		std::optional<std::string>		getCopyrightURL() const;
 		std::vector<Wt::Dbo::ptr<Artist>>	getArtists(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;

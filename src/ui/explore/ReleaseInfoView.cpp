@@ -24,7 +24,7 @@
 #include "database/Release.hpp"
 #include "similarity/SimilaritySearcher.hpp"
 #include "utils/Service.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 #include "ReleaseLink.hpp"
 #include "LmsApplication.hpp"
@@ -64,7 +64,7 @@ ReleaseInfo::refresh()
 	if (!wApp->internalPathMatches("/release/"))
 		return;
 
-	auto releaseId {readAs<Database::IdType>(wApp->internalPathNextPart("/release/"))};
+	auto releaseId {StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/release/"))};
 	if (!releaseId)
 		return;
 

@@ -28,7 +28,7 @@
 #include "database/Track.hpp"
 
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 #include "resource/ImageResource.hpp"
 
@@ -78,7 +78,7 @@ _filters {filters}
 std::vector<Database::IdType>
 Tracks::getTracks(std::optional<std::size_t> offset, std::optional<std::size_t> size, bool& moreResults)
 {
-	const auto searchKeywords {splitString(_search->text().toUTF8(), " ")};
+	const auto searchKeywords {StringUtils::splitString(_search->text().toUTF8(), " ")};
 	const auto clusterIds {_filters->getClusterIds()};
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};

@@ -89,7 +89,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 
 		// Accessors
 		std::string			getName() const		{ return _name; }
-		std::optional<UUID>		getMBID() const		{ return readAs<UUID>(_MBID); }
+		std::optional<UUID>		getMBID() const		{ return UUID::fromString(_MBID); }
 		std::optional<std::size_t>	getTotalTrackNumber() const;
 		std::optional<std::size_t>	getTotalDiscNumber() const;
 		std::chrono::milliseconds	getDuration() const;

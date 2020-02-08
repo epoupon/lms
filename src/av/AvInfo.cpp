@@ -24,7 +24,7 @@
 #include <array>
 
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 namespace Av {
 
@@ -230,19 +230,20 @@ MediaFile::getAttachedPictures(std::size_t nbMaxPictures) const
 	return pictures;
 }
 
-std::optional<MediaFileFormat> guessMediaFileFormat(const std::filesystem::path& file)
+std::optional<MediaFileFormat>
+guessMediaFileFormat(const std::filesystem::path& file)
 {
 	AVOutputFormat* format {av_guess_format(NULL,file.string().c_str(),NULL)};
 	if (!format || !format->name)
 		return {};
 
-	auto formats {splitString(format->name, ",")};
+	auto formats {StringUtils::splitString(format->name, ",")};
 	if (formats.size() > 1)
 		LMS_LOG(AV, INFO) << "File '" << file.string() << "' reported several formats: '" << format->name << "'";
 
 	std::vector<std::string> mimeTypes;
 	if (format->mime_type)
-		mimeTypes = splitString(format->mime_type, ",");
+		mimeTypes = StringUtils::splitString(format->mime_type, ",");
 
 	if (mimeTypes.empty())
 		LMS_LOG(AV, INFO) << "File '" << file.string() << "', no mime type found!";

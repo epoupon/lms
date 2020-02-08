@@ -22,7 +22,7 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 #include "Cluster.hpp"
 #include "Session.hpp"
@@ -65,7 +65,7 @@ ScanSettings::get(Session& session)
 std::set<std::filesystem::path>
 ScanSettings::getAudioFileExtensions() const
 {
-	auto extensions = splitString(_audioFileExtensions, " ");
+	auto extensions = StringUtils::splitString(_audioFileExtensions, " ");
 	return std::set<std::filesystem::path>(std::cbegin(extensions), std::cend(extensions));
 }
 
@@ -84,7 +84,7 @@ ScanSettings::getClusterTypes() const
 void
 ScanSettings::setMediaDirectory(const std::filesystem::path& p)
 {
-	_mediaDirectory = stringTrimEnd(p.string(), "/\\");
+	_mediaDirectory = StringUtils::stringTrimEnd(p.string(), "/\\");
 }
 
 template <typename It>

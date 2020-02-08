@@ -22,7 +22,7 @@
 #include "SubsonicResponse.hpp"
 
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 namespace API::Subsonic
 {
@@ -33,7 +33,7 @@ IdFromString(const std::string& id)
 	if (id == "root")
 		return Id {Id::Type::Root};
 
-	std::vector<std::string> values {splitString(id, "-")};
+	std::vector<std::string> values {StringUtils::splitString(id, "-")};
 	if (values.size() != 2)
 		return std::nullopt;
 
@@ -51,7 +51,7 @@ IdFromString(const std::string& id)
 	else
 		return std::nullopt;
 
-	auto optId {readAs<Database::IdType>(values[1])};
+	auto optId {StringUtils::readAs<Database::IdType>(values[1])};
 	if (!optId)
 		return std::nullopt;
 

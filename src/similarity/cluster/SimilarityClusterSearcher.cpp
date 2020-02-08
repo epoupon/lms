@@ -28,7 +28,6 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
-#include "utils/Utils.hpp"
 
 namespace Similarity {
 namespace ClusterSearcher {

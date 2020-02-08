@@ -21,21 +21,28 @@
 
 #include <regex>
 
-#include "Utils.hpp"
+namespace StringUtils
+{
+	template <>
+	std::optional<UUID>
+	readAs(const std::string& str)
+	{
+		return UUID::fromString(str);
+	}
+}
 
 static
 bool
-stringIsUUID(const std::string& str)
+stringIsUUID(std::string_view str)
 {
 	static const std::regex re { R"([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})"};
 
-	return std::regex_match(str, re);
+	return std::regex_match(std::cbegin(str), std::cend(str), re);
 }
 
 
-template<>
 std::optional<UUID>
-readAs(const std::string& str)
+UUID::fromString(std::string_view str)
 {
 	if (!stringIsUUID(str))
 		return std::nullopt;

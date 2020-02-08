@@ -28,7 +28,8 @@
 #include <taglib/tpropertymap.h>
 
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
+
 
 namespace MetaData
 {
@@ -49,7 +50,7 @@ getPropertyValuesFirstMatchAs(const TagLib::PropertyMap& properties, const std::
 
 		for (const auto& value : values)
 		{
-			auto val {readAs<T>(stringTrim(value.to8Bit(true)))};
+			auto val {StringUtils::readAs<T>(StringUtils::stringTrim(value.to8Bit(true)))};
 			if (!val)
 				continue;
 
@@ -75,9 +76,9 @@ splitAndTrimString(const std::string& str, const std::string& delimiters)
 {
 	std::vector<std::string> res;
 
-	std::vector<std::string> strings {splitString(str, delimiters)};
+	std::vector<std::string> strings {StringUtils::splitString(str, delimiters)};
 	for (const std::string& s : strings)
-		res.emplace_back(stringTrim(s));
+		res.emplace_back(StringUtils::stringTrim(s));
 
 	return res;
 }
@@ -224,29 +225,29 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 				std::vector<std::string> strs;
 				std::transform(values.begin(), values.end(), std::back_inserter(strs), [](const auto& value) { return value.to8Bit(true); });
 
-				std::cout << "[" << tag << "] = " << joinStrings(strs, "*SEP*") << std::endl;
+				std::cout << "[" << tag << "] = " << StringUtils::joinStrings(strs, "*SEP*") << std::endl;
 			}
 
 			if (tag.empty() || values.isEmpty() || values.front().isEmpty())
 				continue;
 
-			std::string value {stringTrim(values.front().to8Bit(true))};
+			std::string value {StringUtils::stringTrim(values.front().to8Bit(true))};
 
 			if (tag == "TITLE")
 				track.title = value;
 			else if (tag == "MUSICBRAINZ_RELEASETRACKID"
 				|| tag == "MUSICBRAINZ RELEASE TRACK ID")
 			{
-				track.musicBrainzTrackID = readAs<UUID>(value);
+				track.musicBrainzTrackID = UUID::fromString(value);
 			}
 			else if (tag == "MUSICBRAINZ_TRACKID"
 				|| tag == "MUSICBRAINZ TRACK ID")
-				track.musicBrainzRecordID = readAs<UUID>(value);
+				track.musicBrainzRecordID = UUID::fromString(value);
 			else if (tag == "ACOUSTID_ID")
-				track.acoustID = readAs<UUID>(value);
+				track.acoustID = UUID::fromString(value);
 			else if (tag == "TRACKTOTAL")
 			{
-				auto totalTrack = readAs<std::size_t>(value);
+				auto totalTrack = StringUtils::readAs<std::size_t>(value);
 				if (totalTrack)
 					track.totalTrack = totalTrack;
 			}
@@ -257,44 +258,44 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 
 				if (!strings.empty())
 				{
-					track.trackNumber = readAs<std::size_t>(strings[0]);
+					track.trackNumber = StringUtils::readAs<std::size_t>(strings[0]);
 
 					// Lower priority than TRACKTOTAL
 					if (strings.size() > 1 && !track.totalTrack)
-						track.totalTrack = readAs<std::size_t>(strings[1]);
+						track.totalTrack = StringUtils::readAs<std::size_t>(strings[1]);
 				}
 			}
 			else if (tag == "DISCTOTAL")
 			{
-				auto totalDisc = readAs<std::size_t>(value);
+				auto totalDisc = StringUtils::readAs<std::size_t>(value);
 				if (totalDisc)
 					track.totalDisc = totalDisc;
 			}
 			else if (tag == "DISCNUMBER")
 			{
 				// Expecting 'Number/Total'
-				std::vector<std::string> strings {splitString(value, "/")};
+				std::vector<std::string> strings {StringUtils::splitString(value, "/")};
 
 				if (!strings.empty())
 				{
-					track.discNumber = readAs<std::size_t>(strings[0]);
+					track.discNumber = StringUtils::readAs<std::size_t>(strings[0]);
 
 					// Lower priority than DISCTOTAL
 					if (strings.size() > 1 && !track.totalDisc)
-						track.totalDisc = readAs<std::size_t>(strings[1]);
+						track.totalDisc = StringUtils::readAs<std::size_t>(strings[1]);
 				}
 			}
 			else if (tag == "DATE")
-				track.year = readAs<int>(value);
+				track.year = StringUtils::readAs<int>(value);
 			else if (tag == "ORIGINALDATE" && !track.originalYear)
 			{
 				// Lower priority than ORIGINALYEAR
-				track.originalYear = readAs<int>(value);
+				track.originalYear = StringUtils::readAs<int>(value);
 			}
 			else if (tag == "ORIGINALYEAR")
 			{
 				// Higher priority than ORIGINALDATE
-				auto originalYear = readAs<int>(value);
+				auto originalYear = StringUtils::readAs<int>(value);
 				if (originalYear)
 					track.originalYear = originalYear;
 			}

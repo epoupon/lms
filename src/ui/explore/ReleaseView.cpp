@@ -29,7 +29,7 @@
 #include "database/Track.hpp"
 
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 #include "resource/ImageResource.hpp"
 
@@ -65,7 +65,7 @@ Release::refresh()
 		return;
 
 	clear();
-	auto releaseId {readAs<Database::IdType>(wApp->internalPathNextPart("/release/"))};
+	auto releaseId {StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/release/"))};
 	if (!releaseId)
 		return;
 

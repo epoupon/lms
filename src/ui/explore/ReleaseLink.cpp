@@ -25,7 +25,6 @@
 
 #include "database/Release.hpp"
 #include "resource/ImageResource.hpp"
-#include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"
 

@@ -19,27 +19,29 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
 
-#include "Utils.hpp"
+#include "utils/String.hpp"
 
 class UUID
 {
 	public:
 
+		static std::optional<UUID> fromString(std::string_view str);
+
 		std::string_view getAsString() const { return _value; }
 
 	private:
-
-		template <typename UUID>
-		friend std::optional<UUID> readAs(const std::string& str);
-
 		UUID(std::string_view value) : _value {value} {}
 		std::string _value;
 };
 
-template<>
-std::optional<UUID>
-readAs(const std::string& str);
+namespace StringUtils
+{
+	template <>
+	std::optional<UUID>
+	readAs(const std::string& str);
+}
 

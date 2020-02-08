@@ -358,7 +358,7 @@ breedFeatureSettingsMap(const FeatureSettingsMap& a, const FeatureSettingsMap& b
 	// just kill random elements until size is good
 	while (res.size() > a.size())
 	{
-		const auto itFeature {pickRandom(res)};
+		const auto itFeature {Random::pickRandom(res)};
 		res.erase(itFeature);
 	}
 
@@ -371,11 +371,11 @@ mutateFeatureSettingsMap(FeatureSettingsMap& a)
 {
 	const std::size_t size {a.size()};
 	// Replace one of the feature with another one, random
-	a.erase(pickRandom(a));
+	a.erase(Random::pickRandom(a));
 
 	while (a.size() != size)
 	{
-		const auto itFeatureSetting {pickRandom(featuresSettings)};
+		const auto itFeatureSetting {Random::pickRandom(featuresSettings)};
 		a.emplace(itFeatureSetting->first, itFeatureSetting->second);
 	}
 }
@@ -425,7 +425,7 @@ int main(int argc, char *argv[])
 
 			while (settings.size() < nbFeatures)
 			{
-				const auto itFeatureSetting {pickRandom(featuresSettings)};
+				const auto itFeatureSetting {Random::pickRandom(featuresSettings)};
 				settings.emplace(itFeatureSetting->first, itFeatureSetting->second);
 			}
 

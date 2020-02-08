@@ -27,7 +27,7 @@
 #include "database/Release.hpp"
 
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 #include "resource/ImageResource.hpp"
 
@@ -137,7 +137,7 @@ Releases::addSome()
 std::vector<Database::IdType>
 Releases::getReleases(std::optional<std::size_t> offset, std::optional<std::size_t> limit, bool& moreResults) const
 {
-	const auto searchKeywords {splitString(_search->text().toUTF8(), " ")};
+	const auto searchKeywords {StringUtils::splitString(_search->text().toUTF8(), " ")};
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 

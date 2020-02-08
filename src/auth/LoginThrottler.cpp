@@ -22,7 +22,7 @@
 #include "LoginThrottler.hpp"
 
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
+#include "utils/Random.hpp"
 
 namespace Auth {
 
@@ -71,7 +71,7 @@ LoginThrottler::onBadClientAttempt(const boost::asio::ip::address& address)
 	if (_attemptsInfo.size() >= _maxEntries)
 		removeOutdatedEntries();
 	if (_attemptsInfo.size() >= _maxEntries)
-		_attemptsInfo.erase(pickRandom(_attemptsInfo));
+		_attemptsInfo.erase(Random::pickRandom(_attemptsInfo));
 
 	_attemptsInfo[address] = now.addSecs(3);
 

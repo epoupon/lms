@@ -28,7 +28,7 @@
 #include "database/Release.hpp"
 
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 #include "resource/ImageResource.hpp"
 
@@ -63,7 +63,7 @@ Artist::refresh()
 
 	clear();
 
-	auto artistId = readAs<Database::IdType>(wApp->internalPathNextPart("/artist/"));
+	const auto artistId {StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/artist/"))};
 	if (!artistId)
 		return;
 

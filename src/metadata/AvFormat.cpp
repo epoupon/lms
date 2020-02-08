@@ -19,10 +19,14 @@
 
 #include "AvFormat.hpp"
 
+#include <algorithm>
+#include <iostream>
+
 #include "av/AvInfo.hpp"
 
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
+
 
 namespace MetaData
 {
@@ -37,7 +41,7 @@ findFirstValueOfAs(const MetadataMap& metadataMap, std::initializer_list<std::st
 	if (it == std::cend(metadataMap))
 		return std::nullopt;
 
-	return readAs<T>(stringTrim(it->second));
+	return StringUtils::readAs<T>(StringUtils::stringTrim(it->second));
 }
 
 template <>
@@ -48,12 +52,12 @@ findFirstValueOfAs(const MetadataMap& metadataMap, std::initializer_list<std::st
 	if (!str)
 		return std::nullopt;
 
-	std::vector<std::string> strUuids = splitString(*str, "/");
+	std::vector<std::string> strUuids = StringUtils::splitString(*str, "/");
 	std::vector<UUID> res;
 
 	for (const std::string strUuid : strUuids)
 	{
-		std::optional<UUID> uuid {readAs<UUID>(strUuid)};
+		std::optional<UUID> uuid {UUID::fromString(strUuid)};
 		if (!uuid)
 			return std::nullopt;
 
@@ -103,7 +107,7 @@ getArtists(const MetadataMap& metadataMap)
 	std::vector<std::string> artistNames;
 	if (metadataMap.find("ARTISTS") != metadataMap.end())
 	{
-		artistNames = splitString(metadataMap.find("ARTISTS")->second, "/;");
+		artistNames = StringUtils::splitString(metadataMap.find("ARTISTS")->second, "/;");
 	}
 	else if (metadataMap.find("ARTIST") != metadataMap.end())
 	{
@@ -163,54 +167,54 @@ AvFormat::parse(const std::filesystem::path& p, bool debug)
 			else if (tag == "TRACK")
 			{
 				// Expecting 'Number/Total'
-				std::vector<std::string> strings {splitString(value, "/") };
+				std::vector<std::string> strings {StringUtils::splitString(value, "/") };
 
 				if (strings.size() > 0)
 				{
-					track.trackNumber = readAs<std::size_t>(strings[0]);
+					track.trackNumber = StringUtils::readAs<std::size_t>(strings[0]);
 
 					if (strings.size() > 1)
-						track.totalTrack = readAs<std::size_t>(strings[1]);
+						track.totalTrack = StringUtils::readAs<std::size_t>(strings[1]);
 				}
 			}
 			else if (tag == "DISC")
 			{
 				// Expecting 'Number/Total'
-				std::vector<std::string> strings {splitString(value, "/")};
+				std::vector<std::string> strings {StringUtils::splitString(value, "/")};
 
 				if (strings.size() > 0)
 				{
-					track.discNumber = readAs<std::size_t>(strings[0]);
+					track.discNumber = StringUtils::readAs<std::size_t>(strings[0]);
 
 					if (strings.size() > 1)
-						track.totalDisc = readAs<std::size_t>(strings[1]);
+						track.totalDisc = StringUtils::readAs<std::size_t>(strings[1]);
 				}
 			}
 			else if (tag == "DATE"
 					|| tag == "YEAR"
 					|| tag == "WM/Year")
 			{
-				track.year = readAs<int>(value);
+				track.year = StringUtils::readAs<int>(value);
 			}
 			else if (tag == "TDOR"	// Original release time (ID3v2 2.4)
 					|| tag == "TORY")	// Original release year
 			{
-				track.originalYear = readAs<int>(value);
+				track.originalYear = StringUtils::readAs<int>(value);
 			}
 			else if (tag == "ACOUSTID ID")
 			{
-				track.acoustID = readAs<UUID>(value);
+				track.acoustID = UUID::fromString(value);
 			}
 			else if (tag == "MUSICBRAINZ RELEASE TRACK ID"
 					|| tag == "MUSICBRAINZ_RELEASETRACKID"
 					|| tag == "MUSICBRAINZ_TRACKID"
 					|| tag == "MUSICBRAINZ/TRACK ID")
 			{
-				track.musicBrainzTrackID = readAs<UUID>(value);
+				track.musicBrainzTrackID = UUID::fromString(value);
 			}
 			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 			{
-				std::vector<std::string> clusterNames {splitString(value, "/,;")};
+				std::vector<std::string> clusterNames {StringUtils::splitString(value, "/,;")};
 
 				if (!clusterNames.empty())
 					track.clusters[tag] = std::set<std::string>{clusterNames.begin(), clusterNames.end()};

@@ -39,7 +39,7 @@
 #include "explore/Explore.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 #include "admin/InitWizardView.hpp"
 #include "admin/DatabaseSettingsView.hpp"
@@ -639,7 +639,7 @@ LmsApplication::notifyMsg(MsgType type, const Wt::WString& message, std::chrono:
 	std::ostringstream oss;
 
 	oss << "$.notify({"
-			"message: '" << jsEscape(message.toUTF8()) << "'"
+			"message: '" << StringUtils::jsEscape(message.toUTF8()) << "'"
 		"},{"
 			"type: '" << msgTypeToString(type) << "',"
 			"placement: {from: 'top', align: 'center'},"

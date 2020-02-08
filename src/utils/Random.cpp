@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,14 +17,17 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "MetaData.hpp"
+#include "Random.hpp"
 
-#include "utils/Utils.hpp"
+namespace Random {
 
-namespace MetaData
+RandGenerator& getRandGenerator()
 {
+	static thread_local std::random_device rd;
+	static thread_local std::mt19937 randGenerator(rd());
 
+	return randGenerator;
+}
 
-
-} // namespace MetaData
+} // Random
 

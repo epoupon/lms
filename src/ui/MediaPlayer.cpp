@@ -29,7 +29,7 @@
 #include "resource/ImageResource.hpp"
 #include "resource/AudioResource.hpp"
 
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -73,9 +73,9 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play)
 			<< "var params = {"
 			<< " resource: \"" << resource << "\","
 			<< " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
-			<< " title: \"" << jsEscape(track->getName()) << "\","
-			<< " artist: \"" << (!artists.empty() ? jsEscape(artists.front()->getName()) : "") << "\","
-			<< " release: \"" << (track->getRelease() ? jsEscape(track->getRelease()->getName()) : "") << "\","
+			<< " title: \"" << StringUtils::jsEscape(track->getName()) << "\","
+			<< " artist: \"" << (!artists.empty() ? StringUtils::jsEscape(artists.front()->getName()) : "") << "\","
+			<< " release: \"" << (track->getRelease() ? StringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
 			<< " artwork: ["
 			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 96) << "\",  sizes: \"96x96\",	type: \"" << imgResourceMimeType << "\" },"
 			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 256) << "\", sizes: \"256x256\",	type: \"" << imgResourceMimeType << "\" },"

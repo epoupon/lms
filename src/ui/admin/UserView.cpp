@@ -34,7 +34,7 @@
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 #include "common/Validators.hpp"
 #include "common/ValueStringModel.hpp"
@@ -229,7 +229,7 @@ UserView::refreshView()
 	if (!wApp->internalPathMatches("/admin/user"))
 		return;
 
-	auto userId = readAs<Database::IdType>(wApp->internalPathNextPart("/admin/user/"));
+	auto userId = StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/admin/user/"));
 
 	clear();
 

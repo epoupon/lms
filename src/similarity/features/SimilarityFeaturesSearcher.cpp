@@ -29,7 +29,6 @@
 #include "database/TrackFeatures.hpp"
 #include "som/DataNormalizer.hpp"
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
 
 
 namespace Similarity {

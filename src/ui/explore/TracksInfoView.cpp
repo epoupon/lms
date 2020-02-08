@@ -26,8 +26,6 @@
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 
-#include "utils/Utils.hpp"
-
 #include "LmsApplication.hpp"
 
 using namespace Database;

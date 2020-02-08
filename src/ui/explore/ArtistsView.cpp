@@ -29,7 +29,7 @@
 #include "common/ValueStringModel.hpp"
 #include "database/Artist.hpp"
 #include "utils/Logger.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
@@ -83,7 +83,7 @@ Artists::refresh()
 void
 Artists::addSome()
 {
-	auto searchKeywords = splitString(_search->text().toUTF8(), " ");
+	const auto searchKeywords {StringUtils::splitString(_search->text().toUTF8(), " ")};
 
 	auto clusterIds = _filters->getClusterIds();
 	auto linkModel = static_cast<ArtistLinkModel*>(_linkType->model().get());

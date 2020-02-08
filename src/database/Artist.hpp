@@ -71,7 +71,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 
 		// Accessors
 		const std::string& getName(void) const { return _name; }
-		std::optional<UUID> getMBID(void) const { return readAs<UUID>(_MBID); }
+		std::optional<UUID> getMBID(void) const { return UUID::fromString(_MBID); }
 
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
 		std::size_t				getReleaseCount() const;

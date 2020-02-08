@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,17 +17,15 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Utils.hpp"
+#include "String.hpp"
 
-#include <string>
-#include <regex>
-#include <sstream>
 #include <iomanip>
-#include <iostream>
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string.hpp>
+
+namespace StringUtils {
 
 bool
 readList(const std::string& str, const std::string& separators, std::list<std::string>& results)
@@ -200,11 +198,5 @@ stringFromHex(const std::string& str)
 	return res;
 }
 
-RandGenerator& getRandGenerator()
-{
-	static thread_local std::random_device rd;
-	static thread_local std::mt19937 randGenerator(rd());
-
-	return randGenerator;
-}
+} // StringUtils
 

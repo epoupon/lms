@@ -28,7 +28,7 @@ test_database_SOURCES = \
 	$(top_srcdir)/src/database/User.cpp			\
 	$(top_srcdir)/src/utils/Logger.cpp			\
 	$(top_srcdir)/src/utils/StreamLogger.cpp		\
-	$(top_srcdir)/src/utils/Utils.cpp
+	$(top_srcdir)/src/utils/String.cpp
 
 test_database_CXXFLAGS=-std=c++17 -I${top_srcdir}/src/
 

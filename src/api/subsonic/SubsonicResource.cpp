@@ -41,6 +41,7 @@
 #include "similarity/SimilaritySearcher.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
+#include "utils/String.hpp"
 #include "utils/Utils.hpp"
 #include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
@@ -52,65 +53,69 @@ static const std::string	reportedStarredDate {"2000-01-01T00:00:00"};
 static const std::string	reportedCreatedBookmarkDate {"2000-01-01T00:00:00"};
 static const std::string	reportedChangedBookmarkDate {"2000-01-01T00:00:00"};
 
-template<>
-std::optional<API::Subsonic::Id>
-readAs(const std::string& str)
-{
-	return API::Subsonic::IdFromString(str);
-}
-
-template<>
-std::optional<bool>
-readAs(const std::string& str)
-{
-	if (str == "true")
-		return true;
-	else if (str == "false")
-		return false;
-
-	return {};
-}
-
 namespace API::Subsonic
 {
-struct ClientVersion
-{
-	unsigned major {};
-	unsigned minor {};
-	unsigned patch {};
-};
+	struct ClientVersion
+	{
+		unsigned major {};
+		unsigned minor {};
+		unsigned patch {};
+	};
 }
 
-template<>
-std::optional<API::Subsonic::ClientVersion>
-readAs(const std::string& str)
+namespace StringUtils
 {
-	// Expects "X.Y.Z"
-	const auto numbers {splitString(str, ".")};
-	if (numbers.size() < 2 || numbers.size() > 3)
-		return std::nullopt;
-
-	API::Subsonic::ClientVersion version;
-
-	auto number {readAs<unsigned>(numbers[0])};
-	if (!number)
-		return std::nullopt;
-	version.major = *number;
-
-	number = {readAs<unsigned>(numbers[1])};
-	if (!number)
-		return std::nullopt;
-	version.minor = *number;
-
-	if (numbers.size() == 3)
+	template<>
+	std::optional<API::Subsonic::Id>
+	StringUtils::readAs(const std::string& str)
 	{
-		number = {readAs<unsigned>(numbers[2])};
-		if (!number)
-			return std::nullopt;
-		version.patch = *number;
+		return API::Subsonic::IdFromString(str);
 	}
 
-	return version;
+	template<>
+	std::optional<bool>
+	StringUtils::readAs(const std::string& str)
+	{
+		if (str == "true")
+			return true;
+		else if (str == "false")
+			return false;
+
+		return {};
+	}
+
+	template<>
+	std::optional<API::Subsonic::ClientVersion>
+	StringUtils::readAs(const std::string& str)
+	{
+		// Expects "X.Y.Z"
+		const auto numbers {StringUtils::splitString(str, ".")};
+		if (numbers.size() < 2 || numbers.size() > 3)
+			return std::nullopt;
+
+		API::Subsonic::ClientVersion version;
+
+		auto number {StringUtils::readAs<unsigned>(numbers[0])};
+		if (!number)
+			return std::nullopt;
+		version.major = *number;
+
+		number = {StringUtils::readAs<unsigned>(numbers[1])};
+		if (!number)
+			return std::nullopt;
+		version.minor = *number;
+
+		if (numbers.size() == 3)
+		{
+			number = {StringUtils::readAs<unsigned>(numbers[2])};
+			if (!number)
+				return std::nullopt;
+			version.patch = *number;
+		}
+
+		return version;
+	}
+
 }
 
 
@@ -136,7 +141,7 @@ static
 std::string
 makeNameFilesystemCompatible(const std::string& name)
 {
-	return replaceInString(name, "/", "_");
+	return StringUtils::replaceInString(name, "/", "_");
 }
 
 template<typename T>
@@ -151,7 +156,7 @@ getMultiParametersAs(const Wt::Http::ParameterMap& parameterMap, const std::stri
 
 	for (const std::string& param : it->second)
 	{
-		auto value {readAs<T>(param)};
+		auto value {StringUtils::readAs<T>(param)};
 		if (!value)
 			throw BadParameterFormatGenericError {paramName};
 
@@ -201,7 +206,7 @@ decodePasswordIfNeeded(const std::string& password)
 {
 	if (password.find("enc:") == 0)
 	{
-		auto decodedPassword {stringFromHex(password.substr(4))};
+		auto decodedPassword {StringUtils::stringFromHex(password.substr(4))};
 		if (!decodedPassword)
 			return password; // fallback on plain password
 
@@ -310,7 +315,7 @@ getArtistNames(const std::vector<Artist::pointer>& artists)
 				return artist->getName();
 			});
 
-	return joinStrings(names, ", ");
+	return StringUtils::joinStrings(names, ", ");
 }
 
 static
@@ -1386,7 +1391,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 	// Mandatory params
 	std::string query {getMandatoryParameterAs<std::string>(context.parameters, "query")};
 
-	std::vector<std::string> keywords {splitString(query, " ")};
+	std::vector<std::string> keywords {StringUtils::splitString(query, " ")};
 
 	// Optional params
 	std::size_t artistCount {getParameterAs<std::size_t>(context.parameters, "artistCount").value_or(20)};
@@ -2035,7 +2040,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 	LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request " << requestId << " '" << request.pathInfo() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap());
 
 	std::string requestPath {request.pathInfo()};
-	if (stringEndsWith(requestPath, ".view"))
+	if (StringUtils::stringEndsWith(requestPath, ".view"))
 		requestPath.resize(requestPath.length() - 5);
 
 	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};

@@ -25,7 +25,6 @@
 #include "utils/Config.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
-#include "utils/Utils.hpp"
 
 namespace Similarity {
 

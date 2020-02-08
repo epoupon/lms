@@ -28,8 +28,10 @@
 #include "database/User.hpp"
 #include "similarity/SimilaritySearcher.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Random.hpp"
 #include "utils/Service.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
+
 #include "TrackStringUtils.hpp"
 #include "LmsApplication.hpp"
 
@@ -72,7 +74,7 @@ PlayQueue::PlayQueue()
 
 			Database::TrackList::pointer trackList {getTrackList()};
 			auto entries {trackList->getEntries()};
-			shuffleContainer(entries);
+			Random::shuffleContainer(entries);
 
 			getTrackList().modify()->clear();
 			for (const auto& entry : entries)

@@ -19,7 +19,8 @@
 
 #include <numeric>
 
-#include "utils/Utils.hpp"
+#include "utils/Random.hpp"
+
 #include "ParallelFor.hpp"
 
 template<typename Individual>
@@ -108,7 +109,7 @@ GeneticAlgorithm<Individual>::simulate(const std::vector<Individual>& initialPop
 
 			ScoredIndividual child {_params.breedFunction(itParent1->individual, itParent2->individual)};
 			
-			if (getRealRandom(float {}, float {1}) <= _params.mutationProbability)
+			if (Random::getRealRandom(float {}, float {1}) <= _params.mutationProbability)
 				_params.mutateFunction(child.individual);
 
 			children.emplace_back(std::move(child));
@@ -156,7 +157,7 @@ template<typename Individual>
 typename std::vector<typename GeneticAlgorithm<Individual>::ScoredIndividual>::const_iterator
 GeneticAlgorithm<Individual>::pickRandomRouletteWheel(const std::vector<ScoredIndividual>& population, Score totalScore)
 {
-	const Score randomScore {getRealRandom(Score {}, totalScore)};
+	const Score randomScore {Random::getRealRandom(Score {}, totalScore)};
 
 	Score curScore{};
 	for (auto itScoredIndividual {std::cbegin(population)}; itScoredIndividual != std::cend(population); ++itScoredIndividual )

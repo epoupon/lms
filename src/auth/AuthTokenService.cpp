@@ -27,7 +27,6 @@
 
 #include "database/Session.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Utils.hpp"
 #include "utils/Logger.hpp"
 
 namespace Auth {

@@ -24,7 +24,6 @@
 #include "database/Artist.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
-#include "utils/Utils.hpp"
 #include "ArtistLink.hpp"
 #include "LmsApplication.hpp"
 

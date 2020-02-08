@@ -27,7 +27,7 @@
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -65,7 +65,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	if (!sizeStr)
 		return;
 
-	const auto size {readAs<std::size_t>(*sizeStr)};
+	const auto size {StringUtils::readAs<std::size_t>(*sizeStr)};
 	if (!size || *size > maxSize)
 		return;
 
@@ -73,7 +73,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 
 	if (trackIdStr)
 	{
-		const auto trackId {readAs<Database::IdType>(*trackIdStr)};
+		const auto trackId {StringUtils::readAs<Database::IdType>(*trackIdStr)};
 		if (!trackId)
 			return;
 
@@ -85,7 +85,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	}
 	else if (releaseIdStr)
 	{
-		const auto releaseId {readAs<Database::IdType>(*releaseIdStr)};
+		const auto releaseId {StringUtils::readAs<Database::IdType>(*releaseIdStr)};
 		if (!releaseId)
 			return;
 

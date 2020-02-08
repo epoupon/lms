@@ -22,7 +22,7 @@
 #include "database/Artist.hpp"
 #include "similarity/SimilaritySearcher.hpp"
 #include "utils/Service.hpp"
-#include "utils/Utils.hpp"
+#include "utils/String.hpp"
 
 #include "ArtistLink.hpp"
 #include "LmsApplication.hpp"
@@ -59,7 +59,7 @@ ArtistInfo::refresh()
 	if (!wApp->internalPathMatches("/artist/"))
 		return;
 
-	auto artistId = readAs<Database::IdType>(wApp->internalPathNextPart("/artist/"));
+	auto artistId = StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/artist/"));
 	if (!artistId)
 		return;
 
