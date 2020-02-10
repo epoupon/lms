@@ -140,3 +140,35 @@ ChildProcess::asyncRead(unsigned char* data, std::size_t bufferSize, ReadCallbac
 		});
 }
 
+void
+ChildProcess::asyncWaitForData(WaitCallback cb)
+{
+	LMS_LOG(CHILDPROCESS, DEBUG) << "Async wait requested";
+
+	_childStdout.async_wait(boost::asio::posix::stream_descriptor::wait_read,
+			[cb {std::move(cb)}](const boost::system::error_code& ec)
+	{
+		LMS_LOG(CHILDPROCESS, DEBUG) << "Wait CB, error = " << ec.message();
+
+		cb();
+	});
+}
+
+std::size_t
+ChildProcess::readSome(unsigned char* data, std::size_t bufferSize)
+{
+	boost::system::error_code ec;
+	const std::size_t res {_childStdout.read_some(boost::asio::buffer(data, bufferSize), ec)};
+	LMS_LOG(CHILDPROCESS, DEBUG) << "read some " << res << " bytes, ec = " << ec.message();
+	if (ec)
+		_childStdout.close(ec);
+
+	return res;
+}
+
+bool
+ChildProcess::finished()
+{
+	return !_childStdout.is_open();
+}
+

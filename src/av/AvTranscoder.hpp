@@ -45,7 +45,7 @@ class Transcoder
 	public:
 		static void init();
 
-		Transcoder(const std::filesystem::path& file, const TranscodeParameters& parameters, std::size_t bufferSize);
+		Transcoder(const std::filesystem::path& file, const TranscodeParameters& parameters);
 		~Transcoder() = default;
 
 		Transcoder(const Transcoder&) = delete;
@@ -59,8 +59,7 @@ class Transcoder
 		using WaitCallback = std::function<void()>;
 		void			asyncWaitForData(WaitCallback cb);
 
-		using ConsumeDataCallback = std::function<std::size_t(const unsigned char*, std::size_t)>;
-		void			consumeData(ConsumeDataCallback cb);
+		std::size_t		readSome(unsigned char* buffer, std::size_t bufferSize);
 
 		const std::string&	getOutputMimeType() const { return _outputMimeType; }
 		const TranscodeParameters& getParameters() const { return _parameters; }
@@ -71,10 +70,6 @@ class Transcoder
 		const std::size_t		_id {};
 		const std::filesystem::path	_filePath;
 		const TranscodeParameters	_parameters;
-
-		std::vector<unsigned char>	_buffer;
-		std::size_t			_writeOffset {};
-		bool				_readPending {};
 
 		std::unique_ptr<IChildProcess>	_child;
 

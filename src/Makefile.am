@@ -52,9 +52,12 @@ lms_SOURCES = \
 	$(srcdir)/database/User.hpp				\
 	$(srcdir)/image/Image.cpp				\
 	$(srcdir)/image/Image.hpp				\
+	$(srcdir)/localplayer/ExceptioAudioOutput.hpp		\
+	$(srcdir)/localplayer/Exception.hpp			\
+	$(srcdir)/localplayer/LocalPlayer.cpp			\
 	$(srcdir)/localplayer/LocalPlayer.hpp			\
-	$(srcdir)/localplayer/pulseaudio/PulseAudioPlayer.cpp	\
-	$(srcdir)/localplayer/pulseaudio/PulseAudioPlayer.hpp	\
+	$(srcdir)/localplayer/pulseaudio/PulseAudioOutput.cpp	\
+	$(srcdir)/localplayer/pulseaudio/PulseAudioOutput.hpp	\
 	$(srcdir)/main/main.cpp					\
 	$(srcdir)/metadata/AvFormat.cpp				\
 	$(srcdir)/metadata/AvFormat.hpp				\

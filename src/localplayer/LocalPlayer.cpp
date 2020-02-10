@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,35 +17,35 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "LocalPlayer.hpp"
 
-#include <Wt/WResource.h>
+#include "AudioOutput.hpp"
 
-#include "av/AvTranscoder.hpp"
-
-#include "database/Types.hpp"
-
-
-namespace UserInterface {
-
-class AudioResource : public Wt::WResource
+LocalPlayer::LocalPlayer(Database::Db& db)
 {
-	public:
-		AudioResource();
-		~AudioResource();
+}
 
-		std::string getUrl(Database::IdType trackId) const;
+void
+LocalPlayer::setAudioOutput(std::unique_ptr<AudioOutput> audioOutput)
+{
+	_audioOutput = std::move(audioOutput);
+}
 
-		void handleRequest(const Wt::Http::Request& request,
-				Wt::Http::Response& response);
+const AudioOutput*
+LocalPlayer::getAudioOutput() const
+{
+	return _audioOutput.get();
+}
 
-	private:
+void
+LocalPlayer::start()
+{
+	_audioOutput->start();
+}
 
-		static const std::size_t	_chunkSize = 65536*4;
-};
-
-} // namespace UserInterface
-
-
-
+void
+LocalPlayer::stop()
+{
+	_audioOutput->stop();
+}
 

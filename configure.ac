@@ -15,7 +15,12 @@ fi
 AC_SUBST(MAGICKXX_CFLAGS)
 AC_SUBST(MAGICKXX_LIBS)
 
-AC_CHECK_HEADERS([Wt/WApplication.h pstreams/pstream.h boost/asio.hpp],
+AC_ARG_ENABLE([tools],
+	      [AC_HELP_STRING([--enable-tools], [Build the tools])],
+	      [:],
+	      [enable_tools=no])
+
+AC_CHECK_HEADERS([Wt/WApplication.h boost/asio.hpp pulse/stream.h],
                  [],
                  [AC_MSG_ERROR([Header not found or unusable !])])
 
@@ -75,6 +80,11 @@ AC_CHECK_LIB(	[config++],
 		,
 		[AC_MSG_ERROR([libconfig++ not found!])])
 
+AC_CHECK_LIB([pulse],
+             [main],
+             ,
+	     [AC_MSG_ERROR([lib filesystem not found!])])
+
 AC_CONFIG_FILES([Makefile
 		 src/Makefile
 		 test/Makefile
@@ -82,11 +92,6 @@ AC_CONFIG_FILES([Makefile
 		 tools/similarity/Makefile
 		 tools/similarity-parameters/Makefile
 		 tools/metadata/Makefile])
-
-AC_ARG_ENABLE([tools],
-	      [AC_HELP_STRING([--enable-tools], [Build the tools])],
-	      [:],
-	      [enable_tools=no])
 
 AM_CONDITIONAL([BUILD_TOOLS], [test "$enable_tools" = "yes"])
 

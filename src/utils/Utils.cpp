@@ -134,7 +134,8 @@ replaceInString(const std::string& str, const std::string& from, const std::stri
 std::string
 jsEscape(const std::string& str)
 {
-	return replaceInString(str, "\'", "\\\'");
+//	std::string res {replaceInString(str, R"(')", R"(\')")};
+	return replaceInString(str, R"(")", R"(\")");
 }
 
 bool

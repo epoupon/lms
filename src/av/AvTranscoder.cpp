@@ -45,12 +45,11 @@ Transcoder::init()
 		throw LmsException {"File '" + ffmpegPath.string() + "' does not exist!"};
 }
 
-Transcoder::Transcoder(const std::filesystem::path& filePath, const TranscodeParameters& parameters, std::size_t bufferSize)
+Transcoder::Transcoder(const std::filesystem::path& filePath, const TranscodeParameters& parameters)
 : _id {globalId++},
 _filePath {filePath},
 _parameters {parameters}
 {
-	_buffer.resize(bufferSize, 0);
 }
 
 bool
@@ -204,40 +203,27 @@ void
 Transcoder::asyncWaitForData(WaitCallback cb)
 {
 	assert(_child);
-	assert(!_readPending);
 
-	_readPending = true;
+	LMS_LOG_TRANSCODE(DEBUG) << "Want to wait for data";
 
-	LMS_LOG_TRANSCODE(DEBUG) << "Want to read data, _writeOffset = " << _writeOffset;
-
-	_child->asyncRead(&_buffer[_writeOffset], _buffer.size() - _writeOffset, [this, cb = std::move(cb)](IChildProcess::ReadResult result, std::size_t nbBytes)
+	_child->asyncWaitForData([cb = std::move(cb)]()
 	{
-		assert(_readPending);
-		_readPending = false;
-
-		if (result != IChildProcess::ReadResult::Success)
-			_finished = true;
-
-		_writeOffset += nbBytes;
 		cb();
 	});
 }
 
-void
-Transcoder::consumeData(ConsumeDataCallback cb)
+std::size_t
+Transcoder::readSome(unsigned char* buffer, std::size_t bufferSize)
 {
-	const std::size_t consumed {cb(&_buffer[0], _writeOffset)};
-	LMS_LOG_TRANSCODE(DEBUG) << "CONSUMED " << consumed  << " bytes";
-	assert(consumed <= _writeOffset);
+	assert(_child);
 
-	memmove(&_buffer[0], &_buffer[consumed], _writeOffset - consumed);
-	_writeOffset -= consumed;
+	return _child->readSome(buffer, bufferSize);
 }
 
 bool
 Transcoder::finished() const
 {
-	return _finished;
+	return _child->finished();
 }
 
 } // namespace Transcode

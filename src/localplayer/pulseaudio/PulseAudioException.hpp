@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,33 +19,28 @@
 
 #pragma once
 
-#include <Wt/WResource.h>
+#include <pulse/context.h>
+#include <pulse/error.h>
 
-#include "av/AvTranscoder.hpp"
-
-#include "database/Types.hpp"
+#include "localplayer/AudioOutputException.hpp"
 
 
-namespace UserInterface {
-
-class AudioResource : public Wt::WResource
+class PulseAudioException : public LmsException
 {
 	public:
-		AudioResource();
-		~AudioResource();
+		using LmsException::LmsException;
 
-		std::string getUrl(Database::IdType trackId) const;
-
-		void handleRequest(const Wt::Http::Request& request,
-				Wt::Http::Response& response);
-
-	private:
-
-		static const std::size_t	_chunkSize = 65536*4;
+		PulseAudioException(int errcode, const std::string& error)
+			: LmsException {error + ": " + pa_strerror(errcode)}
+		{}
 };
 
-} // namespace UserInterface
-
-
+class ContextPulseAudioException : public PulseAudioException
+{
+	public:
+		ContextPulseAudioException(pa_context* context, const std::string& error)
+			: PulseAudioException {pa_context_errno(context), error}
+		{}
+};
 
 

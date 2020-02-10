@@ -1824,7 +1824,7 @@ createTranscoder(RequestContext& context)
 		}
 	}
 
-	return std::make_unique<Av::Transcoder>(trackPath, parameters, 65536);
+	return std::make_unique<Av::Transcoder>(trackPath, parameters);
 }
 
 static
@@ -1832,15 +1832,6 @@ void
 handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
 {
 	std::shared_ptr<Av::Transcoder> transcoder;
-
-	auto waitForMoreData = [](std::shared_ptr<Av::Transcoder> transcoder, Wt::Http::ResponseContinuation& continuation)
-	{
-		transcoder->asyncWaitForData([&]()
-		{
-			continuation.haveMoreData();
-		});
-		continuation.waitForMoreData();
-	};
 
 	Wt::Http::ResponseContinuation *continuation = request.continuation();
 	if (!continuation)
@@ -1862,19 +1853,21 @@ handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http
 		if (!transcoder)
 			throw InternalErrorGenericError {"Cannot retrieve transcoder"};
 
-		transcoder->consumeData([&](const unsigned char* data, std::size_t size)
-		{
-			response.out().write(reinterpret_cast<const char*>(data), size);
-			return size;
-		});
+		std::vector<unsigned char> data;
+		data.resize(65536);
+		const std::size_t nbBytes {transcoder->readSome(&data[0], data.size())};
+		response.out().write(reinterpret_cast<const char*>(&data[0]), nbBytes);
 	}
 
 	if (!transcoder->finished())
 	{
 		continuation = response.createContinuation();
 		continuation->setData(transcoder);
-
-		waitForMoreData(transcoder, *continuation);		
+		continuation->waitForMoreData();
+		transcoder->asyncWaitForData([=]()
+		{
+			continuation->haveMoreData();
+		});
 	}
 }
 

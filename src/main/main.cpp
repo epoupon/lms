@@ -30,6 +30,8 @@
 #include "cover/CoverArtGrabber.hpp"
 #include "database/Db.hpp"
 #include "image/Image.hpp"
+#include "localplayer/LocalPlayer.hpp"
+#include "localplayer/pulseaudio/PulseAudioOutput.hpp"
 #include "scanner/MediaScanner.hpp"
 #include "similarity/features/SimilarityFeaturesScannerAddon.hpp"
 #include "similarity/SimilaritySearcher.hpp"
@@ -158,6 +160,10 @@ int main(int argc, char* argv[])
 
 		IChildProcessManager& childProcessManager {ServiceProvider<IChildProcessManager>::create<ChildProcessManager>()};
 
+		// Local player
+		LocalPlayer& localPlayer {ServiceProvider<LocalPlayer>::create(database)};
+		localPlayer.setAudioOutput(std::make_unique<PulseAudioOutput>(AudioOutput::Format::S16LE, 44100, 2));
+
 		API::Subsonic::SubsonicResource subsonicResource {database};
 
 		// bind API resources
@@ -179,11 +185,18 @@ int main(int argc, char* argv[])
 		LMS_LOG(MAIN, INFO) << "Starting server...";
 		server.start();
 
+		LMS_LOG(MAIN, INFO) << "Starting local player...";
+		localPlayer.start();
+
+
 		// Wait
 		LMS_LOG(MAIN, INFO) << "Now running...";
 		Wt::WServer::waitForShutdown();
 
 		// Stop
+		LMS_LOG(MAIN, INFO) << "Stopping local player...";
+		localPlayer.stop();
+
 		LMS_LOG(MAIN, INFO) << "Stopping server...";
 		server.stop();
 

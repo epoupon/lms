@@ -20,6 +20,7 @@
 #include "AudioResource.hpp"
 
 #include <Wt/Http/Response.h>
+#include <Wt/WServer.h>
 
 #include "utils/Logger.hpp"
 
@@ -30,8 +31,12 @@
 
 namespace UserInterface {
 
+AudioResource::AudioResource()
+{
+	setTakesUpdateLock(true);
+}
 
-AudioResource:: ~AudioResource()
+AudioResource::~AudioResource()
 {
 	beingDeleted();
 }
@@ -44,7 +49,7 @@ AudioResource::getUrl(Database::IdType trackId) const
 
 static
 std::unique_ptr<Av::Transcoder>
-createTranscoder(const Wt::Http::Request& request, std::size_t bufferSize)
+createTranscoder(const Wt::Http::Request& request)
 {
 	Database::IdType trackId;
 	Av::TranscodeParameters parameters {};
@@ -70,72 +75,57 @@ createTranscoder(const Wt::Http::Request& request, std::size_t bufferSize)
 		return {};
 	}
 
-	// DbSession are not thread safe
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+	if (!track)
 	{
-		Wt::WApplication::UpdateLock lock {LmsApp};
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-		const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
-		if (!track)
-		{
-			LMS_LOG(UI, ERROR) << "Missing track";
-			return {};
-		}
-
-		if (LmsApp->getUser()->getAudioTranscodeEnable())
-		{
-			parameters.bitrate = LmsApp->getUser()->getAudioTranscodeBitrate();
-
-			switch (LmsApp->getUser()->getAudioTranscodeFormat())
-			{
-				case Database::AudioFormat::MP3:
-					parameters.encoding = Av::Encoding::MP3;
-					break;
-				case Database::AudioFormat::OGG_OPUS:
-					parameters.encoding = Av::Encoding::OGG_OPUS;
-					break;
-				case Database::AudioFormat::MATROSKA_OPUS:
-					parameters.encoding = Av::Encoding::MATROSKA_OPUS;
-					break;
-				case Database::AudioFormat::OGG_VORBIS:
-					parameters.encoding = Av::Encoding::OGG_VORBIS;
-					break;
-				case Database::AudioFormat::WEBM_VORBIS:
-					parameters.encoding = Av::Encoding::WEBM_VORBIS;
-					break;
-				default:
-					parameters.encoding = Av::Encoding::OGG_OPUS;
-					break;
-			}
-		}
-		else
-			parameters.bitrate = 0;
-
-		return std::make_unique<Av::Transcoder>(track->getPath(), parameters, bufferSize);
+		LMS_LOG(UI, INFO) << "Missing track";
+		return {};
 	}
-}
 
+	if (LmsApp->getUser()->getAudioTranscodeEnable())
+	{
+		parameters.bitrate = LmsApp->getUser()->getAudioTranscodeBitrate();
+
+		switch (LmsApp->getUser()->getAudioTranscodeFormat())
+		{
+			case Database::AudioFormat::MP3:
+				parameters.encoding = Av::Encoding::MP3;
+				break;
+			case Database::AudioFormat::OGG_OPUS:
+				parameters.encoding = Av::Encoding::OGG_OPUS;
+				break;
+			case Database::AudioFormat::MATROSKA_OPUS:
+				parameters.encoding = Av::Encoding::MATROSKA_OPUS;
+				break;
+			case Database::AudioFormat::OGG_VORBIS:
+				parameters.encoding = Av::Encoding::OGG_VORBIS;
+				break;
+			case Database::AudioFormat::WEBM_VORBIS:
+				parameters.encoding = Av::Encoding::WEBM_VORBIS;
+				break;
+			default:
+				parameters.encoding = Av::Encoding::OGG_OPUS;
+				break;
+		}
+	}
+	else
+		parameters.bitrate = 0;
+
+	return std::make_unique<Av::Transcoder>(track->getPath(), parameters);
+}
 
 void
 AudioResource::handleRequest(const Wt::Http::Request& request,
 		Wt::Http::Response& response)
 {
-	auto waitForMoreData = [](std::shared_ptr<Av::Transcoder> transcoder, Wt::Http::ResponseContinuation& continuation)
-	{
-		LMS_LOG(UI, DEBUG) << "Waiting for more data";
-		transcoder->asyncWaitForData([&]()
-		{
-			continuation.haveMoreData();
-		});
-		continuation.waitForMoreData();
-	};
-
 	std::shared_ptr<Av::Transcoder> transcoder;
 
 	Wt::Http::ResponseContinuation *continuation = request.continuation();
 	if (!continuation)
 	{
-		transcoder = createTranscoder(request, _chunkSize);
+		transcoder = createTranscoder(request);
 		if (!transcoder)
 		{
 			LMS_LOG(UI, ERROR) << "Cannot create transcoder";
@@ -161,21 +151,27 @@ AudioResource::handleRequest(const Wt::Http::Request& request,
 			return;
 		}
 
-		transcoder->consumeData([&](const unsigned char* data, std::size_t size)
-		{
-			response.out().write(reinterpret_cast<const char*>(data), size);
-			LMS_LOG(UI, DEBUG) << "Written " << size << " bytes! finished = " << (transcoder->finished() ? "true" : "false");
+		std::vector<unsigned char> data;
+		data.resize(_chunkSize);
+		const std::size_t readBytes {transcoder->readSome(&data[0], data.size())};
+		response.out().write(reinterpret_cast<const char*>(&data[0]), readBytes);
 
-			return size;
-		});
+		LMS_LOG(UI, DEBUG) << "Written " << readBytes << " bytes! finished = " << (transcoder->finished() ? "true" : "false");
 	}
 
 	if (!transcoder->finished())
 	{
+		LMS_LOG(UI, DEBUG) << "Waiting for more data";
+
+		const std::string sessionId {LmsApp->sessionId()};
+
 		continuation = response.createContinuation();
 		continuation->setData(transcoder);
-
-		waitForMoreData(transcoder, *continuation);
+		continuation->waitForMoreData();
+		transcoder->asyncWaitForData([=]()
+		{
+			continuation->haveMoreData();
+		});
 	}
 }
 

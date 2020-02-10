@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,33 +19,10 @@
 
 #pragma once
 
-#include <Wt/WResource.h>
+#include "utils/Exception.hpp"
 
-#include "av/AvTranscoder.hpp"
-
-#include "database/Types.hpp"
-
-
-namespace UserInterface {
-
-class AudioResource : public Wt::WResource
+class AudioOutputException : public LmsException
 {
-	public:
-		AudioResource();
-		~AudioResource();
-
-		std::string getUrl(Database::IdType trackId) const;
-
-		void handleRequest(const Wt::Http::Request& request,
-				Wt::Http::Response& response);
-
-	private:
-
-		static const std::size_t	_chunkSize = 65536*4;
+	using LmsException::LmsException;
 };
-
-} // namespace UserInterface
-
-
-
 
