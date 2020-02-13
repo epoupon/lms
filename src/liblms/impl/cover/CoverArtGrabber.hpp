@@ -40,7 +40,9 @@ namespace CoverArt
 	class Grabber : public IGrabber
 	{
 		public:
-			Grabber();
+			Grabber(const std::filesystem::path& execPath);
+			~Grabber();
+
 			Grabber(const Grabber&) = delete;
 			Grabber& operator=(const Grabber&) = delete;
 			Grabber(Grabber&&) = delete;
@@ -53,24 +55,21 @@ namespace CoverArt
 
 		private:
 
-			Image::Image		getFromTrack(Database::Session& dbSession, Database::IdType trackId, std::size_t size);
-			Image::Image		getFromRelease(Database::Session& dbSession, Database::IdType releaseId, std::size_t size);
+			Image					getFromTrack(Database::Session& dbSession, Database::IdType trackId, std::size_t size);
+			Image					getFromRelease(Database::Session& dbSession, Database::IdType releaseId, std::size_t size);
 
-			std::optional<Image::Image>		getFromTrack(const std::filesystem::path& path) const;
+			std::optional<Image>			getFromTrack(const std::filesystem::path& path) const;
 			std::vector<std::filesystem::path>	getCoverPaths(const std::filesystem::path& directoryPath) const;
-			std::optional<Image::Image>		getFromDirectory(const std::filesystem::path& path) const;
+			std::optional<Image>			getFromDirectory(const std::filesystem::path& path) const;
+			Image					getDefaultCover(std::size_t size);
 
-			Image::Image	getDefaultCover(std::size_t size);
-
-			Image::Image _defaultCover;
+			Image _defaultCover;
 
 			std::mutex _mutex;
-			std::map<std::size_t /* size */, Image::Image> _defaultCovers;
+			std::map<std::size_t /* size */, Image> _defaultCovers;
 
 			static inline const std::vector<std::filesystem::path> _fileExtensions {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize
-
 			static inline const std::size_t _maxFileSize {10000000};
-
 			static inline const std::vector<std::filesystem::path> _preferredFileNames {"cover", "front"}; // TODO parametrize
 	};
 

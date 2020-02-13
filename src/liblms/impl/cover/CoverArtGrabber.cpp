@@ -39,8 +39,19 @@ isFileSupported(const std::filesystem::path& file, const std::vector<std::filesy
 
 namespace CoverArt {
 
-Grabber::Grabber()
+std::unique_ptr<IGrabber> createGrabber(const std::filesystem::path& execPath)
 {
+	return std::make_unique<Grabber>(execPath);
+}
+
+Grabber::Grabber(const std::filesystem::path& execPath)
+{
+	init(execPath);
+}
+
+Grabber::~Grabber()
+{
+	deinit();
 }
 
 void
@@ -50,7 +61,7 @@ Grabber::setDefaultCover(const std::filesystem::path& p)
 		throw LmsException("Cannot read default cover file '" + p.string() + "'");
 }
 
-Image::Image
+Image
 Grabber::getDefaultCover(std::size_t size)
 {
 	LMS_LOG(COVER, DEBUG) << "Getting a default cover using size = " << size;
@@ -59,12 +70,12 @@ Grabber::getDefaultCover(std::size_t size)
 	auto it = _defaultCovers.find(size);
 	if (it == _defaultCovers.end())
 	{
-		Image::Image cover = _defaultCover;
+		Image cover = _defaultCover;
 
 		LMS_LOG(COVER, DEBUG) << "default cover size = " << cover.getSize().width << " x " << cover.getSize().height;
 
 		LMS_LOG(COVER, DEBUG) << "Scaling cover to size = " << size;
-		cover.scale(Image::Geometry{size, size});
+		cover.scale(Geometry{size, size});
 		LMS_LOG(COVER, DEBUG) << "Scaling DONE";
 		auto res = _defaultCovers.insert(std::make_pair(size, cover));
 		assert(res.second);
@@ -74,14 +85,14 @@ Grabber::getDefaultCover(std::size_t size)
 	return it->second;
 }
 
-static std::optional<Image::Image>
+static std::optional<Image>
 getFromAvMediaFile(const Av::MediaFile& input)
 {
-	std::vector<Image::Image> res;
+	std::vector<Image> res;
 
 	for (auto& picture : input.getAttachedPictures(2))
 	{
-		Image::Image image;
+		Image image;
 
 		if (image.load(picture.data))
 			return image;
@@ -93,12 +104,12 @@ getFromAvMediaFile(const Av::MediaFile& input)
 	return std::nullopt;
 }
 
-std::optional<Image::Image>
+std::optional<Image>
 Grabber::getFromDirectory(const std::filesystem::path& p) const
 {
 	for (auto coverPath : getCoverPaths(p))
 	{
-		Image::Image image;
+		Image image;
 
 		if (image.load(coverPath))
 			return image;
@@ -143,7 +154,7 @@ Grabber::getCoverPaths(const std::filesystem::path& directoryPath) const
 	return res;
 }
 
-std::optional<Image::Image>
+std::optional<Image>
 Grabber::getFromTrack(const std::filesystem::path& p) const
 {
 	try
@@ -159,12 +170,12 @@ Grabber::getFromTrack(const std::filesystem::path& p) const
 	}
 }
 
-Image::Image
+Image
 Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, std::size_t size)
 {
 	using namespace Database;
 
-	std::optional<Image::Image> cover;
+	std::optional<Image> cover;
 
 	bool hasCover {};
 	bool isMultiDisc {};
@@ -200,16 +211,16 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 	if (!cover)
 		cover = getDefaultCover(size);
 	else
-		cover->scale(Image::Geometry {size, size});
+		cover->scale(Geometry {size, size});
 
 	return *cover;
 }
 
 
-Image::Image
+Image
 Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, std::size_t size)
 {
-	std::optional<Image::Image> cover;
+	std::optional<Image> cover;
 
 	std::optional<Database::IdType> trackId;
 	{
@@ -230,26 +241,26 @@ Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, 
 	if (!cover)
 		cover = getDefaultCover(size);
 	else
-		cover->scale(Image::Geometry {size, size});
+		cover->scale(Geometry {size, size});
 
 	return *cover;
 }
 
 std::vector<uint8_t>
-Grabber::getFromTrack(Database::Session& session, Database::IdType trackId, Format format, std::size_t size)
+Grabber::getFromTrack(Database::Session& session, Database::IdType trackId, Format format, std::size_t width)
 {
-	const Image::Image cover {getFromTrack(session, trackId, size)};
+	const Image cover {getFromTrack(session, trackId, width)};
 
-	assert(format == Image::Format::JPEG);
+	assert(format == Format::JPEG);
 	return cover.save(format);
 }
 
 std::vector<uint8_t>
-Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, Format format, std::size_t size)
+Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, Format format, std::size_t width)
 {
-	const Image::Image cover {getFromRelease(session, releaseId, size)};
+	const Image cover {getFromRelease(session, releaseId, width)};
 
-	assert(format == Image::Format::JPEG);
+	assert(format == Format::JPEG);
 	return cover.save(format);
 }
 

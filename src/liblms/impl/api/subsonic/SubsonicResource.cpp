@@ -1895,10 +1895,10 @@ handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation*)
 	switch (id.type)
 	{
 		case Id::Type::Track:
-			res.data = ServiceProvider<CoverArt::IGrabber>::get()->getFromTrack(context.dbSession, id.value, CoverArt::Format::JPEG, {size, size});
+			res.data = ServiceProvider<CoverArt::IGrabber>::get()->getFromTrack(context.dbSession, id.value, CoverArt::Format::JPEG, size);
 			break;
 		case Id::Type::Release:
-			res.data = ServiceProvider<CoverArt::IGrabber>::get()->getFromRelease(context.dbSession, id.value, CoverArt::Format::JPEG, {size, size});
+			res.data = ServiceProvider<CoverArt::IGrabber>::get()->getFromRelease(context.dbSession, id.value, CoverArt::Format::JPEG, size);
 			break;
 		default:
 			throw BadParameterGenericError {"id"};

@@ -26,8 +26,6 @@
 
 #include "database/Types.hpp"
 
-#include "image/Image.hpp"
-
 namespace UserInterface {
 
 

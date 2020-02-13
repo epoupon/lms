@@ -24,44 +24,34 @@
 
 #include <Magick++.h>
 
-namespace Image
+#include "cover/CoverArt.hpp"
+
+namespace CoverArt
 {
 
-enum class Format
-{
-	JPEG,
-};
+	void init(const std::filesystem::path& path);
+	void deinit();
 
-std::string format_to_mimeType(Format format);
+	class Image
+	{
+		public:
 
-void init(const char *path);
+			// input
+			bool	load(const std::vector<unsigned char>& rawData);
+			bool	load(const std::filesystem::path& p);
 
-struct Geometry
-{
-	std::size_t width;
-	std::size_t height;
-};
+			Geometry	getSize() const;
 
-class Image
-{
-	public:
+			// Operations
+			bool	scale(Geometry geometry);
 
-		// input
-		bool	load(const std::vector<unsigned char>& rawData);
-		bool	load(const std::filesystem::path& p);
+			// output
+			std::vector<uint8_t> save(Format format) const;
 
-		Geometry	getSize() const;
-
-		// Operations
-		bool	scale(Geometry geometry);
-
-		// output
-		std::vector<uint8_t> save(Format format) const;
-
-	private:
-		Magick::Image	_image;
-};
+		private:
+			Magick::Image	_image;
+	};
 
 
-} // namespace Image
+} // namespace CoverArt
 

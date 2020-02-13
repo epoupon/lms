@@ -40,8 +40,9 @@ class IGrabber
 
 		virtual std::vector<uint8_t>	getFromTrack(Database::Session& dbSession, Database::IdType trackId, Format format, std::size_t width) = 0;
 		virtual std::vector<uint8_t>	getFromRelease(Database::Session& dbSession, Database::IdType releaseId, Format format, std::size_t width) = 0;
-
 };
+
+std::unique_ptr<IGrabber> createGrabber(const std::filesystem::path& execPath);
 
 } // namespace CoverArt
 

@@ -17,14 +17,27 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "image/Image.hpp"
+#include "Image.hpp"
 
 #include "utils/Logger.hpp"
 
-namespace Image {
+namespace CoverArt {
+
+void
+init(const std::filesystem::path& path)
+{
+	Magick::InitializeMagick(path.string().c_str());
+}
+
+void
+deinit()
+{
+	MagickCore::MagickCoreTerminus();
+}
 
 static
-std::string format_to_magick(Format format)
+std::string
+formatToMagick(Format format)
 {
 	switch (format)
 	{
@@ -34,7 +47,8 @@ std::string format_to_magick(Format format)
 	return "JPEG";
 }
 
-std::string format_to_mimeType(Format format)
+std::string
+formatToMimeType(Format format)
 {
 	switch (format)
 	{
@@ -44,18 +58,13 @@ std::string format_to_mimeType(Format format)
 	return "application/octet-stream";
 }
 
-void
-init(const char *path)
-{
-	Magick::InitializeMagick(path);
-}
 
 bool
 Image::load(const std::vector<unsigned char>& rawData)
 {
 	try
 	{
-		Magick::Blob blob(&rawData[0], rawData.size());
+		Magick::Blob blob {&rawData[0], rawData.size()};
 		_image.read(blob);
 
 		return true;
@@ -116,9 +125,9 @@ Image::save(Format format) const
 
 	try
 	{
-		Magick::Image outputImage(_image);
+		Magick::Image outputImage {_image};
 
-		outputImage.magick( format_to_magick(format));
+		outputImage.magick(formatToMagick(format));
 
 		Magick::Blob blob;
 		outputImage.write(&blob);
@@ -135,4 +144,5 @@ Image::save(Format format) const
 	}
 }
 
-} // namespace Image
+} // namespace CoverArt
+

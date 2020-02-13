@@ -27,9 +27,8 @@
 #include "av/AvTranscoder.hpp"
 #include "auth/IAuthTokenService.hpp"
 #include "auth/IPasswordService.hpp"
-#include "cover/CoverArtGrabber.hpp"
+#include "cover/ICoverArtGrabber.hpp"
 #include "database/Db.hpp"
-#include "image/Image.hpp"
 #include "scanner/MediaScanner.hpp"
 #include "recommendation/FeaturesRecommendationProviderCreator.hpp"
 #include "recommendation/IEngine.hpp"
@@ -130,7 +129,6 @@ int main(int argc, char* argv[])
 		server.setServerConfiguration (wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
 
 		// lib init
-		Image::init(argv[0]);
 		Av::Transcoder::init();
 
 		// Initializing a connection pool to the database that will be shared along services
@@ -151,7 +149,7 @@ int main(int argc, char* argv[])
 		recommendationEngine.addProvider(Recommendation::createFeaturesRecommendationProvider(mediaScanner), 0);
 		recommendationEngine.addProvider(Recommendation::createClustersRecommendationProvider(), 1);
 
-		CoverArt::Grabber& coverArtGrabber {ServiceProvider<CoverArt::Grabber>::create()};
+		CoverArt::IGrabber& coverArtGrabber {ServiceProvider<CoverArt::IGrabber>::assign(CoverArt::createGrabber(argv[0]))};
 		coverArtGrabber.setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
 
 		API::Subsonic::SubsonicResource subsonicResource {database};

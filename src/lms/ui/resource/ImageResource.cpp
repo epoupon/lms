@@ -22,7 +22,7 @@
 #include <Wt/WApplication.h>
 #include <Wt/Http/Response.h>
 
-#include "cover/CoverArtGrabber.hpp"
+#include "cover/ICoverArtGrabber.hpp"
 #include "database/Track.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
@@ -32,9 +32,6 @@
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
-
-static const std::string unknownCoverPath = "/images/unknown-cover.jpg";
-static const std::string unknownArtistImagePath = "/images/unknown-artist.jpg";
 
 ImageResource::~ImageResource()
 {
@@ -80,7 +77,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// DbSession are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock {LmsApp};
-			cover = ServiceProvider<CoverArt::Grabber>::get()->getFromTrack(LmsApp->getDbSession(), *trackId, Image::Format::JPEG, *size);
+			cover = ServiceProvider<CoverArt::IGrabber>::get()->getFromTrack(LmsApp->getDbSession(), *trackId, CoverArt::Format::JPEG, *size);
 		}
 	}
 	else if (releaseIdStr)
@@ -92,7 +89,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// DbSession are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock {LmsApp};
-			cover = ServiceProvider<CoverArt::Grabber>::get()->getFromRelease(LmsApp->getDbSession(), *releaseId, Image::Format::JPEG, *size);
+			cover = ServiceProvider<CoverArt::IGrabber>::get()->getFromRelease(LmsApp->getDbSession(), *releaseId, CoverArt::Format::JPEG, *size);
 		}
 	}
 	else
@@ -106,7 +103,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 std::string
 ImageResource::getMimeType()
 {
-	return Image::format_to_mimeType(Image::Format::JPEG);
+	return CoverArt::formatToMimeType(CoverArt::Format::JPEG);
 }
 
 } // namespace UserInterface

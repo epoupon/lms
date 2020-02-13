@@ -29,7 +29,7 @@
 #include <Wt/WStackedWidget.h>
 #include <Wt/WText.h>
 
-#include "cover/CoverArtGrabber.hpp"
+#include "cover/ICoverArtGrabber.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"

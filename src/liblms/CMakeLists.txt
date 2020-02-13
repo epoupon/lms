@@ -10,6 +10,7 @@ add_library(liblms SHARED
 	impl/av/AvTranscoder.cpp
 	impl/av/AvTypes.cpp
 	impl/cover/CoverArtGrabber.cpp
+	impl/cover/Image.cpp
 	impl/database/Artist.cpp
 	impl/database/Cluster.cpp
 	impl/database/Db.cpp
@@ -43,18 +44,21 @@ add_library(liblms SHARED
 	impl/utils/WtLogger.cpp
 	)
 
-include_directories(liblms include/)
-
 target_include_directories(liblms INTERFACE
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	)
 
-# TODO make this private
-target_include_directories(liblms PUBLIC ${IMAGEMAGICKXX_INCLUDE_DIRS})
-target_link_libraries(liblms PUBLIC ${IMAGEMAGICKXX_LIBRARIES})
-target_compile_options(liblms PUBLIC ${IMAGEMAGICKXX_CFLAGS_OTHER})
+target_include_directories(liblms PRIVATE
+	include/
+	${IMAGEMAGICKXX_INCLUDE_DIRS}
+	)
+
+target_compile_options(liblms PRIVATE
+	${IMAGEMAGICKXX_CFLAGS_OTHER}
+	)
 
 target_link_libraries(liblms PRIVATE
+	${IMAGEMAGICKXX_LIBRARIES}
 	avformat
 	avutil
 	config++
