@@ -8,8 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 find_package(PkgConfig)
 pkg_check_modules(IMAGEMAGICKXX REQUIRED ImageMagick++)
 
+enable_testing()
 
-SUBDIRS(src)
+add_subdirectory(src)
 
 install(DIRECTORY approot DESTINATION share/lms)
 install(DIRECTORY docroot DESTINATION share/lms)

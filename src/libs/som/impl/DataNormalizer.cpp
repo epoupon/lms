@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "DataNormalizer.hpp"
+#include "som/DataNormalizer.hpp"
 
 #include <algorithm>
 #include <numeric>

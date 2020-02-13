@@ -23,6 +23,8 @@
 #include <vector>
 #include <cmath>
 
+#include "utils/Exception.hpp"
+
 namespace SOM
 {
 

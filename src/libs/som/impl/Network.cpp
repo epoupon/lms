@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Network.hpp"
+#include "som/Network.hpp"
 
 #include <algorithm>
 #include <chrono>

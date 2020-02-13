@@ -21,8 +21,8 @@
 #include <cassert>
 #include <iostream>
 
-#include "DataNormalizer.hpp"
-#include "Network.hpp"
+#include "som/DataNormalizer.hpp"
+#include "som/Network.hpp"
 
 using namespace SOM;
 

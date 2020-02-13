@@ -25,7 +25,6 @@
 #include <ostream>
 #include <functional>
 
-#include "utils/Exception.hpp"
 #include "InputVector.hpp"
 #include "Matrix.hpp"
 

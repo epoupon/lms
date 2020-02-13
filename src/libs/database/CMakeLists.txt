@@ -35,3 +35,4 @@ target_link_libraries(lmsdatabase PUBLIC
 
 install(TARGETS lmsdatabase DESTINATION lib)
 
+add_subdirectory(test)

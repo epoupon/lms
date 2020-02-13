@@ -2,8 +2,6 @@
 add_library(lmsrecommendation SHARED
 	impl/Engine.cpp
 	impl/ProviderCreator.cpp
-	impl/features/som/DataNormalizer.cpp
-	impl/features/som/Network.cpp
 	)
 
 target_include_directories(lmsrecommendation INTERFACE
@@ -16,9 +14,7 @@ target_include_directories(lmsrecommendation PRIVATE
 
 target_link_libraries(lmsrecommendation PRIVATE
 	lmsdatabase
-	)
-
-target_link_libraries(lmsrecommendation PUBLIC
+	lmssom
 	)
 
 install(TARGETS lmsrecommendation DESTINATION lib)
