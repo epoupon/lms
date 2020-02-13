@@ -57,6 +57,10 @@ std::optional<T> readAs(const std::string& str)
 	return res;
 }
 
+template<>
+std::optional<std::string>
+readAs(const std::string& str);
+
 std::string
 replaceInString(const std::string& str, const std::string& from, const std::string& to);
 
