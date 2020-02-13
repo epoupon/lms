@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "metadata/TagLibParser.hpp"
+#include "TagLibParser.hpp"
 
 #include <taglib/asffile.h>
 #include <taglib/id3v2tag.h>

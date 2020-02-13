@@ -27,6 +27,7 @@
 #include <Wt/WTemplateFormView.h>
 
 #include "database/Cluster.hpp"
+#include "database/ScanSettings.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -229,7 +230,7 @@ DatabaseSettingsView::refreshView()
 		{
 			model->saveData();
 
-			ServiceProvider<Scanner::MediaScanner>::get()->requestReschedule();
+			ServiceProvider<Scanner::IMediaScanner>::get()->requestReschedule();
 			LmsApp->notifyMsg(MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}
 
@@ -246,7 +247,7 @@ DatabaseSettingsView::refreshView()
 
 	immScanBtn->clicked().connect([=] ()
 	{
-		ServiceProvider<Scanner::MediaScanner>::get()->requestImmediateScan();
+		ServiceProvider<Scanner::IMediaScanner>::get()->requestImmediateScan();
 		LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
 	});
 

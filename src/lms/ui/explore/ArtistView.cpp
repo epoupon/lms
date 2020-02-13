@@ -26,6 +26,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
+#include "database/ScanSettings.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"

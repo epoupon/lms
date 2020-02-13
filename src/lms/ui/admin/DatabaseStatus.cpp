@@ -27,7 +27,6 @@
 #include <Wt/WResource.h>
 
 #include "utils/Service.hpp"
-#include "scanner/MediaScanner.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
@@ -136,7 +135,7 @@ DatabaseStatus::refreshContents()
 
 	Wt::WPushButton* reportBtn {bindNew<Wt::WPushButton>("btn-report", Wt::WString::tr("Lms.Admin.Database.Status.get-report"))};
 
-	const MediaScanner::Status status {ServiceProvider<MediaScanner>::get()->getStatus()};
+	const IMediaScanner::Status status {ServiceProvider<IMediaScanner>::get()->getStatus()};
 	if (status.lastCompleteScanStats)
 	{
 		bindString("last-scan", Wt::WString::tr("Lms.Admin.Database.Status.last-scan-status")
@@ -160,14 +159,14 @@ DatabaseStatus::refreshContents()
 
 	switch (status.currentState)
 	{
-		case MediaScanner::State::NotScheduled:
+		case IMediaScanner::State::NotScheduled:
 			bindString("status", Wt::WString::tr("Lms.Admin.Database.Status.status-not-scheduled"));
 			break;
-		case MediaScanner::State::Scheduled:
+		case IMediaScanner::State::Scheduled:
 			bindString("status", Wt::WString::tr("Lms.Admin.Database.Status.status-scheduled")
 					.arg(status.nextScheduledScan.toString()));
 			break;
-		case MediaScanner::State::InProgress:
+		case IMediaScanner::State::InProgress:
 			{
 				std::ostringstream oss;
 				bindString("status", Wt::WString::tr("Lms.Admin.Database.Status.status-in-progress")

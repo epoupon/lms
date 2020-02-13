@@ -528,7 +528,7 @@ LmsApplication::createHome()
 	// Events from MediaScanner
 	{
 		const std::string sessionId {LmsApp->sessionId()};
-		ServiceProvider<Scanner::MediaScanner>::get()->scanComplete().connect(this, [=] ()
+		ServiceProvider<Scanner::IMediaScanner>::get()->scanComplete().connect(this, [=] ()
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
@@ -537,7 +537,7 @@ LmsApplication::createHome()
 			});
 		});
 
-		ServiceProvider<Scanner::MediaScanner>::get()->scanInProgress().connect(this, [=] (Scanner::ScanProgressStats stats)
+		ServiceProvider<Scanner::IMediaScanner>::get()->scanInProgress().connect(this, [=] (Scanner::ScanProgressStats stats)
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
@@ -546,7 +546,7 @@ LmsApplication::createHome()
 			});
 		});
 
-		ServiceProvider<Scanner::MediaScanner>::get()->scheduled().connect(this, [=] (Wt::WDateTime dateTime)
+		ServiceProvider<Scanner::IMediaScanner>::get()->scheduled().connect(this, [=] (Wt::WDateTime dateTime)
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
@@ -561,7 +561,7 @@ LmsApplication::createHome()
 	{
 		if (isUserAdmin())
 		{
-			const auto& stats {*ServiceProvider<Scanner::MediaScanner>::get()->getStatus().lastCompleteScanStats};
+			const auto& stats {*ServiceProvider<Scanner::IMediaScanner>::get()->getStatus().lastCompleteScanStats};
 
 			notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-complete")
 				.arg(static_cast<unsigned>(stats.nbFiles()))

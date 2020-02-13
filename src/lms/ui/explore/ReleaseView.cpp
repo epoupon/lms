@@ -26,6 +26,7 @@
 #include <Wt/WText.h>
 
 #include "database/Release.hpp"
+#include "database/ScanSettings.hpp"
 #include "database/Track.hpp"
 
 #include "utils/Logger.hpp"

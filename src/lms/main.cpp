@@ -22,17 +22,17 @@
 #include <Wt/WServer.h>
 #include <Wt/WApplication.h>
 
-#include "api/subsonic/SubsonicResource.hpp"
-#include "av/AvInfo.hpp"
-#include "av/AvTranscoder.hpp"
 #include "auth/IAuthTokenService.hpp"
 #include "auth/IPasswordService.hpp"
+#include "av/AvInfo.hpp"
+#include "av/AvTranscoder.hpp"
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Db.hpp"
-#include "scanner/MediaScanner.hpp"
+#include "scanner/IMediaScanner.hpp"
 #include "recommendation/FeaturesRecommendationProviderCreator.hpp"
 #include "recommendation/IEngine.hpp"
 #include "recommendation/ClustersRecommendationProviderCreator.hpp"
+#include "subsonic/SubsonicResource.hpp"
 #include "ui/LmsApplication.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Service.hpp"
@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
 		// Service initialization order is important
 		ServiceProvider<Auth::IAuthTokenService>::assign(Auth::createAuthTokenService(ServiceProvider<IConfig>::get()->getULong("login-throttler-max-entriees", 10000)));
 		ServiceProvider<Auth::IPasswordService>::assign(Auth::createPasswordService(ServiceProvider<IConfig>::get()->getULong("login-throttler-max-entriees", 10000)));
-		Scanner::MediaScanner& mediaScanner {ServiceProvider<Scanner::MediaScanner>::create(database)};
+		Scanner::IMediaScanner& mediaScanner {ServiceProvider<Scanner::IMediaScanner>::assign(Scanner::createMediaScanner(database))};
 
 		Recommendation::IEngine& recommendationEngine {ServiceProvider<Recommendation::IEngine>::assign(Recommendation::createEngine())};
 		recommendationEngine.addProvider(Recommendation::createFeaturesRecommendationProvider(mediaScanner), 0);

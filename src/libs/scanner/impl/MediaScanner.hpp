@@ -29,56 +29,33 @@
 
 #include <boost/asio/system_timer.hpp>
 
+#include "scanner/IMediaScanner.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
 #include "metadata/TagLibParser.hpp"
 
-#include "MediaScannerAddon.hpp"
-#include "MediaScannerStats.hpp"
 
 namespace Scanner {
 
-class MediaScanner
+class MediaScanner : public IMediaScanner
 {
 	public:
 		MediaScanner(Database::Db& db);
 
-		void setAddon(MediaScannerAddon& addon);
+		void setAddon(MediaScannerAddon& addon) override;
 
-		void start();
-		void stop();
-		void restart();
+		void start() override;
+		void stop() override;
+		void restart() override;
 
-		// Async requests
-		void requestImmediateScan();
-		void requestReschedule();
+		void requestImmediateScan() override;
+		void requestReschedule() override ;
 
+		Status getStatus() override;
 
-		enum class State
-		{
-			NotScheduled,
-			Scheduled,
-			InProgress,
-		};
-
-		struct Status
-		{
-			State					currentState {State::NotScheduled};
-			Wt::WDateTime				nextScheduledScan;
-			std::optional<ScanStats>		lastCompleteScanStats;
-			std::optional<ScanProgressStats>	inProgressScanStats;
-		};
-
-		Status getStatus();
-
-		// Called just after scan complete
-		Wt::Signal<>& scanComplete() { return _sigScanComplete; }
-
-		// Called during scan in progress
-		Wt::Signal<ScanProgressStats>& scanInProgress() { return _sigScanInProgress; }
-
-		// Called after a schedule
-		Wt::Signal<Wt::WDateTime>& scheduled() { return _sigScheduled; }
+		Wt::Signal<>& scanComplete() override { return _sigScanComplete; }
+		Wt::Signal<ScanProgressStats>& scanInProgress() override { return _sigScanInProgress; }
+		Wt::Signal<Wt::WDateTime>& scheduled() override { return _sigScheduled; }
 
 	private:
 

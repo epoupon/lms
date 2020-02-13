@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "scanner/MediaScanner.hpp"
+#include "MediaScanner.hpp"
 
 #include <boost/asio/placeholders.hpp>
 
@@ -190,6 +190,12 @@ getOrCreateClusters(Session& session, const MetaData::Clusters& clustersNames)
 } // namespace
 
 namespace Scanner {
+
+std::unique_ptr<IMediaScanner>
+createMediaScanner(Database::Db& db)
+{
+	return std::make_unique<MediaScanner>(db);
+}
 
 MediaScanner::MediaScanner(Database::Db& db)
 : _dbSession {db}

@@ -38,7 +38,14 @@ target_include_directories(lms PRIVATE
 	)
 
 target_link_libraries(lms PRIVATE
-	liblms
+	lmsav
+	lmsauth
+	lmscover
+	lmsdatabase
+	lmsrecommendation
+	lmsscanner
+	lmssubsonic
+	lmsutils
 	wt
 	wthttp
 	)

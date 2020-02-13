@@ -25,7 +25,7 @@
 
 #include "database/Db.hpp"
 #include "database/Session.hpp"
-#include "scanner/MediaScanner.hpp"
+#include "scanner/IMediaScanner.hpp"
 
 #include "LmsApplicationGroup.hpp"
 
