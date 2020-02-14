@@ -22,7 +22,7 @@ before_install:
 - git checkout 4.1.0
 - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr && sudo make install
 - popd
-script: cmake . && make && make test
+script: cmake -DCMAKE_BUILD_TYPE=Release . && make && make test
 env:
   global:
     - MAKEFLAGS="-j 2"

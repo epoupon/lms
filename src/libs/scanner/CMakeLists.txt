@@ -1,7 +1,5 @@
 
 add_library(lmsscanner SHARED
-	impl/metadata/AvFormat.cpp
-	impl/metadata/TagLibParser.cpp
 	impl/MediaScanner.cpp
 	impl/MediaScannerStats.cpp
 	)
@@ -15,10 +13,9 @@ target_include_directories(lmsscanner PRIVATE
 	)
 
 target_link_libraries(lmsscanner PRIVATE
-	lmsav
 	lmsdatabase
+	lmsmetadata
 	lmsutils
-	tag
 	)
 
 target_link_libraries(lmsscanner PUBLIC

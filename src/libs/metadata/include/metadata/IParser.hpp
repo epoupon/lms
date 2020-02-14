@@ -26,7 +26,6 @@
 #include <set>
 #include <vector>
 
-//#include "utils/Utils.hpp"
 #include "utils/UUID.hpp"
 
 namespace MetaData
@@ -73,7 +72,7 @@ namespace MetaData
 		std::string			copyrightURL;
 	};
 
-	class Parser
+	class IParser
 	{
 		public:
 			virtual std::optional<Track> parse(const std::filesystem::path& p, bool debug = false) = 0;

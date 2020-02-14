@@ -17,13 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "AvFormat.hpp"
+#include "metadata/AvFormatParser.hpp"
 
 #include <algorithm>
 #include <iostream>
 
 #include "av/AvInfo.hpp"
-
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
@@ -128,7 +127,7 @@ getArtists(const MetadataMap& metadataMap)
 }
 
 std::optional<Track>
-AvFormat::parse(const std::filesystem::path& p, bool debug)
+AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 {
 	Track track;
 

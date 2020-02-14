@@ -29,10 +29,10 @@
 
 #include <boost/asio/system_timer.hpp>
 
-#include "scanner/IMediaScanner.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
 #include "metadata/TagLibParser.hpp"
+#include "scanner/IMediaScanner.hpp"
 
 
 namespace Scanner {

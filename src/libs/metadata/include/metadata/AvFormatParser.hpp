@@ -19,13 +19,13 @@
 
 #pragma once
 
-#include "MetaData.hpp"
+#include "metadata/IParser.hpp"
 
 namespace MetaData
 {
 
 // Parse that makes use of AvFormat
-class AvFormat : public Parser
+class AvFormatParser : public IParser
 {
 	public:
 		std::optional<Track> parse(const std::filesystem::path& p, bool debug = false) override;

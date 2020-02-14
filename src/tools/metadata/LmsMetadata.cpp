@@ -25,8 +25,7 @@
 
 #include <Wt/WDate.h>
 
-#include "av/AvInfo.hpp"
-#include "metadata/AvFormat.hpp"
+#include "metadata/AvFormatParser.hpp"
 #include "metadata/TagLibParser.hpp"
 #include "utils/StreamLogger.hpp"
 
@@ -52,7 +51,7 @@ std::ostream& operator<<(std::ostream& os, const MetaData::Album& album)
 
 
 
-void parse(MetaData::Parser& parser, const std::filesystem::path& file)
+void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 {
 	using namespace MetaData;
 
@@ -155,7 +154,7 @@ int main(int argc, char *argv[])
 
 			{
 				std::cout << "Using av:" << std::endl;
-				MetaData::AvFormat parser;
+				MetaData::AvFormatParser parser;
 				parse(parser, file);
 			}
 
