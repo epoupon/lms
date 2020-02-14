@@ -16,4 +16,3 @@ target_link_libraries(lmssom PUBLIC
 	lmsutils
 	)
 
-add_subdirectory(test)
