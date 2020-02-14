@@ -95,7 +95,14 @@ getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artist
 		{
 			artist = Artist::getByMBID(session, *artistInfo.musicBrainzArtistID);
 			if (!artist)
+			{
 				artist = Artist::create(session, artistInfo.name, artistInfo.musicBrainzArtistID);
+			}
+			else if (artist->getName() != artistInfo.name)
+			{
+				// Name may have been updated
+				artist.modify()->setName(artistInfo.name);
+			}
 
 			artists.emplace_back(std::move(artist));
 			continue;
@@ -136,7 +143,14 @@ getOrCreateRelease(Session& session, const MetaData::Album& album)
 	{
 		release = Release::getByMBID(session, *album.musicBrainzAlbumID);
 		if (!release)
+		{
 			release = Release::create(session, album.name, album.musicBrainzAlbumID);
+		}
+		else if (release->getName() != album.name)
+		{
+			// Name may have been updated
+			release.modify()->setName(album.name);
+		}
 
 		return release;
 	}
