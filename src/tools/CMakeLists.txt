@@ -1,5 +1,5 @@
 
 add_subdirectory(metadata)
-add_subdirectory(recommendation-features)
+add_subdirectory(recommendation)
 
 
