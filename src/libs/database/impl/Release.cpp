@@ -252,6 +252,21 @@ Release::getByFilter(Session& session,
 	return res;
 }
 
+std::vector<IdType>
+Release::getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit)
+{
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<IdType> res = session.getDboSession().query<IdType>
+		("SELECT DISTINCT r.id FROM release r"
+		 	" INNER JOIN track t ON t.release_id = r.id"
+		 	" INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+		.limit(limit ? static_cast<int>(*limit) : -1);
+
+	return std::vector<IdType>(res.begin(), res.end());
+}
+
+
 std::optional<std::size_t>
 Release::getTotalTrackNumber(void) const
 {

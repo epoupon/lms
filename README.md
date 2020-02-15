@@ -17,7 +17,7 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 * Audio transcode for maximum interoperability and low bandwith requirements
 * Persistent play queue across sessions
 * Subsonic API
-* Album artist
+* Compilation support
 * Multi-value tags: artists, genres, ...
 * Custom tags (ex: _mood_, _genre_, _albummood_, _albumgrouping_, ...)
 * MusicBrainzID support to handle duplicated artist and release names

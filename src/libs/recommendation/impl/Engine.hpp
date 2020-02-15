@@ -22,7 +22,7 @@
 #include <map>
 
 #include "recommendation/IEngine.hpp"
-#include "recommendation/Classifier.hpp"
+#include "recommendation/IClassifier.hpp"
 
 namespace Database
 {
@@ -34,17 +34,22 @@ namespace Recommendation
 	class Engine : public IEngine
 	{
 		public:
+			Engine(Database::Session& session);
+
+		private:
+
+			void reloadSettings(Database::Session& session) override;
+
 			// Closest results first
 			std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) override;
 			std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) override;
 			std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) override;
 			std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) override;
 
-		private:
 			void clearClassifiers();
-			void addClassifier(std::unique_ptr<Classifier> classifier, unsigned priority);
+			void addClassifier(std::unique_ptr<IClassifier> classifier, unsigned priority);
 
-			std::map<unsigned, std::unique_ptr<Classifier>> _classifiers;
+			std::map<unsigned, std::unique_ptr<IClassifier>> _classifiers;
 	};
 
 } // ns Recommendation

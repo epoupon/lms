@@ -23,7 +23,6 @@
 #include <unordered_set>
 
 #include "database/Types.hpp"
-#include "Classifier.hpp"
 
 namespace Database
 {
@@ -32,11 +31,12 @@ namespace Database
 
 namespace Recommendation
 {
-	class Classifier;
 	class IEngine
 	{
 		public:
 			virtual ~IEngine() = default;
+
+			virtual void reloadSettings(Database::Session& session) = 0;
 
 			// Closest results first
 			virtual std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) = 0;
@@ -45,7 +45,7 @@ namespace Recommendation
 			virtual std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) = 0;
 	};
 
-	std::unique_ptr<IEngine> createEngine();
+	std::unique_ptr<IEngine> createEngine(Database::Session& session);
 
 } // ns Recommendation
 

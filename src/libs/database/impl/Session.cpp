@@ -118,7 +118,7 @@ Session::doDatabaseMigrationIfNeeded()
 		{
 			_session.execute("DROP TABLE similarity_settings");
 			_session.execute("DROP TABLE similarity_settings_feature");
-			_session.execute("ALTER TABLE scan_settings ADD similarity_engine_type INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(ScanSettings::SimilarityEngineType::Clusters)) + ")");
+			_session.execute("ALTER TABLE scan_settings ADD similarity_engine_type INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(ScanSettings::RecommendationEngineType::Clusters)) + ")");
 		}
 		else if (version == 8)
 		{

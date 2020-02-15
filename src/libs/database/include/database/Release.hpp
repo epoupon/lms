@@ -66,6 +66,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 							std::optional<std::size_t> offset,
 							std::optional<std::size_t> size,
 							bool& moreExpected);
+		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
 
 		std::vector<Wt::Dbo::ptr<Track>> getTracks(const std::set<IdType>& clusters = std::set<IdType>()) const;
 		std::size_t			getTracksCount() const;

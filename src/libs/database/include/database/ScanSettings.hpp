@@ -43,7 +43,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		};
 
 		// Do not modify values (just add)
-		enum class SimilarityEngineType
+		enum class RecommendationEngineType
 		{
 			Clusters = 0,
 			Features,
@@ -60,7 +60,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		UpdatePeriod getUpdatePeriod() const { return _updatePeriod; }
 		std::vector<Wt::Dbo::ptr<ClusterType>> getClusterTypes() const;
 		std::set<std::filesystem::path> getAudioFileExtensions() const;
-		SimilarityEngineType getSimilarityEngineType() const { return _similarityEngineType; }
+		RecommendationEngineType getRecommendationEngineType() const { return _recommendationEngineType; }
 
 		// Setters
 		void addAudioFileExtension(const std::filesystem::path& ext);
@@ -68,7 +68,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
 		void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
 		void setClusterTypes(Session& session, const std::set<std::string>& clusterTypeNames);
-		void setSimilarityEngineType(SimilarityEngineType type) { _similarityEngineType = type; }
+		void setRecommendationEngineType(RecommendationEngineType type) { _recommendationEngineType = type; }
 		void incScanVersion();
 
 		template<class Action>
@@ -79,7 +79,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 			Wt::Dbo::field(a, _startTime,		"start_time");
 			Wt::Dbo::field(a, _updatePeriod,	"update_period");
 			Wt::Dbo::field(a, _audioFileExtensions,	"audio_file_extensions");
-			Wt::Dbo::field(a, _similarityEngineType,"similarity_engine_type");
+			Wt::Dbo::field(a, _recommendationEngineType,"similarity_engine_type");
 			Wt::Dbo::hasMany(a, _clusterTypes, Wt::Dbo::ManyToOne, "scan_settings");
 		}
 
@@ -89,7 +89,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		std::string	_mediaDirectory;
 		Wt::WTime	_startTime = Wt::WTime {0,0,0};
 		UpdatePeriod	_updatePeriod {UpdatePeriod::Never};
-		SimilarityEngineType _similarityEngineType {SimilarityEngineType::Clusters};
+		RecommendationEngineType _recommendationEngineType {RecommendationEngineType::Clusters};
 		std::string	_audioFileExtensions {".alac .mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus"};
 		Wt::Dbo::collection<Wt::Dbo::ptr<ClusterType>>	_clusterTypes;
 };

@@ -21,15 +21,10 @@
 
 #include <memory>
 
-namespace Database
-{
-	class Session;
-}
-
 namespace Recommendation
 {
-	class Classifier;
+	class IClassifier;
 
-	std::unique_ptr<Classifier> createFeaturesClassifier();
+	std::unique_ptr<IClassifier> createFeaturesClassifier();
 }
 

@@ -143,7 +143,10 @@ int main(int argc, char* argv[])
 		ServiceProvider<Auth::IPasswordService>::assign(Auth::createPasswordService(ServiceProvider<IConfig>::get()->getULong("login-throttler-max-entriees", 10000)));
 		Scanner::IMediaScanner& mediaScanner {ServiceProvider<Scanner::IMediaScanner>::assign(Scanner::createMediaScanner(database))};
 
-		ServiceProvider<Recommendation::IEngine>::assign(Recommendation::createEngine());
+		{
+			Database::Session session {database};
+			ServiceProvider<Recommendation::IEngine>::assign(Recommendation::createEngine(session));
+		}
 
 		CoverArt::IGrabber& coverArtGrabber {ServiceProvider<CoverArt::IGrabber>::assign(CoverArt::createGrabber(argv[0]))};
 		coverArtGrabber.setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");

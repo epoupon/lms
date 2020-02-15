@@ -17,22 +17,17 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "recommendation/ClustersClassifierCreator.hpp"
 #include "recommendation/FeaturesClassifierCreator.hpp"
-#include "recommendation/Classifier.hpp"
+#include "recommendation/IClassifier.hpp"
 
 namespace Recommendation
 {
 
-	std::unique_ptr<Classifier> createClustersClassifier()
+	std::unique_ptr<IClassifier> createFeaturesClassifier()
 	{
 		return {};
 	}
 	
-	std::unique_ptr<Classifier> createFeaturesClassifier()
-	{
-		return {};
-	}
 
 }
 

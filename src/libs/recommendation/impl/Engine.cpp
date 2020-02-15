@@ -19,30 +19,49 @@
 
 #include "Engine.hpp"
 
-//#include "features/SimilarityFeaturesScannerAddon.hpp"
-//#include "cluster/SimilarityClusterSearcher.hpp"
+#include "recommendation/ClustersClassifierCreator.hpp"
+#include "recommendation/FeaturesClassifierCreator.hpp"
 
 #include "database/ScanSettings.hpp"
+#include "database/Session.hpp"
 #include "database/TrackList.hpp"
 
 namespace Recommendation {
 
 std::unique_ptr<IEngine>
-createEngine()
+createEngine(Database::Session& session)
 {
-	return std::make_unique<Engine>();
+	return std::make_unique<Engine>(session);
+}
+
+Engine::Engine(Database::Session& session)
+{
+	reloadSettings(session);
 }
 
 void
-Engine::clearClassifiers()
+Engine::reloadSettings(Database::Session& session)
 {
-	_classifiers.clear();
-}
+	using namespace Database;
 
-void
-Engine::addClassifier(std::unique_ptr<Classifier> classifier, unsigned priority)
-{
-	_classifiers.emplace(priority, std::move(classifier));
+	const ScanSettings::RecommendationEngineType engineType {[&]()
+	{
+		auto transaction {session.createSharedTransaction()};
+		return ScanSettings::get(session)->getRecommendationEngineType();
+	}()};
+
+	clearClassifiers();
+
+	switch (engineType)
+	{
+		case ScanSettings::RecommendationEngineType::Features:
+//			_classifiers.emplace(0, createFeaturesClassifier()); // higher priority
+//			[[fallthrough]];
+
+		case ScanSettings::RecommendationEngineType::Clusters:
+			_classifiers.emplace(1, createClustersClassifier(session)); // lower priority
+			break;
+	}
 }
 
 std::vector<Database::IdType>
@@ -79,60 +98,52 @@ Engine::getSimilarTracksFromTrackList(Database::Session& /*session*/, Database::
 }
 
 std::vector<Database::IdType>
-Engine::getSimilarTracks(Database::Session& /*dbSession*/, const std::unordered_set<Database::IdType>& /*trackIds*/, std::size_t /*maxCount*/)
+Engine::getSimilarTracks(Database::Session& dbSession, const std::unordered_set<Database::IdType>& trackIds, std::size_t maxCount)
 {
-#if 0
-	auto engineType {getEngineType(dbSession)};
-	auto somSearcher {_somAddon.getSearcher()};
-
-	if (engineType == Database::ScanSettings::SimilarityEngineType::Features
-		&& somSearcher
-		&& std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return somSearcher->isTrackClassified(trackId); } ))
+	for (const auto& [priority, classifier] : _classifiers)
 	{
-		return somSearcher->getSimilarTracks(trackIds, maxCount);
+		if (std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return classifier->isTrackClassified(trackId); } ))
+			return classifier->getSimilarTracks(dbSession, trackIds, maxCount);
 	}
-	else
-		return ClusterEngine::getSimilarTracks(dbSession, trackIds, maxCount);
-#endif
+
 	return {};
 }
 
 std::vector<Database::IdType>
-Engine::getSimilarReleases(Database::Session& /*dbSession*/, Database::IdType /*releaseId*/, std::size_t /*maxCount*/)
+Engine::getSimilarReleases(Database::Session& dbSession, Database::IdType releaseId, std::size_t maxCount)
 {
-#if 0
-	auto engineType {getEngineType(dbSession)};
-	auto somSearcher {_somAddon.getSearcher()};
-
-	if (engineType == Database::ScanSettings::SimilarityEngineType::Features
-		&& somSearcher
-		&& somSearcher->isReleaseClassified(releaseId))
+	for (const auto& [priority, classifier] : _classifiers)
 	{
-		return somSearcher->getSimilarReleases(releaseId, maxCount);
+		if (classifier->isReleaseClassified(releaseId))
+			return classifier->getSimilarReleases(dbSession, releaseId, maxCount);
 	}
-	else
-		return ClusterEngine::getSimilarReleases(dbSession, releaseId, maxCount);
-#endif
+
 	return {};
 }
 
 std::vector<Database::IdType>
-Engine::getSimilarArtists(Database::Session& /*dbSession*/, Database::IdType /*artistId*/, std::size_t /*maxCount*/)
+Engine::getSimilarArtists(Database::Session& dbSession, Database::IdType artistId, std::size_t maxCount)
 {
-#if 0
-	auto engineType {getEngineType(dbSession)};
-	auto somSearcher {_somAddon.getSearcher()};
-
-	if (engineType == Database::ScanSettings::SimilarityEngineType::Features
-		&& somSearcher
-		&& somSearcher->isArtistClassified(artistId))
+	for (const auto& [priority, classifier] : _classifiers)
 	{
-		return somSearcher->getSimilarArtists(artistId, maxCount);
+		if (classifier->isArtistClassified(artistId))
+			return classifier->getSimilarArtists(dbSession, artistId, maxCount);
 	}
-	else
-		return ClusterEngine::getSimilarArtists(dbSession, artistId, maxCount);
-#endif
+
 	return {};
 }
+
+void
+Engine::clearClassifiers()
+{
+	_classifiers.clear();
+}
+
+void
+Engine::addClassifier(std::unique_ptr<IClassifier> classifier, unsigned priority)
+{
+	_classifiers.emplace(priority, std::move(classifier));
+}
+
 
 } // ns Similarity

@@ -163,6 +163,19 @@ Track::getAllIdsWithFeatures(Session& session, std::optional<std::size_t> limit)
 	return std::vector<IdType>(res.begin(), res.end());
 }
 
+std::vector<IdType>
+Track::getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit)
+{
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<IdType> res = session.getDboSession().query<IdType>
+		("SELECT DISTINCT t.id FROM track t"
+		 	" INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+		.limit(limit ? static_cast<int>(*limit) : -1);
+
+	return std::vector<IdType>(res.begin(), res.end());
+}
+
 std::vector<Cluster::pointer>
 Track::getClusters(void) const
 {
@@ -263,7 +276,7 @@ Track::getByFilter(Session& session,
 
 std::vector<Track::pointer>
 Track::getSimilarTracks(Session& session,
-				const std::set<IdType>& tracks,
+				const std::unordered_set<IdType>& tracks,
 				std::optional<std::size_t> offset,
 				std::optional<std::size_t> size)
 {

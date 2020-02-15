@@ -22,8 +22,9 @@
 #include <chrono>
 #include <filesystem>
 #include <optional>
-#include <vector>
 #include <string>
+#include <unordered_set>
+#include <vector>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
@@ -58,7 +59,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static pointer getById(Session& session, IdType id);
 		static pointer getByMBID(Session& session, const UUID& MBID);
 		static std::vector<pointer>	getSimilarTracks(Session& session,
-							const std::set<IdType>& trackIds,
+							const std::unordered_set<IdType>& trackIds,
 							std::optional<std::size_t> offset = {},
 							std::optional<std::size_t> size = {});
 		static std::vector<pointer>	getByClusters(Session& session,
@@ -78,6 +79,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> size = 1);
 		static std::vector<pointer>	getAllWithMBIDAndMissingFeatures(Session& session);
 		static std::vector<IdType>	getAllIdsWithFeatures(Session& session, std::optional<std::size_t> limit = {});
+		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
 
 		// Create utility
 		static pointer	create(Session& session, const std::filesystem::path& p);

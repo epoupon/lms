@@ -454,9 +454,21 @@ testSingleTrackSingleCluster(Session& session)
 	}
 
 	{
+		auto transaction {session.createSharedTransaction()};
+		CHECK(Track::getAllIdsWithClusters(session).empty());
+	}
+
+	{
 		auto transaction {session.createUniqueTransaction()};
 
 		cluster1.get().modify()->addTrack(track.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		auto tracks {Track::getAllIdsWithClusters(session)};
+		CHECK(tracks.size() == 1);
+		CHECK(tracks.front() == track.getId());
 	}
 
 	{
@@ -612,10 +624,22 @@ testSingleTrackSingleReleaseSingleCluster(Session& session)
 	ScopedCluster cluster {session, clusterType .lockAndGet(), "MyCluster"};
 
 	{
+		auto transaction {session.createSharedTransaction()};
+		CHECK(Release::getAllIdsWithClusters(session).empty());
+	}
+
+	{
 		auto transaction {session.createUniqueTransaction()};
 
 		track.get().modify()->setRelease(release.get());
 		cluster.get().modify()->addTrack(track.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		auto releases {Release::getAllIdsWithClusters(session)};
+		CHECK(releases.size() == 1);
+		CHECK(releases.front() == release.getId());
 	}
 
 	{
@@ -859,6 +883,11 @@ testSingleTrackSingleReleaseSingleArtistSingleCluster(Session& session)
 	ScopedCluster cluster {session, clusterType.lockAndGet(), "MyCluster"};
 
 	{
+		auto transaction {session.createSharedTransaction()};
+		CHECK(Artist::getAllIdsWithClusters(session).empty());
+	}
+
+	{
 		auto transaction {session.createUniqueTransaction()};
 
 		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist);
@@ -873,6 +902,13 @@ testSingleTrackSingleReleaseSingleArtistSingleCluster(Session& session)
 		CHECK(ClusterType::getAllOrphans(session).empty());
 		CHECK(Artist::getAllOrphans(session).empty());
 		CHECK(Release::getAllOrphans(session).empty());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		auto artists {Artist::getAllIdsWithClusters(session)};
+		CHECK(artists.size() == 1);
+		CHECK(artists.front() == artist.getId());
 	}
 
 	{

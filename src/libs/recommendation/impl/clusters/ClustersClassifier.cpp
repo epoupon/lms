@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "SimilarityClusterSearcher.hpp"
+#include "ClustersClassifier.hpp"
 
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
@@ -26,11 +26,60 @@
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 
-namespace Similarity {
-namespace ClusterSearcher {
+namespace Recommendation {
+	
+std::unique_ptr<IClassifier> createClustersClassifier(Database::Session& session)
+{
+	return std::make_unique<ClusterClassifier>(session);
+}
+
+ClusterClassifier::ClusterClassifier(Database::Session& session)
+{
+	classify(session);
+}
+
+void
+ClusterClassifier::classify(Database::Session& session)
+{
+	auto transaction {session.createSharedTransaction()};
+
+	{
+		std::vector<Database::IdType> trackIds {Database::Track::getAllIdsWithClusters(session)};
+		_classifiedTracks = std::unordered_set<Database::IdType>(std::cbegin(trackIds), std::cend(trackIds));
+	}
+
+	{
+		std::vector<Database::IdType> releaseIds {Database::Release::getAllIdsWithClusters(session)};
+		_classifiedReleases = std::unordered_set<Database::IdType>(std::cbegin(releaseIds), std::cend(releaseIds));
+	}
+
+	{
+		std::vector<Database::IdType> artistIds {Database::Artist::getAllIdsWithClusters(session)};
+		_classifiedArtists = std::unordered_set<Database::IdType>(std::cbegin(artistIds), std::cend(artistIds));
+	}
+}
+
+bool
+ClusterClassifier::isTrackClassified(Database::IdType trackId) const
+{
+	return _classifiedTracks.find(trackId) != std::cend(_classifiedTracks);
+}
+
+bool
+ClusterClassifier::isReleaseClassified(Database::IdType releaseId) const
+{
+	return _classifiedReleases.find(releaseId) != std::cend(_classifiedReleases);
+}
+
+bool
+ClusterClassifier::isArtistClassified(Database::IdType artistId) const
+{
+	return _classifiedArtists.find(artistId) != std::cend(_classifiedArtists);
+}
+
 
 std::vector<Database::IdType>
-getSimilarTracks(Database::Session& dbSession, const std::set<Database::IdType>& trackIds, std::size_t maxCount)
+ClusterClassifier::getSimilarTracks(Database::Session& dbSession, const std::unordered_set<Database::IdType>& trackIds, std::size_t maxCount) const
 {
 	auto transaction {dbSession.createSharedTransaction()};
 
@@ -43,7 +92,7 @@ getSimilarTracks(Database::Session& dbSession, const std::set<Database::IdType>&
 }
 
 std::vector<Database::IdType>
-getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount)
+ClusterClassifier::getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const
 {
 	std::vector<Database::IdType> res;
 
@@ -62,7 +111,7 @@ getSimilarTracksFromTrackList(Database::Session& session, Database::IdType track
 }
 
 std::vector<Database::IdType>
-getSimilarReleases(Database::Session& dbSession, Database::IdType releaseId, std::size_t maxCount)
+ClusterClassifier::getSimilarReleases(Database::Session& dbSession, Database::IdType releaseId, std::size_t maxCount) const
 {
 	std::vector<Database::IdType> res;
 
@@ -80,7 +129,7 @@ getSimilarReleases(Database::Session& dbSession, Database::IdType releaseId, std
 }
 
 std::vector<Database::IdType>
-getSimilarArtists(Database::Session& dbSession, Database::IdType artistId, std::size_t maxCount)
+ClusterClassifier::getSimilarArtists(Database::Session& dbSession, Database::IdType artistId, std::size_t maxCount) const
 {
 	std::vector<Database::IdType> res;
 
@@ -97,5 +146,4 @@ getSimilarArtists(Database::Session& dbSession, Database::IdType artistId, std::
 	return res;
 }
 
-} // namespace ClusterSearcher
-} // namespace Similarity
+} // namespace Recommendation

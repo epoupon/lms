@@ -32,21 +32,19 @@ namespace Database
 namespace Recommendation
 {
 
-	class Classifier
+	class IClassifier
 	{
 		public:
-			virtual ~Classifier() = default;
-
-			virtual void classify() = 0;
+			virtual ~IClassifier() = default;
 
 			virtual bool isTrackClassified(Database::IdType trackId) const = 0;
 			virtual bool isReleaseClassified(Database::IdType releaseId) const = 0;
 			virtual bool isArtistClassified(Database::IdType artistId) const = 0;
 
-			virtual std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) = 0;
+			virtual std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const = 0;
 			virtual std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) const = 0;
-			virtual std::vector<Database::IdType> getSimilarReleases(Database::IdType releaseId, std::size_t maxCount) const = 0;
-			virtual std::vector<Database::IdType> getSimilarArtists(Database::IdType artistId, std::size_t maxCount) const = 0;
+			virtual std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const = 0;
+			virtual std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) const = 0;
 	};
 
 } // ns Recommendation

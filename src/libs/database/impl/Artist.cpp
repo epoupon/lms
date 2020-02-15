@@ -104,6 +104,21 @@ Artist::getAllOrphans(Session& session)
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+std::vector<IdType>
+Artist::getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit)
+{
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<IdType> res = session.getDboSession().query<IdType>
+		("SELECT DISTINCT a.id FROM artist a"
+		 	" INNER JOIN track t ON t.id = t_a_l.track_id INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id"
+		 	" INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+		.limit(limit ? static_cast<int>(*limit) : -1);
+
+	return std::vector<IdType>(res.begin(), res.end());
+}
+
+
 static
 Wt::Dbo::Query<Artist::pointer>
 getQuery(Session& session,

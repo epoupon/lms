@@ -1,5 +1,6 @@
 
 add_library(lmsrecommendation SHARED
+	impl/clusters/ClustersClassifier.cpp
 	impl/Engine.cpp
 	impl/ClassifierCreator.cpp
 	)
