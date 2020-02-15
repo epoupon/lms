@@ -32,10 +32,12 @@ namespace Database
 namespace Recommendation
 {
 
-	class Provider
+	class Classifier
 	{
 		public:
-			virtual ~Provider() = default;
+			virtual ~Classifier() = default;
+
+			virtual void classify() = 0;
 
 			virtual bool isTrackClassified(Database::IdType trackId) const = 0;
 			virtual bool isReleaseClassified(Database::IdType releaseId) const = 0;

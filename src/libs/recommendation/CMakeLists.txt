@@ -1,7 +1,7 @@
 
 add_library(lmsrecommendation SHARED
 	impl/Engine.cpp
-	impl/ProviderCreator.cpp
+	impl/ClassifierCreator.cpp
 	)
 
 target_include_directories(lmsrecommendation INTERFACE

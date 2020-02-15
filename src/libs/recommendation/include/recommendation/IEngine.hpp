@@ -23,7 +23,7 @@
 #include <unordered_set>
 
 #include "database/Types.hpp"
-#include "Provider.hpp"
+#include "Classifier.hpp"
 
 namespace Database
 {
@@ -32,14 +32,11 @@ namespace Database
 
 namespace Recommendation
 {
-	class Provider;
+	class Classifier;
 	class IEngine
 	{
 		public:
 			virtual ~IEngine() = default;
-
-			virtual void clearProviders() = 0;
-			virtual void addProvider(std::unique_ptr<Provider> provider, unsigned priority) = 0;
 
 			// Closest results first
 			virtual std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) = 0;

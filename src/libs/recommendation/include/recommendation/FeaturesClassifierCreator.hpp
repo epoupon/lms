@@ -28,8 +28,8 @@ namespace Database
 
 namespace Recommendation
 {
-	class Provider;
+	class Classifier;
 
-	std::unique_ptr<Provider> createClustersRecommendationProvider();
+	std::unique_ptr<Classifier> createFeaturesClassifier();
 }
 

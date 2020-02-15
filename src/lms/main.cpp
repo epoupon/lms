@@ -29,9 +29,7 @@
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Db.hpp"
 #include "scanner/IMediaScanner.hpp"
-#include "recommendation/FeaturesRecommendationProviderCreator.hpp"
 #include "recommendation/IEngine.hpp"
-#include "recommendation/ClustersRecommendationProviderCreator.hpp"
 #include "subsonic/SubsonicResource.hpp"
 #include "ui/LmsApplication.hpp"
 #include "utils/IConfig.hpp"
@@ -145,9 +143,7 @@ int main(int argc, char* argv[])
 		ServiceProvider<Auth::IPasswordService>::assign(Auth::createPasswordService(ServiceProvider<IConfig>::get()->getULong("login-throttler-max-entriees", 10000)));
 		Scanner::IMediaScanner& mediaScanner {ServiceProvider<Scanner::IMediaScanner>::assign(Scanner::createMediaScanner(database))};
 
-		Recommendation::IEngine& recommendationEngine {ServiceProvider<Recommendation::IEngine>::assign(Recommendation::createEngine())};
-		recommendationEngine.addProvider(Recommendation::createFeaturesRecommendationProvider(mediaScanner), 0);
-		recommendationEngine.addProvider(Recommendation::createClustersRecommendationProvider(), 1);
+		ServiceProvider<Recommendation::IEngine>::assign(Recommendation::createEngine());
 
 		CoverArt::IGrabber& coverArtGrabber {ServiceProvider<CoverArt::IGrabber>::assign(CoverArt::createGrabber(argv[0]))};
 		coverArtGrabber.setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");

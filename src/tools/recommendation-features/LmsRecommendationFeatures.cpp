@@ -28,17 +28,16 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "utils/Config.hpp"
+#include "utils/IConfig.hpp"
 #include "utils/Service.hpp"
 #include "utils/StreamLogger.hpp"
-#include "similarity/features/SimilarityFeaturesSearcher.hpp"
+#include "recommendation/IEngine.hpp"
+#include "recommendation/FeaturesClassifierCreator.hpp"
 
 int main(int argc, char *argv[])
 {
 	try
 	{
-		using namespace Similarity;
-
 		// log to stdout
 		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
 
@@ -46,16 +45,16 @@ int main(int argc, char *argv[])
 		if (argc >= 2)
 			configFilePath = std::string(argv[1], 0, 256);
 
-		ServiceProvider<Config>::create(configFilePath);
+		ServiceProvider<IConfig>::assign(createConfig(configFilePath));
 
-		Database::Db db {ServiceProvider<Config>::get()->getPath("working-dir") / "lms.db"};
+		Database::Db db {ServiceProvider<IConfig>::get()->getPath("working-dir") / "lms.db"};
 		Database::Session session {db};
+
+		auto classifier {Recommendation::createFeaturesClassifier()};
 
 		std::cout << "Classifying tracks..." << std::endl;
 		// may be long...
-		struct FeaturesSearcher::TrainSettings trainSettings;
-		trainSettings.featureSettingsMap = FeaturesSearcher::getDefaultTrainFeatureSettings();
-		FeaturesSearcher searcher {session, trainSettings};
+		classifier->classify();
 		std::cout << "Classifying tracks DONE" << std::endl;
 
 		const std::vector<Database::IdType> trackIds = std::invoke([&]()
@@ -85,7 +84,7 @@ int main(int argc, char *argv[])
 			};
 
 			std::cout << "Processing track '" << trackToString(trackId) << std::endl;
-			for (Database::IdType similarTrackId : searcher.getSimilarTracks({trackId}, 3))
+			for (Database::IdType similarTrackId : classifier->getSimilarTracks(session, {trackId}, 3))
 				std::cout << "\t- Similar track '" << trackToString(similarTrackId) << std::endl;
 		}
 
@@ -107,7 +106,7 @@ int main(int argc, char *argv[])
 			};
 
 			std::cout << "Processing release '" << releaseToString(releaseId) << "'" << std::endl;
-			for (Database::IdType similarReleaseId : searcher.getSimilarReleases({releaseId}, 3))
+			for (Database::IdType similarReleaseId : classifier->getSimilarReleases({releaseId}, 3))
 				std::cout << "\t- Similar release '" << releaseToString(similarReleaseId) << "'" << std::endl;
 		}
 
@@ -129,7 +128,7 @@ int main(int argc, char *argv[])
 			};
 
 			std::cout << "Processing artist '" << artistToString(artistId) << "'" << std::endl;
-			for (Database::IdType similarArtistId : searcher.getSimilarArtists({artistId}, 3))
+			for (Database::IdType similarArtistId : classifier->getSimilarArtists({artistId}, 3))
 				std::cout << "\t- Similar artist '" << artistToString(similarArtistId) << "'" << std::endl;
 		}
 

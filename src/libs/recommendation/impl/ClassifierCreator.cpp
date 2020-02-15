@@ -17,24 +17,22 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <memory>
-
-namespace Database
-{
-	class Session;
-}
-
-namespace Scanner
-{
-	class IMediaScanner;
-}
+#include "recommendation/ClustersClassifierCreator.hpp"
+#include "recommendation/FeaturesClassifierCreator.hpp"
+#include "recommendation/Classifier.hpp"
 
 namespace Recommendation
 {
-	class Provider;
 
-	std::unique_ptr<Provider> createFeaturesRecommendationProvider(Scanner::IMediaScanner& scanner);
+	std::unique_ptr<Classifier> createClustersClassifier()
+	{
+		return {};
+	}
+	
+	std::unique_ptr<Classifier> createFeaturesClassifier()
+	{
+		return {};
+	}
+
 }
 

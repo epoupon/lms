@@ -22,7 +22,7 @@
 #include <map>
 
 #include "recommendation/IEngine.hpp"
-#include "recommendation/Provider.hpp"
+#include "recommendation/Classifier.hpp"
 
 namespace Database
 {
@@ -34,9 +34,6 @@ namespace Recommendation
 	class Engine : public IEngine
 	{
 		public:
-			void clearProviders() override;
-			void addProvider(std::unique_ptr<Provider> provider, unsigned priority) override;
-
 			// Closest results first
 			std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) override;
 			std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) override;
@@ -44,8 +41,10 @@ namespace Recommendation
 			std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) override;
 
 		private:
+			void clearClassifiers();
+			void addClassifier(std::unique_ptr<Classifier> classifier, unsigned priority);
 
-			std::map<unsigned, std::unique_ptr<Provider>> _providers;
+			std::map<unsigned, std::unique_ptr<Classifier>> _classifiers;
 	};
 
 } // ns Recommendation

@@ -34,15 +34,15 @@ createEngine()
 }
 
 void
-Engine::clearProviders()
+Engine::clearClassifiers()
 {
-	_providers.clear();
+	_classifiers.clear();
 }
 
 void
-Engine::addProvider(std::unique_ptr<Provider> provider, unsigned priority)
+Engine::addClassifier(std::unique_ptr<Classifier> classifier, unsigned priority)
 {
-	_providers.emplace(priority, std::move(provider));
+	_classifiers.emplace(priority, std::move(classifier));
 }
 
 std::vector<Database::IdType>
