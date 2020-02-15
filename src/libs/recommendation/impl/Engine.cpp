@@ -36,11 +36,11 @@ createEngine(Database::Session& session)
 
 Engine::Engine(Database::Session& session)
 {
-	reloadSettings(session);
+	reload(session);
 }
 
 void
-Engine::reloadSettings(Database::Session& session)
+Engine::reload(Database::Session& session)
 {
 	using namespace Database;
 
@@ -50,56 +50,57 @@ Engine::reloadSettings(Database::Session& session)
 		return ScanSettings::get(session)->getRecommendationEngineType();
 	}()};
 
+	// TODO: just replace the classifier once it is ready
 	clearClassifiers();
 
 	switch (engineType)
 	{
 		case ScanSettings::RecommendationEngineType::Features:
-//			_classifiers.emplace(0, createFeaturesClassifier()); // higher priority
+//			addClassifier(createFeaturesClassifier(), 0); // higher priority
 //			[[fallthrough]];
 
 		case ScanSettings::RecommendationEngineType::Clusters:
-			_classifiers.emplace(1, createClustersClassifier(session)); // lower priority
+			addClassifier(createClustersClassifier(session), 1); // lower priority
 			break;
 	}
 }
 
 std::vector<Database::IdType>
-Engine::getSimilarTracksFromTrackList(Database::Session& /*session*/, Database::IdType /*trackListId*/, std::size_t /*maxCount*/)
+Engine::getSimilarTracksFromTrackList(Database::Session& session, Database::IdType trackListId, std::size_t maxCount)
 {
-#if 0
-	auto engineType {getEngineType(session)};
-	auto somSearcher {_somAddon.getSearcher()};
-
-	std::set<Database::IdType> trackIds;
+	const std::unordered_set<Database::IdType> trackIds {[&]() -> std::unordered_set<Database::IdType>
 	{
 		auto transaction {session.createSharedTransaction()};
+
 		Database::TrackList::pointer trackList {Database::TrackList::getById(session, trackListId)};
 		if (trackList)
 		{
 			const std::vector<Database::IdType> orderedTrackIds {trackList->getTrackIds()};
-			trackIds = std::set<Database::IdType> {std::cbegin(orderedTrackIds), std::cend(orderedTrackIds)};
+			return std::unordered_set<Database::IdType> {std::cbegin(orderedTrackIds), std::cend(orderedTrackIds)};
 		}
-	}
+
+		return {};
+	}()};
 
 	if (trackIds.empty())
 		return {};
 
-	if (engineType == Database::ScanSettings::SimilarityEngineType::Features
-			&& somSearcher
-			&& std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return somSearcher->isTrackClassified(trackId); } ))
+	std::shared_lock lock {_mutex};
+
+	for (const auto& [priority, classifier] : _classifiers)
 	{
-		return somSearcher->getSimilarTracks(trackIds, maxCount);
+		if (std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return classifier->isTrackClassified(trackId); } ))
+			return classifier->getSimilarTracksFromTrackList(session, trackListId, maxCount);
 	}
-	else
-		return ClusterEngine::getSimilarTracksFromTrackList(session, trackListId, maxCount);
-#endif
+
 	return {};
 }
 
 std::vector<Database::IdType>
 Engine::getSimilarTracks(Database::Session& dbSession, const std::unordered_set<Database::IdType>& trackIds, std::size_t maxCount)
 {
+	std::shared_lock lock {_mutex};
+
 	for (const auto& [priority, classifier] : _classifiers)
 	{
 		if (std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return classifier->isTrackClassified(trackId); } ))
@@ -112,6 +113,8 @@ Engine::getSimilarTracks(Database::Session& dbSession, const std::unordered_set<
 std::vector<Database::IdType>
 Engine::getSimilarReleases(Database::Session& dbSession, Database::IdType releaseId, std::size_t maxCount)
 {
+	std::shared_lock lock {_mutex};
+
 	for (const auto& [priority, classifier] : _classifiers)
 	{
 		if (classifier->isReleaseClassified(releaseId))
@@ -124,6 +127,8 @@ Engine::getSimilarReleases(Database::Session& dbSession, Database::IdType releas
 std::vector<Database::IdType>
 Engine::getSimilarArtists(Database::Session& dbSession, Database::IdType artistId, std::size_t maxCount)
 {
+	std::shared_lock lock {_mutex};
+
 	for (const auto& [priority, classifier] : _classifiers)
 	{
 		if (classifier->isArtistClassified(artistId))
@@ -136,12 +141,14 @@ Engine::getSimilarArtists(Database::Session& dbSession, Database::IdType artistI
 void
 Engine::clearClassifiers()
 {
+	std::unique_lock lock {_mutex};
 	_classifiers.clear();
 }
 
 void
 Engine::addClassifier(std::unique_ptr<IClassifier> classifier, unsigned priority)
 {
+	std::unique_lock lock {_mutex};
 	_classifiers.emplace(priority, std::move(classifier));
 }
 

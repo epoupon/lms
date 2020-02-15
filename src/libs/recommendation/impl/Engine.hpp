@@ -20,6 +20,7 @@
 #pragma once
 
 #include <map>
+#include <shared_mutex>
 
 #include "recommendation/IEngine.hpp"
 #include "recommendation/IClassifier.hpp"
@@ -38,7 +39,7 @@ namespace Recommendation
 
 		private:
 
-			void reloadSettings(Database::Session& session) override;
+			void reload(Database::Session& session) override;
 
 			// Closest results first
 			std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) override;
@@ -49,6 +50,7 @@ namespace Recommendation
 			void clearClassifiers();
 			void addClassifier(std::unique_ptr<IClassifier> classifier, unsigned priority);
 
+			std::shared_mutex _mutex;
 			std::map<unsigned, std::unique_ptr<IClassifier>> _classifiers;
 	};
 

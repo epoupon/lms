@@ -36,7 +36,7 @@ namespace Recommendation
 		public:
 			virtual ~IEngine() = default;
 
-			virtual void reloadSettings(Database::Session& session) = 0;
+			virtual void reload(Database::Session& session) = 0;
 
 			// Closest results first
 			virtual std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) = 0;

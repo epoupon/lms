@@ -145,7 +145,23 @@ int main(int argc, char* argv[])
 
 		{
 			Database::Session session {database};
-			ServiceProvider<Recommendation::IEngine>::assign(Recommendation::createEngine(session));
+			Recommendation::IEngine& recommendationEngine {ServiceProvider<Recommendation::IEngine>::assign(Recommendation::createEngine(session))};
+
+			mediaScanner.scanComplete().connect([&]()
+			{
+				auto status = mediaScanner.getStatus();
+
+				if (status.lastCompleteScanStats->nbChanges() > 0)
+				{
+					LMS_LOG(MAIN, INFO) << "Scanner changed some files, reloading the recommendation engine...";
+					Database::Session session {database};
+					recommendationEngine.reload(session);
+				}
+				else
+				{
+					LMS_LOG(MAIN, INFO) << "Scanner did not change files, not reloading the recommendation engine...";
+				}
+			});
 		}
 
 		CoverArt::IGrabber& coverArtGrabber {ServiceProvider<CoverArt::IGrabber>::assign(CoverArt::createGrabber(argv[0]))};

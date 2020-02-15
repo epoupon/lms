@@ -427,6 +427,10 @@ MediaScanner::scan(boost::system::error_code err)
 			addon->preScanComplete();
 	}
 
+	LMS_LOG(DBUPDATER, INFO) << "Optimizing db...";
+	_dbSession.optimize();
+	LMS_LOG(DBUPDATER, INFO) << "Optimize db done!";
+
 	if (_running)
 	{
 		stats.stopTime = Wt::WLocalDateTime::currentDateTime().toUTC();
@@ -448,10 +452,6 @@ MediaScanner::scan(boost::system::error_code err)
 		_curState = State::NotScheduled;
 		_inProgressScanStats.reset();
 	}
-
-	LMS_LOG(DBUPDATER, INFO) << "Optimizing db...";
-	_dbSession.optimize();
-	LMS_LOG(DBUPDATER, INFO) << "Optimize db done!";
 }
 
 void
