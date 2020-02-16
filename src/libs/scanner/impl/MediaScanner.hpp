@@ -29,9 +29,10 @@
 
 #include <boost/asio/system_timer.hpp>
 
+#include "database/Types.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
-#include "metadata/TagLibParser.hpp"
+#include "metadata/IParser.hpp"
 #include "scanner/IMediaScanner.hpp"
 
 
@@ -41,8 +42,12 @@ class MediaScanner : public IMediaScanner
 {
 	public:
 		MediaScanner(Database::Db& db);
+		~MediaScanner();
 
-		void setAddon(MediaScannerAddon& addon) override;
+		MediaScanner(const MediaScanner&) = delete;
+		MediaScanner(MediaScanner&&) = delete;
+		MediaScanner& operator=(const MediaScanner&) = delete;
+		MediaScanner& operator=(MediaScanner&&) = delete;
 
 		void start() override;
 		void stop() override;
@@ -80,7 +85,7 @@ class MediaScanner : public IMediaScanner
 		void notifyInProgressIfNeeded(const ScanStats& stats);
 		void notifyInProgress(const ScanStats& stats);
 
-		bool					_running {false};
+		bool					_running {};
 		Wt::WIOService				_ioService;
 		boost::asio::system_timer		_scheduleTimer {_ioService};
 		Wt::Signal<>				_sigScanComplete;
@@ -88,8 +93,7 @@ class MediaScanner : public IMediaScanner
 		std::chrono::system_clock::time_point	_lastScanInProgressEmit {};
 		Wt::Signal<Wt::WDateTime>		_sigScheduled;
 		Database::Session			_dbSession;
-		MetaData::TagLibParser 			_metadataParser;
-		std::vector<MediaScannerAddon*> 	_addons;
+		std::unique_ptr<MetaData::IParser>	_metadataParser;
 
 		std::mutex				_statusMutex;
 		State					_curState {State::NotScheduled};

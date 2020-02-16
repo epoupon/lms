@@ -23,46 +23,51 @@
 #include "recommendation/FeaturesClassifierCreator.hpp"
 
 #include "database/ScanSettings.hpp"
-#include "database/Session.hpp"
 #include "database/TrackList.hpp"
+#include "utils/Logger.hpp"
 
 namespace Recommendation {
 
 std::unique_ptr<IEngine>
-createEngine(Database::Session& session)
+createEngine(Database::Db& db)
 {
-	return std::make_unique<Engine>(session);
+	return std::make_unique<Engine>(db);
 }
 
-Engine::Engine(Database::Session& session)
+Engine::Engine(Database::Db& db)
+: _dbSession {db}
 {
-	reload(session);
 }
 
 void
-Engine::reload(Database::Session& session)
+Engine::start()
 {
-	using namespace Database;
+	assert(!_running);
+	_running = true;
 
-	const ScanSettings::RecommendationEngineType engineType {[&]()
+	requestReload();
+
+	_ioService.start();
+}
+
+void
+Engine::stop()
+{
+	assert(_running);
+	_running = false;
+
+	_ioService.stop();
+}
+
+void
+Engine::requestReload()
+{
+	LMS_LOG(RECOMMENDATION, DEBUG) << "Reload requested...";
+
+	_ioService.post([&]()
 	{
-		auto transaction {session.createSharedTransaction()};
-		return ScanSettings::get(session)->getRecommendationEngineType();
-	}()};
-
-	// TODO: just replace the classifier once it is ready
-	clearClassifiers();
-
-	switch (engineType)
-	{
-		case ScanSettings::RecommendationEngineType::Features:
-//			addClassifier(createFeaturesClassifier(), 0); // higher priority
-//			[[fallthrough]];
-
-		case ScanSettings::RecommendationEngineType::Clusters:
-			addClassifier(createClustersClassifier(session), 1); // lower priority
-			break;
-	}
+		reload();
+	});
 }
 
 std::vector<Database::IdType>
@@ -85,7 +90,7 @@ Engine::getSimilarTracksFromTrackList(Database::Session& session, Database::IdTy
 	if (trackIds.empty())
 		return {};
 
-	std::shared_lock lock {_mutex};
+	std::shared_lock lock {_classifiersMutex};
 
 	for (const auto& [priority, classifier] : _classifiers)
 	{
@@ -99,7 +104,7 @@ Engine::getSimilarTracksFromTrackList(Database::Session& session, Database::IdTy
 std::vector<Database::IdType>
 Engine::getSimilarTracks(Database::Session& dbSession, const std::unordered_set<Database::IdType>& trackIds, std::size_t maxCount)
 {
-	std::shared_lock lock {_mutex};
+	std::shared_lock lock {_classifiersMutex};
 
 	for (const auto& [priority, classifier] : _classifiers)
 	{
@@ -113,7 +118,7 @@ Engine::getSimilarTracks(Database::Session& dbSession, const std::unordered_set<
 std::vector<Database::IdType>
 Engine::getSimilarReleases(Database::Session& dbSession, Database::IdType releaseId, std::size_t maxCount)
 {
-	std::shared_lock lock {_mutex};
+	std::shared_lock lock {_classifiersMutex};
 
 	for (const auto& [priority, classifier] : _classifiers)
 	{
@@ -127,7 +132,7 @@ Engine::getSimilarReleases(Database::Session& dbSession, Database::IdType releas
 std::vector<Database::IdType>
 Engine::getSimilarArtists(Database::Session& dbSession, Database::IdType artistId, std::size_t maxCount)
 {
-	std::shared_lock lock {_mutex};
+	std::shared_lock lock {_classifiersMutex};
 
 	for (const auto& [priority, classifier] : _classifiers)
 	{
@@ -139,16 +144,52 @@ Engine::getSimilarArtists(Database::Session& dbSession, Database::IdType artistI
 }
 
 void
+Engine::reload()
+{
+	using namespace Database;
+
+	LMS_LOG(RECOMMENDATION, DEBUG) << "Reloading recommendation engines...";
+
+	const ScanSettings::RecommendationEngineType engineType {[&]()
+	{
+		auto transaction {_dbSession.createSharedTransaction()};
+
+		return ScanSettings::get(_dbSession)->getRecommendationEngineType();
+	}()};
+
+	// TODO: just replace the classifier once it is ready
+	clearClassifiers();
+
+	switch (engineType)
+	{
+		case ScanSettings::RecommendationEngineType::Features:
+//			addClassifier(createFeaturesClassifier(), 0); // higher priority
+//			[[fallthrough]];
+
+		case ScanSettings::RecommendationEngineType::Clusters:
+			addClassifier(createClustersClassifier(_dbSession), 1); // lower priority
+			break;
+	}
+
+	LMS_LOG(RECOMMENDATION, DEBUG) << "Recommendation engines reloaded!";
+
+	_sigReloaded.emit();
+}
+
+
+void
 Engine::clearClassifiers()
 {
-	std::unique_lock lock {_mutex};
+	std::unique_lock lock {_classifiersMutex};
+
 	_classifiers.clear();
 }
 
 void
 Engine::addClassifier(std::unique_ptr<IClassifier> classifier, unsigned priority)
 {
-	std::unique_lock lock {_mutex};
+	std::unique_lock lock {_classifiersMutex};
+
 	_classifiers.emplace(priority, std::move(classifier));
 }
 

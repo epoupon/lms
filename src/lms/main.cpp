@@ -143,26 +143,21 @@ int main(int argc, char* argv[])
 		ServiceProvider<Auth::IPasswordService>::assign(Auth::createPasswordService(ServiceProvider<IConfig>::get()->getULong("login-throttler-max-entriees", 10000)));
 		Scanner::IMediaScanner& mediaScanner {ServiceProvider<Scanner::IMediaScanner>::assign(Scanner::createMediaScanner(database))};
 
+		Recommendation::IEngine& recommendationEngine {ServiceProvider<Recommendation::IEngine>::assign(Recommendation::createEngine(database))};
+		mediaScanner.scanComplete().connect([&]()
 		{
-			Database::Session session {database};
-			Recommendation::IEngine& recommendationEngine {ServiceProvider<Recommendation::IEngine>::assign(Recommendation::createEngine(session))};
+			auto status = mediaScanner.getStatus();
 
-			mediaScanner.scanComplete().connect([&]()
+			if (status.lastCompleteScanStats->nbChanges() > 0)
 			{
-				auto status = mediaScanner.getStatus();
-
-				if (status.lastCompleteScanStats->nbChanges() > 0)
-				{
-					LMS_LOG(MAIN, INFO) << "Scanner changed some files, reloading the recommendation engine...";
-					Database::Session session {database};
-					recommendationEngine.reload(session);
-				}
-				else
-				{
-					LMS_LOG(MAIN, INFO) << "Scanner did not change files, not reloading the recommendation engine...";
-				}
-			});
-		}
+				LMS_LOG(MAIN, INFO) << "Scanner changed some files, reloading the recommendation engine...";
+				recommendationEngine.requestReload();
+			}
+			else
+			{
+				LMS_LOG(MAIN, INFO) << "Scanner did not change files, not reloading the recommendation engine...";
+			}
+		});
 
 		CoverArt::IGrabber& coverArtGrabber {ServiceProvider<CoverArt::IGrabber>::assign(CoverArt::createGrabber(argv[0]))};
 		coverArtGrabber.setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
@@ -179,6 +174,9 @@ int main(int argc, char* argv[])
 					std::placeholders::_1, std::ref(database), std::ref(appGroups)));
 
 		// Start
+		LMS_LOG(MAIN, INFO) << "Starting recommendation engine";
+		recommendationEngine.start();
+
 		LMS_LOG(MAIN, INFO) << "Starting media scanner...";
 		mediaScanner.start();
 
@@ -195,6 +193,9 @@ int main(int argc, char* argv[])
 
 		LMS_LOG(MAIN, INFO) << "Stopping media scanner...";
 		mediaScanner.stop();
+
+		LMS_LOG(MAIN, INFO) << "Stopping recommendation engine...";
+		recommendationEngine.stop();
 
 		LMS_LOG(MAIN, INFO) << "Clean stop!";
 		res = EXIT_SUCCESS;

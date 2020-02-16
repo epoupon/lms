@@ -28,6 +28,7 @@
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Track.hpp"
+#include "metadata/TagLibParser.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Path.hpp"
@@ -200,15 +201,18 @@ createMediaScanner(Database::Db& db)
 MediaScanner::MediaScanner(Database::Db& db)
 : _dbSession {db}
 {
+	// For now, always use TagLib
+	_metadataParser = std::make_unique<MetaData::TagLibParser>();
+
 	_ioService.setThreadCount(1);
 
 	refreshScanSettings();
 }
 
-void
-MediaScanner::setAddon(MediaScannerAddon& addon)
+MediaScanner::~MediaScanner()
 {
-	_addons.push_back(&addon);
+	if (_running)
+		stop();
 }
 
 void
@@ -232,9 +236,6 @@ void
 MediaScanner::stop(void)
 {
 	_running = false;
-
-	for (auto& addon : _addons)
-		addon->requestStop();
 
 	_scheduleTimer.cancel();
 
@@ -281,7 +282,7 @@ MediaScanner::scheduleNextScan()
 
 	refreshScanSettings();
 
-	Wt::WDateTime now {Wt::WLocalDateTime::currentServerDateTime().toUTC()};
+	const Wt::WDateTime now {Wt::WLocalDateTime::currentServerDateTime().toUTC()};
 
 	Wt::WDate nextScanDate;
 	switch (_updatePeriod)
@@ -421,12 +422,6 @@ MediaScanner::scan(boost::system::error_code err)
 
 	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), duplicates = " << stats.duplicates.size();
 
-	if (_running)
-	{
-		for (auto& addon : _addons)
-			addon->preScanComplete();
-	}
-
 	LMS_LOG(DBUPDATER, INFO) << "Optimizing db...";
 	_dbSession.optimize();
 	LMS_LOG(DBUPDATER, INFO) << "Optimize db done!";
@@ -457,32 +452,28 @@ MediaScanner::scan(boost::system::error_code err)
 void
 MediaScanner::refreshScanSettings()
 {
-	{
-		auto transaction {_dbSession.createSharedTransaction()};
+	auto transaction {_dbSession.createSharedTransaction()};
 
-		ScanSettings::pointer scanSettings {ScanSettings::get(_dbSession)};
+	ScanSettings::pointer scanSettings {ScanSettings::get(_dbSession)};
 
-		LMS_LOG(DBUPDATER, INFO) << "Using scan settings version " << scanSettings->getScanVersion();
+	LMS_LOG(DBUPDATER, INFO) << "Using scan settings version " << scanSettings->getScanVersion();
 
-		_scanVersion = scanSettings->getScanVersion();
-		_startTime = scanSettings->getUpdateStartTime();
-		_updatePeriod = scanSettings->getUpdatePeriod();
+	_scanVersion = scanSettings->getScanVersion();
+	_startTime = scanSettings->getUpdateStartTime();
+	_updatePeriod = scanSettings->getUpdatePeriod();
 
-		_fileExtensions = scanSettings->getAudioFileExtensions();
-		_mediaDirectory = scanSettings->getMediaDirectory();
+	_fileExtensions = scanSettings->getAudioFileExtensions();
+	_mediaDirectory = scanSettings->getMediaDirectory();
 
-		auto clusterTypes = scanSettings->getClusterTypes();
-		std::set<std::string> clusterTypeNames;
+	auto clusterTypes = scanSettings->getClusterTypes();
+	std::set<std::string> clusterTypeNames;
 
-		std::transform(std::cbegin(clusterTypes), std::cend(clusterTypes),
-				std::inserter(clusterTypeNames, clusterTypeNames.begin()),
-				[](ClusterType::pointer clusterType) { return clusterType->getName(); });
+	std::transform(std::cbegin(clusterTypes), std::cend(clusterTypes),
+			std::inserter(clusterTypeNames, clusterTypeNames.begin()),
+			[](ClusterType::pointer clusterType) { return clusterType->getName(); });
 
-		_metadataParser.setClusterTypeNames(clusterTypeNames);
-	}
+	_metadataParser->setClusterTypeNames(clusterTypeNames);
 
-	for (auto& addon : _addons)
-		addon->refreshSettings();
 }
 
 void
@@ -539,7 +530,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 		}
 	}
 
-	std::optional<MetaData::Track> trackInfo {_metadataParser.parse(file)};
+	std::optional<MetaData::Track> trackInfo {_metadataParser->parse(file)};
 	if (!trackInfo)
 	{
 		stats.errors.emplace_back(file, ScanErrorType::CannotParseFile);

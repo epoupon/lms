@@ -22,35 +22,43 @@
 #include <map>
 #include <shared_mutex>
 
+#include <Wt/WIOService.h>
+
+#include "database/Session.hpp"
 #include "recommendation/IEngine.hpp"
 #include "recommendation/IClassifier.hpp"
-
-namespace Database
-{
-	class Session;
-}
 
 namespace Recommendation
 {
 	class Engine : public IEngine
 	{
 		public:
-			Engine(Database::Session& session);
+			Engine(Database::Db& db);
 
 		private:
 
-			void reload(Database::Session& session) override;
+			void start() override;
+			void stop() override;
 
-			// Closest results first
+			void requestReload() override;
+			Wt::Signal<>& reloaded() override { return _sigReloaded; }
+
 			std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) override;
 			std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) override;
 			std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) override;
 			std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) override;
 
+
+			void reload();
 			void clearClassifiers();
 			void addClassifier(std::unique_ptr<IClassifier> classifier, unsigned priority);
 
-			std::shared_mutex _mutex;
+			bool			_running {};
+			Wt::WIOService		_ioService;
+			Database::Session	_dbSession;
+			Wt::Signal<>		_sigReloaded;
+
+			std::shared_mutex	_classifiersMutex;
 			std::map<unsigned, std::unique_ptr<IClassifier>> _classifiers;
 	};
 

@@ -29,9 +29,96 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "utils/IConfig.hpp"
+#include "utils/Semaphore.hpp"
 #include "utils/Service.hpp"
 #include "utils/StreamLogger.hpp"
 #include "recommendation/IEngine.hpp"
+
+
+static
+void
+dumpRecommendation(Database::Session session, Recommendation::IEngine& engine)
+{
+	const std::vector<Database::IdType> trackIds {[&]()
+		{
+			auto transaction {session.createSharedTransaction()};
+			return Database::Track::getAllIds(session);
+		}()};
+
+	std::cout << "*** Tracks (" << trackIds.size() << ") ***" << std::endl;
+	for (Database::IdType trackId : trackIds)
+	{
+		auto trackToString = [&](Database::IdType trackId)
+		{
+			std::string res;
+			auto transaction {session.createSharedTransaction()};
+			Database::Track::pointer track {Database::Track::getById(session, trackId)};
+
+			res += track->getName();
+			if (track->getRelease())
+				res += " [" + track->getRelease()->getName() + "]";
+			for (auto artist : track->getArtists())
+				res += " - " + artist->getName();
+			for (auto cluster : track->getClusters())
+				res += " {" + cluster->getType()->getName() + "-"+ cluster->getName() + "}";
+
+			return res;
+		};
+
+		std::cout << "Processing track '" << trackToString(trackId) << std::endl;
+		for (Database::IdType similarTrackId : engine.getSimilarTracks(session, {trackId}, 3))
+			std::cout << "\t- Similar track '" << trackToString(similarTrackId) << std::endl;
+	}
+
+	const std::vector<Database::IdType> releaseIds = std::invoke([&]()
+			{
+			auto transaction {session.createSharedTransaction()};
+			return Database::Release::getAllIds(session);
+			});
+
+	std::cout << "*** Releases ***" << std::endl;
+	for (Database::IdType releaseId : releaseIds)
+	{
+		auto releaseToString = [&](Database::IdType releaseId)
+		{
+			auto transaction {session.createSharedTransaction()};
+
+			Database::Release::pointer release {Database::Release::getById(session, releaseId)};
+			return release->getName();
+		};
+
+		std::cout << "Processing release '" << releaseToString(releaseId) << "'" << std::endl;
+		for (Database::IdType similarReleaseId : engine.getSimilarReleases(session, {releaseId}, 3))
+			std::cout << "\t- Similar release '" << releaseToString(similarReleaseId) << "'" << std::endl;
+	}
+
+	const std::vector<Database::IdType> artistIds = std::invoke([&]()
+			{
+			auto transaction {session.createSharedTransaction()};
+			return Database::Artist::getAllIds(session);
+			});
+
+	std::cout << "*** Artists ***" << std::endl;
+	for (Database::IdType artistId : artistIds)
+	{
+		auto artistToString = [&](Database::IdType artistId)
+		{
+			auto transaction {session.createSharedTransaction()};
+
+			Database::Artist::pointer artist {Database::Artist::getById(session, artistId)};
+			return artist->getName();
+		};
+
+		std::cout << "Processing artist '" << artistToString(artistId) << "'" << std::endl;
+		for (Database::IdType similarArtistId : engine.getSimilarArtists(session, {artistId}, 3))
+			std::cout << "\t- Similar artist '" << artistToString(similarArtistId) << "'" << std::endl;
+	}
+
+
+
+
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -50,84 +137,25 @@ int main(int argc, char *argv[])
 		Database::Session session {db};
 
 		std::cout << "Creating recommendation engine..." << std::endl;
-		const auto engine {Recommendation::createEngine(session)};
-		std::cout << "DONE!" << std::endl;
+		const auto engine {Recommendation::createEngine(db)};
+		std::cout << "Recommendation engine created!" << std::endl;
 
-		const std::vector<Database::IdType> trackIds {[&]()
-				{
-					auto transaction {session.createSharedTransaction()};
-					return Database::Track::getAllIds(session);
-				}()};
+		Semaphore sem;
 
-		std::cout << "*** Tracks (" << trackIds.size() << ") ***" << std::endl;
-		for (Database::IdType trackId : trackIds)
+		engine->reloaded().connect([&]()
 		{
-			auto trackToString = [&](Database::IdType trackId)
-			{
-				std::string res;
-				auto transaction {session.createSharedTransaction()};
-				Database::Track::pointer track {Database::Track::getById(session, trackId)};
+			sem.notify();
+		});
 
-				res += track->getName();
-				if (track->getRelease())
-					res += " [" + track->getRelease()->getName() + "]";
-				for (auto artist : track->getArtists())
-					res += " - " + artist->getName();
-				for (auto cluster : track->getClusters())
-					res += " {" + cluster->getType()->getName() + "-"+ cluster->getName() + "}";
+		engine->start();
 
-				return res;
-			};
+		std::cout << "Wating for the recommendation engine to be loaded..." << std::endl;
+		sem.wait();
+		std::cout << "Recommendation engine loaded!" << std::endl;
 
-			std::cout << "Processing track '" << trackToString(trackId) << std::endl;
-			for (Database::IdType similarTrackId : engine->getSimilarTracks(session, {trackId}, 3))
-				std::cout << "\t- Similar track '" << trackToString(similarTrackId) << std::endl;
-		}
+		dumpRecommendation(db, *engine);
 
-		const std::vector<Database::IdType> releaseIds = std::invoke([&]()
-					{
-						auto transaction {session.createSharedTransaction()};
-						return Database::Release::getAllIds(session);
-					});
-
-		std::cout << "*** Releases ***" << std::endl;
-		for (Database::IdType releaseId : releaseIds)
-		{
-			auto releaseToString = [&](Database::IdType releaseId)
-			{
-				auto transaction {session.createSharedTransaction()};
-
-				Database::Release::pointer release {Database::Release::getById(session, releaseId)};
-				return release->getName();
-			};
-
-			std::cout << "Processing release '" << releaseToString(releaseId) << "'" << std::endl;
-			for (Database::IdType similarReleaseId : engine->getSimilarReleases(session, {releaseId}, 3))
-				std::cout << "\t- Similar release '" << releaseToString(similarReleaseId) << "'" << std::endl;
-		}
-
-		const std::vector<Database::IdType> artistIds = std::invoke([&]()
-					{
-						auto transaction {session.createSharedTransaction()};
-						return Database::Artist::getAllIds(session);
-					});
-
-		std::cout << "*** Artists ***" << std::endl;
-		for (Database::IdType artistId : artistIds)
-		{
-			auto artistToString = [&](Database::IdType artistId)
-			{
-				auto transaction {session.createSharedTransaction()};
-
-				Database::Artist::pointer artist {Database::Artist::getById(session, artistId)};
-				return artist->getName();
-			};
-
-			std::cout << "Processing artist '" << artistToString(artistId) << "'" << std::endl;
-			for (Database::IdType similarArtistId : engine->getSimilarArtists(session, {artistId}, 3))
-				std::cout << "\t- Similar artist '" << artistToString(similarArtistId) << "'" << std::endl;
-		}
-
+		engine->stop();
 	}
 	catch( std::exception& e)
 	{

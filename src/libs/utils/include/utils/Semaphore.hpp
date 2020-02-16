@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,23 +19,40 @@
 
 #pragma once
 
-#include "database/Types.hpp"
+#include <mutex>
+#include <condition_variable>
 
-namespace Scanner {
-
-class MediaScannerAddon
+class Semaphore
 {
 	public:
+		Semaphore() = default;
+		Semaphore(const Semaphore&) = delete;
+		Semaphore(Semaphore&&) = delete;
+		Semaphore& operator=(const Semaphore&) = delete;
+		Semaphore& operator=(Semaphore&&) = delete;
 
-		virtual void refreshSettings() = 0;
-		virtual void requestStop() = 0;
-		virtual void preScanComplete() = 0;
+		void notify()
+		{
+			std::unique_lock<std::mutex> lock {_mutex};
 
-		virtual void trackAdded(Database::IdType trackId) = 0;
-		virtual void trackToRemove(Database::IdType trackId) = 0;
-		virtual void trackUpdated(Database::IdType trackId) = 0;
+			_count++;
+			_cv.notify_one();
+		}
 
+		void wait()
+		{
+			std::unique_lock<std::mutex> lock(_mutex);
+
+			while (_count == 0)
+				_cv.wait(lock);
+
+			_count--;
+		}
+
+	private:
+		std::mutex			_mutex;
+		std::condition_variable		_cv;
+		unsigned			_count {};
 };
 
-} // ns Scanner
 

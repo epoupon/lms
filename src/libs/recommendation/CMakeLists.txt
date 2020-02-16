@@ -16,6 +16,7 @@ target_include_directories(lmsrecommendation PRIVATE
 target_link_libraries(lmsrecommendation PRIVATE
 	lmsdatabase
 	lmssom
+	wt
 	)
 
 install(TARGETS lmsrecommendation DESTINATION lib)

@@ -19,13 +19,17 @@
 
 #pragma once
 
+#include <functional>
 #include <vector>
 #include <unordered_set>
+
+#include <Wt/WSignal.h>
 
 #include "database/Types.hpp"
 
 namespace Database
 {
+	class Db;
 	class Session;
 }
 
@@ -36,7 +40,11 @@ namespace Recommendation
 		public:
 			virtual ~IEngine() = default;
 
-			virtual void reload(Database::Session& session) = 0;
+			virtual void start() = 0;
+			virtual void stop() = 0;
+
+			virtual void requestReload() = 0;
+			virtual Wt::Signal<>& reloaded() = 0;
 
 			// Closest results first
 			virtual std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) = 0;
@@ -45,7 +53,7 @@ namespace Recommendation
 			virtual std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) = 0;
 	};
 
-	std::unique_ptr<IEngine> createEngine(Database::Session& session);
+	std::unique_ptr<IEngine> createEngine(Database::Db& db);
 
 } // ns Recommendation
 

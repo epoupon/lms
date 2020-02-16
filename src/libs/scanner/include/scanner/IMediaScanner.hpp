@@ -24,7 +24,6 @@
 #include <Wt/WDateTime.h>
 #include <Wt/WSignal.h>
 
-#include "MediaScannerAddon.hpp"
 #include "MediaScannerStats.hpp"
 
 namespace Database
@@ -38,8 +37,6 @@ class IMediaScanner
 {
 	public:
 		virtual ~IMediaScanner() = default;
-
-		virtual void setAddon(MediaScannerAddon& addon) = 0;
 
 		virtual void start() = 0;
 		virtual void stop() = 0;
