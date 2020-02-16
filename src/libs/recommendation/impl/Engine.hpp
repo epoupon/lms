@@ -37,6 +37,8 @@ namespace Recommendation
 
 		private:
 
+			using ClassifierPriority = unsigned;
+
 			void start() override;
 			void stop() override;
 
@@ -59,7 +61,7 @@ namespace Recommendation
 			Wt::Signal<>		_sigReloaded;
 
 			std::shared_mutex	_classifiersMutex;
-			std::map<unsigned, std::unique_ptr<IClassifier>> _classifiers;
+			std::map<ClassifierPriority, std::unique_ptr<IClassifier>> _classifiers;
 	};
 
 } // ns Recommendation

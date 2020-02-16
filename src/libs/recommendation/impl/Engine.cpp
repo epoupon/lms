@@ -148,7 +148,7 @@ Engine::reload()
 {
 	using namespace Database;
 
-	LMS_LOG(RECOMMENDATION, DEBUG) << "Reloading recommendation engines...";
+	LMS_LOG(RECOMMENDATION, INFO) << "Reloading recommendation engines...";
 
 	const ScanSettings::RecommendationEngineType engineType {[&]()
 	{
@@ -157,21 +157,25 @@ Engine::reload()
 		return ScanSettings::get(_dbSession)->getRecommendationEngineType();
 	}()};
 
-	// TODO: just replace the classifier once it is ready
-	clearClassifiers();
+	std::map<ClassifierPriority, std::unique_ptr<IClassifier>> newClassifiers;
 
 	switch (engineType)
 	{
 		case ScanSettings::RecommendationEngineType::Features:
-//			addClassifier(createFeaturesClassifier(), 0); // higher priority
+//			newClassifiers.emplace_back(0, createFeaturesClassifier()); // higher priority
 //			[[fallthrough]];
 
 		case ScanSettings::RecommendationEngineType::Clusters:
-			addClassifier(createClustersClassifier(_dbSession), 1); // lower priority
+			newClassifiers.emplace(1, createClustersClassifier(_dbSession)); // lower priority
 			break;
 	}
 
-	LMS_LOG(RECOMMENDATION, DEBUG) << "Recommendation engines reloaded!";
+	{
+		std::unique_lock lock {_classifiersMutex};
+		_classifiers.swap(newClassifiers);
+	}
+
+	LMS_LOG(RECOMMENDATION, INFO) << "Recommendation engines reloaded!";
 
 	_sigReloaded.emit();
 }
@@ -180,9 +184,6 @@ Engine::reload()
 void
 Engine::clearClassifiers()
 {
-	std::unique_lock lock {_classifiersMutex};
-
-	_classifiers.clear();
 }
 
 void
