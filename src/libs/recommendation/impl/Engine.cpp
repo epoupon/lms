@@ -24,6 +24,7 @@
 
 #include "database/ScanSettings.hpp"
 #include "database/TrackList.hpp"
+#include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
 namespace Recommendation {
@@ -56,6 +57,8 @@ Engine::stop()
 	assert(_running);
 	_running = false;
 
+	cancelPendingClassifiers();
+
 	_ioService.stop();
 }
 
@@ -73,32 +76,18 @@ Engine::requestReload()
 std::vector<Database::IdType>
 Engine::getSimilarTracksFromTrackList(Database::Session& session, Database::IdType trackListId, std::size_t maxCount)
 {
-	const std::unordered_set<Database::IdType> trackIds {[&]() -> std::unordered_set<Database::IdType>
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		Database::TrackList::pointer trackList {Database::TrackList::getById(session, trackListId)};
-		if (trackList)
-		{
-			const std::vector<Database::IdType> orderedTrackIds {trackList->getTrackIds()};
-			return std::unordered_set<Database::IdType> {std::cbegin(orderedTrackIds), std::cend(orderedTrackIds)};
-		}
-
-		return {};
-	}()};
-
-	if (trackIds.empty())
-		return {};
-
 	std::shared_lock lock {_classifiersMutex};
+
+	std::vector<Database::IdType> res;
 
 	for (const auto& [priority, classifier] : _classifiers)
 	{
-		if (std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return classifier->isTrackClassified(trackId); } ))
-			return classifier->getSimilarTracksFromTrackList(session, trackListId, maxCount);
+		res = classifier->getSimilarTracksFromTrackList(session, trackListId, maxCount);
+		if (!res.empty())
+			break;
 	}
 
-	return {};
+	return res;
 }
 
 std::vector<Database::IdType>
@@ -106,13 +95,16 @@ Engine::getSimilarTracks(Database::Session& dbSession, const std::unordered_set<
 {
 	std::shared_lock lock {_classifiersMutex};
 
+	std::vector<Database::IdType> res;
+
 	for (const auto& [priority, classifier] : _classifiers)
 	{
-		if (std::any_of(std::cbegin(trackIds), std::cend(trackIds), [&](Database::IdType trackId) { return classifier->isTrackClassified(trackId); } ))
-			return classifier->getSimilarTracks(dbSession, trackIds, maxCount);
+		res = classifier->getSimilarTracks(dbSession, trackIds, maxCount);
+		if (!res.empty())
+			break;
 	}
 
-	return {};
+	return res;
 }
 
 std::vector<Database::IdType>
@@ -120,13 +112,16 @@ Engine::getSimilarReleases(Database::Session& dbSession, Database::IdType releas
 {
 	std::shared_lock lock {_classifiersMutex};
 
+	std::vector<Database::IdType> res;
+
 	for (const auto& [priority, classifier] : _classifiers)
 	{
-		if (classifier->isReleaseClassified(releaseId))
-			return classifier->getSimilarReleases(dbSession, releaseId, maxCount);
+		res = classifier->getSimilarReleases(dbSession, releaseId, maxCount);
+		if (!res.empty())
+			break;
 	}
 
-	return {};
+	return res;
 }
 
 std::vector<Database::IdType>
@@ -134,13 +129,16 @@ Engine::getSimilarArtists(Database::Session& dbSession, Database::IdType artistI
 {
 	std::shared_lock lock {_classifiersMutex};
 
+	std::vector<Database::IdType> res;
+
 	for (const auto& [priority, classifier] : _classifiers)
 	{
-		if (classifier->isArtistClassified(artistId))
-			return classifier->getSimilarArtists(dbSession, artistId, maxCount);
+		res = classifier->getSimilarArtists(dbSession, artistId, maxCount);
+		if (!res.empty())
+			return res;
 	}
 
-	return {};
+	return res;
 }
 
 void
@@ -159,14 +157,35 @@ Engine::reload()
 
 	std::map<ClassifierPriority, std::unique_ptr<IClassifier>> newClassifiers;
 
+	// TODO RAII this
+	auto addClassifier = [&](ClassifierPriority prio, std::unique_ptr<IClassifier> classifier)
+	{
+		try
+		{
+			addPendingClassifier(*classifier.get());
+			bool res {classifier->init(_dbSession)};
+			removePendingClassifier(*classifier.get());
+
+			if (res)
+				newClassifiers.emplace(prio, std::move(classifier));
+
+			return res;
+		}
+		catch (LmsException& e)
+		{
+			removePendingClassifier(*classifier.get());
+			throw;
+		}
+	};
+
 	switch (engineType)
 	{
 		case ScanSettings::RecommendationEngineType::Features:
-//			newClassifiers.emplace_back(0, createFeaturesClassifier()); // higher priority
-//			[[fallthrough]];
+			addClassifier(0, createFeaturesClassifier()); // higher priority
+			[[fallthrough]];
 
 		case ScanSettings::RecommendationEngineType::Clusters:
-			newClassifiers.emplace(1, createClustersClassifier(_dbSession)); // lower priority
+			addClassifier(1, createClustersClassifier()); // lower priority
 			break;
 	}
 
@@ -180,19 +199,29 @@ Engine::reload()
 	_sigReloaded.emit();
 }
 
-
 void
-Engine::clearClassifiers()
+Engine::cancelPendingClassifiers()
 {
+	std::unique_lock<std::shared_mutex> lock {_classifiersMutex};
+	
+	for (IClassifier* classifier : _pendingClassifiers)
+		classifier->requestCancelInit();
 }
 
 void
-Engine::addClassifier(std::unique_ptr<IClassifier> classifier, unsigned priority)
+Engine::addPendingClassifier(IClassifier& classifier)
 {
-	std::unique_lock lock {_classifiersMutex};
+	std::unique_lock<std::shared_mutex> lock {_classifiersMutex};
 
-	_classifiers.emplace(priority, std::move(classifier));
+	_pendingClassifiers.insert(&classifier);
 }
 
+void
+Engine::removePendingClassifier(IClassifier& classifier)
+{
+	std::unique_lock<std::shared_mutex> lock {_classifiersMutex};
+
+	_pendingClassifiers.erase(&classifier);
+}
 
 } // ns Similarity

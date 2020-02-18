@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 
 		engine->start();
 
-		std::cout << "Wating for the recommendation engine to be loaded..." << std::endl;
+		std::cout << "Waiting for the recommendation engine to be loaded..." << std::endl;
 		sem.wait();
 		std::cout << "Recommendation engine loaded!" << std::endl;
 

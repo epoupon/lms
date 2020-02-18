@@ -52,8 +52,9 @@ namespace Recommendation
 
 
 			void reload();
-			void clearClassifiers();
-			void addClassifier(std::unique_ptr<IClassifier> classifier, unsigned priority);
+			void cancelPendingClassifiers();
+			void addPendingClassifier(IClassifier& classifier);
+			void removePendingClassifier(IClassifier& classifier);
 
 			bool			_running {};
 			Wt::WIOService		_ioService;
@@ -62,6 +63,7 @@ namespace Recommendation
 
 			std::shared_mutex	_classifiersMutex;
 			std::map<ClassifierPriority, std::unique_ptr<IClassifier>> _classifiers;
+			std::unordered_set<IClassifier*> _pendingClassifiers;
 	};
 
 } // ns Recommendation

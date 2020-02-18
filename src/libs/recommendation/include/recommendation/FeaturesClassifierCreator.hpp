@@ -20,11 +20,10 @@
 #pragma once
 
 #include <memory>
+#include "recommendation/IClassifier.hpp"
 
 namespace Recommendation
 {
-	class IClassifier;
-
 	std::unique_ptr<IClassifier> createFeaturesClassifier();
 }
 

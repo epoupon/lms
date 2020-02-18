@@ -77,9 +77,12 @@ namespace Scanner {
 		std::size_t	skips {};		// no change since last scan
 		std::size_t	scans {};		// actually scanned filed
 
-		std::size_t	additions {};		// Added in DB
+		std::size_t	additions {};		// added in DB
 		std::size_t	deletions {};		// removed from DB
 		std::size_t	updates {};		// updated file in DB
+
+		std::size_t	featuresFetched {};	// features fetched in DB
+		std::size_t	featuresToFetch {};	// features to be fetched in DB
 
 		std::vector<ScanError>		errors;
 		std::vector<ScanDuplicate>	duplicates;

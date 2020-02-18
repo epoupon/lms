@@ -28,6 +28,7 @@
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
+#include "utils/UUID.hpp"
 
 
 namespace AcousticBrainz
@@ -50,7 +51,7 @@ getJsonData(const UUID& mbid)
 
 	if (!client.get(url))
 	{
-		LMS_LOG(SIMILARITY, ERROR) << "Cannot perform a GET request to url '" << url << "'";
+		LMS_LOG(DBUPDATER, ERROR) << "Cannot perform a GET request to url '" << url << "'";
 		return {};
 	}
 
@@ -59,13 +60,13 @@ getJsonData(const UUID& mbid)
 	{
 		if (ec)
 		{
-			LMS_LOG(SIMILARITY, ERROR) << "GET request to url '" << url << "' failed: " << ec.message();
+			LMS_LOG(DBUPDATER, ERROR) << "GET request to url '" << url << "' failed: " << ec.message();
 			return;
 		}
 
 		if (msg.status() != 200)
 		{
-			LMS_LOG(SIMILARITY, ERROR) << "GET request to url '" << url << "' failed: status = " << msg.status() << ", body = " << msg.body();
+			LMS_LOG(DBUPDATER, ERROR) << "GET request to url '" << url << "' failed: status = " << msg.status() << ", body = " << msg.body();
 			return;
 		}
 

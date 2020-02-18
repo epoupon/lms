@@ -28,10 +28,13 @@
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Track.hpp"
+#include "database/TrackFeatures.hpp"
 #include "metadata/TagLibParser.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Path.hpp"
+#include "utils/UUID.hpp"
+#include "AcousticBrainzUtils.hpp"
 
 using namespace Database;
 
@@ -420,7 +423,10 @@ MediaScanner::scan(boost::system::error_code err)
 	if (_running)
 		checkDuplicatedAudioFiles(stats);
 
-	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), duplicates = " << stats.duplicates.size();
+	// Now update all the track features if needed
+	fetchTrackFeatures(stats);
+
+	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << "/" << stats.featuresToFetch <<",  duplicates = " << stats.duplicates.size();
 
 	LMS_LOG(DBUPDATER, INFO) << "Optimizing db...";
 	_dbSession.optimize();
@@ -449,6 +455,76 @@ MediaScanner::scan(boost::system::error_code err)
 	}
 }
 
+bool
+MediaScanner::fetchTrackFeatures(Database::IdType trackId, const UUID& MBID)
+{
+	std::map<std::string, double> features;
+
+	LMS_LOG(DBUPDATER, INFO) << "Fetching low level features for track '" << MBID.getAsString() << "'";
+	const std::string data {AcousticBrainz::extractLowLevelFeatures(MBID)};
+	if (data.empty())
+	{
+		LMS_LOG(DBUPDATER, ERROR) << "Track " << trackId << ", MBID = '" << MBID.getAsString() << "': cannot extract features using AcousticBrainz";
+		return false;
+	}
+
+	{
+		auto uniqueTransaction {_dbSession.createUniqueTransaction()};
+
+		Wt::Dbo::ptr<Database::Track> track {Database::Track::getById(_dbSession, trackId)};
+		if (!track)
+			return false;
+
+		Database::TrackFeatures::create(_dbSession, track, data);
+	}
+
+	return true;
+}
+
+void
+MediaScanner::fetchTrackFeatures(ScanStats& stats)
+{
+	if (_recommendationEngineType != ScanSettings::RecommendationEngineType::Features)
+		return;
+
+	LMS_LOG(DBUPDATER, INFO) << "Fetching missing track features...";
+
+	struct TrackInfo
+	{
+		Database::IdType id;
+		UUID mbid;
+	};
+
+	const auto tracksToFetch {[&]()
+	{
+		std::vector<TrackInfo> res;
+
+		auto transaction {_dbSession.createSharedTransaction()};
+
+		auto tracks {Database::Track::getAllWithMBIDAndMissingFeatures(_dbSession)};
+		for (const auto& track : tracks)
+			res.emplace_back(TrackInfo {track.id(), *track->getMBID()});
+
+		return res;
+	}()};
+
+	stats.featuresToFetch = tracksToFetch.size();
+
+	LMS_LOG(DBUPDATER, INFO) << "Found " << tracksToFetch.size() << " track(s) to fetch!";
+
+	for (const TrackInfo& trackToFetch : tracksToFetch)
+	{
+		if (!_running)
+			return;
+
+		if (fetchTrackFeatures(trackToFetch.id, trackToFetch.mbid))
+			stats.featuresFetched++;
+
+	}
+
+	LMS_LOG(DBUPDATER, INFO) << "Track features fetched!";
+}
+
 void
 MediaScanner::refreshScanSettings()
 {
@@ -464,6 +540,7 @@ MediaScanner::refreshScanSettings()
 
 	_fileExtensions = scanSettings->getAudioFileExtensions();
 	_mediaDirectory = scanSettings->getMediaDirectory();
+	_recommendationEngineType = scanSettings->getRecommendationEngineType();
 
 	auto clusterTypes = scanSettings->getClusterTypes();
 	std::set<std::string> clusterTypeNames;
@@ -648,6 +725,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 		track.modify()->setYear(*trackInfo->originalYear);
 
 	track.modify()->setMBID(trackInfo->musicBrainzRecordID);
+	track.modify()->setFeatures({}); // TODO: only if MBID changed?
 	track.modify()->setHasCover(trackInfo->hasCover);
 	track.modify()->setCopyright(trackInfo->copyright);
 	track.modify()->setCopyrightURL(trackInfo->copyrightURL);

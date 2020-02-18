@@ -19,33 +19,36 @@
 
 #pragma once
 
-#include <map>
-#include <optional>
-#include <set>
+#include <filesystem>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "database/Types.hpp"
 #include "som/Network.hpp"
 
-namespace Similarity {
+namespace Recommendation {
 
-class FeaturesCache
+class FeaturesClassifierCache
 {
 	public:
-
 		static void invalidate();
 
-		static std::optional<FeaturesCache> read();
-		void write();
+		static std::optional<FeaturesClassifierCache> read();
+		void write() const;
 
 	private:
-		using ObjectPositions = std::map<Database::IdType, std::set<SOM::Position>>;
+		using ObjectPositions = std::unordered_map<Database::IdType, std::unordered_set<SOM::Position>>;
 
-		FeaturesCache(SOM::Network network, ObjectPositions trackPositions);
+		FeaturesClassifierCache(SOM::Network network, ObjectPositions trackPositions);
 
-		friend class FeaturesSearcher;
+		static std::optional<SOM::Network> createNetworkFromCacheFile(const std::filesystem::path& path);
+		static std::optional<ObjectPositions> createObjectPositionsFromCacheFile(const std::filesystem::path& path);
+		static bool objectPositionToCacheFile(const ObjectPositions& objectsPosition, const std::filesystem::path& path);
+
+		friend class FeaturesClassifier;
 
 		SOM::Network		_network;
 		ObjectPositions		_trackPositions;
 };
 
-} // namespace Similarity
+} // namespace Recommendation

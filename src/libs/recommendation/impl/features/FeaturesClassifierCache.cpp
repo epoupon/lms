@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "SimilarityFeaturesCache.hpp"
+#include "FeaturesClassifierCache.hpp"
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -26,7 +26,7 @@
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
-namespace Similarity {
+namespace Recommendation {
 
 
 static
@@ -38,7 +38,7 @@ std::filesystem::path getCacheDirectory()
 static std::filesystem::path getCacheNetworkFilePath()
 {
 	return getCacheDirectory() / "network";
-};
+}
 
 static std::filesystem::path getCacheTrackPositionsFilePath()
 {
@@ -79,26 +79,25 @@ networkToCacheFile(const SOM::Network& network, std::filesystem::path path)
 
 		boost::property_tree::write_xml(path.string(), root);
 
-		LMS_LOG(SIMILARITY, DEBUG) << "Created network cache";
+		LMS_LOG(RECOMMENDATION, DEBUG) << "Created network cache";
 		return true;
 	}
 	catch (boost::property_tree::ptree_error& error)
 	{
-		LMS_LOG(SIMILARITY, ERROR) << "Cannot create network cache: " << error.what();
+		LMS_LOG(RECOMMENDATION, ERROR) << "Cannot create network cache: " << error.what();
 		return false;
 	}
 }
 
-static
 std::optional<SOM::Network>
-createNetworkFromCacheFile(const std::filesystem::path& path)
+FeaturesClassifierCache::createNetworkFromCacheFile(const std::filesystem::path& path)
 {
 	if (!std::filesystem::exists(path))
 		return std::nullopt;
 
 	try
 	{
-		LMS_LOG(SIMILARITY, INFO) << "Reading network from cache...";
+		LMS_LOG(RECOMMENDATION, INFO) << "Reading network from cache...";
 
 		boost::property_tree::ptree root;
 
@@ -132,20 +131,19 @@ createNetworkFromCacheFile(const std::filesystem::path& path)
 			res.setRefVector({x, y}, refVector);
 		}
 
-		LMS_LOG(SIMILARITY, INFO) << "Successfully read network from cache";
+		LMS_LOG(RECOMMENDATION, INFO) << "Successfully read network from cache";
 
 		return res;
 	}
 	catch (boost::property_tree::ptree_error& error)
 	{
-		LMS_LOG(SIMILARITY, ERROR) << "Cannot read network cache: " << error.what();
+		LMS_LOG(RECOMMENDATION, ERROR) << "Cannot read network cache: " << error.what();
 		return std::nullopt;
 	}
 }
 
-static
 bool
-objectPositionToCacheFile(const std::map<Database::IdType, std::set<SOM::Position>>& objectsPosition, std::filesystem::path path)
+FeaturesClassifierCache::objectPositionToCacheFile(const ObjectPositions& objectsPosition, const std::filesystem::path& path)
 {
 	try
 	{
@@ -174,24 +172,23 @@ objectPositionToCacheFile(const std::map<Database::IdType, std::set<SOM::Positio
 	}
 	catch (boost::property_tree::ptree_error& error)
 	{
-		LMS_LOG(SIMILARITY, ERROR) << "Cannot cache object position: " << error.what();
+		LMS_LOG(RECOMMENDATION, ERROR) << "Cannot cache object position: " << error.what();
 		return false;
 	}
 }
 
-static
-std::optional<std::map<Database::IdType, std::set<SOM::Position>>>
-createObjectPositionsFromCacheFile(std::filesystem::path path)
+std::optional<FeaturesClassifierCache::ObjectPositions>
+FeaturesClassifierCache::createObjectPositionsFromCacheFile(const std::filesystem::path& path)
 {
 	try
 	{
-		LMS_LOG(SIMILARITY, INFO) << "Reading object position from cache...";
+		LMS_LOG(RECOMMENDATION, INFO) << "Reading object position from cache...";
 
 		boost::property_tree::ptree root;
 
 		boost::property_tree::read_xml(path.string(), root);
 
-		std::map<Database::IdType, std::set<SOM::Position>> res;
+		ObjectPositions res;
 
 		for (const auto& object : root.get_child("objects"))
 		{
@@ -205,42 +202,40 @@ createObjectPositionsFromCacheFile(std::filesystem::path path)
 			}
 		}
 
-		LMS_LOG(SIMILARITY, INFO) << "Successfully read object position from cache";
+		LMS_LOG(RECOMMENDATION, INFO) << "Successfully read object position from cache";
 
 		return res;
 	}
 	catch (boost::property_tree::ptree_error& error)
 	{
-		LMS_LOG(SIMILARITY, ERROR) << "Cannot create object position from cache file: " << error.what();
+		LMS_LOG(RECOMMENDATION, ERROR) << "Cannot create object position from cache file: " << error.what();
 		return std::nullopt;
 	}
 }
 
 void
-FeaturesCache::invalidate()
+FeaturesClassifierCache::invalidate()
 {
 	std::filesystem::remove(getCacheNetworkFilePath());
 	std::filesystem::remove(getCacheTrackPositionsFilePath());
 }
 
-std::optional<FeaturesCache>
-FeaturesCache::read()
+std::optional<FeaturesClassifierCache>
+FeaturesClassifierCache::read()
 {
-	std::optional<FeaturesCache> res;
-
 	auto network{createNetworkFromCacheFile(getCacheNetworkFilePath())};
 	if (!network)
-		return res;
+		return std::nullopt;
 
 	auto trackPositions{createObjectPositionsFromCacheFile(getCacheTrackPositionsFilePath())};
 	if (!trackPositions)
-		return res;
+		return std::nullopt;
 
-	return FeaturesCache{std::move(*network), std::move(*trackPositions)};
+	return FeaturesClassifierCache {std::move(*network), std::move(*trackPositions)};
 }
 
 void
-FeaturesCache::write()
+FeaturesClassifierCache::write() const
 {
 	std::filesystem::create_directories(ServiceProvider<IConfig>::get()->getPath("working-dir") / "cache" / "features");
 
@@ -251,11 +246,10 @@ FeaturesCache::write()
 	}
 }
 
-FeaturesCache::FeaturesCache(SOM::Network network, ObjectPositions trackPositions)
+FeaturesClassifierCache::FeaturesClassifierCache(SOM::Network network, ObjectPositions trackPositions)
 : _network {std::move(network)},
 _trackPositions {std::move(trackPositions)}
 {
 }
 
-
-} // namespace Similarity
+} // namespace Recommendation

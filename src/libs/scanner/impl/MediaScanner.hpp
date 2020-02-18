@@ -35,6 +35,7 @@
 #include "metadata/IParser.hpp"
 #include "scanner/IMediaScanner.hpp"
 
+class UUID;
 
 namespace Scanner {
 
@@ -72,6 +73,8 @@ class MediaScanner : public IMediaScanner
 		void scan(boost::system::error_code ec);
 
 		void scanMediaDirectory( const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats);
+		bool fetchTrackFeatures(Database::IdType trackId, const UUID& MBID);
+		void fetchTrackFeatures(ScanStats& stats);
 
 		// Helpers
 		void refreshScanSettings();
@@ -102,11 +105,12 @@ class MediaScanner : public IMediaScanner
 		Wt::WDateTime				_nextScheduledScan;
 
 		// Current scan settings
-		std::size_t _scanVersion {};
-		Wt::WTime _startTime;
+		std::size_t				_scanVersion {};
+		Wt::WTime				_startTime;
 		Database::ScanSettings::UpdatePeriod 	_updatePeriod {Database::ScanSettings::UpdatePeriod::Never};
 		std::set<std::filesystem::path>		_fileExtensions;
 		std::filesystem::path			_mediaDirectory;
+		Database::ScanSettings::RecommendationEngineType _recommendationEngineType;
 
 
 }; // class MediaScanner

@@ -28,7 +28,7 @@ namespace Recommendation
 	class ClusterClassifier : public IClassifier
 	{
 		public:
-			ClusterClassifier(Database::Session& session);
+			ClusterClassifier() = default;
 			ClusterClassifier(const ClusterClassifier&) = delete;
 			ClusterClassifier(ClusterClassifier&&) = delete;
 			ClusterClassifier& operator=(const ClusterClassifier&) = delete;
@@ -36,20 +36,16 @@ namespace Recommendation
 
 		private:
 
-			bool isTrackClassified(Database::IdType trackId) const override;
-			bool isReleaseClassified(Database::IdType releaseId) const override;
-			bool isArtistClassified(Database::IdType artistId) const override;
+			std::string_view getName() const { return "Clusters"; }
+
+			bool init(Database::Session&) override {return true;}
+			void requestCancelInit() override {}
 
 			std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const override;
 			std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) const override;
 			std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const override;
 			std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) const override;
 
-			void classify(Database::Session& session);
-
-			std::unordered_set<Database::IdType>	_classifiedArtists;
-			std::unordered_set<Database::IdType>	_classifiedReleases;
-			std::unordered_set<Database::IdType>	_classifiedTracks;
 };
 
 } // namespace Recommendation

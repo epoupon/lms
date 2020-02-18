@@ -82,7 +82,7 @@ int main()
 		assert((std::abs(distFunc({1, 0}, {1, 0.33}, weights) - distFunc({1, 0.66}, {1, 1.}, weights)) < EPSILON));
 
 		{
-			std::set<Position> positions;
+			std::unordered_set<Position> positions;
 			for (const InputVector& data : trainData)
 				positions.insert(network.getClosestRefVectorPosition(data));
 			assert(positions.size() == 4);

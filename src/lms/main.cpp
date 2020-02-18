@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
 		{
 			auto status = mediaScanner.getStatus();
 
-			if (status.lastCompleteScanStats->nbChanges() > 0)
+			if (status.lastCompleteScanStats->nbChanges() > 0 || status.lastCompleteScanStats->featuresFetched > 0)
 			{
 				LMS_LOG(MAIN, INFO) << "Scanner changed some files, reloading the recommendation engine...";
 				recommendationEngine.requestReload();

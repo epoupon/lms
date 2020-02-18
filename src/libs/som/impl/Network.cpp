@@ -201,9 +201,9 @@ Network::getClosestRefVectorPosition(const InputVector& data, InputVector::Dista
 }
 
 std::optional<Position>
-Network::getClosestRefVectorPosition(const std::set<Position>& refVectorsPosition, InputVector::Distance maxDistance) const
+Network::getClosestRefVectorPosition(const std::unordered_set<Position>& refVectorsPosition, InputVector::Distance maxDistance) const
 {
-	std::set<Position> neighboursPosition;
+	std::unordered_set<Position> neighboursPosition;
 	for (const Position& refVectorPosition : refVectorsPosition)
 	{
 		if (refVectorPosition.y > 0)

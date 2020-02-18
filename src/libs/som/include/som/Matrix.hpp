@@ -21,7 +21,7 @@
 
 #include <algorithm>
 #include <cassert>
-#include <sstream>
+#include <functional>
 #include <vector>
 
 namespace SOM
@@ -116,3 +116,20 @@ class Matrix
 };
 
 } // ns SOM
+
+namespace std {
+
+template<>
+class hash<SOM::Position>
+{
+	public:
+		size_t operator()(const SOM::Position& s) const
+		{
+			size_t h1 = std::hash<SOM::Coordinate>()(s.x);
+			size_t h2 = std::hash<SOM::Coordinate>()(s.y);
+			return h1 ^ (h2 << 1);
+		}
+};
+
+} // ns std
+

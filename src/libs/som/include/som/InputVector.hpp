@@ -31,7 +31,7 @@ namespace SOM
 class Exception : public LmsException
 {
 	public:
-		Exception(const std::string& msg) : LmsException(msg) {}
+		using LmsException::LmsException;
 };
 
 class InputVector

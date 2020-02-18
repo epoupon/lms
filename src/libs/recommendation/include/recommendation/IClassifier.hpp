@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <functional>
 #include <unordered_set>
 #include <vector>
 
@@ -37,9 +38,10 @@ namespace Recommendation
 		public:
 			virtual ~IClassifier() = default;
 
-			virtual bool isTrackClassified(Database::IdType trackId) const = 0;
-			virtual bool isReleaseClassified(Database::IdType releaseId) const = 0;
-			virtual bool isArtistClassified(Database::IdType artistId) const = 0;
+			virtual std::string_view getName() const = 0;
+
+			virtual bool init(Database::Session& session) = 0;
+			virtual void requestCancelInit() = 0;
 
 			virtual std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const = 0;
 			virtual std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) const = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,30 +20,11 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
-namespace Similarity {
+class UUID;
 
-using FeatureName = std::string;
-using FeatureNames = std::unordered_set<FeatureName>;
-using FeatureValue = double;
-using FeatureValues = std::vector<FeatureValue>;
-using FeatureValuesMap = std::unordered_map<FeatureName, FeatureValues>;
-
-struct FeatureDef
+namespace AcousticBrainz
 {
-	std::size_t nbDimensions {};
-};
+	std::string extractLowLevelFeatures(const UUID& MBID);
+}
 
-FeatureDef getFeatureDef(const FeatureName& featureName);
-FeatureNames getFeatureNames();
-
-struct FeatureSettings
-{
-	double weight {};
-};
-using FeatureSettingsMap = std::unordered_map<FeatureName, FeatureSettings>;
-
-} // namespace Similarity

@@ -25,6 +25,6 @@ namespace Recommendation
 {
 	class IClassifier;
 
-	std::unique_ptr<IClassifier> createClustersClassifier(Database::Session& session);
+	std::unique_ptr<IClassifier> createClustersClassifier();
 }
 

@@ -17,14 +17,14 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "SimilarityFeaturesDefs.hpp"
+#include "FeaturesDefs.hpp"
 
 #include <algorithm>
 #include <iterator>
 
 #include "utils/Exception.hpp"
 
-namespace Similarity {
+namespace Recommendation {
 
 static const std::unordered_map<FeatureName, FeatureDef> featureDefinitions
 {
@@ -398,5 +398,5 @@ getFeatureNames()
 	return res;
 }
 
-} // namespace Similarity
+} // namespace Recommendation
 
