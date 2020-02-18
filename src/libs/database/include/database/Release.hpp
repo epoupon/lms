@@ -89,7 +89,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		void setTotalTrackNumber(std::size_t num)	{ _totalTrackNumber = static_cast<int>(num); }
 
 		// Accessors
-		std::string			getName() const		{ return _name; }
+		const std::string&		getName() const		{ return _name; }
 		std::optional<UUID>		getMBID() const		{ return UUID::fromString(_MBID); }
 		std::optional<std::size_t>	getTotalTrackNumber() const;
 		std::optional<std::size_t>	getTotalDiscNumber() const;
@@ -101,7 +101,8 @@ class Release : public Wt::Dbo::Dbo<Release>
 		bool hasVariousArtists() const;
 		std::vector<pointer>		getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
 
-		void setMBID(const std::optional<UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
+		void setName(std::string_view name)		{ _name = name; }
+		void setMBID(const std::optional<UUID>& mbid)	{ _MBID = mbid ? mbid->getAsString() : ""; }
 
 		template<class Action>
 			void persist(Action& a)

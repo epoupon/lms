@@ -71,8 +71,8 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
 
 		// Accessors
-		const std::string& getName(void) const { return _name; }
-		std::optional<UUID> getMBID(void) const { return UUID::fromString(_MBID); }
+		const std::string&	getName(void) const { return _name; }
+		std::optional<UUID>	getMBID(void) const { return UUID::fromString(_MBID); }
 
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
 		std::size_t				getReleaseCount() const;
@@ -86,7 +86,8 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		// size is the max number of cluster per cluster type
 		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
 
-		void setMBID(const std::optional<UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
+		void setName(std::string_view name)		{ _name  = name; }
+		void setMBID(const std::optional<UUID>& mbid)	{ _MBID = mbid ? mbid->getAsString() : ""; }
 		void setSortName(const std::string& sortName);
 
 		// Create
