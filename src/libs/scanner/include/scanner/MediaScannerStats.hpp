@@ -32,6 +32,8 @@ namespace Scanner {
 		CannotParseFile,	// cannot parse file
 		NoAudioTrack,		// no audio track found
 		BadDuration,		// bad duration
+		NotSupported,		// not supported
+		NotRegular,
 	};
 
 	enum class DuplicateReason

@@ -34,3 +34,10 @@ bool ensureDirectory(const std::filesystem::path& dir);
 // Get the last write time since Epoch
 Wt::WDateTime getLastWriteTime(const std::filesystem::path& dir);
 
+namespace std {
+	template <>
+	struct hash<std::filesystem::path> {
+		inline std::size_t operator()(const std::filesystem::path &path) const { return hash_value(path); }
+	};
+}
+

@@ -108,7 +108,7 @@ class MediaScanner : public IMediaScanner
 		std::size_t				_scanVersion {};
 		Wt::WTime				_startTime;
 		Database::ScanSettings::UpdatePeriod 	_updatePeriod {Database::ScanSettings::UpdatePeriod::Never};
-		std::set<std::filesystem::path>		_fileExtensions;
+		std::unordered_set<std::filesystem::path> _fileExtensions;
 		std::filesystem::path			_mediaDirectory;
 		Database::ScanSettings::RecommendationEngineType _recommendationEngineType;
 

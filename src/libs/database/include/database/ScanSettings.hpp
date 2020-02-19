@@ -19,10 +19,12 @@
 
 #pragma once
 
-#include <filesystem>
+#include <unordered_set>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WTime.h>
+
+#include "utils/Path.hpp"
 
 namespace Database {
 
@@ -59,7 +61,7 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		Wt::WTime getUpdateStartTime() const { return _startTime; }
 		UpdatePeriod getUpdatePeriod() const { return _updatePeriod; }
 		std::vector<Wt::Dbo::ptr<ClusterType>> getClusterTypes() const;
-		std::set<std::filesystem::path> getAudioFileExtensions() const;
+		std::unordered_set<std::filesystem::path> getAudioFileExtensions() const;
 		RecommendationEngineType getRecommendationEngineType() const { return _recommendationEngineType; }
 
 		// Setters

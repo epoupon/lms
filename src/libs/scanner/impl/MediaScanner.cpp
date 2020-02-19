@@ -63,7 +63,7 @@ getNextFirstOfMonth(Wt::WDate current)
 }
 
 bool
-isFileSupported(const std::filesystem::path& file, const std::set<std::filesystem::path>& extensions)
+isFileSupported(const std::filesystem::path& file, const std::unordered_set<std::filesystem::path>& extensions)
 {
 	return (extensions.find(file.extension()) != extensions.end());
 }
@@ -768,10 +768,26 @@ MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bo
 			LMS_LOG(DBUPDATER, ERROR) << "Cannot process entry '" << path.string() << "': " << ec.message();
 			stats.errors.emplace_back(ScanError {path, ScanErrorType::CannotReadFile, ec.message()});
 		}
+		else if (std::filesystem::is_directory(path))
+		{
+			;
+		}
 		else if (std::filesystem::is_regular_file(path))
 		{
 			if (isFileSupported(path, _fileExtensions))
+			{
 				scanAudioFile(path, forceScan, stats );
+			}
+			else
+			{
+				LMS_LOG(DBUPDATER, ERROR) << "Skipped '" << path.string() << "': file not supported";
+				stats.errors.emplace_back(ScanError {path, ScanErrorType::NotSupported});
+			}
+		}
+		else
+		{
+			LMS_LOG(DBUPDATER, ERROR) << "Skipped '" << path.string() << "': not a regular file";
+			stats.errors.emplace_back(ScanError {path, ScanErrorType::NotRegular});
 		}
 
 		itPath.increment(ec);
@@ -782,7 +798,7 @@ MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bo
 
 // Check if a file exists and is still in a media directory
 static bool
-checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDirectory, const std::set<std::filesystem::path>& extensions)
+checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDirectory, const std::unordered_set<std::filesystem::path>& extensions)
 {
 	try
 	{

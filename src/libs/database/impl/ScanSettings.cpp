@@ -21,6 +21,7 @@
 
 #include <Wt/Dbo/WtSqlTraits.h>
 
+#include "utils/Path.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
@@ -62,11 +63,11 @@ ScanSettings::get(Session& session)
 	return session.getDboSession().find<ScanSettings>();
 }
 
-std::set<std::filesystem::path>
+std::unordered_set<std::filesystem::path>
 ScanSettings::getAudioFileExtensions() const
 {
 	auto extensions = StringUtils::splitString(_audioFileExtensions, " ");
-	return std::set<std::filesystem::path>(std::cbegin(extensions), std::cend(extensions));
+	return std::unordered_set<std::filesystem::path>(std::cbegin(extensions), std::cend(extensions));
 }
 
 void
