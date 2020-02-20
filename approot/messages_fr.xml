@@ -61,8 +61,6 @@
 <message id="Lms.Admin.Database.Status.last-scan-not-available">Non disponible</message>
 <message id="Lms.Admin.Database.Status.last-scan-status">{1} fichiers scannés en {2} le {3} ({4} erreurs, {5} duplicatas)</message>
 <message id="Lms.Admin.Database.Status.no-audio-track">Pas de piste audio</message>
-<message id="Lms.Admin.Database.Status.not-regular">Fichier non régulier</message>
-<message id="Lms.Admin.Database.Status.not-supported">Type de fichier non supporté</message>
 <message id="Lms.Admin.Database.Status.same-hash">Hash dupliqué</message>
 <message id="Lms.Admin.Database.Status.same-mbid">MBID dupliqué</message>
 <message id="Lms.Admin.Database.Status.status">Statut</message>

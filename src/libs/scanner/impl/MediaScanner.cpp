@@ -350,33 +350,21 @@ MediaScanner::scheduleNextScan()
 void
 MediaScanner::countAllFiles(ScanStats& stats)
 {
-	std::error_code ec;
-
 	stats.filesToScan = 0;
 
-	std::filesystem::recursive_directory_iterator itPath {_mediaDirectory, std::filesystem::directory_options::follow_directory_symlink, ec};
-	if (ec)
+	exploreFilesRecursive(_mediaDirectory, [&](std::error_code ec, const std::filesystem::path& path)
 	{
-		LMS_LOG(DBUPDATER, ERROR) << "Cannot iterate over '" << _mediaDirectory.string() << "': " << ec.message();
-		return;
-	}
+		if (ec)
+			return;
 
-	std::filesystem::recursive_directory_iterator itEnd;
-	while (_running && itPath != itEnd)
-	{
-		const std::filesystem::path& path {*itPath};
-
-		if (!ec)
+		if (isFileSupported(path, _fileExtensions))
 		{
-			if (std::filesystem::is_regular_file(path) && isFileSupported(path, _fileExtensions))
-				stats.filesToScan ++;
+			stats.filesToScan++;
 
 			if (stats.filesToScan % 250 == 0)
 				notifyInProgressIfNeeded(stats);
 		}
-
-		itPath.increment(ec);
-	}
+	});
 }
 
 void
@@ -592,8 +580,6 @@ MediaScanner::notifyInProgressIfNeeded(const ScanStats& stats)
 void
 MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanStats& stats)
 {
-	notifyInProgressIfNeeded(stats);
-
 	Wt::WDateTime lastWriteTime;
 	try
 	{
@@ -748,50 +734,23 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 void
 MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats)
 {
-	std::error_code ec;
-
-	std::filesystem::recursive_directory_iterator itPath {_mediaDirectory, std::filesystem::directory_options::follow_directory_symlink, ec};
-	if (ec)
+	exploreFilesRecursive(mediaDirectory, [&](std::error_code ec, const std::filesystem::path& path)
 	{
-		LMS_LOG(DBUPDATER, ERROR) << "Cannot iterate over '" << mediaDirectory.string() << "': " << ec.message();
-		stats.errors.emplace_back(ScanError {mediaDirectory, ScanErrorType::CannotReadFile, ec.message()});
-		return;
-	}
-
-	std::filesystem::recursive_directory_iterator itEnd;
-	while (_running && itPath != itEnd)
-	{
-		const std::filesystem::path& path {*itPath};
-
 		if (ec)
 		{
 			LMS_LOG(DBUPDATER, ERROR) << "Cannot process entry '" << path.string() << "': " << ec.message();
 			stats.errors.emplace_back(ScanError {path, ScanErrorType::CannotReadFile, ec.message()});
-		}
-		else if (std::filesystem::is_directory(path))
-		{
-			;
-		}
-		else if (std::filesystem::is_regular_file(path))
-		{
-			if (isFileSupported(path, _fileExtensions))
-			{
-				scanAudioFile(path, forceScan, stats );
-			}
-			else
-			{
-				LMS_LOG(DBUPDATER, ERROR) << "Skipped '" << path.string() << "': file not supported";
-				stats.errors.emplace_back(ScanError {path, ScanErrorType::NotSupported});
-			}
-		}
-		else
-		{
-			LMS_LOG(DBUPDATER, ERROR) << "Skipped '" << path.string() << "': not a regular file";
-			stats.errors.emplace_back(ScanError {path, ScanErrorType::NotRegular});
+
+			return;
 		}
 
-		itPath.increment(ec);
-	}
+		if (isFileSupported(path, _fileExtensions))
+		{
+			scanAudioFile(path, forceScan, stats );
+
+			notifyInProgressIfNeeded(stats);
+		}
+	});
 
 	notifyInProgress(stats);
 }

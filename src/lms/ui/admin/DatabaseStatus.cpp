@@ -94,8 +94,6 @@ class ReportResource : public Wt::WResource
 				case Scanner::ScanErrorType::CannotParseFile: return Wt::WString::tr("Lms.Admin.Database.Status.cannot-parse-file");
 				case Scanner::ScanErrorType::NoAudioTrack: return Wt::WString::tr("Lms.Admin.Database.Status.no-audio-track");
 				case Scanner::ScanErrorType::BadDuration: return Wt::WString::tr("Lms.Admin.Database.Status.bad-duration");
-				case Scanner::ScanErrorType::NotSupported: return Wt::WString::tr("Lms.Admin.Database.Status.not-supported");
-				case Scanner::ScanErrorType::NotRegular: return Wt::WString::tr("Lms.Admin.Database.Status.not-regular");
 			}
 			return "?";
 		}

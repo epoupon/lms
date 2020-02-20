@@ -87,3 +87,39 @@ getLastWriteTime(const std::filesystem::path& file)
 	return Wt::WDateTime::fromTime_t(sb.st_mtime);
 }
 
+void
+exploreFilesRecursive(const std::filesystem::path& directory, std::function<void(std::error_code, const std::filesystem::path&)> cb)
+{
+	std::error_code ec;
+	std::filesystem::directory_iterator itPath {directory, std::filesystem::directory_options::follow_directory_symlink, ec};
+
+	if (ec)
+	{
+		cb(ec, directory);
+		return;
+	}
+
+	std::filesystem::directory_iterator itEnd;
+	while (itPath != itEnd)
+	{
+		if (ec)
+		{
+			cb(ec, *itPath);
+		}
+		else
+		{
+			if (std::filesystem::is_regular_file(*itPath, ec))
+				cb(ec, *itPath);
+			else if (std::filesystem::is_directory(*itPath, ec))
+			{
+				if (!ec)
+					exploreFilesRecursive(*itPath, cb);
+				else
+					cb(ec, *itPath);
+			}
+		}
+
+		itPath.increment(ec);
+	}
+}
+

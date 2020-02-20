@@ -20,6 +20,7 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -34,10 +35,13 @@ bool ensureDirectory(const std::filesystem::path& dir);
 // Get the last write time since Epoch
 Wt::WDateTime getLastWriteTime(const std::filesystem::path& dir);
 
-namespace std {
+void exploreFilesRecursive(const std::filesystem::path& directory, std::function<void(std::error_code, const std::filesystem::path&)> cb);
+
+namespace std
+{
 	template <>
-	struct hash<std::filesystem::path> {
+	struct hash<std::filesystem::path>
+	{
 		inline std::size_t operator()(const std::filesystem::path &path) const { return hash_value(path); }
 	};
 }
-
