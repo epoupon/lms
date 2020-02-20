@@ -354,16 +354,18 @@ MediaScanner::countAllFiles(ScanStats& stats)
 
 	exploreFilesRecursive(_mediaDirectory, [&](std::error_code ec, const std::filesystem::path& path)
 	{
-		if (ec)
-			return;
+		if (!_running)
+			return false;
 
-		if (isFileSupported(path, _fileExtensions))
+		if (!ec && isFileSupported(path, _fileExtensions))
 		{
 			stats.filesToScan++;
 
 			if (stats.filesToScan % 250 == 0)
 				notifyInProgressIfNeeded(stats);
 		}
+
+		return true;
 	});
 }
 
@@ -736,20 +738,22 @@ MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bo
 {
 	exploreFilesRecursive(mediaDirectory, [&](std::error_code ec, const std::filesystem::path& path)
 	{
+		if (!_running)
+			return false;
+
 		if (ec)
 		{
 			LMS_LOG(DBUPDATER, ERROR) << "Cannot process entry '" << path.string() << "': " << ec.message();
 			stats.errors.emplace_back(ScanError {path, ScanErrorType::CannotReadFile, ec.message()});
-
-			return;
 		}
-
-		if (isFileSupported(path, _fileExtensions))
+		else if (isFileSupported(path, _fileExtensions))
 		{
 			scanAudioFile(path, forceScan, stats );
 
 			notifyInProgressIfNeeded(stats);
 		}
+
+		return true;
 	});
 
 	notifyInProgress(stats);

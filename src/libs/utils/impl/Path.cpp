@@ -88,7 +88,7 @@ getLastWriteTime(const std::filesystem::path& file)
 }
 
 void
-exploreFilesRecursive(const std::filesystem::path& directory, std::function<void(std::error_code, const std::filesystem::path&)> cb)
+exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb)
 {
 	std::error_code ec;
 	std::filesystem::directory_iterator itPath {directory, std::filesystem::directory_options::follow_directory_symlink, ec};
@@ -102,22 +102,29 @@ exploreFilesRecursive(const std::filesystem::path& directory, std::function<void
 	std::filesystem::directory_iterator itEnd;
 	while (itPath != itEnd)
 	{
+		bool continueExploring {true};
+
 		if (ec)
 		{
-			cb(ec, *itPath);
+			continueExploring = cb(ec, *itPath);
 		}
 		else
 		{
 			if (std::filesystem::is_regular_file(*itPath, ec))
-				cb(ec, *itPath);
+			{
+				continueExploring = cb(ec, *itPath);
+			}
 			else if (std::filesystem::is_directory(*itPath, ec))
 			{
 				if (!ec)
 					exploreFilesRecursive(*itPath, cb);
 				else
-					cb(ec, *itPath);
+					continueExploring = cb(ec, *itPath);
 			}
 		}
+
+		if (!continueExploring)
+			break;
 
 		itPath.increment(ec);
 	}

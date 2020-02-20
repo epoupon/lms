@@ -35,7 +35,7 @@ bool ensureDirectory(const std::filesystem::path& dir);
 // Get the last write time since Epoch
 Wt::WDateTime getLastWriteTime(const std::filesystem::path& dir);
 
-void exploreFilesRecursive(const std::filesystem::path& directory, std::function<void(std::error_code, const std::filesystem::path&)> cb);
+void exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb);
 
 namespace std
 {
