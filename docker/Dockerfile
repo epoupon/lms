@@ -7,7 +7,7 @@ ARG	FFMPEG_VERSION=4.1.4
 ARG	WT_VERSION=4.2.0
 ARG	IMAGEMAGICK6_VERSION=6.9.10-71
 ARG	PSTREAMS_VERSION=1.0.1
-ARG	LMS_VERSION=3.5.0
+ARG	LMS_VERSION=v3.6.3
 
 ARG	PREFIX="/tmp/install"
 
@@ -153,23 +153,21 @@ RUN \
 # LMS
 RUN \
 	DIR=/tmp/lms && mkdir -p ${DIR} && cd ${DIR} && \
-	curl -sLO https://github.com/epoupon/lms/archive/v${LMS_VERSION}.tar.gz && \
-	tar -x --strip-components=1 -f v${LMS_VERSION}.tar.gz
+	curl -sL https://github.com/epoupon/lms/archive/${LMS_VERSION}.tar.gz -o ${LMS_VERSION}.tar.gz && \
+	tar -x --strip-components=1 -f ${LMS_VERSION}.tar.gz
 
 RUN \
 	DIR=/tmp/lms && mkdir -p ${DIR} && cd ${DIR} && \
-	autoreconf -vfi && \
-	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-O2 -I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" ./configure --prefix=${PREFIX} && \
+	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include -L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} && \
 	make && \
 	make install && \
-	make distclean && \
 	mkdir -p ${PREFIX}/etc/ && \
 	cp conf/lms.conf ${PREFIX}/etc
 
 # Now copy all the stuff installed in a new folder (/tmp/fakeroot/)
 RUN \
 	mkdir -p /tmp/fakeroot/bin && \
-	for bin in ${PREFIX}/bin/ffmpeg ${PREFIX}/bin/lms; \
+	for bin in ${PREFIX}/bin/ffmpeg ${PREFIX}/bin/lms*; \
 	do \
 		strip --strip-all $bin && \
 		cp $bin /tmp/fakeroot/bin/; \
