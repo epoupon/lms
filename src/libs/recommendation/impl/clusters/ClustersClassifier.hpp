@@ -38,7 +38,7 @@ namespace Recommendation
 
 			std::string_view getName() const { return "Clusters"; }
 
-			bool init(Database::Session&) override {return true;}
+			bool init(Database::Session&, bool) override {return true;}
 			void requestCancelInit() override {}
 
 			std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const override;

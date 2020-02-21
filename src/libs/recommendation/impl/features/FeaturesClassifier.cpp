@@ -259,21 +259,57 @@ FeaturesClassifier::getSimilarTracksFromTrackList(Database::Session& session, Da
 }
 
 std::vector<Database::IdType>
-FeaturesClassifier::getSimilarTracks(Database::Session&, const std::unordered_set<Database::IdType>& tracksIds, std::size_t maxCount) const
+FeaturesClassifier::getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksIds, std::size_t maxCount) const
 {
-	return getSimilarObjects(tracksIds, _tracksMap, _trackPositions, maxCount);
+	std::vector<Database::IdType> similarTrackIds {getSimilarObjects(tracksIds, _tracksMap, _trackPositions, maxCount)};
+
+	if (!similarTrackIds.empty())
+	{
+		// Report only existing ids
+		auto transaction {session.createSharedTransaction()};
+
+		similarTrackIds.erase(std::remove_if(std::begin(similarTrackIds), std::end(similarTrackIds),
+					[&](Database::IdType trackId) { return Database::Track::getById(session, trackId) == Database::Track::pointer {}; }),
+				std::cend(similarTrackIds));
+	}
+
+	return similarTrackIds;
 }
 
 std::vector<Database::IdType>
-FeaturesClassifier::getSimilarReleases(Database::Session&, Database::IdType releaseId, std::size_t maxCount) const
+FeaturesClassifier::getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const
 {
-	return getSimilarObjects({releaseId}, _releasesMap, _releasePositions, maxCount);
+	std::vector<Database::IdType> similarReleaseIds {getSimilarObjects({releaseId}, _releasesMap, _releasePositions, maxCount)};
+
+	if (!similarReleaseIds.empty())
+	{
+		// Report only existing ids
+		auto transaction {session.createSharedTransaction()};
+
+		similarReleaseIds.erase(std::remove_if(std::begin(similarReleaseIds), std::end(similarReleaseIds),
+					[&](Database::IdType releaseId) { return Database::Release::getById(session, releaseId) == Database::Release::pointer {}; }),
+				std::cend(similarReleaseIds));
+	}
+
+	return similarReleaseIds;
 }
 
 std::vector<Database::IdType>
-FeaturesClassifier::getSimilarArtists(Database::Session&, Database::IdType artistId, std::size_t maxCount) const
+FeaturesClassifier::getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) const
 {
-	return getSimilarObjects({artistId}, _artistsMap, _artistPositions, maxCount);
+	std::vector<Database::IdType> similarArtistIds {getSimilarObjects({artistId}, _artistsMap, _artistPositions, maxCount)};
+
+	if (!similarArtistIds.empty())
+	{
+		// Report only existing ids
+		auto transaction {session.createSharedTransaction()};
+
+		similarArtistIds.erase(std::remove_if(std::begin(similarArtistIds), std::end(similarArtistIds),
+					[&](Database::IdType artistId) { return Database::Artist::getById(session, artistId) == Database::Artist::pointer {}; }),
+				std::cend(similarArtistIds));
+	}
+
+	return similarArtistIds;
 }
 
 FeaturesClassifierCache
@@ -283,8 +319,14 @@ FeaturesClassifier::toCache() const
 }
 
 bool
-FeaturesClassifier::init(Database::Session& session)
+FeaturesClassifier::init(Database::Session& session, bool databaseChanged)
 {
+	if (databaseChanged)
+	{
+		LMS_LOG(RECOMMENDATION, DEBUG) << "Database changed: invidating cache";
+		FeaturesClassifierCache::invalidate();
+	}
+
 	std::optional<FeaturesClassifierCache> cache {FeaturesClassifierCache::read()};
 	if (cache)
 		return initFromCache(session, *cache);

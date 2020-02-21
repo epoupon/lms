@@ -360,9 +360,7 @@ MediaScanner::countAllFiles(ScanStats& stats)
 		if (!ec && isFileSupported(path, _fileExtensions))
 		{
 			stats.filesToScan++;
-
-			if (stats.filesToScan % 250 == 0)
-				notifyInProgressIfNeeded(stats);
+			notifyInProgressIfNeeded(stats);
 		}
 
 		return true;
@@ -822,6 +820,8 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 				stats.deletions++;
 			}
 		}
+
+		notifyInProgressIfNeeded(stats);
 	}
 }
 

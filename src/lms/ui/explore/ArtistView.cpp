@@ -140,11 +140,6 @@ Artist::refresh()
 		entry->bindWidget("name", LmsApplication::createReleaseAnchor(release));
 
 		auto artists {release->getReleaseArtists()};
-		LMS_LOG(UI, DEBUG) << "Found " << artists.size() << " release artists";
-
-		for (auto artist : artists)
-			LMS_LOG(UI, DEBUG) << "\tArtist = '" << artist->getName() << "'";
-
 		if (artists.empty())
 			artists = release->getArtists();
 

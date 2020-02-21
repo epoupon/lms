@@ -57,7 +57,7 @@ class FeaturesClassifier : public IClassifier
 
 		std::string_view getName() const { return "Features"; }
 
-		bool init(Database::Session& session) override;
+		bool init(Database::Session& session, bool databaseChanged) override;
 		void requestCancelInit() override;
 
 		std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const override;

@@ -21,6 +21,7 @@
 
 #include <map>
 #include <shared_mutex>
+#include <vector>
 
 #include <Wt/WIOService.h>
 
@@ -37,8 +38,6 @@ namespace Recommendation
 
 		private:
 
-			using ClassifierPriority = unsigned;
-
 			void start() override;
 			void stop() override;
 
@@ -51,7 +50,31 @@ namespace Recommendation
 			std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) override;
 
 
-			void reload();
+			void requestReloadInternal(bool databaseChanged);
+			void reload(bool databaseChanged);
+
+			void setClassifierPriorities(std::initializer_list<std::string_view> classifierNames);
+			void clearClassifiers();
+			void initAndAddClassifier(std::unique_ptr<IClassifier> classifier, bool databaseChanged);
+
+			class PendingClassifierHandler
+			{
+				public:
+					PendingClassifierHandler(Engine& engine, IClassifier& classifier) : _engine {engine}, _classifier {classifier}
+					{
+						_engine.addPendingClassifier(_classifier);
+					}
+
+					~PendingClassifierHandler()
+					{
+						_engine.removePendingClassifier(_classifier);
+					}
+
+				private:
+					Engine& _engine;
+					IClassifier& _classifier;
+			};
+
 			void cancelPendingClassifiers();
 			void addPendingClassifier(IClassifier& classifier);
 			void removePendingClassifier(IClassifier& classifier);
@@ -62,7 +85,8 @@ namespace Recommendation
 			Wt::Signal<>		_sigReloaded;
 
 			std::shared_mutex	_classifiersMutex;
-			std::map<ClassifierPriority, std::unique_ptr<IClassifier>> _classifiers;
+			std::map<std::string, std::unique_ptr<IClassifier>> _classifiers;
+			std::vector<std::string> _classifierPriorities; // ordered by priority
 			std::unordered_set<IClassifier*> _pendingClassifiers;
 	};
 

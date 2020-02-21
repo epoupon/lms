@@ -46,7 +46,7 @@ Engine::start()
 	assert(!_running);
 	_running = true;
 
-	requestReload();
+	requestReloadInternal(false);
 
 	_ioService.start();
 }
@@ -65,11 +65,17 @@ Engine::stop()
 void
 Engine::requestReload()
 {
+	requestReloadInternal(true);
+}
+
+void
+Engine::requestReloadInternal(bool databaseChanged)
+{
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Reload requested...";
 
-	_ioService.post([&]()
+	_ioService.post([=]()
 	{
-		reload();
+		reload(databaseChanged);
 	});
 }
 
@@ -80,9 +86,13 @@ Engine::getSimilarTracksFromTrackList(Database::Session& session, Database::IdTy
 
 	std::vector<Database::IdType> res;
 
-	for (const auto& [priority, classifier] : _classifiers)
+	for (const auto& classifierName : _classifierPriorities)
 	{
-		res = classifier->getSimilarTracksFromTrackList(session, trackListId, maxCount);
+		auto itClassifier {_classifiers.find(classifierName)};
+		if (itClassifier == std::cend(_classifiers))
+			continue;
+
+		res = itClassifier->second->getSimilarTracksFromTrackList(session, trackListId, maxCount);
 		if (!res.empty())
 			break;
 	}
@@ -97,11 +107,18 @@ Engine::getSimilarTracks(Database::Session& dbSession, const std::unordered_set<
 
 	std::vector<Database::IdType> res;
 
-	for (const auto& [priority, classifier] : _classifiers)
+	for (const auto& classifierName : _classifierPriorities)
 	{
-		res = classifier->getSimilarTracks(dbSession, trackIds, maxCount);
+		auto itClassifier {_classifiers.find(classifierName)};
+		if (itClassifier == std::cend(_classifiers))
+			continue;
+
+		res = itClassifier->second->getSimilarTracks(dbSession, trackIds, maxCount);
 		if (!res.empty())
+		{
+			LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar tracks using classifier '" << classifierName << "'";
 			break;
+		}
 	}
 
 	return res;
@@ -114,11 +131,18 @@ Engine::getSimilarReleases(Database::Session& dbSession, Database::IdType releas
 
 	std::vector<Database::IdType> res;
 
-	for (const auto& [priority, classifier] : _classifiers)
+	for (const auto& classifierName : _classifierPriorities)
 	{
-		res = classifier->getSimilarReleases(dbSession, releaseId, maxCount);
+		auto itClassifier {_classifiers.find(classifierName)};
+		if (itClassifier == std::cend(_classifiers))
+			continue;
+
+		res = itClassifier->second->getSimilarReleases(dbSession, releaseId, maxCount);
 		if (!res.empty())
+		{
+			LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar releases using classifier '" << classifierName << "'";
 			break;
+		}
 	}
 
 	return res;
@@ -131,18 +155,25 @@ Engine::getSimilarArtists(Database::Session& dbSession, Database::IdType artistI
 
 	std::vector<Database::IdType> res;
 
-	for (const auto& [priority, classifier] : _classifiers)
+	for (const auto& classifierName : _classifierPriorities)
 	{
-		res = classifier->getSimilarArtists(dbSession, artistId, maxCount);
+		auto itClassifier {_classifiers.find(classifierName)};
+		if (itClassifier == std::cend(_classifiers))
+			continue;
+
+		res = itClassifier->second->getSimilarArtists(dbSession, artistId, maxCount);
 		if (!res.empty())
+		{
+			LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar artists using classifier '" << classifierName << "'";
 			return res;
+		}
 	}
 
 	return res;
 }
 
 void
-Engine::reload()
+Engine::reload(bool databaseChanged)
 {
 	using namespace Database;
 
@@ -155,48 +186,68 @@ Engine::reload()
 		return ScanSettings::get(_dbSession)->getRecommendationEngineType();
 	}()};
 
-	std::map<ClassifierPriority, std::unique_ptr<IClassifier>> newClassifiers;
-
-	// TODO RAII this
-	auto addClassifier = [&](ClassifierPriority prio, std::unique_ptr<IClassifier> classifier)
-	{
-		try
-		{
-			addPendingClassifier(*classifier.get());
-			bool res {classifier->init(_dbSession)};
-			removePendingClassifier(*classifier.get());
-
-			if (res)
-				newClassifiers.emplace(prio, std::move(classifier));
-
-			return res;
-		}
-		catch (LmsException& e)
-		{
-			removePendingClassifier(*classifier.get());
-			throw;
-		}
-	};
+	clearClassifiers();
 
 	switch (engineType)
 	{
 		case ScanSettings::RecommendationEngineType::Features:
-			addClassifier(0, createFeaturesClassifier()); // higher priority
-			[[fallthrough]];
+		{
+			auto clustersClassifier {createClustersClassifier()};
+			auto featuresClassifier {createFeaturesClassifier()};
+
+			setClassifierPriorities({featuresClassifier->getName(), clustersClassifier->getName()});
+
+			initAndAddClassifier(std::move(clustersClassifier), databaseChanged); // init first since faster
+			initAndAddClassifier(std::move(featuresClassifier), databaseChanged);
+			break;
+		}
 
 		case ScanSettings::RecommendationEngineType::Clusters:
-			addClassifier(1, createClustersClassifier()); // lower priority
-			break;
-	}
+			auto clustersClassifier {createClustersClassifier()};
 
-	{
-		std::unique_lock lock {_classifiersMutex};
-		_classifiers.swap(newClassifiers);
+			setClassifierPriorities({clustersClassifier->getName()});
+
+			initAndAddClassifier(std::move(clustersClassifier), databaseChanged);
+			break;
 	}
 
 	LMS_LOG(RECOMMENDATION, INFO) << "Recommendation engines reloaded!";
 
 	_sigReloaded.emit();
+}
+
+void
+Engine::setClassifierPriorities(std::initializer_list<std::string_view> classifierPriorities)
+{
+	std::unique_lock<std::shared_mutex> lock {_classifiersMutex};
+
+	_classifierPriorities.clear();
+	std::transform(std::cbegin(classifierPriorities), std::cend(classifierPriorities), std::back_inserter(_classifierPriorities), [](std::string_view name) { return std::string {name}; });
+}
+
+void
+Engine::clearClassifiers()
+{
+	std::unique_lock<std::shared_mutex> lock {_classifiersMutex};
+
+	_classifiers.clear();
+}
+
+void
+Engine::initAndAddClassifier(std::unique_ptr<IClassifier> classifier, bool databaseChanged)
+{
+	PendingClassifierHandler pendingClassifier {*this, *classifier.get()};
+
+	LMS_LOG(RECOMMENDATION, INFO) << "Initializing classifier '" << classifier->getName() << "'...";
+	bool res {classifier->init(_dbSession, databaseChanged)};
+	LMS_LOG(RECOMMENDATION, INFO) << "Initializing classifier '" << classifier->getName() << "': " << (res ? "SUCCESS" : "FAILURE");
+
+	if (res)
+	{
+		std::unique_lock<std::shared_mutex> lock {_classifiersMutex};
+
+		_classifiers.emplace(classifier->getName(), std::move(classifier));
+	}
 }
 
 void
