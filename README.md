@@ -17,28 +17,33 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 * Audio transcode for maximum interoperability and low bandwith requirements
 * Persistent play queue across sessions
 * Subsonic API
-* Album artist
+* Compilation support
 * Multi-value tags: artists, genres, ...
 * Custom tags (ex: _mood_, _genre_, _albummood_, _albumgrouping_, ...)
 * MusicBrainzID support to handle duplicated artist and release names
-* Playlists, (only using Subsonic API for now)
-* Starred Album/Artist/Tracks (only using Subsonic API for now)
 * _Systemd_ integration
+* Subsonic-only features:
+  * Playlists
+  * Starred Album/Artist/Tracks
+  * Bookmarks
 
-## Recommendation engine
+## Music discovery
 
 _LMS_ provides several ways to help you find the music you like:
 * Tag-based filters (ex: _Rock_, _Metal_ and _Aggressive_, _Electronic_ and _Relaxed_, ...)
 * Recommendations for similar artists and albums
-* Radio mode
+* Radio mode, based on what is in the current playqueue
 * Searches in album, artist and track names
 * Most played/Recently added music
 
-The recommendation engine makes use of [Self-Organizing Maps](https://en.wikipedia.org/wiki/Self-organizing_map).</br>
-__Notes__:
-* constructing the map requires significant computation time on large collections (ex: half an hour for 40k tracks)
-* audio data is pulled from [AcousticBrainz](https://acousticbrainz.org/). Therefore your music files must contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) for the recommendation engine to work properly (otherwise, only tag-based recommendations are provided)
-* to use the _self-organizing map_ based engine, you have to enable it first in the settings panel.
+The recommendation engine uses two different sources:
+1. Tags that are present in the audio files
+2. Acoustic similarities of the audio files, using a trained [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map)
+
+__Notes on the self-organizing map__:
+* training the map requires significant computation time on large collections (ex: half an hour for 40k tracks)
+* audio acoustic data is pulled from [AcousticBrainz](https://acousticbrainz.org/). Therefore your audio files _must_ contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier).
+* to enable the audio similarity source, you have to enable it first in the settings panel.
 
 ## Subsonic API
 The API version implemented is 1.12.0 and has been tested on _Android_ using the official application, _Ultrasonic_ and _DSub_.
@@ -80,7 +85,7 @@ __Notes__:
 * a C++17 compiler is needed
 * ffmpeg version 4 minimum is required
 ```sh
-apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavutil-dev libavformat-dev libmagick++-dev libpstreams-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
+apt-get install g++ cmake libboost-system-dev libavutil-dev libavformat-dev libmagick++-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
 ```
 
 You also need _Wt4_, which is not packaged yet on _Debian_. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).</br>
@@ -92,16 +97,10 @@ Get the latest stable release and build it:
 ```sh
 git clone https://github.com/epoupon/lms.git lms
 cd lms
-autoreconf -vfi
 mkdir build
-cd build
-../configure --prefix=/usr
+cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
-configure will report any missing library.
-
-__Note__: in order to customize the installation directories, you can use the following options of the `configure` script:
-* _--prefix_ (defaults to `/usr/local`).
-* _--bindir_ (defaults to `$PREFIX/bin`).
+__Note__: in order to customize the installation directory, you can use the _-DCMAKE_INSTALL_PREFIX_ option (defaults to `/usr/local`).
 
 ```sh
 make
