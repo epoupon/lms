@@ -38,7 +38,7 @@ class PulseAudioOutput final : public IAudioOutput
 {
 	public:
 		PulseAudioOutput(Format format, SampleRate sampleRate, std::size_t nbChannels);
-		~PulseAudioOutput() = default;
+		~PulseAudioOutput();
 
 		PulseAudioOutput (const PulseAudioOutput &) = delete;
 		PulseAudioOutput (PulseAudioOutput &&) = delete;
@@ -52,8 +52,6 @@ class PulseAudioOutput final : public IAudioOutput
 		SampleRate	getSampleRate() const override		{ return _sampleRate; }
 		std::size_t	nbChannels() const override		{ return _nbChannels; }
 
-		void		start() override;
-		void		stop() override;
 		void		resume() override {}
 		void		pause() override {}
 		void		setVolume(Volume) override {}
@@ -62,7 +60,8 @@ class PulseAudioOutput final : public IAudioOutput
 		std::size_t	getCanWriteBytes() override;
 		std::size_t	write(const unsigned char* data, std::size_t size) override;
 	
-
+		void start();
+		void stop();
 		void threadEntry();
 
 		void connect();

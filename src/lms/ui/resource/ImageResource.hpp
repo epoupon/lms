@@ -34,6 +34,7 @@ class ImageResource : public Wt::WResource
 	public:
 		static const std::size_t maxSize {512};
 
+		ImageResource();
 		~ImageResource();
 
 		std::string getReleaseUrl(Database::IdType releaseId, size_t size) const;

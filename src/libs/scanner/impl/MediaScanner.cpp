@@ -224,12 +224,13 @@ MediaScanner::MediaScanner(Database::Db& db)
 	_ioService.setThreadCount(1);
 
 	refreshScanSettings();
+
+	start();
 }
 
 MediaScanner::~MediaScanner()
 {
-	if (_running)
-		stop();
+	stop();
 }
 
 void
@@ -242,6 +243,8 @@ MediaScanner::restart(void)
 void
 MediaScanner::start(void)
 {
+	LMS_LOG(DBUPDATER, INFO) << "Starting scanner...";
+	
 	_running = true;
 
 	scheduleNextScan();
@@ -252,6 +255,8 @@ MediaScanner::start(void)
 void
 MediaScanner::stop(void)
 {
+	LMS_LOG(DBUPDATER, INFO) << "Stopping scanner...";
+
 	_running = false;
 
 	_scheduleTimer.cancel();

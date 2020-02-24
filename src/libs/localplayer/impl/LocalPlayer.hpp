@@ -19,6 +19,12 @@
 
 #pragma once
 
+#include <shared_mutex>
+#include <vector>
+
+#include <Wt/WIOService.h>
+
+#include "av/AvTranscoder.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/Types.hpp"
@@ -32,20 +38,52 @@ class LocalPlayer final : public ILocalPlayer
 {
 	public:
 		LocalPlayer(Database::Db& db);
+		~LocalPlayer();
+
+		LocalPlayer(const LocalPlayer&) = delete;
+		LocalPlayer(LocalPlayer&&) = delete;
+		LocalPlayer& operator=(const LocalPlayer&) = delete;
+		LocalPlayer& operator=(LocalPlayer&&) = delete;
+
+	private:
 
 		void			setAudioOutput(std::unique_ptr<IAudioOutput> audioOutput) override;
 		const IAudioOutput*	getAudioOutput() const override;
 
-		void start() override;
-		void stop() override;
+		void play() override;
+		void pause() override;
 
-		void play() override {}
-		void pause() override {}
+		void addTrack(Database::IdType trackId) override;
 
-		void addTrack(Database::IdType /*trackId*/) override {}
+		
+		void start();
+		void stop();
 
-	private:
+		void asyncWaitDataFromTranscoder();
+		void handlePlay();
+		void handleDataAvailableFromTranscoder();
+		void handleNeedDataFromAudioOutput(std::size_t nbBytes);
+
+		std::size_t feedAudioOutputFromTranscoder(std::size_t nbBytes);
+
+		enum class Status
+		{
+			Stopped,
+			Playing,
+			Paused,
+		};
+
+		std::shared_mutex _mutex;
+
+		bool _waitingDataFromTranscoder {};
+		Status _status {Status::Stopped};
+
+		Database::Session _dbSession;
+		Wt::WIOService _ioService;
 
 		std::unique_ptr<IAudioOutput> _audioOutput;
+		std::vector<Database::IdType> _currentPlayqueue;
+
+		std::unique_ptr<Av::Transcoder> _transcoder;
 };
 

@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <iostream>
@@ -32,6 +33,16 @@ ChildProcess::ChildProcess(boost::asio::io_context& ioContext, const std::filesy
 	int res {pipe2(pipe, O_NONBLOCK | O_CLOEXEC)};
 	if (res < 0)
 		throw SystemException {errno, "pipe2 failed!"};
+
+	{
+		const std::size_t pipeSize {65536*8};
+
+		if (fcntl(pipe[0], F_SETPIPE_SZ, pipeSize) == -1)
+			throw SystemException {errno, "fcntl failed!"};
+
+		if (fcntl(pipe[1], F_SETPIPE_SZ, pipeSize) == -1)
+			throw SystemException {errno, "fcntl failed!"};
+	}
 
 	res = fork();
 	if (res == -1)

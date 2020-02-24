@@ -35,11 +35,14 @@ namespace Recommendation
 	{
 		public:
 			Engine(Database::Db& db);
+			~Engine();
+
+			Engine(const Engine&) = delete;
+			Engine(Engine&&) = delete;
+			Engine& operator=(const Engine&) = delete;
+			Engine& operator=(Engine&&) = delete;
 
 		private:
-
-			void start() override;
-			void stop() override;
 
 			void requestReload() override;
 			Wt::Signal<>& reloaded() override { return _sigReloaded; }
@@ -49,6 +52,9 @@ namespace Recommendation
 			std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) override;
 			std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) override;
 
+			
+			void start();
+			void stop();
 
 			void requestReloadInternal(bool databaseChanged);
 			void reload(bool databaseChanged);

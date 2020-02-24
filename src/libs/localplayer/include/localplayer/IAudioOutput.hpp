@@ -46,8 +46,6 @@ class IAudioOutput
 		virtual SampleRate	getSampleRate() const = 0;
 		virtual std::size_t	nbChannels() const = 0;
 
-		virtual void start() = 0;
-		virtual void stop() = 0;
 		virtual void resume() = 0;
 		virtual void pause() = 0;
 		virtual void setVolume(Volume volume) = 0;

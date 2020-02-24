@@ -50,8 +50,8 @@ class MediaScanner : public IMediaScanner
 		MediaScanner& operator=(const MediaScanner&) = delete;
 		MediaScanner& operator=(MediaScanner&&) = delete;
 
-		void start() override;
-		void stop() override;
+	private:
+
 		void restart() override;
 
 		void requestImmediateScan() override;
@@ -63,7 +63,8 @@ class MediaScanner : public IMediaScanner
 		Wt::Signal<ScanProgressStats>& scanInProgress() override { return _sigScanInProgress; }
 		Wt::Signal<Wt::WDateTime>& scheduled() override { return _sigScheduled; }
 
-	private:
+		void start();
+		void stop();
 
 		// Job handling
 		void scheduleNextScan();

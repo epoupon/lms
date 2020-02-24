@@ -19,6 +19,11 @@
 
 #include "utils/StreamLogger.hpp"
 
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+
+
 StreamLogger::StreamLogger(std::ostream& os)
 : _os {os}
 {
@@ -27,6 +32,9 @@ StreamLogger::StreamLogger(std::ostream& os)
 void
 StreamLogger::processLog(const Log& log)
 {
-	_os << "[" << getSeverityName(log.getSeverity()) << "] [" << getModuleName(log.getModule()) << "] " << log.getMessage() << std::endl;
+	auto now {std::chrono::system_clock::now()};
+	auto now_time_t {std::chrono::system_clock::to_time_t(now)};
+
+	_os << std::put_time(std::localtime(&now_time_t), "%Y-%m-%d %X") << " [" << getSeverityName(log.getSeverity()) << "] [" << getModuleName(log.getModule()) << "] " << log.getMessage() << std::endl;
 }
 

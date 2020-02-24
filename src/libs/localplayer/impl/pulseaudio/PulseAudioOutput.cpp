@@ -43,7 +43,7 @@ constructSampleSpec(IAudioOutput::Format /*format*/, IAudioOutput::SampleRate sa
 	return sampleSpec;
 }
 
-PulseAudioOutput ::PulseAudioOutput(Format format, SampleRate sampleRate, std::size_t nbChannels)
+PulseAudioOutput::PulseAudioOutput(Format format, SampleRate sampleRate, std::size_t nbChannels)
 : _format {format}
 , _sampleRate {sampleRate}
 , _nbChannels {nbChannels}
@@ -64,7 +64,14 @@ PulseAudioOutput ::PulseAudioOutput(Format format, SampleRate sampleRate, std::s
 		static_cast<PulseAudioOutput *>(userdata)->onContextStateChanged();
 	}, this);
 
+	start();
+
 	LMS_LOG(LOCALPLAYER, INFO) << "Init done!";
+}
+
+PulseAudioOutput::~PulseAudioOutput()
+{
+	stop();
 }
 
 void
@@ -256,16 +263,19 @@ PulseAudioOutput::write(const unsigned char* data, std::size_t size)
 void
 PulseAudioOutput::start()
 {
+	LMS_LOG(LOCALPLAYER, INFO) << "Starting PA output...";
 	assert(!_thread);
 
 	connect();
 
 	_thread = std::make_unique<std::thread>([&]() { threadEntry(); } );
+	LMS_LOG(LOCALPLAYER, INFO) << "Started PA output!";
 }
 
 void
 PulseAudioOutput::stop()
 {
+	LMS_LOG(LOCALPLAYER, INFO) << "Stopping PA output...";
 	assert(_thread);
 
 	disconnect();
@@ -273,6 +283,7 @@ PulseAudioOutput::stop()
 	pa_mainloop_quit(_mainLoop.get(), 1);
 
 	_thread->join();
+	LMS_LOG(LOCALPLAYER, INFO) << "Stopped PA output!";
 }
 
 void

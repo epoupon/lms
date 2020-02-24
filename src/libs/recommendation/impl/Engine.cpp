@@ -38,28 +38,43 @@ createEngine(Database::Db& db)
 Engine::Engine(Database::Db& db)
 : _dbSession {db}
 {
+	start();
+}
+
+
+Engine::~Engine()
+{
+	stop();
 }
 
 void
 Engine::start()
 {
+	LMS_LOG(RECOMMENDATION, INFO) << "Starting recommendation engine...";
+
 	assert(!_running);
 	_running = true;
 
 	requestReloadInternal(false);
 
 	_ioService.start();
+
+	LMS_LOG(RECOMMENDATION, INFO) << "Started recommendation engine!";
 }
 
 void
 Engine::stop()
 {
+	LMS_LOG(RECOMMENDATION, INFO) << "Stopping recommendation engine...";
+
 	assert(_running);
 	_running = false;
 
 	cancelPendingClassifiers();
 
 	_ioService.stop();
+
+	LMS_LOG(RECOMMENDATION, INFO) << "Stopped recommendation engine!";
 }
 
 void

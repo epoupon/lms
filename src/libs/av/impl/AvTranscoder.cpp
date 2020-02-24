@@ -40,7 +40,7 @@ static std::filesystem::path	ffmpegPath;
 void
 Transcoder::init()
 {
-	ffmpegPath = ServiceProvider<IConfig>::get()->getPath("ffmpeg-file", "/usr/bin/ffmpeg");
+	ffmpegPath = Service<IConfig>::get()->getPath("ffmpeg-file", "/usr/bin/ffmpeg");
 	if (!std::filesystem::exists(ffmpegPath))
 		throw LmsException {"File '" + ffmpegPath.string() + "' does not exist!"};
 }
@@ -55,10 +55,19 @@ _parameters {parameters}
 bool
 Transcoder::start()
 {
+	if (ffmpegPath.empty())
+		init();
+
 	if (!std::filesystem::exists(_filePath))
+	{
+		LMS_LOG_TRANSCODE(ERROR) << "File '" << _filePath.string() << "' does not exist";
 		return false;
+	}
 	else if (!std::filesystem::is_regular_file( _filePath) )
+	{
+		LMS_LOG_TRANSCODE(ERROR) << "File '" << _filePath.string() << "' is not regular";
 		return false;
+	}
 
 	LMS_LOG_TRANSCODE(INFO) << "Transcoding file '" << _filePath.string() << "'";
 
@@ -187,7 +196,7 @@ Transcoder::start()
 
 	try
 	{
-		_child = ServiceProvider<IChildProcessManager>::get()->spawnChildProcess(ffmpegPath, args);
+		_child = Service<IChildProcessManager>::get()->spawnChildProcess(ffmpegPath, args);
 
 		LMS_LOG_TRANSCODE(DEBUG) << "Stream opened!";
 		return true;

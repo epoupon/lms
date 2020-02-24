@@ -33,6 +33,11 @@
 
 namespace UserInterface {
 
+ImageResource::ImageResource()
+{
+	setTakesUpdateLock(true);
+}
+
 ImageResource::~ImageResource()
 {
 	beingDeleted();
@@ -74,11 +79,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		if (!trackId)
 			return;
 
-		// DbSession are not thread safe
-		{
-			Wt::WApplication::UpdateLock lock {LmsApp};
-			cover = ServiceProvider<CoverArt::IGrabber>::get()->getFromTrack(LmsApp->getDbSession(), *trackId, CoverArt::Format::JPEG, *size);
-		}
+		cover = Service<CoverArt::IGrabber>::get()->getFromTrack(LmsApp->getDbSession(), *trackId, CoverArt::Format::JPEG, *size);
 	}
 	else if (releaseIdStr)
 	{
@@ -86,11 +87,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		if (!releaseId)
 			return;
 
-		// DbSession are not thread safe
-		{
-			Wt::WApplication::UpdateLock lock {LmsApp};
-			cover = ServiceProvider<CoverArt::IGrabber>::get()->getFromRelease(LmsApp->getDbSession(), *releaseId, CoverArt::Format::JPEG, *size);
-		}
+		cover = Service<CoverArt::IGrabber>::get()->getFromRelease(LmsApp->getDbSession(), *releaseId, CoverArt::Format::JPEG, *size);
 	}
 	else
 		return;

@@ -43,8 +43,6 @@ struct TranscodeParameters
 class Transcoder
 {
 	public:
-		static void init();
-
 		Transcoder(const std::filesystem::path& file, const TranscodeParameters& parameters);
 		~Transcoder() = default;
 
@@ -67,6 +65,8 @@ class Transcoder
 		bool			finished() const;
 
 	private:
+		static void init();
+
 		const std::size_t		_id {};
 		const std::filesystem::path	_filePath;
 		const TranscodeParameters	_parameters;

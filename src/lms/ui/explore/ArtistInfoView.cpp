@@ -63,7 +63,7 @@ ArtistInfo::refresh()
 	if (!artistId)
 		return;
 
-	const std::vector<Database::IdType> artistsIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarArtists(LmsApp->getDbSession(), *artistId, 5)};
+	const std::vector<Database::IdType> artistsIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(LmsApp->getDbSession(), *artistId, 5)};
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 

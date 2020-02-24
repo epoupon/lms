@@ -33,11 +33,10 @@ class IAudioOutput;
 class ILocalPlayer
 {
 	public:
+		virtual ~ILocalPlayer() = default;
+
 		virtual void			setAudioOutput(std::unique_ptr<IAudioOutput> audioOutput) = 0;
 		virtual const IAudioOutput*	getAudioOutput() const = 0;
-
-		virtual void start() = 0;
-		virtual void stop() = 0;
 
 		virtual void play() = 0;
 		virtual void pause() = 0;
