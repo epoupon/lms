@@ -44,7 +44,13 @@ void
 LocalPlayer::setAudioOutput(std::unique_ptr<IAudioOutput> audioOutput)
 {
 	_audioOutput = std::move(audioOutput);
-	_audioOutput->setOnCanWriteCallback([=](std::size_t nbBytes) { handleNeedDataFromAudioOutput(nbBytes); });
+	_audioOutput->setOnCanWriteCallback([this](std::size_t)
+	{
+		_ioService.post([this]()
+		{
+			handleNeedDataFromAudioOutput();
+		});
+	});
 }
 
 const IAudioOutput*
@@ -72,8 +78,15 @@ LocalPlayer::stop()
 void
 LocalPlayer::play()
 {
-	std::unique_lock lock {_mutex};
+	_ioService.post([this]()
+	{
+		handlePlay();
+	});
+}
 
+void
+LocalPlayer::handlePlay()
+{
 	std::filesystem::path trackPath;
 	Av::TranscodeParameters parameters {};
 
@@ -95,8 +108,8 @@ LocalPlayer::play()
 
 	_transcoder = std::make_unique<Av::Transcoder>(trackPath, parameters);
 	_transcoder->start();
-	asyncWaitDataFromTranscoder();
 
+	asyncWaitDataFromTranscoder();
 }
 
 void
@@ -121,7 +134,10 @@ LocalPlayer::asyncWaitDataFromTranscoder()
 		_waitingDataFromTranscoder = true;
 		_transcoder->asyncWaitForData([=]()
 		{
-			handleDataAvailableFromTranscoder();
+			_ioService.post([this]()
+			{
+				handleDataAvailableFromTranscoder();
+			});
 		});
 	}
 }
@@ -129,25 +145,24 @@ LocalPlayer::asyncWaitDataFromTranscoder()
 void
 LocalPlayer::handleDataAvailableFromTranscoder()
 {
-	std::unique_lock lock {_mutex};
-
 	_waitingDataFromTranscoder = false;
-	feedAudioOutputFromTranscoder(0);
+	feedAudioOutputFromTranscoder();
 }
 
-std::size_t
-LocalPlayer::feedAudioOutputFromTranscoder(std::size_t /*nbBytes*/)
+void
+LocalPlayer::feedAudioOutputFromTranscoder()
 {
-
 	if (!_transcoder)
 	{
 		LMS_LOG(LOCALPLAYER, DEBUG) << "Transcoder not ready yet";
-		return 0;
+		return;
 	}
 
 	std::size_t audioOutputCanWriteBytesCount {_audioOutput->getCanWriteBytes()};
-
 	LMS_LOG(LOCALPLAYER, DEBUG) << "Audio output needs " << audioOutputCanWriteBytesCount << " bytes";
+
+	if (audioOutputCanWriteBytesCount == 0)
+		return;
 
 	std::vector<unsigned char> buffer;
 	buffer.resize(audioOutputCanWriteBytesCount);
@@ -167,18 +182,15 @@ LocalPlayer::feedAudioOutputFromTranscoder(std::size_t /*nbBytes*/)
 		LMS_LOG(LOCALPLAYER, DEBUG) << "not enough bytes from transcoder!";
 		asyncWaitDataFromTranscoder();
 	}
-
-	return nbWrittenBytes;
 }
 
 void
-LocalPlayer::handleNeedDataFromAudioOutput(std::size_t nbBytes)
+LocalPlayer::handleNeedDataFromAudioOutput()
 {
-	LMS_LOG(LOCALPLAYER, DEBUG) << nbBytes << " bytes needed from audio output!!";
+	LMS_LOG(LOCALPLAYER, DEBUG) << "Some bytes needed from audio output!!";
 
-	std::unique_lock lock {_mutex};
 	if (!_waitingDataFromTranscoder)
-		feedAudioOutputFromTranscoder(nbBytes);
+		feedAudioOutputFromTranscoder();
 	else
 		LMS_LOG(LOCALPLAYER, DEBUG) << "Already waiting for data from transcoder";
 }

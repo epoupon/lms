@@ -49,20 +49,9 @@ PulseAudioOutput::PulseAudioOutput(Format format, SampleRate sampleRate, std::si
 , _nbChannels {nbChannels}
 , _sampleSpec {constructSampleSpec(format, sampleRate, nbChannels)}
 {
-	_mainLoop = MainLoopPtr{pa_mainloop_new()};
+	_mainLoop = MainLoopPtr {pa_threaded_mainloop_new()};
 	if (!_mainLoop)
 		throw PulseAudioException {"pa_mainloop_new failed!"};
-
-	pa_mainloop_api *mainloopAPI {pa_mainloop_get_api(_mainLoop.get())};
-
-	_context = ContextPtr {pa_context_new(mainloopAPI, "LMS")};
-	if (!_context)
-		throw PulseAudioException {"pa_context_new failed!"};
-
-	pa_context_set_state_callback(_context.get(), [](pa_context*, void* userdata)
-	{
-		static_cast<PulseAudioOutput *>(userdata)->onContextStateChanged();
-	}, this);
 
 	start();
 
@@ -77,12 +66,16 @@ PulseAudioOutput::~PulseAudioOutput()
 void
 PulseAudioOutput::setOnCanWriteCallback(OnCanWriteCallback cb)
 {
+	MainLoopLock lock {_mainLoop};
+
 	_onCanWriteCallback = cb;
 }
 
 std::size_t
 PulseAudioOutput::getCanWriteBytes()
 {
+	MainLoopLock lock {_mainLoop};
+
 	if (!_stream)
 		return 0;
 
@@ -90,21 +83,36 @@ PulseAudioOutput::getCanWriteBytes()
 }
 
 void
-PulseAudioOutput::connect()
+PulseAudioOutput::createContext()
 {
 	LMS_LOG(LOCALPLAYER, INFO) << "Connecting to default server...";
 
-	pa_context_flags_t flags {static_cast<pa_context_flags_t>(static_cast<unsigned>(PA_CONTEXT_NOFAIL) | static_cast<unsigned>(PA_CONTEXT_NOAUTOSPAWN))};
+	MainLoopLock lock {_mainLoop};
 
+	pa_mainloop_api *mainloopAPI {pa_threaded_mainloop_get_api(_mainLoop.get())};
+	_context = ContextPtr {pa_context_new(mainloopAPI, "LMS")};
+	if (!_context)
+		throw PulseAudioException {"pa_context_new failed!"};
+
+	pa_context_set_state_callback(_context.get(), [](pa_context*, void* userdata)
+	{
+		static_cast<PulseAudioOutput *>(userdata)->onContextStateChanged();
+	}, this);
+
+	pa_context_flags_t flags {static_cast<pa_context_flags_t>(static_cast<unsigned>(PA_CONTEXT_NOFAIL) | static_cast<unsigned>(PA_CONTEXT_NOAUTOSPAWN))};
 	if (pa_context_connect(_context.get(), nullptr, flags, nullptr) < 0)
 		throw ContextPulseAudioException {_context.get(), "pa_context_connect failed!"};
 }
 
 void
-PulseAudioOutput::disconnect()
+PulseAudioOutput::destroyContext()
 {
 	LMS_LOG(LOCALPLAYER, INFO) << "Disconnecting from server...";
+
+	MainLoopLock lock {_mainLoop};
+
 	pa_context_disconnect(_context.get());
+	_context.reset();
 }
 
 void
@@ -245,6 +253,8 @@ PulseAudioOutput ::onStreamCanWrite(std::size_t maxBytesCount)
 std::size_t
 PulseAudioOutput::write(const unsigned char* data, std::size_t size)
 {
+	MainLoopLock lock {_mainLoop};
+
 	const std::size_t writtenBytes {getAlignedFrameSize(std::min(size, getCanWriteBytes()), _sampleSpec)};
 
 	if (writtenBytes == 0)
@@ -264,11 +274,10 @@ void
 PulseAudioOutput::start()
 {
 	LMS_LOG(LOCALPLAYER, INFO) << "Starting PA output...";
-	assert(!_thread);
 
-	connect();
+	pa_threaded_mainloop_start(_mainLoop.get());
+	createContext();
 
-	_thread = std::make_unique<std::thread>([&]() { threadEntry(); } );
 	LMS_LOG(LOCALPLAYER, INFO) << "Started PA output!";
 }
 
@@ -276,36 +285,11 @@ void
 PulseAudioOutput::stop()
 {
 	LMS_LOG(LOCALPLAYER, INFO) << "Stopping PA output...";
-	assert(_thread);
 
-	disconnect();
+	destroyContext();
+	pa_threaded_mainloop_stop(_mainLoop.get());
 
-	pa_mainloop_quit(_mainLoop.get(), 1);
-
-	_thread->join();
-	LMS_LOG(LOCALPLAYER, INFO) << "Stopped PA output!";
-}
-
-void
-PulseAudioOutput::threadEntry()
-{
-	LMS_LOG(LOCALPLAYER, INFO) << "Running...";
-
-	int stopRequested {};
-
-	try
-	{
-		pa_mainloop_run(_mainLoop.get(),  &stopRequested);
-	}
-	catch (const PulseAudioException& e)
-	{
-		LMS_LOG(LOCALPLAYER, ERROR) << "Caught exception: " << e.what();
-	}
-
-	if (stopRequested)
-		LMS_LOG(LOCALPLAYER, INFO) << "Stopped!";
-	else
-		LMS_LOG(LOCALPLAYER, ERROR) << "Mainloop error!";
+	LMS_LOG(LOCALPLAYER, INFO) << "Stopped PA output...";
 }
 
 

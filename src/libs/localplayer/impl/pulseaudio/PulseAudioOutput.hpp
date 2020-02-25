@@ -22,11 +22,10 @@
 #include "PulseAudioOutput.hpp"
 
 #include <memory>
-#include <thread>
 
 #include <pulse/context.h>
 #include <pulse/error.h>
-#include <pulse/mainloop.h>
+#include <pulse/thread-mainloop.h>
 #include <pulse/stream.h>
 
 #include "av/AvTranscoder.hpp"
@@ -62,12 +61,13 @@ class PulseAudioOutput final : public IAudioOutput
 	
 		void start();
 		void stop();
-		void threadEntry();
 
-		void connect();
-		void disconnect();
+		// context
+		void createContext();
+		void destroyContext();
 		void onContextStateChanged();
 
+		// stream
 		void createStream();
 		void connectStream();
 		void onStreamStateChanged();
@@ -78,18 +78,17 @@ class PulseAudioOutput final : public IAudioOutput
 		const std::size_t	_nbChannels {2};
 		const pa_sample_spec	_sampleSpec;
 
-		std::unique_ptr<std::thread> _thread;
 
 		OnCanWriteCallback 	_onCanWriteCallback;
 
 		struct MainLoopDeleter
 		{
-			void operator()(pa_mainloop* obj)
+			void operator()(pa_threaded_mainloop* obj)
 			{
-				pa_mainloop_free(obj);
+				pa_threaded_mainloop_free(obj);
 			}
 		};
-		using MainLoopPtr = std::unique_ptr<::pa_mainloop, MainLoopDeleter>;
+		using MainLoopPtr = std::unique_ptr<::pa_threaded_mainloop, MainLoopDeleter>;
 		MainLoopPtr _mainLoop;
 
 		struct ContextDeleter
@@ -112,6 +111,20 @@ class PulseAudioOutput final : public IAudioOutput
 		using StreamPtr = std::unique_ptr<::pa_stream, StreamDeleter>;
 		StreamPtr _stream;
 
+		class MainLoopLock
+		{
+			public:
+				MainLoopLock(MainLoopPtr& mainLoop) : _mainLoop {mainLoop}
+				{
+					pa_threaded_mainloop_lock(_mainLoop.get());
+				};
+				~MainLoopLock()
+				{
+					pa_threaded_mainloop_unlock(_mainLoop.get());
+				}
+			private:
+				MainLoopPtr& _mainLoop; 
+		};
 };
 
 class PulseAudioException : public LmsException

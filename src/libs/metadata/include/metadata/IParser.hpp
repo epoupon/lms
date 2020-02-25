@@ -75,6 +75,8 @@ namespace MetaData
 	class IParser
 	{
 		public:
+			virtual ~IParser() = default;
+
 			virtual std::optional<Track> parse(const std::filesystem::path& p, bool debug = false) = 0;
 
 			void setClusterTypeNames(const std::set<std::string>& clusterTypeNames) { _clusterTypeNames = clusterTypeNames; }

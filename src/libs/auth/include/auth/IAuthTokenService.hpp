@@ -40,6 +40,8 @@ namespace Auth {
 	{
 		public:
 
+			virtual ~IAuthTokenService() = default;
+
 			// Auth Token services
 			struct AuthTokenProcessResult
 			{

@@ -62,9 +62,9 @@ class LocalPlayer final : public ILocalPlayer
 		void asyncWaitDataFromTranscoder();
 		void handlePlay();
 		void handleDataAvailableFromTranscoder();
-		void handleNeedDataFromAudioOutput(std::size_t nbBytes);
+		void handleNeedDataFromAudioOutput();
 
-		std::size_t feedAudioOutputFromTranscoder(std::size_t nbBytes);
+		void feedAudioOutputFromTranscoder();
 
 		enum class Status
 		{

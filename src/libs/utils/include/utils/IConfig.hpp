@@ -26,6 +26,7 @@
 class IConfig
 {
 	public:
+		virtual ~IConfig() = default;
 
 		// Default values are returned in case of setting not found
 		virtual std::string	getString(const std::string& setting, const std::string& def = "", const std::unordered_set<std::string>& allowedValues = {}) = 0;
