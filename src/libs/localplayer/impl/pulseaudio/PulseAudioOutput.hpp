@@ -54,7 +54,7 @@ class PulseAudioOutput final : public IAudioOutput
 		void		resume() override {}
 		void		pause() override {}
 		void		setVolume(Volume) override {}
-		void		flush() override {}
+		void		flush() override;
 		void		setOnCanWriteCallback(OnCanWriteCallback cb) override;
 		std::size_t	getCanWriteBytes() override;
 		std::size_t	write(const unsigned char* data, std::size_t size) override;

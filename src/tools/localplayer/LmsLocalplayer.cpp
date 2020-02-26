@@ -61,14 +61,22 @@ int main(int argc, char *argv[])
 		
 		std::cout << "Now playing!" << std::endl;
 
-		localPlayer->addTrack(10);
+		localPlayer->addTrack(49813);
 		localPlayer->play();
 
 		// wait for input to terminate
-		std::cout << "Enter some text to terminate:" << std::endl;
+		std::cout << "Enter some commands:" << std::endl;
+		while (1)
 		{
-			char c;
-			std::cin >> c;
+			std::string command;
+			std::cin >> command;
+
+			if (command == "play")
+				localPlayer->play();
+			if (command == "stop")
+				localPlayer->stop();
+			else if (command == "quit")
+				break;
 		}
 
 		return EXIT_SUCCESS;

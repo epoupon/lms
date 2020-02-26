@@ -64,6 +64,20 @@ PulseAudioOutput::~PulseAudioOutput()
 }
 
 void
+PulseAudioOutput::flush()
+{
+	LMS_LOG(LOCALPLAYER, INFO) << "Flushing stream...";
+
+	MainLoopLock lock {_mainLoop};
+
+	if (!_stream)
+		return;
+
+	pa_operation *operation {pa_stream_flush(_stream.get(), NULL, NULL)};
+	pa_operation_unref(operation);
+}
+
+void
 PulseAudioOutput::setOnCanWriteCallback(OnCanWriteCallback cb)
 {
 	MainLoopLock lock {_mainLoop};

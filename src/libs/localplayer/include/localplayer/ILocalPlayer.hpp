@@ -39,6 +39,7 @@ class ILocalPlayer
 		virtual const IAudioOutput*	getAudioOutput() const = 0;
 
 		virtual void play() = 0;
+		virtual void stop() = 0;
 		virtual void pause() = 0;
 
 		virtual void addTrack(Database::IdType trackId) = 0;

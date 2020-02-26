@@ -51,17 +51,19 @@ class LocalPlayer final : public ILocalPlayer
 		const IAudioOutput*	getAudioOutput() const override;
 
 		void play() override;
+		void stop() override;
 		void pause() override;
 
 		void addTrack(Database::IdType trackId) override;
 
-		
-		void start();
-		void stop();
-
 		void asyncWaitDataFromTranscoder();
+		std::optional<Database::IdType> getTrackIdFromPlayQueueIndex(std::size_t playqueueIdx);
 		void handlePlay();
+		void handleStop();
+		void startPlay();
+		bool startPlayQueueEntry(std::size_t playqueueIdx);
 		void handleDataAvailableFromTranscoder();
+		void handleTranscoderFinished();
 		void handleNeedDataFromAudioOutput();
 
 		void feedAudioOutputFromTranscoder();
@@ -81,9 +83,10 @@ class LocalPlayer final : public ILocalPlayer
 		Database::Session _dbSession;
 		Wt::WIOService _ioService;
 
-		std::unique_ptr<IAudioOutput> _audioOutput;
-		std::vector<Database::IdType> _currentPlayqueue;
+		std::unique_ptr<IAudioOutput>	_audioOutput;
+		std::vector<Database::IdType>	_currentPlayQueue;
+		std::optional<std::size_t>	_currentPlayQueueIdx;
 
-		std::unique_ptr<Av::Transcoder> _transcoder;
+		std::unique_ptr<Av::Transcoder>	_transcoder;
 };
 

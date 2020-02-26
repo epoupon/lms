@@ -32,12 +32,17 @@ LocalPlayer::LocalPlayer(Database::Db& db)
 : _dbSession {db}
 {
 	_ioService.setThreadCount(1);
-	start();
+
+	LMS_LOG(LOCALPLAYER, INFO) << "Starting localplayer...";
+	_ioService.start();
+	LMS_LOG(LOCALPLAYER, INFO) << "Started localplayer!";
 }
 
 LocalPlayer::~LocalPlayer()
 {
-	stop();
+	LMS_LOG(LOCALPLAYER, INFO) << "Stopping localplayer...";
+	_ioService.stop();
+	LMS_LOG(LOCALPLAYER, INFO) << "Stopped localplayer!";
 }
 
 void
@@ -60,22 +65,6 @@ LocalPlayer::getAudioOutput() const
 }
 
 void
-LocalPlayer::start()
-{
-	LMS_LOG(LOCALPLAYER, INFO) << "Starting localplayer...";
-	_ioService.start();
-	LMS_LOG(LOCALPLAYER, INFO) << "Started localplayer!";
-}
-
-void
-LocalPlayer::stop()
-{
-	LMS_LOG(LOCALPLAYER, INFO) << "Stopping localplayer...";
-	_ioService.stop();
-	LMS_LOG(LOCALPLAYER, INFO) << "Stopped localplayer!";
-}
-
-void
 LocalPlayer::play()
 {
 	_ioService.post([this]()
@@ -85,23 +74,112 @@ LocalPlayer::play()
 }
 
 void
+LocalPlayer::stop()
+{
+	_ioService.post([this]()
+	{
+		handleStop();
+	});
+}
+
+std::optional<Database::IdType>
+LocalPlayer::getTrackIdFromPlayQueueIndex(std::size_t playqueueIdx)
+{
+	std::shared_lock lock {_mutex};
+
+	if (playqueueIdx >= _currentPlayQueue.size())
+	{
+		LMS_LOG(LOCALPLAYER, DEBUG) << "Want to play an out of bound track";
+		return std::nullopt;
+	}
+
+	return _currentPlayQueue[playqueueIdx];
+}
+
+void
 LocalPlayer::handlePlay()
 {
+	switch (_status)
+	{
+		case Status::Stopped:
+			startPlay();
+			break;
+
+		case Status::Playing:
+			break;
+		case Status::Paused:
+			// TODO resume
+			break;
+	}
+}
+
+void
+LocalPlayer::handleStop()
+{
+	switch (_status)
+	{
+		case Status::Stopped:
+			break;
+
+		case Status::Playing:
+		case Status::Paused:
+			_transcoder.reset();
+			_audioOutput->flush();
+			_status = Status::Stopped;
+			break;
+	}
+}
+
+void
+LocalPlayer::startPlay()
+{
+	if (!_currentPlayQueueIdx)
+		_currentPlayQueueIdx = 0;
+
+	const std::size_t playQueueSize {[this]()
+	{
+		std::shared_lock lock {_mutex};
+		return _currentPlayQueue.size();
+	}()};
+
+	while (_currentPlayQueueIdx < playQueueSize )
+	{
+		if (startPlayQueueEntry(*_currentPlayQueueIdx))
+		{
+			_status = Status::Playing;
+			return;
+		}
+
+		(*_currentPlayQueueIdx)++;
+	}
+
+	LMS_LOG(LOCALPLAYER, DEBUG) << "No more song in playqueue> stopping";
+	_currentPlayQueueIdx.reset();
+	_status = Status::Stopped;
+}
+
+bool
+LocalPlayer::startPlayQueueEntry(std::size_t playqueueIdx)
+{
+	const std::optional<Database::IdType> trackId {getTrackIdFromPlayQueueIndex(playqueueIdx)};
+	if (!trackId)
+		return false;
+
 	std::filesystem::path trackPath;
 	Av::TranscodeParameters parameters {};
 
 	{
 		auto transaction {_dbSession.createSharedTransaction()};
 
-		auto track {Database::Track::getById(_dbSession, 49813)};
+		auto track {Database::Track::getById(_dbSession, trackId.value())};
 		if (!track)
 		{
 			LMS_LOG(LOCALPLAYER, DEBUG) << "Track not found";
-			return; // TODO next song?
+			return false; // TODO next song?
 		}
 
 		parameters.stripMetadata = true;
-		parameters.encoding = Av::Encoding::PCM_SIGNED_16_LE;
+		parameters.encoding = Av::Encoding::PCM_SIGNED_16_LE; // TODO
 
 		trackPath = track->getPath();
 	}
@@ -110,6 +188,19 @@ LocalPlayer::handlePlay()
 	_transcoder->start();
 
 	asyncWaitDataFromTranscoder();
+
+	return true;
+}
+
+void
+LocalPlayer::handleTranscoderFinished()
+{
+	LMS_LOG(LOCALPLAYER, DEBUG) << "Transcoder finished!";
+	if (_status == Status::Playing)
+	{
+		(*_currentPlayQueueIdx)++;
+		startPlay();
+	}
 }
 
 void
@@ -123,7 +214,7 @@ LocalPlayer::addTrack(Database::IdType trackId)
 {
 	std::unique_lock lock {_mutex};
 
-	_currentPlayqueue.push_back(trackId);
+	_currentPlayQueue.push_back(trackId);
 }
 
 void
@@ -139,6 +230,10 @@ LocalPlayer::asyncWaitDataFromTranscoder()
 				handleDataAvailableFromTranscoder();
 			});
 		});
+	}
+	else
+	{
+		handleTranscoderFinished();
 	}
 }
 
