@@ -74,6 +74,15 @@ LocalPlayer::play()
 }
 
 void
+LocalPlayer::playEntry(EntryIndex id)
+{
+	_ioService.post([this, id]()
+	{
+		handlePlay(id);
+	});
+}
+
+void
 LocalPlayer::stop()
 {
 	_ioService.post([this]()
@@ -83,26 +92,26 @@ LocalPlayer::stop()
 }
 
 std::optional<Database::IdType>
-LocalPlayer::getTrackIdFromPlayQueueIndex(std::size_t playqueueIdx)
+LocalPlayer::getTrackIdFromPlayQueueIndex(EntryIndex entryId)
 {
 	std::shared_lock lock {_mutex};
 
-	if (playqueueIdx >= _currentPlayQueue.size())
+	if (entryId >= _currentPlayQueue.size())
 	{
 		LMS_LOG(LOCALPLAYER, DEBUG) << "Want to play an out of bound track";
 		return std::nullopt;
 	}
 
-	return _currentPlayQueue[playqueueIdx];
+	return _currentPlayQueue[entryId];
 }
 
 void
-LocalPlayer::handlePlay()
+LocalPlayer::handlePlay(std::optional<EntryIndex> id)
 {
 	switch (_status)
 	{
 		case Status::Stopped:
-			startPlay();
+			startPlay(id);
 			break;
 
 		case Status::Playing:
@@ -131,8 +140,11 @@ LocalPlayer::handleStop()
 }
 
 void
-LocalPlayer::startPlay()
+LocalPlayer::startPlay(std::optional<EntryIndex> id)
 {
+	if (id)
+		_currentPlayQueueIdx = *id;
+
 	if (!_currentPlayQueueIdx)
 		_currentPlayQueueIdx = 0;
 
@@ -161,6 +173,8 @@ LocalPlayer::startPlay()
 bool
 LocalPlayer::startPlayQueueEntry(std::size_t playqueueIdx)
 {
+	LMS_LOG(LOCALPLAYER, DEBUG) << "Playing playQueue entry " << playqueueIdx;
+
 	const std::optional<Database::IdType> trackId {getTrackIdFromPlayQueueIndex(playqueueIdx)};
 	if (!trackId)
 		return false;
@@ -198,7 +212,9 @@ LocalPlayer::handleTranscoderFinished()
 	LMS_LOG(LOCALPLAYER, DEBUG) << "Transcoder finished!";
 	if (_status == Status::Playing)
 	{
-		(*_currentPlayQueueIdx)++;
+		if (_currentPlayQueueIdx)
+			(*_currentPlayQueueIdx)++;
+
 		startPlay();
 	}
 }

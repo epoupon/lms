@@ -51,6 +51,7 @@ class LocalPlayer final : public ILocalPlayer
 		const IAudioOutput*	getAudioOutput() const override;
 
 		void play() override;
+		void playEntry(EntryIndex id) override;
 		void stop() override;
 		void pause() override;
 
@@ -58,10 +59,10 @@ class LocalPlayer final : public ILocalPlayer
 
 		void asyncWaitDataFromTranscoder();
 		std::optional<Database::IdType> getTrackIdFromPlayQueueIndex(std::size_t playqueueIdx);
-		void handlePlay();
+		void handlePlay(std::optional<EntryIndex> = {});
 		void handleStop();
-		void startPlay();
-		bool startPlayQueueEntry(std::size_t playqueueIdx);
+		void startPlay(std::optional<EntryIndex> id = {});
+		bool startPlayQueueEntry(EntryIndex id);
 		void handleDataAvailableFromTranscoder();
 		void handleTranscoderFinished();
 		void handleNeedDataFromAudioOutput();
@@ -85,7 +86,7 @@ class LocalPlayer final : public ILocalPlayer
 
 		std::unique_ptr<IAudioOutput>	_audioOutput;
 		std::vector<Database::IdType>	_currentPlayQueue;
-		std::optional<std::size_t>	_currentPlayQueueIdx;
+		std::optional<EntryIndex>	_currentPlayQueueIdx;
 
 		std::unique_ptr<Av::Transcoder>	_transcoder;
 };

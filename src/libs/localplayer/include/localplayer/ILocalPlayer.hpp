@@ -35,10 +35,13 @@ class ILocalPlayer
 	public:
 		virtual ~ILocalPlayer() = default;
 
+		using EntryIndex = std::size_t;
+
 		virtual void			setAudioOutput(std::unique_ptr<IAudioOutput> audioOutput) = 0;
 		virtual const IAudioOutput*	getAudioOutput() const = 0;
 
 		virtual void play() = 0;
+		virtual void playEntry(EntryIndex id) = 0;
 		virtual void stop() = 0;
 		virtual void pause() = 0;
 
