@@ -77,6 +77,7 @@ class Log
 class Logger
 {
 	public:
+		virtual ~Logger() = default;
 		virtual void processLog(const Log& log) = 0;
 };
 
