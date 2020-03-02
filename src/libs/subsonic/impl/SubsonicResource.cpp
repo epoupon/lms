@@ -470,21 +470,19 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 	}
 	else if (!artists.empty())
 	{
-		if (artists.size() > 1)
-		{
-			albumNode.setAttribute("artist", "Various Artists");
+		albumNode.setAttribute("artist", getArtistNames(artists));
 
-			if (!id3)
-				albumNode.setAttribute("parent", IdToString({Id::Type::Root}));
-		}
-		else
+		if (artists.size() == 1)
 		{
-			albumNode.setAttribute("artist", artists.front()->getName());
-
 			if (id3)
 				albumNode.setAttribute("artistId", IdToString({Id::Type::Artist, artists.front().id()}));
 			else
 				albumNode.setAttribute("parent", IdToString({Id::Type::Artist, artists.front().id()}));
+		}
+		else
+		{
+			if (!id3)
+				albumNode.setAttribute("parent", IdToString({Id::Type::Root}));
 		}
 	}
 
