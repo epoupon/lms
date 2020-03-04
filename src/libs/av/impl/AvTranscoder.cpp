@@ -162,6 +162,13 @@ Transcoder::start()
 		args.emplace_back("-f");
 		args.emplace_back(mediaFileFormat->format);
 
+		// Workaround for ipod streams: make it compatible with non seekable output
+		if (mediaFileFormat->format == "ipod")
+		{
+			args.emplace_back("-movflags");
+			args.emplace_back("frag_keyframe");
+		}
+
 		_outputMimeType = mediaFileFormat->mimeType;
 	}
 
