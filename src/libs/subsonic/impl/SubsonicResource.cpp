@@ -1845,7 +1845,6 @@ handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuati
 {
 	MediaRetrievalResult res;
 
-	// TODO store only weak ptrs and use a ring container to store shared_ptr?
 	std::shared_ptr<Av::Transcoder> transcoder;
 
 	if (!continuation)

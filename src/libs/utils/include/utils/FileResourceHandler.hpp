@@ -20,31 +20,21 @@
 #pragma once
 
 #include <filesystem>
-#include <Wt/WResource.h>
+#include <Wt/Http/Request.h>
+#include <Wt/Http/Response.h>
 
-#include "database/Types.hpp"
 
-
-namespace UserInterface {
-
-class AudioFileResource : public Wt::WResource
+// Helper used to deliver file contents from a WResource
+namespace FileResourceHandler
 {
-	public:
-		~AudioFileResource();
+	struct ContinuationData
+	{
+		std::filesystem::path path;
+		::uint64_t beyondLastByte;
+		::uint64_t offset;
+	};
 
-		std::string getUrl(Database::IdType trackId) const;
-
-	private:
-
-		static constexpr std::size_t _chunkSize {262144};
-
-		void handleRequest(const Wt::Http::Request& request,
-				Wt::Http::Response& response) override;
-
-};
-
-} // namespace UserInterface
-
-
-
+	std::optional<ContinuationData> handleInitialRequest(const Wt::Http::Request& request, Wt::Http::Response& response, const std::filesystem::path& path);
+	std::optional<ContinuationData> handleContinuationRequest(const Wt::Http::Request& request, Wt::Http::Response& response, const ContinuationData& continuationData);
+}
 

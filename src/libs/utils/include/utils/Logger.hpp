@@ -49,6 +49,7 @@ enum class Module
 	RECOMMENDATION,
 	TRANSCODE,
 	UI,
+	UTILS,
 };
 
 const char* getModuleName(Module mod);

@@ -1,6 +1,7 @@
 
 add_library(lmsutils SHARED
 	impl/Config.cpp
+	impl/FileResourceHandler.cpp
 	impl/Logger.cpp
 	impl/NetAddress.cpp
 	impl/Path.cpp

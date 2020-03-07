@@ -24,6 +24,7 @@
 
 #include "av/AvInfo.hpp"
 #include "database/Track.hpp"
+#include "utils/FileResourceHandler.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 #include "LmsApplication.hpp"
@@ -87,126 +88,28 @@ void
 AudioFileResource::handleRequest(const Wt::Http::Request& request,
 		Wt::Http::Response& response)
 {
+	std::optional<FileResourceHandler::ContinuationData> continuationData;
 	if (!request.continuation())
 	{
-		LOG(DEBUG) << "Initial request";
-
 		auto trackPath {getTrackPathFromURLArgs(request)};
 		if (!trackPath)
 			return;
 
-		ContinuationData continuationData;
-		continuationData.path = *trackPath;
-		continuationData.offset = 0;
-		continuationData.beyondLastByte = 0;
-
-		{
-			std::error_code ec;
-			continuationData.fileSize = std::filesystem::file_size(*trackPath, ec);
-
-			if (ec)
-			{
-				LOG(ERROR) << "Cannot get file size for '" << *trackPath << "': " << ec.message();
-				return;
-			}
-		}
-
-		LOG(DEBUG) << "Initial request. File = '" << continuationData.path << "', size = " << continuationData.fileSize;
-
-		handleRequestPiecewise(request, response, continuationData);
-
-		const auto fileFormat {Av::guessMediaFileFormat(*trackPath)};
-		const std::string mimeType {fileFormat ? fileFormat->mimeType : "application/octet-stream"};
-		response.setMimeType(mimeType);
-
-		LOG(DEBUG) << "Mime type set to '" << mimeType << "'";
+		continuationData = FileResourceHandler::handleInitialRequest(request, response, *trackPath);
 	}
 	else
 	{
-		ContinuationData continuationData {Wt::cpp17::any_cast<ContinuationData>(request.continuation()->data())};
-		handleRequestPiecewise(request, response, continuationData);
+		auto currentContinuationData {Wt::cpp17::any_cast<FileResourceHandler::ContinuationData>(request.continuation()->data())};
+		continuationData = FileResourceHandler::handleContinuationRequest(request, response, currentContinuationData);
 	}
 
-}
-
-
-void
-AudioFileResource::handleRequestPiecewise(const Wt::Http::Request& request,
-		Wt::Http::Response& response,
-		ContinuationData continuationData)
-{
-	LOG(DEBUG) << "Handling request. File = '" << continuationData.path << "', size = " << continuationData.fileSize << ", offset = " << continuationData.offset << ", beyondLastByte = " << continuationData.beyondLastByte;
-
-	::uint64_t startByte {continuationData.offset};
-	std::ifstream ifs {continuationData.path.string().c_str(), std::ios::in | std::ios::binary};
-
-	if (startByte == 0)
+	if (continuationData)
 	{
-		if (!ifs)
-		{
-			response.setStatus(404);
-			return;
-		}
-		else
-		{
-			response.setStatus(200);
-		}
-
-		const Wt::Http::Request::ByteRangeSpecifier ranges {request.getRanges(continuationData.fileSize)};
-		if (!ranges.isSatisfiable())
-		{
-			std::ostringstream contentRange;
-			contentRange << "bytes */" << continuationData.fileSize;
-			response.setStatus(416); // Requested range not satisfiable
-			response.addHeader("Content-Range", contentRange.str());
-			return;
-		}
-
-		if (ranges.size() == 1)
-		{
-			response.setStatus(206);
-			startByte = ranges[0].firstByte();
-			continuationData.beyondLastByte = ranges[0].lastByte() + 1;
-
-			std::ostringstream contentRange;
-			contentRange << "bytes " << startByte << "-"
-				<< continuationData.beyondLastByte - 1 << "/" << continuationData.fileSize;
-
-			response.addHeader("Content-Range", contentRange.str());
-			response.setContentLength(continuationData.beyondLastByte - startByte);
-		}
-		else
-		{
-			continuationData.beyondLastByte = continuationData.fileSize;
-			response.setContentLength(continuationData.beyondLastByte);
-		}
-	}
-
-	ifs.seekg(static_cast<std::istream::pos_type>(startByte));
-
-	std::vector<char> buf;
-	buf.resize(_chunkSize);
-
-	::uint64_t restSize = continuationData.beyondLastByte - startByte;
-	::uint64_t pieceSize = buf.size() > restSize ? restSize : buf.size();
-
-	ifs.read(&buf[0], pieceSize);
-	const ::uint64_t actualPieceSize {static_cast<::uint64_t>(ifs.gcount())};
-	response.out().write(&buf[0], actualPieceSize);
-
-	LOG(DEBUG) << "Written " << actualPieceSize << " bytes!";
-
-	if (ifs.good() && actualPieceSize < restSize)
-	{
-		LOG(DEBUG) << "Still more to do";
-
 		auto* continuation {response.createContinuation()};
-		ContinuationData newContinuationData {continuationData};
-		newContinuationData.offset = startByte + actualPieceSize;
-		continuation->setData(newContinuationData);
+		continuation->setData(*continuationData);
 	}
-}
 
+}
 
 } // namespace UserInterface
 
