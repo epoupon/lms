@@ -39,7 +39,8 @@ namespace Database {
 
 namespace UserInterface {
 
-class AudioResource;
+class AudioTranscodeResource;
+class AudioFileResource;
 class Auth;
 class ImageResource;
 class LmsApplicationException;
@@ -82,7 +83,8 @@ class LmsApplication : public Wt::WApplication
 
 		// Session application data
 		std::shared_ptr<ImageResource> getImageResource() { return _imageResource; }
-		std::shared_ptr<AudioResource> getAudioResource() { return _audioResource; }
+		std::shared_ptr<AudioTranscodeResource> getAudioTranscodeResource() { return _audioTranscodeResource; }
+		std::shared_ptr<AudioFileResource> getAudioFileResource() { return _audioFileResource; }
 		Database::Session& getDbSession() { return _dbSession;}
 
 		Wt::Dbo::ptr<Database::User> getUser();
@@ -128,8 +130,9 @@ class LmsApplication : public Wt::WApplication
 		Events					_events;
 		std::optional<Database::IdType>	_userId;
 		std::optional<bool>			_userAuthStrong;
+		std::shared_ptr<AudioTranscodeResource>	_audioTranscodeResource;
+		std::shared_ptr<AudioFileResource>	_audioFileResource;
 		std::shared_ptr<ImageResource>		_imageResource;
-		std::shared_ptr<AudioResource>		_audioResource;
 };
 
 

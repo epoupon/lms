@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,28 +19,40 @@
 
 #pragma once
 
+#include <filesystem>
 #include <Wt/WResource.h>
-
-#include "av/AvTranscoder.hpp"
 
 #include "database/Types.hpp"
 
 
 namespace UserInterface {
 
-class AudioResource : public Wt::WResource
+class AudioFileResource : public Wt::WResource
 {
 	public:
-		~AudioResource();
+		~AudioFileResource();
 
 		std::string getUrl(Database::IdType trackId) const;
+
+	private:
+
+		static constexpr std::size_t _chunkSize {262144};
+
+		struct ContinuationData
+		{
+			std::filesystem::path path;
+			::uint64_t beyondLastByte;
+			::uint64_t fileSize;
+			::uint64_t offset;
+		};
 
 		void handleRequest(const Wt::Http::Request& request,
 				Wt::Http::Response& response);
 
-	private:
+		void handleRequestPiecewise(const Wt::Http::Request& request,
+				Wt::Http::Response& response,
+				ContinuationData continuationData);
 
-		static const std::size_t	_chunkSize = 65536*4;
 };
 
 } // namespace UserInterface
