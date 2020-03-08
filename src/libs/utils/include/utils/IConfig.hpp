@@ -27,6 +27,8 @@ class IConfig
 {
 	public:
 
+		virtual ~IConfig() = default;
+
 		// Default values are returned in case of setting not found
 		virtual std::string	getString(const std::string& setting, const std::string& def = "", const std::unordered_set<std::string>& allowedValues = {}) = 0;
 		virtual std::filesystem::path getPath(const std::string& setting, const std::filesystem::path& def = std::filesystem::path()) = 0;
