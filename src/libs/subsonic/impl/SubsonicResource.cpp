@@ -19,15 +19,10 @@
 #include "subsonic/SubsonicResource.hpp"
 
 #include <atomic>
-#include <mutex>
-#include <numeric>
-#include <random>
-#include <thread>
 
 #include <Wt/WLocalDateTime.h>
 
 #include "auth/IPasswordService.hpp"
-#include "av/AvTranscoder.hpp"
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
@@ -40,10 +35,13 @@
 #include "database/User.hpp"
 #include "recommendation/IEngine.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Random.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
-#include "SubsonicId.hpp"
+#include "ParameterParsing.hpp"
+#include "RequestContext.hpp"
+#include "Stream.hpp"
 #include "SubsonicResponse.hpp"
 
 using namespace Database;
@@ -65,25 +63,6 @@ namespace API::Subsonic
 
 namespace StringUtils
 {
-	template<>
-	std::optional<API::Subsonic::Id>
-	StringUtils::readAs(const std::string& str)
-	{
-		return API::Subsonic::IdFromString(str);
-	}
-
-	template<>
-	std::optional<bool>
-	StringUtils::readAs(const std::string& str)
-	{
-		if (str == "true")
-			return true;
-		else if (str == "false")
-			return false;
-
-		return {};
-	}
-
 	template<>
 	std::optional<API::Subsonic::ClientVersion>
 	StringUtils::readAs(const std::string& str)
@@ -122,82 +101,11 @@ namespace StringUtils
 namespace API::Subsonic
 {
 
-struct ClientInfo
-{
-	std::string name;
-	std::string user;
-	std::string password;
-	ClientVersion version;
-};
-
-struct RequestContext
-{
-	const Wt::Http::ParameterMap& parameters;
-	Session& dbSession;
-	std::string userName;
-};
-
 static
 std::string
 makeNameFilesystemCompatible(const std::string& name)
 {
 	return StringUtils::replaceInString(name, "/", "_");
-}
-
-template<typename T>
-std::vector<T>
-getMultiParametersAs(const Wt::Http::ParameterMap& parameterMap, const std::string& paramName)
-{
-	std::vector<T> res;
-
-	auto it = parameterMap.find(paramName);
-	if (it == parameterMap.end())
-		return res;
-
-	for (const std::string& param : it->second)
-	{
-		auto value {StringUtils::readAs<T>(param)};
-		if (!value)
-			throw BadParameterFormatGenericError {paramName};
-
-		res.emplace_back(std::move(*value));
-	}
-
-	return res;
-}
-
-template<typename T>
-std::vector<T>
-getMandatoryMultiParametersAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
-{
-	std::vector<T> res {getMultiParametersAs<T>(parameterMap, param)};
-	if (res.empty())
-		throw RequiredParameterMissingError {};
-
-	return res;
-}
-
-template<typename T>
-std::optional<T>
-getParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
-{
-	std::vector<T> params {getMultiParametersAs<T>(parameterMap, param)};
-
-	if (params.size() != 1)
-		return {};
-
-	return T { std::move(params.front()) };
-}
-
-template<typename T>
-T
-getMandatoryParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
-{
-	auto res {getParameterAs<T>(parameterMap, param)};
-	if (!res)
-		throw RequiredParameterMissingError {};
-
-	return *res;
 }
 
 static
@@ -215,6 +123,14 @@ decodePasswordIfNeeded(const std::string& password)
 
 	return password;
 }
+
+struct ClientInfo
+{
+	std::string name;
+	std::string user;
+	std::string password;
+	ClientVersion version;
+};
 
 static
 ClientInfo
@@ -237,14 +153,6 @@ getClientInfo(const Wt::Http::ParameterMap& parameters)
 
 	return res;
 }
-
-// MediaRetrievals
-struct MediaRetrievalResult
-{
-	std::string mimeType;
-	std::vector<uint8_t> data;
-	Wt::cpp17::any continuationData;
-};
 
 SubsonicResource::SubsonicResource(Db& db)
 : _sessionPool {db}
@@ -1165,9 +1073,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 				std::make_move_iterator(std::end(similarArtistTracks)));
 	}
 
-	auto now {std::chrono::system_clock::now()};
-	std::mt19937 randGenerator {static_cast<std::mt19937::result_type>(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count())};
-	std::shuffle(std::begin(tracks), std::end(tracks), randGenerator);
+	Random::shuffleContainer(tracks);
 
 	Response response {Response::createOkResponse()};
 	Response::Node& similarSongsNode {response.createNode(id3 ? "similarSongs2" : "similarSongs")};
@@ -1775,111 +1681,8 @@ handleNotImplemented(RequestContext&)
 }
 
 static
-Av::Encoding
-userTranscodeFormatToAvEncoding(AudioFormat format)
-{
-	switch (format)
-	{
-		case AudioFormat::MP3:			return Av::Encoding::MP3;
-		case AudioFormat::OGG_OPUS:		return Av::Encoding::OGG_OPUS;
-		case AudioFormat::MATROSKA_OPUS:	return Av::Encoding::MATROSKA_OPUS;
-		case AudioFormat::OGG_VORBIS:		return Av::Encoding::OGG_VORBIS;
-		case AudioFormat::WEBM_VORBIS:		return Av::Encoding::WEBM_VORBIS;
-		default:				return Av::Encoding::OGG_OPUS;
-	}
-}
-
-static
-std::shared_ptr<Av::Transcoder>
-createTranscoder(RequestContext& context)
-{
-	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
-
-	// Optional params
-	std::optional<std::size_t> maxBitRate {getParameterAs<std::size_t>(context.parameters, "maxBitRate")};
-	std::optional<std::string> format {getParameterAs<std::string>(context.parameters, "format")};
-
-	Av::TranscodeParameters parameters {};
-	parameters.stripMetadata = false; // Since it can be cached and some players read the metadata from the downloaded file
-
-	std::filesystem::path trackPath;
-	{
-		auto transaction {context.dbSession.createSharedTransaction()};
-
-		{
-			auto track {Track::getById(context.dbSession, id.value)};
-			if (!track)
-				throw RequestedDataNotFoundError {};
-
-			trackPath = track->getPath();
-		}
-
-		{
-			const User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
-			if (!user)
-				throw UserNotAuthorizedError {};
-
-			// format = "raw" => no transcode. Other format values will be ignored
-			const bool transcode {(!format || (format && *format != "raw")) && user->getAudioTranscodeEnable()};
-			if (transcode)
-			{
-				// "If set to zero, no limit is imposed"
-				if (!maxBitRate || *maxBitRate == 0)
-					maxBitRate = user->getAudioTranscodeBitrate() / 1000;
-
-				*maxBitRate = clamp(*maxBitRate, std::size_t {48}, user->getMaxAudioTranscodeBitrate() / 1000);
-
-				parameters.bitrate = *maxBitRate * 1000;
-				parameters.encoding = userTranscodeFormatToAvEncoding(user->getAudioTranscodeFormat());
-			}
-		}
-	}
-
-	return std::make_shared<Av::Transcoder>(trackPath, parameters);
-}
-
-static
-MediaRetrievalResult
-handleStream(RequestContext& context, Wt::Http::ResponseContinuation* continuation)
-{
-	MediaRetrievalResult res;
-
-	std::shared_ptr<Av::Transcoder> transcoder;
-
-	if (!continuation)
-	{
-		transcoder = createTranscoder(context);
-		transcoder->start();
-
-		res.mimeType = transcoder->getOutputMimeType();
-		LMS_LOG(API_SUBSONIC, DEBUG) << "Mime type set to '" << transcoder->getOutputMimeType() << "'";
-	}
-	else
-	{
-		transcoder = Wt::cpp17::any_cast<std::shared_ptr<Av::Transcoder>>(continuation->data());
-	}
-
-	if (!transcoder)
-		throw InternalErrorGenericError {"Cannot create transcoder"};
-
-	if (!transcoder->isComplete())
-	{
-		static constexpr std::size_t chunkSize {65536*4};
-		res.data.reserve(chunkSize);
-
-		transcoder->process(res.data, chunkSize);
-	}
-
-	if (!transcoder->isComplete())
-		res.continuationData = std::move(transcoder);
-
-	return res;
-}
-
-static
-MediaRetrievalResult
-handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation*)
+void
+handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/, Wt::Http::Response& response)
 {
 	// Mandatory params
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
@@ -1887,23 +1690,21 @@ handleGetCoverArt(RequestContext& context, Wt::Http::ResponseContinuation*)
 	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(256)};
 	size = clamp(size, std::size_t {32}, std::size_t {1024});
 
-	MediaRetrievalResult res;
-
+	std::vector<unsigned char> data;
 	switch (id.type)
 	{
 		case Id::Type::Track:
-			res.data = ServiceProvider<CoverArt::IGrabber>::get()->getFromTrack(context.dbSession, id.value, CoverArt::Format::JPEG, size);
+			data = ServiceProvider<CoverArt::IGrabber>::get()->getFromTrack(context.dbSession, id.value, CoverArt::Format::JPEG, size);
 			break;
 		case Id::Type::Release:
-			res.data = ServiceProvider<CoverArt::IGrabber>::get()->getFromRelease(context.dbSession, id.value, CoverArt::Format::JPEG, size);
+			data = ServiceProvider<CoverArt::IGrabber>::get()->getFromRelease(context.dbSession, id.value, CoverArt::Format::JPEG, size);
 			break;
 		default:
 			throw BadParameterGenericError {"id"};
 	}
 
-	res.mimeType = CoverArt::formatToMimeType(CoverArt::Format::JPEG);
-
-	return res;
+	response.out().write(reinterpret_cast<const char*>(&data[0]), data.size());
+	response.setMimeType(CoverArt::formatToMimeType(CoverArt::Format::JPEG));
 }
 
 using RequestHandlerFunc = std::function<Response(RequestContext& context)>;
@@ -2019,12 +1820,12 @@ static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"startScan",		{handleNotImplemented,			true}},
 };
 
-using MediaRetrievalHandlerFunc = std::function<MediaRetrievalResult(RequestContext&, Wt::Http::ResponseContinuation*)>;
+using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
 static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
 {
 	// Media retrieval
 	{"getCoverArt",		handleGetCoverArt},
-	{"stream",		handleStream},
+	{"stream",		Stream::handle},
 };
 
 void
@@ -2091,26 +1892,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		auto itStreamHandler {mediaRetrievalHandlers.find(requestPath)};
 		if (itStreamHandler != mediaRetrievalHandlers.end())
 		{
-			MediaRetrievalResult res {itStreamHandler->second(requestContext, request.continuation())};
-
-			if (!res.mimeType.empty())
-				response.setMimeType(res.mimeType);
-			if (!res.data.empty())
-			{
-				response.out().write(reinterpret_cast<const char *>(&res.data[0]), res.data.size());
-				if (!response.out())
-				{
-					LMS_LOG(API_SUBSONIC, ERROR) << "Write failed!";
-					return;
-				}
-			}
-
-			if (res.continuationData.has_value())
-			{
-				auto continuation {response.createContinuation()};
-				continuation->setData(std::move(res.continuationData));
-			}
-
+			itStreamHandler->second(requestContext, request, response);
 			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId  << " '" << requestPath << "' handled!";
 			return;
 		}

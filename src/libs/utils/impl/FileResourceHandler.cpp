@@ -17,25 +17,30 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/FileResourceHandler.hpp"
+#include "FileResourceHandler.hpp"
 
 #include <fstream>
 
 #include "utils/Logger.hpp"
 
-namespace FileResourceHandler
+std::unique_ptr<IResourceHandler>
+createFileResourceHandler(const std::filesystem::path& path)
 {
+	return std::make_unique<FileResourceHandler>(path);
+}
 
-static constexpr std::size_t _chunkSize {262144};
 
-static
-std::optional<ContinuationData>
-handleRequestPiecewise(const Wt::Http::Request& request,
-				Wt::Http::Response& response,
-				ContinuationData continuationData)
+FileResourceHandler::FileResourceHandler(const std::filesystem::path& path)
+: _path {path}
 {
-	::uint64_t startByte {continuationData.offset};
-	std::ifstream ifs {continuationData.path.string().c_str(), std::ios::in | std::ios::binary};
+}
+
+
+void
+FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
+{
+	::uint64_t startByte {_offset};
+	std::ifstream ifs {_path.string().c_str(), std::ios::in | std::ios::binary};
 
 	LMS_LOG(UTILS, DEBUG) << "startByte = " << startByte;
 
@@ -43,9 +48,10 @@ handleRequestPiecewise(const Wt::Http::Request& request,
 	{
 		if (!ifs)
 		{
-			LMS_LOG(UTILS, ERROR) << "Cannot open file stream for '" << continuationData.path.string() << "'";
+			LMS_LOG(UTILS, ERROR) << "Cannot open file stream for '" << _path.string() << "'";
 			response.setStatus(404);
-			return std::nullopt;
+			_isFinished = true;
+			return;
 		}
 		else
 		{
@@ -67,7 +73,8 @@ handleRequestPiecewise(const Wt::Http::Request& request,
 			response.addHeader("Content-Range", contentRange.str());
 
 			LMS_LOG(UTILS, DEBUG) << "Range not satisfiable";
-			return std::nullopt;
+			_isFinished = true;
+			return;
 		}
 
 		if (ranges.size() == 1)
@@ -76,21 +83,21 @@ handleRequestPiecewise(const Wt::Http::Request& request,
 
 			response.setStatus(206);
 			startByte = ranges[0].firstByte();
-			continuationData.beyondLastByte = ranges[0].lastByte() + 1;
+			_beyondLastByte = ranges[0].lastByte() + 1;
 
 			std::ostringstream contentRange;
 			contentRange << "bytes " << startByte << "-"
-				<< continuationData.beyondLastByte - 1 << "/" << fileSize;
+				<< _beyondLastByte - 1 << "/" << fileSize;
 
 			response.addHeader("Content-Range", contentRange.str());
-			response.setContentLength(continuationData.beyondLastByte - startByte);
+			response.setContentLength(_beyondLastByte - startByte);
 		}
 		else
 		{
 			LMS_LOG(UTILS, DEBUG) << "No range requested";
 
-			continuationData.beyondLastByte = fileSize;
-			response.setContentLength(continuationData.beyondLastByte);
+			_beyondLastByte = fileSize;
+			response.setContentLength(_beyondLastByte);
 		}
 	}
 
@@ -99,7 +106,7 @@ handleRequestPiecewise(const Wt::Http::Request& request,
 	std::vector<char> buf;
 	buf.resize(_chunkSize);
 
-	::uint64_t restSize = continuationData.beyondLastByte - startByte;
+	::uint64_t restSize = _beyondLastByte - startByte;
 	::uint64_t pieceSize = buf.size() > restSize ? restSize : buf.size();
 
 	ifs.read(&buf[0], pieceSize);
@@ -111,47 +118,21 @@ handleRequestPiecewise(const Wt::Http::Request& request,
 	LMS_LOG(UTILS, DEBUG) << "Progress: " << actualPieceSize << "/" << restSize;
 	if (ifs.good() && actualPieceSize < restSize)
 	{
-		ContinuationData newContinuationData {continuationData};
-		newContinuationData.offset = startByte + actualPieceSize;
+		_offset = startByte + actualPieceSize;
 
-		LMS_LOG(UTILS, DEBUG) << "Job not complete! Next chunk offset = " << newContinuationData.offset;
-
-		return newContinuationData;
+		LMS_LOG(UTILS, DEBUG) << "Job not complete! Next chunk offset = " << _offset;
 	}
 	else
 	{
+		_isFinished = true;
 		LMS_LOG(UTILS, DEBUG) << "Job complete!";
 	}
-
-	return std::nullopt;
 }
 
-
-std::optional<ContinuationData>
-handleInitialRequest(const Wt::Http::Request& request,
-			Wt::Http::Response& response,
-			const std::filesystem::path& path)
+bool
+FileResourceHandler::isFinished() const
 {
-	ContinuationData continuationData;
-	continuationData.path = path;
-	continuationData.offset = 0;
-	continuationData.beyondLastByte = 0;
-
-	LMS_LOG(UTILS, DEBUG) << "Initial request for file '" << path << "'";
-
-	return handleRequestPiecewise(request, response, continuationData);
+	return _isFinished;
 }
-
-std::optional<ContinuationData>
-handleContinuationRequest(const Wt::Http::Request& request,
-			Wt::Http::Response& response,
-			const ContinuationData& continuationData)
-{
-	LMS_LOG(UTILS, DEBUG) << "Continuation request for file '" << continuationData.path << "', offset = " << continuationData.offset;
-	return handleRequestPiecewise(request, response, continuationData);
-}
-
-} // ns FileResourceHandler
-
 
 

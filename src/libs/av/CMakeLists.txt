@@ -2,6 +2,7 @@
 add_library(lmsav SHARED
 	impl/AvInfo.cpp
 	impl/AvTranscoder.cpp
+	impl/AvTranscodeResourceHandler.cpp
 	impl/AvTypes.cpp
 	)
 
@@ -18,6 +19,7 @@ target_link_libraries(lmsav PUBLIC
 	lmsutils
 	avformat
 	avutil
+	wt
 	)
 
 install(TARGETS lmsav DESTINATION lib)

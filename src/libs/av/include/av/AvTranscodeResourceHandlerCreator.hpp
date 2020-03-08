@@ -20,21 +20,15 @@
 #pragma once
 
 #include <filesystem>
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
+#include <memory>
 
+#include "utils/IResourceHandler.hpp"
 
-// Helper used to deliver file contents from a WResource
-namespace FileResourceHandler
+namespace Av
 {
-	struct ContinuationData
-	{
-		std::filesystem::path path;
-		::uint64_t beyondLastByte;
-		::uint64_t offset;
-	};
+	struct TranscodeParameters;
 
-	std::optional<ContinuationData> handleInitialRequest(const Wt::Http::Request& request, Wt::Http::Response& response, const std::filesystem::path& path);
-	std::optional<ContinuationData> handleContinuationRequest(const Wt::Http::Request& request, Wt::Http::Response& response, const ContinuationData& continuationData);
+	std::unique_ptr<IResourceHandler> createTranscodeResourceHandler(const std::filesystem::path& trackPath, const TranscodeParameters& parameters);
+
 }
 

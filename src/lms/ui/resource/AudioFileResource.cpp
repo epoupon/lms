@@ -24,7 +24,7 @@
 
 #include "av/AvInfo.hpp"
 #include "database/Track.hpp"
-#include "utils/FileResourceHandler.hpp"
+#include "utils/FileResourceHandlerCreator.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 #include "LmsApplication.hpp"
@@ -88,28 +88,30 @@ void
 AudioFileResource::handleRequest(const Wt::Http::Request& request,
 		Wt::Http::Response& response)
 {
-	std::optional<FileResourceHandler::ContinuationData> continuationData;
+	std::shared_ptr<IResourceHandler> fileResourceHandler;
+
 	if (!request.continuation())
 	{
 		auto trackPath {getTrackPathFromURLArgs(request)};
 		if (!trackPath)
 			return;
 
-		continuationData = FileResourceHandler::handleInitialRequest(request, response, *trackPath);
+		fileResourceHandler = createFileResourceHandler(*trackPath);
 	}
 	else
 	{
-		auto currentContinuationData {Wt::cpp17::any_cast<FileResourceHandler::ContinuationData>(request.continuation()->data())};
-		continuationData = FileResourceHandler::handleContinuationRequest(request, response, currentContinuationData);
+		fileResourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(request.continuation()->data());
 	}
 
-	if (continuationData)
+	fileResourceHandler->processRequest(request, response);
+
+	if (!fileResourceHandler->isFinished())
 	{
 		auto* continuation {response.createContinuation()};
-		continuation->setData(*continuationData);
+		continuation->setData(fileResourceHandler);
 	}
-
 }
+
 
 } // namespace UserInterface
 
