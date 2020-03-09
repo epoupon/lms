@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,29 +19,27 @@
 
 #pragma once
 
-#include <optional>
+#include <filesystem>
+#include "av/AvTranscoder.hpp"
+#include "utils/IResourceHandler.hpp"
 
-#include "database/Types.hpp"
-
-namespace API::Subsonic
+namespace Av
 {
 
-struct Id
-{
-	enum class Type
+	class TranscodeResourceHandler final : public IResourceHandler
 	{
-		Root,	// Where all artists artistless albums reside
-		Track,
-		Release,
-		Artist,
-		Playlist,
+		public:
+			TranscodeResourceHandler(const std::filesystem::path& trackPath, const TranscodeParameters& parameters);
+
+		private:
+
+			void processRequest(const Wt::Http::Request& request, Wt::Http::Response& reponse) override;
+			bool isFinished() const override;
+
+			static constexpr std::size_t _chunkSize {262144};
+			const std::filesystem::path _trackPath;
+			Transcoder _transcoder;
+
 	};
+}
 
-	Type 			type;
-	Database::IdType	value {};
-};
-
-std::optional<Id>	IdFromString(const std::string& id);
-std::string		IdToString(const Id& id);
-
-} // namespace API::Subsonic

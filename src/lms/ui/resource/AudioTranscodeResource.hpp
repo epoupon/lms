@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,29 +19,36 @@
 
 #pragma once
 
-#include <optional>
+#include <Wt/Dbo/ptr.h>
+#include <Wt/WResource.h>
 
 #include "database/Types.hpp"
 
-namespace API::Subsonic
+namespace Database
 {
+	class User;
+}
 
-struct Id
+namespace UserInterface {
+
+class AudioTranscodeResource : public Wt::WResource
 {
-	enum class Type
-	{
-		Root,	// Where all artists artistless albums reside
-		Track,
-		Release,
-		Artist,
-		Playlist,
-	};
+	public:
+		~AudioTranscodeResource();
 
-	Type 			type;
-	Database::IdType	value {};
+		// Url depends on the user since settings are used in parameters
+		std::string getUrlForUser(Database::IdType trackId, Wt::Dbo::ptr<Database::User> user) const;
+
+		void handleRequest(const Wt::Http::Request& request,
+				Wt::Http::Response& response);
+
+	private:
+
+		static constexpr std::size_t	_chunkSize {262144};
 };
 
-std::optional<Id>	IdFromString(const std::string& id);
-std::string		IdToString(const Id& id);
+} // namespace UserInterface
 
-} // namespace API::Subsonic
+
+
+

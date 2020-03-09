@@ -2,6 +2,12 @@
 
 var LMS = LMS || {};
 
+const Mode = {
+	Transcode: 1,
+	File: 2,
+}
+Object.freeze(Mode);
+
 LMS.mediaplayer = function () {
 
 	var _root = {};
@@ -9,6 +15,7 @@ LMS.mediaplayer = function () {
 	var _offset = 0;
 	var _duration = 0;
 	var _audioSrc;
+	var _mode = Mode.File;
 
 	var _updateControls = function() {
 		if (_elems.audio.paused) {
@@ -125,11 +132,22 @@ LMS.mediaplayer = function () {
 			if (!_elems.audio.hasAttribute("src"))
 				return;
 
-			_offset = parseInt(_elems.seek.value, 10);
-			_elems.audio.src = _audioSrc + "&offset=" + _offset;
-			_elems.audio.load();
-			_playTrack();
+			let selectedOffset = parseInt(_elems.seek.value, 10);
 
+			switch (_mode) {
+				case Mode.Transcode:
+					_offset = selectedOffset;
+					_elems.audio.src = _audioSrc + "&offset=" + _offset;
+					_elems.audio.load();
+					_elems.audio.currentTime = 0;
+					_playTrack();
+					break;
+
+				case Mode.File:
+					_elems.audio.currentTime = selectedOffset;
+					_playTrack();
+					break;
+			}
 		});
 
 		_elems.audio.addEventListener("play", _updateControls);
@@ -175,6 +193,7 @@ LMS.mediaplayer = function () {
 		_offset = 0;
 		_duration = params.duration;
 		_audioSrc = params.resource;
+		_mode = params.mode;
 
 		_elems.seek.max = _duration;
 		_elems.audio.src = _audioSrc;

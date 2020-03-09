@@ -170,6 +170,8 @@ class User : public Wt::Dbo::Dbo<User>
 		bool			hasStarredTrack(Wt::Dbo::ptr<Track> track) const;
 		std::vector<Wt::Dbo::ptr<Track>> getStarredTracks() const;
 
+		bool 			checkBitrate(Bitrate bitrate) const;
+
 		template<class Action>
 		void persist(Action& a)
 		{

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+
  *
  * This file is part of LMS.
  *
@@ -30,7 +30,7 @@
 
 namespace Av {
 
-#define LMS_LOG_TRANSCODE(sev)	LMS_LOG(TRANSCODE, sev) << "[" << _id << "] - "
+#define LOG(sev)	LMS_LOG(TRANSCODE, sev) << "[" << _id << "] - "
 
 static std::atomic<size_t>	globalId {};
 static std::filesystem::path	ffmpegPath;
@@ -59,7 +59,7 @@ Transcoder::start()
 	else if (!std::filesystem::is_regular_file( _filePath) )
 		return false;
 
-	LMS_LOG_TRANSCODE(INFO) << "Transcoding file '" << _filePath.string() << "'";
+	LOG(INFO) << "Transcoding file '" << _filePath.string() << "'";
 
 	std::vector<std::string> args;
 
@@ -99,77 +99,57 @@ Transcoder::start()
 	// Skip video flows (including covers)
 	args.emplace_back("-vn");
 
+	// Output bitrates
+	args.emplace_back("-b:a");
+	args.emplace_back(std::to_string(_parameters.bitrate));
+
 	// Codecs and formats
-	if (_parameters.encoding)
+	switch (_parameters.encoding)
 	{
-		// Output bitrates
-		args.emplace_back("-b:a");
-		args.emplace_back(std::to_string(_parameters.bitrate));
+		case Encoding::MP3:
+			args.emplace_back("-f");
+			args.emplace_back("mp3");
+			break;
 
-		switch (*_parameters.encoding)
-		{
-			case Encoding::MP3:
-				args.emplace_back("-f");
-				args.emplace_back("mp3");
-				break;
+		case Encoding::OGG_OPUS:
+			args.emplace_back("-acodec");
+			args.emplace_back("libopus");
+			args.emplace_back("-f");
+			args.emplace_back("ogg");
+			break;
 
-			case Encoding::OGG_OPUS:
-				args.emplace_back("-acodec");
-				args.emplace_back("libopus");
-				args.emplace_back("-f");
-				args.emplace_back("ogg");
-				break;
+		case Encoding::MATROSKA_OPUS:
+			args.emplace_back("-acodec");
+			args.emplace_back("libopus");
+			args.emplace_back("-f");
+			args.emplace_back("matroska");
+			break;
 
-			case Encoding::MATROSKA_OPUS:
-				args.emplace_back("-acodec");
-				args.emplace_back("libopus");
-				args.emplace_back("-f");
-				args.emplace_back("matroska");
-				break;
+		case Encoding::OGG_VORBIS:
+			args.emplace_back("-acodec");
+			args.emplace_back("libvorbis");
+			args.emplace_back("-f");
+			args.emplace_back("ogg");
+			break;
 
-			case Encoding::OGG_VORBIS:
-				args.emplace_back("-acodec");
-				args.emplace_back("libvorbis");
-				args.emplace_back("-f");
-				args.emplace_back("ogg");
-				break;
+		case Encoding::WEBM_VORBIS:
+			args.emplace_back("-acodec");
+			args.emplace_back("libvorbis");
+			args.emplace_back("-f");
+			args.emplace_back("webm");
+			break;
 
-			case Encoding::WEBM_VORBIS:
-				args.emplace_back("-acodec");
-				args.emplace_back("libvorbis");
-				args.emplace_back("-f");
-				args.emplace_back("webm");
-				break;
-
-			default:
-				return false;
-		}
-
-		_outputMimeType = encodingToMimetype(*_parameters.encoding);
-	}
-	else
-	{
-		auto mediaFileFormat {guessMediaFileFormat(_filePath)};
-
-		if (!mediaFileFormat)
-		{
-			LMS_LOG(AV, ERROR) << "Cannot guess media file format for '" << _filePath.string() << "'";
+		default:
 			return false;
-		}
-
-		args.emplace_back("-acodec");
-		args.emplace_back("copy");
-		args.emplace_back("-f");
-		args.emplace_back(mediaFileFormat->format);
-
-		_outputMimeType = mediaFileFormat->mimeType;
 	}
+
+	_outputMimeType = encodingToMimetype(_parameters.encoding);
 
 	args.emplace_back("pipe:1");
 
-	LMS_LOG_TRANSCODE(DEBUG) << "Dumping args (" << args.size() << ")";
+	LOG(DEBUG) << "Dumping args (" << args.size() << ")";
 	for (const std::string& arg : args)
-		LMS_LOG_TRANSCODE(DEBUG) << "Arg = '" << arg << "'";
+		LOG(DEBUG) << "Arg = '" << arg << "'";
 
 	// make sure only one thread is executing this part of code
 	{
@@ -183,18 +163,18 @@ Transcoder::start()
 		_child->open(ffmpegPath.string(), args);
 		if (!_child->is_open())
 		{
-			LMS_LOG_TRANSCODE(DEBUG) << "Exec failed!";
+			LOG(DEBUG) << "Exec failed!";
 			return false;
 		}
 
 		if (_child->out().eof())
 		{
-			LMS_LOG_TRANSCODE(DEBUG) << "Early end of file!";
+			LOG(DEBUG) << "Early end of file!";
 			return false;
 		}
 
 	}
-	LMS_LOG_TRANSCODE(DEBUG) << "Stream opened!";
+	LOG(DEBUG) << "Stream opened!";
 
 	return true;
 }
@@ -207,12 +187,12 @@ Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 
 	if (_child->out().fail())
 	{
-		LMS_LOG_TRANSCODE(DEBUG) << "Stdout FAILED 2";
+		LOG(DEBUG) << "Stdout FAILED 2";
 	}
 
 	if (_child->out().eof())
 	{
-		LMS_LOG_TRANSCODE(DEBUG) << "Stdout ENDED 2";
+		LOG(DEBUG) << "Stdout ENDED 2";
 	}
 
 	output.resize(maxSize);
@@ -223,12 +203,12 @@ Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 
 	if (_child->out().fail())
 	{
-		LMS_LOG_TRANSCODE(DEBUG) << "Stdout FAILED";
+		LOG(DEBUG) << "Stdout FAILED";
 	}
 
 	if (_child->out().eof())
 	{
-		LMS_LOG_TRANSCODE(DEBUG) << "Stdout EOF!";
+		LOG(DEBUG) << "Stdout EOF!";
 		_child->clear();
 
 		_isComplete = true;
@@ -237,20 +217,20 @@ Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 
 	_total += output.size();
 
-	LMS_LOG_TRANSCODE(DEBUG) << "nb bytes = " << output.size() << ", total = " << _total;
+	LOG(DEBUG) << "nb bytes = " << output.size() << ", total = " << _total;
 }
 
 Transcoder::~Transcoder()
 {
-	LMS_LOG_TRANSCODE(DEBUG) << ", ~Transcoder called! Total produced bytes = " << _total;
+	LOG(DEBUG) << ", ~Transcoder called! Total produced bytes = " << _total;
 
 	if (_child)
 	{
-		LMS_LOG_TRANSCODE(DEBUG) << "Child still here!";
+		LOG(DEBUG) << "Child still here!";
 		_child->rdbuf()->kill(SIGKILL);
-		LMS_LOG_TRANSCODE(DEBUG) << "Closing...";
+		LOG(DEBUG) << "Closing...";
 		_child->rdbuf()->close();
-		LMS_LOG_TRANSCODE(DEBUG) << "Closing DONE";
+		LOG(DEBUG) << "Closing DONE";
 	}
 }
 

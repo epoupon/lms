@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,29 +19,16 @@
 
 #pragma once
 
-#include <optional>
+#include <Wt/Http/Request.h>
+#include <Wt/Http/Response.h>
 
-#include "database/Types.hpp"
-
-namespace API::Subsonic
+// Helper class to serve a resource (must be saved as continuation data if not complete) 
+class IResourceHandler
 {
+	public:
+		virtual ~IResourceHandler() = default;
 
-struct Id
-{
-	enum class Type
-	{
-		Root,	// Where all artists artistless albums reside
-		Track,
-		Release,
-		Artist,
-		Playlist,
-	};
-
-	Type 			type;
-	Database::IdType	value {};
+		virtual void processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) = 0;
+		virtual bool isFinished() const = 0;
 };
 
-std::optional<Id>	IdFromString(const std::string& id);
-std::string		IdToString(const Id& id);
-
-} // namespace API::Subsonic

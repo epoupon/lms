@@ -1,5 +1,7 @@
 
 add_library(lmssubsonic SHARED
+	impl/ParameterParsing.cpp
+	impl/Stream.cpp
 	impl/SubsonicId.cpp
 	impl/SubsonicResource.cpp
 	impl/SubsonicResponse.cpp

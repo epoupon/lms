@@ -37,6 +37,7 @@ const char* getModuleName(Module mod)
 		case Module::RECOMMENDATION:	return "RECOMMENDATION";
 		case Module::TRANSCODE:		return "TRANSCODE";
 		case Module::UI:		return "UI";
+		case Module::UTILS:		return "UTILS";
 	}
 	return "";
 }

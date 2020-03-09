@@ -235,6 +235,8 @@ guessMediaFileFormat(const std::filesystem::path& file)
 	if (!format || !format->name)
 		return {};
 
+	LMS_LOG(AV, DEBUG) << "File '" << file.string() << "', formats = '" << format->name << "'";
+
 	auto formats {StringUtils::splitString(format->name, ",")};
 	if (formats.size() > 1)
 		LMS_LOG(AV, INFO) << "File '" << file.string() << "' reported several formats: '" << format->name << "'";
