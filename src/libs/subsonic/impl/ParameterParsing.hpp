@@ -67,7 +67,7 @@ namespace API::Subsonic
 		std::vector<T> params {getMultiParametersAs<T>(parameterMap, param)};
 
 		if (params.size() != 1)
-			return {};
+			return std::nullopt;
 
 		return T { std::move(params.front()) };
 	}

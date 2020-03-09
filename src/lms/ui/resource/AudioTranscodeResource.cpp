@@ -108,7 +108,7 @@ readParameterAs(const Wt::Http::Request& request, const std::string& parameterNa
 	auto paramStr {request.getParameter(parameterName)};
 	if (!paramStr)
 	{
-		LOG(ERROR) << "Missing parameter '" << parameterName << "'";
+		LOG(DEBUG) << "Missing parameter '" << parameterName << "'";
 		return std::nullopt;
 	}
 
