@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,29 +19,32 @@
 
 #pragma once
 
-#include <optional>
+#include <filesystem>
+#include <Wt/WResource.h>
 
 #include "database/Types.hpp"
 
-namespace API::Subsonic
-{
 
-struct Id
-{
-	enum class Type
-	{
-		Root,	// Where all artists artistless albums reside
-		Track,
-		Release,
-		Artist,
-		Playlist,
-	};
+namespace UserInterface {
 
-	Type 			type;
-	Database::IdType	value {};
+class AudioFileResource : public Wt::WResource
+{
+	public:
+		~AudioFileResource();
+
+		std::string getUrl(Database::IdType trackId) const;
+
+	private:
+
+		static constexpr std::size_t _chunkSize {262144};
+
+		void handleRequest(const Wt::Http::Request& request,
+				Wt::Http::Response& response) override;
+
 };
 
-std::optional<Id>	IdFromString(const std::string& id);
-std::string		IdToString(const Id& id);
+} // namespace UserInterface
 
-} // namespace API::Subsonic
+
+
+

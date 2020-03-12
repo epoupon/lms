@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+
  *
  * This file is part of LMS.
  *
@@ -32,7 +32,7 @@
 
 namespace Av {
 
-#define LMS_LOG_TRANSCODE(sev)	LMS_LOG(TRANSCODE, sev) << "[" << _id << "] - "
+#define LOG(sev)	LMS_LOG(TRANSCODE, sev) << "[" << _id << "] - "
 
 static std::atomic<size_t>	globalId {};
 static std::filesystem::path	ffmpegPath;
@@ -60,16 +60,16 @@ Transcoder::start()
 
 	if (!std::filesystem::exists(_filePath))
 	{
-		LMS_LOG_TRANSCODE(ERROR) << "File '" << _filePath.string() << "' does not exist";
+		LOG(ERROR) << "File '" << _filePath.string() << "' does not exist";
 		return false;
 	}
 	else if (!std::filesystem::is_regular_file( _filePath) )
 	{
-		LMS_LOG_TRANSCODE(ERROR) << "File '" << _filePath.string() << "' is not regular";
+		LOG(ERROR) << "File '" << _filePath.string() << "' is not regular";
 		return false;
 	}
 
-	LMS_LOG_TRANSCODE(INFO) << "Transcoding file '" << _filePath.string() << "'";
+	LOG(INFO) << "Transcoding file '" << _filePath.string() << "'";
 
 	std::vector<std::string> args;
 
@@ -109,103 +109,81 @@ Transcoder::start()
 	// Skip video flows (including covers)
 	args.emplace_back("-vn");
 
-	// Codecs and formats
-	if (_parameters.encoding)
+	// Output bitrates
+	if (_parameters.bitrate)
 	{
-		// Output bitrates
-		if (_parameters.bitrate)
-		{
-			args.emplace_back("-b:a");
-			args.emplace_back(std::to_string(*_parameters.bitrate));
-		}
-
-		switch (*_parameters.encoding)
-		{
-			case Encoding::MATROSKA_OPUS:
-				assert(_parameters.bitrate);
-				args.emplace_back("-acodec");
-				args.emplace_back("libopus");
-				args.emplace_back("-f");
-				args.emplace_back("matroska");
-				break;
-
-			case Encoding::MP3:
-				assert(_parameters.bitrate);
-				args.emplace_back("-f");
-				args.emplace_back("mp3");
-				break;
-			
-			case Encoding::PCM_SIGNED_16_LE:
-				args.emplace_back("-f");
-				args.emplace_back("s16le");
-				break;
-
-			case Encoding::OGG_OPUS:
-				assert(_parameters.bitrate);
-				args.emplace_back("-acodec");
-				args.emplace_back("libopus");
-				args.emplace_back("-f");
-				args.emplace_back("ogg");
-				break;
-
-			case Encoding::OGG_VORBIS:
-				assert(_parameters.bitrate);
-				args.emplace_back("-acodec");
-				args.emplace_back("libvorbis");
-				args.emplace_back("-f");
-				args.emplace_back("ogg");
-				break;
-
-			case Encoding::WEBM_VORBIS:
-				assert(_parameters.bitrate);
-				args.emplace_back("-acodec");
-				args.emplace_back("libvorbis");
-				args.emplace_back("-f");
-				args.emplace_back("webm");
-				break;
-
-			default:
-				return false;
-		}
-
-		_outputMimeType = encodingToMimetype(*_parameters.encoding);
+		args.emplace_back("-b:a");
+		args.emplace_back(std::to_string(_parameters.bitrate));
 	}
-	else
-	{
-		auto mediaFileFormat {guessMediaFileFormat(_filePath)};
 
-		if (!mediaFileFormat)
-		{
-			LMS_LOG(AV, ERROR) << "Cannot guess media file format for '" << _filePath.string() << "'";
+	switch (_parameters.encoding)
+	{
+		case Encoding::MATROSKA_OPUS:
+			assert(_parameters.bitrate);
+			args.emplace_back("-acodec");
+			args.emplace_back("libopus");
+			args.emplace_back("-f");
+			args.emplace_back("matroska");
+			break;
+
+		case Encoding::MP3:
+			assert(_parameters.bitrate);
+			args.emplace_back("-f");
+			args.emplace_back("mp3");
+			break;
+
+		case Encoding::PCM_SIGNED_16_LE:
+			args.emplace_back("-f");
+			args.emplace_back("s16le");
+			break;
+
+		case Encoding::OGG_OPUS:
+			assert(_parameters.bitrate);
+			args.emplace_back("-acodec");
+			args.emplace_back("libopus");
+			args.emplace_back("-f");
+			args.emplace_back("ogg");
+			break;
+
+		case Encoding::OGG_VORBIS:
+			assert(_parameters.bitrate);
+			args.emplace_back("-acodec");
+			args.emplace_back("libvorbis");
+			args.emplace_back("-f");
+			args.emplace_back("ogg");
+			break;
+
+		case Encoding::WEBM_VORBIS:
+			assert(_parameters.bitrate);
+			args.emplace_back("-acodec");
+			args.emplace_back("libvorbis");
+			args.emplace_back("-f");
+			args.emplace_back("webm");
+			break;
+
+		default:
 			return false;
-		}
-
-		args.emplace_back("-acodec");
-		args.emplace_back("copy");
-		args.emplace_back("-f");
-		args.emplace_back(mediaFileFormat->format);
-
-		_outputMimeType = mediaFileFormat->mimeType;
 	}
+
+	_outputMimeType = encodingToMimetype(_parameters.encoding);
 
 	args.emplace_back("pipe:1");
 
-	LMS_LOG_TRANSCODE(DEBUG) << "Dumping args (" << args.size() << ")";
+	LOG(DEBUG) << "Dumping args (" << args.size() << ")";
 	for (const std::string& arg : args)
-		LMS_LOG_TRANSCODE(DEBUG) << "Arg = '" << arg << "'";
+		LOG(DEBUG) << "Arg = '" << arg << "'";
 
 	try
 	{
 		_child = Service<IChildProcessManager>::get()->spawnChildProcess(ffmpegPath, args);
-
-		LMS_LOG_TRANSCODE(DEBUG) << "Stream opened!";
-		return true;
 	}
 	catch (LmsException& e)
 	{
-		LMS_LOG_TRANSCODE(ERROR) << "Unable to create transcoder: " << e.what();
+		LOG(ERROR) << "Unable to create transcoder: " << e.what();
 		return false;
 	}
+
+	return true;
 }
 
 void
@@ -213,7 +191,7 @@ Transcoder::asyncWaitForData(WaitCallback cb)
 {
 	assert(_child);
 
-	LMS_LOG_TRANSCODE(DEBUG) << "Want to wait for data";
+	LOG(DEBUG) << "Want to wait for data";
 
 	_child->asyncWaitForData([cb = std::move(cb)]()
 	{

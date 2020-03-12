@@ -19,15 +19,10 @@
 #include "subsonic/SubsonicResource.hpp"
 
 #include <atomic>
-#include <mutex>
-#include <numeric>
-#include <random>
-#include <thread>
 
 #include <Wt/WLocalDateTime.h>
 
 #include "auth/IPasswordService.hpp"
-#include "av/AvTranscoder.hpp"
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
@@ -41,10 +36,13 @@
 #include "recommendation/IEngine.hpp"
 #include "utils/EnumSet.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Random.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
-#include "SubsonicId.hpp"
+#include "ParameterParsing.hpp"
+#include "RequestContext.hpp"
+#include "Stream.hpp"
 #include "SubsonicResponse.hpp"
 
 using namespace Database;
@@ -66,25 +64,6 @@ namespace API::Subsonic
 
 namespace StringUtils
 {
-	template<>
-	std::optional<API::Subsonic::Id>
-	StringUtils::readAs(const std::string& str)
-	{
-		return API::Subsonic::IdFromString(str);
-	}
-
-	template<>
-	std::optional<bool>
-	StringUtils::readAs(const std::string& str)
-	{
-		if (str == "true")
-			return true;
-		else if (str == "false")
-			return false;
-
-		return {};
-	}
-
 	template<>
 	std::optional<API::Subsonic::ClientVersion>
 	StringUtils::readAs(const std::string& str)
@@ -130,82 +109,11 @@ enum class UserRole
 };
 using UserRoles = EnumSet<UserRole>;
 
-struct ClientInfo
-{
-	std::string name;
-	std::string user;
-	std::string password;
-	ClientVersion version;
-};
-
-struct RequestContext
-{
-	const Wt::Http::ParameterMap& parameters;
-	Session& dbSession;
-	std::string userName;
-};
-
 static
 std::string
 makeNameFilesystemCompatible(const std::string& name)
 {
 	return StringUtils::replaceInString(name, "/", "_");
-}
-
-template<typename T>
-std::vector<T>
-getMultiParametersAs(const Wt::Http::ParameterMap& parameterMap, const std::string& paramName)
-{
-	std::vector<T> res;
-
-	auto it = parameterMap.find(paramName);
-	if (it == parameterMap.end())
-		return res;
-
-	for (const std::string& param : it->second)
-	{
-		auto value {StringUtils::readAs<T>(param)};
-		if (!value)
-			throw BadParameterFormatGenericError {paramName};
-
-		res.emplace_back(std::move(*value));
-	}
-
-	return res;
-}
-
-template<typename T>
-std::vector<T>
-getMandatoryMultiParametersAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
-{
-	std::vector<T> res {getMultiParametersAs<T>(parameterMap, param)};
-	if (res.empty())
-		throw RequiredParameterMissingError {};
-
-	return res;
-}
-
-template<typename T>
-std::optional<T>
-getParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
-{
-	std::vector<T> params {getMultiParametersAs<T>(parameterMap, param)};
-
-	if (params.size() != 1)
-		return {};
-
-	return T { std::move(params.front()) };
-}
-
-template<typename T>
-T
-getMandatoryParameterAs(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
-{
-	auto res {getParameterAs<T>(parameterMap, param)};
-	if (!res)
-		throw RequiredParameterMissingError {};
-
-	return *res;
 }
 
 static
@@ -223,6 +131,14 @@ decodePasswordIfNeeded(const std::string& password)
 
 	return password;
 }
+
+struct ClientInfo
+{
+	std::string name;
+	std::string user;
+	std::string password;
+	ClientVersion version;
+};
 
 static
 ClientInfo
@@ -470,21 +386,19 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 	}
 	else if (!artists.empty())
 	{
-		if (artists.size() > 1)
-		{
-			albumNode.setAttribute("artist", "Various Artists");
+		albumNode.setAttribute("artist", getArtistNames(artists));
 
-			if (!id3)
-				albumNode.setAttribute("parent", IdToString({Id::Type::Root}));
-		}
-		else
+		if (artists.size() == 1)
 		{
-			albumNode.setAttribute("artist", artists.front()->getName());
-
 			if (id3)
 				albumNode.setAttribute("artistId", IdToString({Id::Type::Artist, artists.front().id()}));
 			else
 				albumNode.setAttribute("parent", IdToString({Id::Type::Artist, artists.front().id()}));
+		}
+		else
+		{
+			if (!id3)
+				albumNode.setAttribute("parent", IdToString({Id::Type::Root}));
 		}
 	}
 
@@ -1167,9 +1081,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 				std::make_move_iterator(std::end(similarArtistTracks)));
 	}
 
-	auto now {std::chrono::system_clock::now()};
-	std::mt19937 randGenerator {static_cast<std::mt19937::result_type>(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count())};
-	std::shuffle(std::begin(tracks), std::end(tracks), randGenerator);
+	Random::shuffleContainer(tracks);
 
 	Response response {Response::createOkResponse()};
 	Response::Node& similarSongsNode {response.createNode(id3 ? "similarSongs2" : "similarSongs")};
@@ -1803,117 +1715,8 @@ handleNotImplemented(RequestContext&)
 }
 
 static
-Av::Encoding
-userTranscodeFormatToAvEncoding(AudioFormat format)
-{
-	switch (format)
-	{
-		case AudioFormat::MP3:			return Av::Encoding::MP3;
-		case AudioFormat::OGG_OPUS:		return Av::Encoding::OGG_OPUS;
-		case AudioFormat::MATROSKA_OPUS:	return Av::Encoding::MATROSKA_OPUS;
-		case AudioFormat::OGG_VORBIS:		return Av::Encoding::OGG_VORBIS;
-		case AudioFormat::WEBM_VORBIS:		return Av::Encoding::WEBM_VORBIS;
-		default:				return Av::Encoding::OGG_OPUS;
-	}
-}
-
-static
-std::unique_ptr<Av::Transcoder>
-createTranscoder(RequestContext& context)
-{
-	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
-
-	// Optional params
-	std::optional<std::size_t> maxBitRate {getParameterAs<std::size_t>(context.parameters, "maxBitRate")};
-	std::optional<std::string> format {getParameterAs<std::string>(context.parameters, "format")};
-
-	Av::TranscodeParameters parameters {};
-	parameters.stripMetadata = false; // Since it can be cached and some players read the metadata from the downloaded file
-
-	std::filesystem::path trackPath;
-	{
-		auto transaction {context.dbSession.createSharedTransaction()};
-
-		{
-			auto track {Track::getById(context.dbSession, id.value)};
-			if (!track)
-				throw RequestedDataNotFoundError {};
-
-			trackPath = track->getPath();
-		}
-
-		{
-			const User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
-			if (!user)
-				throw UserNotAuthorizedError {};
-
-			// format = "raw" => no transcode. Other format values will be ignored
-			const bool transcode {(!format || (format && *format != "raw")) && user->getAudioTranscodeEnable()};
-			if (transcode)
-			{
-				// "If set to zero, no limit is imposed"
-				if (!maxBitRate || *maxBitRate == 0)
-					maxBitRate = user->getAudioTranscodeBitrate() / 1000;
-
-				*maxBitRate = clamp(*maxBitRate, std::size_t {48}, user->getMaxAudioTranscodeBitrate() / 1000);
-
-				parameters.bitrate = *maxBitRate * 1000;
-				parameters.encoding = userTranscodeFormatToAvEncoding(user->getAudioTranscodeFormat());
-			}
-		}
-	}
-
-	return std::make_unique<Av::Transcoder>(trackPath, parameters);
-}
-
-static
 void
-handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
-{
-	std::shared_ptr<Av::Transcoder> transcoder;
-
-	Wt::Http::ResponseContinuation *continuation = request.continuation();
-	if (!continuation)
-	{
-		transcoder = createTranscoder(context);
-		if (!transcoder)
-			throw InternalErrorGenericError {"Cannot create transcoder"};
-
-		if (!transcoder->start())
-			throw InternalErrorGenericError {"Cannot create transcoder"};
-
-		response.setMimeType(transcoder->getOutputMimeType());
-		LMS_LOG(API_SUBSONIC, DEBUG) << "Mime type set to '" << transcoder->getOutputMimeType() << "'";
-	}
-	else
-	{
-		transcoder = Wt::cpp17::any_cast<std::shared_ptr<Av::Transcoder>>(continuation->data());
-
-		if (!transcoder)
-			throw InternalErrorGenericError {"Cannot retrieve transcoder"};
-
-		std::vector<unsigned char> data;
-		data.resize(65536);
-		const std::size_t nbBytes {transcoder->readSome(&data[0], data.size())};
-		response.out().write(reinterpret_cast<const char*>(&data[0]), nbBytes);
-	}
-
-	if (!transcoder->finished())
-	{
-		continuation = response.createContinuation();
-		continuation->setData(transcoder);
-		continuation->waitForMoreData();
-		transcoder->asyncWaitForData([=]()
-		{
-			continuation->haveMoreData();
-		});
-	}
-}
-
-static
-void
-handleGetCoverArt(RequestContext& context, const Wt::Http::Request&, Wt::Http::Response& response)
+handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/, Wt::Http::Response& response)
 {
 	// Mandatory params
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
@@ -2056,7 +1859,7 @@ static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrieval
 {
 	// Media retrieval
 	{"getCoverArt",		handleGetCoverArt},
-	{"stream",		handleStream},
+	{"stream",		Stream::handle},
 };
 
 static

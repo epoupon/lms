@@ -39,7 +39,6 @@ namespace Auth {
 	class IAuthTokenService
 	{
 		public:
-
 			virtual ~IAuthTokenService() = default;
 
 			// Auth Token services

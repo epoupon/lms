@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,29 +19,24 @@
 
 #pragma once
 
-#include <optional>
+#include <filesystem>
+#include "utils/IResourceHandler.hpp"
 
-#include "database/Types.hpp"
-
-namespace API::Subsonic
+class FileResourceHandler final : public IResourceHandler
 {
+	public:
+		FileResourceHandler(const std::filesystem::path& filePath);
 
-struct Id
-{
-	enum class Type
-	{
-		Root,	// Where all artists artistless albums reside
-		Track,
-		Release,
-		Artist,
-		Playlist,
-	};
+	private:
 
-	Type 			type;
-	Database::IdType	value {};
+		Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
+
+		static constexpr std::size_t _chunkSize {262144};
+
+		std::filesystem::path	_path;
+		::uint64_t		_beyondLastByte {};
+		::uint64_t		_offset {};
+		bool			_isFinished {};
+
 };
 
-std::optional<Id>	IdFromString(const std::string& id);
-std::string		IdToString(const Id& id);
-
-} // namespace API::Subsonic

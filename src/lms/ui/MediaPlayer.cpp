@@ -19,15 +19,16 @@
 
 #include "MediaPlayer.hpp"
 
-#include "av/AvInfo.hpp"
 #include "utils/Logger.hpp"
 
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
+#include "database/User.hpp"
 
 #include "resource/ImageResource.hpp"
-#include "resource/AudioResource.hpp"
+#include "resource/AudioTranscodeResource.hpp"
+#include "resource/AudioFileResource.hpp"
 
 #include "utils/String.hpp"
 
@@ -57,68 +58,72 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play)
 	LMS_LOG(UI, DEBUG) << "Playing track ID = " << trackId;
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
 	const auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+	const std::string imgResourceMimeType {LmsApp->getImageResource()->getMimeType()};
 
-	try
+	std::string resource;
+	bool transcode;
+	if (LmsApp->getUser()->getAudioTranscodeEnable())
 	{
-		const Av::MediaFile mediaFile {track->getPath()};
-
-		const std::string resource {LmsApp->getAudioResource()->getUrl(trackId)};
-		const std::string imgResourceMimeType {LmsApp->getImageResource()->getMimeType()};
-
-		const auto artists {track->getArtists()};
-
-		std::ostringstream oss;
-		oss
-			<< "var params = {"
-			<< " resource: \"" << resource << "\","
-			<< " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
-			<< " title: \"" << StringUtils::jsEscape(track->getName()) << "\","
-			<< " artist: \"" << (!artists.empty() ? StringUtils::jsEscape(artists.front()->getName()) : "") << "\","
-			<< " release: \"" << (track->getRelease() ? StringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
-			<< " artwork: ["
-			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 96) << "\",  sizes: \"96x96\",	type: \"" << imgResourceMimeType << "\" },"
-			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 256) << "\", sizes: \"256x256\",	type: \"" << imgResourceMimeType << "\" },"
-			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 512) << "\", sizes: \"512x512\",	type: \"" << imgResourceMimeType << "\" },"
-			<< " ]"
-			<< "};";
-		oss << "LMS.mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay
-
-		LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
-
-		_title->setTextFormat(Wt::TextFormat::Plain);
-		_title->setText(Wt::WString::fromUTF8(track->getName()));
-
-		if (!artists.empty())
-		{
-			_artist->setTextFormat(Wt::TextFormat::Plain);
-			_artist->setText(Wt::WString::fromUTF8(artists.front()->getName()));
-			_artist->setLink(LmsApp->createArtistLink(artists.front()));
-		}
-		else
-		{
-			_artist->setText("");
-			_artist->setLink({});
-		}
-
-		if (track->getRelease())
-		{
-			_release->setTextFormat(Wt::TextFormat::Plain);
-			_release->setText(Wt::WString::fromUTF8(track->getRelease()->getName()));
-			_release->setLink(LmsApp->createReleaseLink(track->getRelease()));
-		}
-		else
-		{
-			_release->setText("");
-			_release->setLink({});
-		}
-
-		wApp->doJavaScript(oss.str());
+		resource = LmsApp->getAudioTranscodeResource()->getUrlForUser(trackId, LmsApp->getUser());
+		transcode = true;
 	}
-	catch (Av::MediaFileException& e)
+	else
 	{
-		LMS_LOG(UI, ERROR) << "MediaFileException: " << e.what();
+		resource = LmsApp->getAudioFileResource()->getUrl(trackId);
+		transcode = false;
 	}
+
+	const auto artists {track->getArtists()};
+
+	std::ostringstream oss;
+	oss
+		<< "var params = {"
+		<< " mode: " << (transcode ? "Mode.Transcode" : "Mode.File") << ","
+		<< " resource: \"" << resource << "\","
+		<< " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
+		<< " title: \"" << StringUtils::jsEscape(track->getName()) << "\","
+		<< " artist: \"" << (!artists.empty() ? StringUtils::jsEscape(artists.front()->getName()) : "") << "\","
+		<< " release: \"" << (track->getRelease() ? StringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
+		<< " artwork: ["
+		<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 96) << "\",  sizes: \"96x96\",	type: \"" << imgResourceMimeType << "\" },"
+		<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 256) << "\", sizes: \"256x256\",	type: \"" << imgResourceMimeType << "\" },"
+		<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 512) << "\", sizes: \"512x512\",	type: \"" << imgResourceMimeType << "\" },"
+		<< " ]"
+		<< "};";
+	oss << "LMS.mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay
+
+	LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
+
+	_title->setTextFormat(Wt::TextFormat::Plain);
+	_title->setText(Wt::WString::fromUTF8(track->getName()));
+
+	if (!artists.empty())
+	{
+		_artist->setTextFormat(Wt::TextFormat::Plain);
+		_artist->setText(Wt::WString::fromUTF8(artists.front()->getName()));
+		_artist->setLink(LmsApp->createArtistLink(artists.front()));
+	}
+	else
+	{
+		_artist->setText("");
+		_artist->setLink({});
+	}
+
+	if (track->getRelease())
+	{
+		_release->setTextFormat(Wt::TextFormat::Plain);
+		_release->setText(Wt::WString::fromUTF8(track->getRelease()->getName()));
+		_release->setLink(LmsApp->createReleaseLink(track->getRelease()));
+	}
+	else
+	{
+		_release->setText("");
+		_release->setLink({});
+	}
+
+	wApp->doJavaScript(oss.str());
 }
 
 void

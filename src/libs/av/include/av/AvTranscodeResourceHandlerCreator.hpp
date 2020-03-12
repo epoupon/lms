@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,33 +19,16 @@
 
 #pragma once
 
-#include <Wt/WResource.h>
+#include <filesystem>
+#include <memory>
 
-#include "av/AvTranscoder.hpp"
+#include "utils/IResourceHandler.hpp"
 
-#include "database/Types.hpp"
-
-
-namespace UserInterface {
-
-class AudioResource : public Wt::WResource
+namespace Av
 {
-	public:
-		AudioResource();
-		~AudioResource();
+	struct TranscodeParameters;
 
-		std::string getUrl(Database::IdType trackId) const;
+	std::unique_ptr<IResourceHandler> createTranscodeResourceHandler(const std::filesystem::path& trackPath, const TranscodeParameters& parameters);
 
-		void handleRequest(const Wt::Http::Request& request,
-				Wt::Http::Response& response);
-
-	private:
-
-		static const std::size_t	_chunkSize = 65536*4;
-};
-
-} // namespace UserInterface
-
-
-
+}
 

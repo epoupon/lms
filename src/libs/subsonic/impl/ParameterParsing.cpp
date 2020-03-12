@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,31 +17,27 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "ParameterParsing.hpp"
 
-#include <optional>
-
-#include "database/Types.hpp"
-
-namespace API::Subsonic
+namespace StringUtils
 {
-
-struct Id
-{
-	enum class Type
+	template<>
+	std::optional<API::Subsonic::Id>
+	StringUtils::readAs(const std::string& str)
 	{
-		Root,	// Where all artists artistless albums reside
-		Track,
-		Release,
-		Artist,
-		Playlist,
-	};
+		return API::Subsonic::IdFromString(str);
+	}
 
-	Type 			type;
-	Database::IdType	value {};
-};
+	template<>
+	std::optional<bool>
+	StringUtils::readAs(const std::string& str)
+	{
+		if (str == "true")
+			return true;
+		else if (str == "false")
+			return false;
 
-std::optional<Id>	IdFromString(const std::string& id);
-std::string		IdToString(const Id& id);
+		return {};
+	}
+}
 
-} // namespace API::Subsonic

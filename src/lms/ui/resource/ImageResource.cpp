@@ -31,6 +31,8 @@
 
 #include "LmsApplication.hpp"
 
+#define LOG(level)	LMS_LOG(UI, level) << "Image resource: "
+
 namespace UserInterface {
 
 ImageResource::ImageResource()
@@ -65,24 +67,37 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 
 	// Mandatory parameter size
 	if (!sizeStr)
+	{
+		LOG(DEBUG) << "no size provided!";
 		return;
+	}
 
 	const auto size {StringUtils::readAs<std::size_t>(*sizeStr)};
 	if (!size || *size > maxSize)
+	{
+		LOG(DEBUG) << "invalid size provided!";
 		return;
+	}
 
 	std::vector<uint8_t> cover;
 
 	if (trackIdStr)
 	{
+		LOG(DEBUG) << "Requested cover for track " << *trackIdStr << ", size = " << *size;
+
 		const auto trackId {StringUtils::readAs<Database::IdType>(*trackIdStr)};
 		if (!trackId)
+		{
+			LOG(DEBUG) << "track not found";
 			return;
+		}
 
 		cover = Service<CoverArt::IGrabber>::get()->getFromTrack(LmsApp->getDbSession(), *trackId, CoverArt::Format::JPEG, *size);
 	}
 	else if (releaseIdStr)
 	{
+		LOG(DEBUG) << "Requested cover for release " << *releaseIdStr << ", size = " << *size;
+
 		const auto releaseId {StringUtils::readAs<Database::IdType>(*releaseIdStr)};
 		if (!releaseId)
 			return;
@@ -90,7 +105,10 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		cover = Service<CoverArt::IGrabber>::get()->getFromRelease(LmsApp->getDbSession(), *releaseId, CoverArt::Format::JPEG, *size);
 	}
 	else
+	{
+		LOG(DEBUG) << "No track or release provided";
 		return;
+	}
 
 	response.setMimeType(getMimeType());
 

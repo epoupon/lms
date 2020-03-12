@@ -283,6 +283,16 @@ User::getStarredTracks() const
 	return std::vector<Wt::Dbo::ptr<Track>>(_starredTracks.begin(), _starredTracks.end());
 }
 
+
+bool
+User::checkBitrate(Database::Bitrate bitrate) const
+{
+	if (audioTranscodeAllowedBitrates.find(bitrate) == std::cend(audioTranscodeAllowedBitrates))
+		return false;
+
+	return static_cast<Bitrate>(_maxAudioTranscodeBitrate) >= bitrate;
+}
+
 } // namespace Database
 
 

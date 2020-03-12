@@ -4,6 +4,7 @@ add_library(lmsutils SHARED
 	impl/ChildProcess.cpp
 	impl/ChildProcessManager.cpp
 	impl/Exception.cpp
+	impl/FileResourceHandler.cpp
 	impl/Logger.cpp
 	impl/NetAddress.cpp
 	impl/Path.cpp

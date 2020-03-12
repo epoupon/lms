@@ -33,8 +33,8 @@ namespace Av {
 
 struct TranscodeParameters
 {
-	std::optional<Encoding>			encoding; // If not set, no transcoding is performed
-	std::optional<std::size_t>		bitrate; // may be required by some output encodings
+	Encoding				encoding;
+	std::size_t				bitrate {128000};
 	std::optional<std::size_t>		stream; // Id of the stream to be transcoded (auto detect by default)
 	std::optional<std::chrono::seconds>	offset;
 	bool 					stripMetadata {true};
@@ -57,6 +57,7 @@ class Transcoder
 		using WaitCallback = std::function<void()>;
 		void			asyncWaitForData(WaitCallback cb);
 
+		// non blocking call
 		std::size_t		readSome(unsigned char* buffer, std::size_t bufferSize);
 
 		const std::string&	getOutputMimeType() const { return _outputMimeType; }

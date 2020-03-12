@@ -44,8 +44,9 @@
 #include "admin/DatabaseSettingsView.hpp"
 #include "admin/UserView.hpp"
 #include "admin/UsersView.hpp"
+#include "resource/AudioFileResource.hpp"
+#include "resource/AudioTranscodeResource.hpp"
 #include "resource/ImageResource.hpp"
-#include "resource/AudioResource.hpp"
 #include "Auth.hpp"
 #include "LmsApplicationException.hpp"
 #include "MediaPlayer.hpp"
@@ -400,7 +401,8 @@ void
 LmsApplication::createHome()
 {
 	_imageResource = std::make_shared<ImageResource>();
-	_audioResource = std::make_shared<AudioResource>();
+	_audioTranscodeResource = std::make_shared<AudioTranscodeResource>();
+	_audioFileResource = std::make_shared<AudioFileResource>();
 
 	setConfirmCloseMessage(Wt::WString::tr("Lms.quit-confirm"));
 

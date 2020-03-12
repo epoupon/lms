@@ -51,6 +51,7 @@ enum class Module
 	RECOMMENDATION,
 	TRANSCODE,
 	UI,
+	UTILS,
 };
 
 const char* getModuleName(Module mod);
@@ -79,8 +80,7 @@ class Log
 class Logger
 {
 	public:
-		virtual ~Logger() {}
-
+		virtual ~Logger() = default;
 		virtual void processLog(const Log& log) = 0;
 };
 
