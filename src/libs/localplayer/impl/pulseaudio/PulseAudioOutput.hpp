@@ -32,6 +32,7 @@
 #include "database/Session.hpp"
 #include "localplayer/IAudioOutput.hpp"
 #include "utils/Exception.hpp"
+#include "utils/Logger.hpp"
 
 class PulseAudioOutput final : public IAudioOutput
 {
@@ -51,16 +52,22 @@ class PulseAudioOutput final : public IAudioOutput
 		SampleRate	getSampleRate() const override		{ return _sampleRate; }
 		std::size_t	nbChannels() const override		{ return _nbChannels; }
 
+		void		start() override;
+		void		stop() override;
+
 		void		resume() override {}
 		void		pause() override {}
 		void		setVolume(Volume) override {}
 		void		flush() override;
 		void		setOnCanWriteCallback(OnCanWriteCallback cb) override;
 		std::size_t	getCanWriteBytes() override;
-		std::size_t	write(const unsigned char* data, std::size_t size) override;
+		std::size_t	write(const unsigned char* data, std::size_t size, std::optional<std::chrono::milliseconds> writeIndex) override;
+
+		std::chrono::milliseconds getCurrentReadTime() override;
+		std::chrono::milliseconds getCurrentWriteTime() override;
 	
-		void start();
-		void stop();
+		void init();
+		void deinit();
 
 		// context
 		void createContext();
@@ -70,8 +77,10 @@ class PulseAudioOutput final : public IAudioOutput
 		// stream
 		void createStream();
 		void connectStream();
+		void disconnectStream();
 		void onStreamStateChanged();
 		void onStreamCanWrite(std::size_t nbMaxBytes);
+		void destroyStream();
 
 		const Format		_format {Format::S16LE}; // TODO: make it configurable
 		const SampleRate	_sampleRate {44100}; // TODO: make it configurable
@@ -105,6 +114,7 @@ class PulseAudioOutput final : public IAudioOutput
 		{
 			void operator()(pa_stream* obj )
 			{
+				LMS_LOG(PA, DEBUG) << "Unref stream...";
 				pa_stream_unref(obj);
 			}
 		};
@@ -116,11 +126,13 @@ class PulseAudioOutput final : public IAudioOutput
 			public:
 				MainLoopLock(MainLoopPtr& mainLoop) : _mainLoop {mainLoop}
 				{
-					pa_threaded_mainloop_lock(_mainLoop.get());
+					if (!pa_threaded_mainloop_in_thread(_mainLoop.get()))
+						pa_threaded_mainloop_lock(_mainLoop.get());
 				};
 				~MainLoopLock()
 				{
-					pa_threaded_mainloop_unlock(_mainLoop.get());
+					if (!pa_threaded_mainloop_in_thread(_mainLoop.get()))
+						pa_threaded_mainloop_unlock(_mainLoop.get());
 				}
 			private:
 				MainLoopPtr& _mainLoop; 

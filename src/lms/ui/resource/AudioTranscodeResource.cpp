@@ -145,6 +145,9 @@ getTranscodeParameters(const Wt::Http::Request& request)
 	// optional parameter
 	auto offset {readParameterAs<std::size_t>(request, "offset")};
 
+	if (offset)
+		LOG(DEBUG) << "Offset set to '" << *offset << "'";
+
 	TranscodeParameters transcodeParameters;
 
 	{

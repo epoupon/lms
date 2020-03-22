@@ -20,6 +20,7 @@
 #include "av/AvTranscoder.hpp"
 
 #include <atomic>
+#include <iomanip>
 #include <thread>
 #include <mutex>
 
@@ -85,7 +86,10 @@ Transcoder::start()
 	if (_parameters.offset)
 	{
 		args.emplace_back("-ss");
-		args.emplace_back(std::to_string((*_parameters.offset).count()));
+
+		std::ostringstream oss;
+		oss << std::fixed << std::showpoint << std::setprecision(3) << (_parameters.offset->count() / float {1000});
+		args.emplace_back(oss.str());
 	}
 
 	// Input file

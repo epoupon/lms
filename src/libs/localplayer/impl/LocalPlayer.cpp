@@ -19,6 +19,8 @@
 
 #include "LocalPlayer.hpp"
 
+#include <iomanip>
+
 #include "database/Track.hpp"
 #include "localplayer/IAudioOutput.hpp"
 #include "utils/Logger.hpp"
@@ -53,6 +55,7 @@ LocalPlayer::setAudioOutput(std::unique_ptr<IAudioOutput> audioOutput)
 	{
 		_ioService.post([this]()
 		{
+			std::unique_lock lock {_mutex};
 			handleNeedDataFromAudioOutput();
 		});
 	});
@@ -67,35 +70,28 @@ LocalPlayer::getAudioOutput() const
 void
 LocalPlayer::play()
 {
-	_ioService.post([this]()
-	{
-		handlePlay();
-	});
+	handlePlay();
 }
 
 void
-LocalPlayer::playEntry(EntryIndex id)
+LocalPlayer::playEntry(EntryIndex id, std::chrono::milliseconds offset)
 {
-	_ioService.post([this, id]()
-	{
-		handlePlay(id);
-	});
+	std::unique_lock lock {_mutex};
+
+	handlePlay(id, offset, true);
 }
 
 void
 LocalPlayer::stop()
 {
-	_ioService.post([this]()
-	{
-		handleStop();
-	});
+	std::unique_lock lock {_mutex};
+
+	handleStop();
 }
 
 std::optional<Database::IdType>
 LocalPlayer::getTrackIdFromPlayQueueIndex(EntryIndex entryId)
 {
-	std::shared_lock lock {_mutex};
-
 	if (entryId >= _currentPlayQueue.size())
 	{
 		LMS_LOG(LOCALPLAYER, DEBUG) << "Want to play an out of bound track";
@@ -106,72 +102,67 @@ LocalPlayer::getTrackIdFromPlayQueueIndex(EntryIndex entryId)
 }
 
 void
-LocalPlayer::handlePlay(std::optional<EntryIndex> id)
+LocalPlayer::handlePlay(std::optional<EntryIndex> id, std::chrono::milliseconds offset, bool immediate)
 {
-	switch (_status)
-	{
-		case Status::Stopped:
-			startPlay(id);
-			break;
+	if (_playState == Status::PlayState::Stopped)
+		_audioOutput->start();
 
-		case Status::Playing:
-			break;
-		case Status::Paused:
-			// TODO resume
-			break;
-	}
+	startPlay(id, offset, immediate);
 }
 
 void
 LocalPlayer::handleStop()
 {
-	switch (_status)
-	{
-		case Status::Stopped:
-			break;
-
-		case Status::Playing:
-		case Status::Paused:
-			_transcoder.reset();
-			_audioOutput->flush();
-			_status = Status::Stopped;
-			break;
-	}
+	_transcoder.reset();
+	_audioOutput->stop();
+	_audioOutputEntries.clear();
+	_playState = Status::PlayState::Stopped;
+	LMS_LOG(LOCALPLAYER, INFO) << "Player now stopped";
 }
 
 void
-LocalPlayer::startPlay(std::optional<EntryIndex> id)
+LocalPlayer::startPlay(std::optional<EntryIndex> id, std::chrono::milliseconds offset, bool immediate)
 {
+	assert(!_mutex.try_lock());
+
 	if (id)
 		_currentPlayQueueIdx = *id;
 
 	if (!_currentPlayQueueIdx)
 		_currentPlayQueueIdx = 0;
 
-	const std::size_t playQueueSize {[this]()
+	while (_currentPlayQueueIdx < _currentPlayQueue.size())
 	{
-		std::shared_lock lock {_mutex};
-		return _currentPlayQueue.size();
-	}()};
-
-	while (_currentPlayQueueIdx < playQueueSize )
-	{
-		if (startPlayQueueEntry(*_currentPlayQueueIdx))
+		if (startPlayQueueEntry(*_currentPlayQueueIdx, offset))
 		{
-			_status = Status::Playing;
+			if (immediate)
+				_nextWriteOffset = _audioOutput->getCurrentReadTime();
+
+			_audioOutputEntries.emplace_back(
+				AudioOutputEntryInfo
+				{
+					_nextWriteOffset ? *_nextWriteOffset : _audioOutput->getCurrentWriteTime(),
+					offset,
+					*_currentPlayQueueIdx
+				});
+			_playState = Status::PlayState::Playing;
+
+			LMS_LOG(LOCALPLAYER, DEBUG) << "Adding new entry @ " << std::fixed << std::setprecision(3) << _audioOutputEntries.back().audioOutputStartTime.count() / float {1000};
+
 			return;
 		}
 
 		(*_currentPlayQueueIdx)++;
+		offset = {};
 	}
 
 	LMS_LOG(LOCALPLAYER, DEBUG) << "No more song in playqueue> stopping";
 	_currentPlayQueueIdx.reset();
-	_status = Status::Stopped;
+	handleStop();
 }
 
 bool
-LocalPlayer::startPlayQueueEntry(std::size_t playqueueIdx)
+LocalPlayer::startPlayQueueEntry(std::size_t playqueueIdx, std::chrono::milliseconds offset)
 {
 	LMS_LOG(LOCALPLAYER, DEBUG) << "Playing playQueue entry " << playqueueIdx;
 
@@ -189,11 +180,12 @@ LocalPlayer::startPlayQueueEntry(std::size_t playqueueIdx)
 		if (!track)
 		{
 			LMS_LOG(LOCALPLAYER, DEBUG) << "Track not found";
-			return false; // TODO next song?
+			return false;
 		}
 
 		parameters.stripMetadata = true;
 		parameters.encoding = Av::Encoding::PCM_SIGNED_16_LE; // TODO
+		parameters.offset = offset;
 
 		trackPath = track->getPath();
 	}
@@ -210,7 +202,7 @@ void
 LocalPlayer::handleTranscoderFinished()
 {
 	LMS_LOG(LOCALPLAYER, DEBUG) << "Transcoder finished!";
-	if (_status == Status::Playing)
+	if (_playState == Status::PlayState::Playing)
 	{
 		if (_currentPlayQueueIdx)
 			(*_currentPlayQueueIdx)++;
@@ -223,6 +215,56 @@ void
 LocalPlayer::pause()
 {
 
+}
+
+const LocalPlayer::AudioOutputEntryInfo*
+LocalPlayer::getAudioOutputEntryInfo(std::chrono::milliseconds time) const
+{
+	for (auto it {std::crbegin(_audioOutputEntries)}; it != std::crend(_audioOutputEntries); ++it)
+	{
+		if (time >= it->audioOutputStartTime)
+			return &(*it);
+	}
+
+	return {};
+}
+
+LocalPlayer::Status
+LocalPlayer::getStatus()
+{
+	std::unique_lock lock {_mutex};
+
+	LMS_LOG(LOCALPLAYER, DEBUG) << "Get status...";
+
+	Status status;
+
+	status.playState = _playState;
+
+	if (status.playState != Status::PlayState::Stopped)
+	{
+		const auto currentReadTime {_audioOutput->getCurrentReadTime()};
+		const AudioOutputEntryInfo* entryInfo {getAudioOutputEntryInfo(currentReadTime)};
+
+		if (entryInfo)
+		{
+			const auto playedTime {currentReadTime - entryInfo->audioOutputStartTime};	
+			LMS_LOG(LOCALPLAYER, DEBUG) << "track offset = " << entryInfo->trackOffset.count() << " usecs";
+			status.currentPlayTime = entryInfo->trackOffset + playedTime;
+			status.entryIdx = entryInfo->entryIndex;
+		
+			LMS_LOG(LOCALPLAYER, DEBUG) << "*** current time = " << std::fixed << std::setprecision(3) << status.currentPlayTime->count() / float {1000};
+		}
+	}
+
+	return status;
+}
+
+void
+LocalPlayer::clearTracks()
+{
+	std::unique_lock lock {_mutex};
+
+	_currentPlayQueue.clear();
 }
 
 void
@@ -243,6 +285,7 @@ LocalPlayer::asyncWaitDataFromTranscoder()
 		{
 			_ioService.post([this]()
 			{
+				std::unique_lock lock {_mutex};
 				handleDataAvailableFromTranscoder();
 			});
 		});
@@ -263,6 +306,9 @@ LocalPlayer::handleDataAvailableFromTranscoder()
 void
 LocalPlayer::feedAudioOutputFromTranscoder()
 {
+	LMS_LOG(LOCALPLAYER, DEBUG) << "Feeding audio output from trasncoder...";
+	assert(!_mutex.try_lock());
+
 	if (!_transcoder)
 	{
 		LMS_LOG(LOCALPLAYER, DEBUG) << "Transcoder not ready yet";
@@ -284,7 +330,8 @@ LocalPlayer::feedAudioOutputFromTranscoder()
 
 	buffer.resize(nbTranscodedBytes);
 
-	std::size_t nbWrittenBytes {_audioOutput->write(&buffer[0], buffer.size())};
+	std::size_t nbWrittenBytes {_audioOutput->write(&buffer[0], buffer.size(), _nextWriteOffset)};
+	_nextWriteOffset.reset();
 	LMS_LOG(LOCALPLAYER, DEBUG) << "Written " << nbWrittenBytes << " bytes!";
 	assert(nbWrittenBytes == nbTranscodedBytes);
 

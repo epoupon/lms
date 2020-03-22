@@ -40,6 +40,7 @@
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
+#include "Jukebox.hpp"
 #include "ParameterParsing.hpp"
 #include "RequestContext.hpp"
 #include "Stream.hpp"
@@ -1262,32 +1263,6 @@ handleGetSongsByGenreRequest(RequestContext& context)
 
 static
 Response
-handleJukebox(RequestContext& context)
-{
-	const std::string action {getMandatoryParameterAs<std::string>(context.parameters, "action")};
-	std::optional<int> skip {getParameterAs<int>(context.parameters, "skip")};
-	if (skip && *skip < 0)
-		throw BadParameterGenericError {"skip"};
-
-	std::optional<int> offset {getParameterAs<int>(context.parameters, "offset")};
-	if (offset && *offset < 0)
-		throw BadParameterGenericError {"offset"};
-
-	std::optional<Id> id {getParameterAs<Id>(context.parameters, "id")};
-	if (id && id->type != Id::Type::Track)
-		throw BadParameterGenericError {"id"};
-
-	std::optional<float> gain {getParameterAs<float>(context.parameters, "gain")};
-	if (gain && (*gain < 0 || *gain > 1))
-		throw BadParameterGenericError {"gain"};
-
-	Response response {Response::createOkResponse()};
-
-	return response;
-}
-
-static
-Response
 handleGetUserRequest(RequestContext& context)
 {
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
@@ -1822,7 +1797,7 @@ static const std::unordered_map<std::string, RequestEntryPointInfo> requestEntry
 	{"downloadPodcastEpisode",	{handleNotImplemented,			{}}},
 
 	// Jukebox
-	{"jukeboxControl",	{handleJukebox,				UserRole::Jukebox}},
+	{"jukeboxControl",	{Jukebox::handle,				UserRole::Jukebox}},
 
 	// Internet radio
 	{"getInternetRadioStations",	{handleNotImplemented,			{}}},

@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <optional>
 #include <stdexcept>
@@ -35,6 +36,31 @@
 #include "utils/Logger.hpp"
 #include "utils/StreamLogger.hpp"
 #include "utils/Service.hpp"
+#include "utils/String.hpp"
+
+void commandStatus(ILocalPlayer& localPlayer)
+{
+	const auto status {localPlayer.getStatus()};
+	switch (status.playState)
+	{
+		case ILocalPlayer::Status::PlayState::Playing:
+			std::cout << "PLAYING" << std::endl;
+			break;
+		case ILocalPlayer::Status::PlayState::Paused:
+			std::cout << "Paused" << std::endl;
+			break;
+		case ILocalPlayer::Status::PlayState::Stopped:
+			std::cout << "Stopped" << std::endl;
+			break;
+	}
+	if (status.entryIdx)
+		std::cout << "Entry idx: " << *status.entryIdx << std::endl;
+	if (status.currentPlayTime)
+		std::cout << "Playing time: " << std::fixed << std::setprecision(3) << status.currentPlayTime->count() / float {1000} << " s" << std::endl;
+
+}
+
+
 
 int main(int argc, char *argv[])
 {
@@ -62,19 +88,31 @@ int main(int argc, char *argv[])
 		std::cout << "Now playing!" << std::endl;
 
 		localPlayer->addTrack(49813);
-		localPlayer->play();
 
 		// wait for input to terminate
 		std::cout << "Enter some commands:" << std::endl;
 		while (1)
 		{
-			std::string command;
-			std::cin >> command;
+			std::string commandLine;
+			std::getline(std::cin, commandLine);
+
+			std::vector<std::string> args {StringUtils::splitString(commandLine, " ")};
+
+			const std::string& command {args[0]};
 
 			if (command == "play")
-				localPlayer->play();
-			if (command == "stop")
+			{
+				const ILocalPlayer::EntryIndex entryIdx {StringUtils::readAs<ILocalPlayer::EntryIndex>(args[1]).value_or(0)};
+				const std::chrono::milliseconds offset {StringUtils::readAs<std::size_t>(args[2]).value_or(0)};
+				localPlayer->playEntry(entryIdx, offset);
+				commandStatus(*localPlayer.get());
+			}
+			else if (command == "stop")
 				localPlayer->stop();
+			else if (command == "status")
+			{
+				commandStatus(*localPlayer.get());
+			}
 			else if (command == "quit")
 				break;
 		}

@@ -28,6 +28,7 @@
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/Types.hpp"
+#include "localplayer/IAudioOutput.hpp"
 #include "localplayer/ILocalPlayer.hpp"
 #include "utils/Exception.hpp"
 
@@ -51,42 +52,49 @@ class LocalPlayer final : public ILocalPlayer
 		const IAudioOutput*	getAudioOutput() const override;
 
 		void play() override;
-		void playEntry(EntryIndex id) override;
+		void playEntry(EntryIndex id, std::chrono::milliseconds offset) override;
 		void stop() override;
 		void pause() override;
 
+		Status getStatus() override;
+
+		void clearTracks() override;
 		void addTrack(Database::IdType trackId) override;
 
 		void asyncWaitDataFromTranscoder();
 		std::optional<Database::IdType> getTrackIdFromPlayQueueIndex(std::size_t playqueueIdx);
-		void handlePlay(std::optional<EntryIndex> = {});
+		void handlePlay(std::optional<EntryIndex> = {}, std::chrono::milliseconds offset = {}, bool immediate = {});
 		void handleStop();
-		void startPlay(std::optional<EntryIndex> id = {});
-		bool startPlayQueueEntry(EntryIndex id);
+		void startPlay(std::optional<EntryIndex> id = {}, std::chrono::milliseconds offset = {}, bool immediate = {});
+		bool startPlayQueueEntry(EntryIndex id, std::chrono::milliseconds offset);
 		void handleDataAvailableFromTranscoder();
 		void handleTranscoderFinished();
 		void handleNeedDataFromAudioOutput();
 
 		void feedAudioOutputFromTranscoder();
 
-		enum class Status
-		{
-			Stopped,
-			Playing,
-			Paused,
-		};
-
-		std::shared_mutex _mutex;
+		mutable std::shared_mutex _mutex;
 
 		bool _waitingDataFromTranscoder {};
-		Status _status {Status::Stopped};
+		Status::PlayState _playState {Status::PlayState::Stopped};
 
 		Database::Session _dbSession;
 		Wt::WIOService _ioService;
 
 		std::unique_ptr<IAudioOutput>	_audioOutput;
 		std::vector<Database::IdType>	_currentPlayQueue;
+
+		struct AudioOutputEntryInfo
+		{
+			std::chrono::milliseconds	audioOutputStartTime;	// start time of the audio output for this entry
+			std::chrono::milliseconds	trackOffset;		// track offset
+			EntryIndex			entryIndex;		// entry in the playlist (may be wrong)
+		};
+		const LocalPlayer::AudioOutputEntryInfo* getAudioOutputEntryInfo(std::chrono::milliseconds time) const;
+		std::vector<AudioOutputEntryInfo> _audioOutputEntries;
+
 		std::optional<EntryIndex>	_currentPlayQueueIdx;
+		std::optional<std::chrono::milliseconds> _nextWriteOffset;
 
 		std::unique_ptr<Av::Transcoder>	_transcoder;
 };

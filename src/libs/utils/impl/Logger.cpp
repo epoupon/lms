@@ -34,6 +34,7 @@ const char* getModuleName(Module mod)
 		case Module::LOCALPLAYER:	return "LOCALPLAYER";
 		case Module::MAIN:		return "MAIN";
 		case Module::METADATA:		return "METADATA";
+		case Module::PA:		return "PULSEAUDIO";
 		case Module::REMOTE:		return "REMOTE";
 		case Module::SERVICE:		return "SERVICE";
 		case Module::RECOMMENDATION:	return "RECOMMENDATION";

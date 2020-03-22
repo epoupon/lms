@@ -1,5 +1,6 @@
 
 add_library(lmssubsonic SHARED
+	impl/Jukebox.cpp
 	impl/ParameterParsing.cpp
 	impl/Stream.cpp
 	impl/SubsonicId.cpp
@@ -19,6 +20,7 @@ target_link_libraries(lmssubsonic PRIVATE
 	lmsauth
 	lmsav
 	lmscover
+	lmslocalplayer
 	lmsrecommendation
 	lmsutils
 	)

@@ -21,6 +21,8 @@
 
 #include <cassert>
 #include <cstring>
+#include <iomanip>
+#include <thread>
 
 #include "database/Track.hpp"
 #include "utils/Logger.hpp"
@@ -53,28 +55,63 @@ PulseAudioOutput::PulseAudioOutput(Format format, SampleRate sampleRate, std::si
 	if (!_mainLoop)
 		throw PulseAudioException {"pa_mainloop_new failed!"};
 
-	start();
+	init();
 
-	LMS_LOG(LOCALPLAYER, INFO) << "Init done!";
+	LMS_LOG(PA, INFO) << "Init done!";
 }
 
 PulseAudioOutput::~PulseAudioOutput()
 {
-	stop();
+	deinit();
+}
+
+void
+PulseAudioOutput::start()
+{
+	MainLoopLock lock {_mainLoop};
+
+	createStream();
+	connectStream();
+
+
+
+}
+
+void
+PulseAudioOutput::stop()
+{
+	MainLoopLock lock {_mainLoop};
+
+	disconnectStream();
+	destroyStream();
 }
 
 void
 PulseAudioOutput::flush()
 {
-	LMS_LOG(LOCALPLAYER, INFO) << "Flushing stream...";
+	LMS_LOG(PA, DEBUG) << "Flushing stream...";
 
-	MainLoopLock lock {_mainLoop};
+	LMS_LOG(LOCALPLAYER, DEBUG) << "WRITE @ " << std::fixed << std::setprecision(3) << getCurrentWriteTime().count() / float {1000};
 
-	if (!_stream)
-		return;
+	pa_operation *operation {};
+	{
+		MainLoopLock lock {_mainLoop};
 
-	pa_operation *operation {pa_stream_flush(_stream.get(), NULL, NULL)};
-	pa_operation_unref(operation);
+		if (!_stream)
+			return;
+
+		operation = pa_stream_flush(_stream.get(), NULL, NULL);
+	}
+
+	// TODO: something better here
+	while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING)
+	{
+		LMS_LOG(PA, DEBUG) << "Still running...!";
+		std::this_thread::yield();
+	}
+
+	LMS_LOG(LOCALPLAYER, DEBUG) << "WRITE @ " << std::fixed << std::setprecision(3) << getCurrentWriteTime().count() / float {1000};
+	LMS_LOG(PA, DEBUG) << "Flushed stream!";
 }
 
 void
@@ -99,7 +136,7 @@ PulseAudioOutput::getCanWriteBytes()
 void
 PulseAudioOutput::createContext()
 {
-	LMS_LOG(LOCALPLAYER, INFO) << "Connecting to default server...";
+	LMS_LOG(PA, INFO) << "Connecting to default server...";
 
 	MainLoopLock lock {_mainLoop};
 
@@ -121,7 +158,7 @@ PulseAudioOutput::createContext()
 void
 PulseAudioOutput::destroyContext()
 {
-	LMS_LOG(LOCALPLAYER, INFO) << "Disconnecting from server...";
+	LMS_LOG(PA, INFO) << "Disconnecting from server...";
 
 	MainLoopLock lock {_mainLoop};
 
@@ -135,33 +172,31 @@ PulseAudioOutput::onContextStateChanged()
 	switch (pa_context_get_state(_context.get()))
 	{
 		case PA_CONTEXT_UNCONNECTED:
-			LMS_LOG(LOCALPLAYER, INFO) << "Unconnected from server";
+			LMS_LOG(PA, INFO) << "Unconnected from server";
 			break;
 
 		case PA_CONTEXT_CONNECTING: 
-			LMS_LOG(LOCALPLAYER, INFO) << "Connecting to server...";
+			LMS_LOG(PA, INFO) << "Connecting to server...";
 			break;
 
 		case PA_CONTEXT_AUTHORIZING:
-			LMS_LOG(LOCALPLAYER, INFO) << "Authorizing to server...";
+			LMS_LOG(PA, INFO) << "Authorizing to server...";
 			break;
 
 		case PA_CONTEXT_SETTING_NAME:
-			LMS_LOG(LOCALPLAYER, INFO) << "Setting name to server...";
+			LMS_LOG(PA, INFO) << "Setting name to server...";
 			break;
 
 		case PA_CONTEXT_READY:
-			LMS_LOG(LOCALPLAYER, INFO) << "Connected to server '" << pa_context_get_server(_context.get()) << "'";
-			createStream();
-			connectStream();
+			LMS_LOG(PA, INFO) << "Connected to server '" << pa_context_get_server(_context.get()) << "'";
 			break;
 
 		case PA_CONTEXT_FAILED:
-			LMS_LOG(LOCALPLAYER, ERROR) << "Failed to connect to server";
+			LMS_LOG(PA, ERROR) << "Failed to connect to server";
 			break;
 
 		case PA_CONTEXT_TERMINATED:
-			LMS_LOG(LOCALPLAYER, INFO) << "Connection closed";
+			LMS_LOG(PA, INFO) << "Connection closed";
 			break;
 	}
 
@@ -170,6 +205,8 @@ PulseAudioOutput::onContextStateChanged()
 void
 PulseAudioOutput::createStream()
 {
+	assert(!_stream);
+
 	if (!pa_sample_spec_valid(&_sampleSpec))
 		throw PulseAudioException {"Invalid sample specification!"};
 
@@ -187,7 +224,7 @@ PulseAudioOutput::createStream()
 		static_cast<PulseAudioOutput *>(userdata)->onStreamCanWrite(nbytes);
 	}, this);
 
-	LMS_LOG(LOCALPLAYER, INFO) << "Stream created";
+	LMS_LOG(PA, INFO) << "Stream created";
 }
 
 
@@ -205,7 +242,7 @@ PulseAudioOutput::connectStream()
 	int err {pa_stream_connect_playback(_stream.get(),
 				nullptr, // device
 				&bufferAttr,
-				PA_STREAM_NOFLAGS, // flags
+				static_cast<pa_stream_flags_t>(PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE),
 				nullptr, // volume 
 				nullptr // standalone stream
 				)};
@@ -214,34 +251,57 @@ PulseAudioOutput::connectStream()
 }
 
 void
+PulseAudioOutput::disconnectStream()
+{
+	LMS_LOG(PA, INFO) << "Disconnecting stream...";
+
+	if (!_stream)
+		return;
+
+	if (pa_stream_get_state(_stream.get()) == PA_STREAM_READY)
+	{
+		int err {pa_stream_disconnect(_stream.get())};
+		if (err != 0)
+			throw PulseAudioException {err, "pa_stream_disconnect failed!"};
+
+		LMS_LOG(PA, INFO) << "Stream disconnected!";
+	}
+}
+
+void
 PulseAudioOutput::onStreamStateChanged()
 {
+	if (!_stream)
+		return;
+
 	switch (pa_stream_get_state(_stream.get()))
 	{
 		case PA_STREAM_UNCONNECTED:
-			LMS_LOG(LOCALPLAYER, DEBUG) << "Stream is unconnected";
+			LMS_LOG(PA, DEBUG) << "Stream state: unconnected";
 			break;
 
 		case PA_STREAM_CREATING:
-			LMS_LOG(LOCALPLAYER, DEBUG) << "Stream is creating...";
+			LMS_LOG(PA, DEBUG) << "Stream state: creating...";
 			break;
 
 		case PA_STREAM_READY:
 		{
 			const auto* formatInfo {pa_stream_get_format_info(_stream.get())};
-			LMS_LOG(LOCALPLAYER, DEBUG) << "Encoding = " << pa_encoding_to_string(formatInfo->encoding);
-			LMS_LOG(LOCALPLAYER, DEBUG) << "props = " << pa_proplist_to_string(formatInfo->plist);
-			LMS_LOG(LOCALPLAYER, DEBUG) << "dev = " << pa_stream_get_device_name(_stream.get());
-			LMS_LOG(LOCALPLAYER, DEBUG) << " Stream is ready";
+			LMS_LOG(PA, DEBUG) << "Stream state: ready";
+			LMS_LOG(PA, DEBUG) << " Encoding = " << pa_encoding_to_string(formatInfo->encoding);
+			LMS_LOG(PA, DEBUG) << " props = " << pa_proplist_to_string(formatInfo->plist);
+			LMS_LOG(PA, DEBUG) << " dev = " << pa_stream_get_device_name(_stream.get());
+
+			//TODO: check format selected by server?
 		}
 			break;
 
 		case PA_STREAM_FAILED:
-			LMS_LOG(LOCALPLAYER, ERROR) << "Stream failed!";
+			LMS_LOG(PA, DEBUG) << "Stream state: failed!";
 			break;
 
 		case PA_STREAM_TERMINATED:
-			LMS_LOG(LOCALPLAYER, INFO) << "Stream terminated";
+			LMS_LOG(PA, DEBUG) << "Stream state: terminated!";
 			break;
 
 	}
@@ -256,54 +316,142 @@ getAlignedFrameSize(std::size_t l, const pa_sample_spec& sampleSpec)
 }
 
 void
-PulseAudioOutput ::onStreamCanWrite(std::size_t maxBytesCount)
+PulseAudioOutput::onStreamCanWrite(std::size_t maxBytesCount)
 {
-	LMS_LOG(LOCALPLAYER, DEBUG) << "Stream: can write up to " << maxBytesCount << " bytes";	
+	LMS_LOG(PA, DEBUG) << "Stream: can write up to " << maxBytesCount << " bytes";	
+	if (!_stream)
+	{
+		LMS_LOG(PA, DEBUG) << "No stream, not notifying CanWriteCallback";
+		return;
+	}
+
 
 	if (_onCanWriteCallback)
 		_onCanWriteCallback(maxBytesCount);
 }
 
+void
+PulseAudioOutput::destroyStream()
+{
+	LMS_LOG(PA, DEBUG) << "Destroying stream...";
+	_stream.reset();
+	LMS_LOG(PA, DEBUG) << "Destroyed stream!";
+}
+
 std::size_t
-PulseAudioOutput::write(const unsigned char* data, std::size_t size)
+PulseAudioOutput::write(const unsigned char* data, std::size_t size, std::optional<std::chrono::milliseconds> writeTime)
 {
 	MainLoopLock lock {_mainLoop};
 
+	LMS_LOG(PA, DEBUG) << "Want to write " << size << " bytes";
+	if (writeTime)
+		LMS_LOG(PA, DEBUG) << "\t@ " << std::fixed << std::setprecision(3) << writeTime->count() / float {1000};
+
 	const std::size_t writtenBytes {getAlignedFrameSize(std::min(size, getCanWriteBytes()), _sampleSpec)};
-
-	if (writtenBytes == 0)
-		return 0;
-
-	int res {pa_stream_write(_stream.get(),
+	if (writtenBytes > 0)
+	{
+		int res {pa_stream_write(_stream.get(),
 				data, writtenBytes, nullptr /* internal copy */,
-				0, // offset
-				PA_SEEK_RELATIVE)};
-	if (res != 0)
-		throw PulseAudioException {res, "pa_stream_write failed"};
+				writeTime ? pa_usec_to_bytes(std::chrono::duration_cast<std::chrono::microseconds>(*writeTime).count(), &_sampleSpec) : 0, // ofset
+				writeTime ? PA_SEEK_ABSOLUTE : PA_SEEK_RELATIVE)};
+		if (res != 0)
+			throw PulseAudioException {res, "pa_stream_write failed"};
+	}
+
+	LMS_LOG(PA, INFO) << "Written " << writtenBytes << " bytes!";
 
 	return writtenBytes;
 }
 
 void
-PulseAudioOutput::start()
+PulseAudioOutput::init()
 {
-	LMS_LOG(LOCALPLAYER, INFO) << "Starting PA output...";
+	LMS_LOG(PA, INFO) << "Initializing PA output...";
 
 	pa_threaded_mainloop_start(_mainLoop.get());
 	createContext();
 
-	LMS_LOG(LOCALPLAYER, INFO) << "Started PA output!";
+	LMS_LOG(PA, INFO) << "Initialized PA output!";
 }
 
 void
-PulseAudioOutput::stop()
+PulseAudioOutput::deinit()
 {
-	LMS_LOG(LOCALPLAYER, INFO) << "Stopping PA output...";
+	LMS_LOG(PA, INFO) << "Deinitializing PA output...";
 
 	destroyContext();
 	pa_threaded_mainloop_stop(_mainLoop.get());
 
-	LMS_LOG(LOCALPLAYER, INFO) << "Stopped PA output...";
+	LMS_LOG(PA, INFO) << "Deinitialized PA output...";
 }
 
+std::chrono::milliseconds
+PulseAudioOutput::getCurrentReadTime()
+{
+	{
+		pa_operation *operation {};
+		{
+			MainLoopLock lock {_mainLoop};
+
+			if (!_stream)
+				return {};
+	if (pa_stream_get_state(_stream.get()) != PA_STREAM_READY)
+	{
+		LMS_LOG(PA, DEBUG) << "Stream not ready yet, skip get_time";
+		return {};
+	}
+
+			operation = pa_stream_update_timing_info(_stream.get(), NULL, NULL);
+		}
+
+		// TODO: something better here
+		while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING)
+		{
+			LMS_LOG(PA, DEBUG) << "Still running...!";
+			std::this_thread::yield();
+		}
+	}
+
+	MainLoopLock lock {_mainLoop};
+
+	if (!_stream)
+		return {};
+
+	if (pa_stream_get_state(_stream.get()) != PA_STREAM_READY)
+	{
+		LMS_LOG(PA, DEBUG) << "Stream not ready yet, skip get_time";
+		return {};
+	}
+
+	pa_usec_t playTime {};
+	int res {pa_stream_get_time(_stream.get(), &playTime)};
+	if (res < 0)
+		throw PulseAudioException {res, "pa_stream_get_time failed!"};
+
+	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::microseconds {playTime});
+}
+
+std::chrono::milliseconds
+PulseAudioOutput::getCurrentWriteTime()
+{
+	MainLoopLock lock {_mainLoop};
+
+	if (!_stream)
+		return {};
+
+	if (pa_stream_get_state(_stream.get()) != PA_STREAM_READY)
+	{
+		LMS_LOG(PA, DEBUG) << "Stream not ready yet, skip get_time";
+		return {};
+	}
+
+	const pa_timing_info* timingInfo {pa_stream_get_timing_info(_stream.get())};
+	if (!timingInfo)
+	{
+		LMS_LOG(PA, DEBUG) << "pa_stream_get_timing_info: no data";
+		return {};
+	}
+
+	return std::chrono::milliseconds {pa_bytes_to_usec(timingInfo->write_index, &_sampleSpec) / 1000};
+}
 

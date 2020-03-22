@@ -160,8 +160,8 @@ ChildProcess::asyncWaitForData(WaitCallback cb)
 			[cb {std::move(cb)}](const boost::system::error_code& ec)
 	{
 		LMS_LOG(CHILDPROCESS, DEBUG) << "Wait CB, error = " << ec.message();
-
-		cb();
+		if (!ec)
+			cb();
 	});
 }
 

@@ -19,7 +19,9 @@
 
 #pragma once
 
+#include <chrono>
 #include <functional>
+#include <optional>
 
 #include "utils/Exception.hpp"
 
@@ -46,6 +48,9 @@ class IAudioOutput
 		virtual SampleRate	getSampleRate() const = 0;
 		virtual std::size_t	nbChannels() const = 0;
 
+		virtual void start() = 0;
+		virtual void stop() = 0;
+
 		virtual void resume() = 0;
 		virtual void pause() = 0;
 		virtual void setVolume(Volume volume) = 0;
@@ -54,6 +59,9 @@ class IAudioOutput
 		using OnCanWriteCallback = std::function<void(std::size_t nbBytes)>;
 		virtual void setOnCanWriteCallback(OnCanWriteCallback func) = 0;
 		virtual std::size_t getCanWriteBytes() = 0;
-		virtual std::size_t write(const unsigned char* data, std::size_t nbBytes) = 0;
+		virtual std::size_t write(const unsigned char* data, std::size_t nbBytes, std::optional<std::chrono::milliseconds> writeTime = std::nullopt) = 0;
+
+		virtual std::chrono::milliseconds getCurrentReadTime() = 0; // since last stop
+		virtual std::chrono::milliseconds getCurrentWriteTime() = 0; // since last stop
 };
 

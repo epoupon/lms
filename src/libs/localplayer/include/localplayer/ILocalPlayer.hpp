@@ -41,10 +41,27 @@ class ILocalPlayer
 		virtual const IAudioOutput*	getAudioOutput() const = 0;
 
 		virtual void play() = 0;
-		virtual void playEntry(EntryIndex id) = 0;
+		virtual void playEntry(EntryIndex id, std::chrono::milliseconds offset = {}) = 0;
 		virtual void stop() = 0;
 		virtual void pause() = 0;
 
+		struct Status
+		{
+			enum class PlayState
+			{
+				Stopped,
+				Playing,
+				Paused,
+			};
+
+			PlayState			playState;
+			std::optional<EntryIndex>	entryIdx;
+			std::optional<std::chrono::milliseconds> currentPlayTime;
+		};
+		virtual Status getStatus() = 0;
+
+
+		virtual void clearTracks() = 0;
 		virtual void addTrack(Database::IdType trackId) = 0;
 };
 
