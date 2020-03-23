@@ -21,6 +21,8 @@
 
 #include <regex>
 
+#include "utils/String.hpp"
+
 namespace StringUtils
 {
 	template <>
@@ -40,6 +42,10 @@ stringIsUUID(std::string_view str)
 	return std::regex_match(std::cbegin(str), std::cend(str), re);
 }
 
+UUID::UUID(std::string_view str)
+	: _value {StringUtils::stringToLower(str)}
+{
+}
 
 std::optional<UUID>
 UUID::fromString(std::string_view str)
