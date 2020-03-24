@@ -21,6 +21,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 #include <sstream>
 #include <vector>
 
@@ -40,7 +41,7 @@ std::string
 stringTrimEnd(const std::string& str, const std::string& whitespaces = " \t");
 
 std::string
-stringToLower(const std::string& str);
+stringToLower(std::string_view str);
 
 std::string
 stringToUpper(const std::string& str);
