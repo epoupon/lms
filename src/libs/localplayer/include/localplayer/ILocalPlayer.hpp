@@ -20,6 +20,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "utils/Exception.hpp"
 #include "database/Types.hpp"
@@ -63,6 +64,7 @@ class ILocalPlayer
 
 		virtual void clearTracks() = 0;
 		virtual void addTrack(Database::IdType trackId) = 0;
+		virtual std::vector<Database::IdType> getTracks() = 0;
 };
 
 namespace Database

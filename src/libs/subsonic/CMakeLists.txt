@@ -6,6 +6,7 @@ add_library(lmssubsonic SHARED
 	impl/SubsonicId.cpp
 	impl/SubsonicResource.cpp
 	impl/SubsonicResponse.cpp
+	impl/Utils.cpp
 	)
 
 target_include_directories(lmssubsonic INTERFACE

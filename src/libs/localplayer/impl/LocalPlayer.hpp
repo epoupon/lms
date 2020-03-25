@@ -32,9 +32,12 @@
 #include "localplayer/ILocalPlayer.hpp"
 #include "utils/Exception.hpp"
 
+namespace Database
+{
+	class TrackList;
+}
 
 class IAudioOutput;
-
 class LocalPlayer final : public ILocalPlayer
 {
 	public:
@@ -60,18 +63,23 @@ class LocalPlayer final : public ILocalPlayer
 
 		void clearTracks() override;
 		void addTrack(Database::IdType trackId) override;
+		std::vector<Database::IdType> getTracks() override;
 
 		void asyncWaitDataFromTranscoder();
-		std::optional<Database::IdType> getTrackIdFromPlayQueueIndex(std::size_t playqueueIdx);
 		void handlePlay(std::optional<EntryIndex> = {}, std::chrono::milliseconds offset = {}, bool immediate = {});
 		void handleStop();
 		void startPlay(std::optional<EntryIndex> id = {}, std::chrono::milliseconds offset = {}, bool immediate = {});
-		bool startPlayQueueEntry(EntryIndex id, std::chrono::milliseconds offset);
+		bool startPlayTrack(Database::IdType trackId, std::chrono::milliseconds offset);
 		void handleDataAvailableFromTranscoder();
 		void handleTranscoderFinished();
 		void handleNeedDataFromAudioOutput();
-
 		void feedAudioOutputFromTranscoder();
+
+		Wt::Dbo::ptr<Database::TrackList> getTrackList();
+		void createTrackListIfNeeded();
+		std::vector<Database::IdType> getTrackIds();
+
+		std::optional<std::filesystem::path> getTrackPath(Database::IdType trackId);
 
 		mutable std::shared_mutex _mutex;
 
@@ -81,8 +89,9 @@ class LocalPlayer final : public ILocalPlayer
 		Database::Session _dbSession;
 		Wt::WIOService _ioService;
 
+		Database::IdType _trackListId {};
+
 		std::unique_ptr<IAudioOutput>	_audioOutput;
-		std::vector<Database::IdType>	_currentPlayQueue;
 
 		struct AudioOutputEntryInfo
 		{

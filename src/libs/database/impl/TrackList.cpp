@@ -44,7 +44,6 @@ TrackList::pointer
 TrackList::create(Session& session, const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user)
 {
 	session.checkUniqueLocked();
-	assert(user);
 
 	auto res = session.getDboSession().add( std::make_unique<TrackList>(name, type, isPublic, user) );
 	session.getDboSession().flush();
@@ -56,12 +55,15 @@ TrackList::pointer
 TrackList::get(Session& session, const std::string& name, Type type, Wt::Dbo::ptr<User> user)
 {
 	session.checkSharedLocked();
-	assert(user);
 
-	return session.getDboSession().find<TrackList>()
-		.where("name = ?").bind(name)
-		.where("type = ?").bind(type)
-		.where("user_id = ?").bind(user.id());
+	auto query {session.getDboSession().find<TrackList>()
+			.where("name = ?").bind(name)
+			.where("type = ?").bind(type)};
+
+	if (!user)
+		return query.resultValue();
+
+	return query.where("user_id = ?").bind(user.id());
 }
 
 std::vector<TrackList::pointer>

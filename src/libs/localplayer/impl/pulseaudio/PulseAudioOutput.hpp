@@ -55,8 +55,8 @@ class PulseAudioOutput final : public IAudioOutput
 		void		start() override;
 		void		stop() override;
 
-		void		resume() override {}
-		void		pause() override {}
+		void		resume() override;
+		void		pause() override;
 		void		setVolume(Volume) override {}
 		void		flush() override;
 		void		setOnCanWriteCallback(OnCanWriteCallback cb) override;

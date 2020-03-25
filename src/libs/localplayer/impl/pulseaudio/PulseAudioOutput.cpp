@@ -87,6 +87,31 @@ PulseAudioOutput::stop()
 }
 
 void
+PulseAudioOutput::resume()
+{
+	MainLoopLock lock {_mainLoop};
+
+	if (!_stream)
+		return;
+
+	pa_operation* op {pa_stream_cork(_stream.get(), 0, [](pa_stream*, int, void*) {LMS_LOG(LOCALPLAYER, DEBUG) << "Stream resumed!";}, NULL)};
+	pa_operation_unref(op);
+}
+
+void
+PulseAudioOutput::pause()
+{
+	MainLoopLock lock {_mainLoop};
+
+	if (!_stream)
+		return;
+
+	pa_operation* op {pa_stream_cork(_stream.get(), 1, [](pa_stream*, int, void*) {LMS_LOG(LOCALPLAYER, DEBUG) << "Stream paused!";}, NULL)};
+	pa_operation_unref(op);
+
+}
+
+void
 PulseAudioOutput::flush()
 {
 	LMS_LOG(PA, DEBUG) << "Flushing stream...";
@@ -388,30 +413,6 @@ PulseAudioOutput::deinit()
 std::chrono::milliseconds
 PulseAudioOutput::getCurrentReadTime()
 {
-	{
-		pa_operation *operation {};
-		{
-			MainLoopLock lock {_mainLoop};
-
-			if (!_stream)
-				return {};
-	if (pa_stream_get_state(_stream.get()) != PA_STREAM_READY)
-	{
-		LMS_LOG(PA, DEBUG) << "Stream not ready yet, skip get_time";
-		return {};
-	}
-
-			operation = pa_stream_update_timing_info(_stream.get(), NULL, NULL);
-		}
-
-		// TODO: something better here
-		while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING)
-		{
-			LMS_LOG(PA, DEBUG) << "Still running...!";
-			std::this_thread::yield();
-		}
-	}
-
 	MainLoopLock lock {_mainLoop};
 
 	if (!_stream)

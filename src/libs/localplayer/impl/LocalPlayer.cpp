@@ -22,6 +22,8 @@
 #include <iomanip>
 
 #include "database/Track.hpp"
+#include "database/TrackList.hpp"
+#include "database/User.hpp"
 #include "localplayer/IAudioOutput.hpp"
 #include "utils/Logger.hpp"
 
@@ -33,6 +35,9 @@ std::unique_ptr<ILocalPlayer> createLocalPlayer(Database::Db& db)
 LocalPlayer::LocalPlayer(Database::Db& db)
 : _dbSession {db}
 {
+
+	createTrackListIfNeeded();
+
 	_ioService.setThreadCount(1);
 
 	LMS_LOG(LOCALPLAYER, INFO) << "Starting localplayer...";
@@ -70,6 +75,8 @@ LocalPlayer::getAudioOutput() const
 void
 LocalPlayer::play()
 {
+	std::unique_lock lock {_mutex};
+
 	handlePlay();
 }
 
@@ -87,18 +94,6 @@ LocalPlayer::stop()
 	std::unique_lock lock {_mutex};
 
 	handleStop();
-}
-
-std::optional<Database::IdType>
-LocalPlayer::getTrackIdFromPlayQueueIndex(EntryIndex entryId)
-{
-	if (entryId >= _currentPlayQueue.size())
-	{
-		LMS_LOG(LOCALPLAYER, DEBUG) << "Want to play an out of bound track";
-		return std::nullopt;
-	}
-
-	return _currentPlayQueue[entryId];
 }
 
 void
@@ -125,35 +120,47 @@ LocalPlayer::startPlay(std::optional<EntryIndex> id, std::chrono::milliseconds o
 {
 	assert(!_mutex.try_lock());
 
+	if (_playState == Status::PlayState::Paused)
+	{
+		_audioOutput->resume();
+		_playState = Status::PlayState::Playing;
+
+		if (!id)
+			return;
+	}
+
 	if (id)
 		_currentPlayQueueIdx = *id;
 
 	if (!_currentPlayQueueIdx)
 		_currentPlayQueueIdx = 0;
 
-	while (_currentPlayQueueIdx < _currentPlayQueue.size())
+	const std::vector<Database::IdType> trackIds {getTrackIds()};
+
+	while (*_currentPlayQueueIdx < trackIds.size())
 	{
-		if (startPlayQueueEntry(*_currentPlayQueueIdx, offset))
+		if (!startPlayTrack(trackIds[*_currentPlayQueueIdx], offset))
 		{
-			if (immediate)
-				_nextWriteOffset = _audioOutput->getCurrentReadTime();
-
-			_audioOutputEntries.emplace_back(
-				AudioOutputEntryInfo
-				{
-					_nextWriteOffset ? *_nextWriteOffset : _audioOutput->getCurrentWriteTime(),
-					offset,
-					*_currentPlayQueueIdx
-				});
-			_playState = Status::PlayState::Playing;
-
-			LMS_LOG(LOCALPLAYER, DEBUG) << "Adding new entry @ " << std::fixed << std::setprecision(3) << _audioOutputEntries.back().audioOutputStartTime.count() / float {1000};
-
-			return;
+			(*_currentPlayQueueIdx)++;
+			offset = {};
+			continue;
 		}
 
-		(*_currentPlayQueueIdx)++;
-		offset = {};
+		if (immediate)
+			_nextWriteOffset = _audioOutput->getCurrentReadTime();
+
+		_audioOutputEntries.emplace_back(
+			AudioOutputEntryInfo
+			{
+				_nextWriteOffset ? *_nextWriteOffset : _audioOutput->getCurrentWriteTime(),
+				offset,
+				*_currentPlayQueueIdx
+			});
+		_playState = Status::PlayState::Playing;
+
+		LMS_LOG(LOCALPLAYER, DEBUG) << "Adding new entry @ " << std::fixed << std::setprecision(3) << _audioOutputEntries.back().audioOutputStartTime.count() / float {1000};
+
+		return;
 	}
 
 	LMS_LOG(LOCALPLAYER, DEBUG) << "No more song in playqueue> stopping";
@@ -161,39 +168,75 @@ LocalPlayer::startPlay(std::optional<EntryIndex> id, std::chrono::milliseconds o
 	handleStop();
 }
 
-bool
-LocalPlayer::startPlayQueueEntry(std::size_t playqueueIdx, std::chrono::milliseconds offset)
+void
+LocalPlayer::createTrackListIfNeeded()
 {
-	LMS_LOG(LOCALPLAYER, DEBUG) << "Playing playQueue entry " << playqueueIdx;
+	using namespace Database;
 
-	const std::optional<Database::IdType> trackId {getTrackIdFromPlayQueueIndex(playqueueIdx)};
-	if (!trackId)
+	static const char* trackListName {"__tracklist_localplayer__"};
+
+	auto transaction {_dbSession.createUniqueTransaction()};
+
+	TrackList::pointer trackList {TrackList::get(_dbSession, trackListName, TrackList::Type::Internal, {})};
+	if (!trackList)
+		trackList = TrackList::create(_dbSession, trackListName, TrackList::Type::Internal, false, {});
+
+
+	_trackListId = trackList.id();
+}
+
+Database::TrackList::pointer
+LocalPlayer::getTrackList()
+{
+	return Database::TrackList::getById(_dbSession, _trackListId);
+}
+
+std::vector<Database::IdType>
+LocalPlayer::getTrackIds()
+{
+	assert(!_mutex.try_lock());
+	auto transaction {_dbSession.createSharedTransaction()};
+	
+	return getTrackList()->getTrackIds();
+}
+
+std::optional<std::filesystem::path>
+LocalPlayer::getTrackPath(Database::IdType trackId)
+{
+	using namespace Database;
+
+	assert(!_mutex.try_lock());
+	auto transaction {_dbSession.createSharedTransaction()};
+
+	const Track::pointer track {Track::getById(_dbSession, trackId)};
+
+	if (!track)
+		return std::nullopt;
+
+	return track->getPath();
+}
+
+bool
+LocalPlayer::startPlayTrack(Database::IdType trackId, std::chrono::milliseconds offset)
+{
+	LMS_LOG(LOCALPLAYER, DEBUG) << "Playing track " << trackId;
+
+	const auto trackPath {getTrackPath(trackId)};
+	if (!trackPath)
 		return false;
 
-	std::filesystem::path trackPath;
 	Av::TranscodeParameters parameters {};
+	parameters.stripMetadata = true;
+	parameters.encoding = Av::Encoding::PCM_SIGNED_16_LE; // TODO
+	parameters.offset = offset;
 
-	{
-		auto transaction {_dbSession.createSharedTransaction()};
-
-		auto track {Database::Track::getById(_dbSession, trackId.value())};
-		if (!track)
-		{
-			LMS_LOG(LOCALPLAYER, DEBUG) << "Track not found";
-			return false;
-		}
-
-		parameters.stripMetadata = true;
-		parameters.encoding = Av::Encoding::PCM_SIGNED_16_LE; // TODO
-		parameters.offset = offset;
-
-		trackPath = track->getPath();
-	}
-
-	_transcoder = std::make_unique<Av::Transcoder>(trackPath, parameters);
-	_transcoder->start();
+	_transcoder = std::make_unique<Av::Transcoder>(*trackPath, parameters);
+	if (!_transcoder->start())
+		return false;
 
 	asyncWaitDataFromTranscoder();
+
+	// TODO per playlist -> LmsApp->getUser().modify()->setCurPlayingTrackPos(pos);
 
 	return true;
 }
@@ -214,7 +257,13 @@ LocalPlayer::handleTranscoderFinished()
 void
 LocalPlayer::pause()
 {
+	std::unique_lock lock {_mutex};
 
+	if (_playState == Status::PlayState::Playing)
+	{
+		_audioOutput->pause();
+		_playState = Status::PlayState::Paused;
+	}
 }
 
 const LocalPlayer::AudioOutputEntryInfo*
@@ -264,15 +313,30 @@ LocalPlayer::clearTracks()
 {
 	std::unique_lock lock {_mutex};
 
-	_currentPlayQueue.clear();
+	auto transaction {_dbSession.createUniqueTransaction()};
+	getTrackList().modify()->clear();
 }
 
 void
 LocalPlayer::addTrack(Database::IdType trackId)
 {
+	using namespace Database;
+
 	std::unique_lock lock {_mutex};
 
-	_currentPlayQueue.push_back(trackId);
+	auto transaction {_dbSession.createUniqueTransaction()};
+
+	Track::pointer track {Track::getById(_dbSession, trackId)};
+	if (track)
+		TrackListEntry::create(_dbSession, track, getTrackList());
+}
+
+std::vector<Database::IdType>
+LocalPlayer::getTracks()
+{
+	std::unique_lock lock {_mutex};
+
+	return getTrackIds();
 }
 
 void

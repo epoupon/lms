@@ -1095,6 +1095,39 @@ testSingleTrackListMultipleTrack(Session& session)
 
 static
 void
+testSingleTrackListMultipleTrackNoUser(Session& session)
+{
+	ScopedTrackList trackList {session, "MytrackList", TrackList::Type::Playlist, false, User::pointer {}};
+	std::list<ScopedTrack> tracks;
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		const auto trackList {TrackList::get(session, "MytrackList", TrackList::Type::Playlist, User::pointer {})};
+		CHECK(trackList);
+		CHECK(trackList.id() == trackList.id());
+	}
+
+	for (std::size_t i {}; i < 10; ++i)
+	{
+		tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+
+		auto transaction {session.createUniqueTransaction()};
+		TrackListEntry::create(session, tracks.back().get(), trackList.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		CHECK(trackList->getCount() == tracks.size());
+		const auto trackIds {trackList->getTrackIds()};
+		for (auto trackId : trackIds)
+			CHECK(std::any_of(std::cbegin(tracks), std::cend(tracks), [trackId](const ScopedTrack& track) { return track.getId() == trackId; }));
+	}
+}
+
+static
+void
 testSingleTrackListMultipleTrackSingleCluster(Session& session)
 {
 	ScopedUser user {session, "MyUser", User::PasswordHash {}};
@@ -1424,6 +1457,7 @@ int main()
 
 			RUN_TEST(testSingleTrackList);
 			RUN_TEST(testSingleTrackListMultipleTrack);
+			RUN_TEST(testSingleTrackListMultipleTrackNoUser);
 			RUN_TEST(testSingleTrackListMultipleTrackSingleCluster);
 			RUN_TEST(testSingleTrackListMultipleTrackMultiClusters);
 			RUN_TEST(testMultipleTracksMultipleArtistsMultiClusters);

@@ -20,12 +20,14 @@
 #include "Stream.hpp"
 
 #include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "database/User.hpp"
+#include "localplayer/ILocalPlayer.hpp"
 #include "utils/Service.hpp"
 #include "utils/Utils.hpp"
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
-#include "localplayer/ILocalPlayer.hpp"
+#include "Utils.hpp"
 
 namespace API::Subsonic::Jukebox
 {
@@ -83,18 +85,48 @@ namespace API::Subsonic::Jukebox
 {
 
 static
+void
+fillStatus(Response::Node& statusNode)
+{
+	const ILocalPlayer::Status playerStatus {Service<ILocalPlayer>::get()->getStatus()};
+	statusNode.setAttribute("currentIndex", std::to_string(playerStatus.entryIdx ? *playerStatus.entryIdx : 0));
+	statusNode.setAttribute("playing", playerStatus.playState == ILocalPlayer::Status::PlayState::Playing ? "true" : "false");
+	statusNode.setAttribute("gain", "1.0"); // TODO
+	if (playerStatus.currentPlayTime)
+		statusNode.setAttribute("position", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(*playerStatus.currentPlayTime).count()));
+}
+
+static
 Response
 createStatusReponse()
 {
 	Response response {Response::createOkResponse()};
-	Response::Node& statusResponse {response.createNode("jukeboxStatus")};
+	fillStatus(response.createNode("jukeboxStatus"));
+	return response;
+}
 
-	ILocalPlayer::Status playerStatus {Service<ILocalPlayer>::get()->getStatus()};
-	statusResponse.setAttribute("currentIndex", std::to_string(playerStatus.entryIdx ? *playerStatus.entryIdx : 0));
-	statusResponse.setAttribute("playing", playerStatus.playState == ILocalPlayer::Status::PlayState::Playing ? "true" : "false");
-	statusResponse.setAttribute("gain", "1.0");
-	if (playerStatus.currentPlayTime)
-		statusResponse.setAttribute("position", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(*playerStatus.currentPlayTime).count()));
+static
+Response
+createPlaylistResponse(RequestContext& context)
+{
+	Response response {Response::createOkResponse()};
+	Response::Node& playlistNode {response.createNode("jukeboxPlaylist")};
+
+	fillStatus(playlistNode);
+
+	const std::vector<Database::IdType> trackIds {Service<ILocalPlayer>::get()->getTracks()};
+
+	auto transaction {context.dbSession.createSharedTransaction()};
+	std::vector<Database::Track::pointer> tracks;
+	tracks.reserve(trackIds.size());
+
+	std::transform(std::cbegin(trackIds), std::cend(trackIds), std::back_inserter(tracks),[&](Database::IdType trackId)
+			{
+				return Database::Track::getById(context.dbSession, trackId);
+			});
+
+	for (const Database::Track::pointer& track : tracks)
+		playlistNode.addArrayChild("entry", trackToResponseNode(track, context.dbSession, {}));
 
 	return response;
 }
@@ -201,6 +233,8 @@ handle(RequestContext& context)
 			return createStatusReponse();
 
 		case Action::Get:
+			return createPlaylistResponse(context);
+
 		case Action::Remove:
 		case Action::Shuffle:
 		case Action::SetGain:

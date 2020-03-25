@@ -45,10 +45,10 @@
 #include "RequestContext.hpp"
 #include "Stream.hpp"
 #include "SubsonicResponse.hpp"
+#include "Utils.hpp"
 
 using namespace Database;
 
-static const std::string	genreClusterName {"GENRE"};
 static const std::string	reportedStarredDate {"2000-01-01T00:00:00"};
 static const std::string	reportedCreatedBookmarkDate {"2000-01-01T00:00:00"};
 static const std::string	reportedChangedBookmarkDate {"2000-01-01T00:00:00"};
@@ -109,13 +109,6 @@ enum class UserRole
 	Jukebox,
 };
 using UserRoles = EnumSet<UserRole>;
-
-static
-std::string
-makeNameFilesystemCompatible(const std::string& name)
-{
-	return StringUtils::replaceInString(name, "/", "_");
-}
 
 static
 std::string
@@ -216,126 +209,6 @@ checkUserIsMySelfOrAdmin(RequestContext& context, const std::string& username)
 	}
 }
 
-static
-std::string
-getArtistNames(const std::vector<Artist::pointer>& artists)
-{
-	if (artists.size() == 1)
-		return artists.front()->getName();
-
-	std::vector<std::string> names;
-	names.resize(artists.size());
-
-	std::transform(std::cbegin(artists), std::cend(artists), std::begin(names),
-			[](const Artist::pointer& artist)
-			{
-				return artist->getName();
-			});
-
-	return StringUtils::joinStrings(names, ", ");
-}
-
-static
-std::string
-getTrackPath(const Track::pointer& track)
-{
-	std::string path;
-
-	// The track path has to be relative from the root
-
-	const auto release {track->getRelease()};
-	if (release)
-	{
-		auto artists {release->getReleaseArtists()};
-		if (artists.empty())
-			artists = release->getArtists();
-
-		if (artists.size() > 1)
-			path = "Various Artists/";
-		else if (artists.size() == 1)
-			path = makeNameFilesystemCompatible(artists.front()->getName()) + "/";
-
-		path += makeNameFilesystemCompatible(track->getRelease()->getName()) + "/";
-	}
-
-	if (track->getDiscNumber())
-		path += std::to_string(*track->getDiscNumber()) + "-";
-	if (track->getTrackNumber())
-		path += std::to_string(*track->getTrackNumber()) + "-";
-
-	path += makeNameFilesystemCompatible(track->getName());
-
-	if (track->getPath().has_extension())
-		path += track->getPath().extension();
-
-	return path;
-}
-
-static
-Response::Node
-trackToResponseNode(const Track::pointer& track, Session& dbSession, const User::pointer& user)
-{
-	Response::Node trackResponse;
-
-	trackResponse.setAttribute("id", IdToString({Id::Type::Track, track.id()}));
-	trackResponse.setAttribute("isDir", "false");
-	trackResponse.setAttribute("title", track->getName());
-	if (track->getTrackNumber())
-		trackResponse.setAttribute("track", std::to_string(*track->getTrackNumber()));
-	if (track->getDiscNumber())
-		trackResponse.setAttribute("discNumber", std::to_string(*track->getDiscNumber()));
-	if (track->getYear())
-		trackResponse.setAttribute("year", std::to_string(*track->getYear()));
-
-	trackResponse.setAttribute("path", getTrackPath(track));
-	{
-		std::error_code ec;
-		const auto fileSize {std::filesystem::file_size(track->getPath(), ec)};
-		if (!ec)
-			trackResponse.setAttribute("size", std::to_string(fileSize));
-	}
-
-	if (track->getPath().has_extension())
-	{
-		auto extension {track->getPath().extension()};
-		trackResponse.setAttribute("suffix", extension.string().substr(1));
-	}
-
-	trackResponse.setAttribute("coverArt", IdToString({Id::Type::Track, track.id()}));
-
-	auto artists {track->getArtists()};
-	if (!artists.empty())
-	{
-		trackResponse.setAttribute("artist", getArtistNames(artists));
-
-		if (artists.size() == 1)
-			trackResponse.setAttribute("artistId", IdToString({Id::Type::Artist, artists.front().id()}));
-	}
-
-	if (track->getRelease())
-	{
-		trackResponse.setAttribute("album", track->getRelease()->getName());
-		trackResponse.setAttribute("albumId", IdToString({Id::Type::Release, track->getRelease().id()}));
-		trackResponse.setAttribute("parent", IdToString({Id::Type::Release, track->getRelease().id()}));
-	}
-
-	trackResponse.setAttribute("duration", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count()));
-	trackResponse.setAttribute("type", "music");
-
-	if (user->hasStarredTrack(track))
-		trackResponse.setAttribute("starred", reportedStarredDate);
-
-	// Report the first GENRE for this track
-	ClusterType::pointer clusterType {ClusterType::getByName(dbSession, genreClusterName)};
-	if (clusterType)
-	{
-		auto clusters {track->getClusterGroups({clusterType}, 1)};
-		if (!clusters.empty() && !clusters.front().empty())
-			trackResponse.setAttribute("genre", clusters.front().front()->getName());
-	}
-
-	return trackResponse;
-}
 
 static
 Response::Node
