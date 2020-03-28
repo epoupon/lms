@@ -29,12 +29,6 @@ init(const std::filesystem::path& path)
 	Magick::InitializeMagick(path.string().c_str());
 }
 
-void
-deinit()
-{
-	MagickCore::MagickCoreTerminus();
-}
-
 static
 std::string
 formatToMagick(Format format)

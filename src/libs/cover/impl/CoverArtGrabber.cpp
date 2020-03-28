@@ -49,15 +49,13 @@ Grabber::Grabber(const std::filesystem::path& execPath)
 	init(execPath);
 }
 
-Grabber::~Grabber()
-{
-	deinit();
-}
-
 void
 Grabber::setDefaultCover(const std::filesystem::path& p)
 {
-	if (!_defaultCover.load(p))
+	std::unique_lock lock {_mutex};
+
+	_defaultCover = std::make_unique<Image>();
+	if (!_defaultCover->load(p))
 		throw LmsException("Cannot read default cover file '" + p.string() + "'");
 }
 
@@ -65,12 +63,12 @@ Image
 Grabber::getDefaultCover(std::size_t size)
 {
 	LMS_LOG(COVER, DEBUG) << "Getting a default cover using size = " << size;
-	std::unique_lock<std::mutex> lock(_mutex);
+	std::unique_lock lock {_mutex};
 
 	auto it = _defaultCovers.find(size);
 	if (it == _defaultCovers.end())
 	{
-		Image cover = _defaultCover;
+		Image cover = *_defaultCover;
 
 		LMS_LOG(COVER, DEBUG) << "default cover size = " << cover.getSize().width << " x " << cover.getSize().height;
 

@@ -10,17 +10,17 @@ target_include_directories(lmscover INTERFACE
 
 target_include_directories(lmscover PRIVATE
 	include
-	${IMAGEMAGICKXX_INCLUDE_DIRS}
+	${GRAPHICSMAGICKXX_INCLUDE_DIRS}
 	)
 
 target_compile_options(lmscover PRIVATE
-	${IMAGEMAGICKXX_CFLAGS_OTHER}
+	${GRAPHICSMAGICKXX_CFLAGS_OTHER}
 	)
 
 target_link_libraries(lmscover PRIVATE
 	lmsav
 	lmsdatabase
-	${IMAGEMAGICKXX_LIBRARIES}
+	${GRAPHICSMAGICKXX_LIBRARIES}
 	)
 
 install(TARGETS lmscover DESTINATION lib)
