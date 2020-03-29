@@ -19,6 +19,7 @@
 #include "subsonic/SubsonicResource.hpp"
 
 #include <atomic>
+#include <unordered_map>
 
 #include <Wt/WLocalDateTime.h>
 
