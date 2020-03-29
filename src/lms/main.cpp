@@ -197,6 +197,8 @@ int main(int argc, char* argv[])
 		LMS_LOG(MAIN, INFO) << "Stopping recommendation engine...";
 		recommendationEngine.stop();
 
+		ServiceProvider<CoverArt::IGrabber>::clear();
+
 		LMS_LOG(MAIN, INFO) << "Clean stop!";
 		res = EXIT_SUCCESS;
 	}
