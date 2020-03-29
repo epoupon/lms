@@ -88,7 +88,7 @@ dumpRecommendation(Database::Session session, Recommendation::IEngine& engine)
 		};
 
 		std::cout << "Processing release '" << releaseToString(releaseId) << "'" << std::endl;
-		for (Database::IdType similarReleaseId : engine.getSimilarReleases(session, {releaseId}, 3))
+		for (Database::IdType similarReleaseId : engine.getSimilarReleases(session, releaseId, 3))
 			std::cout << "\t- Similar release '" << releaseToString(similarReleaseId) << "'" << std::endl;
 	}
 
@@ -110,7 +110,7 @@ dumpRecommendation(Database::Session session, Recommendation::IEngine& engine)
 		};
 
 		std::cout << "Processing artist '" << artistToString(artistId) << "'" << std::endl;
-		for (Database::IdType similarArtistId : engine.getSimilarArtists(session, {artistId}, 3))
+		for (Database::IdType similarArtistId : engine.getSimilarArtists(session, artistId, 3))
 			std::cout << "\t- Similar artist '" << artistToString(similarArtistId) << "'" << std::endl;
 	}
 

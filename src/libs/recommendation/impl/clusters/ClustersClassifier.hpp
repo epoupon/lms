@@ -36,7 +36,7 @@ namespace Recommendation
 
 		private:
 
-			std::string_view getName() const { return "Clusters"; }
+			std::string_view getName() const override { return "Clusters"; }
 
 			bool init(Database::Session&, bool) override {return true;}
 			void requestCancelInit() override {}
