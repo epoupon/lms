@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 include(CTest)
 find_package(PkgConfig)
-pkg_check_modules(IMAGEMAGICKXX REQUIRED ImageMagick++)
+pkg_check_modules(GRAPHICSMAGICKXX REQUIRED GraphicsMagick++)
 
 add_subdirectory(src)
 

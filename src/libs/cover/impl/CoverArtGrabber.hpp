@@ -41,7 +41,6 @@ namespace CoverArt
 	{
 		public:
 			Grabber(const std::filesystem::path& execPath);
-			~Grabber();
 
 			Grabber(const Grabber&) = delete;
 			Grabber& operator=(const Grabber&) = delete;
@@ -63,9 +62,8 @@ namespace CoverArt
 			std::optional<Image>			getFromDirectory(const std::filesystem::path& path) const;
 			Image					getDefaultCover(std::size_t size);
 
-			Image _defaultCover;
-
 			std::mutex _mutex;
+			std::unique_ptr<Image> _defaultCover;
 			std::map<std::size_t /* size */, Image> _defaultCovers;
 
 			static inline const std::vector<std::filesystem::path> _fileExtensions {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize

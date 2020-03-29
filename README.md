@@ -85,7 +85,7 @@ __Notes__:
 * a C++17 compiler is needed
 * ffmpeg version 4 minimum is required
 ```sh
-apt-get install g++ cmake libboost-system-dev libavutil-dev libavformat-dev libmagick++-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
+apt-get install g++ cmake libboost-system-dev libavutil-dev libavformat-dev libgraphicsmagick++1-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
 ```
 
 You also need _Wt4_, which is not packaged yet on _Debian_. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).</br>
@@ -208,6 +208,6 @@ To connect to _LMS_, just open your favorite browser and go to http://localhost:
 * Wt (http://www.webtoolkit.eu/)
 * bootstrap3 (http://getbootstrap.com/)
 * ffmpeg project (https://ffmpeg.org/)
-* Magick++ (http://www.imagemagick.org/Magick++/)
+* GraphicsMagick++ (http://www.graphicsmagick.org/)
 * MetaBrainz (https://metabrainz.org/)
 * Bootstrap Notify: https://github.com/mouse0270/bootstrap-notify
