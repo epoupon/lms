@@ -19,8 +19,12 @@ target_compile_options(lmscover PRIVATE
 
 target_link_libraries(lmscover PRIVATE
 	lmsav
-	lmsdatabase
 	${GRAPHICSMAGICKXX_LIBRARIES}
+	)
+
+target_link_libraries(lmscover PUBLIC
+	lmsdatabase
+	std::filesystem
 	)
 
 install(TARGETS lmscover DESTINATION lib)

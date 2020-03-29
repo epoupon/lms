@@ -19,6 +19,7 @@ target_link_libraries(lmsmetadata PRIVATE
 
 target_link_libraries(lmsmetadata PUBLIC
 	lmsutils
+	std::filesystem
 	)
 
 install(TARGETS lmsmetadata DESTINATION lib)

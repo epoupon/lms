@@ -30,6 +30,7 @@ target_link_libraries(lmsdatabase PRIVATE
 
 target_link_libraries(lmsdatabase PUBLIC
 	lmsutils
+	std::filesystem
 	wtdbo
 	)
 

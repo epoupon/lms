@@ -2,11 +2,15 @@ cmake_minimum_required(VERSION 3.10)
 
 project(lms)
 
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 include(CTest)
-find_package(PkgConfig)
+find_package(PkgConfig REQUIRED)
+find_package(Filesystem REQUIRED)
 pkg_check_modules(GRAPHICSMAGICKXX REQUIRED GraphicsMagick++)
 
 add_subdirectory(src)
