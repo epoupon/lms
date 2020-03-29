@@ -157,7 +157,7 @@ systemctl restart lms
 __Note__: don't forget to give the _lms_ user read access to the music directory you want to scan.
 
 ### Configuration
-_LMS_ uses a configuration file, installed by default in `/etc/lms.conf`. It is recommended to edit this file and change relevant settings (listen address, listen port, working directory, Subsonic API activation, ...).
+_LMS_ uses a configuration file, installed by default in `/etc/lms.conf`. It is recommended to edit this file and change relevant settings (listen address, listen port, working directory, Subsonic API activation, deployment path, ...).
 
 All other settings are set using the web interface (user management, scan settings, transcode settings, ...).
 

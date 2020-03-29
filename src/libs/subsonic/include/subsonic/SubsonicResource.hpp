@@ -36,7 +36,7 @@ class SubsonicResource final : public Wt::WResource
 	public:
 		SubsonicResource(Database::Db& db);
 
-		static std::string getPath() { return "/rest/"; }
+		static std::string getPath() { return "rest/"; }
 	private:
 
 		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;

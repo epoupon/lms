@@ -48,6 +48,7 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 	args.push_back("--config=" + wtConfigPath.string());
 	args.push_back("--docroot=" + ServiceProvider<IConfig>::get()->getString("docroot"));
 	args.push_back("--approot=" + ServiceProvider<IConfig>::get()->getString("approot"));
+	args.push_back("--deploy-path=" + ServiceProvider<IConfig>::get()->getString("deploy-path", "/"));
 	args.push_back("--resources-dir=" + ServiceProvider<IConfig>::get()->getString("wt-resources"));
 
 	if (ServiceProvider<IConfig>::get()->getBool("tls-enable", false))
