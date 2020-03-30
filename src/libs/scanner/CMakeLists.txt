@@ -20,6 +20,7 @@ target_link_libraries(lmsscanner PRIVATE
 	)
 
 target_link_libraries(lmsscanner PUBLIC
+	std::filesystem
 	wt
 	)
 

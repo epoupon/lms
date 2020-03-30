@@ -21,14 +21,21 @@
 
 #include "metadata/IParser.hpp"
 
+namespace TagLib
+{
+	class StringList;
+}
+
 namespace MetaData
 {
 
 // Parse that makes use of AvFormat
 class TagLibParser : public IParser
 {
-	public:
+	private:
 		std::optional<Track> parse(const std::filesystem::path& p, bool debug = false) override;
+
+		void processTag(Track& track, const std::string& tag, const TagLib::StringList& values, bool debug);
 };
 
 } // namespace MetaData

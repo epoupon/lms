@@ -55,15 +55,15 @@ class FeaturesClassifier : public IClassifier
 		static const FeatureSettingsMap& getDefaultTrainFeatureSettings();
 	private:
 
-		std::string_view getName() const { return "Features"; }
+		std::string_view getName() const override { return "Features"; }
 
 		bool init(Database::Session& session, bool databaseChanged) override;
 		void requestCancelInit() override;
 
 		std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const override;
 		std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) const override;
-		std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const;
-		std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) const;
+		std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const override;
+		std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) const override;
 
 		bool initFromCache(Database::Session& session, const FeaturesClassifierCache& cache);
 

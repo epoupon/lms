@@ -19,6 +19,7 @@ target_link_libraries(lmsav PUBLIC
 	lmsutils
 	avformat
 	avutil
+	std::filesystem
 	wt
 	)
 

@@ -5,7 +5,7 @@ WORKDIR	/tmp/workdir
 ARG	MAKEFLAGS="-j2"
 ARG	FFMPEG_VERSION=4.1.4
 ARG	WT_VERSION=4.2.0
-ARG	IMAGEMAGICK6_VERSION=6.9.10-71
+ARG	GRAPHICSMAGICK_VERSION=1.3.35
 ARG	PSTREAMS_VERSION=1.0.1
 ARG	LMS_VERSION=v3.6.3
 
@@ -24,6 +24,7 @@ ARG	BUILD_PACKAGES=" \
 	make \
 	libjpeg-turbo-dev \
 	openjpeg-dev \
+	jasper-dev \
 	libpng-dev \
 	tiff-dev \
 	nasm \
@@ -95,50 +96,42 @@ RUN \
 	make && \
 	make install
 
-# ImageMagick
+# GraphicsMagick++
 RUN \
-	DIR=/tmp/imagemagick && mkdir -p ${DIR} && cd ${DIR} && \
-	curl -sLO https://github.com/ImageMagick/ImageMagick6/archive/${IMAGEMAGICK6_VERSION}.tar.gz && \
-	tar -x --strip-components=1 -f ${IMAGEMAGICK6_VERSION}.tar.gz
+	DIR=/tmp/graphicsmagick && mkdir -p ${DIR} && cd ${DIR} && \
+	curl -sL ftp://ftp.graphicsmagick.org/pub/GraphicsMagick/1.3/GraphicsMagick-${GRAPHICSMAGICK_VERSION}.tar.gz -o ${GRAPHICSMAGICK_VERSION}.tar.gz && \
+	tar -x --strip-components=1 -f ${GRAPHICSMAGICK_VERSION}.tar.gz
 
 RUN \
-	DIR=/tmp/imagemagick && mkdir -p ${DIR} && cd ${DIR} && \
+	DIR=/tmp/graphicsmagick && mkdir -p ${DIR} && cd ${DIR} && \
 	./configure \
 	--prefix=${PREFIX} \
 	--enable-shared=yes \
-	--disable-static \
-	--disable-docs \
-	--with-magick-plus-plus \
-	--without-zstd \
-	--without-dps \
-	--without-autotrace \
-	--without-dps \
-	--without-fftw \
-	--without-flif \
-	--without-fpx \
-	--without-djvu \
-	--without-fontconfig \
-	--without-freetype \
-	--without-raqm \
-	--without-gslib \
-	--without-gvc \
-	--without-heic \
-	--without-jbig \
-	--with-jpeg \
-	--without-jxl \
-	--without-lcms \
-	--with-openjp2 \
-	--without-lqr \
-	--with-lzma \
-	--without-openexr \
-	--without-pango \
-	--with-png \
-	--without-raw \
-	--without-rsvg \
-	--with-tiff \
-	--without-webp \
-	--without-wmf \
-	--without-xml && \
+	--enable-static=no \
+	--with-quantum-depth=8 \
+	--with-modules=no \
+	--with-frozenpaths=no \
+	--with-magick-plus-plus=yes \
+	--with-perl=no \
+	--with-bzlib=no \
+	--with-dps=no \
+	--with-fpx=no \
+	--with-jbig=no \
+	--with-webp=no \
+	--with-jp2=yes \
+	--with-jpeg=yes \
+	--with-lcms2=no \
+	--with-lzma=no \
+	--with-png=yes \
+	--with-tiff=yes \
+	--with-trio=no \
+	--with-ttf=no \
+	--with-tcmalloc=no \
+	--with-wmf=no \
+	--with-xml=no \
+	--with-zlib=yes \
+	--with-zstd=no \
+	--with-x=no && \
 	make && \
 	make install && \
 	make distclean
@@ -158,8 +151,9 @@ RUN \
 
 RUN \
 	DIR=/tmp/lms && mkdir -p ${DIR} && cd ${DIR} && \
-	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include -L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} && \
+	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} && \
 	make && \
+	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
 	make install && \
 	mkdir -p ${PREFIX}/etc/ && \
 	cp conf/lms.conf ${PREFIX}/etc
@@ -178,7 +172,8 @@ RUN \
 	done && \
 	cp -r ${PREFIX}/lib /tmp/fakeroot/lib && \
 	cp -r ${PREFIX}/share /tmp/fakeroot/share && \
-        LD_LIBRARY_PATH=/tmp/fakeroot/lib /tmp/fakeroot/bin/ffmpeg -buildconf
+	rm -rf /tmp/fakeroot/share/doc && \
+	rm -rf /tmp/fakeroot/share/man
 
 ## Release Stage
 FROM		alpine:3.10 AS release
@@ -188,6 +183,7 @@ ARG	RUNTIME_PACKAGES=" \
 	openssl \
 	libjpeg-turbo \
 	openjpeg \
+	jasper-libs \
 	libpng \
 	tiff \
 	libogg \

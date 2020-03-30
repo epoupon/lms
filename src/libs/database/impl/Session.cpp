@@ -40,7 +40,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	13
+#define LMS_DATABASE_VERSION	14
 
 using Version = std::size_t;
 
@@ -153,7 +153,13 @@ CREATE TABLE IF NOT EXISTS "track_bookmark" (
 		}
 		else if (version == 12)
 		{
-			// Artist and release that have a baddly parsed name but a MBID had no chance to updat the name
+			// Artist and release that have a badly parsed name but a MBID had no chance to updat the name
+			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+			ScanSettings::get(*this).modify()->incScanVersion();
+		}
+		else if (version == 13)
+		{
+			// Always store UUID in lower case + better WMA parsing
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
 		}

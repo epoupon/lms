@@ -20,6 +20,7 @@
 #include "utils/String.hpp"
 
 #include <iomanip>
+#include <unordered_map>
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -98,15 +99,25 @@ stringTrimEnd(const std::string& str, const std::string& whitespace)
 }
 
 std::string
-stringToLower(const std::string& str)
+stringToLower(std::string_view str)
 {
-	return boost::algorithm::to_lower_copy(str);
+	std::string res;
+	res.reserve(str.size());
+
+	std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](char c) { return std::tolower(c);});
+
+	return res;
 }
 
 std::string
 stringToUpper(const std::string& str)
 {
-	return boost::to_upper_copy<std::string>(str);
+	std::string res;
+	res.reserve(str.size());
+
+	std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](char c) { return std::toupper(c);});
+
+	return res;
 }
 
 std::string

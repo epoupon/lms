@@ -34,7 +34,7 @@ class UUID
 		std::string_view getAsString() const { return _value; }
 
 	private:
-		UUID(std::string_view value) : _value {value} {}
+		UUID(std::string_view value);
 		std::string _value;
 };
 

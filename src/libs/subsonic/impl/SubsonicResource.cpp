@@ -19,6 +19,7 @@
 #include "subsonic/SubsonicResource.hpp"
 
 #include <atomic>
+#include <unordered_map>
 
 #include <Wt/WLocalDateTime.h>
 
@@ -65,7 +66,7 @@ namespace StringUtils
 {
 	template<>
 	std::optional<API::Subsonic::ClientVersion>
-	StringUtils::readAs(const std::string& str)
+	readAs(const std::string& str)
 	{
 		// Expects "X.Y.Z"
 		const auto numbers {StringUtils::splitString(str, ".")};

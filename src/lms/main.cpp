@@ -48,6 +48,7 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 	args.push_back("--config=" + wtConfigPath.string());
 	args.push_back("--docroot=" + ServiceProvider<IConfig>::get()->getString("docroot"));
 	args.push_back("--approot=" + ServiceProvider<IConfig>::get()->getString("approot"));
+	args.push_back("--deploy-path=" + ServiceProvider<IConfig>::get()->getString("deploy-path", "/"));
 	args.push_back("--resources-dir=" + ServiceProvider<IConfig>::get()->getString("wt-resources"));
 
 	if (ServiceProvider<IConfig>::get()->getBool("tls-enable", false))
@@ -196,6 +197,8 @@ int main(int argc, char* argv[])
 
 		LMS_LOG(MAIN, INFO) << "Stopping recommendation engine...";
 		recommendationEngine.stop();
+
+		ServiceProvider<CoverArt::IGrabber>::clear();
 
 		LMS_LOG(MAIN, INFO) << "Clean stop!";
 		res = EXIT_SUCCESS;
