@@ -135,6 +135,7 @@ int main(int argc, char* argv[])
 		{
 			Database::Session session {database};
 			session.prepareTables();
+			session.optimize();
 		}
 
 		UserInterface::LmsApplicationGroupContainer appGroups;

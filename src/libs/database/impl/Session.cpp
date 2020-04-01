@@ -318,9 +318,12 @@ Session::prepareTables()
 void
 Session::optimize()
 {
-	auto uniqueTransaction {createUniqueTransaction()};
-
-	_session.execute("ANALYZE");
+	LMS_LOG(DB, DEBUG) << "Optimizing db...";
+	{
+		auto uniqueTransaction {createUniqueTransaction()};
+		_session.execute("ANALYZE");
+	}
+	LMS_LOG(DB, DEBUG) << "Optimized db!";
 }
 
 } // namespace Database
