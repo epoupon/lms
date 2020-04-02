@@ -171,13 +171,13 @@ getQuery(Session& session,
 }
 
 std::vector<Artist::pointer>
-Artist::getByClusters(Session& session, const std::set<IdType>& clusters)
+Artist::getByClusters(Session& session, const std::set<IdType>& clusters, NameSortMethod sortMethod)
 {
 	assert(!clusters.empty());
 
 	session.checkSharedLocked();
 	bool more;
-	return getByFilter(session, clusters, {}, {}, {}, {}, more);
+	return getByFilter(session, clusters, {}, {}, sortMethod, {}, {}, more);
 }
 
 std::vector<Artist::pointer>
@@ -185,6 +185,7 @@ Artist::getByFilter(Session& session,
 		const std::set<IdType>& clusters,
 		const std::vector<std::string>& keywords,
 		std::optional<TrackArtistLink::Type> linkType,
+		NameSortMethod sortMethod,
 		std::optional<std::size_t> offset,
 		std::optional<std::size_t> size,
 		bool& moreResults)
@@ -405,6 +406,7 @@ void
 Artist::setSortName(const std::string& sortName)
 {
 	_sortName = std::string(sortName, 0 , _maxNameLength);
+	LMS_LOG(DB, DEBUG) << "SORT NAME = '" << _sortName << "'";
 }
 
 } // namespace Database

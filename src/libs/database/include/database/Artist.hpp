@@ -45,6 +45,13 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 {
 	public:
 
+		enum class NameSortMethod
+		{
+			None,
+			ByName,
+			BySortName,
+		};
+
 		using pointer = Wt::Dbo::ptr<Artist>;
 
 		Artist() {}
@@ -55,24 +62,28 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static pointer			getById(Session& session, IdType id);
 		static std::vector<pointer>	getByName(Session& session, const std::string& name);
 		static std::vector<pointer> 	getByClusters(Session& session,
-								const std::set<IdType>& clusters);		// at least one track that belongs to  these clusters
+								const std::set<IdType>& clusters,		// at least one track that belongs to  these clusters
+								NameSortMethod sortMethod
+								);
 		static std::vector<pointer> 	getByFilter(Session& session,
 								const std::set<IdType>& clusters,		// if non empty, at least one artist that belongs to these clusters
 								const std::vector<std::string>& keywords,	// if non empty, name must match all of these keywords
 								std::optional<TrackArtistLink::Type> linkType, 	// if set, only artists that have produced at least one track with this link type
+								NameSortMethod sortMethod,
 								std::optional<std::size_t> offset,
 								std::optional<std::size_t> size,
 								bool& moreExpected);
 
-		static std::vector<pointer>	getAll(Session& session, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getAll(Session& session, NameSortMethod sortMethod, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
 		static std::vector<IdType>	getAllIds(Session& session);
 		static std::vector<pointer>	getAllOrphans(Session& session); // No track related
 		static std::vector<pointer>	getLastAdded(Session& session, Wt::WDateTime after, std::optional<std::size_t> size = {});
 		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
 
 		// Accessors
-		const std::string&	getName(void) const { return _name; }
-		std::optional<UUID>	getMBID(void) const { return UUID::fromString(_MBID); }
+		const std::string&	getName() const { return _name; }
+		const std::string&	getSortName() const { return _sortName; }
+		std::optional<UUID>	getMBID() const { return UUID::fromString(_MBID); }
 
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
 		std::size_t				getReleaseCount() const;
@@ -97,7 +108,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 			void persist(Action& a)
 			{
 				Wt::Dbo::field(a, _name, "name");
-				Wt::Dbo::field(a, _name, "sort_name");
+				Wt::Dbo::field(a, _sortName, "sort_name");
 				Wt::Dbo::field(a, _MBID, "mbid");
 
 				Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "artist");
