@@ -153,9 +153,9 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	messageResourceBundle().use(appRoot() + "tracksinfo");
 
 	// Require js here to avoid async problems
-	requireJQuery("/js/jquery-1.10.2.min.js");
-	require("/js/mediaplayer.js");
-	require("/js/bootstrap-notify.js");
+	requireJQuery("js/jquery-1.10.2.min.js");
+	require("js/mediaplayer.js");
+	require("js/bootstrap-notify.js");
 
 	setTitle("LMS");
 

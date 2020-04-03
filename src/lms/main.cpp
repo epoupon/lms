@@ -43,13 +43,15 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 	const std::filesystem::path wtConfigPath {ServiceProvider<IConfig>::get()->getPath("working-dir") / "wt_config.xml"};
 	const std::filesystem::path wtLogFilePath {ServiceProvider<IConfig>::get()->getPath("log-file", "/var/log/lms.log")};
 	const std::filesystem::path wtAccessLogFilePath {ServiceProvider<IConfig>::get()->getPath("access-log-file", "/var/log/lms.access.log")};
+	const std::filesystem::path wtResourcesPath {ServiceProvider<IConfig>::get()->getPath("wt-resources", "/usr/share/Wt/resources")};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
 	args.push_back("--docroot=" + ServiceProvider<IConfig>::get()->getString("docroot"));
 	args.push_back("--approot=" + ServiceProvider<IConfig>::get()->getString("approot"));
 	args.push_back("--deploy-path=" + ServiceProvider<IConfig>::get()->getString("deploy-path", "/"));
-	args.push_back("--resources-dir=" + ServiceProvider<IConfig>::get()->getString("wt-resources"));
+	if (!wtResourcesPath.empty())
+		args.push_back("--resources-dir=" + wtResourcesPath.string());
 
 	if (ServiceProvider<IConfig>::get()->getBool("tls-enable", false))
 	{

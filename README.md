@@ -163,6 +163,17 @@ All other settings are set using the web interface (user management, scan settin
 
 If a setting is not present in the configuration file, a hardcoded default value is used (the same as in the [default.conf](https://github.com/epoupon/lms/blob/master/conf/lms.conf) file)
 
+### Deploy on non root path
+If you want to deploy on non root path (e.g. https://mydomain.com/newroot/), you have to do the following steps:
+* Create a new intermediary `newroot` directory in `/usr/share/lms/docroot`
+* Symlink `/usr/share/lms/docroot/newroot/resources` to `/usr/share/Wt/resources`
+* Edit `lms.conf` and set:
+```
+wt-resources = ""
+docroot = "/usr/share/lms/docroot/;/newroot/resources,/newroot/css,/newroot/images,/newroot/js,/newroot/favicon.ico";`
+deploy-path = "/newroot/";
+```
+
 ### Reverse proxy settings
 _LMS_ is shipped with an embedded web server, but it is recommended to deploy behind a reverse proxy. You have to set the _behind-reverse-proxy_ option to _true_ in the `lms.conf` configuration file.
 
