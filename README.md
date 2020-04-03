@@ -98,6 +98,7 @@ Get the latest stable release and build it:
 git clone https://github.com/epoupon/lms.git lms
 cd lms
 mkdir build
+cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
 __Note__: in order to customize the installation directory, you can use the _-DCMAKE_INSTALL_PREFIX_ option (defaults to `/usr/local`).
