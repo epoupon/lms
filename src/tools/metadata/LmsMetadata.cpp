@@ -36,6 +36,9 @@ std::ostream& operator<<(std::ostream& os, const MetaData::Artist& artist)
 	if (artist.musicBrainzArtistID)
 		os << " (" << artist.musicBrainzArtistID->getAsString() << ")";
 
+	if (artist.sortName)
+		os << " '" << *artist.sortName << "'";
+
 	return os;
 }
 

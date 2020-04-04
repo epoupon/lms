@@ -87,55 +87,74 @@ static
 std::vector<Artist>
 getArtists(const TagLib::PropertyMap& properties)
 {
-	std::vector<Artist> res;
-
 	std::vector<std::string> artistNames {getPropertyValuesAs<std::string>(properties, "ARTISTS")};
 	if (artistNames.empty())
 		artistNames = getPropertyValuesAs<std::string>(properties, "ARTIST");
 
 	if (artistNames.empty())
-		return res;
+		return {};
 
-	const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"})};
+	std::vector<Artist> artists;
+	artists.reserve(artistNames.size());
+	std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(artists),
+		[&](const std::string& name) { return Artist {name}; });
 
-	if (artistNames.size() == artistsMBID.size())
 	{
-		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::cbegin(artistsMBID), std::back_inserter(res),
-				[&](const std::string& name, const UUID& mbid) { return Artist {name, mbid}; });
-	}
-	else
-	{
-		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(res),
-				[&](const std::string& name) { return Artist{name, {}}; });
+		const std::vector<std::string> artistSortNames {getPropertyValuesAs<std::string>(properties, "ARTISTSORT")};
+		if (artistSortNames.size() == artists.size())
+		{
+			for (std::size_t i {}; i < artistSortNames.size(); ++i)
+				artists[i].sortName = artistSortNames[i];
+		}
 	}
 
-	return res;
+	{
+		const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"})};
+
+		if (artistNames.size() == artistsMBID.size())
+		{
+			for (std::size_t i {}; i < artistsMBID.size(); ++i)
+				artists[i].musicBrainzArtistID = artistsMBID[i];
+		}
+	}
+
+
+	return artists;
 }
 
 static
 std::vector<Artist>
 getAlbumArtists(const TagLib::PropertyMap& properties)
 {
-	std::vector<Artist> res;
-
 	std::vector<std::string> artistNames {getPropertyValuesAs<std::string>(properties, "ALBUMARTIST")};
 	if (artistNames.empty())
-		return res;
+		return {};
 
-	const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"})};
+	std::vector<Artist> artists;
+	artists.reserve(artistNames.size());
+	std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(artists),
+		[&](const std::string& name) { return Artist {name}; });
 
-	if (artistNames.size() == artistsMBID.size())
 	{
-		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::cbegin(artistsMBID), std::back_inserter(res),
-				[&](const std::string& name, const UUID& mbid) { return Artist{name, mbid}; });
-	}
-	else
-	{
-		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(res),
-				[&](const std::string& name) { return Artist{name, {}}; });
+		const std::vector<std::string> artistSortNames {getPropertyValuesAs<std::string>(properties, "ALBUMARTISTSORT")};
+		if (artistSortNames.size() == artists.size())
+		{
+			for (std::size_t i {}; i < artistSortNames.size(); ++i)
+				artists[i].sortName = artistSortNames[i];
+		}
 	}
 
-	return res;
+	{
+		const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"})};
+
+		if (artistsMBID.size() == artists.size())
+		{
+			for (std::size_t i {}; i < artistsMBID.size(); ++i)
+				artists[i].musicBrainzArtistID = artistsMBID[i];
+		}
+	}
+
+	return artists;
 }
 
 static

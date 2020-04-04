@@ -40,7 +40,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	14
+#define LMS_DATABASE_VERSION	15
 
 using Version = std::size_t;
 
@@ -160,6 +160,12 @@ CREATE TABLE IF NOT EXISTS "track_bookmark" (
 		else if (version == 13)
 		{
 			// Always store UUID in lower case + better WMA parsing
+			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+			ScanSettings::get(*this).modify()->incScanVersion();
+		}
+		else if (version == 14)
+		{
+			// SortName now set from metadata
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
 		}

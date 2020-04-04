@@ -24,6 +24,7 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <string_view>
 #include <vector>
 
 #include "utils/UUID.hpp"
@@ -35,7 +36,11 @@ namespace MetaData
 	struct Artist
 	{
 		std::string name;
+		std::optional<std::string> sortName;
 		std::optional<UUID> musicBrainzArtistID;
+
+		Artist(std::string_view _name) : name {_name} {}
+		Artist(std::string_view _name, std::optional<std::string> _sortName, std::optional<UUID> _musicBrainzArtistID) : name {_name}, sortName {_sortName}, musicBrainzArtistID {_musicBrainzArtistID} {}
 	};
 
 	struct Album
