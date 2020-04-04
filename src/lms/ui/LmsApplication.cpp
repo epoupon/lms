@@ -293,7 +293,7 @@ LmsApplication::handleException(LmsApplicationException& e)
 	btn->clicked().connect([this]()
 	{
 		setConfirmCloseMessage("");
-		redirect("/");
+		redirect(".");
 	});
 }
 
@@ -302,7 +302,7 @@ LmsApplication::goHomeAndQuit()
 {
 	setConfirmCloseMessage("");
 	WApplication::quit("");
-	redirect("/");
+	redirect(".");
 }
 
 enum IdxRoot
