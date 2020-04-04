@@ -95,7 +95,7 @@ Artists::addSome()
 			clusterIds,
 			searchKeywords,
 			linkModel->getValue(_linkType->currentIndex()),
-			Artist::NameSortMethod::BySortName,
+			Artist::SortMethod::BySortName,
 			_container->count(), 20, moreResults)};
 
 	for (const auto& artist : artists)

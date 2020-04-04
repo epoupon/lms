@@ -45,7 +45,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 {
 	public:
 
-		enum class NameSortMethod
+		enum class SortMethod
 		{
 			None,
 			ByName,
@@ -60,21 +60,21 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		// Accessors
 		static pointer			getByMBID(Session& session, const UUID& MBID);
 		static pointer			getById(Session& session, IdType id);
-		static std::vector<pointer>	getByName(Session& session, const std::string& name);
+		static std::vector<pointer>	getByName(Session& session, const std::string& name);		// exact match on name field
 		static std::vector<pointer> 	getByClusters(Session& session,
 								const std::set<IdType>& clusters,		// at least one track that belongs to  these clusters
-								NameSortMethod sortMethod
+								SortMethod sortMethod
 								);
 		static std::vector<pointer> 	getByFilter(Session& session,
 								const std::set<IdType>& clusters,		// if non empty, at least one artist that belongs to these clusters
-								const std::vector<std::string>& keywords,	// if non empty, name must match all of these keywords
+								const std::vector<std::string>& keywords,	// if non empty, name must match all of these keywords (name + sort name fields)
 								std::optional<TrackArtistLink::Type> linkType, 	// if set, only artists that have produced at least one track with this link type
-								NameSortMethod sortMethod,
+								SortMethod sortMethod,
 								std::optional<std::size_t> offset,
 								std::optional<std::size_t> size,
 								bool& moreExpected);
 
-		static std::vector<pointer>	getAll(Session& session, NameSortMethod sortMethod, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getAll(Session& session, SortMethod sortMethod, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
 		static std::vector<IdType>	getAllIds(Session& session);
 		static std::vector<pointer>	getAllOrphans(Session& session); // No track related
 		static std::vector<pointer>	getLastAdded(Session& session, Wt::WDateTime after, std::optional<std::size_t> size = {});

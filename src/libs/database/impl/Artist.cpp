@@ -80,7 +80,7 @@ getQuery(Session& session,
 		const std::set<IdType>& clusterIds,
 		const std::vector<std::string>& keywords,
 		std::optional<TrackArtistLink::Type> linkType,
-		Artist::NameSortMethod sortMethod)
+		Artist::SortMethod sortMethod)
 {
 	session.checkSharedLocked();
 
@@ -89,8 +89,19 @@ getQuery(Session& session,
 	std::ostringstream oss;
 	oss << "SELECT DISTINCT a FROM artist a";
 
-	for (auto keyword : keywords)
-		where.And(WhereClause("a.name LIKE ?")).bind("%%" + keyword + "%%");
+	if (!keywords.empty())
+	{
+		WhereClause whereKeywordsName;
+		WhereClause whereKeywordsSortName;
+
+		for (auto keyword : keywords)
+		{
+			whereKeywordsName.And(WhereClause("a.name LIKE ?")).bind("%%" + keyword + "%%");
+			whereKeywordsSortName.And(WhereClause("a.sort_name LIKE ?")).bind("%%" + keyword + "%%");
+		}
+
+		where.And(whereKeywordsName.Or(whereKeywordsSortName));
+	}
 
 	if (!clusterIds.empty() || linkType)
 	{
@@ -116,12 +127,12 @@ getQuery(Session& session,
 
 	switch (sortMethod)
 	{
-		case Artist::NameSortMethod::None:
+		case Artist::SortMethod::None:
 			break;
-		case Artist::NameSortMethod::ByName:
+		case Artist::SortMethod::ByName:
 			oss << " ORDER BY a.name COLLATE NOCASE";
 			break;
-		case Artist::NameSortMethod::BySortName:
+		case Artist::SortMethod::BySortName:
 			oss << " ORDER BY a.sort_name COLLATE NOCASE";
 			break;
 	}
@@ -137,7 +148,7 @@ getQuery(Session& session,
 }
 
 std::vector<Artist::pointer>
-Artist::getAll(Session& session, NameSortMethod sortMethod, std::optional<std::size_t> offset, std::optional<std::size_t> size)
+Artist::getAll(Session& session, SortMethod sortMethod, std::optional<std::size_t> offset, std::optional<std::size_t> size)
 {
 	session.checkSharedLocked();
 
@@ -181,7 +192,7 @@ Artist::getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit
 }
 
 std::vector<Artist::pointer>
-Artist::getByClusters(Session& session, const std::set<IdType>& clusters, NameSortMethod sortMethod)
+Artist::getByClusters(Session& session, const std::set<IdType>& clusters, SortMethod sortMethod)
 {
 	assert(!clusters.empty());
 
@@ -195,7 +206,7 @@ Artist::getByFilter(Session& session,
 		const std::set<IdType>& clusters,
 		const std::vector<std::string>& keywords,
 		std::optional<TrackArtistLink::Type> linkType,
-		NameSortMethod sortMethod,
+		SortMethod sortMethod,
 		std::optional<std::size_t> offset,
 		std::optional<std::size_t> size,
 		bool& moreResults)
