@@ -63,6 +63,15 @@ Image::load(const std::vector<unsigned char>& rawData)
 
 		return true;
 	}
+	catch (Magick::WarningCoder& e)
+	{
+		return true;
+	}
+	catch (Magick::Warning& e)
+	{
+		LMS_LOG(COVER, WARNING) << "Caught Magick warning while loading raw image: " << e.what();
+		return false;
+	}
 	catch (Magick::Exception& e)
 	{
 		LMS_LOG(COVER, ERROR) << "Caught Magick exception while loading raw image: " << e.what();
@@ -78,6 +87,15 @@ Image::load(const std::filesystem::path& p)
 		_image.read(p.string());
 
 		return true;
+	}
+	catch (Magick::WarningCoder& e)
+	{
+		return true;
+	}
+	catch (Magick::Warning& e)
+	{
+		LMS_LOG(COVER, WARNING) << "Caught Magick warning while loading raw image: " << e.what();
+		return false;
 	}
 	catch (Magick::Exception& e)
 	{

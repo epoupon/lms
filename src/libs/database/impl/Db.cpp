@@ -34,6 +34,7 @@ Db::Db(const std::filesystem::path& dbPath)
 
 	std::unique_ptr<Wt::Dbo::backend::Sqlite3> connection {std::make_unique<Wt::Dbo::backend::Sqlite3>(dbPath.string())};
 	connection->executeSql("pragma journal_mode=WAL");
+	connection->executeSql("pragma synchronous=normal");
 //	connection->setProperty("show-queries", "true");
 
 	auto connectionPool = std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), 10);
