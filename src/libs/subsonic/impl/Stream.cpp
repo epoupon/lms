@@ -100,6 +100,7 @@ getStreamParameters(RequestContext& context)
 
 			transcodeParameters.bitrate = *maxBitRate * 1000;
 			transcodeParameters.encoding = userTranscodeFormatToAvEncoding(user->getAudioTranscodeFormat());
+			transcodeParameters.stripMetadata = false; // We want clients to use metadata (offline use, replay gain, etc.)
 
 			parameters.transcodeParameters = std::move(transcodeParameters);
 		}

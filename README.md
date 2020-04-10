@@ -98,6 +98,7 @@ Get the latest stable release and build it:
 git clone https://github.com/epoupon/lms.git lms
 cd lms
 mkdir build
+cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
 __Note__: in order to customize the installation directory, you can use the _-DCMAKE_INSTALL_PREFIX_ option (defaults to `/usr/local`).
@@ -162,6 +163,19 @@ _LMS_ uses a configuration file, installed by default in `/etc/lms.conf`. It is 
 All other settings are set using the web interface (user management, scan settings, transcode settings, ...).
 
 If a setting is not present in the configuration file, a hardcoded default value is used (the same as in the [default.conf](https://github.com/epoupon/lms/blob/master/conf/lms.conf) file)
+
+### Deploy on non root path
+If you want to deploy on non root path (e.g. https://mydomain.com/newroot/), you have to set the `deploy-path` option accordingly in `lms.conf`.
+
+As static resources are __not__ related to the `deploy-path` option, you have to perform the following steps if you want them to be on a non root path too:
+* Create a new intermediary `newroot` directory in `/usr/share/lms/docroot` and move everything in it.
+* Symlink `/usr/share/lms/docroot/newroot/resources` to `/usr/share/Wt/resources`.
+* Edit `lms.conf` and set:
+```
+wt-resources = "" # do not comment the whole line
+docroot = "/usr/share/lms/docroot/;/newroot/resources,/newroot/css,/newroot/images,/newroot/js,/newroot/favicon.ico";`
+deploy-path = "/newroot/"; # ending slash is important
+```
 
 ### Reverse proxy settings
 _LMS_ is shipped with an embedded web server, but it is recommended to deploy behind a reverse proxy. You have to set the _behind-reverse-proxy_ option to _true_ in the `lms.conf` configuration file.

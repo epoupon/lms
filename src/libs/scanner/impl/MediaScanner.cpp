@@ -84,6 +84,38 @@ isPathInParentPath(const std::filesystem::path& path, const std::filesystem::pat
 	return false;
 }
 
+static
+Artist::pointer
+createArtist(Session& session, const MetaData::Artist& artistInfo)
+{
+	Artist::pointer artist {Artist::create(session, artistInfo.name)};
+
+	if (artistInfo.musicBrainzArtistID)
+		artist.modify()->setMBID(*artistInfo.musicBrainzArtistID);
+	if (artistInfo.sortName)
+		artist.modify()->setSortName(*artistInfo.sortName);
+
+	return artist;
+}
+
+static
+void
+updateArtistIfNeeded(const Artist::pointer& artist, const MetaData::Artist& artistInfo)
+{
+	// Name may have been updated
+	if (artist->getName() != artistInfo.name)
+	{
+		artist.modify()->setName(artistInfo.name);
+	}
+
+	// Sortname may have been updated
+	if (artistInfo.sortName && *artistInfo.sortName != artist->getSortName() )
+	{
+		LMS_LOG(DBUPDATER, INFO) << "Setting sort name = '" << *artistInfo.sortName << "'";
+		artist.modify()->setSortName(*artistInfo.sortName);
+	}
+}
+
 std::vector<Artist::pointer>
 getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artistsInfo)
 {
@@ -98,14 +130,9 @@ getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artist
 		{
 			artist = Artist::getByMBID(session, *artistInfo.musicBrainzArtistID);
 			if (!artist)
-			{
-				artist = Artist::create(session, artistInfo.name, artistInfo.musicBrainzArtistID);
-			}
-			else if (artist->getName() != artistInfo.name)
-			{
-				// Name may have been updated
-				artist.modify()->setName(artistInfo.name);
-			}
+				artist = createArtist(session, artistInfo);
+			else
+				updateArtistIfNeeded(artist, artistInfo);
 
 			artists.emplace_back(std::move(artist));
 			continue;
@@ -126,7 +153,9 @@ getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artist
 
 			// No Artist found with the same name and without MBID -> creating
 			if (!artist)
-				artist = Artist::create(session, artistInfo.name);
+				artist = createArtist(session, artistInfo);
+			else
+				updateArtistIfNeeded(artist, artistInfo);
 
 			artists.emplace_back(std::move(artist));
 			continue;
@@ -430,9 +459,7 @@ MediaScanner::scan(boost::system::error_code err)
 
 	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << "/" << stats.featuresToFetch <<",  duplicates = " << stats.duplicates.size();
 
-	LMS_LOG(DBUPDATER, INFO) << "Optimizing db...";
 	_dbSession.optimize();
-	LMS_LOG(DBUPDATER, INFO) << "Optimize db done!";
 
 	if (_running)
 	{
