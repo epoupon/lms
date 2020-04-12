@@ -13,8 +13,8 @@
 	        </div>
 	</div>
 	<div class="page-header">
-		<h3>${name}</h3>
-		${<if-has-artist>}<h4>${artist class="Lms-explore-artistname"}</h4>${</if-has-artist>}
+		<h3><div class="Lms-releasename text-primary">${name}</div></h3>
+		${<if-has-artist>}<h4>${artist class="Lms-artistname text-muted"}</h4>${</if-has-artist>}
 		<h4><small>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</small></h4>
 		${clusters}
 		${play-btn}${add-btn}
@@ -23,19 +23,19 @@
 </message>
 
 <message id="Lms.Explore.Release.template.entry">
-	<div class="row Lms-explore-release-entry Lms-vertical-align">
-		<div class="col-xs-1 Lms-explore-release-entry-tracknumber">
+	<div class="row Lms-explore-release-entry Lms-entry-hoverable Lms-vertical-align">
+		<div class="col-xs-1 Lms-explore-release-entry-tracknumber text-muted">
 			${<if-has-disc-number>}${disc-number}-${</if-has-disc-number>}${<if-has-track-number>}${track-number}${</if-has-track-number>}
 		</div>
 		<div class="col-xs-8 Lms-explore-release-entry-name">
-			${name}
-			${<if-has-artists>}<small>${artists}</small>${</if-has-artists>}
+			<div class="Lms-trackname text-primary">${name}</div>
+			${<if-has-artists>}${artists}${</if-has-artists>}
 		</div>
 		<div class="col-xs-3">
 			<div class="Lms-explore-release-entry-controls">
 				${play-btn}${add-btn}
 			</div>
-			<div class="Lms-explore-release-entry-track-duration">
+			<div class="Lms-explore-release-entry-track-duration text-muted">
 				${duration}
 			</div>
 		</div>
@@ -43,7 +43,7 @@
 </message>
 
 <message id="Lms.Explore.Release.template.entry-artist">
-	${artist class="Lms-explore-artistname"}
+	<small>${artist class="Lms-artistname text-muted"}</small>
 </message>
 
 </messages>

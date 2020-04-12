@@ -23,19 +23,19 @@
 </message>
 
 <message id="Lms.Explore.Tracks.template.entry">
-	<div class="row Lms-explore-tracks-entry Lms-vertical-align">
+	<div class="row Lms-explore-tracks-entry Lms-entry-hoverable Lms-vertical-align">
 		<div class="col-xs-9 Lms-explore-tracks-entry-name">
-			<h4>${name}</h4>
+			<h4><div class="Lms-trackname text-primary">${name}</div></h4>
 			${<if-has-artists-or-release>}
-			${<if-has-release>}<small>${release class="Lms-explore-releasename"}</small>${</if-has-release>}
-			${<if-has-artists>}<small>${artists}</small>${</if-has-artists>}
+			${<if-has-release>}<small>${release class="Lms-releasename text-primary"}</small>${</if-has-release>}
+			${<if-has-artists>}${artists}${</if-has-artists>}
 			${</if-has-artists-or-release>}
 		</div>
 		<div class="col-xs-3">
 			<div class="Lms-explore-tracks-entry-controls">
 				${play-btn}${add-btn}
 			</div>
-			<div class="Lms-explore-tracks-entry-duration">
+			<div class="Lms-explore-tracks-entry-duration text-muted">
 				${duration}
 			</div>
 		</div>
@@ -43,7 +43,7 @@
 </message>
 
 <message id="Lms.Explore.Tracks.template.entry-artist">
-	${artist class="Lms-explore-artistname"}
+	<small>${artist class="Lms-artistname text-muted"}</small>
 </message>
 
 </messages>

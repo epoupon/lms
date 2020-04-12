@@ -6,7 +6,7 @@
 	<div class="container">
 		${contents class="Lms-contents"}
 	</div>
-	${player class="Lms-player"}
+	${player class="Lms-player well well-sm"}
 </message>
 
 </messages>

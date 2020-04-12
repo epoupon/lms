@@ -7,18 +7,18 @@
 			${contents class="Lms-explore-contents"}
 		</div>
 		<div class="col-lg-4">
-			${filters class="Lms-explore-filters"}
-			${info class="Lms-explore-info"}
+			${filters class="well well-sm"}
+			${info class="well well-sm"}
 		</div>
 	</div>
 </message>
 
 <message id="Lms.Explore.template.add-btn">
-	<i class="fa fa-plus-circle Lms-explore-btn"></i>
+	<i class="fa fa-plus-circle Lms-explore-btn Lms-control-btn"></i>
 </message>
 
 <message id="Lms.Explore.template.play-btn">
-	<i class="fa fa-play-circle Lms-explore-btn"></i>
+	<i class="fa fa-play-circle Lms-explore-btn Lms-control-btn"></i>
 </message>
 
 <message id="Lms.Explore.template.filters">
