@@ -22,6 +22,7 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WBootstrapTheme.h>
 #include <Wt/WEnvironment.h>
+#include <Wt/WLinkedCssStyleSheet.h>
 #include <Wt/WMenu.h>
 #include <Wt/WNavigationBar.h>
 #include <Wt/WPopupMenu.h>
@@ -115,7 +116,25 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
   _dbSession {db},
   _appGroups {appGroups}
 {
-	auto  bootstrapTheme = std::make_unique<Wt::WBootstrapTheme>();
+
+	class MyTheme : public Wt::WBootstrapTheme
+	{
+		private:
+			std::vector<Wt::WLinkedCssStyleSheet> styleSheets() const override
+			{
+				return
+				{
+					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/bootstrap-flatly.min.css"}},
+					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/lms-flatly.css"}},
+//					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/bootstrap-darkly.min.css"}},
+//					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/lms-darkly.css"}},
+//					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/bootstrap-slate.css"}},
+					Wt::WLinkedCssStyleSheet { Wt::WLink {"resources/themes/bootstrap/3/wt.css"}},
+				};
+			}
+	};
+
+	auto  bootstrapTheme = std::make_unique<MyTheme>();
 	bootstrapTheme->setVersion(Wt::BootstrapVersion::v3);
 	bootstrapTheme->setResponsive(true);
 	setTheme(std::move(bootstrapTheme));

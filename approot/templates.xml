@@ -2,7 +2,7 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.template">
-	${navbar-top class="main-nav"}
+	${navbar-top class="Lms-navbar"}
 	<div class="container">
 		${contents class="Lms-contents"}
 	</div>

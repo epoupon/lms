@@ -17,32 +17,6 @@ a, a:link, a:active, a:visited {
 	margin-bottom: 78px;
 }
 
-/* Themable items */
-
-/* Base style for artist names */
-.Lms-artistname {
-	font-style: normal;
-}
-
-/* Base style for release names */
-.Lms-releasename {
-	font-style: normal;
-}
-
-.Lms-trackname {
-	font-style: normal;
-}
-
-.Lms-entry-hoverable:hover {
-/*	filter: drop-shadow(0 0 0.2rem darkgrey); */
-}
-
-.Lms-control-btn:hover {
-	color: #337ab7;
-}
-
-/* endof Themable items */
-
 .Lms-show-more {
 	margin-top: 8px;
 	margin-bottom: 8px;
@@ -66,6 +40,14 @@ a, a:link, a:active, a:visited {
 
 .Lms-admin-users-entry-btn {
 	margin-right: 8px;
+}
+
+.Lms-artistname {
+	color: var(--body-color);
+}
+
+a.Lms-artistname:hover, a.Lms-artistname:focus {
+	color: var(--hover-color);
 }
 
 .Lms-cluster {
@@ -127,8 +109,29 @@ a, a:link, a:active, a:visited {
 	margin-bottom: 4px;
 }
 
+.Lms-control-btn:hover {
+	color: var(--hover-color);
+}
+
 .Lms-cover:hover {
 	filter: brightness(130%);
+}
+
+.Lms-cover-small {
+	width: 64px; /* some cover may not be square */
+	border-radius: 10px;
+	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+.Lms-cover-medium {
+	width: 128px;
+	border-radius: 16px;
+	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+.Lms-cover-large {
+	border-radius: 16px;
+	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Lms-explore-contents {
@@ -142,8 +145,6 @@ a, a:link, a:active, a:visited {
 
 .Lms-explore-release-cover {
 	max-width: 100%;
-	border-radius: 8px;
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Lms-explore-release-entry-tracknumber {
@@ -250,6 +251,9 @@ a, a:link, a:active, a:visited {
 	cursor: pointer;
 }
 
+.Lms-navbar {
+	border-radius: 0px;
+}
 
 .Lms-playqueue-entry {
 	min-height: 32px;
@@ -327,26 +331,19 @@ a, a:link, a:active, a:visited {
 	width: 0.9em;
 }
 
+.Lms-player-controls {
+	text-align: center;
+	white-space: nowrap;
+}
+
 .Lms-player-duration {
 	line-height: 40px;
 	text-align: right;
 	white-space: nowrap;
 }
 
-.Lms-player-seek-container {
-	margin-top: 8px;
-	margin-bottom: 8px;
-	position: relative;
-	width: 100%;
-	height: 8px;
-}
-
-.Lms-player-seek-common {
-	position: absolute;
-	width:100%;
-	top: 0px;
-	left: 0px;
-	height: 8px;
+.Lms-player-progress {
+	background-color: var(--slider-background-color);
 }
 
 .Lms-player-seek {
@@ -367,16 +364,28 @@ a, a:link, a:active, a:visited {
 	width: 0px;
 }
 
+.Lms-player-seek-container {
+	margin-top: 8px;
+	margin-bottom: 8px;
+	position: relative;
+	width: 100%;
+	height: 8px;
+}
+
+.Lms-player-seek-common {
+	position: absolute;
+	width:100%;
+	top: 0px;
+	left: 0px;
+	height: 8px;
+	border-radius: 4px;
+}
+
 .Lms-player-seek::-moz-range-thumb {
 	-webkit-appearance: none;
 	-moz-appearance: none;
 	height: 0px;
 	width: 0px;
-}
-
-.Lms-player-controls {
-	text-align: center;
-	white-space: nowrap;
 }
 
 .Lms-player-text-center {
@@ -397,10 +406,20 @@ a, a:link, a:active, a:visited {
 	display: flex;
 }
 
-.Lms-player-volume-slider-container {
-	display: inline-block;
-	width: 85px;
-	margin: auto;
+.Lms-player-volume-slider::-webkit-slider-thumb {
+	background-color: var(--body-color);
+}
+
+.Lms-player-volume-slider::-webkit-slider-thumb:hover {
+	background-color: var(--hover-color);
+}
+
+.Lms-player-volume-slider::-moz-range-thumb {
+	background-color: var(--body-color);
+}
+
+.Lms-player-volume-slider::-moz-range-thumb:hover {
+	background-color: var(--hover-color);
 }
 
 .Lms-player-volume-slider {
@@ -411,9 +430,9 @@ a, a:link, a:active, a:visited {
 	outline: none;
 	cursor: pointer;
 	border-radius: 4px;
-	background-color: inherit;
 	border-style: solid;
 	border-width: thin;
+	background-color: var(--slider-background-color);
 }
 
 .Lms-player-volume-slider::-webkit-slider-thumb {
@@ -422,21 +441,25 @@ a, a:link, a:active, a:visited {
 	width: 14px;
 	height: 14px;
 	border-radius: 7px;
-	background: darkgrey;
 }
 
 .Lms-player-volume-slider::-moz-range-thumb {
 	width: 14px;
 	height: 14px;
 	border-radius: 7px;
-	background: darkgrey;
 }
 
-.Lms-player-volume-slider::-webkit-slider-thumb:hover {
-	background: #337ab7;
+.Lms-player-volume-slider-container {
+	display: inline-block;
+	width: 85px;
+	margin: auto;
 }
 
-.Lms-player-volume-slider::-moz-range-thumb:hover {
-	background: #337ab7;
+.Lms-releasename {
+	color:  var(--body-color);
+}
+
+a.Lms-releasename:hover, a.Lms-releasename:focus {
+	color: var(--hover-color);
 }
 

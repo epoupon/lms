@@ -1,0 +1,37 @@
+:root {
+  --hover-color: #00bc8c;
+  --body-color: #cacaca;
+  --slider-background-color: #5a5a5a;
+}
+
+.Lms-artistname.text-muted {
+	font-style: italic;
+	color: #7e7e7e;
+}
+
+.Lms-player-btn {
+	color: var(--body-color)
+}
+
+.Lms-releasename.text-primary, .Lms-releasename.text-primary:hover {
+	color: var(--body-color)
+}
+
+a.Lms-releasename.text-primary:hover {
+	color: var(--hover-color)
+}
+
+.Lms-trackname.text-primary, .Lms-trackname.text-primary:hover {
+	color: var(--body-color)
+}
+
+/*
+.Lms-entry-hoverable:hover {
+	filter: drop-shadow(0 0 0.2rem darkgrey);
+}
+*/
+
+.media, .media-body {
+	overflow: visible;
+}
+

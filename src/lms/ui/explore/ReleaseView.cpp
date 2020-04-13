@@ -114,7 +114,10 @@ Release::refresh()
 		}
 	}
 
-	t->bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 512)));
+	{
+		Wt::WImage* cover {t->bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 512)))};
+		cover->setStyleClass("Lms-cover-large");
+	}
 
 	Wt::WContainerWidget* clusterContainers {t->bindNew<Wt::WContainerWidget>("clusters")};
 	{
