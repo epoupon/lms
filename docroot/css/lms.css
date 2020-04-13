@@ -308,7 +308,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-player {
-	z-index: 2;
+	z-index: 3;
 	position: fixed;
 	bottom: 0;
 	width: 100%;
