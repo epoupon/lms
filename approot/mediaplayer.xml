@@ -14,10 +14,8 @@
 		</div>
 
 		<div class="row">
-			<div class="col-xs-4 col-sm-2 Lms-player-controls">
-				<i id="lms-mp-previous" class="fa fa-step-backward Lms-player-btn Lms-control-btn Lms-player-btn-controls"></i>
-				<i id="lms-mp-playpause" class="fa fa-play Lms-player-btn Lms-control-btn Lms-player-btn-controls"></i>
-				<i id="lms-mp-next" class="fa fa-step-forward Lms-player-btn Lms-control-btn Lms-player-btn-controls"></i>
+			<div class="col-xs-5 col-sm-2 Lms-player-controls">
+				<i id="lms-mp-previous" class="fa fa-step-backward Lms-player-btn Lms-control-btn Lms-player-btn-controls"></i><i id="lms-mp-playpause" class="fa fa-play Lms-player-btn Lms-control-btn Lms-player-btn-controls"></i><i id="lms-mp-next" class="fa fa-step-forward Lms-player-btn Lms-control-btn Lms-player-btn-controls"></i>
 			</div>
 			<div class="hidden-xs col-sm-2">
 				<div class="Lms-player-volume">
@@ -27,7 +25,7 @@
 					</span>
 				</div>
 			</div>
-			<div class="col-xs-8 col-sm-6">
+			<div class="col-xs-7 col-sm-6">
 				<div class="Lms-player-text-center">
 					${title class="Lms-player-text Lms-trackname text-primary"}
 				</div>

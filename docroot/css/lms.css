@@ -308,6 +308,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-player {
+	z-index: 2;
 	position: fixed;
 	bottom: 0;
 	width: 100%;
@@ -328,7 +329,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 .Lms-player-btn-controls {
 	font-size: 40px !important;
 	text-align: center;
-	width: 0.9em;
+	width: 1.1em;
 }
 
 .Lms-player-controls {
