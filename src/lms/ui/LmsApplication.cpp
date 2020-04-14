@@ -128,7 +128,6 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/lms-flatly.css"}},
 //					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/bootstrap-darkly.min.css"}},
 //					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/lms-darkly.css"}},
-//					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/bootstrap-slate.css"}},
 					Wt::WLinkedCssStyleSheet { Wt::WLink {"resources/themes/bootstrap/3/wt.css"}},
 				};
 			}

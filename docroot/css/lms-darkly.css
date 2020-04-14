@@ -9,6 +9,14 @@
 	color: #7e7e7e;
 }
 
+.Lms-artistname.text-primary, .Lms-artistname.text-primary:hover {
+	color: var(--body-color)
+}
+
+a.Lms-artistname.text-primary:hover {
+	color: var(--hover-color)
+}
+
 .Lms-player-btn {
 	color: var(--body-color)
 }

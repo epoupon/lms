@@ -53,6 +53,8 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 .Lms-cluster {
 	display: inline;
 	cursor: pointer;
+	line-height: 32px;
+	margin: 4px;
 }
 
 .Lms-cluster:hover {
@@ -247,7 +249,9 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-explore-btn {
-	font-size: 22px !important;
+	font-size: 24px !important;
+	text-align: center;
+	width: 28px;
 	cursor: pointer;
 }
 
@@ -270,7 +274,11 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 .Lms-playqueue-btn {
 	font-size: 22px !important;
 	cursor: pointer;
-	margin: 2px;
+}
+
+.text-success .Lms-playqueue-btn {
+	filter: brightness(130%);
+	filter: drop-shadow(0 0 0.65rem var(--hover-color));
 }
 
 .Lms-playqueue-entry-controls {

@@ -13,22 +13,15 @@
 	</div>
 </message>
 
-<message id="Lms.Explore.template.add-btn">
-	<i class="fa fa-plus-circle Lms-explore-btn Lms-control-btn"></i>
-</message>
-
-<message id="Lms.Explore.template.play-btn">
-	<i class="fa fa-play-circle Lms-explore-btn Lms-control-btn"></i>
-</message>
+<message id="Lms.Explore.template.add-btn"><i class="fa fa-plus-circle Lms-explore-btn Lms-control-btn"></i></message>
+<message id="Lms.Explore.template.play-btn"><i class="fa fa-play-circle Lms-explore-btn Lms-control-btn"></i></message>
 
 <message id="Lms.Explore.template.filters">
 	<h3>${tr:Lms.Explore.filters} ${add-filter class="btn-primary"}</h3>
 	${clusters}
 </message>
 
-<message id="Lms.Explore.template.cluster-entry">
-	<span class="badge {1}">${<if-can-delete>}<i class="fa fa-times-circle"></i> ${</if-can-delete>}${name}</span>
-</message>
+<message id="Lms.Explore.template.cluster-entry"><span class="badge {1}">${<if-can-delete>}<i class="fa fa-times-circle"></i> ${</if-can-delete>}${name}</span></message>
 
 <message id="Lms.Explore.template.add-filter">
 	<div class="form-horizontal">

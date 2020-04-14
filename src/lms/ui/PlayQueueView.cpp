@@ -163,13 +163,15 @@ PlayQueue::PlayQueue()
 void
 PlayQueue::updateRepeatBtn()
 {
-	_repeatBtn->toggleStyleClass("Lms-playqueue-btn-selected", _repeatAll);
+	_repeatBtn->toggleStyleClass("text-success", _repeatAll);
+	_repeatBtn->toggleStyleClass("text-muted", !_repeatAll);
 }
 
 void
 PlayQueue::updateRadioBtn()
 {
-	_radioBtn->toggleStyleClass("Lms-playqueue-btn-selected",_radioMode);
+	_radioBtn->toggleStyleClass("text-success",_radioMode);
+	_radioBtn->toggleStyleClass("text-muted", !_radioMode);
 }
 
 Database::TrackList::pointer
