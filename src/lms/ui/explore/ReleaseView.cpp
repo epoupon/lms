@@ -212,12 +212,12 @@ Release::refresh()
 
 		LmsApp->getEvents().trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId, bool /*play*/)
 		{
-			entry->bindString("is-playing", loadedTrackId == trackId ? "Lms-explore-release-entry-playing" : "");
+			entry->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
 		});
 
 		if (LmsApp->getEvents().lastLoadedTrackId && *LmsApp->getEvents().lastLoadedTrackId == trackId)
 		{
-			entry->bindString("is-playing", "Lms-explore-release-entry-playing");
+			entry->bindString("is-playing", "Lms-entry-playing");
 		}
 	}
 }

@@ -23,7 +23,7 @@
 </message>
 
 <message id="Lms.Explore.Tracks.template.entry">
-	<div class="row Lms-explore-tracks-entry Lms-entry-hoverable Lms-vertical-align">
+	<div class="row Lms-explore-tracks-entry Lms-entry-hoverable Lms-vertical-align ${is-playing}">
 		<div class="col-xs-9 Lms-explore-tracks-entry-name">
 			<h4><div class="Lms-trackname text-primary">${name}</div></h4>
 			${<if-has-artists-or-release>}
