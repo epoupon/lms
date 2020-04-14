@@ -25,11 +25,18 @@
 <message id="Lms.Explore.Tracks.template.entry">
 	<div class="row Lms-explore-tracks-entry Lms-entry-hoverable Lms-vertical-align ${is-playing}">
 		<div class="col-xs-9 Lms-explore-tracks-entry-name">
-			<h4><div class="Lms-trackname text-primary">${name}</div></h4>
-			${<if-has-artists-or-release>}
-			${<if-has-release>}<small>${release class="Lms-releasename text-primary"}</small>${</if-has-release>}
-			${<if-has-artists>}${artists}${</if-has-artists>}
-			${</if-has-artists-or-release>}
+			<div class="media">
+				<div class="media-left media-middle hidden-xs">
+					${cover class="media-object Lms-cover"}
+				</div>
+				<div class="media-body media-middle">
+					<h4><div class="Lms-trackname text-primary">${name}</div></h4>
+					${<if-has-artists-or-release>}
+					${<if-has-release>}<small>${release class="Lms-releasename text-primary"}</small>${</if-has-release>}
+					${<if-has-artists>}${artists}${</if-has-artists>}
+					${</if-has-artists-or-release>}
+				</div>
+			</div>
 		</div>
 		<div class="col-xs-3">
 			<div class="Lms-explore-tracks-entry-controls">

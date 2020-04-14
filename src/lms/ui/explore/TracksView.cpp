@@ -144,6 +144,19 @@ Tracks::addSome()
 		{
 			entry->setCondition("if-has-release", true);
 			entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
+			{
+				Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
+				auto cover = std::make_unique<Wt::WImage>();
+				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 96));
+				cover->setStyleClass("Lms-cover-small");
+				anchor->setImage(std::move(cover));
+			}
+		}
+		else
+		{
+			auto cover = entry->bindNew<Wt::WImage>("cover");
+			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(trackId, 96));
+			cover->setStyleClass("Lms-cover-small");
 		}
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
