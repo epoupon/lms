@@ -1,6 +1,7 @@
 :root {
   --hover-color: #00bc8c;
   --body-color: #cacaca;
+  --playing-background-color: #375a7f4f;
   --slider-background-color: #5a5a5a;
 }
 
@@ -17,7 +18,7 @@ a.Lms-artistname.text-primary:hover {
 	color: var(--hover-color)
 }
 
-.Lms-player-btn {
+.Lms-control-btn {
 	color: var(--body-color)
 }
 
@@ -32,12 +33,6 @@ a.Lms-releasename.text-primary:hover {
 .Lms-trackname.text-primary, .Lms-trackname.text-primary:hover {
 	color: var(--body-color)
 }
-
-/*
-.Lms-entry-hoverable:hover {
-	filter: drop-shadow(0 0 0.2rem darkgrey);
-}
-*/
 
 .media, .media-body {
 	overflow: visible;

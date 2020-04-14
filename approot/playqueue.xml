@@ -29,7 +29,7 @@
 <message id="Lms.PlayQueue.template.delete-btn"><i class="fa fa-fw fa-times-circle Lms-playqueue-btn Lms-control-btn"></i></message>
 
 <message id="Lms.PlayQueue.template.entry">
-	<div class="row Lms-playqueue-entry Lms-entry-hoverable Lms-vertical-align">
+	<div class="row Lms-playqueue-entry Lms-entry-hoverable Lms-vertical-align ${is-selected}">
 		<div class="col-xs-9 Lms-playqueue-entry-name">
 			<h4><div class="Lms-trackname text-primary">${name}</div></h4>
 			${<if-has-artists-or-release>}

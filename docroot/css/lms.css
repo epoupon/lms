@@ -179,6 +179,8 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 
 .Lms-explore-release-entry-playing {
 	font-weight: bold;
+	border-radius: 3px;
+	background-color: var(--playing-background-color);
 }
 
 .Lms-explore-release-entry-track-duration {
@@ -298,7 +300,9 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-playqueue-selected {
-	font-weight: 800;
+	font-weight: bold;
+	border-radius: 3px;
+	background-color: var(--playing-background-color);
 }
 
 .Lms-playqueue-selected h4 {

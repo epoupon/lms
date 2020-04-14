@@ -1,19 +1,14 @@
 :root {
-  --hover-color: #18bc9c;
   --body-color: #2c3e50;
-  --slider-background-color: #c0cfde;
+  --hover-color: #18bc9c;
+  --playing-background-color: #2c3e5029;
+  --slider-background-color: #2c3e5029;
 }
 
 .Lms-artistname.text-muted {
 	font-style: italic;
 	color: #7e8f9e;
 }
-
-/*
-.Lms-entry-hoverable:hover {
-	filter: drop-shadow(0 0 0.2rem darkgrey);
-}
-*/
 
 .media, .media-body {
 	overflow: visible;

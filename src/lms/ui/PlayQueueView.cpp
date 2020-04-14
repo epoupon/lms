@@ -284,14 +284,9 @@ PlayQueue::updateCurrentTrack(bool selected)
 	if (!_trackPos || *_trackPos >= static_cast<std::size_t>(_entriesContainer->count()))
 		return;
 
-	auto track = _entriesContainer->widget(*_trackPos);
-	if (track)
-	{
-		if (selected)
-			track->addStyleClass("Lms-playqueue-selected");
-		else
-			track->removeStyleClass("Lms-playqueue-selected");
-	}
+	Wt::WTemplate* entry {static_cast<Wt::WTemplate*>(_entriesContainer->widget(*_trackPos))};
+	if (entry)
+		entry->bindString("is-selected", selected ? "Lms-playqueue-selected" : "");
 }
 
 void

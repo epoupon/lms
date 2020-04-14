@@ -124,11 +124,11 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 			{
 				return
 				{
-					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/bootstrap-flatly.min.css"}},
-					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/lms-flatly.css"}},
-//					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/bootstrap-darkly.min.css"}},
-//					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/lms-darkly.css"}},
-					Wt::WLinkedCssStyleSheet { Wt::WLink {"resources/themes/bootstrap/3/wt.css"}},
+//					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/bootstrap-flatly.min.css"}},
+					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/bootstrap-darkly.min.css"}},
+					Wt::WLinkedCssStyleSheet {Wt::WLink {"resources/themes/bootstrap/3/wt.css"}},
+//					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/lms-flatly.css"}},
+					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/lms-darkly.css"}},
 				};
 			}
 	};
@@ -491,6 +491,7 @@ LmsApplication::createHome()
 	// Contents
 	// Order is important in mainStack, see IdxRoot!
 	Wt::WStackedWidget* mainStack = main->bindNew<Wt::WStackedWidget>("contents");
+	mainStack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
 
 	Explore* explore = mainStack->addNew<Explore>();
 	PlayQueue* playqueue = mainStack->addNew<PlayQueue>();
