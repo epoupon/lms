@@ -32,6 +32,7 @@
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
+#include "resource/ImageResource.hpp"
 #include "TrackStringUtils.hpp"
 #include "LmsApplication.hpp"
 
@@ -343,15 +344,15 @@ PlayQueue::addSome()
 	auto tracklistEntries = tracklist->getEntries(_entriesContainer->count(), 50);
 	for (const Database::TrackListEntry::pointer& tracklistEntry : tracklistEntries)
 	{
-		auto tracklistEntryId = tracklistEntry.id();
-		auto track = tracklistEntry->getTrack();
+		const auto tracklistEntryId {tracklistEntry.id()};
+		const auto track {tracklistEntry->getTrack()};
 
 		Wt::WTemplate* entry = _entriesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry"));
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-		auto artists {track->getArtists()};
-		auto release = track->getRelease();
+		const auto artists {track->getArtists()};
+		const auto release {track->getRelease()};
 
 		if (!artists.empty() || release)
 			entry->setCondition("if-has-artists-or-release", true);
@@ -370,7 +371,20 @@ PlayQueue::addSome()
 		if (release)
 		{
 			entry->setCondition("if-has-release", true);
-			entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
+			entry->bindWidget("release", LmsApplication::createReleaseAnchor(release));
+			{
+				Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
+				auto cover = std::make_unique<Wt::WImage>();
+				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 96));
+				cover->setStyleClass("Lms-cover-small");
+				anchor->setImage(std::move(cover));
+			}
+		}
+		else
+		{
+			auto cover = entry->bindNew<Wt::WImage>("cover");
+			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(track.id(), 96));
+			cover->setStyleClass("Lms-cover-small");
 		}
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
