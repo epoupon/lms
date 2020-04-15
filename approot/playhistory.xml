@@ -21,11 +21,19 @@
 <message id="Lms.PlayHistory.template.entry">
 	<div class="row Lms-playhistory-entry Lms-entry-hoverable Lms-vertical-align">
 		<div class="col-xs-12 Lms-playhistory-entry-name">
-			<h4><div class="Lms-trackname text-primary">${name}</div></h4>
-			${<if-has-artists-or-release>}
-			${<if-has-release>}<small>${release class="Lms-releasename text-primary"}</small>${</if-has-release>}
-			${<if-has-artists>}<small>${artists}</small>${</if-has-artists>}
-			${</if-has-artists-or-release>}
+			<div class="media">
+				<div class="media-left media-middle hidden-xs">
+					${cover class="media-object Lms-cover"}
+				</div>
+				<div class="media-body media-middle">
+
+					<h4><div class="Lms-trackname text-primary">${name}</div></h4>
+					${<if-has-artists-or-release>}
+					${<if-has-release>}<small>${release class="Lms-releasename text-primary"}</small>${</if-has-release>}
+					${<if-has-artists>}<small>${artists}</small>${</if-has-artists>}
+					${</if-has-artists-or-release>}
+				</div>
+			</div>
 		</div>
 	</div>
 </message>
