@@ -44,18 +44,20 @@ class SettingsModel : public Wt::WFormModel
 {
 	public:
 		// Associate each field with a unique string literal.
-		static const Field TranscodeEnableField;
-		static const Field TranscodeFormatField;
-		static const Field TranscodeBitrateField;
-		static const Field PasswordOldField;
-		static const Field PasswordField;
-		static const Field PasswordConfirmField;
+		static inline const Field DarkModeField {"dark-mode"};
+		static inline const Field TranscodeEnableField {"transcoding-enable"};
+		static inline const Field TranscodeFormatField {"transcoding-bitrate"};
+		static inline const Field TranscodeBitrateField {"transcoding-format"};
+		static inline const Field PasswordOldField {"password-old"};
+		static inline const Field PasswordField {"password"};
+		static inline const Field PasswordConfirmField {"password-confirm"};
 
 		SettingsModel(bool withOldPassword)
 			: _withOldPassword {withOldPassword}
 		{
 			initializeModels();
 
+			addField(DarkModeField);
 			addField(TranscodeEnableField);
 			addField(TranscodeBitrateField);
 			addField(TranscodeFormatField);
@@ -77,15 +79,16 @@ class SettingsModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			Database::User::PasswordHash passwordHash;
+			User::PasswordHash passwordHash;
 
 			if (!valueText(PasswordField).empty())
 				passwordHash = ServiceProvider<::Auth::IPasswordService>::get()->hashPassword(valueText(PasswordField).toUTF8());
 
 			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-			Database::User::pointer user {LmsApp->getUser()};
+			User::pointer user {LmsApp->getUser()};
 
+			user.modify()->setUITheme(Wt::asNumber(value(DarkModeField)) ? User::UITheme::Dark : User::UITheme::Light);
 			user.modify()->setAudioTranscodeEnable(Wt::asNumber(value(TranscodeEnableField)));
 
 			auto transcodeBitrateRow {_transcodeBitrateModel->getRowFromString(valueText(TranscodeBitrateField))};
@@ -106,6 +109,8 @@ class SettingsModel : public Wt::WFormModel
 		void loadData()
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+			setValue(DarkModeField, LmsApp->getUser()->getUITheme() == User::UITheme::Dark);
 
 			setValue(TranscodeEnableField, LmsApp->getUser()->getAudioTranscodeEnable());
 			if (!LmsApp->getUser()->getAudioTranscodeEnable())
@@ -223,13 +228,6 @@ class SettingsModel : public Wt::WFormModel
 		std::shared_ptr<ValueStringModel<AudioFormat>>	_transcodeFormatModel;
 };
 
-const Wt::WFormModel::Field SettingsModel::TranscodeEnableField		= "transcoding-enable";
-const Wt::WFormModel::Field SettingsModel::TranscodeBitrateField	= "transcoding-bitrate";
-const Wt::WFormModel::Field SettingsModel::TranscodeFormatField		= "transcoding-format";
-const Wt::WFormModel::Field SettingsModel::PasswordOldField		= "password-old";
-const Wt::WFormModel::Field SettingsModel::PasswordField		= "password";
-const Wt::WFormModel::Field SettingsModel::PasswordConfirmField		= "password-confirm";
-
 SettingsView::SettingsView()
 {
 	wApp->internalPathChanged().connect(std::bind([=]
@@ -251,6 +249,12 @@ SettingsView::refreshView()
 	auto t {addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Settings.template"))};
 
 	auto model {std::make_shared<SettingsModel>(!LmsApp->isUserAuthStrong())};
+
+	// Appearance
+	{
+		auto darkMode {std::make_unique<Wt::WCheckBox>()};
+		t->setFormWidget(SettingsModel::DarkModeField, std::move(darkMode));
+	}
 
 	// Old password
 	if (!LmsApp->isUserAuthStrong())

@@ -58,13 +58,47 @@
 
 namespace UserInterface {
 
+class LmsBooststrapTheme : public Wt::WBootstrapTheme
+{
+	public:
+		LmsBooststrapTheme(Database::User::UITheme theme) : _theme {theme} {}
+
+	private:
+		std::vector<Wt::WLinkedCssStyleSheet> styleSheets() const override
+		{
+			switch (_theme)
+			{
+				case Database::User::UITheme::Dark:
+					return
+					{
+						Wt::WLinkedCssStyleSheet {"css/bootstrap-darkly.min.css"},
+						Wt::WLinkedCssStyleSheet {"resources/themes/bootstrap/3/wt.css"},
+						Wt::WLinkedCssStyleSheet {"css/lms.css"},
+						Wt::WLinkedCssStyleSheet {"css/lms-darkly.css"},
+					};
+
+				case Database::User::UITheme::Light:
+					return
+					{
+						Wt::WLinkedCssStyleSheet {"css/bootstrap-flatly.min.css"},
+						Wt::WLinkedCssStyleSheet {"resources/themes/bootstrap/3/wt.css"},
+						Wt::WLinkedCssStyleSheet {"css/lms.css"},
+						Wt::WLinkedCssStyleSheet {"css/lms-flatly.css"},
+					};
+			}
+			return {};
+		}
+
+		Database::User::UITheme _theme;
+};
+
 std::unique_ptr<Wt::WApplication>
 LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups)
 {
 	return std::make_unique<LmsApplication>(env, db, appGroups);
 }
 
-LmsApplication*
+	LmsApplication*
 LmsApplication::instance()
 {
 	return reinterpret_cast<LmsApplication*>(Wt::WApplication::instance());
@@ -116,31 +150,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
   _dbSession {db},
   _appGroups {appGroups}
 {
-
-	class MyTheme : public Wt::WBootstrapTheme
-	{
-		private:
-			std::vector<Wt::WLinkedCssStyleSheet> styleSheets() const override
-			{
-				return
-				{
-//					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/bootstrap-flatly.min.css"}},
-					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/bootstrap-darkly.min.css"}},
-					Wt::WLinkedCssStyleSheet {Wt::WLink {"resources/themes/bootstrap/3/wt.css"}},
-//					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/lms-flatly.css"}},
-					Wt::WLinkedCssStyleSheet {Wt::WLink {"css/lms-darkly.css"}},
-				};
-			}
-	};
-
-	auto  bootstrapTheme = std::make_unique<MyTheme>();
-	bootstrapTheme->setVersion(Wt::BootstrapVersion::v3);
-	bootstrapTheme->setResponsive(true);
-	setTheme(std::move(bootstrapTheme));
-
 	addMetaHeader(Wt::MetaHeaderType::Meta, "viewport", "width=device-width, user-scalable=no");
 
-	useStyleSheet("css/lms.css");
 	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
 
 	// Add a resource bundle
@@ -196,6 +207,22 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	}
 
 	const auto userId {processAuthToken(env)};
+
+	{
+		Database::User::UITheme theme {Database::User::defaultUITheme};
+		if (userId)
+		{
+			auto transaction {_dbSession.createSharedTransaction()};
+			const auto user {Database::User::getById(_dbSession, *userId)};
+			if (user)
+				theme = user->getUITheme();
+		}
+		auto LmsTheme {std::make_unique<LmsBooststrapTheme>(theme)};
+		LmsTheme->setVersion(Wt::BootstrapVersion::v3);
+		LmsTheme->setResponsive(true);
+		setTheme(std::move(LmsTheme));
+	}
+
 	if (userId)
 	{
 		try

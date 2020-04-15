@@ -40,7 +40,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	15
+#define LMS_DATABASE_VERSION	16
 
 using Version = std::size_t;
 
@@ -168,6 +168,10 @@ CREATE TABLE IF NOT EXISTS "track_bookmark" (
 			// SortName now set from metadata
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
+		}
+		else if (version == 15)
+		{
+			_session.execute("ALTER TABLE user ADD ui_theme INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(User::defaultUITheme)) + ")");
 		}
 		else
 		{
