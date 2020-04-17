@@ -31,6 +31,7 @@
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
+#include "database/SubsonicSettings.hpp"
 #include "database/Track.hpp"
 #include "database/TrackBookmark.hpp"
 #include "database/TrackArtistLink.hpp"
@@ -40,7 +41,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	18
+#define LMS_DATABASE_VERSION	19
 
 using Version = std::size_t;
 
@@ -206,6 +207,16 @@ CREATE TABLE "release_backup" (
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
 		}
+		else if (version == 18)
+		{
+			_session.execute(R"(
+CREATE TABLE IF NOT EXISTS "subsonic_settings" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "api_enabled" boolean not null,
+  "artist_list_mode" integer not null
+))");
+		}
 		else
 		{
 			LMS_LOG(DB, ERROR) << "Database version " << version << " cannot be handled using migration";
@@ -228,6 +239,7 @@ Session::Session(Db& db)
 	_session.mapClass<ClusterType>("cluster_type");
 	_session.mapClass<Release>("release");
 	_session.mapClass<ScanSettings>("scan_settings");
+	_session.mapClass<SubsonicSettings>("subsonic_settings");
 	_session.mapClass<Track>("track");
 	_session.mapClass<TrackBookmark>("track_bookmark");
 	_session.mapClass<TrackArtistLink>("track_artist_link");
@@ -353,6 +365,7 @@ Session::prepareTables()
 		auto uniqueTransaction {createUniqueTransaction()};
 
 		ScanSettings::init(*this);
+		SubsonicSettings::init(*this);
 	}
 }
 

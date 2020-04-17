@@ -19,7 +19,6 @@
 
 #include "UserView.hpp"
 
-#include <Wt/WApplication.h>
 #include <Wt/WCheckBox.h>
 #include <Wt/WComboBox.h>
 #include <Wt/WLineEdit.h>

@@ -68,6 +68,14 @@
 <message id="Lms.Admin.Database.Status.status-scheduled">Scheduled on {1}</message>
 <message id="Lms.Admin.Database.Status.status-in-progress">Scanning {1} of {2} files ({3} %)</message>
 
+<!--Subsonic-->
+<message id="Lms.Admin.Subsonic.all-artists">All artists</message>
+<message id="Lms.Admin.Subsonic.release-artists">Album artists</message>
+<message id="Lms.Admin.Subsonic.enable-api">Enable</message>
+<message id="Lms.Admin.Subsonic.artist-list-mode">Artist list mode</message>
+<message id="Lms.Admin.Subsonic.need-restart">You must restart the service for this change to take effect</message>
+<message id="Lms.Admin.Subsonic.subsonic">Subsonic API</message>
+
 <!--Users-->
 <message id="Lms.Admin.Users.add">New user</message>
 <message id="Lms.Admin.Users.admin">Admin</message>

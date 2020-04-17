@@ -43,6 +43,7 @@
 #include "admin/DatabaseSettingsView.hpp"
 #include "admin/UserView.hpp"
 #include "admin/UsersView.hpp"
+#include "admin/SubsonicView.hpp"
 #include "resource/AudioFileResource.hpp"
 #include "resource/AudioTranscodeResource.hpp"
 #include "resource/ImageResource.hpp"
@@ -121,9 +122,10 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "admin-database");
+	messageResourceBundle().use(appRoot() + "admin-initwizard");
+	messageResourceBundle().use(appRoot() + "admin-subsonic");
 	messageResourceBundle().use(appRoot() + "admin-user");
 	messageResourceBundle().use(appRoot() + "admin-users");
-	messageResourceBundle().use(appRoot() + "admin-initwizard");
 	messageResourceBundle().use(appRoot() + "artist");
 	messageResourceBundle().use(appRoot() + "artistinfo");
 	messageResourceBundle().use(appRoot() + "artistlink");
@@ -342,6 +344,7 @@ enum IdxRoot
 	IdxAdminDatabase,
 	IdxAdminUsers,
 	IdxAdminUser,
+	IdxAdminSubsonic,
 };
 
 static void
@@ -365,6 +368,7 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 		{ "/admin/database",	IdxAdminDatabase,	true },
 		{ "/admin/users",	IdxAdminUsers,		true },
 		{ "/admin/user",	IdxAdminUser,		true },
+		{ "/admin/subsonic",	IdxAdminSubsonic,	true },
 	};
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
@@ -484,6 +488,10 @@ LmsApplication::createHome()
 		usersSettings->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/admin/users"));
 		usersSettings->setSelectable(false);
 
+		auto subsonicSettings = admin->insertItem(2, Wt::WString::tr("Lms.Admin.Subsonic.subsonic"));
+		subsonicSettings->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/admin/subsonic"));
+		subsonicSettings->setSelectable(false);
+
 		menuItem->setMenu(std::move(admin));
 	}
 
@@ -514,6 +522,7 @@ LmsApplication::createHome()
 		mainStack->addNew<DatabaseSettingsView>();
 		mainStack->addNew<UsersView>();
 		mainStack->addNew<UserView>();
+		mainStack->addNew<SubsonicView>();
 	}
 
 	explore->tracksAdd.connect([=] (const std::vector<Database::IdType>& trackIds)

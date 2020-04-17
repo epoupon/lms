@@ -38,15 +38,15 @@ UsersView::UsersView()
 	_container = bindNew<Wt::WContainerWidget>("users");
 
 	Wt::WPushButton* addBtn = bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.Admin.Users.add"));
-	addBtn->clicked().connect(std::bind([=]
+	addBtn->clicked().connect([]()
 	{
 		LmsApp->setInternalPath("/admin/user", true);
-	}));
+	});
 
-	wApp->internalPathChanged().connect(std::bind([=]
+	wApp->internalPathChanged().connect([this]()
 	{
 		refreshView();
-	}));
+	});
 
 	refreshView();
 }
@@ -83,10 +83,10 @@ UsersView::refreshView()
 
 		entry->setCondition("if-edit", true);
 		Wt::WPushButton* editBtn = entry->bindNew<Wt::WPushButton>("edit-btn", Wt::WString::tr("Lms.Admin.Users.edit"));
-		editBtn->clicked().connect(std::bind([=]
+		editBtn->clicked().connect([=]()
 		{
-			LmsApp->setInternalPath("/admin/user/" + std::to_string(user.id()), true);
-		}));
+			LmsApp->setInternalPath("/admin/user/" + std::to_string(userId), true);
+		});
 
 		Wt::WPushButton* delBtn = entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.Admin.Users.del"));
 		delBtn->clicked().connect([=]

@@ -68,6 +68,14 @@
 <message id="Lms.Admin.Database.Status.status-scheduled">Planifié le {1}</message>
 <message id="Lms.Admin.Database.Status.status-in-progress">Scan de {1} fichiers sur {2} ({3} %)</message>
 
+<!--Subsonic-->
+<message id="Lms.Admin.Subsonic.all-artists">Tous les artistes</message>
+<message id="Lms.Admin.Subsonic.release-artists">Artistes d'album</message>
+<message id="Lms.Admin.Subsonic.enable-api">Activer</message>
+<message id="Lms.Admin.Subsonic.artist-list-mode">Mode de listage des artistes</message>
+<message id="Lms.Admin.Subsonic.need-restart">Vous devez redémarrer le service pour que cette option soit prise en compte</message>
+<message id="Lms.Admin.Subsonic.subsonic">API Subsonic</message>
+
 <!--Users-->
 <message id="Lms.Admin.Users.add">Ajouter</message>
 <message id="Lms.Admin.Users.admin">Admin</message>
@@ -116,8 +124,8 @@
 
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">Tous les artistes</message>
-<message id="Lms.Explore.Artists.linktype-artist">Artiste de piste</message>
-<message id="Lms.Explore.Artists.linktype-releaseartist">Artiste d'album</message>
+<message id="Lms.Explore.Artists.linktype-artist">Artistes de piste</message>
+<message id="Lms.Explore.Artists.linktype-releaseartist">Artistes d'album</message>
 <message id="Lms.Explore.ArtistsInfo.recently-added">Ajouts récents</message>
 <message id="Lms.Explore.ArtistsInfo.most-played">Artistes populaires</message>
 
