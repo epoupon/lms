@@ -718,13 +718,6 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 		stats.updates++;
 	}
 
-	// Release related data
-	if (release)
-	{
-		release.modify()->setTotalTrackNumber(trackInfo->totalTrack ? *trackInfo->totalTrack : 0);
-		release.modify()->setTotalDiscNumber(trackInfo->totalDisc ? *trackInfo->totalDisc : 0);
-	}
-
 	// Track related data
 	assert(track);
 
@@ -744,6 +737,8 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	track.modify()->setAddedTime(Wt::WLocalDateTime::currentServerDateTime().toUTC());
 	track.modify()->setTrackNumber(trackInfo->trackNumber ? *trackInfo->trackNumber : 0);
 	track.modify()->setDiscNumber(trackInfo->discNumber ? *trackInfo->discNumber : 0);
+	track.modify()->setTotalTrack(trackInfo->totalTrack);
+	track.modify()->setTotalDisc(trackInfo->totalDisc);
 	track.modify()->setYear(trackInfo->year ? *trackInfo->year : 0);
 	track.modify()->setOriginalYear(trackInfo->originalYear ? *trackInfo->originalYear : 0);
 

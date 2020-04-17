@@ -1,3 +1,4 @@
+/* Stylized for flaty/darkly themes */
 a, a:link, a:active, a:visited {
 	text-decoration: none;
 	cursor: pointer;
@@ -51,64 +52,15 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-cluster {
-	display: inline;
+	display: inline-block;
 	cursor: pointer;
-	line-height: 32px;
-	margin: 4px;
+	line-height: 1.3;
+	margin-right: 4px;
+	margin-bottom: 4px;
 }
 
 .Lms-cluster:hover {
 	filter: brightness(130%);
-}
-
-.Lms-cluster-type-0 {
-	background-color: darkslategrey;
-	margin-bottom: 4px;
-}
-
-.Lms-cluster-type-1 {
-	background-color: darkblue;
-	margin-bottom: 4px;
-}
-
-.Lms-cluster-type-2 {
-	background-color: darkgrey;
-	margin-bottom: 4px;
-}
-
-.Lms-cluster-type-3 {
-	background-color: darkorchid;
-	margin-bottom: 4px;
-}
-
-.Lms-cluster-type-4 {
-	background-color: darkgoldenrod;
-	margin-bottom: 4px;
-}
-
-.Lms-cluster-type-5 {
-	background-color: darkkhaki;
-	margin-bottom: 4px;
-}
-
-.Lms-cluster-type-6 {
-	background-color: darkolivegreen;
-	margin-bottom: 4px;
-}
-
-.Lms-cluster-type-7 {
-	background-color: darkred;
-	margin-bottom: 4px;
-}
-
-.Lms-cluster-type-8 {
-	background-color: darkviolet;
-	margin-bottom: 4px;
-}
-
-.Lms-cluster-type-9 {
-	background-color: darkturquoise;
-	margin-bottom: 4px;
 }
 
 .Lms-control-btn:hover {
@@ -121,24 +73,24 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 
 .Lms-cover-smaller {
 	width: 64px; /* some cover may not be square */
-	border-radius: 10px;
+	border-radius: 3px;
 	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Lms-cover-small {
 	width: 96px; /* some cover may not be square */
-	border-radius: 12px;
+	border-radius: 3px;
 	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Lms-cover-medium {
 	width: 128px;
-	border-radius: 16px;
+	border-radius: 3px;
 	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Lms-cover-large {
-	border-radius: 16px;
+	border-radius: 3px;
 	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
 }
 
@@ -162,7 +114,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-explore-release-entry-tracknumber {
-	text-align: center;
+	text-align: right;
 	white-space: nowrap;
 }
 
@@ -333,6 +285,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	height: 70px;
 	padding: 0px;
 	margin: 0px;
+	background-color: var(--player-background-color);
 }
 
 .Lms-player-btn {
@@ -397,7 +350,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	top: 0px;
 	left: 0px;
 	height: 8px;
-	border-radius: 4px;
+	border-radius: 3px;
 }
 
 .Lms-player-seek::-moz-range-thumb {
@@ -448,7 +401,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	height: 8px;
 	outline: none;
 	cursor: pointer;
-	border-radius: 4px;
+	border-radius: 3px;
 	border-style: solid;
 	border-width: thin;
 	background-color: var(--slider-background-color);

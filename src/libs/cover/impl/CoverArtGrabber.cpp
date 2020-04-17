@@ -189,7 +189,7 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 			trackPath = track->getPath();
 
 			auto release {track->getRelease()};
-			if (release && release->getTotalDiscNumber() > 1)
+			if (release && release->getTotalDisc() > 1)
 				isMultiDisc = true;
 		}
 	}

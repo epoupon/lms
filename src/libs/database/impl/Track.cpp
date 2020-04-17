@@ -177,7 +177,7 @@ Track::getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit)
 }
 
 std::vector<Cluster::pointer>
-Track::getClusters(void) const
+Track::getClusters() const
 {
 	std::vector< Cluster::pointer > clusters;
 	std::copy(_clusters.begin(), _clusters.end(), std::back_inserter(clusters));
@@ -185,7 +185,7 @@ Track::getClusters(void) const
 }
 
 std::vector<IdType>
-Track::getClusterIds(void) const
+Track::getClusterIds() const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));
@@ -355,15 +355,27 @@ Track::setFeatures(const Wt::Dbo::ptr<TrackFeatures>& features)
 }
 
 std::optional<std::size_t>
-Track::getTrackNumber(void) const
+Track::getTrackNumber() const
 {
 	return (_trackNumber > 0) ? std::make_optional<std::size_t>(_trackNumber) : std::nullopt;
 }
 
 std::optional<std::size_t>
-Track::getDiscNumber(void) const
+Track::getTotalTrack() const
+{
+	return (_totalTrack > 0) ? std::make_optional<std::size_t>(_totalTrack) : std::nullopt;
+}
+
+std::optional<std::size_t>
+Track::getDiscNumber() const
 {
 	return (_discNumber > 0) ? std::make_optional<std::size_t>(_discNumber) : std::nullopt;
+}
+
+std::optional<std::size_t>
+Track::getTotalDisc() const
+{
+	return (_totalDisc > 0) ? std::make_optional<std::size_t>(_totalDisc) : std::nullopt;
 }
 
 std::optional<int>

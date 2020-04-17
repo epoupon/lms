@@ -35,6 +35,7 @@
 #include "utils/Service.hpp"
 
 #include "LmsApplication.hpp"
+#include "LmsTheme.hpp"
 
 namespace UserInterface {
 
@@ -88,7 +89,14 @@ class SettingsModel : public Wt::WFormModel
 
 			User::pointer user {LmsApp->getUser()};
 
-			user.modify()->setUITheme(Wt::asNumber(value(DarkModeField)) ? User::UITheme::Dark : User::UITheme::Light);
+			{
+				const User::UITheme newTheme {Wt::asNumber(value(DarkModeField)) ? User::UITheme::Dark : User::UITheme::Light};
+				LmsTheme* lmsTheme {static_cast<LmsTheme*>(LmsApp->theme().get())};
+				lmsTheme->setTheme(newTheme);
+
+				user.modify()->setUITheme(newTheme);
+			}
+
 			user.modify()->setAudioTranscodeEnable(Wt::asNumber(value(TranscodeEnableField)));
 
 			auto transcodeBitrateRow {_transcodeBitrateModel->getRowFromString(valueText(TranscodeBitrateField))};

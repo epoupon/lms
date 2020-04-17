@@ -4,6 +4,7 @@ add_executable(lms
 	ui/Auth.cpp
 	ui/LmsApplication.cpp
 	ui/LmsApplicationGroup.cpp
+	ui/LmsTheme.cpp
 	ui/MediaPlayer.cpp
 	ui/PlayQueueView.cpp
 	ui/PlayHistoryView.cpp

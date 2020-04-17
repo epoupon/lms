@@ -39,6 +39,25 @@ class Db
 		std::shared_mutex&		getMutex() { return _sharedMutex; }
 		Wt::Dbo::SqlConnectionPool&	getConnectionPool() { return *_connectionPool; }
 
+		class ScopedNoForeignKeys
+		{
+			public:
+				ScopedNoForeignKeys(Db& db) : _db {db}
+				{
+					_db.executeSql("PRAGMA foreign_keys=OFF");
+				}
+				~ScopedNoForeignKeys()
+				{
+					_db.executeSql("PRAGMA foreign_keys=ON");
+				}
+
+			private:
+			Db& _db;
+
+		};
+
+		void executeSql(const std::string& sql);
+
 		std::shared_mutex				_sharedMutex;
 		std::unique_ptr<Wt::Dbo::SqlConnectionPool>	_connectionPool;
 };

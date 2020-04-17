@@ -77,7 +77,6 @@ Release::refresh()
 		throw ReleaseNotFoundException {*releaseId};
 
 	Wt::WTemplate* t {addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template"))};
-	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	t->bindString("name", Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
 
@@ -154,18 +153,47 @@ Release::refresh()
 		});
 	}
 
-	Wt::WContainerWidget* tracksContainer {t->bindNew<Wt::WContainerWidget>("tracks")};
+	Wt::WContainerWidget* rootContainer {t->bindNew<Wt::WContainerWidget>("container")};
 
-	auto clusterIds {_filters->getClusterIds()};
-	auto tracks {release->getTracks(clusterIds)};
+	const bool variousArtists {release->hasVariousArtists()};
+	const auto totalDisc {release->getTotalDisc()};
+	const bool isReleaseMultiDisc {totalDisc && *totalDisc > 1};
 
-	bool variousArtists {release->hasVariousArtists()};
+	// Expect to be call in asc order
+	std::map<std::size_t, Wt::WContainerWidget*> trackContainers;
+	auto getOrAddDiscContainer = [&](std::size_t discNumber) -> Wt::WContainerWidget*
+	{
+		{
+			auto it = trackContainers.find(discNumber);
+			if (it != std::cend(trackContainers))
+				return it->second;
+		}
+
+		Wt::WTemplate* disc {rootContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.disc-entry"))};
+		disc->bindNew<Wt::WText>("disc-title", Wt::WString::tr("Lms.Explore.Release.disc").arg(discNumber));
+		disc->addFunction("tr", &Wt::WTemplate::Functions::tr);
+
+		Wt::WContainerWidget* tracksContainer {disc->bindNew<Wt::WContainerWidget>("tracks")};
+		trackContainers[discNumber] = tracksContainer;
+
+		return tracksContainer;
+	};
+
+	const auto clusterIds {_filters->getClusterIds()};
+	const auto tracks {release->getTracks(clusterIds)};
 
 	for (const auto& track : tracks)
 	{
 		auto trackId {track.id()};
 
-		Wt::WTemplate* entry {tracksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry"))};
+		const auto discNumber {track->getDiscNumber()};
+
+		Wt::WContainerWidget* container {rootContainer};
+		if (isReleaseMultiDisc && discNumber)
+			container = getOrAddDiscContainer(*discNumber);
+
+		Wt::WTemplate* entry {container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry"))};
+
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
 		auto artists {track->getArtists()};
@@ -186,14 +214,6 @@ Release::refresh()
 		{
 			entry->setCondition("if-has-track-number", true);
 			entry->bindInt("track-number", *trackNumber);
-		}
-
-		auto discNumber {track->getDiscNumber()};
-		auto totalDiscNumber {release->getTotalDiscNumber()};
-		if (discNumber && totalDiscNumber && *totalDiscNumber > 1)
-		{
-			entry->setCondition("if-has-disc-number", true);
-			entry->bindInt("disc-number", *discNumber);
 		}
 
 		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};

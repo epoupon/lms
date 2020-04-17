@@ -1,8 +1,9 @@
 :root {
+  --body-color: #ffffff;
   --hover-color: #00bc8c;
-  --body-color: #cacaca;
   --playing-background-color: #375a7f4f;
   --slider-background-color: #5a5a5a;
+  --player-background-color: #303030;
 }
 
 .Lms-artistname.text-muted {

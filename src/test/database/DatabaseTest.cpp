@@ -489,6 +489,89 @@ testSingleTrackSingleRelease(Session& session)
 
 static
 void
+testMultiTracksSingleReleaseTotalDiscTrack(Session& session)
+{
+	ScopedRelease release1 {session, "MyRelease"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		CHECK(!release1->getTotalTrack());
+		CHECK(!release1->getTotalDisc());
+	}
+
+	ScopedTrack track1 {session, "MyTrack"};
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		track1.get().modify()->setRelease(release1.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		CHECK(!release1->getTotalTrack());
+		CHECK(!release1->getTotalDisc());
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		track1.get().modify()->setTotalTrack(36);
+		track1.get().modify()->setTotalDisc(6);
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		CHECK(release1->getTotalTrack() && *release1->getTotalTrack() == 36);
+		CHECK(release1->getTotalDisc() && *release1->getTotalDisc() == 6);
+	}
+
+	ScopedTrack track2 {session, "MyTrack2"};
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		track2.get().modify()->setRelease(release1.get());
+		track2.get().modify()->setTotalTrack(37);
+		track2.get().modify()->setTotalDisc(67);
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		CHECK(release1->getTotalTrack() && *release1->getTotalTrack() == 37);
+		CHECK(release1->getTotalDisc() && *release1->getTotalDisc() == 67);
+	}
+
+	ScopedRelease release2 {session, "MyRelease2"};
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		CHECK(!release2->getTotalTrack());
+		CHECK(!release2->getTotalDisc());
+	}
+
+	ScopedTrack track3 {session, "MyTrack3"};
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		track3.get().modify()->setRelease(release2.get());
+		track3.get().modify()->setTotalTrack(7);
+		track3.get().modify()->setTotalDisc(5);
+	}
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		CHECK(release1->getTotalTrack() && *release1->getTotalTrack() == 37);
+		CHECK(release1->getTotalDisc() && *release1->getTotalDisc() == 67);
+		CHECK(release2->getTotalTrack() && *release2->getTotalTrack() == 7);
+		CHECK(release2->getTotalDisc() && *release2->getTotalDisc() == 5);
+	}
+}
+
+static
+void
 testSingleTrackSingleCluster(Session& session)
 {
 	ScopedTrack track {session, "MyTrack"};
@@ -1461,6 +1544,7 @@ int main()
 			RUN_TEST(testMultiArtistsSortMethod);
 
 			RUN_TEST(testSingleTrackSingleRelease);
+			RUN_TEST(testMultiTracksSingleReleaseTotalDiscTrack);
 
 			RUN_TEST(testSingleTrackSingleCluster);
 			RUN_TEST(testMultipleTracksSingleCluster);

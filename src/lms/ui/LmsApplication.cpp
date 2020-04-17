@@ -20,9 +20,7 @@
 #include "LmsApplication.hpp"
 
 #include <Wt/WAnchor.h>
-#include <Wt/WBootstrapTheme.h>
 #include <Wt/WEnvironment.h>
-#include <Wt/WLinkedCssStyleSheet.h>
 #include <Wt/WMenu.h>
 #include <Wt/WNavigationBar.h>
 #include <Wt/WPopupMenu.h>
@@ -50,6 +48,7 @@
 #include "resource/ImageResource.hpp"
 #include "Auth.hpp"
 #include "LmsApplicationException.hpp"
+#include "LmsTheme.hpp"
 #include "MediaPlayer.hpp"
 #include "PlayHistoryView.hpp"
 #include "PlayQueueView.hpp"
@@ -57,40 +56,6 @@
 
 
 namespace UserInterface {
-
-class LmsBooststrapTheme : public Wt::WBootstrapTheme
-{
-	public:
-		LmsBooststrapTheme(Database::User::UITheme theme) : _theme {theme} {}
-
-	private:
-		std::vector<Wt::WLinkedCssStyleSheet> styleSheets() const override
-		{
-			switch (_theme)
-			{
-				case Database::User::UITheme::Dark:
-					return
-					{
-						Wt::WLinkedCssStyleSheet {"css/bootstrap-darkly.min.css"},
-						Wt::WLinkedCssStyleSheet {"resources/themes/bootstrap/3/wt.css"},
-						Wt::WLinkedCssStyleSheet {"css/lms.css"},
-						Wt::WLinkedCssStyleSheet {"css/lms-darkly.css"},
-					};
-
-				case Database::User::UITheme::Light:
-					return
-					{
-						Wt::WLinkedCssStyleSheet {"css/bootstrap-flatly.min.css"},
-						Wt::WLinkedCssStyleSheet {"resources/themes/bootstrap/3/wt.css"},
-						Wt::WLinkedCssStyleSheet {"css/lms.css"},
-						Wt::WLinkedCssStyleSheet {"css/lms-flatly.css"},
-					};
-			}
-			return {};
-		}
-
-		Database::User::UITheme _theme;
-};
 
 std::unique_ptr<Wt::WApplication>
 LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups)
@@ -202,6 +167,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 
 	if (firstConnection)
 	{
+		setTheme(std::make_unique<LmsTheme>(Database::User::defaultUITheme));
 		root()->addWidget(std::make_unique<InitWizardView>());
 		return;
 	}
@@ -217,10 +183,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 			if (user)
 				theme = user->getUITheme();
 		}
-		auto LmsTheme {std::make_unique<LmsBooststrapTheme>(theme)};
-		LmsTheme->setVersion(Wt::BootstrapVersion::v3);
-		LmsTheme->setResponsive(true);
-		setTheme(std::move(LmsTheme));
+
+		setTheme(std::make_unique<LmsTheme>(theme));
 	}
 
 	if (userId)
@@ -245,6 +209,16 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 		Auth* auth {root()->addNew<Auth>()};
 		auth->userLoggedIn.connect(this, [this](Database::IdType userId)
 		{
+			{
+				auto transaction {_dbSession.createSharedTransaction()};
+				const auto user {Database::User::getById(_dbSession, userId)};
+				if (user)
+				{
+					LmsTheme* lmsTheme {static_cast<LmsTheme*>(LmsApp->theme().get())};
+					lmsTheme->setTheme(user->getUITheme());
+				}
+			}
+
 			handleUserLoggedIn(userId, true);
 		});
 	}
@@ -308,18 +282,27 @@ LmsApplication::createReleaseAnchor(Database::Release::pointer release, bool add
 	return res;
 }
 
-std::unique_ptr<Wt::WTemplate>
+std::unique_ptr<Wt::WText>
 LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete)
 {
-	std::string styleClass = "Lms-cluster-type-" + std::to_string(cluster->getType().id() % 10);
+	auto getStyleClass = [](const Database::Cluster::pointer cluster)
+	{
+		switch (cluster->getType().id() % 6)
+		{
+			case 0: return "label-primary";
+			case 1: return "label-default";
+			case 2: return "label-info";
+			case 3: return "label-warning";
+			case 4: return "label-success";
+			case 5: return "label-danger";
+		}
+		return "label-default";
+	};
 
-	auto res = std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.template.cluster-entry").arg(styleClass));
-	res->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	const std::string styleClass {getStyleClass(cluster)};
+	auto res {std::make_unique<Wt::WText>(std::string {} + (canDelete ? "<i class=\"fa fa-times-circle\"></i> " : "") + Wt::WString::fromUTF8(cluster->getName()), Wt::TextFormat::UnsafeXHTML)};
 
-	res->bindString("name", Wt::WString::fromUTF8(cluster->getName()), Wt::TextFormat::Plain);
-	res->setCondition("if-can-delete", canDelete);
-
-	res->setStyleClass("Lms-cluster");
+	res->setStyleClass("Lms-cluster label " + styleClass);
 	res->setToolTip(cluster->getType()->getName(), Wt::TextFormat::Plain);
 	res->setInline(true);
 

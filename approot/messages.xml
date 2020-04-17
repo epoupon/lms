@@ -124,6 +124,7 @@
 <!--Explore:Release-->
 <message id="Lms.Explore.ReleaseInfo.similar-releases">Similar albums</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
+<message id="Lms.Explore.Release.disc">Disc {1}</message>
 
 <!--Explore:Releases-->
 <message id="Lms.Explore.ReleasesInfo.recently-added">Recently added</message>
