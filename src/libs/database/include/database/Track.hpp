@@ -88,6 +88,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setScanVersion(std::size_t version)			{ _scanVersion = version; }
 		void setTrackNumber(int num)					{ _trackNumber = num; }
 		void setDiscNumber(int num)					{ _discNumber = num; }
+		void setTotalTrack(std::optional<int> totalTrack)		{ totalTrack ? _totalTrack = *totalTrack : 0; }
+		void setTotalDisc(std::optional<int> totalDisc)			{ totalDisc ? _totalDisc = *totalDisc : 0; }
 		void setName(const std::string& name)				{ _name = std::string(name, 0, _maxNameLength); }
 		void setDuration(std::chrono::milliseconds duration)		{ _duration = duration; }
 		void setLastWriteTime(Wt::WDateTime time)			{ _fileLastWrite = time; }
@@ -106,7 +108,9 @@ class Track : public Wt::Dbo::Dbo<Track>
 
 		std::size_t 				getScanVersion() const		{ return _scanVersion; }
 		std::optional<std::size_t>		getTrackNumber() const;
+		std::optional<std::size_t>		getTotalTrack() const;
 		std::optional<std::size_t>		getDiscNumber() const;
+		std::optional<std::size_t>		getTotalDisc() const;
 		std::string 				getName() const			{ return _name; }
 		std::filesystem::path			getPath() const			{ return _filePath; }
 		std::chrono::milliseconds		getDuration() const		{ return _duration; }
@@ -135,6 +139,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 				Wt::Dbo::field(a, _scanVersion,		"scan_version");
 				Wt::Dbo::field(a, _trackNumber,		"track_number");
 				Wt::Dbo::field(a, _discNumber,		"disc_number");
+				Wt::Dbo::field(a, _totalTrack,		"total_track");
+				Wt::Dbo::field(a, _totalDisc,		"total_disc");
 				Wt::Dbo::field(a, _name,		"name");
 				Wt::Dbo::field(a, _duration,		"duration");
 				Wt::Dbo::field(a, _year,		"year");
@@ -160,19 +166,21 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static const std::size_t _maxCopyrightLength = 128;
 		static const std::size_t _maxCopyrightURLLength = 128;
 
-		int					_scanVersion = 0;
-		int					_trackNumber = 0;
-		int					_discNumber = 0;
+		int					_scanVersion {};
+		int					_trackNumber {};
+		int					_discNumber {};
+		int					_totalTrack {};
+		int					_totalDisc {};
 		std::string				_name;
 		std::string				_artistName;
 		std::string				_releaseName;
 		std::chrono::duration<int, std::milli>	_duration;
-		int					_year = 0;
-		int					_originalYear = 0;
+		int					_year {};
+		int					_originalYear {};
 		std::string				_filePath;
 		Wt::WDateTime				_fileLastWrite;
 		Wt::WDateTime				_fileAdded;
-		bool					_hasCover = false;
+		bool					_hasCover {};
 		std::string				_MBID; // Musicbrainz Identifier
 		std::string				_copyright;
 		std::string				_copyrightURL;

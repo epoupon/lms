@@ -132,8 +132,7 @@ Artist::refresh()
 
 			auto cover = std::make_unique<Wt::WImage>();
 			cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
-			// Some images may not be square
-			cover->setWidth(128);
+			cover->setStyleClass("Lms-cover-medium");
 			anchor->setImage(std::move(cover));
 		}
 

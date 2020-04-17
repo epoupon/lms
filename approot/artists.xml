@@ -28,9 +28,9 @@
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">
-	<div class="row Lms-explore-artists-entry Lms-vertical-align">
+	<div class="row Lms-explore-artists-entry Lms-entry-hoverable Lms-vertical-align">
 		 <div class="col-xs-12">
-			<h4>${name class="Lms-explore-artistname Lms-explore-artists-entry-name"}</h4>
+			 <h4>${name class="Lms-artistname text-primary"}</h4>
 		</div>
 	</div>
 </message>

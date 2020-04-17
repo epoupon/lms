@@ -28,6 +28,7 @@
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 
+#include "resource/ImageResource.hpp"
 #include "LmsApplication.hpp"
 
 namespace {
@@ -61,6 +62,19 @@ std::unique_ptr<Wt::WTemplate> createEntry(Database::Track::pointer track)
 	{
 		entry->setCondition("if-has-release", true);
 		entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
+		{
+			Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
+			auto cover = std::make_unique<Wt::WImage>();
+			cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 96));
+			cover->setStyleClass("Lms-cover-small");
+			anchor->setImage(std::move(cover));
+		}
+	}
+	else
+	{
+		auto cover = entry->bindNew<Wt::WImage>("cover");
+		cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(track.id(), 96));
+		cover->setStyleClass("Lms-cover-small");
 	}
 
 	return entry;

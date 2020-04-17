@@ -3,17 +3,17 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.ReleaseLink.template">
-	<div class="row Lms-explore-releaselink">
+	<div class="row Lms-explore-releaselink Lms-entry-hoverable">
 		<div class="col-xs-12">
 			<div class="media">
 				<div class="media-left media-middle">
-					${cover class="media-object"}
+					${cover class="media-object Lms-cover"}
 				</div>
 				<div class="media-body media-middle">
 					<div class="media-heading">
-						${release-name class="Lms-explore-releasename"}
+						${release-name class="Lms-releasename text-primary"}
 					</div>
-					${<if-has-artist>}<small>${artist-name class="Lms-explore-artistname Lms-explore-releaselink-artist"}</small>${</if-has-artist>}
+					${<if-has-artist>}<small>${artist-name class="Lms-artistname text-muted"}</small>${</if-has-artist>}
 				</div>
 			</div>
 		</div>

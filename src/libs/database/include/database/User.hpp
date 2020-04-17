@@ -91,14 +91,13 @@ class User : public Wt::Dbo::Dbo<User>
 	public:
 		using pointer = Wt::Dbo::ptr<User>;
 
-		static const std::size_t MinNameLength = 3;
-		static const std::size_t MaxNameLength = 15;
 
+		// Do not change enum values!
 		enum class Type
 		{
-			REGULAR,
-			ADMIN,
-			DEMO
+			REGULAR	= 0,
+			ADMIN	= 1,
+			DEMO	= 2,
 		};
 
 		struct PasswordHash
@@ -107,8 +106,21 @@ class User : public Wt::Dbo::Dbo<User>
 			std::string hash;
 		};
 
-		// list of audio parameters
-		static const std::set<Bitrate> audioTranscodeAllowedBitrates;
+		// Do not change enum values!
+		enum class UITheme
+		{
+			Light	= 0,
+			Dark	= 1,
+		};
+
+		static const std::set<Bitrate>		audioTranscodeAllowedBitrates;
+		static inline const std::size_t 	MinNameLength {3};
+		static inline const std::size_t 	MaxNameLength {15};
+		static inline const bool		defaultAudioTranscodeEnable {true};
+		static inline const AudioFormat		defaultAudioTranscodeFormat {AudioFormat::OGG_OPUS};
+		static inline const Bitrate		defaultAudioTranscodeBitrate {128000};
+		static inline const UITheme		defaultUITheme {UITheme::Dark};
+
 
 		User();
 		User(const std::string& loginName, const PasswordHash& passwordHash);
@@ -138,6 +150,7 @@ class User : public Wt::Dbo::Dbo<User>
 		void setCurPlayingTrackPos(std::size_t pos)		{ _curPlayingTrackPos = pos; }
 		void setRadio(bool val)					{ _radio = val; }
 		void setRepeatAll(bool val)				{ _repeatAll = val; }
+		void setUITheme(UITheme uiTheme)			{ _uiTheme = uiTheme; }
 		void clearAuthTokens();
 
 		// read
@@ -150,6 +163,7 @@ class User : public Wt::Dbo::Dbo<User>
 		std::size_t		getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
 		bool			isRepeatAllSet() const { return _repeatAll; }
 		bool			isRadioSet() const { return _radio; }
+		UITheme			getUITheme() const { return _uiTheme; }
 
 		Wt::Dbo::ptr<TrackList>	getPlayedTrackList(Session& session) const;
 		Wt::Dbo::ptr<TrackList>	getQueuedTrackList(Session& session) const;
@@ -184,6 +198,7 @@ class User : public Wt::Dbo::Dbo<User>
 			Wt::Dbo::field(a, _audioTranscodeEnable, "audio_transcode_enable");
 			Wt::Dbo::field(a, _audioTranscodeBitrate, "audio_transcode_bitrate");
 			Wt::Dbo::field(a, _audioTranscodeFormat, "audio_transcode_format");
+			Wt::Dbo::field(a, _uiTheme, "ui_theme");
 			// User's dynamic data
 			Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
 			Wt::Dbo::field(a, _repeatAll, "repeat_all");
@@ -197,14 +212,11 @@ class User : public Wt::Dbo::Dbo<User>
 
 	private:
 
-		static const bool		defaultAudioTranscodeEnable {true};
-		static const AudioFormat	defaultAudioTranscodeFormat {AudioFormat::OGG_OPUS};
-		static const Bitrate		defaultAudioTranscodeBitrate {128000};
-
 		std::string	_loginName;
 		std::string	_passwordSalt;
 		std::string	_passwordHash;
 		Wt::WDateTime	_lastLogin;
+		UITheme		_uiTheme {defaultUITheme};
 
 		// Admin defined settings
 		int	 	_maxAudioTranscodeBitrate;

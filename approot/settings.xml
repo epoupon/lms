@@ -4,16 +4,30 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Settings.template">
+	<legend>${tr:Lms.Settings.appearance}</legend>
+	<div class="form-horizontal">
+		<div class="form-group">
+			<label class="col-sm-2 control-label"  for="${id:dark-mode}">
+				${tr:Lms.Settings.dark-mode}
+			</label>
+			<div class="col-sm-5">
+				<div class="checkbox"><label>${dark-mode}</label></div>
+			</div>
+			<div class="col-sm-5 help-block">
+				${dark-mode-info}
+			</div>
+		</div>
+	</div>
 	<legend>${tr:Lms.Settings.audio}</legend>
 	<div class="form-horizontal">
 		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:transcoding-enable}">
+			<label class="col-sm-2 control-label"  for="${id:transcoding-enable}">
 				${tr:Lms.Settings.transcoding-enable}
 			</label>
 			<div class="col-sm-5">
-				${transcoding-enable}
+				<div class="checkbox"><label>${transcoding-enable}</label></div>
 			</div>
-			<div class="help-block col-sm-5">
+			<div class="col-sm-5 help-block">
 				${transcoding-enable-info}
 			</div>
 		</div>

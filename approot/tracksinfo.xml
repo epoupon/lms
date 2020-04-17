@@ -11,7 +11,7 @@
 
 <message id="Lms.Explore.TracksInfo.template.entry">
 	<div class="row Lms-explore-tracksinfo-entry Lms-vertical-align">
-		<div class="col-xs-12">
+		<div class="col-xs-12 Lms-trackname">
 			${name}
 		</div>
 	</div>

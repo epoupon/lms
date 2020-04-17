@@ -4,7 +4,7 @@
 
 <message id="Lms.Explore.Artist.template">
 	<div class="page-header">
-		<h2>${name}</h2>
+		<h2><div class="Lms-artistname text-primary">${name}</div></h2>
 		${clusters}
 		${play-btn}${add-btn}
 	</div>
@@ -12,18 +12,18 @@
 </message>
 
 <message id="Lms.Explore.Artist.template.entry">
-	<div class="row Lms-explore-artist-entry">
+	<div class="row Lms-explore-artist-entry Lms-entry-hoverable">
 		<div class="col-xs-12">
 			<div class="media">
 				<div class="media-left media-middle">
-					${cover class="media-object"}
+					${cover class="media-object Lms-cover"}
 				</div>
 				<div class="media-body media-middle">
 					<h4 class="media-heading">
-						${name class="Lms-explore-releasename"}
+						${name class="Lms-releasename text-primary"}
 					</h4>
-					${<if-has-artist>}<h4><small>${artist class="Lms-explore-artistname"}</small></h4>${</if-has-artist>}
-					<h4><small>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</small></h4>
+					${<if-has-artist>}<h4><small>${artist class="Lms-artistname text-muted"}</small></h4>${</if-has-artist>}
+					<h4><small><div class="text-muted">${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</div></small></h4>
 					${play-btn}${add-btn}
 				</div>
 			</div>
