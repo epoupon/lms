@@ -30,6 +30,7 @@
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
+#include "database/SubsonicSettings.hpp"
 #include "database/Track.hpp"
 #include "database/TrackBookmark.hpp"
 #include "database/TrackList.hpp"
@@ -901,7 +902,23 @@ handleGetArtistsRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	auto artists {Artist::getAll(context.dbSession, Artist::SortMethod::BySortName)};
+	std::optional<TrackArtistLink::Type> linkType;
+	switch (SubsonicSettings::get(context.dbSession)->getArtistListMode())
+	{
+		case SubsonicSettings::ArtistListMode::AllArtists:
+			break;
+		case SubsonicSettings::ArtistListMode::ReleaseArtists:
+			linkType = TrackArtistLink::Type::ReleaseArtist;
+			break;
+	}
+
+	bool more {};
+	const std::vector<Artist::pointer> artists {Artist::getByFilter(context.dbSession,
+			{},
+			{},
+			linkType,
+			Artist::SortMethod::BySortName,
+			{}, {}, more)};
 	for (const Artist::pointer& artist : artists)
 		indexNode.addArrayChild("artist", artistToResponseNode(user, artist, true /* id3 */));
 
@@ -1028,7 +1045,23 @@ handleGetIndexesRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	auto artists {Artist::getAll(context.dbSession, Artist::SortMethod::BySortName)};
+	std::optional<TrackArtistLink::Type> linkType;
+	switch (SubsonicSettings::get(context.dbSession)->getArtistListMode())
+	{
+		case SubsonicSettings::ArtistListMode::AllArtists:
+			break;
+		case SubsonicSettings::ArtistListMode::ReleaseArtists:
+			linkType = TrackArtistLink::Type::ReleaseArtist;
+			break;
+	}
+
+	bool more {};
+	const std::vector<Artist::pointer> artists {Artist::getByFilter(context.dbSession,
+			{},
+			{},
+			linkType,
+			Artist::SortMethod::BySortName,
+			{}, {}, more)};
 	for (const Artist::pointer& artist : artists)
 		indexNode.addArrayChild("artist", artistToResponseNode(user, artist, false /* no id3 */));
 
@@ -1752,7 +1785,7 @@ static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"search",		{handleNotImplemented,			false}},
 	{"search2",		{handleSearch2Request,			false}},
 	{"search3",		{handleSearch3Request,			false}},
-	
+
 	// Playlists
 	{"getPlaylists",	{handleGetPlaylistsRequest,		false}},
 	{"getPlaylist",		{handleGetPlaylistRequest,		false}},
@@ -1796,7 +1829,7 @@ static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"createInternetRadioStation",	{handleNotImplemented,			false}},
 	{"updateInternetRadioStation",	{handleNotImplemented,			false}},
 	{"deleteInternetRadioStation",	{handleNotImplemented,			false}},
-	
+
 	// Chat
 	{"getChatMessages",	{handleNotImplemented,			false}},
 	{"addChatMessages",	{handleNotImplemented,			false}},

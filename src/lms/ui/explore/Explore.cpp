@@ -119,6 +119,7 @@ Explore::Explore()
 
 	// Contents
 	Wt::WStackedWidget* contentsStack = bindNew<Wt::WStackedWidget>("contents");
+	contentsStack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
 
 	auto artists = std::make_unique<Artists>(_filters);
 	artists->artistsAdd.connect(this, &Explore::handleArtistsAdd);

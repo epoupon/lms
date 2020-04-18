@@ -39,8 +39,8 @@ ReleaseLink::ReleaseLink(Database::Release::pointer release)
 
 	Wt::WAnchor* anchor = bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 	auto cover = std::make_unique<Wt::WImage>();
-	cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 48));
-	cover->setWidth(48);
+	cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 64));
+	cover->setStyleClass("Lms-cover-smaller");
 	anchor->setImage(std::move(cover));
 
 	auto artists = release->getReleaseArtists();

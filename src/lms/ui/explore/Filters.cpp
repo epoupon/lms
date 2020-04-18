@@ -126,7 +126,7 @@ void
 Filters::add(Database::IdType clusterId)
 {
 
-	Wt::WTemplate* filter {};
+	Wt::WInteractWidget* filter {};
 
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};

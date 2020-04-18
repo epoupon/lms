@@ -3,9 +3,9 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.ArtistLink.template">
-	<div class="row Lms-explore-artistlink Lms-vertical-align">
+	<div class="row Lms-explore-artistlink Lms-entry-hoverable Lms-vertical-align">
 		<div class="col-xs-12">
-			${name class="Lms-explore-artistname Lms-explore-artistlink-name"}
+			${name class="Lms-artistname text-primary"}
 		</div>
 	</div>
 </message>

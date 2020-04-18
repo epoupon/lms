@@ -20,7 +20,6 @@
 #include "LmsApplication.hpp"
 
 #include <Wt/WAnchor.h>
-#include <Wt/WBootstrapTheme.h>
 #include <Wt/WEnvironment.h>
 #include <Wt/WMenu.h>
 #include <Wt/WNavigationBar.h>
@@ -44,11 +43,13 @@
 #include "admin/DatabaseSettingsView.hpp"
 #include "admin/UserView.hpp"
 #include "admin/UsersView.hpp"
+#include "admin/SubsonicView.hpp"
 #include "resource/AudioFileResource.hpp"
 #include "resource/AudioTranscodeResource.hpp"
 #include "resource/ImageResource.hpp"
 #include "Auth.hpp"
 #include "LmsApplicationException.hpp"
+#include "LmsTheme.hpp"
 #include "MediaPlayer.hpp"
 #include "PlayHistoryView.hpp"
 #include "PlayQueueView.hpp"
@@ -63,7 +64,7 @@ LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplica
 	return std::make_unique<LmsApplication>(env, db, appGroups);
 }
 
-LmsApplication*
+	LmsApplication*
 LmsApplication::instance()
 {
 	return reinterpret_cast<LmsApplication*>(Wt::WApplication::instance());
@@ -115,21 +116,16 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
   _dbSession {db},
   _appGroups {appGroups}
 {
-	auto  bootstrapTheme = std::make_unique<Wt::WBootstrapTheme>();
-	bootstrapTheme->setVersion(Wt::BootstrapVersion::v3);
-	bootstrapTheme->setResponsive(true);
-	setTheme(std::move(bootstrapTheme));
-
 	addMetaHeader(Wt::MetaHeaderType::Meta, "viewport", "width=device-width, user-scalable=no");
 
-	useStyleSheet("css/lms.css");
 	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
 
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "admin-database");
+	messageResourceBundle().use(appRoot() + "admin-initwizard");
+	messageResourceBundle().use(appRoot() + "admin-subsonic");
 	messageResourceBundle().use(appRoot() + "admin-user");
 	messageResourceBundle().use(appRoot() + "admin-users");
-	messageResourceBundle().use(appRoot() + "admin-initwizard");
 	messageResourceBundle().use(appRoot() + "artist");
 	messageResourceBundle().use(appRoot() + "artistinfo");
 	messageResourceBundle().use(appRoot() + "artistlink");
@@ -173,11 +169,26 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 
 	if (firstConnection)
 	{
+		setTheme(std::make_unique<LmsTheme>(Database::User::defaultUITheme));
 		root()->addWidget(std::make_unique<InitWizardView>());
 		return;
 	}
 
 	const auto userId {processAuthToken(env)};
+
+	{
+		Database::User::UITheme theme {Database::User::defaultUITheme};
+		if (userId)
+		{
+			auto transaction {_dbSession.createSharedTransaction()};
+			const auto user {Database::User::getById(_dbSession, *userId)};
+			if (user)
+				theme = user->getUITheme();
+		}
+
+		setTheme(std::make_unique<LmsTheme>(theme));
+	}
+
 	if (userId)
 	{
 		try
@@ -200,6 +211,16 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 		Auth* auth {root()->addNew<Auth>()};
 		auth->userLoggedIn.connect(this, [this](Database::IdType userId)
 		{
+			{
+				auto transaction {_dbSession.createSharedTransaction()};
+				const auto user {Database::User::getById(_dbSession, userId)};
+				if (user)
+				{
+					LmsTheme* lmsTheme {static_cast<LmsTheme*>(LmsApp->theme().get())};
+					lmsTheme->setTheme(user->getUITheme());
+				}
+			}
+
 			handleUserLoggedIn(userId, true);
 		});
 	}
@@ -263,18 +284,27 @@ LmsApplication::createReleaseAnchor(Database::Release::pointer release, bool add
 	return res;
 }
 
-std::unique_ptr<Wt::WTemplate>
+std::unique_ptr<Wt::WText>
 LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete)
 {
-	std::string styleClass = "Lms-cluster-type-" + std::to_string(cluster->getType().id() % 10);
+	auto getStyleClass = [](const Database::Cluster::pointer cluster)
+	{
+		switch (cluster->getType().id() % 6)
+		{
+			case 0: return "label-primary";
+			case 1: return "label-default";
+			case 2: return "label-info";
+			case 3: return "label-warning";
+			case 4: return "label-success";
+			case 5: return "label-danger";
+		}
+		return "label-default";
+	};
 
-	auto res = std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.template.cluster-entry").arg(styleClass));
-	res->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	const std::string styleClass {getStyleClass(cluster)};
+	auto res {std::make_unique<Wt::WText>(std::string {} + (canDelete ? "<i class=\"fa fa-times-circle\"></i> " : "") + Wt::WString::fromUTF8(cluster->getName()), Wt::TextFormat::UnsafeXHTML)};
 
-	res->bindString("name", Wt::WString::fromUTF8(cluster->getName()), Wt::TextFormat::Plain);
-	res->setCondition("if-can-delete", canDelete);
-
-	res->setStyleClass("Lms-cluster");
+	res->setStyleClass("Lms-cluster label " + styleClass);
 	res->setToolTip(cluster->getType()->getName(), Wt::TextFormat::Plain);
 	res->setInline(true);
 
@@ -314,6 +344,7 @@ enum IdxRoot
 	IdxAdminDatabase,
 	IdxAdminUsers,
 	IdxAdminUser,
+	IdxAdminSubsonic,
 };
 
 static void
@@ -337,6 +368,7 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 		{ "/admin/database",	IdxAdminDatabase,	true },
 		{ "/admin/users",	IdxAdminUsers,		true },
 		{ "/admin/user",	IdxAdminUser,		true },
+		{ "/admin/subsonic",	IdxAdminSubsonic,	true },
 	};
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
@@ -456,6 +488,10 @@ LmsApplication::createHome()
 		usersSettings->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/admin/users"));
 		usersSettings->setSelectable(false);
 
+		auto subsonicSettings = admin->insertItem(2, Wt::WString::tr("Lms.Admin.Subsonic.subsonic"));
+		subsonicSettings->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/admin/subsonic"));
+		subsonicSettings->setSelectable(false);
+
 		menuItem->setMenu(std::move(admin));
 	}
 
@@ -473,6 +509,7 @@ LmsApplication::createHome()
 	// Contents
 	// Order is important in mainStack, see IdxRoot!
 	Wt::WStackedWidget* mainStack = main->bindNew<Wt::WStackedWidget>("contents");
+	mainStack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
 
 	Explore* explore = mainStack->addNew<Explore>();
 	PlayQueue* playqueue = mainStack->addNew<PlayQueue>();
@@ -485,6 +522,7 @@ LmsApplication::createHome()
 		mainStack->addNew<DatabaseSettingsView>();
 		mainStack->addNew<UsersView>();
 		mainStack->addNew<UserView>();
+		mainStack->addNew<SubsonicView>();
 	}
 
 	explore->tracksAdd.connect([=] (const std::vector<Database::IdType>& trackIds)

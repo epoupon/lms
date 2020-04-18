@@ -68,6 +68,14 @@
 <message id="Lms.Admin.Database.Status.status-scheduled">Scheduled on {1}</message>
 <message id="Lms.Admin.Database.Status.status-in-progress">Scanning {1} of {2} files ({3} %)</message>
 
+<!--Subsonic-->
+<message id="Lms.Admin.Subsonic.all-artists">All artists</message>
+<message id="Lms.Admin.Subsonic.release-artists">Album artists</message>
+<message id="Lms.Admin.Subsonic.enable-api">Enable</message>
+<message id="Lms.Admin.Subsonic.artist-list-mode">Artist list mode</message>
+<message id="Lms.Admin.Subsonic.need-restart">You must restart the service for this change to take effect</message>
+<message id="Lms.Admin.Subsonic.subsonic">Subsonic API</message>
+
 <!--Users-->
 <message id="Lms.Admin.Users.add">New user</message>
 <message id="Lms.Admin.Users.admin">Admin</message>
@@ -124,6 +132,7 @@
 <!--Explore:Release-->
 <message id="Lms.Explore.ReleaseInfo.similar-releases">Similar albums</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
+<message id="Lms.Explore.Release.disc">Disc {1}</message>
 
 <!--Explore:Releases-->
 <message id="Lms.Explore.ReleasesInfo.recently-added">Recently added</message>
@@ -155,8 +164,10 @@
 
 
 <!--Settings-->
+<message id="Lms.Settings.appearance">Appearance</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.change-password">Change password</message>
+<message id="Lms.Settings.dark-mode">Dark mode</message>
 <message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
 <message id="Lms.Settings.password-bad">Bad password</message>
 <message id="Lms.Settings.password-must-fill-old-password">Old password must be filled in</message>

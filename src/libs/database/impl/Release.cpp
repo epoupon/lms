@@ -268,15 +268,29 @@ Release::getAllIdsWithClusters(Session& session, std::optional<std::size_t> limi
 
 
 std::optional<std::size_t>
-Release::getTotalTrackNumber(void) const
+Release::getTotalTrack(void) const
 {
-	return (_totalTrackNumber > 0) ? std::make_optional<std::size_t>(_totalTrackNumber) : std::nullopt;
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
+	int res = session()->query<int>("SELECT COALESCE(MAX(total_track),0) FROM track t INNER JOIN release r ON r.id = t.release_id")
+		.where("r.id = ?")
+		.bind(this->id());
+
+	return (res > 0) ? std::make_optional<std::size_t>(res) : std::nullopt;
 }
 
 std::optional<std::size_t>
-Release::getTotalDiscNumber(void) const
+Release::getTotalDisc(void) const
 {
-	return (_totalDiscNumber > 0) ? std::make_optional<std::size_t>(_totalDiscNumber) : std::nullopt;
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
+	int res = session()->query<int>("SELECT COALESCE(MAX(total_disc),0) FROM track t INNER JOIN release r ON r.id = t.release_id")
+		.where("r.id = ?")
+		.bind(this->id());
+
+	return (res > 0) ? std::make_optional<std::size_t>(res) : std::nullopt;
 }
 
 std::optional<int>
@@ -287,7 +301,7 @@ Release::getReleaseYear(bool original) const
 	const std::string field {original ? "original_year" : "year"};
 
 	Wt::Dbo::collection<int> dates = session()->query<int>(
-			std::string{"SELECT "} + "t." + field + " FROM track t INNER JOIN release r ON r.id = t.release_id")
+			std::string {"SELECT "} + "t." + field + " FROM track t INNER JOIN release r ON r.id = t.release_id")
 		.where("r.id = ?")
 		.groupBy(field)
 		.bind(this->id());

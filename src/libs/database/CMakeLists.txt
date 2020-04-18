@@ -11,6 +11,7 @@ add_library(lmsdatabase SHARED
 	impl/Session.cpp
 	impl/SessionPool.cpp
 	impl/SqlQuery.cpp
+	impl/SubsonicSettings.cpp
 	impl/Track.cpp
 	impl/TrackBookmark.cpp
 	impl/User.cpp

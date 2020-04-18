@@ -1,0 +1,41 @@
+:root {
+  --body-color: #ffffff;
+  --hover-color: #00bc8c;
+  --playing-background-color: #375a7f4f;
+  --slider-background-color: #5a5a5a;
+  --player-background-color: #303030;
+}
+
+.Lms-artistname.text-muted {
+	font-style: italic;
+	color: #7e7e7e;
+}
+
+.Lms-artistname.text-primary, .Lms-artistname.text-primary:hover {
+	color: var(--body-color)
+}
+
+a.Lms-artistname.text-primary:hover {
+	color: var(--hover-color)
+}
+
+.Lms-control-btn {
+	color: var(--body-color)
+}
+
+.Lms-releasename.text-primary, .Lms-releasename.text-primary:hover {
+	color: var(--body-color)
+}
+
+a.Lms-releasename.text-primary:hover {
+	color: var(--hover-color)
+}
+
+.Lms-trackname.text-primary, .Lms-trackname.text-primary:hover {
+	color: var(--body-color)
+}
+
+.media, .media-body {
+	overflow: visible;
+}
+

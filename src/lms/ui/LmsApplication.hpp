@@ -103,7 +103,7 @@ class LmsApplication : public Wt::WApplication
 		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Wt::Dbo::ptr<Database::Artist> artist, bool addText = true);
 		static Wt::WLink createReleaseLink(Wt::Dbo::ptr<Database::Release> release);
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Wt::Dbo::ptr<Database::Release> release, bool addText = true);
-		static std::unique_ptr<Wt::WTemplate> createCluster(Wt::Dbo::ptr<Database::Cluster> cluster, bool canDelete = false);
+		static std::unique_ptr<Wt::WText> createCluster(Wt::Dbo::ptr<Database::Cluster> cluster, bool canDelete = false);
 
 		// Signal emitted just before the session ends (user may already be logged out)
 		Wt::Signal<>&	preQuit() { return _preQuit; }

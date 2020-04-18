@@ -4,6 +4,7 @@ add_executable(lms
 	ui/Auth.cpp
 	ui/LmsApplication.cpp
 	ui/LmsApplicationGroup.cpp
+	ui/LmsTheme.cpp
 	ui/MediaPlayer.cpp
 	ui/PlayQueueView.cpp
 	ui/PlayHistoryView.cpp
@@ -12,6 +13,7 @@ add_executable(lms
 	ui/admin/DatabaseSettingsView.cpp
 	ui/admin/DatabaseStatus.cpp
 	ui/admin/InitWizardView.cpp
+	ui/admin/SubsonicView.cpp
 	ui/admin/UserView.cpp
 	ui/admin/UsersView.cpp
 	ui/common/Validators.cpp

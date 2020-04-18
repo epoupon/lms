@@ -68,6 +68,14 @@
 <message id="Lms.Admin.Database.Status.status-scheduled">Planifié le {1}</message>
 <message id="Lms.Admin.Database.Status.status-in-progress">Scan de {1} fichiers sur {2} ({3} %)</message>
 
+<!--Subsonic-->
+<message id="Lms.Admin.Subsonic.all-artists">Tous les artistes</message>
+<message id="Lms.Admin.Subsonic.release-artists">Artistes d'album</message>
+<message id="Lms.Admin.Subsonic.enable-api">Activer</message>
+<message id="Lms.Admin.Subsonic.artist-list-mode">Mode de listage des artistes</message>
+<message id="Lms.Admin.Subsonic.need-restart">Vous devez redémarrer le service pour que cette option soit prise en compte</message>
+<message id="Lms.Admin.Subsonic.subsonic">API Subsonic</message>
+
 <!--Users-->
 <message id="Lms.Admin.Users.add">Ajouter</message>
 <message id="Lms.Admin.Users.admin">Admin</message>
@@ -116,14 +124,15 @@
 
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">Tous les artistes</message>
-<message id="Lms.Explore.Artists.linktype-artist">Artiste de piste</message>
-<message id="Lms.Explore.Artists.linktype-releaseartist">Artiste d'album</message>
+<message id="Lms.Explore.Artists.linktype-artist">Artistes de piste</message>
+<message id="Lms.Explore.Artists.linktype-releaseartist">Artistes d'album</message>
 <message id="Lms.Explore.ArtistsInfo.recently-added">Ajouts récents</message>
 <message id="Lms.Explore.ArtistsInfo.most-played">Artistes populaires</message>
 
 <!--Explore:Release-->
 <message id="Lms.Explore.ReleaseInfo.similar-releases">Albums similaires</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
+<message id="Lms.Explore.Release.disc">Disque {1}</message>
 
 <!--Explore:Releases-->
 <message id="Lms.Explore.ReleasesInfo.recently-added">Ajouts récents</message>
@@ -155,8 +164,10 @@
 
 
 <!--Settings-->
+<message id="Lms.Settings.appearance">Apparence</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.change-password">Changement de mot de passe</message>
+<message id="Lms.Settings.dark-mode">Mode sombre</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
 <message id="Lms.Settings.password-bad">Mauvais mot de passe</message>
 <message id="Lms.Settings.password-must-fill-old-password">L'ancien mot de passe doit être renseigné</message>

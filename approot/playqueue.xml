@@ -2,58 +2,53 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="Lms.PlayQueue.template.clear-btn">
-	<i class="fa fa-times-circle Lms-playqueue-btn"></i>
-</message>
-
-<message id="Lms.PlayQueue.template.shuffle-btn">
-	<i class="fa fa-random Lms-playqueue-btn"></i>
-</message>
-
-<message id="Lms.PlayQueue.template.repeat-btn">
-	<i class="fa fa-repeat Lms-playqueue-btn"></i>
-</message>
-
-<message id="Lms.PlayQueue.template.radio-btn">
-	<i class="fa fa-rss Lms-playqueue-btn"></i>
-</message>
+<message id="Lms.PlayQueue.template.clear-btn"><i class="fa fa-fw fa-times-circle Lms-playqueue-btn Lms-control-btn"></i></message>
+<message id="Lms.PlayQueue.template.shuffle-btn"><i class="fa fa-fw fa-random Lms-playqueue-btn Lms-control-btn"></i></message>
+<message id="Lms.PlayQueue.template.repeat-btn"><i class="fa fa-fw fa-repeat Lms-playqueue-btn Lms-control-btn"></i></message>
+<message id="Lms.PlayQueue.template.radio-btn"><i class="fa fa-fw fa-rss Lms-playqueue-btn Lms-control-btn"></i></message>
 
 <message id="Lms.PlayQueue.template">
-	<div class="page-header">
-		<h2>${tr:Lms.PlayQueue.playqueue}</h2>
-		${clear-btn}${shuffle-btn}${repeat-btn}${radio-btn}
-		<h4><small>${nb-tracks}</small></h4>
-	</div>
-	${entries}
 	<div class="row">
-		<div class="col-xs-12 Lms-horizontal-center">
-			${show-more class="btn-primary Lms-show-more"}
+		<div class="col-md-8">
+			<div class="page-header">
+				<h2>${tr:Lms.PlayQueue.playqueue}</h2>
+				${clear-btn}${shuffle-btn}${repeat-btn}${radio-btn}
+				<h4><small>${nb-tracks}</small></h4>
+			</div>
+			${entries}
+			<div class="row">
+				<div class="col-xs-12 Lms-horizontal-center">
+					${show-more class="btn-primary Lms-show-more"}
+				</div>
+			</div>
 		</div>
 	</div>
 </message>
 
-<message id="Lms.PlayQueue.template.play-btn">
-	<i class="fa fa-play-circle Lms-playqueue-btn"></i>
-</message>
-
-<message id="Lms.PlayQueue.template.delete-btn">
-	<i class="fa fa-times-circle Lms-playqueue-btn"></i>
-</message>
+<message id="Lms.PlayQueue.template.play-btn"><i class="fa fa-fw fa-play-circle Lms-playqueue-btn Lms-control-btn"></i></message>
+<message id="Lms.PlayQueue.template.delete-btn"><i class="fa fa-fw fa-times-circle Lms-playqueue-btn Lms-control-btn"></i></message>
 
 <message id="Lms.PlayQueue.template.entry">
-	<div class="row Lms-playqueue-entry Lms-vertical-align">
+	<div class="row Lms-playqueue-entry Lms-entry-hoverable Lms-vertical-align ${is-selected}">
 		<div class="col-xs-9 Lms-playqueue-entry-name">
-			<h4>${name}</h4>
-			${<if-has-artists-or-release>}
-			${<if-has-release>}<small>${release class="Lms-explore-releasename"}</small>${</if-has-release>}
-			${<if-has-artists>}<small>${artists}</small>${</if-has-artists>}
-			${</if-has-artists-or-release>}
+			<div class="media">
+				<div class="media-left media-middle hidden-xs">
+					${cover class="media-object Lms-cover"}
+				</div>
+				<div class="media-body media-middle">
+					<h4><div class="Lms-trackname text-primary">${name}</div></h4>
+					${<if-has-artists-or-release>}
+					${<if-has-release>}<small>${release class="Lms-releasename text-primary"}</small>${</if-has-release>}
+					${<if-has-artists>}${artists}${</if-has-artists>}
+					${</if-has-artists-or-release>}
+				</div>
+			</div>
 		</div>
 		<div class="col-xs-3">
-			<div class="Lms-playqueue-entry-controls">
+			<div class="Lms-playqueue-entry-controls Lms-vertical-align">
 				${play-btn}${del-btn}
 			</div>
-			<div class="Lms-playqueue-entry-duration">
+			<div class="Lms-playqueue-entry-duration text-muted">
 				${duration}
 			</div>
 		</div>
@@ -61,7 +56,7 @@
 </message>
 
 <message id="Lms.PlayQueue.template.entry-artist">
-	${artist class="Lms-explore-artistname"}
+	<small>${artist class="Lms-artistname text-muted"}</small>
 </message>
 
 </messages>

@@ -22,17 +22,17 @@
 </message>
 
 <message id="Lms.Explore.Releases.template.entry">
-	<div class="row Lms-explore-releases-entry">
+	<div class="row Lms-explore-releases-entry Lms-entry-hoverable">
 		<div class="col-xs-12">
 			<div class="media">
 				<div class="media-left media-middle">
-					${cover class="media-object"}
+					${cover class="media-object Lms-cover"}
 				</div>
 				<div class="media-body media-middle">
 					<h4 class="media-heading">
-						${release-name class="Lms-explore-releasename"}
+						${release-name class="Lms-releasename text-primary"}
 					</h4>
-					${<if-has-artist>}<h4><small>${artist-name class="Lms-explore-artistname"}</small></h4>${</if-has-artist>}
+					${<if-has-artist>}<h4><small>${artist-name class="Lms-artistname text-muted"}</small></h4>${</if-has-artist>}
 					${play-btn}${add-btn}
 				</div>
 			</div>
