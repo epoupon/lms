@@ -11,11 +11,11 @@
 
 <message id="Lms.Admin.Users.template.entry">
 	<div class="row Lms-admin-users-entry Lms-vertical-align">
-		<div class="col-xs-7 Lms-vertical-align">
-			${name}${<if-tag>}<span class="badge Lms-admin-users-entry-role">${tag}</span>${</if-tag>}
+		<div class="col-md-5 col-xs-8 Lms-vertical-align">
+			${name}${<if-tag>}<span class="label label-info Lms-admin-users-entry-role">${tag}</span>${</if-tag>}
 		</div>
-		<div class="col-xs-5 Lms-horizontal-center">
-			${<if-edit>}${edit-btn class="Lms-admin-users-entry-btn"}${del-btn class="btn-danger Lms-admin-users-entry-btn"}${</if-edit>}
+		<div class="col-md-3 col-xs-4 Lms-horizontal-center">
+			${<if-edit>}${edit-btn class="btn-warning btn-sm Lms-admin-users-entry-btn"}${del-btn class="btn-danger btn-sm Lms-admin-users-entry-btn"}${</if-edit>}
 		</div>
 	</div>
 </message>
