@@ -47,8 +47,8 @@ class SettingsModel : public Wt::WFormModel
 		// Associate each field with a unique string literal.
 		static inline const Field DarkModeField {"dark-mode"};
 		static inline const Field TranscodeEnableField {"transcoding-enable"};
-		static inline const Field TranscodeFormatField {"transcoding-bitrate"};
-		static inline const Field TranscodeBitrateField {"transcoding-format"};
+		static inline const Field TranscodeFormatField {"transcoding-format"};
+		static inline const Field TranscodeBitrateField {"transcoding-bitrate"};
 		static inline const Field PasswordOldField {"password-old"};
 		static inline const Field PasswordField {"password"};
 		static inline const Field PasswordConfirmField {"password-confirm"};
