@@ -65,6 +65,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 
 .Lms-control-btn:hover {
 	color: var(--hover-color);
+	cursor: pointer;
 }
 
 .Lms-cover:hover {
@@ -98,6 +99,12 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	font-weight: bold;
 	border-radius: 3px;
 	background-color: var(--playing-background-color);
+}
+
+.Lms-explore-btn {
+	font-size: 24px !important;
+	text-align: left;
+	width: 28px;
 }
 
 .Lms-explore-contents {
@@ -208,15 +215,13 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	margin: 0px;
 }
 
-.Lms-explore-btn {
-	font-size: 24px !important;
-	text-align: center;
-	width: 28px;
-	cursor: pointer;
-}
-
 .Lms-navbar {
 	border-radius: 0px;
+}
+
+.Lms-playqueue-btn {
+	font-size: 24px !important;
+	text-align: left;
 }
 
 .Lms-playqueue-entry {
@@ -229,11 +234,6 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 
 .Lms-playqueue-entry:hover .Lms-playqueue-entry-duration {
 	display: none;
-}
-
-.Lms-playqueue-btn {
-	font-size: 22px !important;
-	cursor: pointer;
 }
 
 .text-success .Lms-playqueue-btn {
@@ -286,10 +286,6 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	padding: 0px;
 	margin: 0px;
 	background-color: var(--player-background-color);
-}
-
-.Lms-player-btn {
-	cursor: pointer;
 }
 
 .Lms-player-btn-volume {
