@@ -9,7 +9,7 @@
 
 <message id="Lms.PlayQueue.template">
 	<div class="row">
-		<div class="col-lg-8">
+		<div class="col-md-8">
 			<div class="page-header">
 				<h2>${tr:Lms.PlayQueue.playqueue}</h2>
 				${clear-btn}${shuffle-btn}${repeat-btn}${radio-btn}

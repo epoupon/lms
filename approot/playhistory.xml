@@ -4,7 +4,7 @@
 
 <message id="Lms.PlayHistory.template">
 	<div class="row">
-		<div class="col-lg-8">
+		<div class="col-md-8">
 			<div class="page-header">
 				<h2>${tr:Lms.PlayHistory.playhistory}</h2>
 			</div>
