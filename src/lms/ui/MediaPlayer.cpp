@@ -62,26 +62,18 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play)
 	const auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
 	const std::string imgResourceMimeType {LmsApp->getImageResource()->getMimeType()};
 
-	std::string resource;
-	bool transcode;
-	if (LmsApp->getUser()->getAudioTranscodeEnable())
-	{
-		resource = LmsApp->getAudioTranscodeResource()->getUrlForUser(trackId, LmsApp->getUser());
-		transcode = true;
-	}
-	else
-	{
-		resource = LmsApp->getAudioFileResource()->getUrl(trackId);
-		transcode = false;
-	}
+	std::string nativeResource;
+	const std::string transcodeResource {LmsApp->getAudioTranscodeResource()->getUrlForUser(trackId, LmsApp->getUser())};
+//	if (!LmsApp->getUser()->getAudioTranscodeEnable())
+		nativeResource = LmsApp->getAudioFileResource()->getUrl(trackId);
 
 	const auto artists {track->getArtists()};
 
 	std::ostringstream oss;
 	oss
 		<< "var params = {"
-		<< " mode: " << (transcode ? "Mode.Transcode" : "Mode.File") << ","
-		<< " resource: \"" << resource << "\","
+		<< " native_resource: \"" << nativeResource << "\","
+		<< " transcode_resource: \"" << transcodeResource << "\","
 		<< " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
 		<< " title: \"" << StringUtils::jsEscape(track->getName()) << "\","
 		<< " artist: \"" << (!artists.empty() ? StringUtils::jsEscape(artists.front()->getName()) : "") << "\","

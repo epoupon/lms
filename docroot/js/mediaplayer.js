@@ -14,8 +14,8 @@ LMS.mediaplayer = function () {
 	var _elems = {};
 	var _offset = 0;
 	var _duration = 0;
-	var _audioSrc;
-	var _mode = Mode.File;
+	var _audioNativeSrc;
+	var _audioTranscodedSrc;
 
 	var _updateControls = function() {
 		if (_elems.audio.paused) {
@@ -115,8 +115,8 @@ LMS.mediaplayer = function () {
 
 		_elems.playpause.addEventListener("click", function() {
 			if (_elems.audio.paused) {
-				if (_elems.audio.hasAttribute("src"))
-					_elems.audio.play();
+				if (_elems.audio.firstChild)
+					_playTrack();
 			}
 			else
 				_elems.audio.pause();
@@ -129,15 +129,17 @@ LMS.mediaplayer = function () {
 			_requestNextTrack();
 		});
 		_elems.seek.addEventListener("change", function() {
-			if (!_elems.audio.hasAttribute("src"))
+			let mode = _getAudioMode();
+			if (!mode)
 				return;
 
 			let selectedOffset = parseInt(_elems.seek.value, 10);
 
-			switch (_mode) {
+			switch (mode) {
 				case Mode.Transcode:
 					_offset = selectedOffset;
-					_elems.audio.src = _audioSrc + "&offset=" + _offset;
+					_removeAudioSources();
+					_addAudioSourceIfSet(_audioTranscodeSrc +  "&offset=" + _offset);
 					_elems.audio.load();
 					_elems.audio.currentTime = 0;
 					_playTrack();
@@ -189,14 +191,42 @@ LMS.mediaplayer = function () {
 
 	}
 
+	var _removeAudioSources = function() {
+		while ( _elems.audio.lastElementChild) {
+			_elems.audio.removeChild( _elems.audio.lastElementChild);
+		}
+	}
+
+	var _addAudioSourceIfSet = function(audioSrc) {
+		let source = document.createElement('source');
+		source.src = audioSrc;
+		_elems.audio.appendChild(source);
+	}
+
+	var _getAudioMode = function() {
+		if (_elems.audio.currentSrc) {
+			if (_elems.audio.currentSrc.includes("format"))
+				return Mode.Transcode;
+			else
+				return Mode.File;
+		}
+		else
+			return undefined;
+	}
+
 	var loadTrack = function(params, autoplay) {
 		_offset = 0;
 		_duration = params.duration;
-		_audioSrc = params.resource;
-		_mode = params.mode;
+		_audioNativeSrc = params.native_resource;
+		_audioTranscodeSrc = params.transcode_resource;
 
 		_elems.seek.max = _duration;
-		_elems.audio.src = _audioSrc;
+
+		_removeAudioSources();
+		// ! order is important
+		_addAudioSourceIfSet(_audioNativeSrc);
+		_addAudioSourceIfSet(_audioTranscodeSrc);
+		_elems.audio.load();
 
 		_elems.curtime.innerHTML = _durationToString(_offset);
 		_elems.duration.innerHTML = _durationToString(_duration);
