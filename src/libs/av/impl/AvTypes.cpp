@@ -21,15 +21,15 @@
 
 namespace Av {
 
-const char* encodingToMimetype(Encoding encoding)
+const char* formatToMimetype(Format format)
 {
-	switch (encoding)
+	switch (format)
 	{
-		case Encoding::MP3: 		return "audio/mpeg";
-		case Encoding::OGG_OPUS:	return "audio/opus";
-		case Encoding::MATROSKA_OPUS:	return "audio/x-matroska";
-		case Encoding::OGG_VORBIS:	return "audio/ogg";
-		case Encoding::WEBM_VORBIS:	return "audio/webm";
+		case Format::MP3: 		return "audio/mpeg";
+		case Format::OGG_OPUS:		return "audio/opus";
+		case Format::MATROSKA_OPUS:	return "audio/x-matroska";
+		case Format::OGG_VORBIS:	return "audio/ogg";
+		case Format::WEBM_VORBIS:	return "audio/webm";
 	}
 
 	throw AvException {"Invalid encoding"};

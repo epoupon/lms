@@ -31,7 +31,6 @@
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
-#include "database/SubsonicSettings.hpp"
 #include "database/Track.hpp"
 #include "database/TrackBookmark.hpp"
 #include "database/TrackArtistLink.hpp"
@@ -41,7 +40,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	19
+#define LMS_DATABASE_VERSION	21
 
 using Version = std::size_t;
 
@@ -198,11 +197,8 @@ CREATE TABLE "release_backup" (
   "mbid" text not null
 ))");
 			_session.execute("INSERT INTO release_backup SELECT id,version,name,mbid FROM release");
-			_session.execute("DROP TABLE release;");
+			_session.execute("DROP TABLE release");
 			_session.execute("ALTER TABLE release_backup RENAME TO release");
-			_session.execute("CREATE INDEX release_name_idx ON release(name)");
-			_session.execute("CREATE INDEX release_name_nocase_idx ON release(name COLLATE NOCASE)");
-			_session.execute("CREATE INDEX release_mbid_idx ON release(mbid)");
 
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
@@ -216,6 +212,39 @@ CREATE TABLE IF NOT EXISTS "subsonic_settings" (
   "api_enabled" boolean not null,
   "artist_list_mode" integer not null
 ))");
+		}
+		else if (version == 19)
+		{
+			_session.execute(R"(
+CREATE TABLE "user_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "type" integer not null,
+  "login_name" text not null,
+  "password_salt" text not null,
+  "password_hash" text not null,
+  "last_login" text,
+  "subsonic_transcode_enable" boolean not null,
+  "subsonic_transcode_format" integer not null,
+  "subsonic_transcode_bitrate" integer not null,
+  "subsonic_artist_list_mode" integer not null,
+  "ui_theme" integer not null,
+  "cur_playing_track_pos" integer not null,
+  "repeat_all" boolean not null,
+  "radio" boolean not null
+))");
+			_session.execute(std::string {"INSERT INTO user_backup SELECT id, version, type, login_name, password_salt, password_hash, last_login, "}
+					+ (User::defaultSubsonicTranscodeEnable ? "1" : "0")
+					+ ", " + std::to_string(static_cast<int>(User::defaultSubsonicTranscodeFormat))
+					+ ", " + std::to_string(User::defaultSubsonicTranscodeBitrate)
+					+ ", " + std::to_string(static_cast<int>(User::defaultSubsonicArtistListMode))
+					+ ", ui_theme, cur_playing_track_pos, repeat_all, radio FROM user");
+			_session.execute("DROP TABLE user");
+			_session.execute("ALTER TABLE user_backup RENAME TO user");
+		}
+		else if (version == 20)
+		{
+			_session.execute("DROP TABLE subsonic_settings");
 		}
 		else
 		{
@@ -239,7 +268,6 @@ Session::Session(Db& db)
 	_session.mapClass<ClusterType>("cluster_type");
 	_session.mapClass<Release>("release");
 	_session.mapClass<ScanSettings>("scan_settings");
-	_session.mapClass<SubsonicSettings>("subsonic_settings");
 	_session.mapClass<Track>("track");
 	_session.mapClass<TrackBookmark>("track_bookmark");
 	_session.mapClass<TrackArtistLink>("track_artist_link");
@@ -365,7 +393,6 @@ Session::prepareTables()
 		auto uniqueTransaction {createUniqueTransaction()};
 
 		ScanSettings::init(*this);
-		SubsonicSettings::init(*this);
 	}
 }
 

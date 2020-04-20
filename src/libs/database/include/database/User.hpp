@@ -36,7 +36,7 @@ class Session;
 class TrackList;
 class Track;
 
-// User selectable audio formats
+// User selectable audio file formats
 // Do not change values
 enum class AudioFormat
 {
@@ -113,16 +113,33 @@ class User : public Wt::Dbo::Dbo<User>
 			Dark	= 1,
 		};
 
-		static const std::set<Bitrate>		audioTranscodeAllowedBitrates;
+		// Do not remove values!
+		static inline const std::set<Bitrate>	audioTranscodeAllowedBitrates
+		{
+			64000,
+			96000,
+			128000,
+			192000,
+			320000,
+		};
+
+		// Do not change enum values!
+		enum class SubsonicArtistListMode
+		{
+			AllArtists	= 0,
+			ReleaseArtists	= 1,
+		};
+
 		static inline const std::size_t 	MinNameLength {3};
 		static inline const std::size_t 	MaxNameLength {15};
-		static inline const bool		defaultAudioTranscodeEnable {true};
-		static inline const AudioFormat		defaultAudioTranscodeFormat {AudioFormat::OGG_OPUS};
-		static inline const Bitrate		defaultAudioTranscodeBitrate {128000};
+		static inline const bool		defaultSubsonicTranscodeEnable {true};
+		static inline const AudioFormat		defaultSubsonicTranscodeFormat {AudioFormat::OGG_OPUS};
+		static inline const Bitrate		defaultSubsonicTranscodeBitrate {128000};
 		static inline const UITheme		defaultUITheme {UITheme::Dark};
+		static inline const SubsonicArtistListMode defaultSubsonicArtistListMode {SubsonicArtistListMode::AllArtists};
 
 
-		User();
+		User() = default;
 		User(const std::string& loginName, const PasswordHash& passwordHash);
 
 		// utility
@@ -143,27 +160,27 @@ class User : public Wt::Dbo::Dbo<User>
 		void setLastLogin(const Wt::WDateTime& dateTime)	{ _lastLogin = dateTime; }
 		void setPasswordHash(const PasswordHash& passwordHash)	{ _passwordSalt = passwordHash.salt; _passwordHash = passwordHash.hash; }
 		void setType(Type type)					{ _type = type; }
-		void setAudioTranscodeEnable(bool value) 		{ _audioTranscodeEnable = value; }
-		void setAudioTranscodeFormat(AudioFormat format)	{ _audioTranscodeFormat = format; }
-		void setAudioTranscodeBitrate(Bitrate bitrate);
-		void setMaxAudioTranscodeBitrate(Bitrate bitrate);
+		void setSubsonicTranscodeEnable(bool value) 		{ _subsonicTranscodeEnable = value; }
+		void setSubsonicTranscodeFormat(AudioFormat encoding)	{ _subsonicTranscodeFormat = encoding; }
+		void setSubsonicTranscodeBitrate(Bitrate bitrate);
 		void setCurPlayingTrackPos(std::size_t pos)		{ _curPlayingTrackPos = pos; }
 		void setRadio(bool val)					{ _radio = val; }
 		void setRepeatAll(bool val)				{ _repeatAll = val; }
 		void setUITheme(UITheme uiTheme)			{ _uiTheme = uiTheme; }
 		void clearAuthTokens();
+		void setSubsonicArtistListMode(SubsonicArtistListMode mode)	{ _subsonicArtistListMode = mode; }
 
 		// read
 		bool			isAdmin() const { return _type == Type::ADMIN; }
 		bool			isDemo() const { return _type == Type::DEMO; }
-		bool			getAudioTranscodeEnable() const { return _audioTranscodeEnable; }
-		Bitrate			getAudioTranscodeBitrate() const;
-		AudioFormat		getAudioTranscodeFormat() const { return _audioTranscodeFormat; }
-		Bitrate			getMaxAudioTranscodeBitrate() const;
+		bool			getSubsonicTranscodeEnable() const { return _subsonicTranscodeEnable; }
+		AudioFormat		getSubsonicTranscodeFormat() const { return _subsonicTranscodeFormat; }
+		Bitrate			getSubsonicTranscodeBitrate() const { return _subsonicTranscodeBitrate; }
 		std::size_t		getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
 		bool			isRepeatAllSet() const { return _repeatAll; }
 		bool			isRadioSet() const { return _radio; }
 		UITheme			getUITheme() const { return _uiTheme; }
+		SubsonicArtistListMode	getSubsonicArtistListMode() const { return _subsonicArtistListMode; }
 
 		Wt::Dbo::ptr<TrackList>	getPlayedTrackList(Session& session) const;
 		Wt::Dbo::ptr<TrackList>	getQueuedTrackList(Session& session) const;
@@ -184,8 +201,6 @@ class User : public Wt::Dbo::Dbo<User>
 		bool			hasStarredTrack(Wt::Dbo::ptr<Track> track) const;
 		std::vector<Wt::Dbo::ptr<Track>> getStarredTracks() const;
 
-		bool 			checkBitrate(Bitrate bitrate) const;
-
 		template<class Action>
 		void persist(Action& a)
 		{
@@ -194,10 +209,10 @@ class User : public Wt::Dbo::Dbo<User>
 			Wt::Dbo::field(a, _passwordSalt, "password_salt");
 			Wt::Dbo::field(a, _passwordHash, "password_hash");
 			Wt::Dbo::field(a, _lastLogin, "last_login");
-			Wt::Dbo::field(a, _maxAudioTranscodeBitrate, "max_audio_bitrate");
-			Wt::Dbo::field(a, _audioTranscodeEnable, "audio_transcode_enable");
-			Wt::Dbo::field(a, _audioTranscodeBitrate, "audio_transcode_bitrate");
-			Wt::Dbo::field(a, _audioTranscodeFormat, "audio_transcode_format");
+			Wt::Dbo::field(a, _subsonicTranscodeEnable, "subsonic_transcode_enable");
+			Wt::Dbo::field(a, _subsonicTranscodeFormat, "subsonic_transcode_format");
+			Wt::Dbo::field(a, _subsonicTranscodeBitrate, "subsonic_transcode_bitrate");
+			Wt::Dbo::field(a, _subsonicArtistListMode, "subsonic_artist_list_mode");
 			Wt::Dbo::field(a, _uiTheme, "ui_theme");
 			// User's dynamic data
 			Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
@@ -219,13 +234,13 @@ class User : public Wt::Dbo::Dbo<User>
 		UITheme		_uiTheme {defaultUITheme};
 
 		// Admin defined settings
-		int	 	_maxAudioTranscodeBitrate;
 		Type		_type {Type::REGULAR};
 
 		// User defined settings
-		bool		_audioTranscodeEnable {defaultAudioTranscodeEnable};
-		AudioFormat	_audioTranscodeFormat {defaultAudioTranscodeFormat};
-		int		_audioTranscodeBitrate {defaultAudioTranscodeBitrate};
+		SubsonicArtistListMode	_subsonicArtistListMode {defaultSubsonicArtistListMode};
+		bool			_subsonicTranscodeEnable {defaultSubsonicTranscodeEnable};
+		AudioFormat		_subsonicTranscodeFormat {defaultSubsonicTranscodeFormat};
+		int			_subsonicTranscodeBitrate {defaultSubsonicTranscodeBitrate};
 
 		// User's dynamic data (UI)
 		int		_curPlayingTrackPos {}; // Current track position in queue

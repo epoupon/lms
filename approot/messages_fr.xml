@@ -68,14 +68,6 @@
 <message id="Lms.Admin.Database.Status.status-scheduled">Planifié le {1}</message>
 <message id="Lms.Admin.Database.Status.status-in-progress">Scan de {1} fichiers sur {2} ({3} %)</message>
 
-<!--Subsonic-->
-<message id="Lms.Admin.Subsonic.all-artists">Tous les artistes</message>
-<message id="Lms.Admin.Subsonic.release-artists">Artistes d'album</message>
-<message id="Lms.Admin.Subsonic.enable-api">Activer</message>
-<message id="Lms.Admin.Subsonic.artist-list-mode">Mode de listage des artistes</message>
-<message id="Lms.Admin.Subsonic.need-restart">Vous devez redémarrer le service pour que cette option soit prise en compte</message>
-<message id="Lms.Admin.Subsonic.subsonic">API Subsonic</message>
-
 <!--Users-->
 <message id="Lms.Admin.Users.add">Ajouter</message>
 <message id="Lms.Admin.Users.admin">Admin</message>
@@ -146,11 +138,11 @@
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">Effacer</message>
 <message id="Lms.PlayQueue.nb-tracks">{1} pistes</message>
-<message id="Lms.PlayQueue.nb-tracks-playing">
+<message id="Lms.PlayQueue.nb-tracks-added">
 	<plural case="0">{1} piste ajoutée</plural>
 	<plural case="1">{1} pistes ajoutées</plural>
 </message>
-<message id="Lms.PlayQueue.nb-tracks-added">
+<message id="Lms.PlayQueue.nb-tracks-playing">
 	<plural case="0">{1} piste ajoutée</plural>
 	<plural case="1">{1} pistes ajoutées</plural>
 </message>
@@ -166,20 +158,29 @@
 <!--Settings-->
 <message id="Lms.Settings.appearance">Apparence</message>
 <message id="Lms.Settings.audio">Audio</message>
+<message id="Lms.Settings.audio-settings-are-local">Ces paramètres audio sont locaux à votre navigateur !</message>
 <message id="Lms.Settings.change-password">Changement de mot de passe</message>
 <message id="Lms.Settings.dark-mode">Mode sombre</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
 <message id="Lms.Settings.password-bad">Mauvais mot de passe</message>
 <message id="Lms.Settings.password-must-fill-old-password">L'ancien mot de passe doit être renseigné</message>
-<message id="Lms.Settings.transcoding">Transcodage</message>
-<message id="Lms.Settings.transcoding-bitrate">Bitrate du transcodage</message>
-<message id="Lms.Settings.transcoding-format">Format du transcodage</message>
-<message id="Lms.Settings.transcoding-enable">Activer le transcodage</message>
-<message id="Lms.Settings.transcoding.matroska_opus">Matroska/Opus</message>
-<message id="Lms.Settings.transcoding.mp3">MP3</message>
-<message id="Lms.Settings.transcoding.ogg_opus">Ogg/Opus</message>
-<message id="Lms.Settings.transcoding.ogg_vorbis">Ogg/Vorbis</message>
-<message id="Lms.Settings.transcoding.webm_vorbis">WebM/Vorbis</message>
+<message id="Lms.Settings.subsonic-artist-list-mode">Mode de listage des artistes</message>
+<message id="Lms.Settings.subsonic-artist-list-mode.all-artists">Tous les artistes</message>
+<message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Tous les artistes d'album</message>
+<message id="Lms.Settings.subsonic-api">API Subsonic</message>
+<message id="Lms.Settings.transcode">Transcodage</message>
+<message id="Lms.Settings.transcode-bitrate">Bitrate du transcodage</message>
+<message id="Lms.Settings.transcode-enable">Activer le transcodage</message>
+<message id="Lms.Settings.transcode-format">Format du transcodage</message>
+<message id="Lms.Settings.transcode-format.matroska_opus">Matroska/Opus</message>
+<message id="Lms.Settings.transcode-format.mp3">MP3</message>
+<message id="Lms.Settings.transcode-format.ogg_opus">Ogg/Opus</message>
+<message id="Lms.Settings.transcode-format.ogg_vorbis">Ogg/Vorbis</message>
+<message id="Lms.Settings.transcode-format.webm_vorbis">WebM/Vorbis</message>
+<message id="Lms.Settings.transcode-mode">Appliquer le transcodage</message>
+<message id="Lms.Settings.transcode-mode.always">Toujours</message>
+<message id="Lms.Settings.transcode-mode.if-format-not-supported">Seulement lorsque le format n'est pas pris en charge</message>
+<message id="Lms.Settings.transcode-mode.never">Jamais</message>
 <message id="Lms.Settings.settings">Paramètres</message>
 <message id="Lms.Settings.settings-saved">Paramètres sauvegardés !</message>
 

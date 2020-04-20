@@ -2,6 +2,13 @@
 
 var LMS = LMS || {};
 
+// Keep in sync with MediaPlayer::TranscodeMode cpp
+const TranscodeMode = {
+	Never: 0,
+	Always: 1,
+	IfFormatNotSupported: 2,
+}
+
 const Mode = {
 	Transcode: 1,
 	File: 2,
@@ -16,6 +23,9 @@ LMS.mediaplayer = function () {
 	var _duration = 0;
 	var _audioNativeSrc;
 	var _audioTranscodedSrc;
+	var _transcodeMode = TranscodeMode.Never;
+	var _transcodeFormat = 0;
+	var _transcodeBitrate = 0;
 
 	var _updateControls = function() {
 		if (_elems.audio.paused) {
@@ -71,6 +81,29 @@ LMS.mediaplayer = function () {
 		_setVolume(_elems.volumeslider.value);
 	}
 
+	var _initTranscodeSettings = function(defaultTranscodeMode, defaultTranscodeFormat, defaultTranscodeBitrate) {
+		if (typeof(Storage) !== "undefined" && localStorage.transcodeMode) {
+			_transcodeMode = Number(localStorage.transcodeMode);
+		}
+		else {
+			_transcodeMode = defaultTranscodeMode;
+		}
+		if (typeof(Storage) !== "undefined" && localStorage.transcodeFormat) {
+			_transcodeFormat = Number(localStorage.transcodeFormat);
+		}
+		else {
+			_transcodeFormat = defaultTranscodeFormat;
+		}
+		if (typeof(Storage) !== "undefined" && localStorage.transcodeBitrate) {
+			_transcodeBitrate = Number(localStorage.transcodeBitrate);
+		}
+		else {
+			_transcodeBitrate = defaultTranscodeBitrate;
+		}
+
+		Wt.emit(_root, "settingsLoaded", _transcodeMode, _transcodeFormat, _transcodeBitrate);
+	}
+
 	var _setVolume = function(volume) {
 		_elems.lastvolume = _elems.audio.volume;
 
@@ -99,7 +132,7 @@ LMS.mediaplayer = function () {
 		}
 	}
 
-	var init = function(root) {
+	var init = function(root, defaultTranscodeMode, defaultTranscodeFormat, defaultTranscodeBitrate) {
 		_root = root;
 
 		_elems.audio = document.getElementById("lms-mp-audio");
@@ -139,7 +172,7 @@ LMS.mediaplayer = function () {
 				case Mode.Transcode:
 					_offset = selectedOffset;
 					_removeAudioSources();
-					_addAudioSourceIfSet(_audioTranscodeSrc +  "&offset=" + _offset);
+					_addAudioSource(_audioTranscodeSrc + "&offset=" + _offset);
 					_elems.audio.load();
 					_elems.audio.currentTime = 0;
 					_playTrack();
@@ -166,6 +199,7 @@ LMS.mediaplayer = function () {
 		});
 
 		_initVolume();
+		_initTranscodeSettings(defaultTranscodeMode, defaultTranscodeFormat, defaultTranscodeBitrate);
 
 		_elems.volumeslider.addEventListener("input", function() {
 			_setVolume(_elems.volumeslider.value);
@@ -197,7 +231,7 @@ LMS.mediaplayer = function () {
 		}
 	}
 
-	var _addAudioSourceIfSet = function(audioSrc) {
+	var _addAudioSource = function(audioSrc) {
 		let source = document.createElement('source');
 		source.src = audioSrc;
 		_elems.audio.appendChild(source);
@@ -218,14 +252,21 @@ LMS.mediaplayer = function () {
 		_offset = 0;
 		_duration = params.duration;
 		_audioNativeSrc = params.native_resource;
-		_audioTranscodeSrc = params.transcode_resource;
+		_audioTranscodeSrc = params.transcode_resource + "&bitrate=" + _transcodeBitrate + "&format=" + _transcodeFormat;
 
 		_elems.seek.max = _duration;
 
 		_removeAudioSources();
 		// ! order is important
-		_addAudioSourceIfSet(_audioNativeSrc);
-		_addAudioSourceIfSet(_audioTranscodeSrc);
+		if (_transcodeMode == TranscodeMode.Never || _transcodeMode == TranscodeMode.IfFormatNotSupported)
+		{
+			_addAudioSource(_audioNativeSrc);
+		}
+		if (_transcodeMode == TranscodeMode.Always || _transcodeMode == TranscodeMode.IfFormatNotSupported)
+		{
+			_addAudioSource(_audioTranscodeSrc);
+		}
+
 		_elems.audio.load();
 
 		_elems.curtime.innerHTML = _durationToString(_offset);
@@ -248,10 +289,23 @@ LMS.mediaplayer = function () {
 		_elems.audio.pause();
 	}
 
+	var setSettings = function(transcodeMode, transcodeFormat, transcodeBitrate) {
+		_transcodeMode = transcodeMode;
+		_transcodeFormat = transcodeFormat;
+		_transcodeBitrate = transcodeBitrate;
+
+		if (typeof(Storage) !== "undefined") {
+			localStorage.transcodeMode = _transcodeMode;
+			localStorage.transcodeFormat = _transcodeFormat;
+			localStorage.transcodeBitrate = _transcodeBitrate;
+		}
+	}
+
 	return {
 		init: init,
 		loadTrack: loadTrack,
 		stop: stop,
+		setSettings: setSettings,
 	};
 }();
 

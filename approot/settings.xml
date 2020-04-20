@@ -19,44 +19,105 @@
 		</div>
 	</div>
 	<legend>${tr:Lms.Settings.audio}</legend>
+	<div class="col-sm-12">
+		<div class="row">
+			<div class="alert alert-info col-sm-7">
+				${tr:Lms.Settings.audio-settings-are-local}
+			</div>
+		</div>
+	</div>
 	<div class="form-horizontal">
 		<div class="form-group">
-			<label class="col-sm-2 control-label"  for="${id:transcoding-enable}">
-				${tr:Lms.Settings.transcoding-enable}
+			<label class="col-sm-2 control-label"  for="${id:transcode-mode}">
+				${tr:Lms.Settings.transcode-mode}
 			</label>
 			<div class="col-sm-5">
-				<div class="checkbox"><label>${transcoding-enable}</label></div>
+				${transcode-mode}
 			</div>
 			<div class="col-sm-5 help-block">
-				${transcoding-enable-info}
+				${transcode-mode-info}
 			</div>
 		</div>
 		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:transcoding-format}">
-				${tr:Lms.Settings.transcoding-format}
+			<label class="control-label col-sm-2"  for="${id:transcode-format}">
+				${tr:Lms.Settings.transcode-format}
 			</label>
 			<div class="col-sm-5">
-				${transcoding-format}
+				${transcode-format}
 			</div>
 			<div class="help-block col-sm-5">
-				${transcoding-format-info}
+				${transcode-format-info}
 			</div>
 		</div>
 		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:transcoding-bitrate}">
-				${tr:Lms.Settings.transcoding-bitrate}
+			<label class="control-label col-sm-2"  for="${id:transcode-bitrate}">
+				${tr:Lms.Settings.transcode-bitrate}
 			</label>
 			<div class="col-sm-5">
 				<div class="input-group">
-					${transcoding-bitrate}
+					${transcode-bitrate}
 					<span class="input-group-addon">kbps</span>
 				</div>
 			</div>
 			<div class="help-block col-sm-5">
-				${transcoding-bitrate-info}
+				${transcode-bitrate-info}
 			</div>
 		</div>
 	</div>
+	${<if-has-subsonic-api>}
+	<legend>${tr:Lms.Settings.subsonic-api}</legend>
+	<div class="form-horizontal">
+
+		<div class="form-group">
+			<label class="col-sm-2 control-label"  for="${id:subsonic-transcode-enable}">
+				${tr:Lms.Settings.transcode-enable}
+			</label>
+			<div class="col-sm-5">
+				<div class="checkbox"><label>${subsonic-transcode-enable}</label></div>
+			</div>
+			<div class="col-sm-5 help-block">
+				${subsonic-transcode-enable-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:subsonic-transcode-format}">
+				${tr:Lms.Settings.transcode-format}
+			</label>
+			<div class="col-sm-5">
+				${subsonic-transcode-format}
+			</div>
+			<div class="col-sm-5 help-block">
+				${subsonic-transcode-format-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:subsonic-transcode-bitrate}">
+				${tr:Lms.Settings.transcode-bitrate}
+			</label>
+			<div class="col-sm-5">
+				<div class="input-group">
+					${subsonic-transcode-bitrate}
+					<span class="input-group-addon">kbps</span>
+				</div>
+			</div>
+			<div class="help-block col-sm-5">
+				${subsonic-transcode-bitrate-info}
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-sm-2"  for="${id:subsonic-artist-list-mode}">
+				${tr:Lms.Settings.subsonic-artist-list-mode}
+			</label>
+			<div class="col-sm-5">
+				${subsonic-artist-list-mode}
+			</div>
+			<div class="help-block col-sm-5">
+				${subsonic-artist-list-mode-info}
+			</div>
+		</div>
+
+	</div>
+	${</if-has-subsonic-api>}
 	<legend>${tr:Lms.Settings.change-password}</legend>
 	<div class="form-horizontal">
 		${<if-has-old-password>}

@@ -44,6 +44,7 @@ class AudioFileResource;
 class Auth;
 class ImageResource;
 class LmsApplicationException;
+class MediaPlayer;
 
 // Events that can be listen from anywhere in the application
 struct Events
@@ -55,6 +56,7 @@ struct Events
 	// A track is being loaded
 	Wt::Signal<Database::IdType /* trackId */, bool /* play */> trackLoaded;
 	std::optional<Database::IdType> lastLoadedTrackId;
+	Wt::Signal<> mediaPlayerSettingsAvailable;
 	// Unload current track
 	Wt::Signal<> trackUnloaded;
 
@@ -105,6 +107,8 @@ class LmsApplication : public Wt::WApplication
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Wt::Dbo::ptr<Database::Release> release, bool addText = true);
 		static std::unique_ptr<Wt::WText> createCluster(Wt::Dbo::ptr<Database::Cluster> cluster, bool canDelete = false);
 
+		MediaPlayer* getMediaPlayer() const { return _mediaPlayer; }
+
 		// Signal emitted just before the session ends (user may already be logged out)
 		Wt::Signal<>&	preQuit() { return _preQuit; }
 
@@ -133,6 +137,7 @@ class LmsApplication : public Wt::WApplication
 		std::shared_ptr<AudioTranscodeResource>	_audioTranscodeResource;
 		std::shared_ptr<AudioFileResource>	_audioFileResource;
 		std::shared_ptr<ImageResource>		_imageResource;
+		MediaPlayer*				_mediaPlayer {};
 };
 
 

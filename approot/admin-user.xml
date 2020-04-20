@@ -42,21 +42,6 @@
 				${password-info}
 			</div>
 		</div>
-
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:audio-transcode-bitrate-limit}">
-				${tr:Lms.Admin.User.audio-transcode-bitrate-limit}
-			</label>
-			<div class="col-sm-5">
-				<div class="input-group">
-					${audio-transcode-bitrate-limit}
-					<span class="input-group-addon">kbps</span>
-				</div>
-			</div>
-			<div class="help-block col-sm-5">
-				${audio-transcode-bitrate-limit-info}
-			</div>
-		</div>
 		${<if-demo>}
 		<div class="form-group">
 			<label class="control-label col-sm-2"  for="${id:demo}">

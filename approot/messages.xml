@@ -68,14 +68,6 @@
 <message id="Lms.Admin.Database.Status.status-scheduled">Scheduled on {1}</message>
 <message id="Lms.Admin.Database.Status.status-in-progress">Scanning {1} of {2} files ({3} %)</message>
 
-<!--Subsonic-->
-<message id="Lms.Admin.Subsonic.all-artists">All artists</message>
-<message id="Lms.Admin.Subsonic.release-artists">Album artists</message>
-<message id="Lms.Admin.Subsonic.enable-api">Enable</message>
-<message id="Lms.Admin.Subsonic.artist-list-mode">Artist list mode</message>
-<message id="Lms.Admin.Subsonic.need-restart">You must restart the service for this change to take effect</message>
-<message id="Lms.Admin.Subsonic.subsonic">Subsonic API</message>
-
 <!--Users-->
 <message id="Lms.Admin.Users.add">New user</message>
 <message id="Lms.Admin.Users.admin">Admin</message>
@@ -166,20 +158,29 @@
 <!--Settings-->
 <message id="Lms.Settings.appearance">Appearance</message>
 <message id="Lms.Settings.audio">Audio</message>
+<message id="Lms.Settings.audio-settings-are-local">These audio settings are local to your browser!</message>
 <message id="Lms.Settings.change-password">Change password</message>
 <message id="Lms.Settings.dark-mode">Dark mode</message>
 <message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
 <message id="Lms.Settings.password-bad">Bad password</message>
 <message id="Lms.Settings.password-must-fill-old-password">Old password must be filled in</message>
-<message id="Lms.Settings.transcoding">Transcoding</message>
-<message id="Lms.Settings.transcoding-bitrate">Transcode bitrate</message>
-<message id="Lms.Settings.transcoding-format">Transcode format</message>
-<message id="Lms.Settings.transcoding-enable">Enable transcoding</message>
-<message id="Lms.Settings.transcoding.matroska_opus">Matroska/Opus</message>
-<message id="Lms.Settings.transcoding.mp3">MP3</message>
-<message id="Lms.Settings.transcoding.ogg_opus">Ogg/Opus</message>
-<message id="Lms.Settings.transcoding.ogg_vorbis">Ogg/Vorbis</message>
-<message id="Lms.Settings.transcoding.webm_vorbis">WebM/Vorbis</message>
+<message id="Lms.Settings.subsonic-artist-list-mode">Artist list mode</message>
+<message id="Lms.Settings.subsonic-artist-list-mode.all-artists">All artists</message>
+<message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Album artists</message>
+<message id="Lms.Settings.subsonic-api">Subsonic API</message>
+<message id="Lms.Settings.transcode">Transcoding</message>
+<message id="Lms.Settings.transcode-bitrate">Transcode bitrate</message>
+<message id="Lms.Settings.transcode-enable">Enable transcoding</message>
+<message id="Lms.Settings.transcode-format">Transcode format</message>
+<message id="Lms.Settings.transcode-format.matroska_opus">Matroska/Opus</message>
+<message id="Lms.Settings.transcode-format.mp3">MP3</message>
+<message id="Lms.Settings.transcode-format.ogg_opus">Ogg/Opus</message>
+<message id="Lms.Settings.transcode-format.ogg_vorbis">Ogg/Vorbis</message>
+<message id="Lms.Settings.transcode-format.webm_vorbis">WebM/Vorbis</message>
+<message id="Lms.Settings.transcode-mode">Enable transcoding</message>
+<message id="Lms.Settings.transcode-mode.always">Always</message>
+<message id="Lms.Settings.transcode-mode.if-format-not-supported">Only when format is not supported</message>
+<message id="Lms.Settings.transcode-mode.never">Never</message>
 <message id="Lms.Settings.settings">Settings</message>
 <message id="Lms.Settings.settings-saved">New settings saved!</message>
 

@@ -25,13 +25,44 @@
 #include <Wt/WText.h>
 
 #include "database/Types.hpp"
+#include "database/User.hpp"
 
 namespace UserInterface {
 
 class MediaPlayer : public Wt::WTemplate
 {
 	public:
+		using Bitrate = Database::Bitrate;
+		using Format = Database::AudioFormat;
+
+		// Do not change this enum as it may be stored locally in browser
+		// Keep it sync with LMS.mediaplayer js
+		enum class TranscodeMode
+		{
+			Never			= 0,
+			Always			= 1,
+			IfFormatNotSupported	= 2,
+		};
+		static inline constexpr TranscodeMode defaultTranscodeMode {TranscodeMode::IfFormatNotSupported};
+		static inline constexpr Format defaultTranscodeFormat {Format::OGG_OPUS};
+		static inline constexpr Bitrate defaultTranscodeBitrate {128000};
+
+		struct Settings
+		{
+			TranscodeMode	mode {defaultTranscodeMode};
+			Format		format {defaultTranscodeFormat};
+			Bitrate		bitrate {defaultTranscodeBitrate};
+		};
+
 		MediaPlayer();
+
+		MediaPlayer(const MediaPlayer&) = delete;
+		MediaPlayer(MediaPlayer&&) = delete;
+		MediaPlayer& operator=(const MediaPlayer&) = delete;
+		MediaPlayer& operator=(MediaPlayer&&) = delete;
+
+		std::optional<Settings>	getSettings() const { return _settings; }
+		void			setSettings(const Settings& settings);
 
 		// Signals
 		Wt::JSignal<>	playbackEnded;
@@ -42,6 +73,9 @@ class MediaPlayer : public Wt::WTemplate
 		void stop();
 		void loadTrack(Database::IdType trackId, bool play);
 
+		std::optional<Settings>		_settings;
+
+		Wt::JSignal<int, int, int> 	_settingsLoaded;
 		Wt::WText*	_title;
 		Wt::WAnchor*	_release;
 		Wt::WAnchor*	_artist;
