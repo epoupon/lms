@@ -26,6 +26,7 @@
 #include "database/User.hpp"
 #include "ArtistLink.hpp"
 #include "LmsApplication.hpp"
+#include "MediaPlayer.hpp"
 
 using namespace Database;
 
@@ -44,7 +45,7 @@ ArtistsInfo::ArtistsInfo()
 		refreshRecentlyAdded();
 	});
 
-	LmsApp->getEvents().trackLoaded.connect([=]
+	LmsApp->getMediaPlayer()->trackLoaded.connect([=]
 	{
 		refreshMostPlayed();
 	});

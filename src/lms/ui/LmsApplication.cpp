@@ -544,16 +544,14 @@ LmsApplication::createHome()
 		playqueue->playNext();
 	});
 
-	playqueue->trackSelected.connect([=] (Database::IdType trackId, bool play)
+	playqueue->trackSelected.connect([=] (Database::IdType trackId, bool play, float replayGain)
 	{
-		_events.lastLoadedTrackId = trackId;
-		_events.trackLoaded(trackId, play);
+		_mediaPlayer->loadTrack(trackId, play, replayGain);
 	});
 
-	playqueue->trackUnselected.connect([=]
+	playqueue->trackUnselected.connect([=] ()
 	{
-		_events.lastLoadedTrackId.reset();
-		_events.trackUnloaded();
+		_mediaPlayer->stop();
 	});
 
 	// Events from MediaScanner

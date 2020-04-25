@@ -59,7 +59,7 @@ class SettingsModel : public Wt::WFormModel
 		static inline const Field PasswordField {"password"};
 		static inline const Field PasswordConfirmField {"password-confirm"};
 
-		using TranscodeModeModel = ValueStringModel<MediaPlayer::TranscodeMode>;
+		using TranscodeModeModel = ValueStringModel<MediaPlayer::Settings::Transcode::Mode>;
 
 		SettingsModel(bool withOldPassword)
 			: _withOldPassword {withOldPassword}
@@ -118,15 +118,15 @@ class SettingsModel : public Wt::WFormModel
 
 				auto transcodeModeRow {_transcodeModeModel->getRowFromString(valueText(TranscodeModeField))};
 				if (transcodeModeRow)
-					settings.mode = _transcodeModeModel->getValue(*transcodeModeRow);
+					settings.transcode.mode = _transcodeModeModel->getValue(*transcodeModeRow);
 
 				auto transcodeFormatRow {_transcodeFormatModel->getRowFromString(valueText(TranscodeFormatField))};
 				if (transcodeFormatRow)
-					settings.format = _transcodeFormatModel->getValue(*transcodeFormatRow);
+					settings.transcode.format = _transcodeFormatModel->getValue(*transcodeFormatRow);
 
 				auto transcodeBitrateRow {_transcodeBitrateModel->getRowFromString(valueText(TranscodeBitrateField))};
 				if (transcodeBitrateRow)
-					settings.bitrate = _transcodeBitrateModel->getValue(*transcodeBitrateRow);
+					settings.transcode.bitrate = _transcodeBitrateModel->getValue(*transcodeBitrateRow);
 
 				LmsApp->getMediaPlayer()->setSettings(settings);
 			}
@@ -165,15 +165,15 @@ class SettingsModel : public Wt::WFormModel
 			{
 				const auto& settings {*LmsApp->getMediaPlayer()->getSettings()};
 
-				auto transcodeModeRow {_transcodeModeModel->getRowFromValue(settings.mode)};
+				auto transcodeModeRow {_transcodeModeModel->getRowFromValue(settings.transcode.mode)};
 				if (transcodeModeRow)
 					setValue(TranscodeModeField, _transcodeModeModel->getString(*transcodeModeRow));
 
-				auto transcodeFormatRow {_transcodeFormatModel->getRowFromValue(settings.format)};
+				auto transcodeFormatRow {_transcodeFormatModel->getRowFromValue(settings.transcode.format)};
 				if (transcodeFormatRow)
 					setValue(TranscodeFormatField, _transcodeFormatModel->getString(*transcodeFormatRow));
 
-				auto transcodeBitrateRow {_transcodeBitrateModel->getRowFromValue(settings.bitrate)};
+				auto transcodeBitrateRow {_transcodeBitrateModel->getRowFromValue(settings.transcode.bitrate)};
 				if (transcodeBitrateRow)
 					setValue(TranscodeBitrateField, _transcodeBitrateModel->getString(*transcodeBitrateRow));
 			}
@@ -271,9 +271,9 @@ class SettingsModel : public Wt::WFormModel
 		{
 
 			_transcodeModeModel = std::make_shared<TranscodeModeModel>();
-			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.always"), MediaPlayer::TranscodeMode::Always);
-			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.never"), MediaPlayer::TranscodeMode::Never);
-			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.if-format-not-supported"), MediaPlayer::TranscodeMode::IfFormatNotSupported);
+			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.always"), MediaPlayer::Settings::Transcode::Mode::Always);
+			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.never"), MediaPlayer::Settings::Transcode::Mode::Never);
+			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.if-format-not-supported"), MediaPlayer::Settings::Transcode::Mode::IfFormatNotSupported);
 
 			_subsonicArtistListModeModel = std::make_shared<ValueStringModel<User::SubsonicArtistListMode>>();
 			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.all-artists"), User::SubsonicArtistListMode::AllArtists);
@@ -303,12 +303,12 @@ class SettingsModel : public Wt::WFormModel
 
 SettingsView::SettingsView()
 {
-	wApp->internalPathChanged().connect(std::bind([=]
+	wApp->internalPathChanged().connect([=]
 	{
 		refreshView();
-	}));
+	});
 
-	LmsApp->getEvents().mediaPlayerSettingsAvailable.connect([=]()
+	LmsApp->getMediaPlayer()->settingsLoaded.connect([=]()
 	{
 		refreshView();
 	});
@@ -379,7 +379,7 @@ SettingsView::refreshView()
 		transcodeModeRaw->sactivated().connect([=]()
 		{
 			auto row {model->getTranscodeModeModel()->getRowFromString(model->valueText(SettingsModel::TranscodeModeField))};
-			const bool enable = (row && (model->getTranscodeModeModel()->getValue(*row) != MediaPlayer::TranscodeMode::Never));
+			const bool enable = (row && (model->getTranscodeModeModel()->getValue(*row) != MediaPlayer::Settings::Transcode::Mode::Never));
 			model->setReadOnly(SettingsModel::TranscodeFormatField, !enable);
 			model->setReadOnly(SettingsModel::TranscodeBitrateField, !enable);
 			t->updateModel(model.get());

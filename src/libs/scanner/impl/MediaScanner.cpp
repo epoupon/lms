@@ -111,7 +111,6 @@ updateArtistIfNeeded(const Artist::pointer& artist, const MetaData::Artist& arti
 	// Sortname may have been updated
 	if (artistInfo.sortName && *artistInfo.sortName != artist->getSortName() )
 	{
-		LMS_LOG(DBUPDATER, INFO) << "Setting sort name = '" << *artistInfo.sortName << "'";
 		artist.modify()->setSortName(*artistInfo.sortName);
 	}
 }
@@ -751,6 +750,10 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	track.modify()->setHasCover(trackInfo->hasCover);
 	track.modify()->setCopyright(trackInfo->copyright);
 	track.modify()->setCopyrightURL(trackInfo->copyrightURL);
+	if (trackInfo->trackReplayGain)
+		track.modify()->setTrackReplayGain(*trackInfo->trackReplayGain);
+	if (trackInfo->albumReplayGain)
+		track.modify()->setReleaseReplayGain(*trackInfo->albumReplayGain);
 }
 
 void
@@ -819,32 +822,61 @@ checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDire
 void
 MediaScanner::removeMissingTracks(ScanStats& stats)
 {
-	std::vector<std::filesystem::path> trackPaths;
+	static constexpr std::size_t batchSize {50};
+
+	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks to be removed...";
+	std::size_t trackCount {};
+
 	{
 		auto transaction {_dbSession.createSharedTransaction()};
-		trackPaths = Track::getAllPaths(_dbSession);;
+		trackCount = Track::getCount(_dbSession);
 	}
+	LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks to be checked...";
 
-	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks...";
-	for (const auto& trackPath : trackPaths)
+	std::vector<std::pair<Database::IdType, std::filesystem::path>> trackPaths;
+	std::vector<IdType> tracksToRemove;
+
+	for (std::size_t i {trackCount < batchSize ? 0 : trackCount - batchSize}; ; i -= (i > batchSize ? batchSize : i))
 	{
-		if (!_running)
-			return;
+		trackPaths.clear();
+		tracksToRemove.clear();
 
-		if (!checkFile(trackPath, _mediaDirectory, _fileExtensions))
+		{
+			auto transaction {_dbSession.createSharedTransaction()};
+			trackPaths = Track::getAllPaths(_dbSession, i, batchSize);
+		}
+
+		for (const auto& [trackId, trackPath] : trackPaths)
+		{
+			if (!_running)
+				return;
+
+			if (!checkFile(trackPath, _mediaDirectory, _fileExtensions))
+				tracksToRemove.push_back(trackId);
+		}
+
+		if (!tracksToRemove.empty())
 		{
 			auto transaction {_dbSession.createUniqueTransaction()};
 
-			Track::pointer track {Track::getByPath(_dbSession, trackPath)};
-			if (track)
+			for (const IdType trackId : tracksToRemove)
 			{
-				track.remove();
-				stats.deletions++;
+				Track::pointer track {Track::getById(_dbSession, trackId)};
+				if (track)
+				{
+					track.remove();
+					stats.deletions++;
+				}
 			}
 		}
 
 		notifyInProgressIfNeeded(stats);
+
+		if (i == 0)
+			break;
 	}
+
+	LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks checked!";
 }
 
 void

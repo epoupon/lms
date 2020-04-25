@@ -38,6 +38,14 @@ _filePath( p.string() )
 {
 }
 
+std::size_t
+Track::getCount(Session& session)
+{
+	session.checkSharedLocked();
+
+	return session.getDboSession().query<int>("SELECT COUNT(*) FROM track");
+}
+
 std::vector<Track::pointer>
 Track::getAll(Session& session, std::optional<std::size_t> limit)
 {
@@ -107,13 +115,26 @@ Track::create(Session& session, const std::filesystem::path& p)
 	return res;
 }
 
-std::vector<std::filesystem::path>
-Track::getAllPaths(Session& session)
+std::vector<std::pair<IdType, std::filesystem::path>>
+Track::getAllPaths(Session& session, std::optional<std::size_t> offset, std::optional<std::size_t> size)
 {
+	using QueryResultType = std::tuple<IdType, std::string>;
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<std::string> res = session.getDboSession().query<std::string>("SELECT file_path FROM track");
-	return std::vector<std::filesystem::path>(res.begin(), res.end());
+	Wt::Dbo::collection<QueryResultType> queryRes = session.getDboSession().query<QueryResultType>("SELECT id,file_path FROM track")
+		.limit(size ? static_cast<int>(*size) + 1 : -1)
+		.offset(offset ? static_cast<int>(*offset) : -1);
+
+	std::vector<std::pair<IdType, std::filesystem::path>> result;
+	result.reserve(queryRes.size());
+
+	std::transform(std::begin(queryRes), std::end(queryRes), std::back_inserter(result),
+			[](const QueryResultType& queryResult)
+			{
+				return std::make_pair(std::get<0>(queryResult), std::get<1>(queryResult));
+			});
+
+	return result;
 }
 
 std::vector<Track::pointer>

@@ -53,13 +53,6 @@ struct Events
 	Wt::Signal<LmsApplicationInfo> appOpen;
 	Wt::Signal<LmsApplicationInfo> appClosed;
 
-	// A track is being loaded
-	Wt::Signal<Database::IdType /* trackId */, bool /* play */> trackLoaded;
-	std::optional<Database::IdType> lastLoadedTrackId;
-	Wt::Signal<> mediaPlayerSettingsAvailable;
-	// Unload current track
-	Wt::Signal<> trackUnloaded;
-
 	// Database events
 	Wt::Signal<> dbScanned;
 	Wt::Signal<Scanner::ScanProgressStats> dbScanInProgress;

@@ -75,6 +75,8 @@ namespace MetaData
 		std::optional<UUID>		acoustID;
 		std::string			copyright;
 		std::string			copyrightURL;
+		std::optional<float>		trackReplayGain;
+		std::optional<float>		albumReplayGain;
 	};
 
 	class IParser

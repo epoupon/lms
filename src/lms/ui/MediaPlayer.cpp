@@ -19,6 +19,10 @@
 
 #include "MediaPlayer.hpp"
 
+#include <Wt/Json/Object.h>
+#include <Wt/Json/Value.h>
+#include <Wt/Json/Serializer.h>
+
 #include "utils/Logger.hpp"
 
 #include "database/Artist.hpp"
@@ -36,6 +40,108 @@
 
 namespace UserInterface {
 
+static std::string settingsToJSString(const MediaPlayer::Settings& settings)
+{
+	namespace Json = Wt::Json;
+
+	Json::Object res;
+
+	{
+		Json::Object transcode;
+		transcode["mode"] = static_cast<int>(settings.transcode.mode);
+		transcode["format"] = static_cast<int>(settings.transcode.format);
+		transcode["bitrate"] = static_cast<int>(settings.transcode.bitrate);
+		res["transcode"] = std::move(transcode);
+	}
+
+	{
+		Json::Object replayGain;
+		replayGain["mode"] = "TODO";
+		replayGain["preAmpGain"] = 0;
+		replayGain["clippingPreventionMode"] = "TODO";
+		res["replayGain"] = std::move(replayGain);
+	}
+
+	return Json::serialize(res);
+}
+
+static
+std::optional<MediaPlayer::Settings::Transcode::Mode>
+modeFromString(const std::string& str)
+{
+	const auto value {StringUtils::readAs<int>(str)};
+	if (!value)
+		return std::nullopt;
+
+	MediaPlayer::Settings::Transcode::Mode mode {static_cast<MediaPlayer::Settings::Transcode::Mode>(*value)};
+	switch (mode)
+	{
+		case MediaPlayer::Settings::Transcode::Mode::Never:
+		case MediaPlayer::Settings::Transcode::Mode::Always:
+		case MediaPlayer::Settings::Transcode::Mode::IfFormatNotSupported:
+			return mode;
+	}
+
+	return std::nullopt;
+}
+
+static
+std::optional<MediaPlayer::Format>
+formatFromString(const std::string& str)
+{
+	const auto value {StringUtils::readAs<int>(str)};
+	if (!value)
+		return std::nullopt;
+
+	MediaPlayer::Format format {static_cast<MediaPlayer::Format>(*value)};
+	switch (format)
+	{
+		case MediaPlayer::Format::MP3:
+		case MediaPlayer::Format::OGG_OPUS:
+		case MediaPlayer::Format::MATROSKA_OPUS:
+		case MediaPlayer::Format::OGG_VORBIS:
+		case MediaPlayer::Format::WEBM_VORBIS:
+			return format;
+	}
+
+	return std::nullopt;
+}
+
+static
+std::optional<MediaPlayer::Bitrate>
+bitrateFromString(const std::string& str)
+{
+	const auto value {StringUtils::readAs<int>(str)};
+	if (!value)
+		return std::nullopt;
+
+	if (Database::User::audioTranscodeAllowedBitrates.find(*value) != std::cend(Database::User::audioTranscodeAllowedBitrates))
+		return *value;
+
+	return std::nullopt;
+}
+
+static MediaPlayer::Settings settingsfromJSString(const std::string& strSettings)
+{
+	using Settings = MediaPlayer::Settings;
+	namespace Json = Wt::Json;
+	Json::Object parsedSettings;
+
+	Json::parse(strSettings, parsedSettings);
+
+	MediaPlayer::Settings settings;
+
+	const Json::Value transcodeValue {parsedSettings.get("transcode")};
+	if (transcodeValue.type() == Json::Type::Object)
+	{
+		const Json::Object transcode {transcodeValue};
+		settings.transcode.mode = modeFromString(transcode.get("mode").toString().orIfNull("")).value_or(Settings::Transcode::defaultMode);
+		settings.transcode.format = formatFromString(transcode.get("format").toString().orIfNull("")).value_or(Settings::Transcode::defaultFormat);
+		settings.transcode.bitrate = bitrateFromString(transcode.get("bitrate").toString().orIfNull("")).value_or(Settings::Transcode::defaultBitrate);
+	}
+
+	return settings;
+}
 
 MediaPlayer::MediaPlayer()
 : Wt::WTemplate {Wt::WString::tr("Lms.MediaPlayer.template")},
@@ -48,119 +154,99 @@ MediaPlayer::MediaPlayer()
 	_artist = bindNew<Wt::WAnchor>("artist");
 	_release = bindNew<Wt::WAnchor>("release");
 
-	_settingsLoaded.connect([this](int mode, int format, int bitrate)
+	_settingsLoaded.connect([this](const std::string& settings)
 	{
-		LMS_LOG(UI, DEBUG) << "Settings loaded! mode = " << mode << ", format = " << format << ", bitrate = " << bitrate;
+		LMS_LOG(UI, DEBUG) << "Settings loaded! '" << settings << "'";
 
-		Settings settings;
+		_settings = settingsfromJSString(settings);
 
-		switch (static_cast<TranscodeMode>(mode))
-		{
-			case TranscodeMode::Always:
-			case TranscodeMode::Never:
-			case TranscodeMode::IfFormatNotSupported:
-				settings.mode = static_cast<TranscodeMode>(mode);
-				break;
-		}
-
-		switch (static_cast<Format>(format))
-		{
-			case Format::MP3:
-			case Format::OGG_OPUS:
-			case Format::MATROSKA_OPUS:
-			case Format::OGG_VORBIS:
-			case Format::WEBM_VORBIS:
-				settings.format = static_cast<Format>(format);
-				break;
-		}
-
-		if (Database::User::audioTranscodeAllowedBitrates.find(bitrate) != std::cend(Database::User::audioTranscodeAllowedBitrates))
-			settings.bitrate = bitrate;
-
-		_settings = settings;
-
-		LmsApp->getEvents().mediaPlayerSettingsAvailable.emit();
+		settingsLoaded.emit();
 	});
 
 	{
+		Settings defaultSettings;
+
 		std::ostringstream oss;
 		oss << "LMS.mediaplayer.init("
 			<< jsRef()
-			<< ", " << static_cast<int>(defaultTranscodeMode)
-			<< ", " << static_cast<int>(defaultTranscodeFormat)
-			<< ", " << static_cast<int>(defaultTranscodeBitrate)
+			<< ", defaultSettings = " << settingsToJSString(defaultSettings)
 			<< ")";
 
 		LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
 		doJavaScript(oss.str());
 	}
-
-	LmsApp->getEvents().trackLoaded.connect(this, &MediaPlayer::loadTrack);
-	LmsApp->getEvents().trackUnloaded.connect(this, &MediaPlayer::stop);
 }
 
 void
-MediaPlayer::loadTrack(Database::IdType trackId, bool play)
+MediaPlayer::loadTrack(Database::IdType trackId, bool play, float replayGain)
 {
 	LMS_LOG(UI, DEBUG) << "Playing track ID = " << trackId;
 
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-	const auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
-	const std::string imgResourceMimeType {LmsApp->getImageResource()->getMimeType()};
-
-	const std::string transcodeResource {LmsApp->getAudioTranscodeResource()->getUrl(trackId)};
-	const std::string nativeResource {LmsApp->getAudioFileResource()->getUrl(trackId)};
-
-	const auto artists {track->getArtists()};
-
 	std::ostringstream oss;
-	oss
-		<< "var params = {"
-		<< " native_resource: \"" << nativeResource << "\","
-		<< " transcode_resource: \"" << transcodeResource << "\","
-		<< " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
-		<< " title: \"" << StringUtils::jsEscape(track->getName()) << "\","
-		<< " artist: \"" << (!artists.empty() ? StringUtils::jsEscape(artists.front()->getName()) : "") << "\","
-		<< " release: \"" << (track->getRelease() ? StringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
-		<< " artwork: ["
-		<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 96) << "\",  sizes: \"96x96\",	type: \"" << imgResourceMimeType << "\" },"
-		<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 256) << "\", sizes: \"256x256\",	type: \"" << imgResourceMimeType << "\" },"
-		<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 512) << "\", sizes: \"512x512\",	type: \"" << imgResourceMimeType << "\" },"
-		<< " ]"
-		<< "};";
-	oss << "LMS.mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay
+	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+		const auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+		if (!track)
+			return;
+
+		const std::string imgResourceMimeType {LmsApp->getImageResource()->getMimeType()};
+
+		const std::string transcodeResource {LmsApp->getAudioTranscodeResource()->getUrl(trackId)};
+		const std::string nativeResource {LmsApp->getAudioFileResource()->getUrl(trackId)};
+
+		const auto artists {track->getArtists()};
+
+		oss
+			<< "var params = {"
+			<< " nativeResource: \"" << nativeResource << "\","
+			<< " transcodeResource: \"" << transcodeResource << "\","
+			<< " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
+			<< " replayGain: " << replayGain << ","
+			<< " title: \"" << StringUtils::jsEscape(track->getName()) << "\","
+			<< " artist: \"" << (!artists.empty() ? StringUtils::jsEscape(artists.front()->getName()) : "") << "\","
+			<< " release: \"" << (track->getRelease() ? StringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
+			<< " artwork: ["
+			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 96) << "\",  sizes: \"96x96\",	type: \"" << imgResourceMimeType << "\" },"
+			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 256) << "\", sizes: \"256x256\",	type: \"" << imgResourceMimeType << "\" },"
+			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 512) << "\", sizes: \"512x512\",	type: \"" << imgResourceMimeType << "\" },"
+			<< " ]"
+			<< "};";
+		oss << "LMS.mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay
+
+		_title->setTextFormat(Wt::TextFormat::Plain);
+		_title->setText(Wt::WString::fromUTF8(track->getName()));
+
+		if (!artists.empty())
+		{
+			_artist->setTextFormat(Wt::TextFormat::Plain);
+			_artist->setText(Wt::WString::fromUTF8(artists.front()->getName()));
+			_artist->setLink(LmsApp->createArtistLink(artists.front()));
+		}
+		else
+		{
+			_artist->setText("");
+			_artist->setLink({});
+		}
+
+		if (track->getRelease())
+		{
+			_release->setTextFormat(Wt::TextFormat::Plain);
+			_release->setText(Wt::WString::fromUTF8(track->getRelease()->getName()));
+			_release->setLink(LmsApp->createReleaseLink(track->getRelease()));
+		}
+		else
+		{
+			_release->setText("");
+			_release->setLink({});
+		}
+	}
 
 	LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
-
-	_title->setTextFormat(Wt::TextFormat::Plain);
-	_title->setText(Wt::WString::fromUTF8(track->getName()));
-
-	if (!artists.empty())
-	{
-		_artist->setTextFormat(Wt::TextFormat::Plain);
-		_artist->setText(Wt::WString::fromUTF8(artists.front()->getName()));
-		_artist->setLink(LmsApp->createArtistLink(artists.front()));
-	}
-	else
-	{
-		_artist->setText("");
-		_artist->setLink({});
-	}
-
-	if (track->getRelease())
-	{
-		_release->setTextFormat(Wt::TextFormat::Plain);
-		_release->setText(Wt::WString::fromUTF8(track->getRelease()->getName()));
-		_release->setLink(LmsApp->createReleaseLink(track->getRelease()));
-	}
-	else
-	{
-		_release->setText("");
-		_release->setLink({});
-	}
-
 	wApp->doJavaScript(oss.str());
+
+	_trackIdLoaded = trackId;
+	trackLoaded.emit(*_trackIdLoaded);
 }
 
 void
@@ -176,11 +262,7 @@ MediaPlayer::setSettings(const Settings& settings)
 
 	{
 		std::ostringstream oss;
-		oss << "LMS.mediaplayer.setSettings("
-			<< static_cast<int>(_settings->mode)
-			<< ", " << static_cast<int>(_settings->format)
-			<< ", " << static_cast<int>(_settings->bitrate)
-			<< ")";
+		oss << "LMS.mediaplayer.setSettings(settings = " << settingsToJSString(settings) << ")";
 
 		LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
 		doJavaScript(oss.str());
