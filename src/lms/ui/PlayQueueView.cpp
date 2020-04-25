@@ -136,8 +136,13 @@ PlayQueue::PlayQueue()
 
 		if (!LmsApp->getUser()->isDemo())
 		{
-			LmsApp->post([=]
+			LmsApp->getMediaPlayer()->settingsLoaded.connect([=]
 			{
+				if (_mediaPlayerSettingsLoaded)
+					return;
+
+				_mediaPlayerSettingsLoaded = true;
+
 				std::size_t trackPos {};
 
 				{

@@ -81,6 +81,7 @@ class PlayQueue : public Wt::WTemplate
 
 		bool _repeatAll {};
 		bool _radioMode {};
+		bool _mediaPlayerSettingsLoaded {};
 		Database::IdType _tracklistId {};
 		Wt::WContainerWidget* _entriesContainer {};
 		Wt::WPushButton* _showMore {};

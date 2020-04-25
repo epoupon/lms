@@ -121,6 +121,7 @@ LMS.mediaplayer = function () {
 	}
 
 	var _setReplayGain = function (replayGain) {
+		console.log("Applying gain " + replayGain);
 		_gainNode.gain.value = Math.pow(10, (_settings.replayGain.preAmpGain + replayGain) / 20);
 	}
 

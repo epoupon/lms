@@ -86,8 +86,8 @@ LmsTheme::getStyleSheets(Database::User::UITheme theme)
 		case Database::User::UITheme::Dark:
 			return
 			{
-				{"css/bootstrap-darkly.min.css"},
 				{"resources/themes/bootstrap/3/wt.css"},
+				{"css/bootstrap-darkly.min.css"},
 				{"css/lms.css"},
 				{"css/lms-darkly.css"},
 			};
@@ -95,8 +95,8 @@ LmsTheme::getStyleSheets(Database::User::UITheme theme)
 		case Database::User::UITheme::Light:
 			return
 			{
-				{"css/bootstrap-flatly.min.css"},
 				{"resources/themes/bootstrap/3/wt.css"},
+				{"css/bootstrap-flatly.min.css"},
 				{"css/lms.css"},
 				{"css/lms-flatly.css"},
 			};

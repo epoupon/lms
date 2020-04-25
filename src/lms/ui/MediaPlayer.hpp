@@ -76,6 +76,8 @@ class MediaPlayer : public Wt::WTemplate
 
 				static inline constexpr Mode			defaultMode {Mode::None};
 				static inline constexpr Gain			defaultPreAmpGain {};
+				static inline constexpr Gain			minPreAmpGain {-15};
+				static inline constexpr Gain			maxPreAmpGain {15};
 				static inline constexpr ClippingPreventionMode	defaultClippingPreventionMode {ClippingPreventionMode::None};
 
 				Mode			mode;

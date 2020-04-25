@@ -4,161 +4,157 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Settings.template">
-	<legend>${tr:Lms.Settings.appearance}</legend>
-	<div class="form-horizontal">
-		<div class="form-group">
-			<label class="col-sm-2 control-label"  for="${id:dark-mode}">
-				${tr:Lms.Settings.dark-mode}
-			</label>
-			<div class="col-sm-5">
-				<div class="checkbox"><label>${dark-mode}</label></div>
+	<div class="row">
+		<div class="col-lg-6">
+			<legend>${tr:Lms.Settings.appearance}</legend>
+			<div class="form-horizontal">
+				<div class="form-group">
+					<div class="col-lg-offset-3 col-lg-9">
+						<div class="checkbox">
+							<label>${dark-mode}${tr:Lms.Settings.dark-mode}</label>
+							${dark-mode-info clas="help-block"}
+						</div>
+					</div>
+				</div>
 			</div>
-			<div class="col-sm-5 help-block">
-				${dark-mode-info}
-			</div>
-		</div>
-	</div>
-	<legend>${tr:Lms.Settings.audio}</legend>
-	<div class="col-sm-12">
-		<div class="row">
-			<div class="alert alert-info col-sm-7">
+			<legend>${tr:Lms.Settings.audio}</legend>
+			<div class="alert alert-info">
 				${tr:Lms.Settings.audio-settings-are-local}
 			</div>
-		</div>
-	</div>
-	<div class="form-horizontal">
-		<div class="form-group">
-			<label class="col-sm-2 control-label"  for="${id:transcode-mode}">
-				${tr:Lms.Settings.transcode-mode}
-			</label>
-			<div class="col-sm-5">
-				${transcode-mode}
-			</div>
-			<div class="col-sm-5 help-block">
-				${transcode-mode-info}
-			</div>
-		</div>
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:transcode-format}">
-				${tr:Lms.Settings.transcode-format}
-			</label>
-			<div class="col-sm-5">
-				${transcode-format}
-			</div>
-			<div class="help-block col-sm-5">
-				${transcode-format-info}
-			</div>
-		</div>
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:transcode-bitrate}">
-				${tr:Lms.Settings.transcode-bitrate}
-			</label>
-			<div class="col-sm-5">
-				<div class="input-group">
-					${transcode-bitrate}
-					<span class="input-group-addon">kbps</span>
+			<div class="form-horizontal">
+				<div class="form-group">
+					<label class="col-lg-3 control-label"  for="${id:transcode-mode}">
+						${tr:Lms.Settings.transcode-mode}
+					</label>
+					<div class="col-lg-9">
+						${transcode-mode}
+						${transcode-mode-info class="help-block"}
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-lg-3"  for="${id:transcode-format}">
+						${tr:Lms.Settings.transcode-format}
+					</label>
+					<div class="col-lg-9">
+						${transcode-format}
+						${transcode-format-info class="help-block"}
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-lg-3"  for="${id:transcode-bitrate}">
+						${tr:Lms.Settings.transcode-bitrate}
+					</label>
+					<div class="col-lg-9">
+						<div class="input-group">
+							${transcode-bitrate}
+							<span class="input-group-addon">kbps</span>
+						</div>
+						${transcode-bitrate-info class="help-block"}
+					</div>
+				</div>
+
+				<div class="form-group">
+					<label class="col-lg-3 control-label"  for="${id:replaygain-mode}">
+						${tr:Lms.Settings.replaygain-mode}
+					</label>
+					<div class="col-lg-9">
+						${replaygain-mode}
+						${replaygain-mode-info class="help-block"}
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-lg-3 control-label"  for="${id:replaygain-preamp}">
+						${tr:Lms.Settings.replaygain-preamp}
+					</label>
+					<div class="col-lg-9">
+						<div class="input-group">
+							${replaygain-preamp}
+							<span class="input-group-addon">dB</span>
+						</div>
+						${replaygain-preamp-info class="help-block"}
+					</div>
 				</div>
 			</div>
-			<div class="help-block col-sm-5">
-				${transcode-bitrate-info}
-			</div>
-		</div>
-	</div>
-	${<if-has-subsonic-api>}
-	<legend>${tr:Lms.Settings.subsonic-api}</legend>
-	<div class="form-horizontal">
-
-		<div class="form-group">
-			<label class="col-sm-2 control-label"  for="${id:subsonic-transcode-enable}">
-				${tr:Lms.Settings.transcode-enable}
-			</label>
-			<div class="col-sm-5">
-				<div class="checkbox"><label>${subsonic-transcode-enable}</label></div>
-			</div>
-			<div class="col-sm-5 help-block">
-				${subsonic-transcode-enable-info}
-			</div>
-		</div>
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:subsonic-transcode-format}">
-				${tr:Lms.Settings.transcode-format}
-			</label>
-			<div class="col-sm-5">
-				${subsonic-transcode-format}
-			</div>
-			<div class="col-sm-5 help-block">
-				${subsonic-transcode-format-info}
-			</div>
-		</div>
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:subsonic-transcode-bitrate}">
-				${tr:Lms.Settings.transcode-bitrate}
-			</label>
-			<div class="col-sm-5">
-				<div class="input-group">
-					${subsonic-transcode-bitrate}
-					<span class="input-group-addon">kbps</span>
+			${<if-has-subsonic-api>}
+			<legend>${tr:Lms.Settings.subsonic-api}</legend>
+			<div class="form-horizontal">
+				<div class="form-group">
+					<div class="col-lg-offset-3 col-lg-9">
+						<div class="checkbox">
+							<label>${subsonic-transcode-enable}${tr:Lms.Settings.transcode-enable}</label>
+							${subsonic-transcode-enable-info class="help-block"}
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-lg-3"  for="${id:subsonic-transcode-format}">
+						${tr:Lms.Settings.transcode-format}
+					</label>
+					<div class="col-lg-9">
+						${subsonic-transcode-format}
+						${subsonic-transcode-format-info class="help-block"}
+					</div>
+				</div>
+				<div class="form-group">
+				<label class="control-label col-lg-3"  for="${id:subsonic-transcode-bitrate}">
+						${tr:Lms.Settings.transcode-bitrate}
+					</label>
+					<div class="col-lg-9">
+						<div class="input-group">
+							${subsonic-transcode-bitrate}
+							<span class="input-group-addon">kbps</span>
+						</div>
+						${subsonic-transcode-bitrate-info class="help-block"}
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-lg-3"  for="${id:subsonic-artist-list-mode}">
+						${tr:Lms.Settings.subsonic-artist-list-mode}
+					</label>
+					<div class="col-lg-9">
+						${subsonic-artist-list-mode}
+						${subsonic-artist-list-mode-info class="help-block"}
+					</div>
 				</div>
 			</div>
-			<div class="help-block col-sm-5">
-				${subsonic-transcode-bitrate-info}
-			</div>
-		</div>
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:subsonic-artist-list-mode}">
-				${tr:Lms.Settings.subsonic-artist-list-mode}
-			</label>
-			<div class="col-sm-5">
-				${subsonic-artist-list-mode}
-			</div>
-			<div class="help-block col-sm-5">
-				${subsonic-artist-list-mode-info}
-			</div>
-		</div>
+			${</if-has-subsonic-api>}
+			<legend>${tr:Lms.Settings.change-password}</legend>
+			<div class="form-horizontal">
+				${<if-has-old-password>}
+				<div class="form-group">
+					<label class="control-label col-lg-3" for="${id:password-old}">
+						${tr:Lms.password-old}
+					</label>
+					<div class="col-lg-9">
+						${password-old}
+						${password-old-info class="help-block"}
+					</div>
+				</div>
+				${</if-has-old-password>}
+				<div class="form-group">
+					<label class="control-label col-lg-3" for="${id:password}">
+						${tr:Lms.password-new}
+					</label>
+					<div class="col-lg-9">
+						${password}
+						${password-info class="help-block"}
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-lg-3" for="${id:password-confirm}">
+						${tr:Lms.password-confirm}
+					</label>
+					<div class="col-lg-9">
+						${password-confirm}
+						${password-confirm-info class="help-block"}
+					</div>
+				</div>
 
-	</div>
-	${</if-has-subsonic-api>}
-	<legend>${tr:Lms.Settings.change-password}</legend>
-	<div class="form-horizontal">
-		${<if-has-old-password>}
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:password-old}">
-				${tr:Lms.password-old}
-			</label>
-			<div class="col-sm-5">
-				${password-old}
-			</div>
-			<div class="help-block col-sm-5">
-				${password-old-info}
-			</div>
-		</div>
-		${</if-has-old-password>}
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:password}">
-				${tr:Lms.password-new}
-			</label>
-			<div class="col-sm-5">
-				${password}
-			</div>
-			<div class="help-block col-sm-5">
-				${password-info}
-			</div>
-		</div>
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:password-confirm}">
-				${tr:Lms.password-confirm}
-			</label>
-			<div class="col-sm-5">
-				${password-confirm}
-			</div>
-			<div class="help-block col-sm-5">
-				${password-confirm-info}
-			</div>
-		</div>
-
-		<div class="form-group">
-			<div class="col-sm-offset-2 col-sm-10">
-				${apply-btn class="btn-primary"} ${discard-btn}
+				<div class="form-group">
+					<div class="col-lg-offset-3 col-lg-9">
+						${apply-btn class="btn-primary"} ${discard-btn}
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>

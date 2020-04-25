@@ -35,6 +35,7 @@
 #include "resource/AudioFileResource.hpp"
 
 #include "utils/String.hpp"
+#include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -56,9 +57,8 @@ static std::string settingsToJSString(const MediaPlayer::Settings& settings)
 
 	{
 		Json::Object replayGain;
-		replayGain["mode"] = "TODO";
-		replayGain["preAmpGain"] = 0;
-		replayGain["clippingPreventionMode"] = "TODO";
+		replayGain["mode"] = static_cast<int>(settings.replayGain.mode);
+		replayGain["preAmpGain"] = settings.replayGain.preAmpGain;
 		res["replayGain"] = std::move(replayGain);
 	}
 
@@ -67,7 +67,7 @@ static std::string settingsToJSString(const MediaPlayer::Settings& settings)
 
 static
 std::optional<MediaPlayer::Settings::Transcode::Mode>
-modeFromString(const std::string& str)
+transcodeModeFromString(const std::string& str)
 {
 	const auto value {StringUtils::readAs<int>(str)};
 	if (!value)
@@ -121,6 +121,38 @@ bitrateFromString(const std::string& str)
 	return std::nullopt;
 }
 
+static
+std::optional<MediaPlayer::Settings::ReplayGain::Mode>
+replayGainModeFromString(const std::string& str)
+{
+	const auto value {StringUtils::readAs<int>(str)};
+	if (!value)
+		return std::nullopt;
+
+	MediaPlayer::Settings::ReplayGain::Mode mode {static_cast<MediaPlayer::Settings::ReplayGain::Mode>(*value)};
+	switch (mode)
+	{
+		case MediaPlayer::Settings::ReplayGain::Mode::None:
+		case MediaPlayer::Settings::ReplayGain::Mode::Auto:
+		case MediaPlayer::Settings::ReplayGain::Mode::Track:
+		case MediaPlayer::Settings::ReplayGain::Mode::Release:
+			return mode;
+	}
+
+	return std::nullopt;
+}
+
+static
+std::optional<float>
+replayGainPreAmpGainFromString(const std::string& str)
+{
+	const auto value {StringUtils::readAs<double>(str)};
+	if (!value)
+		return std::nullopt;
+
+	return clamp(*value, (double)MediaPlayer::Settings::ReplayGain::minPreAmpGain, (double)MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
+}
+
 static MediaPlayer::Settings settingsfromJSString(const std::string& strSettings)
 {
 	using Settings = MediaPlayer::Settings;
@@ -131,13 +163,24 @@ static MediaPlayer::Settings settingsfromJSString(const std::string& strSettings
 
 	MediaPlayer::Settings settings;
 
-	const Json::Value transcodeValue {parsedSettings.get("transcode")};
-	if (transcodeValue.type() == Json::Type::Object)
 	{
-		const Json::Object transcode {transcodeValue};
-		settings.transcode.mode = modeFromString(transcode.get("mode").toString().orIfNull("")).value_or(Settings::Transcode::defaultMode);
-		settings.transcode.format = formatFromString(transcode.get("format").toString().orIfNull("")).value_or(Settings::Transcode::defaultFormat);
-		settings.transcode.bitrate = bitrateFromString(transcode.get("bitrate").toString().orIfNull("")).value_or(Settings::Transcode::defaultBitrate);
+		const Json::Value transcodeValue {parsedSettings.get("transcode")};
+		if (transcodeValue.type() == Json::Type::Object)
+		{
+			const Json::Object transcode {transcodeValue};
+			settings.transcode.mode = transcodeModeFromString(transcode.get("mode").toString().orIfNull("")).value_or(Settings::Transcode::defaultMode);
+			settings.transcode.format = formatFromString(transcode.get("format").toString().orIfNull("")).value_or(Settings::Transcode::defaultFormat);
+			settings.transcode.bitrate = bitrateFromString(transcode.get("bitrate").toString().orIfNull("")).value_or(Settings::Transcode::defaultBitrate);
+		}
+	}
+	{
+		const Json::Value replayGainValue {parsedSettings.get("replayGain")};
+		if (replayGainValue.type() == Json::Type::Object)
+		{
+			const Json::Object replayGain {replayGainValue};
+			settings.replayGain.mode = replayGainModeFromString(replayGain.get("mode").toString().orIfNull("")).value_or(Settings::ReplayGain::defaultMode);
+			settings.replayGain.preAmpGain = replayGainPreAmpGainFromString(replayGain.get("preAmpGain").toString().orIfNull("")).value_or(Settings::ReplayGain::defaultPreAmpGain);
+		}
 	}
 
 	return settings;
