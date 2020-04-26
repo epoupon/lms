@@ -24,8 +24,8 @@ LMS.mediaplayer = function () {
 	var _audioNativeSrc;
 	var _audioTranscodeSrc;
 	var _settings = {};
-	var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-	var _gainNode = audioCtx.createGain();
+	var _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+	var _gainNode = _audioCtx.createGain();
 
 	var _updateControls = function() {
 		if (_elems.audio.paused) {
@@ -121,7 +121,6 @@ LMS.mediaplayer = function () {
 	}
 
 	var _setReplayGain = function (replayGain) {
-		console.log("Applying gain " + replayGain);
 		_gainNode.gain.value = Math.pow(10, (_settings.replayGain.preAmpGain + replayGain) / 20);
 	}
 
@@ -139,23 +138,27 @@ LMS.mediaplayer = function () {
 		_elems.volume = document.getElementById("lms-mp-volume");
 		_elems.volumeslider = document.getElementById("lms-mp-volume-slider");
 
-		var source = audioCtx.createMediaElementSource(_elems.audio);
+		var source = _audioCtx.createMediaElementSource(_elems.audio);
 		source.connect(_gainNode);
-		_gainNode.connect(audioCtx.destination);
+		_gainNode.connect(_audioCtx.destination);
 
 		_elems.playpause.addEventListener("click", function() {
 			if (_elems.audio.paused) {
-				if (_elems.audio.firstChild)
+				if (_elems.audio.firstChild) {
+					_audioCtx.resume();
 					_playTrack();
+				}
 			}
 			else
 				_elems.audio.pause();
 		});
 
 		_elems.previous.addEventListener("click", function() {
+			_audioCtx.resume();
 			_requestPreviousTrack();
 		});
 		_elems.next.addEventListener("click", function() {
+			_audioCtx.resume();
 			_requestNextTrack();
 		});
 		_elems.seek.addEventListener("change", function() {
@@ -263,8 +266,8 @@ LMS.mediaplayer = function () {
 		{
 			_addAudioSource(_audioTranscodeSrc);
 		}
-
 		_elems.audio.load();
+
 		_setReplayGain(params.replayGain);
 
 		_elems.curtime.innerHTML = _durationToString(_offset);
