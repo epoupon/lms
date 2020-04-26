@@ -28,7 +28,6 @@
 #include "av/AvTranscoder.hpp"
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Db.hpp"
-#include "database/SubsonicSettings.hpp"
 #include "scanner/IMediaScanner.hpp"
 #include "recommendation/IEngine.hpp"
 #include "subsonic/SubsonicResource.hpp"
@@ -170,13 +169,8 @@ int main(int argc, char* argv[])
 		API::Subsonic::SubsonicResource subsonicResource {database};
 
 		// bind API resources
-		{
-			Database::Session session {database};
-			auto transaction {session.createSharedTransaction()};
-
-			if (Database::SubsonicSettings::get(session)->isAPIEnabled())
-				server.addResource(&subsonicResource, subsonicResource.getPath());
-		}
+		if (ServiceProvider<IConfig>::get()->getBool("api-subsonic", true))
+			server.addResource(&subsonicResource, subsonicResource.getPath());
 
 		// bind UI entry point
 		server.addEntryPoint(Wt::EntryPointType::Application,

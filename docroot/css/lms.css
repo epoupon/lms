@@ -239,6 +239,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 .text-success .Lms-playqueue-btn {
 	filter: brightness(130%);
 	filter: drop-shadow(0 0 0.65rem var(--hover-color));
+	color: var(--hover-color);
 }
 
 .Lms-playqueue-entry-controls {

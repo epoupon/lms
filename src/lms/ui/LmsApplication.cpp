@@ -43,7 +43,6 @@
 #include "admin/DatabaseSettingsView.hpp"
 #include "admin/UserView.hpp"
 #include "admin/UsersView.hpp"
-#include "admin/SubsonicView.hpp"
 #include "resource/AudioFileResource.hpp"
 #include "resource/AudioTranscodeResource.hpp"
 #include "resource/ImageResource.hpp"
@@ -123,7 +122,6 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "admin-database");
 	messageResourceBundle().use(appRoot() + "admin-initwizard");
-	messageResourceBundle().use(appRoot() + "admin-subsonic");
 	messageResourceBundle().use(appRoot() + "admin-user");
 	messageResourceBundle().use(appRoot() + "admin-users");
 	messageResourceBundle().use(appRoot() + "artist");
@@ -344,7 +342,6 @@ enum IdxRoot
 	IdxAdminDatabase,
 	IdxAdminUsers,
 	IdxAdminUser,
-	IdxAdminSubsonic,
 };
 
 static void
@@ -368,7 +365,6 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 		{ "/admin/database",	IdxAdminDatabase,	true },
 		{ "/admin/users",	IdxAdminUsers,		true },
 		{ "/admin/user",	IdxAdminUser,		true },
-		{ "/admin/subsonic",	IdxAdminSubsonic,	true },
 	};
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
@@ -445,6 +441,9 @@ LmsApplication::createHome()
 	navbar->setTitle("LMS", Wt::WLink {Wt::LinkType::InternalPath, "/artists"});
 	navbar->setResponsive(true);
 
+	// MediaPlayer
+	_mediaPlayer = main->bindNew<MediaPlayer>("player");
+
 	Wt::WMenu* menu {navbar->addMenu(std::make_unique<Wt::WMenu>())};
 	{
 		auto menuItem = menu->insertItem(0, Wt::WString::tr("Lms.Explore.artists"));
@@ -488,10 +487,6 @@ LmsApplication::createHome()
 		usersSettings->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/admin/users"));
 		usersSettings->setSelectable(false);
 
-		auto subsonicSettings = admin->insertItem(2, Wt::WString::tr("Lms.Admin.Subsonic.subsonic"));
-		subsonicSettings->setLink(Wt::WLink(Wt::LinkType::InternalPath, "/admin/subsonic"));
-		subsonicSettings->setSelectable(false);
-
 		menuItem->setMenu(std::move(admin));
 	}
 
@@ -522,7 +517,6 @@ LmsApplication::createHome()
 		mainStack->addNew<DatabaseSettingsView>();
 		mainStack->addNew<UsersView>();
 		mainStack->addNew<UserView>();
-		mainStack->addNew<SubsonicView>();
 	}
 
 	explore->tracksAdd.connect([=] (const std::vector<Database::IdType>& trackIds)
@@ -536,33 +530,28 @@ LmsApplication::createHome()
 	});
 
 
-	// MediaPlayer
-	MediaPlayer* player = main->bindNew<MediaPlayer>("player");
-
 	// Events from MediaPlayer
-	player->playNext.connect([=]
+	_mediaPlayer->playNext.connect([=]
 	{
 		playqueue->playNext();
 	});
-	player->playPrevious.connect([=]
+	_mediaPlayer->playPrevious.connect([=]
 	{
 		playqueue->playPrevious();
 	});
-	player->playbackEnded.connect([=]
+	_mediaPlayer->playbackEnded.connect([=]
 	{
 		playqueue->playNext();
 	});
 
-	playqueue->trackSelected.connect([=] (Database::IdType trackId, bool play)
+	playqueue->trackSelected.connect([=] (Database::IdType trackId, bool play, float replayGain)
 	{
-		_events.lastLoadedTrackId = trackId;
-		_events.trackLoaded(trackId, play);
+		_mediaPlayer->loadTrack(trackId, play, replayGain);
 	});
 
-	playqueue->trackUnselected.connect([=]
+	playqueue->trackUnselected.connect([=] ()
 	{
-		_events.lastLoadedTrackId.reset();
-		_events.trackUnloaded();
+		_mediaPlayer->stop();
 	});
 
 	// Events from MediaScanner

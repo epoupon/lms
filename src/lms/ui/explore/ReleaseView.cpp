@@ -37,6 +37,7 @@
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
+#include "MediaPlayer.hpp"
 #include "TrackStringUtils.hpp"
 
 using namespace Database;
@@ -46,10 +47,10 @@ namespace UserInterface {
 Release::Release(Filters* filters)
 : _filters(filters)
 {
-	wApp->internalPathChanged().connect(std::bind([=]
+	wApp->internalPathChanged().connect([=]()
 	{
 		refresh();
-	}));
+	});
 
 	refresh();
 
@@ -217,27 +218,28 @@ Release::refresh()
 		}
 
 		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
-		playBtn->clicked().connect(std::bind([=]
+		playBtn->clicked().connect([=]()
 		{
 			tracksPlay.emit({trackId});
-		}));
+		});
 
 		Wt::WText* addBtn {entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
-		addBtn->clicked().connect(std::bind([=]
+		addBtn->clicked().connect([=]()
 		{
 			tracksAdd.emit({trackId});
-		}));
+		});
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
 
-		LmsApp->getEvents().trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId, bool /*play*/)
+		LmsApp->getMediaPlayer()->trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId)
 		{
 			entry->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
 		});
 
-		if (LmsApp->getEvents().lastLoadedTrackId && *LmsApp->getEvents().lastLoadedTrackId == trackId)
+		if (auto trackIdLoaded {LmsApp->getMediaPlayer()->getTrackLoaded()})
 		{
-			entry->bindString("is-playing", "Lms-entry-playing");
+			if (*trackIdLoaded == trackId)
+				entry->bindString("is-playing", "Lms-entry-playing");
 		}
 	}
 }

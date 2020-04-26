@@ -30,6 +30,7 @@
 
 #include "resource/ImageResource.hpp"
 #include "LmsApplication.hpp"
+#include "MediaPlayer.hpp"
 
 namespace {
 
@@ -99,7 +100,7 @@ PlayHistory::PlayHistory()
 		addSome();
 	});
 
-	LmsApp->getEvents().trackLoaded.connect([=](Database::IdType trackId, bool /* play */)
+	LmsApp->getMediaPlayer()->trackLoaded.connect([=](Database::IdType trackId)
 	{
 		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 

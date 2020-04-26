@@ -3,7 +3,8 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.MediaPlayer.template">
-	<audio id="lms-mp-audio"></audio>
+	<audio id="lms-mp-audio">
+	</audio>
 	<div class="container">
 		<div class="Lms-player-seek-container">
 			<input id="lms-mp-seek" class="Lms-player-seek-common Lms-player-seek" type="range" min="0" max="100" step="1" value="0"/>

@@ -37,17 +37,17 @@ namespace API::Subsonic::Stream
 {
 
 static
-Av::Encoding
-userTranscodeFormatToAvEncoding(AudioFormat format)
+Av::Format
+userTranscodeFormatToAvFormat(AudioFormat format)
 {
 	switch (format)
 	{
-		case AudioFormat::MP3:			return Av::Encoding::MP3;
-		case AudioFormat::OGG_OPUS:		return Av::Encoding::OGG_OPUS;
-		case AudioFormat::MATROSKA_OPUS:	return Av::Encoding::MATROSKA_OPUS;
-		case AudioFormat::OGG_VORBIS:		return Av::Encoding::OGG_VORBIS;
-		case AudioFormat::WEBM_VORBIS:		return Av::Encoding::WEBM_VORBIS;
-		default:				return Av::Encoding::OGG_OPUS;
+		case AudioFormat::MP3:			return Av::Format::MP3;
+		case AudioFormat::OGG_OPUS:		return Av::Format::OGG_OPUS;
+		case AudioFormat::MATROSKA_OPUS:	return Av::Format::MATROSKA_OPUS;
+		case AudioFormat::OGG_VORBIS:		return Av::Format::OGG_VORBIS;
+		case AudioFormat::WEBM_VORBIS:		return Av::Format::WEBM_VORBIS;
+		default:				return Av::Format::OGG_OPUS;
 	}
 }
 
@@ -87,19 +87,19 @@ getStreamParameters(RequestContext& context)
 			throw UserNotAuthorizedError {};
 
 		// format = "raw" => no transcode. Other format values will be ignored
-		const bool transcode {(!format || (*format != "raw")) && user->getAudioTranscodeEnable()};
+		const bool transcode {(!format || (*format != "raw")) && user->getSubsonicTranscodeEnable()};
 		if (transcode)
 		{
-			// "If set to zero, no limit is imposed"
-			if (!maxBitRate || *maxBitRate == 0)
-				maxBitRate = user->getAudioTranscodeBitrate() / 1000;
+			std::size_t bitRate {user->getSubsonicTranscodeBitrate() / 1000};
 
-			*maxBitRate = clamp(*maxBitRate, std::size_t {48}, user->getMaxAudioTranscodeBitrate() / 1000);
+			// "If set to zero, no limit is imposed"
+			if (maxBitRate && *maxBitRate != 0)
+				bitRate = clamp(*maxBitRate, std::size_t {48}, bitRate);
 
 			Av::TranscodeParameters transcodeParameters;
 
-			transcodeParameters.bitrate = *maxBitRate * 1000;
-			transcodeParameters.encoding = userTranscodeFormatToAvEncoding(user->getAudioTranscodeFormat());
+			transcodeParameters.bitrate = bitRate * 1000;
+			transcodeParameters.format = userTranscodeFormatToAvFormat(user->getSubsonicTranscodeFormat());
 			transcodeParameters.stripMetadata = false; // We want clients to use metadata (offline use, replay gain, etc.)
 
 			parameters.transcodeParameters = std::move(transcodeParameters);

@@ -33,6 +33,7 @@ namespace Similarity {
 }
 
 namespace Database {
+	class Track;
 	class TrackList;
 }
 
@@ -53,13 +54,13 @@ class PlayQueue : public Wt::WTemplate
 		void playPrevious();
 
 		// Signal emitted when a track is to be load(and optionally played)
-		Wt::Signal<Database::IdType /*trackId*/, bool /*play*/> trackSelected;
+		Wt::Signal<Database::IdType /*trackId*/, bool /*play*/, float /* replayGain */> trackSelected;
 
 		// Signal emitted when track is unselected (has to be stopped)
 		Wt::Signal<> trackUnselected;
 
 	private:
-		Wt::Dbo::ptr<Database::TrackList> getTrackList();
+		Wt::Dbo::ptr<Database::TrackList> getTrackList() const;
 
 		void clearTracks();
 		void enqueueTracks(const std::vector<Database::IdType>& trackIds);
@@ -76,9 +77,11 @@ class PlayQueue : public Wt::WTemplate
 
 		void addRadioTrackFromSimilarity(std::shared_ptr<Similarity::Finder> similarityFinder);
 		void addRadioTrackFromClusters();
+		std::optional<float> getReplayGain(std::size_t pos, const Wt::Dbo::ptr<Database::Track>& track) const;
 
 		bool _repeatAll {};
 		bool _radioMode {};
+		bool _mediaPlayerSettingsLoaded {};
 		Database::IdType _tracklistId {};
 		Wt::WContainerWidget* _entriesContainer {};
 		Wt::WPushButton* _showMore {};

@@ -154,12 +154,19 @@ static
 void
 testSingleTrack(Session& session)
 {
+	{
+		auto transaction {session.createSharedTransaction()};
+		CHECK(Track::getCount(session) == 0);
+	}
+
 	ScopedTrack track {session, "MyTrackFile"};
 
 	{
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createSharedTransaction()};
 
 		CHECK(Track::getAll(session).size() == 1);
+		CHECK(Track::getCount(session) == 1);
+
 	}
 }
 

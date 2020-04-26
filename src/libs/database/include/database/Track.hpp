@@ -55,6 +55,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		Track(const std::filesystem::path& p);
 
 		// Find utility functions
+		static std::size_t getCount(Session& session);
 		static pointer getByPath(Session& session, const std::filesystem::path& p);
 		static pointer getById(Session& session, IdType id);
 		static pointer getByMBID(Session& session, const UUID& MBID);
@@ -74,7 +75,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static std::vector<pointer>	getAll(Session& session, std::optional<std::size_t> limit = {});
 		static std::vector<pointer>	getAllRandom(Session& session, std::optional<std::size_t> limit = {});
 		static std::vector<IdType>	getAllIds(Session& session);
-		static std::vector<std::filesystem::path> getAllPaths(Session& session);
+		static std::vector<std::pair<IdType, std::filesystem::path>> getAllPaths(Session& session, std::optional<std::size_t> offset = std::nullopt, std::optional<std::size_t> size = std::nullopt);
 		static std::vector<pointer>	getMBIDDuplicates(Session& session);
 		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> size = 1);
 		static std::vector<pointer>	getAllWithMBIDAndMissingFeatures(Session& session);
@@ -100,6 +101,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setMBID(const std::optional<UUID>& MBID)			{ _MBID = MBID ? MBID->getAsString() : ""; }
 		void setCopyright(const std::string& copyright)			{ _copyright = std::string(copyright, 0, _maxCopyrightLength); }
 		void setCopyrightURL(const std::string& copyrightURL)		{ _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
+		void setTrackReplayGain(float replayGain)			{ _trackReplayGain = replayGain; }
+		void setReleaseReplayGain(float replayGain)			{ _releaseReplayGain = replayGain; }
 		void clearArtistLinks();
 		void addArtistLink(const Wt::Dbo::ptr<TrackArtistLink>& artistLink);
 		void setRelease(Wt::Dbo::ptr<Release> release)			{ _release = release; }
@@ -122,6 +125,9 @@ class Track : public Wt::Dbo::Dbo<Track>
 		std::optional<UUID>			getMBID() const			{ return UUID::fromString(_MBID); }
 		std::optional<std::string>		getCopyright() const;
 		std::optional<std::string>		getCopyrightURL() const;
+		std::optional<float>			getTrackReplayGain() const	{ return _trackReplayGain; }
+		std::optional<float>			getReleaseReplayGain() const	{ return _releaseReplayGain; }
+
 		std::vector<Wt::Dbo::ptr<Artist>>	getArtists(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;
 		std::vector<IdType>			getArtistIds(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;
 		std::vector<Wt::Dbo::ptr<TrackArtistLink>>	getArtistLinks() const;
@@ -152,6 +158,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 				Wt::Dbo::field(a, _MBID,		"mbid");
 				Wt::Dbo::field(a, _copyright,		"copyright");
 				Wt::Dbo::field(a, _copyrightURL,	"copyright_url");
+				Wt::Dbo::field(a, _trackReplayGain,	"track_replay_gain");
+				Wt::Dbo::field(a, _releaseReplayGain,	"release_replay_gain");
 				Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "track");
 				Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
@@ -184,6 +192,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 		std::string				_MBID; // Musicbrainz Identifier
 		std::string				_copyright;
 		std::string				_copyrightURL;
+		std::optional<float>			_trackReplayGain;
+		std::optional<float>			_releaseReplayGain;
 
 		Wt::Dbo::ptr<Release>				_release;
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks;

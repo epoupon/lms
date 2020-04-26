@@ -27,6 +27,7 @@
 #include "database/User.hpp"
 
 #include "LmsApplication.hpp"
+#include "MediaPlayer.hpp"
 
 using namespace Database;
 
@@ -49,7 +50,7 @@ void addEntries(Wt::WContainerWidget *container, const std::vector<Track::pointe
 namespace UserInterface {
 
 TracksInfo::TracksInfo()
-: Wt::WTemplate(Wt::WString::tr("Lms.Explore.TracksInfo.template"))
+: Wt::WTemplate {Wt::WString::tr("Lms.Explore.TracksInfo.template")}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
@@ -61,7 +62,7 @@ TracksInfo::TracksInfo()
 		refreshRecentlyAdded();
 	});
 
-	LmsApp->getEvents().trackLoaded.connect([=]
+	LmsApp->getMediaPlayer()->trackLoaded.connect([=]
 	{
 		refreshMostPlayed();
 	});

@@ -124,6 +124,12 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 	for (const auto& audioStream : track->audioStreams)
 		std::cout << "Audio stream: " << audioStream.bitRate << " bps" << std::endl;
 
+	if (track->trackReplayGain)
+		std::cout << "Track replay gain: " << *track->trackReplayGain << std::endl;
+
+	if (track->albumReplayGain)
+		std::cout << "Album replay gain: " << *track->albumReplayGain << std::endl;
+
 	if (track->acoustID)
 		std::cout << "AcoustID: " << track->acoustID->getAsString() << std::endl;
 

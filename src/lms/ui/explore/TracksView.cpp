@@ -34,6 +34,7 @@
 
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
+#include "MediaPlayer.hpp"
 #include "TrackStringUtils.hpp"
 
 using namespace Database;
@@ -174,14 +175,15 @@ Tracks::addSome()
 		}));
 
 
-		LmsApp->getEvents().trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId, bool /*play*/)
+		LmsApp->getMediaPlayer()->trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId)
 		{
 			entry->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
 		});
 
-		if (LmsApp->getEvents().lastLoadedTrackId && *LmsApp->getEvents().lastLoadedTrackId == trackId)
+		if (auto trackIdLoaded {LmsApp->getMediaPlayer()->getTrackLoaded()})
 		{
-			entry->bindString("is-playing", "Lms-entry-playing");
+			if (*trackIdLoaded == trackId)
+				entry->bindString("is-playing", "Lms-entry-playing");
 		}
 	}
 

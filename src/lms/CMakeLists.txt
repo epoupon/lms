@@ -13,7 +13,6 @@ add_executable(lms
 	ui/admin/DatabaseSettingsView.cpp
 	ui/admin/DatabaseStatus.cpp
 	ui/admin/InitWizardView.cpp
-	ui/admin/SubsonicView.cpp
 	ui/admin/UserView.cpp
 	ui/admin/UsersView.cpp
 	ui/common/Validators.cpp

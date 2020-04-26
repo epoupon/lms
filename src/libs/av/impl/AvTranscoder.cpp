@@ -104,35 +104,35 @@ Transcoder::start()
 	args.emplace_back(std::to_string(_parameters.bitrate));
 
 	// Codecs and formats
-	switch (_parameters.encoding)
+	switch (_parameters.format)
 	{
-		case Encoding::MP3:
+		case Format::MP3:
 			args.emplace_back("-f");
 			args.emplace_back("mp3");
 			break;
 
-		case Encoding::OGG_OPUS:
+		case Format::OGG_OPUS:
 			args.emplace_back("-acodec");
 			args.emplace_back("libopus");
 			args.emplace_back("-f");
 			args.emplace_back("ogg");
 			break;
 
-		case Encoding::MATROSKA_OPUS:
+		case Format::MATROSKA_OPUS:
 			args.emplace_back("-acodec");
 			args.emplace_back("libopus");
 			args.emplace_back("-f");
 			args.emplace_back("matroska");
 			break;
 
-		case Encoding::OGG_VORBIS:
+		case Format::OGG_VORBIS:
 			args.emplace_back("-acodec");
 			args.emplace_back("libvorbis");
 			args.emplace_back("-f");
 			args.emplace_back("ogg");
 			break;
 
-		case Encoding::WEBM_VORBIS:
+		case Format::WEBM_VORBIS:
 			args.emplace_back("-acodec");
 			args.emplace_back("libvorbis");
 			args.emplace_back("-f");
@@ -143,7 +143,7 @@ Transcoder::start()
 			return false;
 	}
 
-	_outputMimeType = encodingToMimetype(_parameters.encoding);
+	_outputMimeType = formatToMimetype(_parameters.format);
 
 	args.emplace_back("pipe:1");
 

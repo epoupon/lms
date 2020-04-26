@@ -30,7 +30,6 @@
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
-#include "database/SubsonicSettings.hpp"
 #include "database/Track.hpp"
 #include "database/TrackBookmark.hpp"
 #include "database/TrackList.hpp"
@@ -579,7 +578,6 @@ handleCreateUserRequest(RequestContext& context)
 		throw UserAlreadyExistsGenericError {};
 
 	User::pointer user {User::create(context.dbSession, username, hash)};
-	user.modify()->setMaxAudioTranscodeBitrate(128000);
 
 	return Response::createOkResponse();
 }
@@ -903,11 +901,11 @@ handleGetArtistsRequest(RequestContext& context)
 		throw UserNotAuthorizedError {};
 
 	std::optional<TrackArtistLink::Type> linkType;
-	switch (SubsonicSettings::get(context.dbSession)->getArtistListMode())
+	switch (user->getSubsonicArtistListMode())
 	{
-		case SubsonicSettings::ArtistListMode::AllArtists:
+		case User::SubsonicArtistListMode::AllArtists:
 			break;
-		case SubsonicSettings::ArtistListMode::ReleaseArtists:
+		case User::SubsonicArtistListMode::ReleaseArtists:
 			linkType = TrackArtistLink::Type::ReleaseArtist;
 			break;
 	}
@@ -1046,11 +1044,11 @@ handleGetIndexesRequest(RequestContext& context)
 		throw UserNotAuthorizedError {};
 
 	std::optional<TrackArtistLink::Type> linkType;
-	switch (SubsonicSettings::get(context.dbSession)->getArtistListMode())
+	switch (user->getSubsonicArtistListMode())
 	{
-		case SubsonicSettings::ArtistListMode::AllArtists:
+		case User::SubsonicArtistListMode::AllArtists:
 			break;
-		case SubsonicSettings::ArtistListMode::ReleaseArtists:
+		case User::SubsonicArtistListMode::ReleaseArtists:
 			linkType = TrackArtistLink::Type::ReleaseArtist;
 			break;
 	}
@@ -1520,7 +1518,6 @@ handleUpdateUserRequest(RequestContext& context)
 {
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
 	std::optional<std::string> password {getParameterAs<std::string>(context.parameters, "password")};
-	std::optional<Bitrate> maxBitRate {getParameterAs<Bitrate>(context.parameters, "maxBitRate")};
 
 	User::PasswordHash hash;
 	if (password)
@@ -1537,14 +1534,6 @@ handleUpdateUserRequest(RequestContext& context)
 	User::pointer user {User::getByLoginName(context.dbSession, username)};
 	if (!user)
 		throw UserNotAuthorizedError {};
-
-	if (maxBitRate)
-	{
-		if (*maxBitRate == 0)
-			*maxBitRate = 320;
-
-		user.modify()->setMaxAudioTranscodeBitrate(*maxBitRate * 1000);
-	}
 
 	if (password)
 	{

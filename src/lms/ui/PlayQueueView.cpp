@@ -33,8 +33,9 @@
 #include "utils/String.hpp"
 
 #include "resource/ImageResource.hpp"
-#include "TrackStringUtils.hpp"
 #include "LmsApplication.hpp"
+#include "MediaPlayer.hpp"
+#include "TrackStringUtils.hpp"
 
 namespace UserInterface {
 
@@ -135,8 +136,13 @@ PlayQueue::PlayQueue()
 
 		if (!LmsApp->getUser()->isDemo())
 		{
-			LmsApp->post([=]
+			LmsApp->getMediaPlayer()->settingsLoaded.connect([=]
 			{
+				if (_mediaPlayerSettingsLoaded)
+					return;
+
+				_mediaPlayerSettingsLoaded = true;
+
 				std::size_t trackPos {};
 
 				{
@@ -176,7 +182,7 @@ PlayQueue::updateRadioBtn()
 }
 
 Database::TrackList::pointer
-PlayQueue::getTrackList()
+PlayQueue::getTrackList() const
 {
 	return Database::TrackList::getById(LmsApp->getDbSession(), _tracklistId);
 }
@@ -209,6 +215,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 
 	Database::IdType trackId {};
 	bool addRadioTrack {};
+	std::optional<float> replayGain {};
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -235,6 +242,8 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 
 		trackId = track.id();
 
+		replayGain = getReplayGain(pos, track);
+
 		if (!LmsApp->getUser()->isDemo())
 			LmsApp->getUser().modify()->setCurPlayingTrackPos(pos);
 	}
@@ -244,7 +253,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 
 	updateCurrentTrack(true);
 
-	trackSelected.emit(trackId, play);
+	trackSelected.emit(trackId, play, replayGain ? *replayGain : 0);
 }
 
 void
@@ -430,6 +439,60 @@ PlayQueue::enqueueRadioTrack()
 {
 	const std::vector<Database::IdType> trackToAddIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 1)};
 	enqueueTracks(trackToAddIds);
+}
+
+std::optional<float>
+PlayQueue::getReplayGain(std::size_t pos, const Database::Track::pointer& track) const
+{
+	const auto& settings {LmsApp->getMediaPlayer()->getSettings()};
+	if (!settings)
+		return std::nullopt;
+
+	std::optional<MediaPlayer::Gain> gain;
+
+	switch (settings->replayGain.mode)
+	{
+		case MediaPlayer::Settings::ReplayGain::Mode::None:
+			return std::nullopt;
+
+		case MediaPlayer::Settings::ReplayGain::Mode::Track:
+			gain = track->getTrackReplayGain();
+			break;
+
+		case MediaPlayer::Settings::ReplayGain::Mode::Release:
+			gain = track->getReleaseReplayGain();
+			if (!gain)
+				gain = track->getTrackReplayGain();
+			break;
+
+		case MediaPlayer::Settings::ReplayGain::Mode::Auto:
+		{
+			const auto trackList {getTrackList()};
+			const auto prevEntry {pos > 0 ? trackList->getEntry(pos - 1) : Database::TrackListEntry::pointer {}};
+			const auto nextEntry {trackList->getEntry(pos + 1)};
+			const Database::Track::pointer prevTrack {prevEntry ? prevEntry->getTrack() : Database::Track::pointer {}};
+			const Database::Track::pointer nextTrack {nextEntry ? nextEntry->getTrack() : Database::Track::pointer {}};
+
+			if ((prevTrack && prevTrack->getRelease() && prevTrack->getRelease() == track->getRelease())
+				||
+				(nextTrack && nextTrack->getRelease() && nextTrack->getRelease() == track->getRelease()))
+			{
+				gain = track->getReleaseReplayGain();
+				if (!gain)
+					gain = track->getTrackReplayGain();
+			}
+			else
+			{
+				gain = track->getTrackReplayGain();
+			}
+			break;
+		}
+	}
+
+	if (gain)
+		return *gain + settings->replayGain.preAmpGain;
+
+	return settings->replayGain.preAmpGainIfNoInfo;
 }
 
 } // namespace UserInterface
