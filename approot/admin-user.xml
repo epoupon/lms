@@ -2,62 +2,57 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Admin.User.template">
-	<div class="page-header">
-		<h2>${title}</h2>
-	</div>
-	<div class="form-horizontal">
-		${<if-has-last-login>}
-		<div class="form-group">
-			<label class="control-label col-sm-2" for="{id:last-login}">
-				${tr:Lms.Admin.User.last-login}
-			</label>
-			<div class="col-sm-5">
-				<div class="well well-sm">
-					${last-login}
+	<div class="row">
+		<div class="col-lg-8">
+			<legend>${title}</legend>
+			<div class="form-horizontal">
+				${<if-has-last-login>}
+					<div class="form-group">
+						<label class="control-label col-lg-3" for="{id:last-login}">
+							${tr:Lms.Admin.User.last-login}
+						</label>
+						<div class="col-lg-9">
+							<div class="well well-sm">
+								${last-login}
+							</div>
+						</div>
+					</div>
+					${</if-has-last-login>}
+				${<if-has-login>}
+					<div class="form-group">
+						<label class="control-label col-lg-3"  for="${id:login}">
+							${tr:Lms.login}
+						</label>
+						<div class="col-lg-9">
+							${login}
+							${login-info class="help-block"}
+						</div>
+					</div>
+					${</if-has-login>}
+				<div class="form-group">
+					<label class="control-label col-lg-3"  for="${id:password}">
+						${tr:Lms.password-new}
+					</label>
+					<div class="col-lg-9">
+						${password}
+						${password-info class="help-block"}
+					</div>
 				</div>
-			</div>
-		</div>
-		${</if-has-last-login>}
-		${<if-has-login>}
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:login}">
-				${tr:Lms.login}
-			</label>
-			<div class="col-sm-5">
-				${login}
-			</div>
-			<div class="help-block col-sm-5">
-				${login-info}
-			</div>
-		</div>
-		${</if-has-login>}
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:password}">
-				${tr:Lms.password-new}
-			</label>
-			<div class="col-sm-5">
-				${password}
-			</div>
-			<div class="help-block col-sm-5">
-				${password-info}
-			</div>
-		</div>
-		${<if-demo>}
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:demo}">
-				${tr:Lms.Admin.User.demo-account}
-			</label>
-			<div class="col-sm-5">
-				${demo}
-			</div>
-			<div class="help-block col-sm-5">
-				${demo-info}
-			</div>
-		</div>
-		${</if-demo>}
-		<div class="form-group">
-			<div class="col-sm-offset-2 col-sm-10">
-				${save-btn class="btn-primary"}
+				${<if-demo>}
+					<div class="form-group">
+						<div class="col-lg-offset-3 col-lg-3"  for="${id:demo}">
+							<div class="checkbox">
+								<label>${demo}${tr:Lms.Admin.User.demo-account}</label>
+								${demo-info class="help-block"}
+							</div>
+						</div>
+					</div>
+					${</if-demo>}
+				<div class="form-group">
+					<div class="col-lg-offset-3 col-lg-9">
+						${save-btn class="btn-primary"}
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
