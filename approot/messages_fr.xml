@@ -169,7 +169,8 @@
 <message id="Lms.Settings.replaygain-mode.auto">Automatique</message>
 <message id="Lms.Settings.replaygain-mode.track">Piste</message>
 <message id="Lms.Settings.replaygain-mode.release">Album</message>
-<message id="Lms.Settings.replaygain-preamp">PreAmplification ReplayGain</message>
+<message id="Lms.Settings.replaygain-preamp">Pre-amplification ReplayGain</message>
+<message id="Lms.Settings.replaygain-preamp-no-rg-info">Pre-amplification ReplayGain (si pas d'info)</message>
 <message id="Lms.Settings.subsonic-artist-list-mode">Mode de listage des artistes</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">Tous les artistes</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Tous les artistes d'album</message>
