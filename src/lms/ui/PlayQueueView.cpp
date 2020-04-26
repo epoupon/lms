@@ -182,7 +182,7 @@ PlayQueue::updateRadioBtn()
 }
 
 Database::TrackList::pointer
-PlayQueue::getTrackList()
+PlayQueue::getTrackList() const
 {
 	return Database::TrackList::getById(LmsApp->getDbSession(), _tracklistId);
 }
@@ -242,7 +242,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 
 		trackId = track.id();
 
-		replayGain = getReplayGain(track);
+		replayGain = getReplayGain(pos, track);
 
 		if (!LmsApp->getUser()->isDemo())
 			LmsApp->getUser().modify()->setCurPlayingTrackPos(pos);
@@ -442,26 +442,51 @@ PlayQueue::enqueueRadioTrack()
 }
 
 std::optional<float>
-PlayQueue::getReplayGain(const Database::Track::pointer& track) const
+PlayQueue::getReplayGain(std::size_t pos, const Database::Track::pointer& track) const
 {
 	const auto& settings {LmsApp->getMediaPlayer()->getSettings()};
 	if (!settings)
 		return std::nullopt;
 
+	std::optional<MediaPlayer::Gain> gain;
+
 	switch (settings->replayGain.mode)
 	{
 		case MediaPlayer::Settings::ReplayGain::Mode::None:
-			return std::nullopt;
+			break;
 
 		case MediaPlayer::Settings::ReplayGain::Mode::Track:
-			return track->getTrackReplayGain();
+			gain = track->getTrackReplayGain();
+			break;
 
 		case MediaPlayer::Settings::ReplayGain::Mode::Release:
-			return track->getReleaseReplayGain();
+			gain = track->getReleaseReplayGain();
+			break;
 
 		case MediaPlayer::Settings::ReplayGain::Mode::Auto:
-			return track->getTrackReplayGain();
+		{
+			const auto trackList {getTrackList()};
+			const auto prevEntry {pos > 0 ? trackList->getEntry(pos - 1) : Database::TrackListEntry::pointer {}};
+			const auto nextEntry {trackList->getEntry(pos + 1)};
+			const Database::Track::pointer prevTrack {prevEntry ? prevEntry->getTrack() : Database::Track::pointer {}};
+			const Database::Track::pointer nextTrack {nextEntry ? nextEntry->getTrack() : Database::Track::pointer {}};
+
+			if ((prevTrack && prevTrack->getRelease() && prevTrack->getRelease() == track->getRelease())
+				||
+				(nextTrack && nextTrack->getRelease() && nextTrack->getRelease() == track->getRelease()))
+			{
+				gain = track->getReleaseReplayGain();
+			}
+			else
+			{
+				gain = track->getTrackReplayGain();
+			}
+			break;
+		}
 	}
+
+	if (gain)
+		return *gain + settings->replayGain.preAmpGain;
 
 	return std::nullopt;
 }
