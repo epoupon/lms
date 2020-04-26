@@ -453,7 +453,7 @@ PlayQueue::getReplayGain(std::size_t pos, const Database::Track::pointer& track)
 	switch (settings->replayGain.mode)
 	{
 		case MediaPlayer::Settings::ReplayGain::Mode::None:
-			break;
+			return std::nullopt;
 
 		case MediaPlayer::Settings::ReplayGain::Mode::Track:
 			gain = track->getTrackReplayGain();
@@ -461,6 +461,8 @@ PlayQueue::getReplayGain(std::size_t pos, const Database::Track::pointer& track)
 
 		case MediaPlayer::Settings::ReplayGain::Mode::Release:
 			gain = track->getReleaseReplayGain();
+			if (!gain)
+				gain = track->getTrackReplayGain();
 			break;
 
 		case MediaPlayer::Settings::ReplayGain::Mode::Auto:
@@ -476,6 +478,8 @@ PlayQueue::getReplayGain(std::size_t pos, const Database::Track::pointer& track)
 				(nextTrack && nextTrack->getRelease() && nextTrack->getRelease() == track->getRelease()))
 			{
 				gain = track->getReleaseReplayGain();
+				if (!gain)
+					gain = track->getTrackReplayGain();
 			}
 			else
 			{
@@ -488,7 +492,7 @@ PlayQueue::getReplayGain(std::size_t pos, const Database::Track::pointer& track)
 	if (gain)
 		return *gain + settings->replayGain.preAmpGain;
 
-	return std::nullopt;
+	return settings->replayGain.preAmpGainIfNoInfo;
 }
 
 } // namespace UserInterface

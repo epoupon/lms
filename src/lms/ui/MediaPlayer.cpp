@@ -59,6 +59,7 @@ static std::string settingsToJSString(const MediaPlayer::Settings& settings)
 		Json::Object replayGain;
 		replayGain["mode"] = static_cast<int>(settings.replayGain.mode);
 		replayGain["preAmpGain"] = settings.replayGain.preAmpGain;
+		replayGain["preAmpGainIfNoInfo"] = settings.replayGain.preAmpGainIfNoInfo;
 		res["replayGain"] = std::move(replayGain);
 	}
 
@@ -180,6 +181,7 @@ static MediaPlayer::Settings settingsfromJSString(const std::string& strSettings
 			const Json::Object replayGain {replayGainValue};
 			settings.replayGain.mode = replayGainModeFromString(replayGain.get("mode").toString().orIfNull("")).value_or(Settings::ReplayGain::defaultMode);
 			settings.replayGain.preAmpGain = replayGainPreAmpGainFromString(replayGain.get("preAmpGain").toString().orIfNull("")).value_or(Settings::ReplayGain::defaultPreAmpGain);
+			settings.replayGain.preAmpGainIfNoInfo = replayGainPreAmpGainFromString(replayGain.get("preAmpGainIfNoInfo").toString().orIfNull("")).value_or(Settings::ReplayGain::defaultPreAmpGain);
 		}
 	}
 

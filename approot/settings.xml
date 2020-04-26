@@ -5,7 +5,7 @@
 
 <message id="Lms.Settings.template">
 	<div class="row">
-		<div class="col-lg-6">
+		<div class="col-lg-8">
 			<legend>${tr:Lms.Settings.appearance}</legend>
 			<div class="form-horizontal">
 				<div class="form-group">
@@ -72,6 +72,18 @@
 							<span class="input-group-addon">dB</span>
 						</div>
 						${replaygain-preamp-info class="help-block"}
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-lg-3 control-label"  for="${id:replaygain-preamp-no-rg-info}">
+						${tr:Lms.Settings.replaygain-preamp-no-rg-info}
+					</label>
+					<div class="col-lg-9">
+						<div class="input-group">
+							${replaygain-preamp-no-rg-info}
+							<span class="input-group-addon">dB</span>
+						</div>
+						${replaygain-preamp-no-rg-info-info class="help-block"}
 					</div>
 				</div>
 			</div>

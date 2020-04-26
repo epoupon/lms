@@ -55,6 +55,7 @@ class SettingsModel : public Wt::WFormModel
 		static inline const Field TranscodeBitrateField {"transcode-bitrate"};
 		static inline const Field ReplayGainModeField {"replaygain-mode"};
 		static inline const Field ReplayGainPreAmpGainField {"replaygain-preamp"};
+		static inline const Field ReplayGainPreAmpGainIfNoInfoField {"replaygain-preamp-no-rg-info"};
 		static inline const Field SubsonicArtistListModeField {"subsonic-artist-list-mode"};
 		static inline const Field SubsonicTranscodeEnableField {"subsonic-transcode-enable"};
 		static inline const Field SubsonicTranscodeFormatField {"subsonic-transcode-format"};
@@ -77,6 +78,7 @@ class SettingsModel : public Wt::WFormModel
 			addField(TranscodeFormatField);
 			addField(ReplayGainModeField);
 			addField(ReplayGainPreAmpGainField);
+			addField(ReplayGainPreAmpGainIfNoInfoField);
 			addField(SubsonicTranscodeEnableField);
 			addField(SubsonicTranscodeBitrateField);
 			addField(SubsonicTranscodeFormatField);
@@ -91,11 +93,16 @@ class SettingsModel : public Wt::WFormModel
 			setValidator(TranscodeBitrateField, createMandatoryValidator());
 			setValidator(TranscodeFormatField, createMandatoryValidator());
 			setValidator(ReplayGainModeField, createMandatoryValidator());
+
+			auto createPreAmpValidator = []
 			{
 				auto preampGainValidator {std::make_unique<Wt::WDoubleValidator>()};
 				preampGainValidator->setRange(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
-				setValidator(ReplayGainPreAmpGainField, std::move(preampGainValidator));
-			}
+				return preampGainValidator;
+			};
+
+			setValidator(ReplayGainPreAmpGainField, createPreAmpValidator());
+			setValidator(ReplayGainPreAmpGainIfNoInfoField, createPreAmpValidator());
 			setValidator(SubsonicTranscodeBitrateField, createMandatoryValidator());
 			setValidator(SubsonicTranscodeFormatField, createMandatoryValidator());
 
@@ -147,6 +154,7 @@ class SettingsModel : public Wt::WFormModel
 					settings.replayGain.mode = _replayGainModeModel->getValue(*replayGainModeRow);
 
 				settings.replayGain.preAmpGain = Wt::asNumber(value(ReplayGainPreAmpGainField));
+				settings.replayGain.preAmpGainIfNoInfo = Wt::asNumber(value(ReplayGainPreAmpGainIfNoInfoField));
 
 				LmsApp->getMediaPlayer()->setSettings(settings);
 			}
@@ -202,6 +210,7 @@ class SettingsModel : public Wt::WFormModel
 					setValue(ReplayGainModeField, _replayGainModeModel->getString(*replayGainModeRow));
 
 				setValue(ReplayGainPreAmpGainField, settings.replayGain.preAmpGain);
+				setValue(ReplayGainPreAmpGainIfNoInfoField, settings.replayGain.preAmpGainIfNoInfo);
 			}
 
 			setValue(SubsonicTranscodeEnableField, LmsApp->getUser()->getSubsonicTranscodeEnable());
@@ -434,15 +443,24 @@ SettingsView::refreshView()
 		replayGainPreampGain->setRange(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
 		t->setFormWidget(SettingsModel::ReplayGainPreAmpGainField, std::move(replayGainPreampGain));
 
+		// Replay gain preampGain if no info
+		auto replayGainPreampGainIfNoInfo {std::make_unique<Wt::WDoubleSpinBox>()};
+		replayGainPreampGainIfNoInfo->setRange(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
+		t->setFormWidget(SettingsModel::ReplayGainPreAmpGainIfNoInfoField, std::move(replayGainPreampGainIfNoInfo));
+
 		replayGainModeRaw->activated().connect([=](int row)
 		{
 			const bool enable {model->getReplayGainModeModel()->getValue(row) != MediaPlayer::Settings::ReplayGain::Mode::None};
 			model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainField, !enable);
+			model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainIfNoInfoField, !enable);
 			t->updateModel(model.get());
 			t->updateView(model.get());
 		});
 		if (LmsApp->getMediaPlayer()->getSettings()->replayGain.mode == MediaPlayer::Settings::ReplayGain::Mode::None)
+		{
 			model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainField, true);
+			model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainIfNoInfoField, true);
+		}
 	}
 
 	// Subsonic

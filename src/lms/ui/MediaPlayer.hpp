@@ -73,8 +73,9 @@ class MediaPlayer : public Wt::WTemplate
 				static inline constexpr Gain			minPreAmpGain {-15};
 				static inline constexpr Gain			maxPreAmpGain {15};
 
-				Mode			mode;
-				Gain			preAmpGain;
+				Mode			mode {defaultMode};
+				Gain			preAmpGain {defaultPreAmpGain};
+				Gain			preAmpGainIfNoInfo {defaultPreAmpGain};
 			};
 
 			Transcode transcode;
