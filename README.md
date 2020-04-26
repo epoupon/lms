@@ -16,13 +16,13 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 * Recommendation engine
 * Audio transcode for maximum interoperability and low bandwith requirements
 * Persistent play queue across sessions
-* Subsonic API
 * Compilation support
 * Multi-value tags: artists, genres, ...
 * Custom tags (ex: _mood_, _genre_, _albummood_, _albumgrouping_, ...)
 * MusicBrainzID support to handle duplicated artist and release names
+* ReplayGain support
 * _Systemd_ integration
-* Subsonic-only features:
+* Subsonic API, with the following additional features:
   * Playlists
   * Starred Album/Artist/Tracks
   * Bookmarks
@@ -33,7 +33,7 @@ _LMS_ provides several ways to help you find the music you like:
 * Tag-based filters (ex: _Rock_, _Metal_ and _Aggressive_, _Electronic_ and _Relaxed_, ...)
 * Recommendations for similar artists and albums
 * Radio mode, based on what is in the current playqueue
-* Searches in album, artist and track names
+* Searches in album, artist and track names (including sort names)
 * Most played/Recently added music
 
 The recommendation engine uses two different sources:
@@ -219,9 +219,10 @@ journalctl -u lms.service
 To connect to _LMS_, just open your favorite browser and go to http://localhost:5082
 
 ## Credits
-* Wt (http://www.webtoolkit.eu/)
-* bootstrap3 (http://getbootstrap.com/)
-* ffmpeg project (https://ffmpeg.org/)
+* Bootstrap Notify: https://github.com/mouse0270/bootstrap-notify
+* Bootstrap3 (https://getbootstrap.com/)
+* Bootswatch (https://bootswatch.com/)
+* Ffmpeg project (https://ffmpeg.org/)
 * GraphicsMagick++ (http://www.graphicsmagick.org/)
 * MetaBrainz (https://metabrainz.org/)
-* Bootstrap Notify: https://github.com/mouse0270/bootstrap-notify
+* Wt (http://www.webtoolkit.eu/)
