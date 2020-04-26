@@ -33,8 +33,9 @@
 #include "utils/String.hpp"
 
 #include "resource/ImageResource.hpp"
-#include "TrackStringUtils.hpp"
 #include "LmsApplication.hpp"
+#include "MediaPlayer.hpp"
+#include "TrackStringUtils.hpp"
 
 namespace UserInterface {
 
@@ -135,8 +136,13 @@ PlayQueue::PlayQueue()
 
 		if (!LmsApp->getUser()->isDemo())
 		{
-			LmsApp->post([=]
+			LmsApp->getMediaPlayer()->settingsLoaded.connect([=]
 			{
+				if (_mediaPlayerSettingsLoaded)
+					return;
+
+				_mediaPlayerSettingsLoaded = true;
+
 				std::size_t trackPos {};
 
 				{
@@ -209,6 +215,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 
 	Database::IdType trackId {};
 	bool addRadioTrack {};
+	std::optional<float> replayGain {};
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -235,6 +242,8 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 
 		trackId = track.id();
 
+		replayGain = getReplayGain(track);
+
 		if (!LmsApp->getUser()->isDemo())
 			LmsApp->getUser().modify()->setCurPlayingTrackPos(pos);
 	}
@@ -244,7 +253,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 
 	updateCurrentTrack(true);
 
-	trackSelected.emit(trackId, play);
+	trackSelected.emit(trackId, play, replayGain ? *replayGain : 0);
 }
 
 void
@@ -430,6 +439,31 @@ PlayQueue::enqueueRadioTrack()
 {
 	const std::vector<Database::IdType> trackToAddIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 1)};
 	enqueueTracks(trackToAddIds);
+}
+
+std::optional<float>
+PlayQueue::getReplayGain(const Database::Track::pointer& track) const
+{
+	const auto& settings {LmsApp->getMediaPlayer()->getSettings()};
+	if (!settings)
+		return std::nullopt;
+
+	switch (settings->replayGain.mode)
+	{
+		case MediaPlayer::Settings::ReplayGain::Mode::None:
+			return std::nullopt;
+
+		case MediaPlayer::Settings::ReplayGain::Mode::Track:
+			return track->getTrackReplayGain();
+
+		case MediaPlayer::Settings::ReplayGain::Mode::Release:
+			return track->getReleaseReplayGain();
+
+		case MediaPlayer::Settings::ReplayGain::Mode::Auto:
+			return track->getTrackReplayGain();
+	}
+
+	return std::nullopt;
 }
 
 } // namespace UserInterface

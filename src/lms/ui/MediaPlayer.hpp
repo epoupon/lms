@@ -34,24 +34,59 @@ class MediaPlayer : public Wt::WTemplate
 	public:
 		using Bitrate = Database::Bitrate;
 		using Format = Database::AudioFormat;
+		using Gain = float;
 
-		// Do not change this enum as it may be stored locally in browser
+		// Do not change enum values as they may be stored locally in browser
 		// Keep it sync with LMS.mediaplayer js
-		enum class TranscodeMode
-		{
-			Never			= 0,
-			Always			= 1,
-			IfFormatNotSupported	= 2,
-		};
-		static inline constexpr TranscodeMode defaultTranscodeMode {TranscodeMode::IfFormatNotSupported};
-		static inline constexpr Format defaultTranscodeFormat {Format::OGG_OPUS};
-		static inline constexpr Bitrate defaultTranscodeBitrate {128000};
 
 		struct Settings
 		{
-			TranscodeMode	mode {defaultTranscodeMode};
-			Format		format {defaultTranscodeFormat};
-			Bitrate		bitrate {defaultTranscodeBitrate};
+			struct Transcode
+			{
+				enum class Mode
+				{
+					Never			= 0,
+					Always			= 1,
+					IfFormatNotSupported	= 2,
+				};
+				static inline constexpr Mode defaultMode {Mode::IfFormatNotSupported};
+				static inline constexpr Format defaultFormat {Format::OGG_OPUS};
+				static inline constexpr Bitrate defaultBitrate {128000};
+
+				Mode		mode {defaultMode};
+				Format		format {defaultFormat};
+				Bitrate		bitrate {defaultBitrate};
+			};
+
+			struct ReplayGain
+			{
+				enum class Mode
+				{
+					None			= 0,
+					Auto			= 1,
+					Track			= 2,
+					Release			= 3,
+				};
+
+				enum class ClippingPreventionMode
+				{
+					None			= 0,
+					LowerVolume		= 1,
+				};
+
+				static inline constexpr Mode			defaultMode {Mode::None};
+				static inline constexpr Gain			defaultPreAmpGain {};
+				static inline constexpr Gain			minPreAmpGain {-15};
+				static inline constexpr Gain			maxPreAmpGain {15};
+				static inline constexpr ClippingPreventionMode	defaultClippingPreventionMode {ClippingPreventionMode::None};
+
+				Mode			mode;
+				Gain			preAmpGain;
+				ClippingPreventionMode 	clippingPreventionMode;
+			};
+
+			Transcode transcode;
+			ReplayGain replayGain;
 		};
 
 		MediaPlayer();
@@ -61,21 +96,27 @@ class MediaPlayer : public Wt::WTemplate
 		MediaPlayer& operator=(const MediaPlayer&) = delete;
 		MediaPlayer& operator=(MediaPlayer&&) = delete;
 
+		std::optional<Database::IdType> getTrackLoaded() const { return _trackIdLoaded; }
+
+		void loadTrack(Database::IdType trackId, bool play, float replayGain);
+		void stop();
+
 		std::optional<Settings>	getSettings() const { return _settings; }
 		void			setSettings(const Settings& settings);
 
 		// Signals
-		Wt::JSignal<>	playbackEnded;
-		Wt::JSignal<> 	playPrevious;
-		Wt::JSignal<> 	playNext;
+		Wt::JSignal<>			playbackEnded;
+		Wt::JSignal<> 			playPrevious;
+		Wt::JSignal<> 			playNext;
+		Wt::Signal<Database::IdType>	trackLoaded;
+		Wt::Signal<>			settingsLoaded;
 
 	private:
-		void stop();
-		void loadTrack(Database::IdType trackId, bool play);
 
+		std::optional<Database::IdType> _trackIdLoaded;
 		std::optional<Settings>		_settings;
 
-		Wt::JSignal<int, int, int> 	_settingsLoaded;
+		Wt::JSignal<std::string> 	_settingsLoaded;
 		Wt::WText*	_title;
 		Wt::WAnchor*	_release;
 		Wt::WAnchor*	_artist;

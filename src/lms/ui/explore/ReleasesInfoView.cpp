@@ -27,6 +27,7 @@
 #include "resource/ImageResource.hpp"
 #include "ReleaseLink.hpp"
 #include "LmsApplication.hpp"
+#include "MediaPlayer.hpp"
 
 using namespace Database;
 
@@ -45,7 +46,7 @@ ReleasesInfo::ReleasesInfo()
 		refreshRecentlyAdded();
 	});
 
-	LmsApp->getEvents().trackLoaded.connect([=]
+	LmsApp->getMediaPlayer()->trackLoaded.connect([=]
 	{
 		refreshMostPlayed();
 	});

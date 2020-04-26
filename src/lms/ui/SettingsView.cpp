@@ -21,6 +21,8 @@
 
 #include <Wt/WCheckBox.h>
 #include <Wt/WComboBox.h>
+#include <Wt/WDoubleValidator.h>
+#include <Wt/WDoubleSpinBox.h>
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
@@ -51,6 +53,8 @@ class SettingsModel : public Wt::WFormModel
 		static inline const Field TranscodeModeField {"transcode-mode"};
 		static inline const Field TranscodeFormatField {"transcode-format"};
 		static inline const Field TranscodeBitrateField {"transcode-bitrate"};
+		static inline const Field ReplayGainModeField {"replaygain-mode"};
+		static inline const Field ReplayGainPreAmpGainField {"replaygain-preamp"};
 		static inline const Field SubsonicArtistListModeField {"subsonic-artist-list-mode"};
 		static inline const Field SubsonicTranscodeEnableField {"subsonic-transcode-enable"};
 		static inline const Field SubsonicTranscodeFormatField {"subsonic-transcode-format"};
@@ -59,7 +63,8 @@ class SettingsModel : public Wt::WFormModel
 		static inline const Field PasswordField {"password"};
 		static inline const Field PasswordConfirmField {"password-confirm"};
 
-		using TranscodeModeModel = ValueStringModel<MediaPlayer::TranscodeMode>;
+		using TranscodeModeModel = ValueStringModel<MediaPlayer::Settings::Transcode::Mode>;
+		using ReplayGainModeModel = ValueStringModel<MediaPlayer::Settings::ReplayGain::Mode>;
 
 		SettingsModel(bool withOldPassword)
 			: _withOldPassword {withOldPassword}
@@ -70,6 +75,8 @@ class SettingsModel : public Wt::WFormModel
 			addField(TranscodeModeField);
 			addField(TranscodeBitrateField);
 			addField(TranscodeFormatField);
+			addField(ReplayGainModeField);
+			addField(ReplayGainPreAmpGainField);
 			addField(SubsonicTranscodeEnableField);
 			addField(SubsonicTranscodeBitrateField);
 			addField(SubsonicTranscodeFormatField);
@@ -83,6 +90,12 @@ class SettingsModel : public Wt::WFormModel
 			setValidator(TranscodeModeField, createMandatoryValidator());
 			setValidator(TranscodeBitrateField, createMandatoryValidator());
 			setValidator(TranscodeFormatField, createMandatoryValidator());
+			setValidator(ReplayGainModeField, createMandatoryValidator());
+			{
+				auto preampGainValidator {std::make_unique<Wt::WDoubleValidator>()};
+				preampGainValidator->setRange(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
+				setValidator(ReplayGainPreAmpGainField, std::move(preampGainValidator));
+			}
 			setValidator(SubsonicTranscodeBitrateField, createMandatoryValidator());
 			setValidator(SubsonicTranscodeFormatField, createMandatoryValidator());
 
@@ -92,6 +105,7 @@ class SettingsModel : public Wt::WFormModel
 		std::shared_ptr<TranscodeModeModel> getTranscodeModeModel() { return _transcodeModeModel; }
 		std::shared_ptr<Wt::WAbstractItemModel> getTranscodeBitrateModel() { return _transcodeBitrateModel; }
 		std::shared_ptr<Wt::WAbstractItemModel> getTranscodeFormatModel() { return _transcodeFormatModel; }
+		std::shared_ptr<ReplayGainModeModel> getReplayGainModeModel() { return _replayGainModeModel; }
 		std::shared_ptr<Wt::WAbstractItemModel> getSubsonicArtistListModeModel() { return _subsonicArtistListModeModel; }
 
 		void saveData()
@@ -118,15 +132,21 @@ class SettingsModel : public Wt::WFormModel
 
 				auto transcodeModeRow {_transcodeModeModel->getRowFromString(valueText(TranscodeModeField))};
 				if (transcodeModeRow)
-					settings.mode = _transcodeModeModel->getValue(*transcodeModeRow);
+					settings.transcode.mode = _transcodeModeModel->getValue(*transcodeModeRow);
 
 				auto transcodeFormatRow {_transcodeFormatModel->getRowFromString(valueText(TranscodeFormatField))};
 				if (transcodeFormatRow)
-					settings.format = _transcodeFormatModel->getValue(*transcodeFormatRow);
+					settings.transcode.format = _transcodeFormatModel->getValue(*transcodeFormatRow);
 
 				auto transcodeBitrateRow {_transcodeBitrateModel->getRowFromString(valueText(TranscodeBitrateField))};
 				if (transcodeBitrateRow)
-					settings.bitrate = _transcodeBitrateModel->getValue(*transcodeBitrateRow);
+					settings.transcode.bitrate = _transcodeBitrateModel->getValue(*transcodeBitrateRow);
+
+				auto replayGainModeRow {_replayGainModeModel->getRowFromString(valueText(ReplayGainModeField))};
+				if (replayGainModeRow)
+					settings.replayGain.mode = _replayGainModeModel->getValue(*replayGainModeRow);
+
+				settings.replayGain.preAmpGain = Wt::asNumber(value(ReplayGainPreAmpGainField));
 
 				LmsApp->getMediaPlayer()->setSettings(settings);
 			}
@@ -165,17 +185,23 @@ class SettingsModel : public Wt::WFormModel
 			{
 				const auto& settings {*LmsApp->getMediaPlayer()->getSettings()};
 
-				auto transcodeModeRow {_transcodeModeModel->getRowFromValue(settings.mode)};
+				auto transcodeModeRow {_transcodeModeModel->getRowFromValue(settings.transcode.mode)};
 				if (transcodeModeRow)
 					setValue(TranscodeModeField, _transcodeModeModel->getString(*transcodeModeRow));
 
-				auto transcodeFormatRow {_transcodeFormatModel->getRowFromValue(settings.format)};
+				auto transcodeFormatRow {_transcodeFormatModel->getRowFromValue(settings.transcode.format)};
 				if (transcodeFormatRow)
 					setValue(TranscodeFormatField, _transcodeFormatModel->getString(*transcodeFormatRow));
 
-				auto transcodeBitrateRow {_transcodeBitrateModel->getRowFromValue(settings.bitrate)};
+				auto transcodeBitrateRow {_transcodeBitrateModel->getRowFromValue(settings.transcode.bitrate)};
 				if (transcodeBitrateRow)
 					setValue(TranscodeBitrateField, _transcodeBitrateModel->getString(*transcodeBitrateRow));
+
+				auto replayGainModeRow {_replayGainModeModel->getRowFromValue(settings.replayGain.mode)};
+				if (replayGainModeRow)
+					setValue(ReplayGainModeField, _replayGainModeModel->getString(*replayGainModeRow));
+
+				setValue(ReplayGainPreAmpGainField, settings.replayGain.preAmpGain);
 			}
 
 			setValue(SubsonicTranscodeEnableField, LmsApp->getUser()->getSubsonicTranscodeEnable());
@@ -271,13 +297,9 @@ class SettingsModel : public Wt::WFormModel
 		{
 
 			_transcodeModeModel = std::make_shared<TranscodeModeModel>();
-			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.always"), MediaPlayer::TranscodeMode::Always);
-			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.never"), MediaPlayer::TranscodeMode::Never);
-			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.if-format-not-supported"), MediaPlayer::TranscodeMode::IfFormatNotSupported);
-
-			_subsonicArtistListModeModel = std::make_shared<ValueStringModel<User::SubsonicArtistListMode>>();
-			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.all-artists"), User::SubsonicArtistListMode::AllArtists);
-			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.release-artists"), User::SubsonicArtistListMode::ReleaseArtists);
+			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.always"), MediaPlayer::Settings::Transcode::Mode::Always);
+			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.never"), MediaPlayer::Settings::Transcode::Mode::Never);
+			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.if-format-not-supported"), MediaPlayer::Settings::Transcode::Mode::IfFormatNotSupported);
 
 			_transcodeBitrateModel = std::make_shared<ValueStringModel<Bitrate>>();
 			for (const Bitrate bitrate : User::audioTranscodeAllowedBitrates)
@@ -291,6 +313,16 @@ class SettingsModel : public Wt::WFormModel
 			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcode-format.matroska_opus"), AudioFormat::MATROSKA_OPUS);
 			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcode-format.ogg_vorbis"), AudioFormat::OGG_VORBIS);
 			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcode-format.webm_vorbis"), AudioFormat::WEBM_VORBIS);
+
+			_replayGainModeModel = std::make_shared<ReplayGainModeModel>();
+			_replayGainModeModel->add(Wt::WString::tr("Lms.Settings.replaygain-mode.none"), MediaPlayer::Settings::ReplayGain::Mode::None);
+			_replayGainModeModel->add(Wt::WString::tr("Lms.Settings.replaygain-mode.auto"), MediaPlayer::Settings::ReplayGain::Mode::Auto);
+			_replayGainModeModel->add(Wt::WString::tr("Lms.Settings.replaygain-mode.track"), MediaPlayer::Settings::ReplayGain::Mode::Track);
+			_replayGainModeModel->add(Wt::WString::tr("Lms.Settings.replaygain-mode.release"), MediaPlayer::Settings::ReplayGain::Mode::Release);
+
+			_subsonicArtistListModeModel = std::make_shared<ValueStringModel<User::SubsonicArtistListMode>>();
+			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.all-artists"), User::SubsonicArtistListMode::AllArtists);
+			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.release-artists"), User::SubsonicArtistListMode::ReleaseArtists);
 		}
 
 		bool _withOldPassword {};
@@ -298,17 +330,18 @@ class SettingsModel : public Wt::WFormModel
 		std::shared_ptr<TranscodeModeModel>				_transcodeModeModel;
 		std::shared_ptr<ValueStringModel<Bitrate>>			_transcodeBitrateModel;
 		std::shared_ptr<ValueStringModel<AudioFormat>>			_transcodeFormatModel;
+		std::shared_ptr<ReplayGainModeModel>				_replayGainModeModel;
 		std::shared_ptr<ValueStringModel<User::SubsonicArtistListMode>> _subsonicArtistListModeModel;
 };
 
 SettingsView::SettingsView()
 {
-	wApp->internalPathChanged().connect(std::bind([=]
+	wApp->internalPathChanged().connect([=]
 	{
 		refreshView();
-	}));
+	});
 
-	LmsApp->getEvents().mediaPlayerSettingsAvailable.connect([=]()
+	LmsApp->getMediaPlayer()->settingsLoaded.connect([=]()
 	{
 		refreshView();
 	});
@@ -376,15 +409,40 @@ SettingsView::refreshView()
 		transcodeBitrate->setModel(model->getTranscodeBitrateModel());
 		t->setFormWidget(SettingsModel::TranscodeBitrateField, std::move(transcodeBitrate));
 
-		transcodeModeRaw->sactivated().connect([=]()
+		transcodeModeRaw->activated().connect([=](int row)
 		{
-			auto row {model->getTranscodeModeModel()->getRowFromString(model->valueText(SettingsModel::TranscodeModeField))};
-			const bool enable = (row && (model->getTranscodeModeModel()->getValue(*row) != MediaPlayer::TranscodeMode::Never));
+			const bool enable {model->getTranscodeModeModel()->getValue(row) != MediaPlayer::Settings::Transcode::Mode::Never};
 			model->setReadOnly(SettingsModel::TranscodeFormatField, !enable);
 			model->setReadOnly(SettingsModel::TranscodeBitrateField, !enable);
 			t->updateModel(model.get());
 			t->updateView(model.get());
 		});
+		if (LmsApp->getMediaPlayer()->getSettings()->transcode.mode == MediaPlayer::Settings::Transcode::Mode::Never)
+		{
+			model->setReadOnly(SettingsModel::TranscodeFormatField, true);
+			model->setReadOnly(SettingsModel::TranscodeBitrateField, true);
+		}
+
+		// Replay gain mode
+		auto replayGainMode {std::make_unique<Wt::WComboBox>()};
+		auto* replayGainModeRaw {replayGainMode.get()};
+		replayGainMode->setModel(model->getReplayGainModeModel());
+		t->setFormWidget(SettingsModel::ReplayGainModeField, std::move(replayGainMode));
+
+		// Replay gain preampGain
+		auto replayGainPreampGain {std::make_unique<Wt::WDoubleSpinBox>()};
+		replayGainPreampGain->setRange(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
+		t->setFormWidget(SettingsModel::ReplayGainPreAmpGainField, std::move(replayGainPreampGain));
+
+		replayGainModeRaw->activated().connect([=](int row)
+		{
+			const bool enable {model->getReplayGainModeModel()->getValue(row) != MediaPlayer::Settings::ReplayGain::Mode::None};
+			model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainField, !enable);
+			t->updateModel(model.get());
+			t->updateView(model.get());
+		});
+		if (LmsApp->getMediaPlayer()->getSettings()->replayGain.mode == MediaPlayer::Settings::ReplayGain::Mode::None)
+			model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainField, true);
 	}
 
 	// Subsonic

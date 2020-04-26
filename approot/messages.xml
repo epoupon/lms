@@ -164,6 +164,12 @@
 <message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
 <message id="Lms.Settings.password-bad">Bad password</message>
 <message id="Lms.Settings.password-must-fill-old-password">Old password must be filled in</message>
+<message id="Lms.Settings.replaygain-mode">ReplayGain mode</message>
+<message id="Lms.Settings.replaygain-mode.none">No ReplayGain</message>
+<message id="Lms.Settings.replaygain-mode.auto">Auto</message>
+<message id="Lms.Settings.replaygain-mode.track">Track</message>
+<message id="Lms.Settings.replaygain-mode.release">Album</message>
+<message id="Lms.Settings.replaygain-preamp">Replay gain preAmp</message>
 <message id="Lms.Settings.subsonic-artist-list-mode">Artist list mode</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">All artists</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Album artists</message>

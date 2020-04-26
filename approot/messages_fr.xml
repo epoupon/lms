@@ -164,6 +164,12 @@
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
 <message id="Lms.Settings.password-bad">Mauvais mot de passe</message>
 <message id="Lms.Settings.password-must-fill-old-password">L'ancien mot de passe doit être renseigné</message>
+<message id="Lms.Settings.replaygain-mode">Mode ReplayGain</message>
+<message id="Lms.Settings.replaygain-mode.none">Pas de ReplayGain</message>
+<message id="Lms.Settings.replaygain-mode.auto">Automatique</message>
+<message id="Lms.Settings.replaygain-mode.track">Piste</message>
+<message id="Lms.Settings.replaygain-mode.release">Album</message>
+<message id="Lms.Settings.replaygain-preamp">PreAmplification ReplayGain</message>
 <message id="Lms.Settings.subsonic-artist-list-mode">Mode de listage des artistes</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">Tous les artistes</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Tous les artistes d'album</message>
@@ -188,4 +194,5 @@
 <message id="Wt.WMessageBox.Yes">Oui</message>
 <message id="Wt.WMessageBox.No">Non</message>
 <message id="Wt.WValidator.Invalid">Ce champ ne peut pas être vide</message>
+<message id="Wt.WDoubleValidator.BadRange">Le nombre doit être compris entre {1} et {2}</message>
 </messages>
