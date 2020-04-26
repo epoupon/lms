@@ -191,7 +191,7 @@ class SettingsModel : public Wt::WFormModel
 			setValue(DarkModeField, user->getUITheme() == User::UITheme::Dark);
 
 			{
-				const auto& settings {*LmsApp->getMediaPlayer()->getSettings()};
+				const auto settings {*LmsApp->getMediaPlayer()->getSettings()};
 
 				auto transcodeModeRow {_transcodeModeModel->getRowFromValue(settings.transcode.mode)};
 				if (transcodeModeRow)
