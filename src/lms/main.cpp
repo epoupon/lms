@@ -148,6 +148,9 @@ int main(int argc, char* argv[])
 		Scanner::IMediaScanner& mediaScanner {ServiceProvider<Scanner::IMediaScanner>::assign(Scanner::createMediaScanner(database))};
 
 		Recommendation::IEngine& recommendationEngine {ServiceProvider<Recommendation::IEngine>::assign(Recommendation::createEngine(database))};
+		CoverArt::IGrabber& coverArtGrabber {ServiceProvider<CoverArt::IGrabber>::assign(CoverArt::createGrabber(argv[0]))};
+		coverArtGrabber.setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
+
 		mediaScanner.scanComplete().connect([&]()
 		{
 			auto status = mediaScanner.getStatus();
@@ -161,10 +164,10 @@ int main(int argc, char* argv[])
 			{
 				LMS_LOG(MAIN, INFO) << "Scanner did not change files, not reloading the recommendation engine...";
 			}
+			// Flush cover cache even if no changes:
+			// covers may be external files that changed and we don't keep track of them
+			coverArtGrabber.flushCache();
 		});
-
-		CoverArt::IGrabber& coverArtGrabber {ServiceProvider<CoverArt::IGrabber>::assign(CoverArt::createGrabber(argv[0]))};
-		coverArtGrabber.setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
 
 		API::Subsonic::SubsonicResource subsonicResource {database};
 

@@ -26,6 +26,7 @@
 #include "database/Track.hpp"
 
 #include "utils/Logger.hpp"
+#include "utils/Random.hpp"
 
 namespace {
 
@@ -52,35 +53,9 @@ Grabber::Grabber(const std::filesystem::path& execPath)
 void
 Grabber::setDefaultCover(const std::filesystem::path& p)
 {
-	std::unique_lock lock {_mutex};
-
 	_defaultCover = std::make_unique<Image>();
 	if (!_defaultCover->load(p))
 		throw LmsException("Cannot read default cover file '" + p.string() + "'");
-}
-
-Image
-Grabber::getDefaultCover(std::size_t size)
-{
-	LMS_LOG(COVER, DEBUG) << "Getting a default cover using size = " << size;
-	std::unique_lock lock {_mutex};
-
-	auto it = _defaultCovers.find(size);
-	if (it == _defaultCovers.end())
-	{
-		Image cover = *_defaultCover;
-
-		LMS_LOG(COVER, DEBUG) << "default cover size = " << cover.getSize().width << " x " << cover.getSize().height;
-
-		LMS_LOG(COVER, DEBUG) << "Scaling cover to size = " << size;
-		cover.scale(Geometry{size, size});
-		LMS_LOG(COVER, DEBUG) << "Scaling DONE";
-		auto res = _defaultCovers.insert(std::make_pair(size, cover));
-		assert(res.second);
-		it = res.first;
-	}
-
-	return it->second;
 }
 
 static std::optional<Image>
@@ -173,7 +148,11 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 {
 	using namespace Database;
 
-	std::optional<Image> cover;
+	const CacheEntryDesc cacheEntryDesc {CacheEntryDesc::Type::Track, trackId, size};
+	std::optional<Image> cover {loadFromCache(cacheEntryDesc)};
+
+	if (cover)
+		return *cover;
 
 	bool hasCover {};
 	bool isMultiDisc {};
@@ -182,7 +161,7 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 	{
 		auto transaction {dbSession.createSharedTransaction()};
 
-		Track::pointer track = Track::getById(dbSession, trackId);
+		const Track::pointer track {Track::getById(dbSession, trackId)};
 		if (track)
 		{
 			hasCover = track->hasCover();
@@ -207,9 +186,11 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 	}
 
 	if (!cover)
-		cover = getDefaultCover(size);
-	else
-		cover->scale(Geometry {size, size});
+		cover = *_defaultCover;
+
+	cover->scale(Geometry {size, size});
+
+	saveToCache(cacheEntryDesc, *cover);
 
 	return *cover;
 }
@@ -218,30 +199,51 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 Image
 Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, std::size_t size)
 {
-	std::optional<Image> cover;
+	const CacheEntryDesc cacheEntryDesc {CacheEntryDesc::Type::Release, releaseId, size};
+	std::optional<Image> cover {loadFromCache(cacheEntryDesc)};
+
+	if (cover)
+		return *cover;
 
 	std::optional<Database::IdType> trackId;
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto release {Database::Release::getById(session, releaseId)};
+		const auto release {Database::Release::getById(session, releaseId)};
 		if (release)
 		{
-			auto tracks {release->getTracks()};
+			const auto tracks {release->getTracks()};
 			if (!tracks.empty())
 				trackId = tracks.front().id();
 		}
 	}
 
 	if (trackId)
-		return getFromTrack(session, *trackId, size);
-
-	if (!cover)
-		cover = getDefaultCover(size);
+	{
+		cover = getFromTrack(session, *trackId, size);
+	}
 	else
+	{
+		if (!cover)
+			cover = *_defaultCover;
+
 		cover->scale(Geometry {size, size});
+	}
+
+	saveToCache(cacheEntryDesc, *cover);
 
 	return *cover;
+}
+
+void
+Grabber::flushCache()
+{
+	std::unique_lock lock {_cacheMutex};
+
+	LMS_LOG(COVER, DEBUG) << "Cache stats: hits = " << _cacheHits << ", misses = " << _cacheMisses;
+	_cacheHits = 0;
+	_cacheMisses = 0;
+	_cache.clear();
 }
 
 std::vector<uint8_t>
@@ -260,6 +262,33 @@ Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, 
 
 	assert(format == Format::JPEG);
 	return cover.save(format);
+}
+
+void
+Grabber::saveToCache(const CacheEntryDesc& entryDesc, const Image& image)
+{
+	std::unique_lock lock {_cacheMutex};
+
+	if (_cache.size() >= _maxCacheEntries)
+		_cache.erase(Random::pickRandom(_cache));
+
+	_cache[entryDesc] = image;
+}
+
+std::optional<Image>
+Grabber::loadFromCache(const CacheEntryDesc& entryDesc)
+{
+	std::shared_lock lock {_cacheMutex};
+
+	auto it {_cache.find(entryDesc)};
+	if (it == std::cend(_cache))
+	{
+		++_cacheMisses;
+		return std::nullopt;
+	}
+
+	++_cacheHits;
+	return it->second;
 }
 
 } // namespace CoverArt
