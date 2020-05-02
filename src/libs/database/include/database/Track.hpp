@@ -77,7 +77,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static std::vector<IdType>	getAllIds(Session& session);
 		static std::vector<std::pair<IdType, std::filesystem::path>> getAllPaths(Session& session, std::optional<std::size_t> offset = std::nullopt, std::optional<std::size_t> size = std::nullopt);
 		static std::vector<pointer>	getMBIDDuplicates(Session& session);
-		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> size = 1);
+		static std::vector<pointer>	getLastWritten(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> size = 1);
 		static std::vector<pointer>	getAllWithMBIDAndMissingFeatures(Session& session);
 		static std::vector<IdType>	getAllIdsWithFeatures(Session& session, std::optional<std::size_t> limit = {});
 		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});

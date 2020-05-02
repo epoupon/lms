@@ -147,13 +147,13 @@ Track::getMBIDDuplicates(Session& session)
 }
 
 std::vector<Track::pointer>
-Track::getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> limit)
+Track::getLastWritten(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> limit)
 {
 	session.checkSharedLocked();
 
 	Wt::Dbo::collection<Track::pointer> res = session.getDboSession().find<Track>()
-		.where("file_added > ?").bind(after)
-		.orderBy("file_added DESC")
+		.where("file_last_write > ?").bind(after)
+		.orderBy("file_last_write DESC")
 		.limit(limit ? static_cast<int>(*limit) : -1);
 
 	return std::vector<pointer>(res.begin(), res.end());

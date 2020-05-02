@@ -56,7 +56,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static std::vector<IdType>	getAllIds(Session& session);
 		static std::vector<pointer>	getAllOrderedByArtist(Session& session, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
 		static std::vector<pointer>	getAllRandom(Session& session, std::optional<std::size_t> size = {});
-		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getLastWritten(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
 		static std::vector<pointer>	getByYear(Session& session, int yearFrom, int yearTo, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
 
 		static std::vector<pointer>	getByClusters(Session& session, const std::set<IdType>& clusters);

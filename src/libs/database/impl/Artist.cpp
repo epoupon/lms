@@ -230,13 +230,13 @@ Artist::getByFilter(Session& session,
 }
 
 std::vector<Artist::pointer>
-Artist::getLastAdded(Session& session, Wt::WDateTime after, std::optional<std::size_t> limit)
+Artist::getLastWritten(Session& session, Wt::WDateTime after, std::optional<std::size_t> limit)
 {
 	session.checkSharedLocked();
 	Wt::Dbo::collection<Artist::pointer> res = session.getDboSession().query<Artist::pointer>("SELECT a from artist a INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id INNER JOIN track t ON t.id = t_a_l.track_id")
-		.where("t.file_added > ?").bind(after)
+		.where("t.file_last_write > ?").bind(after)
 		.groupBy("a.id")
-		.orderBy("t.file_added DESC")
+		.orderBy("t.file_last_write DESC")
 		.limit(limit ? static_cast<int>(*limit) : -1);
 
 	return std::vector<pointer>(res.begin(), res.end());

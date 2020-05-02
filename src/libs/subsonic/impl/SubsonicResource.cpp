@@ -696,7 +696,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	else if (type == "newest")
 	{
 		auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-6)};
-		releases = Release::getLastAdded(context.dbSession, after, offset, size);
+		releases = Release::getLastWritten(context.dbSession, after, offset, size);
 	}
 	else if (type == "alphabeticalByName")
 	{

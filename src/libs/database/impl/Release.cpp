@@ -145,14 +145,14 @@ Release::getAllOrphans(Session& session)
 }
 
 std::vector<Release::pointer>
-Release::getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> offset, std::optional<std::size_t> limit)
+Release::getLastWritten(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> offset, std::optional<std::size_t> limit)
 {
 	session.checkSharedLocked();
 
 	Wt::Dbo::collection<Release::pointer> res = session.getDboSession().query<Release::pointer>("SELECT r from release r INNER JOIN track t ON r.id = t.release_id")
-		.where("t.file_added > ?").bind(after)
+		.where("t.file_last_write > ?").bind(after)
 		.groupBy("r.id")
-		.orderBy("t.file_added DESC")
+		.orderBy("t.file_last_write DESC")
 		.offset(offset ? static_cast<int>(*offset) : -1)
 		.limit(limit ? static_cast<int>(*limit) : -1);
 

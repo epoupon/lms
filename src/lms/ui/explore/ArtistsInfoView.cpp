@@ -57,10 +57,10 @@ ArtistsInfo::ArtistsInfo()
 void
 ArtistsInfo::refreshRecentlyAdded()
 {
-	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1);
+	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-6);
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-	const std::vector<Database::Artist::pointer> artists {Artist::getLastAdded(LmsApp->getDbSession(), after, 5)};
+	const std::vector<Database::Artist::pointer> artists {Artist::getLastWritten(LmsApp->getDbSession(), after, 5)};
 
 	_recentlyAddedContainer->clear();
 	for (const Database::Artist::pointer& artist : artists)

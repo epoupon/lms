@@ -58,11 +58,11 @@ ReleasesInfo::ReleasesInfo()
 void
 ReleasesInfo::refreshRecentlyAdded()
 {
-	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1);
+	auto after = Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-6);
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const auto releases {Release::getLastAdded(LmsApp->getDbSession(), after, 0, 5)};
+	const auto releases {Release::getLastWritten(LmsApp->getDbSession(), after, 0, 5)};
 
 	_recentlyAddedContainer->clear();
 	for (const Database::Release::pointer& release : releases)

@@ -74,10 +74,10 @@ TracksInfo::TracksInfo()
 void
 TracksInfo::refreshRecentlyAdded()
 {
-	const auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-1)};
+	const auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-6)};
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-	const auto tracks {Track::getLastAdded(LmsApp->getDbSession(), after, 5)};
+	const auto tracks {Track::getLastWritten(LmsApp->getDbSession(), after, 5)};
 
 	_recentlyAddedContainer->clear();
 	addEntries(_recentlyAddedContainer, tracks);

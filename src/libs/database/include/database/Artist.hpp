@@ -77,7 +77,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static std::vector<pointer>	getAll(Session& session, SortMethod sortMethod, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
 		static std::vector<IdType>	getAllIds(Session& session);
 		static std::vector<pointer>	getAllOrphans(Session& session); // No track related
-		static std::vector<pointer>	getLastAdded(Session& session, Wt::WDateTime after, std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getLastWritten(Session& session, Wt::WDateTime after, std::optional<std::size_t> size = {});
 		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
 
 		// Accessors
