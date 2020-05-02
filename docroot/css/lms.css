@@ -27,7 +27,7 @@ a, a:link, a:active, a:visited {
 	min-height: 48px;
 	padding-top: 8px;
 	padding-bottom: 8px;
-	margin: 0px;
+	margin: 0;
 }
 
 .Lms-admin-users-add-btn {
@@ -75,24 +75,24 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 .Lms-cover-smaller {
 	width: 64px; /* some cover may not be square */
 	border-radius: 3px;
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
+	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Lms-cover-small {
 	width: 96px; /* some cover may not be square */
 	border-radius: 3px;
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
+	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Lms-cover-medium {
 	width: 128px;
 	border-radius: 3px;
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
+	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Lms-cover-large {
 	border-radius: 3px;
-	box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.4);
+	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Lms-entry-playing {
@@ -155,7 +155,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-explore-releaselink {
-	margin: 0px;
+	margin: 0;
 	padding-top: 4px;
 	padding-bottom: 4px;
 }
@@ -179,7 +179,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 
 .Lms-explore-artistlink {
 	min-height: 28px;
-	margin: 0px;
+	margin: 0;
 }
 
 .Lms-explore-tracks-entry {
@@ -212,11 +212,11 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 
 .Lms-explore-tracksinfo-entry {
 	min-height: 28px;
-	margin: 0px;
+	margin: 0;
 }
 
 .Lms-navbar {
-	border-radius: 0px;
+	border-radius: 0;
 }
 
 .Lms-playqueue-btn {
@@ -270,7 +270,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 
 .Lms-playhistory-entry {
 	min-height: 32px;
-	margin-bottom: 0px;
+	margin-bottom: 0;
 }
 
 .Lms-playhistory-entry-name {
@@ -284,8 +284,8 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	bottom: 0;
 	width: 100%;
 	height: 70px;
-	padding: 0px;
-	margin: 0px;
+	padding: 0;
+	margin: 0;
 	background-color: var(--player-background-color);
 }
 
@@ -329,8 +329,8 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 .Lms-player-seek::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	-moz-appearance: none;
-	height: 0px;
-	width: 0px;
+	height: 0;
+	width: 0;
 }
 
 .Lms-player-seek-container {
@@ -344,8 +344,8 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 .Lms-player-seek-common {
 	position: absolute;
 	width:100%;
-	top: 0px;
-	left: 0px;
+	top: 0;
+	left: 0;
 	height: 8px;
 	border-radius: 3px;
 }
@@ -353,8 +353,8 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 .Lms-player-seek::-moz-range-thumb {
 	-webkit-appearance: none;
 	-moz-appearance: none;
-	height: 0px;
-	width: 0px;
+	height: 0;
+	width: 0;
 }
 
 .Lms-player-text-center {
@@ -375,22 +375,6 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	display: flex;
 }
 
-.Lms-player-volume-slider::-webkit-slider-thumb {
-	background-color: var(--body-color);
-}
-
-.Lms-player-volume-slider::-webkit-slider-thumb:hover {
-	background-color: var(--hover-color);
-}
-
-.Lms-player-volume-slider::-moz-range-thumb {
-	background-color: var(--body-color);
-}
-
-.Lms-player-volume-slider::-moz-range-thumb:hover {
-	background-color: var(--hover-color);
-}
-
 .Lms-player-volume-slider {
 	-webkit-appearance: none;
 	appearance: none;
@@ -405,17 +389,27 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-player-volume-slider::-webkit-slider-thumb {
-	-webkit-appearance: none; /* Override default look */
+	-webkit-appearance: none;
+	background-color: var(--body-color);
 	appearance: none;
 	width: 14px;
 	height: 14px;
 	border-radius: 7px;
 }
 
+.Lms-player-volume-slider::-webkit-slider-thumb:hover {
+	background-color: var(--hover-color);
+}
+
 .Lms-player-volume-slider::-moz-range-thumb {
+	background-color: var(--body-color);
 	width: 14px;
 	height: 14px;
 	border-radius: 7px;
+}
+
+.Lms-player-volume-slider::-moz-range-thumb:hover {
+	background-color: var(--hover-color);
 }
 
 .Lms-player-volume-slider-container {
