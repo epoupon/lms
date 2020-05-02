@@ -264,6 +264,22 @@ getTrackPath(const Track::pointer& track)
 }
 
 static
+std::string_view
+formatToSuffix(AudioFormat format)
+{
+	switch (format)
+	{
+		case AudioFormat::MP3:			return "mp3";
+		case AudioFormat::OGG_OPUS:		return "opus";
+		case AudioFormat::MATROSKA_OPUS:	return "mka";
+		case AudioFormat::OGG_VORBIS:		return "ogg";
+		case AudioFormat::WEBM_VORBIS:		return "webm";
+	}
+
+	return "";
+}
+
+static
 Response::Node
 trackToResponseNode(const Track::pointer& track, Session& dbSession, const User::pointer& user)
 {
@@ -292,6 +308,9 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 		auto extension {track->getPath().extension()};
 		trackResponse.setAttribute("suffix", extension.string().substr(1));
 	}
+
+	if (user->getSubsonicTranscodeEnable())
+		trackResponse.setAttribute("transcodeSuffix", formatToSuffix(user->getSubsonicTranscodeFormat()));
 
 	trackResponse.setAttribute("coverArt", IdToString({Id::Type::Track, track.id()}));
 
