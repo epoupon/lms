@@ -310,7 +310,7 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 	}
 
 	if (user->getSubsonicTranscodeEnable())
-		trackResponse.setAttribute("transcodeSuffix", formatToSuffix(user->getSubsonicTranscodeFormat()));
+		trackResponse.setAttribute("transcodedSuffix", formatToSuffix(user->getSubsonicTranscodeFormat()));
 
 	trackResponse.setAttribute("coverArt", IdToString({Id::Type::Track, track.id()}));
 
