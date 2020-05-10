@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,21 +19,20 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget.h>
+#include <memory>
+
 #include <Wt/WTemplate.h>
 
-namespace UserInterface {
+#include "database/Types.hpp"
 
-class ArtistInfo : public Wt::WTemplate
+namespace Database
 {
-	public:
-		ArtistInfo();
+	class Artist;
+}
 
-	private:
-		void refresh();
-
-		Wt::WContainerWidget* _similarArtistsContainer;
-};
-
-} // namespace UserInterface
+namespace UserInterface::ArtistListHelpers
+{
+	std::unique_ptr<Wt::WTemplate> createEntry(const Wt::Dbo::ptr<Database::Artist>& artist);
+	std::unique_ptr<Wt::WTemplate> createEntrySmall(const Wt::Dbo::ptr<Database::Artist>& artist);
+}
 

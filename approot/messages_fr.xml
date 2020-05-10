@@ -4,13 +4,13 @@
 
 <!--Common-->
 <message id="Lms.add">Ajouter</message>
+<message id="Lms.administration">Administration</message>
 <message id="Lms.apply">Appliquer</message>
 <message id="Lms.discard">Annuler</message>
-<message id="Lms.administration">Administration</message>
 <message id="Lms.cancel">Annuler</message>
 <message id="Lms.create">Créer</message>
 <message id="Lms.login">Login</message>
-<message id="Lms.logout">Logout</message>
+<message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Quitter</message>
 <message id="Lms.not-a-directory">N'est pas un répertoire</message>
 <message id="Lms.password">Mot de passe</message>
 <message id="Lms.password-bad-login-combination">Mauvaise combinaison login / mot de passe</message>
@@ -23,6 +23,7 @@
 <message id="Lms.quit-confirm">Êtes-vous sûr ?</message>
 <message id="Lms.quit-other-session">Une autre session a été ouverte. Reouvrir celle-ci ?</message>
 <message id="Lms.save">Sauvegarder</message>
+<message id="Lms.user">Utilisateur</message>
 
 <!--Errors-->
 <message id="Lms.Error.artist-not-found">Cet artiste n'existe pas</message>
@@ -37,6 +38,7 @@
 <message id="Lms.Admin.Database.database">Collection de musiques</message>
 <message id="Lms.Admin.Database.immediate-scan">Scanner maintenant !</message>
 <message id="Lms.Admin.Database.monthly">Tous les mois</message>
+<message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Collection de musiques</message>
 <message id="Lms.Admin.Database.never">Jamais</message>
 <message id="Lms.Admin.Database.path">Dossier racine des fichiers de musique</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">Moteur de recommandation</message>
@@ -77,6 +79,7 @@
 <message id="Lms.Admin.Users.demo">Demo</message>
 <message id="Lms.Admin.Users.edit">Editer</message>
 <message id="Lms.Admin.Users.users">Utilisateurs</message>
+<message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utilisateurs</message>
 
 <!--User-->
 <message id="Lms.Admin.User.audio-transcode-bitrate-limit">Limite du bitrate pour le transcodage</message>
@@ -100,11 +103,15 @@
 
 <!--Explore-->
 <message id="Lms.Explore.add-filter">Ajouter filtre</message>
+<message id="Lms.Explore.all">Tous</message>
 <message id="Lms.Explore.artists">Artistes</message>
 <message id="Lms.Explore.filter-added">Filtre ajouté</message>
 <message id="Lms.Explore.filters">Filtres</message>
+<message id="Lms.Explore.mostly-played">Plus joués</message>
+<message id="Lms.Explore.random">Aléatoire</message>
+<message id="Lms.Explore.recently-added">Ajoutés récemment</message>
+<message id="Lms.Explore.recently-played">Joués récemment</message>
 <message id="Lms.Explore.releases">Albums</message>
-<message id="Lms.Explore.search-placeholder">Rechercher...</message>
 <message id="Lms.Explore.show-more">Voir plus</message>
 <message id="Lms.Explore.tracks">Pistes</message>
 <message id="Lms.Explore.type">Type</message>
@@ -112,28 +119,21 @@
 <message id="Lms.Explore.various-artists">Artistes divers</message>
 
 <!--Explore:Artist-->
-<message id="Lms.Explore.ArtistInfo.similar-artists">Artistes similaires</message>
+<message id="Lms.Explore.Artist.similar-artists">Artistes similaires</message>
 
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">Tous les artistes</message>
 <message id="Lms.Explore.Artists.linktype-artist">Artistes de piste</message>
 <message id="Lms.Explore.Artists.linktype-releaseartist">Artistes d'album</message>
-<message id="Lms.Explore.ArtistsInfo.recently-added">Ajouts récents</message>
-<message id="Lms.Explore.ArtistsInfo.most-played">Artistes populaires</message>
 
 <!--Explore:Release-->
 <message id="Lms.Explore.ReleaseInfo.similar-releases">Albums similaires</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disque {1}</message>
 
-<!--Explore:Releases-->
-<message id="Lms.Explore.ReleasesInfo.recently-added">Ajouts récents</message>
-<message id="Lms.Explore.ReleasesInfo.most-played">Albums populaires</message>
-
-<!--Explore:Tracks-->
-<message id="Lms.Explore.TracksInfo.recently-added">Ajouts récents</message>
-<message id="Lms.Explore.TracksInfo.most-played">Pistes populaires</message>
-
+<!--Explore:Search-->
+<message id="Lms.Explore.Search.search-placeholder">Rechercher...</message>
+<message id="Lms.Explore.Search.search">Résultats de la recherche</message>
 
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">Effacer</message>
@@ -162,6 +162,7 @@
 <message id="Lms.Settings.change-password">Changement de mot de passe</message>
 <message id="Lms.Settings.dark-mode">Mode sombre</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
+<message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Paramètres</message>
 <message id="Lms.Settings.password-bad">Mauvais mot de passe</message>
 <message id="Lms.Settings.password-must-fill-old-password">L'ancien mot de passe doit être renseigné</message>
 <message id="Lms.Settings.replaygain-mode">Mode ReplayGain</message>

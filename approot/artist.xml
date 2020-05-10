@@ -3,12 +3,22 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Artist.template">
-	<div class="page-header">
-		<h2><div class="Lms-artistname text-primary">${name}</div></h2>
-		${clusters}
-		${play-btn}${add-btn}
+	<div class="row">
+		<div class="col-md-8">
+			<div class="Lms-header">
+				<h2><div class="Lms-artistname text-primary">${name}</div></h2>
+				${clusters}
+				${play-btn}${add-btn}
+			</div>
+			${releases class="Lms-explore-artist-entries-container"}
+		</div>
+		<div class="col-md-4">
+			<div class="well well-sm">
+				<h3>${tr:Lms.Explore.Artist.similar-artists}</h3>
+				${similar-artists}
+			</div>
+		</div>
 	</div>
-	${releases}
 </message>
 
 <message id="Lms.Explore.Artist.template.entry">

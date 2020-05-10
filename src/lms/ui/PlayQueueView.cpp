@@ -224,7 +224,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 		// If out of range, stop playing
 		if (pos >= tracklist->getCount())
 		{
-			if (!_repeatAll)
+			if (!_repeatAll || tracklist->getCount() == 0)
 			{
 				stop();
 				return;

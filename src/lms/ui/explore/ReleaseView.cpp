@@ -28,16 +28,16 @@
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Track.hpp"
-
+#include "recommendation/IEngine.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
 #include "resource/ImageResource.hpp"
-
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
 #include "MediaPlayer.hpp"
+#include "ReleaseListHelpers.hpp"
 #include "TrackStringUtils.hpp"
 
 using namespace Database;
@@ -45,53 +45,60 @@ using namespace Database;
 namespace UserInterface {
 
 Release::Release(Filters* filters)
-: _filters(filters)
+: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Release.template")}
+, _filters(filters)
 {
+	addFunction("tr", &Wt::WTemplate::Functions::tr);
+
 	wApp->internalPathChanged().connect([=]()
 	{
-		refresh();
+		refreshView();
 	});
-
-	refresh();
 
 	filters->updated().connect([=]
 	{
-		refresh();
+		refreshView();
 	});
+
+	refreshView();
 }
 
 void
-Release::refresh()
+Release::refreshView()
 {
 	if (!wApp->internalPathMatches("/release/"))
 		return;
 
 	clear();
-	auto releaseId {StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/release/"))};
+
+	const auto releaseId {StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/release/"))};
 	if (!releaseId)
 		return;
 
-        auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	const std::vector<Database::IdType> similarReleasesIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 5)};
+
+    auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 	const Database::Release::pointer release {Database::Release::getById(LmsApp->getDbSession(), *releaseId)};
 	if (!release)
 		throw ReleaseNotFoundException {*releaseId};
 
-	Wt::WTemplate* t {addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template"))};
+	refreshCopyright(release);
+	refreshSimilarReleases(similarReleasesIds);
 
-	t->bindString("name", Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
+	bindString("name", Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
 
 	std::optional<int> year {release->getReleaseYear()};
 	if (year)
 	{
-		t->setCondition("if-has-year", true);
-		t->bindInt("year", *year);
+		setCondition("if-has-year", true);
+		bindInt("year", *year);
 
 		std::optional<int> originalYear {release->getReleaseYear(true)};
 		if (originalYear && *originalYear != *year)
 		{
-			t->setCondition("if-has-orig-year", true);
-			t->bindInt("orig-year", *originalYear);
+			setCondition("if-has-orig-year", true);
+			bindInt("orig-year", *originalYear);
 		}
 	}
 
@@ -104,22 +111,22 @@ Release::refresh()
 
 		if (artists.size() > 1)
 		{
-			t->setCondition("if-has-artist", true);
-			t->bindNew<Wt::WText>("artist", Wt::WString::tr("Lms.Explore.various-artists"));
+			setCondition("if-has-artist", true);
+			bindNew<Wt::WText>("artist", Wt::WString::tr("Lms.Explore.various-artists"));
 		}
 		else if (artists.size() == 1)
 		{
-			t->setCondition("if-has-artist", true);
-			t->bindWidget("artist", LmsApplication::createArtistAnchor(artists.front()));
+			setCondition("if-has-artist", true);
+			bindWidget("artist", LmsApplication::createArtistAnchor(artists.front()));
 		}
 	}
 
 	{
-		Wt::WImage* cover {t->bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 512)))};
+		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 512)))};
 		cover->setStyleClass("Lms-cover-large");
 	}
 
-	Wt::WContainerWidget* clusterContainers {t->bindNew<Wt::WContainerWidget>("clusters")};
+	Wt::WContainerWidget* clusterContainers {bindNew<Wt::WContainerWidget>("clusters")};
 	{
 		const auto clusterTypes {ScanSettings::get(LmsApp->getDbSession())->getClusterTypes()};
 		const auto clusterGroups {release->getClusterGroups(clusterTypes, 3)};
@@ -139,7 +146,7 @@ Release::refresh()
 	}
 
 	{
-		Wt::WText* playBtn {t->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
+		Wt::WText* playBtn {bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([=]
 		{
 			releasesPlay.emit({*releaseId});
@@ -147,14 +154,14 @@ Release::refresh()
 	}
 
 	{
-		Wt::WText* addBtn {t->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
+		Wt::WText* addBtn {bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
 		addBtn->clicked().connect([=]
 		{
 			releasesAdd.emit({*releaseId});
 		});
 	}
 
-	Wt::WContainerWidget* rootContainer {t->bindNew<Wt::WContainerWidget>("container")};
+	Wt::WContainerWidget* rootContainer {bindNew<Wt::WContainerWidget>("container")};
 
 	const bool variousArtists {release->hasVariousArtists()};
 	const auto totalDisc {release->getTotalDisc()};
@@ -241,6 +248,48 @@ Release::refresh()
 			if (*trackIdLoaded == trackId)
 				entry->bindString("is-playing", "Lms-entry-playing");
 		}
+	}
+}
+
+void
+Release::refreshCopyright(const Database::Release::pointer& release)
+{
+	std::optional<std::string> copyright {release->getCopyright()};
+	std::optional<std::string> copyrightURL {release->getCopyrightURL()};
+
+	setCondition("if-has-copyright-or-copyright-url", copyright || copyrightURL);
+
+	if (copyrightURL)
+	{
+		setCondition("if-has-copyright-url", true);
+
+		Wt::WLink link {*copyrightURL};
+		link.setTarget(Wt::LinkTarget::NewWindow);
+
+		Wt::WAnchor* anchor {bindNew<Wt::WAnchor>("copyright-url", link)};
+		anchor->setTextFormat(Wt::TextFormat::XHTML);
+		anchor->setText(Wt::WString::tr("Lms.Explore.Release.template.link-btn"));
+	}
+
+	if (copyright)
+	{
+		setCondition("if-has-copyright", true);
+		bindString("copyright", Wt::WString::fromUTF8(*copyright), Wt::TextFormat::Plain);
+	}
+}
+
+void
+Release::refreshSimilarReleases(const std::vector<Database::IdType>& similarReleasesId)
+{
+	auto* similarReleasesContainer {bindNew<Wt::WContainerWidget>("similar-releases")};
+
+	for (Database::IdType id : similarReleasesId)
+	{
+		Database::Release::pointer similarRelease{Database::Release::getById(LmsApp->getDbSession(), id)};
+		if (!similarRelease)
+			continue;
+
+		similarReleasesContainer->addWidget(ReleaseListHelpers::createEntrySmall(similarRelease));
 	}
 }
 

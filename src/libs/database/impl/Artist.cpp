@@ -74,89 +74,131 @@ Artist::create(Session& session, const std::string& name, const std::optional<UU
 	return res;
 }
 
+template <typename T>
 static
-Wt::Dbo::Query<Artist::pointer>
-getQuery(Session& session,
+Wt::Dbo::Query<T>
+createQuery(Session& session,
+		const std::string& queryStr,
 		const std::set<IdType>& clusterIds,
 		const std::vector<std::string>& keywords,
-		std::optional<TrackArtistLink::Type> linkType,
-		Artist::SortMethod sortMethod)
+		std::optional<TrackArtistLink::Type> linkType)
 {
 	session.checkSharedLocked();
 
-	WhereClause where;
+	auto query {session.getDboSession().query<T>(queryStr)};
+	query.join("track t ON t.id = t_a_l.track_id");
+	query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
 
-	std::ostringstream oss;
-	oss << "SELECT DISTINCT a FROM artist a";
+	if (linkType)
+		query.where("t_a_l.type = ?").bind(*linkType);
 
 	if (!keywords.empty())
 	{
-		WhereClause whereKeywordsName;
-		WhereClause whereKeywordsSortName;
+		std::vector<std::string> clauses;
+		std::vector<std::string> sortClauses;
 
-		for (auto keyword : keywords)
+		for (const std::string& keyword : keywords)
 		{
-			whereKeywordsName.And(WhereClause("a.name LIKE ?")).bind("%%" + keyword + "%%");
-			whereKeywordsSortName.And(WhereClause("a.sort_name LIKE ?")).bind("%%" + keyword + "%%");
+			clauses.push_back("a.name LIKE ?");
+			query.bind("%%" + keyword + "%%");
+
+			sortClauses.push_back("a.sort_name LIKE ?");
+			query.bind("%%" + keyword + "%%");
 		}
 
-		where.And(whereKeywordsName.Or(whereKeywordsSortName));
+		query.where("(" + StringUtils::joinStrings(clauses, " AND ") + ") OR (" + StringUtils::joinStrings(sortClauses, " AND ") + ")");
 	}
-
-	if (!clusterIds.empty() || linkType)
-	{
-		oss << " INNER JOIN track t ON t.id = t_a_l.track_id INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id";
-
-		if (!clusterIds.empty())
-		{
-			oss << "  INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
-			WhereClause clusterClause;
-
-			for (auto id : clusterIds)
-				clusterClause.Or(WhereClause("c.id = ?")).bind(std::to_string(id));
-
-			where.And(clusterClause);
-		}
-		if (linkType)
-			where.And(WhereClause {"t_a_l.type = ?"}.bind(std::to_string(static_cast<int>(*linkType))));
-	}
-	oss << " " << where.get();
 
 	if (!clusterIds.empty())
-		oss << " GROUP BY t.id HAVING COUNT(DISTINCT c.id) = " << clusterIds.size();
-
-	switch (sortMethod)
 	{
-		case Artist::SortMethod::None:
-			break;
-		case Artist::SortMethod::ByName:
-			oss << " ORDER BY a.name COLLATE NOCASE";
-			break;
-		case Artist::SortMethod::BySortName:
-			oss << " ORDER BY a.sort_name COLLATE NOCASE";
-			break;
-	}
+		std::ostringstream oss;
+		oss << "a.id IN (SELECT DISTINCT a.id FROM artist a"
+			" INNER JOIN track t ON t.id = t_a_l.track_id"
+			" INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id"
+			" INNER JOIN cluster c ON c.id = t_c.cluster_id"
+			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
 
-	Wt::Dbo::Query<Artist::pointer> query = session.getDboSession().query<Artist::pointer>( oss.str() );
+		WhereClause clusterClause;
+		for (const IdType clusterId : clusterIds)
+		{
+			clusterClause.Or(WhereClause("c.id = ?"));
+			query.bind(clusterId);
+		}
 
-	for (const std::string& bindArg : where.getBindArgs())
-	{
-		query.bind(bindArg);
+		oss << " " << clusterClause.get();
+		oss << " GROUP BY t.id,a.id HAVING COUNT(DISTINCT c.id) = " << clusterIds.size() << ")";
+
+		query.where(oss.str());
 	}
 
 	return query;
 }
 
 std::vector<Artist::pointer>
-Artist::getAll(Session& session, SortMethod sortMethod, std::optional<std::size_t> offset, std::optional<std::size_t> size)
+Artist::getAll(Session& session)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<Artist::pointer> res = getQuery(session, {}, {}, std::nullopt, sortMethod)
-		.limit(size ? static_cast<int>(*size) + 1 : -1)
-		.offset(offset ? static_cast<int>(*offset) : -1);
-
+	Wt::Dbo::collection<pointer> res = session.getDboSession().find<Artist>();
 	return std::vector<pointer>(res.begin(), res.end());
+}
+
+std::vector<Artist::pointer>
+Artist::getAll(Session& session, SortMethod sortMethod)
+{
+	session.checkSharedLocked();
+
+	auto query {session.getDboSession().find<Artist>()};
+	switch (sortMethod)
+	{
+		case Artist::SortMethod::None:
+			break;
+		case Artist::SortMethod::ByName:
+			query.orderBy("name COLLATE NOCASE");
+			break;
+		case Artist::SortMethod::BySortName:
+			query.orderBy("sort_name COLLATE NOCASE");
+			break;
+	}
+
+	Wt::Dbo::collection<pointer> res = query;
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
+
+std::vector<Artist::pointer>
+Artist::getAll(Session& session, SortMethod sortMethod, std::optional<Range> range, bool& moreResults)
+{
+	session.checkSharedLocked();
+
+	auto query {createQuery<Artist::pointer>(session, "SELECT a FROM Artist a", {}, {}, std::nullopt)};
+
+	switch (sortMethod)
+	{
+		case Artist::SortMethod::None:
+			break;
+		case Artist::SortMethod::ByName:
+			query.orderBy("a.name COLLATE NOCASE");
+			break;
+		case Artist::SortMethod::BySortName:
+			query.orderBy("a.sort_name COLLATE NOCASE");
+			break;
+	}
+
+	Wt::Dbo::collection<Artist::pointer> collection = query
+		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
+		.offset(range ? static_cast<int>(range->offset) : -1);
+
+	auto res {std::vector<pointer>(collection.begin(), collection.end())};
+	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
+
+	return res;
 }
 
 std::vector<IdType>
@@ -166,6 +208,21 @@ Artist::getAllIds(Session& session)
 
 	Wt::Dbo::collection<IdType> res = session.getDboSession().query<IdType>("SELECT id FROM artist");
 	return std::vector<IdType>(res.begin(), res.end());
+}
+
+std::vector<IdType>
+Artist::getAllIdsRandom(Session& session, const std::set<IdType>& clusters, std::optional<TrackArtistLink::Type> linkType, std::optional<std::size_t> size)
+{
+	session.checkSharedLocked();
+
+	auto query {createQuery<IdType>(session, "SELECT DISTINCT a.id from artist a", clusters, {}, linkType)};
+
+	Wt::Dbo::collection<IdType> res = query
+		.orderBy("RANDOM()")
+		.limit(size ? static_cast<int>(*size) : -1);
+
+	return std::vector<IdType>(res.begin(), res.end());
+
 }
 
 std::vector<Artist::pointer>
@@ -197,8 +254,8 @@ Artist::getByClusters(Session& session, const std::set<IdType>& clusters, SortMe
 	assert(!clusters.empty());
 
 	session.checkSharedLocked();
-	bool more;
-	return getByFilter(session, clusters, {}, {}, sortMethod, {}, {}, more);
+	bool more{};
+	return getByFilter(session, clusters, {}, std::nullopt, sortMethod, std::nullopt, more);
 }
 
 std::vector<Artist::pointer>
@@ -207,18 +264,31 @@ Artist::getByFilter(Session& session,
 		const std::vector<std::string>& keywords,
 		std::optional<TrackArtistLink::Type> linkType,
 		SortMethod sortMethod,
-		std::optional<std::size_t> offset,
-		std::optional<std::size_t> size,
+		std::optional<Range> range,
 		bool& moreResults)
 {
 	session.checkSharedLocked();
-	Wt::Dbo::collection<Artist::pointer> collection = getQuery(session, clusters, keywords, linkType, sortMethod)
-		.limit(size ? static_cast<int>(*size) + 1 : -1)
-		.offset(offset ? static_cast<int>(*offset) : -1);
+
+	auto query {createQuery<Artist::pointer>(session, "SELECT DISTINCT a from artist a", clusters, keywords, linkType)};
+	switch (sortMethod)
+	{
+		case Artist::SortMethod::None:
+			break;
+		case Artist::SortMethod::ByName:
+			query.orderBy("a.name COLLATE NOCASE");
+			break;
+		case Artist::SortMethod::BySortName:
+			query.orderBy("a.sort_name COLLATE NOCASE");
+			break;
+	}
+
+	Wt::Dbo::collection<Artist::pointer> collection = query
+		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
+		.offset(range ? static_cast<int>(range->offset) : -1);
 
 	auto res {std::vector<pointer>(collection.begin(), collection.end())};
 
-	if (size && res.size() == static_cast<std::size_t>(*size) + 1)
+	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
 	{
 		moreResults = true;
 		res.pop_back();
@@ -230,14 +300,29 @@ Artist::getByFilter(Session& session,
 }
 
 std::vector<Artist::pointer>
-Artist::getLastAdded(Session& session, Wt::WDateTime after, std::optional<std::size_t> limit)
+Artist::getLastWritten(Session& session, std::optional<Wt::WDateTime> after, const std::set<IdType>& clusters, std::optional<TrackArtistLink::Type> linkType, std::optional<Range> range, bool& moreResults)
 {
 	session.checkSharedLocked();
-	Wt::Dbo::collection<Artist::pointer> res = session.getDboSession().query<Artist::pointer>("SELECT a from artist a INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id INNER JOIN track t ON t.id = t_a_l.track_id")
-		.where("t.file_added > ?").bind(after)
-		.groupBy("a.id")
-		.orderBy("t.file_added DESC")
-		.limit(limit ? static_cast<int>(*limit) : -1);
+
+	auto query {createQuery<Artist::pointer>(session, "SELECT DISTINCT a from artist a", clusters, {}, linkType)};
+
+	if (after)
+		query.where("t.file_last_write > ?").bind(*after);
+
+	Wt::Dbo::collection<Artist::pointer> collection = query
+		.orderBy("t.file_last_write DESC")
+		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
+		.offset(range ? static_cast<int>(range->offset) : -1);
+
+	auto res {std::vector<pointer>(collection.begin(), collection.end())};
+
+	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
 
 	return std::vector<pointer>(res.begin(), res.end());
 }
@@ -427,7 +512,6 @@ void
 Artist::setSortName(const std::string& sortName)
 {
 	_sortName = std::string(sortName, 0 , _maxNameLength);
-	LMS_LOG(DB, DEBUG) << "SORT NAME = '" << _sortName << "'";
 }
 
 } // namespace Database

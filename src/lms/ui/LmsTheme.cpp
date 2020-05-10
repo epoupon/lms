@@ -28,43 +28,20 @@ LmsTheme::LmsTheme(Database::User::UITheme theme)
 : _theme {theme}
 {
 	setVersion(Wt::BootstrapVersion::v3);
-	setResponsive(true);
-	applyMetaHeader();
-}
-
-void
-LmsTheme::applyMetaHeader() const
-{
-	switch (_theme)
-	{
-		case Database::User::UITheme::Dark:
-			LmsApp->addMetaHeader("theme-color", "#303030");
-			break;
-		case Database::User::UITheme::Light:
-			LmsApp->removeMetaHeader(Wt::MetaHeaderType::Meta, "theme-color");
-			break;
-	}
+	setResponsive(true); // Should be not necessary since applied via head-matter
 }
 
 void
 LmsTheme::setTheme(Database::User::UITheme theme)
 {
 	// Hack, use the application interface directly since changing theme is not allowed
-
 	const auto currentStyleSheets {getStyleSheets(_theme)};
 	for (auto it {std::crbegin(currentStyleSheets)}; it != std::crend(currentStyleSheets); ++it)
-	{
-		LMS_LOG(UI, DEBUG) << "Removing css file '" << it->url() << "'";
 		LmsApp->removeStyleSheet(*it);
-	}
 
 	_theme = theme;
 	for (const auto& styleSheet : getStyleSheets(theme))
-	{
-		LMS_LOG(UI, DEBUG) << "Adding css file '" << styleSheet.url() << "'";
 		LmsApp->useStyleSheet(styleSheet);
-	}
-	applyMetaHeader();
 }
 
 std::vector<Wt::WLinkedCssStyleSheet>
@@ -86,8 +63,8 @@ LmsTheme::getStyleSheets(Database::User::UITheme theme)
 		case Database::User::UITheme::Dark:
 			return
 			{
-				{"resources/themes/bootstrap/3/wt.css"},
 				{"css/bootstrap-darkly.min.css"},
+				{"resources/themes/bootstrap/3/wt.css"},
 				{"css/lms.css"},
 				{"css/lms-darkly.css"},
 			};
@@ -95,8 +72,8 @@ LmsTheme::getStyleSheets(Database::User::UITheme theme)
 		case Database::User::UITheme::Light:
 			return
 			{
-				{"resources/themes/bootstrap/3/wt.css"},
 				{"css/bootstrap-flatly.min.css"},
+				{"resources/themes/bootstrap/3/wt.css"},
 				{"css/lms.css"},
 				{"css/lms-flatly.css"},
 			};

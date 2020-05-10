@@ -37,7 +37,6 @@ class LmsTheme : public Wt::WBootstrapTheme
 
 	private:
 
-		void applyMetaHeader() const;
 		std::vector<Wt::WLinkedCssStyleSheet> styleSheets() const override;
 		static std::vector<Wt::WLink> getStyleSheets(Database::User::UITheme theme);
 

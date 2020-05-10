@@ -30,7 +30,7 @@ class Filters;
 class Explore : public Wt::WTemplate
 {
 	public:
-		Explore();
+		Explore(Filters* filters);
 
 		Wt::Signal<std::vector<Database::IdType>> tracksAdd;
 		Wt::Signal<std::vector<Database::IdType>> tracksPlay;
@@ -44,7 +44,7 @@ class Explore : public Wt::WTemplate
 		void handleTracksAdd(const std::vector<Database::IdType>& tracksId);
 		void handleTracksPlay(const std::vector<Database::IdType>& tracksId);
 
-		Filters* _filters;
+		Filters* _filters {};
 };
 
 } // namespace UserInterface

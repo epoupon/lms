@@ -32,12 +32,12 @@ class ValueStringModel : public Wt::WStringListModel
 {
 	public:
 
-		T getValue(std::size_t row)
+		T getValue(std::size_t row) const
 		{
 			return Wt::cpp17::any_cast<T>(data(index(static_cast<int>(row), 0), Wt::ItemDataRole::User));
 		}
 
-		Wt::WString getString(std::size_t row)
+		Wt::WString getString(std::size_t row) const
 		{
 			return Wt::cpp17::any_cast<Wt::WString>(data(index(static_cast<int>(row), 0), Wt::ItemDataRole::Display));
 		}

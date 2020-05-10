@@ -20,29 +20,37 @@
 #pragma once
 
 #include <Wt/WSignal.h>
-#include <Wt/WContainerWidget.h>
+#include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
 
-namespace UserInterface {
-
-class Filters;
-class Release : public Wt::WContainerWidget
+namespace Database
 {
-	public:
-		Release(Filters* filters);
+	class Release;
+}
 
-		Wt::Signal<const std::vector<Database::IdType>&> releasesAdd;
-		Wt::Signal<const std::vector<Database::IdType>&> releasesPlay;
+namespace UserInterface
+{
 
-		Wt::Signal<const std::vector<Database::IdType>&> tracksAdd;
-		Wt::Signal<const std::vector<Database::IdType>&> tracksPlay;
+	class Filters;
+	class Release : public Wt::WTemplate
+	{
+		public:
+			Release(Filters* filters);
 
-	private:
-		void refresh();
+			Wt::Signal<const std::vector<Database::IdType>&> releasesAdd;
+			Wt::Signal<const std::vector<Database::IdType>&> releasesPlay;
 
-		Filters* _filters;
-};
+			Wt::Signal<const std::vector<Database::IdType>&> tracksAdd;
+			Wt::Signal<const std::vector<Database::IdType>&> tracksPlay;
+
+		private:
+			void refreshView();
+			void refreshCopyright(const Wt::Dbo::ptr<Database::Release>& release);
+			void refreshSimilarReleases(const std::vector<Database::IdType>& similarReleasesId);
+
+			Filters* _filters {};
+	};
 
 } // namespace UserInterface
 

@@ -8,18 +8,31 @@
 
 <message id="Lms.Explore.Release.template">
 	<div class="row">
-		<div class="col-xs-12">
+		<div class="col-md-3">
 			${cover class="Lms-explore-release-cover"}
-	        </div>
+		</div>
+		<div class="col-md-5">
+			<div class="Lms-header">
+				<h3><div class="Lms-releasename text-primary">${name}</div></h3>
+				${<if-has-artist>}<h4>${artist class="Lms-artistname text-muted"}</h4>${</if-has-artist>}
+				<div class="text-muted"><small>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</small></div>
+				${clusters}
+				${play-btn}${add-btn}
+			</div>
+			${container class="Lms-explore-release-entries-container"}
+		</div>
+		<div class="col-md-4">
+			<div class="well well-sm">
+				${<if-has-copyright-or-copyright-url>}
+				<h3>${tr:Lms.Explore.Release.copyright}</h3>
+				${<if-has-copyright>}<small>${copyright}</small>${</if-has-copyright>}
+				${<if-has-copyright-url>}<small>${copyright-url}</small>${</if-has-copyright-url>}
+				${</if-has-copyright-or-copyright-url>}
+				<h3>${tr:Lms.Explore.Release.similar-releases}</h3>
+				${similar-releases}
+			</div>
+		</div>
 	</div>
-	<div class="page-header">
-		<h3><div class="Lms-releasename text-primary">${name}</div></h3>
-		${<if-has-artist>}<h4>${artist class="Lms-artistname text-muted"}</h4>${</if-has-artist>}
-		<div class="text-muted"><small>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</small></div>
-		${clusters}
-		${play-btn}${add-btn}
-	</div>
-	${container}
 </message>
 
 <message id="Lms.Explore.Release.template.disc-entry">

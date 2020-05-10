@@ -68,16 +68,16 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static std::vector<pointer>	getByFilter(Session& session,
 							const std::set<IdType>& clusters,            // if non empty, tracks that belong to these clusters
 							const std::vector<std::string>& keywords,    // if non empty, name must match all of these keywords
-							std::optional<std::size_t> offset,
-							std::optional<std::size_t> size,
+							std::optional<Range> range,
 							bool& moreExpected);
 
-		static std::vector<pointer>	getAll(Session& session, std::optional<std::size_t> limit = {});
-		static std::vector<pointer>	getAllRandom(Session& session, std::optional<std::size_t> limit = {});
+		static std::vector<pointer>	getAll(Session& session, std::optional<std::size_t> limit = std::nullopt);
+		static std::vector<pointer>	getAllRandom(Session& session, const std::set<IdType>& clusters, std::optional<std::size_t> limit = std::nullopt);
+		static std::vector<IdType>	getAllIdsRandom(Session& session, const std::set<IdType>& clusters, std::optional<std::size_t> limit = std::nullopt);
 		static std::vector<IdType>	getAllIds(Session& session);
 		static std::vector<std::pair<IdType, std::filesystem::path>> getAllPaths(Session& session, std::optional<std::size_t> offset = std::nullopt, std::optional<std::size_t> size = std::nullopt);
 		static std::vector<pointer>	getMBIDDuplicates(Session& session);
-		static std::vector<pointer>	getLastAdded(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> size = 1);
+		static std::vector<pointer>	getLastWritten(Session& session, std::optional<Wt::WDateTime> after, const std::set<IdType>& clusters, std::optional<Range> range, bool& moreResults);
 		static std::vector<pointer>	getAllWithMBIDAndMissingFeatures(Session& session);
 		static std::vector<IdType>	getAllIdsWithFeatures(Session& session, std::optional<std::size_t> limit = {});
 		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});

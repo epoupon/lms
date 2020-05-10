@@ -1,6 +1,6 @@
 # LMS - Lightweight Music Server
 
-[![Build Status](https://travis-ci.org/epoupon/lms.svg?branch=master)](https://travis-ci.org/epoupon/lms) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/epoupon/lms)
+[![Build Status](https://travis-ci.org/epoupon/lms.svg?branch=master)](https://travis-ci.org/epoupon/lms) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/epoupon/lms) [![CodeFactor](https://www.codefactor.io/repository/github/epoupon/lms/badge/master)](https://www.codefactor.io/repository/github/epoupon/lms/overview/master)
 
 _LMS_ is a self-hosted music streaming software: access your music collection from anywhere using a web interface!
 
@@ -34,7 +34,11 @@ _LMS_ provides several ways to help you find the music you like:
 * Recommendations for similar artists and albums
 * Radio mode, based on what is in the current playqueue
 * Searches in album, artist and track names (including sort names)
-* Most played/Recently added music
+* Random/Most played/Recently played/Recently added for Artist/Albums/Tracks, allowing you to search for things like:
+  * Recently added _Electronic_ artists
+  * Random _Metal_ and _Aggressive_ albums
+  * Most played _Relaxed_ tracks
+  * ...
 
 The recommendation engine uses two different sources:
 1. Tags that are present in the audio files

@@ -20,10 +20,10 @@
 #pragma once
 
 #include <filesystem>
-#include <map>
-#include <mutex>
+#include <shared_mutex>
 #include <optional>
 #include <vector>
+#include <unordered_map>
 
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Types.hpp"
@@ -36,7 +36,48 @@ namespace Database
 
 namespace CoverArt
 {
+	struct CacheEntryDesc
+	{
+		enum class Type
+		{
+			Track,
+			Release,
+		};
 
+		Type				type;
+		Database::IdType	id;
+		std::size_t			size;
+
+		bool operator==(const CacheEntryDesc& other) const
+		{
+			return type == other.type
+				&& id == other.id
+				&& size == other.size;
+		}
+	};
+
+} // ns CoverArt
+
+namespace std
+{
+
+	template<>
+	class hash<CoverArt::CacheEntryDesc>
+	{
+		public:
+			size_t operator()(const CoverArt::CacheEntryDesc& e) const
+			{
+				size_t h = std::hash<int>()(static_cast<int>(e.type));
+				h ^= std::hash<Database::IdType>()(e.id) << 1;
+				h ^= std::hash<std::size_t>()(e.size) << 1;
+				return h;
+			}
+	};
+
+} // ns std
+
+namespace CoverArt
+{
 	class Grabber : public IGrabber
 	{
 		public:
@@ -47,12 +88,14 @@ namespace CoverArt
 			Grabber(Grabber&&) = delete;
 			Grabber& operator=(Grabber&&) = delete;
 
+		private:
+
 			void			setDefaultCover(const std::filesystem::path& defaultCoverPath) override;
 
 			std::vector<uint8_t>	getFromTrack(Database::Session& dbSession, Database::IdType trackId, Format format, std::size_t width) override;
 			std::vector<uint8_t>	getFromRelease(Database::Session& dbSession, Database::IdType releaseId, Format format, std::size_t width) override;
+			void			flushCache() override;
 
-		private:
 
 			Image					getFromTrack(Database::Session& dbSession, Database::IdType trackId, std::size_t size);
 			Image					getFromRelease(Database::Session& dbSession, Database::IdType releaseId, std::size_t size);
@@ -60,14 +103,20 @@ namespace CoverArt
 			std::optional<Image>			getFromTrack(const std::filesystem::path& path) const;
 			std::vector<std::filesystem::path>	getCoverPaths(const std::filesystem::path& directoryPath) const;
 			std::optional<Image>			getFromDirectory(const std::filesystem::path& path) const;
-			Image					getDefaultCover(std::size_t size);
 
-			std::mutex _mutex;
-			std::unique_ptr<Image> _defaultCover;
-			std::map<std::size_t /* size */, Image> _defaultCovers;
+			std::unique_ptr<Image> _defaultCover;	// unique_ptr to defer initializing
 
+			std::shared_mutex _cacheMutex;
+			std::unordered_map<CacheEntryDesc, Image> _cache;
+			std::size_t _cacheMisses {};
+			std::size_t _cacheHits {};
+
+			void saveToCache(const CacheEntryDesc& entryDesc, const Image& image);
+			std::optional<Image> loadFromCache(const CacheEntryDesc& entryDesc);
+
+			static inline constexpr std::size_t _maxCacheEntries {1000};
 			static inline const std::vector<std::filesystem::path> _fileExtensions {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize
-			static inline const std::size_t _maxFileSize {10000000};
+			static inline constexpr std::size_t _maxFileSize {10000000};
 			static inline const std::vector<std::filesystem::path> _preferredFileNames {"cover", "front"}; // TODO parametrize
 	};
 

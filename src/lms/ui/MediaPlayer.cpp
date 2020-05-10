@@ -28,6 +28,7 @@
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
+#include "database/TrackList.hpp"
 #include "database/User.hpp"
 
 #include "resource/ImageResource.hpp"
@@ -289,6 +290,15 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play, float replayGain)
 
 	LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
 	wApp->doJavaScript(oss.str());
+
+	{
+		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+		const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+		if (track)
+			Database::TrackListEntry::create(LmsApp->getDbSession(), track, LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession()));
+
+	};
 
 	_trackIdLoaded = trackId;
 	trackLoaded.emit(*_trackIdLoaded);
