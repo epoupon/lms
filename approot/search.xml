@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="Lms.Explore.Search.template">
+	<div class="Lms-header">
+		<h2>${tr:Lms.Explore.Search.search}</h2>
+	</div>
+	${<if-artists>}
+		<h3>${tr:Lms.Explore.artists}</h3>
+		${artists}
+	${</if-artists>}
+	${<if-releases>}
+		<h3>${tr:Lms.Explore.releases}</h3>
+		${releases}
+	${</if-releases>}
+	${<if-tracks>}
+		<h3>${tr:Lms.Explore.tracks}</h3>
+		${tracks}
+	${</if-tracks>}
+</message>
+
+<message id="Lms.Explore.Search.template.track-entry">
+	<div class="row Lms-explore-tracks-entry Lms-entry-hoverable Lms-vertical-align">
+		<div class="col-xs-12 Lms-explore-tracks-entry-name">
+			<div class="media">
+				<div class="media-left media-middle hidden-xs">
+					${cover class="media-object Lms-cover"}
+				</div>
+				<div class="media-body media-middle">
+					<h4><div class="Lms-trackname text-primary">${name}</div></h4>
+					${<if-has-artists-or-release>}
+					${<if-has-release>}<small>${release class="Lms-releasename text-primary"}</small>${</if-has-release>}
+					${<if-has-artists>}${artists}${</if-has-artists>}
+					${</if-has-artists-or-release>}
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+</messages>

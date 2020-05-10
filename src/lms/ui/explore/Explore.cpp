@@ -30,16 +30,11 @@
 
 #include "LmsApplication.hpp"
 
-#include "ArtistInfoView.hpp"
-#include "ArtistsInfoView.hpp"
 #include "ArtistsView.hpp"
 #include "ArtistView.hpp"
 #include "Filters.hpp"
-#include "ReleaseInfoView.hpp"
-#include "ReleasesInfoView.hpp"
 #include "ReleasesView.hpp"
 #include "ReleaseView.hpp"
-#include "TracksInfoView.hpp"
 #include "TracksView.hpp"
 
 namespace UserInterface {
@@ -77,53 +72,19 @@ handleContentsPathChange(Wt::WStackedWidget* stack)
 	}
 }
 
-void
-handleInfoPathChange(Wt::WStackedWidget* stack)
-{
-	enum Idx
-	{
-		IdxArtist = 0,
-		IdxArtists,
-		IdxRelease,
-		IdxReleases,
-		IdxTracks,
-	};
-
-	static const std::map<std::string, int> indexes =
-	{
-		{ "/artists",		IdxArtists },
-		{ "/artist",		IdxArtist },
-		{ "/releases",		IdxReleases },
-		{ "/release",		IdxRelease },
-		{ "/tracks",		IdxTracks },
-	};
-
-	for (auto index : indexes)
-	{
-		if (wApp->internalPathMatches(index.first))
-		{
-			stack->setCurrentIndex(index.second);
-			return;
-		}
-	}
-}
-
 } // namespace
 
-Explore::Explore()
-: Wt::WTemplate(Wt::WString::tr("Lms.Explore.template"))
+Explore::Explore(Filters* filters)
+: Wt::WTemplate {Wt::WString::tr("Lms.Explore.template")}
+, _filters {filters}
 {
 	addFunction("tr", &Functions::tr);
-
-	_filters = bindNew<Filters>("filters");
 
 	// Contents
 	Wt::WStackedWidget* contentsStack = bindNew<Wt::WStackedWidget>("contents");
 	contentsStack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
 
 	auto artists = std::make_unique<Artists>(_filters);
-	artists->artistsAdd.connect(this, &Explore::handleArtistsAdd);
-	artists->artistsPlay.connect(this, &Explore::handleArtistsPlay);
 	contentsStack->addWidget(std::move(artists));
 
 	auto artist = std::make_unique<Artist>(_filters);
@@ -150,32 +111,12 @@ Explore::Explore()
 	tracks->tracksPlay.connect(this, &Explore::handleTracksPlay);
 	contentsStack->addWidget(std::move(tracks));
 
-	// Info
-	Wt::WStackedWidget* infoStack = bindNew<Wt::WStackedWidget>("info");
-
-	auto artistInfo = std::make_unique<ArtistInfo>();
-	infoStack->addWidget(std::move(artistInfo));
-
-	auto artistsInfo = std::make_unique<ArtistsInfo>();
-	infoStack->addWidget(std::move(artistsInfo));
-
-	auto releaseInfo = std::make_unique<ReleaseInfo>();
-	infoStack->addWidget(std::move(releaseInfo));
-
-	auto releasesInfo = std::make_unique<ReleasesInfo>();
-	infoStack->addWidget(std::move(releasesInfo));
-
-	auto tracksInfo = std::make_unique<TracksInfo>();
-	infoStack->addWidget(std::move(tracksInfo));
-
-	wApp->internalPathChanged().connect(std::bind([=]
+	wApp->internalPathChanged().connect([=]
 	{
 		handleContentsPathChange(contentsStack);
-		handleInfoPathChange(infoStack);
-	}));
+	});
 
 	handleContentsPathChange(contentsStack);
-	handleInfoPathChange(infoStack);
 }
 
 static

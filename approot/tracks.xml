@@ -4,19 +4,18 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Tracks.template">
-	<div class="page-header">
+	<div class="Lms-header">
 		<h2>${tr:Lms.Explore.tracks}</h2>
+		${mode class="nav nav-pills Lms-explore-mode-container"}
 		${play-btn}${add-btn}
 	</div>
-	<div class="form-group">
-		<div class="input-group">
-			<span class="input-group-addon"><i class="fa fa-search"></i></span>
-			${search}
+	<div class="row">
+		<div class="col-lg-8">
+			${tracks}
 		</div>
 	</div>
-	${tracks}
 	<div class="row">
-		<div class="col-xs-12 Lms-horizontal-center">
+		<div class="col-lg-8 col-xs-12 Lms-horizontal-center">
 			${show-more class="btn-primary Lms-show-more"}
 		</div>
 	</div>

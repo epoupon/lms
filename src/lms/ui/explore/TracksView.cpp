@@ -20,12 +20,14 @@
 #include "TracksView.hpp"
 
 #include <Wt/WAnchor.h>
+#include <Wt/WMenu.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WText.h>
 
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
+#include "database/TrackList.hpp"
 
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
@@ -47,144 +49,234 @@ _filters {filters}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	_search = bindNew<Wt::WLineEdit>("search");
-	_search->setPlaceholderText(Wt::WString::tr("Lms.Explore.search-placeholder"));
-	_search->textInput().connect(this, &Tracks::refresh);
+	{
+		auto* menu {bindNew<Wt::WMenu>("mode")};
+
+		auto addItem = [this](Wt::WMenu& menu,const Wt::WString& str, Mode mode)
+		{
+			auto* item {menu.addItem(str)};
+			item->clicked().connect([this, mode] { refreshView(mode); });
+
+			if (mode == defaultMode)
+				item->renderSelected(true);
+		};
+
+		addItem(*menu, Wt::WString::tr("Lms.Explore.random"), Mode::Random);
+		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-played"), Mode::RecentlyPlayed);
+		addItem(*menu, Wt::WString::tr("Lms.Explore.most-played"), Mode::MostPlayed);
+		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-added"), Mode::RecentlyAdded);
+		addItem(*menu, Wt::WString::tr("Lms.Explore.all"), Mode::All);
+	}
 
 	Wt::WText* playBtn = bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 	playBtn->clicked().connect([=]
 	{
-		tracksPlay.emit(getTracks());
+		tracksPlay.emit(getAllTracks());
 	});
 
 	Wt::WText* addBtn = bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 	addBtn->clicked().connect([=]
 	{
-		tracksAdd.emit(getTracks());
+		tracksAdd.emit(getAllTracks());
 	});
 
 	_tracksContainer = bindNew<Wt::WContainerWidget>("tracks");
 
 	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->clicked().connect([=]
+	_showMore->clicked().connect([this]
 	{
 		addSome();
 	});
 
-	refresh();
+	filters->updated().connect([this]
+	{
+		refreshView();
+	});
 
-	filters->updated().connect(this, &Tracks::refresh);
+	refreshView();
+}
+
+void
+Tracks::refreshView()
+{
+	_tracksContainer->clear();
+	_randomTracks.clear();
+	addSome();
+}
+
+void
+Tracks::refreshView(Mode mode)
+{
+	_mode = mode;
+	refreshView();
+}
+
+std::vector<Database::Track::pointer>
+Tracks::getRandomTracks(std::optional<Range> range, bool& moreResults)
+{
+	std::vector<Track::pointer> tracks;
+
+	if (_randomTracks.empty())
+		_randomTracks = Track::getAllIdsRandom(LmsApp->getDbSession(), _filters->getClusterIds(), maxItemsPerMode[Mode::Random]);
+
+	{
+		auto itBegin {std::cbegin(_randomTracks) + std::min(range ? range->offset : 0, _randomTracks.size())};
+		auto itEnd {std::cbegin(_randomTracks) + std::min(range ? range->offset + range->limit : _randomTracks.size(), _randomTracks.size())};
+
+		for (auto it {itBegin}; it != itEnd; ++it)
+		{
+			const Track::pointer track {Track::getById(LmsApp->getDbSession(), *it)};
+			if (track)
+				tracks.push_back(track);
+		}
+
+		moreResults = (itEnd != std::cend(_randomTracks));
+	}
+
+	return tracks;
+}
+
+std::vector<Track::pointer>
+Tracks::getTracks(std::optional<Range> range, bool& moreResults)
+{
+	std::vector<Track::pointer> tracks;
+
+	const std::optional<std::size_t> modeLimit{maxItemsPerMode[_mode]};
+	if (modeLimit)
+	{
+		if (range)
+			range->limit = std::min(*modeLimit - range->offset, range->offset + range->limit);
+		else
+			range = Range {0, *modeLimit};
+	}
+
+	switch (_mode)
+	{
+		case Mode::Random:
+			tracks = getRandomTracks(range, moreResults);
+			break;
+
+		case Mode::RecentlyPlayed:
+			tracks = LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession())->getTracksReverse(_filters->getClusterIds(), range, moreResults);
+			break;
+
+		case Mode::MostPlayed:
+			tracks = LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession())->getTopTracks(_filters->getClusterIds(), range, moreResults);
+			break;
+
+		case Mode::RecentlyAdded:
+			tracks = Track::getLastWritten(LmsApp->getDbSession(), std::nullopt, _filters->getClusterIds(), range, moreResults);
+			break;
+
+		case Mode::All:
+			tracks = Track::getByFilter(LmsApp->getDbSession(), _filters->getClusterIds(), {}, range, moreResults);
+			break;
+	}
+
+	if (range && modeLimit && (range->offset + range->limit == *modeLimit))
+		moreResults = false;
+
+	return tracks;
 }
 
 std::vector<Database::IdType>
-Tracks::getTracks(std::optional<std::size_t> offset, std::optional<std::size_t> size, bool& moreResults)
+Tracks::getAllTracks()
 {
-	const auto searchKeywords {StringUtils::splitString(_search->text().toUTF8(), " ")};
-	const auto clusterIds {_filters->getClusterIds()};
-
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const auto tracks {Track::getByFilter(LmsApp->getDbSession(), clusterIds, searchKeywords, offset, size, moreResults)};
+	bool moreResults;
+	const auto tracks {getTracks(std::nullopt, moreResults)};
+
 	std::vector<Database::IdType> res;
 	res.reserve(tracks.size());
 	std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Database::Track::pointer& track) { return track.id(); });
 
 	return res;
-
 }
 
-std::vector<Database::IdType>
-Tracks::getTracks()
+std::unique_ptr<Wt::WTemplate>
+Tracks::createEntry(const Track::pointer& track)
 {
-	bool moreResults;
-	return getTracks({}, {}, moreResults);
-}
+	auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
+	auto* entryPtr {entry.get()};
 
-void
-Tracks::refresh()
-{
-	_tracksContainer->clear();
-	addSome();
+	entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
+
+	auto artists {track->getArtists()};
+	auto release {track->getRelease()};
+	const auto trackId {track.id()};
+
+	if (!artists.empty() || release)
+		entry->setCondition("if-has-artists-or-release", true);
+
+	if (!artists.empty())
+	{
+		entry->setCondition("if-has-artists", true);
+
+		Wt::WContainerWidget* artistContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
+		for (const auto& artist : artists)
+		{
+			Wt::WTemplate* a {artistContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry-artist"))};
+			a->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
+		}
+	}
+
+	if (track->getRelease())
+	{
+		entry->setCondition("if-has-release", true);
+		entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
+		{
+			Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
+			auto cover = std::make_unique<Wt::WImage>();
+			cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 96));
+			cover->setStyleClass("Lms-cover-small");
+			anchor->setImage(std::move(cover));
+		}
+	}
+	else
+	{
+		auto cover = entry->bindNew<Wt::WImage>("cover");
+		cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(trackId, 96));
+		cover->setStyleClass("Lms-cover-small");
+	}
+
+	entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
+
+	Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
+	playBtn->clicked().connect([=]
+	{
+		tracksPlay.emit({trackId});
+	});
+
+	Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
+	addBtn->clicked().connect([=]
+	{
+		tracksAdd.emit({trackId});
+	});
+
+	LmsApp->getMediaPlayer()->trackLoaded.connect(entryPtr, [=] (Database::IdType loadedTrackId)
+	{
+		entryPtr->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
+	});
+
+	if (auto trackIdLoaded {LmsApp->getMediaPlayer()->getTrackLoaded()})
+	{
+		if (*trackIdLoaded == trackId)
+			entry->bindString("is-playing", "Lms-entry-playing");
+	}
+
+	return entry;
 }
 
 void
 Tracks::addSome()
 {
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
 	bool moreResults;
-	const std::vector<Database::IdType> trackIds {getTracks(_tracksContainer->count(), 20, moreResults)};
-
-	for (const Database::IdType trackId : trackIds)
+	for (const Track::pointer& track : getTracks(Range {static_cast<std::size_t>(_tracksContainer->count()), batchSize}, moreResults))
 	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-		const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
-
-		Wt::WTemplate* entry {_tracksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
-
-		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
-
-		auto artists {track->getArtists()};
-		auto release {track->getRelease()};
-
-		if (!artists.empty() || release)
-			entry->setCondition("if-has-artists-or-release", true);
-
-		if (!artists.empty())
-		{
-			entry->setCondition("if-has-artists", true);
-
-			Wt::WContainerWidget* artistContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
-			for (const auto& artist : artists)
-			{
-				Wt::WTemplate* a {artistContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry-artist"))};
-				a->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
-			}
-		}
-
-		if (track->getRelease())
-		{
-			entry->setCondition("if-has-release", true);
-			entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
-			{
-				Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
-				auto cover = std::make_unique<Wt::WImage>();
-				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 96));
-				cover->setStyleClass("Lms-cover-small");
-				anchor->setImage(std::move(cover));
-			}
-		}
-		else
-		{
-			auto cover = entry->bindNew<Wt::WImage>("cover");
-			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(trackId, 96));
-			cover->setStyleClass("Lms-cover-small");
-		}
-
-		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
-
-		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
-		playBtn->clicked().connect(std::bind([=]
-		{
-			tracksPlay.emit({trackId});
-		}));
-
-		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
-		addBtn->clicked().connect(std::bind([=]
-		{
-			tracksAdd.emit({trackId});
-		}));
-
-
-		LmsApp->getMediaPlayer()->trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId)
-		{
-			entry->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
-		});
-
-		if (auto trackIdLoaded {LmsApp->getMediaPlayer()->getTrackLoaded()})
-		{
-			if (*trackIdLoaded == trackId)
-				entry->bindString("is-playing", "Lms-entry-playing");
-		}
+		_tracksContainer->addWidget(createEntry(track));
 	}
 
 	_showMore->setHidden(!moreResults);

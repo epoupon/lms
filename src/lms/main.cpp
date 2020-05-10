@@ -77,7 +77,20 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 	pt.put("server.application-settings.log-file", wtLogFilePath.string());
 	pt.put("server.application-settings.log-config", ServiceProvider<IConfig>::get()->getString("log-config", "* -debug -info:WebRequest"));
 	pt.put("server.application-settings.behind-reverse-proxy", ServiceProvider<IConfig>::get()->getBool("behind-reverse-proxy", false));
-	pt.put("server.application-settings.progressive-bootstrap", true);
+
+	{
+		boost::property_tree::ptree viewport;
+		viewport.put("<xmlattr>.name", "viewport");
+		viewport.put("<xmlattr>.content", "width=device-width, initial-scale=1, user-scalable=no");
+		pt.add_child("server.application-settings.head-matter.meta", viewport);
+	}
+	{
+		boost::property_tree::ptree themeColor;
+		themeColor.put("<xmlattr>.name", "theme-color");
+		themeColor.put("<xmlattr>.content", "#303030");
+		pt.add_child("server.application-settings.head-matter.meta", themeColor);
+	}
+
 
 	std::ofstream oss(wtConfigPath.string().c_str(), std::ios::out);
 	boost::property_tree::xml_parser::write_xml(oss, pt);

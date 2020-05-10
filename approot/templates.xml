@@ -2,7 +2,54 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.template">
-	${navbar-top class="Lms-navbar"}
+	<nav class="navbar navbar-default">
+		<div class="container">
+			<div class="navbar-header">
+				<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse">
+					<span class="sr-only">Toggle navigation</span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+				${title class="navbar-brand"}
+				<div class="Lms-navbar-search pull-left">
+					${search class="form-control"}
+				</div>
+			</div>
+			<div class="collapse navbar-collapse">
+				<ul class="nav navbar-nav">
+					<li>${artists}</li>
+					<li>${releases}</li>
+					<li>${tracks}</li>
+					<li>${playqueue}</li>
+				</ul>
+				<div class="navbar-form navbar-left">
+					${filters class="form-group Lms-clusters-control"}
+				</div>
+				<ul class="nav navbar-nav navbar-right">
+					${<if-is-admin>}
+					<li class="dropdown">
+						<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="${tr:Lms.administration}"><i class="fa fa-cogs" aria-hidden="true"></i> <span class="caret"></span></a>
+						<ul class="dropdown-menu" role="menu">
+							<li>${database}</li>
+							<li>${users}</li>
+						</ul>
+					</li>
+					${</if-is-admin>}
+					<li class="dropdown">
+						<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="${tr:Lms.user}"><i class="fa fa-user" aria-hidden="true"></i>
+ <span class="caret"></span></a>
+						<ul class="dropdown-menu" role="menu">
+							<li class="dropdown-header">${username}</li>
+							<li class="divider"></li>
+							<li>${settings}</li>
+							<li>${logout}</li>
+						</ul>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</nav>
 	<div class="container">
 		${contents class="Lms-contents"}
 	</div>

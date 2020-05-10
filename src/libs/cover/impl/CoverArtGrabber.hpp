@@ -44,9 +44,9 @@ namespace CoverArt
 			Release,
 		};
 
-		Type			type;
+		Type				type;
 		Database::IdType	id;
-		std::size_t		size;
+		std::size_t			size;
 
 		bool operator==(const CacheEntryDesc& other) const
 		{
@@ -114,7 +114,7 @@ namespace CoverArt
 			void saveToCache(const CacheEntryDesc& entryDesc, const Image& image);
 			std::optional<Image> loadFromCache(const CacheEntryDesc& entryDesc);
 
-			static inline constexpr std::size_t _maxCacheEntries {300};
+			static inline constexpr std::size_t _maxCacheEntries {1000};
 			static inline const std::vector<std::filesystem::path> _fileExtensions {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize
 			static inline constexpr std::size_t _maxFileSize {10000000};
 			static inline const std::vector<std::filesystem::path> _preferredFileNames {"cover", "front"}; // TODO parametrize

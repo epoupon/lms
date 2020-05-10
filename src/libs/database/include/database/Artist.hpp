@@ -70,14 +70,21 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 								const std::vector<std::string>& keywords,	// if non empty, name must match all of these keywords (name + sort name fields)
 								std::optional<TrackArtistLink::Type> linkType, 	// if set, only artists that have produced at least one track with this link type
 								SortMethod sortMethod,
-								std::optional<std::size_t> offset,
-								std::optional<std::size_t> size,
+								std::optional<Range> range,
 								bool& moreExpected);
 
-		static std::vector<pointer>	getAll(Session& session, SortMethod sortMethod, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getAll(Session& session);
+		static std::vector<pointer>	getAll(Session& session, SortMethod sortMethod);
+		static std::vector<pointer>	getAll(Session& session, SortMethod sortMethod, std::optional<Range> range, bool& moreResults);
 		static std::vector<IdType>	getAllIds(Session& session);
+		static std::vector<IdType>	getAllIdsRandom(Session& session, const std::set<IdType>& clusters, std::optional<TrackArtistLink::Type> linkType, std::optional<std::size_t> size = {});
 		static std::vector<pointer>	getAllOrphans(Session& session); // No track related
-		static std::vector<pointer>	getLastWritten(Session& session, Wt::WDateTime after, std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getLastWritten(Session& session,
+								std::optional<Wt::WDateTime> after,
+								const std::set<IdType>& clusters,
+								std::optional<TrackArtistLink::Type> linkType, 	// if set, only artists that have produced at least one track with this link type
+								std::optional<Range>,
+								bool& moreResults);
 		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
 
 		// Accessors

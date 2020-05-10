@@ -46,9 +46,25 @@ Db::Db(const std::filesystem::path& dbPath)
 void
 Db::executeSql(const std::string& sql)
 {
-	auto connection {_connectionPool->getConnection()};
+	ScopedConnection connection {*_connectionPool};
 	connection->executeSql(sql);
-	_connectionPool->returnConnection(std::move(connection));
+}
+
+
+Db::ScopedConnection::ScopedConnection(Wt::Dbo::SqlConnectionPool& pool)
+: _connectionPool {pool}
+, _connection {_connectionPool.getConnection()}
+{
+}
+
+Db::ScopedConnection::~ScopedConnection()
+{
+	_connectionPool.returnConnection(std::move(_connection));
+}
+
+Wt::Dbo::SqlConnection* Db::ScopedConnection::operator->() const
+{
+	return _connection.get();
 }
 
 } // namespace Database

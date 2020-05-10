@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,19 +17,21 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ArtistLink.hpp"
+#pragma once
 
-#include <Wt/WAnchor.h>
+#include <memory>
 
-#include "database/Artist.hpp"
-#include "LmsApplication.hpp"
+#include <Wt/WTemplate.h>
 
-namespace UserInterface {
-
-ArtistLink::ArtistLink(Database::Artist::pointer artist)
-: Wt::WTemplate(Wt::WString::tr("Lms.Explore.ArtistLink.template"))
+namespace Database
 {
-	bindWidget("name", LmsApplication::createArtistAnchor(artist));
+	class Release;
 }
 
+namespace UserInterface::ReleaseListHelpers
+{
+
+	std::unique_ptr<Wt::WTemplate> createEntrySmall(const Wt::Dbo::ptr<Database::Release>& release);
+
 } // namespace UserInterface
+

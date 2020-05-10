@@ -32,9 +32,46 @@
 
 namespace Database {
 
+template <typename T>
+static
+Wt::Dbo::Query<T>
+createQuery(Session& session,
+		const std::string& queryStr,
+		const std::set<IdType>& clusterIds,
+		const std::vector<std::string>& keywords)
+{
+	session.checkSharedLocked();
+
+	auto query {session.getDboSession().query<T>(queryStr)};
+
+	for (const std::string& keyword : keywords)
+		query.where("t.name LIKE ?").bind("%%" + keyword + "%%");
+
+	if (!clusterIds.empty())
+	{
+		std::ostringstream oss;
+		oss << "t.id IN (SELECT DISTINCT t.id FROM track t"
+			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
+			" INNER JOIN cluster c ON c.id = t_c.cluster_id";
+
+		WhereClause clusterClause;
+		for (const IdType clusterId : clusterIds)
+		{
+			clusterClause.Or(WhereClause("c.id = ?"));
+			query.bind(clusterId);
+		}
+
+		oss << " " << clusterClause.get();
+		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size() << ")";
+
+		query.where(oss.str());
+	}
+
+	return query;
+}
+
 Track::Track(const std::filesystem::path& p)
-:
-_filePath( p.string() )
+: _filePath {p.string()}
 {
 }
 
@@ -58,16 +95,33 @@ Track::getAll(Session& session, std::optional<std::size_t> limit)
 }
 
 std::vector<Track::pointer>
-Track::getAllRandom(Session& session, std::optional<std::size_t> limit)
+Track::getAllRandom(Session& session, const std::set<IdType>& clusterIds, std::optional<std::size_t> limit)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<Track::pointer> res {session.getDboSession().find<Track>()
-		.limit(limit ? static_cast<int>(*limit) : -1)
-		.orderBy("RANDOM()")};
+	auto query {createQuery<Track::pointer>(session, "SELECT t from track t", clusterIds, {})};
 
-	return std::vector<Track::pointer>(std::cbegin(res), std::cend(res));
+	Wt::Dbo::collection<Track::pointer> collection = query
+		.orderBy("RANDOM()")
+		.limit(limit ? static_cast<int>(*limit) + 1: -1);
+
+	return std::vector<pointer>(collection.begin(), collection.end());
 }
+
+std::vector<Database::IdType>
+Track::getAllIdsRandom(Session& session, const std::set<IdType>& clusterIds, std::optional<std::size_t> limit)
+{
+	session.checkSharedLocked();
+
+	auto query {createQuery<IdType>(session, "SELECT t.id from track t", clusterIds, {})};
+
+	Wt::Dbo::collection<IdType> collection = query
+		.orderBy("RANDOM()")
+		.limit(limit ? static_cast<int>(*limit) + 1: -1);
+
+	return std::vector<IdType>(collection.begin(), collection.end());
+}
+
 
 std::vector<IdType>
 Track::getAllIds(Session& session)
@@ -147,16 +201,30 @@ Track::getMBIDDuplicates(Session& session)
 }
 
 std::vector<Track::pointer>
-Track::getLastWritten(Session& session, const Wt::WDateTime& after, std::optional<std::size_t> limit)
+Track::getLastWritten(Session& session, std::optional<Wt::WDateTime> after, const std::set<IdType>& clusterIds, std::optional<Range> range, bool& moreResults)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<Track::pointer> res = session.getDboSession().find<Track>()
-		.where("file_last_write > ?").bind(after)
-		.orderBy("file_last_write DESC")
-		.limit(limit ? static_cast<int>(*limit) : -1);
+	auto query {createQuery<Track::pointer>(session, "SELECT t from track t", clusterIds, {})};
+	if (after)
+		query.where("t.file_last_write > ?").bind(after);
 
-	return std::vector<pointer>(res.begin(), res.end());
+	Wt::Dbo::collection<Track::pointer> collection = query
+		.orderBy("t.file_last_write DESC")
+		.groupBy("t.id")
+		.offset(range ? static_cast<int>(range->offset) : -1)
+		.limit(range ? static_cast<int>(range->limit) + 1: -1);
+
+	auto res {std::vector<pointer>(collection.begin(), collection.end())};
+	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
+
+	return res;
 }
 
 std::vector<Track::pointer>
@@ -225,66 +293,21 @@ Track::hasTrackFeatures() const
 	return (_trackFeatures.lock() != Database::TrackFeatures::pointer());
 }
 
-static
-Wt::Dbo::Query< Track::pointer >
-getQuery(Session& session,
-		const std::set<IdType>& clusterIds,
-		const std::vector<std::string>& keywords)
-{
-	session.checkSharedLocked();
-
-	WhereClause where;
-
-	std::ostringstream oss;
-	oss << "SELECT t FROM track t";
-
-	for (auto keyword : keywords)
-		where.And(WhereClause("t.name LIKE ?")).bind("%%" + keyword + "%%");
-
-	if (!clusterIds.empty())
-	{
-		oss << " INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
-
-		WhereClause clusterClause;
-
-		for (auto id : clusterIds)
-			clusterClause.Or(WhereClause("c.id = ?")).bind(std::to_string(id));
-
-		where.And(clusterClause);
-	}
-
-	oss << " " << where.get();
-
-	if (!clusterIds.empty())
-		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
-
-	oss << " ORDER BY t.name COLLATE NOCASE";
-
-	Wt::Dbo::Query<Track::pointer> query = session.getDboSession().query<Track::pointer>( oss.str() );
-
-	for (const std::string& bindArg : where.getBindArgs())
-		query.bind(bindArg);
-
-	return query;
-}
-
 std::vector<Track::pointer>
 Track::getByFilter(Session& session,
 		const std::set<IdType>& clusterIds,
 		const std::vector<std::string>& keywords,
-		std::optional<std::size_t> offset,
-		std::optional<std::size_t> size,
+		std::optional<Range> range,
 		bool& moreResults)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<pointer> collection = getQuery(session, clusterIds, keywords)
-		.limit(size ? static_cast<int>(*size) + 1 : -1)
-		.offset(offset ? static_cast<int>(*offset) : -1);
+	Wt::Dbo::collection<pointer> collection = createQuery<Track::pointer>(session, "SELECT t from track t", clusterIds, keywords)
+		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
+		.offset(range ? static_cast<int>(range->offset) : -1);
 
 	std::vector<pointer> res(collection.begin(), collection.end());
-
-	if (size && (res.size() == static_cast<std::size_t>(*size) + 1))
+	if (range && (res.size() == static_cast<std::size_t>(range->limit) + 1))
 	{
 		moreResults = true;
 		res.pop_back();
@@ -340,12 +363,10 @@ Track::getByClusters(Session& session,
 	session.checkSharedLocked();
 
 	bool moreResults;
-
 	return getByFilter(session,
 			clusters,
-			{},
-			{},
-			{},
+			{}, // keywords
+			std::nullopt, // range
 			moreResults);
 }
 

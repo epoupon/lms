@@ -28,6 +28,11 @@
 
 #include "database/Types.hpp"
 
+namespace Database
+{
+	class Track;
+}
+
 namespace UserInterface {
 
 class Filters;
@@ -40,16 +45,42 @@ class Tracks : public Wt::WTemplate
 		Wt::Signal<const std::vector<Database::IdType>&> tracksPlay;
 
 	private:
-		void refresh();
+
+		enum class Mode
+		{
+			Random,
+			RecentlyPlayed,
+			RecentlyAdded,
+			MostPlayed,
+			All
+		};
+
+		void refreshView();
+		void refreshView(Mode mode);
 		void addSome();
 
-		std::vector<Database::IdType> getTracks(std::optional<std::size_t> offset, std::optional<std::size_t> size, bool& moreResults);
-		std::vector<Database::IdType> getTracks();
+		std::unique_ptr<Wt::WTemplate> createEntry(const Wt::Dbo::ptr<Database::Track>& track);
+		std::vector<Wt::Dbo::ptr<Database::Track>> getRandomTracks(std::optional<Database::Range> range, bool& moreResults);
+		std::vector<Wt::Dbo::ptr<Database::Track>> getTracks(std::optional<Database::Range> range, bool& moreResults);
+		std::vector<Database::IdType> getAllTracks();
 
-		Wt::WContainerWidget* _tracksContainer;
-		Wt::WPushButton* _showMore;
-		Wt::WLineEdit* _search;
-		Filters* _filters;
+		static constexpr Mode defaultMode {Mode::Random};
+		static constexpr std::size_t batchSize {20};
+		static inline std::unordered_map<Mode, std::optional<std::size_t>> maxItemsPerMode
+		{
+			{Mode::Random, batchSize * 20},
+			{Mode::RecentlyPlayed, batchSize * 10},
+			{Mode::RecentlyAdded, batchSize * 10},
+			{Mode::MostPlayed, batchSize * 10},
+			{Mode::All, std::nullopt},
+		};
+
+		Mode _mode {defaultMode};
+		Filters* _filters {};
+		std::vector<Database::IdType> _randomTracks;
+		Wt::WContainerWidget* _tracksContainer {};
+		Wt::WPushButton* _showMore {};
+		Wt::WLineEdit* _search {};
 };
 
 } // namespace UserInterface

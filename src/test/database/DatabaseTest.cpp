@@ -48,6 +48,11 @@ using namespace Database;
 				throw std::runtime_error {error}; \
 			} \
 		} \
+		catch (Wt::Dbo::Exception& e) \
+		{ \
+			std::cerr << "Caught DBO exception: " <<e.code() << std::endl; \
+			throw; \
+		} \
 		catch (std::exception& e) \
 		{ \
 			std::cerr << "Exception caught: " << e.what() << std::endl; \
@@ -318,11 +323,11 @@ testSingleTrackSingleArtistMultiRoles(Session& session)
 	{
 		auto transaction {session.createSharedTransaction()};
 		bool hasMore{};
-		CHECK(Artist::getByFilter(session, {}, {}, std::nullopt, Artist::SortMethod::ByName, {}, {}, hasMore).size() == 1);
-		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::Artist, Artist::SortMethod::ByName, {}, {}, hasMore).size() == 1);
-		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::ReleaseArtist, Artist::SortMethod::ByName, {}, {}, hasMore).size() == 1);
-		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::Writer, Artist::SortMethod::ByName, {}, {}, hasMore).size() == 1);
-		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::Composer, Artist::SortMethod::ByName, {}, {}, hasMore).empty());
+		CHECK(Artist::getByFilter(session, {}, {}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, hasMore).size() == 1);
+		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::Artist, Artist::SortMethod::ByName, std::nullopt, hasMore).size() == 1);
+		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::ReleaseArtist, Artist::SortMethod::ByName, std::nullopt, hasMore).size() == 1);
+		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::Writer, Artist::SortMethod::ByName, std::nullopt, hasMore).size() == 1);
+		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::Composer, Artist::SortMethod::ByName, std::nullopt, hasMore).empty());
 	}
 
 	{
@@ -398,23 +403,25 @@ void
 testSingleArtistSearchByName(Session& session)
 {
 	ScopedArtist artist {session, "AAA"};
+	ScopedTrack track {session, "MyTrack"}; // filters does not work on orphans
 
 	{
 		auto transaction {session.createUniqueTransaction()};
 		artist.get().modify()->setSortName("ZZZ");
+		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist);
 	}
 
 	{
 		auto transaction {session.createSharedTransaction()};
 
 		bool more {};
-		CHECK(Artist::getByFilter(session, {}, {"N"}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, std::nullopt, more).empty());
+		CHECK(Artist::getByFilter(session, {}, {"N"}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, more).empty());
 
-		const auto artistsByAAA {Artist::Artist::getByFilter(session, {}, {"A"}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, std::nullopt, more)};
+		const auto artistsByAAA {Artist::Artist::getByFilter(session, {}, {"A"}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, more)};
 		CHECK(artistsByAAA.size() == 1);
 		CHECK(artistsByAAA.front().id() == artist.getId());
 
-		const auto artistsByZZZ {Artist::Artist::getByFilter(session, {}, {"Z"}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, std::nullopt, more)};
+		const auto artistsByZZZ {Artist::Artist::getByFilter(session, {}, {"Z"}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, more)};
 		CHECK(artistsByZZZ.size() == 1);
 		CHECK(artistsByZZZ.front().id() == artist.getId());
 
@@ -660,7 +667,7 @@ testMultipleTracksSingleCluster(Session& session)
 {
 	std::list<ScopedTrack> tracks;
 	ScopedClusterType clusterType {session, "MyClusterType"};
-	ScopedCluster cluster {session, clusterType.lockAndGet(), "MyClusterType"};
+	ScopedCluster cluster {session, clusterType.lockAndGet(), "MyCluster"};
 
 	for (std::size_t i {}; i < 10; ++i)
 	{
@@ -686,6 +693,99 @@ testMultipleTracksSingleCluster(Session& session)
 	}
 }
 
+static
+void
+testMultipleTracksMultipleClustersTopRelease(Session& session)
+{
+	ScopedClusterType clusterType {session, "ClusterType"};
+	ScopedCluster cluster1 {session, clusterType.lockAndGet(), "Cluster1"};
+	ScopedCluster cluster2 {session, clusterType.lockAndGet(), "Cluster2"};
+	ScopedCluster cluster3 {session, clusterType.lockAndGet(), "Cluster3"};
+	ScopedTrack trackA {session, "TrackA"};
+	ScopedTrack trackB {session, "TrackB"};
+	ScopedTrack trackC {session, "TrackC"};
+	ScopedRelease releaseA {session, "ReleaseA"};
+	ScopedRelease releaseB {session, "ReleaseB"};
+	ScopedRelease releaseC {session, "ReleaseC"};
+
+	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedTrackList trackList {session, "TrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		cluster1.get().modify()->addTrack(trackA.get());
+		cluster2.get().modify()->addTrack(trackB.get());
+		cluster2.get().modify()->addTrack(trackC.get());
+		cluster3.get().modify()->addTrack(trackC.get());
+
+		trackA.get().modify()->setRelease(releaseA.get());
+		trackB.get().modify()->setRelease(releaseB.get());
+		trackC.get().modify()->setRelease(releaseC.get());
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		TrackListEntry::create(session, trackA.get(), trackList.get());
+		TrackListEntry::create(session, trackB.get(), trackList.get());
+		TrackListEntry::create(session, trackB.get(), trackList.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool hasMore;
+		const auto releases{trackList->getTopReleases({}, std::nullopt, hasMore)};
+		CHECK(releases.size() == 2);
+		CHECK(releases[0].id() == releaseB.getId());
+		CHECK(releases[1].id() == releaseA.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+ 		bool hasMore;
+		auto releases{trackList->getTopReleases({cluster1.getId()}, std::nullopt, hasMore)};
+		CHECK(releases.size() == 1);
+		CHECK(releases[0].id() == releaseA.getId());
+
+		releases = trackList->getTopReleases({cluster2.getId()}, std::nullopt, hasMore);
+		CHECK(releases.size() == 1);
+		CHECK(releases[0].id() == releaseB.getId());
+
+		releases = trackList->getTopReleases({cluster2.getId(), cluster1.getId()}, std::nullopt, hasMore);
+		CHECK(releases.empty());
+
+		releases = trackList->getTopReleases({cluster2.getId(), cluster3.getId()}, std::nullopt, hasMore);
+		CHECK(releases.empty());
+	}
+
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		TrackListEntry::create(session, trackC.get(), trackList.get());
+		TrackListEntry::create(session, trackC.get(), trackList.get());
+		TrackListEntry::create(session, trackC.get(), trackList.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+ 		bool hasMore;
+		auto releases {trackList->getTopReleases({cluster2.getId(), cluster3.getId()}, std::nullopt, hasMore)};
+		CHECK(releases.size() == 1);
+		CHECK(releases[0].id() == releaseC.getId());
+
+		releases = trackList->getTopReleases({cluster2.getId()}, std::nullopt, hasMore);
+		CHECK(releases.size() == 2);
+		CHECK(releases[0].id() == releaseC.getId());
+		CHECK(releases[1].id() == releaseB.getId());
+	}
+
+
+}
 
 static
 void
@@ -1120,10 +1220,11 @@ testSingleUser(Session& session)
 	{
 		auto transaction {session.createSharedTransaction()};
 
+		bool hasMore {};
 		CHECK(user->getPlayedTrackList(session)->getCount() == 0);
-		CHECK(user->getPlayedTrackList(session)->getTopTracks(1).empty());
-		CHECK(user->getPlayedTrackList(session)->getTopArtists(1).empty());
-		CHECK(user->getPlayedTrackList(session)->getTopReleases(1).empty());
+		CHECK(user->getPlayedTrackList(session)->getTopTracks({}, Range {0, 1}, hasMore).empty());
+		CHECK(user->getPlayedTrackList(session)->getTopArtists({}, std::nullopt, Range {0, 1}, hasMore).empty());
+		CHECK(user->getPlayedTrackList(session)->getTopReleases({}, Range {0, 1}, hasMore).empty());
 		CHECK(user->getQueuedTrackList(session)->getCount() == 0);
 	}
 }
@@ -1334,6 +1435,261 @@ testSingleTrackListMultipleTrackMultiClusters(Session& session)
 
 static
 void
+testSingleTrackListMultipleTrackMultiClustersRecentlyPlayed(Session& session)
+{
+	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedTrackList trackList {session, "MyTrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedClusterType clusterType {session, "MyClusterType"};
+	ScopedCluster cluster1 {session, clusterType.lockAndGet(), "MyCluster1"};
+	ScopedCluster cluster2 {session, clusterType.lockAndGet(), "MyCluster2"};
+	ScopedCluster cluster3 {session, clusterType.lockAndGet(), "MyCluster3"};
+	ScopedTrack track1 {session, "MyTrack1"};
+	ScopedTrack track2 {session, "MyTrack1"};
+	ScopedArtist artist1 {session, "MyArtist1"};
+	ScopedArtist artist2 {session, "MyArtist2"};
+	ScopedRelease release1 {session, "MyRelease1"};
+	ScopedRelease release2 {session, "MyRelease2"};
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		track1.get().modify()->setRelease(release1.get());
+		track2.get().modify()->setRelease(release2.get());
+		TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLink::Type::Artist);
+		TrackArtistLink::create(session, track2.get(), artist2.get(), TrackArtistLink::Type::Artist);
+
+		cluster1.get().modify()->addTrack(track1.get());
+		cluster2.get().modify()->addTrack(track2.get());
+		cluster3.get().modify()->addTrack(track1.get());
+		cluster3.get().modify()->addTrack(track2.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		CHECK(trackList->getArtistsReverse({}, std::nullopt, std::nullopt, moreResults).empty());
+		CHECK(trackList->getReleasesReverse({}, std::nullopt, moreResults).empty());
+		CHECK(trackList->getTracksReverse({}, std::nullopt, moreResults).empty());
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		TrackListEntry::create(session, track1.get(), trackList.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		const auto artists {trackList->getArtistsReverse({}, std::nullopt, std::nullopt, moreResults)};
+		CHECK(artists.size() == 1);
+		CHECK(artists.front().id() == artist1.getId());
+
+		const auto releases {trackList->getReleasesReverse({}, std::nullopt, moreResults)};
+		CHECK(releases.size() == 1);
+		CHECK(releases.front().id() == release1.getId());
+
+		const auto tracks {trackList->getTracksReverse({}, std::nullopt, moreResults)};
+		CHECK(tracks.size() == 1);
+		CHECK(tracks.front().id() == track1.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		const auto artists {trackList->getArtistsReverse({cluster1.getId()}, std::nullopt, std::nullopt, moreResults)};
+		CHECK(artists.size() == 1);
+		CHECK(artists.front().id() == artist1.getId());
+
+		const auto releases {trackList->getReleasesReverse({cluster1.getId()}, std::nullopt, moreResults)};
+		CHECK(releases.size() == 1);
+		CHECK(releases.front().id() == release1.getId());
+
+		const auto tracks {trackList->getTracksReverse({cluster1.getId()}, std::nullopt, moreResults)};
+		CHECK(tracks.size() == 1);
+		CHECK(tracks.front().id() == track1.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		const auto artists {trackList->getArtistsReverse({cluster3.getId()}, std::nullopt, std::nullopt, moreResults)};
+		CHECK(artists.size() == 1);
+		CHECK(artists.front().id() == artist1.getId());
+
+		const auto releases {trackList->getReleasesReverse({cluster3.getId()}, std::nullopt, moreResults)};
+		CHECK(releases.size() == 1);
+		CHECK(releases.front().id() == release1.getId());
+
+		const auto tracks {trackList->getTracksReverse({cluster3.getId()}, std::nullopt, moreResults)};
+		CHECK(tracks.size() == 1);
+		CHECK(tracks.front().id() == track1.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		const auto artists {trackList->getArtistsReverse({cluster1.getId()}, TrackArtistLink::Type::Artist, std::nullopt, moreResults)};
+		CHECK(artists.size() == 1);
+		CHECK(artists.front().id() == artist1.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		const auto artists {trackList->getArtistsReverse({}, TrackArtistLink::Type::Artist, std::nullopt, moreResults)};
+		CHECK(artists.size() == 1);
+		CHECK(artists.front().id() == artist1.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		CHECK(trackList->getArtistsReverse({cluster2.getId()}, std::nullopt, std::nullopt, moreResults).empty());
+		CHECK(trackList->getReleasesReverse({cluster2.getId()}, std::nullopt, moreResults).empty());
+		CHECK(trackList->getTracksReverse({cluster2.getId()}, std::nullopt, moreResults).empty());
+
+		CHECK(trackList->getArtistsReverse({}, TrackArtistLink::Type::ReleaseArtist, std::nullopt, moreResults).empty());
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		TrackListEntry::create(session, track2.get(), trackList.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		const auto artists {trackList->getArtistsReverse({}, std::nullopt, std::nullopt, moreResults)};
+		CHECK(artists.size() == 2);
+		CHECK(artists[0].id() == artist2.getId());
+		CHECK(artists[1].id() == artist1.getId());
+
+		const auto releases {trackList->getReleasesReverse({}, std::nullopt, moreResults)};
+		CHECK(releases.size() == 2);
+		CHECK(releases[0].id() == release2.getId());
+		CHECK(releases[1].id() == release1.getId());
+
+		const auto tracks {trackList->getTracksReverse({}, std::nullopt, moreResults)};
+		CHECK(tracks.size() == 2);
+		CHECK(tracks[0].id() == track2.getId());
+		CHECK(tracks[1].id() == track1.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		const auto artists {trackList->getArtistsReverse({cluster3.getId()}, std::nullopt, std::nullopt, moreResults)};
+		CHECK(artists.size() == 2);
+		CHECK(artists[0].id() == artist2.getId());
+		CHECK(artists[1].id() == artist1.getId());
+
+		const auto releases {trackList->getReleasesReverse({cluster3.getId()}, std::nullopt, moreResults)};
+		CHECK(releases.size() == 2);
+		CHECK(releases[0].id() == release2.getId());
+		CHECK(releases[1].id() == release1.getId());
+
+		const auto tracks {trackList->getTracksReverse({cluster3.getId()}, std::nullopt, moreResults)};
+		CHECK(tracks.size() == 2);
+		CHECK(tracks[0].id() == track2.getId());
+		CHECK(tracks[1].id() == track1.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		const auto artists {trackList->getArtistsReverse({cluster1.getId()}, std::nullopt, std::nullopt, moreResults)};
+		CHECK(artists.size() == 1);
+		CHECK(artists.front().id() == artist1.getId());
+
+		const auto releases {trackList->getReleasesReverse({cluster1.getId()}, std::nullopt, moreResults)};
+		CHECK(releases.size() == 1);
+		CHECK(releases.front().id() == release1.getId());
+
+		const auto tracks {trackList->getTracksReverse({cluster1.getId()}, std::nullopt, moreResults)};
+		CHECK(tracks.size() == 1);
+		CHECK(tracks.front().id() == track1.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		const auto artists {trackList->getArtistsReverse({cluster2.getId()}, std::nullopt, std::nullopt, moreResults)};
+		CHECK(artists.size() == 1);
+		CHECK(artists.front().id() == artist2.getId());
+
+		const auto releases {trackList->getReleasesReverse({cluster2.getId()}, std::nullopt, moreResults)};
+		CHECK(releases.size() == 1);
+		CHECK(releases.front().id() == release2.getId());
+
+		const auto tracks {trackList->getTracksReverse({cluster2.getId()}, std::nullopt, moreResults)};
+		CHECK(tracks.size() == 1);
+		CHECK(tracks.front().id() == track2.getId());
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		TrackListEntry::create(session, track1.get(), trackList.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		const auto artists {trackList->getArtistsReverse({}, std::nullopt, std::nullopt, moreResults)};
+		CHECK(artists.size() == 2);
+		CHECK(artists[0].id() == artist1.getId());
+		CHECK(artists[1].id() == artist2.getId());
+
+		const auto releases {trackList->getReleasesReverse({}, std::nullopt, moreResults)};
+		CHECK(releases.size() == 2);
+		CHECK(releases[0].id() == release1.getId());
+		CHECK(releases[1].id() == release2.getId());
+
+		const auto tracks {trackList->getTracksReverse({}, std::nullopt, moreResults)};
+		CHECK(tracks.size() == 2);
+		CHECK(tracks[0].id() == track1.getId());
+		CHECK(tracks[1].id() == track2.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		bool moreResults {};
+		const auto artists {trackList->getArtistsReverse({cluster3.getId()}, std::nullopt, std::nullopt, moreResults)};
+		CHECK(artists.size() == 2);
+		// TODO investigate
+		// CHECK(artists[0].id() == artist1.getId());
+		// CHECK(artists[1].id() == artist2.getId());
+
+		const auto releases {trackList->getReleasesReverse({cluster3.getId()}, std::nullopt, moreResults)};
+		CHECK(releases.size() == 2);
+		CHECK(releases[0].id() == release1.getId());
+		CHECK(releases[1].id() == release2.getId());
+
+		const auto tracks {trackList->getTracksReverse({cluster3.getId()}, std::nullopt, moreResults)};
+		CHECK(tracks.size() == 2);
+		CHECK(tracks[0].id() == track1.getId());
+		CHECK(tracks[1].id() == track2.getId());
+	}
+}
+
+
+static
+void
 testMultipleTracksMultipleArtistsMultiClusters(Session& session)
 {
 	ScopedArtist artist1 {session, "MyArtist1"};
@@ -1519,72 +1875,72 @@ int main()
 
 		std::cout << "Database test file: '" << tmpFile.string() << "'" << std::endl;
 
-		for (std::size_t i = 0; i < 2; ++i)
-		{
-			Database::Db db {tmpFile};
-			Database::Session session {db};
-			session.prepareTables();
+		Database::Db db {tmpFile};
+		Database::Session session {db};
+		session.prepareTables();
 
-			auto runTest = [&session](const std::string& name, std::function<void(Session&)> testFunc)
-			{
-				std::cout << "Running test '" << name << "'..." << std::endl;
-				testFunc(session);
-				testDatabaseEmpty(session);
-				std::cout << "Running test '" << name << "': SUCCESS" << std::endl;
-			};
+		auto runTest = [&session](const std::string& name, std::function<void(Session&)> testFunc)
+		{
+			std::cout << "Running test '" << name << "'..." << std::endl;
+			testFunc(session);
+			testDatabaseEmpty(session);
+			std::cout << "Running test '" << name << "': SUCCESS" << std::endl;
+		};
 
 #define RUN_TEST(test)	runTest(#test, test)
 
-			// Special test to remove any default created entries
-			RUN_TEST(testRemoveDefaultEntries);
+		// Special test to remove any default created entries
+		RUN_TEST(testRemoveDefaultEntries);
 
-			RUN_TEST(testSingleTrack);
-			RUN_TEST(testSingleArtist);
-			RUN_TEST(testSingleRelease);
-			RUN_TEST(testSingleCluster);
+		RUN_TEST(testSingleTrack);
+		RUN_TEST(testSingleArtist);
+		RUN_TEST(testSingleRelease);
+		RUN_TEST(testSingleCluster);
 
-			RUN_TEST(testSingleTrackSingleArtist);
-			RUN_TEST(testSingleTrackSingleArtistMultiRoles);
-			RUN_TEST(testSingleTrackMultiArtists);
+		RUN_TEST(testSingleTrackSingleArtist);
+		RUN_TEST(testSingleTrackSingleArtistMultiRoles);
+		RUN_TEST(testSingleTrackMultiArtists);
 
-			RUN_TEST(testSingleArtistSearchByName);
-			RUN_TEST(testMultiArtistsSortMethod);
+		RUN_TEST(testSingleArtistSearchByName);
+		RUN_TEST(testMultiArtistsSortMethod);
 
-			RUN_TEST(testSingleTrackSingleRelease);
-			RUN_TEST(testMultiTracksSingleReleaseTotalDiscTrack);
+		RUN_TEST(testSingleTrackSingleRelease);
+		RUN_TEST(testMultiTracksSingleReleaseTotalDiscTrack);
 
-			RUN_TEST(testSingleTrackSingleCluster);
-			RUN_TEST(testMultipleTracksSingleCluster);
+		RUN_TEST(testSingleTrackSingleCluster);
+		RUN_TEST(testMultipleTracksSingleCluster);
 
-			RUN_TEST(testMultipleTracksSingleClusterSimilarity);
-			RUN_TEST(testMultipleTracksMultipleClustersSimilarity);
+		RUN_TEST(testMultipleTracksMultipleClustersTopRelease);
 
-			RUN_TEST(testSingleTrackSingleReleaseSingleCluster);
-			RUN_TEST(testSingleTrackSingleArtistMultiClusters);
-			RUN_TEST(testSingleTrackSingleArtistMultiRolesMultiClusters);
-			RUN_TEST(testMultiTracksSingleArtistMultiClusters);
-			RUN_TEST(testMultiTracksSingleArtistSingleRelease);
+		RUN_TEST(testMultipleTracksSingleClusterSimilarity);
+		RUN_TEST(testMultipleTracksMultipleClustersSimilarity);
 
-			RUN_TEST(testSingleTrackSingleReleaseSingleArtist);
+		RUN_TEST(testSingleTrackSingleReleaseSingleCluster);
+		RUN_TEST(testSingleTrackSingleArtistMultiClusters);
+		RUN_TEST(testSingleTrackSingleArtistMultiRolesMultiClusters);
+		RUN_TEST(testMultiTracksSingleArtistMultiClusters);
+		RUN_TEST(testMultiTracksSingleArtistSingleRelease);
 
-			RUN_TEST(testSingleTrackSingleReleaseSingleArtistSingleCluster);
-			RUN_TEST(testSingleTrackSingleReleaseSingleArtistMultiClusters);
+		RUN_TEST(testSingleTrackSingleReleaseSingleArtist);
 
-			RUN_TEST(testSingleUser);
+		RUN_TEST(testSingleTrackSingleReleaseSingleArtistSingleCluster);
+		RUN_TEST(testSingleTrackSingleReleaseSingleArtistMultiClusters);
 
-			RUN_TEST(testSingleStarredArtist);
-			RUN_TEST(testSingleStarredRelease);
-			RUN_TEST(testSingleStarredTrack);
+		RUN_TEST(testSingleUser);
 
-			RUN_TEST(testSingleTrackList);
-			RUN_TEST(testSingleTrackListMultipleTrack);
-			RUN_TEST(testSingleTrackListMultipleTrackSingleCluster);
-			RUN_TEST(testSingleTrackListMultipleTrackMultiClusters);
-			RUN_TEST(testMultipleTracksMultipleArtistsMultiClusters);
-			RUN_TEST(testMultipleTracksMultipleReleasesMultiClusters);
+		RUN_TEST(testSingleStarredArtist);
+		RUN_TEST(testSingleStarredRelease);
+		RUN_TEST(testSingleStarredTrack);
 
-			RUN_TEST(testSingleTrackSingleUserSingleBookmark);
-		}
+		RUN_TEST(testSingleTrackList);
+		RUN_TEST(testSingleTrackListMultipleTrack);
+		RUN_TEST(testSingleTrackListMultipleTrackSingleCluster);
+		RUN_TEST(testSingleTrackListMultipleTrackMultiClusters);
+		RUN_TEST(testSingleTrackListMultipleTrackMultiClustersRecentlyPlayed);
+		RUN_TEST(testMultipleTracksMultipleArtistsMultiClusters);
+		RUN_TEST(testMultipleTracksMultipleReleasesMultiClusters);
+
+		RUN_TEST(testSingleTrackSingleUserSingleBookmark);
 	}
 	catch (std::exception& e)
 	{

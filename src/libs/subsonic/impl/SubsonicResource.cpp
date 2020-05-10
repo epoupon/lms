@@ -677,7 +677,7 @@ handleGetRandomSongsRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	auto tracks {Track::getAllRandom(context.dbSession, size)};
+	auto tracks {Track::getAllRandom(context.dbSession, {}, size)};
 
 	Response response {Response::createOkResponse()};
 
@@ -710,16 +710,17 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	if (type == "random")
 	{
 		// Random results are paginated, but there is no acceptable way to handle the pagination params without repeating some albums
-		releases = Release::getAllRandom(context.dbSession, size);
+		releases = Release::getAllRandom(context.dbSession, {}, size);
 	}
 	else if (type == "newest")
 	{
 		auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-6)};
-		releases = Release::getLastWritten(context.dbSession, after, offset, size);
+		bool moreResults {};
+		releases = Release::getLastWritten(context.dbSession, after, {}, Range {offset, size}, moreResults);
 	}
 	else if (type == "alphabeticalByName")
 	{
-		releases = Release::getAll(context.dbSession, offset, size);
+		releases = Release::getAll(context.dbSession, Range {offset, size});
 	}
 	else if (type == "alphabeticalByArtist")
 	{
@@ -748,7 +749,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 			if (cluster)
 			{
 				bool more;
-				releases = Release::getByFilter(context.dbSession, {cluster.id()}, {}, offset, size, more);
+				releases = Release::getByFilter(context.dbSession, {cluster.id()}, {}, Range {offset, size}, more);
 			}
 		}
 	}
@@ -935,7 +936,7 @@ handleGetArtistsRequest(RequestContext& context)
 			{},
 			linkType,
 			Artist::SortMethod::BySortName,
-			{}, {}, more)};
+			std::nullopt, more)};
 	for (const Artist::pointer& artist : artists)
 		indexNode.addArrayChild("artist", artistToResponseNode(user, artist, true /* id3 */));
 
@@ -966,7 +967,8 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		{
 			directoryNode.setAttribute("name", "Music");
 
-			auto artists {Artist::getAll(context.dbSession, Artist::SortMethod::BySortName)};
+			bool moreResults{};
+			auto artists {Artist::getAll(context.dbSession, Artist::SortMethod::BySortName, std::nullopt, moreResults)};
 			for (const Artist::pointer& artist : artists)
 				directoryNode.addArrayChild("child", artistToResponseNode(user, artist, false /* no id3 */));
 
@@ -1078,7 +1080,7 @@ handleGetIndexesRequest(RequestContext& context)
 			{},
 			linkType,
 			Artist::SortMethod::BySortName,
-			{}, {}, more)};
+			std::nullopt, more)};
 	for (const Artist::pointer& artist : artists)
 		indexNode.addArrayChild("artist", artistToResponseNode(user, artist, false /* no id3 */));
 
@@ -1296,7 +1298,7 @@ handleGetSongsByGenreRequest(RequestContext& context)
 	Response::Node& songsByGenreNode {response.createNode("songsByGenre")};
 
 	bool more;
-	auto tracks {Track::getByFilter(context.dbSession, {cluster.id()}, {}, offset, size, more)};
+	auto tracks {Track::getByFilter(context.dbSession, {cluster.id()}, {}, Range {offset, size}, more)};
 	for (const Track::pointer& track : tracks)
 		songsByGenreNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 
@@ -1367,19 +1369,19 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 
 	bool more;
 	{
-		auto artists {Artist::getByFilter(context.dbSession, {}, keywords, std::nullopt, Artist::SortMethod::BySortName, artistOffset, artistCount, more)};
+		auto artists {Artist::getByFilter(context.dbSession, {}, keywords, std::nullopt, Artist::SortMethod::BySortName, Range {artistOffset, artistCount}, more)};
 		for (const Artist::pointer& artist : artists)
 			searchResult2Node.addArrayChild("artist", artistToResponseNode(user, artist, id3));
 	}
 
 	{
-		auto releases {Release::getByFilter(context.dbSession, {}, keywords, albumOffset, albumCount, more)};
+		auto releases {Release::getByFilter(context.dbSession, {}, keywords, Range {albumOffset, albumCount}, more)};
 		for (const Release::pointer& release : releases)
 			searchResult2Node.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
 	}
 
 	{
-		auto tracks {Track::getByFilter(context.dbSession, {}, keywords, songOffset, songCount, more)};
+		auto tracks {Track::getByFilter(context.dbSession, {}, keywords, Range {songOffset, songCount}, more)};
 		for (const Track::pointer& track : tracks)
 			searchResult2Node.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 	}

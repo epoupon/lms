@@ -2,23 +2,14 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.template">
-	<div class="row">
-		<div class="col-md-8">
-			${contents class="Lms-explore-contents"}
-		</div>
-		<div class="col-md-4">
-			${filters class="well well-sm"}
-			${info class="well well-sm"}
-		</div>
-	</div>
+	${contents class="Lms-explore-contents"}
 </message>
 
 <message id="Lms.Explore.template.add-btn"><i class="fa fa-plus-circle Lms-explore-btn Lms-control-btn"></i></message>
 <message id="Lms.Explore.template.play-btn"><i class="fa fa-play-circle Lms-explore-btn Lms-control-btn"></i></message>
 
 <message id="Lms.Explore.template.filters">
-	<h3>${tr:Lms.Explore.filters} ${add-filter class="btn-primary"}</h3>
-	${clusters}
+	${add-filter class="btn-sm btn-info"} ${clusters class="Lms-explore-clusters"}
 </message>
 
 <message id="Lms.Explore.template.add-filter">

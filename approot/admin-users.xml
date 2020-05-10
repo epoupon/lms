@@ -2,7 +2,7 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Admin.Users.template">
-	<div class="page-header">
+	<div class="Lms-header">
 		<h2>${tr:Lms.Admin.Users.users}</h2>
 	</div>
 	${users}
