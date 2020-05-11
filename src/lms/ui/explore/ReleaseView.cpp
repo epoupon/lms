@@ -169,7 +169,7 @@ Release::refreshView()
 
 	// Expect to be call in asc order
 	std::map<std::size_t, Wt::WContainerWidget*> trackContainers;
-	auto getOrAddDiscContainer = [&](std::size_t discNumber) -> Wt::WContainerWidget*
+	auto getOrAddDiscContainer = [&](std::size_t discNumber, const std::string& discSubtitle) -> Wt::WContainerWidget*
 	{
 		{
 			auto it = trackContainers.find(discNumber);
@@ -178,8 +178,12 @@ Release::refreshView()
 		}
 
 		Wt::WTemplate* disc {rootContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.disc-entry"))};
-		disc->bindNew<Wt::WText>("disc-title", Wt::WString::tr("Lms.Explore.Release.disc").arg(discNumber));
 		disc->addFunction("tr", &Wt::WTemplate::Functions::tr);
+
+		if (discSubtitle.empty())
+			disc->bindNew<Wt::WText>("disc-title", Wt::WString::tr("Lms.Explore.Release.disc").arg(discNumber));
+		else
+			disc->bindString("disc-title", Wt::WString::fromUTF8(discSubtitle), Wt::TextFormat::Plain);
 
 		Wt::WContainerWidget* tracksContainer {disc->bindNew<Wt::WContainerWidget>("tracks")};
 		trackContainers[discNumber] = tracksContainer;
@@ -198,7 +202,7 @@ Release::refreshView()
 
 		Wt::WContainerWidget* container {rootContainer};
 		if (isReleaseMultiDisc && discNumber)
-			container = getOrAddDiscContainer(*discNumber);
+			container = getOrAddDiscContainer(*discNumber, track->getDiscSubtitle());
 
 		Wt::WTemplate* entry {container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry"))};
 

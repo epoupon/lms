@@ -110,6 +110,9 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 	if (track->discNumber)
 		std::cout << "Disc: " << *track->discNumber << std::endl;
 
+	if (!track->discSubtitle.empty())
+		std::cout << "Disc Subtitle: " << track->discSubtitle << std::endl;
+
 	if (track->totalDisc)
 		std::cout << "TotalDisc: " << *track->totalDisc << std::endl;
 
