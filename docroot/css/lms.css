@@ -63,16 +63,16 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-cover {
-    max-height: 100%;
-    max-width: 100%;
-    width: auto;
-    height: auto;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    margin: auto;
+	max-height: 100%;
+	max-width: 100%;
+	width: auto;
+	height: auto;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	margin: auto;
 	border-radius: 3px;
 	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
 }
@@ -97,6 +97,11 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	width: 128px;
 	height: 128px;
 	position: relative;
+}
+
+.Lms-cover-large {
+	border-radius: 3px;
+	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Lms-entry-playing {
