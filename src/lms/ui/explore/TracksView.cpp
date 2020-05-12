@@ -229,7 +229,7 @@ Tracks::createEntry(const Track::pointer& track)
 			Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 			auto cover = std::make_unique<Wt::WImage>();
 			cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 96));
-			cover->setStyleClass("Lms-cover-small");
+			cover->setStyleClass("Lms-cover");
 			anchor->setImage(std::move(cover));
 		}
 	}
@@ -237,7 +237,7 @@ Tracks::createEntry(const Track::pointer& track)
 	{
 		auto cover = entry->bindNew<Wt::WImage>("cover");
 		cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(trackId, 96));
-		cover->setStyleClass("Lms-cover-small");
+		cover->setStyleClass("Lms-cover");
 	}
 
 	entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);

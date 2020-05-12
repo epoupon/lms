@@ -144,7 +144,7 @@ Artist::createRelease(const Database::Artist::pointer& artist, const Release::po
 
 		auto cover = std::make_unique<Wt::WImage>();
 		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
-		cover->setStyleClass("Lms-cover-medium");
+		cover->setStyleClass("Lms-cover");
 		anchor->setImage(std::move(cover));
 	}
 

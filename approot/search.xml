@@ -25,7 +25,9 @@
 		<div class="col-xs-12 Lms-explore-tracks-entry-name">
 			<div class="media">
 				<div class="media-left media-middle hidden-xs">
-					${cover class="media-object Lms-cover"}
+					<div class="media-object Lms-cover-container-small">
+						${cover}
+					</div>
 				</div>
 				<div class="media-body media-middle">
 					<h4><div class="Lms-trackname text-primary">${name}</div></h4>

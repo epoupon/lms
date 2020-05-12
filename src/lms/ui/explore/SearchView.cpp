@@ -72,7 +72,7 @@ namespace UserInterface
 				Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 				auto cover = std::make_unique<Wt::WImage>();
 				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 96));
-				cover->setStyleClass("Lms-cover-small");
+				cover->setStyleClass("Lms-cover");
 				anchor->setImage(std::move(cover));
 			}
 		}
@@ -80,7 +80,7 @@ namespace UserInterface
 		{
 			auto cover = entry->bindNew<Wt::WImage>("cover");
 			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(trackId, 96));
-			cover->setStyleClass("Lms-cover-small");
+			cover->setStyleClass("Lms-cover");
 		}
 
 		return entry;

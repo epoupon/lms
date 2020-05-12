@@ -43,7 +43,7 @@ namespace UserInterface::ReleaseListHelpers
 		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 		auto cover = std::make_unique<Wt::WImage>();
 		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 64));
-		cover->setStyleClass("Lms-cover-smaller");
+		cover->setStyleClass("Lms-cover");
 		anchor->setImage(std::move(cover));
 
 		auto artists = release->getReleaseArtists();
