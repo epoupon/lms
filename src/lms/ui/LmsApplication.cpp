@@ -314,7 +314,6 @@ LmsApplication::handleException(LmsApplicationException& e)
 	Wt::WPushButton* btn {t->bindNew<Wt::WPushButton>("btn-go-home", Wt::WString::tr("Lms.Error.go-home"))};
 	btn->clicked().connect([this]()
 	{
-		setConfirmCloseMessage("");
 		redirect(".");
 	});
 }
@@ -322,7 +321,6 @@ LmsApplication::handleException(LmsApplicationException& e)
 void
 LmsApplication::goHomeAndQuit()
 {
-	setConfirmCloseMessage("");
 	WApplication::quit("");
 	redirect(".");
 }
@@ -394,7 +392,6 @@ LmsApplication::handleUserLoggedOut()
 		getUser().modify()->clearAuthTokens();
 	}
 
-	setConfirmCloseMessage("");
 	goHomeAndQuit();
 }
 
@@ -425,8 +422,6 @@ LmsApplication::createHome()
 	_imageResource = std::make_shared<ImageResource>();
 	_audioTranscodeResource = std::make_shared<AudioTranscodeResource>();
 	_audioFileResource = std::make_shared<AudioFileResource>();
-
-	setConfirmCloseMessage(Wt::WString::tr("Lms.quit-confirm"));
 
 	Wt::WTemplate* main {root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.template")))};
 
@@ -579,7 +574,6 @@ LmsApplication::createHome()
 		// Only one active session by user
 		if (!LmsApp->isUserDemo())
 		{
-			setConfirmCloseMessage("");
 			quit(Wt::WString::tr("Lms.quit-other-session"));
 		}
 	});
