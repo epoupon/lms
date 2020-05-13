@@ -135,6 +135,9 @@
 <message id="Lms.Explore.Search.search-placeholder">Search...</message>
 <message id="Lms.Explore.Search.search">Search results</message>
 
+<!--Player-->
+<message id="Lms.Player.transcode-active">Transcode active</message>
+
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">Clear</message>
 <message id="Lms.PlayQueue.nb-tracks">{1} tracks</message>

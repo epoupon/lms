@@ -35,6 +35,7 @@
 				</div>
 			</div>
 			<div class="hidden-xs col-sm-2 Lms-player-duration text-muted">
+				<a id="lms-transcode-active" class="Lms-player-btn Lms-control-btn" data-toggle="tooltip" title="${tr:Lms.Player.transcode-active}" style="display:none"><i class="fa fa-fw fa-info-circle" aria-hidden="true"></i></a>
 				<span id="lms-mp-curtime">--</span> / <span id="lms-mp-duration">--</span>
 			</div>
 		</div>

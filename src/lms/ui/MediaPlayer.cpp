@@ -196,6 +196,8 @@ MediaPlayer::MediaPlayer()
   playNext {this, "playNext"},
   _settingsLoaded {this, "settingsLoaded"}
 {
+	addFunction("tr", &Wt::WTemplate::Functions::tr);
+
 	_title = bindNew<Wt::WText>("title");
 	_artist = bindNew<Wt::WAnchor>("artist");
 	_release = bindNew<Wt::WAnchor>("release");
