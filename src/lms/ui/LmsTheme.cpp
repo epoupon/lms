@@ -34,6 +34,9 @@ LmsTheme::LmsTheme(Database::User::UITheme theme)
 void
 LmsTheme::setTheme(Database::User::UITheme theme)
 {
+	if (theme == _theme)
+		return;
+
 	// Hack, use the application interface directly since changing theme is not allowed
 	const auto currentStyleSheets {getStyleSheets(_theme)};
 	for (auto it {std::crbegin(currentStyleSheets)}; it != std::crend(currentStyleSheets); ++it)
