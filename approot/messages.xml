@@ -82,7 +82,6 @@
 <message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Users</message>
 
 <!--User-->
-<message id="Lms.Admin.User.audio-transcode-bitrate-limit">Audio transcode bitrate limit</message>
 <message id="Lms.Admin.User.demo-account">Demo account</message>
 <message id="Lms.Admin.User.demo-account-already-exists">Demo account already exists!</message>
 <message id="Lms.Admin.User.demo-password-invalid">Demo password must be the login name!</message>
@@ -136,7 +135,7 @@
 <message id="Lms.Explore.Search.search">Search results</message>
 
 <!--Player-->
-<message id="Lms.Player.transcode-active">Transcode active</message>
+<message id="Lms.Player.transcoding-active">Transcoding active</message>
 
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">Clear</message>

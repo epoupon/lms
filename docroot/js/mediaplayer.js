@@ -137,9 +137,9 @@ LMS.mediaplayer = function () {
 		_elems.duration = document.getElementById("lms-mp-duration");
 		_elems.volume = document.getElementById("lms-mp-volume");
 		_elems.volumeslider = document.getElementById("lms-mp-volume-slider");
-		_elems.transcodeActive = document.getElementById("lms-transcode-active");
+		_elems.transcodingActive = document.getElementById("lms-transcoding-active");
 
-		$(_elems.transcodeActive).tooltip()
+		$(_elems.transcodingActive).tooltip()
 
 		var source = _audioCtx.createMediaElementSource(_elems.audio);
 		source.connect(_gainNode);
@@ -203,10 +203,10 @@ LMS.mediaplayer = function () {
 
 		_elems.audio.addEventListener("canplay", function() {
 			if (_getAudioMode() == Mode.Transcode) {
-				_elems.transcodeActive.style.display = "inline-block";
+				_elems.transcodingActive.style.display = "inline-block";
 			}
 			else {
-				_elems.transcodeActive.style.display = "none";
+				_elems.transcodingActive.style.display = "none";
 			}
 		});
 
