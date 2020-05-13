@@ -177,7 +177,8 @@ RUN \
 
 ## Release Stage
 FROM		alpine:3.10 AS release
-MAINTAINER 	Emeric Poupon <itmfr@yahoo.fr>
+LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
+LABEL		version=${LMS_VERSION}
 
 ARG	RUNTIME_PACKAGES=" \
 	openssl \
