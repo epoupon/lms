@@ -15,12 +15,13 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 * User management
 * Recommendation engine
 * Audio transcode for maximum interoperability and low bandwith requirements
+* ReplayGain support
 * Persistent play queue across sessions
 * Compilation support
 * Multi-value tags: artists, genres, ...
 * Custom tags (ex: _mood_, _genre_, _albummood_, _albumgrouping_, ...)
 * MusicBrainzID support to handle duplicated artist and release names
-* ReplayGain support
+* Disc subtitles support
 * _Systemd_ integration
 * Subsonic API, with the following additional features:
   * Playlists

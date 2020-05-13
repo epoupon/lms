@@ -101,7 +101,10 @@ createQuery(Session& session,
 		{
 			clauses.push_back("a.name LIKE ?");
 			query.bind("%%" + keyword + "%%");
+		}
 
+		for (const std::string& keyword : keywords)
+		{
 			sortClauses.push_back("a.sort_name LIKE ?");
 			query.bind("%%" + keyword + "%%");
 		}

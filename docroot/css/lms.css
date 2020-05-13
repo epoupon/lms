@@ -62,35 +62,41 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	cursor: pointer;
 }
 
+.Lms-cover {
+	max-height: 100%;
+	max-width: 100%;
+	width: auto;
+	height: auto;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	margin: auto;
+	border-radius: 3px;
+	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+}
+
 .Lms-cover:hover {
 	filter: brightness(130%);
 }
 
 .Lms-cover-container-smaller {
-}
-
-.Lms-cover-smaller {
 	width: 64px;
-	border-radius: 3px;
-	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+	height: 64px;
+	position: relative;
 }
 
 .Lms-cover-container-small {
-}
-
-.Lms-cover-small {
 	width: 96px;
-	border-radius: 3px;
-	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+	height: 96px;
+	position: relative;
 }
 
 .Lms-cover-container-medium {
-}
-
-.Lms-cover-medium {
 	width: 128px;
-	border-radius: 3px;
-	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+	height: 128px;
+	position: relative;
 }
 
 .Lms-cover-large {
@@ -119,8 +125,8 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-explore-releases-entry {
-	padding-top: 8px;
-	padding-bottom: 8px;
+	padding-top: 4px;
+	padding-bottom: 4px;
 }
 
 .Lms-explore-release-cover {
@@ -181,8 +187,8 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-explore-artist-entry {
-	padding-top: 8px;
-	padding-bottom: 8px;
+	padding-top: 4px;
+	padding-bottom: 4px;
 }
 
 .Lms-explore-artist-entries-container {
@@ -191,10 +197,6 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 
 .Lms-explore-mode-container {
 	margin-bottom: 8px;
-}
-
-.Lms-explore-tracks-entry {
-	min-height: 32px;
 }
 
 .Lms-explore-tracks-entry:hover .Lms-explore-tracks-entry-controls {
@@ -221,11 +223,6 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	display: block;
 }
 
-.Lms-explore-tracksinfo-entry {
-	min-height: 28px;
-	margin: 0;
-}
-
 .Lms-header {
 	padding-bottom: 9px;
 	margin-top: 20px;
@@ -246,10 +243,6 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 .Lms-playqueue-btn {
 	font-size: 24px !important;
 	text-align: left;
-}
-
-.Lms-playqueue-entry {
-	min-height: 32px;
 }
 
 .Lms-playqueue-entry:hover .Lms-playqueue-entry-controls {

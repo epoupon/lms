@@ -40,7 +40,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	22
+#define LMS_DATABASE_VERSION	23
 
 using Version = std::size_t;
 
@@ -250,6 +250,13 @@ CREATE TABLE "user_backup" (
 		{
 			_session.execute("ALTER TABLE track ADD track_replay_gain REAL");
 			_session.execute("ALTER TABLE track ADD release_replay_gain REAL");
+
+			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+			ScanSettings::get(*this).modify()->incScanVersion();
+		}
+		else if (version == 22)
+		{
+			_session.execute("ALTER TABLE track ADD disc_subtitle TEXT NOT NULL DEFAULT ''");
 
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();

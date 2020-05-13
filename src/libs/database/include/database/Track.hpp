@@ -91,6 +91,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setDiscNumber(int num)					{ _discNumber = num; }
 		void setTotalTrack(std::optional<int> totalTrack)		{ totalTrack ? _totalTrack = *totalTrack : 0; }
 		void setTotalDisc(std::optional<int> totalDisc)			{ totalDisc ? _totalDisc = *totalDisc : 0; }
+		void setDiscSubtitle(const std::string& name)			{ _discSubtitle = name; }
 		void setName(const std::string& name)				{ _name = std::string(name, 0, _maxNameLength); }
 		void setDuration(std::chrono::milliseconds duration)		{ _duration = duration; }
 		void setLastWriteTime(Wt::WDateTime time)			{ _fileLastWrite = time; }
@@ -113,6 +114,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		std::optional<std::size_t>		getTrackNumber() const;
 		std::optional<std::size_t>		getTotalTrack() const;
 		std::optional<std::size_t>		getDiscNumber() const;
+		const std::string&				getDiscSubtitle() const { return _discSubtitle; }
 		std::optional<std::size_t>		getTotalDisc() const;
 		std::string 				getName() const			{ return _name; }
 		std::filesystem::path			getPath() const			{ return _filePath; }
@@ -145,6 +147,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 				Wt::Dbo::field(a, _scanVersion,		"scan_version");
 				Wt::Dbo::field(a, _trackNumber,		"track_number");
 				Wt::Dbo::field(a, _discNumber,		"disc_number");
+				Wt::Dbo::field(a, _discSubtitle,	"disc_subtitle");
 				Wt::Dbo::field(a, _totalTrack,		"total_track");
 				Wt::Dbo::field(a, _totalDisc,		"total_disc");
 				Wt::Dbo::field(a, _name,		"name");
@@ -177,6 +180,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		int					_scanVersion {};
 		int					_trackNumber {};
 		int					_discNumber {};
+		std::string			_discSubtitle;
 		int					_totalTrack {};
 		int					_totalDisc {};
 		std::string				_name;

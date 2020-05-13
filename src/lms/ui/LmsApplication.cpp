@@ -141,11 +141,9 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 
 	// Require js here to avoid async problems
 	requireJQuery("js/jquery-1.10.2.min.js");
-	require("js/mediaplayer.js");
 	require("js/bootstrap-notify.js");
-	require("js/collapse.js");
-	require("js/dropdown.js");
-	require("js/transition.js");
+	require("js/bootstrap.min.js");
+	require("js/mediaplayer.js");
 
 	setTitle("LMS");
 

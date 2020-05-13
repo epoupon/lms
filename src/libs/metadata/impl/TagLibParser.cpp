@@ -270,6 +270,8 @@ TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::Str
 		track.albumReplayGain = StringUtils::readAs<float>(value);
 	else if (tag == "REPLAYGAIN_TRACK_GAIN")
 		track.trackReplayGain = StringUtils::readAs<float>(value);
+	else if (tag == "DISCSUBTITLE" || tag == "SETSUBTITLE")
+		track.discSubtitle = value;
 	else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 	{
 		std::set<std::string> clusterNames;
@@ -372,8 +374,12 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 	{
 		if (mp3File->ID3v2Tag())
 		{
-			if (!mp3File->ID3v2Tag()->frameListMap()["APIC"].isEmpty())
+			const auto& frameListMap {mp3File->ID3v2Tag()->frameListMap()};
+
+			if (!frameListMap["APIC"].isEmpty())
 				track.hasCover = true;
+			if (!frameListMap["TSST"].isEmpty())
+				properties.insert("DISCSUBTITLE", frameListMap["TSST"].front()->toString());
 		}
 
 		getAPETags(mp3File->APETag());

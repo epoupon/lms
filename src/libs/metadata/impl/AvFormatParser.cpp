@@ -211,6 +211,12 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 			{
 				track.musicBrainzTrackID = UUID::fromString(value);
 			}
+			else if (tag == "TSST"
+					|| tag == "DISCSUBTITLE"
+					|| tag == "SETSUBTITLE")
+			{
+				track.discSubtitle = value;
+			}
 			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 			{
 				std::vector<std::string> clusterNames {StringUtils::splitString(value, "/,;")};

@@ -738,6 +738,8 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	track.modify()->setDiscNumber(trackInfo->discNumber ? *trackInfo->discNumber : 0);
 	track.modify()->setTotalTrack(trackInfo->totalTrack);
 	track.modify()->setTotalDisc(trackInfo->totalDisc);
+	if (!trackInfo->discSubtitle.empty())
+		track.modify()->setDiscSubtitle(trackInfo->discSubtitle);
 	track.modify()->setYear(trackInfo->year ? *trackInfo->year : 0);
 	track.modify()->setOriginalYear(trackInfo->originalYear ? *trackInfo->originalYear : 0);
 
