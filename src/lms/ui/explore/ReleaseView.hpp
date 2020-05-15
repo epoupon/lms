@@ -47,6 +47,7 @@ namespace UserInterface
 		private:
 			void refreshView();
 			void refreshCopyright(const Wt::Dbo::ptr<Database::Release>& release);
+			void refreshLinks(const Wt::Dbo::ptr<Database::Release>& release);
 			void refreshSimilarReleases(const std::vector<Database::IdType>& similarReleasesId);
 
 			Filters* _filters {};

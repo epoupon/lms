@@ -77,10 +77,11 @@ Artist::refreshView()
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Artist::pointer artist = Database::Artist::getById(LmsApp->getDbSession(), *artistId);
+	const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), *artistId)};
 	if (!artist)
 		throw ArtistNotFoundException {*artistId};
 
+	refreshLinks(artist);
 	refreshSimilarArtists(similarArtistIds);
 
 	Wt::WContainerWidget* clusterContainers = bindNew<Wt::WContainerWidget>("clusters");
@@ -199,7 +200,7 @@ Artist::createRelease(const Database::Artist::pointer& artist, const Release::po
 void
 Artist::refreshSimilarArtists(const std::vector<Database::IdType>& similarArtistsId)
 {
-	auto* similarArtistsContainer {bindNew<Wt::WContainerWidget>("similar-artists")};
+	Wt::WContainerWidget* similarArtistsContainer {bindNew<Wt::WContainerWidget>("similar-artists")};
 
 	for (Database::IdType artistId : similarArtistsId)
 	{
@@ -208,6 +209,21 @@ Artist::refreshSimilarArtists(const std::vector<Database::IdType>& similarArtist
 			continue;
 
 		similarArtistsContainer->addWidget(ArtistListHelpers::createEntrySmall(similarArtist));
+	}
+}
+
+void
+Artist::refreshLinks(const Database::Artist::pointer& artist)
+{
+	const auto mbid {artist->getMBID()};
+	if (mbid)
+	{
+		setCondition("if-has-mbid", true);
+
+		Wt::WLink link {"https://musicbrainz.org/artist/" + std::string {mbid->getAsString()}};
+		link.setTarget(Wt::LinkTarget::NewWindow);
+
+		bindNew<Wt::WAnchor>("mbid-link", link, Wt::WString::tr("Lms.Explore.musicbrainz-artist"));
 	}
 }
 

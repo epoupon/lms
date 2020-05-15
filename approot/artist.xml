@@ -12,6 +12,14 @@
 			</div>
 			${releases class="Lms-explore-artist-entries-container"}
 		</div>
+		${<if-has-mbid>}
+		<div class="col-md-4">
+			<div class="well well-sm">
+				<h3>${tr:Lms.Explore.links}</h3>
+				${mbid-link class="text-muted"}
+			</div>
+		</div>
+		${</if-has-mbid>}
 		<div class="col-md-4">
 			<div class="well well-sm">
 				<h3>${tr:Lms.Explore.Artist.similar-artists}</h3>
@@ -22,22 +30,20 @@
 </message>
 
 <message id="Lms.Explore.Artist.template.entry">
-	<div class="row Lms-explore-artist-entry Lms-entry-hoverable">
-		<div class="col-xs-12">
-			<div class="media">
-				<div class="media-left media-middle">
-					<div class="media-object Lms-cover-container-medium">
-						${cover}
-					</div>
+	<div class="Lms-explore-artist-entry Lms-entry-hoverable">
+		<div class="media">
+			<div class="media-left media-middle">
+				<div class="media-object Lms-cover-container-medium">
+					${cover}
 				</div>
-				<div class="media-body media-middle">
-					<h4 class="media-heading">
-						${name class="Lms-releasename text-primary"}
-					</h4>
-					${<if-has-artist>}<h4><small>${artist class="Lms-artistname text-muted"}</small></h4>${</if-has-artist>}
-					<h4><small><div class="text-muted">${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</div></small></h4>
-					${play-btn}${add-btn}
-				</div>
+			</div>
+			<div class="media-body media-middle">
+				<h4 class="media-heading">
+					${name class="Lms-releasename text-primary"}
+				</h4>
+				${<if-has-artist>}<h4><small>${artist class="Lms-artistname text-muted"}</small></h4>${</if-has-artist>}
+				<h4><small><div class="text-muted">${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</div></small></h4>
+				${play-btn}${add-btn}
 			</div>
 		</div>
 	</div>

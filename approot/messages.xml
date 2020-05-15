@@ -105,7 +105,10 @@
 <message id="Lms.Explore.artists">Artists</message>
 <message id="Lms.Explore.filter-added">Filter added</message>
 <message id="Lms.Explore.filters">Filters</message>
+<message id="Lms.Explore.links">Links</message>
 <message id="Lms.Explore.most-played">Most played</message>
+<message id="Lms.Explore.musicbrainz-artist">MusicBrainz Artist</message>
+<message id="Lms.Explore.musicbrainz-release">MusicBrainz Release</message>
 <message id="Lms.Explore.random">Random</message>
 <message id="Lms.Explore.recently-added">Recently added</message>
 <message id="Lms.Explore.recently-played">Recently played</message>
@@ -193,4 +196,3 @@
 <message id="Lms.Settings.settings-saved">New settings saved!</message>
 
 </messages>
-

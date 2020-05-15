@@ -9,17 +9,15 @@
 
 <message id="Lms.PlayQueue.template">
 	<div class="row">
-		<div class="col-md-8">
+		<div class="col-lg-8">
 			<div class="Lms-header">
 				<h2>${tr:Lms.PlayQueue.playqueue}</h2>
 				${clear-btn}${shuffle-btn}${repeat-btn}${radio-btn}
 				<h4><small>${nb-tracks}</small></h4>
 			</div>
 			${entries}
-			<div class="row">
-				<div class="col-xs-12 Lms-horizontal-center">
-					${show-more class="btn-primary Lms-show-more"}
-				</div>
+			<div class="Lms-horizontal-center">
+				${show-more class="btn-primary Lms-show-more"}
 			</div>
 		</div>
 	</div>

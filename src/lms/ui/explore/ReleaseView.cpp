@@ -84,6 +84,7 @@ Release::refreshView()
 		throw ReleaseNotFoundException {*releaseId};
 
 	refreshCopyright(release);
+	refreshLinks(release);
 	refreshSimilarReleases(similarReleasesIds);
 
 	bindString("name", Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
@@ -261,24 +262,40 @@ Release::refreshCopyright(const Database::Release::pointer& release)
 	std::optional<std::string> copyright {release->getCopyright()};
 	std::optional<std::string> copyrightURL {release->getCopyrightURL()};
 
-	setCondition("if-has-copyright-or-copyright-url", copyright || copyrightURL);
+	if (!copyright && !copyrightURL)
+		return;
+
+	setCondition("if-has-copyright", true);
+
+	std::string copyrightText {copyright ? *copyright : ""};
+	if (copyrightText.empty() && copyrightURL)
+		copyrightText = *copyrightURL;
 
 	if (copyrightURL)
 	{
-		setCondition("if-has-copyright-url", true);
-
 		Wt::WLink link {*copyrightURL};
 		link.setTarget(Wt::LinkTarget::NewWindow);
 
-		Wt::WAnchor* anchor {bindNew<Wt::WAnchor>("copyright-url", link)};
-		anchor->setTextFormat(Wt::TextFormat::XHTML);
-		anchor->setText(Wt::WString::tr("Lms.Explore.Release.template.link-btn"));
+		Wt::WAnchor* anchor {bindNew<Wt::WAnchor>("copyright", link)};
+		anchor->setTextFormat(Wt::TextFormat::Plain);
+		anchor->setText(Wt::WString::fromUTF8(copyrightText));
 	}
-
-	if (copyright)
-	{
-		setCondition("if-has-copyright", true);
+	else
 		bindString("copyright", Wt::WString::fromUTF8(*copyright), Wt::TextFormat::Plain);
+}
+
+void
+Release::refreshLinks(const Database::Release::pointer& release)
+{
+	const auto mbid {release->getMBID()};
+	if (mbid)
+	{
+		setCondition("if-has-mbid", true);
+
+		Wt::WLink link {"https://musicbrainz.org/release/" + std::string {mbid->getAsString()}};
+		link.setTarget(Wt::LinkTarget::NewWindow);
+
+		bindNew<Wt::WAnchor>("mbid-link", link, Wt::WString::tr("Lms.Explore.musicbrainz-release"));
 	}
 }
 
