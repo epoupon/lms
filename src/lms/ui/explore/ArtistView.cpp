@@ -110,7 +110,7 @@ Artist::refreshView()
 
 		playBtn->clicked().connect([=]
 		{
-			artistsPlay.emit({*artistId});
+			artistsAction.emit(PlayQueueAction::Play, {*artistId});
 		});
 	}
 
@@ -119,7 +119,7 @@ Artist::refreshView()
 
 		addBtn->clicked().connect([=]
 		{
-			artistsAdd.emit({*artistId});
+			artistsAction.emit(PlayQueueAction::AddLast, {*artistId});
 		});
 	}
 
@@ -185,13 +185,13 @@ Artist::createRelease(const Database::Artist::pointer& artist, const Release::po
 	Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 	playBtn->clicked().connect([=]
 	{
-		releasesPlay.emit({releaseId});
+		releasesAction.emit(PlayQueueAction::Play, {releaseId});
 	});
 
 	Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 	addBtn->clicked().connect([=]
 	{
-		releasesAdd.emit({releaseId});
+		releasesAction.emit(PlayQueueAction::AddLast, {releaseId});
 	});
 
 	return entry;

@@ -50,7 +50,7 @@
 #include "LmsApplicationException.hpp"
 #include "LmsTheme.hpp"
 #include "MediaPlayer.hpp"
-#include "PlayQueueView.hpp"
+#include "PlayQueue.hpp"
 #include "SettingsView.hpp"
 
 
@@ -485,16 +485,10 @@ LmsApplication::createHome()
 		mainStack->addNew<UserView>();
 	}
 
-	explore->tracksAdd.connect([=] (const std::vector<Database::IdType>& trackIds)
+	explore->tracksAction.connect([playqueue] (PlayQueueAction action, const std::vector<Database::IdType>& trackIds)
 	{
-		playqueue->addTracks(trackIds);
+		playqueue->processTracks(action, trackIds);
 	});
-
-	explore->tracksPlay.connect([=] (const std::vector<Database::IdType>& trackIds)
-	{
-		playqueue->playTracks(trackIds);
-	});
-
 
 	// Events from MediaPlayer
 	_mediaPlayer->playNext.connect([=]

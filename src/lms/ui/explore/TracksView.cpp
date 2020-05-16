@@ -71,13 +71,13 @@ _filters {filters}
 	Wt::WText* playBtn = bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 	playBtn->clicked().connect([=]
 	{
-		tracksPlay.emit(getAllTracks());
+		tracksAction.emit(PlayQueueAction::Play, getAllTracks());
 	});
 
 	Wt::WText* addBtn = bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 	addBtn->clicked().connect([=]
 	{
-		tracksAdd.emit(getAllTracks());
+		tracksAction.emit(PlayQueueAction::AddLast, getAllTracks());
 	});
 
 	_tracksContainer = bindNew<Wt::WContainerWidget>("tracks");
@@ -245,13 +245,13 @@ Tracks::createEntry(const Track::pointer& track)
 	Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 	playBtn->clicked().connect([=]
 	{
-		tracksPlay.emit({trackId});
+		tracksAction.emit(PlayQueueAction::Play, {trackId});
 	});
 
 	Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 	addBtn->clicked().connect([=]
 	{
-		tracksAdd.emit({trackId});
+		tracksAction.emit(PlayQueueAction::AddLast, {trackId});
 	});
 
 	LmsApp->getMediaPlayer()->trackLoaded.connect(entryPtr, [=] (Database::IdType loadedTrackId)
@@ -264,6 +264,8 @@ Tracks::createEntry(const Track::pointer& track)
 		if (*trackIdLoaded == trackId)
 			entry->bindString("is-playing", "Lms-entry-playing");
 	}
+	else
+		entry->bindString("is-playing", "");
 
 	return entry;
 }

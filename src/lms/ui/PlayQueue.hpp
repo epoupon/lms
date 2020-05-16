@@ -27,6 +27,7 @@
 #include <Wt/WText.h>
 
 #include "database/Types.hpp"
+#include "PlayQueueAction.hpp"
 
 namespace Similarity {
 	class Finder;
@@ -44,8 +45,7 @@ class PlayQueue : public Wt::WTemplate
 	public:
 		PlayQueue();
 
-		void addTracks(const std::vector<Database::IdType>& trackIds);
-		void playTracks(const std::vector<Database::IdType>& trackIds);
+		void processTracks(PlayQueueAction action, const std::vector<Database::IdType>& trackIds);
 
 		// play the next track in the queue
 		void playNext();

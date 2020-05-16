@@ -70,12 +70,12 @@ _filters {filters}
 	Wt::WText* playBtn {bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 	playBtn->clicked().connect([this]
 	{
-		releasesPlay.emit(getAllReleases());
+		releasesAction.emit(PlayQueueAction::Play, getAllReleases());
 	});
 	Wt::WText* addBtn {bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
 	addBtn->clicked().connect([this]
 	{
-		releasesAdd.emit(getAllReleases());
+		releasesAction.emit(PlayQueueAction::AddLast, getAllReleases());
 	});
 
 	_container = bindNew<Wt::WContainerWidget>("releases");
@@ -140,13 +140,13 @@ Releases::createEntry(const Release::pointer& release)
 	Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 	playBtn->clicked().connect([=]
 	{
-		releasesPlay.emit({releaseId});
+		releasesAction.emit(PlayQueueAction::Play, {releaseId});
 	});
 
 	Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 	addBtn->clicked().connect([=]
 	{
-		releasesAdd.emit({releaseId});
+		releasesAction.emit(PlayQueueAction::AddLast, {releaseId});
 	});
 
 	return entry;

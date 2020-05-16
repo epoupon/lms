@@ -22,6 +22,7 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WApplication.h>
 #include <Wt/WImage.h>
+#include <Wt/WPopupMenu.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
@@ -150,7 +151,7 @@ Release::refreshView()
 		Wt::WText* playBtn {bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([=]
 		{
-			releasesPlay.emit({*releaseId});
+			releasesAction.emit(PlayQueueAction::Play, {*releaseId});
 		});
 	}
 
@@ -158,7 +159,7 @@ Release::refreshView()
 		Wt::WText* addBtn {bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
 		addBtn->clicked().connect([=]
 		{
-			releasesAdd.emit({*releaseId});
+			releasesAction.emit(PlayQueueAction::AddLast, {*releaseId});
 		});
 	}
 
@@ -232,13 +233,13 @@ Release::refreshView()
 		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([=]()
 		{
-			tracksPlay.emit({trackId});
+			tracksAction.emit(PlayQueueAction::Play, {trackId});
 		});
 
 		Wt::WText* addBtn {entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
 		addBtn->clicked().connect([=]()
 		{
-			tracksAdd.emit({trackId});
+			tracksAction.emit(PlayQueueAction::AddLast, {trackId});
 		});
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
@@ -253,6 +254,8 @@ Release::refreshView()
 			if (*trackIdLoaded == trackId)
 				entry->bindString("is-playing", "Lms-entry-playing");
 		}
+		else
+			entry->bindString("is-playing", "");
 	}
 }
 

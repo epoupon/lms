@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "PlayQueueView.hpp"
+#include "PlayQueue.hpp"
 
 #include <Wt/WText.h>
 #include <Wt/WText.h>
@@ -327,20 +327,27 @@ PlayQueue::enqueueTrack(Database::IdType trackId)
 }
 
 void
-PlayQueue::addTracks(const std::vector<Database::IdType>& trackIds)
+PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::IdType>& trackIds)
 {
-	enqueueTracks(trackIds);
-	LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
-}
+	switch (action)
+	{
+		case PlayQueueAction::AddLast:
+			enqueueTracks(trackIds);
+			LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
+			break;
 
-void
-PlayQueue::playTracks(const std::vector<Database::IdType>& trackIds)
-{
-	clearTracks();
-	enqueueTracks(trackIds);
-	loadTrack(0, true);
+		case PlayQueueAction::AddNext:
+			break;
 
-	LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-playing", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
+		case PlayQueueAction::Play:
+			clearTracks();
+			enqueueTracks(trackIds);
+			loadTrack(0, true);
+
+			LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-playing", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
+			break;
+
+	}
 }
 
 void

@@ -88,27 +88,21 @@ Explore::Explore(Filters* filters)
 	contentsStack->addWidget(std::move(artists));
 
 	auto artist = std::make_unique<Artist>(_filters);
-	artist->artistsAdd.connect(this, &Explore::handleArtistsAdd);
-	artist->artistsPlay.connect(this, &Explore::handleArtistsPlay);
-	artist->releasesAdd.connect(this, &Explore::handleReleasesAdd);
-	artist->releasesPlay.connect(this, &Explore::handleReleasesPlay);
+	artist->artistsAction.connect(this, &Explore::handleArtistsAction);
+	artist->releasesAction.connect(this, &Explore::handleReleasesAction);
 	contentsStack->addWidget(std::move(artist));
 
 	auto releases = std::make_unique<Releases>(_filters);
-	releases->releasesAdd.connect(this, &Explore::handleReleasesAdd);
-	releases->releasesPlay.connect(this, &Explore::handleReleasesPlay);
+	releases->releasesAction.connect(this, &Explore::handleReleasesAction);
 	contentsStack->addWidget(std::move(releases));
 
 	auto release = std::make_unique<Release>(_filters);
-	release->releasesAdd.connect(this, &Explore::handleReleasesAdd);
-	release->releasesPlay.connect(this, &Explore::handleReleasesPlay);
-	release->tracksAdd.connect(this, &Explore::handleTracksAdd);
-	release->tracksPlay.connect(this, &Explore::handleTracksPlay);
+	release->releasesAction.connect(this, &Explore::handleReleasesAction);
+	release->tracksAction.connect(this, &Explore::handleTracksAction);
 	contentsStack->addWidget(std::move(release));
 
 	auto tracks = std::make_unique<Tracks>(_filters);
-	tracks->tracksAdd.connect(this, &Explore::handleTracksAdd);
-	tracks->tracksPlay.connect(this, &Explore::handleTracksPlay);
+	tracks->tracksAction.connect(this, &Explore::handleTracksAction);
 	contentsStack->addWidget(std::move(tracks));
 
 	wApp->internalPathChanged().connect([=]
@@ -167,40 +161,23 @@ getReleasesTracks(Database::Session& session, const std::vector<Database::IdType
 }
 
 void
-Explore::handleArtistsAdd(const std::vector<Database::IdType>& artistsId)
+Explore::handleArtistsAction(PlayQueueAction action, const std::vector<Database::IdType>& artistsId)
 {
-	tracksAdd.emit(getArtistsTracks(LmsApp->getDbSession(), artistsId, _filters->getClusterIds()));
+	tracksAction.emit(action, getArtistsTracks(LmsApp->getDbSession(), artistsId, _filters->getClusterIds()));
 }
 
 void
-Explore::handleArtistsPlay(const std::vector<Database::IdType>& artistsId)
+Explore::handleReleasesAction(PlayQueueAction action, const std::vector<Database::IdType>& releasesId)
 {
-	tracksPlay.emit(getArtistsTracks(LmsApp->getDbSession(), artistsId, _filters->getClusterIds()));
+	tracksAction.emit(action, getReleasesTracks(LmsApp->getDbSession(), releasesId, _filters->getClusterIds()));
 }
 
 void
-Explore::handleReleasesAdd(const std::vector<Database::IdType>& releasesId)
+Explore::handleTracksAction(PlayQueueAction action, const std::vector<Database::IdType>& tracksId)
 {
-	tracksAdd.emit(getReleasesTracks(LmsApp->getDbSession(), releasesId, _filters->getClusterIds()));
+	tracksAction.emit(action, tracksId);
 }
 
-void
-Explore::handleReleasesPlay(const std::vector<Database::IdType>& releasesId)
-{
-	tracksPlay.emit(getReleasesTracks(LmsApp->getDbSession(), releasesId, _filters->getClusterIds()));
-}
-
-void
-Explore::handleTracksAdd(const std::vector<Database::IdType>& tracksId)
-{
-	tracksAdd.emit(tracksId);
-}
-
-void
-Explore::handleTracksPlay(const std::vector<Database::IdType>& tracksId)
-{
-	tracksPlay.emit(tracksId);
-}
 
 } // namespace UserInterface
 

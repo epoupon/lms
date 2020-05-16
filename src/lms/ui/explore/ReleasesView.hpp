@@ -26,6 +26,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
+#include "PlayQueueAction.hpp"
 
 namespace Database
 {
@@ -41,8 +42,7 @@ class Releases : public Wt::WTemplate
 	public:
 		Releases(Filters* filters);
 
-		Wt::Signal<const std::vector<Database::IdType>&> releasesAdd;
-		Wt::Signal<const std::vector<Database::IdType>&> releasesPlay;
+		Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> releasesAction;
 
 	private:
 
@@ -71,7 +71,7 @@ class Releases : public Wt::WTemplate
 			{Mode::RecentlyPlayed, batchSize * 3},
 			{Mode::RecentlyAdded, batchSize * 2},
 			{Mode::MostPlayed, batchSize * 2},
-			{Mode::All, std::nullopt},
+			{Mode::All, batchSize * 30},
 		};
 
 		Mode _mode {defaultMode};
