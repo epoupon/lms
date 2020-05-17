@@ -142,7 +142,7 @@ Artist::createRelease(const Database::Artist::pointer& artist, const Release::po
 		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 
 		auto cover = std::make_unique<Wt::WImage>();
-		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
+		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Small));
 		cover->setStyleClass("Lms-cover");
 		anchor->setImage(std::move(cover));
 	}

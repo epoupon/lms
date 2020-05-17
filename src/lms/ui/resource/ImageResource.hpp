@@ -36,8 +36,14 @@ class ImageResource : public Wt::WResource
 
 		~ImageResource();
 
-		std::string getReleaseUrl(Database::IdType releaseId, size_t size) const;
-		std::string getTrackUrl(Database::IdType trackId, size_t size) const;
+		enum class Size : std::size_t
+		{
+			Small = 128,
+			Large = 512,
+		};
+
+		std::string getReleaseUrl(Database::IdType releaseId, Size size) const;
+		std::string getTrackUrl(Database::IdType trackId, Size size) const;
 
 		static std::string getMimeType();
 

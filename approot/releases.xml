@@ -18,7 +18,7 @@
 	<div class="Lms-explore-releases-entry Lms-entry-hoverable">
 		<div class="media">
 			<div class="media-left media-middle">
-				<div class="media-object Lms-cover-container-medium">
+				<div class="media-object Lms-cover-container-small">
 					${cover}
 				</div>
 			</div>
