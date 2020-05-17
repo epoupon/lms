@@ -155,7 +155,7 @@ namespace UserInterface
 			auto* container {bindNew<Wt::WContainerWidget>("releases")};
 
 			for (const Database::Release::pointer& release : releases)
-				container->addWidget(ReleaseListHelpers::createEntrySmall(release));
+				container->addWidget(ReleaseListHelpers::createEntry(release));
 		}
 	}
 

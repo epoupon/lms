@@ -32,6 +32,6 @@ namespace UserInterface::ReleaseListHelpers
 {
 
 	std::unique_ptr<Wt::WTemplate> createEntrySmall(const Wt::Dbo::ptr<Database::Release>& release);
-
+	std::unique_ptr<Wt::WTemplate> createEntry(const Wt::Dbo::ptr<Database::Release>& release);
 } // namespace UserInterface
 

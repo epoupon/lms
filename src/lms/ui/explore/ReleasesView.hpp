@@ -61,7 +61,6 @@ class Releases : public Wt::WTemplate
 		std::vector<Wt::Dbo::ptr<Database::Release>> getReleases(std::optional<Database::Range> range, bool& moreResults);
 		std::vector<Wt::Dbo::ptr<Database::Release>> getRandomReleases(std::optional<Database::Range> range, bool& moreResults);
 		std::vector<Database::IdType> getAllReleases();
-		std::unique_ptr<Wt::WTemplate> createEntry(const Wt::Dbo::ptr<Database::Release>& release);
 
 		static constexpr Mode defaultMode {Mode::Random};
 		static constexpr std::size_t batchSize {20};

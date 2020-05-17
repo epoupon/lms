@@ -33,10 +33,11 @@ using namespace Database;
 namespace UserInterface::ReleaseListHelpers
 {
 
+	static
 	std::unique_ptr<Wt::WTemplate>
-	createEntrySmall(const Database::Release::pointer& release)
+	createEntryInternal(const Database::Release::pointer& release, const std::string& templateKey)
 	{
-		auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.entry-small"))};
+		auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr(templateKey))};
 
 		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
 
@@ -62,6 +63,18 @@ namespace UserInterface::ReleaseListHelpers
 		}
 
 		return entry;
+	}
+
+	std::unique_ptr<Wt::WTemplate>
+	createEntry(const Release::pointer& release)
+	{
+		return createEntryInternal(release, "Lms.Explore.Releases.template.entry");
+	}
+
+	std::unique_ptr<Wt::WTemplate>
+	createEntrySmall(const Release::pointer& release)
+	{
+		return createEntryInternal(release, "Lms.Explore.Releases.template.entry-small");
 	}
 
 } // namespace UserInterface
