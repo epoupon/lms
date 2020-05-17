@@ -194,6 +194,7 @@ server {
 
     access_log            /var/log/nginx/myserver.access.log;
 
+    client_max_body_size 256M; # Make the number the same as 'max-file-size' in fileshelter.conf
     proxy_request_buffering off;
     proxy_buffering off;
     proxy_buffer_size 4k;
