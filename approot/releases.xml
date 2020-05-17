@@ -27,7 +27,6 @@
 					${release-name class="Lms-releasename text-primary"}
 				</h4>
 				${<if-has-artist>}<h4><small>${artist-name class="Lms-artistname text-muted"}</small></h4>${</if-has-artist>}
-				${play-btn}${add-btn}
 			</div>
 		</div>
 	</div>

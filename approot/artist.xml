@@ -43,7 +43,6 @@
 				</h4>
 				${<if-has-artist>}<h4><small>${artist class="Lms-artistname text-muted"}</small></h4>${</if-has-artist>}
 				<h4><small><div class="text-muted">${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</div></small></h4>
-				${play-btn}${add-btn}
 			</div>
 		</div>
 	</div>

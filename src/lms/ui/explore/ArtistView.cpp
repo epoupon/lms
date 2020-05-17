@@ -135,8 +135,6 @@ Artist::refreshView()
 std::unique_ptr<Wt::WTemplate>
 Artist::createRelease(const Database::Artist::pointer& artist, const Release::pointer& release)
 {
-	auto releaseId = release.id();
-
 	auto entry = std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template.entry"));
 	entry->addFunction("tr", Wt::WTemplate::Functions::tr);
 
@@ -181,18 +179,6 @@ Artist::createRelease(const Database::Artist::pointer& artist, const Release::po
 			entry->bindInt("orig-year", *originalYear);
 		}
 	}
-
-	Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
-	playBtn->clicked().connect([=]
-	{
-		releasesAction.emit(PlayQueueAction::Play, {releaseId});
-	});
-
-	Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
-	addBtn->clicked().connect([=]
-	{
-		releasesAction.emit(PlayQueueAction::AddLast, {releaseId});
-	});
 
 	return entry;
 }
