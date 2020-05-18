@@ -126,6 +126,7 @@ Release::refreshView()
 	{
 		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Large)))};
 		cover->setStyleClass("Lms-cover-large");
+		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 	}
 
 	Wt::WContainerWidget* clusterContainers {bindNew<Wt::WContainerWidget>("clusters")};

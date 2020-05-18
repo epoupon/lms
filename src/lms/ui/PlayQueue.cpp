@@ -391,16 +391,18 @@ PlayQueue::addSome()
 			{
 				Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 				auto cover = std::make_unique<Wt::WImage>();
-				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Small));
+				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Large));
 				cover->setStyleClass("Lms-cover");
+				cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 				anchor->setImage(std::move(cover));
 			}
 		}
 		else
 		{
 			auto cover = entry->bindNew<Wt::WImage>("cover");
-			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(track.id(), ImageResource::Size::Small));
+			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(track.id(), ImageResource::Size::Large));
 			cover->setStyleClass("Lms-cover");
+			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		}
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);

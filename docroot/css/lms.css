@@ -75,6 +75,11 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	margin: auto;
 	border-radius: 3px;
 	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    -moz-transition: opacity 1s;
+    -webkit-transition: opacity 1s;
+    -o-transition: opacity 1s;
+    transition: opacity 1s;
 }
 
 .Lms-cover:hover {
@@ -88,6 +93,10 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 .Lms-cover-large {
 	border-radius: 3px;
 	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+.Lms-cover-loaded {
+    opacity: 1;
 }
 
 .Lms-entry-playing {

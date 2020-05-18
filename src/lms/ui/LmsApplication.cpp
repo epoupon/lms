@@ -426,6 +426,8 @@ LmsApplication::createHome()
 	_audioTranscodeResource = std::make_shared<AudioTranscodeResource>();
 	_audioFileResource = std::make_shared<AudioFileResource>();
 
+	declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
+
 	Wt::WTemplate* main {root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.template")))};
 
 	main->addFunction("tr", &Wt::WTemplate::Functions::tr);

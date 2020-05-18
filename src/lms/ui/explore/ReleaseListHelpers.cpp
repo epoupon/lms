@@ -46,6 +46,7 @@ namespace UserInterface::ReleaseListHelpers
 		auto cover = std::make_unique<Wt::WImage>();
 		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Large));
 		cover->setStyleClass("Lms-cover");
+		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		anchor->setImage(std::move(cover));
 
 		auto artists = release->getReleaseArtists();
