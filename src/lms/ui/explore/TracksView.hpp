@@ -59,7 +59,6 @@ class Tracks : public Wt::WTemplate
 		void refreshView(Mode mode);
 		void addSome();
 
-		std::unique_ptr<Wt::WTemplate> createEntry(const Wt::Dbo::ptr<Database::Track>& track);
 		std::vector<Wt::Dbo::ptr<Database::Track>> getRandomTracks(std::optional<Database::Range> range, bool& moreResults);
 		std::vector<Wt::Dbo::ptr<Database::Track>> getTracks(std::optional<Database::Range> range, bool& moreResults);
 		std::vector<Database::IdType> getAllTracks();

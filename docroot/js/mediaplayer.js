@@ -203,10 +203,10 @@ LMS.mediaplayer = function () {
 
 		_elems.audio.addEventListener("canplay", function() {
 			if (_getAudioMode() == Mode.Transcode) {
-				_elems.transcodingActive.style.display = "inline-block";
+				_elems.transcodingActive.style.visibility = "visible";
 			}
 			else {
-				_elems.transcodingActive.style.display = "none";
+				_elems.transcodingActive.style.visibility = "hidden";
 			}
 		});
 

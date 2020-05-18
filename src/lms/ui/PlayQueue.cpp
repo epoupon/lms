@@ -136,7 +136,7 @@ PlayQueue::PlayQueue()
 
 		if (!LmsApp->getUser()->isDemo())
 		{
-			LmsApp->getMediaPlayer()->settingsLoaded.connect([=]
+			LmsApp->getMediaPlayer().settingsLoaded.connect([=]
 			{
 				if (_mediaPlayerSettingsLoaded)
 					return;
@@ -391,16 +391,16 @@ PlayQueue::addSome()
 			{
 				Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 				auto cover = std::make_unique<Wt::WImage>();
-				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 96));
-				cover->setStyleClass("Lms-cover-small");
+				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Small));
+				cover->setStyleClass("Lms-cover");
 				anchor->setImage(std::move(cover));
 			}
 		}
 		else
 		{
 			auto cover = entry->bindNew<Wt::WImage>("cover");
-			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(track.id(), 96));
-			cover->setStyleClass("Lms-cover-small");
+			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(track.id(), ImageResource::Size::Small));
+			cover->setStyleClass("Lms-cover");
 		}
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
@@ -451,7 +451,7 @@ PlayQueue::enqueueRadioTrack()
 std::optional<float>
 PlayQueue::getReplayGain(std::size_t pos, const Database::Track::pointer& track) const
 {
-	const auto& settings {LmsApp->getMediaPlayer()->getSettings()};
+	const auto& settings {LmsApp->getMediaPlayer().getSettings()};
 	if (!settings)
 		return std::nullopt;
 

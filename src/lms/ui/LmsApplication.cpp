@@ -251,6 +251,7 @@ LmsApplication::createArtistAnchor(Database::Artist::pointer artist, bool addTex
 	{
 		res->setTextFormat(Wt::TextFormat::Plain);
 		res->setText(Wt::WString::fromUTF8(artist->getName()));
+		res->setToolTip(Wt::WString::fromUTF8(artist->getName()), Wt::TextFormat::Plain);
 	}
 
 	return res;
@@ -269,8 +270,10 @@ LmsApplication::createReleaseAnchor(Database::Release::pointer release, bool add
 
 	if (addText)
 	{
+		res->setWordWrap(false);
 		res->setTextFormat(Wt::TextFormat::Plain);
 		res->setText(Wt::WString::fromUTF8(release->getName()));
+		res->setToolTip(Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
 	}
 
 	return res;
@@ -462,7 +465,7 @@ LmsApplication::createHome()
 	mainStack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
 
 	Explore* explore = mainStack->addNew<Explore>(filters);
-	PlayQueue* playqueue = mainStack->addNew<PlayQueue>();
+	_playQueue = mainStack->addNew<PlayQueue>();
 	auto* search {mainStack->addNew<SearchView>(filters)};
 	mainStack->addNew<SettingsView>();
 
@@ -485,31 +488,31 @@ LmsApplication::createHome()
 		mainStack->addNew<UserView>();
 	}
 
-	explore->tracksAction.connect([playqueue] (PlayQueueAction action, const std::vector<Database::IdType>& trackIds)
+	explore->tracksAction.connect([this] (PlayQueueAction action, const std::vector<Database::IdType>& trackIds)
 	{
-		playqueue->processTracks(action, trackIds);
+		_playQueue->processTracks(action, trackIds);
 	});
 
 	// Events from MediaPlayer
-	_mediaPlayer->playNext.connect([=]
+	_mediaPlayer->playNext.connect([this]
 	{
-		playqueue->playNext();
+		_playQueue->playNext();
 	});
-	_mediaPlayer->playPrevious.connect([=]
+	_mediaPlayer->playPrevious.connect([this]
 	{
-		playqueue->playPrevious();
+		_playQueue->playPrevious();
 	});
-	_mediaPlayer->playbackEnded.connect([=]
+	_mediaPlayer->playbackEnded.connect([this]
 	{
-		playqueue->playNext();
+		_playQueue->playNext();
 	});
 
-	playqueue->trackSelected.connect([=] (Database::IdType trackId, bool play, float replayGain)
+	_playQueue->trackSelected.connect([this] (Database::IdType trackId, bool play, float replayGain)
 	{
 		_mediaPlayer->loadTrack(trackId, play, replayGain);
 	});
 
-	playqueue->trackUnselected.connect([=] ()
+	_playQueue->trackUnselected.connect([this] ()
 	{
 		_mediaPlayer->stop();
 	});

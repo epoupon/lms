@@ -41,15 +41,15 @@ ImageResource::~ImageResource()
 }
 
 std::string
-ImageResource::getReleaseUrl(Database::IdType releaseId, std::size_t size) const
+ImageResource::getReleaseUrl(Database::IdType releaseId, Size size) const
 {
-	return url() + "&releaseid=" + std::to_string(releaseId) + "&size=" + std::to_string(size);
+	return url() + "&releaseid=" + std::to_string(releaseId) + "&size=" + std::to_string(static_cast<std::size_t>(size));
 }
 
 std::string
-ImageResource::getTrackUrl(Database::IdType trackId, std::size_t size) const
+ImageResource::getTrackUrl(Database::IdType trackId, Size size) const
 {
-	return url() + "&trackid=" + std::to_string(trackId) + "&size=" + std::to_string(size);
+	return url() + "&trackid=" + std::to_string(trackId) + "&size=" + std::to_string(static_cast<std::size_t>(size));
 }
 
 void

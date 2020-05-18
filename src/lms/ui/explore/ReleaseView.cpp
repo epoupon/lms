@@ -76,7 +76,7 @@ Release::refreshView()
 	if (!releaseId)
 		return;
 
-	const std::vector<Database::IdType> similarReleasesIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 5)};
+	const std::vector<Database::IdType> similarReleasesIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 6)};
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -124,7 +124,7 @@ Release::refreshView()
 	}
 
 	{
-		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 512)))};
+		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Large)))};
 		cover->setStyleClass("Lms-cover-large");
 	}
 
@@ -244,12 +244,12 @@ Release::refreshView()
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
 
-		LmsApp->getMediaPlayer()->trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId)
+		LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId)
 		{
 			entry->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
 		});
 
-		if (auto trackIdLoaded {LmsApp->getMediaPlayer()->getTrackLoaded()})
+		if (auto trackIdLoaded {LmsApp->getMediaPlayer().getTrackLoaded()})
 		{
 			if (*trackIdLoaded == trackId)
 				entry->bindString("is-playing", "Lms-entry-playing");
@@ -313,7 +313,7 @@ Release::refreshSimilarReleases(const std::vector<Database::IdType>& similarRele
 		if (!similarRelease)
 			continue;
 
-		similarReleasesContainer->addWidget(ReleaseListHelpers::createEntrySmall(similarRelease));
+		similarReleasesContainer->addWidget(ReleaseListHelpers::createEntry(similarRelease));
 	}
 }
 

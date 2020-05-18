@@ -25,13 +25,13 @@
 
 namespace Database
 {
+	class Artist;
 	class Release;
 }
 
 namespace UserInterface::ReleaseListHelpers
 {
-
-	std::unique_ptr<Wt::WTemplate> createEntrySmall(const Wt::Dbo::ptr<Database::Release>& release);
-
+	std::unique_ptr<Wt::WTemplate> createEntry(const Wt::Dbo::ptr<Database::Release>& release);
+	std::unique_ptr<Wt::WTemplate> createEntryForArtist(const Wt::Dbo::ptr<Database::Release>& release, const Wt::Dbo::ptr<Database::Artist>& artist);
 } // namespace UserInterface
 

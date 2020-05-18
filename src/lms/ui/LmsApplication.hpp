@@ -45,6 +45,7 @@ class Auth;
 class ImageResource;
 class LmsApplicationException;
 class MediaPlayer;
+class PlayQueue;
 
 // Events that can be listen from anywhere in the application
 struct Events
@@ -100,7 +101,8 @@ class LmsApplication : public Wt::WApplication
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Wt::Dbo::ptr<Database::Release> release, bool addText = true);
 		static std::unique_ptr<Wt::WText> createCluster(Wt::Dbo::ptr<Database::Cluster> cluster, bool canDelete = false);
 
-		MediaPlayer* getMediaPlayer() const { return _mediaPlayer; }
+		MediaPlayer&	getMediaPlayer() const { return *_mediaPlayer; }
+		PlayQueue&		getPlayQueue() const { return *_playQueue; }
 
 		// Signal emitted just before the session ends (user may already be logged out)
 		Wt::Signal<>&	preQuit() { return _preQuit; }
@@ -124,13 +126,14 @@ class LmsApplication : public Wt::WApplication
 		Wt::Signal<>				_preQuit;
 		Database::Session			_dbSession;
 		LmsApplicationGroupContainer&   	_appGroups;
-		Events					_events;
+		Events						_events;
 		std::optional<Database::IdType>	_userId;
 		std::optional<bool>			_userAuthStrong;
 		std::shared_ptr<AudioTranscodeResource>	_audioTranscodeResource;
 		std::shared_ptr<AudioFileResource>	_audioFileResource;
 		std::shared_ptr<ImageResource>		_imageResource;
 		MediaPlayer*				_mediaPlayer {};
+		PlayQueue*					_playQueue {};
 };
 
 

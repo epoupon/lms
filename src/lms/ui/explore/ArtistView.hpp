@@ -43,7 +43,6 @@ class Artist : public Wt::WTemplate
 		Artist(Filters* filters);
 
 		Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> artistsAction;
-		Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> releasesAction;
 
 	private:
 		void refreshView();

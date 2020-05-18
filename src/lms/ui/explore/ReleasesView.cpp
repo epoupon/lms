@@ -29,12 +29,11 @@
 #include "database/Release.hpp"
 #include "database/User.hpp"
 #include "database/TrackList.hpp"
-
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
 #include "resource/ImageResource.hpp"
-
+#include "ReleaseListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 
@@ -106,62 +105,17 @@ Releases::refreshView(Mode mode)
 	refreshView();
 }
 
-std::unique_ptr<Wt::WTemplate>
-Releases::createEntry(const Release::pointer& release)
-{
-	const IdType releaseId {release.id()};
-
-	auto entry = std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.entry"));
-	entry->addFunction("tr", Wt::WTemplate::Functions::tr);
-
-	Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
-	auto cover = std::make_unique<Wt::WImage>();
-	cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
-	cover->setStyleClass("Lms-cover");
-	anchor->setImage(std::move(cover));
-
-	entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
-
-	auto artists = release->getReleaseArtists();
-	if (artists.empty())
-		artists = release->getArtists();
-
-	if (artists.size() > 1)
-	{
-		entry->setCondition("if-has-artist", true);
-		entry->bindNew<Wt::WText>("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
-	}
-	else if (artists.size() == 1)
-	{
-		entry->setCondition("if-has-artist", true);
-		entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
-	}
-
-	Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
-	playBtn->clicked().connect([=]
-	{
-		releasesAction.emit(PlayQueueAction::Play, {releaseId});
-	});
-
-	Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
-	addBtn->clicked().connect([=]
-	{
-		releasesAction.emit(PlayQueueAction::AddLast, {releaseId});
-	});
-
-	return entry;
-}
-
 void
 Releases::addSome()
 {
 	bool moreResults {};
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	const auto releases {getReleases(Range {static_cast<std::size_t>(_container->count()), batchSize}, moreResults)};
 
-	for (const Release::pointer& release : getReleases(Range {static_cast<std::size_t>(_container->count()), batchSize}, moreResults))
+	for (const Release::pointer& release : releases)
 	{
-		_container->addWidget(createEntry(release));
+		_container->addWidget(ReleaseListHelpers::createEntry(release));
 	}
 
 	_showMore->setHidden(!moreResults);
@@ -201,7 +155,7 @@ Releases::getReleases(std::optional<Range> range, bool& moreResults)
 	if (modeLimit)
 	{
 		if (range)
-			range->limit = std::min(*modeLimit - range->offset, range->offset + range->limit);
+			range->limit = std::min(*modeLimit - range->offset, range->limit);
 		else
 			range = Range {0, *modeLimit};
 	}
