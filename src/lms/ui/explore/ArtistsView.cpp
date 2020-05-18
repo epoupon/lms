@@ -140,7 +140,7 @@ Artists::getArtists(std::optional<Range> range, bool& moreResults)
 	if (modeLimit)
 	{
 		if (range)
-			range->limit = std::min(*modeLimit - range->offset, range->offset + range->limit);
+			range->limit = std::min(*modeLimit - range->offset, range->limit);
 		else
 			range = Range {0, *modeLimit};
 	}

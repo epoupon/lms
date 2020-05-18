@@ -3,51 +3,36 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Search.template">
+	<div class="Lms-header">
+		<h2>${tr:Lms.Explore.Search.search}</h2>
+	</div>
 	<div class="row">
+		${<if-artists>}
 		<div class="col-lg-8">
-			<div class="Lms-header">
-				<h2>${tr:Lms.Explore.Search.search}</h2>
-			</div>
-			${<if-artists>}
 			<div class="well well-sm">
 				<h3>${tr:Lms.Explore.artists}</h3>
 				${artists}
 			</div>
-			${</if-artists>}
-			${<if-releases>}
+		</div>
+		${</if-artists>}
+		${<if-releases>}
+		<div class="col-lg-8">
 			<div class="well well-sm">
 				<h3>${tr:Lms.Explore.releases}</h3>
-				${releases}
+				<div class="row">
+					${releases}
+				</div>
 			</div>
-			${</if-releases>}
-			${<if-tracks>}
+		</div>
+		${</if-releases>}
+		${<if-tracks>}
+		<div class="col-lg-8">
 			<div class="well well-sm">
 				<h3>${tr:Lms.Explore.tracks}</h3>
 				${tracks}
 			</div>
-			${</if-tracks>}
 		</div>
-	</div>
-</message>
-
-<message id="Lms.Explore.Search.template.track-entry">
-	<div class="Lms-explore-tracks-entry Lms-entry-hoverable Lms-vertical-align">
-		<div class="Lms-explore-tracks-entry-name">
-			<div class="media">
-				<div class="media-left media-middle hidden-xs">
-					<div class="media-object Lms-cover-container-small">
-						${cover}
-					</div>
-				</div>
-				<div class="media-body media-middle">
-					<h4><div class="Lms-trackname text-primary">${name}</div></h4>
-					${<if-has-artists-or-release>}
-					${<if-has-release>}<small>${release class="Lms-releasename text-primary"}</small>${</if-has-release>}
-					${<if-has-artists>}${artists}${</if-has-artists>}
-					${</if-has-artists-or-release>}
-				</div>
-			</div>
-		</div>
+		${</if-tracks>}
 	</div>
 </message>
 

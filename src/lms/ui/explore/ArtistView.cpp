@@ -32,11 +32,11 @@
 #include "utils/String.hpp"
 
 #include "resource/ImageResource.hpp"
-
 #include "ArtistListHelpers.hpp"
+#include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
-#include "Filters.hpp"
+#include "ReleaseListHelpers.hpp"
 
 using namespace Database;
 
@@ -128,59 +128,8 @@ Artist::refreshView()
 	auto releases = artist->getReleases(_filters->getClusterIds());
 	for (const auto& release : releases)
 	{
-		releasesContainer->addWidget(createRelease(artist, release));
+		releasesContainer->addWidget(ReleaseListHelpers::createEntryForArtist(release, artist));
 	}
-}
-
-std::unique_ptr<Wt::WTemplate>
-Artist::createRelease(const Database::Artist::pointer& artist, const Release::pointer& release)
-{
-	auto entry = std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template.entry"));
-	entry->addFunction("tr", Wt::WTemplate::Functions::tr);
-
-	{
-		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
-
-		auto cover = std::make_unique<Wt::WImage>();
-		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Small));
-		cover->setStyleClass("Lms-cover");
-		anchor->setImage(std::move(cover));
-	}
-
-	entry->bindWidget("name", LmsApplication::createReleaseAnchor(release));
-
-	auto artists {release->getReleaseArtists()};
-	if (artists.empty())
-		artists = release->getArtists();
-
-	bool isSameArtist {(std::find(std::cbegin(artists), std::cend(artists), artist) != artists.end())};
-
-	if (artists.size() > 1)
-	{
-		entry->setCondition("if-has-artist", true);
-		entry->bindNew<Wt::WText>("artist", Wt::WString::tr("Lms.Explore.various-artists"));
-	}
-	else if (artists.size() == 1 && !isSameArtist)
-	{
-		entry->setCondition("if-has-artist", true);
-		entry->bindWidget("artist", LmsApplication::createArtistAnchor(artists.front()));
-	}
-
-	std::optional<int> year {release->getReleaseYear()};
-	if (year)
-	{
-		entry->setCondition("if-has-year", true);
-		entry->bindInt("year", *year);
-
-		std::optional<int> originalYear {release->getReleaseYear(true)};
-		if (originalYear && *originalYear != *year)
-		{
-			entry->setCondition("if-has-orig-year", true);
-			entry->bindInt("orig-year", *originalYear);
-		}
-	}
-
-	return entry;
 }
 
 void

@@ -29,62 +29,14 @@
 #include "resource/ImageResource.hpp"
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"
-#include "ReleaseListHelpers.hpp"
 #include "LmsApplication.hpp"
+#include "ReleaseListHelpers.hpp"
+#include "TrackListHelpers.hpp"
 
-static constexpr std::size_t maxEntries {5};
+static constexpr std::size_t maxEntries {6};
 
 namespace UserInterface
 {
-
-	static
-	std::unique_ptr<Wt::WTemplate>
-	createTrack(const Database::Track::pointer& track)
-	{
-		auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Search.template.track-entry"))};
-
-		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
-
-		auto artists {track->getArtists()};
-		auto release {track->getRelease()};
-		const auto trackId {track.id()};
-
-		if (!artists.empty() || release)
-			entry->setCondition("if-has-artists-or-release", true);
-
-		if (!artists.empty())
-		{
-			entry->setCondition("if-has-artists", true);
-
-			Wt::WContainerWidget* artistContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
-			for (const auto& artist : artists)
-			{
-				Wt::WTemplate* a {artistContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry-artist"))};
-				a->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
-			}
-		}
-
-		if (track->getRelease())
-		{
-			entry->setCondition("if-has-release", true);
-			entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
-			{
-				Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
-				auto cover = std::make_unique<Wt::WImage>();
-				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Small));
-				cover->setStyleClass("Lms-cover");
-				anchor->setImage(std::move(cover));
-			}
-		}
-		else
-		{
-			auto cover = entry->bindNew<Wt::WImage>("cover");
-			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(trackId, ImageResource::Size::Small));
-			cover->setStyleClass("Lms-cover");
-		}
-
-		return entry;
-	}
 
 	SearchView::SearchView(Filters* filters)
 	: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Search.template")}
@@ -175,7 +127,7 @@ namespace UserInterface
 			auto* container {bindNew<Wt::WContainerWidget>("tracks")};
 
 			for (const Database::Track::pointer& track : tracks)
-				container->addWidget(createTrack(track));
+				container->addWidget(TrackListHelpers::createEntry(track));
 		}
 	}
 

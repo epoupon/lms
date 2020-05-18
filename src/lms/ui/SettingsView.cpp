@@ -156,7 +156,7 @@ class SettingsModel : public Wt::WFormModel
 				settings.replayGain.preAmpGain = Wt::asNumber(value(ReplayGainPreAmpGainField));
 				settings.replayGain.preAmpGainIfNoInfo = Wt::asNumber(value(ReplayGainPreAmpGainIfNoInfoField));
 
-				LmsApp->getMediaPlayer()->setSettings(settings);
+				LmsApp->getMediaPlayer().setSettings(settings);
 			}
 
 			{
@@ -191,7 +191,7 @@ class SettingsModel : public Wt::WFormModel
 			setValue(DarkModeField, user->getUITheme() == User::UITheme::Dark);
 
 			{
-				const auto settings {*LmsApp->getMediaPlayer()->getSettings()};
+				const auto settings {*LmsApp->getMediaPlayer().getSettings()};
 
 				auto transcodeModeRow {_transcodeModeModel->getRowFromValue(settings.transcode.mode)};
 				if (transcodeModeRow)
@@ -350,7 +350,7 @@ SettingsView::SettingsView()
 		refreshView();
 	});
 
-	LmsApp->getMediaPlayer()->settingsLoaded.connect([=]()
+	LmsApp->getMediaPlayer().settingsLoaded.connect([=]()
 	{
 		refreshView();
 	});
@@ -367,7 +367,7 @@ SettingsView::refreshView()
 	clear();
 
 	// Hack to wait for the audio player know the settings applied
-	if (!LmsApp->getMediaPlayer()->getSettings())
+	if (!LmsApp->getMediaPlayer().getSettings())
 		return;
 
 	auto t {addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Settings.template"))};
@@ -426,7 +426,7 @@ SettingsView::refreshView()
 			t->updateModel(model.get());
 			t->updateView(model.get());
 		});
-		if (LmsApp->getMediaPlayer()->getSettings()->transcode.mode == MediaPlayer::Settings::Transcode::Mode::Never)
+		if (LmsApp->getMediaPlayer().getSettings()->transcode.mode == MediaPlayer::Settings::Transcode::Mode::Never)
 		{
 			model->setReadOnly(SettingsModel::TranscodeFormatField, true);
 			model->setReadOnly(SettingsModel::TranscodeBitrateField, true);
@@ -456,7 +456,7 @@ SettingsView::refreshView()
 			t->updateModel(model.get());
 			t->updateView(model.get());
 		});
-		if (LmsApp->getMediaPlayer()->getSettings()->replayGain.mode == MediaPlayer::Settings::ReplayGain::Mode::None)
+		if (LmsApp->getMediaPlayer().getSettings()->replayGain.mode == MediaPlayer::Settings::ReplayGain::Mode::None)
 		{
 			model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainField, true);
 			model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainIfNoInfoField, true);

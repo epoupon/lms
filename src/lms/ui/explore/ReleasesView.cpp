@@ -111,8 +111,9 @@ Releases::addSome()
 	bool moreResults {};
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	const auto releases {getReleases(Range {static_cast<std::size_t>(_container->count()), batchSize}, moreResults)};
 
-	for (const Release::pointer& release : getReleases(Range {static_cast<std::size_t>(_container->count()), batchSize}, moreResults))
+	for (const Release::pointer& release : releases)
 	{
 		_container->addWidget(ReleaseListHelpers::createEntry(release));
 	}
@@ -154,7 +155,7 @@ Releases::getReleases(std::optional<Range> range, bool& moreResults)
 	if (modeLimit)
 	{
 		if (range)
-			range->limit = std::min(*modeLimit - range->offset, range->offset + range->limit);
+			range->limit = std::min(*modeLimit - range->offset, range->limit);
 		else
 			range = Range {0, *modeLimit};
 	}

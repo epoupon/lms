@@ -8,47 +8,43 @@
 		${mode class="nav nav-pills Lms-explore-mode-container"}
 		${play-btn}${add-btn}
 	</div>
-	${releases}
+	<div class="row">
+		${releases}
+	</div>
 	<div class="Lms-horizontal-center">
 		${show-more class="btn-primary Lms-show-more"}
 	</div>
 </message>
 
-<message id="Lms.Explore.Releases.template.entry">
-	<div class="Lms-explore-releases-entry Lms-entry-hoverable">
-		<div class="media">
-			<div class="media-left media-middle">
-				<div class="media-object Lms-cover-container-small">
-					${cover}
-				</div>
+<message id="Lms.Explore.Releases.template.entry-grid">
+	<div class="col-xs-6 col-sm-3 col-md-2 col-lg-2">
+		<div class="Lms-explore-entry-grid">
+			<div class="Lms-responsive-square Lms-cover-container">
+				${cover}
 			</div>
-			<div class="media-body media-middle">
-				<h4 class="media-heading">
-					${release-name class="Lms-releasename text-primary"}
-				</h4>
-				${<if-has-artist>}<h4><small>${artist-name class="Lms-artistname text-muted"}</small></h4>${</if-has-artist>}
+			<div class="Lms-explore-entry-grid-text-container">
+				<h5>${release-name class="Lms-releasename text-primary"}</h5>
+				<div class="Lms-explore-entry-separator"><h6>${<if-has-year>}<small><span class="text-muted">${year}</span></small>${</if-has-year>}${<if-has-artist>}${artist-name class="Lms-artistname text-muted"}${</if-has-artist>}</h6></div>
 			</div>
 		</div>
 	</div>
 </message>
 
-<message id="Lms.Explore.Releases.template.entry-small">
-	<div class="Lms-explore-releaselink Lms-entry-hoverable">
-		<div class="media">
-			<div class="media-left media-middle">
-				<div class="media-object Lms-cover-container-smaller">
+<message id="Lms.Explore.Releases.template.entry-list">
+	<div class="Lms-explore-entry-list">
+		<div class="row Lms-vertical-align">
+			<div class="col-xs-4 col-sm-3 col-md-2">
+				<div class="Lms-responsive-square Lms-cover-container">
 					${cover}
 				</div>
 			</div>
-			<div class="media-body media-middle">
-				<div class="media-heading">
-					${release-name class="Lms-releasename text-primary"}
-				</div>
-				${<if-has-artist>}<small>${artist-name class="Lms-artistname text-muted"}</small>${</if-has-artist>}
+			<div class="col-xs-8 col-sm-9 col-md-10 Lms-explore-entry-list-text-container">
+				<h5>${release-name class="Lms-releasename text-primary"}</h5>
+				${<if-has-artist>}<h6>${artist-name class="Lms-artistname text-muted"}</h6>${</if-has-artist>}
+				<h6><small><div class="text-muted">${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</div></small></h6>
 			</div>
 		</div>
 	</div>
 </message>
-
 
 </messages>

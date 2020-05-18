@@ -136,7 +136,7 @@ PlayQueue::PlayQueue()
 
 		if (!LmsApp->getUser()->isDemo())
 		{
-			LmsApp->getMediaPlayer()->settingsLoaded.connect([=]
+			LmsApp->getMediaPlayer().settingsLoaded.connect([=]
 			{
 				if (_mediaPlayerSettingsLoaded)
 					return;
@@ -451,7 +451,7 @@ PlayQueue::enqueueRadioTrack()
 std::optional<float>
 PlayQueue::getReplayGain(std::size_t pos, const Database::Track::pointer& track) const
 {
-	const auto& settings {LmsApp->getMediaPlayer()->getSettings()};
+	const auto& settings {LmsApp->getMediaPlayer().getSettings()};
 	if (!settings)
 		return std::nullopt;
 
