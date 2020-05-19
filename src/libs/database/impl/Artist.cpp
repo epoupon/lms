@@ -362,7 +362,7 @@ Artist::getReleases(const std::set<IdType>& clusterIds) const
 	if (!clusterIds.empty())
 		oss << " GROUP BY t.id HAVING COUNT(DISTINCT c.id) = " << clusterIds.size();
 
-	oss << " ORDER BY t.year,r.name";
+	oss << " ORDER BY t.year DESC, r.name COLLATE NOCASE";
 
 	Wt::Dbo::Query<Release::pointer> query = session()->query<Release::pointer>( oss.str() );
 
@@ -395,7 +395,7 @@ Artist::getTracks(std::optional<TrackArtistLink::Type> linkType) const
 
 	auto query {session()->query<Wt::Dbo::ptr<Track>>("SELECT DISTINCT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id")
 		.where("a.id = ?").bind(self()->id())
-		.orderBy("t.year,t.release_id,t.disc_number,t.track_number")};
+		.orderBy("t.year DESC,t.release_id,t.disc_number,t.track_number")};
 
 	if (linkType)
 		query.where("t_a_l.type = ?").bind(*linkType);
@@ -453,7 +453,12 @@ Artist::getSimilarArtists(std::optional<std::size_t> offset, std::optional<std::
 			" INNER JOIN track t ON t.id = t_a_l.track_id"
 			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
 				" WHERE "
-					" t_c.cluster_id IN (SELECT c.id from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id WHERE a.id = ?)"
+					" t_c.cluster_id IN (SELECT c.id from cluster c"
+											" INNER JOIN track t ON c.id = t_c.cluster_id"
+											" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
+											" INNER JOIN artist a ON a.id = t_a_l.artist_id"
+											" INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id"
+											" WHERE a.id = ?)"
 					" AND a.id <> ?"
 				)
 		.bind(self()->id())

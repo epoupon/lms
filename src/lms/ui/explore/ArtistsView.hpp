@@ -69,7 +69,7 @@ class Artists : public Wt::WTemplate
 			{Mode::RecentlyPlayed, batchSize * 4},
 			{Mode::RecentlyAdded, batchSize * 2},
 			{Mode::MostPlayed, batchSize * 2},
-			{Mode::All, std::nullopt},
+			{Mode::All, batchSize * 50},
 		};
 
 		Mode _mode {defaultMode};

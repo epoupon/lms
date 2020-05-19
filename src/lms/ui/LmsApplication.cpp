@@ -50,7 +50,7 @@
 #include "LmsApplicationException.hpp"
 #include "LmsTheme.hpp"
 #include "MediaPlayer.hpp"
-#include "PlayQueueView.hpp"
+#include "PlayQueue.hpp"
 #include "SettingsView.hpp"
 
 
@@ -251,6 +251,7 @@ LmsApplication::createArtistAnchor(Database::Artist::pointer artist, bool addTex
 	{
 		res->setTextFormat(Wt::TextFormat::Plain);
 		res->setText(Wt::WString::fromUTF8(artist->getName()));
+		res->setToolTip(Wt::WString::fromUTF8(artist->getName()), Wt::TextFormat::Plain);
 	}
 
 	return res;
@@ -269,8 +270,10 @@ LmsApplication::createReleaseAnchor(Database::Release::pointer release, bool add
 
 	if (addText)
 	{
+		res->setWordWrap(false);
 		res->setTextFormat(Wt::TextFormat::Plain);
 		res->setText(Wt::WString::fromUTF8(release->getName()));
+		res->setToolTip(Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
 	}
 
 	return res;
@@ -314,7 +317,6 @@ LmsApplication::handleException(LmsApplicationException& e)
 	Wt::WPushButton* btn {t->bindNew<Wt::WPushButton>("btn-go-home", Wt::WString::tr("Lms.Error.go-home"))};
 	btn->clicked().connect([this]()
 	{
-		setConfirmCloseMessage("");
 		redirect(".");
 	});
 }
@@ -322,7 +324,6 @@ LmsApplication::handleException(LmsApplicationException& e)
 void
 LmsApplication::goHomeAndQuit()
 {
-	setConfirmCloseMessage("");
 	WApplication::quit("");
 	redirect(".");
 }
@@ -394,7 +395,6 @@ LmsApplication::handleUserLoggedOut()
 		getUser().modify()->clearAuthTokens();
 	}
 
-	setConfirmCloseMessage("");
 	goHomeAndQuit();
 }
 
@@ -426,7 +426,8 @@ LmsApplication::createHome()
 	_audioTranscodeResource = std::make_shared<AudioTranscodeResource>();
 	_audioFileResource = std::make_shared<AudioFileResource>();
 
-	setConfirmCloseMessage(Wt::WString::tr("Lms.quit-confirm"));
+	declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
+	doJavaScript("$('body').tooltip({ selector: '[data-toggle=\"tooltip\"]'})");
 
 	Wt::WTemplate* main {root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.template")))};
 
@@ -467,7 +468,7 @@ LmsApplication::createHome()
 	mainStack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
 
 	Explore* explore = mainStack->addNew<Explore>(filters);
-	PlayQueue* playqueue = mainStack->addNew<PlayQueue>();
+	_playQueue = mainStack->addNew<PlayQueue>();
 	auto* search {mainStack->addNew<SearchView>(filters)};
 	mainStack->addNew<SettingsView>();
 
@@ -490,37 +491,31 @@ LmsApplication::createHome()
 		mainStack->addNew<UserView>();
 	}
 
-	explore->tracksAdd.connect([=] (const std::vector<Database::IdType>& trackIds)
+	explore->tracksAction.connect([this] (PlayQueueAction action, const std::vector<Database::IdType>& trackIds)
 	{
-		playqueue->addTracks(trackIds);
+		_playQueue->processTracks(action, trackIds);
 	});
-
-	explore->tracksPlay.connect([=] (const std::vector<Database::IdType>& trackIds)
-	{
-		playqueue->playTracks(trackIds);
-	});
-
 
 	// Events from MediaPlayer
-	_mediaPlayer->playNext.connect([=]
+	_mediaPlayer->playNext.connect([this]
 	{
-		playqueue->playNext();
+		_playQueue->playNext();
 	});
-	_mediaPlayer->playPrevious.connect([=]
+	_mediaPlayer->playPrevious.connect([this]
 	{
-		playqueue->playPrevious();
+		_playQueue->playPrevious();
 	});
-	_mediaPlayer->playbackEnded.connect([=]
+	_mediaPlayer->playbackEnded.connect([this]
 	{
-		playqueue->playNext();
+		_playQueue->playNext();
 	});
 
-	playqueue->trackSelected.connect([=] (Database::IdType trackId, bool play, float replayGain)
+	_playQueue->trackSelected.connect([this] (Database::IdType trackId, bool play, float replayGain)
 	{
 		_mediaPlayer->loadTrack(trackId, play, replayGain);
 	});
 
-	playqueue->trackUnselected.connect([=] ()
+	_playQueue->trackUnselected.connect([this] ()
 	{
 		_mediaPlayer->stop();
 	});
@@ -579,7 +574,6 @@ LmsApplication::createHome()
 		// Only one active session by user
 		if (!LmsApp->isUserDemo())
 		{
-			setConfirmCloseMessage("");
 			quit(Wt::WString::tr("Lms.quit-other-session"));
 		}
 	});

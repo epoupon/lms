@@ -19,19 +19,15 @@
 
 #pragma once
 
-#include <memory>
-
-#include <Wt/WTemplate.h>
-
-namespace Database
+namespace UserInterface
 {
-	class Artist;
-	class Release;
+
+	enum class PlayQueueAction
+	{
+		Play,
+		AddNext,
+		AddLast,
+	};
+
 }
-
-namespace UserInterface::ReleaseListHelpers
-{
-	std::unique_ptr<Wt::WTemplate> createEntry(const Wt::Dbo::ptr<Database::Release>& release);
-	std::unique_ptr<Wt::WTemplate> createEntryForArtist(const Wt::Dbo::ptr<Database::Release>& release, const Wt::Dbo::ptr<Database::Artist>& artist);
-} // namespace UserInterface
 

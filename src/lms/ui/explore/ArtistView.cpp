@@ -32,11 +32,11 @@
 #include "utils/String.hpp"
 
 #include "resource/ImageResource.hpp"
-
 #include "ArtistListHelpers.hpp"
+#include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
-#include "Filters.hpp"
+#include "ReleaseListHelpers.hpp"
 
 using namespace Database;
 
@@ -77,10 +77,11 @@ Artist::refreshView()
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Artist::pointer artist = Database::Artist::getById(LmsApp->getDbSession(), *artistId);
+	const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), *artistId)};
 	if (!artist)
 		throw ArtistNotFoundException {*artistId};
 
+	refreshLinks(artist);
 	refreshSimilarArtists(similarArtistIds);
 
 	Wt::WContainerWidget* clusterContainers = bindNew<Wt::WContainerWidget>("clusters");
@@ -109,7 +110,7 @@ Artist::refreshView()
 
 		playBtn->clicked().connect([=]
 		{
-			artistsPlay.emit({*artistId});
+			artistsAction.emit(PlayQueueAction::Play, {*artistId});
 		});
 	}
 
@@ -118,7 +119,7 @@ Artist::refreshView()
 
 		addBtn->clicked().connect([=]
 		{
-			artistsAdd.emit({*artistId});
+			artistsAction.emit(PlayQueueAction::AddLast, {*artistId});
 		});
 	}
 
@@ -127,79 +128,14 @@ Artist::refreshView()
 	auto releases = artist->getReleases(_filters->getClusterIds());
 	for (const auto& release : releases)
 	{
-		releasesContainer->addWidget(createRelease(artist, release));
+		releasesContainer->addWidget(ReleaseListHelpers::createEntryForArtist(release, artist));
 	}
-}
-
-std::unique_ptr<Wt::WTemplate>
-Artist::createRelease(const Database::Artist::pointer& artist, const Release::pointer& release)
-{
-	auto releaseId = release.id();
-
-	auto entry = std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template.entry"));
-	entry->addFunction("tr", Wt::WTemplate::Functions::tr);
-
-	{
-		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
-
-		auto cover = std::make_unique<Wt::WImage>();
-		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
-		cover->setStyleClass("Lms-cover");
-		anchor->setImage(std::move(cover));
-	}
-
-	entry->bindWidget("name", LmsApplication::createReleaseAnchor(release));
-
-	auto artists {release->getReleaseArtists()};
-	if (artists.empty())
-		artists = release->getArtists();
-
-	bool isSameArtist {(std::find(std::cbegin(artists), std::cend(artists), artist) != artists.end())};
-
-	if (artists.size() > 1)
-	{
-		entry->setCondition("if-has-artist", true);
-		entry->bindNew<Wt::WText>("artist", Wt::WString::tr("Lms.Explore.various-artists"));
-	}
-	else if (artists.size() == 1 && !isSameArtist)
-	{
-		entry->setCondition("if-has-artist", true);
-		entry->bindWidget("artist", LmsApplication::createArtistAnchor(artists.front()));
-	}
-
-	std::optional<int> year {release->getReleaseYear()};
-	if (year)
-	{
-		entry->setCondition("if-has-year", true);
-		entry->bindInt("year", *year);
-
-		std::optional<int> originalYear {release->getReleaseYear(true)};
-		if (originalYear && *originalYear != *year)
-		{
-			entry->setCondition("if-has-orig-year", true);
-			entry->bindInt("orig-year", *originalYear);
-		}
-	}
-
-	Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
-	playBtn->clicked().connect([=]
-	{
-		releasesPlay.emit({releaseId});
-	});
-
-	Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
-	addBtn->clicked().connect([=]
-	{
-		releasesAdd.emit({releaseId});
-	});
-
-	return entry;
 }
 
 void
 Artist::refreshSimilarArtists(const std::vector<Database::IdType>& similarArtistsId)
 {
-	auto* similarArtistsContainer {bindNew<Wt::WContainerWidget>("similar-artists")};
+	Wt::WContainerWidget* similarArtistsContainer {bindNew<Wt::WContainerWidget>("similar-artists")};
 
 	for (Database::IdType artistId : similarArtistsId)
 	{
@@ -208,6 +144,21 @@ Artist::refreshSimilarArtists(const std::vector<Database::IdType>& similarArtist
 			continue;
 
 		similarArtistsContainer->addWidget(ArtistListHelpers::createEntrySmall(similarArtist));
+	}
+}
+
+void
+Artist::refreshLinks(const Database::Artist::pointer& artist)
+{
+	const auto mbid {artist->getMBID()};
+	if (mbid)
+	{
+		setCondition("if-has-mbid", true);
+
+		Wt::WLink link {"https://musicbrainz.org/artist/" + std::string {mbid->getAsString()}};
+		link.setTarget(Wt::LinkTarget::NewWindow);
+
+		bindNew<Wt::WAnchor>("mbid-link", link, Wt::WString::tr("Lms.Explore.musicbrainz-artist"));
 	}
 }
 

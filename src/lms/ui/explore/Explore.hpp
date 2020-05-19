@@ -22,6 +22,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
+#include "PlayQueueAction.hpp"
 
 namespace UserInterface {
 
@@ -32,17 +33,13 @@ class Explore : public Wt::WTemplate
 	public:
 		Explore(Filters* filters);
 
-		Wt::Signal<std::vector<Database::IdType>> tracksAdd;
-		Wt::Signal<std::vector<Database::IdType>> tracksPlay;
+		Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> tracksAction;
 
 	private:
 
-		void handleArtistsAdd(const std::vector<Database::IdType>& artistsId);
-		void handleArtistsPlay(const std::vector<Database::IdType>& artistsId);
-		void handleReleasesAdd(const std::vector<Database::IdType>& releasesId);
-		void handleReleasesPlay(const std::vector<Database::IdType>& releasesId);
-		void handleTracksAdd(const std::vector<Database::IdType>& tracksId);
-		void handleTracksPlay(const std::vector<Database::IdType>& tracksId);
+		void handleArtistsAction(PlayQueueAction action, const std::vector<Database::IdType>& artistsId);
+		void handleReleasesAction(PlayQueueAction action, const std::vector<Database::IdType>& releasesId);
+		void handleTracksAction(PlayQueueAction action, const std::vector<Database::IdType>& tracksId);
 
 		Filters* _filters {};
 };

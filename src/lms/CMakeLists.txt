@@ -6,7 +6,7 @@ add_executable(lms
 	ui/LmsApplicationGroup.cpp
 	ui/LmsTheme.cpp
 	ui/MediaPlayer.cpp
-	ui/PlayQueueView.cpp
+	ui/PlayQueue.cpp
 	ui/SettingsView.cpp
 	ui/TrackStringUtils.cpp
 	ui/admin/DatabaseSettingsView.cpp
@@ -24,6 +24,7 @@ add_executable(lms
 	ui/explore/ReleasesView.cpp
 	ui/explore/ReleaseView.cpp
 	ui/explore/SearchView.cpp
+	ui/explore/TrackListHelpers.cpp
 	ui/explore/TracksView.cpp
 	ui/resource/AudioFileResource.cpp
 	ui/resource/AudioTranscodeResource.cpp

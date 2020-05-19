@@ -255,9 +255,8 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play, float replayGain)
 			<< " artist: \"" << (!artists.empty() ? StringUtils::jsEscape(artists.front()->getName()) : "") << "\","
 			<< " release: \"" << (track->getRelease() ? StringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
 			<< " artwork: ["
-			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 96) << "\",  sizes: \"96x96\",	type: \"" << imgResourceMimeType << "\" },"
-			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 256) << "\", sizes: \"256x256\",	type: \"" << imgResourceMimeType << "\" },"
-			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, 512) << "\", sizes: \"512x512\",	type: \"" << imgResourceMimeType << "\" },"
+			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, ImageResource::Size::Small) << "\", sizes: \"128x128\",	type: \"" << imgResourceMimeType << "\" },"
+			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, ImageResource::Size::Large) << "\", sizes: \"512x512\",	type: \"" << imgResourceMimeType << "\" },"
 			<< " ]"
 			<< "};";
 		oss << "LMS.mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay

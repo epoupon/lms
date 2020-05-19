@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,40 +17,19 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef COVER_RESOURCE_HPP_
-#define COVER_RESOURCE_HPP_
+#pragma once
 
-#include <mutex>
+#include <memory>
 
-#include <Wt/WResource.h>
+#include <Wt/WTemplate.h>
 
-#include "database/Types.hpp"
-
-namespace UserInterface {
-
-
-class ImageResource : public Wt::WResource
+namespace Database
 {
-	public:
-		static const std::size_t maxSize {512};
+	class Track;
+}
 
-		~ImageResource();
-
-		enum class Size : std::size_t
-		{
-			Small = 128,
-			Large = 512,
-		};
-
-		std::string getReleaseUrl(Database::IdType releaseId, Size size) const;
-		std::string getTrackUrl(Database::IdType trackId, Size size) const;
-
-		static std::string getMimeType();
-
-		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
-
-};
-
+namespace UserInterface::TrackListHelpers
+{
+	std::unique_ptr<Wt::WTemplate> createEntry(const Wt::Dbo::ptr<Database::Track>& track);
 } // namespace UserInterface
 
-#endif

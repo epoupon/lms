@@ -20,7 +20,6 @@
 <message id="Lms.password-old">Ancien mot de passe</message>
 <message id="Lms.password-too-weak">Mot de passe trop faible</message>
 <message id="Lms.passwords-dont-match">Les mots de passe ne correspondent pas</message>
-<message id="Lms.quit-confirm">Êtes-vous sûr ?</message>
 <message id="Lms.quit-other-session">Une autre session a été ouverte. Reouvrir celle-ci ?</message>
 <message id="Lms.save">Sauvegarder</message>
 <message id="Lms.user">Utilisateur</message>
@@ -106,7 +105,10 @@
 <message id="Lms.Explore.artists">Artistes</message>
 <message id="Lms.Explore.filter-added">Filtre ajouté</message>
 <message id="Lms.Explore.filters">Filtres</message>
-<message id="Lms.Explore.mostly-played">Plus joués</message>
+<message id="Lms.Explore.links">Liens</message>
+<message id="Lms.Explore.most-played">Plus joués</message>
+<message id="Lms.Explore.musicbrainz-artist">MusicBrainz Artist</message>
+<message id="Lms.Explore.musicbrainz-release">MusicBrainz Release</message>
 <message id="Lms.Explore.random">Aléatoire</message>
 <message id="Lms.Explore.recently-added">Ajoutés récemment</message>
 <message id="Lms.Explore.recently-played">Joués récemment</message>
@@ -191,7 +193,6 @@
 <message id="Lms.Settings.transcode-mode.always">Toujours</message>
 <message id="Lms.Settings.transcode-mode.if-format-not-supported">Seulement lorsque le format n'est pas pris en charge</message>
 <message id="Lms.Settings.transcode-mode.never">Jamais</message>
-<message id="Lms.Settings.settings">Paramètres</message>
 <message id="Lms.Settings.settings-saved">Paramètres sauvegardés !</message>
 
 <!--Wt-->

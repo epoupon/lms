@@ -37,7 +37,7 @@
 
 static
 void
-dumpRecommendation(Database::Session session, Recommendation::IEngine& engine)
+dumpTracksRecommendation(Database::Session session, Recommendation::IEngine& engine)
 {
 	const std::vector<Database::IdType> trackIds {[&]()
 		{
@@ -69,7 +69,12 @@ dumpRecommendation(Database::Session session, Recommendation::IEngine& engine)
 		for (Database::IdType similarTrackId : engine.getSimilarTracks(session, {trackId}, 3))
 			std::cout << "\t- Similar track '" << trackToString(similarTrackId) << std::endl;
 	}
+}
 
+static
+void
+dumpReleasesRecommendation(Database::Session session, Recommendation::IEngine& engine)
+{
 	const std::vector<Database::IdType> releaseIds = std::invoke([&]()
 			{
 			auto transaction {session.createSharedTransaction()};
@@ -91,7 +96,12 @@ dumpRecommendation(Database::Session session, Recommendation::IEngine& engine)
 		for (Database::IdType similarReleaseId : engine.getSimilarReleases(session, releaseId, 3))
 			std::cout << "\t- Similar release '" << releaseToString(similarReleaseId) << "'" << std::endl;
 	}
+}
 
+static
+void
+dumpArtistsRecommendation(Database::Session session, Recommendation::IEngine& engine)
+{
 	const std::vector<Database::IdType> artistIds = std::invoke([&]()
 			{
 			auto transaction {session.createSharedTransaction()};
@@ -113,10 +123,6 @@ dumpRecommendation(Database::Session session, Recommendation::IEngine& engine)
 		for (Database::IdType similarArtistId : engine.getSimilarArtists(session, artistId, 3))
 			std::cout << "\t- Similar artist '" << artistToString(similarArtistId) << "'" << std::endl;
 	}
-
-
-
-
 }
 
 
@@ -153,7 +159,9 @@ int main(int argc, char *argv[])
 		sem.wait();
 		std::cout << "Recommendation engine loaded!" << std::endl;
 
-		dumpRecommendation(db, *engine);
+		dumpTracksRecommendation(db, *engine);
+		dumpReleasesRecommendation(db, *engine);
+		dumpArtistsRecommendation(db, *engine);
 
 		engine->stop();
 	}

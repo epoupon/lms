@@ -37,6 +37,7 @@
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
+#include "TrackListHelpers.hpp"
 #include "TrackStringUtils.hpp"
 
 using namespace Database;
@@ -71,13 +72,13 @@ _filters {filters}
 	Wt::WText* playBtn = bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 	playBtn->clicked().connect([=]
 	{
-		tracksPlay.emit(getAllTracks());
+		tracksAction.emit(PlayQueueAction::Play, getAllTracks());
 	});
 
 	Wt::WText* addBtn = bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 	addBtn->clicked().connect([=]
 	{
-		tracksAdd.emit(getAllTracks());
+		tracksAction.emit(PlayQueueAction::AddLast, getAllTracks());
 	});
 
 	_tracksContainer = bindNew<Wt::WContainerWidget>("tracks");
@@ -145,7 +146,7 @@ Tracks::getTracks(std::optional<Range> range, bool& moreResults)
 	if (modeLimit)
 	{
 		if (range)
-			range->limit = std::min(*modeLimit - range->offset, range->offset + range->limit);
+			range->limit = std::min(*modeLimit - range->offset, range->limit);
 		else
 			range = Range {0, *modeLimit};
 	}
@@ -194,80 +195,6 @@ Tracks::getAllTracks()
 	return res;
 }
 
-std::unique_ptr<Wt::WTemplate>
-Tracks::createEntry(const Track::pointer& track)
-{
-	auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
-	auto* entryPtr {entry.get()};
-
-	entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
-
-	auto artists {track->getArtists()};
-	auto release {track->getRelease()};
-	const auto trackId {track.id()};
-
-	if (!artists.empty() || release)
-		entry->setCondition("if-has-artists-or-release", true);
-
-	if (!artists.empty())
-	{
-		entry->setCondition("if-has-artists", true);
-
-		Wt::WContainerWidget* artistContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
-		for (const auto& artist : artists)
-		{
-			Wt::WTemplate* a {artistContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry-artist"))};
-			a->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
-		}
-	}
-
-	if (track->getRelease())
-	{
-		entry->setCondition("if-has-release", true);
-		entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
-		{
-			Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
-			auto cover = std::make_unique<Wt::WImage>();
-			cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 96));
-			cover->setStyleClass("Lms-cover");
-			anchor->setImage(std::move(cover));
-		}
-	}
-	else
-	{
-		auto cover = entry->bindNew<Wt::WImage>("cover");
-		cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(trackId, 96));
-		cover->setStyleClass("Lms-cover");
-	}
-
-	entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
-
-	Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
-	playBtn->clicked().connect([=]
-	{
-		tracksPlay.emit({trackId});
-	});
-
-	Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
-	addBtn->clicked().connect([=]
-	{
-		tracksAdd.emit({trackId});
-	});
-
-	LmsApp->getMediaPlayer()->trackLoaded.connect(entryPtr, [=] (Database::IdType loadedTrackId)
-	{
-		entryPtr->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
-	});
-
-	if (auto trackIdLoaded {LmsApp->getMediaPlayer()->getTrackLoaded()})
-	{
-		if (*trackIdLoaded == trackId)
-			entry->bindString("is-playing", "Lms-entry-playing");
-	}
-
-	return entry;
-}
-
 void
 Tracks::addSome()
 {
@@ -276,7 +203,7 @@ Tracks::addSome()
 	bool moreResults;
 	for (const Track::pointer& track : getTracks(Range {static_cast<std::size_t>(_tracksContainer->count()), batchSize}, moreResults))
 	{
-		_tracksContainer->addWidget(createEntry(track));
+		_tracksContainer->addWidget(TrackListHelpers::createEntry(track));
 	}
 
 	_showMore->setHidden(!moreResults);

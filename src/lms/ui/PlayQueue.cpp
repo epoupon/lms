@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "PlayQueueView.hpp"
+#include "PlayQueue.hpp"
 
 #include <Wt/WText.h>
 #include <Wt/WText.h>
@@ -50,8 +50,15 @@ PlayQueue::PlayQueue()
 		_radioMode = LmsApp->getUser()->isRadioSet();
 	}
 
+	auto setToolTip = [](Wt::WWidget& widget, Wt::WString title)
+	{
+		widget.setAttributeValue("data-toggle", "tooltip");
+		widget.setAttributeValue("data-placement", "bottom");
+		widget.setAttributeValue("title", std::move(title));
+	};
+
 	Wt::WText* clearBtn = bindNew<Wt::WText>("clear-btn", Wt::WString::tr("Lms.PlayQueue.template.clear-btn"), Wt::TextFormat::XHTML);
-	clearBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.clear"));
+	setToolTip(*clearBtn, Wt::WString::tr("Lms.PlayQueue.clear"));
 	clearBtn->clicked().connect([=]
 	{
 		clearTracks();
@@ -68,7 +75,7 @@ PlayQueue::PlayQueue()
 	});
 
 	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.template.shuffle-btn"), Wt::TextFormat::XHTML);
-	shuffleBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.shuffle"));
+	setToolTip(*shuffleBtn, Wt::WString::tr("Lms.PlayQueue.shuffle"));
 	shuffleBtn->clicked().connect([=]
 	{
 		{
@@ -87,7 +94,7 @@ PlayQueue::PlayQueue()
 	});
 
 	_repeatBtn = bindNew<Wt::WText>("repeat-btn", Wt::WString::tr("Lms.PlayQueue.template.repeat-btn"), Wt::TextFormat::XHTML);
-	_repeatBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.repeat"));
+	setToolTip(*_repeatBtn, Wt::WString::tr("Lms.PlayQueue.repeat"));
 	_repeatBtn->clicked().connect([=]
 	{
 		_repeatAll = !_repeatAll;
@@ -101,7 +108,7 @@ PlayQueue::PlayQueue()
 	updateRepeatBtn();
 
 	_radioBtn = bindNew<Wt::WText>("radio-btn", Wt::WString::tr("Lms.PlayQueue.template.radio-btn"));
-	_radioBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.radio-mode"));
+	setToolTip(*_radioBtn, Wt::WString::tr("Lms.PlayQueue.radio-mode"));
 	_radioBtn->clicked().connect([=]
 	{
 		_radioMode = !_radioMode;
@@ -136,7 +143,7 @@ PlayQueue::PlayQueue()
 
 		if (!LmsApp->getUser()->isDemo())
 		{
-			LmsApp->getMediaPlayer()->settingsLoaded.connect([=]
+			LmsApp->getMediaPlayer().settingsLoaded.connect([=]
 			{
 				if (_mediaPlayerSettingsLoaded)
 					return;
@@ -327,20 +334,27 @@ PlayQueue::enqueueTrack(Database::IdType trackId)
 }
 
 void
-PlayQueue::addTracks(const std::vector<Database::IdType>& trackIds)
+PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::IdType>& trackIds)
 {
-	enqueueTracks(trackIds);
-	LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
-}
+	switch (action)
+	{
+		case PlayQueueAction::AddLast:
+			enqueueTracks(trackIds);
+			LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
+			break;
 
-void
-PlayQueue::playTracks(const std::vector<Database::IdType>& trackIds)
-{
-	clearTracks();
-	enqueueTracks(trackIds);
-	loadTrack(0, true);
+		case PlayQueueAction::AddNext:
+			break;
 
-	LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-playing", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
+		case PlayQueueAction::Play:
+			clearTracks();
+			enqueueTracks(trackIds);
+			loadTrack(0, true);
+
+			LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-playing", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
+			break;
+
+	}
 }
 
 void
@@ -384,16 +398,18 @@ PlayQueue::addSome()
 			{
 				Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 				auto cover = std::make_unique<Wt::WImage>();
-				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 96));
-				cover->setStyleClass("Lms-cover-small");
+				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Large));
+				cover->setStyleClass("Lms-cover");
+				cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 				anchor->setImage(std::move(cover));
 			}
 		}
 		else
 		{
 			auto cover = entry->bindNew<Wt::WImage>("cover");
-			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(track.id(), 96));
-			cover->setStyleClass("Lms-cover-small");
+			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(track.id(), ImageResource::Size::Large));
+			cover->setStyleClass("Lms-cover");
+			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		}
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
@@ -444,7 +460,7 @@ PlayQueue::enqueueRadioTrack()
 std::optional<float>
 PlayQueue::getReplayGain(std::size_t pos, const Database::Track::pointer& track) const
 {
-	const auto& settings {LmsApp->getMediaPlayer()->getSettings()};
+	const auto& settings {LmsApp->getMediaPlayer().getSettings()};
 	if (!settings)
 		return std::nullopt;
 

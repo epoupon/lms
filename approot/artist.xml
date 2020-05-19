@@ -3,41 +3,44 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Artist.template">
+	<div class="Lms-header">
+		<h2><div class="Lms-artistname text-primary">${name}</div></h2>
+		${clusters}
+		${play-btn}${add-btn}
+	</div>
 	<div class="row">
-		<div class="col-md-8">
-			<div class="Lms-header">
-				<h2><div class="Lms-artistname text-primary">${name}</div></h2>
-				${clusters}
-				${play-btn}${add-btn}
-			</div>
-			${releases class="Lms-explore-artist-entries-container"}
-		</div>
+		${releases class="Lms-explore-artist-entries-container"}
+	</div>
+	<div class="row">
 		<div class="col-md-4">
 			<div class="well well-sm">
 				<h3>${tr:Lms.Explore.Artist.similar-artists}</h3>
 				${similar-artists}
 			</div>
 		</div>
+		${<if-has-mbid>}
+		<div class="col-md-4">
+			<div class="well well-sm">
+				<h3>${tr:Lms.Explore.links}</h3>
+				${mbid-link class="text-muted"}
+			</div>
+		</div>
+		${</if-has-mbid>}
 	</div>
 </message>
 
 <message id="Lms.Explore.Artist.template.entry">
-	<div class="row Lms-explore-artist-entry Lms-entry-hoverable">
-		<div class="col-xs-12">
-			<div class="media">
-				<div class="media-left media-middle">
-					<div class="media-object Lms-cover-container-medium">
-						${cover}
-					</div>
+	<div class="Lms-explore-entry-list">
+		<div class="row Lms-vertical-align">
+			<div class="col-xs-4 col-sm-3 col-md-2">
+				<div class="Lms-responsive-square Lms-cover-container">
+					${cover}
 				</div>
-				<div class="media-body media-middle">
-					<h4 class="media-heading">
-						${name class="Lms-releasename text-primary"}
-					</h4>
-					${<if-has-artist>}<h4><small>${artist class="Lms-artistname text-muted"}</small></h4>${</if-has-artist>}
-					<h4><small><div class="text-muted">${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</div></small></h4>
-					${play-btn}${add-btn}
-				</div>
+			</div>
+			<div class="col-xs-8 col-sm-9 col-md-10 Lms-explore-list-entry-text-container">
+					<h5>${name class="Lms-releasename text-primary"}</h5>
+					${<if-has-artist>}<h6>${artist class="Lms-artistname text-muted"}</h6>${</if-has-artist>}
+					<h6><small><div class="text-muted">${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</div></small></h6>
 			</div>
 		</div>
 	</div>

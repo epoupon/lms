@@ -22,6 +22,7 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WApplication.h>
 #include <Wt/WImage.h>
+#include <Wt/WPopupMenu.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
@@ -75,7 +76,7 @@ Release::refreshView()
 	if (!releaseId)
 		return;
 
-	const std::vector<Database::IdType> similarReleasesIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 5)};
+	const std::vector<Database::IdType> similarReleasesIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 6)};
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -84,6 +85,7 @@ Release::refreshView()
 		throw ReleaseNotFoundException {*releaseId};
 
 	refreshCopyright(release);
+	refreshLinks(release);
 	refreshSimilarReleases(similarReleasesIds);
 
 	bindString("name", Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
@@ -122,8 +124,9 @@ Release::refreshView()
 	}
 
 	{
-		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 512)))};
+		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Large)))};
 		cover->setStyleClass("Lms-cover-large");
+		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 	}
 
 	Wt::WContainerWidget* clusterContainers {bindNew<Wt::WContainerWidget>("clusters")};
@@ -149,7 +152,7 @@ Release::refreshView()
 		Wt::WText* playBtn {bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([=]
 		{
-			releasesPlay.emit({*releaseId});
+			releasesAction.emit(PlayQueueAction::Play, {*releaseId});
 		});
 	}
 
@@ -157,7 +160,7 @@ Release::refreshView()
 		Wt::WText* addBtn {bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
 		addBtn->clicked().connect([=]
 		{
-			releasesAdd.emit({*releaseId});
+			releasesAction.emit(PlayQueueAction::AddLast, {*releaseId});
 		});
 	}
 
@@ -231,27 +234,29 @@ Release::refreshView()
 		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([=]()
 		{
-			tracksPlay.emit({trackId});
+			tracksAction.emit(PlayQueueAction::Play, {trackId});
 		});
 
 		Wt::WText* addBtn {entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
 		addBtn->clicked().connect([=]()
 		{
-			tracksAdd.emit({trackId});
+			tracksAction.emit(PlayQueueAction::AddLast, {trackId});
 		});
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
 
-		LmsApp->getMediaPlayer()->trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId)
+		LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId)
 		{
 			entry->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
 		});
 
-		if (auto trackIdLoaded {LmsApp->getMediaPlayer()->getTrackLoaded()})
+		if (auto trackIdLoaded {LmsApp->getMediaPlayer().getTrackLoaded()})
 		{
 			if (*trackIdLoaded == trackId)
 				entry->bindString("is-playing", "Lms-entry-playing");
 		}
+		else
+			entry->bindString("is-playing", "");
 	}
 }
 
@@ -261,24 +266,40 @@ Release::refreshCopyright(const Database::Release::pointer& release)
 	std::optional<std::string> copyright {release->getCopyright()};
 	std::optional<std::string> copyrightURL {release->getCopyrightURL()};
 
-	setCondition("if-has-copyright-or-copyright-url", copyright || copyrightURL);
+	if (!copyright && !copyrightURL)
+		return;
+
+	setCondition("if-has-copyright", true);
+
+	std::string copyrightText {copyright ? *copyright : ""};
+	if (copyrightText.empty() && copyrightURL)
+		copyrightText = *copyrightURL;
 
 	if (copyrightURL)
 	{
-		setCondition("if-has-copyright-url", true);
-
 		Wt::WLink link {*copyrightURL};
 		link.setTarget(Wt::LinkTarget::NewWindow);
 
-		Wt::WAnchor* anchor {bindNew<Wt::WAnchor>("copyright-url", link)};
-		anchor->setTextFormat(Wt::TextFormat::XHTML);
-		anchor->setText(Wt::WString::tr("Lms.Explore.Release.template.link-btn"));
+		Wt::WAnchor* anchor {bindNew<Wt::WAnchor>("copyright", link)};
+		anchor->setTextFormat(Wt::TextFormat::Plain);
+		anchor->setText(Wt::WString::fromUTF8(copyrightText));
 	}
-
-	if (copyright)
-	{
-		setCondition("if-has-copyright", true);
+	else
 		bindString("copyright", Wt::WString::fromUTF8(*copyright), Wt::TextFormat::Plain);
+}
+
+void
+Release::refreshLinks(const Database::Release::pointer& release)
+{
+	const auto mbid {release->getMBID()};
+	if (mbid)
+	{
+		setCondition("if-has-mbid", true);
+
+		Wt::WLink link {"https://musicbrainz.org/release/" + std::string {mbid->getAsString()}};
+		link.setTarget(Wt::LinkTarget::NewWindow);
+
+		bindNew<Wt::WAnchor>("mbid-link", link, Wt::WString::tr("Lms.Explore.musicbrainz-release"));
 	}
 }
 
@@ -293,7 +314,7 @@ Release::refreshSimilarReleases(const std::vector<Database::IdType>& similarRele
 		if (!similarRelease)
 			continue;
 
-		similarReleasesContainer->addWidget(ReleaseListHelpers::createEntrySmall(similarRelease));
+		similarReleasesContainer->addWidget(ReleaseListHelpers::createEntry(similarRelease));
 	}
 }
 

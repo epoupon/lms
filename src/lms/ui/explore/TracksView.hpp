@@ -27,6 +27,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
+#include "PlayQueueAction.hpp"
 
 namespace Database
 {
@@ -41,8 +42,7 @@ class Tracks : public Wt::WTemplate
 	public:
 		Tracks(Filters* filters);
 
-		Wt::Signal<const std::vector<Database::IdType>&> tracksAdd;
-		Wt::Signal<const std::vector<Database::IdType>&> tracksPlay;
+		Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> tracksAction;
 
 	private:
 
@@ -59,7 +59,6 @@ class Tracks : public Wt::WTemplate
 		void refreshView(Mode mode);
 		void addSome();
 
-		std::unique_ptr<Wt::WTemplate> createEntry(const Wt::Dbo::ptr<Database::Track>& track);
 		std::vector<Wt::Dbo::ptr<Database::Track>> getRandomTracks(std::optional<Database::Range> range, bool& moreResults);
 		std::vector<Wt::Dbo::ptr<Database::Track>> getTracks(std::optional<Database::Range> range, bool& moreResults);
 		std::vector<Database::IdType> getAllTracks();
@@ -72,7 +71,7 @@ class Tracks : public Wt::WTemplate
 			{Mode::RecentlyPlayed, batchSize * 10},
 			{Mode::RecentlyAdded, batchSize * 10},
 			{Mode::MostPlayed, batchSize * 10},
-			{Mode::All, std::nullopt},
+			{Mode::All, batchSize * 50},
 		};
 
 		Mode _mode {defaultMode};

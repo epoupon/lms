@@ -25,6 +25,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
+#include "PlayQueueAction.hpp"
 
 namespace Database
 {
@@ -41,15 +42,12 @@ class Artist : public Wt::WTemplate
 	public:
 		Artist(Filters* filters);
 
-		Wt::Signal<const std::vector<Database::IdType>&> artistsAdd;
-		Wt::Signal<const std::vector<Database::IdType>&> artistsPlay;
-
-		Wt::Signal<const std::vector<Database::IdType>&> releasesAdd;
-		Wt::Signal<const std::vector<Database::IdType>&> releasesPlay;
+		Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> artistsAction;
 
 	private:
 		void refreshView();
 		void refreshSimilarArtists(const std::vector<Database::IdType>& similarArtistsId);
+		void refreshLinks(const Wt::Dbo::ptr<Database::Artist>& artist);
 
 		std::unique_ptr<Wt::WTemplate> createRelease(const Wt::Dbo::ptr<Database::Artist>& artist, const Wt::Dbo::ptr<Database::Release>& release);
 

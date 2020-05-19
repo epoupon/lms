@@ -23,6 +23,7 @@
 #include <Wt/WImage.h>
 #include <Wt/WText.h>
 
+#include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "resource/ImageResource.hpp"
 
@@ -33,35 +34,75 @@ using namespace Database;
 namespace UserInterface::ReleaseListHelpers
 {
 
+	static
 	std::unique_ptr<Wt::WTemplate>
-	createEntrySmall(const Database::Release::pointer& release)
+	createEntryInternal(const Release::pointer& release, const std::string& templateKey, const Artist::pointer& artist, const bool showYear)
 	{
-		auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.entry-small"))};
+		auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr(templateKey))};
 
 		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
 
 		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 		auto cover = std::make_unique<Wt::WImage>();
-		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 64));
+		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Large));
 		cover->setStyleClass("Lms-cover");
+		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		anchor->setImage(std::move(cover));
 
 		auto artists = release->getReleaseArtists();
 		if (artists.empty())
 			artists = release->getArtists();
 
+		bool isSameArtist {(std::find(std::cbegin(artists), std::cend(artists), artist) != artists.end())};
+
 		if (artists.size() > 1)
 		{
 			entry->setCondition("if-has-artist", true);
 			entry->bindNew<Wt::WText>("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
 		}
-		else if (artists.size() == 1)
+		else if (artists.size() == 1 && !isSameArtist)
 		{
 			entry->setCondition("if-has-artist", true);
 			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
 		}
 
+		if (showYear)
+		{
+			if (std::optional<int> year {release->getReleaseYear()})
+			{
+				entry->setCondition("if-has-year", true);
+
+				std::string strYear {std::to_string(*year)};
+
+				std::optional<int> originalYear {release->getReleaseYear(true)};
+				if (originalYear && *originalYear != *year)
+				{
+					strYear += " (" + std::to_string(*originalYear) + ")";
+				}
+
+				entry->bindString("year", strYear);
+			}
+		}
+
 		return entry;
+	}
+
+	std::unique_ptr<Wt::WTemplate>
+	createEntry(const Release::pointer& release, const Artist::pointer& artist, bool showYear)
+	{
+		return createEntryInternal(release, "Lms.Explore.Releases.template.entry-grid", artist, showYear);
+	}
+
+	std::unique_ptr<Wt::WTemplate>
+	createEntry(const Release::pointer& release)
+	{
+		return createEntry(release, Artist::pointer {}, false /*year*/);
+	}
+
+	std::unique_ptr<Wt::WTemplate>
+	createEntryForArtist(const Wt::Dbo::ptr<Database::Release>& release, const Wt::Dbo::ptr<Database::Artist>& artist)
+	{
+		return createEntry(release, artist, true);
 	}
 
 } // namespace UserInterface

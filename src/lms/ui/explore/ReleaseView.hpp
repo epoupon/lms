@@ -23,6 +23,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
+#include "PlayQueueAction.hpp"
 
 namespace Database
 {
@@ -38,15 +39,16 @@ namespace UserInterface
 		public:
 			Release(Filters* filters);
 
-			Wt::Signal<const std::vector<Database::IdType>&> releasesAdd;
-			Wt::Signal<const std::vector<Database::IdType>&> releasesPlay;
+			Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> releasesAction;
+			Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> tracksAction;
 
-			Wt::Signal<const std::vector<Database::IdType>&> tracksAdd;
-			Wt::Signal<const std::vector<Database::IdType>&> tracksPlay;
+			Wt::Signal<Wt::WWidget&, Database::IdType> createReleaseActionMenu;
+			Wt::Signal<Wt::WWidget&, Database::IdType> createTrackActionMenu;
 
 		private:
 			void refreshView();
 			void refreshCopyright(const Wt::Dbo::ptr<Database::Release>& release);
+			void refreshLinks(const Wt::Dbo::ptr<Database::Release>& release);
 			void refreshSimilarReleases(const std::vector<Database::IdType>& similarReleasesId);
 
 			Filters* _filters {};
