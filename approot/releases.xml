@@ -30,21 +30,4 @@
 	</div>
 </message>
 
-<message id="Lms.Explore.Releases.template.entry-list">
-	<div class="Lms-explore-entry-list">
-		<div class="row Lms-vertical-align">
-			<div class="col-xs-4 col-sm-3 col-md-2">
-				<div class="Lms-responsive-square Lms-cover-container">
-					${cover}
-				</div>
-			</div>
-			<div class="col-xs-8 col-sm-9 col-md-10 Lms-explore-entry-list-text-container">
-				<h5>${release-name class="Lms-releasename text-primary"}</h5>
-				${<if-has-artist>}<h6>${artist-name class="Lms-artistname text-muted"}</h6>${</if-has-artist>}
-				<h6><small><div class="text-muted">${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</div></small></h6>
-			</div>
-		</div>
-	</div>
-</message>
-
 </messages>
