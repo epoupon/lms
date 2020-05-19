@@ -142,6 +142,10 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	margin-bottom: 25px;
 }
 
+.Lms-explore-entry-grid-text-container {
+	height: 36px;
+}
+
 .Lms-explore-entry-grid-text-container h5, h6 {
 	margin-top: 6px;
 	margin-bottom: 6px;

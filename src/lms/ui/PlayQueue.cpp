@@ -50,8 +50,15 @@ PlayQueue::PlayQueue()
 		_radioMode = LmsApp->getUser()->isRadioSet();
 	}
 
+	auto setToolTip = [](Wt::WWidget& widget, Wt::WString title)
+	{
+		widget.setAttributeValue("data-toggle", "tooltip");
+		widget.setAttributeValue("data-placement", "bottom");
+		widget.setAttributeValue("title", std::move(title));
+	};
+
 	Wt::WText* clearBtn = bindNew<Wt::WText>("clear-btn", Wt::WString::tr("Lms.PlayQueue.template.clear-btn"), Wt::TextFormat::XHTML);
-	clearBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.clear"));
+	setToolTip(*clearBtn, Wt::WString::tr("Lms.PlayQueue.clear"));
 	clearBtn->clicked().connect([=]
 	{
 		clearTracks();
@@ -68,7 +75,7 @@ PlayQueue::PlayQueue()
 	});
 
 	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.template.shuffle-btn"), Wt::TextFormat::XHTML);
-	shuffleBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.shuffle"));
+	setToolTip(*shuffleBtn, Wt::WString::tr("Lms.PlayQueue.shuffle"));
 	shuffleBtn->clicked().connect([=]
 	{
 		{
@@ -87,7 +94,7 @@ PlayQueue::PlayQueue()
 	});
 
 	_repeatBtn = bindNew<Wt::WText>("repeat-btn", Wt::WString::tr("Lms.PlayQueue.template.repeat-btn"), Wt::TextFormat::XHTML);
-	_repeatBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.repeat"));
+	setToolTip(*_repeatBtn, Wt::WString::tr("Lms.PlayQueue.repeat"));
 	_repeatBtn->clicked().connect([=]
 	{
 		_repeatAll = !_repeatAll;
@@ -101,7 +108,7 @@ PlayQueue::PlayQueue()
 	updateRepeatBtn();
 
 	_radioBtn = bindNew<Wt::WText>("radio-btn", Wt::WString::tr("Lms.PlayQueue.template.radio-btn"));
-	_radioBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.radio-mode"));
+	setToolTip(*_radioBtn, Wt::WString::tr("Lms.PlayQueue.radio-mode"));
 	_radioBtn->clicked().connect([=]
 	{
 		_radioMode = !_radioMode;

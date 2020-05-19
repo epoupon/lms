@@ -427,6 +427,7 @@ LmsApplication::createHome()
 	_audioFileResource = std::make_shared<AudioFileResource>();
 
 	declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
+	doJavaScript("$('body').tooltip({ selector: '[data-toggle=\"tooltip\"]'})");
 
 	Wt::WTemplate* main {root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.template")))};
 

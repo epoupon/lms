@@ -83,6 +83,7 @@ namespace UserInterface::TrackListHelpers
 			auto cover = entry->bindNew<Wt::WImage>("cover");
 			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(trackId, ImageResource::Size::Large));
 			cover->setStyleClass("Lms-cover");
+			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		}
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
@@ -106,8 +107,7 @@ namespace UserInterface::TrackListHelpers
 
 		if (auto trackIdLoaded {LmsApp->getMediaPlayer().getTrackLoaded()})
 		{
-			if (*trackIdLoaded == trackId)
-				entry->bindString("is-playing", "Lms-entry-playing");
+			entry->bindString("is-playing", *trackIdLoaded == trackId ? "Lms-entry-playing" : "");
 		}
 		else
 			entry->bindString("is-playing", "");

@@ -395,7 +395,7 @@ Artist::getTracks(std::optional<TrackArtistLink::Type> linkType) const
 
 	auto query {session()->query<Wt::Dbo::ptr<Track>>("SELECT DISTINCT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id")
 		.where("a.id = ?").bind(self()->id())
-		.orderBy("t.year,t.release_id,t.disc_number,t.track_number")};
+		.orderBy("t.year DESC,t.release_id,t.disc_number,t.track_number")};
 
 	if (linkType)
 		query.where("t_a_l.type = ?").bind(*linkType);
