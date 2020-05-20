@@ -146,11 +146,9 @@ LMS.mediaplayer = function () {
 		_gainNode.connect(_audioCtx.destination);
 
 		_elems.playpause.addEventListener("click", function() {
-			if (_elems.audio.paused) {
-				if (_elems.audio.firstChild) {
-					_audioCtx.resume();
-					_playTrack();
-				}
+			_audioCtx.resume();
+			if (_elems.audio.paused && _elems.audio.children.length > 0) {
+				_playTrack();
 			}
 			else
 				_elems.audio.pause();
@@ -285,7 +283,7 @@ LMS.mediaplayer = function () {
 		_elems.curtime.innerHTML = _durationToString(_offset);
 		_elems.duration.innerHTML = _durationToString(_duration);
 
-		if (autoplay)
+		if (autoplay && _audioCtx.state == "running")
 			_playTrack();
 
 		if ('mediaSession' in navigator) {
