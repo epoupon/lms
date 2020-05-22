@@ -107,6 +107,12 @@ TrackList::getById(Session& session, IdType id)
 	return session.getDboSession().find<TrackList>().where("id = ?").bind(id);
 }
 
+bool
+TrackList::isEmpty() const
+{
+	return _entries.empty();
+}
+
 std::size_t
 TrackList::getCount() const
 {

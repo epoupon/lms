@@ -54,10 +54,24 @@ Transcoder::Transcoder(const std::filesystem::path& filePath, const TranscodePar
 bool
 Transcoder::start()
 {
-	if (!std::filesystem::exists(_filePath))
+	try
+	{
+		if (!std::filesystem::exists(_filePath))
+		{
+			LOG(ERROR) << "File '" << _filePath << "' does not exist!";
+			return false;
+		}
+		else if (!std::filesystem::is_regular_file( _filePath) )
+		{
+			LOG(ERROR) << "File '" << _filePath << "' is not regular!";
+			return false;
+		}
+	}
+	catch (const std::filesystem::filesystem_error& e)
+	{
+		LOG(ERROR) << "File error on '" << _filePath.string() << "': " << e.what();
 		return false;
-	else if (!std::filesystem::is_regular_file( _filePath) )
-		return false;
+	}
 
 	LOG(INFO) << "Transcoding file '" << _filePath.string() << "'";
 

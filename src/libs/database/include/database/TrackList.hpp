@@ -79,6 +79,7 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		void		clear() { _entries.clear(); }
 
 		// Get tracks, ordered by position
+		bool isEmpty() const;
 		std::size_t getCount() const;
 		Wt::Dbo::ptr<TrackListEntry> getEntry(std::size_t pos) const;
 		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntries(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
