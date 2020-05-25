@@ -24,6 +24,7 @@ target_link_libraries(lmssubsonic PRIVATE
 	lmslocalplayer
 	lmsrecommendation
 	lmsutils
+	std::filesystem
 	)
 
 target_link_libraries(lmssubsonic PUBLIC

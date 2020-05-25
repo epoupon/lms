@@ -30,7 +30,6 @@ namespace CoverArt
 {
 
 	void init(const std::filesystem::path& path);
-	void deinit();
 
 	class Image
 	{

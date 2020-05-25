@@ -94,7 +94,7 @@ getAlbumArtists(const MetadataMap& metadataMap)
 
 	auto mbid {findFirstValueOfAs<UUID>(metadataMap, {"MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"})};
 
-	return {Artist {*name, mbid} };
+	return {Artist {*name, std::nullopt, mbid} };
 }
 
 static
@@ -118,9 +118,9 @@ getArtists(const MetadataMap& metadataMap)
 	for (std::size_t i {}; i < artistNames.size(); ++i)
 	{
 		if (artistMBIDs && artistNames.size() == artistMBIDs->size())
-			artists.emplace_back(Artist {artistNames[i], (*artistMBIDs)[i]});
+			artists.emplace_back(Artist {artistNames[i], std::nullopt, (*artistMBIDs)[i]});
 		else
-			artists.emplace_back(Artist {artistNames[i], {}});
+			artists.emplace_back(Artist {artistNames[i], std::nullopt, {}});
 	}
 
 	return artists;
@@ -210,6 +210,12 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 					|| tag == "MUSICBRAINZ/TRACK ID")
 			{
 				track.musicBrainzTrackID = UUID::fromString(value);
+			}
+			else if (tag == "TSST"
+					|| tag == "DISCSUBTITLE"
+					|| tag == "SETSUBTITLE")
+			{
+				track.discSubtitle = value;
 			}
 			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 			{

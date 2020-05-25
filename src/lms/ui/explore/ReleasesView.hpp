@@ -22,11 +22,16 @@
 #include <optional>
 
 #include <Wt/WContainerWidget.h>
-#include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
+#include "PlayQueueAction.hpp"
+
+namespace Database
+{
+	class Release;
+}
 
 namespace UserInterface {
 
@@ -37,20 +42,42 @@ class Releases : public Wt::WTemplate
 	public:
 		Releases(Filters* filters);
 
-		Wt::Signal<const std::vector<Database::IdType>&> releasesAdd;
-		Wt::Signal<const std::vector<Database::IdType>&> releasesPlay;
+		Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> releasesAction;
 
 	private:
-		void refresh();
+
+		enum class Mode
+		{
+			Random,
+			RecentlyPlayed,
+			RecentlyAdded,
+			MostPlayed,
+			All
+		};
+
+		void refreshView();
+		void refreshView(Mode mode);
 		void addSome();
+		std::vector<Wt::Dbo::ptr<Database::Release>> getReleases(std::optional<Database::Range> range, bool& moreResults);
+		std::vector<Wt::Dbo::ptr<Database::Release>> getRandomReleases(std::optional<Database::Range> range, bool& moreResults);
+		std::vector<Database::IdType> getAllReleases();
 
-		std::vector<Database::IdType> getReleases(std::optional<std::size_t> offset, std::optional<std::size_t> limit, bool& moreResults) const;
-		std::vector<Database::IdType> getReleases() const;
+		static constexpr Mode defaultMode {Mode::Random};
+		static constexpr std::size_t batchSize {18};
+		static inline std::unordered_map<Mode, std::optional<std::size_t>> maxItemsPerMode
+		{
+			{Mode::Random, batchSize * 6},
+			{Mode::RecentlyPlayed, batchSize * 3},
+			{Mode::RecentlyAdded, batchSize * 2},
+			{Mode::MostPlayed, batchSize * 2},
+			{Mode::All, batchSize * 30},
+		};
 
-		Filters* _filters;
-		Wt::WPushButton* _showMore;
-		Wt::WLineEdit* _search;
-		Wt::WContainerWidget* _container;
+		Mode _mode {defaultMode};
+		Filters* _filters {};
+		std::vector<Database::IdType> _randomReleases;
+		Wt::WContainerWidget* _container {};
+		Wt::WPushButton* _showMore {};
 };
 
 } // namespace UserInterface

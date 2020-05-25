@@ -31,17 +31,18 @@ class AvException : public LmsException
 		AvException(const std::string& msg) : LmsException(msg) {}
 };
 
-enum class Encoding
+enum class Format
 {
-	MATROSKA_OPUS,
-	MP3,
-	PCM_SIGNED_16_LE,
-	OGG_OPUS,
-	OGG_VORBIS,
-	WEBM_VORBIS,
+	// Values are important and must not be changed
+	MP3		= 0,
+	OGG_OPUS	= 1,
+	MATROSKA_OPUS	= 2,
+	OGG_VORBIS	= 3,
+	WEBM_VORBIS	= 4,
+	PCM_SIGNED_16_LE = 5,
 };
 
-const char* encodingToMimetype(Encoding encoding);
+const char* formatToMimetype(Format encoding);
 
 }
 

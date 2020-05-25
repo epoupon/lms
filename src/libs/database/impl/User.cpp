@@ -70,28 +70,11 @@ AuthToken::getByValue(Session& session, const std::string& value)
 static const std::string playedListName {"__played_tracks__"};
 static const std::string queuedListName {"__queued_tracks__"};
 
-const std::set<Bitrate>
-User::audioTranscodeAllowedBitrates =
-{
-	64000,
-	96000,
-	128000,
-	192000,
-	320000,
-};
-
-User::User()
-: _maxAudioTranscodeBitrate {static_cast<int>(*audioTranscodeAllowedBitrates.rbegin())}
-{
-
-}
-
 User::User(const std::string& loginName, const PasswordHash& passwordHash)
-: User()
+: _loginName {loginName}
+, _passwordSalt {passwordHash.salt}
+, _passwordHash {passwordHash.hash}
 {
-	_loginName = loginName;
-	_passwordHash = passwordHash.hash;
-	_passwordSalt  = passwordHash.salt;
 }
 
 std::vector<User::pointer>
@@ -141,45 +124,16 @@ User::getByLoginName(Session& session, const std::string& name)
 }
 
 void
-User::setAudioTranscodeBitrate(Bitrate bitrate)
+User::setSubsonicTranscodeBitrate(Bitrate bitrate)
 {
-	_audioTranscodeBitrate = std::min(bitrate, static_cast<Bitrate>(_maxAudioTranscodeBitrate));
-}
-
-void
-User::setMaxAudioTranscodeBitrate(Bitrate requestedBitrate)
-{
-	Bitrate bitrate {*audioTranscodeAllowedBitrates.begin()};
-
-	for (auto allowedBitrate : audioTranscodeAllowedBitrates)
-	{
-		if (requestedBitrate < allowedBitrate)
-			break;
-
-		bitrate = allowedBitrate;
-	}
-
-	_maxAudioTranscodeBitrate = bitrate;
-	if (_audioTranscodeBitrate > _maxAudioTranscodeBitrate)
-		_audioTranscodeBitrate = _maxAudioTranscodeBitrate;
+	assert(audioTranscodeAllowedBitrates.find(bitrate) != audioTranscodeAllowedBitrates.cend());
+	_subsonicTranscodeBitrate = bitrate;
 }
 
 void
 User::clearAuthTokens()
 {
 	_authTokens.clear();
-}
-
-Bitrate
-User::getAudioTranscodeBitrate(void) const
-{
-	return _audioTranscodeBitrate;
-}
-
-std::size_t
-User::getMaxAudioTranscodeBitrate(void) const
-{
-	return _maxAudioTranscodeBitrate;
 }
 
 Wt::Dbo::ptr<TrackList>
@@ -281,16 +235,6 @@ std::vector<Wt::Dbo::ptr<Track>>
 User::getStarredTracks() const
 {
 	return std::vector<Wt::Dbo::ptr<Track>>(_starredTracks.begin(), _starredTracks.end());
-}
-
-
-bool
-User::checkBitrate(Database::Bitrate bitrate) const
-{
-	if (audioTranscodeAllowedBitrates.find(bitrate) == std::cend(audioTranscodeAllowedBitrates))
-		return false;
-
-	return static_cast<Bitrate>(_maxAudioTranscodeBitrate) >= bitrate;
 }
 
 } // namespace Database

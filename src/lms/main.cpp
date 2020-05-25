@@ -46,12 +46,15 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 	const std::filesystem::path wtConfigPath {Service<IConfig>::get()->getPath("working-dir") / "wt_config.xml"};
 	const std::filesystem::path wtLogFilePath {Service<IConfig>::get()->getPath("log-file", "/var/log/lms.log")};
 	const std::filesystem::path wtAccessLogFilePath {Service<IConfig>::get()->getPath("access-log-file", "/var/log/lms.access.log")};
+	const std::filesystem::path wtResourcesPath {Service<IConfig>::get()->getPath("wt-resources", "/usr/share/Wt/resources")};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
 	args.push_back("--docroot=" + Service<IConfig>::get()->getString("docroot"));
 	args.push_back("--approot=" + Service<IConfig>::get()->getString("approot"));
-	args.push_back("--resources-dir=" + Service<IConfig>::get()->getString("wt-resources"));
+	args.push_back("--deploy-path=" + Service<IConfig>::get()->getString("deploy-path", "/"));
+	if (!wtResourcesPath.empty())
+		args.push_back("--resources-dir=" + wtResourcesPath.string());
 
 	if (Service<IConfig>::get()->getBool("tls-enable", false))
 	{
@@ -77,7 +80,19 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 	pt.put("server.application-settings.log-file", wtLogFilePath.string());
 	pt.put("server.application-settings.log-config", Service<IConfig>::get()->getString("log-config", "* -debug -info:WebRequest"));
 	pt.put("server.application-settings.behind-reverse-proxy", Service<IConfig>::get()->getBool("behind-reverse-proxy", false));
-	pt.put("server.application-settings.progressive-bootstrap", true);
+
+	{
+		boost::property_tree::ptree viewport;
+		viewport.put("<xmlattr>.name", "viewport");
+		viewport.put("<xmlattr>.content", "width=device-width, initial-scale=1, user-scalable=no");
+		pt.add_child("server.application-settings.head-matter.meta", viewport);
+	}
+	{
+		boost::property_tree::ptree themeColor;
+		themeColor.put("<xmlattr>.name", "theme-color");
+		themeColor.put("<xmlattr>.content", "#303030");
+		pt.add_child("server.application-settings.head-matter.meta", themeColor);
+	}
 
 	std::ofstream oss(wtConfigPath.string().c_str(), std::ios::out);
 	boost::property_tree::xml_parser::write_xml(oss, pt);
@@ -134,6 +149,7 @@ int main(int argc, char* argv[])
 		{
 			Database::Session session {database};
 			session.prepareTables();
+			session.optimize();
 		}
 
 		UserInterface::LmsApplicationGroupContainer appGroups;
@@ -160,6 +176,9 @@ int main(int argc, char* argv[])
 			{
 				LMS_LOG(MAIN, INFO) << "Scanner did not change files, not reloading the recommendation engine...";
 			}
+			// Flush cover cache even if no changes:
+			// covers may be external files that changed and we don't keep track of them
+			coverArtGrabber->flushCache();
 		});
 
 		// Local player

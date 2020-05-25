@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,23 +19,19 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget.h>
+#include <memory>
+
 #include <Wt/WTemplate.h>
 
-namespace UserInterface {
-
-class ReleasesInfo : public Wt::WTemplate
+namespace Database
 {
-	public:
-		ReleasesInfo();
+	class Artist;
+	class Release;
+}
 
-	private:
-		void refreshRecentlyAdded();
-		void refreshMostPlayed();
-
-		Wt::WContainerWidget* _mostPlayedContainer;
-		Wt::WContainerWidget* _recentlyAddedContainer;
-};
-
+namespace UserInterface::ReleaseListHelpers
+{
+	std::unique_ptr<Wt::WTemplate> createEntry(const Wt::Dbo::ptr<Database::Release>& release);
+	std::unique_ptr<Wt::WTemplate> createEntryForArtist(const Wt::Dbo::ptr<Database::Release>& release, const Wt::Dbo::ptr<Database::Artist>& artist);
 } // namespace UserInterface
 

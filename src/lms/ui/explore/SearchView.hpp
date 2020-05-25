@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,20 +19,30 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget.h>
+#include <string>
+#include <vector>
+
 #include <Wt/WTemplate.h>
 
 namespace UserInterface {
 
-class ReleaseInfo : public Wt::WTemplate
+class Filters;
+
+class SearchView : public Wt::WTemplate
 {
 	public:
-		ReleaseInfo();
+		SearchView(Filters* filters);
+
+		void refreshView(const std::string& searchText);
 
 	private:
-		void refresh();
+		void refreshView();
+		void searchArtists();
+		void searchReleases();
+		void searchTracks();
 
-		Wt::WContainerWidget* _similarReleasesContainer;
+		Filters* _filters {};
+		std::vector<std::string> _keywords;
 };
 
 } // namespace UserInterface

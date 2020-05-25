@@ -2,32 +2,14 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.template">
-	<div class="row">
-		<div class="col-lg-8">
-			${contents class="Lms-explore-contents"}
-		</div>
-		<div class="col-lg-4">
-			${filters class="Lms-explore-filters"}
-			${info class="Lms-explore-info"}
-		</div>
-	</div>
+	${contents class="Lms-explore-contents"}
 </message>
 
-<message id="Lms.Explore.template.add-btn">
-	<i class="fa fa-plus-circle Lms-explore-btn"></i>
-</message>
-
-<message id="Lms.Explore.template.play-btn">
-	<i class="fa fa-play-circle Lms-explore-btn"></i>
-</message>
+<message id="Lms.Explore.template.add-btn"><i class="fa fa-plus-circle Lms-explore-btn Lms-control-btn"></i></message>
+<message id="Lms.Explore.template.play-btn"><i class="fa fa-play-circle Lms-explore-btn Lms-control-btn"></i></message>
 
 <message id="Lms.Explore.template.filters">
-	<h3>${tr:Lms.Explore.filters} ${add-filter class="btn-primary"}</h3>
-	${clusters}
-</message>
-
-<message id="Lms.Explore.template.cluster-entry">
-	<span class="badge {1}">${<if-can-delete>}<i class="fa fa-times-circle"></i> ${</if-can-delete>}${name}</span>
+	${add-filter class="btn-sm btn-info"} ${clusters class="Lms-explore-clusters"}
 </message>
 
 <message id="Lms.Explore.template.add-filter">

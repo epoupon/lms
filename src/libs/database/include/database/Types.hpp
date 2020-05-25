@@ -21,12 +21,19 @@
 
 #include <Wt/Dbo/ptr.h>
 
-namespace Database {
+namespace Database
+{
 	using IdType = Wt::Dbo::dbo_default_traits::IdType;
 
 	static inline bool IdIsValid(IdType id)
 	{
 		return id != Wt::Dbo::dbo_default_traits::invalidId();
 	}
+
+	struct Range
+	{
+		std::size_t offset {};
+		std::size_t limit {};
+	};
 }
 

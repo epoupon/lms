@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "PlayQueueView.hpp"
+#include "PlayQueue.hpp"
 
 #include <Wt/WText.h>
 #include <Wt/WText.h>
@@ -32,8 +32,10 @@
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
-#include "TrackStringUtils.hpp"
+#include "resource/ImageResource.hpp"
 #include "LmsApplication.hpp"
+#include "MediaPlayer.hpp"
+#include "TrackStringUtils.hpp"
 
 namespace UserInterface {
 
@@ -48,8 +50,15 @@ PlayQueue::PlayQueue()
 		_radioMode = LmsApp->getUser()->isRadioSet();
 	}
 
+	auto setToolTip = [](Wt::WWidget& widget, Wt::WString title)
+	{
+		widget.setAttributeValue("data-toggle", "tooltip");
+		widget.setAttributeValue("data-placement", "bottom");
+		widget.setAttributeValue("title", std::move(title));
+	};
+
 	Wt::WText* clearBtn = bindNew<Wt::WText>("clear-btn", Wt::WString::tr("Lms.PlayQueue.template.clear-btn"), Wt::TextFormat::XHTML);
-	clearBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.clear"));
+	setToolTip(*clearBtn, Wt::WString::tr("Lms.PlayQueue.clear"));
 	clearBtn->clicked().connect([=]
 	{
 		clearTracks();
@@ -66,7 +75,7 @@ PlayQueue::PlayQueue()
 	});
 
 	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.template.shuffle-btn"), Wt::TextFormat::XHTML);
-	shuffleBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.shuffle"));
+	setToolTip(*shuffleBtn, Wt::WString::tr("Lms.PlayQueue.shuffle"));
 	shuffleBtn->clicked().connect([=]
 	{
 		{
@@ -85,7 +94,7 @@ PlayQueue::PlayQueue()
 	});
 
 	_repeatBtn = bindNew<Wt::WText>("repeat-btn", Wt::WString::tr("Lms.PlayQueue.template.repeat-btn"), Wt::TextFormat::XHTML);
-	_repeatBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.repeat"));
+	setToolTip(*_repeatBtn, Wt::WString::tr("Lms.PlayQueue.repeat"));
 	_repeatBtn->clicked().connect([=]
 	{
 		_repeatAll = !_repeatAll;
@@ -99,7 +108,7 @@ PlayQueue::PlayQueue()
 	updateRepeatBtn();
 
 	_radioBtn = bindNew<Wt::WText>("radio-btn", Wt::WString::tr("Lms.PlayQueue.template.radio-btn"));
-	_radioBtn->setToolTip(Wt::WString::tr("Lms.PlayQueue.radio-mode"));
+	setToolTip(*_radioBtn, Wt::WString::tr("Lms.PlayQueue.radio-mode"));
 	_radioBtn->clicked().connect([=]
 	{
 		_radioMode = !_radioMode;
@@ -134,8 +143,13 @@ PlayQueue::PlayQueue()
 
 		if (!LmsApp->getUser()->isDemo())
 		{
-			LmsApp->post([=]
+			LmsApp->getMediaPlayer().settingsLoaded.connect([=]
 			{
+				if (_mediaPlayerSettingsLoaded)
+					return;
+
+				_mediaPlayerSettingsLoaded = true;
+
 				std::size_t trackPos {};
 
 				{
@@ -163,17 +177,19 @@ PlayQueue::PlayQueue()
 void
 PlayQueue::updateRepeatBtn()
 {
-	_repeatBtn->toggleStyleClass("Lms-playqueue-btn-selected", _repeatAll);
+	_repeatBtn->toggleStyleClass("text-success", _repeatAll);
+	_repeatBtn->toggleStyleClass("text-muted", !_repeatAll);
 }
 
 void
 PlayQueue::updateRadioBtn()
 {
-	_radioBtn->toggleStyleClass("Lms-playqueue-btn-selected",_radioMode);
+	_radioBtn->toggleStyleClass("text-success",_radioMode);
+	_radioBtn->toggleStyleClass("text-muted", !_radioMode);
 }
 
 Database::TrackList::pointer
-PlayQueue::getTrackList()
+PlayQueue::getTrackList() const
 {
 	return Database::TrackList::getById(LmsApp->getDbSession(), _tracklistId);
 }
@@ -206,6 +222,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 
 	Database::IdType trackId {};
 	bool addRadioTrack {};
+	std::optional<float> replayGain {};
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -214,7 +231,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 		// If out of range, stop playing
 		if (pos >= tracklist->getCount())
 		{
-			if (!_repeatAll)
+			if (!_repeatAll || tracklist->getCount() == 0)
 			{
 				stop();
 				return;
@@ -232,6 +249,8 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 
 		trackId = track.id();
 
+		replayGain = getReplayGain(pos, track);
+
 		if (!LmsApp->getUser()->isDemo())
 			LmsApp->getUser().modify()->setCurPlayingTrackPos(pos);
 	}
@@ -241,7 +260,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 
 	updateCurrentTrack(true);
 
-	trackSelected.emit(trackId, play);
+	trackSelected.emit(trackId, play, replayGain ? *replayGain : 0);
 }
 
 void
@@ -282,14 +301,9 @@ PlayQueue::updateCurrentTrack(bool selected)
 	if (!_trackPos || *_trackPos >= static_cast<std::size_t>(_entriesContainer->count()))
 		return;
 
-	auto track = _entriesContainer->widget(*_trackPos);
-	if (track)
-	{
-		if (selected)
-			track->addStyleClass("Lms-playqueue-selected");
-		else
-			track->removeStyleClass("Lms-playqueue-selected");
-	}
+	Wt::WTemplate* entry {static_cast<Wt::WTemplate*>(_entriesContainer->widget(*_trackPos))};
+	if (entry)
+		entry->bindString("is-selected", selected ? "Lms-playqueue-selected" : "");
 }
 
 void
@@ -320,20 +334,27 @@ PlayQueue::enqueueTrack(Database::IdType trackId)
 }
 
 void
-PlayQueue::addTracks(const std::vector<Database::IdType>& trackIds)
+PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::IdType>& trackIds)
 {
-	enqueueTracks(trackIds);
-	LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
-}
+	switch (action)
+	{
+		case PlayQueueAction::AddLast:
+			enqueueTracks(trackIds);
+			LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
+			break;
 
-void
-PlayQueue::playTracks(const std::vector<Database::IdType>& trackIds)
-{
-	clearTracks();
-	enqueueTracks(trackIds);
-	loadTrack(0, true);
+		case PlayQueueAction::AddNext:
+			break;
 
-	LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-playing", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
+		case PlayQueueAction::Play:
+			clearTracks();
+			enqueueTracks(trackIds);
+			loadTrack(0, true);
+
+			LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-playing", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
+			break;
+
+	}
 }
 
 void
@@ -346,15 +367,15 @@ PlayQueue::addSome()
 	auto tracklistEntries = tracklist->getEntries(_entriesContainer->count(), 50);
 	for (const Database::TrackListEntry::pointer& tracklistEntry : tracklistEntries)
 	{
-		auto tracklistEntryId = tracklistEntry.id();
-		auto track = tracklistEntry->getTrack();
+		const auto tracklistEntryId {tracklistEntry.id()};
+		const auto track {tracklistEntry->getTrack()};
 
 		Wt::WTemplate* entry = _entriesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry"));
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-		auto artists {track->getArtists()};
-		auto release = track->getRelease();
+		const auto artists {track->getArtists()};
+		const auto release {track->getRelease()};
 
 		if (!artists.empty() || release)
 			entry->setCondition("if-has-artists-or-release", true);
@@ -373,7 +394,22 @@ PlayQueue::addSome()
 		if (release)
 		{
 			entry->setCondition("if-has-release", true);
-			entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
+			entry->bindWidget("release", LmsApplication::createReleaseAnchor(release));
+			{
+				Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
+				auto cover = std::make_unique<Wt::WImage>();
+				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Large));
+				cover->setStyleClass("Lms-cover");
+				cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
+				anchor->setImage(std::move(cover));
+			}
+		}
+		else
+		{
+			auto cover = entry->bindNew<Wt::WImage>("cover");
+			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(track.id(), ImageResource::Size::Large));
+			cover->setStyleClass("Lms-cover");
+			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		}
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
@@ -419,6 +455,60 @@ PlayQueue::enqueueRadioTrack()
 {
 	const std::vector<Database::IdType> trackToAddIds {Service<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 1)};
 	enqueueTracks(trackToAddIds);
+}
+
+std::optional<float>
+PlayQueue::getReplayGain(std::size_t pos, const Database::Track::pointer& track) const
+{
+	const auto& settings {LmsApp->getMediaPlayer().getSettings()};
+	if (!settings)
+		return std::nullopt;
+
+	std::optional<MediaPlayer::Gain> gain;
+
+	switch (settings->replayGain.mode)
+	{
+		case MediaPlayer::Settings::ReplayGain::Mode::None:
+			return std::nullopt;
+
+		case MediaPlayer::Settings::ReplayGain::Mode::Track:
+			gain = track->getTrackReplayGain();
+			break;
+
+		case MediaPlayer::Settings::ReplayGain::Mode::Release:
+			gain = track->getReleaseReplayGain();
+			if (!gain)
+				gain = track->getTrackReplayGain();
+			break;
+
+		case MediaPlayer::Settings::ReplayGain::Mode::Auto:
+		{
+			const auto trackList {getTrackList()};
+			const auto prevEntry {pos > 0 ? trackList->getEntry(pos - 1) : Database::TrackListEntry::pointer {}};
+			const auto nextEntry {trackList->getEntry(pos + 1)};
+			const Database::Track::pointer prevTrack {prevEntry ? prevEntry->getTrack() : Database::Track::pointer {}};
+			const Database::Track::pointer nextTrack {nextEntry ? nextEntry->getTrack() : Database::Track::pointer {}};
+
+			if ((prevTrack && prevTrack->getRelease() && prevTrack->getRelease() == track->getRelease())
+				||
+				(nextTrack && nextTrack->getRelease() && nextTrack->getRelease() == track->getRelease()))
+			{
+				gain = track->getReleaseReplayGain();
+				if (!gain)
+					gain = track->getTrackReplayGain();
+			}
+			else
+			{
+				gain = track->getTrackReplayGain();
+			}
+			break;
+		}
+	}
+
+	if (gain)
+		return *gain + settings->replayGain.preAmpGain;
+
+	return settings->replayGain.preAmpGainIfNoInfo;
 }
 
 } // namespace UserInterface

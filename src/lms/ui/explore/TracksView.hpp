@@ -27,6 +27,12 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
+#include "PlayQueueAction.hpp"
+
+namespace Database
+{
+	class Track;
+}
 
 namespace UserInterface {
 
@@ -36,20 +42,44 @@ class Tracks : public Wt::WTemplate
 	public:
 		Tracks(Filters* filters);
 
-		Wt::Signal<const std::vector<Database::IdType>&> tracksAdd;
-		Wt::Signal<const std::vector<Database::IdType>&> tracksPlay;
+		Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> tracksAction;
 
 	private:
-		void refresh();
+
+		enum class Mode
+		{
+			Random,
+			RecentlyPlayed,
+			RecentlyAdded,
+			MostPlayed,
+			All
+		};
+
+		void refreshView();
+		void refreshView(Mode mode);
 		void addSome();
 
-		std::vector<Database::IdType> getTracks(std::optional<std::size_t> offset, std::optional<std::size_t> size, bool& moreResults);
-		std::vector<Database::IdType> getTracks();
+		std::vector<Wt::Dbo::ptr<Database::Track>> getRandomTracks(std::optional<Database::Range> range, bool& moreResults);
+		std::vector<Wt::Dbo::ptr<Database::Track>> getTracks(std::optional<Database::Range> range, bool& moreResults);
+		std::vector<Database::IdType> getAllTracks();
 
-		Wt::WContainerWidget* _tracksContainer;
-		Wt::WPushButton* _showMore;
-		Wt::WLineEdit* _search;
-		Filters* _filters;
+		static constexpr Mode defaultMode {Mode::Random};
+		static constexpr std::size_t batchSize {20};
+		static inline std::unordered_map<Mode, std::optional<std::size_t>> maxItemsPerMode
+		{
+			{Mode::Random, batchSize * 20},
+			{Mode::RecentlyPlayed, batchSize * 10},
+			{Mode::RecentlyAdded, batchSize * 10},
+			{Mode::MostPlayed, batchSize * 10},
+			{Mode::All, batchSize * 50},
+		};
+
+		Mode _mode {defaultMode};
+		Filters* _filters {};
+		std::vector<Database::IdType> _randomTracks;
+		Wt::WContainerWidget* _tracksContainer {};
+		Wt::WPushButton* _showMore {};
+		Wt::WLineEdit* _search {};
 };
 
 } // namespace UserInterface

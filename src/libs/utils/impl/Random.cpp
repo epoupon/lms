@@ -24,9 +24,14 @@ namespace Random {
 RandGenerator& getRandGenerator()
 {
 	static thread_local std::random_device rd;
-	static thread_local std::mt19937 randGenerator(rd());
+	static thread_local RandGenerator randGenerator(rd());
 
 	return randGenerator;
+}
+
+RandGenerator createSeededGenerator(std::size_t seed)
+{
+	return RandGenerator {seed};
 }
 
 } // Random

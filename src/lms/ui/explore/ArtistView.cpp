@@ -27,37 +27,42 @@
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
-
+#include "recommendation/IEngine.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
 #include "resource/ImageResource.hpp"
-
+#include "ArtistListHelpers.hpp"
+#include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
-#include "Filters.hpp"
+#include "ReleaseListHelpers.hpp"
 
 using namespace Database;
 
 namespace UserInterface {
 
 Artist::Artist(Filters* filters)
-: _filters(filters)
+: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Artist.template")}
+, _filters(filters)
 {
-	wApp->internalPathChanged().connect([=]
+	addFunction("tr", &Wt::WTemplate::Functions::tr);
+
+	LmsApp->internalPathChanged().connect([=]
 	{
-		refresh();
+		refreshView();
 	});
 
-	refresh();
-
-	filters->updated().connect([=] {
-		refresh();
+	filters->updated().connect([=]
+	{
+		refreshView();
 	});
+
+	refreshView();
 }
 
 void
-Artist::refresh()
+Artist::refreshView()
 {
 	if (!wApp->internalPathMatches("/artist/"))
 		return;
@@ -68,16 +73,18 @@ Artist::refresh()
 	if (!artistId)
 		return;
 
-        auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	const std::vector<Database::IdType> similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(LmsApp->getDbSession(), *artistId, 5)};
 
-	const Database::Artist::pointer artist = Database::Artist::getById(LmsApp->getDbSession(), *artistId);
+    auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), *artistId)};
 	if (!artist)
 		throw ArtistNotFoundException {*artistId};
 
-	Wt::WTemplate* t {addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template"))};
-	t->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	refreshLinks(artist);
+	refreshSimilarArtists(similarArtistIds);
 
-	Wt::WContainerWidget* clusterContainers = t->bindNew<Wt::WContainerWidget>("clusters");
+	Wt::WContainerWidget* clusterContainers = bindNew<Wt::WContainerWidget>("clusters");
 
 	{
 		auto clusterTypes = ScanSettings::get(LmsApp->getDbSession())->getClusterTypes();
@@ -97,90 +104,61 @@ Artist::refresh()
 		}
 	}
 
-	t->bindString("name", Wt::WString::fromUTF8(artist->getName()), Wt::TextFormat::Plain);
+	bindString("name", Wt::WString::fromUTF8(artist->getName()), Wt::TextFormat::Plain);
 	{
-		Wt::WText* playBtn = t->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
+		Wt::WText* playBtn = bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 
 		playBtn->clicked().connect([=]
 		{
-			artistsPlay.emit({*artistId});
+			artistsAction.emit(PlayQueueAction::Play, {*artistId});
 		});
 	}
 
 	{
-		Wt::WText* addBtn = t->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
+		Wt::WText* addBtn = bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
 
 		addBtn->clicked().connect([=]
 		{
-			artistsAdd.emit({*artistId});
+			artistsAction.emit(PlayQueueAction::AddLast, {*artistId});
 		});
 	}
 
-	Wt::WContainerWidget* releasesContainer = t->bindNew<Wt::WContainerWidget>("releases");
+	Wt::WContainerWidget* releasesContainer = bindNew<Wt::WContainerWidget>("releases");
 
 	auto releases = artist->getReleases(_filters->getClusterIds());
-
-	for (auto release : releases)
+	for (const auto& release : releases)
 	{
-		auto releaseId = release.id();
+		releasesContainer->addWidget(ReleaseListHelpers::createEntryForArtist(release, artist));
+	}
+}
 
-		Wt::WTemplate* entry = releasesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template.entry"));
-		entry->addFunction("tr", Wt::WTemplate::Functions::tr);
+void
+Artist::refreshSimilarArtists(const std::vector<Database::IdType>& similarArtistsId)
+{
+	Wt::WContainerWidget* similarArtistsContainer {bindNew<Wt::WContainerWidget>("similar-artists")};
 
-		{
-			Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
+	for (Database::IdType artistId : similarArtistsId)
+	{
+		const Database::Artist::pointer similarArtist{Database::Artist::getById(LmsApp->getDbSession(), artistId)};
+		if (!similarArtist)
+			continue;
 
-			auto cover = std::make_unique<Wt::WImage>();
-			cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), 128));
-			// Some images may not be square
-			cover->setWidth(128);
-			anchor->setImage(std::move(cover));
-		}
+		similarArtistsContainer->addWidget(ArtistListHelpers::createEntrySmall(similarArtist));
+	}
+}
 
-		entry->bindWidget("name", LmsApplication::createReleaseAnchor(release));
+void
+Artist::refreshLinks(const Database::Artist::pointer& artist)
+{
+	const auto mbid {artist->getMBID()};
+	if (mbid)
+	{
+		setCondition("if-has-mbid", true);
 
-		auto artists {release->getReleaseArtists()};
-		if (artists.empty())
-			artists = release->getArtists();
+		Wt::WLink link {"https://musicbrainz.org/artist/" + std::string {mbid->getAsString()}};
+		link.setTarget(Wt::LinkTarget::NewWindow);
 
-		bool isSameArtist {(std::find(std::cbegin(artists), std::cend(artists), artist) != artists.end())};
-
-		if (artists.size() > 1)
-		{
-			entry->setCondition("if-has-artist", true);
-			entry->bindNew<Wt::WText>("artist", Wt::WString::tr("Lms.Explore.various-artists"));
-		}
-		else if (artists.size() == 1 && !isSameArtist)
-		{
-			entry->setCondition("if-has-artist", true);
-			entry->bindWidget("artist", LmsApplication::createArtistAnchor(artists.front()));
-		}
-
-		std::optional<int> year {release->getReleaseYear()};
-		if (year)
-		{
-			entry->setCondition("if-has-year", true);
-			entry->bindInt("year", *year);
-
-			std::optional<int> originalYear {release->getReleaseYear(true)};
-			if (originalYear && *originalYear != *year)
-			{
-				entry->setCondition("if-has-orig-year", true);
-				entry->bindInt("orig-year", *originalYear);
-			}
-		}
-
-		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
-		playBtn->clicked().connect([=]
-		{
-			releasesPlay.emit({releaseId});
-		});
-
-		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
-		addBtn->clicked().connect([=]
-		{
-			releasesAdd.emit({releaseId});
-		});
+		bindNew<Wt::WAnchor>("mbid-link", link, Wt::WString::tr("Lms.Explore.musicbrainz-artist"));
 	}
 }
 

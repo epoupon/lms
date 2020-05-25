@@ -42,8 +42,6 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 	::uint64_t startByte {_offset};
 	std::ifstream ifs {_path.string().c_str(), std::ios::in | std::ios::binary};
 
-	LMS_LOG(UTILS, DEBUG) << "startByte = " << startByte;
-
 	if (startByte == 0)
 	{
 		if (!ifs)
@@ -99,6 +97,12 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 			_beyondLastByte = fileSize;
 			response.setContentLength(_beyondLastByte);
 		}
+	}
+	else if (!ifs)
+	{
+		LMS_LOG(UTILS, ERROR) << "Cannot reopen file stream for '" << _path.string() << "'";
+		_isFinished = true;
+		return {};
 	}
 
 	ifs.seekg(static_cast<std::istream::pos_type>(startByte));

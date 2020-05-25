@@ -32,217 +32,217 @@
 namespace API::Subsonic::Jukebox
 {
 
-enum class Action
-{
-	Get,
-	Status,
-	Set,
-	Start,
-	Stop,
-	Skip,
-	Add,
-	Clear,
-	Remove,
-	Shuffle,
-	SetGain,
-};
+	enum class Action
+	{
+		Get,
+		Status,
+		Set,
+		Start,
+		Stop,
+		Skip,
+		Add,
+		Clear,
+		Remove,
+		Shuffle,
+		SetGain,
+	};
 
 } // ns API::Subsonic::Jukebox
 
 namespace StringUtils
 {
-template<>
-std::optional<API::Subsonic::Jukebox::Action>
-StringUtils::readAs(const std::string& str)
-{
-
-	using namespace API::Subsonic::Jukebox;
-
-	static const std::unordered_map<std::string_view, Action> actions
+	template<>
+	std::optional<API::Subsonic::Jukebox::Action>
+	StringUtils::readAs(const std::string& str)
 	{
-		{"get",		Action::Get},
-		{"status",	Action::Status},
-		{"set",		Action::Set},
-		{"start",	Action::Start},
-		{"stop",	Action::Stop},
-		{"skip",	Action::Skip},
-		{"add",		Action::Add},
-		{"clear",	Action::Clear},
-		{"remove",	Action::Remove},
-		{"shuffle",	Action::Shuffle},
-		{"setGain",	Action::SetGain},
-	};
 
-	auto itAction {actions.find(str)};
-	if (itAction == std::cend(actions))
-		return std::nullopt;
+		using namespace API::Subsonic::Jukebox;
 
-	return itAction->second;
-}
+		static const std::unordered_map<std::string_view, Action> actions
+		{
+			{"get",		Action::Get},
+			{"status",	Action::Status},
+			{"set",		Action::Set},
+			{"start",	Action::Start},
+			{"stop",	Action::Stop},
+			{"skip",	Action::Skip},
+			{"add",		Action::Add},
+			{"clear",	Action::Clear},
+			{"remove",	Action::Remove},
+			{"shuffle",	Action::Shuffle},
+			{"setGain",	Action::SetGain},
+		};
+
+		auto itAction {actions.find(str)};
+		if (itAction == std::cend(actions))
+			return std::nullopt;
+
+		return itAction->second;
+	}
 } // ns StringUtils
 
 namespace API::Subsonic::Jukebox
 {
 
-static
-void
-fillStatus(Response::Node& statusNode)
-{
-	const ILocalPlayer::Status playerStatus {Service<ILocalPlayer>::get()->getStatus()};
-	statusNode.setAttribute("currentIndex", std::to_string(playerStatus.entryIdx ? *playerStatus.entryIdx : 0));
-	statusNode.setAttribute("playing", playerStatus.playState == ILocalPlayer::Status::PlayState::Playing ? "true" : "false");
-	statusNode.setAttribute("gain", "1.0"); // TODO
-	if (playerStatus.currentPlayTime)
-		statusNode.setAttribute("position", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(*playerStatus.currentPlayTime).count()));
-}
-
-static
-Response
-createStatusReponse()
-{
-	Response response {Response::createOkResponse()};
-	fillStatus(response.createNode("jukeboxStatus"));
-	return response;
-}
-
-static
-Response
-createPlaylistResponse(RequestContext& context)
-{
-	Response response {Response::createOkResponse()};
-	Response::Node& playlistNode {response.createNode("jukeboxPlaylist")};
-
-	fillStatus(playlistNode);
-
-	const std::vector<Database::IdType> trackIds {Service<ILocalPlayer>::get()->getTracks()};
-
-	auto transaction {context.dbSession.createSharedTransaction()};
-	std::vector<Database::Track::pointer> tracks;
-	tracks.reserve(trackIds.size());
-
-	std::transform(std::cbegin(trackIds), std::cend(trackIds), std::back_inserter(tracks),[&](Database::IdType trackId)
-			{
-				return Database::Track::getById(context.dbSession, trackId);
-			});
-
-	for (const Database::Track::pointer& track : tracks)
-		playlistNode.addArrayChild("entry", trackToResponseNode(track, context.dbSession, {}));
-
-	return response;
-}
-
-static
-Response
-handleAdd(const std::vector<Id>& trackIds)
-{
-	for (Id trackId : trackIds)
-		Service<ILocalPlayer>::get()->addTrack(trackId.value);
-
-	return createStatusReponse();
-}
-
-static
-Response
-handleClear()
-{
-	Service<ILocalPlayer>::get()->clearTracks();
-	return createStatusReponse();
-}
-
-static
-Response
-handleSet(const std::vector<Id>& trackIds)
-{
-	Service<ILocalPlayer>::get()->clearTracks();
-
-	for (Id trackId : trackIds)
-		Service<ILocalPlayer>::get()->addTrack(trackId.value);
-
-	return createStatusReponse();
-}
-
-static
-Response
-handleStart()
-{
-	Service<ILocalPlayer>::get()->play();
-
-	return createStatusReponse();
-}
-
-static
-Response
-handleStop()
-{
-	Service<ILocalPlayer>::get()->pause();
-
-	return createStatusReponse();
-}
-
-static
-Response
-handleSkip(int skip, std::optional<int> offset)
-{
-	Service<ILocalPlayer>::get()->playEntry(skip, std::chrono::milliseconds {offset ? *offset * 1000 : 0});
-		
-	return createStatusReponse();
-}
-
-Response
-handle(RequestContext& context)
-{
-	const Action action {getMandatoryParameterAs<Action>(context.parameters, "action")};
-	std::optional<int> index {getParameterAs<int>(context.parameters, "index")};
-	if (index && *index < 0)
-		throw BadParameterGenericError {"index"};
-
-	std::optional<int> offset {getParameterAs<int>(context.parameters, "offset")};
-	if (offset && *offset < 0)
-		throw BadParameterGenericError {"offset"};
-
-	std::vector<Id> trackIds {getMultiParametersAs<Id>(context.parameters, "id")};
-	if (!std::all_of(std::cbegin(trackIds), std::cend(trackIds ), [](const Id& id) { return id.type == Id::Type::Track; }))
-		throw BadParameterGenericError {"id"};
-
-	std::optional<float> gain {getParameterAs<float>(context.parameters, "gain")};
-	if (gain && (*gain < 0 || *gain > 1))
-		throw BadParameterGenericError {"gain"};
-
-	switch (action)
+	static
+	void
+	fillStatus(Response::Node& statusNode)
 	{
-		case Action::Add:
-			return handleAdd(trackIds);
-		case Action::Clear:
-			return handleClear();
-		case Action::Set:
-			return handleSet(trackIds);
-
-		case Action::Start:
-			return handleStart();
-
-		case Action::Stop:
-			return handleStop();
-
-		case Action::Skip:
-			if (!index)
-				throw RequiredParameterMissingError {};
-
-			return handleSkip(*index, offset);
-
-		case Action::Status:
-			return createStatusReponse();
-
-		case Action::Get:
-			return createPlaylistResponse(context);
-
-		case Action::Remove:
-		case Action::Shuffle:
-		case Action::SetGain:
-			throw NotImplementedGenericError {};
+		const ILocalPlayer::Status playerStatus {Service<ILocalPlayer>::get()->getStatus()};
+		statusNode.setAttribute("currentIndex", std::to_string(playerStatus.entryIdx ? *playerStatus.entryIdx : 0));
+		statusNode.setAttribute("playing", playerStatus.playState == ILocalPlayer::Status::PlayState::Playing ? "true" : "false");
+		statusNode.setAttribute("gain", "1.0"); // TODO
+		if (playerStatus.currentPlayTime)
+			statusNode.setAttribute("position", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(*playerStatus.currentPlayTime).count()));
 	}
 
-	throw NotImplementedGenericError {};
-}
+	static
+	Response
+	createStatusReponse()
+	{
+		Response response {Response::createOkResponse()};
+		fillStatus(response.createNode("jukeboxStatus"));
+		return response;
+	}
+
+	static
+	Response
+	createPlaylistResponse(RequestContext& context)
+	{
+		Response response {Response::createOkResponse()};
+		Response::Node& playlistNode {response.createNode("jukeboxPlaylist")};
+
+		fillStatus(playlistNode);
+
+		const std::vector<Database::IdType> trackIds {Service<ILocalPlayer>::get()->getTracks()};
+
+		auto transaction {context.dbSession.createSharedTransaction()};
+		std::vector<Database::Track::pointer> tracks;
+		tracks.reserve(trackIds.size());
+
+		std::transform(std::cbegin(trackIds), std::cend(trackIds), std::back_inserter(tracks),[&](Database::IdType trackId)
+		{
+			return Database::Track::getById(context.dbSession, trackId);
+		});
+
+		for (const Database::Track::pointer& track : tracks)
+			playlistNode.addArrayChild("entry", trackToResponseNode(track, context.dbSession, {}));
+
+		return response;
+	}
+
+	static
+	Response
+	handleAdd(const std::vector<Id>& trackIds)
+	{
+		for (Id trackId : trackIds)
+			Service<ILocalPlayer>::get()->addTrack(trackId.value);
+
+		return createStatusReponse();
+	}
+
+	static
+	Response
+	handleClear()
+	{
+		Service<ILocalPlayer>::get()->clearTracks();
+		return createStatusReponse();
+	}
+
+	static
+	Response
+	handleSet(const std::vector<Id>& trackIds)
+	{
+		Service<ILocalPlayer>::get()->clearTracks();
+
+		for (Id trackId : trackIds)
+			Service<ILocalPlayer>::get()->addTrack(trackId.value);
+
+		return createStatusReponse();
+	}
+
+	static
+	Response
+	handleStart()
+	{
+		Service<ILocalPlayer>::get()->play();
+
+		return createStatusReponse();
+	}
+
+	static
+	Response
+	handleStop()
+	{
+		Service<ILocalPlayer>::get()->pause();
+
+		return createStatusReponse();
+	}
+
+	static
+	Response
+	handleSkip(int skip, std::optional<int> offset)
+	{
+		Service<ILocalPlayer>::get()->playEntry(skip, std::chrono::milliseconds {offset ? *offset * 1000 : 0});
+
+		return createStatusReponse();
+	}
+
+	Response
+	handle(RequestContext& context)
+	{
+		const Action action {getMandatoryParameterAs<Action>(context.parameters, "action")};
+		std::optional<int> index {getParameterAs<int>(context.parameters, "index")};
+		if (index && *index < 0)
+			throw BadParameterGenericError {"index"};
+
+		std::optional<int> offset {getParameterAs<int>(context.parameters, "offset")};
+		if (offset && *offset < 0)
+			throw BadParameterGenericError {"offset"};
+
+		std::vector<Id> trackIds {getMultiParametersAs<Id>(context.parameters, "id")};
+		if (!std::all_of(std::cbegin(trackIds), std::cend(trackIds ), [](const Id& id) { return id.type == Id::Type::Track; }))
+			throw BadParameterGenericError {"id"};
+
+		std::optional<float> gain {getParameterAs<float>(context.parameters, "gain")};
+		if (gain && (*gain < 0 || *gain > 1))
+			throw BadParameterGenericError {"gain"};
+
+		switch (action)
+		{
+			case Action::Add:
+				return handleAdd(trackIds);
+			case Action::Clear:
+				return handleClear();
+			case Action::Set:
+				return handleSet(trackIds);
+
+			case Action::Start:
+				return handleStart();
+
+			case Action::Stop:
+				return handleStop();
+
+			case Action::Skip:
+				if (!index)
+					throw RequiredParameterMissingError {};
+
+				return handleSkip(*index, offset);
+
+			case Action::Status:
+				return createStatusReponse();
+
+			case Action::Get:
+				return createPlaylistResponse(context);
+
+			case Action::Remove:
+			case Action::Shuffle:
+			case Action::SetGain:
+				throw NotImplementedGenericError {};
+		}
+
+		throw NotImplementedGenericError {};
+	}
 
 }
 

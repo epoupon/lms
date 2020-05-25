@@ -1,6 +1,6 @@
 # LMS - Lightweight Music Server
 
-[![Build Status](https://travis-ci.org/epoupon/lms.svg?branch=master)](https://travis-ci.org/epoupon/lms) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/epoupon/lms)
+[![Build Status](https://travis-ci.org/epoupon/lms.svg?branch=master)](https://travis-ci.org/epoupon/lms) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/epoupon/lms) [![CodeFactor](https://www.codefactor.io/repository/github/epoupon/lms/badge/master)](https://www.codefactor.io/repository/github/epoupon/lms/overview/master)
 
 _LMS_ is a self-hosted music streaming software: access your music collection from anywhere using a web interface!
 
@@ -15,14 +15,15 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 * User management
 * Recommendation engine
 * Audio transcode for maximum interoperability and low bandwith requirements
+* ReplayGain support
 * Persistent play queue across sessions
-* Subsonic API
 * Compilation support
 * Multi-value tags: artists, genres, ...
 * Custom tags (ex: _mood_, _genre_, _albummood_, _albumgrouping_, ...)
 * MusicBrainzID support to handle duplicated artist and release names
+* Disc subtitles support
 * _Systemd_ integration
-* Subsonic-only features:
+* Subsonic API, with the following additional features:
   * Playlists
   * Starred Album/Artist/Tracks
   * Bookmarks
@@ -33,8 +34,12 @@ _LMS_ provides several ways to help you find the music you like:
 * Tag-based filters (ex: _Rock_, _Metal_ and _Aggressive_, _Electronic_ and _Relaxed_, ...)
 * Recommendations for similar artists and albums
 * Radio mode, based on what is in the current playqueue
-* Searches in album, artist and track names
-* Most played/Recently added music
+* Searches in album, artist and track names (including sort names)
+* Random/Most played/Recently played/Recently added for Artist/Albums/Tracks, allowing you to search for things like:
+  * Recently added _Electronic_ artists
+  * Random _Metal_ and _Aggressive_ albums
+  * Most played _Relaxed_ tracks
+  * ...
 
 The recommendation engine uses two different sources:
 1. Tags that are present in the audio files
@@ -85,9 +90,7 @@ __Notes__:
 * a C++17 compiler is needed
 * ffmpeg version 4 minimum is required
 ```sh
-apt-get install g++ autoconf automake libboost-filesystem-dev libboost-system-dev libavutil-dev libavformat-dev libmagick++-dev libconfig++-dev ffmpeg libtag1-dev
-=======
-apt-get install g++ cmake libboost-system-dev libavutil-dev libavformat-dev libmagick++-dev libconfig++-dev ffmpeg libtag1-dev
+apt-get install g++ cmake libboost-system-dev libavutil-dev libavformat-dev libgraphicsmagick++1-dev libconfig++-dev ffmpeg libtag1-dev
 ```
 
 You also need _Wt4_, which is not packaged yet on _Debian_. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).</br>
@@ -100,6 +103,7 @@ Get the latest stable release and build it:
 git clone https://github.com/epoupon/lms.git lms
 cd lms
 mkdir build
+cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
 __Note__: in order to customize the installation directory, you can use the _-DCMAKE_INSTALL_PREFIX_ option (defaults to `/usr/local`).
@@ -159,11 +163,24 @@ systemctl restart lms
 __Note__: don't forget to give the _lms_ user read access to the music directory you want to scan.
 
 ### Configuration
-_LMS_ uses a configuration file, installed by default in `/etc/lms.conf`. It is recommended to edit this file and change relevant settings (listen address, listen port, working directory, Subsonic API activation, ...).
+_LMS_ uses a configuration file, installed by default in `/etc/lms.conf`. It is recommended to edit this file and change relevant settings (listen address, listen port, working directory, Subsonic API activation, deployment path, ...).
 
 All other settings are set using the web interface (user management, scan settings, transcode settings, ...).
 
 If a setting is not present in the configuration file, a hardcoded default value is used (the same as in the [default.conf](https://github.com/epoupon/lms/blob/master/conf/lms.conf) file)
+
+### Deploy on non root path
+If you want to deploy on non root path (e.g. https://mydomain.com/newroot/), you have to set the `deploy-path` option accordingly in `lms.conf`.
+
+As static resources are __not__ related to the `deploy-path` option, you have to perform the following steps if you want them to be on a non root path too:
+* Create a new intermediary `newroot` directory in `/usr/share/lms/docroot` and move everything in it.
+* Symlink `/usr/share/lms/docroot/newroot/resources` to `/usr/share/Wt/resources`.
+* Edit `lms.conf` and set:
+```
+wt-resources = "" # do not comment the whole line
+docroot = "/usr/share/lms/docroot/;/newroot/resources,/newroot/css,/newroot/images,/newroot/js,/newroot/favicon.ico";`
+deploy-path = "/newroot/"; # ending slash is important
+```
 
 ### Reverse proxy settings
 _LMS_ is shipped with an embedded web server, but it is recommended to deploy behind a reverse proxy. You have to set the _behind-reverse-proxy_ option to _true_ in the `lms.conf` configuration file.
@@ -207,9 +224,10 @@ journalctl -u lms.service
 To connect to _LMS_, just open your favorite browser and go to http://localhost:5082
 
 ## Credits
-* Wt (http://www.webtoolkit.eu/)
-* bootstrap3 (http://getbootstrap.com/)
-* ffmpeg project (https://ffmpeg.org/)
-* Magick++ (http://www.imagemagick.org/Magick++/)
-* MetaBrainz (https://metabrainz.org/)
 * Bootstrap Notify: https://github.com/mouse0270/bootstrap-notify
+* Bootstrap3 (https://getbootstrap.com/)
+* Bootswatch (https://bootswatch.com/)
+* Ffmpeg project (https://ffmpeg.org/)
+* GraphicsMagick++ (http://www.graphicsmagick.org/)
+* MetaBrainz (https://metabrainz.org/)
+* Wt (http://www.webtoolkit.eu/)

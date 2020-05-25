@@ -19,13 +19,16 @@
 
 #include "metadata/TagLibParser.hpp"
 
+#include <taglib/apetag.h>
 #include <taglib/asffile.h>
 #include <taglib/id3v2tag.h>
 #include <taglib/fileref.h>
 #include <taglib/flacfile.h>
+#include <taglib/mpcfile.h>
 #include <taglib/mpegfile.h>
 #include <taglib/tag.h>
 #include <taglib/tpropertymap.h>
+#include <taglib/wavpackfile.h>
 
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
@@ -87,55 +90,74 @@ static
 std::vector<Artist>
 getArtists(const TagLib::PropertyMap& properties)
 {
-	std::vector<Artist> res;
-
 	std::vector<std::string> artistNames {getPropertyValuesAs<std::string>(properties, "ARTISTS")};
 	if (artistNames.empty())
 		artistNames = getPropertyValuesAs<std::string>(properties, "ARTIST");
 
 	if (artistNames.empty())
-		return res;
+		return {};
 
-	const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"})};
+	std::vector<Artist> artists;
+	artists.reserve(artistNames.size());
+	std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(artists),
+		[&](const std::string& name) { return Artist {name}; });
 
-	if (artistNames.size() == artistsMBID.size())
 	{
-		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::cbegin(artistsMBID), std::back_inserter(res),
-				[&](const std::string& name, const UUID& mbid) { return Artist {name, mbid}; });
-	}
-	else
-	{
-		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(res),
-				[&](const std::string& name) { return Artist{name, {}}; });
+		const std::vector<std::string> artistSortNames {getPropertyValuesAs<std::string>(properties, "ARTISTSORT")};
+		if (artistSortNames.size() == artists.size())
+		{
+			for (std::size_t i {}; i < artistSortNames.size(); ++i)
+				artists[i].sortName = artistSortNames[i];
+		}
 	}
 
-	return res;
+	{
+		const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"})};
+
+		if (artistNames.size() == artistsMBID.size())
+		{
+			for (std::size_t i {}; i < artistsMBID.size(); ++i)
+				artists[i].musicBrainzArtistID = artistsMBID[i];
+		}
+	}
+
+
+	return artists;
 }
 
 static
 std::vector<Artist>
 getAlbumArtists(const TagLib::PropertyMap& properties)
 {
-	std::vector<Artist> res;
-
 	std::vector<std::string> artistNames {getPropertyValuesAs<std::string>(properties, "ALBUMARTIST")};
 	if (artistNames.empty())
-		return res;
+		return {};
 
-	const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"})};
+	std::vector<Artist> artists;
+	artists.reserve(artistNames.size());
+	std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(artists),
+		[&](const std::string& name) { return Artist {name}; });
 
-	if (artistNames.size() == artistsMBID.size())
 	{
-		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::cbegin(artistsMBID), std::back_inserter(res),
-				[&](const std::string& name, const UUID& mbid) { return Artist{name, mbid}; });
-	}
-	else
-	{
-		std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(res),
-				[&](const std::string& name) { return Artist{name, {}}; });
+		const std::vector<std::string> artistSortNames {getPropertyValuesAs<std::string>(properties, "ALBUMARTISTSORT")};
+		if (artistSortNames.size() == artists.size())
+		{
+			for (std::size_t i {}; i < artistSortNames.size(); ++i)
+				artists[i].sortName = artistSortNames[i];
+		}
 	}
 
-	return res;
+	{
+		const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"})};
+
+		if (artistsMBID.size() == artists.size())
+		{
+			for (std::size_t i {}; i < artistsMBID.size(); ++i)
+				artists[i].musicBrainzArtistID = artistsMBID[i];
+		}
+	}
+
+	return artists;
 }
 
 static
@@ -244,6 +266,12 @@ TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::Str
 		track.copyright = value;
 	else if (tag == "COPYRIGHTURL")
 		track.copyrightURL = value;
+	else if (tag == "REPLAYGAIN_ALBUM_GAIN")
+		track.albumReplayGain = StringUtils::readAs<float>(value);
+	else if (tag == "REPLAYGAIN_TRACK_GAIN")
+		track.trackReplayGain = StringUtils::readAs<float>(value);
+	else if (tag == "DISCSUBTITLE" || tag == "SETSUBTITLE")
+		track.discSubtitle = value;
 	else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 	{
 		std::set<std::string> clusterNames;
@@ -292,6 +320,21 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 
 	TagLib::PropertyMap properties {f.file()->properties()};
 
+	auto getAPETags = [&](const TagLib::APE::Tag* apeTag)
+	{
+		if (!apeTag)
+			return;
+
+		for (const auto& [name, values] : apeTag->properties())
+		{
+			if (debug)
+				std::cout << "APE property: '" << name << "'" << std::endl;
+
+			if (!properties.contains(name))
+				properties.insert(name, values);
+		}
+	};
+
 	// Not that good embedded pictures handling
 
 	// WMA
@@ -318,9 +361,10 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 				if (!stringAttributeList.isEmpty())
 				{
 					if (debug)
-						std::cout << "Property: '" << name << "'" << std::endl;
+						std::cout << "ASF property: '" << name << "'" << std::endl;
 
-					properties.insert(name, stringAttributeList);
+					if (!properties.contains(name))
+						properties.insert(name, stringAttributeList);
 				}
 			}
 		}
@@ -330,9 +374,24 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 	{
 		if (mp3File->ID3v2Tag())
 		{
-			if (!mp3File->ID3v2Tag()->frameListMap()["APIC"].isEmpty())
+			const auto& frameListMap {mp3File->ID3v2Tag()->frameListMap()};
+
+			if (!frameListMap["APIC"].isEmpty())
 				track.hasCover = true;
+			if (!frameListMap["TSST"].isEmpty())
+				properties.insert("DISCSUBTITLE", frameListMap["TSST"].front()->toString());
 		}
+
+		getAPETags(mp3File->APETag());
+	}
+	else if (TagLib::MPC::File* mpcFile {dynamic_cast<TagLib::MPC::File*>(f.file())})
+	{
+		getAPETags(mpcFile->APETag());
+	}
+	// WavPack
+	else if (TagLib::WavPack::File* wavPackFile {dynamic_cast<TagLib::WavPack::File*>(f.file())})
+	{
+		getAPETags(wavPackFile->APETag());
 	}
 	// FLAC
 	else if (TagLib::FLAC::File* flacFile {dynamic_cast<TagLib::FLAC::File*>(f.file())})
@@ -341,7 +400,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 			track.hasCover = true;
 	}
 
-	for(const auto& property : properties)
+	for (const auto& property : properties)
 	{
 		const std::string tag {property.first.upper().to8Bit(true)};
 		const TagLib::StringList& values {property.second};

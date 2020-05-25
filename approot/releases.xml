@@ -3,38 +3,28 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.Releases.template">
-	<div class="page-header">
+	<div class="Lms-header">
 		<h2>${tr:Lms.Explore.releases}</h2>
+		${mode class="nav nav-pills Lms-explore-mode-container"}
 		${play-btn}${add-btn}
 	</div>
-	<div class="form-group">
-		<div class="input-group">
-			<span class="input-group-addon"><i class="fa fa-search"></i></span>
-			${search}
-		</div>
-	</div>
-	${releases}
 	<div class="row">
-		<div class="col-xs-12 Lms-horizontal-center">
-			${show-more class="btn-primary Lms-show-more"}
-		</div>
+		${releases}
+	</div>
+	<div class="Lms-horizontal-center">
+		${show-more class="btn-primary Lms-show-more"}
 	</div>
 </message>
 
-<message id="Lms.Explore.Releases.template.entry">
-	<div class="row Lms-explore-releases-entry">
-		<div class="col-xs-12">
-			<div class="media">
-				<div class="media-left media-middle">
-					${cover class="media-object"}
-				</div>
-				<div class="media-body media-middle">
-					<h4 class="media-heading">
-						${release-name class="Lms-explore-releasename"}
-					</h4>
-					${<if-has-artist>}<h4><small>${artist-name class="Lms-explore-artistname"}</small></h4>${</if-has-artist>}
-					${play-btn}${add-btn}
-				</div>
+<message id="Lms.Explore.Releases.template.entry-grid">
+	<div class="col-xs-6 col-sm-3 col-md-2 col-lg-2">
+		<div class="Lms-explore-entry-grid">
+			<div class="Lms-responsive-square Lms-cover-container">
+				${cover}
+			</div>
+			<div class="Lms-explore-entry-grid-text-container">
+				<h5>${release-name class="Lms-releasename text-primary"}</h5>
+				<div class="Lms-explore-entry-separator"><h6>${<if-has-year>}<small><span class="text-muted">${year}</span></small>${</if-has-year>}${<if-has-artist>}${artist-name class="Lms-artistname text-muted"}${</if-has-artist>}</h6></div>
 			</div>
 		</div>
 	</div>

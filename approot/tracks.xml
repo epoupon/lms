@@ -4,46 +4,48 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Tracks.template">
-	<div class="page-header">
-		<h2>${tr:Lms.Explore.tracks}</h2>
-		${play-btn}${add-btn}
-	</div>
-	<div class="form-group">
-		<div class="input-group">
-			<span class="input-group-addon"><i class="fa fa-search"></i></span>
-			${search}
-		</div>
-	</div>
-	${tracks}
 	<div class="row">
-		<div class="col-xs-12 Lms-horizontal-center">
-			${show-more class="btn-primary Lms-show-more"}
+		<div class="col-lg-8">
+			<div class="Lms-header">
+				<h2>${tr:Lms.Explore.tracks}</h2>
+				${mode class="nav nav-pills Lms-explore-mode-container"}
+				${play-btn}${add-btn}
+			</div>
+			${tracks}
+			<div class="Lms-horizontal-center">
+				${show-more class="btn-primary Lms-show-more"}
+			</div>
 		</div>
 	</div>
 </message>
 
 <message id="Lms.Explore.Tracks.template.entry">
-	<div class="row Lms-explore-tracks-entry Lms-vertical-align">
-		<div class="col-xs-9 Lms-explore-tracks-entry-name">
-			<h4>${name}</h4>
-			${<if-has-artists-or-release>}
-			${<if-has-release>}<small>${release class="Lms-explore-releasename"}</small>${</if-has-release>}
-			${<if-has-artists>}<small>${artists}</small>${</if-has-artists>}
-			${</if-has-artists-or-release>}
-		</div>
-		<div class="col-xs-3">
-			<div class="Lms-explore-tracks-entry-controls">
-				${play-btn}${add-btn}
+		<div class="row Lms-vertical-align Lms-explore-entry-list Lms-explore-tracks-entry ${is-playing}">
+			<div class="col-xs-3 col-sm-2 col-md-2">
+				<div class="Lms-responsive-square Lms-cover-container">
+					${cover}
+				</div>
 			</div>
-			<div class="Lms-explore-tracks-entry-duration">
-				${duration}
+			<div class="col-xs-7 col-sm-8 col-md-8 Lms-explore-entry-list-text-container">
+				<div class="Lms-trackname text-primary"><h5>${name}</h5></div>
+				${<if-has-artists-or-release>}
+				${<if-has-release>}<small>${release class="Lms-releasename text-primary"}</small>${</if-has-release>}
+				${<if-has-artists>}${artists}${</if-has-artists>}
+				${</if-has-artists-or-release>}
+			</div>
+			<div class="col-xs-2 col-sm-2 col-md-2">
+				<div class="Lms-explore-tracks-entry-controls">
+					${play-btn}${add-btn}
+				</div>
+				<div class="Lms-explore-tracks-entry-duration text-muted">
+					${duration}
+				</div>
 			</div>
 		</div>
-	</div>
 </message>
 
 <message id="Lms.Explore.Tracks.template.entry-artist">
-	${artist class="Lms-explore-artistname"}
+	<small>${artist class="Lms-artistname text-muted"}</small>
 </message>
 
 </messages>

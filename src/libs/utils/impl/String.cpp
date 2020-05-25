@@ -20,6 +20,7 @@
 #include "utils/String.hpp"
 
 #include <iomanip>
+#include <unordered_map>
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/join.hpp>

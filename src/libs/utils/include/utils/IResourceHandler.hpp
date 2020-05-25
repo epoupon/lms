@@ -22,7 +22,7 @@
 #include <Wt/Http/Request.h>
 #include <Wt/Http/Response.h>
 
-// Helper class to serve a resource (must be saved as continuation data if not complete) 
+// Helper class to serve a resource (must be saved as continuation data if not complete)
 class IResourceHandler
 {
 	public:

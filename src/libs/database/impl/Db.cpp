@@ -33,13 +33,38 @@ Db::Db(const std::filesystem::path& dbPath)
 	LMS_LOG(DB, INFO) << "Creating connection pool on file " << dbPath.string();
 
 	std::unique_ptr<Wt::Dbo::backend::Sqlite3> connection {std::make_unique<Wt::Dbo::backend::Sqlite3>(dbPath.string())};
-	connection->executeSql("pragma journal_mode=WAL");
 //	connection->setProperty("show-queries", "true");
+	connection->executeSql("pragma journal_mode=WAL");
+	connection->executeSql("pragma synchronous=normal");
 
 	auto connectionPool = std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), 10);
 	connectionPool->setTimeout(std::chrono::seconds(10));
 
 	_connectionPool = std::move(connectionPool);
+}
+
+void
+Db::executeSql(const std::string& sql)
+{
+	ScopedConnection connection {*_connectionPool};
+	connection->executeSql(sql);
+}
+
+
+Db::ScopedConnection::ScopedConnection(Wt::Dbo::SqlConnectionPool& pool)
+: _connectionPool {pool}
+, _connection {_connectionPool.getConnection()}
+{
+}
+
+Db::ScopedConnection::~ScopedConnection()
+{
+	_connectionPool.returnConnection(std::move(_connection));
+}
+
+Wt::Dbo::SqlConnection* Db::ScopedConnection::operator->() const
+{
+	return _connection.get();
 }
 
 } // namespace Database

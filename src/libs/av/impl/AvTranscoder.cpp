@@ -59,14 +59,22 @@ Transcoder::start()
 	if (ffmpegPath.empty())
 		init();
 
-	if (!std::filesystem::exists(_filePath))
+	try
 	{
-		LOG(ERROR) << "File '" << _filePath.string() << "' does not exist";
-		return false;
+		if (!std::filesystem::exists(_filePath))
+		{
+			LOG(ERROR) << "File '" << _filePath << "' does not exist!";
+			return false;
+		}
+		else if (!std::filesystem::is_regular_file( _filePath) )
+		{
+			LOG(ERROR) << "File '" << _filePath << "' is not regular!";
+			return false;
+		}
 	}
-	else if (!std::filesystem::is_regular_file( _filePath) )
+	catch (const std::filesystem::filesystem_error& e)
 	{
-		LOG(ERROR) << "File '" << _filePath.string() << "' is not regular";
+		LOG(ERROR) << "File error on '" << _filePath.string() << "': " << e.what();
 		return false;
 	}
 
@@ -120,45 +128,41 @@ Transcoder::start()
 		args.emplace_back(std::to_string(_parameters.bitrate));
 	}
 
-	switch (_parameters.encoding)
+	// Codecs and formats
+	switch (_parameters.format)
 	{
-		case Encoding::MATROSKA_OPUS:
-			assert(_parameters.bitrate);
+		case Format::MP3:
+			args.emplace_back("-f");
+			args.emplace_back("mp3");
+			break;
+
+		case Format::PCM_SIGNED_16_LE:
+			args.emplace_back("-f");
+			args.emplace_back("s16le");
+			break;
+
+		case Format::OGG_OPUS:
+			args.emplace_back("-acodec");
+			args.emplace_back("libopus");
+			args.emplace_back("-f");
+			args.emplace_back("ogg");
+			break;
+
+		case Format::MATROSKA_OPUS:
 			args.emplace_back("-acodec");
 			args.emplace_back("libopus");
 			args.emplace_back("-f");
 			args.emplace_back("matroska");
 			break;
 
-		case Encoding::MP3:
-			assert(_parameters.bitrate);
-			args.emplace_back("-f");
-			args.emplace_back("mp3");
-			break;
-
-		case Encoding::PCM_SIGNED_16_LE:
-			args.emplace_back("-f");
-			args.emplace_back("s16le");
-			break;
-
-		case Encoding::OGG_OPUS:
-			assert(_parameters.bitrate);
-			args.emplace_back("-acodec");
-			args.emplace_back("libopus");
-			args.emplace_back("-f");
-			args.emplace_back("ogg");
-			break;
-
-		case Encoding::OGG_VORBIS:
-			assert(_parameters.bitrate);
+		case Format::OGG_VORBIS:
 			args.emplace_back("-acodec");
 			args.emplace_back("libvorbis");
 			args.emplace_back("-f");
 			args.emplace_back("ogg");
 			break;
 
-		case Encoding::WEBM_VORBIS:
-			assert(_parameters.bitrate);
+		case Format::WEBM_VORBIS:
 			args.emplace_back("-acodec");
 			args.emplace_back("libvorbis");
 			args.emplace_back("-f");
@@ -169,7 +173,7 @@ Transcoder::start()
 			return false;
 	}
 
-	_outputMimeType = encodingToMimetype(_parameters.encoding);
+	_outputMimeType = formatToMimetype(_parameters.format);
 
 	args.emplace_back("pipe:1");
 

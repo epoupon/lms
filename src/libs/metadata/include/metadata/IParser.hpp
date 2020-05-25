@@ -24,6 +24,7 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <string_view>
 #include <vector>
 
 #include "utils/UUID.hpp"
@@ -35,7 +36,11 @@ namespace MetaData
 	struct Artist
 	{
 		std::string name;
+		std::optional<std::string> sortName;
 		std::optional<UUID> musicBrainzArtistID;
+
+		Artist(std::string_view _name) : name {_name} {}
+		Artist(std::string_view _name, std::optional<std::string> _sortName, std::optional<UUID> _musicBrainzArtistID) : name {_name}, sortName {_sortName}, musicBrainzArtistID {_musicBrainzArtistID} {}
 	};
 
 	struct Album
@@ -53,23 +58,26 @@ namespace MetaData
 	{
 		std::vector<Artist>		artists;
 		std::vector<Artist>		albumArtists;
-		std::string			title;
+		std::string				title;
 		std::optional<UUID>		musicBrainzTrackID;
 		std::optional<UUID>		musicBrainzRecordID;
-		std::optional<Album>		album;
-		Clusters			clusters;
-		std::chrono::milliseconds 	duration {};
+		std::optional<Album>	album;
+		Clusters				clusters;
+		std::chrono::milliseconds 	duration;
 		std::optional<std::size_t>	trackNumber;
 		std::optional<std::size_t>	totalTrack;
 		std::optional<std::size_t>	discNumber;
 		std::optional<std::size_t>	totalDisc;
 		std::optional<int>		year;
 		std::optional<int>		originalYear;
-		bool				hasCover {false};
+		bool					hasCover {};
 		std::vector<AudioStream>	audioStreams;
 		std::optional<UUID>		acoustID;
-		std::string			copyright;
-		std::string			copyrightURL;
+		std::string				copyright;
+		std::string				copyrightURL;
+		std::optional<float>	trackReplayGain;
+		std::optional<float>	albumReplayGain;
+		std::string				discSubtitle;
 	};
 
 	class IParser

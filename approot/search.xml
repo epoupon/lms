@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+<!--FORMS message blocks-->
+
+<message id="Lms.Explore.Search.template">
+	<div class="Lms-header">
+		<h2>${tr:Lms.Explore.Search.search}</h2>
+	</div>
+	<div class="row">
+		${<if-artists>}
+		<div class="col-lg-8">
+			<div class="well well-sm">
+				<h3>${tr:Lms.Explore.artists}</h3>
+				${artists}
+			</div>
+		</div>
+		${</if-artists>}
+		${<if-releases>}
+		<div class="col-lg-8">
+			<div class="well well-sm">
+				<h3>${tr:Lms.Explore.releases}</h3>
+				<div class="row">
+					${releases}
+				</div>
+			</div>
+		</div>
+		${</if-releases>}
+		${<if-tracks>}
+		<div class="col-lg-8">
+			<div class="well well-sm">
+				<h3>${tr:Lms.Explore.tracks}</h3>
+				${tracks}
+			</div>
+		</div>
+		${</if-tracks>}
+	</div>
+</message>
+
+</messages>

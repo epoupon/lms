@@ -29,7 +29,7 @@ target_link_libraries(lmsutils PRIVATE
 
 target_link_libraries(lmsutils PUBLIC
 	boost_system
-	stdc++fs
+	std::filesystem
 	wt
 	)
 

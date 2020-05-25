@@ -33,7 +33,7 @@ namespace Av {
 
 struct TranscodeParameters
 {
-	Encoding				encoding;
+	Format					format;
 	std::size_t				bitrate {128000};
 	std::optional<std::size_t>		stream; // Id of the stream to be transcoded (auto detect by default)
 	std::optional<std::chrono::milliseconds> offset;

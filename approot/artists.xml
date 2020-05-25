@@ -3,35 +3,30 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Artists.template">
-	<div class="page-header">
+	<div class="Lms-header">
 		<h2>${tr:Lms.Explore.artists}</h2>
-	</div>
-	<div class="row">
-		<div class="col-xs-12 col-sm-3">
-			<div class="Lms-explore-artists-input">
+		${mode class="nav nav-pills Lms-explore-mode-container"}
+		<div class="row">
+			<div class="col-sm-2">
 				${link-type}
-			</div>
-		</div>
-		<div class="col-xs-12 col-sm-9">
-			<div class="input-group Lms-explore-artists-input">
-				<span class="input-group-addon"><i class="fa fa-search"></i></span>
-				${search}
 			</div>
 		</div>
 	</div>
 	${artists}
-	<div class="row">
-		<div class="col-xs-12 Lms-horizontal-center">
-			${show-more class="btn-primary Lms-show-more"}
-		</div>
+	<div class="Lms-horizontal-center">
+		${show-more class="btn-primary Lms-show-more"}
 	</div>
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">
-	<div class="row Lms-explore-artists-entry Lms-vertical-align">
-		 <div class="col-xs-12">
-			<h4>${name class="Lms-explore-artistname Lms-explore-artists-entry-name"}</h4>
-		</div>
+	<div class="Lms-explore-artists-entry Lms-entry-hoverable Lms-vertical-align">
+		 <h4>${name class="Lms-artistname text-primary"}</h4>
+	</div>
+</message>
+
+<message id="Lms.Explore.Artists.template.entry-small">
+	<div class="Lms-explore-artists-entry-small Lms-entry-hoverable Lms-vertical-align">
+		${name class="Lms-artistname text-primary"}
 	</div>
 </message>
 

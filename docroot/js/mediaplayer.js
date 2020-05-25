@@ -2,6 +2,13 @@
 
 var LMS = LMS || {};
 
+// Keep in sync with MediaPlayer::TranscodeMode cpp
+const TranscodeMode = {
+	Never: 0,
+	Always: 1,
+	IfFormatNotSupported: 2,
+}
+
 const Mode = {
 	Transcode: 1,
 	File: 2,
@@ -14,8 +21,11 @@ LMS.mediaplayer = function () {
 	var _elems = {};
 	var _offset = 0;
 	var _duration = 0;
-	var _audioSrc;
-	var _mode = Mode.File;
+	var _audioNativeSrc;
+	var _audioTranscodeSrc;
+	var _settings = {};
+	var _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+	var _gainNode = _audioCtx.createGain();
 
 	var _updateControls = function() {
 		if (_elems.audio.paused) {
@@ -71,6 +81,17 @@ LMS.mediaplayer = function () {
 		_setVolume(_elems.volumeslider.value);
 	}
 
+	var _initDefaultSettings = function(defaultSettings) {
+		if (typeof(Storage) !== "undefined" && localStorage.settings) {
+			_settings = Object.assign(defaultSettings, JSON.parse(localStorage.settings));
+		}
+		else {
+			_settings = defaultSettings;
+		}
+
+		Wt.emit(_root, "settingsLoaded", JSON.stringify(_settings));
+	}
+
 	var _setVolume = function(volume) {
 		_elems.lastvolume = _elems.audio.volume;
 
@@ -99,7 +120,11 @@ LMS.mediaplayer = function () {
 		}
 	}
 
-	var init = function(root) {
+	var _setReplayGain = function (replayGain) {
+		_gainNode.gain.value = Math.pow(10, (_settings.replayGain.preAmpGain + replayGain) / 20);
+	}
+
+	var init = function(root, defaultSettings) {
 		_root = root;
 
 		_elems.audio = document.getElementById("lms-mp-audio");
@@ -112,32 +137,43 @@ LMS.mediaplayer = function () {
 		_elems.duration = document.getElementById("lms-mp-duration");
 		_elems.volume = document.getElementById("lms-mp-volume");
 		_elems.volumeslider = document.getElementById("lms-mp-volume-slider");
+		_elems.transcodingActive = document.getElementById("lms-transcoding-active");
+
+		$(_elems.transcodingActive).tooltip()
+
+		var source = _audioCtx.createMediaElementSource(_elems.audio);
+		source.connect(_gainNode);
+		_gainNode.connect(_audioCtx.destination);
 
 		_elems.playpause.addEventListener("click", function() {
-			if (_elems.audio.paused) {
-				if (_elems.audio.hasAttribute("src"))
-					_elems.audio.play();
+			_audioCtx.resume();
+			if (_elems.audio.paused && _elems.audio.children.length > 0) {
+				_playTrack();
 			}
 			else
 				_elems.audio.pause();
 		});
 
 		_elems.previous.addEventListener("click", function() {
+			_audioCtx.resume();
 			_requestPreviousTrack();
 		});
 		_elems.next.addEventListener("click", function() {
+			_audioCtx.resume();
 			_requestNextTrack();
 		});
 		_elems.seek.addEventListener("change", function() {
-			if (!_elems.audio.hasAttribute("src"))
+			let mode = _getAudioMode();
+			if (!mode)
 				return;
 
 			let selectedOffset = parseInt(_elems.seek.value, 10);
 
-			switch (_mode) {
+			switch (mode) {
 				case Mode.Transcode:
 					_offset = selectedOffset;
-					_elems.audio.src = _audioSrc + "&offset=" + _offset;
+					_removeAudioSources();
+					_addAudioSource(_audioTranscodeSrc + "&offset=" + _offset);
 					_elems.audio.load();
 					_elems.audio.currentTime = 0;
 					_playTrack();
@@ -163,7 +199,17 @@ LMS.mediaplayer = function () {
 			Wt.emit(_root, "playbackEnded");
 		});
 
+		_elems.audio.addEventListener("canplay", function() {
+			if (_getAudioMode() == Mode.Transcode) {
+				_elems.transcodingActive.style.visibility = "visible";
+			}
+			else {
+				_elems.transcodingActive.style.visibility = "hidden";
+			}
+		});
+
 		_initVolume();
+		_initDefaultSettings(defaultSettings);
 
 		_elems.volumeslider.addEventListener("input", function() {
 			_setVolume(_elems.volumeslider.value);
@@ -189,19 +235,55 @@ LMS.mediaplayer = function () {
 
 	}
 
+	var _removeAudioSources = function() {
+		while ( _elems.audio.lastElementChild) {
+			_elems.audio.removeChild( _elems.audio.lastElementChild);
+		}
+	}
+
+	var _addAudioSource = function(audioSrc) {
+		let source = document.createElement('source');
+		source.src = audioSrc;
+		_elems.audio.appendChild(source);
+	}
+
+	var _getAudioMode = function() {
+		if (_elems.audio.currentSrc) {
+			if (_elems.audio.currentSrc.includes("format"))
+				return Mode.Transcode;
+			else
+				return Mode.File;
+		}
+		else
+			return undefined;
+	}
+
 	var loadTrack = function(params, autoplay) {
 		_offset = 0;
 		_duration = params.duration;
-		_audioSrc = params.resource;
-		_mode = params.mode;
+		_audioNativeSrc = params.nativeResource;
+		_audioTranscodeSrc = params.transcodeResource + "&bitrate=" + _settings.transcode.bitrate + "&format=" + _settings.transcode.format;
 
 		_elems.seek.max = _duration;
-		_elems.audio.src = _audioSrc;
+
+		_removeAudioSources();
+		// ! order is important
+		if (_settings.transcode.mode == TranscodeMode.Never || _settings.transcode.mode == TranscodeMode.IfFormatNotSupported)
+		{
+			_addAudioSource(_audioNativeSrc);
+		}
+		if (_settings.transcode.mode == TranscodeMode.Always || _settings.transcode.mode == TranscodeMode.IfFormatNotSupported)
+		{
+			_addAudioSource(_audioTranscodeSrc);
+		}
+		_elems.audio.load();
+
+		_setReplayGain(params.replayGain);
 
 		_elems.curtime.innerHTML = _durationToString(_offset);
 		_elems.duration.innerHTML = _durationToString(_duration);
 
-		if (autoplay)
+		if (autoplay && _audioCtx.state == "running")
 			_playTrack();
 
 		if ('mediaSession' in navigator) {
@@ -218,10 +300,19 @@ LMS.mediaplayer = function () {
 		_elems.audio.pause();
 	}
 
+	var setSettings = function(settings) {
+		_settings = settings;
+
+		if (typeof(Storage) !== "undefined") {
+			localStorage.settings = JSON.stringify(_settings);
+		}
+	}
+
 	return {
 		init: init,
 		loadTrack: loadTrack,
 		stop: stop,
+		setSettings: setSettings,
 	};
 }();
 

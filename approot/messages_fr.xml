@@ -4,13 +4,13 @@
 
 <!--Common-->
 <message id="Lms.add">Ajouter</message>
+<message id="Lms.administration">Administration</message>
 <message id="Lms.apply">Appliquer</message>
 <message id="Lms.discard">Annuler</message>
-<message id="Lms.administration">Administration</message>
 <message id="Lms.cancel">Annuler</message>
 <message id="Lms.create">Créer</message>
 <message id="Lms.login">Login</message>
-<message id="Lms.logout">Logout</message>
+<message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Quitter</message>
 <message id="Lms.not-a-directory">N'est pas un répertoire</message>
 <message id="Lms.password">Mot de passe</message>
 <message id="Lms.password-bad-login-combination">Mauvaise combinaison login / mot de passe</message>
@@ -20,9 +20,9 @@
 <message id="Lms.password-old">Ancien mot de passe</message>
 <message id="Lms.password-too-weak">Mot de passe trop faible</message>
 <message id="Lms.passwords-dont-match">Les mots de passe ne correspondent pas</message>
-<message id="Lms.quit-confirm">Êtes-vous sûr ?</message>
 <message id="Lms.quit-other-session">Une autre session a été ouverte. Reouvrir celle-ci ?</message>
 <message id="Lms.save">Sauvegarder</message>
+<message id="Lms.user">Utilisateur</message>
 
 <!--Errors-->
 <message id="Lms.Error.artist-not-found">Cet artiste n'existe pas</message>
@@ -37,6 +37,7 @@
 <message id="Lms.Admin.Database.database">Collection de musiques</message>
 <message id="Lms.Admin.Database.immediate-scan">Scanner maintenant !</message>
 <message id="Lms.Admin.Database.monthly">Tous les mois</message>
+<message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Collection de musiques</message>
 <message id="Lms.Admin.Database.never">Jamais</message>
 <message id="Lms.Admin.Database.path">Dossier racine des fichiers de musique</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">Moteur de recommandation</message>
@@ -77,9 +78,9 @@
 <message id="Lms.Admin.Users.demo">Demo</message>
 <message id="Lms.Admin.Users.edit">Editer</message>
 <message id="Lms.Admin.Users.users">Utilisateurs</message>
+<message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utilisateurs</message>
 
 <!--User-->
-<message id="Lms.Admin.User.audio-transcode-bitrate-limit">Limite du bitrate pour le transcodage</message>
 <message id="Lms.Admin.User.demo-account">Compte de démonstration</message>
 <message id="Lms.Admin.User.demo-account-already-exists">Le compte de démonstration existe déjà !</message>
 <message id="Lms.Admin.User.demo-password-invalid">Le password doit être égal au login !</message>
@@ -100,11 +101,18 @@
 
 <!--Explore-->
 <message id="Lms.Explore.add-filter">Ajouter filtre</message>
+<message id="Lms.Explore.all">Tous</message>
 <message id="Lms.Explore.artists">Artistes</message>
 <message id="Lms.Explore.filter-added">Filtre ajouté</message>
 <message id="Lms.Explore.filters">Filtres</message>
+<message id="Lms.Explore.links">Liens</message>
+<message id="Lms.Explore.most-played">Plus joués</message>
+<message id="Lms.Explore.musicbrainz-artist">MusicBrainz Artist</message>
+<message id="Lms.Explore.musicbrainz-release">MusicBrainz Release</message>
+<message id="Lms.Explore.random">Aléatoire</message>
+<message id="Lms.Explore.recently-added">Ajoutés récemment</message>
+<message id="Lms.Explore.recently-played">Joués récemment</message>
 <message id="Lms.Explore.releases">Albums</message>
-<message id="Lms.Explore.search-placeholder">Rechercher...</message>
 <message id="Lms.Explore.show-more">Voir plus</message>
 <message id="Lms.Explore.tracks">Pistes</message>
 <message id="Lms.Explore.type">Type</message>
@@ -112,36 +120,33 @@
 <message id="Lms.Explore.various-artists">Artistes divers</message>
 
 <!--Explore:Artist-->
-<message id="Lms.Explore.ArtistInfo.similar-artists">Artistes similaires</message>
+<message id="Lms.Explore.Artist.similar-artists">Artistes similaires</message>
 
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">Tous les artistes</message>
-<message id="Lms.Explore.Artists.linktype-artist">Artiste de piste</message>
-<message id="Lms.Explore.Artists.linktype-releaseartist">Artiste d'album</message>
-<message id="Lms.Explore.ArtistsInfo.recently-added">Ajouts récents</message>
-<message id="Lms.Explore.ArtistsInfo.most-played">Artistes populaires</message>
+<message id="Lms.Explore.Artists.linktype-artist">Artistes de piste</message>
+<message id="Lms.Explore.Artists.linktype-releaseartist">Artistes d'album</message>
 
 <!--Explore:Release-->
 <message id="Lms.Explore.ReleaseInfo.similar-releases">Albums similaires</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
+<message id="Lms.Explore.Release.disc">Disque {1}</message>
 
-<!--Explore:Releases-->
-<message id="Lms.Explore.ReleasesInfo.recently-added">Ajouts récents</message>
-<message id="Lms.Explore.ReleasesInfo.most-played">Albums populaires</message>
+<!--Explore:Search-->
+<message id="Lms.Explore.Search.search-placeholder">Rechercher...</message>
+<message id="Lms.Explore.Search.search">Résultats de la recherche</message>
 
-<!--Explore:Tracks-->
-<message id="Lms.Explore.TracksInfo.recently-added">Ajouts récents</message>
-<message id="Lms.Explore.TracksInfo.most-played">Pistes populaires</message>
-
+<!--Player-->
+<message id="Lms.Player.transcoding-active">Transcodage actif</message>
 
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">Effacer</message>
 <message id="Lms.PlayQueue.nb-tracks">{1} pistes</message>
-<message id="Lms.PlayQueue.nb-tracks-playing">
+<message id="Lms.PlayQueue.nb-tracks-added">
 	<plural case="0">{1} piste ajoutée</plural>
 	<plural case="1">{1} pistes ajoutées</plural>
 </message>
-<message id="Lms.PlayQueue.nb-tracks-added">
+<message id="Lms.PlayQueue.nb-tracks-playing">
 	<plural case="0">{1} piste ajoutée</plural>
 	<plural case="1">{1} pistes ajoutées</plural>
 </message>
@@ -155,25 +160,44 @@
 
 
 <!--Settings-->
+<message id="Lms.Settings.appearance">Apparence</message>
 <message id="Lms.Settings.audio">Audio</message>
+<message id="Lms.Settings.audio-settings-are-local">Ces paramètres audio sont locaux à votre navigateur !</message>
 <message id="Lms.Settings.change-password">Changement de mot de passe</message>
+<message id="Lms.Settings.dark-mode">Mode sombre</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
+<message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Paramètres</message>
 <message id="Lms.Settings.password-bad">Mauvais mot de passe</message>
 <message id="Lms.Settings.password-must-fill-old-password">L'ancien mot de passe doit être renseigné</message>
-<message id="Lms.Settings.transcoding">Transcodage</message>
-<message id="Lms.Settings.transcoding-bitrate">Bitrate du transcodage</message>
-<message id="Lms.Settings.transcoding-format">Format du transcodage</message>
-<message id="Lms.Settings.transcoding-enable">Activer le transcodage</message>
-<message id="Lms.Settings.transcoding.matroska_opus">Matroska/Opus</message>
-<message id="Lms.Settings.transcoding.mp3">MP3</message>
-<message id="Lms.Settings.transcoding.ogg_opus">Ogg/Opus</message>
-<message id="Lms.Settings.transcoding.ogg_vorbis">Ogg/Vorbis</message>
-<message id="Lms.Settings.transcoding.webm_vorbis">WebM/Vorbis</message>
-<message id="Lms.Settings.settings">Paramètres</message>
+<message id="Lms.Settings.replaygain-mode">Mode ReplayGain</message>
+<message id="Lms.Settings.replaygain-mode.none">Pas de ReplayGain</message>
+<message id="Lms.Settings.replaygain-mode.auto">Automatique</message>
+<message id="Lms.Settings.replaygain-mode.track">Piste</message>
+<message id="Lms.Settings.replaygain-mode.release">Album</message>
+<message id="Lms.Settings.replaygain-preamp">Pre-amplification ReplayGain</message>
+<message id="Lms.Settings.replaygain-preamp-no-rg-info">Pre-amplification ReplayGain (si pas d'info)</message>
+<message id="Lms.Settings.subsonic-artist-list-mode">Mode de listage des artistes</message>
+<message id="Lms.Settings.subsonic-artist-list-mode.all-artists">Tous les artistes</message>
+<message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Tous les artistes d'album</message>
+<message id="Lms.Settings.subsonic-api">API Subsonic</message>
+<message id="Lms.Settings.transcode">Transcodage</message>
+<message id="Lms.Settings.transcode-bitrate">Bitrate du transcodage</message>
+<message id="Lms.Settings.transcode-enable">Activer le transcodage</message>
+<message id="Lms.Settings.transcode-format">Format du transcodage</message>
+<message id="Lms.Settings.transcode-format.matroska_opus">Matroska/Opus</message>
+<message id="Lms.Settings.transcode-format.mp3">MP3</message>
+<message id="Lms.Settings.transcode-format.ogg_opus">Ogg/Opus</message>
+<message id="Lms.Settings.transcode-format.ogg_vorbis">Ogg/Vorbis</message>
+<message id="Lms.Settings.transcode-format.webm_vorbis">WebM/Vorbis</message>
+<message id="Lms.Settings.transcode-mode">Appliquer le transcodage</message>
+<message id="Lms.Settings.transcode-mode.always">Toujours</message>
+<message id="Lms.Settings.transcode-mode.if-format-not-supported">Seulement lorsque le format n'est pas pris en charge</message>
+<message id="Lms.Settings.transcode-mode.never">Jamais</message>
 <message id="Lms.Settings.settings-saved">Paramètres sauvegardés !</message>
 
 <!--Wt-->
 <message id="Wt.WMessageBox.Yes">Oui</message>
 <message id="Wt.WMessageBox.No">Non</message>
 <message id="Wt.WValidator.Invalid">Ce champ ne peut pas être vide</message>
+<message id="Wt.WDoubleValidator.BadRange">Le nombre doit être compris entre {1} et {2}</message>
 </messages>

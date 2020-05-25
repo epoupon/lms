@@ -44,6 +44,8 @@ class AudioFileResource;
 class Auth;
 class ImageResource;
 class LmsApplicationException;
+class MediaPlayer;
+class PlayQueue;
 
 // Events that can be listen from anywhere in the application
 struct Events
@@ -51,12 +53,6 @@ struct Events
 	// Events relative to group
 	Wt::Signal<LmsApplicationInfo> appOpen;
 	Wt::Signal<LmsApplicationInfo> appClosed;
-
-	// A track is being loaded
-	Wt::Signal<Database::IdType /* trackId */, bool /* play */> trackLoaded;
-	std::optional<Database::IdType> lastLoadedTrackId;
-	// Unload current track
-	Wt::Signal<> trackUnloaded;
 
 	// Database events
 	Wt::Signal<> dbScanned;
@@ -103,7 +99,10 @@ class LmsApplication : public Wt::WApplication
 		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Wt::Dbo::ptr<Database::Artist> artist, bool addText = true);
 		static Wt::WLink createReleaseLink(Wt::Dbo::ptr<Database::Release> release);
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Wt::Dbo::ptr<Database::Release> release, bool addText = true);
-		static std::unique_ptr<Wt::WTemplate> createCluster(Wt::Dbo::ptr<Database::Cluster> cluster, bool canDelete = false);
+		static std::unique_ptr<Wt::WText> createCluster(Wt::Dbo::ptr<Database::Cluster> cluster, bool canDelete = false);
+
+		MediaPlayer&	getMediaPlayer() const { return *_mediaPlayer; }
+		PlayQueue&		getPlayQueue() const { return *_playQueue; }
 
 		// Signal emitted just before the session ends (user may already be logged out)
 		Wt::Signal<>&	preQuit() { return _preQuit; }
@@ -127,12 +126,14 @@ class LmsApplication : public Wt::WApplication
 		Wt::Signal<>				_preQuit;
 		Database::Session			_dbSession;
 		LmsApplicationGroupContainer&   	_appGroups;
-		Events					_events;
+		Events						_events;
 		std::optional<Database::IdType>	_userId;
 		std::optional<bool>			_userAuthStrong;
 		std::shared_ptr<AudioTranscodeResource>	_audioTranscodeResource;
 		std::shared_ptr<AudioFileResource>	_audioFileResource;
 		std::shared_ptr<ImageResource>		_imageResource;
+		MediaPlayer*				_mediaPlayer {};
+		PlayQueue*					_playQueue {};
 };
 
 

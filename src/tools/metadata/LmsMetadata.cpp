@@ -36,6 +36,9 @@ std::ostream& operator<<(std::ostream& os, const MetaData::Artist& artist)
 	if (artist.musicBrainzArtistID)
 		os << " (" << artist.musicBrainzArtistID->getAsString() << ")";
 
+	if (artist.sortName)
+		os << " '" << *artist.sortName << "'";
+
 	return os;
 }
 
@@ -55,7 +58,7 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 {
 	using namespace MetaData;
 
-	parser.setClusterTypeNames( {"MOOD", "GENRE"} );
+	parser.setClusterTypeNames( {"ALBUMMOOD", "MOOD", "ALBUMGROUPING", "ALBUMGENRE", "GENRE"} );
 
 	const auto start {std::chrono::steady_clock::now()};
 	std::optional<Track> track {parser.parse(file, true)};
@@ -107,6 +110,9 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 	if (track->discNumber)
 		std::cout << "Disc: " << *track->discNumber << std::endl;
 
+	if (!track->discSubtitle.empty())
+		std::cout << "Disc Subtitle: " << track->discSubtitle << std::endl;
+
 	if (track->totalDisc)
 		std::cout << "TotalDisc: " << *track->totalDisc << std::endl;
 
@@ -120,6 +126,12 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 
 	for (const auto& audioStream : track->audioStreams)
 		std::cout << "Audio stream: " << audioStream.bitRate << " bps" << std::endl;
+
+	if (track->trackReplayGain)
+		std::cout << "Track replay gain: " << *track->trackReplayGain << std::endl;
+
+	if (track->albumReplayGain)
+		std::cout << "Album replay gain: " << *track->albumReplayGain << std::endl;
 
 	if (track->acoustID)
 		std::cout << "AcoustID: " << track->acoustID->getAsString() << std::endl;

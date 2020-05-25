@@ -19,6 +19,7 @@
 #include "subsonic/SubsonicResource.hpp"
 
 #include <atomic>
+#include <unordered_map>
 
 #include <Wt/WLocalDateTime.h>
 
@@ -67,7 +68,7 @@ namespace StringUtils
 {
 	template<>
 	std::optional<API::Subsonic::ClientVersion>
-	StringUtils::readAs(const std::string& str)
+	readAs(const std::string& str)
 	{
 		// Expects "X.Y.Z"
 		const auto numbers {StringUtils::splitString(str, ".")};
@@ -208,7 +209,6 @@ checkUserIsMySelfOrAdmin(RequestContext& context, const std::string& username)
 			throw UserNotAuthorizedError {};
 	}
 }
-
 
 static
 Response::Node
@@ -459,7 +459,6 @@ handleCreateUserRequest(RequestContext& context)
 		throw UserAlreadyExistsGenericError {};
 
 	User::pointer user {User::create(context.dbSession, username, hash)};
-	user.modify()->setMaxAudioTranscodeBitrate(128000);
 
 	return Response::createOkResponse();
 }
@@ -540,7 +539,7 @@ handleGetRandomSongsRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	auto tracks {Track::getAllRandom(context.dbSession, size)};
+	auto tracks {Track::getAllRandom(context.dbSession, {}, size)};
 
 	Response response {Response::createOkResponse()};
 
@@ -573,16 +572,17 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	if (type == "random")
 	{
 		// Random results are paginated, but there is no acceptable way to handle the pagination params without repeating some albums
-		releases = Release::getAllRandom(context.dbSession, size);
+		releases = Release::getAllRandom(context.dbSession, {}, size);
 	}
 	else if (type == "newest")
 	{
 		auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-6)};
-		releases = Release::getLastAdded(context.dbSession, after, offset, size);
+		bool moreResults {};
+		releases = Release::getLastWritten(context.dbSession, after, {}, Range {offset, size}, moreResults);
 	}
 	else if (type == "alphabeticalByName")
 	{
-		releases = Release::getAll(context.dbSession, offset, size);
+		releases = Release::getAll(context.dbSession, Range {offset, size});
 	}
 	else if (type == "alphabeticalByArtist")
 	{
@@ -611,7 +611,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 			if (cluster)
 			{
 				bool more;
-				releases = Release::getByFilter(context.dbSession, {cluster.id()}, {}, offset, size, more);
+				releases = Release::getByFilter(context.dbSession, {cluster.id()}, {}, Range {offset, size}, more);
 			}
 		}
 	}
@@ -782,7 +782,23 @@ handleGetArtistsRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	auto artists {Artist::getAll(context.dbSession)};
+	std::optional<TrackArtistLink::Type> linkType;
+	switch (user->getSubsonicArtistListMode())
+	{
+		case User::SubsonicArtistListMode::AllArtists:
+			break;
+		case User::SubsonicArtistListMode::ReleaseArtists:
+			linkType = TrackArtistLink::Type::ReleaseArtist;
+			break;
+	}
+
+	bool more {};
+	const std::vector<Artist::pointer> artists {Artist::getByFilter(context.dbSession,
+			{},
+			{},
+			linkType,
+			Artist::SortMethod::BySortName,
+			std::nullopt, more)};
 	for (const Artist::pointer& artist : artists)
 		indexNode.addArrayChild("artist", artistToResponseNode(user, artist, true /* id3 */));
 
@@ -813,7 +829,8 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		{
 			directoryNode.setAttribute("name", "Music");
 
-			auto artists {Artist::getAll(context.dbSession)};
+			bool moreResults{};
+			auto artists {Artist::getAll(context.dbSession, Artist::SortMethod::BySortName, std::nullopt, moreResults)};
 			for (const Artist::pointer& artist : artists)
 				directoryNode.addArrayChild("child", artistToResponseNode(user, artist, false /* no id3 */));
 
@@ -909,7 +926,23 @@ handleGetIndexesRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	auto artists {Artist::getAll(context.dbSession)};
+	std::optional<TrackArtistLink::Type> linkType;
+	switch (user->getSubsonicArtistListMode())
+	{
+		case User::SubsonicArtistListMode::AllArtists:
+			break;
+		case User::SubsonicArtistListMode::ReleaseArtists:
+			linkType = TrackArtistLink::Type::ReleaseArtist;
+			break;
+	}
+
+	bool more {};
+	const std::vector<Artist::pointer> artists {Artist::getByFilter(context.dbSession,
+			{},
+			{},
+			linkType,
+			Artist::SortMethod::BySortName,
+			std::nullopt, more)};
 	for (const Artist::pointer& artist : artists)
 		indexNode.addArrayChild("artist", artistToResponseNode(user, artist, false /* no id3 */));
 
@@ -1127,7 +1160,7 @@ handleGetSongsByGenreRequest(RequestContext& context)
 	Response::Node& songsByGenreNode {response.createNode("songsByGenre")};
 
 	bool more;
-	auto tracks {Track::getByFilter(context.dbSession, {cluster.id()}, {}, offset, size, more)};
+	auto tracks {Track::getByFilter(context.dbSession, {cluster.id()}, {}, Range {offset, size}, more)};
 	for (const Track::pointer& track : tracks)
 		songsByGenreNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 
@@ -1198,19 +1231,19 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 
 	bool more;
 	{
-		auto artists {Artist::getByFilter(context.dbSession, {}, keywords, {}, artistOffset, artistCount, more)};
+		auto artists {Artist::getByFilter(context.dbSession, {}, keywords, std::nullopt, Artist::SortMethod::BySortName, Range {artistOffset, artistCount}, more)};
 		for (const Artist::pointer& artist : artists)
 			searchResult2Node.addArrayChild("artist", artistToResponseNode(user, artist, id3));
 	}
 
 	{
-		auto releases {Release::getByFilter(context.dbSession, {}, keywords, albumOffset, albumCount, more)};
+		auto releases {Release::getByFilter(context.dbSession, {}, keywords, Range {albumOffset, albumCount}, more)};
 		for (const Release::pointer& release : releases)
 			searchResult2Node.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
 	}
 
 	{
-		auto tracks {Track::getByFilter(context.dbSession, {}, keywords, songOffset, songCount, more)};
+		auto tracks {Track::getByFilter(context.dbSession, {}, keywords, Range {songOffset, songCount}, more)};
 		for (const Track::pointer& track : tracks)
 			searchResult2Node.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 	}
@@ -1368,7 +1401,6 @@ handleUpdateUserRequest(RequestContext& context)
 {
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
 	std::optional<std::string> password {getParameterAs<std::string>(context.parameters, "password")};
-	std::optional<Bitrate> maxBitRate {getParameterAs<Bitrate>(context.parameters, "maxBitRate")};
 
 	User::PasswordHash hash;
 	if (password)
@@ -1385,14 +1417,6 @@ handleUpdateUserRequest(RequestContext& context)
 	User::pointer user {User::getByLoginName(context.dbSession, username)};
 	if (!user)
 		throw UserNotAuthorizedError {};
-
-	if (maxBitRate)
-	{
-		if (*maxBitRate == 0)
-			*maxBitRate = 320;
-
-		user.modify()->setMaxAudioTranscodeBitrate(*maxBitRate * 1000);
-	}
 
 	if (password)
 	{
@@ -1633,7 +1657,7 @@ static const std::unordered_map<std::string, RequestEntryPointInfo> requestEntry
 	{"search",		{handleNotImplemented,			{}}},
 	{"search2",		{handleSearch2Request,			{}}},
 	{"search3",		{handleSearch3Request,			{}}},
-	
+
 	// Playlists
 	{"getPlaylists",	{handleGetPlaylistsRequest,		{}}},
 	{"getPlaylist",		{handleGetPlaylistRequest,		{}}},
@@ -1677,7 +1701,7 @@ static const std::unordered_map<std::string, RequestEntryPointInfo> requestEntry
 	{"createInternetRadioStation",	{handleNotImplemented,			{}}},
 	{"updateInternetRadioStation",	{handleNotImplemented,			{}}},
 	{"deleteInternetRadioStation",	{handleNotImplemented,			{}}},
-	
+
 	// Chat
 	{"getChatMessages",	{handleNotImplemented,			{}}},
 	{"addChatMessages",	{handleNotImplemented,			{}}},

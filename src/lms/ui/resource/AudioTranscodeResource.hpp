@@ -37,7 +37,7 @@ class AudioTranscodeResource : public Wt::WResource
 		~AudioTranscodeResource();
 
 		// Url depends on the user since settings are used in parameters
-		std::string getUrlForUser(Database::IdType trackId, Wt::Dbo::ptr<Database::User> user) const;
+		std::string getUrl(Database::IdType trackId) const;
 
 		void handleRequest(const Wt::Http::Request& request,
 				Wt::Http::Response& response);

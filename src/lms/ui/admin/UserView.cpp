@@ -19,7 +19,6 @@
 
 #include "UserView.hpp"
 
-#include <Wt/WApplication.h>
 #include <Wt/WCheckBox.h>
 #include <Wt/WComboBox.h>
 #include <Wt/WLineEdit.h>
@@ -49,10 +48,9 @@ class UserModel : public Wt::WFormModel
 {
 
 	public:
-		static const Field LoginField;
-		static const Field PasswordField;
-		static const Field AudioTranscodeBitrateLimitField;
-		static const Field DemoField;
+		static inline const Field LoginField {"login"};
+		static inline const Field PasswordField {"password"};
+		static inline const Field DemoField {"demo"};
 
 		UserModel(std::optional<Database::IdType> userId)
 		: _userId {userId}
@@ -64,19 +62,14 @@ class UserModel : public Wt::WFormModel
 			}
 
 			addField(PasswordField);
-			addField(AudioTranscodeBitrateLimitField);
 			addField(DemoField);
 
 			if (!_userId)
 				setValidator(PasswordField, createMandatoryValidator());
 
-			initializeModels();
-
 			// populate the model with initial data
 			loadData();
 		}
-
-		std::shared_ptr<Wt::WAbstractItemModel> bitrateModel() { return _bitrateModel; }
 
 		void saveData()
 		{
@@ -97,19 +90,11 @@ class UserModel : public Wt::WFormModel
 					user.modify()->setPasswordHash(*passwordHash);
 					user.modify()->clearAuthTokens();
 				}
-
-				auto transcodeBitrateLimitRow {_bitrateModel->getRowFromString(valueText(AudioTranscodeBitrateLimitField))};
-				if (transcodeBitrateLimitRow)
-					user.modify()->setMaxAudioTranscodeBitrate(_bitrateModel->getValue(*transcodeBitrateLimitRow));
 			}
 			else
 			{
 				// Create user
 				Database::User::pointer user {Database::User::create(LmsApp->getDbSession(), valueText(LoginField).toUTF8(), *passwordHash)};
-
-				auto transcodeBitrateLimitRow {_bitrateModel->getRowFromString(valueText(AudioTranscodeBitrateLimitField))};
-				if (transcodeBitrateLimitRow )
-					user.modify()->setMaxAudioTranscodeBitrate(_bitrateModel->getValue(*transcodeBitrateLimitRow));
 
 				if (Wt::asNumber(value(DemoField)))
 					user.modify()->setType(Database::User::Type::DEMO);
@@ -130,10 +115,6 @@ class UserModel : public Wt::WFormModel
 				throw UserNotFoundException {*_userId};
 			else if (user == LmsApp->getUser())
 				throw UserNotAllowedException {};
-
-			auto transcodeBitrateLimitRow {_bitrateModel->getRowFromValue(user->getMaxAudioTranscodeBitrate())};
-			if (transcodeBitrateLimitRow)
-				setValue(AudioTranscodeBitrateLimitField, _bitrateModel->getString(*transcodeBitrateLimitRow));
 		}
 
 		std::string getLoginName() const
@@ -195,30 +176,15 @@ class UserModel : public Wt::WFormModel
 			return false;
 		}
 
-
-		void initializeModels()
-		{
-			_bitrateModel = std::make_shared<ValueStringModel<Bitrate>>();
-
-			for (auto bitrate : Database::User::audioTranscodeAllowedBitrates)
-				_bitrateModel->add( Wt::WString::fromUTF8(std::to_string(bitrate / 1000)), bitrate );
-		}
-
-		std::shared_ptr<ValueStringModel<Bitrate>>	_bitrateModel;
 		std::optional<Database::IdType> _userId;
 };
 
-const Wt::WFormModel::Field UserModel::LoginField = "login";
-const Wt::WFormModel::Field UserModel::PasswordField = "password";
-const Wt::WFormModel::Field UserModel::AudioTranscodeBitrateLimitField = "audio-transcode-bitrate-limit";
-const Wt::WFormModel::Field UserModel::DemoField = "demo";
-
 UserView::UserView()
 {
-	wApp->internalPathChanged().connect(std::bind([=]
+	wApp->internalPathChanged().connect([this]()
 	{
 		refreshView();
-	}));
+	});
 
 	refreshView();
 }
@@ -263,18 +229,13 @@ UserView::refreshView()
 	passwordEdit->setEchoMode(Wt::EchoMode::Password);
 	t->setFormWidget(UserModel::PasswordField, std::move(passwordEdit));
 
-	// Transcode bitrate limit
-	auto bitrate = std::make_unique<Wt::WComboBox>();
-	bitrate->setModel(model->bitrateModel());
-	t->setFormWidget(UserModel::AudioTranscodeBitrateLimitField, std::move(bitrate));
-
 	// Demo account
 	t->setFormWidget(UserModel::DemoField, std::make_unique<Wt::WCheckBox>());
 	if (!userId && Service<IConfig>::get()->getBool("demo", false))
 		t->setCondition("if-demo", true);
 
 	Wt::WPushButton* saveBtn = t->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(userId ? "Lms.save" : "Lms.create"));
-	saveBtn->clicked().connect(std::bind([=]
+	saveBtn->clicked().connect([=]()
 	{
 		t->updateModel(model.get());
 
@@ -288,7 +249,7 @@ UserView::refreshView()
 		{
 			t->updateView(model.get());
 		}
-	}));
+	});
 
 	t->updateView(model.get());
 }

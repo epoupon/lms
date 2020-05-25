@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,21 +19,28 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget.h>
-#include <Wt/WTemplate.h>
+#include <vector>
+
+#include <Wt/WBootstrapTheme.h>
+#include <Wt/WLinkedCssStyleSheet.h>
+
+#include "database/User.hpp"
 
 namespace UserInterface {
 
-class ArtistInfo : public Wt::WTemplate
+class LmsTheme : public Wt::WBootstrapTheme
 {
 	public:
-		ArtistInfo();
+		LmsTheme(Database::User::UITheme theme);
+
+		void setTheme(Database::User::UITheme theme);
 
 	private:
-		void refresh();
 
-		Wt::WContainerWidget* _similarArtistsContainer;
+		std::vector<Wt::WLinkedCssStyleSheet> styleSheets() const override;
+		static std::vector<Wt::WLink> getStyleSheets(Database::User::UITheme theme);
+
+		Database::User::UITheme _theme;
 };
 
-} // namespace UserInterface
-
+}

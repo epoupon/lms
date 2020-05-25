@@ -227,7 +227,7 @@ LocalPlayer::startPlayTrack(Database::IdType trackId, std::chrono::milliseconds 
 
 	Av::TranscodeParameters parameters {};
 	parameters.stripMetadata = true;
-	parameters.encoding = Av::Encoding::PCM_SIGNED_16_LE; // TODO
+	parameters.format = Av::Format::PCM_SIGNED_16_LE; // TODO
 	parameters.offset = offset;
 
 	_transcoder = std::make_unique<Av::Transcoder>(*trackPath, parameters);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,19 +19,15 @@
 
 #pragma once
 
-#include <Wt/WTemplate.h>
-
-namespace Database {
-	class Release;
-}
-
-namespace UserInterface {
-
-class ReleaseLink : public Wt::WTemplate
+namespace UserInterface
 {
-	public:
-		ReleaseLink(Wt::Dbo::ptr<Database::Release>);
-};
 
-} // namespace UserInterface
+	enum class PlayQueueAction
+	{
+		Play,
+		AddNext,
+		AddLast,
+	};
+
+}
 

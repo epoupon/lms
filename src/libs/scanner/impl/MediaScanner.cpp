@@ -84,6 +84,37 @@ isPathInParentPath(const std::filesystem::path& path, const std::filesystem::pat
 	return false;
 }
 
+static
+Artist::pointer
+createArtist(Session& session, const MetaData::Artist& artistInfo)
+{
+	Artist::pointer artist {Artist::create(session, artistInfo.name)};
+
+	if (artistInfo.musicBrainzArtistID)
+		artist.modify()->setMBID(*artistInfo.musicBrainzArtistID);
+	if (artistInfo.sortName)
+		artist.modify()->setSortName(*artistInfo.sortName);
+
+	return artist;
+}
+
+static
+void
+updateArtistIfNeeded(const Artist::pointer& artist, const MetaData::Artist& artistInfo)
+{
+	// Name may have been updated
+	if (artist->getName() != artistInfo.name)
+	{
+		artist.modify()->setName(artistInfo.name);
+	}
+
+	// Sortname may have been updated
+	if (artistInfo.sortName && *artistInfo.sortName != artist->getSortName() )
+	{
+		artist.modify()->setSortName(*artistInfo.sortName);
+	}
+}
+
 std::vector<Artist::pointer>
 getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artistsInfo)
 {
@@ -98,14 +129,9 @@ getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artist
 		{
 			artist = Artist::getByMBID(session, *artistInfo.musicBrainzArtistID);
 			if (!artist)
-			{
-				artist = Artist::create(session, artistInfo.name, artistInfo.musicBrainzArtistID);
-			}
-			else if (artist->getName() != artistInfo.name)
-			{
-				// Name may have been updated
-				artist.modify()->setName(artistInfo.name);
-			}
+				artist = createArtist(session, artistInfo);
+			else
+				updateArtistIfNeeded(artist, artistInfo);
 
 			artists.emplace_back(std::move(artist));
 			continue;
@@ -126,7 +152,9 @@ getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artist
 
 			// No Artist found with the same name and without MBID -> creating
 			if (!artist)
-				artist = Artist::create(session, artistInfo.name);
+				artist = createArtist(session, artistInfo);
+			else
+				updateArtistIfNeeded(artist, artistInfo);
 
 			artists.emplace_back(std::move(artist));
 			continue;
@@ -435,9 +463,7 @@ MediaScanner::scan(boost::system::error_code err)
 
 	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << "/" << stats.featuresToFetch <<",  duplicates = " << stats.duplicates.size();
 
-	LMS_LOG(DBUPDATER, INFO) << "Optimizing db...";
 	_dbSession.optimize();
-	LMS_LOG(DBUPDATER, INFO) << "Optimize db done!";
 
 	if (_running)
 	{
@@ -696,13 +722,6 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 		stats.updates++;
 	}
 
-	// Release related data
-	if (release)
-	{
-		release.modify()->setTotalTrackNumber(trackInfo->totalTrack ? *trackInfo->totalTrack : 0);
-		release.modify()->setTotalDiscNumber(trackInfo->totalDisc ? *trackInfo->totalDisc : 0);
-	}
-
 	// Track related data
 	assert(track);
 
@@ -722,6 +741,10 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	track.modify()->setAddedTime(Wt::WLocalDateTime::currentServerDateTime().toUTC());
 	track.modify()->setTrackNumber(trackInfo->trackNumber ? *trackInfo->trackNumber : 0);
 	track.modify()->setDiscNumber(trackInfo->discNumber ? *trackInfo->discNumber : 0);
+	track.modify()->setTotalTrack(trackInfo->totalTrack);
+	track.modify()->setTotalDisc(trackInfo->totalDisc);
+	if (!trackInfo->discSubtitle.empty())
+		track.modify()->setDiscSubtitle(trackInfo->discSubtitle);
 	track.modify()->setYear(trackInfo->year ? *trackInfo->year : 0);
 	track.modify()->setOriginalYear(trackInfo->originalYear ? *trackInfo->originalYear : 0);
 
@@ -734,6 +757,10 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	track.modify()->setHasCover(trackInfo->hasCover);
 	track.modify()->setCopyright(trackInfo->copyright);
 	track.modify()->setCopyrightURL(trackInfo->copyrightURL);
+	if (trackInfo->trackReplayGain)
+		track.modify()->setTrackReplayGain(*trackInfo->trackReplayGain);
+	if (trackInfo->albumReplayGain)
+		track.modify()->setReleaseReplayGain(*trackInfo->albumReplayGain);
 }
 
 void
@@ -802,32 +829,61 @@ checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDire
 void
 MediaScanner::removeMissingTracks(ScanStats& stats)
 {
-	std::vector<std::filesystem::path> trackPaths;
+	static constexpr std::size_t batchSize {50};
+
+	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks to be removed...";
+	std::size_t trackCount {};
+
 	{
 		auto transaction {_dbSession.createSharedTransaction()};
-		trackPaths = Track::getAllPaths(_dbSession);;
+		trackCount = Track::getCount(_dbSession);
 	}
+	LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks to be checked...";
 
-	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks...";
-	for (const auto& trackPath : trackPaths)
+	std::vector<std::pair<Database::IdType, std::filesystem::path>> trackPaths;
+	std::vector<IdType> tracksToRemove;
+
+	for (std::size_t i {trackCount < batchSize ? 0 : trackCount - batchSize}; ; i -= (i > batchSize ? batchSize : i))
 	{
-		if (!_running)
-			return;
+		trackPaths.clear();
+		tracksToRemove.clear();
 
-		if (!checkFile(trackPath, _mediaDirectory, _fileExtensions))
+		{
+			auto transaction {_dbSession.createSharedTransaction()};
+			trackPaths = Track::getAllPaths(_dbSession, i, batchSize);
+		}
+
+		for (const auto& [trackId, trackPath] : trackPaths)
+		{
+			if (!_running)
+				return;
+
+			if (!checkFile(trackPath, _mediaDirectory, _fileExtensions))
+				tracksToRemove.push_back(trackId);
+		}
+
+		if (!tracksToRemove.empty())
 		{
 			auto transaction {_dbSession.createUniqueTransaction()};
 
-			Track::pointer track {Track::getByPath(_dbSession, trackPath)};
-			if (track)
+			for (const IdType trackId : tracksToRemove)
 			{
-				track.remove();
-				stats.deletions++;
+				Track::pointer track {Track::getById(_dbSession, trackId)};
+				if (track)
+				{
+					track.remove();
+					stats.deletions++;
+				}
 			}
 		}
 
 		notifyInProgressIfNeeded(stats);
+
+		if (i == 0)
+			break;
 	}
+
+	LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks checked!";
 }
 
 void

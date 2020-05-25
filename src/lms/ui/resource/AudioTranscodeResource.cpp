@@ -74,32 +74,27 @@ AudioTranscodeResource:: ~AudioTranscodeResource()
 }
 
 static
-std::optional<Av::Encoding>
-AudioFormatToAvEncoding(Database::AudioFormat format)
+std::optional<Av::Format>
+AudioFormatToAvFormat(Database::AudioFormat format)
 {
 	switch (format)
 	{
-		case Database::AudioFormat::MP3:		return Av::Encoding::MP3;
-		case Database::AudioFormat::OGG_OPUS:		return Av::Encoding::OGG_OPUS;
-		case Database::AudioFormat::MATROSKA_OPUS:	return Av::Encoding::MATROSKA_OPUS;
-		case Database::AudioFormat::OGG_VORBIS:		return Av::Encoding::OGG_VORBIS;
-		case Database::AudioFormat::WEBM_VORBIS:	return Av::Encoding::WEBM_VORBIS;
+		case Database::AudioFormat::MP3:		return Av::Format::MP3;
+		case Database::AudioFormat::OGG_OPUS:		return Av::Format::OGG_OPUS;
+		case Database::AudioFormat::MATROSKA_OPUS:	return Av::Format::MATROSKA_OPUS;
+		case Database::AudioFormat::OGG_VORBIS:		return Av::Format::OGG_VORBIS;
+		case Database::AudioFormat::WEBM_VORBIS:	return Av::Format::WEBM_VORBIS;
 	}
 
-	LOG(ERROR) << "Cannot convert from audio format to encoding";
+	LOG(ERROR) << "Cannot convert from audio format to AV format";
 
 	return std::nullopt;
 }
 
 std::string
-AudioTranscodeResource::getUrlForUser(Database::IdType trackId, Database::User::pointer user) const
+AudioTranscodeResource::getUrl(Database::IdType trackId) const
 {
-	std::string computedUrl {url() + "&trackid=" + std::to_string(trackId)};
-
-	computedUrl += "&format=" + std::to_string(static_cast<std::size_t>(user->getAudioTranscodeFormat()));
-	computedUrl += "&bitrate=" + std::to_string(LmsApp->getUser()->getAudioTranscodeBitrate());
-
-	return computedUrl;
+	return url() + "&trackid=" + std::to_string(trackId);
 }
 
 template<typename T>
@@ -123,7 +118,7 @@ readParameterAs(const Wt::Http::Request& request, const std::string& parameterNa
 struct TranscodeParameters
 {
 	std::filesystem::path trackPath;
-	Av::TranscodeParameters parameters;	
+	Av::TranscodeParameters parameters;
 };
 
 static
@@ -138,15 +133,20 @@ getTranscodeParameters(const Wt::Http::Request& request)
 	if (!trackId || !format || !bitrate)
 		return {};
 
-	auto encoding {AudioFormatToAvEncoding(*format)};
-	if (!encoding)
+	auto avFormat {AudioFormatToAvFormat(*format)};
+	if (!avFormat)
 		return {};
 
 	// optional parameter
 	auto offset {readParameterAs<std::size_t>(request, "offset")};
-
 	if (offset)
 		LOG(DEBUG) << "Offset set to '" << *offset << "'";
+
+	if (Database::User::audioTranscodeAllowedBitrates.find(*bitrate) == std::cend(Database::User::audioTranscodeAllowedBitrates))
+	{
+		LOG(ERROR) << "Bitrate '" << *bitrate << "' is not allowed";
+		return {};
+	}
 
 	TranscodeParameters transcodeParameters;
 
@@ -163,16 +163,10 @@ getTranscodeParameters(const Wt::Http::Request& request)
 		}
 
 		transcodeParameters.trackPath = track->getPath();
-
-		if (!LmsApp->getUser()->checkBitrate(*bitrate))
-		{
-			LOG(ERROR) << "Bitrate '" << *bitrate << "' is not allowed";
-			return {};
-		}
 	}
 
 	transcodeParameters.parameters.stripMetadata = true;
-	transcodeParameters.parameters.encoding = *encoding;
+	transcodeParameters.parameters.format = *avFormat;
 	transcodeParameters.parameters.bitrate = *bitrate;
 	transcodeParameters.parameters.offset = std::chrono::seconds {offset ? *offset : 0};
 
