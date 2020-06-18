@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* This file contains some classes in order to get info from file using the libavconv */
-
 #include "AuthTokenService.hpp"
 
 #include <Wt/Auth/HashFunction.h>

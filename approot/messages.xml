@@ -17,6 +17,9 @@
 <message id="Lms.password-client-throttled">Login throttled, please try again later</message>
 <message id="Lms.password-confirm">Confirm password</message>
 <message id="Lms.password-new">New password</message>
+<message id="Lms.external_auth">Is auth managed externally?</message>
+<message id="Lms.password_must_be_empty_for_ext">Password must be empty for users with external authentication</message>
+<message id="Lms.password-must-not-be-empty">Password must not be empty for users without external authentication</message>
 <message id="Lms.password-old">Old password</message>
 <message id="Lms.password-too-weak">Password too weak</message>
 <message id="Lms.passwords-dont-match">Passwords don't match</message>
