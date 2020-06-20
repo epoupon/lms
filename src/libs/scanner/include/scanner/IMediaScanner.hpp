@@ -64,6 +64,9 @@ class IMediaScanner
 
 		virtual Status getStatus() = 0;
 
+		// Called just after scan start
+		virtual Wt::Signal<>& scanStarted() = 0;
+
 		// Called just after scan complete
 		virtual Wt::Signal<>& scanComplete() = 0;
 

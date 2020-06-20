@@ -1,6 +1,7 @@
 
 add_library(lmssubsonic SHARED
 	impl/ParameterParsing.cpp
+	impl/Scan.cpp
 	impl/Stream.cpp
 	impl/SubsonicId.cpp
 	impl/SubsonicResource.cpp
@@ -26,6 +27,7 @@ target_link_libraries(lmssubsonic PRIVATE
 
 target_link_libraries(lmssubsonic PUBLIC
 	lmsdatabase
+	lmsscanner
 	wt
 	)
 

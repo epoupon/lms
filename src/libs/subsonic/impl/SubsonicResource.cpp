@@ -42,6 +42,7 @@
 #include "utils/Utils.hpp"
 #include "ParameterParsing.hpp"
 #include "RequestContext.hpp"
+#include "Scan.hpp"
 #include "Stream.hpp"
 #include "SubsonicResponse.hpp"
 
@@ -1860,8 +1861,8 @@ static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"savePlayQueue",	{handleNotImplemented,			false}},
 
 	// Media library scanning
-	{"getScanStatus",	{handleNotImplemented,			true}},
-	{"startScan",		{handleNotImplemented,			true}},
+	{"getScanStatus",	{Scan::handleGetScanStatus,		true}},
+	{"startScan",		{Scan::handleStartScan,			true}},
 };
 
 using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;

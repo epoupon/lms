@@ -121,6 +121,10 @@ DatabaseStatus::DatabaseStatus()
 
 	auto onDbEvent = [&]() { refreshContents(); };
 
+	LmsApp->getEvents().dbScanStarted.connect(this, []()
+	{
+		LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
+	});
 	LmsApp->getEvents().dbScanned.connect(this, onDbEvent);
 	LmsApp->getEvents().dbScanInProgress.connect(this, onDbEvent);
 	LmsApp->getEvents().dbScanScheduled.connect(this, onDbEvent);
