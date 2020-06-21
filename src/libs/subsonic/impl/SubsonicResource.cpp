@@ -290,18 +290,18 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 	trackResponse.setAttribute("isDir", "false");
 	trackResponse.setAttribute("title", track->getName());
 	if (track->getTrackNumber())
-		trackResponse.setAttribute("track", std::to_string(*track->getTrackNumber()));
+		trackResponse.setAttribute("track", *track->getTrackNumber());
 	if (track->getDiscNumber())
-		trackResponse.setAttribute("discNumber", std::to_string(*track->getDiscNumber()));
+		trackResponse.setAttribute("discNumber", *track->getDiscNumber());
 	if (track->getYear())
-		trackResponse.setAttribute("year", std::to_string(*track->getYear()));
+		trackResponse.setAttribute("year", *track->getYear());
 
 	trackResponse.setAttribute("path", getTrackPath(track));
 	{
 		std::error_code ec;
 		const auto fileSize {std::filesystem::file_size(track->getPath(), ec)};
 		if (!ec)
-			trackResponse.setAttribute("size", std::to_string(fileSize));
+			trackResponse.setAttribute("size", fileSize);
 	}
 
 	if (track->getPath().has_extension())
@@ -331,7 +331,7 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 		trackResponse.setAttribute("parent", IdToString({Id::Type::Release, track->getRelease().id()}));
 	}
 
-	trackResponse.setAttribute("duration", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count()));
+	trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count());
 	trackResponse.setAttribute("type", "music");
 
 	if (user->hasStarredTrack(track))
@@ -355,7 +355,7 @@ trackBookmarkToResponseNode(const TrackBookmark::pointer& trackBookmark)
 {
 	Response::Node trackBookmarkNode;
 
-	trackBookmarkNode.setAttribute("position", std::to_string(trackBookmark->getOffset().count()));
+	trackBookmarkNode.setAttribute("position", trackBookmark->getOffset().count());
 	if (!trackBookmark->getComment().empty())
 		trackBookmarkNode.setAttribute("comment", trackBookmark->getComment());
 	trackBookmarkNode.setAttribute("created", reportedCreatedBookmarkDate);
@@ -374,7 +374,7 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 	if (id3)
 	{
 		albumNode.setAttribute("name", release->getName());
-		albumNode.setAttribute("songCount", std::to_string(release->getTracksCount()));
+		albumNode.setAttribute("songCount", release->getTracksCount());
 		albumNode.setAttribute("duration", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(release->getDuration()).count()));
 	}
 	else
@@ -387,7 +387,7 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 	albumNode.setAttribute("coverArt", IdToString({Id::Type::Release, release.id()}));
 	auto releaseYear {release->getReleaseYear()};
 	if (releaseYear)
-		albumNode.setAttribute("year", std::to_string(*releaseYear));
+		albumNode.setAttribute("year", *releaseYear);
 
 	auto artists {release->getReleaseArtists()};
 	if (artists.empty())
@@ -443,7 +443,7 @@ artistToResponseNode(const User::pointer& user, const Artist::pointer& artist, b
 	artistNode.setAttribute("name", artist->getName());
 
 	if (id3)
-		artistNode.setAttribute("albumCount", std::to_string(artist->getReleaseCount()));
+		artistNode.setAttribute("albumCount", artist->getReleaseCount());
 
 	if (user->hasStarredArtist(artist))
 		artistNode.setAttribute("starred", reportedStarredDate);
@@ -458,8 +458,8 @@ clusterToResponseNode(const Cluster::pointer& cluster)
 	Response::Node clusterNode;
 
 	clusterNode.setValue(cluster->getName());
-	clusterNode.setAttribute("songCount", std::to_string(cluster->getTracksCount()));
-	clusterNode.setAttribute("albumCount", std::to_string(cluster->getReleasesCount()));
+	clusterNode.setAttribute("songCount", cluster->getTracksCount());
+	clusterNode.setAttribute("albumCount", cluster->getReleasesCount());
 
 	return clusterNode;
 }
@@ -1208,8 +1208,8 @@ tracklistToResponseNode(const TrackList::pointer& tracklist, Session&)
 
 	playlistNode.setAttribute("id", IdToString({Id::Type::Playlist, tracklist.id()}));
 	playlistNode.setAttribute("name", tracklist->getName());
-	playlistNode.setAttribute("songCount", std::to_string(tracklist->getCount()));
-	playlistNode.setAttribute("duration", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(tracklist->getDuration()).count()));
+	playlistNode.setAttribute("songCount", tracklist->getCount());
+	playlistNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(tracklist->getDuration()).count());
 	playlistNode.setAttribute("public", tracklist->isPublic() ? "true" : "false");
 	playlistNode.setAttribute("created", "");
 	playlistNode.setAttribute("owner", tracklist->getUser()->getLoginName());

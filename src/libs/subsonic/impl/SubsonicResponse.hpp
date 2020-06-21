@@ -21,6 +21,7 @@
 #include <map>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 
@@ -181,9 +182,11 @@ class Response
 		{
 			public:
 				void setAttribute(std::string_view key, std::string_view value);
+				void setAttribute(std::string_view key, long long value);
 
 				// A Node has either a value or some children
 				void setValue(std::string_view value);
+				void setValue(long long value);
 				Node& createChild(const std::string& key);
 				Node& createArrayChild(const std::string& key);
 
@@ -192,8 +195,8 @@ class Response
 
 			private:
 				friend class Response;
-				std::map<std::string, std::string> _attributes;
-				std::string _value;
+				std::map<std::string, std::variant<std::string, long long>> _attributes;
+				std::variant<std::string, long long> _value;
 				std::map<std::string, std::vector<Node>> _children;
 				std::map<std::string, std::vector<Node>> _childrenArrays;
 		};

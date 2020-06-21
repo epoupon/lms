@@ -36,7 +36,7 @@ namespace API::Subsonic::Scan
 
 		statusResponse.setAttribute("scanning", scanStatus.currentState == IMediaScanner::State::InProgress ? "true" : "false");
 		if (scanStatus.currentState == IMediaScanner::State::InProgress && scanStatus.inProgressScanStats)
-			statusResponse.setAttribute("count", std::to_string(scanStatus.inProgressScanStats->processedFiles));
+			statusResponse.setAttribute("count", scanStatus.inProgressScanStats->processedFiles);
 
 		return statusResponse;
 	}
