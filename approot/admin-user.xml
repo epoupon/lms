@@ -5,8 +5,9 @@
 	<div class="row">
 		<div class="col-lg-8">
 			<legend>${title}</legend>
-			<div class="form-horizontal">
-				${<if-has-last-login>}
+			<form>
+				<div class="form-horizontal">
+					${<if-has-last-login>}
 					<div class="form-group">
 						<label class="control-label col-lg-3" for="{id:last-login}">
 							${tr:Lms.Admin.User.last-login}
@@ -18,7 +19,7 @@
 						</div>
 					</div>
 					${</if-has-last-login>}
-				${<if-has-login>}
+					${<if-has-login>}
 					<div class="form-group">
 						<label class="control-label col-lg-3"  for="${id:login}">
 							${tr:Lms.login}
@@ -29,16 +30,16 @@
 						</div>
 					</div>
 					${</if-has-login>}
-				<div class="form-group">
-					<label class="control-label col-lg-3"  for="${id:password}">
-						${tr:Lms.password-new}
-					</label>
-					<div class="col-lg-9">
-						${password}
-						${password-info class="help-block"}
+					<div class="form-group">
+						<label class="control-label col-lg-3"  for="${id:password}">
+							${tr:Lms.password-new}
+						</label>
+						<div class="col-lg-9">
+							${password}
+							${password-info class="help-block"}
+						</div>
 					</div>
-				</div>
-				${<if-demo>}
+					${<if-demo>}
 					<div class="form-group">
 						<div class="col-lg-offset-3 col-lg-3"  for="${id:demo}">
 							<div class="checkbox">
@@ -48,12 +49,13 @@
 						</div>
 					</div>
 					${</if-demo>}
-				<div class="form-group">
-					<div class="col-lg-offset-3 col-lg-9">
-						${save-btn class="btn-primary"}
+					<div class="form-group">
+						<div class="col-lg-offset-3 col-lg-9">
+							${save-btn class="btn-primary"}
+						</div>
 					</div>
 				</div>
-			</div>
+			</form>
 		</div>
 	</div>
 </message>

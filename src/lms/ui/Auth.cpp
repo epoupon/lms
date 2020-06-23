@@ -181,12 +181,15 @@ Auth::Auth()
 	};
 
 	// LoginName
-	setFormWidget(AuthModel::LoginNameField, std::make_unique<Wt::WLineEdit>());
+	auto loginName {std::make_unique<Wt::WLineEdit>()};
+	loginName->setAttributeValue("autocomplete", "username");
+	setFormWidget(AuthModel::LoginNameField, std::move(loginName));
 
 	// Password
 	auto password = std::make_unique<Wt::WLineEdit>();
 	password->setEchoMode(Wt::EchoMode::Password);
 	password->enterPressed().connect(this, processAuth);
+	password->setAttributeValue("autocomplete", "current-password");
 	setFormWidget(AuthModel::PasswordField, std::move(password));
 
 	// Remember me

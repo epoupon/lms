@@ -227,6 +227,7 @@ UserView::refreshView()
 	// Password
 	auto passwordEdit = std::make_unique<Wt::WLineEdit>();
 	passwordEdit->setEchoMode(Wt::EchoMode::Password);
+	passwordEdit->setAttributeValue("autocomplete", "off");
 	t->setFormWidget(UserModel::PasswordField, std::move(passwordEdit));
 
 	// Demo account
