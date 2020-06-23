@@ -426,7 +426,7 @@ Release::getSimilarReleases(std::optional<std::size_t> offset, std::optional<std
 		.bind(self()->id())
 		.bind(self()->id())
 		.groupBy("r.id")
-		.orderBy("COUNT(*) DESC")
+		.orderBy("COUNT(*) DESC, RANDOM()")
 		.limit(count ? static_cast<int>(*count) : -1)
 		.offset(offset ? static_cast<int>(*offset) : -1)};
 

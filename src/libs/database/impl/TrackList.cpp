@@ -382,7 +382,7 @@ TrackList::getSimilarTracks(std::optional<std::size_t> offset, std::optional<std
 		.bind(self()->id())
 		.bind(self()->id())
 		.groupBy("t.id")
-		.orderBy("COUNT(*) DESC")
+		.orderBy("COUNT(*) DESC, RANDOM()")
 		.limit(size ? static_cast<int>(*size) : -1)
 		.offset(offset ? static_cast<int>(*offset) : -1)};
 

@@ -811,7 +811,13 @@ testMultipleTracksSingleClusterSimilarity(Session& session)
 		const auto similarTracks {Track::getSimilarTracks(session, {tracks.front().getId()})};
 		CHECK(similarTracks.size() == tracks.size() - 1);
 		for (auto similarTrack : similarTracks)
-			CHECK(std::find_if(std::next(std::cbegin(tracks), 1), std::cend(tracks), [&](const ScopedTrack& track) { return similarTrack.id() == track.getId(); }) != std::cend(tracks));
+		{
+			CHECK(std::find_if(std::next(std::cbegin(tracks), 1), std::cend(tracks),
+						[&](const ScopedTrack& track)
+						{
+							return similarTrack.id() == track.getId();
+						}) != std::cend(tracks));
+		}
 	}
 }
 
