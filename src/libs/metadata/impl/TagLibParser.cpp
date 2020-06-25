@@ -26,8 +26,10 @@
 #include <taglib/flacfile.h>
 #include <taglib/mpcfile.h>
 #include <taglib/mpegfile.h>
+#include <taglib/opusfile.h>
 #include <taglib/tag.h>
 #include <taglib/tpropertymap.h>
+#include <taglib/vorbisfile.h>
 #include <taglib/wavpackfile.h>
 
 #include "utils/Logger.hpp"
@@ -397,6 +399,16 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 	else if (TagLib::FLAC::File* flacFile {dynamic_cast<TagLib::FLAC::File*>(f.file())})
 	{
 		if (!flacFile->pictureList().isEmpty())
+			track.hasCover = true;
+	}
+	else if (TagLib::Ogg::Vorbis::File* vorbisFile {dynamic_cast<TagLib::Ogg::Vorbis::File*>(f.file())})
+	{
+		if (!vorbisFile->tag()->pictureList().isEmpty())
+			track.hasCover = true;
+	}
+	else if (TagLib::Ogg::Opus::File* opusFile {dynamic_cast<TagLib::Ogg::Opus::File*>(f.file())})
+	{
+		if (!opusFile->tag()->pictureList().isEmpty())
 			track.hasCover = true;
 	}
 
