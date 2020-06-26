@@ -111,6 +111,39 @@ class UserModel : public Wt::WFormModel
 		}
 
 	private:
+		
+		Wt::WString validatePassword() const 
+		{
+			Wt::WString error;
+
+			if (Wt::asNumber(value(ExternalAuthField)))
+			{
+				if (!valueText(PasswordField).empty())
+				{
+					error = Wt::WString::tr("Lms.password_must_be_empty_for_ext");
+				}
+			}
+			else if (!valueText(PasswordField).empty())
+			{
+				if (Wt::asNumber(value(DemoField)))
+				{
+					// Demo account: password must be the same as the login name
+					if (valueText(PasswordField) != getLoginName())
+						error = Wt::WString::tr("Lms.Admin.User.demo-password-invalid");
+				}
+				else
+				{
+					// Evaluate the strength of the password for non demo accounts
+					if (!ServiceProvider<::Auth::IPasswordService>::get()->evaluatePasswordStrength(getLoginName(), valueText(PasswordField).toUTF8()))
+						error = Wt::WString::tr("Lms.password-too-weak");
+				}
+			}
+			else 
+			{
+				error = Wt::WString::tr("Lms.password-must-not-be-empty");
+			}
+			return error;
+		}
 
 		void loadData()
 		{
@@ -166,33 +199,7 @@ class UserModel : public Wt::WFormModel
 			}
 			else if (field == PasswordField)
 			{
-				if (Wt::asNumber(value(ExternalAuthField)))
-				{
-					if (!valueText(PasswordField).empty())
-					{
-						error = Wt::WString::tr("Lms.password_must_be_empty_for_ext");
-					}
-				}
-				else if (!valueText(PasswordField).empty())
-				{
-					if (Wt::asNumber(value(DemoField)))
-					{
-						// Demo account: password must be the same as the login name
-						if (valueText(PasswordField) != getLoginName())
-							error = Wt::WString::tr("Lms.Admin.User.demo-password-invalid");
-					}
-					else
-					{
-						// Evaluate the strength of the password for non demo accounts
-						if (!ServiceProvider<::Auth::IPasswordService>::get()->evaluatePasswordStrength(getLoginName(), valueText(PasswordField).toUTF8()))
-							error = Wt::WString::tr("Lms.password-too-weak");
-
-					}
-				}
-				else 
-				{
-					error = Wt::WString::tr("Lms.password-must-not-be-empty");
-				}
+				error = validatePassword();
 			}
 			else if (field == DemoField)
 			{
@@ -201,11 +208,6 @@ class UserModel : public Wt::WFormModel
 				if (Wt::asNumber(value(DemoField)) && Database::User::getDemo(LmsApp->getDbSession()))
 					error = Wt::WString::tr("Lms.Admin.User.demo-account-already-exists");
 			}
-// 			else if (field == ExternalAuthField)
-// 			{
-// 				if (!valueText(PasswordField).empty())
-// 					error = Wt::WString::tr("Lms.password_must_be_empty_for_ext");
-// 			}
 
 			if (error.empty())
 				return Wt::WFormModel::validateField(field);
