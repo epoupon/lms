@@ -163,6 +163,7 @@ LMS.mediaplayer = function () {
 			_requestNextTrack();
 		});
 		_elems.seek.addEventListener("change", function() {
+			_audioCtx.resume();
 			let mode = _getAudioMode();
 			if (!mode)
 				return;
