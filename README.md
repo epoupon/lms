@@ -182,6 +182,8 @@ docroot = "/usr/share/lms/docroot/;/newroot/resources,/newroot/css,/newroot/imag
 deploy-path = "/newroot/"; # ending slash is important
 ```
 
+If you use nginx as a reverse proxy, you can simply replace `location /` with `location /newroot/` to achieve the same result.
+
 ### Reverse proxy settings
 _LMS_ is shipped with an embedded web server, but it is recommended to deploy behind a reverse proxy. You have to set the _behind-reverse-proxy_ option to _true_ in the `lms.conf` configuration file.
 
