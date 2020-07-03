@@ -104,9 +104,15 @@ stringToLower(std::string_view str)
 	std::string res;
 	res.reserve(str.size());
 
-	std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](char c) { return std::tolower(c);});
+	std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](unsigned char c) { return std::tolower(c);});
 
 	return res;
+}
+
+void
+stringToLower(std::string& str)
+{
+	std::transform(std::cbegin(str), std::cend(str), std::begin(str), [](unsigned char c) { return std::tolower(c);});
 }
 
 std::string

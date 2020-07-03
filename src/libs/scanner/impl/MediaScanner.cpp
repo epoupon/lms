@@ -65,7 +65,9 @@ getNextFirstOfMonth(Wt::WDate current)
 bool
 isFileSupported(const std::filesystem::path& file, const std::unordered_set<std::filesystem::path>& extensions)
 {
-	return (extensions.find(file.extension()) != extensions.end());
+	const std::filesystem::path extension {StringUtils::stringToLower(file.extension().string())};
+
+	return (extensions.find(extension) != extensions.end());
 }
 
 bool
@@ -568,7 +570,12 @@ MediaScanner::refreshScanSettings()
 	_startTime = scanSettings->getUpdateStartTime();
 	_updatePeriod = scanSettings->getUpdatePeriod();
 
-	_fileExtensions = scanSettings->getAudioFileExtensions();
+	{
+		const auto fileExtensions {scanSettings->getAudioFileExtensions()};
+		_fileExtensions.clear();
+		std::transform(std::cbegin(fileExtensions), std::end(fileExtensions), std::inserter(_fileExtensions, std::begin(_fileExtensions)),
+				[](const std::filesystem::path& extension) { return std::filesystem::path{ StringUtils::stringToLower(extension.string()) }; });
+	}
 	_mediaDirectory = scanSettings->getMediaDirectory();
 	_recommendationEngineType = scanSettings->getRecommendationEngineType();
 
