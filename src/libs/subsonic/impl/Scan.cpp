@@ -43,20 +43,20 @@ namespace API::Subsonic::Scan
 
 
 	Response
-	handleGetScanStatus(RequestContext&)
+	handleGetScanStatus(RequestContext& context)
 	{
-		Response response {Response::createOkResponse()};
+		Response response {Response::createOkResponse(context)};
 		response.addNode("scanStatus", createStatusResponseNode());
 
 		return response;
 	}
 
 	Response
-	handleStartScan(RequestContext&)
+	handleStartScan(RequestContext& context)
 	{
 		ServiceProvider<IMediaScanner>::get()->requestImmediateScan();
 
-		Response response {Response::createOkResponse()};
+		Response response {Response::createOkResponse(context)};
 		response.addNode("scanStatus", createStatusResponseNode());
 
 		return response;

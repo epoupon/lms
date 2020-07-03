@@ -24,14 +24,12 @@
 #include <variant>
 #include <vector>
 
+#include "RequestContext.hpp"
+
+#define API_VERSION_MAJOR	1
 
 namespace API::Subsonic
 {
-
-#define API_VERSION_MAJOR	1
-#define API_VERSION_MINOR	12
-#define API_VERSION_PATCH	0
-#define API_VERSION_STR		"1.12.0"
 
 enum class ResponseFormat
 {
@@ -201,8 +199,8 @@ class Response
 				std::map<std::string, std::vector<Node>> _childrenArrays;
 		};
 
-		static Response createOkResponse();
-		static Response createFailedResponse(const Error& error);
+		static Response createOkResponse(const RequestContext& context);
+		static Response createFailedResponse(std::string_view clientName, const Error& error);
 
 		virtual ~Response() {}
 		Response(const Response&) = delete;
@@ -215,6 +213,8 @@ class Response
 		Node& createArrayNode(const std::string& key);
 
 		void write(std::ostream& os, ResponseFormat format);
+
+		static unsigned getAPIMinorVersion(std::string_view clientName);
 	private:
 
 		void writeJSON(std::ostream& os);

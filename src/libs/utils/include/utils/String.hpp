@@ -25,8 +25,10 @@
 #include <sstream>
 #include <vector>
 
-namespace StringUtils {
+#define QUOTEME(x) QUOTEME_1(x)
+#define QUOTEME_1(x) #x
 
+namespace StringUtils {
 
 std::vector<std::string>
 splitString(const std::string& string, const std::string& separators);

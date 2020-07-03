@@ -28,6 +28,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 
 #include "utils/Exception.hpp"
+#include "utils/String.hpp"
 
 namespace API::Subsonic
 {
@@ -108,25 +109,25 @@ Response::Node::createArrayChild(const std::string& key)
 }
 
 Response
-Response::createOkResponse()
+Response::createOkResponse(const RequestContext& context)
 {
 	Response response;
 	Node& responseNode {response._root.createChild("subsonic-response")};
 
 	responseNode.setAttribute("status", "ok");
-	responseNode.setAttribute("version", API_VERSION_STR);
+	responseNode.setAttribute("version", std::string {QUOTEME(API_VERSION_MAJOR) "."} + std::to_string(getAPIMinorVersion(context.clientName)) + ".0");
 
 	return response;
 }
 
 Response
-Response::createFailedResponse(const Error& error)
+Response::createFailedResponse(std::string_view clientName, const Error& error)
 {
 	Response response;
 	Node& responseNode {response._root.createChild("subsonic-response")};
 
 	responseNode.setAttribute("status", "failed");
-	responseNode.setAttribute("version", API_VERSION_STR);
+	responseNode.setAttribute("version", std::string {QUOTEME(API_VERSION_MAJOR) "."} + std::to_string(getAPIMinorVersion(clientName)) + ".0");
 
 	Node& errorNode {responseNode.createChild("error")};
 	errorNode.setAttribute("code", std::to_string(static_cast<int>(error.getCode())));
@@ -211,6 +212,16 @@ Response::writeXML(std::ostream& os)
 
 	boost::property_tree::ptree root {nodeToPropertyTree(_root)};
 	boost::property_tree::write_xml(os, root);
+}
+
+unsigned
+Response::getAPIMinorVersion(std::string_view clientName)
+{
+	// Audinaut does not lower its client API version in plain text authentication mode
+	if (clientName == "Audinaut")
+		return 13;
+	else
+		return 12;
 }
 
 void

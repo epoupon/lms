@@ -141,15 +141,15 @@ getClientInfo(const Wt::Http::ParameterMap& parameters)
 	ClientInfo res;
 
 	// Mandatory parameters
+	res.name = getMandatoryParameterAs<std::string>(parameters, "c");
 	res.version = getMandatoryParameterAs<ClientVersion>(parameters, "v");
 	if (res.version.major > API_VERSION_MAJOR)
 		throw ServerMustUpgradeError {};
 	if (res.version.major < API_VERSION_MAJOR)
 		throw ClientMustUpgradeError {};
-	if (res.version.minor > API_VERSION_MINOR)
+	if (res.version.minor > Response::getAPIMinorVersion(res.name))
 		throw ServerMustUpgradeError {};
 
-	res.name = getMandatoryParameterAs<std::string>(parameters, "c");
 	res.user = getMandatoryParameterAs<std::string>(parameters, "u");
 	res.password = decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(parameters, "p"));
 
@@ -493,9 +493,9 @@ userToResponseNode(const User::pointer& user)
 
 static
 Response
-handlePingRequest(RequestContext&)
+handlePingRequest(RequestContext& context)
 {
-	return Response::createOkResponse();
+	return Response::createOkResponse(context);
 }
 
 static
@@ -521,7 +521,7 @@ handleChangePassword(RequestContext& context)
 	user.modify()->setPasswordHash(hash);
 	user.modify()->clearAuthTokens();
 
-	return Response::createOkResponse();
+	return Response::createOkResponse(context);
 }
 
 static
@@ -576,7 +576,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 		TrackListEntry::create(context.dbSession, track, tracklist );
 	}
 
-	return Response::createOkResponse();
+	return Response::createOkResponse(context);
 }
 
 static
@@ -599,7 +599,7 @@ handleCreateUserRequest(RequestContext& context)
 
 	User::pointer user {User::create(context.dbSession, username, hash)};
 
-	return Response::createOkResponse();
+	return Response::createOkResponse(context);
 }
 
 static
@@ -626,7 +626,7 @@ handleDeletePlaylistRequest(RequestContext& context)
 
 	tracklist.remove();
 
-	return Response::createOkResponse();
+	return Response::createOkResponse(context);
 }
 
 static
@@ -647,14 +647,14 @@ handleDeleteUserRequest(RequestContext& context)
 
 	user.remove();
 
-	return Response::createOkResponse();
+	return Response::createOkResponse(context);
 }
 
 static
 Response
-handleGetLicenseRequest(RequestContext&)
+handleGetLicenseRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 
 	Response::Node& licenseNode {response.createNode("license")};
 	licenseNode.setAttribute("licenseExpires", "2025-09-03T14:46:43");
@@ -680,7 +680,7 @@ handleGetRandomSongsRequest(RequestContext& context)
 
 	auto tracks {Track::getAllRandom(context.dbSession, {}, size)};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 
 	Response::Node& randomSongsNode {response.createNode("randomSongs")};
 	for (const Track::pointer& track : tracks)
@@ -757,7 +757,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	else
 		throw NotImplementedGenericError {};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& albumListNode {response.createNode(id3 ? "albumList2" : "albumList")};
 
 	for (const Release::pointer& release : releases)
@@ -800,7 +800,7 @@ handleGetAlbumRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node releaseNode {releaseToResponseNode(release, context.dbSession, user, true /* id3 */)};
 
 	auto tracks {release->getTracks()};
@@ -832,7 +832,7 @@ handleGetArtistRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node artistNode {artistToResponseNode(user, artist, true /* id3 */)};
 
 	auto releases {artist->getReleases()};
@@ -856,7 +856,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(20)};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& artistInfoNode {response.createNode(id3 ? "artistInfo2" : "artistInfo")};
 
 	{
@@ -909,7 +909,7 @@ static
 Response
 handleGetArtistsRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& artistsNode {response.createNode("artists")};
 
 	Response::Node& indexNode {artistsNode.createArrayChild("index")};
@@ -951,7 +951,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 	// Mandatory params
 	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& directoryNode {response.createNode("directory")};
 
 	directoryNode.setAttribute("id", IdToString(id));
@@ -1015,9 +1015,9 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 static
 Response
-handleGetMusicFoldersRequest(RequestContext&)
+handleGetMusicFoldersRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& musicFoldersNode {response.createNode("musicFolders")};
 
 	Response::Node& musicFolderNode {musicFoldersNode.createArrayChild("musicFolder")};
@@ -1031,7 +1031,7 @@ static
 Response
 handleGetGenresRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 
 	Response::Node& genresNode {response.createNode("genres")};
 
@@ -1053,7 +1053,7 @@ static
 Response
 handleGetIndexesRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& artistsNode {response.createNode("indexes")};
 
 	Response::Node& indexNode {artistsNode.createArrayChild("index")};
@@ -1129,7 +1129,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 
 	Random::shuffleContainer(tracks);
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& similarSongsNode {response.createNode(id3 ? "similarSongs2" : "similarSongs")};
 	for (const Track::pointer& track : tracks)
 		similarSongsNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
@@ -1161,7 +1161,7 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& starredNode {response.createNode(id3 ? "starred2" : "starred")};
 
 	{
@@ -1236,7 +1236,7 @@ handleGetPlaylistRequest(RequestContext& context)
 	if (!tracklist)
 		throw RequestedDataNotFoundError {};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node playlistNode {tracklistToResponseNode(tracklist, context.dbSession)};
 
 	auto entries {tracklist->getEntries()};
@@ -1258,7 +1258,7 @@ handleGetPlaylistsRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& playlistsNode {response.createNode("playlists")};
 
 	auto tracklists {TrackList::getAll(context.dbSession, user, TrackList::Type::Playlist)};
@@ -1295,7 +1295,7 @@ handleGetSongsByGenreRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& songsByGenreNode {response.createNode("songsByGenre")};
 
 	bool more;
@@ -1320,7 +1320,7 @@ handleGetUserRequest(RequestContext& context)
 	if (!user)
 		throw RequestedDataNotFoundError {};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	response.addNode("user", userToResponseNode(user));
 
 	return response;
@@ -1332,7 +1332,7 @@ handleGetUsersRequest(RequestContext& context)
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& usersNode {response.createNode("users")};
 
 	const auto users {User::getAll(context.dbSession)};
@@ -1365,7 +1365,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& searchResult2Node {response.createNode(id3 ? "searchResult3" : "searchResult2")};
 
 	bool more;
@@ -1474,7 +1474,7 @@ handleStarRequest(RequestContext& context)
 		user.modify()->starTrack(track);
 	}
 
-	return Response::createOkResponse();
+	return Response::createOkResponse(context);
 }
 
 static
@@ -1531,7 +1531,7 @@ handleUnstarRequest(RequestContext& context)
 	}
 
 
-	return Response::createOkResponse();
+	return Response::createOkResponse(context);
 }
 
 static
@@ -1563,7 +1563,7 @@ handleUpdateUserRequest(RequestContext& context)
 		user.modify()->clearAuthTokens();
 	}
 
-	return Response::createOkResponse();
+	return Response::createOkResponse(context);
 }
 
 static
@@ -1627,7 +1627,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 		TrackListEntry::create(context.dbSession, track, tracklist );
 	}
 
-	return Response::createOkResponse();
+	return Response::createOkResponse(context);
 }
 
 static
@@ -1642,7 +1642,7 @@ handleGetBookmarks(RequestContext& context)
 
 	const auto bookmarks {TrackBookmark::getByUser(context.dbSession, user)};
 
-	Response response {Response::createOkResponse()};
+	Response response {Response::createOkResponse(context)};
 	Response::Node& bookmarksNode {response.createNode("bookmarks")};
 
 	for (const TrackBookmark::pointer& bookmark : bookmarks)
@@ -1687,7 +1687,7 @@ handleCreateBookmark(RequestContext& context)
 	if (comment)
 		bookmark.modify()->setComment(*comment);
 
-	return Response::createOkResponse();
+	return Response::createOkResponse(context);
 }
 
 static
@@ -1715,7 +1715,7 @@ handleDeleteBookmark(RequestContext& context)
 
 	bookmark.remove();
 
-	return Response::createOkResponse();
+	return Response::createOkResponse(context);
 }
 
 static
@@ -1891,11 +1891,14 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 	// Optional parameters
 	const ResponseFormat format {getParameterAs<std::string>(parameters, "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml};
 
+	std::string clientName;
+
 	try
 	{
-
 		// Mandatory parameters
 		const ClientInfo clientInfo {getClientInfo(parameters)};
+
+		clientName = clientInfo.name;
 
 		SessionPool::ScopedSession dbSession {_sessionPool};
 
@@ -1911,7 +1914,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 				throw LoginThrottledGenericError {};
 		}
 
-		RequestContext requestContext {parameters, dbSession.get(), clientInfo.user};
+		RequestContext requestContext {parameters, dbSession.get(), clientInfo.user, clientInfo.name};
 
 		auto itEntryPoint {requestEntryPoints.find(requestPath)};
 		if (itEntryPoint != requestEntryPoints.end())
@@ -1945,21 +1948,12 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		LMS_LOG(API_SUBSONIC, ERROR) << "Unhandled command '" << requestPath << "'";
 		throw UnknownEntryPointGenericError {};
 	}
-	catch (const NotImplementedGenericError& e)
-	{
-		LMS_LOG(API_SUBSONIC, INFO) << "Command '" << requestPath << "'"
-			<< ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
-			<< ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << static_cast<const Error&>(e).getMessage() << "'";
-		Response resp {Response::createFailedResponse(e)};
-		resp.write(response.out(), format);
-		response.setMimeType(ResponseFormatToMimeType(format));
-	}
 	catch (const Error& e)
 	{
 		LMS_LOG(API_SUBSONIC, ERROR) << "Error while processing request '" << requestPath << "'"
 			<< ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
 			<< ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'";
-		Response resp {Response::createFailedResponse(e)};
+		Response resp {Response::createFailedResponse(clientName, e)};
 		resp.write(response.out(), format);
 		response.setMimeType(ResponseFormatToMimeType(format));
 	}
