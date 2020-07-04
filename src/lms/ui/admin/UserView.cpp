@@ -51,6 +51,7 @@ class UserModel : public Wt::WFormModel
 		static inline const Field LoginField {"login"};
 		static inline const Field PasswordField {"password"};
 		static inline const Field DemoField {"demo"};
+		static inline const Field ExternalAuthField{"external-auth"};
 
 		UserModel(std::optional<Database::IdType> userId)
 		: _userId {userId}
@@ -63,6 +64,7 @@ class UserModel : public Wt::WFormModel
 
 			addField(PasswordField);
 			addField(DemoField);
+			addField(ExternalAuthField);
 
 			if (!_userId)
 				setValidator(PasswordField, createMandatoryValidator());
@@ -90,6 +92,8 @@ class UserModel : public Wt::WFormModel
 					user.modify()->setPasswordHash(*passwordHash);
 					user.modify()->clearAuthTokens();
 				}
+				
+				user.modify()->setExternalAuth(static_cast<bool>(Wt::asNumber(value(ExternalAuthField))));
 			}
 			else
 			{
@@ -98,10 +102,48 @@ class UserModel : public Wt::WFormModel
 
 				if (Wt::asNumber(value(DemoField)))
 					user.modify()->setType(Database::User::Type::DEMO);
+				
+				if (Wt::asNumber(value(ExternalAuthField)))
+					user.modify()->setExternalAuth(true);
+				else
+					user.modify()->setExternalAuth(false);
 			}
 		}
 
 	private:
+		
+		Wt::WString validatePassword() const 
+		{
+			Wt::WString error;
+
+			if (Wt::asNumber(value(ExternalAuthField)))
+			{
+				if (!valueText(PasswordField).empty())
+				{
+					error = Wt::WString::tr("Lms.password_must_be_empty_for_ext");
+				}
+			}
+			else if (!valueText(PasswordField).empty())
+			{
+				if (Wt::asNumber(value(DemoField)))
+				{
+					// Demo account: password must be the same as the login name
+					if (valueText(PasswordField) != getLoginName())
+						error = Wt::WString::tr("Lms.Admin.User.demo-password-invalid");
+				}
+				else
+				{
+					// Evaluate the strength of the password for non demo accounts
+					if (!ServiceProvider<::Auth::IPasswordService>::get()->evaluatePasswordStrength(getLoginName(), valueText(PasswordField).toUTF8()))
+						error = Wt::WString::tr("Lms.password-too-weak");
+				}
+			}
+			else 
+			{
+				error = Wt::WString::tr("Lms.password-must-not-be-empty");
+			}
+			return error;
+		}
 
 		void loadData()
 		{
@@ -115,6 +157,19 @@ class UserModel : public Wt::WFormModel
 				throw UserNotFoundException {*_userId};
 			else if (user == LmsApp->getUser())
 				throw UserNotAllowedException {};
+		}
+		
+		bool getExternalAuth() const 
+		{
+			if (_userId)
+			{
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
+				return user->hasExternalAuth();
+			}
+			else
+				return Wt::asNumber(value(ExternalAuthField));
 		}
 
 		std::string getLoginName() const
@@ -144,21 +199,7 @@ class UserModel : public Wt::WFormModel
 			}
 			else if (field == PasswordField)
 			{
-				if (!valueText(PasswordField).empty())
-				{
-					if (Wt::asNumber(value(DemoField)))
-					{
-						// Demo account: password must be the same as the login name
-						if (valueText(PasswordField) != getLoginName())
-							error = Wt::WString::tr("Lms.Admin.User.demo-password-invalid");
-					}
-					else
-					{
-						// Evaluate the strength of the password for non demo accounts
-						if (!ServiceProvider<::Auth::IPasswordService>::get()->evaluatePasswordStrength(getLoginName(), valueText(PasswordField).toUTF8()))
-							error = Wt::WString::tr("Lms.password-too-weak");
-					}
-				}
+				error = validatePassword();
 			}
 			else if (field == DemoField)
 			{
@@ -215,6 +256,12 @@ UserView::refreshView()
 		t->setCondition("if-has-last-login", true);
 
 		t->bindString("last-login", user->getLastLogin().toString(), Wt::TextFormat::Plain);
+		
+
+		auto extCheckBox = std::make_unique<Wt::WCheckBox>();
+		extCheckBox->setChecked(user->hasExternalAuth());
+		t->setFormWidget(UserModel::ExternalAuthField, std::move(extCheckBox));
+		t->setCondition("if-external-auth", true);
 	}
 	else
 	{
@@ -222,6 +269,11 @@ UserView::refreshView()
 		t->setCondition("if-has-login", true);
 		t->setFormWidget(UserModel::LoginField, std::make_unique<Wt::WLineEdit>());
 		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-create"));
+		
+		auto extCheckBox = std::make_unique<Wt::WCheckBox>();
+		extCheckBox->setChecked(true);
+		t->setCondition(UserModel::ExternalAuthField, false);
+		t->setFormWidget("external-auth", std::move(extCheckBox));
 	}
 
 	// Password
@@ -234,7 +286,7 @@ UserView::refreshView()
 	t->setFormWidget(UserModel::DemoField, std::make_unique<Wt::WCheckBox>());
 	if (!userId && ServiceProvider<IConfig>::get()->getBool("demo", false))
 		t->setCondition("if-demo", true);
-
+	
 	Wt::WPushButton* saveBtn = t->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(userId ? "Lms.save" : "Lms.create"));
 	saveBtn->clicked().connect([=]()
 	{

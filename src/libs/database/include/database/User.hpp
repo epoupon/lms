@@ -165,6 +165,7 @@ class User : public Wt::Dbo::Dbo<User>
 		void setSubsonicTranscodeBitrate(Bitrate bitrate);
 		void setCurPlayingTrackPos(std::size_t pos)		{ _curPlayingTrackPos = pos; }
 		void setRadio(bool val)					{ _radio = val; }
+		void setExternalAuth(bool val)				{ _externalAuth = val; }
 		void setRepeatAll(bool val)				{ _repeatAll = val; }
 		void setUITheme(UITheme uiTheme)			{ _uiTheme = uiTheme; }
 		void clearAuthTokens();
@@ -179,6 +180,7 @@ class User : public Wt::Dbo::Dbo<User>
 		std::size_t		getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
 		bool			isRepeatAllSet() const { return _repeatAll; }
 		bool			isRadioSet() const { return _radio; }
+		bool			hasExternalAuth() const { return _externalAuth; }
 		UITheme			getUITheme() const { return _uiTheme; }
 		SubsonicArtistListMode	getSubsonicArtistListMode() const { return _subsonicArtistListMode; }
 
@@ -218,6 +220,7 @@ class User : public Wt::Dbo::Dbo<User>
 			Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
 			Wt::Dbo::field(a, _repeatAll, "repeat_all");
 			Wt::Dbo::field(a, _radio, "radio");
+			Wt::Dbo::field(a, _externalAuth, "external_auth");
 			Wt::Dbo::hasMany(a, _tracklists, Wt::Dbo::ManyToOne, "user");
 			Wt::Dbo::hasMany(a, _starredArtists, Wt::Dbo::ManyToMany, "user_artist_starred", "", Wt::Dbo::OnDeleteCascade);
 			Wt::Dbo::hasMany(a, _starredReleases, Wt::Dbo::ManyToMany, "user_release_starred", "", Wt::Dbo::OnDeleteCascade);
@@ -246,6 +249,8 @@ class User : public Wt::Dbo::Dbo<User>
 		int		_curPlayingTrackPos {}; // Current track position in queue
 		bool		_repeatAll {};
 		bool		_radio {};
+		
+		bool		_externalAuth {false};
 
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackList>> _tracklists;
 		Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> _starredArtists;

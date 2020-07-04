@@ -39,7 +39,7 @@ std::shared_ptr<Wt::WValidator>
 createMandatoryValidator()
 {
 	auto v = std::make_shared<Wt::WValidator>();
-	v->setMandatory(true);
+	//sv->setMandatory(true);
 	return v;
 }
 

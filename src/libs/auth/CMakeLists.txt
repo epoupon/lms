@@ -22,6 +22,7 @@ target_link_libraries(lmsauth PUBLIC
 	pthread
 	boost_system
 	wt
+	${PAM_LIBRARIES}
 	)
 
 install(TARGETS lmsauth DESTINATION lib)
