@@ -113,17 +113,27 @@ InitWizardView::InitWizardView()
 	auto model = std::make_shared<InitWizardModel>();
 
 	// AdminLogin
-	setFormWidget(InitWizardModel::AdminLoginField, std::make_unique<Wt::WLineEdit>());
+	{
+		auto adminLogin {std::make_unique<Wt::WLineEdit>()};
+		adminLogin->setAttributeValue("autocomplete", "username");
+		setFormWidget(InitWizardModel::AdminLoginField, std::move(adminLogin));
+	}
 
 	// Password
-	auto passwordEdit = std::make_unique<Wt::WLineEdit>();
-	passwordEdit->setEchoMode(Wt::EchoMode::Password);
-	setFormWidget(InitWizardModel::PasswordField, std::move(passwordEdit) );
+	{
+		auto passwordEdit = std::make_unique<Wt::WLineEdit>();
+		passwordEdit->setEchoMode(Wt::EchoMode::Password);
+		passwordEdit->setAttributeValue("autocomplete", "current-password");
+		setFormWidget(InitWizardModel::PasswordField, std::move(passwordEdit) );
+	}
 
 	// Password confirmation
-	auto passwordConfirmEdit = std::make_unique<Wt::WLineEdit>();
-	passwordConfirmEdit->setEchoMode(Wt::EchoMode::Password);
-	setFormWidget(InitWizardModel::PasswordConfirmField, std::move(passwordConfirmEdit));
+	{
+		auto passwordConfirmEdit = std::make_unique<Wt::WLineEdit>();
+		passwordConfirmEdit->setEchoMode(Wt::EchoMode::Password);
+		passwordConfirmEdit->setAttributeValue("autocomplete", "current-password");
+		setFormWidget(InitWizardModel::PasswordConfirmField, std::move(passwordConfirmEdit));
+	}
 
 	Wt::WPushButton* saveButton = bindNew<Wt::WPushButton>("create-btn", Wt::WString::tr("Lms.create"));
 	saveButton->clicked().connect([=]

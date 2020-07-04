@@ -55,6 +55,7 @@ struct Events
 	Wt::Signal<LmsApplicationInfo> appClosed;
 
 	// Database events
+	Wt::Signal<> dbScanStarted;
 	Wt::Signal<> dbScanned;
 	Wt::Signal<Scanner::ScanProgressStats> dbScanInProgress;
 	Wt::Signal<Wt::WDateTime> dbScanScheduled;

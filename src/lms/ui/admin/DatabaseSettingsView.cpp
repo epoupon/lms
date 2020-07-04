@@ -248,7 +248,6 @@ DatabaseSettingsView::refreshView()
 	immScanBtn->clicked().connect([=] ()
 	{
 		ServiceProvider<Scanner::IMediaScanner>::get()->requestImmediateScan();
-		LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
 	});
 
 	t->updateView(model.get());

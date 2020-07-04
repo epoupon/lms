@@ -19,27 +19,12 @@
 
 #pragma once
 
-#include <string>
+#include "RequestContext.hpp"
+#include "SubsonicResponse.hpp"
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/ResponseContinuation.h>
-
-
-namespace Database
+namespace API::Subsonic::Scan
 {
-	class Session;
-}
-
-namespace API::Subsonic
-{
-
-	struct RequestContext
-	{
-		const Wt::Http::ParameterMap& parameters;
-		Database::Session& dbSession;
-		std::string userName;
-		std::string clientName;
-	};
-
+	Response handleGetScanStatus(RequestContext& context);
+	Response handleStartScan(RequestContext& context);
 }
 

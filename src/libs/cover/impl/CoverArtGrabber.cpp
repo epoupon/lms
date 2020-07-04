@@ -78,29 +78,58 @@ getFromAvMediaFile(const Av::MediaFile& input)
 }
 
 std::optional<Image>
-Grabber::getFromDirectory(const std::filesystem::path& p) const
+Grabber::getFromDirectory(const std::filesystem::path& p, std::string_view preferredFileName) const
 {
-	for (auto coverPath : getCoverPaths(p))
-	{
-		Image image;
+	const std::multimap<std::string, std::filesystem::path> coverPaths {getCoverPaths(p)};
 
-		if (image.load(coverPath))
+	auto tryLoadImage = [](const std::filesystem::path& p, Image& image)
+	{
+		if (!image.load(p))
+		{
+			LMS_LOG(COVER, ERROR) << "Cannot load image in file '" << p.string() << "'";
+			return false;
+		}
+
+		return true;
+	};
+
+	auto tryLoadImageFromFilename = [&](std::string_view fileName, Image& image)
+	{
+		auto range {coverPaths.equal_range(std::string {fileName})};
+		for (auto it {range.first}; it != range.second; ++it)
+		{
+			if (tryLoadImage(it->second, image))
+				return true;
+		}
+		return false;
+	};
+
+	Image image;
+
+	if (!preferredFileName.empty() && tryLoadImageFromFilename(preferredFileName, image))
+		return image;
+
+	for (std::string_view filename : _preferredFileNames)
+	{
+		if (tryLoadImageFromFilename(filename, image))
 			return image;
-		else
-			LMS_LOG(COVER, ERROR) << "Cannot load image in file '" << coverPath.string() << "'";
 	}
 
-	LMS_LOG(COVER, DEBUG) << "No cover found in directory '" << p.string() << "'";
+	// Just pick one
+	for (const auto& [filename, coverPath] : coverPaths)
+	{
+		if (tryLoadImage(coverPath, image))
+			return image;
+	}
+
 	return std::nullopt;
 }
 
-std::vector<std::filesystem::path>
+std::multimap<std::string, std::filesystem::path>
 Grabber::getCoverPaths(const std::filesystem::path& directoryPath) const
 {
-	std::vector<std::filesystem::path> res;
+	std::multimap<std::string, std::filesystem::path> res;
 	std::error_code ec;
-
-	// TODO handle preferred file names
 
 	std::filesystem::directory_iterator itPath(directoryPath, ec);
 	std::filesystem::directory_iterator itEnd;
@@ -121,7 +150,7 @@ Grabber::getCoverPaths(const std::filesystem::path& directoryPath) const
 			continue;
 		}
 
-		res.push_back(path);
+		res.emplace(std::filesystem::path{path}.filename().replace_extension("").string(), path);
 	}
 
 	return res;
@@ -177,12 +206,12 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 		cover = getFromTrack(trackPath);
 
 	if (!cover)
-		cover = getFromDirectory(trackPath.parent_path());
+		cover = getFromDirectory(trackPath.parent_path(), trackPath.filename().replace_extension("").string());
 
 	if (!cover && isMultiDisc)
 	{
 		if (trackPath.parent_path().has_parent_path())
-			cover = getFromDirectory(trackPath.parent_path().parent_path());
+			cover = getFromDirectory(trackPath.parent_path().parent_path(), {});
 	}
 
 	if (!cover)

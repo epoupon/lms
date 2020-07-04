@@ -65,7 +65,9 @@ getNextFirstOfMonth(Wt::WDate current)
 bool
 isFileSupported(const std::filesystem::path& file, const std::unordered_set<std::filesystem::path>& extensions)
 {
-	return (extensions.find(file.extension()) != extensions.end());
+	const std::filesystem::path extension {StringUtils::stringToLower(file.extension().string())};
+
+	return (extensions.find(extension) != extensions.end());
 }
 
 bool
@@ -310,7 +312,7 @@ MediaScanner::getStatus()
 {
 	Status res;
 
-	std::unique_lock<std::mutex> lock {_statusMutex};
+	std::shared_lock lock {_statusMutex};
 
 	res.currentState = _curState;
 	res.nextScheduledScan = _nextScheduledScan;
@@ -367,7 +369,7 @@ MediaScanner::scheduleNextScan()
 	}
 
 	{
-		std::unique_lock<std::mutex> lock {_statusMutex};
+		std::unique_lock lock {_statusMutex};
 		_curState = nextScanDateTime.isValid() ? State::Scheduled : State::NotScheduled;
 		_nextScheduledScan = nextScanDateTime;
 	}
@@ -421,8 +423,10 @@ MediaScanner::scan(boost::system::error_code err)
 	if (err)
 		return;
 
+	scanStarted().emit();
+
 	{
-		std::unique_lock<std::mutex> lock {_statusMutex};
+		std::unique_lock lock {_statusMutex};
 		_curState = State::InProgress;
 		_nextScheduledScan = {};
 	}
@@ -464,7 +468,7 @@ MediaScanner::scan(boost::system::error_code err)
 	{
 		stats.stopTime = Wt::WLocalDateTime::currentDateTime().toUTC();
 		{
-			std::unique_lock<std::mutex> lock {_statusMutex};
+			std::unique_lock lock {_statusMutex};
 
 			_lastCompleteScanStats = std::move(stats);
 			_inProgressScanStats.reset();
@@ -476,7 +480,7 @@ MediaScanner::scan(boost::system::error_code err)
 	}
 	else
 	{
-		std::unique_lock<std::mutex> lock {_statusMutex};
+		std::unique_lock lock {_statusMutex};
 
 		_curState = State::NotScheduled;
 		_inProgressScanStats.reset();
@@ -566,7 +570,12 @@ MediaScanner::refreshScanSettings()
 	_startTime = scanSettings->getUpdateStartTime();
 	_updatePeriod = scanSettings->getUpdatePeriod();
 
-	_fileExtensions = scanSettings->getAudioFileExtensions();
+	{
+		const auto fileExtensions {scanSettings->getAudioFileExtensions()};
+		_fileExtensions.clear();
+		std::transform(std::cbegin(fileExtensions), std::end(fileExtensions), std::inserter(_fileExtensions, std::begin(_fileExtensions)),
+				[](const std::filesystem::path& extension) { return std::filesystem::path{ StringUtils::stringToLower(extension.string()) }; });
+	}
 	_mediaDirectory = scanSettings->getMediaDirectory();
 	_recommendationEngineType = scanSettings->getRecommendationEngineType();
 
@@ -584,13 +593,15 @@ MediaScanner::refreshScanSettings()
 void
 MediaScanner::notifyInProgress(const ScanStats& stats)
 {
+	const ScanProgressStats progressStats {stats.toProgressStats()};
+
 	{
-		std::unique_lock<std::mutex> lock {_statusMutex};
-		_inProgressScanStats = stats.toProgressStats();
+		std::unique_lock lock {_statusMutex};
+		_inProgressScanStats = progressStats;
 	}
 
-	std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
-	_sigScanInProgress(*_inProgressScanStats);
+	const std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
+	_sigScanInProgress(progressStats);
 	_lastScanInProgressEmit = now;
 }
 

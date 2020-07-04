@@ -20,10 +20,12 @@
 #pragma once
 
 #include <filesystem>
-#include <shared_mutex>
+#include <map>
 #include <optional>
-#include <vector>
+#include <shared_mutex>
+#include <string_view>
 #include <unordered_map>
+#include <vector>
 
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Types.hpp"
@@ -101,8 +103,8 @@ namespace CoverArt
 			Image					getFromRelease(Database::Session& dbSession, Database::IdType releaseId, std::size_t size);
 
 			std::optional<Image>			getFromTrack(const std::filesystem::path& path) const;
-			std::vector<std::filesystem::path>	getCoverPaths(const std::filesystem::path& directoryPath) const;
-			std::optional<Image>			getFromDirectory(const std::filesystem::path& path) const;
+			std::multimap<std::string, std::filesystem::path>	getCoverPaths(const std::filesystem::path& directoryPath) const;
+			std::optional<Image>			getFromDirectory(const std::filesystem::path& path, std::string_view preferredFileName) const;
 
 			std::unique_ptr<Image> _defaultCover;	// unique_ptr to defer initializing
 
@@ -117,7 +119,7 @@ namespace CoverArt
 			static inline constexpr std::size_t _maxCacheEntries {1000};
 			static inline const std::vector<std::filesystem::path> _fileExtensions {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize
 			static inline constexpr std::size_t _maxFileSize {10000000};
-			static inline const std::vector<std::filesystem::path> _preferredFileNames {"cover", "front"}; // TODO parametrize
+			static inline const std::vector<std::string> _preferredFileNames {"cover", "front"}; // TODO parametrize
 	};
 
 } // namespace CoverArt

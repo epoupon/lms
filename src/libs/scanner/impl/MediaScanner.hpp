@@ -20,7 +20,7 @@
 #pragma once
 
 #include <chrono>
-#include <mutex>
+#include <shared_mutex>
 #include <optional>
 
 #include <Wt/WDateTime.h>
@@ -59,6 +59,7 @@ class MediaScanner : public IMediaScanner
 
 		Status getStatus() override;
 
+		Wt::Signal<>& scanStarted() override { return _sigScanStarted; }
 		Wt::Signal<>& scanComplete() override { return _sigScanComplete; }
 		Wt::Signal<ScanProgressStats>& scanInProgress() override { return _sigScanInProgress; }
 		Wt::Signal<Wt::WDateTime>& scheduled() override { return _sigScheduled; }
@@ -88,21 +89,22 @@ class MediaScanner : public IMediaScanner
 		void notifyInProgressIfNeeded(const ScanStats& stats);
 		void notifyInProgress(const ScanStats& stats);
 
-		bool					_running {};
-		Wt::WIOService				_ioService;
-		boost::asio::system_timer		_scheduleTimer {_ioService};
-		Wt::Signal<>				_sigScanComplete;
-		Wt::Signal<ScanProgressStats>		_sigScanInProgress;
+		bool									_running {};
+		Wt::WIOService							_ioService;
+		boost::asio::system_timer				_scheduleTimer {_ioService};
+		Wt::Signal<>							_sigScanStarted;
+		Wt::Signal<>							_sigScanComplete;
+		Wt::Signal<ScanProgressStats>			_sigScanInProgress;
 		std::chrono::system_clock::time_point	_lastScanInProgressEmit {};
-		Wt::Signal<Wt::WDateTime>		_sigScheduled;
-		Database::Session			_dbSession;
-		std::unique_ptr<MetaData::IParser>	_metadataParser;
+		Wt::Signal<Wt::WDateTime>				_sigScheduled;
+		Database::Session						_dbSession;
+		std::unique_ptr<MetaData::IParser>		_metadataParser;
 
-		std::mutex				_statusMutex;
-		State					_curState {State::NotScheduled};
-		std::optional<ScanStats> 		_lastCompleteScanStats;
+		std::shared_mutex					_statusMutex;
+		State								_curState {State::NotScheduled};
+		std::optional<ScanStats> 			_lastCompleteScanStats;
 		std::optional<ScanProgressStats> 	_inProgressScanStats;
-		Wt::WDateTime				_nextScheduledScan;
+		Wt::WDateTime						_nextScheduledScan;
 
 		// Current scan settings
 		std::size_t				_scanVersion {};

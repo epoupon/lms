@@ -28,6 +28,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 
 #include "utils/Exception.hpp"
+#include "utils/String.hpp"
 
 namespace API::Subsonic
 {
@@ -50,11 +51,26 @@ Response::Node::setValue(std::string_view value)
 	if (!_children.empty() || !_childrenArrays.empty())
 		throw LmsException {"Node already has children"};
 
+	_value = std::string {value};
+}
+
+void
+Response::Node::setValue(long long value)
+{
+	if (!_children.empty() || !_childrenArrays.empty())
+		throw LmsException {"Node already has children"};
+
 	_value = value;
 }
 
 void
 Response::Node::setAttribute(std::string_view key, std::string_view value)
+{
+	_attributes[std::string {key}] = std::string {value};
+}
+
+void
+Response::Node::setAttribute(std::string_view key, long long value)
 {
 	_attributes[std::string {key}] = value;
 }
@@ -62,7 +78,7 @@ Response::Node::setAttribute(std::string_view key, std::string_view value)
 void
 Response::Node::addChild(const std::string& key, Node node)
 {
-	if (!_value.empty())
+	if (_value.valueless_by_exception())
 		throw LmsException {"Node already has a value"};
 
 	_children[key].emplace_back(std::move(node));
@@ -71,7 +87,7 @@ Response::Node::addChild(const std::string& key, Node node)
 void
 Response::Node::addArrayChild(const std::string& key, Node node)
 {
-	if (!_value.empty())
+	if (_value.valueless_by_exception())
 		throw LmsException {"Node already has a value"};
 
 	_childrenArrays[key].emplace_back(std::move(node));
@@ -93,25 +109,25 @@ Response::Node::createArrayChild(const std::string& key)
 }
 
 Response
-Response::createOkResponse()
+Response::createOkResponse(const RequestContext& context)
 {
 	Response response;
 	Node& responseNode {response._root.createChild("subsonic-response")};
 
 	responseNode.setAttribute("status", "ok");
-	responseNode.setAttribute("version", API_VERSION_STR);
+	responseNode.setAttribute("version", std::string {QUOTEME(API_VERSION_MAJOR) "."} + std::to_string(getAPIMinorVersion(context.clientName)) + ".0");
 
 	return response;
 }
 
 Response
-Response::createFailedResponse(const Error& error)
+Response::createFailedResponse(std::string_view clientName, const Error& error)
 {
 	Response response;
 	Node& responseNode {response._root.createChild("subsonic-response")};
 
 	responseNode.setAttribute("status", "failed");
-	responseNode.setAttribute("version", API_VERSION_STR);
+	responseNode.setAttribute("version", std::string {QUOTEME(API_VERSION_MAJOR) "."} + std::to_string(getAPIMinorVersion(clientName)) + ".0");
 
 	Node& errorNode {responseNode.createChild("error")};
 	errorNode.setAttribute("code", std::to_string(static_cast<int>(error.getCode())));
@@ -160,11 +176,19 @@ Response::writeXML(std::ostream& os)
 		boost::property_tree::ptree res;
 
 		for (auto itAttribute : node._attributes)
-			res.put("<xmlattr>." + itAttribute.first, itAttribute.second);
-
-		if (!node._value.empty())
 		{
-			res.put_value(node._value);
+			if (std::holds_alternative<std::string>(itAttribute.second))
+				res.put("<xmlattr>." + itAttribute.first, std::get<std::string>(itAttribute.second));
+			else if (std::holds_alternative<long long>(itAttribute.second))
+				res.put("<xmlattr>." + itAttribute.first, std::get<long long>(itAttribute.second));
+		}
+
+		if (node._value.valueless_by_exception())
+		{
+			if (std::holds_alternative<std::string>(node._value))
+				res.put_value(std::get<std::string>(node._value));
+			else if (std::holds_alternative<long long>(node._value))
+				res.put_value(std::get<long long>(node._value));
 		}
 		else
 		{
@@ -190,6 +214,16 @@ Response::writeXML(std::ostream& os)
 	boost::property_tree::write_xml(os, root);
 }
 
+unsigned
+Response::getAPIMinorVersion(std::string_view clientName)
+{
+	// Audinaut does not lower its client API version in plain text authentication mode
+	if (clientName == "Audinaut")
+		return 13;
+	else
+		return 12;
+}
+
 void
 Response::writeJSON(std::ostream& os)
 {
@@ -200,11 +234,19 @@ Response::writeJSON(std::ostream& os)
 		Json::Object res;
 
 		for (auto itAttribute : node._attributes)
-			res[itAttribute.first] = Json::Value {itAttribute.second};
-
-		if (!node._value.empty())
 		{
-			res["value"] = Json::Value {node._value};
+			if (std::holds_alternative<std::string>(itAttribute.second))
+				res[itAttribute.first] = Json::Value {std::get<std::string>(itAttribute.second)};
+			else if (std::holds_alternative<long long>(itAttribute.second))
+				res[itAttribute.first] = Json::Value {std::get<long long>(itAttribute.second)};
+		}
+
+		if (node._value.valueless_by_exception())
+		{
+			if (std::holds_alternative<std::string>(node._value))
+				res["value"] = Json::Value {std::get<std::string>(node._value)};
+			else if (std::holds_alternative<long long>(node._value))
+				res["value"] = Json::Value {std::get<long long>(node._value)};
 		}
 		else
 		{

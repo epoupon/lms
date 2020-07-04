@@ -341,7 +341,7 @@ Track::getSimilarTracks(Session& session,
 					" AND t_c.cluster_id IN (SELECT c.id FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id WHERE t_c.track_id IN (" + oss.str() + "))"
 					" AND t.id NOT IN (" + oss.str() + ")")
 		.groupBy("t.id")
-		.orderBy("COUNT(*) DESC")
+		.orderBy("COUNT(*) DESC, RANDOM()")
 		.limit(size ? static_cast<int>(*size) : -1)
 		.offset(offset ? static_cast<int>(*offset) : -1)};
 

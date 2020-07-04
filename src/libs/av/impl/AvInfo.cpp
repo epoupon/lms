@@ -215,7 +215,7 @@ MediaFile::getAttachedPictures(std::size_t nbMaxPictures) const
 			LMS_LOG(AV, ERROR) << "CODEC ID " << avstream->codecpar->codec_id << " not handled in mime type conversion";
 		}
 
-		AVPacket pkt = avstream->attached_pic;
+		const AVPacket& pkt {avstream->attached_pic};
 
 		std::copy(pkt.data, pkt.data + pkt.size, std::back_inserter(picture.data));
 

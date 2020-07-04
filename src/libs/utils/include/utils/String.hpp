@@ -25,8 +25,10 @@
 #include <sstream>
 #include <vector>
 
-namespace StringUtils {
+#define QUOTEME(x) QUOTEME_1(x)
+#define QUOTEME_1(x) #x
 
+namespace StringUtils {
 
 std::vector<std::string>
 splitString(const std::string& string, const std::string& separators);
@@ -42,6 +44,9 @@ stringTrimEnd(const std::string& str, const std::string& whitespaces = " \t");
 
 std::string
 stringToLower(std::string_view str);
+
+void
+stringToLower(std::string& str);
 
 std::string
 stringToUpper(const std::string& str);

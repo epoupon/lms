@@ -387,17 +387,20 @@ SettingsView::refreshView()
 
 		auto oldPassword {std::make_unique<Wt::WLineEdit>()};
 		oldPassword->setEchoMode(Wt::EchoMode::Password);
+		oldPassword->setAttributeValue("autocomplete", "current-password");
 		t->setFormWidget(SettingsModel::PasswordOldField, std::move(oldPassword));
 	}
 
 	// Password
 	auto password {std::make_unique<Wt::WLineEdit>()};
 	password->setEchoMode(Wt::EchoMode::Password);
+	password->setAttributeValue("autocomplete", "new-password");
 	t->setFormWidget(SettingsModel::PasswordField, std::move(password));
 
 	// Password confirm
 	auto passwordConfirm {std::make_unique<Wt::WLineEdit>()};
 	passwordConfirm->setEchoMode(Wt::EchoMode::Password);
+	passwordConfirm->setAttributeValue("autocomplete", "new-password");
 	t->setFormWidget(SettingsModel::PasswordConfirmField, std::move(passwordConfirm));
 
 	// Audio
