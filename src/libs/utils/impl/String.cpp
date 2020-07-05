@@ -164,6 +164,7 @@ jsEscape(const std::string& str)
 		{ '\r', "\\r" },
 		{ '\t', "\\t" },
 		{ '"', "\\\"" },
+		{ '\'', "\\\'" },
 	};
 
 	std::string escaped;

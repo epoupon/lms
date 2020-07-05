@@ -17,14 +17,6 @@ find_package(PStreams REQUIRED)
 find_package(PAM)
 pkg_check_modules(GRAPHICSMAGICKXX REQUIRED GraphicsMagick++)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Werror -Wno-error=parentheses -Wno-error=unused-function -O0 -g")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g")
-
-if(PAM_FOUND)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSEPAM")
-endif(PAM_FOUND)
-
 add_subdirectory(src)
 
 # TODO pam configuration file

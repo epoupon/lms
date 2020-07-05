@@ -64,8 +64,10 @@ class InitWizardModel : public Wt::WFormModel
 			if (!Database::User::getAll(LmsApp->getDbSession()).empty())
 				throw LmsException("Admin user already created");
 
-			Database::User::pointer user {Database::User::create(LmsApp->getDbSession(), valueText(AdminLoginField).toUTF8(), passwordHash)};
+			Database::User::pointer user {Database::User::create(LmsApp->getDbSession(), valueText(AdminLoginField).toUTF8())};
 			user.modify()->setType(Database::User::Type::ADMIN);
+			user.modify()->setAuthMode(Database::User::AuthMode::Internal);
+			user.modify()->setPasswordHash(passwordHash);
 		}
 
 		bool validateField(Field field)

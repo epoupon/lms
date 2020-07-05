@@ -9,9 +9,6 @@ find_library(AVFORMAT_LIBRARY avformat)
 find_path(AVUTIL_INCLUDE_DIR NAMES libavutil/avutil.h PATH_SUFFIXES ffmpeg)
 find_library(AVUTIL_LIBRARY avutil)
 
-find_path(AVDEVICE_INCLUDE_DIR NAMES libavdevice/avdevice.h PATH_SUFFIXES ffmpeg)
-find_library(AVDEVICE_LIBRARY avdevice)
-
 include(FindPackageHandleStandardArgs)
 
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(

@@ -16,6 +16,7 @@
 <message id="Lms.password-bad-login-combination">Mauvaise combinaison login / mot de passe</message>
 <message id="Lms.password-client-throttled">Trop de tentatives de connexion, veuillez réessayer plus tard</message>
 <message id="Lms.password-confirm">Confirmation du mot de passe</message>
+<message id="Lms.password-must-not-be-empty">Le mot de passe ne doit pas être vide</message>
 <message id="Lms.password-new">Nouveau mot de passe</message>
 <message id="Lms.password-old">Ancien mot de passe</message>
 <message id="Lms.password-too-weak">Mot de passe trop faible</message>
@@ -81,6 +82,9 @@
 <message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utilisateurs</message>
 
 <!--User-->
+<message id="Lms.Admin.User.auth-mode">Mode d'authentification</message>
+<message id="Lms.Admin.User.auth-mode.internal">Interne</message>
+<message id="Lms.Admin.User.auth-mode.pam">PAM</message>
 <message id="Lms.Admin.User.demo-account">Compte de démonstration</message>
 <message id="Lms.Admin.User.demo-account-already-exists">Le compte de démonstration existe déjà !</message>
 <message id="Lms.Admin.User.demo-password-invalid">Le password doit être égal au login !</message>

@@ -708,7 +708,7 @@ testMultipleTracksMultipleClustersTopRelease(Session& session)
 	ScopedRelease releaseB {session, "ReleaseB"};
 	ScopedRelease releaseC {session, "ReleaseC"};
 
-	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedUser user {session, "MyUser"};
 	ScopedTrackList trackList {session, "TrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
 
 	{
@@ -1221,7 +1221,7 @@ static
 void
 testSingleUser(Session& session)
 {
-	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedUser user {session, "MyUser"};
 
 	{
 		auto transaction {session.createSharedTransaction()};
@@ -1240,7 +1240,7 @@ void
 testSingleStarredArtist(Session& session)
 {
 	ScopedArtist artist {session, "MyArtist"};
-	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedUser user {session, "MyUser"};
 
 	{
 		auto transaction {session.createSharedTransaction()};
@@ -1264,7 +1264,7 @@ void
 testSingleStarredRelease(Session& session)
 {
 	ScopedRelease release {session, "MyRelease"};
-	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedUser user {session, "MyUser"};
 
 	{
 		auto transaction {session.createUniqueTransaction()};
@@ -1288,7 +1288,7 @@ void
 testSingleStarredTrack(Session& session)
 {
 	ScopedTrack track {session, "MyTrack"};
-	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedUser user {session, "MyUser"};
 
 	{
 		auto transaction {session.createUniqueTransaction()};
@@ -1311,7 +1311,7 @@ static
 void
 testSingleTrackList(Session& session)
 {
-	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedUser user {session, "MyUser"};
 	ScopedTrackList trackList {session, "MytrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
 
 	{
@@ -1328,7 +1328,7 @@ static
 void
 testSingleTrackListMultipleTrack(Session& session)
 {
-	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedUser user {session, "MyUser"};
 	ScopedTrackList trackList {session, "MytrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
 	std::list<ScopedTrack> tracks;
 
@@ -1354,7 +1354,7 @@ static
 void
 testSingleTrackListMultipleTrackSingleCluster(Session& session)
 {
-	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedUser user {session, "MyUser"};
 	ScopedTrackList trackList {session, "MyTrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
 	ScopedClusterType clusterType {session, "MyClusterType"};
 	ScopedCluster cluster {session, clusterType.lockAndGet(), "MyCluster"};
@@ -1388,7 +1388,7 @@ static
 void
 testSingleTrackListMultipleTrackMultiClusters(Session& session)
 {
-	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedUser user {session, "MyUser"};
 	ScopedTrackList trackList {session, "MyTrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
 	ScopedClusterType clusterType {session, "MyClusterType"};
 	ScopedCluster cluster1 {session, clusterType.lockAndGet(), "MyCluster1"};
@@ -1443,7 +1443,7 @@ static
 void
 testSingleTrackListMultipleTrackMultiClustersRecentlyPlayed(Session& session)
 {
-	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedUser user {session, "MyUser"};
 	ScopedTrackList trackList {session, "MyTrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
 	ScopedClusterType clusterType {session, "MyClusterType"};
 	ScopedCluster cluster1 {session, clusterType.lockAndGet(), "MyCluster1"};
@@ -1821,7 +1821,7 @@ void
 testSingleTrackSingleUserSingleBookmark(Session& session)
 {
 	ScopedTrack track {session, "MyTrack"};
-	ScopedUser user {session, "MyUser", User::PasswordHash {}};
+	ScopedUser user {session, "MyUser"};
 	ScopedTrackBookmark bookmark {session, user.lockAndGet(), track.lockAndGet()};
 
 	{

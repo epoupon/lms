@@ -51,11 +51,15 @@ class UserModel : public Wt::WFormModel
 		static inline const Field LoginField {"login"};
 		static inline const Field PasswordField {"password"};
 		static inline const Field DemoField {"demo"};
-		static inline const Field ExternalAuthField{"external-auth"};
+		static inline const Field AuthModeField{"auth-mode"};
+
+		using AuthModeModel = ValueStringModel<User::AuthMode>;
 
 		UserModel(std::optional<Database::IdType> userId)
 		: _userId {userId}
 		{
+			initializeModels();
+
 			if (!_userId)
 			{
 				addField(LoginField);
@@ -64,14 +68,15 @@ class UserModel : public Wt::WFormModel
 
 			addField(PasswordField);
 			addField(DemoField);
-			addField(ExternalAuthField);
+			addField(AuthModeField);
 
 			if (!_userId)
 				setValidator(PasswordField, createMandatoryValidator());
 
-			// populate the model with initial data
 			loadData();
 		}
+
+		std::shared_ptr<AuthModeModel> getAuthModeModel() const { return _authModeModel; }
 
 		void saveData()
 		{
@@ -86,44 +91,50 @@ class UserModel : public Wt::WFormModel
 				// Update user
 				Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
 
-				// Account
-				if (passwordHash)
+				auto authModeRow {_authModeModel->getRowFromString(valueText(AuthModeField))};
+				if (!authModeRow)
+					throw LmsException {"Bad authentication mode"};
+
+				const Database::User::AuthMode authMode {_authModeModel->getValue(*authModeRow)};
+				user.modify()->setAuthMode(authMode);
+				if (authMode == Database::User::AuthMode::Internal && passwordHash)
 				{
 					user.modify()->setPasswordHash(*passwordHash);
 					user.modify()->clearAuthTokens();
 				}
-				
-				user.modify()->setExternalAuth(static_cast<bool>(Wt::asNumber(value(ExternalAuthField))));
 			}
 			else
 			{
 				// Create user
-				Database::User::pointer user {Database::User::create(LmsApp->getDbSession(), valueText(LoginField).toUTF8(), *passwordHash)};
+				Database::User::pointer user {Database::User::create(LmsApp->getDbSession(), valueText(LoginField).toUTF8())};
 
 				if (Wt::asNumber(value(DemoField)))
 					user.modify()->setType(Database::User::Type::DEMO);
-				
-				if (Wt::asNumber(value(ExternalAuthField)))
-					user.modify()->setExternalAuth(true);
-				else
-					user.modify()->setExternalAuth(false);
+
+				auto authModeRow {_authModeModel->getRowFromString(valueText(AuthModeField))};
+				if (!authModeRow)
+					throw LmsException {"Bad authentication mode"};
+
+				const Database::User::AuthMode authMode {_authModeModel->getValue(*authModeRow)};
+				user.modify()->setAuthMode(authMode);
+				if (authMode == Database::User::AuthMode::Internal)
+					user.modify()->setPasswordHash(*passwordHash);
 			}
 		}
 
 	private:
-		
-		Wt::WString validatePassword() const 
-		{
-			Wt::WString error;
 
-			if (Wt::asNumber(value(ExternalAuthField)))
-			{
-				if (!valueText(PasswordField).empty())
-				{
-					error = Wt::WString::tr("Lms.password_must_be_empty_for_ext");
-				}
-			}
-			else if (!valueText(PasswordField).empty())
+		void validatePassword(Wt::WString& error) const
+		{
+			auto authModeRow {_authModeModel->getRowFromString(valueText(AuthModeField))};
+			if (!authModeRow)
+				throw LmsException {"Bad authentication mode"};
+
+			const Database::User::AuthMode authMode {_authModeModel->getValue(*authModeRow)};
+			if (authMode != Database::User::AuthMode::Internal)
+				return;
+
+			if (!valueText(PasswordField).empty())
 			{
 				if (Wt::asNumber(value(DemoField)))
 				{
@@ -138,11 +149,18 @@ class UserModel : public Wt::WFormModel
 						error = Wt::WString::tr("Lms.password-too-weak");
 				}
 			}
-			else 
+			else
 			{
-				error = Wt::WString::tr("Lms.password-must-not-be-empty");
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				// Allow an empty password if and only if the user previously had one set
+				const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
+				if (!user)
+					throw UserNotFoundException {*_userId};
+
+				if (user->getPasswordHash().hash.empty())
+					error = Wt::WString::tr("Lms.password-must-not-be-empty");
 			}
-			return error;
 		}
 
 		void loadData()
@@ -157,19 +175,14 @@ class UserModel : public Wt::WFormModel
 				throw UserNotFoundException {*_userId};
 			else if (user == LmsApp->getUser())
 				throw UserNotAllowedException {};
-		}
-		
-		bool getExternalAuth() const 
-		{
-			if (_userId)
-			{
-				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-				const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
-				return user->hasExternalAuth();
+			auto authModeRow {_authModeModel->getRowFromValue(user->getAuthMode())};
+			if (authModeRow)
+			{
+				setValue(AuthModeField, _authModeModel->getString(*authModeRow));
+				if (_authModeModel->getValue(*authModeRow) != User::AuthMode::Internal)
+					setReadOnly(PasswordField, true);
 			}
-			else
-				return Wt::asNumber(value(ExternalAuthField));
 		}
 
 		std::string getLoginName() const
@@ -199,7 +212,7 @@ class UserModel : public Wt::WFormModel
 			}
 			else if (field == PasswordField)
 			{
-				error = validatePassword();
+				validatePassword(error);
 			}
 			else if (field == DemoField)
 			{
@@ -217,7 +230,18 @@ class UserModel : public Wt::WFormModel
 			return false;
 		}
 
+		void initializeModels()
+		{
+			_authModeModel = std::make_shared<AuthModeModel>();
+
+			if (ServiceProvider<::Auth::IPasswordService>::get()->isAuthModeSupported(User::AuthMode::Internal))
+				_authModeModel->add(Wt::WString::tr("Lms.Admin.User.auth-mode.internal"), User::AuthMode::Internal);
+			if (ServiceProvider<::Auth::IPasswordService>::get()->isAuthModeSupported(User::AuthMode::PAM))
+				_authModeModel->add(Wt::WString::tr("Lms.Admin.User.auth-mode.pam"), User::AuthMode::PAM);
+		}
+
 		std::optional<Database::IdType> _userId;
+		std::shared_ptr<AuthModeModel>	_authModeModel;
 };
 
 UserView::UserView()
@@ -254,14 +278,7 @@ UserView::refreshView()
 
 		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-edit").arg(user->getLoginName()), Wt::TextFormat::Plain);
 		t->setCondition("if-has-last-login", true);
-
 		t->bindString("last-login", user->getLastLogin().toString(), Wt::TextFormat::Plain);
-		
-
-		auto extCheckBox = std::make_unique<Wt::WCheckBox>();
-		extCheckBox->setChecked(user->hasExternalAuth());
-		t->setFormWidget(UserModel::ExternalAuthField, std::move(extCheckBox));
-		t->setCondition("if-external-auth", true);
 	}
 	else
 	{
@@ -269,12 +286,20 @@ UserView::refreshView()
 		t->setCondition("if-has-login", true);
 		t->setFormWidget(UserModel::LoginField, std::make_unique<Wt::WLineEdit>());
 		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-create"));
-		
-		auto extCheckBox = std::make_unique<Wt::WCheckBox>();
-		extCheckBox->setChecked(true);
-		t->setCondition(UserModel::ExternalAuthField, false);
-		t->setFormWidget("external-auth", std::move(extCheckBox));
 	}
+
+	// Auth mode
+	auto authMode = std::make_unique<Wt::WComboBox>();
+	authMode->setModel(model->getAuthModeModel());
+	authMode->activated().connect([=](int row)
+	{
+		const User::AuthMode authMode {model->getAuthModeModel()->getValue(row)};
+
+		model->setReadOnly(UserModel::PasswordField, authMode != User::AuthMode::Internal);
+		t->updateModel(model.get());
+		t->updateView(model.get());
+	});
+	t->setFormWidget(UserModel::AuthModeField, std::move(authMode));
 
 	// Password
 	auto passwordEdit = std::make_unique<Wt::WLineEdit>();
@@ -286,7 +311,7 @@ UserView::refreshView()
 	t->setFormWidget(UserModel::DemoField, std::make_unique<Wt::WCheckBox>());
 	if (!userId && ServiceProvider<IConfig>::get()->getBool("demo", false))
 		t->setCondition("if-demo", true);
-	
+
 	Wt::WPushButton* saveBtn = t->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(userId ? "Lms.save" : "Lms.create"));
 	saveBtn->clicked().connect([=]()
 	{

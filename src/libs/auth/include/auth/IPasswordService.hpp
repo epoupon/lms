@@ -48,6 +48,9 @@ namespace Auth {
 				Mismatch,
 				Throttled,
 			};
+
+			virtual bool isAuthModeSupported(Database::User::AuthMode authMode) const = 0;
+
 			virtual PasswordCheckResult	checkUserPassword(Database::Session& session, const boost::asio::ip::address& clientAddress, const std::string& loginName, const std::string& password) = 0;
 			virtual Database::User::PasswordHash	hashPassword(const std::string& password) const = 0;
 			virtual bool				evaluatePasswordStrength(const std::string& loginName, const std::string& password) const = 0;

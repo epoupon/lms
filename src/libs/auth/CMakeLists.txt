@@ -25,5 +25,10 @@ target_link_libraries(lmsauth PUBLIC
 	${PAM_LIBRARIES}
 	)
 
+if (PAM_FOUND)
+	target_compile_options(lmsauth PRIVATE "-DLMS_SUPPORT_PAM")
+	target_sources(lmsauth PRIVATE impl/pam/PAM.cpp)
+endif(PAM_FOUND)
+
 install(TARGETS lmsauth DESTINATION lib)
 
