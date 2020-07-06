@@ -6,21 +6,26 @@ add_library(lmsav SHARED
 	impl/AvTypes.cpp
 	)
 
+# TODO make av libs private
 target_include_directories(lmsav INTERFACE
 	include
+	${AVCODEC_INCLUDE_DIR}
+	${AVFORMAT_INCLUDE_DIR}
+	${AVUTIL_INCLUDE_DIR}
 	)
 
 target_include_directories(lmsav PRIVATE
 	include/
 	)
 
-# TODO make these private
 target_link_libraries(lmsav PUBLIC
 	lmsutils
 	avformat
 	avutil
 	std::filesystem
 	wt
+	${AVFORMAT_LIBRARY}
+	${AVUTIL_LIBRARY}
 	)
 
 install(TARGETS lmsav DESTINATION lib)

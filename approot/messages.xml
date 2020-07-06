@@ -16,6 +16,7 @@
 <message id="Lms.password-bad-login-combination">Bad login / password combination</message>
 <message id="Lms.password-client-throttled">Login throttled, please try again later</message>
 <message id="Lms.password-confirm">Confirm password</message>
+<message id="Lms.password-must-not-be-empty">Password must not be empty</message>
 <message id="Lms.password-new">New password</message>
 <message id="Lms.password-old">Old password</message>
 <message id="Lms.password-too-weak">Password too weak</message>
@@ -81,6 +82,9 @@
 <message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Users</message>
 
 <!--User-->
+<message id="Lms.Admin.User.auth-mode">Authentication mode</message>
+<message id="Lms.Admin.User.auth-mode.internal">Internal</message>
+<message id="Lms.Admin.User.auth-mode.pam">PAM</message>
 <message id="Lms.Admin.User.demo-account">Demo account</message>
 <message id="Lms.Admin.User.demo-account-already-exists">Demo account already exists!</message>
 <message id="Lms.Admin.User.demo-password-invalid">Demo password must be the login name!</message>

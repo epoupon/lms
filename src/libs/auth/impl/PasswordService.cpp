@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* This file contains some classes in order to get info from file using the libavconv */
-
 #include "PasswordService.hpp"
 
 #include <Wt/Auth/HashFunction.h>
@@ -28,6 +26,9 @@
 #include "database/Session.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
+#ifdef LMS_SUPPORT_PAM
+#include "pam/PAM.hpp"
+#endif
 
 namespace Auth {
 
@@ -41,10 +42,29 @@ PasswordService::PasswordService(std::size_t maxThrottlerEntries)
 {
 }
 
+bool
+PasswordService::isAuthModeSupported(Database::User::AuthMode authMode) const
+{
+	switch (authMode)
+	{
+		case Database::User::AuthMode::Internal:
+			return true;
+
+		case Database::User::AuthMode::PAM:
+#ifdef LMS_SUPPORT_PAM
+			return true;
+#else
+			return false;
+#endif
+	}
+	return false;
+}
+
 static
 bool
 checkUserPassword(Database::Session& session, const std::string& loginName, const std::string& password)
 {
+	Database::User::AuthMode authMode;
 	Database::User::PasswordHash passwordHash;
 	{
 		auto transaction {session.createSharedTransaction()};
@@ -53,13 +73,28 @@ checkUserPassword(Database::Session& session, const std::string& loginName, cons
 		if (!user)
 			return false;
 
+		authMode = user->getAuthMode();
 		passwordHash = user->getPasswordHash();
 	}
 
-	const Wt::Auth::BCryptHashFunction hashFunc {6};
-	return hashFunc.verify(password, passwordHash.salt, passwordHash.hash);
-}
+	switch (authMode)
+	{
+		case Database::User::AuthMode::Internal:
+		{
+			const Wt::Auth::BCryptHashFunction hashFunc {6}; // TODO parametrize this
+			return hashFunc.verify(password, passwordHash.salt, passwordHash.hash);
+		}
 
+		case Database::User::AuthMode::PAM:
+#ifdef LMS_SUPPORT_PAM
+			return PAM::checkUserPassword(loginName, password);
+#else
+			return false;
+#endif
+	}
+
+	return false;
+}
 
 PasswordService::PasswordCheckResult
 PasswordService::checkUserPassword(Database::Session& session, const boost::asio::ip::address& clientAddress, const std::string& loginName, const std::string& password)

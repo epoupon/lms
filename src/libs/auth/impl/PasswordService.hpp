@@ -46,13 +46,12 @@ namespace Auth {
 			PasswordService(PasswordService&&) = delete;
 			PasswordService& operator=(PasswordService&&) = delete;
 
+		private:
 
-			// Password services
+			bool isAuthModeSupported(Database::User::AuthMode authMode) const;
 			PasswordCheckResult		checkUserPassword(Database::Session& session, const boost::asio::ip::address& clientAddress, const std::string& loginName, const std::string& password) override;
 			Database::User::PasswordHash	hashPassword(const std::string& password) const override;
 			bool				evaluatePasswordStrength(const std::string& loginName, const std::string& password) const override;
-
-		private:
 
 			std::shared_timed_mutex	_mutex;
 			LoginThrottler	_loginThrottler;

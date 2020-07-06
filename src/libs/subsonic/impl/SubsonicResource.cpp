@@ -597,7 +597,9 @@ handleCreateUserRequest(RequestContext& context)
 	if (User::getByLoginName(context.dbSession, username) != User::pointer{})
 		throw UserAlreadyExistsGenericError {};
 
-	User::pointer user {User::create(context.dbSession, username, hash)};
+	User::pointer user {User::create(context.dbSession, username)};
+	user.modify()->setAuthMode(User::AuthMode::Internal);
+	user.modify()->setPasswordHash(hash);
 
 	return Response::createOkResponse(context);
 }
