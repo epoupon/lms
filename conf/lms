@@ -1,9 +1,0 @@
-account required        pam_unix.so     try_first_pass 
-account sufficient 	pam_localuser.so
-
-auth    required        pam_unix.so     try_first_pass
-
-password required       pam_deny.so
-
-session required        pam_unix.so     try_first_pass 
-

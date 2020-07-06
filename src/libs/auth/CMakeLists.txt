@@ -20,14 +20,15 @@ target_link_libraries(lmsauth PRIVATE
 
 target_link_libraries(lmsauth PUBLIC
 	pthread
-	boost_system
+	Boost::system
 	wt
-	${PAM_LIBRARIES}
 	)
 
 if (PAM_FOUND)
 	target_compile_options(lmsauth PRIVATE "-DLMS_SUPPORT_PAM")
 	target_sources(lmsauth PRIVATE impl/pam/PAM.cpp)
+	target_include_directories(lmsauth PRIVATE  ${PAM_INCLUDE_DIR})
+	target_link_libraries(lmsauth PRIVATE ${PAM_LIBRARIES})
 endif(PAM_FOUND)
 
 install(TARGETS lmsauth DESTINATION lib)

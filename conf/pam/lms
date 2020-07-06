@@ -1,0 +1,3 @@
+account		required		pam_unix.so
+auth		required		pam_unix.so
+password	required		pam_deny.so

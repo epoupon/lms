@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -29,75 +29,6 @@
 namespace Auth::PAM
 {
 
-static
-	void
-freeResp(int num_msg, pam_response *response)
-{
-	if (response == nullptr)
-		return;
-
-	for (int i = 0; i < num_msg; i++)
-	{
-		if (response[i].resp)
-		{
-			memset(response[i].resp, 0, strlen(response[i].resp));
-			free(response[i].resp);
-			response[i].resp = nullptr;
-		}
-	}
-
-	free(response);
-}
-
-struct PAMConvData
-{
-	std::string loginName;
-	std::string password;
-};
-
-static
-int
-lms_conv(int msgCount, const pam_message** msgs, pam_response** resps, void* userData)
-{
-	if (msgCount < 1)
-		return PAM_CONV_ERR;
-	if (!resps || !msgs || !userData)
-		return PAM_CONV_ERR;
-
-	const PAMConvData& convData {*static_cast<const PAMConvData*>(userData)};
-
-	pam_response* response {static_cast<pam_response*>(malloc(sizeof(pam_response) * msgCount))};
-	if (!response)
-		return PAM_CONV_ERR;
-
-	for (int i {}; i < msgCount; ++i)
-	{
-		response[i].resp_retcode = 0;
-		response[i].resp = nullptr;
-
-		switch (msgs[i]->msg_style)
-		{
-			case PAM_PROMPT_ECHO_ON:
-				// on memory allocation failure, auth fails
-				response[i].resp = strdup(convData.loginName.c_str());
-				break;
-
-			case PAM_PROMPT_ECHO_OFF:
-				response[i].resp = strdup(convData.password.c_str());
-				break;
-
-			case PAM_ERROR_MSG:
-			case PAM_TEXT_INFO:
-			default:
-				freeResp(i, response);
-				return PAM_CONV_ERR;
-		}
-	}
-
-	*resps = response;
-	return PAM_SUCCESS;
-}
-
 class PAMError
 {
 	public:
@@ -116,9 +47,8 @@ class PAMContext
 {
 	public:
 		PAMContext(std::string_view loginName)
-			: _convData {std::string {loginName}, {}}
 		{
-			int err {pam_start("lms", _convData.loginName.c_str(), &_conv, &_pamh)};
+			int err {pam_start("lms", std::string {loginName}.c_str(), &_conv, &_pamh)};
 			if (err != PAM_SUCCESS)
 				throw PAMError {"start failed", _pamh, err};
 		}
@@ -130,13 +60,13 @@ class PAMContext
 				LMS_LOG(AUTH, ERROR) << "end failed: " << pam_strerror(_pamh, err);
 		}
 
-		void authenticate(const std::string& password)
+		void authenticate(std::string_view password)
 		{
-			_convData.password = password;
-			int err {pam_authenticate(_pamh, 0)};
-			_convData.password.clear();
+			AuthenticateConvContext authContext {password};
+			ScopedConvContextSetter scopedContext {*this, authContext};
 
-			if(err != PAM_SUCCESS)
+			int err {pam_authenticate(_pamh, 0)};
+			if (err != PAM_SUCCESS)
 				throw PAMError {"authenticate failed", _pamh, err};
 		}
 
@@ -144,12 +74,87 @@ class PAMContext
 		{
 			int err {pam_acct_mgmt(_pamh, PAM_SILENT)};
 			if (err != PAM_SUCCESS)
-					throw PAMError {"acct_mgmt failed", _pamh, err};
+				throw PAMError {"acct_mgmt failed", _pamh, err};
 		}
 
 	private:
-		PAMConvData _convData;
-		pam_conv _conv {lms_conv, &_convData};
+
+		class ConvContext
+		{
+			public:
+				virtual ~ConvContext() = default;
+		};
+
+		class AuthenticateConvContext final : public ConvContext
+		{
+			public:
+				AuthenticateConvContext(std::string_view password) : _password {password} {}
+
+				std::string_view getPassword() const { return _password; }
+
+			private:
+				std::string_view _password;
+		};
+
+		class ScopedConvContextSetter
+		{
+			public:
+				ScopedConvContextSetter(PAMContext& pamContext, ConvContext& convContext)
+					: _pamContext {pamContext}
+				{
+					_pamContext._convContext = &convContext;
+				}
+
+				~ScopedConvContextSetter()
+				{
+					_pamContext._convContext = nullptr;
+				}
+
+				ScopedConvContextSetter(const ScopedConvContextSetter&) = delete;
+				ScopedConvContextSetter(ScopedConvContextSetter&&) = delete;
+				ScopedConvContextSetter& operator=(const ScopedConvContextSetter&) = delete;
+				ScopedConvContextSetter& operator=(ScopedConvContextSetter&&) = delete;
+
+			private:
+				PAMContext& _pamContext;
+		};
+
+
+		static int conv(int msgCount, const pam_message** msgs, pam_response** resps, void* userData)
+		{
+			if (msgCount < 1)
+				return PAM_CONV_ERR;
+			if (!resps || !msgs || !userData)
+				return PAM_CONV_ERR;
+
+			PAMContext& context {*static_cast<PAMContext*>(userData)};
+
+			AuthenticateConvContext* authenticateContext = dynamic_cast<AuthenticateConvContext*>(context._convContext);
+			if (!authenticateContext)
+			{
+				LMS_LOG(AUTH, ERROR) << "Unexpected conv!";
+				return PAM_CONV_ERR;
+			}
+
+			// Only expect a PAM_PROMPT_ECHO_OFF msg
+			if (msgCount != 1 || msgs[0]->msg_style != PAM_PROMPT_ECHO_OFF)
+			{
+				LMS_LOG(AUTH, ERROR) << "Unexpected conv message. Count = " << msgCount;
+				return PAM_CONV_ERR;
+			}
+
+			pam_response* response {static_cast<pam_response*>(malloc(sizeof(pam_response)))};
+			if (!response)
+				return PAM_CONV_ERR;
+
+			response->resp = strdup(std::string {authenticateContext->getPassword()}.c_str());
+
+			*resps = response;
+			return PAM_SUCCESS;
+		}
+
+		ConvContext* _convContext {};
+		pam_conv _conv {&PAMContext::conv, this};
 		pam_handle_t *_pamh {};
 
 };

@@ -1,5 +1,5 @@
 /*
-auth_mode(C) 2013 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
