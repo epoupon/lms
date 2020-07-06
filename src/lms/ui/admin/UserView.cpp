@@ -66,12 +66,9 @@ class UserModel : public Wt::WFormModel
 				setValidator(LoginField, createNameValidator());
 			}
 
+			addField(AuthModeField);
 			addField(PasswordField);
 			addField(DemoField);
-			addField(AuthModeField);
-
-			if (!_userId)
-				setValidator(PasswordField, createMandatoryValidator());
 
 			loadData();
 		}
@@ -153,12 +150,19 @@ class UserModel : public Wt::WFormModel
 			{
 				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-				// Allow an empty password if and only if the user previously had one set
-				const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
-				if (!user)
-					throw UserNotFoundException {*_userId};
+				bool needPassword {true};
 
-				if (user->getPasswordHash().hash.empty())
+				// Allow an empty password if and only if the user previously had one set
+				if (_userId)
+				{
+					const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
+					if (!user)
+						throw UserNotFoundException {*_userId};
+
+					needPassword = user->getPasswordHash().hash.empty();
+				}
+
+				if (needPassword)
 					error = Wt::WString::tr("Lms.password-must-not-be-empty");
 			}
 		}
