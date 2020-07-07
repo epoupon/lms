@@ -164,6 +164,7 @@ checkUserPassword(const std::string& loginName, const std::string& password)
 {
 	try
 	{
+		LMS_LOG(AUTH, DEBUG) << "Checking PAM password for user '" << loginName << "'";
 		PAMContext pamContext {loginName};
 
 		pamContext.authenticate(password);

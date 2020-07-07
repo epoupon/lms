@@ -35,6 +35,7 @@
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
+#include "common/AuthModeModel.hpp"
 #include "common/Validators.hpp"
 #include "common/ValueStringModel.hpp"
 #include "LmsApplication.hpp"
@@ -58,8 +59,6 @@ class UserModel : public Wt::WFormModel
 		UserModel(std::optional<Database::IdType> userId)
 		: _userId {userId}
 		{
-			initializeModels();
-
 			if (!_userId)
 			{
 				addField(LoginField);
@@ -69,6 +68,8 @@ class UserModel : public Wt::WFormModel
 			addField(AuthModeField);
 			addField(PasswordField);
 			addField(DemoField);
+
+			setValidator(AuthModeField, createMandatoryValidator());
 
 			loadData();
 		}
@@ -234,18 +235,8 @@ class UserModel : public Wt::WFormModel
 			return false;
 		}
 
-		void initializeModels()
-		{
-			_authModeModel = std::make_shared<AuthModeModel>();
-
-			if (ServiceProvider<::Auth::IPasswordService>::get()->isAuthModeSupported(User::AuthMode::Internal))
-				_authModeModel->add(Wt::WString::tr("Lms.Admin.User.auth-mode.internal"), User::AuthMode::Internal);
-			if (ServiceProvider<::Auth::IPasswordService>::get()->isAuthModeSupported(User::AuthMode::PAM))
-				_authModeModel->add(Wt::WString::tr("Lms.Admin.User.auth-mode.pam"), User::AuthMode::PAM);
-		}
-
 		std::optional<Database::IdType> _userId;
-		std::shared_ptr<AuthModeModel>	_authModeModel;
+		std::shared_ptr<AuthModeModel>	_authModeModel {createAuthModeModel()};
 };
 
 UserView::UserView()

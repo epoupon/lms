@@ -81,6 +81,7 @@ checkUserPassword(Database::Session& session, const std::string& loginName, cons
 	{
 		case Database::User::AuthMode::Internal:
 		{
+			LMS_LOG(AUTH, DEBUG) << "Checking internal password for user '" << loginName << "'";
 			const Wt::Auth::BCryptHashFunction hashFunc {6}; // TODO parametrize this
 			return hashFunc.verify(password, passwordHash.salt, passwordHash.hash);
 		}

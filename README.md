@@ -23,6 +23,7 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 * MusicBrainzID support to handle duplicated artist and release names
 * Disc subtitles support
 * _Systemd_ integration
+* _PAM_ authentication backend
 * Subsonic API, with the following additional features:
   * Playlists
   * Starred Album/Artist/Tracks
