@@ -723,9 +723,8 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	}
 	else if (type == "newest")
 	{
-		auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-6)};
 		bool moreResults {};
-		releases = Release::getLastWritten(context.dbSession, after, {}, Range {offset, size}, moreResults);
+		releases = Release::getLastWritten(context.dbSession, std::nullopt, {}, Range {offset, size}, moreResults);
 	}
 	else if (type == "alphabeticalByName")
 	{
