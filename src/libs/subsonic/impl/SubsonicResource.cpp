@@ -1593,7 +1593,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 
 	std::vector<std::size_t> trackPositionsToRemove {getMultiParametersAs<std::size_t>(context.parameters, "songIndexToRemove")};
 
-	auto transaction {context.dbSession.createSharedTransaction()};
+	auto transaction {context.dbSession.createUniqueTransaction()};
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
