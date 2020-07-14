@@ -17,16 +17,26 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "AuthModeModel.hpp"
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
+#include "auth/IPasswordService.hpp"
+#include "utils/Service.hpp"
 
-#include "RequestContext.hpp"
-
-namespace API::Subsonic::Stream
+namespace UserInterface
 {
-	void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
-	void handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
+
+std::unique_ptr<AuthModeModel>
+createAuthModeModel()
+{
+	auto model {std::make_unique<AuthModeModel>()};
+
+	if (ServiceProvider<::Auth::IPasswordService>::get()->isAuthModeSupported(Database::User::AuthMode::Internal))
+		model->add(Wt::WString::tr("Lms.Admin.User.auth-mode.internal"), Database::User::AuthMode::Internal);
+	if (ServiceProvider<::Auth::IPasswordService>::get()->isAuthModeSupported(Database::User::AuthMode::PAM))
+		model->add(Wt::WString::tr("Lms.Admin.User.auth-mode.pam"), Database::User::AuthMode::PAM);
+
+	return model;
+}
+
 }
 

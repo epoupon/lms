@@ -410,7 +410,7 @@ TrackList::getDuration() const
 
 	using milli = std::chrono::duration<int, std::milli>;
 
-	Wt::Dbo::Query<milli> query {session()->query<milli>("SELECT SUM(duration) FROM track t INNER JOIN tracklist_entry p_e ON t.id = p_e.track_id")
+	Wt::Dbo::Query<milli> query {session()->query<milli>("SELECT COALESCE(SUM(duration), 0) FROM track t INNER JOIN tracklist_entry p_e ON t.id = p_e.track_id")
 			.where("p_e.tracklist_id = ?").bind(self()->id())};
 
 	return query.resultValue();

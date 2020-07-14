@@ -23,6 +23,7 @@ A [demo](http://lms.demo.poupon.io) instance is available, with the following li
 * MusicBrainzID support to handle duplicated artist and release names
 * Disc subtitles support
 * _Systemd_ integration
+* _PAM_ authentication backend
 * Subsonic API, with the following additional features:
   * Playlists
   * Starred Album/Artist/Tracks
@@ -90,8 +91,10 @@ __Notes__:
 * a C++17 compiler is needed
 * ffmpeg version 4 minimum is required
 ```sh
-apt-get install g++ cmake libboost-system-dev libavutil-dev libavformat-dev libgraphicsmagick++1-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev
+apt-get install g++ cmake libboost-system-dev libavutil-dev libavformat-dev libgraphicsmagick++1-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev libpam0g-dev
 ```
+
+__Note__: package libpam0g-dev is optional (only for using PAM authentication)
 
 You also need _Wt4_, which is not packaged yet on _Debian_. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).</br>
 No optional requirement is needed, except openSSL if you plan not to deploy behind a reverse proxy (which is not recommended).

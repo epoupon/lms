@@ -496,12 +496,25 @@ std::chrono::milliseconds
 Release::getDuration() const
 {
 	assert(self());
-	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId() );
+	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId());
 	assert(session());
 
 	using milli = std::chrono::duration<int, std::milli>;
 
-	Wt::Dbo::Query<milli> query {session()->query<milli>("SELECT SUM(duration) FROM track t INNER JOIN release r ON t.release_id = r.id")
+	Wt::Dbo::Query<milli> query {session()->query<milli>("SELECT COALESCE(SUM(duration), 0) FROM track t INNER JOIN release r ON t.release_id = r.id")
+			.where("r.id = ?").bind(self()->id())};
+
+	return query.resultValue();
+}
+
+Wt::WDateTime
+Release::getLastWritten() const
+{
+	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId());
+	assert(session());
+
+	Wt::Dbo::Query<Wt::WDateTime> query {session()->query<Wt::WDateTime>("SELECT COALESCE(MAX(file_last_write), '1970-01-01T00:00:00') FROM track t INNER JOIN release r ON t.release_id = r.id")
 			.where("r.id = ?").bind(self()->id())};
 
 	return query.resultValue();

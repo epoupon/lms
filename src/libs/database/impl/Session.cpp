@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -40,7 +40,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	24
+#define LMS_DATABASE_VERSION	25
 
 using Version = std::size_t;
 
@@ -266,6 +266,11 @@ CREATE TABLE "user_backup" (
 			// Better cover detection
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
+		}
+		else if (version == 24)
+		{
+			// User's AuthMode
+			_session.execute("ALTER TABLE user ADD auth_mode INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(User::defaultAuthMode)) + ")");
 		}
 		else
 		{

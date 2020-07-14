@@ -70,10 +70,8 @@ AuthToken::getByValue(Session& session, const std::string& value)
 static const std::string playedListName {"__played_tracks__"};
 static const std::string queuedListName {"__queued_tracks__"};
 
-User::User(const std::string& loginName, const PasswordHash& passwordHash)
+User::User(const std::string& loginName)
 : _loginName {loginName}
-, _passwordSalt {passwordHash.salt}
-, _passwordHash {passwordHash.hash}
 {
 }
 
@@ -96,11 +94,11 @@ User::getDemo(Session& session)
 }
 
 User::pointer
-User::create(Session& session, const std::string& loginName, const PasswordHash& passwordHash)
+User::create(Session& session, const std::string& loginName)
 {
 	session.checkUniqueLocked();
 
-	User::pointer user {session.getDboSession().add(std::make_unique<User>(loginName, passwordHash))};
+	User::pointer user {session.getDboSession().add(std::make_unique<User>(loginName))};
 
 	TrackList::create(session, playedListName, TrackList::Type::Internal, false, user);
 	TrackList::create(session, queuedListName, TrackList::Type::Internal, false, user);

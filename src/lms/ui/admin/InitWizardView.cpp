@@ -19,6 +19,7 @@
 
 #include "InitWizardView.hpp"
 
+#include <Wt/WComboBox.h>
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
@@ -29,6 +30,7 @@
 #include "utils/Service.hpp"
 
 #include "common/Validators.hpp"
+#include "common/AuthModeModel.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
@@ -41,17 +43,22 @@ class InitWizardModel : public Wt::WFormModel
 		static const Field AdminLoginField;
 		static const Field PasswordField;
 		static const Field PasswordConfirmField;
+		static inline const Field AuthModeField{"auth-mode"};
 
 		InitWizardModel() : Wt::WFormModel()
 		{
 			addField(AdminLoginField);
+			addField(AuthModeField);
 			addField(PasswordField);
 			addField(PasswordConfirmField);
 
+			setValidator(AuthModeField, createMandatoryValidator());
 			setValidator(AdminLoginField, createNameValidator());
 			setValidator(PasswordField, createMandatoryValidator());
 			setValidator(PasswordConfirmField, createMandatoryValidator());
 		}
+
+		std::shared_ptr<AuthModeModel> getAuthModeModel() const { return _authModeModel; }
 
 		void saveData()
 		{
@@ -64,8 +71,54 @@ class InitWizardModel : public Wt::WFormModel
 			if (!Database::User::getAll(LmsApp->getDbSession()).empty())
 				throw LmsException("Admin user already created");
 
-			Database::User::pointer user {Database::User::create(LmsApp->getDbSession(), valueText(AdminLoginField).toUTF8(), passwordHash)};
+			auto authModeRow {_authModeModel->getRowFromString(valueText(AuthModeField))};
+			if (!authModeRow)
+				throw LmsException {"Bad authentication mode"};
+
+			const Database::User::AuthMode authMode {_authModeModel->getValue(*authModeRow)};
+
+			Database::User::pointer user {Database::User::create(LmsApp->getDbSession(), valueText(AdminLoginField).toUTF8())};
 			user.modify()->setType(Database::User::Type::ADMIN);
+			user.modify()->setAuthMode(authMode);
+			if (authMode == Database::User::AuthMode::Internal)
+				user.modify()->setPasswordHash(passwordHash);
+		}
+
+		void validatePassword(Wt::WString& error) const
+		{
+			auto authModeRow {_authModeModel->getRowFromString(valueText(AuthModeField))};
+			if (!authModeRow)
+				throw LmsException {"Bad authentication mode"};
+
+			const Database::User::AuthMode authMode {_authModeModel->getValue(*authModeRow)};
+			if (authMode != Database::User::AuthMode::Internal)
+				return;
+
+			if (!valueText(PasswordField).empty())
+			{
+				// Evaluate the strength of the password
+				if (!ServiceProvider<::Auth::IPasswordService>::get()->evaluatePasswordStrength(valueText(AdminLoginField).toUTF8(), valueText(PasswordField).toUTF8()))
+					error = Wt::WString::tr("Lms.password-too-weak");
+			}
+			else
+				error = Wt::WString::tr("Lms.password-must-not-be-empty");
+		}
+
+		void validatePasswordConfirm(Wt::WString& error) const
+		{
+			auto authModeRow {_authModeModel->getRowFromString(valueText(AuthModeField))};
+			if (!authModeRow)
+				throw LmsException {"Bad authentication mode"};
+
+			const Database::User::AuthMode authMode {_authModeModel->getValue(*authModeRow)};
+			if (authMode != Database::User::AuthMode::Internal)
+				return;
+
+			if (validation(PasswordField).state() == Wt::ValidationState::Valid)
+			{
+				if (valueText(PasswordField) != valueText(PasswordConfirmField))
+					error = Wt::WString::tr("Lms.passwords-dont-match");
+			}
 		}
 
 		bool validateField(Field field)
@@ -74,22 +127,11 @@ class InitWizardModel : public Wt::WFormModel
 
 			if (field == PasswordField)
 			{
-				if (!valueText(PasswordField).empty())
-				{
-					// Evaluate the strength of the password
-					if (!ServiceProvider<::Auth::IPasswordService>::get()->evaluatePasswordStrength(valueText(AdminLoginField).toUTF8(), valueText(PasswordField).toUTF8()))
-						error = Wt::WString::tr("Lms.password-too-weak");
-				}
-				else
-					return Wt::WFormModel::validateField(field);
+				validatePassword(error);
 			}
 			else if (field == PasswordConfirmField)
 			{
-				if (validation(PasswordField).state() == Wt::ValidationState::Valid)
-				{
-					if (valueText(PasswordField) != valueText(PasswordConfirmField))
-						error = Wt::WString::tr("Lms.passwords-dont-match");
-				}
+				validatePasswordConfirm(error);
 			}
 			else
 			{
@@ -101,6 +143,7 @@ class InitWizardModel : public Wt::WFormModel
 			return (validation(field).state() == Wt::ValidationState::Valid);
 		}
 
+		std::shared_ptr<AuthModeModel>	_authModeModel {createAuthModeModel()};
 };
 
 const Wt::WFormModel::Field InitWizardModel::AdminLoginField = "admin-login";
@@ -118,6 +161,20 @@ InitWizardView::InitWizardView()
 		adminLogin->setAttributeValue("autocomplete", "username");
 		setFormWidget(InitWizardModel::AdminLoginField, std::move(adminLogin));
 	}
+
+	// Auth mode
+	auto authMode = std::make_unique<Wt::WComboBox>();
+	authMode->setModel(model->getAuthModeModel());
+	authMode->activated().connect([=](int row)
+	{
+		const Database::User::AuthMode authMode {model->getAuthModeModel()->getValue(row)};
+
+		model->setReadOnly(InitWizardModel::PasswordField, authMode != Database::User::AuthMode::Internal);
+		model->setReadOnly(InitWizardModel::PasswordConfirmField, authMode != Database::User::AuthMode::Internal);
+		updateModel(model.get());
+		updateView(model.get());
+	});
+	setFormWidget(InitWizardModel::AuthModeField, std::move(authMode));
 
 	// Password
 	{

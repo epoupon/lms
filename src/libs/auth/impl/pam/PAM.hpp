@@ -19,14 +19,14 @@
 
 #pragma once
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
+#ifdef LMS_SUPPORT_PAM
 
-#include "RequestContext.hpp"
+#include <string>
 
-namespace API::Subsonic::Stream
+namespace Auth::PAM
 {
-	void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
-	void handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
+	bool checkUserPassword(const std::string& loginName, const std::string& password);
 }
+
+#endif // LMS_SUPPORT_PAM
 

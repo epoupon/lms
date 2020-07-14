@@ -19,6 +19,7 @@
 #pragma once
 
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -180,7 +181,15 @@ class Response
 		{
 			public:
 				void setAttribute(std::string_view key, std::string_view value);
-				void setAttribute(std::string_view key, long long value);
+
+				template <typename T, std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+				void setAttribute(std::string_view key, T value)
+				{
+					if constexpr (std::is_same<bool, T>::value)
+						_attributes[std::string {key}] = value;
+					else
+						_attributes[std::string {key}] = static_cast<long long>(value);
+				}
 
 				// A Node has either a value or some children
 				void setValue(std::string_view value);
@@ -193,8 +202,9 @@ class Response
 
 			private:
 				friend class Response;
-				std::map<std::string, std::variant<std::string, long long>> _attributes;
-				std::variant<std::string, long long> _value;
+				using Value = std::variant<std::string, bool, long long>;
+				std::map<std::string, Value> _attributes;
+				std::optional<Value> _value;
 				std::map<std::string, std::vector<Node>> _children;
 				std::map<std::string, std::vector<Node>> _childrenArrays;
 		};

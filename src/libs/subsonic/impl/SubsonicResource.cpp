@@ -19,6 +19,7 @@
 #include "subsonic/SubsonicResource.hpp"
 
 #include <atomic>
+#include <iomanip>
 #include <unordered_map>
 
 #include <Wt/WLocalDateTime.h>
@@ -50,8 +51,7 @@ using namespace Database;
 
 static const std::string	genreClusterName {"GENRE"};
 static const std::string	reportedStarredDate {"2000-01-01T00:00:00"};
-static const std::string	reportedCreatedBookmarkDate {"2000-01-01T00:00:00"};
-static const std::string	reportedChangedBookmarkDate {"2000-01-01T00:00:00"};
+static const std::string	reportedDummyDate {"2000-01-01T00:00:00"};
 
 namespace API::Subsonic
 {
@@ -287,7 +287,7 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 	Response::Node trackResponse;
 
 	trackResponse.setAttribute("id", IdToString({Id::Type::Track, track.id()}));
-	trackResponse.setAttribute("isDir", "false");
+	trackResponse.setAttribute("isDir", false);
 	trackResponse.setAttribute("title", track->getName());
 	if (track->getTrackNumber())
 		trackResponse.setAttribute("track", *track->getTrackNumber());
@@ -358,8 +358,8 @@ trackBookmarkToResponseNode(const TrackBookmark::pointer& trackBookmark)
 	trackBookmarkNode.setAttribute("position", trackBookmark->getOffset().count());
 	if (!trackBookmark->getComment().empty())
 		trackBookmarkNode.setAttribute("comment", trackBookmark->getComment());
-	trackBookmarkNode.setAttribute("created", reportedCreatedBookmarkDate);
-	trackBookmarkNode.setAttribute("changed", reportedChangedBookmarkDate);
+	trackBookmarkNode.setAttribute("created", reportedDummyDate);
+	trackBookmarkNode.setAttribute("changed", reportedDummyDate);
 	trackBookmarkNode.setAttribute("username", trackBookmark->getUser()->getLoginName());
 
 	return trackBookmarkNode;
@@ -380,7 +380,13 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 	else
 	{
 		albumNode.setAttribute("title", release->getName());
-		albumNode.setAttribute("isDir", "true");
+		albumNode.setAttribute("isDir", true);
+	}
+
+	{
+		std::time_t t {release->getLastWritten().toTime_t()};
+		std::ostringstream oss; oss << std::put_time(std::gmtime(&t), "%FT%T");
+		albumNode.setAttribute("created", oss.str());
 	}
 
 	albumNode.setAttribute("id", IdToString({Id::Type::Release, release.id()}));
@@ -471,18 +477,18 @@ userToResponseNode(const User::pointer& user)
 	Response::Node userNode;
 
 	userNode.setAttribute("username", user->getLoginName());
-	userNode.setAttribute("scrobblingEnabled", "false");
-	userNode.setAttribute("adminRole", user->isAdmin() ? "true" : "false");
-	userNode.setAttribute("settingsRole", "true");
-	userNode.setAttribute("downloadRole", "false");
-	userNode.setAttribute("uploadRole", "false");
-	userNode.setAttribute("playlistRole", "true");
-	userNode.setAttribute("coverArtRole", "false");
-	userNode.setAttribute("commentRole", "false");
-	userNode.setAttribute("podcastRole", "false");
-	userNode.setAttribute("streamRole", "true");
-	userNode.setAttribute("jukeboxRole", "false");
-	userNode.setAttribute("shareRole", "false");
+	userNode.setAttribute("scrobblingEnabled", false);
+	userNode.setAttribute("adminRole", user->isAdmin());
+	userNode.setAttribute("settingsRole", true);
+	userNode.setAttribute("downloadRole", true);
+	userNode.setAttribute("uploadRole", false);
+	userNode.setAttribute("playlistRole", true);
+	userNode.setAttribute("coverArtRole", false);
+	userNode.setAttribute("commentRole", false);
+	userNode.setAttribute("podcastRole", false);
+	userNode.setAttribute("streamRole", true);
+	userNode.setAttribute("jukeboxRole", false);
+	userNode.setAttribute("shareRole", false);
 
 	Response::Node folder;
 	folder.setValue("0");
@@ -597,7 +603,9 @@ handleCreateUserRequest(RequestContext& context)
 	if (User::getByLoginName(context.dbSession, username) != User::pointer{})
 		throw UserAlreadyExistsGenericError {};
 
-	User::pointer user {User::create(context.dbSession, username, hash)};
+	User::pointer user {User::create(context.dbSession, username)};
+	user.modify()->setAuthMode(User::AuthMode::Internal);
+	user.modify()->setPasswordHash(hash);
 
 	return Response::createOkResponse(context);
 }
@@ -659,7 +667,7 @@ handleGetLicenseRequest(RequestContext& context)
 	Response::Node& licenseNode {response.createNode("license")};
 	licenseNode.setAttribute("licenseExpires", "2025-09-03T14:46:43");
 	licenseNode.setAttribute("email", "foo@bar.com");
-	licenseNode.setAttribute("valid", "true");
+	licenseNode.setAttribute("valid", true);
 
 	return response;
 }
@@ -715,9 +723,8 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	}
 	else if (type == "newest")
 	{
-		auto after {Wt::WLocalDateTime::currentServerDateTime().toUTC().addMonths(-6)};
 		bool moreResults {};
-		releases = Release::getLastWritten(context.dbSession, after, {}, Range {offset, size}, moreResults);
+		releases = Release::getLastWritten(context.dbSession, std::nullopt, {}, Range {offset, size}, moreResults);
 	}
 	else if (type == "alphabeticalByName")
 	{
@@ -1210,8 +1217,8 @@ tracklistToResponseNode(const TrackList::pointer& tracklist, Session&)
 	playlistNode.setAttribute("name", tracklist->getName());
 	playlistNode.setAttribute("songCount", tracklist->getCount());
 	playlistNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(tracklist->getDuration()).count());
-	playlistNode.setAttribute("public", tracklist->isPublic() ? "true" : "false");
-	playlistNode.setAttribute("created", "");
+	playlistNode.setAttribute("public", tracklist->isPublic());
+	playlistNode.setAttribute("created", reportedDummyDate);
 	playlistNode.setAttribute("owner", tracklist->getUser()->getLoginName());
 
 	return playlistNode;
@@ -1585,7 +1592,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 
 	std::vector<std::size_t> trackPositionsToRemove {getMultiParametersAs<std::size_t>(context.parameters, "songIndexToRemove")};
 
-	auto transaction {context.dbSession.createSharedTransaction()};
+	auto transaction {context.dbSession.createUniqueTransaction()};
 
 	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
@@ -1805,8 +1812,7 @@ static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"deletePlaylist",	{handleDeletePlaylistRequest,		false}},
 
 	// Media retrieval
-	{"download",		{handleNotImplemented,			false}},
-	{"hls",			{handleNotImplemented,			false}},
+	{"hls",				{handleNotImplemented,			false}},
 	{"getCaptions",		{handleNotImplemented,			false}},
 	{"getLyrics",		{handleNotImplemented,			false}},
 	{"getAvatar",		{handleNotImplemented,			false}},
@@ -1869,8 +1875,9 @@ using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::
 static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
 {
 	// Media retrieval
+	{"download",		Stream::handleDownload},
+	{"stream",			Stream::handleStream},
 	{"getCoverArt",		handleGetCoverArt},
-	{"stream",		Stream::handle},
 };
 
 void

@@ -19,14 +19,13 @@
 
 #pragma once
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
+#include "database/User.hpp"
+#include "common/ValueStringModel.hpp"
 
-#include "RequestContext.hpp"
-
-namespace API::Subsonic::Stream
+namespace UserInterface
 {
-	void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
-	void handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
+	using AuthModeModel = ValueStringModel<Database::User::AuthMode>;
+
+	std::unique_ptr<AuthModeModel> createAuthModeModel();
 }
 
