@@ -57,7 +57,6 @@ struct StreamParameters
 	std::optional<Av::TranscodeParameters> transcodeParameters;
 };
 
-
 static
 StreamParameters
 getStreamParameters(RequestContext& context)
@@ -110,7 +109,44 @@ getStreamParameters(RequestContext& context)
 }
 
 void
-handle(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
+handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
+{
+	std::shared_ptr<IResourceHandler> resourceHandler;
+
+	Wt::Http::ResponseContinuation *continuation = request.continuation();
+	if (!continuation)
+	{
+		// Mandatory params
+		Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
+
+		std::filesystem::path trackPath;
+		{
+			auto transaction {context.dbSession.createSharedTransaction()};
+
+			auto track {Track::getById(context.dbSession, id.value)};
+			if (!track)
+				throw RequestedDataNotFoundError {};
+
+			trackPath = track->getPath();
+		}
+
+		resourceHandler = createFileResourceHandler(trackPath);
+	}
+	else
+	{
+		resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
+	}
+
+	resourceHandler->processRequest(request, response);
+	if (!resourceHandler->isFinished())
+	{
+		Wt::Http::ResponseContinuation *continuation = response.createContinuation();
+		continuation->setData(resourceHandler);
+	}
+}
+
+void
+handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
 {
 	std::shared_ptr<IResourceHandler> resourceHandler;
 

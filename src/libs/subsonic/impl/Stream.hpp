@@ -26,6 +26,7 @@
 
 namespace API::Subsonic::Stream
 {
-	void handle(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
+	void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
+	void handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
 }
 

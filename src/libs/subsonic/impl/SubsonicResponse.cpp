@@ -70,15 +70,9 @@ Response::Node::setAttribute(std::string_view key, std::string_view value)
 }
 
 void
-Response::Node::setAttribute(std::string_view key, long long value)
-{
-	_attributes[std::string {key}] = value;
-}
-
-void
 Response::Node::addChild(const std::string& key, Node node)
 {
-	if (_value.valueless_by_exception())
+	if (_value)
 		throw LmsException {"Node already has a value"};
 
 	_children[key].emplace_back(std::move(node));
@@ -87,7 +81,7 @@ Response::Node::addChild(const std::string& key, Node node)
 void
 Response::Node::addArrayChild(const std::string& key, Node node)
 {
-	if (_value.valueless_by_exception())
+	if (_value)
 		throw LmsException {"Node already has a value"};
 
 	_childrenArrays[key].emplace_back(std::move(node));
@@ -179,16 +173,22 @@ Response::writeXML(std::ostream& os)
 		{
 			if (std::holds_alternative<std::string>(itAttribute.second))
 				res.put("<xmlattr>." + itAttribute.first, std::get<std::string>(itAttribute.second));
+			else if (std::holds_alternative<bool>(itAttribute.second))
+				res.put("<xmlattr>." + itAttribute.first, std::get<bool>(itAttribute.second));
 			else if (std::holds_alternative<long long>(itAttribute.second))
 				res.put("<xmlattr>." + itAttribute.first, std::get<long long>(itAttribute.second));
 		}
 
-		if (node._value.valueless_by_exception())
+		if (node._value)
 		{
-			if (std::holds_alternative<std::string>(node._value))
-				res.put_value(std::get<std::string>(node._value));
-			else if (std::holds_alternative<long long>(node._value))
-				res.put_value(std::get<long long>(node._value));
+			const auto& value {*node._value};
+
+			if (std::holds_alternative<std::string>(value))
+				res.put_value(std::get<std::string>(value));
+			else if (std::holds_alternative<bool>(value))
+				res.put_value(std::get<bool>(value));
+			else if (std::holds_alternative<long long>(value))
+				res.put_value(std::get<long long>(value));
 		}
 		else
 		{
@@ -200,7 +200,7 @@ Response::writeXML(std::ostream& os)
 
 			for (auto itChildArrayNode : node._childrenArrays)
 			{
-				const std::vector<Response::Node>& childArrayNodes {itChildArrayNode .second};
+				const std::vector<Response::Node>& childArrayNodes {itChildArrayNode.second};
 
 				for (const Response::Node& childNode : childArrayNodes )
 					res.add_child(itChildArrayNode.first, nodeToPropertyTree(childNode));
@@ -217,9 +217,11 @@ Response::writeXML(std::ostream& os)
 unsigned
 Response::getAPIMinorVersion(std::string_view clientName)
 {
-	// Audinaut does not lower its client API version in plain text authentication mode
+	// Some clients do not rely on version to enable the clear text password auth scheme
 	if (clientName == "Audinaut")
-		return 13;
+		return 16;
+	else if (clientName == "Sublime Music")
+		return 16;
 	else
 		return 12;
 }
@@ -233,20 +235,24 @@ Response::writeJSON(std::ostream& os)
 	{
 		Json::Object res;
 
-		for (auto itAttribute : node._attributes)
+		auto valueToJsonValue {[](const Node::Value& value) -> Json::Value
 		{
-			if (std::holds_alternative<std::string>(itAttribute.second))
-				res[itAttribute.first] = Json::Value {std::get<std::string>(itAttribute.second)};
-			else if (std::holds_alternative<long long>(itAttribute.second))
-				res[itAttribute.first] = Json::Value {std::get<long long>(itAttribute.second)};
-		}
+			if (std::holds_alternative<std::string>(value))
+				return Json::Value {std::get<std::string>(value)};
+			else if (std::holds_alternative<bool>(value))
+				return Json::Value {std::get<bool>(value)};
+			else if (std::holds_alternative<long long>(value))
+				return Json::Value {std::get<long long>(value)};
 
-		if (node._value.valueless_by_exception())
+			throw LmsException("Unexpected value type");
+		}};
+
+		for (auto itAttribute : node._attributes)
+			res[itAttribute.first] = valueToJsonValue(itAttribute.second);
+
+		if (node._value)
 		{
-			if (std::holds_alternative<std::string>(node._value))
-				res["value"] = Json::Value {std::get<std::string>(node._value)};
-			else if (std::holds_alternative<long long>(node._value))
-				res["value"] = Json::Value {std::get<long long>(node._value)};
+			res["value"] = valueToJsonValue(*node._value);
 		}
 		else
 		{

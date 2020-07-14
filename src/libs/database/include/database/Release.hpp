@@ -90,6 +90,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		std::optional<std::size_t>	getTotalTrack() const;
 		std::optional<std::size_t>	getTotalDisc() const;
 		std::chrono::milliseconds	getDuration() const;
+		Wt::WDateTime				getLastWritten() const;
 
 		// Get the artists of this release
 		std::vector<Wt::Dbo::ptr<Artist> > getArtists(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;

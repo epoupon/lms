@@ -34,7 +34,7 @@ namespace API::Subsonic::Scan
 
 		const IMediaScanner::Status scanStatus {ServiceProvider<IMediaScanner>::get()->getStatus()};
 
-		statusResponse.setAttribute("scanning", scanStatus.currentState == IMediaScanner::State::InProgress ? "true" : "false");
+		statusResponse.setAttribute("scanning", scanStatus.currentState == IMediaScanner::State::InProgress);
 		if (scanStatus.currentState == IMediaScanner::State::InProgress && scanStatus.inProgressScanStats)
 			statusResponse.setAttribute("count", scanStatus.inProgressScanStats->processedFiles);
 

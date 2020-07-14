@@ -210,6 +210,8 @@ testSingleRelease(Session& session)
 		releases = Release::getAll(session);
 		CHECK(releases.size() == 1);
 		CHECK(releases.front().id() == release.getId());
+
+		CHECK(release->getDuration() == std::chrono::seconds {0});
 	}
 }
 
@@ -710,6 +712,12 @@ testMultipleTracksMultipleClustersTopRelease(Session& session)
 
 	ScopedUser user {session, "MyUser"};
 	ScopedTrackList trackList {session, "TrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		CHECK(trackList->getDuration() == std::chrono::seconds {0});
+	}
 
 	{
 		auto transaction {session.createUniqueTransaction()};
