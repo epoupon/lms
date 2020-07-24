@@ -9,6 +9,7 @@
 <message id="Lms.discard">Discard</message>
 <message id="Lms.cancel">Cancel</message>
 <message id="Lms.create">Create</message>
+<message id="Lms.loading">Loading...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
 <message id="Lms.not-a-directory">Not a directory</message>
@@ -117,7 +118,6 @@
 <message id="Lms.Explore.recently-added">Recently added</message>
 <message id="Lms.Explore.recently-played">Recently played</message>
 <message id="Lms.Explore.releases">Albums</message>
-<message id="Lms.Explore.show-more">Show more</message>
 <message id="Lms.Explore.tracks">Tracks</message>
 <message id="Lms.Explore.type">Type</message>
 <message id="Lms.Explore.value">Value</message>

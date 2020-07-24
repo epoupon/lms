@@ -32,6 +32,7 @@
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
+#include "common/LoadingIndicator.hpp"
 #include "resource/ImageResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
@@ -66,10 +67,12 @@ PlayQueue::PlayQueue()
 
 	_entriesContainer = bindNew<Wt::WContainerWidget>("entries");
 
-	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->setHidden(true);
-	_showMore->clicked().connect([=]
+	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
+	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
 	{
+		if (!visible)
+			return;
+
 		addSome();
 		updateCurrentTrack(true);
 	});
@@ -202,7 +205,7 @@ PlayQueue::clearTracks()
 		getTrackList().modify()->clear();
 	}
 
-	_showMore->setHidden(true);
+	_loadingIndicator->setHidden(true);
 	_entriesContainer->clear();
 	updateInfo();
 }
@@ -447,7 +450,7 @@ PlayQueue::addSome()
 
 	}
 
-	_showMore->setHidden(static_cast<std::size_t>(_entriesContainer->count()) >= tracklist->getCount());
+	_loadingIndicator->setHidden(static_cast<std::size_t>(_entriesContainer->count()) >= tracklist->getCount());
 }
 
 void

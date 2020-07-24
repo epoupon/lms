@@ -22,8 +22,6 @@
 #include <optional>
 
 #include <Wt/WContainerWidget.h>
-#include <Wt/WLineEdit.h>
-#include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
@@ -78,8 +76,7 @@ class Tracks : public Wt::WTemplate
 		Filters* _filters {};
 		std::vector<Database::IdType> _randomTracks;
 		Wt::WContainerWidget* _tracksContainer {};
-		Wt::WPushButton* _showMore {};
-		Wt::WLineEdit* _search {};
+		Wt::WTemplate* _loadingIndicator {};
 };
 
 } // namespace UserInterface

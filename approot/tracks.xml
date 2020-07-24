@@ -12,9 +12,7 @@
 				${play-btn}${add-btn}
 			</div>
 			${tracks}
-			<div class="Lms-horizontal-center">
-				${show-more class="btn-primary Lms-show-more"}
-			</div>
+			${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
 		</div>
 	</div>
 </message>

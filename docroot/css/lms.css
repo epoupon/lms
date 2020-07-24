@@ -259,6 +259,11 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	justify-content: center;
 }
 
+.Lms-loading-indicator {
+	margin-top: 8px;
+	margin-bottom: 8px;
+}
+
 .Lms-navbar-search {
 	max-width: 175px;
 	padding-top: 7.5px;
@@ -476,11 +481,6 @@ a.Lms-releasename:hover, a.Lms-releasename:focus {
 	content: "";
 	display: block;
 	padding-bottom: 100%;
-}
-
-.Lms-show-more {
-	margin-top: 8px;
-	margin-bottom: 8px;
 }
 
 

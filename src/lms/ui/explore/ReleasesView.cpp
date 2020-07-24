@@ -32,6 +32,7 @@
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
+#include "common/LoadingIndicator.hpp"
 #include "resource/ImageResource.hpp"
 #include "ReleaseListHelpers.hpp"
 #include "Filters.hpp"
@@ -79,9 +80,12 @@ _filters {filters}
 
 	_container = bindNew<Wt::WContainerWidget>("releases");
 
-	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->clicked().connect([this]
+	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
+	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
 	{
+		if (!visible)
+			return;
+
 		addSome();
 	});
 
@@ -118,7 +122,7 @@ Releases::addSome()
 		_container->addWidget(ReleaseListHelpers::createEntry(release));
 	}
 
-	_showMore->setHidden(!moreResults);
+	_loadingIndicator->setHidden(!moreResults);
 }
 
 std::vector<Database::Release::pointer>

@@ -34,6 +34,7 @@
 
 #include "resource/ImageResource.hpp"
 
+#include "common/LoadingIndicator.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
@@ -83,9 +84,12 @@ _filters {filters}
 
 	_tracksContainer = bindNew<Wt::WContainerWidget>("tracks");
 
-	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->clicked().connect([this]
+	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
+	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
 	{
+		if (!visible)
+			return;
+
 		addSome();
 	});
 
@@ -206,7 +210,7 @@ Tracks::addSome()
 		_tracksContainer->addWidget(TrackListHelpers::createEntry(track));
 	}
 
-	_showMore->setHidden(!moreResults);
+	_loadingIndicator->setHidden(!moreResults);
 }
 
 } // namespace UserInterface

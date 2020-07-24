@@ -16,9 +16,7 @@
 				<h4><small>${nb-tracks}</small></h4>
 			</div>
 			${entries}
-			<div class="Lms-horizontal-center">
-				${show-more class="btn-primary Lms-show-more"}
-			</div>
+			${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
 		</div>
 	</div>
 </message>

@@ -22,7 +22,6 @@
 #include <optional>
 
 #include <Wt/WContainerWidget.h>
-#include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
@@ -84,7 +83,7 @@ class PlayQueue : public Wt::WTemplate
 		bool _mediaPlayerSettingsLoaded {};
 		Database::IdType _tracklistId {};
 		Wt::WContainerWidget* _entriesContainer {};
-		Wt::WPushButton* _showMore {};
+		Wt::WTemplate* _loadingIndicator {};
 		Wt::WText* _nbTracks {};
 		Wt::WText* _repeatBtn {};
 		Wt::WText* _radioBtn {};
