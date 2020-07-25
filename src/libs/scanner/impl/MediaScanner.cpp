@@ -258,48 +258,50 @@ MediaScanner::MediaScanner(Database::Db& db)
 
 MediaScanner::~MediaScanner()
 {
-	if (_running)
-		stop();
-}
-
-void
-MediaScanner::restart(void)
-{
 	stop();
-	start();
 }
 
 void
-MediaScanner::start(void)
+MediaScanner::start()
 {
-	_running = true;
-
 	scheduleNextScan();
 
 	_ioService.start();
 }
 
 void
-MediaScanner::stop(void)
+MediaScanner::stop()
 {
-	_running = false;
+	_abortScan = true;
 
 	_scheduleTimer.cancel();
-
 	_ioService.stop();
 }
 
 void
-MediaScanner::requestImmediateScan()
+MediaScanner::abortScan()
 {
+	_abortScan = true;
+
+	_scheduleTimer.cancel();
+	_ioService.stop();
+
+	_abortScan = false;
+	_ioService.start();
+}
+
+void
+MediaScanner::requestImmediateScan(bool force)
+{
+	abortScan();
 	_ioService.post([=]()
 	{
-		scheduleScan();
+		scheduleScan(force);
 	});
 }
 
 void
-MediaScanner::requestReschedule()
+MediaScanner::requestReload()
 {
 	_ioService.post([=]()
 	{
@@ -308,7 +310,7 @@ MediaScanner::requestReschedule()
 }
 
 MediaScanner::Status
-MediaScanner::getStatus()
+MediaScanner::getStatus() const
 {
 	Status res;
 
@@ -365,7 +367,7 @@ MediaScanner::scheduleNextScan()
 	if (nextScanDate.isValid())
 	{
 		nextScanDateTime = Wt::WDateTime {nextScanDate, _startTime};
-		scheduleScan(nextScanDateTime);
+		scheduleScan(false, nextScanDateTime);
 	}
 
 	{
@@ -384,7 +386,7 @@ MediaScanner::countAllFiles(ScanStats& stats)
 
 	exploreFilesRecursive(_mediaDirectory, [&](std::error_code ec, const std::filesystem::path& path)
 	{
-		if (!_running)
+		if (_abortScan)
 			return false;
 
 		if (!ec && isFileSupported(path, _fileExtensions))
@@ -398,13 +400,21 @@ MediaScanner::countAllFiles(ScanStats& stats)
 }
 
 void
-MediaScanner::scheduleScan(const Wt::WDateTime& dateTime)
+MediaScanner::scheduleScan(bool force, const Wt::WDateTime& dateTime)
 {
+	auto cb {[=](boost::system::error_code ec)
+	{
+		if (ec)
+			return;
+
+		scan(force);
+	}};
+
 	if (dateTime.isNull())
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan right now";
-		_scheduleTimer.expires_from_now(std::chrono::seconds(0));
-		_scheduleTimer.async_wait(std::bind(&MediaScanner::scan, this, std::placeholders::_1));
+		_scheduleTimer.expires_from_now(std::chrono::seconds {0});
+		_scheduleTimer.async_wait(cb);
 	}
 	else
 	{
@@ -413,16 +423,13 @@ MediaScanner::scheduleScan(const Wt::WDateTime& dateTime)
 
 		LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan at " << std::string(std::ctime(&t));
 		_scheduleTimer.expires_at(timePoint);
-		_scheduleTimer.async_wait(std::bind(&MediaScanner::scan, this, std::placeholders::_1));
+		_scheduleTimer.async_wait(cb);
 	}
 }
 
 void
-MediaScanner::scan(boost::system::error_code err)
+MediaScanner::scan(bool forceScan)
 {
-	if (err)
-		return;
-
 	scanStarted().emit();
 
 	{
@@ -438,8 +445,6 @@ MediaScanner::scan(boost::system::error_code err)
 
 	refreshScanSettings();
 
-	bool forceScan {false};
-
 	LMS_LOG(DBUPDATER, DEBUG) << "Counting files in media directory '" << _mediaDirectory.string() << "'...";
 	countAllFiles(stats);
 	LMS_LOG(DBUPDATER, DEBUG) << "-> Nb files = " << stats.filesToScan;
@@ -454,17 +459,17 @@ MediaScanner::scan(boost::system::error_code err)
 
 	removeOrphanEntries();
 
-	if (_running)
+	if (!_abortScan)
 		checkDuplicatedAudioFiles(stats);
 
 	// Now update all the track features if needed
 	fetchTrackFeatures(stats);
 
-	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << "/" << stats.featuresToFetch <<",  duplicates = " << stats.duplicates.size();
+	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << "/" << stats.featuresToFetch <<",  duplicates = " << stats.duplicates.size();
 
 	_dbSession.optimize();
 
-	if (_running)
+	if (!_abortScan)
 	{
 		stats.stopTime = Wt::WLocalDateTime::currentDateTime().toUTC();
 		{
@@ -546,7 +551,7 @@ MediaScanner::fetchTrackFeatures(ScanStats& stats)
 
 	for (const TrackInfo& trackToFetch : tracksToFetch)
 	{
-		if (!_running)
+		if (_abortScan)
 			return;
 
 		if (fetchTrackFeatures(trackToFetch.id, trackToFetch.mbid))
@@ -774,7 +779,7 @@ MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bo
 {
 	exploreFilesRecursive(mediaDirectory, [&](std::error_code ec, const std::filesystem::path& path)
 	{
-		if (!_running)
+		if (_abortScan)
 			return false;
 
 		if (ec)
@@ -861,7 +866,7 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 
 		for (const auto& [trackId, trackPath] : trackPaths)
 		{
-			if (!_running)
+			if (_abortScan)
 				return;
 
 			if (!checkFile(trackPath, _mediaDirectory, _fileExtensions))

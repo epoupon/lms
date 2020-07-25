@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Admin.ScannerController.template">
+	<div class="panel panel-info">
+		<div class="panel-heading">${tr:Lms.Admin.ScannerController.scanner}</div>
+		<div class="panel-body">
+			<div class="form-horizontal">
+				<div class="form-group">
+					<label class="col-lg-3 control-label">
+						${tr:Lms.Admin.ScannerController.status}
+					</label>
+					<div class="col-lg-9">
+						<div class="well well-sm">
+							${status}
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-lg-3 control-label">
+						${tr:Lms.Admin.ScannerController.last-scan}
+					</label>
+					<div class="col-lg-9">
+						<div class="well well-sm">
+							${last-scan}
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-lg-offset-3 col-lg-9">
+							${btn-report class="btn btn-xs"}
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-lg-offset-3 col-lg-9">
+						${btn-action}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+</messages>

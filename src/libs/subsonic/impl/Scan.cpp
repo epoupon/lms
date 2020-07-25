@@ -54,7 +54,7 @@ namespace API::Subsonic::Scan
 	Response
 	handleStartScan(RequestContext& context)
 	{
-		ServiceProvider<IMediaScanner>::get()->requestImmediateScan();
+		ServiceProvider<IMediaScanner>::get()->requestImmediateScan(false);
 
 		Response response {Response::createOkResponse(context)};
 		response.addNode("scanStatus", createStatusResponseNode());

@@ -17,14 +17,16 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "DatabaseStatus.hpp"
+#include "ScannerController.hpp"
 
 #include <iomanip>
 
 #include <Wt/Http/Response.h>
 #include <Wt/WDateTime.h>
+#include <Wt/WPopupMenu.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
+#include <Wt/WSplitButton.h>
 
 #include "utils/Service.hpp"
 #include "LmsApplication.hpp"
@@ -66,7 +68,7 @@ class ReportResource : public Wt::WResource
 
 		void handleRequest(const Wt::Http::Request&, Wt::Http::Response& response)
 		{
-			response.out() << Wt::WString::tr("Lms.Admin.Database.Status.errors-header").arg(_stats.errors.size()).toUTF8() << std::endl;
+			response.out() << Wt::WString::tr("Lms.Admin.ScannerController.errors-header").arg(_stats.errors.size()).toUTF8() << std::endl;
 
 			for (const auto& error : _stats.errors)
 			{
@@ -78,7 +80,7 @@ class ReportResource : public Wt::WResource
 
 			response.out() << std::endl;
 
-			response.out() << Wt::WString::tr("Lms.Admin.Database.Status.duplicates-header").arg(_stats.duplicates.size()).toUTF8() << std::endl;
+			response.out() << Wt::WString::tr("Lms.Admin.ScannerController.duplicates-header").arg(_stats.duplicates.size()).toUTF8() << std::endl;
 
 			for (const auto& duplicate : _stats.duplicates)
 				response.out() << duplicate.file.string() << " - " << duplicateReasonToWString(duplicate.reason).toUTF8() << std::endl;
@@ -90,10 +92,10 @@ class ReportResource : public Wt::WResource
 		{
 			switch (error)
 			{
-				case Scanner::ScanErrorType::CannotReadFile: return Wt::WString::tr("Lms.Admin.Database.Status.cannot-read-file");
-				case Scanner::ScanErrorType::CannotParseFile: return Wt::WString::tr("Lms.Admin.Database.Status.cannot-parse-file");
-				case Scanner::ScanErrorType::NoAudioTrack: return Wt::WString::tr("Lms.Admin.Database.Status.no-audio-track");
-				case Scanner::ScanErrorType::BadDuration: return Wt::WString::tr("Lms.Admin.Database.Status.bad-duration");
+				case Scanner::ScanErrorType::CannotReadFile: return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-file");
+				case Scanner::ScanErrorType::CannotParseFile: return Wt::WString::tr("Lms.Admin.ScannerController.cannot-parse-file");
+				case Scanner::ScanErrorType::NoAudioTrack: return Wt::WString::tr("Lms.Admin.ScannerController.no-audio-track");
+				case Scanner::ScanErrorType::BadDuration: return Wt::WString::tr("Lms.Admin.ScannerController.bad-duration");
 			}
 			return "?";
 		}
@@ -102,8 +104,8 @@ class ReportResource : public Wt::WResource
 		{
 			switch (reason)
 			{
-				case Scanner::DuplicateReason::SameHash: return Wt::WString::tr("Lms.Admin.Database.Status.same-hash");
-				case Scanner::DuplicateReason::SameMBID: return Wt::WString::tr("Lms.Admin.Database.Status.same-mbid");
+				case Scanner::DuplicateReason::SameHash: return Wt::WString::tr("Lms.Admin.ScannerController.same-hash");
+				case Scanner::DuplicateReason::SameMBID: return Wt::WString::tr("Lms.Admin.ScannerController.same-mbid");
 			}
 			return "?";
 		}
@@ -112,8 +114,8 @@ class ReportResource : public Wt::WResource
 };
 
 
-DatabaseStatus::DatabaseStatus()
-: WTemplate {Wt::WString::tr("Lms.Admin.Database.Status.template")}
+ScannerController::ScannerController()
+: WTemplate {Wt::WString::tr("Lms.Admin.ScannerController.template")}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
@@ -133,16 +135,34 @@ DatabaseStatus::DatabaseStatus()
 }
 
 void
-DatabaseStatus::refreshContents()
+ScannerController::refreshContents()
 {
 	using namespace Scanner;
 
-	Wt::WPushButton* reportBtn {bindNew<Wt::WPushButton>("btn-report", Wt::WString::tr("Lms.Admin.Database.Status.get-report"))};
+	Wt::WPushButton* reportBtn {bindNew<Wt::WPushButton>("btn-report", Wt::WString::tr("Lms.Admin.ScannerController.get-report"))};
+
+	Wt::WSplitButton* actionBtn {bindNew<Wt::WSplitButton>("btn-action")};
+	actionBtn->actionButton()->addStyleClass("btn-primary");
+	actionBtn->actionButton()->setText(Wt::WString::tr("Lms.Admin.ScannerController.scan-now"));
+	actionBtn->actionButton()->clicked().connect([]
+	{
+		ServiceProvider<Scanner::IMediaScanner>::get()->requestImmediateScan(false);
+	});
+
+	auto popup = std::make_unique<Wt::WPopupMenu>();
+	popup->addItem(Wt::WString::tr("Lms.Admin.ScannerController.force-scan-now"));
+	popup->itemSelected().connect([]
+	{
+		ServiceProvider<Scanner::IMediaScanner>::get()->requestImmediateScan(true);
+	});
+	actionBtn->dropDownButton()->setMenu(std::move(popup));
+	actionBtn->dropDownButton()->addStyleClass("btn-primary");
+
 
 	const IMediaScanner::Status status {ServiceProvider<IMediaScanner>::get()->getStatus()};
 	if (status.lastCompleteScanStats)
 	{
-		bindString("last-scan", Wt::WString::tr("Lms.Admin.Database.Status.last-scan-status")
+		bindString("last-scan", Wt::WString::tr("Lms.Admin.ScannerController.last-scan-status")
 				.arg(status.lastCompleteScanStats->nbFiles())
 				.arg(durationToString(status.lastCompleteScanStats->startTime, status.lastCompleteScanStats->stopTime))
 				.arg(status.lastCompleteScanStats->stopTime.toString())
@@ -156,7 +176,7 @@ DatabaseStatus::refreshContents()
 	}
 	else
 	{
-		bindString("last-scan", Wt::WString::tr("Lms.Admin.Database.Status.last-scan-not-available"));
+		bindString("last-scan", Wt::WString::tr("Lms.Admin.ScannerController.last-scan-not-available"));
 		reportBtn->setEnabled(false);
 	}
 
@@ -164,16 +184,16 @@ DatabaseStatus::refreshContents()
 	switch (status.currentState)
 	{
 		case IMediaScanner::State::NotScheduled:
-			bindString("status", Wt::WString::tr("Lms.Admin.Database.Status.status-not-scheduled"));
+			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-not-scheduled"));
 			break;
 		case IMediaScanner::State::Scheduled:
-			bindString("status", Wt::WString::tr("Lms.Admin.Database.Status.status-scheduled")
+			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-scheduled")
 					.arg(status.nextScheduledScan.toString()));
 			break;
 		case IMediaScanner::State::InProgress:
 			{
 				std::ostringstream oss;
-				bindString("status", Wt::WString::tr("Lms.Admin.Database.Status.status-in-progress")
+				bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-in-progress")
 						.arg(status.inProgressScanStats->processedFiles)
 						.arg(status.inProgressScanStats->filesToScan)
 						.arg(status.inProgressScanStats->progress()));

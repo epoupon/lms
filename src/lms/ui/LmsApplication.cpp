@@ -123,6 +123,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "admin-database");
 	messageResourceBundle().use(appRoot() + "admin-initwizard");
+	messageResourceBundle().use(appRoot() + "admin-scannercontroller");
 	messageResourceBundle().use(appRoot() + "admin-user");
 	messageResourceBundle().use(appRoot() + "admin-users");
 	messageResourceBundle().use(appRoot() + "artist");

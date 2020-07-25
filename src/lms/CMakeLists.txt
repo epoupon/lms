@@ -10,7 +10,7 @@ add_executable(lms
 	ui/SettingsView.cpp
 	ui/TrackStringUtils.cpp
 	ui/admin/DatabaseSettingsView.cpp
-	ui/admin/DatabaseStatus.cpp
+	ui/admin/ScannerController.cpp
 	ui/admin/InitWizardView.cpp
 	ui/admin/UserView.cpp
 	ui/admin/UsersView.cpp

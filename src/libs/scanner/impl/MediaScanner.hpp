@@ -52,12 +52,10 @@ class MediaScanner : public IMediaScanner
 
 		void start() override;
 		void stop() override;
-		void restart() override;
+		void requestReload() override;
+		void requestImmediateScan(bool force) override;
 
-		void requestImmediateScan() override;
-		void requestReschedule() override ;
-
-		Status getStatus() override;
+		Status getStatus() const override;
 
 		Wt::Signal<>& scanStarted() override { return _sigScanStarted; }
 		Wt::Signal<>& scanComplete() override { return _sigScanComplete; }
@@ -68,10 +66,12 @@ class MediaScanner : public IMediaScanner
 
 		// Job handling
 		void scheduleNextScan();
-		void scheduleScan(const Wt::WDateTime& dateTime = {});
+		void scheduleScan(bool force, const Wt::WDateTime& dateTime = {});
+
+		void abortScan();
 
 		// Update database (scheduled callback)
-		void scan(boost::system::error_code ec);
+		void scan(bool force);
 
 		void scanMediaDirectory( const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats);
 		bool fetchTrackFeatures(Database::IdType trackId, const UUID& MBID);
@@ -89,7 +89,9 @@ class MediaScanner : public IMediaScanner
 		void notifyInProgressIfNeeded(const ScanStats& stats);
 		void notifyInProgress(const ScanStats& stats);
 
-		bool									_running {};
+		std::mutex								_scanInProgress {};
+		std::atomic<bool>						_abortScan {};
+
 		Wt::WIOService							_ioService;
 		boost::asio::system_timer				_scheduleTimer {_ioService};
 		Wt::Signal<>							_sigScanStarted;
@@ -100,7 +102,7 @@ class MediaScanner : public IMediaScanner
 		Database::Session						_dbSession;
 		std::unique_ptr<MetaData::IParser>		_metadataParser;
 
-		std::shared_mutex					_statusMutex;
+		mutable std::shared_mutex			_statusMutex;
 		State								_curState {State::NotScheduled};
 		std::optional<ScanStats> 			_lastCompleteScanStats;
 		std::optional<ScanProgressStats> 	_inProgressScanStats;

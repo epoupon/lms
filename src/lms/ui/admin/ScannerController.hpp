@@ -21,16 +21,17 @@
 
 #include <Wt/WTemplate.h>
 
-namespace UserInterface {
-
-class DatabaseStatus : public Wt::WTemplate
+namespace UserInterface
 {
-	public:
-		DatabaseStatus();
 
-	private:
-		void refreshContents();
-};
+	class ScannerController : public Wt::WTemplate
+	{
+		public:
+			ScannerController();
+
+		private:
+			void refreshContents();
+	};
 
 } // namespace DatabaseStatus
 
