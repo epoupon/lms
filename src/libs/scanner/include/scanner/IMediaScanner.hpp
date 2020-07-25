@@ -58,7 +58,7 @@ class IMediaScanner
 			State								currentState {State::NotScheduled};
 			Wt::WDateTime						nextScheduledScan;
 			std::optional<ScanStats>			lastCompleteScanStats;
-			std::optional<ScanProgressStats>	inProgressScanStats;
+			std::optional<ScanStepStats> 		currentScanStepStats;
 		};
 
 		virtual Status getStatus() const = 0;
@@ -70,7 +70,7 @@ class IMediaScanner
 		virtual Wt::Signal<>& scanComplete() = 0;
 
 		// Called during scan in progress
-		virtual Wt::Signal<ScanProgressStats>& scanInProgress() = 0;
+		virtual Wt::Signal<ScanStepStats>& scanInProgress() = 0;
 
 		// Called after a schedule
 		virtual Wt::Signal<Wt::WDateTime>& scheduled() = 0;

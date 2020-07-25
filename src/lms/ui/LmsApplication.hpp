@@ -57,7 +57,7 @@ struct Events
 	// Database events
 	Wt::Signal<> dbScanStarted;
 	Wt::Signal<> dbScanned;
-	Wt::Signal<Scanner::ScanProgressStats> dbScanInProgress;
+	Wt::Signal<Scanner::ScanStepStats> dbScanInProgress;
 	Wt::Signal<Wt::WDateTime> dbScanScheduled;
 };
 

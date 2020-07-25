@@ -56,15 +56,26 @@ namespace Scanner {
 
 	};
 
+	enum class ScanProgressStep : unsigned
+	{
+		CheckingRemovedFiles = 0,
+		DiscoveringFiles,
+		ScanningFiles,
+		FetchingTrackFeatures,
+	};
+	static inline constexpr unsigned ScanProgressStepCount {4};
+
 	// reduced scan stats
-	struct ScanProgressStats
+	struct ScanStepStats
 	{
 		Wt::WDateTime   startTime;
 
-		std::size_t     filesToScan {};
-		std::size_t	processedFiles {};
+		ScanProgressStep currentStep;
 
-		unsigned	progress() const;
+		std::size_t     filesToProcess {};
+		std::size_t		processedFiles {};
+
+		unsigned		progress() const;
 	};
 
 	struct ScanStats
@@ -72,25 +83,22 @@ namespace Scanner {
 		Wt::WDateTime	startTime;
 		Wt::WDateTime	stopTime;
 
-		std::size_t	filesToScan {};		// Total number of files to be scanned (estimated)
+		std::size_t	filesScanned {};	// Total number of files scanned (estimated)
 
-		std::size_t	skips {};		// no change since last scan
-		std::size_t	scans {};		// actually scanned filed
+		std::size_t	skips {};			// no change since last scan
+		std::size_t	scans {};			// actually scanned filed
 
 		std::size_t	additions {};		// added in DB
 		std::size_t	deletions {};		// removed from DB
-		std::size_t	updates {};		// updated file in DB
+		std::size_t	updates {};			// updated file in DB
 
 		std::size_t	featuresFetched {};	// features fetched in DB
-		std::size_t	featuresToFetch {};	// features to be fetched in DB
 
 		std::vector<ScanError>		errors;
 		std::vector<ScanDuplicate>	duplicates;
 
 		std::size_t	nbFiles() const;
 		std::size_t	nbChanges() const;
-
-		ScanProgressStats toProgressStats() const;
 	};
 
 }

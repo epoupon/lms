@@ -72,7 +72,11 @@
 <message id="Lms.Admin.ScannerController.status">Statut</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Non planifié</message>
 <message id="Lms.Admin.ScannerController.status-scheduled">Planifié le {1}</message>
-<message id="Lms.Admin.ScannerController.status-in-progress">Scan de {1} fichiers sur {2} ({3} %)</message>
+<message id="Lms.Admin.ScannerController.status-in-progress">En cours de scan : étape {1}/{2}</message>
+<message id="Lms.Admin.ScannerController.step-checking-removed-files">Vérification des fichiers... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-discovering-files">Découverte des fichiers: {1} fichiers</message>
+<message id="Lms.Admin.ScannerController.step-fetching-track-features">Récupération des métadonnées AcousticBrainz: {1}/{2} fichiers ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-files">Scan des fichiers: {1}/{2} fichiers ({3}%)...</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">Ajouter</message>

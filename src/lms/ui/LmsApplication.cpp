@@ -544,11 +544,11 @@ LmsApplication::createHome()
 			});
 		});
 
-		ServiceProvider<Scanner::IMediaScanner>::get()->scanInProgress().connect(this, [=] (Scanner::ScanProgressStats stats)
+		ServiceProvider<Scanner::IMediaScanner>::get()->scanInProgress().connect(this, [=] (Scanner::ScanStepStats stepStats)
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
-				_events.dbScanInProgress.emit(stats);
+				_events.dbScanInProgress.emit(stepStats);
 				triggerUpdate();
 			});
 		});

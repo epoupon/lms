@@ -185,18 +185,43 @@ ScannerController::refreshContents()
 	{
 		case IMediaScanner::State::NotScheduled:
 			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-not-scheduled"));
+			bindEmpty("step-status");
 			break;
 		case IMediaScanner::State::Scheduled:
 			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-scheduled")
 					.arg(status.nextScheduledScan.toString()));
+			bindEmpty("step-status");
 			break;
 		case IMediaScanner::State::InProgress:
+			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-in-progress")
+					.arg(static_cast<int>(status.currentScanStepStats->currentStep) + 1)
+					.arg(Scanner::ScanProgressStepCount));
+
+			switch (status.currentScanStepStats->currentStep)
 			{
-				std::ostringstream oss;
-				bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-in-progress")
-						.arg(status.inProgressScanStats->processedFiles)
-						.arg(status.inProgressScanStats->filesToScan)
-						.arg(status.inProgressScanStats->progress()));
+				case Scanner::ScanProgressStep::CheckingRemovedFiles:
+					bindString("step-status", Wt::WString::tr("Lms.Admin.ScannerController.step-checking-removed-files")
+						.arg(status.currentScanStepStats->progress()));
+					break;
+
+				case Scanner::ScanProgressStep::DiscoveringFiles:
+					bindString("step-status", Wt::WString::tr("Lms.Admin.ScannerController.step-discovering-files")
+						.arg(status.currentScanStepStats->processedFiles));
+						break;
+
+				case Scanner::ScanProgressStep::ScanningFiles:
+					bindString("step-status", Wt::WString::tr("Lms.Admin.ScannerController.step-scanning-files")
+						.arg(status.currentScanStepStats->processedFiles)
+						.arg(status.currentScanStepStats->filesToProcess)
+						.arg(status.currentScanStepStats->progress()));
+					break;
+
+				case Scanner::ScanProgressStep::FetchingTrackFeatures:
+					bindString("step-status", Wt::WString::tr("Lms.Admin.ScannerController.step-fetching-track-features")
+						.arg(status.currentScanStepStats->processedFiles)
+						.arg(status.currentScanStepStats->filesToProcess)
+						.arg(status.currentScanStepStats->progress()));
+					break;
 			}
 			break;
 	}

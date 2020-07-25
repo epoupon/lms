@@ -13,6 +13,7 @@
 					<div class="col-lg-9">
 						<div class="well well-sm">
 							${status}
+							<div>${step-status}</div>
 						</div>
 					</div>
 				</div>

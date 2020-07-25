@@ -40,16 +40,10 @@ ScanStats::nbChanges() const
 	return additions + deletions + updates;
 }
 
-ScanProgressStats
-ScanStats::toProgressStats() const
-{
-	return ScanProgressStats {startTime, filesToScan, nbFiles()};
-}
-
 unsigned
-ScanProgressStats::progress() const
+ScanStepStats::progress() const
 {
-	return (processedFiles / static_cast<float>(filesToScan ? filesToScan : 1)) * 100;
+	return (processedFiles / static_cast<float>(filesToProcess ? filesToProcess : 1)) * 100;
 }
 
 } // namespace Scanner
