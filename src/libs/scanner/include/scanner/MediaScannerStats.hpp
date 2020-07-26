@@ -58,7 +58,7 @@ namespace Scanner {
 
 	enum class ScanProgressStep : unsigned
 	{
-		CheckingRemovedFiles = 0,
+		ChekingForMissingFiles = 0,
 		DiscoveringFiles,
 		ScanningFiles,
 		FetchingTrackFeatures,

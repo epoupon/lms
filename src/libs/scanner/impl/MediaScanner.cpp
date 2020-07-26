@@ -865,7 +865,7 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 {
 	static constexpr std::size_t batchSize {50};
 
-	ScanStepStats stepStats{stats.startTime, ScanProgressStep::CheckingRemovedFiles};
+	ScanStepStats stepStats{stats.startTime, ScanProgressStep::ChekingForMissingFiles};
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks to be removed...";
 	std::size_t trackCount {};
@@ -887,8 +887,6 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 		trackPaths.clear();
 		tracksToRemove.clear();
 
-		stepStats.processedFiles++;
-
 		{
 			auto transaction {_dbSession.createSharedTransaction()};
 			trackPaths = Track::getAllPaths(_dbSession, i, batchSize);
@@ -901,6 +899,8 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 
 			if (!checkFile(trackPath, _mediaDirectory, _fileExtensions))
 				tracksToRemove.push_back(trackId);
+
+			stepStats.processedFiles++;
 		}
 
 		if (!tracksToRemove.empty())

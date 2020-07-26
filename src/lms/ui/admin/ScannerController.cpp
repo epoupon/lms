@@ -199,8 +199,8 @@ ScannerController::refreshContents()
 
 			switch (status.currentScanStepStats->currentStep)
 			{
-				case Scanner::ScanProgressStep::CheckingRemovedFiles:
-					bindString("step-status", Wt::WString::tr("Lms.Admin.ScannerController.step-checking-removed-files")
+				case Scanner::ScanProgressStep::ChekingForMissingFiles:
+					bindString("step-status", Wt::WString::tr("Lms.Admin.ScannerController.step-checking-for-missing-files")
 						.arg(status.currentScanStepStats->progress()));
 					break;
 
