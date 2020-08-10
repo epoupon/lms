@@ -60,6 +60,11 @@ The Subsonic API is enabled by default.
 
 __Note__: since _LMS_ stores hashed and salted passwords, it cannot handle the __token authentication__ method defined from version 1.13.0.
 
+## Keyboard shortcuts
+* Play/pause: Space
+* Previous track: Ctrl + Left
+* Next track: Ctrl + Right
+
 ## Installation
 
 ### Docker
