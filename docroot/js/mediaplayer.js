@@ -65,6 +65,15 @@ LMS.mediaplayer = function () {
 		}
 	}
 
+	var _playPause = function() {
+		_audioCtx.resume();
+		if (_elems.audio.paused && _elems.audio.children.length > 0) {
+			_playTrack();
+		}
+		else
+			_elems.audio.pause();
+	}
+
 	var _requestPreviousTrack = function() {
 		Wt.emit(_root, "playPrevious");
 	}
@@ -146,12 +155,7 @@ LMS.mediaplayer = function () {
 		_gainNode.connect(_audioCtx.destination);
 
 		_elems.playpause.addEventListener("click", function() {
-			_audioCtx.resume();
-			if (_elems.audio.paused && _elems.audio.children.length > 0) {
-				_playTrack();
-			}
-			else
-				_elems.audio.pause();
+			_playPause();
 		});
 
 		_elems.previous.addEventListener("click", function() {
@@ -222,6 +226,15 @@ LMS.mediaplayer = function () {
 			}
 			else {
 				_setVolume(_elems.lastvolume);
+			}
+		});
+
+		document.addEventListener("keypress", function(event) {
+			if (event.keyCode == 32) {
+				if (event.target == document.body) {
+					event.preventDefault();
+				}
+				_playPause();
 			}
 		});
 
