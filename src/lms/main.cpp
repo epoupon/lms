@@ -36,7 +36,9 @@
 #include "utils/Service.hpp"
 #include "utils/WtLogger.hpp"
 
-std::vector<std::string> generateWtConfig(std::string execPath)
+static
+std::vector<std::string>
+generateWtConfig(std::string execPath)
 {
 	std::vector<std::string> args;
 
@@ -92,8 +94,16 @@ std::vector<std::string> generateWtConfig(std::string execPath)
 	}
 
 
-	std::ofstream oss(wtConfigPath.string().c_str(), std::ios::out);
-	boost::property_tree::xml_parser::write_xml(oss, pt);
+	{
+		std::ofstream oss {wtConfigPath.string().c_str(), std::ios::out};
+		if (!oss)
+			throw LmsException {"Can't open '" + wtConfigPath.string() + "' for writing!"};
+
+		boost::property_tree::xml_parser::write_xml(oss, pt);
+
+		if (!oss)
+			throw LmsException {"Can't write in file '" + wtConfigPath.string() + "', no space left?"};
+	}
 
 	return args;
 }
