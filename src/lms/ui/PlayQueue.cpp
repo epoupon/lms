@@ -66,16 +66,7 @@ PlayQueue::PlayQueue()
 	});
 
 	_entriesContainer = bindNew<Wt::WContainerWidget>("entries");
-
-	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
-	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
-	{
-		if (!visible)
-			return;
-
-		addSome();
-		updateCurrentTrack(true);
-	});
+	hideLoadingIndicator();
 
 	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.template.shuffle-btn"), Wt::TextFormat::XHTML);
 	setToolTip(*shuffleBtn, Wt::WString::tr("Lms.PlayQueue.shuffle"));
@@ -191,6 +182,27 @@ PlayQueue::updateRadioBtn()
 	_radioBtn->toggleStyleClass("text-muted", !_radioMode);
 }
 
+void
+PlayQueue::displayLoadingIndicator()
+{
+	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
+	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
+	{
+		if (!visible)
+			return;
+
+		addSome();
+		updateCurrentTrack(true);
+	});
+}
+
+void
+PlayQueue::hideLoadingIndicator()
+{
+	_loadingIndicator = nullptr;
+	bindEmpty("loading-indicator");
+}
+
 Database::TrackList::pointer
 PlayQueue::getTrackList() const
 {
@@ -205,7 +217,7 @@ PlayQueue::clearTracks()
 		getTrackList().modify()->clear();
 	}
 
-	_loadingIndicator->setHidden(true);
+	hideLoadingIndicator();
 	_entriesContainer->clear();
 	updateInfo();
 }
@@ -450,7 +462,10 @@ PlayQueue::addSome()
 
 	}
 
-	_loadingIndicator->setHidden(static_cast<std::size_t>(_entriesContainer->count()) >= tracklist->getCount());
+	if (static_cast<std::size_t>(_entriesContainer->count()) < tracklist->getCount())
+		displayLoadingIndicator();
+	else
+		hideLoadingIndicator();
 }
 
 void

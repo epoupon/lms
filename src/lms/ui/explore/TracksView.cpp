@@ -83,15 +83,7 @@ _filters {filters}
 	});
 
 	_tracksContainer = bindNew<Wt::WContainerWidget>("tracks");
-
-	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
-	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
-	{
-		if (!visible)
-			return;
-
-		addSome();
-	});
+	hideLoadingIndicator();
 
 	filters->updated().connect([this]
 	{
@@ -114,6 +106,26 @@ Tracks::refreshView(Mode mode)
 {
 	_mode = mode;
 	refreshView();
+}
+
+void
+Tracks::displayLoadingIndicator()
+{
+	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
+	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
+	{
+		if (!visible)
+			return;
+
+		addSome();
+	});
+}
+
+void
+Tracks::hideLoadingIndicator()
+{
+	_loadingIndicator = nullptr;
+	bindEmpty("loading-indicator");
 }
 
 std::vector<Database::Track::pointer>
@@ -210,7 +222,10 @@ Tracks::addSome()
 		_tracksContainer->addWidget(TrackListHelpers::createEntry(track));
 	}
 
-	_loadingIndicator->setHidden(!moreResults);
+	if (moreResults)
+		displayLoadingIndicator();
+	else
+		hideLoadingIndicator();
 }
 
 } // namespace UserInterface

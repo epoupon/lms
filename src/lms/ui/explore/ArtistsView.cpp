@@ -76,15 +76,7 @@ Artists::Artists(Filters* filters)
 	_linkType->changed().connect([this] { refreshView(); });
 
 	_container = bindNew<Wt::WContainerWidget>("artists");
-
-	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
-	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
-	{
-		if (!visible)
-			return;
-
-		addSome();
-	});
+	hideLoadingIndicator();
 
 	refreshView();
 
@@ -104,6 +96,26 @@ Artists::refreshView(Mode mode)
 {
 	_mode = mode;
 	refreshView();
+}
+
+void
+Artists::displayLoadingIndicator()
+{
+	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
+	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
+	{
+		if (!visible)
+			return;
+
+		addSome();
+	});
+}
+
+void
+Artists::hideLoadingIndicator()
+{
+	_loadingIndicator = nullptr;
+	bindEmpty("loading-indicator");
 }
 
 std::vector<Artist::pointer>
@@ -207,7 +219,10 @@ Artists::addSome()
 		_container->addWidget(ArtistListHelpers::createEntry(artist));
 	}
 
-	_loadingIndicator->setHidden(!moreResults);
+	if (moreResults)
+		displayLoadingIndicator();
+	else
+		hideLoadingIndicator();
 }
 
 } // namespace UserInterface

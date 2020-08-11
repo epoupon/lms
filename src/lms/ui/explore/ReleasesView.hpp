@@ -56,6 +56,8 @@ class Releases : public Wt::WTemplate
 
 		void refreshView();
 		void refreshView(Mode mode);
+		void displayLoadingIndicator();
+		void hideLoadingIndicator();
 
 		void addSome();
 		std::vector<Wt::Dbo::ptr<Database::Release>> getReleases(std::optional<Database::Range> range, bool& moreResults);

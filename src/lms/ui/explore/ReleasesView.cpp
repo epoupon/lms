@@ -79,15 +79,7 @@ _filters {filters}
 	});
 
 	_container = bindNew<Wt::WContainerWidget>("releases");
-
-	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
-	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
-	{
-		if (!visible)
-			return;
-
-		addSome();
-	});
+	hideLoadingIndicator();
 
 	refreshView(defaultMode);
 
@@ -110,6 +102,26 @@ Releases::refreshView(Mode mode)
 }
 
 void
+Releases::displayLoadingIndicator()
+{
+	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
+	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
+	{
+		if (!visible)
+			return;
+
+		addSome();
+	});
+}
+
+void
+Releases::hideLoadingIndicator()
+{
+	_loadingIndicator = nullptr;
+	bindEmpty("loading-indicator");
+}
+
+void
 Releases::addSome()
 {
 	bool moreResults {};
@@ -122,7 +134,10 @@ Releases::addSome()
 		_container->addWidget(ReleaseListHelpers::createEntry(release));
 	}
 
-	_loadingIndicator->setHidden(!moreResults);
+	if (moreResults)
+		displayLoadingIndicator();
+	else
+		hideLoadingIndicator();
 }
 
 std::vector<Database::Release::pointer>

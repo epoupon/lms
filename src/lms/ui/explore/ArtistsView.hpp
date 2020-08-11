@@ -54,6 +54,8 @@ class Artists : public Wt::WTemplate
 
 		void refreshView();
 		void refreshView(Mode mode);
+		void displayLoadingIndicator();
+		void hideLoadingIndicator();
 		void addSome();
 
 		std::vector<Wt::Dbo::ptr<Database::Artist>> getArtists(std::optional<Database::Range> range, bool& moreResults);

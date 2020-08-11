@@ -70,6 +70,8 @@ class PlayQueue : public Wt::WTemplate
 		void updateCurrentTrack(bool selected);
 		void updateRepeatBtn();
 		void updateRadioBtn();
+		void displayLoadingIndicator();
+		void hideLoadingIndicator();
 
 		void loadTrack(std::size_t pos, bool play);
 		void stop();
