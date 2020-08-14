@@ -199,16 +199,6 @@ Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 	if (!_child || _isComplete)
 		return;
 
-	if (_child->out().fail())
-	{
-		LOG(DEBUG) << "Stdout FAILED 2";
-	}
-
-	if (_child->out().eof())
-	{
-		LOG(DEBUG) << "Stdout ENDED 2";
-	}
-
 	output.resize(maxSize);
 
 	//Read on the output stream
@@ -218,14 +208,19 @@ Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 	if (_child->out().fail())
 	{
 		LOG(DEBUG) << "Stdout FAILED";
+		_isComplete = true;
 	}
 
 	if (_child->out().eof())
 	{
 		LOG(DEBUG) << "Stdout EOF!";
-		_child->clear();
-
 		_isComplete = true;
+	}
+
+	if (_isComplete)
+	{
+		LOG(DEBUG) << "Transcode complete!";
+		_child->clear();
 		_child.reset();
 	}
 
