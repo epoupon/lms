@@ -35,6 +35,7 @@
 #include "Filters.hpp"
 #include "ReleasesView.hpp"
 #include "ReleaseView.hpp"
+#include "SearchView.hpp"
 #include "TracksView.hpp"
 
 namespace UserInterface {
@@ -50,6 +51,7 @@ handleContentsPathChange(Wt::WStackedWidget* stack)
 		IdxArtist,
 		IdxReleases,
 		IdxRelease,
+		IdxSearch,
 		IdxTracks,
 	};
 
@@ -59,6 +61,7 @@ handleContentsPathChange(Wt::WStackedWidget* stack)
 		{ "/artist",		IdxArtist },
 		{ "/releases",		IdxReleases },
 		{ "/release",		IdxRelease },
+		{ "/search",		IdxSearch },
 		{ "/tracks",		IdxTracks },
 	};
 
@@ -100,6 +103,11 @@ Explore::Explore(Filters* filters)
 	release->tracksAction.connect(this, &Explore::handleTracksAction);
 	contentsStack->addWidget(std::move(release));
 
+	auto search = std::make_unique<SearchView>(_filters);
+	search->tracksAction.connect(this, &Explore::handleTracksAction);
+	_search = search.get();
+	contentsStack->addWidget(std::move(search));
+
 	auto tracks = std::make_unique<Tracks>(_filters);
 	tracks->tracksAction.connect(this, &Explore::handleTracksAction);
 	contentsStack->addWidget(std::move(tracks));
@@ -110,6 +118,12 @@ Explore::Explore(Filters* filters)
 	});
 
 	handleContentsPathChange(contentsStack);
+}
+
+void
+Explore::search(const Wt::WString& searchText)
+{
+	_search->refreshView(searchText);
 }
 
 static

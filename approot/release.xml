@@ -17,12 +17,13 @@
 				${<if-has-artist>}<h4>${artist class="Lms-artistname text-muted"}</h4>${</if-has-artist>}
 				<div class="text-muted"><small>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</small></div>
 				${clusters}
-				${play-btn}${add-btn}
+				${play-btn}${more-btn}
 			</div>
 			${container}
 		</div>
 	</div>
 	<div class="row">
+		${<if-has-similar-releases>}
 		<div class="col-xs-12 col-md-8">
 			<div class="well well-sm">
 				<h3>${tr:Lms.Explore.Release.similar-releases}</h3>
@@ -31,6 +32,7 @@
 				</div>
 			</div>
 		</div>
+		${</if-has-similar-releases>}
 		${<if-has-copyright>}
 		<div class="col-xs-12 col-md-4">
 			<div class="well well-sm">
@@ -66,7 +68,7 @@
 		</div>
 		<div class="col-xs-3">
 			<div class="Lms-explore-release-entry-controls">
-				${play-btn}${add-btn}
+				${play-btn}${more-btn}
 			</div>
 			<div class="Lms-explore-release-entry-track-duration text-muted">
 				${duration}

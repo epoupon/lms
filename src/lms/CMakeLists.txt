@@ -23,6 +23,7 @@ add_executable(lms
 	ui/explore/Explore.cpp
 	ui/explore/Filters.cpp
 	ui/explore/ReleaseListHelpers.cpp
+	ui/explore/ReleasePopup.cpp
 	ui/explore/ReleasesView.cpp
 	ui/explore/ReleaseView.cpp
 	ui/explore/SearchView.cpp

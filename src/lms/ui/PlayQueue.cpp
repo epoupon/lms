@@ -209,6 +209,13 @@ PlayQueue::getTrackList() const
 	return Database::TrackList::getById(LmsApp->getDbSession(), _tracklistId);
 }
 
+bool
+PlayQueue::isFull() const
+{
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	return getTrackList()->getCount() == _nbMaxEntries;
+}
+
 void
 PlayQueue::clearTracks()
 {
@@ -321,55 +328,77 @@ PlayQueue::updateCurrentTrack(bool selected)
 		entry->bindString("is-selected", selected ? "Lms-playqueue-selected" : "");
 }
 
-void
+std::size_t
 PlayQueue::enqueueTracks(const std::vector<Database::IdType>& trackIds)
 {
+	std::size_t nbTracksQueued {};
+
 	{
 		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-		auto tracklist = getTrackList();
+		auto tracklist {getTrackList()};
+
+		std::size_t nbTracksToEnqueue {tracklist->getCount() + trackIds.size() > _nbMaxEntries ? _nbMaxEntries - tracklist->getCount() : trackIds.size()};
 		for (Database::IdType trackId : trackIds)
 		{
 			Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
 			if (!track)
 				continue;
 
+			if (nbTracksQueued == nbTracksToEnqueue)
+				break;
+
 			Database::TrackListEntry::create(LmsApp->getDbSession(), track, tracklist);
+			nbTracksQueued++;
 		}
 	}
 
 	updateInfo();
 	addSome();
-}
 
-void
-PlayQueue::enqueueTrack(Database::IdType trackId)
-{
-	enqueueTracks({trackId});
+	return nbTracksQueued;
 }
 
 void
 PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::IdType>& trackIds)
 {
+	std::size_t nbAddedTracks {};
+
 	switch (action)
 	{
-		case PlayQueueAction::AddLast:
-			enqueueTracks(trackIds);
-			LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
-			break;
-
-		case PlayQueueAction::AddNext:
+		case PlayQueueAction::PlayLast:
+			nbAddedTracks = enqueueTracks(trackIds);
+			if (!_trackPos)
+				loadTrack(0, true);
 			break;
 
 		case PlayQueueAction::Play:
 			clearTracks();
-			enqueueTracks(trackIds);
+			nbAddedTracks = enqueueTracks(trackIds);
 			loadTrack(0, true);
 
-			LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-playing", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
 			break;
 
+		case PlayQueueAction::PlayShuffled:
+		{
+			clearTracks();
+			{
+				std::vector<Database::IdType> shuffledTrackIds {trackIds};
+				Random::shuffleContainer(shuffledTrackIds);
+				nbAddedTracks = enqueueTracks(shuffledTrackIds);
+			}
+			loadTrack(0, true);
+			break;
+		}
 	}
+
+	if (nbAddedTracks > 0)
+		LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", nbAddedTracks).arg(nbAddedTracks), std::chrono::milliseconds(2000));
+
+	if (isFull())
+		LmsApp->notifyMsg(MsgType::Warning, Wt::WString::tr("Lms.PlayQueue.playqueue-full"), std::chrono::milliseconds(2000));
+
+
 }
 
 void

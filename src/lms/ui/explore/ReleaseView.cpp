@@ -22,7 +22,6 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WApplication.h>
 #include <Wt/WImage.h>
-#include <Wt/WPopupMenu.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
@@ -39,6 +38,7 @@
 #include "LmsApplicationException.hpp"
 #include "MediaPlayer.hpp"
 #include "ReleaseListHelpers.hpp"
+#include "ReleasePopup.hpp"
 #include "TrackStringUtils.hpp"
 
 using namespace Database;
@@ -157,10 +157,10 @@ Release::refreshView()
 	}
 
 	{
-		Wt::WText* addBtn {bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
-		addBtn->clicked().connect([=]
+		Wt::WText* moreBtn {bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
+		moreBtn->clicked().connect([=]
 		{
-			releasesAction.emit(PlayQueueAction::AddLast, {*releaseId});
+			displayReleasePopupMenu(*moreBtn, *releaseId, releasesAction);
 		});
 	}
 
@@ -237,10 +237,18 @@ Release::refreshView()
 			tracksAction.emit(PlayQueueAction::Play, {trackId});
 		});
 
-		Wt::WText* addBtn {entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
-		addBtn->clicked().connect([=]()
+		Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
+		moreBtn->clicked().connect([=]()
 		{
-			tracksAction.emit(PlayQueueAction::AddLast, {trackId});
+			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
+
+			popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
+				->triggered().connect(moreBtn, [=]
+				{
+					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
+				});
+
+			popup->popup(moreBtn);
 		});
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
@@ -306,6 +314,10 @@ Release::refreshLinks(const Database::Release::pointer& release)
 void
 Release::refreshSimilarReleases(const std::vector<Database::IdType>& similarReleasesId)
 {
+	if (similarReleasesId.empty())
+		return;
+
+	setCondition("if-has-similar-releases", true);
 	auto* similarReleasesContainer {bindNew<Wt::WContainerWidget>("similar-releases")};
 
 	for (Database::IdType id : similarReleasesId)

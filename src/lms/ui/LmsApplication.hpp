@@ -22,6 +22,7 @@
 #include <optional>
 
 #include <Wt/WApplication.h>
+#include <Wt/WPopupMenu.h>
 
 #include "database/Db.hpp"
 #include "database/Session.hpp"
@@ -101,6 +102,7 @@ class LmsApplication : public Wt::WApplication
 		static Wt::WLink createReleaseLink(Wt::Dbo::ptr<Database::Release> release);
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Wt::Dbo::ptr<Database::Release> release, bool addText = true);
 		static std::unique_ptr<Wt::WText> createCluster(Wt::Dbo::ptr<Database::Cluster> cluster, bool canDelete = false);
+		Wt::WPopupMenu* createPopupMenu();
 
 		MediaPlayer&	getMediaPlayer() const { return *_mediaPlayer; }
 		PlayQueue&		getPlayQueue() const { return *_playQueue; }
@@ -124,17 +126,18 @@ class LmsApplication : public Wt::WApplication
 
 		void createHome();
 
-		Wt::Signal<>				_preQuit;
-		Database::Session			_dbSession;
-		LmsApplicationGroupContainer&   	_appGroups;
-		Events						_events;
-		std::optional<Database::IdType>	_userId;
-		std::optional<bool>			_userAuthStrong;
+		Wt::Signal<>							_preQuit;
+		Database::Session						_dbSession;
+		LmsApplicationGroupContainer&   		_appGroups;
+		Events									_events;
+		std::optional<Database::IdType>			_userId;
+		std::optional<bool>						_userAuthStrong;
 		std::shared_ptr<AudioTranscodeResource>	_audioTranscodeResource;
-		std::shared_ptr<AudioFileResource>	_audioFileResource;
-		std::shared_ptr<ImageResource>		_imageResource;
-		MediaPlayer*				_mediaPlayer {};
-		PlayQueue*					_playQueue {};
+		std::shared_ptr<AudioFileResource>		_audioFileResource;
+		std::shared_ptr<ImageResource>			_imageResource;
+		MediaPlayer*							_mediaPlayer {};
+		PlayQueue*								_playQueue {};
+		std::unique_ptr<Wt::WPopupMenu>			_popupMenu {};
 };
 
 

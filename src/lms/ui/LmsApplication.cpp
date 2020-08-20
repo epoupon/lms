@@ -35,7 +35,6 @@
 #include "database/User.hpp"
 #include "explore/Explore.hpp"
 #include "explore/Filters.hpp"
-#include "explore/SearchView.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -308,6 +307,13 @@ LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete
 	return res;
 }
 
+Wt::WPopupMenu*
+LmsApplication::createPopupMenu()
+{
+	_popupMenu = std::make_unique<Wt::WPopupMenu>();
+	return _popupMenu.get();
+}
+
 void
 LmsApplication::handleException(LmsApplicationException& e)
 {
@@ -334,7 +340,6 @@ enum IdxRoot
 {
 	IdxExplore	= 0,
 	IdxPlayQueue,
-	IdxSearch,
 	IdxSettings,
 	IdxAdminDatabase,
 	IdxAdminUsers,
@@ -355,9 +360,9 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 		{ "/artist",		IdxExplore,		false },
 		{ "/releases",		IdxExplore,		false },
 		{ "/release",		IdxExplore,		false },
+		{ "/search",		IdxExplore,		false },
 		{ "/tracks",		IdxExplore,		false },
 		{ "/playqueue",		IdxPlayQueue,		false },
-		{ "/search",		IdxSearch,		false },
 		{ "/settings",		IdxSettings,		false },
 		{ "/admin/database",	IdxAdminDatabase,	true },
 		{ "/admin/users",	IdxAdminUsers,		true },
@@ -471,7 +476,6 @@ LmsApplication::createHome()
 
 	Explore* explore = mainStack->addNew<Explore>(filters);
 	_playQueue = mainStack->addNew<PlayQueue>();
-	auto* search {mainStack->addNew<SearchView>(filters)};
 	mainStack->addNew<SettingsView>();
 
 	searchEdit->enterPressed().connect([=]
@@ -482,7 +486,7 @@ LmsApplication::createHome()
 	searchEdit->textInput().connect([=]
 	{
 		setInternalPath("/search", true);
-		search->refreshView(searchEdit->text().toUTF8());
+		explore->search(searchEdit->text());
 	});
 
 	// Admin stuff

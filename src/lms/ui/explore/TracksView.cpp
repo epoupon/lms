@@ -32,9 +32,8 @@
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
-#include "resource/ImageResource.hpp"
-
 #include "common/LoadingIndicator.hpp"
+#include "resource/ImageResource.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
@@ -76,10 +75,23 @@ _filters {filters}
 		tracksAction.emit(PlayQueueAction::Play, getAllTracks());
 	});
 
-	Wt::WText* addBtn = bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
-	addBtn->clicked().connect([=]
+	Wt::WText* moreBtn = bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+	moreBtn->clicked().connect([=]
 	{
-		tracksAction.emit(PlayQueueAction::AddLast, getAllTracks());
+		Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
+
+		popup->addItem(Wt::WString::tr("Lms.Explore.play-shuffled"))
+			->triggered().connect(this, [this]
+			{
+				tracksAction.emit(PlayQueueAction::PlayShuffled, getAllTracks());
+			});
+		popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
+			->triggered().connect(this, [this]
+			{
+				tracksAction.emit(PlayQueueAction::PlayLast, getAllTracks());
+			});
+
+		popup->popup(moreBtn);
 	});
 
 	_tracksContainer = bindNew<Wt::WContainerWidget>("tracks");
@@ -219,7 +231,7 @@ Tracks::addSome()
 	bool moreResults;
 	for (const Track::pointer& track : getTracks(Range {static_cast<std::size_t>(_tracksContainer->count()), batchSize}, moreResults))
 	{
-		_tracksContainer->addWidget(TrackListHelpers::createEntry(track));
+		_tracksContainer->addWidget(TrackListHelpers::createEntry(track, tracksAction));
 	}
 
 	if (moreResults)

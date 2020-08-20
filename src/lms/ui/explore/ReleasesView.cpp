@@ -72,10 +72,23 @@ _filters {filters}
 	{
 		releasesAction.emit(PlayQueueAction::Play, getAllReleases());
 	});
-	Wt::WText* addBtn {bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
-	addBtn->clicked().connect([this]
+	Wt::WText* moreBtn {bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
+	moreBtn->clicked().connect([=]
 	{
-		releasesAction.emit(PlayQueueAction::AddLast, getAllReleases());
+		Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
+
+		popup->addItem(Wt::WString::tr("Lms.Explore.play-shuffled"))
+			->triggered().connect([this]
+			{
+				releasesAction.emit(PlayQueueAction::PlayShuffled, getAllReleases());
+			});
+		popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
+			->triggered().connect([this]
+			{
+				releasesAction.emit(PlayQueueAction::PlayLast, getAllReleases());
+			});
+
+		popup->popup(moreBtn);
 	});
 
 	_container = bindNew<Wt::WContainerWidget>("releases");

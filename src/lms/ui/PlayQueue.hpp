@@ -60,10 +60,10 @@ class PlayQueue : public Wt::WTemplate
 
 	private:
 		Wt::Dbo::ptr<Database::TrackList> getTrackList() const;
+		bool isFull() const;
 
 		void clearTracks();
-		void enqueueTracks(const std::vector<Database::IdType>& trackIds);
-		void enqueueTrack(Database::IdType trackId);
+		std::size_t enqueueTracks(const std::vector<Database::IdType>& trackIds);
 		void addSome();
 		void enqueueRadioTrack();
 		void updateInfo();
@@ -79,6 +79,8 @@ class PlayQueue : public Wt::WTemplate
 		void addRadioTrackFromSimilarity(std::shared_ptr<Similarity::Finder> similarityFinder);
 		void addRadioTrackFromClusters();
 		std::optional<float> getReplayGain(std::size_t pos, const Wt::Dbo::ptr<Database::Track>& track) const;
+
+		static inline constexpr std::size_t _nbMaxEntries {1000};
 
 		bool _repeatAll {};
 		bool _radioMode {};

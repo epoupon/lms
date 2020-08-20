@@ -19,22 +19,16 @@
 
 #pragma once
 
-#include <vector>
+#include <Wt/WWidget.h>
 #include <Wt/WSignal.h>
 
 #include "database/Types.hpp"
+#include "PlayQueueAction.hpp"
 
 namespace UserInterface
 {
-
-	enum class PlayQueueAction
-	{
-		Play,
-		PlayLast,
-		PlayShuffled,
-	};
-
-	using PlayQueueActionSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&>;
-
-}
+	void displayReleasePopupMenu(Wt::WInteractWidget& target,
+			Database::IdType releaseId,
+			PlayQueueActionSignal& releasesAction);
+} // namespace UserInterface
 

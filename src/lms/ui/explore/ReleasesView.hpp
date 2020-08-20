@@ -41,7 +41,7 @@ class Releases : public Wt::WTemplate
 	public:
 		Releases(Filters* filters);
 
-		Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> releasesAction;
+		PlayQueueActionSignal releasesAction;
 
 	private:
 

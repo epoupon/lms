@@ -40,7 +40,7 @@ class Tracks : public Wt::WTemplate
 	public:
 		Tracks(Filters* filters);
 
-		Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> tracksAction;
+		PlayQueueActionSignal tracksAction;
 
 	private:
 

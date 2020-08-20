@@ -27,13 +27,16 @@
 namespace UserInterface {
 
 class Filters;
+class SearchView;
 
 class Explore : public Wt::WTemplate
 {
 	public:
 		Explore(Filters* filters);
 
-		Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> tracksAction;
+		void search(const Wt::WString& searchText);
+
+		PlayQueueActionSignal tracksAction;
 
 	private:
 
@@ -42,6 +45,7 @@ class Explore : public Wt::WTemplate
 		void handleTracksAction(PlayQueueAction action, const std::vector<Database::IdType>& tracksId);
 
 		Filters* _filters {};
+		SearchView* _search {};
 };
 
 } // namespace UserInterface

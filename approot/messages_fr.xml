@@ -121,6 +121,8 @@
 <message id="Lms.Explore.most-played">Plus joués</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz Artist</message>
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz Release</message>
+<message id="Lms.Explore.play-last">Jouer en dernier</message>
+<message id="Lms.Explore.play-shuffled">Jouer aléatoirement</message>
 <message id="Lms.Explore.random">Aléatoire</message>
 <message id="Lms.Explore.recently-added">Ajoutés récemment</message>
 <message id="Lms.Explore.recently-played">Joués récemment</message>
@@ -157,11 +159,8 @@
 	<plural case="0">{1} piste ajoutée</plural>
 	<plural case="1">{1} pistes ajoutées</plural>
 </message>
-<message id="Lms.PlayQueue.nb-tracks-playing">
-	<plural case="0">{1} piste ajoutée</plural>
-	<plural case="1">{1} pistes ajoutées</plural>
-</message>
 <message id="Lms.PlayQueue.playqueue">Liste de lecture</message>
+<message id="Lms.PlayQueue.playqueue-full">Liste de lecture pleine!</message>
 <message id="Lms.PlayQueue.radio-mode">Mode radio</message>
 <message id="Lms.PlayQueue.repeat">Repéter</message>
 <message id="Lms.PlayQueue.shuffle">Mélanger</message>
