@@ -9,6 +9,7 @@
 <message id="Lms.discard">Annuler</message>
 <message id="Lms.cancel">Annuler</message>
 <message id="Lms.create">Créer</message>
+<message id="Lms.loading">Chargement...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Quitter</message>
 <message id="Lms.not-a-directory">N'est pas un répertoire</message>
@@ -53,22 +54,29 @@
 <message id="Lms.Admin.Database.update-start-time">Heure de départ de la mise à jour</message>
 <message id="Lms.Admin.Database.weekly">Toutes les semaines</message>
 
-<message id="Lms.Admin.Database.Status.bad-duration">Impossible de récupérer la durée de la piste</message>
-<message id="Lms.Admin.Database.Status.cannot-parse-file">Impossible d'analyser le fichier</message>
-<message id="Lms.Admin.Database.Status.cannot-read-file">Impossible de lire le fichier</message>
-<message id="Lms.Admin.Database.Status.duplicates-header">{1} fichiers dupliqués :</message>
-<message id="Lms.Admin.Database.Status.errors-header">{1} erreurs :</message>
-<message id="Lms.Admin.Database.Status.get-report">Rapport</message>
-<message id="Lms.Admin.Database.Status.last-scan">Dernier scan</message>
-<message id="Lms.Admin.Database.Status.last-scan-not-available">Non disponible</message>
-<message id="Lms.Admin.Database.Status.last-scan-status">{1} fichiers scannés en {2} le {3} ({4} erreurs, {5} duplicatas)</message>
-<message id="Lms.Admin.Database.Status.no-audio-track">Pas de piste audio</message>
-<message id="Lms.Admin.Database.Status.same-hash">Hash dupliqué</message>
-<message id="Lms.Admin.Database.Status.same-mbid">MBID dupliqué</message>
-<message id="Lms.Admin.Database.Status.status">Statut</message>
-<message id="Lms.Admin.Database.Status.status-not-scheduled">Non planifié</message>
-<message id="Lms.Admin.Database.Status.status-scheduled">Planifié le {1}</message>
-<message id="Lms.Admin.Database.Status.status-in-progress">Scan de {1} fichiers sur {2} ({3} %)</message>
+<message id="Lms.Admin.ScannerController.bad-duration">Impossible de récupérer la durée de la piste</message>
+<message id="Lms.Admin.ScannerController.cannot-parse-file">Impossible d'analyser le fichier</message>
+<message id="Lms.Admin.ScannerController.cannot-read-file">Impossible de lire le fichier</message>
+<message id="Lms.Admin.ScannerController.duplicates-header">{1} fichiers dupliqués :</message>
+<message id="Lms.Admin.ScannerController.errors-header">{1} erreurs :</message>
+<message id="Lms.Admin.ScannerController.force-scan-now">Lancer un scan forcé</message>
+<message id="Lms.Admin.ScannerController.get-report">Rapport</message>
+<message id="Lms.Admin.ScannerController.last-scan">Dernier scan</message>
+<message id="Lms.Admin.ScannerController.last-scan-not-available">Non disponible</message>
+<message id="Lms.Admin.ScannerController.last-scan-status">{1} fichiers scannés en {2} le {3} ({4} erreurs, {5} duplicatas)</message>
+<message id="Lms.Admin.ScannerController.no-audio-track">Pas de piste audio</message>
+<message id="Lms.Admin.ScannerController.same-hash">Hash dupliqué</message>
+<message id="Lms.Admin.ScannerController.same-mbid">MBID dupliqué</message>
+<message id="Lms.Admin.ScannerController.scan-now">Lancer un scan</message>
+<message id="Lms.Admin.ScannerController.scanner">Scanner</message>
+<message id="Lms.Admin.ScannerController.status">Statut</message>
+<message id="Lms.Admin.ScannerController.status-not-scheduled">Non planifié</message>
+<message id="Lms.Admin.ScannerController.status-scheduled">Planifié le {1}</message>
+<message id="Lms.Admin.ScannerController.status-in-progress">En cours de scan : étape {1}/{2}</message>
+<message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Vérification des fichiers supprimés... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-discovering-files">Découverte des fichiers: {1} fichiers</message>
+<message id="Lms.Admin.ScannerController.step-fetching-track-features">Récupération des métadonnées AcousticBrainz: {1}/{2} fichiers ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-files">Scan des fichiers: {1}/{2} fichiers ({3}%)...</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">Ajouter</message>
@@ -113,11 +121,12 @@
 <message id="Lms.Explore.most-played">Plus joués</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz Artist</message>
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz Release</message>
+<message id="Lms.Explore.play-last">Jouer en dernier</message>
+<message id="Lms.Explore.play-shuffled">Jouer aléatoirement</message>
 <message id="Lms.Explore.random">Aléatoire</message>
 <message id="Lms.Explore.recently-added">Ajoutés récemment</message>
 <message id="Lms.Explore.recently-played">Joués récemment</message>
 <message id="Lms.Explore.releases">Albums</message>
-<message id="Lms.Explore.show-more">Voir plus</message>
 <message id="Lms.Explore.tracks">Pistes</message>
 <message id="Lms.Explore.type">Type</message>
 <message id="Lms.Explore.value">Valeur</message>
@@ -132,7 +141,7 @@
 <message id="Lms.Explore.Artists.linktype-releaseartist">Artistes d'album</message>
 
 <!--Explore:Release-->
-<message id="Lms.Explore.ReleaseInfo.similar-releases">Albums similaires</message>
+<message id="Lms.Explore.Release.similar-releases">Albums similaires</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disque {1}</message>
 
@@ -150,11 +159,8 @@
 	<plural case="0">{1} piste ajoutée</plural>
 	<plural case="1">{1} pistes ajoutées</plural>
 </message>
-<message id="Lms.PlayQueue.nb-tracks-playing">
-	<plural case="0">{1} piste ajoutée</plural>
-	<plural case="1">{1} pistes ajoutées</plural>
-</message>
 <message id="Lms.PlayQueue.playqueue">Liste de lecture</message>
+<message id="Lms.PlayQueue.playqueue-full">Liste de lecture pleine!</message>
 <message id="Lms.PlayQueue.radio-mode">Mode radio</message>
 <message id="Lms.PlayQueue.repeat">Repéter</message>
 <message id="Lms.PlayQueue.shuffle">Mélanger</message>

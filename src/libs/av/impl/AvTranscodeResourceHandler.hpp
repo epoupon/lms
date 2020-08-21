@@ -39,7 +39,6 @@ namespace Av
 			static constexpr std::size_t _chunkSize {262144};
 			const std::filesystem::path _trackPath;
 			Transcoder _transcoder;
-
 	};
 }
 

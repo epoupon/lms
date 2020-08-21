@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,18 +19,16 @@
 
 #pragma once
 
-#include <Wt/WTemplate.h>
+#include <Wt/WWidget.h>
+#include <Wt/WSignal.h>
 
-namespace UserInterface {
+#include "database/Types.hpp"
+#include "PlayQueueAction.hpp"
 
-class DatabaseStatus : public Wt::WTemplate
+namespace UserInterface
 {
-	public:
-		DatabaseStatus();
-
-	private:
-		void refreshContents();
-};
-
-} // namespace DatabaseStatus
+	void displayReleasePopupMenu(Wt::WInteractWidget& target,
+			Database::IdType releaseId,
+			PlayQueueActionSignal& releasesAction);
+} // namespace UserInterface
 

@@ -115,11 +115,24 @@ Artist::refreshView()
 	}
 
 	{
-		Wt::WText* addBtn = bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
+		Wt::WText* moreBtn = bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
 
-		addBtn->clicked().connect([=]
+		moreBtn->clicked().connect([=]
 		{
-			artistsAction.emit(PlayQueueAction::AddLast, {*artistId});
+			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
+
+			popup->addItem(Wt::WString::tr("Lms.Explore.play-shuffled"))
+				->triggered().connect(this, [=]
+				{
+					artistsAction.emit(PlayQueueAction::PlayShuffled, {*artistId});
+				});
+			popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
+				->triggered().connect(this, [=]
+				{
+					artistsAction.emit(PlayQueueAction::PlayLast, {*artistId});
+				});
+
+			popup->exec(moreBtn);
 		});
 	}
 
@@ -135,6 +148,10 @@ Artist::refreshView()
 void
 Artist::refreshSimilarArtists(const std::vector<Database::IdType>& similarArtistsId)
 {
+	if (similarArtistsId.empty())
+		return;
+
+	setCondition("if-has-similar-artists", true);
 	Wt::WContainerWidget* similarArtistsContainer {bindNew<Wt::WContainerWidget>("similar-artists")};
 
 	for (Database::IdType artistId : similarArtistsId)

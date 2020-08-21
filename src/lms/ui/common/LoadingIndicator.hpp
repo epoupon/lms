@@ -19,22 +19,10 @@
 
 #pragma once
 
-#include <vector>
-#include <Wt/WSignal.h>
-
-#include "database/Types.hpp"
+#include <Wt/WTemplate.h>
 
 namespace UserInterface
 {
-
-	enum class PlayQueueAction
-	{
-		Play,
-		PlayLast,
-		PlayShuffled,
-	};
-
-	using PlayQueueActionSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&>;
-
+	std::unique_ptr<Wt::WTemplate> createLoadingIndicator();
 }
 

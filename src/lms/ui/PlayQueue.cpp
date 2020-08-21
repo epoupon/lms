@@ -32,6 +32,7 @@
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
+#include "common/LoadingIndicator.hpp"
 #include "resource/ImageResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
@@ -65,14 +66,7 @@ PlayQueue::PlayQueue()
 	});
 
 	_entriesContainer = bindNew<Wt::WContainerWidget>("entries");
-
-	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->setHidden(true);
-	_showMore->clicked().connect([=]
-	{
-		addSome();
-		updateCurrentTrack(true);
-	});
+	hideLoadingIndicator();
 
 	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.template.shuffle-btn"), Wt::TextFormat::XHTML);
 	setToolTip(*shuffleBtn, Wt::WString::tr("Lms.PlayQueue.shuffle"));
@@ -188,10 +182,38 @@ PlayQueue::updateRadioBtn()
 	_radioBtn->toggleStyleClass("text-muted", !_radioMode);
 }
 
+void
+PlayQueue::displayLoadingIndicator()
+{
+	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
+	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
+	{
+		if (!visible)
+			return;
+
+		addSome();
+		updateCurrentTrack(true);
+	});
+}
+
+void
+PlayQueue::hideLoadingIndicator()
+{
+	_loadingIndicator = nullptr;
+	bindEmpty("loading-indicator");
+}
+
 Database::TrackList::pointer
 PlayQueue::getTrackList() const
 {
 	return Database::TrackList::getById(LmsApp->getDbSession(), _tracklistId);
+}
+
+bool
+PlayQueue::isFull() const
+{
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	return getTrackList()->getCount() == _nbMaxEntries;
 }
 
 void
@@ -202,7 +224,7 @@ PlayQueue::clearTracks()
 		getTrackList().modify()->clear();
 	}
 
-	_showMore->setHidden(true);
+	hideLoadingIndicator();
 	_entriesContainer->clear();
 	updateInfo();
 }
@@ -306,55 +328,77 @@ PlayQueue::updateCurrentTrack(bool selected)
 		entry->bindString("is-selected", selected ? "Lms-playqueue-selected" : "");
 }
 
-void
+std::size_t
 PlayQueue::enqueueTracks(const std::vector<Database::IdType>& trackIds)
 {
+	std::size_t nbTracksQueued {};
+
 	{
 		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-		auto tracklist = getTrackList();
+		auto tracklist {getTrackList()};
+
+		std::size_t nbTracksToEnqueue {tracklist->getCount() + trackIds.size() > _nbMaxEntries ? _nbMaxEntries - tracklist->getCount() : trackIds.size()};
 		for (Database::IdType trackId : trackIds)
 		{
 			Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
 			if (!track)
 				continue;
 
+			if (nbTracksQueued == nbTracksToEnqueue)
+				break;
+
 			Database::TrackListEntry::create(LmsApp->getDbSession(), track, tracklist);
+			nbTracksQueued++;
 		}
 	}
 
 	updateInfo();
 	addSome();
-}
 
-void
-PlayQueue::enqueueTrack(Database::IdType trackId)
-{
-	enqueueTracks({trackId});
+	return nbTracksQueued;
 }
 
 void
 PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::IdType>& trackIds)
 {
+	std::size_t nbAddedTracks {};
+
 	switch (action)
 	{
-		case PlayQueueAction::AddLast:
-			enqueueTracks(trackIds);
-			LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
-			break;
-
-		case PlayQueueAction::AddNext:
+		case PlayQueueAction::PlayLast:
+			nbAddedTracks = enqueueTracks(trackIds);
+			if (!_trackPos)
+				loadTrack(0, true);
 			break;
 
 		case PlayQueueAction::Play:
 			clearTracks();
-			enqueueTracks(trackIds);
+			nbAddedTracks = enqueueTracks(trackIds);
 			loadTrack(0, true);
 
-			LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-playing", trackIds.size()).arg(trackIds.size()), std::chrono::milliseconds(2000));
 			break;
 
+		case PlayQueueAction::PlayShuffled:
+		{
+			clearTracks();
+			{
+				std::vector<Database::IdType> shuffledTrackIds {trackIds};
+				Random::shuffleContainer(shuffledTrackIds);
+				nbAddedTracks = enqueueTracks(shuffledTrackIds);
+			}
+			loadTrack(0, true);
+			break;
+		}
 	}
+
+	if (nbAddedTracks > 0)
+		LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", nbAddedTracks).arg(nbAddedTracks), std::chrono::milliseconds(2000));
+
+	if (isFull())
+		LmsApp->notifyMsg(MsgType::Warning, Wt::WString::tr("Lms.PlayQueue.playqueue-full"), std::chrono::milliseconds(2000));
+
+
 }
 
 void
@@ -447,7 +491,10 @@ PlayQueue::addSome()
 
 	}
 
-	_showMore->setHidden(static_cast<std::size_t>(_entriesContainer->count()) >= tracklist->getCount());
+	if (static_cast<std::size_t>(_entriesContainer->count()) < tracklist->getCount())
+		displayLoadingIndicator();
+	else
+		hideLoadingIndicator();
 }
 
 void

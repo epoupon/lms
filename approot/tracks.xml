@@ -9,12 +9,10 @@
 			<div class="Lms-header">
 				<h2>${tr:Lms.Explore.tracks}</h2>
 				${mode class="nav nav-pills Lms-explore-mode-container"}
-				${play-btn}${add-btn}
+				${play-btn}${more-btn}
 			</div>
 			${tracks}
-			<div class="Lms-horizontal-center">
-				${show-more class="btn-primary Lms-show-more"}
-			</div>
+			${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
 		</div>
 	</div>
 </message>
@@ -35,7 +33,7 @@
 			</div>
 			<div class="col-xs-2 col-sm-2 col-md-2">
 				<div class="Lms-explore-tracks-entry-controls">
-					${play-btn}${add-btn}
+					${play-btn}${more-btn}
 				</div>
 				<div class="Lms-explore-tracks-entry-duration text-muted">
 					${duration}

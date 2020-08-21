@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2019 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,22 +19,19 @@
 
 #pragma once
 
-#include <vector>
-#include <Wt/WSignal.h>
-
-#include "database/Types.hpp"
+#include <Wt/WTemplate.h>
 
 namespace UserInterface
 {
 
-	enum class PlayQueueAction
+	class ScannerController : public Wt::WTemplate
 	{
-		Play,
-		PlayLast,
-		PlayShuffled,
+		public:
+			ScannerController();
+
+		private:
+			void refreshContents();
 	};
 
-	using PlayQueueActionSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&>;
-
-}
+} // namespace DatabaseStatus
 

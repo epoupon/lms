@@ -22,7 +22,6 @@
 #include <optional>
 
 #include <Wt/WContainerWidget.h>
-#include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
@@ -61,16 +60,18 @@ class PlayQueue : public Wt::WTemplate
 
 	private:
 		Wt::Dbo::ptr<Database::TrackList> getTrackList() const;
+		bool isFull() const;
 
 		void clearTracks();
-		void enqueueTracks(const std::vector<Database::IdType>& trackIds);
-		void enqueueTrack(Database::IdType trackId);
+		std::size_t enqueueTracks(const std::vector<Database::IdType>& trackIds);
 		void addSome();
 		void enqueueRadioTrack();
 		void updateInfo();
 		void updateCurrentTrack(bool selected);
 		void updateRepeatBtn();
 		void updateRadioBtn();
+		void displayLoadingIndicator();
+		void hideLoadingIndicator();
 
 		void loadTrack(std::size_t pos, bool play);
 		void stop();
@@ -79,12 +80,14 @@ class PlayQueue : public Wt::WTemplate
 		void addRadioTrackFromClusters();
 		std::optional<float> getReplayGain(std::size_t pos, const Wt::Dbo::ptr<Database::Track>& track) const;
 
+		static inline constexpr std::size_t _nbMaxEntries {1000};
+
 		bool _repeatAll {};
 		bool _radioMode {};
 		bool _mediaPlayerSettingsLoaded {};
 		Database::IdType _tracklistId {};
 		Wt::WContainerWidget* _entriesContainer {};
-		Wt::WPushButton* _showMore {};
+		Wt::WTemplate* _loadingIndicator {};
 		Wt::WText* _nbTracks {};
 		Wt::WText* _repeatBtn {};
 		Wt::WText* _radioBtn {};

@@ -40,11 +40,10 @@ class IMediaScanner
 
 		virtual void start() = 0;
 		virtual void stop() = 0;
-		virtual void restart() = 0;
 
 		// Async requests
-		virtual void requestImmediateScan() = 0;
-		virtual void requestReschedule() = 0;
+		virtual void requestReload() = 0;
+		virtual void requestImmediateScan(bool force) = 0;
 
 
 		enum class State
@@ -56,13 +55,13 @@ class IMediaScanner
 
 		struct Status
 		{
-			State					currentState {State::NotScheduled};
-			Wt::WDateTime				nextScheduledScan;
-			std::optional<ScanStats>		lastCompleteScanStats;
-			std::optional<ScanProgressStats>	inProgressScanStats;
+			State								currentState {State::NotScheduled};
+			Wt::WDateTime						nextScheduledScan;
+			std::optional<ScanStats>			lastCompleteScanStats;
+			std::optional<ScanStepStats> 		currentScanStepStats;
 		};
 
-		virtual Status getStatus() = 0;
+		virtual Status getStatus() const = 0;
 
 		// Called just after scan start
 		virtual Wt::Signal<>& scanStarted() = 0;
@@ -71,7 +70,7 @@ class IMediaScanner
 		virtual Wt::Signal<>& scanComplete() = 0;
 
 		// Called during scan in progress
-		virtual Wt::Signal<ScanProgressStats>& scanInProgress() = 0;
+		virtual Wt::Signal<ScanStepStats>& scanInProgress() = 0;
 
 		// Called after a schedule
 		virtual Wt::Signal<Wt::WDateTime>& scheduled() = 0;

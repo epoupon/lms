@@ -17,24 +17,33 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "ReleasePopup.hpp"
 
-#include <vector>
-#include <Wt/WSignal.h>
-
-#include "database/Types.hpp"
+#include "LmsApplication.hpp"
 
 namespace UserInterface
 {
 
-	enum class PlayQueueAction
+	void
+	displayReleasePopupMenu(Wt::WInteractWidget& target,
+			Database::IdType releaseId,
+			PlayQueueActionSignal& releasesAction)
 	{
-		Play,
-		PlayLast,
-		PlayShuffled,
-	};
+			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
 
-	using PlayQueueActionSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&>;
+			popup->addItem(Wt::WString::tr("Lms.Explore.play-shuffled"))
+				->triggered().connect(&target, [&releasesAction, releaseId]
+					{
+						releasesAction.emit(PlayQueueAction::PlayShuffled, {releaseId});
+					});
+			popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
+				->triggered().connect(&target, [&releasesAction, releaseId]
+					{
+						releasesAction.emit(PlayQueueAction::PlayLast, {releaseId});
+					});
 
-}
+			popup->popup(&target);
+	}
+
+} // namespace UserInterface
 

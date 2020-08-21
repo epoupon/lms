@@ -65,6 +65,25 @@ LMS.mediaplayer = function () {
 		}
 	}
 
+	var _playPause = function() {
+		_audioCtx.resume();
+		if (_elems.audio.paused && _elems.audio.children.length > 0) {
+			_playTrack();
+		}
+		else
+			_elems.audio.pause();
+	}
+
+	var _playPrevious = function() {
+		_audioCtx.resume();
+		_requestPreviousTrack();
+	}
+
+	var _playNext = function() {
+		_audioCtx.resume();
+		_requestNextTrack();
+	}
+
 	var _requestPreviousTrack = function() {
 		Wt.emit(_root, "playPrevious");
 	}
@@ -146,21 +165,14 @@ LMS.mediaplayer = function () {
 		_gainNode.connect(_audioCtx.destination);
 
 		_elems.playpause.addEventListener("click", function() {
-			_audioCtx.resume();
-			if (_elems.audio.paused && _elems.audio.children.length > 0) {
-				_playTrack();
-			}
-			else
-				_elems.audio.pause();
+			_playPause();
 		});
 
 		_elems.previous.addEventListener("click", function() {
-			_audioCtx.resume();
-			_requestPreviousTrack();
+			_playPrevious();
 		});
 		_elems.next.addEventListener("click", function() {
-			_audioCtx.resume();
-			_requestNextTrack();
+			_playNext();
 		});
 		_elems.seek.addEventListener("change", function() {
 			_audioCtx.resume();
@@ -223,6 +235,26 @@ LMS.mediaplayer = function () {
 			else {
 				_setVolume(_elems.lastvolume);
 			}
+		});
+
+		document.addEventListener("keydown", function(event) {
+			let handled = false;
+
+			if (event.keyCode == 32 && !(event.target instanceof HTMLInputElement)) {
+				_playPause();
+				handled = true;
+			}
+			else if (event.ctrlKey && event.keyCode == 37) {
+				_playPrevious();
+				handled = true;
+			}
+			else if (event.ctrlKey && event.keyCode == 39) {
+				_playNext();
+				handled = true;
+			}
+
+			if (handled)
+				event.preventDefault();
 		});
 
 		if ('mediaSession' in navigator) {

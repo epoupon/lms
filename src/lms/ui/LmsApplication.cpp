@@ -22,6 +22,7 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WEnvironment.h>
 #include <Wt/WLineEdit.h>
+#include <Wt/WPushButton.h>
 #include <Wt/WServer.h>
 #include <Wt/WStackedWidget.h>
 #include <Wt/WText.h>
@@ -34,7 +35,6 @@
 #include "database/User.hpp"
 #include "explore/Explore.hpp"
 #include "explore/Filters.hpp"
-#include "explore/SearchView.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -122,6 +122,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "admin-database");
 	messageResourceBundle().use(appRoot() + "admin-initwizard");
+	messageResourceBundle().use(appRoot() + "admin-scannercontroller");
 	messageResourceBundle().use(appRoot() + "admin-user");
 	messageResourceBundle().use(appRoot() + "admin-users");
 	messageResourceBundle().use(appRoot() + "artist");
@@ -306,6 +307,13 @@ LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete
 	return res;
 }
 
+Wt::WPopupMenu*
+LmsApplication::createPopupMenu()
+{
+	_popupMenu = std::make_unique<Wt::WPopupMenu>();
+	return _popupMenu.get();
+}
+
 void
 LmsApplication::handleException(LmsApplicationException& e)
 {
@@ -332,7 +340,6 @@ enum IdxRoot
 {
 	IdxExplore	= 0,
 	IdxPlayQueue,
-	IdxSearch,
 	IdxSettings,
 	IdxAdminDatabase,
 	IdxAdminUsers,
@@ -353,9 +360,9 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 		{ "/artist",		IdxExplore,		false },
 		{ "/releases",		IdxExplore,		false },
 		{ "/release",		IdxExplore,		false },
+		{ "/search",		IdxExplore,		false },
 		{ "/tracks",		IdxExplore,		false },
 		{ "/playqueue",		IdxPlayQueue,		false },
-		{ "/search",		IdxSearch,		false },
 		{ "/settings",		IdxSettings,		false },
 		{ "/admin/database",	IdxAdminDatabase,	true },
 		{ "/admin/users",	IdxAdminUsers,		true },
@@ -469,7 +476,6 @@ LmsApplication::createHome()
 
 	Explore* explore = mainStack->addNew<Explore>(filters);
 	_playQueue = mainStack->addNew<PlayQueue>();
-	auto* search {mainStack->addNew<SearchView>(filters)};
 	mainStack->addNew<SettingsView>();
 
 	searchEdit->enterPressed().connect([=]
@@ -480,7 +486,7 @@ LmsApplication::createHome()
 	searchEdit->textInput().connect([=]
 	{
 		setInternalPath("/search", true);
-		search->refreshView(searchEdit->text().toUTF8());
+		explore->search(searchEdit->text());
 	});
 
 	// Admin stuff
@@ -542,11 +548,11 @@ LmsApplication::createHome()
 			});
 		});
 
-		ServiceProvider<Scanner::IMediaScanner>::get()->scanInProgress().connect(this, [=] (Scanner::ScanProgressStats stats)
+		ServiceProvider<Scanner::IMediaScanner>::get()->scanInProgress().connect(this, [=] (Scanner::ScanStepStats stepStats)
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
-				_events.dbScanInProgress.emit(stats);
+				_events.dbScanInProgress.emit(stepStats);
 				triggerUpdate();
 			});
 		});

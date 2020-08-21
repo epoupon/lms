@@ -60,7 +60,7 @@
 				</div>
 				<div class="form-group">
 					<div class="col-lg-offset-3 col-lg-9">
-						${apply-btn class="btn-primary"} ${discard-btn} ${immediate-scan-btn class="btn-info"}
+						${apply-btn class="btn-primary"} ${discard-btn}
 					</div>
 				</div>
 			</form>
@@ -69,42 +69,7 @@
 	<br/>
 	<div class="row">
 		<div class="col-lg-8">
-			<div class="panel panel-info">
-				<div class="panel-heading">${tr:Lms.Admin.Database.Status.status}</div>
-				<div class="panel-body">
-					${status}
-				</div>
-			</div>
-		</div>
-	</div>
-</message>
-
-<message id="Lms.Admin.Database.Status.template">
-	<div class="form-horizontal">
-		<div class="form-group">
-			<label class="col-lg-3 control-label">
-				${tr:Lms.Admin.Database.Status.status}
-			</label>
-			<div class="col-lg-9">
-				<div class="well well-sm">
-					${status}
-				</div>
-			</div>
-		</div>
-		<div class="form-group">
-			<label class="col-lg-3 control-label">
-				${tr:Lms.Admin.Database.Status.last-scan}
-			</label>
-			<div class="col-lg-9">
-				<div class="well well-sm">
-					${last-scan}
-				</div>
-			</div>
-		</div>
-		<div class="form-group">
-			<div class="col-lg-offset-3 col-lg-9">
-				${btn-report class="btn"}
-			</div>
+			${scanner-controller}
 		</div>
 	</div>
 </message>

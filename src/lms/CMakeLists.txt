@@ -10,11 +10,12 @@ add_executable(lms
 	ui/SettingsView.cpp
 	ui/TrackStringUtils.cpp
 	ui/admin/DatabaseSettingsView.cpp
-	ui/admin/DatabaseStatus.cpp
+	ui/admin/ScannerController.cpp
 	ui/admin/InitWizardView.cpp
 	ui/admin/UserView.cpp
 	ui/admin/UsersView.cpp
 	ui/common/AuthModeModel.cpp
+	ui/common/LoadingIndicator.cpp
 	ui/common/Validators.cpp
 	ui/explore/ArtistListHelpers.cpp
 	ui/explore/ArtistView.cpp
@@ -22,6 +23,7 @@ add_executable(lms
 	ui/explore/Explore.cpp
 	ui/explore/Filters.cpp
 	ui/explore/ReleaseListHelpers.cpp
+	ui/explore/ReleasePopup.cpp
 	ui/explore/ReleasesView.cpp
 	ui/explore/ReleaseView.cpp
 	ui/explore/SearchView.cpp

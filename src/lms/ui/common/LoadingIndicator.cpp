@@ -17,24 +17,20 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <vector>
-#include <Wt/WSignal.h>
-
-#include "database/Types.hpp"
+#include "LoadingIndicator.hpp"
 
 namespace UserInterface
 {
-
-	enum class PlayQueueAction
+	std::unique_ptr<Wt::WTemplate>
+	createLoadingIndicator()
 	{
-		Play,
-		PlayLast,
-		PlayShuffled,
-	};
+		auto res {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.LoadingIndicator.template"))};
 
-	using PlayQueueActionSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&>;
+		res->addFunction("tr", &Wt::WTemplate::Functions::tr);
+		res->setScrollVisibilityMargin(200);
+		res->setScrollVisibilityEnabled(true);
 
+		return res;
+	}
 }
 

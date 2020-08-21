@@ -258,21 +258,13 @@ MediaScanner::MediaScanner(Database::Db& db)
 
 MediaScanner::~MediaScanner()
 {
-	if (_running)
-		stop();
-}
-
-void
-MediaScanner::restart(void)
-{
 	stop();
-	start();
 }
 
 void
-MediaScanner::start(void)
+MediaScanner::start()
 {
-	_running = true;
+	std::scoped_lock lock {_controlMutex};
 
 	scheduleNextScan();
 
@@ -280,27 +272,47 @@ MediaScanner::start(void)
 }
 
 void
-MediaScanner::stop(void)
+MediaScanner::stop()
 {
-	_running = false;
+	std::scoped_lock lock {_controlMutex};
+
+	_abortScan = true;
 
 	_scheduleTimer.cancel();
-
 	_ioService.stop();
 }
 
 void
-MediaScanner::requestImmediateScan()
+MediaScanner::abortScan()
 {
+	LMS_LOG(DBUPDATER, DEBUG) << "Aborting scan...";
+	std::scoped_lock lock {_controlMutex};
+
+	LMS_LOG(DBUPDATER, DEBUG) << "Waiting for the scan to abort...";
+
+	_abortScan = true;
+	_scheduleTimer.cancel();
+	_ioService.stop();
+	LMS_LOG(DBUPDATER, DEBUG) << "Scan abort done!";
+
+	_abortScan = false;
+	_ioService.start();
+}
+
+void
+MediaScanner::requestImmediateScan(bool force)
+{
+	abortScan();
 	_ioService.post([=]()
 	{
-		scheduleScan();
+		scheduleScan(force);
 	});
 }
 
 void
-MediaScanner::requestReschedule()
+MediaScanner::requestReload()
 {
+	abortScan();
 	_ioService.post([=]()
 	{
 		scheduleNextScan();
@@ -308,7 +320,7 @@ MediaScanner::requestReschedule()
 }
 
 MediaScanner::Status
-MediaScanner::getStatus()
+MediaScanner::getStatus() const
 {
 	Status res;
 
@@ -317,7 +329,7 @@ MediaScanner::getStatus()
 	res.currentState = _curState;
 	res.nextScheduledScan = _nextScheduledScan;
 	res.lastCompleteScanStats = _lastCompleteScanStats;
-	res.inProgressScanStats = _inProgressScanStats;
+	res.currentScanStepStats = _currentScanStepStats;
 
 	return res;
 }
@@ -365,7 +377,7 @@ MediaScanner::scheduleNextScan()
 	if (nextScanDate.isValid())
 	{
 		nextScanDateTime = Wt::WDateTime {nextScanDate, _startTime};
-		scheduleScan(nextScanDateTime);
+		scheduleScan(false, nextScanDateTime);
 	}
 
 	{
@@ -380,17 +392,21 @@ MediaScanner::scheduleNextScan()
 void
 MediaScanner::countAllFiles(ScanStats& stats)
 {
-	stats.filesToScan = 0;
+	ScanStepStats stepStats{stats.startTime, ScanProgressStep::DiscoveringFiles};
+
+	stats.filesScanned = 0;
+	notifyInProgress(stepStats);
 
 	exploreFilesRecursive(_mediaDirectory, [&](std::error_code ec, const std::filesystem::path& path)
 	{
-		if (!_running)
+		if (_abortScan)
 			return false;
 
 		if (!ec && isFileSupported(path, _fileExtensions))
 		{
-			stats.filesToScan++;
-			notifyInProgressIfNeeded(stats);
+			stats.filesScanned++;
+			stepStats.processedFiles++;
+			notifyInProgressIfNeeded(stepStats);
 		}
 
 		return true;
@@ -398,13 +414,21 @@ MediaScanner::countAllFiles(ScanStats& stats)
 }
 
 void
-MediaScanner::scheduleScan(const Wt::WDateTime& dateTime)
+MediaScanner::scheduleScan(bool force, const Wt::WDateTime& dateTime)
 {
+	auto cb {[=](boost::system::error_code ec)
+	{
+		if (ec)
+			return;
+
+		scan(force);
+	}};
+
 	if (dateTime.isNull())
 	{
 		LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan right now";
-		_scheduleTimer.expires_from_now(std::chrono::seconds(0));
-		_scheduleTimer.async_wait(std::bind(&MediaScanner::scan, this, std::placeholders::_1));
+		_scheduleTimer.expires_from_now(std::chrono::seconds {0});
+		_scheduleTimer.async_wait(cb);
 	}
 	else
 	{
@@ -413,16 +437,13 @@ MediaScanner::scheduleScan(const Wt::WDateTime& dateTime)
 
 		LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan at " << std::string(std::ctime(&t));
 		_scheduleTimer.expires_at(timePoint);
-		_scheduleTimer.async_wait(std::bind(&MediaScanner::scan, this, std::placeholders::_1));
+		_scheduleTimer.async_wait(cb);
 	}
 }
 
 void
-MediaScanner::scan(boost::system::error_code err)
+MediaScanner::scan(bool forceScan)
 {
-	if (err)
-		return;
-
 	scanStarted().emit();
 
 	{
@@ -438,13 +459,11 @@ MediaScanner::scan(boost::system::error_code err)
 
 	refreshScanSettings();
 
-	bool forceScan {false};
+	removeMissingTracks(stats);
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Counting files in media directory '" << _mediaDirectory.string() << "'...";
 	countAllFiles(stats);
-	LMS_LOG(DBUPDATER, DEBUG) << "-> Nb files = " << stats.filesToScan;
-
-	removeMissingTracks(stats);
+	LMS_LOG(DBUPDATER, DEBUG) << "-> Nb files = " << stats.filesScanned;
 
 	LMS_LOG(UI, INFO) << "Checks complete, force scan = " << forceScan;
 
@@ -454,36 +473,39 @@ MediaScanner::scan(boost::system::error_code err)
 
 	removeOrphanEntries();
 
-	if (_running)
+	if (!_abortScan)
 		checkDuplicatedAudioFiles(stats);
 
 	// Now update all the track features if needed
 	fetchTrackFeatures(stats);
 
-	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_running ? "complete" : "aborted") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << "/" << stats.featuresToFetch <<",  duplicates = " << stats.duplicates.size();
+	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size();
 
 	_dbSession.optimize();
 
-	if (_running)
+	if (!_abortScan)
 	{
 		stats.stopTime = Wt::WLocalDateTime::currentDateTime().toUTC();
 		{
 			std::unique_lock lock {_statusMutex};
 
 			_lastCompleteScanStats = std::move(stats);
-			_inProgressScanStats.reset();
+			_currentScanStepStats.reset();
 		}
 
+		LMS_LOG(DBUPDATER, DEBUG) << "Scan not aborted, scheduling next scan!";
 		scheduleNextScan();
 
 		scanComplete().emit();
 	}
 	else
 	{
+		LMS_LOG(DBUPDATER, DEBUG) << "Scan aborted, not scheduling next scan!";
+
 		std::unique_lock lock {_statusMutex};
 
 		_curState = State::NotScheduled;
-		_inProgressScanStats.reset();
+		_currentScanStepStats.reset();
 	}
 }
 
@@ -519,6 +541,8 @@ MediaScanner::fetchTrackFeatures(ScanStats& stats)
 	if (_recommendationEngineType != ScanSettings::RecommendationEngineType::Features)
 		return;
 
+	ScanStepStats stepStats{stats.startTime, ScanProgressStep::FetchingTrackFeatures};
+
 	LMS_LOG(DBUPDATER, INFO) << "Fetching missing track features...";
 
 	struct TrackInfo
@@ -540,18 +564,21 @@ MediaScanner::fetchTrackFeatures(ScanStats& stats)
 		return res;
 	}()};
 
-	stats.featuresToFetch = tracksToFetch.size();
+	stepStats.filesToProcess = tracksToFetch.size();
+	notifyInProgress(stepStats);
 
 	LMS_LOG(DBUPDATER, INFO) << "Found " << tracksToFetch.size() << " track(s) to fetch!";
 
 	for (const TrackInfo& trackToFetch : tracksToFetch)
 	{
-		if (!_running)
+		if (_abortScan)
 			return;
 
 		if (fetchTrackFeatures(trackToFetch.id, trackToFetch.mbid))
 			stats.featuresFetched++;
 
+		stepStats.processedFiles++;
+		notifyInProgressIfNeeded(stepStats);
 	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Track features fetched!";
@@ -591,27 +618,25 @@ MediaScanner::refreshScanSettings()
 }
 
 void
-MediaScanner::notifyInProgress(const ScanStats& stats)
+MediaScanner::notifyInProgress(const ScanStepStats& stepStats)
 {
-	const ScanProgressStats progressStats {stats.toProgressStats()};
-
 	{
 		std::unique_lock lock {_statusMutex};
-		_inProgressScanStats = progressStats;
+		_currentScanStepStats = stepStats;
 	}
 
 	const std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
-	_sigScanInProgress(progressStats);
+	_sigScanInProgress(stepStats);
 	_lastScanInProgressEmit = now;
 }
 
 void
-MediaScanner::notifyInProgressIfNeeded(const ScanStats& stats)
+MediaScanner::notifyInProgressIfNeeded(const ScanStepStats& stepStats)
 {
 	std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
 
-	if (std::chrono::duration_cast<std::chrono::seconds>(now - _lastScanInProgressEmit).count() > 2)
-		notifyInProgress(stats);
+	if (std::chrono::duration_cast<std::chrono::seconds>(now - _lastScanInProgressEmit).count() > 1)
+		notifyInProgress(stepStats);
 }
 
 void
@@ -772,9 +797,13 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 void
 MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats)
 {
+	ScanStepStats stepStats{stats.startTime, ScanProgressStep::ScanningFiles};
+	stepStats.filesToProcess = stats.filesScanned;
+	notifyInProgress(stepStats);
+
 	exploreFilesRecursive(mediaDirectory, [&](std::error_code ec, const std::filesystem::path& path)
 	{
-		if (!_running)
+		if (_abortScan)
 			return false;
 
 		if (ec)
@@ -786,13 +815,12 @@ MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bo
 		{
 			scanAudioFile(path, forceScan, stats );
 
-			notifyInProgressIfNeeded(stats);
+			stepStats.processedFiles++;
+			notifyInProgressIfNeeded(stepStats);
 		}
 
 		return true;
 	});
-
-	notifyInProgress(stats);
 }
 
 // Check if a file exists and is still in a media directory
@@ -837,6 +865,8 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 {
 	static constexpr std::size_t batchSize {50};
 
+	ScanStepStats stepStats{stats.startTime, ScanProgressStep::ChekingForMissingFiles};
+
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks to be removed...";
 	std::size_t trackCount {};
 
@@ -845,6 +875,9 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 		trackCount = Track::getCount(_dbSession);
 	}
 	LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks to be checked...";
+
+	stepStats.filesToProcess = trackCount;
+	notifyInProgress(stepStats);
 
 	std::vector<std::pair<Database::IdType, std::filesystem::path>> trackPaths;
 	std::vector<IdType> tracksToRemove;
@@ -861,11 +894,13 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 
 		for (const auto& [trackId, trackPath] : trackPaths)
 		{
-			if (!_running)
+			if (_abortScan)
 				return;
 
 			if (!checkFile(trackPath, _mediaDirectory, _fileExtensions))
 				tracksToRemove.push_back(trackId);
+
+			stepStats.processedFiles++;
 		}
 
 		if (!tracksToRemove.empty())
@@ -883,7 +918,7 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 			}
 		}
 
-		notifyInProgressIfNeeded(stats);
+		notifyInProgressIfNeeded(stepStats);
 
 		if (i == 0)
 			break;

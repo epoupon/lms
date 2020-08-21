@@ -34,7 +34,7 @@
 
 #include "common/Validators.hpp"
 #include "common/ValueStringModel.hpp"
-#include "DatabaseStatus.hpp"
+#include "ScannerController.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface {
@@ -220,7 +220,7 @@ DatabaseSettingsView::refreshView()
 	Wt::WPushButton *discardBtn = t->bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard")));
 	Wt::WPushButton *immScanBtn = t->bindWidget("immediate-scan-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.Admin.Database.immediate-scan")));
 
-	t->bindNew<DatabaseStatus>("status");
+	t->bindNew<ScannerController>("scanner-controller");
 
 	saveBtn->clicked().connect([=] ()
 	{
@@ -230,7 +230,7 @@ DatabaseSettingsView::refreshView()
 		{
 			model->saveData();
 
-			ServiceProvider<Scanner::IMediaScanner>::get()->requestReschedule();
+			ServiceProvider<Scanner::IMediaScanner>::get()->requestReload();
 			LmsApp->notifyMsg(MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}
 
@@ -247,7 +247,7 @@ DatabaseSettingsView::refreshView()
 
 	immScanBtn->clicked().connect([=] ()
 	{
-		ServiceProvider<Scanner::IMediaScanner>::get()->requestImmediateScan();
+		ServiceProvider<Scanner::IMediaScanner>::get()->requestImmediateScan(false);
 	});
 
 	t->updateView(model.get());

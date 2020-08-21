@@ -32,6 +32,7 @@
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
+#include "common/LoadingIndicator.hpp"
 #include "resource/ImageResource.hpp"
 #include "ReleaseListHelpers.hpp"
 #include "Filters.hpp"
@@ -71,19 +72,27 @@ _filters {filters}
 	{
 		releasesAction.emit(PlayQueueAction::Play, getAllReleases());
 	});
-	Wt::WText* addBtn {bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML)};
-	addBtn->clicked().connect([this]
+	Wt::WText* moreBtn {bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
+	moreBtn->clicked().connect([=]
 	{
-		releasesAction.emit(PlayQueueAction::AddLast, getAllReleases());
+		Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
+
+		popup->addItem(Wt::WString::tr("Lms.Explore.play-shuffled"))
+			->triggered().connect([this]
+			{
+				releasesAction.emit(PlayQueueAction::PlayShuffled, getAllReleases());
+			});
+		popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
+			->triggered().connect([this]
+			{
+				releasesAction.emit(PlayQueueAction::PlayLast, getAllReleases());
+			});
+
+		popup->popup(moreBtn);
 	});
 
 	_container = bindNew<Wt::WContainerWidget>("releases");
-
-	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->clicked().connect([this]
-	{
-		addSome();
-	});
+	hideLoadingIndicator();
 
 	refreshView(defaultMode);
 
@@ -106,6 +115,26 @@ Releases::refreshView(Mode mode)
 }
 
 void
+Releases::displayLoadingIndicator()
+{
+	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
+	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
+	{
+		if (!visible)
+			return;
+
+		addSome();
+	});
+}
+
+void
+Releases::hideLoadingIndicator()
+{
+	_loadingIndicator = nullptr;
+	bindEmpty("loading-indicator");
+}
+
+void
 Releases::addSome()
 {
 	bool moreResults {};
@@ -118,7 +147,10 @@ Releases::addSome()
 		_container->addWidget(ReleaseListHelpers::createEntry(release));
 	}
 
-	_showMore->setHidden(!moreResults);
+	if (moreResults)
+		displayLoadingIndicator();
+	else
+		hideLoadingIndicator();
 }
 
 std::vector<Database::Release::pointer>

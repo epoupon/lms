@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
@@ -39,11 +38,8 @@ namespace UserInterface
 		public:
 			Release(Filters* filters);
 
-			Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> releasesAction;
-			Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> tracksAction;
-
-			Wt::Signal<Wt::WWidget&, Database::IdType> createReleaseActionMenu;
-			Wt::Signal<Wt::WWidget&, Database::IdType> createTrackActionMenu;
+			PlayQueueActionSignal releasesAction;
+			PlayQueueActionSignal tracksAction;
 
 		private:
 			void refreshView();

@@ -6,18 +6,20 @@
 	<div class="Lms-header">
 		<h2><div class="Lms-artistname text-primary">${name}</div></h2>
 		${clusters}
-		${play-btn}${add-btn}
+		${play-btn}${more-btn}
 	</div>
 	<div class="row">
 		${releases class="Lms-explore-artist-entries-container"}
 	</div>
 	<div class="row">
+		${<if-has-similar-artists>}
 		<div class="col-md-4">
 			<div class="well well-sm">
 				<h3>${tr:Lms.Explore.Artist.similar-artists}</h3>
 				${similar-artists}
 			</div>
 		</div>
+		${</if-has-similar-artists>}
 		${<if-has-mbid>}
 		<div class="col-md-4">
 			<div class="well well-sm">

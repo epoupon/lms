@@ -52,26 +52,26 @@ class MediaScanner : public IMediaScanner
 
 		void start() override;
 		void stop() override;
-		void restart() override;
+		void requestReload() override;
+		void requestImmediateScan(bool force) override;
 
-		void requestImmediateScan() override;
-		void requestReschedule() override ;
-
-		Status getStatus() override;
+		Status getStatus() const override;
 
 		Wt::Signal<>& scanStarted() override { return _sigScanStarted; }
 		Wt::Signal<>& scanComplete() override { return _sigScanComplete; }
-		Wt::Signal<ScanProgressStats>& scanInProgress() override { return _sigScanInProgress; }
+		Wt::Signal<ScanStepStats>& scanInProgress() override { return _sigScanInProgress; }
 		Wt::Signal<Wt::WDateTime>& scheduled() override { return _sigScheduled; }
 
 	private:
 
 		// Job handling
 		void scheduleNextScan();
-		void scheduleScan(const Wt::WDateTime& dateTime = {});
+		void scheduleScan(bool force, const Wt::WDateTime& dateTime = {});
+
+		void abortScan();
 
 		// Update database (scheduled callback)
-		void scan(boost::system::error_code ec);
+		void scan(bool force);
 
 		void scanMediaDirectory( const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats);
 		bool fetchTrackFeatures(Database::IdType trackId, const UUID& MBID);
@@ -86,24 +86,25 @@ class MediaScanner : public IMediaScanner
 		void checkDuplicatedAudioFiles(ScanStats& stats);
 		void scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanStats& stats);
 		Database::IdType doScanAudioFile(const std::filesystem::path& file, ScanStats& stats);
-		void notifyInProgressIfNeeded(const ScanStats& stats);
-		void notifyInProgress(const ScanStats& stats);
+		void notifyInProgressIfNeeded(const ScanStepStats& stats);
+		void notifyInProgress(const ScanStepStats& stats);
 
-		bool									_running {};
+		std::mutex								_controlMutex;
+		std::atomic<bool>						_abortScan {};
 		Wt::WIOService							_ioService;
 		boost::asio::system_timer				_scheduleTimer {_ioService};
 		Wt::Signal<>							_sigScanStarted;
 		Wt::Signal<>							_sigScanComplete;
-		Wt::Signal<ScanProgressStats>			_sigScanInProgress;
+		Wt::Signal<ScanStepStats>		_sigScanInProgress;
 		std::chrono::system_clock::time_point	_lastScanInProgressEmit {};
 		Wt::Signal<Wt::WDateTime>				_sigScheduled;
 		Database::Session						_dbSession;
 		std::unique_ptr<MetaData::IParser>		_metadataParser;
 
-		std::shared_mutex					_statusMutex;
+		mutable std::shared_mutex			_statusMutex;
 		State								_curState {State::NotScheduled};
 		std::optional<ScanStats> 			_lastCompleteScanStats;
-		std::optional<ScanProgressStats> 	_inProgressScanStats;
+		std::optional<ScanStepStats> 		_currentScanStepStats;
 		Wt::WDateTime						_nextScheduledScan;
 
 		// Current scan settings

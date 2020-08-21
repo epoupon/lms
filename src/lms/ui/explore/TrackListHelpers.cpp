@@ -30,7 +30,6 @@
 #include "resource/ImageResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
-#include "PlayQueue.hpp"
 #include "TrackStringUtils.hpp"
 
 using namespace Database;
@@ -38,7 +37,7 @@ using namespace Database;
 namespace UserInterface::TrackListHelpers
 {
 	std::unique_ptr<Wt::WTemplate>
-	createEntry(const Wt::Dbo::ptr<Database::Track>& track)
+	createEntry(const Wt::Dbo::ptr<Database::Track>& track, PlayQueueActionSignal& tracksAction)
 	{
 		auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
 		auto* entryPtr {entry.get()};
@@ -89,15 +88,23 @@ namespace UserInterface::TrackListHelpers
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
-		playBtn->clicked().connect([=]
+		playBtn->clicked().connect([trackId, &tracksAction]
 		{
-			LmsApp->getPlayQueue().processTracks(PlayQueueAction::Play, {trackId});
+			tracksAction.emit(PlayQueueAction::Play, {trackId});
 		});
 
-		Wt::WText* addBtn = entry->bindNew<Wt::WText>("add-btn", Wt::WString::tr("Lms.Explore.template.add-btn"), Wt::TextFormat::XHTML);
-		addBtn->clicked().connect([=]
+		Wt::WText* moreBtn = entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+		moreBtn->clicked().connect([=, &tracksAction]
 		{
-			LmsApp->getPlayQueue().processTracks(PlayQueueAction::AddLast, {trackId});
+			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
+
+			popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
+				->triggered().connect(moreBtn, [=, &tracksAction]
+				{
+					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
+				});
+
+			popup->popup(moreBtn);
 		});
 
 		LmsApp->getMediaPlayer().trackLoaded.connect(entryPtr, [=] (Database::IdType loadedTrackId)

@@ -24,6 +24,8 @@
 
 #include <Wt/WTemplate.h>
 
+#include "PlayQueueAction.hpp"
+
 namespace UserInterface {
 
 class Filters;
@@ -33,7 +35,9 @@ class SearchView : public Wt::WTemplate
 	public:
 		SearchView(Filters* filters);
 
-		void refreshView(const std::string& searchText);
+		PlayQueueActionSignal tracksAction;
+
+		void refreshView(const Wt::WString& searchText);
 
 	private:
 		void refreshView();

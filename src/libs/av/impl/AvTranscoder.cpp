@@ -1,5 +1,5 @@
 /*
-
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -59,17 +59,20 @@ Transcoder::start()
 		if (!std::filesystem::exists(_filePath))
 		{
 			LOG(ERROR) << "File '" << _filePath << "' does not exist!";
+			_isComplete = true;
 			return false;
 		}
 		else if (!std::filesystem::is_regular_file( _filePath) )
 		{
 			LOG(ERROR) << "File '" << _filePath << "' is not regular!";
+			_isComplete = true;
 			return false;
 		}
 	}
 	catch (const std::filesystem::filesystem_error& e)
 	{
 		LOG(ERROR) << "File error on '" << _filePath.string() << "': " << e.what();
+		_isComplete = true;
 		return false;
 	}
 
@@ -154,6 +157,7 @@ Transcoder::start()
 			break;
 
 		default:
+			_isComplete = true;
 			return false;
 	}
 
@@ -178,12 +182,14 @@ Transcoder::start()
 		if (!_child->is_open())
 		{
 			LOG(DEBUG) << "Exec failed!";
+			_isComplete = true;
 			return false;
 		}
 
 		if (_child->out().eof())
 		{
 			LOG(DEBUG) << "Early end of file!";
+			_isComplete = true;
 			return false;
 		}
 
@@ -199,16 +205,6 @@ Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 	if (!_child || _isComplete)
 		return;
 
-	if (_child->out().fail())
-	{
-		LOG(DEBUG) << "Stdout FAILED 2";
-	}
-
-	if (_child->out().eof())
-	{
-		LOG(DEBUG) << "Stdout ENDED 2";
-	}
-
 	output.resize(maxSize);
 
 	//Read on the output stream
@@ -218,14 +214,19 @@ Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
 	if (_child->out().fail())
 	{
 		LOG(DEBUG) << "Stdout FAILED";
+		_isComplete = true;
 	}
 
 	if (_child->out().eof())
 	{
 		LOG(DEBUG) << "Stdout EOF!";
-		_child->clear();
-
 		_isComplete = true;
+	}
+
+	if (_isComplete)
+	{
+		LOG(DEBUG) << "Transcode complete!";
+		_child->clear();
 		_child.reset();
 	}
 

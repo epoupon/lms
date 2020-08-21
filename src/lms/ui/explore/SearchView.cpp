@@ -51,9 +51,9 @@ namespace UserInterface
 	}
 
 	void
-	SearchView::refreshView(const std::string& searchText)
+	SearchView::refreshView(const Wt::WString& searchText)
 	{
-		_keywords = StringUtils::splitString(searchText, " ");
+		_keywords = StringUtils::splitString(searchText.toUTF8(), " ");
 		refreshView();
 	}
 
@@ -127,7 +127,7 @@ namespace UserInterface
 			auto* container {bindNew<Wt::WContainerWidget>("tracks")};
 
 			for (const Database::Track::pointer& track : tracks)
-				container->addWidget(TrackListHelpers::createEntry(track));
+				container->addWidget(TrackListHelpers::createEntry(track, tracksAction));
 		}
 	}
 

@@ -22,8 +22,6 @@
 #include <optional>
 
 #include <Wt/WContainerWidget.h>
-#include <Wt/WLineEdit.h>
-#include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
@@ -42,7 +40,7 @@ class Tracks : public Wt::WTemplate
 	public:
 		Tracks(Filters* filters);
 
-		Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&> tracksAction;
+		PlayQueueActionSignal tracksAction;
 
 	private:
 
@@ -57,6 +55,8 @@ class Tracks : public Wt::WTemplate
 
 		void refreshView();
 		void refreshView(Mode mode);
+		void displayLoadingIndicator();
+		void hideLoadingIndicator();
 		void addSome();
 
 		std::vector<Wt::Dbo::ptr<Database::Track>> getRandomTracks(std::optional<Database::Range> range, bool& moreResults);
@@ -78,8 +78,7 @@ class Tracks : public Wt::WTemplate
 		Filters* _filters {};
 		std::vector<Database::IdType> _randomTracks;
 		Wt::WContainerWidget* _tracksContainer {};
-		Wt::WPushButton* _showMore {};
-		Wt::WLineEdit* _search {};
+		Wt::WTemplate* _loadingIndicator {};
 };
 
 } // namespace UserInterface

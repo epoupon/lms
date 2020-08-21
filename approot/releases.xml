@@ -6,14 +6,12 @@
 	<div class="Lms-header">
 		<h2>${tr:Lms.Explore.releases}</h2>
 		${mode class="nav nav-pills Lms-explore-mode-container"}
-		${play-btn}${add-btn}
+		${play-btn}${more-btn}
 	</div>
 	<div class="row">
 		${releases}
 	</div>
-	<div class="Lms-horizontal-center">
-		${show-more class="btn-primary Lms-show-more"}
-	</div>
+	${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
 </message>
 
 <message id="Lms.Explore.Releases.template.entry-grid">

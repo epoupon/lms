@@ -29,6 +29,7 @@
 #include "database/TrackList.hpp"
 #include "utils/Logger.hpp"
 
+#include "common/LoadingIndicator.hpp"
 #include "ArtistListHelpers.hpp"
 #include "LmsApplication.hpp"
 #include "Filters.hpp"
@@ -75,12 +76,7 @@ Artists::Artists(Filters* filters)
 	_linkType->changed().connect([this] { refreshView(); });
 
 	_container = bindNew<Wt::WContainerWidget>("artists");
-
-	_showMore = bindNew<Wt::WPushButton>("show-more", Wt::WString::tr("Lms.Explore.show-more"));
-	_showMore->clicked().connect([=]
-	{
-		addSome();
-	});
+	hideLoadingIndicator();
 
 	refreshView();
 
@@ -100,6 +96,26 @@ Artists::refreshView(Mode mode)
 {
 	_mode = mode;
 	refreshView();
+}
+
+void
+Artists::displayLoadingIndicator()
+{
+	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
+	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
+	{
+		if (!visible)
+			return;
+
+		addSome();
+	});
+}
+
+void
+Artists::hideLoadingIndicator()
+{
+	_loadingIndicator = nullptr;
+	bindEmpty("loading-indicator");
 }
 
 std::vector<Artist::pointer>
@@ -203,7 +219,10 @@ Artists::addSome()
 		_container->addWidget(ArtistListHelpers::createEntry(artist));
 	}
 
-	_showMore->setHidden(!moreResults);
+	if (moreResults)
+		displayLoadingIndicator();
+	else
+		hideLoadingIndicator();
 }
 
 } // namespace UserInterface

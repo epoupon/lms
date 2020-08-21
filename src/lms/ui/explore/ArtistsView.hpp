@@ -24,9 +24,7 @@
 
 #include <Wt/WComboBox.h>
 #include <Wt/WContainerWidget.h>
-#include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
-#include <Wt/WSignal.h>
 
 #include "database/Types.hpp"
 
@@ -56,6 +54,8 @@ class Artists : public Wt::WTemplate
 
 		void refreshView();
 		void refreshView(Mode mode);
+		void displayLoadingIndicator();
+		void hideLoadingIndicator();
 		void addSome();
 
 		std::vector<Wt::Dbo::ptr<Database::Artist>> getArtists(std::optional<Database::Range> range, bool& moreResults);
@@ -67,15 +67,15 @@ class Artists : public Wt::WTemplate
 		{
 			{Mode::Random, batchSize * 4},
 			{Mode::RecentlyPlayed, batchSize * 4},
-			{Mode::RecentlyAdded, batchSize * 2},
-			{Mode::MostPlayed, batchSize * 2},
+			{Mode::RecentlyAdded, batchSize * 4},
+			{Mode::MostPlayed, batchSize * 4},
 			{Mode::All, batchSize * 50},
 		};
 
 		Mode _mode {defaultMode};
 		std::vector<Database::IdType> _randomArtists;
 		Filters* _filters {};
-		Wt::WPushButton* _showMore {};
+		Wt::WTemplate* _loadingIndicator {};
 		Wt::WContainerWidget* _container {};
 		Wt::WComboBox* _linkType {};
 };
