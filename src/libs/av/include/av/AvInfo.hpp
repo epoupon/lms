@@ -21,14 +21,6 @@
 
 #pragma once
 
-extern "C"
-{
-#define __STDC_CONSTANT_MACROS
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libavutil/error.h>
-}
-
 #include <chrono>
 #include <filesystem>
 #include <map>
@@ -37,6 +29,8 @@ extern "C"
 #include <vector>
 
 #include "AvTypes.hpp"
+
+struct AVFormatContext;
 
 namespace Av
 {

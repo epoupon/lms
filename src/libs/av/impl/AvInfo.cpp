@@ -19,6 +19,14 @@
 
 #include "av/AvInfo.hpp"
 
+extern "C"
+{
+#define __STDC_CONSTANT_MACROS
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/error.h>
+}
+
 #include <array>
 
 #include "utils/Logger.hpp"
