@@ -131,15 +131,15 @@ int main(int argc, char *argv[])
 	try
 	{
 		// log to stdout
-		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
+		Service<Logger> logger {std::make_unique<StreamLogger>(std::cout)};
 
 		std::filesystem::path configFilePath {"/etc/lms.conf"};
 		if (argc >= 2)
 			configFilePath = std::string(argv[1], 0, 256);
 
-		ServiceProvider<IConfig>::assign(createConfig(configFilePath));
+		Service<IConfig> config {createConfig(configFilePath)};
 
-		Database::Db db {ServiceProvider<IConfig>::get()->getPath("working-dir") / "lms.db"};
+		Database::Db db {config->getPath("working-dir") / "lms.db"};
 		Database::Session session {db};
 
 		std::cout << "Creating recommendation engine..." << std::endl;

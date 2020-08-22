@@ -500,7 +500,7 @@ PlayQueue::addSome()
 void
 PlayQueue::enqueueRadioTrack()
 {
-	const std::vector<Database::IdType> trackToAddIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 1)};
+	const std::vector<Database::IdType> trackToAddIds {Service<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 1)};
 	enqueueTracks(trackToAddIds);
 }
 

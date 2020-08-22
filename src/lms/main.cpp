@@ -42,31 +42,31 @@ generateWtConfig(std::string execPath)
 {
 	std::vector<std::string> args;
 
-	const std::filesystem::path wtConfigPath {ServiceProvider<IConfig>::get()->getPath("working-dir") / "wt_config.xml"};
-	const std::filesystem::path wtLogFilePath {ServiceProvider<IConfig>::get()->getPath("log-file", "/var/log/lms.log")};
-	const std::filesystem::path wtAccessLogFilePath {ServiceProvider<IConfig>::get()->getPath("access-log-file", "/var/log/lms.access.log")};
-	const std::filesystem::path wtResourcesPath {ServiceProvider<IConfig>::get()->getPath("wt-resources", "/usr/share/Wt/resources")};
+	const std::filesystem::path wtConfigPath {Service<IConfig>::get()->getPath("working-dir") / "wt_config.xml"};
+	const std::filesystem::path wtLogFilePath {Service<IConfig>::get()->getPath("log-file", "/var/log/lms.log")};
+	const std::filesystem::path wtAccessLogFilePath {Service<IConfig>::get()->getPath("access-log-file", "/var/log/lms.access.log")};
+	const std::filesystem::path wtResourcesPath {Service<IConfig>::get()->getPath("wt-resources", "/usr/share/Wt/resources")};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
-	args.push_back("--docroot=" + ServiceProvider<IConfig>::get()->getString("docroot"));
-	args.push_back("--approot=" + ServiceProvider<IConfig>::get()->getString("approot"));
-	args.push_back("--deploy-path=" + ServiceProvider<IConfig>::get()->getString("deploy-path", "/"));
+	args.push_back("--docroot=" + Service<IConfig>::get()->getString("docroot"));
+	args.push_back("--approot=" + Service<IConfig>::get()->getString("approot"));
+	args.push_back("--deploy-path=" + Service<IConfig>::get()->getString("deploy-path", "/"));
 	if (!wtResourcesPath.empty())
 		args.push_back("--resources-dir=" + wtResourcesPath.string());
 
-	if (ServiceProvider<IConfig>::get()->getBool("tls-enable", false))
+	if (Service<IConfig>::get()->getBool("tls-enable", false))
 	{
-		args.push_back("--https-port=" + std::to_string( ServiceProvider<IConfig>::get()->getULong("listen-port", 5082)));
-		args.push_back("--https-address=" + ServiceProvider<IConfig>::get()->getString("listen-addr", "0.0.0.0"));
-		args.push_back("--ssl-certificate=" + ServiceProvider<IConfig>::get()->getString("tls-cert"));
-		args.push_back("--ssl-private-key=" + ServiceProvider<IConfig>::get()->getString("tls-key"));
-		args.push_back("--ssl-tmp-dh=" + ServiceProvider<IConfig>::get()->getString("tls-dh"));
+		args.push_back("--https-port=" + std::to_string( Service<IConfig>::get()->getULong("listen-port", 5082)));
+		args.push_back("--https-address=" + Service<IConfig>::get()->getString("listen-addr", "0.0.0.0"));
+		args.push_back("--ssl-certificate=" + Service<IConfig>::get()->getString("tls-cert"));
+		args.push_back("--ssl-private-key=" + Service<IConfig>::get()->getString("tls-key"));
+		args.push_back("--ssl-tmp-dh=" + Service<IConfig>::get()->getString("tls-dh"));
 	}
 	else
 	{
-		args.push_back("--http-port=" + std::to_string( ServiceProvider<IConfig>::get()->getULong("listen-port", 5082)));
-		args.push_back("--http-address=" + ServiceProvider<IConfig>::get()->getString("listen-addr", "0.0.0.0"));
+		args.push_back("--http-port=" + std::to_string( Service<IConfig>::get()->getULong("listen-port", 5082)));
+		args.push_back("--http-address=" + Service<IConfig>::get()->getString("listen-addr", "0.0.0.0"));
 	}
 
 	if (!wtAccessLogFilePath.empty())
@@ -77,8 +77,8 @@ generateWtConfig(std::string execPath)
 
 	pt.put("server.application-settings.<xmlattr>.location", "*");
 	pt.put("server.application-settings.log-file", wtLogFilePath.string());
-	pt.put("server.application-settings.log-config", ServiceProvider<IConfig>::get()->getString("log-config", "* -debug -info:WebRequest"));
-	pt.put("server.application-settings.behind-reverse-proxy", ServiceProvider<IConfig>::get()->getBool("behind-reverse-proxy", false));
+	pt.put("server.application-settings.log-config", Service<IConfig>::get()->getString("log-config", "* -debug -info:WebRequest"));
+	pt.put("server.application-settings.behind-reverse-proxy", Service<IConfig>::get()->getBool("behind-reverse-proxy", false));
 
 	{
 		boost::property_tree::ptree viewport;
@@ -132,12 +132,12 @@ int main(int argc, char* argv[])
 		// Make pstream work with ffmpeg
 		close(STDIN_FILENO);
 
-		ServiceProvider<IConfig>::assign(createConfig(configFilePath));
-		ServiceProvider<Logger>::create<WtLogger>();
+		Service<IConfig> config {createConfig(configFilePath)};
+		Service<Logger> logger {std::make_unique<WtLogger>()};
 
 		// Make sure the working directory exists
-		std::filesystem::create_directories(ServiceProvider<IConfig>::get()->getPath("working-dir"));
-		std::filesystem::create_directories(ServiceProvider<IConfig>::get()->getPath("working-dir") / "cache");
+		std::filesystem::create_directories(config->getPath("working-dir"));
+		std::filesystem::create_directories(config->getPath("working-dir") / "cache");
 
 		// Construct WT configuration and get the argc/argv back
 		std::vector<std::string> wtServerArgs = generateWtConfig(argv[0]);
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 		Av::Transcoder::init();
 
 		// Initializing a connection pool to the database that will be shared along services
-		Database::Db database {ServiceProvider<IConfig>::get()->getPath("working-dir") / "lms.db"};
+		Database::Db database {config->getPath("working-dir") / "lms.db"};
 		{
 			Database::Session session {database};
 			session.prepareTables();
@@ -166,22 +166,21 @@ int main(int argc, char* argv[])
 		UserInterface::LmsApplicationGroupContainer appGroups;
 
 		// Service initialization order is important
-		ServiceProvider<Auth::IAuthTokenService>::assign(Auth::createAuthTokenService(ServiceProvider<IConfig>::get()->getULong("login-throttler-max-entriees", 10000)));
-		ServiceProvider<Auth::IPasswordService>::assign(Auth::createPasswordService(ServiceProvider<IConfig>::get()->getULong("login-throttler-max-entriees", 10000)));
-		Scanner::IMediaScanner& mediaScanner {ServiceProvider<Scanner::IMediaScanner>::assign(Scanner::createMediaScanner(database))};
+		Service<Auth::IAuthTokenService> authTokenService {Auth::createAuthTokenService(config->getULong("login-throttler-max-entriees", 10000))};
+		Service<Auth::IPasswordService> passwordService {Auth::createPasswordService(config->getULong("login-throttler-max-entriees", 10000))};
+		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0])};
+		coverArtService->setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
+		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
+		Service<Scanner::IMediaScanner> mediaScannerService {Scanner::createMediaScanner(database)};
 
-		Recommendation::IEngine& recommendationEngine {ServiceProvider<Recommendation::IEngine>::assign(Recommendation::createEngine(database))};
-		CoverArt::IGrabber& coverArtGrabber {ServiceProvider<CoverArt::IGrabber>::assign(CoverArt::createGrabber(argv[0]))};
-		coverArtGrabber.setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
-
-		mediaScanner.scanComplete().connect([&]()
+		mediaScannerService->scanComplete().connect([&]()
 		{
-			auto status = mediaScanner.getStatus();
+			auto status = mediaScannerService->getStatus();
 
 			if (status.lastCompleteScanStats->nbChanges() > 0 || status.lastCompleteScanStats->featuresFetched > 0)
 			{
 				LMS_LOG(MAIN, INFO) << "Scanner changed some files, reloading the recommendation engine...";
-				recommendationEngine.requestReload();
+				recommendationEngineService->requestReload();
 			}
 			else
 			{
@@ -189,13 +188,13 @@ int main(int argc, char* argv[])
 			}
 			// Flush cover cache even if no changes:
 			// covers may be external files that changed and we don't keep track of them
-			coverArtGrabber.flushCache();
+			coverArtService->flushCache();
 		});
 
 		API::Subsonic::SubsonicResource subsonicResource {database};
 
 		// bind API resources
-		if (ServiceProvider<IConfig>::get()->getBool("api-subsonic", true))
+		if (config->getBool("api-subsonic", true))
 			server.addResource(&subsonicResource, subsonicResource.getPath());
 
 		// bind UI entry point
@@ -203,31 +202,14 @@ int main(int argc, char* argv[])
 				std::bind(UserInterface::LmsApplication::create,
 					std::placeholders::_1, std::ref(database), std::ref(appGroups)));
 
-		// Start
-		LMS_LOG(MAIN, INFO) << "Starting recommendation engine";
-		recommendationEngine.start();
-
-		LMS_LOG(MAIN, INFO) << "Starting media scanner...";
-		mediaScanner.start();
-
 		LMS_LOG(MAIN, INFO) << "Starting server...";
 		server.start();
 
-		// Wait
 		LMS_LOG(MAIN, INFO) << "Now running...";
 		Wt::WServer::waitForShutdown();
 
-		// Stop
 		LMS_LOG(MAIN, INFO) << "Stopping server...";
 		server.stop();
-
-		LMS_LOG(MAIN, INFO) << "Stopping media scanner...";
-		mediaScanner.stop();
-
-		LMS_LOG(MAIN, INFO) << "Stopping recommendation engine...";
-		recommendationEngine.stop();
-
-		ServiceProvider<CoverArt::IGrabber>::clear();
 
 		LMS_LOG(MAIN, INFO) << "Clean stop!";
 		res = EXIT_SUCCESS;

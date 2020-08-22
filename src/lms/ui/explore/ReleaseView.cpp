@@ -76,7 +76,7 @@ Release::refreshView()
 	if (!releaseId)
 		return;
 
-	const std::vector<Database::IdType> similarReleasesIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 6)};
+	const std::vector<Database::IdType> similarReleasesIds {Service<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 6)};
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 

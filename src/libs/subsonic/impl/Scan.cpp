@@ -32,7 +32,7 @@ namespace API::Subsonic::Scan
 	{
 		Response::Node statusResponse;
 
-		const IMediaScanner::Status scanStatus {ServiceProvider<IMediaScanner>::get()->getStatus()};
+		const IMediaScanner::Status scanStatus {Service<IMediaScanner>::get()->getStatus()};
 
 		statusResponse.setAttribute("scanning", scanStatus.currentState == IMediaScanner::State::InProgress);
 		if (scanStatus.currentState == IMediaScanner::State::InProgress)
@@ -61,7 +61,7 @@ namespace API::Subsonic::Scan
 	Response
 	handleStartScan(RequestContext& context)
 	{
-		ServiceProvider<IMediaScanner>::get()->requestImmediateScan(false);
+		Service<IMediaScanner>::get()->requestImmediateScan(false);
 
 		Response response {Response::createOkResponse(context)};
 		response.addNode("scanStatus", createStatusResponseNode());

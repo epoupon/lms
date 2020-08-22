@@ -1882,7 +1882,7 @@ int main()
 	try
 	{
 		// log to stdout
-		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
+		Service<Logger> logger {std::make_unique<StreamLogger>(std::cout)};
 
 		const std::filesystem::path tmpFile {std::tmpnam(nullptr)};
 		ScopedFileDeleter tmpFileDeleter {tmpFile};

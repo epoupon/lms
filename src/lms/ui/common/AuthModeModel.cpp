@@ -30,9 +30,9 @@ createAuthModeModel()
 {
 	auto model {std::make_unique<AuthModeModel>()};
 
-	if (ServiceProvider<::Auth::IPasswordService>::get()->isAuthModeSupported(Database::User::AuthMode::Internal))
+	if (Service<::Auth::IPasswordService>::get()->isAuthModeSupported(Database::User::AuthMode::Internal))
 		model->add(Wt::WString::tr("Lms.Admin.User.auth-mode.internal"), Database::User::AuthMode::Internal);
-	if (ServiceProvider<::Auth::IPasswordService>::get()->isAuthModeSupported(Database::User::AuthMode::PAM))
+	if (Service<::Auth::IPasswordService>::get()->isAuthModeSupported(Database::User::AuthMode::PAM))
 		model->add(Wt::WString::tr("Lms.Admin.User.auth-mode.pam"), Database::User::AuthMode::PAM);
 
 	return model;

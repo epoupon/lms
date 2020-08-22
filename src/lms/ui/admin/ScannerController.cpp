@@ -146,20 +146,20 @@ ScannerController::refreshContents()
 	actionBtn->actionButton()->setText(Wt::WString::tr("Lms.Admin.ScannerController.scan-now"));
 	actionBtn->actionButton()->clicked().connect([]
 	{
-		ServiceProvider<Scanner::IMediaScanner>::get()->requestImmediateScan(false);
+		Service<Scanner::IMediaScanner>::get()->requestImmediateScan(false);
 	});
 
 	auto popup = std::make_unique<Wt::WPopupMenu>();
 	popup->addItem(Wt::WString::tr("Lms.Admin.ScannerController.force-scan-now"));
 	popup->itemSelected().connect([]
 	{
-		ServiceProvider<Scanner::IMediaScanner>::get()->requestImmediateScan(true);
+		Service<Scanner::IMediaScanner>::get()->requestImmediateScan(true);
 	});
 	actionBtn->dropDownButton()->setMenu(std::move(popup));
 	actionBtn->dropDownButton()->addStyleClass("btn-primary");
 
 
-	const IMediaScanner::Status status {ServiceProvider<IMediaScanner>::get()->getStatus()};
+	const IMediaScanner::Status status {Service<IMediaScanner>::get()->getStatus()};
 	if (status.lastCompleteScanStats)
 	{
 		bindString("last-scan", Wt::WString::tr("Lms.Admin.ScannerController.last-scan-status")
