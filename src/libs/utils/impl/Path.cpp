@@ -32,14 +32,13 @@
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
-void
-computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& crc)
+std::uint32_t
+computeCrc32(const std::filesystem::path& p)
 {
 	using crc_type = boost::crc_32_type;
 	crc_type result;
 
-	std::ifstream  ifs( p.string().c_str(), std::ios_base::binary );
-
+	std::ifstream ifs {p.string().c_str(), std::ios_base::binary};
 	if (ifs)
 	{
 		do
@@ -49,7 +48,7 @@ computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& crc)
 			ifs.read( buffer.data(), buffer.size() );
 			result.process_bytes( buffer.data(), ifs.gcount() );
 		}
-		while ( ifs );
+		while (ifs);
 	}
 	else
 	{
@@ -58,13 +57,7 @@ computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& crc)
 	}
 
 
-	// Copy the result into a vector of unsigned char
-	const crc_type::value_type checksum = result.checksum();
-	for (std::size_t i = 0; (i+1)*8 <= crc_type::bit_count; i++)
-	{
-		const unsigned char* data = reinterpret_cast<const unsigned char*>( &checksum );
-		crc.push_back(data[i]);
-	}
+	return result.checksum();
 }
 
 bool

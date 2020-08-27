@@ -47,7 +47,8 @@ class ImageResource : public Wt::WResource
 
 		static std::string getMimeType();
 
-		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
+	private:
+		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
 
 };
 

@@ -10,6 +10,7 @@ add_library(lmsutils SHARED
 	impl/String.cpp
 	impl/UUID.cpp
 	impl/WtLogger.cpp
+	impl/Zipper.cpp
 	)
 
 target_include_directories(lmsutils INTERFACE

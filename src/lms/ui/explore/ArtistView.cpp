@@ -31,7 +31,7 @@
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
-#include "resource/ImageResource.hpp"
+#include "resource/DownloadResource.hpp"
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
@@ -131,6 +131,8 @@ Artist::refreshView()
 				{
 					artistsAction.emit(PlayQueueAction::PlayLast, {*artistId});
 				});
+			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
+				->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(*artistId)});
 
 			popup->exec(moreBtn);
 		});

@@ -45,6 +45,7 @@
 #include "admin/UsersView.hpp"
 #include "resource/AudioFileResource.hpp"
 #include "resource/AudioTranscodeResource.hpp"
+#include "resource/DownloadResource.hpp"
 #include "resource/ImageResource.hpp"
 #include "Auth.hpp"
 #include "LmsApplicationException.hpp"
@@ -429,9 +430,9 @@ LmsApplication::handleUserLoggedIn(Database::IdType userId, bool strongAuth)
 void
 LmsApplication::createHome()
 {
-	_imageResource = std::make_shared<ImageResource>();
-	_audioTranscodeResource = std::make_shared<AudioTranscodeResource>();
 	_audioFileResource = std::make_shared<AudioFileResource>();
+	_audioTranscodeResource = std::make_shared<AudioTranscodeResource>();
+	_imageResource = std::make_shared<ImageResource>();
 
 	declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
 	doJavaScript("$('body').tooltip({ selector: '[data-toggle=\"tooltip\"]'})");

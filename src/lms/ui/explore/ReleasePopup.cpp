@@ -19,6 +19,7 @@
 
 #include "ReleasePopup.hpp"
 
+#include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface
@@ -41,6 +42,8 @@ namespace UserInterface
 					{
 						releasesAction.emit(PlayQueueAction::PlayLast, {releaseId});
 					});
+			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
+				->setLink(Wt::WLink {std::make_unique<DownloadReleaseResource>(releaseId)});
 
 			popup->popup(&target);
 	}
