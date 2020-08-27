@@ -40,7 +40,8 @@ namespace Zip
 
 			enum GeneralPurposeFlag : std::uint16_t
 			{
-				UseDataDescriptor = 1 << 3,
+				UseDataDescriptor	= 1 << 3,
+				LanguageEncoding	= 1 << 11,
 			};
 
 			enum CompressionMethod : std::uint16_t
@@ -315,7 +316,7 @@ namespace Zip
 
 		header.setSignature();
 		header.setVersionNeededToExtract(1, 0);
-		header.setGeneralPurposeFlags(0);
+		header.setGeneralPurposeFlags(ZipHeader::GeneralPurposeFlag::LanguageEncoding);
 		header.setCrc32UncompressedData(_currentFile->second.fileCrc32);
 		switch (_compMethod)
 		{
@@ -422,7 +423,7 @@ namespace Zip
 		header.setSignature();
 		header.setVersionMadeBy(2, 0);
 		header.setVersionNeededToExtract(1, 0);
-		header.setGeneralPurposeFlags(0);
+		header.setGeneralPurposeFlags(ZipHeader::GeneralPurposeFlag::LanguageEncoding);
 		switch (_compMethod)
 		{
 			case CompressionMethod::NoCompression:

@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 
 	while (!zipper.isComplete())
 	{
-		std::array<std::byte, 65536> buffer;
+		std::array<std::byte, 1000000> buffer;
 
 		std::cout << "Call" << std::endl;
 		std::size_t nbWrittenBytes {zipper.writeSome(buffer.data(), buffer.size())};
