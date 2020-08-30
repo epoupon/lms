@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
 
-	Zipper zipper {files, Zipper::CompressionMethod::NoCompression};
+	Zipper zipper {files};
 
 	while (!zipper.isComplete())
 	{

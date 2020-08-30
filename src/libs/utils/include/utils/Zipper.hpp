@@ -24,6 +24,7 @@
 #include <filesystem>
 
 #include "Exception.hpp"
+#include "utils/Crc32Calculator.hpp"
 
 namespace Zip
 {
@@ -33,17 +34,12 @@ namespace Zip
 		using LmsException::LmsException;
 	};
 
-	// Very simple on-the-fly zip creator
+	// Very simple on-the-fly zip creator, "store" method only
 	class Zipper
 	{
 		public:
 
-			enum class CompressionMethod
-			{
-				NoCompression,
-			};
-
-			Zipper(const std::map<std::string, std::filesystem::path>& files, CompressionMethod comp = CompressionMethod::NoCompression);
+			Zipper(const std::map<std::string, std::filesystem::path>& files);
 
 			static constexpr std::size_t minOutputBufferSize = 64;
 			std::size_t writeSome(std::byte* buffer, std::size_t bufferSize);
@@ -55,6 +51,7 @@ namespace Zip
 			std::size_t writeLocalFileHeader(std::byte* buffer, std::size_t bufferSize);
 			std::size_t writeLocalFileHeaderFileName(std::byte* buffer, std::size_t bufferSize);
 			std::size_t writeFileData(std::byte* buffer, std::size_t bufferSize);
+			std::size_t writeDataDescriptor(std::byte* buffer, std::size_t bufferSize);
 			std::size_t writeCentralDirectoryHeader(std::byte* buffer, std::size_t bufferSize);
 			std::size_t writeCentralDirectoryHeaderFileName(std::byte* buffer, std::size_t bufferSize);
 			std::size_t writeEndOfCentralDirectoryRecord(std::byte* buffer, std::size_t bufferSize);
@@ -63,7 +60,7 @@ namespace Zip
 			{
 				std::filesystem::path filePath;
 				std::size_t fileSize;
-				std::uint32_t fileCrc32;
+				Utils::Crc32Calculator fileCrc32;
 				std::size_t localFileHeaderOffset {};
 			};
 
@@ -75,13 +72,13 @@ namespace Zip
 				LocalFileHeader,
 				LocalFileHeaderFileName,
 				FileData,
+				DataDescriptor,
 				CentralDirectoryHeader,
 				CentralDirectoryHeaderFileName,
 				EndOfCentralDirectoryRecord,
 				Complete,
 			};
 
-			CompressionMethod _compMethod {CompressionMethod::NoCompression};
 			WriteState _writeState {WriteState::LocalFileHeader};
 			FileContainer::iterator _currentFile;
 			std::size_t _currentOffset {};

@@ -26,17 +26,16 @@
 #include <array>
 #include <fstream>
 
-#include <boost/crc.hpp>  // for boost::crc_32_type
 #include <boost/tokenizer.hpp>
 
+#include "utils/Crc32Calculator.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
 std::uint32_t
 computeCrc32(const std::filesystem::path& p)
 {
-	using crc_type = boost::crc_32_type;
-	crc_type result;
+	Utils::Crc32Calculator crc32;
 
 	std::ifstream ifs {p.string().c_str(), std::ios_base::binary};
 	if (ifs)
@@ -46,7 +45,7 @@ computeCrc32(const std::filesystem::path& p)
 			std::array<char,1024>	buffer;
 
 			ifs.read( buffer.data(), buffer.size() );
-			result.process_bytes( buffer.data(), ifs.gcount() );
+			crc32.processBytes( reinterpret_cast<const std::byte*>(buffer.data()), ifs.gcount() );
 		}
 		while (ifs);
 	}
@@ -56,8 +55,7 @@ computeCrc32(const std::filesystem::path& p)
 		throw LmsException("Failed to open file '" + p.string() + "'" );
 	}
 
-
-	return result.checksum();
+	return crc32.getResult();
 }
 
 bool

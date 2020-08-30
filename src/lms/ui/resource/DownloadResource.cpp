@@ -19,6 +19,9 @@
 
 #include "DownloadResource.hpp"
 
+#include <iostream>
+#include <iomanip>
+
 #include <Wt/WApplication.h>
 #include <Wt/Http/Response.h>
 
@@ -124,20 +127,18 @@ static
 std::string
 getTrackPathName(Database::Track::pointer track)
 {
-	std::string fileName;
+	std::ostringstream fileName;
 
-	auto trackNumber {track->getTrackNumber()};
-	auto discNumber {track->getDiscNumber()};
+	if (auto discNumber {track->getDiscNumber()})
+		fileName << *discNumber << ".";
+	if (auto trackNumber {track->getTrackNumber()})
+		fileName << std::setw(2) << std::setfill('0') << *trackNumber << " - ";
 
-	if (discNumber)
-		fileName += std::to_string(*discNumber) + ".";
-	if (trackNumber)
-		fileName += std::to_string(*trackNumber) + " - ";
+	fileName << StringUtils::replaceInString(track->getName(), "/", "_") << track->getPath().filename().extension().string();
 
-	fileName += track->getName() + track->getPath().filename().extension().string();
-	fileName = StringUtils::replaceInString(fileName , "/", "_");
+	LOG(DEBUG) << "Forged filename = '" << fileName.str() << "'";
 
-	return fileName;
+	return fileName.str();
 }
 
 static
@@ -166,7 +167,7 @@ createZipper(const std::vector<Database::Track::pointer>& tracks)
 		files.emplace(fileName, track->getPath());
 	}
 
-	return std::make_unique<Zip::Zipper>(files, Zip::Zipper::CompressionMethod::NoCompression);
+	return std::make_unique<Zip::Zipper>(files);
 }
 
 DownloadReleaseResource::DownloadReleaseResource(Database::IdType releaseId)

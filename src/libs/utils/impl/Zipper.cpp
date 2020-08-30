@@ -23,7 +23,6 @@
 #include <fstream>
 
 #include "utils/Path.hpp"
-#include "utils/Logger.hpp"
 
 // Done using specs from https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
 
@@ -49,6 +48,8 @@ namespace Zip
 				NoCompression = 0,
 			};
 
+			static constexpr std::size_t UnknownCrc32 {0};
+			static constexpr std::size_t UnknownFileSize {0};
 
 
 		protected:
@@ -89,82 +90,34 @@ namespace Zip
 			using ZipHeader::ZipHeader;
 
 			// Setters
-			void setSignature();
-			void setVersionNeededToExtract(unsigned major, unsigned minor);
-			void setGeneralPurposeFlags(std::uint16_t flags);
-			void setCompressionMethod(CompressionMethod compressionMethod);
-			void setLastModifiedDateTime();
-			void setCrc32UncompressedData(std::uint32_t crc);
-			void setCompressedSize(std::size_t size);
-			void setUncompressedSize(std::size_t size);
-			void setFileNameLength(std::size_t size);
-			void setExtraFieldLength(std::size_t size);
+			void setSignature() { write32(0, 0x04034b50); }
+			void setVersionNeededToExtract(unsigned major, unsigned minor) { assert(minor < 10); write16(4, major*10 + minor); }
+			void setGeneralPurposeFlags(std::uint16_t flags) { write16(6, flags); }
+			void setCompressionMethod(CompressionMethod compressionMethod) { write16(8, compressionMethod); }
+			void setLastModifiedDateTime()
+			{ // TODO
+				write16(10, 0); // time
+				write16(12, 0); // date
+			}
+			void setCrc32UncompressedData(std::uint32_t crc) { write32(14, crc); }
+			void setCompressedSize(std::size_t size) { write32(18, size); }
+			void setUncompressedSize(std::size_t size) { write32(22, size); }
+			void setFileNameLength(std::size_t size) { write16(26, size); }
+			void setExtraFieldLength(std::size_t size) { write16(28, size); }
 			static constexpr std::size_t getHeaderSize() { return 30; }
 	};
 
-	void
-	LocalFileHeader::setSignature()
+	class DataDescriptor : public ZipHeader
 	{
-		write32(0, 0x04034b50);
-	}
+		public:
+			using ZipHeader::ZipHeader;
 
-	void
-	LocalFileHeader::setVersionNeededToExtract(unsigned major, unsigned minor)
-	{
-		assert(minor < 10);
-		write16(4, major*10 + minor);
-	}
-
-	void
-	LocalFileHeader::setGeneralPurposeFlags(std::uint16_t flags)
-	{
-		write16(6, flags);
-	}
-
-	void
-	LocalFileHeader::setCompressionMethod(CompressionMethod compressionMethod)
-	{
-		write16(8, compressionMethod);
-	}
-
-	void
-	LocalFileHeader::setLastModifiedDateTime()
-	{
-		// TODO
-		write16(10, 0); // time
-		write16(12, 0); // date
-	}
-
-	void
-	LocalFileHeader::setCrc32UncompressedData(std::uint32_t crc)
-	{
-		write32(14, crc);
-	}
-
-	void
-	LocalFileHeader::setCompressedSize(std::size_t size)
-	{
-		write32(18, size);
-	}
-
-	void
-	LocalFileHeader::setUncompressedSize(std::size_t size)
-	{
-		write32(22, size);
-	}
-
-	void
-	LocalFileHeader::setFileNameLength(std::size_t size)
-	{
-		write16(26, size);
-	}
-
-	void
-	LocalFileHeader::setExtraFieldLength(std::size_t size)
-	{
-		write16(28, size);
-	}
-
+			void setSignature() { write32(0, 0x08074b50 ); }
+			void setCrc32UncompressedData(std::uint32_t crc32) { write32(4, crc32); }
+			void setCompressedSize(std::size_t size) { write32(8, size); }
+			void setUncompressedSize(std::size_t size) { write32(12, size); }
+			static constexpr std::size_t getHeaderSize() { return 16; }
+	};
 
 	class CentralDirectoryHeader : public ZipHeader
 	{
@@ -210,8 +163,7 @@ namespace Zip
 			static constexpr std::size_t getHeaderSize() { return 22; }
 	};
 
-	Zipper::Zipper(const std::map<std::string, std::filesystem::path>& files, CompressionMethod compMethod)
-	: _compMethod {compMethod}
+	Zipper::Zipper(const std::map<std::string, std::filesystem::path>& files)
 	{
 		for (const auto& [filename, filePath] : files)
 		{
@@ -221,13 +173,7 @@ namespace Zip
 			std::error_code ec;
 			fileContext.fileSize = std::filesystem::file_size(filePath, ec);
 			if (ec)
-			{
-				LMS_LOG(UTILS, INFO) << "Cannot get file size for '" << filePath.string() << "': " << ec.message();
-				continue;
-			}
-			fileContext.fileCrc32 = computeCrc32(filePath);
-
-			LMS_LOG(UTILS, DEBUG) << "Processing '" << filePath.string() << "': File size = " << fileContext.fileSize;
+				throw ZipperException {"Cannot get file size for '" + filePath.string() + "': " + ec.message()};
 
 			_files[filename] = std::move(fileContext);
 		}
@@ -247,9 +193,6 @@ namespace Zip
 		{
 			std::size_t nbWrittenBytes {};
 
-			LMS_LOG(UTILS, DEBUG) << "Global offset = " << _currentZipOffset;
-			LMS_LOG(UTILS, DEBUG) << "Buffer ptr = " << buffer << ", remaining size = " << bufferSize;
-
 			switch (_writeState)
 			{
 				case WriteState::LocalFileHeader:
@@ -262,6 +205,10 @@ namespace Zip
 
 				case WriteState::FileData:
 					nbWrittenBytes = writeFileData(buffer, bufferSize);
+					break;
+
+				case WriteState::DataDescriptor:
+					nbWrittenBytes = writeDataDescriptor(buffer, bufferSize);
 					break;
 
 				case WriteState::CentralDirectoryHeader:
@@ -279,8 +226,6 @@ namespace Zip
 				case WriteState::Complete:
 					break;
 			}
-
-			LMS_LOG(UI, DEBUG) << "nbWrittenBytes = " << nbWrittenBytes;
 
 			buffer += nbWrittenBytes;
 			bufferSize -= nbWrittenBytes;
@@ -311,21 +256,15 @@ namespace Zip
 			return 0;
 		}
 
-		LMS_LOG(UTILS, INFO) << "writeLocalFileHeader. crc = " << _currentFile->second.fileCrc32;
 		LocalFileHeader header {buffer, bufferSize};
 
 		header.setSignature();
 		header.setVersionNeededToExtract(1, 0);
-		header.setGeneralPurposeFlags(ZipHeader::GeneralPurposeFlag::LanguageEncoding);
-		header.setCrc32UncompressedData(_currentFile->second.fileCrc32);
-		switch (_compMethod)
-		{
-			case CompressionMethod::NoCompression:
-				header.setCompressionMethod(ZipHeader::CompressionMethod::NoCompression);
-				header.setCompressedSize(_currentFile->second.fileSize);
-				header.setUncompressedSize(_currentFile->second.fileSize);
-				break;
-		}
+		header.setGeneralPurposeFlags(ZipHeader::GeneralPurposeFlag::LanguageEncoding | ZipHeader::GeneralPurposeFlag::UseDataDescriptor);
+		header.setCompressionMethod(ZipHeader::CompressionMethod::NoCompression);
+		header.setCrc32UncompressedData(ZipHeader::UnknownCrc32);
+		header.setCompressedSize(ZipHeader::UnknownFileSize);
+		header.setUncompressedSize(ZipHeader::UnknownFileSize);
 		header.setLastModifiedDateTime(); // getLastWriteTime(*_currentFile));
 		header.setFileNameLength(_currentFile->first.size());
 		header.setExtraFieldLength(0);
@@ -339,6 +278,8 @@ namespace Zip
 	std::size_t
 	Zipper::writeLocalFileHeaderFileName(std::byte* buffer, std::size_t bufferSize)
 	{
+		assert(_currentFile != std::end(_files));
+
 		const std::string& fileName {_currentFile->first};
 
 		assert(_currentOffset <= fileName.size());
@@ -349,10 +290,7 @@ namespace Zip
 			return 0;
 		}
 
-		LMS_LOG(UTILS, INFO) << "writeLocalFileHeaderFileName";
-
 		const std::size_t nbBytesToCopy {std::min<std::size_t>(fileName.size() - _currentOffset, bufferSize)};
-		LMS_LOG(UTILS, INFO) << "\tnbBytesToCopy = " << nbBytesToCopy;
 
 		std::copy(std::next(std::begin(fileName), _currentOffset), std::next(std::begin(fileName), nbBytesToCopy), reinterpret_cast<unsigned char*>(buffer));
 
@@ -363,12 +301,12 @@ namespace Zip
 	std::size_t
 	Zipper::writeFileData(std::byte* buffer, std::size_t bufferSize)
 	{
+		assert(_currentFile != std::end(_files));
+
 		if (_currentOffset == _currentFile->second.fileSize)
 		{
 			_currentOffset = 0;
-			++_currentFile;
-			_writeState = WriteState::LocalFileHeader;
-
+			_writeState = WriteState::DataDescriptor;
 			return 0;
 		}
 
@@ -391,11 +329,30 @@ namespace Zip
 		ifs.read(reinterpret_cast<char*>(buffer), nbBytesToRead );
 		const ::uint64_t actualReadSize {static_cast<::uint64_t>(ifs.gcount())};
 
-		LMS_LOG(UTILS, INFO) << "writeFileData: to read = " << nbBytesToRead << ", actually read = " << actualReadSize;
-
+		_currentFile->second.fileCrc32.processBytes(buffer, actualReadSize);
 		_currentOffset += actualReadSize;
 
 		return actualReadSize;
+	}
+
+	std::size_t
+	Zipper::writeDataDescriptor(std::byte* buffer, std::size_t bufferSize)
+	{
+		assert(bufferSize >= minOutputBufferSize);
+		static_assert(DataDescriptor::getHeaderSize() <= minOutputBufferSize);
+
+		assert(_currentFile != std::end(_files));
+
+		DataDescriptor desc {buffer, bufferSize};
+		desc.setSignature();
+		desc.setCrc32UncompressedData(_currentFile->second.fileCrc32.getResult());
+		desc.setCompressedSize(_currentFile->second.fileSize);
+		desc.setUncompressedSize(_currentFile->second.fileSize);
+
+		++_currentFile;
+		_writeState = WriteState::LocalFileHeader;
+
+		return desc.getHeaderSize();
 	}
 
 	std::size_t
@@ -405,10 +362,7 @@ namespace Zip
 		static_assert(CentralDirectoryHeader::getHeaderSize() <= minOutputBufferSize);
 
 		if (_currentFile == std::begin(_files))
-		{
-			LMS_LOG(UI, INFO) << "First record! _currentZipOffset = " << _currentZipOffset;
 			_centralDirectoryOffset = _currentZipOffset;
-		}
 
 		if (_currentFile == std::end(_files))
 		{
@@ -417,23 +371,16 @@ namespace Zip
 			return 0;
 		}
 
-		LMS_LOG(UTILS, INFO) << "writeCentralDirectoryHeader. Relative offset = " << _currentFile->second.localFileHeaderOffset << ", crc = " << std::hex << _currentFile->second.fileCrc32;
-
 		CentralDirectoryHeader header {buffer, bufferSize};
 		header.setSignature();
 		header.setVersionMadeBy(2, 0);
 		header.setVersionNeededToExtract(1, 0);
-		header.setGeneralPurposeFlags(ZipHeader::GeneralPurposeFlag::LanguageEncoding);
-		switch (_compMethod)
-		{
-			case CompressionMethod::NoCompression:
-				header.setCompressionMethod(ZipHeader::CompressionMethod::NoCompression);
-				header.setCompressedSize(_currentFile->second.fileSize);
-				header.setUncompressedSize(_currentFile->second.fileSize);
-				break;
-		}
+		header.setGeneralPurposeFlags(ZipHeader::GeneralPurposeFlag::LanguageEncoding | ZipHeader::GeneralPurposeFlag::UseDataDescriptor);
+		header.setCompressionMethod(ZipHeader::CompressionMethod::NoCompression);
+		header.setCompressedSize(_currentFile->second.fileSize);
+		header.setUncompressedSize(_currentFile->second.fileSize);
 		header.setLastModifiedDateTime(); // getLastWriteTime(*_currentFile));
-		header.setCrc32UncompressedData(_currentFile->second.fileCrc32);
+		header.setCrc32UncompressedData(_currentFile->second.fileCrc32.getResult());
 		header.setFileNameLength(_currentFile->first.size());
 		header.setExtraFieldLength(0);
 		header.setFileCommentLength(0);
@@ -463,7 +410,6 @@ namespace Zip
 			return 0;
 		}
 
-		LMS_LOG(UTILS, INFO) << "writeCentralDirectoryHeaderFileName";
 		const std::size_t nbBytesToCopy {std::min<std::size_t>(fileName.size() - _currentOffset, bufferSize)};
 
 		std::copy(std::next(std::begin(fileName), _currentOffset), std::next(std::begin(fileName), nbBytesToCopy), reinterpret_cast<unsigned char*>(buffer));
@@ -481,8 +427,6 @@ namespace Zip
 		static_assert(EndOfCentralDirectoryRecord::getHeaderSize() <= minOutputBufferSize);
 
 		EndOfCentralDirectoryRecord record {buffer, bufferSize};
-
-		LMS_LOG(UTILS, DEBUG) << "Writing EOR. nb records = " << _files.size() << ", offset = " << _centralDirectoryOffset << ", size = " << _centralDirectorySize;
 
 		record.setSignature();
 		record.setDiskNumber(0);
