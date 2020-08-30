@@ -136,8 +136,6 @@ getTrackPathName(Database::Track::pointer track)
 
 	fileName << StringUtils::replaceInString(track->getName(), "/", "_") << track->getPath().filename().extension().string();
 
-	LOG(DEBUG) << "Forged filename = '" << fileName.str() << "'";
-
 	return fileName.str();
 }
 
