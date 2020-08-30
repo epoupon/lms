@@ -40,7 +40,10 @@ int main(int argc, char* argv[])
 
 	std::map<std::string, std::filesystem::path> files;
 	for (int i {2}; i < argc; ++i)
-		files.emplace(argv[i], argv[i]);
+	{
+		std::filesystem::path path {argv[i]};
+		files.emplace(path.relative_path(), path);
+	}
 
 
 	std::cout << "Compressing " << files.size() << " files..." << std::endl;
@@ -58,12 +61,10 @@ int main(int argc, char* argv[])
 
 	while (!zipper.isComplete())
 	{
-		std::array<std::byte, 1000000> buffer;
+		//std::array<std::byte, Zipper::minOutputBufferSize> buffer;
+		std::array<std::byte, 65536> buffer;
 
-		std::cout << "Call" << std::endl;
 		std::size_t nbWrittenBytes {zipper.writeSome(buffer.data(), buffer.size())};
-		std::cout << "nbWrittenBytes = " << nbWrittenBytes << std::endl;
-
 		ofs.write(reinterpret_cast<const char*>(buffer.data()), nbWrittenBytes);
 	}
 

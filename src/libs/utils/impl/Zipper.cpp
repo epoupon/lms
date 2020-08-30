@@ -292,7 +292,7 @@ namespace Zip
 
 		const std::size_t nbBytesToCopy {std::min<std::size_t>(fileName.size() - _currentOffset, bufferSize)};
 
-		std::copy(std::next(std::begin(fileName), _currentOffset), std::next(std::begin(fileName), nbBytesToCopy), reinterpret_cast<unsigned char*>(buffer));
+		std::copy(std::next(std::begin(fileName), _currentOffset), std::next(std::begin(fileName), _currentOffset + nbBytesToCopy), reinterpret_cast<unsigned char*>(buffer));
 
 		_currentOffset += nbBytesToCopy;
 		return nbBytesToCopy;
@@ -412,7 +412,7 @@ namespace Zip
 
 		const std::size_t nbBytesToCopy {std::min<std::size_t>(fileName.size() - _currentOffset, bufferSize)};
 
-		std::copy(std::next(std::begin(fileName), _currentOffset), std::next(std::begin(fileName), nbBytesToCopy), reinterpret_cast<unsigned char*>(buffer));
+		std::copy(std::next(std::begin(fileName), _currentOffset), std::next(std::begin(fileName), _currentOffset + nbBytesToCopy), reinterpret_cast<unsigned char*>(buffer));
 
 		_currentOffset += nbBytesToCopy;
 		_centralDirectorySize += nbBytesToCopy;
