@@ -57,15 +57,25 @@ int main(int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
 
-	Zipper zipper {files};
-
-	while (!zipper.isComplete())
+	try
 	{
-		//std::array<std::byte, Zipper::minOutputBufferSize> buffer;
-		std::array<std::byte, 65536> buffer;
+		Zipper zipper {files};
 
-		std::size_t nbWrittenBytes {zipper.writeSome(buffer.data(), buffer.size())};
-		ofs.write(reinterpret_cast<const char*>(buffer.data()), nbWrittenBytes);
+		while (!zipper.isComplete())
+		{
+			//std::array<std::byte, Zipper::minOutputBufferSize> buffer;
+			std::array<std::byte, 65536> buffer;
+
+			std::size_t nbWrittenBytes {zipper.writeSome(buffer.data(), buffer.size())};
+			ofs.write(reinterpret_cast<const char*>(buffer.data()), nbWrittenBytes);
+		}
+
+		std::cout << "Total zip size = " << zipper.getTotalZipFile() << std::endl;
+	}
+	catch (const ZipperException& e)
+	{
+		std::cerr << "Caught Zipper exception: " << e.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 
 	return EXIT_SUCCESS;

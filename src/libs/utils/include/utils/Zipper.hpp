@@ -39,11 +39,15 @@ namespace Zip
 	{
 		public:
 
+			using SizeZype = std::uint64_t;
+
 			Zipper(const std::map<std::string, std::filesystem::path>& files);
 
 			static constexpr std::size_t minOutputBufferSize = 64;
 			std::size_t writeSome(std::byte* buffer, std::size_t bufferSize);
 			bool isComplete() const;
+
+			SizeZype getTotalZipFile() const { return _totalZipSize; }
 
 		private:
 			void setComplete();
@@ -79,6 +83,7 @@ namespace Zip
 				Complete,
 			};
 
+			SizeZype _totalZipSize {};
 			WriteState _writeState {WriteState::LocalFileHeader};
 			FileContainer::iterator _currentFile;
 			std::size_t _currentOffset {};

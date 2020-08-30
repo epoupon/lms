@@ -176,7 +176,21 @@ namespace Zip
 				throw ZipperException {"Cannot get file size for '" + filePath.string() + "': " + ec.message()};
 
 			_files[filename] = std::move(fileContext);
+
+			_totalZipSize += LocalFileHeader::getHeaderSize();
+			_totalZipSize += filename.size();
+			if (fileContext.fileSize > 0)
+			{
+				_totalZipSize += fileContext.fileSize;
+				_totalZipSize += DataDescriptor::getHeaderSize();
+				_totalZipSize += CentralDirectoryHeader::getHeaderSize();
+				_totalZipSize += filename.size();
+			}
 		}
+
+		_totalZipSize += EndOfCentralDirectoryRecord::getHeaderSize();
+		if (_totalZipSize > UINT32_MAX)
+			throw ZipperException {"Cannot create a zip file which is larger than " + std::to_string(UINT32_MAX) + " bytes!"};
 
 		_currentFile = std::begin(_files);
 	}
