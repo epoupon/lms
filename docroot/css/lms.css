@@ -362,6 +362,10 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	background-color: var(--slider-background-color);
 }
 
+.Lms-player-progress .progress-bar {
+	transition: none;
+}
+
 .Lms-player-seek {
 	cursor: pointer;
 	z-index: 1;

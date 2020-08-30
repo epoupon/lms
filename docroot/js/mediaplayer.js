@@ -31,12 +31,10 @@ LMS.mediaplayer = function () {
 		if (_elems.audio.paused) {
 			_elems.playpause.classList.remove("fa-pause");
 			_elems.playpause.classList.add("fa-play");
-			_elems.progress.classList.remove("active");
 		}
 		else {
 			_elems.playpause.classList.remove("fa-play");
 			_elems.playpause.classList.add("fa-pause");
-			_elems.progress.classList.add("active");
 		}
 	}
 
