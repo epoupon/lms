@@ -171,6 +171,7 @@ int main(int argc, char* argv[])
 		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0])};
 		coverArtService->setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
 		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
+		recommendationEngineService->requestLoad();
 		Service<Scanner::IMediaScanner> mediaScannerService {Scanner::createMediaScanner(database)};
 
 		mediaScannerService->scanComplete().connect([&]()

@@ -40,8 +40,7 @@ namespace Recommendation
 		public:
 			virtual ~IEngine() = default;
 
-			virtual void start() = 0;
-			virtual void stop() = 0;
+			virtual void requestLoad() = 0;
 
 			virtual void requestReload() = 0;
 			virtual Wt::Signal<>& reloaded() = 0;

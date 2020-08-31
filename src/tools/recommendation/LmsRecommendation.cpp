@@ -22,6 +22,8 @@
 #include <stdexcept>
 #include <stdlib.h>
 
+#include <boost/program_options.hpp>
+
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -130,14 +132,30 @@ int main(int argc, char *argv[])
 {
 	try
 	{
+		namespace po = boost::program_options;
+
 		// log to stdout
 		Service<Logger> logger {std::make_unique<StreamLogger>(std::cout)};
 
-		std::filesystem::path configFilePath {"/etc/lms.conf"};
-		if (argc >= 2)
-			configFilePath = std::string(argv[1], 0, 256);
+		po::options_description desc{"Allowed options"};
+        desc.add_options()
+        ("help,h", "print usage message")
+		("conf,c", po::value<std::string>()->default_value("/etc/lms.conf"), "LMS config file")
+        ("artists,a", "Display recommendation for artists")
+        ("releases,r", "Display recommendation for releases")
+        ("tracks,t", "Display recommendation for tracks")
+        ;
 
-		Service<IConfig> config {createConfig(configFilePath)};
+        po::variables_map vm;
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+
+        if (vm.count("help"))
+		{
+			std::cout << desc << std::endl;
+            return EXIT_SUCCESS;
+        }
+
+		Service<IConfig> config {createConfig(vm["conf"].as<std::string>())};
 
 		Database::Db db {config->getPath("working-dir") / "lms.db"};
 		Database::Session session {db};
@@ -153,17 +171,20 @@ int main(int argc, char *argv[])
 			sem.notify();
 		});
 
-		engine->start();
+		engine->requestLoad();
 
 		std::cout << "Waiting for the recommendation engine to be loaded..." << std::endl;
 		sem.wait();
 		std::cout << "Recommendation engine loaded!" << std::endl;
 
-		dumpTracksRecommendation(db, *engine);
-		dumpReleasesRecommendation(db, *engine);
-		dumpArtistsRecommendation(db, *engine);
+		if (vm.count("tracks"))
+			dumpTracksRecommendation(db, *engine);
 
-		engine->stop();
+		if (vm.count("releases"))
+			dumpReleasesRecommendation(db, *engine);
+
+		if (vm.count("artists"))
+		dumpArtistsRecommendation(db, *engine);
 	}
 	catch( std::exception& e)
 	{
