@@ -5,8 +5,8 @@
 	${contents class="Lms-explore-contents"}
 </message>
 
-<message id="Lms.Explore.template.more-btn"><i class="fa fa-plus-circle Lms-explore-btn Lms-control-btn"></i></message>
-<message id="Lms.Explore.template.play-btn"><i class="fa fa-play-circle Lms-explore-btn Lms-control-btn"></i></message>
+<message id="Lms.Explore.template.more-btn"><i class="fa fa-plus-circle Lms-explore-btn Lms-btn"></i></message>
+<message id="Lms.Explore.template.play-btn"><i class="fa fa-play-circle Lms-explore-btn Lms-btn"></i></message>
 
 <message id="Lms.Explore.template.filters">
 	${add-filter class="btn-sm btn-info"} ${clusters class="Lms-explore-clusters"}

@@ -21,8 +21,8 @@
 				${cover}
 			</div>
 			<div class="Lms-explore-entry-grid-text-container">
-				<h5>${release-name class="Lms-releasename text-primary"}</h5>
-				<div class="Lms-explore-entry-separator"><h6>${<if-has-year>}<small><span class="text-muted">${year}</span></small>${</if-has-year>}${<if-has-artist>}${artist-name class="Lms-artistname text-muted"}${</if-has-artist>}</h6></div>
+				<h5>${release-name class="Lms-btn Lms-releasename text-primary"}</h5>
+				<div class="Lms-explore-entry-separator"><h6>${<if-has-year>}<small><span class="text-muted">${year}</span></small>${</if-has-year>}${<if-has-artist>}${artist-name class="Lms-btn Lms-artistname text-muted"}${</if-has-artist>}</h6></div>
 			</div>
 		</div>
 	</div>

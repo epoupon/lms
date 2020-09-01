@@ -14,7 +14,7 @@
 		<div class="col-md-8">
 			<div class="Lms-header">
 				<h3><div class="Lms-releasename text-primary">${name}</div></h3>
-				${<if-has-artist>}<h4>${artist class="Lms-artistname text-muted"}</h4>${</if-has-artist>}
+				${<if-has-artist>}<h4>${artist class="Lms-btn Lms-artistname text-muted"}</h4>${</if-has-artist>}
 				<div class="text-muted"><small>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</small></div>
 				${clusters}
 				${play-btn}${more-btn}
@@ -45,7 +45,7 @@
 		<div class="col-xs-12 col-md-4">
 			<div class="well well-sm">
 				<h3>${tr:Lms.Explore.links}</h3>
-				${mbid-link class="text-muted"}
+				${mbid-link class="Lms-btn text-muted"}
 			</div>
 		</div>
 		${</if-has-mbid>}

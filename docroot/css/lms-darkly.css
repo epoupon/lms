@@ -19,10 +19,6 @@ a.Lms-artistname.text-primary:hover {
 	color: var(--hover-color)
 }
 
-.Lms-control-btn {
-	color: var(--body-color)
-}
-
 .Lms-releasename.text-primary, .Lms-releasename.text-primary:hover {
 	color: var(--body-color)
 }
