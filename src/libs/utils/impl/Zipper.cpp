@@ -22,6 +22,9 @@
 #include <cstddef>
 #include <fstream>
 
+#include <Wt/WDate.h>
+#include <Wt/WTime.h>
+
 #include "utils/Path.hpp"
 
 // Done using specs from https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
@@ -56,6 +59,7 @@ namespace Zip
 			void write8(std::size_t offset, std::uint8_t value);
 			void write16(std::size_t offset, std::uint16_t value);
 			void write32(std::size_t offset, std::uint32_t value);
+			void writeDateTime(std::size_t offset, const Wt::WDateTime& time);
 
 		private:
 			std::byte*	_buffer {};
@@ -84,6 +88,24 @@ namespace Zip
 		_buffer[offset + 3] = static_cast<std::byte>(value >> 24);
 	}
 
+	void
+	ZipHeader::writeDateTime(std::size_t offset, const Wt::WDateTime& dateTime)
+	{
+		std::uint32_t encodedDateTime{};
+
+		// Date
+		encodedDateTime |= ((dateTime.date().year() - 1980) << 25);
+		encodedDateTime |= (dateTime.date().month() << 21);
+		encodedDateTime |= (dateTime.date().day() << 16);
+
+		// Time
+		encodedDateTime |= (dateTime.time().hour() << 11);
+		encodedDateTime |= (dateTime.time().minute() << 5);
+		encodedDateTime |= (dateTime.time().second() << 1);
+
+		write32(offset, encodedDateTime);
+	}
+
 	class LocalFileHeader : public ZipHeader
 	{
 		public:
@@ -94,11 +116,7 @@ namespace Zip
 			void setVersionNeededToExtract(unsigned major, unsigned minor) { assert(minor < 10); write16(4, major*10 + minor); }
 			void setGeneralPurposeFlags(std::uint16_t flags) { write16(6, flags); }
 			void setCompressionMethod(CompressionMethod compressionMethod) { write16(8, compressionMethod); }
-			void setLastModifiedDateTime()
-			{ // TODO
-				write16(10, 0); // time
-				write16(12, 0); // date
-			}
+			void setLastModifiedDateTime(const Wt::WDateTime& dateTime) { writeDateTime(10, dateTime); }
 			void setCrc32UncompressedData(std::uint32_t crc) { write32(14, crc); }
 			void setCompressedSize(std::size_t size) { write32(18, size); }
 			void setUncompressedSize(std::size_t size) { write32(22, size); }
@@ -129,11 +147,7 @@ namespace Zip
 			void setVersionNeededToExtract(unsigned major, unsigned minor) { assert(minor < 10); write16(6, major*10 + minor); }
 			void setGeneralPurposeFlags(std::uint16_t flags) { write16(8, flags); }
 			void setCompressionMethod(CompressionMethod method) { write16(10, method); }
-			void setLastModifiedDateTime()
-			{
-				write16(12, 0); // time
-				write16(14, 0); // date
-			}
+			void setLastModifiedDateTime(const Wt::WDateTime& dateTime) { writeDateTime(12, dateTime); }
 			void setCrc32UncompressedData(std::uint32_t crc32) { write32(16, crc32); }
 			void setCompressedSize(std::size_t size) { write32(20, size); }
 			void setUncompressedSize(std::size_t size) { write32(24, size); }
@@ -163,7 +177,7 @@ namespace Zip
 			static constexpr std::size_t getHeaderSize() { return 22; }
 	};
 
-	Zipper::Zipper(const std::map<std::string, std::filesystem::path>& files)
+	Zipper::Zipper(const std::map<std::string, std::filesystem::path>& files, const Wt::WDateTime& lastModifiedTime)
 	{
 		for (const auto& [filename, filePath] : files)
 		{
@@ -174,6 +188,11 @@ namespace Zip
 			fileContext.fileSize = std::filesystem::file_size(filePath, ec);
 			if (ec)
 				throw ZipperException {"Cannot get file size for '" + filePath.string() + "': " + ec.message()};
+
+			if (lastModifiedTime.isValid())
+				fileContext.lastModifiedTime = lastModifiedTime;
+			else
+				fileContext.lastModifiedTime = getLastWriteTime(filePath);
 
 			_files[filename] = std::move(fileContext);
 
@@ -279,7 +298,7 @@ namespace Zip
 		header.setCrc32UncompressedData(ZipHeader::UnknownCrc32);
 		header.setCompressedSize(ZipHeader::UnknownFileSize);
 		header.setUncompressedSize(ZipHeader::UnknownFileSize);
-		header.setLastModifiedDateTime(); // getLastWriteTime(*_currentFile));
+		header.setLastModifiedDateTime(_currentFile->second.lastModifiedTime);
 		header.setFileNameLength(_currentFile->first.size());
 		header.setExtraFieldLength(0);
 
@@ -393,7 +412,7 @@ namespace Zip
 		header.setCompressionMethod(ZipHeader::CompressionMethod::NoCompression);
 		header.setCompressedSize(_currentFile->second.fileSize);
 		header.setUncompressedSize(_currentFile->second.fileSize);
-		header.setLastModifiedDateTime(); // getLastWriteTime(*_currentFile));
+		header.setLastModifiedDateTime(_currentFile->second.lastModifiedTime);
 		header.setCrc32UncompressedData(_currentFile->second.fileCrc32.getResult());
 		header.setFileNameLength(_currentFile->first.size());
 		header.setExtraFieldLength(0);

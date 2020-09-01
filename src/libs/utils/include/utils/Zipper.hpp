@@ -23,6 +23,8 @@
 #include <set>
 #include <filesystem>
 
+#include <Wt/WDateTime.h>
+
 #include "Exception.hpp"
 #include "utils/Crc32Calculator.hpp"
 
@@ -41,7 +43,7 @@ namespace Zip
 
 			using SizeZype = std::uint64_t;
 
-			Zipper(const std::map<std::string, std::filesystem::path>& files);
+			Zipper(const std::map<std::string, std::filesystem::path>& files, const Wt::WDateTime& lastModifiedTime = {});
 
 			static constexpr std::size_t minOutputBufferSize = 64;
 			std::size_t writeSome(std::byte* buffer, std::size_t bufferSize);
@@ -64,6 +66,7 @@ namespace Zip
 			{
 				std::filesystem::path filePath;
 				std::size_t fileSize;
+				Wt::WDateTime lastModifiedTime;
 				Utils::Crc32Calculator fileCrc32;
 				std::size_t localFileHeaderOffset {};
 			};
