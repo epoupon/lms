@@ -78,7 +78,7 @@
 </message>
 
 <message id="Lms.Explore.Release.template.entry-artist">
-	<small>${artist class="Lms-artistname text-muted"}</small>
+	<small>${artist class="Lms-btn Lms-artistname text-muted"}</small>
 </message>
 
 </messages>
