@@ -71,7 +71,7 @@ Artist::refreshView()
 
 	const auto artistId {StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/artist/"))};
 	if (!artistId)
-		return;
+		throw ArtistNotFoundException {*artistId};
 
 	const std::vector<Database::IdType> similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(LmsApp->getDbSession(), *artistId, 5)};
 

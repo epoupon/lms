@@ -74,7 +74,7 @@ Release::refreshView()
 
 	const auto releaseId {StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/release/"))};
 	if (!releaseId)
-		return;
+		throw ReleaseNotFoundException {*releaseId};
 
 	const std::vector<Database::IdType> similarReleasesIds {Service<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 6)};
 

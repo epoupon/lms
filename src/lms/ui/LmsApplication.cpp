@@ -326,7 +326,7 @@ LmsApplication::handleException(LmsApplicationException& e)
 	Wt::WPushButton* btn {t->bindNew<Wt::WPushButton>("btn-go-home", Wt::WString::tr("Lms.Error.go-home"))};
 	btn->clicked().connect([this]()
 	{
-		redirect(".");
+		redirect(defaultPath);
 	});
 }
 
