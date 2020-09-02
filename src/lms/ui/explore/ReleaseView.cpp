@@ -32,6 +32,7 @@
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
+#include "resource/DownloadResource.hpp"
 #include "resource/ImageResource.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
@@ -247,6 +248,8 @@ Release::refreshView()
 				{
 					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
 				});
+			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
+				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
 
 			popup->popup(moreBtn);
 		});

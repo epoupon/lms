@@ -27,6 +27,7 @@
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
+#include "resource/DownloadResource.hpp"
 #include "resource/ImageResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
@@ -103,6 +104,8 @@ namespace UserInterface::TrackListHelpers
 				{
 					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
 				});
+			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
+				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
 
 			popup->popup(moreBtn);
 		});

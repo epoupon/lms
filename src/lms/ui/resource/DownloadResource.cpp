@@ -168,6 +168,32 @@ createZipper(const std::vector<Database::Track::pointer>& tracks)
 	return std::make_unique<Zip::Zipper>(files, Wt::WLocalDateTime::currentDateTime().toUTC());
 }
 
+DownloadArtistResource::DownloadArtistResource(Database::IdType artistId)
+: _artistId {artistId}
+{
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), artistId)};
+	if (artist)
+		suggestFileName(getArtistPathName(artist) + ".zip");
+}
+
+std::unique_ptr<Zip::Zipper>
+DownloadArtistResource::createZipper()
+{
+	Wt::WApplication::UpdateLock lock {LmsApp}; // DbSession are not thread safe
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), _artistId)};
+	if (!artist)
+	{
+		LOG(DEBUG) << "Cannot find artist";
+		return {};
+	}
+
+	return UserInterface::createZipper(artist->getTracks());
+}
+
 DownloadReleaseResource::DownloadReleaseResource(Database::IdType releaseId)
 : _releaseId {releaseId}
 {
@@ -195,30 +221,30 @@ DownloadReleaseResource::createZipper()
 	return UserInterface::createZipper(release->getTracks());
 }
 
-DownloadArtistResource::DownloadArtistResource(Database::IdType artistId)
-: _artistId {artistId}
+DownloadTrackResource::DownloadTrackResource(Database::IdType trackId)
+: _trackId {trackId}
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), artistId)};
-	if (artist)
-		suggestFileName(getArtistPathName(artist) + ".zip");
+	Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+	if (track)
+		suggestFileName(getTrackPathName(track) + ".zip");
 }
 
 std::unique_ptr<Zip::Zipper>
-DownloadArtistResource::createZipper()
+DownloadTrackResource::createZipper()
 {
 	Wt::WApplication::UpdateLock lock {LmsApp}; // DbSession are not thread safe
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), _artistId)};
-	if (!artist)
+	const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), _trackId)};
+	if (!track)
 	{
-		LOG(DEBUG) << "Cannot find artist";
+		LOG(DEBUG) << "Cannot find track";
 		return {};
 	}
 
-	return UserInterface::createZipper(artist->getTracks());
+	return UserInterface::createZipper({track});
 }
 
 } // namespace UserInterface

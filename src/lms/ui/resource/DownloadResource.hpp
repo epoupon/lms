@@ -40,6 +40,16 @@ class DownloadResource : public Wt::WResource
 		virtual std::unique_ptr<Zip::Zipper> createZipper() = 0;
 };
 
+class DownloadArtistResource : public DownloadResource
+{
+	public:
+		DownloadArtistResource(Database::IdType artistId);
+
+	private:
+		std::unique_ptr<Zip::Zipper> createZipper() override;
+		Database::IdType _artistId;
+};
+
 class DownloadReleaseResource : public DownloadResource
 {
 	public:
@@ -50,14 +60,14 @@ class DownloadReleaseResource : public DownloadResource
 		Database::IdType _releaseId;
 };
 
-class DownloadArtistResource : public DownloadResource
+class DownloadTrackResource : public DownloadResource
 {
 	public:
-		DownloadArtistResource(Database::IdType artistId);
+		DownloadTrackResource(Database::IdType trackId);
 
 	private:
 		std::unique_ptr<Zip::Zipper> createZipper() override;
-		Database::IdType _artistId;
+		Database::IdType _trackId;
 };
 
 } // namespace UserInterface
