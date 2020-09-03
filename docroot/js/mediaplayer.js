@@ -238,7 +238,10 @@ LMS.mediaplayer = function () {
 		document.addEventListener("keydown", function(event) {
 			let handled = false;
 
-			if (event.keyCode == 32 && !(event.target instanceof HTMLInputElement)) {
+			if (event.target instanceof HTMLInputElement)
+				return;
+
+			if (event.keyCode == 32) {
 				_playPause();
 				handled = true;
 			}
