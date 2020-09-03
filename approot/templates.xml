@@ -18,10 +18,10 @@
 			</div>
 			<div class="collapse navbar-collapse">
 				<ul class="nav navbar-nav">
-					<li>${artists class="Lms-btn"}</li>
-					<li>${releases class="Lms-btn"}</li>
-					<li>${tracks class="Lms-btn"}</li>
-					<li>${playqueue class="Lms-btn"}</li>
+					<li class="${artists-active}">${artists class="Lms-btn"}</li>
+					<li class="${releases-active}">${releases class="Lms-btn"}</li>
+					<li class="${tracks-active}">${tracks class="Lms-btn"}</li>
+					<li class="${playqueue-active}">${playqueue class="Lms-btn"}</li>
 				</ul>
 				<div class="navbar-form navbar-left">
 					${filters class="form-group Lms-clusters-control"}

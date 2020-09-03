@@ -4,7 +4,6 @@
 
 <message id="Lms.Explore.Artists.template">
 	<div class="Lms-header">
-		<h2>${tr:Lms.Explore.artists}</h2>
 		${mode class="nav nav-pills Lms-explore-mode-container"}
 		<div class="row">
 			<div class="col-sm-2">

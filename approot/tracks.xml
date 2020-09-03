@@ -7,7 +7,6 @@
 	<div class="row">
 		<div class="col-lg-8">
 			<div class="Lms-header">
-				<h2>${tr:Lms.Explore.tracks}</h2>
 				${mode class="nav nav-pills Lms-explore-mode-container"}
 				${play-btn}${more-btn}
 			</div>

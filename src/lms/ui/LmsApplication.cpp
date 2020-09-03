@@ -347,8 +347,9 @@ enum IdxRoot
 	IdxAdminUser,
 };
 
-static void
-handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
+static
+void
+handlePathChange(Wt::WTemplate& main, Wt::WStackedWidget& stack, bool isAdmin)
 {
 	static const struct
 	{
@@ -372,6 +373,11 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
 
+	main.bindString("artists-active", wApp->internalPathMatches("/artists") ? "active" : "");
+	main.bindString("releases-active", wApp->internalPathMatches("/releases") ? "active" : "");
+	main.bindString("tracks-active", wApp->internalPathMatches("/tracks") ? "active" : "");
+	main.bindString("playqueue-active", wApp->internalPathMatches("/playqueue") ? "active" : "");
+
 	for (const auto& view : views)
 	{
 		if (wApp->internalPathMatches(view.path))
@@ -379,7 +385,7 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 			if (view.admin && !isAdmin)
 				break;
 
-			stack->setCurrentIndex(view.index);
+			stack.setCurrentIndex(view.index);
 			return;
 		}
 	}
@@ -597,10 +603,10 @@ LmsApplication::createHome()
 
 	internalPathChanged().connect([=]
 	{
-		handlePathChange(mainStack, isUserAdmin());
+		handlePathChange(*main, *mainStack, isUserAdmin());
 	});
 
-	handlePathChange(mainStack, isUserAdmin());
+	handlePathChange(*main, *mainStack, isUserAdmin());
 }
 
 void
