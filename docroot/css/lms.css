@@ -274,6 +274,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	max-width: 175px;
 	padding-top: 7.5px;
 	padding-bottom: 7.5px;
+	margin-right: 8px;
 }
 
 .Lms-playqueue-btn {
