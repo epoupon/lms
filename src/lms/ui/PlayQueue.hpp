@@ -65,7 +65,7 @@ class PlayQueue : public Wt::WTemplate
 		void clearTracks();
 		std::size_t enqueueTracks(const std::vector<Database::IdType>& trackIds);
 		void addSome();
-		void enqueueRadioTrack();
+		void enqueueRadioTracks();
 		void updateInfo();
 		void updateCurrentTrack(bool selected);
 		void updateRepeatBtn();
