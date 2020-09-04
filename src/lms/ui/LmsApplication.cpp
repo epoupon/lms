@@ -349,7 +349,7 @@ enum IdxRoot
 
 static
 void
-handlePathChange(Wt::WTemplate& main, Wt::WStackedWidget& stack, bool isAdmin)
+handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 {
 	static const struct
 	{
@@ -372,11 +372,6 @@ handlePathChange(Wt::WTemplate& main, Wt::WStackedWidget& stack, bool isAdmin)
 	};
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
-
-	main.bindString("artists-active", wApp->internalPathMatches("/artists") ? "active" : "");
-	main.bindString("releases-active", wApp->internalPathMatches("/releases") ? "active" : "");
-	main.bindString("tracks-active", wApp->internalPathMatches("/tracks") ? "active" : "");
-	main.bindString("playqueue-active", wApp->internalPathMatches("/playqueue") ? "active" : "");
 
 	for (const auto& view : views)
 	{
@@ -442,6 +437,11 @@ LmsApplication::createHome()
 
 	declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
 	doJavaScript("$('body').tooltip({ selector: '[data-toggle=\"tooltip\"]'})");
+	doJavaScript(R"(
+$(".navbar-nav a").on("click", function(){
+   $(".navbar-nav").find(".active").removeClass("active");
+   $(this).parent().addClass("active");
+});)");
 
 	Wt::WTemplate* main {root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.template")))};
 
@@ -603,10 +603,10 @@ LmsApplication::createHome()
 
 	internalPathChanged().connect([=]
 	{
-		handlePathChange(*main, *mainStack, isUserAdmin());
+		handlePathChange(*mainStack, isUserAdmin());
 	});
 
-	handlePathChange(*main, *mainStack, isUserAdmin());
+	handlePathChange(*mainStack, isUserAdmin());
 }
 
 void
