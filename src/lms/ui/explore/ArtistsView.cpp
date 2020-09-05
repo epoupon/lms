@@ -59,6 +59,7 @@ Artists::Artists(Filters* filters)
 		};
 
 		addItem(*menu, Wt::WString::tr("Lms.Explore.random"), Mode::Random);
+		addItem(*menu, Wt::WString::tr("Lms.Explore.starred"), Mode::Starred);
 		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-played"), Mode::RecentlyPlayed);
 		addItem(*menu, Wt::WString::tr("Lms.Explore.most-played"), Mode::MostPlayed);
 		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-added"), Mode::RecentlyAdded);
@@ -165,6 +166,15 @@ Artists::getArtists(std::optional<Range> range, bool& moreResults)
 	{
 		case Mode::Random:
 			artists = getRandomArtists(range, moreResults);
+			break;
+
+		case Mode::Starred:
+			artists = Artist::getStarred(LmsApp->getDbSession(),
+						LmsApp->getUser(),
+						_filters->getClusterIds(),
+						linkType,
+						Artist::SortMethod::BySortName,
+						range, moreResults);
 			break;
 
 		case Mode::RecentlyPlayed:

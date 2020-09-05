@@ -246,6 +246,46 @@ Release::getByYear(Session& session, int yearFrom, int yearTo, std::optional<std
 }
 
 std::vector<Release::pointer>
+Release::getStarred(Session& session,
+		User::pointer user,
+		const std::set<IdType>& clusterIds,
+		std::optional<Range> range,
+		bool& moreResults)
+{
+	session.checkSharedLocked();
+
+	auto query {createQuery<Release::pointer>(session, "SELECT r from release r", clusterIds, {})};
+	{
+		std::ostringstream oss;
+		oss << "r.id IN (SELECT DISTINCT r.id FROM release r"
+			" INNER JOIN user_release_starred urs ON urs.release_id = r.id"
+			" INNER JOIN user u ON u.id = urs.user_id WHERE u.id = ?)";
+
+		query.bind(user.id());
+		query.where(oss.str());
+	}
+
+	Wt::Dbo::collection<Release::pointer> collection = query
+		.groupBy("r.id")
+		.orderBy("r.name COLLATE NOCASE")
+		.offset(range ? static_cast<int>(range->offset) : -1)
+		.limit(range ? static_cast<int>(range->limit) + 1: -1);
+
+	auto res {std::vector<pointer>(collection.begin(), collection.end())};
+	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
+
+	return res;
+
+
+}
+
+std::vector<Release::pointer>
 Release::getByClusters(Session& session, const std::set<IdType>& clusters)
 {
 	assert(!clusters.empty());

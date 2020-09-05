@@ -81,6 +81,10 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static std::vector<pointer>	getAllWithMBIDAndMissingFeatures(Session& session);
 		static std::vector<IdType>	getAllIdsWithFeatures(Session& session, std::optional<std::size_t> limit = {});
 		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
+		static std::vector<pointer>	getStarred(Session& session,
+							Wt::Dbo::ptr<User> user,
+							const std::set<IdType>& clusters,
+							std::optional<Range> range, bool& hasMore);
 
 		// Create utility
 		static pointer	create(Session& session, const std::filesystem::path& p);

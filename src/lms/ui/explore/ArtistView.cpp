@@ -27,6 +27,7 @@
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
+#include "database/User.hpp"
 #include "recommendation/IEngine.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
@@ -131,6 +132,28 @@ Artist::refreshView()
 				{
 					artistsAction.emit(PlayQueueAction::PlayLast, {*artistId});
 				});
+
+			bool isStarred {};
+			{
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				if (auto artist {Database::Artist::getById(LmsApp->getDbSession(), *artistId)})
+					isStarred = LmsApp->getUser()->hasStarredArtist(artist);
+			}
+			popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
+				->triggered().connect(this, [=]
+					{
+						auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+						auto artist {Database::Artist::getById(LmsApp->getDbSession(), *artistId)};
+						if (!artist)
+							return;
+
+						if (isStarred)
+							LmsApp->getUser().modify()->unstarArtist(artist);
+						else
+							LmsApp->getUser().modify()->starArtist(artist);
+					});
 			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
 				->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(*artistId)});
 

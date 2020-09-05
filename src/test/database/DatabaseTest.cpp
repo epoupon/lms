@@ -1248,22 +1248,26 @@ void
 testSingleStarredArtist(Session& session)
 {
 	ScopedArtist artist {session, "MyArtist"};
+	ScopedTrack track {session, "MyTrack"};
 	ScopedUser user {session, "MyUser"};
 
 	{
 		auto transaction {session.createSharedTransaction()};
 
+		auto trackArtistLink {TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist)};
 		user.get().modify()->starArtist(artist.get());
 	}
 
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto artists {user->getStarredArtists()};
+		CHECK(user->hasStarredArtist(artist.get()));
+
+		bool hasMore {};
+		auto artists {Artist::getStarred(session, user.get(), {}, std::nullopt, Artist::SortMethod::BySortName, std::nullopt, hasMore)};
 		CHECK(artists.size() == 1);
 		CHECK(artists.front().id() == artist.getId());
-
-		CHECK(user->hasStarredArtist(artist.get()));
+		CHECK(hasMore == false);
 	}
 }
 
@@ -1272,22 +1276,26 @@ void
 testSingleStarredRelease(Session& session)
 {
 	ScopedRelease release {session, "MyRelease"};
+	ScopedTrack track {session, "MyTrack"};
 	ScopedUser user {session, "MyUser"};
 
 	{
 		auto transaction {session.createUniqueTransaction()};
 
+		track.get().modify()->setRelease(release.get());
 		user.get().modify()->starRelease(release.get());
 	}
 
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto releases {user->getStarredReleases()};
+		CHECK(user->hasStarredRelease(release.get()));
+
+		bool hasMore {};
+		auto releases {Release::getStarred(session, user.get(), {}, std::nullopt, hasMore)};
 		CHECK(releases.size() == 1);
 		CHECK(releases.front().id() == release.getId());
-
-		CHECK(user->hasStarredRelease(release.get()));
+		CHECK(hasMore == false);
 	}
 }
 
@@ -1307,11 +1315,13 @@ testSingleStarredTrack(Session& session)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto tracks {user->getStarredTracks()};
+		CHECK(user->hasStarredTrack(track.get()));
+
+		bool hasMore {};
+		auto tracks {Track::getStarred(session, user.get(), {}, std::nullopt, hasMore)};
 		CHECK(tracks.size() == 1);
 		CHECK(tracks.front().id() == track.getId());
-
-		CHECK(user->hasStarredTrack(track.get()));
+		CHECK(hasMore == false);
 	}
 }
 

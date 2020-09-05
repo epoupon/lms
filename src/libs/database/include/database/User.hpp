@@ -197,18 +197,15 @@ class User : public Wt::Dbo::Dbo<User>
 		void			starArtist(Wt::Dbo::ptr<Artist> artist);
 		void			unstarArtist(Wt::Dbo::ptr<Artist> artist);
 		bool			hasStarredArtist(Wt::Dbo::ptr<Artist> artist) const;
-		std::vector<Wt::Dbo::ptr<Artist>> getStarredArtists() const;
 
 		void			starRelease(Wt::Dbo::ptr<Release> release);
 		void			unstarRelease(Wt::Dbo::ptr<Release> release);
 		bool			hasStarredRelease(Wt::Dbo::ptr<Release> release) const;
-		std::vector<Wt::Dbo::ptr<Release>> getStarredReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
 
 		// Stars
 		void			starTrack(Wt::Dbo::ptr<Track> track);
 		void			unstarTrack(Wt::Dbo::ptr<Track> track);
 		bool			hasStarredTrack(Wt::Dbo::ptr<Track> track) const;
-		std::vector<Wt::Dbo::ptr<Track>> getStarredTracks() const;
 
 		template<class Action>
 		void persist(Action& a)

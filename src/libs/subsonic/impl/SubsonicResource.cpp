@@ -743,7 +743,8 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	}
 	else if (type == "starred")
 	{
-		releases = user->getStarredReleases(offset, size);
+		bool moreResults {};
+		releases = Release::getStarred(context.dbSession, user, {}, Range {offset, size}, moreResults);
 	}
 	else if (type == "byGenre")
 	{
@@ -1172,19 +1173,22 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 	Response::Node& starredNode {response.createNode(id3 ? "starred2" : "starred")};
 
 	{
-		auto artists {user->getStarredArtists()};
+		bool moreResults {};
+		const auto artists {Artist::getStarred(context.dbSession, user, {}, std::nullopt, Artist::SortMethod::BySortName, std::nullopt, moreResults)};
 		for (const Artist::pointer& artist : artists)
 			starredNode.addArrayChild("artist", artistToResponseNode(user, artist, id3));
 	}
 
 	{
-		auto releases {user->getStarredReleases()};
+		bool moreResults {};
+		const auto releases {Release::getStarred(context.dbSession, user, {}, std::nullopt, moreResults)};
 		for (const Release::pointer& release : releases)
 			starredNode.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
 	}
 
 	{
-		auto tracks {user->getStarredTracks()};
+		bool moreResults {};
+		const auto tracks {Track::getStarred(context.dbSession, user, {}, std::nullopt, moreResults)};
 		for (const Track::pointer& track : tracks)
 			starredNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 	}

@@ -128,8 +128,11 @@
 <message id="Lms.Explore.recently-added">Ajoutés récemment</message>
 <message id="Lms.Explore.recently-played">Joués récemment</message>
 <message id="Lms.Explore.releases">Albums</message>
+<message id="Lms.Explore.star">Ajouter aux favoris</message>
+<message id="Lms.Explore.starred">Favoris</message>
 <message id="Lms.Explore.tracks">Pistes</message>
 <message id="Lms.Explore.type">Type</message>
+<message id="Lms.Explore.unstar">Retirer des favoris</message>
 <message id="Lms.Explore.value">Valeur</message>
 <message id="Lms.Explore.various-artists">Artistes divers</message>
 

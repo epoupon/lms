@@ -63,6 +63,7 @@ _filters {filters}
 		};
 
 		addItem(*menu, Wt::WString::tr("Lms.Explore.random"), Mode::Random);
+		addItem(*menu, Wt::WString::tr("Lms.Explore.starred"), Mode::Starred);
 		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-played"), Mode::RecentlyPlayed);
 		addItem(*menu, Wt::WString::tr("Lms.Explore.most-played"), Mode::MostPlayed);
 		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-added"), Mode::RecentlyAdded);
@@ -183,6 +184,10 @@ Tracks::getTracks(std::optional<Range> range, bool& moreResults)
 	{
 		case Mode::Random:
 			tracks = getRandomTracks(range, moreResults);
+			break;
+
+		case Mode::Starred:
+			tracks = Track::getStarred(LmsApp->getDbSession(), LmsApp->getUser(), _filters->getClusterIds(), range, moreResults);
 			break;
 
 		case Mode::RecentlyPlayed:

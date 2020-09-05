@@ -40,6 +40,7 @@
 #include "MediaPlayer.hpp"
 #include "ReleaseListHelpers.hpp"
 #include "ReleasePopup.hpp"
+#include "TrackPopup.hpp"
 #include "TrackStringUtils.hpp"
 
 using namespace Database;
@@ -241,17 +242,7 @@ Release::refreshView()
 		Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
 		moreBtn->clicked().connect([=]()
 		{
-			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
-
-			popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
-				->triggered().connect(moreBtn, [=]
-				{
-					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
-				});
-			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
-				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
-
-			popup->popup(moreBtn);
+			displayTrackPopupMenu(*moreBtn, trackId, tracksAction);
 		});
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);

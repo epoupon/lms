@@ -172,12 +172,6 @@ User::hasStarredArtist(Wt::Dbo::ptr<Artist> artist) const
 	return _starredArtists.count(artist) != 0;
 }
 
-std::vector<Wt::Dbo::ptr<Artist>>
-User::getStarredArtists() const
-{
-	return std::vector<Wt::Dbo::ptr<Artist>>(_starredArtists.begin(), _starredArtists.end());
-}
-
 void
 User::starRelease(Wt::Dbo::ptr<Release> release)
 {
@@ -198,17 +192,6 @@ User::hasStarredRelease(Wt::Dbo::ptr<Release> release) const
 	return _starredReleases.count(release) != 0;
 }
 
-std::vector<Wt::Dbo::ptr<Release>>
-User::getStarredReleases(std::optional<std::size_t> offset, std::optional<std::size_t> limit) const
-{
-	Wt::Dbo::collection<Wt::Dbo::ptr<Release>> res = _starredReleases.find()
-		.offset(offset ? static_cast<int>(*offset) : -1)
-		.limit(limit ? static_cast<int>(*limit) : -1);
-
-	return std::vector<Wt::Dbo::ptr<Release>>(res.begin(), res.end());
-}
-
-
 void
 User::starTrack(Wt::Dbo::ptr<Track> track)
 {
@@ -227,12 +210,6 @@ bool
 User::hasStarredTrack(Wt::Dbo::ptr<Track> track) const
 {
 	return _starredTracks.count(track) != 0;
-}
-
-std::vector<Wt::Dbo::ptr<Track>>
-User::getStarredTracks() const
-{
-	return std::vector<Wt::Dbo::ptr<Track>>(_starredTracks.begin(), _starredTracks.end());
 }
 
 } // namespace Database

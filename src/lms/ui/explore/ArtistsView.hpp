@@ -46,6 +46,7 @@ class Artists : public Wt::WTemplate
 		enum class Mode
 		{
 			Random,
+			Starred,
 			RecentlyPlayed,
 			RecentlyAdded,
 			MostPlayed,

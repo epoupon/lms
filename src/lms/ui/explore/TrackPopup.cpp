@@ -17,9 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ReleasePopup.hpp"
+#include "TrackPopup.hpp"
 
-#include "database/Release.hpp"
+#include "database/Track.hpp"
 #include "database/User.hpp"
 #include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"
@@ -28,47 +28,41 @@ namespace UserInterface
 {
 
 	void
-	displayReleasePopupMenu(Wt::WInteractWidget& target,
-			Database::IdType releaseId,
-			PlayQueueActionSignal& releasesAction)
+	displayTrackPopupMenu(Wt::WInteractWidget& target,
+			Database::IdType trackId,
+			PlayQueueActionSignal& tracksAction)
 	{
 			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
 
-			popup->addItem(Wt::WString::tr("Lms.Explore.play-shuffled"))
-				->triggered().connect(&target, [&releasesAction, releaseId]
-					{
-						releasesAction.emit(PlayQueueAction::PlayShuffled, {releaseId});
-					});
 			popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
-				->triggered().connect(&target, [&releasesAction, releaseId]
-					{
-						releasesAction.emit(PlayQueueAction::PlayLast, {releaseId});
-					});
+				->triggered().connect(&target, [=, &tracksAction]
+				{
+					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
+				});
 
 			bool isStarred {};
 			{
 				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-				if (auto release {Database::Release::getById(LmsApp->getDbSession(), releaseId)})
-					isStarred = LmsApp->getUser()->hasStarredRelease(release);
+				if (auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)})
+					isStarred = LmsApp->getUser()->hasStarredTrack(track);
 			}
-
 			popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
 				->triggered().connect(&target, [=]
 					{
 						auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-						auto release {Database::Release::getById(LmsApp->getDbSession(), releaseId)};
-						if (!release)
+						auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+						if (!track)
 							return;
 
 						if (isStarred)
-							LmsApp->getUser().modify()->unstarRelease(release);
+							LmsApp->getUser().modify()->unstarTrack(track);
 						else
-							LmsApp->getUser().modify()->starRelease(release);
+							LmsApp->getUser().modify()->starTrack(track);
 					});
 			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
-				->setLink(Wt::WLink {std::make_unique<DownloadReleaseResource>(releaseId)});
+				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
 
 			popup->popup(&target);
 	}

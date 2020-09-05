@@ -128,8 +128,11 @@
 <message id="Lms.Explore.recently-added">Recently added</message>
 <message id="Lms.Explore.recently-played">Recently played</message>
 <message id="Lms.Explore.releases">Albums</message>
+<message id="Lms.Explore.star">Star</message>
+<message id="Lms.Explore.starred">Starred</message>
 <message id="Lms.Explore.tracks">Tracks</message>
 <message id="Lms.Explore.type">Type</message>
+<message id="Lms.Explore.unstar">Unstar</message>
 <message id="Lms.Explore.value">Value</message>
 <message id="Lms.Explore.various-artists">Various artists</message>
 

@@ -303,7 +303,11 @@ Artist::getByFilter(Session& session,
 }
 
 std::vector<Artist::pointer>
-Artist::getLastWritten(Session& session, std::optional<Wt::WDateTime> after, const std::set<IdType>& clusters, std::optional<TrackArtistLink::Type> linkType, std::optional<Range> range, bool& moreResults)
+Artist::getLastWritten(Session& session,
+		std::optional<Wt::WDateTime> after,
+		const std::set<IdType>& clusters,
+		std::optional<TrackArtistLink::Type> linkType,
+		std::optional<Range> range, bool& moreResults)
 {
 	session.checkSharedLocked();
 
@@ -314,6 +318,58 @@ Artist::getLastWritten(Session& session, std::optional<Wt::WDateTime> after, con
 
 	Wt::Dbo::collection<Artist::pointer> collection = query
 		.orderBy("t.file_last_write DESC")
+		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
+		.offset(range ? static_cast<int>(range->offset) : -1);
+
+	auto res {std::vector<pointer>(collection.begin(), collection.end())};
+
+	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
+
+	return std::vector<pointer>(res.begin(), res.end());
+}
+
+std::vector<Artist::pointer>
+Artist::getStarred(Session& session,
+		User::pointer user,
+		const std::set<IdType>& clusters,
+		std::optional<TrackArtistLink::Type> linkType,
+		SortMethod sortMethod,
+		std::optional<Range> range, bool& moreResults)
+{
+	session.checkSharedLocked();
+
+	auto query {createQuery<Artist::pointer>(session, "SELECT DISTINCT a from artist a", clusters, {}, linkType)};
+
+	{
+		std::ostringstream oss;
+		oss << "a.id IN (SELECT DISTINCT a.id FROM artist a"
+			" INNER JOIN user_artist_starred uas ON uas.artist_id = a.id"
+			" INNER JOIN user u ON u.id = uas.user_id WHERE u.id = ?)";
+
+		query.bind(user.id());
+		query.where(oss.str());
+	}
+
+	switch (sortMethod)
+	{
+		case Artist::SortMethod::None:
+			break;
+		case Artist::SortMethod::ByName:
+			query.orderBy("name COLLATE NOCASE");
+			break;
+		case Artist::SortMethod::BySortName:
+			query.orderBy("sort_name COLLATE NOCASE");
+			break;
+	}
+
+	Wt::Dbo::collection<Artist::pointer> collection = query
+		.groupBy("a.id")
 		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
 		.offset(range ? static_cast<int>(range->offset) : -1);
 
