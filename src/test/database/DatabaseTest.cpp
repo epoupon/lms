@@ -1252,7 +1252,7 @@ testSingleStarredArtist(Session& session)
 	ScopedUser user {session, "MyUser"};
 
 	{
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createUniqueTransaction()};
 
 		auto trackArtistLink {TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist)};
 		user.get().modify()->starArtist(artist.get());
@@ -1313,7 +1313,7 @@ testSingleStarredTrack(Session& session)
 	}
 
 	{
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createUniqueTransaction()};
 
 		CHECK(user->hasStarredTrack(track.get()));
 
