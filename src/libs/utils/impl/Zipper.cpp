@@ -356,7 +356,7 @@ namespace Zip
 		if (fileSize != _currentFile->second.fileSize)
 			throw ZipperException {"File '" + filePath + "': size mismatch!"};
 
-		const std::size_t nbBytesToRead {std::min(fileSize - _currentOffset, bufferSize)};
+		const std::size_t nbBytesToRead {std::min(static_cast<std::size_t>(fileSize) - _currentOffset, bufferSize)};
 
 		ifs.seekg(_currentOffset, std::ios::beg);
 		ifs.read(reinterpret_cast<char*>(buffer), nbBytesToRead );
