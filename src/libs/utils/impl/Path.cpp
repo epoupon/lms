@@ -26,20 +26,18 @@
 #include <array>
 #include <fstream>
 
-#include <boost/crc.hpp>  // for boost::crc_32_type
 #include <boost/tokenizer.hpp>
 
+#include "utils/Crc32Calculator.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
-void
-computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& crc)
+std::uint32_t
+computeCrc32(const std::filesystem::path& p)
 {
-	using crc_type = boost::crc_32_type;
-	crc_type result;
+	Utils::Crc32Calculator crc32;
 
-	std::ifstream  ifs( p.string().c_str(), std::ios_base::binary );
-
+	std::ifstream ifs {p.string().c_str(), std::ios_base::binary};
 	if (ifs)
 	{
 		do
@@ -47,9 +45,9 @@ computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& crc)
 			std::array<char,1024>	buffer;
 
 			ifs.read( buffer.data(), buffer.size() );
-			result.process_bytes( buffer.data(), ifs.gcount() );
+			crc32.processBytes( reinterpret_cast<const std::byte*>(buffer.data()), ifs.gcount() );
 		}
-		while ( ifs );
+		while (ifs);
 	}
 	else
 	{
@@ -57,14 +55,7 @@ computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& crc)
 		throw LmsException("Failed to open file '" + p.string() + "'" );
 	}
 
-
-	// Copy the result into a vector of unsigned char
-	const crc_type::value_type checksum = result.checksum();
-	for (std::size_t i = 0; (i+1)*8 <= crc_type::bit_count; i++)
-	{
-		const unsigned char* data = reinterpret_cast<const unsigned char*>( &checksum );
-		crc.push_back(data[i]);
-	}
+	return crc32.getResult();
 }
 
 bool

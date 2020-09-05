@@ -511,10 +511,10 @@ handleChangePassword(RequestContext& context)
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
 	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
 
-	if (!ServiceProvider<Auth::IPasswordService>::get()->evaluatePasswordStrength(username, password))
+	if (!Service<Auth::IPasswordService>::get()->evaluatePasswordStrength(username, password))
 		throw PasswordTooWeakGenericError {};
 
-	const User::PasswordHash hash {ServiceProvider<Auth::IPasswordService>::get()->hashPassword(password)};
+	const User::PasswordHash hash {Service<Auth::IPasswordService>::get()->hashPassword(password)};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
@@ -593,10 +593,10 @@ handleCreateUserRequest(RequestContext& context)
 	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
 	// Just ignore all the other fields as we don't handle them
 
-	if (!ServiceProvider<Auth::IPasswordService>::get()->evaluatePasswordStrength(username, password))
+	if (!Service<Auth::IPasswordService>::get()->evaluatePasswordStrength(username, password))
 		throw PasswordTooWeakGenericError {};
 
-	const User::PasswordHash hash {ServiceProvider<Auth::IPasswordService>::get()->hashPassword(password)};
+	const User::PasswordHash hash {Service<Auth::IPasswordService>::get()->hashPassword(password)};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
@@ -743,7 +743,8 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	}
 	else if (type == "starred")
 	{
-		releases = user->getStarredReleases(offset, size);
+		bool moreResults {};
+		releases = Release::getStarred(context.dbSession, user, {}, Range {offset, size}, moreResults);
 	}
 	else if (type == "byGenre")
 	{
@@ -878,7 +879,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 			artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
 	}
 
-	auto similarArtistsId {ServiceProvider<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession, id.value, count)};
+	auto similarArtistsId {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession, id.value, count)};
 
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
@@ -1107,7 +1108,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(50)};
 
-	auto similarArtistsId {ServiceProvider<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession, id.value, 5)};
+	auto similarArtistsId {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession, id.value, 5)};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -1172,19 +1173,22 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 	Response::Node& starredNode {response.createNode(id3 ? "starred2" : "starred")};
 
 	{
-		auto artists {user->getStarredArtists()};
+		bool moreResults {};
+		const auto artists {Artist::getStarred(context.dbSession, user, {}, std::nullopt, Artist::SortMethod::BySortName, std::nullopt, moreResults)};
 		for (const Artist::pointer& artist : artists)
 			starredNode.addArrayChild("artist", artistToResponseNode(user, artist, id3));
 	}
 
 	{
-		auto releases {user->getStarredReleases()};
+		bool moreResults {};
+		const auto releases {Release::getStarred(context.dbSession, user, {}, std::nullopt, moreResults)};
 		for (const Release::pointer& release : releases)
 			starredNode.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
 	}
 
 	{
-		auto tracks {user->getStarredTracks()};
+		bool moreResults {};
+		const auto tracks {Track::getStarred(context.dbSession, user, {}, std::nullopt, moreResults)};
 		for (const Track::pointer& track : tracks)
 			starredNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 	}
@@ -1552,10 +1556,10 @@ handleUpdateUserRequest(RequestContext& context)
 	if (password)
 	{
 		*password = decodePasswordIfNeeded(*password);
-		if (!ServiceProvider<Auth::IPasswordService>::get()->evaluatePasswordStrength(username, *password))
+		if (!Service<Auth::IPasswordService>::get()->evaluatePasswordStrength(username, *password))
 			throw PasswordTooWeakGenericError {};
 
-		hash = ServiceProvider<Auth::IPasswordService>::get()->hashPassword(*password);
+		hash = Service<Auth::IPasswordService>::get()->hashPassword(*password);
 	}
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
@@ -1746,10 +1750,10 @@ handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/,
 	switch (id.type)
 	{
 		case Id::Type::Track:
-			data = ServiceProvider<CoverArt::IGrabber>::get()->getFromTrack(context.dbSession, id.value, CoverArt::Format::JPEG, size);
+			data = Service<CoverArt::IGrabber>::get()->getFromTrack(context.dbSession, id.value, CoverArt::Format::JPEG, size);
 			break;
 		case Id::Type::Release:
-			data = ServiceProvider<CoverArt::IGrabber>::get()->getFromRelease(context.dbSession, id.value, CoverArt::Format::JPEG, size);
+			data = Service<CoverArt::IGrabber>::get()->getFromRelease(context.dbSession, id.value, CoverArt::Format::JPEG, size);
 			break;
 		default:
 			throw BadParameterGenericError {"id"};
@@ -1909,7 +1913,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 		SessionPool::ScopedSession dbSession {_sessionPool};
 
-		switch (ServiceProvider<Auth::IPasswordService>::get()->checkUserPassword(dbSession.get(),
+		switch (Service<Auth::IPasswordService>::get()->checkUserPassword(dbSession.get(),
 					boost::asio::ip::address::from_string(request.clientAddress()),
 					clientInfo.user, clientInfo.password))
 		{

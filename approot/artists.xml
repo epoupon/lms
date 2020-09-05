@@ -4,7 +4,6 @@
 
 <message id="Lms.Explore.Artists.template">
 	<div class="Lms-header">
-		<h2>${tr:Lms.Explore.artists}</h2>
 		${mode class="nav nav-pills Lms-explore-mode-container"}
 		<div class="row">
 			<div class="col-sm-2">
@@ -18,13 +17,13 @@
 
 <message id="Lms.Explore.Artists.template.entry">
 	<div class="Lms-explore-artists-entry Lms-entry-hoverable Lms-vertical-align">
-		 <h4>${name class="Lms-artistname text-primary"}</h4>
+		 <h4>${name class="Lms-btn Lms-artistname text-primary"}</h4>
 	</div>
 </message>
 
 <message id="Lms.Explore.Artists.template.entry-small">
 	<div class="Lms-explore-artists-entry-small Lms-entry-hoverable Lms-vertical-align">
-		${name class="Lms-artistname text-primary"}
+		${name class="Lms-btn Lms-artistname text-primary"}
 	</div>
 </message>
 

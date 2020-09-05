@@ -27,11 +27,12 @@
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
+#include "database/User.hpp"
 #include "recommendation/IEngine.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
-#include "resource/ImageResource.hpp"
+#include "resource/DownloadResource.hpp"
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
@@ -71,9 +72,9 @@ Artist::refreshView()
 
 	const auto artistId {StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/artist/"))};
 	if (!artistId)
-		return;
+		throw ArtistNotFoundException {*artistId};
 
-	const std::vector<Database::IdType> similarArtistIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarArtists(LmsApp->getDbSession(), *artistId, 5)};
+	const std::vector<Database::IdType> similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(LmsApp->getDbSession(), *artistId, 5)};
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -131,6 +132,30 @@ Artist::refreshView()
 				{
 					artistsAction.emit(PlayQueueAction::PlayLast, {*artistId});
 				});
+
+			bool isStarred {};
+			{
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				if (auto artist {Database::Artist::getById(LmsApp->getDbSession(), *artistId)})
+					isStarred = LmsApp->getUser()->hasStarredArtist(artist);
+			}
+			popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
+				->triggered().connect(this, [=]
+					{
+						auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+						auto artist {Database::Artist::getById(LmsApp->getDbSession(), *artistId)};
+						if (!artist)
+							return;
+
+						if (isStarred)
+							LmsApp->getUser().modify()->unstarArtist(artist);
+						else
+							LmsApp->getUser().modify()->starArtist(artist);
+					});
+			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
+				->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(*artistId)});
 
 			popup->exec(moreBtn);
 		});

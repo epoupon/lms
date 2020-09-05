@@ -32,7 +32,7 @@ namespace Recommendation {
 static
 std::filesystem::path getCacheDirectory()
 {
-	return ServiceProvider<IConfig>::get()->getPath("working-dir") / "cache" / "features";
+	return Service<IConfig>::get()->getPath("working-dir") / "cache" / "features";
 }
 
 static std::filesystem::path getCacheNetworkFilePath()
@@ -237,7 +237,7 @@ FeaturesClassifierCache::read()
 void
 FeaturesClassifierCache::write() const
 {
-	std::filesystem::create_directories(ServiceProvider<IConfig>::get()->getPath("working-dir") / "cache" / "features");
+	std::filesystem::create_directories(Service<IConfig>::get()->getPath("working-dir") / "cache" / "features");
 
 	if (!networkToCacheFile(_network, getCacheNetworkFilePath())
 		|| !objectPositionToCacheFile(_trackPositions, getCacheTrackPositionsFilePath()))

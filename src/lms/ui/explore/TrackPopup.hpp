@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,41 +17,18 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef COVER_RESOURCE_HPP_
-#define COVER_RESOURCE_HPP_
+#pragma once
 
-#include <mutex>
-
-#include <Wt/WResource.h>
+#include <Wt/WWidget.h>
+#include <Wt/WSignal.h>
 
 #include "database/Types.hpp"
+#include "PlayQueueAction.hpp"
 
-namespace UserInterface {
-
-
-class ImageResource : public Wt::WResource
+namespace UserInterface
 {
-	public:
-		static const std::size_t maxSize {512};
-
-		~ImageResource();
-
-		enum class Size : std::size_t
-		{
-			Small = 128,
-			Large = 512,
-		};
-
-		std::string getReleaseUrl(Database::IdType releaseId, Size size) const;
-		std::string getTrackUrl(Database::IdType trackId, Size size) const;
-
-		static std::string getMimeType();
-
-	private:
-		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-
-};
-
+	void displayTrackPopupMenu(Wt::WInteractWidget& target,
+			Database::IdType releaseId,
+			PlayQueueActionSignal& releasesAction);
 } // namespace UserInterface
 
-#endif

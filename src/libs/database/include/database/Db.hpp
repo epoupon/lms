@@ -32,6 +32,12 @@ class Db
 	public:
 
 		Db(const std::filesystem::path& dbPath);
+		~Db();
+
+		Db(const Db&) = delete;
+		Db(Db&&) = delete;
+		Db& operator=(const Db&) = delete;
+		Db& operator=(Db&&) = delete;
 
 	private:
 		friend class Session;

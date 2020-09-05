@@ -24,6 +24,7 @@
 #include <taglib/id3v2tag.h>
 #include <taglib/fileref.h>
 #include <taglib/flacfile.h>
+#include <taglib/mp4file.h>
 #include <taglib/mpcfile.h>
 #include <taglib/mpegfile.h>
 #include <taglib/opusfile.h>
@@ -386,6 +387,15 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 
 		getAPETags(mp3File->APETag());
 	}
+	//MP4
+	else if (TagLib::MP4::File* mp4File {dynamic_cast<TagLib::MP4::File*>(f.file())})
+	{
+		auto& coverItem {mp4File->tag()->itemListMap()["covr"]};
+		TagLib::MP4::CoverArtList coverArtList {coverItem.toCoverArtList()};
+		if (!coverArtList.isEmpty())
+			track.hasCover = true;
+	}
+	// MPC
 	else if (TagLib::MPC::File* mpcFile {dynamic_cast<TagLib::MPC::File*>(f.file())})
 	{
 		getAPETags(mpcFile->APETag());

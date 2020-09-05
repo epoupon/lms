@@ -86,6 +86,12 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 								std::optional<Range>,
 								bool& moreResults);
 		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
+		static std::vector<pointer>	getStarred(Session& session,
+								Wt::Dbo::ptr<User> user,
+								const std::set<IdType>& clusters,
+								std::optional<TrackArtistLink::Type> linkType, 	// if set, only artists that have produced at least one track with this link type
+								SortMethod sortMethod,
+								std::optional<Range>, bool& moreResults);
 
 		// Accessors
 		const std::string&	getName() const { return _name; }

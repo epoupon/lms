@@ -35,12 +35,19 @@ namespace Recommendation
 	{
 		public:
 			Engine(Database::Db& db);
+			~Engine();
+
+			Engine(const Engine&) = delete;
+			Engine(Engine&&) = delete;
+			Engine& operator=(const Engine&) = delete;
+			Engine& operator=(Engine&&) = delete;
 
 		private:
 
-			void start() override;
-			void stop() override;
+			void start();
+			void stop();
 
+			void requestLoad() override;
 			void requestReload() override;
 			Wt::Signal<>& reloaded() override { return _sigReloaded; }
 

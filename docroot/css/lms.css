@@ -41,6 +41,15 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	color: var(--hover-color);
 }
 
+.Lms-btn {
+	cursor: pointer;
+}
+
+.Lms-btn:hover {
+	color: var(--hover-color);
+	transition: color .20s cubic-bezier(.43,-.1,.16,1.1);
+}
+
 .Lms-cluster {
 	display: inline-block;
 	cursor: pointer;
@@ -51,15 +60,11 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 
 .Lms-cluster:hover {
 	filter: brightness(130%);
+	transition: filter .20s cubic-bezier(.43,-.1,.16,1.1);
 }
 
 .Lms-clusters-control {
 	margin-top: 4px;
-}
-
-.Lms-control-btn:hover {
-	color: var(--hover-color);
-	cursor: pointer;
 }
 
 .Lms-cover {
@@ -84,6 +89,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 
 .Lms-cover:hover {
 	filter: brightness(130%);
+	transition: filter .20s cubic-bezier(.43,-.1,.16,1.1);
 }
 
 .Lms-cover-container {
@@ -268,6 +274,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	max-width: 175px;
 	padding-top: 7.5px;
 	padding-bottom: 7.5px;
+	margin-right: 8px;
 }
 
 .Lms-playqueue-btn {
@@ -360,6 +367,10 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 
 .Lms-player-progress {
 	background-color: var(--slider-background-color);
+}
+
+.Lms-player-progress .progress-bar {
+	transition: none;
 }
 
 .Lms-player-seek {

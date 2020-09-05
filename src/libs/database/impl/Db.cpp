@@ -43,6 +43,13 @@ Db::Db(const std::filesystem::path& dbPath)
 	_connectionPool = std::move(connectionPool);
 }
 
+Db::~Db()
+{
+	LMS_LOG(DB, DEBUG) << "Optimizing db...";
+	executeSql("pragma optimize");
+	LMS_LOG(DB, DEBUG) << "Optimizing db DONE";
+}
+
 void
 Db::executeSql(const std::string& sql)
 {

@@ -19,46 +19,44 @@
 
 #pragma once
 
+#include <cassert>
 #include <memory>
-#include <type_traits>
 
 template <typename Class>
-class ServiceProvider
+class Service
 {
 	public:
-		template <class DerivedClass, class ...Args>
-		static
-		Class&
-		create(Args&&... args)
+		Service(std::unique_ptr<Class> service)
 		{
-			static_assert(std::is_base_of<Class, DerivedClass>::value);
-
-			assign(std::make_unique<DerivedClass>(std::forward<Args>(args)...));
-			return *get();
+			assign(std::move(service));
 		}
 
-		template <class ...Args>
-		static
-		Class&
-		create(Args&&... args)
+		~Service()
 		{
-			assign(std::make_unique<Class>(std::forward<Args>(args)...));
-			return *get();
+			clear();
 		}
 
-		static
-		Class&
-		assign(std::unique_ptr<Class> service)
-		{
-			_service = std::move(service);
-			return *get();
-		}
+		Service(const Service&) = delete;
+		Service(Service&&) = delete;
+		Service& operator=(const Service&) = delete;
+		Service& operator=(Service&&) = delete;
 
-		static void clear() { _service.reset(); }
+		Class* operator->() const
+		{
+			return Service<Class>::get();
+		}
 
 		static Class* get() { return _service.get(); }
 
 	private:
+		static Class& assign(std::unique_ptr<Class> service)
+		{
+			assert(!_service);
+			_service = std::move(service);
+			return *get();
+		}
+		static void clear() { _service.reset(); }
+
 		static inline std::unique_ptr<Class> _service;
 };
 

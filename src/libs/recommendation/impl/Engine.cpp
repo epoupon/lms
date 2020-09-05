@@ -38,6 +38,12 @@ createEngine(Database::Db& db)
 Engine::Engine(Database::Db& db)
 : _dbSession {db}
 {
+	start();
+}
+
+Engine::~Engine()
+{
+	stop();
 }
 
 void
@@ -45,9 +51,6 @@ Engine::start()
 {
 	assert(!_running);
 	_running = true;
-
-	requestReloadInternal(false);
-
 	_ioService.start();
 }
 
@@ -60,6 +63,12 @@ Engine::stop()
 	cancelPendingClassifiers();
 
 	_ioService.stop();
+}
+
+void
+Engine::requestLoad()
+{
+	requestReloadInternal(false);
 }
 
 void
@@ -254,7 +263,7 @@ void
 Engine::cancelPendingClassifiers()
 {
 	std::unique_lock<std::shared_mutex> lock {_classifiersMutex};
-	
+
 	for (IClassifier* classifier : _pendingClassifiers)
 		classifier->requestCancelInit();
 }

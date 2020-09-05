@@ -82,5 +82,5 @@ class Logger
 		virtual void processLog(const Log& log) = 0;
 };
 
-#define LMS_LOG(module, severity)	Log(ServiceProvider<Logger>::get(), Module::module, Severity::severity).getOstream()
+#define LMS_LOG(module, severity)	Log(Service<Logger>::get(), Module::module, Severity::severity).getOstream()
 

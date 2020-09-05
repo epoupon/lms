@@ -38,13 +38,9 @@ class IMediaScanner
 	public:
 		virtual ~IMediaScanner() = default;
 
-		virtual void start() = 0;
-		virtual void stop() = 0;
-
 		// Async requests
 		virtual void requestReload() = 0;
 		virtual void requestImmediateScan(bool force) = 0;
-
 
 		enum class State
 		{

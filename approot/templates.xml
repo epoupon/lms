@@ -11,17 +11,17 @@
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</button>
-				${title class="navbar-brand"}
+				${title class="navbar-brand Lms-btn"}
 				<div class="Lms-navbar-search pull-left">
 					${search class="form-control"}
 				</div>
 			</div>
 			<div class="collapse navbar-collapse">
 				<ul class="nav navbar-nav">
-					<li>${artists}</li>
-					<li>${releases}</li>
-					<li>${tracks}</li>
-					<li>${playqueue}</li>
+					<li>${artists class="Lms-btn"}</li>
+					<li>${releases class="Lms-btn"}</li>
+					<li>${tracks class="Lms-btn"}</li>
+					<li>${playqueue class="Lms-btn"}</li>
 				</ul>
 				<div class="navbar-form navbar-left">
 					${filters class="form-group Lms-clusters-control"}
@@ -29,7 +29,7 @@
 				<ul class="nav navbar-nav navbar-right">
 					${<if-is-admin>}
 					<li class="dropdown">
-						<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="${tr:Lms.administration}"><i class="fa fa-cogs" aria-hidden="true"></i> <span class="caret"></span></a>
+						<a href="#" class="Lms-btn dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="${tr:Lms.administration}"><i class="fa fa-cogs" aria-hidden="true"></i> <span class="caret"></span></a>
 						<ul class="dropdown-menu" role="menu">
 							<li>${database}</li>
 							<li>${users}</li>
@@ -37,7 +37,7 @@
 					</li>
 					${</if-is-admin>}
 					<li class="dropdown">
-						<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="${tr:Lms.user}"><i class="fa fa-user" aria-hidden="true"></i>
+						<a href="#" class="Lms-btn dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" title="${tr:Lms.user}"><i class="fa fa-user" aria-hidden="true"></i>
  <span class="caret"></span></a>
 						<ul class="dropdown-menu" role="menu">
 							<li class="dropdown-header">${username}</li>

@@ -17,26 +17,31 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "AuthModeModel.hpp"
+#pragma once
 
-#include "auth/IPasswordService.hpp"
-#include "utils/Service.hpp"
+#include <boost/crc.hpp>  // for boost::crc_32_type
 
-namespace UserInterface
+namespace Utils
 {
 
-std::unique_ptr<AuthModeModel>
-createAuthModeModel()
-{
-	auto model {std::make_unique<AuthModeModel>()};
+	class Crc32Calculator
+	{
+		public:
 
-	if (Service<::Auth::IPasswordService>::get()->isAuthModeSupported(Database::User::AuthMode::Internal))
-		model->add(Wt::WString::tr("Lms.Admin.User.auth-mode.internal"), Database::User::AuthMode::Internal);
-	if (Service<::Auth::IPasswordService>::get()->isAuthModeSupported(Database::User::AuthMode::PAM))
-		model->add(Wt::WString::tr("Lms.Admin.User.auth-mode.pam"), Database::User::AuthMode::PAM);
+			void processBytes(const std::byte* _data, std::size_t dataSize)
+			{
+				_result.process_bytes(_data, dataSize);
+			}
 
-	return model;
-}
+			std::uint32_t getResult() const
+			{
+				return _result.checksum();
+			}
+
+		private:
+			using Crc32Type = boost::crc_32_type;
+			Crc32Type _result;
+	};
 
 }
 

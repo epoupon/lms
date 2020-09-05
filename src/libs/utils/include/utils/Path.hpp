@@ -26,7 +26,7 @@
 
 #include <Wt/WDateTime.h>
 
-void computeCrc(const std::filesystem::path& p, std::vector<unsigned char>& checksum);
+std::uint32_t computeCrc32(const std::filesystem::path& p);
 
 // Make sure the given path is a directory
 // Create it if needed

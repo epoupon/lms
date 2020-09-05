@@ -278,7 +278,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 	}
 
 	if (addRadioTrack)
-		enqueueRadioTrack();
+		enqueueRadioTracks();
 
 	updateCurrentTrack(true);
 
@@ -498,9 +498,9 @@ PlayQueue::addSome()
 }
 
 void
-PlayQueue::enqueueRadioTrack()
+PlayQueue::enqueueRadioTracks()
 {
-	const std::vector<Database::IdType> trackToAddIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 1)};
+	const std::vector<Database::IdType> trackToAddIds {Service<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 3)};
 	enqueueTracks(trackToAddIds);
 }
 

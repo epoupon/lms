@@ -45,6 +45,7 @@
 #include "admin/UsersView.hpp"
 #include "resource/AudioFileResource.hpp"
 #include "resource/AudioTranscodeResource.hpp"
+#include "resource/DownloadResource.hpp"
 #include "resource/ImageResource.hpp"
 #include "Auth.hpp"
 #include "LmsApplicationException.hpp"
@@ -325,7 +326,7 @@ LmsApplication::handleException(LmsApplicationException& e)
 	Wt::WPushButton* btn {t->bindNew<Wt::WPushButton>("btn-go-home", Wt::WString::tr("Lms.Error.go-home"))};
 	btn->clicked().connect([this]()
 	{
-		redirect(".");
+		redirect(defaultPath);
 	});
 }
 
@@ -346,8 +347,9 @@ enum IdxRoot
 	IdxAdminUser,
 };
 
-static void
-handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
+static
+void
+handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 {
 	static const struct
 	{
@@ -371,6 +373,8 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
 
+	LmsApp->doJavaScript(R"($('.navbar-nav li.active').removeClass('active'); $('.navbar-nav a[href="' + location.pathname + '"]').closest('li').addClass('active');)");
+
 	for (const auto& view : views)
 	{
 		if (wApp->internalPathMatches(view.path))
@@ -378,7 +382,7 @@ handlePathChange(Wt::WStackedWidget* stack, bool isAdmin)
 			if (view.admin && !isAdmin)
 				break;
 
-			stack->setCurrentIndex(view.index);
+			stack.setCurrentIndex(view.index);
 			return;
 		}
 	}
@@ -429,9 +433,9 @@ LmsApplication::handleUserLoggedIn(Database::IdType userId, bool strongAuth)
 void
 LmsApplication::createHome()
 {
-	_imageResource = std::make_shared<ImageResource>();
-	_audioTranscodeResource = std::make_shared<AudioTranscodeResource>();
 	_audioFileResource = std::make_shared<AudioFileResource>();
+	_audioTranscodeResource = std::make_shared<AudioTranscodeResource>();
+	_imageResource = std::make_shared<ImageResource>();
 
 	declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
 	doJavaScript("$('body').tooltip({ selector: '[data-toggle=\"tooltip\"]'})");
@@ -530,7 +534,7 @@ LmsApplication::createHome()
 	{
 		const std::string sessionId {LmsApp->sessionId()};
 
-		ServiceProvider<Scanner::IMediaScanner>::get()->scanStarted().connect(this, [=] ()
+		Service<Scanner::IMediaScanner>::get()->scanStarted().connect(this, [=] ()
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
@@ -539,7 +543,7 @@ LmsApplication::createHome()
 			});
 		});
 
-		ServiceProvider<Scanner::IMediaScanner>::get()->scanComplete().connect(this, [=] ()
+		Service<Scanner::IMediaScanner>::get()->scanComplete().connect(this, [=] ()
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
@@ -548,7 +552,7 @@ LmsApplication::createHome()
 			});
 		});
 
-		ServiceProvider<Scanner::IMediaScanner>::get()->scanInProgress().connect(this, [=] (Scanner::ScanStepStats stepStats)
+		Service<Scanner::IMediaScanner>::get()->scanInProgress().connect(this, [=] (Scanner::ScanStepStats stepStats)
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
@@ -557,7 +561,7 @@ LmsApplication::createHome()
 			});
 		});
 
-		ServiceProvider<Scanner::IMediaScanner>::get()->scheduled().connect(this, [=] (Wt::WDateTime dateTime)
+		Service<Scanner::IMediaScanner>::get()->scheduled().connect(this, [=] (Wt::WDateTime dateTime)
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
@@ -572,7 +576,7 @@ LmsApplication::createHome()
 	{
 		if (isUserAdmin())
 		{
-			const auto& stats {*ServiceProvider<Scanner::IMediaScanner>::get()->getStatus().lastCompleteScanStats};
+			const auto& stats {*Service<Scanner::IMediaScanner>::get()->getStatus().lastCompleteScanStats};
 
 			notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-complete")
 				.arg(static_cast<unsigned>(stats.nbFiles()))
@@ -596,10 +600,10 @@ LmsApplication::createHome()
 
 	internalPathChanged().connect([=]
 	{
-		handlePathChange(mainStack, isUserAdmin());
+		handlePathChange(*mainStack, isUserAdmin());
 	});
 
-	handlePathChange(mainStack, isUserAdmin());
+	handlePathChange(*mainStack, isUserAdmin());
 }
 
 void

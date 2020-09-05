@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
 	try
 	{
 		// log to stdout
-		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
+		Service<Logger> logger {std::make_unique<StreamLogger>(std::cout)};
 
 		for (std::size_t  i {}; i < static_cast<std::size_t>(argc - 1); ++i)
 		{

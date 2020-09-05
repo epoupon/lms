@@ -27,9 +27,11 @@
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
+#include "resource/DownloadResource.hpp"
 #include "resource/ImageResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
+#include "TrackPopup.hpp"
 #include "TrackStringUtils.hpp"
 
 using namespace Database;
@@ -93,18 +95,10 @@ namespace UserInterface::TrackListHelpers
 			tracksAction.emit(PlayQueueAction::Play, {trackId});
 		});
 
-		Wt::WText* moreBtn = entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+		Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
 		moreBtn->clicked().connect([=, &tracksAction]
 		{
-			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
-
-			popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
-				->triggered().connect(moreBtn, [=, &tracksAction]
-				{
-					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
-				});
-
-			popup->popup(moreBtn);
+			displayTrackPopupMenu(*moreBtn, trackId, tracksAction);
 		});
 
 		LmsApp->getMediaPlayer().trackLoaded.connect(entryPtr, [=] (Database::IdType loadedTrackId)

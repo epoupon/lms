@@ -254,6 +254,8 @@ MediaScanner::MediaScanner(Database::Db& db)
 	_ioService.setThreadCount(1);
 
 	refreshScanSettings();
+
+	start();
 }
 
 MediaScanner::~MediaScanner()

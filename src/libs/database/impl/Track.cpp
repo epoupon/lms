@@ -265,6 +265,41 @@ Track::getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit)
 	return std::vector<IdType>(res.begin(), res.end());
 }
 
+std::vector<Track::pointer>
+Track::getStarred(Session& session,
+		Wt::Dbo::ptr<User> user,
+		const std::set<IdType>& clusterIds,
+		std::optional<Range> range, bool& moreResults)
+{
+	session.checkSharedLocked();
+
+	auto query {createQuery<Track::pointer>(session, "SELECT t from track t", clusterIds, {})};
+	{
+		std::ostringstream oss;
+		oss << "t.id IN (SELECT DISTINCT t.id FROM track t"
+			" INNER JOIN user_track_starred uts ON uts.track_id = t.id"
+			" INNER JOIN user u ON u.id = uts.user_id WHERE u.id = ?)";
+
+		query.bind(user.id());
+		query.where(oss.str());
+	}
+
+	Wt::Dbo::collection<Track::pointer> collection = query
+		.offset(range ? static_cast<int>(range->offset) : -1)
+		.limit(range ? static_cast<int>(range->limit) + 1: -1);
+
+	auto res {std::vector<pointer>(collection.begin(), collection.end())};
+	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
+
+	return res;
+}
+
 std::vector<Cluster::pointer>
 Track::getClusters() const
 {

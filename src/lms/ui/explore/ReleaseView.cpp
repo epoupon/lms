@@ -32,6 +32,7 @@
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
+#include "resource/DownloadResource.hpp"
 #include "resource/ImageResource.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
@@ -39,6 +40,7 @@
 #include "MediaPlayer.hpp"
 #include "ReleaseListHelpers.hpp"
 #include "ReleasePopup.hpp"
+#include "TrackPopup.hpp"
 #include "TrackStringUtils.hpp"
 
 using namespace Database;
@@ -74,9 +76,9 @@ Release::refreshView()
 
 	const auto releaseId {StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/release/"))};
 	if (!releaseId)
-		return;
+		throw ReleaseNotFoundException {*releaseId};
 
-	const std::vector<Database::IdType> similarReleasesIds {ServiceProvider<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 6)};
+	const std::vector<Database::IdType> similarReleasesIds {Service<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 6)};
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -240,15 +242,7 @@ Release::refreshView()
 		Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
 		moreBtn->clicked().connect([=]()
 		{
-			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
-
-			popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
-				->triggered().connect(moreBtn, [=]
-				{
-					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
-				});
-
-			popup->popup(moreBtn);
+			displayTrackPopupMenu(*moreBtn, trackId, tracksAction);
 		});
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
