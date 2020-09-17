@@ -19,9 +19,8 @@
 
 #pragma once
 
-#include <map>
-#include <set>
 #include <filesystem>
+#include <map>
 
 #include <Wt/WDateTime.h>
 
@@ -30,6 +29,7 @@
 
 namespace Zip
 {
+	using SizeType = std::uint64_t;
 
 	class ZipperException : public LmsException
 	{
@@ -41,34 +41,36 @@ namespace Zip
 	{
 		public:
 
-			using SizeZype = std::uint64_t;
-
 			Zipper(const std::map<std::string, std::filesystem::path>& files, const Wt::WDateTime& lastModifiedTime = {});
 
-			static constexpr std::size_t minOutputBufferSize = 64;
-			std::size_t writeSome(std::byte* buffer, std::size_t bufferSize);
+			static constexpr SizeType minOutputBufferSize {64};
+			SizeType writeSome(std::byte* buffer, SizeType bufferSize);
 			bool isComplete() const;
 
-			SizeZype getTotalZipFile() const { return _totalZipSize; }
+			SizeType getTotalZipFile() const { return _totalZipSize; }
 
 		private:
 			void setComplete();
 
-			std::size_t writeLocalFileHeader(std::byte* buffer, std::size_t bufferSize);
-			std::size_t writeLocalFileHeaderFileName(std::byte* buffer, std::size_t bufferSize);
-			std::size_t writeFileData(std::byte* buffer, std::size_t bufferSize);
-			std::size_t writeDataDescriptor(std::byte* buffer, std::size_t bufferSize);
-			std::size_t writeCentralDirectoryHeader(std::byte* buffer, std::size_t bufferSize);
-			std::size_t writeCentralDirectoryHeaderFileName(std::byte* buffer, std::size_t bufferSize);
-			std::size_t writeEndOfCentralDirectoryRecord(std::byte* buffer, std::size_t bufferSize);
+			SizeType writeLocalFileHeader(std::byte* buffer, SizeType bufferSize);
+			SizeType writeLocalFileHeaderFileName(std::byte* buffer, SizeType bufferSize);
+			SizeType writeLocalFileHeaderExtraFields(std::byte* buffer, SizeType bufferSize);
+			SizeType writeFileData(std::byte* buffer, SizeType bufferSize);
+			SizeType writeDataDescriptor(std::byte* buffer, SizeType bufferSize);
+			SizeType writeCentralDirectoryHeader(std::byte* buffer, SizeType bufferSize);
+			SizeType writeCentralDirectoryHeaderFileName(std::byte* buffer, SizeType bufferSize);
+			SizeType writeCentralDirectoryHeaderExtraFields(std::byte* buffer, SizeType bufferSize);
+			SizeType writeZip64EndOfCentralDirectoryRecord(std::byte* buffer, SizeType bufferSize);
+			SizeType writeZip64EndOfCentralDirectoryLocator(std::byte* buffer, SizeType bufferSize);
+			SizeType writeEndOfCentralDirectoryRecord(std::byte* buffer, SizeType bufferSize);
 
 			struct FileContext
 			{
 				std::filesystem::path filePath;
-				std::size_t fileSize;
+				SizeType fileSize;
 				Wt::WDateTime lastModifiedTime;
 				Utils::Crc32Calculator fileCrc32;
-				std::size_t localFileHeaderOffset {};
+				SizeType localFileHeaderOffset {};
 			};
 
 			using FileContainer = std::map<std::string, FileContext>;
@@ -78,21 +80,26 @@ namespace Zip
 			{
 				LocalFileHeader,
 				LocalFileHeaderFileName,
+				LocalFileHeaderExtraFields,
 				FileData,
 				DataDescriptor,
 				CentralDirectoryHeader,
 				CentralDirectoryHeaderFileName,
+				CentralDirectoryHeaderExtraFields,
+				Zip64EndOfCentralDirectoryRecord,
+				Zip64EndOfCentralDirectoryLocator,
 				EndOfCentralDirectoryRecord,
 				Complete,
 			};
 
-			SizeZype _totalZipSize {};
+			SizeType _totalZipSize {};
 			WriteState _writeState {WriteState::LocalFileHeader};
 			FileContainer::iterator _currentFile;
-			std::size_t _currentOffset {};
-			std::size_t _currentZipOffset {};
-			std::size_t _centralDirectoryOffset {};
-			std::size_t _centralDirectorySize {};
+			SizeType _currentOffset {};
+			SizeType _currentZipOffset {};
+			SizeType _centralDirectoryOffset {};
+			SizeType _centralDirectorySize {};
+			SizeType _zip64EndOfCentralDirectoryRecordOffset {};
 	};
 
 } // namespace Zip
