@@ -45,7 +45,7 @@ static std::string averror_to_string(int error)
 }
 
 MediaFileException::MediaFileException(int avError)
-: AvException("MediaFileException: " + averror_to_string(avError))
+: AvException {"MediaFileException: " + averror_to_string(avError)}
 {
 }
 
@@ -181,8 +181,8 @@ MediaFile::hasAttachedPictures(void) const
 	return false;
 }
 
-std::vector<Picture>
-MediaFile::getAttachedPictures(std::size_t nbMaxPictures) const
+void
+MediaFile::visitAttachedPictures(std::function<void(const Picture&)> func) const
 {
 	static const std::map<int, std::string> codecMimeMap =
 	{
@@ -193,8 +193,6 @@ MediaFile::getAttachedPictures(std::size_t nbMaxPictures) const
 		{ AV_CODEC_ID_PNG, "image/x-png" },
 		{ AV_CODEC_ID_PPM, "image/x-portable-pixmap" },
 	};
-
-	std::vector<Picture> pictures;
 
 	for (std::size_t i = 0; i < _context->nb_streams; ++i)
 	{
@@ -225,15 +223,11 @@ MediaFile::getAttachedPictures(std::size_t nbMaxPictures) const
 
 		const AVPacket& pkt {avstream->attached_pic};
 
-		std::copy(pkt.data, pkt.data + pkt.size, std::back_inserter(picture.data));
+		picture.data = reinterpret_cast<const std::byte*>(pkt.data);
+		picture.dataSize = pkt.size;
 
-		pictures.push_back( picture );
-
-		if (pictures.size() >= nbMaxPictures)
-			break;
+		func(picture);
 	}
-
-	return pictures;
 }
 
 std::optional<MediaFileFormat>

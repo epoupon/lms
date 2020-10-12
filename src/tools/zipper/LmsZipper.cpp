@@ -61,14 +61,19 @@ int main(int argc, char* argv[])
 	{
 		Zipper zipper {files};
 
+		Zip::SizeType nbTotalWrittenBytes {};
 		while (!zipper.isComplete())
 		{
 			//std::array<std::byte, Zipper::minOutputBufferSize> buffer;
 			std::array<std::byte, 65536> buffer;
 
-			std::size_t nbWrittenBytes {zipper.writeSome(buffer.data(), buffer.size())};
+			const Zip::SizeType nbWrittenBytes {zipper.writeSome(buffer.data(), buffer.size())};
 			ofs.write(reinterpret_cast<const char*>(buffer.data()), nbWrittenBytes);
+			nbTotalWrittenBytes += nbWrittenBytes;
 		}
+
+		if (nbTotalWrittenBytes != zipper.getTotalZipFile())
+			std::cerr << "ERROR: actual size mismatch!" << std::endl;
 
 		std::cout << "Total zip size = " << zipper.getTotalZipFile() << std::endl;
 	}

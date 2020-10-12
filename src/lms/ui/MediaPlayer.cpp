@@ -238,8 +238,6 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play, float replayGain)
 		if (!track)
 			return;
 
-		const std::string imgResourceMimeType {LmsApp->getImageResource()->getMimeType()};
-
 		const std::string transcodeResource {LmsApp->getAudioTranscodeResource()->getUrl(trackId)};
 		const std::string nativeResource {LmsApp->getAudioFileResource()->getUrl(trackId)};
 
@@ -255,8 +253,8 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play, float replayGain)
 			<< " artist: \"" << (!artists.empty() ? StringUtils::jsEscape(artists.front()->getName()) : "") << "\","
 			<< " release: \"" << (track->getRelease() ? StringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
 			<< " artwork: ["
-			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, ImageResource::Size::Small) << "\", sizes: \"128x128\",	type: \"" << imgResourceMimeType << "\" },"
-			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, ImageResource::Size::Large) << "\", sizes: \"512x512\",	type: \"" << imgResourceMimeType << "\" },"
+			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, ImageResource::Size::Small) << "\", sizes: \"128x128\",	type: \"image/jpeg\" },"
+			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, ImageResource::Size::Large) << "\", sizes: \"512x512\",	type: \"image/jpeg\" },"
 			<< " ]"
 			<< "};";
 		oss << "LMS.mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay

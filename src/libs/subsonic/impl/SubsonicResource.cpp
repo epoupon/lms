@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * copyright (c) 2019 emeric poupon
  *
  * This file is part of LMS.
  *
@@ -546,7 +546,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 		throw BadParameterGenericError {"songId"};
 
 	if (!name && !id)
-		throw RequiredParameterMissingError {};
+		throw RequiredParameterMissingError {"name or id"};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
@@ -1746,21 +1746,21 @@ handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/,
 	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(256)};
 	size = clamp(size, std::size_t {32}, std::size_t {1024});
 
-	std::vector<unsigned char> data;
+	std::unique_ptr<CoverArt::ICoverArt> cover;
 	switch (id.type)
 	{
 		case Id::Type::Track:
-			data = Service<CoverArt::IGrabber>::get()->getFromTrack(context.dbSession, id.value, CoverArt::Format::JPEG, size);
+			cover = Service<CoverArt::IGrabber>::get()->getFromTrack(context.dbSession, id.value, size);
 			break;
 		case Id::Type::Release:
-			data = Service<CoverArt::IGrabber>::get()->getFromRelease(context.dbSession, id.value, CoverArt::Format::JPEG, size);
+			cover = Service<CoverArt::IGrabber>::get()->getFromRelease(context.dbSession, id.value, size);
 			break;
 		default:
 			throw BadParameterGenericError {"id"};
 	}
 
-	response.out().write(reinterpret_cast<const char*>(&data[0]), data.size());
-	response.setMimeType(CoverArt::formatToMimeType(CoverArt::Format::JPEG));
+	response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
+	response.setMimeType(std::string {cover->getMimeType()});
 }
 
 using RequestHandlerFunc = std::function<Response(RequestContext& context)>;

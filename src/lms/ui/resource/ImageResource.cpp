@@ -74,7 +74,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		return;
 	}
 
-	std::vector<uint8_t> cover;
+	std::unique_ptr<CoverArt::ICoverArt> cover;
 
 	if (trackIdStr)
 	{
@@ -90,7 +90,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// DbSession are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock {LmsApp};
-			cover = Service<CoverArt::IGrabber>::get()->getFromTrack(LmsApp->getDbSession(), *trackId, CoverArt::Format::JPEG, *size);
+			cover = Service<CoverArt::IGrabber>::get()->getFromTrack(LmsApp->getDbSession(), *trackId, *size);
 		}
 	}
 	else if (releaseIdStr)
@@ -104,7 +104,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		// DbSession are not thread safe
 		{
 			Wt::WApplication::UpdateLock lock {LmsApp};
-			cover = Service<CoverArt::IGrabber>::get()->getFromRelease(LmsApp->getDbSession(), *releaseId, CoverArt::Format::JPEG, *size);
+			cover = Service<CoverArt::IGrabber>::get()->getFromRelease(LmsApp->getDbSession(), *releaseId, *size);
 		}
 	}
 	else
@@ -113,15 +113,9 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		return;
 	}
 
-	response.setMimeType(getMimeType());
+	response.setMimeType(std::string {cover->getMimeType()});
 
-	response.out().write(reinterpret_cast<const char *>(&cover[0]), cover.size());
-}
-
-std::string
-ImageResource::getMimeType()
-{
-	return CoverArt::formatToMimeType(CoverArt::Format::JPEG);
+	response.out().write(reinterpret_cast<const char *>(cover->getData()), cover->getDataSize());
 }
 
 } // namespace UserInterface

@@ -57,6 +57,7 @@ DownloadResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Resp
 		else
 		{
 			zipper = createZipper();
+			response.setContentLength(zipper->getTotalZipFile());
 			response.setMimeType("application/zip");
 		}
 

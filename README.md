@@ -4,42 +4,38 @@
 
 _LMS_ is a self-hosted music streaming software: access your music collection from anywhere using a web interface!
 
-A [demo](http://lms.demo.poupon.io) instance is available, with the following limitations:
-- Settings cannot be saved
-- No persistent playqueue
-- No administration panel
+A [demo](http://lms.demo.poupon.io) instance is available. Note the administration panel is not available.
 
 ## Main features
-
-* Low memory requirement (the demo instance runs on a Raspberry Pi3B+, using less than 10% of total memory even when transcoding)
-* User management
+* Low memory requirements: the demo instance runs on a Raspberry Pi3B+
 * Recommendation engine
 * Audio transcode for maximum interoperability and low bandwith requirements
+* Multi-value tags: artists, genres, ...
+* Custom tags support: _mood_, _genre_, _albummood_, _albumgrouping_, ...
+* Compilation support
+* [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) support to handle duplicated artist and release names
+* Disc subtitles support
 * ReplayGain support
 * Persistent play queue across sessions
-* Compilation support
-* Multi-value tags: artists, genres, ...
-* Custom tags (ex: _mood_, _genre_, _albummood_, _albumgrouping_, ...)
-* MusicBrainzID support to handle duplicated artist and release names
-* Disc subtitles support
 * _Systemd_ integration
-* _PAM_ authentication backend
+* User management
+  * with optional _PAM_ authentication backend
 * Subsonic API, with the following additional features:
   * Playlists
-  * Starred Album/Artist/Tracks
   * Bookmarks
 
 ## Music discovery
-
 _LMS_ provides several ways to help you find the music you like:
 * Tag-based filters (ex: _Rock_, _Metal_ and _Aggressive_, _Electronic_ and _Relaxed_, ...)
 * Recommendations for similar artists and albums
 * Radio mode, based on what is in the current playqueue
 * Searches in album, artist and track names (including sort names)
-* Random/Most played/Recently played/Recently added for Artist/Albums/Tracks, allowing you to search for things like:
+* Starred Albums/Artists/Tracks
+* Random/Starred/Most played/Recently played/Recently added for Artist/Albums/Tracks, allowing you to search for things like:
   * Recently added _Electronic_ artists
   * Random _Metal_ and _Aggressive_ albums
   * Most played _Relaxed_ tracks
+  * Starred _Jazz_ albums
   * ...
 
 The recommendation engine uses two different sources:
@@ -49,7 +45,7 @@ The recommendation engine uses two different sources:
 __Notes on the self-organizing map__:
 * training the map requires significant computation time on large collections (ex: half an hour for 40k tracks)
 * audio acoustic data is pulled from [AcousticBrainz](https://acousticbrainz.org/). Therefore your audio files _must_ contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier).
-* to enable the audio similarity source, you have to enable it first in the settings panel.
+* to enable the audio similarity source, you have to enable it first in the administration panel.
 
 ## Subsonic API
 The API version implemented is 1.12.0 and has been tested on _Android_ using the official application, _Ultrasonic_ and _DSub_.

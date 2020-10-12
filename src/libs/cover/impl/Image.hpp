@@ -24,33 +24,50 @@
 
 #include <Magick++.h>
 
-#include "cover/CoverArt.hpp"
+#include "utils/Exception.hpp"
 
 namespace CoverArt
 {
-
 	void init(const std::filesystem::path& path);
 
-	class Image
+	// internal use only
+	class ImageException : public LmsException
 	{
 		public:
-
-			// input
-			bool	load(const std::vector<unsigned char>& rawData);
-			bool	load(const std::filesystem::path& p);
-
-			Geometry	getSize() const;
-
-			// Operations
-			bool	scale(Geometry geometry);
-
-			// output
-			std::vector<uint8_t> save(Format format) const;
-
-		private:
-			Magick::Image	_image;
+			using LmsException::LmsException;
 	};
 
+	class EncodedImage
+	{
+		public:
+			EncodedImage() = default;
+			EncodedImage(const std::byte* data, std::size_t dataSize);
+
+			const std::byte* getData() const;
+			std::size_t getDataSize() const;
+
+		private:
+			friend class RawImage;
+			EncodedImage(Magick::Blob blob);
+
+			Magick::Blob _blob;
+	};
+
+	class RawImage
+	{
+		public:
+			RawImage(const std::filesystem::path& p);
+			RawImage(const EncodedImage& encodedImage);
+
+			// Operations
+			void scale(std::size_t width);
+
+			// output
+			EncodedImage encode() const;
+
+		private:
+			Magick::Image _image;
+	};
 
 } // namespace CoverArt
 

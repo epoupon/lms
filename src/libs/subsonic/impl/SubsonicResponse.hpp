@@ -73,9 +73,14 @@ class GenericError : public Error
 class RequiredParameterMissingError : public Error
 {
 	public:
-		RequiredParameterMissingError() : Error {Code::RequiredParameterMissing} {}
+		RequiredParameterMissingError(std::string_view param)
+			: Error {Code::RequiredParameterMissing}
+			, _param {param}
+			{}
+
 	private:
-		std::string getMessage() const override { return "Required parameter is missing."; }
+		std::string getMessage() const override { return "Required parameter '" + _param + "' is missing."; }
+		std::string _param;
 };
 
 class ClientMustUpgradeError : public Error

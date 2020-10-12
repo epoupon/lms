@@ -55,7 +55,7 @@ namespace API::Subsonic
 	{
 		std::vector<T> res {getMultiParametersAs<T>(parameterMap, param)};
 		if (res.empty())
-			throw RequiredParameterMissingError {};
+			throw RequiredParameterMissingError {param};
 
 		return res;
 	}
@@ -78,7 +78,7 @@ namespace API::Subsonic
 	{
 		auto res {getParameterAs<T>(parameterMap, param)};
 		if (!res)
-			throw RequiredParameterMissingError {};
+			throw RequiredParameterMissingError {param};
 
 		return *res;
 	}

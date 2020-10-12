@@ -28,6 +28,8 @@
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
 
+#include "CoverArt.hpp"
+
 namespace {
 
 bool
@@ -40,89 +42,156 @@ isFileSupported(const std::filesystem::path& file, const std::vector<std::filesy
 
 namespace CoverArt {
 
-std::unique_ptr<IGrabber> createGrabber(const std::filesystem::path& execPath)
+std::unique_ptr<IGrabber> createGrabber(const std::filesystem::path& execPath, std::size_t maxCacheSize, std::size_t maxFileSize)
 {
-	return std::make_unique<Grabber>(execPath);
+	return std::make_unique<Grabber>(execPath, maxCacheSize, maxFileSize);
 }
 
-Grabber::Grabber(const std::filesystem::path& execPath)
+Grabber::Grabber(const std::filesystem::path& execPath,
+		std::size_t maxCacheSize,
+		std::size_t maxFileSize)
+	: _maxCacheSize {maxCacheSize}
+	, _maxFileSize {maxFileSize}
 {
+	LMS_LOG(COVER, INFO) << "Max cache size = " << _maxCacheSize;
+	LMS_LOG(COVER, INFO) << "Max file size = " << _maxFileSize;
 	init(execPath);
 }
 
 void
 Grabber::setDefaultCover(const std::filesystem::path& p)
 {
-	_defaultCover = std::make_unique<Image>();
-	if (!_defaultCover->load(p))
+	try
+	{
+		RawImage defaultCover {p};
+		_defaultCover = defaultCover.encode();
+		LMS_LOG(COVER, INFO) << "Successfully read default cover image!";
+	}
+	catch (const ImageException& e)
+	{
 		throw LmsException("Cannot read default cover file '" + p.string() + "'");
+	}
 }
 
-static std::optional<Image>
-getFromAvMediaFile(const Av::MediaFile& input)
+static std::optional<EncodedImage>
+getFromAvMediaFile(const Av::MediaFile& input, Width width)
 {
-	std::vector<Image> res;
+	std::optional<EncodedImage> image;
 
-	for (auto& picture : input.getAttachedPictures(2))
+	input.visitAttachedPictures([&](const Av::Picture& picture)
 	{
-		Image image;
+		if (image)
+			return;
 
-		if (image.load(picture.data))
-			return image;
-		else
-			LMS_LOG(COVER, ERROR) << "Cannot load embedded cover file in '" << input.getPath().string() << "'";
+		try
+		{
+			EncodedImage encodedImage {picture.data, picture.dataSize};
+
+			RawImage rawImage {encodedImage};
+			rawImage.scale(width);
+
+			image = rawImage.encode();
+		}
+		catch (const ImageException& e)
+		{
+			LMS_LOG(COVER, ERROR) << "Cannot read embedded cover: " << e.what();
+		}
+	});
+
+	return image;
+}
+
+static std::optional<EncodedImage>
+getFromFile(const std::filesystem::path& p, Width width)
+{
+	std::optional<EncodedImage> image;
+
+	try
+	{
+		RawImage rawImage {p};
+		rawImage.scale(width);
+
+		image = rawImage.encode();
+	}
+	catch (const ImageException& e)
+	{
+		LMS_LOG(COVER, ERROR) << "Cannot read cover in file '" << p.string() << "': " << e.what();
 	}
 
-	LMS_LOG(COVER, DEBUG) << "No cover found in media file '" << input.getPath().string() << "'";
-	return std::nullopt;
+	return image;
 }
 
-std::optional<Image>
-Grabber::getFromDirectory(const std::filesystem::path& p, std::string_view preferredFileName) const
+EncodedImage
+Grabber::getDefault(Width width)
+{
+	{
+		std::shared_lock lock {_cacheMutex};
+
+		if (auto it {_defaultCache.find(width)}; it != std::cend(_defaultCache))
+			return it->second;
+	}
+
+	{
+		std::unique_lock lock {_cacheMutex};
+
+		if (auto it {_defaultCache.find(width)}; it != std::cend(_defaultCache))
+			return it->second;
+
+		RawImage rawImage {*_defaultCover};
+		rawImage.scale(width);
+		EncodedImage res {rawImage.encode()};
+
+		_defaultCache[width] = res;
+		LMS_LOG(COVER, DEBUG) << "Default cache entries = " << _defaultCache.size();
+
+		return res;
+	}
+}
+
+std::optional<EncodedImage>
+Grabber::getFromDirectory(const std::filesystem::path& p, std::string_view preferredFileName, Width width) const
 {
 	const std::multimap<std::string, std::filesystem::path> coverPaths {getCoverPaths(p)};
 
-	auto tryLoadImage = [](const std::filesystem::path& p, Image& image)
+	auto tryLoadImageFromFilename = [&](std::string_view fileName)
 	{
-		if (!image.load(p))
-		{
-			LMS_LOG(COVER, ERROR) << "Cannot load image in file '" << p.string() << "'";
-			return false;
-		}
+		std::optional<EncodedImage> image;
 
-		return true;
-	};
-
-	auto tryLoadImageFromFilename = [&](std::string_view fileName, Image& image)
-	{
 		auto range {coverPaths.equal_range(std::string {fileName})};
 		for (auto it {range.first}; it != range.second; ++it)
 		{
-			if (tryLoadImage(it->second, image))
-				return true;
+			image = getFromFile(it->second, width);
+			if (!image)
+				continue;
 		}
-		return false;
+		return image;
 	};
 
-	Image image;
+	std::optional<EncodedImage> image;
 
-	if (!preferredFileName.empty() && tryLoadImageFromFilename(preferredFileName, image))
-		return image;
+	if (!preferredFileName.empty())
+	{
+		image = tryLoadImageFromFilename(preferredFileName);
+		if (image)
+			return image;
+	}
 
 	for (std::string_view filename : _preferredFileNames)
 	{
-		if (tryLoadImageFromFilename(filename, image))
+		image = tryLoadImageFromFilename(filename);
+		if (image)
 			return image;
 	}
 
 	// Just pick one
 	for (const auto& [filename, coverPath] : coverPaths)
 	{
-		if (tryLoadImage(coverPath, image))
+		image = getFromFile(coverPath, width);
+		if (image)
 			return image;
 	}
 
-	return std::nullopt;
+	return image;
 }
 
 std::multimap<std::string, std::filesystem::path>
@@ -156,29 +225,32 @@ Grabber::getCoverPaths(const std::filesystem::path& directoryPath) const
 	return res;
 }
 
-std::optional<Image>
-Grabber::getFromTrack(const std::filesystem::path& p) const
+std::optional<EncodedImage>
+Grabber::getFromTrack(const std::filesystem::path& p, Width width) const
 {
+	std::optional<EncodedImage> image;
+
 	try
 	{
-		Av::MediaFile input(p);
+		Av::MediaFile input {p};
 
-		return getFromAvMediaFile(input);
+		image = getFromAvMediaFile(input, width);
 	}
-	catch (Av::MediaFileException& e)
+	catch (Av::AvException& e)
 	{
 		LMS_LOG(COVER, ERROR) << "Cannot get covers from track " << p.string() << ": " << e.what();
-		return std::nullopt;
 	}
+
+	return image;
 }
 
-Image
-Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, std::size_t size)
+EncodedImage
+Grabber::getFromTrackInternal(Database::Session& dbSession, Database::IdType trackId, Width width)
 {
 	using namespace Database;
 
-	const CacheEntryDesc cacheEntryDesc {CacheEntryDesc::Type::Track, trackId, size};
-	std::optional<Image> cover {loadFromCache(cacheEntryDesc)};
+	const CacheEntryDesc cacheEntryDesc {CacheEntryDesc::Type::Track, trackId, width};
+	std::optional<EncodedImage> cover {loadFromCache(cacheEntryDesc)};
 
 	if (cover)
 		return *cover;
@@ -203,33 +275,30 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, st
 	}
 
 	if (hasCover)
-		cover = getFromTrack(trackPath);
+		cover = getFromTrack(trackPath, width);
 
 	if (!cover)
-		cover = getFromDirectory(trackPath.parent_path(), trackPath.filename().replace_extension("").string());
+		cover = getFromDirectory(trackPath.parent_path(), trackPath.filename().replace_extension("").string(), width);
 
 	if (!cover && isMultiDisc)
 	{
 		if (trackPath.parent_path().has_parent_path())
-			cover = getFromDirectory(trackPath.parent_path().parent_path(), {});
+			cover = getFromDirectory(trackPath.parent_path().parent_path(), {}, width);
 	}
 
 	if (!cover)
-		cover = *_defaultCover;
-
-	cover->scale(Geometry {size, size});
+		cover = getDefault(width);
 
 	saveToCache(cacheEntryDesc, *cover);
 
 	return *cover;
 }
 
-
-Image
-Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, std::size_t size)
+EncodedImage
+Grabber::getFromReleaseInternal(Database::Session& session, Database::IdType releaseId, Width width)
 {
-	const CacheEntryDesc cacheEntryDesc {CacheEntryDesc::Type::Release, releaseId, size};
-	std::optional<Image> cover {loadFromCache(cacheEntryDesc)};
+	const CacheEntryDesc cacheEntryDesc {CacheEntryDesc::Type::Release, releaseId, width};
+	std::optional<EncodedImage> cover {loadFromCache(cacheEntryDesc)};
 
 	if (cover)
 		return *cover;
@@ -249,15 +318,11 @@ Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, 
 
 	if (trackId)
 	{
-		cover = getFromTrack(session, *trackId, size);
+		cover = getFromTrackInternal(session, *trackId, width);
 	}
-	else
-	{
-		if (!cover)
-			cover = *_defaultCover;
 
-		cover->scale(Geometry {size, size});
-	}
+	if (!cover)
+		cover = getDefault(width);
 
 	saveToCache(cacheEntryDesc, *cover);
 
@@ -269,42 +334,43 @@ Grabber::flushCache()
 {
 	std::unique_lock lock {_cacheMutex};
 
-	LMS_LOG(COVER, DEBUG) << "Cache stats: hits = " << _cacheHits << ", misses = " << _cacheMisses;
+	LMS_LOG(COVER, DEBUG) << "Cache stats: hits = " << _cacheHits << ", misses = " << _cacheMisses << ", nb entries = " << _cache.size() << ", size = " << _cacheSize;
 	_cacheHits = 0;
 	_cacheMisses = 0;
+	_cacheSize = 0;
 	_cache.clear();
 }
 
-std::vector<uint8_t>
-Grabber::getFromTrack(Database::Session& session, Database::IdType trackId, Format format, std::size_t width)
+std::unique_ptr<ICoverArt>
+Grabber::getFromTrack(Database::Session& session, Database::IdType trackId, std::size_t width)
 {
-	const Image cover {getFromTrack(session, trackId, width)};
-
-	assert(format == Format::JPEG);
-	return cover.save(format);
+	CoverArt toto {getFromTrackInternal(session, trackId, width)};
+	return std::make_unique<CoverArt>(getFromTrackInternal(session, trackId, width));
 }
 
-std::vector<uint8_t>
-Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, Format format, std::size_t width)
+std::unique_ptr<ICoverArt>
+Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, std::size_t width)
 {
-	const Image cover {getFromRelease(session, releaseId, width)};
-
-	assert(format == Format::JPEG);
-	return cover.save(format);
+	return std::make_unique<CoverArt>(getFromReleaseInternal(session, releaseId, width));
 }
 
 void
-Grabber::saveToCache(const CacheEntryDesc& entryDesc, const Image& image)
+Grabber::saveToCache(const CacheEntryDesc& entryDesc, const EncodedImage& image)
 {
 	std::unique_lock lock {_cacheMutex};
 
-	if (_cache.size() >= _maxCacheEntries)
-		_cache.erase(Random::pickRandom(_cache));
+	while (_cacheSize + image.getDataSize() > _maxCacheSize && !_cache.empty())
+	{
+		auto it {Random::pickRandom(_cache)};
+		_cacheSize -= it->second.getDataSize();
+		_cache.erase(it);
+	}
 
+	_cacheSize += image.getDataSize();
 	_cache[entryDesc] = image;
 }
 
-std::optional<Image>
+std::optional<EncodedImage>
 Grabber::loadFromCache(const CacheEntryDesc& entryDesc)
 {
 	std::shared_lock lock {_cacheMutex};
