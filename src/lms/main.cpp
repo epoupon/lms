@@ -168,7 +168,9 @@ int main(int argc, char* argv[])
 		// Service initialization order is important
 		Service<Auth::IAuthTokenService> authTokenService {Auth::createAuthTokenService(config->getULong("login-throttler-max-entriees", 10000))};
 		Service<Auth::IPasswordService> passwordService {Auth::createPasswordService(config->getULong("login-throttler-max-entriees", 10000))};
-		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0])};
+		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0],
+				config->getULong("cover-max-cache-size", 30) * 1000 * 1000,
+				config->getULong("cover-max-file-size", 10) * 1000 * 1000)};
 		coverArtService->setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
 		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
 		recommendationEngineService->requestLoad();

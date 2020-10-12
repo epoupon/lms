@@ -1,6 +1,5 @@
-
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -18,23 +17,31 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <string>
+#include "CoverArt.hpp"
 
 namespace CoverArt
 {
 
-	enum class Format
-	{
-		JPEG,
-	};
-	std::string formatToMimeType(Format format);
+	CoverArt::CoverArt(EncodedImage image)
+		: _image {image}
+	{}
 
-	struct Geometry
+	const std::byte*
+	CoverArt::getData() const
 	{
-		std::size_t width;
-		std::size_t height;
-	};
+		return _image.getData();
+	}
 
-}
+	std::size_t
+	CoverArt::getDataSize() const
+	{
+		return _image.getDataSize();
+	}
+
+	std::string_view
+	CoverArt::getMimeType() const
+	{
+		return "image/jpeg";
+	}
+
+} // namespace CoverArt

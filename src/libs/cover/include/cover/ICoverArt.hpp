@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,36 +20,19 @@
 #pragma once
 
 #include <cstddef>
-#include <filesystem>
-#include <memory>
 #include <string_view>
-
-#include "database/Types.hpp"
-#include "cover/ICoverArt.hpp"
-
-namespace Database
-{
-	class Session;
-}
 
 namespace CoverArt
 {
-	using Width = std::size_t;
 
-	class IGrabber
+	class ICoverArt
 	{
 		public:
-			virtual ~IGrabber() = default;
+			virtual ~ICoverArt() = default;
 
-			virtual void			setDefaultCover(const std::filesystem::path& defaultCoverPath) = 0;
-
-			virtual std::unique_ptr<ICoverArt>	getFromTrack(Database::Session& dbSession, Database::IdType trackId, Width width) = 0;
-			virtual std::unique_ptr<ICoverArt>	getFromRelease(Database::Session& dbSession, Database::IdType releaseId, Width width) = 0;
-
-			virtual void flushCache() = 0;
+			virtual const std::byte* getData() const = 0;
+			virtual std::size_t getDataSize() const = 0;
+			virtual std::string_view getMimeType() const = 0;
 	};
 
-	std::unique_ptr<IGrabber> createGrabber(const std::filesystem::path& execPath, std::size_t maxCacheEntries, std::size_t maxFileSize);
-
 } // namespace CoverArt
-

@@ -23,6 +23,7 @@
 
 #include <chrono>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <optional>
 #include <string>
@@ -40,7 +41,8 @@ void AvInit();
 struct Picture
 {
 	std::string mimeType;
-	std::vector<uint8_t> data;
+	const std::byte* data {};
+	std::size_t dataSize;
 };
 
 struct StreamInfo
@@ -76,11 +78,11 @@ class MediaFile
 		std::vector<StreamInfo>	getStreamInfo() const;
 		std::optional<std::size_t>	getBestStream() const; // none if failure/unknown
 		bool			hasAttachedPictures(void) const;
-		std::vector<Picture>	getAttachedPictures(std::size_t nbMaxPictures) const;
+		void			visitAttachedPictures(std::function<void(const Picture&)> func) const;
 
 	private:
 
-		std::filesystem::path	_p;
+		const std::filesystem::path	_p;
 		AVFormatContext* _context {};
 };
 

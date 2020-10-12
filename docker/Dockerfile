@@ -92,7 +92,7 @@ RUN \
 
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
-	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} && \
+	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=NO && \
 	make && \
 	make install
 
@@ -108,6 +108,7 @@ RUN \
 	--prefix=${PREFIX} \
 	--enable-shared=yes \
 	--enable-static=no \
+	--disable-openmp \
 	--with-quantum-depth=8 \
 	--with-modules=no \
 	--with-frozenpaths=no \
@@ -197,8 +198,7 @@ ARG	RUNTIME_PACKAGES=" \
 	boost-system \
 	boost-thread \
 	libconfig++ \
-	taglib \
-	libgomp"
+	taglib"
 
 ARG	LMS_USER=lms
 ARG	LMS_GROUP=lms

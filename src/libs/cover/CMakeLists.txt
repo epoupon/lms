@@ -1,5 +1,6 @@
 
 add_library(lmscover SHARED
+	impl/CoverArt.cpp
 	impl/CoverArtGrabber.cpp
 	impl/Image.cpp
 	)
