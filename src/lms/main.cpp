@@ -76,6 +76,11 @@ generateWtConfig(std::string execPath)
 	if (!wtAccessLogFilePath.empty())
 		args.push_back("--accesslog=" + wtAccessLogFilePath.string());
 
+	{
+		const unsigned long httpServerThreadCount {configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(1, std::thread::hardware_concurrency())};
+		args.push_back("--threads=" + std::to_string(httpServerThreadCount));
+	}
+
 	// Generate the wt_config.xml file
 	boost::property_tree::ptree pt;
 
@@ -83,11 +88,6 @@ generateWtConfig(std::string execPath)
 	pt.put("server.application-settings.log-file", wtLogFilePath.string());
 	pt.put("server.application-settings.log-config", Service<IConfig>::get()->getString("log-config", "* -debug -info:WebRequest"));
 	pt.put("server.application-settings.behind-reverse-proxy", Service<IConfig>::get()->getBool("behind-reverse-proxy", false));
-
-	{
-		const unsigned long httpServerThreadCount {configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(1, std::thread::hardware_concurrency())};
-		pt.put("server.application-settings.num-threads", httpServerThreadCount);
-	}
 
 	{
 		boost::property_tree::ptree viewport;
