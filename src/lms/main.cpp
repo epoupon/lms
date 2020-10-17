@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <thread>
+
 #include <boost/property_tree/xml_parser.hpp>
 
 #include <Wt/WServer.h>
@@ -47,6 +49,7 @@ generateWtConfig(std::string execPath)
 	const std::filesystem::path wtLogFilePath {Service<IConfig>::get()->getPath("log-file", "/var/log/lms.log")};
 	const std::filesystem::path wtAccessLogFilePath {Service<IConfig>::get()->getPath("access-log-file", "/var/log/lms.access.log")};
 	const std::filesystem::path wtResourcesPath {Service<IConfig>::get()->getPath("wt-resources", "/usr/share/Wt/resources")};
+	const unsigned long configHttpServerThreadCount {Service<IConfig>::get()->getULong("http-server-thread-count", 0)};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
@@ -80,6 +83,11 @@ generateWtConfig(std::string execPath)
 	pt.put("server.application-settings.log-file", wtLogFilePath.string());
 	pt.put("server.application-settings.log-config", Service<IConfig>::get()->getString("log-config", "* -debug -info:WebRequest"));
 	pt.put("server.application-settings.behind-reverse-proxy", Service<IConfig>::get()->getBool("behind-reverse-proxy", false));
+
+	{
+		const unsigned long httpServerThreadCount {configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(1, std::thread::hardware_concurrency())};
+		pt.put("server.application-settings.num-threads", httpServerThreadCount);
+	}
 
 	{
 		boost::property_tree::ptree viewport;
