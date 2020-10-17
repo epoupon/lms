@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -16,30 +16,30 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
-#include <Wt/WResource.h>
-#include <Wt/Http/Response.h>
+#ifndef LMS_SUPPORT_IMAGE_GM
+#error "Bad configuration"
+#endif
 
-namespace Database
+#include <Magick++.h>
+
+#include "cover/IEncodedImage.hpp"
+
+namespace CoverArt::GraphicsMagick
 {
-	class Db;
+	class RawImage;
+	class JPEGImage : public IEncodedImage
+	{
+		public:
+			JPEGImage(const RawImage& rawImage, unsigned quality);
+
+		private:
+			const std::byte* getData() const override;
+			std::size_t getDataSize() const override;
+			std::string_view getMimeType() const override { return "image/jpeg"; }
+
+			Magick::Blob _blob;
+	};
 }
-
-namespace API::Subsonic
-{
-
-class SubsonicResource final : public Wt::WResource
-{
-	public:
-		SubsonicResource(Database::Db& db);
-
-		static std::string getPath() { return "rest/"; }
-	private:
-
-		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;
-
-		Database::Db& _db;
-};
-
-} // namespace

@@ -27,6 +27,7 @@
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
+#include "database/Session.hpp"
 #include "database/User.hpp"
 #include "recommendation/IEngine.hpp"
 #include "utils/Logger.hpp"

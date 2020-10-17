@@ -24,6 +24,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/User.hpp"
+#include "database/Session.hpp"
 #include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"

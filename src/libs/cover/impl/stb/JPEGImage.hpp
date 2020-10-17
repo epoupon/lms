@@ -17,25 +17,23 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <vector>
 
-#include "cover/ICoverArt.hpp"
-#include "Image.hpp"
+#include "cover/IEncodedImage.hpp"
 
-namespace CoverArt
+namespace CoverArt::STB
 {
-
-	class CoverArt : public ICoverArt
+	class RawImage;
+	class JPEGImage : public IEncodedImage
 	{
 		public:
-			CoverArt(EncodedImage image);
-
-			const std::byte* getData() const override;
-			std::size_t getDataSize() const override;
-			std::string_view getMimeType() const override;
+			JPEGImage(const RawImage& rawImage, unsigned quality);
 
 		private:
-			EncodedImage _image;
-	};
+			const std::byte* getData() const override;
+			std::size_t getDataSize() const override;
+			std::string_view getMimeType() const override { return "image/jpeg"; }
 
-} // namespace CoverArt
+			std::vector<std::byte> _data;
+	};
+}

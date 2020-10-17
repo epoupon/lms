@@ -20,6 +20,7 @@
 #include "ReleasePopup.hpp"
 
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/User.hpp"
 #include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"

@@ -25,6 +25,7 @@
 
 #include "common/ValueStringModel.hpp"
 #include "database/Artist.hpp"
+#include "database/Session.hpp"
 #include "database/User.hpp"
 #include "database/TrackList.hpp"
 #include "utils/Logger.hpp"

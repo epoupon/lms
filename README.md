@@ -92,10 +92,11 @@ __Notes__:
 * a C++17 compiler is needed
 * ffmpeg version 4 minimum is required
 ```sh
-apt-get install g++ cmake libboost-system-dev libavutil-dev libavformat-dev libgraphicsmagick++1-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev libpam0g-dev
+apt-get install g++ cmake libboost-system-dev libavutil-dev libavformat-dev libstb-dev libconfig++-dev libpstreams-dev ffmpeg libtag1-dev libpam0g-dev
 ```
-
-__Note__: package libpam0g-dev is optional (only for using PAM authentication)
+__Notes__:
+* libpam0g-dev is optional (only for using PAM authentication)
+* libstb-dev can be replaced by libgraphicsmagick++1-dev (the latter will likely use more RAM)
 
 You also need _Wt4_, which is not packaged yet on _Debian_. See [installation instructions](https://www.webtoolkit.eu/wt/doc/reference/html/InstallationUnix.html).</br>
 No optional requirement is needed, except openSSL if you plan not to deploy behind a reverse proxy (which is not recommended).
@@ -110,7 +111,9 @@ mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
-__Note__: in order to customize the installation directory, you can use the _-DCMAKE_INSTALL_PREFIX_ option (defaults to `/usr/local`).
+__Notes__:
+* you can customize the installation directory using `-DCMAKE_INSTALL_PREFIX=path` (defaults to `/usr/local`).
+* you can customize the image library using `-DIMAGE_LIBRARY=<STB|GraphicksMagick++>`
 
 ```sh
 make

@@ -27,6 +27,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
@@ -182,7 +183,6 @@ DownloadArtistResource::DownloadArtistResource(Database::IdType artistId)
 std::unique_ptr<Zip::Zipper>
 DownloadArtistResource::createZipper()
 {
-	Wt::WApplication::UpdateLock lock {LmsApp}; // DbSession are not thread safe
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 	const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), _artistId)};
@@ -209,7 +209,6 @@ DownloadReleaseResource::DownloadReleaseResource(Database::IdType releaseId)
 std::unique_ptr<Zip::Zipper>
 DownloadReleaseResource::createZipper()
 {
-	Wt::WApplication::UpdateLock lock {LmsApp}; // DbSession are not thread safe
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 	const Database::Release::pointer release {Database::Release::getById(LmsApp->getDbSession(), _releaseId)};
@@ -235,7 +234,6 @@ DownloadTrackResource::DownloadTrackResource(Database::IdType trackId)
 std::unique_ptr<Zip::Zipper>
 DownloadTrackResource::createZipper()
 {
-	Wt::WApplication::UpdateLock lock {LmsApp}; // DbSession are not thread safe
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 	const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), _trackId)};

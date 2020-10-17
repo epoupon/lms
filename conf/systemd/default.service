@@ -10,6 +10,7 @@ WorkingDirectory=/var/lms
 ExecStart=/usr/bin/lms
 User=lms
 Group=lms
+Environment=OMP_THREAD_LIMIT=1
 
 [Install]
 WantedBy=multi-user.target

@@ -24,8 +24,6 @@
 #include <Wt/WApplication.h>
 #include <Wt/WPopupMenu.h>
 
-#include "database/Db.hpp"
-#include "database/Session.hpp"
 #include "scanner/IMediaScanner.hpp"
 
 #include "LmsApplicationGroup.hpp"
@@ -35,6 +33,7 @@ namespace Database {
 	class Cluster;
 	class Db;
 	class Release;
+	class Session;
 	class User;
 }
 
@@ -83,7 +82,7 @@ class LmsApplication : public Wt::WApplication
 		std::shared_ptr<ImageResource> getImageResource() { return _imageResource; }
 		std::shared_ptr<AudioTranscodeResource> getAudioTranscodeResource() { return _audioTranscodeResource; }
 		std::shared_ptr<AudioFileResource> getAudioFileResource() { return _audioFileResource; }
-		Database::Session& getDbSession() { return _dbSession;}
+		Database::Session& getDbSession(); // always thread safe
 
 		Wt::Dbo::ptr<Database::User> getUser();
 		bool isUserAuthStrong() const; // user must be logged in prior this call
@@ -126,8 +125,8 @@ class LmsApplication : public Wt::WApplication
 
 		void createHome();
 
+		Database::Db&							_db;
 		Wt::Signal<>							_preQuit;
-		Database::Session						_dbSession;
 		LmsApplicationGroupContainer&   		_appGroups;
 		Events									_events;
 		std::optional<Database::IdType>			_userId;

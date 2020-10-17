@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,35 +19,36 @@
 
 #pragma once
 
+#ifndef LMS_SUPPORT_IMAGE_STB
+#error "Bad configuration"
+#endif
+
+#include <cstddef>
 #include <filesystem>
-#include <memory>
 
-#include "database/Types.hpp"
 #include "cover/IEncodedImage.hpp"
+#include "IRawImage.hpp"
 
-namespace Database
+namespace CoverArt::STB
 {
-	class Session;
-}
-
-namespace CoverArt
-{
-	class IGrabber
+	class RawImage : public IRawImage
 	{
 		public:
-			virtual ~IGrabber() = default;
+			RawImage(const std::byte* encodedData, std::size_t encodedDataSize);
+			RawImage(const std::filesystem::path& path);
 
-			virtual std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width) = 0;
-			virtual std::shared_ptr<IEncodedImage>	getFromRelease(Database::Session& dbSession, Database::IdType releaseId, ImageSize width) = 0;
+			void resize(ImageSize width) override;
+			std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const override;
 
-			virtual void flushCache() = 0;
+			ImageSize getWidth() const;
+			ImageSize getHeight() const;
+			const std::byte* getData() const;
+
+		private:
+			int _width;
+			int _height;
+			using UniquePtrFree = std::unique_ptr<unsigned char, decltype(&std::free)>;
+			UniquePtrFree _data {nullptr, std::free};
 	};
-
-	std::unique_ptr<IGrabber> createGrabber(const std::filesystem::path& execPath,
-			const std::filesystem::path& defaultCoverPath,
-			std::size_t maxCacheEntries,
-			std::size_t maxFileSize,
-			unsigned jpegQuality);
-
-} // namespace CoverArt
+}
 

@@ -23,6 +23,7 @@
 #include <Wt/Http/Response.h>
 
 #include "av/AvInfo.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "utils/FileResourceHandlerCreator.hpp"
 #include "utils/Logger.hpp"
@@ -48,9 +49,6 @@ static
 std::optional<std::filesystem::path>
 getTrackPathFromTrackId(Database::IdType trackId)
 {
-	// DbSession are not thread safe
-	Wt::WApplication::UpdateLock lock {LmsApp};
-
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 	const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};

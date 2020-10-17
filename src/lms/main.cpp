@@ -28,6 +28,7 @@
 #include "av/AvTranscoder.hpp"
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Db.hpp"
+#include "database/Session.hpp"
 #include "scanner/IMediaScanner.hpp"
 #include "recommendation/IEngine.hpp"
 #include "subsonic/SubsonicResource.hpp"
@@ -140,7 +141,7 @@ int main(int argc, char* argv[])
 		std::filesystem::create_directories(config->getPath("working-dir") / "cache");
 
 		// Construct WT configuration and get the argc/argv back
-		std::vector<std::string> wtServerArgs = generateWtConfig(argv[0]);
+		const std::vector<std::string> wtServerArgs {generateWtConfig(argv[0])};
 
 		std::vector<const char*> wtArgv(wtServerArgs.size());
 		for (std::size_t i = 0; i < wtServerArgs.size(); ++i)
@@ -149,8 +150,8 @@ int main(int argc, char* argv[])
 			wtArgv[i] = wtServerArgs[i].c_str();
 		}
 
-		Wt::WServer server(argv[0]);
-		server.setServerConfiguration (wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
+		Wt::WServer server {argv[0]};
+		server.setServerConfiguration(wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
 
 		// lib init
 		Av::Transcoder::init();
@@ -169,9 +170,10 @@ int main(int argc, char* argv[])
 		Service<Auth::IAuthTokenService> authTokenService {Auth::createAuthTokenService(config->getULong("login-throttler-max-entriees", 10000))};
 		Service<Auth::IPasswordService> passwordService {Auth::createPasswordService(config->getULong("login-throttler-max-entriees", 10000))};
 		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0],
+				server.appRoot() + "/images/unknown-cover.jpg",
 				config->getULong("cover-max-cache-size", 30) * 1000 * 1000,
-				config->getULong("cover-max-file-size", 10) * 1000 * 1000)};
-		coverArtService->setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
+				config->getULong("cover-max-file-size", 10) * 1000 * 1000,
+				config->getULong("cover-jpeg-quality", 75))};
 		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
 		recommendationEngineService->requestLoad();
 		Service<Scanner::IMediaScanner> mediaScannerService {Scanner::createMediaScanner(database)};

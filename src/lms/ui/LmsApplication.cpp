@@ -32,6 +32,7 @@
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/User.hpp"
 #include "explore/Explore.hpp"
 #include "explore/Filters.hpp"
@@ -65,10 +66,16 @@ LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplica
 	return std::make_unique<LmsApplication>(env, db, appGroups);
 }
 
-	LmsApplication*
+LmsApplication*
 LmsApplication::instance()
 {
 	return reinterpret_cast<LmsApplication*>(Wt::WApplication::instance());
+}
+
+Database::Session&
+LmsApplication::getDbSession()
+{
+	return _db.getTLSSession();
 }
 
 Wt::Dbo::ptr<Database::User>
@@ -77,7 +84,7 @@ LmsApplication::getUser()
 	if (!_userId)
 		return {};
 
-	return Database::User::getById(_dbSession, *_userId);
+	return Database::User::getById(getDbSession(), *_userId);
 }
 
 bool
@@ -89,7 +96,7 @@ LmsApplication::isUserAuthStrong() const
 bool
 LmsApplication::isUserAdmin()
 {
-	auto transaction {_dbSession.createSharedTransaction()};
+	auto transaction {getDbSession().createSharedTransaction()};
 
 	return getUser()->isAdmin();
 }
@@ -97,7 +104,7 @@ LmsApplication::isUserAdmin()
 bool
 LmsApplication::isUserDemo()
 {
-	auto transaction {_dbSession.createSharedTransaction()};
+	auto transaction {getDbSession().createSharedTransaction()};
 
 	return getUser()->isDemo();
 }
@@ -105,7 +112,7 @@ LmsApplication::isUserDemo()
 std::string
 LmsApplication::getUserLoginName()
 {
-	auto transaction {_dbSession.createSharedTransaction()};
+	auto transaction {getDbSession().createSharedTransaction()};
 
 	return getUser()->getLoginName();
 }
@@ -114,7 +121,7 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 		Database::Db& db,
 		LmsApplicationGroupContainer& appGroups)
 : Wt::WApplication {env},
-  _dbSession {db},
+  _db {db},
   _appGroups {appGroups}
 {
 
@@ -155,8 +162,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	// If here is no account in the database, launch the first connection wizard
 	bool firstConnection {};
 	{
-		auto transaction {_dbSession.createSharedTransaction()};
-		firstConnection = Database::User::getAll(_dbSession).empty();
+		auto transaction {getDbSession().createSharedTransaction()};
+		firstConnection = Database::User::getAll(getDbSession()).empty();
 	}
 
 	LMS_LOG(UI, DEBUG) << "Creating root widget. First connection = " << firstConnection;
@@ -174,8 +181,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 		Database::User::UITheme theme {Database::User::defaultUITheme};
 		if (userId)
 		{
-			auto transaction {_dbSession.createSharedTransaction()};
-			const auto user {Database::User::getById(_dbSession, *userId)};
+			auto transaction {getDbSession().createSharedTransaction()};
+			const auto user {Database::User::getById(getDbSession(), *userId)};
 			if (user)
 				theme = user->getUITheme();
 		}
@@ -206,8 +213,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 		auth->userLoggedIn.connect(this, [this](Database::IdType userId)
 		{
 			{
-				auto transaction {_dbSession.createSharedTransaction()};
-				const auto user {Database::User::getById(_dbSession, userId)};
+				auto transaction {getDbSession().createSharedTransaction()};
+				const auto user {Database::User::getById(getDbSession(), userId)};
 				if (user)
 				{
 					LmsTheme* lmsTheme {static_cast<LmsTheme*>(LmsApp->theme().get())};
@@ -402,7 +409,7 @@ LmsApplication::handleUserLoggedOut()
 	LMS_LOG(UI, INFO) << "User '" << getUserLoginName() << " 'logged out";
 
 	{
-		auto transaction {_dbSession.createUniqueTransaction()};
+		auto transaction {getDbSession().createUniqueTransaction()};
 		getUser().modify()->clearAuthTokens();
 	}
 

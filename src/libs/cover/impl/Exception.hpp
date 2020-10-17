@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -16,30 +16,19 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
-#include <Wt/WResource.h>
-#include <Wt/Http/Response.h>
+#include "utils/Exception.hpp"
 
-namespace Database
+namespace CoverArt
 {
-	class Db;
-}
+	// internal use only
+	class ImageException : public LmsException
+	{
+		public:
+			using LmsException::LmsException;
+	};
 
-namespace API::Subsonic
-{
+} // namespace CoverArt
 
-class SubsonicResource final : public Wt::WResource
-{
-	public:
-		SubsonicResource(Database::Db& db);
-
-		static std::string getPath() { return "rest/"; }
-	private:
-
-		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;
-
-		Database::Db& _db;
-};
-
-} // namespace

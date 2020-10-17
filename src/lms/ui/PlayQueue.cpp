@@ -23,6 +23,7 @@
 #include <Wt/WText.h>
 
 #include "database/Cluster.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"

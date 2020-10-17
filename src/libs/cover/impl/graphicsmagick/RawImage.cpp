@@ -17,21 +17,23 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Image.hpp"
-
-#include <atomic>
-#include <fstream>
+#include "RawImage.hpp"
 
 #include <magick/resource.h>
 
 #include "utils/Logger.hpp"
+#include "JPEGImage.hpp"
+#include "Exception.hpp"
 
-namespace CoverArt {
+namespace CoverArt::GraphicsMagick {
 
 void
 init(const std::filesystem::path& path)
 {
 	Magick::InitializeMagick(path.string().c_str());
+
+	if (auto nbThreads {MagickLib::GetMagickResourceLimit(MagickLib::ThreadsResource)}; nbThreads != 1)
+		LMS_LOG(COVER, WARNING) << "Consider setting env var OMP_NUM_THREADS=1 to save resources";
 
 	if (!MagickLib::SetMagickResourceLimit(MagickLib::ThreadsResource, 1))
 		LMS_LOG(COVER, ERROR) << "Cannot set Magick thread resource limit to 1!";
@@ -43,26 +45,27 @@ init(const std::filesystem::path& path)
 	LMS_LOG(COVER, INFO) << "Magick Disk resource limit = " << GetMagickResourceLimit(MagickLib::DiskResource);
 }
 
-EncodedImage::EncodedImage(const std::byte* data, std::size_t dataSize)
-: _blob {data, dataSize}
+RawImage::RawImage(const std::byte* encodedData, std::size_t encodedDataSize)
 {
-}
-
-EncodedImage::EncodedImage(Magick::Blob blob)
-:  _blob {blob}
-{
-}
-
-const std::byte*
-EncodedImage::getData() const
-{
-	return reinterpret_cast<const std::byte*>(_blob.data());
-}
-
-std::size_t
-EncodedImage::getDataSize() const
-{
-	return _blob.length();
+	try
+	{
+		Magick::Blob blob {encodedData, encodedDataSize};
+		_image.read(blob);
+	}
+	catch (Magick::WarningCoder& e)
+	{
+		LMS_LOG(COVER, WARNING) << "Caught Magick WarningCoder: " << e.what();
+	}
+	catch (Magick::Warning& e)
+	{
+		LMS_LOG(COVER, WARNING) << "Caught Magick warning: " << e.what();
+		throw ImageException {std::string {"Magick read warning: "} + e.what()};
+	}
+	catch (Magick::Exception& e)
+	{
+		LMS_LOG(COVER, ERROR) << "Caught Magick exception: " << e.what();
+		throw ImageException {std::string {"Magick read error: "} + e.what()};
+	}
 }
 
 RawImage::RawImage(const std::filesystem::path& p)
@@ -73,79 +76,45 @@ RawImage::RawImage(const std::filesystem::path& p)
 	}
 	catch (Magick::WarningCoder& e)
 	{
-		LMS_LOG(COVER, WARNING) << "Caught Magick WarningCoder while loading image '" << p.string() << "': " << e.what();
+		LMS_LOG(COVER, WARNING) << "Caught Magick WarningCoder: " << e.what();
 	}
 	catch (Magick::Warning& e)
 	{
-		LMS_LOG(COVER, WARNING) << "Caught Magick warning while loading raw image '" << p.string() << "': " << e.what();
+		LMS_LOG(COVER, WARNING) << "Caught Magick warning: " << e.what();
 		throw ImageException {std::string {"Magick read warning: "} + e.what()};
 	}
 	catch (Magick::Exception& e)
 	{
-		LMS_LOG(COVER, ERROR) << "Caught Magick exception while loading raw image '" << p.string() << "': " << e.what();
-		throw ImageException {std::string {"Magick read error: "} + e.what()};
-	}
-}
-
-RawImage::RawImage(const EncodedImage& encodedImage)
-{
-	try
-	{
-		_image.read(encodedImage._blob);
-	}
-	catch (Magick::WarningCoder& e)
-	{
-		LMS_LOG(COVER, WARNING) << "Caught Magick WarningCoder while loading raw image: " << e.what();
-	}
-	catch (Magick::Warning& e)
-	{
-		LMS_LOG(COVER, WARNING) << "Caught Magick warning while loading raw image: " << e.what();
-		throw ImageException {std::string {"Magick read warning: "} + e.what()};
-	}
-	catch (Magick::Exception& e)
-	{
-		LMS_LOG(COVER, ERROR) << "Caught Magick exception while loading raw image: " << e.what();
+		LMS_LOG(COVER, ERROR) << "Caught Magick exception: " << e.what();
 		throw ImageException {std::string {"Magick read error: "} + e.what()};
 	}
 }
 
 void
-RawImage::scale(std::size_t width)
+RawImage::resize(ImageSize width)
 {
-	if (width == 0)
-		throw ImageException {"Bad width = 0"};
-
 	try
 	{
 		_image.resize(Magick::Geometry {static_cast<unsigned int>(width), static_cast<unsigned int>(width)});
 	}
 	catch (Magick::Exception& e)
 	{
-		LMS_LOG(COVER, ERROR) << "Caught Magick exception during scale: " << e.what();
+		LMS_LOG(COVER, ERROR) << "Caught Magick exception while resizing: " << e.what();
 		throw ImageException {std::string {"Magick resize error: "} + e.what()};
 	}
 }
 
-EncodedImage
-RawImage::encode() const
+std::unique_ptr<IEncodedImage>
+RawImage::encodeToJPEG(unsigned quality) const
 {
-	try
-	{
-		Magick::Image outputImage {_image};
-
-		outputImage.magick("JPEG");
-
-		Magick::Blob blob;
-		outputImage.write(&blob);
-
-		return EncodedImage {blob};
-	}
-	catch (Magick::Exception& e)
-	{
-		LMS_LOG(COVER, ERROR) << "Caught Magick exception while encoding raw image: " << e.what();
-		throw ImageException {std::string {"Magick encode error: "} + e.what()};
-	}
+	return std::make_unique<JPEGImage>(*this, quality);
 }
 
-} // namespace CoverArt
+Magick::Image
+RawImage::getMagickImage() const
+{
+	return _image;
+}
+
+} // namespace CoverArt::GraphicsMagick
 

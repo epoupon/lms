@@ -28,6 +28,7 @@
 
 #include "database/Cluster.hpp"
 #include "database/ScanSettings.hpp"
+#include "database/Session.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"

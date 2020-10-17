@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,55 +19,36 @@
 
 #pragma once
 
-#include <filesystem>
-#include <vector>
+#ifndef LMS_SUPPORT_IMAGE_GM
+#error "Bad configuration"
+#endif
 
 #include <Magick++.h>
 
-#include "utils/Exception.hpp"
+#include <cstddef>
+#include <filesystem>
 
-namespace CoverArt
+#include "cover/IEncodedImage.hpp"
+#include "IRawImage.hpp"
+
+namespace CoverArt::GraphicsMagick
 {
 	void init(const std::filesystem::path& path);
 
-	// internal use only
-	class ImageException : public LmsException
+	class RawImage : IRawImage
 	{
 		public:
-			using LmsException::LmsException;
-	};
+			RawImage(const std::byte* encodedData, std::size_t encodedDataSize);
+			RawImage(const std::filesystem::path& path);
 
-	class EncodedImage
-	{
-		public:
-			EncodedImage() = default;
-			EncodedImage(const std::byte* data, std::size_t dataSize);
-
-			const std::byte* getData() const;
-			std::size_t getDataSize() const;
+			void resize(ImageSize width) override;
+			std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const override;
 
 		private:
-			friend class RawImage;
-			EncodedImage(Magick::Blob blob);
+			friend class JPEGImage;
+			Magick::Image getMagickImage() const;
 
-			Magick::Blob _blob;
-	};
-
-	class RawImage
-	{
-		public:
-			RawImage(const std::filesystem::path& p);
-			RawImage(const EncodedImage& encodedImage);
-
-			// Operations
-			void scale(std::size_t width);
-
-			// output
-			EncodedImage encode() const;
-
-		private:
 			Magick::Image _image;
 	};
-
-} // namespace CoverArt
+}
 

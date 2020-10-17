@@ -21,6 +21,7 @@
 
 #include <atomic>
 #include <filesystem>
+#include <map>
 #include <optional>
 #include <shared_mutex>
 #include <string_view>
@@ -28,12 +29,17 @@
 #include <vector>
 
 #include "cover/ICoverArtGrabber.hpp"
+#include "cover/IEncodedImage.hpp"
 #include "database/Types.hpp"
-#include "Image.hpp"
 
 namespace Database
 {
 	class Session;
+}
+
+namespace Av
+{
+	class MediaFile;
 }
 
 namespace CoverArt
@@ -83,7 +89,11 @@ namespace CoverArt
 	class Grabber : public IGrabber
 	{
 		public:
-			Grabber(const std::filesystem::path& execPath, std::size_t maxCacheEntries, std::size_t maxFileSize);
+			Grabber(const std::filesystem::path& execPath,
+					const std::filesystem::path& defaultCoverPath,
+					std::size_t maxCacheEntries,
+					std::size_t maxFileSize,
+					unsigned jpegQuality);
 
 			Grabber(const Grabber&) = delete;
 			Grabber& operator=(const Grabber&) = delete;
@@ -91,38 +101,34 @@ namespace CoverArt
 			Grabber& operator=(Grabber&&) = delete;
 
 		private:
-
-			void							setDefaultCover(const std::filesystem::path& defaultCoverPath) override;
-			std::unique_ptr<ICoverArt>		getFromTrack(Database::Session& dbSession, Database::IdType trackId, Width width) override;
-			std::unique_ptr<ICoverArt>		getFromRelease(Database::Session& dbSession, Database::IdType releaseId, Width width) override;
+			std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width) override;
+			std::shared_ptr<IEncodedImage>	getFromRelease(Database::Session& dbSession, Database::IdType releaseId, ImageSize width) override;
 			void							flushCache() override;
 
-			EncodedImage					getFromTrackInternal(Database::Session& dbSession, Database::IdType trackId, Width width);
-			EncodedImage					getFromReleaseInternal(Database::Session& dbSession, Database::IdType releaseId, Width width);
+			std::unique_ptr<IEncodedImage>	getFromAvMediaFile(const Av::MediaFile& input, ImageSize width) const;
+			std::unique_ptr<IEncodedImage>	getFromFile(const std::filesystem::path& p, ImageSize width) const;
 
-			std::optional<EncodedImage>		getFromTrack(const std::filesystem::path& path, Width width) const;
+			std::unique_ptr<IEncodedImage>	getFromTrack(const std::filesystem::path& path, ImageSize width) const;
 			std::multimap<std::string, std::filesystem::path>	getCoverPaths(const std::filesystem::path& directoryPath) const;
-			std::optional<EncodedImage>		getFromDirectory(const std::filesystem::path& path, std::string_view preferredFileName, Width width) const;
-			EncodedImage					getDefault(Width width);
-
-			EncodedImage					resizeCoverOrFallback(EncodedImage image, Width width) const;
-
-			std::optional<EncodedImage>		_defaultCover;	// optional to defer initializing
+			std::unique_ptr<IEncodedImage>	getFromDirectory(const std::filesystem::path& path, std::string_view preferredFileName, ImageSize width) const;
+			std::shared_ptr<IEncodedImage>	getDefault(ImageSize width);
 
 			std::shared_mutex _cacheMutex;
-			std::unordered_map<CacheEntryDesc, EncodedImage> _cache;
-			std::unordered_map<Width, EncodedImage>	_defaultCache;
+			std::unordered_map<CacheEntryDesc, std::shared_ptr<IEncodedImage>> _cache;
+			std::unordered_map<ImageSize, std::shared_ptr<IEncodedImage>> _defaultCoverCache;
 			std::atomic<std::size_t>	_cacheMisses {};
 			std::atomic<std::size_t>	_cacheHits {};
 			std::size_t					_cacheSize {};
 
-			void saveToCache(const CacheEntryDesc& entryDesc, const EncodedImage& image);
-			std::optional<EncodedImage> loadFromCache(const CacheEntryDesc& entryDesc);
+			void saveToCache(const CacheEntryDesc& entryDesc, std::shared_ptr<IEncodedImage> image);
+			std::shared_ptr<IEncodedImage> loadFromCache(const CacheEntryDesc& entryDesc);
 
+			const std::filesystem::path _defaultCoverPath;
 			const std::size_t _maxCacheSize;
 			static inline const std::vector<std::filesystem::path> _fileExtensions {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize
 			const std::size_t _maxFileSize;
 			static inline const std::vector<std::string> _preferredFileNames {"cover", "front"}; // TODO parametrize
+			const unsigned _jpegQuality;
 	};
 
 } // namespace CoverArt

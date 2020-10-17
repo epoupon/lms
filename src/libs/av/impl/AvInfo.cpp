@@ -39,7 +39,7 @@ static std::string averror_to_string(int error)
 	std::array<char, 128> buf = {0};
 
 	if (av_strerror(error, buf.data(), buf.size()) == 0)
-		return std::string(&buf[0]);
+		return &buf[0];
 	else
 		return "Unknown error";
 }

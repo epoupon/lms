@@ -9,7 +9,6 @@ add_library(lmsdatabase SHARED
 	impl/Release.cpp
 	impl/ScanSettings.cpp
 	impl/Session.cpp
-	impl/SessionPool.cpp
 	impl/SqlQuery.cpp
 	impl/Track.cpp
 	impl/TrackBookmark.cpp

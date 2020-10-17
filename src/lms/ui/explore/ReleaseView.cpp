@@ -27,6 +27,7 @@
 
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "recommendation/IEngine.hpp"
 #include "utils/Logger.hpp"

@@ -29,6 +29,7 @@
 
 #include "auth/IAuthTokenService.hpp"
 #include "auth/IPasswordService.hpp"
+#include "database/Session.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 

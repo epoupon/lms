@@ -19,6 +19,7 @@
 
 #include "TrackPopup.hpp"
 
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
 #include "resource/DownloadResource.hpp"

@@ -5,7 +5,7 @@ WORKDIR	/tmp/workdir
 ARG	MAKEFLAGS="-j2"
 ARG	FFMPEG_VERSION=4.1.4
 ARG	WT_VERSION=4.2.0
-ARG	GRAPHICSMAGICK_VERSION=1.3.35
+ARG	STB_VERSION=b42009b3b9d4ca35bc703f5310eedc74f584be58
 ARG	PSTREAMS_VERSION=1.0.1
 ARG	LMS_VERSION=v3.6.3
 
@@ -22,11 +22,9 @@ ARG	BUILD_PACKAGES=" \
 	libtool \
 	g++ \
 	make \
-	libjpeg-turbo-dev \
 	openjpeg-dev \
 	jasper-dev \
 	libpng-dev \
-	tiff-dev \
 	nasm \
 	yasm \
 	curl \
@@ -43,7 +41,15 @@ ARG	BUILD_PACKAGES=" \
 
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
 
-## ffmpeg
+# STB
+RUN \
+	DIR=/tmp/stb && mkdir -p ${DIR} && cd ${DIR} && \
+	curl -sLO https://github.com/nothings/stb/archive/${STB_VERSION}.tar.gz && \
+	tar -x --strip-components=1 -f ${STB_VERSION}.tar.gz && \
+	mkdir -p ${PREFIX}/include/stb && \
+	cp *.h ${PREFIX}/include/stb
+
+# ffmpeg
 RUN  \
 	DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
@@ -73,7 +79,7 @@ RUN \
 	--enable-libopus \
 	--enable-libvorbis \
 	--disable-everything \
-	--enable-decoder=aac*,ac3*,alac,als,flac,mp3*,libopus,pcm*,libvorbis,wavpack,wma*,libopenjpg,png,tiff \
+	--enable-decoder=aac*,ac3*,alac,als,flac,mp3*,libopus,pcm*,libvorbis,wavpack,wma*,libopenjpg,png \
 	--enable-encoder=libmp3lame,libopus,libvorbis \
 	--enable-demuxer=aac,aiff,asf,flac,ipod,ogg,matroska,mov,mp3,mp4,wav,wv,webm \
 	--enable-muxer=ogg,matroska,mp3,webm \
@@ -95,47 +101,6 @@ RUN \
 	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=NO && \
 	make && \
 	make install
-
-# GraphicsMagick++
-RUN \
-	DIR=/tmp/graphicsmagick && mkdir -p ${DIR} && cd ${DIR} && \
-	curl -sL ftp://ftp.graphicsmagick.org/pub/GraphicsMagick/1.3/GraphicsMagick-${GRAPHICSMAGICK_VERSION}.tar.gz -o ${GRAPHICSMAGICK_VERSION}.tar.gz && \
-	tar -x --strip-components=1 -f ${GRAPHICSMAGICK_VERSION}.tar.gz
-
-RUN \
-	DIR=/tmp/graphicsmagick && mkdir -p ${DIR} && cd ${DIR} && \
-	./configure \
-	--prefix=${PREFIX} \
-	--enable-shared=yes \
-	--enable-static=no \
-	--disable-openmp \
-	--with-quantum-depth=8 \
-	--with-modules=no \
-	--with-frozenpaths=no \
-	--with-magick-plus-plus=yes \
-	--with-perl=no \
-	--with-bzlib=no \
-	--with-dps=no \
-	--with-fpx=no \
-	--with-jbig=no \
-	--with-webp=no \
-	--with-jp2=yes \
-	--with-jpeg=yes \
-	--with-lcms2=no \
-	--with-lzma=no \
-	--with-png=yes \
-	--with-tiff=yes \
-	--with-trio=no \
-	--with-ttf=no \
-	--with-tcmalloc=no \
-	--with-wmf=no \
-	--with-xml=no \
-	--with-zlib=yes \
-	--with-zstd=no \
-	--with-x=no && \
-	make && \
-	make install && \
-	make distclean
 
 # libpstreams
 RUN \
@@ -183,11 +148,9 @@ LABEL		version=${LMS_VERSION}
 
 ARG	RUNTIME_PACKAGES=" \
 	openssl \
-	libjpeg-turbo \
 	openjpeg \
 	jasper-libs \
 	libpng \
-	tiff \
 	libogg \
 	opus \
 	libvorbis \

@@ -22,6 +22,7 @@
 #include <Wt/Http/Response.h>
 
 #include "av/AvTranscoder.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
 #include "utils/Logger.hpp"
@@ -148,8 +149,6 @@ AudioTranscodeResource::handleRequest(const Wt::Http::Request& request,
 
 		std::filesystem::path trackPath;
 		{
-			// DbSession are not thread safe
-			Wt::WApplication::UpdateLock lock(LmsApp);
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 			const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), *trackId)};

@@ -27,8 +27,9 @@
 #include <Wt/WText.h>
 
 #include "database/Release.hpp"
-#include "database/User.hpp"
+#include "database/Session.hpp"
 #include "database/TrackList.hpp"
+#include "database/User.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
