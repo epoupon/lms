@@ -28,6 +28,7 @@ namespace CoverArt
 	class IRawImage
 	{
 		public:
+			virtual ~IRawImage() = default;
 			virtual void resize(ImageSize width) = 0;
 			virtual std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const = 0;
 	};
