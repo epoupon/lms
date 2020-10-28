@@ -27,7 +27,7 @@ namespace Random {
 using RandGenerator = std::mt19937;
 RandGenerator& getRandGenerator();
 
-RandGenerator createSeededGenerator(std::size_t seed);
+RandGenerator createSeededGenerator(uint_fast32_t seed);
 
 template <typename T>
 T

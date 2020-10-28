@@ -29,7 +29,7 @@ RandGenerator& getRandGenerator()
 	return randGenerator;
 }
 
-RandGenerator createSeededGenerator(std::size_t seed)
+RandGenerator createSeededGenerator(uint_fast32_t seed)
 {
 	return RandGenerator {seed};
 }

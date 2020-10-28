@@ -18,6 +18,8 @@
  */
 
 #include <unistd.h>
+
+#include <array>
 #include <fstream>
 #include <iostream>
 
