@@ -19,6 +19,7 @@
 
 #include "DownloadResource.hpp"
 
+#include <array>
 #include <iostream>
 #include <iomanip>
 
