@@ -31,6 +31,11 @@ namespace Database
 	class Db;
 }
 
+namespace Recommendation
+{
+	class IEngine;
+}
+
 namespace Scanner {
 
 class IMediaScanner
@@ -73,8 +78,7 @@ class IMediaScanner
 
 };
 
-std::unique_ptr<IMediaScanner> createMediaScanner(Database::Db& db);
-
+std::unique_ptr<IMediaScanner> createMediaScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine);
 
 } // Scanner
 

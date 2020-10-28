@@ -19,15 +19,16 @@
 
 #pragma once
 
+#include <functional>
 #include <unordered_map>
 #include <optional>
 #include <string>
 
-#include "recommendation/IClassifier.hpp"
 #include "som/DataNormalizer.hpp"
 #include "som/Network.hpp"
 #include "FeaturesClassifierCache.hpp"
 #include "FeaturesDefs.hpp"
+#include "IClassifier.hpp"
 
 namespace Database
 {
@@ -53,19 +54,20 @@ class FeaturesClassifier : public IClassifier
 		static void setFeaturesFetchFunc(FeaturesFetchFunc func) { _featuresFetchFunc = func; }
 
 		static const FeatureSettingsMap& getDefaultTrainFeatureSettings();
+
 	private:
 
 		std::string_view getName() const override { return "Features"; }
 
-		bool init(Database::Session& session, bool databaseChanged) override;
-		void requestCancelInit() override;
+		bool load(Database::Session& session, bool forceReload, const ProgressCallback& progressCallback) override;
+		void requestCancelLoad() override;
 
-		std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const override;
-		std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) const override;
-		std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const override;
-		std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) const override;
+		std::unordered_set<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const override;
+		std::unordered_set<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) const override;
+		std::unordered_set<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const override;
+		std::unordered_set<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) const override;
 
-		bool initFromCache(Database::Session& session, const FeaturesClassifierCache& cache);
+		bool loadFromCache(Database::Session& session, const FeaturesClassifierCache& cache);
 
 		// Use training (may be very slow)
 		struct TrainSettings
@@ -74,12 +76,12 @@ class FeaturesClassifier : public IClassifier
 			float sampleCountPerNeuron {4};
 			FeatureSettingsMap featureSettingsMap;
 		};
-		bool initFromTraining(Database::Session& session, const TrainSettings& trainSettings);
+		bool loadFromTraining(Database::Session& session, const TrainSettings& trainSettings, const ProgressCallback& progressCallback);
 
 		using ObjectPositions = std::unordered_map<Database::IdType, std::unordered_set<SOM::Position>>;
 		using MatrixOfObjects = SOM::Matrix<std::unordered_set<Database::IdType>>;
 
-		bool init(Database::Session& session,
+		bool load(Database::Session& session,
 				SOM::Network network,
 				const ObjectPositions& tracksPosition);
 
@@ -88,12 +90,12 @@ class FeaturesClassifier : public IClassifier
 		static std::unordered_set<SOM::Position> getMatchingRefVectorsPosition(const std::unordered_set<Database::IdType>& ids, const ObjectPositions& objectPositions);
 		static std::unordered_set<Database::IdType> getObjectsIds(const std::unordered_set<SOM::Position>& positionSet, const MatrixOfObjects& objectsMap);
 
-		std::vector<Database::IdType> getSimilarObjects(const std::unordered_set<Database::IdType>& ids,
+		std::unordered_set<Database::IdType> getSimilarObjects(const std::unordered_set<Database::IdType>& ids,
 				const SOM::Matrix<std::unordered_set<Database::IdType>>& objectsMap,
 				const ObjectPositions& objectPosition,
 				std::size_t maxCount) const;
 
-		bool				_initCancelled {};
+		bool				_loadCancelled {};
 		std::unique_ptr<SOM::Network>	_network;
 		double				_networkRefVectorsDistanceMedian {};
 

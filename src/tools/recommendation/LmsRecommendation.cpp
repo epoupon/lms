@@ -31,7 +31,6 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "utils/IConfig.hpp"
-#include "utils/Semaphore.hpp"
 #include "utils/Service.hpp"
 #include "utils/StreamLogger.hpp"
 #include "recommendation/IEngine.hpp"
@@ -164,17 +163,8 @@ int main(int argc, char *argv[])
 		const auto engine {Recommendation::createEngine(db)};
 		std::cout << "Recommendation engine created!" << std::endl;
 
-		Semaphore sem;
-
-		engine->reloaded().connect([&]()
-		{
-			sem.notify();
-		});
-
-		engine->requestLoad();
-
-		std::cout << "Waiting for the recommendation engine to be loaded..." << std::endl;
-		sem.wait();
+		std::cout << "Loading recommendation engine..." << std::endl;
+		engine->load(false);
 		std::cout << "Recommendation engine loaded!" << std::endl;
 
 		if (vm.count("tracks"))

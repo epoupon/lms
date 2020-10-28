@@ -46,7 +46,7 @@ namespace UserInterface {
 
 Artist::Artist(Filters* filters)
 : Wt::WTemplate {Wt::WString::tr("Lms.Explore.Artist.template")}
-, _filters(filters)
+, _filters {filters}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
@@ -75,7 +75,7 @@ Artist::refreshView()
 	if (!artistId)
 		throw ArtistNotFoundException {*artistId};
 
-	const std::vector<Database::IdType> similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(LmsApp->getDbSession(), *artistId, 5)};
+	const auto similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(LmsApp->getDbSession(), *artistId, 5)};
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -172,7 +172,7 @@ Artist::refreshView()
 }
 
 void
-Artist::refreshSimilarArtists(const std::vector<Database::IdType>& similarArtistsId)
+Artist::refreshSimilarArtists(const std::unordered_set<Database::IdType>& similarArtistsId)
 {
 	if (similarArtistsId.empty())
 		return;

@@ -37,12 +37,17 @@
 
 class UUID;
 
+namespace Recommendation
+{
+	class IEngine;
+}
+
 namespace Scanner {
 
 class MediaScanner : public IMediaScanner
 {
 	public:
-		MediaScanner(Database::Db& db);
+		MediaScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine);
 		~MediaScanner();
 
 		MediaScanner(const MediaScanner&) = delete;
@@ -89,6 +94,9 @@ class MediaScanner : public IMediaScanner
 		Database::IdType doScanAudioFile(const std::filesystem::path& file, ScanStats& stats);
 		void notifyInProgressIfNeeded(const ScanStepStats& stats);
 		void notifyInProgress(const ScanStepStats& stats);
+		void reloadSimilarityEngine(ScanStats& stats);
+
+		Recommendation::IEngine&				_recommendationEngine;
 
 		std::mutex								_controlMutex;
 		std::atomic<bool>						_abortScan {};
@@ -115,7 +123,6 @@ class MediaScanner : public IMediaScanner
 		std::unordered_set<std::filesystem::path> _fileExtensions;
 		std::filesystem::path			_mediaDirectory;
 		Database::ScanSettings::RecommendationEngineType _recommendationEngineType;
-
 
 }; // class MediaScanner
 

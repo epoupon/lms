@@ -121,7 +121,7 @@ generateWtConfig(std::string execPath)
 int main(int argc, char* argv[])
 {
 	std::filesystem::path configFilePath {"/etc/lms.conf"};
-	int res = EXIT_FAILURE;
+	int res {EXIT_FAILURE};
 
 	assert(argc > 0);
 	assert(argv[0] != NULL);
@@ -183,22 +183,10 @@ int main(int argc, char* argv[])
 				config->getULong("cover-max-file-size", 10) * 1000 * 1000,
 				config->getULong("cover-jpeg-quality", 75))};
 		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
-		recommendationEngineService->requestLoad();
-		Service<Scanner::IMediaScanner> mediaScannerService {Scanner::createMediaScanner(database)};
+		Service<Scanner::IMediaScanner> mediaScannerService {Scanner::createMediaScanner(database, *recommendationEngineService)};
 
 		mediaScannerService->scanComplete().connect([&]()
 		{
-			auto status = mediaScannerService->getStatus();
-
-			if (status.lastCompleteScanStats->nbChanges() > 0 || status.lastCompleteScanStats->featuresFetched > 0)
-			{
-				LMS_LOG(MAIN, INFO) << "Scanner changed some files, reloading the recommendation engine...";
-				recommendationEngineService->requestReload();
-			}
-			else
-			{
-				LMS_LOG(MAIN, INFO) << "Scanner did not change files, not reloading the recommendation engine...";
-			}
 			// Flush cover cache even if no changes:
 			// covers may be external files that changed and we don't keep track of them
 			coverArtService->flushCache();
@@ -224,16 +212,18 @@ int main(int argc, char* argv[])
 		LMS_LOG(MAIN, INFO) << "Stopping server...";
 		server.stop();
 
-		LMS_LOG(MAIN, INFO) << "Clean stop!";
+		LMS_LOG(MAIN, INFO) << "Quitting...";
 		res = EXIT_SUCCESS;
 	}
 	catch(Wt::WServer::Exception& e)
 	{
 		std::cerr << "Caught a WServer::Exception: " << e.what() << std::endl;
+		res = EXIT_FAILURE;
 	}
 	catch(std::exception& e)
 	{
 		std::cerr << "Caught std::exception: " << e.what() << std::endl;
+		res = EXIT_FAILURE;
 	}
 
 	return res;

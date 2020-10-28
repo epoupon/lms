@@ -22,5 +22,7 @@ target_link_libraries(lmsrecommendation PRIVATE
 	wt
 	)
 
+target_include_directories(lmsrecommendation PRIVATE impl)
+
 install(TARGETS lmsrecommendation DESTINATION lib)
 

@@ -19,23 +19,33 @@
 
 #pragma once
 
-#include <map>
+#include <condition_variable>
 #include <shared_mutex>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
-#include <Wt/WIOService.h>
-
-#include "database/Session.hpp"
 #include "recommendation/IEngine.hpp"
-#include "recommendation/IClassifier.hpp"
+#include "IClassifier.hpp"
+
+namespace Database
+{
+	class Db;
+}
 
 namespace Recommendation
 {
+	enum class ClassifierType
+	{
+		Clusters,
+		Features,
+	};
+
 	class Engine : public IEngine
 	{
 		public:
 			Engine(Database::Db& db);
-			~Engine();
+			~Engine() = default;
 
 			Engine(const Engine&) = delete;
 			Engine(Engine&&) = delete;
@@ -43,58 +53,30 @@ namespace Recommendation
 			Engine& operator=(Engine&&) = delete;
 
 		private:
+			void	load(bool forceReload, const ProgressCallback& progressCallback) override;
+			void	cancelLoad() override;
 
-			void start();
-			void stop();
+			std::unordered_set<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) override;
+			std::unordered_set<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) override;
+			std::unordered_set<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) override;
+			std::unordered_set<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) override;
 
-			void requestLoad() override;
-			void requestReload() override;
-			Wt::Signal<>& reloaded() override { return _sigReloaded; }
-
-			std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) override;
-			std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) override;
-			std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) override;
-			std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) override;
-
-
-			void requestReloadInternal(bool databaseChanged);
-			void reload(bool databaseChanged);
-
-			void setClassifierPriorities(std::initializer_list<std::string_view> classifierNames);
+			void setClassifierPriorities(const std::vector<ClassifierType>& classifierTypes);
 			void clearClassifiers();
-			void initAndAddClassifier(std::unique_ptr<IClassifier> classifier, bool databaseChanged);
+			void loadClassifier(std::unique_ptr<IClassifier> classifier, ClassifierType classifierType, bool forceReload, const ProgressCallback& progressCallback);
 
-			class PendingClassifierHandler
-			{
-				public:
-					PendingClassifierHandler(Engine& engine, IClassifier& classifier) : _engine {engine}, _classifier {classifier}
-					{
-						_engine.addPendingClassifier(_classifier);
-					}
+			Database::Db&				_db;
 
-					~PendingClassifierHandler()
-					{
-						_engine.removePendingClassifier(_classifier);
-					}
+			std::mutex							_controlMutex;
+			bool								_loadCancelled {};
+			std::condition_variable 			_pendingClassifiersCondvar;
+			std::unordered_set<IClassifier*>	_pendingClassifiers;
 
-				private:
-					Engine& _engine;
-					IClassifier& _classifier;
-			};
+			std::shared_mutex			_classifiersMutex;
+			using ClassifierContainer = std::unordered_map<ClassifierType, std::unique_ptr<IClassifier>>;
+			ClassifierContainer			_classifiers;
+			std::vector<ClassifierType>	_classifierPriorities; // ordered by priority
 
-			void cancelPendingClassifiers();
-			void addPendingClassifier(IClassifier& classifier);
-			void removePendingClassifier(IClassifier& classifier);
-
-			bool			_running {};
-			Wt::WIOService		_ioService;
-			Database::Session	_dbSession;
-			Wt::Signal<>		_sigReloaded;
-
-			std::shared_mutex	_classifiersMutex;
-			std::map<std::string, std::unique_ptr<IClassifier>> _classifiers;
-			std::vector<std::string> _classifierPriorities; // ordered by priority
-			std::unordered_set<IClassifier*> _pendingClassifiers;
 	};
 
 } // ns Recommendation

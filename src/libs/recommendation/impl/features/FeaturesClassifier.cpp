@@ -127,7 +127,7 @@ getInputVectorWeights(const FeatureSettingsMap& featureSettingsMap, std::size_t 
 }
 
 bool
-FeaturesClassifier::initFromTraining(Database::Session& session, const TrainSettings& trainSettings)
+FeaturesClassifier::loadFromTraining(Database::Session& session, const TrainSettings& trainSettings, const ProgressCallback& progressCallback)
 {
 	LMS_LOG(RECOMMENDATION, INFO) << "Constructing features classifier...";
 
@@ -158,7 +158,7 @@ FeaturesClassifier::initFromTraining(Database::Session& session, const TrainSett
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Extracting features...";
 	for (Database::IdType trackId : trackIds)
 	{
-		if (_initCancelled)
+		if (_loadCancelled)
 			return false;
 
 		std::optional<FeatureValuesMap> featureValuesMap;
@@ -201,23 +201,26 @@ FeaturesClassifier::initFromTraining(Database::Session& session, const TrainSett
 	SOM::InputVector weights {getInputVectorWeights(trainSettings.featureSettingsMap, nbDimensions)};
 	network.setDataWeights(weights);
 
-	auto progressIndicator{[](const auto& iter)
-		{
-			LMS_LOG(RECOMMENDATION, DEBUG) << "Current pass = " << iter.idIteration << " / " << iter.iterationCount;
-		}};
+	auto somProgressCallback{[&](const SOM::Network::CurrentIteration& iter)
+	{
+		LMS_LOG(RECOMMENDATION, DEBUG) << "Current pass = " << iter.idIteration << " / " << iter.iterationCount;
+		progressCallback(Progress {iter.idIteration, iter.iterationCount});
+	}};
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Training network...";
-	network.train(samples, trainSettings.iterationCount, progressIndicator);
+	network.train(samples, trainSettings.iterationCount,
+			progressCallback ? somProgressCallback : SOM::Network::ProgressCallback {},
+			[this] { return _loadCancelled; });
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Training network DONE";
 
-	if (_initCancelled)
+	if (_loadCancelled)
 		return false;
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Classifying tracks...";
 	ObjectPositions trackPositions;
 	for (std::size_t i {}; i < samples.size(); ++i)
 	{
-		if (_initCancelled)
+		if (_loadCancelled)
 			return false;
 
 		const SOM::Position position {network.getClosestRefVectorPosition(samples[i])};
@@ -227,86 +230,100 @@ FeaturesClassifier::initFromTraining(Database::Session& session, const TrainSett
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Classifying tracks DONE";
 
-	return init(session, std::move(network), std::move(trackPositions));
+	return load(session, std::move(network), std::move(trackPositions));
 }
 
 bool
-FeaturesClassifier::initFromCache(Database::Session& session, const FeaturesClassifierCache& cache)
+FeaturesClassifier::loadFromCache(Database::Session& session, const FeaturesClassifierCache& cache)
 {
 	LMS_LOG(RECOMMENDATION, INFO) << "Constructing features classifier from cache...";
 
-	return init(session, std::move(cache._network), cache._trackPositions);
+	return load(session, std::move(cache._network), cache._trackPositions);
 }
 
-std::vector<Database::IdType>
+std::unordered_set<Database::IdType>
 FeaturesClassifier::getSimilarTracksFromTrackList(Database::Session& session, Database::IdType trackListId, std::size_t maxCount) const
 {
-	const std::unordered_set<Database::IdType> trackIds {[&]() -> std::unordered_set<Database::IdType>
+	const std::unordered_set<Database::IdType> trackIds {[&]
 	{
+		std::unordered_set<Database::IdType> res;
+
 		auto transaction {session.createSharedTransaction()};
 
 		const Database::TrackList::pointer trackList {Database::TrackList::getById(session, trackListId)};
 		if (trackList)
 		{
 			const std::vector<Database::IdType> orderedTrackIds {trackList->getTrackIds()};
-			return std::unordered_set<Database::IdType> {std::cbegin(orderedTrackIds), std::cend(orderedTrackIds)};
+			res = std::unordered_set<Database::IdType>(std::cbegin(orderedTrackIds), std::cend(orderedTrackIds));
 		}
 
-		return {};
+		return res;
 	}()};
 
 	return getSimilarTracks(session, trackIds, maxCount);
 }
 
-std::vector<Database::IdType>
+std::unordered_set<Database::IdType>
 FeaturesClassifier::getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksIds, std::size_t maxCount) const
 {
-	std::vector<Database::IdType> similarTrackIds {getSimilarObjects(tracksIds, _tracksMap, _trackPositions, maxCount)};
-
+	auto similarTrackIds {getSimilarObjects(tracksIds, _tracksMap, _trackPositions, maxCount)};
 	if (!similarTrackIds.empty())
 	{
 		// Report only existing ids
 		auto transaction {session.createSharedTransaction()};
 
-		similarTrackIds.erase(std::remove_if(std::begin(similarTrackIds), std::end(similarTrackIds),
-					[&](Database::IdType trackId) { return Database::Track::getById(session, trackId) == Database::Track::pointer {}; }),
-				std::cend(similarTrackIds));
+		for (auto it {std::begin(similarTrackIds)}; it != std::end(similarTrackIds);)
+		{
+			const Database::IdType trackId {*it};
+			if (!Database::Track::getById(session, trackId))
+				it = similarTrackIds.erase(it);
+			else
+				it++;
+		}
 	}
 
 	return similarTrackIds;
 }
 
-std::vector<Database::IdType>
+std::unordered_set<Database::IdType>
 FeaturesClassifier::getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const
 {
-	std::vector<Database::IdType> similarReleaseIds {getSimilarObjects({releaseId}, _releasesMap, _releasePositions, maxCount)};
-
+	auto similarReleaseIds {getSimilarObjects({releaseId}, _releasesMap, _releasePositions, maxCount)};
 	if (!similarReleaseIds.empty())
 	{
 		// Report only existing ids
 		auto transaction {session.createSharedTransaction()};
 
-		similarReleaseIds.erase(std::remove_if(std::begin(similarReleaseIds), std::end(similarReleaseIds),
-					[&](Database::IdType releaseId) { return Database::Release::getById(session, releaseId) == Database::Release::pointer {}; }),
-				std::cend(similarReleaseIds));
+		for (auto it {std::begin(similarReleaseIds)}; it != std::end(similarReleaseIds);)
+		{
+			const Database::IdType releaseId {*it};
+			if (!Database::Release::getById(session, releaseId))
+				it = similarReleaseIds.erase(it);
+			else
+				it++;
+		}
 	}
 
 	return similarReleaseIds;
 }
 
-std::vector<Database::IdType>
+std::unordered_set<Database::IdType>
 FeaturesClassifier::getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) const
 {
-	std::vector<Database::IdType> similarArtistIds {getSimilarObjects({artistId}, _artistsMap, _artistPositions, maxCount)};
-
+	auto similarArtistIds {getSimilarObjects({artistId}, _artistsMap, _artistPositions, maxCount)};
 	if (!similarArtistIds.empty())
 	{
 		// Report only existing ids
 		auto transaction {session.createSharedTransaction()};
 
-		similarArtistIds.erase(std::remove_if(std::begin(similarArtistIds), std::end(similarArtistIds),
-					[&](Database::IdType artistId) { return Database::Artist::getById(session, artistId) == Database::Artist::pointer {}; }),
-				std::cend(similarArtistIds));
+		for (auto it {std::begin(similarArtistIds)}; it != std::end(similarArtistIds);)
+		{
+			const Database::IdType artistId {*it};
+			if (!Database::Release::getById(session, artistId))
+				it = similarArtistIds.erase(it);
+			else
+				it++;
+		}
 	}
 
 	return similarArtistIds;
@@ -319,22 +336,23 @@ FeaturesClassifier::toCache() const
 }
 
 bool
-FeaturesClassifier::init(Database::Session& session, bool databaseChanged)
+FeaturesClassifier::load(Database::Session& session, bool forceReload, const ProgressCallback& progressCallback)
 {
-	if (databaseChanged)
+	if (forceReload)
 	{
-		LMS_LOG(RECOMMENDATION, DEBUG) << "Database changed: invidating cache";
 		FeaturesClassifierCache::invalidate();
 	}
-
-	std::optional<FeaturesClassifierCache> cache {FeaturesClassifierCache::read()};
-	if (cache)
-		return initFromCache(session, *cache);
+	else
+	{
+		const std::optional<FeaturesClassifierCache> cache {FeaturesClassifierCache::read()};
+		if (cache)
+			return loadFromCache(session, *cache);
+	}
 
 	TrainSettings trainSettings;
 	trainSettings.featureSettingsMap = getDefaultTrainFeatureSettings();
 
-	bool res {initFromTraining(session, trainSettings)};
+	const bool res {loadFromTraining(session, trainSettings, progressCallback)};
 	if (res)
 		toCache().write();
 
@@ -342,14 +360,14 @@ FeaturesClassifier::init(Database::Session& session, bool databaseChanged)
 }
 
 void
-FeaturesClassifier::requestCancelInit()
+FeaturesClassifier::requestCancelLoad()
 {
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Requesting init cancellation";
-	_initCancelled = true;
+	_loadCancelled = true;
 }
 
 bool
-FeaturesClassifier::init(Database::Session& session,
+FeaturesClassifier::load(Database::Session& session,
 			SOM::Network network,
 			const ObjectPositions& tracksPosition)
 {
@@ -367,7 +385,7 @@ FeaturesClassifier::init(Database::Session& session,
 
 	for (auto itTrackCoord : tracksPosition)
 	{
-		if (_initCancelled)
+		if (_loadCancelled)
 			return false;
 
 		auto transaction {session.createSharedTransaction()};
@@ -399,7 +417,7 @@ FeaturesClassifier::init(Database::Session& session,
 
 	_network = std::make_unique<SOM::Network>(std::move(network));
 
-	LMS_LOG(RECOMMENDATION, INFO) << "Classifier successfully initialized!";
+	LMS_LOG(RECOMMENDATION, INFO) << "Classifier successfully loaded!";
 
 	return true;
 }
@@ -439,13 +457,13 @@ FeaturesClassifier::getObjectsIds(const std::unordered_set<SOM::Position>& posit
 	return res;
 }
 
-std::vector<Database::IdType>
+std::unordered_set<Database::IdType>
 FeaturesClassifier::getSimilarObjects(const std::unordered_set<Database::IdType>& ids,
 		const MatrixOfObjects& objectsMap,
 		const ObjectPositions& objectPosition,
 		std::size_t maxCount) const
 {
-	std::vector<Database::IdType> res;
+	std::unordered_set<Database::IdType> res;
 
 	std::unordered_set<SOM::Position> searchedRefVectorsPosition {getMatchingRefVectorsPosition(ids, objectPosition)};
 	if (searchedRefVectorsPosition.empty())
@@ -459,14 +477,13 @@ FeaturesClassifier::getSimilarObjects(const std::unordered_set<Database::IdType>
 		for (auto id : ids)
 			closestObjectIds.erase(id);
 
+		for (auto it {std::cbegin(closestObjectIds)}; it != std::cend(closestObjectIds); ++it)
 		{
-			std::vector<Database::IdType> objectIdsToAdd {std::cbegin(closestObjectIds), std::cend(closestObjectIds)};
-			Random::shuffleContainer(objectIdsToAdd );
-			std::copy(std::cbegin(objectIdsToAdd), std::cend(objectIdsToAdd), std::back_inserter(res));
-		}
+			if (res.size() == maxCount)
+				break;
 
-		if (res.size() > maxCount)
-			res.resize(maxCount);
+			res.insert(*it);
+		}
 
 		if (res.size() == maxCount)
 			break;

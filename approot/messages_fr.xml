@@ -59,7 +59,7 @@
 <message id="Lms.Admin.ScannerController.cannot-read-file">Impossible de lire le fichier</message>
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} fichiers dupliqués :</message>
 <message id="Lms.Admin.ScannerController.errors-header">{1} erreurs :</message>
-<message id="Lms.Admin.ScannerController.force-scan-now">Lancer un scan forcé</message>
+<message id="Lms.Admin.ScannerController.force-scan-now">Forcer un rescan complet</message>
 <message id="Lms.Admin.ScannerController.get-report">Rapport</message>
 <message id="Lms.Admin.ScannerController.last-scan">Dernier scan</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Non disponible</message>
@@ -73,10 +73,11 @@
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Non planifié</message>
 <message id="Lms.Admin.ScannerController.status-scheduled">Planifié le {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">En cours de scan : étape {1}/{2}</message>
-<message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Vérification des fichiers supprimés... {1}%</message>
-<message id="Lms.Admin.ScannerController.step-discovering-files">Découverte des fichiers: {1} fichiers</message>
-<message id="Lms.Admin.ScannerController.step-fetching-track-features">Récupération des métadonnées AcousticBrainz: {1}/{2} fichiers ({3}%)...</message>
-<message id="Lms.Admin.ScannerController.step-scanning-files">Scan des fichiers: {1}/{2} fichiers ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Vérification des fichiers... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-discovering-files">Découverte des fichiers : {1} fichiers</message>
+<message id="Lms.Admin.ScannerController.step-fetching-track-features">Récupération des métadonnées AcousticBrainz : {1}/{2} fichiers ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Rechargement du moteur de recommandation : {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-files">Scan des fichiers : {1}/{2} fichiers ({3}%)...</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">Ajouter</message>

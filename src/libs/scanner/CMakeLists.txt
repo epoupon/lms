@@ -16,6 +16,7 @@ target_include_directories(lmsscanner PRIVATE
 target_link_libraries(lmsscanner PRIVATE
 	lmsdatabase
 	lmsmetadata
+	lmsrecommendation
 	lmsutils
 	)
 

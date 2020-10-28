@@ -43,7 +43,7 @@ ScanStats::nbChanges() const
 unsigned
 ScanStepStats::progress() const
 {
-	return (processedFiles / static_cast<float>(filesToProcess ? filesToProcess : 1)) * 100;
+	return (processedElems / static_cast<float>(totalElems ? totalElems : 1)) * 100;
 }
 
 } // namespace Scanner

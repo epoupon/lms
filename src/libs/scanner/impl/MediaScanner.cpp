@@ -30,6 +30,7 @@
 #include "database/Track.hpp"
 #include "database/TrackFeatures.hpp"
 #include "metadata/TagLibParser.hpp"
+#include "recommendation/IEngine.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Path.hpp"
@@ -240,13 +241,14 @@ getOrCreateClusters(Session& session, const MetaData::Clusters& clustersNames)
 namespace Scanner {
 
 std::unique_ptr<IMediaScanner>
-createMediaScanner(Database::Db& db)
+createMediaScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine)
 {
-	return std::make_unique<MediaScanner>(db);
+	return std::make_unique<MediaScanner>(db, recommendationEngine);
 }
 
-MediaScanner::MediaScanner(Database::Db& db)
-: _dbSession {db}
+MediaScanner::MediaScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine)
+: _recommendationEngine {recommendationEngine}
+, _dbSession {db}
 {
 	// For now, always use TagLib
 	_metadataParser = std::make_unique<MetaData::TagLibParser>();
@@ -260,6 +262,7 @@ MediaScanner::MediaScanner(Database::Db& db)
 
 MediaScanner::~MediaScanner()
 {
+	LMS_LOG(DBUPDATER, INFO) << "Shutting down MediaScanner...";
 	stop();
 }
 
@@ -268,7 +271,14 @@ MediaScanner::start()
 {
 	std::scoped_lock lock {_controlMutex};
 
-	scheduleNextScan();
+	_ioService.post([this]
+	{
+		if (_abortScan)
+			return;
+
+		_recommendationEngine.load(false);
+		scheduleNextScan();
+	});
 
 	_ioService.start();
 }
@@ -279,8 +289,8 @@ MediaScanner::stop()
 	std::scoped_lock lock {_controlMutex};
 
 	_abortScan = true;
-
 	_scheduleTimer.cancel();
+	_recommendationEngine.cancelLoad();
 	_ioService.stop();
 }
 
@@ -294,6 +304,7 @@ MediaScanner::abortScan()
 
 	_abortScan = true;
 	_scheduleTimer.cancel();
+	_recommendationEngine.cancelLoad();
 	_ioService.stop();
 	LMS_LOG(DBUPDATER, DEBUG) << "Scan abort done!";
 
@@ -307,6 +318,9 @@ MediaScanner::requestImmediateScan(bool force)
 	abortScan();
 	_ioService.post([=]()
 	{
+		if (_abortScan)
+			return;
+
 		scheduleScan(force);
 	});
 }
@@ -317,6 +331,9 @@ MediaScanner::requestReload()
 	abortScan();
 	_ioService.post([=]()
 	{
+		if (_abortScan)
+			return;
+
 		scheduleNextScan();
 	});
 }
@@ -407,12 +424,13 @@ MediaScanner::countAllFiles(ScanStats& stats)
 		if (!ec && isFileSupported(path, _fileExtensions))
 		{
 			stats.filesScanned++;
-			stepStats.processedFiles++;
+			stepStats.processedElems++;
 			notifyInProgressIfNeeded(stepStats);
 		}
 
 		return true;
 	});
+	notifyInProgress(stepStats);
 }
 
 void
@@ -476,10 +494,11 @@ MediaScanner::scan(bool forceScan)
 	removeOrphanEntries();
 
 	if (!_abortScan)
+	{
 		checkDuplicatedAudioFiles(stats);
-
-	// Now update all the track features if needed
-	fetchTrackFeatures(stats);
+		fetchTrackFeatures(stats);
+		reloadSimilarityEngine(stats);
+	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size();
 
@@ -566,7 +585,7 @@ MediaScanner::fetchTrackFeatures(ScanStats& stats)
 		return res;
 	}()};
 
-	stepStats.filesToProcess = tracksToFetch.size();
+	stepStats.totalElems = tracksToFetch.size();
 	notifyInProgress(stepStats);
 
 	LMS_LOG(DBUPDATER, INFO) << "Found " << tracksToFetch.size() << " track(s) to fetch!";
@@ -579,10 +598,11 @@ MediaScanner::fetchTrackFeatures(ScanStats& stats)
 		if (fetchTrackFeatures(trackToFetch.id, trackToFetch.mbid))
 			stats.featuresFetched++;
 
-		stepStats.processedFiles++;
+		stepStats.processedElems++;
 		notifyInProgressIfNeeded(stepStats);
 	}
 
+	notifyInProgress(stepStats);
 	LMS_LOG(DBUPDATER, INFO) << "Track features fetched!";
 }
 
@@ -591,7 +611,7 @@ MediaScanner::refreshScanSettings()
 {
 	auto transaction {_dbSession.createSharedTransaction()};
 
-	ScanSettings::pointer scanSettings {ScanSettings::get(_dbSession)};
+	const ScanSettings::pointer scanSettings {ScanSettings::get(_dbSession)};
 
 	LMS_LOG(DBUPDATER, INFO) << "Using scan settings version " << scanSettings->getScanVersion();
 
@@ -608,7 +628,7 @@ MediaScanner::refreshScanSettings()
 	_mediaDirectory = scanSettings->getMediaDirectory();
 	_recommendationEngineType = scanSettings->getRecommendationEngineType();
 
-	auto clusterTypes = scanSettings->getClusterTypes();
+	const auto clusterTypes = scanSettings->getClusterTypes();
 	std::set<std::string> clusterTypeNames;
 
 	std::transform(std::cbegin(clusterTypes), std::cend(clusterTypes),
@@ -616,7 +636,6 @@ MediaScanner::refreshScanSettings()
 			[](ClusterType::pointer clusterType) { return clusterType->getName(); });
 
 	_metadataParser->setClusterTypeNames(clusterTypeNames);
-
 }
 
 void
@@ -800,7 +819,7 @@ void
 MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats)
 {
 	ScanStepStats stepStats{stats.startTime, ScanProgressStep::ScanningFiles};
-	stepStats.filesToProcess = stats.filesScanned;
+	stepStats.totalElems = stats.filesScanned;
 	notifyInProgress(stepStats);
 
 	exploreFilesRecursive(mediaDirectory, [&](std::error_code ec, const std::filesystem::path& path)
@@ -817,12 +836,14 @@ MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bo
 		{
 			scanAudioFile(path, forceScan, stats );
 
-			stepStats.processedFiles++;
+			stepStats.processedElems++;
 			notifyInProgressIfNeeded(stepStats);
 		}
 
 		return true;
 	});
+
+	notifyInProgress(stepStats);
 }
 
 // Check if a file exists and is still in a media directory
@@ -878,7 +899,7 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 	}
 	LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks to be checked...";
 
-	stepStats.filesToProcess = trackCount;
+	stepStats.totalElems = trackCount;
 	notifyInProgress(stepStats);
 
 	std::vector<std::pair<Database::IdType, std::filesystem::path>> trackPaths;
@@ -902,7 +923,7 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 			if (!checkFile(trackPath, _mediaDirectory, _fileExtensions))
 				tracksToRemove.push_back(trackId);
 
-			stepStats.processedFiles++;
+			stepStats.processedElems++;
 		}
 
 		if (!tracksToRemove.empty())
@@ -990,6 +1011,23 @@ MediaScanner::checkDuplicatedAudioFiles(ScanStats& stats)
 	}
 
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files done!";
+}
+
+void
+MediaScanner::reloadSimilarityEngine(ScanStats& stats)
+{
+	ScanStepStats stepStats {stats.startTime, ScanProgressStep::ReloadingSimilarityEngine};
+
+	auto progressCallback {[&](const Recommendation::IEngine::Progress& progress)
+	{
+		stepStats.totalElems = progress.totalElems;
+		stepStats.processedElems = progress.processedElems;
+		notifyInProgressIfNeeded(stepStats);
+	}};
+
+	notifyInProgress(stepStats);
+	_recommendationEngine.load(stats.nbChanges() > 0, progressCallback);
+	notifyInProgress(stepStats);
 }
 
 } // namespace Scanner

@@ -27,29 +27,29 @@
 #include "database/TrackList.hpp"
 
 namespace Recommendation {
-	
+
 std::unique_ptr<IClassifier> createClustersClassifier()
 {
 	return std::make_unique<ClusterClassifier>();
 }
 
-std::vector<Database::IdType>
+std::unordered_set<Database::IdType>
 ClusterClassifier::getSimilarTracks(Database::Session& dbSession, const std::unordered_set<Database::IdType>& trackIds, std::size_t maxCount) const
 {
 	auto transaction {dbSession.createSharedTransaction()};
 
-	auto tracks {Database::Track::getSimilarTracks(dbSession, trackIds, 0, maxCount)};
-	std::vector<Database::IdType> res;
-	res.reserve(tracks.size());
+	const auto tracks {Database::Track::getSimilarTracks(dbSession, trackIds, 0, maxCount)};
 
-	std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const auto& track) { return track.id(); });
+	std::unordered_set<Database::IdType> res;
+	std::transform(std::cbegin(tracks), std::cend(tracks), std::inserter(res, std::end(res)),
+			[](const auto& track) { return track.id(); });
 	return res;
 }
 
-std::vector<Database::IdType>
+std::unordered_set<Database::IdType>
 ClusterClassifier::getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const
 {
-	std::vector<Database::IdType> res;
+	std::unordered_set<Database::IdType> res;
 
 	auto transaction {session.createSharedTransaction()};
 
@@ -57,18 +57,17 @@ ClusterClassifier::getSimilarTracksFromTrackList(Database::Session& session, Dat
 	if (!trackList)
 		return res;
 
-	const std::vector<Database::Track::pointer> tracks {trackList->getSimilarTracks(0, maxCount)};
-	res.reserve(tracks.size());
-	std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res),
+	const auto tracks {trackList->getSimilarTracks(0, maxCount)};
+	std::transform(std::cbegin(tracks), std::cend(tracks), std::inserter(res, std::end(res)),
 			[](const Database::Track::pointer& track) { return track.id(); });
 
 	return res;
 }
 
-std::vector<Database::IdType>
+std::unordered_set<Database::IdType>
 ClusterClassifier::getSimilarReleases(Database::Session& dbSession, Database::IdType releaseId, std::size_t maxCount) const
 {
-	std::vector<Database::IdType> res;
+	std::unordered_set<Database::IdType> res;
 
 	auto transaction {dbSession.createSharedTransaction()};
 
@@ -77,16 +76,16 @@ ClusterClassifier::getSimilarReleases(Database::Session& dbSession, Database::Id
 		return res;
 
 	const auto releases {release->getSimilarReleases(0, maxCount)};
-	res.reserve(releases.size());
-	std::transform(std::cbegin(releases), std::cend(releases), std::back_inserter(res), [](const auto& release) { return release.id(); });
+	std::transform(std::cbegin(releases), std::cend(releases), std::inserter(res, std::end(res)),
+			[](const auto& release) { return release.id(); });
 
 	return res;
 }
 
-std::vector<Database::IdType>
+std::unordered_set<Database::IdType>
 ClusterClassifier::getSimilarArtists(Database::Session& dbSession, Database::IdType artistId, std::size_t maxCount) const
 {
-	std::vector<Database::IdType> res;
+	std::unordered_set<Database::IdType> res;
 
 	auto transaction {dbSession.createSharedTransaction()};
 
@@ -95,8 +94,8 @@ ClusterClassifier::getSimilarArtists(Database::Session& dbSession, Database::IdT
 		return res;
 
 	const auto artists {artist->getSimilarArtists(0, maxCount)};
-	res.reserve(artists.size());
-	std::transform(std::cbegin(artists), std::cend(artists), std::back_inserter(res), [](const auto& artist) { return artist.id(); });
+	std::transform(std::cbegin(artists), std::cend(artists), std::inserter(res, std::end(res)),
+			[](const auto& artist) { return artist.id(); });
 
 	return res;
 }

@@ -40,7 +40,7 @@ namespace API::Subsonic::Scan
 			std::size_t count{};
 
 			if (scanStatus.currentScanStepStats && scanStatus.currentScanStepStats->currentStep == ScanProgressStep::ScanningFiles)
-				count = scanStatus.currentScanStepStats->processedFiles;
+				count = scanStatus.currentScanStepStats->processedElems;
 
 			statusResponse.setAttribute("count", count);
 		}

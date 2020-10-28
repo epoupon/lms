@@ -20,7 +20,7 @@
 #pragma once
 
 #include <memory>
-#include "recommendation/IClassifier.hpp"
+#include "IClassifier.hpp"
 
 namespace Recommendation
 {
