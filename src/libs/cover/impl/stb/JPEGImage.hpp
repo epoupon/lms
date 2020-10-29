@@ -17,13 +17,23 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <vector>
 
-#include <memory>
-#include "recommendation/IClassifier.hpp"
+#include "cover/IEncodedImage.hpp"
 
-namespace Recommendation
+namespace CoverArt::STB
 {
-	std::unique_ptr<IClassifier> createFeaturesClassifier();
-}
+	class RawImage;
+	class JPEGImage : public IEncodedImage
+	{
+		public:
+			JPEGImage(const RawImage& rawImage, unsigned quality);
 
+		private:
+			const std::byte* getData() const override;
+			std::size_t getDataSize() const override;
+			std::string_view getMimeType() const override { return "image/jpeg"; }
+
+			std::vector<std::byte> _data;
+	};
+}

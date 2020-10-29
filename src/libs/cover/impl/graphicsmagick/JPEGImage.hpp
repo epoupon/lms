@@ -19,20 +19,27 @@
 
 #pragma once
 
-#include <cstddef>
-#include <string_view>
+#ifndef LMS_SUPPORT_IMAGE_GM
+#error "Bad configuration"
+#endif
 
-namespace CoverArt
+#include <Magick++.h>
+
+#include "cover/IEncodedImage.hpp"
+
+namespace CoverArt::GraphicsMagick
 {
-
-	class ICoverArt
+	class RawImage;
+	class JPEGImage : public IEncodedImage
 	{
 		public:
-			virtual ~ICoverArt() = default;
+			JPEGImage(const RawImage& rawImage, unsigned quality);
 
-			virtual const std::byte* getData() const = 0;
-			virtual std::size_t getDataSize() const = 0;
-			virtual std::string_view getMimeType() const = 0;
+		private:
+			const std::byte* getData() const override;
+			std::size_t getDataSize() const override;
+			std::string_view getMimeType() const override { return "image/jpeg"; }
+
+			Magick::Blob _blob;
 	};
-
-} // namespace CoverArt
+}

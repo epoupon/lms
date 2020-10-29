@@ -62,8 +62,9 @@ namespace Scanner {
 		DiscoveringFiles,
 		ScanningFiles,
 		FetchingTrackFeatures,
+		ReloadingSimilarityEngine,
 	};
-	static inline constexpr unsigned ScanProgressStepCount {4};
+	static inline constexpr unsigned ScanProgressStepCount {5};
 
 	// reduced scan stats
 	struct ScanStepStats
@@ -72,8 +73,8 @@ namespace Scanner {
 
 		ScanProgressStep currentStep;
 
-		std::size_t     filesToProcess {};
-		std::size_t		processedFiles {};
+		std::size_t	totalElems {};
+		std::size_t	processedElems {};
 
 		unsigned		progress() const;
 	};

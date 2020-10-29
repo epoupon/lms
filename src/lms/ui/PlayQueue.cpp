@@ -23,6 +23,7 @@
 #include <Wt/WText.h>
 
 #include "database/Cluster.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
@@ -500,7 +501,10 @@ PlayQueue::addSome()
 void
 PlayQueue::enqueueRadioTracks()
 {
-	const std::vector<Database::IdType> trackToAddIds {Service<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 3)};
+	const auto similarTrackIds {Service<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 3)};
+
+	std::vector<Database::IdType> trackToAddIds(std::cbegin(similarTrackIds), std::cend(similarTrackIds));
+	Random::shuffleContainer(trackToAddIds);
 	enqueueTracks(trackToAddIds);
 }
 

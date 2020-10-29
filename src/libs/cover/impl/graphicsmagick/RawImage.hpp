@@ -19,40 +19,36 @@
 
 #pragma once
 
-#include <mutex>
-#include <condition_variable>
+#ifndef LMS_SUPPORT_IMAGE_GM
+#error "Bad configuration"
+#endif
 
-class Semaphore
+#include <Magick++.h>
+
+#include <cstddef>
+#include <filesystem>
+
+#include "cover/IEncodedImage.hpp"
+#include "IRawImage.hpp"
+
+namespace CoverArt::GraphicsMagick
 {
-	public:
-		Semaphore() = default;
-		Semaphore(const Semaphore&) = delete;
-		Semaphore(Semaphore&&) = delete;
-		Semaphore& operator=(const Semaphore&) = delete;
-		Semaphore& operator=(Semaphore&&) = delete;
+	void init(const std::filesystem::path& path);
 
-		void notify()
-		{
-			std::unique_lock<std::mutex> lock {_mutex};
+	class RawImage : IRawImage
+	{
+		public:
+			RawImage(const std::byte* encodedData, std::size_t encodedDataSize);
+			RawImage(const std::filesystem::path& path);
 
-			_count++;
-			_cv.notify_one();
-		}
+			void resize(ImageSize width) override;
+			std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const override;
 
-		void wait()
-		{
-			std::unique_lock<std::mutex> lock(_mutex);
+		private:
+			friend class JPEGImage;
+			Magick::Image getMagickImage() const;
 
-			while (_count == 0)
-				_cv.wait(lock);
-
-			_count--;
-		}
-
-	private:
-		std::mutex			_mutex;
-		std::condition_variable		_cv;
-		unsigned			_count {};
-};
-
+			Magick::Image _image;
+	};
+}
 

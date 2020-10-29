@@ -25,6 +25,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Cluster.hpp"
+#include "database/Session.hpp"
 
 #include "LmsApplication.hpp"
 

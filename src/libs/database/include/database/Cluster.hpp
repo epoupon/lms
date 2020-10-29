@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <Wt/Dbo/Dbo.h>
@@ -41,7 +42,7 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 		using pointer = Wt::Dbo::ptr<Cluster>;
 
 		Cluster();
-		Cluster(Wt::Dbo::ptr<ClusterType> type, std::string name);
+		Cluster(Wt::Dbo::ptr<ClusterType> type, std::string_view name);
 
 		// Find utility
 		static std::vector<pointer> getAll(Session& session);
@@ -49,7 +50,7 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 		static pointer getById(Session& session, IdType id);
 
 		// Create utility
-		static pointer create(Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name);
+		static pointer create(Session& session, Wt::Dbo::ptr<ClusterType> type, std::string_view name);
 
 		// Accessors
 		const std::string& getName() const		{ return _name; }

@@ -22,6 +22,7 @@
 #include <Wt/Dbo/FixedSqlConnectionPool.h>
 #include <Wt/Dbo/backend/Sqlite3.h>
 
+#include "database/Session.hpp"
 #include "database/User.hpp"
 #include "utils/Logger.hpp"
 
@@ -57,6 +58,24 @@ Db::executeSql(const std::string& sql)
 	connection->executeSql(sql);
 }
 
+Session&
+Db::getTLSSession()
+{
+	static thread_local Session* tlsSession {};
+
+	if (!tlsSession)
+	{
+		auto newSession {std::make_unique<Session>(*this)};
+		tlsSession = newSession.get();
+
+		{
+			std::scoped_lock lock {_tlsSessionsMutex};
+			_tlsSessions.push_back(std::move(newSession));
+		}
+	}
+
+	return *tlsSession;
+}
 
 Db::ScopedConnection::ScopedConnection(Wt::Dbo::SqlConnectionPool& pool)
 : _connectionPool {pool}

@@ -32,14 +32,14 @@ Cluster::Cluster()
 {
 }
 
-Cluster::Cluster(Wt::Dbo::ptr<ClusterType> type, std::string name)
-	: _name(std::string(name, 0, _maxNameLength)),
-	_clusterType(type)
+Cluster::Cluster(Wt::Dbo::ptr<ClusterType> type, std::string_view name)
+	: _name(std::string {name, 0, _maxNameLength}),
+	_clusterType {type}
 {
 }
 
 Cluster::pointer
-Cluster::create(Session& session, Wt::Dbo::ptr<ClusterType> type, std::string name)
+Cluster::create(Session& session, Wt::Dbo::ptr<ClusterType> type, std::string_view name)
 {
 	session.checkUniqueLocked();
 

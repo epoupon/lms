@@ -19,54 +19,15 @@
 
 #pragma once
 
-#include <filesystem>
-#include <vector>
-
-#include <Magick++.h>
-
 #include "utils/Exception.hpp"
 
 namespace CoverArt
 {
-	void init(const std::filesystem::path& path);
-
 	// internal use only
 	class ImageException : public LmsException
 	{
 		public:
 			using LmsException::LmsException;
-	};
-
-	class EncodedImage
-	{
-		public:
-			EncodedImage() = default;
-			EncodedImage(const std::byte* data, std::size_t dataSize);
-
-			const std::byte* getData() const;
-			std::size_t getDataSize() const;
-
-		private:
-			friend class RawImage;
-			EncodedImage(Magick::Blob blob);
-
-			Magick::Blob _blob;
-	};
-
-	class RawImage
-	{
-		public:
-			RawImage(const std::filesystem::path& p);
-			RawImage(const EncodedImage& encodedImage);
-
-			// Operations
-			void scale(std::size_t width);
-
-			// output
-			EncodedImage encode() const;
-
-		private:
-			Magick::Image _image;
 	};
 
 } // namespace CoverArt

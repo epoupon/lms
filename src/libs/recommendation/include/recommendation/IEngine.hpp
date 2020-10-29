@@ -20,10 +20,7 @@
 #pragma once
 
 #include <functional>
-#include <vector>
 #include <unordered_set>
-
-#include <Wt/WSignal.h>
 
 #include "database/Types.hpp"
 
@@ -40,16 +37,19 @@ namespace Recommendation
 		public:
 			virtual ~IEngine() = default;
 
-			virtual void requestLoad() = 0;
+			struct Progress
+			{
+				std::size_t totalElems {};
+				std::size_t	processedElems {};
+			};
+			using ProgressCallback = std::function<void(const Progress&)>;
+			virtual void load(bool forceReload, const ProgressCallback& progressCallback = {}) = 0;
+			virtual void cancelLoad() = 0;
 
-			virtual void requestReload() = 0;
-			virtual Wt::Signal<>& reloaded() = 0;
-
-			// Closest results first
-			virtual std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) = 0;
-			virtual std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) = 0;
-			virtual std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) = 0;
-			virtual std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) = 0;
+			virtual std::unordered_set<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) = 0;
+			virtual std::unordered_set<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) = 0;
+			virtual std::unordered_set<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) = 0;
+			virtual std::unordered_set<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) = 0;
 	};
 
 	std::unique_ptr<IEngine> createEngine(Database::Db& db);

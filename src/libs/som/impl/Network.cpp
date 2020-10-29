@@ -26,6 +26,7 @@
 #include <sstream>
 
 #include "utils/Logger.hpp"
+#include "utils/Random.hpp"
 
 namespace SOM
 {
@@ -78,25 +79,20 @@ defaultNeighbourhoodFunc(Norm norm, const Network::CurrentIteration& iteration)
 
 Network::Network(Coordinate width, Coordinate height, std::size_t inputDimCount)
 :
-_inputDimCount(inputDimCount),
-_weights(inputDimCount, static_cast<InputVector::value_type>(1)),
-_refVectors(width, height, _inputDimCount),
-_distanceFunc(euclidianSquareDistance),
-_learningFactorFunc(defaultLearningFactor),
-_neighbourhoodFunc(defaultNeighbourhoodFunc)
+_inputDimCount {inputDimCount},
+_weights {inputDimCount, static_cast<InputVector::value_type>(1)},
+_refVectors {width, height, _inputDimCount},
+_distanceFunc {euclidianSquareDistance},
+_learningFactorFunc {defaultLearningFactor},
+_neighbourhoodFunc {defaultNeighbourhoodFunc}
 {
-	auto now {std::chrono::system_clock::now()};
-	std::mt19937 randGenerator {static_cast<std::mt19937::result_type>(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count())};
-
 	// init each vector with a random normalized value
-	std::uniform_real_distribution<InputVector::value_type> dist{0, 1};
-
 	for (Coordinate y {}; y < _refVectors.getHeight(); ++y)
 	{
 		for (Coordinate x {}; x < _refVectors.getWidth(); ++x)
 		{
 			for (InputVector::value_type& val : _refVectors.get({x,y}))
-				val = dist(randGenerator);
+				val = Random::getRealRandom<InputVector::value_type>(0, 1);
 		}
 	}
 }
@@ -294,9 +290,6 @@ Network::train(const std::vector<InputVector>& inputData, std::size_t nbIteratio
 	for (const auto& input : inputData)
 		inputDataShuffled.push_back(&input);
 
-	auto now {std::chrono::system_clock::now()};
-	std::mt19937 randGenerator{static_cast<std::mt19937::result_type>(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count())};
-
 	for (std::size_t i {}; i < nbIterations; ++i)
 	{
 		CurrentIteration curIter {i, nbIterations};
@@ -304,7 +297,7 @@ Network::train(const std::vector<InputVector>& inputData, std::size_t nbIteratio
 		if (progressCallback)
 			progressCallback(curIter);
 
-		std::shuffle(inputDataShuffled.begin(), inputDataShuffled.end(), randGenerator);
+		Random::shuffleContainer(inputDataShuffled);
 
 		const LearningFactor learningFactor {_learningFactorFunc(curIter)};
 

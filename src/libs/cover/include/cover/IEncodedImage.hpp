@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,31 +17,24 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "CoverArt.hpp"
+#pragma once
+
+#include <cstddef>
+#include <string_view>
 
 namespace CoverArt
 {
+	using ImageSize = std::size_t;
 
-	CoverArt::CoverArt(EncodedImage image)
-		: _image {image}
-	{}
-
-	const std::byte*
-	CoverArt::getData() const
+	class IEncodedImage
 	{
-		return _image.getData();
-	}
+		public:
+			virtual ~IEncodedImage() = default;
 
-	std::size_t
-	CoverArt::getDataSize() const
-	{
-		return _image.getDataSize();
-	}
-
-	std::string_view
-	CoverArt::getMimeType() const
-	{
-		return "image/jpeg";
-	}
+			virtual const std::byte* getData() const = 0;
+			virtual std::size_t getDataSize() const = 0;
+			virtual std::string_view getMimeType() const = 0;
+	};
 
 } // namespace CoverArt
+

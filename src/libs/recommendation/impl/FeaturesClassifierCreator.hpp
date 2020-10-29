@@ -17,22 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/Random.hpp"
+#pragma once
 
-namespace Random {
+#include <memory>
+#include "IClassifier.hpp"
 
-RandGenerator& getRandGenerator()
+namespace Recommendation
 {
-	static thread_local std::random_device rd;
-	static thread_local RandGenerator randGenerator(rd());
-
-	return randGenerator;
+	std::unique_ptr<IClassifier> createFeaturesClassifier();
 }
-
-RandGenerator createSeededGenerator(uint_fast32_t seed)
-{
-	return RandGenerator {seed};
-}
-
-} // Random
 

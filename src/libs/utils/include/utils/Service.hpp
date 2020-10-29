@@ -46,6 +46,11 @@ class Service
 			return Service<Class>::get();
 		}
 
+		Class& operator*() const
+		{
+			return *Service<Class>::get();
+		}
+
 		static Class* get() { return _service.get(); }
 
 	private:

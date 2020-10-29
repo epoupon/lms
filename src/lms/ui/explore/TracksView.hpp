@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <unordered_map>
 
 #include <Wt/WContainerWidget.h>
 #include <Wt/WTemplate.h>

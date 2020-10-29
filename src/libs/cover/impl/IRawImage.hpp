@@ -19,23 +19,18 @@
 
 #pragma once
 
-#include "cover/ICoverArt.hpp"
-#include "Image.hpp"
+#include <memory>
+
+#include "cover/IEncodedImage.hpp"
 
 namespace CoverArt
 {
-
-	class CoverArt : public ICoverArt
+	class IRawImage
 	{
 		public:
-			CoverArt(EncodedImage image);
-
-			const std::byte* getData() const override;
-			std::size_t getDataSize() const override;
-			std::string_view getMimeType() const override;
-
-		private:
-			EncodedImage _image;
+			virtual ~IRawImage() = default;
+			virtual void resize(ImageSize width) = 0;
+			virtual std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const = 0;
 	};
+}
 
-} // namespace CoverArt

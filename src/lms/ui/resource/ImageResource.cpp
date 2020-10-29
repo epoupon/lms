@@ -74,7 +74,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		return;
 	}
 
-	std::unique_ptr<CoverArt::ICoverArt> cover;
+	std::shared_ptr<CoverArt::IEncodedImage> cover;
 
 	if (trackIdStr)
 	{
@@ -87,11 +87,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 			return;
 		}
 
-		// DbSession are not thread safe
-		{
-			Wt::WApplication::UpdateLock lock {LmsApp};
-			cover = Service<CoverArt::IGrabber>::get()->getFromTrack(LmsApp->getDbSession(), *trackId, *size);
-		}
+		cover = Service<CoverArt::IGrabber>::get()->getFromTrack(LmsApp->getDbSession(), *trackId, *size);
 	}
 	else if (releaseIdStr)
 	{
@@ -101,11 +97,7 @@ ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		if (!releaseId)
 			return;
 
-		// DbSession are not thread safe
-		{
-			Wt::WApplication::UpdateLock lock {LmsApp};
-			cover = Service<CoverArt::IGrabber>::get()->getFromRelease(LmsApp->getDbSession(), *releaseId, *size);
-		}
+		cover = Service<CoverArt::IGrabber>::get()->getFromRelease(LmsApp->getDbSession(), *releaseId, *size);
 	}
 	else
 	{

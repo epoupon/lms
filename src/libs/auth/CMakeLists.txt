@@ -29,7 +29,7 @@ if (PAM_FOUND)
 	target_sources(lmsauth PRIVATE impl/pam/PAM.cpp)
 	target_include_directories(lmsauth PRIVATE  ${PAM_INCLUDE_DIR})
 	target_link_libraries(lmsauth PRIVATE ${PAM_LIBRARIES})
-endif(PAM_FOUND)
+endif (PAM_FOUND)
 
 install(TARGETS lmsauth DESTINATION lib)
 

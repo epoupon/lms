@@ -26,7 +26,7 @@
 
 namespace Database {
 
-// Session living class handling the database and the login
+class Session;
 class Db
 {
 	public:
@@ -38,6 +38,8 @@ class Db
 		Db(Db&&) = delete;
 		Db& operator=(const Db&) = delete;
 		Db& operator=(Db&&) = delete;
+
+		Session& getTLSSession();
 
 	private:
 		friend class Session;
@@ -88,6 +90,9 @@ class Db
 
 		std::shared_mutex				_sharedMutex;
 		std::unique_ptr<Wt::Dbo::SqlConnectionPool>	_connectionPool;
+
+		std::mutex _tlsSessionsMutex;
+		std::vector<std::unique_ptr<Session>> _tlsSessions;
 };
 
 } // namespace Database

@@ -157,7 +157,7 @@ getClientInfo(const Wt::Http::ParameterMap& parameters)
 }
 
 SubsonicResource::SubsonicResource(Db& db)
-: _sessionPool {db}
+: _db {db}
 {
 }
 
@@ -1746,7 +1746,7 @@ handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/,
 	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(256)};
 	size = clamp(size, std::size_t {32}, std::size_t {1024});
 
-	std::unique_ptr<CoverArt::ICoverArt> cover;
+	std::shared_ptr<CoverArt::IEncodedImage> cover;
 	switch (id.type)
 	{
 		case Id::Type::Track:
@@ -1911,9 +1911,9 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 		clientName = clientInfo.name;
 
-		SessionPool::ScopedSession dbSession {_sessionPool};
+		Session& dbSession {_db.getTLSSession()};
 
-		switch (Service<Auth::IPasswordService>::get()->checkUserPassword(dbSession.get(),
+		switch (Service<Auth::IPasswordService>::get()->checkUserPassword(dbSession,
 					boost::asio::ip::address::from_string(request.clientAddress()),
 					clientInfo.user, clientInfo.password))
 		{
@@ -1925,16 +1925,16 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 				throw LoginThrottledGenericError {};
 		}
 
-		RequestContext requestContext {parameters, dbSession.get(), clientInfo.user, clientInfo.name};
+		RequestContext requestContext {parameters, dbSession, clientInfo.user, clientInfo.name};
 
 		auto itEntryPoint {requestEntryPoints.find(requestPath)};
 		if (itEntryPoint != requestEntryPoints.end())
 		{
 			if (itEntryPoint->second.mustBeAdmin)
 			{
-				auto transaction {dbSession.get().createSharedTransaction()};
+				auto transaction {dbSession.createSharedTransaction()};
 
-				User::pointer user {User::getByLoginName(dbSession.get(), clientInfo.user)};
+				User::pointer user {User::getByLoginName(dbSession, clientInfo.user)};
 				if (!user || !user->isAdmin())
 					throw UserNotAuthorizedError {};
 			}

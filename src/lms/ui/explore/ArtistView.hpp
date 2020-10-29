@@ -20,6 +20,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_set>
 
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
@@ -46,7 +47,7 @@ class Artist : public Wt::WTemplate
 
 	private:
 		void refreshView();
-		void refreshSimilarArtists(const std::vector<Database::IdType>& similarArtistsId);
+		void refreshSimilarArtists(const std::unordered_set<Database::IdType>& similarArtistsId);
 		void refreshLinks(const Wt::Dbo::ptr<Database::Artist>& artist);
 
 		std::unique_ptr<Wt::WTemplate> createRelease(const Wt::Dbo::ptr<Database::Artist>& artist, const Wt::Dbo::ptr<Database::Release>& release);

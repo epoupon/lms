@@ -25,58 +25,71 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 
+#if LMS_SUPPORT_IMAGE_STB
+#include "stb/RawImage.hpp"
+using RawImage = CoverArt::STB::RawImage;
+#elif LMS_SUPPORT_IMAGE_GM
+#include "graphicsmagick/RawImage.hpp"
+using RawImage = CoverArt::GraphicsMagick::RawImage;
+#endif
+
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
+#include "utils/Utils.hpp"
+#include "Exception.hpp"
 
-#include "CoverArt.hpp"
+namespace CoverArt {
 
-namespace {
-
+static
 bool
 isFileSupported(const std::filesystem::path& file, const std::vector<std::filesystem::path>& extensions)
 {
 	return (std::find(std::cbegin(extensions), std::cend(extensions), file.extension()) != std::cend(extensions));
 }
 
-} // namespace
-
-namespace CoverArt {
-
-std::unique_ptr<IGrabber> createGrabber(const std::filesystem::path& execPath, std::size_t maxCacheSize, std::size_t maxFileSize)
+std::unique_ptr<IGrabber>
+createGrabber(const std::filesystem::path& execPath,
+		const std::filesystem::path& defaultCoverPath,
+		std::size_t maxCacheSize, std::size_t maxFileSize, unsigned jpegQuality)
 {
-	return std::make_unique<Grabber>(execPath, maxCacheSize, maxFileSize);
+	return std::make_unique<Grabber>(execPath, defaultCoverPath, maxCacheSize, maxFileSize, jpegQuality);
 }
 
 Grabber::Grabber(const std::filesystem::path& execPath,
+		const std::filesystem::path& defaultCoverPath,
 		std::size_t maxCacheSize,
-		std::size_t maxFileSize)
-	: _maxCacheSize {maxCacheSize}
+		std::size_t maxFileSize,
+		unsigned jpegQuality)
+	: _defaultCoverPath {defaultCoverPath}
+	, _maxCacheSize {maxCacheSize}
 	, _maxFileSize {maxFileSize}
+	, _jpegQuality {clamp<unsigned>(jpegQuality, 1, 100)}
 {
+	LMS_LOG(COVER, INFO) << "Default cover path = '" << _defaultCoverPath.string() << "'";
 	LMS_LOG(COVER, INFO) << "Max cache size = " << _maxCacheSize;
 	LMS_LOG(COVER, INFO) << "Max file size = " << _maxFileSize;
-	init(execPath);
-}
+	LMS_LOG(COVER, INFO) << "JPEG export quality = " << _jpegQuality;
 
-void
-Grabber::setDefaultCover(const std::filesystem::path& p)
-{
+#if LMS_SUPPORT_IMAGE_GM
+	GraphicsMagick::init(execPath);
+#else
+	(void)execPath;
+#endif
+
 	try
 	{
-		RawImage defaultCover {p};
-		_defaultCover = defaultCover.encode();
-		LMS_LOG(COVER, INFO) << "Successfully read default cover image!";
+		getDefault(512);
 	}
 	catch (const ImageException& e)
 	{
-		throw LmsException("Cannot read default cover file '" + p.string() + "'");
+		throw LmsException("Cannot read default cover file '" + _defaultCoverPath.string() + "': " + e.what());
 	}
 }
 
-static std::optional<EncodedImage>
-getFromAvMediaFile(const Av::MediaFile& input, Width width)
+std::unique_ptr<IEncodedImage>
+Grabber::getFromAvMediaFile(const Av::MediaFile& input, ImageSize width) const
 {
-	std::optional<EncodedImage> image;
+	std::unique_ptr<IEncodedImage> image;
 
 	input.visitAttachedPictures([&](const Av::Picture& picture)
 	{
@@ -85,12 +98,9 @@ getFromAvMediaFile(const Av::MediaFile& input, Width width)
 
 		try
 		{
-			EncodedImage encodedImage {picture.data, picture.dataSize};
-
-			RawImage rawImage {encodedImage};
-			rawImage.scale(width);
-
-			image = rawImage.encode();
+			RawImage rawImage {picture.data, picture.dataSize};
+			rawImage.resize(width);
+			image = rawImage.encodeToJPEG(_jpegQuality);
 		}
 		catch (const ImageException& e)
 		{
@@ -101,17 +111,16 @@ getFromAvMediaFile(const Av::MediaFile& input, Width width)
 	return image;
 }
 
-static std::optional<EncodedImage>
-getFromFile(const std::filesystem::path& p, Width width)
+std::unique_ptr<IEncodedImage>
+Grabber::getFromFile(const std::filesystem::path& p, ImageSize width) const
 {
-	std::optional<EncodedImage> image;
+	std::unique_ptr<IEncodedImage> image;
 
 	try
 	{
 		RawImage rawImage {p};
-		rawImage.scale(width);
-
-		image = rawImage.encode();
+		rawImage.resize(width);
+		image = rawImage.encodeToJPEG(_jpegQuality);
 	}
 	catch (const ImageException& e)
 	{
@@ -121,53 +130,50 @@ getFromFile(const std::filesystem::path& p, Width width)
 	return image;
 }
 
-EncodedImage
-Grabber::getDefault(Width width)
+std::shared_ptr<IEncodedImage>
+Grabber::getDefault(ImageSize width)
 {
 	{
 		std::shared_lock lock {_cacheMutex};
 
-		if (auto it {_defaultCache.find(width)}; it != std::cend(_defaultCache))
+		if (auto it {_defaultCoverCache.find(width)}; it != std::cend(_defaultCoverCache))
 			return it->second;
 	}
 
 	{
 		std::unique_lock lock {_cacheMutex};
 
-		if (auto it {_defaultCache.find(width)}; it != std::cend(_defaultCache))
+		if (auto it {_defaultCoverCache.find(width)}; it != std::cend(_defaultCoverCache))
 			return it->second;
 
-		RawImage rawImage {*_defaultCover};
-		rawImage.scale(width);
-		EncodedImage res {rawImage.encode()};
+		std::shared_ptr<IEncodedImage> image {getFromFile(_defaultCoverPath, width)};
+		_defaultCoverCache[width] = image;
+		LMS_LOG(COVER, DEBUG) << "Default cache entries = " << _defaultCoverCache.size();
 
-		_defaultCache[width] = res;
-		LMS_LOG(COVER, DEBUG) << "Default cache entries = " << _defaultCache.size();
-
-		return res;
+		return image;
 	}
 }
 
-std::optional<EncodedImage>
-Grabber::getFromDirectory(const std::filesystem::path& p, std::string_view preferredFileName, Width width) const
+std::unique_ptr<IEncodedImage>
+Grabber::getFromDirectory(const std::filesystem::path& p, std::string_view preferredFileName, ImageSize width) const
 {
 	const std::multimap<std::string, std::filesystem::path> coverPaths {getCoverPaths(p)};
 
 	auto tryLoadImageFromFilename = [&](std::string_view fileName)
 	{
-		std::optional<EncodedImage> image;
+		std::unique_ptr<IEncodedImage> image;
 
 		auto range {coverPaths.equal_range(std::string {fileName})};
 		for (auto it {range.first}; it != range.second; ++it)
 		{
 			image = getFromFile(it->second, width);
-			if (!image)
-				continue;
+			if (image)
+				break;
 		}
 		return image;
 	};
 
-	std::optional<EncodedImage> image;
+	std::unique_ptr<IEncodedImage> image;
 
 	if (!preferredFileName.empty())
 	{
@@ -225,10 +231,10 @@ Grabber::getCoverPaths(const std::filesystem::path& directoryPath) const
 	return res;
 }
 
-std::optional<EncodedImage>
-Grabber::getFromTrack(const std::filesystem::path& p, Width width) const
+std::unique_ptr<IEncodedImage>
+Grabber::getFromTrack(const std::filesystem::path& p, ImageSize width) const
 {
-	std::optional<EncodedImage> image;
+	std::unique_ptr<IEncodedImage> image;
 
 	try
 	{
@@ -244,16 +250,16 @@ Grabber::getFromTrack(const std::filesystem::path& p, Width width) const
 	return image;
 }
 
-EncodedImage
-Grabber::getFromTrackInternal(Database::Session& dbSession, Database::IdType trackId, Width width)
+std::shared_ptr<IEncodedImage>
+Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width)
 {
 	using namespace Database;
 
 	const CacheEntryDesc cacheEntryDesc {CacheEntryDesc::Type::Track, trackId, width};
-	std::optional<EncodedImage> cover {loadFromCache(cacheEntryDesc)};
 
+	std::shared_ptr<IEncodedImage> cover {loadFromCache(cacheEntryDesc)};
 	if (cover)
-		return *cover;
+		return cover;
 
 	bool hasCover {};
 	bool isMultiDisc {};
@@ -289,19 +295,20 @@ Grabber::getFromTrackInternal(Database::Session& dbSession, Database::IdType tra
 	if (!cover)
 		cover = getDefault(width);
 
-	saveToCache(cacheEntryDesc, *cover);
+	if (cover)
+		saveToCache(cacheEntryDesc, cover);
 
-	return *cover;
+	return cover;
 }
 
-EncodedImage
-Grabber::getFromReleaseInternal(Database::Session& session, Database::IdType releaseId, Width width)
+std::shared_ptr<IEncodedImage>
+Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, ImageSize width)
 {
 	const CacheEntryDesc cacheEntryDesc {CacheEntryDesc::Type::Release, releaseId, width};
-	std::optional<EncodedImage> cover {loadFromCache(cacheEntryDesc)};
 
+	std::shared_ptr<IEncodedImage> cover {loadFromCache(cacheEntryDesc)};
 	if (cover)
-		return *cover;
+		return cover;
 
 	std::optional<Database::IdType> trackId;
 	{
@@ -317,16 +324,14 @@ Grabber::getFromReleaseInternal(Database::Session& session, Database::IdType rel
 	}
 
 	if (trackId)
-	{
-		cover = getFromTrackInternal(session, *trackId, width);
-	}
-
-	if (!cover)
+		cover = getFromTrack(session, *trackId, width);
+	else
 		cover = getDefault(width);
 
-	saveToCache(cacheEntryDesc, *cover);
+	if (cover)
+		saveToCache(cacheEntryDesc, cover);
 
-	return *cover;
+	return cover;
 }
 
 void
@@ -341,36 +346,23 @@ Grabber::flushCache()
 	_cache.clear();
 }
 
-std::unique_ptr<ICoverArt>
-Grabber::getFromTrack(Database::Session& session, Database::IdType trackId, std::size_t width)
-{
-	CoverArt toto {getFromTrackInternal(session, trackId, width)};
-	return std::make_unique<CoverArt>(getFromTrackInternal(session, trackId, width));
-}
-
-std::unique_ptr<ICoverArt>
-Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, std::size_t width)
-{
-	return std::make_unique<CoverArt>(getFromReleaseInternal(session, releaseId, width));
-}
-
 void
-Grabber::saveToCache(const CacheEntryDesc& entryDesc, const EncodedImage& image)
+Grabber::saveToCache(const CacheEntryDesc& entryDesc, std::shared_ptr<IEncodedImage> image)
 {
 	std::unique_lock lock {_cacheMutex};
 
-	while (_cacheSize + image.getDataSize() > _maxCacheSize && !_cache.empty())
+	while (_cacheSize + image->getDataSize() > _maxCacheSize && !_cache.empty())
 	{
-		auto it {Random::pickRandom(_cache)};
-		_cacheSize -= it->second.getDataSize();
-		_cache.erase(it);
+		auto itRandom {Random::pickRandom(_cache)};
+		_cacheSize -= itRandom->second->getDataSize();
+		_cache.erase(itRandom);
 	}
 
-	_cacheSize += image.getDataSize();
+	_cacheSize += image->getDataSize();
 	_cache[entryDesc] = image;
 }
 
-std::optional<EncodedImage>
+std::shared_ptr<IEncodedImage>
 Grabber::loadFromCache(const CacheEntryDesc& entryDesc)
 {
 	std::shared_lock lock {_cacheMutex};
@@ -379,7 +371,7 @@ Grabber::loadFromCache(const CacheEntryDesc& entryDesc)
 	if (it == std::cend(_cache))
 	{
 		++_cacheMisses;
-		return std::nullopt;
+		return nullptr;
 	}
 
 	++_cacheHits;

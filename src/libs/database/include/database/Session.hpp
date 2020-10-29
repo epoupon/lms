@@ -84,7 +84,7 @@ class Session
 
 		void doDatabaseMigrationIfNeeded();
 
-		Db&			_db;
+		Db&					_db;
 		Wt::Dbo::Session	_session;
 };
 

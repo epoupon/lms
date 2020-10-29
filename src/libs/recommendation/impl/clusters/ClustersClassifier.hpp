@@ -19,8 +19,7 @@
 
 #pragma once
 
-#include "recommendation/IClassifier.hpp"
-
+#include "IClassifier.hpp"
 
 namespace Recommendation
 {
@@ -38,14 +37,13 @@ namespace Recommendation
 
 			std::string_view getName() const override { return "Clusters"; }
 
-			bool init(Database::Session&, bool) override {return true;}
-			void requestCancelInit() override {}
+			bool load(Database::Session&, bool, const ProgressCallback&) override { return true; }
+			void requestCancelLoad() override {}
 
-			std::vector<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const override;
-			std::vector<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) const override;
-			std::vector<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const override;
-			std::vector<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) const override;
-
+			std::unordered_set<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const override;
+			std::unordered_set<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) const override;
+			std::unordered_set<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const override;
+			std::unordered_set<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) const override;
 };
 
 } // namespace Recommendation

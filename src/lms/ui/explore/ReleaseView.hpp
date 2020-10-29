@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <unordered_set>
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
@@ -45,7 +46,7 @@ namespace UserInterface
 			void refreshView();
 			void refreshCopyright(const Wt::Dbo::ptr<Database::Release>& release);
 			void refreshLinks(const Wt::Dbo::ptr<Database::Release>& release);
-			void refreshSimilarReleases(const std::vector<Database::IdType>& similarReleasesId);
+			void refreshSimilarReleases(const std::unordered_set<Database::IdType>& similarReleasesId);
 
 			Filters* _filters {};
 	};

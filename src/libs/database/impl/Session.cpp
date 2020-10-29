@@ -362,13 +362,13 @@ Session::checkSharedLocked()
 UniqueTransaction
 Session::createUniqueTransaction()
 {
-	return UniqueTransaction{_db.getMutex(), _session};
+	return UniqueTransaction {_db.getMutex(), _session};
 }
 
 SharedTransaction
 Session::createSharedTransaction()
 {
-	return SharedTransaction{_db.getMutex(), _session};
+	return SharedTransaction {_db.getMutex(), _session};
 }
 
 void

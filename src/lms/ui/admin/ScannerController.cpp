@@ -206,20 +206,24 @@ ScannerController::refreshContents()
 
 				case Scanner::ScanProgressStep::DiscoveringFiles:
 					bindString("step-status", Wt::WString::tr("Lms.Admin.ScannerController.step-discovering-files")
-						.arg(status.currentScanStepStats->processedFiles));
+						.arg(status.currentScanStepStats->processedElems));
 						break;
 
 				case Scanner::ScanProgressStep::ScanningFiles:
 					bindString("step-status", Wt::WString::tr("Lms.Admin.ScannerController.step-scanning-files")
-						.arg(status.currentScanStepStats->processedFiles)
-						.arg(status.currentScanStepStats->filesToProcess)
+						.arg(status.currentScanStepStats->processedElems)
+						.arg(status.currentScanStepStats->totalElems)
 						.arg(status.currentScanStepStats->progress()));
 					break;
 
 				case Scanner::ScanProgressStep::FetchingTrackFeatures:
 					bindString("step-status", Wt::WString::tr("Lms.Admin.ScannerController.step-fetching-track-features")
-						.arg(status.currentScanStepStats->processedFiles)
-						.arg(status.currentScanStepStats->filesToProcess)
+						.arg(status.currentScanStepStats->processedElems)
+						.arg(status.currentScanStepStats->totalElems)
+						.arg(status.currentScanStepStats->progress()));
+					break;
+				case Scanner::ScanProgressStep::ReloadingSimilarityEngine:
+					bindString("step-status", Wt::WString::tr("Lms.Admin.ScannerController.step-reloading-similarity-engine")
 						.arg(status.currentScanStepStats->progress()));
 					break;
 			}

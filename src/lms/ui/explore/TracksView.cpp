@@ -26,6 +26,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 

@@ -28,6 +28,7 @@
 
 #include "database/Cluster.hpp"
 #include "database/ScanSettings.hpp"
+#include "database/Session.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -46,14 +47,13 @@ class DatabaseSettingsModel : public Wt::WFormModel
 {
 	public:
 		// Associate each field with a unique string literal.
-		static const Field MediaDirectoryField;
-		static const Field UpdatePeriodField;
-		static const Field UpdateStartTimeField;
-		static const Field RecommendationEngineTypeField;
-		static const Field TagsField;
+		static inline const Field MediaDirectoryField {"media-directory"};
+		static inline const Field UpdatePeriodField {"update-period"};
+		static inline const Field UpdateStartTimeField {"update-start-time"};
+		static inline const Field RecommendationEngineTypeField {"recommendation-engine-type"};
+		static inline const Field TagsField {"tags"};
 
 		DatabaseSettingsModel()
-			: Wt::WFormModel()
 		{
 			initializeModels();
 
@@ -134,7 +134,6 @@ class DatabaseSettingsModel : public Wt::WFormModel
 		}
 
 	private:
-
 		static std::shared_ptr<Wt::WValidator> createTagsValidator()
 		{
 			auto v = std::make_shared<Wt::WValidator>();
@@ -161,17 +160,10 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			_recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.features"), ScanSettings::RecommendationEngineType::Features);
 		}
 
-		std::shared_ptr<ValueStringModel<ScanSettings::UpdatePeriod>>		_updatePeriodModel;
-		std::shared_ptr<ValueStringModel<Wt::WTime>>				_updateStartTimeModel;
+		std::shared_ptr<ValueStringModel<ScanSettings::UpdatePeriod>>				_updatePeriodModel;
+		std::shared_ptr<ValueStringModel<Wt::WTime>>								_updateStartTimeModel;
 		std::shared_ptr<ValueStringModel<ScanSettings::RecommendationEngineType>>	_recommendationEngineTypeModel;
-
 };
-
-const Wt::WFormModel::Field DatabaseSettingsModel::MediaDirectoryField			= "media-directory";
-const Wt::WFormModel::Field DatabaseSettingsModel::UpdatePeriodField			= "update-period";
-const Wt::WFormModel::Field DatabaseSettingsModel::UpdateStartTimeField			= "update-start-time";
-const Wt::WFormModel::Field DatabaseSettingsModel::RecommendationEngineTypeField	= "recommendation-engine-type";
-const Wt::WFormModel::Field DatabaseSettingsModel::TagsField				= "tags";
 
 DatabaseSettingsView::DatabaseSettingsView()
 {
@@ -222,7 +214,7 @@ DatabaseSettingsView::refreshView()
 
 	t->bindNew<ScannerController>("scanner-controller");
 
-	saveBtn->clicked().connect([=] ()
+	saveBtn->clicked().connect([=]
 	{
 		t->updateModel(model.get());
 
@@ -230,7 +222,7 @@ DatabaseSettingsView::refreshView()
 		{
 			model->saveData();
 
-			Service<Scanner::IMediaScanner>::get()->requestReload();
+			Service<Scanner::IMediaScanner>::get()->requestImmediateScan(false);
 			LmsApp->notifyMsg(MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}
 
@@ -238,14 +230,14 @@ DatabaseSettingsView::refreshView()
 		t->updateView(model.get());
 	});
 
-	discardBtn->clicked().connect([=] ()
+	discardBtn->clicked().connect([=]
 	{
 		model->loadData();
 		model->validate();
 		t->updateView(model.get());
 	});
 
-	immScanBtn->clicked().connect([=] ()
+	immScanBtn->clicked().connect([=]
 	{
 		Service<Scanner::IMediaScanner>::get()->requestImmediateScan(false);
 	});

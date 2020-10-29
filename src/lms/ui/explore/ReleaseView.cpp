@@ -27,6 +27,7 @@
 
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "recommendation/IEngine.hpp"
 #include "utils/Logger.hpp"
@@ -49,11 +50,11 @@ namespace UserInterface {
 
 Release::Release(Filters* filters)
 : Wt::WTemplate {Wt::WString::tr("Lms.Explore.Release.template")}
-, _filters(filters)
+, _filters {filters}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	wApp->internalPathChanged().connect([=]()
+	wApp->internalPathChanged().connect([=]
 	{
 		refreshView();
 	});
@@ -78,7 +79,7 @@ Release::refreshView()
 	if (!releaseId)
 		throw ReleaseNotFoundException {*releaseId};
 
-	const std::vector<Database::IdType> similarReleasesIds {Service<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 6)};
+	auto similarReleasesIds {Service<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 6)};
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -306,7 +307,7 @@ Release::refreshLinks(const Database::Release::pointer& release)
 }
 
 void
-Release::refreshSimilarReleases(const std::vector<Database::IdType>& similarReleasesId)
+Release::refreshSimilarReleases(const std::unordered_set<Database::IdType>& similarReleasesId)
 {
 	if (similarReleasesId.empty())
 		return;

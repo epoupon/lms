@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <thread>
+
 #include <boost/property_tree/xml_parser.hpp>
 
 #include <Wt/WServer.h>
@@ -28,6 +30,7 @@
 #include "av/AvTranscoder.hpp"
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Db.hpp"
+#include "database/Session.hpp"
 #include "scanner/IMediaScanner.hpp"
 #include "recommendation/IEngine.hpp"
 #include "subsonic/SubsonicResource.hpp"
@@ -46,6 +49,7 @@ generateWtConfig(std::string execPath)
 	const std::filesystem::path wtLogFilePath {Service<IConfig>::get()->getPath("log-file", "/var/log/lms.log")};
 	const std::filesystem::path wtAccessLogFilePath {Service<IConfig>::get()->getPath("access-log-file", "/var/log/lms.access.log")};
 	const std::filesystem::path wtResourcesPath {Service<IConfig>::get()->getPath("wt-resources", "/usr/share/Wt/resources")};
+	const unsigned long configHttpServerThreadCount {Service<IConfig>::get()->getULong("http-server-thread-count", 0)};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
@@ -71,6 +75,11 @@ generateWtConfig(std::string execPath)
 
 	if (!wtAccessLogFilePath.empty())
 		args.push_back("--accesslog=" + wtAccessLogFilePath.string());
+
+	{
+		const unsigned long httpServerThreadCount {configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(1, std::thread::hardware_concurrency())};
+		args.push_back("--threads=" + std::to_string(httpServerThreadCount));
+	}
 
 	// Generate the wt_config.xml file
 	boost::property_tree::ptree pt;
@@ -112,7 +121,7 @@ generateWtConfig(std::string execPath)
 int main(int argc, char* argv[])
 {
 	std::filesystem::path configFilePath {"/etc/lms.conf"};
-	int res = EXIT_FAILURE;
+	int res {EXIT_FAILURE};
 
 	assert(argc > 0);
 	assert(argv[0] != NULL);
@@ -140,7 +149,7 @@ int main(int argc, char* argv[])
 		std::filesystem::create_directories(config->getPath("working-dir") / "cache");
 
 		// Construct WT configuration and get the argc/argv back
-		std::vector<std::string> wtServerArgs = generateWtConfig(argv[0]);
+		const std::vector<std::string> wtServerArgs {generateWtConfig(argv[0])};
 
 		std::vector<const char*> wtArgv(wtServerArgs.size());
 		for (std::size_t i = 0; i < wtServerArgs.size(); ++i)
@@ -149,8 +158,8 @@ int main(int argc, char* argv[])
 			wtArgv[i] = wtServerArgs[i].c_str();
 		}
 
-		Wt::WServer server(argv[0]);
-		server.setServerConfiguration (wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
+		Wt::WServer server {argv[0]};
+		server.setServerConfiguration(wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
 
 		// lib init
 		Av::Transcoder::init();
@@ -169,26 +178,15 @@ int main(int argc, char* argv[])
 		Service<Auth::IAuthTokenService> authTokenService {Auth::createAuthTokenService(config->getULong("login-throttler-max-entriees", 10000))};
 		Service<Auth::IPasswordService> passwordService {Auth::createPasswordService(config->getULong("login-throttler-max-entriees", 10000))};
 		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0],
+				server.appRoot() + "/images/unknown-cover.jpg",
 				config->getULong("cover-max-cache-size", 30) * 1000 * 1000,
-				config->getULong("cover-max-file-size", 10) * 1000 * 1000)};
-		coverArtService->setDefaultCover(server.appRoot() + "/images/unknown-cover.jpg");
+				config->getULong("cover-max-file-size", 10) * 1000 * 1000,
+				config->getULong("cover-jpeg-quality", 75))};
 		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
-		recommendationEngineService->requestLoad();
-		Service<Scanner::IMediaScanner> mediaScannerService {Scanner::createMediaScanner(database)};
+		Service<Scanner::IMediaScanner> mediaScannerService {Scanner::createMediaScanner(database, *recommendationEngineService)};
 
 		mediaScannerService->scanComplete().connect([&]()
 		{
-			auto status = mediaScannerService->getStatus();
-
-			if (status.lastCompleteScanStats->nbChanges() > 0 || status.lastCompleteScanStats->featuresFetched > 0)
-			{
-				LMS_LOG(MAIN, INFO) << "Scanner changed some files, reloading the recommendation engine...";
-				recommendationEngineService->requestReload();
-			}
-			else
-			{
-				LMS_LOG(MAIN, INFO) << "Scanner did not change files, not reloading the recommendation engine...";
-			}
 			// Flush cover cache even if no changes:
 			// covers may be external files that changed and we don't keep track of them
 			coverArtService->flushCache();
@@ -214,16 +212,18 @@ int main(int argc, char* argv[])
 		LMS_LOG(MAIN, INFO) << "Stopping server...";
 		server.stop();
 
-		LMS_LOG(MAIN, INFO) << "Clean stop!";
+		LMS_LOG(MAIN, INFO) << "Quitting...";
 		res = EXIT_SUCCESS;
 	}
 	catch(Wt::WServer::Exception& e)
 	{
 		std::cerr << "Caught a WServer::Exception: " << e.what() << std::endl;
+		res = EXIT_FAILURE;
 	}
 	catch(std::exception& e)
 	{
 		std::cerr << "Caught std::exception: " << e.what() << std::endl;
+		res = EXIT_FAILURE;
 	}
 
 	return res;

@@ -59,7 +59,7 @@
 <message id="Lms.Admin.ScannerController.cannot-read-file">Cannot read file</message>
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} duplicate files:</message>
 <message id="Lms.Admin.ScannerController.errors-header">{1} errors:</message>
-<message id="Lms.Admin.ScannerController.force-scan-now">Force scan now</message>
+<message id="Lms.Admin.ScannerController.force-scan-now">Force full rescan now</message>
 <message id="Lms.Admin.ScannerController.get-report">Get report</message>
 <message id="Lms.Admin.ScannerController.last-scan">Last scan</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Not available</message>
@@ -73,9 +73,10 @@
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Not scheduled</message>
 <message id="Lms.Admin.ScannerController.status-scheduled">Scheduled on {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Scanning: step {1}/{2}</message>
-<message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Checking for missing files... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Checking files... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-discovering-files">Discovering files: {1} files</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Fetching track features from AcousticBrainz: {1}/{2} tracks ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Reloading similarity engine: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scanning files: {1}/{2} files ({3}%)...</message>
 
 <!--Users-->
