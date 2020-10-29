@@ -169,38 +169,45 @@ Engine::load(bool forceReload, const ProgressCallback& progressCallback)
 {
 	using namespace Database;
 
-	static const std::unordered_map<ScanSettings::RecommendationEngineType, std::vector<ClassifierType>> classifierMappings
+	LMS_LOG(RECOMMENDATION, INFO) << "Reloading recommendation engines...";
+	struct ClassifierWithType
 	{
-		{ScanSettings::RecommendationEngineType::Features, {ClassifierType::Clusters, ClassifierType::Features}},
-		{ScanSettings::RecommendationEngineType::Clusters, {ClassifierType::Clusters}},
+		ClassifierType type;
+		std::unique_ptr<IClassifier> classifier;
 	};
 
-	LMS_LOG(RECOMMENDATION, INFO) << "Reloading recommendation engines...";
+	std::vector<ClassifierWithType> classifiers;
+	auto addClassifier {[&](ClassifierType type)
+	{
+		classifiers.emplace_back(ClassifierWithType {type, createClassifier(type)});
+	}};
 
-	const ScanSettings::RecommendationEngineType engineType {getRecommendationEngineType(_db.getTLSSession())};
+	switch (getRecommendationEngineType(_db.getTLSSession()))
+	{
+		case ScanSettings::RecommendationEngineType::Clusters:
+			setClassifierPriorities({ClassifierType::Clusters});
+			addClassifier(ClassifierType::Clusters);
+			break;
+		case ScanSettings::RecommendationEngineType::Features:
+			setClassifierPriorities({ClassifierType::Features, ClassifierType::Clusters});
+			// not same order since clusters is faster to load
+			addClassifier(ClassifierType::Clusters);
+			addClassifier(ClassifierType::Features);
+			break;
+	}
 
 	assert(_pendingClassifiers.empty());
 	clearClassifiers();
-
-	auto itClassifierTypes {classifierMappings.find(engineType)};
-	assert(itClassifierTypes != std::cend(classifierMappings));
-	const std::vector<ClassifierType>& classifierTypes {itClassifierTypes->second};
-
-	setClassifierPriorities(classifierTypes);
-
-	std::vector<std::unique_ptr<IClassifier>> classifiers;
-	for (ClassifierType type : classifierTypes)
-		classifiers.emplace_back(createClassifier(type));
 
 	{
 		std::scoped_lock lock {_controlMutex};
 
 		std::transform(std::cbegin(classifiers), std::cend(classifiers), std::inserter(_pendingClassifiers, std::end(_pendingClassifiers)),
-				[](auto& classifier) { return classifier.get(); });
+				[](auto& classifier) { return classifier.classifier.get(); });
 	}
 
-	for (std::size_t i {}; i < classifiers.size(); ++i)
-		loadClassifier(std::move(classifiers[i]), classifierTypes[i], forceReload, progressCallback);
+	for (ClassifierWithType& classifier : classifiers)
+		loadClassifier(std::move(classifier.classifier), classifier.type, forceReload, progressCallback);
 
 	LMS_LOG(RECOMMENDATION, INFO) << "Recommendation engines loaded!";
 }
@@ -254,9 +261,7 @@ Engine::loadClassifier(std::unique_ptr<IClassifier> classifier,
 	{
 		std::scoped_lock lock {_controlMutex};
 
-		LMS_LOG(RECOMMENDATION, DEBUG) << "About to erase. _pendingClassifiers size =  " << _pendingClassifiers.size();
 		_pendingClassifiers.erase(rawClassifier);
-		LMS_LOG(RECOMMENDATION, DEBUG) << "Erased. _pendingClassifiers size =  " << _pendingClassifiers.size();
 	}
 
 	_pendingClassifiersCondvar.notify_one();

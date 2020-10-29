@@ -276,7 +276,11 @@ MediaScanner::start()
 		if (_abortScan)
 			return;
 
-		_recommendationEngine.load(false);
+		_recommendationEngine.load(false,
+				[](const Recommendation::IEngine::Progress& progress)
+				{
+					LMS_LOG(DBUPDATER, DEBUG) << "Reloading recommendation : " << progress.processedElems << "/" << progress.totalElems;
+				});
 		scheduleNextScan();
 	});
 
