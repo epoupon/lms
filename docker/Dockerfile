@@ -47,7 +47,7 @@ RUN \
 	curl -sLO https://github.com/nothings/stb/archive/${STB_VERSION}.tar.gz && \
 	tar -x --strip-components=1 -f ${STB_VERSION}.tar.gz && \
 	mkdir -p ${PREFIX}/include/stb && \
-	cp *.h ${PREFIX}/include/stb
+	cp ./*.h ${PREFIX}/include/stb
 
 # ffmpeg
 RUN  \
