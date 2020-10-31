@@ -10,7 +10,7 @@ target_include_directories(lmsauth INTERFACE
 	)
 
 target_include_directories(lmsauth PRIVATE
-	include/
+	include
 	)
 
 target_link_libraries(lmsauth PRIVATE
@@ -21,15 +21,15 @@ target_link_libraries(lmsauth PRIVATE
 target_link_libraries(lmsauth PUBLIC
 	pthread
 	Boost::system
-	wt
+	Wt::Wt
 	)
 
-if (PAM_FOUND)
+if (USE_PAM)
 	target_compile_options(lmsauth PRIVATE "-DLMS_SUPPORT_PAM")
 	target_sources(lmsauth PRIVATE impl/pam/PAM.cpp)
 	target_include_directories(lmsauth PRIVATE  ${PAM_INCLUDE_DIR})
 	target_link_libraries(lmsauth PRIVATE ${PAM_LIBRARIES})
-endif (PAM_FOUND)
+endif (USE_PAM)
 
 install(TARGETS lmsauth DESTINATION lib)
 

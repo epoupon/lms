@@ -20,15 +20,15 @@ target_link_libraries(lmssubsonic PRIVATE
 	lmsauth
 	lmsav
 	lmscover
+	lmsdatabase
 	lmsrecommendation
+	lmsscanner
 	lmsutils
 	std::filesystem
 	)
 
 target_link_libraries(lmssubsonic PUBLIC
-	lmsdatabase
-	lmsscanner
-	wt
+	Wt::Wt
 	)
 
 install(TARGETS lmssubsonic DESTINATION lib)

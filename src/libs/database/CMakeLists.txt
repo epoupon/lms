@@ -24,13 +24,13 @@ target_include_directories(lmsdatabase PRIVATE
 	)
 
 target_link_libraries(lmsdatabase PRIVATE
-	wtdbosqlite3
+	Wt::DboSqlite3
 	)
 
 target_link_libraries(lmsdatabase PUBLIC
 	lmsutils
 	std::filesystem
-	wtdbo
+	Wt::Dbo
 	)
 
 install(TARGETS lmsdatabase DESTINATION lib)

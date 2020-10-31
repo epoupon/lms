@@ -145,7 +145,7 @@ FromClause::FromClause(const std::string& clause)
 FromClause&
 FromClause::And(const FromClause& clause)
 {
-	for (const std::string fromClause : clause._clause)
+	for (const std::string& fromClause : clause._clause)
 	{
 		_clause.push_back(fromClause);
 	}

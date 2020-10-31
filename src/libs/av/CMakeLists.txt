@@ -11,7 +11,7 @@ target_include_directories(lmsav INTERFACE
 	)
 
 target_include_directories(lmsav PRIVATE
-	include/
+	include
 	${AVCODEC_INCLUDE_DIR}
 	${AVFORMAT_INCLUDE_DIR}
 	${AVUTIL_INCLUDE_DIR}
@@ -19,10 +19,7 @@ target_include_directories(lmsav PRIVATE
 
 target_link_libraries(lmsav PUBLIC
 	lmsutils
-	avformat
-	avutil
 	std::filesystem
-	wt
 	)
 
 target_link_libraries(lmsav PRIVATE

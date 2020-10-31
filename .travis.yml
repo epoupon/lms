@@ -1,15 +1,55 @@
+arch:
+- amd64
+- arm64
 language: cpp
-sudo: required
+os: linux
 dist: focal
+addons:
+    apt:
+        packages:
+        - build-essential
+        - cmake
+        - libboost-all-dev
+        - libconfig++-dev
+        - libavcodec-dev
+        - libavutil-dev
+        - libavformat-dev
+        - ffmpeg
+        - libstb-dev
+        - libpstreams-dev
+        - libtag1-dev
+        - libpam0g-dev
+        - libgraphicsmagick++1-dev
+compiler:
+- clang
+- gcc
 before_install:
-- eval "${MATRIX_EVAL}"
-- sudo apt-get install build-essential cmake libboost-all-dev libconfig++-dev libavcodec-dev libavutil-dev libavformat-dev ffmpeg libstb-dev libpstreams-dev libconfig++-dev libpstreams-dev libtag1-dev libpam0g-dev
-- git clone https://github.com/emweb/wt.git wt
-- pushd wt;
-- git checkout 4.4.0
-- cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr && sudo make install
-- popd
-script: cmake -DCMAKE_BUILD_TYPE=Release . && make && make test
+- |
+    if [ ! -d ${HOME}/wt-${WT_VERSION}/include ]; then
+        git clone https://github.com/emweb/wt.git wt
+        cd wt
+        git checkout ${WT_VERSION}
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WT_INSTALL_PREFIX} -DENABLE_LIBWTTEST=OFF
+        make install
+        cd ..
+    fi
+script: mkdir build && cd build && cmake -DCMAKE_MODULE_PATH=${WT_INSTALL_PREFIX}/lib/cmake/wt -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DUSE_PAM=${USE_PAM} -DIMAGE_LIBRARY=${IMAGE_LIBRARY} .. && make && make test
+cache:
+    directories:
+    - ${HOME}/wt-${WT_VERSION}
 env:
-  global:
+    global:
     - MAKEFLAGS="-j 2"
+    - WT_VERSION=4.4.0
+    - WT_INSTALL_PREFIX=${HOME}/wt-${WT_VERSION}
+    jobs:
+    - BUILD_TYPE=Release USE_PAM=ON IMAGE_LIBRARY=STB
+    - BUILD_TYPE=Release USE_PAM=OFF IMAGE_LIBRARY=STB
+    - BUILD_TYPE=Release USE_PAM=OFF IMAGE_LIBRARY=GraphicsMagick++
+    - BUILD_TYPE=Debug USE_PAM=ON IMAGE_LIBRARY=STB
+
+# clang7 is not enough for full c++17 support
+jobs:
+    exclude:
+    - compiler: clang
+      arch: amd64

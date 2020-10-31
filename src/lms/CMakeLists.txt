@@ -49,8 +49,8 @@ target_link_libraries(lms PRIVATE
 	lmsscanner
 	lmssubsonic
 	lmsutils
-	wt
-	wthttp
+	Wt::Wt
+	Wt::HTTP
 	)
 
 install(TARGETS lms DESTINATION bin)

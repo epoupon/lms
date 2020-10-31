@@ -35,9 +35,8 @@ namespace Zip
 	class ZipHeader
 	{
 		public:
-			constexpr ZipHeader(std::byte* buffer, SizeType bufferSize)
+			constexpr ZipHeader(std::byte* buffer, SizeType)
 				: _buffer {buffer}
-				, _bufferSize {bufferSize}
 				{}
 
 			enum GeneralPurposeFlag : std::uint16_t
@@ -71,7 +70,6 @@ namespace Zip
 
 		private:
 			std::byte*	_buffer {};
-			const SizeType _bufferSize {};
 	};
 
 	void

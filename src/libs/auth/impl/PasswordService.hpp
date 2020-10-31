@@ -38,9 +38,6 @@ namespace Auth {
 
 			PasswordService(std::size_t maxThrottlerEntries);
 
-			PasswordService() = default;
-			~PasswordService() = default;
-
 			PasswordService(const PasswordService&) = delete;
 			PasswordService& operator=(const PasswordService&) = delete;
 			PasswordService(PasswordService&&) = delete;
@@ -48,7 +45,7 @@ namespace Auth {
 
 		private:
 
-			bool isAuthModeSupported(Database::User::AuthMode authMode) const;
+			bool isAuthModeSupported(Database::User::AuthMode authMode) const override;
 			PasswordCheckResult		checkUserPassword(Database::Session& session, const boost::asio::ip::address& clientAddress, const std::string& loginName, const std::string& password) override;
 			Database::User::PasswordHash	hashPassword(const std::string& password) const override;
 			bool				evaluatePasswordStrength(const std::string& loginName, const std::string& password) const override;

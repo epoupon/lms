@@ -37,9 +37,6 @@ namespace Auth {
 
 			AuthTokenService(std::size_t maxThrottlerEntries);
 
-			AuthTokenService() = default;
-			~AuthTokenService() = default;
-
 			AuthTokenService(const AuthTokenService&) = delete;
 			AuthTokenService& operator=(const AuthTokenService&) = delete;
 			AuthTokenService(AuthTokenService&&) = delete;
