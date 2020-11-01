@@ -47,7 +47,7 @@ RUN \
 	curl -sLO https://github.com/nothings/stb/archive/${STB_VERSION}.tar.gz && \
 	tar -x --strip-components=1 -f ${STB_VERSION}.tar.gz && \
 	mkdir -p ${PREFIX}/include/stb && \
-	cp *.h ${PREFIX}/include/stb
+	cp ./*.h ${PREFIX}/include/stb
 
 # ffmpeg
 RUN  \
@@ -98,7 +98,7 @@ RUN \
 
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
-	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=NO && \
+	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=NO -DENABLE_LIBWTTEST=OFF && \
 	make && \
 	make install
 
@@ -117,7 +117,7 @@ RUN \
 
 RUN \
 	DIR=/tmp/lms && mkdir -p ${DIR} && cd ${DIR} && \
-	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} && \
+	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_MODULE_PATH=${PREFIX}/lib/cmake/wt && \
 	make && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
 	make install && \

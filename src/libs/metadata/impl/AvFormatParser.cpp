@@ -54,7 +54,7 @@ findFirstValueOfAs(const MetadataMap& metadataMap, std::initializer_list<std::st
 	std::vector<std::string> strUuids = StringUtils::splitString(*str, "/");
 	std::vector<UUID> res;
 
-	for (const std::string strUuid : strUuids)
+	for (const std::string& strUuid : strUuids)
 	{
 		std::optional<UUID> uuid {UUID::fromString(strUuid)};
 		if (!uuid)

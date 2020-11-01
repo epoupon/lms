@@ -28,7 +28,7 @@ target_link_libraries(lmsutils PRIVATE
 target_link_libraries(lmsutils PUBLIC
 	Boost::system
 	std::filesystem
-	wt
+	Wt::Wt
 	)
 
 install(TARGETS lmsutils DESTINATION lib)

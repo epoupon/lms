@@ -12,6 +12,7 @@ target_include_directories(lmsrecommendation INTERFACE
 	)
 
 target_include_directories(lmsrecommendation PRIVATE
+	impl
 	include
 	)
 
@@ -19,10 +20,7 @@ target_link_libraries(lmsrecommendation PRIVATE
 	lmsdatabase
 	lmssom
 	std::filesystem
-	wt
 	)
-
-target_include_directories(lmsrecommendation PRIVATE impl)
 
 install(TARGETS lmsrecommendation DESTINATION lib)
 

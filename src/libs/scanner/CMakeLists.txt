@@ -22,7 +22,7 @@ target_link_libraries(lmsscanner PRIVATE
 
 target_link_libraries(lmsscanner PUBLIC
 	std::filesystem
-	wt
+	Wt::Wt
 	)
 
 install(TARGETS lmsscanner DESTINATION lib)

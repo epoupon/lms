@@ -265,7 +265,6 @@ Engine::loadClassifier(std::unique_ptr<IClassifier> classifier,
 	}
 
 	_pendingClassifiersCondvar.notify_one();
-
 }
 
 void
