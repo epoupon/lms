@@ -1,45 +1,35 @@
-
 path_classifiers:
-	test:
-	- src/test
-
-# LGTM_SRC
-#   The root of the source tree.
-# LGTM_WORKSPACE
-#   An existing (initially empty) folder outside the source tree.
-#   Used for temporary download and setup commands.
+    test:
+        - src/test
 
 extraction:
-	cpp:
-		prepare:
-			packages:
-            - build-essential
-            - cmake
-            - libboost-all-dev
-			- libconfig++-dev
-            - libavcodec-dev
-            - libavutil-dev
-            - libavformat-dev
-            - libstb-dev
-            - libpstreams-dev
-            - libtag1-dev
-            - libpam0g-dev
-        after_prepare:
-        - export WT_VERSION=4.4.0
-        - export WT_INSTALL_PREFIX=${LGTM_WORKSPACE}/wt-${WT_VERSION}
-	    - pushd ${LGTM_WORKSPACE}
-        - git clone https://github.com/emweb/wt.git ${LGTM_WORKSPACE}/wt
-        - pushd ${LGTM_WORKSPACE}/wt
-        - git checkout ${WT_VERSION}
-        - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WT_INSTALL_PREFIX} -DENABLE_LIBWTTEST=OFF
-        - make install
-        - popd
-        configure:
-            command:
-            - export WT_VERSION=4.4.0
-            - export WT_INSTALL_PREFIX=${LGTM_WORKSPACE}/wt-${WT_VERSION}
-            - export WT_DIR=${LGTM_WORKSPACE}/wt-${WT_VERSION}/lib/cmake/wt
-            - ls -lah ${WT_INSTALL_PREFIX}
-            - ls -lah ${WT_INSTALL_PREFIX}/lib/cmake/wt
-            - cmake -DCMAKE_PREFIX_PATH=${WT_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=Release
+    cpp:
+        prepare:
+            packages:
+                - build-essential
+                - cmake
+                - libboost-all-dev
+                - libconfig++-dev
+                - libavcodec-dev
+                - libavutil-dev
+                - libavformat-dev
+                - libstb-dev
+                - libpstreams-dev
+                - libtag1-dev
+                - libpam0g-dev
+            after_prepare:
+                - export WT_VERSION=4.4.0
+                - export WT_INSTALL_PREFIX=${LGTM_WORKSPACE}/wt-${WT_VERSION}
+                - pushd ${LGTM_WORKSPACE}
+                - git clone https://github.com/emweb/wt.git ${LGTM_WORKSPACE}/wt
+                - pushd ${LGTM_WORKSPACE}/wt
+                - git checkout ${WT_VERSION}
+                - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WT_INSTALL_PREFIX} -DENABLE_LIBWTTEST=OFF
+                - make install
+                - popd
+            configure:
+                command:
+                    - export WT_VERSION=4.4.0
+                    - export WT_INSTALL_PREFIX=${LGTM_WORKSPACE}/wt-${WT_VERSION}
+                    - cmake -DCMAKE_PREFIX_PATH=${WT_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=Release
 
