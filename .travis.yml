@@ -33,7 +33,7 @@ before_install:
         make install
         cd ..
     fi
-script: mkdir build && cd build && cmake -DCMAKE_MODULE_PATH=${WT_INSTALL_PREFIX}/lib/cmake/wt -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DUSE_PAM=${USE_PAM} -DIMAGE_LIBRARY=${IMAGE_LIBRARY} .. && make && make test
+script: mkdir build && cd build && cmake -DCMAKE_PREFIX_PATH=${WT_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DUSE_PAM=${USE_PAM} -DIMAGE_LIBRARY=${IMAGE_LIBRARY} .. && make && make test
 cache:
     directories:
     - ${HOME}/wt-${WT_VERSION}
