@@ -1012,7 +1012,7 @@ MediaScanner::checkDuplicatedAudioFiles(ScanStats& stats)
 		if (track->getMBID())
 		{
 			LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID()->getAsString() << "], file: " << track->getPath().string() << " - " << track->getName();
-			stats.duplicates.emplace_back(ScanDuplicate {track->getPath(), DuplicateReason::SameMBID});
+			stats.duplicates.emplace_back(ScanDuplicate {track.id(), DuplicateReason::SameMBID});
 		}
 	}
 

@@ -24,6 +24,8 @@
 #include <filesystem>
 #include <vector>
 
+#include "database/Types.hpp"
+
 namespace Scanner {
 
 	enum class ScanErrorType
@@ -51,9 +53,8 @@ namespace Scanner {
 
 	struct ScanDuplicate
 	{
-		std::filesystem::path   file;
+		Database::IdType	trackId;
 		DuplicateReason		reason;
-
 	};
 
 	enum class ScanProgressStep : unsigned
