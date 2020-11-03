@@ -296,8 +296,8 @@ FeaturesClassifier::getSimilarReleases(Database::Session& session, Database::IdT
 
 		for (auto it {std::begin(similarReleaseIds)}; it != std::end(similarReleaseIds);)
 		{
-			const Database::IdType releaseId {*it};
-			if (!Database::Release::getById(session, releaseId))
+			const Database::IdType similarReleaseId {*it};
+			if (!Database::Release::getById(session, similarReleaseId))
 				it = similarReleaseIds.erase(it);
 			else
 				it++;
@@ -318,8 +318,8 @@ FeaturesClassifier::getSimilarArtists(Database::Session& session, Database::IdTy
 
 		for (auto it {std::begin(similarArtistIds)}; it != std::end(similarArtistIds);)
 		{
-			const Database::IdType artistId {*it};
-			if (!Database::Release::getById(session, artistId))
+			const Database::IdType similarArtistId {*it};
+			if (!Database::Release::getById(session, similarArtistId))
 				it = similarArtistIds.erase(it);
 			else
 				it++;

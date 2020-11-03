@@ -19,6 +19,7 @@
 #include "subsonic/SubsonicResource.hpp"
 
 #include <atomic>
+#include <ctime>
 #include <iomanip>
 #include <unordered_map>
 
@@ -385,7 +386,8 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 
 	{
 		std::time_t t {release->getLastWritten().toTime_t()};
-		std::ostringstream oss; oss << std::put_time(std::gmtime(&t), "%FT%T");
+		std::tm gmTime;
+		std::ostringstream oss; oss << std::put_time(::gmtime_r(&t, &gmTime), "%FT%T");
 		albumNode.setAttribute("created", oss.str());
 	}
 

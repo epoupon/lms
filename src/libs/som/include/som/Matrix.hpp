@@ -57,23 +57,23 @@ class Matrix
 		Matrix() = default;
 
 		Matrix(Coordinate width, Coordinate height)
-		: _width{width},
-		_height{height}
+		: _width {width}
+		, _height {height}
 		{
-			_values.resize(_width*_height);
+			_values.resize(static_cast<std::size_t>(_width) * static_cast<std::size_t>(_height));
 		}
 
 		template<typename... CtArgs>
 		Matrix(Coordinate width, Coordinate height, CtArgs... args)
-		: _width{width},
-		_height{height}
+		: _width {width}
+		, _height {height}
 		{
-			 _values.resize(_width*_height, T{args...});
+			 _values.resize(static_cast<std::size_t>(_width) * static_cast<std::size_t>(_height), T{args...});
 		}
 
 		void clear()
 		{
-			std::vector<T> values(_width*_height);
+			std::vector<T> values(static_cast<std::size_t>(_width) * static_cast<std::size_t>(_height));
 			_values.swap(values);
 		}
 
@@ -112,7 +112,7 @@ class Matrix
 
 		Coordinate		_width {};
 		Coordinate		_height {};
-		std::vector<T>		_values;
+		std::vector<T>	_values;
 };
 
 } // ns SOM

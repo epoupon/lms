@@ -156,7 +156,7 @@ LMS.mediaplayer = function () {
 		_elems.volumeslider = document.getElementById("lms-mp-volume-slider");
 		_elems.transcodingActive = document.getElementById("lms-transcoding-active");
 
-		$(_elems.transcodingActive).tooltip()
+		$(_elems.transcodingActive).tooltip();
 
 		var source = _audioCtx.createMediaElementSource(_elems.audio);
 		source.connect(_gainNode);

@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #include <boost/asio/ip/address.hpp>
 
 namespace std
