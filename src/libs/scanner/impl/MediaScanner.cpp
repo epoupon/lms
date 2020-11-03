@@ -19,6 +19,7 @@
 
 #include "MediaScanner.hpp"
 
+#include <ctime>
 #include <boost/asio/placeholders.hpp>
 
 #include <Wt/WLocalDateTime.h>
@@ -458,8 +459,9 @@ MediaScanner::scheduleScan(bool force, const Wt::WDateTime& dateTime)
 	{
 		std::chrono::system_clock::time_point timePoint {dateTime.toTimePoint()};
 		std::time_t t {std::chrono::system_clock::to_time_t(timePoint)};
+		char ctimeStr[26];
 
-		LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan at " << std::string(std::ctime(&t));
+		LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan at " << std::string(::ctime_r(&t, ctimeStr));
 		_scheduleTimer.expires_at(timePoint);
 		_scheduleTimer.async_wait(cb);
 	}

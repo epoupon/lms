@@ -280,9 +280,9 @@ TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::Str
 		std::set<std::string> clusterNames;
 		for (const auto& valueList : values)
 		{
-			auto values = splitAndTrimString(valueList.to8Bit(true), "/,;");
+			const auto splittedValues {splitAndTrimString(valueList.to8Bit(true), "/,;")};
 
-			for (const auto& value : values)
+			for (const auto& value : splittedValues)
 				clusterNames.insert(value);
 		}
 

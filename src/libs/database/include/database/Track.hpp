@@ -93,8 +93,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setScanVersion(std::size_t version)			{ _scanVersion = version; }
 		void setTrackNumber(int num)					{ _trackNumber = num; }
 		void setDiscNumber(int num)					{ _discNumber = num; }
-		void setTotalTrack(std::optional<int> totalTrack)		{ totalTrack ? _totalTrack = *totalTrack : 0; }
-		void setTotalDisc(std::optional<int> totalDisc)			{ totalDisc ? _totalDisc = *totalDisc : 0; }
+		void setTotalTrack(std::optional<int> totalTrack)		{ _totalTrack = totalTrack ? *totalTrack : 0; }
+		void setTotalDisc(std::optional<int> totalDisc)			{ _totalDisc = totalDisc ? *totalDisc : 0; }
 		void setDiscSubtitle(const std::string& name)			{ _discSubtitle = name; }
 		void setName(const std::string& name)				{ _name = std::string(name, 0, _maxNameLength); }
 		void setDuration(std::chrono::milliseconds duration)		{ _duration = duration; }
