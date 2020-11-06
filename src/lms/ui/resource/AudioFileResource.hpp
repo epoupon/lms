@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <filesystem>
 #include <Wt/WResource.h>
 
 #include "database/Types.hpp"

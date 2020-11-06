@@ -105,13 +105,17 @@ namespace CoverArt
 			std::shared_ptr<IEncodedImage>	getFromRelease(Database::Session& dbSession, Database::IdType releaseId, ImageSize width) override;
 			void							flushCache() override;
 
+			std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width, bool allowReleaseFallback);
 			std::unique_ptr<IEncodedImage>	getFromAvMediaFile(const Av::MediaFile& input, ImageSize width) const;
-			std::unique_ptr<IEncodedImage>	getFromFile(const std::filesystem::path& p, ImageSize width) const;
+			std::unique_ptr<IEncodedImage>	getFromCoverFile(const std::filesystem::path& p, ImageSize width) const;
 
 			std::unique_ptr<IEncodedImage>	getFromTrack(const std::filesystem::path& path, ImageSize width) const;
 			std::multimap<std::string, std::filesystem::path>	getCoverPaths(const std::filesystem::path& directoryPath) const;
-			std::unique_ptr<IEncodedImage>	getFromDirectory(const std::filesystem::path& path, std::string_view preferredFileName, ImageSize width) const;
+			std::unique_ptr<IEncodedImage>	getFromDirectory(const std::filesystem::path& directory, ImageSize width) const;
+			std::unique_ptr<IEncodedImage>	getFromSameNamedFile(const std::filesystem::path& filePath, ImageSize width) const;
 			std::shared_ptr<IEncodedImage>	getDefault(ImageSize width);
+
+			bool							checkCoverFile(const std::filesystem::path& directoryPath) const;
 
 			std::shared_mutex _cacheMutex;
 			std::unordered_map<CacheEntryDesc, std::shared_ptr<IEncodedImage>> _cache;

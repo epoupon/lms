@@ -112,7 +112,7 @@ Grabber::getFromAvMediaFile(const Av::MediaFile& input, ImageSize width) const
 }
 
 std::unique_ptr<IEncodedImage>
-Grabber::getFromFile(const std::filesystem::path& p, ImageSize width) const
+Grabber::getFromCoverFile(const std::filesystem::path& p, ImageSize width) const
 {
 	std::unique_ptr<IEncodedImage> image;
 
@@ -146,7 +146,7 @@ Grabber::getDefault(ImageSize width)
 		if (auto it {_defaultCoverCache.find(width)}; it != std::cend(_defaultCoverCache))
 			return it->second;
 
-		std::shared_ptr<IEncodedImage> image {getFromFile(_defaultCoverPath, width)};
+		std::shared_ptr<IEncodedImage> image {getFromCoverFile(_defaultCoverPath, width)};
 		_defaultCoverCache[width] = image;
 		LMS_LOG(COVER, DEBUG) << "Default cache entries = " << _defaultCoverCache.size();
 
@@ -155,9 +155,9 @@ Grabber::getDefault(ImageSize width)
 }
 
 std::unique_ptr<IEncodedImage>
-Grabber::getFromDirectory(const std::filesystem::path& p, std::string_view preferredFileName, ImageSize width) const
+Grabber::getFromDirectory(const std::filesystem::path& directory, ImageSize width) const
 {
-	const std::multimap<std::string, std::filesystem::path> coverPaths {getCoverPaths(p)};
+	const std::multimap<std::string, std::filesystem::path> coverPaths {getCoverPaths(directory)};
 
 	auto tryLoadImageFromFilename = [&](std::string_view fileName)
 	{
@@ -166,7 +166,7 @@ Grabber::getFromDirectory(const std::filesystem::path& p, std::string_view prefe
 		auto range {coverPaths.equal_range(std::string {fileName})};
 		for (auto it {range.first}; it != range.second; ++it)
 		{
-			image = getFromFile(it->second, width);
+			image = getFromCoverFile(it->second, width);
 			if (image)
 				break;
 		}
@@ -174,13 +174,6 @@ Grabber::getFromDirectory(const std::filesystem::path& p, std::string_view prefe
 	};
 
 	std::unique_ptr<IEncodedImage> image;
-
-	if (!preferredFileName.empty())
-	{
-		image = tryLoadImageFromFilename(preferredFileName);
-		if (image)
-			return image;
-	}
 
 	for (std::string_view filename : _preferredFileNames)
 	{
@@ -192,12 +185,56 @@ Grabber::getFromDirectory(const std::filesystem::path& p, std::string_view prefe
 	// Just pick one
 	for (const auto& [filename, coverPath] : coverPaths)
 	{
-		image = getFromFile(coverPath, width);
+		image = getFromCoverFile(coverPath, width);
 		if (image)
 			return image;
 	}
 
 	return image;
+}
+
+std::unique_ptr<IEncodedImage>
+Grabber::getFromSameNamedFile(const std::filesystem::path& filePath, ImageSize width) const
+{
+	std::unique_ptr<IEncodedImage> res;
+
+	std::filesystem::path coverPath {filePath};
+	for (const std::filesystem::path& extension : _fileExtensions)
+	{
+		coverPath.replace_extension(extension);
+
+		if (!checkCoverFile(coverPath))
+			continue;
+
+		res = getFromCoverFile(coverPath, width);
+		if (res)
+			break;
+	}
+
+	return res;
+}
+
+bool
+Grabber::checkCoverFile(const std::filesystem::path& filePath) const
+{
+	std::error_code ec;
+
+	if (!isFileSupported(filePath, _fileExtensions))
+		return false;
+
+	if (!std::filesystem::exists(filePath, ec))
+		return false;
+
+	if (!std::filesystem::is_regular_file(filePath, ec))
+		return false;
+
+	if (std::filesystem::file_size(filePath, ec) > _maxFileSize && !ec)
+	{
+		LMS_LOG(COVER, INFO) << "Cover file '" << filePath.string() << " is too big (" << std::filesystem::file_size(filePath, ec) << "), limit is " << _maxFileSize;
+		return false;
+	}
+
+	return true;
 }
 
 std::multimap<std::string, std::filesystem::path>
@@ -210,22 +247,12 @@ Grabber::getCoverPaths(const std::filesystem::path& directoryPath) const
 	std::filesystem::directory_iterator itEnd;
 	while (!ec && itPath != itEnd)
 	{
-		const std::filesystem::path path {*itPath};
+		const std::filesystem::path& path {*itPath};
+
+		if (checkCoverFile(path))
+			res.emplace(std::filesystem::path{ path }.filename().replace_extension("").string(), path);
+
 		itPath.increment(ec);
-
-		if (!std::filesystem::is_regular_file(path))
-			continue;
-
-		if (!isFileSupported(path, _fileExtensions))
-			continue;
-
-		if (std::filesystem::file_size(path) > _maxFileSize)
-		{
-			LMS_LOG(COVER, INFO) << "Cover file '" << path.string() << " is too big (" << std::filesystem::file_size(path) << "), limit is " << _maxFileSize;
-			continue;
-		}
-
-		res.emplace(std::filesystem::path{path}.filename().replace_extension("").string(), path);
 	}
 
 	return res;
@@ -238,8 +265,7 @@ Grabber::getFromTrack(const std::filesystem::path& p, ImageSize width) const
 
 	try
 	{
-		Av::MediaFile input {p};
-
+		const Av::MediaFile input {p};
 		image = getFromAvMediaFile(input, width);
 	}
 	catch (Av::AvException& e)
@@ -253,6 +279,12 @@ Grabber::getFromTrack(const std::filesystem::path& p, ImageSize width) const
 std::shared_ptr<IEncodedImage>
 Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width)
 {
+	return getFromTrack(dbSession, trackId, width, true /* allow release fallback*/);
+}
+
+std::shared_ptr<IEncodedImage>
+Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width, bool allowReleaseFallback)
+{
 	using namespace Database;
 
 	const CacheEntryDesc cacheEntryDesc {CacheEntryDesc::Type::Track, trackId, width};
@@ -261,35 +293,55 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, Im
 	if (cover)
 		return cover;
 
-	bool hasCover {};
-	bool isMultiDisc {};
-	std::filesystem::path trackPath;
-
+	struct TrackInfo
 	{
+		bool hasCover {};
+		bool isMultiDisc {};
+		std::filesystem::path trackPath;
+		std::optional<Database::IdType> releaseId;
+	};
+
+	auto getTrackInfo {[&]
+	{
+		std::optional<TrackInfo> res;
+
 		auto transaction {dbSession.createSharedTransaction()};
 
 		const Track::pointer track {Track::getById(dbSession, trackId)};
-		if (track)
+		if (!track)
+			return res;
+
+		res = TrackInfo {};
+
+		res->hasCover = track->hasCover();
+		res->trackPath = track->getPath();
+
+		if (const Release::pointer& release {track->getRelease()})
 		{
-			hasCover = track->hasCover();
-			trackPath = track->getPath();
-
-			auto release {track->getRelease()};
-			if (release && release->getTotalDisc() > 1)
-				isMultiDisc = true;
+			res->releaseId = release.id();
+			if (release->getTotalDisc() > 1)
+				res->isMultiDisc = true;
 		}
-	}
 
-	if (hasCover)
-		cover = getFromTrack(trackPath, width);
+		return res;
+	}};
 
-	if (!cover)
-		cover = getFromDirectory(trackPath.parent_path(), trackPath.filename().replace_extension("").string(), width);
-
-	if (!cover && isMultiDisc)
+	if (const std::optional<TrackInfo> trackInfo {getTrackInfo()})
 	{
-		if (trackPath.parent_path().has_parent_path())
-			cover = getFromDirectory(trackPath.parent_path().parent_path(), {}, width);
+		if (trackInfo->hasCover)
+			cover = getFromTrack(trackInfo->trackPath, width);
+
+		if (!cover)
+			cover = getFromSameNamedFile(trackInfo->trackPath, width);
+
+		if (!cover && trackInfo->releaseId && allowReleaseFallback)
+			cover = getFromRelease(dbSession, *trackInfo->releaseId, width);
+
+		if (!cover && trackInfo->isMultiDisc)
+		{
+			if (trackInfo->trackPath.parent_path().has_parent_path())
+				cover = getFromDirectory(trackInfo->trackPath.parent_path().parent_path(), width);
+		}
 	}
 
 	if (!cover)
@@ -310,22 +362,39 @@ Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, 
 	if (cover)
 		return cover;
 
-	std::optional<Database::IdType> trackId;
+	struct ReleaseInfo
 	{
+		Database::IdType firstTrackId;
+		std::filesystem::path releaseDirectory;
+	};
+
+	auto getReleaseInfo {[&]
+	{
+		std::optional<ReleaseInfo> res;
+
 		auto transaction {session.createSharedTransaction()};
 
-		const auto release {Database::Release::getById(session, releaseId)};
-		if (release)
+		if (const Database::Release::pointer release {Database::Release::getById(session, releaseId)})
 		{
-			const auto tracks {release->getTracks()};
-			if (!tracks.empty())
-				trackId = tracks.front().id();
+			if (const auto firstTrack {release->getFirstTrack()})
+			{
+				res = ReleaseInfo {};
+				res->firstTrackId = firstTrack.id();
+				res->releaseDirectory = firstTrack->getPath().parent_path();
+			}
 		}
+
+		return res;
+	}};
+
+	if (const std::optional<ReleaseInfo> releaseInfo {getReleaseInfo()})
+	{
+		cover = getFromDirectory(releaseInfo->releaseDirectory, width);
+		if (!cover)
+			cover = getFromTrack(session, releaseInfo->firstTrackId, width, false /* no release fallback */);
 	}
 
-	if (trackId)
-		cover = getFromTrack(session, *trackId, width);
-	else
+	if (!cover)
 		cover = getDefault(width);
 
 	if (cover)

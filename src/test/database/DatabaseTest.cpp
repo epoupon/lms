@@ -588,6 +588,53 @@ testMultiTracksSingleReleaseTotalDiscTrack(Session& session)
 
 static
 void
+testMultiTracksSingleReleaseFirstTrack(Session& session)
+{
+	ScopedRelease release1 {session, "MyRelease1"};
+	ScopedRelease release2 {session, "MyRelease2"};
+
+	ScopedTrack track1A {session, "MyTrack1A"};
+	ScopedTrack track1B {session, "MyTrack1B"};
+	ScopedTrack track2A {session, "MyTrack2A"};
+	ScopedTrack track2B {session, "MyTrack2B"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		CHECK(!release1->getFirstTrack());
+		CHECK(!release2->getFirstTrack());
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		track1A.get().modify()->setRelease(release1.get());
+		track1B.get().modify()->setRelease(release1.get());
+		track2A.get().modify()->setRelease(release2.get());
+		track2B.get().modify()->setRelease(release2.get());
+
+		track1A.get().modify()->setTrackNumber(1);
+		track1B.get().modify()->setTrackNumber(2);
+
+		track2A.get().modify()->setDiscNumber(2);
+		track2A.get().modify()->setTrackNumber(1);
+		track2B.get().modify()->setTrackNumber(2);
+		track2B.get().modify()->setDiscNumber(1);
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		CHECK(release1->getFirstTrack());
+		CHECK(release2->getFirstTrack());
+
+		CHECK(release1->getFirstTrack().id() == track1A.getId());
+		CHECK(release2->getFirstTrack().id() == track2B.getId());
+	}
+}
+
+static
+void
 testSingleTrackSingleCluster(Session& session)
 {
 	ScopedTrack track {session, "MyTrack"};
@@ -1930,6 +1977,7 @@ int main()
 
 		RUN_TEST(testSingleTrackSingleRelease);
 		RUN_TEST(testMultiTracksSingleReleaseTotalDiscTrack);
+		RUN_TEST(testMultiTracksSingleReleaseFirstTrack);
 
 		RUN_TEST(testSingleTrackSingleCluster);
 		RUN_TEST(testMultipleTracksSingleCluster);

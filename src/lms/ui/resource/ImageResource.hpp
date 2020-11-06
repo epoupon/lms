@@ -17,39 +17,34 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef COVER_RESOURCE_HPP_
-#define COVER_RESOURCE_HPP_
-
-#include <mutex>
+#pragma once
 
 #include <Wt/WResource.h>
-
 #include "database/Types.hpp"
 
-namespace UserInterface {
-
-
-class ImageResource : public Wt::WResource
+namespace UserInterface
 {
-	public:
-		static const std::size_t maxSize {512};
 
-		~ImageResource();
+	class ImageResource : public Wt::WResource
+	{
+		public:
+			static const std::size_t maxSize {512};
 
-		enum class Size : std::size_t
-		{
-			Small = 128,
-			Large = 512,
-		};
+			~ImageResource();
 
-		std::string getReleaseUrl(Database::IdType releaseId, Size size) const;
-		std::string getTrackUrl(Database::IdType trackId, Size size) const;
+			enum class Size : std::size_t
+			{
+				Small = 128,
+				Large = 512,
+			};
 
-	private:
-		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
+			std::string getReleaseUrl(Database::IdType releaseId, Size size) const;
+			std::string getTrackUrl(Database::IdType trackId, Size size) const;
 
-};
+		private:
+			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
+
+	};
 
 } // namespace UserInterface
 
-#endif
