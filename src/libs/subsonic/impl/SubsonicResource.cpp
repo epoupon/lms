@@ -479,7 +479,7 @@ userToResponseNode(const User::pointer& user)
 	Response::Node userNode;
 
 	userNode.setAttribute("username", user->getLoginName());
-	userNode.setAttribute("scrobblingEnabled", false);
+	userNode.setAttribute("scrobblingEnabled", true);
 	userNode.setAttribute("adminRole", user->isAdmin());
 	userNode.setAttribute("settingsRole", true);
 	userNode.setAttribute("downloadRole", true);
@@ -704,11 +704,13 @@ Response
 handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 {
 	// Mandatory params
-	std::string type {getMandatoryParameterAs<std::string>(context.parameters, "type")};
+	const std::string type {getMandatoryParameterAs<std::string>(context.parameters, "type")};
 
 	// Optional params
-	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(10)};
-	std::size_t offset {getParameterAs<std::size_t>(context.parameters, "offset").value_or(0)};
+	const std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(10)};
+	const std::size_t offset {getParameterAs<std::size_t>(context.parameters, "offset").value_or(0)};
+
+	const Range range {offset, size};
 
 	std::vector<Release::pointer> releases;
 
@@ -718,35 +720,13 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	if (type == "random")
+	if (type == "alphabeticalByName")
 	{
-		// Random results are paginated, but there is no acceptable way to handle the pagination params without repeating some albums
-		releases = Release::getAllRandom(context.dbSession, {}, size);
-	}
-	else if (type == "newest")
-	{
-		bool moreResults {};
-		releases = Release::getLastWritten(context.dbSession, std::nullopt, {}, Range {offset, size}, moreResults);
-	}
-	else if (type == "alphabeticalByName")
-	{
-		releases = Release::getAll(context.dbSession, Range {offset, size});
+		releases = Release::getAll(context.dbSession, range);
 	}
 	else if (type == "alphabeticalByArtist")
 	{
 		releases = Release::getAllOrderedByArtist(context.dbSession, offset, size);
-	}
-	else if (type == "byYear")
-	{
-		int fromYear {getMandatoryParameterAs<int>(context.parameters, "fromYear")};
-		int toYear {getMandatoryParameterAs<int>(context.parameters, "toYear")};
-
-		releases = Release::getByYear(context.dbSession, fromYear, toYear, offset, size);
-	}
-	else if (type == "starred")
-	{
-		bool moreResults {};
-		releases = Release::getStarred(context.dbSession, user, {}, Range {offset, size}, moreResults);
 	}
 	else if (type == "byGenre")
 	{
@@ -760,9 +740,41 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 			if (cluster)
 			{
 				bool more;
-				releases = Release::getByFilter(context.dbSession, {cluster.id()}, {}, Range {offset, size}, more);
+				releases = Release::getByFilter(context.dbSession, {cluster.id()}, {}, range, more);
 			}
 		}
+	}
+	else if (type == "byYear")
+	{
+		int fromYear {getMandatoryParameterAs<int>(context.parameters, "fromYear")};
+		int toYear {getMandatoryParameterAs<int>(context.parameters, "toYear")};
+
+		releases = Release::getByYear(context.dbSession, fromYear, toYear, range);
+	}
+	else if (type == "frequent")
+	{
+		bool moreResults {};
+		releases = user->getPlayedTrackList(context.dbSession)->getTopReleases({}, range, moreResults);
+	}
+	else if (type == "newest")
+	{
+		bool moreResults {};
+		releases = Release::getLastWritten(context.dbSession, std::nullopt, {}, range, moreResults);
+	}
+	else if (type == "random")
+	{
+		// Random results are paginated, but there is no acceptable way to handle the pagination params without repeating some albums
+		releases = Release::getAllRandom(context.dbSession, {}, size);
+	}
+	else if (type == "recent")
+	{
+		bool moreResults {};
+		releases = user->getPlayedTrackList(context.dbSession)->getReleasesReverse({}, range, moreResults);
+	}
+	else if (type == "starred")
+	{
+		bool moreResults {};
+		releases = Release::getStarred(context.dbSession, user, {}, range, moreResults);
 	}
 	else
 		throw NotImplementedGenericError {};
@@ -1549,6 +1561,34 @@ handleUnstarRequest(RequestContext& context)
 
 static
 Response
+handleScrobble(RequestContext& context)
+{
+	const std::vector<Id> ids {getMandatoryMultiParametersAs<Id>(context.parameters, "id")};
+	// TODO handle time in some way (need underlying refacto)
+
+	if (!std::all_of(std::cbegin(ids), std::cend(ids), [](const Id& id) { return id.type == Id::Type::Track; }))
+		throw BadParameterGenericError {"id"};
+
+	auto transaction {context.dbSession.createUniqueTransaction()};
+
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	if (!user)
+		throw RequestedDataNotFoundError {};
+
+	for (Id id : ids)
+	{
+		Track::pointer track {Track::getById(context.dbSession, id.value)};
+		if (!track)
+			continue;
+
+		TrackListEntry::create(context.dbSession, track, user->getPlayedTrackList(context.dbSession));
+	}
+
+	return Response::createOkResponse(context);
+}
+
+static
+Response
 handleUpdateUserRequest(RequestContext& context)
 {
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
@@ -1824,10 +1864,10 @@ static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"getAvatar",		{handleNotImplemented,			false}},
 
 	// Media annotation
-	{"star",		{handleStarRequest,			false}},
-	{"unstar",		{handleUnstarRequest,			false}},
+	{"star",			{handleStarRequest,				false}},
+	{"unstar",			{handleUnstarRequest,			false}},
 	{"setRating",		{handleNotImplemented,			false}},
-	{"scrobble",		{handleNotImplemented,			false}},
+	{"scrobble",		{handleScrobble,				false}},
 
 	// Sharing
 	{"getShares",		{handleNotImplemented,			false}},
