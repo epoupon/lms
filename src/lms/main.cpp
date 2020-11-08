@@ -77,7 +77,8 @@ generateWtConfig(std::string execPath)
 		args.push_back("--accesslog=" + wtAccessLogFilePath.string());
 
 	{
-		const unsigned long httpServerThreadCount {configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(1, std::thread::hardware_concurrency())};
+		// Reserve at least 2 threads since we still have some blocking IO (for example when reading from ffmpeg)
+		const unsigned long httpServerThreadCount {configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(2, std::thread::hardware_concurrency())};
 		args.push_back("--threads=" + std::to_string(httpServerThreadCount));
 	}
 
