@@ -509,11 +509,12 @@ Track::getArtists(EnumSet<TrackArtistLinkType> linkTypes) const
 		oss << ")";
 	}
 
-	Wt::Dbo::Query<Artist::pointer> query {session()->query<Artist::pointer>(oss.str())
-		.where("t.id = ?").bind(self()->id())};
+	Wt::Dbo::Query<Artist::pointer> query {session()->query<Artist::pointer>(oss.str())};
 
 	for (TrackArtistLinkType type : linkTypes)
 		query.bind(type);
+
+	query.where("t.id = ?").bind(self()->id());
 
 	Wt::Dbo::collection<Artist::pointer> res = query;
 	return std::vector<Artist::pointer>(std::begin(res), std::end(res));

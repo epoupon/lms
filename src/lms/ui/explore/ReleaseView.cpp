@@ -54,12 +54,12 @@ Release::Release(Filters* filters)
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	wApp->internalPathChanged().connect([=]
+	wApp->internalPathChanged().connect(this, [this]
 	{
 		refreshView();
 	});
 
-	filters->updated().connect([=]
+	filters->updated().connect([this]
 	{
 		refreshView();
 	});

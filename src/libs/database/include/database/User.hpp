@@ -132,8 +132,9 @@ class User : public Wt::Dbo::Dbo<User>
 		// Do not change enum values!
 		enum class SubsonicArtistListMode
 		{
-			AllArtists	= 0,
+			AllArtists		= 0,
 			ReleaseArtists	= 1,
+			TrackArtists	= 2,
 		};
 
 		static inline const std::size_t 	MinNameLength {3};

@@ -290,7 +290,7 @@ testSingleTrackSingleArtist(Session& session)
 
 		CHECK(track->getArtists({TrackArtistLinkType::Artist}).size() == 1);
 		CHECK(track->getArtists({TrackArtistLinkType::ReleaseArtist}).empty());
-		CHECK(track->getArtists({}).empty());
+		CHECK(track->getArtists({}).size() == 1);
 	}
 
 	{

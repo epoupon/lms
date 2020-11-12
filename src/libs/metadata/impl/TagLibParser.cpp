@@ -397,7 +397,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 	}
 
 	track.album = getAlbum(properties);
-	track.artists = getArtists(properties, {"ARTIST", "ARTISTS"}, {"ARTISTSORT"}, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"});
+	track.artists = getArtists(properties, {"ARTISTS", "ARTIST"}, {"ARTISTSORT"}, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"});
 	track.albumArtists = getArtists(properties, {"ALBUMARTIST"}, {"ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"});
 	track.conductorArtists = getArtists(properties, {"CONDUCTOR"}, {""}, {});
 	track.composerArtists = getArtists(properties, {"COMPOSER"}, {"COMPOSERSORT"}, {});

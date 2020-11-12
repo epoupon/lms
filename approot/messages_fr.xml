@@ -199,6 +199,7 @@
 <message id="Lms.Settings.subsonic-artist-list-mode">Mode de listage des artistes</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">Tous les artistes</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Tous les artistes d'album</message>
+<message id="Lms.Settings.subsonic-artist-list-mode.track-artists">Tous les artistes de piste</message>
 <message id="Lms.Settings.subsonic-api">API Subsonic</message>
 <message id="Lms.Settings.transcode">Transcodage</message>
 <message id="Lms.Settings.transcode-bitrate">Bitrate du transcodage</message>

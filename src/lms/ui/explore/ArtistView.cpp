@@ -50,12 +50,12 @@ Artist::Artist(Filters* filters)
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	LmsApp->internalPathChanged().connect([=]
+	LmsApp->internalPathChanged().connect(this, [this]
 	{
 		refreshView();
 	});
 
-	filters->updated().connect([=]
+	filters->updated().connect([this]
 	{
 		refreshView();
 	});

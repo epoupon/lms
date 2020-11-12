@@ -69,35 +69,14 @@ Artists::Artists(Filters* filters)
 	}
 
 	_linkType = bindNew<Wt::WComboBox>("link-type");
-
-	{
-		auto linkTypeModel {std::make_shared<ArtistLinkModel>()};
-		EnumSet<Database::TrackArtistLinkType> usedLinkTypes;
-		{
-			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-			usedLinkTypes = Database::TrackArtistLink::getUsedTypes(LmsApp->getDbSession());
-		}
-
-		auto addTypeIfUsed {[&](Database::TrackArtistLinkType linkType, std::string_view stringKey)
-		{
-			if (!usedLinkTypes.contains(linkType))
-				return;
-
-			linkTypeModel->add(Wt::WString::tr(std::string {stringKey}), linkType);
-		}};
-
-		linkTypeModel->add(Wt::WString::tr("Lms.Explore.Artists.linktype-all"), {});
-		addTypeIfUsed(TrackArtistLinkType::Artist, "Lms.Explore.Artists.linktype-artist");
-		addTypeIfUsed(TrackArtistLinkType::ReleaseArtist, "Lms.Explore.Artists.linktype-releaseartist");
-		addTypeIfUsed(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
-		addTypeIfUsed(TrackArtistLinkType::Lyricist, "Lms.Explore.Artists.linktype-lyricist");
-		addTypeIfUsed(TrackArtistLinkType::Mixer, "Lms.Explore.Artists.linktype-mixer");
-		addTypeIfUsed(TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
-		addTypeIfUsed(TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
-
-		_linkType->setModel(linkTypeModel);
-	}
+	_linkType->setModel(std::make_shared<ArtistLinkModel>());
 	_linkType->changed().connect([this] { refreshView(); });
+	refreshArtistLinkTypes();
+
+	LmsApp->getEvents().dbScanned.connect(this, [this]
+	{
+		refreshArtistLinkTypes();
+	});
 
 	_container = bindNew<Wt::WContainerWidget>("artists");
 	hideLoadingIndicator();
@@ -120,6 +99,37 @@ Artists::refreshView(Mode mode)
 {
 	_mode = mode;
 	refreshView();
+}
+
+void
+Artists::refreshArtistLinkTypes()
+{
+	std::shared_ptr<ArtistLinkModel> linkTypeModel {std::static_pointer_cast<ArtistLinkModel>(_linkType->model())};
+
+	EnumSet<Database::TrackArtistLinkType> usedLinkTypes;
+	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		usedLinkTypes = Database::TrackArtistLink::getUsedTypes(LmsApp->getDbSession());
+	}
+
+	auto addTypeIfUsed {[&](Database::TrackArtistLinkType linkType, std::string_view stringKey)
+	{
+		if (!usedLinkTypes.contains(linkType))
+			return;
+
+		linkTypeModel->add(Wt::WString::tr(std::string {stringKey}), linkType);
+	}};
+
+	linkTypeModel->clear();
+
+	linkTypeModel->add(Wt::WString::tr("Lms.Explore.Artists.linktype-all"), {});
+	addTypeIfUsed(TrackArtistLinkType::Artist, "Lms.Explore.Artists.linktype-artist");
+	addTypeIfUsed(TrackArtistLinkType::ReleaseArtist, "Lms.Explore.Artists.linktype-releaseartist");
+	addTypeIfUsed(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
+	addTypeIfUsed(TrackArtistLinkType::Lyricist, "Lms.Explore.Artists.linktype-lyricist");
+	addTypeIfUsed(TrackArtistLinkType::Mixer, "Lms.Explore.Artists.linktype-mixer");
+	addTypeIfUsed(TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
+	addTypeIfUsed(TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
 }
 
 void

@@ -139,7 +139,7 @@ ScannerController::ScannerController()
 
 	auto onDbEvent = [&]() { refreshContents(); };
 
-	LmsApp->getEvents().dbScanStarted.connect(this, []()
+	LmsApp->getEvents().dbScanStarted.connect(this, []
 	{
 		LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
 	});

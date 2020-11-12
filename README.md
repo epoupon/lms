@@ -65,3 +65,6 @@ __Note__: since _LMS_ stores hashed and salted passwords, it cannot handle the _
 
 See [INSTALL.md](INSTALL.md) file.
 
+## Contributing
+
+Contributions are welcome! Please prepare your pull requests on the [develop](../../tree/develop) branch.

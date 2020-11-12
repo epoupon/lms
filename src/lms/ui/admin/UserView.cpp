@@ -242,7 +242,7 @@ class UserModel : public Wt::WFormModel
 
 UserView::UserView()
 {
-	wApp->internalPathChanged().connect([this]()
+	wApp->internalPathChanged().connect(this, [this]()
 	{
 		refreshView();
 	});

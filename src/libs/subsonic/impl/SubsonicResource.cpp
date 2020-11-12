@@ -316,7 +316,8 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 
 	trackResponse.setAttribute("coverArt", IdToString({Id::Type::Track, track.id()}));
 
-	auto artists {track->getArtists({TrackArtistLinkType::Artist})};
+	const std::vector<Artist::pointer>& artists {track->getArtists({TrackArtistLinkType::Artist})};
+	LMS_LOG(API_SUBSONIC, DEBUG) << "Artists count = " << artists.size();
 	if (!artists.empty())
 	{
 		trackResponse.setAttribute("artist", getArtistNames(artists));
@@ -954,6 +955,9 @@ handleGetArtistsRequest(RequestContext& context)
 		case User::SubsonicArtistListMode::ReleaseArtists:
 			linkType = TrackArtistLinkType::ReleaseArtist;
 			break;
+		case User::SubsonicArtistListMode::TrackArtists:
+			linkType = TrackArtistLinkType::Artist;
+			break;
 	}
 
 	bool more {};
@@ -1097,6 +1101,9 @@ handleGetIndexesRequest(RequestContext& context)
 			break;
 		case User::SubsonicArtistListMode::ReleaseArtists:
 			linkType = TrackArtistLinkType::ReleaseArtist;
+			break;
+		case User::SubsonicArtistListMode::TrackArtists:
+			linkType = TrackArtistLinkType::Artist;
 			break;
 	}
 

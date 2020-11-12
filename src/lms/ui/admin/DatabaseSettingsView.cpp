@@ -167,10 +167,10 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 DatabaseSettingsView::DatabaseSettingsView()
 {
-	wApp->internalPathChanged().connect(std::bind([=]
+	wApp->internalPathChanged().connect(this, [this]
 	{
 		refreshView();
-	}));
+	});
 
 	refreshView();
 }

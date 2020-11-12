@@ -44,7 +44,7 @@ UsersView::UsersView()
 		LmsApp->setInternalPath("/admin/user", true);
 	});
 
-	wApp->internalPathChanged().connect([this]()
+	wApp->internalPathChanged().connect(this, [this]()
 	{
 		refreshView();
 	});
