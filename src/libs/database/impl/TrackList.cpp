@@ -165,7 +165,7 @@ TrackList::getEntriesReverse(std::optional<std::size_t> offset, std::optional<st
 
 static
 Wt::Dbo::Query<Artist::pointer>
-createArtistsQuery(Wt::Dbo::Session& session, const std::string& queryStr, IdType tracklistId, const std::set<IdType>& clusterIds, std::optional<TrackArtistLink::Type> linkType)
+createArtistsQuery(Wt::Dbo::Session& session, const std::string& queryStr, IdType tracklistId, const std::set<IdType>& clusterIds, std::optional<TrackArtistLinkType> linkType)
 {
 	auto query {session.query<Artist::pointer>(queryStr)};
 	query.join("track t ON t.id = t_a_l.track_id");
@@ -270,7 +270,7 @@ createTracksQuery(Wt::Dbo::Session& session, IdType tracklistId, const std::set<
 }
 
 std::vector<Artist::pointer>
-TrackList::getArtistsReverse(const std::set<IdType>& clusterIds, std::optional<TrackArtistLink::Type> linkType, std::optional<Range> range, bool& moreResults) const
+TrackList::getArtistsReverse(const std::set<IdType>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const
 {
 	assert(session());
 	assert(IdIsValid(self()->id()));
@@ -417,7 +417,7 @@ TrackList::getDuration() const
 }
 
 std::vector<Artist::pointer>
-TrackList::getTopArtists(const std::set<IdType>& clusterIds, std::optional<TrackArtistLink::Type> linkType, std::optional<Range> range, bool& moreResults) const
+TrackList::getTopArtists(const std::set<IdType>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const
 {
 	assert(session());
 	assert(IdIsValid(self()->id()));

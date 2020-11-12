@@ -56,10 +56,13 @@ namespace Recommendation
 			void	load(bool forceReload, const ProgressCallback& progressCallback) override;
 			void	cancelLoad() override;
 
-			std::unordered_set<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) override;
-			std::unordered_set<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) override;
-			std::unordered_set<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) override;
-			std::unordered_set<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) override;
+			ResultContainer getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) override;
+			ResultContainer getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) override;
+			ResultContainer getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) override;
+			ResultContainer getSimilarArtists(Database::Session& session,
+					Database::IdType artistId,
+					EnumSet<Database::TrackArtistLinkType> linkTypes,
+					std::size_t maxCount) override;
 
 			void setClassifierPriorities(const std::vector<ClassifierType>& classifierTypes);
 			void clearClassifiers();

@@ -1,17 +1,16 @@
 # LMS - Lightweight Music Server
 
-[![Build Status](https://travis-ci.org/epoupon/lms.svg?branch=master)](https://travis-ci.org/epoupon/lms) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/epoupon/lms) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/epoupon/lms.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/epoupon/lms/context:cpp)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/epoupon/lms) [![Build Status](https://travis-ci.org/epoupon/lms.svg?branch=master)](https://travis-ci.org/epoupon/lms) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/epoupon/lms.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/epoupon/lms/context:cpp)
 
 _LMS_ is a self-hosted music streaming software: access your music collection from anywhere using a web interface!
 
-A [demo](http://lms.demo.poupon.io) instance is available. Note the administration panel is not available.
+A [demo instance](http://lms.demo.poupon.io) is available. Note the administration panel is not available.
 
 ## Main features
-* Low memory requirements: the demo instance runs on a Raspberry Pi3B+
+* Low memory requirements: the demo instance runs on a _Raspberry Pi Zero W_
 * Recommendation engine
 * Audio transcode for maximum interoperability and low bandwith requirements
-* Multi-value tags: artists, genres, ...
-* Custom tags support: _mood_, _genre_, _albummood_, _albumgrouping_, ...
+* Multi-value tags: artists, genres, composers, lyricists, moods, ...
 * Compilation support
 * [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) support to handle duplicated artist and release names
 * Disc subtitles support
@@ -31,6 +30,7 @@ _LMS_ provides several ways to help you find the music you like:
 * Radio mode, based on what is in the current playqueue
 * Searches in album, artist and track names (including sort names)
 * Starred Albums/Artists/Tracks
+* Custom tags support to help you filter your music: _mood_, _albummood_, _albumgenre_, _albumgrouping_, ...
 * Random/Starred/Most played/Recently played/Recently added for Artist/Albums/Tracks, allowing you to search for things like:
   * Recently added _Electronic_ artists
   * Random _Metal_ and _Aggressive_ albums
@@ -232,11 +232,3 @@ journalctl -u lms.service
 
 To connect to _LMS_, just open your favorite browser and go to http://localhost:5082
 
-## Credits
-* Bootstrap Notify: https://github.com/mouse0270/bootstrap-notify
-* Bootstrap3 (https://getbootstrap.com/)
-* Bootswatch (https://bootswatch.com/)
-* Ffmpeg project (https://ffmpeg.org/)
-* GraphicsMagick++ (http://www.graphicsmagick.org/)
-* MetaBrainz (https://metabrainz.org/)
-* Wt (http://www.webtoolkit.eu/)

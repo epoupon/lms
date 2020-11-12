@@ -24,6 +24,7 @@
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
+#include "database/TrackArtistLink.hpp"
 #include "database/TrackFeatures.hpp"
 #include "database/Session.hpp"
 #include "utils/Logger.hpp"
@@ -480,31 +481,81 @@ Track::getCopyrightURL() const
 }
 
 std::vector<Wt::Dbo::ptr<Artist>>
-Track::getArtists(TrackArtistLink::Type type) const
+Track::getArtists(EnumSet<TrackArtistLinkType> linkTypes) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));
 	assert(session());
 
-	Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> artists {session()->query<Artist::pointer>("SELECT a from artist a INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id INNER JOIN track t ON t.id = t_a_l.track_id")
-		.where("t.id = ?").bind(self()->id())
-		.where("t_a_l.type = ?").bind(type)};
+	std::ostringstream oss;
+	oss <<
+		"SELECT a from artist a"
+		" INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id"
+		" INNER JOIN track t ON t.id = t_a_l.track_id";
 
-	return std::vector<Wt::Dbo::ptr<Artist>>(artists.begin(), artists.end());
+	if (!linkTypes.empty())
+	{
+		oss << " AND t_a_l.type IN (";
+
+		bool first {true};
+		for (TrackArtistLinkType type : linkTypes)
+		{
+			(void) type;
+			if (!first)
+				oss << ", ";
+			oss << "?";
+			first = false;
+		}
+		oss << ")";
+	}
+
+	Wt::Dbo::Query<Artist::pointer> query {session()->query<Artist::pointer>(oss.str())
+		.where("t.id = ?").bind(self()->id())};
+
+	for (TrackArtistLinkType type : linkTypes)
+		query.bind(type);
+
+	Wt::Dbo::collection<Artist::pointer> res = query;
+	return std::vector<Artist::pointer>(std::begin(res), std::end(res));
 }
 
 std::vector<IdType>
-Track::getArtistIds(TrackArtistLink::Type type) const
+Track::getArtistIds(EnumSet<TrackArtistLinkType> linkTypes) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));
 	assert(session());
 
-	Wt::Dbo::collection<IdType> artists {session()->query<IdType>("SELECT a.id from artist a INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id INNER JOIN track t ON t.id = t_a_l.track_id")
-		.where("t.id = ?").bind(self()->id())
-		.where("t_a_l.type = ?").bind(type)};
+	std::ostringstream oss;
+	oss <<
+		"SELECT a.id from artist a"
+		" INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id"
+		" INNER JOIN track t ON t.id = t_a_l.track_id";
 
-	return std::vector<IdType>(artists.begin(), artists.end());
+	if (!linkTypes.empty())
+	{
+		oss << " AND t_a_l.type IN (";
+
+		bool first {true};
+		for (TrackArtistLinkType type : linkTypes)
+		{
+			(void) type;
+			if (!first)
+				oss << ", ";
+			oss << "?";
+			first = false;
+		}
+		oss << ")";
+	}
+
+	Wt::Dbo::Query<IdType> query {session()->query<IdType>(oss.str())
+		.where("t.id = ?").bind(self()->id())};
+
+	for (TrackArtistLinkType type : linkTypes)
+		query.bind(type);
+
+	Wt::Dbo::collection<IdType> res = query;
+	return std::vector<IdType>(std::begin(res), std::end(res));
 }
 
 std::vector<Wt::Dbo::ptr<TrackArtistLink>>

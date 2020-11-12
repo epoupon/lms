@@ -316,7 +316,7 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 
 	trackResponse.setAttribute("coverArt", IdToString({Id::Type::Track, track.id()}));
 
-	auto artists {track->getArtists()};
+	auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 	if (!artists.empty())
 	{
 		trackResponse.setAttribute("artist", getArtistNames(artists));
@@ -893,7 +893,10 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 			artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
 	}
 
-	auto similarArtistsId {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession, id.value, count)};
+	auto similarArtistsId {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession,
+			id.value,
+			{TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist},
+			count)};
 
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
@@ -943,13 +946,13 @@ handleGetArtistsRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	std::optional<TrackArtistLink::Type> linkType;
+	std::optional<TrackArtistLinkType> linkType;
 	switch (user->getSubsonicArtistListMode())
 	{
 		case User::SubsonicArtistListMode::AllArtists:
 			break;
 		case User::SubsonicArtistListMode::ReleaseArtists:
-			linkType = TrackArtistLink::Type::ReleaseArtist;
+			linkType = TrackArtistLinkType::ReleaseArtist;
 			break;
 	}
 
@@ -1087,13 +1090,13 @@ handleGetIndexesRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	std::optional<TrackArtistLink::Type> linkType;
+	std::optional<TrackArtistLinkType> linkType;
 	switch (user->getSubsonicArtistListMode())
 	{
 		case User::SubsonicArtistListMode::AllArtists:
 			break;
 		case User::SubsonicArtistListMode::ReleaseArtists:
-			linkType = TrackArtistLink::Type::ReleaseArtist;
+			linkType = TrackArtistLinkType::ReleaseArtist;
 			break;
 	}
 
@@ -1115,36 +1118,39 @@ Response
 handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
-	if (id.type != Id::Type::Artist)
+	const Id artistId {getMandatoryParameterAs<Id>(context.parameters, "id")};
+	if (artistId.type != Id::Type::Artist)
 		throw BadParameterGenericError {"id"};
 
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(50)};
 
-	auto similarArtistsId {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession, id.value, 5)};
+	auto similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession,
+			artistId.value,
+			{TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist},
+			5)};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
+	const Artist::pointer artist {Artist::getById(context.dbSession, artistId.value)};
 	if (!artist)
 		throw RequestedDataNotFoundError {};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	const User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
 	// "Returns a random collection of songs from the given artist and similar artists"
 	auto tracks {artist->getRandomTracks(count / 2)};
-	for ( const auto& similarArtistId : similarArtistsId )
+	for (const Database::IdType similarArtistId : similarArtistIds)
 	{
-		Artist::pointer similarArtist {Artist::getById(context.dbSession, similarArtistId)};
+		const Artist::pointer similarArtist {Artist::getById(context.dbSession, similarArtistId)};
 		if (!similarArtist)
 			continue;
 
 		auto similarArtistTracks {similarArtist->getRandomTracks((count / 2) / 5)};
 
-		tracks.insert(tracks.end(),
+		tracks.insert(std::end(tracks),
 				std::make_move_iterator(std::begin(similarArtistTracks)),
 				std::make_move_iterator(std::end(similarArtistTracks)));
 	}

@@ -19,64 +19,53 @@
 
 #pragma once
 
+#include <string>
+
 #include <Wt/Dbo/Dbo.h>
 
 #include "Types.hpp"
+#include "utils/EnumSet.hpp"
 
-namespace Database {
-
-class Artist;
-class Session;
-class Track;
-
-class TrackArtistLink
+namespace Database
 {
-	public:
-		enum class Type
-		{
-			Artist,	// regular artist
-			Arranger,
-			Composer,
-			Conductor,
-			Lyricist,
-			Mixer,
-			Performer,
-			Producer,
-			ReleaseArtist,
-			Remixer,
-			Writer,
-		};
 
-		using pointer = Wt::Dbo::ptr<TrackArtistLink>;
+	class Artist;
+	class Session;
+	class Track;
 
-		TrackArtistLink() = default;
-		TrackArtistLink(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist, Type type);
+	class TrackArtistLink
+	{
+		public:
+			using pointer = Wt::Dbo::ptr<TrackArtistLink>;
 
-		static pointer create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist,Type type);
+			TrackArtistLink() = default;
+			TrackArtistLink(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist, TrackArtistLinkType type);
 
-		Wt::Dbo::ptr<Track>	getTrack() const { return _track; }
-		Wt::Dbo::ptr<Artist>	getArtist() const { return _artist; }
-		Type			getType() const { return _type; }
+			static pointer create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist, TrackArtistLinkType type);
 
-		template<class Action>
-		void persist(Action& a)
-		{
-			Wt::Dbo::field(a, _type, "type");
-			Wt::Dbo::field(a, _type, "name");
+			static EnumSet<TrackArtistLinkType> getUsedTypes(Session& session);
 
-			Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
-			Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
-		}
+			Wt::Dbo::ptr<Track>		getTrack() const { return _track; }
+			Wt::Dbo::ptr<Artist>	getArtist() const { return _artist; }
+			TrackArtistLinkType		getType() const { return _type; }
 
-	private:
+			template<class Action>
+				void persist(Action& a)
+				{
+					Wt::Dbo::field(a, _type, "type");
+					Wt::Dbo::field(a, _type, "name");
 
-		Type		_type;
-		std::string	_name;
+					Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
+					Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
+				}
 
-		Wt::Dbo::ptr<Track> _track;
-		Wt::Dbo::ptr<Artist> _artist;
-};
+		private:
+			TrackArtistLinkType _type;
+			std::string	_name;
+
+			Wt::Dbo::ptr<Track> _track;
+			Wt::Dbo::ptr<Artist> _artist;
+	};
 
 }
-
 

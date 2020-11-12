@@ -83,7 +83,10 @@ ClusterClassifier::getSimilarReleases(Database::Session& dbSession, Database::Id
 }
 
 std::unordered_set<Database::IdType>
-ClusterClassifier::getSimilarArtists(Database::Session& dbSession, Database::IdType artistId, std::size_t maxCount) const
+ClusterClassifier::getSimilarArtists(Database::Session& dbSession,
+		Database::IdType artistId,
+		EnumSet<Database::TrackArtistLinkType> artistLinkTypes,
+		std::size_t maxCount) const
 {
 	std::unordered_set<Database::IdType> res;
 
@@ -93,7 +96,7 @@ ClusterClassifier::getSimilarArtists(Database::Session& dbSession, Database::IdT
 	if (!artist)
 		return res;
 
-	const auto artists {artist->getSimilarArtists(0, maxCount)};
+	const auto artists {artist->getSimilarArtists(artistLinkTypes, Database::Range {0, maxCount})};
 	std::transform(std::cbegin(artists), std::cend(artists), std::inserter(res, std::end(res)),
 			[](const auto& artist) { return artist.id(); });
 

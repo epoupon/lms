@@ -21,14 +21,15 @@
 
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
+#include "utils/EnumSet.hpp"
 #include "utils/UUID.hpp"
 
-#include "TrackArtistLink.hpp"
 #include "Types.hpp"
 
 namespace Database
@@ -39,6 +40,7 @@ class ClusterType;
 class Release;
 class Session;
 class Track;
+class TrackArtistLink;
 class User;
 
 class Artist : public Wt::Dbo::Dbo<Artist>
@@ -68,7 +70,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static std::vector<pointer> 	getByFilter(Session& session,
 								const std::set<IdType>& clusters,		// if non empty, at least one artist that belongs to these clusters
 								const std::vector<std::string>& keywords,	// if non empty, name must match all of these keywords (name + sort name fields)
-								std::optional<TrackArtistLink::Type> linkType, 	// if set, only artists that have produced at least one track with this link type
+								std::optional<TrackArtistLinkType> linkType, 	// if set, only artists that have produced at least one track with this link type
 								SortMethod sortMethod,
 								std::optional<Range> range,
 								bool& moreExpected);
@@ -77,19 +79,19 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		static std::vector<pointer>	getAll(Session& session, SortMethod sortMethod);
 		static std::vector<pointer>	getAll(Session& session, SortMethod sortMethod, std::optional<Range> range, bool& moreResults);
 		static std::vector<IdType>	getAllIds(Session& session);
-		static std::vector<IdType>	getAllIdsRandom(Session& session, const std::set<IdType>& clusters, std::optional<TrackArtistLink::Type> linkType, std::optional<std::size_t> size = {});
+		static std::vector<IdType>	getAllIdsRandom(Session& session, const std::set<IdType>& clusters, std::optional<TrackArtistLinkType> linkType, std::optional<std::size_t> size = {});
 		static std::vector<pointer>	getAllOrphans(Session& session); // No track related
 		static std::vector<pointer>	getLastWritten(Session& session,
 								std::optional<Wt::WDateTime> after,
 								const std::set<IdType>& clusters,
-								std::optional<TrackArtistLink::Type> linkType, 	// if set, only artists that have produced at least one track with this link type
+								std::optional<TrackArtistLinkType> linkType, 	// if set, only artists that have produced at least one track with this link type
 								std::optional<Range>,
 								bool& moreResults);
 		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
 		static std::vector<pointer>	getStarred(Session& session,
 								Wt::Dbo::ptr<User> user,
 								const std::set<IdType>& clusters,
-								std::optional<TrackArtistLink::Type> linkType, 	// if set, only artists that have produced at least one track with this link type
+								std::optional<TrackArtistLinkType> linkType, 	// if set, only artists that have produced at least one track with this link type
 								SortMethod sortMethod,
 								std::optional<Range>, bool& moreResults);
 
@@ -100,10 +102,12 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
 		std::size_t				getReleaseCount() const;
-		std::vector<Wt::Dbo::ptr<Track>>	getTracks(std::optional<TrackArtistLink::Type> linkType = {}) const;
-		std::vector<Wt::Dbo::ptr<Track>>	getTracksWithRelease(std::optional<TrackArtistLink::Type> linkType = {}) const;
+		std::vector<Wt::Dbo::ptr<Track>>	getTracks(std::optional<TrackArtistLinkType> linkType = {}) const;
+		std::vector<Wt::Dbo::ptr<Track>>	getTracksWithRelease(std::optional<TrackArtistLinkType> linkType = {}) const;
 		std::vector<Wt::Dbo::ptr<Track>>	getRandomTracks(std::optional<std::size_t> count) const;
-		std::vector<pointer>			getSimilarArtists(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
+
+		// No artistLinkTypes means get them all
+		std::vector<pointer>				getSimilarArtists(EnumSet<TrackArtistLinkType> artistLinkTypes = {}, std::optional<Range> range = std::nullopt) const;
 
 		// Get the cluster of the tracks made by this artist
 		// Each clusters are grouped by cluster type, sorted by the number of occurence

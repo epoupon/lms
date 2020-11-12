@@ -20,11 +20,12 @@
 #pragma once
 
 #include <optional>
+#include <set>
 
-#include <Wt/Dbo/WtSqlTraits.h>
+#include <Wt/WDateTime.h>
+#include <Wt/Dbo/Dbo.h>
 
 #include "utils/UUID.hpp"
-#include "TrackArtistLink.hpp"
 #include "Types.hpp"
 
 namespace Database
@@ -34,6 +35,7 @@ class Artist;
 class Cluster;
 class ClusterType;
 class Release;
+class Session;
 class Track;
 class User;
 
@@ -95,8 +97,8 @@ class Release : public Wt::Dbo::Dbo<Release>
 		Wt::WDateTime				getLastWritten() const;
 
 		// Get the artists of this release
-		std::vector<Wt::Dbo::ptr<Artist> > getArtists(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;
-		std::vector<Wt::Dbo::ptr<Artist> > getReleaseArtists() const { return getArtists(TrackArtistLink::Type::ReleaseArtist); }
+		std::vector<Wt::Dbo::ptr<Artist> > getArtists(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
+		std::vector<Wt::Dbo::ptr<Artist> > getReleaseArtists() const { return getArtists(TrackArtistLinkType::ReleaseArtist); }
 		bool hasVariousArtists() const;
 		std::vector<pointer>		getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
 

@@ -143,7 +143,12 @@
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">Tous les artistes</message>
 <message id="Lms.Explore.Artists.linktype-artist">Artistes de piste</message>
+<message id="Lms.Explore.Artists.linktype-composer">Compositeurs</message>
+<message id="Lms.Explore.Artists.linktype-lyricist">Paroliers</message>
+<message id="Lms.Explore.Artists.linktype-mixer">Mixers</message>
+<message id="Lms.Explore.Artists.linktype-producer">Producteurs</message>
 <message id="Lms.Explore.Artists.linktype-releaseartist">Artistes d'album</message>
+<message id="Lms.Explore.Artists.linktype-remixer">Remixers</message>
 
 <!--Explore:Release-->
 <message id="Lms.Explore.Release.similar-releases">Albums similaires</message>

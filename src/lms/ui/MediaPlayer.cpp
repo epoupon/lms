@@ -30,6 +30,7 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
+#include "database/Types.hpp"
 #include "database/User.hpp"
 
 #include "resource/ImageResource.hpp"
@@ -242,7 +243,7 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play, float replayGain)
 		const std::string transcodeResource {LmsApp->getAudioTranscodeResource()->getUrl(trackId)};
 		const std::string nativeResource {LmsApp->getAudioFileResource()->getUrl(trackId)};
 
-		const auto artists {track->getArtists()};
+		const auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
 
 		oss
 			<< "var params = {"

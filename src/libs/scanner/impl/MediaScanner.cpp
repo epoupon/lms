@@ -29,6 +29,7 @@
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Track.hpp"
+#include "database/TrackArtistLink.hpp"
 #include "database/TrackFeatures.hpp"
 #include "metadata/TagLibParser.hpp"
 #include "recommendation/IEngine.hpp"
@@ -750,20 +751,6 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 		title = file.filename().string();
 	}
 
-	// ***** Clusters
-	std::vector<Cluster::pointer> clusters {getOrCreateClusters(_dbSession, trackInfo->clusters)};
-
-	//  ***** Artists
-	std::vector<Artist::pointer> artists {getOrCreateArtists(_dbSession, trackInfo->artists)};
-
-	//  ***** Release artists
-	std::vector<Artist::pointer> releaseArtists {getOrCreateArtists(_dbSession, trackInfo->albumArtists)};
-
-	//  ***** Release
-	Release::pointer release;
-	if (trackInfo->album)
-		release = getOrCreateRelease(_dbSession, *trackInfo->album);
-
 	// If file already exist, update data
 	// Otherwise, create it
 	if (!track)
@@ -784,15 +771,34 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	assert(track);
 
 	track.modify()->clearArtistLinks();
-	for (const auto& artist : artists)
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, artist, Database::TrackArtistLink::Type::Artist));
+	for (const Artist::pointer& artist : getOrCreateArtists(_dbSession, trackInfo->artists))
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, artist, Database::TrackArtistLinkType::Artist));
 
-	for (const auto& releaseArtist : releaseArtists)
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, releaseArtist, Database::TrackArtistLink::Type::ReleaseArtist));
+	for (const Artist::pointer& releaseArtist : getOrCreateArtists(_dbSession, trackInfo->albumArtists))
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, releaseArtist, Database::TrackArtistLinkType::ReleaseArtist));
+
+	for (const Artist::pointer& conductor : getOrCreateArtists(_dbSession, trackInfo->conductorArtists))
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, conductor, Database::TrackArtistLinkType::Conductor));
+
+	for (const Artist::pointer& composer : getOrCreateArtists(_dbSession, trackInfo->composerArtists))
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, composer, Database::TrackArtistLinkType::Composer));
+
+	for (const Artist::pointer& lyricist : getOrCreateArtists(_dbSession, trackInfo->lyricistArtists))
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, lyricist, Database::TrackArtistLinkType::Lyricist));
+
+	for (const Artist::pointer& mixer : getOrCreateArtists(_dbSession, trackInfo->mixerArtists))
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, mixer, Database::TrackArtistLinkType::Mixer));
+
+	for (const Artist::pointer& producer : getOrCreateArtists(_dbSession, trackInfo->producerArtists))
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, producer, Database::TrackArtistLinkType::Producer));
+
+	for (const Artist::pointer& remixer : getOrCreateArtists(_dbSession, trackInfo->remixerArtists))
+		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, remixer, Database::TrackArtistLinkType::Remixer));
 
 	track.modify()->setScanVersion(_scanVersion);
-	track.modify()->setRelease(release);
-	track.modify()->setClusters(clusters);
+	if (trackInfo->album)
+		track.modify()->setRelease(getOrCreateRelease(_dbSession, *trackInfo->album));
+	track.modify()->setClusters(getOrCreateClusters(_dbSession, trackInfo->clusters));
 	track.modify()->setLastWriteTime(lastWriteTime);
 	track.modify()->setName(title);
 	track.modify()->setDuration(trackInfo->duration);

@@ -214,7 +214,7 @@ Release::refreshView()
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-		auto artists {track->getArtists()};
+		const auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
 		if (variousArtists && !artists.empty())
 		{
 			entry->setCondition("if-has-artists", true);

@@ -35,10 +35,9 @@
 #include "utils/StreamLogger.hpp"
 #include "recommendation/IEngine.hpp"
 
-
 static
 void
-dumpTracksRecommendation(Database::Session session, Recommendation::IEngine& engine)
+dumpTracksRecommendation(Database::Session session, Recommendation::IEngine& engine, unsigned maxSimilarityCount)
 {
 	const std::vector<Database::IdType> trackIds {[&]()
 		{
@@ -58,7 +57,7 @@ dumpTracksRecommendation(Database::Session session, Recommendation::IEngine& eng
 			res += track->getName();
 			if (track->getRelease())
 				res += " [" + track->getRelease()->getName() + "]";
-			for (auto artist : track->getArtists())
+			for (auto artist : track->getArtists({Database::TrackArtistLinkType::Artist}))
 				res += " - " + artist->getName();
 			for (auto cluster : track->getClusters())
 				res += " {" + cluster->getType()->getName() + "-"+ cluster->getName() + "}";
@@ -67,14 +66,14 @@ dumpTracksRecommendation(Database::Session session, Recommendation::IEngine& eng
 		};
 
 		std::cout << "Processing track '" << trackToString(trackId) << std::endl;
-		for (Database::IdType similarTrackId : engine.getSimilarTracks(session, {trackId}, 3))
+		for (Database::IdType similarTrackId : engine.getSimilarTracks(session, {trackId}, maxSimilarityCount))
 			std::cout << "\t- Similar track '" << trackToString(similarTrackId) << std::endl;
 	}
 }
 
 static
 void
-dumpReleasesRecommendation(Database::Session session, Recommendation::IEngine& engine)
+dumpReleasesRecommendation(Database::Session session, Recommendation::IEngine& engine, unsigned maxSimilarityCount)
 {
 	const std::vector<Database::IdType> releaseIds = std::invoke([&]()
 			{
@@ -94,14 +93,14 @@ dumpReleasesRecommendation(Database::Session session, Recommendation::IEngine& e
 		};
 
 		std::cout << "Processing release '" << releaseToString(releaseId) << "'" << std::endl;
-		for (Database::IdType similarReleaseId : engine.getSimilarReleases(session, releaseId, 3))
+		for (Database::IdType similarReleaseId : engine.getSimilarReleases(session, releaseId, maxSimilarityCount))
 			std::cout << "\t- Similar release '" << releaseToString(similarReleaseId) << "'" << std::endl;
 	}
 }
 
 static
 void
-dumpArtistsRecommendation(Database::Session session, Recommendation::IEngine& engine)
+dumpArtistsRecommendation(Database::Session session, Recommendation::IEngine& engine, unsigned maxSimilarityCount)
 {
 	const std::vector<Database::IdType> artistIds = std::invoke([&]()
 			{
@@ -121,8 +120,10 @@ dumpArtistsRecommendation(Database::Session session, Recommendation::IEngine& en
 		};
 
 		std::cout << "Processing artist '" << artistToString(artistId) << "'" << std::endl;
-		for (Database::IdType similarArtistId : engine.getSimilarArtists(session, artistId, 3))
+		for (Database::IdType similarArtistId : engine.getSimilarArtists(session, artistId, {Database::TrackArtistLinkType::Artist, Database::TrackArtistLinkType::ReleaseArtist}, maxSimilarityCount))
+		{
 			std::cout << "\t- Similar artist '" << artistToString(similarArtistId) << "'" << std::endl;
+		}
 	}
 }
 
@@ -143,6 +144,7 @@ int main(int argc, char *argv[])
         ("artists,a", "Display recommendation for artists")
         ("releases,r", "Display recommendation for releases")
         ("tracks,t", "Display recommendation for tracks")
+		("max,m", po::value<unsigned>()->default_value(3), "Max similarity result count")
         ;
 
         po::variables_map vm;
@@ -165,16 +167,19 @@ int main(int argc, char *argv[])
 
 		std::cout << "Loading recommendation engine..." << std::endl;
 		engine->load(false);
+
+		unsigned maxSimilarityCount {vm["max"].as<unsigned>()};
+
 		std::cout << "Recommendation engine loaded!" << std::endl;
 
 		if (vm.count("tracks"))
-			dumpTracksRecommendation(db, *engine);
+			dumpTracksRecommendation(db, *engine, maxSimilarityCount);
 
 		if (vm.count("releases"))
-			dumpReleasesRecommendation(db, *engine);
+			dumpReleasesRecommendation(db, *engine, maxSimilarityCount);
 
 		if (vm.count("artists"))
-		dumpArtistsRecommendation(db, *engine);
+			dumpArtistsRecommendation(db, *engine, maxSimilarityCount);
 	}
 	catch( std::exception& e)
 	{

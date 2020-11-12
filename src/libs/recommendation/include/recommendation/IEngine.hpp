@@ -20,9 +20,11 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <unordered_set>
 
 #include "database/Types.hpp"
+#include "utils/EnumSet.hpp"
 
 namespace Database
 {
@@ -46,10 +48,15 @@ namespace Recommendation
 			virtual void load(bool forceReload, const ProgressCallback& progressCallback = {}) = 0;
 			virtual void cancelLoad() = 0;
 
-			virtual std::unordered_set<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) = 0;
-			virtual std::unordered_set<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) = 0;
-			virtual std::unordered_set<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) = 0;
-			virtual std::unordered_set<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) = 0;
+			using ResultContainer = std::unordered_set<Database::IdType>;
+
+			virtual ResultContainer getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) = 0;
+			virtual ResultContainer getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) = 0;
+			virtual ResultContainer getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) = 0;
+			virtual ResultContainer getSimilarArtists(Database::Session& session,
+					Database::IdType artistId,
+					EnumSet<Database::TrackArtistLinkType> linkTypes,
+					std::size_t maxCount) = 0;
 	};
 
 	std::unique_ptr<IEngine> createEngine(Database::Db& db);

@@ -75,7 +75,10 @@ Artist::refreshView()
 	if (!artistId)
 		throw ArtistNotFoundException {*artistId};
 
-	const auto similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(LmsApp->getDbSession(), *artistId, 5)};
+	const auto similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(LmsApp->getDbSession(),
+			*artistId,
+			{TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist},
+			5)};
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 

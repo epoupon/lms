@@ -40,7 +40,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	26
+#define LMS_DATABASE_VERSION	27
 
 using Version = std::size_t;
 
@@ -275,6 +275,12 @@ CREATE TABLE "user_backup" (
 		else if (version == 25)
 		{
 			// Better cover detection
+			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+			ScanSettings::get(*this).modify()->incScanVersion();
+		}
+		else if (version == 26)
+		{
+			// Composer, mixer, etc. support
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
 		}

@@ -28,6 +28,7 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackArtistLink.hpp"
 #include "database/TrackBookmark.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
@@ -265,7 +266,7 @@ testSingleTrackSingleArtist(Session& session)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist);
+		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
 	}
 
 	{
@@ -276,7 +277,7 @@ testSingleTrackSingleArtist(Session& session)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto artists {track->getArtists()};
+		auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		CHECK(artists.size() == 1);
 		CHECK(artists.front().id() == artist.getId());
 
@@ -287,8 +288,9 @@ testSingleTrackSingleArtist(Session& session)
 		CHECK(artistLink->getTrack().id() == track.getId());
 		CHECK(artistLink->getArtist().id() == artist.getId());
 
-		CHECK(track->getArtists(TrackArtistLink::Type::Artist).size() == 1);
-		CHECK(track->getArtists(TrackArtistLink::Type::ReleaseArtist).empty());
+		CHECK(track->getArtists({TrackArtistLinkType::Artist}).size() == 1);
+		CHECK(track->getArtists({TrackArtistLinkType::ReleaseArtist}).empty());
+		CHECK(track->getArtists({}).empty());
 	}
 
 	{
@@ -298,8 +300,8 @@ testSingleTrackSingleArtist(Session& session)
 		CHECK(tracks.size() == 1);
 		CHECK(tracks.front().id() == track.getId());
 
-		CHECK(artist->getTracks(TrackArtistLink::Type::ReleaseArtist).empty());
-		CHECK(artist->getTracks(TrackArtistLink::Type::Artist).size() == 1);
+		CHECK(artist->getTracks(TrackArtistLinkType::ReleaseArtist).empty());
+		CHECK(artist->getTracks(TrackArtistLinkType::Artist).size() == 1);
 	}
 }
 
@@ -312,9 +314,9 @@ testSingleTrackSingleArtistMultiRoles(Session& session)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist);
-		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::ReleaseArtist);
-		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Writer);
+		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::ReleaseArtist);
+		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Writer);
 	}
 
 	{
@@ -326,29 +328,29 @@ testSingleTrackSingleArtistMultiRoles(Session& session)
 		auto transaction {session.createSharedTransaction()};
 		bool hasMore{};
 		CHECK(Artist::getByFilter(session, {}, {}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, hasMore).size() == 1);
-		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::Artist, Artist::SortMethod::ByName, std::nullopt, hasMore).size() == 1);
-		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::ReleaseArtist, Artist::SortMethod::ByName, std::nullopt, hasMore).size() == 1);
-		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::Writer, Artist::SortMethod::ByName, std::nullopt, hasMore).size() == 1);
-		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLink::Type::Composer, Artist::SortMethod::ByName, std::nullopt, hasMore).empty());
+		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLinkType::Artist, Artist::SortMethod::ByName, std::nullopt, hasMore).size() == 1);
+		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLinkType::ReleaseArtist, Artist::SortMethod::ByName, std::nullopt, hasMore).size() == 1);
+		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLinkType::Writer, Artist::SortMethod::ByName, std::nullopt, hasMore).size() == 1);
+		CHECK(Artist::getByFilter(session, {}, {}, TrackArtistLinkType::Composer, Artist::SortMethod::ByName, std::nullopt, hasMore).empty());
 	}
 
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto artists {track->getArtists(TrackArtistLink::Type::Artist)};
+		auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		CHECK(artists.size() == 1);
 		CHECK(artists.front().id() == artist.getId());
 
-		artists = track->getArtists(TrackArtistLink::Type::ReleaseArtist);
+		artists = track->getArtists({TrackArtistLinkType::ReleaseArtist});
 		CHECK(artists.size() == 1);
 		CHECK(artists.front().id() == artist.getId());
 
 		CHECK(track->getArtistLinks().size() == 3);
 
 		CHECK(artist->getTracks().size() == 1);
-		CHECK(artist->getTracks(TrackArtistLink::Type::ReleaseArtist).size() == 1);
-		CHECK(artist->getTracks(TrackArtistLink::Type::Artist).size() == 1);
-		CHECK(artist->getTracks(TrackArtistLink::Type::Writer).size() == 1);
+		CHECK(artist->getTracks({TrackArtistLinkType::ReleaseArtist}).size() == 1);
+		CHECK(artist->getTracks({TrackArtistLinkType::Artist}).size() == 1);
+		CHECK(artist->getTracks({TrackArtistLinkType::Writer}).size() == 1);
 	}
 }
 
@@ -364,8 +366,8 @@ testSingleTrackMultiArtists(Session& session)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLink::Type::Artist);
-		TrackArtistLink::create(session, track.get(), artist2.get(), TrackArtistLink::Type::Artist);
+		TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist);
+		TrackArtistLink::create(session, track.get(), artist2.get(), TrackArtistLinkType::Artist);
 	}
 
 	{
@@ -376,13 +378,14 @@ testSingleTrackMultiArtists(Session& session)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto artists {track->getArtists()};
+		auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		CHECK(artists.size() == 2);
 		CHECK((artists[0].id() == artist1.getId() && artists[1].id() == artist2.getId())
 			|| (artists[0].id() == artist2.getId() && artists[1].id() == artist1.getId()));
 
-		CHECK(track->getArtists(TrackArtistLink::Type::Artist).size() == 2);
-		CHECK(track->getArtists(TrackArtistLink::Type::ReleaseArtist).empty());
+		CHECK(track->getArtists({}).size() == 2);
+		CHECK(track->getArtists({TrackArtistLinkType::Artist}).size() == 2);
+		CHECK(track->getArtists({TrackArtistLinkType::ReleaseArtist}).empty());
 		CHECK(Artist::getAll(session, Artist::SortMethod::ByName).size() == 2);
 		CHECK(Artist::getAllIds(session).size() == 2);
 	}
@@ -393,10 +396,10 @@ testSingleTrackMultiArtists(Session& session)
 		CHECK(artist1->getTracks().front() == track.get());
 		CHECK(artist2->getTracks().front() == track.get());
 
-		CHECK(artist1->getTracks(TrackArtistLink::Type::ReleaseArtist).empty());
-		CHECK(artist1->getTracks(TrackArtistLink::Type::Artist).size() == 1);
-		CHECK(artist2->getTracks(TrackArtistLink::Type::ReleaseArtist).empty());
-		CHECK(artist2->getTracks(TrackArtistLink::Type::Artist).size() == 1);
+		CHECK(artist1->getTracks(TrackArtistLinkType::ReleaseArtist).empty());
+		CHECK(artist1->getTracks(TrackArtistLinkType::Artist).size() == 1);
+		CHECK(artist2->getTracks(TrackArtistLinkType::ReleaseArtist).empty());
+		CHECK(artist2->getTracks(TrackArtistLinkType::Artist).size() == 1);
 	}
 }
 
@@ -410,7 +413,7 @@ testSingleArtistSearchByName(Session& session)
 	{
 		auto transaction {session.createUniqueTransaction()};
 		artist.get().modify()->setSortName("ZZZ");
-		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist);
+		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
 	}
 
 	{
@@ -989,7 +992,7 @@ testSingleTrackSingleArtistMultiClusters(Session& session)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		auto trackArtistLink {TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist)};
+		auto trackArtistLink {TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist)};
 		cluster1.get().modify()->addTrack(track.get());
 	}
 
@@ -1051,8 +1054,8 @@ testSingleTrackSingleArtistMultiRolesMultiClusters(Session& session)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist);
-		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::ReleaseArtist);
+		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::ReleaseArtist);
 		cluster.get().modify()->addTrack(track.get());
 	}
 
@@ -1092,7 +1095,7 @@ testMultiTracksSingleArtistMultiClusters(Session& session)
 		tracks.emplace_back(session, "MyTrackFile" + std::to_string(i));
 
 		auto transaction {session.createUniqueTransaction()};
-		TrackArtistLink::create(session, tracks.back().get(), artist.get(), TrackArtistLink::Type::Artist);
+		TrackArtistLink::create(session, tracks.back().get(), artist.get(), TrackArtistLinkType::Artist);
 
 		for (auto& cluster : clusters)
 			cluster.get().modify()->addTrack(tracks.back().get());
@@ -1131,7 +1134,7 @@ testMultiTracksSingleArtistSingleRelease(Session& session)
 
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackArtistLink::create(session, tracks.back().get(), artist.get(), TrackArtistLink::Type::Artist);
+		TrackArtistLink::create(session, tracks.back().get(), artist.get(), TrackArtistLinkType::Artist);
 		tracks.back().get().modify()->setRelease(release.get());
 	}
 
@@ -1164,7 +1167,7 @@ testSingleTrackSingleReleaseSingleArtist(Session& session)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		auto trackArtistLink {TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist)};
+		auto trackArtistLink {TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist)};
 		track.get().modify()->setRelease(release.get());
 	}
 
@@ -1201,7 +1204,7 @@ testSingleTrackSingleReleaseSingleArtistSingleCluster(Session& session)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist);
+		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
 		track.get().modify()->setRelease(release.get());
 		cluster.get().modify()->addTrack(track.get());
 	}
@@ -1253,7 +1256,7 @@ testSingleTrackSingleReleaseSingleArtistMultiClusters(Session& session)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		auto trackArtistLink {TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist)};
+		auto trackArtistLink {TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist)};
 		track.get().modify()->setRelease(release.get());
 		cluster1.get().modify()->addTrack(track.get());
 		cluster2.get().modify()->addTrack(track.get());
@@ -1301,7 +1304,7 @@ testSingleStarredArtist(Session& session)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		auto trackArtistLink {TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLink::Type::Artist)};
+		auto trackArtistLink {TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist)};
 		user.get().modify()->starArtist(artist.get());
 	}
 
@@ -1526,8 +1529,8 @@ testSingleTrackListMultipleTrackMultiClustersRecentlyPlayed(Session& session)
 
 		track1.get().modify()->setRelease(release1.get());
 		track2.get().modify()->setRelease(release2.get());
-		TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLink::Type::Artist);
-		TrackArtistLink::create(session, track2.get(), artist2.get(), TrackArtistLink::Type::Artist);
+		TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLinkType::Artist);
+		TrackArtistLink::create(session, track2.get(), artist2.get(), TrackArtistLinkType::Artist);
 
 		cluster1.get().modify()->addTrack(track1.get());
 		cluster2.get().modify()->addTrack(track2.get());
@@ -1605,7 +1608,7 @@ testSingleTrackListMultipleTrackMultiClustersRecentlyPlayed(Session& session)
 		auto transaction {session.createSharedTransaction()};
 
 		bool moreResults {};
-		const auto artists {trackList->getArtistsReverse({cluster1.getId()}, TrackArtistLink::Type::Artist, std::nullopt, moreResults)};
+		const auto artists {trackList->getArtistsReverse({cluster1.getId()}, TrackArtistLinkType::Artist, std::nullopt, moreResults)};
 		CHECK(artists.size() == 1);
 		CHECK(artists.front().id() == artist1.getId());
 	}
@@ -1614,7 +1617,7 @@ testSingleTrackListMultipleTrackMultiClustersRecentlyPlayed(Session& session)
 		auto transaction {session.createSharedTransaction()};
 
 		bool moreResults {};
-		const auto artists {trackList->getArtistsReverse({}, TrackArtistLink::Type::Artist, std::nullopt, moreResults)};
+		const auto artists {trackList->getArtistsReverse({}, TrackArtistLinkType::Artist, std::nullopt, moreResults)};
 		CHECK(artists.size() == 1);
 		CHECK(artists.front().id() == artist1.getId());
 	}
@@ -1627,7 +1630,7 @@ testSingleTrackListMultipleTrackMultiClustersRecentlyPlayed(Session& session)
 		CHECK(trackList->getReleasesReverse({cluster2.getId()}, std::nullopt, moreResults).empty());
 		CHECK(trackList->getTracksReverse({cluster2.getId()}, std::nullopt, moreResults).empty());
 
-		CHECK(trackList->getArtistsReverse({}, TrackArtistLink::Type::ReleaseArtist, std::nullopt, moreResults).empty());
+		CHECK(trackList->getArtistsReverse({}, TrackArtistLinkType::ReleaseArtist, std::nullopt, moreResults).empty());
 	}
 
 	{
@@ -1785,10 +1788,10 @@ testMultipleTracksMultipleArtistsMultiClusters(Session& session)
 		auto transaction {session.createUniqueTransaction()};
 
 		if (i < 5)
-			TrackArtistLink::create(session, tracks.back().get(), artist1.get(), TrackArtistLink::Type::Artist);
+			TrackArtistLink::create(session, tracks.back().get(), artist1.get(), TrackArtistLinkType::Artist);
 		else
 		{
-			TrackArtistLink::create(session, tracks.back().get(), artist2.get(), TrackArtistLink::Type::Artist);
+			TrackArtistLink::create(session, tracks.back().get(), artist2.get(), TrackArtistLinkType::Artist);
 			cluster2.get().modify()->addTrack(tracks.back().get());
 		}
 
@@ -1798,7 +1801,7 @@ testMultipleTracksMultipleArtistsMultiClusters(Session& session)
 	tracks.emplace_back(session, "MyTrack" + std::to_string(tracks.size()));
 	{
 		auto transaction {session.createUniqueTransaction()};
-		TrackArtistLink::create(session, tracks.back().get(), artist3.get(), TrackArtistLink::Type::Artist);
+		TrackArtistLink::create(session, tracks.back().get(), artist3.get(), TrackArtistLinkType::Artist);
 		cluster2.get().modify()->addTrack(tracks.back().get());
 	}
 
@@ -1809,6 +1812,28 @@ testMultipleTracksMultipleArtistsMultiClusters(Session& session)
 			auto artists {artist1->getSimilarArtists()};
 			CHECK(artists.size() == 1);
 			CHECK(artists.front().id() == artist2.getId());
+		}
+
+		{
+			auto artists {artist1->getSimilarArtists({TrackArtistLinkType::Artist})};
+			CHECK(artists.size() == 1);
+			CHECK(artists.front().id() == artist2.getId());
+		}
+
+		{
+			auto artists {artist1->getSimilarArtists({TrackArtistLinkType::ReleaseArtist})};
+			CHECK(artists.empty() == 1);
+		}
+
+		{
+			auto artists {artist1->getSimilarArtists({TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist})};
+			CHECK(artists.size() == 1);
+			CHECK(artists.front().id() == artist2.getId());
+		}
+
+		{
+			auto artists {artist1->getSimilarArtists({TrackArtistLinkType::Composer})};
+			CHECK(artists.empty());
 		}
 
 		{

@@ -26,12 +26,13 @@
 #include <unordered_set>
 #include <vector>
 
-#include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
+#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/WtSqlTraits.h>
 
+#include "utils/EnumSet.hpp"
 #include "utils/UUID.hpp"
 
-#include "TrackArtistLink.hpp"
 #include "Types.hpp"
 
 namespace Database {
@@ -40,6 +41,8 @@ class Artist;
 class Cluster;
 class ClusterType;
 class Release;
+class Session;
+class TrackArtistLink;
 class TrackFeatures;
 class TrackListEntry;
 class TrackStats;
@@ -134,8 +137,9 @@ class Track : public Wt::Dbo::Dbo<Track>
 		std::optional<float>			getTrackReplayGain() const	{ return _trackReplayGain; }
 		std::optional<float>			getReleaseReplayGain() const	{ return _releaseReplayGain; }
 
-		std::vector<Wt::Dbo::ptr<Artist>>	getArtists(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;
-		std::vector<IdType>			getArtistIds(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;
+		// no artistLinkTypes means get all
+		std::vector<Wt::Dbo::ptr<Artist>>	getArtists(EnumSet<TrackArtistLinkType> artistLinkTypes) const;
+		std::vector<IdType>					getArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes) const;
 		std::vector<Wt::Dbo::ptr<TrackArtistLink>>	getArtistLinks() const;
 		Wt::Dbo::ptr<Release>			getRelease() const		{ return _release; }
 		std::vector<Wt::Dbo::ptr<Cluster>>	getClusters() const;

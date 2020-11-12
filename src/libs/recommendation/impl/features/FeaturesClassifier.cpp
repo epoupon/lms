@@ -25,6 +25,7 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackArtistLink.hpp"
 #include "database/TrackFeatures.hpp"
 #include "database/TrackList.hpp"
 #include "som/DataNormalizer.hpp"
@@ -308,9 +309,34 @@ FeaturesClassifier::getSimilarReleases(Database::Session& session, Database::IdT
 }
 
 std::unordered_set<Database::IdType>
-FeaturesClassifier::getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) const
+FeaturesClassifier::getSimilarArtists(Database::Session& session,
+		Database::IdType artistId,
+		EnumSet<Database::TrackArtistLinkType> linkTypes,
+		std::size_t maxCount) const
 {
-	auto similarArtistIds {getSimilarObjects({artistId}, _artistsMap, _artistPositions, maxCount)};
+	auto getSimilarArtistIdsForLinkType {[&] (Database::TrackArtistLinkType linkType)
+	{
+		std::unordered_set<Database::IdType> similarArtistIds;
+
+		const auto itArtists {_artistsMap.find(linkType)};
+		if (itArtists == std::cend(_artistsMap))
+		{
+			return similarArtistIds;
+		}
+
+		similarArtistIds = getSimilarObjects({artistId}, itArtists->second, _artistPositions, maxCount);
+
+		return similarArtistIds;
+	}};
+
+	std::unordered_set<Database::IdType> similarArtistIds;
+
+	for (Database::TrackArtistLinkType linkType : linkTypes)
+	{
+		const auto similarArtistIdsForLinkType {getSimilarArtistIdsForLinkType(linkType)};
+		similarArtistIds.insert(std::begin(similarArtistIdsForLinkType), std::end(similarArtistIdsForLinkType));
+	}
+
 	if (!similarArtistIds.empty())
 	{
 		// Report only existing ids
@@ -319,12 +345,15 @@ FeaturesClassifier::getSimilarArtists(Database::Session& session, Database::IdTy
 		for (auto it {std::begin(similarArtistIds)}; it != std::end(similarArtistIds);)
 		{
 			const Database::IdType similarArtistId {*it};
-			if (!Database::Release::getById(session, similarArtistId))
+			if (!Database::Artist::getById(session, similarArtistId))
 				it = similarArtistIds.erase(it);
 			else
 				it++;
 		}
 	}
+
+	while (similarArtistIds.size() > maxCount)
+		similarArtistIds.erase(Random::pickRandom(similarArtistIds));
 
 	return similarArtistIds;
 }
@@ -339,6 +368,7 @@ bool
 FeaturesClassifier::load(Database::Session& session, bool forceReload, const ProgressCallback& progressCallback)
 {
 	if (forceReload)
+
 	{
 		FeaturesClassifierCache::invalidate();
 	}
@@ -377,7 +407,6 @@ FeaturesClassifier::load(Database::Session& session,
 	const SOM::Coordinate width {network.getWidth()};
 	const SOM::Coordinate height {network.getHeight()};
 
-	_artistsMap = MatrixOfObjects {width, height};
 	_releasesMap = MatrixOfObjects {width, height};
 	_tracksMap = MatrixOfObjects {width, height};
 
@@ -407,10 +436,18 @@ FeaturesClassifier::load(Database::Session& session,
 				_releasePositions[track->getRelease().id()].insert(position);
 				_releasesMap[position].insert(track->getRelease().id());
 			}
-			for (const auto& artist : track->getArtists())
+			for (const auto& artistLink : track->getArtistLinks())
 			{
-				_artistPositions[artist.id()].insert(position);
-				_artistsMap[position].insert(artist.id());
+				_artistPositions[artistLink->getArtist().id()].insert(position);
+				auto itArtists {_artistsMap.find(artistLink->getType())};
+				if (itArtists == std::cend(_artistsMap))
+				{
+					auto [it, inserted] = _artistsMap.try_emplace(artistLink->getType(), MatrixOfObjects {});
+					assert(inserted);
+					itArtists = it;
+					itArtists->second = MatrixOfObjects {width, height};
+				}
+				itArtists->second[position].insert(artistLink->getArtist().id());
 			}
 		}
 	}

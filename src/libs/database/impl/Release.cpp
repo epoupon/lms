@@ -19,13 +19,14 @@
 
 #include "database/Release.hpp"
 
-#include "utils/Logger.hpp"
+#include <Wt/Dbo/WtSqlTraits.h>
 
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
+#include "utils/Logger.hpp"
 #include "SqlQuery.hpp"
 
 namespace Database
@@ -431,7 +432,7 @@ Release::getCopyrightURL() const
 }
 
 std::vector<Wt::Dbo::ptr<Artist>>
-Release::getArtists(TrackArtistLink::Type linkType) const
+Release::getArtists(TrackArtistLinkType linkType) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));

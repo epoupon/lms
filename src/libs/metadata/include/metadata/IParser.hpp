@@ -78,6 +78,12 @@ namespace MetaData
 		std::optional<float>	trackReplayGain;
 		std::optional<float>	albumReplayGain;
 		std::string				discSubtitle;
+		std::vector<Artist>		conductorArtists;
+		std::vector<Artist>		composerArtists;
+		std::vector<Artist>		lyricistArtists;
+		std::vector<Artist>		mixerArtists;
+		std::vector<Artist>		producerArtists;
+		std::vector<Artist>		remixerArtists;
 	};
 
 	class IParser
