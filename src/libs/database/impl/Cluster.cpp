@@ -132,11 +132,25 @@ ClusterType::getAllOrphans(Session& session)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<pointer> res = session.getDboSession().query<Wt::Dbo::ptr<ClusterType>>("select c_t from cluster_type c_t LEFT OUTER JOIN cluster c ON c_t.id = c.cluster_type_id WHERE c.id IS NULL");
+	Wt::Dbo::collection<pointer> res = session.getDboSession().query<Wt::Dbo::ptr<ClusterType>>(
+			"SELECT c_t from cluster_type c_t"
+			" LEFT OUTER JOIN cluster c ON c_t.id = c.cluster_type_id")
+		.where("c.id IS NULL");
 
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+std::vector<ClusterType::pointer>
+ClusterType::getAllUsed(Session& session)
+{
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<pointer> res = session.getDboSession().query<Wt::Dbo::ptr<ClusterType>>(
+			"SELECT DISTINCT c_t from cluster_type c_t")
+		.join("cluster c ON c_t.id = c.cluster_type_id");
+
+	return std::vector<pointer>(res.begin(), res.end());
+}
 
 ClusterType::pointer
 ClusterType::getByName(Session& session, const std::string& name)

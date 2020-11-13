@@ -67,4 +67,4 @@ See [INSTALL.md](INSTALL.md) file.
 
 ## Contributing
 
-Contributions are welcome! Please prepare your pull requests on the [develop](../../tree/develop) branch.
+Contributions are welcome! Please submit your pull requests against the [develop](../../tree/develop) branch.

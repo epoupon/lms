@@ -228,7 +228,6 @@ testSingleCluster(Session& session)
 		{
 			auto transaction {session.createUniqueTransaction()};
 
-
 			auto clusters {Cluster::getAll(session)};
 			CHECK(clusters.size() == 1);
 			CHECK(clusters.front().id() == cluster.getId());
@@ -239,6 +238,10 @@ testSingleCluster(Session& session)
 			CHECK(clusters.front().id() == cluster.getId());
 
 			auto clusterTypes {ClusterType::getAll(session)};
+			CHECK(clusterTypes.size() == 1);
+			CHECK(clusterTypes.front().id() == clusterType.getId());
+
+			clusterTypes = ClusterType::getAllUsed(session);
 			CHECK(clusterTypes.size() == 1);
 			CHECK(clusterTypes.front().id() == clusterType.getId());
 
@@ -253,6 +256,8 @@ testSingleCluster(Session& session)
 		auto clusterTypes {ClusterType::getAllOrphans(session)};
 		CHECK(clusterTypes.size() == 1);
 		CHECK(clusterTypes.front().id() == clusterType.getId());
+
+		CHECK(ClusterType::getAllUsed(session).empty());
 	}
 }
 
