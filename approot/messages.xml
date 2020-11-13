@@ -143,7 +143,12 @@
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">All artists</message>
 <message id="Lms.Explore.Artists.linktype-artist">Track artists</message>
+<message id="Lms.Explore.Artists.linktype-composer">Composers</message>
+<message id="Lms.Explore.Artists.linktype-lyricist">Lyricists</message>
+<message id="Lms.Explore.Artists.linktype-mixer">Mixers</message>
+<message id="Lms.Explore.Artists.linktype-producer">Producers</message>
 <message id="Lms.Explore.Artists.linktype-releaseartist">Album artists</message>
+<message id="Lms.Explore.Artists.linktype-remixer">Remixers</message>
 
 <!--Explore:Release-->
 <message id="Lms.Explore.Release.similar-releases">Similar albums</message>
@@ -194,6 +199,7 @@
 <message id="Lms.Settings.subsonic-artist-list-mode">Artist list mode</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">All artists</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Album artists</message>
+<message id="Lms.Settings.subsonic-artist-list-mode.track-artists">Track artists</message>
 <message id="Lms.Settings.subsonic-api">Subsonic API</message>
 <message id="Lms.Settings.transcode">Transcoding</message>
 <message id="Lms.Settings.transcode-bitrate">Transcode bitrate</message>

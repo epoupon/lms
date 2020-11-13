@@ -27,6 +27,7 @@
 #include "database/Artist.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
+#include "database/TrackArtistLink.hpp"
 #include "database/TrackList.hpp"
 #include "utils/Logger.hpp"
 
@@ -39,7 +40,7 @@ using namespace Database;
 
 namespace UserInterface {
 
-using ArtistLinkModel = ValueStringModel<std::optional<TrackArtistLink::Type>>;
+using ArtistLinkModel = ValueStringModel<std::optional<TrackArtistLinkType>>;
 
 Artists::Artists(Filters* filters)
 : Wt::WTemplate {Wt::WString::tr("Lms.Explore.Artists.template")},
@@ -68,14 +69,14 @@ Artists::Artists(Filters* filters)
 	}
 
 	_linkType = bindNew<Wt::WComboBox>("link-type");
-	{
-		auto linkTypeModel {std::make_shared<ArtistLinkModel>()};
-		linkTypeModel->add(Wt::WString::tr("Lms.Explore.Artists.linktype-all"), {});
-		linkTypeModel->add(Wt::WString::tr("Lms.Explore.Artists.linktype-artist"), TrackArtistLink::Type::Artist);
-		linkTypeModel->add(Wt::WString::tr("Lms.Explore.Artists.linktype-releaseartist"), TrackArtistLink::Type::ReleaseArtist);
-		_linkType->setModel(linkTypeModel);
-	}
+	_linkType->setModel(std::make_shared<ArtistLinkModel>());
 	_linkType->changed().connect([this] { refreshView(); });
+	refreshArtistLinkTypes();
+
+	LmsApp->getEvents().dbScanned.connect(this, [this]
+	{
+		refreshArtistLinkTypes();
+	});
 
 	_container = bindNew<Wt::WContainerWidget>("artists");
 	hideLoadingIndicator();
@@ -98,6 +99,37 @@ Artists::refreshView(Mode mode)
 {
 	_mode = mode;
 	refreshView();
+}
+
+void
+Artists::refreshArtistLinkTypes()
+{
+	std::shared_ptr<ArtistLinkModel> linkTypeModel {std::static_pointer_cast<ArtistLinkModel>(_linkType->model())};
+
+	EnumSet<Database::TrackArtistLinkType> usedLinkTypes;
+	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		usedLinkTypes = Database::TrackArtistLink::getUsedTypes(LmsApp->getDbSession());
+	}
+
+	auto addTypeIfUsed {[&](Database::TrackArtistLinkType linkType, std::string_view stringKey)
+	{
+		if (!usedLinkTypes.contains(linkType))
+			return;
+
+		linkTypeModel->add(Wt::WString::tr(std::string {stringKey}), linkType);
+	}};
+
+	linkTypeModel->clear();
+
+	linkTypeModel->add(Wt::WString::tr("Lms.Explore.Artists.linktype-all"), {});
+	addTypeIfUsed(TrackArtistLinkType::Artist, "Lms.Explore.Artists.linktype-artist");
+	addTypeIfUsed(TrackArtistLinkType::ReleaseArtist, "Lms.Explore.Artists.linktype-releaseartist");
+	addTypeIfUsed(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
+	addTypeIfUsed(TrackArtistLinkType::Lyricist, "Lms.Explore.Artists.linktype-lyricist");
+	addTypeIfUsed(TrackArtistLinkType::Mixer, "Lms.Explore.Artists.linktype-mixer");
+	addTypeIfUsed(TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
+	addTypeIfUsed(TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
 }
 
 void
@@ -125,7 +157,7 @@ Artists::getRandomArtists(std::optional<Range> range, bool& moreResults)
 {
 	std::vector<Artist::pointer> artists;
 
-	const std::optional<TrackArtistLink::Type> linkType {static_cast<ArtistLinkModel*>(_linkType->model().get())->getValue(_linkType->currentIndex())};
+	const std::optional<TrackArtistLinkType> linkType {static_cast<ArtistLinkModel*>(_linkType->model().get())->getValue(_linkType->currentIndex())};
 
 	if (_randomArtists.empty())
 		_randomArtists = Artist::getAllIdsRandom(LmsApp->getDbSession(), _filters->getClusterIds(), linkType, maxItemsPerMode[Mode::Random]);
@@ -152,7 +184,7 @@ Artists::getArtists(std::optional<Range> range, bool& moreResults)
 {
 	std::vector<Artist::pointer> artists;
 
-	const std::optional<TrackArtistLink::Type> linkType {static_cast<ArtistLinkModel*>(_linkType->model().get())->getValue(_linkType->currentIndex())};
+	const std::optional<TrackArtistLinkType> linkType {static_cast<ArtistLinkModel*>(_linkType->model().get())->getValue(_linkType->currentIndex())};
 
 	const std::optional<std::size_t> modeLimit{maxItemsPerMode[_mode]};
 	if (modeLimit)

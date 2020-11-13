@@ -81,7 +81,7 @@ createQuery(Session& session,
 		const std::string& queryStr,
 		const std::set<IdType>& clusterIds,
 		const std::vector<std::string>& keywords,
-		std::optional<TrackArtistLink::Type> linkType)
+		std::optional<TrackArtistLinkType> linkType)
 {
 	session.checkSharedLocked();
 
@@ -214,7 +214,7 @@ Artist::getAllIds(Session& session)
 }
 
 std::vector<IdType>
-Artist::getAllIdsRandom(Session& session, const std::set<IdType>& clusters, std::optional<TrackArtistLink::Type> linkType, std::optional<std::size_t> size)
+Artist::getAllIdsRandom(Session& session, const std::set<IdType>& clusters, std::optional<TrackArtistLinkType> linkType, std::optional<std::size_t> size)
 {
 	session.checkSharedLocked();
 
@@ -265,7 +265,7 @@ std::vector<Artist::pointer>
 Artist::getByFilter(Session& session,
 		const std::set<IdType>& clusters,
 		const std::vector<std::string>& keywords,
-		std::optional<TrackArtistLink::Type> linkType,
+		std::optional<TrackArtistLinkType> linkType,
 		SortMethod sortMethod,
 		std::optional<Range> range,
 		bool& moreResults)
@@ -306,7 +306,7 @@ std::vector<Artist::pointer>
 Artist::getLastWritten(Session& session,
 		std::optional<Wt::WDateTime> after,
 		const std::set<IdType>& clusters,
-		std::optional<TrackArtistLink::Type> linkType,
+		std::optional<TrackArtistLinkType> linkType,
 		std::optional<Range> range, bool& moreResults)
 {
 	session.checkSharedLocked();
@@ -338,7 +338,7 @@ std::vector<Artist::pointer>
 Artist::getStarred(Session& session,
 		User::pointer user,
 		const std::set<IdType>& clusters,
-		std::optional<TrackArtistLink::Type> linkType,
+		std::optional<TrackArtistLinkType> linkType,
 		SortMethod sortMethod,
 		std::optional<Range> range, bool& moreResults)
 {
@@ -443,7 +443,7 @@ Artist::getReleaseCount() const
 }
 
 std::vector<Wt::Dbo::ptr<Track>>
-Artist::getTracks(std::optional<TrackArtistLink::Type> linkType) const
+Artist::getTracks(std::optional<TrackArtistLinkType> linkType) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));
@@ -462,7 +462,7 @@ Artist::getTracks(std::optional<TrackArtistLink::Type> linkType) const
 }
 
 std::vector<Wt::Dbo::ptr<Track>>
-Artist::getTracksWithRelease(std::optional<TrackArtistLink::Type> linkType) const
+Artist::getTracksWithRelease(std::optional<TrackArtistLinkType> linkType) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));
@@ -497,13 +497,14 @@ Artist::getRandomTracks(std::optional<std::size_t> count) const
 }
 
 std::vector<Wt::Dbo::ptr<Artist>>
-Artist::getSimilarArtists(std::optional<std::size_t> offset, std::optional<std::size_t> count) const
+Artist::getSimilarArtists(EnumSet<TrackArtistLinkType> artistLinkTypes, std::optional<Range> range) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));
 	assert(session());
 
-	Wt::Dbo::Query<pointer> query {session()->query<pointer>(
+	std::ostringstream oss;
+	oss <<
 			"SELECT a FROM artist a"
 			" INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id"
 			" INNER JOIN track t ON t.id = t_a_l.track_id"
@@ -515,14 +516,34 @@ Artist::getSimilarArtists(std::optional<std::size_t> offset, std::optional<std::
 											" INNER JOIN artist a ON a.id = t_a_l.artist_id"
 											" INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id"
 											" WHERE a.id = ?)"
-					" AND a.id <> ?"
-				)
+					" AND a.id <> ?";
+
+	if (!artistLinkTypes.empty())
+	{
+		oss << " AND t_a_l.type IN (";
+
+		bool first {true};
+		for (TrackArtistLinkType type : artistLinkTypes)
+		{
+			(void) type;
+			if (!first)
+				oss << ", ";
+			oss << "?";
+			first = false;
+		}
+		oss << ")";
+	}
+
+	Wt::Dbo::Query<pointer> query {session()->query<pointer>(oss.str())
 		.bind(self()->id())
 		.bind(self()->id())
 		.groupBy("a.id")
 		.orderBy("COUNT(*) DESC, RANDOM()")
-		.limit(count ? static_cast<int>(*count) : -1)
-		.offset(offset ? static_cast<int>(*offset) : -1)};
+		.limit(range ? static_cast<int>(range->limit) : -1)
+		.offset(range ? static_cast<int>(range->offset) : -1)};
+
+	for (TrackArtistLinkType type : artistLinkTypes)
+		query.bind(type);
 
 	Wt::Dbo::collection<pointer> res = query;
 	return std::vector<pointer>(res.begin(), res.end());

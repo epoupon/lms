@@ -73,6 +73,12 @@ class ValueStringModel : public Wt::WStringListModel
 			setData(rowCount() - 1, 0, str, Wt::ItemDataRole::Display);
 		}
 
+		void
+		clear()
+		{
+			removeRows(0, rowCount());
+		}
+
 };
 
 } // namespace UserInterface

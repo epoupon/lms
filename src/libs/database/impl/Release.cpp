@@ -19,13 +19,14 @@
 
 #include "database/Release.hpp"
 
-#include "utils/Logger.hpp"
+#include <Wt/Dbo/WtSqlTraits.h>
 
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
+#include "utils/Logger.hpp"
 #include "SqlQuery.hpp"
 
 namespace Database
@@ -232,15 +233,15 @@ Release::getLastWritten(Session& session,
 }
 
 std::vector<Release::pointer>
-Release::getByYear(Session& session, int yearFrom, int yearTo, std::optional<std::size_t> offset, std::optional<std::size_t> limit)
+Release::getByYear(Session& session, int yearFrom, int yearTo, std::optional<Range> range)
 {
 	Wt::Dbo::collection<Release::pointer> res = session.getDboSession().query<Release::pointer>
 		("SELECT DISTINCT r from release r INNER JOIN track t ON r.id = t.release_id")
 		.where("t.year >= ?").bind(yearFrom)
 		.where("t.year <= ?").bind(yearTo)
 		.orderBy("t.year, r.name COLLATE NOCASE")
-		.offset(offset ? static_cast<int>(*offset) : -1)
-		.limit(limit ? static_cast<int>(*limit) : -1);
+		.offset(range ? static_cast<int>(range->offset) : -1)
+		.limit(range ? static_cast<int>(range->limit) : -1);
 
 	return std::vector<pointer>(res.begin(), res.end());
 }
@@ -431,7 +432,7 @@ Release::getCopyrightURL() const
 }
 
 std::vector<Wt::Dbo::ptr<Artist>>
-Release::getArtists(TrackArtistLink::Type linkType) const
+Release::getArtists(TrackArtistLinkType linkType) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));
@@ -530,6 +531,20 @@ std::size_t
 Release::getTracksCount() const
 {
 	return _tracks.size();
+}
+
+Wt::Dbo::ptr<Track>
+Release::getFirstTrack() const
+{
+	assert(self());
+	assert(self()->id() != Wt::Dbo::dbo_traits<Artist>::invalidId());
+	assert(session());
+
+	return session()->query<Track::pointer>("SELECT t from track t")
+		.join("release r ON t.release_id = r.id")
+		.where("r.id = ?").bind(self()->id())
+		.orderBy("t.disc_number,t.track_number")
+		.limit(1);
 }
 
 std::chrono::milliseconds

@@ -65,7 +65,10 @@ class FeaturesClassifier : public IClassifier
 		std::unordered_set<Database::IdType> getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const override;
 		std::unordered_set<Database::IdType> getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) const override;
 		std::unordered_set<Database::IdType> getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const override;
-		std::unordered_set<Database::IdType> getSimilarArtists(Database::Session& session, Database::IdType artistId, std::size_t maxCount) const override;
+		std::unordered_set<Database::IdType> getSimilarArtists(Database::Session& session,
+				Database::IdType artistId,
+				EnumSet<Database::TrackArtistLinkType> linkTypes,
+				std::size_t maxCount) const override;
 
 		bool loadFromCache(Database::Session& session, const FeaturesClassifierCache& cache);
 
@@ -99,8 +102,8 @@ class FeaturesClassifier : public IClassifier
 		std::unique_ptr<SOM::Network>	_network;
 		double				_networkRefVectorsDistanceMedian {};
 
-		MatrixOfObjects		_artistsMap;
-		ObjectPositions		_artistPositions;
+		ObjectPositions     _artistPositions;
+		std::unordered_map<Database::TrackArtistLinkType, MatrixOfObjects> _artistsMap;
 
 		MatrixOfObjects		_releasesMap;
 		ObjectPositions		_releasePositions;

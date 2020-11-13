@@ -419,7 +419,7 @@ PlayQueue::addSome()
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-		const auto artists {track->getArtists()};
+		const auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
 		const auto release {track->getRelease()};
 
 		if (!artists.empty() || release)

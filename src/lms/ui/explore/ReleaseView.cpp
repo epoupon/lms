@@ -54,12 +54,12 @@ Release::Release(Filters* filters)
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	wApp->internalPathChanged().connect([=]
+	wApp->internalPathChanged().connect(this, [this]
 	{
 		refreshView();
 	});
 
-	filters->updated().connect([=]
+	filters->updated().connect([this]
 	{
 		refreshView();
 	});
@@ -214,7 +214,7 @@ Release::refreshView()
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-		auto artists {track->getArtists()};
+		const auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
 		if (variousArtists && !artists.empty())
 		{
 			entry->setCondition("if-has-artists", true);

@@ -20,11 +20,12 @@
 #pragma once
 
 #include <optional>
+#include <set>
 
-#include <Wt/Dbo/WtSqlTraits.h>
+#include <Wt/WDateTime.h>
+#include <Wt/Dbo/Dbo.h>
 
 #include "utils/UUID.hpp"
-#include "TrackArtistLink.hpp"
 #include "Types.hpp"
 
 namespace Database
@@ -34,6 +35,7 @@ class Artist;
 class Cluster;
 class ClusterType;
 class Release;
+class Session;
 class Track;
 class User;
 
@@ -58,7 +60,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static std::vector<pointer>	getAllRandom(Session& session, const std::set<IdType>& clusters, std::optional<std::size_t> size = {});
 		static std::vector<IdType>	getAllIdsRandom(Session& session, const std::set<IdType>& clusters, std::optional<std::size_t> size = {});
 		static std::vector<pointer>	getLastWritten(Session& session, std::optional<Wt::WDateTime> after, const std::set<IdType>& clusters, std::optional<Range> range, bool& moreResults);
-		static std::vector<pointer>	getByYear(Session& session, int yearFrom, int yearTo, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getByYear(Session& session, int yearFrom, int yearTo, std::optional<Range> range = std::nullopt);
 		static std::vector<pointer> getStarred(Session& session, Wt::Dbo::ptr<User> user, const std::set<IdType>& clusters, std::optional<Range> range, bool& moreResults);
 
 		static std::vector<pointer>	getByClusters(Session& session, const std::set<IdType>& clusters);
@@ -71,6 +73,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 
 		std::vector<Wt::Dbo::ptr<Track>> getTracks(const std::set<IdType>& clusters = std::set<IdType>()) const;
 		std::size_t			getTracksCount() const;
+		Wt::Dbo::ptr<Track>			getFirstTrack() const;
 
 		// Get the cluster of the tracks that belong to this release
 		// Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)
@@ -94,8 +97,8 @@ class Release : public Wt::Dbo::Dbo<Release>
 		Wt::WDateTime				getLastWritten() const;
 
 		// Get the artists of this release
-		std::vector<Wt::Dbo::ptr<Artist> > getArtists(TrackArtistLink::Type type = TrackArtistLink::Type::Artist) const;
-		std::vector<Wt::Dbo::ptr<Artist> > getReleaseArtists() const { return getArtists(TrackArtistLink::Type::ReleaseArtist); }
+		std::vector<Wt::Dbo::ptr<Artist> > getArtists(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
+		std::vector<Wt::Dbo::ptr<Artist> > getReleaseArtists() const { return getArtists(TrackArtistLinkType::ReleaseArtist); }
 		bool hasVariousArtists() const;
 		std::vector<pointer>		getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
 

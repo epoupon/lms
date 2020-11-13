@@ -42,13 +42,13 @@ namespace MetaData
 
 template<typename T>
 std::vector<T>
-getPropertyValuesFirstMatchAs(const TagLib::PropertyMap& properties, const std::set<std::string>& keys)
+getPropertyValuesFirstMatchAs(const TagLib::PropertyMap& properties, const std::vector<std::string_view>& keys)
 {
 	std::vector<T> res;
 
-	for (const std::string& key : keys)
+	for (std::string_view key : keys)
 	{
-		const TagLib::StringList& values {properties[key]};
+		const TagLib::StringList& values {properties[std::string {key}]};
 		if (values.isEmpty())
 			continue;
 
@@ -91,12 +91,13 @@ splitAndTrimString(const std::string& str, const std::string& delimiters)
 
 static
 std::vector<Artist>
-getArtists(const TagLib::PropertyMap& properties)
+getArtists(const TagLib::PropertyMap& properties,
+		const std::vector<std::string_view>& artistTagNames,
+		const std::vector<std::string_view>& artistSortTagNames,
+		const std::vector<std::string_view>& artistMBIDTagNames
+		)
 {
-	std::vector<std::string> artistNames {getPropertyValuesAs<std::string>(properties, "ARTISTS")};
-	if (artistNames.empty())
-		artistNames = getPropertyValuesAs<std::string>(properties, "ARTIST");
-
+	const std::vector<std::string> artistNames {getPropertyValuesFirstMatchAs<std::string>(properties, artistTagNames)};
 	if (artistNames.empty())
 		return {};
 
@@ -106,7 +107,7 @@ getArtists(const TagLib::PropertyMap& properties)
 		[&](const std::string& name) { return Artist {name}; });
 
 	{
-		const std::vector<std::string> artistSortNames {getPropertyValuesAs<std::string>(properties, "ARTISTSORT")};
+		const std::vector<std::string> artistSortNames {getPropertyValuesFirstMatchAs<std::string>(properties, artistSortTagNames)};
 		if (artistSortNames.size() == artists.size())
 		{
 			for (std::size_t i {}; i < artistSortNames.size(); ++i)
@@ -115,7 +116,7 @@ getArtists(const TagLib::PropertyMap& properties)
 	}
 
 	{
-		const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"})};
+		const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, artistMBIDTagNames)};
 
 		if (artistNames.size() == artistsMBID.size())
 		{
@@ -124,41 +125,6 @@ getArtists(const TagLib::PropertyMap& properties)
 		}
 	}
 
-
-	return artists;
-}
-
-static
-std::vector<Artist>
-getAlbumArtists(const TagLib::PropertyMap& properties)
-{
-	std::vector<std::string> artistNames {getPropertyValuesAs<std::string>(properties, "ALBUMARTIST")};
-	if (artistNames.empty())
-		return {};
-
-	std::vector<Artist> artists;
-	artists.reserve(artistNames.size());
-	std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(artists),
-		[&](const std::string& name) { return Artist {name}; });
-
-	{
-		const std::vector<std::string> artistSortNames {getPropertyValuesAs<std::string>(properties, "ALBUMARTISTSORT")};
-		if (artistSortNames.size() == artists.size())
-		{
-			for (std::size_t i {}; i < artistSortNames.size(); ++i)
-				artists[i].sortName = artistSortNames[i];
-		}
-	}
-
-	{
-		const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"})};
-
-		if (artistsMBID.size() == artists.size())
-		{
-			for (std::size_t i {}; i < artistsMBID.size(); ++i)
-				artists[i].musicBrainzArtistID = artistsMBID[i];
-		}
-	}
 
 	return artists;
 }
@@ -430,9 +396,15 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 		processTag(track, tag, values, debug);
 	}
 
-	track.artists = getArtists(properties);
-	track.albumArtists = getAlbumArtists(properties);
 	track.album = getAlbum(properties);
+	track.artists = getArtists(properties, {"ARTISTS", "ARTIST"}, {"ARTISTSORT"}, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"});
+	track.albumArtists = getArtists(properties, {"ALBUMARTIST"}, {"ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"});
+	track.conductorArtists = getArtists(properties, {"CONDUCTOR"}, {""}, {});
+	track.composerArtists = getArtists(properties, {"COMPOSER"}, {"COMPOSERSORT"}, {});
+	track.lyricistArtists = getArtists(properties, {"LYRICIST"}, {"LYRICISTSORT"}, {});
+	track.mixerArtists = getArtists(properties, {"MIXER"}, {""}, {});
+	track.producerArtists = getArtists(properties, {"PRODUCER"}, {""}, {});
+	track.remixerArtists = getArtists(properties, {"REMIXER", "ModifiedBy"}, {""}, {});
 
 	return track;
 }

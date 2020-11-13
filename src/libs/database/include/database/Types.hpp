@@ -35,5 +35,21 @@ namespace Database
 		std::size_t offset {};
 		std::size_t limit {};
 	};
+
+	enum class TrackArtistLinkType
+	{
+		Artist,	// regular artist
+		Arranger,
+		Composer,
+		Conductor,
+		Lyricist,
+		Mixer,
+		Performer,
+		Producer,
+		ReleaseArtist,
+		Remixer,
+		Writer,
+	};
+
 }
 

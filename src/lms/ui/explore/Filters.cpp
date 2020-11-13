@@ -52,7 +52,7 @@ Filters::showDialog()
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		const auto types {Database::ClusterType::getAll(LmsApp->getDbSession())};
+		const auto types {Database::ClusterType::getAllUsed(LmsApp->getDbSession())};
 		for (const Database::ClusterType::pointer& type : types)
 			typeCombo->addItem(Wt::WString::fromUTF8(type->getName()));
 

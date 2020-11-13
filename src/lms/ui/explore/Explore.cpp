@@ -113,7 +113,7 @@ Explore::Explore(Filters* filters)
 	tracks->tracksAction.connect(this, &Explore::handleTracksAction);
 	contentsStack->addWidget(std::move(tracks));
 
-	wApp->internalPathChanged().connect([=]
+	wApp->internalPathChanged().connect(this, [=]
 	{
 		handleContentsPathChange(contentsStack);
 	});

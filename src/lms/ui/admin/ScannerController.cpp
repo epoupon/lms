@@ -28,6 +28,8 @@
 #include <Wt/WResource.h>
 #include <Wt/WSplitButton.h>
 
+#include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "utils/Service.hpp"
 #include "LmsApplication.hpp"
 
@@ -82,8 +84,22 @@ class ReportResource : public Wt::WResource
 
 			response.out() << Wt::WString::tr("Lms.Admin.ScannerController.duplicates-header").arg(_stats.duplicates.size()).toUTF8() << std::endl;
 
-			for (const auto& duplicate : _stats.duplicates)
-				response.out() << duplicate.file.string() << " - " << duplicateReasonToWString(duplicate.reason).toUTF8() << std::endl;
+			{
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				for (const auto& duplicate : _stats.duplicates)
+				{
+					const auto& track {Database::Track::getById(LmsApp->getDbSession(), duplicate.trackId)};
+					if (!track)
+						continue;
+
+					response.out() << track->getPath().string();
+					if (auto mbid {track->getMBID()})
+						response.out() << " (MBID " << mbid->getAsString() << ")";
+
+					response.out() << " - " << duplicateReasonToWString(duplicate.reason).toUTF8() << '\n';
+				}
+			}
 		}
 
 	private:
@@ -123,7 +139,7 @@ ScannerController::ScannerController()
 
 	auto onDbEvent = [&]() { refreshContents(); };
 
-	LmsApp->getEvents().dbScanStarted.connect(this, []()
+	LmsApp->getEvents().dbScanStarted.connect(this, []
 	{
 		LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
 	});

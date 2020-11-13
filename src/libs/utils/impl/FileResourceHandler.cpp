@@ -60,7 +60,7 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 		const ::uint64_t fileSize {static_cast<::uint64_t>(ifs.tellg())};
 		ifs.seekg(0, std::ios::beg);
 
-		LMS_LOG(UTILS, DEBUG) << "fileSize = " << fileSize;
+		LMS_LOG(UTILS, DEBUG) << "File '" << _path.string() << "', fileSize = " << fileSize;
 
 		const Wt::Http::Request::ByteRangeSpecifier ranges {request.getRanges(fileSize)};
 		if (!ranges.isSatisfiable())

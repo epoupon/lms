@@ -316,7 +316,8 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 
 	trackResponse.setAttribute("coverArt", IdToString({Id::Type::Track, track.id()}));
 
-	auto artists {track->getArtists()};
+	const std::vector<Artist::pointer>& artists {track->getArtists({TrackArtistLinkType::Artist})};
+	LMS_LOG(API_SUBSONIC, DEBUG) << "Artists count = " << artists.size();
 	if (!artists.empty())
 	{
 		trackResponse.setAttribute("artist", getArtistNames(artists));
@@ -479,7 +480,7 @@ userToResponseNode(const User::pointer& user)
 	Response::Node userNode;
 
 	userNode.setAttribute("username", user->getLoginName());
-	userNode.setAttribute("scrobblingEnabled", false);
+	userNode.setAttribute("scrobblingEnabled", true);
 	userNode.setAttribute("adminRole", user->isAdmin());
 	userNode.setAttribute("settingsRole", true);
 	userNode.setAttribute("downloadRole", true);
@@ -704,11 +705,13 @@ Response
 handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 {
 	// Mandatory params
-	std::string type {getMandatoryParameterAs<std::string>(context.parameters, "type")};
+	const std::string type {getMandatoryParameterAs<std::string>(context.parameters, "type")};
 
 	// Optional params
-	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(10)};
-	std::size_t offset {getParameterAs<std::size_t>(context.parameters, "offset").value_or(0)};
+	const std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(10)};
+	const std::size_t offset {getParameterAs<std::size_t>(context.parameters, "offset").value_or(0)};
+
+	const Range range {offset, size};
 
 	std::vector<Release::pointer> releases;
 
@@ -718,35 +721,13 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	if (type == "random")
+	if (type == "alphabeticalByName")
 	{
-		// Random results are paginated, but there is no acceptable way to handle the pagination params without repeating some albums
-		releases = Release::getAllRandom(context.dbSession, {}, size);
-	}
-	else if (type == "newest")
-	{
-		bool moreResults {};
-		releases = Release::getLastWritten(context.dbSession, std::nullopt, {}, Range {offset, size}, moreResults);
-	}
-	else if (type == "alphabeticalByName")
-	{
-		releases = Release::getAll(context.dbSession, Range {offset, size});
+		releases = Release::getAll(context.dbSession, range);
 	}
 	else if (type == "alphabeticalByArtist")
 	{
 		releases = Release::getAllOrderedByArtist(context.dbSession, offset, size);
-	}
-	else if (type == "byYear")
-	{
-		int fromYear {getMandatoryParameterAs<int>(context.parameters, "fromYear")};
-		int toYear {getMandatoryParameterAs<int>(context.parameters, "toYear")};
-
-		releases = Release::getByYear(context.dbSession, fromYear, toYear, offset, size);
-	}
-	else if (type == "starred")
-	{
-		bool moreResults {};
-		releases = Release::getStarred(context.dbSession, user, {}, Range {offset, size}, moreResults);
 	}
 	else if (type == "byGenre")
 	{
@@ -760,9 +741,41 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 			if (cluster)
 			{
 				bool more;
-				releases = Release::getByFilter(context.dbSession, {cluster.id()}, {}, Range {offset, size}, more);
+				releases = Release::getByFilter(context.dbSession, {cluster.id()}, {}, range, more);
 			}
 		}
+	}
+	else if (type == "byYear")
+	{
+		int fromYear {getMandatoryParameterAs<int>(context.parameters, "fromYear")};
+		int toYear {getMandatoryParameterAs<int>(context.parameters, "toYear")};
+
+		releases = Release::getByYear(context.dbSession, fromYear, toYear, range);
+	}
+	else if (type == "frequent")
+	{
+		bool moreResults {};
+		releases = user->getPlayedTrackList(context.dbSession)->getTopReleases({}, range, moreResults);
+	}
+	else if (type == "newest")
+	{
+		bool moreResults {};
+		releases = Release::getLastWritten(context.dbSession, std::nullopt, {}, range, moreResults);
+	}
+	else if (type == "random")
+	{
+		// Random results are paginated, but there is no acceptable way to handle the pagination params without repeating some albums
+		releases = Release::getAllRandom(context.dbSession, {}, size);
+	}
+	else if (type == "recent")
+	{
+		bool moreResults {};
+		releases = user->getPlayedTrackList(context.dbSession)->getReleasesReverse({}, range, moreResults);
+	}
+	else if (type == "starred")
+	{
+		bool moreResults {};
+		releases = Release::getStarred(context.dbSession, user, {}, range, moreResults);
 	}
 	else
 		throw NotImplementedGenericError {};
@@ -881,7 +894,10 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 			artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
 	}
 
-	auto similarArtistsId {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession, id.value, count)};
+	auto similarArtistsId {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession,
+			id.value,
+			{TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist},
+			count)};
 
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
@@ -931,13 +947,16 @@ handleGetArtistsRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	std::optional<TrackArtistLink::Type> linkType;
+	std::optional<TrackArtistLinkType> linkType;
 	switch (user->getSubsonicArtistListMode())
 	{
 		case User::SubsonicArtistListMode::AllArtists:
 			break;
 		case User::SubsonicArtistListMode::ReleaseArtists:
-			linkType = TrackArtistLink::Type::ReleaseArtist;
+			linkType = TrackArtistLinkType::ReleaseArtist;
+			break;
+		case User::SubsonicArtistListMode::TrackArtists:
+			linkType = TrackArtistLinkType::Artist;
 			break;
 	}
 
@@ -1075,13 +1094,16 @@ handleGetIndexesRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	std::optional<TrackArtistLink::Type> linkType;
+	std::optional<TrackArtistLinkType> linkType;
 	switch (user->getSubsonicArtistListMode())
 	{
 		case User::SubsonicArtistListMode::AllArtists:
 			break;
 		case User::SubsonicArtistListMode::ReleaseArtists:
-			linkType = TrackArtistLink::Type::ReleaseArtist;
+			linkType = TrackArtistLinkType::ReleaseArtist;
+			break;
+		case User::SubsonicArtistListMode::TrackArtists:
+			linkType = TrackArtistLinkType::Artist;
 			break;
 	}
 
@@ -1103,36 +1125,39 @@ Response
 handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
-	if (id.type != Id::Type::Artist)
+	const Id artistId {getMandatoryParameterAs<Id>(context.parameters, "id")};
+	if (artistId.type != Id::Type::Artist)
 		throw BadParameterGenericError {"id"};
 
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(50)};
 
-	auto similarArtistsId {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession, id.value, 5)};
+	auto similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession,
+			artistId.value,
+			{TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist},
+			5)};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
+	const Artist::pointer artist {Artist::getById(context.dbSession, artistId.value)};
 	if (!artist)
 		throw RequestedDataNotFoundError {};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	const User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
 	// "Returns a random collection of songs from the given artist and similar artists"
 	auto tracks {artist->getRandomTracks(count / 2)};
-	for ( const auto& similarArtistId : similarArtistsId )
+	for (const Database::IdType similarArtistId : similarArtistIds)
 	{
-		Artist::pointer similarArtist {Artist::getById(context.dbSession, similarArtistId)};
+		const Artist::pointer similarArtist {Artist::getById(context.dbSession, similarArtistId)};
 		if (!similarArtist)
 			continue;
 
 		auto similarArtistTracks {similarArtist->getRandomTracks((count / 2) / 5)};
 
-		tracks.insert(tracks.end(),
+		tracks.insert(std::end(tracks),
 				std::make_move_iterator(std::begin(similarArtistTracks)),
 				std::make_move_iterator(std::end(similarArtistTracks)));
 	}
@@ -1549,6 +1574,34 @@ handleUnstarRequest(RequestContext& context)
 
 static
 Response
+handleScrobble(RequestContext& context)
+{
+	const std::vector<Id> ids {getMandatoryMultiParametersAs<Id>(context.parameters, "id")};
+	// TODO handle time in some way (need underlying refacto)
+
+	if (!std::all_of(std::cbegin(ids), std::cend(ids), [](const Id& id) { return id.type == Id::Type::Track; }))
+		throw BadParameterGenericError {"id"};
+
+	auto transaction {context.dbSession.createUniqueTransaction()};
+
+	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	if (!user)
+		throw RequestedDataNotFoundError {};
+
+	for (Id id : ids)
+	{
+		Track::pointer track {Track::getById(context.dbSession, id.value)};
+		if (!track)
+			continue;
+
+		TrackListEntry::create(context.dbSession, track, user->getPlayedTrackList(context.dbSession));
+	}
+
+	return Response::createOkResponse(context);
+}
+
+static
+Response
 handleUpdateUserRequest(RequestContext& context)
 {
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
@@ -1824,10 +1877,10 @@ static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"getAvatar",		{handleNotImplemented,			false}},
 
 	// Media annotation
-	{"star",		{handleStarRequest,			false}},
-	{"unstar",		{handleUnstarRequest,			false}},
+	{"star",			{handleStarRequest,				false}},
+	{"unstar",			{handleUnstarRequest,			false}},
 	{"setRating",		{handleNotImplemented,			false}},
-	{"scrobble",		{handleNotImplemented,			false}},
+	{"scrobble",		{handleScrobble,				false}},
 
 	// Sharing
 	{"getShares",		{handleNotImplemented,			false}},

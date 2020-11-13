@@ -47,7 +47,7 @@ namespace UserInterface::TrackListHelpers
 		Wt::WText* name {entry->bindNew<Wt::WText>("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain)};
 		name->setToolTip(Wt::WString::fromUTF8(track->getName()));
 
-		const auto artists {track->getArtists()};
+		const auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		const Release::pointer release {track->getRelease()};
 		const IdType trackId {track.id()};
 

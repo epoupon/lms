@@ -541,7 +541,7 @@ LmsApplication::createHome()
 	{
 		const std::string sessionId {LmsApp->sessionId()};
 
-		Service<Scanner::IMediaScanner>::get()->scanStarted().connect(this, [=] ()
+		Service<Scanner::IMediaScanner>::get()->scanStarted().connect(this, [=]
 		{
 			Wt::WServer::instance()->post(sessionId, [=]
 			{
@@ -550,9 +550,9 @@ LmsApplication::createHome()
 			});
 		});
 
-		Service<Scanner::IMediaScanner>::get()->scanComplete().connect(this, [=] ()
+		Service<Scanner::IMediaScanner>::get()->scanComplete().connect(this, [=]
 		{
-			Wt::WServer::instance()->post(sessionId, [=]
+			Wt::WServer::instance()->post(sessionId, [this]
 			{
 				_events.dbScanned.emit();
 				triggerUpdate();

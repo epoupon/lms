@@ -25,7 +25,7 @@
 
 namespace Database {
 
-TrackArtistLink::TrackArtistLink(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist, Type type)
+TrackArtistLink::TrackArtistLink(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist, TrackArtistLinkType type)
 : _type {type},
 _track {track},
 _artist {artist}
@@ -33,7 +33,7 @@ _artist {artist}
 }
 
 TrackArtistLink::pointer
-TrackArtistLink::create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist,Type type)
+TrackArtistLink::create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist, TrackArtistLinkType type)
 {
 	session.checkUniqueLocked();
 
@@ -41,6 +41,16 @@ TrackArtistLink::create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::pt
 	session.getDboSession().flush();
 
 	return res;
+}
+
+EnumSet<TrackArtistLinkType>
+TrackArtistLink::getUsedTypes(Session& session)
+{
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<TrackArtistLinkType> collection = session.getDboSession().query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link");
+
+	return EnumSet<TrackArtistLinkType>(std::begin(collection), std::end(collection));
 }
 
 }

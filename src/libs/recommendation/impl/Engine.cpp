@@ -132,7 +132,10 @@ Engine::getSimilarReleases(Database::Session& dbSession, Database::IdType releas
 }
 
 std::unordered_set<Database::IdType>
-Engine::getSimilarArtists(Database::Session& dbSession, Database::IdType artistId, std::size_t maxCount)
+Engine::getSimilarArtists(Database::Session& dbSession,
+		Database::IdType artistId,
+		EnumSet<Database::TrackArtistLinkType> linkTypes,
+		std::size_t maxCount)
 {
 	std::unordered_set<Database::IdType> res;
 
@@ -144,7 +147,7 @@ Engine::getSimilarArtists(Database::Session& dbSession, Database::IdType artistI
 			continue;
 
 		const IClassifier& classifier {*itClassifier->second};
-		res = classifier.getSimilarArtists(dbSession, artistId, maxCount);
+		res = classifier.getSimilarArtists(dbSession, artistId, linkTypes, maxCount);
 		if (!res.empty())
 		{
 			LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar artists using classifier '" << classifier.getName() << "'";

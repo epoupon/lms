@@ -333,6 +333,7 @@ class SettingsModel : public Wt::WFormModel
 			_subsonicArtistListModeModel = std::make_shared<ValueStringModel<User::SubsonicArtistListMode>>();
 			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.all-artists"), User::SubsonicArtistListMode::AllArtists);
 			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.release-artists"), User::SubsonicArtistListMode::ReleaseArtists);
+			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.track-artists"), User::SubsonicArtistListMode::TrackArtists);
 		}
 
 		bool _withOldPassword {};
@@ -346,12 +347,12 @@ class SettingsModel : public Wt::WFormModel
 
 SettingsView::SettingsView()
 {
-	wApp->internalPathChanged().connect([=]
+	wApp->internalPathChanged().connect(this, [this]
 	{
 		refreshView();
 	});
 
-	LmsApp->getMediaPlayer().settingsLoaded.connect([=]()
+	LmsApp->getMediaPlayer().settingsLoaded.connect([this]
 	{
 		refreshView();
 	});

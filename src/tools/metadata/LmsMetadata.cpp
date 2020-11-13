@@ -76,8 +76,26 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 	for (const Artist& artist : track->artists)
 		std::cout << "Artist: " << artist << std::endl;
 
-	for (const Artist& artist: track->albumArtists)
+	for (const Artist& artist : track->albumArtists)
 		std::cout << "Album artist: " << artist << std::endl;
+
+	for (const Artist& artist : track->conductorArtists)
+		std::cout << "Conductor: " << artist << std::endl;
+
+	for (const Artist& artist : track->composerArtists)
+		std::cout << "Composer: " << artist << std::endl;
+
+	for (const Artist& artist : track->lyricistArtists)
+		std::cout << "Lyricist: " << artist << std::endl;
+
+	for (const Artist& artist : track->mixerArtists)
+		std::cout << "Mixer: " << artist << std::endl;
+
+	for (const Artist& artist : track->producerArtists)
+		std::cout << "Producer: " << artist << std::endl;
+
+	for (const Artist& artist : track->remixerArtists)
+		std::cout << "Remixer: " << artist << std::endl;
 
 	if (track->album)
 		std::cout << "Album: " << *track->album << std::endl;

@@ -56,6 +56,7 @@ class Artists : public Wt::WTemplate
 
 		void refreshView();
 		void refreshView(Mode mode);
+		void refreshArtistLinkTypes();
 		void displayLoadingIndicator();
 		void hideLoadingIndicator();
 		void addSome();
