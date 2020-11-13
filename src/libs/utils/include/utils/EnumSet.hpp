@@ -31,7 +31,6 @@ class EnumSet
 	using index_type = std::uint_fast8_t;
 
 	public:
-
 		EnumSet() = default;
 		constexpr EnumSet(std::initializer_list<T> values)
 		{
@@ -119,7 +118,6 @@ class EnumSet
 		}
 
 	private:
-
 		static_assert(std::numeric_limits<index_type>::max() >= sizeof(underlying_type) * 8);
 		enum : index_type { npos = sizeof(underlying_type) * 8 };
 

@@ -38,6 +38,44 @@ using RawImage = CoverArt::GraphicsMagick::RawImage;
 #include "utils/Utils.hpp"
 #include "Exception.hpp"
 
+namespace
+{
+	struct TrackInfo
+	{
+		bool hasCover {};
+		bool isMultiDisc {};
+		std::filesystem::path trackPath;
+		std::optional<Database::IdType> releaseId;
+	};
+
+	std::optional<TrackInfo>
+	getTrackInfo(Database::Session& dbSession, Database::IdType trackId)
+	{
+		std::optional<TrackInfo> res;
+
+		auto transaction {dbSession.createSharedTransaction()};
+
+		const Database::Track::pointer track {Database::Track::getById(dbSession, trackId)};
+		if (!track)
+			return res;
+
+		res = TrackInfo {};
+
+		res->hasCover = track->hasCover();
+		res->trackPath = track->getPath();
+
+		if (const Database::Release::pointer& release {track->getRelease()})
+		{
+			res->releaseId = release.id();
+			if (release->getTotalDisc() > 1)
+				res->isMultiDisc = true;
+		}
+
+		return res;
+	}
+}
+
+
 namespace CoverArt {
 
 static
@@ -282,6 +320,9 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, Im
 	return getFromTrack(dbSession, trackId, width, true /* allow release fallback*/);
 }
 
+
+
+
 std::shared_ptr<IEncodedImage>
 Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width, bool allowReleaseFallback)
 {
@@ -293,40 +334,7 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, Im
 	if (cover)
 		return cover;
 
-	struct TrackInfo
-	{
-		bool hasCover {};
-		bool isMultiDisc {};
-		std::filesystem::path trackPath;
-		std::optional<Database::IdType> releaseId;
-	};
-
-	auto getTrackInfo {[&]
-	{
-		std::optional<TrackInfo> res;
-
-		auto transaction {dbSession.createSharedTransaction()};
-
-		const Track::pointer track {Track::getById(dbSession, trackId)};
-		if (!track)
-			return res;
-
-		res = TrackInfo {};
-
-		res->hasCover = track->hasCover();
-		res->trackPath = track->getPath();
-
-		if (const Release::pointer& release {track->getRelease()})
-		{
-			res->releaseId = release.id();
-			if (release->getTotalDisc() > 1)
-				res->isMultiDisc = true;
-		}
-
-		return res;
-	}};
-
-	if (const std::optional<TrackInfo> trackInfo {getTrackInfo()})
+	if (const std::optional<TrackInfo> trackInfo {getTrackInfo(dbSession, trackId)})
 	{
 		if (trackInfo->hasCover)
 			cover = getFromTrack(trackInfo->trackPath, width);
