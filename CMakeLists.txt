@@ -18,6 +18,7 @@ find_package(Wt REQUIRED COMPONENTS Wt Dbo DboSqlite3 HTTP)
 find_package(PAM)
 find_package(STB)
 pkg_check_modules(GRAPHICSMAGICKXX GraphicsMagick++)
+pkg_check_modules(CONFIG++ REQUIRED IMPORTED_TARGET libconfig++)
 
 # WT
 if (NOT Wt_FOUND)

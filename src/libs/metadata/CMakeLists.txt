@@ -14,7 +14,7 @@ target_include_directories(lmsmetadata PRIVATE
 
 target_link_libraries(lmsmetadata PRIVATE
 	lmsav
-	tag
+	${Taglib_LIBRARIES}
 	)
 
 target_link_libraries(lmsmetadata PUBLIC
