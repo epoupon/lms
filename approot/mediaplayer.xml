@@ -31,7 +31,7 @@
 					${title class="Lms-player-text Lms-trackname text-primary"}
 				</div>
 				<div class="Lms-player-text-center">
-					<span class="hidden-xs">${release class="Lms-btn Lms-player-text Lms-releasename text-primary"}</span><small>${artist class="Lms-btn Lms-player-text Lms-artistname text-muted"}</small>
+					${release class="Lms-btn Lms-player-text Lms-releasename text-primary"}<span class="hidden-xs"><small>${artist class="Lms-btn Lms-player-text Lms-artistname text-muted"}</small></span>
 				</div>
 			</div>
 			<div class="hidden-xs col-sm-2 Lms-player-duration text-muted">
