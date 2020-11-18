@@ -121,7 +121,7 @@ updateArtistIfNeeded(const Artist::pointer& artist, const MetaData::Artist& arti
 }
 
 std::vector<Artist::pointer>
-getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artistsInfo)
+getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artistsInfo, bool allowFallbackOnMBIDEntries)
 {
 	std::vector<Artist::pointer> artists;
 
@@ -148,11 +148,11 @@ getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artist
 			for (const Artist::pointer& sameNamedArtist : Artist::getByName(session, artistInfo.name))
 			{
 				// Do not fallback on artist that is correctly tagged
-				if (!sameNamedArtist->getMBID())
-				{
-					artist = sameNamedArtist;
-					break;
-				}
+				if (!allowFallbackOnMBIDEntries && sameNamedArtist->getMBID())
+					continue;
+
+				artist = sameNamedArtist;
+				break;
 			}
 
 			// No Artist found with the same name and without MBID -> creating
@@ -771,28 +771,31 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	assert(track);
 
 	track.modify()->clearArtistLinks();
-	for (const Artist::pointer& artist : getOrCreateArtists(_dbSession, trackInfo->artists))
+	// Do not fallback on artists with the same name but having a MBID for artist and releaseArtists, as it may be corrected by properly tagging files
+	for (const Artist::pointer& artist : getOrCreateArtists(_dbSession, trackInfo->artists, false))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, artist, Database::TrackArtistLinkType::Artist));
 
-	for (const Artist::pointer& releaseArtist : getOrCreateArtists(_dbSession, trackInfo->albumArtists))
+	for (const Artist::pointer& releaseArtist : getOrCreateArtists(_dbSession, trackInfo->albumArtists, false))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, releaseArtist, Database::TrackArtistLinkType::ReleaseArtist));
 
-	for (const Artist::pointer& conductor : getOrCreateArtists(_dbSession, trackInfo->conductorArtists))
+	// Allow fallbacks on artists with the same name even if they have MBID, since there is no tag to indicate the MBID of these artists
+	// We could ask MusicBrainz to get all the information, but that would heavily slow down the import process
+	for (const Artist::pointer& conductor : getOrCreateArtists(_dbSession, trackInfo->conductorArtists, true))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, conductor, Database::TrackArtistLinkType::Conductor));
 
-	for (const Artist::pointer& composer : getOrCreateArtists(_dbSession, trackInfo->composerArtists))
+	for (const Artist::pointer& composer : getOrCreateArtists(_dbSession, trackInfo->composerArtists, true))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, composer, Database::TrackArtistLinkType::Composer));
 
-	for (const Artist::pointer& lyricist : getOrCreateArtists(_dbSession, trackInfo->lyricistArtists))
+	for (const Artist::pointer& lyricist : getOrCreateArtists(_dbSession, trackInfo->lyricistArtists, true))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, lyricist, Database::TrackArtistLinkType::Lyricist));
 
-	for (const Artist::pointer& mixer : getOrCreateArtists(_dbSession, trackInfo->mixerArtists))
+	for (const Artist::pointer& mixer : getOrCreateArtists(_dbSession, trackInfo->mixerArtists, true))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, mixer, Database::TrackArtistLinkType::Mixer));
 
-	for (const Artist::pointer& producer : getOrCreateArtists(_dbSession, trackInfo->producerArtists))
+	for (const Artist::pointer& producer : getOrCreateArtists(_dbSession, trackInfo->producerArtists, true))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, producer, Database::TrackArtistLinkType::Producer));
 
-	for (const Artist::pointer& remixer : getOrCreateArtists(_dbSession, trackInfo->remixerArtists))
+	for (const Artist::pointer& remixer : getOrCreateArtists(_dbSession, trackInfo->remixerArtists, true))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, remixer, Database::TrackArtistLinkType::Remixer));
 
 	track.modify()->setScanVersion(_scanVersion);
