@@ -22,7 +22,7 @@ target_include_directories(lmsutils PRIVATE
 	)
 
 target_link_libraries(lmsutils PRIVATE
-	config++
+	PkgConfig::CONFIG++
 	)
 
 target_link_libraries(lmsutils PUBLIC
