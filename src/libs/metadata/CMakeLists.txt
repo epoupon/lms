@@ -14,7 +14,7 @@ target_include_directories(lmsmetadata PRIVATE
 
 target_link_libraries(lmsmetadata PRIVATE
 	lmsav
-	${Taglib_LIBRARIES}
+	PkgConfig::Taglib
 	)
 
 target_link_libraries(lmsmetadata PUBLIC
