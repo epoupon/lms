@@ -22,6 +22,7 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WEnvironment.h>
 #include <Wt/WLineEdit.h>
+#include <Wt/WPopupMenu.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WServer.h>
 #include <Wt/WStackedWidget.h>
@@ -34,8 +35,6 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "explore/Explore.hpp"
-#include "explore/Filters.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -44,10 +43,12 @@
 #include "admin/DatabaseSettingsView.hpp"
 #include "admin/UserView.hpp"
 #include "admin/UsersView.hpp"
+#include "explore/Explore.hpp"
+#include "explore/Filters.hpp"
 #include "resource/AudioFileResource.hpp"
 #include "resource/AudioTranscodeResource.hpp"
 #include "resource/DownloadResource.hpp"
-#include "resource/ImageResource.hpp"
+#include "resource/CoverResource.hpp"
 #include "Auth.hpp"
 #include "LmsApplicationException.hpp"
 #include "LmsTheme.hpp"
@@ -226,6 +227,8 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 		});
 	}
 }
+
+LmsApplication::~LmsApplication() = default;
 
 void
 LmsApplication::finalize()
@@ -440,9 +443,7 @@ LmsApplication::handleUserLoggedIn(Database::IdType userId, bool strongAuth)
 void
 LmsApplication::createHome()
 {
-	_audioFileResource = std::make_shared<AudioFileResource>();
-	_audioTranscodeResource = std::make_shared<AudioTranscodeResource>();
-	_imageResource = std::make_shared<ImageResource>();
+	_coverResource = std::make_shared<CoverResource>();
 
 	declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
 	doJavaScript("$('body').tooltip({ selector: '[data-toggle=\"tooltip\"]'})");
@@ -532,59 +533,15 @@ LmsApplication::createHome()
 		_mediaPlayer->loadTrack(trackId, play, replayGain);
 	});
 
-	_playQueue->trackUnselected.connect([this] ()
+	_playQueue->trackUnselected.connect([this]
 	{
 		_mediaPlayer->stop();
 	});
 
-	// Events from MediaScanner
+	if (isUserAdmin())
 	{
-		const std::string sessionId {LmsApp->sessionId()};
-
-		Service<Scanner::IMediaScanner>::get()->scanStarted().connect(this, [=]
+		_scannerEvents.scanComplete.connect([=] (const Scanner::ScanStats& stats)
 		{
-			Wt::WServer::instance()->post(sessionId, [=]
-			{
-				_events.dbScanStarted.emit();
-				triggerUpdate();
-			});
-		});
-
-		Service<Scanner::IMediaScanner>::get()->scanComplete().connect(this, [=]
-		{
-			Wt::WServer::instance()->post(sessionId, [this]
-			{
-				_events.dbScanned.emit();
-				triggerUpdate();
-			});
-		});
-
-		Service<Scanner::IMediaScanner>::get()->scanInProgress().connect(this, [=] (Scanner::ScanStepStats stepStats)
-		{
-			Wt::WServer::instance()->post(sessionId, [=]
-			{
-				_events.dbScanInProgress.emit(stepStats);
-				triggerUpdate();
-			});
-		});
-
-		Service<Scanner::IMediaScanner>::get()->scheduled().connect(this, [=] (Wt::WDateTime dateTime)
-		{
-			Wt::WServer::instance()->post(sessionId, [=]
-			{
-				_events.dbScanScheduled.emit(dateTime);
-				triggerUpdate();
-			});
-		});
-
-	}
-
-	_events.dbScanned.connect([=] ()
-	{
-		if (isUserAdmin())
-		{
-			const auto& stats {*Service<Scanner::IMediaScanner>::get()->getStatus().lastCompleteScanStats};
-
 			notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-complete")
 				.arg(static_cast<unsigned>(stats.nbFiles()))
 				.arg(static_cast<unsigned>(stats.additions))
@@ -592,8 +549,8 @@ LmsApplication::createHome()
 				.arg(static_cast<unsigned>(stats.deletions))
 				.arg(static_cast<unsigned>(stats.duplicates.size()))
 				.arg(static_cast<unsigned>(stats.errors.size())));
-		}
-	});
+		});
+	}
 
 	// Events from Application group
 	_events.appOpen.connect([=]
@@ -632,14 +589,14 @@ LmsApplication::notify(const Wt::WEvent& event)
 	}
 }
 
-static std::string msgTypeToString(MsgType type)
+static std::string msgTypeToString(LmsApplication::MsgType type)
 {
 	switch(type)
 	{
-		case MsgType::Success:	return "success";
-		case MsgType::Info:	return "info";
-		case MsgType::Warning:	return "warning";
-		case MsgType::Danger:	return "danger";
+		case LmsApplication::MsgType::Success:	return "success";
+		case LmsApplication::MsgType::Info:	return "info";
+		case LmsApplication::MsgType::Warning:	return "warning";
+		case LmsApplication::MsgType::Danger:	return "danger";
 	}
 	return "";
 }

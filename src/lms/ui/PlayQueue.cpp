@@ -34,7 +34,7 @@
 #include "utils/String.hpp"
 
 #include "common/LoadingIndicator.hpp"
-#include "resource/ImageResource.hpp"
+#include "resource/CoverResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
 #include "TrackStringUtils.hpp"
@@ -394,10 +394,10 @@ PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::IdT
 	}
 
 	if (nbAddedTracks > 0)
-		LmsApp->notifyMsg(MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", nbAddedTracks).arg(nbAddedTracks), std::chrono::milliseconds(2000));
+		LmsApp->notifyMsg(LmsApplication::MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", nbAddedTracks).arg(nbAddedTracks), std::chrono::milliseconds(2000));
 
 	if (isFull())
-		LmsApp->notifyMsg(MsgType::Warning, Wt::WString::tr("Lms.PlayQueue.playqueue-full"), std::chrono::milliseconds(2000));
+		LmsApp->notifyMsg(LmsApplication::MsgType::Warning, Wt::WString::tr("Lms.PlayQueue.playqueue-full"), std::chrono::milliseconds(2000));
 
 
 }
@@ -443,7 +443,7 @@ PlayQueue::addSome()
 			{
 				Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 				auto cover = std::make_unique<Wt::WImage>();
-				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Large));
+				cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release.id(), CoverResource::Size::Large));
 				cover->setStyleClass("Lms-cover");
 				cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 				anchor->setImage(std::move(cover));
@@ -452,7 +452,7 @@ PlayQueue::addSome()
 		else
 		{
 			auto cover = entry->bindNew<Wt::WImage>("cover");
-			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(track.id(), ImageResource::Size::Large));
+			cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(track.id(), CoverResource::Size::Large));
 			cover->setStyleClass("Lms-cover");
 			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		}

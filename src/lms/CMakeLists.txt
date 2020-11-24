@@ -32,8 +32,8 @@ add_executable(lms
 	ui/explore/TracksView.cpp
 	ui/resource/AudioFileResource.cpp
 	ui/resource/AudioTranscodeResource.cpp
+	ui/resource/CoverResource.cpp
 	ui/resource/DownloadResource.cpp
-	ui/resource/ImageResource.cpp
 	)
 
 target_include_directories(lms PRIVATE

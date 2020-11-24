@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "MediaScanner.hpp"
+#include "Scanner.hpp"
 
 #include <ctime>
 #include <boost/asio/placeholders.hpp>
@@ -242,13 +242,13 @@ getOrCreateClusters(Session& session, const MetaData::Clusters& clustersNames)
 
 namespace Scanner {
 
-std::unique_ptr<IMediaScanner>
-createMediaScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine)
+std::unique_ptr<IScanner>
+createScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine)
 {
-	return std::make_unique<MediaScanner>(db, recommendationEngine);
+	return std::make_unique<Scanner>(db, recommendationEngine);
 }
 
-MediaScanner::MediaScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine)
+Scanner::Scanner(Database::Db& db, Recommendation::IEngine& recommendationEngine)
 : _recommendationEngine {recommendationEngine}
 , _dbSession {db}
 {
@@ -262,14 +262,14 @@ MediaScanner::MediaScanner(Database::Db& db, Recommendation::IEngine& recommenda
 	start();
 }
 
-MediaScanner::~MediaScanner()
+Scanner::~Scanner()
 {
-	LMS_LOG(DBUPDATER, INFO) << "Shutting down MediaScanner...";
+	LMS_LOG(DBUPDATER, INFO) << "Shutting down Scanner...";
 	stop();
 }
 
 void
-MediaScanner::start()
+Scanner::start()
 {
 	std::scoped_lock lock {_controlMutex};
 
@@ -290,7 +290,7 @@ MediaScanner::start()
 }
 
 void
-MediaScanner::stop()
+Scanner::stop()
 {
 	std::scoped_lock lock {_controlMutex};
 
@@ -301,7 +301,7 @@ MediaScanner::stop()
 }
 
 void
-MediaScanner::abortScan()
+Scanner::abortScan()
 {
 	LMS_LOG(DBUPDATER, DEBUG) << "Aborting scan...";
 	std::scoped_lock lock {_controlMutex};
@@ -319,7 +319,7 @@ MediaScanner::abortScan()
 }
 
 void
-MediaScanner::requestImmediateScan(bool force)
+Scanner::requestImmediateScan(bool force)
 {
 	abortScan();
 	_ioService.post([=]()
@@ -332,7 +332,7 @@ MediaScanner::requestImmediateScan(bool force)
 }
 
 void
-MediaScanner::requestReload()
+Scanner::requestReload()
 {
 	abortScan();
 	_ioService.post([=]()
@@ -344,8 +344,8 @@ MediaScanner::requestReload()
 	});
 }
 
-MediaScanner::Status
-MediaScanner::getStatus() const
+Scanner::Status
+Scanner::getStatus() const
 {
 	Status res;
 
@@ -360,7 +360,7 @@ MediaScanner::getStatus() const
 }
 
 void
-MediaScanner::scheduleNextScan()
+Scanner::scheduleNextScan()
 {
 	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan";
 
@@ -411,11 +411,11 @@ MediaScanner::scheduleNextScan()
 		_nextScheduledScan = nextScanDateTime;
 	}
 
-	_sigScheduled.emit(_nextScheduledScan);
+	_events.scanScheduled.emit(_nextScheduledScan);
 }
 
 void
-MediaScanner::countAllFiles(ScanStats& stats)
+Scanner::countAllFiles(ScanStats& stats)
 {
 	ScanStepStats stepStats{stats.startTime, ScanProgressStep::DiscoveringFiles};
 
@@ -440,7 +440,7 @@ MediaScanner::countAllFiles(ScanStats& stats)
 }
 
 void
-MediaScanner::scheduleScan(bool force, const Wt::WDateTime& dateTime)
+Scanner::scheduleScan(bool force, const Wt::WDateTime& dateTime)
 {
 	auto cb {[=](boost::system::error_code ec)
 	{
@@ -469,9 +469,9 @@ MediaScanner::scheduleScan(bool force, const Wt::WDateTime& dateTime)
 }
 
 void
-MediaScanner::scan(bool forceScan)
+Scanner::scan(bool forceScan)
 {
-	scanStarted().emit();
+	_events.scanStarted.emit();
 
 	{
 		std::unique_lock lock {_statusMutex};
@@ -517,14 +517,14 @@ MediaScanner::scan(bool forceScan)
 		{
 			std::unique_lock lock {_statusMutex};
 
-			_lastCompleteScanStats = std::move(stats);
+			_lastCompleteScanStats = stats;
 			_currentScanStepStats.reset();
 		}
 
 		LMS_LOG(DBUPDATER, DEBUG) << "Scan not aborted, scheduling next scan!";
 		scheduleNextScan();
 
-		scanComplete().emit();
+		_events.scanComplete.emit(stats);
 	}
 	else
 	{
@@ -538,7 +538,7 @@ MediaScanner::scan(bool forceScan)
 }
 
 bool
-MediaScanner::fetchTrackFeatures(Database::IdType trackId, const UUID& MBID)
+Scanner::fetchTrackFeatures(Database::IdType trackId, const UUID& MBID)
 {
 	std::map<std::string, double> features;
 
@@ -564,7 +564,7 @@ MediaScanner::fetchTrackFeatures(Database::IdType trackId, const UUID& MBID)
 }
 
 void
-MediaScanner::fetchTrackFeatures(ScanStats& stats)
+Scanner::fetchTrackFeatures(ScanStats& stats)
 {
 	if (_recommendationEngineType != ScanSettings::RecommendationEngineType::Features)
 		return;
@@ -614,7 +614,7 @@ MediaScanner::fetchTrackFeatures(ScanStats& stats)
 }
 
 void
-MediaScanner::refreshScanSettings()
+Scanner::refreshScanSettings()
 {
 	auto transaction {_dbSession.createSharedTransaction()};
 
@@ -646,7 +646,7 @@ MediaScanner::refreshScanSettings()
 }
 
 void
-MediaScanner::notifyInProgress(const ScanStepStats& stepStats)
+Scanner::notifyInProgress(const ScanStepStats& stepStats)
 {
 	{
 		std::unique_lock lock {_statusMutex};
@@ -654,12 +654,12 @@ MediaScanner::notifyInProgress(const ScanStepStats& stepStats)
 	}
 
 	const std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
-	_sigScanInProgress(stepStats);
+	_events.scanInProgress(stepStats);
 	_lastScanInProgressEmit = now;
 }
 
 void
-MediaScanner::notifyInProgressIfNeeded(const ScanStepStats& stepStats)
+Scanner::notifyInProgressIfNeeded(const ScanStepStats& stepStats)
 {
 	std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
 
@@ -668,7 +668,7 @@ MediaScanner::notifyInProgressIfNeeded(const ScanStepStats& stepStats)
 }
 
 void
-MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanStats& stats)
+Scanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanStats& stats)
 {
 	Wt::WDateTime lastWriteTime;
 	try
@@ -831,7 +831,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 }
 
 void
-MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats)
+Scanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats)
 {
 	ScanStepStats stepStats{stats.startTime, ScanProgressStep::ScanningFiles};
 	stepStats.totalElems = stats.filesScanned;
@@ -899,7 +899,7 @@ checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDire
 }
 
 void
-MediaScanner::removeMissingTracks(ScanStats& stats)
+Scanner::removeMissingTracks(ScanStats& stats)
 {
 	static constexpr std::size_t batchSize {50};
 
@@ -966,7 +966,7 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 }
 
 void
-MediaScanner::removeOrphanEntries()
+Scanner::removeOrphanEntries()
 {
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
 	{
@@ -1009,7 +1009,7 @@ MediaScanner::removeOrphanEntries()
 }
 
 void
-MediaScanner::checkDuplicatedAudioFiles(ScanStats& stats)
+Scanner::checkDuplicatedAudioFiles(ScanStats& stats)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files";
 
@@ -1029,7 +1029,7 @@ MediaScanner::checkDuplicatedAudioFiles(ScanStats& stats)
 }
 
 void
-MediaScanner::reloadSimilarityEngine(ScanStats& stats)
+Scanner::reloadSimilarityEngine(ScanStats& stats)
 {
 	ScanStepStats stepStats {stats.startTime, ScanProgressStep::ReloadingSimilarityEngine};
 

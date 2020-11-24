@@ -29,6 +29,7 @@
 #include "database/Cluster.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
+#include "scanner/IScanner.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -222,8 +223,8 @@ DatabaseSettingsView::refreshView()
 		{
 			model->saveData();
 
-			Service<Scanner::IMediaScanner>::get()->requestImmediateScan(false);
-			LmsApp->notifyMsg(MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
+			Service<Scanner::IScanner>::get()->requestImmediateScan(false);
+			LmsApp->notifyMsg(LmsApplication::MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.
@@ -239,7 +240,7 @@ DatabaseSettingsView::refreshView()
 
 	immScanBtn->clicked().connect([=]
 	{
-		Service<Scanner::IMediaScanner>::get()->requestImmediateScan(false);
+		Service<Scanner::IScanner>::get()->requestImmediateScan(false);
 	});
 
 	t->updateView(model.get());

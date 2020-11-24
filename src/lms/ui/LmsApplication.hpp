@@ -22,13 +22,18 @@
 #include <optional>
 
 #include <Wt/WApplication.h>
-#include <Wt/WPopupMenu.h>
 
-#include "scanner/IMediaScanner.hpp"
+#include "scanner/ScannerEvents.hpp"
 
 #include "LmsApplicationGroup.hpp"
 
-namespace Database {
+namespace Wt
+{
+	class WPopupMenu;
+}
+
+namespace Database
+{
 	class Artist;
 	class Cluster;
 	class Db;
@@ -39,10 +44,8 @@ namespace Database {
 
 namespace UserInterface {
 
-class AudioTranscodeResource;
-class AudioFileResource;
 class Auth;
-class ImageResource;
+class CoverResource;
 class LmsApplicationException;
 class MediaPlayer;
 class PlayQueue;
@@ -53,35 +56,19 @@ struct Events
 	// Events relative to group
 	Wt::Signal<LmsApplicationInfo> appOpen;
 	Wt::Signal<LmsApplicationInfo> appClosed;
-
-	// Database events
-	Wt::Signal<> dbScanStarted;
-	Wt::Signal<> dbScanned;
-	Wt::Signal<Scanner::ScanStepStats> dbScanInProgress;
-	Wt::Signal<Wt::WDateTime> dbScanScheduled;
-};
-
-// Used to classify the message sent to the user
-enum class MsgType
-{
-	Success,
-	Info,
-	Warning,
-	Danger,
 };
 
 class LmsApplication : public Wt::WApplication
 {
 	public:
 		LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups);
+		~LmsApplication();
 
 		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups);
 		static LmsApplication* instance();
 
 		// Session application data
-		std::shared_ptr<ImageResource> getImageResource() { return _imageResource; }
-		std::shared_ptr<AudioTranscodeResource> getAudioTranscodeResource() { return _audioTranscodeResource; }
-		std::shared_ptr<AudioFileResource> getAudioFileResource() { return _audioFileResource; }
+		std::shared_ptr<CoverResource> getCoverResource() { return _coverResource; }
 		Database::Session& getDbSession(); // always thread safe
 
 		Wt::Dbo::ptr<Database::User> getUser();
@@ -91,10 +78,20 @@ class LmsApplication : public Wt::WApplication
 		std::string getUserLoginName(); // user must be logged in prior this call
 
 		Events& getEvents() { return _events; }
+		Scanner::Events& getScannerEvents() { return _scannerEvents; }
 
 		// Utils
 		void post(std::function<void()> func);
-		void notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds(4000));
+
+		// Used to classify the message sent to the user
+		enum class MsgType
+		{
+			Success,
+			Info,
+			Warning,
+			Danger,
+		};
+		void notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds {4000});
 
 		static Wt::WLink createArtistLink(Wt::Dbo::ptr<Database::Artist> artist);
 		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Wt::Dbo::ptr<Database::Artist> artist, bool addText = true);
@@ -129,19 +126,18 @@ class LmsApplication : public Wt::WApplication
 		Wt::Signal<>							_preQuit;
 		LmsApplicationGroupContainer&   		_appGroups;
 		Events									_events;
+		Scanner::Events							_scannerEvents;
 		std::optional<Database::IdType>			_userId;
 		std::optional<bool>						_userAuthStrong;
-		std::shared_ptr<AudioTranscodeResource>	_audioTranscodeResource;
-		std::shared_ptr<AudioFileResource>		_audioFileResource;
-		std::shared_ptr<ImageResource>			_imageResource;
+		std::shared_ptr<CoverResource>			_coverResource;
 		MediaPlayer*							_mediaPlayer {};
 		PlayQueue*								_playQueue {};
-		std::unique_ptr<Wt::WPopupMenu>			_popupMenu {};
+		std::unique_ptr<Wt::WPopupMenu>			_popupMenu;
 };
 
 
 // Helper to get session instance
-#define LmsApp	LmsApplication::instance()
+#define LmsApp	::UserInterface::LmsApplication::instance()
 
 } // namespace UserInterface
 

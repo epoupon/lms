@@ -28,7 +28,7 @@
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "resource/DownloadResource.hpp"
-#include "resource/ImageResource.hpp"
+#include "resource/CoverResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
 #include "TrackPopup.hpp"
@@ -71,9 +71,9 @@ namespace UserInterface::TrackListHelpers
 			entry->setCondition("if-has-release", true);
 			entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
 			{
-				Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
-				auto cover = std::make_unique<Wt::WImage>();
-				cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Large));
+				Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
+				auto cover {std::make_unique<Wt::WImage>()};
+				cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release.id(), CoverResource::Size::Large));
 				cover->setStyleClass("Lms-cover");
 				cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 				anchor->setImage(std::move(cover));
@@ -81,8 +81,8 @@ namespace UserInterface::TrackListHelpers
 		}
 		else
 		{
-			auto cover = entry->bindNew<Wt::WImage>("cover");
-			cover->setImageLink(LmsApp->getImageResource()->getTrackUrl(trackId, ImageResource::Size::Large));
+			auto* cover {entry->bindNew<Wt::WImage>("cover")};
+			cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(trackId, CoverResource::Size::Large));
 			cover->setStyleClass("Lms-cover");
 			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		}

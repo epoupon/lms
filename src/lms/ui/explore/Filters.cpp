@@ -150,7 +150,7 @@ Filters::add(Database::IdType clusterId)
 		_sigUpdated.emit();
 	});
 
-	LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Explore.filter-added"), std::chrono::seconds {2});
+	LmsApp->notifyMsg(LmsApplication::MsgType::Info, Wt::WString::tr("Lms.Explore.filter-added"), std::chrono::seconds {2});
 
 	_sigUpdated.emit();
 }

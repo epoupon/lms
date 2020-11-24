@@ -33,7 +33,7 @@
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
 #include "metadata/IParser.hpp"
-#include "scanner/IMediaScanner.hpp"
+#include "scanner/IScanner.hpp"
 
 class UUID;
 
@@ -44,29 +44,24 @@ namespace Recommendation
 
 namespace Scanner {
 
-class MediaScanner : public IMediaScanner
+class Scanner : public IScanner
 {
 	public:
-		MediaScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine);
-		~MediaScanner();
+		Scanner(Database::Db& db, Recommendation::IEngine& recommendationEngine);
+		~Scanner();
 
-		MediaScanner(const MediaScanner&) = delete;
-		MediaScanner(MediaScanner&&) = delete;
-		MediaScanner& operator=(const MediaScanner&) = delete;
-		MediaScanner& operator=(MediaScanner&&) = delete;
+		Scanner(const Scanner&) = delete;
+		Scanner(Scanner&&) = delete;
+		Scanner& operator=(const Scanner&) = delete;
+		Scanner& operator=(Scanner&&) = delete;
 
 		void requestReload() override;
 		void requestImmediateScan(bool force) override;
 
-		Status getStatus() const override;
-
-		Wt::Signal<>& scanStarted() override { return _sigScanStarted; }
-		Wt::Signal<>& scanComplete() override { return _sigScanComplete; }
-		Wt::Signal<ScanStepStats>& scanInProgress() override { return _sigScanInProgress; }
-		Wt::Signal<Wt::WDateTime>& scheduled() override { return _sigScheduled; }
+		Status	getStatus() const override;
+		Events&	getEvents() override { return _events; }
 
 	private:
-
 		void start();
 		void stop();
 
@@ -102,11 +97,8 @@ class MediaScanner : public IMediaScanner
 		std::atomic<bool>						_abortScan {};
 		Wt::WIOService							_ioService;
 		boost::asio::system_timer				_scheduleTimer {_ioService};
-		Wt::Signal<>							_sigScanStarted;
-		Wt::Signal<>							_sigScanComplete;
-		Wt::Signal<ScanStepStats>		_sigScanInProgress;
+		Events									_events;
 		std::chrono::system_clock::time_point	_lastScanInProgressEmit {};
-		Wt::Signal<Wt::WDateTime>				_sigScheduled;
 		Database::Session						_dbSession;
 		std::unique_ptr<MetaData::IParser>		_metadataParser;
 
@@ -124,7 +116,7 @@ class MediaScanner : public IMediaScanner
 		std::filesystem::path			_mediaDirectory;
 		Database::ScanSettings::RecommendationEngineType _recommendationEngineType;
 
-}; // class MediaScanner
+}; // class Scanner
 
 } // Scanner
 

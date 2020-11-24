@@ -27,7 +27,6 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 
-#include "resource/ImageResource.hpp"
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"

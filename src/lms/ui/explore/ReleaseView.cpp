@@ -34,7 +34,7 @@
 #include "utils/String.hpp"
 
 #include "resource/DownloadResource.hpp"
-#include "resource/ImageResource.hpp"
+#include "resource/CoverResource.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
@@ -127,7 +127,7 @@ Release::refreshView()
 	}
 
 	{
-		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Large)))};
+		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getCoverResource()->getReleaseUrl(release.id(), CoverResource::Size::Large)))};
 		cover->setStyleClass("Lms-cover-large");
 		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 	}

@@ -19,7 +19,7 @@
 
 #include "Scan.hpp"
 
-#include "scanner/IMediaScanner.hpp"
+#include "scanner/IScanner.hpp"
 #include "utils/Service.hpp"
 
 namespace API::Subsonic::Scan
@@ -32,10 +32,10 @@ namespace API::Subsonic::Scan
 	{
 		Response::Node statusResponse;
 
-		const IMediaScanner::Status scanStatus {Service<IMediaScanner>::get()->getStatus()};
+		const IScanner::Status scanStatus {Service<IScanner>::get()->getStatus()};
 
-		statusResponse.setAttribute("scanning", scanStatus.currentState == IMediaScanner::State::InProgress);
-		if (scanStatus.currentState == IMediaScanner::State::InProgress)
+		statusResponse.setAttribute("scanning", scanStatus.currentState == IScanner::State::InProgress);
+		if (scanStatus.currentState == IScanner::State::InProgress)
 		{
 			std::size_t count{};
 
@@ -61,7 +61,7 @@ namespace API::Subsonic::Scan
 	Response
 	handleStartScan(RequestContext& context)
 	{
-		Service<IMediaScanner>::get()->requestImmediateScan(false);
+		Service<IScanner>::get()->requestImmediateScan(false);
 
 		Response response {Response::createOkResponse(context)};
 		response.addNode("scanStatus", createStatusResponseNode());

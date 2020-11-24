@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,32 +19,28 @@
 
 #pragma once
 
-#include <Wt/WResource.h>
-#include "database/Types.hpp"
+#include <Wt/WDateTime.h>
+#include <Wt/WSignal.h>
 
-namespace UserInterface
+#include "ScannerStats.hpp"
+
+namespace Scanner
 {
 
-	class ImageResource : public Wt::WResource
+	struct Events
 	{
-		public:
-			static const std::size_t maxSize {512};
+		// Called just after scan start
+		Wt::Signal<> 				scanStarted;
 
-			~ImageResource();
+		// Called just after scan complete (true if changes have been made)
+		Wt::Signal<ScanStats>		scanComplete;
 
-			enum class Size : std::size_t
-			{
-				Small = 128,
-				Large = 512,
-			};
+		// Called during scan in progress
+		Wt::Signal<ScanStepStats>	scanInProgress;
 
-			std::string getReleaseUrl(Database::IdType releaseId, Size size) const;
-			std::string getTrackUrl(Database::IdType trackId, Size size) const;
-
-		private:
-			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-
+		// Called after a schedule
+		Wt::Signal<Wt::WDateTime>	scanScheduled;
 	};
 
-} // namespace UserInterface
+} // ns Scanner
 
