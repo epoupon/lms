@@ -36,7 +36,7 @@ FileResourceHandler::FileResourceHandler(const std::filesystem::path& path)
 }
 
 
-void
+Wt::Http::ResponseContinuation*
 FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
 {
 	::uint64_t startByte {_offset};
@@ -49,7 +49,7 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 			LMS_LOG(UTILS, ERROR) << "Cannot open file stream for '" << _path.string() << "'";
 			response.setStatus(404);
 			_isFinished = true;
-			return;
+			return {};
 		}
 		else
 		{
@@ -72,7 +72,7 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 
 			LMS_LOG(UTILS, DEBUG) << "Range not satisfiable";
 			_isFinished = true;
-			return;
+			return {};
 		}
 
 		if (ranges.size() == 1)
@@ -102,7 +102,7 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 	{
 		LMS_LOG(UTILS, ERROR) << "Cannot reopen file stream for '" << _path.string() << "'";
 		_isFinished = true;
-		return;
+		return {};
 	}
 
 	ifs.seekg(static_cast<std::istream::pos_type>(startByte));
@@ -123,20 +123,16 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 	if (ifs.good() && actualPieceSize < restSize)
 	{
 		_offset = startByte + actualPieceSize;
-
 		LMS_LOG(UTILS, DEBUG) << "Job not complete! Next chunk offset = " << _offset;
+
+		return response.createContinuation();
 	}
-	else
-	{
-		_isFinished = true;
-		LMS_LOG(UTILS, DEBUG) << "Job complete!";
-	}
+
+	_isFinished = true;
+	LMS_LOG(UTILS, DEBUG) << "Job complete!";
+
+	return {};
 }
 
-bool
-FileResourceHandler::isFinished() const
-{
-	return _isFinished;
-}
 
 

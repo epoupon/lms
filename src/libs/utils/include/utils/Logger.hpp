@@ -38,6 +38,7 @@ enum class Module
 	API_SUBSONIC,
 	AUTH,
 	AV,
+	CHILDPROCESS,
 	COVER,
 	DB,
 	DBUPDATER,

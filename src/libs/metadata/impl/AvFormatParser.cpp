@@ -22,7 +22,7 @@
 #include <algorithm>
 #include <iostream>
 
-#include "av/AvInfo.hpp"
+#include "av/IAudioFile.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
@@ -30,11 +30,9 @@
 namespace MetaData
 {
 
-using MetadataMap = std::map<std::string, std::string>;
-
 template <typename T>
 std::optional<T>
-findFirstValueOfAs(const MetadataMap& metadataMap, std::initializer_list<std::string> tags)
+findFirstValueOfAs(const Av::IAudioFile::MetadataMap& metadataMap, std::initializer_list<std::string> tags)
 {
 	auto it = std::find_first_of(std::cbegin(metadataMap), std::cend(metadataMap), std::cbegin(tags), std::cend(tags), [](const auto& it, const auto& str) { return it.first == str; });
 	if (it == std::cend(metadataMap))
@@ -45,7 +43,7 @@ findFirstValueOfAs(const MetadataMap& metadataMap, std::initializer_list<std::st
 
 template <>
 std::optional<std::vector<UUID>>
-findFirstValueOfAs(const MetadataMap& metadataMap, std::initializer_list<std::string> tags)
+findFirstValueOfAs(const Av::IAudioFile::MetadataMap& metadataMap, std::initializer_list<std::string> tags)
 {
 	std::optional<std::string> str {findFirstValueOfAs<std::string>(metadataMap, tags)};
 	if (!str)
@@ -69,7 +67,7 @@ findFirstValueOfAs(const MetadataMap& metadataMap, std::initializer_list<std::st
 
 static
 std::optional<Album>
-getAlbum(const MetadataMap& metadataMap)
+getAlbum(const Av::IAudioFile::MetadataMap& metadataMap)
 {
 	std::optional<Album> res;
 
@@ -84,7 +82,7 @@ getAlbum(const MetadataMap& metadataMap)
 
 static
 std::vector<Artist>
-getAlbumArtists(const MetadataMap& metadataMap)
+getAlbumArtists(const Av::IAudioFile::MetadataMap& metadataMap)
 {
 	std::vector<Artist> res;
 
@@ -99,7 +97,7 @@ getAlbumArtists(const MetadataMap& metadataMap)
 
 static
 std::vector<Artist>
-getArtists(const MetadataMap& metadataMap)
+getArtists(const Av::IAudioFile::MetadataMap& metadataMap)
 {
 	std::vector<Artist> artists;
 
@@ -133,31 +131,28 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 
 	try
 	{
-		Av::MediaFile mediaFile {p};
+		const auto mediaFile {Av::parseAudioFile(p)};
 
 		// Stream info
 		{
 			std::vector<AudioStream> audioStreams;
 
-			for (auto stream : mediaFile.getStreamInfo())
+			for (auto stream : mediaFile->getStreamInfo())
 			{
 				MetaData::AudioStream audioStream {static_cast<unsigned>(stream.bitrate)};
 				track.audioStreams.emplace_back(audioStream);
 			}
 		}
 
-		track.duration = mediaFile.getDuration();
-		track.hasCover = mediaFile.hasAttachedPictures();
+		track.duration = mediaFile->getDuration();
+		track.hasCover = mediaFile->hasAttachedPictures();
 
 		MetaData::Clusters clusters;
 
-		const std::map<std::string, std::string> metadataMap {mediaFile.getMetaData()};
+		const Av::IAudioFile::MetadataMap metadataMap {mediaFile->getMetaData()};
 
-		for (const auto& metadata : metadataMap)
+		for (const auto& [tag, value] : metadataMap)
 		{
-			const std::string& tag {metadata.first};
-			const std::string& value {metadata.second};
-
 			if (debug)
 				std::cout << "TAG = " << tag << ", VAL = " << value << std::endl;
 
@@ -231,7 +226,7 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 		track.album = getAlbum(metadataMap);
 		track.albumArtists = getAlbumArtists(metadataMap);
 	}
-	catch(Av::MediaFileException& e)
+	catch(Av::Exception& e)
 	{
 		return std::nullopt;
 	}

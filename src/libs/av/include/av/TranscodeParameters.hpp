@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,23 +17,23 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "av/AvTypes.hpp"
+#pragma once
+
+#include <chrono>
+#include <optional>
+
+#include "Types.hpp"
 
 namespace Av {
 
-const char* formatToMimetype(Format format)
+struct TranscodeParameters
 {
-	switch (format)
-	{
-		case Format::MP3: 		return "audio/mpeg";
-		case Format::OGG_OPUS:		return "audio/opus";
-		case Format::MATROSKA_OPUS:	return "audio/x-matroska";
-		case Format::OGG_VORBIS:	return "audio/ogg";
-		case Format::WEBM_VORBIS:	return "audio/webm";
-	}
+	Format						format;
+	std::size_t					bitrate {128000};
+	std::optional<std::size_t>	stream; // Id of the stream to be transcoded (auto detect by default)
+	std::chrono::milliseconds	offset {0};
+	bool 						stripMetadata {true};
+};
 
-	throw AvException {"Invalid encoding"};
-}
-
-}
+} // namespace Av
 

@@ -26,8 +26,6 @@
 
 #include "auth/IAuthTokenService.hpp"
 #include "auth/IPasswordService.hpp"
-#include "av/AvInfo.hpp"
-#include "av/AvTranscoder.hpp"
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
@@ -35,6 +33,7 @@
 #include "recommendation/IEngine.hpp"
 #include "subsonic/SubsonicResource.hpp"
 #include "ui/LmsApplication.hpp"
+#include "utils/IChildProcessManager.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Service.hpp"
 #include "utils/WtLogger.hpp"
@@ -203,9 +202,6 @@ int main(int argc, char* argv[])
 		Wt::WServer server {argv[0]};
 		server.setServerConfiguration(wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
 
-		// lib init
-		Av::Transcoder::init();
-
 		// Initializing a connection pool to the database that will be shared along services
 		Database::Db database {config->getPath("working-dir") / "lms.db"};
 		{
@@ -217,6 +213,7 @@ int main(int argc, char* argv[])
 		UserInterface::LmsApplicationGroupContainer appGroups;
 
 		// Service initialization order is important
+		Service<IChildProcessManager> childProcessManagerService {createChildProcessManager()};
 		Service<Auth::IAuthTokenService> authTokenService {Auth::createAuthTokenService(config->getULong("login-throttler-max-entriees", 10000))};
 		Service<Auth::IPasswordService> passwordService {Auth::createPasswordService(config->getULong("login-throttler-max-entriees", 10000))};
 		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0],

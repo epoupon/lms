@@ -19,15 +19,30 @@
 
 #pragma once
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
+#include <array>
+#include <filesystem>
 
-// Helper class to serve a resource (must be saved as continuation data if not complete)
-class IResourceHandler
+#include "av/TranscodeParameters.hpp"
+#include "utils/IResourceHandler.hpp"
+#include "Transcoder.hpp"
+
+namespace Av
 {
-	public:
-		virtual ~IResourceHandler() = default;
 
-		[[nodiscard]] virtual Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) = 0;
-};
+	class TranscodeResourceHandler final : public IResourceHandler
+	{
+		public:
+			TranscodeResourceHandler(const std::filesystem::path& trackPath, const TranscodeParameters& parameters);
+
+		private:
+
+			Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& reponse) override;
+
+			static constexpr std::size_t _chunkSize {32768};
+			std::array<std::byte, _chunkSize> _buffer;
+			std::size_t _nbBytesReady {};
+			const std::filesystem::path _trackPath;
+			Transcoder _transcoder;
+	};
+}
 

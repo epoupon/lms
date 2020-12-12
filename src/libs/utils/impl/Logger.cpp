@@ -24,20 +24,21 @@ const char* getModuleName(Module mod)
 	switch (mod)
 	{
 		case Module::API_SUBSONIC:	return "API_SUBSONIC";
-		case Module::AUTH:		return "AUTH";
-		case Module::AV:		return "AV";
-		case Module::COVER:		return "COVER";
-		case Module::DB:		return "DB";
+		case Module::AUTH:			return "AUTH";
+		case Module::AV:			return "AV";
+		case Module::CHILDPROCESS:	return "CHILDPROC";
+		case Module::COVER:			return "COVER";
+		case Module::DB:			return "DB";
 		case Module::DBUPDATER:		return "DB UPDATER";
 		case Module::FEATURE:		return "FEATURE";
-		case Module::MAIN:		return "MAIN";
+		case Module::MAIN:			return "MAIN";
 		case Module::METADATA:		return "METADATA";
 		case Module::REMOTE:		return "REMOTE";
 		case Module::SERVICE:		return "SERVICE";
 		case Module::RECOMMENDATION:	return "RECOMMENDATION";
 		case Module::TRANSCODE:		return "TRANSCODE";
-		case Module::UI:		return "UI";
-		case Module::UTILS:		return "UTILS";
+		case Module::UI:			return "UI";
+		case Module::UTILS:			return "UTILS";
 	}
 	return "";
 }

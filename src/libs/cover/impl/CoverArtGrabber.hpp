@@ -39,7 +39,7 @@ namespace Database
 
 namespace Av
 {
-	class MediaFile;
+	class IAudioFile;
 }
 
 namespace CoverArt
@@ -106,7 +106,7 @@ namespace CoverArt
 			void							flushCache() override;
 
 			std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width, bool allowReleaseFallback);
-			std::unique_ptr<IEncodedImage>	getFromAvMediaFile(const Av::MediaFile& input, ImageSize width) const;
+			std::unique_ptr<IEncodedImage>	getFromAvMediaFile(const Av::IAudioFile& input, ImageSize width) const;
 			std::unique_ptr<IEncodedImage>	getFromCoverFile(const std::filesystem::path& p, ImageSize width) const;
 
 			std::unique_ptr<IEncodedImage>	getFromTrack(const std::filesystem::path& path, ImageSize width) const;

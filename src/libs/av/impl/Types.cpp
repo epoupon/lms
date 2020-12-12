@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2019 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,28 +17,25 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <filesystem>
-#include "av/AvTranscoder.hpp"
-#include "utils/IResourceHandler.hpp"
+#include "av/Types.hpp"
 
 namespace Av
 {
 
-	class TranscodeResourceHandler final : public IResourceHandler
+	std::string_view
+	formatToMimetype(Format format)
 	{
-		public:
-			TranscodeResourceHandler(const std::filesystem::path& trackPath, const TranscodeParameters& parameters);
+		switch (format)
+		{
+			case Format::MP3: 			return "audio/mpeg";
+			case Format::OGG_OPUS:		return "audio/opus";
+			case Format::MATROSKA_OPUS:	return "audio/x-matroska";
+			case Format::OGG_VORBIS:	return "audio/ogg";
+			case Format::WEBM_VORBIS:	return "audio/webm";
+		}
 
-		private:
+		throw Exception {"Invalid encoding"};
+	}
 
-			void processRequest(const Wt::Http::Request& request, Wt::Http::Response& reponse) override;
-			bool isFinished() const override;
-
-			static constexpr std::size_t _chunkSize {262144};
-			const std::filesystem::path _trackPath;
-			Transcoder _transcoder;
-	};
 }
 
