@@ -35,7 +35,6 @@ namespace Av
 			TranscodeResourceHandler(const std::filesystem::path& trackPath, const TranscodeParameters& parameters);
 
 		private:
-
 			Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& reponse) override;
 
 			static constexpr std::size_t _chunkSize {32768};

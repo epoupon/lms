@@ -48,7 +48,6 @@ Transcoder::Transcoder(const std::filesystem::path& filePath, const TranscodePar
 , _filePath {filePath}
 , _parameters {parameters}
 {
-
 }
 
 Transcoder::~Transcoder() = default;

@@ -11,7 +11,6 @@
 class ChildProcessManager : public IChildProcessManager
 {
 	public:
-
 		ChildProcessManager();
 		~ChildProcessManager();
 

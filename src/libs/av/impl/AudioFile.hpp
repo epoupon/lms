@@ -48,7 +48,6 @@ namespace Av
 			void								visitAttachedPictures(std::function<void(const Picture&)> func) const override;
 
 		private:
-
 			const std::filesystem::path	_p;
 			AVFormatContext* _context {};
 	};
