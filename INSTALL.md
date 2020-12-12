@@ -157,6 +157,9 @@ server {
     proxy_request_buffering off;
     proxy_buffering off;
     proxy_buffer_size 4k;
+    proxy_read_timeout 10m;
+    proxy_send_timeout 10m;
+	keepalive_timeout 10m;
 
     location / {
 
