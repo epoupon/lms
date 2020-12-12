@@ -142,15 +142,16 @@ ChildProcess::asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback ca
 
 			if (error)
 			{
+				if (error == boost::asio::error::operation_aborted)
+				{
+					return;
+				}
+
 				{
 					boost::system::error_code closeError;
 					_childStdout.close(closeError);
 				}
 
-				if (error == boost::asio::error::operation_aborted)
-				{
-					return;
-				}
 				if (error == boost::asio::error::eof)
 				{
 					callback(ReadResult::EndOfFile, bytesTransferred);
