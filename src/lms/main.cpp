@@ -179,7 +179,6 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		// Make pstream work with ffmpeg
 		close(STDIN_FILENO);
 
 		Service<IConfig> config {createConfig(configFilePath)};

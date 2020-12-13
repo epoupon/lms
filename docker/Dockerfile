@@ -6,7 +6,6 @@ ARG	MAKEFLAGS="-j2"
 ARG	FFMPEG_VERSION=4.1.4
 ARG	WT_VERSION=4.2.0
 ARG	STB_VERSION=b42009b3b9d4ca35bc703f5310eedc74f584be58
-ARG	PSTREAMS_VERSION=1.0.1
 ARG	LMS_VERSION=v3.6.3
 
 ARG	PREFIX="/tmp/install"
@@ -101,13 +100,6 @@ RUN \
 	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=NO -DENABLE_LIBWTTEST=OFF && \
 	make && \
 	make install
-
-# libpstreams
-RUN \
-	DIR=/tmp/libpstreams && mkdir -p ${DIR} && cd ${DIR} && \
-	curl -sLO https://sourceforge.net/projects/pstreams/files/pstreams/Release%201.0/pstreams-${PSTREAMS_VERSION}.tar.gz && \
-	tar -x --strip-components=1 -f pstreams-${PSTREAMS_VERSION}.tar.gz && \
-	prefix=${PREFIX} make install prefix=/ DESTDIR=${PREFIX}
 
 # LMS
 RUN \
