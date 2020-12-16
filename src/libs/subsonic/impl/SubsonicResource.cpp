@@ -53,7 +53,7 @@ using namespace Database;
 static const std::string	genreClusterName {"GENRE"};
 static const std::string	reportedStarredDate {"2000-01-01T00:00:00"};
 static const std::string	reportedDummyDate {"2000-01-01T00:00:00"};
-static const unsigned long	reportedDummyDateULong {946684800000}; // 2000-01-01T00:00:00 UTC
+static const unsigned long	reportedDummyDateULong {946684800000UL}; // 2000-01-01T00:00:00 UTC
 
 namespace API::Subsonic
 {
