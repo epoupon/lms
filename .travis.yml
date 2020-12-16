@@ -16,7 +16,6 @@ addons:
         - libavformat-dev
         - ffmpeg
         - libstb-dev
-        - libpstreams-dev
         - libtag1-dev
         - libpam0g-dev
         - libgraphicsmagick++1-dev

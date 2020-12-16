@@ -19,9 +19,9 @@
 
 #include "Stream.hpp"
 
-#include "av/AvTranscoder.hpp"
-#include "av/AvTranscodeResourceHandlerCreator.hpp"
-#include "av/AvTypes.hpp"
+#include "av/TranscodeParameters.hpp"
+#include "av/TranscodeResourceHandlerCreator.hpp"
+#include "av/Types.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
@@ -113,7 +113,7 @@ handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Ht
 {
 	std::shared_ptr<IResourceHandler> resourceHandler;
 
-	Wt::Http::ResponseContinuation *continuation = request.continuation();
+	Wt::Http::ResponseContinuation* continuation {request.continuation()};
 	if (!continuation)
 	{
 		// Mandatory params
@@ -137,12 +137,9 @@ handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Ht
 		resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
 	}
 
-	resourceHandler->processRequest(request, response);
-	if (!resourceHandler->isFinished())
-	{
-		Wt::Http::ResponseContinuation *continuation = response.createContinuation();
+	continuation = resourceHandler->processRequest(request, response);
+	if (continuation)
 		continuation->setData(resourceHandler);
-	}
 }
 
 void
@@ -150,7 +147,7 @@ handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http
 {
 	std::shared_ptr<IResourceHandler> resourceHandler;
 
-	Wt::Http::ResponseContinuation *continuation = request.continuation();
+	Wt::Http::ResponseContinuation* continuation = request.continuation();
 	if (!continuation)
 	{
 		StreamParameters streamParameters {getStreamParameters(context)};
@@ -164,12 +161,9 @@ handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http
 		resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
 	}
 
-	resourceHandler->processRequest(request, response);
-	if (!resourceHandler->isFinished())
-	{
-		Wt::Http::ResponseContinuation *continuation = response.createContinuation();
+	continuation = resourceHandler->processRequest(request, response);
+	if (continuation)
 		continuation->setData(resourceHandler);
-	}
 }
 
 }

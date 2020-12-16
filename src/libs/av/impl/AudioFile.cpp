@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "av/AvInfo.hpp"
+#include "AudioFile.hpp"
 
 extern "C"
 {
@@ -44,20 +44,28 @@ static std::string averror_to_string(int error)
 		return "Unknown error";
 }
 
-MediaFileException::MediaFileException(int avError)
-: AvException {"MediaFileException: " + averror_to_string(avError)}
+class AudioFileException : public Av::Exception
 {
+	public:
+		AudioFileException(int avError)
+			: Av::Exception {"AudioFileException: " + averror_to_string(avError)}
+		{}
+};
+
+std::unique_ptr<IAudioFile>
+parseAudioFile(const std::filesystem::path& p)
+{
+	return std::make_unique<AudioFile>(p);
 }
 
-
-MediaFile::MediaFile(const std::filesystem::path& p)
+AudioFile::AudioFile(const std::filesystem::path& p)
 : _p {p}
 {
-	int error = avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr);
+	int error {avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr)};
 	if (error < 0)
 	{
 		LMS_LOG(AV, ERROR) << "Cannot open " << _p.string() << ": " << averror_to_string(error);
-		throw MediaFileException(error);
+		throw AudioFileException {error};
 	}
 
 	error = avformat_find_stream_info(_context, nullptr);
@@ -65,32 +73,32 @@ MediaFile::MediaFile(const std::filesystem::path& p)
 	{
 		LMS_LOG(AV, ERROR) << "Cannot find stream information on " << _p.string() << ": " << averror_to_string(error);
 		avformat_close_input(&_context);
-		throw MediaFileException(error);
+		throw AudioFileException {error};
 	}
 }
 
-MediaFile::~MediaFile()
+AudioFile::~AudioFile()
 {
 	avformat_close_input(&_context);
 }
 
-std::string
-MediaFile::getFormatName() const
+const std::filesystem::path&
+AudioFile::getPath() const
 {
-	return _context->iformat->name;
+	return _p;
 }
 
 std::chrono::milliseconds
-MediaFile::getDuration() const
+AudioFile::getDuration() const
 {
 	if (_context->duration == AV_NOPTS_VALUE)
-		return std::chrono::milliseconds(0); // TODO estimate
+		return std::chrono::milliseconds {0}; // TODO estimate
 
-	return std::chrono::milliseconds(_context->duration / AV_TIME_BASE * 1000);
+	return std::chrono::milliseconds {_context->duration / AV_TIME_BASE * 1000};
 }
 
 void
-getMetaDataFromDictionnary(AVDictionary* dictionnary, std::map<std::string, std::string>& res)
+getMetaDataFromDictionnary(AVDictionary* dictionnary, AudioFile::MetadataMap& res)
 {
 	if (!dictionnary)
 		return;
@@ -102,10 +110,10 @@ getMetaDataFromDictionnary(AVDictionary* dictionnary, std::map<std::string, std:
 	}
 }
 
-std::map<std::string, std::string>
-MediaFile::getMetaData(void)
+AudioFile::MetadataMap
+AudioFile::getMetaData() const
 {
-	std::map<std::string, std::string> res;
+	MetadataMap res;
 
 	getMetaDataFromDictionnary(_context->metadata, res);
 
@@ -113,7 +121,7 @@ MediaFile::getMetaData(void)
 	// If we did not find tags, search metadata in streams
 	if (res.empty())
 	{
-		for (std::size_t i = 0; i < _context->nb_streams; ++i)
+		for (std::size_t i {}; i < _context->nb_streams; ++i)
 		{
 			getMetaDataFromDictionnary(_context->streams[i]->metadata, res);
 
@@ -126,7 +134,7 @@ MediaFile::getMetaData(void)
 }
 
 std::vector<StreamInfo>
-MediaFile::getStreamInfo() const
+AudioFile::getStreamInfo() const
 {
 	std::vector<StreamInfo> res;
 
@@ -154,7 +162,7 @@ MediaFile::getStreamInfo() const
 }
 
 std::optional<std::size_t>
-MediaFile::getBestStream() const
+AudioFile::getBestStream() const
 {
 	int res = av_find_best_stream(_context,
 		AVMEDIA_TYPE_AUDIO,
@@ -170,7 +178,7 @@ MediaFile::getBestStream() const
 }
 
 bool
-MediaFile::hasAttachedPictures(void) const
+AudioFile::hasAttachedPictures(void) const
 {
 	for (std::size_t i = 0; i < _context->nb_streams; ++i)
 	{
@@ -182,9 +190,9 @@ MediaFile::hasAttachedPictures(void) const
 }
 
 void
-MediaFile::visitAttachedPictures(std::function<void(const Picture&)> func) const
+AudioFile::visitAttachedPictures(std::function<void(const Picture&)> func) const
 {
-	static const std::map<int, std::string> codecMimeMap =
+	static const std::unordered_map<int, std::string> codecMimeMap =
 	{
 		{ AV_CODEC_ID_BMP, "image/x-bmp" },
 		{ AV_CODEC_ID_GIF, "image/gif" },
@@ -230,7 +238,7 @@ MediaFile::visitAttachedPictures(std::function<void(const Picture&)> func) const
 	}
 }
 
-std::optional<MediaFileFormat>
+std::optional<AudioFileFormat>
 guessMediaFileFormat(const std::filesystem::path& file)
 {
 	AVOutputFormat* format {av_guess_format(NULL,file.string().c_str(),NULL)};
@@ -252,7 +260,7 @@ guessMediaFileFormat(const std::filesystem::path& file)
 	else if (mimeTypes.size() > 1)
 		LMS_LOG(AV, INFO) << "File '" << file.string() << "' reported several mime types: '" << format->mime_type << "'";
 
-	MediaFileFormat res;
+	AudioFileFormat res;
 	res.format = formats.front();
 	res.mimeType = mimeTypes.empty() ? "application/octet-stream" : mimeTypes.front();
 

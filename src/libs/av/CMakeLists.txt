@@ -1,9 +1,9 @@
 
 add_library(lmsav SHARED
-	impl/AvInfo.cpp
-	impl/AvTranscoder.cpp
-	impl/AvTranscodeResourceHandler.cpp
-	impl/AvTypes.cpp
+	impl/AudioFile.cpp
+	impl/Transcoder.cpp
+	impl/TranscodeResourceHandler.cpp
+	impl/Types.cpp
 	)
 
 target_include_directories(lmsav INTERFACE

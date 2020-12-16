@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2019 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,15 +19,28 @@
 
 #pragma once
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
+#include <string_view>
 
-// Helper class to serve a resource (must be saved as continuation data if not complete)
-class IResourceHandler
-{
-	public:
-		virtual ~IResourceHandler() = default;
+#include "utils/Exception.hpp"
 
-		[[nodiscard]] virtual Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) = 0;
-};
+namespace Av {
+
+	class Exception : public LmsException
+	{
+		public:
+			using LmsException::LmsException;
+	};
+
+	enum class Format
+	{
+		// Values are important and must not be changed (stored in the UI's localstorage)
+		MP3				= 0,
+		OGG_OPUS		= 1,
+		MATROSKA_OPUS	= 2,
+		OGG_VORBIS		= 3,
+		WEBM_VORBIS		= 4,
+	};
+
+	std::string_view formatToMimetype(Format format);
+}
 

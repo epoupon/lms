@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,29 +19,21 @@
 
 #pragma once
 
-#include <string>
+#include <chrono>
+#include <optional>
 
-#include "utils/Exception.hpp"
+#include "Types.hpp"
 
 namespace Av {
 
-class AvException : public LmsException
+struct TranscodeParameters
 {
-	public:
-		AvException(const std::string& msg) : LmsException(msg) {}
+	Format						format;
+	std::size_t					bitrate {128000};
+	std::optional<std::size_t>	stream; // Id of the stream to be transcoded (auto detect by default)
+	std::chrono::milliseconds	offset {0};
+	bool 						stripMetadata {true};
 };
 
-enum class Format
-{
-	// Values are important and must not be changed
-	MP3		= 0,
-	OGG_OPUS	= 1,
-	MATROSKA_OPUS	= 2,
-	OGG_VORBIS	= 3,
-	WEBM_VORBIS	= 4,
-};
-
-const char* formatToMimetype(Format encoding);
-
-}
+} // namespace Av
 

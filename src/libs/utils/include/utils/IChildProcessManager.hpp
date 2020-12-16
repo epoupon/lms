@@ -16,18 +16,25 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
+#include <filesystem>
+#include <memory>
+#pragma once
 
-// Helper class to serve a resource (must be saved as continuation data if not complete)
-class IResourceHandler
+#include <filesystem>
+#include <memory>
+
+#include "IChildProcess.hpp"
+
+class IChildProcessManager
 {
 	public:
-		virtual ~IResourceHandler() = default;
+		virtual ~IChildProcessManager() = default;
 
-		[[nodiscard]] virtual Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) = 0;
+		virtual std::unique_ptr<IChildProcess> spawnChildProcess(const std::filesystem::path& path, const IChildProcess::Args& args) = 0;
 };
+
+std::unique_ptr<IChildProcessManager> createChildProcessManager();
+
 

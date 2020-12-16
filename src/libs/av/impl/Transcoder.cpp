@@ -17,12 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "av/AvTranscoder.hpp"
+#include "Transcoder.hpp"
 
 #include <atomic>
-#include <mutex>
+#include <iomanip>
 
-#include "av/AvInfo.hpp"
+#include "utils/IChildProcessManager.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Path.hpp"
 #include "utils/Logger.hpp"
@@ -32,7 +32,7 @@ namespace Av {
 
 #define LOG(sev)	LMS_LOG(TRANSCODE, sev) << "[" << _id << "] - "
 
-static std::atomic<size_t>	globalId {};
+static std::atomic<size_t>		globalId {};
 static std::filesystem::path	ffmpegPath;
 
 void
@@ -40,39 +40,40 @@ Transcoder::init()
 {
 	ffmpegPath = Service<IConfig>::get()->getPath("ffmpeg-file", "/usr/bin/ffmpeg");
 	if (!std::filesystem::exists(ffmpegPath))
-		throw LmsException {"File '" + ffmpegPath.string() + "' does not exist!"};
+		throw Exception {"File '" + ffmpegPath.string() + "' does not exist!"};
 }
 
 Transcoder::Transcoder(const std::filesystem::path& filePath, const TranscodeParameters& parameters)
-: _filePath {filePath},
-  _parameters {parameters},
-  _id {globalId++}
+:  _id {globalId++}
+, _filePath {filePath}
+, _parameters {parameters}
 {
-
 }
+
+Transcoder::~Transcoder() = default;
 
 bool
 Transcoder::start()
 {
+	if (ffmpegPath.empty())
+		init();
+
 	try
 	{
 		if (!std::filesystem::exists(_filePath))
 		{
 			LOG(ERROR) << "File '" << _filePath << "' does not exist!";
-			_isComplete = true;
 			return false;
 		}
 		else if (!std::filesystem::is_regular_file( _filePath) )
 		{
 			LOG(ERROR) << "File '" << _filePath << "' is not regular!";
-			_isComplete = true;
 			return false;
 		}
 	}
 	catch (const std::filesystem::filesystem_error& e)
 	{
 		LOG(ERROR) << "File error on '" << _filePath.string() << "': " << e.what();
-		_isComplete = true;
 		return false;
 	}
 
@@ -82,17 +83,21 @@ Transcoder::start()
 
 	args.emplace_back(ffmpegPath.string());
 
-	// Make sure we do not produce anything in the stderr output
+	// Make sure:
+	// - we do not produce anything in the stderr output
+	// - we do not rely on input
 	// in order not to block the whole forked process
 	args.emplace_back("-loglevel");
 	args.emplace_back("quiet");
 	args.emplace_back("-nostdin");
 
 	// input Offset
-	if (_parameters.offset)
 	{
 		args.emplace_back("-ss");
-		args.emplace_back(std::to_string((*_parameters.offset).count()));
+
+		std::ostringstream oss;
+		oss << std::fixed << std::showpoint << std::setprecision(3) << (_parameters.offset.count() / float {1000});
+		args.emplace_back(oss.str());
 	}
 
 	// Input file
@@ -119,6 +124,7 @@ Transcoder::start()
 	// Output bitrates
 	args.emplace_back("-b:a");
 	args.emplace_back(std::to_string(_parameters.bitrate));
+
 
 	// Codecs and formats
 	switch (_parameters.format)
@@ -157,7 +163,6 @@ Transcoder::start()
 			break;
 
 		default:
-			_isComplete = true;
 			return false;
 	}
 
@@ -169,84 +174,56 @@ Transcoder::start()
 	for (const std::string& arg : args)
 		LOG(DEBUG) << "Arg = '" << arg << "'";
 
-	// make sure only one thread is executing this part of code
+	// Caution: stdin must have been closed before
+	try
 	{
-		static std::mutex transcoderMutex;
-
-		std::lock_guard<std::mutex> lock {transcoderMutex};
-
-		_child = std::make_shared<redi::ipstream>();
-
-		// Caution: stdin must have been closed before
-		_child->open(ffmpegPath.string(), args);
-		if (!_child->is_open())
-		{
-			LOG(DEBUG) << "Exec failed!";
-			_isComplete = true;
-			return false;
-		}
-
-		if (_child->out().eof())
-		{
-			LOG(DEBUG) << "Early end of file!";
-			_isComplete = true;
-			return false;
-		}
-
+		_childProcess = Service<IChildProcessManager>::get()->spawnChildProcess(ffmpegPath, args);
 	}
-	LOG(DEBUG) << "Stream opened!";
+	catch (ChildProcessException& exception)
+	{
+		LOG(ERROR) << "Cannot execute '" << ffmpegPath << "': " << exception.what();
+		return false;
+	}
 
 	return true;
 }
 
 void
-Transcoder::process(std::vector<unsigned char>& output, std::size_t maxSize)
+Transcoder::asyncWaitForData(WaitCallback cb)
 {
-	if (!_child || _isComplete)
-		return;
+	assert(_childProcess);
 
-	output.resize(maxSize);
+	LOG(DEBUG) << "Want to wait for data";
 
-	//Read on the output stream
-	_child->out().read(reinterpret_cast<char*>(&output[0]), maxSize);
-	output.resize(_child->out().gcount());
-
-	if (_child->out().fail())
+	_childProcess->asyncWaitForData([cb = std::move(cb)]
 	{
-		LOG(DEBUG) << "Stdout FAILED";
-		_isComplete = true;
-	}
-
-	if (_child->out().eof())
-	{
-		LOG(DEBUG) << "Stdout EOF!";
-		_isComplete = true;
-	}
-
-	if (_isComplete)
-	{
-		LOG(DEBUG) << "Transcode complete!";
-		_child->clear();
-		_child.reset();
-	}
-
-	_total += output.size();
-
-	LOG(DEBUG) << "nb bytes = " << output.size() << ", total = " << _total;
+		cb();
+	});
 }
 
-Transcoder::~Transcoder()
+void
+Transcoder::asyncRead(std::byte* buffer, std::size_t bufferSize, ReadCallback readCallback)
 {
-	LOG(DEBUG) << ", ~Transcoder called! Total produced bytes = " << _total;
+	assert(_childProcess);
 
-	if (_child)
+	return _childProcess->asyncRead(buffer, bufferSize, [readCallback {std::move(readCallback)}](IChildProcess::ReadResult /*res*/, std::size_t nbBytesRead)
 	{
-		LOG(DEBUG) << "Child still here!";
-		_child->rdbuf()->kill(SIGKILL);
-		LOG(DEBUG) << "Closing...";
-		_child->rdbuf()->close();
-		LOG(DEBUG) << "Closing DONE";
-	}
+		readCallback(nbBytesRead);
+	});
+}
+
+std::size_t
+Transcoder::readSome(std::byte* buffer, std::size_t bufferSize)
+{
+	assert(_childProcess);
+
+	return _childProcess->readSome(buffer, bufferSize);
+}
+
+bool
+Transcoder::finished() const
+{
+	return _childProcess->finished();
 }
 
 } // namespace Transcode

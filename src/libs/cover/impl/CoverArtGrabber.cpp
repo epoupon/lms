@@ -19,7 +19,7 @@
 
 #include "CoverArtGrabber.hpp"
 
-#include "av/AvInfo.hpp"
+#include "av/IAudioFile.hpp"
 
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -125,7 +125,7 @@ Grabber::Grabber(const std::filesystem::path& execPath,
 }
 
 std::unique_ptr<IEncodedImage>
-Grabber::getFromAvMediaFile(const Av::MediaFile& input, ImageSize width) const
+Grabber::getFromAvMediaFile(const Av::IAudioFile& input, ImageSize width) const
 {
 	std::unique_ptr<IEncodedImage> image;
 
@@ -303,10 +303,9 @@ Grabber::getFromTrack(const std::filesystem::path& p, ImageSize width) const
 
 	try
 	{
-		const Av::MediaFile input {p};
-		image = getFromAvMediaFile(input, width);
+		image = getFromAvMediaFile(*Av::parseAudioFile(p), width);
 	}
-	catch (Av::AvException& e)
+	catch (Av::Exception& e)
 	{
 		LMS_LOG(COVER, ERROR) << "Cannot get covers from track " << p.string() << ": " << e.what();
 	}
