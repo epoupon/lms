@@ -37,6 +37,7 @@
 <!--Administration-->
 <message id="Lms.Admin.Database.daily">Tous les jours</message>
 <message id="Lms.Admin.Database.database">Collection de musiques</message>
+<message id="Lms.Admin.Database.hourly">Toutes les heures</message>
 <message id="Lms.Admin.Database.immediate-scan">Scanner maintenant !</message>
 <message id="Lms.Admin.Database.monthly">Tous les mois</message>
 <message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Collection de musiques</message>

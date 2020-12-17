@@ -368,28 +368,32 @@ Scanner::scheduleNextScan()
 
 	const Wt::WDateTime now {Wt::WLocalDateTime::currentServerDateTime().toUTC()};
 
-	Wt::WDate nextScanDate;
+	Wt::WDateTime nextScanDateTime;
 	switch (_updatePeriod)
 	{
 		case ScanSettings::UpdatePeriod::Daily:
 			if (now.time() < _startTime)
-				nextScanDate = now.date();
+				nextScanDateTime = {now.date(), _startTime};
 			else
-				nextScanDate = now.date().addDays(1);
+				nextScanDateTime = {now.date().addDays(1), _startTime};
 			break;
 
 		case ScanSettings::UpdatePeriod::Weekly:
 			if (now.time() < _startTime && now.date().dayOfWeek() == 1)
-				nextScanDate = now.date();
+				nextScanDateTime = {now.date(), _startTime};
 			else
-				nextScanDate = getNextMonday(now.date());
+				nextScanDateTime = {getNextMonday(now.date()), _startTime};
 			break;
 
 		case ScanSettings::UpdatePeriod::Monthly:
 			if (now.time() < _startTime && now.date().day() == 1)
-				nextScanDate = now.date();
+				nextScanDateTime = {now.date(), _startTime};
 			else
-				nextScanDate = getNextFirstOfMonth(now.date());
+				nextScanDateTime = {getNextFirstOfMonth(now.date()), _startTime};
+			break;
+
+		case ScanSettings::UpdatePeriod::Hourly:
+			nextScanDateTime = {now.date(), now.time().addSecs(3600)};
 			break;
 
 		case ScanSettings::UpdatePeriod::Never:
@@ -397,13 +401,8 @@ Scanner::scheduleNextScan()
 			break;
 	}
 
-	Wt::WDateTime nextScanDateTime;
-
-	if (nextScanDate.isValid())
-	{
-		nextScanDateTime = Wt::WDateTime {nextScanDate, _startTime};
+	if (nextScanDateTime.isValid())
 		scheduleScan(false, nextScanDateTime);
-	}
 
 	{
 		std::unique_lock lock {_statusMutex};

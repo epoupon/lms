@@ -41,7 +41,8 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 			Never = 0,
 			Daily,
 			Weekly,
-			Monthly
+			Monthly,
+			Hourly,
 		};
 
 		// Do not modify values (just add)
