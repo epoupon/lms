@@ -133,7 +133,7 @@ proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
 
 	scanner.getEvents().scanComplete.connect([&] (const Scanner::ScanStats& stats)
 	{
-		server.postAll([&]
+		server.postAll([=]
 		{
 			LmsApp->getScannerEvents().scanComplete.emit(stats);
 			LmsApp->triggerUpdate();
@@ -142,7 +142,7 @@ proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
 
 	scanner.getEvents().scanInProgress.connect([&] (const Scanner::ScanStepStats& stats)
 	{
-		server.postAll([&]
+		server.postAll([=]
 		{
 			LmsApp->getScannerEvents().scanInProgress.emit(stats);
 			LmsApp->triggerUpdate();
@@ -151,7 +151,7 @@ proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
 
 	scanner.getEvents().scanScheduled.connect([&] (const Wt::WDateTime dateTime)
 	{
-		server.postAll([&]
+		server.postAll([=]
 		{
 			LmsApp->getScannerEvents().scanScheduled.emit(dateTime);
 			LmsApp->triggerUpdate();
