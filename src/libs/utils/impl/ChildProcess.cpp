@@ -80,7 +80,12 @@ ChildProcess::ChildProcess(boost::asio::io_context& ioContext, const std::filesy
 	else // PARENT
 	{
 		close(pipe[1]);
-		_childStdout.assign(pipe[0]);
+		{
+			boost::system::error_code assignError;
+			_childStdout.assign(pipe[0], assignError);
+			if (assignError)
+				LMS_LOG(CHILDPROCESS, ERROR) << "Assign failed: " << assignError.message();
+		}
 		_childPID = res;
 	}
 }
@@ -89,7 +94,12 @@ ChildProcess::~ChildProcess()
 {
 	if (!_waited)
 	{
-		close(_childStdout.native_handle());
+		{
+			boost::system::error_code closeError;
+			_childStdout.close(closeError);
+			if (closeError)
+				LMS_LOG(CHILDPROCESS, ERROR) << "Closed failed: " << closeError.message();
+		}
 		kill();
 		wait(true);
 	}
@@ -133,12 +143,10 @@ ChildProcess::wait(bool block)
 void
 ChildProcess::asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback callback) 
 {
-	LMS_LOG(CHILDPROCESS, DEBUG) << "ASYNC READ";
-
 	boost::asio::async_read(_childStdout, boost::asio::buffer(data, bufferSize),
 		[this, callback {std::move(callback)}](const boost::system::error_code& error, std::size_t bytesTransferred)
 		{
-			LMS_LOG(CHILDPROCESS, DEBUG) << "ASYNC READ CB - error = '" << error.message() << "', bytesTransferred = " << bytesTransferred;
+			LMS_LOG(CHILDPROCESS, DEBUG) << "Async read cb - ec = '" << error.message() << "', bytesTransferred = " << bytesTransferred;
 
 			if (error)
 			{
