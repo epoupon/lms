@@ -6,7 +6,7 @@
 	<div class="Lms-header">
 		<h2><div class="Lms-artistname text-primary">${name}</div></h2>
 		${clusters}
-		${play-btn}${more-btn}
+		${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
 	</div>
 	<div class="row">
 		${releases class="Lms-explore-artist-entries-container"}

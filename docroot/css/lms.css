@@ -112,9 +112,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-explore-btn {
-	font-size: 24px !important;
-	text-align: left;
-	width: 28px;
+	font-size: 24px;
 }
 
 .Lms-explore-clusters {
@@ -185,7 +183,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-explore-release-entry {
-	min-height: 32px;
+	min-height: 34px;
 }
 
 .Lms-explore-release-entry:hover .Lms-explore-release-entry-controls {
@@ -278,8 +276,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-playqueue-btn {
-	font-size: 24px !important;
-	text-align: left;
+	font-size: 24px;
 }
 
 .Lms-playqueue-entry:hover .Lms-playqueue-entry-controls {
@@ -350,8 +347,6 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 
 .Lms-player-btn-controls {
 	font-size: 40px !important;
-	text-align: center;
-	width: 1.1em;
 }
 
 .Lms-player-controls {

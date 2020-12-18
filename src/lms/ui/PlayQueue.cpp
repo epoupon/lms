@@ -19,7 +19,7 @@
 
 #include "PlayQueue.hpp"
 
-#include <Wt/WText.h>
+#include <Wt/WPopupMenu.h>
 #include <Wt/WText.h>
 
 #include "database/Cluster.hpp"
@@ -35,6 +35,7 @@
 
 #include "common/LoadingIndicator.hpp"
 #include "resource/CoverResource.hpp"
+#include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
 #include "TrackStringUtils.hpp"
@@ -414,6 +415,7 @@ PlayQueue::addSome()
 	{
 		const auto tracklistEntryId {tracklistEntry.id()};
 		const auto track {tracklistEntry->getTrack()};
+		const Database::IdType trackId {track->id()};
 
 		Wt::WTemplate* entry = _entriesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry"));
 
@@ -459,7 +461,7 @@ PlayQueue::addSome()
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
 
-		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.template.play-btn"), Wt::TextFormat::XHTML);
+		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect(std::bind([=]
 		{
 			auto pos = _entriesContainer->indexOf(entry);
@@ -467,8 +469,8 @@ PlayQueue::addSome()
 				loadTrack(pos, true);
 		}));
 
-		Wt::WText* delBtn = entry->bindNew<Wt::WText>("del-btn", Wt::WString::tr("Lms.PlayQueue.template.delete-btn"), Wt::TextFormat::XHTML);
-		delBtn->clicked().connect(std::bind([=]
+		Wt::WText* delBtn {entry->bindNew<Wt::WText>("del-btn", Wt::WString::tr("Lms.PlayQueue.template.delete-btn"), Wt::TextFormat::XHTML)};
+		delBtn->clicked().connect([=]
 		{
 			// Remove the entry n both the widget tree and the playqueue
 			{
@@ -488,8 +490,39 @@ PlayQueue::addSome()
 			_entriesContainer->removeWidget(entry);
 
 			updateInfo();
-		}));
+		});
 
+		Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.PlayQueue.template.more-btn"), Wt::TextFormat::XHTML)};
+		moreBtn->clicked().connect([=]
+		{
+			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
+
+			bool isStarred {};
+			{
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				if (auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)})
+					isStarred = LmsApp->getUser()->hasStarredTrack(track);
+			}
+			popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
+				->triggered().connect(moreBtn, [=]
+					{
+						auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+						auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+						if (!track)
+							return;
+
+						if (isStarred)
+							LmsApp->getUser().modify()->unstarTrack(track);
+						else
+							LmsApp->getUser().modify()->starTrack(track);
+					});
+			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
+				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
+
+			popup->popup(moreBtn);
+		});
 	}
 
 	if (static_cast<std::size_t>(_entriesContainer->count()) < tracklist->getCount())
