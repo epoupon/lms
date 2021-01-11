@@ -412,123 +412,128 @@ PlayQueue::addSome()
 
 	auto tracklistEntries = tracklist->getEntries(_entriesContainer->count(), 50);
 	for (const Database::TrackListEntry::pointer& tracklistEntry : tracklistEntries)
-	{
-		const auto tracklistEntryId {tracklistEntry.id()};
-		const auto track {tracklistEntry->getTrack()};
-		const Database::IdType trackId {track->id()};
-
-		Wt::WTemplate* entry = _entriesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry"));
-
-		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
-
-		const auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
-		const auto release {track->getRelease()};
-
-		if (!artists.empty() || release)
-			entry->setCondition("if-has-artists-or-release", true);
-
-		if (!artists.empty())
-		{
-			entry->setCondition("if-has-artists", true);
-
-			Wt::WContainerWidget* artistContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
-			for (const auto& artist : artists)
-			{
-				Wt::WTemplate* a {artistContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry-artist"))};
-				a->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
-			}
-		}
-		if (release)
-		{
-			entry->setCondition("if-has-release", true);
-			entry->bindWidget("release", LmsApplication::createReleaseAnchor(release));
-			{
-				Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
-				auto cover = std::make_unique<Wt::WImage>();
-				cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release.id(), CoverResource::Size::Large));
-				cover->setStyleClass("Lms-cover");
-				cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
-				anchor->setImage(std::move(cover));
-			}
-		}
-		else
-		{
-			auto cover = entry->bindNew<Wt::WImage>("cover");
-			cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(track.id(), CoverResource::Size::Large));
-			cover->setStyleClass("Lms-cover");
-			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
-		}
-
-		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
-
-		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.template.play-btn"), Wt::TextFormat::XHTML)};
-		playBtn->clicked().connect(std::bind([=]
-		{
-			auto pos = _entriesContainer->indexOf(entry);
-			if (pos >= 0)
-				loadTrack(pos, true);
-		}));
-
-		Wt::WText* delBtn {entry->bindNew<Wt::WText>("del-btn", Wt::WString::tr("Lms.PlayQueue.template.delete-btn"), Wt::TextFormat::XHTML)};
-		delBtn->clicked().connect([=]
-		{
-			// Remove the entry n both the widget tree and the playqueue
-			{
-				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
-
-				Database::TrackListEntry::pointer entryToRemove {Database::TrackListEntry::getById(LmsApp->getDbSession(), tracklistEntryId)};
-				entryToRemove.remove();
-			}
-
-			if (_trackPos)
-			{
-				auto pos {_entriesContainer->indexOf(entry)};
-				if (pos > 0 && *_trackPos >= static_cast<std::size_t>(pos))
-					(*_trackPos)--;
-			}
-
-			_entriesContainer->removeWidget(entry);
-
-			updateInfo();
-		});
-
-		Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.PlayQueue.template.more-btn"), Wt::TextFormat::XHTML)};
-		moreBtn->clicked().connect([=]
-		{
-			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
-
-			bool isStarred {};
-			{
-				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-				if (auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)})
-					isStarred = LmsApp->getUser()->hasStarredTrack(track);
-			}
-			popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
-				->triggered().connect(moreBtn, [=]
-					{
-						auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
-
-						auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
-						if (!track)
-							return;
-
-						if (isStarred)
-							LmsApp->getUser().modify()->unstarTrack(track);
-						else
-							LmsApp->getUser().modify()->starTrack(track);
-					});
-			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
-				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
-
-			popup->popup(moreBtn);
-		});
-	}
+		addEntry(tracklistEntry);
 
 	if (static_cast<std::size_t>(_entriesContainer->count()) < tracklist->getCount())
 		displayLoadingIndicator();
 	else
 		hideLoadingIndicator();
+}
+
+void
+PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
+{
+	const auto tracklistEntryId {tracklistEntry.id()};
+	const auto track {tracklistEntry->getTrack()};
+	const Database::IdType trackId {track->id()};
+
+	Wt::WTemplate* entry = _entriesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry"));
+
+	entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
+
+	const auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
+	const auto release {track->getRelease()};
+
+	if (!artists.empty() || release)
+		entry->setCondition("if-has-artists-or-release", true);
+
+	if (!artists.empty())
+	{
+		entry->setCondition("if-has-artists", true);
+
+		Wt::WContainerWidget* artistContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
+		for (const auto& artist : artists)
+		{
+			Wt::WTemplate* a {artistContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry-artist"))};
+			a->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
+		}
+	}
+	if (release)
+	{
+		entry->setCondition("if-has-release", true);
+		entry->bindWidget("release", LmsApplication::createReleaseAnchor(release));
+		{
+			Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
+			auto cover = std::make_unique<Wt::WImage>();
+			cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release.id(), CoverResource::Size::Large));
+			cover->setStyleClass("Lms-cover");
+			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
+			anchor->setImage(std::move(cover));
+		}
+	}
+	else
+	{
+		auto cover = entry->bindNew<Wt::WImage>("cover");
+		cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(track.id(), CoverResource::Size::Large));
+		cover->setStyleClass("Lms-cover");
+		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
+	}
+
+	entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
+
+	Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.template.play-btn"), Wt::TextFormat::XHTML)};
+	playBtn->clicked().connect([=]
+	{
+		auto pos = _entriesContainer->indexOf(entry);
+		if (pos >= 0)
+			loadTrack(pos, true);
+	});
+
+	Wt::WText* delBtn {entry->bindNew<Wt::WText>("del-btn", Wt::WString::tr("Lms.PlayQueue.template.delete-btn"), Wt::TextFormat::XHTML)};
+	delBtn->clicked().connect([=]
+	{
+		// Remove the entry n both the widget tree and the playqueue
+		{
+			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+			Database::TrackListEntry::pointer entryToRemove {Database::TrackListEntry::getById(LmsApp->getDbSession(), tracklistEntryId)};
+			entryToRemove.remove();
+		}
+
+		if (_trackPos)
+		{
+			auto pos {_entriesContainer->indexOf(entry)};
+			if (pos > 0 && *_trackPos >= static_cast<std::size_t>(pos))
+			(*_trackPos)--;
+		}
+
+		_entriesContainer->removeWidget(entry);
+
+		updateInfo();
+	});
+
+	Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.PlayQueue.template.more-btn"), Wt::TextFormat::XHTML)};
+	moreBtn->clicked().connect([=]
+	{
+		Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
+
+		bool isStarred {};
+		{
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+			if (auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)})
+			isStarred = LmsApp->getUser()->hasStarredTrack(track);
+		}
+
+		popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
+			->triggered().connect(moreBtn, [=]
+			{
+				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+				auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+				if (!track)
+					return;
+
+				if (isStarred)
+					LmsApp->getUser().modify()->unstarTrack(track);
+				else
+					LmsApp->getUser().modify()->starTrack(track);
+			});
+		popup->addItem(Wt::WString::tr("Lms.Explore.download"))
+			->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
+
+		popup->popup(moreBtn);
+	});
 }
 
 void

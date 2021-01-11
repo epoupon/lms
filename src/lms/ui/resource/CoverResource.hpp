@@ -44,7 +44,6 @@ namespace UserInterface
 
 		private:
 			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-
 	};
 
 } // namespace UserInterface

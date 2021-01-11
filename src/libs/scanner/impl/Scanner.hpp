@@ -115,8 +115,7 @@ class Scanner : public IScanner
 		std::unordered_set<std::filesystem::path> _fileExtensions;
 		std::filesystem::path			_mediaDirectory;
 		Database::ScanSettings::RecommendationEngineType _recommendationEngineType;
-
-}; // class Scanner
+};
 
 } // Scanner
 

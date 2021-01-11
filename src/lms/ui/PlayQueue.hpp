@@ -35,6 +35,7 @@ namespace Similarity {
 namespace Database {
 	class Track;
 	class TrackList;
+	class TrackListEntry;
 }
 
 namespace UserInterface {
@@ -65,6 +66,7 @@ class PlayQueue : public Wt::WTemplate
 		void clearTracks();
 		std::size_t enqueueTracks(const std::vector<Database::IdType>& trackIds);
 		void addSome();
+		void addEntry(const Wt::Dbo::ptr<Database::TrackListEntry>& entry);
 		void enqueueRadioTracks();
 		void updateInfo();
 		void updateCurrentTrack(bool selected);

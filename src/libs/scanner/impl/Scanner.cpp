@@ -888,7 +888,6 @@ checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDire
 		}
 
 		return true;
-
 	}
 	catch (std::filesystem::filesystem_error& e)
 	{
