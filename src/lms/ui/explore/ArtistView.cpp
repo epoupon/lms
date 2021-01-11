@@ -21,6 +21,7 @@
 
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
+#include <Wt/WPopupMenu.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2014 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,15 +19,32 @@
 
 #pragma once
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
+#include <Wt/WResource.h>
+#include "database/Types.hpp"
 
-// Helper class to serve a resource (must be saved as continuation data if not complete)
-class IResourceHandler
+namespace UserInterface
 {
-	public:
-		virtual ~IResourceHandler() = default;
 
-		[[nodiscard]] virtual Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) = 0;
-};
+	class CoverResource : public Wt::WResource
+	{
+		public:
+			static const std::size_t maxSize {512};
+
+			CoverResource();
+			~CoverResource();
+
+			enum class Size : std::size_t
+			{
+				Small = 128,
+				Large = 512,
+			};
+
+			std::string getReleaseUrl(Database::IdType releaseId, Size size) const;
+			std::string getTrackUrl(Database::IdType trackId, Size size) const;
+
+		private:
+			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
+	};
+
+} // namespace UserInterface
 

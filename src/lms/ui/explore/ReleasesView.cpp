@@ -24,6 +24,7 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
 #include <Wt/WMenu.h>
+#include <Wt/WPopupMenu.h>
 #include <Wt/WText.h>
 
 #include "database/Release.hpp"
@@ -34,7 +35,6 @@
 #include "utils/String.hpp"
 
 #include "common/LoadingIndicator.hpp"
-#include "resource/ImageResource.hpp"
 #include "ReleaseListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"

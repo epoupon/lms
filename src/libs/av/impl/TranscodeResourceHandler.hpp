@@ -19,9 +19,12 @@
 
 #pragma once
 
+#include <array>
 #include <filesystem>
-#include "av/AvTranscoder.hpp"
+
+#include "av/TranscodeParameters.hpp"
 #include "utils/IResourceHandler.hpp"
+#include "Transcoder.hpp"
 
 namespace Av
 {
@@ -32,11 +35,11 @@ namespace Av
 			TranscodeResourceHandler(const std::filesystem::path& trackPath, const TranscodeParameters& parameters);
 
 		private:
+			Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& reponse) override;
 
-			void processRequest(const Wt::Http::Request& request, Wt::Http::Response& reponse) override;
-			bool isFinished() const override;
-
-			static constexpr std::size_t _chunkSize {262144};
+			static constexpr std::size_t _chunkSize {32768};
+			std::array<std::byte, _chunkSize> _buffer;
+			std::size_t _nbBytesReady {};
 			const std::filesystem::path _trackPath;
 			Transcoder _transcoder;
 	};

@@ -20,8 +20,9 @@
 #include "TracksView.hpp"
 
 #include <Wt/WAnchor.h>
-#include <Wt/WMenu.h>
 #include <Wt/WLineEdit.h>
+#include <Wt/WMenu.h>
+#include <Wt/WPopupMenu.h>
 #include <Wt/WText.h>
 
 #include "database/Artist.hpp"
@@ -34,7 +35,6 @@
 #include "utils/String.hpp"
 
 #include "common/LoadingIndicator.hpp"
-#include "resource/ImageResource.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"

@@ -1,5 +1,7 @@
 
 add_library(lmsutils SHARED
+	impl/ChildProcess.cpp
+	impl/ChildProcessManager.cpp
 	impl/Config.cpp
 	impl/FileResourceHandler.cpp
 	impl/Logger.cpp
@@ -22,7 +24,7 @@ target_include_directories(lmsutils PRIVATE
 	)
 
 target_link_libraries(lmsutils PRIVATE
-	config++
+	PkgConfig::Config++
 	)
 
 target_link_libraries(lmsutils PUBLIC

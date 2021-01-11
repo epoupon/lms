@@ -45,7 +45,10 @@ Artist::getByName(Session& session, const std::string& name)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<Artist::pointer> res = session.getDboSession().find<Artist>().where("name = ?").bind( std::string{name, 0, _maxNameLength} );
+	Wt::Dbo::collection<Artist::pointer> res = session.getDboSession().find<Artist>()
+		.where("name = ?").bind(std::string {name, 0, _maxNameLength})
+		.orderBy("LENGTH(mbid) DESC"); // put mbid entries first
+
 	return std::vector<Artist::pointer>(res.begin(), res.end());
 }
 

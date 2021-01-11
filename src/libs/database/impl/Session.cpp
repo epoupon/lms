@@ -40,7 +40,7 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	27
+#define LMS_DATABASE_VERSION	28
 
 using Version = std::size_t;
 
@@ -281,6 +281,12 @@ CREATE TABLE "user_backup" (
 		else if (version == 26)
 		{
 			// Composer, mixer, etc. support
+			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+			ScanSettings::get(*this).modify()->incScanVersion();
+		}
+		else if (version == 27)
+		{
+			// Composer, mixer, etc. support, now fallback on MBID tagged entries as there is no mean to provide MBID by tags for these kinf od artists
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
 		}

@@ -29,6 +29,7 @@
 #include "database/Cluster.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
+#include "scanner/IScanner.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -47,11 +48,13 @@ class DatabaseSettingsModel : public Wt::WFormModel
 {
 	public:
 		// Associate each field with a unique string literal.
-		static inline const Field MediaDirectoryField {"media-directory"};
-		static inline const Field UpdatePeriodField {"update-period"};
-		static inline const Field UpdateStartTimeField {"update-start-time"};
-		static inline const Field RecommendationEngineTypeField {"recommendation-engine-type"};
-		static inline const Field TagsField {"tags"};
+		static inline constexpr Field MediaDirectoryField {"media-directory"};
+		static inline constexpr Field UpdatePeriodField {"update-period"};
+		static inline constexpr Field UpdateStartTimeField {"update-start-time"};
+		static inline constexpr Field RecommendationEngineTypeField {"recommendation-engine-type"};
+		static inline constexpr Field TagsField {"tags"};
+
+		using UpdatePeriodModel = ValueStringModel<ScanSettings::UpdatePeriod>;
 
 		DatabaseSettingsModel()
 		{
@@ -76,7 +79,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			loadData();
 		}
 
-		std::shared_ptr<Wt::WAbstractItemModel> updatePeriodModel() { return _updatePeriodModel; }
+		std::shared_ptr<UpdatePeriodModel> updatePeriodModel() { return _updatePeriodModel; }
 		std::shared_ptr<Wt::WAbstractItemModel> updateStartTimeModel() { return _updateStartTimeModel; }
 		std::shared_ptr<Wt::WAbstractItemModel> recommendationEngineTypeModel() { return _recommendationEngineTypeModel; }
 
@@ -95,6 +98,12 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			auto startTimeRow {_updateStartTimeModel->getRowFromValue(scanSettings->getUpdateStartTime())};
 			if (startTimeRow)
 				setValue(UpdateStartTimeField, _updateStartTimeModel->getString(*startTimeRow));
+
+			if (scanSettings->getUpdatePeriod() == ScanSettings::UpdatePeriod::Hourly
+					|| scanSettings->getUpdatePeriod() == ScanSettings::UpdatePeriod::Never)
+			{
+				setReadOnly(DatabaseSettingsModel::UpdateStartTimeField, true);
+			}
 
 			auto recommendationEngineTypeRow {_recommendationEngineTypeModel->getRowFromValue(scanSettings->getRecommendationEngineType())};
 			if (recommendationEngineTypeRow)
@@ -144,6 +153,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 		{
 			_updatePeriodModel = std::make_shared<ValueStringModel<ScanSettings::UpdatePeriod>>();
 			_updatePeriodModel->add(Wt::WString::tr("Lms.Admin.Database.never"), ScanSettings::UpdatePeriod::Never);
+			_updatePeriodModel->add(Wt::WString::tr("Lms.Admin.Database.hourly"), ScanSettings::UpdatePeriod::Hourly);
 			_updatePeriodModel->add(Wt::WString::tr("Lms.Admin.Database.daily"), ScanSettings::UpdatePeriod::Daily);
 			_updatePeriodModel->add(Wt::WString::tr("Lms.Admin.Database.weekly"), ScanSettings::UpdatePeriod::Weekly);
 			_updatePeriodModel->add(Wt::WString::tr("Lms.Admin.Database.monthly"), ScanSettings::UpdatePeriod::Monthly);
@@ -160,7 +170,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			_recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.features"), ScanSettings::RecommendationEngineType::Features);
 		}
 
-		std::shared_ptr<ValueStringModel<ScanSettings::UpdatePeriod>>				_updatePeriodModel;
+		std::shared_ptr<UpdatePeriodModel>											_updatePeriodModel;
 		std::shared_ptr<ValueStringModel<Wt::WTime>>								_updateStartTimeModel;
 		std::shared_ptr<ValueStringModel<ScanSettings::RecommendationEngineType>>	_recommendationEngineTypeModel;
 };
@@ -192,6 +202,13 @@ DatabaseSettingsView::refreshView()
 	// Update Period
 	auto updatePeriod {std::make_unique<Wt::WComboBox>()};
 	updatePeriod->setModel(model->updatePeriodModel());
+	updatePeriod->activated().connect([=](int row)
+	{
+		const ScanSettings::UpdatePeriod period {model->updatePeriodModel()->getValue(row)};
+		model->setReadOnly(DatabaseSettingsModel::UpdateStartTimeField, period == ScanSettings::UpdatePeriod::Hourly || period == ScanSettings::UpdatePeriod::Never);
+		t->updateModel(model.get());
+		t->updateView(model.get());
+	});
 	t->setFormWidget(DatabaseSettingsModel::UpdatePeriodField, std::move(updatePeriod));
 
 	// Update Start Time
@@ -222,8 +239,8 @@ DatabaseSettingsView::refreshView()
 		{
 			model->saveData();
 
-			Service<Scanner::IMediaScanner>::get()->requestImmediateScan(false);
-			LmsApp->notifyMsg(MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
+			Service<Scanner::IScanner>::get()->requestImmediateScan(false);
+			LmsApp->notifyMsg(LmsApplication::MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.
@@ -239,7 +256,7 @@ DatabaseSettingsView::refreshView()
 
 	immScanBtn->clicked().connect([=]
 	{
-		Service<Scanner::IMediaScanner>::get()->requestImmediateScan(false);
+		Service<Scanner::IScanner>::get()->requestImmediateScan(false);
 	});
 
 	t->updateView(model.get());

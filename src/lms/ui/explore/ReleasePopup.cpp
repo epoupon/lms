@@ -19,6 +19,8 @@
 
 #include "ReleasePopup.hpp"
 
+#include <Wt/WPopupMenu.h>
+
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"

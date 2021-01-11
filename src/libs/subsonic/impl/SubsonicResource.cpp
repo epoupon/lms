@@ -53,6 +53,7 @@ using namespace Database;
 static const std::string	genreClusterName {"GENRE"};
 static const std::string	reportedStarredDate {"2000-01-01T00:00:00"};
 static const std::string	reportedDummyDate {"2000-01-01T00:00:00"};
+static const unsigned long long	reportedDummyDateULong {946684800000ULL}; // 2000-01-01T00:00:00 UTC
 
 namespace API::Subsonic
 {
@@ -377,7 +378,7 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 	{
 		albumNode.setAttribute("name", release->getName());
 		albumNode.setAttribute("songCount", release->getTracksCount());
-		albumNode.setAttribute("duration", std::to_string(std::chrono::duration_cast<std::chrono::seconds>(release->getDuration()).count()));
+		albumNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(release->getDuration()).count());
 	}
 	else
 	{
@@ -936,7 +937,10 @@ Response
 handleGetArtistsRequest(RequestContext& context)
 {
 	Response response {Response::createOkResponse(context)};
+
 	Response::Node& artistsNode {response.createNode("artists")};
+	artistsNode.setAttribute("ignoredArticles", "");
+	artistsNode.setAttribute("lastModified", reportedDummyDateULong);
 
 	Response::Node& indexNode {artistsNode.createArrayChild("index")};
 	indexNode.setAttribute("name", "?");
@@ -1083,7 +1087,10 @@ Response
 handleGetIndexesRequest(RequestContext& context)
 {
 	Response response {Response::createOkResponse(context)};
+
 	Response::Node& artistsNode {response.createNode("indexes")};
+	artistsNode.setAttribute("ignoredArticles", "");
+	artistsNode.setAttribute("lastModified", reportedDummyDateULong);
 
 	Response::Node& indexNode {artistsNode.createArrayChild("index")};
 	indexNode.setAttribute("name", "?");

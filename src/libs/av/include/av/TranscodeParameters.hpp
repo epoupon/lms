@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,32 +19,21 @@
 
 #pragma once
 
-#include <Wt/WResource.h>
-#include "database/Types.hpp"
+#include <chrono>
+#include <optional>
 
-namespace UserInterface
+#include "Types.hpp"
+
+namespace Av {
+
+struct TranscodeParameters
 {
+	Format						format;
+	std::size_t					bitrate {128000};
+	std::optional<std::size_t>	stream; // Id of the stream to be transcoded (auto detect by default)
+	std::chrono::milliseconds	offset {0};
+	bool 						stripMetadata {true};
+};
 
-	class ImageResource : public Wt::WResource
-	{
-		public:
-			static const std::size_t maxSize {512};
-
-			~ImageResource();
-
-			enum class Size : std::size_t
-			{
-				Small = 128,
-				Large = 512,
-			};
-
-			std::string getReleaseUrl(Database::IdType releaseId, Size size) const;
-			std::string getTrackUrl(Database::IdType trackId, Size size) const;
-
-		private:
-			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-
-	};
-
-} // namespace UserInterface
+} // namespace Av
 

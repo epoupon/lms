@@ -2,16 +2,16 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="Lms.PlayQueue.template.clear-btn"><i class="fa fa-fw fa-times-circle Lms-playqueue-btn Lms-btn"></i></message>
-<message id="Lms.PlayQueue.template.shuffle-btn"><i class="fa fa-fw fa-random Lms-playqueue-btn Lms-btn"></i></message>
-<message id="Lms.PlayQueue.template.repeat-btn"><i class="fa fa-fw fa-repeat Lms-playqueue-btn Lms-btn"></i></message>
-<message id="Lms.PlayQueue.template.radio-btn"><i class="fa fa-fw fa-rss Lms-playqueue-btn Lms-btn"></i></message>
+<message id="Lms.PlayQueue.template.clear-btn"><i class="fa fa-fw fa-times-circle"></i></message>
+<message id="Lms.PlayQueue.template.shuffle-btn"><i class="fa fa-fw fa-random"></i></message>
+<message id="Lms.PlayQueue.template.repeat-btn"><i class="fa fa-fw fa-repeat"></i></message>
+<message id="Lms.PlayQueue.template.radio-btn"><i class="fa fa-fw fa-rss"></i></message>
 
 <message id="Lms.PlayQueue.template">
 	<div class="row">
 		<div class="col-lg-8">
 			<div class="Lms-header">
-				${clear-btn}${shuffle-btn}${repeat-btn}${radio-btn}
+				${clear-btn class="Lms-playqueue-btn Lms-btn"}${shuffle-btn class="Lms-playqueue-btn Lms-btn"}${repeat-btn class="Lms-playqueue-btn Lms-btn"}${radio-btn class="Lms-playqueue-btn Lms-btn"}
 				<h4><small>${nb-tracks}</small></h4>
 			</div>
 			${entries}
@@ -20,8 +20,9 @@
 	</div>
 </message>
 
-<message id="Lms.PlayQueue.template.play-btn"><i class="fa fa-fw fa-play-circle Lms-playqueue-btn Lms-btn"></i></message>
-<message id="Lms.PlayQueue.template.delete-btn"><i class="fa fa-fw fa-times-circle Lms-playqueue-btn Lms-btn"></i></message>
+<message id="Lms.PlayQueue.template.play-btn"><i class="fa fa-fw fa-play-circle"></i></message>
+<message id="Lms.PlayQueue.template.delete-btn"><i class="fa fa-fw fa-times-circle"></i></message>
+<message id="Lms.PlayQueue.template.more-btn"><i class="fa fa-fw fa-plus-circle"></i></message>
 
 <message id="Lms.PlayQueue.template.entry">
 	<div class="row Lms-vertical-align Lms-explore-entry-list Lms-playqueue-entry ${is-selected}">
@@ -39,7 +40,7 @@
 		</div>
 		<div class="col-xs-2 col-sm-2 col-md-2">
 			<div class="Lms-playqueue-entry-controls Lms-vertical-align">
-				${play-btn}${del-btn}
+				${play-btn class="Lms-playqueue-btn Lms-btn"}${del-btn class="Lms-playqueue-btn Lms-btn"}<span class="hidden-xs Lms-playqueue-btn Lms-btn">${more-btn}</span>
 			</div>
 			<div class="Lms-playqueue-entry-duration text-muted">
 				${duration}

@@ -22,7 +22,7 @@
 #include <fstream>
 #include <Wt/Http/Response.h>
 
-#include "av/AvInfo.hpp"
+#include "av/IAudioFile.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "utils/FileResourceHandlerCreator.hpp"
@@ -101,13 +101,9 @@ AudioFileResource::handleRequest(const Wt::Http::Request& request,
 		fileResourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(request.continuation()->data());
 	}
 
-	fileResourceHandler->processRequest(request, response);
-
-	if (!fileResourceHandler->isFinished())
-	{
-		auto* continuation {response.createContinuation()};
+	auto* continuation {fileResourceHandler->processRequest(request, response)};
+	if (continuation)
 		continuation->setData(fileResourceHandler);
-	}
 }
 
 

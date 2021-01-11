@@ -17,23 +17,34 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "av/AvTypes.hpp"
+#include "scanner/ScannerStats.hpp"
 
-namespace Av {
+namespace Scanner {
 
-const char* formatToMimetype(Format format)
+ScanError::ScanError(const std::filesystem::path& _file, ScanErrorType _error, const std::string& _systemError)
+: file {_file},
+error {_error},
+systemError {_systemError}
 {
-	switch (format)
-	{
-		case Format::MP3: 		return "audio/mpeg";
-		case Format::OGG_OPUS:		return "audio/opus";
-		case Format::MATROSKA_OPUS:	return "audio/x-matroska";
-		case Format::OGG_VORBIS:	return "audio/ogg";
-		case Format::WEBM_VORBIS:	return "audio/webm";
-	}
-
-	throw AvException {"Invalid encoding"};
 }
 
+std::size_t
+ScanStats::nbFiles() const
+{
+	return skips + additions + updates;
 }
+
+std::size_t
+ScanStats::nbChanges() const
+{
+	return additions + deletions + updates;
+}
+
+unsigned
+ScanStepStats::progress() const
+{
+	return (processedElems / static_cast<float>(totalElems ? totalElems : 1)) * 100;
+}
+
+} // namespace Scanner
 

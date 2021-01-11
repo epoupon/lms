@@ -33,7 +33,7 @@
 #include "database/Types.hpp"
 #include "database/User.hpp"
 
-#include "resource/ImageResource.hpp"
+#include "resource/CoverResource.hpp"
 #include "resource/AudioTranscodeResource.hpp"
 #include "resource/AudioFileResource.hpp"
 
@@ -192,13 +192,16 @@ static MediaPlayer::Settings settingsfromJSString(const std::string& strSettings
 }
 
 MediaPlayer::MediaPlayer()
-: Wt::WTemplate {Wt::WString::tr("Lms.MediaPlayer.template")},
-  playbackEnded {this, "playbackEnded"},
-  playPrevious {this, "playPrevious"},
-  playNext {this, "playNext"},
-  _settingsLoaded {this, "settingsLoaded"}
+: Wt::WTemplate {Wt::WString::tr("Lms.MediaPlayer.template")}
+, playbackEnded {this, "playbackEnded"}
+, playPrevious {this, "playPrevious"}
+, playNext {this, "playNext"}
+, _settingsLoaded {this, "settingsLoaded"}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
+
+	_audioTranscodeResource = std::make_unique<AudioTranscodeResource>();
+	_audioFileResource = std::make_unique<AudioFileResource>();
 
 	_title = bindNew<Wt::WText>("title");
 	_artist = bindNew<Wt::WAnchor>("artist");
@@ -240,8 +243,8 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play, float replayGain)
 		if (!track)
 			return;
 
-		const std::string transcodeResource {LmsApp->getAudioTranscodeResource()->getUrl(trackId)};
-		const std::string nativeResource {LmsApp->getAudioFileResource()->getUrl(trackId)};
+		const std::string transcodeResource {_audioTranscodeResource->getUrl(trackId)};
+		const std::string nativeResource {_audioFileResource->getUrl(trackId)};
 
 		const auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
 
@@ -255,8 +258,8 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play, float replayGain)
 			<< " artist: \"" << (!artists.empty() ? StringUtils::jsEscape(artists.front()->getName()) : "") << "\","
 			<< " release: \"" << (track->getRelease() ? StringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
 			<< " artwork: ["
-			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, ImageResource::Size::Small) << "\", sizes: \"128x128\",	type: \"image/jpeg\" },"
-			<< "   { src: \"" << LmsApp->getImageResource()->getTrackUrl(trackId, ImageResource::Size::Large) << "\", sizes: \"512x512\",	type: \"image/jpeg\" },"
+			<< "   { src: \"" << LmsApp->getCoverResource()->getTrackUrl(trackId, CoverResource::Size::Small) << "\", sizes: \"128x128\",	type: \"image/jpeg\" },"
+			<< "   { src: \"" << LmsApp->getCoverResource()->getTrackUrl(trackId, CoverResource::Size::Large) << "\", sizes: \"512x512\",	type: \"image/jpeg\" },"
 			<< " ]"
 			<< "};";
 		oss << "LMS.mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay

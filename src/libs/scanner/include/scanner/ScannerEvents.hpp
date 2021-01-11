@@ -19,15 +19,28 @@
 
 #pragma once
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
+#include <Wt/WDateTime.h>
+#include <Wt/WSignal.h>
 
-// Helper class to serve a resource (must be saved as continuation data if not complete)
-class IResourceHandler
+#include "ScannerStats.hpp"
+
+namespace Scanner
 {
-	public:
-		virtual ~IResourceHandler() = default;
 
-		[[nodiscard]] virtual Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) = 0;
-};
+	struct Events
+	{
+		// Called just after scan start
+		Wt::Signal<> 				scanStarted;
+
+		// Called just after scan complete (true if changes have been made)
+		Wt::Signal<ScanStats>		scanComplete;
+
+		// Called during scan in progress
+		Wt::Signal<ScanStepStats>	scanInProgress;
+
+		// Called after a schedule
+		Wt::Signal<Wt::WDateTime>	scanScheduled;
+	};
+
+} // ns Scanner
 

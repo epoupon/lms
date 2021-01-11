@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "MediaScanner.hpp"
+#include "Scanner.hpp"
 
 #include <ctime>
 #include <boost/asio/placeholders.hpp>
@@ -121,7 +121,7 @@ updateArtistIfNeeded(const Artist::pointer& artist, const MetaData::Artist& arti
 }
 
 std::vector<Artist::pointer>
-getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artistsInfo)
+getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artistsInfo, bool allowFallbackOnMBIDEntries)
 {
 	std::vector<Artist::pointer> artists;
 
@@ -148,11 +148,11 @@ getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artist
 			for (const Artist::pointer& sameNamedArtist : Artist::getByName(session, artistInfo.name))
 			{
 				// Do not fallback on artist that is correctly tagged
-				if (!sameNamedArtist->getMBID())
-				{
-					artist = sameNamedArtist;
-					break;
-				}
+				if (!allowFallbackOnMBIDEntries && sameNamedArtist->getMBID())
+					continue;
+
+				artist = sameNamedArtist;
+				break;
 			}
 
 			// No Artist found with the same name and without MBID -> creating
@@ -242,13 +242,13 @@ getOrCreateClusters(Session& session, const MetaData::Clusters& clustersNames)
 
 namespace Scanner {
 
-std::unique_ptr<IMediaScanner>
-createMediaScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine)
+std::unique_ptr<IScanner>
+createScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine)
 {
-	return std::make_unique<MediaScanner>(db, recommendationEngine);
+	return std::make_unique<Scanner>(db, recommendationEngine);
 }
 
-MediaScanner::MediaScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine)
+Scanner::Scanner(Database::Db& db, Recommendation::IEngine& recommendationEngine)
 : _recommendationEngine {recommendationEngine}
 , _dbSession {db}
 {
@@ -262,14 +262,14 @@ MediaScanner::MediaScanner(Database::Db& db, Recommendation::IEngine& recommenda
 	start();
 }
 
-MediaScanner::~MediaScanner()
+Scanner::~Scanner()
 {
-	LMS_LOG(DBUPDATER, INFO) << "Shutting down MediaScanner...";
+	LMS_LOG(DBUPDATER, INFO) << "Shutting down Scanner...";
 	stop();
 }
 
 void
-MediaScanner::start()
+Scanner::start()
 {
 	std::scoped_lock lock {_controlMutex};
 
@@ -290,7 +290,7 @@ MediaScanner::start()
 }
 
 void
-MediaScanner::stop()
+Scanner::stop()
 {
 	std::scoped_lock lock {_controlMutex};
 
@@ -301,7 +301,7 @@ MediaScanner::stop()
 }
 
 void
-MediaScanner::abortScan()
+Scanner::abortScan()
 {
 	LMS_LOG(DBUPDATER, DEBUG) << "Aborting scan...";
 	std::scoped_lock lock {_controlMutex};
@@ -319,7 +319,7 @@ MediaScanner::abortScan()
 }
 
 void
-MediaScanner::requestImmediateScan(bool force)
+Scanner::requestImmediateScan(bool force)
 {
 	abortScan();
 	_ioService.post([=]()
@@ -332,7 +332,7 @@ MediaScanner::requestImmediateScan(bool force)
 }
 
 void
-MediaScanner::requestReload()
+Scanner::requestReload()
 {
 	abortScan();
 	_ioService.post([=]()
@@ -344,8 +344,8 @@ MediaScanner::requestReload()
 	});
 }
 
-MediaScanner::Status
-MediaScanner::getStatus() const
+Scanner::Status
+Scanner::getStatus() const
 {
 	Status res;
 
@@ -360,7 +360,7 @@ MediaScanner::getStatus() const
 }
 
 void
-MediaScanner::scheduleNextScan()
+Scanner::scheduleNextScan()
 {
 	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan";
 
@@ -368,28 +368,32 @@ MediaScanner::scheduleNextScan()
 
 	const Wt::WDateTime now {Wt::WLocalDateTime::currentServerDateTime().toUTC()};
 
-	Wt::WDate nextScanDate;
+	Wt::WDateTime nextScanDateTime;
 	switch (_updatePeriod)
 	{
 		case ScanSettings::UpdatePeriod::Daily:
 			if (now.time() < _startTime)
-				nextScanDate = now.date();
+				nextScanDateTime = {now.date(), _startTime};
 			else
-				nextScanDate = now.date().addDays(1);
+				nextScanDateTime = {now.date().addDays(1), _startTime};
 			break;
 
 		case ScanSettings::UpdatePeriod::Weekly:
 			if (now.time() < _startTime && now.date().dayOfWeek() == 1)
-				nextScanDate = now.date();
+				nextScanDateTime = {now.date(), _startTime};
 			else
-				nextScanDate = getNextMonday(now.date());
+				nextScanDateTime = {getNextMonday(now.date()), _startTime};
 			break;
 
 		case ScanSettings::UpdatePeriod::Monthly:
 			if (now.time() < _startTime && now.date().day() == 1)
-				nextScanDate = now.date();
+				nextScanDateTime = {now.date(), _startTime};
 			else
-				nextScanDate = getNextFirstOfMonth(now.date());
+				nextScanDateTime = {getNextFirstOfMonth(now.date()), _startTime};
+			break;
+
+		case ScanSettings::UpdatePeriod::Hourly:
+			nextScanDateTime = {now.date(), now.time().addSecs(3600)};
 			break;
 
 		case ScanSettings::UpdatePeriod::Never:
@@ -397,13 +401,8 @@ MediaScanner::scheduleNextScan()
 			break;
 	}
 
-	Wt::WDateTime nextScanDateTime;
-
-	if (nextScanDate.isValid())
-	{
-		nextScanDateTime = Wt::WDateTime {nextScanDate, _startTime};
+	if (nextScanDateTime.isValid())
 		scheduleScan(false, nextScanDateTime);
-	}
 
 	{
 		std::unique_lock lock {_statusMutex};
@@ -411,11 +410,11 @@ MediaScanner::scheduleNextScan()
 		_nextScheduledScan = nextScanDateTime;
 	}
 
-	_sigScheduled.emit(_nextScheduledScan);
+	_events.scanScheduled.emit(_nextScheduledScan);
 }
 
 void
-MediaScanner::countAllFiles(ScanStats& stats)
+Scanner::countAllFiles(ScanStats& stats)
 {
 	ScanStepStats stepStats{stats.startTime, ScanProgressStep::DiscoveringFiles};
 
@@ -440,7 +439,7 @@ MediaScanner::countAllFiles(ScanStats& stats)
 }
 
 void
-MediaScanner::scheduleScan(bool force, const Wt::WDateTime& dateTime)
+Scanner::scheduleScan(bool force, const Wt::WDateTime& dateTime)
 {
 	auto cb {[=](boost::system::error_code ec)
 	{
@@ -469,9 +468,9 @@ MediaScanner::scheduleScan(bool force, const Wt::WDateTime& dateTime)
 }
 
 void
-MediaScanner::scan(bool forceScan)
+Scanner::scan(bool forceScan)
 {
-	scanStarted().emit();
+	_events.scanStarted.emit();
 
 	{
 		std::unique_lock lock {_statusMutex};
@@ -517,14 +516,14 @@ MediaScanner::scan(bool forceScan)
 		{
 			std::unique_lock lock {_statusMutex};
 
-			_lastCompleteScanStats = std::move(stats);
+			_lastCompleteScanStats = stats;
 			_currentScanStepStats.reset();
 		}
 
 		LMS_LOG(DBUPDATER, DEBUG) << "Scan not aborted, scheduling next scan!";
 		scheduleNextScan();
 
-		scanComplete().emit();
+		_events.scanComplete.emit(stats);
 	}
 	else
 	{
@@ -538,7 +537,7 @@ MediaScanner::scan(bool forceScan)
 }
 
 bool
-MediaScanner::fetchTrackFeatures(Database::IdType trackId, const UUID& MBID)
+Scanner::fetchTrackFeatures(Database::IdType trackId, const UUID& MBID)
 {
 	std::map<std::string, double> features;
 
@@ -564,7 +563,7 @@ MediaScanner::fetchTrackFeatures(Database::IdType trackId, const UUID& MBID)
 }
 
 void
-MediaScanner::fetchTrackFeatures(ScanStats& stats)
+Scanner::fetchTrackFeatures(ScanStats& stats)
 {
 	if (_recommendationEngineType != ScanSettings::RecommendationEngineType::Features)
 		return;
@@ -614,7 +613,7 @@ MediaScanner::fetchTrackFeatures(ScanStats& stats)
 }
 
 void
-MediaScanner::refreshScanSettings()
+Scanner::refreshScanSettings()
 {
 	auto transaction {_dbSession.createSharedTransaction()};
 
@@ -646,7 +645,7 @@ MediaScanner::refreshScanSettings()
 }
 
 void
-MediaScanner::notifyInProgress(const ScanStepStats& stepStats)
+Scanner::notifyInProgress(const ScanStepStats& stepStats)
 {
 	{
 		std::unique_lock lock {_statusMutex};
@@ -654,12 +653,12 @@ MediaScanner::notifyInProgress(const ScanStepStats& stepStats)
 	}
 
 	const std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
-	_sigScanInProgress(stepStats);
+	_events.scanInProgress(stepStats);
 	_lastScanInProgressEmit = now;
 }
 
 void
-MediaScanner::notifyInProgressIfNeeded(const ScanStepStats& stepStats)
+Scanner::notifyInProgressIfNeeded(const ScanStepStats& stepStats)
 {
 	std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
 
@@ -668,7 +667,7 @@ MediaScanner::notifyInProgressIfNeeded(const ScanStepStats& stepStats)
 }
 
 void
-MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanStats& stats)
+Scanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanStats& stats)
 {
 	Wt::WDateTime lastWriteTime;
 	try
@@ -771,28 +770,31 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 	assert(track);
 
 	track.modify()->clearArtistLinks();
-	for (const Artist::pointer& artist : getOrCreateArtists(_dbSession, trackInfo->artists))
+	// Do not fallback on artists with the same name but having a MBID for artist and releaseArtists, as it may be corrected by properly tagging files
+	for (const Artist::pointer& artist : getOrCreateArtists(_dbSession, trackInfo->artists, false))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, artist, Database::TrackArtistLinkType::Artist));
 
-	for (const Artist::pointer& releaseArtist : getOrCreateArtists(_dbSession, trackInfo->albumArtists))
+	for (const Artist::pointer& releaseArtist : getOrCreateArtists(_dbSession, trackInfo->albumArtists, false))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, releaseArtist, Database::TrackArtistLinkType::ReleaseArtist));
 
-	for (const Artist::pointer& conductor : getOrCreateArtists(_dbSession, trackInfo->conductorArtists))
+	// Allow fallbacks on artists with the same name even if they have MBID, since there is no tag to indicate the MBID of these artists
+	// We could ask MusicBrainz to get all the information, but that would heavily slow down the import process
+	for (const Artist::pointer& conductor : getOrCreateArtists(_dbSession, trackInfo->conductorArtists, true))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, conductor, Database::TrackArtistLinkType::Conductor));
 
-	for (const Artist::pointer& composer : getOrCreateArtists(_dbSession, trackInfo->composerArtists))
+	for (const Artist::pointer& composer : getOrCreateArtists(_dbSession, trackInfo->composerArtists, true))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, composer, Database::TrackArtistLinkType::Composer));
 
-	for (const Artist::pointer& lyricist : getOrCreateArtists(_dbSession, trackInfo->lyricistArtists))
+	for (const Artist::pointer& lyricist : getOrCreateArtists(_dbSession, trackInfo->lyricistArtists, true))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, lyricist, Database::TrackArtistLinkType::Lyricist));
 
-	for (const Artist::pointer& mixer : getOrCreateArtists(_dbSession, trackInfo->mixerArtists))
+	for (const Artist::pointer& mixer : getOrCreateArtists(_dbSession, trackInfo->mixerArtists, true))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, mixer, Database::TrackArtistLinkType::Mixer));
 
-	for (const Artist::pointer& producer : getOrCreateArtists(_dbSession, trackInfo->producerArtists))
+	for (const Artist::pointer& producer : getOrCreateArtists(_dbSession, trackInfo->producerArtists, true))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, producer, Database::TrackArtistLinkType::Producer));
 
-	for (const Artist::pointer& remixer : getOrCreateArtists(_dbSession, trackInfo->remixerArtists))
+	for (const Artist::pointer& remixer : getOrCreateArtists(_dbSession, trackInfo->remixerArtists, true))
 		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, remixer, Database::TrackArtistLinkType::Remixer));
 
 	track.modify()->setScanVersion(_scanVersion);
@@ -828,7 +830,7 @@ MediaScanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, S
 }
 
 void
-MediaScanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats)
+Scanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats)
 {
 	ScanStepStats stepStats{stats.startTime, ScanProgressStep::ScanningFiles};
 	stepStats.totalElems = stats.filesScanned;
@@ -886,7 +888,6 @@ checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDire
 		}
 
 		return true;
-
 	}
 	catch (std::filesystem::filesystem_error& e)
 	{
@@ -896,7 +897,7 @@ checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDire
 }
 
 void
-MediaScanner::removeMissingTracks(ScanStats& stats)
+Scanner::removeMissingTracks(ScanStats& stats)
 {
 	static constexpr std::size_t batchSize {50};
 
@@ -963,7 +964,7 @@ MediaScanner::removeMissingTracks(ScanStats& stats)
 }
 
 void
-MediaScanner::removeOrphanEntries()
+Scanner::removeOrphanEntries()
 {
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
 	{
@@ -1006,7 +1007,7 @@ MediaScanner::removeOrphanEntries()
 }
 
 void
-MediaScanner::checkDuplicatedAudioFiles(ScanStats& stats)
+Scanner::checkDuplicatedAudioFiles(ScanStats& stats)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files";
 
@@ -1026,7 +1027,7 @@ MediaScanner::checkDuplicatedAudioFiles(ScanStats& stats)
 }
 
 void
-MediaScanner::reloadSimilarityEngine(ScanStats& stats)
+Scanner::reloadSimilarityEngine(ScanStats& stats)
 {
 	ScanStepStats stepStats {stats.startTime, ScanProgressStep::ReloadingSimilarityEngine};
 

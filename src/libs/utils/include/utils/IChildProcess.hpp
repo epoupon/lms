@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -16,32 +16,41 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
+#include <cstddef>
+#include <functional>
 #include <string>
+#include <vector>
 
 #include "utils/Exception.hpp"
 
-namespace Av {
-
-class AvException : public LmsException
+class ChildProcessException : public LmsException
 {
 	public:
-		AvException(const std::string& msg) : LmsException(msg) {}
+		using LmsException::LmsException;
 };
 
-enum class Format
+class IChildProcess
 {
-	// Values are important and must not be changed
-	MP3		= 0,
-	OGG_OPUS	= 1,
-	MATROSKA_OPUS	= 2,
-	OGG_VORBIS	= 3,
-	WEBM_VORBIS	= 4,
+	public:
+		using Args = std::vector<std::string>;
+
+		virtual ~IChildProcess() = default;
+
+		enum class ReadResult
+		{
+			Success,
+			Error,
+			EndOfFile,
+		};
+
+		using ReadCallback = std::function<void(ReadResult, std::size_t)>;
+		virtual void		asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback callback) = 0;
+
+		using WaitCallback = std::function<void(void)>;
+		virtual void		asyncWaitForData(WaitCallback cb) = 0;
+		virtual std::size_t	readSome(std::byte* data, std::size_t bufferSize) = 0;
+		virtual bool		finished() = 0;
 };
-
-const char* formatToMimetype(Format encoding);
-
-}
 

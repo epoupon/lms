@@ -73,9 +73,10 @@ Artists::Artists(Filters* filters)
 	_linkType->changed().connect([this] { refreshView(); });
 	refreshArtistLinkTypes();
 
-	LmsApp->getEvents().dbScanned.connect(this, [this]
+	LmsApp->getScannerEvents().scanComplete.connect(this, [this](const Scanner::ScanStats& stats)
 	{
-		refreshArtistLinkTypes();
+		if (stats.nbChanges())
+			refreshArtistLinkTypes();
 	});
 
 	_container = bindNew<Wt::WContainerWidget>("artists");

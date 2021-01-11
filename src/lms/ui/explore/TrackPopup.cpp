@@ -19,6 +19,8 @@
 
 #include "TrackPopup.hpp"
 
+#include <Wt/WPopupMenu.h>
+
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"

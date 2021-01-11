@@ -41,7 +41,8 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 			Never = 0,
 			Daily,
 			Weekly,
-			Monthly
+			Monthly,
+			Hourly,
 		};
 
 		// Do not modify values (just add)
@@ -56,13 +57,13 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		static pointer get(Session& session);
 
 		// Getters
-		std::size_t getScanVersion() const { return _scanVersion; }
-		std::filesystem::path getMediaDirectory() const { return _mediaDirectory; }
-		Wt::WTime getUpdateStartTime() const { return _startTime; }
-		UpdatePeriod getUpdatePeriod() const { return _updatePeriod; }
+		std::size_t				getScanVersion() const { return _scanVersion; }
+		std::filesystem::path	getMediaDirectory() const { return _mediaDirectory; }
+		Wt::WTime				getUpdateStartTime() const { return _startTime; }
+		UpdatePeriod			getUpdatePeriod() const { return _updatePeriod; }
 		std::vector<Wt::Dbo::ptr<ClusterType>> getClusterTypes() const;
 		std::unordered_set<std::filesystem::path> getAudioFileExtensions() const;
-		RecommendationEngineType getRecommendationEngineType() const { return _recommendationEngineType; }
+		RecommendationEngineType	getRecommendationEngineType() const { return _recommendationEngineType; }
 
 		// Setters
 		void addAudioFileExtension(const std::filesystem::path& ext);

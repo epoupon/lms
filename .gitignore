@@ -1,3 +1,5 @@
 *.sw?
 *.*~
+CMakeCache.txt
+CMakeFiles/
 build/

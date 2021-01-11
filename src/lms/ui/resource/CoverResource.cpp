@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ImageResource.hpp"
+#include "CoverResource.hpp"
 
 #include <Wt/WApplication.h>
 #include <Wt/Http/Response.h>
@@ -35,25 +35,34 @@
 
 namespace UserInterface {
 
-ImageResource::~ImageResource()
+CoverResource::CoverResource()
+{
+	LmsApp->getScannerEvents().scanComplete.connect(this, [this](const Scanner::ScanStats& stats)
+	{
+		if (stats.nbChanges())
+			setChanged();
+	});
+}
+
+CoverResource::~CoverResource()
 {
 	beingDeleted();
 }
 
 std::string
-ImageResource::getReleaseUrl(Database::IdType releaseId, Size size) const
+CoverResource::getReleaseUrl(Database::IdType releaseId, Size size) const
 {
 	return url() + "&releaseid=" + std::to_string(releaseId) + "&size=" + std::to_string(static_cast<std::size_t>(size));
 }
 
 std::string
-ImageResource::getTrackUrl(Database::IdType trackId, Size size) const
+CoverResource::getTrackUrl(Database::IdType trackId, Size size) const
 {
 	return url() + "&trackid=" + std::to_string(trackId) + "&size=" + std::to_string(static_cast<std::size_t>(size));
 }
 
 void
-ImageResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
+CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
 {
 	// Retrieve parameters
 	const std::string *trackIdStr = request.getParameter("trackid");

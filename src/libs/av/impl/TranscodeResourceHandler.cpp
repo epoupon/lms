@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "AvTranscodeResourceHandler.hpp"
+#include "TranscodeResourceHandler.hpp"
 
 namespace Av
 {
@@ -36,24 +36,32 @@ namespace Av
 		_transcoder.start();
 	}
 
-	void
+	Wt::Http::ResponseContinuation*
 	TranscodeResourceHandler::processRequest(const Wt::Http::Request& /*request*/, Wt::Http::Response& response)
 	{
 		response.setMimeType(_transcoder.getOutputMimeType());
 
-		if (!_transcoder.isComplete())
+		if (_nbBytesReady > 0)
 		{
-			std::vector<unsigned char> buffer;
-
-			_transcoder.process(buffer, _chunkSize);
-			response.out().write(reinterpret_cast<const char *>(&buffer[0]), buffer.size());
+			response.out().write(reinterpret_cast<const char *>(&_buffer[0]), _nbBytesReady);
+			_nbBytesReady = 0;
 		}
-	}
 
-	bool
-	TranscodeResourceHandler::isFinished() const
-	{
-		return _transcoder.isComplete();
+		if (!_transcoder.finished())
+		{
+			Wt::Http::ResponseContinuation *continuation {response.createContinuation()};
+			continuation->waitForMoreData();
+			_transcoder.asyncRead(_buffer.data(), _buffer.size(), [=](std::size_t nbBytesRead)
+			{
+				assert(_nbBytesReady == 0);
+				_nbBytesReady = nbBytesRead;
+				continuation->haveMoreData();
+			});
+
+			return continuation;
+		}
+
+		return {};
 	}
 }
 

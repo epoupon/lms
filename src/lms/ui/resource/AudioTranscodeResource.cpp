@@ -19,9 +19,12 @@
 
 #include "AudioTranscodeResource.hpp"
 
+#include <optional>
 #include <Wt/Http/Response.h>
 
-#include "av/AvTranscoder.hpp"
+#include "av/TranscodeParameters.hpp"
+#include "av/TranscodeResourceHandlerCreator.hpp"
+#include "av/Types.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
@@ -66,20 +69,13 @@ namespace StringUtils
 	}
 }
 
-namespace UserInterface {
-
-AudioTranscodeResource:: ~AudioTranscodeResource()
-{
-	beingDeleted();
-}
-
 static
 std::optional<Av::Format>
 AudioFormatToAvFormat(Database::AudioFormat format)
 {
 	switch (format)
 	{
-		case Database::AudioFormat::MP3:		return Av::Format::MP3;
+		case Database::AudioFormat::MP3:			return Av::Format::MP3;
 		case Database::AudioFormat::OGG_OPUS:		return Av::Format::OGG_OPUS;
 		case Database::AudioFormat::MATROSKA_OPUS:	return Av::Format::MATROSKA_OPUS;
 		case Database::AudioFormat::OGG_VORBIS:		return Av::Format::OGG_VORBIS;
@@ -89,6 +85,14 @@ AudioFormatToAvFormat(Database::AudioFormat format)
 	LOG(ERROR) << "Cannot convert from audio format to AV format";
 
 	return std::nullopt;
+}
+
+
+namespace UserInterface {
+
+AudioTranscodeResource:: ~AudioTranscodeResource()
+{
+	beingDeleted();
 }
 
 std::string
@@ -115,102 +119,85 @@ readParameterAs(const Wt::Http::Request& request, const std::string& parameterNa
 	return res;
 }
 
+struct TranscodeParameters
+{
+	std::filesystem::path file;
+	Av::TranscodeParameters transcodeParameters;
+};
+
+static
+std::optional<TranscodeParameters>
+readTranscodeParameters(const Wt::Http::Request& request)
+{
+	TranscodeParameters parameters;
+
+	// mandatory parameters
+	auto trackId {readParameterAs<Database::IdType>(request, "trackid")};
+	auto format {readParameterAs<Database::AudioFormat>(request, "format")};
+	auto bitrate {readParameterAs<Database::Bitrate>(request, "bitrate")};
+
+	if (!trackId || !format || !bitrate)
+		return std::nullopt;
+
+	const std::optional<Av::Format> avFormat {AudioFormatToAvFormat(*format)};
+	if (!avFormat)
+		return std::nullopt;
+
+	// optional parameter
+	std::size_t offset {readParameterAs<std::size_t>(request, "offset").value_or(0)};
+
+	std::filesystem::path trackPath;
+	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+		const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), *trackId)};
+		if (!track)
+		{
+			LOG(ERROR) << "Missing track";
+			return std::nullopt;
+		}
+
+		parameters.file = track->getPath();
+
+		if (Database::User::audioTranscodeAllowedBitrates.find(*bitrate) == std::cend(Database::User::audioTranscodeAllowedBitrates))
+		{
+			LOG(ERROR) << "Bitrate '" << *bitrate << "' is not allowed";
+			return std::nullopt;
+		}
+	}
+
+	parameters.transcodeParameters.stripMetadata = true;
+	parameters.transcodeParameters.format = *avFormat;
+	parameters.transcodeParameters.bitrate = *bitrate;
+	parameters.transcodeParameters.offset = std::chrono::seconds {offset};
+
+	return parameters;
+}
+
 void
 AudioTranscodeResource::handleRequest(const Wt::Http::Request& request,
 		Wt::Http::Response& response)
 {
-	std::shared_ptr<Av::Transcoder> transcoder;
+	std::shared_ptr<IResourceHandler> resourceHandler;
 
-	// First, see if this request is for a continuation
-	Wt::Http::ResponseContinuation *continuation = request.continuation();
-	if (continuation)
+	Wt::Http::ResponseContinuation* continuation {request.continuation()};
+	if (!continuation)
 	{
-		LOG(DEBUG) << "Continuation! " << continuation ;
-		transcoder = Wt::cpp17::any_cast<std::shared_ptr<Av::Transcoder>>(continuation->data());
+		const std::optional<TranscodeParameters>& parameters {readTranscodeParameters(request)};
+		if (parameters)
+			resourceHandler = Av::createTranscodeResourceHandler(parameters->file, parameters->transcodeParameters);
 	}
 	else
 	{
-		LOG(DEBUG) << "First request: creating transcoder";
-
-		// mandatory parameters
-		auto trackId {readParameterAs<Database::IdType>(request, "trackid")};
-		auto format {readParameterAs<Database::AudioFormat>(request, "format")};
-		auto bitrate {readParameterAs<Database::Bitrate>(request, "bitrate")};
-
-		if (!trackId || !format || !bitrate)
-			return;
-
-		auto avFormat {AudioFormatToAvFormat(*format)};
-		if (!avFormat)
-			return;
-
-		// optional parameter
-		auto offset {readParameterAs<std::size_t>(request, "offset")};
-
-		std::filesystem::path trackPath;
-		{
-			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-			const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), *trackId)};
-			if (!track)
-			{
-				LOG(ERROR) << "Missing track";
-				return;
-			}
-
-			trackPath = track->getPath();
-
-			if (Database::User::audioTranscodeAllowedBitrates.find(*bitrate) == std::cend(Database::User::audioTranscodeAllowedBitrates))
-			{
-				LOG(ERROR) << "Bitrate '" << *bitrate << "' is not allowed";
-				return;
-			}
-		}
-
-		Av::TranscodeParameters parameters {};
-		parameters.stripMetadata = true;
-		parameters.format = *avFormat;
-		parameters.bitrate = *bitrate;
-		parameters.offset = std::chrono::seconds {offset ? *offset : 0};
-
-		transcoder = std::make_shared<Av::Transcoder>(trackPath, parameters);
-		if (!transcoder->start())
-		{
-			LOG(ERROR) << "Cannot start transcoder";
-			return;
-		}
-
-		LOG(DEBUG) << "Transcoder started";
-
-		std::string mimeType {transcoder->getOutputMimeType()};
-		response.setMimeType(mimeType);
-		LOG(DEBUG) << "Mime type set to '" << mimeType << "'";
-
+		resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
 	}
 
-	if (!transcoder->isComplete())
+	if (resourceHandler)
 	{
-		std::vector<unsigned char> data;
-		data.reserve(_chunkSize);
-
-		transcoder->process(data, _chunkSize);
-
-		response.out().write(reinterpret_cast<char*>(&data[0]), data.size());
-		LOG(DEBUG) << "Written " << data.size() << " bytes! complete = " << (transcoder->isComplete() ? "true" : "false");
-
-		if (!response.out())
-		{
-			LOG(ERROR) << "Write failed!";
-		}
+		continuation = resourceHandler->processRequest(request, response);
+		if (continuation)
+			continuation->setData(resourceHandler);
 	}
-
-	if (!transcoder->isComplete() && response.out())
-	{
-		continuation = response.createContinuation();
-		continuation->setData(transcoder);
-	}
-	else
-		LOG(DEBUG) << "No more data!";
 }
 
 } // namespace UserInterface

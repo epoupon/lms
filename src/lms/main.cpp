@@ -26,15 +26,14 @@
 
 #include "auth/IAuthTokenService.hpp"
 #include "auth/IPasswordService.hpp"
-#include "av/AvInfo.hpp"
-#include "av/AvTranscoder.hpp"
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
-#include "scanner/IMediaScanner.hpp"
+#include "scanner/IScanner.hpp"
 #include "recommendation/IEngine.hpp"
 #include "subsonic/SubsonicResource.hpp"
 #include "ui/LmsApplication.hpp"
+#include "utils/IChildProcessManager.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Service.hpp"
 #include "utils/WtLogger.hpp"
@@ -119,6 +118,47 @@ generateWtConfig(std::string execPath)
 }
 
 
+static
+void
+proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
+{
+	scanner.getEvents().scanStarted.connect([&]
+	{
+		server.postAll([]
+		{
+			LmsApp->getScannerEvents().scanStarted.emit();
+			LmsApp->triggerUpdate();
+		});
+	});
+
+	scanner.getEvents().scanComplete.connect([&] (const Scanner::ScanStats& stats)
+	{
+		server.postAll([=]
+		{
+			LmsApp->getScannerEvents().scanComplete.emit(stats);
+			LmsApp->triggerUpdate();
+		});
+	});
+
+	scanner.getEvents().scanInProgress.connect([&] (const Scanner::ScanStepStats& stats)
+	{
+		server.postAll([=]
+		{
+			LmsApp->getScannerEvents().scanInProgress.emit(stats);
+			LmsApp->triggerUpdate();
+		});
+	});
+
+	scanner.getEvents().scanScheduled.connect([&] (const Wt::WDateTime dateTime)
+	{
+		server.postAll([=]
+		{
+			LmsApp->getScannerEvents().scanScheduled.emit(dateTime);
+			LmsApp->triggerUpdate();
+		});
+	});
+}
+
 int main(int argc, char* argv[])
 {
 	std::filesystem::path configFilePath {"/etc/lms.conf"};
@@ -139,7 +179,6 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		// Make pstream work with ffmpeg
 		close(STDIN_FILENO);
 
 		Service<IConfig> config {createConfig(configFilePath)};
@@ -162,9 +201,6 @@ int main(int argc, char* argv[])
 		Wt::WServer server {argv[0]};
 		server.setServerConfiguration(wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
 
-		// lib init
-		Av::Transcoder::init();
-
 		// Initializing a connection pool to the database that will be shared along services
 		Database::Db database {config->getPath("working-dir") / "lms.db"};
 		{
@@ -176,6 +212,7 @@ int main(int argc, char* argv[])
 		UserInterface::LmsApplicationGroupContainer appGroups;
 
 		// Service initialization order is important
+		Service<IChildProcessManager> childProcessManagerService {createChildProcessManager()};
 		Service<Auth::IAuthTokenService> authTokenService {Auth::createAuthTokenService(config->getULong("login-throttler-max-entriees", 10000))};
 		Service<Auth::IPasswordService> passwordService {Auth::createPasswordService(config->getULong("login-throttler-max-entriees", 10000))};
 		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0],
@@ -184,9 +221,9 @@ int main(int argc, char* argv[])
 				config->getULong("cover-max-file-size", 10) * 1000 * 1000,
 				config->getULong("cover-jpeg-quality", 75))};
 		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
-		Service<Scanner::IMediaScanner> mediaScannerService {Scanner::createMediaScanner(database, *recommendationEngineService)};
+		Service<Scanner::IScanner> scannerService {Scanner::createScanner(database, *recommendationEngineService)};
 
-		mediaScannerService->scanComplete().connect([&]()
+		scannerService->getEvents().scanComplete.connect([&]
 		{
 			// Flush cover cache even if no changes:
 			// covers may be external files that changed and we don't keep track of them
@@ -201,8 +238,12 @@ int main(int argc, char* argv[])
 
 		// bind UI entry point
 		server.addEntryPoint(Wt::EntryPointType::Application,
-				std::bind(UserInterface::LmsApplication::create,
-					std::placeholders::_1, std::ref(database), std::ref(appGroups)));
+			[&](const Wt::WEnvironment &env)
+			{
+				return UserInterface::LmsApplication::create(env, database, appGroups);
+			});
+
+		proxyScannerEventsToApplication(*scannerService, server);
 
 		LMS_LOG(MAIN, INFO) << "Starting server...";
 		server.start();

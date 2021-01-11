@@ -29,10 +29,9 @@ class FileResourceHandler final : public IResourceHandler
 
 	private:
 
-		void processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-		bool isFinished() const override;
+		Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
 
-		static constexpr std::size_t _chunkSize {262144};
+		static constexpr std::size_t _chunkSize {65536};
 
 		std::filesystem::path	_path;
 		::uint64_t		_beyondLastByte {};

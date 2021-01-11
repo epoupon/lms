@@ -1,8 +1,8 @@
 
 add_library(lmsscanner SHARED
 	impl/AcousticBrainzUtils.cpp
-	impl/MediaScanner.cpp
-	impl/MediaScannerStats.cpp
+	impl/Scanner.cpp
+	impl/ScannerStats.cpp
 	)
 
 target_include_directories(lmsscanner INTERFACE

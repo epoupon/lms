@@ -29,6 +29,9 @@
 
 namespace UserInterface {
 
+class AudioFileResource;
+class AudioTranscodeResource;
+
 class MediaPlayer : public Wt::WTemplate
 {
 	public:
@@ -105,6 +108,8 @@ class MediaPlayer : public Wt::WTemplate
 		Wt::Signal<>			settingsLoaded;
 
 	private:
+		std::unique_ptr<AudioFileResource>		_audioFileResource;
+		std::unique_ptr<AudioTranscodeResource>	_audioTranscodeResource;
 
 		std::optional<Database::IdType> _trackIdLoaded;
 		std::optional<Settings>		_settings;

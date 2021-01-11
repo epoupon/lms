@@ -30,6 +30,7 @@
 
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "scanner/IScanner.hpp"
 #include "utils/Service.hpp"
 #include "LmsApplication.hpp"
 
@@ -139,13 +140,13 @@ ScannerController::ScannerController()
 
 	auto onDbEvent = [&]() { refreshContents(); };
 
-	LmsApp->getEvents().dbScanStarted.connect(this, []
+	LmsApp->getScannerEvents().scanStarted.connect(this, []
 	{
-		LmsApp->notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
+		LmsApp->notifyMsg(LmsApplication::MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
 	});
-	LmsApp->getEvents().dbScanned.connect(this, onDbEvent);
-	LmsApp->getEvents().dbScanInProgress.connect(this, onDbEvent);
-	LmsApp->getEvents().dbScanScheduled.connect(this, onDbEvent);
+	LmsApp->getScannerEvents().scanComplete.connect(this, onDbEvent);
+	LmsApp->getScannerEvents().scanInProgress.connect(this, onDbEvent);
+	LmsApp->getScannerEvents().scanScheduled.connect(this, onDbEvent);
 
 	refreshContents();
 }
@@ -162,20 +163,20 @@ ScannerController::refreshContents()
 	actionBtn->actionButton()->setText(Wt::WString::tr("Lms.Admin.ScannerController.scan-now"));
 	actionBtn->actionButton()->clicked().connect([]
 	{
-		Service<Scanner::IMediaScanner>::get()->requestImmediateScan(false);
+		Service<Scanner::IScanner>::get()->requestImmediateScan(false);
 	});
 
 	auto popup = std::make_unique<Wt::WPopupMenu>();
 	popup->addItem(Wt::WString::tr("Lms.Admin.ScannerController.force-scan-now"));
 	popup->itemSelected().connect([]
 	{
-		Service<Scanner::IMediaScanner>::get()->requestImmediateScan(true);
+		Service<Scanner::IScanner>::get()->requestImmediateScan(true);
 	});
 	actionBtn->dropDownButton()->setMenu(std::move(popup));
 	actionBtn->dropDownButton()->addStyleClass("btn-primary");
 
 
-	const IMediaScanner::Status status {Service<IMediaScanner>::get()->getStatus()};
+	const IScanner::Status status {Service<IScanner>::get()->getStatus()};
 	if (status.lastCompleteScanStats)
 	{
 		bindString("last-scan", Wt::WString::tr("Lms.Admin.ScannerController.last-scan-status")
@@ -199,16 +200,16 @@ ScannerController::refreshContents()
 
 	switch (status.currentState)
 	{
-		case IMediaScanner::State::NotScheduled:
+		case IScanner::State::NotScheduled:
 			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-not-scheduled"));
 			bindEmpty("step-status");
 			break;
-		case IMediaScanner::State::Scheduled:
+		case IScanner::State::Scheduled:
 			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-scheduled")
 					.arg(status.nextScheduledScan.toString()));
 			bindEmpty("step-status");
 			break;
-		case IMediaScanner::State::InProgress:
+		case IScanner::State::InProgress:
 			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-in-progress")
 					.arg(static_cast<int>(status.currentScanStepStats->currentStep) + 1)
 					.arg(Scanner::ScanProgressStepCount));

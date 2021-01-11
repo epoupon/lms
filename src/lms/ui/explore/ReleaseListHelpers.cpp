@@ -25,7 +25,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
-#include "resource/ImageResource.hpp"
+#include "resource/CoverResource.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -44,7 +44,7 @@ namespace UserInterface::ReleaseListHelpers
 
 		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 		auto cover = std::make_unique<Wt::WImage>();
-		cover->setImageLink(LmsApp->getImageResource()->getReleaseUrl(release.id(), ImageResource::Size::Large));
+		cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release.id(), CoverResource::Size::Large));
 		cover->setStyleClass("Lms-cover");
 		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		anchor->setImage(std::move(cover));

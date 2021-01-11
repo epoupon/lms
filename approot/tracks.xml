@@ -8,7 +8,7 @@
 		<div class="col-lg-8">
 			<div class="Lms-header">
 				${mode class="nav nav-pills Lms-explore-mode-container"}
-				${play-btn}${more-btn}
+				${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
 			</div>
 			${tracks}
 			${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
@@ -32,7 +32,7 @@
 			</div>
 			<div class="col-xs-2 col-sm-2 col-md-2">
 				<div class="Lms-explore-tracks-entry-controls">
-					${play-btn}${more-btn}
+					${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
 				</div>
 				<div class="Lms-explore-tracks-entry-duration text-muted">
 					${duration}
