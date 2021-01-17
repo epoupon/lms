@@ -27,8 +27,8 @@ namespace UserInterface
 		auto res {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.LoadingIndicator.template"))};
 
 		res->addFunction("tr", &Wt::WTemplate::Functions::tr);
-		res->setScrollVisibilityMargin(200);
 		res->setScrollVisibilityEnabled(true);
+		res->setScrollVisibilityMargin(200);
 
 		return res;
 	}
