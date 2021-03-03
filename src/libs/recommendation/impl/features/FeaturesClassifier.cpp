@@ -194,7 +194,12 @@ FeaturesClassifier::loadFromTraining(Database::Session& session, const TrainSett
 	for (auto& sample : samples)
 		dataNormalizer.normalizeData(sample);
 
-	const SOM::Coordinate size {static_cast<SOM::Coordinate>(std::sqrt(samples.size() / trainSettings.sampleCountPerNeuron))};
+	SOM::Coordinate size {static_cast<SOM::Coordinate>(std::sqrt(samples.size() / trainSettings.sampleCountPerNeuron))};
+	if (size < 2)
+	{
+		LMS_LOG(RECOMMENDATION, WARNING) << "Very few tracks (" << samples.size() << ") are being used by the features engine, expect bad behaviors";
+		size = 2;
+	}
 	LMS_LOG(RECOMMENDATION, INFO) << "Found " << samples.size() << " tracks, constructing a " << size << "*" << size << " network";
 
 	SOM::Network network {size, size, nbDimensions};
