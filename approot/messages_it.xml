@@ -17,7 +17,6 @@
 <message id="Lms.password-bad-login-combination">Errata combinazione di Login / Password </message>
 <message id="Lms.password-client-throttled">Superati i tentativi di accesso, riprova più tardi</message>
 <message id="Lms.password-confirm">Conferma la password</message>
-<message id="Lms.password-must-not-be-empty">Il campo password non deve essere vuoto</message>
 <message id="Lms.password-new">Nuova password</message>
 <message id="Lms.password-old">Vecchia password</message>
 <message id="Lms.password-too-weak">La password è troppo debole</message>
@@ -92,9 +91,6 @@
 <message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utenti</message>
 
 <!--User-->
-<message id="Lms.Admin.User.auth-mode">Modalità di autenticazione</message>
-<message id="Lms.Admin.User.auth-mode.internal">Interna</message>
-<message id="Lms.Admin.User.auth-mode.pam">PAM</message>
 <message id="Lms.Admin.User.demo-account">Account demo</message>
 <message id="Lms.Admin.User.demo-account-already-exists">L'account demo è già esistente!</message>
 <message id="Lms.Admin.User.demo-password-invalid">La password dell'account demo deve essere il nome utente!</message>

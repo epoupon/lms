@@ -23,9 +23,11 @@
 #include <Wt/WMessageBox.h>
 #include <Wt/WTemplate.h>
 
+#include "auth/IPasswordService.hpp"
 #include "database/User.hpp"
 #include "database/Session.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Service.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -38,11 +40,16 @@ UsersView::UsersView()
 
 	_container = bindNew<Wt::WContainerWidget>("users");
 
-	Wt::WPushButton* addBtn = bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.Admin.Users.add"));
-	addBtn->clicked().connect([]()
+	if (Service<::Auth::IPasswordService>::get() && Service<::Auth::IPasswordService>::get()->canSetPasswords())
 	{
-		LmsApp->setInternalPath("/admin/user", true);
-	});
+		setCondition("if-can-create-user", true);
+
+		Wt::WPushButton* addBtn = bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.Admin.Users.add"));
+		addBtn->clicked().connect([]()
+		{
+			LmsApp->setInternalPath("/admin/user", true);
+		});
+	}
 
 	wApp->internalPathChanged().connect(this, [this]()
 	{

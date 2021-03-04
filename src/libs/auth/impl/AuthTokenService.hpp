@@ -19,8 +19,10 @@
 
 #pragma once
 
-#include "auth/IAuthTokenService.hpp"
+#include <shared_mutex>
 
+#include "auth/IAuthTokenService.hpp"
+#include "AuthServiceBase.hpp"
 #include "LoginThrottler.hpp"
 
 namespace Database
@@ -28,13 +30,11 @@ namespace Database
 	class Session;
 }
 
-
-namespace Auth {
-
-	class AuthTokenService : public IAuthTokenService
+namespace Auth
+{
+	class AuthTokenService : public IAuthTokenService, public AuthServiceBase
 	{
 		public:
-
 			AuthTokenService(std::size_t maxThrottlerEntries);
 
 			AuthTokenService(const AuthTokenService&) = delete;
@@ -42,14 +42,12 @@ namespace Auth {
 			AuthTokenService(AuthTokenService&&) = delete;
 			AuthTokenService& operator=(AuthTokenService&&) = delete;
 
-			AuthTokenProcessResult	processAuthToken(Database::Session& session, const boost::asio::ip::address& clientAddress, const std::string& tokenValue) override;
-			std::string		createAuthToken(Database::Session& session, Database::IdType userid, const Wt::WDateTime& expiry) override;
-
 		private:
+			AuthTokenProcessResult	processAuthToken(Database::Session& session, const boost::asio::ip::address& clientAddress, std::string_view tokenValue) override;
+			std::string				createAuthToken(Database::Session& session, Database::IdType userId, const Wt::WDateTime& expiry) override;
+			void					clearAuthTokens(Database::Session& session, Database::IdType userId) override;
 
-			std::shared_timed_mutex	_mutex;
-			LoginThrottler	_loginThrottler;
+			std::shared_mutex	_mutex;
+			LoginThrottler		_loginThrottler;
 	};
-
 }
-

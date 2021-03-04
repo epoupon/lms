@@ -36,7 +36,4 @@ class Auth : public Wt::WTemplateFormView
 		Wt::Signal<Database::IdType /*userId*/> userLoggedIn;
 };
 
-
 } // namespace UserInterface
-
-

@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 include(CTest)
+find_package(Threads REQUIRED)
 find_package(Filesystem REQUIRED)
 find_package(FFMPEGAV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system program_options)

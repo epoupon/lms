@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,26 +17,17 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "AuthModeModel.hpp"
+#pragma once
 
-#include "auth/IPasswordService.hpp"
-#include "utils/Service.hpp"
+#include <Wt/WValidator.h>
 
 namespace UserInterface
 {
+	std::shared_ptr<Wt::WValidator> createPasswordStrengthValidator(std::string_view loginName);
+	using LoginNameGetFunc = std::function<std::string()>;
+	std::shared_ptr<Wt::WValidator> createPasswordStrengthValidator(LoginNameGetFunc loginNameGetFunc);
 
-std::unique_ptr<AuthModeModel>
-createAuthModeModel()
-{
-	auto model {std::make_unique<AuthModeModel>()};
-
-	if (Service<::Auth::IPasswordService>::get()->isAuthModeSupported(Database::User::AuthMode::Internal))
-		model->add(Wt::WString::tr("Lms.Admin.User.auth-mode.internal"), Database::User::AuthMode::Internal);
-	if (Service<::Auth::IPasswordService>::get()->isAuthModeSupported(Database::User::AuthMode::PAM))
-		model->add(Wt::WString::tr("Lms.Admin.User.auth-mode.pam"), Database::User::AuthMode::PAM);
-
-	return model;
-}
-
-}
+	// Check current user password
+	std::shared_ptr<Wt::WValidator> createPasswordCheckValidator();
+} // namespace UserInterface
 

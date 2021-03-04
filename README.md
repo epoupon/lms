@@ -18,7 +18,6 @@ A [demo instance](http://lms.demo.poupon.io) is available. Note the administrati
 * Persistent play queue across sessions
 * _Systemd_ integration
 * User management
-  * with optional _PAM_ authentication backend
 * Subsonic API, with the following additional features:
   * Playlists
   * Bookmarks
@@ -30,7 +29,7 @@ _LMS_ provides several ways to help you find the music you like:
 * Radio mode, based on what is in the current playqueue
 * Searches in album, artist and track names (including sort names)
 * Starred Albums/Artists/Tracks
-* Custom tags support to help you filter your music: _mood_, _albummood_, _albumgenre_, _albumgrouping_, ...
+* Various tags to help you filter your music: _mood_, _albummood_, _albumgenre_, _albumgrouping_, ...
 * Random/Starred/Most played/Recently played/Recently added for Artist/Albums/Tracks, allowing you to search for things like:
   * Recently added _Electronic_ artists
   * Random _Metal_ and _Aggressive_ albums
@@ -54,7 +53,7 @@ Since _LMS_ uses metadata tags to organize music, a compatibility mode is used t
 
 The Subsonic API is enabled by default.
 
-__Note__: since _LMS_ stores hashed and salted passwords, it cannot handle the __token authentication__ method defined from version 1.13.0.
+__Note__: since _LMS_ may store hashed and salted passwords or may forward authentication requests to external services, it cannot handle the __token authentication__ method defined from version 1.13.0.
 
 ## Keyboard shortcuts
 * Play/pause: <kbd>Space</bbd>

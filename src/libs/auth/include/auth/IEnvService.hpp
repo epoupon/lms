@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2019 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,14 +19,44 @@
 
 #pragma once
 
-#ifdef LMS_SUPPORT_PAM
-
+#include <optional>
 #include <string>
 
-namespace Auth::PAM
+#include "database/Types.hpp"
+
+namespace Database
 {
-	bool checkUserPassword(const std::string& loginName, const std::string& password);
+	class Session;
 }
 
-#endif // LMS_SUPPORT_PAM
+namespace Wt
+{
+	class WEnvironment;
+}
 
+namespace Auth
+{
+	class IEnvService
+	{
+		public:
+			virtual ~IEnvService() = default;
+
+			// Auth Token services
+			struct CheckResult
+			{
+				enum class State
+				{
+					Granted,
+					Denied,
+					Throttled,
+				};
+
+				State state {State::Denied};
+				std::optional<Database::IdType>	userId {};
+			};
+
+			virtual CheckResult			processEnv(Database::Session& session, const Wt::WEnvironment& env) = 0;
+	};
+
+	std::unique_ptr<IEnvService> createEnvService(std::string_view backendName);
+} // namespace Auth

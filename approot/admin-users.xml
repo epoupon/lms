@@ -6,7 +6,9 @@
 		<h2>${tr:Lms.Admin.Users.users}</h2>
 	</div>
 	${users}
+	${<if-can-create-user>}
 	${add-btn class="btn-primary Lms-admin-users-add-btn"}
+	${</if-can-create-user>}
 </message>
 
 <message id="Lms.Admin.Users.template.entry">

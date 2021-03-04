@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,13 +19,21 @@
 
 #pragma once
 
-#include "database/User.hpp"
-#include "common/ValueStringModel.hpp"
+#include "auth/IEnvService.hpp"
+#include "AuthServiceBase.hpp"
 
-namespace UserInterface
+namespace Auth
 {
-	using AuthModeModel = ValueStringModel<Database::User::AuthMode>;
+	class HttpHeadersEnvService : public IEnvService, public AuthServiceBase
+	{
+		public:
+			HttpHeadersEnvService();
 
-	std::unique_ptr<AuthModeModel> createAuthModeModel();
-}
+		private:
+			CheckResult	processEnv(Database::Session& session, const Wt::WEnvironment& env) override;
+
+			std::string _fieldName;
+	};
+
+} // namespace Auth
 

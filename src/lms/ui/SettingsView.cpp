@@ -29,7 +29,8 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
 
-#include "common/Validators.hpp"
+#include "common/PasswordValidator.hpp"
+#include "common/MandatoryValidator.hpp"
 #include "common/ValueStringModel.hpp"
 
 #include "auth/IPasswordService.hpp"
@@ -68,8 +69,9 @@ class SettingsModel : public Wt::WFormModel
 		using TranscodeModeModel = ValueStringModel<MediaPlayer::Settings::Transcode::Mode>;
 		using ReplayGainModeModel = ValueStringModel<MediaPlayer::Settings::ReplayGain::Mode>;
 
-		SettingsModel(bool withOldPassword)
-			: _withOldPassword {withOldPassword}
+		SettingsModel(::Auth::IPasswordService* authPasswordService, bool withOldPassword)
+			: _authPasswordService {authPasswordService}
+			, _withOldPassword {withOldPassword}
 		{
 			initializeModels();
 
@@ -84,11 +86,18 @@ class SettingsModel : public Wt::WFormModel
 			addField(SubsonicTranscodeBitrateField);
 			addField(SubsonicTranscodeFormatField);
 
-			if (_withOldPassword)
-				addField(PasswordOldField);
+			if (_authPasswordService)
+			{
+				if (_withOldPassword)
+				{
+					addField(PasswordOldField);
+					setValidator(PasswordOldField, createPasswordCheckValidator());
+				}
 
-			addField(PasswordField);
-			addField(PasswordConfirmField);
+				addField(PasswordField);
+				setValidator(PasswordField, createPasswordStrengthValidator(LmsApp->getUserLoginName()));
+				addField(PasswordConfirmField);
+			}
 
 			setValidator(TranscodeModeField, createMandatoryValidator());
 			setValidator(TranscodeBitrateField, createMandatoryValidator());
@@ -118,11 +127,6 @@ class SettingsModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			User::PasswordHash passwordHash;
-
-			if (!valueText(PasswordField).empty())
-				passwordHash = Service<::Auth::IPasswordService>::get()->hashPassword(valueText(PasswordField).toUTF8());
-
 			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
 			User::pointer user {LmsApp->getUser()};
@@ -172,15 +176,15 @@ class SettingsModel : public Wt::WFormModel
 					user.modify()->setSubsonicTranscodeFormat(_transcodeFormatModel->getValue(*subsonicTranscodeFormatRow));
 			}
 
-			if (!valueText(PasswordField).empty())
-			{
-				user.modify()->setPasswordHash(passwordHash);
-				user.modify()->clearAuthTokens();
-			}
-
 			auto subsonicArtistListModeRow {_subsonicArtistListModeModel->getRowFromString(valueText(SubsonicArtistListModeField))};
 			if (subsonicArtistListModeRow)
 				user.modify()->setSubsonicArtistListMode(_subsonicArtistListModeModel->getValue(*subsonicArtistListModeRow));
+
+			if (_authPasswordService && !valueText(PasswordField).empty())
+			{
+				_authPasswordService->setPassword(LmsApp->getDbSession(), user.id(), valueText(PasswordField).toUTF8());
+			}
+
 		}
 
 		void loadData()
@@ -242,46 +246,17 @@ class SettingsModel : public Wt::WFormModel
 
 			if (field == PasswordOldField)
 			{
-				if (!valueText(PasswordOldField).empty())
-				{
-					switch (Service<::Auth::IPasswordService>::get()->checkUserPassword(
-							LmsApp->getDbSession(),
-							boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
-							LmsApp->getUserLoginName(),
-							valueText(PasswordOldField).toUTF8()))
-					{
-						case ::Auth::IPasswordService::PasswordCheckResult::Match:
-							break;
-						case ::Auth::IPasswordService::PasswordCheckResult::Mismatch:
-							error = Wt::WString::tr("Lms.Settings.password-bad");
-							break;
-						case ::Auth::IPasswordService::PasswordCheckResult::Throttled:
-							error = Wt::WString::tr("Lms.password-client-throttled");
-							break;
-					}
-				}
+				if (valueText(PasswordOldField).empty() && !valueText(PasswordField).empty())
+					error = Wt::WString::tr("Lms.Settings.password-must-fill-old-password");
 				else
-				{
-					if (!valueText(PasswordField).empty())
-						error = Wt::WString::tr("Lms.Settings.password-must-fill-old-password");
-					else
-						return Wt::WFormModel::validateField(field);
-				}
+					return Wt::WFormModel::validateField(field);
 			}
 			else if (field == PasswordField)
 			{
-				if (!valueText(PasswordField).empty())
-				{
-					if (!Service<::Auth::IPasswordService>::get()->evaluatePasswordStrength(LmsApp->getUserLoginName(), valueText(PasswordField).toUTF8()))
-						error = Wt::WString::tr("Lms.password-too-weak");
-				}
+				if (!valueText(PasswordOldField).empty() && valueText(PasswordField).empty())
+					error = Wt::WString::tr("Wt.WValidator.Invalid");
 				else
-				{
-					if (!valueText(PasswordOldField).empty())
-						error = Wt::WString::tr("Wt.WValidator.Invalid");
-					else
-						return Wt::WFormModel::validateField(field);
-				}
+					return Wt::WFormModel::validateField(field);
 			}
 			else if (field == PasswordConfirmField)
 			{
@@ -336,6 +311,7 @@ class SettingsModel : public Wt::WFormModel
 			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.track-artists"), User::SubsonicArtistListMode::TrackArtists);
 		}
 
+		::Auth::IPasswordService* _authPasswordService {};
 		bool _withOldPassword {};
 
 		std::shared_ptr<TranscodeModeModel>				_transcodeModeModel;
@@ -374,7 +350,11 @@ SettingsView::refreshView()
 
 	auto t {addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Settings.template"))};
 
-	auto model {std::make_shared<SettingsModel>(!LmsApp->isUserAuthStrong())};
+	auto* authPasswordService {Service<::Auth::IPasswordService>::get()};
+	if (authPasswordService && !authPasswordService->canSetPasswords())
+		authPasswordService = nullptr;
+
+	auto model {std::make_shared<SettingsModel>(authPasswordService, !LmsApp->isUserAuthStrong())};
 
 	// Appearance
 	{
@@ -382,28 +362,33 @@ SettingsView::refreshView()
 		t->setFormWidget(SettingsModel::DarkModeField, std::move(darkMode));
 	}
 
-	// Old password
-	if (!LmsApp->isUserAuthStrong())
+	if (authPasswordService)
 	{
-		t->setCondition("if-has-old-password", true);
+		t->setCondition("if-has-change-password", true);
 
-		auto oldPassword {std::make_unique<Wt::WLineEdit>()};
-		oldPassword->setEchoMode(Wt::EchoMode::Password);
-		oldPassword->setAttributeValue("autocomplete", "current-password");
-		t->setFormWidget(SettingsModel::PasswordOldField, std::move(oldPassword));
+		// Old password
+		if (!LmsApp->isUserAuthStrong())
+		{
+			t->setCondition("if-has-old-password", true);
+
+			auto oldPassword {std::make_unique<Wt::WLineEdit>()};
+			oldPassword->setEchoMode(Wt::EchoMode::Password);
+			oldPassword->setAttributeValue("autocomplete", "current-password");
+			t->setFormWidget(SettingsModel::PasswordOldField, std::move(oldPassword));
+		}
+
+		// Password
+		auto password {std::make_unique<Wt::WLineEdit>()};
+		password->setEchoMode(Wt::EchoMode::Password);
+		password->setAttributeValue("autocomplete", "new-password");
+		t->setFormWidget(SettingsModel::PasswordField, std::move(password));
+
+		// Password confirm
+		auto passwordConfirm {std::make_unique<Wt::WLineEdit>()};
+		passwordConfirm->setEchoMode(Wt::EchoMode::Password);
+		passwordConfirm->setAttributeValue("autocomplete", "new-password");
+		t->setFormWidget(SettingsModel::PasswordConfirmField, std::move(passwordConfirm));
 	}
-
-	// Password
-	auto password {std::make_unique<Wt::WLineEdit>()};
-	password->setEchoMode(Wt::EchoMode::Password);
-	password->setAttributeValue("autocomplete", "new-password");
-	t->setFormWidget(SettingsModel::PasswordField, std::move(password));
-
-	// Password confirm
-	auto passwordConfirm {std::make_unique<Wt::WLineEdit>()};
-	passwordConfirm->setEchoMode(Wt::EchoMode::Password);
-	passwordConfirm->setAttributeValue("autocomplete", "new-password");
-	t->setFormWidget(SettingsModel::PasswordConfirmField, std::move(passwordConfirm));
 
 	// Audio
 	{

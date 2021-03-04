@@ -31,6 +31,12 @@ class LmsApplicationException : public LmsException
 		LmsApplicationException(const Wt::WString& error) : LmsException {error.toUTF8()} {}
 };
 
+class DeploymentException : public LmsApplicationException
+{
+	public:
+		DeploymentException() : LmsApplicationException {Wt::WString::tr("Lms.Error.deployment-error")} {}
+};
+
 class ArtistNotFoundException : public LmsApplicationException
 {
 	public:

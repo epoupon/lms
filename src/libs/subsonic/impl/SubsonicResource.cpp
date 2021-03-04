@@ -106,6 +106,15 @@ namespace API::Subsonic
 {
 
 static
+void
+checkSetPasswordImplemented()
+{
+	Auth::IPasswordService* passwordService {Service<Auth::IPasswordService>::get()};
+	if (!passwordService || !passwordService->canSetPasswords())
+		throw NotImplementedGenericError {};
+}
+
+static
 std::string
 makeNameFilesystemCompatible(const std::string& name)
 {
@@ -515,21 +524,31 @@ handleChangePassword(RequestContext& context)
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
 	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
 
-	if (!Service<Auth::IPasswordService>::get()->evaluatePasswordStrength(username, password))
+	try
+	{
+		Database::IdType userId;
+		{
+			auto transaction {context.dbSession.createSharedTransaction()};
+
+			checkUserIsMySelfOrAdmin(context, username);
+
+			User::pointer user {User::getByLoginName(context.dbSession, username)};
+			if (!user)
+				throw UserNotAuthorizedError {};
+
+			userId = user.id();
+		}
+
+		Service<Auth::IPasswordService>::get()->setPassword(context.dbSession, userId, password);
+	}
+	catch (Auth::IPasswordService::PasswordTooWeakException&)
+	{
 		throw PasswordTooWeakGenericError {};
-
-	const User::PasswordHash hash {Service<Auth::IPasswordService>::get()->hashPassword(password)};
-
-	auto transaction {context.dbSession.createUniqueTransaction()};
-
-	checkUserIsMySelfOrAdmin(context, username);
-
-	User::pointer user {User::getByLoginName(context.dbSession, username)};
-	if (!user)
+	}
+	catch (Auth::Exception& authException)
+	{
 		throw UserNotAuthorizedError {};
-
-	user.modify()->setPasswordHash(hash);
-	user.modify()->clearAuthTokens();
+	}
 
 	return Response::createOkResponse(context);
 }
@@ -597,19 +616,40 @@ handleCreateUserRequest(RequestContext& context)
 	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
 	// Just ignore all the other fields as we don't handle them
 
-	if (!Service<Auth::IPasswordService>::get()->evaluatePasswordStrength(username, password))
+	Database::IdType userId;
+	{
+		auto transaction {context.dbSession.createUniqueTransaction()};
+
+		User::pointer user {User::getByLoginName(context.dbSession, username)};
+		if (user)
+			throw UserAlreadyExistsGenericError {};
+
+		user = User::create(context.dbSession, username);
+		userId = user.id();
+	}
+
+	auto removeCreatedUser {[&]()
+		{
+			auto transaction {context.dbSession.createUniqueTransaction()};
+			User::pointer user {User::getById(context.dbSession, userId)};
+			if (user)
+				user.remove();
+		}};
+
+	try
+	{
+		Service<Auth::IPasswordService>::get()->setPassword(context.dbSession, userId, password);
+	}
+	catch (const Auth::IPasswordService::PasswordTooWeakException&)
+	{
+		removeCreatedUser();
 		throw PasswordTooWeakGenericError {};
-
-	const User::PasswordHash hash {Service<Auth::IPasswordService>::get()->hashPassword(password)};
-
-	auto transaction {context.dbSession.createUniqueTransaction()};
-
-	if (User::getByLoginName(context.dbSession, username) != User::pointer{})
-		throw UserAlreadyExistsGenericError {};
-
-	User::pointer user {User::create(context.dbSession, username)};
-	user.modify()->setAuthMode(User::AuthMode::Internal);
-	user.modify()->setPasswordHash(hash);
+	}
+	catch (const Auth::Exception& exception)
+	{
+		removeCreatedUser();
+		throw UserNotAuthorizedError {};
+	}
 
 	return Response::createOkResponse(context);
 }
@@ -1614,26 +1654,33 @@ handleUpdateUserRequest(RequestContext& context)
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
 	std::optional<std::string> password {getParameterAs<std::string>(context.parameters, "password")};
 
-	User::PasswordHash hash;
-	if (password)
+	Database::IdType userId;
 	{
-		*password = decodePasswordIfNeeded(*password);
-		if (!Service<Auth::IPasswordService>::get()->evaluatePasswordStrength(username, *password))
-			throw PasswordTooWeakGenericError {};
+		auto transaction {context.dbSession.createSharedTransaction()};
 
-		hash = Service<Auth::IPasswordService>::get()->hashPassword(*password);
+		User::pointer user {User::getByLoginName(context.dbSession, username)};
+		if (!user)
+			throw RequestedDataNotFoundError {};
+
+		userId = user.id();
 	}
 
-	auto transaction {context.dbSession.createUniqueTransaction()};
-
-	User::pointer user {User::getByLoginName(context.dbSession, username)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
 	if (password)
 	{
-		user.modify()->setPasswordHash(hash);
-		user.modify()->clearAuthTokens();
+		checkSetPasswordImplemented();
+
+		try
+		{
+			Service<::Auth::IPasswordService>()->setPassword(context.dbSession, userId, decodePasswordIfNeeded(*password));
+		}
+		catch (const Auth::IPasswordService::PasswordTooWeakException&)
+		{
+			throw PasswordTooWeakGenericError {};
+		}
+		catch (const Auth::Exception&)
+		{
+			throw UserNotAuthorizedError {};
+		}
 	}
 
 	return Response::createOkResponse(context);
@@ -1826,10 +1873,12 @@ handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/,
 }
 
 using RequestHandlerFunc = std::function<Response(RequestContext& context)>;
+using CheckImplementedFunc = std::function<void()>;
 struct RequestEntryPointInfo
 {
-	RequestHandlerFunc	func;
-	bool			mustBeAdmin;
+	RequestHandlerFunc		func;
+	bool					mustBeAdmin;
+	CheckImplementedFunc	checkFunc {};
 };
 
 static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
@@ -1918,12 +1967,12 @@ static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"addChatMessages",	{handleNotImplemented,			false}},
 
 	// User management
-	{"getUser",		{handleGetUserRequest,			false}},
+	{"getUser",			{handleGetUserRequest,			false}},
 	{"getUsers",		{handleGetUsersRequest,			true}},
-	{"createUser",		{handleCreateUserRequest,		true}},
+	{"createUser",		{handleCreateUserRequest,		true, &checkSetPasswordImplemented}},
 	{"updateUser",		{handleUpdateUserRequest,		true}},
 	{"deleteUser",		{handleDeleteUserRequest,		true}},
-	{"changePassword",	{handleChangePassword,			false}},
+	{"changePassword",	{handleChangePassword,			false, &checkSetPasswordImplemented}},
 
 	// Bookmarks
 	{"getBookmarks",	{handleGetBookmarks,			false}},
@@ -1975,15 +2024,17 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 		Session& dbSession {_db.getTLSSession()};
 
-		switch (Service<Auth::IPasswordService>::get()->checkUserPassword(dbSession,
-					boost::asio::ip::address::from_string(request.clientAddress()),
-					clientInfo.user, clientInfo.password))
+		const Auth::IPasswordService::CheckResult checkResult {Service<Auth::IPasswordService>::get()->checkUserPassword(dbSession,
+																	boost::asio::ip::address::from_string(request.clientAddress()),
+																	clientInfo.user, clientInfo.password)};
+
+		switch (checkResult.state)
 		{
-			case Auth::IPasswordService::PasswordCheckResult::Match:
+			case Auth::IPasswordService::CheckResult::State::Granted:
 				break;
-			case Auth::IPasswordService::PasswordCheckResult::Mismatch:
+			case Auth::IPasswordService::CheckResult::State::Denied:
 				throw WrongUsernameOrPasswordError {};
-			case Auth::IPasswordService::PasswordCheckResult::Throttled:
+			case Auth::IPasswordService::CheckResult::State::Throttled:
 				throw LoginThrottledGenericError {};
 		}
 
@@ -1992,6 +2043,9 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		auto itEntryPoint {requestEntryPoints.find(requestPath)};
 		if (itEntryPoint != requestEntryPoints.end())
 		{
+			if (itEntryPoint->second.checkFunc)
+				itEntryPoint->second.checkFunc();
+
 			if (itEntryPoint->second.mustBeAdmin)
 			{
 				auto transaction {dbSession.createSharedTransaction()};

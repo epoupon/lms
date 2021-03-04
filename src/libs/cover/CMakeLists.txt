@@ -9,6 +9,7 @@ target_include_directories(lmscover INTERFACE
 
 target_include_directories(lmscover PRIVATE
 	include
+	impl
 	)
 
 target_link_libraries(lmscover PRIVATE
@@ -38,8 +39,6 @@ elseif (IMAGE_LIBRARY STREQUAL GraphicsMagick++)
 else ()
 	message(FATAL_ERROR "Invalid IMAGE_LIBRARY provided")
 endif()
-
-target_include_directories(lmscover PRIVATE impl)
 
 install(TARGETS lmscover DESTINATION lib)
 

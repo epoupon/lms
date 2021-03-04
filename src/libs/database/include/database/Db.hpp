@@ -20,9 +20,10 @@
 #pragma once
 
 #include <filesystem>
-#include <shared_mutex>
 
 #include <Wt/Dbo/SqlConnectionPool.h>
+
+#include "utils/RecursiveSharedMutex.hpp"
 
 namespace Database {
 
@@ -44,7 +45,7 @@ class Db
 	private:
 		friend class Session;
 
-		std::shared_mutex&		getMutex() { return _sharedMutex; }
+		RecursiveSharedMutex&		getMutex() { return _sharedMutex; }
 		Wt::Dbo::SqlConnectionPool&	getConnectionPool() { return *_connectionPool; }
 
 		class ScopedConnection
@@ -88,7 +89,7 @@ class Db
 
 		void executeSql(const std::string& sql);
 
-		std::shared_mutex				_sharedMutex;
+		RecursiveSharedMutex				_sharedMutex;
 		std::unique_ptr<Wt::Dbo::SqlConnectionPool>	_connectionPool;
 
 		std::mutex _tlsSessionsMutex;
