@@ -34,6 +34,11 @@ namespace Wt
 	class WEnvironment;
 }
 
+namespace Wt::Http
+{
+	class Request;
+}
+
 namespace Auth
 {
 	class IEnvService
@@ -56,6 +61,7 @@ namespace Auth
 			};
 
 			virtual CheckResult			processEnv(Database::Session& session, const Wt::WEnvironment& env) = 0;
+			virtual CheckResult			processRequest(Database::Session& session, const Wt::Http::Request& request) = 0;
 	};
 
 	std::unique_ptr<IEnvService> createEnvService(std::string_view backendName);

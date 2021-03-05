@@ -29,7 +29,7 @@ namespace Auth
 {
 
 	HttpHeadersEnvService::HttpHeadersEnvService()
-		: _fieldName {Service<IConfig>::get()->getString("http-headers-field-name", "X-Forwarded-User")}
+		: _fieldName {Service<IConfig>::get()->getString("http-headers-login-field", "X-Forwarded-User")}
 	{
 		LMS_LOG(AUTH, INFO) << "Using http header field = '" << _fieldName << "'";
 	}
@@ -37,7 +37,21 @@ namespace Auth
 	HttpHeadersEnvService::CheckResult
 	HttpHeadersEnvService::processEnv(Database::Session& session, const Wt::WEnvironment& env)
 	{
-		const std::string loginName { env.headerValue(_fieldName)};
+		const std::string loginName {env.headerValue(_fieldName)};
+		if (loginName.empty())
+			return {CheckResult::State::Denied};
+
+		LMS_LOG(AUTH, DEBUG) << "Extracted login name = '" << loginName <<  "' from HTTP header";
+
+		const Database::IdType userId {getOrCreateUser(session, loginName)};
+		onUserAuthenticated(session, userId);
+		return {CheckResult::State::Granted, userId};
+	}
+
+	HttpHeadersEnvService::CheckResult
+	HttpHeadersEnvService::processRequest(Database::Session& session, const Wt::Http::Request& request)
+	{
+		const std::string loginName {request.headerValue(_fieldName)};
 		if (loginName.empty())
 			return {CheckResult::State::Denied};
 

@@ -22,8 +22,8 @@
 #include <string>
 
 #include <Wt/Http/Request.h>
-#include <Wt/Http/ResponseContinuation.h>
 
+#include "database/Types.hpp"
 
 namespace Database
 {
@@ -32,14 +32,12 @@ namespace Database
 
 namespace API::Subsonic
 {
-
 	struct RequestContext
 	{
 		const Wt::Http::ParameterMap& parameters;
 		Database::Session& dbSession;
-		std::string userName;
+		Database::IdType userId;
 		std::string clientName;
 	};
-
 }
 

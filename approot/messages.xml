@@ -28,7 +28,6 @@
 <!--Errors-->
 <message id="Lms.Error.artist-not-found">Artist not found</message>
 <message id="Lms.Error.error-occurred">Error occured!</message>
-<message id="Lms.Error.deployment-error">Deployment error</message>
 <message id="Lms.Error.go-home">Go home</message>
 <message id="Lms.Error.release-not-found">Release not found</message>
 <message id="Lms.Error.user-not-allowed">You are not allowed to perform this operation</message>

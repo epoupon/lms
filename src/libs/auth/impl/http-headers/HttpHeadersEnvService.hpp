@@ -31,6 +31,7 @@ namespace Auth
 
 		private:
 			CheckResult	processEnv(Database::Session& session, const Wt::WEnvironment& env) override;
+			CheckResult	processRequest(Database::Session& session, const Wt::Http::Request& request) override;
 
 			std::string _fieldName;
 	};

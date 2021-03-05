@@ -60,7 +60,7 @@ class LmsApplication : public Wt::WApplication
 {
 	public:
 
-		LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups);
+		LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups, std::optional<Database::IdType> userId = std::nullopt);
 		~LmsApplication();
 
 		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups);
@@ -110,7 +110,6 @@ class LmsApplication : public Wt::WApplication
 
 		void init();
 		void setTheme();
-		void processEnvAuth();
 		void processPasswordAuth();
 		void handleException(LmsApplicationException& e);
 		void goHomeAndQuit();

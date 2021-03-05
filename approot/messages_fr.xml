@@ -28,7 +28,6 @@
 <!--Errors-->
 <message id="Lms.Error.artist-not-found">Cet artiste n'existe pas</message>
 <message id="Lms.Error.error-occurred">Une erreur est survenue!</message>
-<message id="Lms.Error.deployment-error">Erreur de déploiement</message>
 <message id="Lms.Error.go-home">Retour à l'accueil</message>
 <message id="Lms.Error.release-not-found">Cet album n'existe pas</message>
 <message id="Lms.Error.user-not-allowed">Vous n'avez pas les droits pour effectuer cette opération</message>

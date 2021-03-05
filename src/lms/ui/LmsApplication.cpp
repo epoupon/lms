@@ -65,6 +65,19 @@ static constexpr const char* defaultPath {"/releases"};
 std::unique_ptr<Wt::WApplication>
 LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups)
 {
+	if (auto *authEnvService {Service<::Auth::IEnvService>::get()})
+	{
+		const auto checkResult {authEnvService->processEnv(db.getTLSSession(), env)};
+		if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
+		{
+			LMS_LOG(UI, ERROR) << "Cannot authenticate user from environment!";
+			// return a blank page
+			return std::make_unique<Wt::WApplication>(env);
+		}
+
+		return std::make_unique<LmsApplication>(env, db, appGroups, checkResult.userId);
+	}
+
 	return std::make_unique<LmsApplication>(env, db, appGroups);
 }
 
@@ -121,10 +134,12 @@ LmsApplication::getUserLoginName()
 
 LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 		Database::Db& db,
-		LmsApplicationGroupContainer& appGroups)
-: Wt::WApplication {env},
-  _db {db},
-  _appGroups {appGroups}
+		LmsApplicationGroupContainer& appGroups,
+		std::optional<Database::IdType> userId)
+: Wt::WApplication {env}
+,  _db {db}
+,  _appGroups {appGroups}
+, _authenticatedUser {userId ? std::make_optional<UserAuthInfo>(UserAuthInfo {*userId, false}) : std::nullopt}
 {
 	try
 	{
@@ -181,23 +196,12 @@ LmsApplication::init()
 	// Handle Media Scanner events and other session events
 	enableUpdates(true);
 
-	if (Service<::Auth::IEnvService>::exists())
-		processEnvAuth();
+	if (_authenticatedUser)
+	{
+		onUserLoggedIn();
+	}
 	else if (Service<::Auth::IPasswordService>::exists())
 		processPasswordAuth();
-	else
-		throw LmsException {"No auth service available!"};
-}
-
-void
-LmsApplication::processEnvAuth()
-{
-	const auto checkResult {Service<::Auth::IEnvService>::get()->processEnv(getDbSession(), wApp->environment())};
-	if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
-		throw DeploymentException {};
-
-	_authenticatedUser = {*checkResult.userId, false};
-	onUserLoggedIn();
 }
 
 void
