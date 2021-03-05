@@ -19,44 +19,59 @@
 
 #pragma once
 
-#include <optional>
-#include <string>
+#include <string_view>
+
+#include <Wt/WDateTime.h>
+#include <Wt/Dbo/ptr.h>
 
 #include <boost/asio/ip/address.hpp>
-
-#include "database/User.hpp"
+#include "auth/Types.hpp"
 #include "database/Types.hpp"
 
 namespace Database
 {
 	class Session;
+	class User;
 }
 
+namespace Auth
+{
 
-namespace Auth {
+	class IAuthTokenService;
 
 	class IPasswordService
 	{
 		public:
-
 			virtual ~IPasswordService() = default;
 
-			// Password services
-			enum class PasswordCheckResult
+			struct CheckResult
 			{
-				Match,
-				Mismatch,
-				Throttled,
+				enum class State
+				{
+					Granted,
+					Denied,
+					Throttled,
+				};
+				State state {State::Denied};
+				std::optional<Database::IdType> userId {};
+				std::optional<Wt::WDateTime> expiry {};
+			};
+			virtual CheckResult				checkUserPassword(Database::Session& session,
+													const boost::asio::ip::address& clientAddress,
+													std::string_view loginName,
+													std::string_view password) = 0;
+
+			class PasswordTooWeakException : public Auth::Exception
+			{
+				public:
+					PasswordTooWeakException() : Auth::Exception {"Password too weak"} {}
 			};
 
-			virtual bool isAuthModeSupported(Database::User::AuthMode authMode) const = 0;
-
-			virtual PasswordCheckResult	checkUserPassword(Database::Session& session, const boost::asio::ip::address& clientAddress, const std::string& loginName, const std::string& password) = 0;
-			virtual Database::User::PasswordHash	hashPassword(const std::string& password) const = 0;
-			virtual bool				evaluatePasswordStrength(const std::string& loginName, const std::string& password) const = 0;
+			virtual bool					canSetPasswords() const = 0;
+			virtual bool					isPasswordSecureEnough(std::string_view username, std::string_view password) const = 0;
+			virtual void					setPassword(Database::Session& session, Database::IdType userId, std::string_view newPassword) = 0;
 	};
 
-	std::unique_ptr<IPasswordService> createPasswordService(std::size_t maxThrottlerEntryCount);
-
+	std::unique_ptr<IPasswordService>	createPasswordService(std::string_view authPasswordBackend, std::size_t maxThrottlerEntryCount, IAuthTokenService& authTokenService);
 }
 

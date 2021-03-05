@@ -131,6 +131,7 @@
 					</div>
 				</div>
 				${</if-has-subsonic-api>}
+				${<if-has-change-password>}
 				<legend>${tr:Lms.Settings.change-password}</legend>
 				<div class="form-horizontal">
 					${<if-has-old-password>}
@@ -162,7 +163,9 @@
 							${password-confirm-info class="help-block"}
 						</div>
 					</div>
-
+				</div>
+				${</if-has-change-password>}
+				<div class="form-horizontal">
 					<div class="form-group">
 						<div class="col-lg-offset-3 col-lg-9">
 							${apply-btn class="btn-primary"} ${discard-btn}

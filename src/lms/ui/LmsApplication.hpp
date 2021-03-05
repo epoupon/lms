@@ -27,11 +27,6 @@
 
 #include "LmsApplicationGroup.hpp"
 
-namespace Wt
-{
-	class WPopupMenu;
-}
-
 namespace Database
 {
 	class Artist;
@@ -41,10 +36,13 @@ namespace Database
 	class Session;
 	class User;
 }
+namespace Wt
+{
+	class WPopupMenu;
+}
 
 namespace UserInterface {
 
-class Auth;
 class CoverResource;
 class LmsApplicationException;
 class MediaPlayer;
@@ -61,11 +59,13 @@ struct Events
 class LmsApplication : public Wt::WApplication
 {
 	public:
-		LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups);
+
+		LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups, std::optional<Database::IdType> userId = std::nullopt);
 		~LmsApplication();
 
 		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups);
 		static LmsApplication* instance();
+
 
 		// Session application data
 		std::shared_ptr<CoverResource> getCoverResource() { return _coverResource; }
@@ -107,15 +107,17 @@ class LmsApplication : public Wt::WApplication
 		Wt::Signal<>&	preQuit() { return _preQuit; }
 
 	private:
-
+		void init();
+		void setTheme();
+		void processPasswordAuth();
 		void handleException(LmsApplicationException& e);
 		void goHomeAndQuit();
 
 		LmsApplicationGroup& getApplicationGroup();
 
 		// Signal slots
-		void handleUserLoggedOut();
-		void handleUserLoggedIn(Database::IdType userId, bool strongAuth);
+		void logoutUser();
+		void onUserLoggedIn();
 
 		void notify(const Wt::WEvent& event) override;
 		void finalize() override;
@@ -127,8 +129,12 @@ class LmsApplication : public Wt::WApplication
 		LmsApplicationGroupContainer&   		_appGroups;
 		Events									_events;
 		Scanner::Events							_scannerEvents;
-		std::optional<Database::IdType>			_userId;
-		std::optional<bool>						_userAuthStrong;
+		struct UserAuthInfo
+		{
+			Database::IdType	userId;
+			bool				strongAuth {};
+		};
+		std::optional<UserAuthInfo>				_authenticatedUser;
 		std::shared_ptr<CoverResource>			_coverResource;
 		MediaPlayer*							_mediaPlayer {};
 		PlayQueue*								_playQueue {};

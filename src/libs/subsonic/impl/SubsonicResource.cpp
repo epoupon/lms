@@ -26,6 +26,7 @@
 #include <Wt/WLocalDateTime.h>
 
 #include "auth/IPasswordService.hpp"
+#include "auth/IEnvService.hpp"
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
@@ -104,6 +105,15 @@ namespace StringUtils
 
 namespace API::Subsonic
 {
+
+static
+void
+checkSetPasswordImplemented()
+{
+	Auth::IPasswordService* passwordService {Service<Auth::IPasswordService>::get()};
+	if (!passwordService || !passwordService->canSetPasswords())
+		throw NotImplementedGenericError {};
+}
 
 static
 std::string
@@ -200,14 +210,33 @@ static
 void
 checkUserIsMySelfOrAdmin(RequestContext& context, const std::string& username)
 {
-	if (username != context.userName)
-	{
-		User::pointer currentUser {User::getByLoginName(context.dbSession, context.userName)};
-		if (!currentUser)
-			throw RequestedDataNotFoundError {};
+	User::pointer currentUser {User::getById(context.dbSession, context.userId)};
+	if (!currentUser)
+		throw RequestedDataNotFoundError {};
 
-		if (!currentUser->isAdmin())
-			throw UserNotAuthorizedError {};
+	if (currentUser->getLoginName() != username	&& !currentUser->isAdmin())
+		throw UserNotAuthorizedError {};
+}
+
+static
+void
+checkUserIsAdmin(RequestContext& context)
+{
+	LMS_LOG(API_SUBSONIC, DEBUG) << "Check user is admin";
+
+	auto transaction {context.dbSession.createSharedTransaction()};
+
+	User::pointer currentUser {User::getById(context.dbSession, context.userId)};
+	if (!currentUser)
+	{
+		LMS_LOG(API_SUBSONIC, DEBUG) << "NOT FOUND";
+		throw RequestedDataNotFoundError {};
+	}
+
+	if (!currentUser->isAdmin())
+	{
+		LMS_LOG(API_SUBSONIC, DEBUG) << "NOT ADMIN";
+		throw UserNotAuthorizedError {};
 	}
 }
 
@@ -318,7 +347,6 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 	trackResponse.setAttribute("coverArt", IdToString({Id::Type::Track, track.id()}));
 
 	const std::vector<Artist::pointer>& artists {track->getArtists({TrackArtistLinkType::Artist})};
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Artists count = " << artists.size();
 	if (!artists.empty())
 	{
 		trackResponse.setAttribute("artist", getArtistNames(artists));
@@ -515,21 +543,31 @@ handleChangePassword(RequestContext& context)
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
 	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
 
-	if (!Service<Auth::IPasswordService>::get()->evaluatePasswordStrength(username, password))
+	try
+	{
+		Database::IdType userId;
+		{
+			auto transaction {context.dbSession.createSharedTransaction()};
+
+			checkUserIsMySelfOrAdmin(context, username);
+
+			User::pointer user {User::getByLoginName(context.dbSession, username)};
+			if (!user)
+				throw UserNotAuthorizedError {};
+
+			userId = user.id();
+		}
+
+		Service<Auth::IPasswordService>::get()->setPassword(context.dbSession, userId, password);
+	}
+	catch (Auth::IPasswordService::PasswordTooWeakException&)
+	{
 		throw PasswordTooWeakGenericError {};
-
-	const User::PasswordHash hash {Service<Auth::IPasswordService>::get()->hashPassword(password)};
-
-	auto transaction {context.dbSession.createUniqueTransaction()};
-
-	checkUserIsMySelfOrAdmin(context, username);
-
-	User::pointer user {User::getByLoginName(context.dbSession, username)};
-	if (!user)
+	}
+	catch (Auth::Exception& authException)
+	{
 		throw UserNotAuthorizedError {};
-
-	user.modify()->setPasswordHash(hash);
-	user.modify()->clearAuthTokens();
+	}
 
 	return Response::createOkResponse(context);
 }
@@ -554,7 +592,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -597,19 +635,40 @@ handleCreateUserRequest(RequestContext& context)
 	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
 	// Just ignore all the other fields as we don't handle them
 
-	if (!Service<Auth::IPasswordService>::get()->evaluatePasswordStrength(username, password))
+	Database::IdType userId;
+	{
+		auto transaction {context.dbSession.createUniqueTransaction()};
+
+		User::pointer user {User::getByLoginName(context.dbSession, username)};
+		if (user)
+			throw UserAlreadyExistsGenericError {};
+
+		user = User::create(context.dbSession, username);
+		userId = user.id();
+	}
+
+	auto removeCreatedUser {[&]()
+	{
+		auto transaction {context.dbSession.createUniqueTransaction()};
+		User::pointer user {User::getById(context.dbSession, userId)};
+		if (user)
+			user.remove();
+	}};
+
+	try
+	{
+		Service<Auth::IPasswordService>::get()->setPassword(context.dbSession, userId, password);
+	}
+	catch (const Auth::IPasswordService::PasswordTooWeakException&)
+	{
+		removeCreatedUser();
 		throw PasswordTooWeakGenericError {};
-
-	const User::PasswordHash hash {Service<Auth::IPasswordService>::get()->hashPassword(password)};
-
-	auto transaction {context.dbSession.createUniqueTransaction()};
-
-	if (User::getByLoginName(context.dbSession, username) != User::pointer{})
-		throw UserAlreadyExistsGenericError {};
-
-	User::pointer user {User::create(context.dbSession, username)};
-	user.modify()->setAuthMode(User::AuthMode::Internal);
-	user.modify()->setPasswordHash(hash);
+	}
+	catch (const Auth::Exception& exception)
+	{
+		removeCreatedUser();
+		throw UserNotAuthorizedError {};
+	}
 
 	return Response::createOkResponse(context);
 }
@@ -624,7 +683,7 @@ handleDeletePlaylistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -647,15 +706,15 @@ handleDeleteUserRequest(RequestContext& context)
 {
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
 
-	// cannot delete ourself
-	if (username == context.userName)
-		throw UserNotAuthorizedError {};
-
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
 	User::pointer user {User::getByLoginName(context.dbSession, username)};
 	if (!user)
 		throw RequestedDataNotFoundError {};
+
+	// cannot delete ourself
+	if (user.id() == context.userId)
+		throw UserNotAuthorizedError {};
 
 	user.remove();
 
@@ -686,7 +745,7 @@ handleGetRandomSongsRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -718,7 +777,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -820,7 +879,7 @@ handleGetAlbumRequest(RequestContext& context)
 	if (!release)
 		throw RequestedDataNotFoundError {};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -852,7 +911,7 @@ handleGetArtistRequest(RequestContext& context)
 	if (!artist)
 		throw RequestedDataNotFoundError {};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -903,7 +962,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
 
-		User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+		User::pointer user {User::getById(context.dbSession, context.userId)};
 		if (!user)
 			throw UserNotAuthorizedError {};
 
@@ -947,7 +1006,7 @@ handleGetArtistsRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -991,7 +1050,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1097,7 +1156,7 @@ handleGetIndexesRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1150,7 +1209,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	if (!artist)
 		throw RequestedDataNotFoundError {};
 
-	const User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	const User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1199,7 +1258,7 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1273,7 +1332,7 @@ handleGetPlaylistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1299,7 +1358,7 @@ handleGetPlaylistsRequest(RequestContext& context)
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1336,7 +1395,7 @@ handleGetSongsByGenreRequest(RequestContext& context)
 	if (!cluster)
 		throw RequestedDataNotFoundError {};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1406,7 +1465,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1488,7 +1547,7 @@ handleStarRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1544,7 +1603,7 @@ handleUnstarRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw RequestedDataNotFoundError {};
 
@@ -1591,7 +1650,7 @@ handleScrobble(RequestContext& context)
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw RequestedDataNotFoundError {};
 
@@ -1614,26 +1673,33 @@ handleUpdateUserRequest(RequestContext& context)
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
 	std::optional<std::string> password {getParameterAs<std::string>(context.parameters, "password")};
 
-	User::PasswordHash hash;
-	if (password)
+	Database::IdType userId;
 	{
-		*password = decodePasswordIfNeeded(*password);
-		if (!Service<Auth::IPasswordService>::get()->evaluatePasswordStrength(username, *password))
-			throw PasswordTooWeakGenericError {};
+		auto transaction {context.dbSession.createSharedTransaction()};
 
-		hash = Service<Auth::IPasswordService>::get()->hashPassword(*password);
+		User::pointer user {User::getByLoginName(context.dbSession, username)};
+		if (!user)
+			throw RequestedDataNotFoundError {};
+
+		userId = user.id();
 	}
 
-	auto transaction {context.dbSession.createUniqueTransaction()};
-
-	User::pointer user {User::getByLoginName(context.dbSession, username)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
 	if (password)
 	{
-		user.modify()->setPasswordHash(hash);
-		user.modify()->clearAuthTokens();
+		checkSetPasswordImplemented();
+
+		try
+		{
+			Service<::Auth::IPasswordService>()->setPassword(context.dbSession, userId, decodePasswordIfNeeded(*password));
+		}
+		catch (const Auth::IPasswordService::PasswordTooWeakException&)
+		{
+			throw PasswordTooWeakGenericError {};
+		}
+		catch (const Auth::Exception&)
+		{
+			throw UserNotAuthorizedError {};
+		}
 	}
 
 	return Response::createOkResponse(context);
@@ -1660,7 +1726,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1709,7 +1775,7 @@ handleGetBookmarks(RequestContext& context)
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1743,7 +1809,7 @@ handleCreateBookmark(RequestContext& context)
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	const User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	const User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1774,7 +1840,7 @@ handleDeleteBookmark(RequestContext& context)
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	const User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+	const User::pointer user {User::getById(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1826,10 +1892,12 @@ handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/,
 }
 
 using RequestHandlerFunc = std::function<Response(RequestContext& context)>;
+using CheckImplementedFunc = std::function<void()>;
 struct RequestEntryPointInfo
 {
-	RequestHandlerFunc	func;
-	bool			mustBeAdmin;
+	RequestHandlerFunc		func;
+	bool					mustBeAdmin;
+	CheckImplementedFunc	checkFunc {};
 };
 
 static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
@@ -1918,12 +1986,12 @@ static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 	{"addChatMessages",	{handleNotImplemented,			false}},
 
 	// User management
-	{"getUser",		{handleGetUserRequest,			false}},
+	{"getUser",			{handleGetUserRequest,			false}},
 	{"getUsers",		{handleGetUsersRequest,			true}},
-	{"createUser",		{handleCreateUserRequest,		true}},
+	{"createUser",		{handleCreateUserRequest,		true, &checkSetPasswordImplemented}},
 	{"updateUser",		{handleUpdateUserRequest,		true}},
 	{"deleteUser",		{handleDeleteUserRequest,		true}},
-	{"changePassword",	{handleChangePassword,			false}},
+	{"changePassword",	{handleChangePassword,			false, &checkSetPasswordImplemented}},
 
 	// Bookmarks
 	{"getBookmarks",	{handleGetBookmarks,			false}},
@@ -1945,6 +2013,39 @@ static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrieval
 	{"stream",			Stream::handleStream},
 	{"getCoverArt",		handleGetCoverArt},
 };
+
+static
+Database::IdType
+authenticateUser(const Wt::Http::Request &request, const ClientInfo& clientInfo, Session& dbSession)
+{
+	if (auto *authEnvService {Service<::Auth::IEnvService>::get()})
+	{
+		const auto checkResult {authEnvService->processRequest(dbSession, request)};
+		if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
+			throw UserNotAuthorizedError {};
+
+		return *checkResult.userId;
+	}
+	else if (auto *authPasswordService {Service<::Auth::IPasswordService>::get()})
+	{
+		const auto checkResult {authPasswordService->checkUserPassword(dbSession,
+												boost::asio::ip::address::from_string(request.clientAddress()),
+												clientInfo.user, clientInfo.password)};
+
+		switch (checkResult.state)
+		{
+			case Auth::IPasswordService::CheckResult::State::Granted:
+				return *checkResult.userId;
+				break;
+			case Auth::IPasswordService::CheckResult::State::Denied:
+				throw WrongUsernameOrPasswordError {};
+			case Auth::IPasswordService::CheckResult::State::Throttled:
+				throw LoginThrottledGenericError {};
+		}
+	}
+
+	throw InternalErrorGenericError {"No service avalaible to authenticate user"};
+}
 
 void
 SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response)
@@ -1975,31 +2076,17 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 
 		Session& dbSession {_db.getTLSSession()};
 
-		switch (Service<Auth::IPasswordService>::get()->checkUserPassword(dbSession,
-					boost::asio::ip::address::from_string(request.clientAddress()),
-					clientInfo.user, clientInfo.password))
-		{
-			case Auth::IPasswordService::PasswordCheckResult::Match:
-				break;
-			case Auth::IPasswordService::PasswordCheckResult::Mismatch:
-				throw WrongUsernameOrPasswordError {};
-			case Auth::IPasswordService::PasswordCheckResult::Throttled:
-				throw LoginThrottledGenericError {};
-		}
-
-		RequestContext requestContext {parameters, dbSession, clientInfo.user, clientInfo.name};
+		const Database::IdType userId {authenticateUser(request, clientInfo, dbSession)};
+		RequestContext requestContext {parameters, dbSession, userId, clientInfo.name};
 
 		auto itEntryPoint {requestEntryPoints.find(requestPath)};
 		if (itEntryPoint != requestEntryPoints.end())
 		{
-			if (itEntryPoint->second.mustBeAdmin)
-			{
-				auto transaction {dbSession.createSharedTransaction()};
+			if (itEntryPoint->second.checkFunc)
+				itEntryPoint->second.checkFunc();
 
-				User::pointer user {User::getByLoginName(dbSession, clientInfo.user)};
-				if (!user || !user->isAdmin())
-					throw UserNotAuthorizedError {};
-			}
+			if (itEntryPoint->second.mustBeAdmin)
+				checkUserIsAdmin(requestContext);
 
 			Response resp {(itEntryPoint->second.func)(requestContext)};
 

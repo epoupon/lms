@@ -28,6 +28,8 @@
 #include <Wt/WStackedWidget.h>
 #include <Wt/WText.h>
 
+#include "auth/IEnvService.hpp"
+#include "auth/IPasswordService.hpp"
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
@@ -56,7 +58,6 @@
 #include "PlayQueue.hpp"
 #include "SettingsView.hpp"
 
-
 namespace UserInterface {
 
 static constexpr const char* defaultPath {"/releases"};
@@ -64,6 +65,19 @@ static constexpr const char* defaultPath {"/releases"};
 std::unique_ptr<Wt::WApplication>
 LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups)
 {
+	if (auto *authEnvService {Service<::Auth::IEnvService>::get()})
+	{
+		const auto checkResult {authEnvService->processEnv(db.getTLSSession(), env)};
+		if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
+		{
+			LMS_LOG(UI, ERROR) << "Cannot authenticate user from environment!";
+			// return a blank page
+			return std::make_unique<Wt::WApplication>(env);
+		}
+
+		return std::make_unique<LmsApplication>(env, db, appGroups, checkResult.userId);
+	}
+
 	return std::make_unique<LmsApplication>(env, db, appGroups);
 }
 
@@ -82,16 +96,16 @@ LmsApplication::getDbSession()
 Wt::Dbo::ptr<Database::User>
 LmsApplication::getUser()
 {
-	if (!_userId)
+	if (!_authenticatedUser)
 		return {};
 
-	return Database::User::getById(getDbSession(), *_userId);
+	return Database::User::getById(getDbSession(), _authenticatedUser->userId);
 }
 
 bool
 LmsApplication::isUserAuthStrong() const
 {
-	return *_userAuthStrong;
+	return _authenticatedUser->strongAuth;
 }
 
 bool
@@ -120,12 +134,34 @@ LmsApplication::getUserLoginName()
 
 LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 		Database::Db& db,
-		LmsApplicationGroupContainer& appGroups)
-: Wt::WApplication {env},
-  _db {db},
-  _appGroups {appGroups}
+		LmsApplicationGroupContainer& appGroups,
+		std::optional<Database::IdType> userId)
+: Wt::WApplication {env}
+,  _db {db}
+,  _appGroups {appGroups}
+, _authenticatedUser {userId ? std::make_optional<UserAuthInfo>(UserAuthInfo {*userId, false}) : std::nullopt}
 {
+	try
+	{
+		init();
+	}
+	catch (LmsApplicationException& e)
+	{
+		LMS_LOG(UI, WARNING) << "Caught a LmsApplication exception: " << e.what();
+		handleException(e);
+	}
+	catch (std::exception& e)
+	{
+		LMS_LOG(UI, ERROR) << "Caught exception: " << e.what();
+		throw LmsException {"Internal error"}; // Do not put details here at it may appear on the user rendered html
+	}
+}
 
+LmsApplication::~LmsApplication() = default;
+
+void
+LmsApplication::init()
+{
 	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
 
 	// Add a resource bundle
@@ -160,80 +196,71 @@ LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 	// Handle Media Scanner events and other session events
 	enableUpdates(true);
 
+	if (_authenticatedUser)
+	{
+		onUserLoggedIn();
+	}
+	else if (Service<::Auth::IPasswordService>::exists())
+		processPasswordAuth();
+}
+
+void
+LmsApplication::processPasswordAuth()
+{
+	{
+		std::optional<Database::IdType> userId {processAuthToken(environment())};
+		if (userId)
+		{
+			LMS_LOG(UI, DEBUG) << "User authenticated using Auth token!";
+			_authenticatedUser = {*userId, false};
+			onUserLoggedIn();
+			return;
+		}
+	}
+
+	setTheme();
+
 	// If here is no account in the database, launch the first connection wizard
 	bool firstConnection {};
 	{
 		auto transaction {getDbSession().createSharedTransaction()};
-		firstConnection = Database::User::getAll(getDbSession()).empty();
+		firstConnection = Database::User::getCount(getDbSession()) == 0;
 	}
 
 	LMS_LOG(UI, DEBUG) << "Creating root widget. First connection = " << firstConnection;
 
-	if (firstConnection)
+	if (firstConnection && Service<::Auth::IPasswordService>::get()->canSetPasswords())
 	{
-		setTheme(std::make_unique<LmsTheme>(Database::User::defaultUITheme));
 		root()->addWidget(std::make_unique<InitWizardView>());
-		return;
-	}
-
-	const auto userId {processAuthToken(env)};
-
-	{
-		Database::User::UITheme theme {Database::User::defaultUITheme};
-		if (userId)
-		{
-			auto transaction {getDbSession().createSharedTransaction()};
-			const auto user {Database::User::getById(getDbSession(), *userId)};
-			if (user)
-				theme = user->getUITheme();
-		}
-
-		setTheme(std::make_unique<LmsTheme>(theme));
-	}
-
-	if (userId)
-	{
-		try
-		{
-			handleUserLoggedIn(*userId, false);
-		}
-		catch (LmsApplicationException& e)
-		{
-			LMS_LOG(UI, WARNING) << "Caught a LmsApplication exception: " << e.what();
-			handleException(e);
-		}
-		catch (std::exception& e)
-		{
-			LMS_LOG(UI, ERROR) << "Caught exception: " << e.what();
-			throw LmsException {"Internal error"}; // Do not put details here at it may appear on the user rendered html
-		}
 	}
 	else
 	{
 		Auth* auth {root()->addNew<Auth>()};
 		auth->userLoggedIn.connect(this, [this](Database::IdType userId)
 		{
-			{
-				auto transaction {getDbSession().createSharedTransaction()};
-				const auto user {Database::User::getById(getDbSession(), userId)};
-				if (user)
-				{
-					LmsTheme* lmsTheme {static_cast<LmsTheme*>(LmsApp->theme().get())};
-					lmsTheme->setTheme(user->getUITheme());
-				}
-			}
-
-			handleUserLoggedIn(userId, true);
+			_authenticatedUser = {userId, true};
+			onUserLoggedIn();
 		});
 	}
 }
 
-LmsApplication::~LmsApplication() = default;
+void
+LmsApplication::setTheme()
+{
+	Database::User::UITheme theme {Database::User::defaultUITheme};
+	{
+		auto transaction {getDbSession().createSharedTransaction()};
+		if (const auto user {getUser()})
+			theme = user->getUITheme();
+	}
+
+	WApplication::setTheme(std::make_unique<LmsTheme>(theme));
+}
 
 void
 LmsApplication::finalize()
 {
-	if (_userId)
+	if (_authenticatedUser)
 	{
 		LmsApplicationInfo info = LmsApplicationInfo::fromEnvironment(environment());
 
@@ -403,28 +430,25 @@ handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 LmsApplicationGroup&
 LmsApplication::getApplicationGroup()
 {
-	return _appGroups.get(*_userId);
+	return _appGroups.get(_authenticatedUser->userId);
 }
 
 void
-LmsApplication::handleUserLoggedOut()
+LmsApplication::logoutUser()
 {
-	LMS_LOG(UI, INFO) << "User '" << getUserLoginName() << " 'logged out";
-
 	{
 		auto transaction {getDbSession().createUniqueTransaction()};
 		getUser().modify()->clearAuthTokens();
 	}
 
+	LMS_LOG(UI, INFO) << "User '" << getUserLoginName() << " 'logged out";
 	goHomeAndQuit();
 }
 
 void
-LmsApplication::handleUserLoggedIn(Database::IdType userId, bool strongAuth)
+LmsApplication::onUserLoggedIn()
 {
-	_userId = userId;
-	_userAuthStrong = strongAuth;
-
+	setTheme();
 	root()->clear();
 
 	const LmsApplicationInfo info {LmsApplicationInfo::fromEnvironment(environment())};
@@ -466,9 +490,9 @@ LmsApplication::createHome()
 	main->bindNew<Wt::WAnchor>("settings", Wt::WLink {Wt::LinkType::InternalPath, "/settings"}, Wt::WString::tr("Lms.Settings.menu-settings"));
 
 	{
-		auto* logout {main->bindNew<Wt::WAnchor>("logout")};
+		Wt::WAnchor* logout {main->bindNew<Wt::WAnchor>("logout")};
 		logout->setText(Wt::WString::tr("Lms.logout"));
-		logout->clicked().connect(this, &LmsApplication::handleUserLoggedOut);
+		logout->clicked().connect(this, &LmsApplication::logoutUser);
 	}
 
 	Wt::WLineEdit* searchEdit {main->bindNew<Wt::WLineEdit>("search")};
@@ -483,10 +507,10 @@ LmsApplication::createHome()
 
 	// Contents
 	// Order is important in mainStack, see IdxRoot!
-	Wt::WStackedWidget* mainStack = main->bindNew<Wt::WStackedWidget>("contents");
+	Wt::WStackedWidget* mainStack {main->bindNew<Wt::WStackedWidget>("contents")};
 	mainStack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
 
-	Explore* explore = mainStack->addNew<Explore>(filters);
+	Explore* explore {mainStack->addNew<Explore>(filters)};
 	_playQueue = mainStack->addNew<PlayQueue>();
 	mainStack->addNew<SettingsView>();
 

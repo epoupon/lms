@@ -30,15 +30,7 @@
 						</div>
 					</div>
 					${</if-has-login>}
-					<div class="form-group">
-						<label class="control-label col-lg-3"  for="${id:auth-mode}">
-							${tr:Lms.Admin.User.auth-mode}
-						</label>
-						<div class="col-lg-9">
-							${auth-mode}
-							${auth-mode-info class="help-block"}
-						</div>
-					</div>
+					${<if-has-password>}
 					<div class="form-group">
 						<label class="control-label col-lg-3"  for="${id:password}">
 							${tr:Lms.password-new}
@@ -48,6 +40,7 @@
 							${password-info class="help-block"}
 						</div>
 					</div>
+					${</if-has-password>}
 					${<if-demo>}
 					<div class="form-group">
 						<div class="col-lg-offset-3 col-lg-3"  for="${id:demo}">

@@ -35,11 +35,11 @@ class Config final : public IConfig
 		Config& operator=(Config&&) = delete;
 
 		// Default values are returned in case of setting not found
-		std::string	getString(const std::string& setting, const std::string& def = "", const std::unordered_set<std::string>& allowedValues = {}) override;
-		std::filesystem::path getPath(const std::string& setting, const std::filesystem::path& def = std::filesystem::path()) override;
-		unsigned long	getULong(const std::string& setting, unsigned long def = 0) override;
-		long		getLong(const std::string& setting, long def = 0) override;
-		bool		getBool(const std::string& setting, bool def = false) override;
+		std::string_view		getString(std::string_view setting, std::string_view def = "") override;
+		std::filesystem::path	getPath(std::string_view setting, const std::filesystem::path& def = std::filesystem::path()) override;
+		unsigned long	getULong(std::string_view setting, unsigned long def = 0) override;
+		long		getLong(std::string_view setting, long def = 0) override;
+		bool		getBool(std::string_view setting, bool def = false) override;
 
 	private:
 

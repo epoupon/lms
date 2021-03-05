@@ -8,6 +8,7 @@
     + [Upgrade](#upgrade)
 - [Deployment](#deployment)
   * [Configuration](#configuration)
+  * [Authentication backend](#authentication-backend)
   * [Deploy on non root path](#deploy-on-non-root-path)
   * [Reverse proxy settings](#reverse-proxy-settings)
 - [Run](#run)
@@ -125,7 +126,16 @@ _LMS_ uses a configuration file, installed by default in `/etc/lms.conf`. It is 
 
 All other settings are set using the web interface (user management, scan settings, transcode settings, ...).
 
-If a setting is not present in the configuration file, a hardcoded default value is used (the same as in the [default.conf](conf/lms.conf) file)
+If a setting is not present in the configuration file, a hardcoded default value is used (the same as in the [default configuration file](conf/lms.conf))
+
+## Authentication backend
+
+You can define which authentication backend to be used thanks to the `authentication-backend` option:
+* `internal` (default): _LMS_ uses an internal database to store users and their associated passwords (salted and hashed using [Bcrypt](https://en.wikipedia.org/wiki/Bcrypt)). Only the admin user can create, edit or remove other users.
+* `PAM`: the user/password authentication request is forwarded to PAM (see the [default configuration file](conf/pam/lms)).
+* `http-headers`: _LMS_ uses a configurable HTTP header field, typically set by a reverse proxy to handle [SSO](https://en.wikipedia.org/wiki/Single_sign-on), to extract the login name. You can customize the field to be used using the `http-headers-login-field` option.
+
+__Note__: the first created user is the admin user
 
 ## Deploy on non root path
 If you want to deploy on non root path (e.g. https://mydomain.com/newroot/), you have to set the `deploy-path` option accordingly in `lms.conf`.

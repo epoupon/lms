@@ -26,6 +26,7 @@ template <typename Class>
 class Service
 {
 	public:
+		Service() = default;
 		Service(std::unique_ptr<Class> service)
 		{
 			assign(std::move(service));
@@ -52,14 +53,17 @@ class Service
 		}
 
 		static Class* get() { return _service.get(); }
+		static bool exists() { return _service.get(); }
 
-	private:
-		static Class& assign(std::unique_ptr<Class> service)
+		template <typename SubClass>
+		static Class& assign(std::unique_ptr<SubClass> service)
 		{
 			assert(!_service);
 			_service = std::move(service);
 			return *get();
 		}
+
+	private:
 		static void clear() { _service.reset(); }
 
 		static inline std::unique_ptr<Class> _service;

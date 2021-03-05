@@ -25,6 +25,7 @@
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "utils/Logger.hpp"
+#include "StringViewTraits.hpp"
 
 namespace Database {
 
@@ -70,7 +71,7 @@ AuthToken::getByValue(Session& session, const std::string& value)
 static const std::string playedListName {"__played_tracks__"};
 static const std::string queuedListName {"__queued_tracks__"};
 
-User::User(const std::string& loginName)
+User::User(std::string_view loginName)
 : _loginName {loginName}
 {
 }
@@ -93,8 +94,16 @@ User::getDemo(Session& session)
 	return res;
 }
 
+std::size_t
+User::getCount(Session& session)
+{
+	session.checkSharedLocked();
+
+	return session.getDboSession().query<int>("SELECT COUNT(*) FROM user");
+}
+
 User::pointer
-User::create(Session& session, const std::string& loginName)
+User::create(Session& session, std::string_view loginName)
 {
 	session.checkUniqueLocked();
 
@@ -115,7 +124,7 @@ User::getById(Session& session, IdType id)
 }
 
 User::pointer
-User::getByLoginName(Session& session, const std::string& name)
+User::getByLoginName(Session& session, std::string_view name)
 {
 	return session.getDboSession().find<User>()
 		.where("login_name = ?").bind(name);

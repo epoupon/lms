@@ -19,74 +19,68 @@
 
 #pragma once
 
-#include <mutex>
-#include <map>
 #include <memory>
-#include <shared_mutex>
-#include <vector>
+#include <mutex>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/SqlConnectionPool.h>
 
-namespace Database {
+#include "utils/RecursiveSharedMutex.hpp"
 
-class UniqueTransaction
+namespace Database
 {
-	public:
-		~UniqueTransaction();
 
-	private:
-		friend class Session;
-		UniqueTransaction(std::shared_mutex& mutex, Wt::Dbo::Session& session);
+	class UniqueTransaction
+	{
+		private:
+			friend class Session;
+			UniqueTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session);
 
-		std::unique_lock<std::shared_mutex> _lock;
-		Wt::Dbo::Transaction _transaction;
-};
+			std::unique_lock<RecursiveSharedMutex> _lock;
+			Wt::Dbo::Transaction _transaction;
+	};
 
-class SharedTransaction
-{
-	public:
-		~SharedTransaction();
+	class SharedTransaction
+	{
+		private:
+			friend class Session;
+			SharedTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session);
 
-	private:
-		friend class Session;
-		SharedTransaction(std::shared_mutex& mutex, Wt::Dbo::Session& session);
+			std::shared_lock<RecursiveSharedMutex> _lock;
+			Wt::Dbo::Transaction _transaction;
+	};
 
-		std::shared_lock<std::shared_mutex> _lock;
-		Wt::Dbo::Transaction _transaction;
-};
+	class Db;
+	class Session
+	{
+		public:
+			Session (Db& database);
 
-class Db;
-class Session
-{
-	public:
-		Session (Db& database);
+			Session(const Session&) = delete;
+			Session(Session&&) = delete;
+			Session& operator=(const Session&) = delete;
+			Session& operator=(Session&&) = delete;
 
-		Session(const Session&) = delete;
-		Session(Session&&) = delete;
-		Session& operator=(const Session&) = delete;
-		Session& operator=(Session&&) = delete;
+			[[nodiscard]] UniqueTransaction createUniqueTransaction();
+			[[nodiscard]] SharedTransaction createSharedTransaction();
 
-		[[nodiscard]] UniqueTransaction createUniqueTransaction();
-		[[nodiscard]] SharedTransaction createSharedTransaction();
+			void checkUniqueLocked();
+			void checkSharedLocked();
 
-		void checkUniqueLocked();
-		void checkSharedLocked();
+			void optimize();
 
-		void optimize();
+			void prepareTables(); // need to run only once at startup
 
-		void prepareTables(); // need to run only once at startup
+			Wt::Dbo::Session& getDboSession() { return _session; }
 
-		Wt::Dbo::Session& getDboSession() { return _session; }
+		private:
+			Session(std::shared_mutex& mutex, Wt::Dbo::SqlConnectionPool& connectionPool);
 
-	private:
-		Session(std::shared_mutex& mutex, Wt::Dbo::SqlConnectionPool& connectionPool);
+			void doDatabaseMigrationIfNeeded();
 
-		void doDatabaseMigrationIfNeeded();
-
-		Db&					_db;
-		Wt::Dbo::Session	_session;
-};
+			Db&					_db;
+			Wt::Dbo::Session	_session;
+	};
 
 } // namespace Database
 

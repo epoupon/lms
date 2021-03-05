@@ -34,7 +34,8 @@
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
-#include "common/Validators.hpp"
+#include "common/DirectoryValidator.hpp"
+#include "common/MandatoryValidator.hpp"
 #include "common/ValueStringModel.hpp"
 #include "ScannerController.hpp"
 #include "LmsApplication.hpp"
@@ -66,7 +67,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			addField(RecommendationEngineTypeField);
 			addField(TagsField);
 
-			auto dirValidator {std::make_shared<DirectoryValidator>()};
+			auto dirValidator {createDirectoryValidator()};
 			dirValidator->setMandatory(true);
 			setValidator(MediaDirectoryField, dirValidator);
 

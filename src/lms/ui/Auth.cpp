@@ -30,13 +30,17 @@
 #include "auth/IAuthTokenService.hpp"
 #include "auth/IPasswordService.hpp"
 #include "database/Session.hpp"
+#include "database/User.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
-#include "common/Validators.hpp"
+#include "common/LoginNameValidator.hpp"
+#include "common/MandatoryValidator.hpp"
+#include "common/PasswordValidator.hpp"
 #include "LmsApplication.hpp"
 
-namespace UserInterface {
+namespace UserInterface
+{
 
 static const std::string authCookieName {"LmsAuth"};
 
@@ -65,12 +69,12 @@ processAuthToken(const Wt::WEnvironment& env)
 	const auto res {Service<::Auth::IAuthTokenService>::get()->processAuthToken(LmsApp->getDbSession(), boost::asio::ip::address::from_string(env.clientAddress()), *authCookie)};
 	switch (res.state)
 	{
-		case ::Auth::IAuthTokenService::AuthTokenProcessResult::State::NotFound:
+		case ::Auth::IAuthTokenService::AuthTokenProcessResult::State::Denied:
 		case ::Auth::IAuthTokenService::AuthTokenProcessResult::State::Throttled:
 			LmsApp->setCookie(authCookieName, std::string {}, 0, "", "", env.urlScheme() == "https");
 			return std::nullopt;
 
-		case ::Auth::IAuthTokenService::AuthTokenProcessResult::State::Found:
+		case ::Auth::IAuthTokenService::AuthTokenProcessResult::State::Granted:
 			createAuthToken(res.authTokenInfo->userId, res.authTokenInfo->expiry);
 			break;
 	}
@@ -93,7 +97,7 @@ class AuthModel : public Wt::WFormModel
 			addField(PasswordField);
 			addField(RememberMeField);
 
-			setValidator(LoginNameField, createNameValidator());
+			setValidator(LoginNameField, createLoginNameValidator());
 			setValidator(PasswordField, createMandatoryValidator());
 		}
 
@@ -125,18 +129,20 @@ class AuthModel : public Wt::WFormModel
 
 			if (field == PasswordField)
 			{
-				switch (Service<::Auth::IPasswordService>::get()->checkUserPassword(
+				const auto checkResult {Service<::Auth::IPasswordService>::get()->checkUserPassword(
 							LmsApp->getDbSession(),
 							boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
 							valueText(LoginNameField).toUTF8(),
-							valueText(PasswordField).toUTF8()))
+							valueText(PasswordField).toUTF8())};
+				switch (checkResult.state)
 				{
-					case ::Auth::IPasswordService::PasswordCheckResult::Match:
+					case ::Auth::IPasswordService::CheckResult::State::Granted:
+						_userId = *checkResult.userId;
 						break;
-					case ::Auth::IPasswordService::PasswordCheckResult::Mismatch:
+					case ::Auth::IPasswordService::CheckResult::State::Denied:
 						error = Wt::WString::tr("Lms.password-bad-login-combination");
 						break;
-					case ::Auth::IPasswordService::PasswordCheckResult::Throttled:
+					case ::Auth::IPasswordService::CheckResult::State::Throttled:
 						error = Wt::WString::tr("Lms.password-client-throttled");
 						break;
 				}

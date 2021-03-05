@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <string_view>
 #include <vector>
 
 #include <Wt/Dbo/Dbo.h>
@@ -100,12 +101,6 @@ class User : public Wt::Dbo::Dbo<User>
 			DEMO	= 2,
 		};
 
-		enum class AuthMode
-		{
-			Internal	= 0,
-			PAM			= 1,
-		};
-
 		struct PasswordHash
 		{
 			std::string salt;
@@ -144,19 +139,19 @@ class User : public Wt::Dbo::Dbo<User>
 		static inline const Bitrate		defaultSubsonicTranscodeBitrate {128000};
 		static inline const UITheme		defaultUITheme {UITheme::Dark};
 		static inline const SubsonicArtistListMode defaultSubsonicArtistListMode {SubsonicArtistListMode::AllArtists};
-		static inline const AuthMode defaultAuthMode {AuthMode::Internal};
 
 
 		User() = default;
-		User(const std::string& loginName);
+		User(std::string_view loginName);
 
 		// utility
-		static pointer create(Session& session, const std::string& loginName);
+		static pointer create(Session& session, std::string_view loginName);
 
 		static pointer			getById(Session& session, IdType id);
-		static pointer			getByLoginName(Session& session, const std::string& loginName);
+		static pointer			getByLoginName(Session& session, std::string_view loginName);
 		static std::vector<pointer>	getAll(Session& session);
 		static pointer			getDemo(Session& session);
+		static std::size_t		getCount(Session& session);
 
 		// accessors
 		const std::string& getLoginName() const { return _loginName; }
@@ -173,7 +168,6 @@ class User : public Wt::Dbo::Dbo<User>
 		void setSubsonicTranscodeBitrate(Bitrate bitrate);
 		void setCurPlayingTrackPos(std::size_t pos)		{ _curPlayingTrackPos = pos; }
 		void setRadio(bool val)					{ _radio = val; }
-		void setAuthMode(AuthMode mode) { _authMode = mode;}
 		void setRepeatAll(bool val)				{ _repeatAll = val; }
 		void setUITheme(UITheme uiTheme)			{ _uiTheme = uiTheme; }
 		void clearAuthTokens();
@@ -188,7 +182,6 @@ class User : public Wt::Dbo::Dbo<User>
 		std::size_t		getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
 		bool			isRepeatAllSet() const { return _repeatAll; }
 		bool			isRadioSet() const { return _radio; }
-		AuthMode		getAuthMode() const { return _authMode; }
 		UITheme			getUITheme() const { return _uiTheme; }
 		SubsonicArtistListMode	getSubsonicArtistListMode() const { return _subsonicArtistListMode; }
 
@@ -225,7 +218,6 @@ class User : public Wt::Dbo::Dbo<User>
 			Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
 			Wt::Dbo::field(a, _repeatAll, "repeat_all");
 			Wt::Dbo::field(a, _radio, "radio");
-			Wt::Dbo::field(a, _authMode, "auth_mode");
 			Wt::Dbo::hasMany(a, _tracklists, Wt::Dbo::ManyToOne, "user");
 			Wt::Dbo::hasMany(a, _starredArtists, Wt::Dbo::ManyToMany, "user_artist_starred", "", Wt::Dbo::OnDeleteCascade);
 			Wt::Dbo::hasMany(a, _starredReleases, Wt::Dbo::ManyToMany, "user_release_starred", "", Wt::Dbo::OnDeleteCascade);
@@ -248,13 +240,12 @@ class User : public Wt::Dbo::Dbo<User>
 		SubsonicArtistListMode	_subsonicArtistListMode {defaultSubsonicArtistListMode};
 		bool			_subsonicTranscodeEnable {defaultSubsonicTranscodeEnable};
 		AudioFormat		_subsonicTranscodeFormat {defaultSubsonicTranscodeFormat};
-		int			_subsonicTranscodeBitrate {defaultSubsonicTranscodeBitrate};
+		int				_subsonicTranscodeBitrate {defaultSubsonicTranscodeBitrate};
 
 		// User's dynamic data (UI)
 		int		_curPlayingTrackPos {}; // Current track position in queue
 		bool		_repeatAll {};
 		bool		_radio {};
-		AuthMode	_authMode {defaultAuthMode};
 
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackList>> _tracklists;
 		Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> _starredArtists;

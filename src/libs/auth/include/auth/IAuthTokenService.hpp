@@ -23,6 +23,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 #include <boost/asio/ip/address.hpp>
 #include <Wt/WDateTime.h>
 
@@ -31,11 +32,11 @@
 namespace Database
 {
 	class Session;
+	class User;
 }
 
-
-namespace Auth {
-
+namespace Auth
+{
 	class IAuthTokenService
 	{
 		public:
@@ -46,9 +47,9 @@ namespace Auth {
 			{
 				enum class State
 				{
-					Found,
+					Granted,
 					Throttled,
-					NotFound,
+					Denied,
 				};
 
 				struct AuthTokenInfo
@@ -57,16 +58,17 @@ namespace Auth {
 					Wt::WDateTime expiry;
 				};
 
-				State state {State::NotFound};
+				State state {State::Denied};
 				std::optional<AuthTokenInfo>	authTokenInfo {};
 			};
 
-			// Removed if found
-			virtual AuthTokenProcessResult	processAuthToken(Database::Session& session, const boost::asio::ip::address& clientAddress, const std::string& tokenValue) = 0;
-			virtual std::string		createAuthToken(Database::Session& session, Database::IdType userid, const Wt::WDateTime& expiry) = 0;
+			// Provided token is only accepted once
+			virtual AuthTokenProcessResult	processAuthToken(Database::Session& session, const boost::asio::ip::address& clientAddress, std::string_view tokenValue) = 0;
+
+			// Returns a one time token
+			virtual std::string				createAuthToken(Database::Session& session, Database::IdType userid, const Wt::WDateTime& expiry) = 0;
+			virtual void					clearAuthTokens(Database::Session& session, Database::IdType userid) = 0;
 	};
 
 	std::unique_ptr<IAuthTokenService> createAuthTokenService(std::size_t maxThrottlerEntryCount);
-
 }
-

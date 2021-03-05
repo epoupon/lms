@@ -47,70 +47,62 @@ Config::Config(const std::filesystem::path& p)
 	}
 }
 
-std::string
-Config::getString(const std::string& setting, const std::string& def, const std::unordered_set<std::string>& allowedValues)
+std::string_view
+Config::getString(std::string_view setting, std::string_view def)
 {
 	try {
-		std::string res {(const char*)_config.lookup(setting)};
-
-		if (!allowedValues.empty() && allowedValues.find(res) == std::cend(allowedValues))
-		{
-			LMS_LOG(MAIN, ERROR) << "Invalid setting for '" << setting << "', using default value '" << def << "'";
-			return def;
-		}
-
-		return res;
+		return static_cast<const char*>(_config.lookup(std::string {setting}));
 	}
-	catch (std::exception &e)
+	catch (libconfig::ConfigException&)
 	{
 		return def;
 	}
 }
 
 std::filesystem::path
-Config::getPath(const std::string& setting, const std::filesystem::path& path)
+Config::getPath(std::string_view setting, const std::filesystem::path& path)
 {
 	try {
-		const char* res = _config.lookup(setting);
+		const char* res {_config.lookup(std::string {setting})};
 		return std::filesystem::path {std::string(res)};
 	}
-	catch (std::exception &e)
+	catch (libconfig::ConfigException&)
 	{
 		return path;
 	}
 }
 
 unsigned long
-Config::getULong(const std::string& setting, unsigned long def)
+Config::getULong(std::string_view setting, unsigned long def)
 {
 	try {
-		return static_cast<unsigned int>(_config.lookup(setting));
+		return static_cast<unsigned int>(_config.lookup(std::string {setting}));
 	}
-	catch (...)
+	catch (libconfig::ConfigException&)
 	{
 		return def;
 	}
 }
 
 long
-Config::getLong(const std::string& setting, long def)
+Config::getLong(std::string_view setting, long def)
 {
 	try {
-		return _config.lookup(setting);
+		return _config.lookup(std::string {setting});
 	}
-	catch (...)
+	catch (libconfig::ConfigException&)
 	{
 		return def;
 	}
 }
 
 bool
-Config::getBool(const std::string& setting, bool def)
+Config::getBool(std::string_view setting, bool def)
 {
 	try {
-		return _config.lookup(setting);
+		return _config.lookup(std::string {setting});
 	}
-	catch (...)
+	catch (libconfig::ConfigException&)
 	{
 		return def;
 	}

@@ -22,6 +22,7 @@
 #include <map>
 #include <mutex>
 #include <thread>
+#include <string_view>
 
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
@@ -40,17 +41,16 @@
 
 namespace Database {
 
-#define LMS_DATABASE_VERSION	28
+	using Version = std::size_t;
+	static constexpr Version LMS_DATABASE_VERSION {29};
 
-using Version = std::size_t;
+	class VersionInfo
+	{
+		public:
+			using pointer = Wt::Dbo::ptr<VersionInfo>;
 
-class VersionInfo
-{
-	public:
-		using pointer = Wt::Dbo::ptr<VersionInfo>;
-
-		static VersionInfo::pointer getOrCreate(Session& session)
-		{
+			static VersionInfo::pointer getOrCreate(Session& session)
+			{
 			session.checkUniqueLocked();
 
 			pointer versionInfo {session.getDboSession().find<VersionInfo>()};
@@ -270,7 +270,7 @@ CREATE TABLE "user_backup" (
 		else if (version == 24)
 		{
 			// User's AuthMode
-			_session.execute("ALTER TABLE user ADD auth_mode INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(User::defaultAuthMode)) + ")");
+			_session.execute("ALTER TABLE user ADD auth_mode INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*User::defaultAuthMode*/0)) + ")");
 		}
 		else if (version == 25)
 		{
@@ -289,6 +289,31 @@ CREATE TABLE "user_backup" (
 			// Composer, mixer, etc. support, now fallback on MBID tagged entries as there is no mean to provide MBID by tags for these kinf od artists
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
+		}
+		else if (version == 28)
+		{
+			// Drop Auth mode
+			_session.execute(R"(
+CREATE TABLE "user_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "type" integer not null,
+  "login_name" text not null,
+  "password_salt" text not null,
+  "password_hash" text not null,
+  "last_login" text,
+  "subsonic_transcode_enable" boolean not null,
+  "subsonic_transcode_format" integer not null,
+  "subsonic_transcode_bitrate" integer not null,
+  "subsonic_artist_list_mode" integer not null,
+  "ui_theme" integer not null,
+  "cur_playing_track_pos" integer not null,
+  "repeat_all" boolean not null,
+  "radio" boolean not null
+))");
+			_session.execute("INSERT INTO user_backup SELECT id, version, type, login_name, password_salt, password_hash, last_login, subsonic_transcode_enable, subsonic_transcode_format, subsonic_transcode_bitrate, subsonic_artist_list_mode, ui_theme, cur_playing_track_pos, repeat_all, radio FROM user");
+			_session.execute("DROP TABLE user");
+			_session.execute("ALTER TABLE user_backup RENAME TO user");
 		}
 		else
 		{
@@ -329,46 +354,28 @@ enum class OwnedLock
 	Unique,
 };
 
-static thread_local std::map<std::shared_mutex*, OwnedLock> lockDebug;
-
-UniqueTransaction::UniqueTransaction(std::shared_mutex& mutex, Wt::Dbo::Session& session)
+UniqueTransaction::UniqueTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
 : _lock {mutex},
  _transaction {session}
 {
-	assert(lockDebug[_lock.mutex()] == OwnedLock::None);
-	lockDebug[_lock.mutex()] = OwnedLock::Unique;
 }
 
-UniqueTransaction::~UniqueTransaction()
-{
-	assert(lockDebug[_lock.mutex()] == OwnedLock::Unique);
-	lockDebug[_lock.mutex()] = OwnedLock::None;
-}
-
-SharedTransaction::SharedTransaction(std::shared_mutex& mutex, Wt::Dbo::Session& session)
+SharedTransaction::SharedTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
 : _lock {mutex},
  _transaction {session}
 {
-	assert(lockDebug[_lock.mutex()] == OwnedLock::None);
-	lockDebug[_lock.mutex()] = OwnedLock::Shared;
-}
-
-SharedTransaction::~SharedTransaction()
-{
-	assert(lockDebug[_lock.mutex()] == OwnedLock::Shared);
-	lockDebug[_lock.mutex()] = OwnedLock::None;
 }
 
 void
 Session::checkUniqueLocked()
 {
-	assert(lockDebug[&_db.getMutex()] == OwnedLock::Unique);
+//	assert(lockDebug[&_db.getMutex()] == OwnedLock::Unique);
 }
 
 void
 Session::checkSharedLocked()
 {
-	assert(lockDebug[&_db.getMutex()] != OwnedLock::None);
+//	assert(lockDebug[&_db.getMutex()] != OwnedLock::None);
 }
 
 UniqueTransaction

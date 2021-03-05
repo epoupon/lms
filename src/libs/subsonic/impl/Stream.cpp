@@ -81,7 +81,7 @@ getStreamParameters(RequestContext& context)
 	}
 
 	{
-		const User::pointer user {User::getByLoginName(context.dbSession, context.userName)};
+		const User::pointer user {User::getById(context.dbSession, context.userId)};
 		if (!user)
 			throw UserNotAuthorizedError {};
 

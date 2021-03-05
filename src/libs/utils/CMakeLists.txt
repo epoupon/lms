@@ -8,6 +8,7 @@ add_library(lmsutils SHARED
 	impl/NetAddress.cpp
 	impl/Path.cpp
 	impl/Random.cpp
+	impl/RecursiveSharedMutex.cpp
 	impl/StreamLogger.cpp
 	impl/String.cpp
 	impl/UUID.cpp

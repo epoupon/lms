@@ -26,6 +26,7 @@
 
 #include "auth/IAuthTokenService.hpp"
 #include "auth/IPasswordService.hpp"
+#include "auth/IEnvService.hpp"
 #include "cover/ICoverArtGrabber.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
@@ -36,6 +37,7 @@
 #include "utils/IChildProcessManager.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Service.hpp"
+#include "utils/String.hpp"
 #include "utils/WtLogger.hpp"
 
 static
@@ -52,24 +54,24 @@ generateWtConfig(std::string execPath)
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
-	args.push_back("--docroot=" + Service<IConfig>::get()->getString("docroot"));
-	args.push_back("--approot=" + Service<IConfig>::get()->getString("approot"));
-	args.push_back("--deploy-path=" + Service<IConfig>::get()->getString("deploy-path", "/"));
+	args.push_back("--docroot=" + std::string {Service<IConfig>::get()->getString("docroot")});
+	args.push_back("--approot=" + std::string {Service<IConfig>::get()->getString("approot")});
+	args.push_back("--deploy-path=" + std::string {Service<IConfig>::get()->getString("deploy-path", "/")});
 	if (!wtResourcesPath.empty())
 		args.push_back("--resources-dir=" + wtResourcesPath.string());
 
 	if (Service<IConfig>::get()->getBool("tls-enable", false))
 	{
 		args.push_back("--https-port=" + std::to_string( Service<IConfig>::get()->getULong("listen-port", 5082)));
-		args.push_back("--https-address=" + Service<IConfig>::get()->getString("listen-addr", "0.0.0.0"));
-		args.push_back("--ssl-certificate=" + Service<IConfig>::get()->getString("tls-cert"));
-		args.push_back("--ssl-private-key=" + Service<IConfig>::get()->getString("tls-key"));
-		args.push_back("--ssl-tmp-dh=" + Service<IConfig>::get()->getString("tls-dh"));
+		args.push_back("--https-address=" + std::string {Service<IConfig>::get()->getString("listen-addr", "0.0.0.0")});
+		args.push_back("--ssl-certificate=" + std::string {Service<IConfig>::get()->getString("tls-cert")});
+		args.push_back("--ssl-private-key=" + std::string {Service<IConfig>::get()->getString("tls-key")});
+		args.push_back("--ssl-tmp-dh=" + std::string {Service<IConfig>::get()->getString("tls-dh")});
 	}
 	else
 	{
 		args.push_back("--http-port=" + std::to_string( Service<IConfig>::get()->getULong("listen-port", 5082)));
-		args.push_back("--http-address=" + Service<IConfig>::get()->getString("listen-addr", "0.0.0.0"));
+		args.push_back("--http-address=" + std::string {Service<IConfig>::get()->getString("listen-addr", "0.0.0.0")});
 	}
 
 	if (!wtAccessLogFilePath.empty())
@@ -211,10 +213,26 @@ int main(int argc, char* argv[])
 
 		UserInterface::LmsApplicationGroupContainer appGroups;
 
-		// Service initialization order is important
+		// Service initialization order is important (reverse-order for deinit)
 		Service<IChildProcessManager> childProcessManagerService {createChildProcessManager()};
-		Service<Auth::IAuthTokenService> authTokenService {Auth::createAuthTokenService(config->getULong("login-throttler-max-entriees", 10000))};
-		Service<Auth::IPasswordService> passwordService {Auth::createPasswordService(config->getULong("login-throttler-max-entriees", 10000))};
+
+		Service<Auth::IAuthTokenService> authTokenService;
+		Service<Auth::IPasswordService> authPasswordService;
+		Service<Auth::IEnvService> authEnvService;
+
+		const std::string authenticationBackend {StringUtils::stringToLower(config->getString("authentication-backend", "internal"))};
+		if (authenticationBackend == "internal" || authenticationBackend == "pam")
+		{
+			authTokenService.assign(Auth::createAuthTokenService(config->getULong("login-throttler-max-entriees", 10000)));
+			authPasswordService.assign(Auth::createPasswordService(authenticationBackend, config->getULong("login-throttler-max-entriees", 10000), *authTokenService.get()));
+		}
+		else if (authenticationBackend == "http-headers")
+		{
+			authEnvService.assign(Auth::createEnvService(authenticationBackend));
+		}
+		else
+			throw LmsException {"Bad value '" + authenticationBackend + "' for 'authentication-backend'"};
+
 		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0],
 				server.appRoot() + "/images/unknown-cover.jpg",
 				config->getULong("cover-max-cache-size", 30) * 1000 * 1000,

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -21,21 +21,8 @@
 
 #include <Wt/WValidator.h>
 
-#include "database/User.hpp"
-
-namespace UserInterface {
-
-std::shared_ptr<Wt::WValidator> createNameValidator();
-std::shared_ptr<Wt::WValidator> createMandatoryValidator();
-
-class DirectoryValidator : public Wt::WValidator
+namespace UserInterface
 {
-	public:
-		DirectoryValidator();
-
-		Wt::WValidator::Result validate(const Wt::WString& input) const override;
-
-};
-
+	std::shared_ptr<Wt::WValidator> createDirectoryValidator();
 } // namespace UserInterface
 
