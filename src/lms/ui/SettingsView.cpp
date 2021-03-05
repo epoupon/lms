@@ -493,7 +493,6 @@ SettingsView::refreshView()
 
 	saveBtn->clicked().connect([=]()
 	{
-
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 

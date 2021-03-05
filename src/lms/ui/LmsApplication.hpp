@@ -107,7 +107,6 @@ class LmsApplication : public Wt::WApplication
 		Wt::Signal<>&	preQuit() { return _preQuit; }
 
 	private:
-
 		void init();
 		void setTheme();
 		void processPasswordAuth();

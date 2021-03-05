@@ -31,7 +31,6 @@ namespace Auth
 			using PasswordServiceBase::PasswordServiceBase;
 
 		private:
-
 			bool	checkUserPassword(Database::Session& session,
 						std::string_view loginName,
 						std::string_view password) override;

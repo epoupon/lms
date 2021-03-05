@@ -36,7 +36,6 @@ namespace Auth
 			InternalPasswordService(std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService);
 
 		private:
-
 			bool	checkUserPassword(Database::Session& session,
 						std::string_view loginName,
 						std::string_view password) override;

@@ -81,7 +81,6 @@ namespace Auth
 			}
 
 		private:
-
 			class ConvContext
 			{
 				public:
@@ -159,7 +158,6 @@ namespace Auth
 			ConvContext* _convContext {};
 			pam_conv _conv {&PAMContext::conv, this};
 			pam_handle_t *_pamh {};
-
 	};
 
 	bool
