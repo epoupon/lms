@@ -68,6 +68,9 @@ namespace UserInterface
 	Wt::WValidator::Result
 	PasswordCheckValidator::validate(const Wt::WString& input) const
 	{
+		if (input.empty())
+			return Wt::WValidator::validate(input);
+
 		const auto checkResult {Service<::Auth::IPasswordService>::get()->checkUserPassword(
 					LmsApp->getDbSession(),
 					boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
