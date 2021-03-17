@@ -124,9 +124,19 @@ static
 void
 proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
 {
+	auto postAll {[](Wt::WServer& server, std::function<void()> cb)
+	{
+		server.postAll([cb = std::move(cb)]
+		{
+			// may be nullptr, see https://redmine.webtoolkit.eu/issues/8202
+			if (LmsApp)
+				cb();
+		});
+	}};
+
 	scanner.getEvents().scanStarted.connect([&]
 	{
-		server.postAll([]
+		postAll(server, []
 		{
 			LmsApp->getScannerEvents().scanStarted.emit();
 			LmsApp->triggerUpdate();
@@ -135,7 +145,7 @@ proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
 
 	scanner.getEvents().scanComplete.connect([&] (const Scanner::ScanStats& stats)
 	{
-		server.postAll([=]
+		postAll(server, [=]
 		{
 			LmsApp->getScannerEvents().scanComplete.emit(stats);
 			LmsApp->triggerUpdate();
@@ -144,7 +154,7 @@ proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
 
 	scanner.getEvents().scanInProgress.connect([&] (const Scanner::ScanStepStats& stats)
 	{
-		server.postAll([=]
+		postAll(server, [=]
 		{
 			LmsApp->getScannerEvents().scanInProgress.emit(stats);
 			LmsApp->triggerUpdate();
@@ -153,7 +163,7 @@ proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
 
 	scanner.getEvents().scanScheduled.connect([&] (const Wt::WDateTime dateTime)
 	{
-		server.postAll([=]
+		postAll(server, [=]
 		{
 			LmsApp->getScannerEvents().scanScheduled.emit(dateTime);
 			LmsApp->triggerUpdate();
