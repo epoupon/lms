@@ -36,7 +36,7 @@ bool ensureDirectory(const std::filesystem::path& dir);
 Wt::WDateTime getLastWriteTime(const std::filesystem::path& dir);
 
 // returns false if aborted by user
-bool exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb);
+bool exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb, const std::filesystem::path& excludeDirFileName = {});
 
 namespace std
 {

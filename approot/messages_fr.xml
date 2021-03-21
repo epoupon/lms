@@ -42,6 +42,7 @@
 <message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Collection de musiques</message>
 <message id="Lms.Admin.Database.never">Jamais</message>
 <message id="Lms.Admin.Database.path">Dossier racine des fichiers de musique</message>
+<message id="Lms.Admin.Database.path-help">Les dossiers contenant un fichier <code>.lmsignore</code> sont ignorés</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">Moteur de recommandation</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.clusters">Basé sur les tags</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.features">Basé sur l'analyse audio</message>

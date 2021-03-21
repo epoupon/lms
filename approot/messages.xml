@@ -42,6 +42,7 @@
 <message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Music collection</message>
 <message id="Lms.Admin.Database.never">Never</message>
 <message id="Lms.Admin.Database.path">Media root directory</message>
+<message id="Lms.Admin.Database.path-help">Directories containing a <code>.lmsignore</code> file are skipped</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">Recommendation engine</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.clusters">Tags based</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.features">Audio analysis based</message>

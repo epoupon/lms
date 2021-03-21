@@ -43,6 +43,8 @@ using namespace Database;
 
 namespace {
 
+const std::filesystem::path excludeDirFileName {".lmsignore"};
+
 Wt::WDate
 getNextMonday(Wt::WDate current)
 {
@@ -74,7 +76,7 @@ isFileSupported(const std::filesystem::path& file, const std::unordered_set<std:
 }
 
 bool
-isPathInParentPath(const std::filesystem::path& path, const std::filesystem::path& parentPath)
+isPathInMediaDirectory(const std::filesystem::path& path, const std::filesystem::path& rootPath)
 {
 	std::filesystem::path curPath = path;
 
@@ -82,7 +84,11 @@ isPathInParentPath(const std::filesystem::path& path, const std::filesystem::pat
 	{
 		curPath = curPath.parent_path();
 
-		if (curPath == parentPath)
+		std::error_code ec;
+		if (std::filesystem::exists(curPath / excludeDirFileName, ec))
+			return false;
+
+		if (curPath == rootPath)
 			return true;
 	}
 
@@ -434,7 +440,7 @@ Scanner::countAllFiles(ScanStats& stats)
 		}
 
 		return true;
-	});
+	}, excludeDirFileName);
 	notifyInProgress(stepStats);
 }
 
@@ -855,7 +861,7 @@ Scanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool fo
 		}
 
 		return true;
-	});
+	}, excludeDirFileName);
 
 	notifyInProgress(stepStats);
 }
@@ -875,7 +881,7 @@ checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDire
 			return false;
 		}
 
-		if (!isPathInParentPath(p, mediaDirectory))
+		if (!isPathInMediaDirectory(p, mediaDirectory))
 		{
 			LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': out of media directory";
 			return false;
