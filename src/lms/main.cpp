@@ -34,6 +34,7 @@
 #include "recommendation/IEngine.hpp"
 #include "subsonic/SubsonicResource.hpp"
 #include "ui/LmsApplication.hpp"
+#include "ui/LmsApplicationManager.hpp"
 #include "utils/IChildProcessManager.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Service.hpp"
@@ -221,7 +222,7 @@ int main(int argc, char* argv[])
 			session.optimize();
 		}
 
-		UserInterface::LmsApplicationGroupContainer appGroups;
+		UserInterface::LmsApplicationManager appManager;
 
 		// Service initialization order is important (reverse-order for deinit)
 		Service<IChildProcessManager> childProcessManagerService {createChildProcessManager()};
@@ -268,7 +269,7 @@ int main(int argc, char* argv[])
 		server.addEntryPoint(Wt::EntryPointType::Application,
 			[&](const Wt::WEnvironment &env)
 			{
-				return UserInterface::LmsApplication::create(env, database, appGroups);
+				return UserInterface::LmsApplication::create(env, database, appManager);
 			});
 
 		proxyScannerEventsToApplication(*scannerService, server);

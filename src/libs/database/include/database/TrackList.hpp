@@ -22,8 +22,10 @@
 #include <optional>
 #include <string>
 #include <set>
+#include <vector>
 
 #include <Wt/Dbo/Dbo.h>
+#include <Wt/WDateTime.h>
 
 #include "Types.hpp"
 
@@ -142,13 +144,16 @@ class TrackListEntry : public Wt::Dbo::Dbo<TrackListEntry>
 		template<class Action>
 		void persist(Action& a)
 		{
-			Wt::Dbo::belongsTo(a,	_track, "track", Wt::Dbo::OnDeleteCascade);
-			Wt::Dbo::belongsTo(a,	_tracklist, "tracklist", Wt::Dbo::OnDeleteCascade);
+			Wt::Dbo::field(a,		_dateTime,	"date_time");
+
+			Wt::Dbo::belongsTo(a,	_track,		"track",		Wt::Dbo::OnDeleteCascade);
+			Wt::Dbo::belongsTo(a,	_tracklist,	"tracklist",	Wt::Dbo::OnDeleteCascade);
 		}
 
 	private:
 
-		Wt::Dbo::ptr<Track>	_track;
+		Wt::WDateTime			_dateTime;
+		Wt::Dbo::ptr<Track>		_track;
 		Wt::Dbo::ptr<TrackList>	_tracklist;
 };
 

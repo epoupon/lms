@@ -19,6 +19,8 @@
 
 #include "PasswordValidator.hpp"
 
+#include <Wt/WEnvironment.h>
+
 #include "auth/IPasswordService.hpp"
 #include "utils/Service.hpp"
 #include "LmsApplication.hpp"

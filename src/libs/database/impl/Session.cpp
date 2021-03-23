@@ -39,10 +39,11 @@
 #include "database/TrackFeatures.hpp"
 #include "database/User.hpp"
 
-namespace Database {
+namespace Database
+{
 
 	using Version = std::size_t;
-	static constexpr Version LMS_DATABASE_VERSION {29};
+	static constexpr Version LMS_DATABASE_VERSION {30};
 
 	class VersionInfo
 	{
@@ -78,7 +79,7 @@ namespace Database {
 
 	private:
 		int _version {LMS_DATABASE_VERSION};
-};
+	};
 
 void
 Session::doDatabaseMigrationIfNeeded()
@@ -314,6 +315,11 @@ CREATE TABLE "user_backup" (
 			_session.execute("INSERT INTO user_backup SELECT id, version, type, login_name, password_salt, password_hash, last_login, subsonic_transcode_enable, subsonic_transcode_format, subsonic_transcode_bitrate, subsonic_artist_list_mode, ui_theme, cur_playing_track_pos, repeat_all, radio FROM user");
 			_session.execute("DROP TABLE user");
 			_session.execute("ALTER TABLE user_backup RENAME TO user");
+		}
+		else if (version == 29)
+		{
+			// new field data_time in tracklist_entry (used by async scrobble or to make stats)
+			_session.execute("ALTER TABLE tracklist_entry ADD date_time TEXT");
 		}
 		else
 		{

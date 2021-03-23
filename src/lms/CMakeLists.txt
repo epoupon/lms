@@ -3,7 +3,7 @@ add_executable(lms
 	main.cpp
 	ui/Auth.cpp
 	ui/LmsApplication.cpp
-	ui/LmsApplicationGroup.cpp
+	ui/LmsApplicationManager.cpp
 	ui/LmsTheme.cpp
 	ui/MediaPlayer.cpp
 	ui/PlayQueue.cpp

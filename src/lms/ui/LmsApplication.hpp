@@ -25,8 +25,6 @@
 
 #include "scanner/ScannerEvents.hpp"
 
-#include "LmsApplicationGroup.hpp"
-
 namespace Database
 {
 	class Artist;
@@ -47,23 +45,16 @@ class CoverResource;
 class LmsApplicationException;
 class MediaPlayer;
 class PlayQueue;
-
-// Events that can be listen from anywhere in the application
-struct Events
-{
-	// Events relative to group
-	Wt::Signal<LmsApplicationInfo> appOpen;
-	Wt::Signal<LmsApplicationInfo> appClosed;
-};
+class LmsApplicationManager;
 
 class LmsApplication : public Wt::WApplication
 {
 	public:
 
-		LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups, std::optional<Database::IdType> userId = std::nullopt);
+		LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationManager& appManager, std::optional<Database::IdType> userId = std::nullopt);
 		~LmsApplication();
 
-		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups);
+		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationManager& appManager);
 		static LmsApplication* instance();
 
 
@@ -71,13 +62,14 @@ class LmsApplication : public Wt::WApplication
 		std::shared_ptr<CoverResource> getCoverResource() { return _coverResource; }
 		Database::Session& getDbSession(); // always thread safe
 
-		Wt::Dbo::ptr<Database::User> getUser();
+		Wt::Dbo::ptr<Database::User>	getUser();
+		Database::IdType				getUserId();
 		bool isUserAuthStrong() const; // user must be logged in prior this call
 		bool isUserAdmin(); // user must be logged in prior this call
 		bool isUserDemo(); // user must be logged in prior this call
 		std::string getUserLoginName(); // user must be logged in prior this call
 
-		Events& getEvents() { return _events; }
+		// Proxified scanner events
 		Scanner::Events& getScannerEvents() { return _scannerEvents; }
 
 		// Utils
@@ -113,8 +105,6 @@ class LmsApplication : public Wt::WApplication
 		void handleException(LmsApplicationException& e);
 		void goHomeAndQuit();
 
-		LmsApplicationGroup& getApplicationGroup();
-
 		// Signal slots
 		void logoutUser();
 		void onUserLoggedIn();
@@ -126,8 +116,7 @@ class LmsApplication : public Wt::WApplication
 
 		Database::Db&							_db;
 		Wt::Signal<>							_preQuit;
-		LmsApplicationGroupContainer&   		_appGroups;
-		Events									_events;
+		LmsApplicationManager&   				_appManager;
 		Scanner::Events							_scannerEvents;
 		struct UserAuthInfo
 		{
