@@ -46,6 +46,10 @@ namespace
 			SystemException(int err, const std::string& errMsg)
 				: ChildProcessException {errMsg + ": " + strerror(err)}
 			{}
+
+			SystemException(boost::system::error_code ec, const std::string& errMsg)
+				: ChildProcessException {errMsg + ": " + ec.message()}
+			{}
 	};
 }
 
@@ -103,7 +107,7 @@ ChildProcess::ChildProcess(boost::asio::io_context& ioContext, const std::filesy
 			boost::system::error_code assignError;
 			_childStdout.assign(pipe[0], assignError);
 			if (assignError)
-				LMS_LOG(CHILDPROCESS, ERROR) << "Assign failed: " << assignError.message();
+				throw SystemException {assignError, "fork failed!"};
 		}
 		_childPID = res;
 	}
@@ -113,6 +117,7 @@ ChildProcess::~ChildProcess()
 {
 	if (!_waited)
 	{
+		LMS_LOG(CHILDPROCESS, DEBUG) << "Closing child process...";
 		{
 			boost::system::error_code closeError;
 			_childStdout.close(closeError);
@@ -136,6 +141,7 @@ ChildProcess::drain()
 void
 ChildProcess::kill()
 {
+	LMS_LOG(CHILDPROCESS, DEBUG) << "Killing child process...";
 	::kill(_childPID, SIGKILL);
 }
 
@@ -162,36 +168,25 @@ ChildProcess::wait(bool block)
 void
 ChildProcess::asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback callback) 
 {
+	assert(!finished());
+
 	boost::asio::async_read(_childStdout, boost::asio::buffer(data, bufferSize),
 		[this, callback {std::move(callback)}](const boost::system::error_code& error, std::size_t bytesTransferred)
 		{
 			LMS_LOG(CHILDPROCESS, DEBUG) << "Async read cb - ec = '" << error.message() << "', bytesTransferred = " << bytesTransferred;
 
+			ReadResult readResult {ReadResult::Success};
 			if (error)
 			{
-				if (error == boost::asio::error::operation_aborted)
-				{
-					return;
-				}
-
-				{
-					boost::system::error_code closeError;
-					_childStdout.close(closeError);
-				}
+				_finished = true;
 
 				if (error == boost::asio::error::eof)
-				{
-					callback(ReadResult::EndOfFile, bytesTransferred);
-					return;
-				}
+					readResult = ReadResult::EndOfFile;
 				else
-				{
-					callback(ReadResult::Error, bytesTransferred);
 					return;
-				}
 			}
 
-			callback(ReadResult::Success, bytesTransferred);
+			callback(readResult, bytesTransferred);
 		});
 }
 
@@ -199,6 +194,7 @@ void
 ChildProcess::asyncWaitForData(WaitCallback cb)
 {
 	LMS_LOG(CHILDPROCESS, DEBUG) << "Async wait requested";
+	assert(!finished());
 
 	_childStdout.async_wait(boost::asio::posix::stream_descriptor::wait_read,
 			[cb {std::move(cb)}](const boost::system::error_code& ec)
@@ -224,6 +220,6 @@ ChildProcess::readSome(std::byte* data, std::size_t bufferSize)
 bool
 ChildProcess::finished()
 {
-	return !_childStdout.is_open();
+	return _finished;
 }
 
