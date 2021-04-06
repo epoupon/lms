@@ -29,7 +29,6 @@ namespace Scrobbling
 			InternalScrobbler(Database::Db&	db);
 
 		private:
-
 			void listenStarted(const Listen& listen) override;
 			void listenFinished(const Listen& listen, std::chrono::seconds duration) override;
 

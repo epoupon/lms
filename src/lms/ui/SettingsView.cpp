@@ -308,7 +308,6 @@ class SettingsModel : public Wt::WFormModel
 
 		void initializeModels()
 		{
-
 			_transcodeModeModel = std::make_shared<TranscodeModeModel>();
 			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.always"), MediaPlayer::Settings::Transcode::Mode::Always);
 			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.never"), MediaPlayer::Settings::Transcode::Mode::Never);

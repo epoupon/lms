@@ -74,6 +74,8 @@ namespace Scrobbling
 			const std::string			_apiEndpoint;
 			const std::size_t			_maxRetryCount {2};
 			const std::chrono::seconds	_defaultRetryWaitDuration {30};
+			const std::chrono::seconds	_minRetryWaitDuration {1};
+			const std::chrono::seconds	_maxRetryWaitDuration {300};
 
 			Database::Db&				_db;
 			Wt::WIOService				_ioService;

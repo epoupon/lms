@@ -37,7 +37,6 @@ namespace UserInterface
 			Wt::Signal<LmsApplication&> applicationUnregistered;
 
 		private:
-
 			friend class LmsApplication;
 
 			void registerApplication(LmsApplication& application);

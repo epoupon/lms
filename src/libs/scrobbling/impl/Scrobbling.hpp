@@ -31,7 +31,6 @@ namespace Scrobbling
 	class Scrobbling : public IScrobbling
 	{
 		public:
-
 			Scrobbling(Database::Db& db);
 
 		private:

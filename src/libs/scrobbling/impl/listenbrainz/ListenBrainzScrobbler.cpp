@@ -316,7 +316,7 @@ namespace Scrobbling
 		LOG(DEBUG) << "POST done. status = " << msg.status() << ", msg = '" << msg.body() << "'";
 		if (ec)
 		{
-			LOG(ERROR) << "Client error: " << ec.message();
+			LOG(ERROR) << "Retry " << queuedListen.retryCount << ", client error: '" << ec.message() << "'";
 			// may be a network error, try again later
 			if (++queuedListen.retryCount > _maxRetryCount)
 				_sendQueue.pop_front();
@@ -363,7 +363,7 @@ namespace Scrobbling
 	{
 		assert(_state == State::Idle);
 
-		const std::chrono::seconds duration {requestedDuration.count() > 0 ? requestedDuration : std::chrono::seconds {1}};
+		const std::chrono::seconds duration {clamp(requestedDuration, _minRetryWaitDuration, _maxRetryWaitDuration)};
 		LOG(DEBUG) << "Throttling for " << duration.count() << " seconds";
 
 		_ioService.schedule(duration, [this]

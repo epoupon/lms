@@ -114,15 +114,6 @@ class MediaPlayer : public Wt::WTemplate
 		Wt::JSignal<>			playbackEnded;
 
 	private:
-
-		enum class State
-		{
-			Playing,
-			Stopped,
-		};
-		std::chrono::steady_clock::time_point _lastStateTimePoint;
-		State _state {State::Stopped};
-
 		std::unique_ptr<AudioFileResource>		_audioFileResource;
 		std::unique_ptr<AudioTranscodeResource>	_audioTranscodeResource;
 

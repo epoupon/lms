@@ -2098,7 +2098,6 @@ testDatabaseEmpty(Session& session)
 
 int main()
 {
-
 	try
 	{
 		// log to stdout
