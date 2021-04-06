@@ -193,9 +193,11 @@ static MediaPlayer::Settings settingsfromJSString(const std::string& strSettings
 
 MediaPlayer::MediaPlayer()
 : Wt::WTemplate {Wt::WString::tr("Lms.MediaPlayer.template")}
-, playbackEnded {this, "playbackEnded"}
 , playPrevious {this, "playPrevious"}
 , playNext {this, "playNext"}
+, scrobbleListenNow {this, "scrobbleListenNow"}
+, scrobbleListenFinished {this, "scrobbleListenFinished"}
+, playbackEnded {this, "playbackEnded"}
 , _settingsLoaded {this, "settingsLoaded"}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
@@ -250,6 +252,7 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play, float replayGain)
 
 		oss
 			<< "var params = {"
+			<< " trackId :\"" << trackId << "\","
 			<< " nativeResource: \"" << nativeResource << "\","
 			<< " transcodeResource: \"" << transcodeResource << "\","
 			<< " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
@@ -294,15 +297,6 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play, float replayGain)
 
 	LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
 	wApp->doJavaScript(oss.str());
-
-	{
-		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
-
-		const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
-		if (track)
-			Database::TrackListEntry::create(LmsApp->getDbSession(), track, LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession()));
-
-	};
 
 	_trackIdLoaded = trackId;
 	trackLoaded.emit(*_trackIdLoaded);

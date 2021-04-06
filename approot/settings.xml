@@ -131,6 +131,27 @@
 					</div>
 				</div>
 				${</if-has-subsonic-api>}
+				<legend>${tr:Lms.Settings.scrobbling}</legend>
+				<div class="form-horizontal">
+					<div class="form-group">
+						<label class="col-lg-3 control-label" for="${id:scrobbler}">
+							${tr:Lms.Settings.scrobbling.scrobbler}
+						</label>
+						<div class="col-lg-9">
+							${scrobbler}
+							${scrobbler-info class="help-block"}
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-lg-3 control-label" for="${id:listenbrainz-token}">
+							${tr:Lms.Settings.scrobbling.listenbrainz-token}
+						</label>
+						<div class="col-lg-9">
+							${listenbrainz-token}
+							${listenbrainz-token-info class="help-block"}
+						</div>
+					</div>
+				</div>
 				${<if-has-change-password>}
 				<legend>${tr:Lms.Settings.change-password}</legend>
 				<div class="form-horizontal">

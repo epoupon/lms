@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,12 +19,25 @@
 
 #pragma once
 
-#include <string>
+#include "IScrobbler.hpp"
 
-class UUID;
-
-namespace AcousticBrainz
+namespace Scrobbling
 {
-	std::string extractLowLevelFeatures(const UUID& recordingMBID);
-}
+	class InternalScrobbler final : public IScrobbler
+	{
+		public:
+			InternalScrobbler(Database::Db&	db);
+
+		private:
+
+			void listenStarted(const Listen& listen) override;
+			void listenFinished(const Listen& listen, std::chrono::seconds duration) override;
+
+			void addListen(const Listen& listen, const Wt::WDateTime& timePoint) override;
+
+			Wt::Dbo::ptr<Database::TrackList> getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user) override;
+
+			Database::Db&	_db;
+	};
+} // Scrobbling
 

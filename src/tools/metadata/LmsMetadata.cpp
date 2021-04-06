@@ -102,11 +102,11 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 
 	std::cout << "Title: " << track->title << std::endl;
 
-	if (track->musicBrainzTrackID)
-		std::cout << "MB TrackID = " << track->musicBrainzTrackID->getAsString() << std::endl;
+	if (track->trackMBID)
+		std::cout << "track MBID = " << track->trackMBID->getAsString() << std::endl;
 
-	if (track->musicBrainzRecordID)
-		std::cout << "MB RecordID = " << track->musicBrainzRecordID->getAsString() << std::endl;
+	if (track->recordingMBID)
+		std::cout << "recording MBID = " << track->recordingMBID->getAsString() << std::endl;
 
 	for (const auto& cluster : track->clusters)
 	{

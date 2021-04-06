@@ -149,7 +149,6 @@ void
 TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::StringList& values, bool debug)
 {
 
-	// TODO validate MBID format
 	if (debug)
 	{
 		std::vector<std::string> strs;
@@ -168,11 +167,11 @@ TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::Str
 	else if (tag == "MUSICBRAINZ_RELEASETRACKID"
 			|| tag == "MUSICBRAINZ RELEASE TRACK ID")
 	{
-		track.musicBrainzTrackID = UUID::fromString(value);
+		track.trackMBID = UUID::fromString(value);
 	}
 	else if (tag == "MUSICBRAINZ_TRACKID"
 			|| tag == "MUSICBRAINZ TRACK ID")
-		track.musicBrainzRecordID = UUID::fromString(value);
+		track.recordingMBID = UUID::fromString(value);
 	else if (tag == "ACOUSTID_ID")
 		track.acoustID = UUID::fromString(value);
 	else if (tag == "TRACKTOTAL")

@@ -20,12 +20,15 @@ LMS.mediaplayer = function () {
 	var _root = {};
 	var _elems = {};
 	var _offset = 0;
+	var _trackId = null;
 	var _duration = 0;
 	var _audioNativeSrc;
 	var _audioTranscodeSrc;
 	var _settings = {};
 	var _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 	var _gainNode = _audioCtx.createGain();
+	var _playedDuration = 0;
+	var _lastStartPlaying = null;
 
 	var _updateControls = function() {
 		if (_elems.audio.paused) {
@@ -38,16 +41,35 @@ LMS.mediaplayer = function () {
 		}
 	}
 
+	var _startTimer = function() {
+		if (_lastStartPlaying == null)
+			Wt.emit(_root, "scrobbleListenNow", _trackId);
+		_lastStartPlaying = Date.now();
+	}
+
+	var _stopTimer = function() {
+		if (_lastStartPlaying != null) {
+			_playedDuration += Date.now() - _lastStartPlaying;
+		}
+	}
+
+	var _resetTimer = function() {
+		if (_lastStartPlaying != null)
+			Wt.emit(_root, "scrobbleListenFinished", _trackId, _playedDuration);
+		_playedDuration = 0;
+		_lastStartPlaying = null;
+	}
+
 	var _durationToString = function (duration) {
-			var minutes = parseInt(duration / 60, 10);
-			var seconds = parseInt(duration, 10) % 60;
+		var minutes = parseInt(duration / 60, 10);
+		var seconds = parseInt(duration, 10) % 60;
 
-			var res = "";
+		var res = "";
 
-			res += minutes + ":";
-			res += (seconds  < 10 ? "0" + seconds : seconds);
+		res += minutes + ":";
+		res += (seconds  < 10 ? "0" + seconds : seconds);
 
-			return res;
+		return res;
 	}
 
 	var _playTrack = function() {
@@ -201,6 +223,10 @@ LMS.mediaplayer = function () {
 		_elems.audio.addEventListener("playing", _updateControls);
 		_elems.audio.addEventListener("pause", _updateControls);
 
+		_elems.audio.addEventListener("pause", _stopTimer);
+		_elems.audio.addEventListener("playing", _startTimer);
+		_elems.audio.addEventListener("waiting", _stopTimer);
+
 		_elems.audio.addEventListener("timeupdate", function() {
 			_elems.progress.style.width = "" + ((_offset + _elems.audio.currentTime) / _duration) * 100 + "%";
 			_elems.curtime.innerHTML = _durationToString(_offset + _elems.audio.currentTime);
@@ -293,6 +319,10 @@ LMS.mediaplayer = function () {
 	}
 
 	var loadTrack = function(params, autoplay) {
+		_stopTimer();
+		_resetTimer();
+
+		_trackId = params.trackId;
 		_offset = 0;
 		_duration = params.duration;
 		_audioNativeSrc = params.nativeResource;

@@ -38,6 +38,7 @@
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 #include "recommendation/IEngine.hpp"
+#include "scrobbling/IScrobbling.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Service.hpp"
@@ -815,7 +816,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	else if (type == "frequent")
 	{
 		bool moreResults {};
-		releases = user->getPlayedTrackList(context.dbSession)->getTopReleases({}, range, moreResults);
+		releases = Service<Scrobbling::IScrobbling>::get()->getTopReleases(context.dbSession, user, {}, range, moreResults);
 	}
 	else if (type == "newest")
 	{
@@ -830,7 +831,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	else if (type == "recent")
 	{
 		bool moreResults {};
-		releases = user->getPlayedTrackList(context.dbSession)->getReleasesReverse({}, range, moreResults);
+		releases = Service<Scrobbling::IScrobbling>::get()->getRecentReleases(context.dbSession, user, {}, range, moreResults);
 	}
 	else if (type == "starred")
 	{
@@ -1643,25 +1644,51 @@ Response
 handleScrobble(RequestContext& context)
 {
 	const std::vector<Id> ids {getMandatoryMultiParametersAs<Id>(context.parameters, "id")};
-	// TODO handle time in some way (need underlying refacto)
+	const std::vector<unsigned long> times {getMandatoryMultiParametersAs<unsigned long>(context.parameters, "time")};
 
 	if (!std::all_of(std::cbegin(ids), std::cend(ids), [](const Id& id) { return id.type == Id::Type::Track; }))
 		throw BadParameterGenericError {"id"};
 
-	auto transaction {context.dbSession.createUniqueTransaction()};
+	if (ids.size() != times.size())
+		throw BadParameterGenericError {"time"};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
-	if (!user)
-		throw RequestedDataNotFoundError {};
-
-	for (Id id : ids)
+	struct Scrobble
 	{
-		Track::pointer track {Track::getById(context.dbSession, id.value)};
-		if (!track)
-			continue;
+		Scrobbling::Listen listen;
+		Wt::WDateTime timePoint;
+	};
 
-		TrackListEntry::create(context.dbSession, track, user->getPlayedTrackList(context.dbSession));
+	std::vector<Scrobble> scrobbles;
+	scrobbles.reserve(ids.size());
+
+	{
+		auto transaction {context.dbSession.createSharedTransaction()};
+
+		User::pointer user {User::getById(context.dbSession, context.userId)};
+		if (!user)
+			throw RequestedDataNotFoundError {};
+
+		Scrobble scrobble;
+		scrobble.listen.userId = context.userId;
+
+		for (std::size_t i {}; i < ids.size(); ++i)
+		{
+			const Id id {ids[i]};
+			const unsigned long time {times[i]};
+
+			const Track::pointer track {Track::getById(context.dbSession, id.value)};
+			if (!track)
+				continue;
+
+			scrobble.listen.trackId = id.value;
+			scrobble.timePoint.setTime_t(static_cast<std::time_t>(time / 1000));
+
+			scrobbles.emplace_back(scrobble);
+		}
 	}
+
+	for (const Scrobble& scrobble : scrobbles)
+		Service<Scrobbling::IScrobbling>::get()->addListen(scrobble.listen, scrobble.timePoint);
 
 	return Response::createOkResponse(context);
 }

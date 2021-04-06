@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,12 +19,14 @@
 
 #pragma once
 
-#include <string>
+#include "database/Types.hpp"
 
-class UUID;
-
-namespace AcousticBrainz
+namespace Scrobbling
 {
-	std::string extractLowLevelFeatures(const UUID& recordingMBID);
-}
+	struct Listen
+	{
+		Database::IdType userId {};
+		Database::IdType trackId {};
+	};
+} // ns Scrobbling
 

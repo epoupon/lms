@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,14 +17,15 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "UUIDValidator.hpp"
 
-#include <string>
+#include <Wt/WRegExpValidator.h>
 
-class UUID;
-
-namespace AcousticBrainz
+namespace UserInterface
 {
-	std::string extractLowLevelFeatures(const UUID& recordingMBID);
-}
-
+	std::shared_ptr<Wt::WValidator>
+	createUUIDValidator()
+	{
+		return std::make_unique<Wt::WRegExpValidator>("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}");
+	}
+} // namespace UserInterface

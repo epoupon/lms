@@ -30,7 +30,8 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
-
+#include "database/User.hpp"
+#include "scrobbling/IScrobbling.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
@@ -192,11 +193,11 @@ Tracks::getTracks(std::optional<Range> range, bool& moreResults)
 			break;
 
 		case Mode::RecentlyPlayed:
-			tracks = LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession())->getTracksReverse(_filters->getClusterIds(), range, moreResults);
+			tracks = Service<Scrobbling::IScrobbling>::get()->getRecentTracks(LmsApp->getDbSession(), LmsApp->getUser(), _filters->getClusterIds(), range, moreResults);
 			break;
 
 		case Mode::MostPlayed:
-			tracks = LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession())->getTopTracks(_filters->getClusterIds(), range, moreResults);
+			tracks = Service<Scrobbling::IScrobbling>::get()->getTopTracks(LmsApp->getDbSession(), LmsApp->getUser(), _filters->getClusterIds(), range, moreResults);
 			break;
 
 		case Mode::RecentlyAdded:

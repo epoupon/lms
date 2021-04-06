@@ -318,8 +318,16 @@ CREATE TABLE "user_backup" (
 		}
 		else if (version == 29)
 		{
-			// new field data_time in tracklist_entry (used by async scrobble or to make stats)
 			_session.execute("ALTER TABLE tracklist_entry ADD date_time TEXT");
+			_session.execute("ALTER TABLE user ADD listenbrainz_token TEXT");
+			_session.execute("ALTER TABLE user ADD scrobbler INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(User::defaultScrobbler)) + ")");
+			_session.execute("ALTER TABLE track ADD recording_mbid TEXT");
+
+			_session.execute("DELETE from tracklist WHERE name = ?").bind("__played_tracks__");
+
+			// MBID changes
+			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+			ScanSettings::get(*this).modify()->incScanVersion();
 		}
 		else
 		{
@@ -432,6 +440,7 @@ Session::prepareTables()
 		_session.execute("CREATE INDEX IF NOT EXISTS track_name_idx ON track(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_recording_mbid_idx ON track(recording_mbid)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_year_idx ON track(year)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_original_year_idx ON track(original_year)");

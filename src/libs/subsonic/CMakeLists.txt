@@ -23,6 +23,7 @@ target_link_libraries(lmssubsonic PRIVATE
 	lmsdatabase
 	lmsrecommendation
 	lmsscanner
+	lmsscrobbling
 	lmsutils
 	std::filesystem
 	)

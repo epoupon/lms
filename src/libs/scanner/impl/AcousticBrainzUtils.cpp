@@ -79,9 +79,9 @@ getJsonData(const UUID& mbid)
 }
 
 std::string
-extractLowLevelFeatures(const UUID& mbid)
+extractLowLevelFeatures(const UUID& recordingMBID)
 {
-	return getJsonData(mbid);
+	return getJsonData(recordingMBID);
 }
 
 } // namespace Scanner::AcousticBrainz

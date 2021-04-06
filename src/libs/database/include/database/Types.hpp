@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <Wt/Dbo/ptr.h>
 
 namespace Database
@@ -51,5 +52,23 @@ namespace Database
 		Writer,
 	};
 
+	// User selectable audio file formats
+	// Do not change values
+	enum class AudioFormat
+	{
+		MP3		= 1,
+		OGG_OPUS	= 2,
+		OGG_VORBIS	= 3,
+		WEBM_VORBIS	= 4,
+		MATROSKA_OPUS	= 5,
+	};
+	using Bitrate = std::uint32_t;
+
+	// Do not change enum values!
+	enum class Scrobbler
+	{
+		Internal		= 0,
+		ListenBrainz	= 1,
+	};
 }
 

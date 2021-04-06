@@ -29,6 +29,7 @@
 #include "database/User.hpp"
 #include "database/TrackArtistLink.hpp"
 #include "database/TrackList.hpp"
+#include "scrobbling/IScrobbling.hpp"
 #include "utils/Logger.hpp"
 
 #include "common/LoadingIndicator.hpp"
@@ -212,15 +213,15 @@ Artists::getArtists(std::optional<Range> range, bool& moreResults)
 			break;
 
 		case Mode::RecentlyPlayed:
-			artists = LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession())
-				->getArtistsReverse(_filters->getClusterIds(),
+			artists = Service<Scrobbling::IScrobbling>::get()->getRecentArtists(LmsApp->getDbSession(), LmsApp->getUser(),
+						_filters->getClusterIds(),
 						linkType,
 						range, moreResults);
 			break;
 
 		case Mode::MostPlayed:
-			artists = LmsApp->getUser()->getPlayedTrackList(LmsApp->getDbSession())
-				->getTopArtists(_filters->getClusterIds(),
+			artists = Service<Scrobbling::IScrobbling>::get()->getTopArtists(LmsApp->getDbSession(), LmsApp->getUser(),
+						_filters->getClusterIds(),
 						linkType,
 						range, moreResults);
 			break;

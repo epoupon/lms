@@ -37,6 +37,7 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
+#include "scrobbling/IScrobbling.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -544,6 +545,21 @@ LmsApplication::createHome()
 	{
 		_playQueue->playPrevious();
 	});
+
+	_mediaPlayer->scrobbleListenNow.connect([this](Database::IdType trackId)
+	{
+		LMS_LOG(UI, DEBUG) << "Received ScrobbleListenNow from player for trackId = " << trackId;
+		const Scrobbling::Listen listen {getUserId(), trackId};
+		Service<Scrobbling::IScrobbling>::get()->listenStarted(listen);
+	});
+	_mediaPlayer->scrobbleListenFinished.connect([this](Database::IdType trackId, unsigned durationMs)
+	{
+		LMS_LOG(UI, DEBUG) << "Received ScrobbleListenFinished from player for trackId = " << trackId << ", duration = " << (durationMs / 1000) << "s";
+		const std::chrono::milliseconds duration {durationMs};
+		const Scrobbling::Listen listen {getUserId(), trackId};
+		Service<Scrobbling::IScrobbling>::get()->listenFinished(listen, std::chrono::duration_cast<std::chrono::seconds>(duration));
+	});
+
 	_mediaPlayer->playbackEnded.connect([this]
 	{
 		_playQueue->playNext();

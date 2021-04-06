@@ -200,11 +200,14 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 				track.acoustID = UUID::fromString(value);
 			}
 			else if (tag == "MUSICBRAINZ RELEASE TRACK ID"
-					|| tag == "MUSICBRAINZ_RELEASETRACKID"
-					|| tag == "MUSICBRAINZ_TRACKID"
+					|| tag == "MUSICBRAINZ_RELEASETRACKID")
+			{
+				track.trackMBID = UUID::fromString(value);
+			}
+			else if (tag == "MUSICBRAINZ_TRACKID"
 					|| tag == "MUSICBRAINZ/TRACK ID")
 			{
-				track.musicBrainzTrackID = UUID::fromString(value);
+				track.recordingMBID = UUID::fromString(value);
 			}
 			else if (tag == "TSST"
 					|| tag == "DISCSUBTITLE"

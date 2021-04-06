@@ -59,8 +59,8 @@ namespace MetaData
 		std::vector<Artist>		artists;
 		std::vector<Artist>		albumArtists;
 		std::string				title;
-		std::optional<UUID>		musicBrainzTrackID;
-		std::optional<UUID>		musicBrainzRecordID;
+		std::optional<UUID>		trackMBID;
+		std::optional<UUID>		recordingMBID;
 		std::optional<Album>	album;
 		Clusters				clusters;
 		std::chrono::milliseconds 	duration;

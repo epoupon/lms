@@ -543,15 +543,15 @@ Scanner::scan(bool forceScan)
 }
 
 bool
-Scanner::fetchTrackFeatures(Database::IdType trackId, const UUID& MBID)
+Scanner::fetchTrackFeatures(Database::IdType trackId, const UUID& recordingMBID)
 {
 	std::map<std::string, double> features;
 
-	LMS_LOG(DBUPDATER, INFO) << "Fetching low level features for track '" << MBID.getAsString() << "'";
-	const std::string data {AcousticBrainz::extractLowLevelFeatures(MBID)};
+	LMS_LOG(DBUPDATER, INFO) << "Fetching low level features for recording '" << recordingMBID.getAsString() << "'";
+	const std::string data {AcousticBrainz::extractLowLevelFeatures(recordingMBID)};
 	if (data.empty())
 	{
-		LMS_LOG(DBUPDATER, ERROR) << "Track " << trackId << ", MBID = '" << MBID.getAsString() << "': cannot extract features using AcousticBrainz";
+		LMS_LOG(DBUPDATER, ERROR) << "Track " << trackId << ", recording MBID = '" << recordingMBID.getAsString() << "': cannot extract features using AcousticBrainz";
 		return false;
 	}
 
@@ -581,7 +581,7 @@ Scanner::fetchTrackFeatures(ScanStats& stats)
 	struct TrackInfo
 	{
 		Database::IdType id;
-		UUID mbid;
+		UUID recordingMBID;
 	};
 
 	const auto tracksToFetch {[&]()
@@ -590,9 +590,9 @@ Scanner::fetchTrackFeatures(ScanStats& stats)
 
 		auto transaction {_dbSession.createSharedTransaction()};
 
-		auto tracks {Database::Track::getAllWithMBIDAndMissingFeatures(_dbSession)};
+		auto tracks {Database::Track::getAllWithRecordingMBIDAndMissingFeatures(_dbSession)};
 		for (const auto& track : tracks)
-			res.emplace_back(TrackInfo {track.id(), *track->getMBID()});
+			res.emplace_back(TrackInfo {track.id(), *track->getRecordingMBID()});
 
 		return res;
 	}()};
@@ -607,7 +607,7 @@ Scanner::fetchTrackFeatures(ScanStats& stats)
 		if (_abortScan)
 			return;
 
-		if (fetchTrackFeatures(trackToFetch.id, trackToFetch.mbid))
+		if (fetchTrackFeatures(trackToFetch.id, trackToFetch.recordingMBID))
 			stats.featuresFetched++;
 
 		stepStats.processedElems++;
@@ -824,7 +824,8 @@ Scanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanSt
 	if (!trackInfo->year && trackInfo->originalYear)
 		track.modify()->setYear(*trackInfo->originalYear);
 
-	track.modify()->setMBID(trackInfo->musicBrainzRecordID);
+	track.modify()->setRecordingMBID(trackInfo->recordingMBID);
+	track.modify()->setTrackMBID(trackInfo->trackMBID);
 	track.modify()->setFeatures({}); // TODO: only if MBID changed?
 	track.modify()->setHasCover(trackInfo->hasCover);
 	track.modify()->setCopyright(trackInfo->copyright);
@@ -1022,9 +1023,9 @@ Scanner::checkDuplicatedAudioFiles(ScanStats& stats)
 	const std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(_dbSession);
 	for (const Track::pointer& track : tracks)
 	{
-		if (track->getMBID())
+		if (auto trackMBID {track->getTrackMBID()})
 		{
-			LMS_LOG(DBUPDATER, INFO) << "Found duplicated MBID [" << track->getMBID()->getAsString() << "], file: " << track->getPath().string() << " - " << track->getName();
+			LMS_LOG(DBUPDATER, INFO) << "Found duplicated Track MBID [" << trackMBID->getAsString() << "], file: " << track->getPath().string() << " - " << track->getName();
 			stats.duplicates.emplace_back(ScanDuplicate {track.id(), DuplicateReason::SameMBID});
 		}
 	}

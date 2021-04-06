@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,12 +19,10 @@
 
 #pragma once
 
-#include <string>
+#include <Wt/WValidator.h>
 
-class UUID;
-
-namespace AcousticBrainz
+namespace UserInterface
 {
-	std::string extractLowLevelFeatures(const UUID& recordingMBID);
-}
+	std::shared_ptr<Wt::WValidator> createUUIDValidator();
+} // namespace UserInterface
 

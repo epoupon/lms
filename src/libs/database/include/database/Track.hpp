@@ -81,7 +81,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static std::vector<std::pair<IdType, std::filesystem::path>> getAllPaths(Session& session, std::optional<std::size_t> offset = std::nullopt, std::optional<std::size_t> size = std::nullopt);
 		static std::vector<pointer>	getMBIDDuplicates(Session& session);
 		static std::vector<pointer>	getLastWritten(Session& session, std::optional<Wt::WDateTime> after, const std::set<IdType>& clusters, std::optional<Range> range, bool& moreResults);
-		static std::vector<pointer>	getAllWithMBIDAndMissingFeatures(Session& session);
+		static std::vector<pointer>	getAllWithRecordingMBIDAndMissingFeatures(Session& session);
 		static std::vector<IdType>	getAllIdsWithFeatures(Session& session, std::optional<std::size_t> limit = {});
 		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
 		static std::vector<pointer>	getStarred(Session& session,
@@ -106,7 +106,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 		void setYear(int year)						{ _year = year; }
 		void setOriginalYear(int year)					{ _originalYear = year; }
 		void setHasCover(bool hasCover)					{ _hasCover = hasCover; }
-		void setMBID(const std::optional<UUID>& MBID)			{ _MBID = MBID ? MBID->getAsString() : ""; }
+		void setTrackMBID(const std::optional<UUID>& MBID)			{ _trackMBID = MBID ? MBID->getAsString() : ""; }
+		void setRecordingMBID(const std::optional<UUID>& MBID)		{ _recordingMBID = MBID ? MBID->getAsString() : ""; }
 		void setCopyright(const std::string& copyright)			{ _copyright = std::string(copyright, 0, _maxCopyrightLength); }
 		void setCopyrightURL(const std::string& copyrightURL)		{ _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
 		void setTrackReplayGain(float replayGain)			{ _trackReplayGain = replayGain; }
@@ -131,7 +132,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 		Wt::WDateTime				getLastWriteTime() const	{ return _fileLastWrite; }
 		Wt::WDateTime				getAddedTime() const		{ return _fileAdded; }
 		bool					hasCover() const		{ return _hasCover; }
-		std::optional<UUID>			getMBID() const			{ return UUID::fromString(_MBID); }
+		std::optional<UUID>				getTrackMBID() const			{ return UUID::fromString(_trackMBID); }
+		std::optional<UUID>				getRecordingMBID() const			{ return UUID::fromString(_recordingMBID); }
 		std::optional<std::string>		getCopyright() const;
 		std::optional<std::string>		getCopyrightURL() const;
 		std::optional<float>			getTrackReplayGain() const	{ return _trackReplayGain; }
@@ -166,7 +168,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 				Wt::Dbo::field(a, _fileLastWrite,	"file_last_write");
 				Wt::Dbo::field(a, _fileAdded,		"file_added");
 				Wt::Dbo::field(a, _hasCover,		"has_cover");
-				Wt::Dbo::field(a, _MBID,		"mbid");
+				Wt::Dbo::field(a, _trackMBID,		"mbid");
+				Wt::Dbo::field(a, _recordingMBID,	"recording_mbid");
 				Wt::Dbo::field(a, _copyright,		"copyright");
 				Wt::Dbo::field(a, _copyrightURL,	"copyright_url");
 				Wt::Dbo::field(a, _trackReplayGain,	"track_replay_gain");
@@ -201,7 +204,8 @@ class Track : public Wt::Dbo::Dbo<Track>
 		Wt::WDateTime				_fileLastWrite;
 		Wt::WDateTime				_fileAdded;
 		bool					_hasCover {};
-		std::string				_MBID; // Musicbrainz Identifier
+		std::string				_trackMBID;
+		std::string				_recordingMBID;
 		std::string				_copyright;
 		std::string				_copyrightURL;
 		std::optional<float>			_trackReplayGain;
