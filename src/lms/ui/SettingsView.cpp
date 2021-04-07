@@ -225,6 +225,12 @@ class SettingsModel : public Wt::WFormModel
 				if (transcodeBitrateRow)
 					setValue(TranscodeBitrateField, _transcodeBitrateModel->getString(*transcodeBitrateRow));
 
+				{
+					const bool usesTranscode {settings.transcode.mode != MediaPlayer::Settings::Transcode::Mode::Never};
+					setReadOnly(SettingsModel::TranscodeFormatField, !usesTranscode);
+					setReadOnly(SettingsModel::TranscodeBitrateField, !usesTranscode);
+				}
+
 				auto replayGainModeRow {_replayGainModeModel->getRowFromValue(settings.replayGain.mode)};
 				if (replayGainModeRow)
 					setValue(ReplayGainModeField, _replayGainModeModel->getString(*replayGainModeRow));
@@ -234,10 +240,10 @@ class SettingsModel : public Wt::WFormModel
 			}
 
 			setValue(SubsonicTranscodeEnableField, LmsApp->getUser()->getSubsonicTranscodeEnable());
-			if (!LmsApp->getUser()->getSubsonicTranscodeEnable())
 			{
-				setReadOnly(SubsonicTranscodeFormatField, true);
-				setReadOnly(SubsonicTranscodeBitrateField, true);
+				const bool usesTranscode {LmsApp->getUser()->getSubsonicTranscodeEnable()};
+				setReadOnly(SubsonicTranscodeFormatField, !usesTranscode);
+				setReadOnly(SubsonicTranscodeBitrateField, !usesTranscode);
 			}
 
 			{
@@ -263,11 +269,16 @@ class SettingsModel : public Wt::WFormModel
 					LMS_LOG(UI, DEBUG) << "Read listenBrainzToken! value = " << listenBrainzToken->getAsString();
 					setValue(ListenBrainzTokenField, Wt::WString::fromUTF8( std::string {listenBrainzToken->getAsString()}));
 				}
+
+				{
+					const bool usesListenBrainz {user->getScrobbler() == Scrobbler::ListenBrainz};
+					setReadOnly(SettingsModel::ListenBrainzTokenField, !usesListenBrainz);
+					validator(SettingsModel::ListenBrainzTokenField)->setMandatory(usesListenBrainz);
+				}
 			}
 		}
 
 	private:
-
 		bool validateField(Field field)
 		{
 			Wt::WString error;
@@ -448,11 +459,6 @@ SettingsView::refreshView()
 			t->updateModel(model.get());
 			t->updateView(model.get());
 		});
-		if (LmsApp->getMediaPlayer().getSettings()->transcode.mode == MediaPlayer::Settings::Transcode::Mode::Never)
-		{
-			model->setReadOnly(SettingsModel::TranscodeFormatField, true);
-			model->setReadOnly(SettingsModel::TranscodeBitrateField, true);
-		}
 
 		// Replay gain mode
 		auto replayGainMode {std::make_unique<Wt::WComboBox>()};
@@ -532,8 +538,9 @@ SettingsView::refreshView()
 		{
 			const bool enable {model->getScrobblerModel()->getValue(row) == Scrobbler::ListenBrainz};
 			model->setReadOnly(SettingsModel::ListenBrainzTokenField, !enable);
-            t->updateModel(model.get());
-            t->updateView(model.get());
+			model->validator(SettingsModel::ListenBrainzTokenField)->setMandatory(enable);
+			t->updateModel(model.get());
+			t->updateView(model.get());
 		});
 	}
 
