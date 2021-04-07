@@ -98,6 +98,12 @@ namespace
 		if (artists.empty())
 			artists = track->getArtists({Database::TrackArtistLinkType::ReleaseArtist});
 
+		if (artists.empty())
+		{
+			LOG(DEBUG) << "Track cannot be scrobbled since it does not have any artist";
+			return std::nullopt;
+		}
+
 		Wt::Json::Object additionalInfo;
 		additionalInfo["listening_from"] = "LMS";
 		if (track->getRelease())
@@ -106,7 +112,6 @@ namespace
 				additionalInfo["release_mbid"] = Wt::Json::Value {std::string {MBID->getAsString()}};
 		}
 
-		if (!artists.empty())
 		{
 			Wt::Json::Array artistMBIDs;
 			for (const Database::Artist::pointer& artist : artists)
@@ -130,10 +135,7 @@ namespace
 
 		Wt::Json::Object trackMetadata;
 		trackMetadata["additional_info"] = std::move(additionalInfo);
-
-		if (!artists.empty())
-			trackMetadata["artist_name"] = Wt::Json::Value {artists.front()->getName()};
-
+		trackMetadata["artist_name"] = Wt::Json::Value {artists.front()->getName()};
 		trackMetadata["track_name"] = Wt::Json::Value {track->getName()};
 		if (track->getRelease())
 			trackMetadata["release_name"] = Wt::Json::Value {track->getRelease()->getName()};
@@ -262,6 +264,8 @@ namespace Scrobbling
 
 		_sendQueue.emplace_back(QueuedListen {listen, timePoint});
 
+		LOG(DEBUG) << "listen queue size = " << _sendQueue.size();
+
 		if (_state == State::Idle)
 			sendNextQueuedListen();
 	}
@@ -270,27 +274,33 @@ namespace Scrobbling
 	ListenBrainzScrobbler::sendNextQueuedListen()
 	{
 		assert(_state == State::Idle);
-		if (_sendQueue.empty())
-			return;
 
-		sendListen(_sendQueue.front().listen, _sendQueue.front().timePoint);
-		_state = State::Sending;
+		while (!_sendQueue.empty())
+		{
+			if (sendListen(_sendQueue.front().listen, _sendQueue.front().timePoint))
+			{
+				_state = State::Sending;
+				break;
+			}
+
+			_sendQueue.pop_front();
+		}
 	}
 
-	void
+	bool
 	ListenBrainzScrobbler::sendListen(const Listen& listen, const Wt::WDateTime& timePoint)
 	{
 		Database::Session& session {_db.getTLSSession()};
 
 		const std::optional<UUID> listenBrainzToken {getListenBrainzToken(session, listen.userId)};
 		if (!listenBrainzToken)
-			return;
+			return false;
 
 		std::string payload {listenToJsonString(session, listen, timePoint, timePoint.isValid() ? "single" : "playing_now")};
 		if (payload.empty())
 		{
 			LOG(DEBUG) << "Cannot convert listen to json: skipping";
-			return;
+			return false;
 		}
 
 		// now send this
@@ -300,9 +310,13 @@ namespace Scrobbling
 
 		const std::string endPoint {_apiEndpoint + "submit-listens"};
 		if (!_client.post(endPoint, message))
+		{
 			LOG(ERROR) << "Cannot post to '" << endPoint << "': invalid scheme or URL?";
+			return false;
+		}
 
-		LOG(DEBUG) << "POST done to '" << endPoint << "'";
+		LOG(DEBUG) << "Listen POST done to '" << endPoint << "'";
+		return true;
 	}
 
 	void

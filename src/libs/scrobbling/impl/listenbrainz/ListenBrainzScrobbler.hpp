@@ -57,7 +57,7 @@ namespace Scrobbling
 
 			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
 			void sendNextQueuedListen();
-			void sendListen(const Listen& listen, const Wt::WDateTime& timePoint);
+			bool sendListen(const Listen& listen, const Wt::WDateTime& timePoint);
 			void onClientDone(Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg);
 			void throttle(std::chrono::seconds duration);
 
