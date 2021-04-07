@@ -306,6 +306,7 @@ namespace Scrobbling
 		// now send this
 		Wt::Http::Message message;
 		message.addHeader("Authorization", "Token " + std::string {listenBrainzToken->getAsString()});
+		message.addHeader("Content-Type", "application/json");
 		message.addBodyText(payload);
 
 		const std::string endPoint {_apiEndpoint + "submit-listens"};
