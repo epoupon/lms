@@ -30,7 +30,7 @@ namespace Scrobbling
 
 		private:
 			void listenStarted(const Listen& listen) override;
-			void listenFinished(const Listen& listen, std::chrono::seconds duration) override;
+			void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
 
 			void addListen(const Listen& listen, const Wt::WDateTime& timePoint) override;
 

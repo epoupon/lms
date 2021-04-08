@@ -43,7 +43,7 @@ namespace Scrobbling
 			virtual ~IScrobbler() = default;
 
 			virtual void listenStarted(const Listen& listen) = 0;
-			virtual void listenFinished(const Listen& listen, std::chrono::seconds duration) = 0;
+			virtual void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) = 0;
 
 			virtual void addListen(const Listen& listen, const Wt::WDateTime& timePoint) = 0;
 

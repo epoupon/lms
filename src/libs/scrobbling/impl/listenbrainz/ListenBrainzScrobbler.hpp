@@ -50,7 +50,7 @@ namespace Scrobbling
 
 		private:
 			void listenStarted(const Listen& listen) override;
-			void listenFinished(const Listen& listen, std::chrono::seconds duration) override;
+			void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
 			void addListen(const Listen& listen, const Wt::WDateTime& timePoint) override;
 
 			Wt::Dbo::ptr<Database::TrackList> getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user) override;

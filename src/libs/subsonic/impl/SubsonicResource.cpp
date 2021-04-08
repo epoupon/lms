@@ -1644,51 +1644,45 @@ Response
 handleScrobble(RequestContext& context)
 {
 	const std::vector<Id> ids {getMandatoryMultiParametersAs<Id>(context.parameters, "id")};
-	const std::vector<unsigned long> times {getMandatoryMultiParametersAs<unsigned long>(context.parameters, "time")};
+	const std::vector<unsigned long> times {getMultiParametersAs<unsigned long>(context.parameters, "time")};
+	const bool submission{getParameterAs<bool>(context.parameters, "submission").value_or(true)};
 
+	// only for tracks
 	if (!std::all_of(std::cbegin(ids), std::cend(ids), [](const Id& id) { return id.type == Id::Type::Track; }))
 		throw BadParameterGenericError {"id"};
 
-	if (ids.size() != times.size())
+	// playing now => no time to be provided
+	if (!submission && !times.empty())
 		throw BadParameterGenericError {"time"};
 
-	struct Scrobble
+	// playing now => only one at a time
+	if (!submission && ids.size() > 1)
+		throw BadParameterGenericError {"id"};
+
+	// if multiple submissions, must have times
+	if (ids.size() > 1 && ids.size() != times.size())
+		throw BadParameterGenericError {"time"};
+
+	if (!submission)
 	{
-		Scrobbling::Listen listen;
-		Wt::WDateTime timePoint;
-	};
-
-	std::vector<Scrobble> scrobbles;
-	scrobbles.reserve(ids.size());
-
+		Service<Scrobbling::IScrobbling>::get()->listenStarted({context.userId, ids.front().value});
+	}
+	else
 	{
-		auto transaction {context.dbSession.createSharedTransaction()};
-
-		User::pointer user {User::getById(context.dbSession, context.userId)};
-		if (!user)
-			throw RequestedDataNotFoundError {};
-
-		Scrobble scrobble;
-		scrobble.listen.userId = context.userId;
-
-		for (std::size_t i {}; i < ids.size(); ++i)
+		if (times.empty())
 		{
-			const Id id {ids[i]};
-			const unsigned long time {times[i]};
-
-			const Track::pointer track {Track::getById(context.dbSession, id.value)};
-			if (!track)
-				continue;
-
-			scrobble.listen.trackId = id.value;
-			scrobble.timePoint.setTime_t(static_cast<std::time_t>(time / 1000));
-
-			scrobbles.emplace_back(scrobble);
+			Service<Scrobbling::IScrobbling>::get()->listenFinished({context.userId, ids.front().value});
+		}
+		else
+		{
+			for (std::size_t i {}; i < ids.size(); ++i)
+			{
+				const Database::IdType trackId {ids[i].value};
+				const unsigned long time {times[i]};
+				Service<Scrobbling::IScrobbling>::get()->addListen({context.userId, trackId}, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000)));
+			}
 		}
 	}
-
-	for (const Scrobble& scrobble : scrobbles)
-		Service<Scrobbling::IScrobbling>::get()->addListen(scrobble.listen, scrobble.timePoint);
 
 	return Response::createOkResponse(context);
 }

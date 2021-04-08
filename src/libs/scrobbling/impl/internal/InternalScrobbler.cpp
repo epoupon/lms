@@ -35,15 +35,19 @@ namespace Scrobbling
 	{}
 
 	void
-	InternalScrobbler::listenStarted(const Listen& listen)
+	InternalScrobbler::listenStarted(const Listen& /*listen*/)
 	{
-		addListen(listen, Wt::WDateTime::currentDateTime());
+		// nothing to do
 	}
 
 	void
-	InternalScrobbler::listenFinished(const Listen& /*event*/, std::chrono::seconds /* duration */)
+	InternalScrobbler::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
 	{
-		// nothing to do
+		// record tracks that have been played for at least of few seconds...
+		if (duration && *duration < std::chrono::seconds {5})
+			return;
+
+		addListen(listen, Wt::WDateTime::currentDateTime());
 	}
 
 	void

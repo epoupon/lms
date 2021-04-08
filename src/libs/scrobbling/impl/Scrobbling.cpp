@@ -50,7 +50,7 @@ namespace Scrobbling
 	}
 
 	void
-	Scrobbling::listenFinished(const Listen& listen, std::chrono::seconds duration)
+	Scrobbling::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
 	{
 		if (auto scrobbler {getUserScrobbler(listen.userId)})
 			_scrobblers[*scrobbler]->listenFinished(listen, duration);

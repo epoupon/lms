@@ -214,13 +214,13 @@ namespace Scrobbling
 	}
 
 	void
-	ListenBrainzScrobbler::listenFinished(const Listen& listen, std::chrono::seconds duration)
+	ListenBrainzScrobbler::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
 	{
-		if (!canBeScrobbled(_db.getTLSSession(), listen.trackId, duration))
+		if (duration && !canBeScrobbled(_db.getTLSSession(), listen.trackId, *duration))
 			return;
 
 		Listen timedListen {listen};
-		const Wt::WDateTime now {Wt::WDateTime::currentDateTime().addSecs(-duration.count())};
+		const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
 
 		_ioService.post([=]
 		{

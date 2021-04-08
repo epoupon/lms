@@ -49,7 +49,7 @@ namespace Scrobbling
 
 			// Scrobbling
 			virtual void listenStarted(const Listen& listen) = 0;
-			virtual void listenFinished(const Listen& listen, std::chrono::seconds duration) = 0;
+			virtual void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> playedDuration = std::nullopt) = 0;
 
 			virtual void addListen(const Listen& listen, Wt::WDateTime timePoint) = 0;
 
