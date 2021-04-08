@@ -13,6 +13,7 @@ A [demo instance](http://lms.demo.poupon.io) is available. Note the administrati
 * Multi-value tags: artists, genres, composers, lyricists, moods, ...
 * Compilation support
 * [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) support to handle duplicated artist and release names
+* Scrobbling to [ListenBrainz](https://listenbrainz.org)
 * Disc subtitles support
 * ReplayGain support
 * Persistent play queue across sessions

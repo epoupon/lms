@@ -22,8 +22,10 @@
 #include <optional>
 #include <string>
 #include <set>
+#include <vector>
 
 #include <Wt/Dbo/Dbo.h>
+#include <Wt/WDateTime.h>
 
 #include "Types.hpp"
 
@@ -45,11 +47,11 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		enum class Type
 		{
 			Playlist,  // user controlled playlists
-			Internal,  // current playqueue, history
+			Internal,  // internal usage (current playqueue, history, ...)
 		};
 
 		TrackList() = default;
-		TrackList(const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user);
+		TrackList(std::string_view name, Type type, bool isPublic, Wt::Dbo::ptr<User> user);
 
 		// Stats utility
 		std::vector<Wt::Dbo::ptr<Artist>> getTopArtists(const std::set<IdType>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
@@ -57,14 +59,14 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		std::vector<Wt::Dbo::ptr<Track>> getTopTracks(const std::set<IdType>& clusterIds, std::optional<Range> range, bool& moreResults) const;
 
 		// Search utility
-		static pointer	get(Session& session, const std::string& name, Type type, Wt::Dbo::ptr<User> user);
+		static pointer	get(Session& session, std::string_view name, Type type, Wt::Dbo::ptr<User> user);
 		static pointer	getById(Session& session, IdType tracklistId);
 		static std::vector<pointer> getAll(Session& session);
 		static std::vector<pointer> getAll(Session& session, Wt::Dbo::ptr<User> user);
 		static std::vector<pointer> getAll(Session& session, Wt::Dbo::ptr<User> user, Type type);
 
 		// Create utility
-		static pointer	create(Session& session, const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user);
+		static pointer	create(Session& session, std::string_view name, Type type, bool isPublic, Wt::Dbo::ptr<User> user);
 
 		// Accessors
 		std::string	getName() const { return _name; }
@@ -82,7 +84,6 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		std::size_t getCount() const;
 		Wt::Dbo::ptr<TrackListEntry> getEntry(std::size_t pos) const;
 		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntries(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
-		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntriesReverse(std::optional<std::size_t>  offset = {}, std::optional<std::size_t> size = {}) const;
 
 		std::vector<Wt::Dbo::ptr<Artist>> getArtistsReverse(const std::set<IdType>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
 		std::vector<Wt::Dbo::ptr<Release>> getReleasesReverse(const std::set<IdType>& clusterIds, std::optional<Range> range, bool& moreResults) const;
@@ -129,26 +130,31 @@ class TrackListEntry : public Wt::Dbo::Dbo<TrackListEntry>
 		using pointer = Wt::Dbo::ptr<TrackListEntry>;
 
 		TrackListEntry() = default;
-		TrackListEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist);
+		TrackListEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist, const Wt::WDateTime& dateTime);
 
+		// find utility
 		static pointer getById(Session& session, IdType id);
 
 		// Create utility
-		static pointer create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist);
+		static pointer create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist, const Wt::WDateTime& dateTime = Wt::WDateTime::currentDateTime());
 
 		// Accessors
 		Wt::Dbo::ptr<Track>	getTrack() const { return _track; }
+		const Wt::WDateTime& getDateTime() const { return _dateTime; }
 
 		template<class Action>
 		void persist(Action& a)
 		{
-			Wt::Dbo::belongsTo(a,	_track, "track", Wt::Dbo::OnDeleteCascade);
-			Wt::Dbo::belongsTo(a,	_tracklist, "tracklist", Wt::Dbo::OnDeleteCascade);
+			Wt::Dbo::field(a,		_dateTime,	"date_time");
+
+			Wt::Dbo::belongsTo(a,	_track,		"track",		Wt::Dbo::OnDeleteCascade);
+			Wt::Dbo::belongsTo(a,	_tracklist,	"tracklist",	Wt::Dbo::OnDeleteCascade);
 		}
 
 	private:
 
-		Wt::Dbo::ptr<Track>	_track;
+		Wt::WDateTime			_dateTime;
+		Wt::Dbo::ptr<Track>		_track;
 		Wt::Dbo::ptr<TrackList>	_tracklist;
 };
 

@@ -78,8 +78,8 @@ getLastWriteTime(const std::filesystem::path& file)
 	return Wt::WDateTime::fromTime_t(sb.st_mtime);
 }
 
-void
-exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb)
+bool
+exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb, const std::filesystem::path& excludeDirFileName)
 {
 	std::error_code ec;
 	std::filesystem::directory_iterator itPath {directory, std::filesystem::directory_options::follow_directory_symlink, ec};
@@ -87,7 +87,18 @@ exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool
 	if (ec)
 	{
 		cb(ec, directory);
-		return;
+		return true; // try to continue exploring anyway
+	}
+
+	if (!excludeDirFileName.empty())
+	{
+		const std::filesystem::path excludePath {directory / excludeDirFileName};
+
+		if (std::filesystem::exists(excludePath, ec))
+		{
+			LMS_LOG(DBUPDATER, DEBUG) << "Found '" << excludePath.string() << "': skipping directory";
+			return true;
+		}
 	}
 
 	std::filesystem::directory_iterator itEnd;
@@ -108,16 +119,18 @@ exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool
 			else if (std::filesystem::is_directory(*itPath, ec))
 			{
 				if (!ec)
-					exploreFilesRecursive(*itPath, cb);
+					continueExploring = exploreFilesRecursive(*itPath, cb, excludeDirFileName);
 				else
 					continueExploring = cb(ec, *itPath);
 			}
 		}
 
 		if (!continueExploring)
-			break;
+			return false;
 
 		itPath.increment(ec);
 	}
+
+	return true;
 }
 

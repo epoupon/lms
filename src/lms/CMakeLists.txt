@@ -3,7 +3,7 @@ add_executable(lms
 	main.cpp
 	ui/Auth.cpp
 	ui/LmsApplication.cpp
-	ui/LmsApplicationGroup.cpp
+	ui/LmsApplicationManager.cpp
 	ui/LmsTheme.cpp
 	ui/MediaPlayer.cpp
 	ui/PlayQueue.cpp
@@ -19,6 +19,7 @@ add_executable(lms
 	ui/common/LoginNameValidator.cpp
 	ui/common/MandatoryValidator.cpp
 	ui/common/PasswordValidator.cpp
+	ui/common/UUIDValidator.cpp
 	ui/explore/ArtistListHelpers.cpp
 	ui/explore/ArtistView.cpp
 	ui/explore/ArtistsView.cpp
@@ -49,6 +50,7 @@ target_link_libraries(lms PRIVATE
 	lmsdatabase
 	lmsrecommendation
 	lmsscanner
+	lmsscrobbling
 	lmssubsonic
 	lmsutils
 	Wt::Wt

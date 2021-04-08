@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,12 +19,30 @@
 
 #pragma once
 
-#include <string>
+#include <mutex>
+#include <unordered_set>
+#include <unordered_map>
 
-class UUID;
+#include <Wt/WSignal.h>
 
-namespace AcousticBrainz
+#include "database/Types.hpp"
+
+namespace UserInterface
 {
-	std::string extractLowLevelFeatures(const UUID& recordingMBID);
-}
+	class LmsApplication;
+	class LmsApplicationManager
+	{
+		public:
+			Wt::Signal<LmsApplication&> applicationRegistered;
+			Wt::Signal<LmsApplication&> applicationUnregistered;
 
+		private:
+			friend class LmsApplication;
+
+			void registerApplication(LmsApplication& application);
+			void unregisterApplication(LmsApplication& application);
+
+			std::mutex _mutex;
+			std::unordered_map<Database::IdType /* user */, std::unordered_set<LmsApplication*>>  m_applications;
+	};
+} // UserInterface

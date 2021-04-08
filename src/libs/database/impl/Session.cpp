@@ -39,10 +39,11 @@
 #include "database/TrackFeatures.hpp"
 #include "database/User.hpp"
 
-namespace Database {
+namespace Database
+{
 
 	using Version = std::size_t;
-	static constexpr Version LMS_DATABASE_VERSION {29};
+	static constexpr Version LMS_DATABASE_VERSION {30};
 
 	class VersionInfo
 	{
@@ -78,7 +79,7 @@ namespace Database {
 
 	private:
 		int _version {LMS_DATABASE_VERSION};
-};
+	};
 
 void
 Session::doDatabaseMigrationIfNeeded()
@@ -315,6 +316,19 @@ CREATE TABLE "user_backup" (
 			_session.execute("DROP TABLE user");
 			_session.execute("ALTER TABLE user_backup RENAME TO user");
 		}
+		else if (version == 29)
+		{
+			_session.execute("ALTER TABLE tracklist_entry ADD date_time TEXT");
+			_session.execute("ALTER TABLE user ADD listenbrainz_token TEXT");
+			_session.execute("ALTER TABLE user ADD scrobbler INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(User::defaultScrobbler)) + ")");
+			_session.execute("ALTER TABLE track ADD recording_mbid TEXT");
+
+			_session.execute("DELETE from tracklist WHERE name = ?").bind("__played_tracks__");
+
+			// MBID changes
+			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+			ScanSettings::get(*this).modify()->incScanVersion();
+		}
 		else
 		{
 			LMS_LOG(DB, ERROR) << "Database version " << version << " cannot be handled using migration";
@@ -426,6 +440,7 @@ Session::prepareTables()
 		_session.execute("CREATE INDEX IF NOT EXISTS track_name_idx ON track(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_recording_mbid_idx ON track(recording_mbid)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_year_idx ON track(year)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_original_year_idx ON track(original_year)");

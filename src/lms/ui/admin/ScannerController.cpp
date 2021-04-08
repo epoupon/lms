@@ -95,8 +95,8 @@ class ReportResource : public Wt::WResource
 						continue;
 
 					response.out() << track->getPath().string();
-					if (auto mbid {track->getMBID()})
-						response.out() << " (MBID " << mbid->getAsString() << ")";
+					if (auto mbid {track->getTrackMBID()})
+						response.out() << " (Track MBID " << mbid->getAsString() << ")";
 
 					response.out() << " - " << duplicateReasonToWString(duplicate.reason).toUTF8() << '\n';
 				}

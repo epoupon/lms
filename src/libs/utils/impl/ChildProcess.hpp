@@ -20,9 +20,6 @@
 #pragma once
 
 #include <cstddef>
-#include <functional>
-#pragma once
-
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -56,5 +53,6 @@ class ChildProcess : public IChildProcess
 		FileDescriptor				_childStdout;
 		::pid_t						_childPID {};
 		bool						_waited {};
+		bool						_finished {};
 		std::optional<int>			_exitCode;
 };

@@ -19,13 +19,15 @@
 
 #pragma once
 
+#include <chrono>
+#include <optional>
+
 #include <Wt/WAnchor.h>
 #include <Wt/WJavaScript.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
 #include "database/Types.hpp"
-#include "database/User.hpp"
 
 namespace UserInterface {
 
@@ -101,11 +103,15 @@ class MediaPlayer : public Wt::WTemplate
 		void			setSettings(const Settings& settings);
 
 		// Signals
-		Wt::JSignal<>			playbackEnded;
 		Wt::JSignal<> 			playPrevious;
 		Wt::JSignal<> 			playNext;
 		Wt::Signal<Database::IdType>	trackLoaded;
 		Wt::Signal<>			settingsLoaded;
+
+		Wt::JSignal<Database::IdType>				scrobbleListenNow;
+		Wt::JSignal<Database::IdType, unsigned /* ms */>		scrobbleListenFinished;
+
+		Wt::JSignal<>			playbackEnded;
 
 	private:
 		std::unique_ptr<AudioFileResource>		_audioFileResource;
@@ -115,9 +121,10 @@ class MediaPlayer : public Wt::WTemplate
 		std::optional<Settings>		_settings;
 
 		Wt::JSignal<std::string> 	_settingsLoaded;
-		Wt::WText*	_title;
-		Wt::WAnchor*	_release;
-		Wt::WAnchor*	_artist;
+
+		Wt::WText*		_title {};
+		Wt::WAnchor*	_release {};
+		Wt::WAnchor*	_artist {};
 };
 
 } // namespace UserInterface

@@ -33,7 +33,9 @@
 #include "scanner/IScanner.hpp"
 #include "recommendation/IEngine.hpp"
 #include "subsonic/SubsonicResource.hpp"
+#include "scrobbling/IScrobbling.hpp"
 #include "ui/LmsApplication.hpp"
+#include "ui/LmsApplicationManager.hpp"
 #include "utils/IChildProcessManager.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Service.hpp"
@@ -124,9 +126,19 @@ static
 void
 proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
 {
+	auto postAll {[](Wt::WServer& server, std::function<void()> cb)
+	{
+		server.postAll([cb = std::move(cb)]
+		{
+			// may be nullptr, see https://redmine.webtoolkit.eu/issues/8202
+			if (LmsApp)
+				cb();
+		});
+	}};
+
 	scanner.getEvents().scanStarted.connect([&]
 	{
-		server.postAll([]
+		postAll(server, []
 		{
 			LmsApp->getScannerEvents().scanStarted.emit();
 			LmsApp->triggerUpdate();
@@ -135,7 +147,7 @@ proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
 
 	scanner.getEvents().scanComplete.connect([&] (const Scanner::ScanStats& stats)
 	{
-		server.postAll([=]
+		postAll(server, [=]
 		{
 			LmsApp->getScannerEvents().scanComplete.emit(stats);
 			LmsApp->triggerUpdate();
@@ -144,7 +156,7 @@ proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
 
 	scanner.getEvents().scanInProgress.connect([&] (const Scanner::ScanStepStats& stats)
 	{
-		server.postAll([=]
+		postAll(server, [=]
 		{
 			LmsApp->getScannerEvents().scanInProgress.emit(stats);
 			LmsApp->triggerUpdate();
@@ -153,7 +165,7 @@ proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
 
 	scanner.getEvents().scanScheduled.connect([&] (const Wt::WDateTime dateTime)
 	{
-		server.postAll([=]
+		postAll(server, [=]
 		{
 			LmsApp->getScannerEvents().scanScheduled.emit(dateTime);
 			LmsApp->triggerUpdate();
@@ -211,7 +223,7 @@ int main(int argc, char* argv[])
 			session.optimize();
 		}
 
-		UserInterface::LmsApplicationGroupContainer appGroups;
+		UserInterface::LmsApplicationManager appManager;
 
 		// Service initialization order is important (reverse-order for deinit)
 		Service<IChildProcessManager> childProcessManagerService {createChildProcessManager()};
@@ -248,6 +260,8 @@ int main(int argc, char* argv[])
 			coverArtService->flushCache();
 		});
 
+		Service<Scrobbling::IScrobbling> scrobblingService {Scrobbling::createScrobbling(database)};
+
 		API::Subsonic::SubsonicResource subsonicResource {database};
 
 		// bind API resources
@@ -258,7 +272,7 @@ int main(int argc, char* argv[])
 		server.addEntryPoint(Wt::EntryPointType::Application,
 			[&](const Wt::WEnvironment &env)
 			{
-				return UserInterface::LmsApplication::create(env, database, appGroups);
+				return UserInterface::LmsApplication::create(env, database, appManager);
 			});
 
 		proxyScannerEventsToApplication(*scannerService, server);

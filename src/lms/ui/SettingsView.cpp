@@ -31,6 +31,7 @@
 
 #include "common/PasswordValidator.hpp"
 #include "common/MandatoryValidator.hpp"
+#include "common/UUIDValidator.hpp"
 #include "common/ValueStringModel.hpp"
 
 #include "auth/IPasswordService.hpp"
@@ -62,12 +63,15 @@ class SettingsModel : public Wt::WFormModel
 		static inline const Field SubsonicTranscodeEnableField {"subsonic-transcode-enable"};
 		static inline const Field SubsonicTranscodeFormatField {"subsonic-transcode-format"};
 		static inline const Field SubsonicTranscodeBitrateField {"subsonic-transcode-bitrate"};
+		static inline const Field ScrobblerField {"scrobbler"};
+		static inline const Field ListenBrainzTokenField {"listenbrainz-token"};
 		static inline const Field PasswordOldField {"password-old"};
 		static inline const Field PasswordField {"password"};
 		static inline const Field PasswordConfirmField {"password-confirm"};
 
 		using TranscodeModeModel = ValueStringModel<MediaPlayer::Settings::Transcode::Mode>;
 		using ReplayGainModeModel = ValueStringModel<MediaPlayer::Settings::ReplayGain::Mode>;
+		using ScrobblerModel = ValueStringModel<Scrobbler>;
 
 		SettingsModel(::Auth::IPasswordService* authPasswordService, bool withOldPassword)
 			: _authPasswordService {authPasswordService}
@@ -85,6 +89,9 @@ class SettingsModel : public Wt::WFormModel
 			addField(SubsonicTranscodeEnableField);
 			addField(SubsonicTranscodeBitrateField);
 			addField(SubsonicTranscodeFormatField);
+			addField(ScrobblerField);
+			addField(ListenBrainzTokenField);
+			setValidator(ListenBrainzTokenField, createUUIDValidator());
 
 			if (_authPasswordService)
 			{
@@ -103,7 +110,6 @@ class SettingsModel : public Wt::WFormModel
 			setValidator(TranscodeBitrateField, createMandatoryValidator());
 			setValidator(TranscodeFormatField, createMandatoryValidator());
 			setValidator(ReplayGainModeField, createMandatoryValidator());
-
 			auto createPreAmpValidator = []
 			{
 				auto preampGainValidator {std::make_unique<Wt::WDoubleValidator>()};
@@ -119,11 +125,12 @@ class SettingsModel : public Wt::WFormModel
 			loadData();
 		}
 
-		std::shared_ptr<TranscodeModeModel> getTranscodeModeModel() { return _transcodeModeModel; }
-		std::shared_ptr<Wt::WAbstractItemModel> getTranscodeBitrateModel() { return _transcodeBitrateModel; }
-		std::shared_ptr<Wt::WAbstractItemModel> getTranscodeFormatModel() { return _transcodeFormatModel; }
-		std::shared_ptr<ReplayGainModeModel> getReplayGainModeModel() { return _replayGainModeModel; }
-		std::shared_ptr<Wt::WAbstractItemModel> getSubsonicArtistListModeModel() { return _subsonicArtistListModeModel; }
+		std::shared_ptr<TranscodeModeModel>		getTranscodeModeModel() { return _transcodeModeModel; }
+		std::shared_ptr<Wt::WAbstractItemModel>	getTranscodeBitrateModel() { return _transcodeBitrateModel; }
+		std::shared_ptr<Wt::WAbstractItemModel>	getTranscodeFormatModel() { return _transcodeFormatModel; }
+		std::shared_ptr<ReplayGainModeModel>	getReplayGainModeModel() { return _replayGainModeModel; }
+		std::shared_ptr<Wt::WAbstractItemModel>	getSubsonicArtistListModeModel() { return _subsonicArtistListModeModel; }
+		std::shared_ptr<ScrobblerModel>			getScrobblerModel() { return _scrobblerModel; }
 
 		void saveData()
 		{
@@ -174,11 +181,19 @@ class SettingsModel : public Wt::WFormModel
 				auto subsonicTranscodeFormatRow {_transcodeFormatModel->getRowFromString(valueText(SubsonicTranscodeFormatField))};
 				if (subsonicTranscodeFormatRow)
 					user.modify()->setSubsonicTranscodeFormat(_transcodeFormatModel->getValue(*subsonicTranscodeFormatRow));
+
+				auto subsonicArtistListModeRow {_subsonicArtistListModeModel->getRowFromString(valueText(SubsonicArtistListModeField))};
+				if (subsonicArtistListModeRow)
+					user.modify()->setSubsonicArtistListMode(_subsonicArtistListModeModel->getValue(*subsonicArtistListModeRow));
+
 			}
 
-			auto subsonicArtistListModeRow {_subsonicArtistListModeModel->getRowFromString(valueText(SubsonicArtistListModeField))};
-			if (subsonicArtistListModeRow)
-				user.modify()->setSubsonicArtistListMode(_subsonicArtistListModeModel->getValue(*subsonicArtistListModeRow));
+			{
+				if (auto scrobblerRow {_scrobblerModel->getRowFromString(valueText(ScrobblerField))})
+					user.modify()->setScrobbler(_scrobblerModel->getValue(*scrobblerRow));
+
+				user.modify()->setListenBrainzToken(UUID::fromString(Wt::asString(value(ListenBrainzTokenField)).toUTF8()));
+			}
 
 			if (_authPasswordService && !valueText(PasswordField).empty())
 			{
@@ -210,6 +225,12 @@ class SettingsModel : public Wt::WFormModel
 				if (transcodeBitrateRow)
 					setValue(TranscodeBitrateField, _transcodeBitrateModel->getString(*transcodeBitrateRow));
 
+				{
+					const bool usesTranscode {settings.transcode.mode != MediaPlayer::Settings::Transcode::Mode::Never};
+					setReadOnly(SettingsModel::TranscodeFormatField, !usesTranscode);
+					setReadOnly(SettingsModel::TranscodeBitrateField, !usesTranscode);
+				}
+
 				auto replayGainModeRow {_replayGainModeModel->getRowFromValue(settings.replayGain.mode)};
 				if (replayGainModeRow)
 					setValue(ReplayGainModeField, _replayGainModeModel->getString(*replayGainModeRow));
@@ -219,27 +240,45 @@ class SettingsModel : public Wt::WFormModel
 			}
 
 			setValue(SubsonicTranscodeEnableField, LmsApp->getUser()->getSubsonicTranscodeEnable());
-			if (!LmsApp->getUser()->getSubsonicTranscodeEnable())
 			{
-				setReadOnly(SubsonicTranscodeFormatField, true);
-				setReadOnly(SubsonicTranscodeBitrateField, true);
+				const bool usesTranscode {LmsApp->getUser()->getSubsonicTranscodeEnable()};
+				setReadOnly(SubsonicTranscodeFormatField, !usesTranscode);
+				setReadOnly(SubsonicTranscodeBitrateField, !usesTranscode);
 			}
 
-			auto subsonicTranscodeBitrateRow {_transcodeBitrateModel->getRowFromValue(user->getSubsonicTranscodeBitrate())};
-			if (subsonicTranscodeBitrateRow)
-				setValue(SubsonicTranscodeBitrateField, _transcodeBitrateModel->getString(*subsonicTranscodeBitrateRow));
+			{
+				auto subsonicTranscodeBitrateRow {_transcodeBitrateModel->getRowFromValue(user->getSubsonicTranscodeBitrate())};
+				if (subsonicTranscodeBitrateRow)
+					setValue(SubsonicTranscodeBitrateField, _transcodeBitrateModel->getString(*subsonicTranscodeBitrateRow));
 
-			auto subsonicTranscodeFormatRow {_transcodeFormatModel->getRowFromValue(user->getSubsonicTranscodeFormat())};
-			if (subsonicTranscodeFormatRow)
-				setValue(SubsonicTranscodeFormatField, _transcodeFormatModel->getString(*subsonicTranscodeFormatRow));
+				auto subsonicTranscodeFormatRow {_transcodeFormatModel->getRowFromValue(user->getSubsonicTranscodeFormat())};
+				if (subsonicTranscodeFormatRow)
+					setValue(SubsonicTranscodeFormatField, _transcodeFormatModel->getString(*subsonicTranscodeFormatRow));
 
-			auto subsonicArtistListModeRow {_subsonicArtistListModeModel->getRowFromValue(user->getSubsonicArtistListMode())};
-			if (subsonicArtistListModeRow)
-				setValue(SubsonicArtistListModeField, _subsonicArtistListModeModel->getString(*subsonicArtistListModeRow));
+				auto subsonicArtistListModeRow {_subsonicArtistListModeModel->getRowFromValue(user->getSubsonicArtistListMode())};
+				if (subsonicArtistListModeRow)
+					setValue(SubsonicArtistListModeField, _subsonicArtistListModeModel->getString(*subsonicArtistListModeRow));
+			}
+
+			{
+				if (auto scrobblerRow {_scrobblerModel->getRowFromValue(user->getScrobbler())})
+					setValue(ScrobblerField, _scrobblerModel->getString(*scrobblerRow));
+
+				if (auto listenBrainzToken {user->getListenBrainzToken()})
+				{
+					LMS_LOG(UI, DEBUG) << "Read listenBrainzToken! value = " << listenBrainzToken->getAsString();
+					setValue(ListenBrainzTokenField, Wt::WString::fromUTF8( std::string {listenBrainzToken->getAsString()}));
+				}
+
+				{
+					const bool usesListenBrainz {user->getScrobbler() == Scrobbler::ListenBrainz};
+					setReadOnly(SettingsModel::ListenBrainzTokenField, !usesListenBrainz);
+					validator(SettingsModel::ListenBrainzTokenField)->setMandatory(usesListenBrainz);
+				}
+			}
 		}
 
 	private:
-
 		bool validateField(Field field)
 		{
 			Wt::WString error;
@@ -280,7 +319,6 @@ class SettingsModel : public Wt::WFormModel
 
 		void initializeModels()
 		{
-
 			_transcodeModeModel = std::make_shared<TranscodeModeModel>();
 			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.always"), MediaPlayer::Settings::Transcode::Mode::Always);
 			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.never"), MediaPlayer::Settings::Transcode::Mode::Never);
@@ -309,16 +347,21 @@ class SettingsModel : public Wt::WFormModel
 			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.all-artists"), User::SubsonicArtistListMode::AllArtists);
 			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.release-artists"), User::SubsonicArtistListMode::ReleaseArtists);
 			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.track-artists"), User::SubsonicArtistListMode::TrackArtists);
+
+			_scrobblerModel = std::make_shared<ValueStringModel<Scrobbler>>();
+			_scrobblerModel->add(Wt::WString::tr("Lms.Settings.scrobbling.scrobbler.internal"), Scrobbler::Internal);
+			_scrobblerModel->add(Wt::WString::tr("Lms.Settings.scrobbling.scrobbler.listenbrainz"), Scrobbler::ListenBrainz);
 		}
 
 		::Auth::IPasswordService* _authPasswordService {};
 		bool _withOldPassword {};
 
-		std::shared_ptr<TranscodeModeModel>				_transcodeModeModel;
+		std::shared_ptr<TranscodeModeModel>					_transcodeModeModel;
 		std::shared_ptr<ValueStringModel<Bitrate>>			_transcodeBitrateModel;
-		std::shared_ptr<ValueStringModel<AudioFormat>>			_transcodeFormatModel;
+		std::shared_ptr<ValueStringModel<AudioFormat>>		_transcodeFormatModel;
 		std::shared_ptr<ReplayGainModeModel>				_replayGainModeModel;
 		std::shared_ptr<ValueStringModel<User::SubsonicArtistListMode>> _subsonicArtistListModeModel;
+		std::shared_ptr<ScrobblerModel> 					_scrobblerModel;
 };
 
 SettingsView::SettingsView()
@@ -416,11 +459,6 @@ SettingsView::refreshView()
 			t->updateModel(model.get());
 			t->updateView(model.get());
 		});
-		if (LmsApp->getMediaPlayer().getSettings()->transcode.mode == MediaPlayer::Settings::Transcode::Mode::Never)
-		{
-			model->setReadOnly(SettingsModel::TranscodeFormatField, true);
-			model->setReadOnly(SettingsModel::TranscodeBitrateField, true);
-		}
 
 		// Replay gain mode
 		auto replayGainMode {std::make_unique<Wt::WComboBox>()};
@@ -473,15 +511,34 @@ SettingsView::refreshView()
 		t->setFormWidget(SettingsModel::SubsonicTranscodeBitrateField, std::move(transcodeBitrate));
 
 		// Artist list mode
-		auto artistListMode = std::make_unique<Wt::WComboBox>();
+		auto artistListMode {std::make_unique<Wt::WComboBox>()};
 		artistListMode->setModel(model->getSubsonicArtistListModeModel());
 		t->setFormWidget(SettingsModel::SubsonicArtistListModeField, std::move(artistListMode));
 
-		transcodeRaw->changed().connect([=]()
+		transcodeRaw->changed().connect([=]
 		{
 			const bool enable {transcodeRaw->checkState() == Wt::CheckState::Checked};
 			model->setReadOnly(SettingsModel::SubsonicTranscodeFormatField, !enable);
 			model->setReadOnly(SettingsModel::SubsonicTranscodeBitrateField, !enable);
+			t->updateModel(model.get());
+			t->updateView(model.get());
+		});
+	}
+
+	// Scrobbling
+	{
+		auto scrobbler {std::make_unique<Wt::WComboBox>()};
+		scrobbler->setModel(model->getScrobblerModel());
+		auto* scrobblerRaw {scrobbler.get()};
+		t->setFormWidget(SettingsModel::ScrobblerField, std::move(scrobbler));
+
+		auto listenbrainzToken {std::make_unique<Wt::WLineEdit>()};
+		t->setFormWidget(SettingsModel::ListenBrainzTokenField, std::move(listenbrainzToken));
+		scrobblerRaw->activated().connect([=](int row)
+		{
+			const bool enable {model->getScrobblerModel()->getValue(row) == Scrobbler::ListenBrainz};
+			model->setReadOnly(SettingsModel::ListenBrainzTokenField, !enable);
+			model->validator(SettingsModel::ListenBrainzTokenField)->setMandatory(enable);
 			t->updateModel(model.get());
 			t->updateView(model.get());
 		});

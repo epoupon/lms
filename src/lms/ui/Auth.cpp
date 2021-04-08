@@ -21,6 +21,7 @@
 
 #include <iomanip>
 
+#include <Wt/WEnvironment.h>
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WCheckBox.h>

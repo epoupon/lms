@@ -42,6 +42,7 @@
 <message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Collection de musiques</message>
 <message id="Lms.Admin.Database.never">Jamais</message>
 <message id="Lms.Admin.Database.path">Dossier racine des fichiers de musique</message>
+<message id="Lms.Admin.Database.path-help">Les dossiers contenant un fichier <code>.lmsignore</code> sont ignorés</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">Moteur de recommandation</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.clusters">Basé sur les tags</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.features">Basé sur l'analyse audio</message>
@@ -193,6 +194,11 @@
 <message id="Lms.Settings.replaygain-mode.release">Album</message>
 <message id="Lms.Settings.replaygain-preamp">Pre-amplification ReplayGain</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">Pre-amplification ReplayGain (si pas d'info)</message>
+<message id="Lms.Settings.scrobbling">Scrobbling</message>
+<message id="Lms.Settings.scrobbling.scrobbler">Scrobbler</message>
+<message id="Lms.Settings.scrobbling.scrobbler.internal">Interne</message>
+<message id="Lms.Settings.scrobbling.scrobbler.listenbrainz">ListenBrainz</message>
+<message id="Lms.Settings.scrobbling.listenbrainz-token">Jeton ListenBrainz</message>
 <message id="Lms.Settings.subsonic-artist-list-mode">Mode de listage des artistes</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">Tous les artistes</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Tous les artistes d'album</message>

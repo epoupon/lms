@@ -68,7 +68,6 @@ AuthToken::getByValue(Session& session, const std::string& value)
 		.where("value = ?").bind(value);
 }
 
-static const std::string playedListName {"__played_tracks__"};
 static const std::string queuedListName {"__queued_tracks__"};
 
 User::User(std::string_view loginName)
@@ -109,7 +108,6 @@ User::create(Session& session, std::string_view loginName)
 
 	User::pointer user {session.getDboSession().add(std::make_unique<User>(loginName))};
 
-	TrackList::create(session, playedListName, TrackList::Type::Internal, false, user);
 	TrackList::create(session, queuedListName, TrackList::Type::Internal, false, user);
 
 	session.getDboSession().flush();
@@ -141,15 +139,6 @@ void
 User::clearAuthTokens()
 {
 	_authTokens.clear();
-}
-
-Wt::Dbo::ptr<TrackList>
-User::getPlayedTrackList(Session& session) const
-{
-	assert(self());
-	session.checkSharedLocked();
-
-	return TrackList::get(session, playedListName, TrackList::Type::Internal, self());
 }
 
 Wt::Dbo::ptr<TrackList>

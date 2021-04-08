@@ -26,6 +26,7 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
+#include "utils/UUID.hpp"
 #include "Types.hpp"
 
 namespace Database {
@@ -36,19 +37,6 @@ class Release;
 class Session;
 class TrackList;
 class Track;
-
-// User selectable audio file formats
-// Do not change values
-enum class AudioFormat
-{
-	MP3		= 1,
-	OGG_OPUS	= 2,
-	OGG_VORBIS	= 3,
-	WEBM_VORBIS	= 4,
-	MATROSKA_OPUS	= 5,
-};
-
-using Bitrate = std::size_t;
 
 class User;
 class AuthToken
@@ -139,6 +127,7 @@ class User : public Wt::Dbo::Dbo<User>
 		static inline const Bitrate		defaultSubsonicTranscodeBitrate {128000};
 		static inline const UITheme		defaultUITheme {UITheme::Dark};
 		static inline const SubsonicArtistListMode defaultSubsonicArtistListMode {SubsonicArtistListMode::AllArtists};
+		static inline const Scrobbler	defaultScrobbler {Scrobbler::Internal};
 
 
 		User() = default;
@@ -172,6 +161,8 @@ class User : public Wt::Dbo::Dbo<User>
 		void setUITheme(UITheme uiTheme)			{ _uiTheme = uiTheme; }
 		void clearAuthTokens();
 		void setSubsonicArtistListMode(SubsonicArtistListMode mode)	{ _subsonicArtistListMode = mode; }
+		void setScrobbler(Scrobbler scrobbler)	{ _scrobbler = scrobbler; }
+		void setListenBrainzToken(const std::optional<UUID>& MBID)	{ _listenbrainzToken = MBID ? MBID->getAsString() : ""; }
 
 		// read
 		bool			isAdmin() const { return _type == Type::ADMIN; }
@@ -184,8 +175,9 @@ class User : public Wt::Dbo::Dbo<User>
 		bool			isRadioSet() const { return _radio; }
 		UITheme			getUITheme() const { return _uiTheme; }
 		SubsonicArtistListMode	getSubsonicArtistListMode() const { return _subsonicArtistListMode; }
+		Scrobbler				getScrobbler() const { return _scrobbler; }
+		std::optional<UUID>		getListenBrainzToken() const	{ return UUID::fromString(_listenbrainzToken); }
 
-		Wt::Dbo::ptr<TrackList>	getPlayedTrackList(Session& session) const;
 		Wt::Dbo::ptr<TrackList>	getQueuedTrackList(Session& session) const;
 
 		void			starArtist(Wt::Dbo::ptr<Artist> artist);
@@ -214,10 +206,14 @@ class User : public Wt::Dbo::Dbo<User>
 			Wt::Dbo::field(a, _subsonicTranscodeBitrate, "subsonic_transcode_bitrate");
 			Wt::Dbo::field(a, _subsonicArtistListMode, "subsonic_artist_list_mode");
 			Wt::Dbo::field(a, _uiTheme, "ui_theme");
-			// User's dynamic data
+			Wt::Dbo::field(a, _scrobbler, "scrobbler");
+			Wt::Dbo::field(a, _listenbrainzToken, "listenbrainz_token");
+
+			// UI settings
 			Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
 			Wt::Dbo::field(a, _repeatAll, "repeat_all");
 			Wt::Dbo::field(a, _radio, "radio");
+
 			Wt::Dbo::hasMany(a, _tracklists, Wt::Dbo::ManyToOne, "user");
 			Wt::Dbo::hasMany(a, _starredArtists, Wt::Dbo::ManyToMany, "user_artist_starred", "", Wt::Dbo::OnDeleteCascade);
 			Wt::Dbo::hasMany(a, _starredReleases, Wt::Dbo::ManyToMany, "user_release_starred", "", Wt::Dbo::OnDeleteCascade);
@@ -232,6 +228,8 @@ class User : public Wt::Dbo::Dbo<User>
 		std::string	_passwordHash;
 		Wt::WDateTime	_lastLogin;
 		UITheme		_uiTheme {defaultUITheme};
+		Scrobbler	_scrobbler {defaultScrobbler};
+		std::string	_listenbrainzToken; // Musicbrainz Identifier
 
 		// Admin defined settings
 		Type		_type {Type::REGULAR};

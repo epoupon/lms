@@ -229,13 +229,13 @@ Track::getLastWritten(Session& session, std::optional<Wt::WDateTime> after, cons
 }
 
 std::vector<Track::pointer>
-Track::getAllWithMBIDAndMissingFeatures(Session& session)
+Track::getAllWithRecordingMBIDAndMissingFeatures(Session& session)
 {
 	session.checkSharedLocked();
 
 	Wt::Dbo::collection<pointer> res = session.getDboSession().query<pointer>
 		("SELECT t FROM track t")
-		.where("LENGTH(t.mbid) > 0")
+		.where("LENGTH(t.recording_mbid) > 0")
 		.where("NOT EXISTS (SELECT * FROM track_features t_f WHERE t_f.track_id = t.id)");
 	return std::vector<pointer>(res.begin(), res.end());
 }

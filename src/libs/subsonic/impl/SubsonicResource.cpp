@@ -38,6 +38,7 @@
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 #include "recommendation/IEngine.hpp"
+#include "scrobbling/IScrobbling.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Service.hpp"
@@ -815,7 +816,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	else if (type == "frequent")
 	{
 		bool moreResults {};
-		releases = user->getPlayedTrackList(context.dbSession)->getTopReleases({}, range, moreResults);
+		releases = Service<Scrobbling::IScrobbling>::get()->getTopReleases(context.dbSession, user, {}, range, moreResults);
 	}
 	else if (type == "newest")
 	{
@@ -830,7 +831,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	else if (type == "recent")
 	{
 		bool moreResults {};
-		releases = user->getPlayedTrackList(context.dbSession)->getReleasesReverse({}, range, moreResults);
+		releases = Service<Scrobbling::IScrobbling>::get()->getRecentReleases(context.dbSession, user, {}, range, moreResults);
 	}
 	else if (type == "starred")
 	{
@@ -1643,24 +1644,44 @@ Response
 handleScrobble(RequestContext& context)
 {
 	const std::vector<Id> ids {getMandatoryMultiParametersAs<Id>(context.parameters, "id")};
-	// TODO handle time in some way (need underlying refacto)
+	const std::vector<unsigned long> times {getMultiParametersAs<unsigned long>(context.parameters, "time")};
+	const bool submission{getParameterAs<bool>(context.parameters, "submission").value_or(true)};
 
+	// only for tracks
 	if (!std::all_of(std::cbegin(ids), std::cend(ids), [](const Id& id) { return id.type == Id::Type::Track; }))
 		throw BadParameterGenericError {"id"};
 
-	auto transaction {context.dbSession.createUniqueTransaction()};
+	// playing now => no time to be provided
+	if (!submission && !times.empty())
+		throw BadParameterGenericError {"time"};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
-	if (!user)
-		throw RequestedDataNotFoundError {};
+	// playing now => only one at a time
+	if (!submission && ids.size() > 1)
+		throw BadParameterGenericError {"id"};
 
-	for (Id id : ids)
+	// if multiple submissions, must have times
+	if (ids.size() > 1 && ids.size() != times.size())
+		throw BadParameterGenericError {"time"};
+
+	if (!submission)
 	{
-		Track::pointer track {Track::getById(context.dbSession, id.value)};
-		if (!track)
-			continue;
-
-		TrackListEntry::create(context.dbSession, track, user->getPlayedTrackList(context.dbSession));
+		Service<Scrobbling::IScrobbling>::get()->listenStarted({context.userId, ids.front().value});
+	}
+	else
+	{
+		if (times.empty())
+		{
+			Service<Scrobbling::IScrobbling>::get()->listenFinished({context.userId, ids.front().value});
+		}
+		else
+		{
+			for (std::size_t i {}; i < ids.size(); ++i)
+			{
+				const Database::IdType trackId {ids[i].value};
+				const unsigned long time {times[i]};
+				Service<Scrobbling::IScrobbling>::get()->addListen({context.userId, trackId}, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000)));
+			}
+		}
 	}
 
 	return Response::createOkResponse(context);

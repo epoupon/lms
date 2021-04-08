@@ -37,6 +37,7 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
+#include "scrobbling/IScrobbling.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -53,6 +54,7 @@
 #include "resource/CoverResource.hpp"
 #include "Auth.hpp"
 #include "LmsApplicationException.hpp"
+#include "LmsApplicationManager.hpp"
 #include "LmsTheme.hpp"
 #include "MediaPlayer.hpp"
 #include "PlayQueue.hpp"
@@ -63,7 +65,7 @@ namespace UserInterface {
 static constexpr const char* defaultPath {"/releases"};
 
 std::unique_ptr<Wt::WApplication>
-LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationGroupContainer& appGroups)
+LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationManager& appManager)
 {
 	if (auto *authEnvService {Service<::Auth::IEnvService>::get()})
 	{
@@ -75,10 +77,10 @@ LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplica
 			return std::make_unique<Wt::WApplication>(env);
 		}
 
-		return std::make_unique<LmsApplication>(env, db, appGroups, checkResult.userId);
+		return std::make_unique<LmsApplication>(env, db, appManager, checkResult.userId);
 	}
 
-	return std::make_unique<LmsApplication>(env, db, appGroups);
+	return std::make_unique<LmsApplication>(env, db, appManager);
 }
 
 LmsApplication*
@@ -100,6 +102,12 @@ LmsApplication::getUser()
 		return {};
 
 	return Database::User::getById(getDbSession(), _authenticatedUser->userId);
+}
+
+Database::IdType
+LmsApplication::getUserId()
+{
+	return _authenticatedUser->userId;
 }
 
 bool
@@ -134,11 +142,11 @@ LmsApplication::getUserLoginName()
 
 LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 		Database::Db& db,
-		LmsApplicationGroupContainer& appGroups,
+		LmsApplicationManager& appManager,
 		std::optional<Database::IdType> userId)
 : Wt::WApplication {env}
 ,  _db {db}
-,  _appGroups {appGroups}
+,  _appManager {appManager}
 , _authenticatedUser {userId ? std::make_optional<UserAuthInfo>(UserAuthInfo {*userId, false}) : std::nullopt}
 {
 	try
@@ -261,16 +269,7 @@ void
 LmsApplication::finalize()
 {
 	if (_authenticatedUser)
-	{
-		LmsApplicationInfo info = LmsApplicationInfo::fromEnvironment(environment());
-
-		getApplicationGroup().postOthers([info]
-		{
-			LmsApp->getEvents().appClosed(info);
-		});
-
-		getApplicationGroup().leave();
-	}
+		_appManager.unregisterApplication(*this);
 
 	preQuit().emit();
 }
@@ -427,12 +426,6 @@ handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 	wApp->setInternalPath(defaultPath, true);
 }
 
-LmsApplicationGroup&
-LmsApplication::getApplicationGroup()
-{
-	return _appGroups.get(_authenticatedUser->userId);
-}
-
 void
 LmsApplication::logoutUser()
 {
@@ -451,14 +444,19 @@ LmsApplication::onUserLoggedIn()
 	setTheme();
 	root()->clear();
 
-	const LmsApplicationInfo info {LmsApplicationInfo::fromEnvironment(environment())};
-
 	LMS_LOG(UI, INFO) << "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent();
-	getApplicationGroup().join(info);
 
-	getApplicationGroup().postOthers([info]
+	_appManager.registerApplication(*this);
+	_appManager.applicationRegistered.connect(this, [this] (LmsApplication& otherApplication)
 	{
-		LmsApp->getEvents().appOpen(info);
+		// Only one active session by user
+		if (otherApplication.getUserId() == getUserId())
+		{
+			if (!LmsApp->isUserDemo())
+			{
+				quit(Wt::WString::tr("Lms.quit-other-session"));
+			}
+		}
 	});
 
 	createHome();
@@ -547,6 +545,21 @@ LmsApplication::createHome()
 	{
 		_playQueue->playPrevious();
 	});
+
+	_mediaPlayer->scrobbleListenNow.connect([this](Database::IdType trackId)
+	{
+		LMS_LOG(UI, DEBUG) << "Received ScrobbleListenNow from player for trackId = " << trackId;
+		const Scrobbling::Listen listen {getUserId(), trackId};
+		Service<Scrobbling::IScrobbling>::get()->listenStarted(listen);
+	});
+	_mediaPlayer->scrobbleListenFinished.connect([this](Database::IdType trackId, unsigned durationMs)
+	{
+		LMS_LOG(UI, DEBUG) << "Received ScrobbleListenFinished from player for trackId = " << trackId << ", duration = " << (durationMs / 1000) << "s";
+		const std::chrono::milliseconds duration {durationMs};
+		const Scrobbling::Listen listen {getUserId(), trackId};
+		Service<Scrobbling::IScrobbling>::get()->listenFinished(listen, std::chrono::duration_cast<std::chrono::seconds>(duration));
+	});
+
 	_mediaPlayer->playbackEnded.connect([this]
 	{
 		_playQueue->playNext();
@@ -575,16 +588,6 @@ LmsApplication::createHome()
 				.arg(static_cast<unsigned>(stats.errors.size())));
 		});
 	}
-
-	// Events from Application group
-	_events.appOpen.connect([=]
-	{
-		// Only one active session by user
-		if (!LmsApp->isUserDemo())
-		{
-			quit(Wt::WString::tr("Lms.quit-other-session"));
-		}
-	});
 
 	internalPathChanged().connect([=]
 	{

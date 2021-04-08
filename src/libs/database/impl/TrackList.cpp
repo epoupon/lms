@@ -29,10 +29,11 @@
 #include "database/User.hpp"
 #include "database/Track.hpp"
 #include "SqlQuery.hpp"
+#include "StringViewTraits.hpp"
 
 namespace Database {
 
-TrackList::TrackList(const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user)
+TrackList::TrackList(std::string_view name, Type type, bool isPublic, Wt::Dbo::ptr<User> user)
 : _name {name},
  _type {type},
  _isPublic {isPublic},
@@ -42,7 +43,7 @@ TrackList::TrackList(const std::string& name, Type type, bool isPublic, Wt::Dbo:
 }
 
 TrackList::pointer
-TrackList::create(Session& session, const std::string& name, Type type, bool isPublic, Wt::Dbo::ptr<User> user)
+TrackList::create(Session& session, std::string_view name, Type type, bool isPublic, Wt::Dbo::ptr<User> user)
 {
 	session.checkUniqueLocked();
 	assert(user);
@@ -54,7 +55,7 @@ TrackList::create(Session& session, const std::string& name, Type type, bool isP
 }
 
 TrackList::pointer
-TrackList::get(Session& session, const std::string& name, Type type, Wt::Dbo::ptr<User> user)
+TrackList::get(Session& session, std::string_view name, Type type, Wt::Dbo::ptr<User> user)
 {
 	session.checkSharedLocked();
 	assert(user);
@@ -141,22 +142,6 @@ TrackList::getEntries(std::optional<std::size_t> offset, std::optional<std::size
 		session()->find<TrackListEntry>()
 		.where("tracklist_id = ?").bind(self().id())
 		.orderBy("id")
-		.limit(size ? static_cast<int>(*size) : -1)
-		.offset(offset ? static_cast<int>(*offset) : -1);
-
-	return std::vector<Wt::Dbo::ptr<TrackListEntry>>(entries.begin(), entries.end());
-}
-
-std::vector<Wt::Dbo::ptr<TrackListEntry>>
-TrackList::getEntriesReverse(std::optional<std::size_t> offset, std::optional<std::size_t> size) const
-{
-	assert(session());
-	assert(IdIsValid(self()->id()));
-
-	Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> entries =
-		session()->find<TrackListEntry>()
-		.where("tracklist_id = ?").bind(self().id())
-		.orderBy("id DESC")
 		.limit(size ? static_cast<int>(*size) : -1)
 		.offset(offset ? static_cast<int>(*offset) : -1);
 
@@ -275,8 +260,9 @@ TrackList::getArtistsReverse(const std::set<IdType>& clusterIds, std::optional<T
 	assert(session());
 	assert(IdIsValid(self()->id()));
 
-	Wt::Dbo::collection<Artist::pointer> collection = createArtistsQuery(*session(), "SELECT DISTINCT a from artist a", self()->id(), clusterIds, linkType)
-		.orderBy("p_e.id DESC")
+	Wt::Dbo::collection<Artist::pointer> collection = createArtistsQuery(*session(), "SELECT a from artist a", self()->id(), clusterIds, linkType)
+		.groupBy("a.id").having("p_e.date_time = MAX(p_e.date_time)")
+		.orderBy("p_e.date_time DESC")
 		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
 		.offset(range ? static_cast<int>(range->offset) : -1);
 
@@ -298,8 +284,9 @@ TrackList::getReleasesReverse(const std::set<IdType>& clusterIds, std::optional<
 	assert(session());
 	assert(IdIsValid(self()->id()));
 
-	Wt::Dbo::collection<Release::pointer> collection = createReleasesQuery(*session(), "SELECT DISTINCT r from release r", self()->id(), clusterIds)
-		.orderBy("p_e.id DESC")
+	Wt::Dbo::collection<Release::pointer> collection = createReleasesQuery(*session(), "SELECT r from release r", self()->id(), clusterIds)
+		.groupBy("r.id").having("p_e.date_time = MAX(p_e.date_time)")
+		.orderBy("p_e.date_time DESC")
 		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
 		.offset(range ? static_cast<int>(range->offset) : -1);
 
@@ -322,8 +309,8 @@ TrackList::getTracksReverse(const std::set<IdType>& clusterIds, std::optional<Ra
 	assert(IdIsValid(self()->id()));
 
 	Wt::Dbo::collection<Track::pointer> collection = createTracksQuery(*session(), self()->id(), clusterIds)
-		.orderBy("p_e.id DESC")
-		.groupBy("t.id")
+		.groupBy("t.id").having("p_e.date_time = MAX(p_e.date_time)")
+		.orderBy("p_e.date_time DESC")
 		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
 		.offset(range ? static_cast<int>(range->offset) : -1);
 
@@ -498,21 +485,22 @@ TrackList::getTopTracks(const std::set<IdType>& clusterIds, std::optional<Range>
 	return res;
 }
 
-TrackListEntry::TrackListEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist)
-: _track(track),
- _tracklist(tracklist)
+TrackListEntry::TrackListEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist, const Wt::WDateTime& dateTime)
+: _dateTime {Wt::WDateTime::fromTime_t(dateTime.toTime_t())} // force second resolution
+, _track {track}
+, _tracklist {tracklist}
 {
-
+	assert(_dateTime.isValid());
 }
 
 TrackListEntry::pointer
-TrackListEntry::create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist)
+TrackListEntry::create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist, const Wt::WDateTime& dateTime)
 {
 	session.checkUniqueLocked();
 	assert(track);
 	assert(tracklist);
 
-	auto res = session.getDboSession().add( std::make_unique<TrackListEntry>( track, tracklist) );
+	auto res = session.getDboSession().add(std::make_unique<TrackListEntry>( track, tracklist, dateTime));
 	session.getDboSession().flush();
 
 	return res;
