@@ -11,14 +11,14 @@ A [demo instance](http://lms.demo.poupon.io) is available. Note the administrati
 * Recommendation engine
 * Audio transcode for maximum interoperability and low bandwith requirements
 * Multi-value tags: artists, genres, composers, lyricists, moods, ...
-* Compilation support
 * [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) support to handle duplicated artist and release names
 * Scrobbling to [ListenBrainz](https://listenbrainz.org)
+* Compilation support
 * Disc subtitles support
 * ReplayGain support
 * Persistent play queue across sessions
 * _Systemd_ integration
-* User management
+* User management, with several authentication backends
 * Subsonic API, with the following additional features:
   * Playlists
   * Bookmarks
@@ -43,8 +43,8 @@ The recommendation engine uses two different sources:
 2. Acoustic similarities of the audio files, using a trained [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map)
 
 __Notes on the self-organizing map__:
-* training the map requires significant computation time on large collections (ex: half an hour for 40k tracks)
-* audio acoustic data is pulled from [AcousticBrainz](https://acousticbrainz.org/). Therefore your audio files _must_ contain the [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier).
+* training the map requires significant computation time on large collections (ex: half an hour for 40k tracks using a Core i5)
+* audio acoustic data is pulled from [AcousticBrainz](https://acousticbrainz.org/). Therefore your audio files _must_ contain the [recording](https://musicbrainz.org/doc/Recording) [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier).
 * to enable the audio similarity source, you have to enable it first in the administration panel.
 
 ## Subsonic API
@@ -67,4 +67,7 @@ See [INSTALL.md](INSTALL.md) file.
 
 ## Contributing
 
-Contributions are welcome! Please submit your pull requests against the [develop](../../tree/develop) branch.
+Any feedback is welcome:
+* feel free to participate in [discussions](https://github.com/epoupon/lms/discussions) if you have questions,
+* report any bug or request for new features in the [issue tracker](https://github.com/epoupon/lms/issues),
+* submit your pull requests based on the [develop](../../tree/develop) branch.
