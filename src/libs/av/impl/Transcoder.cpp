@@ -48,11 +48,12 @@ Transcoder::Transcoder(const std::filesystem::path& filePath, const TranscodePar
 , _filePath {filePath}
 , _parameters {parameters}
 {
+	start();
 }
 
 Transcoder::~Transcoder() = default;
 
-bool
+void
 Transcoder::start()
 {
 	if (ffmpegPath.empty())
@@ -61,20 +62,13 @@ Transcoder::start()
 	try
 	{
 		if (!std::filesystem::exists(_filePath))
-		{
-			LOG(ERROR) << "File '" << _filePath << "' does not exist!";
-			return false;
-		}
+			throw Exception {"File '" + _filePath.string() + "' does not exist!"};
 		else if (!std::filesystem::is_regular_file( _filePath) )
-		{
-			LOG(ERROR) << "File '" << _filePath << "' is not regular!";
-			return false;
-		}
+			throw Exception {"File '" + _filePath.string() + "' is not regular!"};
 	}
 	catch (const std::filesystem::filesystem_error& e)
 	{
-		LOG(ERROR) << "File error on '" << _filePath.string() << "': " << e.what();
-		return false;
+		throw Exception {"File error '" + _filePath.string() + "': " + e.what()};
 	}
 
 	LOG(INFO) << "Transcoding file '" << _filePath.string() << "'";
@@ -163,7 +157,7 @@ Transcoder::start()
 			break;
 
 		default:
-			return false;
+			throw Exception {"Unhandled format (" + std::to_string(static_cast<int>(_parameters.format)) + ")"};
 	}
 
 	_outputMimeType = formatToMimetype(_parameters.format);
@@ -181,11 +175,8 @@ Transcoder::start()
 	}
 	catch (ChildProcessException& exception)
 	{
-		LOG(ERROR) << "Cannot execute '" << ffmpegPath << "': " << exception.what();
-		return false;
+		throw Exception {"Cannot execute '" + ffmpegPath.string() + "': " + exception.what()};
 	}
-
-	return true;
 }
 
 void
@@ -223,6 +214,8 @@ Transcoder::readSome(std::byte* buffer, std::size_t bufferSize)
 bool
 Transcoder::finished() const
 {
+	assert(_childProcess);
+
 	return _childProcess->finished();
 }
 

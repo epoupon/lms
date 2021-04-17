@@ -26,6 +26,7 @@
 #include "database/Track.hpp"
 #include "database/User.hpp"
 #include "utils/IResourceHandler.hpp"
+#include "utils/Logger.hpp"
 #include "utils/FileResourceHandlerCreator.hpp"
 #include "utils/Utils.hpp"
 #include "ParameterParsing.hpp"
@@ -147,24 +148,30 @@ handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http
 {
 	std::shared_ptr<IResourceHandler> resourceHandler;
 
-	Wt::Http::ResponseContinuation* continuation = request.continuation();
-	if (!continuation)
+	try
 	{
-		StreamParameters streamParameters {getStreamParameters(context)};
-		if (streamParameters.transcodeParameters)
-			resourceHandler = Av::createTranscodeResourceHandler(streamParameters.trackPath, *streamParameters.transcodeParameters);
+		Wt::Http::ResponseContinuation* continuation = request.continuation();
+		if (!continuation)
+		{
+			StreamParameters streamParameters {getStreamParameters(context)};
+			if (streamParameters.transcodeParameters)
+				resourceHandler = Av::createTranscodeResourceHandler(streamParameters.trackPath, *streamParameters.transcodeParameters);
+			else
+				resourceHandler = createFileResourceHandler(streamParameters.trackPath);
+		}
 		else
-			resourceHandler = createFileResourceHandler(streamParameters.trackPath);
+		{
+			resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
+		}
+
+		continuation = resourceHandler->processRequest(request, response);
+		if (continuation)
+			continuation->setData(resourceHandler);
 	}
-	else
+	catch (const Av::Exception& e)
 	{
-		resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
+		LMS_LOG(API_SUBSONIC, ERROR) << "Caught Av exception: " << e.what();
 	}
-
-	continuation = resourceHandler->processRequest(request, response);
-	if (continuation)
-		continuation->setData(resourceHandler);
 }
 
-}
-
+} // namespace API::Subsonic::Stream
