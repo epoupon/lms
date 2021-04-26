@@ -71,11 +71,12 @@ ChildProcess::ChildProcess(boost::asio::io_context& ioContext, const std::filesy
 	{
 		const std::size_t pipeSize {65536*8};
 
+#if defined(__linux__) && defined(F_SETPIPE_SZ)
 		if (fcntl(pipe[0], F_SETPIPE_SZ, pipeSize) == -1)
 			throw SystemException {errno, "fcntl failed!"};
-
 		if (fcntl(pipe[1], F_SETPIPE_SZ, pipeSize) == -1)
 			throw SystemException {errno, "fcntl failed!"};
+#endif
 	}
 
 	res = fork();
