@@ -69,9 +69,10 @@ ChildProcess::ChildProcess(boost::asio::io_context& ioContext, const std::filesy
 		throw SystemException {errno, "pipe2 failed!"};
 
 	{
-		const std::size_t pipeSize {65536*8};
-
 #if defined(__linux__) && defined(F_SETPIPE_SZ)
+		// Just a hint here to prevent the writer from writing too many bytes ahead of the reader
+		constexpr std::size_t pipeSize {65536*4};
+
 		if (fcntl(pipe[0], F_SETPIPE_SZ, pipeSize) == -1)
 			throw SystemException {errno, "fcntl failed!"};
 		if (fcntl(pipe[1], F_SETPIPE_SZ, pipeSize) == -1)
