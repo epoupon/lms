@@ -33,7 +33,6 @@ namespace Av
 	TranscodeResourceHandler::TranscodeResourceHandler(const std::filesystem::path& trackPath, const TranscodeParameters& parameters)
 		: _transcoder {trackPath, parameters}
 	{
-		_transcoder.start();
 	}
 
 	Wt::Http::ResponseContinuation*

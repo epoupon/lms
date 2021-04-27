@@ -40,8 +40,6 @@ namespace Av
 			Transcoder(Transcoder&&) = delete;
 			Transcoder& operator=(Transcoder&&) = delete;
 
-			bool			start();
-
 			using WaitCallback = std::function<void()>;
 			void			asyncWaitForData(WaitCallback cb);
 
@@ -57,6 +55,8 @@ namespace Av
 
 		private:
 			static void init();
+
+			void start();
 
 			const std::size_t		_id {};
 			const std::filesystem::path	_filePath;

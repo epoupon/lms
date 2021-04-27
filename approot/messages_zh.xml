@@ -218,5 +218,3 @@
 <message id="Wt.WValidator.Invalid">此字段不能为空</message>
 <message id="Wt.WDoubleValidator.BadRange">这个值应该在 {1} 和 {2}</message>
 </messages>
- 
-</messages>

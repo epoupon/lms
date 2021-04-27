@@ -19,9 +19,7 @@
 
 #pragma once
 
-#include <chrono>
 #include <deque>
-#include <mutex>
 
 #include <Wt/Http/Client.h>
 #include <Wt/WIOService.h>

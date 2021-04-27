@@ -180,23 +180,30 @@ AudioTranscodeResource::handleRequest(const Wt::Http::Request& request,
 {
 	std::shared_ptr<IResourceHandler> resourceHandler;
 
-	Wt::Http::ResponseContinuation* continuation {request.continuation()};
-	if (!continuation)
+	try
 	{
-		const std::optional<TranscodeParameters>& parameters {readTranscodeParameters(request)};
-		if (parameters)
-			resourceHandler = Av::createTranscodeResourceHandler(parameters->file, parameters->transcodeParameters);
-	}
-	else
-	{
-		resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
-	}
+		Wt::Http::ResponseContinuation* continuation {request.continuation()};
+		if (!continuation)
+		{
+			const std::optional<TranscodeParameters>& parameters {readTranscodeParameters(request)};
+			if (parameters)
+				resourceHandler = Av::createTranscodeResourceHandler(parameters->file, parameters->transcodeParameters);
+		}
+		else
+		{
+			resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
+		}
 
-	if (resourceHandler)
+		if (resourceHandler)
+		{
+			continuation = resourceHandler->processRequest(request, response);
+			if (continuation)
+				continuation->setData(resourceHandler);
+		}
+	}
+	catch (const Av::Exception& e)
 	{
-		continuation = resourceHandler->processRequest(request, response);
-		if (continuation)
-			continuation->setData(resourceHandler);
+		LOG(ERROR) << "Caught Av exception: " << e.what();
 	}
 }
 
