@@ -67,7 +67,7 @@ DownloadResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Resp
 			return;
 
 		std::array<std::byte, bufferSize> buffer;
-		std::size_t nbWrittenBytes {zipper->writeSome(buffer.data(), buffer.size())};
+		Zip::SizeType nbWrittenBytes {zipper->writeSome(buffer.data(), buffer.size())};
 
 		response.out().write(reinterpret_cast<const char *>(buffer.data()), nbWrittenBytes);
 

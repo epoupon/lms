@@ -188,7 +188,7 @@ namespace Scrobbling
 	{
 		LOG(INFO) << "Starting ListenBrainz scrobbler... API endpoint = '" << _apiEndpoint << "'";
 
-		_client.done().connect([this](Wt::AsioWrapper::error_code ec, Wt::Http::Message msg)
+		_client.done().connect([this](Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg)
 		{
 			onClientDone(ec, msg);
 		});
