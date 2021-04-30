@@ -481,6 +481,8 @@ testSingleTrackSingleRelease(Session& session)
 			auto transaction {session.createUniqueTransaction()};
 
 			track.get().modify()->setRelease(release.get());
+			track.get().modify()->setName("MyTrackName");
+			release.get().modify()->setName("MyReleaseName");
 		}
 
 		{
@@ -497,6 +499,23 @@ testSingleTrackSingleRelease(Session& session)
 
 			CHECK(track->getRelease());
 			CHECK(track->getRelease().id() == release.getId());
+		}
+
+		{
+			auto transaction {session.createUniqueTransaction()};
+			auto tracks {Track::getByNameAndReleaseName(session, "MyTrackName", "MyReleaseName")};
+			CHECK(tracks.size() == 1);
+			CHECK(tracks.front().id() == track.getId());
+		}
+		{
+			auto transaction {session.createUniqueTransaction()};
+			auto tracks {Track::getByNameAndReleaseName(session, "MyTrackName", "MyReleaseFoo")};
+			CHECK(tracks.size() == 0);
+		}
+		{
+			auto transaction {session.createUniqueTransaction()};
+			auto tracks {Track::getByNameAndReleaseName(session, "MyTrackFoo", "MyReleaseName")};
+			CHECK(tracks.size() == 0);
 		}
 	}
 

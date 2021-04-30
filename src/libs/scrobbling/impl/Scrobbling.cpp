@@ -30,37 +30,37 @@
 namespace Scrobbling
 {
 	std::unique_ptr<IScrobbling>
-	createScrobbling(Database::Db& db)
+	createScrobbling(boost::asio::io_context& ioContext, Database::Db& db)
 	{
-		return std::make_unique<Scrobbling>(db);
+		return std::make_unique<Scrobbling>(ioContext, db);
 	}
 
-	Scrobbling::Scrobbling(Database::Db& db)
+	Scrobbling::Scrobbling(boost::asio::io_context& ioContext, Database::Db& db)
 		: _db {db}
 	{
 		_scrobblers.emplace(Database::Scrobbler::Internal, std::make_unique<InternalScrobbler>(_db));
-		_scrobblers.emplace(Database::Scrobbler::ListenBrainz, std::make_unique<ListenBrainzScrobbler>(_db));
+		_scrobblers.emplace(Database::Scrobbler::ListenBrainz, std::make_unique<ListenBrainz::Scrobbler>(ioContext, _db));
 	}
 
 	void
 	Scrobbling::listenStarted(const Listen& listen)
 	{
-		if (auto scrobbler {getUserScrobbler(listen.userId)})
+		if (std::optional<Database::Scrobbler> scrobbler {getUserScrobbler(listen.userId)})
 			_scrobblers[*scrobbler]->listenStarted(listen);
 	}
 
 	void
 	Scrobbling::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
 	{
-		if (auto scrobbler {getUserScrobbler(listen.userId)})
+		if (std::optional<Database::Scrobbler> scrobbler {getUserScrobbler(listen.userId)})
 			_scrobblers[*scrobbler]->listenFinished(listen, duration);
 	}
 
 	void
-	Scrobbling::addListen(const Listen& listen, Wt::WDateTime timePoint)
+	Scrobbling::addTimedListen(const TimedListen& listen)
 	{
-		if (auto scrobbler {getUserScrobbler(listen.userId)})
-			_scrobblers[*scrobbler]->addListen(listen, timePoint);
+		if (std::optional<Database::Scrobbler> scrobbler {getUserScrobbler(listen.userId)})
+			_scrobblers[*scrobbler]->addTimedListen(listen);
 	}
 
 	std::optional<Database::Scrobbler>

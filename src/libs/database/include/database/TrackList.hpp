@@ -84,6 +84,9 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		std::size_t getCount() const;
 		Wt::Dbo::ptr<TrackListEntry> getEntry(std::size_t pos) const;
 		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntries(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
+		Wt::Dbo::ptr<TrackListEntry> getEntryByTrackAndDateTime(Wt::Dbo::ptr<Track> track, const Wt::WDateTime& dateTime) const;
+
+		// Get track bya
 
 		std::vector<Wt::Dbo::ptr<Artist>> getArtistsReverse(const std::set<IdType>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
 		std::vector<Wt::Dbo::ptr<Release>> getReleasesReverse(const std::set<IdType>& clusterIds, std::optional<Range> range, bool& moreResults) const;

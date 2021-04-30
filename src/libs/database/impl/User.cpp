@@ -84,6 +84,15 @@ User::getAll(Session& session)
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
+std::vector<IdType>
+User::getAllIds(Session& session)
+{
+	session.checkSharedLocked();
+
+	Wt::Dbo::collection<IdType> res = session.getDboSession().query<IdType>("SELECT id FROM user");
+	return std::vector<IdType>(res.begin(), res.end());
+}
+
 User::pointer
 User::getDemo(Session& session)
 {

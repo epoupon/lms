@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <boost/asio/io_service.hpp>
+
 #include <chrono>
 #include <memory>
 #include <optional>
@@ -51,7 +53,7 @@ namespace Scrobbling
 			virtual void listenStarted(const Listen& listen) = 0;
 			virtual void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> playedDuration = std::nullopt) = 0;
 
-			virtual void addListen(const Listen& listen, Wt::WDateTime timePoint) = 0;
+			virtual void addTimedListen(const TimedListen& listen) = 0;
 
 			// Stats
 			// From most recent to oldest
@@ -95,7 +97,7 @@ namespace Scrobbling
 																	bool& moreResults) = 0;
 	};
 
-	std::unique_ptr<IScrobbling> createScrobbling(Database::Db& db);
+	std::unique_ptr<IScrobbling> createScrobbling(boost::asio::io_service& ioService, Database::Db& db);
 
 } // ns Scrobbling
 

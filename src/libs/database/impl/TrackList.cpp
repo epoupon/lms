@@ -148,6 +148,18 @@ TrackList::getEntries(std::optional<std::size_t> offset, std::optional<std::size
 	return std::vector<Wt::Dbo::ptr<TrackListEntry>>(entries.begin(), entries.end());
 }
 
+Wt::Dbo::ptr<TrackListEntry>
+TrackList::getEntryByTrackAndDateTime(Wt::Dbo::ptr<Track> track, const Wt::WDateTime& dateTime) const
+{
+	assert(session());
+	assert(IdIsValid(self()->id()));
+
+	return session()->find<TrackListEntry>()
+			.where("tracklist_id = ?").bind(self().id())
+			.where("track_id = ?").bind(track.id())
+			.where("date_time = ?").bind(Wt::WDateTime::fromTime_t(dateTime.toTime_t()));
+}
+
 static
 Wt::Dbo::Query<Artist::pointer>
 createArtistsQuery(Wt::Dbo::Session& session, const std::string& queryStr, IdType tracklistId, const std::set<IdType>& clusterIds, std::optional<TrackArtistLinkType> linkType)

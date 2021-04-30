@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <Wt/WDateTime.h>
+
 #include "database/Types.hpp"
 
 namespace Scrobbling
@@ -27,6 +29,11 @@ namespace Scrobbling
 	{
 		Database::IdType userId {};
 		Database::IdType trackId {};
+	};
+
+	struct TimedListen : public Listen
+	{
+		Wt::WDateTime listenedAt;
 	};
 } // ns Scrobbling
 

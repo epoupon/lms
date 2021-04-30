@@ -17,26 +17,33 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "utils/Logger.hpp"
+#include "utils/IOContextRunner.hpp"
 
-#include "IScrobbler.hpp"
-
-namespace Scrobbling
+IOContextRunner::IOContextRunner(boost::asio::io_service& ioService, std::size_t threadCount)
+: _ioService {ioService}
+, _work {ioService}
 {
-	class InternalScrobbler final : public IScrobbler
-	{
-		public:
-			InternalScrobbler(Database::Db&	db);
+	LMS_LOG(UTILS, INFO) << "Starting IO Context with " << threadCount << " threads...";
+	for (std::size_t i {}; i < threadCount; ++i)
+		_threads.emplace_back([&] { _ioService.run(); });
+}
 
-		private:
-			void listenStarted(const Listen& listen) override;
-			void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
+void
+IOContextRunner::stop()
+{
+	LMS_LOG(UTILS, INFO) << "Stopping IO Context";
+	_work.reset();
+	_ioService.stop();
+	LMS_LOG(UTILS, INFO) << "Stopped IO Context";
+}
 
-			void addTimedListen(const TimedListen& listen) override;
+IOContextRunner::~IOContextRunner()
+{
 
-			Wt::Dbo::ptr<Database::TrackList> getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user) override;
+	stop();
 
-			Database::Db&	_db;
-	};
-} // Scrobbling
+	for (std::thread& t : _threads)
+		t.join();
 
+}

@@ -30,6 +30,7 @@
 #include "utils/Logger.hpp"
 
 #include "SqlQuery.hpp"
+#include "StringViewTraits.hpp"
 
 namespace Database {
 
@@ -151,12 +152,12 @@ Track::getById(Session& session, IdType id)
 }
 
 Track::pointer
-Track::getByMBID(Session& session, const UUID& mbid)
+Track::getByRecordingMBID(Session& session, const UUID& mbid)
 {
 	session.checkSharedLocked();
 
 	return session.getDboSession().find<Track>()
-		.where("mbid = ?").bind(std::string {mbid.getAsString()});
+		.where("recording_mbid = ?").bind(std::string {mbid.getAsString()});
 }
 
 Track::pointer
@@ -352,6 +353,18 @@ Track::getByFilter(Session& session,
 		moreResults = false;
 
 	return res;
+}
+
+std::vector<Track::pointer>
+Track::getByNameAndReleaseName(Session& session, std::string_view trackName, std::string_view releaseName)
+{
+	session.checkSharedLocked();
+	Wt::Dbo::collection<pointer> collection = session.getDboSession().query<Track::pointer>("SELECT t from track t")
+		.join("release r ON t.release_id = r.id")
+		.where("t.name = ?").bind(trackName)
+		.where("r.name = ?").bind(releaseName);
+
+	return std::vector<pointer>(collection.begin(), collection.end());
 }
 
 std::vector<Track::pointer>

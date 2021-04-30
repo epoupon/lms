@@ -19,39 +19,25 @@
 
 #pragma once
 
-#include <chrono>
-#include <memory>
 #include <optional>
+#include <thread>
+#include <boost/asio/io_service.hpp>
 
-#include <Wt/WDateTime.h>
-
-#include "scrobbling/Listen.hpp"
-
-namespace Database
+class IOContextRunner
 {
-	class Db;
-	class Session;
-	class TrackList;
-	class User;
-}
+	public:
+		IOContextRunner(boost::asio::io_service& ioService, std::size_t threadCount);
+		~IOContextRunner();
 
-namespace Scrobbling
-{
+		IOContextRunner(const IOContextRunner&) = delete;
+		IOContextRunner(IOContextRunner&&) = delete;
+		IOContextRunner& operator=(const IOContextRunner&) = delete;
+		IOContextRunner& operator=(IOContextRunner&&) = delete;
 
-	class IScrobbler
-	{
-		public:
-			virtual ~IScrobbler() = default;
+		void stop();
 
-			virtual void listenStarted(const Listen& listen) = 0;
-			virtual void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) = 0;
-
-			virtual void addTimedListen(const TimedListen& listen) = 0;
-
-			virtual Wt::Dbo::ptr<Database::TrackList> getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user)  = 0;
-	};
-
-	std::unique_ptr<IScrobbler> createScrobbler(std::string_view backendName);
-
-} // ns Scrobbling
-
+	private:
+		boost::asio::io_service&		_ioService;
+		std::optional<boost::asio::io_service::work>	_work;
+		std::vector<std::thread>		_threads;
+};

@@ -19,39 +19,20 @@
 
 #pragma once
 
-#include <chrono>
-#include <memory>
-#include <optional>
-
-#include <Wt/WDateTime.h>
-
-#include "scrobbling/Listen.hpp"
+#include <Wt/Dbo/ptr.h>
+#include "utils/UUID.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {
-	class Db;
 	class Session;
 	class TrackList;
 	class User;
 }
 
-namespace Scrobbling
+namespace Scrobbling::ListenBrainz::Utils
 {
-
-	class IScrobbler
-	{
-		public:
-			virtual ~IScrobbler() = default;
-
-			virtual void listenStarted(const Listen& listen) = 0;
-			virtual void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) = 0;
-
-			virtual void addTimedListen(const TimedListen& listen) = 0;
-
-			virtual Wt::Dbo::ptr<Database::TrackList> getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user)  = 0;
-	};
-
-	std::unique_ptr<IScrobbler> createScrobbler(std::string_view backendName);
-
-} // ns Scrobbling
-
+	std::optional<UUID>					getListenBrainzToken(Database::Session& session, Database::IdType userId);
+	Wt::Dbo::ptr<Database::TrackList>	getOrCreateListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user);
+	Wt::Dbo::ptr<Database::TrackList>	getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user);
+}

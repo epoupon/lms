@@ -19,6 +19,7 @@
 
 #include <thread>
 
+#include <boost/asio/io_context.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
 #include <Wt/WServer.h>
@@ -38,6 +39,7 @@
 #include "ui/LmsApplicationManager.hpp"
 #include "utils/IChildProcessManager.hpp"
 #include "utils/IConfig.hpp"
+#include "utils/IOContextRunner.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "utils/WtLogger.hpp"
@@ -212,8 +214,11 @@ int main(int argc, char* argv[])
 			wtArgv[i] = wtServerArgs[i].c_str();
 		}
 
+		boost::asio::io_context ioContext; // ioContext used to dispatch all the services that are out of the Wt event loop
 		Wt::WServer server {argv[0]};
 		server.setServerConfiguration(wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
+
+		IOContextRunner ioContextRunner {ioContext, std::max<unsigned long>(2, std::thread::hardware_concurrency())};
 
 		// Initializing a connection pool to the database that will be shared along services
 		Database::Db database {config->getPath("working-dir") / "lms.db"};
@@ -226,7 +231,7 @@ int main(int argc, char* argv[])
 		UserInterface::LmsApplicationManager appManager;
 
 		// Service initialization order is important (reverse-order for deinit)
-		Service<IChildProcessManager> childProcessManagerService {createChildProcessManager()};
+		Service<IChildProcessManager> childProcessManagerService {createChildProcessManager(ioContext)};
 
 		Service<Auth::IAuthTokenService> authTokenService;
 		Service<Auth::IPasswordService> authPasswordService;
@@ -251,7 +256,7 @@ int main(int argc, char* argv[])
 				config->getULong("cover-max-file-size", 10) * 1000 * 1000,
 				config->getULong("cover-jpeg-quality", 75))};
 		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
-		Service<Scanner::IScanner> scannerService {Scanner::createScanner(database, *recommendationEngineService)};
+		Service<Scanner::IScanner> scannerService {Scanner::createScanner(/*ioContext,*/ database, *recommendationEngineService)};
 
 		scannerService->getEvents().scanComplete.connect([&]
 		{
@@ -260,7 +265,7 @@ int main(int argc, char* argv[])
 			coverArtService->flushCache();
 		});
 
-		Service<Scrobbling::IScrobbling> scrobblingService {Scrobbling::createScrobbling(database)};
+		Service<Scrobbling::IScrobbling> scrobblingService {Scrobbling::createScrobbling(ioContext, database)};
 
 		API::Subsonic::SubsonicResource subsonicResource {database};
 

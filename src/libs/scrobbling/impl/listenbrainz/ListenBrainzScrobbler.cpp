@@ -34,41 +34,12 @@
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
+#include "Utils.hpp"
 
 #define LOG(sev)	LMS_LOG(SCROBBLING, sev) << "[listenbrainz] - "
 
-namespace StringUtils
-{
-	template<>
-	std::optional<std::chrono::seconds>
-	readAs(const std::string& str)
-	{
-		std::optional<std::chrono::seconds> res;
-
-		if (const std::optional<std::size_t> value {StringUtils::readAs<std::size_t>(str)})
-			res = std::chrono::seconds {*value};
-
-		return res;
-	}
-}
-
 namespace
 {
-	std::optional<UUID>
-	getListenBrainzToken(Database::Session& session, Database::IdType userId)
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		const Database::User::pointer user {Database::User::getById(session, userId)};
-		if (!user)
-			return std::nullopt;
-
-		if (user->getScrobbler() != Database::Scrobbler::ListenBrainz)
-			return std::nullopt;
-
-		return user->getListenBrainzToken();
-	}
-
 	bool
 	canBeScrobbled(Database::Session& session, Database::IdType trackId, std::chrono::seconds duration)
 	{
@@ -164,252 +135,105 @@ namespace
 		res = Wt::Json::serialize(root);
 		return res;
 	}
-
-	template <typename T>
-	std::optional<T>
-	headerReadAs(const Wt::Http::Message& msg, std::string_view headerName)
-	{
-		std::optional<T> res;
-
-		if (const std::string* headerValue {msg.getHeader(std::string {headerName})})
-			res = StringUtils::readAs<T>(*headerValue);
-
-		return res;
-	}
 }
 
-namespace Scrobbling
+namespace Scrobbling::ListenBrainz
 {
-	static const std::string historyTracklistName {"__scrobbler_listenbrainz_history__"};
-
-	ListenBrainzScrobbler::ListenBrainzScrobbler(Database::Db& db)
-		: _apiEndpoint {Service<IConfig>::get()->getString("listenbrainz-api-url", "https://api.listenbrainz.org/1/")}
+	Scrobbler::Scrobbler(boost::asio::io_context& ioContext, Database::Db& db)
+		: _ioContext {ioContext}
 		, _db {db}
+		, _sendQueue {_ioContext, Service<IConfig>::get()->getString("listenbrainz-api-base-url", "https://api.listenbrainz.org")}
+		, _listensSynchronizer {_ioContext, db, _sendQueue}
 	{
-		LOG(INFO) << "Starting ListenBrainz scrobbler... API endpoint = '" << _apiEndpoint << "'";
-
-		_client.done().connect([this](Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg)
-		{
-			onClientDone(ec, msg);
-		});
-
-		_ioService.setThreadCount(1);
-		_ioService.start();
+		LOG(INFO) << "Starting ListenBrainz scrobbler... API endpoint = '" << _sendQueue.getAPIBaseURL();
 	}
 
-	ListenBrainzScrobbler::~ListenBrainzScrobbler()
+	Scrobbler::~Scrobbler()
 	{
-		_ioService.stop();
-
-		LOG(INFO) << "Stopped ListenBrainz scrobbler";
+		LOG(INFO) << "Stopped ListenBrainz scrobbler!";
 	}
 
 	void
-	ListenBrainzScrobbler::listenStarted(const Listen& listen)
+	Scrobbler::listenStarted(const Listen& listen)
 	{
-		_ioService.post([=]
-		{
-			enqueListen(listen, Wt::WDateTime {});
-		});
+		enqueListen(listen, Wt::WDateTime {});
 	}
 
 	void
-	ListenBrainzScrobbler::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
+	Scrobbler::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
 	{
 		if (duration && !canBeScrobbled(_db.getTLSSession(), listen.trackId, *duration))
 			return;
 
-		Listen timedListen {listen};
+		const Listen timedListen {listen};
 		const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
 
-		_ioService.post([=]
-		{
-			enqueListen(timedListen, now);
-		});
+		enqueListen(timedListen, now);
 	}
 
 	void
-	ListenBrainzScrobbler::addListen(const Listen& listen, const Wt::WDateTime& timePoint)
+	Scrobbler::addTimedListen(const TimedListen& listen)
 	{
-		assert(timePoint.isValid());
-
-		_ioService.post([=]
-		{
-			enqueListen(listen, timePoint);
-		});
+		assert(listen.listenedAt.isValid());
+		enqueListen(listen, listen.listenedAt);
 	}
 
-	Wt::Dbo::ptr<Database::TrackList>
-	ListenBrainzScrobbler::getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user)
+	Database::TrackList::pointer
+	Scrobbler::getListensTrackList(Database::Session& session, Database::User::pointer user)
 	{
-		return Database::TrackList::get(session, historyTracklistName, Database::TrackList::Type::Internal, user);
+		return Utils::getListensTrackList(session, user);
 	}
 
 	void
-	ListenBrainzScrobbler::enqueListen(const Listen& listen, const Wt::WDateTime& timePoint)
+	Scrobbler::enqueListen(const Listen& listen, const Wt::WDateTime& timePoint)
 	{
-		if (!timePoint.isValid())
-		{
-			// If we are currently throttled, just replace the entry if it has no timePoint
-			// in order to only report the newest track listened to
-			// If not throttled, just search past the next current first message as it is being sent
-
-			const std::size_t offset {_state == State::Throttled ? std::size_t {0} : std::size_t {1}};
-			if (_sendQueue.size() > offset)
-			{
-				_sendQueue.erase(std::remove_if(std::next(std::begin(_sendQueue), offset), std::end(_sendQueue),
-							[&](const QueuedListen& queuedListen) { return queuedListen.listen.userId == listen.userId && !queuedListen.timePoint.isValid(); }), std::end(_sendQueue));
-			}
-		}
-
-		_sendQueue.emplace_back(QueuedListen {listen, timePoint});
-
-		LOG(DEBUG) << "listen queue size = " << _sendQueue.size();
-
-		if (_state == State::Idle)
-			sendNextQueuedListen();
-	}
-
-	void
-	ListenBrainzScrobbler::sendNextQueuedListen()
-	{
-		assert(_state == State::Idle);
-
-		while (!_sendQueue.empty())
-		{
-			if (sendListen(_sendQueue.front().listen, _sendQueue.front().timePoint))
-			{
-				_state = State::Sending;
-				break;
-			}
-
-			_sendQueue.pop_front();
-		}
-	}
-
-	bool
-	ListenBrainzScrobbler::sendListen(const Listen& listen, const Wt::WDateTime& timePoint)
-	{
-		Database::Session& session {_db.getTLSSession()};
-
-		const std::optional<UUID> listenBrainzToken {getListenBrainzToken(session, listen.userId)};
-		if (!listenBrainzToken)
-			return false;
-
-		std::string payload {listenToJsonString(session, listen, timePoint, timePoint.isValid() ? "single" : "playing_now")};
-		if (payload.empty())
-		{
-			LOG(DEBUG) << "Cannot convert listen to json: skipping";
-			return false;
-		}
-
-		// now send this
-		Wt::Http::Message message;
-		message.addHeader("Authorization", "Token " + std::string {listenBrainzToken->getAsString()});
-		message.addHeader("Content-Type", "application/json");
-		message.addBodyText(payload);
-
-		const std::string endPoint {_apiEndpoint + "submit-listens"};
-		if (!_client.post(endPoint, message))
-		{
-			LOG(ERROR) << "Cannot post to '" << endPoint << "': invalid scheme or URL?";
-			return false;
-		}
-
-		LOG(DEBUG) << "Listen POST done to '" << endPoint << "'";
-		return true;
-	}
-
-	void
-	ListenBrainzScrobbler::onClientDone(Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg)
-	{
-		assert(!_sendQueue.empty());
-		QueuedListen& queuedListen {_sendQueue.front()};
-
-		_state = State::Idle;
-
-		LOG(DEBUG) << "POST done. status = " << msg.status() << ", msg = '" << msg.body() << "'";
-		if (ec)
-		{
-			LOG(ERROR) << "Retry " << queuedListen.retryCount << ", client error: '" << ec.message() << "'";
-			// may be a network error, try again later
-			if (++queuedListen.retryCount > _maxRetryCount)
-				_sendQueue.pop_front();
-
-			throttle(_defaultRetryWaitDuration);
+		std::optional<SendQueue::RequestData> requestData {createSubmitListenRequestData(listen, timePoint)};
+		if (!requestData)
 			return;
-		}
 
-		bool mustThrottle{};
-
-		switch (msg.status())
+		SendQueue::Request submitListen {std::move(*requestData)};
+		if (timePoint.isValid())
 		{
-			case 429:
-				mustThrottle = true;
-				break;
-
-			case 200:
-				if (queuedListen.timePoint.isValid())
-					cacheListen(queuedListen.listen, queuedListen.timePoint);
-				_sendQueue.pop_front();
-				break;
-
-			default:
-				LOG(ERROR) << "Submit error: '" << msg.body() << "'";
-				_sendQueue.pop_front();
-				break;
-		}
-
-		const auto remainingCount {headerReadAs<std::size_t>(msg, "X-RateLimit-Remaining")};
-		LOG(DEBUG) << "Remaining messages = " << (remainingCount ? *remainingCount : 0);
-		if (mustThrottle || (remainingCount && *remainingCount == 0))
-		{
-			const auto waitDuration {headerReadAs<std::chrono::seconds>(msg, "X-RateLimit-Reset-In")};
-			throttle(waitDuration.value_or(_defaultRetryWaitDuration));
+			submitListen.setPriority(SendQueue::Request::Priority::Normal);
+			submitListen.setOnSuccessFunc([=](std::string_view)
+			{
+				_listensSynchronizer.saveListen(TimedListen {listen, timePoint});
+			});
 		}
 		else
 		{
-			sendNextQueuedListen();
+			// We want "listen now" to appear as soon as possible
+			submitListen.setPriority(SendQueue::Request::Priority::High);
 		}
+
+		_sendQueue.enqueueRequest(std::move(submitListen));
 	}
 
-	void
-	ListenBrainzScrobbler::throttle(std::chrono::seconds requestedDuration)
-	{
-		assert(_state == State::Idle);
-
-		const std::chrono::seconds duration {clamp(requestedDuration, _minRetryWaitDuration, _maxRetryWaitDuration)};
-		LOG(DEBUG) << "Throttling for " << duration.count() << " seconds";
-
-		_ioService.schedule(duration, [this]
-		{
-			_state = State::Idle;
-			sendNextQueuedListen();
-		});
-		_state = State::Throttled;
-	}
-
-	void
-	ListenBrainzScrobbler::cacheListen(const Listen& listen, const Wt::WDateTime& timePoint)
+	std::optional<SendQueue::RequestData>
+	Scrobbler::createSubmitListenRequestData(const Listen& listen, const Wt::WDateTime& timePoint)
 	{
 		Database::Session& session {_db.getTLSSession()};
 
-		auto transaction {session.createUniqueTransaction()};
+		const std::optional<UUID> listenBrainzToken {Utils::getListenBrainzToken(session, listen.userId)};
+		if (!listenBrainzToken)
+			return std::nullopt;
 
-		const Database::User::pointer user {Database::User::getById(session, listen.userId)};
-		if (!user)
-			return;
+		SendQueue::RequestData requestData;
+		requestData.endpoint = "/1/submit-listens";
+		requestData.type = SendQueue::RequestData::Type::POST;
 
-		const Database::Track::pointer track {Database::Track::getById(session, listen.trackId)};
-		if (!track)
-			return;
+		std::string bodyText {listenToJsonString(session, listen, timePoint, timePoint.isValid() ? "single" : "playing_now")};
+		if (bodyText.empty())
+		{
+			LOG(DEBUG) << "Cannot convert listen to json: skipping";
+			return std::nullopt;
+		}
 
-		Database::TrackList::pointer tracklist {getListensTrackList(session, user)};
-		if (!tracklist)
-			tracklist = Database::TrackList::create(session, historyTracklistName, Database::TrackList::Type::Internal, false, user);
+		requestData.message.addBodyText(bodyText);
+		requestData.message.addHeader("Authorization", "Token " + std::string {listenBrainzToken->getAsString()});
+		requestData.message.addHeader("Content-Type", "application/json");
 
-		Database::TrackListEntry::create(session, track, getListensTrackList(session, user), timePoint);
+		return requestData;
 	}
-
-} // Scrobbling
+} // namespace Scrobbling::ListenBrainz
 

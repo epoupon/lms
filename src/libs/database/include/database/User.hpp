@@ -139,6 +139,7 @@ class User : public Wt::Dbo::Dbo<User>
 		static pointer			getById(Session& session, IdType id);
 		static pointer			getByLoginName(Session& session, std::string_view loginName);
 		static std::vector<pointer>	getAll(Session& session);
+		static std::vector<IdType>	getAllIds(Session& session);
 		static pointer			getDemo(Session& session);
 		static std::size_t		getCount(Session& session);
 
