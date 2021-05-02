@@ -30,7 +30,7 @@ namespace StringUtils
 {
 	template<>
 	std::optional<std::chrono::seconds>
-	readAs(const std::string& str)
+	readAs(std::string_view str)
 	{
 		std::optional<std::chrono::seconds> res;
 

@@ -251,7 +251,7 @@ guessMediaFileFormat(const std::filesystem::path& file)
 	if (formats.size() > 1)
 		LMS_LOG(AV, INFO) << "File '" << file.string() << "' reported several formats: '" << format->name << "'";
 
-	std::vector<std::string> mimeTypes;
+	std::vector<std::string_view> mimeTypes;
 	if (format->mime_type)
 		mimeTypes = StringUtils::splitString(format->mime_type, ",");
 

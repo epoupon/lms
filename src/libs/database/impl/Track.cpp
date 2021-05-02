@@ -31,6 +31,7 @@
 
 #include "SqlQuery.hpp"
 #include "StringViewTraits.hpp"
+#include "Utils.hpp"
 
 namespace Database {
 
@@ -40,14 +41,14 @@ Wt::Dbo::Query<T>
 createQuery(Session& session,
 		const std::string& queryStr,
 		const std::set<IdType>& clusterIds,
-		const std::vector<std::string>& keywords)
+		const std::vector<std::string_view>& keywords)
 {
 	session.checkSharedLocked();
 
 	auto query {session.getDboSession().query<T>(queryStr)};
 
-	for (const std::string& keyword : keywords)
-		query.where("t.name LIKE ?").bind("%%" + keyword + "%%");
+	for (std::string_view keyword : keywords)
+		query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%%" + escapeLikeKeyword(keyword) + "%%");
 
 	if (!clusterIds.empty())
 	{
@@ -333,7 +334,7 @@ Track::hasTrackFeatures() const
 std::vector<Track::pointer>
 Track::getByFilter(Session& session,
 		const std::set<IdType>& clusterIds,
-		const std::vector<std::string>& keywords,
+		const std::vector<std::string_view>& keywords,
 		std::optional<Range> range,
 		bool& moreResults)
 {

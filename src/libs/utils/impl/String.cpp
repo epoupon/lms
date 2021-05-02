@@ -19,6 +19,7 @@
 
 #include "utils/String.hpp"
 
+#include <algorithm>
 #include <iomanip>
 #include <unordered_map>
 
@@ -57,18 +58,41 @@ readList(const std::string& str, const std::string& separators, std::list<std::s
 
 template<>
 std::optional<std::string>
-readAs(const std::string& str)
+readAs(std::string_view str)
 {
-	return str;
+	return std::string {str};
 }
 
 std::vector<std::string>
-splitString(const std::string& string, const std::string& separators)
+splitStringCopy(std::string_view string, std::string_view separators)
 {
 	std::string str {stringTrim(string, separators)};
 
 	std::vector<std::string> res;
 	boost::algorithm::split(res, str, boost::is_any_of(separators), boost::token_compress_on);
+
+	return res;
+}
+
+std::vector<std::string_view>
+splitString(std::string_view str, std::string_view separators)
+{
+	std::vector<std::string_view> res;
+
+	std::string_view::size_type strBegin {};
+
+	while ((strBegin = str.find_first_not_of(separators, strBegin)) != std::string_view::npos)
+	{
+		auto strEnd {str.find_first_of(separators, strBegin + 1)};
+		if (strEnd == std::string_view::npos)
+		{
+			res.push_back(str.substr(strBegin, str.size() - strBegin));
+			break;
+		}
+
+		res.push_back(str.substr(strBegin, strEnd - strBegin));
+		strBegin = strEnd + 1;
+	}
 
 	return res;
 }
@@ -80,22 +104,22 @@ joinStrings(const std::vector<std::string>& strings, const std::string& delimite
 }
 
 std::string
-stringTrim(const std::string& str, const std::string& whitespace)
+stringTrim(std::string_view str, std::string_view whitespaces)
 {
-	const auto strBegin = str.find_first_not_of(whitespace);
-	if (strBegin == std::string::npos)
+	const auto strBegin = str.find_first_not_of(whitespaces);
+	if (strBegin == std::string_view::npos)
 		return ""; // no content
 
-	const auto strEnd = str.find_last_not_of(whitespace);
+	const auto strEnd = str.find_last_not_of(whitespaces);
 	const auto strRange = strEnd - strBegin + 1;
 
-	return str.substr(strBegin, strRange);
+	return std::string {str.substr(strBegin, strRange)};
 }
 
 std::string
-stringTrimEnd(const std::string& str, const std::string& whitespace)
+stringTrimEnd(std::string_view str, std::string_view whitespaces)
 {
-	return str.substr(0, str.find_last_not_of(whitespace)+1);
+	return std::string {str.substr(0, str.find_last_not_of(whitespaces) + 1)};
 }
 
 std::string
@@ -183,6 +207,23 @@ jsEscape(const std::string& str)
 	}
 
 	return escaped;
+}
+
+std::string
+escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar)
+{
+	std::string res;
+	res.reserve(str.size());
+
+	for (const char c : str)
+	{
+		if (std::any_of(std::cbegin(charsToEscape), std::cend(charsToEscape), [c](char charToEscape) { return c == charToEscape; }))
+			res += escapeChar;
+
+		res += c;
+	}
+
+	return res;
 }
 
 bool

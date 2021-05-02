@@ -42,6 +42,6 @@ namespace StringUtils
 {
 	template <>
 	std::optional<UUID>
-	readAs(const std::string& str);
+	readAs(std::string_view str);
 }
 

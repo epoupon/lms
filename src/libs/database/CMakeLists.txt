@@ -13,6 +13,7 @@ add_library(lmsdatabase SHARED
 	impl/Track.cpp
 	impl/TrackBookmark.cpp
 	impl/User.cpp
+	impl/Utils.cpp
 	)
 
 target_include_directories(lmsdatabase INTERFACE

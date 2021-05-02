@@ -26,6 +26,74 @@
 #include <stdlib.h>
 
 #include "utils/RecursiveSharedMutex.hpp"
+#include "utils/String.hpp"
+
+
+void
+testStrings()
+{
+	{
+		const std::string test{"a"};
+
+		const std::vector<std::string_view> strings {StringUtils::splitString(test, "")};
+		assert(strings.size() == 1);
+		assert(strings.front() == "a");
+	}
+
+	{
+		const std::string test{"a b"};
+
+		const std::vector<std::string_view> strings {StringUtils::splitString(test, "|")};
+		assert(strings.size() == 1);
+		assert(strings.front() == "a b");
+	}
+
+	{
+		const std::string test{"  a"};
+
+		const std::vector<std::string_view> strings {StringUtils::splitString(test, " ")};
+		assert(strings.size() == 1);
+		assert(strings.front() == "a");
+	}
+
+	{
+		const std::string test{"a  "};
+
+		const std::vector<std::string_view> strings {StringUtils::splitString(test, " ")};
+		assert(strings.size() == 1);
+		assert(strings.front() == "a");
+	}
+
+	{
+		const std::string test{"a b"};
+
+		const std::vector<std::string_view> strings {StringUtils::splitString(test, " ")};
+		assert(strings.size() == 2);
+		assert(strings.front() == "a");
+		assert(strings.back() == "b");
+	}
+
+	{
+		const std::string test{"a b,c|defgh  "};
+
+		const std::vector<std::string_view> strings {StringUtils::splitString(test, " ,|")};
+		assert(strings.size() == 4);
+		assert(strings[0] == "a");
+		assert(strings[1] == "b");
+		assert(strings[2] == "c");
+		assert(strings[3] == "defgh");
+	}
+
+	{
+		assert(StringUtils::escapeString("", "*", ' ') == "");
+		assert(StringUtils::escapeString("", "", ' ') == "");
+		assert(StringUtils::escapeString("a", "", ' ') == "a");
+		assert(StringUtils::escapeString("*", "*", '_') == "_*");
+		assert(StringUtils::escapeString("*a*", "*", '_') == "_*a_*");
+		assert(StringUtils::escapeString("*a|", "*|", '_') == "_*a_|");
+		assert(StringUtils::escapeString("**||", "*|", '_') == "_*_*_|_|");
+	}
+}
 
 void
 testSharedMutex()
@@ -109,6 +177,7 @@ int main()
 {
 	try
 	{
+		testStrings();
 		testSharedMutex();
 	}
 	catch (std::exception& e)

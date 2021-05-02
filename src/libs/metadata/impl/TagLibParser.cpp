@@ -78,12 +78,12 @@ getPropertyValuesAs(const TagLib::PropertyMap& properties, const std::string& ke
 
 static
 std::vector<std::string>
-splitAndTrimString(const std::string& str, const std::string& delimiters)
+splitAndTrimString(const std::string& str, std::string_view delimiters)
 {
 	std::vector<std::string> res;
 
-	std::vector<std::string> strings {StringUtils::splitString(str, delimiters)};
-	for (const std::string& s : strings)
+	std::vector<std::string_view> strings {StringUtils::splitString(str, delimiters)};
+	for (std::string_view s : strings)
 		res.emplace_back(StringUtils::stringTrim(s));
 
 	return res;
@@ -203,8 +203,7 @@ TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::Str
 	else if (tag == "DISCNUMBER")
 	{
 		// Expecting 'Number/Total'
-		std::vector<std::string> strings {StringUtils::splitString(value, "/")};
-
+		std::vector<std::string_view> strings {StringUtils::splitString(value, "/")};
 		if (!strings.empty())
 		{
 			track.discNumber = StringUtils::readAs<std::size_t>(strings[0]);

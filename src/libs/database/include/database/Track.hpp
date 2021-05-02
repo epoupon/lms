@@ -71,7 +71,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 							const std::set<IdType>& clusters);           // tracks that belong to these clusters
 		static std::vector<pointer>	getByFilter(Session& session,
 							const std::set<IdType>& clusters,            // if non empty, tracks that belong to these clusters
-							const std::vector<std::string>& keywords,    // if non empty, name must match all of these keywords
+							const std::vector<std::string_view>& keywords,    // if non empty, name must match all of these keywords
 							std::optional<Range> range,
 							bool& moreExpected);
 		static std::vector<pointer> getByNameAndReleaseName(Session& session, std::string_view trackName, std::string_view releaseName);

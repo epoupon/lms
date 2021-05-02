@@ -28,12 +28,12 @@ namespace API::Subsonic
 {
 
 std::optional<Id>
-IdFromString(const std::string& id)
+IdFromString(const std::string_view id)
 {
 	if (id == "root")
 		return Id {Id::Type::Root};
 
-	std::vector<std::string> values {StringUtils::splitString(id, "-")};
+	std::vector<std::string_view> values {StringUtils::splitString(id, "-")};
 	if (values.size() != 2)
 		return std::nullopt;
 

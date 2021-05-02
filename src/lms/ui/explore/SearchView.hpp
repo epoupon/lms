@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <Wt/WTemplate.h>
@@ -46,7 +47,8 @@ class SearchView : public Wt::WTemplate
 		void searchTracks();
 
 		Filters* _filters {};
-		std::vector<std::string> _keywords;
+		std::string _searchValue;
+		std::vector<std::string_view> _keywords;
 };
 
 } // namespace UserInterface

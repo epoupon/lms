@@ -39,7 +39,7 @@ namespace StringUtils
 {
 	template <>
 	std::optional<Database::AudioFormat>
-	readAs(const std::string& str)
+	readAs(std::string_view str)
 	{
 
 		auto encodedFormat {readAs<int>(str)};

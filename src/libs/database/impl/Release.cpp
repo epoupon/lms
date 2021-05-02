@@ -28,6 +28,7 @@
 #include "database/User.hpp"
 #include "utils/Logger.hpp"
 #include "SqlQuery.hpp"
+#include "Utils.hpp"
 
 namespace Database
 {
@@ -38,14 +39,14 @@ Wt::Dbo::Query<T>
 createQuery(Session& session,
 			const std::string& queryStr,
 			const std::set<IdType>& clusterIds,
-			const std::vector<std::string>& keywords)
+			const std::vector<std::string_view>& keywords)
 {
 
 	auto query {session.getDboSession().query<T>(queryStr)};
 	query.join("track t ON t.release_id = r.id");
 
-	for (const std::string& keyword : keywords)
-		query.where("r.name LIKE ?").bind("%%" + keyword + "%%");
+	for (std::string_view keyword : keywords)
+		query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%%" + escapeLikeKeyword(keyword) + "%%");
 
 	if (!clusterIds.empty())
 	{
@@ -300,7 +301,7 @@ Release::getByClusters(Session& session, const std::set<IdType>& clusters)
 std::vector<Release::pointer>
 Release::getByFilter(Session& session,
 		const std::set<IdType>& clusterIds,
-		const std::vector<std::string>& keywords,
+		const std::vector<std::string_view>& keywords,
 		std::optional<Range> range,
 		bool& moreResults)
 {

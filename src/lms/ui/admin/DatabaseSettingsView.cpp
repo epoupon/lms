@@ -139,7 +139,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			if (recommendationEngineTypeRow)
 				scanSettings.modify()->setRecommendationEngineType(_recommendationEngineTypeModel->getValue(*recommendationEngineTypeRow));
 
-			auto clusterTypes {StringUtils::splitString(valueText(TagsField).toUTF8(), " ")};
+			auto clusterTypes {StringUtils::splitStringCopy(valueText(TagsField).toUTF8(), " ")};
 			scanSettings.modify()->setClusterTypes(LmsApp->getDbSession(), std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
 		}
 

@@ -53,7 +53,8 @@ namespace UserInterface
 	void
 	SearchView::refreshView(const Wt::WString& searchText)
 	{
-		_keywords = StringUtils::splitString(searchText.toUTF8(), " ");
+		_searchValue = searchText.toUTF8();
+		_keywords = StringUtils::splitString(_searchValue, " ");
 		refreshView();
 	}
 
@@ -73,6 +74,7 @@ namespace UserInterface
 	SearchView::searchArtists()
 	{
 		bool more;
+
 		const auto artists {Database::Artist::getByFilter(LmsApp->getDbSession(),
 								_filters->getClusterIds(),
 								_keywords,

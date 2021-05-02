@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,29 +19,15 @@
 
 #pragma once
 
-#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
 
-#include "database/Types.hpp"
-
-namespace API::Subsonic
+namespace Database
 {
+#define ESCAPE_CHAR_STR "\\"
+	static constexpr char escapeChar {'\\'};
+	std::string escapeLikeKeyword(std::string_view keywords);
 
-struct Id
-{
-	enum class Type
-	{
-		Root,	// Where all artists artistless albums reside
-		Track,
-		Release,
-		Artist,
-		Playlist,
-	};
+} // namespace Database
 
-	Type 			type;
-	Database::IdType	value {};
-};
-
-std::optional<Id>	IdFromString(std::string_view id);
-std::string		IdToString(const Id& id);
-
-} // namespace API::Subsonic

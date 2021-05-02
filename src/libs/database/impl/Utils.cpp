@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,31 +17,17 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "Utils.hpp"
 
-#include <optional>
+#include "utils/String.hpp"
 
-#include "database/Types.hpp"
-
-namespace API::Subsonic
+namespace Database
 {
-
-struct Id
-{
-	enum class Type
+	std::string
+	escapeLikeKeyword(std::string_view keyword)
 	{
-		Root,	// Where all artists artistless albums reside
-		Track,
-		Release,
-		Artist,
-		Playlist,
-	};
+		return StringUtils::escapeString(keyword, "*_", escapeChar);
+	}
 
-	Type 			type;
-	Database::IdType	value {};
-};
+} // namespace Database
 
-std::optional<Id>	IdFromString(std::string_view id);
-std::string		IdToString(const Id& id);
-
-} // namespace API::Subsonic

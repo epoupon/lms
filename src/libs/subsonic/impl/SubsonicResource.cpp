@@ -71,7 +71,7 @@ namespace StringUtils
 {
 	template<>
 	std::optional<API::Subsonic::ClientVersion>
-	readAs(const std::string& str)
+	readAs(std::string_view str)
 	{
 		// Expects "X.Y.Z"
 		const auto numbers {StringUtils::splitString(str, ".")};
@@ -1454,7 +1454,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 	// Mandatory params
 	std::string query {getMandatoryParameterAs<std::string>(context.parameters, "query")};
 
-	std::vector<std::string> keywords {StringUtils::splitString(query, " ")};
+	std::vector<std::string_view> keywords {StringUtils::splitString(query, " ")};
 
 	// Optional params
 	std::size_t artistCount {getParameterAs<std::size_t>(context.parameters, "artistCount").value_or(20)};
