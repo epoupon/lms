@@ -103,13 +103,13 @@ createQuery(Session& session,
 		for (std::string_view keyword : keywords)
 		{
 			clauses.push_back("a.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-			query.bind("%%" + escapeLikeKeyword(keyword) + "%%");
+			query.bind("%" + escapeLikeKeyword(keyword) + "%");
 		}
 
 		for (std::string_view keyword : keywords)
 		{
 			sortClauses.push_back("a.sort_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-			query.bind("%%" + escapeLikeKeyword(keyword) + "%%");
+			query.bind("%" + escapeLikeKeyword(keyword) + "%");
 		}
 
 		query.where("(" + StringUtils::joinStrings(clauses, " AND ") + ") OR (" + StringUtils::joinStrings(sortClauses, " AND ") + ")");

@@ -36,7 +36,8 @@ ARG	BUILD_PACKAGES=" \
 	openssl-dev \
 	boost-dev \
 	libconfig-dev \
-	taglib-dev"
+	taglib-dev \
+	gtest-dev"
 
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
 

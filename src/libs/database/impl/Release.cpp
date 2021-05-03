@@ -46,7 +46,7 @@ createQuery(Session& session,
 	query.join("track t ON t.release_id = r.id");
 
 	for (std::string_view keyword : keywords)
-		query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%%" + escapeLikeKeyword(keyword) + "%%");
+		query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + escapeLikeKeyword(keyword) + "%");
 
 	if (!clusterIds.empty())
 	{

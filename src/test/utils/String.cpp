@@ -1,0 +1,89 @@
+/*
+ * Copyright (C) 2019 Emeric Poupon
+ *
+ * This file is part of LMS.
+ *
+ * LMS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * LMS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <gtest/gtest.h>
+
+#include "utils/String.hpp"
+
+TEST(StringUtils, splitString)
+{
+	{
+		const std::string test{"a"};
+
+		const std::vector<std::string_view> strings {StringUtils::splitString(test, "")};
+		ASSERT_EQ(strings.size(), 1);
+		EXPECT_EQ(strings.front() , "a");
+	}
+
+	{
+		const std::string test{"a b"};
+
+		const std::vector<std::string_view> strings {StringUtils::splitString(test, "|")};
+		ASSERT_EQ(strings.size(), 1);
+		EXPECT_EQ(strings.front(), "a b");
+	}
+
+	{
+		const std::string test{"  a"};
+
+		const std::vector<std::string_view> strings {StringUtils::splitString(test, " ")};
+		ASSERT_EQ(strings.size(), 1);
+		EXPECT_EQ(strings.front(), "a");
+	}
+
+	{
+		const std::string test{"a  "};
+
+		const std::vector<std::string_view> strings {StringUtils::splitString(test, " ")};
+		ASSERT_EQ(strings.size(), 1);
+		EXPECT_EQ(strings.front(), "a");
+	}
+
+	{
+		const std::string test{"a b"};
+
+		const std::vector<std::string_view> strings {StringUtils::splitString(test, " ")};
+		ASSERT_EQ(strings.size(), 2);
+		EXPECT_EQ(strings.front(), "a");
+		EXPECT_EQ(strings.back(), "b");
+	}
+
+	{
+		const std::string test{"a b,c|defgh  "};
+
+		const std::vector<std::string_view> strings {StringUtils::splitString(test, " ,|")};
+		ASSERT_EQ(strings.size(), 4);
+		EXPECT_EQ(strings[0], "a");
+		EXPECT_EQ(strings[1], "b");
+		EXPECT_EQ(strings[2], "c");
+		EXPECT_EQ(strings[3], "defgh");
+	}
+}
+
+TEST(StringUtils, escapeString)
+{
+	EXPECT_EQ(StringUtils::escapeString("", "*", ' '), "");
+	EXPECT_EQ(StringUtils::escapeString("", "", ' '), "");
+	EXPECT_EQ(StringUtils::escapeString("a", "", ' '), "a");
+	EXPECT_EQ(StringUtils::escapeString("*", "*", '_'), "_*");
+	EXPECT_EQ(StringUtils::escapeString("*a*", "*", '_'), "_*a_*");
+	EXPECT_EQ(StringUtils::escapeString("*a|", "*|", '_'), "_*a_|");
+	EXPECT_EQ(StringUtils::escapeString("**||", "*|", '_'), "_*_*_|_|");
+}
+

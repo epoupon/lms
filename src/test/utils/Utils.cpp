@@ -17,17 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Utils.hpp"
+#include <gtest/gtest.h>
 
-#include "utils/String.hpp"
-
-namespace Database
+int main(int argc, char **argv)
 {
-	std::string
-	escapeLikeKeyword(std::string_view keyword)
-	{
-		return StringUtils::escapeString(keyword, "%_", escapeChar);
-	}
-
-} // namespace Database
+	::testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
+}
 

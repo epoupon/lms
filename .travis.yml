@@ -19,6 +19,7 @@ addons:
         - libtag1-dev
         - libpam0g-dev
         - libgraphicsmagick++1-dev
+        - libgtest-dev
 compiler:
 - clang
 - gcc

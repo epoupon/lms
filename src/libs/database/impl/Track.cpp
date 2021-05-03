@@ -48,7 +48,7 @@ createQuery(Session& session,
 	auto query {session.getDboSession().query<T>(queryStr)};
 
 	for (std::string_view keyword : keywords)
-		query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%%" + escapeLikeKeyword(keyword) + "%%");
+		query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + escapeLikeKeyword(keyword) + "%");
 
 	if (!clusterIds.empty())
 	{
