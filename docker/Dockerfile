@@ -1,4 +1,4 @@
-FROM	alpine:3.10 AS build
+FROM	alpine:3.13 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -6,7 +6,7 @@ ARG	MAKEFLAGS="-j2"
 ARG	FFMPEG_VERSION=4.1.4
 ARG	WT_VERSION=4.5.0
 ARG	STB_VERSION=b42009b3b9d4ca35bc703f5310eedc74f584be58
-ARG	LMS_VERSION=v3.6.3
+ARG	LMS_VERSION=v3.25.2
 
 ARG	PREFIX="/tmp/install"
 
@@ -22,7 +22,6 @@ ARG	BUILD_PACKAGES=" \
 	g++ \
 	make \
 	openjpeg-dev \
-	jasper-dev \
 	libpng-dev \
 	nasm \
 	yasm \
@@ -111,7 +110,7 @@ RUN \
 RUN \
 	DIR=/tmp/lms && mkdir -p ${DIR} && cd ${DIR} && \
 	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
-	make && \
+	LD_LIBRARY_PATH=${PREFIX}/lib VERBOSE=1 make && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
 	make install && \
 	mkdir -p ${PREFIX}/etc/ && \
@@ -135,14 +134,14 @@ RUN \
 	rm -rf /tmp/fakeroot/share/man
 
 ## Release Stage
-FROM		alpine:3.10 AS release
+FROM		alpine:3.13 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 LABEL		version=${LMS_VERSION}
 
 ARG	RUNTIME_PACKAGES=" \
-	openssl \
+	libssl1.1 \
+	libcrypto1.1 \
 	openjpeg \
-	jasper-libs \
 	libpng \
 	libogg \
 	opus \
