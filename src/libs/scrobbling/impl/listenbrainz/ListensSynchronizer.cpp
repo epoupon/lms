@@ -98,7 +98,7 @@ namespace
 			Wt::Json::Object root;
 			Wt::Json::parse(std::string {msgBody}, root);
 
-			const Wt::Json::Object& payload {static_cast<Wt::Json::Object>(root.get("payload"))};
+			const Wt::Json::Object& payload {static_cast<const Wt::Json::Object&>(root.get("payload"))};
 			return static_cast<int>(payload.get("count"));
 		}
 		catch (const Wt::WException& e)
