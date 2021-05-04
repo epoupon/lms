@@ -313,6 +313,17 @@ formatToSuffix(AudioFormat format)
 }
 
 static
+std::string
+dateTimeToCreatedString(const Wt::WDateTime& dateTime)
+{
+		const std::time_t t {dateTime.toTime_t()};
+		std::tm gmTime;
+		std::ostringstream oss;
+		oss << std::put_time(::gmtime_r(&t, &gmTime), "%FT%T");
+		return oss.str();
+}
+
+static
 Response::Node
 trackToResponseNode(const Track::pointer& track, Session& dbSession, const User::pointer& user)
 {
@@ -365,6 +376,7 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 
 	trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count());
 	trackResponse.setAttribute("type", "music");
+	trackResponse.setAttribute("created", dateTimeToCreatedString(track->getLastWritten()));
 
 	if (user->hasStarredTrack(track))
 		trackResponse.setAttribute("starred", reportedStarredDate);
@@ -415,13 +427,7 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 		albumNode.setAttribute("isDir", true);
 	}
 
-	{
-		std::time_t t {release->getLastWritten().toTime_t()};
-		std::tm gmTime;
-		std::ostringstream oss; oss << std::put_time(::gmtime_r(&t, &gmTime), "%FT%T");
-		albumNode.setAttribute("created", oss.str());
-	}
-
+	albumNode.setAttribute("created", dateTimeToCreatedString(release->getLastWritten()));
 	albumNode.setAttribute("id", IdToString({Id::Type::Release, release.id()}));
 	albumNode.setAttribute("coverArt", IdToString({Id::Type::Release, release.id()}));
 	auto releaseYear {release->getReleaseYear()};
