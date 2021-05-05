@@ -38,9 +38,9 @@ static
 std::string
 getJsonData(const UUID& mbid)
 {
-	static constexpr std::string_view defaultAPIURL {"https://acousticbrainz.org/api"};
+	static constexpr std::string_view defaultAPIURL {"https://acousticbrainz.org"};
 
-	const std::string url {std::string {Service<IConfig>::get()->getString("acousticbrainz-api-base-url", defaultAPIURL)} + std::string {mbid.getAsString()} + "/low-level"};
+	const std::string url {std::string {Service<IConfig>::get()->getString("acousticbrainz-api-base-url", defaultAPIURL)} + "/api/v1/" + std::string {mbid.getAsString()} + "/low-level"};
 
 	boost::asio::io_service ioService;
 
