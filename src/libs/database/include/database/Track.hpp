@@ -129,6 +129,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		std::string 				getName() const			{ return _name; }
 		std::filesystem::path			getPath() const			{ return _filePath; }
 		std::chrono::milliseconds		getDuration() const		{ return _duration; }
+		const Wt::WDateTime&			getLastWritten() const	{ return _fileLastWrite; }
 		std::optional<int>			getYear() const;
 		std::optional<int>			getOriginalYear() const;
 		Wt::WDateTime				getLastWriteTime() const	{ return _fileLastWrite; }
