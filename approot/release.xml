@@ -14,7 +14,7 @@
 		<div class="col-md-8">
 			<div class="Lms-header">
 				<h3><div class="Lms-releasename text-primary">${name}</div></h3>
-				${<if-has-artist>}<h4>${artist class="Lms-btn Lms-artistname text-muted"}</h4>${</if-has-artist>}
+				${<if-has-release-artists>}${artists}${</if-has-release-artists>}
 				<div class="text-muted"><small>${<if-has-year>}${year}${</if-has-year>}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>}</small></div>
 				${clusters}
 				${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
@@ -52,7 +52,11 @@
 	</div>
 </message>
 
-<message id="Lms.Explore.Release.template.disc-entry">
+<message id="Lms.Explore.Release.template.entry-release-artist">
+	<h4>${artist class="Lms-btn Lms-artistname text-muted"}</h4>
+</message>
+
+<message id="Lms.Explore.Release.template.entry-disc">
 	<h4>${disc-title}</h4>
 	${tracks}
 </message>

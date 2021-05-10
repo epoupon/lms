@@ -114,15 +114,16 @@ Release::refreshView()
 		if (artists.empty())
 			artists = release->getArtists();
 
-		if (artists.size() > 1)
+		if (!artists.empty())
 		{
-			setCondition("if-has-artist", true);
-			bindNew<Wt::WText>("artist", Wt::WString::tr("Lms.Explore.various-artists"));
-		}
-		else if (artists.size() == 1)
-		{
-			setCondition("if-has-artist", true);
-			bindWidget("artist", LmsApplication::createArtistAnchor(artists.front()));
+			setCondition("if-has-release-artists", true);
+
+			Wt::WContainerWidget* artistsContainer {bindNew<Wt::WContainerWidget>("artists")};
+			for (const auto& artist : artists)
+			{
+				Wt::WTemplate* artistTemplate {artistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-release-artist"))};
+				artistTemplate->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
+			}
 		}
 	}
 
@@ -183,8 +184,7 @@ Release::refreshView()
 				return it->second;
 		}
 
-		Wt::WTemplate* disc {rootContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.disc-entry"))};
-		disc->addFunction("tr", &Wt::WTemplate::Functions::tr);
+		Wt::WTemplate* disc {rootContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-disc"))};
 
 		if (discSubtitle.empty())
 			disc->bindNew<Wt::WText>("disc-title", Wt::WString::tr("Lms.Explore.Release.disc").arg(discNumber));
