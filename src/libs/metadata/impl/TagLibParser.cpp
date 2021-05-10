@@ -396,13 +396,13 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 
 	track.album = getAlbum(properties);
 	track.artists = getArtists(properties, {"ARTISTS", "ARTIST"}, {"ARTISTSORT"}, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"});
-	track.albumArtists = getArtists(properties, {"ALBUMARTIST"}, {"ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"});
-	track.conductorArtists = getArtists(properties, {"CONDUCTOR"}, {""}, {});
-	track.composerArtists = getArtists(properties, {"COMPOSER"}, {"COMPOSERSORT"}, {});
-	track.lyricistArtists = getArtists(properties, {"LYRICIST"}, {"LYRICISTSORT"}, {});
-	track.mixerArtists = getArtists(properties, {"MIXER"}, {""}, {});
-	track.producerArtists = getArtists(properties, {"PRODUCER"}, {""}, {});
-	track.remixerArtists = getArtists(properties, {"REMIXER", "ModifiedBy"}, {""}, {});
+	track.albumArtists = getArtists(properties, {"ALBUMARTISTS", "ALBUMARTIST"}, {"ALBUMARTISTSSORT", "ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"});
+	track.conductorArtists = getArtists(properties, {"CONDUCTORS", "CONDUCTOR"}, {"CONDUCTORSSORT", "CONDUCTORSORT"}, {});
+	track.composerArtists = getArtists(properties, {"COMPOSERS", "COMPOSER"}, {"COMPOSERSSORT", "COMPOSERSORT"}, {});
+	track.lyricistArtists = getArtists(properties, {"LYRICISTS", "LYRICIST"}, {"LYRICISTSSORT", "LYRICISTSORT"}, {});
+	track.mixerArtists = getArtists(properties, {"MIXERS", "MIXER"}, {"MIXERSSORT", "MIXERSORT"}, {});
+	track.producerArtists = getArtists(properties, {"PRODUCERS", "PRODUCER"}, {"PRODUCERSSORT", "PRODUCERSORT"}, {});
+	track.remixerArtists = getArtists(properties, {"REMIXERS", "REMIXER", "ModifiedBy"}, {"REMIXERSSORT", "REMIXERSORT"}, {});
 
 	return track;
 }
