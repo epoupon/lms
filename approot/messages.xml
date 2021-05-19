@@ -155,7 +155,6 @@
 
 <!--Explore:Search-->
 <message id="Lms.Explore.Search.search-placeholder">Search...</message>
-<message id="Lms.Explore.Search.search">Search results</message>
 
 <!--Player-->
 <message id="Lms.Player.transcoding-active">Transcoding active</message>
