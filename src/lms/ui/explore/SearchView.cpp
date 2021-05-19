@@ -76,8 +76,6 @@ namespace UserInterface
 		{
 			refreshView();
 		});
-
-		refreshView();
 	}
 
 	std::size_t
