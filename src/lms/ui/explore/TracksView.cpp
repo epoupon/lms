@@ -19,57 +19,46 @@
 
 #include "TracksView.hpp"
 
-#include <Wt/WAnchor.h>
-#include <Wt/WLineEdit.h>
 #include <Wt/WMenu.h>
 #include <Wt/WPopupMenu.h>
 #include <Wt/WText.h>
 
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackList.hpp"
-#include "database/User.hpp"
-#include "scrobbling/IScrobbling.hpp"
 #include "utils/Logger.hpp"
-#include "utils/String.hpp"
 
-#include "common/LoadingIndicator.hpp"
+#include "common/InfiniteScrollingContainer.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
-#include "MediaPlayer.hpp"
 #include "TrackListHelpers.hpp"
-#include "TrackStringUtils.hpp"
 
 using namespace Database;
 
 namespace UserInterface {
 
-Tracks::Tracks(Filters* filters)
+Tracks::Tracks(Filters& filters)
 : Wt::WTemplate {Wt::WString::tr("Lms.Explore.Tracks.template")},
-_filters {filters}
+_trackCollector {filters, _defaultMode, _maxCount}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	{
 		auto* menu {bindNew<Wt::WMenu>("mode")};
 
-		auto addItem = [this](Wt::WMenu& menu,const Wt::WString& str, Mode mode)
+		auto addItem = [this](Wt::WMenu& menu,const Wt::WString& str, TrackCollector::Mode mode)
 		{
 			auto* item {menu.addItem(str)};
 			item->clicked().connect([this, mode] { refreshView(mode); });
 
-			if (mode == defaultMode)
+			if (mode == _defaultMode)
 				item->renderSelected(true);
 		};
 
-		addItem(*menu, Wt::WString::tr("Lms.Explore.random"), Mode::Random);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.starred"), Mode::Starred);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-played"), Mode::RecentlyPlayed);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.most-played"), Mode::MostPlayed);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-added"), Mode::RecentlyAdded);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.all"), Mode::All);
+		addItem(*menu, Wt::WString::tr("Lms.Explore.random"), TrackCollector::Mode::Random);
+		addItem(*menu, Wt::WString::tr("Lms.Explore.starred"), TrackCollector::Mode::Starred);
+		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-played"), TrackCollector::Mode::RecentlyPlayed);
+		addItem(*menu, Wt::WString::tr("Lms.Explore.most-played"), TrackCollector::Mode::MostPlayed);
+		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-added"), TrackCollector::Mode::RecentlyAdded);
+		addItem(*menu, Wt::WString::tr("Lms.Explore.all"), TrackCollector::Mode::All);
 	}
 
 	Wt::WText* playBtn = bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
@@ -97,155 +86,58 @@ _filters {filters}
 		popup->popup(moreBtn);
 	});
 
-	_tracksContainer = bindNew<Wt::WContainerWidget>("tracks");
-	hideLoadingIndicator();
+	_container = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.Tracks.template.container"));
+	_container->onRequestElements.connect([this]
+	{
+		addSome();
+	});
 
-	filters->updated().connect([this]
+	filters.updated().connect([this]
 	{
 		refreshView();
 	});
 
-	refreshView();
+	refreshView(_trackCollector.getMode());
 }
 
 void
 Tracks::refreshView()
 {
-	_tracksContainer->clear();
-	_randomTracks.clear();
+	_container->clear();
+	_trackCollector.reset();
 	addSome();
 }
 
 void
-Tracks::refreshView(Mode mode)
+Tracks::refreshView(TrackCollector::Mode mode)
 {
-	_mode = mode;
+	_trackCollector.setMode(mode);
 	refreshView();
-}
-
-void
-Tracks::displayLoadingIndicator()
-{
-	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
-	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
-	{
-		if (!visible)
-			return;
-
-		addSome();
-	});
-}
-
-void
-Tracks::hideLoadingIndicator()
-{
-	_loadingIndicator = nullptr;
-	bindEmpty("loading-indicator");
-}
-
-std::vector<Database::Track::pointer>
-Tracks::getRandomTracks(std::optional<Range> range, bool& moreResults)
-{
-	std::vector<Track::pointer> tracks;
-
-	if (_randomTracks.empty())
-		_randomTracks = Track::getAllIdsRandom(LmsApp->getDbSession(), _filters->getClusterIds(), maxItemsPerMode[Mode::Random]);
-
-	{
-		auto itBegin {std::cbegin(_randomTracks) + std::min(range ? range->offset : 0, _randomTracks.size())};
-		auto itEnd {std::cbegin(_randomTracks) + std::min(range ? range->offset + range->limit : _randomTracks.size(), _randomTracks.size())};
-
-		for (auto it {itBegin}; it != itEnd; ++it)
-		{
-			const Track::pointer track {Track::getById(LmsApp->getDbSession(), *it)};
-			if (track)
-				tracks.push_back(track);
-		}
-
-		moreResults = (itEnd != std::cend(_randomTracks));
-	}
-
-	return tracks;
-}
-
-std::vector<Track::pointer>
-Tracks::getTracks(std::optional<Range> range, bool& moreResults)
-{
-	std::vector<Track::pointer> tracks;
-
-	const std::optional<std::size_t> modeLimit{maxItemsPerMode[_mode]};
-	if (modeLimit)
-	{
-		if (range)
-			range->limit = std::min(*modeLimit - range->offset, range->limit);
-		else
-			range = Range {0, *modeLimit};
-	}
-
-	switch (_mode)
-	{
-		case Mode::Random:
-			tracks = getRandomTracks(range, moreResults);
-			break;
-
-		case Mode::Starred:
-			tracks = Track::getStarred(LmsApp->getDbSession(), LmsApp->getUser(), _filters->getClusterIds(), range, moreResults);
-			break;
-
-		case Mode::RecentlyPlayed:
-			tracks = Service<Scrobbling::IScrobbling>::get()->getRecentTracks(LmsApp->getDbSession(), LmsApp->getUser(), _filters->getClusterIds(), range, moreResults);
-			break;
-
-		case Mode::MostPlayed:
-			tracks = Service<Scrobbling::IScrobbling>::get()->getTopTracks(LmsApp->getDbSession(), LmsApp->getUser(), _filters->getClusterIds(), range, moreResults);
-			break;
-
-		case Mode::RecentlyAdded:
-			tracks = Track::getLastWritten(LmsApp->getDbSession(), std::nullopt, _filters->getClusterIds(), range, moreResults);
-			break;
-
-		case Mode::All:
-			tracks = Track::getByFilter(LmsApp->getDbSession(), _filters->getClusterIds(), {}, range, moreResults);
-			break;
-	}
-
-	if (range && modeLimit && (range->offset + range->limit == *modeLimit))
-		moreResults = false;
-
-	return tracks;
-}
-
-std::vector<Database::IdType>
-Tracks::getAllTracks()
-{
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-	bool moreResults;
-	const auto tracks {getTracks(std::nullopt, moreResults)};
-
-	std::vector<Database::IdType> res;
-	res.reserve(tracks.size());
-	std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Database::Track::pointer& track) { return track.id(); });
-
-	return res;
 }
 
 void
 Tracks::addSome()
 {
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	bool moreResults {};
 
-	bool moreResults;
-	for (const Track::pointer& track : getTracks(Range {static_cast<std::size_t>(_tracksContainer->count()), batchSize}, moreResults))
 	{
-		_tracksContainer->addWidget(TrackListHelpers::createEntry(track, tracksAction));
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+		const auto tracks {_trackCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize}, moreResults)};
+
+		for (const auto& track : tracks)
+			_container->add(TrackListHelpers::createEntry(track, tracksAction));
 	}
 
-	if (moreResults)
-		displayLoadingIndicator();
-	else
-		hideLoadingIndicator();
+	_container->setHasMore(moreResults);
 }
+
+std::vector<Database::IdType>
+Tracks::getAllTracks()
+{
+	return _trackCollector.getAll();
+}
+
 
 } // namespace UserInterface
 

@@ -88,14 +88,14 @@ Explore::Explore(Filters* filters)
 	Wt::WStackedWidget* contentsStack = bindNew<Wt::WStackedWidget>("contents");
 	contentsStack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
 
-	auto artists = std::make_unique<Artists>(_filters);
+	auto artists = std::make_unique<Artists>(*_filters);
 	contentsStack->addWidget(std::move(artists));
 
 	auto artist = std::make_unique<Artist>(_filters);
 	artist->artistsAction.connect(this, &Explore::handleArtistsAction);
 	contentsStack->addWidget(std::move(artist));
 
-	auto releases = std::make_unique<Releases>(_filters);
+	auto releases = std::make_unique<Releases>(*_filters);
 	releases->releasesAction.connect(this, &Explore::handleReleasesAction);
 	contentsStack->addWidget(std::move(releases));
 
@@ -109,7 +109,7 @@ Explore::Explore(Filters* filters)
 	_search = search.get();
 	contentsStack->addWidget(std::move(search));
 
-	auto tracks = std::make_unique<Tracks>(_filters);
+	auto tracks = std::make_unique<Tracks>(*_filters);
 	tracks->tracksAction.connect(this, &Explore::handleTracksAction);
 	contentsStack->addWidget(std::move(tracks));
 

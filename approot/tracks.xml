@@ -4,16 +4,11 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Tracks.template">
-	<div class="row">
-		<div class="col-lg-8">
-			<div class="Lms-header">
-				${mode class="nav nav-pills Lms-explore-mode-container"}
-				${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
-			</div>
-			${tracks}
-			${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
-		</div>
+	<div class="Lms-header">
+		${mode class="nav nav-pills Lms-explore-mode-container"}
+		${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
 	</div>
+	${tracks}
 </message>
 
 <message id="Lms.Explore.Tracks.template.entry">
@@ -43,6 +38,15 @@
 
 <message id="Lms.Explore.Tracks.template.entry-artist">
 	<small>${artist class="Lms-btn Lms-artistname text-muted"}</small>
+</message>
+
+<message id="Lms.Explore.Tracks.template.container">
+	<div class="row">
+		<div class="col-lg-8">
+			${elements}
+			${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
+		</div>
+	</div>
 </message>
 
 </messages>

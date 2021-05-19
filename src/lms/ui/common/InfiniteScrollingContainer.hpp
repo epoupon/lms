@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,42 +19,32 @@
 
 #pragma once
 
-#include <unordered_map>
-
 #include <Wt/WContainerWidget.h>
+#include <Wt/WSignal.h>
+#include <Wt/WString.h>
 #include <Wt/WTemplate.h>
-
-#include "database/Types.hpp"
-#include "PlayQueueAction.hpp"
-#include "TrackCollector.hpp"
 
 namespace UserInterface
 {
-
-	class Filters;
-	class InfiniteScrollingContainer;
-
-	class Tracks : public Wt::WTemplate
+	class InfiniteScrollingContainer : public Wt::WTemplate
 	{
 		public:
-			Tracks(Filters& filters);
+			// "text" must contain loading-indicator and "elements"
+			InfiniteScrollingContainer(const Wt::WString& text = Wt::WString::tr("Lms.infinite-scrolling-container"));
 
-			PlayQueueActionSignal tracksAction;
+			void clear();
+			std::size_t getCount();
+			void add(std::unique_ptr<Wt::WWidget> result);
+
+			void setHasMore(bool hasMore);
+
+			Wt::Signal<>	onRequestElements;
 
 		private:
-			void refreshView();
-			void refreshView(TrackCollector::Mode mode);
-			void addSome();
+			void displayLoadingIndicator();
+			void hideLoadingIndicator();
 
-			std::vector<Database::IdType> getAllTracks();
-
-			static constexpr TrackCollector::Mode _defaultMode {TrackCollector::Mode::Random};
-			static constexpr std::size_t _batchSize {6};
-			static constexpr std::size_t _maxCount {128};
-
-			InfiniteScrollingContainer* _container {};
-			TrackCollector				_trackCollector;
+			Wt::WContainerWidget*	_elements;
+			Wt::WTemplate*			_loadingIndicator;
 	};
-
-} // namespace UserInterface
-
+}

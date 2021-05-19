@@ -7,10 +7,7 @@
 		${mode class="nav nav-pills Lms-explore-mode-container"}
 		${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
 	</div>
-	<div class="row">
-		${releases}
-	</div>
-	${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
+	${releases}
 </message>
 
 <message id="Lms.Explore.Releases.template.entry-grid">
@@ -26,5 +23,13 @@
 		</div>
 	</div>
 </message>
+
+<message id="Lms.Explore.Releases.template.container">
+	<div class="row">
+		${elements}
+	</div>
+	${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
+</message>
+
 
 </messages>

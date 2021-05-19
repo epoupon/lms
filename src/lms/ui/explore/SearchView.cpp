@@ -19,14 +19,19 @@
 
 #include "SearchView.hpp"
 
+#include <functional>
+
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
+#include <Wt/WStackedWidget.h>
 
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 
+#include "common/InfiniteScrollingContainer.hpp"
+#include "common/LoadingIndicator.hpp"
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
@@ -41,97 +46,152 @@ namespace UserInterface
 	SearchView::SearchView(Filters* filters)
 	: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Search.template")}
 	, _filters {filters}
+	, _releaseCollector {*filters, ReleaseCollector::Mode::Search, getMaxCount(Mode::Release)}
+	, _artistCollector {*filters, ArtistCollector::Mode::Search, getMaxCount(Mode::Artist)}
+	, _trackCollector {*filters, TrackCollector::Mode::Search, getMaxCount(Mode::Track)}
 	{
 		addFunction("tr", &Wt::WTemplate::Functions::tr);
+
+		Wt::WStackedWidget* stack {bindNew<Wt::WStackedWidget>("stack")};
+		stack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
+		_menu = bindNew<Wt::WMenu>("mode", stack);
+
+		auto addItem = [=](const Wt::WString& str, Mode mode, const Wt::WString& templateStr, std::function<void()> onRequestElementsFunc)
+		{
+			assert(modeToIndex(mode) == _results.size());
+
+			auto results {std::make_unique<InfiniteScrollingContainer>(templateStr)};
+			results->onRequestElements.connect(std::move(onRequestElementsFunc));
+
+			_results.push_back(results.get());
+			_menu->addItem(str, std::move(results));
+		};
+
+		// same order as Mode!
+		addItem(Wt::WString::tr("Lms.Explore.releases"), Mode::Release, Wt::WString::tr("Lms.Explore.Releases.template.container"), [this]{ addSomeReleases(); });
+		addItem(Wt::WString::tr("Lms.Explore.artists"), Mode::Artist, Wt::WString::tr("Lms.infinite-scrolling-container"), [this]{ addSomeArtists(); });
+		addItem(Wt::WString::tr("Lms.Explore.tracks"), Mode::Track, Wt::WString::tr("Lms.Explore.Tracks.template.container"), [this]{ addSomeTracks(); });
 
 		_filters->updated().connect([=]
 		{
 			refreshView();
 		});
+
+		refreshView();
+	}
+
+	std::size_t
+	SearchView::modeToIndex(Mode mode) const
+	{
+		return static_cast<std::size_t>(mode);
+	}
+
+	Wt::WMenuItem&
+	SearchView::getItemMenu(Mode mode) const
+	{
+		return *_menu->itemAt(modeToIndex(mode));
+	}
+
+	InfiniteScrollingContainer&
+	SearchView::getResultContainer(Mode mode) const
+	{
+		return *_results[modeToIndex(mode)];
+	}
+
+	std::size_t
+	SearchView::getBatchSize(Mode mode) const
+	{
+		auto it {_batchSizes.find(mode)};
+		assert(it != _batchSizes.cend());
+		return it->second;
+	}
+
+	std::size_t
+	SearchView::getMaxCount(Mode mode) const
+	{
+		auto it {_maxCounts.find(mode)};
+		assert(it != _maxCounts.cend());
+		return it->second;
 	}
 
 	void
 	SearchView::refreshView(const Wt::WString& searchText)
 	{
-		_searchValue = searchText.toUTF8();
-		_keywords = StringUtils::splitString(_searchValue, " ");
+		_releaseCollector.setSearch(searchText.toUTF8());
+		_artistCollector.setSearch(searchText.toUTF8());
+		_trackCollector.setSearch(searchText.toUTF8());
 		refreshView();
 	}
 
 	void
 	SearchView::refreshView()
 	{
-		clear();
+		for (InfiniteScrollingContainer* results : _results)
+			results->clear();
 
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-		searchArtists();
-		searchReleases();
-		searchTracks();
+		addSomeReleases();
+		addSomeArtists();
+		addSomeTracks();
 	}
 
 	void
-	SearchView::searchArtists()
+	SearchView::addSomeArtists()
 	{
-		bool more;
+		InfiniteScrollingContainer& results {getResultContainer(Mode::Artist)};
+		bool moreResults {};
 
-		const auto artists {Database::Artist::getByFilter(LmsApp->getDbSession(),
-								_filters->getClusterIds(),
-								_keywords,
-								std::nullopt,
-								Database::Artist::SortMethod::BySortName,
-								Database::Range {0, maxEntries}, more)};
-
-		if (!artists.empty())
 		{
-			setCondition("if-artists", true);
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-			auto* container {bindNew<Wt::WContainerWidget>("artists")};
-
-			for (const Database::Artist::pointer& artist : artists)
-				container->addWidget(ArtistListHelpers::createEntrySmall(artist));
+			const Database::Range range {results.getCount(), getBatchSize(Mode::Artist)};
+			for (const auto& artist : _artistCollector.get(range, moreResults))
+				results.add(ArtistListHelpers::createEntry(artist));
 		}
+
+		results.setHasMore(moreResults);
+
+		getItemMenu(Mode::Artist).setDisabled(results.getCount() == 0);
 	}
 
 	void
-	SearchView::searchReleases()
+	SearchView::addSomeReleases()
 	{
-		bool more;
-		const auto releases {Database::Release::getByFilter(LmsApp->getDbSession(),
-								_filters->getClusterIds(),
-								_keywords,
-								Database::Range {0, maxEntries}, more)};
+		InfiniteScrollingContainer& results {getResultContainer(Mode::Release)};
+		bool moreResults {};
 
-		if (!releases.empty())
 		{
-			setCondition("if-releases", true);
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-			auto* container {bindNew<Wt::WContainerWidget>("releases")};
-
-			for (const Database::Release::pointer& release : releases)
-				container->addWidget(ReleaseListHelpers::createEntry(release));
+			const Database::Range range {results.getCount(), getBatchSize(Mode::Release)};
+			for (const auto& release : _releaseCollector.get(range, moreResults))
+				results.add(ReleaseListHelpers::createEntry(release));
 		}
+
+		results.setHasMore(moreResults);
+
+		getItemMenu(Mode::Release).setDisabled(results.getCount() == 0);
 	}
 
 	void
-	SearchView::searchTracks()
+	SearchView::addSomeTracks()
 	{
-		bool more;
-		const auto tracks {Database::Track::getByFilter(LmsApp->getDbSession(),
-								_filters->getClusterIds(),
-								_keywords,
-								Database::Range {0, maxEntries}, more)};
+		InfiniteScrollingContainer& results {getResultContainer(Mode::Track)};
+		bool moreResults {};
 
-		if (!tracks.empty())
 		{
-			setCondition("if-tracks", true);
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-			auto* container {bindNew<Wt::WContainerWidget>("tracks")};
-
-			for (const Database::Track::pointer& track : tracks)
-				container->addWidget(TrackListHelpers::createEntry(track, tracksAction));
+			const Database::Range range {results.getCount(), getBatchSize(Mode::Track)};
+			for (const auto& track : _trackCollector.get(range, moreResults))
+				results.add(TrackListHelpers::createEntry(track, tracksAction));
 		}
+
+		results.setHasMore(moreResults);
+
+		getItemMenu(Mode::Track).setDisabled(results.getCount() == 0);
 	}
+
+
 
 } // namespace UserInterface
 
