@@ -62,7 +62,7 @@ class Track : public Wt::Dbo::Dbo<Track>
 		static std::size_t getCount(Session& session);
 		static pointer getByPath(Session& session, const std::filesystem::path& p);
 		static pointer getById(Session& session, IdType id);
-		static pointer getByRecordingMBID(Session& session, const UUID& MBID);
+		static std::vector<pointer> getByRecordingMBID(Session& session, const UUID& MBID);
 		static std::vector<pointer>	getSimilarTracks(Session& session,
 							const std::unordered_set<IdType>& trackIds,
 							std::optional<std::size_t> offset = {},

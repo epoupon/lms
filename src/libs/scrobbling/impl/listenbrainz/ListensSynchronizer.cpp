@@ -130,7 +130,12 @@ namespace
 		{
 			const Wt::Json::Object& additionalInfo = metadata.get("additional_info");
 			if (std::optional<UUID> recordingMBID {UUID::fromString(additionalInfo.get("recording_mbid").orIfNull(""))})
-				track = Database::Track::getByRecordingMBID(session, *recordingMBID);
+			{
+				const auto tracks {Database::Track::getByRecordingMBID(session, *recordingMBID)};
+				// if duplicated files, do not record it (let the user correct its database)
+				if (tracks.size() == 1)
+					track = tracks.front();
+			}
 		}
 
 		if (track)

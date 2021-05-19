@@ -152,13 +152,15 @@ Track::getById(Session& session, IdType id)
 		.where("id = ?").bind(id);
 }
 
-Track::pointer
+std::vector<Track::pointer>
 Track::getByRecordingMBID(Session& session, const UUID& mbid)
 {
 	session.checkSharedLocked();
 
-	return session.getDboSession().find<Track>()
+	Wt::Dbo::collection<Track::pointer> res = session.getDboSession().find<Track>()
 		.where("recording_mbid = ?").bind(std::string {mbid.getAsString()});
+
+	return std::vector<Track::pointer>(res.begin(), res.end());
 }
 
 Track::pointer
