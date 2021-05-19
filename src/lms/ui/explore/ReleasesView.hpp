@@ -50,7 +50,7 @@ namespace UserInterface
 
 			static constexpr std::size_t _maxItemsPerLine {6};
 			static constexpr std::size_t _batchSize {_maxItemsPerLine};
-			static constexpr std::size_t _maxCount {_maxItemsPerLine * 24};
+			static constexpr std::size_t _maxCount {_maxItemsPerLine * 32};
 
 			InfiniteScrollingContainer* _container {};
 			ReleaseCollector			_releaseCollector;

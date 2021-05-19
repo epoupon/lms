@@ -46,7 +46,7 @@ namespace UserInterface
 			void addSome();
 
 			static constexpr std::size_t _batchSize {30};
-			static constexpr std::size_t _maxCount {128};
+			static constexpr std::size_t _maxCount {256};
 
 			InfiniteScrollingContainer* _container {};
 			ArtistCollector				_artistCollector;
