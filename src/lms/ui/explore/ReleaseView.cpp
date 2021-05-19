@@ -107,25 +107,7 @@ Release::refreshView()
 		}
 	}
 
-	{
-		std::vector<Wt::Dbo::ptr<Database::Artist>> artists;
-
-		artists = release->getReleaseArtists();
-		if (artists.empty())
-			artists = release->getArtists();
-
-		if (!artists.empty())
-		{
-			setCondition("if-has-release-artists", true);
-
-			Wt::WContainerWidget* artistsContainer {bindNew<Wt::WContainerWidget>("artists")};
-			for (const auto& artist : artists)
-			{
-				Wt::WTemplate* artistTemplate {artistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-release-artist"))};
-				artistTemplate->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
-			}
-		}
-	}
+	refreshReleaseArtists(release);
 
 	{
 		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getCoverResource()->getReleaseUrl(release.id(), CoverResource::Size::Large)))};
@@ -260,6 +242,35 @@ Release::refreshView()
 		}
 		else
 			entry->bindString("is-playing", "");
+	}
+}
+
+void
+Release::refreshReleaseArtists(const Database::Release::pointer& release)
+{
+	std::vector<Wt::Dbo::ptr<Database::Artist>> artists;
+
+	artists = release->getReleaseArtists();
+	if (artists.empty())
+	{
+		artists = release->getArtists(Database::TrackArtistLinkType::Artist);
+		if (artists.size() > 1)
+		{
+			setCondition("if-has-various-release-artists", true);
+			return;
+		}
+	}
+
+	if (!artists.empty())
+	{
+		setCondition("if-has-release-artists", true);
+
+		Wt::WContainerWidget* artistsContainer {bindNew<Wt::WContainerWidget>("artists")};
+		for (const auto& artist : artists)
+		{
+			Wt::WTemplate* artistTemplate {artistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-release-artist"))};
+			artistTemplate->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
+		}
 	}
 }
 
