@@ -124,7 +124,6 @@ class TmpDatabase final
 		const std::filesystem::path _tmpFile {std::tmpnam(nullptr)};
 		ScopedFileDeleter fileDeleter {_tmpFile};
 		Database::Db _db {_tmpFile};
-
 };
 
 class DatabaseFixture : public ::testing::Test

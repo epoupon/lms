@@ -42,7 +42,6 @@ TEST_F(DatabaseFixture, SingleTrack)
 
 TEST_F(DatabaseFixture, MultipleTracksSearchByFilter)
 {
-
 	ScopedTrack track1 {session, ""};
 	ScopedTrack track2 {session, ""};
 	ScopedTrack track3 {session, ""};

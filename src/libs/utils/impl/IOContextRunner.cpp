@@ -40,10 +40,8 @@ IOContextRunner::stop()
 
 IOContextRunner::~IOContextRunner()
 {
-
 	stop();
 
 	for (std::thread& t : _threads)
 		t.join();
-
 }

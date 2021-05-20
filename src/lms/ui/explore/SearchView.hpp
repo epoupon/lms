@@ -49,7 +49,6 @@ namespace UserInterface
 			void refreshView(const Wt::WString& searchText);
 
 		private:
-
 			// same order as in the menu
 			enum class Mode
 			{

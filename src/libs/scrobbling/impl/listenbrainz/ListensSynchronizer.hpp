@@ -67,7 +67,6 @@ namespace Scrobbling::ListenBrainz
 				std::size_t		fetchedListenCount{};
 				std::size_t		matchedListenCount{};
 				std::size_t		importedListenCount{};
-
 			};
 
 			UserContext& getUserContext(Database::IdType userId);
