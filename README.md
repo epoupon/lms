@@ -56,6 +56,22 @@ The Subsonic API is enabled by default.
 
 __Note__: since _LMS_ may store hashed and salted passwords or may forward authentication requests to external services, it cannot handle the __token authentication__ method defined from version 1.13.0.
 
+## About tags
+_LMS_ relies exclusively on tags to organize your music collection.
+
+### Filtering
+You can specify the tags you want to be used to filter your collection. By default, `GENRE`, `ALBUMGROUPING`, `MOOD` and `ALBUMMOOD` tags are used.
+In the administration  panel, you can set whatever tags you want, even custom tags.
+
+### Multiple album artists
+_LMS_ requires the `ALBUMARTISTS` and `ALBUMARTISTSSORT` tags to properly handle multiple album artists on the same album. As they are a custom tags, you may need to setup your favorite tagger to add them.
+
+__Note__: if you use [Picard](https://picard.musicbrainz.org/), add the following script to include these tags:
+```
+$setmulti(albumartists,%_albumartists%)
+$setmulti(albumartistssort,%_albumartists_sort%)
+```
+
 ## Keyboard shortcuts
 * Play/pause: <kbd>Space</bbd>
 * Previous track: <kbd>Ctrl</kbd> + <kbd>Left</kbd>
