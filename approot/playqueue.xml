@@ -8,14 +8,13 @@
 <message id="Lms.PlayQueue.template.radio-btn"><i class="fa fa-fw fa-rss"></i></message>
 
 <message id="Lms.PlayQueue.template">
+	<div class="Lms-header">
+		${clear-btn class="Lms-playqueue-btn Lms-btn"}${shuffle-btn class="Lms-playqueue-btn Lms-btn"}${repeat-btn class="Lms-playqueue-btn Lms-btn"}${radio-btn class="Lms-playqueue-btn Lms-btn"}
+		<h4><small>${nb-tracks}</small></h4>
+	</div>
 	<div class="row">
 		<div class="col-lg-8">
-			<div class="Lms-header">
-				${clear-btn class="Lms-playqueue-btn Lms-btn"}${shuffle-btn class="Lms-playqueue-btn Lms-btn"}${repeat-btn class="Lms-playqueue-btn Lms-btn"}${radio-btn class="Lms-playqueue-btn Lms-btn"}
-				<h4><small>${nb-tracks}</small></h4>
-			</div>
 			${entries}
-			${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
 		</div>
 	</div>
 </message>

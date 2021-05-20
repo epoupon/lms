@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <optional>
+#include <utility>
+
 #include <Wt/WContainerWidget.h>
 #include <Wt/WSignal.h>
 #include <Wt/WString.h>
@@ -35,6 +38,17 @@ namespace UserInterface
 			void clear();
 			std::size_t getCount();
 			void add(std::unique_ptr<Wt::WWidget> result);
+
+			template<typename T, typename... Args>
+			T* addNew(Args&&... args)
+			{
+				return _elements->addNew<T>(std::forward<Args>(args)...);
+			}
+
+			void remove(Wt::WWidget& widget);
+
+			Wt::WWidget*				getWidget(std::size_t pos) const;
+			std::optional<std::size_t>	getIndexOf(Wt::WWidget& widget) const;
 
 			void setHasMore(bool hasMore);
 

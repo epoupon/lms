@@ -60,6 +60,25 @@ namespace UserInterface
 	}
 
 	void
+	InfiniteScrollingContainer::remove(Wt::WWidget& widget)
+	{
+		_elements->removeWidget(&widget);
+	}
+
+	Wt::WWidget*
+	InfiniteScrollingContainer::getWidget(std::size_t pos) const
+	{
+		return _elements->widget(pos);
+	}
+
+	std::optional<std::size_t>
+	InfiniteScrollingContainer::getIndexOf(Wt::WWidget& widget) const
+	{
+		return _elements->indexOf(&widget);
+	}
+
+
+	void
 	InfiniteScrollingContainer::displayLoadingIndicator()
 	{
 		_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
@@ -78,6 +97,5 @@ namespace UserInterface
 		_loadingIndicator = nullptr;
 		bindEmpty("loading-indicator");
 	}
-
 
 }
