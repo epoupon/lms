@@ -85,6 +85,7 @@ class PlayQueue : public Wt::WTemplate
 		std::optional<float> getReplayGain(std::size_t pos, const Wt::Dbo::ptr<Database::Track>& track) const;
 
 		static inline constexpr std::size_t _nbMaxEntries {1000};
+		static inline constexpr std::size_t _batchSize {6};
 
 		bool _repeatAll {};
 		bool _radioMode {};

@@ -392,7 +392,7 @@ PlayQueue::addSome()
 
 	auto tracklist = getTrackList();
 
-	auto tracklistEntries = tracklist->getEntries(_entriesContainer->getCount(), 50);
+	auto tracklistEntries = tracklist->getEntries(_entriesContainer->getCount(), _batchSize);
 	for (const Database::TrackListEntry::pointer& tracklistEntry : tracklistEntries)
 		addEntry(tracklistEntry);
 
