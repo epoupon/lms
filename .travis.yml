@@ -29,7 +29,7 @@ before_install:
         git clone https://github.com/emweb/wt.git wt
         cd wt
         git checkout ${WT_VERSION}
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WT_INSTALL_PREFIX} -DENABLE_LIBWTTEST=OFF
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WT_INSTALL_PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF
         make install
         cd ..
     fi
@@ -40,7 +40,7 @@ cache:
 env:
     global:
     - MAKEFLAGS="-j 2"
-    - WT_VERSION=4.4.0
+    - WT_VERSION=4.5.0
     - WT_INSTALL_PREFIX=${HOME}/wt-${WT_VERSION}
     jobs:
     - BUILD_TYPE=Release USE_PAM=ON IMAGE_LIBRARY=STB
