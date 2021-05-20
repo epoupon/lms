@@ -150,28 +150,40 @@ namespace Scrobbling::ListenBrainz
 
 		LOG(DEBUG) << "Client done. status = " << msg.status();
 		if (ec)
+			onClientDoneError(std::move(request), ec);
+		else
+			onClientDoneSuccess(std::move(request), msg);
+	}
+
+	void
+	SendQueue::onClientDoneError(Request request, Wt::AsioWrapper::error_code ec)
+	{
+		LOG(ERROR) << "Retry " << request._retryCount << ", client error: '" << ec.message() << "'";
+
+		// may be a network error, try again later
+		throttle(_defaultRetryWaitDuration);
+
+		if (request._retryCount++ < _maxRetryCount)
 		{
-			LOG(ERROR) << "Retry " << request._retryCount << ", client error: '" << ec.message() << "'";
-
-			// may be a network error, try again later
-			throttle(_defaultRetryWaitDuration);
-
-			if (request._retryCount++ < _maxRetryCount)
-			{
-				_sendQueue[request._priority].emplace_front(std::move(request));
-			}
-			else
-			{
-				LOG(ERROR) << "Too many retries, giving up operation and throttle";
-				if (request._onFailureFunc)
-					request._onFailureFunc();
-			}
-			return;
+			_sendQueue[request._priority].emplace_front(std::move(request));
 		}
+		else
+		{
+			LOG(ERROR) << "Too many retries, giving up operation and throttle";
+			if (request._onFailureFunc)
+				request._onFailureFunc();
+		}
+	}
 
+	void
+	SendQueue::onClientDoneSuccess(Request request, const Wt::Http::Message& msg)
+	{
 		bool mustThrottle{};
 		if (msg.status() == 429)
+		{
 			_sendQueue[request._priority].emplace_front(std::move(request));
+			mustThrottle = true;
+		}
 
 		const auto remainingCount {headerReadAs<std::size_t>(msg, "X-RateLimit-Remaining")};
 		LOG(DEBUG) << "Remaining messages = " << (remainingCount ? *remainingCount : 0);

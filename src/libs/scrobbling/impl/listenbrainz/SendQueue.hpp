@@ -91,6 +91,8 @@ namespace Scrobbling::ListenBrainz
 			void sendNextQueuedRequest();
 			bool sendRequest(const RequestData& request);
 			void onClientDone(Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg);
+			void onClientDoneError(Request request, Wt::AsioWrapper::error_code ec);
+			void onClientDoneSuccess(Request request, const Wt::Http::Message& msg);
 			void throttle(std::chrono::seconds duration);
 
 			const std::size_t			_maxRetryCount {2};
