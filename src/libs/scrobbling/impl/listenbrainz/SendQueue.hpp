@@ -58,7 +58,6 @@ namespace Scrobbling::ListenBrainz
 			class Request
 			{
 				public:
-
 					enum class Priority
 					{
 						High,
