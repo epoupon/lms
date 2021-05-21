@@ -277,7 +277,10 @@ LmsApplication::finalize()
 Wt::WLink
 LmsApplication::createArtistLink(Database::Artist::pointer artist)
 {
-	return Wt::WLink {Wt::LinkType::InternalPath, "/artist/" + std::to_string(artist.id())};
+	if (const auto mbid {artist->getMBID()})
+		return Wt::WLink {Wt::LinkType::InternalPath, "/artist/mbid/" + std::string {mbid->getAsString()}};
+	else
+		return Wt::WLink {Wt::LinkType::InternalPath, "/artist/" + std::to_string(artist.id())};
 }
 
 std::unique_ptr<Wt::WAnchor>
@@ -298,7 +301,10 @@ LmsApplication::createArtistAnchor(Database::Artist::pointer artist, bool addTex
 Wt::WLink
 LmsApplication::createReleaseLink(Database::Release::pointer release)
 {
-	return Wt::WLink {Wt::LinkType::InternalPath, "/release/" + std::to_string(release.id())};
+	if (const auto mbid {release->getMBID()})
+		return Wt::WLink {Wt::LinkType::InternalPath, "/release/mbid/" + std::string {mbid->getAsString()}};
+	else
+		return Wt::WLink {Wt::LinkType::InternalPath, "/release/" + std::to_string(release.id())};
 }
 
 std::unique_ptr<Wt::WAnchor>

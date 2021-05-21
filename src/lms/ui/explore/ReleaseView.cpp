@@ -67,6 +67,27 @@ Release::Release(Filters* filters)
 	refreshView();
 }
 
+static
+std::optional<IdType>
+extractReleaseIdFromInternalPath()
+{
+	if (wApp->internalPathMatches("/release/mbid/"))
+	{
+		const auto mbid {UUID::fromString(wApp->internalPathNextPart("/release/mbid/"))};
+		if (mbid)
+		{
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+			if (const Database::Release::pointer release {Database::Release::getByMBID(LmsApp->getDbSession(), *mbid)})
+				return release.id();
+		}
+
+		return std::nullopt;
+	}
+
+	return StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/release/"));
+}
+
+
 void
 Release::refreshView()
 {
@@ -75,9 +96,9 @@ Release::refreshView()
 
 	clear();
 
-	const auto releaseId {StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/release/"))};
+	const auto releaseId {extractReleaseIdFromInternalPath()};
 	if (!releaseId)
-		throw ReleaseNotFoundException {*releaseId};
+		throw ReleaseNotFoundException {};
 
 	auto similarReleasesIds {Service<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 6)};
 
@@ -85,7 +106,7 @@ Release::refreshView()
 
 	const Database::Release::pointer release {Database::Release::getById(LmsApp->getDbSession(), *releaseId)};
 	if (!release)
-		throw ReleaseNotFoundException {*releaseId};
+		throw ReleaseNotFoundException {};
 
 	refreshCopyright(release);
 	refreshLinks(release);
