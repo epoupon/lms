@@ -21,6 +21,7 @@
 
 #include <boost/asio/bind_executor.hpp>
 
+#include "scrobbling/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
@@ -228,9 +229,10 @@ namespace Scrobbling::ListenBrainz
 				LOG(DEBUG) << "SendQueue: throttle aborted";
 				return;
 			}
-
-			if (ec)
-				LOG(ERROR) << "async_wait failed:" << ec.message();
+			else if (ec)
+			{
+				throw Exception {"Throttle timer failure: " + std::string {ec.message()} };
+			}
 
 			_state = State::Idle;
 			sendNextQueuedRequest();

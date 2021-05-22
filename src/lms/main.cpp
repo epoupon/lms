@@ -294,13 +294,15 @@ int main(int argc, char* argv[])
 		LMS_LOG(MAIN, INFO) << "Quitting...";
 		res = EXIT_SUCCESS;
 	}
-	catch(Wt::WServer::Exception& e)
+	catch (const Wt::WServer::Exception& e)
 	{
+		LMS_LOG(MAIN, FATAL) << "Caught WServer::Exception: " << e.what();
 		std::cerr << "Caught a WServer::Exception: " << e.what() << std::endl;
 		res = EXIT_FAILURE;
 	}
-	catch(std::exception& e)
+	catch (const std::exception& e)
 	{
+		LMS_LOG(MAIN, FATAL) << "Caught std::exception: " << e.what();
 		std::cerr << "Caught std::exception: " << e.what() << std::endl;
 		res = EXIT_FAILURE;
 	}

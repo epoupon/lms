@@ -17,8 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/Logger.hpp"
 #include "utils/IOContextRunner.hpp"
+
+#include <cstdlib>
+
+#include "utils/Logger.hpp"
 
 IOContextRunner::IOContextRunner(boost::asio::io_service& ioService, std::size_t threadCount)
 : _ioService {ioService}
@@ -26,7 +29,20 @@ IOContextRunner::IOContextRunner(boost::asio::io_service& ioService, std::size_t
 {
 	LMS_LOG(UTILS, INFO) << "Starting IO Context with " << threadCount << " threads...";
 	for (std::size_t i {}; i < threadCount; ++i)
-		_threads.emplace_back([&] { _ioService.run(); });
+	{
+		_threads.emplace_back([&]
+		{
+			try
+			{
+				_ioService.run();
+			}
+			catch (const std::exception& e)
+			{
+				LMS_LOG(UTILS, FATAL) << "Exception caught in IO context: " << e.what();
+				std::abort();
+			}
+		});
+	}
 }
 
 void

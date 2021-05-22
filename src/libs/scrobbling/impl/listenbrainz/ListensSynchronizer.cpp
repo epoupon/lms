@@ -32,6 +32,7 @@
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
+#include "scrobbling/Exception.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
@@ -320,6 +321,10 @@ namespace Scrobbling::ListenBrainz
 			{
 				LOG(DEBUG) << "getListens aborted";
 				return;
+			}
+			else if (ec)
+			{
+				throw Exception {"GetListens timer failure: " + std::string {ec.message()} };
 			}
 
 			startGetListens();
