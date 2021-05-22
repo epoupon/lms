@@ -1,3 +1,4 @@
+include(GoogleTest)
 
 add_executable(test-som
 	SomTest.cpp
@@ -5,7 +6,8 @@ add_executable(test-som
 
 target_link_libraries(test-som PRIVATE
 	lmssom
+	GTest::GTest
 	)
 
-add_test(NAME som COMMAND test-som)
+gtest_discover_tests(test-som)
 

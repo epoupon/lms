@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <optional>
 #include <unordered_map>
 
 #include <Wt/WContainerWidget.h>
@@ -27,61 +26,35 @@
 
 #include "database/Types.hpp"
 #include "PlayQueueAction.hpp"
+#include "TrackCollector.hpp"
 
-namespace Database
+namespace UserInterface
 {
-	class Track;
-}
 
-namespace UserInterface {
+	class Filters;
+	class InfiniteScrollingContainer;
 
-class Filters;
-class Tracks : public Wt::WTemplate
-{
-	public:
-		Tracks(Filters* filters);
+	class Tracks : public Wt::WTemplate
+	{
+		public:
+			Tracks(Filters& filters);
 
-		PlayQueueActionSignal tracksAction;
+			PlayQueueActionSignal tracksAction;
 
-	private:
+		private:
+			void refreshView();
+			void refreshView(TrackCollector::Mode mode);
+			void addSome();
 
-		enum class Mode
-		{
-			Random,
-			Starred,
-			RecentlyPlayed,
-			RecentlyAdded,
-			MostPlayed,
-			All
-		};
+			std::vector<Database::IdType> getAllTracks();
 
-		void refreshView();
-		void refreshView(Mode mode);
-		void displayLoadingIndicator();
-		void hideLoadingIndicator();
-		void addSome();
+			static constexpr TrackCollector::Mode _defaultMode {TrackCollector::Mode::Random};
+			static constexpr std::size_t _batchSize {6};
+			static constexpr std::size_t _maxCount {160};
 
-		std::vector<Wt::Dbo::ptr<Database::Track>> getRandomTracks(std::optional<Database::Range> range, bool& moreResults);
-		std::vector<Wt::Dbo::ptr<Database::Track>> getTracks(std::optional<Database::Range> range, bool& moreResults);
-		std::vector<Database::IdType> getAllTracks();
-
-		static constexpr Mode defaultMode {Mode::Random};
-		static constexpr std::size_t batchSize {20};
-		static inline std::unordered_map<Mode, std::optional<std::size_t>> maxItemsPerMode
-		{
-			{Mode::Random, batchSize * 20},
-			{Mode::RecentlyPlayed, batchSize * 10},
-			{Mode::RecentlyAdded, batchSize * 10},
-			{Mode::MostPlayed, batchSize * 10},
-			{Mode::All, batchSize * 50},
-		};
-
-		Mode _mode {defaultMode};
-		Filters* _filters {};
-		std::vector<Database::IdType> _randomTracks;
-		Wt::WContainerWidget* _tracksContainer {};
-		Wt::WTemplate* _loadingIndicator {};
-};
+			InfiniteScrollingContainer* _container {};
+			TrackCollector				_trackCollector;
+	};
 
 } // namespace UserInterface
 

@@ -33,7 +33,7 @@
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
-#include "common/LoadingIndicator.hpp"
+#include "common/InfiniteScrollingContainer.hpp"
 #include "resource/CoverResource.hpp"
 #include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"
@@ -67,8 +67,12 @@ PlayQueue::PlayQueue()
 		clearTracks();
 	});
 
-	_entriesContainer = bindNew<Wt::WContainerWidget>("entries");
-	hideLoadingIndicator();
+	_entriesContainer = bindNew<InfiniteScrollingContainer>("entries");
+	_entriesContainer->onRequestElements.connect([this]
+	{
+		addSome();
+		updateCurrentTrack(true);
+	});
 
 	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.template.shuffle-btn"), Wt::TextFormat::XHTML);
 	setToolTip(*shuffleBtn, Wt::WString::tr("Lms.PlayQueue.shuffle"));
@@ -184,27 +188,6 @@ PlayQueue::updateRadioBtn()
 	_radioBtn->toggleStyleClass("text-muted", !_radioMode);
 }
 
-void
-PlayQueue::displayLoadingIndicator()
-{
-	_loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
-	_loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
-	{
-		if (!visible)
-			return;
-
-		addSome();
-		updateCurrentTrack(true);
-	});
-}
-
-void
-PlayQueue::hideLoadingIndicator()
-{
-	_loadingIndicator = nullptr;
-	bindEmpty("loading-indicator");
-}
-
 Database::TrackList::pointer
 PlayQueue::getTrackList() const
 {
@@ -226,7 +209,6 @@ PlayQueue::clearTracks()
 		getTrackList().modify()->clear();
 	}
 
-	hideLoadingIndicator();
 	_entriesContainer->clear();
 	updateInfo();
 }
@@ -322,10 +304,10 @@ PlayQueue::updateInfo()
 void
 PlayQueue::updateCurrentTrack(bool selected)
 {
-	if (!_trackPos || *_trackPos >= static_cast<std::size_t>(_entriesContainer->count()))
+	if (!_trackPos || *_trackPos >= static_cast<std::size_t>(_entriesContainer->getCount()))
 		return;
 
-	Wt::WTemplate* entry {static_cast<Wt::WTemplate*>(_entriesContainer->widget(*_trackPos))};
+	Wt::WTemplate* entry {static_cast<Wt::WTemplate*>(_entriesContainer->getWidget(*_trackPos))};
 	if (entry)
 		entry->bindString("is-selected", selected ? "Lms-playqueue-selected" : "");
 }
@@ -410,14 +392,11 @@ PlayQueue::addSome()
 
 	auto tracklist = getTrackList();
 
-	auto tracklistEntries = tracklist->getEntries(_entriesContainer->count(), 50);
+	auto tracklistEntries = tracklist->getEntries(_entriesContainer->getCount(), _batchSize);
 	for (const Database::TrackListEntry::pointer& tracklistEntry : tracklistEntries)
 		addEntry(tracklistEntry);
 
-	if (static_cast<std::size_t>(_entriesContainer->count()) < tracklist->getCount())
-		displayLoadingIndicator();
-	else
-		hideLoadingIndicator();
+	_entriesContainer->setHasMore(_entriesContainer->getCount() < tracklist->getCount());
 }
 
 void
@@ -474,9 +453,9 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 	Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.template.play-btn"), Wt::TextFormat::XHTML)};
 	playBtn->clicked().connect([=]
 	{
-		auto pos = _entriesContainer->indexOf(entry);
-		if (pos >= 0)
-			loadTrack(pos, true);
+		const std::optional<std::size_t> pos {_entriesContainer->getIndexOf(*entry)};
+		if (pos)
+			loadTrack(*pos, true);
 	});
 
 	Wt::WText* delBtn {entry->bindNew<Wt::WText>("del-btn", Wt::WString::tr("Lms.PlayQueue.template.delete-btn"), Wt::TextFormat::XHTML)};
@@ -492,12 +471,12 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 
 		if (_trackPos)
 		{
-			auto pos {_entriesContainer->indexOf(entry)};
-			if (pos > 0 && *_trackPos >= static_cast<std::size_t>(pos))
-			(*_trackPos)--;
+			const std::optional<std::size_t> pos {_entriesContainer->getIndexOf(*entry)};
+			if (pos && *_trackPos >= *pos)
+				(*_trackPos)--;
 		}
 
-		_entriesContainer->removeWidget(entry);
+		_entriesContainer->remove(*entry);
 
 		updateInfo();
 	});

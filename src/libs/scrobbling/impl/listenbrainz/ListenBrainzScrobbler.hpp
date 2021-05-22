@@ -19,12 +19,12 @@
 
 #pragma once
 
-#include <deque>
-
-#include <Wt/Http/Client.h>
-#include <Wt/WIOService.h>
+#include <optional>
+#include <boost/asio/io_context.hpp>
 
 #include "IScrobbler.hpp"
+#include "ListensSynchronizer.hpp"
+#include "SendQueue.hpp"
 
 namespace Database
 {
@@ -33,59 +33,33 @@ namespace Database
 	class TrackList;
 }
 
-namespace Scrobbling
+namespace Scrobbling::ListenBrainz
 {
-	class ListenBrainzScrobbler final : public IScrobbler
+	class Scrobbler final : public IScrobbler
 	{
 		public:
-			ListenBrainzScrobbler(Database::Db& db);
-			~ListenBrainzScrobbler();
+			Scrobbler(boost::asio::io_context& ioContext, Database::Db& db);
+			~Scrobbler();
 
-			ListenBrainzScrobbler(const ListenBrainzScrobbler&) = delete;
-			ListenBrainzScrobbler(const ListenBrainzScrobbler&&) = delete;
-			ListenBrainzScrobbler& operator=(const ListenBrainzScrobbler&) = delete;
-			ListenBrainzScrobbler& operator=(const ListenBrainzScrobbler&&) = delete;
+			Scrobbler(const Scrobbler&) = delete;
+			Scrobbler(const Scrobbler&&) = delete;
+			Scrobbler& operator=(const Scrobbler&) = delete;
+			Scrobbler& operator=(const Scrobbler&&) = delete;
 
 		private:
 			void listenStarted(const Listen& listen) override;
 			void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
-			void addListen(const Listen& listen, const Wt::WDateTime& timePoint) override;
-
+			void addTimedListen(const TimedListen& listen) override;
 			Wt::Dbo::ptr<Database::TrackList> getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user) override;
 
+			// Submit listens
 			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
-			void sendNextQueuedListen();
-			bool sendListen(const Listen& listen, const Wt::WDateTime& timePoint);
-			void onClientDone(Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg);
-			void throttle(std::chrono::seconds duration);
+			std::optional<SendQueue::RequestData> createSubmitListenRequestData(const Listen& listen, const Wt::WDateTime& timePoint);
 
-			void cacheListen(const Listen& listen, const Wt::WDateTime& timePoint);
-
-			enum class State
-			{
-				Idle,
-				Throttled,
-				Sending,
-			};
-			State						_state {State::Idle};
-
-			const std::string			_apiEndpoint;
-			const std::size_t			_maxRetryCount {2};
-			const std::chrono::seconds	_defaultRetryWaitDuration {30};
-			const std::chrono::seconds	_minRetryWaitDuration {1};
-			const std::chrono::seconds	_maxRetryWaitDuration {300};
-
+			boost::asio::io_context&	_ioContext;
 			Database::Db&				_db;
-			Wt::WIOService				_ioService;
-			Wt::Http::Client			_client {_ioService};
-
-			struct QueuedListen
-			{
-				Listen			listen;
-				Wt::WDateTime	timePoint;
-				std::size_t		retryCount {};
-			};
-			std::deque<QueuedListen>	_sendQueue;
+			SendQueue					_sendQueue;
+			ListensSynchronizer			_listensSynchronizer;
 	};
-} // Scrobbling
+} // Scrobbling::ListenBrainz
 

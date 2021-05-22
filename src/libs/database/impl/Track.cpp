@@ -30,6 +30,8 @@
 #include "utils/Logger.hpp"
 
 #include "SqlQuery.hpp"
+#include "StringViewTraits.hpp"
+#include "Utils.hpp"
 
 namespace Database {
 
@@ -39,14 +41,14 @@ Wt::Dbo::Query<T>
 createQuery(Session& session,
 		const std::string& queryStr,
 		const std::set<IdType>& clusterIds,
-		const std::vector<std::string>& keywords)
+		const std::vector<std::string_view>& keywords)
 {
 	session.checkSharedLocked();
 
 	auto query {session.getDboSession().query<T>(queryStr)};
 
-	for (const std::string& keyword : keywords)
-		query.where("t.name LIKE ?").bind("%%" + keyword + "%%");
+	for (std::string_view keyword : keywords)
+		query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + escapeLikeKeyword(keyword) + "%");
 
 	if (!clusterIds.empty())
 	{
@@ -150,13 +152,15 @@ Track::getById(Session& session, IdType id)
 		.where("id = ?").bind(id);
 }
 
-Track::pointer
-Track::getByMBID(Session& session, const UUID& mbid)
+std::vector<Track::pointer>
+Track::getByRecordingMBID(Session& session, const UUID& mbid)
 {
 	session.checkSharedLocked();
 
-	return session.getDboSession().find<Track>()
-		.where("mbid = ?").bind(std::string {mbid.getAsString()});
+	Wt::Dbo::collection<Track::pointer> res = session.getDboSession().find<Track>()
+		.where("recording_mbid = ?").bind(std::string {mbid.getAsString()});
+
+	return std::vector<Track::pointer>(res.begin(), res.end());
 }
 
 Track::pointer
@@ -332,7 +336,7 @@ Track::hasTrackFeatures() const
 std::vector<Track::pointer>
 Track::getByFilter(Session& session,
 		const std::set<IdType>& clusterIds,
-		const std::vector<std::string>& keywords,
+		const std::vector<std::string_view>& keywords,
 		std::optional<Range> range,
 		bool& moreResults)
 {
@@ -352,6 +356,18 @@ Track::getByFilter(Session& session,
 		moreResults = false;
 
 	return res;
+}
+
+std::vector<Track::pointer>
+Track::getByNameAndReleaseName(Session& session, std::string_view trackName, std::string_view releaseName)
+{
+	session.checkSharedLocked();
+	Wt::Dbo::collection<pointer> collection = session.getDboSession().query<Track::pointer>("SELECT t from track t")
+		.join("release r ON t.release_id = r.id")
+		.where("t.name = ?").bind(trackName)
+		.where("r.name = ?").bind(releaseName);
+
+	return std::vector<pointer>(collection.begin(), collection.end());
 }
 
 std::vector<Track::pointer>

@@ -90,10 +90,10 @@ namespace StringUtils
 {
 	template<>
 	std::optional<API::Subsonic::Id>
-	readAs(const std::string& str);
+	readAs(std::string_view str);
 
 	template<>
 	std::optional<bool>
-	readAs(const std::string& str);
+	readAs(std::string_view str);
 }
 

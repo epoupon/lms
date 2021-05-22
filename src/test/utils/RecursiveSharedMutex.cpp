@@ -18,17 +18,15 @@
  */
 
 #include <atomic>
-#include <cassert>
 #include <chrono>
-#include <iostream>
 #include <thread>
 #include <vector>
-#include <stdlib.h>
+
+#include <gtest/gtest.h>
 
 #include "utils/RecursiveSharedMutex.hpp"
 
-void
-testSharedMutex()
+TEST(RecursiveSharedMutex, SingleThreaded)
 {
 	{
 		RecursiveSharedMutex mutex;
@@ -56,7 +54,10 @@ testSharedMutex()
 			std::shared_lock lock2 {mutex};
 		}
 	}
+}
 
+TEST(RecursiveSharedMutex, MultiThreaded)
+{
 	{
 		constexpr std::size_t nbThreads {10};
 		std::vector<std::thread> threads;
@@ -102,20 +103,4 @@ testSharedMutex()
 		for (std::thread& t : threads)
 			t.join();
 	}
-}
-
-
-int main()
-{
-	try
-	{
-		testSharedMutex();
-	}
-	catch (std::exception& e)
-	{
-		std::cerr << "Caught exception: " << e.what();
-		return EXIT_FAILURE;
-	}
-
-	return EXIT_SUCCESS;
 }

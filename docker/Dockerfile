@@ -1,12 +1,8 @@
-FROM	alpine:3.10 AS build
+FROM	alpine:3.13 AS build
 
 WORKDIR	/tmp/workdir
 
 ARG	MAKEFLAGS="-j2"
-ARG	FFMPEG_VERSION=4.1.4
-ARG	WT_VERSION=4.5.0
-ARG	STB_VERSION=b42009b3b9d4ca35bc703f5310eedc74f584be58
-ARG	LMS_VERSION=v3.6.3
 
 ARG	PREFIX="/tmp/install"
 
@@ -22,7 +18,6 @@ ARG	BUILD_PACKAGES=" \
 	g++ \
 	make \
 	openjpeg-dev \
-	jasper-dev \
 	libpng-dev \
 	nasm \
 	yasm \
@@ -36,19 +31,13 @@ ARG	BUILD_PACKAGES=" \
 	openssl-dev \
 	boost-dev \
 	libconfig-dev \
-	taglib-dev"
+	taglib-dev \
+	gtest-dev"
 
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
 
-# STB
-RUN \
-	DIR=/tmp/stb && mkdir -p ${DIR} && cd ${DIR} && \
-	curl -sLO https://github.com/nothings/stb/archive/${STB_VERSION}.tar.gz && \
-	tar -x --strip-components=1 -f ${STB_VERSION}.tar.gz && \
-	mkdir -p ${PREFIX}/include/stb && \
-	cp ./*.h ${PREFIX}/include/stb
-
 # ffmpeg
+ARG	FFMPEG_VERSION=4.1.4
 RUN  \
 	DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
@@ -90,6 +79,7 @@ RUN \
 	make distclean
 
 # WT
+ARG	WT_VERSION=4.5.0
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/emweb/wt/archive/${WT_VERSION}.tar.gz && \
@@ -97,11 +87,21 @@ RUN \
 
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
-	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=NO -DENABLE_LIBWTTEST=OFF && \
+	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF && \
 	make && \
 	make install
 
+# STB
+ARG	STB_VERSION=b42009b3b9d4ca35bc703f5310eedc74f584be58
+RUN \
+	DIR=/tmp/stb && mkdir -p ${DIR} && cd ${DIR} && \
+	curl -sLO https://github.com/nothings/stb/archive/${STB_VERSION}.tar.gz && \
+	tar -x --strip-components=1 -f ${STB_VERSION}.tar.gz && \
+	mkdir -p ${PREFIX}/include/stb && \
+	cp ./*.h ${PREFIX}/include/stb
+
 # LMS
+ARG	LMS_VERSION=v3.25.2
 RUN \
 	DIR=/tmp/lms && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sL https://github.com/epoupon/lms/archive/${LMS_VERSION}.tar.gz -o ${LMS_VERSION}.tar.gz && \
@@ -110,7 +110,7 @@ RUN \
 RUN \
 	DIR=/tmp/lms && mkdir -p ${DIR} && cd ${DIR} && \
 	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
-	make && \
+	LD_LIBRARY_PATH=${PREFIX}/lib VERBOSE=1 make && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
 	make install && \
 	mkdir -p ${PREFIX}/etc/ && \
@@ -134,14 +134,14 @@ RUN \
 	rm -rf /tmp/fakeroot/share/man
 
 ## Release Stage
-FROM		alpine:3.10 AS release
+FROM		alpine:3.13 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 LABEL		version=${LMS_VERSION}
 
 ARG	RUNTIME_PACKAGES=" \
-	openssl \
+	libssl1.1 \
+	libcrypto1.1 \
 	openjpeg \
-	jasper-libs \
 	libpng \
 	libogg \
 	opus \

@@ -34,19 +34,19 @@ class LmsApplicationException : public LmsException
 class ArtistNotFoundException : public LmsApplicationException
 {
 	public:
-		ArtistNotFoundException(Database::IdType artistId) : LmsApplicationException {Wt::WString::tr("Lms.Error.artist-not-found").arg(artistId)} {}
+		ArtistNotFoundException() : LmsApplicationException {Wt::WString::tr("Lms.Error.artist-not-found")} {}
 };
 
 class ReleaseNotFoundException : public LmsApplicationException
 {
 	public:
-		ReleaseNotFoundException(Database::IdType releaseId) : LmsApplicationException {Wt::WString::tr("Lms.Error.release-not-found").arg(releaseId)} {}
+		ReleaseNotFoundException() : LmsApplicationException {Wt::WString::tr("Lms.Error.release-not-found")} {}
 };
 
 class UserNotFoundException : public LmsApplicationException
 {
 	public:
-		UserNotFoundException(Database::IdType userId) : LmsApplicationException {Wt::WString::tr("Lms.Error.user-not-found").arg(userId)} {}
+		UserNotFoundException() : LmsApplicationException {Wt::WString::tr("Lms.Error.user-not-found")} {}
 };
 
 class UserNotAllowedException : public LmsApplicationException

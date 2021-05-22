@@ -23,14 +23,14 @@ namespace StringUtils
 {
 	template<>
 	std::optional<API::Subsonic::Id>
-	readAs(const std::string& str)
+	readAs(std::string_view str)
 	{
 		return API::Subsonic::IdFromString(str);
 	}
 
 	template<>
 	std::optional<bool>
-	readAs(const std::string& str)
+	readAs(std::string_view str)
 	{
 		if (str == "true")
 			return true;

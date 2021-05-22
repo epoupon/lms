@@ -41,6 +41,7 @@ namespace UserInterface::ReleaseListHelpers
 		auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr(templateKey))};
 
 		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
+		entry->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 		auto cover = std::make_unique<Wt::WImage>();
@@ -57,8 +58,7 @@ namespace UserInterface::ReleaseListHelpers
 
 		if (artists.size() > 1)
 		{
-			entry->setCondition("if-has-artist", true);
-			entry->bindNew<Wt::WText>("artist-name", Wt::WString::tr("Lms.Explore.various-artists"));
+			entry->setCondition("if-has-various-artists", true);
 		}
 		else if (artists.size() == 1 && !isSameArtist)
 		{

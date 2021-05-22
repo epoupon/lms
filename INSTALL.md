@@ -44,7 +44,7 @@ __Notes__:
 * a C++17 compiler is needed
 * ffmpeg version 4 minimum is required
 ```sh
-apt-get install g++ cmake libboost-program-options-dev libboost-system-dev libavutil-dev libavformat-dev libstb-dev libconfig++-dev ffmpeg libtag1-dev libpam0g-dev
+apt-get install g++ cmake libboost-program-options-dev libboost-system-dev libavutil-dev libavformat-dev libstb-dev libconfig++-dev ffmpeg libtag1-dev libpam0g-dev libgtest-dev
 ```
 __Notes__:
 * libpam0g-dev is optional (only for using PAM authentication)

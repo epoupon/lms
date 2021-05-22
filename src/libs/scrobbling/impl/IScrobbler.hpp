@@ -46,7 +46,7 @@ namespace Scrobbling
 			virtual void listenStarted(const Listen& listen) = 0;
 			virtual void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) = 0;
 
-			virtual void addListen(const Listen& listen, const Wt::WDateTime& timePoint) = 0;
+			virtual void addTimedListen(const TimedListen& listen) = 0;
 
 			virtual Wt::Dbo::ptr<Database::TrackList> getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user)  = 0;
 	};

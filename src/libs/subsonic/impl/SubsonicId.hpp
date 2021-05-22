@@ -41,7 +41,7 @@ struct Id
 	Database::IdType	value {};
 };
 
-std::optional<Id>	IdFromString(const std::string& id);
+std::optional<Id>	IdFromString(std::string_view id);
 std::string		IdToString(const Id& id);
 
 } // namespace API::Subsonic

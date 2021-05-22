@@ -84,7 +84,7 @@ class UserModel : public Wt::WFormModel
 				// Update user
 				Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
 				if (!user)
-					throw UserNotFoundException {*_userId};
+					throw UserNotFoundException {};
 
 				if (_authPasswordService && !valueText(PasswordField).empty())
 					_authPasswordService->setPassword(LmsApp->getDbSession(), user.id(), valueText(PasswordField).toUTF8());
@@ -117,7 +117,7 @@ class UserModel : public Wt::WFormModel
 
 			const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
 			if (!user)
-				throw UserNotFoundException {*_userId};
+				throw UserNotFoundException {};
 			else if (user == LmsApp->getUser())
 				throw UserNotAllowedException {};
 		}
@@ -215,7 +215,7 @@ UserView::refreshView()
 
 		const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *userId)};
 		if (!user)
-			throw UserNotFoundException {*userId};
+			throw UserNotFoundException {};
 
 		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-edit").arg(user->getLoginName()), Wt::TextFormat::Plain);
 		t->setCondition("if-has-last-login", true);

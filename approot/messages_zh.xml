@@ -154,7 +154,6 @@
 
 <!--Explore:Search-->
 <message id="Lms.Explore.Search.search-placeholder">搜索中...</message>
-<message id="Lms.Explore.Search.search">搜索结果</message>
 
 <!--Player-->
 <message id="Lms.Player.transcoding-active">转码有效</message>

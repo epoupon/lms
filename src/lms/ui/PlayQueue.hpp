@@ -28,17 +28,21 @@
 #include "database/Types.hpp"
 #include "PlayQueueAction.hpp"
 
-namespace Similarity {
+namespace Similarity
+{
 	class Finder;
 }
 
-namespace Database {
+namespace Database
+{
 	class Track;
 	class TrackList;
 	class TrackListEntry;
 }
 
 namespace UserInterface {
+
+class InfiniteScrollingContainer;
 
 class PlayQueue : public Wt::WTemplate
 {
@@ -72,8 +76,6 @@ class PlayQueue : public Wt::WTemplate
 		void updateCurrentTrack(bool selected);
 		void updateRepeatBtn();
 		void updateRadioBtn();
-		void displayLoadingIndicator();
-		void hideLoadingIndicator();
 
 		void loadTrack(std::size_t pos, bool play);
 		void stop();
@@ -83,13 +85,13 @@ class PlayQueue : public Wt::WTemplate
 		std::optional<float> getReplayGain(std::size_t pos, const Wt::Dbo::ptr<Database::Track>& track) const;
 
 		static inline constexpr std::size_t _nbMaxEntries {1000};
+		static inline constexpr std::size_t _batchSize {12};
 
 		bool _repeatAll {};
 		bool _radioMode {};
 		bool _mediaPlayerSettingsLoaded {};
 		Database::IdType _tracklistId {};
-		Wt::WContainerWidget* _entriesContainer {};
-		Wt::WTemplate* _loadingIndicator {};
+		InfiniteScrollingContainer* _entriesContainer {};
 		Wt::WText* _nbTracks {};
 		Wt::WText* _repeatBtn {};
 		Wt::WText* _radioBtn {};

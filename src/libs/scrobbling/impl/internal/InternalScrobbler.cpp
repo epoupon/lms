@@ -47,11 +47,11 @@ namespace Scrobbling
 		if (duration && *duration < std::chrono::seconds {5})
 			return;
 
-		addListen(listen, Wt::WDateTime::currentDateTime());
+		addTimedListen({listen, Wt::WDateTime::currentDateTime()});
 	}
 
 	void
-	InternalScrobbler::addListen(const Listen& listen, const Wt::WDateTime& timePoint)
+	InternalScrobbler::addTimedListen(const TimedListen& listen)
 	{
 		Database::Session& session {_db.getTLSSession()};
 
@@ -69,7 +69,7 @@ namespace Scrobbling
 		if (!track)
 			return;
 
-		Database::TrackListEntry::create(session, track, getListensTrackList(session, user), timePoint);
+		Database::TrackListEntry::create(session, track, getListensTrackList(session, user), listen.listenedAt);
 	}
 
 	Wt::Dbo::ptr<Database::TrackList>

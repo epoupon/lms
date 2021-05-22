@@ -64,6 +64,26 @@ Artist::Artist(Filters* filters)
 	refreshView();
 }
 
+static
+std::optional<IdType>
+extractArtistIdFromInternalPath()
+{
+	if (wApp->internalPathMatches("/artist/mbid/"))
+	{
+		const auto mbid {UUID::fromString(wApp->internalPathNextPart("/artist/mbid/"))};
+		if (mbid)
+		{
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+			if (const Database::Artist::pointer artist {Database::Artist::getByMBID(LmsApp->getDbSession(), *mbid)})
+				return artist.id();
+		}
+
+		return std::nullopt;
+	}
+
+	return StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/artist/"));
+}
+
 void
 Artist::refreshView()
 {
@@ -72,9 +92,9 @@ Artist::refreshView()
 
 	clear();
 
-	const auto artistId {StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/artist/"))};
+	const auto artistId {extractArtistIdFromInternalPath()};
 	if (!artistId)
-		throw ArtistNotFoundException {*artistId};
+		throw ArtistNotFoundException {};
 
 	const auto similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(LmsApp->getDbSession(),
 			*artistId,
@@ -85,7 +105,7 @@ Artist::refreshView()
 
 	const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), *artistId)};
 	if (!artist)
-		throw ArtistNotFoundException {*artistId};
+		throw ArtistNotFoundException {};
 
 	refreshLinks(artist);
 	refreshSimilarArtists(similarArtistIds);

@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <initializer_list>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -31,16 +32,19 @@
 namespace StringUtils {
 
 std::vector<std::string>
-splitString(const std::string& string, const std::string& separators);
+splitStringCopy(std::string_view string, std::string_view separators);
+
+std::vector<std::string_view>
+splitString(std::string_view string, std::string_view separators);
 
 std::string
 joinStrings(const std::vector<std::string>& strings, const std::string& delimiter);
 
 std::string
-stringTrim(const std::string& str, const std::string& whitespaces = " \t");
+stringTrim(std::string_view str, std::string_view whitespaces = " \t");
 
 std::string
-stringTrimEnd(const std::string& str, const std::string& whitespaces = " \t");
+stringTrimEnd(std::string_view str, std::string_view whitespaces = " \t");
 
 std::string
 stringToLower(std::string_view str);
@@ -55,11 +59,11 @@ std::string
 bufferToString(const std::vector<unsigned char>& data);
 
 template<typename T>
-std::optional<T> readAs(const std::string& str)
+std::optional<T> readAs(std::string_view str)
 {
 	T res;
 
-	std::istringstream iss ( str );
+	std::istringstream iss {std::string {str}};
 	iss >> res;
 	if (iss.fail())
 		return std::nullopt;
@@ -69,14 +73,16 @@ std::optional<T> readAs(const std::string& str)
 
 template<>
 std::optional<std::string>
-readAs(const std::string& str);
+readAs(std::string_view str);
 
-[[nodiscard]]
 std::string
 replaceInString(const std::string& str, const std::string& from, const std::string& to);
 
 std::string
 jsEscape(const std::string& str);
+
+std::string
+escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar);
 
 bool
 stringEndsWith(const std::string& str, const std::string& ending);

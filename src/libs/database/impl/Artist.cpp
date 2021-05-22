@@ -27,7 +27,7 @@
 #include "database/User.hpp"
 #include "utils/Logger.hpp"
 #include "SqlQuery.hpp"
-
+#include "Utils.hpp"
 
 namespace Database
 {
@@ -83,7 +83,7 @@ Wt::Dbo::Query<T>
 createQuery(Session& session,
 		const std::string& queryStr,
 		const std::set<IdType>& clusterIds,
-		const std::vector<std::string>& keywords,
+		const std::vector<std::string_view>& keywords,
 		std::optional<TrackArtistLinkType> linkType)
 {
 	session.checkSharedLocked();
@@ -100,16 +100,16 @@ createQuery(Session& session,
 		std::vector<std::string> clauses;
 		std::vector<std::string> sortClauses;
 
-		for (const std::string& keyword : keywords)
+		for (std::string_view keyword : keywords)
 		{
-			clauses.push_back("a.name LIKE ?");
-			query.bind("%%" + keyword + "%%");
+			clauses.push_back("a.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
+			query.bind("%" + escapeLikeKeyword(keyword) + "%");
 		}
 
-		for (const std::string& keyword : keywords)
+		for (std::string_view keyword : keywords)
 		{
-			sortClauses.push_back("a.sort_name LIKE ?");
-			query.bind("%%" + keyword + "%%");
+			sortClauses.push_back("a.sort_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
+			query.bind("%" + escapeLikeKeyword(keyword) + "%");
 		}
 
 		query.where("(" + StringUtils::joinStrings(clauses, " AND ") + ") OR (" + StringUtils::joinStrings(sortClauses, " AND ") + ")");
@@ -267,7 +267,7 @@ Artist::getByClusters(Session& session, const std::set<IdType>& clusters, SortMe
 std::vector<Artist::pointer>
 Artist::getByFilter(Session& session,
 		const std::set<IdType>& clusters,
-		const std::vector<std::string>& keywords,
+		const std::vector<std::string_view>& keywords,
 		std::optional<TrackArtistLinkType> linkType,
 		SortMethod sortMethod,
 		std::optional<Range> range,

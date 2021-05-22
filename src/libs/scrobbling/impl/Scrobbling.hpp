@@ -31,12 +31,12 @@ namespace Scrobbling
 	class Scrobbling : public IScrobbling
 	{
 		public:
-			Scrobbling(Database::Db& db);
+			Scrobbling(boost::asio::io_context& ioContext, Database::Db& db);
 
 		private:
 			void listenStarted(const Listen& listen) override;
 			void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
-			void addListen(const Listen& listen, Wt::WDateTime timePoint) override;
+			void addTimedListen(const TimedListen& listen) override;
 
 			std::vector<Wt::Dbo::ptr<Database::Artist>> getRecentArtists(Database::Session& session,
 																	Wt::Dbo::ptr<Database::User> user,

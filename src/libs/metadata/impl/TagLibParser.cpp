@@ -78,12 +78,12 @@ getPropertyValuesAs(const TagLib::PropertyMap& properties, const std::string& ke
 
 static
 std::vector<std::string>
-splitAndTrimString(const std::string& str, const std::string& delimiters)
+splitAndTrimString(const std::string& str, std::string_view delimiters)
 {
 	std::vector<std::string> res;
 
-	std::vector<std::string> strings {StringUtils::splitString(str, delimiters)};
-	for (const std::string& s : strings)
+	std::vector<std::string_view> strings {StringUtils::splitString(str, delimiters)};
+	for (std::string_view s : strings)
 		res.emplace_back(StringUtils::stringTrim(s));
 
 	return res;
@@ -203,8 +203,7 @@ TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::Str
 	else if (tag == "DISCNUMBER")
 	{
 		// Expecting 'Number/Total'
-		std::vector<std::string> strings {StringUtils::splitString(value, "/")};
-
+		std::vector<std::string_view> strings {StringUtils::splitString(value, "/")};
 		if (!strings.empty())
 		{
 			track.discNumber = StringUtils::readAs<std::size_t>(strings[0]);
@@ -397,13 +396,13 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 
 	track.album = getAlbum(properties);
 	track.artists = getArtists(properties, {"ARTISTS", "ARTIST"}, {"ARTISTSORT"}, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"});
-	track.albumArtists = getArtists(properties, {"ALBUMARTIST"}, {"ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"});
-	track.conductorArtists = getArtists(properties, {"CONDUCTOR"}, {""}, {});
-	track.composerArtists = getArtists(properties, {"COMPOSER"}, {"COMPOSERSORT"}, {});
-	track.lyricistArtists = getArtists(properties, {"LYRICIST"}, {"LYRICISTSORT"}, {});
-	track.mixerArtists = getArtists(properties, {"MIXER"}, {""}, {});
-	track.producerArtists = getArtists(properties, {"PRODUCER"}, {""}, {});
-	track.remixerArtists = getArtists(properties, {"REMIXER", "ModifiedBy"}, {""}, {});
+	track.albumArtists = getArtists(properties, {"ALBUMARTISTS", "ALBUMARTIST"}, {"ALBUMARTISTSSORT", "ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"});
+	track.conductorArtists = getArtists(properties, {"CONDUCTORS", "CONDUCTOR"}, {"CONDUCTORSSORT", "CONDUCTORSORT"}, {});
+	track.composerArtists = getArtists(properties, {"COMPOSERS", "COMPOSER"}, {"COMPOSERSSORT", "COMPOSERSORT"}, {});
+	track.lyricistArtists = getArtists(properties, {"LYRICISTS", "LYRICIST"}, {"LYRICISTSSORT", "LYRICISTSORT"}, {});
+	track.mixerArtists = getArtists(properties, {"MIXERS", "MIXER"}, {"MIXERSSORT", "MIXERSORT"}, {});
+	track.producerArtists = getArtists(properties, {"PRODUCERS", "PRODUCER"}, {"PRODUCERSSORT", "PRODUCERSORT"}, {});
+	track.remixerArtists = getArtists(properties, {"REMIXERS", "REMIXER", "ModifiedBy"}, {"REMIXERSSORT", "REMIXERSORT"}, {});
 
 	return track;
 }

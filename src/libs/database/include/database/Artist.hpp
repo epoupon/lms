@@ -21,6 +21,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <vector>
 
@@ -69,7 +70,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 								);
 		static std::vector<pointer> 	getByFilter(Session& session,
 								const std::set<IdType>& clusters,		// if non empty, at least one artist that belongs to these clusters
-								const std::vector<std::string>& keywords,	// if non empty, name must match all of these keywords (name + sort name fields)
+								const std::vector<std::string_view>& keywords,	// if non empty, name must match all of these keywords (name + sort name fields)
 								std::optional<TrackArtistLinkType> linkType, 	// if set, only artists that have produced at least one track with this link type
 								SortMethod sortMethod,
 								std::optional<Range> range,

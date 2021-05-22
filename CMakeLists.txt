@@ -19,6 +19,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(Taglib REQUIRED IMPORTED_TARGET taglib)
 pkg_check_modules(Config++ REQUIRED IMPORTED_TARGET libconfig++)
 pkg_check_modules(GraphicsMagick++ IMPORTED_TARGET GraphicsMagick++)
+find_package(GTest REQUIRED)
 
 # WT
 if (NOT Wt_FOUND)

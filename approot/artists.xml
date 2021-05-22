@@ -12,7 +12,6 @@
 		</div>
 	</div>
 	${artists}
-	${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">

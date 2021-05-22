@@ -1,12 +1,16 @@
+include(GoogleTest)
 
 add_executable(test-utils
-	UtilsTest.cpp
+	String.cpp
+	RecursiveSharedMutex.cpp
+	Utils.cpp
 	)
 
 target_link_libraries(test-utils PRIVATE
 	lmsutils
 	Threads::Threads
+	GTest::GTest
 	)
 
-add_test(NAME utils COMMAND test-utils)
+gtest_discover_tests(test-utils)
 

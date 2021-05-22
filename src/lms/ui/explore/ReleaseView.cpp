@@ -67,6 +67,27 @@ Release::Release(Filters* filters)
 	refreshView();
 }
 
+static
+std::optional<IdType>
+extractReleaseIdFromInternalPath()
+{
+	if (wApp->internalPathMatches("/release/mbid/"))
+	{
+		const auto mbid {UUID::fromString(wApp->internalPathNextPart("/release/mbid/"))};
+		if (mbid)
+		{
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+			if (const Database::Release::pointer release {Database::Release::getByMBID(LmsApp->getDbSession(), *mbid)})
+				return release.id();
+		}
+
+		return std::nullopt;
+	}
+
+	return StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/release/"));
+}
+
+
 void
 Release::refreshView()
 {
@@ -75,9 +96,9 @@ Release::refreshView()
 
 	clear();
 
-	const auto releaseId {StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/release/"))};
+	const auto releaseId {extractReleaseIdFromInternalPath()};
 	if (!releaseId)
-		throw ReleaseNotFoundException {*releaseId};
+		throw ReleaseNotFoundException {};
 
 	auto similarReleasesIds {Service<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 6)};
 
@@ -85,7 +106,7 @@ Release::refreshView()
 
 	const Database::Release::pointer release {Database::Release::getById(LmsApp->getDbSession(), *releaseId)};
 	if (!release)
-		throw ReleaseNotFoundException {*releaseId};
+		throw ReleaseNotFoundException {};
 
 	refreshCopyright(release);
 	refreshLinks(release);
@@ -107,24 +128,7 @@ Release::refreshView()
 		}
 	}
 
-	{
-		std::vector<Wt::Dbo::ptr<Database::Artist>> artists;
-
-		artists = release->getReleaseArtists();
-		if (artists.empty())
-			artists = release->getArtists();
-
-		if (artists.size() > 1)
-		{
-			setCondition("if-has-artist", true);
-			bindNew<Wt::WText>("artist", Wt::WString::tr("Lms.Explore.various-artists"));
-		}
-		else if (artists.size() == 1)
-		{
-			setCondition("if-has-artist", true);
-			bindWidget("artist", LmsApplication::createArtistAnchor(artists.front()));
-		}
-	}
+	refreshReleaseArtists(release);
 
 	{
 		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getCoverResource()->getReleaseUrl(release.id(), CoverResource::Size::Large)))};
@@ -183,8 +187,7 @@ Release::refreshView()
 				return it->second;
 		}
 
-		Wt::WTemplate* disc {rootContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.disc-entry"))};
-		disc->addFunction("tr", &Wt::WTemplate::Functions::tr);
+		Wt::WTemplate* disc {rootContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-disc"))};
 
 		if (discSubtitle.empty())
 			disc->bindNew<Wt::WText>("disc-title", Wt::WString::tr("Lms.Explore.Release.disc").arg(discNumber));
@@ -260,6 +263,35 @@ Release::refreshView()
 		}
 		else
 			entry->bindString("is-playing", "");
+	}
+}
+
+void
+Release::refreshReleaseArtists(const Database::Release::pointer& release)
+{
+	std::vector<Wt::Dbo::ptr<Database::Artist>> artists;
+
+	artists = release->getReleaseArtists();
+	if (artists.empty())
+	{
+		artists = release->getArtists(Database::TrackArtistLinkType::Artist);
+		if (artists.size() > 1)
+		{
+			setCondition("if-has-various-release-artists", true);
+			return;
+		}
+	}
+
+	if (!artists.empty())
+	{
+		setCondition("if-has-release-artists", true);
+
+		Wt::WContainerWidget* artistsContainer {bindNew<Wt::WContainerWidget>("artists")};
+		for (const auto& artist : artists)
+		{
+			Wt::WTemplate* artistTemplate {artistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-release-artist"))};
+			artistTemplate->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
+		}
 	}
 }
 

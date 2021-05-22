@@ -49,10 +49,10 @@ findFirstValueOfAs(const Av::IAudioFile::MetadataMap& metadataMap, std::initiali
 	if (!str)
 		return std::nullopt;
 
-	std::vector<std::string> strUuids = StringUtils::splitString(*str, "/");
+	const std::vector<std::string_view> strUuids {StringUtils::splitString(*str, "/")};
 	std::vector<UUID> res;
 
-	for (const std::string& strUuid : strUuids)
+	for (std::string_view strUuid : strUuids)
 	{
 		std::optional<UUID> uuid {UUID::fromString(strUuid)};
 		if (!uuid)
@@ -101,7 +101,7 @@ getArtists(const Av::IAudioFile::MetadataMap& metadataMap)
 {
 	std::vector<Artist> artists;
 
-	std::vector<std::string> artistNames;
+	std::vector<std::string_view> artistNames;
 	if (metadataMap.find("ARTISTS") != metadataMap.end())
 	{
 		artistNames = StringUtils::splitString(metadataMap.find("ARTISTS")->second, "/;");
@@ -161,8 +161,7 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 			else if (tag == "TRACK")
 			{
 				// Expecting 'Number/Total'
-				std::vector<std::string> strings {StringUtils::splitString(value, "/") };
-
+				const std::vector<std::string_view> strings {StringUtils::splitString(value, "/") };
 				if (strings.size() > 0)
 				{
 					track.trackNumber = StringUtils::readAs<std::size_t>(strings[0]);
@@ -174,8 +173,7 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 			else if (tag == "DISC")
 			{
 				// Expecting 'Number/Total'
-				std::vector<std::string> strings {StringUtils::splitString(value, "/")};
-
+				const std::vector<std::string_view> strings {StringUtils::splitString(value, "/")};
 				if (strings.size() > 0)
 				{
 					track.discNumber = StringUtils::readAs<std::size_t>(strings[0]);
@@ -217,10 +215,16 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 			}
 			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 			{
-				std::vector<std::string> clusterNames {StringUtils::splitString(value, "/,;")};
+				const std::vector<std::string_view> clusterNames {StringUtils::splitString(value, "/,;")};
 
 				if (!clusterNames.empty())
-					track.clusters[tag] = std::set<std::string>{clusterNames.begin(), clusterNames.end()};
+				{
+					std::set<std::string> values;
+					std::transform(std::cbegin(clusterNames), std::cend(clusterNames),
+							std::inserter(values, std::begin(values)),
+							[](std::string_view clusterName) { return std::string {clusterName}; });
+					track.clusters[tag] = std::move(values);
+				}
 			}
 
 		}

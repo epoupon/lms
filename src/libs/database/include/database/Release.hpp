@@ -66,7 +66,7 @@ class Release : public Wt::Dbo::Dbo<Release>
 		static std::vector<pointer>	getByClusters(Session& session, const std::set<IdType>& clusters);
 		static std::vector<pointer>	getByFilter(Session& session,
 							const std::set<IdType>& clusters,		// if non empty, at least one release that belongs to these clusters
-							const std::vector<std::string>& keywords,	// if non empty, name must match all of these keywords
+							const std::vector<std::string_view>& keywords,	// if non empty, name must match all of these keywords
 							std::optional<Range> range,
 							bool& moreExpected);
 		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
