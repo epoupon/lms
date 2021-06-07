@@ -22,6 +22,7 @@
 #include <algorithm>
 
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/User.hpp"
 #include "database/TrackList.hpp"
 #include "scrobbling/IScrobbling.hpp"
@@ -79,6 +80,8 @@ namespace UserInterface
 	std::vector<Database::IdType>
 	ReleaseCollector::getAll()
 	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
 		bool moreResults;
 		const auto releases {get(std::nullopt, moreResults)};
 

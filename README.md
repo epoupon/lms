@@ -77,6 +77,14 @@ $setmulti(albumartistssort,%_albumartists_sort%)
 * Previous track: <kbd>Ctrl</kbd> + <kbd>Left</kbd>
 * Next track: <kbd>Ctrl</kbd> + <kbd>Right</kbd>
 
+## Security considerations
+_Wt_ (the web framework used) has some [built-in security measures](https://www.webtoolkit.eu/wt/features#security), but _LMS_ also has some too:
+* to mitigate brute force login attempts, _LMS_ uses an internal login throttler based on the client IP address. The `Client-IP` or `X-Forwarded-For` headers are used to determined the real IP adress, so make sure to properly configure your reverse proxy to filter or even erase the values (see example in [INSTALL.md](INSTALL.md)).
+* all passwords are stored hashed and salted using [bcrypt](https://fr.wikipedia.org/wiki/Bcrypt)
+* all the resources relative to the music collection (tracks, covers, etc.) are private to a session
+
+## Keyboard shortcuts
+
 ## Installation
 
 See [INSTALL.md](INSTALL.md) file.
