@@ -21,9 +21,10 @@
 
 #include <algorithm>
 
+#include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "database/User.hpp"
 #include "database/TrackList.hpp"
+#include "database/User.hpp"
 #include "scrobbling/IScrobbling.hpp"
 #include "utils/Service.hpp"
 #include "Filters.hpp"
@@ -79,6 +80,8 @@ namespace UserInterface
 	std::vector<Database::IdType>
 	TrackCollector::getAll()
 	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
 		bool moreResults;
 		const auto releases {get(std::nullopt, moreResults)};
 
