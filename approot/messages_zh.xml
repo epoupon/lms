@@ -34,13 +34,13 @@
 <message id="Lms.Error.user-not-found">未找到此用户</message>
 
 <!--Administration-->
-<message id="Lms.Admin.Database.daily">每日的</message>
+<message id="Lms.Admin.Database.daily">每日</message>
 <message id="Lms.Admin.Database.database">音乐收藏</message>
-<message id="Lms.Admin.Database.hourly">每小时的</message>
+<message id="Lms.Admin.Database.hourly">每小时</message>
 <message id="Lms.Admin.Database.immediate-scan">立即扫描！</message>
-<message id="Lms.Admin.Database.monthly">每月的</message>
+<message id="Lms.Admin.Database.monthly">每月</message>
 <message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> 音乐收藏</message>
-<message id="Lms.Admin.Database.never">从未</message>
+<message id="Lms.Admin.Database.never">从不</message>
 <message id="Lms.Admin.Database.path">媒体根目录</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">推荐引擎</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.clusters">基于标签</message>
@@ -52,7 +52,7 @@
 <message id="Lms.Admin.Database.tags">标签</message>
 <message id="Lms.Admin.Database.update-period">更新周期</message>
 <message id="Lms.Admin.Database.update-start-time">更新开始时间</message>
-<message id="Lms.Admin.Database.weekly">每周的</message>
+<message id="Lms.Admin.Database.weekly">每周</message>
 
 <message id="Lms.Admin.ScannerController.bad-duration">无法获得音轨时间</message>
 <message id="Lms.Admin.ScannerController.cannot-parse-file">无法解析文件</message>
@@ -75,7 +75,7 @@
 <message id="Lms.Admin.ScannerController.status-in-progress">扫描中: 阶段 {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-missing-files">检查文件中... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-discovering-files">检索文件中: {1} 文件</message>
-<message id="Lms.Admin.ScannerController.step-fetching-track-features">Fetching track features from AcousticBrainz: {1}/{2} tracks ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-fetching-track-features">从 AcousticBrainz 获取音轨特征: {1}/{2} 音轨 ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">重载相似引擎中 {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">扫描文件中: {1}/{2} 文件 ({3}%)...</message>
 
@@ -139,7 +139,7 @@
 
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">所有歌手</message>
-<message id="Lms.Explore.Artists.linktype-artist">追踪歌手</message>
+<message id="Lms.Explore.Artists.linktype-artist">音轨歌手</message>
 <message id="Lms.Explore.Artists.linktype-composer">作曲</message>
 <message id="Lms.Explore.Artists.linktype-lyricist">作词</message>
 <message id="Lms.Explore.Artists.linktype-mixer">混响</message>
@@ -156,14 +156,14 @@
 <message id="Lms.Explore.Search.search-placeholder">搜索中...</message>
 
 <!--Player-->
-<message id="Lms.Player.transcoding-active">转码有效</message>
+<message id="Lms.Player.transcoding-active">转码已启用</message>
 
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">清除</message>
-<message id="Lms.PlayQueue.nb-tracks">{1} 追踪</message>
+<message id="Lms.PlayQueue.nb-tracks">{1} 音轨</message>
 <message id="Lms.PlayQueue.nb-tracks-added">
-	<plural case="0">添加 {1} 追踪</plural>
-	<plural case="1">已添加 {1} 追踪</plural>
+	<plural case="0">添加 {1} 音轨</plural>
+	<plural case="1">已添加 {1} 音轨</plural>
 </message>
 <message id="Lms.PlayQueue.playqueue">播放队列</message>
 <message id="Lms.PlayQueue.playqueue-full">播放队列已满！</message>
@@ -177,13 +177,13 @@
 <!--Settings-->
 <message id="Lms.Settings.appearance">外观</message>
 <message id="Lms.Settings.audio">音频</message>
-<message id="Lms.Settings.audio-settings-are-local">这些音频设置取决于您的本地浏览器！</message>
+<message id="Lms.Settings.audio-settings-are-local">这些音频设置仅保存在您的本地浏览器！</message>
 <message id="Lms.Settings.change-password">更改密码</message>
 <message id="Lms.Settings.dark-mode">夜间模式</message>
 <message id="Lms.Settings.demo-cannot-save">使用演示账号时不能保存！</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> 设置</message>
 <message id="Lms.Settings.password-bad">无效密码</message>
-<message id="Lms.Settings.password-must-fill-old-password">旧密码必须填写</message>
+<message id="Lms.Settings.password-must-fill-old-password">必须填写旧密码</message>
 <message id="Lms.Settings.replaygain-mode">ReplayGain 模式</message>
 <message id="Lms.Settings.replaygain-mode.none">没有 ReplayGain</message>
 <message id="Lms.Settings.replaygain-mode.auto">自动模式</message>
@@ -194,10 +194,10 @@
 <message id="Lms.Settings.subsonic-artist-list-mode">歌手列表模式</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">所有歌手</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">专辑歌手</message>
-<message id="Lms.Settings.subsonic-artist-list-mode.track-artists">追踪歌手</message>
+<message id="Lms.Settings.subsonic-artist-list-mode.track-artists">音轨歌手</message>
 <message id="Lms.Settings.subsonic-api">Subsonic 应用程序接口</message>
 <message id="Lms.Settings.transcode">转码</message>
-<message id="Lms.Settings.transcode-bitrate">视频比特率</message>
+<message id="Lms.Settings.transcode-bitrate">转码比特率</message>
 <message id="Lms.Settings.transcode-enable">开启转码</message>
 <message id="Lms.Settings.transcode-format">转码格式</message>
 <message id="Lms.Settings.transcode-format.matroska_opus">Matroska/Opus</message>
