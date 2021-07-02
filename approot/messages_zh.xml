@@ -42,10 +42,11 @@
 <message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> 音乐收藏</message>
 <message id="Lms.Admin.Database.never">从不</message>
 <message id="Lms.Admin.Database.path">媒体根目录</message>
+<message id="Lms.Admin.Database.path-help">包含 <code>.lmsignore</code> 文件的目录将会被跳过</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">推荐引擎</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.clusters">基于标签</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.features">基于音频分析</message>
-<message id="Lms.Admin.Database.scan-complete">扫描完成: {1} 总文件, {2} 附加文件, {3} 升级文件, {4} 已删除文件, {5} 副本文件, {6} 错误文件</message>
+<message id="Lms.Admin.Database.scan-complete">扫描完成：总文件 {1}，添加文件 {2}，更新文件 {3}，删除文件 {4}，副本文件 {5}，错误文件 {6}</message>
 <message id="Lms.Admin.Database.scan-launched">扫描已完成！</message>
 <message id="Lms.Admin.Database.scan-options">扫描选项</message>
 <message id="Lms.Admin.Database.settings-saved">新设置已保存！</message>
@@ -58,7 +59,7 @@
 <message id="Lms.Admin.ScannerController.cannot-parse-file">无法解析文件</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">无法读取文件</message>
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} 备份文件:</message>
-<message id="Lms.Admin.ScannerController.errors-header">{1} 错误:</message>
+<message id="Lms.Admin.ScannerController.errors-header">{1} 错误：</message>
 <message id="Lms.Admin.ScannerController.force-scan-now">立即强制全盘扫描</message>
 <message id="Lms.Admin.ScannerController.get-report">生成报告</message>
 <message id="Lms.Admin.ScannerController.last-scan">最后扫描</message>
@@ -119,7 +120,7 @@
 <message id="Lms.Explore.links">链接</message>
 <message id="Lms.Explore.most-played">播放最多</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz 歌手</message>
-<message id="Lms.Explore.musicbrainz-release">MusicBrainz 发布</message>
+<message id="Lms.Explore.musicbrainz-release">MusicBrainz 专辑</message>
 <message id="Lms.Explore.play-last">播放列表</message>
 <message id="Lms.Explore.play-shuffled">随机播放</message>
 <message id="Lms.Explore.random">随机</message>
@@ -215,5 +216,5 @@
 <message id="Wt.WMessageBox.Yes">是</message>
 <message id="Wt.WMessageBox.No">否</message>
 <message id="Wt.WValidator.Invalid">此字段不能为空</message>
-<message id="Wt.WDoubleValidator.BadRange">这个值应该在 {1} 和 {2}</message>
+<message id="Wt.WDoubleValidator.BadRange">这个值应该在 {1} 和 {2} 之间</message>
 </messages>
