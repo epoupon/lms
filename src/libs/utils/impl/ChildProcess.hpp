@@ -24,6 +24,7 @@
 #include <unistd.h>
 
 #include <filesystem>
+#include <optional>
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/posix/stream_descriptor.hpp>
