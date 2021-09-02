@@ -83,8 +83,6 @@ _Wt_ (the web framework used) has some [built-in security measures](https://www.
 * all passwords are stored hashed and salted using [bcrypt](https://fr.wikipedia.org/wiki/Bcrypt)
 * all the resources relative to the music collection (tracks, covers, etc.) are private to a session
 
-## Keyboard shortcuts
-
 ## Installation
 
 See [INSTALL.md](INSTALL.md) file.
