@@ -1,0 +1,44 @@
+FROM	alpine:3.13 AS build
+
+WORKDIR	/tmp/workdir
+
+ARG	MAKEFLAGS="-j2"
+
+ARG	PREFIX="/tmp/install"
+
+ARG	BUILD_PACKAGES=" \
+	ca-certificates \
+	curl \
+	coreutils \
+	bzip2 \
+	pkgconfig \
+	g++ \
+	ffmpeg-dev \
+	make \
+	cmake \
+	boost-dev \
+	libconfig-dev \
+	taglib-dev \
+	wt-dev \
+	gtest-dev"
+
+RUN	apk add --no-cache --update ${BUILD_PACKAGES}
+
+# STB
+ARG	STB_VERSION=b42009b3b9d4ca35bc703f5310eedc74f584be58
+RUN \
+	DIR=/tmp/stb && mkdir -p ${DIR} && cd ${DIR} && \
+	curl -sLO https://github.com/nothings/stb/archive/${STB_VERSION}.tar.gz && \
+	tar -x --strip-components=1 -f ${STB_VERSION}.tar.gz && \
+	mkdir -p ${PREFIX}/include/stb && \
+	cp ./*.h ${PREFIX}/include/stb
+
+# LMS
+COPY . /tmp/lms/
+ARG LMS_BUILD_TYPE="Release"
+RUN \
+	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR} && \
+	CXXFLAGS="-I${PREFIX}/include" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=${LMS_BUILD_TYPE} && \
+	VERBOSE=1 make && \
+	make test
+

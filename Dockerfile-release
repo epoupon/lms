@@ -101,20 +101,15 @@ RUN \
 	cp ./*.h ${PREFIX}/include/stb
 
 # LMS
-ARG	LMS_VERSION=v3.25.2
+COPY . /tmp/lms/
 RUN \
-	DIR=/tmp/lms && mkdir -p ${DIR} && cd ${DIR} && \
-	curl -sL https://github.com/epoupon/lms/archive/${LMS_VERSION}.tar.gz -o ${LMS_VERSION}.tar.gz && \
-	tar -x --strip-components=1 -f ${LMS_VERSION}.tar.gz
-
-RUN \
-	DIR=/tmp/lms && mkdir -p ${DIR} && cd ${DIR} && \
-	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
+	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR} && \
+	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
 	LD_LIBRARY_PATH=${PREFIX}/lib VERBOSE=1 make && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
 	make install && \
 	mkdir -p ${PREFIX}/etc/ && \
-	cp conf/lms.conf ${PREFIX}/etc
+	cp /tmp/lms/conf/lms.conf ${PREFIX}/etc
 
 # Now copy all the stuff installed in a new folder (/tmp/fakeroot/)
 RUN \

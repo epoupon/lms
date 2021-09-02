@@ -1,6 +1,6 @@
 # LMS - Lightweight Music Server
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/epoupon/lms) [![Build Status](https://travis-ci.org/epoupon/lms.svg?branch=master)](https://travis-ci.org/epoupon/lms) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/epoupon/lms.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/epoupon/lms/context:cpp)
+[![Last Release](https://img.shields.io/github/v/release/epoupon/lms?logo=github&label=latest)](https://github.com/epoupon/lms/releases) [![Build](https://img.shields.io/github/workflow/status/epoupon/lms/Build?logo=github)](https://github.com/epoupon/lms/actions) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/epoupon/lms.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/epoupon/lms/context:cpp)
 
 _LMS_ is a self-hosted music streaming software: access your music collection from anywhere using a web interface!
 
