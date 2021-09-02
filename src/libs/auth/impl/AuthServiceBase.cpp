@@ -33,9 +33,9 @@ namespace Auth
 		Database::User::pointer user {Database::User::getByLoginName(session, loginName)};
 		if (!user)
 		{
-			const Database::User::Type type {Database::User::getCount(session) == 0 ? Database::User::Type::ADMIN : Database::User::Type::REGULAR};
+			const Database::UserType type {Database::User::getCount(session) == 0 ? Database::UserType::ADMIN : Database::UserType::REGULAR};
 
-			LMS_LOG(AUTH, DEBUG) << "Creating user '" << loginName << "', admin = " << (type == Database::User::Type::ADMIN);
+			LMS_LOG(AUTH, DEBUG) << "Creating user '" << loginName << "', admin = " << (type == Database::UserType::ADMIN);
 
 			user = Database::User::create(session, loginName);
 			user.modify()->setType(type);

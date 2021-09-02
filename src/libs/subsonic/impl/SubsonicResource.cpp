@@ -180,7 +180,7 @@ std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap
 	auto censorValue = [](const std::string& type, const std::string& value) -> std::string
 	{
 		if (type == "p" || type == "password")
-			return "*SENSIBLE DATA*";
+			return "*REDACTED*";
 		else
 			return value;
 	};
@@ -221,24 +221,16 @@ checkUserIsMySelfOrAdmin(RequestContext& context, const std::string& username)
 
 static
 void
-checkUserIsAdmin(RequestContext& context)
+checkUserTypeIsAllowed(RequestContext& context, EnumSet<Database::UserType> allowedUserTypes)
 {
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Check user is admin";
-
 	auto transaction {context.dbSession.createSharedTransaction()};
 
 	User::pointer currentUser {User::getById(context.dbSession, context.userId)};
 	if (!currentUser)
-	{
-		LMS_LOG(API_SUBSONIC, DEBUG) << "NOT FOUND";
 		throw RequestedDataNotFoundError {};
-	}
 
-	if (!currentUser->isAdmin())
-	{
-		LMS_LOG(API_SUBSONIC, DEBUG) << "NOT ADMIN";
+	if (!allowedUserTypes.contains(currentUser->getType()))
 		throw UserNotAuthorizedError {};
-	}
 }
 
 static
@@ -567,7 +559,7 @@ handleChangePassword(RequestContext& context)
 
 		Service<Auth::IPasswordService>::get()->setPassword(context.dbSession, userId, password);
 	}
-	catch (Auth::IPasswordService::PasswordTooWeakException&)
+	catch (Auth::PasswordTooWeakException&)
 	{
 		throw PasswordTooWeakGenericError {};
 	}
@@ -666,7 +658,7 @@ handleCreateUserRequest(RequestContext& context)
 	{
 		Service<Auth::IPasswordService>::get()->setPassword(context.dbSession, userId, password);
 	}
-	catch (const Auth::IPasswordService::PasswordTooWeakException&)
+	catch (const Auth::PasswordTooWeakException&)
 	{
 		removeCreatedUser();
 		throw PasswordTooWeakGenericError {};
@@ -1719,7 +1711,7 @@ handleUpdateUserRequest(RequestContext& context)
 		{
 			Service<::Auth::IPasswordService>()->setPassword(context.dbSession, userId, decodePasswordIfNeeded(*password));
 		}
-		catch (const Auth::IPasswordService::PasswordTooWeakException&)
+		catch (const Auth::PasswordTooWeakException&)
 		{
 			throw PasswordTooWeakGenericError {};
 		}
@@ -1922,114 +1914,114 @@ using RequestHandlerFunc = std::function<Response(RequestContext& context)>;
 using CheckImplementedFunc = std::function<void()>;
 struct RequestEntryPointInfo
 {
-	RequestHandlerFunc		func;
-	bool					mustBeAdmin;
-	CheckImplementedFunc	checkFunc {};
+	RequestHandlerFunc			func;
+	EnumSet<Database::UserType>	allowedUserTypes {Database::UserType::DEMO, Database::UserType::REGULAR, Database::UserType::ADMIN};
+	CheckImplementedFunc		checkFunc {};
 };
 
 static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 {
 	// System
-	{"ping",		{handlePingRequest,			false}},
-	{"getLicense",		{handleGetLicenseRequest,		false}},
+	{"ping",		{handlePingRequest}},
+	{"getLicense",		{handleGetLicenseRequest}},
 
 	// Browsing
-	{"getMusicFolders",	{handleGetMusicFoldersRequest,		false}},
-	{"getIndexes",		{handleGetIndexesRequest,		false}},
-	{"getMusicDirectory",	{handleGetMusicDirectoryRequest,	false}},
-	{"getGenres",		{handleGetGenresRequest,		false}},
-	{"getArtists",		{handleGetArtistsRequest,		false}},
-	{"getArtist",		{handleGetArtistRequest,		false}},
-	{"getAlbum",		{handleGetAlbumRequest,			false}},
-	{"getSong",		{handleNotImplemented,			false}},
-	{"getVideos",		{handleNotImplemented,			false}},
-	{"getArtistInfo",	{handleGetArtistInfoRequest,		false}},
-	{"getArtistInfo2",	{handleGetArtistInfo2Request,		false}},
-	{"getAlbumInfo",	{handleNotImplemented,			false}},
-	{"getAlbumInfo2",	{handleNotImplemented,			false}},
-	{"getSimilarSongs",	{handleGetSimilarSongsRequest,		false}},
-	{"getSimilarSongs2",	{handleGetSimilarSongs2Request,		false}},
-	{"getTopSongs",		{handleNotImplemented,			false}},
+	{"getMusicFolders",	{handleGetMusicFoldersRequest}},
+	{"getIndexes",		{handleGetIndexesRequest}},
+	{"getMusicDirectory",	{handleGetMusicDirectoryRequest}},
+	{"getGenres",		{handleGetGenresRequest}},
+	{"getArtists",		{handleGetArtistsRequest}},
+	{"getArtist",		{handleGetArtistRequest}},
+	{"getAlbum",		{handleGetAlbumRequest}},
+	{"getSong",		{handleNotImplemented}},
+	{"getVideos",		{handleNotImplemented}},
+	{"getArtistInfo",	{handleGetArtistInfoRequest}},
+	{"getArtistInfo2",	{handleGetArtistInfo2Request}},
+	{"getAlbumInfo",	{handleNotImplemented}},
+	{"getAlbumInfo2",	{handleNotImplemented}},
+	{"getSimilarSongs",	{handleGetSimilarSongsRequest}},
+	{"getSimilarSongs2",	{handleGetSimilarSongs2Request}},
+	{"getTopSongs",		{handleNotImplemented}},
 
 	// Album/song lists
-	{"getAlbumList",	{handleGetAlbumListRequest,		false}},
-	{"getAlbumList2",	{handleGetAlbumList2Request,		false}},
-	{"getRandomSongs",	{handleGetRandomSongsRequest,		false}},
-	{"getSongsByGenre",	{handleGetSongsByGenreRequest,		false}},
-	{"getNowPlaying",	{handleNotImplemented,			false}},
-	{"getStarred",		{handleGetStarredRequest,		false}},
-	{"getStarred2",		{handleGetStarred2Request,		false}},
+	{"getAlbumList",	{handleGetAlbumListRequest}},
+	{"getAlbumList2",	{handleGetAlbumList2Request}},
+	{"getRandomSongs",	{handleGetRandomSongsRequest}},
+	{"getSongsByGenre",	{handleGetSongsByGenreRequest}},
+	{"getNowPlaying",	{handleNotImplemented}},
+	{"getStarred",		{handleGetStarredRequest}},
+	{"getStarred2",		{handleGetStarred2Request}},
 
 	// Searching
-	{"search",		{handleNotImplemented,			false}},
-	{"search2",		{handleSearch2Request,			false}},
-	{"search3",		{handleSearch3Request,			false}},
+	{"search",		{handleNotImplemented}},
+	{"search2",		{handleSearch2Request}},
+	{"search3",		{handleSearch3Request}},
 
 	// Playlists
-	{"getPlaylists",	{handleGetPlaylistsRequest,		false}},
-	{"getPlaylist",		{handleGetPlaylistRequest,		false}},
-	{"createPlaylist",	{handleCreatePlaylistRequest,		false}},
-	{"updatePlaylist",	{handleUpdatePlaylistRequest,		false}},
-	{"deletePlaylist",	{handleDeletePlaylistRequest,		false}},
+	{"getPlaylists",	{handleGetPlaylistsRequest}},
+	{"getPlaylist",		{handleGetPlaylistRequest}},
+	{"createPlaylist",	{handleCreatePlaylistRequest}},
+	{"updatePlaylist",	{handleUpdatePlaylistRequest}},
+	{"deletePlaylist",	{handleDeletePlaylistRequest}},
 
 	// Media retrieval
-	{"hls",				{handleNotImplemented,			false}},
-	{"getCaptions",		{handleNotImplemented,			false}},
-	{"getLyrics",		{handleNotImplemented,			false}},
-	{"getAvatar",		{handleNotImplemented,			false}},
+	{"hls",				{handleNotImplemented}},
+	{"getCaptions",		{handleNotImplemented}},
+	{"getLyrics",		{handleNotImplemented}},
+	{"getAvatar",		{handleNotImplemented}},
 
 	// Media annotation
-	{"star",			{handleStarRequest,				false}},
-	{"unstar",			{handleUnstarRequest,			false}},
-	{"setRating",		{handleNotImplemented,			false}},
-	{"scrobble",		{handleScrobble,				false}},
+	{"star",			{handleStarRequest}},
+	{"unstar",			{handleUnstarRequest}},
+	{"setRating",		{handleNotImplemented}},
+	{"scrobble",		{handleScrobble}},
 
 	// Sharing
-	{"getShares",		{handleNotImplemented,			false}},
-	{"createShares",	{handleNotImplemented,			false}},
-	{"updateShare",		{handleNotImplemented,			false}},
-	{"deleteShare",		{handleNotImplemented,			false}},
+	{"getShares",		{handleNotImplemented}},
+	{"createShares",	{handleNotImplemented}},
+	{"updateShare",		{handleNotImplemented}},
+	{"deleteShare",		{handleNotImplemented}},
 
 	// Podcast
-	{"getPodcasts",			{handleNotImplemented,			false}},
-	{"getNewestPodcasts",		{handleNotImplemented,			false}},
-	{"refreshPodcasts",		{handleNotImplemented,			false}},
-	{"createPodcastChannel",	{handleNotImplemented,			false}},
-	{"deletePodcastChannel",	{handleNotImplemented,			false}},
-	{"deletePodcastEpisode",	{handleNotImplemented,			false}},
-	{"downloadPodcastEpisode",	{handleNotImplemented,			false}},
+	{"getPodcasts",			{handleNotImplemented}},
+	{"getNewestPodcasts",		{handleNotImplemented}},
+	{"refreshPodcasts",		{handleNotImplemented}},
+	{"createPodcastChannel",	{handleNotImplemented}},
+	{"deletePodcastChannel",	{handleNotImplemented}},
+	{"deletePodcastEpisode",	{handleNotImplemented}},
+	{"downloadPodcastEpisode",	{handleNotImplemented}},
 
 	// Jukebox
-	{"jukeboxControl",	{handleNotImplemented,			false}},
+	{"jukeboxControl",	{handleNotImplemented}},
 
 	// Internet radio
-	{"getInternetRadioStations",	{handleNotImplemented,			false}},
-	{"createInternetRadioStation",	{handleNotImplemented,			false}},
-	{"updateInternetRadioStation",	{handleNotImplemented,			false}},
-	{"deleteInternetRadioStation",	{handleNotImplemented,			false}},
+	{"getInternetRadioStations",	{handleNotImplemented}},
+	{"createInternetRadioStation",	{handleNotImplemented}},
+	{"updateInternetRadioStation",	{handleNotImplemented}},
+	{"deleteInternetRadioStation",	{handleNotImplemented}},
 
 	// Chat
-	{"getChatMessages",	{handleNotImplemented,			false}},
-	{"addChatMessages",	{handleNotImplemented,			false}},
+	{"getChatMessages",	{handleNotImplemented}},
+	{"addChatMessages",	{handleNotImplemented}},
 
 	// User management
-	{"getUser",			{handleGetUserRequest,			false}},
-	{"getUsers",		{handleGetUsersRequest,			true}},
-	{"createUser",		{handleCreateUserRequest,		true, &checkSetPasswordImplemented}},
-	{"updateUser",		{handleUpdateUserRequest,		true}},
-	{"deleteUser",		{handleDeleteUserRequest,		true}},
-	{"changePassword",	{handleChangePassword,			false, &checkSetPasswordImplemented}},
+	{"getUser",			{handleGetUserRequest}},
+	{"getUsers",		{handleGetUsersRequest,			{Database::UserType::ADMIN}}},
+	{"createUser",		{handleCreateUserRequest,		{Database::UserType::ADMIN}, &checkSetPasswordImplemented}},
+	{"updateUser",		{handleUpdateUserRequest,		{Database::UserType::ADMIN}}},
+	{"deleteUser",		{handleDeleteUserRequest,		{Database::UserType::ADMIN}}},
+	{"changePassword",	{handleChangePassword,			{Database::UserType::REGULAR, Database::UserType::ADMIN}, &checkSetPasswordImplemented}},
 
 	// Bookmarks
-	{"getBookmarks",	{handleGetBookmarks,			false}},
-	{"createBookmark",	{handleCreateBookmark,			false}},
-	{"deleteBookmark",	{handleDeleteBookmark,			false}},
-	{"getPlayQueue",	{handleNotImplemented,			false}},
-	{"savePlayQueue",	{handleNotImplemented,			false}},
+	{"getBookmarks",	{handleGetBookmarks}},
+	{"createBookmark",	{handleCreateBookmark}},
+	{"deleteBookmark",	{handleDeleteBookmark}},
+	{"getPlayQueue",	{handleNotImplemented}},
+	{"savePlayQueue",	{handleNotImplemented}},
 
 	// Media library scanning
-	{"getScanStatus",	{Scan::handleGetScanStatus,		true}},
-	{"startScan",		{Scan::handleStartScan,			true}},
+	{"getScanStatus",	{Scan::handleGetScanStatus,		{Database::UserType::ADMIN}}},
+	{"startScan",		{Scan::handleStartScan,			{Database::UserType::ADMIN}}},
 };
 
 using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
@@ -2112,8 +2104,7 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 			if (itEntryPoint->second.checkFunc)
 				itEntryPoint->second.checkFunc();
 
-			if (itEntryPoint->second.mustBeAdmin)
-				checkUserIsAdmin(requestContext);
+			checkUserTypeIsAllowed(requestContext, itEntryPoint->second.allowedUserTypes);
 
 			Response resp {(itEntryPoint->second.func)(requestContext)};
 

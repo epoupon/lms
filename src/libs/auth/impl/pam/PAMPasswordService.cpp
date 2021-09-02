@@ -187,7 +187,7 @@ namespace Auth
 	}
 
 	bool
-	PAMPasswordService::isPasswordSecureEnough(std::string_view, std::string_view) const
+	PAMPasswordService::isPasswordSecureEnough(std::string_view, const PasswordValidationContext&) const
 	{
 		throw NotImplementedException {};
 	}

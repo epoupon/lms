@@ -61,14 +61,9 @@ namespace Auth
 													std::string_view loginName,
 													std::string_view password) = 0;
 
-			class PasswordTooWeakException : public Auth::Exception
-			{
-				public:
-					PasswordTooWeakException() : Auth::Exception {"Password too weak"} {}
-			};
-
 			virtual bool					canSetPasswords() const = 0;
-			virtual bool					isPasswordSecureEnough(std::string_view username, std::string_view password) const = 0;
+
+			virtual bool					isPasswordSecureEnough(std::string_view password, const PasswordValidationContext& context) const = 0;
 			virtual void					setPassword(Database::Session& session, Database::IdType userId, std::string_view newPassword) = 0;
 	};
 

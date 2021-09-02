@@ -70,5 +70,13 @@ namespace Database
 		Internal		= 0,
 		ListenBrainz	= 1,
 	};
+
+	// Do not change enum values!
+	enum class UserType
+	{
+		REGULAR	= 0,
+		ADMIN	= 1,
+		DEMO	= 2,
+	};
 }
 

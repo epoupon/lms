@@ -80,15 +80,6 @@ class User : public Wt::Dbo::Dbo<User>
 	public:
 		using pointer = Wt::Dbo::ptr<User>;
 
-
-		// Do not change enum values!
-		enum class Type
-		{
-			REGULAR	= 0,
-			ADMIN	= 1,
-			DEMO	= 2,
-		};
-
 		struct PasswordHash
 		{
 			std::string salt;
@@ -152,7 +143,7 @@ class User : public Wt::Dbo::Dbo<User>
 		// write
 		void setLastLogin(const Wt::WDateTime& dateTime)	{ _lastLogin = dateTime; }
 		void setPasswordHash(const PasswordHash& passwordHash)	{ _passwordSalt = passwordHash.salt; _passwordHash = passwordHash.hash; }
-		void setType(Type type)					{ _type = type; }
+		void setType(UserType type)					{ _type = type; }
 		void setSubsonicTranscodeEnable(bool value) 		{ _subsonicTranscodeEnable = value; }
 		void setSubsonicTranscodeFormat(AudioFormat encoding)	{ _subsonicTranscodeFormat = encoding; }
 		void setSubsonicTranscodeBitrate(Bitrate bitrate);
@@ -166,8 +157,9 @@ class User : public Wt::Dbo::Dbo<User>
 		void setListenBrainzToken(const std::optional<UUID>& MBID)	{ _listenbrainzToken = MBID ? MBID->getAsString() : ""; }
 
 		// read
-		bool			isAdmin() const { return _type == Type::ADMIN; }
-		bool			isDemo() const { return _type == Type::DEMO; }
+		bool			isAdmin() const { return _type == UserType::ADMIN; }
+		bool			isDemo() const { return _type == UserType::DEMO; }
+		UserType		getType() const { return _type; }
 		bool			getSubsonicTranscodeEnable() const { return _subsonicTranscodeEnable; }
 		AudioFormat		getSubsonicTranscodeFormat() const { return _subsonicTranscodeFormat; }
 		Bitrate			getSubsonicTranscodeBitrate() const { return _subsonicTranscodeBitrate; }
@@ -233,7 +225,7 @@ class User : public Wt::Dbo::Dbo<User>
 		std::string	_listenbrainzToken; // Musicbrainz Identifier
 
 		// Admin defined settings
-		Type		_type {Type::REGULAR};
+		UserType		_type {UserType::REGULAR};
 
 		// User defined settings
 		SubsonicArtistListMode	_subsonicArtistListMode {defaultSubsonicArtistListMode};

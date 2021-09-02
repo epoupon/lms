@@ -102,7 +102,7 @@ class SettingsModel : public Wt::WFormModel
 				}
 
 				addField(PasswordField);
-				setValidator(PasswordField, createPasswordStrengthValidator(LmsApp->getUserLoginName()));
+				setValidator(PasswordField, createPasswordStrengthValidator([] { return ::Auth::PasswordValidationContext {LmsApp->getUserLoginName(), LmsApp->getUserType()}; }));
 				addField(PasswordConfirmField);
 			}
 

@@ -98,7 +98,7 @@ User::getDemo(Session& session)
 {
 	session.checkSharedLocked();
 
-	pointer res = session.getDboSession().find<User>().where("type = ?").bind(Type::DEMO);
+	pointer res = session.getDboSession().find<User>().where("type = ?").bind(UserType::DEMO);
 	return res;
 }
 

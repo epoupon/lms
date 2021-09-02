@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <string>
+#include "database/Types.hpp"
 #include "utils/Exception.hpp"
 
 namespace Auth
@@ -32,6 +34,18 @@ namespace Auth
 	{
 		public:
 			NotImplementedException() : Auth::Exception {"Not implemented"} {}
+	};
+
+	struct PasswordValidationContext
+	{
+		std::string loginName;
+		Database::UserType userType;
+	};
+
+	class PasswordTooWeakException : public Exception
+	{
+		public:
+			PasswordTooWeakException() : Auth::Exception {"Password too weak"} {}
 	};
 }
 

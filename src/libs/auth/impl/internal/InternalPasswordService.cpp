@@ -81,9 +81,18 @@ namespace Auth
 	}
 
 	bool
-	InternalPasswordService::isPasswordSecureEnough(std::string_view loginName, std::string_view password) const
+	InternalPasswordService::isPasswordSecureEnough(std::string_view password, const PasswordValidationContext& context) const
 	{
-		return _validator.evaluateStrength(std::string {password}, std::string {loginName}, "").isValid();
+		switch (context.userType)
+		{
+			case Database::UserType::ADMIN:
+			case Database::UserType::REGULAR:
+				return _validator.evaluateStrength(std::string {password}, context.loginName, "").isValid();
+			case Database::UserType::DEMO:
+				return true; // no constraint
+		}
+
+		throw NotImplementedException {};
 	}
 
 	void
@@ -97,7 +106,7 @@ namespace Auth
 		if (!user)
 			throw Exception {"User not found!"};
 
-		if (!isPasswordSecureEnough(user->getLoginName(), newPassword))
+		if (!isPasswordSecureEnough(newPassword, PasswordValidationContext {user->getLoginName(), user->getType()} ))
 			throw PasswordTooWeakException {};
 
 		user.modify()->setPasswordHash(passwordHash);

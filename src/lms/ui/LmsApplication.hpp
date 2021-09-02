@@ -65,9 +65,8 @@ class LmsApplication : public Wt::WApplication
 		Wt::Dbo::ptr<Database::User>	getUser();
 		Database::IdType				getUserId();
 		bool isUserAuthStrong() const; // user must be logged in prior this call
-		bool isUserAdmin(); // user must be logged in prior this call
-		bool isUserDemo(); // user must be logged in prior this call
-		std::string getUserLoginName(); // user must be logged in prior this call
+		Database::UserType				getUserType(); // user must be logged in prior this call
+		std::string						getUserLoginName(); // user must be logged in prior this call
 
 		// Proxified scanner events
 		Scanner::Events& getScannerEvents() { return _scannerEvents; }

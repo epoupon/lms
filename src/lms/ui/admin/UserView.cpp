@@ -66,7 +66,7 @@ class UserModel : public Wt::WFormModel
 			if (authPasswordService)
 			{
 				addField(PasswordField);
-				setValidator(PasswordField, createPasswordStrengthValidator([this] { return getLoginName(); }));
+				setValidator(PasswordField, createPasswordStrengthValidator([this] { return ::Auth::PasswordValidationContext {getLoginName(), Wt::asNumber(value(DemoField)) ? UserType::DEMO : UserType::REGULAR}; }));
 				if (!userId)
 					validator(PasswordField)->setMandatory(true);
 			}
@@ -100,7 +100,7 @@ class UserModel : public Wt::WFormModel
 				user = Database::User::create(LmsApp->getDbSession(), valueText(LoginField).toUTF8());
 
 				if (Wt::asNumber(value(DemoField)))
-					user.modify()->setType(Database::User::Type::DEMO);
+					user.modify()->setType(Database::UserType::DEMO);
 
 				if (_authPasswordService)
 					_authPasswordService->setPassword(LmsApp->getDbSession(), user.id(), valueText(PasswordField).toUTF8());
@@ -159,6 +159,9 @@ class UserModel : public Wt::WFormModel
 			}
 			else if (field == PasswordField)
 			{
+				if (Wt::asNumber(value(DemoField)))
+					setValidator(PasswordField, {});
+
 				validatePassword(error);
 			}
 			else if (field == DemoField)
@@ -172,7 +175,7 @@ class UserModel : public Wt::WFormModel
 			if (error.empty())
 				return Wt::WFormModel::validateField(field);
 
-			setValidation(field, Wt::WValidator::Result( Wt::ValidationState::Invalid, error));
+			setValidation(field, Wt::WValidator::Result {Wt::ValidationState::Invalid, error});
 
 			return false;
 		}

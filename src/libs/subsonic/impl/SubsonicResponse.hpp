@@ -152,6 +152,11 @@ class PasswordTooWeakGenericError : public GenericError
 	std::string getMessage() const override { return "Password too weak"; }
 };
 
+class DemoUserCannotChangePasswordGenericError : public GenericError
+{
+	std::string getMessage() const override { return "Demo user cannot change its password"; }
+};
+
 class UserAlreadyExistsGenericError : public GenericError
 {
 	std::string getMessage() const override { return "User already exists"; }

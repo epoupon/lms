@@ -116,20 +116,12 @@ LmsApplication::isUserAuthStrong() const
 	return _authenticatedUser->strongAuth;
 }
 
-bool
-LmsApplication::isUserAdmin()
+Database::UserType
+LmsApplication::getUserType()
 {
 	auto transaction {getDbSession().createSharedTransaction()};
 
-	return getUser()->isAdmin();
-}
-
-bool
-LmsApplication::isUserDemo()
-{
-	auto transaction {getDbSession().createSharedTransaction()};
-
-	return getUser()->isDemo();
+	return getUser()->getType();
 }
 
 std::string
@@ -458,7 +450,7 @@ LmsApplication::onUserLoggedIn()
 		// Only one active session by user
 		if (otherApplication.getUserId() == getUserId())
 		{
-			if (!LmsApp->isUserDemo())
+			if (LmsApp->getUserType() != Database::UserType::DEMO)
 			{
 				quit(Wt::WString::tr("Lms.quit-other-session"));
 			}
@@ -502,7 +494,7 @@ LmsApplication::createHome()
 	Wt::WLineEdit* searchEdit {main->bindNew<Wt::WLineEdit>("search")};
 	searchEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
 
-	if (isUserAdmin())
+	if (LmsApp->getUserType() == Database::UserType::ADMIN)
 	{
 		main->setCondition("if-is-admin", true);
 		main->bindNew<Wt::WAnchor>("database", Wt::WLink {Wt::LinkType::InternalPath, "/admin/database"}, Wt::WString::tr("Lms.Admin.Database.menu-database"));
@@ -530,7 +522,7 @@ LmsApplication::createHome()
 	});
 
 	// Admin stuff
-	if (isUserAdmin())
+	if (getUserType() == Database::UserType::ADMIN)
 	{
 		mainStack->addNew<DatabaseSettingsView>();
 		mainStack->addNew<UsersView>();
@@ -581,7 +573,8 @@ LmsApplication::createHome()
 		_mediaPlayer->stop();
 	});
 
-	if (isUserAdmin())
+	const bool isAdmin {getUserType() == Database::UserType::ADMIN};
+	if (isAdmin)
 	{
 		_scannerEvents.scanComplete.connect([=] (const Scanner::ScanStats& stats)
 		{
@@ -597,10 +590,10 @@ LmsApplication::createHome()
 
 	internalPathChanged().connect([=]
 	{
-		handlePathChange(*mainStack, isUserAdmin());
+		handlePathChange(*mainStack, isAdmin);
 	});
 
-	handlePathChange(*mainStack, isUserAdmin());
+	handlePathChange(*mainStack, isAdmin);
 }
 
 void
