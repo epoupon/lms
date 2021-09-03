@@ -559,11 +559,15 @@ handleChangePassword(RequestContext& context)
 
 		Service<Auth::IPasswordService>::get()->setPassword(context.dbSession, userId, password);
 	}
-	catch (Auth::PasswordTooWeakException&)
+	catch (const Auth::PasswordMustMatchLoginNameException&)
+	{
+		throw PasswordMustMatchLoginNameGenericError {};
+	}
+	catch (const Auth::PasswordTooWeakException&)
 	{
 		throw PasswordTooWeakGenericError {};
 	}
-	catch (Auth::Exception& authException)
+	catch (const Auth::Exception& authException)
 	{
 		throw UserNotAuthorizedError {};
 	}
@@ -657,6 +661,11 @@ handleCreateUserRequest(RequestContext& context)
 	try
 	{
 		Service<Auth::IPasswordService>::get()->setPassword(context.dbSession, userId, password);
+	}
+	catch (const Auth::PasswordMustMatchLoginNameException&)
+	{
+		removeCreatedUser();
+		throw PasswordMustMatchLoginNameGenericError {};
 	}
 	catch (const Auth::PasswordTooWeakException&)
 	{
@@ -1710,6 +1719,10 @@ handleUpdateUserRequest(RequestContext& context)
 		try
 		{
 			Service<::Auth::IPasswordService>()->setPassword(context.dbSession, userId, decodePasswordIfNeeded(*password));
+		}
+		catch (const Auth::PasswordMustMatchLoginNameException&)
+		{
+			throw PasswordMustMatchLoginNameGenericError {};
 		}
 		catch (const Auth::PasswordTooWeakException&)
 		{

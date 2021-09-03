@@ -17,6 +17,7 @@
 <message id="Lms.password-bad-login-combination">无效的登陆 / 密码组合</message>
 <message id="Lms.password-client-throttled">登录已被限制，请稍后再试</message>
 <message id="Lms.password-confirm">确认密码</message>
+<message id="Lms.password-must-match-login">演示密码必须是登录名！</message>
 <message id="Lms.password-new">新密码</message>
 <message id="Lms.password-old">旧密码</message>
 <message id="Lms.password-too-weak">密码太弱</message>
@@ -94,7 +95,6 @@
 <!--User-->
 <message id="Lms.Admin.User.demo-account">演示账号</message>
 <message id="Lms.Admin.User.demo-account-already-exists">演示账号已存在！</message>
-<message id="Lms.Admin.User.demo-password-invalid">演示密码必须是登录名！</message>
 <message id="Lms.Admin.User.last-login">最后登录</message>
 <message id="Lms.Admin.User.user-already-exists">用户已存在！</message>
 <message id="Lms.Admin.User.user-create">新建用户</message>

@@ -66,7 +66,7 @@ class UserModel : public Wt::WFormModel
 			if (authPasswordService)
 			{
 				addField(PasswordField);
-				setValidator(PasswordField, createPasswordStrengthValidator([this] { return ::Auth::PasswordValidationContext {getLoginName(), Wt::asNumber(value(DemoField)) ? UserType::DEMO : UserType::REGULAR}; }));
+				setValidator(PasswordField, createPasswordStrengthValidator([this] { return ::Auth::PasswordValidationContext {getLoginName(), getUserType()}; }));
 				if (!userId)
 					validator(PasswordField)->setMandatory(true);
 			}
@@ -122,6 +122,19 @@ class UserModel : public Wt::WFormModel
 				throw UserNotAllowedException {};
 		}
 
+		Database::UserType getUserType() const
+		{
+			if (_userId)
+			{
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
+				return user->getType();
+			}
+
+			return Wt::asNumber(value(DemoField)) ? UserType::DEMO : UserType::REGULAR;
+		}
+
 		std::string getLoginName() const
 		{
 			if (_userId)
@@ -131,18 +144,8 @@ class UserModel : public Wt::WFormModel
 				const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
 				return user->getLoginName();
 			}
-			else
-				return valueText(LoginField).toUTF8();
-		}
 
-		void validatePassword(Wt::WString& error) const
-		{
-			if (!valueText(PasswordField).empty() && Wt::asNumber(value(DemoField)))
-			{
-				// Demo account: password must be the same as the login name
-				if (valueText(PasswordField) != getLoginName())
-					error = Wt::WString::tr("Lms.Admin.User.demo-password-invalid");
-			}
+			return valueText(LoginField).toUTF8();
 		}
 
 		bool validateField(Field field)
@@ -156,13 +159,6 @@ class UserModel : public Wt::WFormModel
 				const Database::User::pointer user {Database::User::getByLoginName(LmsApp->getDbSession(), valueText(LoginField).toUTF8())};
 				if (user)
 					error = Wt::WString::tr("Lms.Admin.User.user-already-exists");
-			}
-			else if (field == PasswordField)
-			{
-				if (Wt::asNumber(value(DemoField)))
-					setValidator(PasswordField, {});
-
-				validatePassword(error);
 			}
 			else if (field == DemoField)
 			{

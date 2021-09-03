@@ -36,16 +36,34 @@ namespace Auth
 			NotImplementedException() : Auth::Exception {"Not implemented"} {}
 	};
 
+	class UserNotFoundException : public Exception
+	{
+		public:
+			UserNotFoundException() : Auth::Exception {"User not found"} {}
+	};
+
 	struct PasswordValidationContext
 	{
 		std::string loginName;
 		Database::UserType userType;
 	};
 
-	class PasswordTooWeakException : public Exception
+	class PasswordException : public Exception
 	{
 		public:
-			PasswordTooWeakException() : Auth::Exception {"Password too weak"} {}
+			using Exception::Exception;
+	};
+
+	class PasswordTooWeakException : public PasswordException
+	{
+		public:
+			PasswordTooWeakException() : PasswordException {"Password too weak"} {}
+	};
+
+	class PasswordMustMatchLoginNameException : public PasswordException
+	{
+		public:
+			PasswordMustMatchLoginNameException() : PasswordException {"Password must match login name"} {}
 	};
 }
 

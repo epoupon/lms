@@ -276,6 +276,14 @@ class SettingsModel : public Wt::WFormModel
 					validator(SettingsModel::ListenBrainzTokenField)->setMandatory(usesListenBrainz);
 				}
 			}
+			if (_authPasswordService)
+			{
+				if (_withOldPassword)
+					setValue(PasswordOldField, "");
+
+				setValue(PasswordField, "");
+				setValue(PasswordConfirmField, "");
+			}
 		}
 
 	private:

@@ -56,15 +56,21 @@ namespace Auth
 				std::optional<Database::IdType> userId {};
 				std::optional<Wt::WDateTime> expiry {};
 			};
-			virtual CheckResult				checkUserPassword(Database::Session& session,
-													const boost::asio::ip::address& clientAddress,
-													std::string_view loginName,
-													std::string_view password) = 0;
+			virtual CheckResult		checkUserPassword(Database::Session& session,
+											const boost::asio::ip::address& clientAddress,
+											std::string_view loginName,
+											std::string_view password) = 0;
 
-			virtual bool					canSetPasswords() const = 0;
+			virtual bool			canSetPasswords() const = 0;
 
-			virtual bool					isPasswordSecureEnough(std::string_view password, const PasswordValidationContext& context) const = 0;
-			virtual void					setPassword(Database::Session& session, Database::IdType userId, std::string_view newPassword) = 0;
+			enum class PasswordAcceptabilityResult
+			{
+				OK,
+				TooWeak,
+				MustMatchLoginName,
+			};
+			virtual PasswordAcceptabilityResult	checkPasswordAcceptability(std::string_view password, const PasswordValidationContext& context) const = 0;
+			virtual void						setPassword(Database::Session& session, Database::IdType userId, std::string_view newPassword) = 0;
 	};
 
 	std::unique_ptr<IPasswordService>	createPasswordService(std::string_view authPasswordBackend, std::size_t maxThrottlerEntryCount, IAuthTokenService& authTokenService);

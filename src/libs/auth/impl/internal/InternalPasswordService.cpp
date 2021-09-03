@@ -80,16 +80,16 @@ namespace Auth
 		return true;
 	}
 
-	bool
-	InternalPasswordService::isPasswordSecureEnough(std::string_view password, const PasswordValidationContext& context) const
+	IPasswordService::PasswordAcceptabilityResult
+	InternalPasswordService::checkPasswordAcceptability(std::string_view password, const PasswordValidationContext& context) const
 	{
 		switch (context.userType)
 		{
 			case Database::UserType::ADMIN:
 			case Database::UserType::REGULAR:
-				return _validator.evaluateStrength(std::string {password}, context.loginName, "").isValid();
+				return _validator.evaluateStrength(std::string {password}, context.loginName, "").isValid() ? PasswordAcceptabilityResult::OK : PasswordAcceptabilityResult::TooWeak;
 			case Database::UserType::DEMO:
-				return true; // no constraint
+				return password == context.loginName ? PasswordAcceptabilityResult::OK : PasswordAcceptabilityResult::MustMatchLoginName;
 		}
 
 		throw NotImplementedException {};
@@ -106,8 +106,15 @@ namespace Auth
 		if (!user)
 			throw Exception {"User not found!"};
 
-		if (!isPasswordSecureEnough(newPassword, PasswordValidationContext {user->getLoginName(), user->getType()} ))
-			throw PasswordTooWeakException {};
+		switch (checkPasswordAcceptability(newPassword, PasswordValidationContext {user->getLoginName(), user->getType()}))
+		{
+			case PasswordAcceptabilityResult::OK:
+				break;
+			case PasswordAcceptabilityResult::TooWeak:
+				throw PasswordTooWeakException {};
+			case PasswordAcceptabilityResult::MustMatchLoginName:
+				throw PasswordMustMatchLoginNameException {};
+		}
 
 		user.modify()->setPasswordHash(passwordHash);
 		getAuthTokenService().clearAuthTokens(session, userId);

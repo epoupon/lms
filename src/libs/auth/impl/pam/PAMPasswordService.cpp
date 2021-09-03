@@ -186,8 +186,8 @@ namespace Auth
 		return false;
 	}
 
-	bool
-	PAMPasswordService::isPasswordSecureEnough(std::string_view, const PasswordValidationContext&) const
+	IPasswordService::PasswordAcceptabilityResult
+	PAMPasswordService::checkPasswordAcceptability(std::string_view, const PasswordValidationContext&) const
 	{
 		throw NotImplementedException {};
 	}

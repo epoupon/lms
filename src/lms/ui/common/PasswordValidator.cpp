@@ -48,10 +48,17 @@ namespace UserInterface
 
 		const ::Auth::PasswordValidationContext context {_passwordValidationContextGetFunc()};
 
-		if (Service<::Auth::IPasswordService>::get()->isPasswordSecureEnough(input.toUTF8(), context))
-			return Wt::WValidator::Result {Wt::ValidationState::Valid};
+		switch (Service<::Auth::IPasswordService>::get()->checkPasswordAcceptability(input.toUTF8(), context))
+		{
+			case ::Auth::IPasswordService::PasswordAcceptabilityResult::OK:
+				return Wt::WValidator::Result {Wt::ValidationState::Valid};
+			case ::Auth::IPasswordService::PasswordAcceptabilityResult::TooWeak:
+				return Wt::WValidator::Result {Wt::ValidationState::Invalid, Wt::WString::tr("Lms.password-too-weak")};
+			case ::Auth::IPasswordService::PasswordAcceptabilityResult::MustMatchLoginName:
+				return Wt::WValidator::Result {Wt::ValidationState::Invalid, Wt::WString::tr("Lms.password-must-match-login")};
+		}
 
-		return Wt::WValidator::Result {Wt::ValidationState::Invalid, Wt::WString::tr("Lms.password-too-weak")};
+		throw LmsException {"internal error"};
 	}
 
 	std::shared_ptr<Wt::WValidator>
