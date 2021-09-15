@@ -104,7 +104,7 @@ class Artist : public Wt::Dbo::Dbo<Artist>
 		std::vector<Wt::Dbo::ptr<Release>>	getReleases(const std::set<IdType>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
 		std::size_t				getReleaseCount() const;
 		std::vector<Wt::Dbo::ptr<Track>>	getTracks(std::optional<TrackArtistLinkType> linkType = {}) const;
-		std::vector<Wt::Dbo::ptr<Track>>	getTracksWithRelease(std::optional<TrackArtistLinkType> linkType = {}) const;
+		std::vector<Wt::Dbo::ptr<Track>>	getNonReleaseTracks(std::optional<TrackArtistLinkType> linkType = {}) const;
 		std::vector<Wt::Dbo::ptr<Track>>	getRandomTracks(std::optional<std::size_t> count) const;
 
 		// No artistLinkTypes means get them all

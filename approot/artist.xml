@@ -8,9 +8,20 @@
 		${clusters}
 		${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
 	</div>
+	${<if-has-release>}
 	<div class="row">
 		${releases class="Lms-explore-artist-entries-container"}
 	</div>
+	${</if-has-release>}
+	${<if-has-non-release-track>}
+	<div class="Lms-explore-artist-tracks-container">
+		<div class="row">
+			<div class="col-lg-8">
+				${tracks}
+			</div>
+		</div>
+	</div>
+	${</if-has-non-release-track>}
 	<div class="row">
 		${<if-has-similar-artists>}
 		<div class="col-md-4">

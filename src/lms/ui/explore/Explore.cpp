@@ -93,6 +93,7 @@ Explore::Explore(Filters* filters)
 
 	auto artist = std::make_unique<Artist>(_filters);
 	artist->artistsAction.connect(this, &Explore::handleArtistsAction);
+	artist->tracksAction.connect(this, &Explore::handleTracksAction);
 	contentsStack->addWidget(std::move(artist));
 
 	auto releases = std::make_unique<Releases>(*_filters);

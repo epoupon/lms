@@ -29,6 +29,7 @@
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "database/User.hpp"
 #include "recommendation/IEngine.hpp"
 #include "utils/Logger.hpp"
@@ -40,6 +41,7 @@
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
 #include "ReleaseListHelpers.hpp"
+#include "TrackListHelpers.hpp"
 
 using namespace Database;
 
@@ -107,6 +109,8 @@ Artist::refreshView()
 	if (!artist)
 		throw ArtistNotFoundException {};
 
+	refreshReleases(artist);
+	refreshNonReleaseTracks(artist);
 	refreshLinks(artist);
 	refreshSimilarArtists(similarArtistIds);
 
@@ -185,13 +189,37 @@ Artist::refreshView()
 			popup->exec(moreBtn);
 		});
 	}
+}
+
+void
+Artist::refreshReleases(const Wt::Dbo::ptr<Database::Artist>& artist)
+{
+	const auto releases {artist->getReleases(_filters->getClusterIds())};
+	if (releases.empty())
+		return;
+
+	setCondition("if-has-release", true);
 
 	Wt::WContainerWidget* releasesContainer = bindNew<Wt::WContainerWidget>("releases");
-
-	auto releases = artist->getReleases(_filters->getClusterIds());
 	for (const auto& release : releases)
 	{
 		releasesContainer->addWidget(ReleaseListHelpers::createEntryForArtist(release, artist));
+	}
+}
+
+void
+Artist::refreshNonReleaseTracks(const Wt::Dbo::ptr<Database::Artist>& artist)
+{
+	const auto tracks {artist->getNonReleaseTracks()};
+	if (tracks.empty())
+		return;
+
+	setCondition("if-has-non-release-track", true);
+
+	Wt::WContainerWidget* tracksContainer = bindNew<Wt::WContainerWidget>("tracks");
+	for (const Track::pointer& track : tracks)
+	{
+		tracksContainer->addWidget(TrackListHelpers::createEntry(track, tracksAction));
 	}
 }
 

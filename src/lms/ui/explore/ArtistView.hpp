@@ -44,9 +44,12 @@ class Artist : public Wt::WTemplate
 		Artist(Filters* filters);
 
 		PlayQueueActionSignal artistsAction;
+		PlayQueueActionSignal tracksAction;
 
 	private:
 		void refreshView();
+		void refreshReleases(const Wt::Dbo::ptr<Database::Artist>& artist);
+		void refreshNonReleaseTracks(const Wt::Dbo::ptr<Database::Artist>& artist);
 		void refreshSimilarArtists(const std::unordered_set<Database::IdType>& similarArtistsId);
 		void refreshLinks(const Wt::Dbo::ptr<Database::Artist>& artist);
 

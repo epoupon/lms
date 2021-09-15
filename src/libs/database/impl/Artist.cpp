@@ -465,15 +465,16 @@ Artist::getTracks(std::optional<TrackArtistLinkType> linkType) const
 }
 
 std::vector<Wt::Dbo::ptr<Track>>
-Artist::getTracksWithRelease(std::optional<TrackArtistLinkType> linkType) const
+Artist::getNonReleaseTracks(std::optional<TrackArtistLinkType> linkType) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));
 	assert(session());
 
-	auto query {session()->query<Wt::Dbo::ptr<Track>>("SELECT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id INNER JOIN release r ON r.id = t.release_id")
+	auto query {session()->query<Wt::Dbo::ptr<Track>>("SELECT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id")
 		.where("a.id = ?").bind(self()->id())
-		.orderBy("t.year,r.name,t.disc_number,t.track_number")};
+		.where("t.release_id is NULL")
+		.orderBy("t.name")};
 
 	if (linkType)
 		query.where("t_a_l.type = ?").bind(*linkType);

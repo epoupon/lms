@@ -312,3 +312,27 @@ TEST_F(DatabaseFixture, MultiArtistsSortMethod)
 	}
 }
 
+TEST_F(DatabaseFixture, SingleArtistNonReleaseTracks)
+{
+	ScopedArtist artist {session, "artist"};
+	ScopedTrack track1 {session, "MyTrack1"};
+	ScopedTrack track2 {session, "MyTrack2"};
+	ScopedRelease release{session, "MyRelease"};
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		TrackArtistLink::create(session, track1.get(), artist.get(), TrackArtistLinkType::Artist);
+		TrackArtistLink::create(session, track2.get(), artist.get(), TrackArtistLinkType::Artist);
+
+		track1.get().modify()->setRelease(release.get());
+	}
+
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		const auto tracks {artist->getNonReleaseTracks()};
+		ASSERT_EQ(tracks.size(), 1);
+		EXPECT_EQ(tracks.front().id(), track2.getId());
+	}
+}
