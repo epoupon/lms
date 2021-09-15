@@ -465,7 +465,7 @@ Artist::getTracks(std::optional<TrackArtistLinkType> linkType) const
 }
 
 std::vector<Wt::Dbo::ptr<Track>>
-Artist::getNonReleaseTracks(std::optional<TrackArtistLinkType> linkType) const
+Artist::getNonReleaseTracks(std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const
 {
 	assert(self());
 	assert(IdIsValid(self()->id()));
@@ -474,16 +474,41 @@ Artist::getNonReleaseTracks(std::optional<TrackArtistLinkType> linkType) const
 	auto query {session()->query<Wt::Dbo::ptr<Track>>("SELECT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id")
 		.where("a.id = ?").bind(self()->id())
 		.where("t.release_id is NULL")
+		.orderBy("t.name")
+		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
+		.offset(range ? static_cast<int>(range->offset) : -1)};
+
+	if (linkType)
+		query.where("t_a_l.type = ?").bind(*linkType);
+
+	Wt::Dbo::collection<Track::pointer> tracks {query.resultList()};
+
+	auto res {std::vector<Track::pointer>(tracks.begin(), tracks.end())};
+	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
+
+	return res;
+}
+
+bool
+Artist::hasNonReleaseTracks(std::optional<TrackArtistLinkType> linkType) const
+{
+	auto query {session()->query<Wt::Dbo::ptr<Track>>("SELECT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id")
+		.where("a.id = ?").bind(self()->id())
+		.where("t.release_id is NULL")
 		.orderBy("t.name")};
 
 	if (linkType)
 		query.where("t_a_l.type = ?").bind(*linkType);
 
-	Wt::Dbo::collection<Wt::Dbo::ptr<Track>> tracks {query.resultList()};
-
-	return std::vector<Wt::Dbo::ptr<Track>>(tracks.begin(), tracks.end());
+	Wt::Dbo::collection<Track::pointer> tracks {query.resultList()};
+	return !tracks.empty();
 }
-
 
 std::vector<Wt::Dbo::ptr<Track>>
 Artist::getRandomTracks(std::optional<std::size_t> count) const

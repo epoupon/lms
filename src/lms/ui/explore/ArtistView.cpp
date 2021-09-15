@@ -35,6 +35,7 @@
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
+#include "common/InfiniteScrollingContainer.hpp"
 #include "resource/DownloadResource.hpp"
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"
@@ -93,6 +94,8 @@ Artist::refreshView()
 		return;
 
 	clear();
+	_artistId = {};
+	_trackContainer = nullptr;
 
 	const auto artistId {extractArtistIdFromInternalPath()};
 	if (!artistId)
@@ -108,6 +111,8 @@ Artist::refreshView()
 	const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), *artistId)};
 	if (!artist)
 		throw ArtistNotFoundException {};
+
+	_artistId = *artistId;
 
 	refreshReleases(artist);
 	refreshNonReleaseTracks(artist);
@@ -140,7 +145,7 @@ Artist::refreshView()
 
 		playBtn->clicked().connect([=]
 		{
-			artistsAction.emit(PlayQueueAction::Play, {*artistId});
+			artistsAction.emit(PlayQueueAction::Play, {_artistId});
 		});
 	}
 
@@ -154,12 +159,12 @@ Artist::refreshView()
 			popup->addItem(Wt::WString::tr("Lms.Explore.play-shuffled"))
 				->triggered().connect(this, [=]
 				{
-					artistsAction.emit(PlayQueueAction::PlayShuffled, {*artistId});
+					artistsAction.emit(PlayQueueAction::PlayShuffled, {_artistId});
 				});
 			popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
 				->triggered().connect(this, [=]
 				{
-					artistsAction.emit(PlayQueueAction::PlayLast, {*artistId});
+					artistsAction.emit(PlayQueueAction::PlayLast, {_artistId});
 				});
 
 			bool isStarred {};
@@ -210,17 +215,17 @@ Artist::refreshReleases(const Wt::Dbo::ptr<Database::Artist>& artist)
 void
 Artist::refreshNonReleaseTracks(const Wt::Dbo::ptr<Database::Artist>& artist)
 {
-	const auto tracks {artist->getNonReleaseTracks()};
-	if (tracks.empty())
+	if (!artist->hasNonReleaseTracks())
 		return;
 
 	setCondition("if-has-non-release-track", true);
-
-	Wt::WContainerWidget* tracksContainer = bindNew<Wt::WContainerWidget>("tracks");
-	for (const Track::pointer& track : tracks)
+	_trackContainer = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.Tracks.template.container"));
+	_trackContainer->onRequestElements.connect(this, [this]
 	{
-		tracksContainer->addWidget(TrackListHelpers::createEntry(track, tracksAction));
-	}
+		addSomeNonReleaseTracks();
+	});
+
+	addSomeNonReleaseTracks();
 }
 
 void
@@ -255,6 +260,35 @@ Artist::refreshLinks(const Database::Artist::pointer& artist)
 
 		bindNew<Wt::WAnchor>("mbid-link", link, Wt::WString::tr("Lms.Explore.musicbrainz-artist"));
 	}
+}
+
+void
+Artist::addSomeNonReleaseTracks()
+{
+	bool moreResults {};
+
+	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+		const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), _artistId)};
+		if (!artist)
+			return;
+
+		const auto tracks {artist->getNonReleaseTracks(std::nullopt, Database::Range {static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize}, moreResults)};
+
+		for (const auto& track : tracks)
+		{
+			if (_trackContainer->getCount() == _tracksMaxCount)
+			{
+				moreResults = false;
+				break;
+			}
+
+			_trackContainer->add(TrackListHelpers::createEntry(track, tracksAction));
+		}
+	}
+
+	_trackContainer->setHasMore(moreResults);
 }
 
 } // namespace UserInterface

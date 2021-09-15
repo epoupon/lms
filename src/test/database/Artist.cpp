@@ -318,6 +318,16 @@ TEST_F(DatabaseFixture, SingleArtistNonReleaseTracks)
 	ScopedTrack track1 {session, "MyTrack1"};
 	ScopedTrack track2 {session, "MyTrack2"};
 	ScopedRelease release{session, "MyRelease"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(artist->hasNonReleaseTracks(std::nullopt), false);
+
+		bool moreResults;
+		const auto tracks {artist->getNonReleaseTracks(std::nullopt, std::nullopt, moreResults )};
+		EXPECT_EQ(tracks.size(), 0);
+	}
+
 	{
 		auto transaction {session.createUniqueTransaction()};
 
@@ -331,7 +341,10 @@ TEST_F(DatabaseFixture, SingleArtistNonReleaseTracks)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		const auto tracks {artist->getNonReleaseTracks()};
+		bool moreResults;
+		const auto tracks {artist->getNonReleaseTracks(std::nullopt, std::nullopt, moreResults )};
+		EXPECT_EQ(artist->hasNonReleaseTracks(std::nullopt), true);
+		EXPECT_EQ(moreResults, false);
 		ASSERT_EQ(tracks.size(), 1);
 		EXPECT_EQ(tracks.front().id(), track2.getId());
 	}

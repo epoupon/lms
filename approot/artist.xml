@@ -15,11 +15,7 @@
 	${</if-has-release>}
 	${<if-has-non-release-track>}
 	<div class="Lms-explore-artist-tracks-container">
-		<div class="row">
-			<div class="col-lg-8">
-				${tracks}
-			</div>
-		</div>
+		${tracks}
 	</div>
 	${</if-has-non-release-track>}
 	<div class="row">
