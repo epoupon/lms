@@ -6,6 +6,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules/)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+if (UNIX)
+	set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
+endif ()
 
 include(CTest)
 find_package(PkgConfig REQUIRED)

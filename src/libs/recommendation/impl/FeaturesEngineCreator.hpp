@@ -24,6 +24,6 @@
 
 namespace Recommendation
 {
-	std::unique_ptr<IClassifier> createFeaturesClassifier();
+	std::unique_ptr<IClassifier> createFeaturesEngine();
 }
 

@@ -44,7 +44,7 @@ namespace UserInterface
 		public:
 			SearchView(Filters* filters);
 
-			PlayQueueActionSignal tracksAction;
+			PlayQueueActionTrackSignal tracksAction;
 
 			void refreshView(const Wt::WString& searchText);
 

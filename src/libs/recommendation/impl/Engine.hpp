@@ -55,12 +55,13 @@ namespace Recommendation
 		private:
 			void	load(bool forceReload, const ProgressCallback& progressCallback) override;
 			void	cancelLoad() override;
+			void	requestCancelLoad() override {};
 
-			ResultContainer getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) override;
-			ResultContainer getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) override;
-			ResultContainer getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) override;
-			ResultContainer getSimilarArtists(Database::Session& session,
-					Database::IdType artistId,
+			ResultContainer<Database::TrackId> getSimilarTracksFromTrackList(Database::Session& session, Database::TrackListId tracklistId, std::size_t maxCount) override;
+			ResultContainer<Database::TrackId> getSimilarTracks(Database::Session& session, const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) override;
+			ResultContainer<Database::ReleaseId> getSimilarReleases(Database::Session& session, Database::ReleaseId releaseId, std::size_t maxCount) override;
+			ResultContainer<Database::ArtistId> getSimilarArtists(Database::Session& session,
+					Database::ArtistId artistId,
 					EnumSet<Database::TrackArtistLinkType> linkTypes,
 					std::size_t maxCount) override;
 
@@ -79,7 +80,6 @@ namespace Recommendation
 			using ClassifierContainer = std::unordered_map<ClassifierType, std::unique_ptr<IClassifier>>;
 			ClassifierContainer			_classifiers;
 			std::vector<ClassifierType>	_classifierPriorities; // ordered by priority
-
 	};
 
 } // ns Recommendation

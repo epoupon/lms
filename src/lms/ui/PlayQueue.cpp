@@ -23,6 +23,7 @@
 #include <Wt/WText.h>
 
 #include "database/Cluster.hpp"
+#include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
@@ -129,7 +130,7 @@ PlayQueue::PlayQueue()
 
 		if (LmsApp->getUser()->isDemo())
 		{
-			LMS_LOG(UI, DEBUG) << "Removing tracklist id " << _tracklistId;
+			LMS_LOG(UI, DEBUG) << "Removing tracklist id " << _tracklistId.toString();
 			auto tracklist = Database::TrackList::getById(LmsApp->getDbSession(), _tracklistId);
 			if (tracklist)
 				tracklist.remove();
@@ -167,7 +168,7 @@ PlayQueue::PlayQueue()
 			trackList = Database::TrackList::create(LmsApp->getDbSession(), currentPlayQueueName, Database::TrackList::Type::Internal, false, LmsApp->getUser());
 		}
 
-		_tracklistId = trackList.id();
+		_tracklistId = trackList->getId();
 	}
 
 	updateInfo();
@@ -226,7 +227,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 {
 	updateCurrentTrack(false);
 
-	Database::IdType trackId {};
+	Database::TrackId trackId {};
 	bool addRadioTrack {};
 	std::optional<float> replayGain {};
 	{
@@ -253,7 +254,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 		_trackPos = pos;
 		auto track = tracklist->getEntry(*_trackPos)->getTrack();
 
-		trackId = track.id();
+		trackId = track->getId();
 
 		replayGain = getReplayGain(pos, track);
 
@@ -313,7 +314,7 @@ PlayQueue::updateCurrentTrack(bool selected)
 }
 
 std::size_t
-PlayQueue::enqueueTracks(const std::vector<Database::IdType>& trackIds)
+PlayQueue::enqueueTracks(const std::vector<Database::TrackId>& trackIds)
 {
 	std::size_t nbTracksQueued {};
 
@@ -323,7 +324,7 @@ PlayQueue::enqueueTracks(const std::vector<Database::IdType>& trackIds)
 		auto tracklist {getTrackList()};
 
 		std::size_t nbTracksToEnqueue {tracklist->getCount() + trackIds.size() > _nbMaxEntries ? _nbMaxEntries - tracklist->getCount() : trackIds.size()};
-		for (Database::IdType trackId : trackIds)
+		for (const Database::TrackId trackId : trackIds)
 		{
 			Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
 			if (!track)
@@ -344,7 +345,7 @@ PlayQueue::enqueueTracks(const std::vector<Database::IdType>& trackIds)
 }
 
 void
-PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::IdType>& trackIds)
+PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::TrackId>& trackIds)
 {
 	std::size_t nbAddedTracks {};
 
@@ -367,7 +368,7 @@ PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::IdT
 		{
 			clearTracks();
 			{
-				std::vector<Database::IdType> shuffledTrackIds {trackIds};
+				std::vector<Database::TrackId> shuffledTrackIds {trackIds};
 				Random::shuffleContainer(shuffledTrackIds);
 				nbAddedTracks = enqueueTracks(shuffledTrackIds);
 			}
@@ -402,9 +403,9 @@ PlayQueue::addSome()
 void
 PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 {
-	const auto tracklistEntryId {tracklistEntry.id()};
+	const Database::TrackListEntryId tracklistEntryId {tracklistEntry->getId()};
 	const auto track {tracklistEntry->getTrack()};
-	const Database::IdType trackId {track->id()};
+	const Database::TrackId trackId {track->getId()};
 
 	Wt::WTemplate* entry = _entriesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry"));
 
@@ -434,7 +435,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 		{
 			Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 			auto cover = std::make_unique<Wt::WImage>();
-			cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release.id(), CoverResource::Size::Large));
+			cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large));
 			cover->setStyleClass("Lms-cover");
 			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 			anchor->setImage(std::move(cover));
@@ -443,7 +444,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 	else
 	{
 		auto cover = entry->bindNew<Wt::WImage>("cover");
-		cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(track.id(), CoverResource::Size::Large));
+		cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(track->getId(), CoverResource::Size::Large));
 		cover->setStyleClass("Lms-cover");
 		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 	}
@@ -520,7 +521,7 @@ PlayQueue::enqueueRadioTracks()
 {
 	const auto similarTrackIds {Service<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 3)};
 
-	std::vector<Database::IdType> trackToAddIds(std::cbegin(similarTrackIds), std::cend(similarTrackIds));
+	std::vector<Database::TrackId> trackToAddIds(std::cbegin(similarTrackIds), std::cend(similarTrackIds));
 	Random::shuffleContainer(trackToAddIds);
 	enqueueTracks(trackToAddIds);
 }

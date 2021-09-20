@@ -96,13 +96,13 @@ namespace Auth
 	}
 
 	void
-	InternalPasswordService::setPassword(Database::Session& session, Database::IdType userId, std::string_view newPassword)
+	InternalPasswordService::setPassword(Database::Session& session, Database::UserId userId, std::string_view newPassword)
 	{
 		const Database::User::PasswordHash passwordHash {hashPassword(newPassword)};
 
 		auto transaction {session.createUniqueTransaction()};
 
-		const Database::User::pointer user {Database::User::getById(session, userId)};
+		Database::User::pointer user {Database::User::getById(session, userId)};
 		if (!user)
 			throw Exception {"User not found!"};
 

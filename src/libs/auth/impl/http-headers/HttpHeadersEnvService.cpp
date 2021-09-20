@@ -43,7 +43,7 @@ namespace Auth
 
 		LMS_LOG(AUTH, DEBUG) << "Extracted login name = '" << loginName <<  "' from HTTP header";
 
-		const Database::IdType userId {getOrCreateUser(session, loginName)};
+		const Database::UserId userId {getOrCreateUser(session, loginName)};
 		onUserAuthenticated(session, userId);
 		return {CheckResult::State::Granted, userId};
 	}
@@ -57,7 +57,7 @@ namespace Auth
 
 		LMS_LOG(AUTH, DEBUG) << "Extracted login name = '" << loginName <<  "' from HTTP header";
 
-		const Database::IdType userId {getOrCreateUser(session, loginName)};
+		const Database::UserId userId {getOrCreateUser(session, loginName)};
 		onUserAuthenticated(session, userId);
 		return {CheckResult::State::Granted, userId};
 	}

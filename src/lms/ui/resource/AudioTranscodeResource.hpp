@@ -37,13 +37,11 @@ class AudioTranscodeResource : public Wt::WResource
 		~AudioTranscodeResource();
 
 		// Url depends on the user since settings are used in parameters
-		std::string getUrl(Database::IdType trackId) const;
+		std::string getUrl(Database::TrackId trackId) const;
 
-		void handleRequest(const Wt::Http::Request& request,
-				Wt::Http::Response& response);
+		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
 
 	private:
-
 		static constexpr std::size_t	_chunkSize {262144};
 };
 

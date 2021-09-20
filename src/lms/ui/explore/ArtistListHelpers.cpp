@@ -26,7 +26,7 @@
 namespace UserInterface::ArtistListHelpers
 {
 	std::unique_ptr<Wt::WTemplate>
-	createEntry(const Wt::Dbo::ptr<Database::Artist>& artist)
+	createEntry(const Database::ObjectPtr<Database::Artist>& artist)
 	{
 		auto res {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry"))};
 		res->bindWidget("name", LmsApplication::createArtistAnchor(artist));
@@ -35,7 +35,7 @@ namespace UserInterface::ArtistListHelpers
 	}
 
 	std::unique_ptr<Wt::WTemplate>
-	createEntrySmall(const Wt::Dbo::ptr<Database::Artist>& artist)
+	createEntrySmall(const Database::ObjectPtr<Database::Artist>& artist)
 	{
 		auto res {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry-small"))};
 		res->bindWidget("name", LmsApplication::createArtistAnchor(artist));

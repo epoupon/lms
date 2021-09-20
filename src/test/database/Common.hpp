@@ -40,6 +40,8 @@ template <typename T>
 class ScopedEntity
 {
 	public:
+		using IdType = typename T::IdType;
+
 		template <typename... Args>
 		ScopedEntity(Database::Session& session, Args&& ...args)
 			: _session {session}
@@ -48,7 +50,7 @@ class ScopedEntity
 
 			auto entity {T::create(_session, std::forward<Args>(args)...)};
 			EXPECT_TRUE(entity);
-			_id = entity.id();
+			_id = entity->getId();
 		}
 
 		~ScopedEntity()
@@ -84,11 +86,11 @@ class ScopedEntity
 			return get();
 		}
 
-		Database::IdType getId() const { return _id; }
+		IdType getId() const { return _id; }
 
 	private:
 		Database::Session& _session;
-		Database::IdType _id {};
+		IdType _id {};
 };
 
 using ScopedArtist = ScopedEntity<Database::Artist>;

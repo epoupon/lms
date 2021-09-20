@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "FeaturesClassifier.hpp"
+#include "FeaturesEngine.hpp"
 
 #include <numeric>
 
@@ -35,13 +35,13 @@
 
 namespace Recommendation {
 
-std::unique_ptr<IClassifier> createFeaturesClassifier()
+std::unique_ptr<IClassifier> createFeaturesEngine()
 {
-	return std::make_unique<FeaturesClassifier>();
+	return std::make_unique<FeaturesEngine>();
 }
 
 const FeatureSettingsMap&
-FeaturesClassifier::getDefaultTrainFeatureSettings()
+FeaturesEngine::getDefaultTrainFeatureSettings()
 {
 	static const FeatureSettingsMap defaultTrainFeatureSettings
 	{
@@ -57,16 +57,16 @@ FeaturesClassifier::getDefaultTrainFeatureSettings()
 
 static
 std::optional<FeatureValuesMap>
-getTrackFeatureValues(FeaturesClassifier::FeaturesFetchFunc func, Database::IdType trackId, const std::unordered_set<FeatureName>& featureNames)
+getTrackFeatureValues(FeaturesEngine::FeaturesFetchFunc func, Database::TrackId trackId, const std::unordered_set<FeatureName>& featureNames)
 {
 	return func(trackId, featureNames);
 }
 
 static
 std::optional<FeatureValuesMap>
-getTrackFeatureValuesFromDb(Database::Session& session, Database::IdType trackId, const std::unordered_set<FeatureName>& featureNames)
+getTrackFeatureValuesFromDb(Database::Session& session, Database::TrackId trackId, const std::unordered_set<FeatureName>& featureNames)
 {
-	auto func = [&](Database::IdType trackId, const std::unordered_set<FeatureName>& featureNames)
+	auto func = [&](Database::TrackId trackId, const std::unordered_set<FeatureName>& featureNames)
 	{
 		std::optional<FeatureValuesMap> res;
 
@@ -128,7 +128,7 @@ getInputVectorWeights(const FeatureSettingsMap& featureSettingsMap, std::size_t 
 }
 
 bool
-FeaturesClassifier::loadFromTraining(Database::Session& session, const TrainSettings& trainSettings, const ProgressCallback& progressCallback)
+FeaturesEngine::loadFromTraining(Database::Session& session, const TrainSettings& trainSettings, const ProgressCallback& progressCallback)
 {
 	LMS_LOG(RECOMMENDATION, INFO) << "Constructing features classifier...";
 
@@ -141,7 +141,7 @@ FeaturesClassifier::loadFromTraining(Database::Session& session, const TrainSett
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Features dimension = " << nbDimensions;
 
-	std::vector<Database::IdType> trackIds;
+	std::vector<Database::TrackId> trackIds;
 	{
 		auto transaction {session.createSharedTransaction()};
 
@@ -151,13 +151,13 @@ FeaturesClassifier::loadFromTraining(Database::Session& session, const TrainSett
 	}
 
 	std::vector<SOM::InputVector> samples;
-	std::vector<Database::IdType> samplesTrackIds;
+	std::vector<Database::TrackId> samplesTrackIds;
 
 	samples.reserve(trackIds.size());
 	samplesTrackIds.reserve(trackIds.size());
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Extracting features...";
-	for (Database::IdType trackId : trackIds)
+	for (Database::TrackId trackId : trackIds)
 	{
 		if (_loadCancelled)
 			return false;
@@ -223,7 +223,7 @@ FeaturesClassifier::loadFromTraining(Database::Session& session, const TrainSett
 		return false;
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Classifying tracks...";
-	ObjectPositions trackPositions;
+	TrackPositions trackPositions;
 	for (std::size_t i {}; i < samples.size(); ++i)
 	{
 		if (_loadCancelled)
@@ -231,7 +231,7 @@ FeaturesClassifier::loadFromTraining(Database::Session& session, const TrainSett
 
 		const SOM::Position position {network.getClosestRefVectorPosition(samples[i])};
 
-		trackPositions[samplesTrackIds[i]].insert(position);
+		trackPositions[samplesTrackIds[i]].push_back(position);
 	}
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Classifying tracks DONE";
@@ -240,28 +240,25 @@ FeaturesClassifier::loadFromTraining(Database::Session& session, const TrainSett
 }
 
 bool
-FeaturesClassifier::loadFromCache(Database::Session& session, const FeaturesClassifierCache& cache)
+FeaturesEngine::loadFromCache(Database::Session& session, const FeaturesEngineCache& cache)
 {
 	LMS_LOG(RECOMMENDATION, INFO) << "Constructing features classifier from cache...";
 
 	return load(session, std::move(cache._network), cache._trackPositions);
 }
 
-std::unordered_set<Database::IdType>
-FeaturesClassifier::getSimilarTracksFromTrackList(Database::Session& session, Database::IdType trackListId, std::size_t maxCount) const
+IClassifier::ResultContainer<Database::TrackId>
+FeaturesEngine::getSimilarTracksFromTrackList(Database::Session& session, Database::TrackListId trackListId, std::size_t maxCount) const
 {
-	const std::unordered_set<Database::IdType> trackIds {[&]
+	const std::vector<Database::TrackId> trackIds {[&]
 	{
-		std::unordered_set<Database::IdType> res;
+		std::vector<Database::TrackId> res;
 
 		auto transaction {session.createSharedTransaction()};
 
 		const Database::TrackList::pointer trackList {Database::TrackList::getById(session, trackListId)};
 		if (trackList)
-		{
-			const std::vector<Database::IdType> orderedTrackIds {trackList->getTrackIds()};
-			res = std::unordered_set<Database::IdType>(std::cbegin(orderedTrackIds), std::cend(orderedTrackIds));
-		}
+			res = trackList->getTrackIds();
 
 		return res;
 	}()};
@@ -269,72 +266,64 @@ FeaturesClassifier::getSimilarTracksFromTrackList(Database::Session& session, Da
 	return getSimilarTracks(session, trackIds, maxCount);
 }
 
-std::unordered_set<Database::IdType>
-FeaturesClassifier::getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksIds, std::size_t maxCount) const
+std::vector<Database::TrackId>
+FeaturesEngine::getSimilarTracks(Database::Session& session, const std::vector<Database::TrackId>& tracksIds, std::size_t maxCount) const
 {
-	auto similarTrackIds {getSimilarObjects(tracksIds, _tracksMap, _trackPositions, maxCount)};
-	if (!similarTrackIds.empty())
+	auto similarTrackIds {getSimilarObjects(tracksIds, _trackMatrix, _trackPositions, maxCount)};
+
 	{
-		// Report only existing ids
+		// Report only existing ids, as tracks may have been removed a long time ago (refreshing the SOM takes some time)
 		auto transaction {session.createSharedTransaction()};
 
-		for (auto it {std::begin(similarTrackIds)}; it != std::end(similarTrackIds);)
-		{
-			const Database::IdType trackId {*it};
-			if (!Database::Track::getById(session, trackId))
-				it = similarTrackIds.erase(it);
-			else
-				it++;
-		}
+		similarTrackIds.erase(std::remove_if(std::begin(similarTrackIds), std::end(similarTrackIds),
+			[&](Database::TrackId trackId)
+			{
+				return Database::Track::getById(session, trackId); // TODO exists
+			}), std::end(similarTrackIds));
 	}
 
 	return similarTrackIds;
 }
 
-std::unordered_set<Database::IdType>
-FeaturesClassifier::getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const
+std::vector<Database::ReleaseId>
+FeaturesEngine::getSimilarReleases(Database::Session& session, Database::ReleaseId releaseId, std::size_t maxCount) const
 {
-	auto similarReleaseIds {getSimilarObjects({releaseId}, _releasesMap, _releasePositions, maxCount)};
-	if (!similarReleaseIds.empty())
+	auto similarReleaseIds {getSimilarObjects<Database::ReleaseId>({releaseId}, _releaseMatrix, _releasePositions, maxCount)};
+
 	{
 		// Report only existing ids
 		auto transaction {session.createSharedTransaction()};
 
-		for (auto it {std::begin(similarReleaseIds)}; it != std::end(similarReleaseIds);)
-		{
-			const Database::IdType similarReleaseId {*it};
-			if (!Database::Release::getById(session, similarReleaseId))
-				it = similarReleaseIds.erase(it);
-			else
-				it++;
-		}
+		similarReleaseIds.erase(std::remove_if(std::begin(similarReleaseIds), std::end(similarReleaseIds),
+			[&](Database::ReleaseId releaseId)
+			{
+				return Database::Release::getById(session, releaseId); // TODO exists
+			}), std::end(similarReleaseIds));
 	}
 
 	return similarReleaseIds;
 }
 
-std::unordered_set<Database::IdType>
-FeaturesClassifier::getSimilarArtists(Database::Session& session,
-		Database::IdType artistId,
+std::vector<Database::ArtistId>
+FeaturesEngine::getSimilarArtists(Database::Session& session,
+		Database::ArtistId artistId,
 		EnumSet<Database::TrackArtistLinkType> linkTypes,
 		std::size_t maxCount) const
 {
 	auto getSimilarArtistIdsForLinkType {[&] (Database::TrackArtistLinkType linkType)
 	{
-		std::unordered_set<Database::IdType> similarArtistIds;
+		std::vector<Database::ArtistId> similarArtistIds;
 
-		const auto itArtists {_artistsMap.find(linkType)};
-		if (itArtists == std::cend(_artistsMap))
+		const auto itArtists {_artistMatrix.find(linkType)};
+		if (itArtists == std::cend(_artistMatrix))
 		{
 			return similarArtistIds;
 		}
 
-		similarArtistIds = getSimilarObjects({artistId}, itArtists->second, _artistPositions, maxCount);
-
-		return similarArtistIds;
+		return getSimilarObjects({artistId}, itArtists->second, _artistPositions, maxCount);
 	}};
 
-	std::unordered_set<Database::IdType> similarArtistIds;
+	std::unordered_set<Database::ArtistId> similarArtistIds;
 
 	for (Database::TrackArtistLinkType linkType : linkTypes)
 	{
@@ -342,44 +331,42 @@ FeaturesClassifier::getSimilarArtists(Database::Session& session,
 		similarArtistIds.insert(std::begin(similarArtistIdsForLinkType), std::end(similarArtistIdsForLinkType));
 	}
 
-	if (!similarArtistIds.empty())
+	std::vector<Database::ArtistId> res(std::cbegin(similarArtistIds), std::cend(similarArtistIds));
+
 	{
 		// Report only existing ids
 		auto transaction {session.createSharedTransaction()};
 
-		for (auto it {std::begin(similarArtistIds)}; it != std::end(similarArtistIds);)
-		{
-			const Database::IdType similarArtistId {*it};
-			if (!Database::Artist::getById(session, similarArtistId))
-				it = similarArtistIds.erase(it);
-			else
-				it++;
-		}
+		res.erase(std::remove_if(std::begin(res), std::end(res),
+				[&](Database::ArtistId artistId)
+				{
+					return Database::Artist::getById(session, artistId); // TODO exists
+				}), std::end(res));
 	}
 
-	while (similarArtistIds.size() > maxCount)
-		similarArtistIds.erase(Random::pickRandom(similarArtistIds));
+	while (res.size() > maxCount)
+		res.erase(Random::pickRandom(res));
 
-	return similarArtistIds;
+	return res;
 }
 
-FeaturesClassifierCache
-FeaturesClassifier::toCache() const
+FeaturesEngineCache
+FeaturesEngine::toCache() const
 {
-	return FeaturesClassifierCache {*_network, _trackPositions};
+	return FeaturesEngineCache {*_network, _trackPositions};
 }
 
 bool
-FeaturesClassifier::load(Database::Session& session, bool forceReload, const ProgressCallback& progressCallback)
+FeaturesEngine::load(Database::Session& session, bool forceReload, const ProgressCallback& progressCallback)
 {
 	if (forceReload)
 
 	{
-		FeaturesClassifierCache::invalidate();
+		FeaturesEngineCache::invalidate();
 	}
 	else
 	{
-		const std::optional<FeaturesClassifierCache> cache {FeaturesClassifierCache::read()};
+		const std::optional<FeaturesEngineCache> cache {FeaturesEngineCache::read()};
 		if (cache)
 			return loadFromCache(session, *cache);
 	}
@@ -395,64 +382,65 @@ FeaturesClassifier::load(Database::Session& session, bool forceReload, const Pro
 }
 
 void
-FeaturesClassifier::requestCancelLoad()
+FeaturesEngine::requestCancelLoad()
 {
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Requesting init cancellation";
 	_loadCancelled = true;
 }
 
 bool
-FeaturesClassifier::load(Database::Session& session,
+FeaturesEngine::load(Database::Session& session,
 			SOM::Network network,
-			const ObjectPositions& tracksPosition)
+			const TrackPositions& trackPositions)
 {
+	using namespace Database;
+
 	_networkRefVectorsDistanceMedian = network.computeRefVectorsDistanceMedian();
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Median distance betweend ref vectors = " << _networkRefVectorsDistanceMedian;
 
 	const SOM::Coordinate width {network.getWidth()};
 	const SOM::Coordinate height {network.getHeight()};
 
-	_releasesMap = MatrixOfObjects {width, height};
-	_tracksMap = MatrixOfObjects {width, height};
+	_releaseMatrix = ReleaseMatrix {width, height};
+	_trackMatrix = TrackMatrix {width, height};
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Constructing maps...";
 
-	for (auto itTrackCoord : tracksPosition)
+	for (const auto& [trackId, positions] : trackPositions)
 	{
 		if (_loadCancelled)
 			return false;
 
 		auto transaction {session.createSharedTransaction()};
 
-		Database::IdType trackId {itTrackCoord.first};
-		const std::unordered_set<SOM::Position>& positionSet {itTrackCoord.second};
-
-		const Database::Track::pointer track {Database::Track::getById(session, trackId)};
+		const Track::pointer track {Database::Track::getById(session, trackId)};
 		if (!track)
 			continue;
 
-		for (const SOM::Position& position : positionSet)
+		for (const SOM::Position& position : positions)
 		{
-			_tracksMap[position].insert(trackId);
-			_trackPositions[trackId].insert(position);
+			Utils::push_back_if_not_present(_trackPositions[trackId], position);
+			Utils::push_back_if_not_present(_trackMatrix[position], trackId);
 
-			if (track->getRelease())
+			if (Release::pointer release {track->getRelease()})
 			{
-				_releasePositions[track->getRelease().id()].insert(position);
-				_releasesMap[position].insert(track->getRelease().id());
+				const ReleaseId releaseId {release->getId()};
+				Utils::push_back_if_not_present(_releasePositions[releaseId], position);
+				Utils::push_back_if_not_present(_releaseMatrix[position], releaseId);
 			}
-			for (const auto& artistLink : track->getArtistLinks())
+			for (const TrackArtistLink::pointer& artistLink : track->getArtistLinks())
 			{
-				_artistPositions[artistLink->getArtist().id()].insert(position);
-				auto itArtists {_artistsMap.find(artistLink->getType())};
-				if (itArtists == std::cend(_artistsMap))
+				const ArtistId artistId {artistLink->getArtist()->getId()};
+
+				Utils::push_back_if_not_present(_artistPositions[artistId], position);
+				auto itArtists {_artistMatrix.find(artistLink->getType())};
+				if (itArtists == std::cend(_artistMatrix))
 				{
-					auto [it, inserted] = _artistsMap.try_emplace(artistLink->getType(), MatrixOfObjects {});
+					auto [it, inserted] = _artistMatrix.try_emplace(artistLink->getType(), ArtistMatrix {width, height});
 					assert(inserted);
 					itArtists = it;
-					itArtists->second = MatrixOfObjects {width, height};
 				}
-				itArtists->second[position].insert(artistLink->getArtist().id());
+				Utils::push_back_if_not_present(itArtists->second[position], artistId);
 			}
 		}
 	}
@@ -463,84 +451,5 @@ FeaturesClassifier::load(Database::Session& session,
 
 	return true;
 }
-
-std::unordered_set<SOM::Position>
-FeaturesClassifier::getMatchingRefVectorsPosition(const std::unordered_set<Database::IdType>& ids, const ObjectPositions& objectPositions)
-{
-	std::unordered_set<SOM::Position> res;
-
-	if (ids.empty())
-		return res;
-
-	for (auto id : ids)
-	{
-		auto it = objectPositions.find(id);
-		if (it == objectPositions.end())
-			continue;
-
-		for (const auto& position : it->second)
-			res.insert(position);
-	}
-
-	return res;
-}
-
-std::unordered_set<Database::IdType>
-FeaturesClassifier::getObjectsIds(const std::unordered_set<SOM::Position>& positionSet, const MatrixOfObjects& objectsMap)
-{
-	std::unordered_set<Database::IdType> res;
-
-	for (const auto& position : positionSet)
-	{
-		for (auto id : objectsMap.get(position))
-			res.insert(id);
-	}
-
-	return res;
-}
-
-std::unordered_set<Database::IdType>
-FeaturesClassifier::getSimilarObjects(const std::unordered_set<Database::IdType>& ids,
-		const MatrixOfObjects& objectsMap,
-		const ObjectPositions& objectPosition,
-		std::size_t maxCount) const
-{
-	std::unordered_set<Database::IdType> res;
-
-	std::unordered_set<SOM::Position> searchedRefVectorsPosition {getMatchingRefVectorsPosition(ids, objectPosition)};
-	if (searchedRefVectorsPosition.empty())
-		return res;
-
-	while (1)
-	{
-		std::unordered_set<Database::IdType> closestObjectIds {getObjectsIds(searchedRefVectorsPosition, objectsMap)};
-
-		// Remove objects that are already in input or already reported
-		for (auto id : ids)
-			closestObjectIds.erase(id);
-
-		for (auto it {std::cbegin(closestObjectIds)}; it != std::cend(closestObjectIds); ++it)
-		{
-			if (res.size() == maxCount)
-				break;
-
-			res.insert(*it);
-		}
-
-		if (res.size() == maxCount)
-			break;
-
-		// If there is not enough objects, try again with closest neighbour until there is too much distance
-		const std::optional<SOM::Position> closestRefVectorPosition {_network->getClosestRefVectorPosition(searchedRefVectorsPosition, _networkRefVectorsDistanceMedian * 0.75)};
-		if (!closestRefVectorPosition)
-			break;
-
-		searchedRefVectorsPosition.insert(closestRefVectorPosition.value());
-	}
-
-	return res;
-}
-
-
 
 } // ns Recommendation

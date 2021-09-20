@@ -39,14 +39,14 @@ namespace UserInterface
 		public:
 			Tracks(Filters& filters);
 
-			PlayQueueActionSignal tracksAction;
+			PlayQueueActionTrackSignal tracksAction;
 
 		private:
 			void refreshView();
 			void refreshView(TrackCollector::Mode mode);
 			void addSome();
 
-			std::vector<Database::IdType> getAllTracks();
+			std::vector<Database::TrackId> getAllTracks();
 
 			static constexpr TrackCollector::Mode _defaultMode {TrackCollector::Mode::Random};
 			static constexpr std::size_t _batchSize {6};

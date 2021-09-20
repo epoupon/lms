@@ -38,7 +38,7 @@ namespace UserInterface
 		public:
 			Releases(Filters& filters);
 
-			PlayQueueActionSignal releasesAction;
+			PlayQueueActionReleaseSignal releasesAction;
 
 		private:
 
@@ -46,7 +46,7 @@ namespace UserInterface
 			void refreshView(ReleaseCollector::Mode mode);
 
 			void addSome();
-			std::vector<Database::IdType> getAllReleases();
+			std::vector<Database::ReleaseId> getAllReleases();
 
 			static constexpr std::size_t _maxItemsPerLine {6};
 			static constexpr std::size_t _batchSize {_maxItemsPerLine};

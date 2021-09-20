@@ -38,7 +38,7 @@ namespace Auth
 			bool	canSetPasswords() const override;
 			PasswordAcceptabilityResult	checkPasswordAcceptability(std::string_view loginName, const PasswordValidationContext& context) const override;
 			void	setPassword(Database::Session& session,
-						Database::IdType userId,
+						Database::UserId userId,
 						std::string_view newPassword) override;
 	};
 }

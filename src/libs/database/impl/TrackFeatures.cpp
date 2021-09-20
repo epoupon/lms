@@ -28,14 +28,14 @@
 
 namespace Database {
 
-TrackFeatures::TrackFeatures(Wt::Dbo::ptr<Track> track, const std::string& jsonEncodedFeatures)
-: _data(jsonEncodedFeatures),
-_track(track)
+TrackFeatures::TrackFeatures(ObjectPtr<Track> track, const std::string& jsonEncodedFeatures)
+: _data {jsonEncodedFeatures},
+_track {getDboPtr(track)}
 {
 }
 
 TrackFeatures::pointer
-TrackFeatures::create(Session& session, Wt::Dbo::ptr<Track> track, const std::string& jsonEncodedFeatures)
+TrackFeatures::create(Session& session, ObjectPtr<Track> track, const std::string& jsonEncodedFeatures)
 {
 	session.checkUniqueLocked();
 	return session.getDboSession().add(std::make_unique<TrackFeatures>(track, jsonEncodedFeatures));

@@ -57,7 +57,7 @@ namespace Auth
 				};
 
 				State state {State::Denied};
-				std::optional<Database::IdType>	userId {};
+				std::optional<Database::UserId>	userId {};
 			};
 
 			virtual CheckResult			processEnv(Database::Session& session, const Wt::WEnvironment& env) = 0;

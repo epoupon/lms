@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "ClustersClassifierCreator.hpp"
-#include "FeaturesClassifierCreator.hpp"
+#include "FeaturesEngineCreator.hpp"
 
 #include "database/Db.hpp"
 #include "database/Session.hpp"
@@ -45,7 +45,7 @@ createClassifier(ClassifierType type)
 			break;
 
 		case ClassifierType::Features:
-			return createFeaturesClassifier();
+			return createFeaturesEngine();
 			break;
 	}
 
@@ -63,10 +63,10 @@ Engine::Engine(Database::Db& db)
 {
 }
 
-std::unordered_set<Database::IdType>
-Engine::getSimilarTracksFromTrackList(Database::Session& session, Database::IdType trackListId, std::size_t maxCount)
+Engine::TrackContainer
+Engine::getSimilarTracksFromTrackList(Database::Session& session, Database::TrackListId trackListId, std::size_t maxCount)
 {
-	std::unordered_set<Database::IdType> res;
+	TrackContainer res;
 
 	std::shared_lock lock {_classifiersMutex};
 	for (const auto& classifierName : _classifierPriorities)
@@ -83,10 +83,10 @@ Engine::getSimilarTracksFromTrackList(Database::Session& session, Database::IdTy
 	return res;
 }
 
-std::unordered_set<Database::IdType>
-Engine::getSimilarTracks(Database::Session& dbSession, const std::unordered_set<Database::IdType>& trackIds, std::size_t maxCount)
+Engine::TrackContainer
+Engine::getSimilarTracks(Database::Session& dbSession, const std::vector<Database::TrackId>& trackIds, std::size_t maxCount)
 {
-	std::unordered_set<Database::IdType> res;
+	TrackContainer res;
 
 	std::shared_lock lock {_classifiersMutex};
 	for (ClassifierType classifierType : _classifierPriorities)
@@ -107,10 +107,10 @@ Engine::getSimilarTracks(Database::Session& dbSession, const std::unordered_set<
 	return res;
 }
 
-std::unordered_set<Database::IdType>
-Engine::getSimilarReleases(Database::Session& dbSession, Database::IdType releaseId, std::size_t maxCount)
+Engine::ReleaseContainer
+Engine::getSimilarReleases(Database::Session& dbSession, Database::ReleaseId releaseId, std::size_t maxCount)
 {
-	std::unordered_set<Database::IdType> res;
+	ReleaseContainer res;
 
 	std::shared_lock lock {_classifiersMutex};
 	for (ClassifierType classifierType : _classifierPriorities)
@@ -131,13 +131,10 @@ Engine::getSimilarReleases(Database::Session& dbSession, Database::IdType releas
 	return res;
 }
 
-std::unordered_set<Database::IdType>
-Engine::getSimilarArtists(Database::Session& dbSession,
-		Database::IdType artistId,
-		EnumSet<Database::TrackArtistLinkType> linkTypes,
-		std::size_t maxCount)
+Engine::ArtistContainer
+Engine::getSimilarArtists(Database::Session& dbSession, Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount)
 {
-	std::unordered_set<Database::IdType> res;
+	ArtistContainer res;
 
 	std::shared_lock lock {_classifiersMutex};
 	for (ClassifierType classifierType : _classifierPriorities)

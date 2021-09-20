@@ -50,7 +50,7 @@ namespace Scrobbling::ListenBrainz
 			void listenStarted(const Listen& listen) override;
 			void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
 			void addTimedListen(const TimedListen& listen) override;
-			Wt::Dbo::ptr<Database::TrackList> getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user) override;
+			Database::ObjectPtr<Database::TrackList> getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user) override;
 
 			// Submit listens
 			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);

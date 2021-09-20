@@ -61,7 +61,7 @@ namespace Scrobbling
 		if (!user)
 			return;
 
-		Wt::Dbo::ptr<Database::TrackList> tracklist {getListensTrackList(session, user)};
+		Database::TrackList::pointer tracklist {getListensTrackList(session, user)};
 		if (!tracklist)
 			tracklist = Database::TrackList::create(session, historyTracklistName, Database::TrackList::Type::Internal, false, user);
 
@@ -72,8 +72,8 @@ namespace Scrobbling
 		Database::TrackListEntry::create(session, track, getListensTrackList(session, user), listen.listenedAt);
 	}
 
-	Wt::Dbo::ptr<Database::TrackList>
-	InternalScrobbler::getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user)
+	Database::TrackList::pointer
+	InternalScrobbler::getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user)
 	{
 		return Database::TrackList::get(session, historyTracklistName, Database::TrackList::Type::Internal, user);
 	}

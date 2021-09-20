@@ -64,7 +64,7 @@ namespace Scrobbling
 	}
 
 	std::optional<Database::Scrobbler>
-	Scrobbling::getUserScrobbler(Database::IdType userId)
+	Scrobbling::getUserScrobbler(Database::UserId userId)
 	{
 		std::optional<Database::Scrobbler> scrobbler;
 
@@ -76,49 +76,49 @@ namespace Scrobbling
 		return scrobbler;
 	}
 
-	std::vector<Wt::Dbo::ptr<Database::Artist>>
+	std::vector<Database::ObjectPtr<Database::Artist>>
 	Scrobbling::getRecentArtists(Database::Session& session,
-										Wt::Dbo::ptr<Database::User> user,
-										const std::set<Database::IdType>& clusterIds,
+										Database::ObjectPtr<Database::User> user,
+										const std::vector<Database::ClusterId>& clusterIds,
 										std::optional<Database::TrackArtistLinkType> linkType,
 										std::optional<Database::Range> range,
 										bool& moreResults)
 	{
-		const Wt::Dbo::ptr<Database::TrackList> history {getListensTrackList(session, user)};
+		const Database::ObjectPtr<Database::TrackList> history {getListensTrackList(session, user)};
 
-		std::vector<Wt::Dbo::ptr<Database::Artist>> res;
+		std::vector<Database::ObjectPtr<Database::Artist>> res;
 		if (history)
 			res = history->getArtistsReverse(clusterIds, linkType, range, moreResults);
 
 		return res;
 	}
 
-	std::vector<Wt::Dbo::ptr<Database::Release>>
+	std::vector<Database::ObjectPtr<Database::Release>>
 	Scrobbling::getRecentReleases(Database::Session& session,
-										Wt::Dbo::ptr<Database::User> user,
-										const std::set<Database::IdType>& clusterIds,
+										Database::ObjectPtr<Database::User> user,
+										const std::vector<Database::ClusterId>& clusterIds,
 										std::optional<Database::Range> range,
 										bool& moreResults)
 	{
-		const Wt::Dbo::ptr<Database::TrackList> history {getListensTrackList(session, user)};
+		const Database::ObjectPtr<Database::TrackList> history {getListensTrackList(session, user)};
 
-		std::vector<Wt::Dbo::ptr<Database::Release>> res;
+		std::vector<Database::ObjectPtr<Database::Release>> res;
 		if (history)
 			res = history->getReleasesReverse(clusterIds, range, moreResults);
 
 		return res;
 	}
 
-	std::vector<Wt::Dbo::ptr<Database::Track>>
+	std::vector<Database::ObjectPtr<Database::Track>>
 	Scrobbling::getRecentTracks(Database::Session& session,
-										Wt::Dbo::ptr<Database::User> user,
-										const std::set<Database::IdType>& clusterIds,
+										Database::ObjectPtr<Database::User> user,
+										const std::vector<Database::ClusterId>& clusterIds,
 										std::optional<Database::Range> range,
 										bool& moreResults)
 	{
-		const Wt::Dbo::ptr<Database::TrackList> history {getListensTrackList(session, user)};
+		const Database::ObjectPtr<Database::TrackList> history {getListensTrackList(session, user)};
 
-		std::vector<Wt::Dbo::ptr<Database::Track>> res;
+		std::vector<Database::ObjectPtr<Database::Track>> res;
 		if (history)
 			res = history->getTracksReverse(clusterIds, range, moreResults);
 
@@ -127,57 +127,57 @@ namespace Scrobbling
 
 
 	// Top
-	std::vector<Wt::Dbo::ptr<Database::Artist>>
+	std::vector<Database::ObjectPtr<Database::Artist>>
 	Scrobbling::getTopArtists(Database::Session& session,
-										Wt::Dbo::ptr<Database::User> user,
-										const std::set<Database::IdType>& clusterIds,
+										Database::ObjectPtr<Database::User> user,
+										const std::vector<Database::ClusterId>& clusterIds,
 										std::optional<Database::TrackArtistLinkType> linkType,
 										std::optional<Database::Range> range,
 										bool& moreResults)
 	{
-		const Wt::Dbo::ptr<Database::TrackList> history {getListensTrackList(session, user)};
+		const Database::ObjectPtr<Database::TrackList> history {getListensTrackList(session, user)};
 
-		std::vector<Wt::Dbo::ptr<Database::Artist>> res;
+		std::vector<Database::ObjectPtr<Database::Artist>> res;
 		if (history)
 			res = history->getTopArtists(clusterIds, linkType, range, moreResults);
 
 		return res;
 	}
 
-	std::vector<Wt::Dbo::ptr<Database::Release>>
+	std::vector<Database::ObjectPtr<Database::Release>>
 	Scrobbling::getTopReleases(Database::Session& session,
-										Wt::Dbo::ptr<Database::User> user,
-										const std::set<Database::IdType>& clusterIds,
+										Database::ObjectPtr<Database::User> user,
+										const std::vector<Database::ClusterId>& clusterIds,
 										std::optional<Database::Range> range,
 										bool& moreResults)
 	{
-		const Wt::Dbo::ptr<Database::TrackList> history {getListensTrackList(session, user)};
+		const Database::ObjectPtr<Database::TrackList> history {getListensTrackList(session, user)};
 
-		std::vector<Wt::Dbo::ptr<Database::Release>> res;
+		std::vector<Database::ObjectPtr<Database::Release>> res;
 		if (history)
 			res = history->getTopReleases(clusterIds, range, moreResults);
 
 		return res;
 	}
 
-	std::vector<Wt::Dbo::ptr<Database::Track>>
+	std::vector<Database::ObjectPtr<Database::Track>>
 	Scrobbling::getTopTracks(Database::Session& session,
-										Wt::Dbo::ptr<Database::User> user,
-										const std::set<Database::IdType>& clusterIds,
+										Database::ObjectPtr<Database::User> user,
+										const std::vector<Database::ClusterId>& clusterIds,
 										std::optional<Database::Range> range,
 										bool& moreResults)
 	{
-		const Wt::Dbo::ptr<Database::TrackList> history {getListensTrackList(session, user)};
+		const Database::ObjectPtr<Database::TrackList> history {getListensTrackList(session, user)};
 
-		std::vector<Wt::Dbo::ptr<Database::Track>> res;
+		std::vector<Database::ObjectPtr<Database::Track>> res;
 		if (history)
 			res = history->getTopTracks(clusterIds, range, moreResults);
 
 		return res;
 	}
 
-	Wt::Dbo::ptr<Database::TrackList>
-	Scrobbling::getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user)
+	Database::ObjectPtr<Database::TrackList>
+	Scrobbling::getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user)
 	{
 		return _scrobblers[user->getScrobbler()]->getListensTrackList(session, user);
 	}

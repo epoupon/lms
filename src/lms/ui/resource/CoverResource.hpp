@@ -39,8 +39,8 @@ namespace UserInterface
 				Large = 512,
 			};
 
-			std::string getReleaseUrl(Database::IdType releaseId, Size size) const;
-			std::string getTrackUrl(Database::IdType trackId, Size size) const;
+			std::string getReleaseUrl(Database::ReleaseId releaseId, Size size) const;
+			std::string getTrackUrl(Database::TrackId trackId, Size size) const;
 
 		private:
 			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;

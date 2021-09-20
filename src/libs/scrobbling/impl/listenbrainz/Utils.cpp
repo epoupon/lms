@@ -30,7 +30,7 @@ static constexpr std::string_view historyTracklistName {"__scrobbler_listenbrain
 namespace Scrobbling::ListenBrainz::Utils
 {
 	std::optional<UUID>
-	getListenBrainzToken(Database::Session& session, Database::IdType userId)
+	getListenBrainzToken(Database::Session& session, Database::UserId userId)
 	{
 		auto transaction {session.createSharedTransaction()};
 

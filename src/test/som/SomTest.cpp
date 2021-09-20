@@ -17,8 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <unordered_set>
 #include <gtest/gtest.h>
-
 #include "som/DataNormalizer.hpp"
 #include "som/Network.hpp"
 

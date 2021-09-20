@@ -23,17 +23,19 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 
+#include "Traits.hpp"
+
 namespace Database {
 
-TrackArtistLink::TrackArtistLink(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist, TrackArtistLinkType type)
+TrackArtistLink::TrackArtistLink(ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type)
 : _type {type},
-_track {track},
-_artist {artist}
+_track {getDboPtr(track)},
+_artist {getDboPtr(artist)}
 {
 }
 
 TrackArtistLink::pointer
-TrackArtistLink::create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist, TrackArtistLinkType type)
+TrackArtistLink::create(Session& session, ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type)
 {
 	session.checkUniqueLocked();
 
@@ -48,9 +50,9 @@ TrackArtistLink::getUsedTypes(Session& session)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<TrackArtistLinkType> collection = session.getDboSession().query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link");
+	auto res {session.getDboSession().query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link").resultList()};
 
-	return EnumSet<TrackArtistLinkType>(std::begin(collection), std::end(collection));
+	return EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
 }
 
 }

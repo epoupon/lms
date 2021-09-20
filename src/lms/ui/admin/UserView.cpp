@@ -53,7 +53,7 @@ class UserModel : public Wt::WFormModel
 		static inline const Field PasswordField {"password"};
 		static inline const Field DemoField {"demo"};
 
-		UserModel(std::optional<Database::IdType> userId, ::Auth::IPasswordService* authPasswordService)
+		UserModel(std::optional<Database::UserId> userId, ::Auth::IPasswordService* authPasswordService)
 		: _userId {userId}
 		, _authPasswordService {authPasswordService}
 		{
@@ -87,7 +87,7 @@ class UserModel : public Wt::WFormModel
 					throw UserNotFoundException {};
 
 				if (_authPasswordService && !valueText(PasswordField).empty())
-					_authPasswordService->setPassword(LmsApp->getDbSession(), user.id(), valueText(PasswordField).toUTF8());
+					_authPasswordService->setPassword(LmsApp->getDbSession(), user->getId(), valueText(PasswordField).toUTF8());
 			}
 			else
 			{
@@ -103,7 +103,7 @@ class UserModel : public Wt::WFormModel
 					user.modify()->setType(Database::UserType::DEMO);
 
 				if (_authPasswordService)
-					_authPasswordService->setPassword(LmsApp->getDbSession(), user.id(), valueText(PasswordField).toUTF8());
+					_authPasswordService->setPassword(LmsApp->getDbSession(), user->getId(), valueText(PasswordField).toUTF8());
 			}
 		}
 
@@ -176,7 +176,7 @@ class UserModel : public Wt::WFormModel
 			return false;
 		}
 
-		std::optional<Database::IdType> _userId;
+		std::optional<Database::UserId> _userId;
 		::Auth::IPasswordService* _authPasswordService {};
 };
 
@@ -196,7 +196,7 @@ UserView::refreshView()
 	if (!wApp->internalPathMatches("/admin/user"))
 		return;
 
-	auto userId = StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/admin/user/"));
+	const std::optional<Database::UserId> userId {StringUtils::readAs<Database::UserId::ValueType>(wApp->internalPathNextPart("/admin/user/"))};
 
 	clear();
 

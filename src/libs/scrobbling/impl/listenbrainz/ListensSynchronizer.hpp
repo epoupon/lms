@@ -50,14 +50,14 @@ namespace Scrobbling::ListenBrainz
 		private:
 			struct UserContext
 			{
-				UserContext(Database::IdType id) : userId {id} {}
+				UserContext(Database::UserId id) : userId {id} {}
 
 				UserContext(const UserContext&) = delete;
 				UserContext(UserContext&&) = delete;
 				UserContext& operator=(const UserContext&) = delete;
 				UserContext& operator=(UserContext&&) = delete;
 
-				const Database::IdType	userId;
+				const Database::UserId	userId;
 				bool					fetching {};
 				std::optional<std::size_t> listenCount {};
 
@@ -69,7 +69,7 @@ namespace Scrobbling::ListenBrainz
 				std::size_t		importedListenCount{};
 			};
 
-			UserContext& getUserContext(Database::IdType userId);
+			UserContext& getUserContext(Database::UserId userId);
 			bool isFetching() const;
 			void scheduleGetListens(std::chrono::seconds fromNow);
 			void startGetListens();
@@ -78,7 +78,7 @@ namespace Scrobbling::ListenBrainz
 			void enqueValidateToken(UserContext& context);
 			void enqueGetListenCount(UserContext& context);
 			void enqueGetListens(UserContext& context);
-			std::optional<SendQueue::RequestData>	createValidateTokenRequestData(Database::IdType userId);
+			std::optional<SendQueue::RequestData>	createValidateTokenRequestData(Database::UserId userId);
 			std::optional<SendQueue::RequestData>	createGetListensRequestData(std::string_view listenBrainzUserName, const Wt::WDateTime& maxDateTime);
 			void									processGetListensResponse(std::string_view body, UserContext& context);
 
@@ -88,7 +88,7 @@ namespace Scrobbling::ListenBrainz
 			SendQueue&						_sendQueue;
 			boost::asio::steady_timer		_getListensTimer {_ioContext};
 
-			std::unordered_map<Database::IdType, UserContext> _userContexts;
+			std::unordered_map<Database::UserId, UserContext> _userContexts;
 
 			const std::size_t			_maxSyncListenCount;
 			const std::chrono::hours	_syncListensPeriod;

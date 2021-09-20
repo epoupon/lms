@@ -45,15 +45,15 @@ namespace UserInterface
 		public:
 			Artist(Filters* filters);
 
-			PlayQueueActionSignal artistsAction;
-			PlayQueueActionSignal tracksAction;
+			PlayQueueActionArtistSignal artistsAction;
+			PlayQueueActionTrackSignal tracksAction;
 
 		private:
 			void refreshView();
-			void refreshReleases(const Wt::Dbo::ptr<Database::Artist>& artist);
-			void refreshNonReleaseTracks(const Wt::Dbo::ptr<Database::Artist>& artist);
-			void refreshSimilarArtists(const std::unordered_set<Database::IdType>& similarArtistsId);
-			void refreshLinks(const Wt::Dbo::ptr<Database::Artist>& artist);
+			void refreshReleases(const Database::ObjectPtr<Database::Artist>& artist);
+			void refreshNonReleaseTracks(const Database::ObjectPtr<Database::Artist>& artist);
+			void refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArtistsId);
+			void refreshLinks(const Database::ObjectPtr<Database::Artist>& artist);
 
 			void addSomeNonReleaseTracks();
 			static constexpr std::size_t _tracksBatchSize {6};
@@ -61,7 +61,7 @@ namespace UserInterface
 
 			Filters* _filters {};
 			InfiniteScrollingContainer* _trackContainer {};
-			Database::IdType			_artistId {};
+			Database::ArtistId			_artistId {};
 	};
 } // namespace UserInterface
 

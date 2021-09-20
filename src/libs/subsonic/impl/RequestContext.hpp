@@ -36,7 +36,7 @@ namespace API::Subsonic
 	{
 		const Wt::Http::ParameterMap& parameters;
 		Database::Session& dbSession;
-		Database::IdType userId;
+		Database::UserId userId;
 		std::string clientName;
 	};
 }

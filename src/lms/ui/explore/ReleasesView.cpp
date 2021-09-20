@@ -128,7 +128,7 @@ Releases::addSome()
 	_container->setHasMore(moreResults);
 }
 
-std::vector<Database::IdType>
+std::vector<Database::ReleaseId>
 Releases::getAllReleases()
 {
 	return _releaseCollector.getAll();

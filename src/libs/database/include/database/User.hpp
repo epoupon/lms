@@ -26,8 +26,8 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
+#include "database/Types.hpp"
 #include "utils/UUID.hpp"
-#include "Types.hpp"
 
 namespace Database {
 
@@ -39,24 +39,21 @@ class TrackList;
 class Track;
 
 class User;
-class AuthToken
+class AuthToken : public Object<AuthToken, AuthTokenId>
 {
 	public:
-
-		using pointer = Wt::Dbo::ptr<AuthToken>;
-
 		AuthToken() = default;
-		AuthToken(const std::string& value, const Wt::WDateTime& expiry, Wt::Dbo::ptr<User> user);
+		AuthToken(const std::string& value, const Wt::WDateTime& expiry, ObjectPtr<User> user);
 
 		// Utility
-		static pointer create(Session& session, const std::string& value, const Wt::WDateTime&expiry, Wt::Dbo::ptr<User> user);
+		static pointer create(Session& session, const std::string& value, const Wt::WDateTime&expiry, ObjectPtr<User> user);
 		static void removeExpiredTokens(Session& session, const Wt::WDateTime& now);
 		static pointer getByValue(Session& session, const std::string& value);
-		static pointer getById(Session& session, IdType tokenId);
+		static pointer getById(Session& session, AuthTokenId tokenId);
 
 		// Accessors
 		const Wt::WDateTime&	getExpiry() const { return _expiry; }
-		Wt::Dbo::ptr<User>	getUser() const { return _user; }
+		ObjectPtr<User>	getUser() const { return _user; }
 		const std::string&	getValue() const { return _value; }
 
 		template<class Action>
@@ -75,11 +72,9 @@ class AuthToken
 		Wt::Dbo::ptr<User>	_user;
 };
 
-class User : public Wt::Dbo::Dbo<User>
+class User : public Object<User, UserId>
 {
 	public:
-		using pointer = Wt::Dbo::ptr<User>;
-
 		struct PasswordHash
 		{
 			std::string salt;
@@ -120,17 +115,16 @@ class User : public Wt::Dbo::Dbo<User>
 		static inline const SubsonicArtistListMode defaultSubsonicArtistListMode {SubsonicArtistListMode::AllArtists};
 		static inline const Scrobbler	defaultScrobbler {Scrobbler::Internal};
 
-
 		User() = default;
 		User(std::string_view loginName);
 
 		// utility
 		static pointer create(Session& session, std::string_view loginName);
 
-		static pointer			getById(Session& session, IdType id);
+		static pointer			getById(Session& session, UserId id);
 		static pointer			getByLoginName(Session& session, std::string_view loginName);
 		static std::vector<pointer>	getAll(Session& session);
-		static std::vector<IdType>	getAllIds(Session& session);
+		static std::vector<UserId>	getAllIds(Session& session);
 		static pointer			getDemo(Session& session);
 		static std::size_t		getCount(Session& session);
 
@@ -171,20 +165,20 @@ class User : public Wt::Dbo::Dbo<User>
 		Scrobbler				getScrobbler() const { return _scrobbler; }
 		std::optional<UUID>		getListenBrainzToken() const	{ return UUID::fromString(_listenbrainzToken); }
 
-		Wt::Dbo::ptr<TrackList>	getQueuedTrackList(Session& session) const;
+		ObjectPtr<TrackList>	getQueuedTrackList(Session& session) const;
 
-		void			starArtist(Wt::Dbo::ptr<Artist> artist);
-		void			unstarArtist(Wt::Dbo::ptr<Artist> artist);
-		bool			hasStarredArtist(Wt::Dbo::ptr<Artist> artist) const;
+		void			starArtist(ObjectPtr<Artist> artist);
+		void			unstarArtist(ObjectPtr<Artist> artist);
+		bool			hasStarredArtist(ObjectPtr<Artist> artist) const;
 
-		void			starRelease(Wt::Dbo::ptr<Release> release);
-		void			unstarRelease(Wt::Dbo::ptr<Release> release);
-		bool			hasStarredRelease(Wt::Dbo::ptr<Release> release) const;
+		void			starRelease(ObjectPtr<Release> release);
+		void			unstarRelease(ObjectPtr<Release> release);
+		bool			hasStarredRelease(ObjectPtr<Release> release) const;
 
 		// Stars
-		void			starTrack(Wt::Dbo::ptr<Track> track);
-		void			unstarTrack(Wt::Dbo::ptr<Track> track);
-		bool			hasStarredTrack(Wt::Dbo::ptr<Track> track) const;
+		void			starTrack(ObjectPtr<Track> track);
+		void			unstarTrack(ObjectPtr<Track> track);
+		bool			hasStarredTrack(ObjectPtr<Track> track) const;
 
 		template<class Action>
 		void persist(Action& a)

@@ -29,7 +29,6 @@
 
 namespace Database
 {
-	class Db;
 	class Session;
 	class TrackList;
 	class User;
@@ -48,7 +47,7 @@ namespace Scrobbling
 
 			virtual void addTimedListen(const TimedListen& listen) = 0;
 
-			virtual Wt::Dbo::ptr<Database::TrackList> getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user)  = 0;
+			virtual Database::ObjectPtr<Database::TrackList> getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user)  = 0;
 	};
 
 	std::unique_ptr<IScrobbler> createScrobbler(std::string_view backendName);

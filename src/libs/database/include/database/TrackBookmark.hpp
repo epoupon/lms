@@ -23,7 +23,7 @@
 
 #include <Wt/Dbo/Dbo.h>
 
-#include "Types.hpp"
+#include "database/Types.hpp"
 
 namespace Database {
 
@@ -31,22 +31,20 @@ class Session;
 class Track;
 class User;
 
-class TrackBookmark : public Wt::Dbo::Dbo<TrackBookmark>
+class TrackBookmark : public Object<TrackBookmark, TrackBookmarkId>
 {
 	public:
-		using pointer = Wt::Dbo::ptr<TrackBookmark>;
-
 		TrackBookmark () = default;
-		TrackBookmark(Wt::Dbo::ptr<User> user, Wt::Dbo::ptr<Track> track);
+		TrackBookmark(ObjectPtr<User> user, ObjectPtr<Track> track);
 
 		// utility
-		static pointer create(Session& session, Wt::Dbo::ptr<User> user, Wt::Dbo::ptr<Track> track);
+		static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track);
 
 		// Find utility functions
 		static std::vector<pointer>	getAll(Session& session);
-		static std::vector<pointer>	getByUser(Session& session, Wt::Dbo::ptr<User> user);
-		static pointer			getByUser(Session& session, Wt::Dbo::ptr<User> user, Wt::Dbo::ptr<Track> track);
-		static pointer			getById(Session& session, IdType id);
+		static std::vector<pointer>	getByUser(Session& session, ObjectPtr<User> user);
+		static pointer			getByUser(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track);
+		static pointer			getById(Session& session, TrackBookmarkId id);
 
 		// Setters
 		void setOffset(std::chrono::milliseconds offset)	{ _offset = offset; }
@@ -55,8 +53,8 @@ class TrackBookmark : public Wt::Dbo::Dbo<TrackBookmark>
 		// Getters
 		std::chrono::milliseconds	getOffset() const	{ return _offset; }
 		std::string_view		getComment() const	{ return _comment; }
-		Wt::Dbo::ptr<Track>		getTrack() const	{ return _track; }
-		Wt::Dbo::ptr<User>		getUser() const		{ return _user; }
+		ObjectPtr<Track>		getTrack() const	{ return _track; }
+		ObjectPtr<User>		getUser() const		{ return _user; }
 
 		template<class Action>
 			void persist(Action& a)

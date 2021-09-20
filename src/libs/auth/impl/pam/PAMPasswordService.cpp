@@ -193,7 +193,7 @@ namespace Auth
 	}
 
 	void
-	PAMPasswordService::setPassword(Database::Session&, Database::IdType, std::string_view)
+	PAMPasswordService::setPassword(Database::Session&, Database::UserId, std::string_view)
 	{
 		throw NotImplementedException {};
 	}

@@ -45,11 +45,11 @@ namespace
 		bool hasCover {};
 		bool isMultiDisc {};
 		std::filesystem::path trackPath;
-		std::optional<Database::IdType> releaseId;
+		std::optional<Database::ReleaseId> releaseId;
 	};
 
 	std::optional<TrackInfo>
-	getTrackInfo(Database::Session& dbSession, Database::IdType trackId)
+	getTrackInfo(Database::Session& dbSession, Database::TrackId trackId)
 	{
 		std::optional<TrackInfo> res;
 
@@ -66,7 +66,7 @@ namespace
 
 		if (const Database::Release::pointer& release {track->getRelease()})
 		{
-			res->releaseId = release.id();
+			res->releaseId = release->getId();
 			if (release->getTotalDisc() > 1)
 				res->isMultiDisc = true;
 		}
@@ -74,7 +74,6 @@ namespace
 		return res;
 	}
 }
-
 
 namespace CoverArt {
 
@@ -101,7 +100,7 @@ Grabber::Grabber(const std::filesystem::path& execPath,
 	: _defaultCoverPath {defaultCoverPath}
 	, _maxCacheSize {maxCacheSize}
 	, _maxFileSize {maxFileSize}
-	, _jpegQuality {clamp<unsigned>(jpegQuality, 1, 100)}
+	, _jpegQuality {Utils::clamp<unsigned>(jpegQuality, 1, 100)}
 {
 	LMS_LOG(COVER, INFO) << "Default cover path = '" << _defaultCoverPath.string() << "'";
 	LMS_LOG(COVER, INFO) << "Max cache size = " << _maxCacheSize;
@@ -314,20 +313,17 @@ Grabber::getFromTrack(const std::filesystem::path& p, ImageSize width) const
 }
 
 std::shared_ptr<IEncodedImage>
-Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width)
+Grabber::getFromTrack(Database::Session& dbSession, Database::TrackId trackId, ImageSize width)
 {
 	return getFromTrack(dbSession, trackId, width, true /* allow release fallback*/);
 }
 
-
-
-
 std::shared_ptr<IEncodedImage>
-Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width, bool allowReleaseFallback)
+Grabber::getFromTrack(Database::Session& dbSession, Database::TrackId trackId, ImageSize width, bool allowReleaseFallback)
 {
 	using namespace Database;
 
-	const CacheEntryDesc cacheEntryDesc {CacheEntryDesc::Type::Track, trackId, width};
+	const CacheEntryDesc cacheEntryDesc {trackId, width};
 
 	std::shared_ptr<IEncodedImage> cover {loadFromCache(cacheEntryDesc)};
 	if (cover)
@@ -361,9 +357,9 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::IdType trackId, Im
 }
 
 std::shared_ptr<IEncodedImage>
-Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, ImageSize width)
+Grabber::getFromRelease(Database::Session& session, Database::ReleaseId releaseId, ImageSize width)
 {
-	const CacheEntryDesc cacheEntryDesc {CacheEntryDesc::Type::Release, releaseId, width};
+	const CacheEntryDesc cacheEntryDesc {releaseId, width};
 
 	std::shared_ptr<IEncodedImage> cover {loadFromCache(cacheEntryDesc)};
 	if (cover)
@@ -371,7 +367,7 @@ Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, 
 
 	struct ReleaseInfo
 	{
-		Database::IdType firstTrackId;
+		Database::TrackId firstTrackId;
 		std::filesystem::path releaseDirectory;
 	};
 
@@ -386,7 +382,7 @@ Grabber::getFromRelease(Database::Session& session, Database::IdType releaseId, 
 			if (const auto firstTrack {release->getFirstTrack()})
 			{
 				res = ReleaseInfo {};
-				res->firstTrackId = firstTrack.id();
+				res->firstTrackId = firstTrack->getId();
 				res->releaseDirectory = firstTrack->getPath().parent_path();
 			}
 		}

@@ -45,7 +45,7 @@ namespace UserInterface::ReleaseListHelpers
 
 		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 		auto cover = std::make_unique<Wt::WImage>();
-		cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release.id(), CoverResource::Size::Large));
+		cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large));
 		cover->setStyleClass("Lms-cover");
 		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		anchor->setImage(std::move(cover));
@@ -100,7 +100,7 @@ namespace UserInterface::ReleaseListHelpers
 	}
 
 	std::unique_ptr<Wt::WTemplate>
-	createEntryForArtist(const Wt::Dbo::ptr<Database::Release>& release, const Wt::Dbo::ptr<Database::Artist>& artist)
+	createEntryForArtist(const Database::Release::pointer& release, const Database::Artist::pointer& artist)
 	{
 		return createEntry(release, artist, true);
 	}

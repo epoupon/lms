@@ -195,7 +195,7 @@ namespace
 		std::vector<Scrobbling::TimedListen> matchedListens;
 	};
 	ParseGetListensResult
-	parseGetListens(Database::Session& session, std::string_view msgBody, Database::IdType userId)
+	parseGetListens(Database::Session& session, std::string_view msgBody, Database::UserId userId)
 	{
 		ParseGetListensResult result;
 
@@ -233,7 +233,7 @@ namespace
 					result.oldestEntry = listenedAt;
 
 				if (const Database::Track::pointer track {tryMatchListen(session, metadata)})
-					result.matchedListens.emplace_back(Scrobbling::TimedListen {userId, track.id(), listenedAt});
+					result.matchedListens.emplace_back(Scrobbling::TimedListen {userId, track->getId(), listenedAt});
 			}
 		}
 		catch (const Wt::WException& error)
@@ -285,7 +285,7 @@ namespace Scrobbling::ListenBrainz
 	}
 
 	ListensSynchronizer::UserContext&
-	ListensSynchronizer::getUserContext(Database::IdType userId)
+	ListensSynchronizer::getUserContext(Database::UserId userId)
 	{
 		auto itContext {_userContexts.find(userId)};
 		if (itContext == std::cend(_userContexts))
@@ -338,14 +338,14 @@ namespace Scrobbling::ListenBrainz
 
 		assert(!isFetching());
 
-		std::vector<Database::IdType> userIds;
+		std::vector<Database::UserId> userIds;
 		{
 			Database::Session& session {_db.getTLSSession()};
 			auto transaction {session.createSharedTransaction()};
 			userIds = Database::User::getAllIds(_db.getTLSSession());
 		}
 
-		for (const Database::IdType userId : userIds)
+		for (const Database::UserId userId : userIds)
 		{
 			if (Utils::getListenBrainzToken(_db.getTLSSession(), userId))
 				startGetListens(getUserContext(userId));
@@ -373,7 +373,7 @@ namespace Scrobbling::ListenBrainz
 	{
 		_strand.dispatch([this, &context]
 		{
-			LOG(DEBUG) << "Fetch done for user " << context.userId << ", fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount;
+			LOG(DEBUG) << "Fetch done for user " << context.userId.getValue() << ", fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount;
 			context.fetching = false;
 
 			if (!isFetching())
@@ -473,7 +473,7 @@ namespace Scrobbling::ListenBrainz
 	}
 
 	std::optional<SendQueue::RequestData>
-	ListensSynchronizer::createValidateTokenRequestData(Database::IdType userId)
+	ListensSynchronizer::createValidateTokenRequestData(Database::UserId userId)
 	{
 		Database::Session& session {_db.getTLSSession()};
 

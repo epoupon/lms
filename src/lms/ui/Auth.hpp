@@ -25,7 +25,7 @@
 
 namespace UserInterface {
 
-std::optional<Database::IdType>
+std::optional<Database::UserId>
 processAuthToken(const Wt::WEnvironment& env);
 
 class Auth : public Wt::WTemplateFormView
@@ -33,7 +33,7 @@ class Auth : public Wt::WTemplateFormView
 	public:
 		Auth();
 
-		Wt::Signal<Database::IdType /*userId*/> userLoggedIn;
+		Wt::Signal<Database::UserId> userLoggedIn;
 };
 
 } // namespace UserInterface

@@ -26,6 +26,7 @@
 #include <Wt/WText.h>
 
 #include "database/Artist.hpp"
+#include "database/Cluster.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
@@ -68,7 +69,7 @@ Artist::Artist(Filters* filters)
 }
 
 static
-std::optional<IdType>
+std::optional<ArtistId>
 extractArtistIdFromInternalPath()
 {
 	if (wApp->internalPathMatches("/artist/mbid/"))
@@ -78,13 +79,13 @@ extractArtistIdFromInternalPath()
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 			if (const Database::Artist::pointer artist {Database::Artist::getByMBID(LmsApp->getDbSession(), *mbid)})
-				return artist.id();
+				return artist->getId();
 		}
 
 		return std::nullopt;
 	}
 
-	return StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/artist/"));
+	return StringUtils::readAs<Database::ArtistId::ValueType>(wApp->internalPathNextPart("/artist/"));
 }
 
 void
@@ -129,7 +130,7 @@ Artist::refreshView()
 		{
 			for (auto cluster : clusters)
 			{
-				auto clusterId = cluster.id();
+				auto clusterId = cluster->getId();
 				auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
 				entry->clicked().connect([=]
 				{
@@ -197,7 +198,7 @@ Artist::refreshView()
 }
 
 void
-Artist::refreshReleases(const Wt::Dbo::ptr<Database::Artist>& artist)
+Artist::refreshReleases(const Database::ObjectPtr<Database::Artist>& artist)
 {
 	const auto releases {artist->getReleases(_filters->getClusterIds())};
 	if (releases.empty())
@@ -213,7 +214,7 @@ Artist::refreshReleases(const Wt::Dbo::ptr<Database::Artist>& artist)
 }
 
 void
-Artist::refreshNonReleaseTracks(const Wt::Dbo::ptr<Database::Artist>& artist)
+Artist::refreshNonReleaseTracks(const Database::ObjectPtr<Database::Artist>& artist)
 {
 	if (!artist->hasNonReleaseTracks())
 		return;
@@ -229,7 +230,7 @@ Artist::refreshNonReleaseTracks(const Wt::Dbo::ptr<Database::Artist>& artist)
 }
 
 void
-Artist::refreshSimilarArtists(const std::unordered_set<Database::IdType>& similarArtistsId)
+Artist::refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArtistsId)
 {
 	if (similarArtistsId.empty())
 		return;
@@ -237,7 +238,7 @@ Artist::refreshSimilarArtists(const std::unordered_set<Database::IdType>& simila
 	setCondition("if-has-similar-artists", true);
 	Wt::WContainerWidget* similarArtistsContainer {bindNew<Wt::WContainerWidget>("similar-artists")};
 
-	for (Database::IdType artistId : similarArtistsId)
+	for (const Database::ArtistId artistId : similarArtistsId)
 	{
 		const Database::Artist::pointer similarArtist{Database::Artist::getById(LmsApp->getDbSession(), artistId)};
 		if (!similarArtist)

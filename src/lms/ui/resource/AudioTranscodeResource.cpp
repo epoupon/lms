@@ -96,9 +96,9 @@ AudioTranscodeResource:: ~AudioTranscodeResource()
 }
 
 std::string
-AudioTranscodeResource::getUrl(Database::IdType trackId) const
+AudioTranscodeResource::getUrl(Database::TrackId trackId) const
 {
-	return url() + "&trackid=" + std::to_string(trackId);
+	return url() + "&trackid=" + trackId.toString();
 }
 
 template<typename T>
@@ -132,9 +132,9 @@ readTranscodeParameters(const Wt::Http::Request& request)
 	TranscodeParameters parameters;
 
 	// mandatory parameters
-	auto trackId {readParameterAs<Database::IdType>(request, "trackid")};
-	auto format {readParameterAs<Database::AudioFormat>(request, "format")};
-	auto bitrate {readParameterAs<Database::Bitrate>(request, "bitrate")};
+	const std::optional<Database::TrackId> trackId {readParameterAs<Database::TrackId::ValueType>(request, "trackid")};
+	const auto format {readParameterAs<Database::AudioFormat>(request, "format")};
+	const auto bitrate {readParameterAs<Database::Bitrate>(request, "bitrate")};
 
 	if (!trackId || !format || !bitrate)
 		return std::nullopt;

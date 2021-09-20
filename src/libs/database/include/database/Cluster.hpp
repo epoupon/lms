@@ -24,10 +24,9 @@
 #include <vector>
 
 #include <Wt/Dbo/Dbo.h>
-
 #include <Wt/WDateTime.h>
 
-#include "Types.hpp"
+#include "database/Types.hpp"
 
 namespace Database {
 
@@ -36,31 +35,29 @@ class ClusterType;
 class ScanSettings;
 class Session;
 
-class Cluster : public Wt::Dbo::Dbo<Cluster>
+class Cluster : public Object<Cluster, ClusterId>
 {
 	public:
-		using pointer = Wt::Dbo::ptr<Cluster>;
-
-		Cluster();
-		Cluster(Wt::Dbo::ptr<ClusterType> type, std::string_view name);
+		Cluster() = default;
+		Cluster(ObjectPtr<ClusterType> type, std::string_view name);
 
 		// Find utility
 		static std::vector<pointer> getAll(Session& session);
 		static std::vector<pointer> getAllOrphans(Session& session);
-		static pointer getById(Session& session, IdType id);
+		static pointer getById(Session& session, ClusterId id);
 
 		// Create utility
-		static pointer create(Session& session, Wt::Dbo::ptr<ClusterType> type, std::string_view name);
+		static pointer create(Session& session, ObjectPtr<ClusterType> type, std::string_view name);
 
 		// Accessors
 		const std::string& getName() const		{ return _name; }
-		Wt::Dbo::ptr<ClusterType> getType() const	{ return _clusterType; }
+		ObjectPtr<ClusterType> getType() const	{ return _clusterType; }
 		std::size_t getTracksCount() const		{ return _tracks.size(); }
-		std::vector<Wt::Dbo::ptr<Track>> getTracks(std::optional<std::size_t> offset = {}, std::optional<std::size_t> limit = {}) const;
-		std::set<IdType> getTrackIds() const;
+		std::vector<ObjectPtr<Track>> getTracks(std::optional<std::size_t> offset = {}, std::optional<std::size_t> limit = {}) const;
+		std::vector<TrackId> getTrackIds() const;
 		std::size_t getReleasesCount() const;
 
-		void addTrack(Wt::Dbo::ptr<Track> track);
+		void addTrack(ObjectPtr<Track> track);
 
 		template<class Action>
 		void persist(Action& a)
@@ -72,7 +69,6 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 		}
 
 	private:
-
 		static const std::size_t _maxNameLength = 128;
 
 		std::string	_name;
@@ -82,19 +78,17 @@ class Cluster : public Wt::Dbo::Dbo<Cluster>
 };
 
 
-class ClusterType : public Wt::Dbo::Dbo<ClusterType>
+class ClusterType : public Object<ClusterType, ClusterTypeId>
 {
 	public:
+		ClusterType() = default;
+		ClusterType(std::string_view name);
 
-		using pointer = Wt::Dbo::ptr<ClusterType>;
-
-		ClusterType() {}
-		ClusterType(std::string name);
-
+		// Getters
 		static std::vector<pointer> getAllOrphans(Session& session);
 		static std::vector<pointer> getAllUsed(Session& session);
 		static pointer getByName(Session& session, const std::string& name);
-		static pointer getById(Session& session, IdType id);
+		static pointer getById(Session& session, ClusterTypeId id);
 		static std::vector<pointer> getAll(Session& session);
 
 		static pointer create(Session& session, const std::string& name);

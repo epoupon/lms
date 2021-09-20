@@ -39,15 +39,15 @@ namespace UserInterface
 		public:
 			Release(Filters* filters);
 
-			PlayQueueActionSignal releasesAction;
-			PlayQueueActionSignal tracksAction;
+			PlayQueueActionReleaseSignal releasesAction;
+			PlayQueueActionTrackSignal tracksAction;
 
 		private:
 			void refreshView();
-			void refreshReleaseArtists(const Wt::Dbo::ptr<Database::Release>& release);
-			void refreshCopyright(const Wt::Dbo::ptr<Database::Release>& release);
-			void refreshLinks(const Wt::Dbo::ptr<Database::Release>& release);
-			void refreshSimilarReleases(const std::unordered_set<Database::IdType>& similarReleasesId);
+			void refreshReleaseArtists(const Database::ObjectPtr<Database::Release>& release);
+			void refreshCopyright(const Database::ObjectPtr<Database::Release>& release);
+			void refreshLinks(const Database::ObjectPtr<Database::Release>& release);
+			void refreshSimilarReleases(const std::vector<Database::ReleaseId>& similarReleasesId);
 
 			Filters* _filters {};
 	};

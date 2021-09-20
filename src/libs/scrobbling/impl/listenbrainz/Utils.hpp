@@ -21,6 +21,7 @@
 
 #include <Wt/Dbo/ptr.h>
 #include "utils/UUID.hpp"
+
 #include "database/Types.hpp"
 
 namespace Database
@@ -32,7 +33,7 @@ namespace Database
 
 namespace Scrobbling::ListenBrainz::Utils
 {
-	std::optional<UUID>					getListenBrainzToken(Database::Session& session, Database::IdType userId);
-	Wt::Dbo::ptr<Database::TrackList>	getOrCreateListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user);
-	Wt::Dbo::ptr<Database::TrackList>	getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user);
+	std::optional<UUID>							getListenBrainzToken(Database::Session& session, Database::UserId userId);
+	Database::ObjectPtr<Database::TrackList>	getOrCreateListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user);
+	Database::ObjectPtr<Database::TrackList>	getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user);
 }

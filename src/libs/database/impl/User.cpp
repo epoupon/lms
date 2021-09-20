@@ -26,25 +26,25 @@
 #include "database/TrackList.hpp"
 #include "utils/Logger.hpp"
 #include "StringViewTraits.hpp"
+#include "Traits.hpp"
 
 namespace Database {
 
 
-AuthToken::AuthToken(const std::string& value, const Wt::WDateTime& expiry, Wt::Dbo::ptr<User> user)
+AuthToken::AuthToken(const std::string& value, const Wt::WDateTime& expiry, ObjectPtr<User> user)
 : _value {value}
 , _expiry {expiry}
-, _user {user}
+, _user {getDboPtr(user)}
 {
 
 }
 
 AuthToken::pointer
-AuthToken::create(Session& session, const std::string& value, const Wt::WDateTime& expiry, Wt::Dbo::ptr<User> user)
+AuthToken::create(Session& session, const std::string& value, const Wt::WDateTime& expiry, ObjectPtr<User> user)
 {
 	session.checkUniqueLocked();
 
-	auto res {session.getDboSession().add(std::make_unique<AuthToken>(value, expiry, user))};
-
+	AuthToken::pointer res {session.getDboSession().add(std::make_unique<AuthToken>(value, expiry, user))};
 	session.getDboSession().flush();
 
 	return res;
@@ -65,7 +65,8 @@ AuthToken::getByValue(Session& session, const std::string& value)
 	session.checkSharedLocked();
 
 	return session.getDboSession().find<AuthToken>()
-		.where("value = ?").bind(value);
+		.where("value = ?").bind(value)
+		.resultValue();
 }
 
 static const std::string queuedListName {"__queued_tracks__"};
@@ -80,17 +81,17 @@ User::getAll(Session& session)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<pointer> res = session.getDboSession().find<User>();
+	auto res {session.getDboSession().find<User>().resultList()};
 	return std::vector<pointer>(res.begin(), res.end());
 }
 
-std::vector<IdType>
+std::vector<UserId>
 User::getAllIds(Session& session)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<IdType> res = session.getDboSession().query<IdType>("SELECT id FROM user");
-	return std::vector<IdType>(res.begin(), res.end());
+	auto res {session.getDboSession().query<UserId>("SELECT id FROM user").resultList()};
+	return std::vector<UserId>(res.begin(), res.end());
 }
 
 User::pointer
@@ -98,8 +99,7 @@ User::getDemo(Session& session)
 {
 	session.checkSharedLocked();
 
-	pointer res = session.getDboSession().find<User>().where("type = ?").bind(UserType::DEMO);
-	return res;
+	return session.getDboSession().find<User>().where("type = ?").bind(UserType::DEMO).resultValue();
 }
 
 std::size_t
@@ -125,16 +125,17 @@ User::create(Session& session, std::string_view loginName)
 }
 
 User::pointer
-User::getById(Session& session, IdType id)
+User::getById(Session& session, UserId id)
 {
-	return session.getDboSession().find<User>().where("id = ?").bind( id );
+	return session.getDboSession().find<User>().where("id = ?").bind(id).resultValue();
 }
 
 User::pointer
 User::getByLoginName(Session& session, std::string_view name)
 {
 	return session.getDboSession().find<User>()
-		.where("login_name = ?").bind(name);
+		.where("login_name = ?").bind(name)
+		.resultValue();
 }
 
 void
@@ -150,7 +151,7 @@ User::clearAuthTokens()
 	_authTokens.clear();
 }
 
-Wt::Dbo::ptr<TrackList>
+TrackList::pointer
 User::getQueuedTrackList(Session& session) const
 {
 	assert(self());
@@ -160,63 +161,63 @@ User::getQueuedTrackList(Session& session) const
 }
 
 void
-User::starArtist(Wt::Dbo::ptr<Artist> artist)
+User::starArtist(ObjectPtr<Artist> artist)
 {
-	if (_starredArtists.count(artist) == 0)
-		_starredArtists.insert(artist);
+	if (_starredArtists.count(getDboPtr(artist)) == 0)
+		_starredArtists.insert(getDboPtr(artist));
 }
 
 void
-User::unstarArtist(Wt::Dbo::ptr<Artist> artist)
+User::unstarArtist(ObjectPtr<Artist> artist)
 {
-	if (_starredArtists.count(artist) != 0)
-		_starredArtists.erase(artist);
+	if (_starredArtists.count(getDboPtr(artist)) != 0)
+		_starredArtists.erase(getDboPtr(artist));
 }
 
 bool
-User::hasStarredArtist(Wt::Dbo::ptr<Artist> artist) const
+User::hasStarredArtist(ObjectPtr<Artist> artist) const
 {
-	return _starredArtists.count(artist) != 0;
+	return _starredArtists.count(getDboPtr(artist)) != 0;
 }
 
 void
-User::starRelease(Wt::Dbo::ptr<Release> release)
+User::starRelease(ObjectPtr<Release> release)
 {
-	if (_starredReleases.count(release) == 0)
-		_starredReleases.insert(release);
+	if (_starredReleases.count(getDboPtr(release)) == 0)
+		_starredReleases.insert(getDboPtr(release));
 }
 
 void
-User::unstarRelease(Wt::Dbo::ptr<Release> release)
+User::unstarRelease(ObjectPtr<Release> release)
 {
-	if (_starredReleases.count(release) != 0)
-		_starredReleases.erase(release);
+	if (_starredReleases.count(getDboPtr(release)) != 0)
+		_starredReleases.erase(getDboPtr(release));
 }
 
 bool
-User::hasStarredRelease(Wt::Dbo::ptr<Release> release) const
+User::hasStarredRelease(ObjectPtr<Release> release) const
 {
-	return _starredReleases.count(release) != 0;
+	return _starredReleases.count(getDboPtr(release)) != 0;
 }
 
 void
-User::starTrack(Wt::Dbo::ptr<Track> track)
+User::starTrack(ObjectPtr<Track> track)
 {
-	if (_starredTracks.count(track) == 0)
-		_starredTracks.insert(track);
+	if (_starredTracks.count(getDboPtr(track)) == 0)
+		_starredTracks.insert(getDboPtr(track));
 }
 
 void
-User::unstarTrack(Wt::Dbo::ptr<Track> track)
+User::unstarTrack(ObjectPtr<Track> track)
 {
-	if (_starredTracks.count(track) != 0)
-		_starredTracks.erase(track);
+	if (_starredTracks.count(getDboPtr(track)) != 0)
+		_starredTracks.erase(getDboPtr(track));
 }
 
 bool
-User::hasStarredTrack(Wt::Dbo::ptr<Track> track) const
+User::hasStarredTrack(ObjectPtr<Track> track) const
 {
-	return _starredTracks.count(track) != 0;
+	return _starredTracks.count(getDboPtr(track)) != 0;
 }
 
 } // namespace Database

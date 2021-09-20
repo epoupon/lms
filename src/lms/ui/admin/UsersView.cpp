@@ -72,7 +72,7 @@ UsersView::refreshView()
 	auto users = Database::User::getAll(LmsApp->getDbSession());
 	for (const auto& user : users)
 	{
-		const Database::IdType userId {user.id()};
+		const Database::UserId userId {user->getId()};
 
 		Wt::WTemplate* entry {_container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry"))};
 
@@ -93,7 +93,7 @@ UsersView::refreshView()
 		Wt::WPushButton* editBtn = entry->bindNew<Wt::WPushButton>("edit-btn", Wt::WString::tr("Lms.Admin.Users.edit"));
 		editBtn->clicked().connect([=]()
 		{
-			LmsApp->setInternalPath("/admin/user/" + std::to_string(userId), true);
+			LmsApp->setInternalPath("/admin/user/" + userId.toString(), true);
 		});
 
 		Wt::WPushButton* delBtn = entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.Admin.Users.del"));

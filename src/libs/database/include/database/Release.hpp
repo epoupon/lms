@@ -20,13 +20,13 @@
 #pragma once
 
 #include <optional>
-#include <set>
+#include <vector>
 
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
+#include "database/Types.hpp"
 #include "utils/UUID.hpp"
-#include "Types.hpp"
 
 namespace Database
 {
@@ -39,49 +39,46 @@ class Session;
 class Track;
 class User;
 
-class Release : public Wt::Dbo::Dbo<Release>
+class Release : public Object<Release, ReleaseId>
 {
 	public:
-
-		using pointer = Wt::Dbo::ptr<Release>;
-
-		Release() {}
+		Release() = default;
 		Release(const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Accessors
 		static std::size_t		getCount(Session& session);
 		static pointer			getByMBID(Session& session, const UUID& MBID);
 		static std::vector<pointer>	getByName(Session& session, const std::string& name);
-		static pointer			getById(Session& session, IdType id);
+		static pointer			getById(Session& session, ReleaseId id);
 		static std::vector<pointer>	getAllOrphans(Session& session); // no track related
 		static std::vector<pointer>	getAll(Session& session, std::optional<Range> range = std::nullopt);
-		static std::vector<IdType>	getAllIds(Session& session);
+		static std::vector<ReleaseId>	getAllIds(Session& session);
 		static std::vector<pointer>	getAllOrderedByArtist(Session& session, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
-		static std::vector<pointer>	getAllRandom(Session& session, const std::set<IdType>& clusters, std::optional<std::size_t> size = {});
-		static std::vector<IdType>	getAllIdsRandom(Session& session, const std::set<IdType>& clusters, std::optional<std::size_t> size = {});
-		static std::vector<pointer>	getLastWritten(Session& session, std::optional<Wt::WDateTime> after, const std::set<IdType>& clusters, std::optional<Range> range, bool& moreResults);
+		static std::vector<pointer>	getAllRandom(Session& session, const std::vector<ClusterId>& clusters, std::optional<std::size_t> size = {});
+		static std::vector<ReleaseId>	getAllIdsRandom(Session& session, const std::vector<ClusterId>& clusters, std::optional<std::size_t> size = {});
+		static std::vector<pointer>	getLastWritten(Session& session, std::optional<Wt::WDateTime> after, const std::vector<ClusterId>& clusters, std::optional<Range> range, bool& moreResults);
 		static std::vector<pointer>	getByYear(Session& session, int yearFrom, int yearTo, std::optional<Range> range = std::nullopt);
-		static std::vector<pointer> getStarred(Session& session, Wt::Dbo::ptr<User> user, const std::set<IdType>& clusters, std::optional<Range> range, bool& moreResults);
+		static std::vector<pointer> getStarred(Session& session, ObjectPtr<User> user, const std::vector<ClusterId>& clusters, std::optional<Range> range, bool& moreResults);
 
-		static std::vector<pointer>	getByClusters(Session& session, const std::set<IdType>& clusters);
+		static std::vector<pointer>	getByClusters(Session& session, const std::vector<ClusterId>& clusters);
 		static std::vector<pointer>	getByFilter(Session& session,
-							const std::set<IdType>& clusters,		// if non empty, at least one release that belongs to these clusters
+							const std::vector<ClusterId>& clusters,		// if non empty, at least one release that belongs to these clusters
 							const std::vector<std::string_view>& keywords,	// if non empty, name must match all of these keywords
 							std::optional<Range> range,
 							bool& moreExpected);
-		static std::vector<IdType>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
+		static std::vector<ReleaseId>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
 
-		std::vector<Wt::Dbo::ptr<Track>> getTracks(const std::set<IdType>& clusters = std::set<IdType>()) const;
-		std::size_t			getTracksCount() const;
-		Wt::Dbo::ptr<Track>			getFirstTrack() const;
+		std::vector<ObjectPtr<Track>> getTracks(const std::vector<ClusterId>& clusters = {}) const;
+		std::size_t					getTracksCount() const;
+		ObjectPtr<Track>			getFirstTrack() const;
 
 		// Get the cluster of the tracks that belong to this release
 		// Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)
 		// size is the max number of cluster per cluster type
-		std::vector<std::vector<Wt::Dbo::ptr<Cluster>>> getClusterGroups(std::vector<Wt::Dbo::ptr<ClusterType>> clusterTypes, std::size_t size) const;
+		std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ObjectPtr<ClusterType>>& clusterTypes, std::size_t size) const;
 
 		// Create
-		static pointer create(Session& session, const std::string& name, const std::optional<UUID>& MBID = {});
+		static pointer	create(Session& session, const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Utility functions
 		std::optional<int> getReleaseYear(bool originalDate = false) const; // 0 if unknown or various
@@ -97,8 +94,8 @@ class Release : public Wt::Dbo::Dbo<Release>
 		Wt::WDateTime				getLastWritten() const;
 
 		// Get the artists of this release
-		std::vector<Wt::Dbo::ptr<Artist> > getArtists(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
-		std::vector<Wt::Dbo::ptr<Artist> > getReleaseArtists() const { return getArtists(TrackArtistLinkType::ReleaseArtist); }
+		std::vector<ObjectPtr<Artist> > getArtists(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
+		std::vector<ObjectPtr<Artist> > getReleaseArtists() const { return getArtists(TrackArtistLinkType::ReleaseArtist); }
 		bool hasVariousArtists() const;
 		std::vector<pointer>		getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
 

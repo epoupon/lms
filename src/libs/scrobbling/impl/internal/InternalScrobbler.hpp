@@ -21,6 +21,11 @@
 
 #include "IScrobbler.hpp"
 
+namespace Database
+{
+	class Db;
+}
+
 namespace Scrobbling
 {
 	class InternalScrobbler final : public IScrobbler
@@ -34,7 +39,7 @@ namespace Scrobbling
 
 			void addTimedListen(const TimedListen& listen) override;
 
-			Wt::Dbo::ptr<Database::TrackList> getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user) override;
+			Database::ObjectPtr<Database::TrackList> getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user) override;
 
 			Database::Db&	_db;
 	};

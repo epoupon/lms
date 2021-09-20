@@ -32,7 +32,7 @@ namespace Auth
 	class AuthServiceBase
 	{
 		protected:
-			Database::IdType	getOrCreateUser(Database::Session& session, std::string_view loginName);
-			void				onUserAuthenticated(Database::Session& session, Database::IdType userId);
+			Database::UserId	getOrCreateUser(Database::Session& session, std::string_view loginName);
+			void				onUserAuthenticated(Database::Session& session, Database::UserId userId);
 	};
 }

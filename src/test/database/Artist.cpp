@@ -28,13 +28,21 @@ TEST_F(DatabaseFixture, SingleArtist)
 	{
 		auto transaction {session.createSharedTransaction()};
 
+		EXPECT_TRUE(artist.get());
+		EXPECT_FALSE(!artist.get());
+		EXPECT_EQ(artist.get()->getId(), artist.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
 		auto artists {Artist::getAll(session, Artist::SortMethod::ByName)};
 		ASSERT_EQ(artists.size(), 1);
-		EXPECT_EQ(artists.front().id(), artist.getId());
+		EXPECT_EQ(artists.front()->getId(), artist.getId());
 
 		artists = Artist::getAllOrphans(session);
 		ASSERT_EQ(artists.size(), 1);
-		EXPECT_EQ(artists.front().id(), artist.getId());
+		EXPECT_EQ(artists.front()->getId(), artist.getId());
 	}
 }
 
@@ -59,14 +67,14 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtist)
 
 		auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		ASSERT_EQ(artists.size(), 1);
-		EXPECT_EQ(artists.front().id(), artist.getId());
+		EXPECT_EQ(artists.front()->getId(), artist.getId());
 
 		EXPECT_EQ(artist->getReleaseCount(), 0);
 
 		ASSERT_EQ(track->getArtistLinks().size(), 1);
 		auto artistLink {track->getArtistLinks().front()};
-		EXPECT_EQ(artistLink->getTrack().id(), track.getId());
-		EXPECT_EQ(artistLink->getArtist().id(), artist.getId());
+		EXPECT_EQ(artistLink->getTrack()->getId(), track.getId());
+		EXPECT_EQ(artistLink->getArtist()->getId(), artist.getId());
 
 		ASSERT_EQ(track->getArtists({TrackArtistLinkType::Artist}).size(), 1);
 		EXPECT_TRUE(track->getArtists({TrackArtistLinkType::ReleaseArtist}).empty());
@@ -78,7 +86,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtist)
 
 		auto tracks {artist->getTracks()};
 		ASSERT_EQ(tracks.size(), 1);
-		EXPECT_EQ(tracks.front().id(), track.getId());
+		EXPECT_EQ(tracks.front()->getId(), track.getId());
 
 		EXPECT_TRUE(artist->getTracks(TrackArtistLinkType::ReleaseArtist).empty());
 		EXPECT_EQ(artist->getTracks(TrackArtistLinkType::Artist).size(), 1);
@@ -117,11 +125,11 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiRoles)
 
 		auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		ASSERT_EQ(artists.size(), 1);
-		EXPECT_EQ(artists.front().id(), artist.getId());
+		EXPECT_EQ(artists.front()->getId(), artist.getId());
 
 		artists = track->getArtists({TrackArtistLinkType::ReleaseArtist});
 		ASSERT_EQ(artists.size(), 1);
-		EXPECT_EQ(artists.front().id(), artist.getId());
+		EXPECT_EQ(artists.front()->getId(), artist.getId());
 
 		EXPECT_EQ(track->getArtistLinks().size(), 3);
 
@@ -156,8 +164,8 @@ TEST_F(DatabaseFixture,SingleTrackMultiArtists)
 
 		auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		ASSERT_EQ(artists.size(), 2);
-		EXPECT_TRUE((artists[0].id() == artist1.getId() && artists[1].id() == artist2.getId())
-			|| (artists[0].id() == artist2.getId() && artists[1].id() == artist1.getId()));
+		EXPECT_TRUE((artists[0]->getId() == artist1.getId() && artists[1]->getId() == artist2.getId())
+			|| (artists[0]->getId() == artist2.getId() && artists[1]->getId() == artist1.getId()));
 
 		EXPECT_EQ(track->getArtists({}).size(), 2);
 		EXPECT_EQ(track->getArtists({TrackArtistLinkType::Artist}).size(), 2);
@@ -198,11 +206,11 @@ TEST_F(DatabaseFixture, SingleArtistSearchByName)
 
 		const auto artistsByAAA {Artist::Artist::getByFilter(session, {}, {"A"}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, more)};
 		ASSERT_EQ(artistsByAAA.size(), 1);
-		EXPECT_EQ(artistsByAAA.front().id(), artist.getId());
+		EXPECT_EQ(artistsByAAA.front()->getId(), artist.getId());
 
 		const auto artistsByZZZ {Artist::Artist::getByFilter(session, {}, {"Z"}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, more)};
 		ASSERT_EQ(artistsByZZZ.size(), 1);
-		EXPECT_EQ(artistsByZZZ.front().id(), artist.getId());
+		EXPECT_EQ(artistsByZZZ.front()->getId(), artist.getId());
 
 		EXPECT_TRUE(Artist::getByName(session, "NNN").empty());
 	}
@@ -223,19 +231,19 @@ TEST_F(DatabaseFixture, MultipleArtistsSearchByNameEscaped)
 		{
 			const auto artists {Artist::getByName(session, "MyArtist%")};
 			ASSERT_TRUE(artists.size() == 1);
-			EXPECT_EQ(artists.front().id(), artist1.getId());
+			EXPECT_EQ(artists.front()->getId(), artist1.getId());
 			EXPECT_TRUE(Artist::getByName(session, "MyArtistFoo").empty());
 		}
 		{
 			const auto artists {Artist::getByName(session, "%MyArtist")};
 			ASSERT_TRUE(artists.size() == 1);
-			EXPECT_EQ(artists.front().id(), artist2.getId());
+			EXPECT_EQ(artists.front()->getId(), artist2.getId());
 			EXPECT_TRUE(Artist::getByName(session, "FooMyArtist").empty());
 		}
 		{
 			const auto artists {Artist::getByName(session, "%_MyArtist")};
 			ASSERT_TRUE(artists.size() == 1);
-			ASSERT_EQ(artists.front().id(), artist3.getId());
+			ASSERT_EQ(artists.front()->getId(), artist3.getId());
 			EXPECT_TRUE(Artist::getByName(session, "%CMyArtist").empty());
 		}
 	}
@@ -265,21 +273,21 @@ TEST_F(DatabaseFixture, MultipleArtistsSearchByNameEscaped)
 		{
 			const auto artists {Artist::getByFilter(session, {}, {"MyArtist%"}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, more)};
 			ASSERT_EQ(artists.size(), 2);
-			EXPECT_EQ(artists[0].id(), artist1.getId());
-			EXPECT_EQ(artists[1].id(), artist4.getId());
+			EXPECT_EQ(artists[0]->getId(), artist1.getId());
+			EXPECT_EQ(artists[1]->getId(), artist4.getId());
 		}
 
 		{
 			const auto artists {Artist::getByFilter(session, {}, {"%MyArtist"}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, more)};
 			ASSERT_EQ(artists.size(), 2);
-			EXPECT_EQ(artists[0].id(), artist2.getId());
-			EXPECT_EQ(artists[1].id(), artist5.getId());
+			EXPECT_EQ(artists[0]->getId(), artist2.getId());
+			EXPECT_EQ(artists[1]->getId(), artist5.getId());
 		}
 
 		{
 			const auto artists {Artist::getByFilter(session, {}, {"_MyArtist"}, std::nullopt, Artist::SortMethod::ByName, std::nullopt, more)};
 			ASSERT_EQ(artists.size(), 1);
-			EXPECT_EQ(artists[0].id(), artist3.getId());
+			EXPECT_EQ(artists[0]->getId(), artist3.getId());
 		}
 	}
 }
@@ -303,12 +311,12 @@ TEST_F(DatabaseFixture, MultiArtistsSortMethod)
 		auto allArtistsBySortName {Artist::getAll(session, Artist::SortMethod::BySortName)};
 
 		ASSERT_EQ(allArtistsByName.size(), 2);
-		EXPECT_EQ(allArtistsByName.front().id(), artistA.getId());
-		EXPECT_EQ(allArtistsByName.back().id(), artistB.getId());
+		EXPECT_EQ(allArtistsByName.front()->getId(), artistA.getId());
+		EXPECT_EQ(allArtistsByName.back()->getId(), artistB.getId());
 
 		ASSERT_EQ(allArtistsBySortName.size(), 2);
-		EXPECT_EQ(allArtistsBySortName.front().id(), artistB.getId());
-		EXPECT_EQ(allArtistsBySortName.back().id(), artistA.getId());
+		EXPECT_EQ(allArtistsBySortName.front()->getId(), artistB.getId());
+		EXPECT_EQ(allArtistsBySortName.back()->getId(), artistA.getId());
 	}
 }
 
@@ -321,7 +329,7 @@ TEST_F(DatabaseFixture, SingleArtistNonReleaseTracks)
 
 	{
 		auto transaction {session.createSharedTransaction()};
-		EXPECT_EQ(artist->hasNonReleaseTracks(std::nullopt), false);
+		EXPECT_FALSE(artist->hasNonReleaseTracks(std::nullopt));
 
 		bool moreResults;
 		const auto tracks {artist->getNonReleaseTracks(std::nullopt, std::nullopt, moreResults )};
@@ -343,9 +351,9 @@ TEST_F(DatabaseFixture, SingleArtistNonReleaseTracks)
 
 		bool moreResults;
 		const auto tracks {artist->getNonReleaseTracks(std::nullopt, std::nullopt, moreResults )};
-		EXPECT_EQ(artist->hasNonReleaseTracks(std::nullopt), true);
-		EXPECT_EQ(moreResults, false);
+		EXPECT_TRUE(artist->hasNonReleaseTracks(std::nullopt));
+		EXPECT_FALSE(moreResults);
 		ASSERT_EQ(tracks.size(), 1);
-		EXPECT_EQ(tracks.front().id(), track2.getId());
+		EXPECT_EQ(tracks.front()->getId(), track2.getId());
 	}
 }

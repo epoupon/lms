@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,27 +17,22 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ParameterParsing.hpp"
+#pragma once
 
-namespace StringUtils
+#include "database/Types.hpp"
+#include "utils/EnumSet.hpp"
+
+namespace Database
 {
-	template<>
-	std::optional<API::Subsonic::Id>
-	readAs(std::string_view str)
-	{
-		return API::Subsonic::IdFromString(str);
-	}
-
-	template<>
-	std::optional<bool>
-	readAs(std::string_view str)
-	{
-		if (str == "true")
-			return true;
-		else if (str == "false")
-			return false;
-
-		return {};
-	}
+	class Db;
+	class Session;
 }
+
+namespace Recommendation
+{
+	class IRecommendation
+	{
+	};
+
+} // ns Recommendation
 

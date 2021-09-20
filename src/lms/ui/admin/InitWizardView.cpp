@@ -70,7 +70,7 @@ class InitWizardModel : public Wt::WFormModel
 
 			Database::User::pointer user {Database::User::create(LmsApp->getDbSession(), valueText(AdminLoginField).toUTF8())};
 			user.modify()->setType(Database::UserType::ADMIN);
-			Service<::Auth::IPasswordService>::get()->setPassword(LmsApp->getDbSession(), user.id(), valueText(PasswordField).toUTF8());
+			Service<::Auth::IPasswordService>::get()->setPassword(LmsApp->getDbSession(), user->getId(), valueText(PasswordField).toUTF8());
 		}
 
 		bool validateField(Field field)

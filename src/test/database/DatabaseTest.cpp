@@ -32,11 +32,11 @@ TEST_F(DatabaseFixture, SingleRelease)
 
 		auto releases {Release::getAllOrphans(session)};
 		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front().id(), release.getId());
+		EXPECT_EQ(releases.front()->getId(), release.getId());
 
 		releases = Release::getAll(session);
 		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front().id(), release.getId());
+		EXPECT_EQ(releases.front()->getId(), release.getId());
 		EXPECT_EQ(release->getDuration(), std::chrono::seconds {0});
 	}
 }
@@ -61,21 +61,21 @@ TEST_F(DatabaseFixture, SingleTrackSingleRelease)
 
 			EXPECT_EQ(release->getTracksCount(), 1);
 			ASSERT_EQ(release->getTracks().size(), 1);
-			EXPECT_EQ(release->getTracks().front().id(), track.getId());
+			EXPECT_EQ(release->getTracks().front()->getId(), track.getId());
 		}
 
 		{
 			auto transaction {session.createUniqueTransaction()};
 
 			ASSERT_TRUE(track->getRelease());
-			EXPECT_EQ(track->getRelease().id(), release.getId());
+			EXPECT_EQ(track->getRelease()->getId(), release.getId());
 		}
 
 		{
 			auto transaction {session.createUniqueTransaction()};
 			auto tracks {Track::getByNameAndReleaseName(session, "MyTrackName", "MyReleaseName")};
 			ASSERT_EQ(tracks.size(), 1);
-			EXPECT_EQ(tracks.front().id(), track.getId());
+			EXPECT_EQ(tracks.front()->getId(), track.getId());
 		}
 		{
 			auto transaction {session.createUniqueTransaction()};
@@ -96,7 +96,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleRelease)
 
 		auto releases {Release::getAllOrphans(session)};
 		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front().id(), release.getId());
+		EXPECT_EQ(releases.front()->getId(), release.getId());
 	}
 }
 
@@ -140,29 +140,29 @@ TEST_F(DatabaseFixture, MulitpleReleaseSearchByName)
 		{
 			const auto releases {Release::getByFilter(session, {}, {"MyRelease"}, std::nullopt, more)};
 			EXPECT_EQ(releases.size(), 5);
-			EXPECT_TRUE(std::none_of(std::cbegin(releases), std::cend(releases), [&](const Release::pointer& release) { return release.id() == release6.getId(); }));
+			EXPECT_TRUE(std::none_of(std::cbegin(releases), std::cend(releases), [&](const Release::pointer& release) { return release->getId() == release6.getId(); }));
 		}
 		{
 			const auto releases {Release::getByFilter(session, {}, {"MyRelease%"}, std::nullopt, more)};
-			EXPECT_EQ(releases.size(), 2);
-			EXPECT_EQ(releases[0].id(), release2.getId());
-			EXPECT_EQ(releases[1].id(), release4.getId());
+			ASSERT_EQ(releases.size(), 2);
+			EXPECT_EQ(releases[0]->getId(), release2.getId());
+			EXPECT_EQ(releases[1]->getId(), release4.getId());
 		}
 		{
 			const auto releases {Release::getByFilter(session, {}, {"%MyRelease"}, std::nullopt, more)};
-			EXPECT_EQ(releases.size(), 2);
-			EXPECT_EQ(releases[0].id(), release3.getId());
-			EXPECT_EQ(releases[1].id(), release5.getId());
+			ASSERT_EQ(releases.size(), 2);
+			EXPECT_EQ(releases[0]->getId(), release3.getId());
+			EXPECT_EQ(releases[1]->getId(), release5.getId());
 		}
 		{
 			const auto releases {Release::getByFilter(session, {}, {"Foo%MyRelease"}, std::nullopt, more)};
-			EXPECT_EQ(releases.size(), 1);
-			EXPECT_EQ(releases[0].id(), release5.getId());
+			ASSERT_EQ(releases.size(), 1);
+			EXPECT_EQ(releases[0]->getId(), release5.getId());
 		}
 		{
 			const auto releases {Release::getByFilter(session, {}, {"MyRelease%Foo"}, std::nullopt, more)};
-			EXPECT_EQ(releases.size(), 1);
-			EXPECT_EQ(releases[0].id(), release4.getId());
+			ASSERT_EQ(releases.size(), 1);
+			EXPECT_EQ(releases[0]->getId(), release4.getId());
 		}
 	}
 }
@@ -296,8 +296,8 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseFirstTrack)
 		EXPECT_TRUE(release1->getFirstTrack());
 		EXPECT_TRUE(release2->getFirstTrack());
 
-		EXPECT_EQ(release1->getFirstTrack().id(), track1A.getId());
-		EXPECT_EQ(release2->getFirstTrack().id(), track2B.getId());
+		EXPECT_EQ(release1->getFirstTrack()->getId(), track1A.getId());
+		EXPECT_EQ(release2->getFirstTrack()->getId(), track2B.getId());
 	}
 }
 
@@ -329,7 +329,7 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistSingleRelease)
 
 		EXPECT_EQ(artist->getReleaseCount(), 1);
 		ASSERT_EQ(artist->getReleases().size(), 1);
-		EXPECT_EQ(artist->getReleases().front().id(), release.getId());
+		EXPECT_EQ(artist->getReleases().front()->getId(), release.getId());
 
 		EXPECT_EQ(release->getTracks().size(), nbTracks);
 	}
@@ -353,13 +353,13 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtist)
 
 		auto releases {artist->getReleases()};
 		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front().id(), release.getId());
+		EXPECT_EQ(releases.front()->getId(), release.getId());
 
 		EXPECT_EQ(artist->getReleaseCount(), 1);
 
 		auto artists {release->getArtists()};
 		ASSERT_EQ(artists.size(), 1);
-		ASSERT_EQ(artists.front().id(), artist.getId());
+		ASSERT_EQ(artists.front()->getId(), artist.getId());
 	}
 }
 
@@ -409,7 +409,7 @@ TEST_F(DatabaseFixture, SingleStarredArtist)
 		bool hasMore {};
 		auto artists {Artist::getStarred(session, user.get(), {}, std::nullopt, Artist::SortMethod::BySortName, std::nullopt, hasMore)};
 		ASSERT_EQ(artists.size(), 1);
-		EXPECT_EQ(artists.front().id(), artist.getId());
+		EXPECT_EQ(artists.front()->getId(), artist.getId());
 		EXPECT_FALSE(hasMore);
 	}
 }
@@ -441,7 +441,7 @@ TEST_F(DatabaseFixture, SingleStarredRelease)
 		bool hasMore {};
 		auto releases {Release::getStarred(session, user.get(), {}, std::nullopt, hasMore)};
 		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front().id(), release.getId());
+		EXPECT_EQ(releases.front()->getId(), release.getId());
 		EXPECT_FALSE(hasMore);
 	}
 }
@@ -471,7 +471,7 @@ TEST_F(DatabaseFixture, SingleStarredTrack)
 		bool hasMore {};
 		auto tracks {Track::getStarred(session, user.get(), {}, std::nullopt, hasMore)};
 		ASSERT_EQ(tracks.size(), 1);
-		EXPECT_EQ(tracks.front().id(), track.getId());
+		EXPECT_EQ(tracks.front()->getId(), track.getId());
 		EXPECT_FALSE(hasMore);
 	}
 }
@@ -486,7 +486,7 @@ TEST_F(DatabaseFixture, SingleTrackList)
 
 		auto trackLists {TrackList::getAll(session, user.get(), TrackList::Type::Playlist)};
 		ASSERT_EQ(trackLists.size(), 1);
-		EXPECT_EQ(trackLists.front().id(), trackList.getId());
+		EXPECT_EQ(trackLists.front()->getId(), trackList.getId());
 	}
 }
 
@@ -536,8 +536,8 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackDateTime)
 		bool moreResults;
 		const auto tracks {trackList.get()->getTracksReverse({}, std::nullopt, moreResults)};
 		ASSERT_EQ(tracks.size(), 3);
-		EXPECT_EQ(tracks.front().id(), track3.getId());
-		EXPECT_EQ(tracks.back().id(), track2.getId());
+		EXPECT_EQ(tracks.front()->getId(), track3.getId());
+		EXPECT_EQ(tracks.back()->getId(), track2.getId());
 	}
 }
 
@@ -584,11 +584,11 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackRecentlyPlayed)
 		bool moreResults {};
 		const auto artists {trackList->getArtistsReverse({}, std::nullopt, std::nullopt, moreResults)};
 		ASSERT_EQ(artists.size(), 1);
-		EXPECT_EQ(artists.front().id(), artist1.getId());
+		EXPECT_EQ(artists.front()->getId(), artist1.getId());
 
 		const auto releases {trackList->getReleasesReverse({}, std::nullopt, moreResults)};
 		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front().id(), release1.getId());
+		EXPECT_EQ(releases.front()->getId(), release1.getId());
 
 		const auto tracks {trackList->getTracksReverse({}, std::nullopt, moreResults)};
 		EXPECT_EQ(tracks.size(), 1);
@@ -606,18 +606,18 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackRecentlyPlayed)
 		bool moreResults {};
 		const auto artists {trackList->getArtistsReverse({}, std::nullopt, std::nullopt, moreResults)};
 		ASSERT_EQ(artists.size(), 2);
-		EXPECT_EQ(artists[0].id(), artist2.getId());
-		EXPECT_EQ(artists[1].id(), artist1.getId());
+		EXPECT_EQ(artists[0]->getId(), artist2.getId());
+		EXPECT_EQ(artists[1]->getId(), artist1.getId());
 
 		const auto releases {trackList->getReleasesReverse({}, std::nullopt, moreResults)};
 		ASSERT_EQ(releases.size(), 2);
-		EXPECT_EQ(releases[0].id(), release2.getId());
-		EXPECT_EQ(releases[1].id(), release1.getId());
+		EXPECT_EQ(releases[0]->getId(), release2.getId());
+		EXPECT_EQ(releases[1]->getId(), release1.getId());
 
 		const auto tracks {trackList->getTracksReverse({}, std::nullopt, moreResults)};
 		ASSERT_EQ(tracks.size(), 2);
-		EXPECT_EQ(tracks[0].id(), track2.getId());
-		EXPECT_EQ(tracks[1].id(), track1.getId());
+		EXPECT_EQ(tracks[0]->getId(), track2.getId());
+		EXPECT_EQ(tracks[1]->getId(), track1.getId());
 	}
 
 	{
@@ -632,18 +632,18 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackRecentlyPlayed)
 		bool moreResults {};
 		const auto artists {trackList->getArtistsReverse({}, std::nullopt, std::nullopt, moreResults)};
 		ASSERT_EQ(artists.size(), 2);
-		EXPECT_EQ(artists[0].id(), artist1.getId());
-		EXPECT_EQ(artists[1].id(), artist2.getId());
+		EXPECT_EQ(artists[0]->getId(), artist1.getId());
+		EXPECT_EQ(artists[1]->getId(), artist2.getId());
 
 		const auto releases {trackList->getReleasesReverse({}, std::nullopt, moreResults)};
 		ASSERT_EQ(releases.size(), 2);
-		EXPECT_EQ(releases[0].id(), release1.getId());
-		EXPECT_EQ(releases[1].id(), release2.getId());
+		EXPECT_EQ(releases[0]->getId(), release1.getId());
+		EXPECT_EQ(releases[1]->getId(), release2.getId());
 
 		const auto tracks {trackList->getTracksReverse({}, std::nullopt, moreResults)};
 		ASSERT_EQ(tracks.size(), 2);
-		EXPECT_EQ(tracks[0].id(), track1.getId());
-		EXPECT_EQ(tracks[1].id(), track2.getId());
+		EXPECT_EQ(tracks[0]->getId(), track1.getId());
+		EXPECT_EQ(tracks[1]->getId(), track2.getId());
 	}
 }
 

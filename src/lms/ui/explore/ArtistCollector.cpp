@@ -31,7 +31,7 @@ namespace UserInterface
 {
 	using namespace Database;
 
-	std::vector<Wt::Dbo::ptr<Database::Artist>>
+	std::vector<Database::ObjectPtr<Database::Artist>>
 	ArtistCollector::get(std::optional<Database::Range> range, bool& moreResults)
 	{
 		range = getActualRange(range);

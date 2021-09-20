@@ -19,29 +19,45 @@
 
 #pragma once
 
-#include <optional>
-
 #include "database/Types.hpp"
+#include "utils/String.hpp"
 
 namespace API::Subsonic
 {
+	struct RootId {};
 
-struct Id
-{
-	enum class Type
-	{
-		Root,	// Where all artists artistless albums reside
-		Track,
-		Release,
-		Artist,
-		Playlist,
-	};
-
-	Type 			type;
-	Database::IdType	value {};
-};
-
-std::optional<Id>	IdFromString(std::string_view id);
-std::string		IdToString(const Id& id);
-
+	std::string			idToString(Database::ArtistId id);
+	std::string			idToString(Database::ReleaseId id);
+	std::string			idToString(Database::TrackId id);
+	std::string			idToString(Database::TrackListId id);
+	std::string			idToString(RootId);
 } // namespace API::Subsonic
+
+// Used to parse parameters
+namespace StringUtils
+{
+	template<>
+	std::optional<API::Subsonic::RootId>
+	readAs(std::string_view str);
+
+	template<>
+	std::optional<Database::ArtistId>
+	readAs(std::string_view str);
+
+	template<>
+	std::optional<Database::ReleaseId>
+	readAs(std::string_view str);
+
+	template<>
+	std::optional<Database::TrackId>
+	readAs(std::string_view str);
+
+	template<>
+	std::optional<Database::TrackListId>
+	readAs(std::string_view str);
+
+	template<>
+	std::optional<bool>
+	readAs(std::string_view str);
+}
+

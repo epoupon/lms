@@ -19,23 +19,22 @@
 
 #pragma once
 
-#include <unordered_set>
+#include <filesystem>
+#include <vector>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WTime.h>
 
-#include "utils/Path.hpp"
+#include "database/Types.hpp"
 
 namespace Database {
 
 class ClusterType;
 class Session;
 
-class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
+class ScanSettings : public Object<ScanSettings, ScanSettingsId>
 {
 	public:
-		using pointer = Wt::Dbo::ptr<ScanSettings>;
-
 		// Do not modify values (just add)
 		enum class UpdatePeriod {
 			Never = 0,
@@ -61,8 +60,8 @@ class ScanSettings : public Wt::Dbo::Dbo<ScanSettings>
 		std::filesystem::path	getMediaDirectory() const { return _mediaDirectory; }
 		Wt::WTime				getUpdateStartTime() const { return _startTime; }
 		UpdatePeriod			getUpdatePeriod() const { return _updatePeriod; }
-		std::vector<Wt::Dbo::ptr<ClusterType>> getClusterTypes() const;
-		std::unordered_set<std::filesystem::path> getAudioFileExtensions() const;
+		std::vector<ObjectPtr<ClusterType>> getClusterTypes() const;
+		std::vector<std::filesystem::path> getAudioFileExtensions() const;
 		RecommendationEngineType	getRecommendationEngineType() const { return _recommendationEngineType; }
 
 		// Setters

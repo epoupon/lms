@@ -26,64 +26,127 @@
 
 namespace API::Subsonic
 {
-
-std::optional<Id>
-IdFromString(const std::string_view id)
-{
-	if (id == "root")
-		return Id {Id::Type::Root};
-
-	std::vector<std::string_view> values {StringUtils::splitString(id, "-")};
-	if (values.size() != 2)
-		return std::nullopt;
-
-	Id res;
-
-	const std::string type {std::move(values[0])};
-	if (type == "ar")
-		res.type = Id::Type::Artist;
-	else if (type == "al")
-		res.type = Id::Type::Release;
-	else if (type == "tr")
-		res.type = Id::Type::Track;
-	else if (type == "pl")
-		res.type = Id::Type::Playlist;
-	else
-		return std::nullopt;
-
-	auto optId {StringUtils::readAs<Database::IdType>(values[1])};
-	if (!optId)
-		return std::nullopt;
-
-	res.value = *optId;
-
-	return res;
-}
-
-std::string
-IdToString(const Id& id)
-{
-	std::string res;
-
-	switch (id.type)
+	std::string
+	idToString(Database::ArtistId id)
 	{
-		case Id::Type::Root:
-			return "root";
-		case Id::Type::Artist:
-			res = "ar-";
-			break;
-		case Id::Type::Release:
-			res = "al-";
-			break;
-		case Id::Type::Track:
-			res = "tr-";
-			break;
-		case Id::Type::Playlist:
-			res = "pl-";
-			break;
+		return "ar-" + id.toString();
 	}
 
-	return res + std::to_string(id.value);
+	std::string
+	idToString(Database::ReleaseId id)
+	{
+		return "al-" + id.toString();
+	}
+
+	std::string
+	idToString(RootId)
+	{
+		return "root";
+	}
+
+	std::string
+	idToString(Database::TrackId id)
+	{
+		return "tr-" + id.toString();
+	}
+
+	std::string
+	idToString(Database::TrackListId id)
+	{
+		return "pl-" + id.toString();
+	}
+} // namespace API::Subsonic
+
+namespace StringUtils
+{
+	template<>
+	std::optional<Database::ArtistId>
+	readAs(std::string_view str)
+	{
+		std::vector<std::string_view> values {StringUtils::splitString(str, "-")};
+		if (values.size() != 2)
+			return std::nullopt;
+
+		if (values[0] != "ar")
+			return std::nullopt;
+
+		if (const auto value {StringUtils::readAs<Database::ArtistId::ValueType>(values[1])})
+			return Database::ArtistId {*value};
+
+		return std::nullopt;
+	}
+
+	template<>
+	std::optional<Database::ReleaseId>
+	readAs(std::string_view str)
+	{
+		std::vector<std::string_view> values {StringUtils::splitString(str, "-")};
+		if (values.size() != 2)
+			return std::nullopt;
+
+		if (values[0] != "al")
+			return std::nullopt;
+
+		if (const auto value {StringUtils::readAs<Database::ReleaseId::ValueType>(values[1])})
+			return Database::ReleaseId {*value};
+
+		return std::nullopt;
+	}
+
+	template<>
+	std::optional<API::Subsonic::RootId>
+	readAs(std::string_view str)
+	{
+		if (str == "root")
+			return API::Subsonic::RootId {};
+
+		return std::nullopt;
+	}
+
+	template<>
+	std::optional<Database::TrackId>
+	readAs(std::string_view str)
+	{
+		std::vector<std::string_view> values {StringUtils::splitString(str, "-")};
+		if (values.size() != 2)
+			return std::nullopt;
+
+		if (values[0] != "tr")
+			return std::nullopt;
+
+		if (const auto value {StringUtils::readAs<Database::TrackId::ValueType>(values[1])})
+			return Database::TrackId {*value};
+
+		return std::nullopt;
+	}
+
+	template<>
+	std::optional<Database::TrackListId>
+	readAs(std::string_view str)
+	{
+		std::vector<std::string_view> values {StringUtils::splitString(str, "-")};
+		if (values.size() != 2)
+			return std::nullopt;
+
+		if (values[0] != "pl")
+			return std::nullopt;
+
+		if (const auto value {StringUtils::readAs<Database::TrackListId::ValueType>(values[1])})
+			return Database::TrackListId {*value};
+
+		return std::nullopt;
+	}
+
+	template<>
+	std::optional<bool>
+	readAs(std::string_view str)
+	{
+		if (str == "true")
+			return true;
+		else if (str == "false")
+			return false;
+
+		return {};
+	}
 }
 
-} // namespace API::Subsonic

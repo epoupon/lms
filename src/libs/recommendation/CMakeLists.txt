@@ -1,8 +1,8 @@
 
 add_library(lmsrecommendation SHARED
 	impl/clusters/ClustersClassifier.cpp
-	impl/features/FeaturesClassifierCache.cpp
-	impl/features/FeaturesClassifier.cpp
+	impl/features/FeaturesEngineCache.cpp
+	impl/features/FeaturesEngine.cpp
 	impl/features/FeaturesDefs.cpp
 	impl/Engine.cpp
 	)

@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "FeaturesClassifierCache.hpp"
+#include "FeaturesEngineCache.hpp"
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -90,7 +90,7 @@ networkToCacheFile(const SOM::Network& network, std::filesystem::path path)
 }
 
 std::optional<SOM::Network>
-FeaturesClassifierCache::createNetworkFromCacheFile(const std::filesystem::path& path)
+FeaturesEngineCache::createNetworkFromCacheFile(const std::filesystem::path& path)
 {
 	if (!std::filesystem::exists(path))
 		return std::nullopt;
@@ -143,19 +143,19 @@ FeaturesClassifierCache::createNetworkFromCacheFile(const std::filesystem::path&
 }
 
 bool
-FeaturesClassifierCache::objectPositionToCacheFile(const ObjectPositions& objectsPosition, const std::filesystem::path& path)
+FeaturesEngineCache::objectPositionToCacheFile(const TrackPositions& trackPositions, const std::filesystem::path& path)
 {
 	try
 	{
 		boost::property_tree::ptree root;
 
-		for (const auto& objectPosition : objectsPosition)
+		for (const auto& [id, positions] : trackPositions)
 		{
 			boost::property_tree::ptree node;
 
-			node.put("id", objectPosition.first);
+			node.put("id", id.getValue());
 
-			for (const auto& position : objectPosition.second)
+			for (const SOM::Position& position : positions)
 			{
 				boost::property_tree::ptree positionNode;
 				positionNode.put("x", position.x);
@@ -177,8 +177,8 @@ FeaturesClassifierCache::objectPositionToCacheFile(const ObjectPositions& object
 	}
 }
 
-std::optional<FeaturesClassifierCache::ObjectPositions>
-FeaturesClassifierCache::createObjectPositionsFromCacheFile(const std::filesystem::path& path)
+std::optional<FeaturesEngineCache::TrackPositions>
+FeaturesEngineCache::createObjectPositionsFromCacheFile(const std::filesystem::path& path)
 {
 	try
 	{
@@ -188,17 +188,17 @@ FeaturesClassifierCache::createObjectPositionsFromCacheFile(const std::filesyste
 
 		boost::property_tree::read_xml(path.string(), root);
 
-		ObjectPositions res;
+		TrackPositions res;
 
 		for (const auto& object : root.get_child("objects"))
 		{
-			auto id = object.second.get<Database::IdType>("id");
+			const Database::TrackId id {object.second.get<Database::IdType::ValueType>("id")};
 			for (const auto& position : object.second.get_child("position"))
 			{
 				auto x = position.second.get<SOM::Coordinate>("x");
 				auto y = position.second.get<SOM::Coordinate>("y");
 
-				res[id].insert({x, y});
+				res[id].push_back({x, y});
 			}
 		}
 
@@ -214,14 +214,14 @@ FeaturesClassifierCache::createObjectPositionsFromCacheFile(const std::filesyste
 }
 
 void
-FeaturesClassifierCache::invalidate()
+FeaturesEngineCache::invalidate()
 {
 	std::filesystem::remove(getCacheNetworkFilePath());
 	std::filesystem::remove(getCacheTrackPositionsFilePath());
 }
 
-std::optional<FeaturesClassifierCache>
-FeaturesClassifierCache::read()
+std::optional<FeaturesEngineCache>
+FeaturesEngineCache::read()
 {
 	auto network{createNetworkFromCacheFile(getCacheNetworkFilePath())};
 	if (!network)
@@ -231,11 +231,11 @@ FeaturesClassifierCache::read()
 	if (!trackPositions)
 		return std::nullopt;
 
-	return FeaturesClassifierCache {std::move(*network), std::move(*trackPositions)};
+	return FeaturesEngineCache {std::move(*network), std::move(*trackPositions)};
 }
 
 void
-FeaturesClassifierCache::write() const
+FeaturesEngineCache::write() const
 {
 	std::filesystem::create_directories(Service<IConfig>::get()->getPath("working-dir") / "cache" / "features");
 
@@ -246,7 +246,7 @@ FeaturesClassifierCache::write() const
 	}
 }
 
-FeaturesClassifierCache::FeaturesClassifierCache(SOM::Network network, ObjectPositions trackPositions)
+FeaturesEngineCache::FeaturesEngineCache(SOM::Network network, TrackPositions trackPositions)
 : _network {std::move(network)},
 _trackPositions {std::move(trackPositions)}
 {

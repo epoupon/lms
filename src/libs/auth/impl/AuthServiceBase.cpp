@@ -25,7 +25,7 @@
 
 namespace Auth
 {
-	Database::IdType
+	Database::UserId
 	AuthServiceBase::getOrCreateUser(Database::Session& session, std::string_view loginName)
 	{
 		auto transaction {session.createUniqueTransaction()};
@@ -41,11 +41,11 @@ namespace Auth
 			user.modify()->setType(type);
 		}
 
-		return user.id();
+		return user->getId();
 	}
 
 	void
-	AuthServiceBase::onUserAuthenticated(Database::Session& session, Database::IdType userId)
+	AuthServiceBase::onUserAuthenticated(Database::Session& session, Database::UserId userId)
 	{
 		auto transaction {session.createUniqueTransaction()};
 		Database::User::pointer user {Database::User::getById(session, userId)};

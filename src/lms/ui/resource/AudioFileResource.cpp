@@ -40,14 +40,14 @@ AudioFileResource:: ~AudioFileResource()
 }
 
 std::string
-AudioFileResource::getUrl(Database::IdType trackId) const
+AudioFileResource::getUrl(Database::TrackId trackId) const
 {
-	return url()+ "&trackid=" + std::to_string(trackId);
+	return url()+ "&trackid=" + trackId.toString();
 }
 
 static
 std::optional<std::filesystem::path>
-getTrackPathFromTrackId(Database::IdType trackId)
+getTrackPathFromTrackId(Database::TrackId trackId)
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -72,7 +72,7 @@ getTrackPathFromURLArgs(const Wt::Http::Request& request)
 		return std::nullopt;
 	}
 
-	const auto trackId {StringUtils::readAs<Database::IdType>(*trackIdParameter)};
+	const std::optional<Database::TrackId> trackId {StringUtils::readAs<Database::TrackId::ValueType>(*trackIdParameter)};
 	if (!trackId)
 	{
 		LOG(ERROR) << "Bad trackid URL parameter!";

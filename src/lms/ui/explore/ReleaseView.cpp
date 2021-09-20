@@ -25,6 +25,7 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
+#include "database/Cluster.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
@@ -68,7 +69,7 @@ Release::Release(Filters* filters)
 }
 
 static
-std::optional<IdType>
+std::optional<ReleaseId>
 extractReleaseIdFromInternalPath()
 {
 	if (wApp->internalPathMatches("/release/mbid/"))
@@ -78,13 +79,13 @@ extractReleaseIdFromInternalPath()
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 			if (const Database::Release::pointer release {Database::Release::getByMBID(LmsApp->getDbSession(), *mbid)})
-				return release.id();
+				return release->getId();
 		}
 
 		return std::nullopt;
 	}
 
-	return StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/release/"));
+	return StringUtils::readAs<Database::ReleaseId::ValueType>(wApp->internalPathNextPart("/release/"));
 }
 
 
@@ -131,7 +132,7 @@ Release::refreshView()
 	refreshReleaseArtists(release);
 
 	{
-		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getCoverResource()->getReleaseUrl(release.id(), CoverResource::Size::Large)))};
+		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large)))};
 		cover->setStyleClass("Lms-cover-large");
 		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 	}
@@ -145,7 +146,7 @@ Release::refreshView()
 		{
 			for (const auto& cluster : clusters)
 			{
-				auto clusterId {cluster.id()};
+				const ClusterId clusterId {cluster->getId()};
 				auto entry {clusterContainers->addWidget(LmsApp->createCluster(cluster))};
 				entry->clicked().connect([=]
 				{
@@ -205,7 +206,7 @@ Release::refreshView()
 
 	for (const auto& track : tracks)
 	{
-		auto trackId {track.id()};
+		auto trackId {track->getId()};
 
 		const auto discNumber {track->getDiscNumber()};
 
@@ -251,7 +252,7 @@ Release::refreshView()
 
 		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
 
-		LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=] (Database::IdType loadedTrackId)
+		LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=] (Database::TrackId loadedTrackId)
 		{
 			entry->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
 		});
@@ -269,7 +270,7 @@ Release::refreshView()
 void
 Release::refreshReleaseArtists(const Database::Release::pointer& release)
 {
-	std::vector<Wt::Dbo::ptr<Database::Artist>> artists;
+	std::vector<Database::ObjectPtr<Database::Artist>> artists;
 
 	artists = release->getReleaseArtists();
 	if (artists.empty())
@@ -339,7 +340,7 @@ Release::refreshLinks(const Database::Release::pointer& release)
 }
 
 void
-Release::refreshSimilarReleases(const std::unordered_set<Database::IdType>& similarReleasesId)
+Release::refreshSimilarReleases(const std::vector<Database::ReleaseId>& similarReleasesId)
 {
 	if (similarReleasesId.empty())
 		return;
@@ -347,9 +348,9 @@ Release::refreshSimilarReleases(const std::unordered_set<Database::IdType>& simi
 	setCondition("if-has-similar-releases", true);
 	auto* similarReleasesContainer {bindNew<Wt::WContainerWidget>("similar-releases")};
 
-	for (Database::IdType id : similarReleasesId)
+	for (const Database::ReleaseId id : similarReleasesId)
 	{
-		Database::Release::pointer similarRelease{Database::Release::getById(LmsApp->getDbSession(), id)};
+		const Database::Release::pointer similarRelease{Database::Release::getById(LmsApp->getDbSession(), id)};
 		if (!similarRelease)
 			continue;
 

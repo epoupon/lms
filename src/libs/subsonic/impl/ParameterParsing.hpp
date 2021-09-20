@@ -20,8 +20,8 @@
 
 #include <Wt/Http/Request.h>
 
+#include "database/Types.hpp"
 #include "utils/String.hpp"
-#include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
 
 namespace API::Subsonic
@@ -82,18 +82,5 @@ namespace API::Subsonic
 
 		return *res;
 	}
-
-
-}
-
-namespace StringUtils
-{
-	template<>
-	std::optional<API::Subsonic::Id>
-	readAs(std::string_view str);
-
-	template<>
-	std::optional<bool>
-	readAs(std::string_view str);
 }
 
