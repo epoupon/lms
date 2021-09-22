@@ -1,4 +1,4 @@
-FROM	alpine:3.13 AS build
+FROM	alpine:3.14 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -129,7 +129,7 @@ RUN \
 	rm -rf /tmp/fakeroot/share/man
 
 ## Release Stage
-FROM		alpine:3.13 AS release
+FROM		alpine:3.14 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 LABEL		version=${LMS_VERSION}
 
