@@ -3,6 +3,7 @@ add_executable(test-database
 	Artist.cpp
 	Cluster.cpp
 	DatabaseTest.cpp
+	Release.cpp
 	Track.cpp
 	)
 

@@ -25,7 +25,7 @@
 #include "av/IAudioFile.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
-
+#include "Utils.hpp"
 
 namespace MetaData
 {
@@ -186,12 +186,12 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 					|| tag == "YEAR"
 					|| tag == "WM/Year")
 			{
-				track.year = StringUtils::readAs<int>(value);
+				track.date = Utils::parseDate(value);
 			}
 			else if (tag == "TDOR"	// Original release time (ID3v2 2.4)
 					|| tag == "TORY")	// Original release year
 			{
-				track.originalYear = StringUtils::readAs<int>(value);
+				track.originalDate = Utils::parseDate(value);
 			}
 			else if (tag == "ACOUSTID ID")
 			{

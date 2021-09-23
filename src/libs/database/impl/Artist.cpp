@@ -419,7 +419,7 @@ Artist::getReleases(const std::vector<ClusterId>& clusterIds) const
 	if (!clusterIds.empty())
 		oss << " GROUP BY t.id HAVING COUNT(DISTINCT c.id) = " << clusterIds.size();
 
-	oss << " ORDER BY t.year DESC, r.name COLLATE NOCASE";
+	oss << " ORDER BY t.date DESC, r.name COLLATE NOCASE";
 
 	auto query {session()->query<Wt::Dbo::ptr<Release>>(oss.str())};
 
@@ -447,7 +447,7 @@ Artist::getTracks(std::optional<TrackArtistLinkType> linkType) const
 
 	auto query {session()->query<Wt::Dbo::ptr<Track>>("SELECT DISTINCT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id")
 		.where("a.id = ?").bind(getId())
-		.orderBy("t.year DESC,t.release_id,t.disc_number,t.track_number")};
+		.orderBy("t.date DESC,t.release_id,t.disc_number,t.track_number")};
 
 	if (linkType)
 		query.where("t_a_l.type = ?").bind(*linkType);

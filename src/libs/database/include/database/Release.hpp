@@ -81,9 +81,9 @@ class Release : public Object<Release, ReleaseId>
 		static pointer	create(Session& session, const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Utility functions
-		std::optional<int> getReleaseYear(bool originalDate = false) const; // 0 if unknown or various
-		std::optional<std::string> getCopyright() const;
-		std::optional<std::string> getCopyrightURL() const;
+		std::optional<int>			getReleaseYear(bool originalDate = false) const;
+		std::optional<std::string>	getCopyright() const;
+		std::optional<std::string>	getCopyrightURL() const;
 
 		// Accessors
 		const std::string&		getName() const		{ return _name; }

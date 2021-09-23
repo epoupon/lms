@@ -35,7 +35,7 @@
 
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
-
+#include "Utils.hpp"
 
 namespace MetaData
 {
@@ -214,18 +214,26 @@ TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::Str
 		}
 	}
 	else if (tag == "DATE")
-		track.year = StringUtils::readAs<int>(value);
-	else if (tag == "ORIGINALDATE" && !track.originalYear)
 	{
-		// Lower priority than ORIGINALYEAR
-		track.originalYear = StringUtils::readAs<int>(value);
+		// Higher priority than YEAR
+		if (const Wt::WDate date {Utils::parseDate(value)}; date.isValid())
+			track.date = date;
 	}
-	else if (tag == "ORIGINALYEAR")
+	else if (tag == "YEAR" && !track.date.isValid())
 	{
-		// Higher priority than ORIGINALDATE
-		auto originalYear = StringUtils::readAs<int>(value);
-		if (originalYear)
-			track.originalYear = originalYear;
+		// lower priority than DATE
+		track.date = Utils::parseDate(value);
+	}
+	else if (tag == "ORIGINALDATE")
+	{
+		// Higher priority than ORIGINALYEAR
+		if (const Wt::WDate date {Utils::parseDate(value)}; date.isValid())
+			track.originalDate = date;
+	}
+	else if (tag == "ORIGINALYEAR" && !track.originalDate.isValid())
+	{
+		// Lower priority than ORIGINALDATE
+		track.originalDate = Utils::parseDate(value);
 	}
 	else if (tag == "METADATA_BLOCK_PICTURE")
 		track.hasCover = true;
@@ -260,7 +268,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 {
 	TagLib::FileRef f {p.string().c_str(),
 		true, // read audio properties
-		TagLib::AudioProperties::Fast};
+		TagLib::AudioProperties::Fast}; // TODO parametrize this
 
 	if (f.isNull())
 	{

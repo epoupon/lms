@@ -102,8 +102,8 @@ class Track : public Object<Track, TrackId>
 		void setDuration(std::chrono::milliseconds duration)		{ _duration = duration; }
 		void setLastWriteTime(Wt::WDateTime time)			{ _fileLastWrite = time; }
 		void setAddedTime(Wt::WDateTime time)				{ _fileAdded = time; }
-		void setYear(int year)						{ _year = year; }
-		void setOriginalYear(int year)					{ _originalYear = year; }
+		void setDate(const Wt::WDate& date)							{ _date = date; }
+		void setOriginalDate(const Wt::WDate& date)					{ _originalDate = date; }
 		void setHasCover(bool hasCover)					{ _hasCover = hasCover; }
 		void setTrackMBID(const std::optional<UUID>& MBID)			{ _trackMBID = MBID ? MBID->getAsString() : ""; }
 		void setRecordingMBID(const std::optional<UUID>& MBID)		{ _recordingMBID = MBID ? MBID->getAsString() : ""; }
@@ -118,26 +118,26 @@ class Track : public Object<Track, TrackId>
 		void setFeatures(const ObjectPtr<TrackFeatures>& features);
 
 		std::size_t 				getScanVersion() const		{ return _scanVersion; }
-		std::optional<std::size_t>		getTrackNumber() const;
-		std::optional<std::size_t>		getTotalTrack() const;
-		std::optional<std::size_t>		getDiscNumber() const;
-		const std::string&				getDiscSubtitle() const { return _discSubtitle; }
-		std::optional<std::size_t>		getTotalDisc() const;
+		std::optional<std::size_t>	getTrackNumber() const;
+		std::optional<std::size_t>	getTotalTrack() const;
+		std::optional<std::size_t>	getDiscNumber() const;
+		const std::string&			getDiscSubtitle() const { return _discSubtitle; }
+		std::optional<std::size_t>	getTotalDisc() const;
 		std::string 				getName() const			{ return _name; }
-		std::filesystem::path			getPath() const			{ return _filePath; }
-		std::chrono::milliseconds		getDuration() const		{ return _duration; }
-		const Wt::WDateTime&			getLastWritten() const	{ return _fileLastWrite; }
+		std::filesystem::path		getPath() const			{ return _filePath; }
+		std::chrono::milliseconds	getDuration() const		{ return _duration; }
+		const Wt::WDateTime&		getLastWritten() const	{ return _fileLastWrite; }
 		std::optional<int>			getYear() const;
 		std::optional<int>			getOriginalYear() const;
 		Wt::WDateTime				getLastWriteTime() const	{ return _fileLastWrite; }
 		Wt::WDateTime				getAddedTime() const		{ return _fileAdded; }
-		bool					hasCover() const		{ return _hasCover; }
-		std::optional<UUID>				getTrackMBID() const			{ return UUID::fromString(_trackMBID); }
-		std::optional<UUID>				getRecordingMBID() const			{ return UUID::fromString(_recordingMBID); }
-		std::optional<std::string>		getCopyright() const;
-		std::optional<std::string>		getCopyrightURL() const;
-		std::optional<float>			getTrackReplayGain() const	{ return _trackReplayGain; }
-		std::optional<float>			getReleaseReplayGain() const	{ return _releaseReplayGain; }
+		bool						hasCover() const		{ return _hasCover; }
+		std::optional<UUID>			getTrackMBID() const			{ return UUID::fromString(_trackMBID); }
+		std::optional<UUID>			getRecordingMBID() const			{ return UUID::fromString(_recordingMBID); }
+		std::optional<std::string>	getCopyright() const;
+		std::optional<std::string>	getCopyrightURL() const;
+		std::optional<float>		getTrackReplayGain() const	{ return _trackReplayGain; }
+		std::optional<float>		getReleaseReplayGain() const	{ return _releaseReplayGain; }
 
 		// no artistLinkTypes means get all
 		std::vector<ObjectPtr<Artist>>	getArtists(EnumSet<TrackArtistLinkType> artistLinkTypes) const;
@@ -160,10 +160,10 @@ class Track : public Object<Track, TrackId>
 				Wt::Dbo::field(a, _discSubtitle,	"disc_subtitle");
 				Wt::Dbo::field(a, _totalTrack,		"total_track");
 				Wt::Dbo::field(a, _totalDisc,		"total_disc");
-				Wt::Dbo::field(a, _name,		"name");
+				Wt::Dbo::field(a, _name,			"name");
 				Wt::Dbo::field(a, _duration,		"duration");
-				Wt::Dbo::field(a, _year,		"year");
-				Wt::Dbo::field(a, _originalYear,	"original_year");
+				Wt::Dbo::field(a, _date,			"date");
+				Wt::Dbo::field(a, _originalDate,	"original_date");
 				Wt::Dbo::field(a, _filePath,		"file_path");
 				Wt::Dbo::field(a, _fileLastWrite,	"file_last_write");
 				Wt::Dbo::field(a, _fileAdded,		"file_added");
@@ -198,8 +198,8 @@ class Track : public Object<Track, TrackId>
 		std::string				_artistName;
 		std::string				_releaseName;
 		std::chrono::duration<int, std::milli>	_duration {};
-		int						_year {};
-		int						_originalYear {};
+		Wt::WDate				_date;
+		Wt::WDate				_originalDate;
 		std::string				_filePath;
 		Wt::WDateTime			_fileLastWrite;
 		Wt::WDateTime			_fileAdded;

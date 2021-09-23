@@ -483,13 +483,13 @@ Track::getTotalDisc() const
 std::optional<int>
 Track::getYear() const
 {
-	return (_year > 0) ? std::make_optional<int>(_year) : std::nullopt;
+	return (_date.isValid() ? std::make_optional<int>(_date.year()) : std::nullopt);
 }
 
 std::optional<int>
 Track::getOriginalYear() const
 {
-	return (_originalYear > 0) ? std::make_optional<int>(_originalYear) : std::nullopt;
+	return (_originalDate.isValid() ? std::make_optional<int>(_originalDate.year()) : std::nullopt);
 }
 
 std::optional<std::string>

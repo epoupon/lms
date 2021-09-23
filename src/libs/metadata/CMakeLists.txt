@@ -1,7 +1,10 @@
 
+add_subdirectory(test)
+
 add_library(lmsmetadata SHARED
 	impl/AvFormatParser.cpp
 	impl/TagLibParser.cpp
+	impl/Utils.cpp
 	)
 
 target_include_directories(lmsmetadata INTERFACE

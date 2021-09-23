@@ -817,12 +817,12 @@ Scanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanSt
 	track.modify()->setTotalDisc(trackInfo->totalDisc);
 	if (!trackInfo->discSubtitle.empty())
 		track.modify()->setDiscSubtitle(trackInfo->discSubtitle);
-	track.modify()->setYear(trackInfo->year ? *trackInfo->year : 0);
-	track.modify()->setOriginalYear(trackInfo->originalYear ? *trackInfo->originalYear : 0);
+	track.modify()->setDate(trackInfo->date);
+	track.modify()->setOriginalDate(trackInfo->originalDate);
 
 	// If a file has an OriginalYear but no Year, set it to ease filtering
-	if (!trackInfo->year && trackInfo->originalYear)
-		track.modify()->setYear(*trackInfo->originalYear);
+	if (!trackInfo->date.isValid() && trackInfo->originalDate.isValid())
+		track.modify()->setDate(trackInfo->originalDate);
 
 	track.modify()->setRecordingMBID(trackInfo->recordingMBID);
 	track.modify()->setTrackMBID(trackInfo->trackMBID);

@@ -87,3 +87,28 @@ TEST_F(DatabaseFixture, MultipleTracksSearchByFilter)
 	}
 }
 
+TEST_F(DatabaseFixture, SingleTrackDate)
+{
+	ScopedTrack track {session, "MyTrack"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(track->getYear(), std::nullopt);
+		EXPECT_EQ(track->getOriginalYear(), std::nullopt);
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+		track.get().modify()->setDate(Wt::WDate {1995, 5, 5});
+		track.get().modify()->setOriginalDate(Wt::WDate {1994, 2, 2});
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(track->getYear(), 1995);
+		EXPECT_EQ(track->getOriginalYear(), 1994);
+	}
+}
+
+
+

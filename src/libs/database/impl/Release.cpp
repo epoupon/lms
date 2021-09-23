@@ -249,9 +249,9 @@ Release::getByYear(Session& session, int yearFrom, int yearTo, std::optional<Ran
 {
 	auto res {session.getDboSession().query<Wt::Dbo::ptr<Release>>
 		("SELECT DISTINCT r from release r INNER JOIN track t ON r.id = t.release_id")
-		.where("t.year >= ?").bind(yearFrom)
-		.where("t.year <= ?").bind(yearTo)
-		.orderBy("t.year, r.name COLLATE NOCASE")
+		.where("t.date >= ?").bind(Wt::WDate {yearFrom, 1, 1})
+		.where("t.date <= ?").bind(Wt::WDate {yearTo, 12, 31})
+		.orderBy("t.date, r.name COLLATE NOCASE")
 		.offset(range ? static_cast<int>(range->offset) : -1)
 		.limit(range ? static_cast<int>(range->limit) : -1)
 		.resultList()};
@@ -383,19 +383,20 @@ Release::getReleaseYear(bool original) const
 {
 	assert(session());
 
-	const char* field {original ? "original_year" : "year"};
+	const char* field {original ? "original_date" : "date"};
 
-	Wt::Dbo::collection<int> dates = session()->query<int>(
+	auto dates {session()->query<Wt::WDate>(
 			std::string {"SELECT "} + "t." + field + " FROM track t INNER JOIN release r ON r.id = t.release_id")
 		.where("r.id = ?")
 		.groupBy(field)
-		.bind(getId());
+		.bind(getId())
+		.resultList()};
 
 	// various dates => no date
 	if (dates.empty() || dates.size() > 1)
 		return std::nullopt;
 
-	auto date {dates.front()};
+	auto date {dates.front().year()};
 
 	if (date > 0)
 		return date;
