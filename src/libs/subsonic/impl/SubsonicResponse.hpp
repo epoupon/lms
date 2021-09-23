@@ -178,17 +178,6 @@ class BadParameterGenericError : public GenericError
 		const std::string _parameterName;
 };
 
-class BadParameterFormatGenericError : public GenericError
-{
-	public:
-		BadParameterFormatGenericError(const std::string& parameterName) : _parameterName {parameterName} {}
-
-	private:
-		std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad format"; }
-
-		const std::string _parameterName;
-};
-
 class Response
 {
 	public:

@@ -40,10 +40,8 @@ namespace API::Subsonic
 		for (const std::string& param : it->second)
 		{
 			auto value {StringUtils::readAs<T>(param)};
-			if (!value)
-				throw BadParameterFormatGenericError {paramName};
-
-			res.emplace_back(std::move(*value));
+			if (value)
+				res.emplace_back(std::move(*value));
 		}
 
 		return res;
