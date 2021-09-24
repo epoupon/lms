@@ -50,7 +50,8 @@ Config::Config(const std::filesystem::path& p)
 std::string_view
 Config::getString(std::string_view setting, std::string_view def)
 {
-	try {
+	try
+	{
 		return static_cast<const char*>(_config.lookup(std::string {setting}));
 	}
 	catch (libconfig::ConfigException&)
@@ -59,10 +60,30 @@ Config::getString(std::string_view setting, std::string_view def)
 	}
 }
 
+void
+Config::visitStrings(std::string_view setting, std::function<void(std::string_view)> _func, std::initializer_list<std::string_view> defs)
+{
+	try
+	{
+		const libconfig::Setting& values {_config.lookup(std::string {setting})};
+		for (int i {}; i < values.getLength(); ++i)
+			_func(static_cast<const char*>(values[i]));
+	}
+	catch (const libconfig::SettingNotFoundException&)
+	{
+		for (std::string_view def : defs)
+			_func(def);
+	}
+	catch (libconfig::ConfigException&)
+	{
+	}
+}
+
 std::filesystem::path
 Config::getPath(std::string_view setting, const std::filesystem::path& path)
 {
-	try {
+	try
+	{
 		const char* res {_config.lookup(std::string {setting})};
 		return std::filesystem::path {std::string(res)};
 	}
@@ -75,7 +96,8 @@ Config::getPath(std::string_view setting, const std::filesystem::path& path)
 unsigned long
 Config::getULong(std::string_view setting, unsigned long def)
 {
-	try {
+	try
+	{
 		return static_cast<unsigned int>(_config.lookup(std::string {setting}));
 	}
 	catch (libconfig::ConfigException&)
@@ -87,7 +109,8 @@ Config::getULong(std::string_view setting, unsigned long def)
 long
 Config::getLong(std::string_view setting, long def)
 {
-	try {
+	try
+	{
 		return _config.lookup(std::string {setting});
 	}
 	catch (libconfig::ConfigException&)
@@ -99,7 +122,8 @@ Config::getLong(std::string_view setting, long def)
 bool
 Config::getBool(std::string_view setting, bool def)
 {
-	try {
+	try
+	{
 		return _config.lookup(std::string {setting});
 	}
 	catch (libconfig::ConfigException&)
@@ -107,5 +131,4 @@ Config::getBool(std::string_view setting, bool def)
 		return def;
 	}
 }
-
 

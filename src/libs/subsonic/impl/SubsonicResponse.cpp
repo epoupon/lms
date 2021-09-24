@@ -29,6 +29,7 @@
 
 #include "utils/Exception.hpp"
 #include "utils/String.hpp"
+#include "ProtocolVersion.hpp"
 
 namespace API::Subsonic
 {
@@ -102,26 +103,32 @@ Response::Node::createArrayChild(const std::string& key)
 	return _childrenArrays[key].back();
 }
 
+void
+Response::Node::setVersionAttribute(ProtocolVersion protocolVersion)
+{
+	setAttribute("version", std::to_string(protocolVersion.major) + "." + std::to_string(protocolVersion.minor) + "." + std::to_string(protocolVersion.patch));
+}
+
 Response
-Response::createOkResponse(const RequestContext& context)
+Response::createOkResponse(ProtocolVersion protocolVersion)
 {
 	Response response;
 	Node& responseNode {response._root.createChild("subsonic-response")};
 
 	responseNode.setAttribute("status", "ok");
-	responseNode.setAttribute("version", std::string {QUOTEME(API_VERSION_MAJOR) "."} + std::to_string(getAPIMinorVersion(context.clientName)) + ".0");
+	responseNode.setVersionAttribute(protocolVersion);
 
 	return response;
 }
 
 Response
-Response::createFailedResponse(std::string_view clientName, const Error& error)
+Response::createFailedResponse(ProtocolVersion protocolVersion, const Error& error)
 {
 	Response response;
 	Node& responseNode {response._root.createChild("subsonic-response")};
 
 	responseNode.setAttribute("status", "failed");
-	responseNode.setAttribute("version", std::string {QUOTEME(API_VERSION_MAJOR) "."} + std::to_string(getAPIMinorVersion(clientName)) + ".0");
+	responseNode.setVersionAttribute(protocolVersion);
 
 	Node& errorNode {responseNode.createChild("error")};
 	errorNode.setAttribute("code", std::to_string(static_cast<int>(error.getCode())));
@@ -212,18 +219,6 @@ Response::writeXML(std::ostream& os)
 
 	boost::property_tree::ptree root {nodeToPropertyTree(_root)};
 	boost::property_tree::write_xml(os, root);
-}
-
-unsigned
-Response::getAPIMinorVersion(std::string_view clientName)
-{
-	// Some clients do not rely on version to enable the clear text password auth scheme
-	if (clientName == "Audinaut")
-		return 16;
-	else if (clientName == "Sublime Music")
-		return 16;
-	else
-		return 12;
 }
 
 void

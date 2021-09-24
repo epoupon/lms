@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -16,18 +16,19 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
-#include <memory>
-
-#include <Wt/WResource.h>
-
-namespace Database
-{
-	class Db;
-}
+#include <string>
+#include "ProtocolVersion.hpp"
 
 namespace API::Subsonic
 {
-	std::unique_ptr<Wt::WResource> createSubsonicResource(Database::Db& db);
-} // namespace
+	struct ClientInfo
+	{
+		std::string name;
+		std::string user;
+		std::string password;
+		ProtocolVersion version;
+	};
+}

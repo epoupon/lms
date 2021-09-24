@@ -48,13 +48,13 @@ __Notes on the self-organizing map__:
 * to enable the audio similarity source, you have to enable it first in the administration panel.
 
 ## Subsonic API
-The API version implemented is 1.12.0 and has been tested on _Android_ using the official application, _Ultrasonic_ and _DSub_.
+The API version implemented is 1.16.0 and has been tested on _Android_ using _Subsonic Player_, _Ultrasonic_ and _DSub_.
 
-Since _LMS_ uses metadata tags to organize music, a compatibility mode is used to navigate through the collection using the directory browsing commands.
+Since _LMS_ uses metadata tags to organize music, a compatibility mode is used to navigate through the collection when using the directory browsing commands.
 
 The Subsonic API is enabled by default.
 
-__Note__: since _LMS_ may store hashed and salted passwords or may forward authentication requests to external services, it cannot handle the __token authentication__ method defined from version 1.13.0.
+__Note__: since _LMS_ may store hashed and salted passwords or may forward authentication requests to external services, it cannot handle the __token authentication__ method. You may need to check your client to make sure to use the __password__ authentication method.
 
 ## About tags
 _LMS_ relies exclusively on tags to organize your music collection.

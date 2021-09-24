@@ -16,7 +16,8 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "subsonic/SubsonicResource.hpp"
+
+#include "SubsonicResource.hpp"
 
 #include <atomic>
 #include <ctime>
@@ -39,12 +40,14 @@
 #include "database/User.hpp"
 #include "recommendation/IEngine.hpp"
 #include "scrobbling/IScrobbling.hpp"
+#include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
 #include "ParameterParsing.hpp"
+#include "ProtocolVersion.hpp"
 #include "RequestContext.hpp"
 #include "Scan.hpp"
 #include "Stream.hpp"
@@ -58,55 +61,17 @@ static const std::string	reportedStarredDate {"2000-01-01T00:00:00"};
 static const std::string	reportedDummyDate {"2000-01-01T00:00:00"};
 static const unsigned long long	reportedDummyDateULong {946684800000ULL}; // 2000-01-01T00:00:00 UTC
 
-namespace API::Subsonic
-{
-	struct ClientVersion
-	{
-		unsigned major {};
-		unsigned minor {};
-		unsigned patch {};
-	};
-}
 
-namespace StringUtils
-{
-	template<>
-	std::optional<API::Subsonic::ClientVersion>
-	readAs(std::string_view str)
-	{
-		// Expects "X.Y.Z"
-		const auto numbers {StringUtils::splitString(str, ".")};
-		if (numbers.size() < 2 || numbers.size() > 3)
-			return std::nullopt;
-
-		API::Subsonic::ClientVersion version;
-
-		auto number {StringUtils::readAs<unsigned>(numbers[0])};
-		if (!number)
-			return std::nullopt;
-		version.major = *number;
-
-		number = {StringUtils::readAs<unsigned>(numbers[1])};
-		if (!number)
-			return std::nullopt;
-		version.minor = *number;
-
-		if (numbers.size() == 3)
-		{
-			number = {StringUtils::readAs<unsigned>(numbers[2])};
-			if (!number)
-				return std::nullopt;
-			version.patch = *number;
-		}
-
-		return version;
-	}
-
-}
 
 
 namespace API::Subsonic
 {
+
+std::unique_ptr<Wt::WResource>
+createSubsonicResource(Database::Db& db)
+{
+	return std::make_unique<SubsonicResource>(db);
+}
 
 static
 void
@@ -140,38 +105,24 @@ decodePasswordIfNeeded(const std::string& password)
 	return password;
 }
 
-struct ClientInfo
-{
-	std::string name;
-	std::string user;
-	std::string password;
-	ClientVersion version;
-};
-
 static
-ClientInfo
-getClientInfo(const Wt::Http::ParameterMap& parameters)
+std::unordered_map<std::string, ProtocolVersion>
+readConfigProtocolVersions()
 {
-	ClientInfo res;
+	std::unordered_map<std::string, ProtocolVersion> res;
 
-	// Mandatory parameters
-	res.name = getMandatoryParameterAs<std::string>(parameters, "c");
-	res.version = getMandatoryParameterAs<ClientVersion>(parameters, "v");
-	if (res.version.major > API_VERSION_MAJOR)
-		throw ServerMustUpgradeError {};
-	if (res.version.major < API_VERSION_MAJOR)
-		throw ClientMustUpgradeError {};
-	if (res.version.minor > Response::getAPIMinorVersion(res.name))
-		throw ServerMustUpgradeError {};
-
-	res.user = getMandatoryParameterAs<std::string>(parameters, "u");
-	res.password = decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(parameters, "p"));
+	Service<IConfig>::get()->visitStrings("api-subsonic-report-old-server-protocol",
+			[&](std::string_view client)
+			{
+				res.emplace(std::string {client}, ProtocolVersion {1, 12, 0});
+			}, {"DSub"});
 
 	return res;
 }
 
 SubsonicResource::SubsonicResource(Db& db)
-: _db {db}
+: _serverProtocolVersionsByClient {readConfigProtocolVersions()}
+, _db {db}
 {
 }
 
@@ -530,7 +481,7 @@ static
 Response
 handlePingRequest(RequestContext& context)
 {
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -570,7 +521,7 @@ handleChangePassword(RequestContext& context)
 		throw UserNotAuthorizedError {};
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -620,7 +571,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 		TrackListEntry::create(context.dbSession, track, tracklist );
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -671,7 +622,7 @@ handleCreateUserRequest(RequestContext& context)
 		throw UserNotAuthorizedError {};
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -696,7 +647,7 @@ handleDeletePlaylistRequest(RequestContext& context)
 
 	tracklist.remove();
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -717,14 +668,14 @@ handleDeleteUserRequest(RequestContext& context)
 
 	user.remove();
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
 Response
 handleGetLicenseRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 
 	Response::Node& licenseNode {response.createNode("license")};
 	licenseNode.setAttribute("licenseExpires", "2025-09-03T14:46:43");
@@ -750,7 +701,7 @@ handleGetRandomSongsRequest(RequestContext& context)
 
 	auto tracks {Track::getAllRandom(context.dbSession, {}, size)};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 
 	Response::Node& randomSongsNode {response.createNode("randomSongs")};
 	for (const Track::pointer& track : tracks)
@@ -839,7 +790,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	else
 		throw NotImplementedGenericError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& albumListNode {response.createNode(id3 ? "albumList2" : "albumList")};
 
 	for (const Release::pointer& release : releases)
@@ -879,7 +830,7 @@ handleGetAlbumRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node releaseNode {releaseToResponseNode(release, context.dbSession, user, true /* id3 */)};
 
 	auto tracks {release->getTracks()};
@@ -908,7 +859,7 @@ handleGetArtistRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node artistNode {artistToResponseNode(user, artist, true /* id3 */)};
 
 	auto releases {artist->getReleases()};
@@ -930,7 +881,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(20)};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& artistInfoNode {response.createNode(id3 ? "artistInfo2" : "artistInfo")};
 
 	{
@@ -986,7 +937,7 @@ static
 Response
 handleGetArtistsRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 
 	Response::Node& artistsNode {response.createNode("artists")};
 	artistsNode.setAttribute("ignoredArticles", "");
@@ -1040,7 +991,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 	if (!root && !artistId && !releaseId && !trackId)
 		throw BadParameterGenericError {"id"};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& directoryNode {response.createNode("directory")};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
@@ -1097,7 +1048,7 @@ static
 Response
 handleGetMusicFoldersRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& musicFoldersNode {response.createNode("musicFolders")};
 
 	Response::Node& musicFolderNode {musicFoldersNode.createArrayChild("musicFolder")};
@@ -1111,7 +1062,7 @@ static
 Response
 handleGetGenresRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 
 	Response::Node& genresNode {response.createNode("genres")};
 
@@ -1133,7 +1084,7 @@ static
 Response
 handleGetIndexesRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 
 	Response::Node& artistsNode {response.createNode("indexes")};
 	artistsNode.setAttribute("ignoredArticles", "");
@@ -1216,7 +1167,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 
 	Random::shuffleContainer(tracks);
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& similarSongsNode {response.createNode(id3 ? "similarSongs2" : "similarSongs")};
 	for (const Track::pointer& track : tracks)
 		similarSongsNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
@@ -1248,7 +1199,7 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& starredNode {response.createNode(id3 ? "starred2" : "starred")};
 
 	{
@@ -1324,7 +1275,7 @@ handleGetPlaylistRequest(RequestContext& context)
 	if (!tracklist)
 		throw RequestedDataNotFoundError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node playlistNode {tracklistToResponseNode(tracklist, context.dbSession)};
 
 	auto entries {tracklist->getEntries()};
@@ -1346,7 +1297,7 @@ handleGetPlaylistsRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& playlistsNode {response.createNode("playlists")};
 
 	auto tracklists {TrackList::getAll(context.dbSession, user, TrackList::Type::Playlist)};
@@ -1383,7 +1334,7 @@ handleGetSongsByGenreRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& songsByGenreNode {response.createNode("songsByGenre")};
 
 	bool more;
@@ -1408,7 +1359,7 @@ handleGetUserRequest(RequestContext& context)
 	if (!user)
 		throw RequestedDataNotFoundError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	response.addNode("user", userToResponseNode(user));
 
 	return response;
@@ -1420,7 +1371,7 @@ handleGetUsersRequest(RequestContext& context)
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& usersNode {response.createNode("users")};
 
 	const auto users {User::getAll(context.dbSession)};
@@ -1453,7 +1404,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& searchResult2Node {response.createNode(id3 ? "searchResult3" : "searchResult2")};
 
 	bool more;
@@ -1538,7 +1489,7 @@ handleStarRequest(RequestContext& context)
 		user.modify()->starTrack(track);
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1595,7 +1546,7 @@ handleUnstarRequest(RequestContext& context)
 	}
 
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1639,7 +1590,7 @@ handleScrobble(RequestContext& context)
 		}
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1682,7 +1633,7 @@ handleUpdateUserRequest(RequestContext& context)
 		}
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1741,7 +1692,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 		TrackListEntry::create(context.dbSession, track, tracklist);
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1756,7 +1707,7 @@ handleGetBookmarks(RequestContext& context)
 
 	const auto bookmarks {TrackBookmark::getByUser(context.dbSession, user)};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& bookmarksNode {response.createNode("bookmarks")};
 
 	for (const TrackBookmark::pointer& bookmark : bookmarks)
@@ -1798,7 +1749,7 @@ handleCreateBookmark(RequestContext& context)
 	if (comment)
 		bookmark.modify()->setComment(*comment);
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1824,7 +1775,7 @@ handleDeleteBookmark(RequestContext& context)
 
 	bookmark.remove();
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1867,7 +1818,7 @@ struct RequestEntryPointInfo
 	CheckImplementedFunc		checkFunc {};
 };
 
-static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
+static const std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 {
 	// System
 	{"ping",		{handlePingRequest}},
@@ -1981,38 +1932,6 @@ static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrieval
 	{"getCoverArt",		handleGetCoverArt},
 };
 
-static
-Database::UserId
-authenticateUser(const Wt::Http::Request &request, const ClientInfo& clientInfo, Session& dbSession)
-{
-	if (auto *authEnvService {Service<::Auth::IEnvService>::get()})
-	{
-		const auto checkResult {authEnvService->processRequest(dbSession, request)};
-		if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
-			throw UserNotAuthorizedError {};
-
-		return *checkResult.userId;
-	}
-	else if (auto *authPasswordService {Service<::Auth::IPasswordService>::get()})
-	{
-		const auto checkResult {authPasswordService->checkUserPassword(dbSession,
-												boost::asio::ip::address::from_string(request.clientAddress()),
-												clientInfo.user, clientInfo.password)};
-
-		switch (checkResult.state)
-		{
-			case Auth::IPasswordService::CheckResult::State::Granted:
-				return *checkResult.userId;
-				break;
-			case Auth::IPasswordService::CheckResult::State::Denied:
-				throw WrongUsernameOrPasswordError {};
-			case Auth::IPasswordService::CheckResult::State::Throttled:
-				throw LoginThrottledGenericError {};
-		}
-	}
-
-	throw InternalErrorGenericError {"No service avalaible to authenticate user"};
-}
 
 void
 SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response)
@@ -2027,24 +1946,16 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 	if (StringUtils::stringEndsWith(requestPath, ".view"))
 		requestPath.resize(requestPath.length() - 5);
 
-	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
-
 	// Optional parameters
-	const ResponseFormat format {getParameterAs<std::string>(parameters, "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml};
+	const ResponseFormat format {getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml};
 
-	std::string clientName;
+	ProtocolVersion protocolVersion {defaultServerProtocolVersion};
 
 	try
 	{
-		// Mandatory parameters
-		const ClientInfo clientInfo {getClientInfo(parameters)};
-
-		clientName = clientInfo.name;
-
-		Session& dbSession {_db.getTLSSession()};
-
-		const Database::UserId userId {authenticateUser(request, clientInfo, dbSession)};
-		RequestContext requestContext {parameters, dbSession, userId, clientInfo.name};
+		// We need to parse client a soon as possible to make sure to answer with the right protocol version
+		protocolVersion = getServerProtocolVersion(getMandatoryParameterAs<std::string>(request.getParameterMap(), "c"));
+		RequestContext requestContext {buildRequestContext(request)};
 
 		auto itEntryPoint {requestEntryPoints.find(requestPath)};
 		if (itEntryPoint != requestEntryPoints.end())
@@ -2079,10 +1990,96 @@ SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Resp
 		LMS_LOG(API_SUBSONIC, ERROR) << "Error while processing request '" << requestPath << "'"
 			<< ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
 			<< ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'";
-		Response resp {Response::createFailedResponse(clientName, e)};
+		Response resp {Response::createFailedResponse(protocolVersion, e)};
 		resp.write(response.out(), format);
 		response.setMimeType(ResponseFormatToMimeType(format));
 	}
+}
+
+ProtocolVersion
+SubsonicResource::getServerProtocolVersion(const std::string& clientName) const
+{
+	auto it {_serverProtocolVersionsByClient.find(clientName)};
+	if (it == std::cend(_serverProtocolVersionsByClient))
+		return defaultServerProtocolVersion;
+
+	return it->second;
+}
+
+void
+SubsonicResource::checkProtocolVersion(ProtocolVersion client, ProtocolVersion server)
+{
+	if (client.major > server.major)
+		throw ServerMustUpgradeError {};
+	if (client.major < server.major)
+		throw ClientMustUpgradeError {};
+	if (client.minor > server.minor)
+		throw ServerMustUpgradeError {};
+	else if (client.minor == server.minor)
+	{
+		if (client.patch > server.patch)
+			throw ServerMustUpgradeError {};
+	}
+}
+
+ClientInfo
+SubsonicResource::getClientInfo(const Wt::Http::ParameterMap& parameters)
+{
+	ClientInfo res;
+
+	// Mandatory parameters
+	res.name = getMandatoryParameterAs<std::string>(parameters, "c");
+	res.version = getMandatoryParameterAs<ProtocolVersion>(parameters, "v");
+	res.user = getMandatoryParameterAs<std::string>(parameters, "u");
+	res.password = decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(parameters, "p"));
+
+	return res;
+}
+
+RequestContext
+SubsonicResource::buildRequestContext(const Wt::Http::Request& request)
+{
+	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
+
+	const ClientInfo clientInfo {getClientInfo(parameters)};
+
+	Session& dbSession {_db.getTLSSession()};
+
+	const Database::UserId userId {authenticateUser(request, clientInfo, dbSession)};
+
+	return {parameters, dbSession, userId, clientInfo, getServerProtocolVersion(clientInfo.name)};
+}
+
+Database::UserId
+SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo, Session& dbSession)
+{
+	if (auto *authEnvService {Service<::Auth::IEnvService>::get()})
+	{
+		const auto checkResult {authEnvService->processRequest(dbSession, request)};
+		if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
+			throw UserNotAuthorizedError {};
+
+		return *checkResult.userId;
+	}
+	else if (auto *authPasswordService {Service<::Auth::IPasswordService>::get()})
+	{
+		const auto checkResult {authPasswordService->checkUserPassword(dbSession,
+												boost::asio::ip::address::from_string(request.clientAddress()),
+												clientInfo.user, clientInfo.password)};
+
+		switch (checkResult.state)
+		{
+			case Auth::IPasswordService::CheckResult::State::Granted:
+				return *checkResult.userId;
+				break;
+			case Auth::IPasswordService::CheckResult::State::Denied:
+				throw WrongUsernameOrPasswordError {};
+			case Auth::IPasswordService::CheckResult::State::Throttled:
+				throw LoginThrottledGenericError {};
+		}
+	}
+
+	throw InternalErrorGenericError {"No service avalaible to authenticate user"};
 }
 
 } // namespace api::subsonic
