@@ -124,7 +124,7 @@ namespace Database
 			using pointer = ObjectPtr<T>;
 			using IdType = ObjectIdType;
 
-			IdType getId() const { return Wt::Dbo::Dbo<T>::self()->Wt::Dbo::Dbo<T>::id(); }
+			IdType getId() const { return Wt::Dbo::Dbo<T>::self()->Wt::Dbo::template Dbo<T>::id(); }
 
 			// catch some misuses
 			typename Wt::Dbo::dbo_traits<T>::IdType id() const = delete;

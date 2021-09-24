@@ -64,7 +64,6 @@ namespace Av
 
 			std::unique_ptr<IChildProcess>	_childProcess;
 
-			bool			_finished {};
 			std::string		_outputMimeType;
 	};
 
