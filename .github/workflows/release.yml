@@ -6,6 +6,7 @@ on:
 jobs:
   Docker:
     name: Docker images
+    timeout-minutes: 720
     environment:
       name: Docker
     runs-on: ubuntu-latest
