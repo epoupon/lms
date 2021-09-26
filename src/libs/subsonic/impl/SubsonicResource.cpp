@@ -1585,7 +1585,7 @@ handleScrobble(RequestContext& context)
 			{
 				const TrackId trackId {ids[i]};
 				const unsigned long time {times[i]};
-				Service<Scrobbling::IScrobbling>::get()->addTimedListen({context.userId, trackId, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000))});
+				Service<Scrobbling::IScrobbling>::get()->addTimedListen({{context.userId, trackId}, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000))});
 			}
 		}
 	}
