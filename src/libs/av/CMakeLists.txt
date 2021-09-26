@@ -23,8 +23,7 @@ target_link_libraries(lmsav PUBLIC
 	)
 
 target_link_libraries(lmsav PRIVATE
-	${AVFORMAT_LIBRARY}
-	${AVUTIL_LIBRARY}
+	PkgConfig::LIBAV
 	)
 
 install(TARGETS lmsav DESTINATION lib)

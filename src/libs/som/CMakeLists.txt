@@ -1,5 +1,5 @@
 
-add_library(lmssom STATIC
+add_library(lmssom SHARED
 	impl/DataNormalizer.cpp
 	impl/Network.cpp
 	)
@@ -18,3 +18,4 @@ target_link_libraries(lmssom PUBLIC
 
 set_property(TARGET lmssom PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+install(TARGETS lmssom DESTINATION lib)

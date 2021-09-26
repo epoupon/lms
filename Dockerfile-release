@@ -2,8 +2,6 @@ FROM	alpine:3.14 AS build
 
 WORKDIR	/tmp/workdir
 
-ARG	MAKEFLAGS="-j2"
-
 ARG	PREFIX="/tmp/install"
 
 ARG	BUILD_PACKAGES=" \
@@ -131,7 +129,6 @@ RUN \
 ## Release Stage
 FROM		alpine:3.14 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
-LABEL		version=${LMS_VERSION}
 
 ARG	RUNTIME_PACKAGES=" \
 	libssl1.1 \

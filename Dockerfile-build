@@ -1,28 +1,39 @@
-FROM	alpine:3.14 AS build
+
+FROM --platform=$BUILDPLATFORM tonistiigi/xx AS xx
+
+FROM --platform=$BUILDPLATFORM alpine:3.14
+ARG TARGETPLATFORM
 
 WORKDIR	/tmp/workdir
 
-ARG	MAKEFLAGS="-j2"
-
 ARG	PREFIX="/tmp/install"
 
-ARG	BUILD_PACKAGES=" \
-	ca-certificates \
-	curl \
-	coreutils \
-	bzip2 \
-	pkgconfig \
-	g++ \
-	ffmpeg-dev \
+ARG BUILD_PACKAGES="\
+	clang \
 	make \
 	cmake \
+	lld \
+	curl \
+	tree \
+	pkgconfig"
+
+RUN	apk add --no-cache ${BUILD_PACKAGES}
+
+ARG	LMS_BUILD_PACKAGES=" \
+	gcc \
+	g++ \
+	musl-dev \
 	boost-dev \
+	ffmpeg-dev \
 	libconfig-dev \
 	taglib-dev \
 	wt-dev \
 	gtest-dev"
 
-RUN	apk add --no-cache --update ${BUILD_PACKAGES}
+# copy xx scripts to your build stage
+COPY --from=xx / /
+
+RUN	xx-apk add --no-scripts --no-cache ${LMS_BUILD_PACKAGES}
 
 # STB
 ARG	STB_VERSION=b42009b3b9d4ca35bc703f5310eedc74f584be58
@@ -37,8 +48,6 @@ RUN \
 COPY . /tmp/lms/
 ARG LMS_BUILD_TYPE="Release"
 RUN \
-	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR} && \
-	CXXFLAGS="-I${PREFIX}/include" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=${LMS_BUILD_TYPE} && \
-	VERBOSE=1 make && \
-	make test
-
+	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR}  && \
+		PKG_CONFIG_PATH=/$(xx-info)/usr/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=${LMS_BUILD_TYPE} $(xx-clang --print-cmake-defines) -DCMAKE_PREFIX_PATH=/$(xx-info)/usr/lib/cmake -DBUILD_TESTING=OFF && \
+		VERBOSE=1 make -j$(nproc)
