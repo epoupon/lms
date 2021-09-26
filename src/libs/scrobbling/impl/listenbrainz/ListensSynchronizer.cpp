@@ -233,7 +233,7 @@ namespace
 					result.oldestEntry = listenedAt;
 
 				if (const Database::Track::pointer track {tryMatchListen(session, metadata)})
-					result.matchedListens.emplace_back(Scrobbling::TimedListen {userId, track->getId(), listenedAt});
+					result.matchedListens.emplace_back(Scrobbling::TimedListen {{userId, track->getId()}, listenedAt});
 			}
 		}
 		catch (const Wt::WException& error)
