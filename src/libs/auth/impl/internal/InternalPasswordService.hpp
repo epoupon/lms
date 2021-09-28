@@ -41,8 +41,8 @@ namespace Auth
 						std::string_view password) override;
 
 			bool	canSetPasswords() const override;
-			bool	isPasswordSecureEnough(std::string_view loginName, std::string_view password) const override;
-			void	setPassword(Database::Session& session, Database::IdType userId, std::string_view newPassword) override;
+			PasswordAcceptabilityResult	checkPasswordAcceptability(std::string_view loginName, const PasswordValidationContext& context) const override;
+			void	setPassword(Database::Session& session, Database::UserId userId, std::string_view newPassword) override;
 
 			Database::User::PasswordHash	hashPassword(std::string_view password) const;
 			void							hashRandomPassword() const;

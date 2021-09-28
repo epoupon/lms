@@ -26,7 +26,7 @@
 
 #include <Wt/Dbo/Dbo.h>
 
-#include "Types.hpp"
+#include "database/Types.hpp"
 
 namespace Database {
 
@@ -37,17 +37,14 @@ using FeatureName = std::string;
 using FeatureValues  = std::vector<double>;
 using FeatureValuesMap = std::unordered_map<FeatureName, FeatureValues>;
 
-class TrackFeatures : public Wt::Dbo::Dbo<TrackFeatures>
+class TrackFeatures : public Object<TrackFeatures, TrackFeaturesId>
 {
 	public:
-
-		using pointer = Wt::Dbo::ptr<TrackFeatures>;
-
 		TrackFeatures() = default;
-		TrackFeatures(Wt::Dbo::ptr<Track> track, const std::string& jsonEncodedFeatures);
+		TrackFeatures(ObjectPtr<Track> track, const std::string& jsonEncodedFeatures);
 
 		// Create utility
-		static pointer create(Session& session, Wt::Dbo::ptr<Track> track, const std::string& jsonEncodedFeatures);
+		static pointer create(Session& session, ObjectPtr<Track> track, const std::string& jsonEncodedFeatures);
 
 		FeatureValues		getFeatureValues(const FeatureName& feature) const;
 		FeatureValuesMap	getFeatureValuesMap(const std::unordered_set<FeatureName>& featureNames) const;

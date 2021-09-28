@@ -77,17 +77,17 @@ namespace UserInterface
 		return releases;
 	}
 
-	std::vector<Database::IdType>
+	std::vector<Database::TrackId>
 	TrackCollector::getAll()
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 		bool moreResults;
-		const auto releases {get(std::nullopt, moreResults)};
+		const auto tracks {get(std::nullopt, moreResults)};
 
-		std::vector<IdType> res;
-		res.reserve(releases.size());
-		std::transform(std::cbegin(releases), std::cend(releases), std::back_inserter(res), [](const Track::pointer& release) { return release.id(); });
+		std::vector<TrackId> res;
+		res.reserve(tracks.size());
+		std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Track::pointer& track) { return track->getId(); });
 
 		return res;
 	}

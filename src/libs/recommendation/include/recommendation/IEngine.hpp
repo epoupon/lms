@@ -20,9 +20,7 @@
 #pragma once
 
 #include <functional>
-#include <optional>
-#include <unordered_set>
-
+#include <memory>
 #include "database/Types.hpp"
 #include "utils/EnumSet.hpp"
 
@@ -48,15 +46,20 @@ namespace Recommendation
 			virtual void load(bool forceReload, const ProgressCallback& progressCallback = {}) = 0;
 			virtual void cancelLoad() = 0;
 
-			using ResultContainer = std::unordered_set<Database::IdType>;
+			template <typename IdType>
+			using ResultContainer = std::vector<IdType>;
 
-			virtual ResultContainer getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) = 0;
-			virtual ResultContainer getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) = 0;
-			virtual ResultContainer getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) = 0;
-			virtual ResultContainer getSimilarArtists(Database::Session& session,
-					Database::IdType artistId,
-					EnumSet<Database::TrackArtistLinkType> linkTypes,
-					std::size_t maxCount) = 0;
+			using ArtistContainer = ResultContainer<Database::ArtistId>;
+			using ReleaseContainer = ResultContainer<Database::ReleaseId>;
+			using TrackContainer = ResultContainer<Database::TrackId>;
+
+			virtual TrackContainer getSimilarTracksFromTrackList(Database::Session& session, Database::TrackListId tracklistId, std::size_t maxCount) = 0;
+			virtual TrackContainer getSimilarTracks(Database::Session& session, const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) = 0;
+			virtual ReleaseContainer getSimilarReleases(Database::Session& session, Database::ReleaseId releaseId, std::size_t maxCount) = 0;
+			virtual ArtistContainer getSimilarArtists(Database::Session& session, Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) = 0;
+
+		protected:
+			virtual void requestCancelLoad() = 0;
 	};
 
 	std::unique_ptr<IEngine> createEngine(Database::Db& db);

@@ -43,31 +43,31 @@ class DownloadResource : public Wt::WResource
 class DownloadArtistResource : public DownloadResource
 {
 	public:
-		DownloadArtistResource(Database::IdType artistId);
+		DownloadArtistResource(Database::ArtistId artistId);
 
 	private:
 		std::unique_ptr<Zip::Zipper> createZipper() override;
-		Database::IdType _artistId;
+		Database::ArtistId _artistId;
 };
 
 class DownloadReleaseResource : public DownloadResource
 {
 	public:
-		DownloadReleaseResource(Database::IdType releaseId);
+		DownloadReleaseResource(Database::ReleaseId releaseId);
 
 	private:
 		std::unique_ptr<Zip::Zipper> createZipper() override;
-		Database::IdType _releaseId;
+		Database::ReleaseId _releaseId;
 };
 
 class DownloadTrackResource : public DownloadResource
 {
 	public:
-		DownloadTrackResource(Database::IdType trackId);
+		DownloadTrackResource(Database::TrackId trackId);
 
 	private:
 		std::unique_ptr<Zip::Zipper> createZipper() override;
-		Database::IdType _trackId;
+		Database::TrackId _trackId;
 };
 
 } // namespace UserInterface

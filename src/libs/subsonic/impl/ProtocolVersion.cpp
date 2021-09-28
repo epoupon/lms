@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * copyright (c) 2021 emeric poupon
  *
  * This file is part of LMS.
  *
@@ -17,27 +17,40 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ParameterParsing.hpp"
+#include "ProtocolVersion.hpp"
 
 namespace StringUtils
 {
 	template<>
-	std::optional<API::Subsonic::Id>
+	std::optional<API::Subsonic::ProtocolVersion>
 	readAs(std::string_view str)
 	{
-		return API::Subsonic::IdFromString(str);
-	}
+		// Expects "X.Y.Z"
+		const auto numbers {StringUtils::splitString(str, ".")};
+		if (numbers.size() < 2 || numbers.size() > 3)
+			return std::nullopt;
 
-	template<>
-	std::optional<bool>
-	readAs(std::string_view str)
-	{
-		if (str == "true")
-			return true;
-		else if (str == "false")
-			return false;
+		API::Subsonic::ProtocolVersion version;
 
-		return {};
+		auto number {StringUtils::readAs<unsigned>(numbers[0])};
+		if (!number)
+			return std::nullopt;
+		version.major = *number;
+
+		number = {StringUtils::readAs<unsigned>(numbers[1])};
+		if (!number)
+			return std::nullopt;
+		version.minor = *number;
+
+		if (numbers.size() == 3)
+		{
+			number = {StringUtils::readAs<unsigned>(numbers[2])};
+			if (!number)
+				return std::nullopt;
+			version.patch = *number;
+		}
+
+		return version;
 	}
 }
 

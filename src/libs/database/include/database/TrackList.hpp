@@ -27,7 +27,7 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
-#include "Types.hpp"
+#include "database/Types.hpp"
 
 namespace Database {
 
@@ -39,11 +39,9 @@ class Track;
 class TrackListEntry;
 class User;
 
-class TrackList : public Wt::Dbo::Dbo<TrackList>
+class TrackList : public Object<TrackList, TrackListId>
 {
 	public:
-		using pointer = Wt::Dbo::ptr<TrackList>;
-
 		enum class Type
 		{
 			Playlist,  // user controlled playlists
@@ -51,28 +49,28 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		};
 
 		TrackList() = default;
-		TrackList(std::string_view name, Type type, bool isPublic, Wt::Dbo::ptr<User> user);
+		TrackList(std::string_view name, Type type, bool isPublic, ObjectPtr<User> user);
 
 		// Stats utility
-		std::vector<Wt::Dbo::ptr<Artist>> getTopArtists(const std::set<IdType>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
-		std::vector<Wt::Dbo::ptr<Release>> getTopReleases(const std::set<IdType>& clusterIds, std::optional<Range> range, bool& moreResults) const;
-		std::vector<Wt::Dbo::ptr<Track>> getTopTracks(const std::set<IdType>& clusterIds, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Artist>> getTopArtists(const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Release>> getTopReleases(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Track>> getTopTracks(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
 
 		// Search utility
-		static pointer	get(Session& session, std::string_view name, Type type, Wt::Dbo::ptr<User> user);
-		static pointer	getById(Session& session, IdType tracklistId);
+		static pointer	get(Session& session, std::string_view name, Type type, ObjectPtr<User> user);
+		static pointer	getById(Session& session, TrackListId tracklistId);
 		static std::vector<pointer> getAll(Session& session);
-		static std::vector<pointer> getAll(Session& session, Wt::Dbo::ptr<User> user);
-		static std::vector<pointer> getAll(Session& session, Wt::Dbo::ptr<User> user, Type type);
+		static std::vector<pointer> getAll(Session& session, ObjectPtr<User> user);
+		static std::vector<pointer> getAll(Session& session, ObjectPtr<User> user, Type type);
 
 		// Create utility
-		static pointer	create(Session& session, std::string_view name, Type type, bool isPublic, Wt::Dbo::ptr<User> user);
+		static pointer	create(Session& session, std::string_view name, Type type, bool isPublic, ObjectPtr<User> user);
 
 		// Accessors
 		std::string	getName() const { return _name; }
 		bool		isPublic() const { return _isPublic; }
 		Type		getType() const { return _type; }
-		Wt::Dbo::ptr<User> getUser() const { return _user; }
+		ObjectPtr<User> getUser() const { return _user; }
 
 		// Modifiers
 		void		setName(const std::string& name) { _name = name; }
@@ -80,29 +78,29 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		void		clear() { _entries.clear(); }
 
 		// Get tracks, ordered by position
-		bool isEmpty() const;
-		std::size_t getCount() const;
-		Wt::Dbo::ptr<TrackListEntry> getEntry(std::size_t pos) const;
-		std::vector<Wt::Dbo::ptr<TrackListEntry>> getEntries(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
-		Wt::Dbo::ptr<TrackListEntry> getEntryByTrackAndDateTime(Wt::Dbo::ptr<Track> track, const Wt::WDateTime& dateTime) const;
+		bool										isEmpty() const;
+		std::size_t									getCount() const;
+		ObjectPtr<TrackListEntry>					getEntry(std::size_t pos) const;
+		std::vector<ObjectPtr<TrackListEntry>>	getEntries(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
+		ObjectPtr<TrackListEntry>					getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const;
 
 		// Get track bya
 
-		std::vector<Wt::Dbo::ptr<Artist>> getArtistsReverse(const std::set<IdType>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
-		std::vector<Wt::Dbo::ptr<Release>> getReleasesReverse(const std::set<IdType>& clusterIds, std::optional<Range> range, bool& moreResults) const;
-		std::vector<Wt::Dbo::ptr<Track>> getTracksReverse(const std::set<IdType>& clusterIds, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Artist>>	getArtistsReverse(const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Release>>	getReleasesReverse(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Track>>		getTracksReverse(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
 
-		std::vector<IdType> getTrackIds() const;
+		std::vector<TrackId> getTrackIds() const;
 
 		std::chrono::milliseconds getDuration() const;
 
 		// Get clusters, order by occurence
-		std::vector<Wt::Dbo::ptr<Cluster>> getClusters() const;
+		std::vector<ObjectPtr<Cluster>> getClusters() const;
 
-		bool hasTrack(IdType trackId) const;
+		bool hasTrack(TrackId trackId) const;
 
 		// Ordered from most clusters in common
-		std::vector<Wt::Dbo::ptr<Track>> getSimilarTracks(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
+		std::vector<ObjectPtr<Track>> getSimilarTracks(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
 
 		template<class Action>
 		void persist(Action& a)
@@ -122,27 +120,24 @@ class TrackList : public Wt::Dbo::Dbo<TrackList>
 		bool			_isPublic {false};
 
 		Wt::Dbo::ptr<User>	_user;
-		Wt::Dbo::collection< Wt::Dbo::ptr<TrackListEntry> > _entries;
+		Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _entries;
 
 };
 
-class TrackListEntry : public Wt::Dbo::Dbo<TrackListEntry>
+class TrackListEntry : public Object<TrackListEntry, TrackListEntryId>
 {
 	public:
-
-		using pointer = Wt::Dbo::ptr<TrackListEntry>;
-
 		TrackListEntry() = default;
-		TrackListEntry(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist, const Wt::WDateTime& dateTime);
+		TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime);
 
 		// find utility
-		static pointer getById(Session& session, IdType id);
+		static pointer getById(Session& session, TrackListEntryId id);
 
 		// Create utility
-		static pointer create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<TrackList> tracklist, const Wt::WDateTime& dateTime = Wt::WDateTime::currentDateTime());
+		static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime = Wt::WDateTime::currentDateTime());
 
 		// Accessors
-		Wt::Dbo::ptr<Track>	getTrack() const { return _track; }
+		ObjectPtr<Track>	getTrack() const { return _track; }
 		const Wt::WDateTime& getDateTime() const { return _dateTime; }
 
 		template<class Action>

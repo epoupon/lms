@@ -1,6 +1,6 @@
 
 add_library(lmssubsonic SHARED
-	impl/ParameterParsing.cpp
+	impl/ProtocolVersion.cpp
 	impl/Scan.cpp
 	impl/Stream.cpp
 	impl/SubsonicId.cpp

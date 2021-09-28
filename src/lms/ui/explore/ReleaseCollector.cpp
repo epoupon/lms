@@ -77,7 +77,7 @@ namespace UserInterface
 		return releases;
 	}
 
-	std::vector<Database::IdType>
+	std::vector<Database::ReleaseId>
 	ReleaseCollector::getAll()
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
@@ -85,9 +85,9 @@ namespace UserInterface
 		bool moreResults;
 		const auto releases {get(std::nullopt, moreResults)};
 
-		std::vector<IdType> res;
+		std::vector<ReleaseId> res;
 		res.reserve(releases.size());
-		std::transform(std::cbegin(releases), std::cend(releases), std::back_inserter(res), [](const Release::pointer& release) { return release.id(); });
+		std::transform(std::cbegin(releases), std::cend(releases), std::back_inserter(res), [](const Release::pointer& release) { return release->getId(); });
 
 		return res;
 	}

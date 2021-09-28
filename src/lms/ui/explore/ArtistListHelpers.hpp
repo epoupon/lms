@@ -32,7 +32,7 @@ namespace Database
 
 namespace UserInterface::ArtistListHelpers
 {
-	std::unique_ptr<Wt::WTemplate> createEntry(const Wt::Dbo::ptr<Database::Artist>& artist);
-	std::unique_ptr<Wt::WTemplate> createEntrySmall(const Wt::Dbo::ptr<Database::Artist>& artist);
+	std::unique_ptr<Wt::WTemplate> createEntry(const Database::ObjectPtr<Database::Artist>& artist);
+	std::unique_ptr<Wt::WTemplate> createEntrySmall(const Database::ObjectPtr<Database::Artist>& artist);
 }
 

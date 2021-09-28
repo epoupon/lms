@@ -94,22 +94,22 @@ class MediaPlayer : public Wt::WTemplate
 		MediaPlayer& operator=(const MediaPlayer&) = delete;
 		MediaPlayer& operator=(MediaPlayer&&) = delete;
 
-		std::optional<Database::IdType> getTrackLoaded() const { return _trackIdLoaded; }
+		std::optional<Database::TrackId> getTrackLoaded() const { return _trackIdLoaded; }
 
-		void loadTrack(Database::IdType trackId, bool play, float replayGain);
+		void loadTrack(Database::TrackId trackId, bool play, float replayGain);
 		void stop();
 
 		std::optional<Settings>	getSettings() const { return _settings; }
 		void			setSettings(const Settings& settings);
 
 		// Signals
-		Wt::JSignal<> 			playPrevious;
-		Wt::JSignal<> 			playNext;
-		Wt::Signal<Database::IdType>	trackLoaded;
-		Wt::Signal<>			settingsLoaded;
+		Wt::JSignal<> 					playPrevious;
+		Wt::JSignal<> 					playNext;
+		Wt::Signal<Database::TrackId>	trackLoaded;
+		Wt::Signal<>					settingsLoaded;
 
-		Wt::JSignal<Database::IdType>				scrobbleListenNow;
-		Wt::JSignal<Database::IdType, unsigned /* ms */>		scrobbleListenFinished;
+		Wt::JSignal<Database::TrackId::ValueType>						scrobbleListenNow;
+		Wt::JSignal<Database::TrackId::ValueType, unsigned /* ms */>	scrobbleListenFinished;
 
 		Wt::JSignal<>			playbackEnded;
 
@@ -117,7 +117,7 @@ class MediaPlayer : public Wt::WTemplate
 		std::unique_ptr<AudioFileResource>		_audioFileResource;
 		std::unique_ptr<AudioTranscodeResource>	_audioTranscodeResource;
 
-		std::optional<Database::IdType> _trackIdLoaded;
+		std::optional<Database::TrackId> _trackIdLoaded;
 		std::optional<Settings>		_settings;
 
 		Wt::JSignal<std::string> 	_settingsLoaded;

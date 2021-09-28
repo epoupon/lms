@@ -22,18 +22,18 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
+#include "Traits.hpp"
 
 namespace Database {
 
-TrackBookmark::TrackBookmark(Wt::Dbo::ptr<User> user, Wt::Dbo::ptr<Track> track)
-: _user {user},
-_track {track}
+TrackBookmark::TrackBookmark(ObjectPtr<User> user, ObjectPtr<Track> track)
+: _user {getDboPtr(user)},
+_track {getDboPtr(track)}
 {
 }
 
-
 TrackBookmark::pointer
-TrackBookmark::create(Session& session, Wt::Dbo::ptr<User> user, Wt::Dbo::ptr<Track> track)
+TrackBookmark::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track)
 {
 	session.checkUniqueLocked();
 
@@ -48,42 +48,41 @@ TrackBookmark::getAll(Session& session)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<TrackBookmark::pointer> res {session.getDboSession().find<TrackBookmark>()};
-
+	auto res {session.getDboSession().find<TrackBookmark>().resultList()};
 	return std::vector<TrackBookmark::pointer>(std::cbegin(res), std::cend(res));
 }
 
 std::vector<TrackBookmark::pointer>
-TrackBookmark::getByUser(Session& session, Wt::Dbo::ptr<User> user)
+TrackBookmark::getByUser(Session& session, User::pointer user)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<TrackBookmark::pointer> res
-	{
-		session.getDboSession().find<TrackBookmark>()
-		.where("user_id = ?").bind(user.id())
-	};
+	auto res {session.getDboSession().find<TrackBookmark>()
+				.where("user_id = ?").bind(user->getId())
+				.resultList()};
 
 	return std::vector<TrackBookmark::pointer>(std::cbegin(res), std::cend(res));
 }
 
 TrackBookmark::pointer
-TrackBookmark::getByUser(Session& session, Wt::Dbo::ptr<User> user, Wt::Dbo::ptr<Track> track)
+TrackBookmark::getByUser(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track)
 {
 	session.checkSharedLocked();
 
 	return session.getDboSession().find<TrackBookmark>()
-		.where("user_id = ?").bind(user.id())
-		.where("track_id = ?").bind(track.id());
+		.where("user_id = ?").bind(user->getId())
+		.where("track_id = ?").bind(track->getId())
+		.resultValue();
 }
 
 TrackBookmark::pointer
-TrackBookmark::getById(Session& session, IdType id)
+TrackBookmark::getById(Session& session, TrackBookmarkId id)
 {
 	session.checkSharedLocked();
 
 	return session.getDboSession().find<TrackBookmark>()
-		.where("id = ?").bind(id);
+		.where("id = ?").bind(id)
+		.resultValue();
 }
 
 

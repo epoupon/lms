@@ -23,7 +23,7 @@
 
 #include <Wt/Dbo/Dbo.h>
 
-#include "Types.hpp"
+#include "database/Types.hpp"
 #include "utils/EnumSet.hpp"
 
 namespace Database
@@ -33,20 +33,18 @@ namespace Database
 	class Session;
 	class Track;
 
-	class TrackArtistLink
+	class TrackArtistLink : public Object<TrackArtistLink, TrackArtistLinkId>
 	{
 		public:
-			using pointer = Wt::Dbo::ptr<TrackArtistLink>;
-
 			TrackArtistLink() = default;
-			TrackArtistLink(Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist, TrackArtistLinkType type);
+			TrackArtistLink(ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type);
 
-			static pointer create(Session& session, Wt::Dbo::ptr<Track> track, Wt::Dbo::ptr<Artist> artist, TrackArtistLinkType type);
+			static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type);
 
 			static EnumSet<TrackArtistLinkType> getUsedTypes(Session& session);
 
-			Wt::Dbo::ptr<Track>		getTrack() const { return _track; }
-			Wt::Dbo::ptr<Artist>	getArtist() const { return _artist; }
+			ObjectPtr<Track>		getTrack() const { return _track; }
+			ObjectPtr<Artist>	getArtist() const { return _artist; }
 			TrackArtistLinkType		getType() const { return _type; }
 
 			template<class Action>

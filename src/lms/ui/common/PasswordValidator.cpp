@@ -30,12 +30,14 @@ namespace UserInterface
 	class PasswordStrengthValidator : public Wt::WValidator
 	{
 		public:
-			PasswordStrengthValidator(LoginNameGetFunc loginNameGetFunc) : _loginNameGetFunc {std::move(loginNameGetFunc)} {}
-
-			Wt::WValidator::Result validate(const Wt::WString& input) const override;
+			PasswordStrengthValidator(PasswordValidationContextGetFunc passwordValidationContextGetFunc)
+				: _passwordValidationContextGetFunc {std::move(passwordValidationContextGetFunc)}
+			{}
 
 		private:
-			LoginNameGetFunc _loginNameGetFunc;
+			Wt::WValidator::Result validate(const Wt::WString& input) const override;
+
+			PasswordValidationContextGetFunc _passwordValidationContextGetFunc;
 	};
 
 	Wt::WValidator::Result
@@ -44,21 +46,25 @@ namespace UserInterface
 		if (input.empty())
 			return Wt::WValidator::validate(input);
 
-		if (Service<::Auth::IPasswordService>::get()->isPasswordSecureEnough(_loginNameGetFunc(), input.toUTF8()))
-			return Wt::WValidator::Result {Wt::ValidationState::Valid};
+		const ::Auth::PasswordValidationContext context {_passwordValidationContextGetFunc()};
 
-		return Wt::WValidator::Result {Wt::ValidationState::Invalid, Wt::WString::tr("Lms.password-too-weak")};
+		switch (Service<::Auth::IPasswordService>::get()->checkPasswordAcceptability(input.toUTF8(), context))
+		{
+			case ::Auth::IPasswordService::PasswordAcceptabilityResult::OK:
+				return Wt::WValidator::Result {Wt::ValidationState::Valid};
+			case ::Auth::IPasswordService::PasswordAcceptabilityResult::TooWeak:
+				return Wt::WValidator::Result {Wt::ValidationState::Invalid, Wt::WString::tr("Lms.password-too-weak")};
+			case ::Auth::IPasswordService::PasswordAcceptabilityResult::MustMatchLoginName:
+				return Wt::WValidator::Result {Wt::ValidationState::Invalid, Wt::WString::tr("Lms.password-must-match-login")};
+		}
+
+		throw LmsException {"internal error"};
 	}
 
 	std::shared_ptr<Wt::WValidator>
-	createPasswordStrengthValidator(std::string_view loginName)
+	createPasswordStrengthValidator(PasswordValidationContextGetFunc passwordValidationContextGetFunc)
 	{
-		return std::make_shared<PasswordStrengthValidator>([loginName = std::string {loginName}] { return loginName; });
-	}
-
-	std::shared_ptr<Wt::WValidator> createPasswordStrengthValidator(LoginNameGetFunc loginNameGetFunc)
-	{
-		return std::make_shared<PasswordStrengthValidator>(std::move(loginNameGetFunc));
+		return std::make_shared<PasswordStrengthValidator>(std::move(passwordValidationContextGetFunc));
 	}
 
 	class PasswordCheckValidator : public Wt::WValidator

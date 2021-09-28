@@ -80,25 +80,41 @@ namespace Auth
 		return true;
 	}
 
-	bool
-	InternalPasswordService::isPasswordSecureEnough(std::string_view loginName, std::string_view password) const
+	IPasswordService::PasswordAcceptabilityResult
+	InternalPasswordService::checkPasswordAcceptability(std::string_view password, const PasswordValidationContext& context) const
 	{
-		return _validator.evaluateStrength(std::string {password}, std::string {loginName}, "").isValid();
+		switch (context.userType)
+		{
+			case Database::UserType::ADMIN:
+			case Database::UserType::REGULAR:
+				return _validator.evaluateStrength(std::string {password}, context.loginName, "").isValid() ? PasswordAcceptabilityResult::OK : PasswordAcceptabilityResult::TooWeak;
+			case Database::UserType::DEMO:
+				return password == context.loginName ? PasswordAcceptabilityResult::OK : PasswordAcceptabilityResult::MustMatchLoginName;
+		}
+
+		throw NotImplementedException {};
 	}
 
 	void
-	InternalPasswordService::setPassword(Database::Session& session, Database::IdType userId, std::string_view newPassword)
+	InternalPasswordService::setPassword(Database::Session& session, Database::UserId userId, std::string_view newPassword)
 	{
 		const Database::User::PasswordHash passwordHash {hashPassword(newPassword)};
 
 		auto transaction {session.createUniqueTransaction()};
 
-		const Database::User::pointer user {Database::User::getById(session, userId)};
+		Database::User::pointer user {Database::User::getById(session, userId)};
 		if (!user)
 			throw Exception {"User not found!"};
 
-		if (!isPasswordSecureEnough(user->getLoginName(), newPassword))
-			throw PasswordTooWeakException {};
+		switch (checkPasswordAcceptability(newPassword, PasswordValidationContext {user->getLoginName(), user->getType()}))
+		{
+			case PasswordAcceptabilityResult::OK:
+				break;
+			case PasswordAcceptabilityResult::TooWeak:
+				throw PasswordTooWeakException {};
+			case PasswordAcceptabilityResult::MustMatchLoginName:
+				throw PasswordMustMatchLoginNameException {};
+		}
 
 		user.modify()->setPasswordHash(passwordHash);
 		getAuthTokenService().clearAuthTokens(session, userId);

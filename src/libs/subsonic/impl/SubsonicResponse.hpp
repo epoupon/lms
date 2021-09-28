@@ -27,8 +27,6 @@
 
 #include "RequestContext.hpp"
 
-#define API_VERSION_MAJOR	1
-
 namespace API::Subsonic
 {
 
@@ -152,6 +150,16 @@ class PasswordTooWeakGenericError : public GenericError
 	std::string getMessage() const override { return "Password too weak"; }
 };
 
+class PasswordMustMatchLoginNameGenericError : public GenericError
+{
+	std::string getMessage() const override { return "Password must match login name"; }
+};
+
+class DemoUserCannotChangePasswordGenericError : public GenericError
+{
+	std::string getMessage() const override { return "Demo user cannot change its password"; }
+};
+
 class UserAlreadyExistsGenericError : public GenericError
 {
 	std::string getMessage() const override { return "User already exists"; }
@@ -164,17 +172,6 @@ class BadParameterGenericError : public GenericError
 
 	private:
 		std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad value"; }
-
-		const std::string _parameterName;
-};
-
-class BadParameterFormatGenericError : public GenericError
-{
-	public:
-		BadParameterFormatGenericError(const std::string& parameterName) : _parameterName {parameterName} {}
-
-	private:
-		std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad format"; }
 
 		const std::string _parameterName;
 };
@@ -206,6 +203,9 @@ class Response
 				void addArrayChild(const std::string& key, Node node);
 
 			private:
+
+				void setVersionAttribute(ProtocolVersion version);
+
 				friend class Response;
 				using Value = std::variant<std::string, bool, long long>;
 				std::map<std::string, Value> _attributes;
@@ -214,8 +214,8 @@ class Response
 				std::map<std::string, std::vector<Node>> _childrenArrays;
 		};
 
-		static Response createOkResponse(const RequestContext& context);
-		static Response createFailedResponse(std::string_view clientName, const Error& error);
+		static Response createOkResponse(ProtocolVersion protocolVersion);
+		static Response createFailedResponse(ProtocolVersion protocolVersion, const Error& error);
 
 		virtual ~Response() {}
 		Response(const Response&) = delete;
@@ -229,9 +229,7 @@ class Response
 
 		void write(std::ostream& os, ResponseFormat format);
 
-		static unsigned getAPIMinorVersion(std::string_view clientName);
 	private:
-
 		void writeJSON(std::ostream& os);
 		void writeXML(std::ostream& os);
 

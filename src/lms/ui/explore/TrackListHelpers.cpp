@@ -39,7 +39,7 @@ using namespace Database;
 namespace UserInterface::TrackListHelpers
 {
 	std::unique_ptr<Wt::WTemplate>
-	createEntry(const Wt::Dbo::ptr<Database::Track>& track, PlayQueueActionSignal& tracksAction)
+	createEntry(const Database::ObjectPtr<Database::Track>& track, PlayQueueActionTrackSignal& tracksAction)
 	{
 		auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
 		auto* entryPtr {entry.get()};
@@ -49,7 +49,7 @@ namespace UserInterface::TrackListHelpers
 
 		const auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		const Release::pointer release {track->getRelease()};
-		const IdType trackId {track.id()};
+		const TrackId trackId {track->getId()};
 
 		if (!artists.empty() || release)
 			entry->setCondition("if-has-artists-or-release", true);
@@ -73,7 +73,7 @@ namespace UserInterface::TrackListHelpers
 			{
 				Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
 				auto cover {std::make_unique<Wt::WImage>()};
-				cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release.id(), CoverResource::Size::Large));
+				cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large));
 				cover->setStyleClass("Lms-cover");
 				cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 				anchor->setImage(std::move(cover));
@@ -101,7 +101,7 @@ namespace UserInterface::TrackListHelpers
 			displayTrackPopupMenu(*moreBtn, trackId, tracksAction);
 		});
 
-		LmsApp->getMediaPlayer().trackLoaded.connect(entryPtr, [=] (Database::IdType loadedTrackId)
+		LmsApp->getMediaPlayer().trackLoaded.connect(entryPtr, [=] (Database::TrackId loadedTrackId)
 		{
 			entryPtr->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
 		});

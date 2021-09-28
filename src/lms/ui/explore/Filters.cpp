@@ -58,12 +58,10 @@ Filters::showDialog()
 
 		if (!types.empty())
 		{
-			const auto values {types.front()->getClusters()};
-
-			for (const Database::Cluster::pointer& value : values)
+			for (const Database::Cluster::pointer& cluster : types.front()->getClusters())
 			{
-				if (_filterIds.find(value.id()) == _filterIds.end())
-					valueCombo->addItem(Wt::WString::fromUTF8(value->getName()));
+				if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), cluster->getId()) == _clusterIds.end())
+					valueCombo->addItem(Wt::WString::fromUTF8(cluster->getName()));
 			}
 		}
 	}
@@ -78,11 +76,10 @@ Filters::showDialog()
 
 		auto clusterType = Database::ClusterType::getByName(LmsApp->getDbSession(), name);
 
-		const auto values = clusterType->getClusters();
-		for (const Database::Cluster::pointer& value : values)
+		for (const Database::Cluster::pointer& cluster : clusterType->getClusters())
 		{
-			if (_filterIds.find(value.id()) == _filterIds.end())
-				valueCombo->addItem(Wt::WString::fromUTF8(value->getName()));
+			if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), cluster->getId()) == _clusterIds.end())
+				valueCombo->addItem(Wt::WString::fromUTF8(cluster->getName()));
 		}
 	});
 
@@ -101,7 +98,7 @@ Filters::showDialog()
 		const std::string value {valueCombo->valueText().toUTF8()};
 
 		// TODO use a model to store the cluster.id() values
-		Database::IdType clusterId {};
+		Database::ClusterId clusterId {};
 
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
@@ -114,7 +111,7 @@ Filters::showDialog()
 			if (!cluster)
 				return;
 
-			clusterId = cluster.id();
+			clusterId = cluster->getId();
 		}
 
 		add(clusterId);
@@ -124,7 +121,7 @@ Filters::showDialog()
 }
 
 void
-Filters::add(Database::IdType clusterId)
+Filters::add(Database::ClusterId clusterId)
 {
 
 	Wt::WInteractWidget* filter {};
@@ -136,9 +133,10 @@ Filters::add(Database::IdType clusterId)
 		if (!cluster)
 			return;
 
-		auto res {_filterIds.insert(clusterId)};
-		if (!res.second)
+		if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), clusterId) != std::cend(_clusterIds))
 			return;
+
+		_clusterIds.push_back(clusterId);
 
 		filter = _filters->addWidget(LmsApp->createCluster(cluster, true));
 	}
@@ -146,7 +144,7 @@ Filters::add(Database::IdType clusterId)
 	filter->clicked().connect([=]
 	{
 		_filters->removeWidget(filter);
-		_filterIds.erase(clusterId);
+		_clusterIds.erase(std::remove_if(std::begin(_clusterIds), std::end(_clusterIds), [clusterId](Database::ClusterId id) { return id == clusterId; }), std::end(_clusterIds));
 		_sigUpdated.emit();
 	});
 

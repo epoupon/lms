@@ -40,11 +40,11 @@ namespace Recommendation
 			bool load(Database::Session&, bool, const ProgressCallback&) override { return true; }
 			void requestCancelLoad() override {}
 
-			ResultContainer getSimilarTracksFromTrackList(Database::Session& session, Database::IdType tracklistId, std::size_t maxCount) const override;
-			ResultContainer getSimilarTracks(Database::Session& session, const std::unordered_set<Database::IdType>& tracksId, std::size_t maxCount) const override;
-			ResultContainer getSimilarReleases(Database::Session& session, Database::IdType releaseId, std::size_t maxCount) const override;
-			ResultContainer getSimilarArtists(Database::Session& session,
-					Database::IdType artistId,
+			ResultContainer<Database::TrackId> getSimilarTracksFromTrackList(Database::Session& session, Database::TrackListId tracklistId, std::size_t maxCount) const override;
+			ResultContainer<Database::TrackId> getSimilarTracks(Database::Session& session, const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const override;
+			ResultContainer<Database::ReleaseId> getSimilarReleases(Database::Session& session, Database::ReleaseId releaseId, std::size_t maxCount) const override;
+			ResultContainer<Database::ArtistId> getSimilarArtists(Database::Session& session,
+					Database::ArtistId artistId,
 					EnumSet<Database::TrackArtistLinkType> linkTypes,
 					std::size_t maxCount) const override;
 };

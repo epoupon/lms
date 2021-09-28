@@ -6,21 +6,23 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules/)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+if (UNIX)
+	set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
+endif ()
 
 include(CTest)
 find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Filesystem REQUIRED)
-find_package(FFMPEGAV REQUIRED)
+find_package(GTest REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system program_options)
 find_package(Wt REQUIRED COMPONENTS Wt Dbo DboSqlite3 HTTP)
-find_package(PAM)
-find_package(STB)
-find_package(PkgConfig REQUIRED)
 pkg_check_modules(Taglib REQUIRED IMPORTED_TARGET taglib)
 pkg_check_modules(Config++ REQUIRED IMPORTED_TARGET libconfig++)
 pkg_check_modules(GraphicsMagick++ IMPORTED_TARGET GraphicsMagick++)
-find_package(GTest REQUIRED)
+pkg_check_modules(LIBAV IMPORTED_TARGET libavutil libavformat)
+find_package(PAM)
+find_package(STB)
 
 # WT
 if (NOT Wt_FOUND)
@@ -66,7 +68,6 @@ elseif (IMAGE_LIBRARY STREQUAL STB AND NOT STB_FOUND)
 	message(FATAL_ERROR "STB not found")
 endif ()
 message(STATUS "IMAGE_LIBRARY set to ${IMAGE_LIBRARY}")
-
 
 add_subdirectory(src)
 

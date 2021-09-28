@@ -54,7 +54,7 @@ class InitWizardModel : public Wt::WFormModel
 			addField(PasswordConfirmField);
 
 			setValidator(AdminLoginField, createLoginNameValidator());
-			setValidator(PasswordField, createPasswordStrengthValidator([this] { return valueText(AdminLoginField).toUTF8(); }));
+			setValidator(PasswordField, createPasswordStrengthValidator([this] { return ::Auth::PasswordValidationContext {valueText(AdminLoginField).toUTF8(), Database::UserType::ADMIN}; }));
 			validator(PasswordField)->setMandatory(true);
 			setValidator(PasswordConfirmField, createMandatoryValidator());
 		}
@@ -69,8 +69,8 @@ class InitWizardModel : public Wt::WFormModel
 				throw LmsException {"Admin user already created"};
 
 			Database::User::pointer user {Database::User::create(LmsApp->getDbSession(), valueText(AdminLoginField).toUTF8())};
-			user.modify()->setType(Database::User::Type::ADMIN);
-			Service<::Auth::IPasswordService>::get()->setPassword(LmsApp->getDbSession(), user.id(), valueText(PasswordField).toUTF8());
+			user.modify()->setType(Database::UserType::ADMIN);
+			Service<::Auth::IPasswordService>::get()->setPassword(LmsApp->getDbSession(), user->getId(), valueText(PasswordField).toUTF8());
 		}
 
 		bool validateField(Field field)

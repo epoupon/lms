@@ -21,6 +21,9 @@
 
 #include <boost/asio/ip/address.hpp>
 
+#ifndef BOOST_ASIO_HAS_STD_HASH
+#include <functional>
+
 namespace std
 {
 	template<> struct hash<boost::asio::ip::address>
@@ -30,4 +33,4 @@ namespace std
 
 }
 
-
+#endif // BOOST_ASIO_HAS_STD_HASH

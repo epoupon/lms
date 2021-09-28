@@ -50,15 +50,15 @@ CoverResource::~CoverResource()
 }
 
 std::string
-CoverResource::getReleaseUrl(Database::IdType releaseId, Size size) const
+CoverResource::getReleaseUrl(Database::ReleaseId releaseId, Size size) const
 {
-	return url() + "&releaseid=" + std::to_string(releaseId) + "&size=" + std::to_string(static_cast<std::size_t>(size));
+	return url() + "&releaseid=" + releaseId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
 }
 
 std::string
-CoverResource::getTrackUrl(Database::IdType trackId, Size size) const
+CoverResource::getTrackUrl(Database::TrackId trackId, Size size) const
 {
-	return url() + "&trackid=" + std::to_string(trackId) + "&size=" + std::to_string(static_cast<std::size_t>(size));
+	return url() + "&trackid=" + trackId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
 }
 
 void
@@ -89,7 +89,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	{
 		LOG(DEBUG) << "Requested cover for track " << *trackIdStr << ", size = " << *size;
 
-		const auto trackId {StringUtils::readAs<Database::IdType>(*trackIdStr)};
+		const std::optional<Database::TrackId> trackId {StringUtils::readAs<Database::TrackId::ValueType>(*trackIdStr)};
 		if (!trackId)
 		{
 			LOG(DEBUG) << "track not found";
@@ -102,7 +102,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 	{
 		LOG(DEBUG) << "Requested cover for release " << *releaseIdStr << ", size = " << *size;
 
-		const auto releaseId {StringUtils::readAs<Database::IdType>(*releaseIdStr)};
+		const std::optional<Database::ReleaseId> releaseId {StringUtils::readAs<Database::ReleaseId::ValueType>(*releaseIdStr)};
 		if (!releaseId)
 			return;
 

@@ -41,7 +41,7 @@
 namespace
 {
 	bool
-	canBeScrobbled(Database::Session& session, Database::IdType trackId, std::chrono::seconds duration)
+	canBeScrobbled(Database::Session& session, Database::TrackId trackId, std::chrono::seconds duration)
 	{
 		auto transaction {session.createSharedTransaction()};
 

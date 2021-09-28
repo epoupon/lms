@@ -53,7 +53,7 @@ namespace Scanner {
 
 	struct ScanDuplicate
 	{
-		Database::IdType	trackId;
+		Database::TrackId	trackId;
 		DuplicateReason		reason;
 	};
 

@@ -36,13 +36,13 @@ class Explore : public Wt::WTemplate
 
 		void search(const Wt::WString& searchText);
 
-		PlayQueueActionSignal tracksAction;
+		PlayQueueActionTrackSignal tracksAction;
 
 	private:
 
-		void handleArtistsAction(PlayQueueAction action, const std::vector<Database::IdType>& artistsId);
-		void handleReleasesAction(PlayQueueAction action, const std::vector<Database::IdType>& releasesId);
-		void handleTracksAction(PlayQueueAction action, const std::vector<Database::IdType>& tracksId);
+		void handleArtistsAction(PlayQueueAction action, const std::vector<Database::ArtistId>& artistsId);
+		void handleReleasesAction(PlayQueueAction action, const std::vector<Database::ReleaseId>& releasesId);
+		void handleTracksAction(PlayQueueAction action, const std::vector<Database::TrackId>& tracksId);
 
 		Filters* _filters {};
 		SearchView* _search {};

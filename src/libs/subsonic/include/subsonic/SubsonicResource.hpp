@@ -18,8 +18,9 @@
  */
 #pragma once
 
+#include <memory>
+
 #include <Wt/WResource.h>
-#include <Wt/Http/Response.h>
 
 namespace Database
 {
@@ -28,18 +29,5 @@ namespace Database
 
 namespace API::Subsonic
 {
-
-class SubsonicResource final : public Wt::WResource
-{
-	public:
-		SubsonicResource(Database::Db& db);
-
-		static std::string getPath() { return "rest/"; }
-	private:
-
-		void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;
-
-		Database::Db& _db;
-};
-
+	std::unique_ptr<Wt::WResource> createSubsonicResource(Database::Db& db);
 } // namespace

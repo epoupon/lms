@@ -102,7 +102,7 @@ class SettingsModel : public Wt::WFormModel
 				}
 
 				addField(PasswordField);
-				setValidator(PasswordField, createPasswordStrengthValidator(LmsApp->getUserLoginName()));
+				setValidator(PasswordField, createPasswordStrengthValidator([] { return ::Auth::PasswordValidationContext {LmsApp->getUserLoginName(), LmsApp->getUserType()}; }));
 				addField(PasswordConfirmField);
 			}
 
@@ -197,7 +197,7 @@ class SettingsModel : public Wt::WFormModel
 
 			if (_authPasswordService && !valueText(PasswordField).empty())
 			{
-				_authPasswordService->setPassword(LmsApp->getDbSession(), user.id(), valueText(PasswordField).toUTF8());
+				_authPasswordService->setPassword(LmsApp->getDbSession(), user->getId(), valueText(PasswordField).toUTF8());
 			}
 
 		}
@@ -275,6 +275,14 @@ class SettingsModel : public Wt::WFormModel
 					setReadOnly(SettingsModel::ListenBrainzTokenField, !usesListenBrainz);
 					validator(SettingsModel::ListenBrainzTokenField)->setMandatory(usesListenBrainz);
 				}
+			}
+			if (_authPasswordService)
+			{
+				if (_withOldPassword)
+					setValue(PasswordOldField, "");
+
+				setValue(PasswordField, "");
+				setValue(PasswordConfirmField, "");
 			}
 		}
 

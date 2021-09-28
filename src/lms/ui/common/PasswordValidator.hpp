@@ -19,13 +19,16 @@
 
 #pragma once
 
+#include <functional>
 #include <Wt/WValidator.h>
+
+#include "database/Types.hpp"
+#include "auth/Types.hpp"
 
 namespace UserInterface
 {
-	std::shared_ptr<Wt::WValidator> createPasswordStrengthValidator(std::string_view loginName);
-	using LoginNameGetFunc = std::function<std::string()>;
-	std::shared_ptr<Wt::WValidator> createPasswordStrengthValidator(LoginNameGetFunc loginNameGetFunc);
+	using PasswordValidationContextGetFunc = std::function<::Auth::PasswordValidationContext()>;
+	std::shared_ptr<Wt::WValidator> createPasswordStrengthValidator(PasswordValidationContextGetFunc passwordValidationContextGetFunc);
 
 	// Check current user password
 	std::shared_ptr<Wt::WValidator> createPasswordCheckValidator();

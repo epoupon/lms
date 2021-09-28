@@ -43,7 +43,7 @@ namespace Database
 {
 
 	using Version = std::size_t;
-	static constexpr Version LMS_DATABASE_VERSION {30};
+	static constexpr Version LMS_DATABASE_VERSION {31};
 
 	class VersionInfo
 	{
@@ -329,6 +329,37 @@ CREATE TABLE "user_backup" (
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
 		}
+		else if (version == 30)
+		{
+			// drop "year" and "original_year" (rescan needed to convert them into dates)
+			_session.execute(R"(
+CREATE TABLE "track_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "scan_version" integer not null,
+  "track_number" integer not null,
+  "disc_number" integer not null,
+  "name" text not null,
+  "duration" integer,
+  "date" integer text,
+  "original_date" integer text,
+  "file_path" text not null,
+  "file_last_write" text,
+  "file_added" text,
+  "has_cover" boolean not null,
+  "mbid" text not null,
+  "copyright" text not null,
+  "copyright_url" text not null,
+  "release_id" bigint, total_disc INTEGER NOT NULL DEFAULT(0), total_track INTEGER NOT NULL DEFAULT(0), track_replay_gain REAL, release_replay_gain REAL, disc_subtitle TEXT NOT NULL DEFAULT '', recording_mbid TEXT,
+  constraint "fk_track_release" foreign key ("release_id") references "release" ("id") on delete cascade deferrable initially deferred
+))");
+			_session.execute("INSERT INTO track_backup SELECT id, version, scan_version, track_number, disc_number, name, duration, \"1900-01-01\", \"1900-01-01\", file_path, file_last_write, file_added, has_cover, mbid, copyright, copyright_url, release_id, total_disc, total_track, track_replay_gain, release_replay_gain, disc_subtitle, recording_mbid FROM track");
+			_session.execute("DROP TABLE track");
+			_session.execute("ALTER TABLE track_backup RENAME TO track");
+
+			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+			ScanSettings::get(*this).modify()->incScanVersion();
+		}
 		else
 		{
 			LMS_LOG(DB, ERROR) << "Database version " << version << " cannot be handled using migration";
@@ -442,8 +473,8 @@ Session::prepareTables()
 		_session.execute("CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_recording_mbid_idx ON track(recording_mbid)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
-		_session.execute("CREATE INDEX IF NOT EXISTS track_year_idx ON track(year)");
-		_session.execute("CREATE INDEX IF NOT EXISTS track_original_year_idx ON track(original_year)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_date_idx ON track(date)");
+		_session.execute("CREATE INDEX IF NOT EXISTS track_original_date_idx ON track(original_date)");
 		_session.execute("CREATE INDEX IF NOT EXISTS tracklist_name_idx ON tracklist(name)");
 		_session.execute("CREATE INDEX IF NOT EXISTS tracklist_user_idx ON tracklist(user_id)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_features_track_idx ON track_features(track_id)");

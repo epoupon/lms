@@ -28,7 +28,7 @@
 namespace UserInterface
 {
 	void displayReleasePopupMenu(Wt::WInteractWidget& target,
-			Database::IdType releaseId,
-			PlayQueueActionSignal& releasesAction);
+			Database::ReleaseId releaseId,
+			PlayQueueActionReleaseSignal& releasesAction);
 } // namespace UserInterface
 

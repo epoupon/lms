@@ -54,7 +54,7 @@ namespace Auth
 
 				struct AuthTokenInfo
 				{
-					Database::IdType userId;
+					Database::UserId userId;
 					Wt::WDateTime expiry;
 				};
 
@@ -66,8 +66,8 @@ namespace Auth
 			virtual AuthTokenProcessResult	processAuthToken(Database::Session& session, const boost::asio::ip::address& clientAddress, std::string_view tokenValue) = 0;
 
 			// Returns a one time token
-			virtual std::string				createAuthToken(Database::Session& session, Database::IdType userid, const Wt::WDateTime& expiry) = 0;
-			virtual void					clearAuthTokens(Database::Session& session, Database::IdType userid) = 0;
+			virtual std::string				createAuthToken(Database::Session& session, Database::UserId userid, const Wt::WDateTime& expiry) = 0;
+			virtual void					clearAuthTokens(Database::Session& session, Database::UserId userid) = 0;
 	};
 
 	std::unique_ptr<IAuthTokenService> createAuthTokenService(std::size_t maxThrottlerEntryCount);

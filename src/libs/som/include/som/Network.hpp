@@ -20,7 +20,6 @@
 #pragma once
 
 #include <vector>
-#include <unordered_set>
 #include <optional>
 #include <ostream>
 #include <functional>
@@ -70,7 +69,7 @@ class Network
 		Position getClosestRefVectorPosition(const InputVector& data) const;
 		std::optional<Position> getClosestRefVectorPosition(const InputVector& data, InputVector::Distance maxDistance) const;
 
-		std::optional<Position> getClosestRefVectorPosition(const std::unordered_set<Position>& refVectorsPosition, InputVector::Distance maxDistance) const;
+		std::optional<Position> getClosestRefVectorPosition(const std::vector<Position>& refVectorsPosition, InputVector::Distance maxDistance) const;
 
 		InputVector::Distance getRefVectorsDistance(const Position& position1, const Position& position2) const;
 

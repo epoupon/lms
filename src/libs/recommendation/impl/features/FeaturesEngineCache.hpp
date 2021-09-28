@@ -28,27 +28,27 @@
 
 namespace Recommendation {
 
-class FeaturesClassifierCache
+class FeaturesEngineCache
 {
 	public:
 		static void invalidate();
 
-		static std::optional<FeaturesClassifierCache> read();
+		static std::optional<FeaturesEngineCache> read();
 		void write() const;
 
 	private:
-		using ObjectPositions = std::unordered_map<Database::IdType, std::unordered_set<SOM::Position>>;
+		using TrackPositions = std::unordered_map<Database::TrackId, std::vector<SOM::Position>>;
 
-		FeaturesClassifierCache(SOM::Network network, ObjectPositions trackPositions);
+		FeaturesEngineCache(SOM::Network network, TrackPositions trackPositions);
 
 		static std::optional<SOM::Network> createNetworkFromCacheFile(const std::filesystem::path& path);
-		static std::optional<ObjectPositions> createObjectPositionsFromCacheFile(const std::filesystem::path& path);
-		static bool objectPositionToCacheFile(const ObjectPositions& objectsPosition, const std::filesystem::path& path);
+		static std::optional<TrackPositions> createObjectPositionsFromCacheFile(const std::filesystem::path& path);
+		static bool objectPositionToCacheFile(const TrackPositions& trackPositions, const std::filesystem::path& path);
 
-		friend class FeaturesClassifier;
+		friend class FeaturesEngine;
 
 		SOM::Network		_network;
-		ObjectPositions		_trackPositions;
+		TrackPositions		_trackPositions;
 };
 
 } // namespace Recommendation

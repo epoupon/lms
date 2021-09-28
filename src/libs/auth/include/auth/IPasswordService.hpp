@@ -53,23 +53,24 @@ namespace Auth
 					Throttled,
 				};
 				State state {State::Denied};
-				std::optional<Database::IdType> userId {};
+				std::optional<Database::UserId> userId {};
 				std::optional<Wt::WDateTime> expiry {};
 			};
-			virtual CheckResult				checkUserPassword(Database::Session& session,
-													const boost::asio::ip::address& clientAddress,
-													std::string_view loginName,
-													std::string_view password) = 0;
+			virtual CheckResult		checkUserPassword(Database::Session& session,
+											const boost::asio::ip::address& clientAddress,
+											std::string_view loginName,
+											std::string_view password) = 0;
 
-			class PasswordTooWeakException : public Auth::Exception
+			virtual bool			canSetPasswords() const = 0;
+
+			enum class PasswordAcceptabilityResult
 			{
-				public:
-					PasswordTooWeakException() : Auth::Exception {"Password too weak"} {}
+				OK,
+				TooWeak,
+				MustMatchLoginName,
 			};
-
-			virtual bool					canSetPasswords() const = 0;
-			virtual bool					isPasswordSecureEnough(std::string_view username, std::string_view password) const = 0;
-			virtual void					setPassword(Database::Session& session, Database::IdType userId, std::string_view newPassword) = 0;
+			virtual PasswordAcceptabilityResult	checkPasswordAcceptability(std::string_view password, const PasswordValidationContext& context) const = 0;
+			virtual void						setPassword(Database::Session& session, Database::UserId userId, std::string_view newPassword) = 0;
 	};
 
 	std::unique_ptr<IPasswordService>	createPasswordService(std::string_view authPasswordBackend, std::size_t maxThrottlerEntryCount, IAuthTokenService& authTokenService);

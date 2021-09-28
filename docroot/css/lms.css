@@ -126,6 +126,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 .Lms-explore-entry-list {
 	padding-top: 4px;
 	padding-bottom: 4px;
+	min-height: 76px;
 }
 
 .Lms-explore-entry-list-text-container {
@@ -226,6 +227,10 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-explore-artist-entries-container {
+	margin-bottom: 15px;
+}
+
+.Lms-explore-artist-tracks-container {
 	margin-bottom: 15px;
 }
 

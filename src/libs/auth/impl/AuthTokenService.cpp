@@ -45,7 +45,7 @@ namespace Auth
 	}
 
 	std::string
-	AuthTokenService::createAuthToken(Database::Session& session, Database::IdType userId, const Wt::WDateTime& expiry)
+	AuthTokenService::createAuthToken(Database::Session& session, Database::UserId userId, const Wt::WDateTime& expiry)
 	{
 		const std::string secret {Wt::WRandom::generateId(32)};
 		const std::string secretHash {sha1Function.compute(secret, {})};
@@ -86,7 +86,7 @@ namespace Auth
 
 		LMS_LOG(UI, DEBUG) << "Found auth token for user '" << authToken->getUser()->getLoginName() << "'!";
 
-		AuthTokenService::AuthTokenProcessResult::AuthTokenInfo res {authToken->getUser().id(), authToken->getExpiry()};
+		AuthTokenService::AuthTokenProcessResult::AuthTokenInfo res {authToken->getUser()->getId(), authToken->getExpiry()};
 		authToken.remove();
 
 		return res;
@@ -123,7 +123,7 @@ namespace Auth
 	}
 
 	void
-	AuthTokenService::clearAuthTokens(Database::Session& session, Database::IdType userId)
+	AuthTokenService::clearAuthTokens(Database::Session& session, Database::UserId userId)
 	{
 		auto transaction {session.createUniqueTransaction()};
 

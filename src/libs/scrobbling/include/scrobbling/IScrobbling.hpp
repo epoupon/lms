@@ -24,12 +24,12 @@
 #include <chrono>
 #include <memory>
 #include <optional>
-#include <set>
 #include <vector>
 
 #include <Wt/WDateTime.h>
 
 #include "scrobbling/Listen.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {
@@ -57,42 +57,42 @@ namespace Scrobbling
 
 			// Stats
 			// From most recent to oldest
-			virtual std::vector<Wt::Dbo::ptr<Database::Artist>> getRecentArtists(Database::Session& session,
-																	Wt::Dbo::ptr<Database::User> user,
-																	const std::set<Database::IdType>& clusterIds,
+			virtual std::vector<Database::ObjectPtr<Database::Artist>> getRecentArtists(Database::Session& session,
+																	Database::ObjectPtr<Database::User> user,
+																	const std::vector<Database::ClusterId>& clusterIds,
 																	std::optional<Database::TrackArtistLinkType> linkType,
 																	std::optional<Database::Range> range,
 																	bool& moreResults) = 0;
 
-			virtual std::vector<Wt::Dbo::ptr<Database::Release>> getRecentReleases(Database::Session& session,
-																	Wt::Dbo::ptr<Database::User> user,
-																	const std::set<Database::IdType>& clusterIds,
+			virtual std::vector<Database::ObjectPtr<Database::Release>> getRecentReleases(Database::Session& session,
+																	Database::ObjectPtr<Database::User> user,
+																	const std::vector<Database::ClusterId>& clusterIds,
 																	std::optional<Database::Range> range,
 																	bool& moreResults) = 0;
 
-			virtual std::vector<Wt::Dbo::ptr<Database::Track>> getRecentTracks(Database::Session& session,
-																	Wt::Dbo::ptr<Database::User> user,
-																	const std::set<Database::IdType>& clusterIds,
+			virtual std::vector<Database::ObjectPtr<Database::Track>> getRecentTracks(Database::Session& session,
+																	Database::ObjectPtr<Database::User> user,
+																	const std::vector<Database::ClusterId>& clusterIds,
 																	std::optional<Database::Range> range,
 																	bool& moreResults) = 0;
 
 			// Top
-			virtual std::vector<Wt::Dbo::ptr<Database::Artist>> getTopArtists(Database::Session& session,
-																	Wt::Dbo::ptr<Database::User> user,
-																	const std::set<Database::IdType>& clusterIds,
+			virtual std::vector<Database::ObjectPtr<Database::Artist>> getTopArtists(Database::Session& session,
+																	Database::ObjectPtr<Database::User> user,
+																	const std::vector<Database::ClusterId>& clusterIds,
 																	std::optional<Database::TrackArtistLinkType> linkType,
 																	std::optional<Database::Range> range,
 																	bool& moreResults) = 0;
 
-			virtual std::vector<Wt::Dbo::ptr<Database::Release>> getTopReleases(Database::Session& session,
-																	Wt::Dbo::ptr<Database::User> user,
-																	const std::set<Database::IdType>& clusterIds,
+			virtual std::vector<Database::ObjectPtr<Database::Release>> getTopReleases(Database::Session& session,
+																	Database::ObjectPtr<Database::User> user,
+																	const std::vector<Database::ClusterId>& clusterIds,
 																	std::optional<Database::Range> range,
 																	bool& moreResults) = 0;
 
-			virtual std::vector<Wt::Dbo::ptr<Database::Track>> getTopTracks(Database::Session& session,
-																	Wt::Dbo::ptr<Database::User> user,
-																	const std::set<Database::IdType>& clusterIds,
+			virtual std::vector<Database::ObjectPtr<Database::Track>> getTopTracks(Database::Session& session,
+																	Database::ObjectPtr<Database::User> user,
+																	const std::vector<Database::ClusterId>& clusterIds,
 																	std::optional<Database::Range> range,
 																	bool& moreResults) = 0;
 	};

@@ -24,6 +24,7 @@
 #include <cmath>
 #include <random>
 #include <sstream>
+#include <unordered_set>
 
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
@@ -197,7 +198,7 @@ Network::getClosestRefVectorPosition(const InputVector& data, InputVector::Dista
 }
 
 std::optional<Position>
-Network::getClosestRefVectorPosition(const std::unordered_set<Position>& refVectorsPosition, InputVector::Distance maxDistance) const
+Network::getClosestRefVectorPosition(const std::vector<Position>& refVectorsPosition, InputVector::Distance maxDistance) const
 {
 	std::unordered_set<Position> neighboursPosition;
 	for (const Position& refVectorPosition : refVectorsPosition)

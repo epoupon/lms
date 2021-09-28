@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <vector>
 #include <Wt/WContainerWidget.h>
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
@@ -34,9 +35,9 @@ class Filters : public Wt::WTemplate
 	public:
 		Filters();
 
-		void add(Database::IdType clusterId);
+		void add(Database::ClusterId clusterId);
 
-		std::set<Database::IdType> getClusterIds() const { return _filterIds; }
+		const std::vector<Database::ClusterId>& getClusterIds() const { return _clusterIds; }
 
 		Wt::Signal<>& updated() { return _sigUpdated; }
 
@@ -46,7 +47,7 @@ class Filters : public Wt::WTemplate
 
 		Wt::WContainerWidget *_filters;
 		Wt::Signal<> _sigUpdated;
-		std::set<Database::IdType> _filterIds;
+		std::vector<Database::ClusterId> _clusterIds;
 };
 
 } // namespace UserInterface

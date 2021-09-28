@@ -47,7 +47,7 @@ static const std::string authCookieName {"LmsAuth"};
 
 static
 void
-createAuthToken(Database::IdType userId, const Wt::WDateTime& expiry)
+createAuthToken(Database::UserId userId, const Wt::WDateTime& expiry)
 {
 	const std::string secret {Service<::Auth::IAuthTokenService>::get()->createAuthToken(LmsApp->getDbSession(), userId, expiry)};
 
@@ -60,7 +60,7 @@ createAuthToken(Database::IdType userId, const Wt::WDateTime& expiry)
 }
 
 
-std::optional<Database::IdType>
+std::optional<Database::UserId>
 processAuthToken(const Wt::WEnvironment& env)
 {
 	const std::string* authCookie {env.getCookie(authCookieName)};
@@ -111,7 +111,7 @@ class AuthModel : public Wt::WFormModel
 
 				Database::User::pointer user {Database::User::getByLoginName(LmsApp->getDbSession(), valueText(LoginNameField).toUTF8())};
 				user.modify()->setLastLogin(Wt::WDateTime::currentDateTime());
-				_userId = user.id();
+				_userId = user->getId();
 
 				isDemo = user->isDemo();
 			}
@@ -158,11 +158,11 @@ class AuthModel : public Wt::WFormModel
 			return (validation(field).state() == Wt::ValidationState::Valid);
 		}
 
-		std::optional<Database::IdType> getUserId() const { return _userId; }
+		std::optional<Database::UserId> getUserId() const { return _userId; }
 
 	private:
 
-		std::optional<Database::IdType> _userId;
+		std::optional<Database::UserId> _userId;
 };
 
 const AuthModel::Field AuthModel::LoginNameField {"login-name"};

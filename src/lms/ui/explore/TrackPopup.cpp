@@ -32,8 +32,8 @@ namespace UserInterface
 
 	void
 	displayTrackPopupMenu(Wt::WInteractWidget& target,
-			Database::IdType trackId,
-			PlayQueueActionSignal& tracksAction)
+			Database::TrackId trackId,
+			PlayQueueActionTrackSignal& tracksAction)
 	{
 			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
 

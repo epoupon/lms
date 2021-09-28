@@ -63,7 +63,7 @@ StreamParameters
 getStreamParameters(RequestContext& context)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
+	const TrackId id {getMandatoryParameterAs<TrackId>(context.parameters, "id")};
 
 	// Optional params
 	std::optional<std::size_t> maxBitRate {getParameterAs<std::size_t>(context.parameters, "maxBitRate")};
@@ -74,7 +74,7 @@ getStreamParameters(RequestContext& context)
 	auto transaction {context.dbSession.createSharedTransaction()};
 
 	{
-		auto track {Track::getById(context.dbSession, id.value)};
+		auto track {Track::getById(context.dbSession, id)};
 		if (!track)
 			throw RequestedDataNotFoundError {};
 
@@ -94,7 +94,7 @@ getStreamParameters(RequestContext& context)
 
 			// "If set to zero, no limit is imposed"
 			if (maxBitRate && *maxBitRate != 0)
-				bitRate = clamp(*maxBitRate, std::size_t {48}, bitRate);
+				bitRate = Utils::clamp(*maxBitRate, std::size_t {48}, bitRate);
 
 			Av::TranscodeParameters transcodeParameters;
 
@@ -118,13 +118,13 @@ handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Ht
 	if (!continuation)
 	{
 		// Mandatory params
-		Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
+		Database::TrackId id {getMandatoryParameterAs<Database::TrackId>(context.parameters, "id")};
 
 		std::filesystem::path trackPath;
 		{
 			auto transaction {context.dbSession.createSharedTransaction()};
 
-			auto track {Track::getById(context.dbSession, id.value)};
+			auto track {Track::getById(context.dbSession, id)};
 			if (!track)
 				throw RequestedDataNotFoundError {};
 

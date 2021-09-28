@@ -34,26 +34,34 @@ namespace Database
 	class Release;
 }
 
-namespace UserInterface {
-
-class Filters;
-
-class Artist : public Wt::WTemplate
+namespace UserInterface
 {
-	public:
-		Artist(Filters* filters);
 
-		PlayQueueActionSignal artistsAction;
+	class Filters;
+	class InfiniteScrollingContainer;
 
-	private:
-		void refreshView();
-		void refreshSimilarArtists(const std::unordered_set<Database::IdType>& similarArtistsId);
-		void refreshLinks(const Wt::Dbo::ptr<Database::Artist>& artist);
+	class Artist : public Wt::WTemplate
+	{
+		public:
+			Artist(Filters* filters);
 
-		std::unique_ptr<Wt::WTemplate> createRelease(const Wt::Dbo::ptr<Database::Artist>& artist, const Wt::Dbo::ptr<Database::Release>& release);
+			PlayQueueActionArtistSignal artistsAction;
+			PlayQueueActionTrackSignal tracksAction;
 
-		Filters* _filters {};
-};
+		private:
+			void refreshView();
+			void refreshReleases(const Database::ObjectPtr<Database::Artist>& artist);
+			void refreshNonReleaseTracks(const Database::ObjectPtr<Database::Artist>& artist);
+			void refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArtistsId);
+			void refreshLinks(const Database::ObjectPtr<Database::Artist>& artist);
 
+			void addSomeNonReleaseTracks();
+			static constexpr std::size_t _tracksBatchSize {6};
+			static constexpr std::size_t _tracksMaxCount {160};
+
+			Filters* _filters {};
+			InfiniteScrollingContainer* _trackContainer {};
+			Database::ArtistId			_artistId {};
+	};
 } // namespace UserInterface
 

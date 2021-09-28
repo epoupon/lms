@@ -20,8 +20,8 @@
 
 #include <Wt/Http/Request.h>
 
+#include "database/Types.hpp"
 #include "utils/String.hpp"
-#include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
 
 namespace API::Subsonic
@@ -40,10 +40,8 @@ namespace API::Subsonic
 		for (const std::string& param : it->second)
 		{
 			auto value {StringUtils::readAs<T>(param)};
-			if (!value)
-				throw BadParameterFormatGenericError {paramName};
-
-			res.emplace_back(std::move(*value));
+			if (value)
+				res.emplace_back(std::move(*value));
 		}
 
 		return res;
@@ -82,18 +80,5 @@ namespace API::Subsonic
 
 		return *res;
 	}
-
-
-}
-
-namespace StringUtils
-{
-	template<>
-	std::optional<API::Subsonic::Id>
-	readAs(std::string_view str);
-
-	template<>
-	std::optional<bool>
-	readAs(std::string_view str);
 }
 

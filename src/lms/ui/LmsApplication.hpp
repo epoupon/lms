@@ -51,7 +51,7 @@ class LmsApplication : public Wt::WApplication
 {
 	public:
 
-		LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationManager& appManager, std::optional<Database::IdType> userId = std::nullopt);
+		LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationManager& appManager, std::optional<Database::UserId> userId = std::nullopt);
 		~LmsApplication();
 
 		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationManager& appManager);
@@ -62,12 +62,11 @@ class LmsApplication : public Wt::WApplication
 		std::shared_ptr<CoverResource> getCoverResource() { return _coverResource; }
 		Database::Session& getDbSession(); // always thread safe
 
-		Wt::Dbo::ptr<Database::User>	getUser();
-		Database::IdType				getUserId();
+		Database::ObjectPtr<Database::User>	getUser();
+		Database::UserId				getUserId();
 		bool isUserAuthStrong() const; // user must be logged in prior this call
-		bool isUserAdmin(); // user must be logged in prior this call
-		bool isUserDemo(); // user must be logged in prior this call
-		std::string getUserLoginName(); // user must be logged in prior this call
+		Database::UserType				getUserType(); // user must be logged in prior this call
+		std::string						getUserLoginName(); // user must be logged in prior this call
 
 		// Proxified scanner events
 		Scanner::Events& getScannerEvents() { return _scannerEvents; }
@@ -85,11 +84,11 @@ class LmsApplication : public Wt::WApplication
 		};
 		void notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds {4000});
 
-		static Wt::WLink createArtistLink(Wt::Dbo::ptr<Database::Artist> artist);
-		static std::unique_ptr<Wt::WAnchor> createArtistAnchor(Wt::Dbo::ptr<Database::Artist> artist, bool addText = true);
-		static Wt::WLink createReleaseLink(Wt::Dbo::ptr<Database::Release> release);
-		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Wt::Dbo::ptr<Database::Release> release, bool addText = true);
-		static std::unique_ptr<Wt::WText> createCluster(Wt::Dbo::ptr<Database::Cluster> cluster, bool canDelete = false);
+		static Wt::WLink					createArtistLink(Database::ObjectPtr<Database::Artist> artist);
+		static std::unique_ptr<Wt::WAnchor>	createArtistAnchor(Database::ObjectPtr<Database::Artist> artist, bool addText = true);
+		static Wt::WLink					createReleaseLink(Database::ObjectPtr<Database::Release> release);
+		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::ObjectPtr<Database::Release> release, bool addText = true);
+		static std::unique_ptr<Wt::WText>	createCluster(Database::ObjectPtr<Database::Cluster> cluster, bool canDelete = false);
 		Wt::WPopupMenu* createPopupMenu();
 
 		MediaPlayer&	getMediaPlayer() const { return *_mediaPlayer; }
@@ -120,7 +119,7 @@ class LmsApplication : public Wt::WApplication
 		Scanner::Events							_scannerEvents;
 		struct UserAuthInfo
 		{
-			Database::IdType	userId;
+			Database::UserId	userId;
 			bool				strongAuth {};
 		};
 		std::optional<UserAuthInfo>				_authenticatedUser;

@@ -22,6 +22,7 @@
 #include <memory>
 
 #include <Wt/WTemplate.h>
+#include "database/Types.hpp"
 
 namespace Database
 {
@@ -31,7 +32,7 @@ namespace Database
 
 namespace UserInterface::ReleaseListHelpers
 {
-	std::unique_ptr<Wt::WTemplate> createEntry(const Wt::Dbo::ptr<Database::Release>& release);
-	std::unique_ptr<Wt::WTemplate> createEntryForArtist(const Wt::Dbo::ptr<Database::Release>& release, const Wt::Dbo::ptr<Database::Artist>& artist);
+	std::unique_ptr<Wt::WTemplate> createEntry(const Database::ObjectPtr<Database::Release>& release);
+	std::unique_ptr<Wt::WTemplate> createEntryForArtist(const Database::ObjectPtr<Database::Release>& release, const Database::ObjectPtr<Database::Artist>& artist);
 } // namespace UserInterface
 

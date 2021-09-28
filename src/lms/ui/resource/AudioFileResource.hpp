@@ -31,7 +31,7 @@ class AudioFileResource : public Wt::WResource
 	public:
 		~AudioFileResource();
 
-		std::string getUrl(Database::IdType trackId) const;
+		std::string getUrl(Database::TrackId trackId) const;
 
 	private:
 

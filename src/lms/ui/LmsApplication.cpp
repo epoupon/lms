@@ -95,7 +95,7 @@ LmsApplication::getDbSession()
 	return _db.getTLSSession();
 }
 
-Wt::Dbo::ptr<Database::User>
+Database::User::pointer
 LmsApplication::getUser()
 {
 	if (!_authenticatedUser)
@@ -104,7 +104,7 @@ LmsApplication::getUser()
 	return Database::User::getById(getDbSession(), _authenticatedUser->userId);
 }
 
-Database::IdType
+Database::UserId
 LmsApplication::getUserId()
 {
 	return _authenticatedUser->userId;
@@ -116,20 +116,12 @@ LmsApplication::isUserAuthStrong() const
 	return _authenticatedUser->strongAuth;
 }
 
-bool
-LmsApplication::isUserAdmin()
+Database::UserType
+LmsApplication::getUserType()
 {
 	auto transaction {getDbSession().createSharedTransaction()};
 
-	return getUser()->isAdmin();
-}
-
-bool
-LmsApplication::isUserDemo()
-{
-	auto transaction {getDbSession().createSharedTransaction()};
-
-	return getUser()->isDemo();
+	return getUser()->getType();
 }
 
 std::string
@@ -143,7 +135,7 @@ LmsApplication::getUserLoginName()
 LmsApplication::LmsApplication(const Wt::WEnvironment& env,
 		Database::Db& db,
 		LmsApplicationManager& appManager,
-		std::optional<Database::IdType> userId)
+		std::optional<Database::UserId> userId)
 : Wt::WApplication {env}
 ,  _db {db}
 ,  _appManager {appManager}
@@ -216,7 +208,7 @@ void
 LmsApplication::processPasswordAuth()
 {
 	{
-		std::optional<Database::IdType> userId {processAuthToken(environment())};
+		std::optional<Database::UserId> userId {processAuthToken(environment())};
 		if (userId)
 		{
 			LMS_LOG(UI, DEBUG) << "User authenticated using Auth token!";
@@ -244,7 +236,7 @@ LmsApplication::processPasswordAuth()
 	else
 	{
 		Auth* auth {root()->addNew<Auth>()};
-		auth->userLoggedIn.connect(this, [this](Database::IdType userId)
+		auth->userLoggedIn.connect(this, [this](Database::UserId userId)
 		{
 			_authenticatedUser = {userId, true};
 			onUserLoggedIn();
@@ -280,7 +272,7 @@ LmsApplication::createArtistLink(Database::Artist::pointer artist)
 	if (const auto mbid {artist->getMBID()})
 		return Wt::WLink {Wt::LinkType::InternalPath, "/artist/mbid/" + std::string {mbid->getAsString()}};
 	else
-		return Wt::WLink {Wt::LinkType::InternalPath, "/artist/" + std::to_string(artist.id())};
+		return Wt::WLink {Wt::LinkType::InternalPath, "/artist/" + artist->getId().toString()};
 }
 
 std::unique_ptr<Wt::WAnchor>
@@ -304,7 +296,7 @@ LmsApplication::createReleaseLink(Database::Release::pointer release)
 	if (const auto mbid {release->getMBID()})
 		return Wt::WLink {Wt::LinkType::InternalPath, "/release/mbid/" + std::string {mbid->getAsString()}};
 	else
-		return Wt::WLink {Wt::LinkType::InternalPath, "/release/" + std::to_string(release.id())};
+		return Wt::WLink {Wt::LinkType::InternalPath, "/release/" + release->getId().toString()};
 }
 
 std::unique_ptr<Wt::WAnchor>
@@ -328,7 +320,7 @@ LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete
 {
 	auto getStyleClass = [](const Database::Cluster::pointer cluster)
 	{
-		switch (cluster->getType().id() % 6)
+		switch (cluster->getType()->getId().getValue() % 6)
 		{
 			case 0: return "label-info";
 			case 1: return "label-warning";
@@ -458,7 +450,7 @@ LmsApplication::onUserLoggedIn()
 		// Only one active session by user
 		if (otherApplication.getUserId() == getUserId())
 		{
-			if (!LmsApp->isUserDemo())
+			if (LmsApp->getUserType() != Database::UserType::DEMO)
 			{
 				quit(Wt::WString::tr("Lms.quit-other-session"));
 			}
@@ -502,7 +494,7 @@ LmsApplication::createHome()
 	Wt::WLineEdit* searchEdit {main->bindNew<Wt::WLineEdit>("search")};
 	searchEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
 
-	if (isUserAdmin())
+	if (LmsApp->getUserType() == Database::UserType::ADMIN)
 	{
 		main->setCondition("if-is-admin", true);
 		main->bindNew<Wt::WAnchor>("database", Wt::WLink {Wt::LinkType::InternalPath, "/admin/database"}, Wt::WString::tr("Lms.Admin.Database.menu-database"));
@@ -530,14 +522,14 @@ LmsApplication::createHome()
 	});
 
 	// Admin stuff
-	if (isUserAdmin())
+	if (getUserType() == Database::UserType::ADMIN)
 	{
 		mainStack->addNew<DatabaseSettingsView>();
 		mainStack->addNew<UsersView>();
 		mainStack->addNew<UserView>();
 	}
 
-	explore->tracksAction.connect([this] (PlayQueueAction action, const std::vector<Database::IdType>& trackIds)
+	explore->tracksAction.connect([this] (PlayQueueAction action, const std::vector<Database::TrackId>& trackIds)
 	{
 		_playQueue->processTracks(action, trackIds);
 	});
@@ -552,15 +544,15 @@ LmsApplication::createHome()
 		_playQueue->playPrevious();
 	});
 
-	_mediaPlayer->scrobbleListenNow.connect([this](Database::IdType trackId)
+	_mediaPlayer->scrobbleListenNow.connect([this](Database::TrackId trackId)
 	{
-		LMS_LOG(UI, DEBUG) << "Received ScrobbleListenNow from player for trackId = " << trackId;
+		LMS_LOG(UI, DEBUG) << "Received ScrobbleListenNow from player for trackId = " << trackId.toString();
 		const Scrobbling::Listen listen {getUserId(), trackId};
 		Service<Scrobbling::IScrobbling>::get()->listenStarted(listen);
 	});
-	_mediaPlayer->scrobbleListenFinished.connect([this](Database::IdType trackId, unsigned durationMs)
+	_mediaPlayer->scrobbleListenFinished.connect([this](Database::TrackId trackId, unsigned durationMs)
 	{
-		LMS_LOG(UI, DEBUG) << "Received ScrobbleListenFinished from player for trackId = " << trackId << ", duration = " << (durationMs / 1000) << "s";
+		LMS_LOG(UI, DEBUG) << "Received ScrobbleListenFinished from player for trackId = " << trackId.toString() << ", duration = " << (durationMs / 1000) << "s";
 		const std::chrono::milliseconds duration {durationMs};
 		const Scrobbling::Listen listen {getUserId(), trackId};
 		Service<Scrobbling::IScrobbling>::get()->listenFinished(listen, std::chrono::duration_cast<std::chrono::seconds>(duration));
@@ -571,7 +563,7 @@ LmsApplication::createHome()
 		_playQueue->playNext();
 	});
 
-	_playQueue->trackSelected.connect([this] (Database::IdType trackId, bool play, float replayGain)
+	_playQueue->trackSelected.connect([this] (Database::TrackId trackId, bool play, float replayGain)
 	{
 		_mediaPlayer->loadTrack(trackId, play, replayGain);
 	});
@@ -581,7 +573,8 @@ LmsApplication::createHome()
 		_mediaPlayer->stop();
 	});
 
-	if (isUserAdmin())
+	const bool isAdmin {getUserType() == Database::UserType::ADMIN};
+	if (isAdmin)
 	{
 		_scannerEvents.scanComplete.connect([=] (const Scanner::ScanStats& stats)
 		{
@@ -597,10 +590,10 @@ LmsApplication::createHome()
 
 	internalPathChanged().connect([=]
 	{
-		handlePathChange(*mainStack, isUserAdmin());
+		handlePathChange(*mainStack, isAdmin);
 	});
 
-	handlePathChange(*mainStack, isUserAdmin());
+	handlePathChange(*mainStack, isAdmin);
 }
 
 void

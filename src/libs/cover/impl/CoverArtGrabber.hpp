@@ -26,6 +26,7 @@
 #include <shared_mutex>
 #include <string_view>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include "cover/ICoverArtGrabber.hpp"
@@ -46,20 +47,12 @@ namespace CoverArt
 {
 	struct CacheEntryDesc
 	{
-		enum class Type
-		{
-			Track,
-			Release,
-		};
-
-		Type				type;
-		Database::IdType	id;
+		std::variant<Database::TrackId, Database::ReleaseId> id;
 		std::size_t			size;
 
 		bool operator==(const CacheEntryDesc& other) const
 		{
-			return type == other.type
-				&& id == other.id
+			return id == other.id
 				&& size == other.size;
 		}
 	};
@@ -75,8 +68,12 @@ namespace std
 		public:
 			size_t operator()(const CoverArt::CacheEntryDesc& e) const
 			{
-				size_t h = std::hash<int>()(static_cast<int>(e.type));
-				h ^= std::hash<Database::IdType>()(e.id) << 1;
+				size_t h {};
+				std::visit([&](auto id)
+				{
+					using IdType = std::decay_t<decltype(id)>;
+					h ^= std::hash<IdType>()(id);
+				}, e.id);
 				h ^= std::hash<std::size_t>()(e.size) << 1;
 				return h;
 			}
@@ -101,11 +98,11 @@ namespace CoverArt
 			Grabber& operator=(Grabber&&) = delete;
 
 		private:
-			std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width) override;
-			std::shared_ptr<IEncodedImage>	getFromRelease(Database::Session& dbSession, Database::IdType releaseId, ImageSize width) override;
+			std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::TrackId trackId, ImageSize width) override;
+			std::shared_ptr<IEncodedImage>	getFromRelease(Database::Session& dbSession, Database::ReleaseId releaseId, ImageSize width) override;
 			void							flushCache() override;
 
-			std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width, bool allowReleaseFallback);
+			std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::TrackId trackId, ImageSize width, bool allowReleaseFallback);
 			std::unique_ptr<IEncodedImage>	getFromAvMediaFile(const Av::IAudioFile& input, ImageSize width) const;
 			std::unique_ptr<IEncodedImage>	getFromCoverFile(const std::filesystem::path& p, ImageSize width) const;
 

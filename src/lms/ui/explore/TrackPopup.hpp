@@ -28,7 +28,7 @@
 namespace UserInterface
 {
 	void displayTrackPopupMenu(Wt::WInteractWidget& target,
-			Database::IdType releaseId,
-			PlayQueueActionSignal& releasesAction);
+			Database::TrackId trackId,
+			PlayQueueActionTrackSignal& tracksAction);
 } // namespace UserInterface
 

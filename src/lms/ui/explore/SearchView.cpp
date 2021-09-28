@@ -38,8 +38,6 @@
 #include "ReleaseListHelpers.hpp"
 #include "TrackListHelpers.hpp"
 
-static constexpr std::size_t maxEntries {6};
-
 namespace UserInterface
 {
 
@@ -56,7 +54,7 @@ namespace UserInterface
 		stack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
 		_menu = bindNew<Wt::WMenu>("mode", stack);
 
-		auto addItem = [=](const Wt::WString& str, Mode mode, const Wt::WString& templateStr, std::function<void()> onRequestElementsFunc)
+		auto addItem = [=](const Wt::WString& str, [[maybe_unused]] Mode mode, const Wt::WString& templateStr, std::function<void()> onRequestElementsFunc)
 		{
 			assert(modeToIndex(mode) == _results.size());
 

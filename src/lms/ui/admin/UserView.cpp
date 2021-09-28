@@ -53,7 +53,7 @@ class UserModel : public Wt::WFormModel
 		static inline const Field PasswordField {"password"};
 		static inline const Field DemoField {"demo"};
 
-		UserModel(std::optional<Database::IdType> userId, ::Auth::IPasswordService* authPasswordService)
+		UserModel(std::optional<Database::UserId> userId, ::Auth::IPasswordService* authPasswordService)
 		: _userId {userId}
 		, _authPasswordService {authPasswordService}
 		{
@@ -66,7 +66,7 @@ class UserModel : public Wt::WFormModel
 			if (authPasswordService)
 			{
 				addField(PasswordField);
-				setValidator(PasswordField, createPasswordStrengthValidator([this] { return getLoginName(); }));
+				setValidator(PasswordField, createPasswordStrengthValidator([this] { return ::Auth::PasswordValidationContext {getLoginName(), getUserType()}; }));
 				if (!userId)
 					validator(PasswordField)->setMandatory(true);
 			}
@@ -87,7 +87,7 @@ class UserModel : public Wt::WFormModel
 					throw UserNotFoundException {};
 
 				if (_authPasswordService && !valueText(PasswordField).empty())
-					_authPasswordService->setPassword(LmsApp->getDbSession(), user.id(), valueText(PasswordField).toUTF8());
+					_authPasswordService->setPassword(LmsApp->getDbSession(), user->getId(), valueText(PasswordField).toUTF8());
 			}
 			else
 			{
@@ -100,10 +100,10 @@ class UserModel : public Wt::WFormModel
 				user = Database::User::create(LmsApp->getDbSession(), valueText(LoginField).toUTF8());
 
 				if (Wt::asNumber(value(DemoField)))
-					user.modify()->setType(Database::User::Type::DEMO);
+					user.modify()->setType(Database::UserType::DEMO);
 
 				if (_authPasswordService)
-					_authPasswordService->setPassword(LmsApp->getDbSession(), user.id(), valueText(PasswordField).toUTF8());
+					_authPasswordService->setPassword(LmsApp->getDbSession(), user->getId(), valueText(PasswordField).toUTF8());
 			}
 		}
 
@@ -122,6 +122,19 @@ class UserModel : public Wt::WFormModel
 				throw UserNotAllowedException {};
 		}
 
+		Database::UserType getUserType() const
+		{
+			if (_userId)
+			{
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
+				return user->getType();
+			}
+
+			return Wt::asNumber(value(DemoField)) ? UserType::DEMO : UserType::REGULAR;
+		}
+
 		std::string getLoginName() const
 		{
 			if (_userId)
@@ -131,18 +144,8 @@ class UserModel : public Wt::WFormModel
 				const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
 				return user->getLoginName();
 			}
-			else
-				return valueText(LoginField).toUTF8();
-		}
 
-		void validatePassword(Wt::WString& error) const
-		{
-			if (!valueText(PasswordField).empty() && Wt::asNumber(value(DemoField)))
-			{
-				// Demo account: password must be the same as the login name
-				if (valueText(PasswordField) != getLoginName())
-					error = Wt::WString::tr("Lms.Admin.User.demo-password-invalid");
-			}
+			return valueText(LoginField).toUTF8();
 		}
 
 		bool validateField(Field field)
@@ -157,10 +160,6 @@ class UserModel : public Wt::WFormModel
 				if (user)
 					error = Wt::WString::tr("Lms.Admin.User.user-already-exists");
 			}
-			else if (field == PasswordField)
-			{
-				validatePassword(error);
-			}
 			else if (field == DemoField)
 			{
 				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
@@ -172,12 +171,12 @@ class UserModel : public Wt::WFormModel
 			if (error.empty())
 				return Wt::WFormModel::validateField(field);
 
-			setValidation(field, Wt::WValidator::Result( Wt::ValidationState::Invalid, error));
+			setValidation(field, Wt::WValidator::Result {Wt::ValidationState::Invalid, error});
 
 			return false;
 		}
 
-		std::optional<Database::IdType> _userId;
+		std::optional<Database::UserId> _userId;
 		::Auth::IPasswordService* _authPasswordService {};
 };
 
@@ -197,7 +196,7 @@ UserView::refreshView()
 	if (!wApp->internalPathMatches("/admin/user"))
 		return;
 
-	auto userId = StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/admin/user/"));
+	const std::optional<Database::UserId> userId {StringUtils::readAs<Database::UserId::ValueType>(wApp->internalPathNextPart("/admin/user/"))};
 
 	clear();
 

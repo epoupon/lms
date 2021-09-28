@@ -27,8 +27,8 @@ namespace Scrobbling
 {
 	struct Listen
 	{
-		Database::IdType userId {};
-		Database::IdType trackId {};
+		Database::UserId userId {};
+		Database::TrackId trackId {};
 	};
 
 	struct TimedListen : public Listen

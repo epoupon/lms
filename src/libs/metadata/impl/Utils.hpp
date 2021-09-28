@@ -1,5 +1,6 @@
+
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2016 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,13 +18,10 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <Wt/WDate.h>
 
-#include <memory>
-#include "IClassifier.hpp"
-
-namespace Recommendation
+namespace MetaData::Utils
 {
-	std::unique_ptr<IClassifier> createFeaturesClassifier();
+	Wt::WDate parseDate(const std::string& dateStr);
 }
 

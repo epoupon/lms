@@ -16,7 +16,8 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "subsonic/SubsonicResource.hpp"
+
+#include "SubsonicResource.hpp"
 
 #include <atomic>
 #include <ctime>
@@ -39,15 +40,18 @@
 #include "database/User.hpp"
 #include "recommendation/IEngine.hpp"
 #include "scrobbling/IScrobbling.hpp"
+#include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
 #include "ParameterParsing.hpp"
+#include "ProtocolVersion.hpp"
 #include "RequestContext.hpp"
 #include "Scan.hpp"
 #include "Stream.hpp"
+#include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
 
 using namespace Database;
@@ -57,55 +61,17 @@ static const std::string	reportedStarredDate {"2000-01-01T00:00:00"};
 static const std::string	reportedDummyDate {"2000-01-01T00:00:00"};
 static const unsigned long long	reportedDummyDateULong {946684800000ULL}; // 2000-01-01T00:00:00 UTC
 
-namespace API::Subsonic
-{
-	struct ClientVersion
-	{
-		unsigned major {};
-		unsigned minor {};
-		unsigned patch {};
-	};
-}
 
-namespace StringUtils
-{
-	template<>
-	std::optional<API::Subsonic::ClientVersion>
-	readAs(std::string_view str)
-	{
-		// Expects "X.Y.Z"
-		const auto numbers {StringUtils::splitString(str, ".")};
-		if (numbers.size() < 2 || numbers.size() > 3)
-			return std::nullopt;
-
-		API::Subsonic::ClientVersion version;
-
-		auto number {StringUtils::readAs<unsigned>(numbers[0])};
-		if (!number)
-			return std::nullopt;
-		version.major = *number;
-
-		number = {StringUtils::readAs<unsigned>(numbers[1])};
-		if (!number)
-			return std::nullopt;
-		version.minor = *number;
-
-		if (numbers.size() == 3)
-		{
-			number = {StringUtils::readAs<unsigned>(numbers[2])};
-			if (!number)
-				return std::nullopt;
-			version.patch = *number;
-		}
-
-		return version;
-	}
-
-}
 
 
 namespace API::Subsonic
 {
+
+std::unique_ptr<Wt::WResource>
+createSubsonicResource(Database::Db& db)
+{
+	return std::make_unique<SubsonicResource>(db);
+}
 
 static
 void
@@ -139,38 +105,24 @@ decodePasswordIfNeeded(const std::string& password)
 	return password;
 }
 
-struct ClientInfo
-{
-	std::string name;
-	std::string user;
-	std::string password;
-	ClientVersion version;
-};
-
 static
-ClientInfo
-getClientInfo(const Wt::Http::ParameterMap& parameters)
+std::unordered_map<std::string, ProtocolVersion>
+readConfigProtocolVersions()
 {
-	ClientInfo res;
+	std::unordered_map<std::string, ProtocolVersion> res;
 
-	// Mandatory parameters
-	res.name = getMandatoryParameterAs<std::string>(parameters, "c");
-	res.version = getMandatoryParameterAs<ClientVersion>(parameters, "v");
-	if (res.version.major > API_VERSION_MAJOR)
-		throw ServerMustUpgradeError {};
-	if (res.version.major < API_VERSION_MAJOR)
-		throw ClientMustUpgradeError {};
-	if (res.version.minor > Response::getAPIMinorVersion(res.name))
-		throw ServerMustUpgradeError {};
-
-	res.user = getMandatoryParameterAs<std::string>(parameters, "u");
-	res.password = decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(parameters, "p"));
+	Service<IConfig>::get()->visitStrings("api-subsonic-report-old-server-protocol",
+			[&](std::string_view client)
+			{
+				res.emplace(std::string {client}, ProtocolVersion {1, 12, 0});
+			}, {"DSub"});
 
 	return res;
 }
 
 SubsonicResource::SubsonicResource(Db& db)
-: _db {db}
+: _serverProtocolVersionsByClient {readConfigProtocolVersions()}
+, _db {db}
 {
 }
 
@@ -180,7 +132,7 @@ std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap
 	auto censorValue = [](const std::string& type, const std::string& value) -> std::string
 	{
 		if (type == "p" || type == "password")
-			return "*SENSIBLE DATA*";
+			return "*REDACTED*";
 		else
 			return value;
 	};
@@ -221,24 +173,16 @@ checkUserIsMySelfOrAdmin(RequestContext& context, const std::string& username)
 
 static
 void
-checkUserIsAdmin(RequestContext& context)
+checkUserTypeIsAllowed(RequestContext& context, EnumSet<Database::UserType> allowedUserTypes)
 {
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Check user is admin";
-
 	auto transaction {context.dbSession.createSharedTransaction()};
 
 	User::pointer currentUser {User::getById(context.dbSession, context.userId)};
 	if (!currentUser)
-	{
-		LMS_LOG(API_SUBSONIC, DEBUG) << "NOT FOUND";
 		throw RequestedDataNotFoundError {};
-	}
 
-	if (!currentUser->isAdmin())
-	{
-		LMS_LOG(API_SUBSONIC, DEBUG) << "NOT ADMIN";
+	if (!allowedUserTypes.contains(currentUser->getType()))
 		throw UserNotAuthorizedError {};
-	}
 }
 
 static
@@ -329,7 +273,7 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 {
 	Response::Node trackResponse;
 
-	trackResponse.setAttribute("id", IdToString({Id::Type::Track, track.id()}));
+	trackResponse.setAttribute("id", idToString(track->getId()));
 	trackResponse.setAttribute("isDir", false);
 	trackResponse.setAttribute("title", track->getName());
 	if (track->getTrackNumber())
@@ -356,7 +300,7 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 	if (user->getSubsonicTranscodeEnable())
 		trackResponse.setAttribute("transcodedSuffix", formatToSuffix(user->getSubsonicTranscodeFormat()));
 
-	trackResponse.setAttribute("coverArt", IdToString({Id::Type::Track, track.id()}));
+	trackResponse.setAttribute("coverArt", idToString(track->getId()));
 
 	const std::vector<Artist::pointer>& artists {track->getArtists({TrackArtistLinkType::Artist})};
 	if (!artists.empty())
@@ -364,14 +308,14 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 		trackResponse.setAttribute("artist", getArtistNames(artists));
 
 		if (artists.size() == 1)
-			trackResponse.setAttribute("artistId", IdToString({Id::Type::Artist, artists.front().id()}));
+			trackResponse.setAttribute("artistId", idToString(artists.front()->getId()));
 	}
 
 	if (track->getRelease())
 	{
 		trackResponse.setAttribute("album", track->getRelease()->getName());
-		trackResponse.setAttribute("albumId", IdToString({Id::Type::Release, track->getRelease().id()}));
-		trackResponse.setAttribute("parent", IdToString({Id::Type::Release, track->getRelease().id()}));
+		trackResponse.setAttribute("albumId", idToString(track->getRelease()->getId()));
+		trackResponse.setAttribute("parent", idToString(track->getRelease()->getId()));
 	}
 
 	trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count());
@@ -428,8 +372,8 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 	}
 
 	albumNode.setAttribute("created", dateTimeToCreatedString(release->getLastWritten()));
-	albumNode.setAttribute("id", IdToString({Id::Type::Release, release.id()}));
-	albumNode.setAttribute("coverArt", IdToString({Id::Type::Release, release.id()}));
+	albumNode.setAttribute("id", idToString(release->getId()));
+	albumNode.setAttribute("coverArt", idToString(release->getId()));
 	auto releaseYear {release->getReleaseYear()};
 	if (releaseYear)
 		albumNode.setAttribute("year", *releaseYear);
@@ -440,7 +384,7 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 
 	if (artists.empty() && !id3)
 	{
-		albumNode.setAttribute("parent", IdToString({Id::Type::Root}));
+		albumNode.setAttribute("parent", idToString(RootId {}));
 	}
 	else if (!artists.empty())
 	{
@@ -448,15 +392,12 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 
 		if (artists.size() == 1)
 		{
-			if (id3)
-				albumNode.setAttribute("artistId", IdToString({Id::Type::Artist, artists.front().id()}));
-			else
-				albumNode.setAttribute("parent", IdToString({Id::Type::Artist, artists.front().id()}));
+			albumNode.setAttribute(id3 ? "artistId" : "parent", idToString(artists.front()->getId()));
 		}
 		else
 		{
 			if (!id3)
-				albumNode.setAttribute("parent", IdToString({Id::Type::Root}));
+				albumNode.setAttribute("parent", idToString(RootId {}));
 		}
 	}
 
@@ -484,7 +425,7 @@ artistToResponseNode(const User::pointer& user, const Artist::pointer& artist, b
 {
 	Response::Node artistNode;
 
-	artistNode.setAttribute("id", IdToString({Id::Type::Artist, artist.id()}));
+	artistNode.setAttribute("id", idToString(artist->getId()));
 	artistNode.setAttribute("name", artist->getName());
 
 	if (id3)
@@ -540,7 +481,7 @@ static
 Response
 handlePingRequest(RequestContext& context)
 {
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -552,7 +493,7 @@ handleChangePassword(RequestContext& context)
 
 	try
 	{
-		Database::IdType userId;
+		Database::UserId userId;
 		{
 			auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -562,21 +503,25 @@ handleChangePassword(RequestContext& context)
 			if (!user)
 				throw UserNotAuthorizedError {};
 
-			userId = user.id();
+			userId = user->getId();
 		}
 
 		Service<Auth::IPasswordService>::get()->setPassword(context.dbSession, userId, password);
 	}
-	catch (Auth::IPasswordService::PasswordTooWeakException&)
+	catch (const Auth::PasswordMustMatchLoginNameException&)
+	{
+		throw PasswordMustMatchLoginNameGenericError {};
+	}
+	catch (const Auth::PasswordTooWeakException&)
 	{
 		throw PasswordTooWeakGenericError {};
 	}
-	catch (Auth::Exception& authException)
+	catch (const Auth::Exception& authException)
 	{
 		throw UserNotAuthorizedError {};
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -584,15 +529,10 @@ Response
 handleCreatePlaylistRequest(RequestContext& context)
 {
 	// Optional params
-	auto id {getParameterAs<Id>(context.parameters, "playlistId")};
-	if (id && id->type != Id::Type::Playlist)
-		throw BadParameterGenericError {"playlistId"};
-
+	const auto id {getParameterAs<TrackListId>(context.parameters, "playlistId")};
 	auto name {getParameterAs<std::string>(context.parameters, "name")};
 
-	std::vector<Id> trackIds {getMultiParametersAs<Id>(context.parameters, "songId")};
-	if (!std::all_of(std::cbegin(trackIds), std::cend(trackIds ), [](const Id& id) { return id.type == Id::Type::Track; }))
-		throw BadParameterGenericError {"songId"};
+	std::vector<TrackId> trackIds {getMultiParametersAs<TrackId>(context.parameters, "songId")};
 
 	if (!name && !id)
 		throw RequiredParameterMissingError {"name or id"};
@@ -606,7 +546,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 	TrackList::pointer tracklist;
 	if (id)
 	{
-		tracklist = TrackList::getById(context.dbSession, id->value);
+		tracklist = TrackList::getById(context.dbSession, *id);
 		if (!tracklist
 			|| tracklist->getUser() != user
 			|| tracklist->getType() != TrackList::Type::Playlist)
@@ -622,16 +562,16 @@ handleCreatePlaylistRequest(RequestContext& context)
 		tracklist = TrackList::create(context.dbSession, *name, TrackList::Type::Playlist, false, user);
 	}
 
-	for (const Id& trackId : trackIds)
+	for (const TrackId trackId : trackIds)
 	{
-		Track::pointer track {Track::getById(context.dbSession, trackId.value)};
+		Track::pointer track {Track::getById(context.dbSession, trackId)};
 		if (!track)
 			continue;
 
 		TrackListEntry::create(context.dbSession, track, tracklist );
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -642,7 +582,7 @@ handleCreateUserRequest(RequestContext& context)
 	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
 	// Just ignore all the other fields as we don't handle them
 
-	Database::IdType userId;
+	Database::UserId userId;
 	{
 		auto transaction {context.dbSession.createUniqueTransaction()};
 
@@ -651,7 +591,7 @@ handleCreateUserRequest(RequestContext& context)
 			throw UserAlreadyExistsGenericError {};
 
 		user = User::create(context.dbSession, username);
-		userId = user.id();
+		userId = user->getId();
 	}
 
 	auto removeCreatedUser {[&]()
@@ -666,7 +606,12 @@ handleCreateUserRequest(RequestContext& context)
 	{
 		Service<Auth::IPasswordService>::get()->setPassword(context.dbSession, userId, password);
 	}
-	catch (const Auth::IPasswordService::PasswordTooWeakException&)
+	catch (const Auth::PasswordMustMatchLoginNameException&)
+	{
+		removeCreatedUser();
+		throw PasswordMustMatchLoginNameGenericError {};
+	}
+	catch (const Auth::PasswordTooWeakException&)
 	{
 		removeCreatedUser();
 		throw PasswordTooWeakGenericError {};
@@ -677,16 +622,14 @@ handleCreateUserRequest(RequestContext& context)
 		throw UserNotAuthorizedError {};
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
 Response
 handleDeletePlaylistRequest(RequestContext& context)
 {
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
-	if (id.type != Id::Type::Playlist)
-		throw BadParameterGenericError {"id"};
+	TrackListId id {getMandatoryParameterAs<TrackListId>(context.parameters, "id")};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
@@ -694,7 +637,7 @@ handleDeletePlaylistRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id.value)};
+	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id)};
 	if (!tracklist
 		|| tracklist->getUser() != user
 		|| tracklist->getType() != TrackList::Type::Playlist)
@@ -704,7 +647,7 @@ handleDeletePlaylistRequest(RequestContext& context)
 
 	tracklist.remove();
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -720,19 +663,19 @@ handleDeleteUserRequest(RequestContext& context)
 		throw RequestedDataNotFoundError {};
 
 	// cannot delete ourself
-	if (user.id() == context.userId)
+	if (user->getId() == context.userId)
 		throw UserNotAuthorizedError {};
 
 	user.remove();
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
 Response
 handleGetLicenseRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 
 	Response::Node& licenseNode {response.createNode("license")};
 	licenseNode.setAttribute("licenseExpires", "2025-09-03T14:46:43");
@@ -758,7 +701,7 @@ handleGetRandomSongsRequest(RequestContext& context)
 
 	auto tracks {Track::getAllRandom(context.dbSession, {}, size)};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 
 	Response::Node& randomSongsNode {response.createNode("randomSongs")};
 	for (const Track::pointer& track : tracks)
@@ -808,7 +751,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 			if (cluster)
 			{
 				bool more;
-				releases = Release::getByFilter(context.dbSession, {cluster.id()}, {}, range, more);
+				releases = Release::getByFilter(context.dbSession, {cluster->getId()}, {}, range, more);
 			}
 		}
 	}
@@ -847,7 +790,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	else
 		throw NotImplementedGenericError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& albumListNode {response.createNode(id3 ? "albumList2" : "albumList")};
 
 	for (const Release::pointer& release : releases)
@@ -875,14 +818,11 @@ Response
 handleGetAlbumRequest(RequestContext& context)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
-
-	if (id.type != Id::Type::Release)
-		throw BadParameterGenericError {"id"};
+	ReleaseId id {getMandatoryParameterAs<ReleaseId>(context.parameters, "id")};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Release::pointer release {Release::getById(context.dbSession, id.value)};
+	Release::pointer release {Release::getById(context.dbSession, id)};
 	if (!release)
 		throw RequestedDataNotFoundError {};
 
@@ -890,7 +830,7 @@ handleGetAlbumRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node releaseNode {releaseToResponseNode(release, context.dbSession, user, true /* id3 */)};
 
 	auto tracks {release->getTracks()};
@@ -907,14 +847,11 @@ Response
 handleGetArtistRequest(RequestContext& context)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
-
-	if (id.type != Id::Type::Artist)
-		throw BadParameterGenericError {"id"};
+	ArtistId id {getMandatoryParameterAs<ArtistId>(context.parameters, "id")};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
+	Artist::pointer artist {Artist::getById(context.dbSession, id)};
 	if (!artist)
 		throw RequestedDataNotFoundError {};
 
@@ -922,7 +859,7 @@ handleGetArtistRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node artistNode {artistToResponseNode(user, artist, true /* id3 */)};
 
 	auto releases {artist->getReleases()};
@@ -939,20 +876,18 @@ Response
 handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
-	if (id.type != Id::Type::Artist)
-		throw BadParameterGenericError {"id"};
+	ArtistId id {getMandatoryParameterAs<ArtistId>(context.parameters, "id")};
 
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(20)};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& artistInfoNode {response.createNode(id3 ? "artistInfo2" : "artistInfo")};
 
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
 
-		Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
+		Artist::pointer artist {Artist::getById(context.dbSession, id)};
 		if (!artist)
 			throw RequestedDataNotFoundError {};
 
@@ -962,7 +897,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 	}
 
 	auto similarArtistsId {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession,
-			id.value,
+			id,
 			{TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist},
 			count)};
 
@@ -973,7 +908,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 		if (!user)
 			throw UserNotAuthorizedError {};
 
-		for ( const auto& similarArtistId : similarArtistsId )
+		for ( const ArtistId similarArtistId : similarArtistsId )
 		{
 			Artist::pointer similarArtist {Artist::getById(context.dbSession, similarArtistId)};
 			if (similarArtist)
@@ -1002,7 +937,7 @@ static
 Response
 handleGetArtistsRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 
 	Response::Node& artistsNode {response.createNode("artists")};
 	artistsNode.setAttribute("ignoredArticles", "");
@@ -1048,12 +983,16 @@ Response
 handleGetMusicDirectoryRequest(RequestContext& context)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
+	const auto artistId {getParameterAs<ArtistId>(context.parameters, "id")};
+	const auto releaseId {getParameterAs<ReleaseId>(context.parameters, "id")};
+	const auto trackId {getParameterAs<TrackId>(context.parameters, "id")};
+	const auto root {getParameterAs<RootId>(context.parameters, "id")};
 
-	Response response {Response::createOkResponse(context)};
+	if (!root && !artistId && !releaseId && !trackId)
+		throw BadParameterGenericError {"id"};
+
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& directoryNode {response.createNode("directory")};
-
-	directoryNode.setAttribute("id", IdToString(id));
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -1061,53 +1000,46 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	switch (id.type)
+	if (root)
 	{
-		case Id::Type::Root:
-		{
-			directoryNode.setAttribute("name", "Music");
+		directoryNode.setAttribute("id", idToString(RootId {}));
+		directoryNode.setAttribute("name", "Music");
 
-			bool moreResults{};
-			auto artists {Artist::getAll(context.dbSession, Artist::SortMethod::BySortName, std::nullopt, moreResults)};
-			for (const Artist::pointer& artist : artists)
-				directoryNode.addArrayChild("child", artistToResponseNode(user, artist, false /* no id3 */));
-
-			break;
-		}
-
-		case Id::Type::Artist:
-		{
-			auto artist {Artist::getById(context.dbSession, id.value)};
-			if (!artist)
-				throw RequestedDataNotFoundError {};
-
-			directoryNode.setAttribute("name", makeNameFilesystemCompatible(artist->getName()));
-
-			auto releases {artist->getReleases()};
-			for (const Release::pointer& release : releases)
-				directoryNode.addArrayChild("child", releaseToResponseNode(release, context.dbSession, user, false /* no id3 */));
-
-			break;
-		}
-
-		case Id::Type::Release:
-		{
-			auto release {Release::getById(context.dbSession, id.value)};
-			if (!release)
-				throw RequestedDataNotFoundError {};
-
-			directoryNode.setAttribute("name", makeNameFilesystemCompatible(release->getName()));
-
-			auto tracks {release->getTracks()};
-			for (const Track::pointer& track : tracks)
-				directoryNode.addArrayChild("child", trackToResponseNode(track, context.dbSession, user));
-
-			break;
-		}
-
-		default:
-			throw BadParameterGenericError {"id"};
+		bool moreResults{};
+		auto artists {Artist::getAll(context.dbSession, Artist::SortMethod::BySortName, std::nullopt, moreResults)};
+		for (const Artist::pointer& artist : artists)
+			directoryNode.addArrayChild("child", artistToResponseNode(user, artist, false /* no id3 */));
 	}
+	else if (artistId)
+	{
+		directoryNode.setAttribute("id", idToString(*artistId));
+
+		auto artist {Artist::getById(context.dbSession, *artistId)};
+		if (!artist)
+			throw RequestedDataNotFoundError {};
+
+		directoryNode.setAttribute("name", makeNameFilesystemCompatible(artist->getName()));
+
+		auto releases {artist->getReleases()};
+		for (const Release::pointer& release : releases)
+			directoryNode.addArrayChild("child", releaseToResponseNode(release, context.dbSession, user, false /* no id3 */));
+	}
+	else if (releaseId)
+	{
+		directoryNode.setAttribute("id", idToString(*releaseId));
+
+		auto release {Release::getById(context.dbSession, *releaseId)};
+		if (!release)
+				throw RequestedDataNotFoundError {};
+
+		directoryNode.setAttribute("name", makeNameFilesystemCompatible(release->getName()));
+
+		auto tracks {release->getTracks()};
+		for (const Track::pointer& track : tracks)
+			directoryNode.addArrayChild("child", trackToResponseNode(track, context.dbSession, user));
+	}
+	else
+		throw BadParameterGenericError {"id"};
 
 	return response;
 }
@@ -1116,7 +1048,7 @@ static
 Response
 handleGetMusicFoldersRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& musicFoldersNode {response.createNode("musicFolders")};
 
 	Response::Node& musicFolderNode {musicFoldersNode.createArrayChild("musicFolder")};
@@ -1130,7 +1062,7 @@ static
 Response
 handleGetGenresRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 
 	Response::Node& genresNode {response.createNode("genres")};
 
@@ -1152,7 +1084,7 @@ static
 Response
 handleGetIndexesRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 
 	Response::Node& artistsNode {response.createNode("indexes")};
 	artistsNode.setAttribute("ignoredArticles", "");
@@ -1198,21 +1130,19 @@ Response
 handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 {
 	// Mandatory params
-	const Id artistId {getMandatoryParameterAs<Id>(context.parameters, "id")};
-	if (artistId.type != Id::Type::Artist)
-		throw BadParameterGenericError {"id"};
+	const ArtistId artistId {getMandatoryParameterAs<ArtistId>(context.parameters, "id")};
 
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(50)};
 
-	auto similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession,
-			artistId.value,
+	const auto similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession,
+			artistId,
 			{TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist},
 			5)};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	const Artist::pointer artist {Artist::getById(context.dbSession, artistId.value)};
+	const Artist::pointer artist {Artist::getById(context.dbSession, artistId)};
 	if (!artist)
 		throw RequestedDataNotFoundError {};
 
@@ -1222,7 +1152,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 
 	// "Returns a random collection of songs from the given artist and similar artists"
 	auto tracks {artist->getRandomTracks(count / 2)};
-	for (const Database::IdType similarArtistId : similarArtistIds)
+	for (const ArtistId similarArtistId : similarArtistIds)
 	{
 		const Artist::pointer similarArtist {Artist::getById(context.dbSession, similarArtistId)};
 		if (!similarArtist)
@@ -1237,7 +1167,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 
 	Random::shuffleContainer(tracks);
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& similarSongsNode {response.createNode(id3 ? "similarSongs2" : "similarSongs")};
 	for (const Track::pointer& track : tracks)
 		similarSongsNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
@@ -1269,7 +1199,7 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& starredNode {response.createNode(id3 ? "starred2" : "starred")};
 
 	{
@@ -1317,7 +1247,7 @@ tracklistToResponseNode(const TrackList::pointer& tracklist, Session&)
 {
 	Response::Node playlistNode;
 
-	playlistNode.setAttribute("id", IdToString({Id::Type::Playlist, tracklist.id()}));
+	playlistNode.setAttribute("id", idToString(tracklist->getId()));
 	playlistNode.setAttribute("name", tracklist->getName());
 	playlistNode.setAttribute("songCount", tracklist->getCount());
 	playlistNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(tracklist->getDuration()).count());
@@ -1333,9 +1263,7 @@ Response
 handleGetPlaylistRequest(RequestContext& context)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
-	if (id.type != Id::Type::Playlist)
-		throw BadParameterGenericError {"id"};
+	TrackListId trackListId {getMandatoryParameterAs<TrackListId>(context.parameters, "id")};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -1343,11 +1271,11 @@ handleGetPlaylistRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id.value)};
+	TrackList::pointer tracklist {TrackList::getById(context.dbSession, trackListId)};
 	if (!tracklist)
 		throw RequestedDataNotFoundError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node playlistNode {tracklistToResponseNode(tracklist, context.dbSession)};
 
 	auto entries {tracklist->getEntries()};
@@ -1369,7 +1297,7 @@ handleGetPlaylistsRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& playlistsNode {response.createNode("playlists")};
 
 	auto tracklists {TrackList::getAll(context.dbSession, user, TrackList::Type::Playlist)};
@@ -1406,11 +1334,11 @@ handleGetSongsByGenreRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& songsByGenreNode {response.createNode("songsByGenre")};
 
 	bool more;
-	auto tracks {Track::getByFilter(context.dbSession, {cluster.id()}, {}, Range {offset, size}, more)};
+	auto tracks {Track::getByFilter(context.dbSession, {cluster->getId()}, {}, Range {offset, size}, more)};
 	for (const Track::pointer& track : tracks)
 		songsByGenreNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 
@@ -1431,7 +1359,7 @@ handleGetUserRequest(RequestContext& context)
 	if (!user)
 		throw RequestedDataNotFoundError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	response.addNode("user", userToResponseNode(user));
 
 	return response;
@@ -1443,7 +1371,7 @@ handleGetUsersRequest(RequestContext& context)
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& usersNode {response.createNode("users")};
 
 	const auto users {User::getAll(context.dbSession)};
@@ -1476,7 +1404,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& searchResult2Node {response.createNode(id3 ? "searchResult3" : "searchResult2")};
 
 	bool more;
@@ -1503,9 +1431,9 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 
 struct StarParameters
 {
-	std::vector<Id> artistIds;
-	std::vector<Id> releaseIds;
-	std::vector<Id> trackIds;
+	std::vector<ArtistId> artistIds;
+	std::vector<ReleaseId> releaseIds;
+	std::vector<TrackId> trackIds;
 };
 
 static
@@ -1514,34 +1442,10 @@ getStarParameters(const Wt::Http::ParameterMap& parameters)
 {
 	StarParameters res;
 
-	std::vector<Id> ids {getMultiParametersAs<Id>(parameters, "id")};
-	res.artistIds = getMultiParametersAs<Id>(parameters, "artistId");
-	res.releaseIds = getMultiParametersAs<Id>(parameters, "albumId");
-
-	if (!std::all_of(std::cbegin(res.releaseIds ), std::cend(res.releaseIds ), [](const Id& id) { return id.type == Id::Type::Release; }))
-		throw BadParameterGenericError {"albumId"};
-
-	if (!std::all_of(std::cbegin(res.artistIds ), std::cend(res.artistIds ), [](const Id& id) { return id.type == Id::Type::Artist; }))
-		throw BadParameterGenericError {"artistId"};
-
-	// Redispatch the old "id" parameter in new lists
-	for (const Id& id : ids)
-	{
-		switch (id.type)
-		{
-			case Id::Type::Artist:
-				res.artistIds.emplace_back(id);
-				break;
-			case Id::Type::Release:
-				res.releaseIds.emplace_back(id);
-				break;
-			case Id::Type::Track:
-				res.trackIds.emplace_back(id);
-				break;
-			default:
-				throw BadParameterGenericError {"id"};
-		}
-	}
+	// TODO handle parameters for legacy file browsing
+	res.trackIds = getMultiParametersAs<TrackId>(parameters, "id");
+	res.artistIds = getMultiParametersAs<ArtistId>(parameters, "artistId");
+	res.releaseIds = getMultiParametersAs<ReleaseId>(parameters, "albumId");
 
 	return res;
 }
@@ -1558,34 +1462,34 @@ handleStarRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	for (const Id& id : params.artistIds)
+	for (const ArtistId id : params.artistIds)
 	{
-		Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
+		Artist::pointer artist {Artist::getById(context.dbSession, id)};
 		if (!artist)
 			continue;
 
 		user.modify()->starArtist(artist);
 	}
 
-	for (const Id& id : params.releaseIds)
+	for (const ReleaseId id : params.releaseIds)
 	{
-		Release::pointer release {Release::getById(context.dbSession, id.value)};
+		Release::pointer release {Release::getById(context.dbSession, id)};
 		if (!release)
 			continue;
 
 		user.modify()->starRelease(release);
 	}
 
-	for (const Id& id : params.trackIds)
+	for (const TrackId id : params.trackIds)
 	{
-		Track::pointer track {Track::getById(context.dbSession, id.value)};
+		Track::pointer track {Track::getById(context.dbSession, id)};
 		if (!track)
 			continue;
 
 		user.modify()->starTrack(track);
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1614,27 +1518,27 @@ handleUnstarRequest(RequestContext& context)
 	if (!user)
 		throw RequestedDataNotFoundError {};
 
-	for (const Id& id : params.artistIds)
+	for (const ArtistId id : params.artistIds)
 	{
-		Artist::pointer artist {Artist::getById(context.dbSession, id.value)};
+		Artist::pointer artist {Artist::getById(context.dbSession, id)};
 		if (!artist)
 			continue;
 
 		user.modify()->unstarArtist(artist);
 	}
 
-	for (const Id& id : params.releaseIds)
+	for (const ReleaseId id : params.releaseIds)
 	{
-		Release::pointer release {Release::getById(context.dbSession, id.value)};
+		Release::pointer release {Release::getById(context.dbSession, id)};
 		if (!release)
 			continue;
 
 		user.modify()->unstarRelease(release);
 	}
 
-	for (const Id& id : params.trackIds)
+	for (const TrackId id : params.trackIds)
 	{
-		Track::pointer track {Track::getById(context.dbSession, id.value)};
+		Track::pointer track {Track::getById(context.dbSession, id)};
 		if (!track)
 			continue;
 
@@ -1642,20 +1546,16 @@ handleUnstarRequest(RequestContext& context)
 	}
 
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
 Response
 handleScrobble(RequestContext& context)
 {
-	const std::vector<Id> ids {getMandatoryMultiParametersAs<Id>(context.parameters, "id")};
+	const std::vector<TrackId> ids {getMandatoryMultiParametersAs<TrackId>(context.parameters, "id")};
 	const std::vector<unsigned long> times {getMultiParametersAs<unsigned long>(context.parameters, "time")};
 	const bool submission{getParameterAs<bool>(context.parameters, "submission").value_or(true)};
-
-	// only for tracks
-	if (!std::all_of(std::cbegin(ids), std::cend(ids), [](const Id& id) { return id.type == Id::Type::Track; }))
-		throw BadParameterGenericError {"id"};
 
 	// playing now => no time to be provided
 	if (!submission && !times.empty())
@@ -1671,26 +1571,26 @@ handleScrobble(RequestContext& context)
 
 	if (!submission)
 	{
-		Service<Scrobbling::IScrobbling>::get()->listenStarted({context.userId, ids.front().value});
+		Service<Scrobbling::IScrobbling>::get()->listenStarted({context.userId, ids.front()});
 	}
 	else
 	{
 		if (times.empty())
 		{
-			Service<Scrobbling::IScrobbling>::get()->listenFinished({context.userId, ids.front().value});
+			Service<Scrobbling::IScrobbling>::get()->listenFinished({context.userId, ids.front()});
 		}
 		else
 		{
 			for (std::size_t i {}; i < ids.size(); ++i)
 			{
-				const Database::IdType trackId {ids[i].value};
+				const TrackId trackId {ids[i]};
 				const unsigned long time {times[i]};
-				Service<Scrobbling::IScrobbling>::get()->addTimedListen({context.userId, trackId, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000))});
+				Service<Scrobbling::IScrobbling>::get()->addTimedListen({{context.userId, trackId}, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000))});
 			}
 		}
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1700,7 +1600,7 @@ handleUpdateUserRequest(RequestContext& context)
 	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
 	std::optional<std::string> password {getParameterAs<std::string>(context.parameters, "password")};
 
-	Database::IdType userId;
+	UserId userId;
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -1708,7 +1608,7 @@ handleUpdateUserRequest(RequestContext& context)
 		if (!user)
 			throw RequestedDataNotFoundError {};
 
-		userId = user.id();
+		userId = user->getId();
 	}
 
 	if (password)
@@ -1719,7 +1619,11 @@ handleUpdateUserRequest(RequestContext& context)
 		{
 			Service<::Auth::IPasswordService>()->setPassword(context.dbSession, userId, decodePasswordIfNeeded(*password));
 		}
-		catch (const Auth::IPasswordService::PasswordTooWeakException&)
+		catch (const Auth::PasswordMustMatchLoginNameException&)
+		{
+			throw PasswordMustMatchLoginNameGenericError {};
+		}
+		catch (const Auth::PasswordTooWeakException&)
 		{
 			throw PasswordTooWeakGenericError {};
 		}
@@ -1729,7 +1633,7 @@ handleUpdateUserRequest(RequestContext& context)
 		}
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1737,18 +1641,13 @@ Response
 handleUpdatePlaylistRequest(RequestContext& context)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "playlistId")};
-	if (id.type != Id::Type::Playlist)
-		throw BadParameterGenericError {"playlistId"};
+	TrackListId id {getMandatoryParameterAs<TrackListId>(context.parameters, "playlistId")};
 
 	// Optional parameters
 	auto name {getParameterAs<std::string>(context.parameters, "name")};
 	auto isPublic {getParameterAs<bool>(context.parameters, "public")};
 
-	std::vector<Id> trackIdsToAdd {getMultiParametersAs<Id>(context.parameters, "songIdToAdd")};
-	if (!std::all_of(std::cbegin(trackIdsToAdd), std::cend(trackIdsToAdd), [](const Id& id) { return id.type == Id::Type::Track; }))
-		throw BadParameterGenericError {"songIdToAdd"};
-
+	std::vector<TrackId> trackIdsToAdd {getMultiParametersAs<TrackId>(context.parameters, "songIdToAdd")};
 	std::vector<std::size_t> trackPositionsToRemove {getMultiParametersAs<std::size_t>(context.parameters, "songIndexToRemove")};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
@@ -1757,7 +1656,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id.value)};
+	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id)};
 	if (!tracklist
 		|| tracklist->getUser() != user
 		|| tracklist->getType() != TrackList::Type::Playlist)
@@ -1784,16 +1683,16 @@ handleUpdatePlaylistRequest(RequestContext& context)
 	}
 
 	// Add tracks
-	for (const Id& trackIdToAdd : trackIdsToAdd)
+	for (const TrackId trackIdToAdd : trackIdsToAdd)
 	{
-		Track::pointer track {Track::getById(context.dbSession, trackIdToAdd.value)};
+		Track::pointer track {Track::getById(context.dbSession, trackIdToAdd)};
 		if (!track)
 			continue;
 
-		TrackListEntry::create(context.dbSession, track, tracklist );
+		TrackListEntry::create(context.dbSession, track, tracklist);
 	}
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1808,7 +1707,7 @@ handleGetBookmarks(RequestContext& context)
 
 	const auto bookmarks {TrackBookmark::getByUser(context.dbSession, user)};
 
-	Response response {Response::createOkResponse(context)};
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& bookmarksNode {response.createNode("bookmarks")};
 
 	for (const TrackBookmark::pointer& bookmark : bookmarks)
@@ -1827,10 +1726,7 @@ Response
 handleCreateBookmark(RequestContext& context)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
-	if (id.type != Id::Type::Track)
-		throw BadParameterGenericError {"id"};
-
+	TrackId id {getMandatoryParameterAs<TrackId>(context.parameters, "id")};
 	unsigned long position {getMandatoryParameterAs<unsigned long>(context.parameters, "position")};
 	const std::optional<std::string> comment {getParameterAs<std::string>(context.parameters, "comment")};
 
@@ -1840,7 +1736,7 @@ handleCreateBookmark(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	const Track::pointer track {Track::getById(context.dbSession, id.value)};
+	const Track::pointer track {Track::getById(context.dbSession, id)};
 	if (!track)
 		throw RequestedDataNotFoundError {};
 
@@ -1853,7 +1749,7 @@ handleCreateBookmark(RequestContext& context)
 	if (comment)
 		bookmark.modify()->setComment(*comment);
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1861,9 +1757,7 @@ Response
 handleDeleteBookmark(RequestContext& context)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
-	if (id.type != Id::Type::Track)
-		throw BadParameterGenericError {"id"};
+	TrackId id {getMandatoryParameterAs<TrackId>(context.parameters, "id")};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
@@ -1871,7 +1765,7 @@ handleDeleteBookmark(RequestContext& context)
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	const Track::pointer track {Track::getById(context.dbSession, id.value)};
+	const Track::pointer track {Track::getById(context.dbSession, id)};
 	if (!track)
 		throw RequestedDataNotFoundError {};
 
@@ -1881,7 +1775,7 @@ handleDeleteBookmark(RequestContext& context)
 
 	bookmark.remove();
 
-	return Response::createOkResponse(context);
+	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
@@ -1896,23 +1790,20 @@ void
 handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/, Wt::Http::Response& response)
 {
 	// Mandatory params
-	Id id {getMandatoryParameterAs<Id>(context.parameters, "id")};
+	const auto trackId {getParameterAs<TrackId>(context.parameters, "id")};
+	const auto releaseId {getParameterAs<ReleaseId>(context.parameters, "id")};
+
+	if (!trackId && !releaseId)
+		throw BadParameterGenericError {"id"};
 
 	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(256)};
-	size = clamp(size, std::size_t {32}, std::size_t {1024});
+	size = Utils::clamp(size, std::size_t {32}, std::size_t {1024});
 
 	std::shared_ptr<CoverArt::IEncodedImage> cover;
-	switch (id.type)
-	{
-		case Id::Type::Track:
-			cover = Service<CoverArt::IGrabber>::get()->getFromTrack(context.dbSession, id.value, size);
-			break;
-		case Id::Type::Release:
-			cover = Service<CoverArt::IGrabber>::get()->getFromRelease(context.dbSession, id.value, size);
-			break;
-		default:
-			throw BadParameterGenericError {"id"};
-	}
+	if (trackId)
+		cover = Service<CoverArt::IGrabber>::get()->getFromTrack(context.dbSession, *trackId, size);
+	else if (releaseId)
+		cover = Service<CoverArt::IGrabber>::get()->getFromRelease(context.dbSession, *releaseId, size);
 
 	response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
 	response.setMimeType(std::string {cover->getMimeType()});
@@ -1922,114 +1813,114 @@ using RequestHandlerFunc = std::function<Response(RequestContext& context)>;
 using CheckImplementedFunc = std::function<void()>;
 struct RequestEntryPointInfo
 {
-	RequestHandlerFunc		func;
-	bool					mustBeAdmin;
-	CheckImplementedFunc	checkFunc {};
+	RequestHandlerFunc			func;
+	EnumSet<UserType>			allowedUserTypes {UserType::DEMO, UserType::REGULAR, UserType::ADMIN};
+	CheckImplementedFunc		checkFunc {};
 };
 
-static std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
+static const std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 {
 	// System
-	{"ping",		{handlePingRequest,			false}},
-	{"getLicense",		{handleGetLicenseRequest,		false}},
+	{"ping",		{handlePingRequest}},
+	{"getLicense",		{handleGetLicenseRequest}},
 
 	// Browsing
-	{"getMusicFolders",	{handleGetMusicFoldersRequest,		false}},
-	{"getIndexes",		{handleGetIndexesRequest,		false}},
-	{"getMusicDirectory",	{handleGetMusicDirectoryRequest,	false}},
-	{"getGenres",		{handleGetGenresRequest,		false}},
-	{"getArtists",		{handleGetArtistsRequest,		false}},
-	{"getArtist",		{handleGetArtistRequest,		false}},
-	{"getAlbum",		{handleGetAlbumRequest,			false}},
-	{"getSong",		{handleNotImplemented,			false}},
-	{"getVideos",		{handleNotImplemented,			false}},
-	{"getArtistInfo",	{handleGetArtistInfoRequest,		false}},
-	{"getArtistInfo2",	{handleGetArtistInfo2Request,		false}},
-	{"getAlbumInfo",	{handleNotImplemented,			false}},
-	{"getAlbumInfo2",	{handleNotImplemented,			false}},
-	{"getSimilarSongs",	{handleGetSimilarSongsRequest,		false}},
-	{"getSimilarSongs2",	{handleGetSimilarSongs2Request,		false}},
-	{"getTopSongs",		{handleNotImplemented,			false}},
+	{"getMusicFolders",	{handleGetMusicFoldersRequest}},
+	{"getIndexes",		{handleGetIndexesRequest}},
+	{"getMusicDirectory",	{handleGetMusicDirectoryRequest}},
+	{"getGenres",		{handleGetGenresRequest}},
+	{"getArtists",		{handleGetArtistsRequest}},
+	{"getArtist",		{handleGetArtistRequest}},
+	{"getAlbum",		{handleGetAlbumRequest}},
+	{"getSong",		{handleNotImplemented}},
+	{"getVideos",		{handleNotImplemented}},
+	{"getArtistInfo",	{handleGetArtistInfoRequest}},
+	{"getArtistInfo2",	{handleGetArtistInfo2Request}},
+	{"getAlbumInfo",	{handleNotImplemented}},
+	{"getAlbumInfo2",	{handleNotImplemented}},
+	{"getSimilarSongs",	{handleGetSimilarSongsRequest}},
+	{"getSimilarSongs2",	{handleGetSimilarSongs2Request}},
+	{"getTopSongs",		{handleNotImplemented}},
 
 	// Album/song lists
-	{"getAlbumList",	{handleGetAlbumListRequest,		false}},
-	{"getAlbumList2",	{handleGetAlbumList2Request,		false}},
-	{"getRandomSongs",	{handleGetRandomSongsRequest,		false}},
-	{"getSongsByGenre",	{handleGetSongsByGenreRequest,		false}},
-	{"getNowPlaying",	{handleNotImplemented,			false}},
-	{"getStarred",		{handleGetStarredRequest,		false}},
-	{"getStarred2",		{handleGetStarred2Request,		false}},
+	{"getAlbumList",	{handleGetAlbumListRequest}},
+	{"getAlbumList2",	{handleGetAlbumList2Request}},
+	{"getRandomSongs",	{handleGetRandomSongsRequest}},
+	{"getSongsByGenre",	{handleGetSongsByGenreRequest}},
+	{"getNowPlaying",	{handleNotImplemented}},
+	{"getStarred",		{handleGetStarredRequest}},
+	{"getStarred2",		{handleGetStarred2Request}},
 
 	// Searching
-	{"search",		{handleNotImplemented,			false}},
-	{"search2",		{handleSearch2Request,			false}},
-	{"search3",		{handleSearch3Request,			false}},
+	{"search",		{handleNotImplemented}},
+	{"search2",		{handleSearch2Request}},
+	{"search3",		{handleSearch3Request}},
 
 	// Playlists
-	{"getPlaylists",	{handleGetPlaylistsRequest,		false}},
-	{"getPlaylist",		{handleGetPlaylistRequest,		false}},
-	{"createPlaylist",	{handleCreatePlaylistRequest,		false}},
-	{"updatePlaylist",	{handleUpdatePlaylistRequest,		false}},
-	{"deletePlaylist",	{handleDeletePlaylistRequest,		false}},
+	{"getPlaylists",	{handleGetPlaylistsRequest}},
+	{"getPlaylist",		{handleGetPlaylistRequest}},
+	{"createPlaylist",	{handleCreatePlaylistRequest}},
+	{"updatePlaylist",	{handleUpdatePlaylistRequest}},
+	{"deletePlaylist",	{handleDeletePlaylistRequest}},
 
 	// Media retrieval
-	{"hls",				{handleNotImplemented,			false}},
-	{"getCaptions",		{handleNotImplemented,			false}},
-	{"getLyrics",		{handleNotImplemented,			false}},
-	{"getAvatar",		{handleNotImplemented,			false}},
+	{"hls",				{handleNotImplemented}},
+	{"getCaptions",		{handleNotImplemented}},
+	{"getLyrics",		{handleNotImplemented}},
+	{"getAvatar",		{handleNotImplemented}},
 
 	// Media annotation
-	{"star",			{handleStarRequest,				false}},
-	{"unstar",			{handleUnstarRequest,			false}},
-	{"setRating",		{handleNotImplemented,			false}},
-	{"scrobble",		{handleScrobble,				false}},
+	{"star",			{handleStarRequest}},
+	{"unstar",			{handleUnstarRequest}},
+	{"setRating",		{handleNotImplemented}},
+	{"scrobble",		{handleScrobble}},
 
 	// Sharing
-	{"getShares",		{handleNotImplemented,			false}},
-	{"createShares",	{handleNotImplemented,			false}},
-	{"updateShare",		{handleNotImplemented,			false}},
-	{"deleteShare",		{handleNotImplemented,			false}},
+	{"getShares",		{handleNotImplemented}},
+	{"createShares",	{handleNotImplemented}},
+	{"updateShare",		{handleNotImplemented}},
+	{"deleteShare",		{handleNotImplemented}},
 
 	// Podcast
-	{"getPodcasts",			{handleNotImplemented,			false}},
-	{"getNewestPodcasts",		{handleNotImplemented,			false}},
-	{"refreshPodcasts",		{handleNotImplemented,			false}},
-	{"createPodcastChannel",	{handleNotImplemented,			false}},
-	{"deletePodcastChannel",	{handleNotImplemented,			false}},
-	{"deletePodcastEpisode",	{handleNotImplemented,			false}},
-	{"downloadPodcastEpisode",	{handleNotImplemented,			false}},
+	{"getPodcasts",			{handleNotImplemented}},
+	{"getNewestPodcasts",		{handleNotImplemented}},
+	{"refreshPodcasts",		{handleNotImplemented}},
+	{"createPodcastChannel",	{handleNotImplemented}},
+	{"deletePodcastChannel",	{handleNotImplemented}},
+	{"deletePodcastEpisode",	{handleNotImplemented}},
+	{"downloadPodcastEpisode",	{handleNotImplemented}},
 
 	// Jukebox
-	{"jukeboxControl",	{handleNotImplemented,			false}},
+	{"jukeboxControl",	{handleNotImplemented}},
 
 	// Internet radio
-	{"getInternetRadioStations",	{handleNotImplemented,			false}},
-	{"createInternetRadioStation",	{handleNotImplemented,			false}},
-	{"updateInternetRadioStation",	{handleNotImplemented,			false}},
-	{"deleteInternetRadioStation",	{handleNotImplemented,			false}},
+	{"getInternetRadioStations",	{handleNotImplemented}},
+	{"createInternetRadioStation",	{handleNotImplemented}},
+	{"updateInternetRadioStation",	{handleNotImplemented}},
+	{"deleteInternetRadioStation",	{handleNotImplemented}},
 
 	// Chat
-	{"getChatMessages",	{handleNotImplemented,			false}},
-	{"addChatMessages",	{handleNotImplemented,			false}},
+	{"getChatMessages",	{handleNotImplemented}},
+	{"addChatMessages",	{handleNotImplemented}},
 
 	// User management
-	{"getUser",			{handleGetUserRequest,			false}},
-	{"getUsers",		{handleGetUsersRequest,			true}},
-	{"createUser",		{handleCreateUserRequest,		true, &checkSetPasswordImplemented}},
-	{"updateUser",		{handleUpdateUserRequest,		true}},
-	{"deleteUser",		{handleDeleteUserRequest,		true}},
-	{"changePassword",	{handleChangePassword,			false, &checkSetPasswordImplemented}},
+	{"getUser",			{handleGetUserRequest}},
+	{"getUsers",		{handleGetUsersRequest,			{UserType::ADMIN}}},
+	{"createUser",		{handleCreateUserRequest,		{UserType::ADMIN}, &checkSetPasswordImplemented}},
+	{"updateUser",		{handleUpdateUserRequest,		{UserType::ADMIN}}},
+	{"deleteUser",		{handleDeleteUserRequest,		{UserType::ADMIN}}},
+	{"changePassword",	{handleChangePassword,			{UserType::REGULAR, UserType::ADMIN}, &checkSetPasswordImplemented}},
 
 	// Bookmarks
-	{"getBookmarks",	{handleGetBookmarks,			false}},
-	{"createBookmark",	{handleCreateBookmark,			false}},
-	{"deleteBookmark",	{handleDeleteBookmark,			false}},
-	{"getPlayQueue",	{handleNotImplemented,			false}},
-	{"savePlayQueue",	{handleNotImplemented,			false}},
+	{"getBookmarks",	{handleGetBookmarks}},
+	{"createBookmark",	{handleCreateBookmark}},
+	{"deleteBookmark",	{handleDeleteBookmark}},
+	{"getPlayQueue",	{handleNotImplemented}},
+	{"savePlayQueue",	{handleNotImplemented}},
 
 	// Media library scanning
-	{"getScanStatus",	{Scan::handleGetScanStatus,		true}},
-	{"startScan",		{Scan::handleStartScan,			true}},
+	{"getScanStatus",	{Scan::handleGetScanStatus,		{UserType::ADMIN}}},
+	{"startScan",		{Scan::handleStartScan,			{UserType::ADMIN}}},
 };
 
 using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
@@ -2041,9 +1932,126 @@ static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrieval
 	{"getCoverArt",		handleGetCoverArt},
 };
 
-static
-Database::IdType
-authenticateUser(const Wt::Http::Request &request, const ClientInfo& clientInfo, Session& dbSession)
+
+void
+SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response)
+{
+	static std::atomic<std::size_t> curRequestId {};
+
+	const std::size_t requestId {curRequestId++};
+
+	LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request " << requestId << " '" << request.pathInfo() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap());
+
+	std::string requestPath {request.pathInfo()};
+	if (StringUtils::stringEndsWith(requestPath, ".view"))
+		requestPath.resize(requestPath.length() - 5);
+
+	// Optional parameters
+	const ResponseFormat format {getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml};
+
+	ProtocolVersion protocolVersion {defaultServerProtocolVersion};
+
+	try
+	{
+		// We need to parse client a soon as possible to make sure to answer with the right protocol version
+		protocolVersion = getServerProtocolVersion(getMandatoryParameterAs<std::string>(request.getParameterMap(), "c"));
+		RequestContext requestContext {buildRequestContext(request)};
+
+		auto itEntryPoint {requestEntryPoints.find(requestPath)};
+		if (itEntryPoint != requestEntryPoints.end())
+		{
+			if (itEntryPoint->second.checkFunc)
+				itEntryPoint->second.checkFunc();
+
+			checkUserTypeIsAllowed(requestContext, itEntryPoint->second.allowedUserTypes);
+
+			Response resp {(itEntryPoint->second.func)(requestContext)};
+
+			resp.write(response.out(), format);
+			response.setMimeType(ResponseFormatToMimeType(format));
+
+			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << requestPath << "' handled!";
+			return;
+		}
+
+		auto itStreamHandler {mediaRetrievalHandlers.find(requestPath)};
+		if (itStreamHandler != mediaRetrievalHandlers.end())
+		{
+			itStreamHandler->second(requestContext, request, response);
+			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId  << " '" << requestPath << "' handled!";
+			return;
+		}
+
+		LMS_LOG(API_SUBSONIC, ERROR) << "Unhandled command '" << requestPath << "'";
+		throw UnknownEntryPointGenericError {};
+	}
+	catch (const Error& e)
+	{
+		LMS_LOG(API_SUBSONIC, ERROR) << "Error while processing request '" << requestPath << "'"
+			<< ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
+			<< ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'";
+		Response resp {Response::createFailedResponse(protocolVersion, e)};
+		resp.write(response.out(), format);
+		response.setMimeType(ResponseFormatToMimeType(format));
+	}
+}
+
+ProtocolVersion
+SubsonicResource::getServerProtocolVersion(const std::string& clientName) const
+{
+	auto it {_serverProtocolVersionsByClient.find(clientName)};
+	if (it == std::cend(_serverProtocolVersionsByClient))
+		return defaultServerProtocolVersion;
+
+	return it->second;
+}
+
+void
+SubsonicResource::checkProtocolVersion(ProtocolVersion client, ProtocolVersion server)
+{
+	if (client.major > server.major)
+		throw ServerMustUpgradeError {};
+	if (client.major < server.major)
+		throw ClientMustUpgradeError {};
+	if (client.minor > server.minor)
+		throw ServerMustUpgradeError {};
+	else if (client.minor == server.minor)
+	{
+		if (client.patch > server.patch)
+			throw ServerMustUpgradeError {};
+	}
+}
+
+ClientInfo
+SubsonicResource::getClientInfo(const Wt::Http::ParameterMap& parameters)
+{
+	ClientInfo res;
+
+	// Mandatory parameters
+	res.name = getMandatoryParameterAs<std::string>(parameters, "c");
+	res.version = getMandatoryParameterAs<ProtocolVersion>(parameters, "v");
+	res.user = getMandatoryParameterAs<std::string>(parameters, "u");
+	res.password = decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(parameters, "p"));
+
+	return res;
+}
+
+RequestContext
+SubsonicResource::buildRequestContext(const Wt::Http::Request& request)
+{
+	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
+
+	const ClientInfo clientInfo {getClientInfo(parameters)};
+
+	Session& dbSession {_db.getTLSSession()};
+
+	const Database::UserId userId {authenticateUser(request, clientInfo, dbSession)};
+
+	return {parameters, dbSession, userId, clientInfo, getServerProtocolVersion(clientInfo.name)};
+}
+
+Database::UserId
+SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo, Session& dbSession)
 {
 	if (auto *authEnvService {Service<::Auth::IEnvService>::get()})
 	{
@@ -2072,78 +2080,6 @@ authenticateUser(const Wt::Http::Request &request, const ClientInfo& clientInfo,
 	}
 
 	throw InternalErrorGenericError {"No service avalaible to authenticate user"};
-}
-
-void
-SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response)
-{
-	static std::atomic<std::size_t> curRequestId {};
-
-	const std::size_t requestId {curRequestId++};
-
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request " << requestId << " '" << request.pathInfo() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap());
-
-	std::string requestPath {request.pathInfo()};
-	if (StringUtils::stringEndsWith(requestPath, ".view"))
-		requestPath.resize(requestPath.length() - 5);
-
-	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
-
-	// Optional parameters
-	const ResponseFormat format {getParameterAs<std::string>(parameters, "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml};
-
-	std::string clientName;
-
-	try
-	{
-		// Mandatory parameters
-		const ClientInfo clientInfo {getClientInfo(parameters)};
-
-		clientName = clientInfo.name;
-
-		Session& dbSession {_db.getTLSSession()};
-
-		const Database::IdType userId {authenticateUser(request, clientInfo, dbSession)};
-		RequestContext requestContext {parameters, dbSession, userId, clientInfo.name};
-
-		auto itEntryPoint {requestEntryPoints.find(requestPath)};
-		if (itEntryPoint != requestEntryPoints.end())
-		{
-			if (itEntryPoint->second.checkFunc)
-				itEntryPoint->second.checkFunc();
-
-			if (itEntryPoint->second.mustBeAdmin)
-				checkUserIsAdmin(requestContext);
-
-			Response resp {(itEntryPoint->second.func)(requestContext)};
-
-			resp.write(response.out(), format);
-			response.setMimeType(ResponseFormatToMimeType(format));
-
-			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << requestPath << "' handled!";
-			return;
-		}
-
-		auto itStreamHandler {mediaRetrievalHandlers.find(requestPath)};
-		if (itStreamHandler != mediaRetrievalHandlers.end())
-		{
-			itStreamHandler->second(requestContext, request, response);
-			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId  << " '" << requestPath << "' handled!";
-			return;
-		}
-
-		LMS_LOG(API_SUBSONIC, ERROR) << "Unhandled command '" << requestPath << "'";
-		throw UnknownEntryPointGenericError {};
-	}
-	catch (const Error& e)
-	{
-		LMS_LOG(API_SUBSONIC, ERROR) << "Error while processing request '" << requestPath << "'"
-			<< ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
-			<< ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'";
-		Response resp {Response::createFailedResponse(clientName, e)};
-		resp.write(response.out(), format);
-		response.setMimeType(ResponseFormatToMimeType(format));
-	}
 }
 
 } // namespace api::subsonic

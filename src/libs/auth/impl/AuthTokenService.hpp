@@ -44,8 +44,8 @@ namespace Auth
 
 		private:
 			AuthTokenProcessResult	processAuthToken(Database::Session& session, const boost::asio::ip::address& clientAddress, std::string_view tokenValue) override;
-			std::string				createAuthToken(Database::Session& session, Database::IdType userId, const Wt::WDateTime& expiry) override;
-			void					clearAuthTokens(Database::Session& session, Database::IdType userId) override;
+			std::string				createAuthToken(Database::Session& session, Database::UserId userId, const Wt::WDateTime& expiry) override;
+			void					clearAuthTokens(Database::Session& session, Database::UserId userId) override;
 
 			std::shared_mutex	_mutex;
 			LoginThrottler		_loginThrottler;

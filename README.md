@@ -1,6 +1,6 @@
 # LMS - Lightweight Music Server
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/epoupon/lms) [![Build Status](https://travis-ci.org/epoupon/lms.svg?branch=master)](https://travis-ci.org/epoupon/lms) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/epoupon/lms.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/epoupon/lms/context:cpp)
+[![Last Release](https://img.shields.io/github/v/release/epoupon/lms?logo=github&label=latest)](https://github.com/epoupon/lms/releases) [![Build](https://img.shields.io/github/workflow/status/epoupon/lms/Build?logo=github)](https://github.com/epoupon/lms/actions) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/epoupon/lms.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/epoupon/lms/context:cpp)
 
 _LMS_ is a self-hosted music streaming software: access your music collection from anywhere using a web interface!
 
@@ -12,13 +12,13 @@ A [demo instance](http://lms.demo.poupon.io) is available. Note the administrati
 * Audio transcode for maximum interoperability and low bandwith requirements
 * Multi-value tags: artists, genres, composers, lyricists, moods, ...
 * [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) support to handle duplicated artist and release names
-* Scrobbling to [ListenBrainz](https://listenbrainz.org)
+* [ListenBrainz](https://listenbrainz.org) support for scrobbling and synchronizing listens
 * Compilation support
 * Disc subtitles support
 * ReplayGain support
 * Persistent play queue across sessions
 * _Systemd_ integration
-* User management, with several authentication backends
+* User management, with several authentication backends, see [Deployment](INSTALL.md#deployment)
 * Subsonic API, with the following additional features:
   * Playlists
   * Bookmarks
@@ -48,13 +48,13 @@ __Notes on the self-organizing map__:
 * to enable the audio similarity source, you have to enable it first in the administration panel.
 
 ## Subsonic API
-The API version implemented is 1.12.0 and has been tested on _Android_ using the official application, _Ultrasonic_ and _DSub_.
+The API version implemented is 1.16.0 and has been tested on _Android_ using _Subsonic Player_, _Ultrasonic_ and _DSub_.
 
-Since _LMS_ uses metadata tags to organize music, a compatibility mode is used to navigate through the collection using the directory browsing commands.
+Since _LMS_ uses metadata tags to organize music, a compatibility mode is used to navigate through the collection when using the directory browsing commands.
 
 The Subsonic API is enabled by default.
 
-__Note__: since _LMS_ may store hashed and salted passwords or may forward authentication requests to external services, it cannot handle the __token authentication__ method defined from version 1.13.0.
+__Note__: since _LMS_ may store hashed and salted passwords or may forward authentication requests to external services, it cannot handle the __token authentication__ method. You may need to check your client to make sure to use the __password__ authentication method.
 
 ## About tags
 _LMS_ relies exclusively on tags to organize your music collection.

@@ -27,6 +27,7 @@
 #include <string_view>
 #include <vector>
 
+#include <Wt/WDate.h>
 #include "utils/UUID.hpp"
 
 namespace MetaData
@@ -56,21 +57,21 @@ namespace MetaData
 
 	struct Track
 	{
-		std::vector<Artist>		artists;
-		std::vector<Artist>		albumArtists;
-		std::string				title;
-		std::optional<UUID>		trackMBID;
-		std::optional<UUID>		recordingMBID;
-		std::optional<Album>	album;
-		Clusters				clusters;
+		std::vector<Artist>			artists;
+		std::vector<Artist>			albumArtists;
+		std::string					title;
+		std::optional<UUID>			trackMBID;
+		std::optional<UUID>			recordingMBID;
+		std::optional<Album>		album;
+		Clusters					clusters;
 		std::chrono::milliseconds 	duration;
 		std::optional<std::size_t>	trackNumber;
 		std::optional<std::size_t>	totalTrack;
 		std::optional<std::size_t>	discNumber;
 		std::optional<std::size_t>	totalDisc;
-		std::optional<int>		year;
-		std::optional<int>		originalYear;
-		bool					hasCover {};
+		Wt::WDate					date;
+		Wt::WDate					originalDate;
+		bool						hasCover {};
 		std::vector<AudioStream>	audioStreams;
 		std::optional<UUID>		acoustID;
 		std::string				copyright;

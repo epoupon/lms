@@ -38,47 +38,47 @@ namespace Scrobbling
 			void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
 			void addTimedListen(const TimedListen& listen) override;
 
-			std::vector<Wt::Dbo::ptr<Database::Artist>> getRecentArtists(Database::Session& session,
-																	Wt::Dbo::ptr<Database::User> user,
-																	const std::set<Database::IdType>& clusterIds,
+			std::vector<Database::ObjectPtr<Database::Artist>> getRecentArtists(Database::Session& session,
+																	Database::ObjectPtr<Database::User> user,
+																	const std::vector<Database::ClusterId>& clusterIds,
 																	std::optional<Database::TrackArtistLinkType> linkType,
 																	std::optional<Database::Range> range,
 																	bool& moreResults) override;
 
-			std::vector<Wt::Dbo::ptr<Database::Release>> getRecentReleases(Database::Session& session,
-																	Wt::Dbo::ptr<Database::User> user,
-																	const std::set<Database::IdType>& clusterIds,
+			std::vector<Database::ObjectPtr<Database::Release>> getRecentReleases(Database::Session& session,
+																	Database::ObjectPtr<Database::User> user,
+																	const std::vector<Database::ClusterId>& clusterIds,
 																	std::optional<Database::Range> range,
 																	bool& moreResults) override;
 
-			std::vector<Wt::Dbo::ptr<Database::Track>> getRecentTracks(Database::Session& session,
-																	Wt::Dbo::ptr<Database::User> user,
-																	const std::set<Database::IdType>& clusterIds,
+			std::vector<Database::ObjectPtr<Database::Track>> getRecentTracks(Database::Session& session,
+																	Database::ObjectPtr<Database::User> user,
+																	const std::vector<Database::ClusterId>& clusterIds,
 																	std::optional<Database::Range> range,
 																	bool& moreResults) override;
 
-			std::vector<Wt::Dbo::ptr<Database::Artist>> getTopArtists(Database::Session& session,
-																	Wt::Dbo::ptr<Database::User> user,
-																	const std::set<Database::IdType>& clusterIds,
+			std::vector<Database::ObjectPtr<Database::Artist>> getTopArtists(Database::Session& session,
+																	Database::ObjectPtr<Database::User> user,
+																	const std::vector<Database::ClusterId>& clusterIds,
 																	std::optional<Database::TrackArtistLinkType> linkType,
 																	std::optional<Database::Range> range,
 																	bool& moreResults) override;
 
-			std::vector<Wt::Dbo::ptr<Database::Release>> getTopReleases(Database::Session& session,
-																	Wt::Dbo::ptr<Database::User> user,
-																	const std::set<Database::IdType>& clusterIds,
+			std::vector<Database::ObjectPtr<Database::Release>> getTopReleases(Database::Session& session,
+																	Database::ObjectPtr<Database::User> user,
+																	const std::vector<Database::ClusterId>& clusterIds,
 																	std::optional<Database::Range> range,
 																	bool& moreResults) override;
 
-			std::vector<Wt::Dbo::ptr<Database::Track>> getTopTracks(Database::Session& session,
-																	Wt::Dbo::ptr<Database::User> user,
-																	const std::set<Database::IdType>& clusterIds,
+			std::vector<Database::ObjectPtr<Database::Track>> getTopTracks(Database::Session& session,
+																	Database::ObjectPtr<Database::User> user,
+																	const std::vector<Database::ClusterId>& clusterIds,
 																	std::optional<Database::Range> range,
 																	bool& moreResults) override;
 
-			Wt::Dbo::ptr<Database::TrackList> getListensTrackList(Database::Session& session, Wt::Dbo::ptr<Database::User> user);
+			Database::ObjectPtr<Database::TrackList> getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user);
 
-			std::optional<Database::Scrobbler> getUserScrobbler(Database::IdType userId);
+			std::optional<Database::Scrobbler> getUserScrobbler(Database::UserId userId);
 
 			Database::Db& _db;
 			std::unordered_map<Database::Scrobbler, std::unique_ptr<IScrobbler>> _scrobblers;

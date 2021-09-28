@@ -154,7 +154,7 @@ replayGainPreAmpGainFromString(const std::string& str)
 	if (!value)
 		return std::nullopt;
 
-	return clamp(*value, (double)MediaPlayer::Settings::ReplayGain::minPreAmpGain, (double)MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
+	return Utils::clamp(*value, (double)MediaPlayer::Settings::ReplayGain::minPreAmpGain, (double)MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
 }
 
 static MediaPlayer::Settings settingsfromJSString(const std::string& strSettings)
@@ -233,9 +233,9 @@ MediaPlayer::MediaPlayer()
 }
 
 void
-MediaPlayer::loadTrack(Database::IdType trackId, bool play, float replayGain)
+MediaPlayer::loadTrack(Database::TrackId trackId, bool play, float replayGain)
 {
-	LMS_LOG(UI, DEBUG) << "Playing track ID = " << trackId;
+	LMS_LOG(UI, DEBUG) << "Playing track ID = " << trackId.toString();
 
 	std::ostringstream oss;
 	{
@@ -252,7 +252,7 @@ MediaPlayer::loadTrack(Database::IdType trackId, bool play, float replayGain)
 
 		oss
 			<< "var params = {"
-			<< " trackId :\"" << trackId << "\","
+			<< " trackId :\"" << trackId.toString() << "\","
 			<< " nativeResource: \"" << nativeResource << "\","
 			<< " transcodeResource: \"" << transcodeResource << "\","
 			<< " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","

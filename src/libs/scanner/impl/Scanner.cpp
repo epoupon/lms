@@ -111,7 +111,7 @@ createArtist(Session& session, const MetaData::Artist& artistInfo)
 
 static
 void
-updateArtistIfNeeded(const Artist::pointer& artist, const MetaData::Artist& artistInfo)
+updateArtistIfNeeded(Artist::pointer artist, const MetaData::Artist& artistInfo)
 {
 	// Name may have been updated
 	if (artist->getName() != artistInfo.name)
@@ -543,7 +543,7 @@ Scanner::scan(bool forceScan)
 }
 
 bool
-Scanner::fetchTrackFeatures(Database::IdType trackId, const UUID& recordingMBID)
+Scanner::fetchTrackFeatures(Database::TrackId trackId, const UUID& recordingMBID)
 {
 	std::map<std::string, double> features;
 
@@ -551,14 +551,14 @@ Scanner::fetchTrackFeatures(Database::IdType trackId, const UUID& recordingMBID)
 	const std::string data {AcousticBrainz::extractLowLevelFeatures(recordingMBID)};
 	if (data.empty())
 	{
-		LMS_LOG(DBUPDATER, ERROR) << "Track " << trackId << ", recording MBID = '" << recordingMBID.getAsString() << "': cannot extract features using AcousticBrainz";
+		LMS_LOG(DBUPDATER, ERROR) << "Track " << trackId.getValue() << ", recording MBID = '" << recordingMBID.getAsString() << "': cannot extract features using AcousticBrainz";
 		return false;
 	}
 
 	{
 		auto uniqueTransaction {_dbSession.createUniqueTransaction()};
 
-		Wt::Dbo::ptr<Database::Track> track {Database::Track::getById(_dbSession, trackId)};
+		Database::Track::pointer track {Database::Track::getById(_dbSession, trackId)};
 		if (!track)
 			return false;
 
@@ -580,7 +580,7 @@ Scanner::fetchTrackFeatures(ScanStats& stats)
 
 	struct TrackInfo
 	{
-		Database::IdType id;
+		Database::TrackId id;
 		UUID recordingMBID;
 	};
 
@@ -592,7 +592,7 @@ Scanner::fetchTrackFeatures(ScanStats& stats)
 
 		auto tracks {Database::Track::getAllWithRecordingMBIDAndMissingFeatures(_dbSession)};
 		for (const auto& track : tracks)
-			res.emplace_back(TrackInfo {track.id(), *track->getRecordingMBID()});
+			res.emplace_back(TrackInfo {track->getId(), *track->getRecordingMBID()});
 
 		return res;
 	}()};
@@ -817,12 +817,12 @@ Scanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanSt
 	track.modify()->setTotalDisc(trackInfo->totalDisc);
 	if (!trackInfo->discSubtitle.empty())
 		track.modify()->setDiscSubtitle(trackInfo->discSubtitle);
-	track.modify()->setYear(trackInfo->year ? *trackInfo->year : 0);
-	track.modify()->setOriginalYear(trackInfo->originalYear ? *trackInfo->originalYear : 0);
+	track.modify()->setDate(trackInfo->date);
+	track.modify()->setOriginalDate(trackInfo->originalDate);
 
 	// If a file has an OriginalYear but no Year, set it to ease filtering
-	if (!trackInfo->year && trackInfo->originalYear)
-		track.modify()->setYear(*trackInfo->originalYear);
+	if (!trackInfo->date.isValid() && trackInfo->originalDate.isValid())
+		track.modify()->setDate(trackInfo->originalDate);
 
 	track.modify()->setRecordingMBID(trackInfo->recordingMBID);
 	track.modify()->setTrackMBID(trackInfo->trackMBID);
@@ -922,8 +922,8 @@ Scanner::removeMissingTracks(ScanStats& stats)
 	stepStats.totalElems = trackCount;
 	notifyInProgress(stepStats);
 
-	std::vector<std::pair<Database::IdType, std::filesystem::path>> trackPaths;
-	std::vector<IdType> tracksToRemove;
+	std::vector<std::pair<Database::TrackId, std::filesystem::path>> trackPaths;
+	std::vector<TrackId> tracksToRemove;
 
 	for (std::size_t i {trackCount < batchSize ? 0 : trackCount - batchSize}; ; i -= (i > batchSize ? batchSize : i))
 	{
@@ -950,7 +950,7 @@ Scanner::removeMissingTracks(ScanStats& stats)
 		{
 			auto transaction {_dbSession.createUniqueTransaction()};
 
-			for (const IdType trackId : tracksToRemove)
+			for (const TrackId trackId : tracksToRemove)
 			{
 				Track::pointer track {Track::getById(_dbSession, trackId)};
 				if (track)
@@ -1026,7 +1026,7 @@ Scanner::checkDuplicatedAudioFiles(ScanStats& stats)
 		if (auto trackMBID {track->getTrackMBID()})
 		{
 			LMS_LOG(DBUPDATER, INFO) << "Found duplicated Track MBID [" << trackMBID->getAsString() << "], file: " << track->getPath().string() << " - " << track->getName();
-			stats.duplicates.emplace_back(ScanDuplicate {track.id(), DuplicateReason::SameMBID});
+			stats.duplicates.emplace_back(ScanDuplicate {track->getId(), DuplicateReason::SameMBID});
 		}
 	}
 

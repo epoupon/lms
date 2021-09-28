@@ -22,6 +22,7 @@
 #include <chrono>
 #include <shared_mutex>
 #include <optional>
+#include <unordered_set>
 
 #include <Wt/WDateTime.h>
 #include <Wt/WIOService.h>
@@ -34,6 +35,7 @@
 #include "database/Session.hpp"
 #include "metadata/IParser.hpp"
 #include "scanner/IScanner.hpp"
+#include "utils/Path.hpp"
 
 class UUID;
 
@@ -75,7 +77,7 @@ class Scanner : public IScanner
 		void scan(bool force);
 
 		void scanMediaDirectory( const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats);
-		bool fetchTrackFeatures(Database::IdType trackId, const UUID& MBID);
+		bool fetchTrackFeatures(Database::TrackId trackId, const UUID& MBID);
 		void fetchTrackFeatures(ScanStats& stats);
 
 		// Helpers
@@ -86,7 +88,6 @@ class Scanner : public IScanner
 		void removeOrphanEntries();
 		void checkDuplicatedAudioFiles(ScanStats& stats);
 		void scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanStats& stats);
-		Database::IdType doScanAudioFile(const std::filesystem::path& file, ScanStats& stats);
 		void notifyInProgressIfNeeded(const ScanStepStats& stats);
 		void notifyInProgress(const ScanStepStats& stats);
 		void reloadSimilarityEngine(ScanStats& stats);
@@ -112,8 +113,8 @@ class Scanner : public IScanner
 		std::size_t				_scanVersion {};
 		Wt::WTime				_startTime;
 		Database::ScanSettings::UpdatePeriod 	_updatePeriod {Database::ScanSettings::UpdatePeriod::Never};
-		std::unordered_set<std::filesystem::path> _fileExtensions;
-		std::filesystem::path			_mediaDirectory;
+		std::unordered_set<std::filesystem::path>		_fileExtensions;
+		std::filesystem::path					_mediaDirectory;
 		Database::ScanSettings::RecommendationEngineType _recommendationEngineType;
 };
 

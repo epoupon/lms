@@ -24,6 +24,8 @@
 #include <Wt/Http/Request.h>
 
 #include "database/Types.hpp"
+#include "ClientInfo.hpp"
+#include "ProtocolVersion.hpp"
 
 namespace Database
 {
@@ -36,8 +38,9 @@ namespace API::Subsonic
 	{
 		const Wt::Http::ParameterMap& parameters;
 		Database::Session& dbSession;
-		Database::IdType userId;
-		std::string clientName;
+		Database::UserId userId;
+		ClientInfo clientInfo;
+		ProtocolVersion serverProtocolVersion;
 	};
 }
 

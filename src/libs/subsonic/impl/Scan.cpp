@@ -52,7 +52,7 @@ namespace API::Subsonic::Scan
 	Response
 	handleGetScanStatus(RequestContext& context)
 	{
-		Response response {Response::createOkResponse(context)};
+		Response response {Response::createOkResponse(context.serverProtocolVersion)};
 		response.addNode("scanStatus", createStatusResponseNode());
 
 		return response;
@@ -63,7 +63,7 @@ namespace API::Subsonic::Scan
 	{
 		Service<IScanner>::get()->requestImmediateScan(false);
 
-		Response response {Response::createOkResponse(context)};
+		Response response {Response::createOkResponse(context.serverProtocolVersion)};
 		response.addNode("scanStatus", createStatusResponseNode());
 
 		return response;

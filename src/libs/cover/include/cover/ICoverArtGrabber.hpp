@@ -37,8 +37,8 @@ namespace CoverArt
 		public:
 			virtual ~IGrabber() = default;
 
-			virtual std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::IdType trackId, ImageSize width) = 0;
-			virtual std::shared_ptr<IEncodedImage>	getFromRelease(Database::Session& dbSession, Database::IdType releaseId, ImageSize width) = 0;
+			virtual std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::TrackId trackId, ImageSize width) = 0;
+			virtual std::shared_ptr<IEncodedImage>	getFromRelease(Database::Session& dbSession, Database::ReleaseId releaseId, ImageSize width) = 0;
 
 			virtual void flushCache() = 0;
 	};

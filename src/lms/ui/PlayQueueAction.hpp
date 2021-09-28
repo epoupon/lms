@@ -34,7 +34,8 @@ namespace UserInterface
 		PlayShuffled,
 	};
 
-	using PlayQueueActionSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::IdType>&>;
-
+	using PlayQueueActionArtistSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::ArtistId>&>;
+	using PlayQueueActionReleaseSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::ReleaseId>&>;
+	using PlayQueueActionTrackSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::TrackId>&>;
 }
 

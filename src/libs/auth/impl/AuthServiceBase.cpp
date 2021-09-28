@@ -25,7 +25,7 @@
 
 namespace Auth
 {
-	Database::IdType
+	Database::UserId
 	AuthServiceBase::getOrCreateUser(Database::Session& session, std::string_view loginName)
 	{
 		auto transaction {session.createUniqueTransaction()};
@@ -33,19 +33,19 @@ namespace Auth
 		Database::User::pointer user {Database::User::getByLoginName(session, loginName)};
 		if (!user)
 		{
-			const Database::User::Type type {Database::User::getCount(session) == 0 ? Database::User::Type::ADMIN : Database::User::Type::REGULAR};
+			const Database::UserType type {Database::User::getCount(session) == 0 ? Database::UserType::ADMIN : Database::UserType::REGULAR};
 
-			LMS_LOG(AUTH, DEBUG) << "Creating user '" << loginName << "', admin = " << (type == Database::User::Type::ADMIN);
+			LMS_LOG(AUTH, DEBUG) << "Creating user '" << loginName << "', admin = " << (type == Database::UserType::ADMIN);
 
 			user = Database::User::create(session, loginName);
 			user.modify()->setType(type);
 		}
 
-		return user.id();
+		return user->getId();
 	}
 
 	void
-	AuthServiceBase::onUserAuthenticated(Database::Session& session, Database::IdType userId)
+	AuthServiceBase::onUserAuthenticated(Database::Session& session, Database::UserId userId)
 	{
 		auto transaction {session.createUniqueTransaction()};
 		Database::User::pointer user {Database::User::getById(session, userId)};

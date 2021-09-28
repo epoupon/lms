@@ -49,7 +49,7 @@ class PlayQueue : public Wt::WTemplate
 	public:
 		PlayQueue();
 
-		void processTracks(PlayQueueAction action, const std::vector<Database::IdType>& trackIds);
+		void processTracks(PlayQueueAction action, const std::vector<Database::TrackId>& trackIds);
 
 		// play the next track in the queue
 		void playNext();
@@ -58,19 +58,19 @@ class PlayQueue : public Wt::WTemplate
 		void playPrevious();
 
 		// Signal emitted when a track is to be load(and optionally played)
-		Wt::Signal<Database::IdType /*trackId*/, bool /*play*/, float /* replayGain */> trackSelected;
+		Wt::Signal<Database::TrackId, bool /*play*/, float /* replayGain */> trackSelected;
 
 		// Signal emitted when track is unselected (has to be stopped)
 		Wt::Signal<> trackUnselected;
 
 	private:
-		Wt::Dbo::ptr<Database::TrackList> getTrackList() const;
+		Database::ObjectPtr<Database::TrackList> getTrackList() const;
 		bool isFull() const;
 
 		void clearTracks();
-		std::size_t enqueueTracks(const std::vector<Database::IdType>& trackIds);
+		std::size_t enqueueTracks(const std::vector<Database::TrackId>& trackIds);
 		void addSome();
-		void addEntry(const Wt::Dbo::ptr<Database::TrackListEntry>& entry);
+		void addEntry(const Database::ObjectPtr<Database::TrackListEntry>& entry);
 		void enqueueRadioTracks();
 		void updateInfo();
 		void updateCurrentTrack(bool selected);
@@ -82,7 +82,7 @@ class PlayQueue : public Wt::WTemplate
 
 		void addRadioTrackFromSimilarity(std::shared_ptr<Similarity::Finder> similarityFinder);
 		void addRadioTrackFromClusters();
-		std::optional<float> getReplayGain(std::size_t pos, const Wt::Dbo::ptr<Database::Track>& track) const;
+		std::optional<float> getReplayGain(std::size_t pos, const Database::ObjectPtr<Database::Track>& track) const;
 
 		static inline constexpr std::size_t _nbMaxEntries {1000};
 		static inline constexpr std::size_t _batchSize {12};
@@ -90,7 +90,7 @@ class PlayQueue : public Wt::WTemplate
 		bool _repeatAll {};
 		bool _radioMode {};
 		bool _mediaPlayerSettingsLoaded {};
-		Database::IdType _tracklistId {};
+		Database::TrackListId _tracklistId {};
 		InfiniteScrollingContainer* _entriesContainer {};
 		Wt::WText* _nbTracks {};
 		Wt::WText* _repeatBtn {};

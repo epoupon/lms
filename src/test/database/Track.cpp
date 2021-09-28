@@ -70,20 +70,45 @@ TEST_F(DatabaseFixture, MultipleTracksSearchByFilter)
 		{
 			const auto tracks {Track::getByFilter(session, {}, {"MyTrack"}, std::nullopt, more)};
 			EXPECT_EQ(tracks.size(), 5);
-			EXPECT_TRUE(std::none_of(std::cbegin(tracks), std::cend(tracks), [&](const Track::pointer& track) { return track.id() == track6.getId(); }));
+			EXPECT_TRUE(std::none_of(std::cbegin(tracks), std::cend(tracks), [&](const Track::pointer& track) { return track->getId() == track6.getId(); }));
 		}
 		{
 			const auto tracks {Track::getByFilter(session, {}, {"MyTrack%"}, std::nullopt, more)};
 			ASSERT_EQ(tracks.size(), 2);
-			EXPECT_EQ(tracks[0].id(), track2.getId());
-			EXPECT_EQ(tracks[1].id(), track3.getId());
+			EXPECT_EQ(tracks[0]->getId(), track2.getId());
+			EXPECT_EQ(tracks[1]->getId(), track3.getId());
 		}
 		{
 			const auto tracks {Track::getByFilter(session, {}, {"%MyTrack"}, std::nullopt, more)};
 			ASSERT_EQ(tracks.size(), 2);
-			EXPECT_EQ(tracks[0].id(), track4.getId());
-			EXPECT_EQ(tracks[1].id(), track5.getId());
+			EXPECT_EQ(tracks[0]->getId(), track4.getId());
+			EXPECT_EQ(tracks[1]->getId(), track5.getId());
 		}
 	}
 }
+
+TEST_F(DatabaseFixture, SingleTrackDate)
+{
+	ScopedTrack track {session, "MyTrack"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(track->getYear(), std::nullopt);
+		EXPECT_EQ(track->getOriginalYear(), std::nullopt);
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+		track.get().modify()->setDate(Wt::WDate {1995, 5, 5});
+		track.get().modify()->setOriginalDate(Wt::WDate {1994, 2, 2});
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(track->getYear(), 1995);
+		EXPECT_EQ(track->getOriginalYear(), 1994);
+	}
+}
+
+
 

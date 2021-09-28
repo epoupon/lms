@@ -97,7 +97,7 @@ getReleaseArtistPathName(Database::Release::pointer release)
 {
 	std::string releaseArtistName;
 
-	std::vector<Wt::Dbo::ptr<Database::Artist>> artists;
+	std::vector<Database::ObjectPtr<Database::Artist>> artists;
 
 	artists = release->getReleaseArtists();
 	if (artists.empty())
@@ -171,7 +171,7 @@ createZipper(const std::vector<Database::Track::pointer>& tracks)
 	return std::make_unique<Zip::Zipper>(files, Wt::WLocalDateTime::currentDateTime().toUTC());
 }
 
-DownloadArtistResource::DownloadArtistResource(Database::IdType artistId)
+DownloadArtistResource::DownloadArtistResource(Database::ArtistId artistId)
 : _artistId {artistId}
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
@@ -196,7 +196,7 @@ DownloadArtistResource::createZipper()
 	return UserInterface::createZipper(artist->getTracks());
 }
 
-DownloadReleaseResource::DownloadReleaseResource(Database::IdType releaseId)
+DownloadReleaseResource::DownloadReleaseResource(Database::ReleaseId releaseId)
 : _releaseId {releaseId}
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
@@ -222,7 +222,7 @@ DownloadReleaseResource::createZipper()
 	return UserInterface::createZipper(release->getTracks());
 }
 
-DownloadTrackResource::DownloadTrackResource(Database::IdType trackId)
+DownloadTrackResource::DownloadTrackResource(Database::TrackId trackId)
 : _trackId {trackId}
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};

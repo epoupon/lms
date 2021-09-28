@@ -35,13 +35,13 @@ namespace UserInterface
 		public:
 			using DatabaseCollectorBase::DatabaseCollectorBase;
 
-			std::vector<Wt::Dbo::ptr<Database::Track>>	get(std::optional<Database::Range> range, bool& moreResults);
-			std::vector<Database::IdType>					getAll();
+			std::vector<Database::ObjectPtr<Database::Track>>	get(std::optional<Database::Range> range, bool& moreResults);
+			std::vector<Database::TrackId>				getAll();
 			void reset() { _randomTracks.clear(); }
 
 		private:
-			std::vector<Wt::Dbo::ptr<Database::Track>> getRandomTracks(std::optional<Range> range, bool& moreResults);
-			std::vector<Database::IdType> _randomTracks;
+			std::vector<Database::ObjectPtr<Database::Track>> getRandomTracks(std::optional<Range> range, bool& moreResults);
+			std::vector<Database::TrackId> _randomTracks;
 	};
 } // ns UserInterface
 

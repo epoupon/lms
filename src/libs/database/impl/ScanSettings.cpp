@@ -60,14 +60,14 @@ ScanSettings::get(Session& session)
 {
 	session.checkSharedLocked();
 
-	return session.getDboSession().find<ScanSettings>();
+	return session.getDboSession().find<ScanSettings>().resultValue();
 }
 
-std::unordered_set<std::filesystem::path>
+std::vector<std::filesystem::path>
 ScanSettings::getAudioFileExtensions() const
 {
-	auto extensions = StringUtils::splitString(_audioFileExtensions, " ");
-	return std::unordered_set<std::filesystem::path>(std::cbegin(extensions), std::cend(extensions));
+	const auto extensions {StringUtils::splitString(_audioFileExtensions, " ")};
+	return std::vector<std::filesystem::path>(std::cbegin(extensions), std::cend(extensions));
 }
 
 void
@@ -111,19 +111,19 @@ ScanSettings::setClusterTypes(Session& session, const std::set<std::string>& clu
 	// Create any missing cluster type
 	for (const std::string& clusterTypeName : clusterTypeNames)
 	{
-		auto clusterType {ClusterType::getByName(session, clusterTypeName)};
+		ClusterType::pointer clusterType {ClusterType::getByName(session, clusterTypeName)};
 		if (!clusterType)
 		{
 			LMS_LOG(DB, INFO) << "Creating cluster type " << clusterTypeName;
 			clusterType = ClusterType::create(session, clusterTypeName);
-			_clusterTypes.insert(clusterType);
+			_clusterTypes.insert(getDboPtr(clusterType));
 
 			needRescan = true;
 		}
 	}
 
 	// Delete no longer existing cluster types
-	for (ClusterType::pointer& clusterType : _clusterTypes)
+	for (Wt::Dbo::ptr<ClusterType> clusterType : _clusterTypes)
 	{
 		if (std::none_of(clusterTypeNames.begin(), clusterTypeNames.end(),
 			[clusterType](const std::string& name) { return name == clusterType->getName(); }))

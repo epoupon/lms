@@ -132,7 +132,7 @@ Tracks::addSome()
 	_container->setHasMore(moreResults);
 }
 
-std::vector<Database::IdType>
+std::vector<Database::TrackId>
 Tracks::getAllTracks()
 {
 	return _trackCollector.getAll();

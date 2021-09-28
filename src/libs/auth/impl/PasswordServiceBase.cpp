@@ -84,7 +84,7 @@ namespace Auth
 			{
 				_loginThrottler.onGoodClientAttempt(clientAddress);
 
-				const Database::IdType userId {getOrCreateUser(session, loginName)};
+				const Database::UserId userId {getOrCreateUser(session, loginName)};
 				onUserAuthenticated(session, userId);
 				return {CheckResult::State::Granted, userId};
 			}

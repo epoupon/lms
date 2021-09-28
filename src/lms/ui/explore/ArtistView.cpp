@@ -26,20 +26,24 @@
 #include <Wt/WText.h>
 
 #include "database/Artist.hpp"
+#include "database/Cluster.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "database/User.hpp"
 #include "recommendation/IEngine.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
+#include "common/InfiniteScrollingContainer.hpp"
 #include "resource/DownloadResource.hpp"
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
 #include "ReleaseListHelpers.hpp"
+#include "TrackListHelpers.hpp"
 
 using namespace Database;
 
@@ -65,7 +69,7 @@ Artist::Artist(Filters* filters)
 }
 
 static
-std::optional<IdType>
+std::optional<ArtistId>
 extractArtistIdFromInternalPath()
 {
 	if (wApp->internalPathMatches("/artist/mbid/"))
@@ -75,13 +79,13 @@ extractArtistIdFromInternalPath()
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 			if (const Database::Artist::pointer artist {Database::Artist::getByMBID(LmsApp->getDbSession(), *mbid)})
-				return artist.id();
+				return artist->getId();
 		}
 
 		return std::nullopt;
 	}
 
-	return StringUtils::readAs<Database::IdType>(wApp->internalPathNextPart("/artist/"));
+	return StringUtils::readAs<Database::ArtistId::ValueType>(wApp->internalPathNextPart("/artist/"));
 }
 
 void
@@ -91,6 +95,8 @@ Artist::refreshView()
 		return;
 
 	clear();
+	_artistId = {};
+	_trackContainer = nullptr;
 
 	const auto artistId {extractArtistIdFromInternalPath()};
 	if (!artistId)
@@ -107,6 +113,10 @@ Artist::refreshView()
 	if (!artist)
 		throw ArtistNotFoundException {};
 
+	_artistId = *artistId;
+
+	refreshReleases(artist);
+	refreshNonReleaseTracks(artist);
 	refreshLinks(artist);
 	refreshSimilarArtists(similarArtistIds);
 
@@ -120,7 +130,7 @@ Artist::refreshView()
 		{
 			for (auto cluster : clusters)
 			{
-				auto clusterId = cluster.id();
+				auto clusterId = cluster->getId();
 				auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
 				entry->clicked().connect([=]
 				{
@@ -136,7 +146,7 @@ Artist::refreshView()
 
 		playBtn->clicked().connect([=]
 		{
-			artistsAction.emit(PlayQueueAction::Play, {*artistId});
+			artistsAction.emit(PlayQueueAction::Play, {_artistId});
 		});
 	}
 
@@ -150,12 +160,12 @@ Artist::refreshView()
 			popup->addItem(Wt::WString::tr("Lms.Explore.play-shuffled"))
 				->triggered().connect(this, [=]
 				{
-					artistsAction.emit(PlayQueueAction::PlayShuffled, {*artistId});
+					artistsAction.emit(PlayQueueAction::PlayShuffled, {_artistId});
 				});
 			popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
 				->triggered().connect(this, [=]
 				{
-					artistsAction.emit(PlayQueueAction::PlayLast, {*artistId});
+					artistsAction.emit(PlayQueueAction::PlayLast, {_artistId});
 				});
 
 			bool isStarred {};
@@ -185,10 +195,18 @@ Artist::refreshView()
 			popup->exec(moreBtn);
 		});
 	}
+}
+
+void
+Artist::refreshReleases(const Database::ObjectPtr<Database::Artist>& artist)
+{
+	const auto releases {artist->getReleases(_filters->getClusterIds())};
+	if (releases.empty())
+		return;
+
+	setCondition("if-has-release", true);
 
 	Wt::WContainerWidget* releasesContainer = bindNew<Wt::WContainerWidget>("releases");
-
-	auto releases = artist->getReleases(_filters->getClusterIds());
 	for (const auto& release : releases)
 	{
 		releasesContainer->addWidget(ReleaseListHelpers::createEntryForArtist(release, artist));
@@ -196,7 +214,23 @@ Artist::refreshView()
 }
 
 void
-Artist::refreshSimilarArtists(const std::unordered_set<Database::IdType>& similarArtistsId)
+Artist::refreshNonReleaseTracks(const Database::ObjectPtr<Database::Artist>& artist)
+{
+	if (!artist->hasNonReleaseTracks())
+		return;
+
+	setCondition("if-has-non-release-track", true);
+	_trackContainer = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.Tracks.template.container"));
+	_trackContainer->onRequestElements.connect(this, [this]
+	{
+		addSomeNonReleaseTracks();
+	});
+
+	addSomeNonReleaseTracks();
+}
+
+void
+Artist::refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArtistsId)
 {
 	if (similarArtistsId.empty())
 		return;
@@ -204,7 +238,7 @@ Artist::refreshSimilarArtists(const std::unordered_set<Database::IdType>& simila
 	setCondition("if-has-similar-artists", true);
 	Wt::WContainerWidget* similarArtistsContainer {bindNew<Wt::WContainerWidget>("similar-artists")};
 
-	for (Database::IdType artistId : similarArtistsId)
+	for (const Database::ArtistId artistId : similarArtistsId)
 	{
 		const Database::Artist::pointer similarArtist{Database::Artist::getById(LmsApp->getDbSession(), artistId)};
 		if (!similarArtist)
@@ -227,6 +261,35 @@ Artist::refreshLinks(const Database::Artist::pointer& artist)
 
 		bindNew<Wt::WAnchor>("mbid-link", link, Wt::WString::tr("Lms.Explore.musicbrainz-artist"));
 	}
+}
+
+void
+Artist::addSomeNonReleaseTracks()
+{
+	bool moreResults {};
+
+	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+		const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), _artistId)};
+		if (!artist)
+			return;
+
+		const auto tracks {artist->getNonReleaseTracks(std::nullopt, Database::Range {static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize}, moreResults)};
+
+		for (const auto& track : tracks)
+		{
+			if (_trackContainer->getCount() == _tracksMaxCount)
+			{
+				moreResults = false;
+				break;
+			}
+
+			_trackContainer->add(TrackListHelpers::createEntry(track, tracksAction));
+		}
+	}
+
+	_trackContainer->setHasMore(moreResults);
 }
 
 } // namespace UserInterface

@@ -19,6 +19,8 @@
 
 #include "utils/NetAddress.hpp"
 
+#ifndef BOOST_ASIO_HAS_STD_HASH
+
 namespace std
 {
 	std::size_t hash<boost::asio::ip::address>::operator()(const boost::asio::ip::address& ipAddr) const
@@ -40,3 +42,5 @@ namespace std
 		return std::hash<std::string>{}(ipAddr.to_string());
 	}
 }
+
+#endif // BOOST_ASIO_HAS_STD_HASH
