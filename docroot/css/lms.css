@@ -184,7 +184,7 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 }
 
 .Lms-explore-release-entry {
-	min-height: 34px;
+	min-height: 36px;
 }
 
 .Lms-explore-release-entry:hover .Lms-explore-release-entry-controls {
