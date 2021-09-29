@@ -9,5 +9,7 @@ target_link_libraries(test-som PRIVATE
 	GTest::GTest
 	)
 
-gtest_discover_tests(test-som)
+if (NOT CMAKE_CROSSCOMPILING)
+	gtest_discover_tests(test-som)
+endif()
 
