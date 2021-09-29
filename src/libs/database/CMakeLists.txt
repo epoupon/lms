@@ -1,4 +1,3 @@
-
 add_library(lmsdatabase SHARED
 	impl/Artist.cpp
 	impl/Cluster.cpp
@@ -36,3 +35,6 @@ target_link_libraries(lmsdatabase PUBLIC
 
 install(TARGETS lmsdatabase DESTINATION lib)
 
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()

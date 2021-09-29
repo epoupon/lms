@@ -1,4 +1,3 @@
-
 add_library(lmsutils SHARED
 	impl/ChildProcess.cpp
 	impl/ChildProcessManager.cpp
@@ -37,3 +36,6 @@ target_link_libraries(lmsutils PUBLIC
 
 install(TARGETS lmsutils DESTINATION lib)
 
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()
