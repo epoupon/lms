@@ -409,6 +409,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 
 	Wt::WTemplate* entry = _entriesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry"));
 
+	entry->bindString("is-selected", "");
 	entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
 	const auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
