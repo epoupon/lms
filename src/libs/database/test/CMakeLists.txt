@@ -12,5 +12,7 @@ target_link_libraries(test-database PRIVATE
 	GTest::GTest
 	)
 
-gtest_discover_tests(test-database)
+if (NOT CMAKE_CROSSCOMPILING)
+	gtest_discover_tests(test-database)
+endif()
 
