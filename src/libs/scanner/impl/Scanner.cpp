@@ -806,6 +806,8 @@ Scanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanSt
 	track.modify()->setScanVersion(_scanVersion);
 	if (trackInfo->album)
 		track.modify()->setRelease(getOrCreateRelease(_dbSession, *trackInfo->album));
+	else
+		track.modify()->setRelease({});
 	track.modify()->setClusters(getOrCreateClusters(_dbSession, trackInfo->clusters));
 	track.modify()->setLastWriteTime(lastWriteTime);
 	track.modify()->setName(title);
@@ -815,8 +817,7 @@ Scanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanSt
 	track.modify()->setDiscNumber(trackInfo->discNumber ? *trackInfo->discNumber : 0);
 	track.modify()->setTotalTrack(trackInfo->totalTrack);
 	track.modify()->setTotalDisc(trackInfo->totalDisc);
-	if (!trackInfo->discSubtitle.empty())
-		track.modify()->setDiscSubtitle(trackInfo->discSubtitle);
+	track.modify()->setDiscSubtitle(trackInfo->discSubtitle);
 	track.modify()->setDate(trackInfo->date);
 	track.modify()->setOriginalDate(trackInfo->originalDate);
 
@@ -830,10 +831,8 @@ Scanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanSt
 	track.modify()->setHasCover(trackInfo->hasCover);
 	track.modify()->setCopyright(trackInfo->copyright);
 	track.modify()->setCopyrightURL(trackInfo->copyrightURL);
-	if (trackInfo->trackReplayGain)
-		track.modify()->setTrackReplayGain(*trackInfo->trackReplayGain);
-	if (trackInfo->albumReplayGain)
-		track.modify()->setReleaseReplayGain(*trackInfo->albumReplayGain);
+	track.modify()->setTrackReplayGain(trackInfo->trackReplayGain);
+	track.modify()->setReleaseReplayGain(trackInfo->albumReplayGain);
 }
 
 void

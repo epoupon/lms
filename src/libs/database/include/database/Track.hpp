@@ -109,8 +109,8 @@ class Track : public Object<Track, TrackId>
 		void setRecordingMBID(const std::optional<UUID>& MBID)		{ _recordingMBID = MBID ? MBID->getAsString() : ""; }
 		void setCopyright(const std::string& copyright)			{ _copyright = std::string(copyright, 0, _maxCopyrightLength); }
 		void setCopyrightURL(const std::string& copyrightURL)		{ _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
-		void setTrackReplayGain(float replayGain)			{ _trackReplayGain = replayGain; }
-		void setReleaseReplayGain(float replayGain)			{ _releaseReplayGain = replayGain; }
+		void setTrackReplayGain(std::optional<float> replayGain)			{ _trackReplayGain = replayGain; }
+		void setReleaseReplayGain(std::optional<float> replayGain)			{ _releaseReplayGain = replayGain; }
 		void clearArtistLinks();
 		void addArtistLink(const ObjectPtr<TrackArtistLink>& artistLink);
 		void setRelease(ObjectPtr<Release> release)			{ _release = getDboPtr(release); }
