@@ -12,5 +12,7 @@ target_link_libraries(test-utils PRIVATE
 	GTest::GTest
 	)
 
-gtest_discover_tests(test-utils)
+if (NOT CMAKE_CROSSCOMPILING)
+	gtest_discover_tests(test-utils)
+endif()
 
