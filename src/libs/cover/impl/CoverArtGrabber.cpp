@@ -21,6 +21,7 @@
 
 #include "av/IAudioFile.hpp"
 
+#include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -33,6 +34,7 @@ using RawImage = CoverArt::STB::RawImage;
 using RawImage = CoverArt::GraphicsMagick::RawImage;
 #endif
 
+#include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Utils.hpp"
@@ -85,27 +87,25 @@ isFileSupported(const std::filesystem::path& file, const std::vector<std::filesy
 }
 
 std::unique_ptr<IGrabber>
-createGrabber(const std::filesystem::path& execPath,
-		const std::filesystem::path& defaultCoverPath,
-		std::size_t maxCacheSize, std::size_t maxFileSize, unsigned jpegQuality)
+createGrabber(Database::Db& db, const std::filesystem::path& execPath, const std::filesystem::path& defaultCoverPath)
 {
-	return std::make_unique<Grabber>(execPath, defaultCoverPath, maxCacheSize, maxFileSize, jpegQuality);
+	return std::make_unique<Grabber>(db, execPath, defaultCoverPath);
 }
 
-Grabber::Grabber(const std::filesystem::path& execPath,
-		const std::filesystem::path& defaultCoverPath,
-		std::size_t maxCacheSize,
-		std::size_t maxFileSize,
-		unsigned jpegQuality)
-	: _defaultCoverPath {defaultCoverPath}
-	, _maxCacheSize {maxCacheSize}
-	, _maxFileSize {maxFileSize}
-	, _jpegQuality {Utils::clamp<unsigned>(jpegQuality, 1, 100)}
+Grabber::Grabber(Database::Db& db,
+		const std::filesystem::path& execPath,
+		const std::filesystem::path& defaultCoverPath)
+	: _db {db}
+	, _defaultCoverPath {defaultCoverPath}
+	, _maxCacheSize {Service<IConfig>::get()->getULong("cover-max-cache-size", 30) * 1000 * 1000}
+	, _maxFileSize {Service<IConfig>::get()->getULong("cover-max-file-size", 10) * 1000 * 1000}
+
 {
+	setJpegQuality(Service<IConfig>::get()->getULong("cover-jpeg-quality", 75));
+
 	LMS_LOG(COVER, INFO) << "Default cover path = '" << _defaultCoverPath.string() << "'";
 	LMS_LOG(COVER, INFO) << "Max cache size = " << _maxCacheSize;
 	LMS_LOG(COVER, INFO) << "Max file size = " << _maxFileSize;
-	LMS_LOG(COVER, INFO) << "JPEG export quality = " << _jpegQuality;
 
 #if LMS_SUPPORT_IMAGE_GM
 	GraphicsMagick::init(execPath);
@@ -313,9 +313,9 @@ Grabber::getFromTrack(const std::filesystem::path& p, ImageSize width) const
 }
 
 std::shared_ptr<IEncodedImage>
-Grabber::getFromTrack(Database::Session& dbSession, Database::TrackId trackId, ImageSize width)
+Grabber::getFromTrack(Database::TrackId trackId, ImageSize width)
 {
-	return getFromTrack(dbSession, trackId, width, true /* allow release fallback*/);
+	return getFromTrack(_db.getTLSSession(), trackId, width, true /* allow release fallback*/);
 }
 
 std::shared_ptr<IEncodedImage>
@@ -338,7 +338,7 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::TrackId trackId, I
 			cover = getFromSameNamedFile(trackInfo->trackPath, width);
 
 		if (!cover && trackInfo->releaseId && allowReleaseFallback)
-			cover = getFromRelease(dbSession, *trackInfo->releaseId, width);
+			cover = getFromRelease(*trackInfo->releaseId, width);
 
 		if (!cover && trackInfo->isMultiDisc)
 		{
@@ -357,7 +357,7 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::TrackId trackId, I
 }
 
 std::shared_ptr<IEncodedImage>
-Grabber::getFromRelease(Database::Session& session, Database::ReleaseId releaseId, ImageSize width)
+Grabber::getFromRelease(Database::ReleaseId releaseId, ImageSize width)
 {
 	const CacheEntryDesc cacheEntryDesc {releaseId, width};
 
@@ -370,6 +370,8 @@ Grabber::getFromRelease(Database::Session& session, Database::ReleaseId releaseI
 		Database::TrackId firstTrackId;
 		std::filesystem::path releaseDirectory;
 	};
+
+	Database::Session& session {_db.getTLSSession()};
 
 	auto getReleaseInfo {[&]
 	{
@@ -416,6 +418,14 @@ Grabber::flushCache()
 	_cacheMisses = 0;
 	_cacheSize = 0;
 	_cache.clear();
+}
+
+void
+Grabber::setJpegQuality(unsigned quality)
+{
+	_jpegQuality = Utils::clamp<unsigned>(quality, 1, 100);
+
+	LMS_LOG(COVER, INFO) << "JPEG export quality = " << _jpegQuality;
 }
 
 void

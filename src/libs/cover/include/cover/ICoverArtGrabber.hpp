@@ -27,7 +27,7 @@
 
 namespace Database
 {
-	class Session;
+	class Db;
 }
 
 namespace CoverArt
@@ -37,17 +37,17 @@ namespace CoverArt
 		public:
 			virtual ~IGrabber() = default;
 
-			virtual std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::TrackId trackId, ImageSize width) = 0;
-			virtual std::shared_ptr<IEncodedImage>	getFromRelease(Database::Session& dbSession, Database::ReleaseId releaseId, ImageSize width) = 0;
+			virtual std::shared_ptr<IEncodedImage>	getFromTrack(Database::TrackId trackId, ImageSize width) = 0;
+			virtual std::shared_ptr<IEncodedImage>	getFromRelease(Database::ReleaseId releaseId, ImageSize width) = 0;
 
 			virtual void flushCache() = 0;
+
+			virtual void setJpegQuality(unsigned quality) = 0; // from 1 to 100
 	};
 
-	std::unique_ptr<IGrabber> createGrabber(const std::filesystem::path& execPath,
-			const std::filesystem::path& defaultCoverPath,
-			std::size_t maxCacheEntries,
-			std::size_t maxFileSize,
-			unsigned jpegQuality);
+	std::unique_ptr<IGrabber> createGrabber(Database::Db& db,
+									const std::filesystem::path& execPath,
+									const std::filesystem::path& defaultCoverPath);
 
 } // namespace CoverArt
 

@@ -1795,9 +1795,9 @@ handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/,
 
 	std::shared_ptr<CoverArt::IEncodedImage> cover;
 	if (trackId)
-		cover = Service<CoverArt::IGrabber>::get()->getFromTrack(context.dbSession, *trackId, size);
+		cover = Service<CoverArt::IGrabber>::get()->getFromTrack(*trackId, size);
 	else if (releaseId)
-		cover = Service<CoverArt::IGrabber>::get()->getFromRelease(context.dbSession, *releaseId, size);
+		cover = Service<CoverArt::IGrabber>::get()->getFromRelease(*releaseId, size);
 
 	response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
 	response.setMimeType(std::string {cover->getMimeType()});

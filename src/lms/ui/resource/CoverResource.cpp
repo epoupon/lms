@@ -96,7 +96,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 			return;
 		}
 
-		cover = Service<CoverArt::IGrabber>::get()->getFromTrack(LmsApp->getDbSession(), *trackId, *size);
+		cover = Service<CoverArt::IGrabber>::get()->getFromTrack(*trackId, *size);
 	}
 	else if (releaseIdStr)
 	{
@@ -106,7 +106,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		if (!releaseId)
 			return;
 
-		cover = Service<CoverArt::IGrabber>::get()->getFromRelease(LmsApp->getDbSession(), *releaseId, *size);
+		cover = Service<CoverArt::IGrabber>::get()->getFromRelease(*releaseId, *size);
 	}
 	else
 	{

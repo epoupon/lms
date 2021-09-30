@@ -250,13 +250,9 @@ int main(int argc, char* argv[])
 		else
 			throw LmsException {"Bad value '" + authenticationBackend + "' for 'authentication-backend'"};
 
-		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0],
-				server.appRoot() + "/images/unknown-cover.jpg",
-				config->getULong("cover-max-cache-size", 30) * 1000 * 1000,
-				config->getULong("cover-max-file-size", 10) * 1000 * 1000,
-				config->getULong("cover-jpeg-quality", 75))};
+		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(database, argv[0], server.appRoot() + "/images/unknown-cover.jpg")};
 		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
-		Service<Scanner::IScanner> scannerService {Scanner::createScanner(/*ioContext,*/ database, *recommendationEngineService)};
+		Service<Scanner::IScanner> scannerService {Scanner::createScanner(database, *recommendationEngineService)};
 
 		scannerService->getEvents().scanComplete.connect([&]
 		{

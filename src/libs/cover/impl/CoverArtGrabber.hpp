@@ -86,11 +86,9 @@ namespace CoverArt
 	class Grabber : public IGrabber
 	{
 		public:
-			Grabber(const std::filesystem::path& execPath,
-					const std::filesystem::path& defaultCoverPath,
-					std::size_t maxCacheEntries,
-					std::size_t maxFileSize,
-					unsigned jpegQuality);
+			Grabber(Database::Db& db,
+					const std::filesystem::path& execPath,
+					const std::filesystem::path& defaultCoverPath);
 
 			Grabber(const Grabber&) = delete;
 			Grabber& operator=(const Grabber&) = delete;
@@ -98,9 +96,10 @@ namespace CoverArt
 			Grabber& operator=(Grabber&&) = delete;
 
 		private:
-			std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::TrackId trackId, ImageSize width) override;
-			std::shared_ptr<IEncodedImage>	getFromRelease(Database::Session& dbSession, Database::ReleaseId releaseId, ImageSize width) override;
+			std::shared_ptr<IEncodedImage>	getFromTrack(Database::TrackId trackId, ImageSize width) override;
+			std::shared_ptr<IEncodedImage>	getFromRelease(Database::ReleaseId releaseId, ImageSize width) override;
 			void							flushCache() override;
+			void							setJpegQuality(unsigned quality) override;
 
 			std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::TrackId trackId, ImageSize width, bool allowReleaseFallback);
 			std::unique_ptr<IEncodedImage>	getFromAvMediaFile(const Av::IAudioFile& input, ImageSize width) const;
@@ -113,6 +112,8 @@ namespace CoverArt
 			std::shared_ptr<IEncodedImage>	getDefault(ImageSize width);
 
 			bool							checkCoverFile(const std::filesystem::path& directoryPath) const;
+
+			Database::Db&				_db;
 
 			std::shared_mutex _cacheMutex;
 			std::unordered_map<CacheEntryDesc, std::shared_ptr<IEncodedImage>> _cache;
@@ -129,7 +130,7 @@ namespace CoverArt
 			static inline const std::vector<std::filesystem::path> _fileExtensions {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize
 			const std::size_t _maxFileSize;
 			static inline const std::vector<std::string> _preferredFileNames {"cover", "front"}; // TODO parametrize
-			const unsigned _jpegQuality;
+			unsigned _jpegQuality;
 	};
 
 } // namespace CoverArt

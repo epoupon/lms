@@ -47,7 +47,7 @@ dumpTrackCovers(Database::Session& session, CoverArt::ImageSize width)
 	for (const Database::TrackId trackId : trackIds)
 	{
 		std::cout << "Getting cover for track id " << trackId.toString() << std::endl;
-		Service<CoverArt::IGrabber>::get()->getFromTrack(session, trackId, width);
+		Service<CoverArt::IGrabber>::get()->getFromTrack(trackId, width);
 	}
 }
 
@@ -82,15 +82,11 @@ int main(int argc, char *argv[])
         }
 
 		Service<IConfig> config {createConfig(vm["conf"].as<std::string>())};
-
-		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0],
-				vm["default-cover"].as<std::string>(),
-				config->getULong("cover-max-cache-size", 30) * 1000 * 1000,
-				config->getULong("cover-max-file-size", 10) * 1000 * 1000,
-				config->getULong("cover-jpeg-quality", vm["quality"].as<unsigned>())
-				)};
-
 		Database::Db db {config->getPath("working-dir") / "lms.db"};
+		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(db, argv[0], vm["default-cover"].as<std::string>())};
+
+		coverArtService->setJpegQuality(config->getULong("cover-jpeg-quality", vm["quality"].as<unsigned>()));
+
 		Database::Session session {db};
 
 		if (vm.count("tracks"))
