@@ -20,13 +20,12 @@
 #pragma once
 
 #include <condition_variable>
+#include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "recommendation/IEngine.hpp"
-#include "IClassifier.hpp"
 
 namespace Database
 {
@@ -35,7 +34,7 @@ namespace Database
 
 namespace Recommendation
 {
-	enum class ClassifierType
+	enum class EngineType
 	{
 		Clusters,
 		Features,
@@ -57,29 +56,29 @@ namespace Recommendation
 			void	cancelLoad() override;
 			void	requestCancelLoad() override {};
 
-			ResultContainer<Database::TrackId> getSimilarTracksFromTrackList(Database::Session& session, Database::TrackListId tracklistId, std::size_t maxCount) override;
-			ResultContainer<Database::TrackId> getSimilarTracks(Database::Session& session, const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) override;
-			ResultContainer<Database::ReleaseId> getSimilarReleases(Database::Session& session, Database::ReleaseId releaseId, std::size_t maxCount) override;
-			ResultContainer<Database::ArtistId> getSimilarArtists(Database::Session& session,
-					Database::ArtistId artistId,
-					EnumSet<Database::TrackArtistLinkType> linkTypes,
-					std::size_t maxCount) override;
+			TrackContainer getSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const override;
+			TrackContainer getSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const override;
+			ReleaseContainer getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const override;
+			ArtistContainer getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
-			void setClassifierPriorities(const std::vector<ClassifierType>& classifierTypes);
-			void clearClassifiers();
-			void loadClassifier(std::unique_ptr<IClassifier> classifier, ClassifierType classifierType, bool forceReload, const ProgressCallback& progressCallback);
+			void setEnginePriorities(const std::vector<EngineType>& engineTypes);
+			void clearEngines();
+			void loadPendingEngine(EngineType engineType, std::unique_ptr<IEngine> engine, bool forceReload, const ProgressCallback& progressCallback);
 
 			Database::Db&				_db;
 
-			std::mutex							_controlMutex;
-			bool								_loadCancelled {};
-			std::condition_variable 			_pendingClassifiersCondvar;
-			std::unordered_set<IClassifier*>	_pendingClassifiers;
+			std::mutex					_controlMutex;
+			bool						_loadCancelled {};
 
-			std::shared_mutex			_classifiersMutex;
-			using ClassifierContainer = std::unordered_map<ClassifierType, std::unique_ptr<IClassifier>>;
-			ClassifierContainer			_classifiers;
-			std::vector<ClassifierType>	_classifierPriorities; // ordered by priority
+			using EngineContainer = std::unordered_map<EngineType, std::unique_ptr<IEngine>>;
+			EngineContainer				_engines;
+			mutable std::shared_mutex	_enginesMutex;
+
+			std::vector<IEngine*>		_pendingEngines;
+			std::shared_mutex			_pendingEnginesMutex;
+			std::condition_variable 	_pendingEnginesCondvar;
+
+			std::vector<EngineType>		_enginePriorities; // ordered by priority
 	};
 
 } // ns Recommendation

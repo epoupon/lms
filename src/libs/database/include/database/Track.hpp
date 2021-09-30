@@ -56,9 +56,10 @@ class Track : public Object<Track, TrackId>
 		Track(const std::filesystem::path& p);
 
 		// Find utility functions
-		static std::size_t getCount(Session& session);
-		static pointer getByPath(Session& session, const std::filesystem::path& p);
-		static pointer getById(Session& session, TrackId id);
+		static std::size_t			getCount(Session& session);
+		static pointer				getByPath(Session& session, const std::filesystem::path& p);
+		static pointer 				getById(Session& session, TrackId id);
+		static bool					exists(Session& session, TrackId id);
 		static std::vector<pointer> getByRecordingMBID(Session& session, const UUID& MBID);
 		static std::vector<pointer>	getSimilarTracks(Session& session,
 							const std::vector<TrackId>& trackIds,

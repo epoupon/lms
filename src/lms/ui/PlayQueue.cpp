@@ -520,7 +520,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 void
 PlayQueue::enqueueRadioTracks()
 {
-	const auto similarTrackIds {Service<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 3)};
+	const auto similarTrackIds {Service<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(_tracklistId, 3)};
 
 	std::vector<Database::TrackId> trackToAddIds(std::cbegin(similarTrackIds), std::cend(similarTrackIds));
 	Random::shuffleContainer(trackToAddIds);

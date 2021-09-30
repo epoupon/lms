@@ -23,6 +23,13 @@ using namespace Database;
 
 TEST_F(DatabaseFixture, SingleArtist)
 {
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_FALSE(Artist::exists(session, 35));
+		EXPECT_FALSE(Artist::exists(session, 0));
+		EXPECT_FALSE(Artist::exists(session, 1));
+	}
+
 	ScopedArtist artist {session, "MyArtist"};
 
 	{
@@ -31,6 +38,8 @@ TEST_F(DatabaseFixture, SingleArtist)
 		EXPECT_TRUE(artist.get());
 		EXPECT_FALSE(!artist.get());
 		EXPECT_EQ(artist.get()->getId(), artist.getId());
+
+		EXPECT_TRUE(Artist::exists(session, artist.getId()));
 	}
 
 	{

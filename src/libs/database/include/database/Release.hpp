@@ -50,6 +50,7 @@ class Release : public Object<Release, ReleaseId>
 		static pointer			getByMBID(Session& session, const UUID& MBID);
 		static std::vector<pointer>	getByName(Session& session, const std::string& name);
 		static pointer			getById(Session& session, ReleaseId id);
+		static bool				exists(Session& session, ReleaseId id);
 		static std::vector<pointer>	getAllOrphans(Session& session); // no track related
 		static std::vector<pointer>	getAll(Session& session, std::optional<Range> range = std::nullopt);
 		static std::vector<ReleaseId>	getAllIds(Session& session);

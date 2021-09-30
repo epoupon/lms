@@ -66,6 +66,13 @@ Artist::getById(Session& session, ArtistId id)
 	return session.getDboSession().find<Artist>().where("id = ?").bind(id).resultValue();
 }
 
+bool
+Artist::exists(Session& session, ArtistId id)
+{
+	session.checkSharedLocked();
+	return session.getDboSession().query<int>("SELECT 1 FROM artist").where("id = ?").bind(id).resultValue() == 1;
+}
+
 Artist::pointer
 Artist::create(Session& session, const std::string& name, const std::optional<UUID>& MBID)
 {

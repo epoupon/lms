@@ -22,6 +22,7 @@
 #include <numeric>
 
 #include "database/Artist.hpp"
+#include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -35,9 +36,9 @@
 
 namespace Recommendation {
 
-std::unique_ptr<IClassifier> createFeaturesEngine()
+std::unique_ptr<IEngine> createFeaturesEngine(Database::Db& db)
 {
-	return std::make_unique<FeaturesEngine>();
+	return std::make_unique<FeaturesEngine>(db);
 }
 
 const FeatureSettingsMap&
@@ -127,8 +128,8 @@ getInputVectorWeights(const FeatureSettingsMap& featureSettingsMap, std::size_t 
 	return weights;
 }
 
-bool
-FeaturesEngine::loadFromTraining(Database::Session& session, const TrainSettings& trainSettings, const ProgressCallback& progressCallback)
+void
+FeaturesEngine::loadFromTraining(const TrainSettings& trainSettings, const ProgressCallback& progressCallback)
 {
 	LMS_LOG(RECOMMENDATION, INFO) << "Constructing features classifier...";
 
@@ -140,6 +141,8 @@ FeaturesEngine::loadFromTraining(Database::Session& session, const TrainSettings
 			[](std::size_t sum, const FeatureName& featureName) { return sum + getFeatureDef(featureName).nbDimensions; })};
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Features dimension = " << nbDimensions;
+
+	Database::Session& session {_db.getTLSSession()};
 
 	std::vector<Database::TrackId> trackIds;
 	{
@@ -160,7 +163,7 @@ FeaturesEngine::loadFromTraining(Database::Session& session, const TrainSettings
 	for (Database::TrackId trackId : trackIds)
 	{
 		if (_loadCancelled)
-			return false;
+			return;
 
 		std::optional<FeatureValuesMap> featureValuesMap;
 
@@ -184,7 +187,7 @@ FeaturesEngine::loadFromTraining(Database::Session& session, const TrainSettings
 	if (samples.empty())
 	{
 		LMS_LOG(RECOMMENDATION, INFO) << "Nothing to classify!";
-		return false;
+		return;
 	}
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Normalizing data...";
@@ -219,15 +222,13 @@ FeaturesEngine::loadFromTraining(Database::Session& session, const TrainSettings
 			[this] { return _loadCancelled; });
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Training network DONE";
 
-	if (_loadCancelled)
-		return false;
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Classifying tracks...";
 	TrackPositions trackPositions;
 	for (std::size_t i {}; i < samples.size(); ++i)
 	{
 		if (_loadCancelled)
-			return false;
+			return;
 
 		const SOM::Position position {network.getClosestRefVectorPosition(samples[i])};
 
@@ -236,23 +237,25 @@ FeaturesEngine::loadFromTraining(Database::Session& session, const TrainSettings
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Classifying tracks DONE";
 
-	return load(session, std::move(network), std::move(trackPositions));
+	load(std::move(network), std::move(trackPositions));
 }
 
-bool
-FeaturesEngine::loadFromCache(Database::Session& session, const FeaturesEngineCache& cache)
+void
+FeaturesEngine::loadFromCache(FeaturesEngineCache cache)
 {
 	LMS_LOG(RECOMMENDATION, INFO) << "Constructing features classifier from cache...";
 
-	return load(session, std::move(cache._network), cache._trackPositions);
+	load(std::move(cache._network), cache._trackPositions);
 }
 
-IClassifier::ResultContainer<Database::TrackId>
-FeaturesEngine::getSimilarTracksFromTrackList(Database::Session& session, Database::TrackListId trackListId, std::size_t maxCount) const
+IEngine::TrackContainer
+FeaturesEngine::getSimilarTracksFromTrackList(Database::TrackListId trackListId, std::size_t maxCount) const
 {
-	const std::vector<Database::TrackId> trackIds {[&]
+	const TrackContainer trackIds {[&]
 	{
-		std::vector<Database::TrackId> res;
+		TrackContainer res;
+
+		Database::Session& session {_db.getTLSSession()};
 
 		auto transaction {session.createSharedTransaction()};
 
@@ -263,13 +266,15 @@ FeaturesEngine::getSimilarTracksFromTrackList(Database::Session& session, Databa
 		return res;
 	}()};
 
-	return getSimilarTracks(session, trackIds, maxCount);
+	return getSimilarTracks(trackIds, maxCount);
 }
 
-std::vector<Database::TrackId>
-FeaturesEngine::getSimilarTracks(Database::Session& session, const std::vector<Database::TrackId>& tracksIds, std::size_t maxCount) const
+IEngine::TrackContainer
+FeaturesEngine::getSimilarTracks(const std::vector<Database::TrackId>& tracksIds, std::size_t maxCount) const
 {
 	auto similarTrackIds {getSimilarObjects(tracksIds, _trackMatrix, _trackPositions, maxCount)};
+
+	Database::Session& session {_db.getTLSSession()};
 
 	{
 		// Report only existing ids, as tracks may have been removed a long time ago (refreshing the SOM takes some time)
@@ -278,18 +283,21 @@ FeaturesEngine::getSimilarTracks(Database::Session& session, const std::vector<D
 		similarTrackIds.erase(std::remove_if(std::begin(similarTrackIds), std::end(similarTrackIds),
 			[&](Database::TrackId trackId)
 			{
-				return Database::Track::getById(session, trackId); // TODO exists
+				return !Database::Track::exists(session, trackId);
 			}), std::end(similarTrackIds));
 	}
 
 	return similarTrackIds;
 }
 
-std::vector<Database::ReleaseId>
-FeaturesEngine::getSimilarReleases(Database::Session& session, Database::ReleaseId releaseId, std::size_t maxCount) const
+IEngine::ReleaseContainer
+FeaturesEngine::getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const
 {
-	auto similarReleaseIds {getSimilarObjects<Database::ReleaseId>({releaseId}, _releaseMatrix, _releasePositions, maxCount)};
+	auto similarReleaseIds {getSimilarObjects({releaseId}, _releaseMatrix, _releasePositions, maxCount)};
 
+	Database::Session& session {_db.getTLSSession()};
+
+	if (!similarReleaseIds.empty())
 	{
 		// Report only existing ids
 		auto transaction {session.createSharedTransaction()};
@@ -297,7 +305,7 @@ FeaturesEngine::getSimilarReleases(Database::Session& session, Database::Release
 		similarReleaseIds.erase(std::remove_if(std::begin(similarReleaseIds), std::end(similarReleaseIds),
 			[&](Database::ReleaseId releaseId)
 			{
-				return Database::Release::getById(session, releaseId); // TODO exists
+				return !Database::Release::exists(session, releaseId);
 			}), std::end(similarReleaseIds));
 	}
 
@@ -305,10 +313,7 @@ FeaturesEngine::getSimilarReleases(Database::Session& session, Database::Release
 }
 
 std::vector<Database::ArtistId>
-FeaturesEngine::getSimilarArtists(Database::Session& session,
-		Database::ArtistId artistId,
-		EnumSet<Database::TrackArtistLinkType> linkTypes,
-		std::size_t maxCount) const
+FeaturesEngine::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
 {
 	auto getSimilarArtistIdsForLinkType {[&] (Database::TrackArtistLinkType linkType)
 	{
@@ -333,15 +338,16 @@ FeaturesEngine::getSimilarArtists(Database::Session& session,
 
 	std::vector<Database::ArtistId> res(std::cbegin(similarArtistIds), std::cend(similarArtistIds));
 
+	Database::Session& session {_db.getTLSSession()};
 	{
 		// Report only existing ids
 		auto transaction {session.createSharedTransaction()};
 
 		res.erase(std::remove_if(std::begin(res), std::end(res),
-				[&](Database::ArtistId artistId)
-				{
-					return Database::Artist::getById(session, artistId); // TODO exists
-				}), std::end(res));
+			[&](Database::ArtistId artistId)
+			{
+				return !Database::Artist::exists(session, artistId);
+			}), std::end(res));
 	}
 
 	while (res.size() > maxCount)
@@ -356,29 +362,25 @@ FeaturesEngine::toCache() const
 	return FeaturesEngineCache {*_network, _trackPositions};
 }
 
-bool
-FeaturesEngine::load(Database::Session& session, bool forceReload, const ProgressCallback& progressCallback)
+void
+FeaturesEngine::load(bool forceReload, const ProgressCallback& progressCallback)
 {
 	if (forceReload)
-
 	{
 		FeaturesEngineCache::invalidate();
 	}
-	else
+	else if (const std::optional<FeaturesEngineCache> cache {FeaturesEngineCache::read()})
 	{
-		const std::optional<FeaturesEngineCache> cache {FeaturesEngineCache::read()};
-		if (cache)
-			return loadFromCache(session, *cache);
+		loadFromCache(*cache);
+		return;
 	}
 
 	TrainSettings trainSettings;
 	trainSettings.featureSettingsMap = getDefaultTrainFeatureSettings();
 
-	const bool res {loadFromTraining(session, trainSettings, progressCallback)};
-	if (res)
+	loadFromTraining(trainSettings, progressCallback);
+	if (!_loadCancelled)
 		toCache().write();
-
-	return res;
 }
 
 void
@@ -388,10 +390,8 @@ FeaturesEngine::requestCancelLoad()
 	_loadCancelled = true;
 }
 
-bool
-FeaturesEngine::load(Database::Session& session,
-			SOM::Network network,
-			const TrackPositions& trackPositions)
+void
+FeaturesEngine::load(const SOM::Network& network, const TrackPositions& trackPositions)
 {
 	using namespace Database;
 
@@ -406,10 +406,12 @@ FeaturesEngine::load(Database::Session& session,
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Constructing maps...";
 
+	Database::Session& session {_db.getTLSSession()};
+
 	for (const auto& [trackId, positions] : trackPositions)
 	{
 		if (_loadCancelled)
-			return false;
+			return;
 
 		auto transaction {session.createSharedTransaction()};
 
@@ -445,11 +447,9 @@ FeaturesEngine::load(Database::Session& session,
 		}
 	}
 
-	_network = std::make_unique<SOM::Network>(std::move(network));
+	_network = std::make_unique<SOM::Network>(network);
 
 	LMS_LOG(RECOMMENDATION, INFO) << "Classifier successfully loaded!";
-
-	return true;
 }
 
 } // ns Recommendation

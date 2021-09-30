@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,20 +19,16 @@
 
 #pragma once
 
-#include "database/Types.hpp"
-#include "utils/EnumSet.hpp"
+#include <memory>
 
 namespace Database
 {
 	class Db;
-	class Session;
 }
 
 namespace Recommendation
 {
-	class IRecommendation
-	{
-	};
-
-} // ns Recommendation
+	class IEngine;
+	std::unique_ptr<IEngine> createClustersEngine(Database::Db& db);
+}
 

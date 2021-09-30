@@ -23,10 +23,19 @@ using namespace Database;
 
 TEST_F(DatabaseFixture, SingleRelease)
 {
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		EXPECT_FALSE(Release::exists(session, 0));
+		EXPECT_FALSE(Release::exists(session, 1));
+	}
+
 	ScopedRelease release {session, "MyRelease"};
 
 	{
 		auto transaction {session.createSharedTransaction()};
+
+		EXPECT_TRUE(Release::exists(session, release.getId()));
 
 		auto releases {Release::getAllOrphans(session)};
 		ASSERT_EQ(releases.size(), 1);

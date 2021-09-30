@@ -26,12 +26,12 @@
 #include <string>
 #include <vector>
 
+#include "recommendation/IEngine.hpp"
 #include "som/DataNormalizer.hpp"
 #include "som/Network.hpp"
 #include "utils/Utils.hpp"
 #include "FeaturesEngineCache.hpp"
 #include "FeaturesDefs.hpp"
-#include "IClassifier.hpp"
 
 namespace Database
 {
@@ -42,10 +42,11 @@ namespace Recommendation {
 
 using FeatureWeight = double;
 
-class FeaturesEngine : public IClassifier
+class FeaturesEngine : public IEngine
 {
 	public:
-		FeaturesEngine() = default;
+		FeaturesEngine(Database::Db& db) : _db {db} {}
+
 		FeaturesEngine(const FeaturesEngine&) = delete;
 		FeaturesEngine(FeaturesEngine&&) = delete;
 		FeaturesEngine& operator=(const FeaturesEngine&) = delete;
@@ -59,21 +60,16 @@ class FeaturesEngine : public IClassifier
 		static const FeatureSettingsMap& getDefaultTrainFeatureSettings();
 
 	private:
-
-		std::string_view getName() const override { return "Features"; }
-
-		bool load(Database::Session& session, bool forceReload, const ProgressCallback& progressCallback) override;
+		void load(bool forceReload, const ProgressCallback& progressCallback) override;
 		void requestCancelLoad() override;
+		void cancelLoad() override {}
 
-		ResultContainer<Database::TrackId> getSimilarTracksFromTrackList(Database::Session& session, Database::TrackListId tracklistId, std::size_t maxCount) const override;
-		ResultContainer<Database::TrackId> getSimilarTracks(Database::Session& session, const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const override;
-		ResultContainer<Database::ReleaseId> getSimilarReleases(Database::Session& session, Database::ReleaseId releaseId, std::size_t maxCount) const override;
-		ResultContainer<Database::ArtistId> getSimilarArtists(Database::Session& session,
-				Database::ArtistId artistId,
-				EnumSet<Database::TrackArtistLinkType> linkTypes,
-				std::size_t maxCount) const override;
+		TrackContainer getSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const override;
+		TrackContainer getSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const override;
+		ReleaseContainer getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const override;
+		ArtistContainer getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
-		bool loadFromCache(Database::Session& session, const FeaturesEngineCache& cache);
+		void loadFromCache(FeaturesEngineCache cache);
 
 		// Use training (may be very slow)
 		struct TrainSettings
@@ -82,7 +78,7 @@ class FeaturesEngine : public IClassifier
 			float sampleCountPerNeuron {4};
 			FeatureSettingsMap featureSettingsMap;
 		};
-		bool loadFromTraining(Database::Session& session, const TrainSettings& trainSettings, const ProgressCallback& progressCallback);
+		void loadFromTraining(const TrainSettings& trainSettings, const ProgressCallback& progressCallback);
 
 		template <typename IdType>
 		using ObjectPositions = std::unordered_map<IdType, std::vector<SOM::Position>>;
@@ -97,7 +93,7 @@ class FeaturesEngine : public IClassifier
 		using ReleaseMatrix = ObjectMatrix<Database::ReleaseId>;
 		using TrackMatrix = ObjectMatrix<Database::TrackId>;
 
-		bool load(Database::Session& session, SOM::Network network, const TrackPositions& tracksPosition);
+		void load(const SOM::Network& network, const TrackPositions& tracksPosition);
 
 		FeaturesEngineCache toCache() const;
 
@@ -113,6 +109,7 @@ class FeaturesEngine : public IClassifier
 				const ObjectPositions<IdType>& objectPositions,
 				std::size_t maxCount) const;
 
+		Database::Db&		_db;
 		bool				_loadCancelled {};
 		std::unique_ptr<SOM::Network>	_network;
 		double				_networkRefVectorsDistanceMedian {};

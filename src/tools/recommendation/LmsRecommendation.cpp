@@ -66,7 +66,7 @@ dumpTracksRecommendation(Database::Session session, Recommendation::IEngine& eng
 		};
 
 		std::cout << "Processing track '" << trackToString(trackId) << std::endl;
-		for (Database::TrackId similarTrackId : engine.getSimilarTracks(session, {trackId}, maxSimilarityCount))
+		for (Database::TrackId similarTrackId : engine.getSimilarTracks({trackId}, maxSimilarityCount))
 			std::cout << "\t- Similar track '" << trackToString(similarTrackId) << std::endl;
 	}
 }
@@ -84,7 +84,7 @@ dumpReleasesRecommendation(Database::Session session, Recommendation::IEngine& e
 	std::cout << "*** Releases ***" << std::endl;
 	for (Database::ReleaseId releaseId : releaseIds)
 	{
-		auto releaseToString = [&](Database::ReleaseId releaseId)
+		auto releaseToString = [&](Database::ReleaseId releaseId) -> std::string
 		{
 			auto transaction {session.createSharedTransaction()};
 
@@ -93,7 +93,7 @@ dumpReleasesRecommendation(Database::Session session, Recommendation::IEngine& e
 		};
 
 		std::cout << "Processing release '" << releaseToString(releaseId) << "'" << std::endl;
-		for (Database::ReleaseId similarReleaseId : engine.getSimilarReleases(session, releaseId, maxSimilarityCount))
+		for (Database::ReleaseId similarReleaseId : engine.getSimilarReleases(releaseId, maxSimilarityCount))
 			std::cout << "\t- Similar release '" << releaseToString(similarReleaseId) << "'" << std::endl;
 	}
 }
@@ -120,7 +120,7 @@ dumpArtistsRecommendation(Database::Session session, Recommendation::IEngine& en
 		};
 
 		std::cout << "Processing artist '" << artistToString(artistId) << "'" << std::endl;
-		for (Database::ArtistId similarArtistId : engine.getSimilarArtists(session, artistId, {Database::TrackArtistLinkType::Artist, Database::TrackArtistLinkType::ReleaseArtist}, maxSimilarityCount))
+		for (Database::ArtistId similarArtistId : engine.getSimilarArtists(artistId, {Database::TrackArtistLinkType::Artist, Database::TrackArtistLinkType::ReleaseArtist}, maxSimilarityCount))
 		{
 			std::cout << "\t- Similar artist '" << artistToString(similarArtistId) << "'" << std::endl;
 		}

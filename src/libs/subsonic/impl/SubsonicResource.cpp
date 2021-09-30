@@ -896,10 +896,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 			artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
 	}
 
-	auto similarArtistsId {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession,
-			id,
-			{TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist},
-			count)};
+	auto similarArtistsId {Service<Recommendation::IEngine>::get()->getSimilarArtists(id, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, count)};
 
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
@@ -1135,10 +1132,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(50)};
 
-	const auto similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(context.dbSession,
-			artistId,
-			{TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist},
-			5)};
+	const auto similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, 5)};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 

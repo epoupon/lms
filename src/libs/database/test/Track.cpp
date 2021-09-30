@@ -28,6 +28,7 @@ TEST_F(DatabaseFixture, SingleTrack)
 	{
 		auto transaction {session.createSharedTransaction()};
 		EXPECT_EQ(Track::getCount(session), 0);
+		EXPECT_FALSE(Track::exists(session, 0));
 	}
 
 	ScopedTrack track {session, "MyTrackFile"};
@@ -37,6 +38,10 @@ TEST_F(DatabaseFixture, SingleTrack)
 
 		EXPECT_EQ(Track::getAll(session).size(), 1);
 		EXPECT_EQ(Track::getCount(session), 1);
+		EXPECT_TRUE(Track::exists(session, track.getId()));
+		auto myTrack {Track::getById(session, track.getId())};
+		ASSERT_TRUE(myTrack);
+		EXPECT_EQ(myTrack->getId(), track.getId());
 	}
 }
 

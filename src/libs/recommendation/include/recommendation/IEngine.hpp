@@ -21,13 +21,13 @@
 
 #include <functional>
 #include <memory>
+#include <string_view>
 #include "database/Types.hpp"
 #include "utils/EnumSet.hpp"
 
 namespace Database
 {
 	class Db;
-	class Session;
 }
 
 namespace Recommendation
@@ -44,7 +44,8 @@ namespace Recommendation
 			};
 			using ProgressCallback = std::function<void(const Progress&)>;
 			virtual void load(bool forceReload, const ProgressCallback& progressCallback = {}) = 0;
-			virtual void cancelLoad() = 0;
+			virtual void cancelLoad() = 0;  // wait for cancel done
+			virtual void requestCancelLoad() = 0;
 
 			template <typename IdType>
 			using ResultContainer = std::vector<IdType>;
@@ -53,13 +54,10 @@ namespace Recommendation
 			using ReleaseContainer = ResultContainer<Database::ReleaseId>;
 			using TrackContainer = ResultContainer<Database::TrackId>;
 
-			virtual TrackContainer getSimilarTracksFromTrackList(Database::Session& session, Database::TrackListId tracklistId, std::size_t maxCount) = 0;
-			virtual TrackContainer getSimilarTracks(Database::Session& session, const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) = 0;
-			virtual ReleaseContainer getSimilarReleases(Database::Session& session, Database::ReleaseId releaseId, std::size_t maxCount) = 0;
-			virtual ArtistContainer getSimilarArtists(Database::Session& session, Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) = 0;
-
-		protected:
-			virtual void requestCancelLoad() = 0;
+			virtual TrackContainer getSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const = 0;
+			virtual TrackContainer getSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const = 0;
+			virtual ReleaseContainer getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const = 0;
+			virtual ArtistContainer getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
 	};
 
 	std::unique_ptr<IEngine> createEngine(Database::Db& db);

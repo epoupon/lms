@@ -20,10 +20,15 @@
 #pragma once
 
 #include <memory>
-#include "IClassifier.hpp"
+#include "recommendation/IEngine.hpp"
+
+namespace Database
+{
+	class Db;
+}
 
 namespace Recommendation
 {
-	std::unique_ptr<IClassifier> createFeaturesEngine();
+	std::unique_ptr<IEngine> createFeaturesEngine(Database::Db& db);
 }
 

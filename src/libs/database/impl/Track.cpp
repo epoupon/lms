@@ -156,6 +156,14 @@ Track::getById(Session& session, TrackId id)
 		.resultValue();
 }
 
+bool
+Track::exists(Session& session, TrackId id)
+{
+	session.checkSharedLocked();
+
+	return session.getDboSession().query<int>("SELECT 1 from track").where("id = ?").bind(id).resultValue() == 1;
+}
+
 std::vector<Track::pointer>
 Track::getByRecordingMBID(Session& session, const UUID& mbid)
 {

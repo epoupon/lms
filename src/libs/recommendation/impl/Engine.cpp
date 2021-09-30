@@ -22,7 +22,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ClustersClassifierCreator.hpp"
+#include "ClustersEngineCreator.hpp"
 #include "FeaturesEngineCreator.hpp"
 
 #include "database/Db.hpp"
@@ -31,260 +31,229 @@
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
-namespace Recommendation {
-
-
-static
-std::unique_ptr<IClassifier>
-createClassifier(ClassifierType type)
+namespace Recommendation
 {
-	switch (type)
+
+	static
+	std::string_view
+	engineTypeToString(EngineType engineType)
 	{
-		case ClassifierType::Clusters:
-			return createClustersClassifier();
-			break;
-
-		case ClassifierType::Features:
-			return createFeaturesEngine();
-			break;
-	}
-
-	return {};
-}
-
-std::unique_ptr<IEngine>
-createEngine(Database::Db& db)
-{
-	return std::make_unique<Engine>(db);
-}
-
-Engine::Engine(Database::Db& db)
-: _db {db}
-{
-}
-
-Engine::TrackContainer
-Engine::getSimilarTracksFromTrackList(Database::Session& session, Database::TrackListId trackListId, std::size_t maxCount)
-{
-	TrackContainer res;
-
-	std::shared_lock lock {_classifiersMutex};
-	for (const auto& classifierName : _classifierPriorities)
-	{
-		auto itClassifier {_classifiers.find(classifierName)};
-		if (itClassifier == std::cend(_classifiers))
-			continue;
-
-		res = itClassifier->second->getSimilarTracksFromTrackList(session, trackListId, maxCount);
-		if (!res.empty())
-			break;
-	}
-
-	return res;
-}
-
-Engine::TrackContainer
-Engine::getSimilarTracks(Database::Session& dbSession, const std::vector<Database::TrackId>& trackIds, std::size_t maxCount)
-{
-	TrackContainer res;
-
-	std::shared_lock lock {_classifiersMutex};
-	for (ClassifierType classifierType : _classifierPriorities)
-	{
-		auto itClassifier {_classifiers.find(classifierType)};
-		if (itClassifier == std::cend(_classifiers))
-			continue;
-
-		const IClassifier& classifier {*itClassifier->second};
-		res = classifier.getSimilarTracks(dbSession, trackIds, maxCount);
-		if (!res.empty())
+		switch (engineType)
 		{
-			LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar tracks using classifier '" << classifier.getName() << "'";
-			break;
+			case EngineType::Clusters: return "clusters";
+			case EngineType::Features: return "features";
+		}
+
+		throw LmsException {"Internal error"};
+	}
+
+	std::unique_ptr<IEngine>
+	createEngine(Database::Db& db)
+	{
+		return std::make_unique<Engine>(db);
+	}
+
+	Engine::Engine(Database::Db& db)
+		: _db {db}
+	{
+	}
+
+	Engine::TrackContainer
+	Engine::getSimilarTracksFromTrackList(Database::TrackListId trackListId, std::size_t maxCount) const
+	{
+		TrackContainer res;
+
+		std::shared_lock lock {_enginesMutex};
+		for (const auto& engineType : _enginePriorities)
+		{
+			auto itEngine {_engines.find(engineType)};
+			if (itEngine == std::cend(_engines))
+				continue;
+
+			res = itEngine->second->getSimilarTracksFromTrackList(trackListId, maxCount);
+			if (!res.empty())
+				break;
+		}
+
+		return res;
+	}
+
+	Engine::TrackContainer
+	Engine::getSimilarTracks(const std::vector<Database::TrackId>& trackIds, std::size_t maxCount) const
+	{
+		TrackContainer res;
+
+		std::shared_lock lock {_enginesMutex};
+		for (EngineType engineType : _enginePriorities)
+		{
+			auto itEngine {_engines.find(engineType)};
+			if (itEngine == std::cend(_engines))
+				continue;
+
+			const IEngine& engine {*itEngine->second};
+			res = engine.getSimilarTracks(trackIds, maxCount);
+			if (!res.empty())
+			{
+				LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar tracks using engine '" << engineTypeToString(engineType) << "'";
+				break;
+			}
+		}
+
+		return res;
+	}
+
+	Engine::ReleaseContainer
+	Engine::getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const
+	{
+		ReleaseContainer res;
+
+		std::shared_lock lock {_enginesMutex};
+		for (EngineType engineType : _enginePriorities)
+		{
+			auto itEngine {_engines.find(engineType)};
+			if (itEngine == std::cend(_engines))
+				continue;
+
+			const IEngine& engine {*itEngine->second};
+			res = engine.getSimilarReleases(releaseId, maxCount);
+			if (!res.empty())
+			{
+				LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar releases using engine '" << engineTypeToString(engineType) << "'";
+				break;
+			}
+
+			LMS_LOG(RECOMMENDATION, DEBUG) << "No result using engine '" << engineTypeToString(engineType) << "'";
+		}
+
+		return res;
+	}
+
+	Engine::ArtistContainer
+	Engine::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
+	{
+		ArtistContainer res;
+
+		std::shared_lock lock {_enginesMutex};
+		for (EngineType engineType : _enginePriorities)
+		{
+			auto itEngine {_engines.find(engineType)};
+			if (itEngine == std::cend(_engines))
+				continue;
+
+			const IEngine& engine {*itEngine->second};
+			res = engine.getSimilarArtists(artistId, linkTypes, maxCount);
+			if (!res.empty())
+			{
+				LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar artists using engine '" << engineTypeToString(engineType) << "'";
+				return res;
+			}
+		}
+
+		return res;
+	}
+
+	static
+	Database::ScanSettings::RecommendationEngineType
+	getRecommendationEngineType(Database::Session& session)
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		return Database::ScanSettings::get(session)->getRecommendationEngineType();
+	}
+
+	void
+	Engine::load(bool forceReload, const ProgressCallback& progressCallback)
+	{
+		using namespace Database;
+
+		LMS_LOG(RECOMMENDATION, INFO) << "Reloading recommendation engines...";
+
+		EngineContainer enginesToLoad;
+
+		{
+			std::unique_lock controlLock {_controlMutex};
+
+			{
+				std::unique_lock lock {_enginesMutex};
+				_engines.clear();
+			}
+
+			switch (getRecommendationEngineType(_db.getTLSSession()))
+			{
+				case ScanSettings::RecommendationEngineType::Clusters:
+					_enginePriorities = {EngineType::Clusters};
+					enginesToLoad.try_emplace(EngineType::Clusters, createClustersEngine(_db));
+					break;
+
+				case ScanSettings::RecommendationEngineType::Features:
+					_enginePriorities = {EngineType::Features, EngineType::Clusters};
+
+					// not same order since clusters is faster to load
+					enginesToLoad.try_emplace(EngineType::Clusters, createClustersEngine(_db));
+					enginesToLoad.try_emplace(EngineType::Features, createFeaturesEngine(_db));
+					break;
+			}
+
+			assert(_pendingEngines.empty());
+			for (auto& [engineType, engine] : enginesToLoad)
+				_pendingEngines.push_back(engine.get());
+		}
+
+		for (auto& [engineType, engine] : enginesToLoad)
+			loadPendingEngine(engineType, std::move(engine), forceReload, progressCallback);
+
+		_pendingEnginesCondvar.notify_all();
+
+		LMS_LOG(RECOMMENDATION, INFO) << "Recommendation engines loaded!";
+	}
+
+	void
+	Engine::loadPendingEngine(EngineType engineType, std::unique_ptr<IEngine> engine, bool forceReload, const ProgressCallback& progressCallback)
+	{
+		if (!_loadCancelled)
+		{
+			LMS_LOG(RECOMMENDATION, INFO) << "Initializing engine '" << engineTypeToString(engineType) << "'...";
+
+			auto progress {[&](const IEngine::Progress& progress)
+			{
+				progressCallback(progress);
+			}};
+
+			engine->load(forceReload, progressCallback ? progress : IEngine::ProgressCallback {});
+
+			{
+				std::scoped_lock lock {_controlMutex};
+				_pendingEngines.erase(std::find(std::begin(_pendingEngines), std::end(_pendingEngines), engine.get()));
+			}
+			LMS_LOG(RECOMMENDATION, INFO) << "Initializing engine '" << engineTypeToString(engineType) << "': " << (_loadCancelled ? "aborted" : "complete");
+		}
+
+		if (!_loadCancelled)
+		{
+			std::unique_lock lock {_enginesMutex};
+			_engines.emplace(engineType, std::move(engine));
 		}
 	}
 
-	return res;
-}
-
-Engine::ReleaseContainer
-Engine::getSimilarReleases(Database::Session& dbSession, Database::ReleaseId releaseId, std::size_t maxCount)
-{
-	ReleaseContainer res;
-
-	std::shared_lock lock {_classifiersMutex};
-	for (ClassifierType classifierType : _classifierPriorities)
+	void
+	Engine::cancelLoad()
 	{
-		auto itClassifier {_classifiers.find(classifierType)};
-		if (itClassifier == std::cend(_classifiers))
-			continue;
+		LMS_LOG(RECOMMENDATION, DEBUG) << "Cancelling loading...";
 
-		const IClassifier& classifier {*itClassifier->second};
-		res = classifier.getSimilarReleases(dbSession, releaseId, maxCount);
-		if (!res.empty())
-		{
-			LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar releases using classifier '" << classifier.getName() << "'";
-			break;
-		}
+		std::unique_lock controlLock {_controlMutex};
+
+		assert(!_loadCancelled);
+		_loadCancelled = true;
+
+		LMS_LOG(RECOMMENDATION, DEBUG) << "Still " <<  _pendingEngines.size() << " pending engines!";
+
+		for (IEngine* engine : _pendingEngines)
+			engine->requestCancelLoad();
+
+		_pendingEnginesCondvar.wait(controlLock, [this] {return _pendingEngines.empty();});
+		_loadCancelled = false;
+
+		LMS_LOG(RECOMMENDATION, DEBUG) << "Cancelling loading DONE";
 	}
-
-	return res;
-}
-
-Engine::ArtistContainer
-Engine::getSimilarArtists(Database::Session& dbSession, Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount)
-{
-	ArtistContainer res;
-
-	std::shared_lock lock {_classifiersMutex};
-	for (ClassifierType classifierType : _classifierPriorities)
-	{
-		auto itClassifier {_classifiers.find(classifierType)};
-		if (itClassifier == std::cend(_classifiers))
-			continue;
-
-		const IClassifier& classifier {*itClassifier->second};
-		res = classifier.getSimilarArtists(dbSession, artistId, linkTypes, maxCount);
-		if (!res.empty())
-		{
-			LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar artists using classifier '" << classifier.getName() << "'";
-			return res;
-		}
-	}
-
-	return res;
-}
-
-static
-Database::ScanSettings::RecommendationEngineType
-getRecommendationEngineType(Database::Session& session)
-{
-	auto transaction {session.createSharedTransaction()};
-
-	return Database::ScanSettings::get(session)->getRecommendationEngineType();
-}
-
-void
-Engine::load(bool forceReload, const ProgressCallback& progressCallback)
-{
-	using namespace Database;
-
-	LMS_LOG(RECOMMENDATION, INFO) << "Reloading recommendation engines...";
-	struct ClassifierWithType
-	{
-		ClassifierType type;
-		std::unique_ptr<IClassifier> classifier;
-	};
-
-	std::vector<ClassifierWithType> classifiers;
-	auto addClassifier {[&](ClassifierType type)
-	{
-		classifiers.emplace_back(ClassifierWithType {type, createClassifier(type)});
-	}};
-
-	switch (getRecommendationEngineType(_db.getTLSSession()))
-	{
-		case ScanSettings::RecommendationEngineType::Clusters:
-			setClassifierPriorities({ClassifierType::Clusters});
-			addClassifier(ClassifierType::Clusters);
-			break;
-		case ScanSettings::RecommendationEngineType::Features:
-			setClassifierPriorities({ClassifierType::Features, ClassifierType::Clusters});
-			// not same order since clusters is faster to load
-			addClassifier(ClassifierType::Clusters);
-			addClassifier(ClassifierType::Features);
-			break;
-	}
-
-	assert(_pendingClassifiers.empty());
-	clearClassifiers();
-
-	{
-		std::scoped_lock lock {_controlMutex};
-
-		std::transform(std::cbegin(classifiers), std::cend(classifiers), std::inserter(_pendingClassifiers, std::end(_pendingClassifiers)),
-				[](auto& classifier) { return classifier.classifier.get(); });
-	}
-
-	for (ClassifierWithType& classifier : classifiers)
-		loadClassifier(std::move(classifier.classifier), classifier.type, forceReload, progressCallback);
-
-	LMS_LOG(RECOMMENDATION, INFO) << "Recommendation engines loaded!";
-}
-
-void
-Engine::setClassifierPriorities(const std::vector<ClassifierType>& classifierPriorities)
-{
-	std::unique_lock<std::shared_mutex> lock {_classifiersMutex};
-
-	_classifierPriorities = classifierPriorities;
-}
-
-void
-Engine::clearClassifiers()
-{
-	std::unique_lock lock {_classifiersMutex};
-
-	_classifiers.clear();
-}
-
-void
-Engine::loadClassifier(std::unique_ptr<IClassifier> classifier,
-		ClassifierType classifierType,
-		bool forceReload,
-		const ProgressCallback& progressCallback)
-{
-	IClassifier* rawClassifier {classifier.get()};
-
-	bool res {};
-	if (!_loadCancelled)
-	{
-		LMS_LOG(RECOMMENDATION, INFO) << "Initializing classifier '" << classifier->getName() << "'...";
-
-		auto progress {[&](IClassifier::Progress progress)
-		{
-			progressCallback(Progress {progress.processedElems, progress.totalElems});
-		}};
-
-		res = classifier->load(_db.getTLSSession(), forceReload, progressCallback ? progress : IClassifier::ProgressCallback {});
-
-		LMS_LOG(RECOMMENDATION, INFO) << "Initializing classifier '" << classifier->getName() << "': " << (res ? "SUCCESS" : "FAILURE");
-	}
-
-	if (res)
-	{
-		std::unique_lock lock {_classifiersMutex};
-
-		_classifiers.emplace(classifierType, std::move(classifier));
-	}
-
-	{
-		std::scoped_lock lock {_controlMutex};
-
-		_pendingClassifiers.erase(rawClassifier);
-	}
-
-	_pendingClassifiersCondvar.notify_one();
-}
-
-void
-Engine::cancelLoad()
-{
-	LMS_LOG(RECOMMENDATION, DEBUG) << "Cancelling loading...";
-
-	std::unique_lock lock {_controlMutex};
-
-	LMS_LOG(RECOMMENDATION, DEBUG) << "Still " <<  _pendingClassifiers.size() << " pending classifiers!";
-
-	_loadCancelled = true;
-
-	for (IClassifier* classifier : _pendingClassifiers)
-		classifier->requestCancelLoad();
-
-    _pendingClassifiersCondvar.wait(lock, [this] {return _pendingClassifiers.empty();});
-	_loadCancelled = false;
-
-	LMS_LOG(RECOMMENDATION, DEBUG) << "Cancelling loading DONE";
-}
 
 } // ns Similarity

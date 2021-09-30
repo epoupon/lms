@@ -58,8 +58,9 @@ class Artist : public Object<Artist, ArtistId>
 		// Accessors
 		static pointer			getByMBID(Session& session, const UUID& MBID);
 		static pointer			getById(Session& session, ArtistId id);
+		static bool				exists(Session& session, ArtistId id);
 		static std::vector<pointer>	getByName(Session& session, const std::string& name);		// exact match on name field
-		static std::vector<pointer> 	getByClusters(Session& session,
+		static std::vector<pointer> getByClusters(Session& session,
 								const std::vector<ClusterId>& clusters,		// at least one track that belongs to  these clusters
 								SortMethod sortMethod
 								);

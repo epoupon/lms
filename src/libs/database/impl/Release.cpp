@@ -114,6 +114,13 @@ Release::getById(Session& session, ReleaseId id)
 					.resultValue();
 }
 
+bool
+Release::exists(Session& session, ReleaseId id)
+{
+	session.checkSharedLocked();
+	return session.getDboSession().query<int>("SELECT 1 FROM release").where("id = ?").bind(id).resultValue() == 1;
+}
+
 Release::pointer
 Release::create(Session& session, const std::string& name, const std::optional<UUID>& MBID)
 {
