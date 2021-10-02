@@ -19,8 +19,11 @@
 
 #include "Scrobbling.hpp"
 
+#include "database/Artist.hpp"
 #include "database/Db.hpp"
+#include "database/Release.hpp"
 #include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 
@@ -29,13 +32,15 @@
 
 namespace Scrobbling
 {
+	using namespace Database;
+
 	std::unique_ptr<IScrobbling>
-	createScrobbling(boost::asio::io_context& ioContext, Database::Db& db)
+	createScrobbling(boost::asio::io_context& ioContext, Db& db)
 	{
 		return std::make_unique<Scrobbling>(ioContext, db);
 	}
 
-	Scrobbling::Scrobbling(boost::asio::io_context& ioContext, Database::Db& db)
+	Scrobbling::Scrobbling(boost::asio::io_context& ioContext, Db& db)
 		: _db {db}
 	{
 		_scrobblers.emplace(Database::Scrobbler::Internal, std::make_unique<InternalScrobbler>(_db));
@@ -68,116 +73,169 @@ namespace Scrobbling
 	{
 		std::optional<Database::Scrobbler> scrobbler;
 
-		Database::Session& session {_db.getTLSSession()};
+		Session& session {_db.getTLSSession()};
 		auto transaction {session.createSharedTransaction()};
-		if (const Database::User::pointer user {Database::User::getById(session, userId)})
+		if (const User::pointer user {User::getById(session, userId)})
 			scrobbler = user->getScrobbler();
 
 		return scrobbler;
 	}
 
-	std::vector<Database::ObjectPtr<Database::Artist>>
-	Scrobbling::getRecentArtists(Database::Session& session,
-										Database::ObjectPtr<Database::User> user,
-										const std::vector<Database::ClusterId>& clusterIds,
-										std::optional<Database::TrackArtistLinkType> linkType,
-										std::optional<Database::Range> range,
-										bool& moreResults)
+	Scrobbling::ArtistContainer
+	Scrobbling::getRecentArtists(UserId userId,
+									const std::vector<ClusterId>& clusterIds,
+									std::optional<TrackArtistLinkType> linkType,
+									std::optional<Range> range,
+									bool& moreResults)
 	{
-		const Database::ObjectPtr<Database::TrackList> history {getListensTrackList(session, user)};
+		ArtistContainer res;
 
-		std::vector<Database::ObjectPtr<Database::Artist>> res;
+		Session& session {_db.getTLSSession()};
+		auto transaction {session.createSharedTransaction()};
+
+		const User::pointer user {User::getById(session, userId)};
+		if (!user)
+			return res;
+
+		const ObjectPtr<TrackList> history {getListensTrackList(session, user)};
 		if (history)
-			res = history->getArtistsReverse(clusterIds, linkType, range, moreResults);
+		{
+			for (const Artist::pointer& artist : history->getArtistsReverse(clusterIds, linkType, range, moreResults))
+				res.push_back(artist->getId());
+		}
 
 		return res;
 	}
 
-	std::vector<Database::ObjectPtr<Database::Release>>
-	Scrobbling::getRecentReleases(Database::Session& session,
-										Database::ObjectPtr<Database::User> user,
-										const std::vector<Database::ClusterId>& clusterIds,
-										std::optional<Database::Range> range,
-										bool& moreResults)
+	Scrobbling::ReleaseContainer
+	Scrobbling::getRecentReleases(Database::UserId userId,
+									const std::vector<Database::ClusterId>& clusterIds,
+									std::optional<Database::Range> range,
+									bool& moreResults)
 	{
-		const Database::ObjectPtr<Database::TrackList> history {getListensTrackList(session, user)};
+		ReleaseContainer res;
 
-		std::vector<Database::ObjectPtr<Database::Release>> res;
+		Session& session {_db.getTLSSession()};
+		auto transaction {session.createSharedTransaction()};
+
+		const User::pointer user {User::getById(session, userId)};
+		if (!user)
+			return res;
+
+		const ObjectPtr<TrackList> history {getListensTrackList(session, user)};
 		if (history)
-			res = history->getReleasesReverse(clusterIds, range, moreResults);
+		{
+			for (const Release::pointer& release : history->getReleasesReverse(clusterIds, range, moreResults))
+				res.push_back(release->getId());
+		}
 
 		return res;
 	}
 
-	std::vector<Database::ObjectPtr<Database::Track>>
-	Scrobbling::getRecentTracks(Database::Session& session,
-										Database::ObjectPtr<Database::User> user,
+	Scrobbling::TrackContainer
+	Scrobbling::getRecentTracks(Database::UserId userId,
 										const std::vector<Database::ClusterId>& clusterIds,
 										std::optional<Database::Range> range,
 										bool& moreResults)
 	{
-		const Database::ObjectPtr<Database::TrackList> history {getListensTrackList(session, user)};
+		TrackContainer res;
 
-		std::vector<Database::ObjectPtr<Database::Track>> res;
+		Session& session {_db.getTLSSession()};
+		auto transaction {session.createSharedTransaction()};
+
+		const User::pointer user {User::getById(session, userId)};
+		if (!user)
+			return res;
+
+		const ObjectPtr<TrackList> history {getListensTrackList(session, user)};
 		if (history)
-			res = history->getTracksReverse(clusterIds, range, moreResults);
+		{
+			for (const Track::pointer& track : history->getTracksReverse(clusterIds, range, moreResults))
+				res.push_back(track->getId());
+		}
 
 		return res;
 	}
 
 
 	// Top
-	std::vector<Database::ObjectPtr<Database::Artist>>
-	Scrobbling::getTopArtists(Database::Session& session,
-										Database::ObjectPtr<Database::User> user,
-										const std::vector<Database::ClusterId>& clusterIds,
-										std::optional<Database::TrackArtistLinkType> linkType,
-										std::optional<Database::Range> range,
-										bool& moreResults)
+	Scrobbling::ArtistContainer
+	Scrobbling::getTopArtists(UserId userId,
+								const std::vector<Database::ClusterId>& clusterIds,
+								std::optional<Database::TrackArtistLinkType> linkType,
+								std::optional<Database::Range> range,
+								bool& moreResults)
 	{
-		const Database::ObjectPtr<Database::TrackList> history {getListensTrackList(session, user)};
+		ArtistContainer res;
 
-		std::vector<Database::ObjectPtr<Database::Artist>> res;
+		Session& session {_db.getTLSSession()};
+		auto transaction {session.createSharedTransaction()};
+
+		const User::pointer user {User::getById(session, userId)};
+		if (!user)
+			return res;
+
+		const ObjectPtr<TrackList> history {getListensTrackList(session, user)};
 		if (history)
-			res = history->getTopArtists(clusterIds, linkType, range, moreResults);
+		{
+			for (const Artist::pointer& artist : history->getTopArtists(clusterIds, linkType, range, moreResults))
+				res.push_back(artist->getId());
+		}
 
 		return res;
 	}
 
-	std::vector<Database::ObjectPtr<Database::Release>>
-	Scrobbling::getTopReleases(Database::Session& session,
-										Database::ObjectPtr<Database::User> user,
-										const std::vector<Database::ClusterId>& clusterIds,
-										std::optional<Database::Range> range,
-										bool& moreResults)
+	Scrobbling::ReleaseContainer
+	Scrobbling::getTopReleases(Database::UserId userId,
+								const std::vector<Database::ClusterId>& clusterIds,
+								std::optional<Database::Range> range,
+								bool& moreResults)
 	{
-		const Database::ObjectPtr<Database::TrackList> history {getListensTrackList(session, user)};
+		ReleaseContainer res;
 
-		std::vector<Database::ObjectPtr<Database::Release>> res;
+		Session& session {_db.getTLSSession()};
+		auto transaction {session.createSharedTransaction()};
+
+		const User::pointer user {User::getById(session, userId)};
+		if (!user)
+			return res;
+
+		const ObjectPtr<TrackList> history {getListensTrackList(session, user)};
 		if (history)
-			res = history->getTopReleases(clusterIds, range, moreResults);
+		{
+			for (const Release::pointer& release : history->getTopReleases(clusterIds, range, moreResults))
+				res.push_back(release->getId());
+		}
 
 		return res;
 	}
 
-	std::vector<Database::ObjectPtr<Database::Track>>
-	Scrobbling::getTopTracks(Database::Session& session,
-										Database::ObjectPtr<Database::User> user,
-										const std::vector<Database::ClusterId>& clusterIds,
-										std::optional<Database::Range> range,
-										bool& moreResults)
+	Scrobbling::TrackContainer
+	Scrobbling::getTopTracks(Database::UserId userId,
+								const std::vector<Database::ClusterId>& clusterIds,
+								std::optional<Database::Range> range,
+								bool& moreResults)
 	{
-		const Database::ObjectPtr<Database::TrackList> history {getListensTrackList(session, user)};
+		TrackContainer res;
 
-		std::vector<Database::ObjectPtr<Database::Track>> res;
-		if (history)
-			res = history->getTopTracks(clusterIds, range, moreResults);
+		Session& session {_db.getTLSSession()};
+		auto transaction {session.createSharedTransaction()};
+
+		const User::pointer user {User::getById(session, userId)};
+		if (!user)
+			return res;
+
+		if (const ObjectPtr<TrackList> history {getListensTrackList(session, user)})
+		{
+			for (const Track::pointer& track : history->getTopTracks(clusterIds, range, moreResults))
+				res.push_back(track->getId());
+		}
 
 		return res;
 	}
 
 	Database::ObjectPtr<Database::TrackList>
-	Scrobbling::getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user)
+	Scrobbling::getListensTrackList(Session& session, Database::ObjectPtr<Database::User> user)
 	{
 		return _scrobblers[user->getScrobbler()]->getListensTrackList(session, user);
 	}

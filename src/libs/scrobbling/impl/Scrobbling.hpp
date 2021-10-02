@@ -38,43 +38,37 @@ namespace Scrobbling
 			void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
 			void addTimedListen(const TimedListen& listen) override;
 
-			std::vector<Database::ObjectPtr<Database::Artist>> getRecentArtists(Database::Session& session,
-																	Database::ObjectPtr<Database::User> user,
-																	const std::vector<Database::ClusterId>& clusterIds,
-																	std::optional<Database::TrackArtistLinkType> linkType,
-																	std::optional<Database::Range> range,
-																	bool& moreResults) override;
+			ArtistContainer getRecentArtists(Database::UserId userId,
+												const std::vector<Database::ClusterId>& clusterIds,
+												std::optional<Database::TrackArtistLinkType> linkType,
+												std::optional<Database::Range> range,
+												bool& moreResults) override;
 
-			std::vector<Database::ObjectPtr<Database::Release>> getRecentReleases(Database::Session& session,
-																	Database::ObjectPtr<Database::User> user,
-																	const std::vector<Database::ClusterId>& clusterIds,
-																	std::optional<Database::Range> range,
-																	bool& moreResults) override;
+			ReleaseContainer getRecentReleases(Database::UserId userId,
+												const std::vector<Database::ClusterId>& clusterIds,
+												std::optional<Database::Range> range,
+												bool& moreResults) override;
 
-			std::vector<Database::ObjectPtr<Database::Track>> getRecentTracks(Database::Session& session,
-																	Database::ObjectPtr<Database::User> user,
-																	const std::vector<Database::ClusterId>& clusterIds,
-																	std::optional<Database::Range> range,
-																	bool& moreResults) override;
+			TrackContainer getRecentTracks(Database::UserId userId,
+												const std::vector<Database::ClusterId>& clusterIds,
+												std::optional<Database::Range> range,
+												bool& moreResults) override;
 
-			std::vector<Database::ObjectPtr<Database::Artist>> getTopArtists(Database::Session& session,
-																	Database::ObjectPtr<Database::User> user,
-																	const std::vector<Database::ClusterId>& clusterIds,
-																	std::optional<Database::TrackArtistLinkType> linkType,
-																	std::optional<Database::Range> range,
-																	bool& moreResults) override;
+			ArtistContainer getTopArtists(Database::UserId userId,
+												const std::vector<Database::ClusterId>& clusterIds,
+												std::optional<Database::TrackArtistLinkType> linkType,
+												std::optional<Database::Range> range,
+												bool& moreResults) override;
 
-			std::vector<Database::ObjectPtr<Database::Release>> getTopReleases(Database::Session& session,
-																	Database::ObjectPtr<Database::User> user,
-																	const std::vector<Database::ClusterId>& clusterIds,
-																	std::optional<Database::Range> range,
-																	bool& moreResults) override;
+			ReleaseContainer getTopReleases(Database::UserId userId,
+												const std::vector<Database::ClusterId>& clusterIds,
+												std::optional<Database::Range> range,
+												bool& moreResults) override;
 
-			std::vector<Database::ObjectPtr<Database::Track>> getTopTracks(Database::Session& session,
-																	Database::ObjectPtr<Database::User> user,
-																	const std::vector<Database::ClusterId>& clusterIds,
-																	std::optional<Database::Range> range,
-																	bool& moreResults) override;
+			TrackContainer getTopTracks(Database::UserId userId,
+												const std::vector<Database::ClusterId>& clusterIds,
+												std::optional<Database::Range> range,
+												bool& moreResults) override;
 
 			Database::ObjectPtr<Database::TrackList> getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user);
 

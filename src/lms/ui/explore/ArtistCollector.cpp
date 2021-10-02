@@ -34,6 +34,8 @@ namespace UserInterface
 	std::vector<Database::ObjectPtr<Database::Artist>>
 	ArtistCollector::get(std::optional<Database::Range> range, bool& moreResults)
 	{
+		Scrobbling::IScrobbling& scrobbling {*Service<Scrobbling::IScrobbling>::get()};
+
 		range = getActualRange(range);
 
 		std::vector<Artist::pointer> artists;
@@ -53,17 +55,19 @@ namespace UserInterface
 				break;
 
 			case Mode::RecentlyPlayed:
-				artists = Service<Scrobbling::IScrobbling>::get()->getRecentArtists(LmsApp->getDbSession(), LmsApp->getUser(),
-								getFilters().getClusterIds(),
-								_linkType,
-								range, moreResults);
+				for (const ArtistId artistId : scrobbling.getRecentArtists(LmsApp->getUserId(), getFilters().getClusterIds(), _linkType, range, moreResults))
+				{
+					if (Artist::pointer artist {Artist::getById(LmsApp->getDbSession(), artistId)})
+						artists.push_back(artist);
+				}
 				break;
 
 			case Mode::MostPlayed:
-				artists = Service<Scrobbling::IScrobbling>::get()->getTopArtists(LmsApp->getDbSession(), LmsApp->getUser(),
-								getFilters().getClusterIds(),
-								_linkType,
-								range, moreResults);
+				for (const ArtistId artistId : scrobbling.getTopArtists(LmsApp->getUserId(), getFilters().getClusterIds(), _linkType, range, moreResults))
+				{
+					if (Artist::pointer artist {Artist::getById(LmsApp->getDbSession(), artistId)})
+						artists.push_back(artist);
+				}
 				break;
 
 			case Mode::RecentlyAdded:

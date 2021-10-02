@@ -37,6 +37,8 @@ namespace UserInterface
 	std::vector<Release::pointer>
 	ReleaseCollector::get(std::optional<Database::Range> range, bool& moreResults)
 	{
+		Scrobbling::IScrobbling& scrobbling {*Service<Scrobbling::IScrobbling>::get()};
+
 		range = getActualRange(range);
 
 		std::vector<Release::pointer> releases;
@@ -51,11 +53,19 @@ namespace UserInterface
 				break;
 
 			case ReleaseCollector::Mode::RecentlyPlayed:
-				releases = Service<Scrobbling::IScrobbling>::get()->getRecentReleases(LmsApp->getDbSession(), LmsApp->getUser(), getFilters().getClusterIds(), range, moreResults);
+				for (const ReleaseId releaseId : scrobbling.getRecentReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range, moreResults))
+				{
+					if (const Release::pointer release {Release::getById(LmsApp->getDbSession(), releaseId)})
+						releases.push_back(release);
+				}
 				break;
 
 			case Mode::MostPlayed:
-				releases = Service<Scrobbling::IScrobbling>::get()->getTopReleases(LmsApp->getDbSession(), LmsApp->getUser(), getFilters().getClusterIds(), range, moreResults);
+				for (const ReleaseId releaseId : scrobbling.getTopReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range, moreResults))
+				{
+					if (const Release::pointer release {Release::getById(LmsApp->getDbSession(), releaseId)})
+						releases.push_back(release);
+				}
 				break;
 
 			case Mode::RecentlyAdded:

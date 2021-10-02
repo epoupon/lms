@@ -56,45 +56,45 @@ namespace Scrobbling
 			virtual void addTimedListen(const TimedListen& listen) = 0;
 
 			// Stats
+			template <typename IdType>
+			using ResultContainer = std::vector<IdType>;
+
+			using ArtistContainer = ResultContainer<Database::ArtistId>;
+			using ReleaseContainer = ResultContainer<Database::ReleaseId>;
+			using TrackContainer = ResultContainer<Database::TrackId>;
 			// From most recent to oldest
-			virtual std::vector<Database::ObjectPtr<Database::Artist>> getRecentArtists(Database::Session& session,
-																	Database::ObjectPtr<Database::User> user,
-																	const std::vector<Database::ClusterId>& clusterIds,
-																	std::optional<Database::TrackArtistLinkType> linkType,
-																	std::optional<Database::Range> range,
-																	bool& moreResults) = 0;
+			virtual ArtistContainer getRecentArtists(Database::UserId userId,
+														const std::vector<Database::ClusterId>& clusterIds,
+														std::optional<Database::TrackArtistLinkType> linkType,
+														std::optional<Database::Range> range,
+														bool& moreResults) = 0;
 
-			virtual std::vector<Database::ObjectPtr<Database::Release>> getRecentReleases(Database::Session& session,
-																	Database::ObjectPtr<Database::User> user,
-																	const std::vector<Database::ClusterId>& clusterIds,
-																	std::optional<Database::Range> range,
-																	bool& moreResults) = 0;
+			virtual ReleaseContainer getRecentReleases(Database::UserId userId,
+														const std::vector<Database::ClusterId>& clusterIds,
+														std::optional<Database::Range> range,
+														bool& moreResults) = 0;
 
-			virtual std::vector<Database::ObjectPtr<Database::Track>> getRecentTracks(Database::Session& session,
-																	Database::ObjectPtr<Database::User> user,
-																	const std::vector<Database::ClusterId>& clusterIds,
-																	std::optional<Database::Range> range,
-																	bool& moreResults) = 0;
+			virtual TrackContainer getRecentTracks(Database::UserId userId,
+														const std::vector<Database::ClusterId>& clusterIds,
+														std::optional<Database::Range> range,
+														bool& moreResults) = 0;
 
 			// Top
-			virtual std::vector<Database::ObjectPtr<Database::Artist>> getTopArtists(Database::Session& session,
-																	Database::ObjectPtr<Database::User> user,
-																	const std::vector<Database::ClusterId>& clusterIds,
-																	std::optional<Database::TrackArtistLinkType> linkType,
-																	std::optional<Database::Range> range,
-																	bool& moreResults) = 0;
+			virtual ArtistContainer getTopArtists(Database::UserId userId,
+														const std::vector<Database::ClusterId>& clusterIds,
+														std::optional<Database::TrackArtistLinkType> linkType,
+														std::optional<Database::Range> range,
+														bool& moreResults) = 0;
 
-			virtual std::vector<Database::ObjectPtr<Database::Release>> getTopReleases(Database::Session& session,
-																	Database::ObjectPtr<Database::User> user,
-																	const std::vector<Database::ClusterId>& clusterIds,
-																	std::optional<Database::Range> range,
-																	bool& moreResults) = 0;
+			virtual ReleaseContainer getTopReleases(Database::UserId userId,
+														const std::vector<Database::ClusterId>& clusterIds,
+														std::optional<Database::Range> range,
+														bool& moreResults) = 0;
 
-			virtual std::vector<Database::ObjectPtr<Database::Track>> getTopTracks(Database::Session& session,
-																	Database::ObjectPtr<Database::User> user,
-																	const std::vector<Database::ClusterId>& clusterIds,
-																	std::optional<Database::Range> range,
-																	bool& moreResults) = 0;
+			virtual TrackContainer getTopTracks(Database::UserId userId,
+														const std::vector<Database::ClusterId>& clusterIds,
+														std::optional<Database::Range> range,
+														bool& moreResults) = 0;
 	};
 
 	std::unique_ptr<IScrobbling> createScrobbling(boost::asio::io_service& ioService, Database::Db& db);

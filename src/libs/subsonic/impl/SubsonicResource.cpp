@@ -724,6 +724,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	const Range range {offset, size};
 
 	std::vector<Release::pointer> releases;
+	Scrobbling::IScrobbling& scrobbling {*Service<Scrobbling::IScrobbling>::get()};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -765,7 +766,11 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	else if (type == "frequent")
 	{
 		bool moreResults {};
-		releases = Service<Scrobbling::IScrobbling>::get()->getTopReleases(context.dbSession, user, {}, range, moreResults);
+		for (ReleaseId releaseId : scrobbling.getTopReleases(context.userId, {}, range, moreResults))
+		{
+			if (Release::pointer release {Release::getById(context.dbSession, releaseId)})
+				releases.push_back(release );
+		}
 	}
 	else if (type == "newest")
 	{
@@ -780,7 +785,11 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	else if (type == "recent")
 	{
 		bool moreResults {};
-		releases = Service<Scrobbling::IScrobbling>::get()->getRecentReleases(context.dbSession, user, {}, range, moreResults);
+		for (ReleaseId releaseId : scrobbling.getRecentReleases(context.userId, {}, range, moreResults))
+		{
+			if (Release::pointer release {Release::getById(context.dbSession, releaseId)})
+				releases.push_back(release );
+		}
 	}
 	else if (type == "starred")
 	{
