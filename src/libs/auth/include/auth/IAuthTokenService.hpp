@@ -31,7 +31,7 @@
 
 namespace Database
 {
-	class Session;
+	class Db;
 	class User;
 }
 
@@ -63,12 +63,12 @@ namespace Auth
 			};
 
 			// Provided token is only accepted once
-			virtual AuthTokenProcessResult	processAuthToken(Database::Session& session, const boost::asio::ip::address& clientAddress, std::string_view tokenValue) = 0;
+			virtual AuthTokenProcessResult	processAuthToken(const boost::asio::ip::address& clientAddress, std::string_view tokenValue) = 0;
 
 			// Returns a one time token
-			virtual std::string				createAuthToken(Database::Session& session, Database::UserId userid, const Wt::WDateTime& expiry) = 0;
-			virtual void					clearAuthTokens(Database::Session& session, Database::UserId userid) = 0;
+			virtual std::string				createAuthToken(Database::UserId userid, const Wt::WDateTime& expiry) = 0;
+			virtual void					clearAuthTokens(Database::UserId userid) = 0;
 	};
 
-	std::unique_ptr<IAuthTokenService> createAuthTokenService(std::size_t maxThrottlerEntryCount);
+	std::unique_ptr<IAuthTokenService> createAuthTokenService(Database::Db& db, std::size_t maxThrottlerEntryCount);
 }

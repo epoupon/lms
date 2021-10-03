@@ -49,7 +49,7 @@ static
 void
 createAuthToken(Database::UserId userId, const Wt::WDateTime& expiry)
 {
-	const std::string secret {Service<::Auth::IAuthTokenService>::get()->createAuthToken(LmsApp->getDbSession(), userId, expiry)};
+	const std::string secret {Service<::Auth::IAuthTokenService>::get()->createAuthToken(userId, expiry)};
 
 	LmsApp->setCookie(authCookieName,
 			secret,
@@ -67,7 +67,7 @@ processAuthToken(const Wt::WEnvironment& env)
 	if (!authCookie)
 		return std::nullopt;
 
-	const auto res {Service<::Auth::IAuthTokenService>::get()->processAuthToken(LmsApp->getDbSession(), boost::asio::ip::address::from_string(env.clientAddress()), *authCookie)};
+	const auto res {Service<::Auth::IAuthTokenService>::get()->processAuthToken(boost::asio::ip::address::from_string(env.clientAddress()), *authCookie)};
 	switch (res.state)
 	{
 		case ::Auth::IAuthTokenService::AuthTokenProcessResult::State::Denied:
@@ -131,7 +131,6 @@ class AuthModel : public Wt::WFormModel
 			if (field == PasswordField)
 			{
 				const auto checkResult {Service<::Auth::IPasswordService>::get()->checkUserPassword(
-							LmsApp->getDbSession(),
 							boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
 							valueText(LoginNameField).toUTF8(),
 							valueText(PasswordField).toUTF8())};

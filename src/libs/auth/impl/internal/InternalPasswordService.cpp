@@ -29,8 +29,8 @@
 
 namespace Auth
 {
-	InternalPasswordService::InternalPasswordService(std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
-		: PasswordServiceBase {maxThrottlerEntries, authTokenService}
+	InternalPasswordService::InternalPasswordService(Database::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
+		: PasswordServiceBase {db, maxThrottlerEntries, authTokenService}
 	{
 		_validator.setMinimumLength(Wt::Auth::PasswordStrengthType::OneCharClass, 4);
 		_validator.setMinimumLength(Wt::Auth::PasswordStrengthType::TwoCharClass, 4);
@@ -42,14 +42,13 @@ namespace Auth
 	}
 
 	bool
-	InternalPasswordService::checkUserPassword(Database::Session& session,
-			std::string_view loginName,
-			std::string_view password)
+	InternalPasswordService::checkUserPassword(std::string_view loginName, std::string_view password)
 	{
 		LMS_LOG(AUTH, DEBUG) << "Checking internal password for user '" << loginName << "'";
 
 		Database::User::PasswordHash passwordHash;
 		{
+			Database::Session& session {getDbSession()};
 			auto transaction {session.createSharedTransaction()};
 
 			const Database::User::pointer user {Database::User::getByLoginName(session, loginName)};
@@ -96,10 +95,11 @@ namespace Auth
 	}
 
 	void
-	InternalPasswordService::setPassword(Database::Session& session, Database::UserId userId, std::string_view newPassword)
+	InternalPasswordService::setPassword(Database::UserId userId, std::string_view newPassword)
 	{
 		const Database::User::PasswordHash passwordHash {hashPassword(newPassword)};
 
+		Database::Session& session {getDbSession()};
 		auto transaction {session.createUniqueTransaction()};
 
 		Database::User::pointer user {Database::User::getById(session, userId)};
@@ -117,7 +117,7 @@ namespace Auth
 		}
 
 		user.modify()->setPasswordHash(passwordHash);
-		getAuthTokenService().clearAuthTokens(session, userId);
+		getAuthTokenService().clearAuthTokens(userId);
 	}
 
 	Database::User::PasswordHash

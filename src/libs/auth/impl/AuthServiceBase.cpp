@@ -19,25 +19,33 @@
 
 #include "AuthServiceBase.hpp"
 
+#include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
 #include "utils/Logger.hpp"
 
 namespace Auth
 {
-	Database::UserId
-	AuthServiceBase::getOrCreateUser(Database::Session& session, std::string_view loginName)
+	using namespace Database;
+
+	AuthServiceBase::AuthServiceBase(Db& db)
+	: _db {db}
+	{}
+
+	UserId
+	AuthServiceBase::getOrCreateUser(std::string_view loginName)
 	{
+		Session& session {getDbSession()};
 		auto transaction {session.createUniqueTransaction()};
 
-		Database::User::pointer user {Database::User::getByLoginName(session, loginName)};
+		User::pointer user {User::getByLoginName(session, loginName)};
 		if (!user)
 		{
-			const Database::UserType type {Database::User::getCount(session) == 0 ? Database::UserType::ADMIN : Database::UserType::REGULAR};
+			const UserType type {User::getCount(session) == 0 ? UserType::ADMIN : UserType::REGULAR};
 
-			LMS_LOG(AUTH, DEBUG) << "Creating user '" << loginName << "', admin = " << (type == Database::UserType::ADMIN);
+			LMS_LOG(AUTH, DEBUG) << "Creating user '" << loginName << "', admin = " << (type == UserType::ADMIN);
 
-			user = Database::User::create(session, loginName);
+			user = User::create(session, loginName);
 			user.modify()->setType(type);
 		}
 
@@ -45,11 +53,19 @@ namespace Auth
 	}
 
 	void
-	AuthServiceBase::onUserAuthenticated(Database::Session& session, Database::UserId userId)
+	AuthServiceBase::onUserAuthenticated(UserId userId)
 	{
+		Session& session {getDbSession()};
 		auto transaction {session.createUniqueTransaction()};
-		Database::User::pointer user {Database::User::getById(session, userId)};
+
+		User::pointer user {User::getById(session, userId)};
 		if (user)
 			user.modify()->setLastLogin(Wt::WDateTime::currentDateTime());
+	}
+
+	Session&
+	AuthServiceBase::getDbSession()
+	{
+		return _db.getTLSSession();
 	}
 }

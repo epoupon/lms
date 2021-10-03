@@ -33,16 +33,14 @@ namespace Auth
 	class InternalPasswordService : public PasswordServiceBase
 	{
 		public:
-			InternalPasswordService(std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService);
+			InternalPasswordService(Database::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService);
 
 		private:
-			bool	checkUserPassword(Database::Session& session,
-						std::string_view loginName,
-						std::string_view password) override;
+			bool	checkUserPassword(std::string_view loginName, std::string_view password) override;
 
 			bool	canSetPasswords() const override;
 			PasswordAcceptabilityResult	checkPasswordAcceptability(std::string_view loginName, const PasswordValidationContext& context) const override;
-			void	setPassword(Database::Session& session, Database::UserId userId, std::string_view newPassword) override;
+			void	setPassword(Database::UserId userId, std::string_view newPassword) override;
 
 			Database::User::PasswordHash	hashPassword(std::string_view password) const;
 			void							hashRandomPassword() const;

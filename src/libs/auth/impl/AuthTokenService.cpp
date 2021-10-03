@@ -32,23 +32,26 @@
 namespace Auth
 {
 
-	std::unique_ptr<IAuthTokenService> createAuthTokenService(std::size_t maxThrottlerEntries)
+	std::unique_ptr<IAuthTokenService> createAuthTokenService(Database::Db& db, std::size_t maxThrottlerEntries)
 	{
-		return std::make_unique<AuthTokenService>(maxThrottlerEntries);
+		return std::make_unique<AuthTokenService>(db, maxThrottlerEntries);
 	}
 
 	static const Wt::Auth::SHA1HashFunction sha1Function;
 
-	AuthTokenService::AuthTokenService(std::size_t maxThrottlerEntries)
-	: _loginThrottler {maxThrottlerEntries}
+	AuthTokenService::AuthTokenService(Database::Db& db, std::size_t maxThrottlerEntries)
+	: AuthServiceBase {db}
+	, _loginThrottler {maxThrottlerEntries}
 	{
 	}
 
 	std::string
-	AuthTokenService::createAuthToken(Database::Session& session, Database::UserId userId, const Wt::WDateTime& expiry)
+	AuthTokenService::createAuthToken(Database::UserId userId, const Wt::WDateTime& expiry)
 	{
 		const std::string secret {Wt::WRandom::generateId(32)};
 		const std::string secretHash {sha1Function.compute(secret, {})};
+
+		Database::Session& session {getDbSession()};
 
 		auto transaction {session.createUniqueTransaction()};
 
@@ -66,12 +69,12 @@ namespace Auth
 		return secret;
 	}
 
-	static
 	std::optional<AuthTokenService::AuthTokenProcessResult::AuthTokenInfo>
-	processAuthToken(Database::Session& session, std::string_view secret)
+	AuthTokenService::processAuthToken(std::string_view secret)
 	{
 		const std::string secretHash {sha1Function.compute(std::string {secret}, {})};
 
+		Database::Session& session {getDbSession()};
 		auto transaction {session.createUniqueTransaction()};
 
 		Database::AuthToken::pointer authToken {Database::AuthToken::getByValue(session, secretHash)};
@@ -93,7 +96,7 @@ namespace Auth
 	}
 
 	AuthTokenService::AuthTokenProcessResult
-	AuthTokenService::processAuthToken(Database::Session& session, const boost::asio::ip::address& clientAddress, std::string_view tokenValue)
+	AuthTokenService::processAuthToken(const boost::asio::ip::address& clientAddress, std::string_view tokenValue)
 	{
 		// Do not waste too much resource on brute force attacks (optim)
 		{
@@ -103,7 +106,7 @@ namespace Auth
 				return AuthTokenProcessResult {AuthTokenProcessResult::State::Throttled};
 		}
 
-		auto res {Auth::processAuthToken(session, tokenValue)};
+		auto res {processAuthToken(tokenValue)};
 		{
 			std::unique_lock lock {_mutex};
 
@@ -117,14 +120,16 @@ namespace Auth
 			}
 
 			_loginThrottler.onGoodClientAttempt(clientAddress);
-			onUserAuthenticated(session, res->userId);
+			onUserAuthenticated(res->userId);
 			return AuthTokenProcessResult {AuthTokenProcessResult::State::Granted, std::move(*res)};
 		}
 	}
 
 	void
-	AuthTokenService::clearAuthTokens(Database::Session& session, Database::UserId userId)
+	AuthTokenService::clearAuthTokens(Database::UserId userId)
 	{
+		Database::Session& session {getDbSession()};
+
 		auto transaction {session.createUniqueTransaction()};
 
 		Database::User::pointer user {Database::User::getById(session, userId)};

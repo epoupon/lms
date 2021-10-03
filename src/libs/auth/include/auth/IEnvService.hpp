@@ -26,6 +26,7 @@
 
 namespace Database
 {
+	class Db;
 	class Session;
 }
 
@@ -60,9 +61,9 @@ namespace Auth
 				std::optional<Database::UserId>	userId {};
 			};
 
-			virtual CheckResult			processEnv(Database::Session& session, const Wt::WEnvironment& env) = 0;
-			virtual CheckResult			processRequest(Database::Session& session, const Wt::Http::Request& request) = 0;
+			virtual CheckResult			processEnv(const Wt::WEnvironment& env) = 0;
+			virtual CheckResult			processRequest(const Wt::Http::Request& request) = 0;
 	};
 
-	std::unique_ptr<IEnvService> createEnvService(std::string_view backendName);
+	std::unique_ptr<IEnvService> createEnvService(std::string_view backendName, Database::Db& db);
 } // namespace Auth

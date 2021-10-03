@@ -87,7 +87,7 @@ class UserModel : public Wt::WFormModel
 					throw UserNotFoundException {};
 
 				if (_authPasswordService && !valueText(PasswordField).empty())
-					_authPasswordService->setPassword(LmsApp->getDbSession(), user->getId(), valueText(PasswordField).toUTF8());
+					_authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
 			}
 			else
 			{
@@ -103,7 +103,7 @@ class UserModel : public Wt::WFormModel
 					user.modify()->setType(Database::UserType::DEMO);
 
 				if (_authPasswordService)
-					_authPasswordService->setPassword(LmsApp->getDbSession(), user->getId(), valueText(PasswordField).toUTF8());
+					_authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
 			}
 		}
 

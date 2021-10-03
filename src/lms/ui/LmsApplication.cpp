@@ -69,7 +69,7 @@ LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplica
 {
 	if (auto *authEnvService {Service<::Auth::IEnvService>::get()})
 	{
-		const auto checkResult {authEnvService->processEnv(db.getTLSSession(), env)};
+		const auto checkResult {authEnvService->processEnv(env)};
 		if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
 		{
 			LMS_LOG(UI, ERROR) << "Cannot authenticate user from environment!";

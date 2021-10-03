@@ -24,6 +24,7 @@
 
 namespace Database
 {
+	class Db;
 	class Session;
 }
 
@@ -32,7 +33,14 @@ namespace Auth
 	class AuthServiceBase
 	{
 		protected:
-			Database::UserId	getOrCreateUser(Database::Session& session, std::string_view loginName);
-			void				onUserAuthenticated(Database::Session& session, Database::UserId userId);
+			AuthServiceBase(Database::Db& db);
+
+			Database::UserId	getOrCreateUser(std::string_view loginName);
+			void				onUserAuthenticated(Database::UserId userId);
+
+			Database::Session&		getDbSession();
+
+		private:
+			Database::Db&		_db;
 	};
 }

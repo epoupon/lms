@@ -197,7 +197,7 @@ class SettingsModel : public Wt::WFormModel
 
 			if (_authPasswordService && !valueText(PasswordField).empty())
 			{
-				_authPasswordService->setPassword(LmsApp->getDbSession(), user->getId(), valueText(PasswordField).toUTF8());
+				_authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
 			}
 
 		}

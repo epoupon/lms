@@ -245,12 +245,12 @@ int main(int argc, char* argv[])
 		const std::string authenticationBackend {StringUtils::stringToLower(config->getString("authentication-backend", "internal"))};
 		if (authenticationBackend == "internal" || authenticationBackend == "pam")
 		{
-			authTokenService.assign(Auth::createAuthTokenService(config->getULong("login-throttler-max-entriees", 10000)));
-			authPasswordService.assign(Auth::createPasswordService(authenticationBackend, config->getULong("login-throttler-max-entriees", 10000), *authTokenService.get()));
+			authTokenService.assign(Auth::createAuthTokenService(database, config->getULong("login-throttler-max-entriees", 10000)));
+			authPasswordService.assign(Auth::createPasswordService(authenticationBackend, database, config->getULong("login-throttler-max-entriees", 10000), *authTokenService.get()));
 		}
 		else if (authenticationBackend == "http-headers")
 		{
-			authEnvService.assign(Auth::createEnvService(authenticationBackend));
+			authEnvService.assign(Auth::createEnvService(authenticationBackend, database));
 		}
 		else
 			throw LmsException {"Bad value '" + authenticationBackend + "' for 'authentication-backend'"};

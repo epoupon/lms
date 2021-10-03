@@ -161,7 +161,7 @@ namespace Auth
 	};
 
 	bool
-	PAMPasswordService::checkUserPassword(Database::Session& /*session*/, std::string_view loginName, std::string_view password)
+	PAMPasswordService::checkUserPassword(std::string_view loginName, std::string_view password)
 	{
 		try
 		{
@@ -193,7 +193,7 @@ namespace Auth
 	}
 
 	void
-	PAMPasswordService::setPassword(Database::Session&, Database::UserId, std::string_view)
+	PAMPasswordService::setPassword(Database::UserId, std::string_view)
 	{
 		throw NotImplementedException {};
 	}

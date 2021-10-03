@@ -35,7 +35,7 @@ namespace Auth
 	class AuthTokenService : public IAuthTokenService, public AuthServiceBase
 	{
 		public:
-			AuthTokenService(std::size_t maxThrottlerEntries);
+			AuthTokenService(Database::Db& db, std::size_t maxThrottlerEntries);
 
 			AuthTokenService(const AuthTokenService&) = delete;
 			AuthTokenService& operator=(const AuthTokenService&) = delete;
@@ -43,9 +43,11 @@ namespace Auth
 			AuthTokenService& operator=(AuthTokenService&&) = delete;
 
 		private:
-			AuthTokenProcessResult	processAuthToken(Database::Session& session, const boost::asio::ip::address& clientAddress, std::string_view tokenValue) override;
-			std::string				createAuthToken(Database::Session& session, Database::UserId userId, const Wt::WDateTime& expiry) override;
-			void					clearAuthTokens(Database::Session& session, Database::UserId userId) override;
+			AuthTokenProcessResult	processAuthToken(const boost::asio::ip::address& clientAddress, std::string_view tokenValue) override;
+			std::string				createAuthToken(Database::UserId userId, const Wt::WDateTime& expiry) override;
+			void					clearAuthTokens(Database::UserId userId) override;
+
+			std::optional<AuthTokenService::AuthTokenProcessResult::AuthTokenInfo> processAuthToken(std::string_view secret);
 
 			std::shared_mutex	_mutex;
 			LoginThrottler		_loginThrottler;

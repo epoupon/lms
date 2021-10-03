@@ -27,6 +27,7 @@
 
 namespace Database
 {
+	class Db;
 	class Session;
 }
 
@@ -36,7 +37,7 @@ namespace Auth
 	class PasswordServiceBase : public IPasswordService, public AuthServiceBase
 	{
 		public:
-			PasswordServiceBase(std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService);
+			PasswordServiceBase(Database::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService);
 
 			PasswordServiceBase(const PasswordServiceBase&) = delete;
 			PasswordServiceBase& operator=(const PasswordServiceBase&) = delete;
@@ -47,14 +48,11 @@ namespace Auth
 			IAuthTokenService&	getAuthTokenService() { return _authTokenService; }
 
 		private:
-			virtual bool	checkUserPassword(Database::Session& session,
-										std::string_view loginName,
-										std::string_view password) = 0;
+			virtual bool	checkUserPassword(std::string_view loginName, std::string_view password) = 0;
 
-			CheckResult		checkUserPassword(Database::Session& session,
-													const boost::asio::ip::address& clientAddress,
-													std::string_view loginName,
-													std::string_view password) override;
+			CheckResult		checkUserPassword(const boost::asio::ip::address& clientAddress,
+												std::string_view loginName,
+												std::string_view password) override;
 
 			std::shared_mutex			_mutex;
 			LoginThrottler				_loginThrottler;

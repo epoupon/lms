@@ -506,7 +506,7 @@ handleChangePassword(RequestContext& context)
 			userId = user->getId();
 		}
 
-		Service<Auth::IPasswordService>::get()->setPassword(context.dbSession, userId, password);
+		Service<Auth::IPasswordService>::get()->setPassword(userId, password);
 	}
 	catch (const Auth::PasswordMustMatchLoginNameException&)
 	{
@@ -604,7 +604,7 @@ handleCreateUserRequest(RequestContext& context)
 
 	try
 	{
-		Service<Auth::IPasswordService>::get()->setPassword(context.dbSession, userId, password);
+		Service<Auth::IPasswordService>::get()->setPassword(userId, password);
 	}
 	catch (const Auth::PasswordMustMatchLoginNameException&)
 	{
@@ -1620,7 +1620,7 @@ handleUpdateUserRequest(RequestContext& context)
 
 		try
 		{
-			Service<::Auth::IPasswordService>()->setPassword(context.dbSession, userId, decodePasswordIfNeeded(*password));
+			Service<::Auth::IPasswordService>()->setPassword(userId, decodePasswordIfNeeded(*password));
 		}
 		catch (const Auth::PasswordMustMatchLoginNameException&)
 		{
@@ -2043,22 +2043,18 @@ RequestContext
 SubsonicResource::buildRequestContext(const Wt::Http::Request& request)
 {
 	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
-
 	const ClientInfo clientInfo {getClientInfo(parameters)};
+	const Database::UserId userId {authenticateUser(request, clientInfo)};
 
-	Session& dbSession {_db.getTLSSession()};
-
-	const Database::UserId userId {authenticateUser(request, clientInfo, dbSession)};
-
-	return {parameters, dbSession, userId, clientInfo, getServerProtocolVersion(clientInfo.name)};
+	return {parameters, _db.getTLSSession(), userId, clientInfo, getServerProtocolVersion(clientInfo.name)};
 }
 
 Database::UserId
-SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo, Session& dbSession)
+SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo)
 {
 	if (auto *authEnvService {Service<::Auth::IEnvService>::get()})
 	{
-		const auto checkResult {authEnvService->processRequest(dbSession, request)};
+		const auto checkResult {authEnvService->processRequest(request)};
 		if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
 			throw UserNotAuthorizedError {};
 
@@ -2066,9 +2062,8 @@ SubsonicResource::authenticateUser(const Wt::Http::Request& request, const Clien
 	}
 	else if (auto *authPasswordService {Service<::Auth::IPasswordService>::get()})
 	{
-		const auto checkResult {authPasswordService->checkUserPassword(dbSession,
-												boost::asio::ip::address::from_string(request.clientAddress()),
-												clientInfo.user, clientInfo.password)};
+		const auto checkResult {authPasswordService->checkUserPassword(boost::asio::ip::address::from_string(request.clientAddress()),
+																			clientInfo.user, clientInfo.password)};
 
 		switch (checkResult.state)
 		{

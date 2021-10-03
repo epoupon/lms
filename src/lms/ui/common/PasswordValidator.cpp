@@ -80,7 +80,6 @@ namespace UserInterface
 			return Wt::WValidator::validate(input);
 
 		const auto checkResult {Service<::Auth::IPasswordService>::get()->checkUserPassword(
-					LmsApp->getDbSession(),
 					boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
 					LmsApp->getUserLoginName(),
 					input.toUTF8())};

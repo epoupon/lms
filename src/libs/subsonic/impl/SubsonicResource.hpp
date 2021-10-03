@@ -48,7 +48,7 @@ namespace API::Subsonic
 			static void checkProtocolVersion(ProtocolVersion client, ProtocolVersion server);
 			ClientInfo getClientInfo(const Wt::Http::ParameterMap& parameters);
 			RequestContext buildRequestContext(const Wt::Http::Request& request);
-			Database::UserId authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo, Database::Session& dbSession);
+			Database::UserId authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo);
 
 			const std::unordered_map<std::string, ProtocolVersion> _serverProtocolVersionsByClient;
 			Database::Db& _db;

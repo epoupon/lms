@@ -27,11 +27,11 @@ namespace Auth
 	class HttpHeadersEnvService : public IEnvService, public AuthServiceBase
 	{
 		public:
-			HttpHeadersEnvService();
+			HttpHeadersEnvService(Database::Db& db);
 
 		private:
-			CheckResult	processEnv(Database::Session& session, const Wt::WEnvironment& env) override;
-			CheckResult	processRequest(Database::Session& session, const Wt::Http::Request& request) override;
+			CheckResult	processEnv(const Wt::WEnvironment& env) override;
+			CheckResult	processRequest(const Wt::Http::Request& request) override;
 
 			std::string _fieldName;
 	};
