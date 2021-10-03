@@ -19,6 +19,8 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
+
 #include <Wt/WResource.h>
 #include <Wt/Http/Response.h>
 
