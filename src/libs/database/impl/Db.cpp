@@ -29,7 +29,7 @@
 namespace Database {
 
 // Session living class handling the database and the login
-Db::Db(const std::filesystem::path& dbPath)
+Db::Db(const std::filesystem::path& dbPath, std::size_t connectionCount)
 {
 	LMS_LOG(DB, INFO) << "Creating connection pool on file " << dbPath.string();
 
@@ -38,7 +38,7 @@ Db::Db(const std::filesystem::path& dbPath)
 	connection->executeSql("pragma journal_mode=WAL");
 	connection->executeSql("pragma synchronous=normal");
 
-	auto connectionPool = std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), 10);
+	auto connectionPool = std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), connectionCount);
 	connectionPool->setTimeout(std::chrono::seconds(10));
 
 	_connectionPool = std::move(connectionPool);

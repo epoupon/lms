@@ -45,6 +45,16 @@
 #include "utils/WtLogger.hpp"
 
 static
+std::size_t
+getThreadCount()
+{
+	const unsigned long configHttpServerThreadCount {Service<IConfig>::get()->getULong("http-server-thread-count", 0)};
+
+	// Reserve at least 2 threads since we still have some blocking IO (for example when reading from ffmpeg)
+	return configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(2, std::thread::hardware_concurrency());
+}
+
+static
 std::vector<std::string>
 generateWtConfig(std::string execPath)
 {
@@ -54,7 +64,6 @@ generateWtConfig(std::string execPath)
 	const std::filesystem::path wtLogFilePath {Service<IConfig>::get()->getPath("log-file", "/var/log/lms.log")};
 	const std::filesystem::path wtAccessLogFilePath {Service<IConfig>::get()->getPath("access-log-file", "/var/log/lms.access.log")};
 	const std::filesystem::path wtResourcesPath {Service<IConfig>::get()->getPath("wt-resources", "/usr/share/Wt/resources")};
-	const unsigned long configHttpServerThreadCount {Service<IConfig>::get()->getULong("http-server-thread-count", 0)};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
@@ -81,11 +90,7 @@ generateWtConfig(std::string execPath)
 	if (!wtAccessLogFilePath.empty())
 		args.push_back("--accesslog=" + wtAccessLogFilePath.string());
 
-	{
-		// Reserve at least 2 threads since we still have some blocking IO (for example when reading from ffmpeg)
-		const unsigned long httpServerThreadCount {configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(2, std::thread::hardware_concurrency())};
-		args.push_back("--threads=" + std::to_string(httpServerThreadCount));
-	}
+	args.push_back("--threads=" + std::to_string(getThreadCount()));
 
 	// Generate the wt_config.xml file
 	boost::property_tree::ptree pt;
@@ -221,7 +226,7 @@ int main(int argc, char* argv[])
 		IOContextRunner ioContextRunner {ioContext, std::max<unsigned long>(2, std::thread::hardware_concurrency())};
 
 		// Initializing a connection pool to the database that will be shared along services
-		Database::Db database {config->getPath("working-dir") / "lms.db"};
+		Database::Db database {config->getPath("working-dir") / "lms.db", getThreadCount()};
 		{
 			Database::Session session {database};
 			session.prepareTables();

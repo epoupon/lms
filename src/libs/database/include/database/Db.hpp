@@ -32,7 +32,7 @@ class Db
 {
 	public:
 
-		Db(const std::filesystem::path& dbPath);
+		Db(const std::filesystem::path& dbPath, std::size_t connectionCount = 10);
 		~Db();
 
 		Db(const Db&) = delete;
