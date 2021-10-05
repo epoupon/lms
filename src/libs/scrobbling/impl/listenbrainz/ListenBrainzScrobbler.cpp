@@ -32,6 +32,7 @@
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 #include "utils/IConfig.hpp"
+#include "utils/http/IClient.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "Utils.hpp"
@@ -142,10 +143,10 @@ namespace Scrobbling::ListenBrainz
 	Scrobbler::Scrobbler(boost::asio::io_context& ioContext, Database::Db& db)
 		: _ioContext {ioContext}
 		, _db {db}
-		, _sendQueue {_ioContext, Service<IConfig>::get()->getString("listenbrainz-api-base-url", "https://api.listenbrainz.org")}
-		, _listensSynchronizer {_ioContext, db, _sendQueue}
+		, _baseAPIUrl {Service<IConfig>::get()->getString("listenbrainz-api-base-url", "https://api.listenbrainz.org")}
+		, _listensSynchronizer {_ioContext, db, _baseAPIUrl}
 	{
-		LOG(INFO) << "Starting ListenBrainz scrobbler... API endpoint = '" << _sendQueue.getAPIBaseURL();
+		LOG(INFO) << "Starting ListenBrainz scrobbler... API endpoint = '" << _baseAPIUrl;
 	}
 
 	Scrobbler::~Scrobbler()
@@ -187,53 +188,38 @@ namespace Scrobbling::ListenBrainz
 	void
 	Scrobbler::enqueListen(const Listen& listen, const Wt::WDateTime& timePoint)
 	{
-		std::optional<SendQueue::RequestData> requestData {createSubmitListenRequestData(listen, timePoint)};
-		if (!requestData)
-			return;
+		Http::ClientPOSTRequestParameters request;
+		request.url = _baseAPIUrl + "/1/submit-listens";
 
-		SendQueue::Request submitListen {std::move(*requestData)};
 		if (timePoint.isValid())
 		{
-			submitListen.setPriority(SendQueue::Request::Priority::Normal);
-			submitListen.setOnSuccessFunc([=](std::string_view)
+			request.priority = Http::ClientRequestParameters::Priority::Normal;
+			request.onSuccessFunc = [=](std::string_view)
 			{
 				_listensSynchronizer.saveListen(TimedListen {listen, timePoint});
-			});
+			};
 		}
 		else
 		{
 			// We want "listen now" to appear as soon as possible
-			submitListen.setPriority(SendQueue::Request::Priority::High);
+			request.priority = Http::ClientRequestParameters::Priority::High;
 		}
 
-		_sendQueue.enqueueRequest(std::move(submitListen));
-	}
-
-	std::optional<SendQueue::RequestData>
-	Scrobbler::createSubmitListenRequestData(const Listen& listen, const Wt::WDateTime& timePoint)
-	{
-		Database::Session& session {_db.getTLSSession()};
-
-		const std::optional<UUID> listenBrainzToken {Utils::getListenBrainzToken(session, listen.userId)};
-		if (!listenBrainzToken)
-			return std::nullopt;
-
-		SendQueue::RequestData requestData;
-		requestData.endpoint = "/1/submit-listens";
-		requestData.type = SendQueue::RequestData::Type::POST;
-
-		std::string bodyText {listenToJsonString(session, listen, timePoint, timePoint.isValid() ? "single" : "playing_now")};
+		std::string bodyText {listenToJsonString(_db.getTLSSession(), listen, timePoint, timePoint.isValid() ? "single" : "playing_now")};
 		if (bodyText.empty())
 		{
 			LOG(DEBUG) << "Cannot convert listen to json: skipping";
-			return std::nullopt;
+			return;
 		}
 
-		requestData.message.addBodyText(bodyText);
-		requestData.message.addHeader("Authorization", "Token " + std::string {listenBrainzToken->getAsString()});
-		requestData.message.addHeader("Content-Type", "application/json");
+		const std::optional<UUID> listenBrainzToken {Utils::getListenBrainzToken(_db.getTLSSession(), listen.userId)};
+		if (!listenBrainzToken)
+			return;
 
-		return requestData;
+		request.message.addBodyText(bodyText);
+		request.message.addHeader("Authorization", "Token " + std::string {listenBrainzToken->getAsString()});
+		request.message.addHeader("Content-Type", "application/json");
+		Service<Http::IClient>::get()->sendPOSTRequest(std::move(request));
 	}
 } // namespace Scrobbling::ListenBrainz
 

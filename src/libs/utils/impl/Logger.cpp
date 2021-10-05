@@ -31,6 +31,7 @@ const char* getModuleName(Module mod)
 		case Module::DB:			return "DB";
 		case Module::DBUPDATER:		return "DB UPDATER";
 		case Module::FEATURE:		return "FEATURE";
+		case Module::HTTP:			return "HTTP";
 		case Module::MAIN:			return "MAIN";
 		case Module::METADATA:		return "METADATA";
 		case Module::REMOTE:		return "REMOTE";

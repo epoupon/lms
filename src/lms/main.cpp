@@ -37,6 +37,7 @@
 #include "scrobbling/IScrobbling.hpp"
 #include "ui/LmsApplication.hpp"
 #include "ui/LmsApplicationManager.hpp"
+#include "utils/http/IClient.hpp"
 #include "utils/IChildProcessManager.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/IOContextRunner.hpp"
@@ -255,6 +256,7 @@ int main(int argc, char* argv[])
 		else
 			throw LmsException {"Bad value '" + authenticationBackend + "' for 'authentication-backend'"};
 
+		Service<Http::IClient> httpClient {Http::createClient(ioContext)};
 		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(database, argv[0], server.appRoot() + "/images/unknown-cover.jpg")};
 		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
 		Service<Scanner::IScanner> scannerService {Scanner::createScanner(database, *recommendationEngineService)};

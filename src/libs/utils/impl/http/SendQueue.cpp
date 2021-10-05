@@ -19,9 +19,10 @@
 
 #include "SendQueue.hpp"
 
+#include <boost/asio/dispatch.hpp>
 #include <boost/asio/bind_executor.hpp>
 
-#include "scrobbling/Exception.hpp"
+#include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
@@ -57,11 +58,10 @@ namespace
 	}
 }
 
-namespace Scrobbling::ListenBrainz
+namespace Http
 {
-	SendQueue::SendQueue(boost::asio::io_context& ioContext, std::string_view apiBaseURL)
+	SendQueue::SendQueue(boost::asio::io_context& ioContext)
 	: _ioContext {ioContext}
-	, _apiBaseURL {apiBaseURL}
 	{
 		_client.done().connect([this](Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg)
 		{
@@ -78,11 +78,11 @@ namespace Scrobbling::ListenBrainz
 	}
 
 	void
-	SendQueue::enqueueRequest(Request request)
+	SendQueue::sendRequest(std::unique_ptr<ClientRequest> request)
 	{
-		_strand.dispatch([this, request = std::move(request)]()
+		boost::asio::dispatch(_strand, [this, request = std::move(request)]() mutable
 		{
-			_sendQueue[request._priority].emplace_back(std::move(request));
+			_sendQueue[request->getParameters().priority].emplace_back(std::move(request));
 
 			if (_state == State::Idle)
 				sendNextQueuedRequest();
@@ -93,16 +93,17 @@ namespace Scrobbling::ListenBrainz
 	SendQueue::sendNextQueuedRequest()
 	{
 		assert(_state == State::Idle);
+		assert(!_currentRequest);
 
 		for (auto& [prio, requests] : _sendQueue)
 		{
 			LOG(DEBUG) << "Processing prio " << static_cast<int>(prio) << ", request count = " << requests.size();
 			while (!requests.empty())
 			{
-				Request request {std::move(requests.front())};
+				std::unique_ptr<ClientRequest> request {std::move(requests.front())};
 				requests.pop_front();
 
-				if (!sendRequest(request._requestData))
+				if (!sendRequest(*request))
 					continue;
 
 				_state = State::Sending;
@@ -113,20 +114,19 @@ namespace Scrobbling::ListenBrainz
 	}
 
 	bool
-	SendQueue::sendRequest(const RequestData& requestData)
+	SendQueue::sendRequest(const ClientRequest& request)
 	{
-		const std::string url {_apiBaseURL + requestData.endpoint};
+		LOG(DEBUG) << "Sending request to url '" << request.getParameters().url << "'";
 
-		LOG(DEBUG) << "Sending request type " << (requestData.type == RequestData::Type::GET ? "GET" : "POST") << " to url '" << url << "'";
-
-		bool res{};
-		switch (requestData.type)
+		bool res {};
+		switch (request.getType())
 		{
-			case RequestData::Type::GET:
-				res = _client.get(url, requestData.headers);
+			case ClientRequest::Type::GET:
+				res = _client.get(request.getParameters().url, request.getGETParameters().headers);
 				break;
-			case RequestData::Type::POST:
-				res = _client.post(url, requestData.message);
+
+			case ClientRequest::Type::POST:
+				res = _client.post(request.getParameters().url, request.getPOSTParameters().message);
 				break;
 		}
 
@@ -146,43 +146,43 @@ namespace Scrobbling::ListenBrainz
 		}
 
 		assert(_currentRequest);
-		Request request {std::move(*_currentRequest)};
 		_state = State::Idle;
 
 		LOG(DEBUG) << "Client done. status = " << msg.status();
 		if (ec)
-			onClientDoneError(std::move(request), ec);
+			onClientDoneError(std::move(_currentRequest), ec);
 		else
-			onClientDoneSuccess(std::move(request), msg);
+			onClientDoneSuccess(std::move(_currentRequest), msg);
 	}
 
 	void
-	SendQueue::onClientDoneError(Request request, Wt::AsioWrapper::error_code ec)
+	SendQueue::onClientDoneError(std::unique_ptr<ClientRequest> request, Wt::AsioWrapper::error_code ec)
 	{
-		LOG(ERROR) << "Retry " << request._retryCount << ", client error: '" << ec.message() << "'";
+		LOG(ERROR) << "Retry " << request->retryCount << ", client error: '" << ec.message() << "'";
 
 		// may be a network error, try again later
 		throttle(_defaultRetryWaitDuration);
 
-		if (request._retryCount++ < _maxRetryCount)
+		if (request->retryCount++ < _maxRetryCount)
 		{
-			_sendQueue[request._priority].emplace_front(std::move(request));
+			_sendQueue[request->getParameters().priority].emplace_front(std::move(request));
 		}
 		else
 		{
 			LOG(ERROR) << "Too many retries, giving up operation and throttle";
-			if (request._onFailureFunc)
-				request._onFailureFunc();
+			if (request->getParameters().onFailureFunc)
+				request->getParameters().onFailureFunc();
 		}
 	}
 
 	void
-	SendQueue::onClientDoneSuccess(Request request, const Wt::Http::Message& msg)
+	SendQueue::onClientDoneSuccess(std::unique_ptr<ClientRequest> request, const Wt::Http::Message& msg)
 	{
+		const ClientRequestParameters& requestParameters {request->getParameters()};
 		bool mustThrottle{};
 		if (msg.status() == 429)
 		{
-			_sendQueue[request._priority].emplace_front(std::move(request));
+			_sendQueue[requestParameters.priority].emplace_front(std::move(request));
 			mustThrottle = true;
 		}
 
@@ -198,14 +198,14 @@ namespace Scrobbling::ListenBrainz
 		{
 			if (msg.status() == 200)
 			{
-				if (request._onSuccessFunc)
-					request._onSuccessFunc(msg.body());
+				if (requestParameters.onSuccessFunc)
+					requestParameters.onSuccessFunc(msg.body());
 			}
 			else
 			{
 				LOG(ERROR) << "Send error: '" << msg.body() << "'";
-				if (request._onFailureFunc)
-					request._onFailureFunc();
+				if (requestParameters.onFailureFunc)
+					requestParameters.onFailureFunc();
 			}
 		}
 
@@ -231,7 +231,7 @@ namespace Scrobbling::ListenBrainz
 			}
 			else if (ec)
 			{
-				throw Exception {"Throttle timer failure: " + std::string {ec.message()} };
+				throw LmsException {"Throttle timer failure: " + std::string {ec.message()} };
 			}
 
 			_state = State::Idle;

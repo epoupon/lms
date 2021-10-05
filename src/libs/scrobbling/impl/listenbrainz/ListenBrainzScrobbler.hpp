@@ -24,7 +24,6 @@
 
 #include "IScrobbler.hpp"
 #include "ListensSynchronizer.hpp"
-#include "SendQueue.hpp"
 
 namespace Database
 {
@@ -54,11 +53,11 @@ namespace Scrobbling::ListenBrainz
 
 			// Submit listens
 			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
-			std::optional<SendQueue::RequestData> createSubmitListenRequestData(const Listen& listen, const Wt::WDateTime& timePoint);
+			//std::optional<SendQueue::RequestData> createSubmitListenRequestData(const Listen& listen, const Wt::WDateTime& timePoint);
 
 			boost::asio::io_context&	_ioContext;
 			Database::Db&				_db;
-			SendQueue					_sendQueue;
+			std::string					_baseAPIUrl;
 			ListensSynchronizer			_listensSynchronizer;
 	};
 } // Scrobbling::ListenBrainz

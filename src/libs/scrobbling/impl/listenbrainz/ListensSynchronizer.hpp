@@ -28,7 +28,6 @@
 
 #include "database/Types.hpp"
 #include "scrobbling/Listen.hpp"
-#include "SendQueue.hpp"
 
 namespace Database
 {
@@ -43,7 +42,7 @@ namespace Scrobbling::ListenBrainz
 	class ListensSynchronizer
 	{
 		public:
-			ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, SendQueue& sendQueue);
+			ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, std::string_view baseAPIUrl);
 
 			void saveListen(const TimedListen& listen);
 
@@ -78,14 +77,12 @@ namespace Scrobbling::ListenBrainz
 			void enqueValidateToken(UserContext& context);
 			void enqueGetListenCount(UserContext& context);
 			void enqueGetListens(UserContext& context);
-			std::optional<SendQueue::RequestData>	createValidateTokenRequestData(Database::UserId userId);
-			std::optional<SendQueue::RequestData>	createGetListensRequestData(std::string_view listenBrainzUserName, const Wt::WDateTime& maxDateTime);
 			void									processGetListensResponse(std::string_view body, UserContext& context);
 
 			boost::asio::io_context&		_ioContext;
 			boost::asio::io_context::strand	_strand {_ioContext};
 			Database::Db&					_db;
-			SendQueue&						_sendQueue;
+			std::string						_baseAPIUrl;
 			boost::asio::steady_timer		_getListensTimer {_ioContext};
 
 			std::unordered_map<Database::UserId, UserContext> _userContexts;

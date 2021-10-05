@@ -1,4 +1,6 @@
 add_library(lmsutils SHARED
+	impl/http/Client.cpp
+	impl/http/SendQueue.cpp
 	impl/ChildProcess.cpp
 	impl/ChildProcessManager.cpp
 	impl/Config.cpp

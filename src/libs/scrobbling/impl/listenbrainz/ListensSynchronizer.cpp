@@ -34,6 +34,7 @@
 #include "database/User.hpp"
 #include "scrobbling/Exception.hpp"
 #include "utils/IConfig.hpp"
+#include "utils/http/IClient.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
@@ -44,17 +45,6 @@
 namespace
 {
 	using namespace Scrobbling::ListenBrainz;
-
-	SendQueue::RequestData
-	createValidateTokenRequestData(std::string_view authToken)
-	{
-		SendQueue::RequestData requestData;
-		requestData.type = SendQueue::RequestData::Type::GET;
-		requestData.endpoint = "/1/validate-token";
-		requestData.headers = { {"Authorization",  "Token " + std::string {authToken}} };
-
-		return requestData;
-	}
 
 	std::string
 	parseValidateToken(std::string_view msgBody)
@@ -79,18 +69,6 @@ namespace
 		return listenBrainzUserName;
 	}
 
-	SendQueue::RequestData
-	createListenCountRequestData(std::string_view listenBrainzUserName)
-	{
-		LOG(DEBUG) << "Getting listen count for listenbrainz user '" << listenBrainzUserName << "'";
-
-		SendQueue::RequestData requestData;
-		requestData.type = SendQueue::RequestData::Type::GET;
-		requestData.endpoint = "/1/user/" + std::string {listenBrainzUserName} + "/listen-count";
-
-		return requestData;
-	}
-
 	std::optional<std::size_t>
 	parseListenCount(std::string_view msgBody)
 	{
@@ -107,18 +85,6 @@ namespace
 			LOG(ERROR) << "Cannot parse listen count response: " << e.what();
 			return std::nullopt;
 		}
-	}
-
-	SendQueue::RequestData
-	createGetListensRequestData(std::string_view listenBrainzUserName, const Wt::WDateTime& maxDateTime)
-	{
-		LOG(DEBUG) << "Getting listens for listenbrainz user '" << listenBrainzUserName << "' with max_ts = " << maxDateTime.toString();
-
-		SendQueue::RequestData requestData;
-		requestData.type = SendQueue::RequestData::Type::GET;
-		requestData.endpoint = "/1/user/" + std::string {listenBrainzUserName} + "/listens?max_ts=" + std::to_string(maxDateTime.toTime_t());
-
-		return requestData;
 	}
 
 	Database::Track::pointer
@@ -247,10 +213,10 @@ namespace
 
 namespace Scrobbling::ListenBrainz
 {
-	ListensSynchronizer::ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, SendQueue& sendQueue)
+	ListensSynchronizer::ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, std::string_view baseAPIUrl)
 		: _ioContext {ioContext}
 		, _db {db}
-		, _sendQueue {sendQueue}
+		, _baseAPIUrl {baseAPIUrl}
 		, _maxSyncListenCount {Service<IConfig>::get()->getULong("listenbrainz-max-sync-listen-count", 1000)}
 		, _syncListensPeriod {Service<IConfig>::get()->getULong("listenbrainz-sync-listens-period-hours", 1)}
 	{
@@ -386,31 +352,33 @@ namespace Scrobbling::ListenBrainz
 	{
 		assert(context.listenBrainzUserName.empty());
 
-		std::optional<SendQueue::RequestData> requestData {createValidateTokenRequestData(context.userId)};
-		if (!requestData)
+		const std::optional<UUID> listenBrainzToken {Utils::getListenBrainzToken(_db.getTLSSession(), context.userId)};
+		if (!listenBrainzToken)
 		{
 			onGetListensEnded(context);
 			return;
 		}
 
-		SendQueue::Request validateTokenRequest {std::move(*requestData)};
-		validateTokenRequest.setOnSuccessFunc([this, &context] (std::string_view msgBody)
-		{
-			context.listenBrainzUserName = parseValidateToken(msgBody);
-			if (context.listenBrainzUserName.empty())
+		Http::ClientGETRequestParameters request;
+		request.priority = Http::ClientRequestParameters::Priority::Low;
+		request.url = _baseAPIUrl + "/1/validate-token";
+		request.headers = { {"Authorization",  "Token " + std::string {listenBrainzToken->getAsString()}} };
+		request.onSuccessFunc = [this, &context] (std::string_view msgBody)
+			{
+				context.listenBrainzUserName = parseValidateToken(msgBody);
+				if (context.listenBrainzUserName.empty())
+				{
+					onGetListensEnded(context);
+					return;
+				}
+				enqueGetListenCount(context);
+			};
+		request.onFailureFunc = [this, &context]
 			{
 				onGetListensEnded(context);
-				return;
-			}
-			enqueGetListenCount(context);
-		});
-		validateTokenRequest.setOnFailureFunc([this, &context]
-		{
-			onGetListensEnded(context);
-		});
+			};
 
-		validateTokenRequest.setPriority(SendQueue::Request::Priority::Low);
-		_sendQueue.enqueueRequest(std::move(validateTokenRequest));
+		Service<Http::IClient>::get()->sendGETRequest(std::move(request));
 	}
 
 	void
@@ -418,32 +386,33 @@ namespace Scrobbling::ListenBrainz
 	{
 		assert(!context.listenBrainzUserName.empty());
 
-		SendQueue::Request getListenCountRequest {createListenCountRequestData(context.listenBrainzUserName)};
-		getListenCountRequest.setOnSuccessFunc([=, &context] (std::string_view msgBody)
-		{
-			const auto listenCount = parseListenCount(msgBody);
-			if (listenCount)
-				LOG(DEBUG) << "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount;
+		Http::ClientGETRequestParameters request;
+		request.url = _baseAPIUrl + "/1/user/" + std::string {context.listenBrainzUserName} + "/listen-count";
+		request.priority = Http::ClientRequestParameters::Priority::Low;
+		request.onSuccessFunc = [=, &context] (std::string_view msgBody)
+			{
+				const auto listenCount = parseListenCount(msgBody);
+				if (listenCount)
+					LOG(DEBUG) << "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount;
 
-			bool needSync {listenCount && (!context.listenCount || *context.listenCount != *listenCount)};
-			context.listenCount = listenCount;
+				bool needSync {listenCount && (!context.listenCount || *context.listenCount != *listenCount)};
+				context.listenCount = listenCount;
 
-			if (!needSync)
+				if (!needSync)
+				{
+					onGetListensEnded(context);
+					return;
+				}
+
+				context.maxDateTime = Wt::WDateTime::currentDateTime();
+				enqueGetListens(context);
+			};
+		request.onFailureFunc = [this, &context]
 			{
 				onGetListensEnded(context);
-				return;
-			}
+			};
 
-			context.maxDateTime = Wt::WDateTime::currentDateTime();
-			enqueGetListens(context);
-		});
-		getListenCountRequest.setOnFailureFunc([this, &context]
-		{
-			onGetListensEnded(context);
-		});
-
-		getListenCountRequest.setPriority(SendQueue::Request::Priority::Low);
-		_sendQueue.enqueueRequest(std::move(getListenCountRequest));
+		Service<Http::IClient>::get()->sendGETRequest(std::move(request));
 	}
 
 	void
@@ -451,37 +420,26 @@ namespace Scrobbling::ListenBrainz
 	{
 		assert(!context.listenBrainzUserName.empty());
 
-		SendQueue::Request getListensRequest {::createGetListensRequestData(context.listenBrainzUserName, context.maxDateTime)};
-		getListensRequest.setOnSuccessFunc([=, &context] (std::string_view msgBody)
-		{
-			processGetListensResponse(msgBody, context);
-			if (context.fetchedListenCount >= _maxSyncListenCount || !context.maxDateTime.isValid())
+		Http::ClientGETRequestParameters request;
+		request.url = _baseAPIUrl + "/1/user/" + context.listenBrainzUserName + "/listens?max_ts=" + std::to_string(context.maxDateTime.toTime_t());
+		request.priority = Http::ClientRequestParameters::Priority::Low;
+		request.onSuccessFunc = [=, &context] (std::string_view msgBody)
+			{
+				processGetListensResponse(msgBody, context);
+				if (context.fetchedListenCount >= _maxSyncListenCount || !context.maxDateTime.isValid())
+				{
+					onGetListensEnded(context);
+					return;
+				}
+
+				enqueGetListens(context);
+			};
+		request.onFailureFunc = [=, &context]
 			{
 				onGetListensEnded(context);
-				return;
-			}
+			};
 
-			enqueGetListens(context);
-		});
-		getListensRequest.setOnFailureFunc([=, &context]
-		{
-			onGetListensEnded(context);
-		});
-
-		getListensRequest.setPriority(SendQueue::Request::Priority::Low);
-		_sendQueue.enqueueRequest(std::move(getListensRequest));
-	}
-
-	std::optional<SendQueue::RequestData>
-	ListensSynchronizer::createValidateTokenRequestData(Database::UserId userId)
-	{
-		Database::Session& session {_db.getTLSSession()};
-
-		const std::optional<UUID> listenBrainzToken {Utils::getListenBrainzToken(session, userId)};
-		if (!listenBrainzToken)
-			return std::nullopt;
-
-		return ::createValidateTokenRequestData(listenBrainzToken->getAsString());
+		Service<Http::IClient>::get()->sendGETRequest(std::move(request));
 	}
 
 	void
