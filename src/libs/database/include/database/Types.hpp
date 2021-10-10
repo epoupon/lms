@@ -105,6 +105,8 @@ namespace Database
 			const T* operator->() const { return _obj.get(); }
 			operator bool() const { return _obj.get(); }
 			bool operator!() const { return !_obj.get(); }
+			bool operator==(const ObjectPtr& other) const { return other._obj == _obj; }
+			bool operator!=(const ObjectPtr& other) const { return other._obj != _obj; }
 
 			auto modify() { return _obj.modify(); }
 			void remove() { _obj.remove(); }

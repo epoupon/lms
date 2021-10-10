@@ -69,8 +69,8 @@ UsersView::refreshView()
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto users = Database::User::getAll(LmsApp->getDbSession());
-	for (const auto& user : users)
+	const Database::User::pointer currentUser {LmsApp->getUser()};
+	for (const Database::User::pointer& user : Database::User::getAll(LmsApp->getDbSession()))
 	{
 		const Database::UserId userId {user->getId()};
 
@@ -86,7 +86,7 @@ UsersView::refreshView()
 		}
 
 		// Don't edit ourself this way
-		if (LmsApp->getUser() == user)
+		if (currentUser == user)
 			continue;
 
 		entry->setCondition("if-edit", true);
