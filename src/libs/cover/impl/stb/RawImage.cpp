@@ -32,7 +32,7 @@
 
 #include "Exception.hpp"
 
-namespace CoverArt::STB
+namespace Cover::STB
 {
 	RawImage::RawImage(const std::byte* encodedData, std::size_t encodedDataSize)
 	{

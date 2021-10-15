@@ -29,7 +29,7 @@
 #include "cover/IEncodedImage.hpp"
 #include "IRawImage.hpp"
 
-namespace CoverArt::STB
+namespace Cover::STB
 {
 	class RawImage : public IRawImage
 	{

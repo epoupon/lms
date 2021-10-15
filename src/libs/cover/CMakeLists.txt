@@ -1,6 +1,6 @@
 
 add_library(lmscover SHARED
-	impl/CoverArtGrabber.cpp
+	impl/CoverService.cpp
 	)
 
 target_include_directories(lmscover INTERFACE

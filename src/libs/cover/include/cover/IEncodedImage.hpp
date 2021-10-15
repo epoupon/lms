@@ -22,7 +22,7 @@
 #include <cstddef>
 #include <string_view>
 
-namespace CoverArt
+namespace Cover
 {
 	using ImageSize = std::size_t;
 
@@ -36,5 +36,5 @@ namespace CoverArt
 			virtual std::string_view getMimeType() const = 0;
 	};
 
-} // namespace CoverArt
+} // namespace Cover
 

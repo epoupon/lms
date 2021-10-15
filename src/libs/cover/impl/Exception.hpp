@@ -21,7 +21,7 @@
 
 #include "utils/Exception.hpp"
 
-namespace CoverArt
+namespace Cover
 {
 	// internal use only
 	class ImageException : public LmsException
@@ -30,5 +30,5 @@ namespace CoverArt
 			using LmsException::LmsException;
 	};
 
-} // namespace CoverArt
+} // namespace Cover
 

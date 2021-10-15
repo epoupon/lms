@@ -24,7 +24,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "cover/ICoverArtGrabber.hpp"
+#include "cover/ICoverService.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -36,7 +36,7 @@
 
 static
 void
-dumpTrackCovers(Database::Session& session, CoverArt::ImageSize width)
+dumpTrackCovers(Database::Session& session, Cover::ImageSize width)
 {
 	std::vector<Database::TrackId> trackIds;
 	{
@@ -47,7 +47,7 @@ dumpTrackCovers(Database::Session& session, CoverArt::ImageSize width)
 	for (const Database::TrackId trackId : trackIds)
 	{
 		std::cout << "Getting cover for track id " << trackId.toString() << std::endl;
-		Service<CoverArt::IGrabber>::get()->getFromTrack(trackId, width);
+		Service<Cover::ICoverService>::get()->getFromTrack(trackId, width);
 	}
 }
 
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 
 		Service<IConfig> config {createConfig(vm["conf"].as<std::string>())};
 		Database::Db db {config->getPath("working-dir") / "lms.db"};
-		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(db, argv[0], vm["default-cover"].as<std::string>())};
+		Service<Cover::ICoverService> coverArtService {Cover::createCoverService(db, argv[0], vm["default-cover"].as<std::string>())};
 
 		coverArtService->setJpegQuality(config->getULong("cover-jpeg-quality", vm["quality"].as<unsigned>()));
 

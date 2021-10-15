@@ -30,12 +30,12 @@ namespace Database
 	class Db;
 }
 
-namespace CoverArt
+namespace Cover
 {
-	class IGrabber
+	class ICoverService
 	{
 		public:
-			virtual ~IGrabber() = default;
+			virtual ~ICoverService() = default;
 
 			virtual std::shared_ptr<IEncodedImage>	getFromTrack(Database::TrackId trackId, ImageSize width) = 0;
 			virtual std::shared_ptr<IEncodedImage>	getFromRelease(Database::ReleaseId releaseId, ImageSize width) = 0;
@@ -45,9 +45,9 @@ namespace CoverArt
 			virtual void setJpegQuality(unsigned quality) = 0; // from 1 to 100
 	};
 
-	std::unique_ptr<IGrabber> createGrabber(Database::Db& db,
-									const std::filesystem::path& execPath,
-									const std::filesystem::path& defaultCoverPath);
+	std::unique_ptr<ICoverService> createCoverService(Database::Db& db,
+										const std::filesystem::path& execPath,
+										const std::filesystem::path& defaultCoverPath);
 
 } // namespace CoverArt
 

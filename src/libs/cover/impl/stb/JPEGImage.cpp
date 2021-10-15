@@ -25,7 +25,7 @@
 #include "RawImage.hpp"
 #include "Exception.hpp"
 
-namespace CoverArt::STB
+namespace Cover::STB
 {
 	JPEGImage::JPEGImage(const RawImage& rawImage, unsigned quality)
 	{

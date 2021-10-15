@@ -23,7 +23,7 @@
 
 #include "cover/IEncodedImage.hpp"
 
-namespace CoverArt::STB
+namespace Cover::STB
 {
 	class RawImage;
 	class JPEGImage : public IEncodedImage

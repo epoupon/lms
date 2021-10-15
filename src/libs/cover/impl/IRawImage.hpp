@@ -23,7 +23,7 @@
 
 #include "cover/IEncodedImage.hpp"
 
-namespace CoverArt
+namespace Cover
 {
 	class IRawImage
 	{

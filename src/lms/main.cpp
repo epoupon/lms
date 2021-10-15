@@ -28,7 +28,7 @@
 #include "auth/IAuthTokenService.hpp"
 #include "auth/IPasswordService.hpp"
 #include "auth/IEnvService.hpp"
-#include "cover/ICoverArtGrabber.hpp"
+#include "cover/ICoverService.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "scanner/IScanner.hpp"
@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
 		Wt::WServer server {argv[0]};
 		server.setServerConfiguration(wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
 
-		IOContextRunner ioContextRunner {ioContext, std::max<unsigned long>(2, std::thread::hardware_concurrency())};
+		IOContextRunner ioContextRunner {ioContext, getThreadCount()};
 
 		// Initializing a connection pool to the database that will be shared along services
 		Database::Db database {config->getPath("working-dir") / "lms.db", getThreadCount()};
@@ -257,7 +257,7 @@ int main(int argc, char* argv[])
 			throw LmsException {"Bad value '" + authenticationBackend + "' for 'authentication-backend'"};
 
 		Service<Http::IClient> httpClient {Http::createClient(ioContext)};
-		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(database, argv[0], server.appRoot() + "/images/unknown-cover.jpg")};
+		Service<Cover::ICoverService> coverService {Cover::createCoverService(database, argv[0], server.appRoot() + "/images/unknown-cover.jpg")};
 		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
 		Service<Scanner::IScanner> scannerService {Scanner::createScanner(database, *recommendationEngineService)};
 
@@ -265,7 +265,7 @@ int main(int argc, char* argv[])
 		{
 			// Flush cover cache even if no changes:
 			// covers may be external files that changed and we don't keep track of them
-			coverArtService->flushCache();
+			coverService->flushCache();
 		});
 
 		Service<Scrobbling::IScrobbling> scrobblingService {Scrobbling::createScrobbling(ioContext, database)};

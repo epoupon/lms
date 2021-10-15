@@ -28,7 +28,7 @@
 
 #include "auth/IPasswordService.hpp"
 #include "auth/IEnvService.hpp"
-#include "cover/ICoverArtGrabber.hpp"
+#include "cover/ICoverService.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -1802,11 +1802,11 @@ handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/,
 	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(256)};
 	size = Utils::clamp(size, std::size_t {32}, std::size_t {1024});
 
-	std::shared_ptr<CoverArt::IEncodedImage> cover;
+	std::shared_ptr<Cover::IEncodedImage> cover;
 	if (trackId)
-		cover = Service<CoverArt::IGrabber>::get()->getFromTrack(*trackId, size);
+		cover = Service<Cover::ICoverService>::get()->getFromTrack(*trackId, size);
 	else if (releaseId)
-		cover = Service<CoverArt::IGrabber>::get()->getFromRelease(*releaseId, size);
+		cover = Service<Cover::ICoverService>::get()->getFromRelease(*releaseId, size);
 
 	response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
 	response.setMimeType(std::string {cover->getMimeType()});

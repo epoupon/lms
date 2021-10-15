@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "CoverArtGrabber.hpp"
+#include "CoverService.hpp"
 
 #include "av/IAudioFile.hpp"
 
@@ -28,10 +28,10 @@
 
 #if LMS_SUPPORT_IMAGE_STB
 #include "stb/RawImage.hpp"
-using RawImage = CoverArt::STB::RawImage;
+using RawImage = Cover::STB::RawImage;
 #elif LMS_SUPPORT_IMAGE_GM
 #include "graphicsmagick/RawImage.hpp"
-using RawImage = CoverArt::GraphicsMagick::RawImage;
+using RawImage = Cover::GraphicsMagick::RawImage;
 #endif
 
 #include "utils/IConfig.hpp"
@@ -77,7 +77,7 @@ namespace
 	}
 }
 
-namespace CoverArt {
+namespace Cover {
 
 static
 bool
@@ -86,13 +86,13 @@ isFileSupported(const std::filesystem::path& file, const std::vector<std::filesy
 	return (std::find(std::cbegin(extensions), std::cend(extensions), file.extension()) != std::cend(extensions));
 }
 
-std::unique_ptr<IGrabber>
-createGrabber(Database::Db& db, const std::filesystem::path& execPath, const std::filesystem::path& defaultCoverPath)
+std::unique_ptr<ICoverService>
+createCoverService(Database::Db& db, const std::filesystem::path& execPath, const std::filesystem::path& defaultCoverPath)
 {
-	return std::make_unique<Grabber>(db, execPath, defaultCoverPath);
+	return std::make_unique<CoverService>(db, execPath, defaultCoverPath);
 }
 
-Grabber::Grabber(Database::Db& db,
+CoverService::CoverService(Database::Db& db,
 		const std::filesystem::path& execPath,
 		const std::filesystem::path& defaultCoverPath)
 	: _db {db}
@@ -124,7 +124,7 @@ Grabber::Grabber(Database::Db& db,
 }
 
 std::unique_ptr<IEncodedImage>
-Grabber::getFromAvMediaFile(const Av::IAudioFile& input, ImageSize width) const
+CoverService::getFromAvMediaFile(const Av::IAudioFile& input, ImageSize width) const
 {
 	std::unique_ptr<IEncodedImage> image;
 
@@ -149,7 +149,7 @@ Grabber::getFromAvMediaFile(const Av::IAudioFile& input, ImageSize width) const
 }
 
 std::unique_ptr<IEncodedImage>
-Grabber::getFromCoverFile(const std::filesystem::path& p, ImageSize width) const
+CoverService::getFromCoverFile(const std::filesystem::path& p, ImageSize width) const
 {
 	std::unique_ptr<IEncodedImage> image;
 
@@ -168,7 +168,7 @@ Grabber::getFromCoverFile(const std::filesystem::path& p, ImageSize width) const
 }
 
 std::shared_ptr<IEncodedImage>
-Grabber::getDefault(ImageSize width)
+CoverService::getDefault(ImageSize width)
 {
 	{
 		std::shared_lock lock {_cacheMutex};
@@ -192,7 +192,7 @@ Grabber::getDefault(ImageSize width)
 }
 
 std::unique_ptr<IEncodedImage>
-Grabber::getFromDirectory(const std::filesystem::path& directory, ImageSize width) const
+CoverService::getFromDirectory(const std::filesystem::path& directory, ImageSize width) const
 {
 	const std::multimap<std::string, std::filesystem::path> coverPaths {getCoverPaths(directory)};
 
@@ -231,7 +231,7 @@ Grabber::getFromDirectory(const std::filesystem::path& directory, ImageSize widt
 }
 
 std::unique_ptr<IEncodedImage>
-Grabber::getFromSameNamedFile(const std::filesystem::path& filePath, ImageSize width) const
+CoverService::getFromSameNamedFile(const std::filesystem::path& filePath, ImageSize width) const
 {
 	std::unique_ptr<IEncodedImage> res;
 
@@ -252,7 +252,7 @@ Grabber::getFromSameNamedFile(const std::filesystem::path& filePath, ImageSize w
 }
 
 bool
-Grabber::checkCoverFile(const std::filesystem::path& filePath) const
+CoverService::checkCoverFile(const std::filesystem::path& filePath) const
 {
 	std::error_code ec;
 
@@ -275,7 +275,7 @@ Grabber::checkCoverFile(const std::filesystem::path& filePath) const
 }
 
 std::multimap<std::string, std::filesystem::path>
-Grabber::getCoverPaths(const std::filesystem::path& directoryPath) const
+CoverService::getCoverPaths(const std::filesystem::path& directoryPath) const
 {
 	std::multimap<std::string, std::filesystem::path> res;
 	std::error_code ec;
@@ -296,7 +296,7 @@ Grabber::getCoverPaths(const std::filesystem::path& directoryPath) const
 }
 
 std::unique_ptr<IEncodedImage>
-Grabber::getFromTrack(const std::filesystem::path& p, ImageSize width) const
+CoverService::getFromTrack(const std::filesystem::path& p, ImageSize width) const
 {
 	std::unique_ptr<IEncodedImage> image;
 
@@ -313,13 +313,13 @@ Grabber::getFromTrack(const std::filesystem::path& p, ImageSize width) const
 }
 
 std::shared_ptr<IEncodedImage>
-Grabber::getFromTrack(Database::TrackId trackId, ImageSize width)
+CoverService::getFromTrack(Database::TrackId trackId, ImageSize width)
 {
 	return getFromTrack(_db.getTLSSession(), trackId, width, true /* allow release fallback*/);
 }
 
 std::shared_ptr<IEncodedImage>
-Grabber::getFromTrack(Database::Session& dbSession, Database::TrackId trackId, ImageSize width, bool allowReleaseFallback)
+CoverService::getFromTrack(Database::Session& dbSession, Database::TrackId trackId, ImageSize width, bool allowReleaseFallback)
 {
 	using namespace Database;
 
@@ -357,7 +357,7 @@ Grabber::getFromTrack(Database::Session& dbSession, Database::TrackId trackId, I
 }
 
 std::shared_ptr<IEncodedImage>
-Grabber::getFromRelease(Database::ReleaseId releaseId, ImageSize width)
+CoverService::getFromRelease(Database::ReleaseId releaseId, ImageSize width)
 {
 	const CacheEntryDesc cacheEntryDesc {releaseId, width};
 
@@ -409,7 +409,7 @@ Grabber::getFromRelease(Database::ReleaseId releaseId, ImageSize width)
 }
 
 void
-Grabber::flushCache()
+CoverService::flushCache()
 {
 	std::unique_lock lock {_cacheMutex};
 
@@ -421,7 +421,7 @@ Grabber::flushCache()
 }
 
 void
-Grabber::setJpegQuality(unsigned quality)
+CoverService::setJpegQuality(unsigned quality)
 {
 	_jpegQuality = Utils::clamp<unsigned>(quality, 1, 100);
 
@@ -429,7 +429,7 @@ Grabber::setJpegQuality(unsigned quality)
 }
 
 void
-Grabber::saveToCache(const CacheEntryDesc& entryDesc, std::shared_ptr<IEncodedImage> image)
+CoverService::saveToCache(const CacheEntryDesc& entryDesc, std::shared_ptr<IEncodedImage> image)
 {
 	std::unique_lock lock {_cacheMutex};
 
@@ -445,7 +445,7 @@ Grabber::saveToCache(const CacheEntryDesc& entryDesc, std::shared_ptr<IEncodedIm
 }
 
 std::shared_ptr<IEncodedImage>
-Grabber::loadFromCache(const CacheEntryDesc& entryDesc)
+CoverService::loadFromCache(const CacheEntryDesc& entryDesc)
 {
 	std::shared_lock lock {_cacheMutex};
 
@@ -460,5 +460,5 @@ Grabber::loadFromCache(const CacheEntryDesc& entryDesc)
 	return it->second;
 }
 
-} // namespace CoverArt
+} // namespace Cover
 

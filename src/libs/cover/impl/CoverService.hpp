@@ -29,7 +29,7 @@
 #include <variant>
 #include <vector>
 
-#include "cover/ICoverArtGrabber.hpp"
+#include "cover/ICoverService.hpp"
 #include "cover/IEncodedImage.hpp"
 #include "database/Types.hpp"
 
@@ -43,7 +43,7 @@ namespace Av
 	class IAudioFile;
 }
 
-namespace CoverArt
+namespace Cover
 {
 	struct CacheEntryDesc
 	{
@@ -57,16 +57,16 @@ namespace CoverArt
 		}
 	};
 
-} // ns CoverArt
+} // ns Cover
 
 namespace std
 {
 
 	template<>
-	class hash<CoverArt::CacheEntryDesc>
+	class hash<Cover::CacheEntryDesc>
 	{
 		public:
-			size_t operator()(const CoverArt::CacheEntryDesc& e) const
+			size_t operator()(const Cover::CacheEntryDesc& e) const
 			{
 				size_t h {};
 				std::visit([&](auto id)
@@ -81,19 +81,19 @@ namespace std
 
 } // ns std
 
-namespace CoverArt
+namespace Cover
 {
-	class Grabber : public IGrabber
+	class CoverService : public ICoverService
 	{
 		public:
-			Grabber(Database::Db& db,
+			CoverService(Database::Db& db,
 					const std::filesystem::path& execPath,
 					const std::filesystem::path& defaultCoverPath);
 
-			Grabber(const Grabber&) = delete;
-			Grabber& operator=(const Grabber&) = delete;
-			Grabber(Grabber&&) = delete;
-			Grabber& operator=(Grabber&&) = delete;
+			CoverService(const CoverService&) = delete;
+			CoverService& operator=(const CoverService&) = delete;
+			CoverService(CoverService&&) = delete;
+			CoverService& operator=(CoverService&&) = delete;
 
 		private:
 			std::shared_ptr<IEncodedImage>	getFromTrack(Database::TrackId trackId, ImageSize width) override;
@@ -133,5 +133,5 @@ namespace CoverArt
 			unsigned _jpegQuality;
 	};
 
-} // namespace CoverArt
+} // namespace Cover
 
