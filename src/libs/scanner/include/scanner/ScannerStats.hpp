@@ -24,7 +24,7 @@
 #include <filesystem>
 #include <vector>
 
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 
 namespace Scanner {
 

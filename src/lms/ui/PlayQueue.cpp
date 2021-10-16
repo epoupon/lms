@@ -22,12 +22,12 @@
 #include <Wt/WPopupMenu.h>
 #include <Wt/WText.h>
 
-#include "database/Cluster.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackList.hpp"
-#include "database/User.hpp"
+#include "lmscore/database/Cluster.hpp"
+#include "lmscore/database/Release.hpp"
+#include "lmscore/database/Session.hpp"
+#include "lmscore/database/Track.hpp"
+#include "lmscore/database/TrackList.hpp"
+#include "lmscore/database/User.hpp"
 #include "recommendation/IEngine.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"

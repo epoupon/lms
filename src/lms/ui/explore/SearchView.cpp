@@ -25,10 +25,10 @@
 #include <Wt/WImage.h>
 #include <Wt/WStackedWidget.h>
 
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "lmscore/database/Artist.hpp"
+#include "lmscore/database/Release.hpp"
+#include "lmscore/database/Session.hpp"
+#include "lmscore/database/Track.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
 #include "common/LoadingIndicator.hpp"

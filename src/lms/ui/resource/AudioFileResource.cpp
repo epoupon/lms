@@ -23,8 +23,8 @@
 #include <Wt/Http/Response.h>
 
 #include "av/IAudioFile.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "lmscore/database/Session.hpp"
+#include "lmscore/database/Track.hpp"
 #include "utils/FileResourceHandlerCreator.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"

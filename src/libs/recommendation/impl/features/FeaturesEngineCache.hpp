@@ -23,7 +23,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 #include "som/Network.hpp"
 
 namespace Recommendation {

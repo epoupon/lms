@@ -7,6 +7,20 @@ add_library(lmscore SHARED
 	impl/auth/PasswordServiceBase.cpp
 	impl/auth/http-headers/HttpHeadersEnvService.cpp
 	impl/auth/internal/InternalPasswordService.cpp
+	impl/database/Artist.cpp
+	impl/database/Cluster.cpp
+	impl/database/Db.cpp
+	impl/database/TrackArtistLink.cpp
+	impl/database/TrackFeatures.cpp
+	impl/database/TrackList.cpp
+	impl/database/Release.cpp
+	impl/database/ScanSettings.cpp
+	impl/database/Session.cpp
+	impl/database/SqlQuery.cpp
+	impl/database/Track.cpp
+	impl/database/TrackBookmark.cpp
+	impl/database/User.cpp
+	impl/database/Utils.cpp
 	impl/cover/CoverService.cpp
 	)
 
@@ -21,6 +35,7 @@ target_include_directories(lmscore PRIVATE
 
 target_link_libraries(lmscore PRIVATE
 	lmsav
+	Wt::DboSqlite3
 	)
 
 target_link_libraries(lmscore PUBLIC
@@ -29,6 +44,7 @@ target_link_libraries(lmscore PUBLIC
 	lmsutils
 	std::filesystem
 	Wt::Wt
+	Wt::Dbo
 	)
 
 if (USE_PAM)
@@ -41,3 +57,6 @@ endif (USE_PAM)
 
 install(TARGETS lmscore DESTINATION lib)
 
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()

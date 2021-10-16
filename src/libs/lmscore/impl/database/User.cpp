@@ -17,13 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/User.hpp"
+#include "lmscore/database/User.hpp"
 
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackList.hpp"
+#include "lmscore/database/Artist.hpp"
+#include "lmscore/database/Release.hpp"
+#include "lmscore/database/Session.hpp"
+#include "lmscore/database/Track.hpp"
+#include "lmscore/database/TrackList.hpp"
 #include "utils/Logger.hpp"
 #include "StringViewTraits.hpp"
 #include "Traits.hpp"

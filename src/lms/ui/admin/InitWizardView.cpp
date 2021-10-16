@@ -25,8 +25,8 @@
 #include <Wt/WPushButton.h>
 
 #include "lmscore/auth/IPasswordService.hpp"
-#include "database/Session.hpp"
-#include "database/User.hpp"
+#include "lmscore/database/Session.hpp"
+#include "lmscore/database/User.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"

@@ -27,7 +27,7 @@
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 #include "utils/EnumSet.hpp"
 #include "utils/UUID.hpp"
 

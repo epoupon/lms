@@ -31,7 +31,7 @@
 
 #include "lmscore/cover/ICoverService.hpp"
 #include "image/IEncodedImage.hpp"
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 
 namespace Database
 {

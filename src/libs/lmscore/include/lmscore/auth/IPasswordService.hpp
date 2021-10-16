@@ -26,7 +26,7 @@
 #include <Wt/Dbo/ptr.h>
 
 #include "lmscore/auth/Types.hpp"
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 
 namespace Database
 {

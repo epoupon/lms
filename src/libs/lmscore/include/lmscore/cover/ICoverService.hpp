@@ -22,7 +22,7 @@
 #include <filesystem>
 #include <memory>
 
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 #include "image/IEncodedImage.hpp"
 
 namespace Database

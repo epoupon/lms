@@ -21,9 +21,9 @@
 
 #include <Wt/WPopupMenu.h>
 
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "lmscore/database/Session.hpp"
+#include "lmscore/database/Track.hpp"
+#include "lmscore/database/User.hpp"
 #include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"
 

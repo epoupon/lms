@@ -24,9 +24,9 @@
 #include <Wt/WImage.h>
 #include <Wt/WText.h>
 
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
-#include "database/Track.hpp"
+#include "lmscore/database/Artist.hpp"
+#include "lmscore/database/Release.hpp"
+#include "lmscore/database/Track.hpp"
 #include "resource/DownloadResource.hpp"
 #include "resource/CoverResource.hpp"
 #include "LmsApplication.hpp"

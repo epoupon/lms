@@ -34,7 +34,7 @@
 #include "utils/EnumSet.hpp"
 #include "utils/UUID.hpp"
 
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 
 namespace Database {
 

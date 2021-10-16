@@ -17,13 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/Db.hpp"
+#include "lmscore/database/Db.hpp"
 
 #include <Wt/Dbo/FixedSqlConnectionPool.h>
 #include <Wt/Dbo/backend/Sqlite3.h>
 
-#include "database/Session.hpp"
-#include "database/User.hpp"
+#include "lmscore/database/Session.hpp"
+#include "lmscore/database/User.hpp"
 #include "utils/Logger.hpp"
 
 namespace Database {

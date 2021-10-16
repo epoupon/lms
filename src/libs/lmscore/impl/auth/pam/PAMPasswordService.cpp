@@ -27,7 +27,6 @@
 #include <security/pam_appl.h>
 
 #include "lmscore/auth/Types.hpp"
-#include "database/Session.hpp"
 #include "utils/Logger.hpp"
 
 namespace Auth

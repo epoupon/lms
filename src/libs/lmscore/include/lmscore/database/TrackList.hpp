@@ -21,13 +21,12 @@
 
 #include <optional>
 #include <string>
-#include <set>
 #include <vector>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 
 namespace Database {
 

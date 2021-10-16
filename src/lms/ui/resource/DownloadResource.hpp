@@ -22,7 +22,7 @@
 #include <memory>
 #include <Wt/WResource.h>
 
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 #include "utils/Zipper.hpp"
 
 namespace UserInterface {

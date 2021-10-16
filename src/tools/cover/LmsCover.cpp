@@ -25,10 +25,10 @@
 #include <boost/program_options.hpp>
 
 #include "lmscore/cover/ICoverService.hpp"
-#include "database/Db.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "lmscore/database/Db.hpp"
+#include "lmscore/database/Release.hpp"
+#include "lmscore/database/Session.hpp"
+#include "lmscore/database/Track.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"

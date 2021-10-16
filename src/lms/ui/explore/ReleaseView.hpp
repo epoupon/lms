@@ -22,7 +22,7 @@
 #include <unordered_set>
 #include <Wt/WTemplate.h>
 
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 #include "PlayQueueAction.hpp"
 
 namespace Database

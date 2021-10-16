@@ -22,7 +22,7 @@
 #include <vector>
 #include <Wt/WSignal.h>
 
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 
 namespace UserInterface
 {

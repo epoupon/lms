@@ -19,11 +19,11 @@
 
 #include "InternalScrobbler.hpp"
 
-#include "database/Db.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackList.hpp"
-#include "database/User.hpp"
+#include "lmscore/database/Db.hpp"
+#include "lmscore/database/Session.hpp"
+#include "lmscore/database/Track.hpp"
+#include "lmscore/database/TrackList.hpp"
+#include "lmscore/database/User.hpp"
 #include "utils/Logger.hpp"
 
 namespace Scrobbling

@@ -4,7 +4,7 @@ add_executable(lms-recommendation
 	)
 
 target_link_libraries(lms-recommendation PRIVATE
-	lmsdatabase
+	lmscore
 	lmsrecommendation
 	Boost::program_options
 	)

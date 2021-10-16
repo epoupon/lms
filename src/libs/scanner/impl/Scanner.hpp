@@ -30,9 +30,9 @@
 
 #include <boost/asio/system_timer.hpp>
 
-#include "database/Types.hpp"
-#include "database/ScanSettings.hpp"
-#include "database/Session.hpp"
+#include "lmscore/database/Types.hpp"
+#include "lmscore/database/ScanSettings.hpp"
+#include "lmscore/database/Session.hpp"
 #include "metadata/IParser.hpp"
 #include "scanner/IScanner.hpp"
 #include "utils/Path.hpp"

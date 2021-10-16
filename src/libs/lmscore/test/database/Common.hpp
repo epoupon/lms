@@ -24,17 +24,17 @@
 
 #include <gtest/gtest.h>
 
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Db.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackArtistLink.hpp"
-#include "database/TrackBookmark.hpp"
-#include "database/TrackList.hpp"
-#include "database/Types.hpp"
-#include "database/User.hpp"
+#include "lmscore/database/Artist.hpp"
+#include "lmscore/database/Cluster.hpp"
+#include "lmscore/database/Db.hpp"
+#include "lmscore/database/Release.hpp"
+#include "lmscore/database/Session.hpp"
+#include "lmscore/database/Track.hpp"
+#include "lmscore/database/TrackArtistLink.hpp"
+#include "lmscore/database/TrackBookmark.hpp"
+#include "lmscore/database/TrackList.hpp"
+#include "lmscore/database/Types.hpp"
+#include "lmscore/database/User.hpp"
 
 template <typename T>
 class ScopedEntity

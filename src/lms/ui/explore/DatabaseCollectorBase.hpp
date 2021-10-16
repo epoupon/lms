@@ -25,7 +25,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 
 namespace UserInterface
 {

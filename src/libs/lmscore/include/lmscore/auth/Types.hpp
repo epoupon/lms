@@ -20,7 +20,7 @@
 #pragma once
 
 #include <string>
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 #include "utils/Exception.hpp"
 
 namespace Auth

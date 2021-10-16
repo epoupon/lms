@@ -23,7 +23,7 @@
 
 #include <Wt/Dbo/Dbo.h>
 
-#include "database/Types.hpp"
+#include "lmscore/database/Types.hpp"
 
 namespace Database {
 
