@@ -19,23 +19,21 @@
 
 #pragma once
 
-#include <vector>
+#include <memory>
 
-#include "cover/IEncodedImage.hpp"
+#include "image/IEncodedImage.hpp"
 
-namespace Cover::STB
+namespace Image
 {
-	class RawImage;
-	class JPEGImage : public IEncodedImage
+	class IRawImage
 	{
 		public:
-			JPEGImage(const RawImage& rawImage, unsigned quality);
-
-		private:
-			const std::byte* getData() const override;
-			std::size_t getDataSize() const override;
-			std::string_view getMimeType() const override { return "image/jpeg"; }
-
-			std::vector<std::byte> _data;
+			virtual ~IRawImage() = default;
+			virtual void resize(ImageSize width) = 0;
+			virtual std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const = 0;
 	};
+
+	std::unique_ptr<IRawImage> decodeImage(const std::byte* encodedData, std::size_t encodedDataSize);
+	std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path);
 }
+

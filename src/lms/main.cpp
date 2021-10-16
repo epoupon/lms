@@ -28,7 +28,7 @@
 #include "auth/IAuthTokenService.hpp"
 #include "auth/IPasswordService.hpp"
 #include "auth/IEnvService.hpp"
-#include "cover/ICoverService.hpp"
+#include "lmscore/services/ICoverService.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "scanner/IScanner.hpp"

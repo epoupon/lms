@@ -19,15 +19,21 @@
 
 #pragma once
 
-#include "utils/Exception.hpp"
+#include <cstddef>
+#include <string_view>
 
-namespace Cover
+namespace Image
 {
-	// internal use only
-	class ImageException : public LmsException
+	using ImageSize = std::size_t;
+
+	class IEncodedImage
 	{
 		public:
-			using LmsException::LmsException;
+			virtual ~IEncodedImage() = default;
+
+			virtual const std::byte* getData() const = 0;
+			virtual std::size_t getDataSize() const = 0;
+			virtual std::string_view getMimeType() const = 0;
 	};
 
 } // namespace Cover

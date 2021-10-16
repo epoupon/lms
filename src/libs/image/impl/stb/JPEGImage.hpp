@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,22 +19,23 @@
 
 #pragma once
 
-#include <cstddef>
-#include <string_view>
+#include <vector>
 
-namespace Cover
+#include "image/IEncodedImage.hpp"
+
+namespace Image::STB
 {
-	using ImageSize = std::size_t;
-
-	class IEncodedImage
+	class RawImage;
+	class JPEGImage : public IEncodedImage
 	{
 		public:
-			virtual ~IEncodedImage() = default;
+			JPEGImage(const RawImage& rawImage, unsigned quality);
 
-			virtual const std::byte* getData() const = 0;
-			virtual std::size_t getDataSize() const = 0;
-			virtual std::string_view getMimeType() const = 0;
+		private:
+			const std::byte* getData() const override;
+			std::size_t getDataSize() const override;
+			std::string_view getMimeType() const override { return "image/jpeg"; }
+
+			std::vector<std::byte> _data;
 	};
-
-} // namespace Cover
-
+}

@@ -51,7 +51,7 @@ target_include_directories(lms PRIVATE
 target_link_libraries(lms PRIVATE
 	lmsav
 	lmsauth
-	lmscover
+	lmscore
 	lmsdatabase
 	lmsrecommendation
 	lmsscanner

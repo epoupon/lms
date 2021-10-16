@@ -22,10 +22,10 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
 
+#include "image/Exception.hpp"
 #include "RawImage.hpp"
-#include "Exception.hpp"
 
-namespace Cover::STB
+namespace Image::STB
 {
 	JPEGImage::JPEGImage(const RawImage& rawImage, unsigned quality)
 	{

@@ -29,8 +29,8 @@
 #include <variant>
 #include <vector>
 
-#include "cover/ICoverService.hpp"
-#include "cover/IEncodedImage.hpp"
+#include "lmscore/services/ICoverService.hpp"
+#include "image/IEncodedImage.hpp"
 #include "database/Types.hpp"
 
 namespace Database
@@ -96,34 +96,34 @@ namespace Cover
 			CoverService& operator=(CoverService&&) = delete;
 
 		private:
-			std::shared_ptr<IEncodedImage>	getFromTrack(Database::TrackId trackId, ImageSize width) override;
-			std::shared_ptr<IEncodedImage>	getFromRelease(Database::ReleaseId releaseId, ImageSize width) override;
+			std::shared_ptr<Image::IEncodedImage>	getFromTrack(Database::TrackId trackId, Image::ImageSize width) override;
+			std::shared_ptr<Image::IEncodedImage>	getFromRelease(Database::ReleaseId releaseId, Image::ImageSize width) override;
 			void							flushCache() override;
 			void							setJpegQuality(unsigned quality) override;
 
-			std::shared_ptr<IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::TrackId trackId, ImageSize width, bool allowReleaseFallback);
-			std::unique_ptr<IEncodedImage>	getFromAvMediaFile(const Av::IAudioFile& input, ImageSize width) const;
-			std::unique_ptr<IEncodedImage>	getFromCoverFile(const std::filesystem::path& p, ImageSize width) const;
+			std::shared_ptr<Image::IEncodedImage>	getFromTrack(Database::Session& dbSession, Database::TrackId trackId, Image::ImageSize width, bool allowReleaseFallback);
+			std::unique_ptr<Image::IEncodedImage>	getFromAvMediaFile(const Av::IAudioFile& input, Image::ImageSize width) const;
+			std::unique_ptr<Image::IEncodedImage>	getFromCoverFile(const std::filesystem::path& p, Image::ImageSize width) const;
 
-			std::unique_ptr<IEncodedImage>	getFromTrack(const std::filesystem::path& path, ImageSize width) const;
+			std::unique_ptr<Image::IEncodedImage>	getFromTrack(const std::filesystem::path& path, Image::ImageSize width) const;
 			std::multimap<std::string, std::filesystem::path>	getCoverPaths(const std::filesystem::path& directoryPath) const;
-			std::unique_ptr<IEncodedImage>	getFromDirectory(const std::filesystem::path& directory, ImageSize width) const;
-			std::unique_ptr<IEncodedImage>	getFromSameNamedFile(const std::filesystem::path& filePath, ImageSize width) const;
-			std::shared_ptr<IEncodedImage>	getDefault(ImageSize width);
+			std::unique_ptr<Image::IEncodedImage>	getFromDirectory(const std::filesystem::path& directory, Image::ImageSize width) const;
+			std::unique_ptr<Image::IEncodedImage>	getFromSameNamedFile(const std::filesystem::path& filePath, Image::ImageSize width) const;
+			std::shared_ptr<Image::IEncodedImage>	getDefault(Image::ImageSize width);
 
 			bool							checkCoverFile(const std::filesystem::path& directoryPath) const;
 
 			Database::Db&				_db;
 
 			std::shared_mutex _cacheMutex;
-			std::unordered_map<CacheEntryDesc, std::shared_ptr<IEncodedImage>> _cache;
-			std::unordered_map<ImageSize, std::shared_ptr<IEncodedImage>> _defaultCoverCache;
+			std::unordered_map<CacheEntryDesc, std::shared_ptr<Image::IEncodedImage>> _cache;
+			std::unordered_map<Image::ImageSize, std::shared_ptr<Image::IEncodedImage>> _defaultCoverCache;
 			std::atomic<std::size_t>	_cacheMisses {};
 			std::atomic<std::size_t>	_cacheHits {};
 			std::size_t					_cacheSize {};
 
-			void saveToCache(const CacheEntryDesc& entryDesc, std::shared_ptr<IEncodedImage> image);
-			std::shared_ptr<IEncodedImage> loadFromCache(const CacheEntryDesc& entryDesc);
+			void saveToCache(const CacheEntryDesc& entryDesc, std::shared_ptr<Image::IEncodedImage> image);
+			std::shared_ptr<Image::IEncodedImage> loadFromCache(const CacheEntryDesc& entryDesc);
 
 			const std::filesystem::path _defaultCoverPath;
 			const std::size_t _maxCacheSize;

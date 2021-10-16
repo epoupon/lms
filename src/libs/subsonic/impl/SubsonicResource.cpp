@@ -28,7 +28,7 @@
 
 #include "auth/IPasswordService.hpp"
 #include "auth/IEnvService.hpp"
-#include "cover/ICoverService.hpp"
+#include "lmscore/services/ICoverService.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -1802,7 +1802,7 @@ handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/,
 	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(256)};
 	size = Utils::clamp(size, std::size_t {32}, std::size_t {1024});
 
-	std::shared_ptr<Cover::IEncodedImage> cover;
+	std::shared_ptr<Image::IEncodedImage> cover;
 	if (trackId)
 		cover = Service<Cover::ICoverService>::get()->getFromTrack(*trackId, size);
 	else if (releaseId)

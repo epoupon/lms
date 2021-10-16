@@ -25,7 +25,16 @@
 #include "JPEGImage.hpp"
 #include "Exception.hpp"
 
-namespace CoverArt::GraphicsMagick {
+namespace Image::GraphicsMagick
+{
+
+	std::unique_ptr<IRawImage> decodeImage(const std::byte* encodedData, std::size_t encodedDataSize)
+	{
+		return std::make_unique<RawImage>(encodedData, encodedDataSize);
+	}
+
+	std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path)
+	{
 
 void
 init(const std::filesystem::path& path)
@@ -116,5 +125,5 @@ RawImage::getMagickImage() const
 	return _image;
 }
 
-} // namespace CoverArt::GraphicsMagick
+} // namespace Image::GraphicsMagick
 

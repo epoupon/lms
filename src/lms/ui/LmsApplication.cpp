@@ -30,7 +30,7 @@
 
 #include "auth/IEnvService.hpp"
 #include "auth/IPasswordService.hpp"
-#include "cover/ICoverService.hpp"
+#include "lmscore/services/ICoverService.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"

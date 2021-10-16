@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,18 +19,16 @@
 
 #pragma once
 
-#include <memory>
+#include "utils/Exception.hpp"
 
-#include "cover/IEncodedImage.hpp"
-
-namespace Cover
+namespace Image
 {
-	class IRawImage
+	// internal use only
+	class ImageException : public LmsException
 	{
 		public:
-			virtual ~IRawImage() = default;
-			virtual void resize(ImageSize width) = 0;
-			virtual std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const = 0;
+			using LmsException::LmsException;
 	};
-}
+
+} // namespace Cover
 

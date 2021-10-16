@@ -26,10 +26,10 @@
 #include <cstddef>
 #include <filesystem>
 
-#include "cover/IEncodedImage.hpp"
-#include "IRawImage.hpp"
+#include "image/IEncodedImage.hpp"
+#include "image/IRawImage.hpp"
 
-namespace Cover::STB
+namespace Image::STB
 {
 	class RawImage : public IRawImage
 	{

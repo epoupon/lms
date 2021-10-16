@@ -22,7 +22,7 @@
 #include <Wt/WApplication.h>
 #include <Wt/Http/Response.h>
 
-#include "cover/ICoverService.hpp"
+#include "lmscore/services/ICoverService.hpp"
 #include "database/Track.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
@@ -83,7 +83,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		return;
 	}
 
-	std::shared_ptr<Cover::IEncodedImage> cover;
+	std::shared_ptr<Image::IEncodedImage> cover;
 
 	if (trackIdStr)
 	{

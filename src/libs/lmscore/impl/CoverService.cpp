@@ -26,19 +26,12 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 
-#if LMS_SUPPORT_IMAGE_STB
-#include "stb/RawImage.hpp"
-using RawImage = Cover::STB::RawImage;
-#elif LMS_SUPPORT_IMAGE_GM
-#include "graphicsmagick/RawImage.hpp"
-using RawImage = Cover::GraphicsMagick::RawImage;
-#endif
-
+#include "image/Exception.hpp"
+#include "image/IRawImage.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Utils.hpp"
-#include "Exception.hpp"
 
 namespace
 {
@@ -79,6 +72,8 @@ namespace
 
 namespace Cover {
 
+using namespace Image;
+
 static
 bool
 isFileSupported(const std::filesystem::path& file, const std::vector<std::filesystem::path>& extensions)
@@ -117,7 +112,7 @@ CoverService::CoverService(Database::Db& db,
 	{
 		getDefault(512);
 	}
-	catch (const ImageException& e)
+	catch (const Image::ImageException& e)
 	{
 		throw LmsException("Cannot read default cover file '" + _defaultCoverPath.string() + "': " + e.what());
 	}
@@ -135,11 +130,11 @@ CoverService::getFromAvMediaFile(const Av::IAudioFile& input, ImageSize width) c
 
 		try
 		{
-			RawImage rawImage {picture.data, picture.dataSize};
-			rawImage.resize(width);
-			image = rawImage.encodeToJPEG(_jpegQuality);
+			std::unique_ptr<IRawImage> rawImage {decodeImage(picture.data, picture.dataSize)};
+			rawImage->resize(width);
+			image = rawImage->encodeToJPEG(_jpegQuality);
 		}
-		catch (const ImageException& e)
+		catch (const Image::ImageException& e)
 		{
 			LMS_LOG(COVER, ERROR) << "Cannot read embedded cover: " << e.what();
 		}
@@ -155,9 +150,9 @@ CoverService::getFromCoverFile(const std::filesystem::path& p, ImageSize width) 
 
 	try
 	{
-		RawImage rawImage {p};
-		rawImage.resize(width);
-		image = rawImage.encodeToJPEG(_jpegQuality);
+		std::unique_ptr<IRawImage> rawImage {decodeImage(p)};
+		rawImage->resize(width);
+		image = rawImage->encodeToJPEG(_jpegQuality);
 	}
 	catch (const ImageException& e)
 	{

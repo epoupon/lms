@@ -24,7 +24,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "cover/ICoverService.hpp"
+#include "lmscore/services/ICoverService.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -36,7 +36,7 @@
 
 static
 void
-dumpTrackCovers(Database::Session& session, Cover::ImageSize width)
+dumpTrackCovers(Database::Session& session, Image::ImageSize width)
 {
 	std::vector<Database::TrackId> trackIds;
 	{

@@ -1,8 +1,9 @@
 
 add_subdirectory(auth)
 add_subdirectory(av)
-add_subdirectory(cover)
 add_subdirectory(database)
+add_subdirectory(image)
+add_subdirectory(lmscore)
 add_subdirectory(metadata)
 add_subdirectory(recommendation)
 add_subdirectory(scanner)

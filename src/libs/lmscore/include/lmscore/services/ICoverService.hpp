@@ -23,7 +23,7 @@
 #include <memory>
 
 #include "database/Types.hpp"
-#include "cover/IEncodedImage.hpp"
+#include "image/IEncodedImage.hpp"
 
 namespace Database
 {
@@ -37,8 +37,8 @@ namespace Cover
 		public:
 			virtual ~ICoverService() = default;
 
-			virtual std::shared_ptr<IEncodedImage>	getFromTrack(Database::TrackId trackId, ImageSize width) = 0;
-			virtual std::shared_ptr<IEncodedImage>	getFromRelease(Database::ReleaseId releaseId, ImageSize width) = 0;
+			virtual std::shared_ptr<Image::IEncodedImage>	getFromTrack(Database::TrackId trackId, Image::ImageSize width) = 0;
+			virtual std::shared_ptr<Image::IEncodedImage>	getFromRelease(Database::ReleaseId releaseId, Image::ImageSize width) = 0;
 
 			virtual void flushCache() = 0;
 
