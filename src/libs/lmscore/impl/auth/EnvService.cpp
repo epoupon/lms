@@ -17,24 +17,18 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "auth/IEnvService.hpp"
-#include "AuthServiceBase.hpp"
+#include "lmscore/auth/IEnvService.hpp"
+#include "lmscore/auth/Types.hpp"
+#include "http-headers/HttpHeadersEnvService.hpp"
 
 namespace Auth
 {
-	class HttpHeadersEnvService : public IEnvService, public AuthServiceBase
+	std::unique_ptr<IEnvService>
+	createEnvService(std::string_view backendName, Database::Db& db)
 	{
-		public:
-			HttpHeadersEnvService(Database::Db& db);
+		if (backendName == "http-headers")
+			return std::make_unique<HttpHeadersEnvService>(db);
 
-		private:
-			CheckResult	processEnv(const Wt::WEnvironment& env) override;
-			CheckResult	processRequest(const Wt::Http::Request& request) override;
-
-			std::string _fieldName;
-	};
-
-} // namespace Auth
-
+		throw Exception {"Authentication backend '" + std::string {backendName} + "' is not supported!"};
+	}
+}

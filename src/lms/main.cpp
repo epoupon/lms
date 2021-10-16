@@ -25,10 +25,10 @@
 #include <Wt/WServer.h>
 #include <Wt/WApplication.h>
 
-#include "auth/IAuthTokenService.hpp"
-#include "auth/IPasswordService.hpp"
-#include "auth/IEnvService.hpp"
-#include "lmscore/services/ICoverService.hpp"
+#include "lmscore/auth/IAuthTokenService.hpp"
+#include "lmscore/auth/IPasswordService.hpp"
+#include "lmscore/auth/IEnvService.hpp"
+#include "lmscore/cover/ICoverService.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "scanner/IScanner.hpp"

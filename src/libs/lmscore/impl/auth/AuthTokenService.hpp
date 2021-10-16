@@ -21,7 +21,7 @@
 
 #include <shared_mutex>
 
-#include "auth/IAuthTokenService.hpp"
+#include "lmscore/auth/IAuthTokenService.hpp"
 #include "AuthServiceBase.hpp"
 #include "LoginThrottler.hpp"
 

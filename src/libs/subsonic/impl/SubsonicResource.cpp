@@ -26,9 +26,9 @@
 
 #include <Wt/WLocalDateTime.h>
 
-#include "auth/IPasswordService.hpp"
-#include "auth/IEnvService.hpp"
-#include "lmscore/services/ICoverService.hpp"
+#include "lmscore/auth/IPasswordService.hpp"
+#include "lmscore/auth/IEnvService.hpp"
+#include "lmscore/cover/ICoverService.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"

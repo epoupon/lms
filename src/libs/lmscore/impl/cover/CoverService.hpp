@@ -29,7 +29,7 @@
 #include <variant>
 #include <vector>
 
-#include "lmscore/services/ICoverService.hpp"
+#include "lmscore/cover/ICoverService.hpp"
 #include "image/IEncodedImage.hpp"
 #include "database/Types.hpp"
 

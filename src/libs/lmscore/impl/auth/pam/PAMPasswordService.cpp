@@ -26,7 +26,7 @@
 #include <cstring>
 #include <security/pam_appl.h>
 
-#include "auth/Types.hpp"
+#include "lmscore/auth/Types.hpp"
 #include "database/Session.hpp"
 #include "utils/Logger.hpp"
 
