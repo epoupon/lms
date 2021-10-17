@@ -25,7 +25,7 @@
 #include <Wt/WComboBox.h>
 #include <Wt/WTemplate.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 #include "ArtistCollector.hpp"
 
 namespace UserInterface

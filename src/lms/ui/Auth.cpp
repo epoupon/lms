@@ -30,8 +30,8 @@
 
 #include "lmscore/auth/IAuthTokenService.hpp"
 #include "lmscore/auth/IPasswordService.hpp"
-#include "lmscore/database/Session.hpp"
-#include "lmscore/database/User.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 

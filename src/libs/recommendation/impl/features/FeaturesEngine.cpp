@@ -21,14 +21,14 @@
 
 #include <numeric>
 
-#include "lmscore/database/Artist.hpp"
-#include "lmscore/database/Db.hpp"
-#include "lmscore/database/Release.hpp"
-#include "lmscore/database/Session.hpp"
-#include "lmscore/database/Track.hpp"
-#include "lmscore/database/TrackArtistLink.hpp"
-#include "lmscore/database/TrackFeatures.hpp"
-#include "lmscore/database/TrackList.hpp"
+#include "database/Artist.hpp"
+#include "database/Db.hpp"
+#include "database/Release.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
+#include "database/TrackArtistLink.hpp"
+#include "database/TrackFeatures.hpp"
+#include "database/TrackList.hpp"
 #include "som/DataNormalizer.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"

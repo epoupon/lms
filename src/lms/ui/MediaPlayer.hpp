@@ -27,7 +27,7 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 
 namespace UserInterface {
 

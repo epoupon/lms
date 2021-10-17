@@ -23,7 +23,7 @@
 
 #include <Wt/Dbo/Dbo.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 #include "utils/EnumSet.hpp"
 
 namespace Database

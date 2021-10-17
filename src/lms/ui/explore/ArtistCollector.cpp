@@ -19,9 +19,9 @@
 
 #include "ArtistCollector.hpp"
 
-#include "lmscore/database/Artist.hpp"
-#include "lmscore/database/User.hpp"
-#include "lmscore/database/TrackList.hpp"
+#include "database/Artist.hpp"
+#include "database/User.hpp"
+#include "database/TrackList.hpp"
 #include "scrobbling/IScrobbling.hpp"
 #include "utils/Service.hpp"
 #include "Filters.hpp"

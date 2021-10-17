@@ -24,7 +24,7 @@
 #include <Wt/WContainerWidget.h>
 #include <Wt/WTemplate.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 #include "PlayQueueAction.hpp"
 #include "ReleaseCollector.hpp"
 

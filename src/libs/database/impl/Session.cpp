@@ -17,22 +17,27 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "lmscore/database/Session.hpp"
+#include "database/Session.hpp"
+
+#include <map>
+#include <mutex>
+#include <thread>
+#include <string_view>
 
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
-#include "lmscore/database/Artist.hpp"
-#include "lmscore/database/Cluster.hpp"
-#include "lmscore/database/Db.hpp"
-#include "lmscore/database/Release.hpp"
-#include "lmscore/database/ScanSettings.hpp"
-#include "lmscore/database/Track.hpp"
-#include "lmscore/database/TrackBookmark.hpp"
-#include "lmscore/database/TrackArtistLink.hpp"
-#include "lmscore/database/TrackList.hpp"
-#include "lmscore/database/TrackFeatures.hpp"
-#include "lmscore/database/User.hpp"
+#include "database/Artist.hpp"
+#include "database/Cluster.hpp"
+#include "database/Db.hpp"
+#include "database/Release.hpp"
+#include "database/ScanSettings.hpp"
+#include "database/Track.hpp"
+#include "database/TrackBookmark.hpp"
+#include "database/TrackArtistLink.hpp"
+#include "database/TrackList.hpp"
+#include "database/TrackFeatures.hpp"
+#include "database/User.hpp"
 
 namespace Database
 {

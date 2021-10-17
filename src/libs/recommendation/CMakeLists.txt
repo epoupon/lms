@@ -17,7 +17,7 @@ target_include_directories(lmsrecommendation PRIVATE
 	)
 
 target_link_libraries(lmsrecommendation PRIVATE
-	lmscore
+	lmsdatabase
 	lmssom
 	std::filesystem
 	)

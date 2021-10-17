@@ -20,7 +20,7 @@
 #pragma once
 
 #include <Wt/WResource.h>
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 
 namespace UserInterface
 {

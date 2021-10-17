@@ -21,8 +21,8 @@
 
 #include <functional>
 #include <memory>
-
-#include "lmscore/database/Types.hpp"
+#include <string_view>
+#include "database/Types.hpp"
 #include "utils/EnumSet.hpp"
 
 namespace Database

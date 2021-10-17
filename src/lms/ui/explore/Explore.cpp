@@ -23,10 +23,10 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
-#include "lmscore/database/Artist.hpp"
-#include "lmscore/database/Release.hpp"
-#include "lmscore/database/Session.hpp"
-#include "lmscore/database/Track.hpp"
+#include "database/Artist.hpp"
+#include "database/Release.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "utils/Logger.hpp"
 
 #include "LmsApplication.hpp"

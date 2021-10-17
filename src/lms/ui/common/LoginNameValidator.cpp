@@ -20,7 +20,7 @@
 #include "LoginNameValidator.hpp"
 
 #include <Wt/WLengthValidator.h>
-#include "lmscore/database/User.hpp"
+#include "database/User.hpp"
 
 namespace UserInterface
 {

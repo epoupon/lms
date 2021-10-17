@@ -22,7 +22,7 @@
 #include <memory>
 
 #include <Wt/WTemplate.h>
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {

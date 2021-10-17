@@ -29,7 +29,7 @@
 #include <Wt/WDateTime.h>
 
 #include "scrobbling/Listen.hpp"
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {

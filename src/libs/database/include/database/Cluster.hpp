@@ -26,7 +26,7 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 
 namespace Database {
 

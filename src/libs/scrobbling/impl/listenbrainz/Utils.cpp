@@ -21,9 +21,9 @@
 
 #include <string_view>
 
-#include "lmscore/database/Session.hpp"
-#include "lmscore/database/TrackList.hpp"
-#include "lmscore/database/User.hpp"
+#include "database/Session.hpp"
+#include "database/TrackList.hpp"
+#include "database/User.hpp"
 
 static constexpr std::string_view historyTracklistName {"__scrobbler_listenbrainz_history__"};
 

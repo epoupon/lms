@@ -24,13 +24,13 @@
 
 #include <Wt/WLocalDateTime.h>
 
-#include "lmscore/database/Artist.hpp"
-#include "lmscore/database/Cluster.hpp"
-#include "lmscore/database/Release.hpp"
-#include "lmscore/database/ScanSettings.hpp"
-#include "lmscore/database/Track.hpp"
-#include "lmscore/database/TrackArtistLink.hpp"
-#include "lmscore/database/TrackFeatures.hpp"
+#include "database/Artist.hpp"
+#include "database/Cluster.hpp"
+#include "database/Release.hpp"
+#include "database/ScanSettings.hpp"
+#include "database/Track.hpp"
+#include "database/TrackArtistLink.hpp"
+#include "database/TrackFeatures.hpp"
 #include "metadata/TagLibParser.hpp"
 #include "recommendation/IEngine.hpp"
 #include "utils/Exception.hpp"

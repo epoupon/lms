@@ -21,10 +21,10 @@
 
 #include <algorithm>
 
-#include "lmscore/database/Release.hpp"
-#include "lmscore/database/Session.hpp"
-#include "lmscore/database/User.hpp"
-#include "lmscore/database/TrackList.hpp"
+#include "database/Release.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
+#include "database/TrackList.hpp"
 #include "scrobbling/IScrobbling.hpp"
 #include "utils/Service.hpp"
 #include "Filters.hpp"

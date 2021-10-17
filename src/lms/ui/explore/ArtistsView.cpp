@@ -21,8 +21,8 @@
 
 #include <Wt/WMenu.h>
 
-#include "lmscore/database/Session.hpp"
-#include "lmscore/database/TrackArtistLink.hpp"
+#include "database/Session.hpp"
+#include "database/TrackArtistLink.hpp"
 #include "utils/EnumSet.hpp"
 #include "utils/Logger.hpp"
 

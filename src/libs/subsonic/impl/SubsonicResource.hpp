@@ -24,7 +24,7 @@
 #include <Wt/WResource.h>
 #include <Wt/Http/Response.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 #include "ClientInfo.hpp"
 #include "RequestContext.hpp"
 

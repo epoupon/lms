@@ -22,7 +22,7 @@
 #include <Wt/Dbo/ptr.h>
 #include "utils/UUID.hpp"
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {

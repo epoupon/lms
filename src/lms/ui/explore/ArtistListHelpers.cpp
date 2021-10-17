@@ -20,7 +20,7 @@
 
 #include <Wt/WAnchor.h>
 
-#include "lmscore/database/Artist.hpp"
+#include "database/Artist.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface::ArtistListHelpers

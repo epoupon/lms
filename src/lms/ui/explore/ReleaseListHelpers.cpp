@@ -23,8 +23,8 @@
 #include <Wt/WImage.h>
 #include <Wt/WText.h>
 
-#include "lmscore/database/Artist.hpp"
-#include "lmscore/database/Release.hpp"
+#include "database/Artist.hpp"
+#include "database/Release.hpp"
 #include "resource/CoverResource.hpp"
 
 #include "LmsApplication.hpp"

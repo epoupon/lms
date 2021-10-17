@@ -20,8 +20,9 @@
 #pragma once
 
 #include <optional>
+#include <string>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {

@@ -21,18 +21,19 @@
 
 #include <Wt/WTemplateFormView.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 
-namespace UserInterface
+namespace UserInterface {
+
+std::optional<Database::UserId>
+processAuthToken(const Wt::WEnvironment& env);
+
+class Auth : public Wt::WTemplateFormView
 {
-	std::optional<Database::UserId>
-	processAuthToken(const Wt::WEnvironment& env);
+	public:
+		Auth();
 
-	class Auth : public Wt::WTemplateFormView
-	{
-		public:
-			Auth();
+		Wt::Signal<Database::UserId> userLoggedIn;
+};
 
-			Wt::Signal<Database::UserId> userLoggedIn;
-	};
 } // namespace UserInterface

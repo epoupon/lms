@@ -25,13 +25,13 @@
 
 #include "utils/Logger.hpp"
 
-#include "lmscore/database/Artist.hpp"
-#include "lmscore/database/Release.hpp"
-#include "lmscore/database/Session.hpp"
-#include "lmscore/database/Track.hpp"
-#include "lmscore/database/TrackList.hpp"
-#include "lmscore/database/Types.hpp"
-#include "lmscore/database/User.hpp"
+#include "database/Artist.hpp"
+#include "database/Release.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
+#include "database/TrackList.hpp"
+#include "database/Types.hpp"
+#include "database/User.hpp"
 
 #include "resource/CoverResource.hpp"
 #include "resource/AudioTranscodeResource.hpp"

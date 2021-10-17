@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "lmscore/database/ScanSettings.hpp"
+#include "database/ScanSettings.hpp"
 
 #include <Wt/Dbo/WtSqlTraits.h>
 
@@ -25,8 +25,8 @@
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
-#include "lmscore/database/Cluster.hpp"
-#include "lmscore/database/Session.hpp"
+#include "database/Cluster.hpp"
+#include "database/Session.hpp"
 
 namespace {
 

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 #include "utils/String.hpp"
 
 namespace API::Subsonic

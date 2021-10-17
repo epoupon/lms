@@ -22,7 +22,7 @@
 #include <type_traits>
 #include <Wt/Dbo/StdSqlTraits.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 
 namespace Wt::Dbo
 {

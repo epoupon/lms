@@ -19,13 +19,13 @@
 
 #include "ClustersEngine.hpp"
 
-#include "lmscore/database/Artist.hpp"
-#include "lmscore/database/Cluster.hpp"
-#include "lmscore/database/Db.hpp"
-#include "lmscore/database/Release.hpp"
-#include "lmscore/database/Session.hpp"
-#include "lmscore/database/Track.hpp"
-#include "lmscore/database/TrackList.hpp"
+#include "database/Artist.hpp"
+#include "database/Cluster.hpp"
+#include "database/Db.hpp"
+#include "database/Release.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
+#include "database/TrackList.hpp"
 
 namespace Recommendation {
 

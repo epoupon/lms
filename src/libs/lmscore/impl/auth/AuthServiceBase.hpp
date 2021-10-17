@@ -20,7 +20,7 @@
 #pragma once
 
 #include <string_view>
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {

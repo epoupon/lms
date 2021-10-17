@@ -24,8 +24,8 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
-#include "lmscore/database/Cluster.hpp"
-#include "lmscore/database/Session.hpp"
+#include "database/Cluster.hpp"
+#include "database/Session.hpp"
 
 #include "LmsApplication.hpp"
 

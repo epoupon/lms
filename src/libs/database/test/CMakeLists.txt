@@ -8,7 +8,7 @@ add_executable(test-database
 	)
 
 target_link_libraries(test-database PRIVATE
-	lmscore
+	lmsdatabase
 	GTest::GTest
 	)
 

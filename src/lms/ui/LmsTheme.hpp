@@ -24,7 +24,7 @@
 #include <Wt/WBootstrapTheme.h>
 #include <Wt/WLinkedCssStyleSheet.h>
 
-#include "lmscore/database/User.hpp"
+#include "database/User.hpp"
 
 namespace UserInterface {
 

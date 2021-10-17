@@ -22,7 +22,7 @@
 #include <Wt/WWidget.h>
 #include <Wt/WSignal.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 #include "PlayQueueAction.hpp"
 
 namespace UserInterface

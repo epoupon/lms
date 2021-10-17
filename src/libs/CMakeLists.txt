@@ -1,5 +1,6 @@
 
 add_subdirectory(av)
+add_subdirectory(database)
 add_subdirectory(image)
 add_subdirectory(lmscore)
 add_subdirectory(metadata)

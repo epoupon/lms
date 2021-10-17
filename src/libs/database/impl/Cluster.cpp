@@ -17,13 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "lmscore/database/Cluster.hpp"
+#include "database/Cluster.hpp"
 
-#include "lmscore/database/Artist.hpp"
-#include "lmscore/database/Release.hpp"
-#include "lmscore/database/ScanSettings.hpp"
-#include "lmscore/database/Session.hpp"
-#include "lmscore/database/Track.hpp"
+#include "database/Artist.hpp"
+#include "database/Release.hpp"
+#include "database/ScanSettings.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "SqlQuery.hpp"
 #include "Traits.hpp"
 

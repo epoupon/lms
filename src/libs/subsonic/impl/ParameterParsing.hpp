@@ -20,7 +20,7 @@
 
 #include <Wt/Http/Request.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 #include "utils/String.hpp"
 #include "SubsonicResponse.hpp"
 

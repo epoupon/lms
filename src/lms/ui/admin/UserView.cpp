@@ -28,8 +28,8 @@
 #include <Wt/WFormModel.h>
 
 #include "lmscore/auth/IPasswordService.hpp"
-#include "lmscore/database/User.hpp"
-#include "lmscore/database/Session.hpp"
+#include "database/User.hpp"
+#include "database/Session.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"

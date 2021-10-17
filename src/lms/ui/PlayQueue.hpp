@@ -25,7 +25,7 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 #include "PlayQueueAction.hpp"
 
 namespace Similarity

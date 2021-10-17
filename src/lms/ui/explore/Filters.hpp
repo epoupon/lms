@@ -24,7 +24,7 @@
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 
 #include "Filters.hpp"
 

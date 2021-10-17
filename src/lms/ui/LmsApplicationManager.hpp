@@ -25,7 +25,7 @@
 
 #include <Wt/WSignal.h>
 
-#include "lmscore/database/Types.hpp"
+#include "database/Types.hpp"
 
 namespace UserInterface
 {

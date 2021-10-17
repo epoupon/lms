@@ -25,9 +25,9 @@
 #include "av/TranscodeParameters.hpp"
 #include "av/TranscodeResourceHandlerCreator.hpp"
 #include "av/Types.hpp"
-#include "lmscore/database/Session.hpp"
-#include "lmscore/database/Track.hpp"
-#include "lmscore/database/User.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
+#include "database/User.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 

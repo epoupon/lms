@@ -23,7 +23,7 @@
 #include <Wt/WPopupMenu.h>
 #include <Wt/WText.h>
 
-#include "lmscore/database/Session.hpp"
+#include "database/Session.hpp"
 #include "common/InfiniteScrollingContainer.hpp"
 #include "ReleaseListHelpers.hpp"
 #include "Filters.hpp"
