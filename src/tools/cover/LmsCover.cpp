@@ -24,11 +24,11 @@
 
 #include <boost/program_options.hpp>
 
-#include "lmscore/services/ICoverService.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "services/cover/ICoverService.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"

@@ -28,7 +28,6 @@
 
 #include "auth/IPasswordService.hpp"
 #include "auth/IEnvService.hpp"
-#include "lmscore/services/ICoverService.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -40,6 +39,7 @@
 #include "database/User.hpp"
 #include "recommendation/IEngine.hpp"
 #include "scrobbling/IScrobbling.hpp"
+#include "services/cover/ICoverService.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
