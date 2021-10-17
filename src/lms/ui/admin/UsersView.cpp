@@ -23,7 +23,7 @@
 #include <Wt/WMessageBox.h>
 #include <Wt/WTemplate.h>
 
-#include "lmscore/auth/IPasswordService.hpp"
+#include "auth/IPasswordService.hpp"
 #include "database/User.hpp"
 #include "database/Session.hpp"
 #include "utils/Logger.hpp"

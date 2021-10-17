@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,19 +19,34 @@
 
 #pragma once
 
-#include "auth/PasswordServiceBase.hpp"
+#include <Wt/Auth/HashFunction.h>
+#include <Wt/Auth/PasswordStrengthValidator.h>
+
+#include "database/User.hpp"
+#include "PasswordServiceBase.hpp"
+#include "LoginThrottler.hpp"
 
 namespace Auth
 {
-	class PAMPasswordService: public PasswordServiceBase
+	class IAuthTokenService;
+
+	class InternalPasswordService : public PasswordServiceBase
 	{
 		public:
-			using PasswordServiceBase::PasswordServiceBase;
+			InternalPasswordService(Database::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService);
 
 		private:
-			bool	checkUserPassword(std::string_view loginName,std::string_view password) override;
+			bool	checkUserPassword(std::string_view loginName, std::string_view password) override;
+
 			bool	canSetPasswords() const override;
 			PasswordAcceptabilityResult	checkPasswordAcceptability(std::string_view loginName, const PasswordValidationContext& context) const override;
 			void	setPassword(Database::UserId userId, std::string_view newPassword) override;
+
+			Database::User::PasswordHash	hashPassword(std::string_view password) const;
+			void							hashRandomPassword() const;
+
+			const Wt::Auth::BCryptHashFunction	_hashFunc {7}; // TODO parametrize this
+			Wt::Auth::PasswordStrengthValidator	_validator;
 	};
+
 }

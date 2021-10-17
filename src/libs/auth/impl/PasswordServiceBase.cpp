@@ -27,7 +27,7 @@
 #include "pam/PAMPasswordService.hpp"
 #endif // LMS_SUPPORT_PAM
 
-#include "lmscore/auth/Types.hpp"
+#include "auth/Types.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
 #include "utils/Exception.hpp"

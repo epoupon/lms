@@ -28,9 +28,9 @@
 #include <Wt/WStackedWidget.h>
 #include <Wt/WText.h>
 
-#include "lmscore/auth/IEnvService.hpp"
-#include "lmscore/auth/IPasswordService.hpp"
-#include "lmscore/cover/ICoverService.hpp"
+#include "auth/IEnvService.hpp"
+#include "auth/IPasswordService.hpp"
+#include "lmscore/services/ICoverService.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"

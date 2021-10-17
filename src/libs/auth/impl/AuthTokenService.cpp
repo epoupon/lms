@@ -23,7 +23,7 @@
 #include <Wt/Auth/PasswordStrengthValidator.h>
 #include <Wt/WRandom.h>
 
-#include "lmscore/auth/Types.hpp"
+#include "auth/Types.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
 #include "utils/Exception.hpp"

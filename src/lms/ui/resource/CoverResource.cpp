@@ -22,7 +22,7 @@
 #include <Wt/WApplication.h>
 #include <Wt/Http/Response.h>
 
-#include "lmscore/cover/ICoverService.hpp"
+#include "lmscore/services/ICoverService.hpp"
 #include "database/Track.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"

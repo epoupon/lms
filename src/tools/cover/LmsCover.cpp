@@ -24,7 +24,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "lmscore/cover/ICoverService.hpp"
+#include "lmscore/services/ICoverService.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"

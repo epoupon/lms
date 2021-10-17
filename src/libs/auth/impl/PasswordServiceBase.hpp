@@ -21,8 +21,8 @@
 
 #include <shared_mutex>
 
-#include "lmscore/auth/IPasswordService.hpp"
-#include "auth/AuthServiceBase.hpp"
+#include "auth/IPasswordService.hpp"
+#include "AuthServiceBase.hpp"
 #include "LoginThrottler.hpp"
 
 namespace Database
