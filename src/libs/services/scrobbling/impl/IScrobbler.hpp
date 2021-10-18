@@ -25,7 +25,7 @@
 
 #include <Wt/WDateTime.h>
 
-#include "scrobbling/Listen.hpp"
+#include "services/scrobbling/Listen.hpp"
 
 namespace Database
 {

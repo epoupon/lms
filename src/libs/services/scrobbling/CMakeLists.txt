@@ -4,7 +4,7 @@ add_library(lmsscrobbling SHARED
 	impl/listenbrainz/ListenBrainzScrobbler.cpp
 	impl/listenbrainz/ListensSynchronizer.cpp
 	impl/listenbrainz/Utils.cpp
-	impl/Scrobbling.cpp
+	impl/ScrobblingService.cpp
 	)
 
 target_include_directories(lmsscrobbling INTERFACE

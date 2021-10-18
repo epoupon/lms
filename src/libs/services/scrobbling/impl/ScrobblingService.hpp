@@ -23,15 +23,15 @@
 #include <optional>
 #include <unordered_map>
 
-#include "scrobbling/IScrobbling.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "IScrobbler.hpp"
 
 namespace Scrobbling
 {
-	class Scrobbling : public IScrobbling
+	class ScrobblingService : public IScrobblingService
 	{
 		public:
-			Scrobbling(boost::asio::io_context& ioContext, Database::Db& db);
+			ScrobblingService(boost::asio::io_context& ioContext, Database::Db& db);
 
 		private:
 			void listenStarted(const Listen& listen) override;

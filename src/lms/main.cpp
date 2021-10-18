@@ -34,7 +34,7 @@
 #include "scanner/IScanner.hpp"
 #include "recommendation/IEngine.hpp"
 #include "subsonic/SubsonicResource.hpp"
-#include "scrobbling/IScrobbling.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "ui/LmsApplication.hpp"
 #include "ui/LmsApplicationManager.hpp"
 #include "utils/http/IClient.hpp"
@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
 			coverService->flushCache();
 		});
 
-		Service<Scrobbling::IScrobbling> scrobblingService {Scrobbling::createScrobbling(ioContext, database)};
+		Service<Scrobbling::IScrobblingService> scrobblingService {Scrobbling::createScrobblingService(ioContext, database)};
 
 		std::unique_ptr<Wt::WResource> subsonicResource;
 

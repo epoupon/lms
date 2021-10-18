@@ -22,7 +22,7 @@
 #include "database/Artist.hpp"
 #include "database/User.hpp"
 #include "database/TrackList.hpp"
-#include "scrobbling/IScrobbling.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
@@ -34,7 +34,7 @@ namespace UserInterface
 	std::vector<Database::ObjectPtr<Database::Artist>>
 	ArtistCollector::get(std::optional<Database::Range> range, bool& moreResults)
 	{
-		Scrobbling::IScrobbling& scrobbling {*Service<Scrobbling::IScrobbling>::get()};
+		Scrobbling::IScrobblingService& scrobbling {*Service<Scrobbling::IScrobblingService>::get()};
 
 		range = getActualRange(range);
 

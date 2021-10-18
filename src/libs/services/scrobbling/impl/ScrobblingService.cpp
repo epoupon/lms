@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Scrobbling.hpp"
+#include "ScrobblingService.hpp"
 
 #include "database/Artist.hpp"
 #include "database/Db.hpp"
@@ -34,13 +34,13 @@ namespace Scrobbling
 {
 	using namespace Database;
 
-	std::unique_ptr<IScrobbling>
-	createScrobbling(boost::asio::io_context& ioContext, Db& db)
+	std::unique_ptr<IScrobblingService>
+	createScrobblingService(boost::asio::io_context& ioContext, Db& db)
 	{
-		return std::make_unique<Scrobbling>(ioContext, db);
+		return std::make_unique<ScrobblingService>(ioContext, db);
 	}
 
-	Scrobbling::Scrobbling(boost::asio::io_context& ioContext, Db& db)
+	ScrobblingService::ScrobblingService(boost::asio::io_context& ioContext, Db& db)
 		: _db {db}
 	{
 		_scrobblers.emplace(Database::Scrobbler::Internal, std::make_unique<InternalScrobbler>(_db));
@@ -48,28 +48,28 @@ namespace Scrobbling
 	}
 
 	void
-	Scrobbling::listenStarted(const Listen& listen)
+	ScrobblingService::listenStarted(const Listen& listen)
 	{
 		if (std::optional<Database::Scrobbler> scrobbler {getUserScrobbler(listen.userId)})
 			_scrobblers[*scrobbler]->listenStarted(listen);
 	}
 
 	void
-	Scrobbling::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
+	ScrobblingService::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
 	{
 		if (std::optional<Database::Scrobbler> scrobbler {getUserScrobbler(listen.userId)})
 			_scrobblers[*scrobbler]->listenFinished(listen, duration);
 	}
 
 	void
-	Scrobbling::addTimedListen(const TimedListen& listen)
+	ScrobblingService::addTimedListen(const TimedListen& listen)
 	{
 		if (std::optional<Database::Scrobbler> scrobbler {getUserScrobbler(listen.userId)})
 			_scrobblers[*scrobbler]->addTimedListen(listen);
 	}
 
 	std::optional<Database::Scrobbler>
-	Scrobbling::getUserScrobbler(Database::UserId userId)
+	ScrobblingService::getUserScrobbler(Database::UserId userId)
 	{
 		std::optional<Database::Scrobbler> scrobbler;
 
@@ -81,8 +81,8 @@ namespace Scrobbling
 		return scrobbler;
 	}
 
-	Scrobbling::ArtistContainer
-	Scrobbling::getRecentArtists(UserId userId,
+	ScrobblingService::ArtistContainer
+	ScrobblingService::getRecentArtists(UserId userId,
 									const std::vector<ClusterId>& clusterIds,
 									std::optional<TrackArtistLinkType> linkType,
 									std::optional<Range> range,
@@ -107,8 +107,8 @@ namespace Scrobbling
 		return res;
 	}
 
-	Scrobbling::ReleaseContainer
-	Scrobbling::getRecentReleases(Database::UserId userId,
+	ScrobblingService::ReleaseContainer
+	ScrobblingService::getRecentReleases(Database::UserId userId,
 									const std::vector<Database::ClusterId>& clusterIds,
 									std::optional<Database::Range> range,
 									bool& moreResults)
@@ -132,8 +132,8 @@ namespace Scrobbling
 		return res;
 	}
 
-	Scrobbling::TrackContainer
-	Scrobbling::getRecentTracks(Database::UserId userId,
+	ScrobblingService::TrackContainer
+	ScrobblingService::getRecentTracks(Database::UserId userId,
 										const std::vector<Database::ClusterId>& clusterIds,
 										std::optional<Database::Range> range,
 										bool& moreResults)
@@ -159,8 +159,8 @@ namespace Scrobbling
 
 
 	// Top
-	Scrobbling::ArtistContainer
-	Scrobbling::getTopArtists(UserId userId,
+	ScrobblingService::ArtistContainer
+	ScrobblingService::getTopArtists(UserId userId,
 								const std::vector<Database::ClusterId>& clusterIds,
 								std::optional<Database::TrackArtistLinkType> linkType,
 								std::optional<Database::Range> range,
@@ -185,8 +185,8 @@ namespace Scrobbling
 		return res;
 	}
 
-	Scrobbling::ReleaseContainer
-	Scrobbling::getTopReleases(Database::UserId userId,
+	ScrobblingService::ReleaseContainer
+	ScrobblingService::getTopReleases(Database::UserId userId,
 								const std::vector<Database::ClusterId>& clusterIds,
 								std::optional<Database::Range> range,
 								bool& moreResults)
@@ -210,8 +210,8 @@ namespace Scrobbling
 		return res;
 	}
 
-	Scrobbling::TrackContainer
-	Scrobbling::getTopTracks(Database::UserId userId,
+	ScrobblingService::TrackContainer
+	ScrobblingService::getTopTracks(Database::UserId userId,
 								const std::vector<Database::ClusterId>& clusterIds,
 								std::optional<Database::Range> range,
 								bool& moreResults)
@@ -235,7 +235,7 @@ namespace Scrobbling
 	}
 
 	Database::ObjectPtr<Database::TrackList>
-	Scrobbling::getListensTrackList(Session& session, Database::ObjectPtr<Database::User> user)
+	ScrobblingService::getListensTrackList(Session& session, Database::ObjectPtr<Database::User> user)
 	{
 		return _scrobblers[user->getScrobbler()]->getListensTrackList(session, user);
 	}

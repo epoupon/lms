@@ -27,7 +27,7 @@
 #include <Wt/Dbo/Dbo.h>
 
 #include "database/Types.hpp"
-#include "scrobbling/Listen.hpp"
+#include "services/scrobbling/Listen.hpp"
 
 namespace Database
 {

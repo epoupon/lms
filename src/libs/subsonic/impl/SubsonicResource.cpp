@@ -38,7 +38,7 @@
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 #include "recommendation/IEngine.hpp"
-#include "scrobbling/IScrobbling.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "services/cover/ICoverService.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
@@ -724,7 +724,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	const Range range {offset, size};
 
 	std::vector<Release::pointer> releases;
-	Scrobbling::IScrobbling& scrobbling {*Service<Scrobbling::IScrobbling>::get()};
+	Scrobbling::IScrobblingService& scrobbling {*Service<Scrobbling::IScrobblingService>::get()};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -1574,13 +1574,13 @@ handleScrobble(RequestContext& context)
 
 	if (!submission)
 	{
-		Service<Scrobbling::IScrobbling>::get()->listenStarted({context.userId, ids.front()});
+		Service<Scrobbling::IScrobblingService>::get()->listenStarted({context.userId, ids.front()});
 	}
 	else
 	{
 		if (times.empty())
 		{
-			Service<Scrobbling::IScrobbling>::get()->listenFinished({context.userId, ids.front()});
+			Service<Scrobbling::IScrobblingService>::get()->listenFinished({context.userId, ids.front()});
 		}
 		else
 		{
@@ -1588,7 +1588,7 @@ handleScrobble(RequestContext& context)
 			{
 				const TrackId trackId {ids[i]};
 				const unsigned long time {times[i]};
-				Service<Scrobbling::IScrobbling>::get()->addTimedListen({{context.userId, trackId}, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000))});
+				Service<Scrobbling::IScrobblingService>::get()->addTimedListen({{context.userId, trackId}, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000))});
 			}
 		}
 	}

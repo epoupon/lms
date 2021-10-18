@@ -28,7 +28,7 @@
 
 #include <Wt/WDateTime.h>
 
-#include "scrobbling/Listen.hpp"
+#include "services/scrobbling/Listen.hpp"
 #include "database/Types.hpp"
 
 namespace Database
@@ -44,10 +44,10 @@ namespace Database
 namespace Scrobbling
 {
 
-	class IScrobbling
+	class IScrobblingService
 	{
 		public:
-			virtual ~IScrobbling() = default;
+			virtual ~IScrobblingService() = default;
 
 			// Scrobbling
 			virtual void listenStarted(const Listen& listen) = 0;
@@ -97,7 +97,7 @@ namespace Scrobbling
 														bool& moreResults) = 0;
 	};
 
-	std::unique_ptr<IScrobbling> createScrobbling(boost::asio::io_service& ioService, Database::Db& db);
+	std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_service& ioService, Database::Db& db);
 
 } // ns Scrobbling
 

@@ -32,7 +32,7 @@
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
-#include "scrobbling/Exception.hpp"
+#include "services/scrobbling/Exception.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/http/IClient.hpp"
 #include "utils/Logger.hpp"
