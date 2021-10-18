@@ -26,8 +26,8 @@
 
 #include <Wt/WLocalDateTime.h>
 
-#include "auth/IPasswordService.hpp"
-#include "auth/IEnvService.hpp"
+#include "services/auth/IPasswordService.hpp"
+#include "services/auth/IEnvService.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -37,7 +37,7 @@
 #include "database/TrackBookmark.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
-#include "recommendation/IEngine.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "services/cover/ICoverService.hpp"
 #include "utils/IConfig.hpp"
@@ -905,7 +905,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 			artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
 	}
 
-	auto similarArtistsId {Service<Recommendation::IEngine>::get()->getSimilarArtists(id, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, count)};
+	auto similarArtistsId {Service<Recommendation::IRecommendationService>::get()->getSimilarArtists(id, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, count)};
 
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
@@ -1141,7 +1141,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	// Optional params
 	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(50)};
 
-	const auto similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, 5)};
+	const auto similarArtistIds {Service<Recommendation::IRecommendationService>::get()->getSimilarArtists(artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, 5)};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 

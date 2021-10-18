@@ -41,7 +41,7 @@ class UUID;
 
 namespace Recommendation
 {
-	class IEngine;
+	class IRecommendationService;
 }
 
 namespace Scanner {
@@ -49,7 +49,7 @@ namespace Scanner {
 class Scanner : public IScanner
 {
 	public:
-		Scanner(Database::Db& db, Recommendation::IEngine& recommendationEngine);
+		Scanner(Database::Db& db, Recommendation::IRecommendationService& recommendationService);
 		~Scanner();
 
 		Scanner(const Scanner&) = delete;
@@ -92,7 +92,7 @@ class Scanner : public IScanner
 		void notifyInProgress(const ScanStepStats& stats);
 		void reloadSimilarityEngine(ScanStats& stats);
 
-		Recommendation::IEngine&				_recommendationEngine;
+		Recommendation::IRecommendationService&	_recommendationService;
 
 		std::mutex								_controlMutex;
 		std::atomic<bool>						_abortScan {};
@@ -115,7 +115,7 @@ class Scanner : public IScanner
 		Database::ScanSettings::UpdatePeriod 	_updatePeriod {Database::ScanSettings::UpdatePeriod::Never};
 		std::unordered_set<std::filesystem::path>		_fileExtensions;
 		std::filesystem::path					_mediaDirectory;
-		Database::ScanSettings::RecommendationEngineType _recommendationEngineType;
+		Database::ScanSettings::RecommendationEngineType _recommendationServiceType;
 };
 
 } // Scanner

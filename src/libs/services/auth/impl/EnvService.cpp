@@ -17,9 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "auth/IEnvService.hpp"
+#include "services/auth/IEnvService.hpp"
 
-#include "auth/Types.hpp"
+#include "services/auth/Types.hpp"
 #include "http-headers/HttpHeadersEnvService.hpp"
 
 namespace Auth

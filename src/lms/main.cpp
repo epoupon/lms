@@ -25,15 +25,15 @@
 #include <Wt/WServer.h>
 #include <Wt/WApplication.h>
 
-#include "auth/IAuthTokenService.hpp"
-#include "auth/IPasswordService.hpp"
-#include "auth/IEnvService.hpp"
+#include "services/auth/IAuthTokenService.hpp"
+#include "services/auth/IPasswordService.hpp"
+#include "services/auth/IEnvService.hpp"
 #include "services/cover/ICoverService.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "scanner/IScanner.hpp"
-#include "recommendation/IEngine.hpp"
 #include "subsonic/SubsonicResource.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "ui/LmsApplication.hpp"
 #include "ui/LmsApplicationManager.hpp"
@@ -258,8 +258,8 @@ int main(int argc, char* argv[])
 
 		Service<Http::IClient> httpClient {Http::createClient(ioContext)};
 		Service<Cover::ICoverService> coverService {Cover::createCoverService(database, argv[0], server.appRoot() + "/images/unknown-cover.jpg")};
-		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
-		Service<Scanner::IScanner> scannerService {Scanner::createScanner(database, *recommendationEngineService)};
+		Service<Recommendation::IRecommendationService> recommendationService {Recommendation::createRecommendationService(database)};
+		Service<Scanner::IScanner> scannerService {Scanner::createScanner(database, *recommendationService)};
 
 		scannerService->getEvents().scanComplete.connect([&]
 		{

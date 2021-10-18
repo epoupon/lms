@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "recommendation/IEngine.hpp"
+#include "IEngine.hpp"
 
 namespace Recommendation
 {
@@ -37,7 +37,6 @@ namespace Recommendation
 		private:
 			void load(bool, const ProgressCallback&) override {}
 			void requestCancelLoad() override {}
-			void cancelLoad() {}
 
 			TrackContainer		getSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const override;
 			TrackContainer		getSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const override;

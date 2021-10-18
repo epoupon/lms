@@ -20,7 +20,7 @@
 #pragma once
 
 #include <memory>
-#include "recommendation/IEngine.hpp"
+#include "IEngine.hpp"
 
 namespace Database
 {

@@ -34,7 +34,7 @@ std::unique_ptr<IEngine> createClustersEngine(Database::Db& db)
 	return std::make_unique<ClusterEngine>(db);
 }
 
-IEngine::TrackContainer
+TrackContainer
 ClusterEngine::getSimilarTracks(const std::vector<Database::TrackId>& trackIds, std::size_t maxCount) const
 {
 	Database::Session& dbSession {_db.getTLSSession()};
@@ -52,7 +52,7 @@ ClusterEngine::getSimilarTracks(const std::vector<Database::TrackId>& trackIds, 
 	return res;
 }
 
-IEngine::ResultContainer<Database::TrackId>
+TrackContainer
 ClusterEngine::getSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const
 {
 	Database::Session& dbSession {_db.getTLSSession()};
@@ -74,7 +74,7 @@ ClusterEngine::getSimilarTracksFromTrackList(Database::TrackListId tracklistId, 
 	return res;
 }
 
-IEngine::ResultContainer<Database::ReleaseId>
+ReleaseContainer
 ClusterEngine::getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const
 {
 	Database::Session& dbSession {_db.getTLSSession()};
@@ -95,7 +95,7 @@ ClusterEngine::getSimilarReleases(Database::ReleaseId releaseId, std::size_t max
 	return res;
 }
 
-IEngine::ResultContainer<Database::ArtistId>
+ArtistContainer
 ClusterEngine::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> artistLinkTypes, std::size_t maxCount) const
 {
 	Database::Session& dbSession {_db.getTLSSession()};

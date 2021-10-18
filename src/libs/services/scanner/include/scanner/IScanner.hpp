@@ -31,7 +31,7 @@ namespace Database
 
 namespace Recommendation
 {
-	class IEngine;
+	class IRecommendationService;
 }
 
 namespace Scanner
@@ -66,7 +66,7 @@ namespace Scanner
 			virtual Events& getEvents() = 0;
 	};
 
-	std::unique_ptr<IScanner> createScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine);
+	std::unique_ptr<IScanner> createScanner(Database::Db& db, Recommendation::IRecommendationService& recommendationEngine);
 
 } // Scanner
 

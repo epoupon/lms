@@ -32,7 +32,7 @@
 #include "database/TrackArtistLink.hpp"
 #include "database/TrackFeatures.hpp"
 #include "metadata/TagLibParser.hpp"
-#include "recommendation/IEngine.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Path.hpp"
@@ -249,13 +249,13 @@ getOrCreateClusters(Session& session, const MetaData::Clusters& clustersNames)
 namespace Scanner {
 
 std::unique_ptr<IScanner>
-createScanner(Database::Db& db, Recommendation::IEngine& recommendationEngine)
+createScanner(Database::Db& db, Recommendation::IRecommendationService& recommendationService)
 {
-	return std::make_unique<Scanner>(db, recommendationEngine);
+	return std::make_unique<Scanner>(db, recommendationService);
 }
 
-Scanner::Scanner(Database::Db& db, Recommendation::IEngine& recommendationEngine)
-: _recommendationEngine {recommendationEngine}
+Scanner::Scanner(Database::Db& db, Recommendation::IRecommendationService& recommendationService)
+: _recommendationService {recommendationService}
 , _dbSession {db}
 {
 	// For now, always use TagLib
@@ -284,8 +284,8 @@ Scanner::start()
 		if (_abortScan)
 			return;
 
-		_recommendationEngine.load(false,
-				[](const Recommendation::IEngine::Progress& progress)
+		_recommendationService.load(false,
+				[](const Recommendation::Progress& progress)
 				{
 					LMS_LOG(DBUPDATER, DEBUG) << "Reloading recommendation : " << progress.processedElems << "/" << progress.totalElems;
 				});
@@ -302,7 +302,7 @@ Scanner::stop()
 
 	_abortScan = true;
 	_scheduleTimer.cancel();
-	_recommendationEngine.cancelLoad();
+	_recommendationService.cancelLoad();
 	_ioService.stop();
 }
 
@@ -316,7 +316,7 @@ Scanner::abortScan()
 
 	_abortScan = true;
 	_scheduleTimer.cancel();
-	_recommendationEngine.cancelLoad();
+	_recommendationService.cancelLoad();
 	_ioService.stop();
 	LMS_LOG(DBUPDATER, DEBUG) << "Scan abort done!";
 
@@ -571,7 +571,7 @@ Scanner::fetchTrackFeatures(Database::TrackId trackId, const UUID& recordingMBID
 void
 Scanner::fetchTrackFeatures(ScanStats& stats)
 {
-	if (_recommendationEngineType != ScanSettings::RecommendationEngineType::Features)
+	if (_recommendationServiceType != ScanSettings::RecommendationEngineType::Features)
 		return;
 
 	ScanStepStats stepStats{stats.startTime, ScanProgressStep::FetchingTrackFeatures};
@@ -638,7 +638,7 @@ Scanner::refreshScanSettings()
 				[](const std::filesystem::path& extension) { return std::filesystem::path{ StringUtils::stringToLower(extension.string()) }; });
 	}
 	_mediaDirectory = scanSettings->getMediaDirectory();
-	_recommendationEngineType = scanSettings->getRecommendationEngineType();
+	_recommendationServiceType = scanSettings->getRecommendationEngineType();
 
 	const auto clusterTypes = scanSettings->getClusterTypes();
 	std::set<std::string> clusterTypeNames;
@@ -1037,7 +1037,7 @@ Scanner::reloadSimilarityEngine(ScanStats& stats)
 {
 	ScanStepStats stepStats {stats.startTime, ScanProgressStep::ReloadingSimilarityEngine};
 
-	auto progressCallback {[&](const Recommendation::IEngine::Progress& progress)
+	auto progressCallback {[&](const Recommendation::Progress& progress)
 	{
 		stepStats.totalElems = progress.totalElems;
 		stepStats.processedElems = progress.processedElems;
@@ -1045,7 +1045,7 @@ Scanner::reloadSimilarityEngine(ScanStats& stats)
 	}};
 
 	notifyInProgress(stepStats);
-	_recommendationEngine.load(stats.nbChanges() > 0, progressCallback);
+	_recommendationService.load(stats.nbChanges() > 0, progressCallback);
 	notifyInProgress(stepStats);
 }
 

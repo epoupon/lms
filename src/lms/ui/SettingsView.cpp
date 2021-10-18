@@ -34,7 +34,7 @@
 #include "common/UUIDValidator.hpp"
 #include "common/ValueStringModel.hpp"
 
-#include "auth/IPasswordService.hpp"
+#include "services/auth/IPasswordService.hpp"
 #include "database/Session.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"

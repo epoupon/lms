@@ -32,7 +32,7 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "recommendation/IEngine.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
@@ -102,7 +102,7 @@ Artist::refreshView()
 	if (!artistId)
 		throw ArtistNotFoundException {};
 
-	const auto similarArtistIds {Service<Recommendation::IEngine>::get()->getSimilarArtists(*artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, 5)};
+	const auto similarArtistIds {Service<Recommendation::IRecommendationService>::get()->getSimilarArtists(*artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, 5)};
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 

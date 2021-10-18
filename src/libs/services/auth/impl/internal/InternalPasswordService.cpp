@@ -20,8 +20,8 @@
 #include "InternalPasswordService.hpp"
 #include <Wt/WRandom.h>
 
-#include "auth/IAuthTokenService.hpp"
-#include "auth/Types.hpp"
+#include "services/auth/IAuthTokenService.hpp"
+#include "services/auth/Types.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
 #include "utils/Exception.hpp"

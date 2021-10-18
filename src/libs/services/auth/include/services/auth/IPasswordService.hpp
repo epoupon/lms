@@ -21,11 +21,11 @@
 
 #include <string_view>
 
+#include <boost/asio/ip/address.hpp>
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/ptr.h>
 
-#include <boost/asio/ip/address.hpp>
-#include "auth/Types.hpp"
+#include "services/auth/Types.hpp"
 #include "database/Types.hpp"
 
 namespace Database

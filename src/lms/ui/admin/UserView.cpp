@@ -27,7 +27,7 @@
 
 #include <Wt/WFormModel.h>
 
-#include "auth/IPasswordService.hpp"
+#include "services/auth/IPasswordService.hpp"
 #include "database/User.hpp"
 #include "database/Session.hpp"
 #include "utils/IConfig.hpp"

@@ -4,7 +4,7 @@ add_library(lmsrecommendation SHARED
 	impl/features/FeaturesEngineCache.cpp
 	impl/features/FeaturesEngine.cpp
 	impl/features/FeaturesDefs.cpp
-	impl/Engine.cpp
+	impl/RecommendationService.cpp
 	)
 
 target_include_directories(lmsrecommendation INTERFACE

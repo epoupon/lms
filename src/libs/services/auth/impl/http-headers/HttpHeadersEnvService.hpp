@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "auth/IEnvService.hpp"
+#include "services/auth/IEnvService.hpp"
 #include "AuthServiceBase.hpp"
 
 namespace Auth

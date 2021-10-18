@@ -28,8 +28,8 @@
 #include <Wt/WStackedWidget.h>
 #include <Wt/WText.h>
 
-#include "auth/IEnvService.hpp"
-#include "auth/IPasswordService.hpp"
+#include "services/auth/IEnvService.hpp"
+#include "services/auth/IPasswordService.hpp"
 #include "services/cover/ICoverService.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"

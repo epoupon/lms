@@ -30,7 +30,7 @@
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "recommendation/IEngine.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
@@ -101,7 +101,7 @@ Release::refreshView()
 	if (!releaseId)
 		throw ReleaseNotFoundException {};
 
-	auto similarReleasesIds {Service<Recommendation::IEngine>::get()->getSimilarReleases(*releaseId, 6)};
+	auto similarReleasesIds {Service<Recommendation::IRecommendationService>::get()->getSimilarReleases(*releaseId, 6)};
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 

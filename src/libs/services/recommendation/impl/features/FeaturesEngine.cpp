@@ -248,7 +248,7 @@ FeaturesEngine::loadFromCache(FeaturesEngineCache cache)
 	load(std::move(cache._network), cache._trackPositions);
 }
 
-IEngine::TrackContainer
+TrackContainer
 FeaturesEngine::getSimilarTracksFromTrackList(Database::TrackListId trackListId, std::size_t maxCount) const
 {
 	const TrackContainer trackIds {[&]
@@ -269,7 +269,7 @@ FeaturesEngine::getSimilarTracksFromTrackList(Database::TrackListId trackListId,
 	return getSimilarTracks(trackIds, maxCount);
 }
 
-IEngine::TrackContainer
+TrackContainer
 FeaturesEngine::getSimilarTracks(const std::vector<Database::TrackId>& tracksIds, std::size_t maxCount) const
 {
 	auto similarTrackIds {getSimilarObjects(tracksIds, _trackMatrix, _trackPositions, maxCount)};
@@ -290,7 +290,7 @@ FeaturesEngine::getSimilarTracks(const std::vector<Database::TrackId>& tracksIds
 	return similarTrackIds;
 }
 
-IEngine::ReleaseContainer
+ReleaseContainer
 FeaturesEngine::getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const
 {
 	auto similarReleaseIds {getSimilarObjects({releaseId}, _releaseMatrix, _releasePositions, maxCount)};
@@ -312,12 +312,12 @@ FeaturesEngine::getSimilarReleases(Database::ReleaseId releaseId, std::size_t ma
 	return similarReleaseIds;
 }
 
-std::vector<Database::ArtistId>
+ArtistContainer
 FeaturesEngine::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
 {
 	auto getSimilarArtistIdsForLinkType {[&] (Database::TrackArtistLinkType linkType)
 	{
-		std::vector<Database::ArtistId> similarArtistIds;
+		ArtistContainer similarArtistIds;
 
 		const auto itArtists {_artistMatrix.find(linkType)};
 		if (itArtists == std::cend(_artistMatrix))
@@ -336,7 +336,7 @@ FeaturesEngine::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database:
 		similarArtistIds.insert(std::begin(similarArtistIdsForLinkType), std::end(similarArtistIdsForLinkType));
 	}
 
-	std::vector<Database::ArtistId> res(std::cbegin(similarArtistIds), std::cend(similarArtistIds));
+	ArtistContainer res(std::cbegin(similarArtistIds), std::cend(similarArtistIds));
 
 	Database::Session& session {_db.getTLSSession()};
 	{

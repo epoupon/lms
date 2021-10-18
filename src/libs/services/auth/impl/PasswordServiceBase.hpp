@@ -21,7 +21,7 @@
 
 #include <shared_mutex>
 
-#include "auth/IPasswordService.hpp"
+#include "services/auth/IPasswordService.hpp"
 #include "AuthServiceBase.hpp"
 #include "LoginThrottler.hpp"
 

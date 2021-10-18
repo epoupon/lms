@@ -28,7 +28,7 @@
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
-#include "recommendation/IEngine.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Service.hpp"
@@ -520,7 +520,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 void
 PlayQueue::enqueueRadioTracks()
 {
-	const auto similarTrackIds {Service<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(_tracklistId, 3)};
+	const auto similarTrackIds {Service<Recommendation::IRecommendationService>::get()->getSimilarTracksFromTrackList(_tracklistId, 3)};
 
 	std::vector<Database::TrackId> trackToAddIds(std::cbegin(similarTrackIds), std::cend(similarTrackIds));
 	Random::shuffleContainer(trackToAddIds);

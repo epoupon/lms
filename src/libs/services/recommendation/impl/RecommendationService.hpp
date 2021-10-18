@@ -25,7 +25,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "recommendation/IEngine.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
+#include "IEngine.hpp"
 
 namespace Database
 {
@@ -40,21 +41,20 @@ namespace Recommendation
 		Features,
 	};
 
-	class Engine : public IEngine
+	class RecommendationService : public IRecommendationService
 	{
 		public:
-			Engine(Database::Db& db);
-			~Engine() = default;
+			RecommendationService(Database::Db& db);
+			~RecommendationService() = default;
 
-			Engine(const Engine&) = delete;
-			Engine(Engine&&) = delete;
-			Engine& operator=(const Engine&) = delete;
-			Engine& operator=(Engine&&) = delete;
+			RecommendationService(const RecommendationService&) = delete;
+			RecommendationService(RecommendationService&&) = delete;
+			RecommendationService& operator=(const RecommendationService&) = delete;
+			RecommendationService& operator=(RecommendationService&&) = delete;
 
 		private:
 			void	load(bool forceReload, const ProgressCallback& progressCallback) override;
 			void	cancelLoad() override;
-			void	requestCancelLoad() override {};
 
 			TrackContainer getSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const override;
 			TrackContainer getSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const override;

@@ -24,7 +24,7 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
-#include "auth/IPasswordService.hpp"
+#include "services/auth/IPasswordService.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
 #include "utils/Exception.hpp"

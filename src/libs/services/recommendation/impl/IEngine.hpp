@@ -24,6 +24,7 @@
 #include <string_view>
 #include "database/Types.hpp"
 #include "utils/EnumSet.hpp"
+#include "services/recommendation/Types.hpp"
 
 namespace Database
 {
@@ -37,22 +38,8 @@ namespace Recommendation
 		public:
 			virtual ~IEngine() = default;
 
-			struct Progress
-			{
-				std::size_t totalElems {};
-				std::size_t	processedElems {};
-			};
-			using ProgressCallback = std::function<void(const Progress&)>;
 			virtual void load(bool forceReload, const ProgressCallback& progressCallback = {}) = 0;
-			virtual void cancelLoad() = 0;  // wait for cancel done
 			virtual void requestCancelLoad() = 0;
-
-			template <typename IdType>
-			using ResultContainer = std::vector<IdType>;
-
-			using ArtistContainer = ResultContainer<Database::ArtistId>;
-			using ReleaseContainer = ResultContainer<Database::ReleaseId>;
-			using TrackContainer = ResultContainer<Database::TrackId>;
 
 			virtual TrackContainer getSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const = 0;
 			virtual TrackContainer getSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const = 0;

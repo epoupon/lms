@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Engine.hpp"
+#include "RecommendationService.hpp"
 
 #include <unordered_map>
 #include <vector>
@@ -47,19 +47,19 @@ namespace Recommendation
 		throw LmsException {"Internal error"};
 	}
 
-	std::unique_ptr<IEngine>
-	createEngine(Database::Db& db)
+	std::unique_ptr<IRecommendationService>
+	createRecommendationService(Database::Db& db)
 	{
-		return std::make_unique<Engine>(db);
+		return std::make_unique<RecommendationService>(db);
 	}
 
-	Engine::Engine(Database::Db& db)
+	RecommendationService::RecommendationService(Database::Db& db)
 		: _db {db}
 	{
 	}
 
-	Engine::TrackContainer
-	Engine::getSimilarTracksFromTrackList(Database::TrackListId trackListId, std::size_t maxCount) const
+	TrackContainer
+	RecommendationService::getSimilarTracksFromTrackList(Database::TrackListId trackListId, std::size_t maxCount) const
 	{
 		TrackContainer res;
 
@@ -78,8 +78,8 @@ namespace Recommendation
 		return res;
 	}
 
-	Engine::TrackContainer
-	Engine::getSimilarTracks(const std::vector<Database::TrackId>& trackIds, std::size_t maxCount) const
+	TrackContainer
+	RecommendationService::getSimilarTracks(const std::vector<Database::TrackId>& trackIds, std::size_t maxCount) const
 	{
 		TrackContainer res;
 
@@ -102,8 +102,8 @@ namespace Recommendation
 		return res;
 	}
 
-	Engine::ReleaseContainer
-	Engine::getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const
+	ReleaseContainer
+	RecommendationService::getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const
 	{
 		ReleaseContainer res;
 
@@ -128,8 +128,8 @@ namespace Recommendation
 		return res;
 	}
 
-	Engine::ArtistContainer
-	Engine::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
+	ArtistContainer
+	RecommendationService::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
 	{
 		ArtistContainer res;
 
@@ -162,7 +162,7 @@ namespace Recommendation
 	}
 
 	void
-	Engine::load(bool forceReload, const ProgressCallback& progressCallback)
+	RecommendationService::load(bool forceReload, const ProgressCallback& progressCallback)
 	{
 		using namespace Database;
 
@@ -208,18 +208,18 @@ namespace Recommendation
 	}
 
 	void
-	Engine::loadPendingEngine(EngineType engineType, std::unique_ptr<IEngine> engine, bool forceReload, const ProgressCallback& progressCallback)
+	RecommendationService::loadPendingEngine(EngineType engineType, std::unique_ptr<IEngine> engine, bool forceReload, const ProgressCallback& progressCallback)
 	{
 		if (!_loadCancelled)
 		{
 			LMS_LOG(RECOMMENDATION, INFO) << "Initializing engine '" << engineTypeToString(engineType) << "'...";
 
-			auto progress {[&](const IEngine::Progress& progress)
+			auto progress {[&](const Progress& progress)
 			{
 				progressCallback(progress);
 			}};
 
-			engine->load(forceReload, progressCallback ? progress : IEngine::ProgressCallback {});
+			engine->load(forceReload, progressCallback ? progress : ProgressCallback {});
 
 			{
 				std::scoped_lock lock {_controlMutex};
@@ -236,7 +236,7 @@ namespace Recommendation
 	}
 
 	void
-	Engine::cancelLoad()
+	RecommendationService::cancelLoad()
 	{
 		LMS_LOG(RECOMMENDATION, DEBUG) << "Cancelling loading...";
 

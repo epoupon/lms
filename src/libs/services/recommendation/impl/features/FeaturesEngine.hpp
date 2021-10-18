@@ -26,10 +26,10 @@
 #include <string>
 #include <vector>
 
-#include "recommendation/IEngine.hpp"
 #include "som/DataNormalizer.hpp"
 #include "som/Network.hpp"
 #include "utils/Utils.hpp"
+#include "IEngine.hpp"
 #include "FeaturesEngineCache.hpp"
 #include "FeaturesDefs.hpp"
 
@@ -62,7 +62,6 @@ class FeaturesEngine : public IEngine
 	private:
 		void load(bool forceReload, const ProgressCallback& progressCallback) override;
 		void requestCancelLoad() override;
-		void cancelLoad() override {}
 
 		TrackContainer getSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const override;
 		TrackContainer getSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const override;

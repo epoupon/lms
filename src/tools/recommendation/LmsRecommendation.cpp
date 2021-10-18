@@ -30,14 +30,14 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Service.hpp"
 #include "utils/StreamLogger.hpp"
-#include "recommendation/IEngine.hpp"
 
 static
 void
-dumpTracksRecommendation(Database::Session session, Recommendation::IEngine& engine, unsigned maxSimilarityCount)
+dumpTracksRecommendation(Database::Session session, Recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
 {
 	const std::vector<Database::TrackId> trackIds {[&]()
 		{
@@ -66,14 +66,14 @@ dumpTracksRecommendation(Database::Session session, Recommendation::IEngine& eng
 		};
 
 		std::cout << "Processing track '" << trackToString(trackId) << std::endl;
-		for (Database::TrackId similarTrackId : engine.getSimilarTracks({trackId}, maxSimilarityCount))
+		for (Database::TrackId similarTrackId : recommendationService.getSimilarTracks({trackId}, maxSimilarityCount))
 			std::cout << "\t- Similar track '" << trackToString(similarTrackId) << std::endl;
 	}
 }
 
 static
 void
-dumpReleasesRecommendation(Database::Session session, Recommendation::IEngine& engine, unsigned maxSimilarityCount)
+dumpReleasesRecommendation(Database::Session session, Recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
 {
 	const std::vector<Database::ReleaseId> releaseIds = std::invoke([&]()
 		{
@@ -93,14 +93,14 @@ dumpReleasesRecommendation(Database::Session session, Recommendation::IEngine& e
 		};
 
 		std::cout << "Processing release '" << releaseToString(releaseId) << "'" << std::endl;
-		for (Database::ReleaseId similarReleaseId : engine.getSimilarReleases(releaseId, maxSimilarityCount))
+		for (Database::ReleaseId similarReleaseId : recommendationService.getSimilarReleases(releaseId, maxSimilarityCount))
 			std::cout << "\t- Similar release '" << releaseToString(similarReleaseId) << "'" << std::endl;
 	}
 }
 
 static
 void
-dumpArtistsRecommendation(Database::Session session, Recommendation::IEngine& engine, unsigned maxSimilarityCount)
+dumpArtistsRecommendation(Database::Session session, Recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
 {
 	const std::vector<Database::ArtistId> artistIds = std::invoke([&]()
 	{
@@ -120,7 +120,7 @@ dumpArtistsRecommendation(Database::Session session, Recommendation::IEngine& en
 		};
 
 		std::cout << "Processing artist '" << artistToString(artistId) << "'" << std::endl;
-		for (Database::ArtistId similarArtistId : engine.getSimilarArtists(artistId, {Database::TrackArtistLinkType::Artist, Database::TrackArtistLinkType::ReleaseArtist}, maxSimilarityCount))
+		for (Database::ArtistId similarArtistId : recommendationService.getSimilarArtists(artistId, {Database::TrackArtistLinkType::Artist, Database::TrackArtistLinkType::ReleaseArtist}, maxSimilarityCount))
 		{
 			std::cout << "\t- Similar artist '" << artistToString(similarArtistId) << "'" << std::endl;
 		}
@@ -161,25 +161,25 @@ int main(int argc, char *argv[])
 		Database::Db db {config->getPath("working-dir") / "lms.db"};
 		Database::Session session {db};
 
-		std::cout << "Creating recommendation engine..." << std::endl;
-		const auto engine {Recommendation::createEngine(db)};
-		std::cout << "Recommendation engine created!" << std::endl;
+		std::cout << "Creating recommendation recommendationService..." << std::endl;
+		const auto recommendationService {Recommendation::createRecommendationService(db)};
+		std::cout << "Recommendation recommendationService created!" << std::endl;
 
-		std::cout << "Loading recommendation engine..." << std::endl;
-		engine->load(false);
+		std::cout << "Loading recommendation recommendationService..." << std::endl;
+		recommendationService->load(false);
 
 		unsigned maxSimilarityCount {vm["max"].as<unsigned>()};
 
-		std::cout << "Recommendation engine loaded!" << std::endl;
+		std::cout << "Recommendation recommendationService loaded!" << std::endl;
 
 		if (vm.count("tracks"))
-			dumpTracksRecommendation(db, *engine, maxSimilarityCount);
+			dumpTracksRecommendation(db, *recommendationService, maxSimilarityCount);
 
 		if (vm.count("releases"))
-			dumpReleasesRecommendation(db, *engine, maxSimilarityCount);
+			dumpReleasesRecommendation(db, *recommendationService, maxSimilarityCount);
 
 		if (vm.count("artists"))
-			dumpArtistsRecommendation(db, *engine, maxSimilarityCount);
+			dumpArtistsRecommendation(db, *recommendationService, maxSimilarityCount);
 	}
 	catch( std::exception& e)
 	{
