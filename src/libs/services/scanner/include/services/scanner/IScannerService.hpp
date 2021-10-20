@@ -37,10 +37,10 @@ namespace Recommendation
 namespace Scanner
 {
 
-	class IScanner
+	class IScannerService
 	{
 		public:
-			virtual ~IScanner() = default;
+			virtual ~IScannerService() = default;
 
 			// Async requests
 			virtual void requestReload() = 0;
@@ -66,7 +66,7 @@ namespace Scanner
 			virtual Events& getEvents() = 0;
 	};
 
-	std::unique_ptr<IScanner> createScanner(Database::Db& db, Recommendation::IRecommendationService& recommendationEngine);
+	std::unique_ptr<IScannerService> createScannerService(Database::Db& db, Recommendation::IRecommendationService& recommendationEngine);
 
 } // Scanner
 

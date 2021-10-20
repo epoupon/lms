@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Scanner.hpp"
+#include "ScannerService.hpp"
 
 #include <ctime>
 #include <boost/asio/placeholders.hpp>
@@ -248,13 +248,13 @@ getOrCreateClusters(Session& session, const MetaData::Clusters& clustersNames)
 
 namespace Scanner {
 
-std::unique_ptr<IScanner>
-createScanner(Database::Db& db, Recommendation::IRecommendationService& recommendationService)
+std::unique_ptr<IScannerService>
+createScannerService(Database::Db& db, Recommendation::IRecommendationService& recommendationService)
 {
-	return std::make_unique<Scanner>(db, recommendationService);
+	return std::make_unique<ScannerService>(db, recommendationService);
 }
 
-Scanner::Scanner(Database::Db& db, Recommendation::IRecommendationService& recommendationService)
+ScannerService::ScannerService(Database::Db& db, Recommendation::IRecommendationService& recommendationService)
 : _recommendationService {recommendationService}
 , _dbSession {db}
 {
@@ -268,14 +268,14 @@ Scanner::Scanner(Database::Db& db, Recommendation::IRecommendationService& recom
 	start();
 }
 
-Scanner::~Scanner()
+ScannerService::~ScannerService()
 {
 	LMS_LOG(DBUPDATER, INFO) << "Shutting down Scanner...";
 	stop();
 }
 
 void
-Scanner::start()
+ScannerService::start()
 {
 	std::scoped_lock lock {_controlMutex};
 
@@ -296,7 +296,7 @@ Scanner::start()
 }
 
 void
-Scanner::stop()
+ScannerService::stop()
 {
 	std::scoped_lock lock {_controlMutex};
 
@@ -307,7 +307,7 @@ Scanner::stop()
 }
 
 void
-Scanner::abortScan()
+ScannerService::abortScan()
 {
 	LMS_LOG(DBUPDATER, DEBUG) << "Aborting scan...";
 	std::scoped_lock lock {_controlMutex};
@@ -325,7 +325,7 @@ Scanner::abortScan()
 }
 
 void
-Scanner::requestImmediateScan(bool force)
+ScannerService::requestImmediateScan(bool force)
 {
 	abortScan();
 	_ioService.post([=]()
@@ -338,7 +338,7 @@ Scanner::requestImmediateScan(bool force)
 }
 
 void
-Scanner::requestReload()
+ScannerService::requestReload()
 {
 	abortScan();
 	_ioService.post([=]()
@@ -350,8 +350,8 @@ Scanner::requestReload()
 	});
 }
 
-Scanner::Status
-Scanner::getStatus() const
+ScannerService::Status
+ScannerService::getStatus() const
 {
 	Status res;
 
@@ -366,7 +366,7 @@ Scanner::getStatus() const
 }
 
 void
-Scanner::scheduleNextScan()
+ScannerService::scheduleNextScan()
 {
 	LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan";
 
@@ -420,7 +420,7 @@ Scanner::scheduleNextScan()
 }
 
 void
-Scanner::countAllFiles(ScanStats& stats)
+ScannerService::countAllFiles(ScanStats& stats)
 {
 	ScanStepStats stepStats{stats.startTime, ScanProgressStep::DiscoveringFiles};
 
@@ -445,7 +445,7 @@ Scanner::countAllFiles(ScanStats& stats)
 }
 
 void
-Scanner::scheduleScan(bool force, const Wt::WDateTime& dateTime)
+ScannerService::scheduleScan(bool force, const Wt::WDateTime& dateTime)
 {
 	auto cb {[=](boost::system::error_code ec)
 	{
@@ -474,7 +474,7 @@ Scanner::scheduleScan(bool force, const Wt::WDateTime& dateTime)
 }
 
 void
-Scanner::scan(bool forceScan)
+ScannerService::scan(bool forceScan)
 {
 	_events.scanStarted.emit();
 
@@ -543,7 +543,7 @@ Scanner::scan(bool forceScan)
 }
 
 bool
-Scanner::fetchTrackFeatures(Database::TrackId trackId, const UUID& recordingMBID)
+ScannerService::fetchTrackFeatures(Database::TrackId trackId, const UUID& recordingMBID)
 {
 	std::map<std::string, double> features;
 
@@ -569,7 +569,7 @@ Scanner::fetchTrackFeatures(Database::TrackId trackId, const UUID& recordingMBID
 }
 
 void
-Scanner::fetchTrackFeatures(ScanStats& stats)
+ScannerService::fetchTrackFeatures(ScanStats& stats)
 {
 	if (_recommendationServiceType != ScanSettings::RecommendationEngineType::Features)
 		return;
@@ -619,7 +619,7 @@ Scanner::fetchTrackFeatures(ScanStats& stats)
 }
 
 void
-Scanner::refreshScanSettings()
+ScannerService::refreshScanSettings()
 {
 	auto transaction {_dbSession.createSharedTransaction()};
 
@@ -651,7 +651,7 @@ Scanner::refreshScanSettings()
 }
 
 void
-Scanner::notifyInProgress(const ScanStepStats& stepStats)
+ScannerService::notifyInProgress(const ScanStepStats& stepStats)
 {
 	{
 		std::unique_lock lock {_statusMutex};
@@ -664,7 +664,7 @@ Scanner::notifyInProgress(const ScanStepStats& stepStats)
 }
 
 void
-Scanner::notifyInProgressIfNeeded(const ScanStepStats& stepStats)
+ScannerService::notifyInProgressIfNeeded(const ScanStepStats& stepStats)
 {
 	std::chrono::system_clock::time_point now {std::chrono::system_clock::now()};
 
@@ -673,7 +673,7 @@ Scanner::notifyInProgressIfNeeded(const ScanStepStats& stepStats)
 }
 
 void
-Scanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanStats& stats)
+ScannerService::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanStats& stats)
 {
 	Wt::WDateTime lastWriteTime;
 	try
@@ -836,7 +836,7 @@ Scanner::scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanSt
 }
 
 void
-Scanner::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats)
+ScannerService::scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats)
 {
 	ScanStepStats stepStats{stats.startTime, ScanProgressStep::ScanningFiles};
 	stepStats.totalElems = stats.filesScanned;
@@ -903,7 +903,7 @@ checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDire
 }
 
 void
-Scanner::removeMissingTracks(ScanStats& stats)
+ScannerService::removeMissingTracks(ScanStats& stats)
 {
 	static constexpr std::size_t batchSize {50};
 
@@ -970,7 +970,7 @@ Scanner::removeMissingTracks(ScanStats& stats)
 }
 
 void
-Scanner::removeOrphanEntries()
+ScannerService::removeOrphanEntries()
 {
 	LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
 	{
@@ -1013,7 +1013,7 @@ Scanner::removeOrphanEntries()
 }
 
 void
-Scanner::checkDuplicatedAudioFiles(ScanStats& stats)
+ScannerService::checkDuplicatedAudioFiles(ScanStats& stats)
 {
 	LMS_LOG(DBUPDATER, INFO) << "Checking duplicated audio files";
 
@@ -1033,7 +1033,7 @@ Scanner::checkDuplicatedAudioFiles(ScanStats& stats)
 }
 
 void
-Scanner::reloadSimilarityEngine(ScanStats& stats)
+ScannerService::reloadSimilarityEngine(ScanStats& stats)
 {
 	ScanStepStats stepStats {stats.startTime, ScanProgressStep::ReloadingSimilarityEngine};
 

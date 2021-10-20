@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "scanner/ScannerStats.hpp"
+#include "services/scanner/ScannerStats.hpp"
 
 namespace Scanner {
 

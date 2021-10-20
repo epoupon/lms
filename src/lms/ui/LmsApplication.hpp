@@ -23,7 +23,7 @@
 
 #include <Wt/WApplication.h>
 
-#include "scanner/ScannerEvents.hpp"
+#include "services/scanner/ScannerEvents.hpp"
 
 namespace Database
 {

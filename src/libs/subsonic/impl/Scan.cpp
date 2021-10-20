@@ -19,7 +19,7 @@
 
 #include "Scan.hpp"
 
-#include "scanner/IScanner.hpp"
+#include "services/scanner/IScannerService.hpp"
 #include "utils/Service.hpp"
 
 namespace API::Subsonic::Scan
@@ -32,10 +32,10 @@ namespace API::Subsonic::Scan
 	{
 		Response::Node statusResponse;
 
-		const IScanner::Status scanStatus {Service<IScanner>::get()->getStatus()};
+		const IScannerService::Status scanStatus {Service<IScannerService>::get()->getStatus()};
 
-		statusResponse.setAttribute("scanning", scanStatus.currentState == IScanner::State::InProgress);
-		if (scanStatus.currentState == IScanner::State::InProgress)
+		statusResponse.setAttribute("scanning", scanStatus.currentState == IScannerService::State::InProgress);
+		if (scanStatus.currentState == IScannerService::State::InProgress)
 		{
 			std::size_t count{};
 
@@ -61,7 +61,7 @@ namespace API::Subsonic::Scan
 	Response
 	handleStartScan(RequestContext& context)
 	{
-		Service<IScanner>::get()->requestImmediateScan(false);
+		Service<IScannerService>::get()->requestImmediateScan(false);
 
 		Response response {Response::createOkResponse(context.serverProtocolVersion)};
 		response.addNode("scanStatus", createStatusResponseNode());

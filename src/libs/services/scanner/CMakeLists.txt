@@ -1,7 +1,7 @@
 
 add_library(lmsscanner SHARED
 	impl/AcousticBrainzUtils.cpp
-	impl/Scanner.cpp
+	impl/ScannerService.cpp
 	impl/ScannerStats.cpp
 	)
 

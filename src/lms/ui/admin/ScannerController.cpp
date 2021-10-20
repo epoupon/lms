@@ -30,7 +30,7 @@
 
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "scanner/IScanner.hpp"
+#include "services/scanner/IScannerService.hpp"
 #include "utils/Service.hpp"
 #include "LmsApplication.hpp"
 
@@ -163,20 +163,20 @@ ScannerController::refreshContents()
 	actionBtn->actionButton()->setText(Wt::WString::tr("Lms.Admin.ScannerController.scan-now"));
 	actionBtn->actionButton()->clicked().connect([]
 	{
-		Service<Scanner::IScanner>::get()->requestImmediateScan(false);
+		Service<Scanner::IScannerService>::get()->requestImmediateScan(false);
 	});
 
 	auto popup = std::make_unique<Wt::WPopupMenu>();
 	popup->addItem(Wt::WString::tr("Lms.Admin.ScannerController.force-scan-now"));
 	popup->itemSelected().connect([]
 	{
-		Service<Scanner::IScanner>::get()->requestImmediateScan(true);
+		Service<Scanner::IScannerService>::get()->requestImmediateScan(true);
 	});
 	actionBtn->dropDownButton()->setMenu(std::move(popup));
 	actionBtn->dropDownButton()->addStyleClass("btn-primary");
 
 
-	const IScanner::Status status {Service<IScanner>::get()->getStatus()};
+	const IScannerService::Status status {Service<IScannerService>::get()->getStatus()};
 	if (status.lastCompleteScanStats)
 	{
 		bindString("last-scan", Wt::WString::tr("Lms.Admin.ScannerController.last-scan-status")
@@ -200,16 +200,16 @@ ScannerController::refreshContents()
 
 	switch (status.currentState)
 	{
-		case IScanner::State::NotScheduled:
+		case IScannerService::State::NotScheduled:
 			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-not-scheduled"));
 			bindEmpty("step-status");
 			break;
-		case IScanner::State::Scheduled:
+		case IScannerService::State::Scheduled:
 			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-scheduled")
 					.arg(status.nextScheduledScan.toString()));
 			bindEmpty("step-status");
 			break;
-		case IScanner::State::InProgress:
+		case IScannerService::State::InProgress:
 			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-in-progress")
 					.arg(static_cast<int>(status.currentScanStepStats->currentStep) + 1)
 					.arg(Scanner::ScanProgressStepCount));

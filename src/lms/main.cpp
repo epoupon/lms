@@ -31,7 +31,7 @@
 #include "services/cover/ICoverService.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
-#include "scanner/IScanner.hpp"
+#include "services/scanner/IScannerService.hpp"
 #include "subsonic/SubsonicResource.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
@@ -132,7 +132,7 @@ generateWtConfig(std::string execPath)
 
 static
 void
-proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
+proxyScannerEventsToApplication(Scanner::IScannerService& scanner, Wt::WServer& server)
 {
 	auto postAll {[](Wt::WServer& server, std::function<void()> cb)
 	{
@@ -259,7 +259,7 @@ int main(int argc, char* argv[])
 		Service<Http::IClient> httpClient {Http::createClient(ioContext)};
 		Service<Cover::ICoverService> coverService {Cover::createCoverService(database, argv[0], server.appRoot() + "/images/unknown-cover.jpg")};
 		Service<Recommendation::IRecommendationService> recommendationService {Recommendation::createRecommendationService(database)};
-		Service<Scanner::IScanner> scannerService {Scanner::createScanner(database, *recommendationService)};
+		Service<Scanner::IScannerService> scannerService {Scanner::createScannerService(database, *recommendationService)};
 
 		scannerService->getEvents().scanComplete.connect([&]
 		{
