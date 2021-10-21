@@ -21,29 +21,21 @@
 
 #include <Wt/WResource.h>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 
-
-namespace UserInterface {
-
-class AudioFileResource : public Wt::WResource
+namespace UserInterface
 {
-	public:
-		~AudioFileResource();
+	class AudioFileResource : public Wt::WResource
+	{
+		public:
+			~AudioFileResource();
 
-		std::string getUrl(Database::TrackId trackId) const;
+			std::string getUrl(Database::TrackId trackId) const;
 
-	private:
+		private:
+			static constexpr std::size_t _chunkSize {262144};
 
-		static constexpr std::size_t _chunkSize {262144};
-
-		void handleRequest(const Wt::Http::Request& request,
-				Wt::Http::Response& response) override;
-
-};
-
+			void handleRequest(const Wt::Http::Request& request,
+					Wt::Http::Response& response) override;
+	};
 } // namespace UserInterface
-
-
-
-

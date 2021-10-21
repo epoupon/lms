@@ -27,7 +27,7 @@
 #include <security/pam_appl.h>
 
 #include "services/auth/Types.hpp"
-#include "database/Session.hpp"
+#include "services/database/Session.hpp"
 #include "utils/Logger.hpp"
 
 namespace Auth

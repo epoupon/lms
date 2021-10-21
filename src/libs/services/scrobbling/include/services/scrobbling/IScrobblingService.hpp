@@ -29,7 +29,7 @@
 #include <Wt/WDateTime.h>
 
 #include "services/scrobbling/Listen.hpp"
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 
 namespace Database
 {

@@ -19,9 +19,9 @@
 
 #include "ArtistCollector.hpp"
 
-#include "database/Artist.hpp"
-#include "database/User.hpp"
-#include "database/TrackList.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/User.hpp"
+#include "services/database/TrackList.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "Filters.hpp"

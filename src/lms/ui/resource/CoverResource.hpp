@@ -20,11 +20,10 @@
 #pragma once
 
 #include <Wt/WResource.h>
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 
 namespace UserInterface
 {
-
 	class CoverResource : public Wt::WResource
 	{
 		public:
@@ -45,6 +44,5 @@ namespace UserInterface
 		private:
 			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
 	};
-
 } // namespace UserInterface
 

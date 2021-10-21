@@ -26,7 +26,7 @@
 #include <boost/asio/steady_timer.hpp>
 #include <Wt/Dbo/Dbo.h>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 #include "services/scrobbling/Listen.hpp"
 
 namespace Database

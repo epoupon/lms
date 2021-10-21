@@ -26,7 +26,7 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 #include "utils/UUID.hpp"
 
 namespace Database {

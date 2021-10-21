@@ -21,15 +21,14 @@
 
 #include <Wt/WPopupMenu.h>
 
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/User.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/User.hpp"
 #include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface
 {
-
 	void
 	displayReleasePopupMenu(Wt::WInteractWidget& target,
 			Database::ReleaseId releaseId,
@@ -75,6 +74,4 @@ namespace UserInterface
 
 			popup->popup(&target);
 	}
-
 } // namespace UserInterface
-

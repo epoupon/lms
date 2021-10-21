@@ -17,11 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/TrackArtistLink.hpp"
+#include "services/database/TrackArtistLink.hpp"
 
-#include "database/Artist.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
 
 #include "Traits.hpp"
 

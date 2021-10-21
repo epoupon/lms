@@ -23,8 +23,8 @@
 #include <Wt/WImage.h>
 #include <Wt/WText.h>
 
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Release.hpp"
 #include "resource/CoverResource.hpp"
 
 #include "LmsApplication.hpp"
@@ -33,7 +33,6 @@ using namespace Database;
 
 namespace UserInterface::ReleaseListHelpers
 {
-
 	static
 	std::unique_ptr<Wt::WTemplate>
 	createEntryInternal(const Release::pointer& release, const std::string& templateKey, const Artist::pointer& artist, const bool showYear)
@@ -104,6 +103,5 @@ namespace UserInterface::ReleaseListHelpers
 	{
 		return createEntry(release, artist, true);
 	}
-
 } // namespace UserInterface
 

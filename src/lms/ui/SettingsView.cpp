@@ -35,7 +35,7 @@
 #include "common/ValueStringModel.hpp"
 
 #include "services/auth/IPasswordService.hpp"
-#include "database/Session.hpp"
+#include "services/database/Session.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"

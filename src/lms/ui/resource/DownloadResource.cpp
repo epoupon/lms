@@ -26,10 +26,10 @@
 #include <Wt/Http/Response.h>
 #include <Wt/WLocalDateTime.h>
 
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Zipper.hpp"

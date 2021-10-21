@@ -24,31 +24,27 @@
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 
 #include "Filters.hpp"
 
-namespace UserInterface {
-
-class Filters : public Wt::WTemplate
+namespace UserInterface
 {
-	public:
-		Filters();
+	class Filters : public Wt::WTemplate
+	{
+		public:
+			Filters();
 
-		void add(Database::ClusterId clusterId);
+			void add(Database::ClusterId clusterId);
+			const std::vector<Database::ClusterId>& getClusterIds() const { return _clusterIds; }
+			Wt::Signal<>& updated() { return _sigUpdated; }
 
-		const std::vector<Database::ClusterId>& getClusterIds() const { return _clusterIds; }
+		private:
+			void showDialog();
 
-		Wt::Signal<>& updated() { return _sigUpdated; }
-
-	private:
-
-		void showDialog();
-
-		Wt::WContainerWidget *_filters;
-		Wt::Signal<> _sigUpdated;
-		std::vector<Database::ClusterId> _clusterIds;
-};
-
+			Wt::WContainerWidget *_filters;
+			Wt::Signal<> _sigUpdated;
+			std::vector<Database::ClusterId> _clusterIds;
+	};
 } // namespace UserInterface
 

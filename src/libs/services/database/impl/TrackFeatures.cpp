@@ -17,13 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/TrackFeatures.hpp"
+#include "services/database/TrackFeatures.hpp"
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-#include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
 #include "utils/Logger.hpp"
 
 namespace Database {

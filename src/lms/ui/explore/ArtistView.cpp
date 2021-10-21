@@ -25,13 +25,13 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Release.hpp"
-#include "database/ScanSettings.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Cluster.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/ScanSettings.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/User.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"

@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/Session.hpp"
+#include "services/database/Session.hpp"
 
 #include <map>
 #include <mutex>
@@ -27,17 +27,17 @@
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Db.hpp"
-#include "database/Release.hpp"
-#include "database/ScanSettings.hpp"
-#include "database/Track.hpp"
-#include "database/TrackBookmark.hpp"
-#include "database/TrackArtistLink.hpp"
-#include "database/TrackList.hpp"
-#include "database/TrackFeatures.hpp"
-#include "database/User.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Cluster.hpp"
+#include "services/database/Db.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/ScanSettings.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/TrackBookmark.hpp"
+#include "services/database/TrackArtistLink.hpp"
+#include "services/database/TrackList.hpp"
+#include "services/database/TrackFeatures.hpp"
+#include "services/database/User.hpp"
 
 namespace Database
 {

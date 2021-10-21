@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 #include "utils/String.hpp"
 
 namespace API::Subsonic

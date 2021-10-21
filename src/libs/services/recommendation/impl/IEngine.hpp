@@ -22,7 +22,7 @@
 #include <functional>
 #include <memory>
 #include <string_view>
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 #include "utils/EnumSet.hpp"
 #include "services/recommendation/Types.hpp"
 

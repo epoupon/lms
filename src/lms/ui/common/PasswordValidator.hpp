@@ -22,7 +22,7 @@
 #include <functional>
 #include <Wt/WValidator.h>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 #include "services/auth/Types.hpp"
 
 namespace UserInterface

@@ -20,9 +20,8 @@
 #pragma once
 
 #include <Wt/WWidget.h>
-#include <Wt/WSignal.h>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 #include "PlayQueueAction.hpp"
 
 namespace UserInterface

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <functional>
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 
 namespace Recommendation
 {

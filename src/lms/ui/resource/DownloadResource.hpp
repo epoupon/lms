@@ -22,53 +22,51 @@
 #include <memory>
 #include <Wt/WResource.h>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 #include "utils/Zipper.hpp"
 
-namespace UserInterface {
-
-class DownloadResource : public Wt::WResource
+namespace UserInterface
 {
-	public:
-		static constexpr std::size_t bufferSize {32768};
+	class DownloadResource : public Wt::WResource
+	{
+		public:
+			static constexpr std::size_t bufferSize {32768};
 
-		~DownloadResource();
+			~DownloadResource();
 
-	private:
+		private:
+			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
+			virtual std::unique_ptr<Zip::Zipper> createZipper() = 0;
+	};
 
-		void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-		virtual std::unique_ptr<Zip::Zipper> createZipper() = 0;
-};
+	class DownloadArtistResource : public DownloadResource
+	{
+		public:
+			DownloadArtistResource(Database::ArtistId artistId);
 
-class DownloadArtistResource : public DownloadResource
-{
-	public:
-		DownloadArtistResource(Database::ArtistId artistId);
+		private:
+			std::unique_ptr<Zip::Zipper> createZipper() override;
+			Database::ArtistId _artistId;
+	};
 
-	private:
-		std::unique_ptr<Zip::Zipper> createZipper() override;
-		Database::ArtistId _artistId;
-};
+	class DownloadReleaseResource : public DownloadResource
+	{
+		public:
+			DownloadReleaseResource(Database::ReleaseId releaseId);
 
-class DownloadReleaseResource : public DownloadResource
-{
-	public:
-		DownloadReleaseResource(Database::ReleaseId releaseId);
+		private:
+			std::unique_ptr<Zip::Zipper> createZipper() override;
+			Database::ReleaseId _releaseId;
+	};
 
-	private:
-		std::unique_ptr<Zip::Zipper> createZipper() override;
-		Database::ReleaseId _releaseId;
-};
+	class DownloadTrackResource : public DownloadResource
+	{
+		public:
+			DownloadTrackResource(Database::TrackId trackId);
 
-class DownloadTrackResource : public DownloadResource
-{
-	public:
-		DownloadTrackResource(Database::TrackId trackId);
-
-	private:
-		std::unique_ptr<Zip::Zipper> createZipper() override;
-		Database::TrackId _trackId;
-};
-
+		private:
+			std::unique_ptr<Zip::Zipper> createZipper() override;
+			Database::TrackId _trackId;
+	};
 } // namespace UserInterface
 

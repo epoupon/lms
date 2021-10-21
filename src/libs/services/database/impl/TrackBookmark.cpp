@@ -17,11 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/TrackBookmark.hpp"
+#include "services/database/TrackBookmark.hpp"
 
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/User.hpp"
 #include "Traits.hpp"
 
 namespace Database {

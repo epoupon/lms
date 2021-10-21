@@ -24,8 +24,8 @@
 #include <Wt/WTemplate.h>
 
 #include "services/auth/IPasswordService.hpp"
-#include "database/User.hpp"
-#include "database/Session.hpp"
+#include "services/database/User.hpp"
+#include "services/database/Session.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
@@ -34,7 +34,7 @@
 namespace UserInterface {
 
 UsersView::UsersView()
- : Wt::WTemplate(Wt::WString::tr("Lms.Admin.Users.template"))
+ : Wt::WTemplate {Wt::WString::tr("Lms.Admin.Users.template")}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
@@ -45,7 +45,7 @@ UsersView::UsersView()
 		setCondition("if-can-create-user", true);
 
 		Wt::WPushButton* addBtn = bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.Admin.Users.add"));
-		addBtn->clicked().connect([]()
+		addBtn->clicked().connect([]
 		{
 			LmsApp->setInternalPath("/admin/user", true);
 		});
@@ -69,8 +69,7 @@ UsersView::refreshView()
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto users = Database::User::getAll(LmsApp->getDbSession());
-	for (const auto& user : users)
+	for (const auto& user : Database::User::getAll(LmsApp->getDbSession()))
 	{
 		const Database::UserId userId {user->getId()};
 

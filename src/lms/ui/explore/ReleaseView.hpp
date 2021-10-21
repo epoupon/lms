@@ -22,7 +22,7 @@
 #include <unordered_set>
 #include <Wt/WTemplate.h>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 #include "PlayQueueAction.hpp"
 
 namespace Database
@@ -32,7 +32,6 @@ namespace Database
 
 namespace UserInterface
 {
-
 	class Filters;
 	class Release : public Wt::WTemplate
 	{
@@ -51,6 +50,5 @@ namespace UserInterface
 
 			Filters* _filters {};
 	};
-
 } // namespace UserInterface
 

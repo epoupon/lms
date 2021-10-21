@@ -28,8 +28,8 @@
 #include <Wt/WResource.h>
 #include <Wt/WSplitButton.h>
 
-#include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
 #include "services/scanner/IScannerService.hpp"
 #include "utils/Service.hpp"
 #include "LmsApplication.hpp"

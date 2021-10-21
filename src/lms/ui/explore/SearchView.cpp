@@ -25,10 +25,10 @@
 #include <Wt/WImage.h>
 #include <Wt/WStackedWidget.h>
 
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
 #include "common/LoadingIndicator.hpp"
@@ -40,7 +40,6 @@
 
 namespace UserInterface
 {
-
 	SearchView::SearchView(Filters* filters)
 	: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Search.template")}
 	, _filters {filters}
@@ -186,8 +185,5 @@ namespace UserInterface
 
 		getItemMenu(Mode::Track).setDisabled(results.getCount() == 0);
 	}
-
-
-
 } // namespace UserInterface
 

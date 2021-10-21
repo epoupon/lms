@@ -22,11 +22,10 @@
 #include <vector>
 #include <Wt/WSignal.h>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 
 namespace UserInterface
 {
-
 	enum class PlayQueueAction
 	{
 		Play,

@@ -21,8 +21,8 @@
 
 #include <Wt/WMenu.h>
 
-#include "database/Session.hpp"
-#include "database/TrackArtistLink.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/TrackArtistLink.hpp"
 #include "utils/EnumSet.hpp"
 #include "utils/Logger.hpp"
 

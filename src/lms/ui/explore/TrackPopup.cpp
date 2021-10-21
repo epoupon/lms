@@ -21,15 +21,14 @@
 
 #include <Wt/WPopupMenu.h>
 
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/User.hpp"
 #include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface
 {
-
 	void
 	displayTrackPopupMenu(Wt::WInteractWidget& target,
 			Database::TrackId trackId,

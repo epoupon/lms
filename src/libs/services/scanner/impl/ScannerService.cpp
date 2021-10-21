@@ -24,13 +24,13 @@
 
 #include <Wt/WLocalDateTime.h>
 
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Release.hpp"
-#include "database/ScanSettings.hpp"
-#include "database/Track.hpp"
-#include "database/TrackArtistLink.hpp"
-#include "database/TrackFeatures.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Cluster.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/ScanSettings.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/TrackArtistLink.hpp"
+#include "services/database/TrackFeatures.hpp"
 #include "metadata/TagLibParser.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Exception.hpp"

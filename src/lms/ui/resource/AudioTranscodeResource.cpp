@@ -25,9 +25,9 @@
 #include "av/TranscodeParameters.hpp"
 #include "av/TranscodeResourceHandlerCreator.hpp"
 #include "av/Types.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/User.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
@@ -41,7 +41,6 @@ namespace StringUtils
 	std::optional<Database::AudioFormat>
 	readAs(std::string_view str)
 	{
-
 		auto encodedFormat {readAs<int>(str)};
 		if (!encodedFormat)
 			return std::nullopt;

@@ -17,17 +17,17 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/Track.hpp"
+#include "services/database/Track.hpp"
 
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Release.hpp"
-#include "database/TrackArtistLink.hpp"
-#include "database/TrackFeatures.hpp"
-#include "database/Session.hpp"
-#include "database/User.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Cluster.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/TrackArtistLink.hpp"
+#include "services/database/TrackFeatures.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/User.hpp"
 #include "utils/Logger.hpp"
 
 #include "SqlQuery.hpp"

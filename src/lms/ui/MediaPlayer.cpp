@@ -25,13 +25,13 @@
 
 #include "utils/Logger.hpp"
 
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackList.hpp"
-#include "database/Types.hpp"
-#include "database/User.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/TrackList.hpp"
+#include "services/database/Types.hpp"
+#include "services/database/User.hpp"
 
 #include "resource/CoverResource.hpp"
 #include "resource/AudioTranscodeResource.hpp"
