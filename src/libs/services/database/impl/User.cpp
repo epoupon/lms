@@ -161,61 +161,61 @@ User::getQueuedTrackList(Session& session) const
 }
 
 void
-User::starArtist(ObjectPtr<Artist> artist)
+User::star(ObjectPtr<Artist> artist)
 {
 	if (_starredArtists.count(getDboPtr(artist)) == 0)
 		_starredArtists.insert(getDboPtr(artist));
 }
 
 void
-User::unstarArtist(ObjectPtr<Artist> artist)
+User::unstar(ObjectPtr<Artist> artist)
 {
 	if (_starredArtists.count(getDboPtr(artist)) != 0)
 		_starredArtists.erase(getDboPtr(artist));
 }
 
 bool
-User::hasStarredArtist(ObjectPtr<Artist> artist) const
+User::isStarred(ObjectPtr<Artist> artist) const
 {
 	return _starredArtists.count(getDboPtr(artist)) != 0;
 }
 
 void
-User::starRelease(ObjectPtr<Release> release)
+User::star(ObjectPtr<Release> release)
 {
 	if (_starredReleases.count(getDboPtr(release)) == 0)
 		_starredReleases.insert(getDboPtr(release));
 }
 
 void
-User::unstarRelease(ObjectPtr<Release> release)
+User::unstar(ObjectPtr<Release> release)
 {
 	if (_starredReleases.count(getDboPtr(release)) != 0)
 		_starredReleases.erase(getDboPtr(release));
 }
 
 bool
-User::hasStarredRelease(ObjectPtr<Release> release) const
+User::isStarred(ObjectPtr<Release> release) const
 {
 	return _starredReleases.count(getDboPtr(release)) != 0;
 }
 
 void
-User::starTrack(ObjectPtr<Track> track)
+User::star(ObjectPtr<Track> track)
 {
 	if (_starredTracks.count(getDboPtr(track)) == 0)
 		_starredTracks.insert(getDboPtr(track));
 }
 
 void
-User::unstarTrack(ObjectPtr<Track> track)
+User::unstar(ObjectPtr<Track> track)
 {
 	if (_starredTracks.count(getDboPtr(track)) != 0)
 		_starredTracks.erase(getDboPtr(track));
 }
 
 bool
-User::hasStarredTrack(ObjectPtr<Track> track) const
+User::isStarred(ObjectPtr<Track> track) const
 {
 	return _starredTracks.count(getDboPtr(track)) != 0;
 }

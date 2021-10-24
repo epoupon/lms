@@ -115,5 +115,36 @@ TEST_F(DatabaseFixture, SingleTrackDate)
 	}
 }
 
+TEST_F(DatabaseFixture, SingleStarredTrack)
+{
+	ScopedTrack track {session, "MyTrack"};
+	ScopedUser user {session, "MyUser"};
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		EXPECT_FALSE(user->isStarred(track.get()));
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		user.get().modify()->star(track.get());
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		EXPECT_TRUE(user->isStarred(track.get()));
+
+		bool hasMore {};
+		auto tracks {Track::getStarred(session, user.get(), {}, std::nullopt, hasMore)};
+		ASSERT_EQ(tracks.size(), 1);
+		EXPECT_EQ(tracks.front()->getId(), track.getId());
+		EXPECT_FALSE(hasMore);
+	}
+}
+
+
 
 

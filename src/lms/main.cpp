@@ -31,6 +31,7 @@
 #include "services/cover/ICoverService.hpp"
 #include "services/database/Db.hpp"
 #include "services/database/Session.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scanner/IScannerService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
@@ -238,7 +239,7 @@ int main(int argc, char* argv[])
 
 		// Service initialization order is important (reverse-order for deinit)
 		Service<IChildProcessManager> childProcessManagerService {createChildProcessManager(ioContext)};
-
+		Service<Feedback::IFeedbackService> feedbackService {Feedback::createFeedbackService(database)};
 		Service<Auth::IAuthTokenService> authTokenService;
 		Service<Auth::IPasswordService> authPasswordService;
 		Service<Auth::IEnvService> authEnvService;

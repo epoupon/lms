@@ -37,6 +37,7 @@
 #include "services/database/TrackBookmark.hpp"
 #include "services/database/TrackList.hpp"
 #include "services/database/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "services/cover/ICoverService.hpp"
@@ -322,7 +323,7 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 	trackResponse.setAttribute("type", "music");
 	trackResponse.setAttribute("created", dateTimeToCreatedString(track->getLastWritten()));
 
-	if (user->hasStarredTrack(track))
+	if (Service<Feedback::IFeedbackService>::get()->isStarred(user->getId(), track->getId()))
 		trackResponse.setAttribute("starred", reportedStarredDate);
 
 	// Report the first GENRE for this track
@@ -413,7 +414,7 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 		}
 	}
 
-	if (user->hasStarredRelease(release))
+	if (Service<Feedback::IFeedbackService>::get()->isStarred(user->getId(), release->getId()))
 		albumNode.setAttribute("starred", reportedStarredDate);
 
 	return albumNode;
@@ -431,7 +432,7 @@ artistToResponseNode(const User::pointer& user, const Artist::pointer& artist, b
 	if (id3)
 		artistNode.setAttribute("albumCount", artist->getReleaseCount());
 
-	if (user->hasStarredArtist(artist))
+	if (Service<Feedback::IFeedbackService>::get()->isStarred(user->getId(), artist->getId()))
 		artistNode.setAttribute("starred", reportedStarredDate);
 
 	return artistNode;
@@ -1471,7 +1472,7 @@ handleStarRequest(RequestContext& context)
 		if (!artist)
 			continue;
 
-		user.modify()->starArtist(artist);
+		Service<Feedback::IFeedbackService>::get()->star(user->getId(), artist->getId());
 	}
 
 	for (const ReleaseId id : params.releaseIds)
@@ -1480,7 +1481,7 @@ handleStarRequest(RequestContext& context)
 		if (!release)
 			continue;
 
-		user.modify()->starRelease(release);
+		Service<Feedback::IFeedbackService>::get()->star(user->getId(), release->getId());
 	}
 
 	for (const TrackId id : params.trackIds)
@@ -1489,7 +1490,7 @@ handleStarRequest(RequestContext& context)
 		if (!track)
 			continue;
 
-		user.modify()->starTrack(track);
+		Service<Feedback::IFeedbackService>::get()->star(user->getId(), track->getId());
 	}
 
 	return Response::createOkResponse(context.serverProtocolVersion);
@@ -1527,7 +1528,7 @@ handleUnstarRequest(RequestContext& context)
 		if (!artist)
 			continue;
 
-		user.modify()->unstarArtist(artist);
+		Service<Feedback::IFeedbackService>::get()->unstar(user->getId(), artist->getId());
 	}
 
 	for (const ReleaseId id : params.releaseIds)
@@ -1536,7 +1537,7 @@ handleUnstarRequest(RequestContext& context)
 		if (!release)
 			continue;
 
-		user.modify()->unstarRelease(release);
+		Service<Feedback::IFeedbackService>::get()->unstar(user->getId(), release->getId());
 	}
 
 	for (const TrackId id : params.trackIds)
@@ -1545,7 +1546,7 @@ handleUnstarRequest(RequestContext& context)
 		if (!track)
 			continue;
 
-		user.modify()->unstarTrack(track);
+		Service<Feedback::IFeedbackService>::get()->unstar(user->getId(), track->getId());
 	}
 
 

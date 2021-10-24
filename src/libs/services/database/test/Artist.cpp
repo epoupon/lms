@@ -366,3 +366,36 @@ TEST_F(DatabaseFixture, SingleArtistNonReleaseTracks)
 		EXPECT_EQ(tracks.front()->getId(), track2.getId());
 	}
 }
+
+TEST_F(DatabaseFixture, SingleStarredArtist)
+{
+	ScopedArtist artist {session, "MyArtist"};
+	ScopedTrack track {session, "MyTrack"};
+	ScopedUser user {session, "MyUser"};
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		EXPECT_FALSE(user->isStarred(artist.get()));
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		auto trackArtistLink {TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist)};
+		user.get().modify()->star(artist.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		EXPECT_TRUE(user->isStarred(artist.get()));
+
+		bool hasMore {};
+		auto artists {Artist::getStarred(session, user.get(), {}, std::nullopt, Artist::SortMethod::BySortName, std::nullopt, hasMore)};
+		ASSERT_EQ(artists.size(), 1);
+		EXPECT_EQ(artists.front()->getId(), artist.getId());
+		EXPECT_FALSE(hasMore);
+	}
+}
+

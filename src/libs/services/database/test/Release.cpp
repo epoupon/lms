@@ -361,3 +361,36 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseDate)
 	}
 }
 
+TEST_F(DatabaseFixture, SingleStarredRelease)
+{
+	ScopedRelease release {session, "MyRelease"};
+	ScopedTrack track {session, "MyTrack"};
+	ScopedUser user {session, "MyUser"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		EXPECT_FALSE(user->isStarred(release.get()));
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		track.get().modify()->setRelease(release.get());
+		user.get().modify()->star(release.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		EXPECT_TRUE(user->isStarred(release.get()));
+
+		bool hasMore {};
+		auto releases {Release::getStarred(session, user.get(), {}, std::nullopt, hasMore)};
+		ASSERT_EQ(releases.size(), 1);
+		EXPECT_EQ(releases.front()->getId(), release.getId());
+		EXPECT_FALSE(hasMore);
+	}
+}
+
+

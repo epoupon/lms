@@ -26,8 +26,8 @@
 
 #include "services/database/Types.hpp"
 
-namespace Scanner {
-
+namespace Scanner
+{
 	enum class ScanErrorType
 	{
 		CannotReadFile,		// cannot read file
@@ -102,6 +102,5 @@ namespace Scanner {
 		std::size_t	nbFiles() const;
 		std::size_t	nbChanges() const;
 	};
-
-}
+} // namespace Scanner
 

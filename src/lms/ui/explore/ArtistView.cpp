@@ -32,6 +32,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
@@ -165,26 +166,14 @@ Artist::refreshView()
 					artistsAction.emit(PlayQueueAction::PlayLast, {_artistId});
 				});
 
-			bool isStarred {};
-			{
-				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-				if (auto artist {Database::Artist::getById(LmsApp->getDbSession(), *artistId)})
-					isStarred = LmsApp->getUser()->hasStarredArtist(artist);
-			}
+			const bool isStarred {Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), _artistId)};
 			popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
 				->triggered().connect(this, [=]
 					{
-						auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
-
-						auto artist {Database::Artist::getById(LmsApp->getDbSession(), *artistId)};
-						if (!artist)
-							return;
-
 						if (isStarred)
-							LmsApp->getUser().modify()->unstarArtist(artist);
+							Service<Feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), _artistId);
 						else
-							LmsApp->getUser().modify()->starArtist(artist);
+							Service<Feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), _artistId);
 					});
 			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
 				->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(*artistId)});

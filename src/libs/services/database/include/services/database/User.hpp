@@ -167,18 +167,18 @@ class User : public Object<User, UserId>
 
 		ObjectPtr<TrackList>	getQueuedTrackList(Session& session) const;
 
-		void			starArtist(ObjectPtr<Artist> artist);
-		void			unstarArtist(ObjectPtr<Artist> artist);
-		bool			hasStarredArtist(ObjectPtr<Artist> artist) const;
+		void			star(ObjectPtr<Artist> artist);
+		void			unstar(ObjectPtr<Artist> artist);
+		bool			isStarred(ObjectPtr<Artist> artist) const;
 
-		void			starRelease(ObjectPtr<Release> release);
-		void			unstarRelease(ObjectPtr<Release> release);
-		bool			hasStarredRelease(ObjectPtr<Release> release) const;
+		void			star(ObjectPtr<Release> release);
+		void			unstar(ObjectPtr<Release> release);
+		bool			isStarred(ObjectPtr<Release> release) const;
 
 		// Stars
-		void			starTrack(ObjectPtr<Track> track);
-		void			unstarTrack(ObjectPtr<Track> track);
-		bool			hasStarredTrack(ObjectPtr<Track> track) const;
+		void			star(ObjectPtr<Track> track);
+		void			unstar(ObjectPtr<Track> track);
+		bool			isStarred(ObjectPtr<Track> track) const;
 
 		template<class Action>
 		void persist(Action& a)

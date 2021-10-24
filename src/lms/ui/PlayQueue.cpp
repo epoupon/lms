@@ -28,6 +28,7 @@
 #include "services/database/Track.hpp"
 #include "services/database/TrackList.hpp"
 #include "services/database/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
@@ -488,27 +489,14 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 	{
 		Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
 
-		bool isStarred {};
-		{
-			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-			if (auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)})
-			isStarred = LmsApp->getUser()->hasStarredTrack(track);
-		}
-
+		const bool isStarred {Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId)};
 		popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
 			->triggered().connect(moreBtn, [=]
 			{
-				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
-
-				auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
-				if (!track)
-					return;
-
 				if (isStarred)
-					LmsApp->getUser().modify()->unstarTrack(track);
+					Service<Feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
 				else
-					LmsApp->getUser().modify()->starTrack(track);
+					Service<Feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
 			});
 		popup->addItem(Wt::WString::tr("Lms.Explore.download"))
 			->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
