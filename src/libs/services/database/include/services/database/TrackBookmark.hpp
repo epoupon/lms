@@ -23,7 +23,13 @@
 
 #include <Wt/Dbo/Dbo.h>
 
+#include "services/database/IdType.hpp"
+#include "services/database/Object.hpp"
+#include "services/database/TrackId.hpp"
 #include "services/database/Types.hpp"
+#include "services/database/UserId.hpp"
+
+LMS_DECLARE_IDTYPE(TrackBookmarkId)
 
 namespace Database {
 
@@ -41,10 +47,10 @@ class TrackBookmark : public Object<TrackBookmark, TrackBookmarkId>
 		static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track);
 
 		// Find utility functions
-		static std::vector<pointer>	getAll(Session& session);
-		static std::vector<pointer>	getByUser(Session& session, ObjectPtr<User> user);
-		static pointer			getByUser(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track);
-		static pointer			getById(Session& session, TrackBookmarkId id);
+		static std::size_t						getCount(Session& session);
+		static pointer							find(Session& session, TrackBookmarkId id);
+		static RangeResults<TrackBookmarkId>	find(Session& session, UserId userId, Range range);
+		static pointer							find(Session& session, UserId userId, TrackId trackId);
 
 		// Setters
 		void setOffset(std::chrono::milliseconds offset)	{ _offset = offset; }
@@ -52,9 +58,9 @@ class TrackBookmark : public Object<TrackBookmark, TrackBookmarkId>
 
 		// Getters
 		std::chrono::milliseconds	getOffset() const	{ return _offset; }
-		std::string_view		getComment() const	{ return _comment; }
-		ObjectPtr<Track>		getTrack() const	{ return _track; }
-		ObjectPtr<User>		getUser() const		{ return _user; }
+		std::string_view			getComment() const	{ return _comment; }
+		ObjectPtr<Track>			getTrack() const	{ return _track; }
+		ObjectPtr<User>				getUser() const		{ return _user; }
 
 		template<class Action>
 			void persist(Action& a)

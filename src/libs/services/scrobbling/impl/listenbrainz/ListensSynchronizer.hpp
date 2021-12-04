@@ -24,7 +24,6 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/io_context_strand.hpp>
 #include <boost/asio/steady_timer.hpp>
-#include <Wt/Dbo/Dbo.h>
 
 #include "services/database/Types.hpp"
 #include "services/scrobbling/Listen.hpp"

@@ -24,6 +24,7 @@
 #include <Wt/WRandom.h>
 
 #include "services/auth/Types.hpp"
+#include "services/database/AuthToken.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "utils/Exception.hpp"
@@ -55,7 +56,7 @@ namespace Auth
 
 		auto transaction {session.createUniqueTransaction()};
 
-		Database::User::pointer user {Database::User::getById(session, userId)};
+		Database::User::pointer user {Database::User::find(session, userId)};
 		if (!user)
 			throw Exception {"User deleted"};
 
@@ -77,7 +78,7 @@ namespace Auth
 		Database::Session& session {getDbSession()};
 		auto transaction {session.createUniqueTransaction()};
 
-		Database::AuthToken::pointer authToken {Database::AuthToken::getByValue(session, secretHash)};
+		Database::AuthToken::pointer authToken {Database::AuthToken::find(session, secretHash)};
 		if (!authToken)
 			return std::nullopt;
 
@@ -132,7 +133,7 @@ namespace Auth
 
 		auto transaction {session.createUniqueTransaction()};
 
-		Database::User::pointer user {Database::User::getById(session, userId)};
+		Database::User::pointer user {Database::User::find(session, userId)};
 		if (!user)
 			throw Exception {"User deleted"};
 

@@ -34,7 +34,12 @@
 #include "utils/EnumSet.hpp"
 #include "utils/UUID.hpp"
 
+#include "services/database/ArtistId.hpp"
+#include "services/database/ClusterId.hpp"
+#include "services/database/Object.hpp"
+#include "services/database/TrackId.hpp"
 #include "services/database/Types.hpp"
+#include "services/database/UserId.hpp"
 
 namespace Database {
 
@@ -44,50 +49,51 @@ class ClusterType;
 class Release;
 class Session;
 class TrackArtistLink;
-class TrackFeatures;
-class TrackListEntry;
 class TrackStats;
 class User;
 
 class Track : public Object<Track, TrackId>
 {
 	public:
+		struct FindParameters
+		{
+			std::vector<ClusterId>			clusters; // if non empty, tracks that belong to these clusters
+			std::vector<std::string_view>	keywords; // if non empty, name must match all of these keywords
+			TrackSortMethod					sortMethod {TrackSortMethod::None};
+			Range							range;
+			Wt::WDateTime					writtenAfter;
+			UserId							starringUser;	// only tracks starred by this user
+			std::optional<Scrobbler>			scrobbler;		// and for this scrobbler
+
+			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
+			FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
+			FindParameters& setSortMethod(TrackSortMethod _method) { sortMethod = _method; return *this; }
+			FindParameters& setRange(Range _range) { range = _range; return *this; }
+			FindParameters& setWrittenAfter(const Wt::WDateTime& _after) { writtenAfter = _after; return *this; }
+			FindParameters& setStarringUser(UserId _user, Scrobbler _scrobbler) { starringUser = _user; scrobbler = _scrobbler; return *this; }
+		};
+		struct PathResult
+		{
+			TrackId					trackId;
+			std::filesystem::path	path;
+		};
+
 		Track() = default;
 		Track(const std::filesystem::path& p);
 
 		// Find utility functions
-		static std::size_t			getCount(Session& session);
-		static pointer				getByPath(Session& session, const std::filesystem::path& p);
-		static pointer 				getById(Session& session, TrackId id);
-		static bool					exists(Session& session, TrackId id);
-		static std::vector<pointer> getByRecordingMBID(Session& session, const UUID& MBID);
-		static std::vector<pointer>	getSimilarTracks(Session& session,
-							const std::vector<TrackId>& trackIds,
-							std::optional<std::size_t> offset = {},
-							std::optional<std::size_t> size = {});
-		static std::vector<pointer>	getByClusters(Session& session,
-							const std::vector<ClusterId>& clusters);           // tracks that belong to these clusters
-		static std::vector<pointer>	getByFilter(Session& session,
-							const std::vector<ClusterId>& clusters,            // if non empty, tracks that belong to these clusters
-							const std::vector<std::string_view>& keywords,    // if non empty, name must match all of these keywords
-							std::optional<Range> range,
-							bool& moreExpected);
-		static std::vector<pointer> getByNameAndReleaseName(Session& session, std::string_view trackName, std::string_view releaseName);
+		static std::size_t				getCount(Session& session);
+		static pointer					findByPath(Session& session, const std::filesystem::path& p);
+		static pointer 					find(Session& session, TrackId id);
+		static bool						exists(Session& session, TrackId id);
+		static std::vector<pointer>		findByRecordingMBID(Session& session, const UUID& MBID);
+		static RangeResults<TrackId>	findSimilarTracks(Session& session, const std::vector<TrackId>& trackIds, Range range);
 
-		static std::vector<pointer>	getAll(Session& session, std::optional<std::size_t> limit = std::nullopt);
-		static std::vector<pointer>	getAllRandom(Session& session, const std::vector<ClusterId>& clusters, std::optional<std::size_t> limit = std::nullopt);
-		static std::vector<TrackId>	getAllIdsRandom(Session& session, const std::vector<ClusterId>& clusters, std::optional<std::size_t> limit = std::nullopt);
-		static std::vector<TrackId>	getAllIds(Session& session);
-		static std::vector<std::pair<TrackId, std::filesystem::path>> getAllPaths(Session& session, std::optional<std::size_t> offset = std::nullopt, std::optional<std::size_t> size = std::nullopt);
-		static std::vector<pointer>	getMBIDDuplicates(Session& session);
-		static std::vector<pointer>	getLastWritten(Session& session, std::optional<Wt::WDateTime> after, const std::vector<ClusterId>& clusters, std::optional<Range> range, bool& moreResults);
-		static std::vector<pointer>	getAllWithRecordingMBIDAndMissingFeatures(Session& session);
-		static std::vector<TrackId>	getAllIdsWithFeatures(Session& session, std::optional<std::size_t> limit = {});
-		static std::vector<TrackId>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
-		static std::vector<pointer>	getStarred(Session& session,
-							ObjectPtr<User> user,
-							const std::vector<ClusterId>& clusters,
-							std::optional<Range> range, bool& hasMore);
+		static RangeResults<TrackId>	find(Session& session, const FindParameters& parameters);
+		static RangeResults<TrackId>	findByNameAndReleaseName(Session& session, std::string_view trackName, std::string_view releaseName);
+		static RangeResults<PathResult>	findPaths(Session& session, Range range);
+		static RangeResults<TrackId>	findMBIDDuplicates(Session& session, Range range);
+		static RangeResults<TrackId>	findWithRecordingMBIDAndMissingFeatures(Session& session, Range range);
 
 		// Create utility
 		static pointer	create(Session& session, const std::filesystem::path& p);
@@ -116,7 +122,6 @@ class Track : public Object<Track, TrackId>
 		void addArtistLink(const ObjectPtr<TrackArtistLink>& artistLink);
 		void setRelease(ObjectPtr<Release> release)			{ _release = getDboPtr(release); }
 		void setClusters(const std::vector<ObjectPtr<Cluster>>& clusters );
-		void setFeatures(const ObjectPtr<TrackFeatures>& features);
 
 		std::size_t 				getScanVersion() const		{ return _scanVersion; }
 		std::optional<std::size_t>	getTrackNumber() const;
@@ -147,8 +152,6 @@ class Track : public Object<Track, TrackId>
 		ObjectPtr<Release>				getRelease() const		{ return _release; }
 		std::vector<ObjectPtr<Cluster>>	getClusters() const;
 		std::vector<ClusterId>				getClusterIds() const;
-		bool								hasTrackFeatures() const;
-		ObjectPtr<TrackFeatures>			getTrackFeatures() const;
 
 		std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ObjectPtr<ClusterType>>& clusterTypes, std::size_t size) const;
 
@@ -178,9 +181,6 @@ class Track : public Object<Track, TrackId>
 				Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "track");
 				Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
-				Wt::Dbo::hasMany(a, _playlistEntries, Wt::Dbo::ManyToOne, "track");
-				Wt::Dbo::hasMany(a, _starringUsers, Wt::Dbo::ManyToMany, "user_track_starred", "", Wt::Dbo::OnDeleteCascade);
-				Wt::Dbo::hasOne(a, _trackFeatures);
 			}
 
 	private:
@@ -215,10 +215,6 @@ class Track : public Object<Track, TrackId>
 		Wt::Dbo::ptr<Release>				_release;
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks;
 		Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> 	_clusters;
-		Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _playlistEntries;
-		Wt::Dbo::collection<Wt::Dbo::ptr<User>>		_starringUsers;
-		Wt::Dbo::weak_ptr<TrackFeatures>		_trackFeatures;
-
 };
 
 } // namespace database

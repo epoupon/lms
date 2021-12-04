@@ -49,11 +49,9 @@ namespace Scrobbling::ListenBrainz
 			void listenStarted(const Listen& listen) override;
 			void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
 			void addTimedListen(const TimedListen& listen) override;
-			Database::ObjectPtr<Database::TrackList> getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user) override;
 
 			// Submit listens
 			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
-			//std::optional<SendQueue::RequestData> createSubmitListenRequestData(const Listen& listen, const Wt::WDateTime& timePoint);
 
 			boost::asio::io_context&	_ioContext;
 			Database::Db&				_db;

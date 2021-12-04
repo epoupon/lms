@@ -23,7 +23,7 @@
 
 #include <Wt/WTemplate.h>
 
-#include "services/database/Types.hpp"
+#include "services/database/Object.hpp"
 
 namespace Database
 {

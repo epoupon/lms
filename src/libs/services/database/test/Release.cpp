@@ -21,11 +21,12 @@
 
 using namespace Database;
 
-TEST_F(DatabaseFixture, SingleRelease)
+TEST_F(DatabaseFixture, Release)
 {
 	{
 		auto transaction {session.createSharedTransaction()};
 
+		EXPECT_EQ(Release::getCount(session), 0);
 		EXPECT_FALSE(Release::exists(session, 0));
 		EXPECT_FALSE(Release::exists(session, 1));
 	}
@@ -35,20 +36,23 @@ TEST_F(DatabaseFixture, SingleRelease)
 	{
 		auto transaction {session.createSharedTransaction()};
 
+		EXPECT_EQ(Release::getCount(session), 1);
 		EXPECT_TRUE(Release::exists(session, release.getId()));
 
-		auto releases {Release::getAllOrphans(session)};
-		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front()->getId(), release.getId());
+		auto releases {Release::findOrphans(session, Range {})};
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release.getId());
 
-		releases = Release::getAll(session);
-		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front()->getId(), release.getId());
-		EXPECT_EQ(release->getDuration(), std::chrono::seconds {0});
+		{
+			auto releases {Release::find(session, Release::FindParameters {})};
+			ASSERT_EQ(releases.results.size(), 1);
+			EXPECT_EQ(releases.results.front(), release.getId());
+			EXPECT_EQ(release->getDuration(), std::chrono::seconds {0});
+		}
 	}
 }
 
-TEST_F(DatabaseFixture, SingleTrackSingleRelease)
+TEST_F(DatabaseFixture, Release_singleTrack)
 {
 	ScopedRelease release {session, "MyRelease"};
 
@@ -64,7 +68,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleRelease)
 
 		{
 			auto transaction {session.createSharedTransaction()};
-			EXPECT_TRUE(Release::getAllOrphans(session).empty());
+			EXPECT_TRUE(Release::findOrphans(session, Range {}).results.empty());
 
 			EXPECT_EQ(release->getTracksCount(), 1);
 			ASSERT_EQ(release->getTracks().size(), 1);
@@ -80,19 +84,19 @@ TEST_F(DatabaseFixture, SingleTrackSingleRelease)
 
 		{
 			auto transaction {session.createUniqueTransaction()};
-			auto tracks {Track::getByNameAndReleaseName(session, "MyTrackName", "MyReleaseName")};
-			ASSERT_EQ(tracks.size(), 1);
-			EXPECT_EQ(tracks.front()->getId(), track.getId());
+			auto tracks {Track::findByNameAndReleaseName(session, "MyTrackName", "MyReleaseName")};
+			ASSERT_EQ(tracks.results.size(), 1);
+			EXPECT_EQ(tracks.results.front(), track.getId());
 		}
 		{
 			auto transaction {session.createUniqueTransaction()};
-			auto tracks {Track::getByNameAndReleaseName(session, "MyTrackName", "MyReleaseFoo")};
-			EXPECT_EQ(tracks.size(), 0);
+			auto tracks {Track::findByNameAndReleaseName(session, "MyTrackName", "MyReleaseFoo")};
+			EXPECT_EQ(tracks.results.size(), 0);
 		}
 		{
 			auto transaction {session.createUniqueTransaction()};
-			auto tracks {Track::getByNameAndReleaseName(session, "MyTrackFoo", "MyReleaseName")};
-			EXPECT_EQ(tracks.size(), 0);
+			auto tracks {Track::findByNameAndReleaseName(session, "MyTrackFoo", "MyReleaseName")};
+			EXPECT_EQ(tracks.results.size(), 0);
 		}
 	}
 
@@ -101,9 +105,9 @@ TEST_F(DatabaseFixture, SingleTrackSingleRelease)
 
 		EXPECT_TRUE(release->getTracks().empty());
 
-		auto releases {Release::getAllOrphans(session)};
-		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front()->getId(), release.getId());
+		auto releases {Release::findOrphans(session, Range {})};
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release.getId());
 	}
 }
 
@@ -138,38 +142,37 @@ TEST_F(DatabaseFixture, MulitpleReleaseSearchByName)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		bool more;
 		{
-			const auto releases {Release::getByFilter(session, {}, {"Release"}, std::nullopt, more)};
-			EXPECT_EQ(releases.size(), 6);
+			const auto releases {Release::find(session, Release::FindParameters {}.setKeywords({"Release"}))};
+			EXPECT_EQ(releases.results.size(), 6);
 		}
 
 		{
-			const auto releases {Release::getByFilter(session, {}, {"MyRelease"}, std::nullopt, more)};
-			EXPECT_EQ(releases.size(), 5);
-			EXPECT_TRUE(std::none_of(std::cbegin(releases), std::cend(releases), [&](const Release::pointer& release) { return release->getId() == release6.getId(); }));
+			const auto releases {Release::find(session, Release::FindParameters {}.setKeywords({"MyRelease"}))};
+			ASSERT_EQ(releases.results.size(), 5);
+			EXPECT_TRUE(std::none_of(std::cbegin(releases.results), std::cend(releases.results), [&](const ReleaseId releaseId) { return releaseId == release6.getId(); }));
 		}
 		{
-			const auto releases {Release::getByFilter(session, {}, {"MyRelease%"}, std::nullopt, more)};
-			ASSERT_EQ(releases.size(), 2);
-			EXPECT_EQ(releases[0]->getId(), release2.getId());
-			EXPECT_EQ(releases[1]->getId(), release4.getId());
+			const auto releases {Release::find(session, Release::FindParameters {}.setKeywords({"MyRelease%"}))};
+			ASSERT_EQ(releases.results.size(), 2);
+			EXPECT_EQ(releases.results[0], release2.getId());
+			EXPECT_EQ(releases.results[1], release4.getId());
 		}
 		{
-			const auto releases {Release::getByFilter(session, {}, {"%MyRelease"}, std::nullopt, more)};
-			ASSERT_EQ(releases.size(), 2);
-			EXPECT_EQ(releases[0]->getId(), release3.getId());
-			EXPECT_EQ(releases[1]->getId(), release5.getId());
+			const auto releases {Release::find(session, Release::FindParameters {}.setKeywords({"%MyRelease"}))};
+			ASSERT_EQ(releases.results.size(), 2);
+			EXPECT_EQ(releases.results[0], release3.getId());
+			EXPECT_EQ(releases.results[1], release5.getId());
 		}
 		{
-			const auto releases {Release::getByFilter(session, {}, {"Foo%MyRelease"}, std::nullopt, more)};
-			ASSERT_EQ(releases.size(), 1);
-			EXPECT_EQ(releases[0]->getId(), release5.getId());
+			const auto releases {Release::find(session, Release::FindParameters {}.setKeywords({"Foo%MyRelease"}))};
+			ASSERT_EQ(releases.results.size(), 1);
+			EXPECT_EQ(releases.results[0], release5.getId());
 		}
 		{
-			const auto releases {Release::getByFilter(session, {}, {"MyRelease%Foo"}, std::nullopt, more)};
-			ASSERT_EQ(releases.size(), 1);
-			EXPECT_EQ(releases[0]->getId(), release4.getId());
+			const auto releases {Release::find(session, Release::FindParameters {}.setKeywords({"MyRelease%Foo"}))};
+			ASSERT_EQ(releases.results.size(), 1);
+			EXPECT_EQ(releases.results[0], release4.getId());
 		}
 	}
 }
@@ -323,8 +326,8 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseDate)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		const auto releases {Release::getByYear(session, 0, 3000)};
-		EXPECT_EQ(releases.size(), 0);
+		const auto releases {Release::find(session, Release::FindParameters {}.setDateRange(DateRange::fromYearRange(0, 3000)))};
+		EXPECT_EQ(releases.results.size(), 0);
 	}
 
 	{
@@ -348,48 +351,48 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseDate)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto releases {Release::getByYear(session, 1950, 2000)};
-		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front()->getId(), release1.getId());
+		auto releases {Release::find(session, Release::FindParameters {}.setDateRange(DateRange::fromYearRange(1950, 2000)))};
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release1.getId());
 
-		releases = Release::getByYear(session, 1994, 1994);
-		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front()->getId(), release1.getId());
+		releases = Release::find(session, Release::FindParameters {}.setDateRange(DateRange::fromYearRange(1994, 1994)));
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release1.getId());
 
-		releases = Release::getByYear(session, 1993, 1993);
-		ASSERT_EQ(releases.size(), 0);
+		releases = Release::find(session, Release::FindParameters {}.setDateRange(DateRange::fromYearRange(1993, 1993)));
+		ASSERT_EQ(releases.results.size(), 0);
 	}
 }
 
-TEST_F(DatabaseFixture, SingleStarredRelease)
+TEST_F(DatabaseFixture, Release_writtenAfter)
 {
 	ScopedRelease release {session, "MyRelease"};
 	ScopedTrack track {session, "MyTrack"};
-	ScopedUser user {session, "MyUser"};
 
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		EXPECT_FALSE(user->isStarred(release.get()));
-	}
+	const Wt::WDateTime dateTime {Wt::WDate {1950, 1, 1}, Wt::WTime {12, 30, 20}};
 
 	{
 		auto transaction {session.createUniqueTransaction()};
-
+		track.get().modify()->setLastWriteTime(dateTime);
 		track.get().modify()->setRelease(release.get());
-		user.get().modify()->star(release.get());
 	}
 
 	{
 		auto transaction {session.createSharedTransaction()};
+		const auto releases {Release::find(session, Release::FindParameters {})};
+		EXPECT_EQ(releases.results.size(), 1);
+	}
 
-		EXPECT_TRUE(user->isStarred(release.get()));
+	{
+		auto transaction {session.createSharedTransaction()};
+		const auto releases {Release::find(session, Release::FindParameters {}.setWrittenAfter(dateTime.addSecs(-1)))};
+		EXPECT_EQ(releases.results.size(), 1);
+	}
 
-		bool hasMore {};
-		auto releases {Release::getStarred(session, user.get(), {}, std::nullopt, hasMore)};
-		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front()->getId(), release.getId());
-		EXPECT_FALSE(hasMore);
+	{
+		auto transaction {session.createSharedTransaction()};
+		const auto releases {Release::find(session, Release::FindParameters {}.setWrittenAfter(dateTime.addSecs(+1)))};
+		EXPECT_EQ(releases.results.size(), 0);
 	}
 }
 

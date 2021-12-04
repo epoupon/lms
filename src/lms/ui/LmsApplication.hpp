@@ -23,6 +23,9 @@
 
 #include <Wt/WApplication.h>
 
+#include "services/database/Object.hpp"
+#include "services/database/UserId.hpp"
+#include "services/database/Types.hpp"
 #include "services/scanner/ScannerEvents.hpp"
 
 namespace Database

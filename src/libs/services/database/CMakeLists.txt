@@ -1,16 +1,22 @@
 add_library(lmsdatabase SHARED
 	impl/Artist.cpp
+	impl/AuthToken.cpp
 	impl/Cluster.cpp
 	impl/Db.cpp
+	impl/Listen.cpp
 	impl/TrackArtistLink.cpp
 	impl/TrackFeatures.cpp
 	impl/TrackList.cpp
 	impl/Release.cpp
 	impl/ScanSettings.cpp
 	impl/Session.cpp
+	impl/StarredArtist.cpp
+	impl/StarredRelease.cpp
+	impl/StarredTrack.cpp
 	impl/SqlQuery.cpp
 	impl/Track.cpp
 	impl/TrackBookmark.cpp
+	impl/Types.cpp
 	impl/User.cpp
 	impl/Utils.cpp
 	)

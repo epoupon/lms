@@ -101,7 +101,7 @@ LmsApplication::getUser()
 	if (!_authenticatedUser)
 		return {};
 
-	return Database::User::getById(getDbSession(), _authenticatedUser->userId);
+	return Database::User::find(getDbSession(), _authenticatedUser->userId);
 }
 
 Database::UserId
@@ -247,7 +247,7 @@ LmsApplication::processPasswordAuth()
 void
 LmsApplication::setTheme()
 {
-	Database::User::UITheme theme {Database::User::defaultUITheme};
+	Database::UITheme theme {Database::User::defaultUITheme};
 	{
 		auto transaction {getDbSession().createSharedTransaction()};
 		if (const auto user {getUser()})

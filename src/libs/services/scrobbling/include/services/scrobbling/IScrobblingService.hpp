@@ -24,21 +24,17 @@
 #include <chrono>
 #include <memory>
 #include <optional>
-#include <vector>
-
-#include <Wt/WDateTime.h>
 
 #include "services/scrobbling/Listen.hpp"
+#include "services/database/ArtistId.hpp"
+#include "services/database/ClusterId.hpp"
+#include "services/database/ReleaseId.hpp"
+#include "services/database/TrackId.hpp"
 #include "services/database/Types.hpp"
 
 namespace Database
 {
-	class Artist;
 	class Db;
-	class Release;
-	class Session;
-	class Track;
-	class User;
 }
 
 namespace Scrobbling
@@ -56,45 +52,56 @@ namespace Scrobbling
 			virtual void addTimedListen(const TimedListen& listen) = 0;
 
 			// Stats
-			template <typename IdType>
-			using ResultContainer = std::vector<IdType>;
-
-			using ArtistContainer = ResultContainer<Database::ArtistId>;
-			using ReleaseContainer = ResultContainer<Database::ReleaseId>;
-			using TrackContainer = ResultContainer<Database::TrackId>;
+			using ArtistContainer = Database::RangeResults<Database::ArtistId>;
+			using ReleaseContainer = Database::RangeResults<Database::ReleaseId>;
+			using TrackContainer = Database::RangeResults<Database::TrackId>;
 			// From most recent to oldest
 			virtual ArtistContainer getRecentArtists(Database::UserId userId,
 														const std::vector<Database::ClusterId>& clusterIds,
 														std::optional<Database::TrackArtistLinkType> linkType,
-														std::optional<Database::Range> range,
-														bool& moreResults) = 0;
+														Database::Range range) = 0;
 
 			virtual ReleaseContainer getRecentReleases(Database::UserId userId,
 														const std::vector<Database::ClusterId>& clusterIds,
-														std::optional<Database::Range> range,
-														bool& moreResults) = 0;
+														Database::Range range) = 0;
 
 			virtual TrackContainer getRecentTracks(Database::UserId userId,
 														const std::vector<Database::ClusterId>& clusterIds,
-														std::optional<Database::Range> range,
-														bool& moreResults) = 0;
+														Database::Range range) = 0;
 
 			// Top
 			virtual ArtistContainer getTopArtists(Database::UserId userId,
 														const std::vector<Database::ClusterId>& clusterIds,
 														std::optional<Database::TrackArtistLinkType> linkType,
-														std::optional<Database::Range> range,
-														bool& moreResults) = 0;
+														Database::Range) = 0;
 
 			virtual ReleaseContainer getTopReleases(Database::UserId userId,
 														const std::vector<Database::ClusterId>& clusterIds,
-														std::optional<Database::Range> range,
-														bool& moreResults) = 0;
+														Database::Range range) = 0;
 
 			virtual TrackContainer getTopTracks(Database::UserId userId,
 														const std::vector<Database::ClusterId>& clusterIds,
-														std::optional<Database::Range> range,
-														bool& moreResults) = 0;
+														Database::Range range) = 0;
+
+			// Star
+			virtual void 			star(Database::UserId userId, Database::ArtistId artistId) = 0;
+			virtual void 			unstar(Database::UserId userId, Database::ArtistId artistId) = 0;
+			virtual bool 			isStarred(Database::UserId userId, Database::ArtistId artistId) = 0;
+			virtual ArtistContainer	getStarredArtists(Database::UserId userId,
+														const std::vector<Database::ClusterId>& clusterIds,
+														std::optional<Database::TrackArtistLinkType> linkType,
+														Database::ArtistSortMethod sortMethod,
+														Database::Range range) = 0;
+
+			virtual void 				star(Database::UserId userId, Database::ReleaseId releaseId) = 0;
+			virtual void 				unstar(Database::UserId userId, Database::ReleaseId releaseId) = 0;
+			virtual bool 				isStarred(Database::UserId userId, Database::ReleaseId artistId) = 0;
+			virtual ReleaseContainer	getStarredReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
+
+			virtual void 				star(Database::UserId userId, Database::TrackId trackId) = 0;
+			virtual void 				unstar(Database::UserId userId, Database::TrackId trackId) = 0;
+			virtual bool 				isStarred(Database::UserId userId, Database::TrackId artistId) = 0;
+			virtual TrackContainer		getStarredTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
 	};
 
 	std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_service& ioService, Database::Db& db);

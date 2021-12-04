@@ -23,7 +23,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 
-#include "Traits.hpp"
+#include "IdTypeTraits.hpp"
 
 namespace Database {
 
@@ -46,7 +46,7 @@ TrackArtistLink::create(Session& session, ObjectPtr<Track> track, ObjectPtr<Arti
 }
 
 EnumSet<TrackArtistLinkType>
-TrackArtistLink::getUsedTypes(Session& session)
+TrackArtistLink::findUsedTypes(Session& session)
 {
 	session.checkSharedLocked();
 

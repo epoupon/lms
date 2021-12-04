@@ -138,7 +138,7 @@ getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artist
 		// First try to get by MBID
 		if (artistInfo.musicBrainzArtistID)
 		{
-			artist = Artist::getByMBID(session, *artistInfo.musicBrainzArtistID);
+			artist = Artist::find(session, *artistInfo.musicBrainzArtistID);
 			if (!artist)
 				artist = createArtist(session, artistInfo);
 			else
@@ -151,7 +151,7 @@ getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artist
 		// Fall back on artist name (collisions may occur)
 		if (!artistInfo.name.empty())
 		{
-			for (const Artist::pointer& sameNamedArtist : Artist::getByName(session, artistInfo.name))
+			for (const Artist::pointer& sameNamedArtist : Artist::find(session, artistInfo.name))
 			{
 				// Do not fallback on artist that is correctly tagged
 				if (!allowFallbackOnMBIDEntries && sameNamedArtist->getMBID())
@@ -183,7 +183,7 @@ getOrCreateRelease(Session& session, const MetaData::Album& album)
 	// First try to get by MBID
 	if (album.musicBrainzAlbumID)
 	{
-		release = Release::getByMBID(session, *album.musicBrainzAlbumID);
+		release = Release::find(session, *album.musicBrainzAlbumID);
 		if (!release)
 		{
 			release = Release::create(session, album.name, album.musicBrainzAlbumID);
@@ -200,7 +200,7 @@ getOrCreateRelease(Session& session, const MetaData::Album& album)
 	// Fall back on release name (collisions may occur)
 	if (!album.name.empty())
 	{
-		for (const Release::pointer& sameNamedRelease : Release::getByName(session, album.name))
+		for (const Release::pointer& sameNamedRelease : Release::find(session, album.name))
 		{
 			// do not fallback on properly tagged releases
 			if (!sameNamedRelease->getMBID())
@@ -227,7 +227,7 @@ getOrCreateClusters(Session& session, const MetaData::Clusters& clustersNames)
 
 	for (auto clusterNames : clustersNames)
 	{
-		auto clusterType = ClusterType::getByName(session, clusterNames.first);
+		auto clusterType = ClusterType::find(session, clusterNames.first);
 		if (!clusterType)
 			continue;
 
@@ -249,12 +249,12 @@ getOrCreateClusters(Session& session, const MetaData::Clusters& clustersNames)
 namespace Scanner {
 
 std::unique_ptr<IScannerService>
-createScannerService(Database::Db& db, Recommendation::IRecommendationService& recommendationService)
+createScannerService(Db& db, Recommendation::IRecommendationService& recommendationService)
 {
 	return std::make_unique<ScannerService>(db, recommendationService);
 }
 
-ScannerService::ScannerService(Database::Db& db, Recommendation::IRecommendationService& recommendationService)
+ScannerService::ScannerService(Db& db, Recommendation::IRecommendationService& recommendationService)
 : _recommendationService {recommendationService}
 , _dbSession {db}
 {
@@ -543,7 +543,7 @@ ScannerService::scan(bool forceScan)
 }
 
 bool
-ScannerService::fetchTrackFeatures(Database::TrackId trackId, const UUID& recordingMBID)
+ScannerService::fetchTrackFeatures(TrackId trackId, const UUID& recordingMBID)
 {
 	std::map<std::string, double> features;
 
@@ -558,11 +558,11 @@ ScannerService::fetchTrackFeatures(Database::TrackId trackId, const UUID& record
 	{
 		auto uniqueTransaction {_dbSession.createUniqueTransaction()};
 
-		Database::Track::pointer track {Database::Track::getById(_dbSession, trackId)};
+		Track::pointer track {Track::find(_dbSession, trackId)};
 		if (!track)
 			return false;
 
-		Database::TrackFeatures::create(_dbSession, track, data);
+		TrackFeatures::create(_dbSession, track, data);
 	}
 
 	return true;
@@ -580,7 +580,7 @@ ScannerService::fetchTrackFeatures(ScanStats& stats)
 
 	struct TrackInfo
 	{
-		Database::TrackId id;
+		TrackId id;
 		UUID recordingMBID;
 	};
 
@@ -590,9 +590,12 @@ ScannerService::fetchTrackFeatures(ScanStats& stats)
 
 		auto transaction {_dbSession.createSharedTransaction()};
 
-		auto tracks {Database::Track::getAllWithRecordingMBIDAndMissingFeatures(_dbSession)};
-		for (const auto& track : tracks)
+		auto trackIds {Track::findWithRecordingMBIDAndMissingFeatures(_dbSession, Range {})};
+		for (const TrackId trackId : trackIds.results)
+		{
+			const Track::pointer track {Track::find(_dbSession, trackId)};
 			res.emplace_back(TrackInfo {track->getId(), *track->getRecordingMBID()});
+		}
 
 		return res;
 	}()};
@@ -692,7 +695,7 @@ ScannerService::scanAudioFile(const std::filesystem::path& file, bool forceScan,
 		// Skip file if last write is the same
 		auto transaction {_dbSession.createSharedTransaction()};
 
-		const Track::pointer track {Track::getByPath(_dbSession, file)};
+		const Track::pointer track {Track::findByPath(_dbSession, file)};
 
 		if (track && track->getLastWriteTime().toTime_t() == lastWriteTime.toTime_t()
 				&& track->getScanVersion() == _scanVersion)
@@ -713,7 +716,7 @@ ScannerService::scanAudioFile(const std::filesystem::path& file, bool forceScan,
 
 	auto uniqueTransaction {_dbSession.createUniqueTransaction()};
 
-	Track::pointer track {Track::getByPath(_dbSession, file) };
+	Track::pointer track {Track::findByPath(_dbSession, file) };
 
 	// We estimate this is an audio file if:
 	// - we found a least one audio stream
@@ -778,30 +781,30 @@ ScannerService::scanAudioFile(const std::filesystem::path& file, bool forceScan,
 	track.modify()->clearArtistLinks();
 	// Do not fallback on artists with the same name but having a MBID for artist and releaseArtists, as it may be corrected by properly tagging files
 	for (const Artist::pointer& artist : getOrCreateArtists(_dbSession, trackInfo->artists, false))
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, artist, Database::TrackArtistLinkType::Artist));
+		track.modify()->addArtistLink(TrackArtistLink::create(_dbSession, track, artist, TrackArtistLinkType::Artist));
 
 	for (const Artist::pointer& releaseArtist : getOrCreateArtists(_dbSession, trackInfo->albumArtists, false))
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, releaseArtist, Database::TrackArtistLinkType::ReleaseArtist));
+		track.modify()->addArtistLink(TrackArtistLink::create(_dbSession, track, releaseArtist, TrackArtistLinkType::ReleaseArtist));
 
 	// Allow fallbacks on artists with the same name even if they have MBID, since there is no tag to indicate the MBID of these artists
 	// We could ask MusicBrainz to get all the information, but that would heavily slow down the import process
 	for (const Artist::pointer& conductor : getOrCreateArtists(_dbSession, trackInfo->conductorArtists, true))
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, conductor, Database::TrackArtistLinkType::Conductor));
+		track.modify()->addArtistLink(TrackArtistLink::create(_dbSession, track, conductor, TrackArtistLinkType::Conductor));
 
 	for (const Artist::pointer& composer : getOrCreateArtists(_dbSession, trackInfo->composerArtists, true))
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, composer, Database::TrackArtistLinkType::Composer));
+		track.modify()->addArtistLink(TrackArtistLink::create(_dbSession, track, composer, TrackArtistLinkType::Composer));
 
 	for (const Artist::pointer& lyricist : getOrCreateArtists(_dbSession, trackInfo->lyricistArtists, true))
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, lyricist, Database::TrackArtistLinkType::Lyricist));
+		track.modify()->addArtistLink(TrackArtistLink::create(_dbSession, track, lyricist, TrackArtistLinkType::Lyricist));
 
 	for (const Artist::pointer& mixer : getOrCreateArtists(_dbSession, trackInfo->mixerArtists, true))
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, mixer, Database::TrackArtistLinkType::Mixer));
+		track.modify()->addArtistLink(TrackArtistLink::create(_dbSession, track, mixer, TrackArtistLinkType::Mixer));
 
 	for (const Artist::pointer& producer : getOrCreateArtists(_dbSession, trackInfo->producerArtists, true))
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, producer, Database::TrackArtistLinkType::Producer));
+		track.modify()->addArtistLink(TrackArtistLink::create(_dbSession, track, producer, TrackArtistLinkType::Producer));
 
 	for (const Artist::pointer& remixer : getOrCreateArtists(_dbSession, trackInfo->remixerArtists, true))
-		track.modify()->addArtistLink(Database::TrackArtistLink::create(_dbSession, track, remixer, Database::TrackArtistLinkType::Remixer));
+		track.modify()->addArtistLink(TrackArtistLink::create(_dbSession, track, remixer, TrackArtistLinkType::Remixer));
 
 	track.modify()->setScanVersion(_scanVersion);
 	if (trackInfo->album)
@@ -827,7 +830,8 @@ ScannerService::scanAudioFile(const std::filesystem::path& file, bool forceScan,
 
 	track.modify()->setRecordingMBID(trackInfo->recordingMBID);
 	track.modify()->setTrackMBID(trackInfo->trackMBID);
-	track.modify()->setFeatures({}); // TODO: only if MBID changed?
+	if (auto trackFeatures {TrackFeatures::find(_dbSession, track->getId())})
+		trackFeatures.remove(); // TODO: only if MBID changed?
 	track.modify()->setHasCover(trackInfo->hasCover);
 	track.modify()->setCopyright(trackInfo->copyright);
 	track.modify()->setCopyrightURL(trackInfo->copyrightURL);
@@ -921,26 +925,25 @@ ScannerService::removeMissingTracks(ScanStats& stats)
 	stepStats.totalElems = trackCount;
 	notifyInProgress(stepStats);
 
-	std::vector<std::pair<Database::TrackId, std::filesystem::path>> trackPaths;
+	RangeResults<Track::PathResult> trackPaths;
 	std::vector<TrackId> tracksToRemove;
 
 	for (std::size_t i {trackCount < batchSize ? 0 : trackCount - batchSize}; ; i -= (i > batchSize ? batchSize : i))
 	{
-		trackPaths.clear();
 		tracksToRemove.clear();
 
 		{
 			auto transaction {_dbSession.createSharedTransaction()};
-			trackPaths = Track::getAllPaths(_dbSession, i, batchSize);
+			trackPaths = Track::findPaths(_dbSession, Range {i, batchSize});
 		}
 
-		for (const auto& [trackId, trackPath] : trackPaths)
+		for (const Track::PathResult& trackPath : trackPaths.results)
 		{
 			if (_abortScan)
 				return;
 
-			if (!checkFile(trackPath, _mediaDirectory, _fileExtensions))
-				tracksToRemove.push_back(trackId);
+			if (!checkFile(trackPath.path, _mediaDirectory, _fileExtensions))
+				tracksToRemove.push_back(trackPath.trackId);
 
 			stepStats.processedElems++;
 		}
@@ -951,7 +954,7 @@ ScannerService::removeMissingTracks(ScanStats& stats)
 
 			for (const TrackId trackId : tracksToRemove)
 			{
-				Track::pointer track {Track::getById(_dbSession, trackId)};
+				Track::pointer track {Track::find(_dbSession, trackId)};
 				if (track)
 				{
 					track.remove();
@@ -977,9 +980,10 @@ ScannerService::removeOrphanEntries()
 		auto transaction {_dbSession.createUniqueTransaction()};
 
 		// Now process orphan Cluster (no track)
-		auto clusters {Cluster::getAllOrphans(_dbSession)};
-		for (auto& cluster : clusters)
+		auto clusterIds {Cluster::findOrphans(_dbSession, Range {})};
+		for (ClusterId clusterId : clusterIds.results)
 		{
+			Cluster::pointer cluster {Cluster::find(_dbSession, clusterId)};
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster '" << cluster->getName() << "'";
 			cluster.remove();
 		}
@@ -989,9 +993,10 @@ ScannerService::removeOrphanEntries()
 	{
 		auto transaction {_dbSession.createUniqueTransaction()};
 
-		auto artists {Artist::getAllOrphans(_dbSession)};
-		for (auto& artist : artists)
+		auto artistIds {Artist::findAllOrphans(_dbSession, Range {})};
+		for (const ArtistId artistId : artistIds.results)
 		{
+			Artist::pointer artist {Artist::find(_dbSession, artistId)};
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan artist '" << artist->getName() << "'";
 			artist.remove();
 		}
@@ -1001,9 +1006,10 @@ ScannerService::removeOrphanEntries()
 	{
 		auto transaction {_dbSession.createUniqueTransaction()};
 
-		auto releases {Release::getAllOrphans(_dbSession)};
-		for (auto& release : releases)
+		auto releases {Release::findOrphans(_dbSession, Range {})};
+		for (const ReleaseId releaseId : releases.results)
 		{
+			Release::pointer release {Release::find(_dbSession, releaseId)};
 			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan release '" << release->getName() << "'";
 			release.remove();
 		}
@@ -1019,9 +1025,10 @@ ScannerService::checkDuplicatedAudioFiles(ScanStats& stats)
 
 	auto transaction {_dbSession.createSharedTransaction()};
 
-	const std::vector<Track::pointer> tracks = Database::Track::getMBIDDuplicates(_dbSession);
-	for (const Track::pointer& track : tracks)
+	const RangeResults<TrackId> tracks = Track::findMBIDDuplicates(_dbSession, Range {});
+	for (const TrackId trackId : tracks.results)
 	{
+		const Track::pointer track {Track::find(_dbSession, trackId)};
 		if (auto trackMBID {track->getTrackMBID()})
 		{
 			LMS_LOG(DBUPDATER, INFO) << "Found duplicated Track MBID [" << trackMBID->getAsString() << "], file: " << track->getPath().string() << " - " << track->getName();

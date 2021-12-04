@@ -24,8 +24,9 @@
 #include "services/database/ScanSettings.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
+#include "IdTypeTraits.hpp"
 #include "SqlQuery.hpp"
-#include "Traits.hpp"
+#include "Utils.hpp"
 
 namespace Database {
 
@@ -33,6 +34,14 @@ Cluster::Cluster(ObjectPtr<ClusterType> type, std::string_view name)
 	: _name {std::string {name, 0, _maxNameLength}},
 	_clusterType {getDboPtr(type)}
 {
+}
+
+std::size_t
+Cluster::getCount(Session& session)
+{
+	session.checkSharedLocked();
+
+	return session.getDboSession().query<int>("SELECT COUNT(*) FROM cluster");
 }
 
 Cluster::pointer
@@ -46,25 +55,26 @@ Cluster::create(Session& session, ObjectPtr<ClusterType> type, std::string_view 
 	return res;
 }
 
-std::vector<Cluster::pointer>
-Cluster::getAll(Session& session)
+RangeResults<ClusterId>
+Cluster::find(Session& session, Range range)
 {
 	session.checkSharedLocked();
+	auto query {session.getDboSession().query<ClusterId>("SELECT id FROM cluster")};
 
-	Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> res {session.getDboSession().find<Cluster>()};
-	return std::vector<Cluster::pointer>(res.begin(), res.end());
+	return execQuery(query, range);
 }
 
-std::vector<Cluster::pointer>
-Cluster::getAllOrphans(Session& session)
+RangeResults<ClusterId>
+Cluster::findOrphans(Session& session, Range range)
 {
 	session.checkSharedLocked();
-	auto res {session.getDboSession().query<Wt::Dbo::ptr<Cluster>>("SELECT DISTINCT c FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track_cluster t_c WHERE t_c.cluster_id = c.id)").resultList()};
-	return std::vector<Cluster::pointer>(res.begin(), res.end());
+	auto query {session.getDboSession().query<ClusterId>("SELECT DISTINCT c.id FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track_cluster t_c WHERE t_c.cluster_id = c.id)")};
+
+	return execQuery(query, range);
 }
 
 Cluster::pointer
-Cluster::getById(Session& session, ClusterId id)
+Cluster::find(Session& session, ClusterId id)
 {
 	session.checkSharedLocked();
 
@@ -77,29 +87,15 @@ Cluster::addTrack(ObjectPtr<Track> track)
 	_tracks.insert(getDboPtr(track));
 }
 
-std::vector<Track::pointer>
-Cluster::getTracks(std::optional<std::size_t> offset, std::optional<std::size_t> limit) const
+RangeResults<TrackId>
+Cluster::getTracks(Range range) const
 {
 	assert(session());
 
-	auto res {session()->query<Wt::Dbo::ptr<Track>>("SELECT t FROM track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
-			.where("c.id = ?").bind(getId())
-			.offset(offset ? static_cast<int>(*offset) : -1)
-			.limit(limit ? static_cast<int>(*limit) : -1)
-			.resultList()};
+	auto query {session()->query<TrackId>("SELECT t.id FROM track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+			.where("c.id = ?").bind(getId())};
 
-	return std::vector<Track::pointer>(res.begin(), res.end());
-}
-
-std::vector<TrackId>
-Cluster::getTrackIds() const
-{
-	assert(session());
-
-	Wt::Dbo::collection<TrackId> res = session()->query<TrackId>("SELECT t_c.track_id FROM track_cluster t_c INNER JOIN cluster c ON c.id = t_c.cluster_id")
-		.where("c.id = ?").bind(getId());
-
-	return std::vector<TrackId>(res.begin(), res.end());
+	return execQuery(query, range);
 }
 
 std::size_t
@@ -117,33 +113,42 @@ ClusterType::ClusterType(std::string_view name)
 {
 }
 
-std::vector<ClusterType::pointer>
-ClusterType::getAllOrphans(Session& session)
+std::size_t
+ClusterType::getCount(Session& session)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<Wt::Dbo::ptr<ClusterType>> res = session.getDboSession().query<Wt::Dbo::ptr<ClusterType>>(
-			"SELECT c_t from cluster_type c_t"
-			" LEFT OUTER JOIN cluster c ON c_t.id = c.cluster_type_id")
-		.where("c.id IS NULL");
-
-	return std::vector<pointer>(res.begin(), res.end());
+	return session.getDboSession().query<int>("SELECT COUNT(*) FROM cluster_type");
 }
 
-std::vector<ClusterType::pointer>
-ClusterType::getAllUsed(Session& session)
+
+RangeResults<ClusterTypeId>
+ClusterType::findOrphans(Session& session, Range range)
 {
 	session.checkSharedLocked();
 
-	Wt::Dbo::collection<Wt::Dbo::ptr<ClusterType>> res = session.getDboSession().query<Wt::Dbo::ptr<ClusterType>>(
-			"SELECT DISTINCT c_t from cluster_type c_t")
-		.join("cluster c ON c_t.id = c.cluster_type_id");
+	auto query {session.getDboSession().query<ClusterTypeId>(
+			"SELECT c_t.id from cluster_type c_t"
+			" LEFT OUTER JOIN cluster c ON c_t.id = c.cluster_type_id")
+		.where("c.id IS NULL")};
 
-	return std::vector<pointer>(res.begin(), res.end());
+	return execQuery(query, range);
+}
+
+RangeResults<ClusterTypeId>
+ClusterType::findUsed(Session& session, Range range)
+{
+	session.checkSharedLocked();
+
+	auto query {session.getDboSession().query<ClusterTypeId>(
+			"SELECT DISTINCT c_t.id from cluster_type c_t")
+		.join("cluster c ON c_t.id = c.cluster_type_id")};
+
+	return execQuery(query, range);
 }
 
 ClusterType::pointer
-ClusterType::getByName(Session& session, const std::string& name)
+ClusterType::find(Session& session, const std::string& name)
 {
 	session.checkSharedLocked();
 
@@ -151,20 +156,21 @@ ClusterType::getByName(Session& session, const std::string& name)
 }
 
 ClusterType::pointer
-ClusterType::getById(Session& session, ClusterTypeId id)
+ClusterType::find(Session& session, ClusterTypeId id)
 {
 	session.checkSharedLocked();
 
 	return session.getDboSession().find<ClusterType>().where("id = ?").bind(id).resultValue();
 }
 
-std::vector<ClusterType::pointer>
-ClusterType::getAll(Session& session)
+RangeResults<ClusterTypeId>
+ClusterType::find(Session& session, Range range)
 {
 	session.checkSharedLocked();
 
-	auto res {session.getDboSession().find<ClusterType>().resultList()};
-	return std::vector<pointer>(res.begin(), res.end());
+	auto query {session.getDboSession().query<ClusterTypeId>("SELECT id from cluster_type")};
+
+	return execQuery(query, range);
 }
 
 ClusterType::pointer

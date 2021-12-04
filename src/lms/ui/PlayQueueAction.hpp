@@ -22,7 +22,9 @@
 #include <vector>
 #include <Wt/WSignal.h>
 
-#include "services/database/Types.hpp"
+#include "services/database/ArtistId.hpp"
+#include "services/database/ReleaseId.hpp"
+#include "services/database/TrackId.hpp"
 
 namespace UserInterface
 {

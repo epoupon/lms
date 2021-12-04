@@ -36,7 +36,9 @@
 
 namespace Recommendation {
 
-std::unique_ptr<IEngine> createFeaturesEngine(Database::Db& db)
+using namespace Database;
+
+std::unique_ptr<IEngine> createFeaturesEngine(Db& db)
 {
 	return std::make_unique<FeaturesEngine>(db);
 }
@@ -49,42 +51,11 @@ FeaturesEngine::getDefaultTrainFeatureSettings()
 		{ "lowlevel.spectral_energyband_high.mean",	{1}},
 		{ "lowlevel.spectral_rolloff.median",		{1}},
 		{ "lowlevel.spectral_contrast_valleys.var",	{1}},
-		{ "lowlevel.erbbands.mean",			{1}},
-		{ "lowlevel.gfcc.mean",				{1}},
+		{ "lowlevel.erbbands.mean",					{1}},
+		{ "lowlevel.gfcc.mean",						{1}},
 	};
 
 	return defaultTrainFeatureSettings;
-}
-
-static
-std::optional<FeatureValuesMap>
-getTrackFeatureValues(FeaturesEngine::FeaturesFetchFunc func, Database::TrackId trackId, const std::unordered_set<FeatureName>& featureNames)
-{
-	return func(trackId, featureNames);
-}
-
-static
-std::optional<FeatureValuesMap>
-getTrackFeatureValuesFromDb(Database::Session& session, Database::TrackId trackId, const std::unordered_set<FeatureName>& featureNames)
-{
-	auto func = [&](Database::TrackId trackId, const std::unordered_set<FeatureName>& featureNames)
-	{
-		std::optional<FeatureValuesMap> res;
-
-		auto transaction {session.createSharedTransaction()};
-
-		Database::Track::pointer track {Database::Track::getById(session, trackId)};
-		if (!track)
-			return res;
-
-		res = track->getTrackFeatures()->getFeatureValuesMap(featureNames);
-		if (res->empty())
-			res.reset();
-
-		return res;
-	};
-
-	return getTrackFeatureValues(func, trackId, featureNames);
 }
 
 static
@@ -142,45 +113,46 @@ FeaturesEngine::loadFromTraining(const TrainSettings& trainSettings, const Progr
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Features dimension = " << nbDimensions;
 
-	Database::Session& session {_db.getTLSSession()};
+	Session& session {_db.getTLSSession()};
 
-	std::vector<Database::TrackId> trackIds;
+	RangeResults<TrackFeaturesId> trackFeaturesIds;
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		LMS_LOG(RECOMMENDATION, DEBUG) << "Getting Tracks with features...";
-		trackIds = Database::Track::getAllIdsWithFeatures(session);
-		LMS_LOG(RECOMMENDATION, DEBUG) << "Getting Tracks with features DONE (found " << trackIds.size() << " tracks)";
+		LMS_LOG(RECOMMENDATION, DEBUG) << "Getting Track features...";
+		trackFeaturesIds = TrackFeatures::find(session, Range {});
+		LMS_LOG(RECOMMENDATION, DEBUG) << "Getting Track features DONE (found " << trackFeaturesIds.results.size() << " track features)";
 	}
 
 	std::vector<SOM::InputVector> samples;
-	std::vector<Database::TrackId> samplesTrackIds;
+	std::vector<TrackId> samplesTrackIds;
 
-	samples.reserve(trackIds.size());
-	samplesTrackIds.reserve(trackIds.size());
+	samples.reserve(trackFeaturesIds.results.size());
+	samplesTrackIds.reserve(trackFeaturesIds.results.size());
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Extracting features...";
-	for (Database::TrackId trackId : trackIds)
+	// TODO handle errors using exceptions
+	for (const TrackFeaturesId trackFeaturesId : trackFeaturesIds.results)
 	{
 		if (_loadCancelled)
 			return;
 
-		std::optional<FeatureValuesMap> featureValuesMap;
+		auto transaction {session.createSharedTransaction()};
 
-		if (_featuresFetchFunc)
-			featureValuesMap = getTrackFeatureValues(_featuresFetchFunc, trackId, featureNames);
-		else
-			featureValuesMap = getTrackFeatureValuesFromDb(session, trackId, featureNames);
-
-		if (!featureValuesMap)
+		TrackFeatures::pointer trackFeatures {TrackFeatures::find(session, trackFeaturesId)};
+		if (!trackFeatures)
 			continue;
 
-		std::optional<SOM::InputVector> inputVector {convertFeatureValuesMapToInputVector(*featureValuesMap, nbDimensions)};
+		FeatureValuesMap featureValuesMap {trackFeatures->getFeatureValuesMap(featureNames)};
+		if (featureValuesMap.empty())
+			continue;
+
+		std::optional<SOM::InputVector> inputVector {convertFeatureValuesMapToInputVector(featureValuesMap, nbDimensions)};
 		if (!inputVector)
 			continue;
 
 		samples.emplace_back(std::move(*inputVector));
-		samplesTrackIds.emplace_back(trackId);
+		samplesTrackIds.emplace_back(trackFeatures->getTrack()->getId());
 	}
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Extracting features DONE";
 
@@ -249,41 +221,41 @@ FeaturesEngine::loadFromCache(FeaturesEngineCache cache)
 }
 
 TrackContainer
-FeaturesEngine::getSimilarTracksFromTrackList(Database::TrackListId trackListId, std::size_t maxCount) const
+FeaturesEngine::findSimilarTracksFromTrackList(TrackListId trackListId, std::size_t maxCount) const
 {
 	const TrackContainer trackIds {[&]
 	{
 		TrackContainer res;
 
-		Database::Session& session {_db.getTLSSession()};
+		Session& session {_db.getTLSSession()};
 
 		auto transaction {session.createSharedTransaction()};
 
-		const Database::TrackList::pointer trackList {Database::TrackList::getById(session, trackListId)};
+		const TrackList::pointer trackList {TrackList::find(session, trackListId)};
 		if (trackList)
 			res = trackList->getTrackIds();
 
 		return res;
 	}()};
 
-	return getSimilarTracks(trackIds, maxCount);
+	return findSimilarTracks(trackIds, maxCount);
 }
 
 TrackContainer
-FeaturesEngine::getSimilarTracks(const std::vector<Database::TrackId>& tracksIds, std::size_t maxCount) const
+FeaturesEngine::findSimilarTracks(const std::vector<TrackId>& tracksIds, std::size_t maxCount) const
 {
 	auto similarTrackIds {getSimilarObjects(tracksIds, _trackMatrix, _trackPositions, maxCount)};
 
-	Database::Session& session {_db.getTLSSession()};
+	Session& session {_db.getTLSSession()};
 
 	{
 		// Report only existing ids, as tracks may have been removed a long time ago (refreshing the SOM takes some time)
 		auto transaction {session.createSharedTransaction()};
 
 		similarTrackIds.erase(std::remove_if(std::begin(similarTrackIds), std::end(similarTrackIds),
-			[&](Database::TrackId trackId)
+			[&](TrackId trackId)
 			{
-				return !Database::Track::exists(session, trackId);
+				return !Track::exists(session, trackId);
 			}), std::end(similarTrackIds));
 	}
 
@@ -291,11 +263,11 @@ FeaturesEngine::getSimilarTracks(const std::vector<Database::TrackId>& tracksIds
 }
 
 ReleaseContainer
-FeaturesEngine::getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const
+FeaturesEngine::getSimilarReleases(ReleaseId releaseId, std::size_t maxCount) const
 {
 	auto similarReleaseIds {getSimilarObjects({releaseId}, _releaseMatrix, _releasePositions, maxCount)};
 
-	Database::Session& session {_db.getTLSSession()};
+	Session& session {_db.getTLSSession()};
 
 	if (!similarReleaseIds.empty())
 	{
@@ -303,9 +275,9 @@ FeaturesEngine::getSimilarReleases(Database::ReleaseId releaseId, std::size_t ma
 		auto transaction {session.createSharedTransaction()};
 
 		similarReleaseIds.erase(std::remove_if(std::begin(similarReleaseIds), std::end(similarReleaseIds),
-			[&](Database::ReleaseId releaseId)
+			[&](ReleaseId releaseId)
 			{
-				return !Database::Release::exists(session, releaseId);
+				return !Release::exists(session, releaseId);
 			}), std::end(similarReleaseIds));
 	}
 
@@ -313,9 +285,9 @@ FeaturesEngine::getSimilarReleases(Database::ReleaseId releaseId, std::size_t ma
 }
 
 ArtistContainer
-FeaturesEngine::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
+FeaturesEngine::getSimilarArtists(ArtistId artistId, EnumSet<TrackArtistLinkType> linkTypes, std::size_t maxCount) const
 {
-	auto getSimilarArtistIdsForLinkType {[&] (Database::TrackArtistLinkType linkType)
+	auto getSimilarArtistIdsForLinkType {[&] (TrackArtistLinkType linkType)
 	{
 		ArtistContainer similarArtistIds;
 
@@ -328,9 +300,9 @@ FeaturesEngine::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database:
 		return getSimilarObjects({artistId}, itArtists->second, _artistPositions, maxCount);
 	}};
 
-	std::unordered_set<Database::ArtistId> similarArtistIds;
+	std::unordered_set<ArtistId> similarArtistIds;
 
-	for (Database::TrackArtistLinkType linkType : linkTypes)
+	for (TrackArtistLinkType linkType : linkTypes)
 	{
 		const auto similarArtistIdsForLinkType {getSimilarArtistIdsForLinkType(linkType)};
 		similarArtistIds.insert(std::begin(similarArtistIdsForLinkType), std::end(similarArtistIdsForLinkType));
@@ -338,15 +310,15 @@ FeaturesEngine::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database:
 
 	ArtistContainer res(std::cbegin(similarArtistIds), std::cend(similarArtistIds));
 
-	Database::Session& session {_db.getTLSSession()};
+	Session& session {_db.getTLSSession()};
 	{
 		// Report only existing ids
 		auto transaction {session.createSharedTransaction()};
 
 		res.erase(std::remove_if(std::begin(res), std::end(res),
-			[&](Database::ArtistId artistId)
+			[&](ArtistId artistId)
 			{
-				return !Database::Artist::exists(session, artistId);
+				return !Artist::exists(session, artistId);
 			}), std::end(res));
 	}
 
@@ -406,7 +378,7 @@ FeaturesEngine::load(const SOM::Network& network, const TrackPositions& trackPos
 
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Constructing maps...";
 
-	Database::Session& session {_db.getTLSSession()};
+	Session& session {_db.getTLSSession()};
 
 	for (const auto& [trackId, positions] : trackPositions)
 	{
@@ -415,7 +387,7 @@ FeaturesEngine::load(const SOM::Network& network, const TrackPositions& trackPos
 
 		auto transaction {session.createSharedTransaction()};
 
-		const Track::pointer track {Database::Track::getById(session, trackId)};
+		const Track::pointer track {Track::find(session, trackId)};
 		if (!track)
 			continue;
 

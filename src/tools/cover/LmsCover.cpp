@@ -38,13 +38,15 @@ static
 void
 dumpTrackCovers(Database::Session& session, Image::ImageSize width)
 {
-	std::vector<Database::TrackId> trackIds;
+	using namespace Database;
+
+	RangeResults<Database::TrackId> trackIds;
 	{
 		auto transaction {session.createSharedTransaction()};
-		trackIds = Database::Track::getAllIds(session);
+		trackIds = Database::Track::find(session, Database::Track::FindParameters {});
 	}
 
-	for (const Database::TrackId trackId : trackIds)
+	for (const Database::TrackId trackId : trackIds.results)
 	{
 		std::cout << "Getting cover for track id " << trackId.toString() << std::endl;
 		Service<Cover::ICoverService>::get()->getFromTrack(trackId, width);

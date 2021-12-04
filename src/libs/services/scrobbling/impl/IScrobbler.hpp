@@ -23,8 +23,9 @@
 #include <memory>
 #include <optional>
 
-#include <Wt/WDateTime.h>
-
+#include "services/database/ArtistId.hpp"
+#include "services/database/ReleaseId.hpp"
+#include "services/database/TrackListId.hpp"
 #include "services/scrobbling/Listen.hpp"
 
 namespace Database
@@ -36,18 +37,26 @@ namespace Database
 
 namespace Scrobbling
 {
-
 	class IScrobbler
 	{
 		public:
 			virtual ~IScrobbler() = default;
 
+			// Listens
 			virtual void listenStarted(const Listen& listen) = 0;
 			virtual void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) = 0;
-
 			virtual void addTimedListen(const TimedListen& listen) = 0;
 
-			virtual Database::ObjectPtr<Database::TrackList> getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user)  = 0;
+			// Feedback
+ 			virtual void onStarred(Database::UserId, Database::ArtistId) {};
+ 			virtual void onUnstarred(Database::UserId, Database::ArtistId) {};
+ 			virtual void onStarred(Database::UserId, Database::ReleaseId) {};
+ 			virtual void onUnstarred(Database::UserId, Database::ReleaseId) {};
+ 			virtual void onStarred(Database::UserId, Database::TrackId) {};
+ 			virtual void onUnstarred(Database::UserId, Database::TrackId) {};
+
+//			virtual void star(Database::TrackId trackId) = 0;
+//			virtual void unstar(Database::TrackId trackId) = 0;
 	};
 
 	std::unique_ptr<IScrobbler> createScrobbler(std::string_view backendName);

@@ -31,6 +31,8 @@
 
 namespace UserInterface {
 
+using namespace Database;
+
 void
 Filters::showDialog()
 {
@@ -52,13 +54,18 @@ Filters::showDialog()
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		const auto types {Database::ClusterType::getAllUsed(LmsApp->getDbSession())};
-		for (const Database::ClusterType::pointer& type : types)
-			typeCombo->addItem(Wt::WString::fromUTF8(type->getName()));
-
-		if (!types.empty())
+		const auto clusterTypesIds {ClusterType::findUsed(LmsApp->getDbSession(), Range {})};
+		for (const ClusterTypeId clusterTypeId : clusterTypesIds.results)
 		{
-			for (const Database::Cluster::pointer& cluster : types.front()->getClusters())
+			const auto clusterType {ClusterType::find(LmsApp->getDbSession(), clusterTypeId)};
+			typeCombo->addItem(Wt::WString::fromUTF8(clusterType->getName()));
+		}
+
+		if (!clusterTypesIds.results.empty())
+		{
+			const auto clusterType {ClusterType::find(LmsApp->getDbSession(), clusterTypesIds.results.front())};
+
+			for (const Cluster::pointer cluster : clusterType->getClusters())
 			{
 				if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), cluster->getId()) == _clusterIds.end())
 					valueCombo->addItem(Wt::WString::fromUTF8(cluster->getName()));
@@ -74,9 +81,9 @@ Filters::showDialog()
 
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		auto clusterType = Database::ClusterType::getByName(LmsApp->getDbSession(), name);
+		auto clusterType = ClusterType::find(LmsApp->getDbSession(), name);
 
-		for (const Database::Cluster::pointer& cluster : clusterType->getClusters())
+		for (const Cluster::pointer& cluster : clusterType->getClusters())
 		{
 			if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), cluster->getId()) == _clusterIds.end())
 				valueCombo->addItem(Wt::WString::fromUTF8(cluster->getName()));
@@ -98,16 +105,16 @@ Filters::showDialog()
 		const std::string value {valueCombo->valueText().toUTF8()};
 
 		// TODO use a model to store the cluster.id() values
-		Database::ClusterId clusterId {};
+		ClusterId clusterId {};
 
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-			Database::ClusterType::pointer clusterType {Database::ClusterType::getByName(LmsApp->getDbSession(), type)};
+			ClusterType::pointer clusterType {ClusterType::find(LmsApp->getDbSession(), type)};
 			if (!clusterType)
 				return;
 
-			Database::Cluster::pointer cluster {clusterType->getCluster(value)};
+			Cluster::pointer cluster {clusterType->getCluster(value)};
 			if (!cluster)
 				return;
 
@@ -121,7 +128,7 @@ Filters::showDialog()
 }
 
 void
-Filters::add(Database::ClusterId clusterId)
+Filters::add(ClusterId clusterId)
 {
 
 	Wt::WInteractWidget* filter {};
@@ -129,7 +136,7 @@ Filters::add(Database::ClusterId clusterId)
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		Database::Cluster::pointer cluster {Database::Cluster::getById(LmsApp->getDbSession(), clusterId)};
+		Cluster::pointer cluster {Cluster::find(LmsApp->getDbSession(), clusterId)};
 		if (!cluster)
 			return;
 
@@ -144,7 +151,7 @@ Filters::add(Database::ClusterId clusterId)
 	filter->clicked().connect([=]
 	{
 		_filters->removeWidget(filter);
-		_clusterIds.erase(std::remove_if(std::begin(_clusterIds), std::end(_clusterIds), [clusterId](Database::ClusterId id) { return id == clusterId; }), std::end(_clusterIds));
+		_clusterIds.erase(std::remove_if(std::begin(_clusterIds), std::end(_clusterIds), [clusterId](ClusterId id) { return id == clusterId; }), std::end(_clusterIds));
 		_sigUpdated.emit();
 	});
 

@@ -65,7 +65,7 @@ class InitWizardModel : public Wt::WFormModel
 
 			// Check if a user already exist
 			// If it's the case, just do nothing
-			if (!Database::User::getAll(LmsApp->getDbSession()).empty())
+			if (Database::User::getCount(LmsApp->getDbSession()) > 0)
 				throw LmsException {"Admin user already created"};
 
 			Database::User::pointer user {Database::User::create(LmsApp->getDbSession(), valueText(AdminLoginField).toUTF8())};

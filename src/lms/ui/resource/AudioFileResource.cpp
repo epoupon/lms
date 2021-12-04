@@ -51,7 +51,7 @@ getTrackPathFromTrackId(Database::TrackId trackId)
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+	const Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), trackId)};
 	if (!track)
 	{
 		LOG(ERROR) << "Missing track";

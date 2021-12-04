@@ -25,7 +25,10 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WTime.h>
 
-#include "services/database/Types.hpp"
+#include "services/database/IdType.hpp"
+#include "services/database/Object.hpp"
+
+LMS_DECLARE_IDTYPE(ScanSettingsId)
 
 namespace Database {
 

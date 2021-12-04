@@ -74,7 +74,7 @@ getStreamParameters(RequestContext& context)
 	auto transaction {context.dbSession.createSharedTransaction()};
 
 	{
-		auto track {Track::getById(context.dbSession, id)};
+		auto track {Track::find(context.dbSession, id)};
 		if (!track)
 			throw RequestedDataNotFoundError {};
 
@@ -82,7 +82,7 @@ getStreamParameters(RequestContext& context)
 	}
 
 	{
-		const User::pointer user {User::getById(context.dbSession, context.userId)};
+		const User::pointer user {User::find(context.dbSession, context.userId)};
 		if (!user)
 			throw UserNotAuthorizedError {};
 
@@ -124,7 +124,7 @@ handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Ht
 		{
 			auto transaction {context.dbSession.createSharedTransaction()};
 
-			auto track {Track::getById(context.dbSession, id)};
+			auto track {Track::find(context.dbSession, id)};
 			if (!track)
 				throw RequestedDataNotFoundError {};
 

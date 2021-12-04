@@ -21,13 +21,18 @@
 
 #include <optional>
 #include <string>
-#include <set>
+#include <string_view>
 #include <vector>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
+#include "services/database/ClusterId.hpp"
+#include "services/database/Object.hpp"
+#include "services/database/TrackId.hpp"
+#include "services/database/TrackListId.hpp"
 #include "services/database/Types.hpp"
+#include "services/database/UserId.hpp"
 
 namespace Database {
 
@@ -52,25 +57,25 @@ class TrackList : public Object<TrackList, TrackListId>
 		TrackList(std::string_view name, Type type, bool isPublic, ObjectPtr<User> user);
 
 		// Stats utility
-		std::vector<ObjectPtr<Artist>> getTopArtists(const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
-		std::vector<ObjectPtr<Release>> getTopReleases(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
-		std::vector<ObjectPtr<Track>> getTopTracks(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Artist>>	getTopArtists(const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Release>>	getTopReleases(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Track>>	getTopTracks(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
 
 		// Search utility
-		static pointer	get(Session& session, std::string_view name, Type type, ObjectPtr<User> user);
-		static pointer	getById(Session& session, TrackListId tracklistId);
-		static std::vector<pointer> getAll(Session& session);
-		static std::vector<pointer> getAll(Session& session, ObjectPtr<User> user);
-		static std::vector<pointer> getAll(Session& session, ObjectPtr<User> user, Type type);
+		static std::size_t					getCount(Session& session);
+		static pointer						find(Session& session, std::string_view name, Type type, UserId userId);
+		static pointer						find(Session& session, TrackListId tracklistId);
+		static RangeResults<TrackListId>	find(Session& session, UserId userId, Range range);
+		static RangeResults<TrackListId>	find(Session& session, UserId userId, Type type, Range range);
 
 		// Create utility
 		static pointer	create(Session& session, std::string_view name, Type type, bool isPublic, ObjectPtr<User> user);
 
 		// Accessors
-		std::string	getName() const { return _name; }
-		bool		isPublic() const { return _isPublic; }
-		Type		getType() const { return _type; }
-		ObjectPtr<User> getUser() const { return _user; }
+		std::string_view	getName() const { return _name; }
+		bool				isPublic() const { return _isPublic; }
+		Type				getType() const { return _type; }
+		ObjectPtr<User>		getUser() const { return _user; }
 
 		// Modifiers
 		void		setName(const std::string& name) { _name = name; }
@@ -81,18 +86,20 @@ class TrackList : public Object<TrackList, TrackListId>
 		bool										isEmpty() const;
 		std::size_t									getCount() const;
 		ObjectPtr<TrackListEntry>					getEntry(std::size_t pos) const;
-		std::vector<ObjectPtr<TrackListEntry>>	getEntries(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
+		std::vector<ObjectPtr<TrackListEntry>>		getEntries(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
 		ObjectPtr<TrackListEntry>					getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const;
 
-		// Get track bya
+		std::vector<ObjectPtr<Artist>>				getArtists(const std::vector<ClusterId>& clusters, std::optional<TrackArtistLinkType> linkType, ArtistSortMethod sortMethod, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Release>>				getReleases(const std::vector<ClusterId>& clusters, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Track>>				getTracks(const std::vector<ClusterId>& clusters, std::optional<Range> range, bool& moreResults) const;
 
-		std::vector<ObjectPtr<Artist>>	getArtistsReverse(const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
-		std::vector<ObjectPtr<Release>>	getReleasesReverse(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
-		std::vector<ObjectPtr<Track>>		getTracksReverse(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
+		// Sorted by date time
+		std::vector<ObjectPtr<Artist>>				getArtistsOrderedByRecentFirst(const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Release>>				getReleasesOrderedByRecentFirst(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
+		std::vector<ObjectPtr<Track>>				getTracksOrderedByRecentFirst(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
 
-		std::vector<TrackId> getTrackIds() const;
-
-		std::chrono::milliseconds getDuration() const;
+		std::vector<TrackId>						getTrackIds() const;
+		std::chrono::milliseconds					getDuration() const;
 
 		// Get clusters, order by occurence
 		std::vector<ObjectPtr<Cluster>> getClusters() const;
@@ -129,12 +136,13 @@ class TrackListEntry : public Object<TrackListEntry, TrackListEntryId>
 	public:
 		TrackListEntry() = default;
 		TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime);
+		TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist);
 
 		// find utility
 		static pointer getById(Session& session, TrackListEntryId id);
 
 		// Create utility
-		static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime = Wt::WDateTime::currentDateTime());
+		static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime = {});
 
 		// Accessors
 		ObjectPtr<Track>	getTrack() const { return _track; }
@@ -151,7 +159,7 @@ class TrackListEntry : public Object<TrackListEntry, TrackListEntryId>
 
 	private:
 
-		Wt::WDateTime			_dateTime;
+		Wt::WDateTime			_dateTime;		// optional date time
 		Wt::Dbo::ptr<Track>		_track;
 		Wt::Dbo::ptr<TrackList>	_tracklist;
 };

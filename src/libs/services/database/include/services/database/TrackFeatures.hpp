@@ -26,7 +26,12 @@
 
 #include <Wt/Dbo/Dbo.h>
 
+#include "services/database/IdType.hpp"
+#include "services/database/Object.hpp"
+#include "services/database/TrackId.hpp"
 #include "services/database/Types.hpp"
+
+LMS_DECLARE_IDTYPE(TrackFeaturesId)
 
 namespace Database {
 
@@ -43,11 +48,20 @@ class TrackFeatures : public Object<TrackFeatures, TrackFeaturesId>
 		TrackFeatures() = default;
 		TrackFeatures(ObjectPtr<Track> track, const std::string& jsonEncodedFeatures);
 
+		// Find utilities
+		static std::size_t						getCount(Session& session);
+		static pointer							find(Session& session, TrackFeaturesId id);
+		static pointer							find(Session& session, TrackId trackId);
+		static RangeResults<TrackFeaturesId>	find(Session& session, Range range);
+
 		// Create utility
-		static pointer create(Session& session, ObjectPtr<Track> track, const std::string& jsonEncodedFeatures);
+		static pointer		create(Session& session, ObjectPtr<Track> track, const std::string& jsonEncodedFeatures);
 
 		FeatureValues		getFeatureValues(const FeatureName& feature) const;
 		FeatureValuesMap	getFeatureValuesMap(const std::unordered_set<FeatureName>& featureNames) const;
+
+		// Accessors
+		Wt::Dbo::ptr<Track> getTrack() const { return _track; }
 
 		template<class Action>
 		void persist(Action& a)
@@ -57,7 +71,6 @@ class TrackFeatures : public Object<TrackFeatures, TrackFeaturesId>
 		}
 
 	private:
-
 		std::string _data;
 		Wt::Dbo::ptr<Track> _track;
 };

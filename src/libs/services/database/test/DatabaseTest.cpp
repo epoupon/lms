@@ -42,8 +42,8 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistSingleRelease)
 
 	{
 		auto transaction {session.createSharedTransaction()};
-		EXPECT_TRUE(Release::getAllOrphans(session).empty());
-		EXPECT_TRUE(Artist::getAllOrphans(session).empty());
+		EXPECT_TRUE(Release::findOrphans(session, Range {}).results.empty());
+		EXPECT_TRUE(Artist::findAllOrphans(session, Range {}).results.empty());
 	}
 
 	{
@@ -89,8 +89,8 @@ TEST_F(DatabaseFixture, SingleUser)
 {
 	{
 		auto transaction {session.createSharedTransaction()};
-		EXPECT_TRUE(User::getAll(session).empty());
-		EXPECT_TRUE(User::getAllIds(session).empty());
+		EXPECT_TRUE(User::find(session, Range {}).results.empty());
+		EXPECT_EQ(User::getCount(session), 0);
 	}
 
 	ScopedUser user {session, "MyUser"};
@@ -98,214 +98,8 @@ TEST_F(DatabaseFixture, SingleUser)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		EXPECT_EQ(user->getQueuedTrackList(session)->getCount(), 0);
-		EXPECT_EQ(User::getAll(session).size(), 1);
-		EXPECT_EQ(User::getAllIds(session).size(), 1);
-	}
-}
-
-TEST_F(DatabaseFixture, SingleTrackList)
-{
-	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MytrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
-
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		auto trackLists {TrackList::getAll(session, user.get(), TrackList::Type::Playlist)};
-		ASSERT_EQ(trackLists.size(), 1);
-		EXPECT_EQ(trackLists.front()->getId(), trackList.getId());
-	}
-}
-
-TEST_F(DatabaseFixture, SingleTrackListMultipleTrack)
-{
-	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MytrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
-	std::list<ScopedTrack> tracks;
-
-	for (std::size_t i {}; i < 10; ++i)
-	{
-		tracks.emplace_back(session, "MyTrack" + std::to_string(i));
-
-		auto transaction {session.createUniqueTransaction()};
-		TrackListEntry::create(session, tracks.back().get(), trackList.get());
-	}
-
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		ASSERT_EQ(trackList->getCount(), tracks.size());
-		const auto trackIds {trackList->getTrackIds()};
-		for (auto trackId : trackIds)
-			EXPECT_TRUE(std::any_of(std::cbegin(tracks), std::cend(tracks), [trackId](const ScopedTrack& track) { return track.getId() == trackId; }));
-	}
-}
-
-TEST_F(DatabaseFixture, SingleTrackListMultipleTrackDateTime)
-{
-	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MytrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
-	ScopedTrack track1 {session, "MyTrack1"};
-	ScopedTrack track2 {session, "MyTrack2"};
-	ScopedTrack track3 {session, "MyTrack3"};
-
-	{
-		Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
-		auto transaction {session.createUniqueTransaction()};
-		TrackListEntry::create(session, track1.get(), trackList.get(), now);
-		TrackListEntry::create(session, track2.get(), trackList.get(), now.addSecs(-1));
-		TrackListEntry::create(session, track3.get(), trackList.get(), now.addSecs(1));
-	}
-
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		bool moreResults;
-		const auto tracks {trackList.get()->getTracksReverse({}, std::nullopt, moreResults)};
-		ASSERT_EQ(tracks.size(), 3);
-		EXPECT_EQ(tracks.front()->getId(), track3.getId());
-		EXPECT_EQ(tracks.back()->getId(), track2.getId());
-	}
-}
-
-TEST_F(DatabaseFixture, SingleTrackListMultipleTrackRecentlyPlayed)
-{
-	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MyTrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
-	ScopedTrack track1 {session, "MyTrack1"};
-	ScopedTrack track2 {session, "MyTrack1"};
-	ScopedArtist artist1 {session, "MyArtist1"};
-	ScopedArtist artist2 {session, "MyArtist2"};
-	ScopedRelease release1 {session, "MyRelease1"};
-	ScopedRelease release2 {session, "MyRelease2"};
-
-	const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
-
-	{
-		auto transaction {session.createUniqueTransaction()};
-
-		track1.get().modify()->setRelease(release1.get());
-		track2.get().modify()->setRelease(release2.get());
-		TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLinkType::Artist);
-		TrackArtistLink::create(session, track2.get(), artist2.get(), TrackArtistLinkType::Artist);
-	}
-	{
-
-		auto transaction {session.createSharedTransaction()};
-
-		bool moreResults {};
-		EXPECT_TRUE(trackList->getArtistsReverse({}, std::nullopt, std::nullopt, moreResults).empty());
-		EXPECT_TRUE(trackList->getReleasesReverse({}, std::nullopt, moreResults).empty());
-		EXPECT_TRUE(trackList->getTracksReverse({}, std::nullopt, moreResults).empty());
-	}
-
-	{
-		auto transaction {session.createUniqueTransaction()};
-
-		TrackListEntry::create(session, track1.get(), trackList.get(), now);
-	}
-
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		bool moreResults {};
-		const auto artists {trackList->getArtistsReverse({}, std::nullopt, std::nullopt, moreResults)};
-		ASSERT_EQ(artists.size(), 1);
-		EXPECT_EQ(artists.front()->getId(), artist1.getId());
-
-		const auto releases {trackList->getReleasesReverse({}, std::nullopt, moreResults)};
-		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front()->getId(), release1.getId());
-
-		const auto tracks {trackList->getTracksReverse({}, std::nullopt, moreResults)};
-		EXPECT_EQ(tracks.size(), 1);
-	}
-
-	{
-		auto transaction {session.createUniqueTransaction()};
-
-		TrackListEntry::create(session, track2.get(), trackList.get(), now.addSecs(1));
-	}
-
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		bool moreResults {};
-		const auto artists {trackList->getArtistsReverse({}, std::nullopt, std::nullopt, moreResults)};
-		ASSERT_EQ(artists.size(), 2);
-		EXPECT_EQ(artists[0]->getId(), artist2.getId());
-		EXPECT_EQ(artists[1]->getId(), artist1.getId());
-
-		const auto releases {trackList->getReleasesReverse({}, std::nullopt, moreResults)};
-		ASSERT_EQ(releases.size(), 2);
-		EXPECT_EQ(releases[0]->getId(), release2.getId());
-		EXPECT_EQ(releases[1]->getId(), release1.getId());
-
-		const auto tracks {trackList->getTracksReverse({}, std::nullopt, moreResults)};
-		ASSERT_EQ(tracks.size(), 2);
-		EXPECT_EQ(tracks[0]->getId(), track2.getId());
-		EXPECT_EQ(tracks[1]->getId(), track1.getId());
-	}
-
-	{
-		auto transaction {session.createUniqueTransaction()};
-
-		TrackListEntry::create(session, track1.get(), trackList.get(), now.addSecs(2));
-	}
-
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		bool moreResults {};
-		const auto artists {trackList->getArtistsReverse({}, std::nullopt, std::nullopt, moreResults)};
-		ASSERT_EQ(artists.size(), 2);
-		EXPECT_EQ(artists[0]->getId(), artist1.getId());
-		EXPECT_EQ(artists[1]->getId(), artist2.getId());
-
-		const auto releases {trackList->getReleasesReverse({}, std::nullopt, moreResults)};
-		ASSERT_EQ(releases.size(), 2);
-		EXPECT_EQ(releases[0]->getId(), release1.getId());
-		EXPECT_EQ(releases[1]->getId(), release2.getId());
-
-		const auto tracks {trackList->getTracksReverse({}, std::nullopt, moreResults)};
-		ASSERT_EQ(tracks.size(), 2);
-		EXPECT_EQ(tracks[0]->getId(), track1.getId());
-		EXPECT_EQ(tracks[1]->getId(), track2.getId());
-	}
-}
-
-TEST_F(DatabaseFixture, SingleTrackSingleUserSingleBookmark)
-{
-	ScopedTrack track {session, "MyTrack"};
-	ScopedUser user {session, "MyUser"};
-	ScopedTrackBookmark bookmark {session, user.lockAndGet(), track.lockAndGet()};
-
-	{
-		auto transaction {session.createUniqueTransaction()};
-
-		bookmark.get().modify()->setComment("MyComment");
-		bookmark.get().modify()->setOffset(std::chrono::milliseconds {5});
-	}
-
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		EXPECT_EQ(TrackBookmark::getAll(session).size(), 1);
-
-		const auto bookmarks {TrackBookmark::getByUser(session, user.get())};
-		ASSERT_EQ(bookmarks.size(), 1);
-		EXPECT_EQ(bookmarks.back(), bookmark.get());
-	}
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		auto userBookmark {TrackBookmark::getByUser(session, user.get(), track.get())};
-		ASSERT_TRUE(userBookmark);
-		EXPECT_EQ(userBookmark, bookmark.get());
-
-		EXPECT_EQ(userBookmark->getOffset(), std::chrono::milliseconds {5});
-		EXPECT_EQ(userBookmark->getComment(), "MyComment");
+		EXPECT_EQ(User::find(session, Range {}).results.size(), 1);
+		EXPECT_EQ(User::getCount(session), 1);
 	}
 }
 

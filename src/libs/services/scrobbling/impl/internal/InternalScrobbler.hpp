@@ -34,14 +34,12 @@ namespace Scrobbling
 			InternalScrobbler(Database::Db&	db);
 
 		private:
+			// IScrobbler
 			void listenStarted(const Listen& listen) override;
 			void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
-
 			void addTimedListen(const TimedListen& listen) override;
 
-			Database::ObjectPtr<Database::TrackList> getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user) override;
-
-			Database::Db&	_db;
+			Database::Db&			_db;
 	};
 } // Scrobbling
 

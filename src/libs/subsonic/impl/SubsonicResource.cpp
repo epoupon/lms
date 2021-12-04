@@ -37,7 +37,6 @@
 #include "services/database/TrackBookmark.hpp"
 #include "services/database/TrackList.hpp"
 #include "services/database/User.hpp"
-#include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "services/cover/ICoverService.hpp"
@@ -164,7 +163,7 @@ static
 void
 checkUserIsMySelfOrAdmin(RequestContext& context, const std::string& username)
 {
-	User::pointer currentUser {User::getById(context.dbSession, context.userId)};
+	User::pointer currentUser {User::find(context.dbSession, context.userId)};
 	if (!currentUser)
 		throw RequestedDataNotFoundError {};
 
@@ -178,7 +177,7 @@ checkUserTypeIsAllowed(RequestContext& context, EnumSet<Database::UserType> allo
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer currentUser {User::getById(context.dbSession, context.userId)};
+	User::pointer currentUser {User::find(context.dbSession, context.userId)};
 	if (!currentUser)
 		throw RequestedDataNotFoundError {};
 
@@ -323,11 +322,11 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 	trackResponse.setAttribute("type", "music");
 	trackResponse.setAttribute("created", dateTimeToCreatedString(track->getLastWritten()));
 
-	if (Service<Feedback::IFeedbackService>::get()->isStarred(user->getId(), track->getId()))
+	if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), track->getId()))
 		trackResponse.setAttribute("starred", reportedStarredDate);
 
 	// Report the first GENRE for this track
-	ClusterType::pointer clusterType {ClusterType::getByName(dbSession, genreClusterName)};
+	ClusterType::pointer clusterType {ClusterType::find(dbSession, genreClusterName)};
 	if (clusterType)
 	{
 		auto clusters {track->getClusterGroups({clusterType}, 1)};
@@ -405,7 +404,7 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 	if (id3)
 	{
 		// Report the first GENRE for this track
-		ClusterType::pointer clusterType {ClusterType::getByName(dbSession, genreClusterName)};
+		ClusterType::pointer clusterType {ClusterType::find(dbSession, genreClusterName)};
 		if (clusterType)
 		{
 			auto clusters {release->getClusterGroups({clusterType}, 1)};
@@ -414,7 +413,7 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 		}
 	}
 
-	if (Service<Feedback::IFeedbackService>::get()->isStarred(user->getId(), release->getId()))
+	if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), release->getId()))
 		albumNode.setAttribute("starred", reportedStarredDate);
 
 	return albumNode;
@@ -432,7 +431,7 @@ artistToResponseNode(const User::pointer& user, const Artist::pointer& artist, b
 	if (id3)
 		artistNode.setAttribute("albumCount", artist->getReleaseCount());
 
-	if (Service<Feedback::IFeedbackService>::get()->isStarred(user->getId(), artist->getId()))
+	if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), artist->getId()))
 		artistNode.setAttribute("starred", reportedStarredDate);
 
 	return artistNode;
@@ -500,7 +499,7 @@ handleChangePassword(RequestContext& context)
 
 			checkUserIsMySelfOrAdmin(context, username);
 
-			User::pointer user {User::getByLoginName(context.dbSession, username)};
+			User::pointer user {User::find(context.dbSession, username)};
 			if (!user)
 				throw UserNotAuthorizedError {};
 
@@ -540,14 +539,14 @@ handleCreatePlaylistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
 	TrackList::pointer tracklist;
 	if (id)
 	{
-		tracklist = TrackList::getById(context.dbSession, *id);
+		tracklist = TrackList::find(context.dbSession, *id);
 		if (!tracklist
 			|| tracklist->getUser() != user
 			|| tracklist->getType() != TrackList::Type::Playlist)
@@ -565,11 +564,11 @@ handleCreatePlaylistRequest(RequestContext& context)
 
 	for (const TrackId trackId : trackIds)
 	{
-		Track::pointer track {Track::getById(context.dbSession, trackId)};
+		Track::pointer track {Track::find(context.dbSession, trackId)};
 		if (!track)
 			continue;
 
-		TrackListEntry::create(context.dbSession, track, tracklist );
+		TrackListEntry::create(context.dbSession, track, tracklist);
 	}
 
 	return Response::createOkResponse(context.serverProtocolVersion);
@@ -587,7 +586,7 @@ handleCreateUserRequest(RequestContext& context)
 	{
 		auto transaction {context.dbSession.createUniqueTransaction()};
 
-		User::pointer user {User::getByLoginName(context.dbSession, username)};
+		User::pointer user {User::find(context.dbSession, username)};
 		if (user)
 			throw UserAlreadyExistsGenericError {};
 
@@ -598,7 +597,7 @@ handleCreateUserRequest(RequestContext& context)
 	auto removeCreatedUser {[&]()
 	{
 		auto transaction {context.dbSession.createUniqueTransaction()};
-		User::pointer user {User::getById(context.dbSession, userId)};
+		User::pointer user {User::find(context.dbSession, userId)};
 		if (user)
 			user.remove();
 	}};
@@ -634,11 +633,11 @@ handleDeletePlaylistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id)};
+	TrackList::pointer tracklist {TrackList::find(context.dbSession, id)};
 	if (!tracklist
 		|| tracklist->getUser() != user
 		|| tracklist->getType() != TrackList::Type::Playlist)
@@ -659,7 +658,7 @@ handleDeleteUserRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	User::pointer user {User::getByLoginName(context.dbSession, username)};
+	User::pointer user {User::find(context.dbSession, username)};
 	if (!user)
 		throw RequestedDataNotFoundError {};
 
@@ -696,17 +695,20 @@ handleGetRandomSongsRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	auto tracks {Track::getAllRandom(context.dbSession, {}, size)};
+	const auto trackIds {Track::find(context.dbSession, Track::FindParameters {}.setSortMethod(TrackSortMethod::Random).setRange({0, size}))};
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 
 	Response::Node& randomSongsNode {response.createNode("randomSongs")};
-	for (const Track::pointer& track : tracks)
+	for (const TrackId trackId : trackIds.results)
+	{
+		const Track::pointer track {Track::find(context.dbSession, trackId)};
 		randomSongsNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+	}
 
 	return response;
 }
@@ -724,78 +726,86 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 
 	const Range range {offset, size};
 
-	std::vector<Release::pointer> releases;
+	RangeResults<ReleaseId> releases;
 	Scrobbling::IScrobblingService& scrobbling {*Service<Scrobbling::IScrobblingService>::get()};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
 	if (type == "alphabeticalByName")
 	{
-		releases = Release::getAll(context.dbSession, range);
+		Release::FindParameters params;
+		params.setSortMethod(ReleaseSortMethod::Name);
+		params.setRange(range);
+
+		releases = Release::find(context.dbSession, params);
 	}
 	else if (type == "alphabeticalByArtist")
 	{
-		releases = Release::getAllOrderedByArtist(context.dbSession, offset, size);
+		releases = Release::findOrderedByArtist(context.dbSession, range);
 	}
 	else if (type == "byGenre")
 	{
 		// Mandatory param
-		std::string genre {getMandatoryParameterAs<std::string>(context.parameters, "genre")};
+		const std::string genre {getMandatoryParameterAs<std::string>(context.parameters, "genre")};
 
-		ClusterType::pointer clusterType {ClusterType::getByName(context.dbSession, genreClusterName)};
-		if (clusterType)
+		if (const ClusterType::pointer clusterType {ClusterType::find(context.dbSession, genreClusterName)})
 		{
-			Cluster::pointer cluster {clusterType->getCluster(genre)};
-			if (cluster)
+			if (const Cluster::pointer cluster {clusterType->getCluster(genre)})
 			{
-				bool more;
-				releases = Release::getByFilter(context.dbSession, {cluster->getId()}, {}, range, more);
+				Release::FindParameters params;
+				params.setClusters({cluster->getId()});
+				params.setSortMethod(ReleaseSortMethod::Name);
+				params.setRange(range);
+
+				releases = Release::find(context.dbSession, params);
 			}
 		}
 	}
 	else if (type == "byYear")
 	{
-		int fromYear {getMandatoryParameterAs<int>(context.parameters, "fromYear")};
-		int toYear {getMandatoryParameterAs<int>(context.parameters, "toYear")};
+		const int fromYear {getMandatoryParameterAs<int>(context.parameters, "fromYear")};
+		const int toYear {getMandatoryParameterAs<int>(context.parameters, "toYear")};
 
-		releases = Release::getByYear(context.dbSession, fromYear, toYear, range);
+		Release::FindParameters params;
+		params.setSortMethod(ReleaseSortMethod::Date);
+		params.setRange(range);
+		params.setDateRange(DateRange::fromYearRange(fromYear, toYear));
+
+		releases = Release::find(context.dbSession, params);
 	}
 	else if (type == "frequent")
 	{
-		bool moreResults {};
-		for (ReleaseId releaseId : scrobbling.getTopReleases(context.userId, {}, range, moreResults))
-		{
-			if (Release::pointer release {Release::getById(context.dbSession, releaseId)})
-				releases.push_back(release );
-		}
+		releases = scrobbling.getTopReleases(context.userId, {}, range);
 	}
 	else if (type == "newest")
 	{
-		bool moreResults {};
-		releases = Release::getLastWritten(context.dbSession, std::nullopt, {}, range, moreResults);
+		Release::FindParameters params;
+		params.setSortMethod(ReleaseSortMethod::LastWritten);
+		params.setRange(range);
+
+		releases = Release::find(context.dbSession, params);
 	}
 	else if (type == "random")
 	{
 		// Random results are paginated, but there is no acceptable way to handle the pagination params without repeating some albums
-		releases = Release::getAllRandom(context.dbSession, {}, size);
+		// (no seed provided by subsonic, ot it would require to store some kind of context for each user/client when iterating over the random albums)
+		Release::FindParameters params;
+		params.setSortMethod(ReleaseSortMethod::Random);
+		params.setRange({0, size});
+
+		releases = Release::find(context.dbSession, params);
 	}
 	else if (type == "recent")
 	{
-		bool moreResults {};
-		for (ReleaseId releaseId : scrobbling.getRecentReleases(context.userId, {}, range, moreResults))
-		{
-			if (Release::pointer release {Release::getById(context.dbSession, releaseId)})
-				releases.push_back(release );
-		}
+		releases = scrobbling.getRecentReleases(context.userId, {}, range);
 	}
 	else if (type == "starred")
 	{
-		bool moreResults {};
-		releases = Release::getStarred(context.dbSession, user, {}, range, moreResults);
+		releases = scrobbling.getStarredReleases(context.userId, {}, range);
 	}
 	else
 		throw NotImplementedGenericError {};
@@ -803,8 +813,11 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& albumListNode {response.createNode(id3 ? "albumList2" : "albumList")};
 
-	for (const Release::pointer& release : releases)
+	for (const ReleaseId releaseId : releases.results)
+	{
+		const Release::pointer release {Release::find(context.dbSession, releaseId)};
 		albumListNode.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
+	}
 
 	return response;
 }
@@ -832,11 +845,11 @@ handleGetAlbumRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Release::pointer release {Release::getById(context.dbSession, id)};
+	Release::pointer release {Release::find(context.dbSession, id)};
 	if (!release)
 		throw RequestedDataNotFoundError {};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -861,11 +874,11 @@ handleGetArtistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	Artist::pointer artist {Artist::getById(context.dbSession, id)};
+	const Artist::pointer artist {Artist::find(context.dbSession, id)};
 	if (!artist)
 		throw RequestedDataNotFoundError {};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -897,7 +910,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
 
-		Artist::pointer artist {Artist::getById(context.dbSession, id)};
+		const Artist::pointer artist {Artist::find(context.dbSession, id)};
 		if (!artist)
 			throw RequestedDataNotFoundError {};
 
@@ -911,13 +924,13 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
 
-		User::pointer user {User::getById(context.dbSession, context.userId)};
+		User::pointer user {User::find(context.dbSession, context.userId)};
 		if (!user)
 			throw UserNotAuthorizedError {};
 
-		for ( const ArtistId similarArtistId : similarArtistsId )
+		for (const ArtistId similarArtistId : similarArtistsId)
 		{
-			Artist::pointer similarArtist {Artist::getById(context.dbSession, similarArtistId)};
+			const Artist::pointer similarArtist {Artist::find(context.dbSession, similarArtistId)};
 			if (similarArtist)
 				artistInfoNode.addArrayChild("similarArtist", artistToResponseNode(user, similarArtist, id3));
 		}
@@ -955,32 +968,31 @@ handleGetArtistsRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	std::optional<TrackArtistLinkType> linkType;
+	Artist::FindParameters findParameters;
+
+	findParameters.setSortMethod(ArtistSortMethod::BySortName);
 	switch (user->getSubsonicArtistListMode())
 	{
-		case User::SubsonicArtistListMode::AllArtists:
+		case SubsonicArtistListMode::AllArtists:
 			break;
-		case User::SubsonicArtistListMode::ReleaseArtists:
-			linkType = TrackArtistLinkType::ReleaseArtist;
+		case SubsonicArtistListMode::ReleaseArtists:
+			findParameters.setLinkType(TrackArtistLinkType::ReleaseArtist);
 			break;
-		case User::SubsonicArtistListMode::TrackArtists:
-			linkType = TrackArtistLinkType::Artist;
+		case SubsonicArtistListMode::TrackArtists:
+			findParameters.setLinkType(TrackArtistLinkType::Artist);
 			break;
 	}
 
-	bool more {};
-	const std::vector<Artist::pointer> artists {Artist::getByFilter(context.dbSession,
-			{},
-			{},
-			linkType,
-			Artist::SortMethod::BySortName,
-			std::nullopt, more)};
-	for (const Artist::pointer& artist : artists)
+	const RangeResults<ArtistId> artists {Artist::find(context.dbSession, findParameters)};
+	for (const ArtistId artistId : artists.results)
+	{
+		const auto artist {Artist::find(context.dbSession, artistId)};
 		indexNode.addArrayChild("artist", artistToResponseNode(user, artist, true /* id3 */));
+	}
 
 	return response;
 }
@@ -1003,7 +1015,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1012,16 +1024,18 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		directoryNode.setAttribute("id", idToString(RootId {}));
 		directoryNode.setAttribute("name", "Music");
 
-		bool moreResults{};
-		auto artists {Artist::getAll(context.dbSession, Artist::SortMethod::BySortName, std::nullopt, moreResults)};
-		for (const Artist::pointer& artist : artists)
+		auto artistIds {Artist::find(context.dbSession, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::BySortName))};
+		for (const ArtistId artistId : artistIds.results)
+		{
+			const Artist::pointer artist {Artist::find(context.dbSession, artistId)};
 			directoryNode.addArrayChild("child", artistToResponseNode(user, artist, false /* no id3 */));
+		}
 	}
 	else if (artistId)
 	{
 		directoryNode.setAttribute("id", idToString(*artistId));
 
-		auto artist {Artist::getById(context.dbSession, *artistId)};
+		auto artist {Artist::find(context.dbSession, *artistId)};
 		if (!artist)
 			throw RequestedDataNotFoundError {};
 
@@ -1035,7 +1049,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 	{
 		directoryNode.setAttribute("id", idToString(*releaseId));
 
-		auto release {Release::getById(context.dbSession, *releaseId)};
+		auto release {Release::find(context.dbSession, *releaseId)};
 		if (!release)
 				throw RequestedDataNotFoundError {};
 
@@ -1075,7 +1089,7 @@ handleGetGenresRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	const ClusterType::pointer clusterType {ClusterType::getByName(context.dbSession, genreClusterName)};
+	const ClusterType::pointer clusterType {ClusterType::find(context.dbSession, genreClusterName)};
 	if (clusterType)
 	{
 		const auto clusters {clusterType->getClusters()};
@@ -1102,32 +1116,30 @@ handleGetIndexesRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	std::optional<TrackArtistLinkType> linkType;
+	Artist::FindParameters parameters;
+	parameters.setSortMethod(ArtistSortMethod::BySortName);
 	switch (user->getSubsonicArtistListMode())
 	{
-		case User::SubsonicArtistListMode::AllArtists:
+		case SubsonicArtistListMode::AllArtists:
 			break;
-		case User::SubsonicArtistListMode::ReleaseArtists:
-			linkType = TrackArtistLinkType::ReleaseArtist;
+		case SubsonicArtistListMode::ReleaseArtists:
+			parameters.setLinkType(TrackArtistLinkType::ReleaseArtist);
 			break;
-		case User::SubsonicArtistListMode::TrackArtists:
-			linkType = TrackArtistLinkType::Artist;
+		case SubsonicArtistListMode::TrackArtists:
+			parameters.setLinkType(TrackArtistLinkType::Artist);
 			break;
 	}
 
-	bool more {};
-	const std::vector<Artist::pointer> artists {Artist::getByFilter(context.dbSession,
-			{},
-			{},
-			linkType,
-			Artist::SortMethod::BySortName,
-			std::nullopt, more)};
-	for (const Artist::pointer& artist : artists)
+	const RangeResults<ArtistId> artists {Artist::find(context.dbSession, parameters)};
+	for (const ArtistId artistId : artists.results)
+	{
+		const Artist::pointer artist {Artist::find(context.dbSession, artistId)};
 		indexNode.addArrayChild("artist", artistToResponseNode(user, artist, false /* no id3 */));
+	}
 
 	return response;
 }
@@ -1146,11 +1158,11 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	const Artist::pointer artist {Artist::getById(context.dbSession, artistId)};
+	const Artist::pointer artist {Artist::find(context.dbSession, artistId)};
 	if (!artist)
 		throw RequestedDataNotFoundError {};
 
-	const User::pointer user {User::getById(context.dbSession, context.userId)};
+	const User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
@@ -1158,7 +1170,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	auto tracks {artist->getRandomTracks(count / 2)};
 	for (const ArtistId similarArtistId : similarArtistIds)
 	{
-		const Artist::pointer similarArtist {Artist::getById(context.dbSession, similarArtistId)};
+		const Artist::pointer similarArtist {Artist::find(context.dbSession, similarArtistId)};
 		if (!similarArtist)
 			continue;
 
@@ -1199,31 +1211,30 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& starredNode {response.createNode(id3 ? "starred2" : "starred")};
 
+	Scrobbling::IScrobblingService& scrobbling {*Service<Scrobbling::IScrobblingService>::get()};
+
+	for (const ArtistId artistId : scrobbling.getStarredArtists(context.userId, {} /* clusters */, std::nullopt /* linkType */, ArtistSortMethod::BySortName, Range {}).results)
 	{
-		bool moreResults {};
-		const auto artists {Artist::getStarred(context.dbSession, user, {}, std::nullopt, Artist::SortMethod::BySortName, std::nullopt, moreResults)};
-		for (const Artist::pointer& artist : artists)
+		if (auto artist {Artist::find(context.dbSession, artistId)})
 			starredNode.addArrayChild("artist", artistToResponseNode(user, artist, id3));
 	}
 
+	for (const ReleaseId releaseId : scrobbling.getStarredReleases(context.userId, {} /* clusters */, Range {}).results)
 	{
-		bool moreResults {};
-		const auto releases {Release::getStarred(context.dbSession, user, {}, std::nullopt, moreResults)};
-		for (const Release::pointer& release : releases)
+		if (auto release {Release::find(context.dbSession, releaseId)})
 			starredNode.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
 	}
 
+	for (const TrackId trackId : scrobbling.getStarredTracks(context.userId, {} /* clusters */, Range {}).results)
 	{
-		bool moreResults {};
-		const auto tracks {Track::getStarred(context.dbSession, user, {}, std::nullopt, moreResults)};
-		for (const Track::pointer& track : tracks)
+		if (auto track {Track::find(context.dbSession, trackId)})
 			starredNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 	}
 
@@ -1271,11 +1282,11 @@ handleGetPlaylistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	TrackList::pointer tracklist {TrackList::getById(context.dbSession, trackListId)};
+	TrackList::pointer tracklist {TrackList::find(context.dbSession, trackListId)};
 	if (!tracklist)
 		throw RequestedDataNotFoundError {};
 
@@ -1297,16 +1308,15 @@ handleGetPlaylistsRequest(RequestContext& context)
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& playlistsNode {response.createNode("playlists")};
 
-	auto tracklists {TrackList::getAll(context.dbSession, user, TrackList::Type::Playlist)};
-	for (const TrackList::pointer& tracklist : tracklists)
-		playlistsNode.addArrayChild("playlist", tracklistToResponseNode(tracklist, context.dbSession));
+	auto tracklistIds {TrackList::find(context.dbSession, context.userId, TrackList::Type::Playlist, Range {})};
+	for (const TrackListId trackListId : tracklistIds.results)
+	{
+		const TrackList::pointer trackList {TrackList::find(context.dbSession, trackListId)};
+		playlistsNode.addArrayChild("playlist", tracklistToResponseNode(trackList, context.dbSession));
+	}
 
 	return response;
 }
@@ -1326,7 +1336,7 @@ handleGetSongsByGenreRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	auto clusterType {ClusterType::getByName(context.dbSession, genreClusterName)};
+	auto clusterType {ClusterType::find(context.dbSession, genreClusterName)};
 	if (!clusterType)
 		throw RequestedDataNotFoundError {};
 
@@ -1334,17 +1344,23 @@ handleGetSongsByGenreRequest(RequestContext& context)
 	if (!cluster)
 		throw RequestedDataNotFoundError {};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& songsByGenreNode {response.createNode("songsByGenre")};
 
-	bool more;
-	auto tracks {Track::getByFilter(context.dbSession, {cluster->getId()}, {}, Range {offset, size}, more)};
-	for (const Track::pointer& track : tracks)
+	Track::FindParameters params;
+	params.setClusters({cluster->getId()});
+	params.setRange({offset, size});
+
+	auto trackIds {Track::find(context.dbSession, params)};
+	for (const TrackId trackId : trackIds.results)
+	{
+		const Track::pointer track {Track::find(context.dbSession, trackId)};
 		songsByGenreNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+	}
 
 	return response;
 }
@@ -1359,7 +1375,7 @@ handleGetUserRequest(RequestContext& context)
 
 	checkUserIsMySelfOrAdmin(context, username);
 
-	const User::pointer user {User::getByLoginName(context.dbSession, username)};
+	const User::pointer user {User::find(context.dbSession, username)};
 	if (!user)
 		throw RequestedDataNotFoundError {};
 
@@ -1378,9 +1394,12 @@ handleGetUsersRequest(RequestContext& context)
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& usersNode {response.createNode("users")};
 
-	const auto users {User::getAll(context.dbSession)};
-	for (const User::pointer& user : users)
+	const auto userIds {User::find(context.dbSession, Range {})};
+	for (const UserId userId : userIds.results)
+	{
+		const User::pointer user {User::find(context.dbSession, userId)};
 		usersNode.addArrayChild("user", userToResponseNode(user));
+	}
 
 	return response;
 }
@@ -1404,30 +1423,52 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& searchResult2Node {response.createNode(id3 ? "searchResult3" : "searchResult2")};
 
-	bool more;
 	{
-		auto artists {Artist::getByFilter(context.dbSession, {}, keywords, std::nullopt, Artist::SortMethod::BySortName, Range {artistOffset, artistCount}, more)};
-		for (const Artist::pointer& artist : artists)
+		Artist::FindParameters params;
+		params.setKeywords(keywords);
+		params.setSortMethod(ArtistSortMethod::BySortName);
+		params.setRange({artistOffset, artistCount});
+
+		RangeResults<ArtistId> artistIds {Artist::find(context.dbSession, params)};
+		for (const ArtistId artistId : artistIds.results)
+		{
+			const auto artist {Artist::find(context.dbSession, artistId)};
 			searchResult2Node.addArrayChild("artist", artistToResponseNode(user, artist, id3));
+		}
 	}
 
 	{
-		auto releases {Release::getByFilter(context.dbSession, {}, keywords, Range {albumOffset, albumCount}, more)};
-		for (const Release::pointer& release : releases)
+		Release::FindParameters params;
+		params.setKeywords(keywords);
+		params.setSortMethod(ReleaseSortMethod::Name);
+		params.setRange({albumOffset, albumCount});
+
+		RangeResults<ReleaseId> releaseIds {Release::find(context.dbSession, params)};
+		for (const ReleaseId releaseId : releaseIds.results)
+		{
+			const auto release {Release::find(context.dbSession, releaseId)};
 			searchResult2Node.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
+		}
 	}
 
 	{
-		auto tracks {Track::getByFilter(context.dbSession, {}, keywords, Range {songOffset, songCount}, more)};
-		for (const Track::pointer& track : tracks)
+		Track::FindParameters params;
+		params.setKeywords(keywords);
+		params.setRange({songOffset, songCount});
+
+		RangeResults<TrackId> trackIds {Track::find(context.dbSession, params)};
+		for (const TrackId trackId : trackIds.results)
+		{
+			const auto track {Track::find(context.dbSession, trackId)};
 			searchResult2Node.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+		}
 	}
 
 	return response;
@@ -1462,35 +1503,35 @@ handleStarRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
 	for (const ArtistId id : params.artistIds)
 	{
-		Artist::pointer artist {Artist::getById(context.dbSession, id)};
+		Artist::pointer artist {Artist::find(context.dbSession, id)};
 		if (!artist)
 			continue;
 
-		Service<Feedback::IFeedbackService>::get()->star(user->getId(), artist->getId());
+		Service<Scrobbling::IScrobblingService>::get()->star(user->getId(), artist->getId());
 	}
 
 	for (const ReleaseId id : params.releaseIds)
 	{
-		Release::pointer release {Release::getById(context.dbSession, id)};
+		Release::pointer release {Release::find(context.dbSession, id)};
 		if (!release)
 			continue;
 
-		Service<Feedback::IFeedbackService>::get()->star(user->getId(), release->getId());
+		Service<Scrobbling::IScrobblingService>::get()->star(user->getId(), release->getId());
 	}
 
 	for (const TrackId id : params.trackIds)
 	{
-		Track::pointer track {Track::getById(context.dbSession, id)};
+		Track::pointer track {Track::find(context.dbSession, id)};
 		if (!track)
 			continue;
 
-		Service<Feedback::IFeedbackService>::get()->star(user->getId(), track->getId());
+		Service<Scrobbling::IScrobblingService>::get()->star(user->getId(), track->getId());
 	}
 
 	return Response::createOkResponse(context.serverProtocolVersion);
@@ -1518,35 +1559,29 @@ handleUnstarRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw RequestedDataNotFoundError {};
 
-	for (const ArtistId id : params.artistIds)
-	{
-		Artist::pointer artist {Artist::getById(context.dbSession, id)};
-		if (!artist)
-			continue;
-
-		Service<Feedback::IFeedbackService>::get()->unstar(user->getId(), artist->getId());
-	}
+	for (const ArtistId artistId : params.artistIds)
+		Service<Scrobbling::IScrobblingService>::get()->unstar(context.userId, artistId);
 
 	for (const ReleaseId id : params.releaseIds)
 	{
-		Release::pointer release {Release::getById(context.dbSession, id)};
+		Release::pointer release {Release::find(context.dbSession, id)};
 		if (!release)
 			continue;
 
-		Service<Feedback::IFeedbackService>::get()->unstar(user->getId(), release->getId());
+		Service<Scrobbling::IScrobblingService>::get()->unstar(user->getId(), release->getId());
 	}
 
 	for (const TrackId id : params.trackIds)
 	{
-		Track::pointer track {Track::getById(context.dbSession, id)};
+		Track::pointer track {Track::find(context.dbSession, id)};
 		if (!track)
 			continue;
 
-		Service<Feedback::IFeedbackService>::get()->unstar(user->getId(), track->getId());
+		Service<Scrobbling::IScrobblingService>::get()->unstar(user->getId(), track->getId());
 	}
 
 
@@ -1608,7 +1643,7 @@ handleUpdateUserRequest(RequestContext& context)
 	{
 		auto transaction {context.dbSession.createSharedTransaction()};
 
-		User::pointer user {User::getByLoginName(context.dbSession, username)};
+		User::pointer user {User::find(context.dbSession, username)};
 		if (!user)
 			throw RequestedDataNotFoundError {};
 
@@ -1656,11 +1691,11 @@ handleUpdatePlaylistRequest(RequestContext& context)
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	TrackList::pointer tracklist {TrackList::getById(context.dbSession, id)};
+	TrackList::pointer tracklist {TrackList::find(context.dbSession, id)};
 	if (!tracklist
 		|| tracklist->getUser() != user
 		|| tracklist->getType() != TrackList::Type::Playlist)
@@ -1689,7 +1724,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 	// Add tracks
 	for (const TrackId trackIdToAdd : trackIdsToAdd)
 	{
-		Track::pointer track {Track::getById(context.dbSession, trackIdToAdd)};
+		Track::pointer track {Track::find(context.dbSession, trackIdToAdd)};
 		if (!track)
 			continue;
 
@@ -1705,17 +1740,18 @@ handleGetBookmarks(RequestContext& context)
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	User::pointer user {User::getById(context.dbSession, context.userId)};
+	User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	const auto bookmarks {TrackBookmark::getByUser(context.dbSession, user)};
+	const auto bookmarkIds {TrackBookmark::find(context.dbSession, user->getId(), Range {})};
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& bookmarksNode {response.createNode("bookmarks")};
 
-	for (const TrackBookmark::pointer& bookmark : bookmarks)
+	for (const TrackBookmarkId bookmarkId : bookmarkIds.results)
 	{
+		const TrackBookmark::pointer bookmark {TrackBookmark::find(context.dbSession, bookmarkId)};
 		Response::Node bookmarkNode {trackBookmarkToResponseNode(bookmark)};
 		bookmarkNode.addArrayChild("entry", trackToResponseNode(bookmark->getTrack(), context.dbSession, user));
 
@@ -1730,22 +1766,22 @@ Response
 handleCreateBookmark(RequestContext& context)
 {
 	// Mandatory params
-	TrackId id {getMandatoryParameterAs<TrackId>(context.parameters, "id")};
+	TrackId trackId {getMandatoryParameterAs<TrackId>(context.parameters, "id")};
 	unsigned long position {getMandatoryParameterAs<unsigned long>(context.parameters, "position")};
 	const std::optional<std::string> comment {getParameterAs<std::string>(context.parameters, "comment")};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	const User::pointer user {User::getById(context.dbSession, context.userId)};
+	const User::pointer user {User::find(context.dbSession, context.userId)};
 	if (!user)
 		throw UserNotAuthorizedError {};
 
-	const Track::pointer track {Track::getById(context.dbSession, id)};
+	const Track::pointer track {Track::find(context.dbSession, trackId)};
 	if (!track)
 		throw RequestedDataNotFoundError {};
 
 	// Replace any existing bookmark
-	auto bookmark {TrackBookmark::getByUser(context.dbSession, user, track)};
+	auto bookmark {TrackBookmark::find(context.dbSession, user->getId(), trackId)};
 	if (!bookmark)
 		bookmark = TrackBookmark::create(context.dbSession, user, track);
 
@@ -1761,19 +1797,11 @@ Response
 handleDeleteBookmark(RequestContext& context)
 {
 	// Mandatory params
-	TrackId id {getMandatoryParameterAs<TrackId>(context.parameters, "id")};
+	TrackId trackId {getMandatoryParameterAs<TrackId>(context.parameters, "id")};
 
 	auto transaction {context.dbSession.createUniqueTransaction()};
 
-	const User::pointer user {User::getById(context.dbSession, context.userId)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
-	const Track::pointer track {Track::getById(context.dbSession, id)};
-	if (!track)
-		throw RequestedDataNotFoundError {};
-
-	auto bookmark {TrackBookmark::getByUser(context.dbSession, user, track)};
+	auto bookmark {TrackBookmark::find(context.dbSession, context.userId, trackId)};
 	if (!bookmark)
 		throw RequestedDataNotFoundError {};
 

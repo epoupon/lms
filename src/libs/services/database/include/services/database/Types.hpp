@@ -22,63 +22,126 @@
 #include <cstdint>
 #include <cassert>
 #include <functional>
-#include <Wt/Dbo/ptr.h>
+#include <Wt/WDate.h>
 
 namespace Database
 {
-	class IdType
-	{
-		public:
-			using ValueType = Wt::Dbo::dbo_default_traits::IdType;
+	// Caution: do not change enum values if they are set!
 
-			IdType() = default;
-			IdType(ValueType id) : _id {id} { assert(isValid()); }
-
-			bool isValid() const { return _id != Wt::Dbo::dbo_default_traits::invalidId(); }
-			std::string toString() const { assert(isValid()); return std::to_string(_id); }
-
-			ValueType getValue() const { return _id; }
-
-			bool operator==(IdType other) const { return other._id == _id; }
-			bool operator!=(IdType other) const { return !(*this == other); }
-			bool operator<(IdType other) const { return other._id < _id; }
-
-		private:
-			Wt::Dbo::dbo_default_traits::IdType _id {Wt::Dbo::dbo_default_traits::invalidId()};
-	};
-
+	// Request:
+	// 	  size = 0 => no size limit!
+	// Response (via RangeResults)
+	//    size => results size
 	struct Range
 	{
 		std::size_t offset {};
-		std::size_t limit {};
+		std::size_t size {};
+
+		// TODO remove this
+		operator bool() const { return size != 0; }
 	};
 
+	template <typename T>
+	struct RangeResults
+	{
+		Range range;
+		std::vector<T> results;
+		bool moreResults;
+
+		RangeResults getSubRange(Range subRange)
+		{
+			assert(subRange.offset >= range.offset);
+
+			if (!subRange.size)
+				subRange.size = range.size - (subRange.offset - range.offset);
+
+			subRange.offset = std::min(subRange.offset, range.offset + range.size);
+			subRange.size = std::min(subRange.size, range.offset + range.size - subRange.offset);
+
+			RangeResults subResults;
+
+			auto itBegin {std::cbegin(results) + subRange.offset - range.offset};
+			auto itEnd {itBegin + subRange.size};
+			subResults.results.reserve(std::distance(itBegin, itEnd));
+			std::copy(itBegin, itEnd, std::back_inserter(subResults.results));
+
+			subResults.range = subRange;
+			if (subRange.offset + subRange.size == range.offset + range.size)
+				subResults.moreResults = moreResults;
+			else
+				subResults.moreResults = true;
+
+			return subResults;
+		}
+	};
+
+	struct DateRange
+	{
+		Wt::WDate begin;
+		Wt::WDate end;
+
+		static DateRange fromYearRange(int from, int to);
+	};
+
+	enum class ArtistSortMethod
+	{
+		None,
+		ByName,
+		BySortName,
+		Random,
+		LastWritten,
+		StarredDateDesc,
+	};
+
+	enum class ReleaseSortMethod
+	{
+		None,
+		Name,
+		Date,
+		Random,
+		LastWritten,
+		StarredDateDesc,
+	};
+
+	enum class TrackSortMethod
+	{
+		None,
+		Random,
+		LastWritten,
+		StarredDateDesc,
+	};
+
+	// Do not change enum values!
 	enum class TrackArtistLinkType
 	{
-		Artist,	// regular artist
-		Arranger,
-		Composer,
-		Conductor,
-		Lyricist,
-		Mixer,
-		Performer,
-		Producer,
-		ReleaseArtist,
-		Remixer,
-		Writer,
+		Artist		= 0,	// regular track artist
+		Arranger	= 1,
+		Composer	= 2,
+		Conductor	= 3,
+		Lyricist	= 4,
+		Mixer		= 5,
+		Performer	= 6,
+		Producer	= 7,
+		ReleaseArtist = 8,
+		Remixer		= 9,
+		Writer		= 10,
 	};
 
 	// User selectable audio file formats
 	// Do not change values
 	enum class AudioFormat
 	{
-		MP3		= 1,
-		OGG_OPUS	= 2,
-		OGG_VORBIS	= 3,
-		WEBM_VORBIS	= 4,
+		MP3				= 1,
+		OGG_OPUS		= 2,
+		OGG_VORBIS		= 3,
+		WEBM_VORBIS		= 4,
 		MATROSKA_OPUS	= 5,
 	};
+
 	using Bitrate = std::uint32_t;
+	// Do not remove values!
+	void visitAllowedAudioBitrates(std::function<void(Bitrate)>);
+	bool isAudioBitrateAllowed(Bitrate bitrate);
 
 	// Do not change enum values!
 	enum class Scrobbler
@@ -95,82 +158,19 @@ namespace Database
 		DEMO	= 2,
 	};
 
-	template <typename T>
-	class ObjectPtr
+	// Do not change enum values!
+	enum class UITheme
 	{
-		public:
-			ObjectPtr() = default;
-			ObjectPtr(Wt::Dbo::ptr<T> obj) : _obj {obj} {}
-
-			const T* operator->() const { return _obj.get(); }
-			operator bool() const { return _obj.get(); }
-			bool operator!() const { return !_obj.get(); }
-
-			auto modify() { return _obj.modify(); }
-			void remove() { _obj.remove(); }
-
-		private:
-			template <typename, typename> friend class Object;
-			Wt::Dbo::ptr<T> _obj;
+		Light	= 0,
+		Dark	= 1,
 	};
 
-	template <typename T, typename ObjectIdType>
-	class Object : public Wt::Dbo::Dbo<T>
+	// Do not change enum values!
+	enum class SubsonicArtistListMode
 	{
-		static_assert(std::is_base_of_v<Database::IdType, ObjectIdType>);
-		static_assert(!std::is_same_v<Database::IdType, ObjectIdType>);
-
-		public:
-			using pointer = ObjectPtr<T>;
-			using IdType = ObjectIdType;
-
-			IdType getId() const { return Wt::Dbo::Dbo<T>::self()->Wt::Dbo::template Dbo<T>::id(); }
-
-			// catch some misuses
-			typename Wt::Dbo::dbo_traits<T>::IdType id() const = delete;
-
-		protected:
-			// Can get raw dbo ptr only from Objects
-			template <typename SomeObject>
-			static
-			Wt::Dbo::ptr<SomeObject> getDboPtr(ObjectPtr<SomeObject> ptr) { return ptr._obj; }
+		AllArtists		= 0,
+		ReleaseArtists	= 1,
+		TrackArtists	= 2,
 	};
 }
-
-// TODO factorize hash with std::enable_if
-#define LMS_DECLARE_IDTYPE(name) \
-namespace Database { \
-	class name : public IdType \
-	{ \
-		public: \
-			using IdType::IdType; \
-	};\
-} \
-namespace std \
-{ \
-	template<> \
-	class hash<Database::name> \
-	{ \
-		public: \
-			size_t operator()(Database::name id) const \
-			{ \
-				return std::hash<Database::name::ValueType>()(id.getValue()); \
-			} \
-	}; \
-} // ns std
-
-LMS_DECLARE_IDTYPE(ArtistId)
-LMS_DECLARE_IDTYPE(AuthTokenId)
-LMS_DECLARE_IDTYPE(ClusterId)
-LMS_DECLARE_IDTYPE(ClusterTypeId)
-LMS_DECLARE_IDTYPE(ReleaseId)
-LMS_DECLARE_IDTYPE(ScanSettingsId)
-LMS_DECLARE_IDTYPE(TrackArtistLinkId)
-LMS_DECLARE_IDTYPE(TrackBookmarkId)
-LMS_DECLARE_IDTYPE(TrackFeaturesId)
-LMS_DECLARE_IDTYPE(TrackId)
-LMS_DECLARE_IDTYPE(TrackListId)
-LMS_DECLARE_IDTYPE(TrackListEntryId)
-LMS_DECLARE_IDTYPE(UserId)
-
 

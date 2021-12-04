@@ -23,6 +23,10 @@
 
 #include "DatabaseCollectorBase.hpp"
 
+#include "services/database/Object.hpp"
+#include "services/database/ReleaseId.hpp"
+#include "services/database/Types.hpp"
+
 namespace Database
 {
 	class Release;
@@ -35,13 +39,12 @@ namespace UserInterface
 		public:
 			using DatabaseCollectorBase::DatabaseCollectorBase;
 
-			std::vector<Database::ObjectPtr<Database::Release>>	get(std::optional<Database::Range> range, bool& moreResults);
-			std::vector<Database::ReleaseId>				getAll();
-			void reset() { _randomReleases.clear(); }
+			Database::RangeResults<Database::ReleaseId>	get(Database::Range range);
+			void reset() { _randomReleases.reset(); }
 
 		private:
-			std::vector<Database::ObjectPtr<Database::Release>> getRandomReleases(std::optional<Range> range, bool& moreResults);
-			std::vector<Database::ReleaseId> _randomReleases;
+			Database::RangeResults<Database::ReleaseId> getRandomReleases(Range range);
+			std::optional<Database::RangeResults<Database::ReleaseId>> _randomReleases;
 	};
 } // ns UserInterface
 

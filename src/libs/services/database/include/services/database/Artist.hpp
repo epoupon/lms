@@ -27,7 +27,11 @@
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
+#include "services/database/ArtistId.hpp"
+#include "services/database/ClusterId.hpp"
+#include "services/database/Object.hpp"
 #include "services/database/Types.hpp"
+#include "services/database/UserId.hpp"
 #include "utils/EnumSet.hpp"
 #include "utils/UUID.hpp"
 
@@ -38,6 +42,7 @@ class Cluster;
 class ClusterType;
 class Release;
 class Session;
+class StarredArtist;
 class Track;
 class TrackArtistLink;
 class User;
@@ -45,67 +50,53 @@ class User;
 class Artist : public Object<Artist, ArtistId>
 {
 	public:
-		enum class SortMethod
+		struct FindParameters
 		{
-			None,
-			ByName,
-			BySortName,
+			std::vector<ClusterId>				clusters;	// if non empty, at least one artist that belongs to these clusters
+			std::vector<std::string_view>		keywords;	// if non empty, name must match all of these keywords (on either name field OR sort name field)
+			std::optional<TrackArtistLinkType>	linkType;	// if set, only artists that have produced at least one track with this link type
+			ArtistSortMethod					sortMethod {ArtistSortMethod::None};
+			Range								range;
+			Wt::WDateTime						writtenAfter;
+			UserId								starringUser;	// only artists starred by this user
+			std::optional<Scrobbler>			scrobbler;		// and for this scrobbler
+
+			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
+			FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
+			FindParameters& setLinkType(std::optional<TrackArtistLinkType> _linkType) { linkType = _linkType; return *this; }
+			FindParameters& setSortMethod(ArtistSortMethod _sortMethod) {sortMethod = _sortMethod; return *this; }
+			FindParameters& setRange(Range _range) {range = _range; return *this; }
+			FindParameters& setWrittenAfter(const Wt::WDateTime& _after) { writtenAfter = _after; return *this; }
+			FindParameters& setStarringUser(UserId _user, Scrobbler _scrobbler) { starringUser = _user; scrobbler = _scrobbler; return *this; }
 		};
 
 		Artist() = default;
 		Artist(const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Accessors
-		static pointer			getByMBID(Session& session, const UUID& MBID);
-		static pointer			getById(Session& session, ArtistId id);
-		static bool				exists(Session& session, ArtistId id);
-		static std::vector<pointer>	getByName(Session& session, const std::string& name);		// exact match on name field
-		static std::vector<pointer> getByClusters(Session& session,
-								const std::vector<ClusterId>& clusters,		// at least one track that belongs to  these clusters
-								SortMethod sortMethod
-								);
-		static std::vector<pointer> 	getByFilter(Session& session,
-								const std::vector<ClusterId>& clusters,			// if non empty, at least one artist that belongs to these clusters
-								const std::vector<std::string_view>& keywords,	// if non empty, name must match all of these keywords (name + sort name fields)
-								std::optional<TrackArtistLinkType> linkType, 	// if set, only artists that have produced at least one track with this link type
-								SortMethod sortMethod,
-								std::optional<Range> range,
-								bool& moreExpected);
+		static std::size_t				getCount(Session& session);
+		static pointer					find(Session& session, const UUID& MBID);
+		static pointer					find(Session& session, ArtistId id);
+		static std::vector<pointer>		find(Session& session, const std::string& name);		// exact match on name field
+		static RangeResults<ArtistId>	find(Session& session, const FindParameters& parameters);
+		static RangeResults<ArtistId>	findAllOrphans(Session& session, Range range); // No track related
+		static bool						exists(Session& session, ArtistId id);
 
-		static std::vector<pointer>		getAll(Session& session);
-		static std::vector<pointer>		getAll(Session& session, SortMethod sortMethod);
-		static std::vector<pointer>		getAll(Session& session, SortMethod sortMethod, std::optional<Range> range, bool& moreResults);
-		static std::vector<ArtistId>	getAllIds(Session& session);
-		static std::vector<ArtistId>	getAllIdsRandom(Session& session, const std::vector<ClusterId>& clusters, std::optional<TrackArtistLinkType> linkType, std::optional<std::size_t> size = {});
-		static std::vector<pointer>		getAllOrphans(Session& session); // No track related
-		static std::vector<pointer>		getLastWritten(Session& session,
-								std::optional<Wt::WDateTime> after,
-								const std::vector<ClusterId>& clusters,
-								std::optional<TrackArtistLinkType> linkType, 	// if set, only artists that have produced at least one track with this link type
-								std::optional<Range>,
-								bool& moreResults);
-		static std::vector<ArtistId>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
-		static std::vector<pointer>	getStarred(Session& session,
-								ObjectPtr<User> user,
-								const std::vector<ClusterId>& clusters,
-								std::optional<TrackArtistLinkType> linkType, 	// if set, only artists that have produced at least one track with this link type
-								SortMethod sortMethod,
-								std::optional<Range>, bool& moreResults);
 
 		// Accessors
 		const std::string&	getName() const { return _name; }
 		const std::string&	getSortName() const { return _sortName; }
 		std::optional<UUID>	getMBID() const { return UUID::fromString(_MBID); }
 
-		std::vector<ObjectPtr<Release>>	getReleases(const std::vector<ClusterId>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
+		std::vector<ObjectPtr<Release>>		getReleases(const std::vector<ClusterId>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
 		std::size_t							getReleaseCount() const;
 		std::vector<ObjectPtr<Track>>		getTracks(std::optional<TrackArtistLinkType> linkType = {}) const;
 		bool								hasNonReleaseTracks(std::optional<TrackArtistLinkType> linkType = std::nullopt) const;
-		std::vector<ObjectPtr<Track>>		getNonReleaseTracks(std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
+		RangeResults<ObjectPtr<Track>>		getNonReleaseTracks(std::optional<TrackArtistLinkType> linkType, Range range) const;
 		std::vector<ObjectPtr<Track>>		getRandomTracks(std::optional<std::size_t> count) const;
 
 		// No artistLinkTypes means get them all
-		std::vector<pointer>				getSimilarArtists(EnumSet<TrackArtistLinkType> artistLinkTypes = {}, std::optional<Range> range = std::nullopt) const;
+		RangeResults<ArtistId>				findSimilarArtists(EnumSet<TrackArtistLinkType> artistLinkTypes = {}, Range range = {}) const;
 
 		// Get the cluster of the tracks made by this artist
 		// Each clusters are grouped by cluster type, sorted by the number of occurence
@@ -127,7 +118,7 @@ class Artist : public Object<Artist, ArtistId>
 				Wt::Dbo::field(a, _MBID, "mbid");
 
 				Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "artist");
-				Wt::Dbo::hasMany(a, _starringUsers, Wt::Dbo::ManyToMany, "user_release_starred", "", Wt::Dbo::OnDeleteCascade);
+				Wt::Dbo::hasMany(a, _starredArtists, Wt::Dbo::ManyToMany, "user_starred_artists", "", Wt::Dbo::OnDeleteCascade);
 			}
 
 	private:
@@ -138,8 +129,8 @@ class Artist : public Object<Artist, ArtistId>
 		std::string _sortName;
 		std::string _MBID;	// Musicbrainz Identifier
 
-		Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks; // Tracks involving this artist
-		Wt::Dbo::collection<Wt::Dbo::ptr<User>>		_starringUsers; // Users that starred this artist
+		Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>>	_trackArtistLinks;	// Tracks involving this artist
+		Wt::Dbo::collection<Wt::Dbo::ptr<StarredArtist>>	_starredArtists; 	// starred entries for this artist
 };
 
 } // namespace Database

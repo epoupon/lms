@@ -22,7 +22,7 @@
 #include <unordered_set>
 #include <Wt/WTemplate.h>
 
-#include "services/database/Types.hpp"
+#include "services/database/Object.hpp"
 #include "PlayQueueAction.hpp"
 
 namespace Database

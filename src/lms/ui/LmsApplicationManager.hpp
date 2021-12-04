@@ -25,7 +25,7 @@
 
 #include <Wt/WSignal.h>
 
-#include "services/database/Types.hpp"
+#include "services/database/UserId.hpp"
 
 namespace UserInterface
 {

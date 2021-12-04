@@ -23,8 +23,12 @@
 
 #include <Wt/Dbo/Dbo.h>
 
+#include "services/database/IdType.hpp"
+#include "services/database/Object.hpp"
 #include "services/database/Types.hpp"
 #include "utils/EnumSet.hpp"
+
+LMS_DECLARE_IDTYPE(TrackArtistLinkId)
 
 namespace Database
 {
@@ -40,11 +44,10 @@ namespace Database
 			TrackArtistLink(ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type);
 
 			static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type);
-
-			static EnumSet<TrackArtistLinkType> getUsedTypes(Session& session);
+			static EnumSet<TrackArtistLinkType> findUsedTypes(Session& session);
 
 			ObjectPtr<Track>		getTrack() const { return _track; }
-			ObjectPtr<Artist>	getArtist() const { return _artist; }
+			ObjectPtr<Artist>		getArtist() const { return _artist; }
 			TrackArtistLinkType		getType() const { return _type; }
 
 			template<class Action>

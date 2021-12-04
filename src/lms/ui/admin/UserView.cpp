@@ -53,7 +53,7 @@ class UserModel : public Wt::WFormModel
 		static inline const Field PasswordField {"password"};
 		static inline const Field DemoField {"demo"};
 
-		UserModel(std::optional<Database::UserId> userId, ::Auth::IPasswordService* authPasswordService)
+		UserModel(std::optional<UserId> userId, ::Auth::IPasswordService* authPasswordService)
 		: _userId {userId}
 		, _authPasswordService {authPasswordService}
 		{
@@ -82,7 +82,7 @@ class UserModel : public Wt::WFormModel
 			if (_userId)
 			{
 				// Update user
-				Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
+				User::pointer user {User::find(LmsApp->getDbSession(), *_userId)};
 				if (!user)
 					throw UserNotFoundException {};
 
@@ -92,15 +92,15 @@ class UserModel : public Wt::WFormModel
 			else
 			{
 				// Check races with other endpoints (subsonic API...)
-				Database::User::pointer user {Database::User::getByLoginName(LmsApp->getDbSession(), valueText(LoginField).toUTF8())};
+				User::pointer user {User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8())};
 				if (user)
 					throw UserNotAllowedException {};
 
 				// Create user
-				user = Database::User::create(LmsApp->getDbSession(), valueText(LoginField).toUTF8());
+				user = User::create(LmsApp->getDbSession(), valueText(LoginField).toUTF8());
 
 				if (Wt::asNumber(value(DemoField)))
-					user.modify()->setType(Database::UserType::DEMO);
+					user.modify()->setType(UserType::DEMO);
 
 				if (_authPasswordService)
 					_authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
@@ -115,20 +115,20 @@ class UserModel : public Wt::WFormModel
 
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-			const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
+			const User::pointer user {User::find(LmsApp->getDbSession(), *_userId)};
 			if (!user)
 				throw UserNotFoundException {};
 			else if (user == LmsApp->getUser())
 				throw UserNotAllowedException {};
 		}
 
-		Database::UserType getUserType() const
+		UserType getUserType() const
 		{
 			if (_userId)
 			{
 				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-				const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
+				const User::pointer user {User::find(LmsApp->getDbSession(), *_userId)};
 				return user->getType();
 			}
 
@@ -141,7 +141,7 @@ class UserModel : public Wt::WFormModel
 			{
 				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-				const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *_userId)};
+				const User::pointer user {User::find(LmsApp->getDbSession(), *_userId)};
 				return user->getLoginName();
 			}
 
@@ -156,7 +156,7 @@ class UserModel : public Wt::WFormModel
 			{
 				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-				const Database::User::pointer user {Database::User::getByLoginName(LmsApp->getDbSession(), valueText(LoginField).toUTF8())};
+				const User::pointer user {User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8())};
 				if (user)
 					error = Wt::WString::tr("Lms.Admin.User.user-already-exists");
 			}
@@ -164,7 +164,7 @@ class UserModel : public Wt::WFormModel
 			{
 				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-				if (Wt::asNumber(value(DemoField)) && Database::User::getDemo(LmsApp->getDbSession()))
+				if (Wt::asNumber(value(DemoField)) && User::findDemoUser(LmsApp->getDbSession()))
 					error = Wt::WString::tr("Lms.Admin.User.demo-account-already-exists");
 			}
 
@@ -176,7 +176,7 @@ class UserModel : public Wt::WFormModel
 			return false;
 		}
 
-		std::optional<Database::UserId> _userId;
+		std::optional<UserId> _userId;
 		::Auth::IPasswordService* _authPasswordService {};
 };
 
@@ -196,7 +196,7 @@ UserView::refreshView()
 	if (!wApp->internalPathMatches("/admin/user"))
 		return;
 
-	const std::optional<Database::UserId> userId {StringUtils::readAs<Database::UserId::ValueType>(wApp->internalPathNextPart("/admin/user/"))};
+	const std::optional<UserId> userId {StringUtils::readAs<UserId::ValueType>(wApp->internalPathNextPart("/admin/user/"))};
 
 	clear();
 
@@ -212,7 +212,7 @@ UserView::refreshView()
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		const Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), *userId)};
+		const User::pointer user {User::find(LmsApp->getDbSession(), *userId)};
 		if (!user)
 			throw UserNotFoundException {};
 

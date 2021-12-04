@@ -24,7 +24,7 @@
 #include <filesystem>
 #include <vector>
 
-#include "services/database/Types.hpp"
+#include "services/database/TrackId.hpp"
 
 namespace Scanner
 {

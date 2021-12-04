@@ -138,7 +138,7 @@ getArtistsTracks(Database::Session& session, const std::vector<Database::ArtistI
 
 	for (const Database::ArtistId artistId : artistsId)
 	{
-		const Database::Artist::pointer artist {Database::Artist::getById(session, artistId)};
+		const Database::Artist::pointer artist {Database::Artist::find(session, artistId)};
 		if (!artist)
 			continue;
 
@@ -162,7 +162,7 @@ getReleasesTracks(Database::Session& session, const std::vector<Database::Releas
 
 	for (const Database::ReleaseId releaseId : releasesId)
 	{
-		const Database::Release::pointer release {Database::Release::getById(session, releaseId)};
+		const Database::Release::pointer release {Database::Release::find(session, releaseId)};
 		if (!release)
 			continue;
 

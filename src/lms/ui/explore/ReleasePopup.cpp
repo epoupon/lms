@@ -24,7 +24,7 @@
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
-#include "services/feedback/IFeedbackService.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "resource/DownloadResource.hpp"
 #include "utils/Service.hpp"
 #include "LmsApplication.hpp"
@@ -49,14 +49,14 @@ namespace UserInterface
 						releasesAction.emit(PlayQueueAction::PlayLast, {releaseId});
 					});
 
-			const bool isStarred {Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), releaseId)};
+			const bool isStarred {Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), releaseId)};
 			popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
 				->triggered().connect(&target, [=]
 					{
 						if (isStarred)
-							Service<Feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), releaseId);
+							Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), releaseId);
 						else
-							Service<Feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), releaseId);
+							Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), releaseId);
 					});
 			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
 				->setLink(Wt::WLink {std::make_unique<DownloadReleaseResource>(releaseId)});

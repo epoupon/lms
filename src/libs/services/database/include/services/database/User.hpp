@@ -26,51 +26,15 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
+#include "services/database/Object.hpp"
 #include "services/database/Types.hpp"
+#include "services/database/UserId.hpp"
 #include "utils/UUID.hpp"
 
 namespace Database {
 
-
-class Artist;
-class Release;
+class AuthToken;
 class Session;
-class TrackList;
-class Track;
-
-class User;
-class AuthToken : public Object<AuthToken, AuthTokenId>
-{
-	public:
-		AuthToken() = default;
-		AuthToken(const std::string& value, const Wt::WDateTime& expiry, ObjectPtr<User> user);
-
-		// Utility
-		static pointer create(Session& session, const std::string& value, const Wt::WDateTime&expiry, ObjectPtr<User> user);
-		static void removeExpiredTokens(Session& session, const Wt::WDateTime& now);
-		static pointer getByValue(Session& session, const std::string& value);
-		static pointer getById(Session& session, AuthTokenId tokenId);
-
-		// Accessors
-		const Wt::WDateTime&	getExpiry() const { return _expiry; }
-		ObjectPtr<User>	getUser() const { return _user; }
-		const std::string&	getValue() const { return _value; }
-
-		template<class Action>
-		void persist(Action& a)
-		{
-			Wt::Dbo::field(a,	_value,		"value");
-			Wt::Dbo::field(a,	_expiry,	"expiry");
-			Wt::Dbo::belongsTo(a,	_user,		"user", Wt::Dbo::OnDeleteCascade);
-		}
-
-	private:
-
-		std::string		_value;
-		Wt::WDateTime		_expiry;
-
-		Wt::Dbo::ptr<User>	_user;
-};
 
 class User : public Object<User, UserId>
 {
@@ -81,35 +45,10 @@ class User : public Object<User, UserId>
 			std::string hash;
 		};
 
-		// Do not change enum values!
-		enum class UITheme
-		{
-			Light	= 0,
-			Dark	= 1,
-		};
-
-		// Do not remove values!
-		static inline const std::set<Bitrate>	audioTranscodeAllowedBitrates
-		{
-			64000,
-			96000,
-			128000,
-			192000,
-			320000,
-		};
-
-		// Do not change enum values!
-		enum class SubsonicArtistListMode
-		{
-			AllArtists		= 0,
-			ReleaseArtists	= 1,
-			TrackArtists	= 2,
-		};
-
 		static inline const std::size_t 	MinNameLength {3};
 		static inline const std::size_t 	MaxNameLength {15};
 		static inline const bool		defaultSubsonicTranscodeEnable {true};
-		static inline const AudioFormat		defaultSubsonicTranscodeFormat {AudioFormat::OGG_OPUS};
+		static inline const AudioFormat defaultSubsonicTranscodeFormat {AudioFormat::OGG_OPUS};
 		static inline const Bitrate		defaultSubsonicTranscodeBitrate {128000};
 		static inline const UITheme		defaultUITheme {UITheme::Dark};
 		static inline const SubsonicArtistListMode defaultSubsonicArtistListMode {SubsonicArtistListMode::AllArtists};
@@ -121,18 +60,17 @@ class User : public Object<User, UserId>
 		// utility
 		static pointer create(Session& session, std::string_view loginName);
 
-		static pointer			getById(Session& session, UserId id);
-		static pointer			getByLoginName(Session& session, std::string_view loginName);
-		static std::vector<pointer>	getAll(Session& session);
-		static std::vector<UserId>	getAllIds(Session& session);
-		static pointer			getDemo(Session& session);
-		static std::size_t		getCount(Session& session);
+		static std::size_t			getCount(Session& session);
+		static pointer				find(Session& session, UserId id);
+		static pointer				find(Session& session, std::string_view loginName);
+		static RangeResults<UserId>	find(Session& session, Range range);
+		static pointer				findDemoUser(Session& session);
 
 		// accessors
-		const std::string& getLoginName() const { return _loginName; }
-		PasswordHash getPasswordHash() const { return PasswordHash {_passwordSalt, _passwordHash}; }
-		Wt::WDateTime getLastLogin() const { return _lastLogin; }
-		std::size_t getAuthTokensCount() const { return _authTokens.size(); }
+		const std::string&		getLoginName() const { return _loginName; }
+		PasswordHash			getPasswordHash() const { return PasswordHash {_passwordSalt, _passwordHash}; }
+		const Wt::WDateTime&	getLastLogin() const { return _lastLogin; }
+		std::size_t				getAuthTokensCount() const { return _authTokens.size(); }
 
 		// write
 		void setLastLogin(const Wt::WDateTime& dateTime)	{ _lastLogin = dateTime; }
@@ -165,21 +103,6 @@ class User : public Object<User, UserId>
 		Scrobbler				getScrobbler() const { return _scrobbler; }
 		std::optional<UUID>		getListenBrainzToken() const	{ return UUID::fromString(_listenbrainzToken); }
 
-		ObjectPtr<TrackList>	getQueuedTrackList(Session& session) const;
-
-		void			star(ObjectPtr<Artist> artist);
-		void			unstar(ObjectPtr<Artist> artist);
-		bool			isStarred(ObjectPtr<Artist> artist) const;
-
-		void			star(ObjectPtr<Release> release);
-		void			unstar(ObjectPtr<Release> release);
-		bool			isStarred(ObjectPtr<Release> release) const;
-
-		// Stars
-		void			star(ObjectPtr<Track> track);
-		void			unstar(ObjectPtr<Track> track);
-		bool			isStarred(ObjectPtr<Track> track) const;
-
 		template<class Action>
 		void persist(Action& a)
 		{
@@ -196,20 +119,15 @@ class User : public Object<User, UserId>
 			Wt::Dbo::field(a, _scrobbler, "scrobbler");
 			Wt::Dbo::field(a, _listenbrainzToken, "listenbrainz_token");
 
-			// UI settings
+			// UI player settings
 			Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
 			Wt::Dbo::field(a, _repeatAll, "repeat_all");
 			Wt::Dbo::field(a, _radio, "radio");
 
-			Wt::Dbo::hasMany(a, _tracklists, Wt::Dbo::ManyToOne, "user");
-			Wt::Dbo::hasMany(a, _starredArtists, Wt::Dbo::ManyToMany, "user_artist_starred", "", Wt::Dbo::OnDeleteCascade);
-			Wt::Dbo::hasMany(a, _starredReleases, Wt::Dbo::ManyToMany, "user_release_starred", "", Wt::Dbo::OnDeleteCascade);
-			Wt::Dbo::hasMany(a, _starredTracks, Wt::Dbo::ManyToMany, "user_track_starred", "", Wt::Dbo::OnDeleteCascade);
 			Wt::Dbo::hasMany(a, _authTokens, Wt::Dbo::ManyToOne, "user");
 		}
 
 	private:
-
 		std::string	_loginName;
 		std::string	_passwordSalt;
 		std::string	_passwordHash;
@@ -228,16 +146,11 @@ class User : public Object<User, UserId>
 		int				_subsonicTranscodeBitrate {defaultSubsonicTranscodeBitrate};
 
 		// User's dynamic data (UI)
-		int		_curPlayingTrackPos {}; // Current track position in queue
+		int			_curPlayingTrackPos {}; // Current track position in queue
 		bool		_repeatAll {};
 		bool		_radio {};
 
-		Wt::Dbo::collection<Wt::Dbo::ptr<TrackList>> _tracklists;
-		Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> _starredArtists;
-		Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _starredReleases;
-		Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _starredTracks;
 		Wt::Dbo::collection<Wt::Dbo::ptr<AuthToken>> _authTokens;
-
 };
 
 } // namespace Databas'

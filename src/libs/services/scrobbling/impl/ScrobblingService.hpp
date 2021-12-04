@@ -41,38 +41,56 @@ namespace Scrobbling
 			ArtistContainer getRecentArtists(Database::UserId userId,
 												const std::vector<Database::ClusterId>& clusterIds,
 												std::optional<Database::TrackArtistLinkType> linkType,
-												std::optional<Database::Range> range,
-												bool& moreResults) override;
+												Database::Range range) override;
 
 			ReleaseContainer getRecentReleases(Database::UserId userId,
 												const std::vector<Database::ClusterId>& clusterIds,
-												std::optional<Database::Range> range,
-												bool& moreResults) override;
+												Database::Range range) override;
 
 			TrackContainer getRecentTracks(Database::UserId userId,
 												const std::vector<Database::ClusterId>& clusterIds,
-												std::optional<Database::Range> range,
-												bool& moreResults) override;
+												Database::Range range) override;
 
 			ArtistContainer getTopArtists(Database::UserId userId,
 												const std::vector<Database::ClusterId>& clusterIds,
 												std::optional<Database::TrackArtistLinkType> linkType,
-												std::optional<Database::Range> range,
-												bool& moreResults) override;
+												Database::Range range) override;
 
 			ReleaseContainer getTopReleases(Database::UserId userId,
 												const std::vector<Database::ClusterId>& clusterIds,
-												std::optional<Database::Range> range,
-												bool& moreResults) override;
+												Database::Range range) override;
 
 			TrackContainer getTopTracks(Database::UserId userId,
 												const std::vector<Database::ClusterId>& clusterIds,
-												std::optional<Database::Range> range,
-												bool& moreResults) override;
+												Database::Range range) override;
 
-			Database::ObjectPtr<Database::TrackList> getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user);
+			void star(Database::UserId userId, Database::ArtistId artistId) override;
+			void unstar(Database::UserId userId, Database::ArtistId artistId) override;
+			bool isStarred(Database::UserId userId, Database::ArtistId artistId) override;
+			ArtistContainer	getStarredArtists(Database::UserId userId,
+														const std::vector<Database::ClusterId>& clusterIds,
+														std::optional<Database::TrackArtistLinkType> linkType,
+														Database::ArtistSortMethod sortMethod,
+														Database::Range range) override;
+
+			void star(Database::UserId userId, Database::ReleaseId releaseId) override;
+			void unstar(Database::UserId userId, Database::ReleaseId releaseId) override;
+			bool isStarred(Database::UserId userId, Database::ReleaseId artistId) override;
+			ReleaseContainer getStarredReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
+
+			void star(Database::UserId userId, Database::TrackId trackId) override;
+			void unstar(Database::UserId userId, Database::TrackId trackId) override;
+			bool isStarred(Database::UserId userId, Database::TrackId trackId) override;
+			TrackContainer getStarredTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
 
 			std::optional<Database::Scrobbler> getUserScrobbler(Database::UserId userId);
+
+			template <typename ObjType, typename ObjIdType, typename StarredObjType>
+			void star(Database::UserId userId, ObjIdType id);
+			template <typename ObjType, typename ObjIdType, typename StarredObjType>
+			void unstar(Database::UserId userId, ObjIdType id);
+			template <typename ObjType, typename ObjIdType, typename StarredObjType>
+			bool isStarred(Database::UserId userId, ObjIdType id);
 
 			Database::Db& _db;
 			std::unordered_map<Database::Scrobbler, std::unique_ptr<IScrobbler>> _scrobblers;

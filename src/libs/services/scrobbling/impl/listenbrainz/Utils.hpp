@@ -19,21 +19,18 @@
 
 #pragma once
 
-#include <Wt/Dbo/ptr.h>
 #include "utils/UUID.hpp"
 
 #include "services/database/Types.hpp"
+#include "services/database/UserId.hpp"
 
 namespace Database
 {
 	class Session;
-	class TrackList;
 	class User;
 }
 
 namespace Scrobbling::ListenBrainz::Utils
 {
 	std::optional<UUID>							getListenBrainzToken(Database::Session& session, Database::UserId userId);
-	Database::ObjectPtr<Database::TrackList>	getOrCreateListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user);
-	Database::ObjectPtr<Database::TrackList>	getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user);
 }

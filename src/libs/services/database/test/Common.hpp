@@ -27,11 +27,13 @@
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
 #include "services/database/Db.hpp"
+#include "services/database/Listen.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
 #include "services/database/TrackBookmark.hpp"
+#include "services/database/TrackFeatures.hpp"
 #include "services/database/TrackList.hpp"
 #include "services/database/Types.hpp"
 #include "services/database/User.hpp"
@@ -57,7 +59,7 @@ class ScopedEntity
 		{
 			auto transaction {_session.createUniqueTransaction()};
 
-			auto entity {T::getById(_session, _id)};
+			auto entity {T::find(_session, _id)};
 			entity.remove();
 		}
 
@@ -76,7 +78,7 @@ class ScopedEntity
 		{
 			_session.checkSharedLocked();
 
-			auto entity {T::getById(_session, _id)};
+			auto entity {T::find(_session, _id)};
 			EXPECT_TRUE(entity);
 			return entity;
 		}
@@ -98,7 +100,6 @@ using ScopedCluster = ScopedEntity<Database::Cluster>;
 using ScopedClusterType = ScopedEntity<Database::ClusterType>;
 using ScopedRelease = ScopedEntity<Database::Release>;
 using ScopedTrack = ScopedEntity<Database::Track>;
-using ScopedTrackBookmark = ScopedEntity<Database::TrackBookmark>;
 using ScopedTrackList = ScopedEntity<Database::TrackList>;
 using ScopedUser = ScopedEntity<Database::User>;
 
@@ -120,60 +121,27 @@ class ScopedFileDeleter final
 class TmpDatabase final
 {
 	public:
-		Database::Db& getDb() { return _db; }
+		TmpDatabase ();
+
+		Database::Db& getDb();
 
 	private:
-		const std::filesystem::path _tmpFile {std::tmpnam(nullptr)};
-		ScopedFileDeleter fileDeleter {_tmpFile};
-		Database::Db _db {_tmpFile};
+		const std::filesystem::path _tmpFile;
+		ScopedFileDeleter _fileDeleter;
+		Database::Db _db;
 };
 
 class DatabaseFixture : public ::testing::Test
 {
 public:
-	~DatabaseFixture()
-	{
-		testDatabaseEmpty();
-	}
+	~DatabaseFixture();
 
 public:
-    static void SetUpTestCase()
-	{
-		_tmpDb = std::make_unique<TmpDatabase>();
-		{
-			Database::Session s {_tmpDb->getDb()};
-			s.prepareTables();
-			s.optimize();
-
-			// remove default created entries
-			{
-				auto transaction {s.createUniqueTransaction()};
-				auto clusterTypes {Database::ClusterType::getAll(s)};
-				for (auto& clusterType : clusterTypes)
-					clusterType.remove();
-			}
-		}
-    }
-
-    static void TearDownTestCase()
-	{
-		_tmpDb.reset();
-    }
+    static void SetUpTestCase();
+    static void TearDownTestCase();
 
 private:
-	void testDatabaseEmpty()
-	{
-		auto uniqueTransaction {session.createUniqueTransaction()};
-
-		EXPECT_TRUE(Database::Artist::getAll(session, Database::Artist::SortMethod::ByName).empty());
-		EXPECT_TRUE(Database::Cluster::getAll(session).empty());
-		EXPECT_TRUE(Database::ClusterType::getAll(session).empty());
-		EXPECT_TRUE(Database::Release::getAll(session).empty());
-		EXPECT_TRUE(Database::Track::getAll(session).empty());
-		EXPECT_TRUE(Database::TrackBookmark::getAll(session).empty());
-		EXPECT_TRUE(Database::TrackList::getAll(session).empty());
-		EXPECT_TRUE(Database::User::getAll(session).empty());
-	}
+	void testDatabaseEmpty();
 
 	static inline std::unique_ptr<TmpDatabase> _tmpDb {};
 

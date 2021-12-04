@@ -32,7 +32,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
-#include "services/feedback/IFeedbackService.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
@@ -79,14 +79,14 @@ extractArtistIdFromInternalPath()
 		if (mbid)
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-			if (const Database::Artist::pointer artist {Database::Artist::getByMBID(LmsApp->getDbSession(), *mbid)})
+			if (const Database::Artist::pointer artist {Database::Artist::find(LmsApp->getDbSession(), *mbid)})
 				return artist->getId();
 		}
 
 		return std::nullopt;
 	}
 
-	return StringUtils::readAs<Database::ArtistId::ValueType>(wApp->internalPathNextPart("/artist/"));
+	return StringUtils::readAs<ArtistId::ValueType>(wApp->internalPathNextPart("/artist/"));
 }
 
 void
@@ -107,7 +107,7 @@ Artist::refreshView()
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), *artistId)};
+	const Database::Artist::pointer artist {Database::Artist::find(LmsApp->getDbSession(), *artistId)};
 	if (!artist)
 		throw ArtistNotFoundException {};
 
@@ -166,14 +166,14 @@ Artist::refreshView()
 					artistsAction.emit(PlayQueueAction::PlayLast, {_artistId});
 				});
 
-			const bool isStarred {Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), _artistId)};
+			const bool isStarred {Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), _artistId)};
 			popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
 				->triggered().connect(this, [=]
 					{
 						if (isStarred)
-							Service<Feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), _artistId);
+							Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), _artistId);
 						else
-							Service<Feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), _artistId);
+							Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), _artistId);
 					});
 			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
 				->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(*artistId)});
@@ -184,7 +184,7 @@ Artist::refreshView()
 }
 
 void
-Artist::refreshReleases(const Database::ObjectPtr<Database::Artist>& artist)
+Artist::refreshReleases(const ObjectPtr<Database::Artist>& artist)
 {
 	const auto releases {artist->getReleases(_filters->getClusterIds())};
 	if (releases.empty())
@@ -200,7 +200,7 @@ Artist::refreshReleases(const Database::ObjectPtr<Database::Artist>& artist)
 }
 
 void
-Artist::refreshNonReleaseTracks(const Database::ObjectPtr<Database::Artist>& artist)
+Artist::refreshNonReleaseTracks(const ObjectPtr<Database::Artist>& artist)
 {
 	if (!artist->hasNonReleaseTracks())
 		return;
@@ -216,7 +216,7 @@ Artist::refreshNonReleaseTracks(const Database::ObjectPtr<Database::Artist>& art
 }
 
 void
-Artist::refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArtistsId)
+Artist::refreshSimilarArtists(const std::vector<ArtistId>& similarArtistsId)
 {
 	if (similarArtistsId.empty())
 		return;
@@ -224,9 +224,9 @@ Artist::refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArti
 	setCondition("if-has-similar-artists", true);
 	Wt::WContainerWidget* similarArtistsContainer {bindNew<Wt::WContainerWidget>("similar-artists")};
 
-	for (const Database::ArtistId artistId : similarArtistsId)
+	for (const ArtistId artistId : similarArtistsId)
 	{
-		const Database::Artist::pointer similarArtist{Database::Artist::getById(LmsApp->getDbSession(), artistId)};
+		const Database::Artist::pointer similarArtist {Database::Artist::find(LmsApp->getDbSession(), artistId)};
 		if (!similarArtist)
 			continue;
 
@@ -252,27 +252,24 @@ Artist::refreshLinks(const Database::Artist::pointer& artist)
 void
 Artist::addSomeNonReleaseTracks()
 {
-	bool moreResults {};
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
+	const Database::Artist::pointer artist {Database::Artist::find(LmsApp->getDbSession(), _artistId)};
+	if (!artist)
+		return;
+
+	const auto tracks {artist->getNonReleaseTracks(std::nullopt, Range {static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize})};
+	bool moreResults {tracks.moreResults};
+
+	for (const Track::pointer& track : tracks.results)
 	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-		const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), _artistId)};
-		if (!artist)
-			return;
-
-		const auto tracks {artist->getNonReleaseTracks(std::nullopt, Database::Range {static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize}, moreResults)};
-
-		for (const auto& track : tracks)
+		if (_trackContainer->getCount() == _tracksMaxCount)
 		{
-			if (_trackContainer->getCount() == _tracksMaxCount)
-			{
-				moreResults = false;
-				break;
-			}
-
-			_trackContainer->add(TrackListHelpers::createEntry(track, tracksAction));
+			moreResults = false;
+			break;
 		}
+
+		_trackContainer->add(TrackListHelpers::createEntry(track, tracksAction));
 	}
 
 	_trackContainer->setHasMore(moreResults);

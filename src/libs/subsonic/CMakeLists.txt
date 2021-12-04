@@ -20,7 +20,6 @@ target_link_libraries(lmssubsonic PRIVATE
 	lmsauth
 	lmsav
 	lmsdatabase
-	lmsfeedback
 	lmsrecommendation
 	lmsscanner
 	lmsscrobbling

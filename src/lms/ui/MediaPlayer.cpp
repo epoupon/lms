@@ -119,10 +119,10 @@ bitrateFromString(const std::string& str)
 	if (!value)
 		return std::nullopt;
 
-	if (Database::User::audioTranscodeAllowedBitrates.find(*value) != std::cend(Database::User::audioTranscodeAllowedBitrates))
-		return *value;
+	if (!Database::isAudioBitrateAllowed(*value))
+		return std::nullopt;
 
-	return std::nullopt;
+	return *value;
 }
 
 static
@@ -241,7 +241,7 @@ MediaPlayer::loadTrack(Database::TrackId trackId, bool play, float replayGain)
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		const auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+		const auto track {Database::Track::find(LmsApp->getDbSession(), trackId)};
 		if (!track)
 			return;
 

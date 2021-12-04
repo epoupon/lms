@@ -51,7 +51,7 @@ namespace Auth
 			Database::Session& session {getDbSession()};
 			auto transaction {session.createSharedTransaction()};
 
-			const Database::User::pointer user {Database::User::getByLoginName(session, loginName)};
+			const Database::User::pointer user {Database::User::find(session, loginName)};
 			if (!user)
 			{
 				LMS_LOG(AUTH, DEBUG) << "hashing random stuff";
@@ -102,7 +102,7 @@ namespace Auth
 		Database::Session& session {getDbSession()};
 		auto transaction {session.createUniqueTransaction()};
 
-		Database::User::pointer user {Database::User::getById(session, userId)};
+		Database::User::pointer user {Database::User::find(session, userId)};
 		if (!user)
 			throw Exception {"User not found!"};
 

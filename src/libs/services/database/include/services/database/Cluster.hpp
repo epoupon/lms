@@ -26,6 +26,9 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
+#include "services/database/Object.hpp"
+#include "services/database/ClusterId.hpp"
+#include "services/database/TrackId.hpp"
 #include "services/database/Types.hpp"
 
 namespace Database {
@@ -42,20 +45,20 @@ class Cluster : public Object<Cluster, ClusterId>
 		Cluster(ObjectPtr<ClusterType> type, std::string_view name);
 
 		// Find utility
-		static std::vector<pointer> getAll(Session& session);
-		static std::vector<pointer> getAllOrphans(Session& session);
-		static pointer getById(Session& session, ClusterId id);
+		static std::size_t				getCount(Session& session);
+		static RangeResults<ClusterId>	find(Session& session, Range range);
+		static pointer					find(Session& session, ClusterId id);
+		static RangeResults<ClusterId>	findOrphans(Session& session, Range range);
 
 		// Create utility
 		static pointer create(Session& session, ObjectPtr<ClusterType> type, std::string_view name);
 
 		// Accessors
-		const std::string& getName() const		{ return _name; }
-		ObjectPtr<ClusterType> getType() const	{ return _clusterType; }
-		std::size_t getTracksCount() const		{ return _tracks.size(); }
-		std::vector<ObjectPtr<Track>> getTracks(std::optional<std::size_t> offset = {}, std::optional<std::size_t> limit = {}) const;
-		std::vector<TrackId> getTrackIds() const;
-		std::size_t getReleasesCount() const;
+		const std::string&				getName() const		{ return _name; }
+		ObjectPtr<ClusterType>			getType() const	{ return _clusterType; }
+		std::size_t						getTracksCount() const		{ return _tracks.size(); }
+		RangeResults<TrackId>			getTracks(Range range) const;
+		std::size_t						getReleasesCount() const;
 
 		void addTrack(ObjectPtr<Track> track);
 
@@ -85,19 +88,20 @@ class ClusterType : public Object<ClusterType, ClusterTypeId>
 		ClusterType(std::string_view name);
 
 		// Getters
-		static std::vector<pointer> getAllOrphans(Session& session);
-		static std::vector<pointer> getAllUsed(Session& session);
-		static pointer getByName(Session& session, const std::string& name);
-		static pointer getById(Session& session, ClusterTypeId id);
-		static std::vector<pointer> getAll(Session& session);
+		static std::size_t					getCount(Session& session);
+		static RangeResults<ClusterTypeId>	find(Session& session, Range range);
+		static pointer 						find(Session& session, const std::string& name);
+		static pointer						find(Session& session, ClusterTypeId id);
+		static RangeResults<ClusterTypeId>	findOrphans(Session& session, Range range);
+		static RangeResults<ClusterTypeId>	findUsed(Session& session, Range range);
 
 		static pointer create(Session& session, const std::string& name);
 		static void remove(Session& session, const std::string& name);
 
 		// Accessors
-		const std::string& getName(void) const { return _name; }
-		std::vector<Cluster::pointer> getClusters() const;
-		Cluster::pointer getCluster(const std::string& name) const;
+		const std::string&				getName() const { return _name; }
+		std::vector<Cluster::pointer>	getClusters() const;
+		Cluster::pointer				getCluster(const std::string& name) const;
 
 		template<class Action>
 		void persist(Action& a)

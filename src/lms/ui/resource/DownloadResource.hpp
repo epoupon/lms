@@ -22,7 +22,9 @@
 #include <memory>
 #include <Wt/WResource.h>
 
-#include "services/database/Types.hpp"
+#include "services/database/ArtistId.hpp"
+#include "services/database/ReleaseId.hpp"
+#include "services/database/TrackId.hpp"
 #include "utils/Zipper.hpp"
 
 namespace UserInterface

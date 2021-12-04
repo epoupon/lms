@@ -24,7 +24,7 @@
 
 namespace UserInterface {
 
-LmsTheme::LmsTheme(Database::User::UITheme theme)
+LmsTheme::LmsTheme(Database::UITheme theme)
 : _theme {theme}
 {
 	setVersion(Wt::BootstrapVersion::v3);
@@ -32,7 +32,7 @@ LmsTheme::LmsTheme(Database::User::UITheme theme)
 }
 
 void
-LmsTheme::setTheme(Database::User::UITheme theme)
+LmsTheme::setTheme(Database::UITheme theme)
 {
 	if (theme == _theme)
 		return;
@@ -59,11 +59,11 @@ LmsTheme::styleSheets() const
 }
 
 std::vector<Wt::WLink>
-LmsTheme::getStyleSheets(Database::User::UITheme theme)
+LmsTheme::getStyleSheets(Database::UITheme theme)
 {
 	switch (theme)
 	{
-		case Database::User::UITheme::Dark:
+		case Database::UITheme::Dark:
 			return
 			{
 				{"css/fonts.css"},
@@ -73,7 +73,7 @@ LmsTheme::getStyleSheets(Database::User::UITheme theme)
 				{"css/lms-darkly.css"},
 			};
 
-		case Database::User::UITheme::Light:
+		case Database::UITheme::Light:
 			return
 			{
 				{"css/fonts.css"},

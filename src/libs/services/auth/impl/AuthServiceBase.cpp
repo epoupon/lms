@@ -38,7 +38,7 @@ namespace Auth
 		Session& session {getDbSession()};
 		auto transaction {session.createUniqueTransaction()};
 
-		User::pointer user {User::getByLoginName(session, loginName)};
+		User::pointer user {User::find(session, loginName)};
 		if (!user)
 		{
 			const UserType type {User::getCount(session) == 0 ? UserType::ADMIN : UserType::REGULAR};
@@ -58,7 +58,7 @@ namespace Auth
 		Session& session {getDbSession()};
 		auto transaction {session.createUniqueTransaction()};
 
-		User::pointer user {User::getById(session, userId)};
+		User::pointer user {User::find(session, userId)};
 		if (user)
 			user.modify()->setLastLogin(Wt::WDateTime::currentDateTime());
 	}

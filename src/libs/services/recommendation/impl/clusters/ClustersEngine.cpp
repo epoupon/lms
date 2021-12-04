@@ -29,40 +29,35 @@
 
 namespace Recommendation {
 
-std::unique_ptr<IEngine> createClustersEngine(Database::Db& db)
+using namespace Database;
+
+std::unique_ptr<IEngine> createClustersEngine(Db& db)
 {
 	return std::make_unique<ClusterEngine>(db);
 }
 
 TrackContainer
-ClusterEngine::getSimilarTracks(const std::vector<Database::TrackId>& trackIds, std::size_t maxCount) const
+ClusterEngine::findSimilarTracks(const std::vector<TrackId>& trackIds, std::size_t maxCount) const
 {
-	Database::Session& dbSession {_db.getTLSSession()};
+	Session& dbSession {_db.getTLSSession()};
 
-	TrackContainer res;
+	auto transaction {dbSession.createSharedTransaction()};
 
-	{
-		auto transaction {dbSession.createSharedTransaction()};
-
-		const auto tracks {Database::Track::getSimilarTracks(dbSession, trackIds, 0, maxCount)};
-		res.reserve(tracks.size());
-		std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const auto& track) { return track->getId(); });
-	}
-
-	return res;
+	const auto similarTrackIds {Track::findSimilarTracks(dbSession, trackIds, Range {0, maxCount})};
+	return std::move(similarTrackIds.results);
 }
 
 TrackContainer
-ClusterEngine::getSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const
+ClusterEngine::findSimilarTracksFromTrackList(TrackListId tracklistId, std::size_t maxCount) const
 {
-	Database::Session& dbSession {_db.getTLSSession()};
+	Session& dbSession {_db.getTLSSession()};
 
 	TrackContainer res;
 
 	{
 		auto transaction {dbSession.createSharedTransaction()};
 
-		const Database::TrackList::pointer trackList {Database::TrackList::getById(dbSession, tracklistId)};
+		const TrackList::pointer trackList {TrackList::find(dbSession, tracklistId)};
 		if (!trackList)
 			return res;
 
@@ -75,15 +70,15 @@ ClusterEngine::getSimilarTracksFromTrackList(Database::TrackListId tracklistId, 
 }
 
 ReleaseContainer
-ClusterEngine::getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const
+ClusterEngine::getSimilarReleases(ReleaseId releaseId, std::size_t maxCount) const
 {
-	Database::Session& dbSession {_db.getTLSSession()};
+	Session& dbSession {_db.getTLSSession()};
 
 	ReleaseContainer res;
 	{
 		auto transaction {dbSession.createSharedTransaction()};
 
-		auto release {Database::Release::getById(dbSession, releaseId)};
+		auto release {Release::find(dbSession, releaseId)};
 		if (!release)
 			return res;
 
@@ -96,24 +91,18 @@ ClusterEngine::getSimilarReleases(Database::ReleaseId releaseId, std::size_t max
 }
 
 ArtistContainer
-ClusterEngine::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> artistLinkTypes, std::size_t maxCount) const
+ClusterEngine::getSimilarArtists(ArtistId artistId, EnumSet<TrackArtistLinkType> artistLinkTypes, std::size_t maxCount) const
 {
-	Database::Session& dbSession {_db.getTLSSession()};
+	Session& dbSession {_db.getTLSSession()};
 
-	ResultContainer<Database::ArtistId> res;
-	{
-		auto transaction {dbSession.createSharedTransaction()};
+	auto transaction {dbSession.createSharedTransaction()};
 
-		auto artist {Database::Artist::getById(dbSession, artistId)};
-		if (!artist)
-			return res;
+	auto artist {Artist::find(dbSession, artistId)};
+	if (!artist)
+		return {};
 
-		const auto artists {artist->getSimilarArtists(artistLinkTypes, Database::Range {0, maxCount})};
-		res.reserve(artists.size());
-		std::transform(std::cbegin(artists), std::cend(artists), std::back_inserter(res), [](const auto& artist) { return artist->getId(); });
-	}
-
-	return res;
+	const auto similarArtistIds {artist->findSimilarArtists(artistLinkTypes, Range {0, maxCount})};
+	return std::move(similarArtistIds.results);
 }
 
 } // namespace Recommendation

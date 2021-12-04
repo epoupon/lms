@@ -52,19 +52,14 @@ class FeaturesEngine : public IEngine
 		FeaturesEngine& operator=(const FeaturesEngine&) = delete;
 		FeaturesEngine& operator=(FeaturesEngine&&) = delete;
 
-		using FeaturesFetchFunc = std::function<std::optional<std::unordered_map<std::string, std::vector<double>>>(Database::TrackId, const std::unordered_set<std::string>& /*features*/)>;
-		// Default is to retrieve the features from the database (may be slow).
-		// Use this only if you want to train different searchers with some cached data
-		static void setFeaturesFetchFunc(FeaturesFetchFunc func) { _featuresFetchFunc = func; }
-
 		static const FeatureSettingsMap& getDefaultTrainFeatureSettings();
 
 	private:
 		void load(bool forceReload, const ProgressCallback& progressCallback) override;
 		void requestCancelLoad() override;
 
-		TrackContainer getSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const override;
-		TrackContainer getSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const override;
+		TrackContainer findSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const override;
+		TrackContainer findSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const override;
 		ReleaseContainer getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const override;
 		ArtistContainer getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
@@ -121,8 +116,6 @@ class FeaturesEngine : public IEngine
 
 		TrackPositions		_trackPositions;
 		TrackMatrix			_trackMatrix;
-
-		static inline FeaturesFetchFunc _featuresFetchFunc;
 };
 
 template <typename IdType>

@@ -27,6 +27,7 @@
 
 #include "services/database/Artist.hpp"
 #include "services/database/Db.hpp"
+#include "services/database/Listen.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
@@ -87,10 +88,10 @@ namespace
 		}
 	}
 
-	Database::Track::pointer
+	Database::TrackId
 	tryMatchListen(Database::Session& session, const Wt::Json::Object& metadata)
 	{
-		Database::Track::pointer track;
+		using namespace Database;
 
 		// first try to get the associated track using MBIDs, and then fallback on names
 		if (metadata.type("additional_info") == Wt::Json::Type::Object)
@@ -98,30 +99,29 @@ namespace
 			const Wt::Json::Object& additionalInfo = metadata.get("additional_info");
 			if (std::optional<UUID> recordingMBID {UUID::fromString(additionalInfo.get("recording_mbid").orIfNull(""))})
 			{
-				const auto tracks {Database::Track::getByRecordingMBID(session, *recordingMBID)};
+				const auto tracks {Track::findByRecordingMBID(session, *recordingMBID)};
 				// if duplicated files, do not record it (let the user correct its database)
 				if (tracks.size() == 1)
-					track = tracks.front();
+					return tracks.front()->getId();
 			}
 		}
-
-		if (track)
-			return track;
 
 		// these fields are mandatory
 		const std::string trackName {static_cast<std::string>(metadata.get("track_name"))};
 		const std::string releaseName {static_cast<std::string>(metadata.get("release_name"))};
 
-		auto tracks {Database::Track::getByNameAndReleaseName(session, trackName, releaseName)};
-		if (tracks.size() > 1)
+		auto tracks {Track::findByNameAndReleaseName(session, trackName, releaseName)};
+		if (tracks.results.size() > 1)
 		{
-			tracks.erase(std::remove_if(std::begin(tracks), std::end(tracks),
-				[&](const Database::Track::pointer track)
+			tracks.results.erase(std::remove_if(std::begin(tracks.results), std::end(tracks.results),
+				[&](const TrackId trackId)
 				{
+					const Track::pointer track {Track::find(session, trackId)};
+
 					if (std::string artistName {metadata.get("artist_name").orIfNull("")}; !artistName.empty())
 					{
-						const auto& artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
-						if (std::none_of(std::begin(artists), std::end(artists), [&](const Database::Artist::pointer& artist) { return artist->getName() == artistName; }))
+						const auto& artists {track->getArtists({TrackArtistLinkType::Artist})};
+						if (std::none_of(std::begin(artists), std::end(artists), [&](const Artist::pointer& artist) { return artist->getName() == artistName; }))
 							return true;
 					}
 					if (metadata.type("additional_info") == Wt::Json::Type::Object)
@@ -145,13 +145,13 @@ namespace
 					}
 
 					return false;
-				}), std::end(tracks));
+				}), std::end(tracks.results));
 		}
 
-		if (tracks.size() == 1)
-			track = tracks.front();
+		if (tracks.results.size() == 1)
+			return tracks.results.front();
 
-		return track;
+		return {};
 	}
 
 	struct ParseGetListensResult
@@ -198,8 +198,8 @@ namespace
 				else if (listenedAt < result.oldestEntry)
 					result.oldestEntry = listenedAt;
 
-				if (const Database::Track::pointer track {tryMatchListen(session, metadata)})
-					result.matchedListens.emplace_back(Scrobbling::TimedListen {{userId, track->getId()}, listenedAt});
+				if (Database::TrackId trackId {tryMatchListen(session, metadata)}; trackId.isValid())
+					result.matchedListens.emplace_back(Scrobbling::TimedListen {{userId, trackId}, listenedAt});
 			}
 		}
 		catch (const Wt::WException& error)
@@ -234,15 +234,18 @@ namespace Scrobbling::ListenBrainz
 
 			auto transaction {session.createUniqueTransaction()};
 
-			const Database::User::pointer user {Database::User::getById(session, listen.userId)};
+			if (Database::Listen::find(session, listen.userId, listen.trackId, Database::Scrobbler::ListenBrainz, listen.listenedAt))
+				return;
+
+			const Database::User::pointer user {Database::User::find(session, listen.userId)};
 			if (!user)
 				return;
 
-			const Database::Track::pointer track {Database::Track::getById(session, listen.trackId)};
+			const Database::Track::pointer track {Database::Track::find(session, listen.trackId)};
 			if (!track)
 				return;
 
-			Database::TrackListEntry::create(session, track, Utils::getOrCreateListensTrackList(session, user), listen.listenedAt);
+			Database::Listen::create(session, user, track, Database::Scrobbler::ListenBrainz, listen.listenedAt);
 
 			UserContext& context {getUserContext(listen.userId)};
 			if (context.listenCount)
@@ -304,14 +307,14 @@ namespace Scrobbling::ListenBrainz
 
 		assert(!isFetching());
 
-		std::vector<Database::UserId> userIds;
+		Database::RangeResults<Database::UserId> userIds;
 		{
 			Database::Session& session {_db.getTLSSession()};
 			auto transaction {session.createSharedTransaction()};
-			userIds = Database::User::getAllIds(_db.getTLSSession());
+			userIds = Database::User::find(_db.getTLSSession(), Database::Range {});
 		}
 
-		for (const Database::UserId userId : userIds)
+		for (const Database::UserId userId : userIds.results)
 		{
 			if (Utils::getListenBrainzToken(_db.getTLSSession(), userId))
 				startGetListens(getUserContext(userId));
@@ -458,25 +461,22 @@ namespace Scrobbling::ListenBrainz
 
 		auto transaction {session.createUniqueTransaction()};
 
-		Database::User::pointer user {Database::User::getById(session, context.userId)};
+		Database::User::pointer user {Database::User::find(session, context.userId)};
 		if (!user)
 			return;
 
-		Database::TrackList::pointer tracklist {Utils::getOrCreateListensTrackList(session, user)};
-
 		for (const TimedListen& listen : parseResult.matchedListens)
 		{
-			const Database::Track::pointer track {Database::Track::getById(session, listen.trackId)};
+			const Database::Track::pointer track {Database::Track::find(session, listen.trackId)};
 			if (!track)
 				continue;
 
-			if (!tracklist->getEntryByTrackAndDateTime(track, listen.listenedAt))
-			{
-				context.importedListenCount++;
-				Database::TrackListEntry::create(session, track, tracklist, listen.listenedAt);
-			}
+			if (Database::Listen::find(session, listen.userId, listen.trackId, Database::Scrobbler::ListenBrainz, listen.listenedAt))
+				continue;
+
+			Database::Listen::create(session, user, track, Database::Scrobbler::ListenBrainz, listen.listenedAt);
+			context.importedListenCount++;
 		}
 	}
-
 } // namespace Scrobbling::ListenBrainz
 

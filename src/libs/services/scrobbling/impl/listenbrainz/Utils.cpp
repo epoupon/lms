@@ -34,7 +34,7 @@ namespace Scrobbling::ListenBrainz::Utils
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		const Database::User::pointer user {Database::User::getById(session, userId)};
+		const Database::User::pointer user {Database::User::find(session, userId)};
 		if (!user)
 			return std::nullopt;
 
@@ -43,21 +43,4 @@ namespace Scrobbling::ListenBrainz::Utils
 
 		return user->getListenBrainzToken();
 	}
-
-	Database::TrackList::pointer
-	getListensTrackList(Database::Session& session, Database::User::pointer user)
-	{
-		return Database::TrackList::get(session, historyTracklistName, Database::TrackList::Type::Internal, user);
-	}
-
-	Database::TrackList::pointer
-	getOrCreateListensTrackList(Database::Session& session, Database::User::pointer user)
-	{
-		Database::TrackList::pointer tracklist {getListensTrackList(session, user)};
-		if (!tracklist)
-			tracklist = Database::TrackList::create(session, historyTracklistName, Database::TrackList::Type::Internal, false, user);
-
-		return tracklist;
-	}
-
 }

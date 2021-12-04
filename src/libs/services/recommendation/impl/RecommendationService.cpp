@@ -59,7 +59,7 @@ namespace Recommendation
 	}
 
 	TrackContainer
-	RecommendationService::getSimilarTracksFromTrackList(Database::TrackListId trackListId, std::size_t maxCount) const
+	RecommendationService::findSimilarTracksFromTrackList(Database::TrackListId trackListId, std::size_t maxCount) const
 	{
 		TrackContainer res;
 
@@ -70,7 +70,7 @@ namespace Recommendation
 			if (itEngine == std::cend(_engines))
 				continue;
 
-			res = itEngine->second->getSimilarTracksFromTrackList(trackListId, maxCount);
+			res = itEngine->second->findSimilarTracksFromTrackList(trackListId, maxCount);
 			if (!res.empty())
 				break;
 		}
@@ -79,7 +79,7 @@ namespace Recommendation
 	}
 
 	TrackContainer
-	RecommendationService::getSimilarTracks(const std::vector<Database::TrackId>& trackIds, std::size_t maxCount) const
+	RecommendationService::findSimilarTracks(const std::vector<Database::TrackId>& trackIds, std::size_t maxCount) const
 	{
 		TrackContainer res;
 
@@ -91,7 +91,7 @@ namespace Recommendation
 				continue;
 
 			const IEngine& engine {*itEngine->second};
-			res = engine.getSimilarTracks(trackIds, maxCount);
+			res = engine.findSimilarTracks(trackIds, maxCount);
 			if (!res.empty())
 			{
 				LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar tracks using engine '" << engineTypeToString(engineType) << "'";
@@ -139,6 +139,8 @@ namespace Recommendation
 			auto itEngine {_engines.find(engineType)};
 			if (itEngine == std::cend(_engines))
 				continue;
+
+			LMS_LOG(RECOMMENDATION, DEBUG) << "Trying engine '" << engineTypeToString(engineType) << "'";
 
 			const IEngine& engine {*itEngine->second};
 			res = engine.getSimilarArtists(artistId, linkTypes, maxCount);

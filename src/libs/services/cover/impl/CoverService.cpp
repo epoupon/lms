@@ -50,7 +50,7 @@ namespace
 
 		auto transaction {dbSession.createSharedTransaction()};
 
-		const Database::Track::pointer track {Database::Track::getById(dbSession, trackId)};
+		const Database::Track::pointer track {Database::Track::find(dbSession, trackId)};
 		if (!track)
 			return res;
 
@@ -374,7 +374,7 @@ CoverService::getFromRelease(Database::ReleaseId releaseId, ImageSize width)
 
 		auto transaction {session.createSharedTransaction()};
 
-		if (const Database::Release::pointer release {Database::Release::getById(session, releaseId)})
+		if (const Database::Release::pointer release {Database::Release::find(session, releaseId)})
 		{
 			if (const auto firstTrack {release->getFirstTrack()})
 			{

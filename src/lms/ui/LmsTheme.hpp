@@ -24,21 +24,21 @@
 #include <Wt/WBootstrapTheme.h>
 #include <Wt/WLinkedCssStyleSheet.h>
 
-#include "services/database/User.hpp"
+#include "services/database/Types.hpp"
 
 namespace UserInterface
 {
 	class LmsTheme : public Wt::WBootstrapTheme
 	{
 		public:
-			LmsTheme(Database::User::UITheme theme);
+			LmsTheme(Database::UITheme theme);
 
-			void setTheme(Database::User::UITheme theme);
+			void setTheme(Database::UITheme theme);
 
 		private:
 			std::vector<Wt::WLinkedCssStyleSheet> styleSheets() const override;
-			static std::vector<Wt::WLink> getStyleSheets(Database::User::UITheme theme);
+			static std::vector<Wt::WLink> getStyleSheets(Database::UITheme theme);
 
-			Database::User::UITheme _theme;
+			Database::UITheme _theme;
 	};
 }

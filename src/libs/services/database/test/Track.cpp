@@ -23,10 +23,11 @@
 
 using namespace Database;
 
-TEST_F(DatabaseFixture, SingleTrack)
+TEST_F(DatabaseFixture, Track)
 {
 	{
 		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(Track::find(session, Track::FindParameters {}).results.size(), 0);
 		EXPECT_EQ(Track::getCount(session), 0);
 		EXPECT_FALSE(Track::exists(session, 0));
 	}
@@ -36,16 +37,16 @@ TEST_F(DatabaseFixture, SingleTrack)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		EXPECT_EQ(Track::getAll(session).size(), 1);
+		EXPECT_EQ(Track::find(session, Track::FindParameters {}).results.size(), 1);
 		EXPECT_EQ(Track::getCount(session), 1);
 		EXPECT_TRUE(Track::exists(session, track.getId()));
-		auto myTrack {Track::getById(session, track.getId())};
+		auto myTrack {Track::find(session, track.getId())};
 		ASSERT_TRUE(myTrack);
 		EXPECT_EQ(myTrack->getId(), track.getId());
 	}
 }
 
-TEST_F(DatabaseFixture, MultipleTracksSearchByFilter)
+TEST_F(DatabaseFixture, Track_findByKeywords)
 {
 	ScopedTrack track1 {session, ""};
 	ScopedTrack track2 {session, ""};
@@ -67,32 +68,31 @@ TEST_F(DatabaseFixture, MultipleTracksSearchByFilter)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		bool more;
 		{
-			const auto tracks {Track::getByFilter(session, {}, {"Track"}, std::nullopt, more)};
-			EXPECT_EQ(tracks.size(), 6);
+			const auto tracks {Track::find(session, Track::FindParameters {}.setKeywords({"Track"}))};
+			EXPECT_EQ(tracks.results.size(), 6);
 		}
 		{
-			const auto tracks {Track::getByFilter(session, {}, {"MyTrack"}, std::nullopt, more)};
-			EXPECT_EQ(tracks.size(), 5);
-			EXPECT_TRUE(std::none_of(std::cbegin(tracks), std::cend(tracks), [&](const Track::pointer& track) { return track->getId() == track6.getId(); }));
+			const auto tracks {Track::find(session, Track::FindParameters {}.setKeywords({"MyTrack"}))};
+			EXPECT_EQ(tracks.results.size(), 5);
+			EXPECT_TRUE(std::none_of(std::cbegin(tracks.results), std::cend(tracks.results), [&](const TrackId trackId) { return trackId == track6.getId(); }));
 		}
 		{
-			const auto tracks {Track::getByFilter(session, {}, {"MyTrack%"}, std::nullopt, more)};
-			ASSERT_EQ(tracks.size(), 2);
-			EXPECT_EQ(tracks[0]->getId(), track2.getId());
-			EXPECT_EQ(tracks[1]->getId(), track3.getId());
+			const auto tracks {Track::find(session, Track::FindParameters {}.setKeywords({"MyTrack%"}))};
+			ASSERT_EQ(tracks.results.size(), 2);
+			EXPECT_EQ(tracks.results[0], track2.getId());
+			EXPECT_EQ(tracks.results[1], track3.getId());
 		}
 		{
-			const auto tracks {Track::getByFilter(session, {}, {"%MyTrack"}, std::nullopt, more)};
-			ASSERT_EQ(tracks.size(), 2);
-			EXPECT_EQ(tracks[0]->getId(), track4.getId());
-			EXPECT_EQ(tracks[1]->getId(), track5.getId());
+			const auto tracks {Track::find(session, Track::FindParameters {}.setKeywords({"%MyTrack"}))};
+			ASSERT_EQ(tracks.results.size(), 2);
+			EXPECT_EQ(tracks.results[0], track4.getId());
+			EXPECT_EQ(tracks.results[1], track5.getId());
 		}
 	}
 }
 
-TEST_F(DatabaseFixture, SingleTrackDate)
+TEST_F(DatabaseFixture, Track_date)
 {
 	ScopedTrack track {session, "MyTrack"};
 
@@ -115,36 +115,33 @@ TEST_F(DatabaseFixture, SingleTrackDate)
 	}
 }
 
-TEST_F(DatabaseFixture, SingleStarredTrack)
+TEST_F(DatabaseFixture, Track_writtenAfter)
 {
 	ScopedTrack track {session, "MyTrack"};
-	ScopedUser user {session, "MyUser"};
+
+	const Wt::WDateTime dateTime {Wt::WDate {1950, 1, 1}, Wt::WTime {12, 30, 20}};
 
 	{
 		auto transaction {session.createUniqueTransaction()};
-
-		EXPECT_FALSE(user->isStarred(track.get()));
+		track.get().modify()->setLastWriteTime(dateTime);
 	}
 
 	{
-		auto transaction {session.createUniqueTransaction()};
-
-		user.get().modify()->star(track.get());
+		auto transaction {session.createSharedTransaction()};
+		const auto tracks {Track::find(session, Track::FindParameters {})};
+		EXPECT_EQ(tracks.results.size(), 1);
 	}
 
 	{
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createSharedTransaction()};
+		const auto tracks {Track::find(session, Track::FindParameters {}.setWrittenAfter(dateTime.addSecs(-1)))};
+		EXPECT_EQ(tracks.results.size(), 1);
+	}
 
-		EXPECT_TRUE(user->isStarred(track.get()));
-
-		bool hasMore {};
-		auto tracks {Track::getStarred(session, user.get(), {}, std::nullopt, hasMore)};
-		ASSERT_EQ(tracks.size(), 1);
-		EXPECT_EQ(tracks.front()->getId(), track.getId());
-		EXPECT_FALSE(hasMore);
+	{
+		auto transaction {session.createSharedTransaction()};
+		const auto tracks {Track::find(session, Track::FindParameters {}.setWrittenAfter(dateTime.addSecs(+1)))};
+		EXPECT_EQ(tracks.results.size(), 0);
 	}
 }
-
-
-
 

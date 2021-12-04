@@ -28,28 +28,45 @@
 #include "services/database/User.hpp"
 #include "utils/Logger.hpp"
 #include "SqlQuery.hpp"
-#include "Traits.hpp"
+#include "IdTypeTraits.hpp"
 #include "Utils.hpp"
 
 namespace Database
 {
 
-template <typename T>
-static
-Wt::Dbo::Query<T>
-createQuery(Session& session,
-			const std::string& queryStr,
-			const std::vector<ClusterId>& clusterIds,
-			const std::vector<std::string_view>& keywords)
+Wt::Dbo::Query<ReleaseId>
+createQuery(Session& session, const Release::FindParameters& params)
 {
+	auto query {session.getDboSession().query<ReleaseId>("SELECT DISTINCT r.id from release r")};
 
-	auto query {session.getDboSession().query<T>(queryStr)};
-	query.join("track t ON t.release_id = r.id");
+	if (params.sortMethod == ReleaseSortMethod::LastWritten
+			|| params.writtenAfter.isValid()
+			|| params.dateRange)
+	{
+		query.join("track t ON t.release_id = r.id");
+	}
 
-	for (std::string_view keyword : keywords)
+	if (params.writtenAfter.isValid())
+		query.where("t.file_last_write > ?").bind(params.writtenAfter);
+
+	if (params.dateRange)
+	{
+		query.where("t.date >= ?").bind(params.dateRange->begin);
+		query.where("t.date <= ?").bind(params.dateRange->end);
+	}
+
+	for (std::string_view keyword : params.keywords)
 		query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + escapeLikeKeyword(keyword) + "%");
 
-	if (!clusterIds.empty())
+	if (params.starringUser.isValid())
+	{
+		assert(params.scrobbler);
+		query.join("starred_release s_r ON s_r.release_id = r.id")
+			.where("s_r.user_id = ?").bind(params.starringUser)
+			.where("s_r.scrobbler = ?").bind(*params.scrobbler);
+	}
+
+	if (!params.clusters.empty())
 	{
 		std::ostringstream oss;
 		oss << "r.id IN (SELECT DISTINCT r.id FROM release r"
@@ -58,16 +75,38 @@ createQuery(Session& session,
 			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
 
 		WhereClause clusterClause;
-		for (const ClusterId clusterId : clusterIds)
+		for (const ClusterId clusterId : params.clusters)
 		{
 			clusterClause.Or(WhereClause("c.id = ?"));
 			query.bind(clusterId);
 		}
 
 		oss << " " << clusterClause.get();
-		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size() << ")";
+		oss << " GROUP BY t.id HAVING COUNT(*) = " << params.clusters.size() << ")";
 
 		query.where(oss.str());
+	}
+
+	switch (params.sortMethod)
+	{
+		case ReleaseSortMethod::None:
+			break;
+		case ReleaseSortMethod::Name:
+			query.orderBy("r.name COLLATE NOCASE");
+			break;
+		case ReleaseSortMethod::Random:
+			query.orderBy("RANDOM()");
+			break;
+		case ReleaseSortMethod::LastWritten:
+			query.orderBy("t.file_last_write DESC");
+			break;
+		case ReleaseSortMethod::Date:
+			query.orderBy("t.date, r.name COLLATE NOCASE");
+			break;
+		case ReleaseSortMethod::StarredDateDesc:
+			assert(params.starringUser.isValid());
+			query.orderBy("s_r.date_time DESC");
+			break;
 	}
 
 	return query;
@@ -80,7 +119,7 @@ _MBID {MBID ? MBID->getAsString() : ""}
 }
 
 std::vector<Release::pointer>
-Release::getByName(Session& session, const std::string& name)
+Release::find(Session& session, const std::string& name)
 {
 	session.checkUniqueLocked();
 
@@ -93,7 +132,7 @@ Release::getByName(Session& session, const std::string& name)
 }
 
 Release::pointer
-Release::getByMBID(Session& session, const UUID& mbid)
+Release::find(Session& session, const UUID& mbid)
 {
 	session.checkSharedLocked();
 
@@ -104,7 +143,7 @@ Release::getByMBID(Session& session, const UUID& mbid)
 }
 
 Release::pointer
-Release::getById(Session& session, ReleaseId id)
+Release::find(Session& session, ReleaseId id)
 {
 	session.checkSharedLocked();
 
@@ -137,229 +176,43 @@ Release::getCount(Session& session)
 {
 	session.checkSharedLocked();
 
-	return session.getDboSession().find<Release>().resultList().size();
+	return session.getDboSession().query<int>("SELECT COUNT(*) FROM release");
 }
 
-std::vector<Release::pointer>
-Release::getAll(Session& session, std::optional<Range> range)
+RangeResults<ReleaseId>
+Release::findOrderedByArtist(Session& session, Range range)
 {
 	session.checkSharedLocked();
 
-	auto res {session.getDboSession().find<Release>()
-		.offset(range ? static_cast<int>(range->offset) : -1)
-		.limit(range ? static_cast<int>(range->limit) : -1)
-		.orderBy("name COLLATE NOCASE")
-		.resultList()};
-
-	return std::vector<pointer>(res.begin(), res.end());
-}
-
-std::vector<ReleaseId>
-Release::getAllIds(Session& session)
-{
-	session.checkSharedLocked();
-
-	Wt::Dbo::collection<ReleaseId> res = session.getDboSession().query<ReleaseId>("SELECT id FROM release");
-	return std::vector<ReleaseId>(res.begin(), res.end());
-}
-
-std::vector<Release::pointer>
-Release::getAllOrderedByArtist(Session& session, std::optional<std::size_t> offset, std::optional<std::size_t> size)
-{
-	session.checkSharedLocked();
-
-	auto res {session.getDboSession().query<Wt::Dbo::ptr<Release>>(
-			"SELECT DISTINCT r FROM release r"
+	// TODO merge with execQuery
+	auto query {session.getDboSession().query<ReleaseId>(
+			"SELECT DISTINCT r.id FROM release r"
 			" INNER JOIN track t ON r.id = t.release_id"
 			" INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id"
 			" INNER JOIN artist a ON t_a_l.artist_id = a.id")
-		 .offset(offset ? static_cast<int>(*offset) : -1)
-		 .limit(size ? static_cast<int>(*size) : -1)
-		 .orderBy("a.name COLLATE NOCASE, r.name COLLATE NOCASE")
-		 .resultList()};
+		 .orderBy("a.name COLLATE NOCASE, r.name COLLATE NOCASE")};
 
-	return std::vector<pointer>(res.begin(), res.end());
+	return execQuery(query, range);
 }
 
-std::vector<Release::pointer>
-Release::getAllRandom(Session& session, const std::vector<ClusterId>& clusterIds, std::optional<std::size_t> size)
+RangeResults<ReleaseId>
+Release::findOrphans(Session& session, Range range)
 {
 	session.checkSharedLocked();
 
-	auto query {createQuery<Wt::Dbo::ptr<Release>>(session, "SELECT DISTINCT r from release r", clusterIds, {})};
-	auto res {query
-		.orderBy("RANDOM()")
-		.limit(size ? static_cast<int>(*size) : -1)
-		.resultList()};
-
-	return std::vector<pointer>(res.begin(), res.end());
+	auto query {session.getDboSession().query<ReleaseId>("select r.id from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL")};
+	return execQuery(query, range);
 }
 
-std::vector<ReleaseId>
-Release::getAllIdsRandom(Session& session, const std::vector<ClusterId>& clusterIds, std::optional<std::size_t> size)
+RangeResults<ReleaseId>
+Release::find(Session& session, const FindParameters& params)
 {
 	session.checkSharedLocked();
 
-	auto query {createQuery<ReleaseId>(session, "SELECT DISTINCT r.id from release r", clusterIds, {})};
+	auto query {createQuery(session, params)};
 
-	Wt::Dbo::collection<ReleaseId> res = query
-		.orderBy("RANDOM()")
-		.limit(size ? static_cast<int>(*size) : -1);
-
-	return std::vector<ReleaseId>(res.begin(), res.end());
+	return execQuery(query, params.range);
 }
-
-
-std::vector<Release::pointer>
-Release::getAllOrphans(Session& session)
-{
-	session.checkSharedLocked();
-
-	auto res {session.getDboSession().query<Wt::Dbo::ptr<Release>>("select r from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL").resultList()};
-	return std::vector<pointer>(res.begin(), res.end());
-}
-
-std::vector<Release::pointer>
-Release::getLastWritten(Session& session,
-		std::optional<Wt::WDateTime> after,
-		const std::vector<ClusterId>& clusterIds,
-		std::optional<Range> range,
-		bool& moreResults)
-{
-	session.checkSharedLocked();
-
-	auto query {createQuery<Wt::Dbo::ptr<Release>>(session, "SELECT r from release r", clusterIds, {})};
-	if (after)
-		query.where("t.file_last_write > ?").bind(after);
-
-	auto collection {query
-		.orderBy("t.file_last_write DESC")
-		.groupBy("r.id")
-		.offset(range ? static_cast<int>(range->offset) : -1)
-		.limit(range ? static_cast<int>(range->limit) + 1: -1)
-		.resultList()};
-
-	std::vector<pointer> res(collection.begin(), collection.end());
-	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
-	{
-		moreResults = true;
-		res.pop_back();
-	}
-	else
-		moreResults = false;
-
-	return res;
-}
-
-std::vector<Release::pointer>
-Release::getByYear(Session& session, int yearFrom, int yearTo, std::optional<Range> range)
-{
-	auto res {session.getDboSession().query<Wt::Dbo::ptr<Release>>
-		("SELECT DISTINCT r from release r INNER JOIN track t ON r.id = t.release_id")
-		.where("t.date >= ?").bind(Wt::WDate {yearFrom, 1, 1})
-		.where("t.date <= ?").bind(Wt::WDate {yearTo, 12, 31})
-		.orderBy("t.date, r.name COLLATE NOCASE")
-		.offset(range ? static_cast<int>(range->offset) : -1)
-		.limit(range ? static_cast<int>(range->limit) : -1)
-		.resultList()};
-
-	return std::vector<pointer>(res.begin(), res.end());
-}
-
-std::vector<Release::pointer>
-Release::getStarred(Session& session,
-		User::pointer user,
-		const std::vector<ClusterId>& clusterIds,
-		std::optional<Range> range,
-		bool& moreResults)
-{
-	session.checkSharedLocked();
-
-	auto query {createQuery<Wt::Dbo::ptr<Release>>(session, "SELECT r from release r", clusterIds, {})};
-	{
-		std::ostringstream oss;
-		oss << "r.id IN (SELECT DISTINCT r.id FROM release r"
-			" INNER JOIN user_release_starred urs ON urs.release_id = r.id"
-			" INNER JOIN user u ON u.id = urs.user_id WHERE u.id = ?)";
-
-		query.bind(user->getId());
-		query.where(oss.str());
-	}
-
-	auto collection {query
-		.groupBy("r.id")
-		.orderBy("r.name COLLATE NOCASE")
-		.offset(range ? static_cast<int>(range->offset) : -1)
-		.limit(range ? static_cast<int>(range->limit) + 1: -1)
-		.resultList()};
-
-	std::vector<pointer> res(collection.begin(), collection.end());
-	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
-	{
-		moreResults = true;
-		res.pop_back();
-	}
-	else
-		moreResults = false;
-
-	return res;
-
-
-}
-
-std::vector<Release::pointer>
-Release::getByClusters(Session& session, const std::vector<ClusterId>& clusters)
-{
-	assert(!clusters.empty());
-
-	session.checkSharedLocked();
-
-	bool moreResults;
-	return getByFilter(session, clusters, {}, std::nullopt, moreResults);
-}
-
-std::vector<Release::pointer>
-Release::getByFilter(Session& session,
-		const std::vector<ClusterId>& clusterIds,
-		const std::vector<std::string_view>& keywords,
-		std::optional<Range> range,
-		bool& moreResults)
-{
-	session.checkSharedLocked();
-
-	auto collection {createQuery<Wt::Dbo::ptr<Release>>(session, "SELECT r from release r", clusterIds, keywords)
-		.groupBy("r.id")
-		.orderBy("r.name COLLATE NOCASE")
-		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
-		.offset(range ? static_cast<int>(range->offset) : -1)
-		.resultList()};
-
-	std::vector<pointer> res(collection.begin(), collection.end());
-	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
-	{
-		moreResults = true;
-		res.pop_back();
-	}
-	else
-		moreResults = false;
-
-	return res;
-}
-
-std::vector<ReleaseId>
-Release::getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit)
-{
-	session.checkSharedLocked();
-
-	Wt::Dbo::collection<ReleaseId> res = session.getDboSession().query<ReleaseId>
-		("SELECT DISTINCT r.id FROM release r"
-		 	" INNER JOIN track t ON t.release_id = r.id"
-		 	" INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
-		.limit(limit ? static_cast<int>(*limit) : -1);
-
-	return std::vector<ReleaseId>(res.begin(), res.end());
-}
-
 
 std::optional<std::size_t>
 Release::getTotalTrack(void) const

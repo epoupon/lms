@@ -21,7 +21,7 @@
 
 #include <Wt/WResource.h>
 
-#include "services/database/Types.hpp"
+#include "services/database/TrackId.hpp"
 
 namespace UserInterface
 {

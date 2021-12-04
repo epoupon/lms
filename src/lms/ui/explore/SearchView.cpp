@@ -38,6 +38,8 @@
 #include "ReleaseListHelpers.hpp"
 #include "TrackListHelpers.hpp"
 
+using namespace Database;
+
 namespace UserInterface
 {
 	SearchView::SearchView(Filters* filters)
@@ -133,17 +135,22 @@ namespace UserInterface
 	SearchView::addSomeArtists()
 	{
 		InfiniteScrollingContainer& results {getResultContainer(Mode::Artist)};
-		bool moreResults {};
 
 		{
+			using namespace Database;
+
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-			const Database::Range range {results.getCount(), getBatchSize(Mode::Artist)};
-			for (const auto& artist : _artistCollector.get(range, moreResults))
+			const Range range {results.getCount(), getBatchSize(Mode::Artist)};
+			const RangeResults<ArtistId> artistIds {_artistCollector.get(range)};
+			for (const ArtistId artistId : artistIds.results)
+			{
+				const Artist::pointer artist {Artist::find(LmsApp->getDbSession(), artistId)};
 				results.add(ArtistListHelpers::createEntry(artist));
-		}
+			}
 
-		results.setHasMore(moreResults);
+			results.setHasMore(artistIds.moreResults);
+		}
 
 		getItemMenu(Mode::Artist).setDisabled(results.getCount() == 0);
 	}
@@ -155,14 +162,21 @@ namespace UserInterface
 		bool moreResults {};
 
 		{
+			using namespace Database;
+
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-			const Database::Range range {results.getCount(), getBatchSize(Mode::Release)};
-			for (const auto& release : _releaseCollector.get(range, moreResults))
-				results.add(ReleaseListHelpers::createEntry(release));
-		}
+			const Range range {results.getCount(), getBatchSize(Mode::Release)};
+			const RangeResults<ReleaseId> releaseIds {_releaseCollector.get(range)};
 
-		results.setHasMore(moreResults);
+			for (const ReleaseId releaseId : releaseIds.results)
+			{
+				const Release::pointer release {Release::find(LmsApp->getDbSession(), releaseId)};
+				results.add(ReleaseListHelpers::createEntry(release));
+			}
+
+			results.setHasMore(moreResults);
+		}
 
 		getItemMenu(Mode::Release).setDisabled(results.getCount() == 0);
 	}
@@ -171,17 +185,22 @@ namespace UserInterface
 	SearchView::addSomeTracks()
 	{
 		InfiniteScrollingContainer& results {getResultContainer(Mode::Track)};
-		bool moreResults {};
-
 		{
+			using namespace Database;
+
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-			const Database::Range range {results.getCount(), getBatchSize(Mode::Track)};
-			for (const auto& track : _trackCollector.get(range, moreResults))
-				results.add(TrackListHelpers::createEntry(track, tracksAction));
-		}
+			const Range range {results.getCount(), getBatchSize(Mode::Track)};
+			const RangeResults<TrackId> trackIds {_trackCollector.get(range)};
 
-		results.setHasMore(moreResults);
+			for (const TrackId trackId : trackIds.results)
+			{
+				const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
+				results.add(TrackListHelpers::createEntry(track, tracksAction));
+			}
+
+			results.setHasMore(trackIds.moreResults);
+		}
 
 		getItemMenu(Mode::Track).setDisabled(results.getCount() == 0);
 	}

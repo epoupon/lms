@@ -21,9 +21,8 @@
 
 #include <filesystem>
 #include <unordered_map>
-#include <unordered_set>
 
-#include "services/database/Types.hpp"
+#include "services/database/TrackId.hpp"
 #include "som/Network.hpp"
 
 namespace Recommendation {

@@ -46,7 +46,7 @@ namespace
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		const Database::Track::pointer track {Database::Track::getById(session, trackId)};
+		const Database::Track::pointer track {Database::Track::find(session, trackId)};
 		if (!track)
 			return false;
 
@@ -62,7 +62,7 @@ namespace
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		const Database::Track::pointer track {Database::Track::getById(session, listen.trackId)};
+		const Database::Track::pointer track {Database::Track::find(session, listen.trackId)};
 		if (!track)
 			return std::nullopt;
 
@@ -177,12 +177,6 @@ namespace Scrobbling::ListenBrainz
 	{
 		assert(listen.listenedAt.isValid());
 		enqueListen(listen, listen.listenedAt);
-	}
-
-	Database::TrackList::pointer
-	Scrobbler::getListensTrackList(Database::Session& session, Database::User::pointer user)
-	{
-		return Utils::getListensTrackList(session, user);
 	}
 
 	void

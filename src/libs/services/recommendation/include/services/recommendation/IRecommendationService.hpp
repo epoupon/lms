@@ -20,8 +20,9 @@
 #pragma once
 
 #include <memory>
-#include <string_view>
 #include "utils/EnumSet.hpp"
+#include "services/database/TrackListId.hpp"
+#include "services/database/Types.hpp"
 #include "services/recommendation/Types.hpp"
 
 namespace Database
@@ -39,8 +40,8 @@ namespace Recommendation
 			virtual void load(bool forceReload, const ProgressCallback& progressCallback = {}) = 0;
 			virtual void cancelLoad() = 0;  // wait for cancel done
 
-			virtual TrackContainer getSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const = 0;
-			virtual TrackContainer getSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const = 0;
+			virtual TrackContainer findSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const = 0;
+			virtual TrackContainer findSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const = 0;
 			virtual ReleaseContainer getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const = 0;
 			virtual ArtistContainer getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
 	};

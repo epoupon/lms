@@ -20,7 +20,7 @@
 #pragma once
 
 #include <string_view>
-#include "services/database/Types.hpp"
+#include "services/database/UserId.hpp"
 
 namespace Database
 {

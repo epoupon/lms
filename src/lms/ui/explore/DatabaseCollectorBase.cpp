@@ -23,28 +23,23 @@
 
 namespace UserInterface
 {
-	DatabaseCollectorBase::DatabaseCollectorBase(Filters& filters, Mode defaultMode, std::optional<std::size_t> maxCount)
+	DatabaseCollectorBase::DatabaseCollectorBase(Filters& filters, Mode defaultMode, std::size_t maxCount)
 		: _filters {filters}
 		, _mode {defaultMode}
 		, _maxCount {maxCount}
 	{
 	}
 
-	std::optional<DatabaseCollectorBase::Range>
-	DatabaseCollectorBase::getActualRange(std::optional<Range> range) const
+	DatabaseCollectorBase::Range
+	DatabaseCollectorBase::getActualRange(Range range) const
 	{
-		if (std::optional<std::size_t> maxCount {getMaxCount()})
-		{
-			if (range)
-				range->limit = std::min(*maxCount - range->offset, range->limit);
-			else
-				range = Range {0, *maxCount};
-		}
+		assert(range.offset < _maxCount);
+		range.size = std::min(_maxCount - range.offset, range.size);
 
 		return range;
 	}
 
-	std::optional<std::size_t>
+	std::size_t
 	DatabaseCollectorBase::getMaxCount() const
 	{
 		return _maxCount;

@@ -29,5 +29,12 @@ namespace Database
 		return StringUtils::escapeString(keyword, "%_", escapeChar);
 	}
 
+	Wt::WDateTime
+	normalizeDateTime(const Wt::WDateTime& dateTime)
+	{
+		// force second resolution
+		return Wt::WDateTime::fromTime_t(dateTime.toTime_t());
+	}
+
 } // namespace Database
 

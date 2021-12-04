@@ -34,99 +34,88 @@ namespace UserInterface
 {
 	using namespace Database;
 
-	std::vector<Release::pointer>
-	ReleaseCollector::get(std::optional<Database::Range> range, bool& moreResults)
+	RangeResults<ReleaseId>
+	ReleaseCollector::get(Database::Range range)
 	{
 		Scrobbling::IScrobblingService& scrobbling {*Service<Scrobbling::IScrobblingService>::get()};
 
 		range = getActualRange(range);
 
-		std::vector<Release::pointer> releases;
+		RangeResults<ReleaseId> releases;
 		switch (getMode())
 		{
 			case Mode::Random:
-				releases = getRandomReleases(range, moreResults);
+				releases = getRandomReleases(range);
 				break;
 
 			case Mode::Starred:
-				releases = Release::getStarred(LmsApp->getDbSession(), LmsApp->getUser(), getFilters().getClusterIds(), range, moreResults);
+				releases = scrobbling.getStarredReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
 				break;
 
 			case ReleaseCollector::Mode::RecentlyPlayed:
-				for (const ReleaseId releaseId : scrobbling.getRecentReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range, moreResults))
-				{
-					if (const Release::pointer release {Release::getById(LmsApp->getDbSession(), releaseId)})
-						releases.push_back(release);
-				}
+				releases = scrobbling.getRecentReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
 				break;
 
 			case Mode::MostPlayed:
-				for (const ReleaseId releaseId : scrobbling.getTopReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range, moreResults))
-				{
-					if (const Release::pointer release {Release::getById(LmsApp->getDbSession(), releaseId)})
-						releases.push_back(release);
-				}
+				releases = scrobbling.getTopReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
 				break;
 
 			case Mode::RecentlyAdded:
-				releases = Release::getLastWritten(LmsApp->getDbSession(), std::nullopt, getFilters().getClusterIds(), range, moreResults);
-				break;
-
-			case Mode::Search:
-				releases = Release::getByFilter(LmsApp->getDbSession(), getFilters().getClusterIds(), getSearchKeywords(), range, moreResults);
-				break;
-
-			case Mode::All:
-				releases = Release::getByFilter(LmsApp->getDbSession(), getFilters().getClusterIds(), {}, range, moreResults);
-				break;
-		}
-
-		if (range && getMaxCount() && (range->offset + range->limit == *getMaxCount()))
-			moreResults = false;
-
-		return releases;
-	}
-
-	std::vector<Database::ReleaseId>
-	ReleaseCollector::getAll()
-	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-		bool moreResults;
-		const auto releases {get(std::nullopt, moreResults)};
-
-		std::vector<ReleaseId> res;
-		res.reserve(releases.size());
-		std::transform(std::cbegin(releases), std::cend(releases), std::back_inserter(res), [](const Release::pointer& release) { return release->getId(); });
-
-		return res;
-	}
-
-	std::vector<Database::Release::pointer>
-	ReleaseCollector::getRandomReleases(std::optional<Range> range, bool& moreResults)
-	{
-		std::vector<Release::pointer> releases;
-
-		assert(getMode() == Mode::Random);
-
-		if (_randomReleases.empty())
-			_randomReleases = Release::getAllIdsRandom(LmsApp->getDbSession(), getFilters().getClusterIds(), getMaxCount());
-
-		{
-			auto itBegin {std::cbegin(_randomReleases) + std::min(range ? range->offset : 0, _randomReleases.size())};
-			auto itEnd {std::cbegin(_randomReleases) + std::min(range ? range->offset + range->limit : _randomReleases.size(), _randomReleases.size())};
-
-			for (auto it {itBegin}; it != itEnd; ++it)
 			{
-				Release::pointer release {Release::getById(LmsApp->getDbSession(), *it)};
-				if (release)
-					releases.push_back(release);
+				Release::FindParameters params;
+				params.setClusters(getFilters().getClusterIds());
+				params.setSortMethod(ReleaseSortMethod::LastWritten);
+				params.setRange(range);
+
+				releases = Release::find(LmsApp->getDbSession(), params);
+				break;
 			}
 
-			moreResults = (itEnd != std::cend(_randomReleases));
+			case Mode::Search:
+			{
+				Release::FindParameters params;
+				params.setClusters(getFilters().getClusterIds());
+				params.setKeywords(getSearchKeywords());
+				params.setSortMethod(ReleaseSortMethod::Name);
+				params.setRange(range);
+
+				releases = Release::find(LmsApp->getDbSession(), params);
+				break;
+			}
+
+			case Mode::All:
+			{
+				Release::FindParameters params;
+				params.setClusters(getFilters().getClusterIds());
+				params.setSortMethod(ReleaseSortMethod::Name);
+				params.setRange(range);
+
+				releases = Release::find(LmsApp->getDbSession(), params);
+				break;
+			}
 		}
 
+		if (range.offset + range.size == getMaxCount())
+			releases.moreResults = false;
+
 		return releases;
+	}
+
+	RangeResults<ReleaseId>
+	ReleaseCollector::getRandomReleases(Range range)
+	{
+		assert(getMode() == Mode::Random);
+
+		if (!_randomReleases)
+		{
+			Release::FindParameters params;
+			params.setClusters(getFilters().getClusterIds());
+			params.setSortMethod(ReleaseSortMethod::Random);
+			params.setRange({0, getMaxCount()});
+			_randomReleases = Release::find(LmsApp->getDbSession(), params);
+		}
+
+		return _randomReleases->getSubRange(range);
 	}
 
 } // ns UserInterface

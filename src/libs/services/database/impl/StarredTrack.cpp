@@ -1,0 +1,79 @@
+/*
+ * Copyright (C) 2021 Emeric Poupon
+ *
+ * This file is part of LMS.
+ *
+ * LMS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * LMS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "services/database/StarredTrack.hpp"
+
+#include <Wt/Dbo/WtSqlTraits.h>
+
+#include "services/database/Track.hpp"
+#include "services/database/User.hpp"
+#include "IdTypeTraits.hpp"
+#include "Utils.hpp"
+
+namespace Database
+{
+	StarredTrack::StarredTrack(ObjectPtr<Track> track, ObjectPtr<User> user, Scrobbler scrobbler)
+		: _scrobbler {scrobbler}
+		, _track {getDboPtr(track)}
+		, _user {getDboPtr(user)}
+	{
+	}
+
+	std::size_t
+	StarredTrack::getCount(Session& session)
+	{
+		session.checkSharedLocked();
+		return session.getDboSession().query<int>("SELECT COUNT(*) FROM starred_track");
+	}
+
+	StarredTrack::pointer
+	StarredTrack::find(Session& session, StarredTrackId id)
+	{
+		session.checkSharedLocked();
+		return session.getDboSession().find<StarredTrack>().where("id = ?").bind(id).resultValue();
+	}
+
+	StarredTrack::pointer
+	StarredTrack::find(Session& session, TrackId trackId, UserId userId, Scrobbler scrobbler)
+	{
+		session.checkSharedLocked();
+		return session.getDboSession().find<StarredTrack>()
+			.where("track_id = ?").bind(trackId)
+			.where("user_id = ?").bind(userId)
+			.where("scrobbler = ?").bind(scrobbler)
+			.resultValue();
+	}
+
+	StarredTrack::pointer
+	StarredTrack::create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user, Scrobbler scrobbler)
+	{
+		session.checkUniqueLocked();
+
+		StarredTrack::pointer res {session.getDboSession().add(std::make_unique<StarredTrack>(track, user, scrobbler))};
+		session.getDboSession().flush();
+
+		return res;
+	}
+
+	void
+	StarredTrack::setDateTime(const Wt::WDateTime& dateTime)
+	{
+		_dateTime = normalizeDateTime(dateTime);
+	}
+}

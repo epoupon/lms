@@ -24,6 +24,7 @@
 #include <Wt/WText.h>
 
 #include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
 #include "utils/Logger.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
@@ -118,24 +119,25 @@ Tracks::refreshView(TrackCollector::Mode mode)
 void
 Tracks::addSome()
 {
-	bool moreResults {};
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
+	const auto trackIds {_trackCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize})};
+
+	for (const TrackId trackId : trackIds.results)
 	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-		const auto tracks {_trackCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize}, moreResults)};
-
-		for (const auto& track : tracks)
-			_container->add(TrackListHelpers::createEntry(track, tracksAction));
+		const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
+		_container->add(TrackListHelpers::createEntry(track, tracksAction));
 	}
 
-	_container->setHasMore(moreResults);
+	_container->setHasMore(trackIds.moreResults);
 }
 
 std::vector<Database::TrackId>
 Tracks::getAllTracks()
 {
-	return _trackCollector.getAll();
+	RangeResults<TrackId> trackIds {_trackCollector.get(Range {})};
+
+	return std::move(trackIds.results);
 }
 
 

@@ -33,6 +33,8 @@
 
 namespace UserInterface {
 
+using namespace Database;
+
 UsersView::UsersView()
  : Wt::WTemplate {Wt::WString::tr("Lms.Admin.Users.template")}
 {
@@ -69,9 +71,9 @@ UsersView::refreshView()
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	for (const auto& user : Database::User::getAll(LmsApp->getDbSession()))
+	for (const UserId userId : User::find(LmsApp->getDbSession(), Range {}).results)
 	{
-		const Database::UserId userId {user->getId()};
+		const User::pointer user {User::find(LmsApp->getDbSession(), userId)};
 
 		Wt::WTemplate* entry {_container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry"))};
 
@@ -109,7 +111,7 @@ UsersView::refreshView()
 				{
 					auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-					Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), userId)};
+					User::pointer user {User::find(LmsApp->getDbSession(), userId)};
 					if (user)
 						user.remove();
 

@@ -109,7 +109,7 @@ class AuthModel : public Wt::WFormModel
 			{
 				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-				Database::User::pointer user {Database::User::getByLoginName(LmsApp->getDbSession(), valueText(LoginNameField).toUTF8())};
+				Database::User::pointer user {Database::User::find(LmsApp->getDbSession(), valueText(LoginNameField).toUTF8())};
 				user.modify()->setLastLogin(Wt::WDateTime::currentDateTime());
 				_userId = user->getId();
 
@@ -205,7 +205,7 @@ Auth::Auth()
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		Database::User::pointer demoUser {Database::User::getDemo(LmsApp->getDbSession())};
+		Database::User::pointer demoUser {Database::User::findDemoUser(LmsApp->getDbSession())};
 		if (demoUser)
 		{
 			model->setValue(AuthModel::LoginNameField, demoUser->getLoginName());

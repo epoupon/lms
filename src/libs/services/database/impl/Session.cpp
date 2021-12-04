@@ -28,10 +28,15 @@
 #include "utils/Logger.hpp"
 
 #include "services/database/Artist.hpp"
+#include "services/database/AuthToken.hpp"
 #include "services/database/Cluster.hpp"
 #include "services/database/Db.hpp"
+#include "services/database/Listen.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/ScanSettings.hpp"
+#include "services/database/StarredArtist.hpp"
+#include "services/database/StarredRelease.hpp"
+#include "services/database/StarredTrack.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackBookmark.hpp"
 #include "services/database/TrackArtistLink.hpp"
@@ -43,7 +48,7 @@ namespace Database
 {
 
 	using Version = std::size_t;
-	static constexpr Version LMS_DATABASE_VERSION {31};
+	static constexpr Version LMS_DATABASE_VERSION {32};
 
 	class VersionInfo
 	{
@@ -360,6 +365,61 @@ CREATE TABLE "track_backup" (
 			// Just increment the scan version of the settings to make the next scheduled scan rescan everything
 			ScanSettings::get(*this).modify()->incScanVersion();
 		}
+		else if (version == 31)
+		{
+			// new star system, using dedicated ObjectSets per scrobbler
+			_session.execute("DROP TABLE user_artist_starred");
+			_session.execute("DROP TABLE user_release_starred");
+			_session.execute("DROP TABLE user_track_starred");
+
+			_session.execute(R"(
+CREATE TABLE IF NOT EXISTS "starred_artist" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "scrobbler" integer not null,
+  "date_time" text,
+  "artist_id" bigint,
+  "user_id" bigint,
+  constraint "fk_starred_artist_artist" foreign key ("artist_id") references "artist" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_starred_artist_user" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred
+))");
+
+			_session.execute(R"(
+CREATE TABLE IF NOT EXISTS "starred_release" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "scrobbler" integer not null,
+  "date_time" text,
+  "release_id" bigint,
+  "user_id" bigint,
+  constraint "fk_starred_release_release" foreign key ("release_id") references "release" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_starred_release_user" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred
+))");
+
+			_session.execute(R"(
+CREATE TABLE IF NOT EXISTS "starred_track" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "scrobbler" integer not null,
+  "date_time" text,
+  "track_id" bigint,
+  "user_id" bigint,
+  constraint "fk_starred_track_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_starred_track_user" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred
+))");
+
+			_session.execute(R"(
+CREATE TABLE IF NOT EXISTS "listen" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "date_time" text,
+  "scrobbler" integer not null,
+  "track_id" bigint,
+  "user_id" bigint,
+  constraint "fk_listen_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_listen_user" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred
+))");
+		}
 		else
 		{
 			LMS_LOG(DB, ERROR) << "Database version " << version << " cannot be handled using migration";
@@ -380,8 +440,12 @@ Session::Session(Db& db)
 	_session.mapClass<AuthToken>("auth_token");
 	_session.mapClass<Cluster>("cluster");
 	_session.mapClass<ClusterType>("cluster_type");
+	_session.mapClass<Listen>("listen");
 	_session.mapClass<Release>("release");
 	_session.mapClass<ScanSettings>("scan_settings");
+	_session.mapClass<StarredArtist>("starred_artist");
+	_session.mapClass<StarredRelease>("starred_release");
+	_session.mapClass<StarredTrack>("starred_track");
 	_session.mapClass<Track>("track");
 	_session.mapClass<TrackBookmark>("track_bookmark");
 	_session.mapClass<TrackArtistLink>("track_artist_link");
@@ -484,6 +548,11 @@ Session::prepareTables()
 		_session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_type_idx ON track_artist_link(type)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_bookmark_user_idx ON track_bookmark(user_id)");
 		_session.execute("CREATE INDEX IF NOT EXISTS track_bookmark_user_track_idx ON track_bookmark(user_id,track_id)");
+		_session.execute("CREATE INDEX IF NOT EXISTS listen_scrobbler_idx ON listen(scrobbler)");
+		_session.execute("CREATE INDEX IF NOT EXISTS listen_user_scrobbler_idx ON listen(user_id,scrobbler)");
+		_session.execute("CREATE INDEX IF NOT EXISTS starred_artist_user_scrobbler_idx ON starred_artist(user_id,scrobbler)");
+		_session.execute("CREATE INDEX IF NOT EXISTS starred_release_user_scrobbler_idx ON starred_release(user_id,scrobbler)");
+		_session.execute("CREATE INDEX IF NOT EXISTS starred_track_user_scrobbler_idx ON starred_track(user_id,scrobbler)");
 	}
 
 	// Initial settings tables

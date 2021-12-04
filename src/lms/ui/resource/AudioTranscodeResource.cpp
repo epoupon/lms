@@ -149,7 +149,7 @@ readTranscodeParameters(const Wt::Http::Request& request)
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), *trackId)};
+		const Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), *trackId)};
 		if (!track)
 		{
 			LOG(ERROR) << "Missing track";
@@ -158,7 +158,7 @@ readTranscodeParameters(const Wt::Http::Request& request)
 
 		parameters.file = track->getPath();
 
-		if (Database::User::audioTranscodeAllowedBitrates.find(*bitrate) == std::cend(Database::User::audioTranscodeAllowedBitrates))
+		if (!Database::isAudioBitrateAllowed(*bitrate))
 		{
 			LOG(ERROR) << "Bitrate '" << *bitrate << "' is not allowed";
 			return std::nullopt;

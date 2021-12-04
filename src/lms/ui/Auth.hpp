@@ -19,9 +19,10 @@
 
 #pragma once
 
+#include <optional>
 #include <Wt/WTemplateFormView.h>
 
-#include "services/database/Types.hpp"
+#include "services/database/UserId.hpp"
 
 namespace UserInterface
 {

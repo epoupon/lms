@@ -22,7 +22,8 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
-#include "Traits.hpp"
+#include "IdTypeTraits.hpp"
+#include "Utils.hpp"
 
 namespace Database {
 
@@ -31,6 +32,15 @@ TrackBookmark::TrackBookmark(ObjectPtr<User> user, ObjectPtr<Track> track)
 _track {getDboPtr(track)}
 {
 }
+
+std::size_t
+TrackBookmark::getCount(Session& session)
+{
+	session.checkSharedLocked();
+
+	return session.getDboSession().query<int>("SELECT COUNT(*) FROM track_bookmark");
+}
+
 
 TrackBookmark::pointer
 TrackBookmark::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track)
@@ -43,40 +53,30 @@ TrackBookmark::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> t
 	return res;
 }
 
-std::vector<TrackBookmark::pointer>
-TrackBookmark::getAll(Session& session)
+RangeResults<TrackBookmarkId>
+TrackBookmark::find(Session& session, UserId userId, Range range)
 {
 	session.checkSharedLocked();
 
-	auto res {session.getDboSession().find<TrackBookmark>().resultList()};
-	return std::vector<TrackBookmark::pointer>(std::cbegin(res), std::cend(res));
-}
+	auto query {session.getDboSession().query<TrackBookmarkId>("SELECT id from track_bookmark")
+				.where("user_id = ?").bind(userId)};
 
-std::vector<TrackBookmark::pointer>
-TrackBookmark::getByUser(Session& session, User::pointer user)
-{
-	session.checkSharedLocked();
-
-	auto res {session.getDboSession().find<TrackBookmark>()
-				.where("user_id = ?").bind(user->getId())
-				.resultList()};
-
-	return std::vector<TrackBookmark::pointer>(std::cbegin(res), std::cend(res));
+	return execQuery(query, range);
 }
 
 TrackBookmark::pointer
-TrackBookmark::getByUser(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track)
+TrackBookmark::find(Session& session, UserId userId, TrackId trackId)
 {
 	session.checkSharedLocked();
 
 	return session.getDboSession().find<TrackBookmark>()
-		.where("user_id = ?").bind(user->getId())
-		.where("track_id = ?").bind(track->getId())
+		.where("user_id = ?").bind(userId)
+		.where("track_id = ?").bind(trackId)
 		.resultValue();
 }
 
 TrackBookmark::pointer
-TrackBookmark::getById(Session& session, TrackBookmarkId id)
+TrackBookmark::find(Session& session, TrackBookmarkId id)
 {
 	session.checkSharedLocked();
 
@@ -84,7 +84,6 @@ TrackBookmark::getById(Session& session, TrackBookmarkId id)
 		.where("id = ?").bind(id)
 		.resultValue();
 }
-
 
 } // namespace Database
 

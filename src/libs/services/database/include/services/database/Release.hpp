@@ -25,7 +25,11 @@
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
+#include "services/database/ClusterId.hpp"
+#include "services/database/Object.hpp"
+#include "services/database/ReleaseId.hpp"
 #include "services/database/Types.hpp"
+#include "services/database/UserId.hpp"
 #include "utils/UUID.hpp"
 
 namespace Database
@@ -42,36 +46,42 @@ class User;
 class Release : public Object<Release, ReleaseId>
 {
 	public:
+		struct FindParameters
+		{
+			std::vector<ClusterId>       	clusters; // if non empty, releases that belong to these clusters
+			std::vector<std::string_view>	keywords; // if non empty, name must match all of these keywords
+			ReleaseSortMethod				sortMethod {ReleaseSortMethod::None};
+			Range							range;
+			Wt::WDateTime					writtenAfter;
+			std::optional<DateRange>		dateRange;
+			UserId							starringUser;	// only releases starred by this user
+			std::optional<Scrobbler>			scrobbler;		// and for this scrobbler
+
+			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
+			FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
+			FindParameters& setSortMethod(ReleaseSortMethod _sortMethod) {sortMethod = _sortMethod; return *this; }
+			FindParameters& setRange(Range _range) {range = _range; return *this; }
+			FindParameters& setWrittenAfter(const Wt::WDateTime& _after) {writtenAfter = _after; return *this; }
+			FindParameters& setDateRange(const std::optional<DateRange>& _dateRange) {dateRange = _dateRange; return *this; }
+			FindParameters& setStarringUser(UserId _user, Scrobbler _scrobbler) { starringUser = _user; scrobbler = _scrobbler; return *this; }
+		};
+
 		Release() = default;
 		Release(const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Accessors
-		static std::size_t		getCount(Session& session);
-		static pointer			getByMBID(Session& session, const UUID& MBID);
-		static std::vector<pointer>	getByName(Session& session, const std::string& name);
-		static pointer			getById(Session& session, ReleaseId id);
-		static bool				exists(Session& session, ReleaseId id);
-		static std::vector<pointer>	getAllOrphans(Session& session); // no track related
-		static std::vector<pointer>	getAll(Session& session, std::optional<Range> range = std::nullopt);
-		static std::vector<ReleaseId>	getAllIds(Session& session);
-		static std::vector<pointer>	getAllOrderedByArtist(Session& session, std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {});
-		static std::vector<pointer>	getAllRandom(Session& session, const std::vector<ClusterId>& clusters, std::optional<std::size_t> size = {});
-		static std::vector<ReleaseId>	getAllIdsRandom(Session& session, const std::vector<ClusterId>& clusters, std::optional<std::size_t> size = {});
-		static std::vector<pointer>	getLastWritten(Session& session, std::optional<Wt::WDateTime> after, const std::vector<ClusterId>& clusters, std::optional<Range> range, bool& moreResults);
-		static std::vector<pointer>	getByYear(Session& session, int yearFrom, int yearTo, std::optional<Range> range = std::nullopt);
-		static std::vector<pointer> getStarred(Session& session, ObjectPtr<User> user, const std::vector<ClusterId>& clusters, std::optional<Range> range, bool& moreResults);
+		static std::size_t				getCount(Session& session);
+		static bool						exists(Session& session, ReleaseId id);
+		static pointer					find(Session& session, const UUID& MBID);
+		static std::vector<pointer>		find(Session& session, const std::string& name);
+		static pointer					find(Session& session, ReleaseId id);
+		static RangeResults<ReleaseId>	find(Session& session, const FindParameters& parameters);
+		static RangeResults<ReleaseId>	findOrphans(Session& session, Range range); // no track related
+		static RangeResults<ReleaseId>	findOrderedByArtist(Session& session, Range range);
 
-		static std::vector<pointer>	getByClusters(Session& session, const std::vector<ClusterId>& clusters);
-		static std::vector<pointer>	getByFilter(Session& session,
-							const std::vector<ClusterId>& clusters,		// if non empty, at least one release that belongs to these clusters
-							const std::vector<std::string_view>& keywords,	// if non empty, name must match all of these keywords
-							std::optional<Range> range,
-							bool& moreExpected);
-		static std::vector<ReleaseId>	getAllIdsWithClusters(Session& session, std::optional<std::size_t> limit = {});
-
-		std::vector<ObjectPtr<Track>> getTracks(const std::vector<ClusterId>& clusters = {}) const;
-		std::size_t					getTracksCount() const;
-		ObjectPtr<Track>			getFirstTrack() const;
+		std::vector<ObjectPtr<Track>>	getTracks(const std::vector<ClusterId>& clusters = {}) const;
+		std::size_t						getTracksCount() const;
+		ObjectPtr<Track>				getFirstTrack() const;
 
 		// Get the cluster of the tracks that belong to this release
 		// Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)
@@ -110,7 +120,6 @@ class Release : public Object<Release, ReleaseId>
 				Wt::Dbo::field(a, _MBID, "mbid");
 
 				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
-				Wt::Dbo::hasMany(a, _starringUsers, Wt::Dbo::ManyToMany, "user_release_starred", "", Wt::Dbo::OnDeleteCascade);
 			}
 
 	private:
@@ -120,7 +129,6 @@ class Release : public Object<Release, ReleaseId>
 		std::string	_MBID;
 
 		Wt::Dbo::collection<Wt::Dbo::ptr<Track>>	_tracks; // Tracks in the release
-		Wt::Dbo::collection<Wt::Dbo::ptr<User>>		_starringUsers; // Users that starred this release
 };
 
 } // namespace Database

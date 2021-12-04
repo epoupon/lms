@@ -20,22 +20,19 @@
 #include "InternalScrobbler.hpp"
 
 #include "services/database/Db.hpp"
+#include "services/database/Listen.hpp"
 #include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
-#include "services/database/TrackList.hpp"
 #include "services/database/User.hpp"
-#include "utils/Logger.hpp"
+#include "services/database/Track.hpp"
 
 namespace Scrobbling
 {
-	static const std::string historyTracklistName {"__scrobbler_internal_history__"};
-
 	InternalScrobbler::InternalScrobbler(Database::Db& db)
-	: _db {db}
+		: _db {db}
 	{}
 
 	void
-	InternalScrobbler::listenStarted(const Listen& /*listen*/)
+	InternalScrobbler::listenStarted(const Listen&)
 	{
 		// nothing to do
 	}
@@ -43,7 +40,7 @@ namespace Scrobbling
 	void
 	InternalScrobbler::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
 	{
-		// record tracks that have been played for at least of few seconds...
+		// only record tracks that have been played for at least of few seconds...
 		if (duration && *duration < std::chrono::seconds {5})
 			return;
 
@@ -54,29 +51,20 @@ namespace Scrobbling
 	InternalScrobbler::addTimedListen(const TimedListen& listen)
 	{
 		Database::Session& session {_db.getTLSSession()};
-
 		auto transaction {session.createUniqueTransaction()};
 
-		const Database::User::pointer user {Database::User::getById(session, listen.userId)};
+		if (Database::Listen::find(session, listen.userId, listen.trackId, Database::Scrobbler::Internal, listen.listenedAt))
+			return;
+
+		const Database::User::pointer user {Database::User::find(session, listen.userId)};
 		if (!user)
 			return;
 
-		Database::TrackList::pointer tracklist {getListensTrackList(session, user)};
-		if (!tracklist)
-			tracklist = Database::TrackList::create(session, historyTracklistName, Database::TrackList::Type::Internal, false, user);
-
-		const Database::Track::pointer track {Database::Track::getById(session, listen.trackId)};
+		const Database::Track::pointer track {Database::Track::find(session, listen.trackId)};
 		if (!track)
 			return;
 
-		Database::TrackListEntry::create(session, track, getListensTrackList(session, user), listen.listenedAt);
+		Database::Listen::create(session, user, track, Database::Scrobbler::Internal, listen.listenedAt);
 	}
-
-	Database::TrackList::pointer
-	InternalScrobbler::getListensTrackList(Database::Session& session, Database::ObjectPtr<Database::User> user)
-	{
-		return Database::TrackList::get(session, historyTracklistName, Database::TrackList::Type::Internal, user);
-	}
-
 } // Scrobbling
 

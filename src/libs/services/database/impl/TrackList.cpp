@@ -30,7 +30,8 @@
 #include "services/database/Track.hpp"
 #include "SqlQuery.hpp"
 #include "StringViewTraits.hpp"
-#include "Traits.hpp"
+#include "IdTypeTraits.hpp"
+#include "Utils.hpp"
 
 namespace Database {
 
@@ -55,56 +56,54 @@ TrackList::create(Session& session, std::string_view name, Type type, bool isPub
 	return res;
 }
 
-TrackList::pointer
-TrackList::get(Session& session, std::string_view name, Type type, ObjectPtr<User> user)
+std::size_t
+TrackList::getCount(Session& session)
 {
 	session.checkSharedLocked();
-	assert(user);
+
+	return session.getDboSession().query<int>("SELECT COUNT(*) FROM tracklist");
+}
+
+
+TrackList::pointer
+TrackList::find(Session& session, std::string_view name, Type type, UserId userId)
+{
+	session.checkSharedLocked();
+	assert(userId.isValid());
 
 	return session.getDboSession().find<TrackList>()
 		.where("name = ?").bind(name)
 		.where("type = ?").bind(type)
-		.where("user_id = ?").bind(user->getId()).resultValue();
+		.where("user_id = ?").bind(userId).resultValue();
 }
 
-std::vector<TrackList::pointer>
-TrackList::getAll(Session& session)
+RangeResults<TrackListId>
+TrackList::find(Session& session, UserId userId, Range range)
 {
 	session.checkSharedLocked();
 
-	auto res = session.getDboSession().find<TrackList>().resultList();
-	return std::vector<TrackList::pointer>(res.begin(), res.end());
+	auto query {session.getDboSession().query<TrackListId>("SELECT id FROM tracklist")
+		.where("user_id = ?").bind(userId)
+		.orderBy("name COLLATE NOCASE")};
+
+	return execQuery(query, range);
 }
 
-std::vector<TrackList::pointer>
-TrackList::getAll(Session& session, ObjectPtr<User> user)
+RangeResults<TrackListId>
+TrackList::find(Session& session, UserId userId, Type type, Range range)
 {
 	session.checkSharedLocked();
 
-	auto res {session.getDboSession().find<TrackList>()
-		.where("user_id = ?").bind(user->getId())
-		.orderBy("name COLLATE NOCASE")
-		.resultList()};
-
-	return std::vector<TrackList::pointer>(res.begin(), res.end());
-}
-
-std::vector<TrackList::pointer>
-TrackList::getAll(Session& session, ObjectPtr<User> user, Type type)
-{
-	session.checkSharedLocked();
-
-	auto res {session.getDboSession().find<TrackList>()
-		.where("user_id = ?").bind(user->getId())
+	auto query {session.getDboSession().query<TrackListId>("SELECT id FROM tracklist")
+		.where("user_id = ?").bind(userId)
 		.where("type = ?").bind(type)
-		.orderBy("name COLLATE NOCASE")
-		.resultList()};
+		.orderBy("name COLLATE NOCASE")};
 
-	return std::vector<TrackList::pointer>(res.begin(), res.end());
+	return execQuery(query, range);
 }
 
 TrackList::pointer
-TrackList::getById(Session& session, TrackListId id)
+TrackList::find(Session& session, TrackListId id)
 {
 	session.checkSharedLocked();
 
@@ -159,7 +158,7 @@ TrackList::getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTim
 	return session()->find<TrackListEntry>()
 			.where("tracklist_id = ?").bind(getId())
 			.where("track_id = ?").bind(track->getId())
-			.where("date_time = ?").bind(Wt::WDateTime::fromTime_t(dateTime.toTime_t()))
+			.where("date_time = ?").bind(normalizeDateTime(dateTime))
 			.resultValue();
 }
 
@@ -270,19 +269,109 @@ createTracksQuery(Wt::Dbo::Session& session, TrackListId tracklistId, const std:
 }
 
 std::vector<Artist::pointer>
-TrackList::getArtistsReverse(const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const
+TrackList::getArtists(const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, ArtistSortMethod sortMethod, std::optional<Range> range, bool& moreResults) const
+{
+	assert(session());
+
+	auto query {createArtistsQuery(*session(), "SELECT a from artist a", getId(), clusterIds, linkType)
+		.groupBy("a.id").having("p_e.date_time = MAX(p_e.date_time)")
+		.limit(range ? static_cast<int>(range->size) + 1 : -1)
+		.offset(range ? static_cast<int>(range->offset) : -1)};
+
+	switch (sortMethod)
+	{
+		case ArtistSortMethod::None:
+			break;
+		case ArtistSortMethod::ByName:
+			query.orderBy("a.name COLLATE NOCASE");
+			break;
+		case ArtistSortMethod::BySortName:
+			query.orderBy("a.sort_name COLLATE NOCASE");
+			break;
+		case ArtistSortMethod::Random:
+			query.orderBy("RANDOM()");
+			break;
+		case ArtistSortMethod::LastWritten:
+		case ArtistSortMethod::StarredDateDesc:
+			assert(false); // Not implemented!
+			break;
+	}
+
+	Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> collection {query.resultList()};
+
+	auto res {std::vector<Artist::pointer>(collection.begin(), collection.end())};
+	if (range && res.size() == static_cast<std::size_t>(range->size) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
+
+	return res;
+}
+
+
+std::vector<ObjectPtr<Release>>
+TrackList::getReleases(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const
+{
+	assert(session());
+
+	auto collection {createReleasesQuery(*session(), "SELECT r from release r", getId(), clusterIds)
+		.groupBy("r.id").having("p_e.date_time = MAX(p_e.date_time)")
+		.limit(range ? static_cast<int>(range->size) + 1 : -1)
+		.offset(range ? static_cast<int>(range->offset) : -1)
+		.resultList()};
+
+	std::vector<Release::pointer> res(collection.begin(), collection.end());
+	if (range && res.size() == static_cast<std::size_t>(range->size) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
+
+	return res;
+}
+
+std::vector<ObjectPtr<Track>>
+TrackList::getTracks(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const
+{
+	assert(session());
+
+	auto collection {createTracksQuery(*session(), getId(), clusterIds)
+		.groupBy("t.id").having("p_e.date_time = MAX(p_e.date_time)")
+		.limit(range ? static_cast<int>(range->size) + 1 : -1)
+		.offset(range ? static_cast<int>(range->offset) : -1)
+		.resultList()};
+
+	std::vector<Track::pointer> res(collection.begin(), collection.end());
+	if (range && res.size() == static_cast<std::size_t>(range->size) + 1)
+	{
+		moreResults = true;
+		res.pop_back();
+	}
+	else
+		moreResults = false;
+
+	return res;
+}
+
+std::vector<Artist::pointer>
+TrackList::getArtistsOrderedByRecentFirst(const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const
 {
 	assert(session());
 
 	auto collection {createArtistsQuery(*session(), "SELECT a from artist a", getId(), clusterIds, linkType)
 		.groupBy("a.id").having("p_e.date_time = MAX(p_e.date_time)")
-		.orderBy("p_e.date_time DESC")
-		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
+		.orderBy("p_e.date_time DESC, p_e.id DESC")
+		.limit(range ? static_cast<int>(range->size) + 1 : -1)
 		.offset(range ? static_cast<int>(range->offset) : -1)
 		.resultList()};
 
 	auto res {std::vector<Artist::pointer>(collection.begin(), collection.end())};
-	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	if (range && res.size() == static_cast<std::size_t>(range->size) + 1)
 	{
 		moreResults = true;
 		res.pop_back();
@@ -294,19 +383,19 @@ TrackList::getArtistsReverse(const std::vector<ClusterId>& clusterIds, std::opti
 }
 
 std::vector<Release::pointer>
-TrackList::getReleasesReverse(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const
+TrackList::getReleasesOrderedByRecentFirst(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const
 {
 	assert(session());
 
 	auto collection {createReleasesQuery(*session(), "SELECT r from release r", getId(), clusterIds)
 		.groupBy("r.id").having("p_e.date_time = MAX(p_e.date_time)")
-		.orderBy("p_e.date_time DESC")
-		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
+		.orderBy("p_e.date_time DESC, p_e.id DESC")
+		.limit(range ? static_cast<int>(range->size) + 1 : -1)
 		.offset(range ? static_cast<int>(range->offset) : -1)
 		.resultList()};
 
 	std::vector<Release::pointer> res(collection.begin(), collection.end());
-	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	if (range && res.size() == static_cast<std::size_t>(range->size) + 1)
 	{
 		moreResults = true;
 		res.pop_back();
@@ -318,19 +407,19 @@ TrackList::getReleasesReverse(const std::vector<ClusterId>& clusterIds, std::opt
 }
 
 std::vector<Track::pointer>
-TrackList::getTracksReverse(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const
+TrackList::getTracksOrderedByRecentFirst(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const
 {
 	assert(session());
 
 	auto collection {createTracksQuery(*session(), getId(), clusterIds)
 		.groupBy("t.id").having("p_e.date_time = MAX(p_e.date_time)")
-		.orderBy("p_e.date_time DESC")
-		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
+		.orderBy("p_e.date_time DESC, p_e.id DESC")
+		.limit(range ? static_cast<int>(range->size) + 1 : -1)
 		.offset(range ? static_cast<int>(range->offset) : -1)
 		.resultList()};
 
 	std::vector<Track::pointer> res(collection.begin(), collection.end());
-	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	if (range && res.size() == static_cast<std::size_t>(range->size) + 1)
 	{
 		moreResults = true;
 		res.pop_back();
@@ -424,13 +513,13 @@ TrackList::getTopArtists(const std::vector<ClusterId>& clusterIds, std::optional
 	auto collection {query
 		.orderBy("COUNT(a.id) DESC")
 		.groupBy("a.id")
-		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
+		.limit(range ? static_cast<int>(range->size) + 1 : -1)
 		.offset(range ? static_cast<int>(range->offset) : -1)
 		.resultList()};
 
 	std::vector<Artist::pointer> res(collection.begin(), collection.end());
 
-	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	if (range && res.size() == static_cast<std::size_t>(range->size) + 1)
 	{
 		moreResults = true;
 		res.pop_back();
@@ -450,12 +539,12 @@ TrackList::getTopReleases(const std::vector<ClusterId>& clusterIds, std::optiona
 	auto collection {query
 		.orderBy("COUNT(r.id) DESC")
 		.groupBy("r.id")
-		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
+		.limit(range ? static_cast<int>(range->size) + 1 : -1)
 		.offset(range ? static_cast<int>(range->offset) : -1)
 		.resultList()};
 
 	std::vector<Release::pointer> res(collection.begin(), collection.end());
-	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	if (range && res.size() == static_cast<std::size_t>(range->size) + 1)
 	{
 		moreResults = true;
 		res.pop_back();
@@ -475,12 +564,12 @@ TrackList::getTopTracks(const std::vector<ClusterId>& clusterIds, std::optional<
 	auto collection {query
 		.orderBy("COUNT(t.id) DESC")
 		.groupBy("t.id")
-		.limit(range ? static_cast<int>(range->limit) + 1 : -1)
+		.limit(range ? static_cast<int>(range->size) + 1 : -1)
 		.offset(range ? static_cast<int>(range->offset) : -1)
 		.resultList()};
 
 	std::vector<Track::pointer> res(collection.begin(), collection.end());
-	if (range && res.size() == static_cast<std::size_t>(range->limit) + 1)
+	if (range && res.size() == static_cast<std::size_t>(range->size) + 1)
 	{
 		moreResults = true;
 		res.pop_back();
@@ -492,11 +581,10 @@ TrackList::getTopTracks(const std::vector<ClusterId>& clusterIds, std::optional<
 }
 
 TrackListEntry::TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime)
-: _dateTime {Wt::WDateTime::fromTime_t(dateTime.toTime_t())} // force second resolution
+: _dateTime {normalizeDateTime(dateTime)}
 , _track {getDboPtr(track)}
 , _tracklist {getDboPtr(tracklist)}
 {
-	assert(_dateTime.isValid());
 }
 
 TrackListEntry::pointer

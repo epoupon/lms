@@ -111,7 +111,7 @@ ScanSettings::setClusterTypes(Session& session, const std::set<std::string>& clu
 	// Create any missing cluster type
 	for (const std::string& clusterTypeName : clusterTypeNames)
 	{
-		ClusterType::pointer clusterType {ClusterType::getByName(session, clusterTypeName)};
+		ClusterType::pointer clusterType {ClusterType::find(session, clusterTypeName)};
 		if (!clusterType)
 		{
 			LMS_LOG(DB, INFO) << "Creating cluster type " << clusterTypeName;

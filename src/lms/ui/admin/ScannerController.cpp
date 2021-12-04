@@ -90,7 +90,7 @@ class ReportResource : public Wt::WResource
 
 				for (const auto& duplicate : _stats.duplicates)
 				{
-					const auto& track {Database::Track::getById(LmsApp->getDbSession(), duplicate.trackId)};
+					const auto& track {Database::Track::find(LmsApp->getDbSession(), duplicate.trackId)};
 					if (!track)
 						continue;
 
