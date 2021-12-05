@@ -36,12 +36,17 @@ namespace Database
 	class User;
 }
 
+namespace Http
+{
+	class IClient;
+}
+
 namespace Scrobbling::ListenBrainz
 {
 	class ListensSynchronizer
 	{
 		public:
-			ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, std::string_view baseAPIUrl);
+			ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, Http::IClient& client);
 
 			void saveListen(const TimedListen& listen);
 
@@ -81,8 +86,8 @@ namespace Scrobbling::ListenBrainz
 			boost::asio::io_context&		_ioContext;
 			boost::asio::io_context::strand	_strand {_ioContext};
 			Database::Db&					_db;
-			std::string						_baseAPIUrl;
 			boost::asio::steady_timer		_getListensTimer {_ioContext};
+			Http::IClient&					_client;
 
 			std::unordered_map<Database::UserId, UserContext> _userContexts;
 

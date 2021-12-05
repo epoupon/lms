@@ -37,7 +37,7 @@ namespace Http
 		};
 
 		Priority	priority {Priority::Normal};
-		std::string url;
+		std::string relativeUrl; // relative to baseUrl used by the client
 
 		using OnSuccessFunc = std::function<void(std::string_view msgBody)>;
 		OnSuccessFunc onSuccessFunc;

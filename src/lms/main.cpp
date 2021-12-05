@@ -37,7 +37,6 @@
 #include "subsonic/SubsonicResource.hpp"
 #include "ui/LmsApplication.hpp"
 #include "ui/LmsApplicationManager.hpp"
-#include "utils/http/IClient.hpp"
 #include "utils/IChildProcessManager.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/IOContextRunner.hpp"
@@ -255,7 +254,6 @@ int main(int argc, char* argv[])
 		else
 			throw LmsException {"Bad value '" + authenticationBackend + "' for 'authentication-backend'"};
 
-		Service<Http::IClient> httpClient {Http::createClient(ioContext)};
 		Service<Cover::ICoverService> coverService {Cover::createCoverService(database, argv[0], server.appRoot() + "/images/unknown-cover.jpg")};
 		Service<Recommendation::IRecommendationService> recommendationService {Recommendation::createRecommendationService(database)};
 		Service<Scanner::IScannerService> scannerService {Scanner::createScannerService(database, *recommendationService)};

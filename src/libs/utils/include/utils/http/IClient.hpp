@@ -35,6 +35,6 @@ namespace Http
 			virtual void sendPOSTRequest(ClientPOSTRequestParameters&& request) = 0;
 	};
 
-	std::unique_ptr<IClient> createClient(boost::asio::io_context& ioContext);
+	std::unique_ptr<IClient> createClient(boost::asio::io_context& ioContext, std::string_view baseUrl);
 } // namespace Http
 

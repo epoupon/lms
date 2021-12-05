@@ -32,6 +32,7 @@ namespace Scrobbling
 	{
 		public:
 			ScrobblingService(boost::asio::io_context& ioContext, Database::Db& db);
+			~ScrobblingService();
 
 		private:
 			void listenStarted(const Listen& listen) override;

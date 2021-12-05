@@ -213,10 +213,10 @@ namespace
 
 namespace Scrobbling::ListenBrainz
 {
-	ListensSynchronizer::ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, std::string_view baseAPIUrl)
+	ListensSynchronizer::ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, Http::IClient& client)
 		: _ioContext {ioContext}
 		, _db {db}
-		, _baseAPIUrl {baseAPIUrl}
+		, _client {client}
 		, _maxSyncListenCount {Service<IConfig>::get()->getULong("listenbrainz-max-sync-listen-count", 1000)}
 		, _syncListensPeriod {Service<IConfig>::get()->getULong("listenbrainz-sync-listens-period-hours", 1)}
 	{
@@ -364,7 +364,7 @@ namespace Scrobbling::ListenBrainz
 
 		Http::ClientGETRequestParameters request;
 		request.priority = Http::ClientRequestParameters::Priority::Low;
-		request.url = _baseAPIUrl + "/1/validate-token";
+		request.relativeUrl = "/1/validate-token";
 		request.headers = { {"Authorization",  "Token " + std::string {listenBrainzToken->getAsString()}} };
 		request.onSuccessFunc = [this, &context] (std::string_view msgBody)
 			{
@@ -381,7 +381,7 @@ namespace Scrobbling::ListenBrainz
 				onGetListensEnded(context);
 			};
 
-		Service<Http::IClient>::get()->sendGETRequest(std::move(request));
+		_client.sendGETRequest(std::move(request));
 	}
 
 	void
@@ -390,7 +390,7 @@ namespace Scrobbling::ListenBrainz
 		assert(!context.listenBrainzUserName.empty());
 
 		Http::ClientGETRequestParameters request;
-		request.url = _baseAPIUrl + "/1/user/" + std::string {context.listenBrainzUserName} + "/listen-count";
+		request.relativeUrl = "/1/user/" + std::string {context.listenBrainzUserName} + "/listen-count";
 		request.priority = Http::ClientRequestParameters::Priority::Low;
 		request.onSuccessFunc = [=, &context] (std::string_view msgBody)
 			{
@@ -415,7 +415,7 @@ namespace Scrobbling::ListenBrainz
 				onGetListensEnded(context);
 			};
 
-		Service<Http::IClient>::get()->sendGETRequest(std::move(request));
+		_client.sendGETRequest(std::move(request));
 	}
 
 	void
@@ -424,7 +424,7 @@ namespace Scrobbling::ListenBrainz
 		assert(!context.listenBrainzUserName.empty());
 
 		Http::ClientGETRequestParameters request;
-		request.url = _baseAPIUrl + "/1/user/" + context.listenBrainzUserName + "/listens?max_ts=" + std::to_string(context.maxDateTime.toTime_t());
+		request.relativeUrl = "/1/user/" + context.listenBrainzUserName + "/listens?max_ts=" + std::to_string(context.maxDateTime.toTime_t());
 		request.priority = Http::ClientRequestParameters::Priority::Low;
 		request.onSuccessFunc = [=, &context] (std::string_view msgBody)
 			{
@@ -442,7 +442,7 @@ namespace Scrobbling::ListenBrainz
 				onGetListensEnded(context);
 			};
 
-		Service<Http::IClient>::get()->sendGETRequest(std::move(request));
+		_client.sendGETRequest(std::move(request));
 	}
 
 	void

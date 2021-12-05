@@ -144,7 +144,8 @@ namespace Scrobbling::ListenBrainz
 		: _ioContext {ioContext}
 		, _db {db}
 		, _baseAPIUrl {Service<IConfig>::get()->getString("listenbrainz-api-base-url", "https://api.listenbrainz.org")}
-		, _listensSynchronizer {_ioContext, db, _baseAPIUrl}
+		, _client {Http::createClient(_ioContext, _baseAPIUrl)}
+		, _listensSynchronizer {_ioContext, db, *_client}
 	{
 		LOG(INFO) << "Starting ListenBrainz scrobbler... API endpoint = '" << _baseAPIUrl;
 	}
@@ -183,7 +184,7 @@ namespace Scrobbling::ListenBrainz
 	Scrobbler::enqueListen(const Listen& listen, const Wt::WDateTime& timePoint)
 	{
 		Http::ClientPOSTRequestParameters request;
-		request.url = _baseAPIUrl + "/1/submit-listens";
+		request.relativeUrl = "/1/submit-listens";
 
 		if (timePoint.isValid())
 		{
@@ -213,7 +214,7 @@ namespace Scrobbling::ListenBrainz
 		request.message.addBodyText(bodyText);
 		request.message.addHeader("Authorization", "Token " + std::string {listenBrainzToken->getAsString()});
 		request.message.addHeader("Content-Type", "application/json");
-		Service<Http::IClient>::get()->sendPOSTRequest(std::move(request));
+		_client->sendPOSTRequest(std::move(request));
 	}
 } // namespace Scrobbling::ListenBrainz
 

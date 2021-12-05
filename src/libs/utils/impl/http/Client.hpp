@@ -31,17 +31,17 @@ namespace Http
 	class Client final : public IClient
 	{
 		public:
-			Client(boost::asio::io_context& ioContext) : _ioContext {ioContext} {}
+			Client(boost::asio::io_context& ioContext, std::string_view baseUrl)
+			: _ioContext {ioContext}
+			, _sendQueue {ioContext, baseUrl}
+			{}
 
 		private:
 			void sendGETRequest(ClientGETRequestParameters&& request) override;
 			void sendPOSTRequest(ClientPOSTRequestParameters&& request) override;
 
-			SendQueue&	getOrCreateSendQueue(const std::string& host);
-
-			boost::asio::io_context&					_ioContext;
-			std::shared_mutex							_sendQueuesMutex;
-			std::unordered_map<std::string, SendQueue>	_sendQueues;
+			boost::asio::io_context&	_ioContext;
+			SendQueue					_sendQueue;
 	};
 } // namespace Http
 

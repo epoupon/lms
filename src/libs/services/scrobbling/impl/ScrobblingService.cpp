@@ -30,6 +30,7 @@
 #include "services/database/StarredTrack.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
+#include "utils/Logger.hpp"
 
 #include "internal/InternalScrobbler.hpp"
 #include "listenbrainz/ListenBrainzScrobbler.hpp"
@@ -47,8 +48,15 @@ namespace Scrobbling
 	ScrobblingService::ScrobblingService(boost::asio::io_context& ioContext, Db& db)
 		: _db {db}
 	{
+		LMS_LOG(SCROBBLING, INFO) << "Starting service...";
 		_scrobblers.emplace(Scrobbler::Internal, std::make_unique<InternalScrobbler>(_db));
 		_scrobblers.emplace(Scrobbler::ListenBrainz, std::make_unique<ListenBrainz::Scrobbler>(ioContext, _db));
+		LMS_LOG(SCROBBLING, INFO) << "Service started!";
+	}
+
+	ScrobblingService::~ScrobblingService()
+	{
+		LMS_LOG(SCROBBLING, INFO) << "Service stopped!";
 	}
 
 	void

@@ -27,7 +27,7 @@ IOContextRunner::IOContextRunner(boost::asio::io_service& ioService, std::size_t
 : _ioService {ioService}
 , _work {ioService}
 {
-	LMS_LOG(UTILS, INFO) << "Starting IO Context with " << threadCount << " threads...";
+	LMS_LOG(UTILS, INFO) << "Starting IO context with " << threadCount << " threads...";
 	for (std::size_t i {}; i < threadCount; ++i)
 	{
 		_threads.emplace_back([&]
@@ -48,10 +48,10 @@ IOContextRunner::IOContextRunner(boost::asio::io_service& ioService, std::size_t
 void
 IOContextRunner::stop()
 {
-	LMS_LOG(UTILS, INFO) << "Stopping IO Context";
+	LMS_LOG(UTILS, DEBUG) << "Stopping IO context...";
 	_work.reset();
 	_ioService.stop();
-	LMS_LOG(UTILS, INFO) << "Stopped IO Context";
+	LMS_LOG(UTILS, DEBUG) << "IO context stopped!";
 }
 
 IOContextRunner::~IOContextRunner()

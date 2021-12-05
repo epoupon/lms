@@ -35,7 +35,7 @@ namespace Http
 	class SendQueue
 	{
 		public:
-			SendQueue(boost::asio::io_context& ioContext);
+			SendQueue(boost::asio::io_context& ioContext, std::string_view baseUrl);
 			~SendQueue();
 
 			SendQueue(const SendQueue&) = delete;
@@ -62,6 +62,7 @@ namespace Http
 			boost::asio::io_context&		_ioContext;
 			boost::asio::io_context::strand	_strand {_ioContext};
 			boost::asio::steady_timer		_throttleTimer {_ioContext};
+			std::string						_baseUrl;
 
 			enum class State
 			{

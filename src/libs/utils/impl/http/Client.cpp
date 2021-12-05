@@ -23,51 +23,21 @@
 namespace Http
 {
 	std::unique_ptr<IClient>
-	createClient(boost::asio::io_context& ioContext)
+	createClient(boost::asio::io_context& ioContext, std::string_view baseUrl)
 	{
-		return std::make_unique<Client>(ioContext);
+		return std::make_unique<Client>(ioContext, baseUrl);
 	}
 
 	void
 	Client::sendGETRequest(ClientGETRequestParameters&& GETParams)
 	{
-		SendQueue& sendQueue {getOrCreateSendQueue(GETParams.url)};
-		sendQueue.sendRequest(std::make_unique<ClientRequest>(std::move(GETParams)));
+		_sendQueue.sendRequest(std::make_unique<ClientRequest>(std::move(GETParams)));
 	}
 
 	void
 	Client::sendPOSTRequest(ClientPOSTRequestParameters&& POSTParams)
 	{
-		SendQueue& sendQueue {getOrCreateSendQueue(POSTParams.url)};
-		sendQueue.sendRequest(std::make_unique<ClientRequest>(std::move(POSTParams)));
+		_sendQueue.sendRequest(std::make_unique<ClientRequest>(std::move(POSTParams)));
 	}
-
-	SendQueue&
-	Client::getOrCreateSendQueue(const std::string& url)
-	{
-		Wt::Http::Client::URL parsedURL;
-		if (!Wt::Http::Client::parseUrl(url, parsedURL))
-			throw LmsException {"Cannot parse URL '" + url + "'"};
-
-		{
-			std::shared_lock lock {_sendQueuesMutex};
-
-			if (auto it = _sendQueues.find(parsedURL.host); it != std::cend(_sendQueues))
-				return it->second;
-		}
-
-		{
-			std::unique_lock lock {_sendQueuesMutex};
-
-			if (auto it = _sendQueues.find(parsedURL.host); it != std::cend(_sendQueues))
-				return it->second;
-
-			auto [it, inserted] {_sendQueues.emplace(parsedURL.host, _ioContext)};
-			assert(inserted);
-
-			return it->second;
-		}
-	}
-
 } // namespace Http
 

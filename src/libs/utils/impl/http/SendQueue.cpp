@@ -60,8 +60,9 @@ namespace
 
 namespace Http
 {
-	SendQueue::SendQueue(boost::asio::io_context& ioContext)
+	SendQueue::SendQueue(boost::asio::io_context& ioContext, std::string_view baseUrl)
 	: _ioContext {ioContext}
+	, _baseUrl {baseUrl}
 	{
 		_client.done().connect([this](Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg)
 		{
@@ -116,17 +117,18 @@ namespace Http
 	bool
 	SendQueue::sendRequest(const ClientRequest& request)
 	{
-		LOG(DEBUG) << "Sending request to url '" << request.getParameters().url << "'";
+		std::string url {_baseUrl + request.getParameters().relativeUrl};
+		LOG(DEBUG) << "Sending request to url '" << url << "'";
 
 		bool res {};
 		switch (request.getType())
 		{
 			case ClientRequest::Type::GET:
-				res = _client.get(request.getParameters().url, request.getGETParameters().headers);
+				res = _client.get(url, request.getGETParameters().headers);
 				break;
 
 			case ClientRequest::Type::POST:
-				res = _client.post(request.getParameters().url, request.getPOSTParameters().message);
+				res = _client.post(url, request.getPOSTParameters().message);
 				break;
 		}
 
