@@ -270,8 +270,9 @@ ScannerService::ScannerService(Db& db, Recommendation::IRecommendationService& r
 
 ScannerService::~ScannerService()
 {
-	LMS_LOG(DBUPDATER, INFO) << "Shutting down Scanner...";
+	LMS_LOG(DBUPDATER, INFO) << "Stopping service...";
 	stop();
+	LMS_LOG(DBUPDATER, INFO) << "Service stopped!";
 }
 
 void

@@ -223,11 +223,12 @@ namespace Recommendation
 
 			engine->load(forceReload, progressCallback ? progress : ProgressCallback {});
 
-			{
-				std::scoped_lock lock {_controlMutex};
-				_pendingEngines.erase(std::find(std::begin(_pendingEngines), std::end(_pendingEngines), engine.get()));
-			}
 			LMS_LOG(RECOMMENDATION, INFO) << "Initializing engine '" << engineTypeToString(engineType) << "': " << (_loadCancelled ? "aborted" : "complete");
+		}
+
+		{
+			std::scoped_lock lock {_controlMutex};
+			_pendingEngines.erase(std::find(std::begin(_pendingEngines), std::end(_pendingEngines), engine.get()));
 		}
 
 		if (!_loadCancelled)
@@ -250,7 +251,9 @@ namespace Recommendation
 		LMS_LOG(RECOMMENDATION, DEBUG) << "Still " <<  _pendingEngines.size() << " pending engines!";
 
 		for (IEngine* engine : _pendingEngines)
+		{
 			engine->requestCancelLoad();
+		}
 
 		_pendingEnginesCondvar.wait(controlLock, [this] {return _pendingEngines.empty();});
 		_loadCancelled = false;
