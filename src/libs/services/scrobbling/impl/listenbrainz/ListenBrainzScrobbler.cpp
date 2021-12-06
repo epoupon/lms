@@ -28,16 +28,16 @@
 #include "utils/Service.hpp"
 #include "Utils.hpp"
 
-#define LOG(sev)	LMS_LOG(SCROBBLING, sev) << "[listenbrainz] - "
+using namespace Database;
 
 namespace
 {
 	bool
-	canBeScrobbled(Database::Session& session, Database::TrackId trackId, std::chrono::seconds duration)
+	canBeScrobbled(Session& session, TrackId trackId, std::chrono::seconds duration)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		const Database::Track::pointer track {Database::Track::find(session, trackId)};
+		const Track::pointer track {Track::find(session, trackId)};
 		if (!track)
 			return false;
 
@@ -51,12 +51,13 @@ namespace
 
 namespace Scrobbling::ListenBrainz
 {
-	Scrobbler::Scrobbler(boost::asio::io_context& ioContext, Database::Db& db)
+	Scrobbler::Scrobbler(boost::asio::io_context& ioContext, Db& db)
 		: _ioContext {ioContext}
 		, _db {db}
 		, _baseAPIUrl {Service<IConfig>::get()->getString("listenbrainz-api-base-url", "https://api.listenbrainz.org")}
 		, _client {Http::createClient(_ioContext, _baseAPIUrl)}
 		, _listensSynchronizer {_ioContext, db, *_client}
+		, _feedbackSender {db, *_client}
 	{
 		LOG(INFO) << "Starting ListenBrainz scrobbler... API endpoint = '" << _baseAPIUrl;
 	}
@@ -86,6 +87,20 @@ namespace Scrobbling::ListenBrainz
 	Scrobbler::addTimedListen(const TimedListen& timedListen)
 	{
 		_listensSynchronizer.enqueListen(timedListen);
+	}
+
+	void
+	Scrobbler::onStarred(UserId userId, TrackId trackId)
+	{
+		const Feedback feedback {Feedback::Type::Love, userId, trackId};
+		_feedbackSender.enqueFeedback(feedback);
+	}
+
+	void
+	Scrobbler::onUnstarred(UserId userId, TrackId trackId)
+	{
+		const Feedback feedback {Feedback::Type::Erase, userId, trackId};
+		_feedbackSender.enqueFeedback(feedback);
 	}
 } // namespace Scrobbling::ListenBrainz
 

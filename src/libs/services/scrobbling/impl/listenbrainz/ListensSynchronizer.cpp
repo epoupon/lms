@@ -36,13 +36,9 @@
 #include "services/scrobbling/Exception.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/http/IClient.hpp"
-#include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
 #include "Utils.hpp"
-
-#define LOG(sev)	LMS_LOG(SCROBBLING, sev) << "[listenbrainz Synchronizer] - "
-#define LOG_EX(sev)	LMS_LOG_EX(Module::SCROBBLING, sev) << "[listenbrainz Synchronizer] - "
 
 namespace
 {
@@ -536,7 +532,7 @@ namespace Scrobbling::ListenBrainz
 	{
 		_strand.dispatch([this, &context]
 		{
-			LOG_EX(context.importedListenCount > 0 ? Severity::INFO : Severity::DEBUG) << "Sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount;
+			LOG(INFO) << "Sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount;
 			context.syncing = false;
 
 			if (!isSyncing())
