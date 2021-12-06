@@ -36,12 +36,9 @@
 #include "services/scrobbling/Exception.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/http/IClient.hpp"
-#include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
 #include "Utils.hpp"
-
-#define LOG(sev)	LMS_LOG(SCROBBLING, sev) << "[listenbrainz Synchronizer] - "
 
 namespace
 {

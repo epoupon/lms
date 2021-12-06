@@ -25,15 +25,11 @@
 #include <boost/asio/io_context_strand.hpp>
 #include <boost/asio/steady_timer.hpp>
 
-#include "services/database/Types.hpp"
 #include "services/scrobbling/Listen.hpp"
 
 namespace Database
 {
 	class Db;
-	class Session;
-	class TrackList;
-	class User;
 }
 
 namespace Http
@@ -60,9 +56,9 @@ namespace Scrobbling::ListenBrainz
 				UserContext& operator=(const UserContext&) = delete;
 				UserContext& operator=(UserContext&&) = delete;
 
-				const Database::UserId	userId;
-				bool					fetching {};
-				std::optional<std::size_t> listenCount {};
+				const Database::UserId		userId;
+				bool						fetching {};
+				std::optional<std::size_t>	listenCount {};
 
 				// resetted at each fetch
 				std::string		listenBrainzUserName; // need to be resolved first

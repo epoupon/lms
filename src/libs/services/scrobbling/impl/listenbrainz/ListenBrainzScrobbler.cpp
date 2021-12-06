@@ -37,16 +37,16 @@
 #include "utils/Service.hpp"
 #include "Utils.hpp"
 
-#define LOG(sev)	LMS_LOG(SCROBBLING, sev) << "[listenbrainz] - "
+using namespace Database;
 
 namespace
 {
 	bool
-	canBeScrobbled(Database::Session& session, Database::TrackId trackId, std::chrono::seconds duration)
+	canBeScrobbled(Session& session, TrackId trackId, std::chrono::seconds duration)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		const Database::Track::pointer track {Database::Track::find(session, trackId)};
+		const Track::pointer track {Track::find(session, trackId)};
 		if (!track)
 			return false;
 
@@ -58,17 +58,17 @@ namespace
 	}
 
 	std::optional<Wt::Json::Object>
-	listenToJsonPayload(Database::Session& session, const Scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
+	listenToJsonPayload(Session& session, const Scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		const Database::Track::pointer track {Database::Track::find(session, listen.trackId)};
+		const Track::pointer track {Track::find(session, listen.trackId)};
 		if (!track)
 			return std::nullopt;
 
-		auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
+		auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		if (artists.empty())
-			artists = track->getArtists({Database::TrackArtistLinkType::ReleaseArtist});
+			artists = track->getArtists({TrackArtistLinkType::ReleaseArtist});
 
 		if (artists.empty())
 		{
@@ -86,7 +86,7 @@ namespace
 
 		{
 			Wt::Json::Array artistMBIDs;
-			for (const Database::Artist::pointer& artist : artists)
+			for (const Artist::pointer& artist : artists)
 			{
 				if (auto MBID {artist->getMBID()})
 					artistMBIDs.push_back(Wt::Json::Value {std::string {MBID->getAsString()}});
@@ -121,7 +121,7 @@ namespace
 	}
 
 	std::string
-	listenToJsonString(Database::Session& session, const Scrobbling::Listen& listen, const Wt::WDateTime& timePoint, std::string_view listenType)
+	listenToJsonString(Session& session, const Scrobbling::Listen& listen, const Wt::WDateTime& timePoint, std::string_view listenType)
 	{
 		std::string res;
 
@@ -140,12 +140,13 @@ namespace
 
 namespace Scrobbling::ListenBrainz
 {
-	Scrobbler::Scrobbler(boost::asio::io_context& ioContext, Database::Db& db)
+	Scrobbler::Scrobbler(boost::asio::io_context& ioContext, Db& db)
 		: _ioContext {ioContext}
 		, _db {db}
 		, _baseAPIUrl {Service<IConfig>::get()->getString("listenbrainz-api-base-url", "https://api.listenbrainz.org")}
 		, _client {Http::createClient(_ioContext, _baseAPIUrl)}
 		, _listensSynchronizer {_ioContext, db, *_client}
+		, _feedbackSender {db, *_client}
 	{
 		LOG(INFO) << "Starting ListenBrainz scrobbler... API endpoint = '" << _baseAPIUrl;
 	}
@@ -215,6 +216,20 @@ namespace Scrobbling::ListenBrainz
 		request.message.addHeader("Authorization", "Token " + std::string {listenBrainzToken->getAsString()});
 		request.message.addHeader("Content-Type", "application/json");
 		_client->sendPOSTRequest(std::move(request));
+	}
+
+	void
+	Scrobbler::onStarred(UserId userId, TrackId trackId)
+	{
+		const Feedback feedback {Feedback::Type::Love, userId, trackId};
+		_feedbackSender.enqueFeedback(feedback);
+	}
+
+	void
+	Scrobbler::onUnstarred(UserId userId, TrackId trackId)
+	{
+		const Feedback feedback {Feedback::Type::Erase, userId, trackId};
+		_feedbackSender.enqueFeedback(feedback);
 	}
 } // namespace Scrobbling::ListenBrainz
 

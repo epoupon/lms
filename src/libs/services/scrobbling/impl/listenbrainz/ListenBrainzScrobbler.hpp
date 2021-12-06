@@ -19,17 +19,17 @@
 
 #pragma once
 
+#include <string>
 #include <optional>
 #include <boost/asio/io_context.hpp>
 
 #include "IScrobbler.hpp"
+#include "FeedbackSender.hpp"
 #include "ListensSynchronizer.hpp"
 
 namespace Database
 {
 	class Db;
-	class Session;
-	class TrackList;
 }
 
 namespace Scrobbling::ListenBrainz
@@ -53,11 +53,16 @@ namespace Scrobbling::ListenBrainz
 			// Submit listens
 			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
 
+			// Star
+			void onStarred(Database::UserId userId, Database::TrackId trackId) override;
+			void onUnstarred(Database::UserId userId, Database::TrackId trackId) override;
+
 			boost::asio::io_context&		_ioContext;
 			Database::Db&					_db;
 			std::string						_baseAPIUrl;
 			std::unique_ptr<Http::IClient>	_client;
 			ListensSynchronizer				_listensSynchronizer;
+			FeedbackSender					_feedbackSender;
 	};
 } // Scrobbling::ListenBrainz
 

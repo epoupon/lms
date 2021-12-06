@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2021 Emeric Poupon
  *
@@ -19,19 +20,47 @@
 
 #pragma once
 
-#include "utils/UUID.hpp"
-
+#include "services/database/TrackId.hpp"
 #include "services/database/UserId.hpp"
-#include "utils/Logger.hpp"
-
-#define LOG(sev)	LMS_LOG(SCROBBLING, sev) << "[listenbrainz] - "
 
 namespace Database
 {
+	class Db;
 	class Session;
 }
 
-namespace Scrobbling::ListenBrainz::Utils
+namespace Http
 {
-	std::optional<UUID> getListenBrainzToken(Database::Session& session, Database::UserId userId);
+	class IClient;
+}
+
+namespace Scrobbling::ListenBrainz
+{
+	struct Feedback
+	{
+		enum class Type
+		{
+			// See https://listenbrainz.readthedocs.io/en/production/dev/feedback-json/#feedback-json-doc
+			Love = 1,
+			Hate = -1,
+			Erase = 0,
+		};
+
+		Type				type;
+		Database::UserId 	userId;
+		Database::TrackId 	trackId;
+	};
+
+	class FeedbackSender
+	{
+		public:
+			FeedbackSender(Database::Db& db, Http::IClient& client);
+
+			void enqueFeedback(const Feedback& feedback);
+
+		private:
+			std::string		feedbackToJsonString(Database::Session& session, const Feedback& feedback);
+			Database::Db&	_db;
+			Http::IClient&	_client;
+	};
 }
