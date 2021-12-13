@@ -74,8 +74,6 @@ namespace Database
 			Wt::Dbo::Session& getDboSession() { return _session; }
 
 		private:
-			Session(std::shared_mutex& mutex, Wt::Dbo::SqlConnectionPool& connectionPool);
-
 			void doDatabaseMigrationIfNeeded();
 
 			Db&					_db;

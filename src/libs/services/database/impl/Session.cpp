@@ -456,14 +456,6 @@ Session::Session(Db& db)
 	_session.mapClass<User>("user");
 }
 
-
-enum class OwnedLock
-{
-	None,
-	Shared,
-	Unique,
-};
-
 UniqueTransaction::UniqueTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
 : _lock {mutex},
  _transaction {session}
@@ -479,13 +471,13 @@ SharedTransaction::SharedTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Sessi
 void
 Session::checkUniqueLocked()
 {
-//	assert(lockDebug[&_db.getMutex()] == OwnedLock::Unique);
+	assert(_db.getMutex().isUniqueLocked());
 }
 
 void
 Session::checkSharedLocked()
 {
-//	assert(lockDebug[&_db.getMutex()] != OwnedLock::None);
+	assert(_db.getMutex().isSharedLocked());
 }
 
 UniqueTransaction
