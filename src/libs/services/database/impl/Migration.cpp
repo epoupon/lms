@@ -549,6 +549,17 @@ CREATE TABLE "listen" (
 		ScanSettings::get(session).modify()->addAudioFileExtension(".wv");
 	}
 
+	static
+	void
+	migrateFromV33(Session& session)
+	{
+		// Add scrobbling state
+		// By default, everythin needs to be sent
+		session.getDboSession().execute("ALTER TABLE starred_artist ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
+		session.getDboSession().execute("ALTER TABLE starred_release ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
+		session.getDboSession().execute("ALTER TABLE starred_track ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
+	}
+
 	void
 	doDbMigration(Session& session)
 	{
@@ -588,6 +599,7 @@ CREATE TABLE "listen" (
 			{30, migrateFromV30},
 			{31, migrateFromV31},
 			{32, migrateFromV32},
+			{33, migrateFromV33},
 		};
 
 		while (1)

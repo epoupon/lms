@@ -59,12 +59,14 @@ namespace Database
 
 			// Setters
 			void setDateTime(const Wt::WDateTime& dateTime);
+			void setScrobblingState(ScrobblingState state) { _scrobblingState  = state; }
 
 			template<class Action>
 			void persist(Action& a)
 			{
-				Wt::Dbo::field(a,	_scrobbler,		"scrobbler");
-				Wt::Dbo::field(a,	_dateTime,		"date_time");
+				Wt::Dbo::field(a,	_scrobbler,			"scrobbler");
+				Wt::Dbo::field(a,	_scrobblingState,	"scrobbling_state");
+				Wt::Dbo::field(a,	_dateTime,			"date_time");
 
 				Wt::Dbo::belongsTo(a,	_release,	"release",	Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::belongsTo(a,	_user,		"user",		Wt::Dbo::OnDeleteCascade);
@@ -72,6 +74,7 @@ namespace Database
 
 		private:
 			Scrobbler		_scrobbler;			// for which scrobbler
+			ScrobblingState	_scrobblingState {ScrobblingState::PendingAdd};
 			Wt::WDateTime	_dateTime;			// when it was starred
 
 			Wt::Dbo::ptr<Release>	_release;
