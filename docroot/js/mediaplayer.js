@@ -390,9 +390,9 @@ LMS.mediaplayer = (function () {
         window.removeEventListener(`click`, unlock, true);
         _initAudioCtx();
     };
-    window.addEventListener(`touchstart`, unlock, true);
-    window.addEventListener(`touchend`, unlock, true);
-    window.addEventListener(`click`, unlock, true);
+    window.addEventListener(`touchstart`, unlock, false);
+    window.addEventListener(`touchend`, unlock, false);
+    window.addEventListener(`click`, unlock, false);
 
     return {
         init: init,
