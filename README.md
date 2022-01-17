@@ -4,7 +4,7 @@
 
 _LMS_ is a self-hosted music streaming software: access your music collection from anywhere using a web interface!
 
-A [demo instance](http://lms.demo.poupon.io) is available. Note the administration panel is not available.
+A [demo instance](http://lms-demo.poupon.dev) is available. Note the administration panel is not available.
 
 ## Main features
 * Low memory requirements: the demo instance runs on a _Raspberry Pi Zero W_
