@@ -414,6 +414,7 @@ CREATE TABLE IF NOT EXISTS "listen" (
   "version" integer not null,
   "date_time" text,
   "scrobbler" integer not null,
+  "scrobbling_state" integer not null,
   "track_id" bigint,
   "user_id" bigint,
   constraint "fk_listen_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred,

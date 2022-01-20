@@ -95,6 +95,7 @@ class Listen : public Object<Listen, ListenId>
 		{
 			Wt::Dbo::field(a, _dateTime, "date_time");
 			Wt::Dbo::field(a, _scrobbler, "scrobbler");
+			Wt::Dbo::field(a, _scrobblingState, "scrobbling_state");
 
 			Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
 			Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
@@ -103,6 +104,8 @@ class Listen : public Object<Listen, ListenId>
 	private:
 		Wt::WDateTime		_dateTime;
 		Scrobbler			_scrobbler;
+		ScrobblingState		_scrobblingState {ScrobblingState::PendingAdd};
+
 		Wt::Dbo::ptr<User>	_user;
 		Wt::Dbo::ptr<Track>	_track;
 };
