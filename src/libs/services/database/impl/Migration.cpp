@@ -506,7 +506,7 @@ CREATE TABLE "listen" (
   constraint "fk_listen_user" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred
 ))");
 
-		auto migrateListens {[&session, &getScrobbler](const std::string& trackListName, Scrobbler scrobbler)
+		auto migrateListens {[&session](const std::string& trackListName, Scrobbler scrobbler)
 		{
 			using UserIdObjectId = std::tuple<IdType::ValueType /* userId */, IdType::ValueType /* trackId */, Wt::WDateTime>;
 
@@ -524,7 +524,7 @@ CREATE TABLE "listen" (
 				session.getDboSession().execute("INSERT INTO listen ('version', 'date_time', 'scrobbler', 'scrobbling_state', 'track_id', 'user_id') VALUES (?, ?, ?, ?, ?, ?)")
 					.bind(0)
 					.bind(dateTime.toString().toUTF8())
-					.bind(getScrobbler(userId))
+					.bind(scrobbler)
 					.bind(ScrobblingState::Synchronized) // consider sync is done to avoid duplicate submissions
 					.bind(trackId)
 					.bind(userId);
