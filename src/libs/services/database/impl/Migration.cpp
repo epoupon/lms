@@ -19,6 +19,8 @@
 
 #include "Migration.hpp"
 
+#include <Wt/Dbo/WtSqlTraits.h>
+
 #include "services/database/Db.hpp"
 #include "services/database/ScanSettings.hpp"
 #include "services/database/Session.hpp"
@@ -463,20 +465,17 @@ CREATE TABLE "starred_track" (
 			return itInserted->second;
 		}};
 
-		auto migrateStarEntries = [&session, &getScrobbler, &now](const std::string& colName, const std::string& oldTableName, const std::string& newTableName)
+		auto migrateStarEntries {[&session, &getScrobbler, &now](const std::string& colName, const std::string& oldTableName, const std::string& newTableName)
 		{
-			using UserIdObjectId = std::tuple<IdType::ValueType, IdType::ValueType>;
+			using UserIdObjectId = std::tuple<IdType::ValueType /* userId */, IdType::ValueType /* entryId */>;
 
 			std::vector<UserIdObjectId> starredEntries;
 			auto query {session.getDboSession().query<UserIdObjectId>("SELECT user_id, " + colName + " from " + oldTableName)};
 			auto results {query.resultList()};
-			starredEntries.reserve(results.size());
-			for (const auto& entry : results)
-				starredEntries.push_back(entry);
 
-			LMS_LOG(DB, INFO) << "Found " << starredEntries.size() << " " << colName << " to migrate";
+			LMS_LOG(DB, INFO) << "Found " << results.size() << " " << colName << " to migrate";
 
-			for (const auto [userId, entryId] : starredEntries)
+			for (const auto& [userId, entryId] : results)
 			{
 				session.getDboSession().execute("INSERT INTO " + newTableName + " ('version', 'scrobbler', 'date_time', '" + colName + "', 'user_id') VALUES (?, ?, ?, ?, ?)")
 					.bind(0)
@@ -487,7 +486,7 @@ CREATE TABLE "starred_track" (
 			}
 
 			session.getDboSession().execute("DROP TABLE " + oldTableName);
-		};
+		}};
 
 		migrateStarEntries("artist_id","user_artist_starred", "starred_artist");
 		migrateStarEntries("release_id","user_release_starred", "starred_release");
@@ -506,6 +505,34 @@ CREATE TABLE "listen" (
   constraint "fk_listen_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred,
   constraint "fk_listen_user" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred
 ))");
+
+		auto migrateListens {[&session, &getScrobbler](const std::string& trackListName, Scrobbler scrobbler)
+		{
+			using UserIdObjectId = std::tuple<IdType::ValueType /* userId */, IdType::ValueType /* trackId */, Wt::WDateTime>;
+
+			std::vector<UserIdObjectId> listens;
+			auto query {session.getDboSession().query<UserIdObjectId>("SELECT t_l.user_id, t_l_e.track_id, t_l_e.date_time FROM tracklist t_l")
+													.join("tracklist_entry t_l_e ON t_l_e.tracklist_id = t_l.id")
+													.where("t_l.name = ?").bind(trackListName)};
+			auto results {query.resultList()};
+			listens.reserve(results.size());
+
+			LMS_LOG(DB, INFO) << "Found " << results.size() << " listens in " << trackListName;
+
+			for (const auto& [userId, trackId, dateTime] : results)
+			{
+				session.getDboSession().execute("INSERT INTO listen ('version', 'date_time', 'scrobbler', 'scrobbling_state', 'track_id', 'user_id') VALUES (?, ?, ?, ?, ?, ?)")
+					.bind(0)
+					.bind(dateTime.toString().toUTF8())
+					.bind(getScrobbler(userId))
+					.bind(ScrobblingState::Synchronized) // consider sync is done to avoid duplicate submissions
+					.bind(trackId)
+					.bind(userId);
+			}
+		}};
+
+		migrateListens("__scrobbler_internal_history__", Scrobbler::Internal);
+		migrateListens("__scrobbler_listenbrainz_history__", Scrobbler::ListenBrainz);
 	}
 
 	void
