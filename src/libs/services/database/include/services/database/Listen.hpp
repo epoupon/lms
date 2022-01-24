@@ -24,14 +24,12 @@
 
 #include "services/database/ArtistId.hpp"
 #include "services/database/ClusterId.hpp"
-#include "services/database/IdType.hpp"
+#include "services/database/ListenId.hpp"
 #include "services/database/Object.hpp"
 #include "services/database/ReleaseId.hpp"
 #include "services/database/TrackId.hpp"
 #include "services/database/Types.hpp"
 #include "services/database/UserId.hpp"
-
-LMS_DECLARE_IDTYPE(ListenId)
 
 namespace Database
 {
@@ -89,6 +87,11 @@ class Listen : public Object<Listen, ListenId>
 														Scrobbler scrobbler,
 														const std::vector<ClusterId>& clusterIds,
 														Range range = {});
+
+		ScrobblingState getScrobblingState() const { return _scrobblingState; }
+		ObjectPtr<User> getUser() const { return _user; }
+
+		void			setScrobblingState(ScrobblingState state) { _scrobblingState = state; }
 
 		template<class Action>
 		void persist(Action& a)

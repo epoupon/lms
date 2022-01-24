@@ -26,6 +26,8 @@
 #include <boost/asio/steady_timer.hpp>
 
 #include "services/database/Types.hpp"
+#include "services/database/ListenId.hpp"
+#include "services/database/UserId.hpp"
 #include "services/scrobbling/Listen.hpp"
 
 namespace Database
@@ -48,9 +50,12 @@ namespace Scrobbling::ListenBrainz
 		public:
 			ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, Http::IClient& client);
 
-			void saveListen(const TimedListen& listen);
+			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
 
 		private:
+			Database::ListenId	saveListen(const TimedListen& listen);
+			void				onListenSent(Database::ListenId listenId);
+
 			struct UserContext
 			{
 				UserContext(Database::UserId id) : userId {id} {}

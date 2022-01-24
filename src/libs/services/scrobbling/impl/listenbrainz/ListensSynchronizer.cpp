@@ -47,6 +47,86 @@ namespace
 {
 	using namespace Scrobbling::ListenBrainz;
 
+	std::optional<Wt::Json::Object>
+	listenToJsonPayload(Database::Session& session, const Scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		const Database::Track::pointer track {Database::Track::find(session, listen.trackId)};
+		if (!track)
+			return std::nullopt;
+
+		auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
+		if (artists.empty())
+			artists = track->getArtists({Database::TrackArtistLinkType::ReleaseArtist});
+
+		if (artists.empty())
+		{
+			LOG(DEBUG) << "Track cannot be scrobbled since it does not have any artist";
+			return std::nullopt;
+		}
+
+		Wt::Json::Object additionalInfo;
+		additionalInfo["listening_from"] = "LMS";
+		if (track->getRelease())
+		{
+			if (auto MBID {track->getRelease()->getMBID()})
+				additionalInfo["release_mbid"] = Wt::Json::Value {std::string {MBID->getAsString()}};
+		}
+
+		{
+			Wt::Json::Array artistMBIDs;
+			for (const Database::Artist::pointer& artist : artists)
+			{
+				if (auto MBID {artist->getMBID()})
+					artistMBIDs.push_back(Wt::Json::Value {std::string {MBID->getAsString()}});
+			}
+
+			if (!artistMBIDs.empty())
+				additionalInfo["artist_mbids"] = std::move(artistMBIDs);
+		}
+
+		if (auto MBID {track->getTrackMBID()})
+			additionalInfo["track_mbid"] = Wt::Json::Value {std::string {MBID->getAsString()}};
+
+		if (auto MBID {track->getRecordingMBID()})
+			additionalInfo["recording_mbid"] = Wt::Json::Value {std::string {MBID->getAsString()}};
+
+		if (const std::optional<std::size_t> trackNumber {track->getTrackNumber()})
+			additionalInfo["tracknumber"] = Wt::Json::Value {static_cast<long long int>(*trackNumber)};
+
+		Wt::Json::Object trackMetadata;
+		trackMetadata["additional_info"] = std::move(additionalInfo);
+		trackMetadata["artist_name"] = Wt::Json::Value {artists.front()->getName()};
+		trackMetadata["track_name"] = Wt::Json::Value {track->getName()};
+		if (track->getRelease())
+			trackMetadata["release_name"] = Wt::Json::Value {track->getRelease()->getName()};
+
+		Wt::Json::Object payload;
+		payload["track_metadata"] = std::move(trackMetadata);
+		if (timePoint.isValid())
+			payload["listened_at"] = Wt::Json::Value {static_cast<long long int>(timePoint.toTime_t())};
+
+		return payload;
+	}
+
+	std::string
+	listenToJsonString(Database::Session& session, const Scrobbling::Listen& listen, const Wt::WDateTime& timePoint, std::string_view listenType)
+	{
+		std::string res;
+
+		std::optional<Wt::Json::Object> payload {listenToJsonPayload(session, listen, timePoint)};
+		if (!payload)
+			return res;
+
+		Wt::Json::Object root;
+		root["listen_type"] = Wt::Json::Value {std::string {listenType}};
+		root["payload"] = Wt::Json::Array {std::move(*payload)};
+
+		res = Wt::Json::serialize(root);
+		return res;
+	}
+
 	std::string
 	parseValidateToken(std::string_view msgBody)
 	{
@@ -226,30 +306,91 @@ namespace Scrobbling::ListenBrainz
 	}
 
 	void
+	ListensSynchronizer::enqueListen(const Listen& listen, const Wt::WDateTime& timePoint)
+	{
+		Http::ClientPOSTRequestParameters request;
+		request.relativeUrl = "/1/submit-listens";
+
+		if (timePoint.isValid())
+		{
+			// We want the listen to be sent again later in case of failure, so we just save it as pending send
+			const Database::ListenId listenId {saveListen(TimedListen {listen, timePoint})};
+			if (!listenId.isValid())
+				return;
+
+			request.priority = Http::ClientRequestParameters::Priority::Normal;
+			request.onSuccessFunc = [=](std::string_view)
+			{
+				onListenSent(listenId);
+			};
+			// on failure, this listen will be sent during the next sync
+		}
+		else
+		{
+			// We want "listen now" to appear as soon as possible
+			request.priority = Http::ClientRequestParameters::Priority::High;
+			// don't retry on failure
+		}
+
+		std::string bodyText {listenToJsonString(_db.getTLSSession(), listen, timePoint, timePoint.isValid() ? "single" : "playing_now")};
+		if (bodyText.empty())
+		{
+			LOG(DEBUG) << "Cannot convert listen to json: skipping";
+			return;
+		}
+
+		const std::optional<UUID> listenBrainzToken {Utils::getListenBrainzToken(_db.getTLSSession(), listen.userId)};
+		if (!listenBrainzToken)
+			return;
+
+		request.message.addBodyText(bodyText);
+		request.message.addHeader("Authorization", "Token " + std::string {listenBrainzToken->getAsString()});
+		request.message.addHeader("Content-Type", "application/json");
+		_client.sendPOSTRequest(std::move(request));
+
+	}
+
+	Database::ListenId
 	ListensSynchronizer::saveListen(const TimedListen& listen)
+	{
+		using namespace Database;
+
+		Session& session {_db.getTLSSession()};
+		auto transaction {session.createUniqueTransaction()};
+
+		if (Database::Listen::find(session, listen.userId, listen.trackId, Database::Scrobbler::ListenBrainz, listen.listenedAt))
+			return {};
+
+		const User::pointer user {User::find(session, listen.userId)};
+		if (!user)
+			return {};
+
+		const Track::pointer track {Track::find(session, listen.trackId)};
+		if (!track)
+			return {};
+
+		const auto dbListen {Database::Listen::create(session, user, track, Database::Scrobbler::ListenBrainz, listen.listenedAt)};
+		assert(dbListen->getScrobblingState() == Database::ScrobblingState::PendingAdd);
+
+		return dbListen->getId();
+	}
+
+	void
+	ListensSynchronizer::onListenSent(Database::ListenId listenId)
 	{
 		_strand.dispatch([=]
 		{
 			Database::Session& session {_db.getTLSSession()};
-
 			auto transaction {session.createUniqueTransaction()};
 
-			if (Database::Listen::find(session, listen.userId, listen.trackId, Database::Scrobbler::ListenBrainz, listen.listenedAt))
-				return;
+			if (Database::Listen::pointer listen {Database::Listen::find(session, listenId)})
+			{
+				listen.modify()->setScrobblingState(Database::ScrobblingState::Synchronized);
 
-			const Database::User::pointer user {Database::User::find(session, listen.userId)};
-			if (!user)
-				return;
-
-			const Database::Track::pointer track {Database::Track::find(session, listen.trackId)};
-			if (!track)
-				return;
-
-			Database::Listen::create(session, user, track, Database::Scrobbler::ListenBrainz, listen.listenedAt);
-
-			UserContext& context {getUserContext(listen.userId)};
-			if (context.listenCount)
-				(*context.listenCount)++;
+				UserContext& context {getUserContext(listen->getUser()->getId())};
+				if (context.listenCount)
+					(*context.listenCount)++;
+			}
 		});
 	}
 
@@ -303,7 +444,7 @@ namespace Scrobbling::ListenBrainz
 	void
 	ListensSynchronizer::startGetListens()
 	{
-		LOG(DEBUG) << "GetListens started!!!";
+		LOG(DEBUG) << "GetListens started!";
 
 		assert(!isFetching());
 
