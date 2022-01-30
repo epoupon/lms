@@ -25,6 +25,7 @@
 #include <Wt/WServer.h>
 #include <Wt/WApplication.h>
 
+#include "image/IRawImage.hpp"
 #include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
 #include "services/auth/IEnvService.hpp"
@@ -254,6 +255,7 @@ int main(int argc, char* argv[])
 		else
 			throw LmsException {"Bad value '" + authenticationBackend + "' for 'authentication-backend'"};
 
+		Image::init(argv[0]);
 		Service<Cover::ICoverService> coverService {Cover::createCoverService(database, argv[0], server.appRoot() + "/images/unknown-cover.jpg")};
 		Service<Recommendation::IRecommendationService> recommendationService {Recommendation::createRecommendationService(database)};
 		Service<Scanner::IScannerService> scannerService {Scanner::createScannerService(database, *recommendationService)};

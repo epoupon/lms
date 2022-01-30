@@ -184,7 +184,6 @@ class Track : public Object<Track, TrackId>
 			}
 
 	private:
-
 		static const std::size_t _maxNameLength = 128;
 		static const std::size_t _maxCopyrightLength = 128;
 		static const std::size_t _maxCopyrightURLLength = 128;

@@ -41,7 +41,6 @@ class WhereClause
 	private:
 		std::string _clause;		// WHERE clause
 		std::list<std::string>  _bindArgs;
-
 };
 
 class InnerJoinClause
