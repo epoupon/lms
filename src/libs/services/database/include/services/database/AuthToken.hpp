@@ -57,7 +57,6 @@ namespace Database
 			}
 
 		private:
-
 			std::string			_value;
 			Wt::WDateTime		_expiry;
 			Wt::Dbo::ptr<User>	_user;

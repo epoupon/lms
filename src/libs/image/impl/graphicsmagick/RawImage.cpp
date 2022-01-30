@@ -35,6 +35,9 @@ namespace Image::GraphicsMagick
 
 	std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path)
 	{
+		return std::make_unique<RawImage>(path)
+	}
+}
 
 void
 init(const std::filesystem::path& path)

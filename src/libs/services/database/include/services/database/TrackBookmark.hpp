@@ -71,7 +71,6 @@ class TrackBookmark : public Object<TrackBookmark, TrackBookmarkId>
 				Wt::Dbo::belongsTo(a, _user, 		"user", Wt::Dbo::OnDeleteCascade);
 			}
 	private:
-
 		static const std::size_t _maxCommentLength = 128;
 
 		std::chrono::duration<int, std::milli>	_offset;

@@ -28,27 +28,24 @@
 #include "utils/NetAddress.hpp"
 #include "utils/Exception.hpp"
 
-namespace Auth {
-
-class LoginThrottler
+namespace Auth
 {
-	public:
-		LoginThrottler(std::size_t maxEntries) : _maxEntries {maxEntries} {}
+	class LoginThrottler
+	{
+		public:
+			LoginThrottler(std::size_t maxEntries) : _maxEntries {maxEntries} {}
 
-		// user must lock these calls to avoid races
-		bool isClientThrottled(const boost::asio::ip::address& address) const;
-		void onBadClientAttempt(const boost::asio::ip::address& address);
-		void onGoodClientAttempt(const boost::asio::ip::address& address);
+			// user must lock these calls to avoid races
+			bool isClientThrottled(const boost::asio::ip::address& address) const;
+			void onBadClientAttempt(const boost::asio::ip::address& address);
+			void onGoodClientAttempt(const boost::asio::ip::address& address);
 
-	private:
+		private:
+			void removeOutdatedEntries();
 
-		void removeOutdatedEntries();
+			const std::size_t _maxEntries;
 
-		const std::size_t _maxEntries;
-
-		std::unordered_map<boost::asio::ip::address, Wt::WDateTime>	_attemptsInfo;
-};
-
-
+			std::unordered_map<boost::asio::ip::address, Wt::WDateTime>	_attemptsInfo;
+	};
 } // Auth
 

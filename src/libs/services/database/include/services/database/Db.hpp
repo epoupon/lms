@@ -31,7 +31,6 @@ class Session;
 class Db
 {
 	public:
-
 		Db(const std::filesystem::path& dbPath, std::size_t connectionCount = 10);
 		~Db();
 
@@ -67,7 +66,6 @@ class Db
 				Wt::Dbo::SqlConnectionPool& _connectionPool;
 				std::unique_ptr<Wt::Dbo::SqlConnection> _connection;
 		};
-
 
 		RecursiveSharedMutex				_sharedMutex;
 		std::unique_ptr<Wt::Dbo::SqlConnectionPool>	_connectionPool;

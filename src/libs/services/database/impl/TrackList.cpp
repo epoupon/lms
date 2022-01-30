@@ -41,7 +41,6 @@ TrackList::TrackList(std::string_view name, Type type, bool isPublic, ObjectPtr<
  _isPublic {isPublic},
  _user {getDboPtr(user)}
 {
-
 }
 
 TrackList::pointer

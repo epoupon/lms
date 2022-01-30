@@ -130,7 +130,6 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackRecentlyPlayed)
 		TrackArtistLink::create(session, track2.get(), artist2.get(), TrackArtistLinkType::Artist);
 	}
 	{
-
 		auto transaction {session.createSharedTransaction()};
 
 		bool moreResults {};

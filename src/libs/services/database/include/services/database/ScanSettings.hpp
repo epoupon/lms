@@ -89,7 +89,6 @@ class ScanSettings : public Object<ScanSettings, ScanSettingsId>
 		}
 
 	private:
-
 		int		_scanVersion {};
 		std::string	_mediaDirectory;
 		Wt::WTime	_startTime = Wt::WTime {0,0,0};
