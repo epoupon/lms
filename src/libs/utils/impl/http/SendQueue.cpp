@@ -26,7 +26,7 @@
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
-#define LOG(sev)	LMS_LOG(SCROBBLING, sev) << "[listenbrainz SendQueue] - "
+#define LOG(sev)	LMS_LOG(SCROBBLING, sev) << "[Http SendQueue] - "
 
 namespace StringUtils
 {
@@ -143,7 +143,7 @@ namespace Http
 	{
 		if (ec == boost::asio::error::operation_aborted)
 		{
-			LOG(DEBUG) << "SendQueue: client aborted";
+			LOG(DEBUG) << "Client aborted";
 			return;
 		}
 
@@ -228,7 +228,7 @@ namespace Http
 		{
 			if (ec == boost::asio::error::operation_aborted)
 			{
-				LOG(DEBUG) << "SendQueue: throttle aborted";
+				LOG(DEBUG) << "Throttle aborted";
 				return;
 			}
 			else if (ec)

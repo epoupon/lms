@@ -44,11 +44,24 @@ class Listen : public Object<Listen, ListenId>
 		Listen() = default;
 		Listen(ObjectPtr<User> user, ObjectPtr<Track> track, Scrobbler scrobbler, const Wt::WDateTime& dateTime);
 
+		struct FindParameters
+		{
+			UserId							user;
+			std::optional<Scrobbler>		scrobbler;
+			std::optional<ScrobblingState>	scrobblingState;
+			Range							range;
+
+			FindParameters& setUser(UserId _user) { user = _user; return *this; }
+			FindParameters& setScrobbler(Scrobbler _scrobbler) { scrobbler = _scrobbler; return *this; }
+			FindParameters& setScrobblingState(ScrobblingState _scrobblingState) { scrobblingState = _scrobblingState; return *this; }
+			FindParameters& setRange(Range _range) {range = _range; return *this; }
+		};
+
 		// Accessors
 		static std::size_t				getCount(Session& session);
 		static pointer 					find(Session& session, ListenId id);
-		static RangeResults<pointer>	find(Session& session, UserId userId, Scrobbler scrobbler, Range = {});
 		static pointer					find(Session& session, UserId userId, TrackId trackId, Scrobbler scrobbler, const Wt::WDateTime& dateTime);
+		static RangeResults<ListenId>	find(Session& session, const FindParameters& parameters);
 
 		// Create
 		static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, Scrobbler scrobbler, const Wt::WDateTime& dateTime);
@@ -88,8 +101,10 @@ class Listen : public Object<Listen, ListenId>
 														const std::vector<ClusterId>& clusterIds,
 														Range range = {});
 
-		ScrobblingState getScrobblingState() const { return _scrobblingState; }
-		ObjectPtr<User> getUser() const { return _user; }
+		ScrobblingState			getScrobblingState() const { return _scrobblingState; }
+		ObjectPtr<User>			getUser() const { return _user; }
+		ObjectPtr<Track>		getTrack() const { return _track; }
+		const Wt::WDateTime&	getDateTime() const { return _dateTime; }
 
 		void			setScrobblingState(ScrobblingState state) { _scrobblingState = state; }
 

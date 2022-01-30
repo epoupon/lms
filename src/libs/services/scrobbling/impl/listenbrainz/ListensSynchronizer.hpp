@@ -50,11 +50,14 @@ namespace Scrobbling::ListenBrainz
 		public:
 			ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, Http::IClient& client);
 
-			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
+			void enqueListen(const TimedListen& listen);
+			void enqueListenNow(const Listen& listen);
 
 		private:
-			Database::ListenId	saveListen(const TimedListen& listen);
-			void				onListenSent(Database::ListenId listenId);
+			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
+			bool saveListen(const TimedListen& listen, Database::ScrobblingState scrobblinState);
+
+			void enquePendingListens();
 
 			struct UserContext
 			{
@@ -66,10 +69,10 @@ namespace Scrobbling::ListenBrainz
 				UserContext& operator=(UserContext&&) = delete;
 
 				const Database::UserId	userId;
-				bool					fetching {};
+				bool					syncing {};
 				std::optional<std::size_t> listenCount {};
 
-				// resetted at each fetch
+				// resetted at each sync
 				std::string		listenBrainzUserName; // need to be resolved first
 				Wt::WDateTime	maxDateTime;
 				std::size_t		fetchedListenCount{};
@@ -78,20 +81,20 @@ namespace Scrobbling::ListenBrainz
 			};
 
 			UserContext& getUserContext(Database::UserId userId);
-			bool isFetching() const;
-			void scheduleGetListens(std::chrono::seconds fromNow);
-			void startGetListens();
-			void startGetListens(UserContext& context);
-			void onGetListensEnded(UserContext& context);
+			bool isSyncing() const;
+			void scheduleSync(std::chrono::seconds fromNow);
+			void startSync();
+			void startSync(UserContext& context);
+			void onSyncEnded(UserContext& context);
 			void enqueValidateToken(UserContext& context);
 			void enqueGetListenCount(UserContext& context);
 			void enqueGetListens(UserContext& context);
-			void									processGetListensResponse(std::string_view body, UserContext& context);
+			void processGetListensResponse(std::string_view body, UserContext& context);
 
 			boost::asio::io_context&		_ioContext;
 			boost::asio::io_context::strand	_strand {_ioContext};
 			Database::Db&					_db;
-			boost::asio::steady_timer		_getListensTimer {_ioContext};
+			boost::asio::steady_timer		_syncTimer {_ioContext};
 			Http::IClient&					_client;
 
 			std::unordered_map<Database::UserId, UserContext> _userContexts;

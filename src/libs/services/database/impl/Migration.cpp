@@ -76,6 +76,13 @@ namespace Database::Migration
 	};
 
 	static
+	std::string
+	dateTimeToDbFormat(const Wt::WDateTime& dateTime)
+	{
+		return dateTime.toString("yyyy'-'MM'-'dd'T'hh':'mm':'ss'.000'", false).toUTF8();
+	}
+
+	static
 	void
 	migrateFromV5(Session& session)
 	{
@@ -450,7 +457,7 @@ CREATE TABLE "starred_track" (
 		// Can't migrate using class mapping as mapping may evolve in the future
 
 		// use time_t to avoid rounding issues later
-		const Wt::WDateTime now {Wt::WDateTime::fromTime_t(Wt::WDateTime::currentDateTime().toTime_t())};
+		const std::string now {dateTimeToDbFormat(Wt::WDateTime::fromTime_t(Wt::WDateTime::currentDateTime().toTime_t()))};
 
 		std::map<IdType::ValueType, Scrobbler> userScrobblers;
 		auto getScrobbler {[&](IdType::ValueType userId)
@@ -480,7 +487,7 @@ CREATE TABLE "starred_track" (
 				session.getDboSession().execute("INSERT INTO " + newTableName + " ('version', 'scrobbler', 'date_time', '" + colName + "', 'user_id') VALUES (?, ?, ?, ?, ?)")
 					.bind(0)
 					.bind(getScrobbler(userId))
-					.bind(now.toString().toUTF8())
+					.bind(now)
 					.bind(entryId)
 					.bind(userId);
 			}
@@ -523,7 +530,7 @@ CREATE TABLE "listen" (
 			{
 				session.getDboSession().execute("INSERT INTO listen ('version', 'date_time', 'scrobbler', 'scrobbling_state', 'track_id', 'user_id') VALUES (?, ?, ?, ?, ?, ?)")
 					.bind(0)
-					.bind(dateTime.toString().toUTF8())
+					.bind(dateTimeToDbFormat(dateTime))
 					.bind(scrobbler)
 					.bind(ScrobblingState::Synchronized) // consider sync is done to avoid duplicate submissions
 					.bind(trackId)

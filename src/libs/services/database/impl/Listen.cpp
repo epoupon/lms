@@ -155,17 +155,24 @@ namespace Database
 		return session.getDboSession().find<Listen>().where("id = ?").bind(id).resultValue();
 	}
 
-	RangeResults<Listen::pointer>
-	Listen::find(Session& session, UserId userId, Scrobbler scrobbler, Range range)
+	RangeResults<ListenId>
+	Listen::find(Session& session, const FindParameters& parameters)
 	{
 		session.checkSharedLocked();
 
-		auto query {session.getDboSession().find<Listen>()
-						.where("user_id = ?").bind(userId)
-						.where("scrobbler = ?").bind(scrobbler)
-						.orderBy("date_time")};
+		auto query {session.getDboSession().query<ListenId>("SELECT id FROM listen")
+								.orderBy("date_time")};
 
-		return execQuery(query, range);
+		if (parameters.user.isValid())
+			query.where("user_id = ?").bind(parameters.user);
+
+		if (parameters.scrobbler)
+			query.where("scrobbler = ?").bind(*parameters.scrobbler);
+
+		if (parameters.scrobblingState)
+			query.where("scrobbling_state = ?").bind(*parameters.scrobblingState);
+
+		return execQuery(query, parameters.range);
 	}
 
 	Listen::pointer

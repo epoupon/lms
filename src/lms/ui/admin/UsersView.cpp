@@ -71,7 +71,7 @@ UsersView::refreshView()
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	for (const UserId userId : User::find(LmsApp->getDbSession(), Range {}).results)
+	for (const UserId userId : User::find(LmsApp->getDbSession(), User::FindParameters {}).results)
 	{
 		const User::pointer user {User::find(LmsApp->getDbSession(), userId)};
 

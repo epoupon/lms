@@ -1394,7 +1394,7 @@ handleGetUsersRequest(RequestContext& context)
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& usersNode {response.createNode("users")};
 
-	const auto userIds {User::find(context.dbSession, Range {})};
+	const auto userIds {User::find(context.dbSession, User::FindParameters {})};
 	for (const UserId userId : userIds.results)
 	{
 		const User::pointer user {User::find(context.dbSession, userId)};

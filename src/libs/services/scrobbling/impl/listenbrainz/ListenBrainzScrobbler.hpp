@@ -50,9 +50,6 @@ namespace Scrobbling::ListenBrainz
 			void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
 			void addTimedListen(const TimedListen& listen) override;
 
-			// Submit listens
-			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
-
 			boost::asio::io_context&		_ioContext;
 			Database::Db&					_db;
 			std::string						_baseAPIUrl;

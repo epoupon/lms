@@ -69,7 +69,7 @@ namespace Scrobbling::ListenBrainz
 	void
 	Scrobbler::listenStarted(const Listen& listen)
 	{
-		enqueListen(listen, Wt::WDateTime {});
+		_listensSynchronizer.enqueListenNow(listen);
 	}
 
 	void
@@ -78,23 +78,14 @@ namespace Scrobbling::ListenBrainz
 		if (duration && !canBeScrobbled(_db.getTLSSession(), listen.trackId, *duration))
 			return;
 
-		const Listen timedListen {listen};
-		const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
-
-		enqueListen(timedListen, now);
+		const TimedListen timedListen {listen, Wt::WDateTime::currentDateTime()};
+		_listensSynchronizer.enqueListen(timedListen);
 	}
 
 	void
-	Scrobbler::addTimedListen(const TimedListen& listen)
+	Scrobbler::addTimedListen(const TimedListen& timedListen)
 	{
-		assert(listen.listenedAt.isValid());
-		enqueListen(listen, listen.listenedAt);
-	}
-
-	void
-	Scrobbler::enqueListen(const Listen& listen, const Wt::WDateTime& timePoint)
-	{
-		_listensSynchronizer.enqueListen(listen, timePoint);
+		_listensSynchronizer.enqueListen(timedListen);
 	}
 } // namespace Scrobbling::ListenBrainz
 

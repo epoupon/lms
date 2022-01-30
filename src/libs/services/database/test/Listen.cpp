@@ -66,17 +66,28 @@ TEST_F(DatabaseFixture, Listen_get)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto listens {Listen::find(session, user->getId(), Scrobbler::ListenBrainz)};
+		auto listens {Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobbler(Scrobbler::ListenBrainz))};
 		EXPECT_EQ(listens.results.size(), 0);
 	}
 
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto listens {Listen::find(session, user->getId(), Scrobbler::Internal)};
-		EXPECT_EQ(listens.moreResults, false);
-		ASSERT_EQ(listens.results.size(), 1);
-		EXPECT_EQ(listens.results.front()->getId(), listen->getId());
+		{
+			auto listens {Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobbler(Scrobbler::Internal))};
+			EXPECT_EQ(listens.moreResults, false);
+			ASSERT_EQ(listens.results.size(), 1);
+			EXPECT_EQ(listens.results.front(), listen->getId());
+		}
+
+		{
+			auto listens {Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobbler(Scrobbler::Internal).setScrobblingState(ScrobblingState::PendingAdd))};
+			EXPECT_EQ(listens.results.size(), 1);
+		}
+		{
+			auto listens {Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobbler(Scrobbler::Internal).setScrobblingState(ScrobblingState::Synchronized))};
+			EXPECT_EQ(listens.results.size(), 0);
+		}
 	}
 }
 
@@ -91,11 +102,11 @@ TEST_F(DatabaseFixture, Listen_get_multi)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto listens {Listen::find(session, user->getId(), Scrobbler::Internal)};
+		auto listens {Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobbler(Scrobbler::Internal))};
 		ASSERT_EQ(listens.results.size(), 3);
-		EXPECT_EQ(listens.results[0]->getId(), listen1.getId());
-		EXPECT_EQ(listens.results[1]->getId(), listen2.getId());
-		EXPECT_EQ(listens.results[2]->getId(), listen3.getId());
+		EXPECT_EQ(listens.results[0], listen1.getId());
+		EXPECT_EQ(listens.results[1], listen2.getId());
+		EXPECT_EQ(listens.results[2], listen3.getId());
 	}
 }
 

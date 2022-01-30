@@ -19,13 +19,8 @@
 
 #include "Utils.hpp"
 
-#include <string_view>
-
 #include "services/database/Session.hpp"
-#include "services/database/TrackList.hpp"
 #include "services/database/User.hpp"
-
-static constexpr std::string_view historyTracklistName {"__scrobbler_listenbrainz_history__"};
 
 namespace Scrobbling::ListenBrainz::Utils
 {
@@ -36,9 +31,6 @@ namespace Scrobbling::ListenBrainz::Utils
 
 		const Database::User::pointer user {Database::User::find(session, userId)};
 		if (!user)
-			return std::nullopt;
-
-		if (user->getScrobbler() != Database::Scrobbler::ListenBrainz)
 			return std::nullopt;
 
 		return user->getListenBrainzToken();

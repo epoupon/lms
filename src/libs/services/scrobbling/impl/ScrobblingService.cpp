@@ -105,7 +105,8 @@ namespace Scrobbling
 		Session& session {_db.getTLSSession()};
 		auto transaction {session.createSharedTransaction()};
 
-		return Database::Listen::getRecentArtists(session, userId, *scrobbler, clusterIds, linkType, range);
+		res = Database::Listen::getRecentArtists(session, userId, *scrobbler, clusterIds, linkType, range);
+		return res;
 	}
 
 	ScrobblingService::ReleaseContainer
@@ -120,7 +121,8 @@ namespace Scrobbling
 		Session& session {_db.getTLSSession()};
 		auto transaction {session.createSharedTransaction()};
 
-		return Database::Listen::getRecentReleases(session, userId, *scrobbler, clusterIds, range);
+		res = Database::Listen::getRecentReleases(session, userId, *scrobbler, clusterIds, range);
+		return res;
 	}
 
 	ScrobblingService::TrackContainer
@@ -135,7 +137,8 @@ namespace Scrobbling
 		Session& session {_db.getTLSSession()};
 		auto transaction {session.createSharedTransaction()};
 
-		return Database::Listen::getRecentTracks(session, userId, *scrobbler, clusterIds, range);
+		res = Database::Listen::getRecentTracks(session, userId, *scrobbler, clusterIds, range);
+		return res;
 	}
 
 	// Top
@@ -151,7 +154,8 @@ namespace Scrobbling
 		Session& session {_db.getTLSSession()};
 		auto transaction {session.createSharedTransaction()};
 
-		return Database::Listen::getTopArtists(session, userId, *scrobbler, clusterIds, linkType, range);
+		res = Database::Listen::getTopArtists(session, userId, *scrobbler, clusterIds, linkType, range);
+		return res;
 	}
 
 	ScrobblingService::ReleaseContainer
@@ -166,7 +170,8 @@ namespace Scrobbling
 		Session& session {_db.getTLSSession()};
 		auto transaction {session.createSharedTransaction()};
 
-		return Database::Listen::getTopReleases(session, userId, *scrobbler, clusterIds, range);
+		res = Database::Listen::getTopReleases(session, userId, *scrobbler, clusterIds, range);
+		return res;
 	}
 
 	ScrobblingService::TrackContainer
@@ -181,7 +186,8 @@ namespace Scrobbling
 		Session& session {_db.getTLSSession()};
 		auto transaction {session.createSharedTransaction()};
 
-		return Database::Listen::getTopTracks(session, userId, *scrobbler, clusterIds, range);
+		res = Database::Listen::getTopTracks(session, userId, *scrobbler, clusterIds, range);
+		return res;
 	}
 
 	void
