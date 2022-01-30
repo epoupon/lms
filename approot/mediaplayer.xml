@@ -35,7 +35,7 @@
 				</div>
 			</div>
 			<div class="hidden-xs col-sm-2 col-md-2 Lms-player-duration text-muted">
-				<a id="lms-transcoding-active" class="Lms-player-btn Lms-btn" data-toggle="tooltip" title="${tr:Lms.Player.transcoding-active}" style="visibility:hidden"><i class="fa fa-fw fa-info-circle" aria-hidden="true"></i></a>
+				<span id="lms-transcoding-active" class="Lms-player-btn Lms-btn" data-toggle="tooltip" title="${tr:Lms.Player.transcoding-active}" style="visibility:hidden"><i class="fa fa-fw fa-info-circle" aria-hidden="true"></i></span>
 				<span id="lms-mp-curtime">--</span> / <span id="lms-mp-duration">--</span>
 			</div>
 		</div>
