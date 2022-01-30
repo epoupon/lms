@@ -45,10 +45,9 @@ namespace Image
 	}
 
 	void
-	init(const std::filesystem::path& path)
+	init(const std::filesystem::path&)
 	{
 	}
-{
 }
 
 namespace Image::STB
