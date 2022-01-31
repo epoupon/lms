@@ -157,8 +157,8 @@ Artists::addSome()
 	const auto artistIds {_artistCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize})};
 	for (const ArtistId artistId : artistIds.results)
 	{
-		const auto artist {Artist::find(LmsApp->getDbSession(), artistId)};
-		_container->add(ArtistListHelpers::createEntry(artist));
+		if (const auto artist {Artist::find(LmsApp->getDbSession(), artistId)})
+			_container->add(ArtistListHelpers::createEntry(artist));
 	}
 
 	_container->setHasMore(artistIds.moreResults);
