@@ -128,7 +128,7 @@ bool
 RecursiveSharedMutex::isSharedLocked()
 {
 	const auto thisThreadId {std::this_thread::get_id()};
-	if (_uniqueOwner  == thisThreadId )
+	if (_uniqueOwner == thisThreadId )
 		return true;
 
 	std::scoped_lock lock {_sharedCountMutex};
