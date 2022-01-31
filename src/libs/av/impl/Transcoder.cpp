@@ -119,7 +119,6 @@ Transcoder::start()
 	args.emplace_back("-b:a");
 	args.emplace_back(std::to_string(_parameters.bitrate));
 
-
 	// Codecs and formats
 	switch (_parameters.format)
 	{

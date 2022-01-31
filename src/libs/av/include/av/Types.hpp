@@ -33,12 +33,11 @@ namespace Av {
 
 	enum class Format
 	{
-		// Values are important and must not be changed (stored in the UI's localstorage)
-		MP3				= 0,
-		OGG_OPUS		= 1,
-		MATROSKA_OPUS	= 2,
-		OGG_VORBIS		= 3,
-		WEBM_VORBIS		= 4,
+		MP3,
+		OGG_OPUS,
+		MATROSKA_OPUS,
+		OGG_VORBIS,
+		WEBM_VORBIS,
 	};
 
 	std::string_view formatToMimetype(Format format);

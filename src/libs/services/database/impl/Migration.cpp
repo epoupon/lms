@@ -542,6 +542,13 @@ CREATE TABLE "listen" (
 		migrateListens("__scrobbler_listenbrainz_history__", Scrobbler::ListenBrainz);
 	}
 
+	static
+	void
+	migrateFromV32(Session& session)
+	{
+		ScanSettings::get(session).modify()->addAudioFileExtension(".wv");
+	}
+
 	void
 	doDbMigration(Session& session)
 	{
@@ -580,6 +587,7 @@ CREATE TABLE "listen" (
 			{29, migrateFromV29},
 			{30, migrateFromV30},
 			{31, migrateFromV31},
+			{32, migrateFromV32},
 		};
 
 		while (1)
