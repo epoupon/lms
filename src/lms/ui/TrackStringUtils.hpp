@@ -23,5 +23,5 @@
 #include <string>
 
 std::string
-trackDurationToString(std::chrono::milliseconds msDuration);
+durationToString(std::chrono::milliseconds msDuration);
 

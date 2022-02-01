@@ -455,7 +455,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 	}
 
-	entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
+	entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 	Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.template.play-btn"), Wt::TextFormat::XHTML)};
 	playBtn->clicked().connect([=]
