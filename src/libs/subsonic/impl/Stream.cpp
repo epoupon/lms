@@ -22,9 +22,9 @@
 #include "av/TranscodeParameters.hpp"
 #include "av/TranscodeResourceHandlerCreator.hpp"
 #include "av/Types.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/User.hpp"
 #include "utils/IResourceHandler.hpp"
 #include "utils/Logger.hpp"
 #include "utils/FileResourceHandlerCreator.hpp"
@@ -74,7 +74,7 @@ getStreamParameters(RequestContext& context)
 	auto transaction {context.dbSession.createSharedTransaction()};
 
 	{
-		auto track {Track::getById(context.dbSession, id)};
+		auto track {Track::find(context.dbSession, id)};
 		if (!track)
 			throw RequestedDataNotFoundError {};
 
@@ -82,7 +82,7 @@ getStreamParameters(RequestContext& context)
 	}
 
 	{
-		const User::pointer user {User::getById(context.dbSession, context.userId)};
+		const User::pointer user {User::find(context.dbSession, context.userId)};
 		if (!user)
 			throw UserNotAuthorizedError {};
 
@@ -124,7 +124,7 @@ handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Ht
 		{
 			auto transaction {context.dbSession.createSharedTransaction()};
 
-			auto track {Track::getById(context.dbSession, id)};
+			auto track {Track::find(context.dbSession, id)};
 			if (!track)
 				throw RequestedDataNotFoundError {};
 

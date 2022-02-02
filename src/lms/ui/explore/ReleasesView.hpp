@@ -24,7 +24,7 @@
 #include <Wt/WContainerWidget.h>
 #include <Wt/WTemplate.h>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 #include "PlayQueueAction.hpp"
 #include "ReleaseCollector.hpp"
 
@@ -41,7 +41,6 @@ namespace UserInterface
 			PlayQueueActionReleaseSignal releasesAction;
 
 		private:
-
 			void refreshView();
 			void refreshView(ReleaseCollector::Mode mode);
 

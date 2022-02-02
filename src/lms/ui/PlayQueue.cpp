@@ -22,13 +22,14 @@
 #include <Wt/WPopupMenu.h>
 #include <Wt/WText.h>
 
-#include "database/Cluster.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackList.hpp"
-#include "database/User.hpp"
-#include "recommendation/IEngine.hpp"
+#include "services/database/Cluster.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/TrackList.hpp"
+#include "services/database/User.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Service.hpp"
@@ -131,7 +132,7 @@ PlayQueue::PlayQueue()
 		if (LmsApp->getUser()->isDemo())
 		{
 			LMS_LOG(UI, DEBUG) << "Removing tracklist id " << _tracklistId.toString();
-			auto tracklist = Database::TrackList::getById(LmsApp->getDbSession(), _tracklistId);
+			auto tracklist = Database::TrackList::find(LmsApp->getDbSession(), _tracklistId);
 			if (tracklist)
 				tracklist.remove();
 		}
@@ -160,7 +161,11 @@ PlayQueue::PlayQueue()
 
 				loadTrack(trackPos, false);
 			});
-			trackList = LmsApp->getUser()->getQueuedTrackList(LmsApp->getDbSession());
+
+			static const std::string queuedListName {"__queued_tracks__"};
+			trackList = Database::TrackList::find(LmsApp->getDbSession(), queuedListName, Database::TrackList::Type::Internal, LmsApp->getUserId());
+			if (!trackList)
+				trackList = Database::TrackList::create(LmsApp->getDbSession(), queuedListName, Database::TrackList::Type::Internal, false, LmsApp->getUser());
 		}
 		else
 		{
@@ -192,7 +197,7 @@ PlayQueue::updateRadioBtn()
 Database::TrackList::pointer
 PlayQueue::getTrackList() const
 {
-	return Database::TrackList::getById(LmsApp->getDbSession(), _tracklistId);
+	return Database::TrackList::find(LmsApp->getDbSession(), _tracklistId);
 }
 
 bool
@@ -326,7 +331,7 @@ PlayQueue::enqueueTracks(const std::vector<Database::TrackId>& trackIds)
 		std::size_t nbTracksToEnqueue {tracklist->getCount() + trackIds.size() > _nbMaxEntries ? _nbMaxEntries - tracklist->getCount() : trackIds.size()};
 		for (const Database::TrackId trackId : trackIds)
 		{
-			Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+			Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), trackId)};
 			if (!track)
 				continue;
 
@@ -409,6 +414,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 
 	Wt::WTemplate* entry = _entriesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry"));
 
+	entry->bindString("is-selected", "");
 	entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
 	const auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
@@ -449,7 +455,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 	}
 
-	entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
+	entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 	Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.template.play-btn"), Wt::TextFormat::XHTML)};
 	playBtn->clicked().connect([=]
@@ -487,27 +493,14 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 	{
 		Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
 
-		bool isStarred {};
-		{
-			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-			if (auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)})
-			isStarred = LmsApp->getUser()->hasStarredTrack(track);
-		}
-
+		const bool isStarred {Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId)};
 		popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
 			->triggered().connect(moreBtn, [=]
 			{
-				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
-
-				auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
-				if (!track)
-					return;
-
 				if (isStarred)
-					LmsApp->getUser().modify()->unstarTrack(track);
+					Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), trackId);
 				else
-					LmsApp->getUser().modify()->starTrack(track);
+					Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), trackId);
 			});
 		popup->addItem(Wt::WString::tr("Lms.Explore.download"))
 			->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
@@ -519,7 +512,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 void
 PlayQueue::enqueueRadioTracks()
 {
-	const auto similarTrackIds {Service<Recommendation::IEngine>::get()->getSimilarTracksFromTrackList(LmsApp->getDbSession(), _tracklistId, 3)};
+	const auto similarTrackIds {Service<Recommendation::IRecommendationService>::get()->findSimilarTracksFromTrackList(_tracklistId, 3)};
 
 	std::vector<Database::TrackId> trackToAddIds(std::cbegin(similarTrackIds), std::cend(similarTrackIds));
 	Random::shuffleContainer(trackToAddIds);

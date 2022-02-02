@@ -34,8 +34,9 @@
 #include "common/UUIDValidator.hpp"
 #include "common/ValueStringModel.hpp"
 
-#include "auth/IPasswordService.hpp"
-#include "database/Session.hpp"
+#include "services/auth/IPasswordService.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/User.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
@@ -139,7 +140,7 @@ class SettingsModel : public Wt::WFormModel
 			User::pointer user {LmsApp->getUser()};
 
 			{
-				const User::UITheme newTheme {Wt::asNumber(value(DarkModeField)) ? User::UITheme::Dark : User::UITheme::Light};
+				const UITheme newTheme {Wt::asNumber(value(DarkModeField)) ? UITheme::Dark : UITheme::Light};
 				LmsTheme* lmsTheme {static_cast<LmsTheme*>(LmsApp->theme().get())};
 				lmsTheme->setTheme(newTheme);
 
@@ -197,7 +198,7 @@ class SettingsModel : public Wt::WFormModel
 
 			if (_authPasswordService && !valueText(PasswordField).empty())
 			{
-				_authPasswordService->setPassword(LmsApp->getDbSession(), user->getId(), valueText(PasswordField).toUTF8());
+				_authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
 			}
 
 		}
@@ -208,7 +209,7 @@ class SettingsModel : public Wt::WFormModel
 
 			User::pointer user {LmsApp->getUser()};
 
-			setValue(DarkModeField, user->getUITheme() == User::UITheme::Dark);
+			setValue(DarkModeField, user->getUITheme() == UITheme::Dark);
 
 			{
 				const auto settings {*LmsApp->getMediaPlayer().getSettings()};
@@ -333,10 +334,10 @@ class SettingsModel : public Wt::WFormModel
 			_transcodeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.if-format-not-supported"), MediaPlayer::Settings::Transcode::Mode::IfFormatNotSupported);
 
 			_transcodeBitrateModel = std::make_shared<ValueStringModel<Bitrate>>();
-			for (const Bitrate bitrate : User::audioTranscodeAllowedBitrates)
+			visitAllowedAudioBitrates([&](const Bitrate bitrate)
 			{
 				_transcodeBitrateModel->add(Wt::WString::fromUTF8(std::to_string(bitrate / 1000)), bitrate);
-			}
+			});
 
 			_transcodeFormatModel = std::make_shared<ValueStringModel<AudioFormat>>();
 			_transcodeFormatModel->add(Wt::WString::tr("Lms.Settings.transcode-format.mp3"), AudioFormat::MP3);
@@ -351,10 +352,10 @@ class SettingsModel : public Wt::WFormModel
 			_replayGainModeModel->add(Wt::WString::tr("Lms.Settings.replaygain-mode.track"), MediaPlayer::Settings::ReplayGain::Mode::Track);
 			_replayGainModeModel->add(Wt::WString::tr("Lms.Settings.replaygain-mode.release"), MediaPlayer::Settings::ReplayGain::Mode::Release);
 
-			_subsonicArtistListModeModel = std::make_shared<ValueStringModel<User::SubsonicArtistListMode>>();
-			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.all-artists"), User::SubsonicArtistListMode::AllArtists);
-			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.release-artists"), User::SubsonicArtistListMode::ReleaseArtists);
-			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.track-artists"), User::SubsonicArtistListMode::TrackArtists);
+			_subsonicArtistListModeModel = std::make_shared<ValueStringModel<SubsonicArtistListMode>>();
+			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.all-artists"), SubsonicArtistListMode::AllArtists);
+			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.release-artists"), SubsonicArtistListMode::ReleaseArtists);
+			_subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.track-artists"), SubsonicArtistListMode::TrackArtists);
 
 			_scrobblerModel = std::make_shared<ValueStringModel<Scrobbler>>();
 			_scrobblerModel->add(Wt::WString::tr("Lms.Settings.scrobbling.scrobbler.internal"), Scrobbler::Internal);
@@ -368,7 +369,7 @@ class SettingsModel : public Wt::WFormModel
 		std::shared_ptr<ValueStringModel<Bitrate>>			_transcodeBitrateModel;
 		std::shared_ptr<ValueStringModel<AudioFormat>>		_transcodeFormatModel;
 		std::shared_ptr<ReplayGainModeModel>				_replayGainModeModel;
-		std::shared_ptr<ValueStringModel<User::SubsonicArtistListMode>> _subsonicArtistListModeModel;
+		std::shared_ptr<ValueStringModel<SubsonicArtistListMode>> _subsonicArtistListModeModel;
 		std::shared_ptr<ScrobblerModel> 					_scrobblerModel;
 };
 

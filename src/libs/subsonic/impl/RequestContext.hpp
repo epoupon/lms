@@ -23,7 +23,7 @@
 
 #include <Wt/Http/Request.h>
 
-#include "database/Types.hpp"
+#include "services/database/UserId.hpp"
 #include "ClientInfo.hpp"
 #include "ProtocolVersion.hpp"
 

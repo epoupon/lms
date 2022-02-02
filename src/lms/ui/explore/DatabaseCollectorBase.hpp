@@ -25,7 +25,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 
 namespace UserInterface
 {
@@ -49,17 +49,16 @@ namespace UserInterface
 				All
 			};
 
-			DatabaseCollectorBase(Filters& filters, Mode defaultMode, std::optional<std::size_t> maxCount = std::nullopt);
+			DatabaseCollectorBase(Filters& filters, Mode defaultMode, std::size_t maxCount);
 
 			Mode getMode() const { return _mode; }
 			void setMode(Mode mode) { _mode = mode; }
-			void setMaxCount(std::size_t maxCount) { _maxCount = maxCount; }
 			void setSearch(std::string_view search);
 
 		protected:
-			std::optional<Range>	getActualRange(std::optional<Range> range) const;
-			std::optional<std::size_t> getMaxCount() const;
-			Filters&				getFilters() { return _filters; }
+			Range		getActualRange(Range range) const;
+			std::size_t	getMaxCount() const;
+			Filters&	getFilters() { return _filters; }
 			const std::vector<std::string_view>& getSearchKeywords() const { return _searchKeywords; }
 
 		private:
@@ -67,7 +66,7 @@ namespace UserInterface
 			std::string	_searchText;
 			std::vector<std::string_view> _searchKeywords;
 			Mode		_mode;
-			std::optional<std::size_t> _maxCount;
+			std::size_t _maxCount;
 	};
 } // ns UserInterface
 

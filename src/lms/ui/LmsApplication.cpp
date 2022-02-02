@@ -28,16 +28,16 @@
 #include <Wt/WStackedWidget.h>
 #include <Wt/WText.h>
 
-#include "auth/IEnvService.hpp"
-#include "auth/IPasswordService.hpp"
-#include "cover/ICoverArtGrabber.hpp"
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Db.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/User.hpp"
-#include "scrobbling/IScrobbling.hpp"
+#include "services/auth/IEnvService.hpp"
+#include "services/auth/IPasswordService.hpp"
+#include "services/cover/ICoverService.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Cluster.hpp"
+#include "services/database/Db.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/User.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -69,7 +69,7 @@ LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplica
 {
 	if (auto *authEnvService {Service<::Auth::IEnvService>::get()})
 	{
-		const auto checkResult {authEnvService->processEnv(db.getTLSSession(), env)};
+		const auto checkResult {authEnvService->processEnv(env)};
 		if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
 		{
 			LMS_LOG(UI, ERROR) << "Cannot authenticate user from environment!";
@@ -101,7 +101,7 @@ LmsApplication::getUser()
 	if (!_authenticatedUser)
 		return {};
 
-	return Database::User::getById(getDbSession(), _authenticatedUser->userId);
+	return Database::User::find(getDbSession(), _authenticatedUser->userId);
 }
 
 Database::UserId
@@ -247,7 +247,7 @@ LmsApplication::processPasswordAuth()
 void
 LmsApplication::setTheme()
 {
-	Database::User::UITheme theme {Database::User::defaultUITheme};
+	Database::UITheme theme {Database::User::defaultUITheme};
 	{
 		auto transaction {getDbSession().createSharedTransaction()};
 		if (const auto user {getUser()})
@@ -548,14 +548,14 @@ LmsApplication::createHome()
 	{
 		LMS_LOG(UI, DEBUG) << "Received ScrobbleListenNow from player for trackId = " << trackId.toString();
 		const Scrobbling::Listen listen {getUserId(), trackId};
-		Service<Scrobbling::IScrobbling>::get()->listenStarted(listen);
+		Service<Scrobbling::IScrobblingService>::get()->listenStarted(listen);
 	});
 	_mediaPlayer->scrobbleListenFinished.connect([this](Database::TrackId trackId, unsigned durationMs)
 	{
 		LMS_LOG(UI, DEBUG) << "Received ScrobbleListenFinished from player for trackId = " << trackId.toString() << ", duration = " << (durationMs / 1000) << "s";
 		const std::chrono::milliseconds duration {durationMs};
 		const Scrobbling::Listen listen {getUserId(), trackId};
-		Service<Scrobbling::IScrobbling>::get()->listenFinished(listen, std::chrono::duration_cast<std::chrono::seconds>(duration));
+		Service<Scrobbling::IScrobblingService>::get()->listenFinished(listen, std::chrono::duration_cast<std::chrono::seconds>(duration));
 	});
 
 	_mediaPlayer->playbackEnded.connect([this]

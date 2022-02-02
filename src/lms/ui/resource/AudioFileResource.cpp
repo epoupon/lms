@@ -23,8 +23,8 @@
 #include <Wt/Http/Response.h>
 
 #include "av/IAudioFile.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
 #include "utils/FileResourceHandlerCreator.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
@@ -51,7 +51,7 @@ getTrackPathFromTrackId(Database::TrackId trackId)
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+	const Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), trackId)};
 	if (!track)
 	{
 		LOG(ERROR) << "Missing track";

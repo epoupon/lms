@@ -1,5 +1,6 @@
-
 add_library(lmsutils SHARED
+	impl/http/Client.cpp
+	impl/http/SendQueue.cpp
 	impl/ChildProcess.cpp
 	impl/ChildProcessManager.cpp
 	impl/Config.cpp
@@ -37,3 +38,6 @@ target_link_libraries(lmsutils PUBLIC
 
 install(TARGETS lmsutils DESTINATION lib)
 
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()

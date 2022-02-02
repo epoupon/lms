@@ -24,9 +24,9 @@
 #include <Wt/WImage.h>
 #include <Wt/WText.h>
 
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
-#include "database/Track.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Track.hpp"
 #include "resource/DownloadResource.hpp"
 #include "resource/CoverResource.hpp"
 #include "LmsApplication.hpp"
@@ -87,7 +87,7 @@ namespace UserInterface::TrackListHelpers
 			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		}
 
-		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
+		entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 		playBtn->clicked().connect([trackId, &tracksAction]

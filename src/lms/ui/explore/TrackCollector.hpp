@@ -21,6 +21,8 @@
 
 #include <vector>
 
+#include "services/database/Object.hpp"
+#include "services/database/TrackId.hpp"
 #include "DatabaseCollectorBase.hpp"
 
 namespace Database
@@ -35,13 +37,12 @@ namespace UserInterface
 		public:
 			using DatabaseCollectorBase::DatabaseCollectorBase;
 
-			std::vector<Database::ObjectPtr<Database::Track>>	get(std::optional<Database::Range> range, bool& moreResults);
-			std::vector<Database::TrackId>				getAll();
-			void reset() { _randomTracks.clear(); }
+			Database::RangeResults<Database::TrackId>	get(Database::Range range);
+			void reset() { _randomTracks.reset(); }
 
 		private:
-			std::vector<Database::ObjectPtr<Database::Track>> getRandomTracks(std::optional<Range> range, bool& moreResults);
-			std::vector<Database::TrackId> _randomTracks;
+			Database::RangeResults<Database::TrackId> getRandomTracks(Range range);
+			std::optional<Database::RangeResults<Database::TrackId>> _randomTracks;
 	};
 } // ns UserInterface
 

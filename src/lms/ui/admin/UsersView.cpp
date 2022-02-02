@@ -23,9 +23,9 @@
 #include <Wt/WMessageBox.h>
 #include <Wt/WTemplate.h>
 
-#include "auth/IPasswordService.hpp"
-#include "database/User.hpp"
-#include "database/Session.hpp"
+#include "services/auth/IPasswordService.hpp"
+#include "services/database/User.hpp"
+#include "services/database/Session.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
@@ -33,8 +33,10 @@
 
 namespace UserInterface {
 
+using namespace Database;
+
 UsersView::UsersView()
- : Wt::WTemplate(Wt::WString::tr("Lms.Admin.Users.template"))
+ : Wt::WTemplate {Wt::WString::tr("Lms.Admin.Users.template")}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
@@ -45,7 +47,7 @@ UsersView::UsersView()
 		setCondition("if-can-create-user", true);
 
 		Wt::WPushButton* addBtn = bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.Admin.Users.add"));
-		addBtn->clicked().connect([]()
+		addBtn->clicked().connect([]
 		{
 			LmsApp->setInternalPath("/admin/user", true);
 		});
@@ -69,10 +71,10 @@ UsersView::refreshView()
 
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	auto users = Database::User::getAll(LmsApp->getDbSession());
-	for (const auto& user : users)
+	const User::IdType currentUserId {LmsApp->getUser()};
+	for (const UserId userId : User::find(LmsApp->getDbSession(), User::FindParameters {}).results)
 	{
-		const Database::UserId userId {user->getId()};
+		const User::pointer user {User::find(LmsApp->getDbSession(), userId)};
 
 		Wt::WTemplate* entry {_container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry"))};
 
@@ -86,7 +88,7 @@ UsersView::refreshView()
 		}
 
 		// Don't edit ourself this way
-		if (LmsApp->getUser() == user)
+		if (user->getId() == currentUserId)
 			continue;
 
 		entry->setCondition("if-edit", true);
@@ -110,7 +112,7 @@ UsersView::refreshView()
 				{
 					auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-					Database::User::pointer user {Database::User::getById(LmsApp->getDbSession(), userId)};
+					User::pointer user {User::find(LmsApp->getDbSession(), userId)};
 					if (user)
 						user.remove();
 

@@ -19,11 +19,11 @@ target_include_directories(lmssubsonic PRIVATE
 target_link_libraries(lmssubsonic PRIVATE
 	lmsauth
 	lmsav
-	lmscover
 	lmsdatabase
 	lmsrecommendation
 	lmsscanner
 	lmsscrobbling
+	lmsservice-cover
 	lmsutils
 	std::filesystem
 	)

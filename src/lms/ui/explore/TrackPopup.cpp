@@ -21,15 +21,16 @@
 
 #include <Wt/WPopupMenu.h>
 
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/User.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
+#include "utils/Service.hpp"
 #include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface
 {
-
 	void
 	displayTrackPopupMenu(Wt::WInteractWidget& target,
 			Database::TrackId trackId,
@@ -43,26 +44,20 @@ namespace UserInterface
 					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
 				});
 
-			bool isStarred {};
-			{
-				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-				if (auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)})
-					isStarred = LmsApp->getUser()->hasStarredTrack(track);
-			}
+			const bool isStarred {Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId)};
 			popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
 				->triggered().connect(&target, [=]
 					{
 						auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-						auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+						auto track {Database::Track::find(LmsApp->getDbSession(), trackId)};
 						if (!track)
 							return;
 
 						if (isStarred)
-							LmsApp->getUser().modify()->unstarTrack(track);
+							Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), trackId);
 						else
-							LmsApp->getUser().modify()->starTrack(track);
+							Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), trackId);
 					});
 			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
 				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});

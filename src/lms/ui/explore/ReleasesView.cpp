@@ -23,7 +23,8 @@
 #include <Wt/WPopupMenu.h>
 #include <Wt/WText.h>
 
-#include "database/Session.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
 #include "common/InfiniteScrollingContainer.hpp"
 #include "ReleaseListHelpers.hpp"
 #include "Filters.hpp"
@@ -115,23 +116,24 @@ Releases::refreshView(ReleaseCollector::Mode mode)
 void
 Releases::addSome()
 {
-	bool moreResults {};
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
+	const auto releaseIds {_releaseCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize})};
+	for (const ReleaseId releaseId : releaseIds.results)
 	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-		const auto releases {_releaseCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize}, moreResults)};
-		for (const auto& release : releases)
+		if (const Release::pointer release {Release::find(LmsApp->getDbSession(), releaseId)})
 			_container->add(ReleaseListHelpers::createEntry(release));
 	}
 
-	_container->setHasMore(moreResults);
+	_container->setHasMore(releaseIds.moreResults);
 }
 
-std::vector<Database::ReleaseId>
+std::vector<ReleaseId>
 Releases::getAllReleases()
 {
-	return _releaseCollector.getAll();
+	RangeResults<ReleaseId> releaseIds {_releaseCollector.get(Range {})};
+
+	return std::move(releaseIds.results);
 }
 
 } // namespace UserInterface

@@ -25,7 +25,8 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
-#include "database/Types.hpp"
+#include "services/database/Object.hpp"
+#include "services/database/TrackListId.hpp"
 #include "PlayQueueAction.hpp"
 
 namespace Similarity

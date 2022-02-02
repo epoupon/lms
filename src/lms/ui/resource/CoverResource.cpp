@@ -22,8 +22,8 @@
 #include <Wt/WApplication.h>
 #include <Wt/Http/Response.h>
 
-#include "cover/ICoverArtGrabber.hpp"
-#include "database/Track.hpp"
+#include "services/cover/ICoverService.hpp"
+#include "services/database/Track.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
@@ -83,7 +83,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		return;
 	}
 
-	std::shared_ptr<CoverArt::IEncodedImage> cover;
+	std::shared_ptr<Image::IEncodedImage> cover;
 
 	if (trackIdStr)
 	{
@@ -96,7 +96,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 			return;
 		}
 
-		cover = Service<CoverArt::IGrabber>::get()->getFromTrack(LmsApp->getDbSession(), *trackId, *size);
+		cover = Service<Cover::ICoverService>::get()->getFromTrack(*trackId, *size);
 	}
 	else if (releaseIdStr)
 	{
@@ -106,7 +106,7 @@ CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Respons
 		if (!releaseId)
 			return;
 
-		cover = Service<CoverArt::IGrabber>::get()->getFromRelease(LmsApp->getDbSession(), *releaseId, *size);
+		cover = Service<Cover::ICoverService>::get()->getFromRelease(*releaseId, *size);
 	}
 	else
 	{

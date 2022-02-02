@@ -24,9 +24,9 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
-#include "auth/IPasswordService.hpp"
-#include "database/Session.hpp"
-#include "database/User.hpp"
+#include "services/auth/IPasswordService.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/User.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
@@ -65,12 +65,12 @@ class InitWizardModel : public Wt::WFormModel
 
 			// Check if a user already exist
 			// If it's the case, just do nothing
-			if (!Database::User::getAll(LmsApp->getDbSession()).empty())
+			if (Database::User::getCount(LmsApp->getDbSession()) > 0)
 				throw LmsException {"Admin user already created"};
 
 			Database::User::pointer user {Database::User::create(LmsApp->getDbSession(), valueText(AdminLoginField).toUTF8())};
 			user.modify()->setType(Database::UserType::ADMIN);
-			Service<::Auth::IPasswordService>::get()->setPassword(LmsApp->getDbSession(), user->getId(), valueText(PasswordField).toUTF8());
+			Service<::Auth::IPasswordService>::get()->setPassword(user->getId(), valueText(PasswordField).toUTF8());
 		}
 
 		bool validateField(Field field)

@@ -25,13 +25,13 @@
 
 #include "utils/Logger.hpp"
 
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackList.hpp"
-#include "database/Types.hpp"
-#include "database/User.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/TrackList.hpp"
+#include "services/database/Types.hpp"
+#include "services/database/User.hpp"
 
 #include "resource/CoverResource.hpp"
 #include "resource/AudioTranscodeResource.hpp"
@@ -119,10 +119,10 @@ bitrateFromString(const std::string& str)
 	if (!value)
 		return std::nullopt;
 
-	if (Database::User::audioTranscodeAllowedBitrates.find(*value) != std::cend(Database::User::audioTranscodeAllowedBitrates))
-		return *value;
+	if (!Database::isAudioBitrateAllowed(*value))
+		return std::nullopt;
 
-	return std::nullopt;
+	return *value;
 }
 
 static
@@ -241,7 +241,7 @@ MediaPlayer::loadTrack(Database::TrackId trackId, bool play, float replayGain)
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		const auto track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+		const auto track {Database::Track::find(LmsApp->getDbSession(), trackId)};
 		if (!track)
 			return;
 

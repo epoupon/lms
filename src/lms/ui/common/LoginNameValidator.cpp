@@ -20,7 +20,7 @@
 #include "LoginNameValidator.hpp"
 
 #include <Wt/WLengthValidator.h>
-#include "database/User.hpp"
+#include "services/database/User.hpp"
 
 namespace UserInterface
 {

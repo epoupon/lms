@@ -21,15 +21,16 @@
 
 #include <Wt/WPopupMenu.h>
 
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/User.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/User.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "resource/DownloadResource.hpp"
+#include "utils/Service.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface
 {
-
 	void
 	displayReleasePopupMenu(Wt::WInteractWidget& target,
 			Database::ReleaseId releaseId,
@@ -48,33 +49,18 @@ namespace UserInterface
 						releasesAction.emit(PlayQueueAction::PlayLast, {releaseId});
 					});
 
-			bool isStarred {};
-			{
-				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-				if (auto release {Database::Release::getById(LmsApp->getDbSession(), releaseId)})
-					isStarred = LmsApp->getUser()->hasStarredRelease(release);
-			}
-
+			const bool isStarred {Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), releaseId)};
 			popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
 				->triggered().connect(&target, [=]
 					{
-						auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
-
-						auto release {Database::Release::getById(LmsApp->getDbSession(), releaseId)};
-						if (!release)
-							return;
-
 						if (isStarred)
-							LmsApp->getUser().modify()->unstarRelease(release);
+							Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), releaseId);
 						else
-							LmsApp->getUser().modify()->starRelease(release);
+							Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), releaseId);
 					});
 			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
 				->setLink(Wt::WLink {std::make_unique<DownloadReleaseResource>(releaseId)});
 
 			popup->popup(&target);
 	}
-
 } // namespace UserInterface
-

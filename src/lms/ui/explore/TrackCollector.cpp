@@ -21,11 +21,11 @@
 
 #include <algorithm>
 
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackList.hpp"
-#include "database/User.hpp"
-#include "scrobbling/IScrobbling.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/TrackList.hpp"
+#include "services/database/User.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
@@ -34,89 +34,85 @@ namespace UserInterface
 {
 	using namespace Database;
 
-	std::vector<Track::pointer>
-	TrackCollector::get(std::optional<Database::Range> range, bool& moreResults)
+	RangeResults<TrackId>
+	TrackCollector::get(Range range)
 	{
+		Scrobbling::IScrobblingService& scrobbling {*Service<Scrobbling::IScrobblingService>::get()};
 		range = getActualRange(range);
 
-		std::vector<Track::pointer> releases;
+		RangeResults<TrackId> tracks;
 		switch (getMode())
 		{
 			case Mode::Random:
-				releases = getRandomTracks(range, moreResults);
+				tracks = getRandomTracks(range);
 				break;
 
 			case Mode::Starred:
-				releases = Track::getStarred(LmsApp->getDbSession(), LmsApp->getUser(), getFilters().getClusterIds(), range, moreResults);
+				tracks = scrobbling.getStarredTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
 				break;
 
 			case TrackCollector::Mode::RecentlyPlayed:
-				releases = Service<Scrobbling::IScrobbling>::get()->getRecentTracks(LmsApp->getDbSession(), LmsApp->getUser(), getFilters().getClusterIds(), range, moreResults);
+				tracks = scrobbling.getRecentTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
 				break;
 
 			case Mode::MostPlayed:
-				releases = Service<Scrobbling::IScrobbling>::get()->getTopTracks(LmsApp->getDbSession(), LmsApp->getUser(), getFilters().getClusterIds(), range, moreResults);
+				tracks = scrobbling.getTopTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
 				break;
 
 			case Mode::RecentlyAdded:
-				releases = Track::getLastWritten(LmsApp->getDbSession(), std::nullopt, getFilters().getClusterIds(), range, moreResults);
-				break;
-
-			case Mode::Search:
-				releases = Track::getByFilter(LmsApp->getDbSession(), getFilters().getClusterIds(), getSearchKeywords(), range, moreResults);
-				break;
-
-			case Mode::All:
-				releases = Track::getByFilter(LmsApp->getDbSession(), getFilters().getClusterIds(), {}, range, moreResults);
-				break;
-		}
-
-		if (range && getMaxCount() && (range->offset + range->limit == *getMaxCount()))
-			moreResults = false;
-
-		return releases;
-	}
-
-	std::vector<Database::TrackId>
-	TrackCollector::getAll()
-	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-		bool moreResults;
-		const auto tracks {get(std::nullopt, moreResults)};
-
-		std::vector<TrackId> res;
-		res.reserve(tracks.size());
-		std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Track::pointer& track) { return track->getId(); });
-
-		return res;
-	}
-
-	std::vector<Database::Track::pointer>
-	TrackCollector::getRandomTracks(std::optional<Range> range, bool& moreResults)
-	{
-		std::vector<Track::pointer> releases;
-
-		assert(getMode() == Mode::Random);
-
-		if (_randomTracks.empty())
-			_randomTracks = Track::getAllIdsRandom(LmsApp->getDbSession(), getFilters().getClusterIds(), getMaxCount());
-
-		{
-			auto itBegin {std::cbegin(_randomTracks) + std::min(range ? range->offset : 0, _randomTracks.size())};
-			auto itEnd {std::cbegin(_randomTracks) + std::min(range ? range->offset + range->limit : _randomTracks.size(), _randomTracks.size())};
-
-			for (auto it {itBegin}; it != itEnd; ++it)
 			{
-				Track::pointer release {Track::getById(LmsApp->getDbSession(), *it)};
-				if (release)
-					releases.push_back(release);
+				Track::FindParameters params;
+				params.setClusters(getFilters().getClusterIds());
+				params.setSortMethod(TrackSortMethod::LastWritten);
+				params.setRange(range);
+
+				tracks = Track::find(LmsApp->getDbSession(), params);
+				break;
 			}
 
-			moreResults = (itEnd != std::cend(_randomTracks));
+			case Mode::Search:
+			{
+				Track::FindParameters params;
+				params.setClusters(getFilters().getClusterIds());
+				params.setKeywords(getSearchKeywords());
+				params.setRange(range);
+
+				tracks = Track::find(LmsApp->getDbSession(), params);
+				break;
+			}
+
+			case Mode::All:
+			{
+				Track::FindParameters params;
+				params.setClusters(getFilters().getClusterIds());
+				params.setRange(range);
+
+				tracks = Track::find(LmsApp->getDbSession(), params);
+				break;
+			}
 		}
 
-		return releases;
+		if (range.offset + range.size == getMaxCount())
+			tracks.moreResults = false;
+
+		return tracks;
+	}
+
+	RangeResults<TrackId>
+	TrackCollector::getRandomTracks(Range range)
+	{
+		assert(getMode() == Mode::Random);
+
+		if (!_randomTracks)
+		{
+			Track::FindParameters params;
+			params.setClusters(getFilters().getClusterIds());
+			params.setSortMethod(TrackSortMethod::Random);
+			params.setRange({0, getMaxCount()});
+			_randomTracks = Track::find(LmsApp->getDbSession(), params);
+		}
+
+		return _randomTracks->getSubRange(range);
 	}
 
 } // ns UserInterface

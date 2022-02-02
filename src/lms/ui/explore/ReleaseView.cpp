@@ -25,12 +25,12 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
-#include "database/Cluster.hpp"
-#include "database/Release.hpp"
-#include "database/ScanSettings.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "recommendation/IEngine.hpp"
+#include "services/database/Cluster.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/ScanSettings.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
@@ -78,14 +78,14 @@ extractReleaseIdFromInternalPath()
 		if (mbid)
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-			if (const Database::Release::pointer release {Database::Release::getByMBID(LmsApp->getDbSession(), *mbid)})
+			if (const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), *mbid)})
 				return release->getId();
 		}
 
 		return std::nullopt;
 	}
 
-	return StringUtils::readAs<Database::ReleaseId::ValueType>(wApp->internalPathNextPart("/release/"));
+	return StringUtils::readAs<ReleaseId::ValueType>(wApp->internalPathNextPart("/release/"));
 }
 
 
@@ -101,11 +101,11 @@ Release::refreshView()
 	if (!releaseId)
 		throw ReleaseNotFoundException {};
 
-	auto similarReleasesIds {Service<Recommendation::IEngine>::get()->getSimilarReleases(LmsApp->getDbSession(), *releaseId, 6)};
+	auto similarReleasesIds {Service<Recommendation::IRecommendationService>::get()->getSimilarReleases(*releaseId, 6)};
 
     auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Release::pointer release {Database::Release::getById(LmsApp->getDbSession(), *releaseId)};
+	const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), *releaseId)};
 	if (!release)
 		throw ReleaseNotFoundException {};
 
@@ -128,6 +128,8 @@ Release::refreshView()
 			bindInt("orig-year", *originalYear);
 		}
 	}
+
+	bindString("duration", durationToString(release->getDuration()), Wt::TextFormat::Plain);
 
 	refreshReleaseArtists(release);
 
@@ -218,7 +220,7 @@ Release::refreshView()
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-		const auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
+		const auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		if (variousArtists && !artists.empty())
 		{
 			entry->setCondition("if-has-artists", true);
@@ -250,9 +252,9 @@ Release::refreshView()
 			displayTrackPopupMenu(*moreBtn, trackId, tracksAction);
 		});
 
-		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
+		entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
-		LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=] (Database::TrackId loadedTrackId)
+		LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=] (TrackId loadedTrackId)
 		{
 			entry->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
 		});
@@ -270,12 +272,12 @@ Release::refreshView()
 void
 Release::refreshReleaseArtists(const Database::Release::pointer& release)
 {
-	std::vector<Database::ObjectPtr<Database::Artist>> artists;
+	std::vector<ObjectPtr<Artist>> artists;
 
 	artists = release->getReleaseArtists();
 	if (artists.empty())
 	{
-		artists = release->getArtists(Database::TrackArtistLinkType::Artist);
+		artists = release->getArtists(TrackArtistLinkType::Artist);
 		if (artists.size() > 1)
 		{
 			setCondition("if-has-various-release-artists", true);
@@ -340,7 +342,7 @@ Release::refreshLinks(const Database::Release::pointer& release)
 }
 
 void
-Release::refreshSimilarReleases(const std::vector<Database::ReleaseId>& similarReleasesId)
+Release::refreshSimilarReleases(const std::vector<ReleaseId>& similarReleasesId)
 {
 	if (similarReleasesId.empty())
 		return;
@@ -348,9 +350,9 @@ Release::refreshSimilarReleases(const std::vector<Database::ReleaseId>& similarR
 	setCondition("if-has-similar-releases", true);
 	auto* similarReleasesContainer {bindNew<Wt::WContainerWidget>("similar-releases")};
 
-	for (const Database::ReleaseId id : similarReleasesId)
+	for (const ReleaseId id : similarReleasesId)
 	{
-		const Database::Release::pointer similarRelease{Database::Release::getById(LmsApp->getDbSession(), id)};
+		const Database::Release::pointer similarRelease {Database::Release::find(LmsApp->getDbSession(), id)};
 		if (!similarRelease)
 			continue;
 

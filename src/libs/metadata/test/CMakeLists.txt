@@ -14,5 +14,7 @@ target_link_libraries(test-metadata PRIVATE
 	GTest::GTest
 	)
 
-gtest_discover_tests(test-metadata)
+if (NOT CMAKE_CROSSCOMPILING)
+	gtest_discover_tests(test-metadata)
+endif()
 

@@ -26,10 +26,10 @@
 #include <Wt/Http/Response.h>
 #include <Wt/WLocalDateTime.h>
 
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Zipper.hpp"
@@ -176,7 +176,7 @@ DownloadArtistResource::DownloadArtistResource(Database::ArtistId artistId)
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), artistId)};
+	Database::Artist::pointer artist {Database::Artist::find(LmsApp->getDbSession(), artistId)};
 	if (artist)
 		suggestFileName(getArtistPathName(artist) + ".zip");
 }
@@ -186,7 +186,7 @@ DownloadArtistResource::createZipper()
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Artist::pointer artist {Database::Artist::getById(LmsApp->getDbSession(), _artistId)};
+	const Database::Artist::pointer artist {Database::Artist::find(LmsApp->getDbSession(), _artistId)};
 	if (!artist)
 	{
 		LOG(DEBUG) << "Cannot find artist";
@@ -201,7 +201,7 @@ DownloadReleaseResource::DownloadReleaseResource(Database::ReleaseId releaseId)
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	Database::Release::pointer release {Database::Release::getById(LmsApp->getDbSession(), releaseId)};
+	Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), releaseId)};
 	if (release)
 		suggestFileName(getReleasePathName(release) + ".zip");
 }
@@ -212,7 +212,7 @@ DownloadReleaseResource::createZipper()
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Release::pointer release {Database::Release::getById(LmsApp->getDbSession(), _releaseId)};
+	const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), _releaseId)};
 	if (!release)
 	{
 		LOG(DEBUG) << "Cannot find release";
@@ -227,7 +227,7 @@ DownloadTrackResource::DownloadTrackResource(Database::TrackId trackId)
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), trackId)};
+	Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), trackId)};
 	if (track)
 		suggestFileName(getTrackPathName(track) + ".zip");
 }
@@ -237,7 +237,7 @@ DownloadTrackResource::createZipper()
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), _trackId)};
+	const Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), _trackId)};
 	if (!track)
 	{
 		LOG(DEBUG) << "Cannot find track";

@@ -21,8 +21,9 @@
 
 #include <Wt/WMenu.h>
 
-#include "database/Session.hpp"
-#include "database/TrackArtistLink.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/TrackArtistLink.hpp"
 #include "utils/EnumSet.hpp"
 #include "utils/Logger.hpp"
 
@@ -109,7 +110,7 @@ Artists::refreshView(ArtistCollector::Mode mode)
 }
 
 void
-Artists::refreshView(std::optional<Database::TrackArtistLinkType> linkType)
+Artists::refreshView(std::optional<TrackArtistLinkType> linkType)
 {
 	_artistCollector.setArtistLinkType(linkType);
 	refreshView();
@@ -120,13 +121,13 @@ Artists::refreshArtistLinkTypes()
 {
 	std::shared_ptr<ArtistLinkModel> linkTypeModel {std::static_pointer_cast<ArtistLinkModel>(_linkType->model())};
 
-	EnumSet<Database::TrackArtistLinkType> usedLinkTypes;
+	EnumSet<TrackArtistLinkType> usedLinkTypes;
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-		usedLinkTypes = Database::TrackArtistLink::getUsedTypes(LmsApp->getDbSession());
+		usedLinkTypes = TrackArtistLink::findUsedTypes(LmsApp->getDbSession());
 	}
 
-	auto addTypeIfUsed {[&](Database::TrackArtistLinkType linkType, std::string_view stringKey)
+	auto addTypeIfUsed {[&](TrackArtistLinkType linkType, std::string_view stringKey)
 	{
 		if (!usedLinkTypes.contains(linkType))
 			return;
@@ -151,17 +152,16 @@ Artists::refreshArtistLinkTypes()
 void
 Artists::addSome()
 {
-	bool moreResults {};
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
+	const auto artistIds {_artistCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize})};
+	for (const ArtistId artistId : artistIds.results)
 	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-		const auto artists {_artistCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize}, moreResults)};
-		for (const auto& artist : artists)
+		if (const auto artist {Artist::find(LmsApp->getDbSession(), artistId)})
 			_container->add(ArtistListHelpers::createEntry(artist));
 	}
 
-	_container->setHasMore(moreResults);
+	_container->setHasMore(artistIds.moreResults);
 }
 
 } // namespace UserInterface

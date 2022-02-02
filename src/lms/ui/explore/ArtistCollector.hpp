@@ -20,11 +20,10 @@
 #pragma once
 
 #include <optional>
-#include <vector>
 
 #include "DatabaseCollectorBase.hpp"
-
-#include "database/Types.hpp"
+#include "services/database/ArtistId.hpp"
+#include "services/database/Types.hpp"
 
 namespace Database
 {
@@ -38,13 +37,13 @@ namespace UserInterface
 		public:
 			using DatabaseCollectorBase::DatabaseCollectorBase;
 
-			std::vector<Database::ObjectPtr<Database::Artist>>	get(std::optional<Database::Range> range, bool& moreResults);
-			void reset() { _randomArtists.clear(); }
+			Database::RangeResults<Database::ArtistId>	get(Database::Range range);
+			void reset() { _randomArtists.reset(); }
 			void setArtistLinkType(std::optional<Database::TrackArtistLinkType> linkType) { _linkType = linkType; }
 
 		private:
-			std::vector<Database::ObjectPtr<Database::Artist>>	getRandomArtists(std::optional<Range> range, bool& moreResults);
-			std::vector<Database::ArtistId> _randomArtists;
+			Database::RangeResults<Database::ArtistId>	getRandomArtists(Range range);
+			std::optional<Database::RangeResults<Database::ArtistId>> _randomArtists;
 			std::optional<Database::TrackArtistLinkType> _linkType;
 	};
 } // ns UserInterface

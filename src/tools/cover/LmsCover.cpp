@@ -24,11 +24,11 @@
 
 #include <boost/program_options.hpp>
 
-#include "cover/ICoverArtGrabber.hpp"
-#include "database/Db.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "services/database/Db.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/cover/ICoverService.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
@@ -36,18 +36,20 @@
 
 static
 void
-dumpTrackCovers(Database::Session& session, CoverArt::ImageSize width)
+dumpTrackCovers(Database::Session& session, Image::ImageSize width)
 {
-	std::vector<Database::TrackId> trackIds;
+	using namespace Database;
+
+	RangeResults<Database::TrackId> trackIds;
 	{
 		auto transaction {session.createSharedTransaction()};
-		trackIds = Database::Track::getAllIds(session);
+		trackIds = Database::Track::find(session, Database::Track::FindParameters {});
 	}
 
-	for (const Database::TrackId trackId : trackIds)
+	for (const Database::TrackId trackId : trackIds.results)
 	{
 		std::cout << "Getting cover for track id " << trackId.toString() << std::endl;
-		Service<CoverArt::IGrabber>::get()->getFromTrack(session, trackId, width);
+		Service<Cover::ICoverService>::get()->getFromTrack(trackId, width);
 	}
 }
 
@@ -82,15 +84,11 @@ int main(int argc, char *argv[])
         }
 
 		Service<IConfig> config {createConfig(vm["conf"].as<std::string>())};
-
-		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0],
-				vm["default-cover"].as<std::string>(),
-				config->getULong("cover-max-cache-size", 30) * 1000 * 1000,
-				config->getULong("cover-max-file-size", 10) * 1000 * 1000,
-				config->getULong("cover-jpeg-quality", vm["quality"].as<unsigned>())
-				)};
-
 		Database::Db db {config->getPath("working-dir") / "lms.db"};
+		Service<Cover::ICoverService> coverArtService {Cover::createCoverService(db, argv[0], vm["default-cover"].as<std::string>())};
+
+		coverArtService->setJpegQuality(config->getULong("cover-jpeg-quality", vm["quality"].as<unsigned>()));
+
 		Database::Session session {db};
 
 		if (vm.count("tracks"))

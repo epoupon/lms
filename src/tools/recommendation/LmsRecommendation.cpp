@@ -24,40 +24,43 @@
 
 #include <boost/program_options.hpp>
 
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Db.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/Cluster.hpp"
+#include "services/database/Db.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/Types.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Service.hpp"
 #include "utils/StreamLogger.hpp"
-#include "recommendation/IEngine.hpp"
+
+using namespace Database;
 
 static
 void
-dumpTracksRecommendation(Database::Session session, Recommendation::IEngine& engine, unsigned maxSimilarityCount)
+dumpTracksRecommendation(Session session, Recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
 {
-	const std::vector<Database::TrackId> trackIds {[&]()
+	const RangeResults<TrackId> trackIds {[&]()
 		{
 			auto transaction {session.createSharedTransaction()};
-			return Database::Track::getAllIds(session);
+			return Track::find(session, Track::FindParameters {});
 		}()};
 
-	std::cout << "*** Tracks (" << trackIds.size() << ") ***" << std::endl;
-	for (Database::TrackId trackId : trackIds)
+	std::cout << "*** Tracks (" << trackIds.results.size() << ") ***" << std::endl;
+	for (const TrackId trackId : trackIds.results)
 	{
-		auto trackToString = [&](Database::TrackId trackId)
+		auto trackToString = [&](const TrackId trackId)
 		{
 			std::string res;
 			auto transaction {session.createSharedTransaction()};
-			Database::Track::pointer track {Database::Track::getById(session, trackId)};
+			const Track::pointer track {Track::find(session, trackId)};
 
 			res += track->getName();
 			if (track->getRelease())
 				res += " [" + track->getRelease()->getName() + "]";
-			for (auto artist : track->getArtists({Database::TrackArtistLinkType::Artist}))
+			for (auto artist : track->getArtists({TrackArtistLinkType::Artist}))
 				res += " - " + artist->getName();
 			for (auto cluster : track->getClusters())
 				res += " {" + cluster->getType()->getName() + "-"+ cluster->getName() + "}";
@@ -66,61 +69,61 @@ dumpTracksRecommendation(Database::Session session, Recommendation::IEngine& eng
 		};
 
 		std::cout << "Processing track '" << trackToString(trackId) << std::endl;
-		for (Database::TrackId similarTrackId : engine.getSimilarTracks(session, {trackId}, maxSimilarityCount))
+		for (TrackId similarTrackId : recommendationService.findSimilarTracks({trackId}, maxSimilarityCount))
 			std::cout << "\t- Similar track '" << trackToString(similarTrackId) << std::endl;
 	}
 }
 
 static
 void
-dumpReleasesRecommendation(Database::Session session, Recommendation::IEngine& engine, unsigned maxSimilarityCount)
+dumpReleasesRecommendation(Session session, Recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
 {
-	const std::vector<Database::ReleaseId> releaseIds = std::invoke([&]()
+	const RangeResults<ReleaseId> releaseIds {std::invoke([&]()
 		{
 			auto transaction {session.createSharedTransaction()};
-			return Database::Release::getAllIds(session);
-		});
+			return Release::find(session, Release::FindParameters {});
+		})};
 
 	std::cout << "*** Releases ***" << std::endl;
-	for (Database::ReleaseId releaseId : releaseIds)
+	for (ReleaseId releaseId : releaseIds.results)
 	{
-		auto releaseToString = [&](Database::ReleaseId releaseId)
+		auto releaseToString = [&](ReleaseId releaseId) -> std::string
 		{
 			auto transaction {session.createSharedTransaction()};
 
-			Database::Release::pointer release {Database::Release::getById(session, releaseId)};
+			Release::pointer release {Release::find(session, releaseId)};
 			return release->getName();
 		};
 
 		std::cout << "Processing release '" << releaseToString(releaseId) << "'" << std::endl;
-		for (Database::ReleaseId similarReleaseId : engine.getSimilarReleases(session, releaseId, maxSimilarityCount))
+		for (ReleaseId similarReleaseId : recommendationService.getSimilarReleases(releaseId, maxSimilarityCount))
 			std::cout << "\t- Similar release '" << releaseToString(similarReleaseId) << "'" << std::endl;
 	}
 }
 
 static
 void
-dumpArtistsRecommendation(Database::Session session, Recommendation::IEngine& engine, unsigned maxSimilarityCount)
+dumpArtistsRecommendation(Session session, Recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
 {
-	const std::vector<Database::ArtistId> artistIds = std::invoke([&]()
+	const RangeResults<ArtistId> artistIds = std::invoke([&]()
 	{
 		auto transaction {session.createSharedTransaction()};
-		return Database::Artist::getAllIds(session);
+		return Artist::find(session, Artist::FindParameters {});
 	});
 
 	std::cout << "*** Artists ***" << std::endl;
-	for (Database::ArtistId artistId : artistIds)
+	for (ArtistId artistId : artistIds.results)
 	{
-		auto artistToString = [&](Database::ArtistId artistId)
+		auto artistToString = [&](ArtistId artistId)
 		{
 			auto transaction {session.createSharedTransaction()};
 
-			Database::Artist::pointer artist {Database::Artist::getById(session, artistId)};
+			Artist::pointer artist {Artist::find(session, artistId)};
 			return artist->getName();
 		};
 
 		std::cout << "Processing artist '" << artistToString(artistId) << "'" << std::endl;
-		for (Database::ArtistId similarArtistId : engine.getSimilarArtists(session, artistId, {Database::TrackArtistLinkType::Artist, Database::TrackArtistLinkType::ReleaseArtist}, maxSimilarityCount))
+		for (ArtistId similarArtistId : recommendationService.getSimilarArtists(artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, maxSimilarityCount))
 		{
 			std::cout << "\t- Similar artist '" << artistToString(similarArtistId) << "'" << std::endl;
 		}
@@ -158,28 +161,28 @@ int main(int argc, char *argv[])
 
 		Service<IConfig> config {createConfig(vm["conf"].as<std::string>())};
 
-		Database::Db db {config->getPath("working-dir") / "lms.db"};
-		Database::Session session {db};
+		Db db {config->getPath("working-dir") / "lms.db"};
+		Session session {db};
 
-		std::cout << "Creating recommendation engine..." << std::endl;
-		const auto engine {Recommendation::createEngine(db)};
-		std::cout << "Recommendation engine created!" << std::endl;
+		std::cout << "Creating recommendation recommendationService..." << std::endl;
+		const auto recommendationService {Recommendation::createRecommendationService(db)};
+		std::cout << "Recommendation recommendationService created!" << std::endl;
 
-		std::cout << "Loading recommendation engine..." << std::endl;
-		engine->load(false);
+		std::cout << "Loading recommendation recommendationService..." << std::endl;
+		recommendationService->load(false);
 
 		unsigned maxSimilarityCount {vm["max"].as<unsigned>()};
 
-		std::cout << "Recommendation engine loaded!" << std::endl;
+		std::cout << "Recommendation recommendationService loaded!" << std::endl;
 
 		if (vm.count("tracks"))
-			dumpTracksRecommendation(db, *engine, maxSimilarityCount);
+			dumpTracksRecommendation(db, *recommendationService, maxSimilarityCount);
 
 		if (vm.count("releases"))
-			dumpReleasesRecommendation(db, *engine, maxSimilarityCount);
+			dumpReleasesRecommendation(db, *recommendationService, maxSimilarityCount);
 
 		if (vm.count("artists"))
-			dumpArtistsRecommendation(db, *engine, maxSimilarityCount);
+			dumpArtistsRecommendation(db, *recommendationService, maxSimilarityCount);
 	}
 	catch( std::exception& e)
 	{

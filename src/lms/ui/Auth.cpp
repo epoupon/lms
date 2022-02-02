@@ -28,10 +28,10 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WRandom.h>
 
-#include "auth/IAuthTokenService.hpp"
-#include "auth/IPasswordService.hpp"
-#include "database/Session.hpp"
-#include "database/User.hpp"
+#include "services/auth/IAuthTokenService.hpp"
+#include "services/auth/IPasswordService.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/User.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
@@ -49,7 +49,7 @@ static
 void
 createAuthToken(Database::UserId userId, const Wt::WDateTime& expiry)
 {
-	const std::string secret {Service<::Auth::IAuthTokenService>::get()->createAuthToken(LmsApp->getDbSession(), userId, expiry)};
+	const std::string secret {Service<::Auth::IAuthTokenService>::get()->createAuthToken(userId, expiry)};
 
 	LmsApp->setCookie(authCookieName,
 			secret,
@@ -67,7 +67,7 @@ processAuthToken(const Wt::WEnvironment& env)
 	if (!authCookie)
 		return std::nullopt;
 
-	const auto res {Service<::Auth::IAuthTokenService>::get()->processAuthToken(LmsApp->getDbSession(), boost::asio::ip::address::from_string(env.clientAddress()), *authCookie)};
+	const auto res {Service<::Auth::IAuthTokenService>::get()->processAuthToken(boost::asio::ip::address::from_string(env.clientAddress()), *authCookie)};
 	switch (res.state)
 	{
 		case ::Auth::IAuthTokenService::AuthTokenProcessResult::State::Denied:
@@ -109,7 +109,7 @@ class AuthModel : public Wt::WFormModel
 			{
 				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-				Database::User::pointer user {Database::User::getByLoginName(LmsApp->getDbSession(), valueText(LoginNameField).toUTF8())};
+				Database::User::pointer user {Database::User::find(LmsApp->getDbSession(), valueText(LoginNameField).toUTF8())};
 				user.modify()->setLastLogin(Wt::WDateTime::currentDateTime());
 				_userId = user->getId();
 
@@ -131,7 +131,6 @@ class AuthModel : public Wt::WFormModel
 			if (field == PasswordField)
 			{
 				const auto checkResult {Service<::Auth::IPasswordService>::get()->checkUserPassword(
-							LmsApp->getDbSession(),
 							boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
 							valueText(LoginNameField).toUTF8(),
 							valueText(PasswordField).toUTF8())};
@@ -206,7 +205,7 @@ Auth::Auth()
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		Database::User::pointer demoUser {Database::User::getDemo(LmsApp->getDbSession())};
+		Database::User::pointer demoUser {Database::User::findDemoUser(LmsApp->getDbSession())};
 		if (demoUser)
 		{
 			model->setValue(AuthModel::LoginNameField, demoUser->getLoginName());

@@ -43,6 +43,7 @@ enum class Module
 	DB,
 	DBUPDATER,
 	FEATURE,
+	HTTP,
 	MAIN,
 	METADATA,
 	REMOTE,
@@ -84,5 +85,6 @@ class Logger
 		virtual void processLog(const Log& log) = 0;
 };
 
-#define LMS_LOG(module, severity)	Log(Service<Logger>::get(), Module::module, Severity::severity).getOstream()
+#define LMS_LOG(module, severity)		Log(Service<Logger>::get(), Module::module, Severity::severity).getOstream()
+#define LMS_LOG_EX(module, severity)	Log(Service<Logger>::get(), module, severity).getOstream()
 

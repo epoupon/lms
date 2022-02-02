@@ -51,11 +51,11 @@ target_include_directories(lms PRIVATE
 target_link_libraries(lms PRIVATE
 	lmsav
 	lmsauth
-	lmscover
 	lmsdatabase
 	lmsrecommendation
 	lmsscanner
 	lmsscrobbling
+	lmsservice-cover
 	lmssubsonic
 	lmsutils
 	Wt::Wt

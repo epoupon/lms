@@ -25,9 +25,9 @@
 #include "av/TranscodeParameters.hpp"
 #include "av/TranscodeResourceHandlerCreator.hpp"
 #include "av/Types.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/User.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
@@ -41,7 +41,6 @@ namespace StringUtils
 	std::optional<Database::AudioFormat>
 	readAs(std::string_view str)
 	{
-
 		auto encodedFormat {readAs<int>(str)};
 		if (!encodedFormat)
 			return std::nullopt;
@@ -150,7 +149,7 @@ readTranscodeParameters(const Wt::Http::Request& request)
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		const Database::Track::pointer track {Database::Track::getById(LmsApp->getDbSession(), *trackId)};
+		const Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), *trackId)};
 		if (!track)
 		{
 			LOG(ERROR) << "Missing track";
@@ -159,7 +158,7 @@ readTranscodeParameters(const Wt::Http::Request& request)
 
 		parameters.file = track->getPath();
 
-		if (Database::User::audioTranscodeAllowedBitrates.find(*bitrate) == std::cend(Database::User::audioTranscodeAllowedBitrates))
+		if (!Database::isAudioBitrateAllowed(*bitrate))
 		{
 			LOG(ERROR) << "Bitrate '" << *bitrate << "' is not allowed";
 			return std::nullopt;

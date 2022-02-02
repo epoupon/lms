@@ -28,9 +28,9 @@
 #include <Wt/WResource.h>
 #include <Wt/WSplitButton.h>
 
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "scanner/IScanner.hpp"
+#include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/scanner/IScannerService.hpp"
 #include "utils/Service.hpp"
 #include "LmsApplication.hpp"
 
@@ -90,13 +90,13 @@ class ReportResource : public Wt::WResource
 
 				for (const auto& duplicate : _stats.duplicates)
 				{
-					const auto& track {Database::Track::getById(LmsApp->getDbSession(), duplicate.trackId)};
+					const auto& track {Database::Track::find(LmsApp->getDbSession(), duplicate.trackId)};
 					if (!track)
 						continue;
 
 					response.out() << track->getPath().string();
 					if (auto mbid {track->getTrackMBID()})
-						response.out() << " (Track MBID " << mbid->getAsString() << ")";
+						response.out() << " (Recording MBID " << mbid->getAsString() << ")";
 
 					response.out() << " - " << duplicateReasonToWString(duplicate.reason).toUTF8() << '\n';
 				}
@@ -122,7 +122,7 @@ class ReportResource : public Wt::WResource
 			switch (reason)
 			{
 				case Scanner::DuplicateReason::SameHash: return Wt::WString::tr("Lms.Admin.ScannerController.same-hash");
-				case Scanner::DuplicateReason::SameMBID: return Wt::WString::tr("Lms.Admin.ScannerController.same-mbid");
+				case Scanner::DuplicateReason::SameRecordingMBID: return Wt::WString::tr("Lms.Admin.ScannerController.same-mbid");
 			}
 			return "?";
 		}
@@ -163,20 +163,20 @@ ScannerController::refreshContents()
 	actionBtn->actionButton()->setText(Wt::WString::tr("Lms.Admin.ScannerController.scan-now"));
 	actionBtn->actionButton()->clicked().connect([]
 	{
-		Service<Scanner::IScanner>::get()->requestImmediateScan(false);
+		Service<Scanner::IScannerService>::get()->requestImmediateScan(false);
 	});
 
 	auto popup = std::make_unique<Wt::WPopupMenu>();
 	popup->addItem(Wt::WString::tr("Lms.Admin.ScannerController.force-scan-now"));
 	popup->itemSelected().connect([]
 	{
-		Service<Scanner::IScanner>::get()->requestImmediateScan(true);
+		Service<Scanner::IScannerService>::get()->requestImmediateScan(true);
 	});
 	actionBtn->dropDownButton()->setMenu(std::move(popup));
 	actionBtn->dropDownButton()->addStyleClass("btn-primary");
 
 
-	const IScanner::Status status {Service<IScanner>::get()->getStatus()};
+	const IScannerService::Status status {Service<IScannerService>::get()->getStatus()};
 	if (status.lastCompleteScanStats)
 	{
 		bindString("last-scan", Wt::WString::tr("Lms.Admin.ScannerController.last-scan-status")
@@ -200,16 +200,16 @@ ScannerController::refreshContents()
 
 	switch (status.currentState)
 	{
-		case IScanner::State::NotScheduled:
+		case IScannerService::State::NotScheduled:
 			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-not-scheduled"));
 			bindEmpty("step-status");
 			break;
-		case IScanner::State::Scheduled:
+		case IScannerService::State::Scheduled:
 			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-scheduled")
 					.arg(status.nextScheduledScan.toString()));
 			bindEmpty("step-status");
 			break;
-		case IScanner::State::InProgress:
+		case IScannerService::State::InProgress:
 			bindString("status", Wt::WString::tr("Lms.Admin.ScannerController.status-in-progress")
 					.arg(static_cast<int>(status.currentScanStepStats->currentStep) + 1)
 					.arg(Scanner::ScanProgressStepCount));

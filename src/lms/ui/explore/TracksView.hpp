@@ -24,7 +24,7 @@
 #include <Wt/WContainerWidget.h>
 #include <Wt/WTemplate.h>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 #include "PlayQueueAction.hpp"
 #include "TrackCollector.hpp"
 

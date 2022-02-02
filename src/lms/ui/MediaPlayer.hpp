@@ -27,7 +27,8 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
-#include "database/Types.hpp"
+#include "services/database/TrackId.hpp"
+#include "services/database/Types.hpp"
 
 namespace UserInterface {
 

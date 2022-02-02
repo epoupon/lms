@@ -21,32 +21,30 @@
 
 #include <Wt/WTemplate.h>
 
-#include "database/Types.hpp"
+#include "services/database/Types.hpp"
 #include "PlayQueueAction.hpp"
 
-namespace UserInterface {
-
-class Filters;
-class SearchView;
-
-class Explore : public Wt::WTemplate
+namespace UserInterface
 {
-	public:
-		Explore(Filters* filters);
+	class Filters;
+	class SearchView;
 
-		void search(const Wt::WString& searchText);
+	class Explore : public Wt::WTemplate
+	{
+		public:
+			Explore(Filters* filters);
 
-		PlayQueueActionTrackSignal tracksAction;
+			void search(const Wt::WString& searchText);
 
-	private:
+			PlayQueueActionTrackSignal tracksAction;
 
-		void handleArtistsAction(PlayQueueAction action, const std::vector<Database::ArtistId>& artistsId);
-		void handleReleasesAction(PlayQueueAction action, const std::vector<Database::ReleaseId>& releasesId);
-		void handleTracksAction(PlayQueueAction action, const std::vector<Database::TrackId>& tracksId);
+		private:
+			void handleArtistsAction(PlayQueueAction action, const std::vector<Database::ArtistId>& artistsId);
+			void handleReleasesAction(PlayQueueAction action, const std::vector<Database::ReleaseId>& releasesId);
+			void handleTracksAction(PlayQueueAction action, const std::vector<Database::TrackId>& tracksId);
 
-		Filters* _filters {};
-		SearchView* _search {};
-};
-
+			Filters* _filters {};
+			SearchView* _search {};
+	};
 } // namespace UserInterface
 

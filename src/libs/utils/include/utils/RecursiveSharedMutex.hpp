@@ -34,6 +34,10 @@ class RecursiveSharedMutex
 		void lock_shared();
 		void unlock_shared();
 
+#ifndef NDEBUG
+		bool isSharedLocked();
+		bool isUniqueLocked();
+#endif // NDEBUG
 	private:
 		std::shared_mutex _mutex;
 		std::thread::id _uniqueOwner;

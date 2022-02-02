@@ -19,10 +19,10 @@
 
 #include "ArtistCollector.hpp"
 
-#include "database/Artist.hpp"
-#include "database/User.hpp"
-#include "database/TrackList.hpp"
-#include "scrobbling/IScrobbling.hpp"
+#include "services/database/Artist.hpp"
+#include "services/database/User.hpp"
+#include "services/database/TrackList.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
@@ -31,100 +31,92 @@ namespace UserInterface
 {
 	using namespace Database;
 
-	std::vector<Database::ObjectPtr<Database::Artist>>
-	ArtistCollector::get(std::optional<Database::Range> range, bool& moreResults)
+	RangeResults<ArtistId>
+	ArtistCollector::get(Database::Range range)
 	{
+		Scrobbling::IScrobblingService& scrobbling {*Service<Scrobbling::IScrobblingService>::get()};
+
 		range = getActualRange(range);
 
-		std::vector<Artist::pointer> artists;
+		RangeResults<ArtistId> artists;
 		switch (getMode())
 		{
 			case Mode::Random:
-				artists = getRandomArtists(range, moreResults);
+				artists = getRandomArtists(range);
 				break;
 
 			case Mode::Starred:
-				artists = Artist::getStarred(LmsApp->getDbSession(),
-								LmsApp->getUser(),
-								getFilters().getClusterIds(),
-								_linkType,
-								Artist::SortMethod::BySortName,
-								range, moreResults);
+				artists = scrobbling.getStarredArtists(LmsApp->getUserId(), getFilters().getClusterIds(), _linkType, ArtistSortMethod::StarredDateDesc, range);
 				break;
 
 			case Mode::RecentlyPlayed:
-				artists = Service<Scrobbling::IScrobbling>::get()->getRecentArtists(LmsApp->getDbSession(), LmsApp->getUser(),
-								getFilters().getClusterIds(),
-								_linkType,
-								range, moreResults);
+				artists = scrobbling.getRecentArtists(LmsApp->getUserId(), getFilters().getClusterIds(), _linkType, range);
 				break;
 
 			case Mode::MostPlayed:
-				artists = Service<Scrobbling::IScrobbling>::get()->getTopArtists(LmsApp->getDbSession(), LmsApp->getUser(),
-								getFilters().getClusterIds(),
-								_linkType,
-								range, moreResults);
+				artists = scrobbling.getTopArtists(LmsApp->getUserId(), getFilters().getClusterIds(), _linkType, range);
 				break;
 
 			case Mode::RecentlyAdded:
-				artists = Artist::getLastWritten(LmsApp->getDbSession(),
-								std::nullopt, // after
-								getFilters().getClusterIds(),
-								_linkType,
-								range, moreResults);
-				break;
-
-			case Mode::Search:
-				artists = Database::Artist::getByFilter(LmsApp->getDbSession(),
-								getFilters().getClusterIds(),
-								getSearchKeywords(),
-								std::nullopt, // no link
-								Database::Artist::SortMethod::BySortName,
-								range, moreResults);
-				break;
-
-			case Mode::All:
-				artists = Artist::getByFilter(LmsApp->getDbSession(),
-						getFilters().getClusterIds(),
-						{},
-						_linkType,
-						Artist::SortMethod::BySortName,
-						range, moreResults);
-				break;
-		}
-
-		if (range && getMaxCount() && (range->offset + range->limit == *getMaxCount()))
-			moreResults = false;
-
-		return artists;
-	}
-
-	std::vector<Database::Artist::pointer>
-	ArtistCollector::getRandomArtists(std::optional<Range> range, bool& moreResults)
-	{
-		std::vector<Artist::pointer> artists;
-
-		assert(getMode() == Mode::Random);
-
-		if (_randomArtists.empty())
-			_randomArtists = Artist::getAllIdsRandom(LmsApp->getDbSession(), getFilters().getClusterIds(), _linkType, getMaxCount());
-
-		{
-			auto itBegin {std::cbegin(_randomArtists) + std::min(range ? range->offset : 0, _randomArtists.size())};
-			auto itEnd {std::cbegin(_randomArtists) + std::min(range ? range->offset + range->limit : _randomArtists.size(), _randomArtists.size())};
-
-			for (auto it {itBegin}; it != itEnd; ++it)
 			{
-				Artist::pointer artist {Artist::getById(LmsApp->getDbSession(), *it)};
-				if (artist)
-					artists.push_back(artist);
+				Artist::FindParameters params;
+				params.setClusters(getFilters().getClusterIds());
+				params.setLinkType(_linkType);
+				params.setSortMethod(ArtistSortMethod::LastWritten);
+				params.setRange(range);
+
+				artists = Artist::find(LmsApp->getDbSession(), params);
+				break;
 			}
 
-			moreResults = (itEnd != std::cend(_randomArtists));
+			case Mode::Search:
+			{
+				Artist::FindParameters params;
+				params.setClusters(getFilters().getClusterIds());
+				params.setKeywords(getSearchKeywords());
+				params.setSortMethod(ArtistSortMethod::BySortName);
+				params.setRange(range);
+
+				artists = Artist::find(LmsApp->getDbSession(), params);
+				break;
+			}
+
+			case Mode::All:
+			{
+				Artist::FindParameters params;
+				params.setClusters(getFilters().getClusterIds());
+				params.setLinkType(_linkType);
+				params.setSortMethod(ArtistSortMethod::BySortName);
+				params.setRange(range);
+
+				artists = Artist::find(LmsApp->getDbSession(), params);
+				break;
+			}
 		}
+
+		if (range.offset + range.size == getMaxCount())
+			artists.moreResults = false;
 
 		return artists;
 	}
 
+	RangeResults<Database::ArtistId>
+	ArtistCollector::getRandomArtists(Range range)
+	{
+		assert(getMode() == Mode::Random);
+
+		if (!_randomArtists)
+		{
+			Artist::FindParameters params;
+			params.setClusters(getFilters().getClusterIds());
+			params.setLinkType(_linkType);
+			params.setSortMethod(ArtistSortMethod::Random);
+			params.setRange(Range {0, getMaxCount()});
+
+			_randomArtists = Artist::find(LmsApp->getDbSession(), params);
+		}
+
+		return _randomArtists->getSubRange(range);
+	}
 } // ns UserInterface
 

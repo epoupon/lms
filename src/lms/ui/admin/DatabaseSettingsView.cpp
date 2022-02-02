@@ -26,10 +26,10 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
 
-#include "database/Cluster.hpp"
-#include "database/ScanSettings.hpp"
-#include "database/Session.hpp"
-#include "scanner/IScanner.hpp"
+#include "services/database/Cluster.hpp"
+#include "services/database/ScanSettings.hpp"
+#include "services/database/Session.hpp"
+#include "services/scanner/IScannerService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -240,7 +240,7 @@ DatabaseSettingsView::refreshView()
 		{
 			model->saveData();
 
-			Service<Scanner::IScanner>::get()->requestImmediateScan(false);
+			Service<Scanner::IScannerService>::get()->requestImmediateScan(false);
 			LmsApp->notifyMsg(LmsApplication::MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}
 
@@ -257,7 +257,7 @@ DatabaseSettingsView::refreshView()
 
 	immScanBtn->clicked().connect([=]
 	{
-		Service<Scanner::IScanner>::get()->requestImmediateScan(false);
+		Service<Scanner::IScannerService>::get()->requestImmediateScan(false);
 	});
 
 	t->updateView(model.get());

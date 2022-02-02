@@ -25,16 +25,17 @@
 #include <Wt/WServer.h>
 #include <Wt/WApplication.h>
 
-#include "auth/IAuthTokenService.hpp"
-#include "auth/IPasswordService.hpp"
-#include "auth/IEnvService.hpp"
-#include "cover/ICoverArtGrabber.hpp"
-#include "database/Db.hpp"
-#include "database/Session.hpp"
-#include "scanner/IScanner.hpp"
-#include "recommendation/IEngine.hpp"
+#include "image/IRawImage.hpp"
+#include "services/auth/IAuthTokenService.hpp"
+#include "services/auth/IPasswordService.hpp"
+#include "services/auth/IEnvService.hpp"
+#include "services/cover/ICoverService.hpp"
+#include "services/database/Db.hpp"
+#include "services/database/Session.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
+#include "services/scanner/IScannerService.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "subsonic/SubsonicResource.hpp"
-#include "scrobbling/IScrobbling.hpp"
 #include "ui/LmsApplication.hpp"
 #include "ui/LmsApplicationManager.hpp"
 #include "utils/IChildProcessManager.hpp"
@@ -43,6 +44,16 @@
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "utils/WtLogger.hpp"
+
+static
+std::size_t
+getThreadCount()
+{
+	const unsigned long configHttpServerThreadCount {Service<IConfig>::get()->getULong("http-server-thread-count", 0)};
+
+	// Reserve at least 2 threads since we still have some blocking IO (for example when reading from ffmpeg)
+	return configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(2, std::thread::hardware_concurrency());
+}
 
 static
 std::vector<std::string>
@@ -54,7 +65,6 @@ generateWtConfig(std::string execPath)
 	const std::filesystem::path wtLogFilePath {Service<IConfig>::get()->getPath("log-file", "/var/log/lms.log")};
 	const std::filesystem::path wtAccessLogFilePath {Service<IConfig>::get()->getPath("access-log-file", "/var/log/lms.access.log")};
 	const std::filesystem::path wtResourcesPath {Service<IConfig>::get()->getPath("wt-resources", "/usr/share/Wt/resources")};
-	const unsigned long configHttpServerThreadCount {Service<IConfig>::get()->getULong("http-server-thread-count", 0)};
 
 	args.push_back(execPath);
 	args.push_back("--config=" + wtConfigPath.string());
@@ -81,11 +91,7 @@ generateWtConfig(std::string execPath)
 	if (!wtAccessLogFilePath.empty())
 		args.push_back("--accesslog=" + wtAccessLogFilePath.string());
 
-	{
-		// Reserve at least 2 threads since we still have some blocking IO (for example when reading from ffmpeg)
-		const unsigned long httpServerThreadCount {configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(2, std::thread::hardware_concurrency())};
-		args.push_back("--threads=" + std::to_string(httpServerThreadCount));
-	}
+	args.push_back("--threads=" + std::to_string(getThreadCount()));
 
 	// Generate the wt_config.xml file
 	boost::property_tree::ptree pt;
@@ -126,7 +132,7 @@ generateWtConfig(std::string execPath)
 
 static
 void
-proxyScannerEventsToApplication(Scanner::IScanner& scanner, Wt::WServer& server)
+proxyScannerEventsToApplication(Scanner::IScannerService& scanner, Wt::WServer& server)
 {
 	auto postAll {[](Wt::WServer& server, std::function<void()> cb)
 	{
@@ -218,10 +224,10 @@ int main(int argc, char* argv[])
 		Wt::WServer server {argv[0]};
 		server.setServerConfiguration(wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
 
-		IOContextRunner ioContextRunner {ioContext, std::max<unsigned long>(2, std::thread::hardware_concurrency())};
+		IOContextRunner ioContextRunner {ioContext, getThreadCount()};
 
 		// Initializing a connection pool to the database that will be shared along services
-		Database::Db database {config->getPath("working-dir") / "lms.db"};
+		Database::Db database {config->getPath("working-dir") / "lms.db", getThreadCount()};
 		{
 			Database::Session session {database};
 			session.prepareTables();
@@ -232,7 +238,6 @@ int main(int argc, char* argv[])
 
 		// Service initialization order is important (reverse-order for deinit)
 		Service<IChildProcessManager> childProcessManagerService {createChildProcessManager(ioContext)};
-
 		Service<Auth::IAuthTokenService> authTokenService;
 		Service<Auth::IPasswordService> authPasswordService;
 		Service<Auth::IEnvService> authEnvService;
@@ -240,32 +245,29 @@ int main(int argc, char* argv[])
 		const std::string authenticationBackend {StringUtils::stringToLower(config->getString("authentication-backend", "internal"))};
 		if (authenticationBackend == "internal" || authenticationBackend == "pam")
 		{
-			authTokenService.assign(Auth::createAuthTokenService(config->getULong("login-throttler-max-entriees", 10000)));
-			authPasswordService.assign(Auth::createPasswordService(authenticationBackend, config->getULong("login-throttler-max-entriees", 10000), *authTokenService.get()));
+			authTokenService.assign(Auth::createAuthTokenService(database, config->getULong("login-throttler-max-entriees", 10000)));
+			authPasswordService.assign(Auth::createPasswordService(authenticationBackend, database, config->getULong("login-throttler-max-entriees", 10000), *authTokenService.get()));
 		}
 		else if (authenticationBackend == "http-headers")
 		{
-			authEnvService.assign(Auth::createEnvService(authenticationBackend));
+			authEnvService.assign(Auth::createEnvService(authenticationBackend, database));
 		}
 		else
 			throw LmsException {"Bad value '" + authenticationBackend + "' for 'authentication-backend'"};
 
-		Service<CoverArt::IGrabber> coverArtService {CoverArt::createGrabber(argv[0],
-				server.appRoot() + "/images/unknown-cover.jpg",
-				config->getULong("cover-max-cache-size", 30) * 1000 * 1000,
-				config->getULong("cover-max-file-size", 10) * 1000 * 1000,
-				config->getULong("cover-jpeg-quality", 75))};
-		Service<Recommendation::IEngine> recommendationEngineService {Recommendation::createEngine(database)};
-		Service<Scanner::IScanner> scannerService {Scanner::createScanner(/*ioContext,*/ database, *recommendationEngineService)};
+		Image::init(argv[0]);
+		Service<Cover::ICoverService> coverService {Cover::createCoverService(database, argv[0], server.appRoot() + "/images/unknown-cover.jpg")};
+		Service<Recommendation::IRecommendationService> recommendationService {Recommendation::createRecommendationService(database)};
+		Service<Scanner::IScannerService> scannerService {Scanner::createScannerService(database, *recommendationService)};
 
 		scannerService->getEvents().scanComplete.connect([&]
 		{
 			// Flush cover cache even if no changes:
 			// covers may be external files that changed and we don't keep track of them
-			coverArtService->flushCache();
+			coverService->flushCache();
 		});
 
-		Service<Scrobbling::IScrobbling> scrobblingService {Scrobbling::createScrobbling(ioContext, database)};
+		Service<Scrobbling::IScrobblingService> scrobblingService {Scrobbling::createScrobblingService(ioContext, database)};
 
 		std::unique_ptr<Wt::WResource> subsonicResource;
 
