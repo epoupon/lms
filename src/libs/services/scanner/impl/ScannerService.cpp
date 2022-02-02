@@ -34,6 +34,7 @@
 #include "metadata/TagLibParser.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Exception.hpp"
+#include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Path.hpp"
 #include "utils/UUID.hpp"
@@ -256,8 +257,11 @@ createScannerService(Db& db, Recommendation::IRecommendationService& recommendat
 
 ScannerService::ScannerService(Db& db, Recommendation::IRecommendationService& recommendationService)
 : _recommendationService {recommendationService}
+, _skipDuplicateRecordingMBID {Service<IConfig>::get()->getBool("scanner-skip-duplicate-recording-mbid", false)}
 , _dbSession {db}
 {
+	LMS_LOG(DBUPDATER, INFO) << "skipDuplicateRecordingMBID = " << _skipDuplicateRecordingMBID;
+
 	// For now, always use TagLib
 	_metadataParser = std::make_unique<MetaData::TagLibParser>();
 
@@ -719,6 +723,25 @@ ScannerService::scanAudioFile(const std::filesystem::path& file, bool forceScan,
 
 	Track::pointer track {Track::findByPath(_dbSession, file) };
 
+	// Skip duplicate recording MBID
+	if (trackInfo->recordingMBID && _skipDuplicateRecordingMBID)
+	{
+		for (Track::pointer otherTrack : Track::findByRecordingMBID(_dbSession, *trackInfo->recordingMBID))
+		{
+			if (track && track->getId() == otherTrack->getId())
+				continue;
+
+			LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (similar recording MBID in '" << otherTrack->getPath().string() << "')";
+			// This recording MBID already exists, just remove what we just scanned
+			if (track)
+			{
+				track.remove();
+				stats.deletions++;
+			}
+			return;
+		}
+	}
+
 	// We estimate this is an audio file if:
 	// - we found a least one audio stream
 	// - the duration is not null
@@ -1026,14 +1049,14 @@ ScannerService::checkDuplicatedAudioFiles(ScanStats& stats)
 
 	auto transaction {_dbSession.createSharedTransaction()};
 
-	const RangeResults<TrackId> tracks = Track::findMBIDDuplicates(_dbSession, Range {});
+	const RangeResults<TrackId> tracks = Track::findRecordingMBIDDuplicates(_dbSession, Range {});
 	for (const TrackId trackId : tracks.results)
 	{
 		const Track::pointer track {Track::find(_dbSession, trackId)};
-		if (auto trackMBID {track->getTrackMBID()})
+		if (auto recordingMBID {track->getRecordingMBID()})
 		{
-			LMS_LOG(DBUPDATER, INFO) << "Found duplicated Track MBID [" << trackMBID->getAsString() << "], file: " << track->getPath().string() << " - " << track->getName();
-			stats.duplicates.emplace_back(ScanDuplicate {track->getId(), DuplicateReason::SameMBID});
+			LMS_LOG(DBUPDATER, INFO) << "Found duplicated recording MBID [" << recordingMBID->getAsString() << "], file: " << track->getPath().string() << " - " << track->getName();
+			stats.duplicates.emplace_back(ScanDuplicate {track->getId(), DuplicateReason::SameRecordingMBID});
 		}
 	}
 

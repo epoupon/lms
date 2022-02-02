@@ -96,7 +96,7 @@ class ReportResource : public Wt::WResource
 
 					response.out() << track->getPath().string();
 					if (auto mbid {track->getTrackMBID()})
-						response.out() << " (Track MBID " << mbid->getAsString() << ")";
+						response.out() << " (Recording MBID " << mbid->getAsString() << ")";
 
 					response.out() << " - " << duplicateReasonToWString(duplicate.reason).toUTF8() << '\n';
 				}
@@ -122,7 +122,7 @@ class ReportResource : public Wt::WResource
 			switch (reason)
 			{
 				case Scanner::DuplicateReason::SameHash: return Wt::WString::tr("Lms.Admin.ScannerController.same-hash");
-				case Scanner::DuplicateReason::SameMBID: return Wt::WString::tr("Lms.Admin.ScannerController.same-mbid");
+				case Scanner::DuplicateReason::SameRecordingMBID: return Wt::WString::tr("Lms.Admin.ScannerController.same-mbid");
 			}
 			return "?";
 		}

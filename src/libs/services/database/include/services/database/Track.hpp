@@ -92,7 +92,7 @@ class Track : public Object<Track, TrackId>
 		static RangeResults<TrackId>	find(Session& session, const FindParameters& parameters);
 		static RangeResults<TrackId>	findByNameAndReleaseName(Session& session, std::string_view trackName, std::string_view releaseName);
 		static RangeResults<PathResult>	findPaths(Session& session, Range range);
-		static RangeResults<TrackId>	findMBIDDuplicates(Session& session, Range range);
+		static RangeResults<TrackId>	findRecordingMBIDDuplicates(Session& session, Range range);
 		static RangeResults<TrackId>	findWithRecordingMBIDAndMissingFeatures(Session& session, Range range);
 
 		// Create utility
