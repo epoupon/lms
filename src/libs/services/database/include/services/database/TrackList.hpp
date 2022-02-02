@@ -127,7 +127,6 @@ class TrackList : public Object<TrackList, TrackListId>
 
 		Wt::Dbo::ptr<User>	_user;
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _entries;
-
 };
 
 class TrackListEntry : public Object<TrackListEntry, TrackListEntryId>

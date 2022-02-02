@@ -68,7 +68,6 @@ class GroupByStatement
 
 	private:
 		std::string _statement;		// SELECT statement
-
 };
 
 class SelectStatement

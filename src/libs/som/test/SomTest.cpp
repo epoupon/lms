@@ -51,7 +51,6 @@ TEST(som, Matrix)
 
 TEST(som, InputVector)
 {
-
 	{
 		InputVector test1 {2};
 		test1[0] = 0;
