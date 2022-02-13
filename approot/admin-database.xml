@@ -4,71 +4,58 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Admin.Database.template">
-	<div class ="row">
-		<div class="col-lg-8">
-			<form>
-				<legend>${tr:Lms.Admin.Database.database}</legend>
-				<div class="form-horizontal">
-					<div class="form-group">
-						<label class="col-lg-3 control-label"  for="${id:media-directory}">
-							${tr:Lms.Admin.Database.path}
-						</label>
-						<div class="col-lg-9">
-							${media-directory}
-							${media-directory-info class="help-block"}
-							<span class="help-block">${tr:Lms.Admin.Database.path-help}</span>
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="col-lg-3 control-label"  for="${id:update-period}">
-							${tr:Lms.Admin.Database.update-period}
-						</label>
-						<div class="col-lg-9">
-							${update-period}
-							${update-period-info class="help-block"}
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="col-lg-3 control-label"  for="${id:update-start-time}">
-							${tr:Lms.Admin.Database.update-start-time}
-						</label>
-						<div class="col-lg-9">
-							${update-start-time}
-							${update-start-time-info class="help-block"}
-						</div>
-					</div>
-				</div>
-				<legend>${tr:Lms.Admin.Database.scan-options}</legend>
-				<div class="form-horizontal">
-					<div class="form-group">
-						<label class="col-lg-3 control-label"  for="${id:recommendation-engine-type}">
-							${tr:Lms.Admin.Database.recommendation-engine-type}
-						</label>
-						<div class="col-lg-9">
-							${recommendation-engine-type}
-							${recommendation-engine-type-info class="help-block"}
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="col-lg-3 control-label"  for="${id:tags}">
-							${tr:Lms.Admin.Database.tags}
-						</label>
-						<div class="col-lg-9">
-							${tags}
-							${tags-info class="help-block"}
-						</div>
-					</div>
-				</div>
-				<div class="form-horizontal">
-					<div class="form-group">
-						<div class="col-lg-offset-3 col-lg-9">
-							${apply-btn class="btn-primary"} ${discard-btn}
-						</div>
-					</div>
-				</div>
-			</form>
+	<form class="row g-3">
+		<legend>${tr:Lms.Admin.Database.database}</legend>
+		<div class="col-12">
+			<label class="form-label" for="${id:media-directory}">
+				${tr:Lms.Admin.Database.path}
+			</label>
+			${media-directory}
+			<div class="invalid-feedback">
+				${media-directory-info}
+			</div>
 		</div>
-	</div>
+		<div class="col-md-6">
+			<label class="form-label" for="${id:update-period}">
+				${tr:Lms.Admin.Database.update-period}
+			</label>
+			${update-period}
+			<div class="invalid-feedback">
+				${update-period-info"}
+			</div>
+		</div>
+		<div class="col-md-6">
+			<label class="form-label" for="${id:update-start-time}">
+				${tr:Lms.Admin.Database.update-start-time}
+			</label>
+			${update-start-time}
+			<div class="invalid-feedback">
+				${update-start-time-info}
+			</div>
+		</div>
+		<legend>${tr:Lms.Admin.Database.scan-options}</legend>
+		<div class="col-md-6">
+			<label class="form-label" for="${id:recommendation-engine-type}">
+				${tr:Lms.Admin.Database.recommendation-engine-type}
+			</label>
+			${recommendation-engine-type}
+			<div class="invalid-feedback">
+				${recommendation-engine-type-info}
+			</div>
+		</div>
+		<div class="col-12">
+			<label class="form-label"  for="${id:tags}">
+				${tr:Lms.Admin.Database.tags}
+			</label>
+			${tags}
+			<div class="invalid-feedback">
+				${tags-info}
+			</div>
+		</div>
+		<div class="col-12">
+			${apply-btn class="btn-primary"} ${discard-btn}
+		</div>
+	</form>
 	<br/>
 	<div class="row">
 		<div class="col-lg-8">
