@@ -15,7 +15,7 @@
 				${media-directory-info}
 			</div>
 		</div>
-		<div class="col-md-6">
+		<div class="col-lg-6">
 			<label class="form-label" for="${id:update-period}">
 				${tr:Lms.Admin.Database.update-period}
 			</label>
@@ -24,7 +24,7 @@
 				${update-period-info"}
 			</div>
 		</div>
-		<div class="col-md-6">
+		<div class="col-lg-6">
 			<label class="form-label" for="${id:update-start-time}">
 				${tr:Lms.Admin.Database.update-start-time}
 			</label>
@@ -34,7 +34,7 @@
 			</div>
 		</div>
 		<legend>${tr:Lms.Admin.Database.scan-options}</legend>
-		<div class="col-md-6">
+		<div class="col-lg-6">
 			<label class="form-label" for="${id:recommendation-engine-type}">
 				${tr:Lms.Admin.Database.recommendation-engine-type}
 			</label>
@@ -57,11 +57,7 @@
 		</div>
 	</form>
 	<br/>
-	<div class="row">
-		<div class="col-lg-8">
-			${scanner-controller}
-		</div>
-	</div>
+	${scanner-controller}
 </message>
 
 </messages>
