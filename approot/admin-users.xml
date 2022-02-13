@@ -12,12 +12,12 @@
 </message>
 
 <message id="Lms.Admin.Users.template.entry">
-	<div class="row Lms-admin-users-entry Lms-vertical-align">
-		<div class="col-md-5 col-xs-8 Lms-vertical-align">
-			${name}${<if-tag>}<span class="label label-info Lms-admin-users-entry-role">${tag}</span>${</if-tag>}
+	<div class="row align-items-center mb-3">
+		<div class="col-auto me-auto">
+			${name}${<if-tag>} <span class="badge bg-info">${tag}</span>${</if-tag>}
 		</div>
-		<div class="col-md-3 col-xs-4 Lms-horizontal-center">
-			${<if-edit>}${edit-btn class="btn-warning btn-sm Lms-admin-users-entry-btn"}${del-btn class="btn-danger btn-sm Lms-admin-users-entry-btn"}${</if-edit>}
+		<div class="col-auto">
+			${<if-edit>}${edit-btn class="btn-warning btn-sm"} ${del-btn class="btn-danger btn-sm"}${</if-edit>}
 		</div>
 	</div>
 </message>

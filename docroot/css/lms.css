@@ -8,29 +8,9 @@ body {
 	padding-bottom: 78px;
 }
 
-.Lms-vertical-align {
-	display: flex;
-	align-items: center;
-}
-
-.Lms-admin-users-entry {
-	min-height: 48px;
-	padding-top: 8px;
-	padding-bottom: 8px;
-	margin: 0;
-}
-
 .Lms-admin-users-add-btn {
 	margin-top: 8px;
 	margin-bottom: 8px;
-}
-
-.Lms-admin-users-entry-role {
-	margin-left: 8px;
-}
-
-.Lms-admin-users-entry-btn {
-	margin-right: 8px;
 }
 
 .Lms-artistname {
@@ -261,11 +241,6 @@ a.Lms-artistname:hover, a.Lms-artistname:focus {
 	padding-bottom: 9px;
 	margin-top: 20px;
 	margin-bottom: 20px;
-}
-
-.Lms-horizontal-center {
-	display: flex;
-	justify-content: center;
 }
 
 .Lms-loading-indicator {
