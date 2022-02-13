@@ -27,14 +27,12 @@ namespace UserInterface {
 LmsTheme::LmsTheme(Database::UITheme theme)
 : _theme {theme}
 {
-	setVersion(Wt::BootstrapVersion::v3);
-	setResponsive(true); // Should be not necessary since applied via head-matter
 }
 
 void
-LmsTheme::setTheme(Database::UITheme theme)
+LmsTheme::setTheme(Database::UITheme )
 {
-	if (theme == _theme)
+/*	if (theme == _theme)
 		return;
 
 	// Hack, use the application interface directly since changing theme is not allowed
@@ -45,12 +43,13 @@ LmsTheme::setTheme(Database::UITheme theme)
 	_theme = theme;
 	for (const auto& styleSheet : getStyleSheets(theme))
 		LmsApp->useStyleSheet(styleSheet);
+		*/
 }
-
+/*
 std::vector<Wt::WLinkedCssStyleSheet>
 LmsTheme::styleSheets() const
 {
-	const std::vector<Wt::WLink> styleSheets {getStyleSheets(_theme)};
+/	const std::vector<Wt::WLink> styleSheets {getStyleSheets(_theme)};
 	std::vector<Wt::WLinkedCssStyleSheet> res;
 	res.reserve(styleSheets.size());
 
@@ -59,7 +58,7 @@ LmsTheme::styleSheets() const
 }
 
 std::vector<Wt::WLink>
-LmsTheme::getStyleSheets(Database::UITheme theme)
+LmsTheme::getStyleSheets(Database::UITheme )
 {
 	switch (theme)
 	{
@@ -85,5 +84,5 @@ LmsTheme::getStyleSheets(Database::UITheme theme)
 	}
 	return {};
 }
-
+*/
 }
