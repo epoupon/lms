@@ -2,64 +2,55 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Admin.User.template">
-	<div class="row">
-		<div class="col-lg-8">
-			<legend>${title}</legend>
-			<form>
-				<div class="form-horizontal">
-					${<if-has-last-login>}
-					<div class="form-group">
-						<label class="control-label col-lg-3" for="{id:last-login}">
-							${tr:Lms.Admin.User.last-login}
-						</label>
-						<div class="col-lg-9">
-							<div class="well well-sm">
-								${last-login}
-							</div>
-						</div>
-					</div>
-					${</if-has-last-login>}
-					${<if-has-login>}
-					<div class="form-group">
-						<label class="control-label col-lg-3"  for="${id:login}">
-							${tr:Lms.login}
-						</label>
-						<div class="col-lg-9">
-							${login}
-							${login-info class="help-block"}
-						</div>
-					</div>
-					${</if-has-login>}
-					${<if-has-password>}
-					<div class="form-group">
-						<label class="control-label col-lg-3"  for="${id:password}">
-							${tr:Lms.password-new}
-						</label>
-						<div class="col-lg-9">
-							${password}
-							${password-info class="help-block"}
-						</div>
-					</div>
-					${</if-has-password>}
-					${<if-demo>}
-					<div class="form-group">
-						<div class="col-lg-offset-3 col-lg-3"  for="${id:demo}">
-							<div class="checkbox">
-								<label>${demo}${tr:Lms.Admin.User.demo-account}</label>
-								${demo-info class="help-block"}
-							</div>
-						</div>
-					</div>
-					${</if-demo>}
-					<div class="form-group">
-						<div class="col-lg-offset-3 col-lg-9">
-							${save-btn class="btn-primary"}
-						</div>
+	<form class="row g-3">
+		<legend>${title}</legend>
+		${<if-has-last-login>}
+			<div class="col-lg-6">
+				<label class="form-label" for="{id:last-login}">
+					${tr:Lms.Admin.User.last-login}
+				</label>
+				<input type="text" readonly="readonly" class="form-control" id="status" value="${last-login}"/>
+			</div>
+		${</if-has-last-login>}
+		${<if-has-login>}
+			<div class="col-lg-6">
+				<label class="form-label"  for="${id:login}">
+					${tr:Lms.login}
+				</label>
+				${login}
+				<div class="invalid-feedback">
+					${login-info}
+				</div>
+			</div>
+		${</if-has-login>}
+		${<if-has-password>}
+			<div class="col-lg-6">
+				<label class="form-label"  for="${id:password}">
+					${tr:Lms.password-new}
+				</label>
+				${password}
+				<div class="invalid-feedback">
+					${password-info}
+				</div>
+			</div>
+		${</if-has-password>}
+		${<if-demo>}
+			<div class="col-12">
+				<div class="form-check">
+					${demo class=""form-check-input}
+					<label class="form-check-label" for="${id:demo}">
+						${tr:Lms.Admin.User.demo-account}
+					</label>
+					<div class="invalid-feedback">
+						${demo-info}
 					</div>
 				</div>
-			</form>
+			</div>
+		${</if-demo>}
+		<div class="col-12">
+			${save-btn class="btn-primary"}
 		</div>
-	</div>
+	</form>
 </message>
 
 </messages>

@@ -2,9 +2,7 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Admin.Users.template">
-	<div class="Lms-header">
-		<h2>${tr:Lms.Admin.Users.users}</h2>
-	</div>
+	<h2>${tr:Lms.Admin.Users.users}</h2>
 	${users}
 	${<if-can-create-user>}
 	${add-btn class="btn-primary Lms-admin-users-add-btn"}
