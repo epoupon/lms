@@ -241,7 +241,7 @@ AudioFile::visitAttachedPictures(std::function<void(const Picture&)> func) const
 std::optional<AudioFileFormat>
 guessMediaFileFormat(const std::filesystem::path& file)
 {
-	AVOutputFormat* format {av_guess_format(NULL,file.string().c_str(),NULL)};
+	const AVOutputFormat* format {av_guess_format(NULL,file.string().c_str(),NULL)};
 	if (!format || !format->name)
 		return {};
 
