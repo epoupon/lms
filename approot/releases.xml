@@ -3,7 +3,7 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.Releases.template">
-	<div class="Lms-header">
+	<div>
 		${mode class="nav nav-pills Lms-explore-mode-container"}
 		${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
 	</div>
@@ -11,23 +11,17 @@
 </message>
 
 <message id="Lms.Explore.Releases.template.entry-grid">
-	<div class="col-xs-6 col-sm-3 col-md-2 col-lg-2">
-		<div class="Lms-explore-entry-grid">
-			<div class="Lms-responsive-square Lms-cover-container">
-				${cover}
-			</div>
-			<div class="Lms-explore-entry-grid-text-container">
-				<h5>${release-name class="Lms-btn Lms-releasename text-primary"}</h5>
-				<div class="Lms-explore-entry-separator"><h6>${<if-has-year>}<small><span class="text-muted">${year}</span></small>${</if-has-year>}${<if-has-artist>}${artist-name class="Lms-btn Lms-artistname text-muted"}${</if-has-artist>}${<if-has-various-artists>}<div class="Lms-artistname text-muted">${tr:Lms.Explore.various-artists}</div>${</if-has-various-artists>}</h6></div>
-			</div>
+		<div class="card border-0">
+			${cover class="card-img-top"}
+			${release-name}
+			${<if-has-year>}${year}${</if-has-year>}
+			${<if-has-artist>}${artist-name}${</if-has-artist>}
+			${<if-has-various-artists>}${tr:Lms.Explore.various-artists}${</if-has-various-artists>}
 		</div>
-	</div>
 </message>
 
 <message id="Lms.Explore.Releases.template.container">
-	<div class="row">
-		${elements}
-	</div>
+	${elements class="row gy-4"}
 	${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
 </message>
 

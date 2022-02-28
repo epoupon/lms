@@ -45,7 +45,7 @@ namespace UserInterface::ReleaseListHelpers
 		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 		auto cover = std::make_unique<Wt::WImage>();
 		cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large));
-		cover->setStyleClass("Lms-cover");
+		cover->setStyleClass("img-fluid card-img-top");
 		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		anchor->setImage(std::move(cover));
 
@@ -83,6 +83,7 @@ namespace UserInterface::ReleaseListHelpers
 			}
 		}
 
+		entry->setStyleClass("col-6 col-md-4 col-lg-3 col-xl-2");
 		return entry;
 	}
 

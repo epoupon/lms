@@ -15,13 +15,13 @@
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">
-	<div class="Lms-explore-artists-entry Lms-entry-hoverable Lms-vertical-align">
+	<div class="Lms-explore-artists-entry Lms-entry-hoverable">
 		 <h4>${name class="Lms-btn Lms-artistname text-primary"}</h4>
 	</div>
 </message>
 
 <message id="Lms.Explore.Artists.template.entry-small">
-	<div class="Lms-explore-artists-entry-small Lms-entry-hoverable Lms-vertical-align">
+	<div class="Lms-explore-artists-entry-small Lms-entry-hoverable">
 		${name class="Lms-btn Lms-artistname text-primary"}
 	</div>
 </message>

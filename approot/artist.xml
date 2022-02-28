@@ -9,9 +9,7 @@
 		${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
 	</div>
 	${<if-has-release>}
-	<div class="row">
-		${releases class="Lms-explore-artist-entries-container"}
-	</div>
+	${releases class="row gy-4"}
 	${</if-has-release>}
 	${<if-has-non-release-track>}
 	<div class="Lms-explore-artist-tracks-container">
