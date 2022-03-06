@@ -25,12 +25,10 @@
 	</div>
 	<div class="row">
 		${<if-has-similar-releases>}
-		<div class="col-xs-12 col-md-8">
+		<div class="col-12 col-md-8">
 			<div class="well well-sm">
 				<h3>${tr:Lms.Explore.Release.similar-releases}</h3>
-				<div class="row">
-					${similar-releases}
-				</div>
+				${similar-releases class="row"}
 			</div>
 		</div>
 		${</if-has-similar-releases>}

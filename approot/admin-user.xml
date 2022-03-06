@@ -37,7 +37,7 @@
 		${<if-demo>}
 			<div class="col-12">
 				<div class="form-check">
-					${demo class=""form-check-input}
+					${demo class="form-check-input"}
 					<label class="form-check-label" for="${id:demo}">
 						${tr:Lms.Admin.User.demo-account}
 					</label>
