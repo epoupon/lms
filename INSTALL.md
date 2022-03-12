@@ -106,7 +106,7 @@ You can define which authentication backend to be used thanks to the `authentica
 * `PAM`: the user/password authentication request is forwarded to PAM (see the default [PAM configuration file](conf/pam/lms) provided).
 * `http-headers`: _LMS_ uses a configurable HTTP header field, typically set by a reverse proxy to handle [SSO](https://en.wikipedia.org/wiki/Single_sign-on), to extract the login name. You can customize the field to be used using the `http-headers-login-field` option.
 __Note__: the first created user is the admin user
-## `internal` backend: reset admin password
+### `internal` backend: reset admin password
 Open the the database file located in `/var/lms/lms.db` using `sqlite3`:
 ```sh
 sqlite3 /var/lms/lms.db
