@@ -22,9 +22,6 @@
 						${tracks class="nav-link Lms-btn"}
 					</li>
 					<li class="nav-item">
-						${tracks class="nav-link Lms-btn"}
-					</li>
-					<li class="nav-item">
 						${playqueue class="nav-link Lms-btn"}
 					</li>
 					<li class="nav-item">
