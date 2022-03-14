@@ -102,7 +102,6 @@ class LmsApplication : public Wt::WApplication
 
 	private:
 		void init();
-		void setTheme();
 		void processPasswordAuth();
 		void handleException(LmsApplicationException& e);
 		void goHomeAndQuit();

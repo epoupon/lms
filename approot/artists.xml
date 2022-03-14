@@ -3,27 +3,21 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Artists.template">
-	<div class="Lms-header">
-		${mode class="nav nav-pills Lms-explore-mode-container"}
-		<div class="row">
-			<div class="col-sm-2">
-				${link-type}
-			</div>
+	${mode class="nav nav-pills mb-1"}
+	<div class="row mb-3">
+		<div class="col-lg-3">
+			${link-type}
 		</div>
 	</div>
 	${artists}
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">
-	<div class="Lms-explore-artists-entry Lms-entry-hoverable">
-		 <h4>${name class="Lms-btn Lms-artistname text-primary"}</h4>
-	</div>
+	${name}
 </message>
 
 <message id="Lms.Explore.Artists.template.entry-small">
-	<div class="Lms-explore-artists-entry-small Lms-entry-hoverable">
-		${name class="Lms-btn Lms-artistname text-primary"}
-	</div>
+	${name}
 </message>
 
 </messages>

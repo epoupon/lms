@@ -4,9 +4,9 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Tracks.template">
-	<div class="Lms-header">
-		${mode class="nav nav-pills Lms-explore-mode-container"}
-		${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
+	${mode class="nav nav-pills Lms-explore-mode-container mb-1"}
+	<div class="mb-3">
+		${play-btn}${more-btn}
 	</div>
 	${tracks}
 </message>
@@ -38,15 +38,6 @@
 
 <message id="Lms.Explore.Tracks.template.entry-artist">
 	<small>${artist class="Lms-btn Lms-artistname text-muted"}</small>
-</message>
-
-<message id="Lms.Explore.Tracks.template.container">
-	<div class="row">
-		<div class="col-lg-8">
-			${elements}
-			${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
-		</div>
-	</div>
 </message>
 
 </messages>

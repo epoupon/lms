@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <messages xmlns:if="Wt.WTemplate.conditions">
 
-<message id="Lms.template">
-	<nav class="navbar navbar-expand-md navbar-light bg-light">
+<message id="Lms.main.template">
+	${navbar}
+	<div class="container">
+		${contents class="Lms-contents"}
+	</div>
+	${player class="fixed-bottom bg-light Lms-player"}
+</message>
+
+<message id="Lms.main.template.navbar">
+	<nav class="navbar navbar-expand-md navbar-light bg-light mb-3">
 		<div class="container">
 			<form class="d-flex">
 				${search class="form-control me-2" type="search"}
@@ -13,22 +21,22 @@
 			<div class="collapse navbar-collapse" id="navbarSupportedContent">
 				<ul class="navbar-nav me-auto mb-2 mb-lg-0">
 					<li class="nav-item">
-						${releases class="nav-link Lms-btn"}
+						${releases class="nav-link"}
 					</li>
 					<li class="nav-item">
-						${artists class="nav-link Lms-btn"}
+						${artists class="nav-link"}
 					</li>
 					<li class="nav-item">
-						${tracks class="nav-link Lms-btn"}
+						${tracks class="nav-link"}
 					</li>
 					<li class="nav-item">
-						${playqueue class="nav-link Lms-btn"}
+						${playqueue class="nav-link"}
 					</li>
 					<li class="nav-item">
 						${filters class="nav-link Lms-clusters-control"}
 					</li>
 				</ul>
-				<div class="navbar-nav me-auto mb-2 mb-lg-0">
+				<div class="navbar-nav mb-2 mb-lg-0">
 				${<if-is-admin>}
 					<li class="nav-item dropdown">
 						<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="${tr:Lms.administration}">
@@ -55,20 +63,6 @@
 			</div>
 		</div>
 	</nav>
-	<div class="container">
-		${contents class="Lms-contents"}
-	</div>
-	${player class="Lms-player"}
-</message>
-
-<message id="Lms.LoadingIndicator.template">
-	<i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>
-	<span class="sr-only">${tr:Lms.loading}</span>
-</message>
-
-<message id="Lms.infinite-scrolling-container">
-	${elements}
-	${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
 </message>
 
 </messages>

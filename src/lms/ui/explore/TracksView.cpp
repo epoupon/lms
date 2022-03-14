@@ -87,7 +87,7 @@ _trackCollector {filters, _defaultMode, _maxCount}
 		popup->popup(moreBtn);
 	});
 
-	_container = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.Tracks.template.container"));
+	_container = bindNew<InfiniteScrollingContainer>("tracks");
 	_container->onRequestElements.connect([this]
 	{
 		addSome();

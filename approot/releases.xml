@@ -3,16 +3,16 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.Releases.template">
-	<div>
-		${mode class="nav nav-pills Lms-explore-mode-container"}
-		${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
+	${mode class="nav nav-pills Lms-explore-mode-container mb-1"}
+	<div class="mb-3">
+		${play-btn}${more-btn}
 	</div>
 	${releases}
 </message>
 
 <message id="Lms.Explore.Releases.template.entry-grid">
 		<div class="card border-0">
-			${cover class="card-img-top"}
+			${cover class="shadow-sm"}
 			${release-name}
 			${<if-has-year>}${year}${</if-has-year>}
 			${<if-has-artist>}${artist-name}${</if-has-artist>}
@@ -22,7 +22,7 @@
 
 <message id="Lms.Explore.Releases.template.container">
 	${elements class="row gy-4"}
-	${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
+	${loading-indicator}
 </message>
 
 

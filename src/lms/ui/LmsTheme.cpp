@@ -32,6 +32,7 @@ LmsTheme::LmsTheme(Database::UITheme theme)
 void
 LmsTheme::setTheme(Database::UITheme )
 {
+
 /*	if (theme == _theme)
 		return;
 
