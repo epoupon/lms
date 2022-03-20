@@ -5,37 +5,33 @@
 	${contents class="Lms-explore-contents"}
 </message>
 
-<message id="Lms.Explore.template.more-btn"><i class="fa fa-fw fa-plus-circle"></i></message>
-<message id="Lms.Explore.template.play-btn"><i class="fa fa-fw fa-play-circle"></i></message>
+<message id="Lms.Explore.template.more-btn"><i class="fa fa-2x fa-plus-circle"></i></message>
+<message id="Lms.Explore.template.play-btn"><i class="fa fa-2x fa-play-circle"></i></message>
 
 <message id="Lms.Explore.template.filters">
 	${add-filter class="btn-sm btn-info me-1"}${clusters class="d-inline-block"}
 </message>
 
 <message id="Lms.Explore.template.add-filter">
-	<div class="form-horizontal">
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:type}">
+	<form class="row g-3">
+		<div class="col-12">
+			<label class="form-label" for="${id:type}">
 				${tr:Lms.Explore.type}
 			</label>
-			<div class="col-sm-10">
-				${type}
-			</div>
+			${type}
 		</div>
-		<div class="form-group">
-			<label class="control-label col-sm-2"  for="${id:value}">
+		<div class="col-12">
+			<label class="form-label" for="${id:value}">
 				${tr:Lms.Explore.value}
 			</label>
-			<div class="col-sm-10">
-				${value}
-			</div>
+			${value}
 		</div>
-		<div class="form-group">
+		<div class="col-12">
 			<div class="col-sm-offset-2 col-sm-10">
-				${add-btn class="btn-primary"} ${cancel-btn}
+				${add-btn class="btn-primary me-1"}${cancel-btn}
 			</div>
 		</div>
-	</div>
+	</form>
 </message>
 
 </messages>
