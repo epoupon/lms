@@ -53,7 +53,7 @@
 			</div>
 		</div>
 		<div class="col-12">
-			${apply-btn class="btn-primary"} ${discard-btn}
+			${apply-btn class="btn-primary me-1"}${discard-btn}
 		</div>
 	</form>
 	<br/>
