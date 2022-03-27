@@ -52,7 +52,6 @@ namespace UserInterface
 		addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 		Wt::WStackedWidget* stack {bindNew<Wt::WStackedWidget>("stack")};
-		stack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
 		_menu = bindNew<Wt::WMenu>("mode", stack);
 
 		auto addItem = [=](const Wt::WString& str, [[maybe_unused]] Mode mode, const Wt::WString& templateStr, std::function<void()> onRequestElementsFunc)
@@ -159,7 +158,6 @@ namespace UserInterface
 	SearchView::addSomeReleases()
 	{
 		InfiniteScrollingContainer& results {getResultContainer(Mode::Release)};
-		bool moreResults {};
 
 		{
 			using namespace Database;
@@ -175,7 +173,7 @@ namespace UserInterface
 				results.add(ReleaseListHelpers::createEntry(release));
 			}
 
-			results.setHasMore(moreResults);
+			results.setHasMore(releaseIds.moreResults);
 		}
 
 		getItemMenu(Mode::Release).setDisabled(results.getCount() == 0);

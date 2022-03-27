@@ -492,7 +492,6 @@ LmsApplication::createHome()
 	// Contents
 	// Order is important in mainStack, see IdxRoot!
 	Wt::WStackedWidget* mainStack {main->bindNew<Wt::WStackedWidget>("contents")};
-	mainStack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
 
 	Explore* explore {mainStack->addNew<Explore>(filters)};
 	_playQueue = mainStack->addNew<PlayQueue>();

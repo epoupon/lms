@@ -13,9 +13,9 @@
 <message id="Lms.Explore.Releases.template.entry-grid">
 		<div class="card border-0">
 			${cover class="shadow-sm"}
-			${release-name}
+			${release-name class="text-truncate text-nowrap"}
 			${<if-has-year>}${year}${</if-has-year>}
-			${<if-has-artist>}${artist-name}${</if-has-artist>}
+			${<if-has-artist>}${artist-name class=" text-truncate text-nowrap"}${</if-has-artist>}
 			${<if-has-various-artists>}${tr:Lms.Explore.various-artists}${</if-has-various-artists>}
 		</div>
 </message>

@@ -32,15 +32,13 @@ namespace Http
 	{
 		public:
 			Client(boost::asio::io_context& ioContext, std::string_view baseUrl)
-			: _ioContext {ioContext}
-			, _sendQueue {ioContext, baseUrl}
+			: _sendQueue {ioContext, baseUrl}
 			{}
 
 		private:
 			void sendGETRequest(ClientGETRequestParameters&& request) override;
 			void sendPOSTRequest(ClientPOSTRequestParameters&& request) override;
 
-			boost::asio::io_context&	_ioContext;
 			SendQueue					_sendQueue;
 	};
 } // namespace Http
