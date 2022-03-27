@@ -4,9 +4,9 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Tracks.template">
-	${mode class="nav nav-pills Lms-explore-mode-container mb-1"}
 	<div class="mb-3">
-		${play-btn}${more-btn}
+		${mode class="nav nav-pills mb-2"}
+		${play-btn class="me-2"}${more-btn}
 	</div>
 	${tracks}
 </message>

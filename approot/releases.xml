@@ -3,9 +3,9 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.Releases.template">
-	${mode class="nav nav-pills Lms-explore-mode-container mb-1"}
 	<div class="mb-3">
-		${play-btn}${more-btn}
+		${mode class="nav nav-pills mb-2"}
+		${play-btn class="me-2"}${more-btn}
 	</div>
 	${releases}
 </message>

@@ -2,7 +2,7 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.template">
-	${contents class="Lms-explore-contents"}
+	${contents}
 </message>
 
 <message id="Lms.Explore.template.more-btn"><i class="fa fa-2x fa-plus-circle"></i></message>

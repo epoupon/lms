@@ -557,7 +557,7 @@ SettingsView::refreshView()
 	Wt::WPushButton *saveBtn {t->bindWidget("apply-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.apply")))};
 	Wt::WPushButton *discardBtn {t->bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard")))};
 
-	saveBtn->clicked().connect([=]()
+	saveBtn->clicked().connect([=]
 	{
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
@@ -581,12 +581,12 @@ SettingsView::refreshView()
 		t->updateView(model.get());
 	});
 
-	discardBtn->clicked().connect(std::bind([=] ()
+	discardBtn->clicked().connect([=]
 	{
 		model->loadData();
 		model->validate();
 		t->updateView(model.get());
-	}));
+	});
 
 	t->updateView(model.get());
 }
