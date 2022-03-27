@@ -1,5 +1,5 @@
 FROM --platform=$BUILDPLATFORM tonistiigi/xx AS xx
-FROM --platform=$BUILDPLATFORM alpine:3.14
+FROM --platform=$BUILDPLATFORM alpine:edge
 
 ARG BUILD_PACKAGES="\
 	clang \
@@ -30,7 +30,7 @@ RUN	xx-apk add --no-scripts --no-cache ${LMS_BUILD_PACKAGES}
 ARG	PREFIX="/tmp/install"
 
 # STB
-ARG	STB_VERSION=b42009b3b9d4ca35bc703f5310eedc74f584be58
+ARG	STB_VERSION=af1a5bc352164740c1cc1354942b1c6b72eacb8a
 RUN \
 	DIR=/tmp/stb && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/nothings/stb/archive/${STB_VERSION}.tar.gz && \
@@ -47,4 +47,4 @@ RUN \
 		PKG_CONFIG_PATH=/$(xx-info)/usr/lib/pkgconfig cmake /tmp/lms/ -DCMAKE_INCLUDE_PATH=${PREFIX}/include -DCMAKE_BUILD_TYPE=${LMS_BUILD_TYPE} $(xx-clang --print-cmake-defines) -DCMAKE_PREFIX_PATH=/$(xx-info)/usr/lib/cmake -DBUILD_TESTING=${BUILD_TESTS} && \
 		VERBOSE=1 make -j$(nproc) && \
 		xx-verify src/lms/lms && \
-		xx-info is-cross || make test
+		(xx-info is-cross || make test)
