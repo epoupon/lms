@@ -206,7 +206,7 @@ Artist::refreshNonReleaseTracks(const ObjectPtr<Database::Artist>& artist)
 		return;
 
 	setCondition("if-has-non-release-track", true);
-	_trackContainer = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.Tracks.template.container"));
+	_trackContainer = bindNew<InfiniteScrollingContainer>("tracks");
 	_trackContainer->onRequestElements.connect(this, [this]
 	{
 		addSomeNonReleaseTracks();

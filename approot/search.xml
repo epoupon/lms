@@ -3,9 +3,7 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Search.template">
-	<div class="Lms-header">
-		${mode class="nav nav-pills Lms-explore-mode-container"}
-	</div>
+	${mode class="nav nav-pills mb-3"}
 	${stack}
 </message>
 

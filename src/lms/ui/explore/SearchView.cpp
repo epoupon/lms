@@ -69,7 +69,7 @@ namespace UserInterface
 		// same order as Mode!
 		addItem(Wt::WString::tr("Lms.Explore.releases"), Mode::Release, Wt::WString::tr("Lms.Explore.Releases.template.container"), [this]{ addSomeReleases(); });
 		addItem(Wt::WString::tr("Lms.Explore.artists"), Mode::Artist, Wt::WString::tr("Lms.infinite-scrolling-container"), [this]{ addSomeArtists(); });
-		addItem(Wt::WString::tr("Lms.Explore.tracks"), Mode::Track, Wt::WString::tr("Lms.Explore.Tracks.template.container"), [this]{ addSomeTracks(); });
+		addItem(Wt::WString::tr("Lms.Explore.tracks"), Mode::Track, Wt::WString::tr("Lms.infinite-scrolling-container"), [this]{ addSomeTracks(); });
 
 		_filters->updated().connect([=]
 		{
