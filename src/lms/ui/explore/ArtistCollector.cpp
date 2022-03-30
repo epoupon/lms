@@ -20,8 +20,9 @@
 #include "ArtistCollector.hpp"
 
 #include "services/database/Artist.hpp"
-#include "services/database/User.hpp"
+#include "services/database/Session.hpp"
 #include "services/database/TrackList.hpp"
+#include "services/database/User.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "Filters.hpp"
@@ -65,7 +66,10 @@ namespace UserInterface
 				params.setSortMethod(ArtistSortMethod::LastWritten);
 				params.setRange(range);
 
-				artists = Artist::find(LmsApp->getDbSession(), params);
+				{
+					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+					artists = Artist::find(LmsApp->getDbSession(), params);
+				}
 				break;
 			}
 
@@ -77,7 +81,10 @@ namespace UserInterface
 				params.setSortMethod(ArtistSortMethod::BySortName);
 				params.setRange(range);
 
-				artists = Artist::find(LmsApp->getDbSession(), params);
+				{
+					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+					artists = Artist::find(LmsApp->getDbSession(), params);
+				}
 				break;
 			}
 
@@ -89,7 +96,10 @@ namespace UserInterface
 				params.setSortMethod(ArtistSortMethod::BySortName);
 				params.setRange(range);
 
-				artists = Artist::find(LmsApp->getDbSession(), params);
+				{
+					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+					artists = Artist::find(LmsApp->getDbSession(), params);
+				}
 				break;
 			}
 		}
@@ -113,7 +123,10 @@ namespace UserInterface
 			params.setSortMethod(ArtistSortMethod::Random);
 			params.setRange(Range {0, getMaxCount()});
 
-			_randomArtists = Artist::find(LmsApp->getDbSession(), params);
+			{
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+				_randomArtists = Artist::find(LmsApp->getDbSession(), params);
+			}
 		}
 
 		return _randomArtists->getSubRange(range);

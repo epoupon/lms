@@ -66,7 +66,10 @@ namespace UserInterface
 				params.setSortMethod(TrackSortMethod::LastWritten);
 				params.setRange(range);
 
-				tracks = Track::find(LmsApp->getDbSession(), params);
+				{
+					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+					tracks = Track::find(LmsApp->getDbSession(), params);
+				}
 				break;
 			}
 
@@ -77,7 +80,10 @@ namespace UserInterface
 				params.setKeywords(getSearchKeywords());
 				params.setRange(range);
 
-				tracks = Track::find(LmsApp->getDbSession(), params);
+				{
+					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+					tracks = Track::find(LmsApp->getDbSession(), params);
+				}
 				break;
 			}
 
@@ -87,7 +93,10 @@ namespace UserInterface
 				params.setClusters(getFilters().getClusterIds());
 				params.setRange(range);
 
-				tracks = Track::find(LmsApp->getDbSession(), params);
+				{
+					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+					tracks = Track::find(LmsApp->getDbSession(), params);
+				}
 				break;
 			}
 		}
@@ -109,7 +118,11 @@ namespace UserInterface
 			params.setClusters(getFilters().getClusterIds());
 			params.setSortMethod(TrackSortMethod::Random);
 			params.setRange({0, getMaxCount()});
-			_randomTracks = Track::find(LmsApp->getDbSession(), params);
+
+			{
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+				_randomTracks = Track::find(LmsApp->getDbSession(), params);
+			}
 		}
 
 		return _randomTracks->getSubRange(range);
