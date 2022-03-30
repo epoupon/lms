@@ -13,11 +13,7 @@
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">
-	${name}
-</message>
-
-<message id="Lms.Explore.Artists.template.entry-small">
-	${name}
+	${name class="text-decoration-none text-reset"}
 </message>
 
 </messages>

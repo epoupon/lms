@@ -3,10 +3,10 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Artist.template">
-	<div class="Lms-header">
-		<h2><div class="Lms-artistname text-primary">${name}</div></h2>
-		${clusters}
-		${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
+	<div class="mb-3">
+		${name}
+		${clusters class="mb-2"}
+		${play-btn class="me-2"}${more-btn}
 	</div>
 	${<if-has-release>}
 	${releases class="row gy-4"}
