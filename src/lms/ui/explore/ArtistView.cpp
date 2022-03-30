@@ -230,7 +230,7 @@ Artist::refreshSimilarArtists(const std::vector<ArtistId>& similarArtistsId)
 		if (!similarArtist)
 			continue;
 
-		similarArtistsContainer->addWidget(ArtistListHelpers::createEntrySmall(similarArtist));
+		similarArtistsContainer->addWidget(ArtistListHelpers::createEntry(similarArtist));
 	}
 }
 

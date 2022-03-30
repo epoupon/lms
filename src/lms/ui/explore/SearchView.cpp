@@ -138,14 +138,17 @@ namespace UserInterface
 		{
 			using namespace Database;
 
-			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
 			const Range range {results.getCount(), getBatchSize(Mode::Artist)};
 			const RangeResults<ArtistId> artistIds {_artistCollector.get(range)};
-			for (const ArtistId artistId : artistIds.results)
+
 			{
-				const Artist::pointer artist {Artist::find(LmsApp->getDbSession(), artistId)};
-				results.add(ArtistListHelpers::createEntry(artist));
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				for (const ArtistId artistId : artistIds.results)
+				{
+					const Artist::pointer artist {Artist::find(LmsApp->getDbSession(), artistId)};
+					results.add(ArtistListHelpers::createEntry(artist));
+				}
 			}
 
 			results.setHasMore(artistIds.moreResults);
@@ -162,15 +165,17 @@ namespace UserInterface
 		{
 			using namespace Database;
 
-			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
 			const Range range {results.getCount(), getBatchSize(Mode::Release)};
 			const RangeResults<ReleaseId> releaseIds {_releaseCollector.get(range)};
 
-			for (const ReleaseId releaseId : releaseIds.results)
 			{
-				const Release::pointer release {Release::find(LmsApp->getDbSession(), releaseId)};
-				results.add(ReleaseListHelpers::createEntry(release));
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				for (const ReleaseId releaseId : releaseIds.results)
+				{
+					const Release::pointer release {Release::find(LmsApp->getDbSession(), releaseId)};
+					results.add(ReleaseListHelpers::createEntry(release));
+				}
 			}
 
 			results.setHasMore(releaseIds.moreResults);
@@ -186,15 +191,17 @@ namespace UserInterface
 		{
 			using namespace Database;
 
-			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
 			const Range range {results.getCount(), getBatchSize(Mode::Track)};
 			const RangeResults<TrackId> trackIds {_trackCollector.get(range)};
 
-			for (const TrackId trackId : trackIds.results)
 			{
-				const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
-				results.add(TrackListHelpers::createEntry(track, tracksAction));
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				for (const TrackId trackId : trackIds.results)
+				{
+					const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
+					results.add(TrackListHelpers::createEntry(track, tracksAction));
+				}
 			}
 
 			results.setHasMore(trackIds.moreResults);

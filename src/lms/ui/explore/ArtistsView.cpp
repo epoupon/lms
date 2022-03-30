@@ -152,13 +152,16 @@ Artists::refreshArtistLinkTypes()
 void
 Artists::addSome()
 {
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
 	const auto artistIds {_artistCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize})};
-	for (const ArtistId artistId : artistIds.results)
+
 	{
-		if (const auto artist {Artist::find(LmsApp->getDbSession(), artistId)})
-			_container->add(ArtistListHelpers::createEntry(artist));
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+		for (const ArtistId artistId : artistIds.results)
+		{
+			if (const auto artist {Artist::find(LmsApp->getDbSession(), artistId)})
+				_container->add(ArtistListHelpers::createEntry(artist));
+		}
 	}
 
 	_container->setHasMore(artistIds.moreResults);

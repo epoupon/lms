@@ -116,13 +116,16 @@ Releases::refreshView(ReleaseCollector::Mode mode)
 void
 Releases::addSome()
 {
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
 	const auto releaseIds {_releaseCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize})};
-	for (const ReleaseId releaseId : releaseIds.results)
+
 	{
-		if (const Release::pointer release {Release::find(LmsApp->getDbSession(), releaseId)})
-			_container->add(ReleaseListHelpers::createEntry(release));
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+		for (const ReleaseId releaseId : releaseIds.results)
+		{
+			if (const Release::pointer release {Release::find(LmsApp->getDbSession(), releaseId)})
+				_container->add(ReleaseListHelpers::createEntry(release));
+		}
 	}
 
 	_container->setHasMore(releaseIds.moreResults);

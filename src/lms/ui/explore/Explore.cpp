@@ -85,7 +85,8 @@ Explore::Explore(Filters* filters)
 	addFunction("tr", &Functions::tr);
 
 	// Contents
-	Wt::WStackedWidget* contentsStack = bindNew<Wt::WStackedWidget>("contents");
+	Wt::WStackedWidget* contentsStack {bindNew<Wt::WStackedWidget>("contents")};
+	contentsStack->setOverflow(Wt::Overflow::Visible); // wt makes it hidden by default
 
 	auto artists = std::make_unique<Artists>(*_filters);
 	contentsStack->addWidget(std::move(artists));
@@ -157,6 +158,7 @@ getReleasesTracks(Database::Session& session, const std::vector<Database::Releas
 {
 	std::vector<Database::TrackId> res;
 
+	// TODO optimize this
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 	for (const Database::ReleaseId releaseId : releasesId)
