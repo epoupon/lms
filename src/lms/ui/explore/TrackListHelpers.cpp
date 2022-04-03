@@ -74,7 +74,7 @@ namespace UserInterface::TrackListHelpers
 				Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
 				auto cover {std::make_unique<Wt::WImage>()};
 				cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large));
-				cover->setStyleClass("Lms-cover");
+				cover->setStyleClass("img-fluid");
 				cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 				anchor->setImage(std::move(cover));
 			}
@@ -83,7 +83,7 @@ namespace UserInterface::TrackListHelpers
 		{
 			auto* cover {entry->bindNew<Wt::WImage>("cover")};
 			cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(trackId, CoverResource::Size::Large));
-			cover->setStyleClass("Lms-cover");
+			cover->setStyleClass("img-fluid");
 			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		}
 

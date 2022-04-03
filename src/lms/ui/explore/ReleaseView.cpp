@@ -135,7 +135,7 @@ Release::refreshView()
 
 	{
 		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large)))};
-		cover->setStyleClass("Lms-cover-large");
+		cover->setStyleClass("img-fluid");
 		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 	}
 

@@ -20,7 +20,7 @@
 				${clusters class="mb-2"}
 				${play-btn class="me-2"}${more-btn}
 			</div>
-			${container}
+			${container class="d-grid gap-3"}
 		</div>
 	</div>
 	<div class="row">
@@ -51,7 +51,7 @@
 
 <message id="Lms.Explore.Release.template.entry-disc">
 	<h4>${disc-title}</h4>
-	${tracks}
+	${tracks class="d-grid gap-1"}
 </message>
 
 <message id="Lms.Explore.Release.template.entry">
