@@ -46,7 +46,6 @@ namespace Http
 			void sendRequest(std::unique_ptr<ClientRequest> request);
 
 		private:
-
 			void sendNextQueuedRequest();
 			bool sendRequest(const ClientRequest& request);
 			void onClientDone(Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg);

@@ -112,7 +112,6 @@ class ClusterType : public Object<ClusterType, ClusterTypeId>
 		}
 
 	private:
-
 		static const std::size_t _maxNameLength = 128;
 
 		std::string     _name;

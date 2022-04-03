@@ -25,9 +25,9 @@
 
 #include <Magick++.h>
 
-#include "cover/IEncodedImage.hpp"
+#include "image/IEncodedImage.hpp"
 
-namespace CoverArt::GraphicsMagick
+namespace Image::GraphicsMagick
 {
 	class RawImage;
 	class JPEGImage : public IEncodedImage

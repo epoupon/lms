@@ -33,7 +33,6 @@ namespace Database
 	, _expiry {expiry}
 	, _user {getDboPtr(user)}
 	{
-
 	}
 
 	AuthToken::pointer

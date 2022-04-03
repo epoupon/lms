@@ -28,14 +28,12 @@
 #include <cstddef>
 #include <filesystem>
 
-#include "cover/IEncodedImage.hpp"
-#include "IRawImage.hpp"
+#include "image/IEncodedImage.hpp"
+#include "image/IRawImage.hpp"
 
-namespace CoverArt::GraphicsMagick
+namespace Image::GraphicsMagick
 {
-	void init(const std::filesystem::path& path);
-
-	class RawImage : IRawImage
+	class RawImage : public IRawImage
 	{
 		public:
 			RawImage(const std::byte* encodedData, std::size_t encodedDataSize);

@@ -43,6 +43,11 @@ namespace Image
 	{
 		return std::make_unique<STB::RawImage>(path);
 	}
+
+	void
+	init(const std::filesystem::path&)
+	{
+	}
 }
 
 namespace Image::STB

@@ -46,7 +46,21 @@ TEST_F(DatabaseFixture, Track)
 	}
 }
 
-TEST_F(DatabaseFixture, Track_findByKeywords)
+TEST_F(DatabaseFixture, MultipleTracks)
+{
+	ScopedTrack track1 {session, "MyTrackFile1"};
+	ScopedTrack track2 {session, "MyTrackFile2"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		EXPECT_TRUE(track1.getId() != track2.getId());
+		EXPECT_TRUE(track1.get() != track2.get());
+		EXPECT_FALSE(track1.get() == track2.get());
+	}
+}
+
+TEST_F(DatabaseFixture, MultipleTracksSearchByFilter)
 {
 	ScopedTrack track1 {session, ""};
 	ScopedTrack track2 {session, ""};

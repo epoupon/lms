@@ -65,4 +65,3 @@ namespace Scrobbling::ListenBrainz
 			FeedbackSender					_feedbackSender;
 	};
 } // Scrobbling::ListenBrainz
-

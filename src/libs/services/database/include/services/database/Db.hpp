@@ -31,7 +31,6 @@ class Session;
 class Db
 {
 	public:
-
 		Db(const std::filesystem::path& dbPath, std::size_t connectionCount = 10);
 		~Db();
 
@@ -41,6 +40,8 @@ class Db
 		Db& operator=(Db&&) = delete;
 
 		Session& getTLSSession();
+
+		void executeSql(const std::string& sql);
 
 	private:
 		friend class Session;
@@ -65,29 +66,6 @@ class Db
 				Wt::Dbo::SqlConnectionPool& _connectionPool;
 				std::unique_ptr<Wt::Dbo::SqlConnection> _connection;
 		};
-
-		class ScopedNoForeignKeys
-		{
-			public:
-				ScopedNoForeignKeys(Db& db) : _db {db}
-				{
-					_db.executeSql("PRAGMA foreign_keys=OFF");
-				}
-				~ScopedNoForeignKeys()
-				{
-					_db.executeSql("PRAGMA foreign_keys=ON");
-				}
-
-				ScopedNoForeignKeys(const ScopedNoForeignKeys&) = delete;
-				ScopedNoForeignKeys(ScopedNoForeignKeys&&) = delete;
-				ScopedNoForeignKeys& operator=(const ScopedNoForeignKeys&) = delete;
-				ScopedNoForeignKeys& operator=(ScopedNoForeignKeys&&) = delete;
-
-			private:
-				Db& _db;
-		};
-
-		void executeSql(const std::string& sql);
 
 		RecursiveSharedMutex				_sharedMutex;
 		std::unique_ptr<Wt::Dbo::SqlConnectionPool>	_connectionPool;

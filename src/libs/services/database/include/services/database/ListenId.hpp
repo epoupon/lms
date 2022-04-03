@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,27 +19,7 @@
 
 #pragma once
 
-#include <string_view>
+#include "services/database/IdType.hpp"
 
-#include "utils/Exception.hpp"
-
-namespace Av {
-
-	class Exception : public LmsException
-	{
-		public:
-			using LmsException::LmsException;
-	};
-
-	enum class Format
-	{
-		MP3,
-		OGG_OPUS,
-		MATROSKA_OPUS,
-		OGG_VORBIS,
-		WEBM_VORBIS,
-	};
-
-	std::string_view formatToMimetype(Format format);
-}
+LMS_DECLARE_IDTYPE(ListenId)
 

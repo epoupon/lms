@@ -45,6 +45,15 @@ class User : public Object<User, UserId>
 			std::string hash;
 		};
 
+		struct FindParameters
+		{
+			std::optional<Scrobbler>		scrobbler;
+			Range							range;
+
+			FindParameters& setScrobbler(Scrobbler _scrobbler) { scrobbler = _scrobbler; return *this; }
+			FindParameters& setRange(Range _range) {range = _range; return *this; }
+		};
+
 		static inline const std::size_t 	MinNameLength {3};
 		static inline const std::size_t 	MaxNameLength {15};
 		static inline const bool		defaultSubsonicTranscodeEnable {true};
@@ -63,7 +72,7 @@ class User : public Object<User, UserId>
 		static std::size_t			getCount(Session& session);
 		static pointer				find(Session& session, UserId id);
 		static pointer				find(Session& session, std::string_view loginName);
-		static RangeResults<UserId>	find(Session& session, Range range);
+		static RangeResults<UserId>	find(Session& session, const FindParameters& params);
 		static pointer				findDemoUser(Session& session);
 
 		// accessors

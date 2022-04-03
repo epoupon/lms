@@ -44,13 +44,16 @@ User::getCount(Session& session)
 }
 
 RangeResults<UserId>
-User::find(Session& session, Range range)
+User::find(Session& session, const FindParameters& params)
 {
 	session.checkSharedLocked();
 
 	auto query {session.getDboSession().query<UserId>("SELECT id FROM user")};
 
-	return execQuery(query, range);
+	if (params.scrobbler)
+		query.where("scrobbler = ?").bind(*params.scrobbler);
+
+	return execQuery(query, params.range);
 }
 
 User::pointer

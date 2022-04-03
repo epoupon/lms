@@ -89,13 +89,12 @@ class ScanSettings : public Object<ScanSettings, ScanSettingsId>
 		}
 
 	private:
-
 		int		_scanVersion {};
 		std::string	_mediaDirectory;
 		Wt::WTime	_startTime = Wt::WTime {0,0,0};
 		UpdatePeriod	_updatePeriod {UpdatePeriod::Never};
 		RecommendationEngineType _recommendationEngineType {RecommendationEngineType::Clusters};
-		std::string	_audioFileExtensions {".alac .mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus"};
+		std::string	_audioFileExtensions {".alac .mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus .wv"};
 		Wt::Dbo::collection<Wt::Dbo::ptr<ClusterType>>	_clusterTypes;
 };
 

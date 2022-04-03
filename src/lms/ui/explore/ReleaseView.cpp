@@ -129,6 +129,8 @@ Release::refreshView()
 		}
 	}
 
+	bindString("duration", durationToString(release->getDuration()), Wt::TextFormat::Plain);
+
 	refreshReleaseArtists(release);
 
 	{
@@ -250,7 +252,7 @@ Release::refreshView()
 			displayTrackPopupMenu(*moreBtn, trackId, tracksAction);
 		});
 
-		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
+		entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 		LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=] (TrackId loadedTrackId)
 		{

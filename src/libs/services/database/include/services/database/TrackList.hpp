@@ -121,14 +121,12 @@ class TrackList : public Object<TrackList, TrackListId>
 		}
 
 	private:
-
 		std::string		_name;
 		Type			_type {Type::Playlist};
 		bool			_isPublic {false};
 
 		Wt::Dbo::ptr<User>	_user;
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _entries;
-
 };
 
 class TrackListEntry : public Object<TrackListEntry, TrackListEntryId>
@@ -158,7 +156,6 @@ class TrackListEntry : public Object<TrackListEntry, TrackListEntryId>
 		}
 
 	private:
-
 		Wt::WDateTime			_dateTime;		// optional date time
 		Wt::Dbo::ptr<Track>		_track;
 		Wt::Dbo::ptr<TrackList>	_tracklist;

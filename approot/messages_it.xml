@@ -67,7 +67,7 @@
 <message id="Lms.Admin.ScannerController.last-scan-status">Scansionati {1} files in {2} su {3} ({4} errori, {5} duplicati)</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">Nessuna traccia audio</message>
 <message id="Lms.Admin.ScannerController.same-hash">Hash doppio</message>
-<message id="Lms.Admin.ScannerController.same-mbid">MBID doppio</message>
+<message id="Lms.Admin.ScannerController.same-mbid">Recording MBID doppio</message>
 <message id="Lms.Admin.ScannerController.scan-now">Scansiona ora</message>
 <message id="Lms.Admin.ScannerController.scanner">Scanner</message>
 <message id="Lms.Admin.ScannerController.status">Stato</message>

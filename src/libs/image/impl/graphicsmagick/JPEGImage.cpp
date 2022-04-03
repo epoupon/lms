@@ -19,11 +19,11 @@
 
 #include "JPEGImage.hpp"
 
-#include "Exception.hpp"
 #include "RawImage.hpp"
+#include "image/Exception.hpp"
 #include "utils/Logger.hpp"
 
-namespace CoverArt::GraphicsMagick
+namespace Image::GraphicsMagick
 {
 	JPEGImage::JPEGImage(const RawImage& rawImage, unsigned quality)
 	{

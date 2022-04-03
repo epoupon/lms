@@ -68,7 +68,7 @@
 <message id="Lms.Admin.ScannerController.last-scan-status">已扫描 {1} 文件 在 {2} 和 {3} ({4} 错误, {5} 副本)</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">没有音轨</message>
 <message id="Lms.Admin.ScannerController.same-hash">复制文件哈希值</message>
-<message id="Lms.Admin.ScannerController.same-mbid">复制 MBID</message>
+<message id="Lms.Admin.ScannerController.same-mbid">复制 Recording MBID</message>
 <message id="Lms.Admin.ScannerController.scan-now">立即扫描</message>
 <message id="Lms.Admin.ScannerController.scanner">扫描器</message>
 <message id="Lms.Admin.ScannerController.status">状态</message>

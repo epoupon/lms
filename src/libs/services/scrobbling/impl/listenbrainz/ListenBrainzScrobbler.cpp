@@ -19,18 +19,9 @@
 
 #include "ListenBrainzScrobbler.hpp"
 
-#include <Wt/Json/Array.h>
-#include <Wt/Json/Object.h>
-#include <Wt/Json/Value.h>
-#include <Wt/Json/Serializer.h>
-
-#include "services/database/Artist.hpp"
 #include "services/database/Db.hpp"
-#include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "services/database/TrackList.hpp"
-#include "services/database/User.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/http/IClient.hpp"
 #include "utils/Logger.hpp"
@@ -159,7 +150,7 @@ namespace Scrobbling::ListenBrainz
 	void
 	Scrobbler::listenStarted(const Listen& listen)
 	{
-		enqueListen(listen, Wt::WDateTime {});
+		_listensSynchronizer.enqueListenNow(listen);
 	}
 
 	void
@@ -168,54 +159,14 @@ namespace Scrobbling::ListenBrainz
 		if (duration && !canBeScrobbled(_db.getTLSSession(), listen.trackId, *duration))
 			return;
 
-		const Listen timedListen {listen};
-		const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
-
-		enqueListen(timedListen, now);
+		const TimedListen timedListen {listen, Wt::WDateTime::currentDateTime()};
+		_listensSynchronizer.enqueListen(timedListen);
 	}
 
 	void
-	Scrobbler::addTimedListen(const TimedListen& listen)
+	Scrobbler::addTimedListen(const TimedListen& timedListen)
 	{
-		assert(listen.listenedAt.isValid());
-		enqueListen(listen, listen.listenedAt);
-	}
-
-	void
-	Scrobbler::enqueListen(const Listen& listen, const Wt::WDateTime& timePoint)
-	{
-		Http::ClientPOSTRequestParameters request;
-		request.relativeUrl = "/1/submit-listens";
-
-		if (timePoint.isValid())
-		{
-			request.priority = Http::ClientRequestParameters::Priority::Normal;
-			request.onSuccessFunc = [=](std::string_view)
-			{
-				_listensSynchronizer.saveListen(TimedListen {listen, timePoint});
-			};
-		}
-		else
-		{
-			// We want "listen now" to appear as soon as possible
-			request.priority = Http::ClientRequestParameters::Priority::High;
-		}
-
-		std::string bodyText {listenToJsonString(_db.getTLSSession(), listen, timePoint, timePoint.isValid() ? "single" : "playing_now")};
-		if (bodyText.empty())
-		{
-			LOG(DEBUG) << "Cannot convert listen to json: skipping";
-			return;
-		}
-
-		const std::optional<UUID> listenBrainzToken {Utils::getListenBrainzToken(_db.getTLSSession(), listen.userId)};
-		if (!listenBrainzToken)
-			return;
-
-		request.message.addBodyText(bodyText);
-		request.message.addHeader("Authorization", "Token " + std::string {listenBrainzToken->getAsString()});
-		request.message.addHeader("Content-Type", "application/json");
-		_client->sendPOSTRequest(std::move(request));
+		_listensSynchronizer.enqueListen(timedListen);
 	}
 
 	void
@@ -232,4 +183,3 @@ namespace Scrobbling::ListenBrainz
 		_feedbackSender.enqueFeedback(feedback);
 	}
 } // namespace Scrobbling::ListenBrainz
-

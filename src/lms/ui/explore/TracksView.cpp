@@ -125,8 +125,8 @@ Tracks::addSome()
 
 	for (const TrackId trackId : trackIds.results)
 	{
-		const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
-		_container->add(TrackListHelpers::createEntry(track, tracksAction));
+		if (const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)})
+			_container->add(TrackListHelpers::createEntry(track, tracksAction));
 	}
 
 	_container->setHasMore(trackIds.moreResults);

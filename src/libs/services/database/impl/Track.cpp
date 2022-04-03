@@ -186,12 +186,12 @@ Track::findPaths(Session& session, Range range)
 }
 
 RangeResults<TrackId>
-Track::findMBIDDuplicates(Session& session, Range range)
+Track::findRecordingMBIDDuplicates(Session& session, Range range)
 {
 	session.checkSharedLocked();
 
-	auto query {session.getDboSession().query<TrackId>( "SELECT track.id FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)")
-		.orderBy("track.release_id,track.disc_number,track.track_number,track.mbid")};
+	auto query {session.getDboSession().query<TrackId>( "SELECT track.id FROM track WHERE recording_mbid in (SELECT recording_mbid FROM track WHERE recording_mbid <> '' GROUP BY recording_mbid HAVING COUNT (*) > 1)")
+		.orderBy("track.release_id,track.disc_number,track.track_number,track.recording_mbid")};
 
 	return execQuery(query, range);
 }

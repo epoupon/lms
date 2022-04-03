@@ -30,16 +30,16 @@ namespace Scanner
 {
 	enum class ScanErrorType
 	{
-		CannotReadFile,		// cannot read file
-		CannotParseFile,	// cannot parse file
-		NoAudioTrack,		// no audio track found
-		BadDuration,		// bad duration
+		CannotReadFile,			// cannot read file
+		CannotParseFile,		// cannot parse file
+		NoAudioTrack,			// no audio track found
+		BadDuration,			// bad duration
 	};
 
 	enum class DuplicateReason
 	{
 		SameHash,
-		SameMBID,
+		SameRecordingMBID,
 	};
 
 	struct ScanError

@@ -111,7 +111,6 @@ namespace Database
 		StarredDateDesc,
 	};
 
-	// Do not change enum values!
 	enum class TrackArtistLinkType
 	{
 		Artist		= 0,	// regular track artist
@@ -128,7 +127,6 @@ namespace Database
 	};
 
 	// User selectable audio file formats
-	// Do not change values
 	enum class AudioFormat
 	{
 		MP3				= 1,
@@ -143,14 +141,19 @@ namespace Database
 	void visitAllowedAudioBitrates(std::function<void(Bitrate)>);
 	bool isAudioBitrateAllowed(Bitrate bitrate);
 
-	// Do not change enum values!
 	enum class Scrobbler
 	{
 		Internal		= 0,
 		ListenBrainz	= 1,
 	};
 
-	// Do not change enum values!
+	enum class ScrobblingState
+	{
+		PendingAdd		= 0,
+		Synchronized	= 1,
+		PendingRemove	= 2,
+	};
+
 	enum class UserType
 	{
 		REGULAR	= 0,
@@ -158,14 +161,12 @@ namespace Database
 		DEMO	= 2,
 	};
 
-	// Do not change enum values!
 	enum class UITheme
 	{
 		Light	= 0,
 		Dark	= 1,
 	};
 
-	// Do not change enum values!
 	enum class SubsonicArtistListMode
 	{
 		AllArtists		= 0,

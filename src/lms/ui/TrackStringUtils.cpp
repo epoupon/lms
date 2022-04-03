@@ -23,7 +23,7 @@
 #include <sstream>
 
 std::string
-trackDurationToString(std::chrono::milliseconds	msDuration)
+durationToString(std::chrono::milliseconds msDuration)
 {
 	const std::chrono::seconds duration {std::chrono::duration_cast<std::chrono::seconds>(msDuration)};
 

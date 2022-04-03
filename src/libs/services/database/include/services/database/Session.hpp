@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <memory>
 #include <mutex>
 
 #include <Wt/Dbo/Dbo.h>
@@ -72,12 +71,9 @@ namespace Database
 			void prepareTables(); // need to run only once at startup
 
 			Wt::Dbo::Session& getDboSession() { return _session; }
+			Db& getDb() { return _db; }
 
 		private:
-			Session(std::shared_mutex& mutex, Wt::Dbo::SqlConnectionPool& connectionPool);
-
-			void doDatabaseMigrationIfNeeded();
-
 			Db&					_db;
 			Wt::Dbo::Session	_session;
 	};

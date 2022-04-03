@@ -89,7 +89,7 @@ TEST_F(DatabaseFixture, SingleUser)
 {
 	{
 		auto transaction {session.createSharedTransaction()};
-		EXPECT_TRUE(User::find(session, Range {}).results.empty());
+		EXPECT_TRUE(User::find(session, User::FindParameters {}).results.empty());
 		EXPECT_EQ(User::getCount(session), 0);
 	}
 
@@ -98,7 +98,7 @@ TEST_F(DatabaseFixture, SingleUser)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		EXPECT_EQ(User::find(session, Range {}).results.size(), 1);
+		EXPECT_EQ(User::find(session, User::FindParameters {}).results.size(), 1);
 		EXPECT_EQ(User::getCount(session), 1);
 	}
 }

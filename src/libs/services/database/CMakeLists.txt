@@ -4,6 +4,7 @@ add_library(lmsdatabase SHARED
 	impl/Cluster.cpp
 	impl/Db.cpp
 	impl/Listen.cpp
+	impl/Migration.cpp
 	impl/TrackArtistLink.cpp
 	impl/TrackFeatures.cpp
 	impl/TrackList.cpp

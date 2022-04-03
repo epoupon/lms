@@ -955,50 +955,6 @@ handleGetArtistInfo2Request(RequestContext& context)
 
 static
 Response
-handleGetArtistsRequest(RequestContext& context)
-{
-	Response response {Response::createOkResponse(context.serverProtocolVersion)};
-
-	Response::Node& artistsNode {response.createNode("artists")};
-	artistsNode.setAttribute("ignoredArticles", "");
-	artistsNode.setAttribute("lastModified", reportedDummyDateULong);
-
-	Response::Node& indexNode {artistsNode.createArrayChild("index")};
-	indexNode.setAttribute("name", "?");
-
-	auto transaction {context.dbSession.createSharedTransaction()};
-
-	User::pointer user {User::find(context.dbSession, context.userId)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
-	Artist::FindParameters findParameters;
-
-	findParameters.setSortMethod(ArtistSortMethod::BySortName);
-	switch (user->getSubsonicArtistListMode())
-	{
-		case SubsonicArtistListMode::AllArtists:
-			break;
-		case SubsonicArtistListMode::ReleaseArtists:
-			findParameters.setLinkType(TrackArtistLinkType::ReleaseArtist);
-			break;
-		case SubsonicArtistListMode::TrackArtists:
-			findParameters.setLinkType(TrackArtistLinkType::Artist);
-			break;
-	}
-
-	const RangeResults<ArtistId> artists {Artist::find(context.dbSession, findParameters)};
-	for (const ArtistId artistId : artists.results)
-	{
-		const auto artist {Artist::find(context.dbSession, artistId)};
-		indexNode.addArrayChild("artist", artistToResponseNode(user, artist, true /* id3 */));
-	}
-
-	return response;
-}
-
-static
-Response
 handleGetMusicDirectoryRequest(RequestContext& context)
 {
 	// Mandatory params
@@ -1081,6 +1037,88 @@ handleGetMusicFoldersRequest(RequestContext& context)
 
 static
 Response
+handleGetArtistsRequestCommon(RequestContext& context, bool id3)
+{
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
+
+	Response::Node& artistsNode {response.createNode(id3 ? "artists" : "indexes")};
+	artistsNode.setAttribute("ignoredArticles", "");
+	artistsNode.setAttribute("lastModified", reportedDummyDateULong);
+
+	auto transaction {context.dbSession.createSharedTransaction()};
+
+	User::pointer user {User::find(context.dbSession, context.userId)};
+	if (!user)
+		throw UserNotAuthorizedError {};
+
+	Artist::FindParameters parameters;
+	parameters.setSortMethod(ArtistSortMethod::BySortName);
+	switch (user->getSubsonicArtistListMode())
+	{
+		case SubsonicArtistListMode::AllArtists:
+			break;
+		case SubsonicArtistListMode::ReleaseArtists:
+			parameters.setLinkType(TrackArtistLinkType::ReleaseArtist);
+			break;
+		case SubsonicArtistListMode::TrackArtists:
+			parameters.setLinkType(TrackArtistLinkType::Artist);
+			break;
+	}
+
+	Response::Node* currentIndexNode {};
+	char currentIndex{};
+
+	Response::Node* unknownIndexNode {};
+	auto getOrCreateUnknownIndexNode {[&]
+	{
+		if (!unknownIndexNode)
+		{
+			unknownIndexNode = &artistsNode.createArrayChild("index");
+			unknownIndexNode->setAttribute("name", "?");
+		}
+
+		return unknownIndexNode;
+	}};
+
+	auto getOrCreateIndexNode {[&](char first)
+	{
+		if (!currentIndexNode || currentIndex != first)
+		{
+			currentIndexNode = &artistsNode.createArrayChild("index");
+			currentIndexNode->setAttribute("name", std::string {first});
+			currentIndex = first;
+		}
+
+		return currentIndexNode;
+	}};
+
+	const RangeResults<ArtistId> artists {Artist::find(context.dbSession, parameters)};
+	for (const ArtistId artistId : artists.results)
+	{
+		const Artist::pointer artist {Artist::find(context.dbSession, artistId)};
+		const std::string& sortName {artist->getSortName()};
+
+		Response::Node* indexNode{};
+		if (sortName.empty() || !std::isalpha(sortName[0]))
+			indexNode = getOrCreateUnknownIndexNode();
+		else
+			indexNode = getOrCreateIndexNode(std::toupper(sortName[0]));
+
+		indexNode->addArrayChild("artist", artistToResponseNode(user, artist, id3));
+	}
+
+	return response;
+}
+
+static
+Response
+handleGetIndexesRequest(RequestContext& context)
+{
+	return handleGetArtistsRequestCommon(context, false /* no id3 */);
+}
+
+static
+Response
 handleGetGenresRequest(RequestContext& context)
 {
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
@@ -1103,45 +1141,9 @@ handleGetGenresRequest(RequestContext& context)
 
 static
 Response
-handleGetIndexesRequest(RequestContext& context)
+handleGetArtistsRequest(RequestContext& context)
 {
-	Response response {Response::createOkResponse(context.serverProtocolVersion)};
-
-	Response::Node& artistsNode {response.createNode("indexes")};
-	artistsNode.setAttribute("ignoredArticles", "");
-	artistsNode.setAttribute("lastModified", reportedDummyDateULong);
-
-	Response::Node& indexNode {artistsNode.createArrayChild("index")};
-	indexNode.setAttribute("name", "?");
-
-	auto transaction {context.dbSession.createSharedTransaction()};
-
-	User::pointer user {User::find(context.dbSession, context.userId)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
-	Artist::FindParameters parameters;
-	parameters.setSortMethod(ArtistSortMethod::BySortName);
-	switch (user->getSubsonicArtistListMode())
-	{
-		case SubsonicArtistListMode::AllArtists:
-			break;
-		case SubsonicArtistListMode::ReleaseArtists:
-			parameters.setLinkType(TrackArtistLinkType::ReleaseArtist);
-			break;
-		case SubsonicArtistListMode::TrackArtists:
-			parameters.setLinkType(TrackArtistLinkType::Artist);
-			break;
-	}
-
-	const RangeResults<ArtistId> artists {Artist::find(context.dbSession, parameters)};
-	for (const ArtistId artistId : artists.results)
-	{
-		const Artist::pointer artist {Artist::find(context.dbSession, artistId)};
-		indexNode.addArrayChild("artist", artistToResponseNode(user, artist, false /* no id3 */));
-	}
-
-	return response;
+	return handleGetArtistsRequestCommon(context, true /* id3 */);
 }
 
 static
@@ -1394,7 +1396,7 @@ handleGetUsersRequest(RequestContext& context)
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& usersNode {response.createNode("users")};
 
-	const auto userIds {User::find(context.dbSession, Range {})};
+	const auto userIds {User::find(context.dbSession, User::FindParameters {})};
 	for (const UserId userId : userIds.results)
 	{
 		const User::pointer user {User::find(context.dbSession, userId)};
@@ -1501,38 +1503,14 @@ handleStarRequest(RequestContext& context)
 {
 	StarParameters params {getStarParameters(context.parameters)};
 
-	auto transaction {context.dbSession.createSharedTransaction()};
-
-	User::pointer user {User::find(context.dbSession, context.userId)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
 	for (const ArtistId id : params.artistIds)
-	{
-		Artist::pointer artist {Artist::find(context.dbSession, id)};
-		if (!artist)
-			continue;
-
-		Service<Scrobbling::IScrobblingService>::get()->star(user->getId(), artist->getId());
-	}
+		Service<Scrobbling::IScrobblingService>::get()->star(context.userId, id);
 
 	for (const ReleaseId id : params.releaseIds)
-	{
-		Release::pointer release {Release::find(context.dbSession, id)};
-		if (!release)
-			continue;
-
-		Service<Scrobbling::IScrobblingService>::get()->star(user->getId(), release->getId());
-	}
+		Service<Scrobbling::IScrobblingService>::get()->star(context.userId, id);
 
 	for (const TrackId id : params.trackIds)
-	{
-		Track::pointer track {Track::find(context.dbSession, id)};
-		if (!track)
-			continue;
-
-		Service<Scrobbling::IScrobblingService>::get()->star(user->getId(), track->getId());
-	}
+		Service<Scrobbling::IScrobblingService>::get()->star(context.userId, id);
 
 	return Response::createOkResponse(context.serverProtocolVersion);
 }
@@ -1557,33 +1535,14 @@ handleUnstarRequest(RequestContext& context)
 {
 	StarParameters params {getStarParameters(context.parameters)};
 
-	auto transaction {context.dbSession.createSharedTransaction()};
-
-	User::pointer user {User::find(context.dbSession, context.userId)};
-	if (!user)
-		throw RequestedDataNotFoundError {};
-
-	for (const ArtistId artistId : params.artistIds)
-		Service<Scrobbling::IScrobblingService>::get()->unstar(context.userId, artistId);
+	for (const ArtistId id : params.artistIds)
+		Service<Scrobbling::IScrobblingService>::get()->unstar(context.userId, id);
 
 	for (const ReleaseId id : params.releaseIds)
-	{
-		Release::pointer release {Release::find(context.dbSession, id)};
-		if (!release)
-			continue;
-
-		Service<Scrobbling::IScrobblingService>::get()->unstar(user->getId(), release->getId());
-	}
+		Service<Scrobbling::IScrobblingService>::get()->unstar(context.userId, id);
 
 	for (const TrackId id : params.trackIds)
-	{
-		Track::pointer track {Track::find(context.dbSession, id)};
-		if (!track)
-			continue;
-
-		Service<Scrobbling::IScrobblingService>::get()->unstar(user->getId(), track->getId());
-	}
-
+		Service<Scrobbling::IScrobblingService>::get()->unstar(context.userId, id);
 
 	return Response::createOkResponse(context.serverProtocolVersion);
 }

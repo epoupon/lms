@@ -87,7 +87,7 @@ namespace UserInterface::TrackListHelpers
 			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 		}
 
-		entry->bindString("duration", trackDurationToString(track->getDuration()), Wt::TextFormat::Plain);
+		entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 		playBtn->clicked().connect([trackId, &tracksAction]

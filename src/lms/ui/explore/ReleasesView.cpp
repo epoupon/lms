@@ -121,8 +121,8 @@ Releases::addSome()
 	const auto releaseIds {_releaseCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize})};
 	for (const ReleaseId releaseId : releaseIds.results)
 	{
-		const Release::pointer release {Release::find(LmsApp->getDbSession(), releaseId)};
-		_container->add(ReleaseListHelpers::createEntry(release));
+		if (const Release::pointer release {Release::find(LmsApp->getDbSession(), releaseId)})
+			_container->add(ReleaseListHelpers::createEntry(release));
 	}
 
 	_container->setHasMore(releaseIds.moreResults);

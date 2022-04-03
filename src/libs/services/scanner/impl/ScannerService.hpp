@@ -98,6 +98,7 @@ namespace Scanner
 			std::atomic<bool>						_abortScan {};
 			Wt::WIOService							_ioService;
 			boost::asio::system_timer				_scheduleTimer {_ioService};
+			const bool								_skipDuplicateRecordingMBID {};
 			Events									_events;
 			std::chrono::system_clock::time_point	_lastScanInProgressEmit {};
 			Database::Session						_dbSession;

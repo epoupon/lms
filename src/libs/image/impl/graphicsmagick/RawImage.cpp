@@ -21,38 +21,43 @@
 
 #include <magick/resource.h>
 
-#include "utils/Logger.hpp"
 #include "JPEGImage.hpp"
-#include "Exception.hpp"
+#include "image/Exception.hpp"
+#include "utils/Logger.hpp"
 
-namespace Image::GraphicsMagick
+namespace Image
 {
-
 	std::unique_ptr<IRawImage> decodeImage(const std::byte* encodedData, std::size_t encodedDataSize)
 	{
-		return std::make_unique<RawImage>(encodedData, encodedDataSize);
+		return std::make_unique<GraphicsMagick::RawImage>(encodedData, encodedDataSize);
 	}
 
 	std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path)
 	{
+		return std::make_unique<GraphicsMagick::RawImage>(path);
+	}
 
-void
-init(const std::filesystem::path& path)
-{
-	Magick::InitializeMagick(path.string().c_str());
+	void
+	init(const std::filesystem::path& path)
+	{
+		Magick::InitializeMagick(path.string().c_str());
 
-	if (auto nbThreads {MagickLib::GetMagickResourceLimit(MagickLib::ThreadsResource)}; nbThreads != 1)
-		LMS_LOG(COVER, WARNING) << "Consider setting env var OMP_NUM_THREADS=1 to save resources";
+		if (auto nbThreads {MagickLib::GetMagickResourceLimit(MagickLib::ThreadsResource)}; nbThreads != 1)
+			LMS_LOG(COVER, WARNING) << "Consider setting env var OMP_NUM_THREADS=1 to save resources";
 
-	if (!MagickLib::SetMagickResourceLimit(MagickLib::ThreadsResource, 1))
-		LMS_LOG(COVER, ERROR) << "Cannot set Magick thread resource limit to 1!";
+		if (!MagickLib::SetMagickResourceLimit(MagickLib::ThreadsResource, 1))
+			LMS_LOG(COVER, ERROR) << "Cannot set Magick thread resource limit to 1!";
 
-	if (!MagickLib::SetMagickResourceLimit(MagickLib::DiskResource, 0))
-		LMS_LOG(COVER, ERROR) << "Cannot set Magick disk resource limit to 0!";
+		if (!MagickLib::SetMagickResourceLimit(MagickLib::DiskResource, 0))
+			LMS_LOG(COVER, ERROR) << "Cannot set Magick disk resource limit to 0!";
 
-	LMS_LOG(COVER, INFO) << "Magick threads resource limit = " << GetMagickResourceLimit(MagickLib::ThreadsResource);
-	LMS_LOG(COVER, INFO) << "Magick Disk resource limit = " << GetMagickResourceLimit(MagickLib::DiskResource);
+		LMS_LOG(COVER, INFO) << "Magick threads resource limit = " << GetMagickResourceLimit(MagickLib::ThreadsResource);
+		LMS_LOG(COVER, INFO) << "Magick Disk resource limit = " << GetMagickResourceLimit(MagickLib::DiskResource);
+	}
 }
+
+namespace Image::GraphicsMagick
+{
 
 RawImage::RawImage(const std::byte* encodedData, std::size_t encodedDataSize)
 {

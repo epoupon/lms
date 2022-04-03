@@ -26,7 +26,6 @@
 class WhereClause
 {
 	public:
-
 		WhereClause() {}
 		WhereClause(const std::string& clause) { _clause = clause; }
 
@@ -40,16 +39,13 @@ class WhereClause
 		const std::list<std::string>&	getBindArgs(void) const	{return _bindArgs;}
 
 	private:
-
 		std::string _clause;		// WHERE clause
 		std::list<std::string>  _bindArgs;
-
 };
 
 class InnerJoinClause
 {
 	public:
-
 		InnerJoinClause() {}
 		InnerJoinClause(const std::string& clause);
 
@@ -57,7 +53,6 @@ class InnerJoinClause
 		std::string get() const	{ return _clause;}
 
 	private:
-
 		std::string _clause;
 };
 
@@ -73,7 +68,6 @@ class GroupByStatement
 
 	private:
 		std::string _statement;		// SELECT statement
-
 };
 
 class SelectStatement
@@ -87,14 +81,12 @@ class SelectStatement
 		std::string get() const;
 
 	private:
-
 		std::list<std::string>	_statement;
 };
 
 class FromClause
 {
 	public:
-
 		FromClause() {}
 		FromClause(const std::string& clause);
 
@@ -103,15 +95,12 @@ class FromClause
 		std::string get() const;
 
 	private:
-
 		std::list<std::string>	_clause;
-
 };
 
 class SqlQuery
 {
 	public:
-
 		SelectStatement&	select(void)		{ return _selectStatement;}
 		SelectStatement&	select(const std::string& statement)		{ _selectStatement = SelectStatement(statement); return _selectStatement; }
 		FromClause&		from(void)		{ return _fromClause; }
@@ -122,10 +111,9 @@ class SqlQuery
 		GroupByStatement&	groupBy(void) 		{ return _groupByStatement; }
 		const GroupByStatement&	groupBy(void) const	{ return _groupByStatement; }
 
-		std::string get(void) const;
+		std::string get() const;
 
 	private:
-
 		SelectStatement		_selectStatement;	// SELECT statement
 		InnerJoinClause		_innerJoinClause;	// INNER JOIN
 		FromClause		_fromClause;		// FROM tables
