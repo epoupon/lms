@@ -442,7 +442,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 			Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
 			auto cover = std::make_unique<Wt::WImage>();
 			cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large));
-			cover->setStyleClass("Lms-cover");
+			cover->setStyleClass("img-fluid");
 			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 			anchor->setImage(std::move(cover));
 		}
@@ -451,7 +451,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 	{
 		auto cover = entry->bindNew<Wt::WImage>("cover");
 		cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(track->getId(), CoverResource::Size::Large));
-		cover->setStyleClass("Lms-cover");
+		cover->setStyleClass("img-fluid");
 		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
 	}
 
