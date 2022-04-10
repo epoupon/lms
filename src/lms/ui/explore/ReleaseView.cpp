@@ -22,6 +22,7 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WApplication.h>
 #include <Wt/WImage.h>
+#include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
@@ -159,7 +160,7 @@ Release::refreshView()
 	}
 
 	{
-		Wt::WText* playBtn {bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
+		Wt::WPushButton* playBtn {bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([=]
 		{
 			releasesAction.emit(PlayQueueAction::Play, {*releaseId});
@@ -167,7 +168,7 @@ Release::refreshView()
 	}
 
 	{
-		Wt::WText* moreBtn {bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
+		Wt::WPushButton* moreBtn {bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
 		moreBtn->clicked().connect([=]
 		{
 			displayReleasePopupMenu(*moreBtn, *releaseId, releasesAction);
@@ -218,6 +219,11 @@ Release::refreshView()
 
 		Wt::WTemplate* entry {container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry"))};
 
+		entry->clicked().connect([=]
+		{
+			tracksAction.emit(PlayQueueAction::Play, {trackId});
+		});
+
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
 		const auto artists {track->getArtists({TrackArtistLinkType::Artist})};
@@ -226,10 +232,13 @@ Release::refreshView()
 			entry->setCondition("if-has-artists", true);
 
 			Wt::WContainerWidget* artistsContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
+			bool firstArtist {true};
 			for (const auto& artist : artists)
 			{
-				Wt::WTemplate *t {artistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-artist"))};
-				t->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
+				if (!firstArtist)
+					artistsContainer->addNew<Wt::WText>(" · ");
+				artistsContainer->addWidget(LmsApplication::createArtistAnchor(artist));
+				firstArtist = false;
 			}
 		}
 
@@ -240,14 +249,8 @@ Release::refreshView()
 			entry->bindInt("track-number", *trackNumber);
 		}
 
-		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
-		playBtn->clicked().connect([=]()
-		{
-			tracksAction.emit(PlayQueueAction::Play, {trackId});
-		});
-
-		Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
-		moreBtn->clicked().connect([=]()
+		Wt::WPushButton* moreBtn {entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
+		moreBtn->clicked().connect([=]
 		{
 			displayTrackPopupMenu(*moreBtn, trackId, tracksAction);
 		});

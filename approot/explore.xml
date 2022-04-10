@@ -5,8 +5,8 @@
 	${contents}
 </message>
 
-<message id="Lms.Explore.template.more-btn"><i class="fa fa-2x fa-plus-circle"></i></message>
-<message id="Lms.Explore.template.play-btn"><i class="fa fa-2x fa-play-circle"></i></message>
+<message id="Lms.Explore.template.more-btn"><i class="fa fa-fw fa-ellipsis-v"></i></message>
+<message id="Lms.Explore.template.play-btn"><i class="fa fa-fw fa-play"></i></message>
 
 <message id="Lms.Explore.template.filters">
 	${add-filter class="btn-sm btn-info me-1"}${clusters class="d-inline-block"}

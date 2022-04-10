@@ -452,6 +452,7 @@ LmsApplication::createHome()
 	_coverResource = std::make_shared<CoverResource>();
 
 	declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
+	declareJavaScriptFunction("stopPropagation", "function(event) { event.stopPropagation() }");
 	doJavaScript("$('body').tooltip({ selector: '[data-toggle=\"tooltip\"]'})");
 
 	Wt::WTemplate* main {root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.main.template")))};
