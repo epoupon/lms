@@ -21,6 +21,7 @@
 
 #include <Wt/WMenu.h>
 #include <Wt/WPopupMenu.h>
+#include <Wt/WPushButton.h>
 #include <Wt/WText.h>
 
 #include "services/database/Release.hpp"
@@ -60,12 +61,12 @@ Releases::Releases(Filters& filters)
 		addItem(*menu, Wt::WString::tr("Lms.Explore.all"), ReleaseCollector::Mode::All);
 	}
 
-	Wt::WText* playBtn {bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
+	Wt::WPushButton* playBtn {bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 	playBtn->clicked().connect([this]
 	{
 		releasesAction.emit(PlayQueueAction::Play, getAllReleases());
 	});
-	Wt::WText* moreBtn {bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
+	Wt::WPushButton* moreBtn {bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
 	moreBtn->clicked().connect([=]
 	{
 		Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};

@@ -18,7 +18,7 @@
 				${<if-has-various-release-artists>}${tr:Lms.Explore.various-artists}${</if-has-various-release-artists>}
 				${<if-has-year>}${year}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>} · ${</if-has-year>}${duration}
 				${clusters class="mb-2"}
-				${play-btn class="btn btn-dark me-2"}${more-btn class="btn btn-dark"}
+				${play-btn class="btn btn-lg btn-outline-dark border-0 me-2"}${more-btn class="btn btn-lg btn-outline-dark border-0"}
 			</div>
 			${container class="d-grid gap-3"}
 		</div>
@@ -54,20 +54,26 @@
 	${tracks class="d-grid gap-1"}
 </message>
 
+<message id="Lms.Explore.Release.template.entry-nodisc">
+	${tracks class="d-grid gap-1"}
+</message>
+
 <message id="Lms.Explore.Release.template.entry">
 	<div class="d-flex align-items-center">
 		<div class="p-2 text-muted text-end" style="min-width: 2.1rem;">
 			${<if-has-track-number>}${track-number}${</if-has-track-number>}
 		</div>
 		<div class="p-2 flex-fill">
-			${name}
-				${<if-has-artists>}<div><div style="display: inline-block;" onclick="Wt.stopPropagation(event)">${artists}</div></div>${</if-has-artists>}
+			<div class="Lms-mw-fit-content">
+				${name}
+				${<if-has-artists>}${artists}${</if-has-artists>}
+			</div>
 		</div>
 		<div class="p-2 d-none d-sm-block text-muted">
 			${duration}
 		</div>
-		<div class="p-2" onclick="Wt.stopPropagation(event)">
-			${more-btn class="btn btn-sm btn-outline-secondary border-0"}
+		<div class="p-2">
+			${play-btn class="btn btn-sm btn-outline-secondary border-0"}${more-btn class="btn btn-sm btn-outline-secondary border-0"}
 		</div>
 	</div>
 </message>

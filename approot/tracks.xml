@@ -6,7 +6,7 @@
 <message id="Lms.Explore.Tracks.template">
 	<div class="mb-3">
 		${mode class="nav nav-pills mb-2"}
-		${play-btn class="me-2"}${more-btn}
+		${play-btn class="btn btn-lg btn-outline-dark border-0 me-2"}${more-btn class="btn btn-lg btn-outline-dark border-0"}
 	</div>
 	${tracks}
 </message>
@@ -27,7 +27,7 @@
 			</div>
 			<div class="col-2 col-sm-2 col-md-2">
 				${duration}
-				${play-btn class="me-2"}${more-btn}
+				${play-btn class="btn btn-sm btn-outline-secondary border-0"}${more-btn class="btn btn-sm btn-outline-secondary border-0"}
 			</div>
 		</div>
 </message>

@@ -5,7 +5,7 @@
 <message id="Lms.Explore.Releases.template">
 	<div class="mb-3">
 		${mode class="nav nav-pills mb-2"}
-		${play-btn class="me-2"}${more-btn}
+		${play-btn class="btn btn-lg btn-outline-dark border-0 me-2"}${more-btn class="btn btn-lg btn-outline-dark border-0"}
 	</div>
 	${releases}
 </message>

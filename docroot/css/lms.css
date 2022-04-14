@@ -5,3 +5,7 @@ body {
 .Lms-player {
 	height: 70px;
 }
+
+.Lms-mw-fit-content {
+	max-width: fit-content;
+}

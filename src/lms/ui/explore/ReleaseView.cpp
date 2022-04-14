@@ -181,7 +181,7 @@ Release::refreshView()
 	const auto totalDisc {release->getTotalDisc()};
 	const bool isReleaseMultiDisc {totalDisc && *totalDisc > 1};
 
-	// Expect to be call in asc order
+	// Expect to be called in asc order
 	std::map<std::size_t, Wt::WContainerWidget*> trackContainers;
 	auto getOrAddDiscContainer = [&](std::size_t discNumber, const std::string& discSubtitle) -> Wt::WContainerWidget*
 	{
@@ -204,6 +204,18 @@ Release::refreshView()
 		return tracksContainer;
 	};
 
+	Wt::WContainerWidget* noDiscTracksContainer{};
+	auto getOrAddNoDiscContainer =  [&]
+	{
+		if (noDiscTracksContainer)
+			return noDiscTracksContainer;
+
+		Wt::WTemplate* disc {rootContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-nodisc"))};
+		noDiscTracksContainer = disc->bindNew<Wt::WContainerWidget>("tracks");
+
+		return noDiscTracksContainer;
+	};
+
 	const auto clusterIds {_filters->getClusterIds()};
 	const auto tracks {release->getTracks(clusterIds)};
 
@@ -213,16 +225,13 @@ Release::refreshView()
 
 		const auto discNumber {track->getDiscNumber()};
 
-		Wt::WContainerWidget* container {rootContainer};
+		Wt::WContainerWidget* container;
 		if (isReleaseMultiDisc && discNumber)
 			container = getOrAddDiscContainer(*discNumber, track->getDiscSubtitle());
+		else
+			container = getOrAddNoDiscContainer();
 
 		Wt::WTemplate* entry {container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry"))};
-
-		entry->clicked().connect([=]
-		{
-			tracksAction.emit(PlayQueueAction::Play, {trackId});
-		});
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
@@ -248,6 +257,12 @@ Release::refreshView()
 			entry->setCondition("if-has-track-number", true);
 			entry->bindInt("track-number", *trackNumber);
 		}
+
+		Wt::WPushButton* playBtn {entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
+		playBtn->clicked().connect([=]
+		{
+			tracksAction.emit(PlayQueueAction::Play, {trackId});
+		});
 
 		Wt::WPushButton* moreBtn {entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
 		moreBtn->clicked().connect([=]
