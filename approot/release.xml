@@ -7,17 +7,19 @@
 </message>
 
 <message id="Lms.Explore.Release.template">
-	<div class="row mb-3">
+	<div class="row mb-3 gy-3">
 		<div class="col-lg-4">
 			${cover class="Lms-explore-release-cover"}
-		</div>
-		<div class="col-lg-8">
-			<div class="mb-3">
+			<div>
 				${name}
 				${<if-has-release-artists>}${artists}${</if-has-release-artists>}
 				${<if-has-various-release-artists>}${tr:Lms.Explore.various-artists}${</if-has-various-release-artists>}
-				${<if-has-year>}${year}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>} · ${</if-has-year>}${duration}
-				${clusters class="mb-2"}
+				<div class="small text-muted">${<if-has-year>}${year}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>} · ${</if-has-year>}${duration}</div>
+				${clusters}
+			</div>
+		</div>
+		<div class="col-lg-8">
+			<div class="mb-3">
 				${play-btn class="btn btn-lg btn-outline-dark border-0 me-2"}${more-btn class="btn btn-lg btn-outline-dark border-0"}
 			</div>
 			${container class="d-grid gap-3"}
@@ -59,7 +61,7 @@
 </message>
 
 <message id="Lms.Explore.Release.template.entry">
-	<div class="d-flex align-items-center">
+	<div class="d-flex align-items-center rounded Lms-bg-light-hover">
 		<div class="p-2 text-muted text-end" style="min-width: 2.1rem;">
 			${<if-has-track-number>}${track-number}${</if-has-track-number>}
 		</div>
