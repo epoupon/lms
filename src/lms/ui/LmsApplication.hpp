@@ -27,6 +27,7 @@
 #include "services/database/UserId.hpp"
 #include "services/database/Types.hpp"
 #include "services/scanner/ScannerEvents.hpp"
+#include "Notification.hpp"
 
 namespace Database
 {
@@ -49,6 +50,7 @@ class LmsApplicationException;
 class MediaPlayer;
 class PlayQueue;
 class LmsApplicationManager;
+class NotificationContainer;
 
 class LmsApplication : public Wt::WApplication
 {
@@ -78,14 +80,7 @@ class LmsApplication : public Wt::WApplication
 		void post(std::function<void()> func);
 
 		// Used to classify the message sent to the user
-		enum class MsgType
-		{
-			Success,
-			Info,
-			Warning,
-			Danger,
-		};
-		void notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds {4000});
+		void notifyMsg(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds {5000});
 
 		static Wt::WLink					createArtistLink(Database::ObjectPtr<Database::Artist> artist);
 		static std::unique_ptr<Wt::WAnchor>	createArtistAnchor(Database::ObjectPtr<Database::Artist> artist, bool addText = true);
@@ -129,6 +124,7 @@ class LmsApplication : public Wt::WApplication
 		MediaPlayer*							_mediaPlayer {};
 		PlayQueue*								_playQueue {};
 		std::unique_ptr<Wt::WPopupMenu>			_popupMenu;
+		NotificationContainer*					_notificationContainer {};
 };
 
 

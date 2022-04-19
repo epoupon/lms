@@ -383,12 +383,10 @@ PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::Tra
 	}
 
 	if (nbAddedTracks > 0)
-		LmsApp->notifyMsg(LmsApplication::MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", nbAddedTracks).arg(nbAddedTracks), std::chrono::milliseconds(2000));
+		LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.PlayQueue.playqueue"), Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", nbAddedTracks).arg(nbAddedTracks), std::chrono::milliseconds(2000));
 
 	if (isFull())
-		LmsApp->notifyMsg(LmsApplication::MsgType::Warning, Wt::WString::tr("Lms.PlayQueue.playqueue-full"), std::chrono::milliseconds(2000));
-
-
+		LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.PlayQueue.playqueue"), Wt::WString::tr("Lms.PlayQueue.playqueue-full"), std::chrono::milliseconds(2000));
 }
 
 void

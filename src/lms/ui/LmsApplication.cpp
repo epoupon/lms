@@ -58,6 +58,7 @@
 #include "LmsApplicationManager.hpp"
 #include "LmsTheme.hpp"
 #include "MediaPlayer.hpp"
+#include "NotificationContainer.hpp"
 #include "PlayQueue.hpp"
 #include "SettingsView.hpp"
 
@@ -186,6 +187,7 @@ LmsApplication::init()
 	messageResourceBundle().use(appRoot() + "mediaplayer");
 	messageResourceBundle().use(appRoot() + "messages");
 	messageResourceBundle().use(appRoot() + "misc");
+	messageResourceBundle().use(appRoot() + "notifications");
 	messageResourceBundle().use(appRoot() + "playqueue");
 	messageResourceBundle().use(appRoot() + "release");
 	messageResourceBundle().use(appRoot() + "releases");
@@ -460,6 +462,8 @@ LmsApplication::createHome()
 
 	Wt::WTemplate* navbar {main->bindNew<Wt::WTemplate>("navbar", Wt::WString::tr("Lms.main.template.navbar"))};
 
+	_notificationContainer = main->bindNew<NotificationContainer>("notifications");
+
 	// MediaPlayer
 	_mediaPlayer = main->bindNew<MediaPlayer>("player");
 
@@ -566,7 +570,9 @@ LmsApplication::createHome()
 	{
 		_scannerEvents.scanComplete.connect([=] (const Scanner::ScanStats& stats)
 		{
-			notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-complete")
+			notifyMsg(Notification::Type::Info,
+					Wt::WString::tr("Lms.Admin.Database.database"),
+					Wt::WString::tr("Lms.Admin.Database.scan-complete")
 				.arg(static_cast<unsigned>(stats.nbFiles()))
 				.arg(static_cast<unsigned>(stats.additions))
 				.arg(static_cast<unsigned>(stats.updates))
@@ -603,48 +609,18 @@ LmsApplication::notify(const Wt::WEvent& event)
 	}
 }
 
-static std::string msgTypeToString(LmsApplication::MsgType type)
-{
-	switch(type)
-	{
-		case LmsApplication::MsgType::Success:	return "success";
-		case LmsApplication::MsgType::Info:	return "info";
-		case LmsApplication::MsgType::Warning:	return "warning";
-		case LmsApplication::MsgType::Danger:	return "danger";
-	}
-	return "";
-}
-
 void
 LmsApplication::post(std::function<void()> func)
 {
 	Wt::WServer::instance()->post(LmsApp->sessionId(), std::move(func));
 }
 
-
 void
-LmsApplication::notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration)
+LmsApplication::notifyMsg(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration)
 {
-	LMS_LOG(UI, INFO) << "Notifying message '" << message.toUTF8() << "' of type '" << msgTypeToString(type) << "'";
-
-	// TODO
-	return;
-
-	std::ostringstream oss;
-
-	oss << "$.notify({"
-			"message: '" << StringUtils::jsEscape(message.toUTF8()) << "'"
-		"},{"
-			"type: '" << msgTypeToString(type) << "',"
-			"placement: {from: 'bottom', align: 'right'},"
-			"timer: 250,"
-			"offset: {x: 20, y: 80},"
-			"delay: " << duration.count() << ""
-		"});";
-
-	LmsApp->doJavaScript(oss.str());
+	LMS_LOG(UI, INFO) << "Notifying message '" << message.toUTF8() << "' for category '" << category.toUTF8() << "'";
+	_notificationContainer->add(type, category, message, duration);
 }
-
 
 } // namespace UserInterface
 

@@ -5,6 +5,7 @@
 	${navbar}
 	<div class="container">
 		${contents}
+		${notifications class="toast-container position-fixed top-0 end-0 p-3"}
 	</div>
 	${player class="fixed-bottom bg-light Lms-player"}
 </message>

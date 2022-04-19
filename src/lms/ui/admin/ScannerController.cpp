@@ -142,7 +142,7 @@ ScannerController::ScannerController()
 
 	LmsApp->getScannerEvents().scanStarted.connect(this, []
 	{
-		LmsApp->notifyMsg(LmsApplication::MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-launched"));
+		LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.Admin.Database.scan-launched"));
 	});
 	LmsApp->getScannerEvents().scanComplete.connect(this, onDbEvent);
 	LmsApp->getScannerEvents().scanInProgress.connect(this, onDbEvent);

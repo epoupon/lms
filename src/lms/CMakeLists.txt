@@ -6,6 +6,7 @@ add_executable(lms
 	ui/LmsApplicationManager.cpp
 	ui/LmsTheme.cpp
 	ui/MediaPlayer.cpp
+	ui/NotificationContainer.cpp
 	ui/PlayQueue.cpp
 	ui/SettingsView.cpp
 	ui/TrackStringUtils.cpp

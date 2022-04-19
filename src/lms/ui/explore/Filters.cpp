@@ -155,7 +155,9 @@ Filters::add(ClusterId clusterId)
 		_sigUpdated.emit();
 	});
 
-	LmsApp->notifyMsg(LmsApplication::MsgType::Info, Wt::WString::tr("Lms.Explore.filter-added"), std::chrono::seconds {2});
+	LmsApp->notifyMsg(Notification::Type::Info,
+			Wt::WString::tr("Lms.Explore.filters"),
+			Wt::WString::tr("Lms.Explore.filter-added"), std::chrono::seconds {2});
 
 	_sigUpdated.emit();
 }

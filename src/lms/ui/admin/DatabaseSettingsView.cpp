@@ -241,7 +241,7 @@ DatabaseSettingsView::refreshView()
 			model->saveData();
 
 			Service<Scanner::IScannerService>::get()->requestImmediateScan(false);
-			LmsApp->notifyMsg(LmsApplication::MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
+			LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.
