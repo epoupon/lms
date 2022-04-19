@@ -9,7 +9,7 @@
 <message id="Lms.Explore.template.play-btn"><i class="fa fa-fw fa-play"></i></message>
 
 <message id="Lms.Explore.template.filters">
-	${add-filter class="btn-sm btn-info me-1"}${clusters class="d-inline-block"}
+	${add-filter class="btn-sm btn-outline-primary me-2"}${clusters class="d-inline-block align-items-center"}
 </message>
 
 <message id="Lms.Explore.template.add-filter">

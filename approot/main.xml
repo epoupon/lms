@@ -13,7 +13,7 @@
 	<nav class="navbar navbar-expand-md navbar-light bg-light mb-3">
 		<div class="container">
 			<form class="d-flex">
-				${search class="form-control me-2" type="search"}
+				${search class="form-control" type="search"}
 			</form>
 		    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
 				<span class="navbar-toggler-icon"></span>
@@ -33,7 +33,7 @@
 						${playqueue class="nav-link"}
 					</li>
 					<li class="nav-item">
-						${filters class="nav-link"}
+						${filters class="py-2 d-flex align-items-center"}
 					</li>
 				</ul>
 				<div class="navbar-nav align-items-md-center mb-lg-0">
@@ -54,7 +54,7 @@
 						</a>
 						<ul class="dropdown-menu" aria-labelledby="navbarDropdown">
 							<li class="dropdown-header">${username}</li>
-							<li class="divider"></li>
+							<li class="dropdown-divider"></li>
 							<li>${settings class="dropdown-item"}</li>
 							<li>${logout class="dropdown-item"}</li>
 						</ul>
