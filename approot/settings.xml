@@ -5,18 +5,6 @@
 
 <message id="Lms.Settings.template">
 	<form class="row g-3">
-		<legend>${tr:Lms.Settings.appearance}</legend>
-		<div class="col-12">
-			<div class="form-check">
-				${dark-mode class="form-check-input"}
-				<label class="form-check-label" for="${id:dark-mode}">
-					${tr:Lms.Settings.dark-mode}
-				</label>
-				<div class="invalid-feedback">
-					${dark-mode-info}
-				</div>
-			</div>
-		</div>
 		<legend>${tr:Lms.Settings.audio}</legend>
 		<div class="alert alert-info">
 			${tr:Lms.Settings.audio-settings-are-local}

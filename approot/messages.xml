@@ -177,11 +177,9 @@
 
 
 <!--Settings-->
-<message id="Lms.Settings.appearance">Appearance</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">These audio settings are local to your browser!</message>
 <message id="Lms.Settings.change-password">Change password</message>
-<message id="Lms.Settings.dark-mode">Dark mode</message>
 <message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Settings</message>
 <message id="Lms.Settings.password-bad">Bad password</message>

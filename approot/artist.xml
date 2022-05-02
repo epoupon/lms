@@ -6,7 +6,7 @@
 	<div class="mb-3">
 		${name}
 		${clusters class="mb-2"}
-		${play-btn class="btn btn-lg btn-outline-dark border-0 me-2"}${more-btn class="btn btn-lg btn-outline-dark border-0"}
+		${play-btn class="btn btn-outline-primary me-2"}${more-btn class="btn btn-outline-primary"}
 	</div>
 	${<if-has-release>}
 	${releases class="row gy-4"}

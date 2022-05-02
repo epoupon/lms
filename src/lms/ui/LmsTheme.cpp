@@ -22,68 +22,18 @@
 #include "utils/Logger.hpp"
 #include "LmsApplication.hpp"
 
-namespace UserInterface {
-
-LmsTheme::LmsTheme(Database::UITheme theme)
-: _theme {theme}
+namespace UserInterface
 {
-}
-
-void
-LmsTheme::setTheme(Database::UITheme )
-{
-
-/*	if (theme == _theme)
-		return;
-
-	// Hack, use the application interface directly since changing theme is not allowed
-	const auto currentStyleSheets {getStyleSheets(_theme)};
-	for (auto it {std::crbegin(currentStyleSheets)}; it != std::crend(currentStyleSheets); ++it)
-		LmsApp->removeStyleSheet(*it);
-
-	_theme = theme;
-	for (const auto& styleSheet : getStyleSheets(theme))
-		LmsApp->useStyleSheet(styleSheet);
-		*/
-}
-/*
-std::vector<Wt::WLinkedCssStyleSheet>
-LmsTheme::styleSheets() const
-{
-/	const std::vector<Wt::WLink> styleSheets {getStyleSheets(_theme)};
-	std::vector<Wt::WLinkedCssStyleSheet> res;
-	res.reserve(styleSheets.size());
-
-	std::transform(std::cbegin(styleSheets), std::cend(styleSheets), std::back_inserter(res), [](const Wt::WLink& styleSheet) { return Wt::WLinkedCssStyleSheet {styleSheet}; });
-	return res;
-}
-
-std::vector<Wt::WLink>
-LmsTheme::getStyleSheets(Database::UITheme )
-{
-	switch (theme)
+	std::vector<Wt::WLinkedCssStyleSheet>
+	LmsTheme::styleSheets() const
 	{
-		case Database::UITheme::Dark:
-			return
-			{
-				{"css/fonts.css"},
-				{"css/bootstrap-darkly.min.css"},
-				{"resources/themes/bootstrap/3/wt.css"},
-				{"css/lms.css"},
-				{"css/lms-darkly.css"},
-			};
+		static const std::vector<Wt::WLinkedCssStyleSheet> files
+		{
+			{"css/bootstrap.solar.min.css"},
+			{"resources/themes/bootstrap/5/wt.min.css"},
+			{"css/lms.css"},
+		};
 
-		case Database::UITheme::Light:
-			return
-			{
-				{"css/fonts.css"},
-				{"css/bootstrap-flatly.min.css"},
-				{"resources/themes/bootstrap/3/wt.css"},
-				{"css/lms.css"},
-				{"css/lms-flatly.css"},
-			};
+		return files;
 	}
-	return {};
-}
-*/
 }

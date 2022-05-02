@@ -176,11 +176,9 @@
 <message id="Lms.PlayHistory.playhistory">播放历史</message>
 
 <!--Settings-->
-<message id="Lms.Settings.appearance">外观</message>
 <message id="Lms.Settings.audio">音频</message>
 <message id="Lms.Settings.audio-settings-are-local">这些音频设置仅保存在您的本地浏览器！</message>
 <message id="Lms.Settings.change-password">更改密码</message>
-<message id="Lms.Settings.dark-mode">夜间模式</message>
 <message id="Lms.Settings.demo-cannot-save">使用演示账号时不能保存！</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> 设置</message>
 <message id="Lms.Settings.password-bad">无效密码</message>

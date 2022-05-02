@@ -177,11 +177,9 @@
 
 
 <!--Settings-->
-<message id="Lms.Settings.appearance">Apparence</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">Ces paramètres audio sont locaux à votre navigateur !</message>
 <message id="Lms.Settings.change-password">Changement de mot de passe</message>
-<message id="Lms.Settings.dark-mode">Mode sombre</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Paramètres</message>
 <message id="Lms.Settings.password-bad">Mauvais mot de passe</message>

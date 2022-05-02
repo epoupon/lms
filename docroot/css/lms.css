@@ -1,6 +1,6 @@
 /* Generic rules */
-.Lms-bg-light-hover:hover {
-	background-color: var(--bs-light);
+.Lms-bg-dark-hover:hover {
+	background-color: var(--bs-dark);
 }
 
 .Lms-mw-fit-content {

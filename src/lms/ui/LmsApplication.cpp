@@ -164,10 +164,9 @@ LmsApplication::~LmsApplication() = default;
 void
 LmsApplication::init()
 {
-	setTheme(std::make_shared<Wt::WBootstrap5Theme>());
+	setTheme(std::make_shared<LmsTheme>());
 
 	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
-	useStyleSheet("css/lms.css");
 	require("js/mediaplayer.js");
 
 	setTitle("LMS");

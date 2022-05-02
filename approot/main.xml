@@ -7,11 +7,11 @@
 		${contents}
 		${notifications class="toast-container position-fixed top-0 end-0 p-3"}
 	</div>
-	${player class="fixed-bottom bg-light Lms-player"}
+	${player class="fixed-bottom bg-dark Lms-player"}
 </message>
 
 <message id="Lms.main.template.navbar">
-	<nav class="navbar navbar-expand-md navbar-light bg-light mb-3">
+	<nav class="navbar navbar-expand-md navbar-dark bg-dark mb-3">
 		<div class="container">
 			<form class="d-flex">
 				${search class="form-control" type="search"}

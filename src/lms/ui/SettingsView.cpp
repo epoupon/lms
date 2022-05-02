@@ -42,7 +42,6 @@
 #include "utils/Service.hpp"
 
 #include "LmsApplication.hpp"
-#include "LmsTheme.hpp"
 #include "MediaPlayer.hpp"
 
 namespace UserInterface {
@@ -53,7 +52,6 @@ class SettingsModel : public Wt::WFormModel
 {
 	public:
 		// Associate each field with a unique string literal.
-		static inline const Field DarkModeField {"dark-mode"};
 		static inline const Field TranscodeModeField {"transcode-mode"};
 		static inline const Field TranscodeFormatField {"transcode-format"};
 		static inline const Field TranscodeBitrateField {"transcode-bitrate"};
@@ -80,7 +78,6 @@ class SettingsModel : public Wt::WFormModel
 		{
 			initializeModels();
 
-			addField(DarkModeField);
 			addField(TranscodeModeField);
 			addField(TranscodeBitrateField);
 			addField(TranscodeFormatField);
@@ -138,14 +135,6 @@ class SettingsModel : public Wt::WFormModel
 			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
 			User::pointer user {LmsApp->getUser()};
-
-			{
-				const UITheme newTheme {Wt::asNumber(value(DarkModeField)) ? UITheme::Dark : UITheme::Light};
-				LmsTheme* lmsTheme {static_cast<LmsTheme*>(LmsApp->theme().get())};
-				lmsTheme->setTheme(newTheme);
-
-				user.modify()->setUITheme(newTheme);
-			}
 
 			{
 				MediaPlayer::Settings settings;
@@ -208,8 +197,6 @@ class SettingsModel : public Wt::WFormModel
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 			User::pointer user {LmsApp->getUser()};
-
-			setValue(DarkModeField, user->getUITheme() == UITheme::Dark);
 
 			{
 				const auto settings {*LmsApp->getMediaPlayer().getSettings()};
@@ -407,12 +394,6 @@ SettingsView::refreshView()
 		authPasswordService = nullptr;
 
 	auto model {std::make_shared<SettingsModel>(authPasswordService, !LmsApp->isUserAuthStrong())};
-
-	// Appearance
-	{
-		auto darkMode {std::make_unique<Wt::WCheckBox>()};
-		t->setFormWidget(SettingsModel::DarkModeField, std::move(darkMode));
-	}
 
 	if (authPasswordService)
 	{

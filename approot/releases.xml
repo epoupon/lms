@@ -5,13 +5,13 @@
 <message id="Lms.Explore.Releases.template">
 	<div class="mb-3">
 		${mode class="nav nav-pills mb-2"}
-		${play-btn class="btn btn-lg btn-outline-dark border-0 me-2"}${more-btn class="btn btn-lg btn-outline-dark border-0"}
+		${play-btn class="btn btn-outline-primary me-2"}${more-btn class="btn btn-outline-primary"}
 	</div>
 	${releases}
 </message>
 
 <message id="Lms.Explore.Releases.template.entry-grid">
-		<div class="card border-0">
+		<div class="card border-0 bg-transparent">
 			${cover class="shadow-sm"}
 			${release-name class="text-truncate text-nowrap"}
 			${<if-has-year>}${year}${</if-has-year>}
@@ -24,6 +24,5 @@
 	${elements class="row gy-4"}
 	${loading-indicator}
 </message>
-
 
 </messages>
