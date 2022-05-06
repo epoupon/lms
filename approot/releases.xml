@@ -4,7 +4,26 @@
 
 <message id="Lms.Explore.Releases.template">
 	<div class="mb-3">
-		${mode class="nav nav-pills mb-2"}
+		<ul class="nav nav-pills mb-2">
+			<li class="nav-item">
+				${random class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${starred class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${recently-played class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${most-played class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${recently-added class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${all class="nav-link"}
+			</li>
+		</ul>
 		${play-btn class="btn btn-outline-primary me-2"}${more-btn class="btn btn-outline-primary"}
 	</div>
 	${releases}

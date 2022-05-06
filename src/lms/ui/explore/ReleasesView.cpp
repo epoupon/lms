@@ -41,25 +41,30 @@ Releases::Releases(Filters& filters)
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
+	auto bindMenuItem {[this](const std::string& var, const Wt::WString& title, ReleaseCollector::Mode mode)
 	{
-		auto* menu {bindNew<Wt::WMenu>("mode")};
-
-		auto addItem = [this](Wt::WMenu& menu,const Wt::WString& str, ReleaseCollector::Mode mode)
+		auto *menuItem {bindNew<Wt::WPushButton>(var, title)};
+		menuItem->clicked().connect([=]
 		{
-			auto* item {menu.addItem(str)};
-			item->clicked().connect([this, mode] { refreshView(mode); });
+			refreshView(mode);
+			_currentActiveItem->removeStyleClass("active");
+			menuItem->addStyleClass("active");
+			_currentActiveItem = menuItem;
+		});
 
-			if (mode == _defaultMode)
-				item->renderSelected(true);
-		};
+		if (mode == _defaultMode)
+		{
+			_currentActiveItem = menuItem;
+			_currentActiveItem->addStyleClass("active");
+		}
+	}};
 
-		addItem(*menu, Wt::WString::tr("Lms.Explore.random"), ReleaseCollector::Mode::Random);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.starred"), ReleaseCollector::Mode::Starred);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-played"), ReleaseCollector::Mode::RecentlyPlayed);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.most-played"), ReleaseCollector::Mode::MostPlayed);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-added"), ReleaseCollector::Mode::RecentlyAdded);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.all"), ReleaseCollector::Mode::All);
-	}
+	bindMenuItem("random", Wt::WString::tr("Lms.Explore.random"), ReleaseCollector::Mode::Random);
+	bindMenuItem("starred", Wt::WString::tr("Lms.Explore.starred"), ReleaseCollector::Mode::Starred);
+	bindMenuItem("recently-played", Wt::WString::tr("Lms.Explore.recently-played"), ReleaseCollector::Mode::RecentlyPlayed);
+	bindMenuItem("most-played", Wt::WString::tr("Lms.Explore.most-played"), ReleaseCollector::Mode::MostPlayed);
+	bindMenuItem("recently-added", Wt::WString::tr("Lms.Explore.recently-added"), ReleaseCollector::Mode::RecentlyAdded);
+	bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), ReleaseCollector::Mode::All);
 
 	Wt::WPushButton* playBtn {bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 	playBtn->clicked().connect([this]

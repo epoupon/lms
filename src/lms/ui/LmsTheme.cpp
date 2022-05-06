@@ -30,7 +30,6 @@ namespace UserInterface
 		static const std::vector<Wt::WLinkedCssStyleSheet> files
 		{
 			{"css/bootstrap.solar.min.css"},
-			{"resources/themes/bootstrap/5/wt.min.css"},
 			{"css/lms.css"},
 		};
 

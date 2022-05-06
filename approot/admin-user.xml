@@ -17,7 +17,7 @@
 				<label class="form-label"  for="${id:login}">
 					${tr:Lms.login}
 				</label>
-				${login}
+				${login class="form-control"}
 				<div class="invalid-feedback">
 					${login-info}
 				</div>
@@ -28,7 +28,7 @@
 				<label class="form-label"  for="${id:password}">
 					${tr:Lms.password-new}
 				</label>
-				${password}
+				${password class="form-control"}
 				<div class="invalid-feedback">
 					${password-info}
 				</div>
@@ -48,7 +48,7 @@
 			</div>
 		${</if-demo>}
 		<div class="col-12">
-			${save-btn class="btn-primary"}
+			${save-btn class="btn btn-primary"}
 		</div>
 	</form>
 </message>

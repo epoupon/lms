@@ -58,6 +58,7 @@
 #include "LmsApplicationManager.hpp"
 #include "LmsTheme.hpp"
 #include "MediaPlayer.hpp"
+#include "ModalManager.hpp"
 #include "NotificationContainer.hpp"
 #include "PlayQueue.hpp"
 #include "SettingsView.hpp"
@@ -462,6 +463,7 @@ LmsApplication::createHome()
 	Wt::WTemplate* navbar {main->bindNew<Wt::WTemplate>("navbar", Wt::WString::tr("Lms.main.template.navbar"))};
 
 	_notificationContainer = main->bindNew<NotificationContainer>("notifications");
+	_modalManager = main->bindNew<ModalManager>("modal");
 
 	// MediaPlayer
 	_mediaPlayer = main->bindNew<MediaPlayer>("player");

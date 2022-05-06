@@ -12,6 +12,12 @@ body {
 	padding-bottom: 78px;
 }
 
+.Lms-notification-container {
+	position: fixed;
+	bottom: 78px;
+	right: 0px;
+}
+
 .Lms-player {
 	height: 70px;
 }

@@ -4,7 +4,7 @@
 
 <message id="Lms.Explore.Artist.template">
 	<div class="mb-3">
-		${name}
+		<h3>${name}</h3>
 		${clusters class="mb-2"}
 		${play-btn class="btn btn-outline-primary me-2"}${more-btn class="btn btn-outline-primary"}
 	</div>

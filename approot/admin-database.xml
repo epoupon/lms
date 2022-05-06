@@ -10,7 +10,7 @@
 			<label class="form-label" for="${id:media-directory}">
 				${tr:Lms.Admin.Database.path}
 			</label>
-			${media-directory}
+			${media-directory class="form-control"}
 			<div class="invalid-feedback">
 				${media-directory-info}
 			</div>
@@ -19,7 +19,7 @@
 			<label class="form-label" for="${id:update-period}">
 				${tr:Lms.Admin.Database.update-period}
 			</label>
-			${update-period}
+			${update-period class="form-control"}
 			<div class="invalid-feedback">
 				${update-period-info"}
 			</div>
@@ -28,7 +28,7 @@
 			<label class="form-label" for="${id:update-start-time}">
 				${tr:Lms.Admin.Database.update-start-time}
 			</label>
-			${update-start-time}
+			${update-start-time class="form-control"}
 			<div class="invalid-feedback">
 				${update-start-time-info}
 			</div>
@@ -38,22 +38,22 @@
 			<label class="form-label" for="${id:recommendation-engine-type}">
 				${tr:Lms.Admin.Database.recommendation-engine-type}
 			</label>
-			${recommendation-engine-type}
+			${recommendation-engine-type class="form-control"}
 			<div class="invalid-feedback">
 				${recommendation-engine-type-info}
 			</div>
 		</div>
 		<div class="col-12">
-			<label class="form-label"  for="${id:tags}">
+			<label class="form-label" for="${id:tags}">
 				${tr:Lms.Admin.Database.tags}
 			</label>
-			${tags}
+			${tags class="form-control"}
 			<div class="invalid-feedback">
 				${tags-info}
 			</div>
 		</div>
 		<div class="col-12">
-			${apply-btn class="btn-primary me-1"}${discard-btn}
+			${apply-btn class="btn btn-primary me-1"}${discard-btn class="btn btn-secondary"}
 		</div>
 	</form>
 	<br/>

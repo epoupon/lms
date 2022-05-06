@@ -13,7 +13,7 @@
 			<label class="form-label" for="${id:transcode-mode}">
 				${tr:Lms.Settings.transcode-mode}
 			</label>
-			${transcode-mode}
+			${transcode-mode class="form-control"}
 			<div class="invalid-feedback">
 				${transcode-mode-info}
 			</div>
@@ -22,7 +22,7 @@
 			<label class="form-label" for="${id:transcode-format}">
 				${tr:Lms.Settings.transcode-format}
 			</label>
-			${transcode-format}
+			${transcode-format class="form-control"}
 			<div class="invalid-feedback">
 				${transcode-format-info}
 			</div>
@@ -32,7 +32,7 @@
 				${tr:Lms.Settings.transcode-bitrate}
 			</label>
 			<div class="input-group mb-3">
-				${transcode-bitrate}
+				${transcode-bitrate class="form-control"}
 				<span class="input-group-text">kbps</span>
 			</div>
 			<div class="invalid-feedback">
@@ -43,7 +43,7 @@
 			<label class="form-label"  for="${id:replaygain-mode}">
 				${tr:Lms.Settings.replaygain-mode}
 			</label>
-			${replaygain-mode}
+			${replaygain-mode class="form-control"}
 			<div class="invalid-feedback">
 				${replaygain-mode-info}
 			</div>
@@ -53,7 +53,7 @@
 				${tr:Lms.Settings.replaygain-preamp}
 			</label>
 			<div class="input-group mb-3">
-				${replaygain-preamp}
+				${replaygain-preamp class="form-control"}
 				<span class="input-group-text">dB</span>
 			</div>
 			<div class="invalid-feedback">
@@ -61,11 +61,11 @@
 			</div>
 		</div>
 		<div class="col-lg-6">
-			<label class="form-label"  for="${id:replaygain-preamp-no-rg-info}">
+			<label class="form-label" for="${id:replaygain-preamp-no-rg-info}">
 				${tr:Lms.Settings.replaygain-preamp-no-rg-info}
 			</label>
 			<div class="input-group mb-3">
-				${replaygain-preamp-no-rg-info}
+				${replaygain-preamp-no-rg-info class="form-control"}
 				<span class="input-group-text">dB</span>
 			</div>
 			<div class="invalid-feedback">
@@ -78,7 +78,7 @@
 				<div class="form-check">
 					${subsonic-transcode-enable class="form-check-input"}
 					<label class="form-check-label" for="${id:subsonic-transcode-enable}">
-						${tr:Lms.Settings.transcode-enable}
+						${tr:Lms.Settings.transcode-enable class="form-control"}
 					</label>
 					<div class="invalid-feedback">
 						${subsonic-transcode-enable-info}
@@ -86,20 +86,20 @@
 				</div>
 			</div>
 			<div class="col-lg-6">
-				<label class="form-label"  for="${id:subsonic-transcode-format}">
+				<label class="form-label" for="${id:subsonic-transcode-format}">
 					${tr:Lms.Settings.transcode-format}
 				</label>
-				${subsonic-transcode-format}
+				${subsonic-transcode-format class="form-control"}
 				<div class="invalid-feedback">
 					${subsonic-transcode-format-info class="help-block"}
 				</div>
 			</div>
 			<div class="col-lg-6">
-				<label class="col-lg-3 form-label"  for="${id:subsonic-transcode-bitrate}">
+				<label class="col-lg-3 form-label" for="${id:subsonic-transcode-bitrate}">
 					${tr:Lms.Settings.transcode-bitrate}
 				</label>
 				<div class="input-group mb-3">
-					${subsonic-transcode-bitrate}
+					${subsonic-transcode-bitrate class="form-control"}
 					<span class="input-group-text">kbps</span>
 				</div>
 				<div class="invalid-feedback">
@@ -107,10 +107,10 @@
 				</div>
 			</div>
 			<div class="col-12">
-				<label class="form-label"  for="${id:subsonic-artist-list-mode}">
+				<label class="form-label" for="${id:subsonic-artist-list-mode}">
 					${tr:Lms.Settings.subsonic-artist-list-mode}
 				</label>
-				${subsonic-artist-list-mode}
+				${subsonic-artist-list-mode class="form-control"}
 				<div class="invalid-feedback">
 					${subsonic-artist-list-mode-info class="help-block"}
 				</div>
@@ -121,7 +121,7 @@
 			<label class="form-label" for="${id:scrobbler}">
 				${tr:Lms.Settings.scrobbling.scrobbler}
 			</label>
-			${scrobbler}
+			${scrobbler class="form-control"}
 			<div class="invalid-feedback">
 				${scrobbler-info class="help-block"}
 			</div>
@@ -130,7 +130,7 @@
 			<label class="form-label" for="${id:listenbrainz-token}">
 				${tr:Lms.Settings.scrobbling.listenbrainz-token}
 			</label>
-			${listenbrainz-token}
+			${listenbrainz-token class="form-control"}
 			<div class="invalid-feedback">
 				${listenbrainz-token-info class="help-block"}
 			</div>
@@ -142,7 +142,7 @@
 			<label class="form-label" for="${id:password-old}">
 				${tr:Lms.password-old}
 			</label>
-			${password-old}
+			${password-old class="form-control"}
 			<div class="invalid-feedback">
 				${password-old-info class="help-block"}
 			</div>
@@ -152,7 +152,7 @@
 			<label class="col-lg-3 control-label" for="${id:password}">
 				${tr:Lms.password-new}
 			</label>
-			${password}
+			${password class="form-control"}
 			<div class="invalid-feedback">
 				${password-info class="help-block"}
 			</div>
@@ -161,14 +161,14 @@
 			<label class="col-lg-3 control-label" for="${id:password-confirm}">
 				${tr:Lms.password-confirm}
 			</label>
-			${password-confirm}
+			${password-confirm class="form-control"}
 			<div class="invalid-feedback">
 				${password-confirm-info class="help-block"}
 			</div>
 		</div>
 		${</if-has-change-password>}
 		<div class="col-12">
-			${apply-btn class="btn-primary me-1"}${discard-btn}
+			${apply-btn class="btn btn-primary me-1"}${discard-btn class="btn btn-secondary"}
 		</div>
 	</form>
 </message>

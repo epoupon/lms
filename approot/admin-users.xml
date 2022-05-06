@@ -5,17 +5,36 @@
 	<h2>${tr:Lms.Admin.Users.users}</h2>
 	${users}
 	${<if-can-create-user>}
-	${add-btn class="btn-primary Lms-admin-users-add-btn"}
+	${add-btn class="btn btn-primary"}
 	${</if-can-create-user>}
 </message>
 
 <message id="Lms.Admin.Users.template.entry">
 	<div class="row align-items-center mb-3">
 		<div class="col-auto me-auto">
-			${name}${<if-tag>} <span class="badge bg-info">${tag}</span>${</if-tag>}
+			${name}${<if-tag>}<span class="badge bg-info ms-2">${tag}</span>${</if-tag>}
 		</div>
 		<div class="col-auto">
-			${<if-edit>}${edit-btn class="btn-warning btn-sm"} ${del-btn class="btn-danger btn-sm"}${</if-edit>}
+			${<if-edit>}${edit-btn class="btn btn-sm btn-warning me-1"} ${del-btn class="btn btn-sm btn-danger"}${</if-edit>}
+		</div>
+	</div>
+</message>
+
+<message id="Lms.Admin.Users.template.delete-user">
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">${tr:Lms.Admin.Users.del-user}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p>Modal body text goes here.</p>
+				</div>
+				<div class="modal-footer">
+					${del-btn class="btn btn-danger me-1"}${cancel-btn class="btn btn-secondary"}
+				</div>
+			</div>
 		</div>
 	</div>
 </message>

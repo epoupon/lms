@@ -11,7 +11,7 @@
 					<label class="form-label" for="${id:login-name}">
 						${tr:Lms.login}
 					</label>
-					${login-name}
+					${login-name class="form-control"}
 					<div class="invalid-feedback">
 						${login-name-info}
 					</div>
@@ -20,7 +20,7 @@
 					<label class="form-label" for="${id:password}">
 						${tr:Lms.password}
 					</label>
-					${password}
+					${password class="form-control"}
 					<div class="invalid-feedback">
 						${password-info}
 					</div>
@@ -34,7 +34,7 @@
 					</div>
 				</div>
 				<div class="col-12">
-					${login-btn class="btn-primary"}
+					${login-btn class="btn btn-primary"}
 				</div>
 			</div>
 		</form>

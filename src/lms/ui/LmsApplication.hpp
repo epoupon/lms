@@ -51,6 +51,7 @@ class MediaPlayer;
 class PlayQueue;
 class LmsApplicationManager;
 class NotificationContainer;
+class ModalManager;
 
 class LmsApplication : public Wt::WApplication
 {
@@ -91,6 +92,7 @@ class LmsApplication : public Wt::WApplication
 
 		MediaPlayer&	getMediaPlayer() const { return *_mediaPlayer; }
 		PlayQueue&		getPlayQueue() const { return *_playQueue; }
+		ModalManager&	getModalManager() const { return *_modalManager; }
 
 		// Signal emitted just before the session ends (user may already be logged out)
 		Wt::Signal<>&	preQuit() { return _preQuit; }
@@ -125,6 +127,7 @@ class LmsApplication : public Wt::WApplication
 		PlayQueue*								_playQueue {};
 		std::unique_ptr<Wt::WPopupMenu>			_popupMenu;
 		NotificationContainer*					_notificationContainer {};
+		ModalManager*							_modalManager {};
 };
 
 

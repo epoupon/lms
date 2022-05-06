@@ -168,10 +168,11 @@ Release::refreshView()
 	}
 
 	{
-		Wt::WPushButton* moreBtn {bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
-		moreBtn->clicked().connect([=]
+		Wt::WPushButton* playShuffled {bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)};
+		playShuffled->setDefault(false);
+		playShuffled->clicked().connect([=]
 		{
-			displayReleasePopupMenu(*moreBtn, *releaseId, releasesAction);
+			releasesAction.emit(PlayQueueAction::PlayShuffled, {*releaseId});
 		});
 	}
 
@@ -351,11 +352,7 @@ Release::refreshLinks(const Database::Release::pointer& release)
 	if (mbid)
 	{
 		setCondition("if-has-mbid", true);
-
-		Wt::WLink link {"https://musicbrainz.org/release/" + std::string {mbid->getAsString()}};
-		link.setTarget(Wt::LinkTarget::NewWindow);
-
-		bindNew<Wt::WAnchor>("mbid-link", link, Wt::WString::tr("Lms.Explore.musicbrainz-release"));
+		bindString("mbid-link", std::string {"https://musicbrainz.org/release/"} + std::string {mbid->getAsString()});
 	}
 }
 

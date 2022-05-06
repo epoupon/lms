@@ -51,6 +51,7 @@ namespace UserInterface
 			static constexpr std::size_t _batchSize {_maxItemsPerLine};
 			static constexpr std::size_t _maxCount {_maxItemsPerLine * 32};
 
+			Wt::WWidget*				_currentActiveItem {};
 			InfiniteScrollingContainer* _container {};
 			ReleaseCollector			_releaseCollector;
 			static constexpr ReleaseCollector::Mode _defaultMode {ReleaseCollector::Mode::Random};
