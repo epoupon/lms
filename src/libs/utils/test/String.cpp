@@ -24,7 +24,7 @@
 TEST(StringUtils, splitString)
 {
 	{
-		const std::string test{"a"};
+		const std::string test {"a"};
 
 		const std::vector<std::string_view> strings {StringUtils::splitString(test, "")};
 		ASSERT_EQ(strings.size(), 1);
@@ -32,7 +32,7 @@ TEST(StringUtils, splitString)
 	}
 
 	{
-		const std::string test{"a b"};
+		const std::string test {"a b"};
 
 		const std::vector<std::string_view> strings {StringUtils::splitString(test, "|")};
 		ASSERT_EQ(strings.size(), 1);
@@ -40,7 +40,7 @@ TEST(StringUtils, splitString)
 	}
 
 	{
-		const std::string test{"  a"};
+		const std::string test {"  a"};
 
 		const std::vector<std::string_view> strings {StringUtils::splitString(test, " ")};
 		ASSERT_EQ(strings.size(), 1);
@@ -48,7 +48,7 @@ TEST(StringUtils, splitString)
 	}
 
 	{
-		const std::string test{"a  "};
+		const std::string test {"a  "};
 
 		const std::vector<std::string_view> strings {StringUtils::splitString(test, " ")};
 		ASSERT_EQ(strings.size(), 1);
@@ -56,7 +56,7 @@ TEST(StringUtils, splitString)
 	}
 
 	{
-		const std::string test{"a b"};
+		const std::string test {"a b"};
 
 		const std::vector<std::string_view> strings {StringUtils::splitString(test, " ")};
 		ASSERT_EQ(strings.size(), 2);
@@ -65,7 +65,7 @@ TEST(StringUtils, splitString)
 	}
 
 	{
-		const std::string test{"a b,c|defgh  "};
+		const std::string test {"a b,c|defgh  "};
 
 		const std::vector<std::string_view> strings {StringUtils::splitString(test, " ,|")};
 		ASSERT_EQ(strings.size(), 4);
@@ -73,6 +73,28 @@ TEST(StringUtils, splitString)
 		EXPECT_EQ(strings[1], "b");
 		EXPECT_EQ(strings[2], "c");
 		EXPECT_EQ(strings[3], "defgh");
+	}
+}
+
+
+TEST(StringUtils, splitStringCopy)
+{
+	{
+		const std::string test {"test=foo"};
+
+		const std::vector<std::string> strings {StringUtils::splitStringCopy(test, "=")};
+		ASSERT_EQ(strings.size(), 2);
+		EXPECT_EQ(strings[0], "test");
+		EXPECT_EQ(strings[1], "foo");
+	}
+
+	{
+		const std::string test {"test=foo bar"};
+
+		const std::vector<std::string> strings {StringUtils::splitStringCopy(test, "=")};
+		ASSERT_EQ(strings.size(), 2);
+		EXPECT_EQ(strings[0], "test");
+		EXPECT_EQ(strings[1], "foo bar");
 	}
 }
 

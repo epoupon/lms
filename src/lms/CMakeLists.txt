@@ -23,6 +23,7 @@ add_executable(lms
 	ui/common/LoginNameValidator.cpp
 	ui/common/MandatoryValidator.cpp
 	ui/common/PasswordValidator.cpp
+	ui/common/Template.cpp
 	ui/common/UUIDValidator.cpp
 	ui/explore/ArtistCollector.cpp
 	ui/explore/ArtistListHelpers.cpp
@@ -33,7 +34,6 @@ add_executable(lms
 	ui/explore/Filters.cpp
 	ui/explore/ReleaseCollector.cpp
 	ui/explore/ReleaseListHelpers.cpp
-	ui/explore/ReleasePopup.cpp
 	ui/explore/ReleasesView.cpp
 	ui/explore/ReleaseView.cpp
 	ui/explore/SearchView.cpp

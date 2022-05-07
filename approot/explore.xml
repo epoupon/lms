@@ -13,25 +13,35 @@
 </message>
 
 <message id="Lms.Explore.template.add-filter">
-	<form class="row g-3">
-		<div class="col-12">
-			<label class="form-label" for="${id:type}">
-				${tr:Lms.Explore.type}
-			</label>
-			${type}
-		</div>
-		<div class="col-12">
-			<label class="form-label" for="${id:value}">
-				${tr:Lms.Explore.value}
-			</label>
-			${value}
-		</div>
-		<div class="col-12">
-			<div class="col-sm-offset-2 col-sm-10">
-				${add-btn class="btn btn-primary me-1"}${cancel-btn class="btn btn-secondary"}
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">${tr:Lms.Explore.add-filter}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<form class="row g-3">
+						<div class="col-12">
+							<label class="form-label" for="${id:type}">
+								${tr:Lms.Explore.type}
+							</label>
+							${type class="form-control"}
+						</div>
+						<div class="col-12">
+							<label class="form-label" for="${id:value}">
+								${tr:Lms.Explore.value}
+							</label>
+							${value class="form-control"}
+						</div>
+					</form>
+					<div class="modal-footer">
+						${add-btn class="btn btn-primary me-1"}${cancel-btn class="btn btn-secondary"}
+					</div>
+				</div>
 			</div>
 		</div>
-	</form>
+	</div>
 </message>
 
 </messages>

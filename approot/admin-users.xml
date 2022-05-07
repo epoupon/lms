@@ -15,7 +15,7 @@
 			${name}${<if-tag>}<span class="badge bg-info ms-2">${tag}</span>${</if-tag>}
 		</div>
 		<div class="col-auto">
-			${<if-edit>}${edit-btn class="btn btn-sm btn-warning me-1"} ${del-btn class="btn btn-sm btn-danger"}${</if-edit>}
+			${<if-edit>}${edit-btn class="btn btn-sm btn-primary me-1"} ${del-btn class="btn btn-sm btn-danger"}${</if-edit>}
 		</div>
 	</div>
 </message>

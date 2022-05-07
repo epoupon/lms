@@ -22,12 +22,15 @@
 			<div class="mb-3">
 				${play-btn class="btn btn-outline-primary me-2"}
 				<span class="dropdown">
-					<button class="btn btn-outline-primary" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">...</button>
-					<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+					${more-btn class="btn btn-outline-primary" data-bs-toggle="dropdown" aria-expanded="false"}
+					<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
 						<li>${play-shuffled class="btn dropdown-item"}</li>
+						<li>${play-last class="btn dropdown-item"}</li>
+						<li>${star class="btn dropdown-item"}</li>
 						${<if-has-mbid>}
 						<li><a href="${mbid-link}" target="_blank" class="dropdown-item">${tr:Lms.Explore.musicbrainz-release}</a></li>
 						${</if-has-mbid>}
+						<li>${download class="btn dropdown-item"}</li>
 					</ul>
 				</span>
 			</div>

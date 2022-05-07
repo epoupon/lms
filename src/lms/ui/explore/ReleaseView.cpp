@@ -32,8 +32,8 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Logger.hpp"
-#include "utils/String.hpp"
 
 #include "resource/DownloadResource.hpp"
 #include "resource/CoverResource.hpp"
@@ -42,7 +42,6 @@
 #include "LmsApplicationException.hpp"
 #include "MediaPlayer.hpp"
 #include "ReleaseListHelpers.hpp"
-#include "ReleasePopup.hpp"
 #include "TrackPopup.hpp"
 #include "TrackStringUtils.hpp"
 
@@ -51,10 +50,11 @@ using namespace Database;
 namespace UserInterface {
 
 Release::Release(Filters* filters)
-: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Release.template")}
+: Template {Wt::WString::tr("Lms.Explore.Release.template")}
 , _filters {filters}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
+	addFunction("id", &Wt::WTemplate::Functions::id);
 
 	wApp->internalPathChanged().connect(this, [this]
 	{
@@ -159,20 +159,44 @@ Release::refreshView()
 		}
 	}
 
-	{
-		Wt::WPushButton* playBtn {bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
-		playBtn->clicked().connect([=]
+	bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)
+		->clicked().connect([=]
 		{
 			releasesAction.emit(PlayQueueAction::Play, {*releaseId});
 		});
-	}
 
-	{
-		Wt::WPushButton* playShuffled {bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)};
-		playShuffled->setDefault(false);
-		playShuffled->clicked().connect([=]
+	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
 		{
 			releasesAction.emit(PlayQueueAction::PlayShuffled, {*releaseId});
+		});
+
+	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			releasesAction.emit(PlayQueueAction::PlayLast, {*releaseId});
+		});
+
+	bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+		->setLink(Wt::WLink {std::make_unique<DownloadReleaseResource>(*releaseId)});
+
+	{
+		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), *releaseId); }};
+
+		Wt::WPushButton* star {bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
+		star->clicked().connect([=]
+		{
+			if (isStarred())
+			{
+				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), *releaseId);
+				star->setText(Wt::WString::tr("Lms.Explore.star"));
+			}
+			else
+			{
+				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), *releaseId);
+				star->setText(Wt::WString::tr("Lms.Explore.unstar"));
+			}
 		});
 	}
 
@@ -263,12 +287,6 @@ Release::refreshView()
 		playBtn->clicked().connect([=]
 		{
 			tracksAction.emit(PlayQueueAction::Play, {trackId});
-		});
-
-		Wt::WPushButton* moreBtn {entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
-		moreBtn->clicked().connect([=]
-		{
-			displayTrackPopupMenu(*moreBtn, trackId, tracksAction);
 		});
 
 		entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);

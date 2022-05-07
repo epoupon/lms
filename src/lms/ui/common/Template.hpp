@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,15 +19,18 @@
 
 #pragma once
 
-#include <Wt/WWidget.h>
-
-#include "services/database/Types.hpp"
-#include "PlayQueueAction.hpp"
+#include <Wt/WTemplate.h>
 
 namespace UserInterface
 {
-	void displayReleasePopupMenu(Wt::WInteractWidget& target,
-			Database::ReleaseId releaseId,
-			PlayQueueActionReleaseSignal& releasesAction);
-} // namespace UserInterface
 
+	class Template : public Wt::WTemplate
+	{
+		public:
+			using Wt::WTemplate::WTemplate;
+
+		private:
+			void applyArguments(Wt::WWidget* w, const std::vector<Wt::WString>& args) override;
+	};
+
+} // namespace UserInterface
