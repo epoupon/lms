@@ -19,9 +19,6 @@
 
 #pragma once
 
-#include <string>
-#include <string_view>
-#include <vector>
 #include <unordered_map>
 
 #include <Wt/WContainerWidget.h>

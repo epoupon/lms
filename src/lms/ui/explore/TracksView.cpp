@@ -19,10 +19,7 @@
 
 #include "TracksView.hpp"
 
-#include <Wt/WMenu.h>
-#include <Wt/WPopupMenu.h>
 #include <Wt/WPushButton.h>
-#include <Wt/WText.h>
 
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
@@ -38,55 +35,54 @@ using namespace Database;
 namespace UserInterface {
 
 Tracks::Tracks(Filters& filters)
-: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Tracks.template")},
+: Template {Wt::WString::tr("Lms.Explore.Tracks.template")},
 _trackCollector {filters, _defaultMode, _maxCount}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
+	addFunction("id", &Wt::WTemplate::Functions::id);
 
+	auto bindMenuItem {[this](const std::string& var, const Wt::WString& title, TrackCollector::Mode mode)
 	{
-		auto* menu {bindNew<Wt::WMenu>("mode")};
-
-		auto addItem = [this](Wt::WMenu& menu,const Wt::WString& str, TrackCollector::Mode mode)
+		auto *menuItem {bindNew<Wt::WPushButton>(var, title)};
+		menuItem->clicked().connect([=]
 		{
-			auto* item {menu.addItem(str)};
-			item->clicked().connect([this, mode] { refreshView(mode); });
+			refreshView(mode);
+			_currentActiveItem->removeStyleClass("active");
+			menuItem->addStyleClass("active");
+			_currentActiveItem = menuItem;
+		});
 
-			if (mode == _defaultMode)
-				item->renderSelected(true);
-		};
+		if (mode == _defaultMode)
+		{
+			_currentActiveItem = menuItem;
+			_currentActiveItem->addStyleClass("active");
+		}
+	}};
 
-		addItem(*menu, Wt::WString::tr("Lms.Explore.random"), TrackCollector::Mode::Random);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.starred"), TrackCollector::Mode::Starred);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-played"), TrackCollector::Mode::RecentlyPlayed);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.most-played"), TrackCollector::Mode::MostPlayed);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-added"), TrackCollector::Mode::RecentlyAdded);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.all"), TrackCollector::Mode::All);
-	}
+	bindMenuItem("random", Wt::WString::tr("Lms.Explore.random"), TrackCollector::Mode::Random);
+	bindMenuItem("starred", Wt::WString::tr("Lms.Explore.starred"), TrackCollector::Mode::Starred);
+	bindMenuItem("recently-played", Wt::WString::tr("Lms.Explore.recently-played"), TrackCollector::Mode::RecentlyPlayed);
+	bindMenuItem("most-played", Wt::WString::tr("Lms.Explore.most-played"), TrackCollector::Mode::MostPlayed);
+	bindMenuItem("recently-added", Wt::WString::tr("Lms.Explore.recently-added"), TrackCollector::Mode::RecentlyAdded);
+	bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), TrackCollector::Mode::All);
 
-	Wt::WPushButton* playBtn {bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
-	playBtn->clicked().connect([=]
-	{
-		tracksAction.emit(PlayQueueAction::Play, getAllTracks());
-	});
+	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)
+		->clicked().connect([=]
+		{
+			tracksAction.emit(PlayQueueAction::Play, getAllTracks());
+		});
 
-	Wt::WPushButton* moreBtn {bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
-	moreBtn->clicked().connect([=]
-	{
-		Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
-
-		popup->addItem(Wt::WString::tr("Lms.Explore.play-shuffled"))
-			->triggered().connect(this, [this]
-			{
-				tracksAction.emit(PlayQueueAction::PlayShuffled, getAllTracks());
-			});
-		popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
-			->triggered().connect(this, [this]
-			{
-				tracksAction.emit(PlayQueueAction::PlayLast, getAllTracks());
-			});
-
-		popup->popup(moreBtn);
-	});
+	bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			tracksAction.emit(PlayQueueAction::PlayShuffled, getAllTracks());
+		});
+	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			tracksAction.emit(PlayQueueAction::PlayLast, getAllTracks());
+		});
 
 	_container = bindNew<InfiniteScrollingContainer>("tracks");
 	_container->onRequestElements.connect([this]

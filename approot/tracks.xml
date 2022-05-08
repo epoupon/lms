@@ -5,8 +5,36 @@
 
 <message id="Lms.Explore.Tracks.template">
 	<div class="mb-3">
-		${mode class="nav nav-pills mb-2"}
-		${play-btn class="btn btn-outline-primary me-2"}${more-btn class="btn btn-outline-primary"}
+		<ul class="nav nav-pills mb-2">
+			<li class="nav-item">
+				${random class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${starred class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${recently-played class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${most-played class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${recently-added class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${all class="nav-link"}
+			</li>
+		</ul>
+		<div class="d-flex">
+			${play-btn class="btn btn-outline-primary me-2"}
+			<div class="dropdown d-inline-block">
+				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-outline-primary"}
+				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+					<li>${play-last class="btn dropdown-item"}</li>
+					<li>${play-shuffled class="btn dropdown-item"}</li>
+				</ul>
+			</div>
+		</div>
 	</div>
 	${tracks}
 </message>
@@ -27,15 +55,17 @@
 			</div>
 			<div class="col-2 col-sm-2 col-md-2">
 				${duration}
-				${play-btn class="btn btn-sm btn-outline-secondary border-0"}
-				<span class="dropdown">
-					${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
-					<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
-						<li>${play-last class="btn dropdown-item"}</li>
-						<li>${star class="btn dropdown-item"}</li>
-						<li>${download class="btn dropdown-item"}</li>
-					</ul>
-				</span>
+				<div class="d-flex">
+					${play-btn class="btn btn-sm btn-outline-secondary border-0"}
+					<div class="dropdown d-inline-block">
+						${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
+						<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+							<li>${play-last class="btn dropdown-item"}</li>
+							<li>${star class="btn dropdown-item"}</li>
+							<li>${download class="btn dropdown-item"}</li>
+						</ul>
+					</div>
+				</div>
 			</div>
 		</div>
 </message>

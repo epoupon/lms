@@ -48,6 +48,7 @@ namespace UserInterface
 			static constexpr std::size_t _batchSize {30};
 			static constexpr std::size_t _maxCount {256};
 
+			Wt::WWidget*				_currentActiveItem {};
 			InfiniteScrollingContainer* _container {};
 			ArtistCollector				_artistCollector;
 			Wt::WComboBox*				_linkType {};

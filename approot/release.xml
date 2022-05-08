@@ -19,9 +19,9 @@
 			${clusters class="mb-2"}
 		</div>
 		<div class="col-12">
-			<div class="mb-3">
+			<div class="mb-3 d-flex">
 				${play-btn class="btn btn-outline-primary me-2"}
-				<span class="dropdown">
+				<div class="dropdown d-inline-block">
 					${more-btn class="btn btn-outline-primary" data-bs-toggle="dropdown" aria-expanded="false"}
 					<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
 						<li>${play-shuffled class="btn dropdown-item"}</li>
@@ -32,7 +32,7 @@
 						${</if-has-mbid>}
 						<li>${download class="btn dropdown-item"}</li>
 					</ul>
-				</span>
+				</div>
 			</div>
 			${container class="d-grid gap-3"}
 		</div>
@@ -80,16 +80,16 @@
 		<div class="p-2 d-none d-sm-block text-muted">
 			${duration}
 		</div>
-		<div class="p-2">
+		<div class="p-2 d-flex">
 			${play-btn class="btn btn-sm btn-outline-secondary border-0"}
-			<span class="dropdown">
+			<div class="dropdown d-inline-block">
 				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
 				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
 					<li>${play-last class="btn dropdown-item"}</li>
 					<li>${star class="btn dropdown-item"}</li>
 					<li>${download class="btn dropdown-item"}</li>
 				</ul>
-			</span>
+			</div>
 		</div>
 	</div>
 </message>

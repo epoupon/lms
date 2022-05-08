@@ -19,14 +19,13 @@
 
 #include "ReleasesView.hpp"
 
-#include <Wt/WMenu.h>
-#include <Wt/WPopupMenu.h>
 #include <Wt/WPushButton.h>
-#include <Wt/WText.h>
 
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
+
 #include "common/InfiniteScrollingContainer.hpp"
+#include "common/Template.hpp"
 #include "ReleaseListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
@@ -36,10 +35,11 @@ using namespace Database;
 namespace UserInterface {
 
 Releases::Releases(Filters& filters)
-: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Releases.template")}
+: Template {Wt::WString::tr("Lms.Explore.Releases.template")}
 , _releaseCollector {filters, _defaultMode, _maxCount}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
+	addFunction("id", &Wt::WTemplate::Functions::id);
 
 	auto bindMenuItem {[this](const std::string& var, const Wt::WString& title, ReleaseCollector::Mode mode)
 	{
@@ -71,24 +71,18 @@ Releases::Releases(Filters& filters)
 	{
 		releasesAction.emit(PlayQueueAction::Play, getAllReleases());
 	});
-	Wt::WPushButton* moreBtn {bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
-	moreBtn->clicked().connect([=]
-	{
-		Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
 
-		popup->addItem(Wt::WString::tr("Lms.Explore.play-shuffled"))
-			->triggered().connect([this]
-			{
-				releasesAction.emit(PlayQueueAction::PlayShuffled, getAllReleases());
-			});
-		popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
-			->triggered().connect([this]
-			{
-				releasesAction.emit(PlayQueueAction::PlayLast, getAllReleases());
-			});
-
-		popup->popup(moreBtn);
-	});
+	bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			releasesAction.emit(PlayQueueAction::PlayShuffled, getAllReleases());
+		});
+	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			releasesAction.emit(PlayQueueAction::PlayLast, getAllReleases());
+		});
 
 	_container = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
 	_container->onRequestElements.connect([this]

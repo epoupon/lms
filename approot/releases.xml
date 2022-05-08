@@ -24,7 +24,16 @@
 				${all class="nav-link"}
 			</li>
 		</ul>
-		${play-btn class="btn btn-outline-primary me-2"}${more-btn class="btn btn-outline-primary"}
+		<div class="d-flex">
+			${play-btn class="btn btn-outline-primary me-2"}
+			<div class="dropdown d-inline-block">
+				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-outline-primary"}
+				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+					<li>${play-last class="btn dropdown-item"}</li>
+					<li>${play-shuffled class="btn dropdown-item"}</li>
+				</ul>
+			</div>
+		</div>
 	</div>
 	${releases}
 </message>
