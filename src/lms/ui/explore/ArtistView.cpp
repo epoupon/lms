@@ -19,12 +19,7 @@
 
 #include "ArtistView.hpp"
 
-#include <Wt/WAnchor.h>
-#include <Wt/WImage.h>
-#include <Wt/WPopupMenu.h>
 #include <Wt/WPushButton.h>
-#include <Wt/WTemplate.h>
-#include <Wt/WText.h>
 
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
@@ -52,10 +47,11 @@ using namespace Database;
 namespace UserInterface {
 
 Artist::Artist(Filters* filters)
-: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Artist.template")}
+: Template {Wt::WString::tr("Lms.Explore.Artist.template")}
 , _filters {filters}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
+	addFunction("id", &Wt::WTemplate::Functions::id);
 
 	LmsApp->internalPathChanged().connect(this, [this]
 	{
@@ -140,44 +136,43 @@ Artist::refreshView()
 	}
 
 	bindString("name", Wt::WString::fromUTF8(artist->getName()), Wt::TextFormat::Plain);
-	{
-		Wt::WPushButton* playBtn {bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
-		playBtn->clicked().connect([=]
+
+	bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)
+		->clicked().connect([=]
 		{
 			artistsAction.emit(PlayQueueAction::Play, {_artistId});
 		});
-	}
+
+	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			artistsAction.emit(PlayQueueAction::PlayShuffled, {_artistId});
+		});
+	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			artistsAction.emit(PlayQueueAction::PlayLast, {_artistId});
+		});
+	bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+		->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(*artistId)});
 
 	{
-		Wt::WPushButton* moreBtn {bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
-		moreBtn->clicked().connect([=]
+		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), *artistId); }};
+
+		Wt::WPushButton* starBtn {bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
+		starBtn->clicked().connect([=]
 		{
-			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
-
-			popup->addItem(Wt::WString::tr("Lms.Explore.play-shuffled"))
-				->triggered().connect(this, [=]
-				{
-					artistsAction.emit(PlayQueueAction::PlayShuffled, {_artistId});
-				});
-			popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
-				->triggered().connect(this, [=]
-				{
-					artistsAction.emit(PlayQueueAction::PlayLast, {_artistId});
-				});
-
-			const bool isStarred {Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), _artistId)};
-			popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
-				->triggered().connect(this, [=]
-					{
-						if (isStarred)
-							Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), _artistId);
-						else
-							Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), _artistId);
-					});
-			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
-				->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(*artistId)});
-
-			popup->exec(moreBtn);
+			if (isStarred())
+			{
+				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), *artistId);
+				starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+			}
+			else
+			{
+				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), *artistId);
+				starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+			}
 		});
 	}
 }
@@ -240,11 +235,7 @@ Artist::refreshLinks(const Database::Artist::pointer& artist)
 	if (mbid)
 	{
 		setCondition("if-has-mbid", true);
-
-		Wt::WLink link {"https://musicbrainz.org/artist/" + std::string {mbid->getAsString()}};
-		link.setTarget(Wt::LinkTarget::NewWindow);
-
-		bindNew<Wt::WAnchor>("mbid-link", link, Wt::WString::tr("Lms.Explore.musicbrainz-artist"));
+		bindString("mbid-link", std::string {"https://musicbrainz.org/artist/"} + std::string {mbid->getAsString()});
 	}
 }
 

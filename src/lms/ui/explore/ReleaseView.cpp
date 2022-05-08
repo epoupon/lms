@@ -20,11 +20,8 @@
 #include "ReleaseView.hpp"
 
 #include <Wt/WAnchor.h>
-#include <Wt/WApplication.h>
 #include <Wt/WImage.h>
 #include <Wt/WPushButton.h>
-#include <Wt/WTemplate.h>
-#include <Wt/WText.h>
 
 #include "services/database/Cluster.hpp"
 #include "services/database/Release.hpp"
@@ -184,18 +181,18 @@ Release::refreshView()
 	{
 		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), *releaseId); }};
 
-		Wt::WPushButton* star {bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
-		star->clicked().connect([=]
+		Wt::WPushButton* starBtn {bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
+		starBtn->clicked().connect([=]
 		{
 			if (isStarred())
 			{
 				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), *releaseId);
-				star->setText(Wt::WString::tr("Lms.Explore.star"));
+				starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
 			}
 			else
 			{
 				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), *releaseId);
-				star->setText(Wt::WString::tr("Lms.Explore.unstar"));
+				starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
 			}
 		});
 	}

@@ -19,13 +19,9 @@
 
 #pragma once
 
-#include <memory>
-#include <unordered_set>
-
-#include <Wt/WSignal.h>
-#include <Wt/WTemplate.h>
-
 #include "services/database/Object.hpp"
+#include "common/Template.hpp"
+
 #include "PlayQueueAction.hpp"
 
 namespace Database
@@ -40,7 +36,7 @@ namespace UserInterface
 	class Filters;
 	class InfiniteScrollingContainer;
 
-	class Artist : public Wt::WTemplate
+	class Artist : public Template
 	{
 		public:
 			Artist(Filters* filters);

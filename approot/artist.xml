@@ -6,34 +6,40 @@
 	<div class="mb-3">
 		<h3>${name}</h3>
 		${clusters class="mb-2"}
-		${play-btn class="btn btn-outline-primary me-2"}${more-btn class="btn btn-outline-primary"}
+		<div class="d-flex">
+			${play-btn class="btn btn-outline-primary me-2"}
+			<div class="dropdown d-inline-block">
+				${more-btn class="btn btn-outline-primary" data-bs-toggle="dropdown" aria-expanded="false"}
+				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+					<li>${play-shuffled class="btn dropdown-item"}</li>
+					<li>${play-last class="btn dropdown-item"}</li>
+					<li>${star class="btn dropdown-item"}</li>
+					${<if-has-mbid>}
+					<li><a href="${mbid-link}" target="_blank" class="dropdown-item">${tr:Lms.Explore.musicbrainz-artist}</a></li>
+					${</if-has-mbid>}
+					<li>${download class="btn dropdown-item"}</li>
+				</ul>
+			</div>
+		</div>
 	</div>
 	${<if-has-release>}
-	${releases class="row gy-4"}
+	${releases class="row gy-4 mb-5"}
 	${</if-has-release>}
 	${<if-has-non-release-track>}
 	<div class="Lms-explore-artist-tracks-container">
 		${tracks}
 	</div>
 	${</if-has-non-release-track>}
+	${<if-has-similar-artists>}
 	<div class="row">
-		${<if-has-similar-artists>}
 		<div class="col-md-4">
 			<div class="well well-sm">
 				<h3>${tr:Lms.Explore.Artist.similar-artists}</h3>
 				${similar-artists}
 			</div>
 		</div>
-		${</if-has-similar-artists>}
-		${<if-has-mbid>}
-		<div class="col-md-4">
-			<div class="well well-sm">
-				<h3>${tr:Lms.Explore.links}</h3>
-				${mbid-link class="Lms-btn text-muted"}
-			</div>
-		</div>
-		${</if-has-mbid>}
 	</div>
+	${</if-has-similar-artists>}
 </message>
 
 </messages>
