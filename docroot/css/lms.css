@@ -22,3 +22,7 @@ body {
 	height: 70px;
 }
 
+.fixed-bottom.Lms-player {
+	z-index: 999;
+}
+

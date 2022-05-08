@@ -22,26 +22,31 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WContainerWidget.h>
 #include <Wt/WImage.h>
+#include <Wt/WPushButton.h>
 #include <Wt/WText.h>
 
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
+#include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
+#include "utils/Service.hpp"
+
+#include "common/Template.hpp"
 #include "resource/DownloadResource.hpp"
 #include "resource/CoverResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
-#include "TrackPopup.hpp"
 #include "TrackStringUtils.hpp"
 
 using namespace Database;
 
 namespace UserInterface::TrackListHelpers
 {
-	std::unique_ptr<Wt::WTemplate>
+	std::unique_ptr<Wt::WWidget>
 	createEntry(const Database::ObjectPtr<Database::Track>& track, PlayQueueActionTrackSignal& tracksAction)
 	{
-		auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
+		auto entry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
 		auto* entryPtr {entry.get()};
 
 		Wt::WText* name {entry->bindNew<Wt::WText>("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain)};
@@ -95,11 +100,36 @@ namespace UserInterface::TrackListHelpers
 			tracksAction.emit(PlayQueueAction::Play, {trackId});
 		});
 
-		Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
-		moreBtn->clicked().connect([=, &tracksAction]
 		{
-			displayTrackPopupMenu(*moreBtn, trackId, tracksAction);
-		});
+			entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+			entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
+				->clicked().connect([=, &tracksAction]
+				{
+					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
+				});
+
+			auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
+
+			Wt::WPushButton* starBtn {entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
+			starBtn->clicked().connect([=]
+			{
+				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+				if (isStarred())
+				{
+					Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), trackId);
+					starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+				}
+				else
+				{
+					Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), trackId);
+					starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+				}
+			});
+
+			entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
+		}
 
 		LmsApp->getMediaPlayer().trackLoaded.connect(entryPtr, [=] (Database::TrackId loadedTrackId)
 		{

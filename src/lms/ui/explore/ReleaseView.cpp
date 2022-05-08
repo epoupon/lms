@@ -35,6 +35,7 @@
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Logger.hpp"
 
+#include "common/Template.hpp"
 #include "resource/DownloadResource.hpp"
 #include "resource/CoverResource.hpp"
 #include "Filters.hpp"
@@ -42,7 +43,6 @@
 #include "LmsApplicationException.hpp"
 #include "MediaPlayer.hpp"
 #include "ReleaseListHelpers.hpp"
-#include "TrackPopup.hpp"
 #include "TrackStringUtils.hpp"
 
 using namespace Database;
@@ -256,7 +256,7 @@ Release::refreshView()
 		else
 			container = getOrAddNoDiscContainer();
 
-		Wt::WTemplate* entry {container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry"))};
+		Template* entry {container->addNew<Template>(Wt::WString::tr("Lms.Explore.Release.template.entry"))};
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
@@ -288,6 +288,37 @@ Release::refreshView()
 		{
 			tracksAction.emit(PlayQueueAction::Play, {trackId});
 		});
+
+		{
+			entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+			entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
+				->clicked().connect([=]
+				{
+					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
+				});
+
+			auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
+
+			Wt::WPushButton* starBtn {entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
+			starBtn->clicked().connect([=]
+			{
+				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+				if (isStarred())
+				{
+					Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), trackId);
+					starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+				}
+				else
+				{
+					Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), trackId);
+					starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+				}
+			});
+
+			entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
+		}
 
 		entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
 

@@ -81,7 +81,15 @@
 			${duration}
 		</div>
 		<div class="p-2">
-			${play-btn class="btn btn-sm btn-outline-secondary border-0"}${more-btn class="btn btn-sm btn-outline-secondary border-0"}
+			${play-btn class="btn btn-sm btn-outline-secondary border-0"}
+			<span class="dropdown">
+				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
+				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+					<li>${play-last class="btn dropdown-item"}</li>
+					<li>${star class="btn dropdown-item"}</li>
+					<li>${download class="btn dropdown-item"}</li>
+				</ul>
+			</span>
 		</div>
 	</div>
 </message>

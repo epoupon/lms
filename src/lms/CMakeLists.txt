@@ -39,7 +39,6 @@ add_executable(lms
 	ui/explore/SearchView.cpp
 	ui/explore/TrackCollector.cpp
 	ui/explore/TrackListHelpers.cpp
-	ui/explore/TrackPopup.cpp
 	ui/explore/TracksView.cpp
 	ui/resource/AudioFileResource.cpp
 	ui/resource/AudioTranscodeResource.cpp

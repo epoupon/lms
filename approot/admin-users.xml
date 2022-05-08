@@ -29,7 +29,7 @@
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<p>Modal body text goes here.</p>
+					${tr:Lms.Admin.Users.del-user-name}
 				</div>
 				<div class="modal-footer">
 					${del-btn class="btn btn-danger me-1"}${cancel-btn class="btn btn-secondary"}
