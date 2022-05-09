@@ -396,8 +396,7 @@ handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
 
-	LmsApp->doJavaScript(R"($('.navbar-nav li.active').removeClass('active'); $('.navbar-nav a[href="' + location.pathname + '"]').closest('li').addClass('active');)");
-
+	LmsApp->doJavaScript(R"($('.navbar-nav a.active').removeClass('active'); $('.navbar-nav a[href="' + location.pathname + '"]').closest('a').addClass('active');)");
 	for (const auto& view : views)
 	{
 		if (wApp->internalPathMatches(view.path))
