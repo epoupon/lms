@@ -34,7 +34,7 @@
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">
-	${name class="text-decoration-none text-reset"}
+	${name class="text-decoration-none link-secondary"}
 </message>
 
 </messages>

@@ -14,7 +14,7 @@
 		<div class="col">
 			<h3>${name}</h3>
 			${<if-has-release-artists>}${artists}${</if-has-release-artists>}
-			${<if-has-various-release-artists>}${tr:Lms.Explore.various-artists}${</if-has-various-release-artists>}
+			${<if-has-various-release-artists>}<div class="text-secondary">${tr:Lms.Explore.various-artists}</div>${</if-has-various-release-artists>}
 			<div class="small text-muted">${<if-has-year>}${year}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>} · ${</if-has-year>}${duration}</div>
 			${clusters class="mb-2"}
 		</div>
@@ -47,7 +47,7 @@
 </message>
 
 <message id="Lms.Explore.Release.template.entry-release-artist">
-	${artist}
+	${artist class="text-decoration-none link-success"}
 </message>
 
 <message id="Lms.Explore.Release.template.entry-disc">

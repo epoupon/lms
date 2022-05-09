@@ -268,7 +268,9 @@ Release::refreshView()
 			{
 				if (!firstArtist)
 					artistsContainer->addNew<Wt::WText>(" · ");
-				artistsContainer->addWidget(LmsApplication::createArtistAnchor(artist));
+				auto anchor {LmsApplication::createArtistAnchor(artist)};
+				anchor->addStyleClass("link-success text-decoration-none"); // hack
+				artistsContainer->addWidget(std::move(anchor));
 				firstArtist = false;
 			}
 		}

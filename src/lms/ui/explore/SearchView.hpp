@@ -21,8 +21,7 @@
 
 #include <unordered_map>
 
-#include <Wt/WContainerWidget.h>
-#include <Wt/WMenu.h>
+#include <Wt/WStackedWidget.h>
 #include <Wt/WTemplate.h>
 
 #include "ArtistCollector.hpp"
@@ -49,14 +48,10 @@ namespace UserInterface
 			// same order as in the menu
 			enum class Mode
 			{
-				Release,
 				Artist,
+				Release,
 				Track,
 			};
-
-			std::size_t modeToIndex(Mode mode) const;
-			Wt::WMenuItem& getItemMenu(Mode mode) const;
-			InfiniteScrollingContainer& getResultContainer(Mode mode) const;
 
 			static constexpr Mode _defaultMode {Mode::Release};
 			static inline std::unordered_map<Mode, std::size_t> _batchSizes
@@ -75,15 +70,18 @@ namespace UserInterface
 			std::size_t getMaxCount(Mode mode) const;
 
 			void refreshView();
-			void addSomeReleases();
 			void addSomeArtists();
+			void addSomeReleases();
 			void addSomeTracks();
 
 			Filters* _filters {};
-			Wt::WMenu* _menu {};
-			ReleaseCollector	_releaseCollector;
 			ArtistCollector		_artistCollector;
+			ReleaseCollector	_releaseCollector;
 			TrackCollector		_trackCollector;
+
+			InfiniteScrollingContainer* _artists;
+			InfiniteScrollingContainer* _releases;
+			InfiniteScrollingContainer* _tracks;
 
 			std::vector<InfiniteScrollingContainer*> _results;
 	};
