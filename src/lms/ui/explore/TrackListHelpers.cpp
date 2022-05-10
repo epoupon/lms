@@ -49,27 +49,11 @@ namespace UserInterface::TrackListHelpers
 		auto entry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
 		auto* entryPtr {entry.get()};
 
-		Wt::WText* name {entry->bindNew<Wt::WText>("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain)};
-		name->setToolTip(Wt::WString::fromUTF8(track->getName()));
+		entry->bindString("name", Wt::WString::fromUTF8(track->getName()));
 
 		const auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		const Release::pointer release {track->getRelease()};
 		const TrackId trackId {track->getId()};
-
-		if (!artists.empty() || release)
-			entry->setCondition("if-has-artists-or-release", true);
-
-		if (!artists.empty())
-		{
-			entry->setCondition("if-has-artists", true);
-
-			Wt::WContainerWidget* artistContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
-			for (const Artist::pointer& artist : artists)
-			{
-				Wt::WTemplate* a {artistContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry-artist"))};
-				a->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
-			}
-		}
 
 		if (track->getRelease())
 		{

@@ -293,7 +293,6 @@ LmsApplication::createReleaseAnchor(Database::Release::pointer release, bool add
 
 	if (addText)
 	{
-		res->setWordWrap(false);
 		res->setTextFormat(Wt::TextFormat::Plain);
 		res->setText(Wt::WString::fromUTF8(release->getName()));
 		res->setToolTip(Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);

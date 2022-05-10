@@ -65,10 +65,8 @@
 			${<if-has-track-number>}${track-number}${</if-has-track-number>}
 		</div>
 		<div class="p-2 flex-fill">
-			<div class="Lms-mw-fit-content">
-				${name}
-				${<if-has-artists>}${artists}${</if-has-artists>}
-			</div>
+			${name}
+			${<if-has-artists>}${artists}${</if-has-artists>}
 		</div>
 		<div class="p-2 d-none d-sm-block text-muted">
 			${duration}
