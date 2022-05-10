@@ -3,10 +3,6 @@
 	background-color: var(--bs-dark);
 }
 
-.Lms-mw-fit-content {
-	max-width: fit-content;
-}
-
 /* Specific rules */
 body {
 	padding-bottom: 78px;
