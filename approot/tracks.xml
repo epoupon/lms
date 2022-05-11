@@ -40,30 +40,26 @@
 </message>
 
 <message id="Lms.Explore.Tracks.template.entry">
-	<div class="card bg-transparent">
-		<div class="row align-items-center Lms-bg-dark-hover rounded">
-			<div class="col-2 col-lg-1">
-				${cover}
-			</div>
-			<div class="col-10 col-lg-11 d-flex align-items-center">
-				<div class="flex-fill">
-					<div>${name}</div>
-					${<if-has-release>}${release class="text-decoration-none link-sucess"}${</if-has-release>}
-				</div>
-				<div class="p-2 d-none d-sm-block text-muted">
-					${duration}
-				</div>
-				<div class="d-flex">
-					${play-btn class="btn btn-sm btn-outline-secondary border-0"}
-					<div class="dropdown d-inline-block">
-						${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
-						<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
-							<li>${play-last class="btn dropdown-item"}</li>
-							<li>${star class="btn dropdown-item"}</li>
-							<li>${download class="btn dropdown-item"}</li>
-						</ul>
-					</div>
-				</div>
+	<div class="d-flex align-items-center rounded Lms-bg-dark-hover">
+		<div class="p-1 Lms-cover-small">
+			${cover}
+		</div>
+		<div class="p-2 flex-fill">
+			<div>${name}</div>
+			${<if-has-release>}${release class="text-decoration-none link-success"}${</if-has-release>}
+		</div>
+		<div class="p-2 d-none d-sm-block text-muted">
+			${duration}
+		</div>
+		<div class="p-2 d-flex">
+			${play-btn class="btn btn-sm btn-outline-secondary border-0"}
+			<div class="dropdown d-inline-block">
+				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
+				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+					<li>${play-last class="btn dropdown-item"}</li>
+					<li>${star class="btn dropdown-item"}</li>
+					<li>${download class="btn dropdown-item"}</li>
+				</ul>
 			</div>
 		</div>
 	</div>

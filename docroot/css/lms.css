@@ -8,6 +8,11 @@ body {
 	padding-bottom: 78px;
 }
 
+.Lms-cover-small {
+	width: 72px;
+	min-width: 72px;
+}
+
 .Lms-notification-container {
 	position: fixed;
 	bottom: 78px;
@@ -22,3 +27,29 @@ body {
 	z-index: 999;
 }
 
+.Lms-cover {
+	max-height: 100%;
+	max-width: 100%;
+	width: auto;
+	height: auto;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	margin: auto;
+}
+
+.Lms-cover-container {
+	position: relative;
+}
+
+.Lms-responsive-square {
+	width: 100%;
+}
+
+.Lms-responsive-square:after {
+	content: "";
+	display: block;
+	padding-bottom: 100%;
+}

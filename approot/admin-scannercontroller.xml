@@ -5,38 +5,41 @@
 	<div class="card">
 		<h5 class="card-header">${tr:Lms.Admin.ScannerController.scanner}</h5>
 		<div class="card-body">
-			<div class="mb-3 row">
-				<label class="col-sm-2 col-form-label" for="status">
-					${tr:Lms.Admin.ScannerController.status}
-				</label>
-				<div class="col-sm-10">
-					<input type="text" readonly="readonly" class="form-control" id="status" value="${status}"/>
+			<form>
+				<div class="row g-3">
+					<div class="col-12">
+						<label class="form-label" for="status">
+							${tr:Lms.Admin.ScannerController.status}
+						</label>
+						<input type="text" readonly="readonly" class="form-control" id="status" value="${status}"/>
+					</div>
+					<div class="col-12">
+						<label class="form-label" for="step-status">
+							${tr:Lms.Admin.ScannerController.step-status}
+						</label>
+						<input type="text" readonly="readonly" class="form-control" id="step-status" value="${step-status}"/>
+					</div>
+					<div class="col-12">
+						<label class="form-label" for="last-scan">
+							${tr:Lms.Admin.ScannerController.last-scan}
+						</label>
+						<div class="input-group">
+							<input type="text" readonly="readonly" class="form-control" id="last-scan" value="${last-scan}"/>
+							${report-btn class="btn btn-outline-info"}
+						</div>
+					</div>
+					<div class="col-12">
+						<div class="btn-group">
+							${scan-btn class="btn btn-primary"}
+							<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+							</button>
+							<ul class="dropdown-menu">
+								<li>${full-scan-btn class="dropdown-item"}</li>
+							</ul>
+						</div>
+					</div>
 				</div>
-			</div>
-			<div class="mb-3 row">
-				<label class="col-sm-2 col-form-label" for="step-status">
-					${tr:Lms.Admin.ScannerController.step-status}
-				</label>
-				<div class="col-sm-10">
-					<input type="text" readonly="readonly" class="form-control" id="step-status" value="${step-status}"/>
-				</div>
-			</div>
-			<div class="mb-3 row">
-				<label class="col-sm-2 col-form-label" for="last-scan">
-					${tr:Lms.Admin.ScannerController.last-scan}
-				</label>
-				<div class="col-sm-10">
-					<input type="text" readonly="readonly" class="form-control" id="last-scan" value="${last-scan}"/>
-				</div>
-			</div>
-			<div class="mb-3 row">
-				<div class="offset-sm-2">
-					${btn-report class="btn btn-sm"}
-				</div>
-			</div>
-			<div class="col-12">
-				${btn-action}
-			</div>
+			</form>
 		</div>
 	</div>
 </message>

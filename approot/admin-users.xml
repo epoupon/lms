@@ -2,20 +2,20 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Admin.Users.template">
-	<h2>${tr:Lms.Admin.Users.users}</h2>
-	${users}
+	<h3>${tr:Lms.Admin.Users.users}</h3>
+	${users class="d-grid gap-1"}
 	${<if-can-create-user>}
 	${add-btn class="btn btn-primary"}
 	${</if-can-create-user>}
 </message>
 
 <message id="Lms.Admin.Users.template.entry">
-	<div class="row align-items-center mb-3">
-		<div class="col-auto me-auto">
+	<div class="d-flex align-items-center Lms-bg-dark-hover rounded">
+		<div class="p-2 flex-fill">
 			${name}${<if-tag>}<span class="badge bg-info ms-2">${tag}</span>${</if-tag>}
 		</div>
-		<div class="col-auto">
-			${<if-edit>}${edit-btn class="btn btn-sm btn-primary me-1"} ${del-btn class="btn btn-sm btn-danger"}${</if-edit>}
+		<div class="p-2">
+			${<if-edit>}${edit-btn class="btn btn-sm btn-secondary me-1"}${del-btn class="btn btn-sm btn-danger"}${</if-edit>}
 		</div>
 	</div>
 </message>

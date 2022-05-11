@@ -39,13 +39,13 @@
 </message>
 
 <message id="Lms.Explore.Releases.template.entry-grid">
-		<div class="card border-0 bg-transparent">
-			${cover class="shadow-sm"}
-			${release-name class="text-truncate text-nowrap text-decoration-none link-success"}
-			${<if-has-artist>}${artist-name class=" text-truncate text-nowrap text-decoration-none link-secondary"}${</if-has-artist>}
-			${<if-has-various-artists>}<div class="text-truncate text-nowrap text-secondary">${tr:Lms.Explore.various-artists}</div>${</if-has-various-artists>}
-			${<if-has-year>}<div class="small text-muted">${year}</div>${</if-has-year>}
-		</div>
+	<div class="Lms-responsive-square Lms-cover-container">
+		${cover class="shadow-sm"}
+	</div>
+	${release-name class="d-block text-truncate text-nowrap text-decoration-none link-success"}
+	${<if-has-artist>}${artist-name class="d-block text-truncate text-nowrap text-decoration-none link-secondary"}${</if-has-artist>}
+	${<if-has-various-artists>}<div class="text-truncate text-nowrap text-secondary">${tr:Lms.Explore.various-artists}</div>${</if-has-various-artists>}
+	${<if-has-year>}<div class="small text-muted">${year}</div>${</if-has-year>}
 </message>
 
 <message id="Lms.Explore.Releases.template.container">

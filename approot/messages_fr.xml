@@ -99,7 +99,7 @@
 <message id="Lms.Admin.User.user-already-exists">L'utilisateur existe déjà !</message>
 <message id="Lms.Admin.User.user-create">Nouvel utilisateur</message>
 <message id="Lms.Admin.User.user-created">Nouvel utilisateur créé !</message>
-<message id="Lms.Admin.User.user-edit">Utilisateur {1}</message>
+<message id="Lms.Admin.User.user-edit">Utilisateur '{1}'</message>
 <message id="Lms.Admin.User.user-updated">L'utilisateur a été mis à jour !</message>
 
 <!--Wizard-->

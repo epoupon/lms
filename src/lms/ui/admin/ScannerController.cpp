@@ -23,10 +23,8 @@
 
 #include <Wt/Http/Response.h>
 #include <Wt/WDateTime.h>
-#include <Wt/WPopupMenu.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
-#include <Wt/WSplitButton.h>
 
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
@@ -156,25 +154,19 @@ ScannerController::refreshContents()
 {
 	using namespace Scanner;
 
-	Wt::WPushButton* reportBtn {bindNew<Wt::WPushButton>("btn-report", Wt::WString::tr("Lms.Admin.ScannerController.get-report"))};
+	Wt::WPushButton* reportBtn {bindNew<Wt::WPushButton>("report-btn", Wt::WString::tr("Lms.Admin.ScannerController.get-report"))};
 
-	Wt::WSplitButton* actionBtn {bindNew<Wt::WSplitButton>("btn-action")};
-	actionBtn->actionButton()->addStyleClass("btn-primary");
-	actionBtn->actionButton()->setText(Wt::WString::tr("Lms.Admin.ScannerController.scan-now"));
-	actionBtn->actionButton()->clicked().connect([]
+	Wt::WPushButton* scanBtn {bindNew<Wt::WPushButton>("scan-btn", Wt::WString::tr("Lms.Admin.ScannerController.scan-now"))};
+	scanBtn->clicked().connect([]
 	{
 		Service<Scanner::IScannerService>::get()->requestImmediateScan(false);
 	});
 
-	auto popup = std::make_unique<Wt::WPopupMenu>();
-	popup->addItem(Wt::WString::tr("Lms.Admin.ScannerController.force-scan-now"));
-	popup->itemSelected().connect([]
+	Wt::WPushButton* fullScanBtn {bindNew<Wt::WPushButton>("full-scan-btn", Wt::WString::tr("Lms.Admin.ScannerController.force-scan-now"))};
+	fullScanBtn->clicked().connect([]
 	{
 		Service<Scanner::IScannerService>::get()->requestImmediateScan(true);
 	});
-	actionBtn->dropDownButton()->setMenu(std::move(popup));
-	actionBtn->dropDownButton()->addStyleClass("btn-primary");
-
 
 	const IScannerService::Status status {Service<IScannerService>::get()->getStatus()};
 	if (status.lastCompleteScanStats)
