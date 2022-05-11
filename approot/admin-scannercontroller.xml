@@ -7,13 +7,13 @@
 		<div class="card-body">
 			<form>
 				<div class="row g-3">
-					<div class="col-12">
+					<div class="col-lg-6">
 						<label class="form-label" for="status">
 							${tr:Lms.Admin.ScannerController.status}
 						</label>
 						<input type="text" readonly="readonly" class="form-control" id="status" value="${status}"/>
 					</div>
-					<div class="col-12">
+					<div class="col-lg-6">
 						<label class="form-label" for="step-status">
 							${tr:Lms.Admin.ScannerController.step-status}
 						</label>
