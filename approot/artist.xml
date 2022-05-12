@@ -23,19 +23,15 @@
 		</div>
 	</div>
 	${<if-has-release>}
-	${releases}
+	${releases class="mb-3"}
 	${</if-has-release>}
 	${<if-has-non-release-track>}
-	${tracks}
+	${tracks class="mb-3"}
 	${</if-has-non-release-track>}
 	${<if-has-similar-artists>}
-	<div class="row">
-		<div class="col-md-4">
-			<div class="well well-sm">
-				<h3>${tr:Lms.Explore.Artist.similar-artists}</h3>
-				${similar-artists}
-			</div>
-		</div>
+	<div>
+		<h3>${tr:Lms.Explore.Artist.similar-artists}</h3>
+		${similar-artists class="d-grid gap-3"}
 	</div>
 	${</if-has-similar-artists>}
 </message>

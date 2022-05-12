@@ -7,7 +7,7 @@
 </message>
 
 <message id="Lms.Explore.Release.template">
-	<div class="row mb-5 gy-3">
+	<div class="row mb-3 gy-3">
 		<div class="col-lg-3 col-md-4">
 			${cover class="Lms-explore-release-cover"}
 		</div>
