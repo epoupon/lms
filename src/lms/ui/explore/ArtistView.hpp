@@ -51,11 +51,14 @@ namespace UserInterface
 			void refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArtistsId);
 			void refreshLinks(const Database::ObjectPtr<Database::Artist>& artist);
 
+			void addSomeReleases();
 			void addSomeNonReleaseTracks();
+			static constexpr std::size_t _releasesBatchSize {6};
 			static constexpr std::size_t _tracksBatchSize {6};
 			static constexpr std::size_t _tracksMaxCount {160};
 
 			Filters* _filters {};
+			InfiniteScrollingContainer* _releaseContainer {};
 			InfiniteScrollingContainer* _trackContainer {};
 			Database::ArtistId			_artistId {};
 	};

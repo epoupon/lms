@@ -180,17 +180,16 @@ Artist::refreshView()
 void
 Artist::refreshReleases(const ObjectPtr<Database::Artist>& artist)
 {
-	const auto releases {artist->getReleases(_filters->getClusterIds())};
-	if (releases.empty())
+	if (artist->getReleaseCount() == 0)
 		return;
 
 	setCondition("if-has-release", true);
-
-	Wt::WContainerWidget* releasesContainer = bindNew<Wt::WContainerWidget>("releases");
-	for (const auto& release : releases)
+	_releaseContainer = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
+	_releaseContainer->onRequestElements.connect(this, [this]
 	{
-		releasesContainer->addWidget(ReleaseListHelpers::createEntryForArtist(release, artist));
-	}
+		addSomeReleases();
+	});
+	addSomeReleases();
 }
 
 void
@@ -237,6 +236,27 @@ Artist::refreshLinks(const Database::Artist::pointer& artist)
 		setCondition("if-has-mbid", true);
 		bindString("mbid-link", std::string {"https://musicbrainz.org/artist/"} + std::string {mbid->getAsString()});
 	}
+}
+
+void
+Artist::addSomeReleases()
+{
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	const Database::Artist::pointer artist {Database::Artist::find(LmsApp->getDbSession(), _artistId)};
+	if (!artist)
+		return;
+
+	const Range range {static_cast<std::size_t>(_releaseContainer->getCount()), _releasesBatchSize};
+	const auto releases {artist->getReleases(range, _filters->getClusterIds())};
+
+	for (const ReleaseId releaseId : releases.results)
+	{
+		const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), releaseId)};
+		_releaseContainer->add(ReleaseListHelpers::createEntryForArtist(release, artist));
+	}
+
+	_releaseContainer->setHasMore(releases.moreResults);
 }
 
 void

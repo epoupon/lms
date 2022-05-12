@@ -9,7 +9,7 @@
 		<div class="alert alert-info">
 			${tr:Lms.Settings.audio-settings-are-local}
 		</div>
-		<div class="col-12">
+		<div class="col-lg-4">
 			<label class="form-label" for="${id:transcode-mode}">
 				${tr:Lms.Settings.transcode-mode}
 			</label>
@@ -18,7 +18,7 @@
 				${transcode-mode-info}
 			</div>
 		</div>
-		<div class="col-lg-6">
+		<div class="col-lg-4">
 			<label class="form-label" for="${id:transcode-format}">
 				${tr:Lms.Settings.transcode-format}
 			</label>
@@ -27,7 +27,7 @@
 				${transcode-format-info}
 			</div>
 		</div>
-		<div class="col-lg-6">
+		<div class="col-lg-4">
 			<label class="form-label"  for="${id:transcode-bitrate}">
 				${tr:Lms.Settings.transcode-bitrate}
 			</label>
@@ -39,7 +39,7 @@
 				${transcode-bitrate-info}
 			</div>
 		</div>
-		<div class="col-12">
+		<div class="col-lg-4">
 			<label class="form-label"  for="${id:replaygain-mode}">
 				${tr:Lms.Settings.replaygain-mode}
 			</label>
@@ -48,7 +48,7 @@
 				${replaygain-mode-info}
 			</div>
 		</div>
-		<div class="col-lg-6">
+		<div class="col-lg-4">
 			<label class="form-label"  for="${id:replaygain-preamp}">
 				${tr:Lms.Settings.replaygain-preamp}
 			</label>
@@ -60,7 +60,7 @@
 				${replaygain-preamp-info}
 			</div>
 		</div>
-		<div class="col-lg-6">
+		<div class="col-lg-4">
 			<label class="form-label" for="${id:replaygain-preamp-no-rg-info}">
 				${tr:Lms.Settings.replaygain-preamp-no-rg-info}
 			</label>
@@ -117,7 +117,7 @@
 			</div>
 			${</if-has-subsonic-api>}
 		<legend>${tr:Lms.Settings.scrobbling}</legend>
-		<div class="col-12">
+		<div class="col-lg-6">
 			<label class="form-label" for="${id:scrobbler}">
 				${tr:Lms.Settings.scrobbling.scrobbler}
 			</label>
@@ -126,7 +126,7 @@
 				${scrobbler-info class="help-block"}
 			</div>
 		</div>
-		<div class="col-12">
+		<div class="col-lg-6">
 			<label class="form-label" for="${id:listenbrainz-token}">
 				${tr:Lms.Settings.scrobbling.listenbrainz-token}
 			</label>
@@ -148,7 +148,7 @@
 			</div>
 		</div>
 		${</if-has-old-password>}
-		<div class="col-12">
+		<div class="col-lg-6">
 			<label class="col-lg-3 control-label" for="${id:password}">
 				${tr:Lms.password-new}
 			</label>
@@ -157,7 +157,7 @@
 				${password-info class="help-block"}
 			</div>
 		</div>
-		<div class="col-12">
+		<div class="col-lg-6">
 			<label class="col-lg-3 control-label" for="${id:password-confirm}">
 				${tr:Lms.password-confirm}
 			</label>

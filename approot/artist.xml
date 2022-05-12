@@ -23,12 +23,10 @@
 		</div>
 	</div>
 	${<if-has-release>}
-	${releases class="row gy-4 mb-5"}
+	${releases}
 	${</if-has-release>}
 	${<if-has-non-release-track>}
-	<div class="Lms-explore-artist-tracks-container">
-		${tracks}
-	</div>
+	${tracks}
 	${</if-has-non-release-track>}
 	${<if-has-similar-artists>}
 	<div class="row">

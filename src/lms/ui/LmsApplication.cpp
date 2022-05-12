@@ -23,7 +23,6 @@
 #include <Wt/WBootstrap5Theme.h>
 #include <Wt/WEnvironment.h>
 #include <Wt/WLineEdit.h>
-#include <Wt/WPopupMenu.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WServer.h>
 #include <Wt/WStackedWidget.h>
@@ -328,13 +327,6 @@ LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete
 	res->setInline(true);
 
 	return res;
-}
-
-Wt::WPopupMenu*
-LmsApplication::createPopupMenu()
-{
-	_popupMenu = std::make_unique<Wt::WPopupMenu>();
-	return _popupMenu.get();
 }
 
 void

@@ -885,9 +885,12 @@ handleGetArtistRequest(RequestContext& context)
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node artistNode {artistToResponseNode(user, artist, true /* id3 */)};
 
-	auto releases {artist->getReleases()};
-	for (const Release::pointer& release : releases)
+	auto releases {artist->getReleases(Range {})};
+	for (const ReleaseId releaseId : releases.results)
+	{
+		const Release::pointer release {Release::find(context.dbSession, releaseId)};
 		artistNode.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, true /* id3 */));
+	}
 
 	response.addNode("artist", std::move(artistNode));
 
@@ -997,9 +1000,12 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 		directoryNode.setAttribute("name", makeNameFilesystemCompatible(artist->getName()));
 
-		auto releases {artist->getReleases()};
-		for (const Release::pointer& release : releases)
+		auto releases {artist->getReleases(Range {})};
+		for (const ReleaseId releaseId : releases.results)
+		{
+			const Release::pointer release {Release::find(context.dbSession, releaseId)};
 			directoryNode.addArrayChild("child", releaseToResponseNode(release, context.dbSession, user, false /* no id3 */));
+		}
 	}
 	else if (releaseId)
 	{

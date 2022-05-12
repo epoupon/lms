@@ -30,6 +30,7 @@
 #include "services/database/ArtistId.hpp"
 #include "services/database/ClusterId.hpp"
 #include "services/database/Object.hpp"
+#include "services/database/ReleaseId.hpp"
 #include "services/database/Types.hpp"
 #include "services/database/UserId.hpp"
 #include "utils/EnumSet.hpp"
@@ -88,7 +89,7 @@ class Artist : public Object<Artist, ArtistId>
 		const std::string&	getSortName() const { return _sortName; }
 		std::optional<UUID>	getMBID() const { return UUID::fromString(_MBID); }
 
-		std::vector<ObjectPtr<Release>>		getReleases(const std::vector<ClusterId>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
+		RangeResults<ReleaseId>				getReleases(Range range, const std::vector<ClusterId>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
 		std::size_t							getReleaseCount() const;
 		std::vector<ObjectPtr<Track>>		getTracks(std::optional<TrackArtistLinkType> linkType = {}) const;
 		bool								hasNonReleaseTracks(std::optional<TrackArtistLinkType> linkType = std::nullopt) const;

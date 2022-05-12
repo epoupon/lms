@@ -489,7 +489,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 	Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.PlayQueue.template.more-btn"), Wt::TextFormat::XHTML)};
 	moreBtn->clicked().connect([=]
 	{
-		Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
+/*		Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
 
 		const bool isStarred {Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId)};
 		popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
@@ -504,6 +504,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 			->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
 
 		popup->popup(moreBtn);
+		*/
 	});
 }
 

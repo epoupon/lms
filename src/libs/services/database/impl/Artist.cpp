@@ -204,8 +204,8 @@ Artist::find(Session& session, const FindParameters& params)
 	return execQuery(query, params.range);
 }
 
-std::vector<Release::pointer>
-Artist::getReleases(const std::vector<ClusterId>& clusterIds) const
+RangeResults<ReleaseId>
+Artist::getReleases(Range range, const std::vector<ClusterId>& clusterIds) const
 {
 	assert(session());
 
@@ -213,7 +213,7 @@ Artist::getReleases(const std::vector<ClusterId>& clusterIds) const
 
 	std::ostringstream oss;
 
-	oss << "SELECT DISTINCT r FROM release r INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id INNER JOIN track t ON t.release_id = r.id";
+	oss << "SELECT DISTINCT r.id FROM release r INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id INNER JOIN track t ON t.release_id = r.id";
 
 	if (!clusterIds.empty())
 	{
@@ -236,13 +236,12 @@ Artist::getReleases(const std::vector<ClusterId>& clusterIds) const
 
 	oss << " ORDER BY t.date DESC, r.name COLLATE NOCASE";
 
-	auto query {session()->query<Wt::Dbo::ptr<Release>>(oss.str())};
+	auto query {session()->query<ReleaseId>(oss.str())};
 
 	for (const std::string& bindArg : where.getBindArgs())
 		query.bind(bindArg);
 
-	auto res {query.resultList()};
-	return std::vector<Release::pointer>(res.begin(), res.end());
+	return execQuery(query, range);
 }
 
 std::size_t

@@ -38,10 +38,6 @@ namespace Database
 	class Session;
 	class User;
 }
-namespace Wt
-{
-	class WPopupMenu;
-}
 
 namespace UserInterface {
 
@@ -88,7 +84,6 @@ class LmsApplication : public Wt::WApplication
 		static Wt::WLink					createReleaseLink(Database::ObjectPtr<Database::Release> release);
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::ObjectPtr<Database::Release> release, bool addText = true);
 		static std::unique_ptr<Wt::WText>	createCluster(Database::ObjectPtr<Database::Cluster> cluster, bool canDelete = false);
-		Wt::WPopupMenu* createPopupMenu();
 
 		MediaPlayer&	getMediaPlayer() const { return *_mediaPlayer; }
 		PlayQueue&		getPlayQueue() const { return *_playQueue; }
@@ -125,7 +120,6 @@ class LmsApplication : public Wt::WApplication
 		std::shared_ptr<CoverResource>			_coverResource;
 		MediaPlayer*							_mediaPlayer {};
 		PlayQueue*								_playQueue {};
-		std::unique_ptr<Wt::WPopupMenu>			_popupMenu;
 		NotificationContainer*					_notificationContainer {};
 		ModalManager*							_modalManager {};
 };

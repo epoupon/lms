@@ -42,7 +42,7 @@
 	</div>
 	${<if-has-similar-releases>}
 	<h3>${tr:Lms.Explore.Release.similar-releases}</h3>
-	${similar-releases class="row gy-4"}
+	${similar-releases class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 gx-2 gy-4"}
 	${</if-has-similar-releases>}
 </message>
 

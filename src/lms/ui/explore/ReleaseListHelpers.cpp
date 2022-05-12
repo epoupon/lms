@@ -83,8 +83,6 @@ namespace UserInterface::ReleaseListHelpers
 			}
 		}
 
-		// hack
-		entry->setStyleClass("p-2 Lms-bg-dark-hover rounded col-6 col-md-4 col-lg-3 col-xl-2");
 		return entry;
 	}
 

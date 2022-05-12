@@ -39,17 +39,21 @@
 </message>
 
 <message id="Lms.Explore.Releases.template.entry-grid">
-	<div class="Lms-responsive-square Lms-cover-container">
-		${cover class="shadow-sm"}
+	<div class="col">
+		<div class="Lms-bg-dark-hover rounded p-2">
+			<div class="Lms-responsive-square Lms-cover-container">
+				${cover class="shadow-sm"}
+			</div>
+			${release-name class="d-block text-truncate text-nowrap text-decoration-none link-success"}
+			${<if-has-artist>}${artist-name class="d-block text-truncate text-nowrap text-decoration-none link-secondary"}${</if-has-artist>}
+			${<if-has-various-artists>}<div class="text-truncate text-nowrap text-secondary">${tr:Lms.Explore.various-artists}</div>${</if-has-various-artists>}
+			${<if-has-year>}<div class="small text-muted">${year}</div>${</if-has-year>}
+		</div>
 	</div>
-	${release-name class="d-block text-truncate text-nowrap text-decoration-none link-success"}
-	${<if-has-artist>}${artist-name class="d-block text-truncate text-nowrap text-decoration-none link-secondary"}${</if-has-artist>}
-	${<if-has-various-artists>}<div class="text-truncate text-nowrap text-secondary">${tr:Lms.Explore.various-artists}</div>${</if-has-various-artists>}
-	${<if-has-year>}<div class="small text-muted">${year}</div>${</if-has-year>}
 </message>
 
 <message id="Lms.Explore.Releases.template.container">
-	${elements class="row gy-4"}
+	${elements class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 gx-2 gy-4"}
 	${loading-indicator}
 </message>
 
