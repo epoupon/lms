@@ -2,38 +2,56 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 <!--FORMS message blocks-->
 
-<message id="Lms.PlayQueue.template.clear-btn"><i class="fa fa-2x fa-times-circle"></i></message>
-<message id="Lms.PlayQueue.template.shuffle-btn"><i class="fa fa-2x fa-random"></i></message>
-<message id="Lms.PlayQueue.template.repeat-btn"><i class="fa fa-2x fa-repeat"></i></message>
-<message id="Lms.PlayQueue.template.radio-btn"><i class="fa fa-2x fa-rss"></i></message>
+<message id="Lms.PlayQueue.template.clear-btn"><i class="fa fa-fw fa-times"></i></message>
+<message id="Lms.PlayQueue.template.shuffle-btn"><i class="fa fa-fw fa-random"></i></message>
+<message id="Lms.PlayQueue.template.repeat-btn"><i class="fa fa-fw fa-repeat"></i></message>
+<message id="Lms.PlayQueue.template.radio-btn"><i class="fa fa-fw fa-rss"></i></message>
 
 <message id="Lms.PlayQueue.template">
 	<div class="mb-3">
-		${clear-btn class="me-2"}${shuffle-btn class="me-2"}${repeat-btn class="me-2"}${radio-btn class="me-2"}
+		<div class="d-inline-block me-2" data-toggle="tooltip" title="${tr:Lms.PlayQueue.clear}">
+			${clear-btn class="btn btn-secondary"}
+		</div>
+		<div class="d-inline-block me-2" data-toggle="tooltip" title="${tr:Lms.PlayQueue.shuffle}">
+			${shuffle-btn class="btn btn-secondary"}
+		</div>
+		<div class="btn-group me-2">
+			${repeat-btn class="btn-check"}
+			<label class="btn btn-outline-info" data-toggle="tooltip" title="${tr:Lms.PlayQueue.repeat}" for="${id:repeat-btn}">${tr:Lms.PlayQueue.template.repeat-btn}</label>
+			${radio-btn class="btn-check"}
+			<label class="btn btn-outline-info" data-toggle="tooltip" title="${tr:Lms.PlayQueue.radio-mode}" for="${id:radio-btn}">${tr:Lms.PlayQueue.template.radio-btn}</label>
+		</div>
 		${nb-tracks}
 	</div>
 	${entries}
 </message>
 
-<message id="Lms.PlayQueue.template.play-btn"><i class="fa fa-2x fa-play-circle"></i></message>
-<message id="Lms.PlayQueue.template.delete-btn"><i class="fa fa-2x fa-times-circle"></i></message>
-<message id="Lms.PlayQueue.template.more-btn"><i class="fa fa-2x fa-plus-circle"></i></message>
+<message id="Lms.PlayQueue.template.play-btn"><i class="fa fa-fw fa-play"></i></message>
+<message id="Lms.PlayQueue.template.delete-btn"><i class="fa fa-fw fa-times"></i></message>
+<message id="Lms.PlayQueue.template.more-btn"><i class="fa fa-fw fa-ellipsis-v"></i></message>
 
 <message id="Lms.PlayQueue.template.entry">
-	<div class="row Lms-vertical-align Lms-explore-entry-list Lms-playqueue-entry ${is-selected}">
-		<div class="col-3 col-sm-2 col-md-2">
+	<div class="d-flex align-items-center rounded Lms-bg-dark-hover">
+		<div class="p-1 Lms-cover-small">
 			${cover}
 		</div>
-		<div class="col-7 col-sm-8 col-md-8">
-			${name}
-			${<if-has-artists-or-release>}
-			${<if-has-release>}${release}${</if-has-release>}
-			${<if-has-artists>}${artists}${</if-has-artists>}
-			${</if-has-artists-or-release>}
+		<div class="p-2 flex-fill">
+			<div>${name}</div>
+			${<if-has-release>}${release class="text-decoration-none link-success"}${</if-has-release>}
 		</div>
-		<div class="col-2 col-sm-2 col-md-2">
+		<div class="p-2 d-none d-sm-block text-muted">
 			${duration}
-			${play-btn class="me-2"}${del-btn class="me-2"}${more-btn}
+		</div>
+		<div class="p-2 d-flex">
+			${play-btn class="btn btn-sm btn-outline-secondary border-0"}
+			${del-btn class="btn btn-sm btn-outline-secondary border-0"}
+			<div class="dropdown d-none d-sm-block">
+				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
+				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+					<li>${star class="btn dropdown-item"}</li>
+					<li>${download class="btn dropdown-item"}</li>
+				</ul>
+			</div>
 		</div>
 	</div>
 </message>

@@ -62,7 +62,7 @@ namespace UserInterface
 			};
 			static inline std::unordered_map<Mode, std::size_t> _maxCounts
 			{
-				{Mode::Artist, 64},
+				{Mode::Artist, 512},
 				{Mode::Release, 60},
 				{Mode::Track, 64},
 			};
