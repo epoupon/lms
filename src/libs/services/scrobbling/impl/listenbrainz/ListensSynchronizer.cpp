@@ -532,7 +532,8 @@ namespace Scrobbling::ListenBrainz
 	{
 		_strand.dispatch([this, &context]
 		{
-			LOG_EX(context.importedListenCount > 0 ? Severity::INFO : Severity::DEBUG) << "Sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount;
+			// FIXME
+			//LOG_EX(context.importedListenCount > 0 ? Severity::INFO : Severity::DEBUG) << "Sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount;
 			context.syncing = false;
 
 			if (!isSyncing())

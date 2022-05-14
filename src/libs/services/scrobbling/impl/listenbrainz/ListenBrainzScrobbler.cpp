@@ -19,7 +19,9 @@
 
 #include "ListenBrainzScrobbler.hpp"
 
+#include "services/database/Artist.hpp"
 #include "services/database/Db.hpp"
+#include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "utils/IConfig.hpp"
