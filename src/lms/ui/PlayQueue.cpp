@@ -301,11 +301,7 @@ PlayQueue::updateCurrentTrack(bool selected)
 	if (!entry)
 		return;
 
-	if (selected)
-		entry->addStyleClass("bg-dark");
-	else
-		entry->removeStyleClass("bg-dark");
-
+	entry->toggleStyleClass("Lms-entry-playing", selected);
 }
 
 std::size_t

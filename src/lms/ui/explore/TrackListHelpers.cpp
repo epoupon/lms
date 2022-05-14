@@ -30,6 +30,7 @@
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
+#include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
 #include "common/Template.hpp"
@@ -84,14 +85,14 @@ namespace UserInterface::TrackListHelpers
 			tracksAction.emit(PlayQueueAction::Play, {trackId});
 		});
 
-		{
-			entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
-			entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
-				->clicked().connect([=, &tracksAction]
-				{
-					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
-				});
+		entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+		entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
+			->clicked().connect([=, &tracksAction]
+			{
+				tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
+			});
 
+		{
 			auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
 
 			Wt::WPushButton* starBtn {entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
@@ -111,21 +112,22 @@ namespace UserInterface::TrackListHelpers
 				}
 			});
 
-			entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
-				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
 		}
+
+		entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+			->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
 
 		LmsApp->getMediaPlayer().trackLoaded.connect(entryPtr, [=] (Database::TrackId loadedTrackId)
 		{
-			entryPtr->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
+			entryPtr->toggleStyleClass("Lms-entry-playing", loadedTrackId == trackId);
 		});
 
 		if (auto trackIdLoaded {LmsApp->getMediaPlayer().getTrackLoaded()})
 		{
-			entry->bindString("is-playing", *trackIdLoaded == trackId ? "Lms-entry-playing" : "");
+			entryPtr->toggleStyleClass("Lms-entry-playing", *trackIdLoaded == trackId);
 		}
 		else
-			entry->bindString("is-playing", "");
+			entry->removeStyleClass("Lms-entry-playing");
 
 		return entry;
 	}

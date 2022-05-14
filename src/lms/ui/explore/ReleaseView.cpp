@@ -323,16 +323,15 @@ Release::refreshView()
 
 		LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=] (TrackId loadedTrackId)
 		{
-			entry->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
+			entry->toggleStyleClass("Lms-entry-playing", loadedTrackId == trackId);
 		});
 
 		if (auto trackIdLoaded {LmsApp->getMediaPlayer().getTrackLoaded()})
 		{
-			if (*trackIdLoaded == trackId)
-				entry->bindString("is-playing", "Lms-entry-playing");
+			entry->toggleStyleClass("Lms-entry-playing", *trackIdLoaded == trackId);
 		}
 		else
-			entry->bindString("is-playing", "");
+			entry->removeStyleClass("Lms-entry-playing");
 	}
 }
 
