@@ -298,8 +298,14 @@ PlayQueue::updateCurrentTrack(bool selected)
 		return;
 
 	Template* entry {static_cast<Template*>(_entriesContainer->getWidget(*_trackPos))};
-	if (entry)
-		entry->bindString("is-playing", selected ? "TODO" : "");
+	if (!entry)
+		return;
+
+	if (selected)
+		entry->addStyleClass("bg-dark");
+	else
+		entry->removeStyleClass("bg-dark");
+
 }
 
 std::size_t
@@ -397,7 +403,6 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 	Template* entry {_entriesContainer->addNew<Template>(Wt::WString::tr("Lms.PlayQueue.template.entry"))};
 	entry->addFunction("id", &Wt::WTemplate::Functions::id);
 
-	entry->bindEmpty("is-playing");
 	entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
 	const auto release {track->getRelease()};
