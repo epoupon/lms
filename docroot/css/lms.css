@@ -27,6 +27,10 @@ body {
 	z-index: 999;
 }
 
+.Lms-entry-playing {
+	background-color: var(--bs-dark);
+}
+
 .Lms-cover {
 	max-height: 100%;
 	max-width: 100%;
