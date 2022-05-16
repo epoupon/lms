@@ -85,7 +85,7 @@ Artists::Artists(Filters& filters)
 			refreshArtistLinkTypes();
 	});
 
-	_container = bindNew<InfiniteScrollingContainer>("artists");
+	_container = bindNew<InfiniteScrollingContainer>("artists", Wt::WString::tr("Lms.Explore.Artists.template.container"));
 	_container->onRequestElements.connect([this]
 	{
 		addSome();

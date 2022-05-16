@@ -37,4 +37,9 @@
 	${name class="text-decoration-none link-secondary"}
 </message>
 
+<message id="Lms.Explore.Artists.template.container">
+	${elements class="d-grid gap-3"}
+	${loading-indicator}
+</message>
+
 </messages>

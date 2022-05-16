@@ -10,7 +10,7 @@
 </message>
 
 <message id="Lms.infinite-scrolling-container">
-	${elements class="d-grid gap-3"}
+	${elements}
 	${loading-indicator}
 </message>
 

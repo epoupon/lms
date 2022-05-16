@@ -44,7 +44,7 @@ namespace UserInterface
 	{
 		addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-		_artists = bindNew<InfiniteScrollingContainer>("artists", Wt::WString::tr("Lms.infinite-scrolling-container"));
+		_artists = bindNew<InfiniteScrollingContainer>("artists", Wt::WString::tr("Lms.Explore.Artists.template.container"));
 		_artists->onRequestElements.connect([this] { addSomeArtists(); });
 
 		_releases = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));

@@ -31,13 +31,13 @@
 <message id="Lms.PlayQueue.template.more-btn"><i class="fa fa-fw fa-ellipsis-v"></i></message>
 
 <message id="Lms.PlayQueue.template.entry">
-	<div class="d-flex align-items-center rounded Lms-bg-dark-hover">
+	<div class="d-flex align-items-center rounded Lms-bg-dark-hover mb-2">
 		<div class="p-1 Lms-cover-small">
 			${cover}
 		</div>
-		<div class="p-2 flex-fill">
-			<div>${name}</div>
-			${<if-has-release>}${release class="text-decoration-none link-success"}${</if-has-release>}
+		<div class="p-2 flex-fill text-truncate">
+			<div class="d-block text-truncate">${name}</div>
+			${<if-has-release>}${release class="text-decoration-none link-success text-truncate"}${</if-has-release>}
 		</div>
 		<div class="p-2 d-none d-sm-block text-muted">
 			${duration}

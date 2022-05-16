@@ -81,6 +81,7 @@
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">重载相似引擎中 {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">扫描文件中: {1}/{2} 文件 ({3}%)...</message>
 
+
 <!--Users-->
 <message id="Lms.Admin.Users.add">新建用户</message>
 <message id="Lms.Admin.Users.admin">管理员</message>

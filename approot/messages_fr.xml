@@ -80,6 +80,7 @@
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Récupération des métadonnées AcousticBrainz : {1}/{2} fichiers ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Rechargement du moteur de recommandation : {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scan des fichiers : {1}/{2} fichiers ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-status">Statut de l'étape</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">Ajouter</message>

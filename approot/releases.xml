@@ -39,8 +39,8 @@
 </message>
 
 <message id="Lms.Explore.Releases.template.entry-grid">
-	<div class="col">
-		<div class="Lms-bg-dark-hover rounded p-2">
+	<div class="col h-100 Lms-bg-dark-hover rounded">
+		<div class="p-2">
 			<div class="Lms-responsive-square Lms-cover-container">
 				${cover class="shadow-sm"}
 			</div>
