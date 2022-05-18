@@ -22,6 +22,7 @@
 #include <atomic>
 #include <ctime>
 #include <iomanip>
+#include <map>
 #include <unordered_map>
 
 #include <Wt/WLocalDateTime.h>
@@ -1065,46 +1066,30 @@ handleGetArtistsRequestCommon(RequestContext& context, bool id3)
 			break;
 	}
 
-	Response::Node* currentIndexNode {};
-	char currentIndex{};
-
-	Response::Node* unknownIndexNode {};
-	auto getOrCreateUnknownIndexNode {[&]
-	{
-		if (!unknownIndexNode)
-		{
-			unknownIndexNode = &artistsNode.createArrayChild("index");
-			unknownIndexNode->setAttribute("name", "?");
-		}
-
-		return unknownIndexNode;
-	}};
-
-	auto getOrCreateIndexNode {[&](char first)
-	{
-		if (!currentIndexNode || currentIndex != first)
-		{
-			currentIndexNode = &artistsNode.createArrayChild("index");
-			currentIndexNode->setAttribute("name", std::string {first});
-			currentIndex = first;
-		}
-
-		return currentIndexNode;
-	}};
-
+	std::map<char, std::vector<Artist::pointer>> artistsSortedByFirstChar;
 	const RangeResults<ArtistId> artists {Artist::find(context.dbSession, parameters)};
 	for (const ArtistId artistId : artists.results)
 	{
 		const Artist::pointer artist {Artist::find(context.dbSession, artistId)};
 		const std::string& sortName {artist->getSortName()};
 
-		Response::Node* indexNode{};
+		char sortChar;
 		if (sortName.empty() || !std::isalpha(sortName[0]))
-			indexNode = getOrCreateUnknownIndexNode();
+			sortChar = '?';
 		else
-			indexNode = getOrCreateIndexNode(std::toupper(sortName[0]));
+			sortChar = std::toupper(sortName[0]);
 
-		indexNode->addArrayChild("artist", artistToResponseNode(user, artist, id3));
+		artistsSortedByFirstChar[sortChar].push_back(artist);
+	}
+
+
+	for (const auto& [sortChar, artists] : artistsSortedByFirstChar)
+	{
+		Response::Node& indexNode {artistsNode.createArrayChild("index")};
+		indexNode.setAttribute("name", std::string {sortChar});
+
+		for (const Artist::pointer& artist :artists)
+			indexNode.addArrayChild("artist", artistToResponseNode(user, artist, id3));
 	}
 
 	return response;
