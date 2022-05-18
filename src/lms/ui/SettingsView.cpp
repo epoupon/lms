@@ -21,7 +21,6 @@
 
 #include <Wt/WCheckBox.h>
 #include <Wt/WComboBox.h>
-#include <Wt/WDoubleValidator.h>
 #include <Wt/WDoubleSpinBox.h>
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
@@ -29,8 +28,9 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
 
-#include "common/PasswordValidator.hpp"
+#include "common/DoubleValidator.hpp"
 #include "common/MandatoryValidator.hpp"
+#include "common/PasswordValidator.hpp"
 #include "common/UUIDValidator.hpp"
 #include "common/ValueStringModel.hpp"
 
@@ -108,12 +108,10 @@ class SettingsModel : public Wt::WFormModel
 			setValidator(TranscodeBitrateField, createMandatoryValidator());
 			setValidator(TranscodeFormatField, createMandatoryValidator());
 			setValidator(ReplayGainModeField, createMandatoryValidator());
-			auto createPreAmpValidator = []
+			auto createPreAmpValidator {[]
 			{
-				auto preampGainValidator {std::make_unique<Wt::WDoubleValidator>()};
-				preampGainValidator->setRange(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
-				return preampGainValidator;
-			};
+				return createDoubleValidator(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
+			}};
 
 			setValidator(ReplayGainPreAmpGainField, createPreAmpValidator());
 			setValidator(ReplayGainPreAmpGainIfNoInfoField, createPreAmpValidator());

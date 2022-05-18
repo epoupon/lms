@@ -23,6 +23,6 @@
 
 namespace UserInterface
 {
-	std::shared_ptr<Wt::WValidator> createMandatoryValidator();
+	std::unique_ptr<Wt::WValidator> createMandatoryValidator();
 } // namespace UserInterface
 

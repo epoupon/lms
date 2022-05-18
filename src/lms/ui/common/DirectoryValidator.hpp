@@ -23,6 +23,6 @@
 
 namespace UserInterface
 {
-	std::shared_ptr<Wt::WValidator> createDirectoryValidator();
+	std::unique_ptr<Wt::WValidator> createDirectoryValidator();
 } // namespace UserInterface
 

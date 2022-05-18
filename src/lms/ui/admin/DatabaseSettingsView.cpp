@@ -69,12 +69,11 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 			auto dirValidator {createDirectoryValidator()};
 			dirValidator->setMandatory(true);
-			setValidator(MediaDirectoryField, dirValidator);
+			setValidator(MediaDirectoryField, move(dirValidator));
 
 			setValidator(UpdatePeriodField, createMandatoryValidator());
 			setValidator(UpdateStartTimeField, createMandatoryValidator());
 			setValidator(RecommendationEngineTypeField, createMandatoryValidator());
-			setValidator(TagsField, createTagsValidator());
 
 			// populate the model with initial data
 			loadData();
@@ -144,11 +143,6 @@ class DatabaseSettingsModel : public Wt::WFormModel
 		}
 
 	private:
-		static std::shared_ptr<Wt::WValidator> createTagsValidator()
-		{
-			auto v = std::make_shared<Wt::WValidator>();
-			return v;
-		}
 
 		void initializeModels()
 		{

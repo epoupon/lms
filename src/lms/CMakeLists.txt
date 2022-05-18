@@ -18,6 +18,7 @@ add_executable(lms
 	ui/admin/UserView.cpp
 	ui/admin/UsersView.cpp
 	ui/common/DirectoryValidator.cpp
+	ui/common/DoubleValidator.cpp
 	ui/common/InfiniteScrollingContainer.cpp
 	ui/common/LoadingIndicator.cpp
 	ui/common/LoginNameValidator.cpp

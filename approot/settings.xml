@@ -55,9 +55,9 @@
 			<div class="input-group mb-3">
 				${replaygain-preamp class="form-control"}
 				<span class="input-group-text">dB</span>
-			</div>
-			<div class="invalid-feedback">
-				${replaygain-preamp-info}
+				<div class="invalid-feedback">
+					${replaygain-preamp-info}
+				</div>
 			</div>
 		</div>
 		<div class="col-lg-4">
@@ -67,9 +67,9 @@
 			<div class="input-group mb-3">
 				${replaygain-preamp-no-rg-info class="form-control"}
 				<span class="input-group-text">dB</span>
-			</div>
-			<div class="invalid-feedback">
-				${replaygain-preamp-no-rg-info-info}
+				<div class="invalid-feedback">
+					${replaygain-preamp-no-rg-info-info}
+				</div>
 			</div>
 		</div>
 		${<if-has-subsonic-api>}

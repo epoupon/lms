@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,24 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "UUIDValidator.hpp"
+#pragma once
 
-#include <Wt/WRegExpValidator.h>
+#include <Wt/WValidator.h>
 
 namespace UserInterface
 {
-	class RegExpValidator : public Wt::WRegExpValidator
-	{
-		public:
-			using Wt::WRegExpValidator::WRegExpValidator;
-
-		private:
-			std::string javaScriptValidate() const override { return {}; }
-	};
-
-	std::unique_ptr<Wt::WValidator>
-	createUUIDValidator()
-	{
-		return std::make_unique<RegExpValidator>("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}");
-	}
+	std::unique_ptr<Wt::WValidator> createDoubleValidator(double min, double max);
 } // namespace UserInterface
+
