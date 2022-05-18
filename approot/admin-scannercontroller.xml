@@ -8,23 +8,23 @@
 			<form>
 				<div class="row g-3">
 					<div class="col-lg-6">
-						<label class="form-label" for="status">
+						<label class="form-label" for="${id:status}">
 							${tr:Lms.Admin.ScannerController.status}
 						</label>
-						<input type="text" readonly="readonly" class="form-control" id="status" value="${status}"/>
+						${status class="form-control"}
 					</div>
 					<div class="col-lg-6">
-						<label class="form-label" for="step-status">
+						<label class="form-label" for="${id:step-status}">
 							${tr:Lms.Admin.ScannerController.step-status}
 						</label>
-						<input type="text" readonly="readonly" class="form-control" id="step-status" value="${step-status}"/>
+						${step-status class="form-control"}
 					</div>
 					<div class="col-12">
-						<label class="form-label" for="last-scan">
+						<label class="form-label" for="{id:last-scan}">
 							${tr:Lms.Admin.ScannerController.last-scan}
 						</label>
 						<div class="input-group">
-							<input type="text" readonly="readonly" class="form-control" id="last-scan" value="${last-scan}"/>
+							${last-scan class="form-control"}
 							${report-btn class="btn btn-outline-info"}
 						</div>
 					</div>
