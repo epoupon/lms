@@ -22,6 +22,19 @@
 #include <chrono>
 #include <string>
 
-std::string
-durationToString(std::chrono::milliseconds msDuration);
+#include <Wt/WImage.h>
+
+#include "services/database/ReleaseId.hpp"
+#include "services/database/TrackId.hpp"
+
+#include "resource/CoverResource.hpp"
+
+namespace UserInterface::Utils
+{
+	std::string
+	durationToString(std::chrono::milliseconds msDuration);
+
+	std::unique_ptr<Wt::WImage> createCover(Database::ReleaseId releaseId, CoverResource::Size size);
+	std::unique_ptr<Wt::WImage> createCover(Database::TrackId trackId, CoverResource::Size size);
+}
 

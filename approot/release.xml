@@ -9,7 +9,7 @@
 <message id="Lms.Explore.Release.template">
 	<div class="row mb-3 gy-3">
 		<div class="col-lg-3 col-md-4">
-			${cover class="Lms-explore-release-cover"}
+			${cover}
 		</div>
 		<div class="col">
 			<h3>${name}</h3>

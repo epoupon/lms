@@ -34,13 +34,12 @@
 
 #include "common/Template.hpp"
 #include "resource/DownloadResource.hpp"
-#include "resource/CoverResource.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
 #include "MediaPlayer.hpp"
 #include "ReleaseListHelpers.hpp"
-#include "TrackStringUtils.hpp"
+#include "Utils.hpp"
 
 using namespace Database;
 
@@ -127,15 +126,11 @@ Release::refreshView()
 		}
 	}
 
-	bindString("duration", durationToString(release->getDuration()), Wt::TextFormat::Plain);
+	bindString("duration", Utils::durationToString(release->getDuration()), Wt::TextFormat::Plain);
 
 	refreshReleaseArtists(release);
 
-	{
-		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large)))};
-		cover->setStyleClass("img-fluid");
-		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
-	}
+	bindWidget<Wt::WImage>("cover", Utils::createCover(release->getId(), CoverResource::Size::Large));
 
 	Wt::WContainerWidget* clusterContainers {bindNew<Wt::WContainerWidget>("clusters")};
 	{
@@ -319,7 +314,7 @@ Release::refreshView()
 				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
 		}
 
-		entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
+		entry->bindString("duration", Utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 		LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=] (TrackId loadedTrackId)
 		{

@@ -38,7 +38,7 @@
 #include "resource/CoverResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
-#include "TrackStringUtils.hpp"
+#include "Utils.hpp"
 
 using namespace Database;
 
@@ -60,26 +60,21 @@ namespace UserInterface::TrackListHelpers
 		{
 			entry->setCondition("if-has-release", true);
 			entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
-			{
-				Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
-				auto cover {std::make_unique<Wt::WImage>()};
-				cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large));
-				cover->setStyleClass("img-fluid");
-				cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
-				anchor->setImage(std::move(cover));
-			}
+			Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
+			auto cover {Utils::createCover(release->getId(), CoverResource::Size::Small)};
+			cover->addStyleClass("Lms-cover-track"); // HACK
+			anchor->setImage(std::move((cover)));
 		}
 		else
 		{
-			auto* cover {entry->bindNew<Wt::WImage>("cover")};
-			cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(trackId, CoverResource::Size::Large));
-			cover->setStyleClass("img-fluid");
-			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
+			auto cover {Utils::createCover(trackId, CoverResource::Size::Small)};
+			cover->addStyleClass("Lms-cover-track"); // HACK
+			entry->bindWidget<Wt::WImage>("cover", std::move(cover));
 		}
 
-		entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
+		entry->bindString("duration", Utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
-		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
+		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([trackId, &tracksAction]
 		{
 			tracksAction.emit(PlayQueueAction::Play, {trackId});

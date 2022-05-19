@@ -8,11 +8,6 @@ body {
 	padding-bottom: 78px;
 }
 
-.Lms-cover-small {
-	width: 64px;
-	min-width: 64px;
-}
-
 .Lms-notification-container {
 	position: fixed;
 	bottom: 78px;
@@ -32,6 +27,19 @@ body {
 }
 
 .Lms-cover {
+	opacity: 0;
+	transition: opacity 1s;
+}
+
+.Lms-cover-container {
+	position: relative;
+}
+
+.Lms-cover-loaded {
+	opacity: 1;
+}
+
+.Lms-cover-release {
 	max-height: 100%;
 	max-width: 100%;
 	width: auto;
@@ -44,8 +52,9 @@ body {
 	margin: auto;
 }
 
-.Lms-cover-container {
-	position: relative;
+.Lms-cover-track {
+	width: 64px;
+	min-width: 64px;
 }
 
 .Lms-responsive-square {

@@ -11,7 +11,7 @@ add_executable(lms
 	ui/NotificationContainer.cpp
 	ui/PlayQueue.cpp
 	ui/SettingsView.cpp
-	ui/TrackStringUtils.cpp
+	ui/Utils.cpp
 	ui/admin/DatabaseSettingsView.cpp
 	ui/admin/ScannerController.cpp
 	ui/admin/InitWizardView.cpp

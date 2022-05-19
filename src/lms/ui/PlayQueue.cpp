@@ -36,11 +36,10 @@
 #include "utils/String.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
-#include "resource/CoverResource.hpp"
 #include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
-#include "TrackStringUtils.hpp"
+#include "Utils.hpp"
 
 namespace UserInterface {
 
@@ -408,22 +407,18 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 		entry->bindWidget("release", LmsApplication::createReleaseAnchor(release));
 		{
 			Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
-			auto cover {std::make_unique<Wt::WImage>()};
-			cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large));
-			cover->setStyleClass("img-fluid"); // HACK
-			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
+			auto cover {Utils::createCover(release->getId(), CoverResource::Size::Small)};
+			cover->addStyleClass("Lms-cover-track"); // HACK
 			anchor->setImage(std::move(cover));
 		}
 	}
 	else
 	{
-		auto cover = entry->bindNew<Wt::WImage>("cover");
-		cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(track->getId(), CoverResource::Size::Large));
-		cover->setStyleClass("img-fluid"); // HACK
-		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
+		auto cover {entry->bindWidget<Wt::WImage>("cover", Utils::createCover(track->getId(), CoverResource::Size::Small))};
+		cover->addStyleClass("Lms-cover-track");
 	}
 
-	entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
+	entry->bindString("duration", Utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 	Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.template.play-btn"), Wt::TextFormat::XHTML)};
 	playBtn->clicked().connect([=]
