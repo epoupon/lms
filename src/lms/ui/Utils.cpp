@@ -22,6 +22,10 @@
 #include <iomanip>
 #include <sstream>
 
+#include <Wt/WText.h>
+
+#include "services/database/Cluster.hpp"
+#include "services/database/Session.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface::Utils
@@ -59,5 +63,41 @@ namespace UserInterface::Utils
 		cover->setStyleClass("Lms-cover img-fluid"); // HACK
 		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
 		return cover;
+	}
+
+	std::unique_ptr<Wt::WInteractWidget>
+	createCluster(Database::ClusterId clusterId, bool canDelete)
+	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+		const Database::Cluster::pointer cluster {Database::Cluster::find(LmsApp->getDbSession(), clusterId)};
+		if (!cluster)
+			return {};
+
+		auto getStyleClass {[](const Database::Cluster::pointer& cluster) -> const char*
+		{
+			switch (cluster->getType()->getId().getValue() % 8)
+			{
+				case 0: return "bg-primary";
+				case 1: return "bg-secondary";
+				case 2: return "bg-success";
+				case 3: return "bg-danger";
+				case 4: return "bg-warning text-dark";
+				case 5: return "bg-info text-dark";
+				case 6: return "bg-light text-dark";
+				case 7: return "bg-dark";
+			}
+
+			return "bg-primary";
+		}};
+
+		const std::string styleClass {getStyleClass(cluster)};
+		auto res {std::make_unique<Wt::WText>(std::string {} + (canDelete ? "<i class=\"fa fa-times-circle\"></i> " : "") + Wt::WString::fromUTF8(cluster->getName()), Wt::TextFormat::UnsafeXHTML)};
+
+		res->setStyleClass("Lms-badge-cluster badge me-1 " + styleClass); // HACK
+		res->setToolTip(cluster->getType()->getName(), Wt::TextFormat::Plain);
+		res->setInline(true);
+
+		return res;
 	}
 }

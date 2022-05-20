@@ -300,35 +300,6 @@ LmsApplication::createReleaseAnchor(Database::Release::pointer release, bool add
 	return res;
 }
 
-std::unique_ptr<Wt::WText>
-LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete)
-{
-	auto getStyleClass = [](const Database::Cluster::pointer cluster)
-	{
-		switch (cluster->getType()->getId().getValue() % 8)
-		{
-			case 0: return "bg-primary";
-			case 1: return "bg-secondary";
-			case 2: return "bg-success";
-			case 3: return "bg-danger";
-			case 4: return "bg-warning text-dark";
-			case 5: return "bg-info text-dark";
-			case 6: return "bg-light text-dark";
-			case 7: return "bg-dark";
-		}
-		return "bg-primary";
-	};
-
-	const std::string styleClass {getStyleClass(cluster)};
-	auto res {std::make_unique<Wt::WText>(std::string {} + (canDelete ? "<i class=\"fa fa-times-circle\"></i> " : "") + Wt::WString::fromUTF8(cluster->getName()), Wt::TextFormat::UnsafeXHTML)};
-
-	res->setStyleClass("badge me-1 " + styleClass);
-	res->setToolTip(cluster->getType()->getName(), Wt::TextFormat::Plain);
-	res->setInline(true);
-
-	return res;
-}
-
 void
 LmsApplication::handleException(LmsApplicationException& e)
 {

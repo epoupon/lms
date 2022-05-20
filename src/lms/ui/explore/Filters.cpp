@@ -28,6 +28,7 @@
 #include "services/database/Session.hpp"
 
 #include "LmsApplication.hpp"
+#include "Utils.hpp"
 #include "ModalManager.hpp"
 
 namespace UserInterface {
@@ -124,22 +125,20 @@ void
 Filters::add(ClusterId clusterId)
 {
 
+	if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), clusterId) != std::cend(_clusterIds))
+		return;
+
 	Wt::WInteractWidget* filter {};
 
 	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-		Cluster::pointer cluster {Cluster::find(LmsApp->getDbSession(), clusterId)};
+		auto cluster {Utils::createCluster(clusterId, true)};
 		if (!cluster)
 			return;
 
-		if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), clusterId) != std::cend(_clusterIds))
-			return;
-
-		_clusterIds.push_back(clusterId);
-
-		filter = _filters->addWidget(LmsApp->createCluster(cluster, true));
+		filter = _filters->addWidget(std::move(cluster));
 	}
+
+	_clusterIds.push_back(clusterId);
 
 	filter->clicked().connect([=]
 	{

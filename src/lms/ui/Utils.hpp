@@ -23,7 +23,9 @@
 #include <string>
 
 #include <Wt/WImage.h>
+#include <Wt/WInteractWidget.h>
 
+#include "services/database/ClusterId.hpp"
 #include "services/database/ReleaseId.hpp"
 #include "services/database/TrackId.hpp"
 
@@ -36,5 +38,6 @@ namespace UserInterface::Utils
 
 	std::unique_ptr<Wt::WImage> createCover(Database::ReleaseId releaseId, CoverResource::Size size);
 	std::unique_ptr<Wt::WImage> createCover(Database::TrackId trackId, CoverResource::Size size);
-}
 
+	std::unique_ptr<Wt::WInteractWidget> createCluster(Database::ClusterId clusterId, bool canDelete = false);
+}

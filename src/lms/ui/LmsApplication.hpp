@@ -83,7 +83,6 @@ class LmsApplication : public Wt::WApplication
 		static std::unique_ptr<Wt::WAnchor>	createArtistAnchor(Database::ObjectPtr<Database::Artist> artist, bool addText = true);
 		static Wt::WLink					createReleaseLink(Database::ObjectPtr<Database::Release> release);
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::ObjectPtr<Database::Release> release, bool addText = true);
-		static std::unique_ptr<Wt::WText>	createCluster(Database::ObjectPtr<Database::Cluster> cluster, bool canDelete = false);
 
 		MediaPlayer&	getMediaPlayer() const { return *_mediaPlayer; }
 		PlayQueue&		getPlayQueue() const { return *_playQueue; }

@@ -139,10 +139,10 @@ Release::refreshView()
 
 		for (const auto& clusters : clusterGroups)
 		{
-			for (const auto& cluster : clusters)
+			for (const Database::Cluster::pointer& cluster : clusters)
 			{
 				const ClusterId clusterId {cluster->getId()};
-				auto entry {clusterContainers->addWidget(LmsApp->createCluster(cluster))};
+				Wt::WInteractWidget* entry {clusterContainers->addWidget(Utils::createCluster(clusterId))};
 				entry->clicked().connect([=]
 				{
 					_filters->add(clusterId);

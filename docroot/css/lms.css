@@ -8,18 +8,19 @@ body {
 	padding-bottom: 78px;
 }
 
+a img:hover {
+	filter: brightness(85%);
+}
+
+.Lms-badge-cluster:hover {
+	filter: brightness(85%);
+	cursor: pointer;
+}
+
 .Lms-notification-container {
 	position: fixed;
 	bottom: 78px;
 	right: 0px;
-}
-
-.Lms-player {
-	height: 70px;
-}
-
-.fixed-bottom.Lms-player {
-	z-index: 999;
 }
 
 .Lms-entry-playing {
@@ -56,6 +57,15 @@ body {
 	width: 64px;
 	min-width: 64px;
 }
+
+.Lms-player {
+	height: 70px;
+}
+
+.fixed-bottom.Lms-player {
+	z-index: 999;
+}
+
 
 .Lms-responsive-square {
 	width: 100%;

@@ -41,6 +41,7 @@
 #include "LmsApplicationException.hpp"
 #include "ReleaseListHelpers.hpp"
 #include "TrackListHelpers.hpp"
+#include "Utils.hpp"
 
 using namespace Database;
 
@@ -115,7 +116,7 @@ Artist::refreshView()
 	refreshLinks(artist);
 	refreshSimilarArtists(similarArtistIds);
 
-	Wt::WContainerWidget* clusterContainers = bindNew<Wt::WContainerWidget>("clusters");
+	Wt::WContainerWidget* clusterContainers {bindNew<Wt::WContainerWidget>("clusters")};
 
 	{
 		auto clusterTypes = ScanSettings::get(LmsApp->getDbSession())->getClusterTypes();
@@ -123,10 +124,10 @@ Artist::refreshView()
 
 		for (auto clusters : clusterGroups)
 		{
-			for (auto cluster : clusters)
+			for (const Database::Cluster::pointer& cluster : clusters)
 			{
-				auto clusterId = cluster->getId();
-				auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
+				const Database::ClusterId clusterId = cluster->getId();
+				Wt::WInteractWidget* entry {clusterContainers->addWidget(Utils::createCluster(clusterId))};
 				entry->clicked().connect([=]
 				{
 					_filters->add(clusterId);
