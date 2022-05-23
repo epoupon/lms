@@ -415,13 +415,13 @@ LmsApplication::createHome()
 	_coverResource = std::make_shared<CoverResource>();
 
 	declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
-	doJavaScript("$('body').tooltip({ selector: '[data-toggle=\"tooltip\"]'})");
 
 	Wt::WTemplate* main {root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.main.template")))};
 
 	main->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	Wt::WTemplate* navbar {main->bindNew<Wt::WTemplate>("navbar", Wt::WString::tr("Lms.main.template.navbar"))};
+	navbar->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_notificationContainer = main->bindNew<NotificationContainer>("notifications");
 	_modalManager = main->bindNew<ModalManager>("modal");

@@ -1,4 +1,17 @@
 /* Generic rules */
+
+.link-success {
+	transition: color 0.15s ease;
+}
+
+.link-secondary {
+	transition: color 0.15s ease;
+}
+
+.Lms-bg-dark-hover {
+	transition: background-color 0.15s ease;
+}
+
 .Lms-bg-dark-hover:hover {
 	background-color: var(--bs-dark);
 }
@@ -8,8 +21,9 @@ body {
 	padding-bottom: 78px;
 }
 
-a img:hover {
-	filter: brightness(85%);
+.Lms-badge-cluster {
+	transition: filter 0.15s ease;
+	cursor: pointer;
 }
 
 .Lms-badge-cluster:hover {
@@ -29,7 +43,11 @@ a img:hover {
 
 .Lms-cover {
 	opacity: 0;
-	transition: opacity 1s;
+	transition: opacity 0.5s ease-in, filter 0.15s ease;
+}
+
+.Lms-cover-anchor:hover {
+	filter: brightness(85%);
 }
 
 .Lms-cover-container {
@@ -64,6 +82,37 @@ a img:hover {
 
 .fixed-bottom.Lms-player {
 	z-index: 999;
+}
+
+.Lms-player-seek-common {
+	position: absolute;
+	width:100%;
+	top: 0;
+	left: 0;
+	height: 6px;
+}
+
+.Lms-player-seek {
+	cursor: pointer;
+	z-index: 1;
+	touch-action: manipulation;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	background: transparent;
+}
+
+.Lms-player-seek::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	height: 0;
+	width: 0;
+}
+
+.Lms-player-seek::-moz-range-thumb {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	height: 0;
+	width: 0;
 }
 
 

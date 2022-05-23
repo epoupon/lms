@@ -149,7 +149,7 @@
 		</div>
 		${</if-has-old-password>}
 		<div class="col-lg-6">
-			<label class="col-lg-3 control-label" for="${id:password}">
+			<label class="form-label" for="${id:password}">
 				${tr:Lms.password-new}
 			</label>
 			${password class="form-control"}
@@ -158,7 +158,7 @@
 			</div>
 		</div>
 		<div class="col-lg-6">
-			<label class="col-lg-3 control-label" for="${id:password-confirm}">
+			<label class="form-label" for="${id:password-confirm}">
 				${tr:Lms.password-confirm}
 			</label>
 			${password-confirm class="form-control"}

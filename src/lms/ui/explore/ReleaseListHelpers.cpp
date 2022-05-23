@@ -45,7 +45,7 @@ namespace UserInterface::ReleaseListHelpers
 		{
 			Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
 			auto cover {Utils::createCover(release->getId(), CoverResource::Size::Large)};
-			cover->addStyleClass("Lms-cover-release");
+			cover->addStyleClass("Lms-cover-release Lms-cover-anchor");
 			anchor->setImage(std::move(cover));
 		}
 

@@ -62,7 +62,7 @@ namespace UserInterface::TrackListHelpers
 			entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
 			Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
 			auto cover {Utils::createCover(release->getId(), CoverResource::Size::Small)};
-			cover->addStyleClass("Lms-cover-track"); // HACK
+			cover->addStyleClass("Lms-cover-track Lms-cover-anchor"); // HACK
 			anchor->setImage(std::move((cover)));
 		}
 		else
