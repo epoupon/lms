@@ -4,7 +4,7 @@
 
 <message id="Lms.Explore.Artists.template">
 	<div class="mb-3">
-		<ul class="nav nav-pills mb-1">
+		<ul class="nav nav-pills mb-2">
 			<li class="nav-item">
 				${random class="nav-link"}
 			</li>

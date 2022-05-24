@@ -66,13 +66,12 @@ Releases::Releases(Filters& filters)
 	bindMenuItem("recently-added", Wt::WString::tr("Lms.Explore.recently-added"), ReleaseCollector::Mode::RecentlyAdded);
 	bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), ReleaseCollector::Mode::All);
 
-	Wt::WPushButton* playBtn {bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
+	Wt::WPushButton* playBtn {bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)};
 	playBtn->clicked().connect([this]
 	{
 		releasesAction.emit(PlayQueueAction::Play, getAllReleases());
 	});
 
-	bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
 	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{

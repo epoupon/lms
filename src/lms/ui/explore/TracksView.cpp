@@ -66,13 +66,12 @@ _trackCollector {filters, _defaultMode, _maxCount}
 	bindMenuItem("recently-added", Wt::WString::tr("Lms.Explore.recently-added"), TrackCollector::Mode::RecentlyAdded);
 	bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), TrackCollector::Mode::All);
 
-	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)
+	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
 		->clicked().connect([=]
 		{
 			tracksAction.emit(PlayQueueAction::Play, getAllTracks());
 		});
 
-	bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
 	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{

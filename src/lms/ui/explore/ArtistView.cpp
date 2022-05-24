@@ -138,8 +138,7 @@ Artist::refreshView()
 
 	bindString("name", Wt::WString::fromUTF8(artist->getName()), Wt::TextFormat::Plain);
 
-	bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
-	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)
+	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
 		->clicked().connect([=]
 		{
 			artistsAction.emit(PlayQueueAction::Play, {_artistId});

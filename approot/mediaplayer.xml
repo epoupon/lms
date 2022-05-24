@@ -15,13 +15,13 @@
 
 		<div class="d-flex align-items-center">
 			<div class="d-inline-flex me-2">
-				<button id="lms-mp-previous" class="btn btn-outline-primary border-0 d-none d-sm-block">
+				<button id="lms-mp-previous" class="btn btn-sm btn-outline-primary border-0">
 					<i class="fa fa-fw fa-step-backward"/>
 				</button>
 				<button id="lms-mp-playpause" class="btn btn-outline-primary border-0">
 					<i class="fa fa-fw fa-play"/>
 				</button>
-				<button id="lms-mp-next" class="btn btn-outline-primary border-0">
+				<button id="lms-mp-next" class="btn btn-sm btn-outline-primary border-0">
 					<i class="fa fa-fw fa-step-forward"/>
 				</button>
 			</div>
