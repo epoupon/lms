@@ -28,7 +28,7 @@ extraction:
             - popd
         configure:
             command:
-                - export WT_VERSION=4.5.0
+                - export WT_VERSION=4.7.2
                 - export WT_INSTALL_PREFIX=${LGTM_WORKSPACE}/wt-${WT_VERSION}
                 - cmake -DCMAKE_PREFIX_PATH=${WT_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=Release
 
