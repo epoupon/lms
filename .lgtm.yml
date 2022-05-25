@@ -17,7 +17,7 @@ extraction:
                 - libtag1-dev
                 - libpam0g-dev
         after_prepare:
-            - export WT_VERSION=4.5.0
+            - export WT_VERSION=4.7.2
             - export WT_INSTALL_PREFIX=${LGTM_WORKSPACE}/wt-${WT_VERSION}
             - pushd ${LGTM_WORKSPACE}
             - git clone https://github.com/emweb/wt.git ${LGTM_WORKSPACE}/wt
