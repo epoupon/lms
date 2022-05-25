@@ -31,12 +31,6 @@ body {
 	cursor: pointer;
 }
 
-.Lms-notification-container {
-	position: fixed;
-	bottom: 78px;
-	right: 0px;
-}
-
 .Lms-entry-playing {
 	background-color: var(--bs-dark);
 }
@@ -76,12 +70,38 @@ body {
 	min-width: 64px;
 }
 
+#lms-mp-progress {
+	transition: none;
+}
+
+#lms-mp-volume {
+  cursor: pointer;
+}
+
+#lms-mp-volume-slider::-webkit-slider-runnable-track {
+  background-color: var(--bs-gray-900);
+}
+
+#lms-mp-volume-slider::-moz-range-track {
+  background-color: var(--bs-gray-900);
+}
+
+.Lms-notification-container {
+	position: fixed;
+	bottom: 78px;
+	right: 0px;
+}
+
 .Lms-player {
 	height: 70px;
 }
 
 .fixed-bottom.Lms-player {
 	z-index: 999;
+}
+
+.Lms-player-volume-container {
+	width: 100px;
 }
 
 .Lms-player-seek-common {
@@ -114,7 +134,6 @@ body {
 	height: 0;
 	width: 0;
 }
-
 
 .Lms-responsive-square {
 	width: 100%;

@@ -4,49 +4,44 @@
 
 <message id="Lms.Admin.InitWizard.template">
 	<div class="container">
-		<div class="row">
-			<div class="col-lg-8">
-				<div class="page-header">
+		<form class="row mt-3 justify-content-md-center g-3">
+			<div class="col-lg-6">
+				<div class="row g-3">
 					<h2>${tr:Lms.Admin.InitWizard.header}</h2>
-				</div>
-				<form>
-					<div class="form-horizontal">
-						<div class="form-group">
-							<label class="col-lg-3 control-label"  for="${id:admin-login}">
-								${tr:Lms.login}
-							</label>
-							<div class="col-lg-9">
-								${admin-login}
-								${admin-login-info class="help-block"}
-							</div>
-						</div>
-						<div class="form-group">
-							<label class="col-lg-3 control-label"  for="${id:password}">
-								${tr:Lms.password}
-							</label>
-							<div class="col-lg-9">
-								${password}
-								${password-info class="help-block"}
-							</div>
-						</div>
-						<div class="form-group">
-							<label class="col-lg-3 control-label"  for="${id:password-confirm}">
-								${tr:Lms.password-confirm}
-							</label>
-							<div class="col-lg-9">
-								${password-confirm}
-								${password-confirm-info class="help-block"}
-							</div>
-						</div>
-						<div class="form-group">
-							<div class="col-lg-offset-3 col-lg-9">
-								${create-btn class="btn-primary"}
-							</div>
+					<div class="col-12">
+						<label class="form-label" for="${id:admin-login}">
+							${tr:Lms.login}
+						</label>
+						${admin-login class="form-control"}
+						<div class="invalid-feedback">
+							${admin-login-info}
 						</div>
 					</div>
-				</form>
+					<div class="col-lg-6">
+						<label class="form-label" for="${id:password}">
+							${tr:Lms.password}
+						</label>
+						${password class="form-control"}
+						<div class="invalid-feedback">
+							${password-info}
+						</div>
+					</div>
+					<div class="col-lg-6">
+						<label class="form-label" for="${id:password-confirm}">
+							${tr:Lms.password-confirm}
+						</label>
+						${password-confirm class="form-control"}
+						<div class="invalid-feedback">
+							${password-confirm-info class="help-block"}
+						</div>
+					</div>
+					<div class="col-12">
+						${create-btn class="btn btn-primary"}
+					</div>
+					${info class="alert alert-success mt-3"}
+				</div>
 			</div>
-		</div>
+		</form>
 	</div>
 </message>
 

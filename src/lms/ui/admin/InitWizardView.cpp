@@ -126,6 +126,11 @@ InitWizardView::InitWizardView()
 		setFormWidget(InitWizardModel::PasswordConfirmField, std::move(passwordConfirmEdit));
 	}
 
+	// Result notification
+	Wt::WText* resultNotification {bindNew<Wt::WText>("info")};
+	resultNotification->setHidden(true);
+
+
 	Wt::WPushButton* saveButton = bindNew<Wt::WPushButton>("create-btn", Wt::WString::tr("Lms.create"));
 	saveButton->clicked().connect([=]
 	{
@@ -134,8 +139,8 @@ InitWizardView::InitWizardView()
 		if (model->validate())
 		{
 			model->saveData();
-			// TODO notify here
-			// LmsApp->notifyMsg(LmsApplication::MsgType::Success, Wt::WString::tr("Lms.Admin.InitWizard.done"));
+			resultNotification->setText(Wt::WString::tr("Lms.Admin.InitWizard.done"));
+			resultNotification->setHidden(false);
 			saveButton->setEnabled(false);
 		}
 
