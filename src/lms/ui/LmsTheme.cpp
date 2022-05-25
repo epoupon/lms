@@ -1,38 +1,62 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2020 Emweb bv, Herent, Belgium.
  *
- * This file is part of LMS.
- *
- * LMS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * LMS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
+ * See the LICENSE file for terms of use.
  */
 
 #include "LmsTheme.hpp"
 
-#include "utils/Logger.hpp"
-#include "LmsApplication.hpp"
+#include <Wt/WApplication.h>
+#include <Wt/WLinkedCssStyleSheet.h>
 
 namespace UserInterface
 {
+
+	void
+	LmsTheme::init(Wt::WApplication* app) const
+	{
+		app->require("js/bootstrap.bundle.min.js");
+		Wt::WString v = app->metaHeader(Wt::MetaHeaderType::Meta, "viewport");
+		if (v.empty())
+			app->addMetaHeader("viewport", "width=device-width, initial-scale=1, user-scalable=no");
+	}
+
+	std::string
+	LmsTheme::name() const
+	{
+		return "bootstrap5";
+	}
+
+	std::string
+	LmsTheme::resourcesUrl() const
+	{
+		return "";
+	}
+
 	std::vector<Wt::WLinkedCssStyleSheet>
 	LmsTheme::styleSheets() const
 	{
 		static const std::vector<Wt::WLinkedCssStyleSheet> files
 		{
-			{"css/bootstrap.solar.min.css"},
+			{"css/bootstrap.solar.min.css"}, // TODO parametrize this
 			{"css/lms.css"},
 		};
 
 		return files;
 	}
-}
+
+	void LmsTheme::applyValidationStyle(Wt::WWidget* widget, const Wt::WValidator::Result& validation, Wt::WFlags<Wt::ValidationStyleFlag> styles) const
+	{
+		{
+			const bool validStyle {(validation.state() == Wt::ValidationState::Valid) && styles.test(Wt::ValidationStyleFlag::ValidStyle)};
+			widget->toggleStyleClass("is-valid", validStyle);
+		}
+
+		{
+			const bool invalidStyle  {(validation.state() != Wt::ValidationState::Valid) &&  styles.test(Wt::ValidationStyleFlag::InvalidStyle)};
+			widget->toggleStyleClass("is-invalid", invalidStyle);
+		}
+	}
+
+} // namespace UserInterface
+

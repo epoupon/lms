@@ -1,4 +1,4 @@
-FROM	alpine:3.14 AS build
+FROM	alpine:3.16 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -77,7 +77,7 @@ RUN \
 	make distclean
 
 # WT
-ARG	WT_VERSION=4.7.0
+ARG	WT_VERSION=4.7.2
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/emweb/wt/archive/${WT_VERSION}.tar.gz && \
@@ -126,8 +126,13 @@ RUN \
 	rm -rf /tmp/fakeroot/share/doc && \
 	rm -rf /tmp/fakeroot/share/man
 
+# Remove useless stuff
+RUN \
+	rm -rf /tmp/fakeroot/share/Wt/resources/jPlayer \
+	rm -rf /tmp/fakeroot/share/Wt/resources/themes
+
 ## Release Stage
-FROM		alpine:3.14 AS release
+FROM		alpine:3.16 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 
 ARG	RUNTIME_PACKAGES=" \

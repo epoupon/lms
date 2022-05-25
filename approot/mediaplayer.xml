@@ -34,7 +34,7 @@
 				<input id ="lms-mp-volume-slider" class="form-range" type="range" min="0" max="1" step="0.01" value="0.8"/>
 			</div>
 			<div class="d-none d-sm-block text-muted text-nowrap">
-				<span id="lms-transcoding-active" title="${tr:Lms.Player.transcoding-active}" style="visibility:hidden"><i class="fa fa-fw fa-info-circle" aria-hidden="true"></i></span>
+				<span id="lms-transcoding-active" title="${tr:Lms.Player.transcoding-active}" class="p-2" style="visibility:hidden"><i class="fa fa-fw fa-info-circle" aria-hidden="true"></i></span>
 				<span id="lms-mp-curtime">--</span> / <span id="lms-mp-duration">--</span>
 			</div>
 		</div>

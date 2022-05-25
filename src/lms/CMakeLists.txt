@@ -2,7 +2,6 @@
 add_executable(lms
 	main.cpp
 	ui/Auth.cpp
-	ui/Bootstrap5Theme.cpp
 	ui/LmsApplication.cpp
 	ui/LmsApplicationManager.cpp
 	ui/LmsTheme.cpp
