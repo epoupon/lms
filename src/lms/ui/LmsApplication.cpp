@@ -20,13 +20,11 @@
 #include "LmsApplication.hpp"
 
 #include <Wt/WAnchor.h>
-#include <Wt/WBootstrap5Theme.h>
 #include <Wt/WEnvironment.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WServer.h>
 #include <Wt/WStackedWidget.h>
-#include <Wt/WText.h>
 
 #include "services/auth/IEnvService.hpp"
 #include "services/auth/IPasswordService.hpp"
