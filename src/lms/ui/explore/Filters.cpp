@@ -124,7 +124,6 @@ Filters::showDialog()
 void
 Filters::add(ClusterId clusterId)
 {
-
 	if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), clusterId) != std::cend(_clusterIds))
 		return;
 

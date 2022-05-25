@@ -55,7 +55,6 @@ durationToString(const Wt::WDateTime& begin, const Wt::WDateTime& end)
 class ReportResource : public Wt::WResource
 {
 	public:
-
 		ReportResource()
 		{
 			suggestFileName("report.txt");
@@ -268,7 +267,6 @@ ScannerController::refreshContents()
 			}
 			break;
 	}
-
 }
 
 } // namespace UserInterface

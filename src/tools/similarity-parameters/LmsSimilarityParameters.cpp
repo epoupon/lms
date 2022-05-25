@@ -324,7 +324,6 @@ static
 void
 printBadlyClassifiedTracks(Database::Session& session, FeaturesSearcher::TrainSettings trainSettings)
 {
-	
 	FeaturesSearcher searcher {session, trainSettings};
 
 	const std::vector<Database::IdType> trackIds = std::invoke([&]()
@@ -384,7 +383,6 @@ int main(int argc, char *argv[])
 {
 	try
 	{
-
 		// log to stdout
 //		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
 

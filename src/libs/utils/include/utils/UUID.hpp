@@ -28,7 +28,6 @@
 class UUID
 {
 	public:
-
 		static std::optional<UUID> fromString(std::string_view str);
 
 		std::string_view getAsString() const { return _value; }

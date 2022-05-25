@@ -27,7 +27,6 @@ class InitWizardView : public Wt::WTemplateFormView
 {
 	public:
 		InitWizardView();
-
 };
 
 } // namespace UserInterface

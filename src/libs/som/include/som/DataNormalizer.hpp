@@ -30,7 +30,6 @@ namespace SOM
 class DataNormalizer
 {
 	public:
-
 		struct MinMax
 		{
 			InputVector::value_type min;

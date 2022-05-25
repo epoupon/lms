@@ -26,7 +26,6 @@
 class IConfig
 {
 	public:
-
 		virtual ~IConfig() = default;
 
 		// Default values are returned in case of setting not found

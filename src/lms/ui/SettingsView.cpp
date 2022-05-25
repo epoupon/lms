@@ -187,7 +187,6 @@ class SettingsModel : public Wt::WFormModel
 			{
 				_authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
 			}
-
 		}
 
 		void loadData()

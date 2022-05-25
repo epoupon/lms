@@ -52,7 +52,6 @@ class ModalManager;
 class LmsApplication : public Wt::WApplication
 {
 	public:
-
 		LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationManager& appManager, std::optional<Database::UserId> userId = std::nullopt);
 		~LmsApplication();
 

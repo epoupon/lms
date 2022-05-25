@@ -41,7 +41,6 @@ namespace UserInterface {
 class InitWizardModel : public Wt::WFormModel
 {
 	public:
-
 		// Associate each field with a unique string literal.
 		static inline const Field AdminLoginField {"admin-login"};
 		static inline const Field PasswordField {"password"};

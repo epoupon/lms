@@ -28,7 +28,6 @@ class FileResourceHandler final : public IResourceHandler
 		FileResourceHandler(const std::filesystem::path& filePath);
 
 	private:
-
 		Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
 
 		static constexpr std::size_t _chunkSize {65536};

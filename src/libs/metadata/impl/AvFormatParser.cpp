@@ -226,7 +226,6 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 					track.clusters[tag] = std::move(values);
 				}
 			}
-
 		}
 
 		track.artists = getArtists(metadataMap);

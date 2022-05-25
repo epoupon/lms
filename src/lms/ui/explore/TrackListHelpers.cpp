@@ -106,7 +106,6 @@ namespace UserInterface::TrackListHelpers
 					starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
 				}
 			});
-
 		}
 
 		entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))

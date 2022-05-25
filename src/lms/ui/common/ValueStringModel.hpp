@@ -30,7 +30,6 @@ template <typename T>
 class ValueStringModel : public Wt::WStringListModel
 {
 	public:
-
 		T getValue(std::size_t row) const
 		{
 			return Wt::cpp17::any_cast<T>(data(index(static_cast<int>(row), 0), Wt::ItemDataRole::User));
@@ -78,7 +77,6 @@ class ValueStringModel : public Wt::WStringListModel
 		{
 			removeRows(0, rowCount());
 		}
-
 };
 
 } // namespace UserInterface

@@ -148,7 +148,6 @@ getAlbum(const TagLib::PropertyMap& properties)
 void
 TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::StringList& values, bool debug)
 {
-
 	if (debug)
 	{
 		std::vector<std::string> strs;

@@ -89,7 +89,7 @@ body {
 .Lms-notification-container {
 	position: fixed;
 	bottom: 78px;
-	right: 0px;
+	right: 0;
 }
 
 .Lms-player {

@@ -194,7 +194,6 @@ int main(int argc, char *argv[])
 				parse(parser, file);
 			}
 		}
-
 	}
 	catch (std::exception& e)
 	{

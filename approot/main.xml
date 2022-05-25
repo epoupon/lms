@@ -35,7 +35,7 @@
 						${playqueue class="nav-link"}
 					</li>
 					<li class="nav-item">
-						${filters class="py-2 d-flex align-items-center"}
+						${filters class="nav-link d-flex align-items-center"}
 					</li>
 				</ul>
 				<div class="navbar-nav align-items-md-center mb-lg-0">

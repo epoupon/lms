@@ -53,7 +53,6 @@ template <typename T>
 class Matrix
 {
 	public:
-
 		Matrix() = default;
 
 		Matrix(Coordinate width, Coordinate height)
@@ -109,7 +108,6 @@ class Matrix
 		}
 
 	private:
-
 		Coordinate		_width {};
 		Coordinate		_height {};
 		std::vector<T>	_values;

@@ -47,7 +47,6 @@ using namespace Database;
 
 class UserModel : public Wt::WFormModel
 {
-
 	public:
 		static inline const Field LoginField {"login"};
 		static inline const Field PasswordField {"password"};

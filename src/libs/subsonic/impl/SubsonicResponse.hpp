@@ -203,7 +203,6 @@ class Response
 				void addArrayChild(const std::string& key, Node node);
 
 			private:
-
 				void setVersionAttribute(ProtocolVersion version);
 
 				friend class Response;

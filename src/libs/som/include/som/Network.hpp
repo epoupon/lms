@@ -40,7 +40,6 @@ std::ostream& operator<<(std::ostream& os, const InputVector& a);
 class Network
 {
 	public:
-
 		// Init a network with random values
 		Network(Coordinate width, Coordinate height, std::size_t inputDimCount);
 

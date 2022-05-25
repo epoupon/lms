@@ -143,7 +143,6 @@ class DatabaseSettingsModel : public Wt::WFormModel
 		}
 
 	private:
-
 		void initializeModels()
 		{
 			_updatePeriodModel = std::make_shared<ValueStringModel<ScanSettings::UpdatePeriod>>();
