@@ -2,22 +2,39 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Admin.Users.template">
-	<div class="Lms-header">
-		<h2>${tr:Lms.Admin.Users.users}</h2>
-	</div>
-	${users}
+	<h3>${tr:Lms.Admin.Users.users}</h3>
+	${users class="d-grid gap-1 mb-3"}
 	${<if-can-create-user>}
-	${add-btn class="btn-primary Lms-admin-users-add-btn"}
+	${add-btn class="btn btn-primary"}
 	${</if-can-create-user>}
 </message>
 
 <message id="Lms.Admin.Users.template.entry">
-	<div class="row Lms-admin-users-entry Lms-vertical-align">
-		<div class="col-md-5 col-xs-8 Lms-vertical-align">
-			${name}${<if-tag>}<span class="label label-info Lms-admin-users-entry-role">${tag}</span>${</if-tag>}
+	<div class="d-flex align-items-center Lms-bg-dark-hover rounded">
+		<div class="p-2 flex-fill">
+			${name}${<if-tag>}<span class="badge bg-info ms-2">${tag}</span>${</if-tag>}
 		</div>
-		<div class="col-md-3 col-xs-4 Lms-horizontal-center">
-			${<if-edit>}${edit-btn class="btn-warning btn-sm Lms-admin-users-entry-btn"}${del-btn class="btn-danger btn-sm Lms-admin-users-entry-btn"}${</if-edit>}
+		<div class="p-2">
+			${<if-edit>}${edit-btn class="btn btn-sm btn-secondary me-1"}${del-btn class="btn btn-sm btn-danger"}${</if-edit>}
+		</div>
+	</div>
+</message>
+
+<message id="Lms.Admin.Users.template.delete-user">
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">${tr:Lms.Admin.Users.del-user}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					${tr:Lms.Admin.Users.del-user-name}
+				</div>
+				<div class="modal-footer">
+					${del-btn class="btn btn-danger me-1"}${cancel-btn class="btn btn-secondary"}
+				</div>
+			</div>
 		</div>
 	</div>
 </message>

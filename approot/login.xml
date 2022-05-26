@@ -4,46 +4,38 @@
 
 <message id="Lms.Auth.template">
 	<div class="container">
-		<div class="page-header">
-			<h2>${tr:Lms.Auth.welcome}</h2>
-		</div>
-		<form>
-			<div class="form-horizontal">
-				<div class="form-group">
-					<label class="control-label col-sm-2"  for="${id:login-name}">
-						${tr:Lms.login}
-					</label>
-					<div class="col-sm-5">
-						${login-name}
+		<form class="row mt-3 justify-content-md-center">
+			<div class="col-lg-6">
+				<div class="row g-3">
+					<h2>${tr:Lms.Auth.welcome}</h2>
+					<div class="col-12">
+						<label class="form-label" for="${id:login-name}">
+							${tr:Lms.login}
+						</label>
+						${login-name class="form-control"}
+						<div class="invalid-feedback">
+							${login-name-info}
+						</div>
 					</div>
-					<div class="help-block col-sm-5">
-						${login-name-info}
+					<div class="col-12">
+						<label class="form-label" for="${id:password}">
+							${tr:Lms.password}
+						</label>
+						${password class="form-control"}
+						<div class="invalid-feedback">
+							${password-info}
+						</div>
 					</div>
-				</div>
-
-				<div class="form-group">
-					<label class="control-label col-sm-2"  for="${id:password}">
-						${tr:Lms.password}
-					</label>
-					<div class="col-sm-5">
-						${password}
+					<div class="col-12">
+						<div class="form-check">
+							${remember-me class="form-check-input"}
+							<label class="form-check-label" for="${id:remember-me}">
+								${tr:Lms.Auth.remember-me}
+							</label>
+						</div>
 					</div>
-					<div class="help-block col-sm-5">
-						${password-info}
-					</div>
-				</div>
-
-				<div class="form-group">
-					<label class="control-label col-sm-2"  for="${id:remember-me}">
-						${tr:Lms.Auth.remember-me}
-					</label>
-					<div class="col-sm-5">
-						<div class="checkbox"><label>${remember-me}</label></div>
-					</div>
-				</div>
-				<div class="form-group">
-					<div class="col-sm-offset-2 col-sm-10">
-						${login-btn class="btn-primary"}
+					<div class="col-12">
+						${login-btn class="btn btn-primary"}
 					</div>
 				</div>
 			</div>

@@ -19,16 +19,25 @@
 
 #pragma once
 
-#include <Wt/WWidget.h>
-#include <Wt/WSignal.h>
+#include <chrono>
+#include <string>
 
-#include "services/database/Types.hpp"
-#include "PlayQueueAction.hpp"
+#include <Wt/WImage.h>
+#include <Wt/WInteractWidget.h>
 
-namespace UserInterface
+#include "services/database/ClusterId.hpp"
+#include "services/database/ReleaseId.hpp"
+#include "services/database/TrackId.hpp"
+
+#include "resource/CoverResource.hpp"
+
+namespace UserInterface::Utils
 {
-	void displayTrackPopupMenu(Wt::WInteractWidget& target,
-			Database::TrackId trackId,
-			PlayQueueActionTrackSignal& tracksAction);
-} // namespace UserInterface
+	std::string
+	durationToString(std::chrono::milliseconds msDuration);
 
+	std::unique_ptr<Wt::WImage> createCover(Database::ReleaseId releaseId, CoverResource::Size size);
+	std::unique_ptr<Wt::WImage> createCover(Database::TrackId trackId, CoverResource::Size size);
+
+	std::unique_ptr<Wt::WInteractWidget> createCluster(Database::ClusterId clusterId, bool canDelete = false);
+}

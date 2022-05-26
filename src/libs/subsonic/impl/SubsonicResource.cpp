@@ -22,6 +22,7 @@
 #include <atomic>
 #include <ctime>
 #include <iomanip>
+#include <map>
 #include <unordered_map>
 
 #include <Wt/WLocalDateTime.h>
@@ -885,9 +886,12 @@ handleGetArtistRequest(RequestContext& context)
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node artistNode {artistToResponseNode(user, artist, true /* id3 */)};
 
-	auto releases {artist->getReleases()};
-	for (const Release::pointer& release : releases)
+	auto releases {artist->getReleases(Range {})};
+	for (const ReleaseId releaseId : releases.results)
+	{
+		const Release::pointer release {Release::find(context.dbSession, releaseId)};
 		artistNode.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, true /* id3 */));
+	}
 
 	response.addNode("artist", std::move(artistNode));
 
@@ -997,9 +1001,12 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 		directoryNode.setAttribute("name", makeNameFilesystemCompatible(artist->getName()));
 
-		auto releases {artist->getReleases()};
-		for (const Release::pointer& release : releases)
+		auto releases {artist->getReleases(Range {})};
+		for (const ReleaseId releaseId : releases.results)
+		{
+			const Release::pointer release {Release::find(context.dbSession, releaseId)};
 			directoryNode.addArrayChild("child", releaseToResponseNode(release, context.dbSession, user, false /* no id3 */));
+		}
 	}
 	else if (releaseId)
 	{
@@ -1065,46 +1072,30 @@ handleGetArtistsRequestCommon(RequestContext& context, bool id3)
 			break;
 	}
 
-	Response::Node* currentIndexNode {};
-	char currentIndex{};
-
-	Response::Node* unknownIndexNode {};
-	auto getOrCreateUnknownIndexNode {[&]
-	{
-		if (!unknownIndexNode)
-		{
-			unknownIndexNode = &artistsNode.createArrayChild("index");
-			unknownIndexNode->setAttribute("name", "?");
-		}
-
-		return unknownIndexNode;
-	}};
-
-	auto getOrCreateIndexNode {[&](char first)
-	{
-		if (!currentIndexNode || currentIndex != first)
-		{
-			currentIndexNode = &artistsNode.createArrayChild("index");
-			currentIndexNode->setAttribute("name", std::string {first});
-			currentIndex = first;
-		}
-
-		return currentIndexNode;
-	}};
-
+	std::map<char, std::vector<Artist::pointer>> artistsSortedByFirstChar;
 	const RangeResults<ArtistId> artists {Artist::find(context.dbSession, parameters)};
 	for (const ArtistId artistId : artists.results)
 	{
 		const Artist::pointer artist {Artist::find(context.dbSession, artistId)};
 		const std::string& sortName {artist->getSortName()};
 
-		Response::Node* indexNode{};
+		char sortChar;
 		if (sortName.empty() || !std::isalpha(sortName[0]))
-			indexNode = getOrCreateUnknownIndexNode();
+			sortChar = '?';
 		else
-			indexNode = getOrCreateIndexNode(std::toupper(sortName[0]));
+			sortChar = std::toupper(sortName[0]);
 
-		indexNode->addArrayChild("artist", artistToResponseNode(user, artist, id3));
+		artistsSortedByFirstChar[sortChar].push_back(artist);
+	}
+
+
+	for (const auto& [sortChar, artists] : artistsSortedByFirstChar)
+	{
+		Response::Node& indexNode {artistsNode.createArrayChild("index")};
+		indexNode.setAttribute("name", std::string {sortChar});
+
+		for (const Artist::pointer& artist :artists)
+			indexNode.addArrayChild("artist", artistToResponseNode(user, artist, id3));
 	}
 
 	return response;

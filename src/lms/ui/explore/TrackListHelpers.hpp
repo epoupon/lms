@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include <Wt/WTemplate.h>
+#include <Wt/WWidget.h>
 #include "services/database/Object.hpp"
 #include "PlayQueueAction.hpp"
 
@@ -32,6 +32,6 @@ namespace Database
 
 namespace UserInterface::TrackListHelpers
 {
-	std::unique_ptr<Wt::WTemplate> createEntry(const Database::ObjectPtr<Database::Track>& track, PlayQueueActionTrackSignal& tracksAction);
+	std::unique_ptr<Wt::WWidget> createEntry(const Database::ObjectPtr<Database::Track>& track, PlayQueueActionTrackSignal& tracksAction);
 } // namespace UserInterface
 

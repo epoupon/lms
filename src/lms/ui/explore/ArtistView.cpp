@@ -19,11 +19,7 @@
 
 #include "ArtistView.hpp"
 
-#include <Wt/WAnchor.h>
-#include <Wt/WImage.h>
-#include <Wt/WPopupMenu.h>
-#include <Wt/WTemplate.h>
-#include <Wt/WText.h>
+#include <Wt/WPushButton.h>
 
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
@@ -45,16 +41,18 @@
 #include "LmsApplicationException.hpp"
 #include "ReleaseListHelpers.hpp"
 #include "TrackListHelpers.hpp"
+#include "Utils.hpp"
 
 using namespace Database;
 
 namespace UserInterface {
 
 Artist::Artist(Filters* filters)
-: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Artist.template")}
+: Template {Wt::WString::tr("Lms.Explore.Artist.template")}
 , _filters {filters}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
+	addFunction("id", &Wt::WTemplate::Functions::id);
 
 	LmsApp->internalPathChanged().connect(this, [this]
 	{
@@ -118,7 +116,7 @@ Artist::refreshView()
 	refreshLinks(artist);
 	refreshSimilarArtists(similarArtistIds);
 
-	Wt::WContainerWidget* clusterContainers = bindNew<Wt::WContainerWidget>("clusters");
+	Wt::WContainerWidget* clusterContainers {bindNew<Wt::WContainerWidget>("clusters")};
 
 	{
 		auto clusterTypes = ScanSettings::get(LmsApp->getDbSession())->getClusterTypes();
@@ -126,10 +124,10 @@ Artist::refreshView()
 
 		for (auto clusters : clusterGroups)
 		{
-			for (auto cluster : clusters)
+			for (const Database::Cluster::pointer& cluster : clusters)
 			{
-				auto clusterId = cluster->getId();
-				auto entry = clusterContainers->addWidget(LmsApp->createCluster(cluster));
+				const Database::ClusterId clusterId = cluster->getId();
+				Wt::WInteractWidget* entry {clusterContainers->addWidget(Utils::createCluster(clusterId))};
 				entry->clicked().connect([=]
 				{
 					_filters->add(clusterId);
@@ -139,46 +137,42 @@ Artist::refreshView()
 	}
 
 	bindString("name", Wt::WString::fromUTF8(artist->getName()), Wt::TextFormat::Plain);
-	{
-		Wt::WText* playBtn = bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
 
-		playBtn->clicked().connect([=]
+	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
+		->clicked().connect([=]
 		{
 			artistsAction.emit(PlayQueueAction::Play, {_artistId});
 		});
-	}
+
+	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			artistsAction.emit(PlayQueueAction::PlayShuffled, {_artistId});
+		});
+	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			artistsAction.emit(PlayQueueAction::PlayLast, {_artistId});
+		});
+	bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+		->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(*artistId)});
 
 	{
-		Wt::WText* moreBtn = bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), *artistId); }};
 
-		moreBtn->clicked().connect([=]
+		Wt::WPushButton* starBtn {bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
+		starBtn->clicked().connect([=]
 		{
-			Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
-
-			popup->addItem(Wt::WString::tr("Lms.Explore.play-shuffled"))
-				->triggered().connect(this, [=]
-				{
-					artistsAction.emit(PlayQueueAction::PlayShuffled, {_artistId});
-				});
-			popup->addItem(Wt::WString::tr("Lms.Explore.play-last"))
-				->triggered().connect(this, [=]
-				{
-					artistsAction.emit(PlayQueueAction::PlayLast, {_artistId});
-				});
-
-			const bool isStarred {Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), _artistId)};
-			popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
-				->triggered().connect(this, [=]
-					{
-						if (isStarred)
-							Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), _artistId);
-						else
-							Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), _artistId);
-					});
-			popup->addItem(Wt::WString::tr("Lms.Explore.download"))
-				->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(*artistId)});
-
-			popup->exec(moreBtn);
+			if (isStarred())
+			{
+				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), *artistId);
+				starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+			}
+			else
+			{
+				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), *artistId);
+				starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+			}
 		});
 	}
 }
@@ -186,17 +180,16 @@ Artist::refreshView()
 void
 Artist::refreshReleases(const ObjectPtr<Database::Artist>& artist)
 {
-	const auto releases {artist->getReleases(_filters->getClusterIds())};
-	if (releases.empty())
+	if (artist->getReleaseCount() == 0)
 		return;
 
 	setCondition("if-has-release", true);
-
-	Wt::WContainerWidget* releasesContainer = bindNew<Wt::WContainerWidget>("releases");
-	for (const auto& release : releases)
+	_releaseContainer = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
+	_releaseContainer->onRequestElements.connect(this, [this]
 	{
-		releasesContainer->addWidget(ReleaseListHelpers::createEntryForArtist(release, artist));
-	}
+		addSomeReleases();
+	});
+	addSomeReleases();
 }
 
 void
@@ -206,7 +199,7 @@ Artist::refreshNonReleaseTracks(const ObjectPtr<Database::Artist>& artist)
 		return;
 
 	setCondition("if-has-non-release-track", true);
-	_trackContainer = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.Tracks.template.container"));
+	_trackContainer = bindNew<InfiniteScrollingContainer>("tracks");
 	_trackContainer->onRequestElements.connect(this, [this]
 	{
 		addSomeNonReleaseTracks();
@@ -230,7 +223,7 @@ Artist::refreshSimilarArtists(const std::vector<ArtistId>& similarArtistsId)
 		if (!similarArtist)
 			continue;
 
-		similarArtistsContainer->addWidget(ArtistListHelpers::createEntrySmall(similarArtist));
+		similarArtistsContainer->addWidget(ArtistListHelpers::createEntry(similarArtist));
 	}
 }
 
@@ -241,12 +234,29 @@ Artist::refreshLinks(const Database::Artist::pointer& artist)
 	if (mbid)
 	{
 		setCondition("if-has-mbid", true);
-
-		Wt::WLink link {"https://musicbrainz.org/artist/" + std::string {mbid->getAsString()}};
-		link.setTarget(Wt::LinkTarget::NewWindow);
-
-		bindNew<Wt::WAnchor>("mbid-link", link, Wt::WString::tr("Lms.Explore.musicbrainz-artist"));
+		bindString("mbid-link", std::string {"https://musicbrainz.org/artist/"} + std::string {mbid->getAsString()});
 	}
+}
+
+void
+Artist::addSomeReleases()
+{
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	const Database::Artist::pointer artist {Database::Artist::find(LmsApp->getDbSession(), _artistId)};
+	if (!artist)
+		return;
+
+	const Range range {static_cast<std::size_t>(_releaseContainer->getCount()), _releasesBatchSize};
+	const auto releases {artist->getReleases(range, _filters->getClusterIds())};
+
+	for (const ReleaseId releaseId : releases.results)
+	{
+		const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), releaseId)};
+		_releaseContainer->add(ReleaseListHelpers::createEntryForArtist(release, artist));
+	}
+
+	_releaseContainer->setHasMore(releases.moreResults);
 }
 
 void

@@ -50,8 +50,9 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistSingleRelease)
 		auto transaction {session.createSharedTransaction()};
 
 		EXPECT_EQ(artist->getReleaseCount(), 1);
-		ASSERT_EQ(artist->getReleases().size(), 1);
-		EXPECT_EQ(artist->getReleases().front()->getId(), release.getId());
+		auto releases {artist->getReleases(Range {})};
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release.getId());
 
 		EXPECT_EQ(release->getTracks().size(), nbTracks);
 	}
@@ -73,9 +74,9 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtist)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		auto releases {artist->getReleases()};
-		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front()->getId(), release.getId());
+		auto releases {artist->getReleases(Range {})};
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release.getId());
 
 		EXPECT_EQ(artist->getReleaseCount(), 1);
 

@@ -19,22 +19,18 @@
 
 #pragma once
 
-#include <unordered_map>
-
-#include <Wt/WContainerWidget.h>
-#include <Wt/WTemplate.h>
-
 #include "services/database/Types.hpp"
+
+#include "common/Template.hpp"
 #include "PlayQueueAction.hpp"
 #include "TrackCollector.hpp"
 
 namespace UserInterface
 {
-
 	class Filters;
 	class InfiniteScrollingContainer;
 
-	class Tracks : public Wt::WTemplate
+	class Tracks : public Template
 	{
 		public:
 			Tracks(Filters& filters);
@@ -52,9 +48,9 @@ namespace UserInterface
 			static constexpr std::size_t _batchSize {6};
 			static constexpr std::size_t _maxCount {160};
 
+			Wt::WWidget*				_currentActiveItem {};
 			InfiniteScrollingContainer* _container {};
 			TrackCollector				_trackCollector;
 	};
-
 } // namespace UserInterface
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,26 +19,27 @@
 
 #pragma once
 
-#include <vector>
-
-#include <Wt/WBootstrapTheme.h>
-#include <Wt/WLinkedCssStyleSheet.h>
-
-#include "services/database/Types.hpp"
+#include <Wt/WTheme.h>
 
 namespace UserInterface
 {
-	class LmsTheme : public Wt::WBootstrapTheme
+	class LmsTheme : public Wt::WTheme
 	{
-		public:
-			LmsTheme(Database::UITheme theme);
-
-			void setTheme(Database::UITheme theme);
-
 		private:
-			std::vector<Wt::WLinkedCssStyleSheet> styleSheets() const override;
-			static std::vector<Wt::WLink> getStyleSheets(Database::UITheme theme);
+			void init(Wt::WApplication *app) const override;
 
-			Database::UITheme _theme;
+			std::string name() const override;
+			std::string resourcesUrl() const override;
+			std::vector<Wt::WLinkedCssStyleSheet> styleSheets() const override;
+			void apply(Wt::WWidget*, Wt::WWidget*, int) const override {};
+			void apply(Wt::WWidget*, Wt::DomElement&, int) const override {};
+			std::string disabledClass() const override { return "disabled"; }
+			std::string activeClass() const override { return "active"; };
+			std::string utilityCssClass(int) const override { return ""; };
+			bool canStyleAnchorAsButton() const override { return true; };
+			void applyValidationStyle(Wt::WWidget* widget,
+					const Wt::WValidator::Result& validation,
+					Wt::WFlags<Wt::ValidationStyleFlag> flags) const override;
+			bool canBorderBoxElement(const Wt::DomElement&) const override { return true; }
 	};
 }

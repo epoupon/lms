@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <vector>
-
 #include "services/database/Object.hpp"
 #include "services/database/TrackId.hpp"
 #include "DatabaseCollectorBase.hpp"

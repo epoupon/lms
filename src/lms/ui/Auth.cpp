@@ -86,7 +86,6 @@ processAuthToken(const Wt::WEnvironment& env)
 class AuthModel : public Wt::WFormModel
 {
 	public:
-
 		// Associate each field with a unique string literal.
 		static const Field LoginNameField;
 		static const Field PasswordField;
@@ -160,14 +159,12 @@ class AuthModel : public Wt::WFormModel
 		std::optional<Database::UserId> getUserId() const { return _userId; }
 
 	private:
-
 		std::optional<Database::UserId> _userId;
 };
 
 const AuthModel::Field AuthModel::LoginNameField {"login-name"};
 const AuthModel::Field AuthModel::PasswordField {"password"};
 const AuthModel::Field AuthModel::RememberMeField {"remember-me"};
-
 
 Auth::Auth()
 : Wt::WTemplateFormView {Wt::WString::tr("Lms.Auth.template")}
@@ -217,7 +214,6 @@ Auth::Auth()
 	loginBtn->clicked().connect(this, processAuth);
 
 	updateView(model.get());
-
 }
 
 } // namespace UserInterface

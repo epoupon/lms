@@ -80,6 +80,7 @@
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Fetching track features from AcousticBrainz: {1}/{2} tracks ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Reloading similarity engine: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scanning files: {1}/{2} files ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-status">Step status</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">New user</message>
@@ -99,7 +100,7 @@
 <message id="Lms.Admin.User.user-already-exists">User already exists!</message>
 <message id="Lms.Admin.User.user-create">New user</message>
 <message id="Lms.Admin.User.user-created">New user created!</message>
-<message id="Lms.Admin.User.user-edit">Edit user {1}</message>
+<message id="Lms.Admin.User.user-edit">Edit user '{1}'</message>
 <message id="Lms.Admin.User.user-updated">User updated!</message>
 
 <!--Wizard-->
@@ -117,10 +118,10 @@
 <message id="Lms.Explore.download">Download</message>
 <message id="Lms.Explore.filter-added">Filter added</message>
 <message id="Lms.Explore.filters">Filters</message>
-<message id="Lms.Explore.links">Links</message>
 <message id="Lms.Explore.most-played">Most played</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz Artist</message>
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz Release</message>
+<message id="Lms.Explore.play">Play</message>
 <message id="Lms.Explore.play-last">Play last</message>
 <message id="Lms.Explore.play-shuffled">Play shuffled</message>
 <message id="Lms.Explore.random">Random</message>
@@ -177,11 +178,9 @@
 
 
 <!--Settings-->
-<message id="Lms.Settings.appearance">Appearance</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">These audio settings are local to your browser!</message>
 <message id="Lms.Settings.change-password">Change password</message>
-<message id="Lms.Settings.dark-mode">Dark mode</message>
 <message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Settings</message>
 <message id="Lms.Settings.password-bad">Bad password</message>

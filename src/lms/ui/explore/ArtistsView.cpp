@@ -19,7 +19,7 @@
 
 #include "ArtistsView.hpp"
 
-#include <Wt/WMenu.h>
+#include <Wt/WPushButton.h>
 
 #include "services/database/Artist.hpp"
 #include "services/database/Session.hpp"
@@ -45,25 +45,30 @@ Artists::Artists(Filters& filters)
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
+	auto bindMenuItem {[this](const std::string& var, const Wt::WString& title, ArtistCollector::Mode mode)
 	{
-		auto* menu {bindNew<Wt::WMenu>("mode")};
-
-		auto addItem = [this](Wt::WMenu& menu,const Wt::WString& str, ArtistCollector::Mode mode)
+		auto *menuItem {bindNew<Wt::WPushButton>(var, title)};
+		menuItem->clicked().connect([=]
 		{
-			auto* item {menu.addItem(str)};
-			item->clicked().connect([this, mode] { refreshView(mode); });
+			refreshView(mode);
+			_currentActiveItem->removeStyleClass("active");
+			menuItem->addStyleClass("active");
+			_currentActiveItem = menuItem;
+		});
 
-			if (mode == _defaultMode)
-				item->renderSelected(true);
-		};
+		if (mode == _defaultMode)
+		{
+			_currentActiveItem = menuItem;
+			_currentActiveItem->addStyleClass("active");
+		}
+	}};
 
-		addItem(*menu, Wt::WString::tr("Lms.Explore.random"), ArtistCollector::Mode::Random);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.starred"), ArtistCollector::Mode::Starred);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-played"), ArtistCollector::Mode::RecentlyPlayed);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.most-played"), ArtistCollector::Mode::MostPlayed);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.recently-added"), ArtistCollector::Mode::RecentlyAdded);
-		addItem(*menu, Wt::WString::tr("Lms.Explore.all"), ArtistCollector::Mode::All);
-	}
+	bindMenuItem("random", Wt::WString::tr("Lms.Explore.random"), ArtistCollector::Mode::Random);
+	bindMenuItem("starred", Wt::WString::tr("Lms.Explore.starred"), ArtistCollector::Mode::Starred);
+	bindMenuItem("recently-played", Wt::WString::tr("Lms.Explore.recently-played"), ArtistCollector::Mode::RecentlyPlayed);
+	bindMenuItem("most-played", Wt::WString::tr("Lms.Explore.most-played"), ArtistCollector::Mode::MostPlayed);
+	bindMenuItem("recently-added", Wt::WString::tr("Lms.Explore.recently-added"), ArtistCollector::Mode::RecentlyAdded);
+	bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), ArtistCollector::Mode::All);
 
 	_linkType = bindNew<Wt::WComboBox>("link-type");
 	_linkType->setModel(std::make_shared<ArtistLinkModel>());
@@ -80,7 +85,7 @@ Artists::Artists(Filters& filters)
 			refreshArtistLinkTypes();
 	});
 
-	_container = bindNew<InfiniteScrollingContainer>("artists");
+	_container = bindNew<InfiniteScrollingContainer>("artists", Wt::WString::tr("Lms.Explore.Artists.template.container"));
 	_container->onRequestElements.connect([this]
 	{
 		addSome();
@@ -152,13 +157,16 @@ Artists::refreshArtistLinkTypes()
 void
 Artists::addSome()
 {
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
 	const auto artistIds {_artistCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize})};
-	for (const ArtistId artistId : artistIds.results)
+
 	{
-		if (const auto artist {Artist::find(LmsApp->getDbSession(), artistId)})
-			_container->add(ArtistListHelpers::createEntry(artist));
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+		for (const ArtistId artistId : artistIds.results)
+		{
+			if (const auto artist {Artist::find(LmsApp->getDbSession(), artistId)})
+				_container->add(ArtistListHelpers::createEntry(artist));
+		}
 	}
 
 	_container->setHasMore(artistIds.moreResults);

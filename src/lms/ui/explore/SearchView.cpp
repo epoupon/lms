@@ -19,19 +19,12 @@
 
 #include "SearchView.hpp"
 
-#include <functional>
-
-#include <Wt/WAnchor.h>
-#include <Wt/WImage.h>
-#include <Wt/WStackedWidget.h>
-
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
-#include "common/LoadingIndicator.hpp"
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
@@ -45,54 +38,25 @@ namespace UserInterface
 	SearchView::SearchView(Filters* filters)
 	: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Search.template")}
 	, _filters {filters}
-	, _releaseCollector {*filters, ReleaseCollector::Mode::Search, getMaxCount(Mode::Release)}
 	, _artistCollector {*filters, ArtistCollector::Mode::Search, getMaxCount(Mode::Artist)}
+	, _releaseCollector {*filters, ReleaseCollector::Mode::Search, getMaxCount(Mode::Release)}
 	, _trackCollector {*filters, TrackCollector::Mode::Search, getMaxCount(Mode::Track)}
 	{
 		addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-		Wt::WStackedWidget* stack {bindNew<Wt::WStackedWidget>("stack")};
-		stack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
-		_menu = bindNew<Wt::WMenu>("mode", stack);
+		_artists = bindNew<InfiniteScrollingContainer>("artists", Wt::WString::tr("Lms.Explore.Artists.template.container"));
+		_artists->onRequestElements.connect([this] { addSomeArtists(); });
 
-		auto addItem = [=](const Wt::WString& str, [[maybe_unused]] Mode mode, const Wt::WString& templateStr, std::function<void()> onRequestElementsFunc)
-		{
-			assert(modeToIndex(mode) == _results.size());
+		_releases = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
+		_releases->onRequestElements.connect([this] { addSomeReleases(); });
 
-			auto results {std::make_unique<InfiniteScrollingContainer>(templateStr)};
-			results->onRequestElements.connect(std::move(onRequestElementsFunc));
-
-			_results.push_back(results.get());
-			_menu->addItem(str, std::move(results));
-		};
-
-		// same order as Mode!
-		addItem(Wt::WString::tr("Lms.Explore.releases"), Mode::Release, Wt::WString::tr("Lms.Explore.Releases.template.container"), [this]{ addSomeReleases(); });
-		addItem(Wt::WString::tr("Lms.Explore.artists"), Mode::Artist, Wt::WString::tr("Lms.infinite-scrolling-container"), [this]{ addSomeArtists(); });
-		addItem(Wt::WString::tr("Lms.Explore.tracks"), Mode::Track, Wt::WString::tr("Lms.Explore.Tracks.template.container"), [this]{ addSomeTracks(); });
+		_tracks = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.infinite-scrolling-container"));
+		_tracks->onRequestElements.connect([this] { addSomeTracks(); });
 
 		_filters->updated().connect([=]
 		{
 			refreshView();
 		});
-	}
-
-	std::size_t
-	SearchView::modeToIndex(Mode mode) const
-	{
-		return static_cast<std::size_t>(mode);
-	}
-
-	Wt::WMenuItem&
-	SearchView::getItemMenu(Mode mode) const
-	{
-		return *_menu->itemAt(modeToIndex(mode));
-	}
-
-	InfiniteScrollingContainer&
-	SearchView::getResultContainer(Mode mode) const
-	{
-		return *_results[modeToIndex(mode)];
 	}
 
 	std::size_t
@@ -123,86 +87,76 @@ namespace UserInterface
 	void
 	SearchView::refreshView()
 	{
-		for (InfiniteScrollingContainer* results : _results)
-			results->clear();
+		_artists->clear();
+		_releases->clear();
+		_tracks->clear();
 
-		addSomeReleases();
 		addSomeArtists();
+		addSomeReleases();
 		addSomeTracks();
 	}
 
 	void
 	SearchView::addSomeArtists()
 	{
-		InfiniteScrollingContainer& results {getResultContainer(Mode::Artist)};
+		using namespace Database;
+
+		const Range range {_artists->getCount(), getBatchSize(Mode::Artist)};
+		const RangeResults<ArtistId> artistIds {_artistCollector.get(range)};
 
 		{
-			using namespace Database;
-
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-			const Range range {results.getCount(), getBatchSize(Mode::Artist)};
-			const RangeResults<ArtistId> artistIds {_artistCollector.get(range)};
 			for (const ArtistId artistId : artistIds.results)
 			{
 				const Artist::pointer artist {Artist::find(LmsApp->getDbSession(), artistId)};
-				results.add(ArtistListHelpers::createEntry(artist));
+				_artists->add(ArtistListHelpers::createEntry(artist));
 			}
-
-			results.setHasMore(artistIds.moreResults);
 		}
 
-		getItemMenu(Mode::Artist).setDisabled(results.getCount() == 0);
+		_artists->setHasMore(artistIds.moreResults);
 	}
 
 	void
 	SearchView::addSomeReleases()
 	{
-		InfiniteScrollingContainer& results {getResultContainer(Mode::Release)};
-		bool moreResults {};
+		using namespace Database;
+
+		const Range range {_releases->getCount(), getBatchSize(Mode::Release)};
+		const RangeResults<ReleaseId> releaseIds {_releaseCollector.get(range)};
 
 		{
-			using namespace Database;
-
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-			const Range range {results.getCount(), getBatchSize(Mode::Release)};
-			const RangeResults<ReleaseId> releaseIds {_releaseCollector.get(range)};
 
 			for (const ReleaseId releaseId : releaseIds.results)
 			{
 				const Release::pointer release {Release::find(LmsApp->getDbSession(), releaseId)};
-				results.add(ReleaseListHelpers::createEntry(release));
+				_releases->add(ReleaseListHelpers::createEntry(release));
 			}
-
-			results.setHasMore(moreResults);
 		}
 
-		getItemMenu(Mode::Release).setDisabled(results.getCount() == 0);
+		_releases->setHasMore(releaseIds.moreResults);
 	}
 
 	void
 	SearchView::addSomeTracks()
 	{
-		InfiniteScrollingContainer& results {getResultContainer(Mode::Track)};
+		using namespace Database;
+
+		const Range range {_tracks->getCount(), getBatchSize(Mode::Track)};
+		const RangeResults<TrackId> trackIds {_trackCollector.get(range)};
+
 		{
-			using namespace Database;
-
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-
-			const Range range {results.getCount(), getBatchSize(Mode::Track)};
-			const RangeResults<TrackId> trackIds {_trackCollector.get(range)};
 
 			for (const TrackId trackId : trackIds.results)
 			{
 				const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
-				results.add(TrackListHelpers::createEntry(track, tracksAction));
+				_tracks->add(TrackListHelpers::createEntry(track, tracksAction));
 			}
-
-			results.setHasMore(trackIds.moreResults);
 		}
 
-		getItemMenu(Mode::Track).setDisabled(results.getCount() == 0);
+		_tracks->setHasMore(trackIds.moreResults);
 	}
 } // namespace UserInterface
 

@@ -25,9 +25,9 @@
 
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
-#include "resource/CoverResource.hpp"
 
 #include "LmsApplication.hpp"
+#include "Utils.hpp"
 
 using namespace Database;
 
@@ -42,18 +42,18 @@ namespace UserInterface::ReleaseListHelpers
 		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
 		entry->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-		Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
-		auto cover = std::make_unique<Wt::WImage>();
-		cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large));
-		cover->setStyleClass("Lms-cover");
-		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
-		anchor->setImage(std::move(cover));
+		{
+			Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
+			auto cover {Utils::createCover(release->getId(), CoverResource::Size::Large)};
+			cover->addStyleClass("Lms-cover-release Lms-cover-anchor");
+			anchor->setImage(std::move(cover));
+		}
 
-		auto artists = release->getReleaseArtists();
+		auto artists {release->getReleaseArtists()};
 		if (artists.empty())
 			artists = release->getArtists();
 
-		bool isSameArtist {(std::find(std::cbegin(artists), std::cend(artists), artist) != artists.end())};
+		const bool isSameArtist {(std::find(std::cbegin(artists), std::cend(artists), artist) != artists.end())};
 
 		if (artists.size() > 1)
 		{

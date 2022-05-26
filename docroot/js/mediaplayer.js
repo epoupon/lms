@@ -31,13 +31,16 @@ LMS.mediaplayer = function () {
 	var _lastStartPlaying = null;
 
 	var _updateControls = function() {
+		const pauseClass = "fa-pause";
+		const playClass = "fa-play";
+
 		if (_elems.audio.paused) {
-			_elems.playpause.classList.remove("fa-pause");
-			_elems.playpause.classList.add("fa-play");
+			_elems.playpause.firstElementChild.classList.remove(pauseClass);
+			_elems.playpause.firstElementChild.classList.add(playClass);
 		}
 		else {
-			_elems.playpause.classList.remove("fa-play");
-			_elems.playpause.classList.add("fa-pause");
+			_elems.playpause.firstElementChild.classList.remove(playClass);
+			_elems.playpause.firstElementChild.classList.add(pauseClass);
 		}
 	}
 
@@ -177,8 +180,6 @@ LMS.mediaplayer = function () {
 		_elems.volume = document.getElementById("lms-mp-volume");
 		_elems.volumeslider = document.getElementById("lms-mp-volume-slider");
 		_elems.transcodingActive = document.getElementById("lms-transcoding-active");
-
-		$(_elems.transcodingActive).tooltip();
 
 		var source = _audioCtx.createMediaElementSource(_elems.audio);
 		source.connect(_gainNode);

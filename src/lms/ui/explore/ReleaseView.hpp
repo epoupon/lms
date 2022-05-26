@@ -19,10 +19,8 @@
 
 #pragma once
 
-#include <unordered_set>
-#include <Wt/WTemplate.h>
-
 #include "services/database/Object.hpp"
+#include "common/Template.hpp"
 #include "PlayQueueAction.hpp"
 
 namespace Database
@@ -33,7 +31,9 @@ namespace Database
 namespace UserInterface
 {
 	class Filters;
-	class Release : public Wt::WTemplate
+
+
+	class Release : public Template
 	{
 		public:
 			Release(Filters* filters);

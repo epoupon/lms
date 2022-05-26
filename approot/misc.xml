@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.LoadingIndicator.template">
+	<div class="my-5 text-center">
+		<div class="spinner-border" role="status">
+			<span class="visually-hidden">${tr:Lms.loading}</span>
+		</div>
+	</div>
+</message>
+
+<message id="Lms.infinite-scrolling-container">
+	${elements}
+	${loading-indicator}
+</message>
+
+</messages>

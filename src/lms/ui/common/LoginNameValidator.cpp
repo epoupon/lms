@@ -24,10 +24,16 @@
 
 namespace UserInterface
 {
-	std::shared_ptr<Wt::WValidator>
+	class LengthValidator : public Wt::WLengthValidator
+	{
+		private:
+			std::string javaScriptValidate() const override { return {}; }
+	};
+
+	std::unique_ptr<Wt::WValidator>
 	createLoginNameValidator()
 	{
-		auto v = std::make_unique<Wt::WLengthValidator>();
+		auto v = std::make_unique<LengthValidator>();
 		v->setMandatory(true);
 		v->setMinimumLength(::Database::User::MinNameLength);
 		v->setMaximumLength(::Database::User::MaxNameLength);

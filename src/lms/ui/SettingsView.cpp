@@ -21,7 +21,6 @@
 
 #include <Wt/WCheckBox.h>
 #include <Wt/WComboBox.h>
-#include <Wt/WDoubleValidator.h>
 #include <Wt/WDoubleSpinBox.h>
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
@@ -29,8 +28,9 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
 
-#include "common/PasswordValidator.hpp"
+#include "common/DoubleValidator.hpp"
 #include "common/MandatoryValidator.hpp"
+#include "common/PasswordValidator.hpp"
 #include "common/UUIDValidator.hpp"
 #include "common/ValueStringModel.hpp"
 
@@ -42,7 +42,6 @@
 #include "utils/Service.hpp"
 
 #include "LmsApplication.hpp"
-#include "LmsTheme.hpp"
 #include "MediaPlayer.hpp"
 
 namespace UserInterface {
@@ -53,7 +52,6 @@ class SettingsModel : public Wt::WFormModel
 {
 	public:
 		// Associate each field with a unique string literal.
-		static inline const Field DarkModeField {"dark-mode"};
 		static inline const Field TranscodeModeField {"transcode-mode"};
 		static inline const Field TranscodeFormatField {"transcode-format"};
 		static inline const Field TranscodeBitrateField {"transcode-bitrate"};
@@ -80,7 +78,6 @@ class SettingsModel : public Wt::WFormModel
 		{
 			initializeModels();
 
-			addField(DarkModeField);
 			addField(TranscodeModeField);
 			addField(TranscodeBitrateField);
 			addField(TranscodeFormatField);
@@ -111,12 +108,10 @@ class SettingsModel : public Wt::WFormModel
 			setValidator(TranscodeBitrateField, createMandatoryValidator());
 			setValidator(TranscodeFormatField, createMandatoryValidator());
 			setValidator(ReplayGainModeField, createMandatoryValidator());
-			auto createPreAmpValidator = []
+			auto createPreAmpValidator {[]
 			{
-				auto preampGainValidator {std::make_unique<Wt::WDoubleValidator>()};
-				preampGainValidator->setRange(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
-				return preampGainValidator;
-			};
+				return createDoubleValidator(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
+			}};
 
 			setValidator(ReplayGainPreAmpGainField, createPreAmpValidator());
 			setValidator(ReplayGainPreAmpGainIfNoInfoField, createPreAmpValidator());
@@ -138,14 +133,6 @@ class SettingsModel : public Wt::WFormModel
 			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
 			User::pointer user {LmsApp->getUser()};
-
-			{
-				const UITheme newTheme {Wt::asNumber(value(DarkModeField)) ? UITheme::Dark : UITheme::Light};
-				LmsTheme* lmsTheme {static_cast<LmsTheme*>(LmsApp->theme().get())};
-				lmsTheme->setTheme(newTheme);
-
-				user.modify()->setUITheme(newTheme);
-			}
 
 			{
 				MediaPlayer::Settings settings;
@@ -200,7 +187,6 @@ class SettingsModel : public Wt::WFormModel
 			{
 				_authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
 			}
-
 		}
 
 		void loadData()
@@ -208,8 +194,6 @@ class SettingsModel : public Wt::WFormModel
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 			User::pointer user {LmsApp->getUser()};
-
-			setValue(DarkModeField, user->getUITheme() == UITheme::Dark);
 
 			{
 				const auto settings {*LmsApp->getMediaPlayer().getSettings()};
@@ -408,12 +392,6 @@ SettingsView::refreshView()
 
 	auto model {std::make_shared<SettingsModel>(authPasswordService, !LmsApp->isUserAuthStrong())};
 
-	// Appearance
-	{
-		auto darkMode {std::make_unique<Wt::WCheckBox>()};
-		t->setFormWidget(SettingsModel::DarkModeField, std::move(darkMode));
-	}
-
 	if (authPasswordService)
 	{
 		t->setCondition("if-has-change-password", true);
@@ -557,14 +535,14 @@ SettingsView::refreshView()
 	Wt::WPushButton *saveBtn {t->bindWidget("apply-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.apply")))};
 	Wt::WPushButton *discardBtn {t->bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard")))};
 
-	saveBtn->clicked().connect([=]()
+	saveBtn->clicked().connect([=]
 	{
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 			if (LmsApp->getUser()->isDemo())
 			{
-				LmsApp->notifyMsg(LmsApplication::MsgType::Warning, Wt::WString::tr("Lms.Settings.demo-cannot-save"));
+				LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.settings"), Wt::WString::tr("Lms.Settings.demo-cannot-save"));
 				return;
 			}
 		}
@@ -574,19 +552,19 @@ SettingsView::refreshView()
 		if (model->validate())
 		{
 			model->saveData();
-			LmsApp->notifyMsg(LmsApplication::MsgType::Success, Wt::WString::tr("Lms.Settings.settings-saved"));
+			LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.settings"), Wt::WString::tr("Lms.Settings.settings-saved"));
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.
 		t->updateView(model.get());
 	});
 
-	discardBtn->clicked().connect(std::bind([=] ()
+	discardBtn->clicked().connect([=]
 	{
 		model->loadData();
 		model->validate();
 		t->updateView(model.get());
-	}));
+	});
 
 	t->updateView(model.get());
 }

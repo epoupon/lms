@@ -19,8 +19,8 @@
 
 #include "PlayQueue.hpp"
 
-#include <Wt/WPopupMenu.h>
-#include <Wt/WText.h>
+#include <Wt/WCheckBox.h>
+#include <Wt/WPushButton.h>
 
 #include "services/database/Cluster.hpp"
 #include "services/database/Release.hpp"
@@ -36,34 +36,20 @@
 #include "utils/String.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
-#include "resource/CoverResource.hpp"
 #include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
-#include "TrackStringUtils.hpp"
+#include "Utils.hpp"
 
 namespace UserInterface {
 
 PlayQueue::PlayQueue()
-: Wt::WTemplate(Wt::WString::tr("Lms.PlayQueue.template"))
+: Template {Wt::WString::tr("Lms.PlayQueue.template")}
 {
+	addFunction("id", &Wt::WTemplate::Functions::id);
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-		_repeatAll = LmsApp->getUser()->isRepeatAllSet();
-		_radioMode = LmsApp->getUser()->isRadioSet();
-	}
-
-	auto setToolTip = [](Wt::WWidget& widget, Wt::WString title)
-	{
-		widget.setAttributeValue("data-toggle", "tooltip");
-		widget.setAttributeValue("data-placement", "bottom");
-		widget.setAttributeValue("title", std::move(title));
-	};
-
 	Wt::WText* clearBtn = bindNew<Wt::WText>("clear-btn", Wt::WString::tr("Lms.PlayQueue.template.clear-btn"), Wt::TextFormat::XHTML);
-	setToolTip(*clearBtn, Wt::WString::tr("Lms.PlayQueue.clear"));
 	clearBtn->clicked().connect([=]
 	{
 		clearTracks();
@@ -77,7 +63,6 @@ PlayQueue::PlayQueue()
 	});
 
 	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.template.shuffle-btn"), Wt::TextFormat::XHTML);
-	setToolTip(*shuffleBtn, Wt::WString::tr("Lms.PlayQueue.shuffle"));
 	shuffleBtn->clicked().connect([=]
 	{
 		{
@@ -95,33 +80,33 @@ PlayQueue::PlayQueue()
 		addSome();
 	});
 
-	_repeatBtn = bindNew<Wt::WText>("repeat-btn", Wt::WString::tr("Lms.PlayQueue.template.repeat-btn"), Wt::TextFormat::XHTML);
-	setToolTip(*_repeatBtn, Wt::WString::tr("Lms.PlayQueue.repeat"));
+	_repeatBtn = bindNew<Wt::WCheckBox>("repeat-btn");
 	_repeatBtn->clicked().connect([=]
 	{
-		_repeatAll = !_repeatAll;
-		updateRepeatBtn();
-
 		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
 		if (!LmsApp->getUser()->isDemo())
-			LmsApp->getUser().modify()->setRepeatAll(_repeatAll);
+			LmsApp->getUser().modify()->setRepeatAll(isRepeatAllSet());
 	});
-	updateRepeatBtn();
+	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		if (LmsApp->getUser()->isRepeatAllSet())
+			_repeatBtn->setCheckState(Wt::CheckState::Checked);
+	}
 
-	_radioBtn = bindNew<Wt::WText>("radio-btn", Wt::WString::tr("Lms.PlayQueue.template.radio-btn"));
-	setToolTip(*_radioBtn, Wt::WString::tr("Lms.PlayQueue.radio-mode"));
+	_radioBtn = bindNew<Wt::WCheckBox>("radio-btn");
 	_radioBtn->clicked().connect([=]
 	{
-		_radioMode = !_radioMode;
-		updateRadioBtn();
-
 		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
 		if (!LmsApp->getUser()->isDemo())
-			LmsApp->getUser().modify()->setRadio(_radioMode);
+			LmsApp->getUser().modify()->setRadio(isRadioModeSet());
 	});
-	updateRadioBtn();
+	{
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		if (LmsApp->getUser()->isRadioSet())
+			_radioBtn->setCheckState(Wt::CheckState::Checked);
+	}
 
 	_nbTracks = bindNew<Wt::WText>("nb-tracks");
 
@@ -180,18 +165,16 @@ PlayQueue::PlayQueue()
 	addSome();
 }
 
-void
-PlayQueue::updateRepeatBtn()
+bool
+PlayQueue::isRepeatAllSet() const
 {
-	_repeatBtn->toggleStyleClass("text-success", _repeatAll);
-	_repeatBtn->toggleStyleClass("text-muted", !_repeatAll);
+	return _repeatBtn->checkState() == Wt::CheckState::Checked;
 }
 
-void
-PlayQueue::updateRadioBtn()
+bool
+PlayQueue::isRadioModeSet() const
 {
-	_radioBtn->toggleStyleClass("text-success",_radioMode);
-	_radioBtn->toggleStyleClass("text-muted", !_radioMode);
+	return _radioBtn->checkState() == Wt::CheckState::Checked;
 }
 
 Database::TrackList::pointer
@@ -243,7 +226,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 		// If out of range, stop playing
 		if (pos >= tracklist->getCount())
 		{
-			if (!_repeatAll || tracklist->getCount() == 0)
+			if (!isRepeatAllSet() || tracklist->getCount() == 0)
 			{
 				stop();
 				return;
@@ -253,7 +236,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 		}
 
 		// If last and radio mode, fill the next song
-		if (_radioMode && pos == tracklist->getCount() - 1)
+		if (isRadioModeSet() && pos == tracklist->getCount() - 1)
 			addRadioTrack = true;
 
 		_trackPos = pos;
@@ -313,9 +296,11 @@ PlayQueue::updateCurrentTrack(bool selected)
 	if (!_trackPos || *_trackPos >= static_cast<std::size_t>(_entriesContainer->getCount()))
 		return;
 
-	Wt::WTemplate* entry {static_cast<Wt::WTemplate*>(_entriesContainer->getWidget(*_trackPos))};
-	if (entry)
-		entry->bindString("is-selected", selected ? "Lms-playqueue-selected" : "");
+	Template* entry {static_cast<Template*>(_entriesContainer->getWidget(*_trackPos))};
+	if (!entry)
+		return;
+
+	entry->toggleStyleClass("Lms-entry-playing", selected);
 }
 
 std::size_t
@@ -383,12 +368,10 @@ PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::Tra
 	}
 
 	if (nbAddedTracks > 0)
-		LmsApp->notifyMsg(LmsApplication::MsgType::Info, Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", nbAddedTracks).arg(nbAddedTracks), std::chrono::milliseconds(2000));
+		LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.PlayQueue.playqueue"), Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", nbAddedTracks).arg(nbAddedTracks), std::chrono::milliseconds(2000));
 
 	if (isFull())
-		LmsApp->notifyMsg(LmsApplication::MsgType::Warning, Wt::WString::tr("Lms.PlayQueue.playqueue-full"), std::chrono::milliseconds(2000));
-
-
+		LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.PlayQueue.playqueue"), Wt::WString::tr("Lms.PlayQueue.playqueue-full"), std::chrono::milliseconds(2000));
 }
 
 void
@@ -412,50 +395,30 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 	const auto track {tracklistEntry->getTrack()};
 	const Database::TrackId trackId {track->getId()};
 
-	Wt::WTemplate* entry = _entriesContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry"));
+	Template* entry {_entriesContainer->addNew<Template>(Wt::WString::tr("Lms.PlayQueue.template.entry"))};
+	entry->addFunction("id", &Wt::WTemplate::Functions::id);
 
-	entry->bindString("is-selected", "");
 	entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-	const auto artists {track->getArtists({Database::TrackArtistLinkType::Artist})};
 	const auto release {track->getRelease()};
-
-	if (!artists.empty() || release)
-		entry->setCondition("if-has-artists-or-release", true);
-
-	if (!artists.empty())
-	{
-		entry->setCondition("if-has-artists", true);
-
-		Wt::WContainerWidget* artistContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
-		for (const auto& artist : artists)
-		{
-			Wt::WTemplate* a {artistContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.PlayQueue.template.entry-artist"))};
-			a->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
-		}
-	}
 	if (release)
 	{
 		entry->setCondition("if-has-release", true);
 		entry->bindWidget("release", LmsApplication::createReleaseAnchor(release));
 		{
-			Wt::WAnchor* anchor = entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false));
-			auto cover = std::make_unique<Wt::WImage>();
-			cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large));
-			cover->setStyleClass("Lms-cover");
-			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
+			Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
+			auto cover {Utils::createCover(release->getId(), CoverResource::Size::Small)};
+			cover->addStyleClass("Lms-cover-track Lms-cover-anchor"); // HACK
 			anchor->setImage(std::move(cover));
 		}
 	}
 	else
 	{
-		auto cover = entry->bindNew<Wt::WImage>("cover");
-		cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(track->getId(), CoverResource::Size::Large));
-		cover->setStyleClass("Lms-cover");
-		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
+		auto cover {entry->bindWidget<Wt::WImage>("cover", Utils::createCover(track->getId(), CoverResource::Size::Small))};
+		cover->addStyleClass("Lms-cover-track");
 	}
 
-	entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
+	entry->bindString("duration", Utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 	Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.template.play-btn"), Wt::TextFormat::XHTML)};
 	playBtn->clicked().connect([=]
@@ -488,25 +451,29 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 		updateInfo();
 	});
 
-	Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.PlayQueue.template.more-btn"), Wt::TextFormat::XHTML)};
-	moreBtn->clicked().connect([=]
+	entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.PlayQueue.template.more-btn"), Wt::TextFormat::XHTML);
+
+	auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
+
+	Wt::WPushButton* starBtn {entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
+	starBtn->clicked().connect([=]
 	{
-		Wt::WPopupMenu* popup {LmsApp->createPopupMenu()};
+		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-		const bool isStarred {Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId)};
-		popup->addItem(Wt::WString::tr(isStarred ? "Lms.Explore.unstar" : "Lms.Explore.star"))
-			->triggered().connect(moreBtn, [=]
-			{
-				if (isStarred)
-					Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), trackId);
-				else
-					Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), trackId);
-			});
-		popup->addItem(Wt::WString::tr("Lms.Explore.download"))
-			->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
-
-		popup->popup(moreBtn);
+		if (isStarred())
+		{
+			Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), trackId);
+			starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+		}
+		else
+		{
+			Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), trackId);
+			starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+		}
 	});
+
+	entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+		->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
 }
 
 void

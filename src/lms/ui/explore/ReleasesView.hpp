@@ -19,12 +19,11 @@
 
 #pragma once
 
-#include <unordered_map>
-
 #include <Wt/WContainerWidget.h>
-#include <Wt/WTemplate.h>
 
 #include "services/database/Types.hpp"
+
+#include "common/Template.hpp"
 #include "PlayQueueAction.hpp"
 #include "ReleaseCollector.hpp"
 
@@ -33,7 +32,7 @@ namespace UserInterface
 	class Filters;
 	class InfiniteScrollingContainer;
 
-	class Releases : public Wt::WTemplate
+	class Releases : public Template
 	{
 		public:
 			Releases(Filters& filters);
@@ -51,6 +50,7 @@ namespace UserInterface
 			static constexpr std::size_t _batchSize {_maxItemsPerLine};
 			static constexpr std::size_t _maxCount {_maxItemsPerLine * 32};
 
+			Wt::WWidget*				_currentActiveItem {};
 			InfiniteScrollingContainer* _container {};
 			ReleaseCollector			_releaseCollector;
 			static constexpr ReleaseCollector::Mode _defaultMode {ReleaseCollector::Mode::Random};

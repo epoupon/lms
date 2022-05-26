@@ -27,6 +27,7 @@
 #include "services/database/UserId.hpp"
 #include "services/database/Types.hpp"
 #include "services/scanner/ScannerEvents.hpp"
+#include "Notification.hpp"
 
 namespace Database
 {
@@ -37,10 +38,6 @@ namespace Database
 	class Session;
 	class User;
 }
-namespace Wt
-{
-	class WPopupMenu;
-}
 
 namespace UserInterface {
 
@@ -49,11 +46,12 @@ class LmsApplicationException;
 class MediaPlayer;
 class PlayQueue;
 class LmsApplicationManager;
+class NotificationContainer;
+class ModalManager;
 
 class LmsApplication : public Wt::WApplication
 {
 	public:
-
 		LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationManager& appManager, std::optional<Database::UserId> userId = std::nullopt);
 		~LmsApplication();
 
@@ -78,31 +76,22 @@ class LmsApplication : public Wt::WApplication
 		void post(std::function<void()> func);
 
 		// Used to classify the message sent to the user
-		enum class MsgType
-		{
-			Success,
-			Info,
-			Warning,
-			Danger,
-		};
-		void notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds {4000});
+		void notifyMsg(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds {5000});
 
 		static Wt::WLink					createArtistLink(Database::ObjectPtr<Database::Artist> artist);
 		static std::unique_ptr<Wt::WAnchor>	createArtistAnchor(Database::ObjectPtr<Database::Artist> artist, bool addText = true);
 		static Wt::WLink					createReleaseLink(Database::ObjectPtr<Database::Release> release);
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::ObjectPtr<Database::Release> release, bool addText = true);
-		static std::unique_ptr<Wt::WText>	createCluster(Database::ObjectPtr<Database::Cluster> cluster, bool canDelete = false);
-		Wt::WPopupMenu* createPopupMenu();
 
 		MediaPlayer&	getMediaPlayer() const { return *_mediaPlayer; }
 		PlayQueue&		getPlayQueue() const { return *_playQueue; }
+		ModalManager&	getModalManager() const { return *_modalManager; }
 
 		// Signal emitted just before the session ends (user may already be logged out)
 		Wt::Signal<>&	preQuit() { return _preQuit; }
 
 	private:
 		void init();
-		void setTheme();
 		void processPasswordAuth();
 		void handleException(LmsApplicationException& e);
 		void goHomeAndQuit();
@@ -129,7 +118,8 @@ class LmsApplication : public Wt::WApplication
 		std::shared_ptr<CoverResource>			_coverResource;
 		MediaPlayer*							_mediaPlayer {};
 		PlayQueue*								_playQueue {};
-		std::unique_ptr<Wt::WPopupMenu>			_popupMenu;
+		NotificationContainer*					_notificationContainer {};
+		ModalManager*							_modalManager {};
 };
 
 

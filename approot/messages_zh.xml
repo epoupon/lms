@@ -81,6 +81,7 @@
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">重载相似引擎中 {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">扫描文件中: {1}/{2} 文件 ({3}%)...</message>
 
+
 <!--Users-->
 <message id="Lms.Admin.Users.add">新建用户</message>
 <message id="Lms.Admin.Users.admin">管理员</message>
@@ -117,10 +118,10 @@
 <message id="Lms.Explore.download">下载</message>
 <message id="Lms.Explore.filter-added">筛选已添加</message>
 <message id="Lms.Explore.filters">筛选</message>
-<message id="Lms.Explore.links">链接</message>
 <message id="Lms.Explore.most-played">播放最多</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz 歌手</message>
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz 专辑</message>
+
 <message id="Lms.Explore.play-last">播放列表</message>
 <message id="Lms.Explore.play-shuffled">随机播放</message>
 <message id="Lms.Explore.random">随机</message>
@@ -176,11 +177,9 @@
 <message id="Lms.PlayHistory.playhistory">播放历史</message>
 
 <!--Settings-->
-<message id="Lms.Settings.appearance">外观</message>
 <message id="Lms.Settings.audio">音频</message>
 <message id="Lms.Settings.audio-settings-are-local">这些音频设置仅保存在您的本地浏览器！</message>
 <message id="Lms.Settings.change-password">更改密码</message>
-<message id="Lms.Settings.dark-mode">夜间模式</message>
 <message id="Lms.Settings.demo-cannot-save">使用演示账号时不能保存！</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> 设置</message>
 <message id="Lms.Settings.password-bad">无效密码</message>

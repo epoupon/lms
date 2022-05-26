@@ -22,96 +22,106 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WContainerWidget.h>
 #include <Wt/WImage.h>
+#include <Wt/WPushButton.h>
 #include <Wt/WText.h>
 
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
+#include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
+#include "utils/Logger.hpp"
+#include "utils/Service.hpp"
+
+#include "common/Template.hpp"
 #include "resource/DownloadResource.hpp"
 #include "resource/CoverResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
-#include "TrackPopup.hpp"
-#include "TrackStringUtils.hpp"
+#include "Utils.hpp"
 
 using namespace Database;
 
 namespace UserInterface::TrackListHelpers
 {
-	std::unique_ptr<Wt::WTemplate>
+	std::unique_ptr<Wt::WWidget>
 	createEntry(const Database::ObjectPtr<Database::Track>& track, PlayQueueActionTrackSignal& tracksAction)
 	{
-		auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
+		auto entry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
 		auto* entryPtr {entry.get()};
 
-		Wt::WText* name {entry->bindNew<Wt::WText>("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain)};
-		name->setToolTip(Wt::WString::fromUTF8(track->getName()));
+		entry->bindString("name", Wt::WString::fromUTF8(track->getName()));
 
 		const auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		const Release::pointer release {track->getRelease()};
 		const TrackId trackId {track->getId()};
 
-		if (!artists.empty() || release)
-			entry->setCondition("if-has-artists-or-release", true);
-
-		if (!artists.empty())
-		{
-			entry->setCondition("if-has-artists", true);
-
-			Wt::WContainerWidget* artistContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
-			for (const Artist::pointer& artist : artists)
-			{
-				Wt::WTemplate* a {artistContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Tracks.template.entry-artist"))};
-				a->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
-			}
-		}
-
 		if (track->getRelease())
 		{
 			entry->setCondition("if-has-release", true);
 			entry->bindWidget("release", LmsApplication::createReleaseAnchor(track->getRelease()));
-			{
-				Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
-				auto cover {std::make_unique<Wt::WImage>()};
-				cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large));
-				cover->setStyleClass("Lms-cover");
-				cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
-				anchor->setImage(std::move(cover));
-			}
+			Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
+			auto cover {Utils::createCover(release->getId(), CoverResource::Size::Small)};
+			cover->addStyleClass("Lms-cover-track Lms-cover-anchor"); // HACK
+			anchor->setImage(std::move((cover)));
 		}
 		else
 		{
-			auto* cover {entry->bindNew<Wt::WImage>("cover")};
-			cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(trackId, CoverResource::Size::Large));
-			cover->setStyleClass("Lms-cover");
-			cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
+			auto cover {Utils::createCover(trackId, CoverResource::Size::Small)};
+			cover->addStyleClass("Lms-cover-track"); // HACK
+			entry->bindWidget<Wt::WImage>("cover", std::move(cover));
 		}
 
-		entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
+		entry->bindString("duration", Utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
-		Wt::WText* playBtn = entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML);
+		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([trackId, &tracksAction]
 		{
 			tracksAction.emit(PlayQueueAction::Play, {trackId});
 		});
 
-		Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
-		moreBtn->clicked().connect([=, &tracksAction]
+		entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+		entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
+			->clicked().connect([=, &tracksAction]
+			{
+				tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
+			});
+
 		{
-			displayTrackPopupMenu(*moreBtn, trackId, tracksAction);
-		});
+			auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
+
+			Wt::WPushButton* starBtn {entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
+			starBtn->clicked().connect([=]
+			{
+				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+				if (isStarred())
+				{
+					Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), trackId);
+					starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+				}
+				else
+				{
+					Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), trackId);
+					starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+				}
+			});
+		}
+
+		entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+			->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
 
 		LmsApp->getMediaPlayer().trackLoaded.connect(entryPtr, [=] (Database::TrackId loadedTrackId)
 		{
-			entryPtr->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
+			entryPtr->toggleStyleClass("Lms-entry-playing", loadedTrackId == trackId);
 		});
 
 		if (auto trackIdLoaded {LmsApp->getMediaPlayer().getTrackLoaded()})
 		{
-			entry->bindString("is-playing", *trackIdLoaded == trackId ? "Lms-entry-playing" : "");
+			entryPtr->toggleStyleClass("Lms-entry-playing", *trackIdLoaded == trackId);
 		}
 		else
-			entry->bindString("is-playing", "");
+			entry->removeStyleClass("Lms-entry-playing");
 
 		return entry;
 	}

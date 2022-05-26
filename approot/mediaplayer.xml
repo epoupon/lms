@@ -6,36 +6,35 @@
 	<audio id="lms-mp-audio">
 	</audio>
 	<div class="container">
-		<div class="Lms-player-seek-container">
+		<div class="p-1 my-1 position-relative">
 			<input id="lms-mp-seek" class="Lms-player-seek-common Lms-player-seek" type="range" min="0" max="100" step="1" value="0"/>
-			<div class="progress Lms-player-seek-common Lms-player-progress">
-				<div id="lms-mp-progress" class="progress-bar" role="progressbar" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-				</div>
+			<div class="progress Lms-player-seek-common bg-secondary rounded">
+				<div id="lms-mp-progress" class="progress-bar" role="progressbar" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
 			</div>
 		</div>
 
-		<div class="row">
-			<div class="col-xs-5 col-sm-3 col-md-2 Lms-player-controls">
-				<i id="lms-mp-previous" class="fa fa-fw fa-step-backward Lms-player-btn Lms-btn Lms-player-btn-controls"></i><i id="lms-mp-playpause" class="fa fa-fw fa-play Lms-player-btn Lms-btn Lms-player-btn-controls"></i><i id="lms-mp-next" class="fa fa-fw fa-step-forward Lms-player-btn Lms-btn Lms-player-btn-controls"></i>
+		<div class="d-flex align-items-center">
+			<div class="d-inline-flex me-2">
+				<button id="lms-mp-previous" class="btn btn-sm btn-outline-primary border-0">
+					<i class="fa fa-fw fa-step-backward"/>
+				</button>
+				<button id="lms-mp-playpause" class="btn btn-outline-primary border-0">
+					<i class="fa fa-fw fa-play"/>
+				</button>
+				<button id="lms-mp-next" class="btn btn-sm btn-outline-primary border-0">
+					<i class="fa fa-fw fa-step-forward"/>
+				</button>
 			</div>
-			<div class="hidden-xs hidden-sm col-md-2">
-				<div class="Lms-player-volume">
-					<i id="lms-mp-volume" class="fa fa-fw fa-volume-up Lms-player-btn Lms-btn Lms-player-btn-volume"></i>
-					<span class="Lms-player-volume-slider-container">
-						<input id ="lms-mp-volume-slider" type="range" min="0" max="1" step="0.01" value="0.8" class="Lms-player-volume-slider"/>
-					</span>
-				</div>
+			<div class="flex-fill text-center text-truncate">
+				${title class="d-block text-truncate"}
+				${release class="text-decoration-none text-truncate link-success"}
 			</div>
-			<div class="col-xs-7 col-sm-7 col-md-6">
-				<div class="Lms-player-text-center">
-					${title class="Lms-player-text Lms-trackname text-primary"}
-				</div>
-				<div class="Lms-player-text-center">
-					${release class="Lms-btn Lms-player-text Lms-releasename text-primary"}<span class="hidden-xs"><small>${artist class="Lms-btn Lms-player-text Lms-artistname text-muted"}</small></span>
-				</div>
+			<div class="d-none d-md-flex align-items-center Lms-player-volume-container">
+				<i id="lms-mp-volume" class="fa fa-fw fa-volume-up link-primary me-1"></i>
+				<input id ="lms-mp-volume-slider" class="form-range" type="range" min="0" max="1" step="0.01" value="0.8"/>
 			</div>
-			<div class="hidden-xs col-sm-2 col-md-2 Lms-player-duration text-muted">
-				<span id="lms-transcoding-active" class="Lms-player-btn Lms-btn" data-toggle="tooltip" title="${tr:Lms.Player.transcoding-active}" style="visibility:hidden"><i class="fa fa-fw fa-info-circle" aria-hidden="true"></i></span>
+			<div class="d-none d-sm-block text-muted text-nowrap">
+				<span id="lms-transcoding-active" title="${tr:Lms.Player.transcoding-active}" class="p-2" style="visibility:hidden"><i class="fa fa-fw fa-info-circle" aria-hidden="true"></i></span>
 				<span id="lms-mp-curtime">--</span> / <span id="lms-mp-duration">--</span>
 			</div>
 		</div>

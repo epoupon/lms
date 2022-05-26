@@ -83,7 +83,6 @@ DownloadResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Resp
 	}
 }
 
-
 static
 std::string
 getArtistPathName(Database::Artist::pointer artist)

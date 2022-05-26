@@ -20,10 +20,8 @@
 #include "ReleaseView.hpp"
 
 #include <Wt/WAnchor.h>
-#include <Wt/WApplication.h>
 #include <Wt/WImage.h>
-#include <Wt/WTemplate.h>
-#include <Wt/WText.h>
+#include <Wt/WPushButton.h>
 
 #include "services/database/Cluster.hpp"
 #include "services/database/Release.hpp"
@@ -31,29 +29,28 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Logger.hpp"
-#include "utils/String.hpp"
 
+#include "common/Template.hpp"
 #include "resource/DownloadResource.hpp"
-#include "resource/CoverResource.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
 #include "MediaPlayer.hpp"
 #include "ReleaseListHelpers.hpp"
-#include "ReleasePopup.hpp"
-#include "TrackPopup.hpp"
-#include "TrackStringUtils.hpp"
+#include "Utils.hpp"
 
 using namespace Database;
 
 namespace UserInterface {
 
 Release::Release(Filters* filters)
-: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Release.template")}
+: Template {Wt::WString::tr("Lms.Explore.Release.template")}
 , _filters {filters}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
+	addFunction("id", &Wt::WTemplate::Functions::id);
 
 	wApp->internalPathChanged().connect(this, [this]
 	{
@@ -129,15 +126,11 @@ Release::refreshView()
 		}
 	}
 
-	bindString("duration", durationToString(release->getDuration()), Wt::TextFormat::Plain);
+	bindString("duration", Utils::durationToString(release->getDuration()), Wt::TextFormat::Plain);
 
 	refreshReleaseArtists(release);
 
-	{
-		Wt::WImage* cover {bindNew<Wt::WImage>("cover", Wt::WLink(LmsApp->getCoverResource()->getReleaseUrl(release->getId(), CoverResource::Size::Large)))};
-		cover->setStyleClass("Lms-cover-large");
-		cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)");
-	}
+	bindWidget<Wt::WImage>("cover", Utils::createCover(release->getId(), CoverResource::Size::Large));
 
 	Wt::WContainerWidget* clusterContainers {bindNew<Wt::WContainerWidget>("clusters")};
 	{
@@ -146,10 +139,10 @@ Release::refreshView()
 
 		for (const auto& clusters : clusterGroups)
 		{
-			for (const auto& cluster : clusters)
+			for (const Database::Cluster::pointer& cluster : clusters)
 			{
 				const ClusterId clusterId {cluster->getId()};
-				auto entry {clusterContainers->addWidget(LmsApp->createCluster(cluster))};
+				Wt::WInteractWidget* entry {clusterContainers->addWidget(Utils::createCluster(clusterId))};
 				entry->clicked().connect([=]
 				{
 					_filters->add(clusterId);
@@ -158,19 +151,43 @@ Release::refreshView()
 		}
 	}
 
-	{
-		Wt::WText* playBtn {bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
-		playBtn->clicked().connect([=]
+	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
+		->clicked().connect([=]
 		{
 			releasesAction.emit(PlayQueueAction::Play, {*releaseId});
 		});
-	}
+
+	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			releasesAction.emit(PlayQueueAction::PlayShuffled, {*releaseId});
+		});
+
+	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			releasesAction.emit(PlayQueueAction::PlayLast, {*releaseId});
+		});
+
+	bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+		->setLink(Wt::WLink {std::make_unique<DownloadReleaseResource>(*releaseId)});
 
 	{
-		Wt::WText* moreBtn {bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
-		moreBtn->clicked().connect([=]
+		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), *releaseId); }};
+
+		Wt::WPushButton* starBtn {bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
+		starBtn->clicked().connect([=]
 		{
-			displayReleasePopupMenu(*moreBtn, *releaseId, releasesAction);
+			if (isStarred())
+			{
+				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), *releaseId);
+				starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+			}
+			else
+			{
+				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), *releaseId);
+				starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+			}
 		});
 	}
 
@@ -180,7 +197,7 @@ Release::refreshView()
 	const auto totalDisc {release->getTotalDisc()};
 	const bool isReleaseMultiDisc {totalDisc && *totalDisc > 1};
 
-	// Expect to be call in asc order
+	// Expect to be called in asc order
 	std::map<std::size_t, Wt::WContainerWidget*> trackContainers;
 	auto getOrAddDiscContainer = [&](std::size_t discNumber, const std::string& discSubtitle) -> Wt::WContainerWidget*
 	{
@@ -203,6 +220,18 @@ Release::refreshView()
 		return tracksContainer;
 	};
 
+	Wt::WContainerWidget* noDiscTracksContainer{};
+	auto getOrAddNoDiscContainer =  [&]
+	{
+		if (noDiscTracksContainer)
+			return noDiscTracksContainer;
+
+		Wt::WTemplate* disc {rootContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-nodisc"))};
+		noDiscTracksContainer = disc->bindNew<Wt::WContainerWidget>("tracks");
+
+		return noDiscTracksContainer;
+	};
+
 	const auto clusterIds {_filters->getClusterIds()};
 	const auto tracks {release->getTracks(clusterIds)};
 
@@ -212,11 +241,13 @@ Release::refreshView()
 
 		const auto discNumber {track->getDiscNumber()};
 
-		Wt::WContainerWidget* container {rootContainer};
+		Wt::WContainerWidget* container;
 		if (isReleaseMultiDisc && discNumber)
 			container = getOrAddDiscContainer(*discNumber, track->getDiscSubtitle());
+		else
+			container = getOrAddNoDiscContainer();
 
-		Wt::WTemplate* entry {container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry"))};
+		Template* entry {container->addNew<Template>(Wt::WString::tr("Lms.Explore.Release.template.entry"))};
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
@@ -226,10 +257,15 @@ Release::refreshView()
 			entry->setCondition("if-has-artists", true);
 
 			Wt::WContainerWidget* artistsContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
+			bool firstArtist {true};
 			for (const auto& artist : artists)
 			{
-				Wt::WTemplate *t {artistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-artist"))};
-				t->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
+				if (!firstArtist)
+					artistsContainer->addNew<Wt::WText>(" · ");
+				auto anchor {LmsApplication::createArtistAnchor(artist)};
+				anchor->addStyleClass("link-success text-decoration-none"); // hack
+				artistsContainer->addWidget(std::move(anchor));
+				firstArtist = false;
 			}
 		}
 
@@ -240,32 +276,56 @@ Release::refreshView()
 			entry->bindInt("track-number", *trackNumber);
 		}
 
-		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
-		playBtn->clicked().connect([=]()
+		Wt::WPushButton* playBtn {entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
+		playBtn->clicked().connect([=]
 		{
 			tracksAction.emit(PlayQueueAction::Play, {trackId});
 		});
 
-		Wt::WText* moreBtn {entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML)};
-		moreBtn->clicked().connect([=]()
 		{
-			displayTrackPopupMenu(*moreBtn, trackId, tracksAction);
-		});
+			entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+			entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
+				->clicked().connect([=]
+				{
+					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
+				});
 
-		entry->bindString("duration", durationToString(track->getDuration()), Wt::TextFormat::Plain);
+			auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
+
+			Wt::WPushButton* starBtn {entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
+			starBtn->clicked().connect([=]
+			{
+				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+				if (isStarred())
+				{
+					Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), trackId);
+					starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+				}
+				else
+				{
+					Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), trackId);
+					starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+				}
+			});
+
+			entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
+		}
+
+		entry->bindString("duration", Utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 		LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=] (TrackId loadedTrackId)
 		{
-			entry->bindString("is-playing", loadedTrackId == trackId ? "Lms-entry-playing" : "");
+			entry->toggleStyleClass("Lms-entry-playing", loadedTrackId == trackId);
 		});
 
 		if (auto trackIdLoaded {LmsApp->getMediaPlayer().getTrackLoaded()})
 		{
-			if (*trackIdLoaded == trackId)
-				entry->bindString("is-playing", "Lms-entry-playing");
+			entry->toggleStyleClass("Lms-entry-playing", *trackIdLoaded == trackId);
 		}
 		else
-			entry->bindString("is-playing", "");
+			entry->removeStyleClass("Lms-entry-playing");
 	}
 }
 
@@ -333,11 +393,7 @@ Release::refreshLinks(const Database::Release::pointer& release)
 	if (mbid)
 	{
 		setCondition("if-has-mbid", true);
-
-		Wt::WLink link {"https://musicbrainz.org/release/" + std::string {mbid->getAsString()}};
-		link.setTarget(Wt::LinkTarget::NewWindow);
-
-		bindNew<Wt::WAnchor>("mbid-link", link, Wt::WString::tr("Lms.Explore.musicbrainz-release"));
+		bindString("mbid-link", std::string {"https://musicbrainz.org/release/"} + std::string {mbid->getAsString()});
 	}
 }
 

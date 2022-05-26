@@ -33,15 +33,5 @@ namespace UserInterface::ArtistListHelpers
 
 		return res;
 	}
-
-	std::unique_ptr<Wt::WTemplate>
-	createEntrySmall(const Database::ObjectPtr<Database::Artist>& artist)
-	{
-		auto res {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry-small"))};
-		res->bindWidget("name", LmsApplication::createArtistAnchor(artist));
-
-		return res;
-	}
-
 }
 

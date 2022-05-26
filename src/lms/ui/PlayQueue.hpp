@@ -21,6 +21,7 @@
 
 #include <optional>
 
+#include <Wt/WCheckBox.h>
 #include <Wt/WContainerWidget.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
@@ -28,6 +29,8 @@
 #include "services/database/Object.hpp"
 #include "services/database/TrackListId.hpp"
 #include "PlayQueueAction.hpp"
+
+#include "common/Template.hpp"
 
 namespace Similarity
 {
@@ -45,7 +48,7 @@ namespace UserInterface {
 
 class InfiniteScrollingContainer;
 
-class PlayQueue : public Wt::WTemplate
+class PlayQueue : public Template
 {
 	public:
 		PlayQueue();
@@ -75,8 +78,8 @@ class PlayQueue : public Wt::WTemplate
 		void enqueueRadioTracks();
 		void updateInfo();
 		void updateCurrentTrack(bool selected);
-		void updateRepeatBtn();
-		void updateRadioBtn();
+		bool isRepeatAllSet() const;
+		bool isRadioModeSet() const;
 
 		void loadTrack(std::size_t pos, bool play);
 		void stop();
@@ -88,14 +91,12 @@ class PlayQueue : public Wt::WTemplate
 		static inline constexpr std::size_t _nbMaxEntries {1000};
 		static inline constexpr std::size_t _batchSize {12};
 
-		bool _repeatAll {};
-		bool _radioMode {};
 		bool _mediaPlayerSettingsLoaded {};
 		Database::TrackListId _tracklistId {};
 		InfiniteScrollingContainer* _entriesContainer {};
 		Wt::WText* _nbTracks {};
-		Wt::WText* _repeatBtn {};
-		Wt::WText* _radioBtn {};
+		Wt::WCheckBox* _repeatBtn {};
+		Wt::WCheckBox* _radioBtn {};
 		std::optional<std::size_t> _trackPos;	// current track position, if set
 };
 

@@ -22,11 +22,9 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WEnvironment.h>
 #include <Wt/WLineEdit.h>
-#include <Wt/WPopupMenu.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WServer.h>
 #include <Wt/WStackedWidget.h>
-#include <Wt/WText.h>
 
 #include "services/auth/IEnvService.hpp"
 #include "services/auth/IPasswordService.hpp"
@@ -57,6 +55,8 @@
 #include "LmsApplicationManager.hpp"
 #include "LmsTheme.hpp"
 #include "MediaPlayer.hpp"
+#include "ModalManager.hpp"
+#include "NotificationContainer.hpp"
 #include "PlayQueue.hpp"
 #include "SettingsView.hpp"
 
@@ -162,7 +162,12 @@ LmsApplication::~LmsApplication() = default;
 void
 LmsApplication::init()
 {
+	setTheme(std::make_shared<LmsTheme>());
+
 	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
+	require("js/mediaplayer.js");
+
+	setTitle("LMS");
 
 	// Add a resource bundle
 	messageResourceBundle().use(appRoot() + "admin-database");
@@ -175,23 +180,17 @@ LmsApplication::init()
 	messageResourceBundle().use(appRoot() + "error");
 	messageResourceBundle().use(appRoot() + "explore");
 	messageResourceBundle().use(appRoot() + "login");
+	messageResourceBundle().use(appRoot() + "main");
 	messageResourceBundle().use(appRoot() + "mediaplayer");
 	messageResourceBundle().use(appRoot() + "messages");
+	messageResourceBundle().use(appRoot() + "misc");
+	messageResourceBundle().use(appRoot() + "notifications");
 	messageResourceBundle().use(appRoot() + "playqueue");
 	messageResourceBundle().use(appRoot() + "release");
 	messageResourceBundle().use(appRoot() + "releases");
 	messageResourceBundle().use(appRoot() + "search");
 	messageResourceBundle().use(appRoot() + "settings");
-	messageResourceBundle().use(appRoot() + "templates");
 	messageResourceBundle().use(appRoot() + "tracks");
-
-	// Require js here to avoid async problems
-	requireJQuery("js/jquery-1.10.2.min.js");
-	require("js/bootstrap-notify.js");
-	require("js/bootstrap.min.js");
-	require("js/mediaplayer.js");
-
-	setTitle("LMS");
 
 	// Handle Media Scanner events and other session events
 	enableUpdates(true);
@@ -218,8 +217,6 @@ LmsApplication::processPasswordAuth()
 		}
 	}
 
-	setTheme();
-
 	// If here is no account in the database, launch the first connection wizard
 	bool firstConnection {};
 	{
@@ -242,19 +239,6 @@ LmsApplication::processPasswordAuth()
 			onUserLoggedIn();
 		});
 	}
-}
-
-void
-LmsApplication::setTheme()
-{
-	Database::UITheme theme {Database::User::defaultUITheme};
-	{
-		auto transaction {getDbSession().createSharedTransaction()};
-		if (const auto user {getUser()})
-			theme = user->getUITheme();
-	}
-
-	WApplication::setTheme(std::make_unique<LmsTheme>(theme));
 }
 
 void
@@ -306,47 +290,12 @@ LmsApplication::createReleaseAnchor(Database::Release::pointer release, bool add
 
 	if (addText)
 	{
-		res->setWordWrap(false);
 		res->setTextFormat(Wt::TextFormat::Plain);
 		res->setText(Wt::WString::fromUTF8(release->getName()));
 		res->setToolTip(Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
 	}
 
 	return res;
-}
-
-std::unique_ptr<Wt::WText>
-LmsApplication::createCluster(Database::Cluster::pointer cluster, bool canDelete)
-{
-	auto getStyleClass = [](const Database::Cluster::pointer cluster)
-	{
-		switch (cluster->getType()->getId().getValue() % 6)
-		{
-			case 0: return "label-info";
-			case 1: return "label-warning";
-			case 2: return "label-primary";
-			case 3: return "label-default";
-			case 4: return "label-success";
-			case 5: return "label-danger";
-		}
-		return "label-default";
-	};
-
-	const std::string styleClass {getStyleClass(cluster)};
-	auto res {std::make_unique<Wt::WText>(std::string {} + (canDelete ? "<i class=\"fa fa-times-circle\"></i> " : "") + Wt::WString::fromUTF8(cluster->getName()), Wt::TextFormat::UnsafeXHTML)};
-
-	res->setStyleClass("Lms-cluster label " + styleClass);
-	res->setToolTip(cluster->getType()->getName(), Wt::TextFormat::Plain);
-	res->setInline(true);
-
-	return res;
-}
-
-Wt::WPopupMenu*
-LmsApplication::createPopupMenu()
-{
-	_popupMenu = std::make_unique<Wt::WPopupMenu>();
-	return _popupMenu.get();
 }
 
 void
@@ -407,8 +356,7 @@ handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
 
-	LmsApp->doJavaScript(R"($('.navbar-nav li.active').removeClass('active'); $('.navbar-nav a[href="' + location.pathname + '"]').closest('li').addClass('active');)");
-
+	LmsApp->doJavaScript(R"($('.navbar-nav a.active').removeClass('active'); $('.navbar-nav a[href="' + location.pathname + '"]').closest('a').addClass('active');)");
 	for (const auto& view : views)
 	{
 		if (wApp->internalPathMatches(view.path))
@@ -439,7 +387,6 @@ LmsApplication::logoutUser()
 void
 LmsApplication::onUserLoggedIn()
 {
-	setTheme();
 	root()->clear();
 
 	LMS_LOG(UI, INFO) << "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent();
@@ -466,45 +413,50 @@ LmsApplication::createHome()
 	_coverResource = std::make_shared<CoverResource>();
 
 	declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
-	doJavaScript("$('body').tooltip({ selector: '[data-toggle=\"tooltip\"]'})");
 
-	Wt::WTemplate* main {root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.template")))};
+	Wt::WTemplate* main {root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.main.template")))};
 
 	main->addFunction("tr", &Wt::WTemplate::Functions::tr);
+
+	Wt::WTemplate* navbar {main->bindNew<Wt::WTemplate>("navbar", Wt::WString::tr("Lms.main.template.navbar"))};
+	navbar->addFunction("tr", &Wt::WTemplate::Functions::tr);
+
+	_notificationContainer = main->bindNew<NotificationContainer>("notifications");
+	_modalManager = main->bindNew<ModalManager>("modal");
 
 	// MediaPlayer
 	_mediaPlayer = main->bindNew<MediaPlayer>("player");
 
-	main->bindNew<Wt::WAnchor>("title",  Wt::WLink {Wt::LinkType::InternalPath, defaultPath}, "LMS");
-	main->bindNew<Wt::WAnchor>("artists", Wt::WLink {Wt::LinkType::InternalPath, "/artists"}, Wt::WString::tr("Lms.Explore.artists"));
-	main->bindNew<Wt::WAnchor>("releases", Wt::WLink {Wt::LinkType::InternalPath, "/releases"}, Wt::WString::tr("Lms.Explore.releases"));
-	main->bindNew<Wt::WAnchor>("tracks", Wt::WLink {Wt::LinkType::InternalPath, "/tracks"}, Wt::WString::tr("Lms.Explore.tracks"));
+	navbar->bindNew<Wt::WAnchor>("title",  Wt::WLink {Wt::LinkType::InternalPath, defaultPath}, "LMS");
+	navbar->bindNew<Wt::WAnchor>("artists", Wt::WLink {Wt::LinkType::InternalPath, "/artists"}, Wt::WString::tr("Lms.Explore.artists"));
+	navbar->bindNew<Wt::WAnchor>("releases", Wt::WLink {Wt::LinkType::InternalPath, "/releases"}, Wt::WString::tr("Lms.Explore.releases"));
+	navbar->bindNew<Wt::WAnchor>("tracks", Wt::WLink {Wt::LinkType::InternalPath, "/tracks"}, Wt::WString::tr("Lms.Explore.tracks"));
 
-	Filters* filters {main->bindNew<Filters>("filters")};
-	main->bindNew<Wt::WAnchor>("playqueue", Wt::WLink {Wt::LinkType::InternalPath, "/playqueue"}, Wt::WString::tr("Lms.PlayQueue.playqueue"));
-	main->bindString("username", getUserLoginName(), Wt::TextFormat::Plain);
-	main->bindNew<Wt::WAnchor>("settings", Wt::WLink {Wt::LinkType::InternalPath, "/settings"}, Wt::WString::tr("Lms.Settings.menu-settings"));
+	Filters* filters {navbar->bindNew<Filters>("filters")};
+	navbar->bindNew<Wt::WAnchor>("playqueue", Wt::WLink {Wt::LinkType::InternalPath, "/playqueue"}, Wt::WString::tr("Lms.PlayQueue.playqueue"));
+	navbar->bindString("username", getUserLoginName(), Wt::TextFormat::Plain);
+	navbar->bindNew<Wt::WAnchor>("settings", Wt::WLink {Wt::LinkType::InternalPath, "/settings"}, Wt::WString::tr("Lms.Settings.menu-settings"));
 
 	{
-		Wt::WAnchor* logout {main->bindNew<Wt::WAnchor>("logout")};
+		Wt::WAnchor* logout {navbar->bindNew<Wt::WAnchor>("logout")};
 		logout->setText(Wt::WString::tr("Lms.logout"));
 		logout->clicked().connect(this, &LmsApplication::logoutUser);
 	}
 
-	Wt::WLineEdit* searchEdit {main->bindNew<Wt::WLineEdit>("search")};
+	Wt::WLineEdit* searchEdit {navbar->bindNew<Wt::WLineEdit>("search")};
 	searchEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
 
 	if (LmsApp->getUserType() == Database::UserType::ADMIN)
 	{
-		main->setCondition("if-is-admin", true);
-		main->bindNew<Wt::WAnchor>("database", Wt::WLink {Wt::LinkType::InternalPath, "/admin/database"}, Wt::WString::tr("Lms.Admin.Database.menu-database"));
-		main->bindNew<Wt::WAnchor>("users", Wt::WLink {Wt::LinkType::InternalPath, "/admin/users"}, Wt::WString::tr("Lms.Admin.Users.menu-users"));
+		navbar->setCondition("if-is-admin", true);
+		navbar->bindNew<Wt::WAnchor>("database", Wt::WLink {Wt::LinkType::InternalPath, "/admin/database"}, Wt::WString::tr("Lms.Admin.Database.menu-database"));
+		navbar->bindNew<Wt::WAnchor>("users", Wt::WLink {Wt::LinkType::InternalPath, "/admin/users"}, Wt::WString::tr("Lms.Admin.Users.menu-users"));
 	}
 
 	// Contents
 	// Order is important in mainStack, see IdxRoot!
 	Wt::WStackedWidget* mainStack {main->bindNew<Wt::WStackedWidget>("contents")};
-	mainStack->setAttributeValue("style", "overflow-x:visible;overflow-y:visible;");
+	mainStack->setOverflow(Wt::Overflow::Visible); // wt makes it hidden by default
 
 	Explore* explore {mainStack->addNew<Explore>(filters)};
 	_playQueue = mainStack->addNew<PlayQueue>();
@@ -578,7 +530,9 @@ LmsApplication::createHome()
 	{
 		_scannerEvents.scanComplete.connect([=] (const Scanner::ScanStats& stats)
 		{
-			notifyMsg(MsgType::Info, Wt::WString::tr("Lms.Admin.Database.scan-complete")
+			notifyMsg(Notification::Type::Info,
+					Wt::WString::tr("Lms.Admin.Database.database"),
+					Wt::WString::tr("Lms.Admin.Database.scan-complete")
 				.arg(static_cast<unsigned>(stats.nbFiles()))
 				.arg(static_cast<unsigned>(stats.additions))
 				.arg(static_cast<unsigned>(stats.updates))
@@ -615,45 +569,18 @@ LmsApplication::notify(const Wt::WEvent& event)
 	}
 }
 
-static std::string msgTypeToString(LmsApplication::MsgType type)
-{
-	switch(type)
-	{
-		case LmsApplication::MsgType::Success:	return "success";
-		case LmsApplication::MsgType::Info:	return "info";
-		case LmsApplication::MsgType::Warning:	return "warning";
-		case LmsApplication::MsgType::Danger:	return "danger";
-	}
-	return "";
-}
-
 void
 LmsApplication::post(std::function<void()> func)
 {
 	Wt::WServer::instance()->post(LmsApp->sessionId(), std::move(func));
 }
 
-
 void
-LmsApplication::notifyMsg(MsgType type, const Wt::WString& message, std::chrono::milliseconds duration)
+LmsApplication::notifyMsg(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration)
 {
-	LMS_LOG(UI, INFO) << "Notifying message '" << message.toUTF8() << "' of type '" << msgTypeToString(type) << "'";
-
-	std::ostringstream oss;
-
-	oss << "$.notify({"
-			"message: '" << StringUtils::jsEscape(message.toUTF8()) << "'"
-		"},{"
-			"type: '" << msgTypeToString(type) << "',"
-			"placement: {from: 'bottom', align: 'right'},"
-			"timer: 250,"
-			"offset: {x: 20, y: 80},"
-			"delay: " << duration.count() << ""
-		"});";
-
-	LmsApp->doJavaScript(oss.str());
+	LMS_LOG(UI, INFO) << "Notifying message '" << message.toUTF8() << "' for category '" << category.toUTF8() << "'";
+	_notificationContainer->add(type, category, message, duration);
 }
-
 
 } // namespace UserInterface
 

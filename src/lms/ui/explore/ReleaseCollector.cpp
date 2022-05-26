@@ -67,7 +67,10 @@ namespace UserInterface
 				params.setSortMethod(ReleaseSortMethod::LastWritten);
 				params.setRange(range);
 
-				releases = Release::find(LmsApp->getDbSession(), params);
+				{
+					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+					releases = Release::find(LmsApp->getDbSession(), params);
+				}
 				break;
 			}
 
@@ -79,7 +82,10 @@ namespace UserInterface
 				params.setSortMethod(ReleaseSortMethod::Name);
 				params.setRange(range);
 
-				releases = Release::find(LmsApp->getDbSession(), params);
+				{
+					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+					releases = Release::find(LmsApp->getDbSession(), params);
+				}
 				break;
 			}
 
@@ -90,7 +96,10 @@ namespace UserInterface
 				params.setSortMethod(ReleaseSortMethod::Name);
 				params.setRange(range);
 
-				releases = Release::find(LmsApp->getDbSession(), params);
+				{
+					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+					releases = Release::find(LmsApp->getDbSession(), params);
+				}
 				break;
 			}
 		}
@@ -112,7 +121,11 @@ namespace UserInterface
 			params.setClusters(getFilters().getClusterIds());
 			params.setSortMethod(ReleaseSortMethod::Random);
 			params.setRange({0, getMaxCount()});
-			_randomReleases = Release::find(LmsApp->getDbSession(), params);
+
+			{
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+				_randomReleases = Release::find(LmsApp->getDbSession(), params);
+			}
 		}
 
 		return _randomReleases->getSubRange(range);

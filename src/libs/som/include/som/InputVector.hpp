@@ -163,7 +163,6 @@ class InputVector
 		}
 
 	private:
-
 		friend class InputVector operator-(const InputVector& a, const InputVector& b)
 		{
 			if (!a.hasSameDimension(b.getNbDimensions()))

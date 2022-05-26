@@ -574,13 +574,13 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistSingleCluster)
 		ASSERT_EQ(artists.results.size(), 1);
 		EXPECT_EQ(artists.results.front(), artist.getId());
 
-		auto releases {artist->getReleases()};
-		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front()->getId(), release.getId());
+		auto releases {artist->getReleases(Range {})};
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release.getId());
 
-		releases = artist->getReleases({cluster.getId()});
-		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front()->getId(), release.getId());
+		releases = artist->getReleases(Range {}, {cluster.getId()});
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release.getId());
 	}
 }
 
@@ -605,13 +605,13 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistMultiClusters)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto releases {artist->getReleases()};
-		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front()->getId(), release.getId());
+		auto releases {artist->getReleases(Range {})};
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release.getId());
 
-		releases = artist->getReleases({cluster1.getId(), cluster2.getId()});
-		ASSERT_EQ(releases.size(), 1);
-		EXPECT_EQ(releases.front()->getId(), release.getId());
+		releases = artist->getReleases(Range {}, {cluster1.getId(), cluster2.getId()});
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release.getId());
 	}
 }
 

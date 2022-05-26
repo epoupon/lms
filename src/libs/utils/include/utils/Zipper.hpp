@@ -40,7 +40,6 @@ namespace Zip
 	class Zipper
 	{
 		public:
-
 			Zipper(const std::map<std::string, std::filesystem::path>& files, const Wt::WDateTime& lastModifiedTime = {});
 
 			static constexpr SizeType minOutputBufferSize {64};

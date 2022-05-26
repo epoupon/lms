@@ -80,6 +80,7 @@
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Ricarica motore di tracce simili: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scansione files: {1}/{2} files ({3}%)...</message>
 
+
 <!--Users-->
 <message id="Lms.Admin.Users.add">Nuovo utente</message>
 <message id="Lms.Admin.Users.admin">Amministratore</message>
@@ -116,10 +117,10 @@
 <message id="Lms.Explore.download">Download</message>
 <message id="Lms.Explore.filter-added">Filtro aggiunto</message>
 <message id="Lms.Explore.filters">Filtri</message>
-<message id="Lms.Explore.links">Collegamenti</message>
 <message id="Lms.Explore.most-played">Più ascoltati</message>
 <message id="Lms.Explore.musicbrainz-artist">Artista MusicBrainz</message>
 <message id="Lms.Explore.musicbrainz-release">Album MusicBrainz</message>
+
 <message id="Lms.Explore.play-last">Aggiungi alla coda di riproduzione</message>
 <message id="Lms.Explore.play-shuffled">Aggiungi alla coda di riproduzione mischiando</message>
 <message id="Lms.Explore.random">Casuali</message>
@@ -176,11 +177,9 @@
 
 
 <!--Settings-->
-<message id="Lms.Settings.appearance">Aspetto</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">Queste impostazioni sono salvate localmente su questo dispositivo!</message>
 <message id="Lms.Settings.change-password">Cambia password</message>
-<message id="Lms.Settings.dark-mode">Tema scuro</message>
 <message id="Lms.Settings.demo-cannot-save">Non posso salvare le impostazioni utilizzando l'account demo!</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Impostazioni</message>
 <message id="Lms.Settings.password-bad">Password errata</message>

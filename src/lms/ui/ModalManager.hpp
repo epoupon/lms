@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,9 +19,23 @@
 
 #pragma once
 
-#include <chrono>
-#include <string>
+#include <Wt/WContainerWidget.h>
+#include <Wt/WSignal.h>
+#include <Wt/WWidget.h>
 
-std::string
-durationToString(std::chrono::milliseconds msDuration);
+namespace UserInterface
+{
+	class ModalManager : public Wt::WContainerWidget
+	{
+		public:
+			ModalManager();
 
+			// should handle only one modal at a time
+			// Widget must contain a "modal" element
+			void show(std::unique_ptr<Wt::WWidget> modalWidget);
+			void dispose(Wt::WWidget* modalWidget);
+
+		private:
+			Wt::JSignal<std::string> _closed;
+	};
+}

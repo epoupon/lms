@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.notifications.template.entry">
+	<div class="toast align-items-center ${bg-color} text-${text-color} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${duration}">
+		<div class="d-flex">
+			<div class="toast-body">
+				${message}
+			</div>
+			<button type="button" class="btn-close btn-close-${text-color} me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+		</div>
+	</div>
+</message>
+</messages>

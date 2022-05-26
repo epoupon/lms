@@ -50,7 +50,6 @@ class GeneticAlgorithm
 		Individual simulate(const std::vector<Individual>& initialPopulation);
 
 	private:
-
 		struct ScoredIndividual
 		{
 			Individual individual;

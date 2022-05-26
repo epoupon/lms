@@ -47,7 +47,6 @@ using namespace Database;
 
 class UserModel : public Wt::WFormModel
 {
-
 	public:
 		static inline const Field LoginField {"login"};
 		static inline const Field PasswordField {"password"};
@@ -252,7 +251,9 @@ UserView::refreshView()
 		if (model->validate())
 		{
 			model->saveData();
-			LmsApp->notifyMsg(LmsApplication::MsgType::Success, Wt::WString::tr(userId ? "Lms.Admin.User.user-updated" : "Lms.Admin.User.user-created"));
+			LmsApp->notifyMsg(Notification::Type::Info,
+					Wt::WString::tr("Lms.Admin.Users.users"),
+					Wt::WString::tr(userId ? "Lms.Admin.User.user-updated" : "Lms.Admin.User.user-created"));
 			LmsApp->setInternalPath("/admin/users", true);
 		}
 		else

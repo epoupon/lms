@@ -30,6 +30,7 @@
 #include "utils/Service.hpp"
 
 #include "LmsApplication.hpp"
+#include "ModalManager.hpp"
 
 namespace UserInterface {
 
@@ -101,30 +102,31 @@ UsersView::refreshView()
 		Wt::WPushButton* delBtn = entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.Admin.Users.del"));
 		delBtn->clicked().connect([=]
 		{
-			auto msgBox = delBtn->addChild(std::make_unique<Wt::WMessageBox>(Wt::WString::tr("Lms.Admin.Users.del-user"),
-				Wt::WString::tr("Lms.Admin.Users.del-user-name"),
-				Wt::Icon::Warning, Wt::StandardButton::Yes | Wt::StandardButton::No));
+			auto modal {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.delete-user"))};
+			modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
+			Wt::WWidget* modalPtr {modal.get()};
 
-			msgBox->setModal(true);
-			msgBox->buttonClicked().connect([=] (Wt::StandardButton btn)
+			auto* delBtn {modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.Admin.Users.del"))};
+			delBtn->clicked().connect([=]
 			{
-				if (btn == Wt::StandardButton::Yes)
-				{
-					auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-					User::pointer user {User::find(LmsApp->getDbSession(), userId)};
-					if (user)
-						user.remove();
+				User::pointer user {User::find(LmsApp->getDbSession(), userId)};
+				if (user)
+					user.remove();
 
-					_container->removeWidget(entry);
-				}
-				else
-				{
-					delBtn->removeChild(msgBox);
-				}
+				_container->removeWidget(entry);
+
+				LmsApp->getModalManager().dispose(modalPtr);
 			});
 
-			msgBox->show();
+			auto* cancelBtn {modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel"))};
+			cancelBtn->clicked().connect([=]
+			{
+				LmsApp->getModalManager().dispose(modalPtr);
+			});
+
+			LmsApp->getModalManager().show(std::move(modal));
 		});
 	}
 }

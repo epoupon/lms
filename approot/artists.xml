@@ -3,11 +3,30 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Artists.template">
-	<div class="Lms-header">
-		${mode class="nav nav-pills Lms-explore-mode-container"}
+	<div class="mb-3">
+		<ul class="nav nav-pills mb-2">
+			<li class="nav-item">
+				${random class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${starred class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${recently-played class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${most-played class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${recently-added class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${all class="nav-link"}
+			</li>
+		</ul>
 		<div class="row">
-			<div class="col-sm-2">
-				${link-type}
+			<div class="col-lg-3">
+				${link-type class="form-select"}
 			</div>
 		</div>
 	</div>
@@ -15,15 +34,12 @@
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">
-	<div class="Lms-explore-artists-entry Lms-entry-hoverable Lms-vertical-align">
-		 <h4>${name class="Lms-btn Lms-artistname text-primary"}</h4>
-	</div>
+	${name class="text-decoration-none link-secondary"}
 </message>
 
-<message id="Lms.Explore.Artists.template.entry-small">
-	<div class="Lms-explore-artists-entry-small Lms-entry-hoverable Lms-vertical-align">
-		${name class="Lms-btn Lms-artistname text-primary"}
-	</div>
+<message id="Lms.Explore.Artists.template.container">
+	${elements class="d-grid gap-3"}
+	${loading-indicator}
 </message>
 
 </messages>

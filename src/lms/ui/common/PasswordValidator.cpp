@@ -36,6 +36,7 @@ namespace UserInterface
 
 		private:
 			Wt::WValidator::Result validate(const Wt::WString& input) const override;
+			std::string javaScriptValidate() const override { return {}; }
 
 			PasswordValidationContextGetFunc _passwordValidationContextGetFunc;
 	};
@@ -61,16 +62,17 @@ namespace UserInterface
 		throw LmsException {"internal error"};
 	}
 
-	std::shared_ptr<Wt::WValidator>
+	std::unique_ptr<Wt::WValidator>
 	createPasswordStrengthValidator(PasswordValidationContextGetFunc passwordValidationContextGetFunc)
 	{
-		return std::make_shared<PasswordStrengthValidator>(std::move(passwordValidationContextGetFunc));
+		return std::make_unique<PasswordStrengthValidator>(std::move(passwordValidationContextGetFunc));
 	}
 
 	class PasswordCheckValidator : public Wt::WValidator
 	{
-		public:
+		private:
 			Wt::WValidator::Result validate(const Wt::WString& input) const override;
+			std::string javaScriptValidate() const override { return {}; }
 	};
 
 	Wt::WValidator::Result
@@ -96,10 +98,10 @@ namespace UserInterface
 		throw LmsException {"InternalError"};
 	}
 
-	std::shared_ptr<Wt::WValidator>
+	std::unique_ptr<Wt::WValidator>
 	createPasswordCheckValidator()
 	{
-		return std::make_shared<PasswordCheckValidator>();
+		return std::make_unique<PasswordCheckValidator>();
 	}
 
 } // namespace UserInterface

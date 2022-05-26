@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,21 +17,20 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "TrackStringUtils.hpp"
+#pragma once
 
-#include <iomanip>
-#include <sstream>
+#include <Wt/WTemplate.h>
 
-std::string
-durationToString(std::chrono::milliseconds msDuration)
+namespace UserInterface
 {
-	const std::chrono::seconds duration {std::chrono::duration_cast<std::chrono::seconds>(msDuration)};
 
-	std::ostringstream oss;
-	oss << (duration.count() / 60)
-		<< ":"
-		<< std::setfill('0') << std::setw(2) << duration.count() % 60;
+	class Template : public Wt::WTemplate
+	{
+		public:
+			using Wt::WTemplate::WTemplate;
 
-	return oss.str();
-}
+		private:
+			void applyArguments(Wt::WWidget* w, const std::vector<Wt::WString>& args) override;
+	};
 
+} // namespace UserInterface

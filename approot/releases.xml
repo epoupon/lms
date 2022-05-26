@@ -3,33 +3,56 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.Releases.template">
-	<div class="Lms-header">
-		${mode class="nav nav-pills Lms-explore-mode-container"}
-		${play-btn class="Lms-explore-btn Lms-btn"}${more-btn class="Lms-explore-btn Lms-btn"}
+	<div class="mb-3">
+		<ul class="nav nav-pills mb-2">
+			<li class="nav-item">
+				${random class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${starred class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${recently-played class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${most-played class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${recently-added class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${all class="nav-link"}
+			</li>
+		</ul>
+		<div class="btn-group">
+			${play-btn class="btn btn-primary"}
+			<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"/>
+			<ul class="dropdown-menu">
+				<li>${play-last class="btn dropdown-item"}</li>
+				<li>${play-shuffled class="btn dropdown-item"}</li>
+			</ul>
+		</div>
 	</div>
 	${releases}
 </message>
 
 <message id="Lms.Explore.Releases.template.entry-grid">
-	<div class="col-xs-6 col-sm-3 col-md-2 col-lg-2">
-		<div class="Lms-explore-entry-grid">
+	<div class="col h-100 Lms-bg-dark-hover rounded">
+		<div class="p-2">
 			<div class="Lms-responsive-square Lms-cover-container">
-				${cover}
+				${cover class="shadow-sm"}
 			</div>
-			<div class="Lms-explore-entry-grid-text-container">
-				<h5>${release-name class="Lms-btn Lms-releasename text-primary"}</h5>
-				<div class="Lms-explore-entry-separator"><h6>${<if-has-year>}<small><span class="text-muted">${year}</span></small>${</if-has-year>}${<if-has-artist>}${artist-name class="Lms-btn Lms-artistname text-muted"}${</if-has-artist>}${<if-has-various-artists>}<div class="Lms-artistname text-muted">${tr:Lms.Explore.various-artists}</div>${</if-has-various-artists>}</h6></div>
-			</div>
+			${release-name class="d-block text-truncate text-nowrap text-decoration-none link-success"}
+			${<if-has-artist>}${artist-name class="d-block text-truncate text-nowrap text-decoration-none link-secondary"}${</if-has-artist>}
+			${<if-has-various-artists>}<div class="text-truncate text-nowrap text-secondary">${tr:Lms.Explore.various-artists}</div>${</if-has-various-artists>}
+			${<if-has-year>}<div class="small text-muted">${year}</div>${</if-has-year>}
 		</div>
 	</div>
 </message>
 
 <message id="Lms.Explore.Releases.template.container">
-	<div class="row">
-		${elements}
-	</div>
-	${loading-indicator class="Lms-horizontal-center Lms-loading-indicator"}
+	${elements class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 gx-2 gy-4"}
+	${loading-indicator}
 </message>
-
 
 </messages>

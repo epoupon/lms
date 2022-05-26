@@ -69,12 +69,11 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 			auto dirValidator {createDirectoryValidator()};
 			dirValidator->setMandatory(true);
-			setValidator(MediaDirectoryField, dirValidator);
+			setValidator(MediaDirectoryField, move(dirValidator));
 
 			setValidator(UpdatePeriodField, createMandatoryValidator());
 			setValidator(UpdateStartTimeField, createMandatoryValidator());
 			setValidator(RecommendationEngineTypeField, createMandatoryValidator());
-			setValidator(TagsField, createTagsValidator());
 
 			// populate the model with initial data
 			loadData();
@@ -144,12 +143,6 @@ class DatabaseSettingsModel : public Wt::WFormModel
 		}
 
 	private:
-		static std::shared_ptr<Wt::WValidator> createTagsValidator()
-		{
-			auto v = std::make_shared<Wt::WValidator>();
-			return v;
-		}
-
 		void initializeModels()
 		{
 			_updatePeriodModel = std::make_shared<ValueStringModel<ScanSettings::UpdatePeriod>>();
@@ -241,7 +234,7 @@ DatabaseSettingsView::refreshView()
 			model->saveData();
 
 			Service<Scanner::IScannerService>::get()->requestImmediateScan(false);
-			LmsApp->notifyMsg(LmsApplication::MsgType::Success, Wt::WString::tr("Lms.Admin.Database.settings-saved"));
+			LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}
 
 		// Udate the view: Delete any validation message in the view, etc.

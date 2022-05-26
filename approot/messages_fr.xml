@@ -80,6 +80,7 @@
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Récupération des métadonnées AcousticBrainz : {1}/{2} fichiers ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Rechargement du moteur de recommandation : {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scan des fichiers : {1}/{2} fichiers ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-status">Statut de l'étape</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">Ajouter</message>
@@ -99,7 +100,7 @@
 <message id="Lms.Admin.User.user-already-exists">L'utilisateur existe déjà !</message>
 <message id="Lms.Admin.User.user-create">Nouvel utilisateur</message>
 <message id="Lms.Admin.User.user-created">Nouvel utilisateur créé !</message>
-<message id="Lms.Admin.User.user-edit">Utilisateur {1}</message>
+<message id="Lms.Admin.User.user-edit">Utilisateur '{1}'</message>
 <message id="Lms.Admin.User.user-updated">L'utilisateur a été mis à jour !</message>
 
 <!--Wizard-->
@@ -117,10 +118,10 @@
 <message id="Lms.Explore.download">Télécharger</message>
 <message id="Lms.Explore.filter-added">Filtre ajouté</message>
 <message id="Lms.Explore.filters">Filtres</message>
-<message id="Lms.Explore.links">Liens</message>
 <message id="Lms.Explore.most-played">Plus joués</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz Artist</message>
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz Release</message>
+<message id="Lms.Explore.play">Jouer</message>
 <message id="Lms.Explore.play-last">Jouer en dernier</message>
 <message id="Lms.Explore.play-shuffled">Jouer aléatoirement</message>
 <message id="Lms.Explore.random">Aléatoire</message>
@@ -177,11 +178,9 @@
 
 
 <!--Settings-->
-<message id="Lms.Settings.appearance">Apparence</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">Ces paramètres audio sont locaux à votre navigateur !</message>
 <message id="Lms.Settings.change-password">Changement de mot de passe</message>
-<message id="Lms.Settings.dark-mode">Mode sombre</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Paramètres</message>
 <message id="Lms.Settings.password-bad">Mauvais mot de passe</message>

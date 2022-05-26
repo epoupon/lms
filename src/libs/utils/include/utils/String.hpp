@@ -31,34 +31,43 @@
 
 namespace StringUtils {
 
+[[nodiscard]]
 std::vector<std::string>
 splitStringCopy(std::string_view string, std::string_view separators);
 
+[[nodiscard]]
 std::vector<std::string_view>
 splitString(std::string_view string, std::string_view separators);
 
+[[nodiscard]]
 std::string
 joinStrings(const std::vector<std::string>& strings, const std::string& delimiter);
 
+[[nodiscard]]
 std::string
 stringTrim(std::string_view str, std::string_view whitespaces = " \t");
 
+[[nodiscard]]
 std::string
 stringTrimEnd(std::string_view str, std::string_view whitespaces = " \t");
 
+[[nodiscard]]
 std::string
 stringToLower(std::string_view str);
 
 void
 stringToLower(std::string& str);
 
+[[nodiscard]]
 std::string
 stringToUpper(const std::string& str);
 
+[[nodiscard]]
 std::string
 bufferToString(const std::vector<unsigned char>& data);
 
 template<typename T>
+[[nodiscard]]
 std::optional<T> readAs(std::string_view str)
 {
 	T res;
@@ -72,21 +81,27 @@ std::optional<T> readAs(std::string_view str)
 }
 
 template<>
+[[nodiscard]]
 std::optional<std::string>
 readAs(std::string_view str);
 
+[[nodiscard]]
 std::string
 replaceInString(const std::string& str, const std::string& from, const std::string& to);
 
+[[nodiscard]]
 std::string
 jsEscape(const std::string& str);
 
+[[nodiscard]]
 std::string
 escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar);
 
+[[nodiscard]]
 bool
 stringEndsWith(const std::string& str, const std::string& ending);
 
+[[nodiscard]]
 std::optional<std::string>
 stringFromHex(const std::string& str);
 

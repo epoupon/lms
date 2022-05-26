@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,17 +17,25 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "DoubleValidator.hpp"
 
-#include <Wt/WWidget.h>
-
-#include "services/database/Types.hpp"
-#include "PlayQueueAction.hpp"
+#include <Wt/WDoubleValidator.h>
 
 namespace UserInterface
 {
-	void displayReleasePopupMenu(Wt::WInteractWidget& target,
-			Database::ReleaseId releaseId,
-			PlayQueueActionReleaseSignal& releasesAction);
-} // namespace UserInterface
+	class DoubleValidator : public Wt::WDoubleValidator
+	{
+		public:
+			using Wt::WDoubleValidator::WDoubleValidator;
 
+		private:
+			std::string javaScriptValidate() const override { return {}; }
+	};
+
+	std::unique_ptr<Wt::WValidator>
+	createDoubleValidator(double min, double max)
+	{
+		auto validator {std::make_unique<DoubleValidator>(min, max)};
+		return validator;
+	}
+} // namespace UserInterface
