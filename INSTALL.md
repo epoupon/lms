@@ -1,6 +1,6 @@
 - [Installation](#installation)
   * [Docker](#docker)
-  * [Debian Buster packages](#debian-buster-packages)
+  * [Debian Bullseye packages](#debian-bullseye-packages)
   * [From source](#from-source)
     + [Build dependencies](#build-dependencies)
     + [Build](#build)
@@ -15,12 +15,12 @@
 # Installation
 ## Docker
 _Docker_ images are available, please see detailed instructions on https://hub.docker.com/r/epoupon/lms.
-## Debian Buster packages
-_Buster_ packages are provided for _amd64_ and _armhf_ architectures.
+## Debian Bullseye packages
+_Bullseye_ packages are provided for _amd64_ and _armhf_ architectures.
 As root, trust the following debian package provider and add it in your list of repositories:
 ```sh
 wget -O - https://debian.poupon.dev/apt/debian/epoupon.gpg.key | apt-key add -
-echo "deb https://debian.poupon.dev/apt/debian buster main" > /etc/apt/sources.list.d/epoupon.list
+echo "deb https://debian.poupon.dev/apt/debian bullseye main" > /etc/apt/sources.list.d/epoupon.list
 ```
 To install or upgrade _LMS_:
 ```sh
@@ -30,7 +30,7 @@ apt install lms
 The _lms_ service is started just after the package installation, run by a dedicated _lms_ system user.</br>
 Please refer to [Deployment](#deployment) for further configuration options.
 ## From source
-__Note__: this installation process and the default values of the configuration files have been written for _Debian Buster_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
+__Note__: this installation process and the default values of the configuration files have been written for _Debian Bullseye_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
 ### Build dependencies
 __Notes__:
 * a C++17 compiler is needed
