@@ -1,4 +1,4 @@
-FROM	alpine:3.16 AS build
+FROM	alpine:3.14 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -132,7 +132,7 @@ RUN \
 	rm -rf /tmp/fakeroot/share/Wt/resources/themes
 
 ## Release Stage
-FROM		alpine:3.16 AS release
+FROM		alpine:3.14 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 
 ARG	RUNTIME_PACKAGES=" \
