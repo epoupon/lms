@@ -67,7 +67,12 @@ std::vector<std::filesystem::path>
 ScanSettings::getAudioFileExtensions() const
 {
 	const auto extensions {StringUtils::splitString(_audioFileExtensions, " ")};
-	return std::vector<std::filesystem::path>(std::cbegin(extensions), std::cend(extensions));
+
+	std::vector<std::filesystem::path> res (std::cbegin(extensions), std::cend(extensions));
+	std::sort(std::begin(res), std::end(res));
+	res.erase(std::unique( std::begin(res), std::end(res)), std::end(res));
+
+	return res;
 }
 
 void

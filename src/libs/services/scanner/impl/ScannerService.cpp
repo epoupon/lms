@@ -69,11 +69,11 @@ getNextFirstOfMonth(Wt::WDate current)
 }
 
 bool
-isFileSupported(const std::filesystem::path& file, const std::unordered_set<std::filesystem::path>& extensions)
+isFileSupported(const std::filesystem::path& file, const std::vector<std::filesystem::path>& extensions)
 {
 	const std::filesystem::path extension {StringUtils::stringToLower(file.extension().string())};
 
-	return (extensions.find(extension) != extensions.end());
+	return (std::find(std::cbegin(extensions), std::cend(extensions), extension) != std::cend(extensions));
 }
 
 bool
@@ -642,7 +642,7 @@ ScannerService::refreshScanSettings()
 	{
 		const auto fileExtensions {scanSettings->getAudioFileExtensions()};
 		_fileExtensions.clear();
-		std::transform(std::cbegin(fileExtensions), std::end(fileExtensions), std::inserter(_fileExtensions, std::begin(_fileExtensions)),
+		std::transform(std::cbegin(fileExtensions), std::end(fileExtensions), std::back_inserter(_fileExtensions),
 				[](const std::filesystem::path& extension) { return std::filesystem::path{ StringUtils::stringToLower(extension.string()) }; });
 	}
 	_mediaDirectory = scanSettings->getMediaDirectory();
@@ -896,7 +896,7 @@ ScannerService::scanMediaDirectory(const std::filesystem::path& mediaDirectory, 
 
 // Check if a file exists and is still in a media directory
 static bool
-checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDirectory, const std::unordered_set<std::filesystem::path>& extensions)
+checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDirectory, const std::vector<std::filesystem::path>& extensions)
 {
 	try
 	{
