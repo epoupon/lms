@@ -63,7 +63,7 @@ class FeaturesEngine : public IEngine
 		ReleaseContainer getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const override;
 		ArtistContainer getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
-		void loadFromCache(FeaturesEngineCache cache);
+		void loadFromCache(FeaturesEngineCache&& cache);
 
 		// Use training (may be very slow)
 		struct TrainSettings

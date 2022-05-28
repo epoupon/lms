@@ -213,7 +213,7 @@ FeaturesEngine::loadFromTraining(const TrainSettings& trainSettings, const Progr
 }
 
 void
-FeaturesEngine::loadFromCache(FeaturesEngineCache cache)
+FeaturesEngine::loadFromCache(FeaturesEngineCache&& cache)
 {
 	LMS_LOG(RECOMMENDATION, INFO) << "Constructing features classifier from cache...";
 
@@ -341,9 +341,9 @@ FeaturesEngine::load(bool forceReload, const ProgressCallback& progressCallback)
 	{
 		FeaturesEngineCache::invalidate();
 	}
-	else if (const std::optional<FeaturesEngineCache> cache {FeaturesEngineCache::read()})
+	else if (std::optional<FeaturesEngineCache> cache {FeaturesEngineCache::read()})
 	{
-		loadFromCache(*cache);
+		loadFromCache(std::move(*cache));
 		return;
 	}
 
