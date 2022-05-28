@@ -22,7 +22,7 @@
 #include <chrono>
 #include <shared_mutex>
 #include <optional>
-#include <unordered_set>
+#include <vector>
 
 #include <Wt/WDateTime.h>
 #include <Wt/WIOService.h>
@@ -114,7 +114,7 @@ namespace Scanner
 			std::size_t				_scanVersion {};
 			Wt::WTime				_startTime;
 			Database::ScanSettings::UpdatePeriod 	_updatePeriod {Database::ScanSettings::UpdatePeriod::Never};
-			std::unordered_set<std::filesystem::path>		_fileExtensions;
+			std::vector<std::filesystem::path>		_fileExtensions;
 			std::filesystem::path					_mediaDirectory;
 			Database::ScanSettings::RecommendationEngineType _recommendationServiceType;
 	};

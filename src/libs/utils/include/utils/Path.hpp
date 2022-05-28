@@ -38,11 +38,3 @@ Wt::WDateTime getLastWriteTime(const std::filesystem::path& dir);
 // returns false if aborted by user
 bool exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb, const std::filesystem::path& excludeDirFileName = {});
 
-namespace std
-{
-	template <>
-	struct hash<std::filesystem::path>
-	{
-		inline std::size_t operator()(const std::filesystem::path &path) const { return hash_value(path); }
-	};
-}
