@@ -31,6 +31,7 @@
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
+#include "utils/String.hpp"
 #include "utils/Utils.hpp"
 
 namespace
@@ -68,6 +69,19 @@ namespace
 
 		return res;
 	}
+
+	std::vector<std::string> constructPreferredFileNames()
+	{
+		std::vector<std::string> res;
+
+		Service<IConfig>::get()->visitStrings("cover-preferred-file-names",
+				[&res](std::string_view fileName)
+				{
+					res.emplace_back(fileName);
+				}, {"cover", "front"});
+
+		return res;
+	}
 }
 
 namespace Cover {
@@ -94,6 +108,7 @@ CoverService::CoverService(Database::Db& db,
 	, _defaultCoverPath {defaultCoverPath}
 	, _maxCacheSize {Service<IConfig>::get()->getULong("cover-max-cache-size", 30) * 1000 * 1000}
 	, _maxFileSize {Service<IConfig>::get()->getULong("cover-max-file-size", 10) * 1000 * 1000}
+	, _preferredFileNames {constructPreferredFileNames()}
 
 {
 	setJpegQuality(Service<IConfig>::get()->getULong("cover-jpeg-quality", 75));
@@ -101,6 +116,7 @@ CoverService::CoverService(Database::Db& db,
 	LMS_LOG(COVER, INFO) << "Default cover path = '" << _defaultCoverPath.string() << "'";
 	LMS_LOG(COVER, INFO) << "Max cache size = " << _maxCacheSize;
 	LMS_LOG(COVER, INFO) << "Max file size = " << _maxFileSize;
+	LMS_LOG(COVER, INFO) << "Preferred file names: " << StringUtils::joinStrings(_preferredFileNames, ",");
 
 #if LMS_SUPPORT_IMAGE_GM
 	GraphicsMagick::init(execPath);
