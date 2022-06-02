@@ -21,6 +21,8 @@
 
 #include "services/database/Db.hpp"
 #include "services/database/Session.hpp"
+#include "services/database/StarredArtist.hpp"
+#include "services/database/StarredRelease.hpp"
 #include "services/database/Track.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/http/IClient.hpp"
@@ -46,6 +48,27 @@ namespace
 			LOG(DEBUG) << "Track cannot be scrobbled since played duration is too short: " << duration.count() << "s, total duration = " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << "s";
 
 		return res;
+	}
+
+	template <typename StarredObjType>
+	void onStarred(Database::Session& session, typename StarredObjType::IdType id)
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		if (auto starredObj {StarredObjType::find(session, id)})
+		{
+			// maybe in the future this will be supported by ListenBrainz so set it to PendingAdd
+			starredObj.modify()->setScrobblingState(Database::ScrobblingState::PendingAdd);
+		}
+	}
+
+	template <typename StarredObjType>
+	void onUnstarred(Database::Session& session, typename StarredObjType::IdType id)
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		if (auto starredObj {StarredObjType::find(session, id)})
+			starredObj.remove();
 	}
 }
 
@@ -90,17 +113,39 @@ namespace Scrobbling::ListenBrainz
 	}
 
 	void
-	Scrobbler::onStarred(UserId userId, TrackId trackId)
+	Scrobbler::onStarred(StarredArtistId starredArtistId)
 	{
-		const Feedback feedback {Feedback::Type::Love, userId, trackId};
-		_feedbackSender.enqueFeedback(feedback);
+		::onStarred<StarredArtist>(_db.getTLSSession(), starredArtistId);
 	}
 
 	void
-	Scrobbler::onUnstarred(UserId userId, TrackId trackId)
+	Scrobbler::onUnstarred(StarredArtistId starredArtistId)
 	{
-		const Feedback feedback {Feedback::Type::Erase, userId, trackId};
-		_feedbackSender.enqueFeedback(feedback);
+		::onUnstarred<StarredArtist>(_db.getTLSSession(), starredArtistId);
+	}
+
+	void
+	Scrobbler::onStarred(StarredReleaseId starredReleaseId)
+	{
+		::onStarred<StarredRelease>(_db.getTLSSession(), starredReleaseId);
+	}
+
+	void
+	Scrobbler::onUnstarred(StarredReleaseId starredReleaseId)
+	{
+		::onUnstarred<StarredRelease>(_db.getTLSSession(), starredReleaseId);
+	}
+
+	void
+	Scrobbler::onStarred(StarredTrackId starredTrackId)
+	{
+		_feedbackSender.enqueFeedback(FeedbackType::Love, starredTrackId);
+	}
+
+	void
+	Scrobbler::onUnstarred(StarredTrackId starredtrackId)
+	{
+		_feedbackSender.enqueFeedback(FeedbackType::Erase, starredtrackId);
 	}
 } // namespace Scrobbling::ListenBrainz
 

@@ -22,14 +22,11 @@
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
-#include "services/database/ReleaseId.hpp"
-#include "services/database/IdType.hpp"
 #include "services/database/Object.hpp"
-#include "services/database/Session.hpp"
+#include "services/database/ReleaseId.hpp"
+#include "services/database/StarredReleaseId.hpp"
 #include "services/database/Types.hpp"
 #include "services/database/UserId.hpp"
-
-LMS_DECLARE_IDTYPE(StarredReleaseId)
 
 namespace Database
 {
@@ -56,6 +53,7 @@ namespace Database
 			ObjectPtr<User>		getUser() const { return _user; }
 			Scrobbler			getScrobbler() const { return _scrobbler; }
 			const Wt::WDateTime& getDateTime() const { return _dateTime; }
+			ScrobblingState		getScrobblingState() const { return _scrobblingState; }
 
 			// Setters
 			void setDateTime(const Wt::WDateTime& dateTime);

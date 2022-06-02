@@ -22,6 +22,7 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "services/database/Artist.hpp"
+#include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"

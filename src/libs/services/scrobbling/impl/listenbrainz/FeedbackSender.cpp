@@ -22,7 +22,10 @@
 
 #include "services/database/Db.hpp"
 #include "services/database/Session.hpp"
+#include "services/database/StarredTrack.hpp"
 #include "services/database/Track.hpp"
+#include "services/database/User.hpp"
+#include "services/scrobbling/Exception.hpp"
 #include "utils/http/IClient.hpp"
 
 #include "Utils.hpp"
@@ -37,56 +40,93 @@ namespace Scrobbling::ListenBrainz
 	{}
 
 	void
-	FeedbackSender::enqueFeedback(const Feedback& feedback)
+	FeedbackSender::enqueFeedback(FeedbackType type, Database::StarredTrackId starredTrackId)
 	{
+		Session& session {_db.getTLSSession()};
+		auto transaction {session.createUniqueTransaction()};
+
+		StarredTrack::pointer starredTrack {StarredTrack::find(session, starredTrackId)};
+		if (!starredTrack)
+			return;
+
 		Http::ClientPOSTRequestParameters request;
 		request.relativeUrl = "/1/feedback/recording-feedback";
 
-		std::string bodyText {feedbackToJsonString(_db.getTLSSession(), feedback)};
-		if (bodyText.empty())
+		std::optional<UUID> recordingMBID {starredTrack->getTrack()->getRecordingMBID()};
+
+		switch (type)
 		{
-			LOG(DEBUG) << "Cannot convert feedback to json: skipping";
-			return;
+			case FeedbackType::Love:
+				// if there is no recording MBID, do not set to synchronized to make the user a chance to update its tags
+				// and make it synchronizable later
+				starredTrack.modify()->setScrobblingState(ScrobblingState::PendingAdd);
+				if (!recordingMBID)
+				{
+					LOG(DEBUG) << "Track has no recording MBID: skipping";
+					return;
+				}
+				break;
+
+			case FeedbackType::Erase:
+				if (!recordingMBID)
+				{
+					LOG(DEBUG) << "Track has no recording MBID: erasing star";
+					starredTrack.remove();
+					return;
+				}
+				else
+				{
+					starredTrack.modify()->setScrobblingState(ScrobblingState::PendingRemove);
+				}
+				break;
+
+			default:
+				throw Exception {"Unhandled feedback type"};
 		}
 
-		const std::optional<UUID> listenBrainzToken {Utils::getListenBrainzToken(_db.getTLSSession(), feedback.userId)};
+		const std::optional<UUID> listenBrainzToken {starredTrack->getUser()->getListenBrainzToken()};
 		if (!listenBrainzToken)
 			return;
 
-		request.message.addBodyText(bodyText);
 		request.message.addHeader("Authorization", "Token " + std::string {listenBrainzToken->getAsString()});
+
+		Wt::Json::Object root;
+		root["recording_mbid"] = Wt::Json::Value {std::string {recordingMBID->getAsString()}};
+		root["score"] = Wt::Json::Value {static_cast<int>(type)};
+
+		request.message.addBodyText(Wt::Json::serialize(root));
 		request.message.addHeader("Content-Type", "application/json");
+
+		request.onSuccessFunc = [=](std::string_view /*msgBody*/) { onFeedbackSent(type, starredTrackId); };
 		_client.sendPOSTRequest(std::move(request));
 	}
 
-	std::string
-	FeedbackSender::feedbackToJsonString(Session& session, const Feedback& feedback)
+	void
+	FeedbackSender::onFeedbackSent(FeedbackType type, Database::StarredTrackId starredTrackId)
 	{
-		std::string res;
+		Session& session {_db.getTLSSession()};
+		auto transaction {session.createUniqueTransaction()};
 
-		std::string recordingMBID;
+		StarredTrack::pointer starredTrack {StarredTrack::find(session, starredTrackId)};
+		if (!starredTrack)
 		{
-			auto transaction {session.createSharedTransaction()};
-
-			const Track::pointer track {Track::find(session, feedback.trackId)};
-			if (!track)
-				return res;
-
-			if (auto mbid {track->getRecordingMBID()})
-				recordingMBID = mbid->getAsString();
+			LOG(DEBUG) << "Starred track not found. deleted?";
+			return;
 		}
 
-		if (recordingMBID.empty())
+		switch (type)
 		{
-			LOG(DEBUG) << "Track has no recording MBID: skipping";
-			return res;
+			case FeedbackType::Love:
+				starredTrack.modify()->setScrobblingState(ScrobblingState::Synchronized);
+				LOG(DEBUG) << "State set to synchronized";
+				break;
+			case FeedbackType::Erase:
+				starredTrack.remove();
+				LOG(DEBUG) << "Removed starred track";
+				break;
+
+			default:
+				throw Exception {"Unhandled feedback type"};
 		}
-
-		Wt::Json::Object root;
-		root["recording_mbid"] = Wt::Json::Value {recordingMBID};
-		root["score"] = Wt::Json::Value {static_cast<int>(feedback.type)};
-
-		res = Wt::Json::serialize(root);
-		return res;
 	}
 }

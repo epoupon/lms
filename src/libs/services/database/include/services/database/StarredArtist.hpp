@@ -23,13 +23,10 @@
 #include <Wt/Dbo/Dbo.h>
 
 #include "services/database/ArtistId.hpp"
-#include "services/database/IdType.hpp"
 #include "services/database/Object.hpp"
-#include "services/database/Session.hpp"
+#include "services/database/StarredArtistId.hpp"
 #include "services/database/Types.hpp"
 #include "services/database/UserId.hpp"
-
-LMS_DECLARE_IDTYPE(StarredArtistId)
 
 namespace Database
 {
@@ -56,6 +53,7 @@ namespace Database
 			ObjectPtr<User>		getUser() const { return _user; }
 			Scrobbler			getScrobbler() const { return _scrobbler; }
 			const Wt::WDateTime& getDateTime() const { return _dateTime; }
+			ScrobblingState		getScrobblingState() const { return _scrobblingState; }
 
 			// Setters
 			void setDateTime(const Wt::WDateTime& dateTime);

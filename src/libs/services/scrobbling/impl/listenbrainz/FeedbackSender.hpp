@@ -20,8 +20,7 @@
 
 #pragma once
 
-#include "services/database/TrackId.hpp"
-#include "services/database/UserId.hpp"
+#include "services/database/StarredTrackId.hpp"
 
 namespace Database
 {
@@ -36,19 +35,13 @@ namespace Http
 
 namespace Scrobbling::ListenBrainz
 {
-	struct Feedback
-	{
-		enum class Type
-		{
-			// See https://listenbrainz.readthedocs.io/en/production/dev/feedback-json/#feedback-json-doc
-			Love = 1,
-			Hate = -1,
-			Erase = 0,
-		};
 
-		Type				type;
-		Database::UserId 	userId;
-		Database::TrackId 	trackId;
+	// See https://listenbrainz.readthedocs.io/en/production/dev/feedback-json/#feedback-json-doc
+	enum class FeedbackType
+	{
+		Love = 1,
+		Hate = -1,
+		Erase = 0,
 	};
 
 	class FeedbackSender
@@ -56,10 +49,12 @@ namespace Scrobbling::ListenBrainz
 		public:
 			FeedbackSender(Database::Db& db, Http::IClient& client);
 
-			void enqueFeedback(const Feedback& feedback);
+			void enqueFeedback(FeedbackType type, Database::StarredTrackId starredTrackId);
 
 		private:
-			std::string		feedbackToJsonString(Database::Session& session, const Feedback& feedback);
+			void			onFeedbackSent(FeedbackType type, Database::StarredTrackId starredTrackId);
+			std::string		prepareFeedback(FeedbackType type, Database::StarredTrackId starredTrackId);
+
 			Database::Db&	_db;
 			Http::IClient&	_client;
 	};

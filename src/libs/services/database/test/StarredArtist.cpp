@@ -64,6 +64,24 @@ TEST_F(DatabaseFixture, StarredArtist)
 	}
 }
 
+TEST_F(DatabaseFixture, StarredArtist_PendingDestroy)
+{
+	ScopedArtist artist {session, "MyArtist"};
+	ScopedUser user {session, "MyUser"};
+	ScopedStarredArtist starredArtist {session, artist.lockAndGet(), user.lockAndGet(), Scrobbler::Internal};
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		auto artists {Artist::find(session, Artist::FindParameters {}.setStarringUser(user.getId(), Scrobbler::Internal))};
+		EXPECT_EQ(artists.results.size(), 1);
+
+		starredArtist.get().modify()->setScrobblingState(ScrobblingState::PendingRemove);
+		artists = Artist::find(session, Artist::FindParameters {}.setStarringUser(user.getId(), Scrobbler::Internal));
+		EXPECT_EQ(artists.results.size(), 0);
+	}
+}
+
 TEST_F(DatabaseFixture, StarredArtist_dateTime)
 {
 	ScopedArtist artist1 {session, "MyArtist1"};

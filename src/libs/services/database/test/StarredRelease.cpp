@@ -64,6 +64,24 @@ TEST_F(DatabaseFixture, StarredRelease)
 	}
 }
 
+TEST_F(DatabaseFixture, Starredrelease_PendingDestroy)
+{
+	ScopedRelease release {session, "MyRelease"};
+	ScopedUser user {session, "MyUser"};
+	ScopedStarredRelease starredRelease {session, release.lockAndGet(), user.lockAndGet(), Scrobbler::Internal};
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		auto releases {Release::find(session, Release::FindParameters {}.setStarringUser(user.getId(), Scrobbler::Internal))};
+		EXPECT_EQ(releases.results.size(), 1);
+
+		starredRelease.get().modify()->setScrobblingState(ScrobblingState::PendingRemove);
+		releases = Release::find(session, Release::FindParameters {}.setStarringUser(user.getId(), Scrobbler::Internal));
+		EXPECT_EQ(releases.results.size(), 0);
+	}
+}
+
 TEST_F(DatabaseFixture, StarredRelease_dateTime)
 {
 	ScopedRelease release1 {session, "MyRelease1"};
