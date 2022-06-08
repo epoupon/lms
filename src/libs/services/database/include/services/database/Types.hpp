@@ -98,6 +98,7 @@ namespace Database
 		None,
 		Name,
 		Date,
+		DateDesc,
 		Random,
 		LastWritten,
 		StarredDateDesc,

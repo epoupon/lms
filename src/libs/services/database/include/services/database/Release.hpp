@@ -25,11 +25,13 @@
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
+#include "services/database/ArtistId.hpp"
 #include "services/database/ClusterId.hpp"
 #include "services/database/Object.hpp"
 #include "services/database/ReleaseId.hpp"
 #include "services/database/Types.hpp"
 #include "services/database/UserId.hpp"
+#include "utils/EnumSet.hpp"
 #include "utils/UUID.hpp"
 
 namespace Database
@@ -54,8 +56,11 @@ class Release : public Object<Release, ReleaseId>
 			Range							range;
 			Wt::WDateTime					writtenAfter;
 			std::optional<DateRange>		dateRange;
-			UserId							starringUser;	// only releases starred by this user
-			std::optional<Scrobbler>			scrobbler;		// and for this scrobbler
+			UserId							starringUser;				// only releases starred by this user
+			std::optional<Scrobbler>		scrobbler;					//    and for this scrobbler
+			ArtistId						artist;						// only releases that involved this user
+			EnumSet<TrackArtistLinkType>	trackArtistLinkTypes; 			//    and for these link types
+			EnumSet<TrackArtistLinkType>	excludedTrackArtistLinkTypes; 	//    but not for these link types
 
 			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
 			FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
@@ -64,6 +69,13 @@ class Release : public Object<Release, ReleaseId>
 			FindParameters& setWrittenAfter(const Wt::WDateTime& _after) {writtenAfter = _after; return *this; }
 			FindParameters& setDateRange(const std::optional<DateRange>& _dateRange) {dateRange = _dateRange; return *this; }
 			FindParameters& setStarringUser(UserId _user, Scrobbler _scrobbler) { starringUser = _user; scrobbler = _scrobbler; return *this; }
+			FindParameters& setArtist(ArtistId _artist, EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}, EnumSet<TrackArtistLinkType> _excludedTrackArtistLinkTypes = {})
+			{
+				artist = _artist;
+				trackArtistLinkTypes = _trackArtistLinkTypes;
+				excludedTrackArtistLinkTypes = _excludedTrackArtistLinkTypes;
+				return *this;
+			}
 		};
 
 		Release() = default;

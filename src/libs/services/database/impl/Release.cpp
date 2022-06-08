@@ -41,7 +41,8 @@ createQuery(Session& session, const Release::FindParameters& params)
 
 	if (params.sortMethod == ReleaseSortMethod::LastWritten
 			|| params.writtenAfter.isValid()
-			|| params.dateRange)
+			|| params.dateRange
+			|| params.artist.isValid())
 	{
 		query.join("track t ON t.release_id = r.id");
 	}
@@ -64,6 +65,55 @@ createQuery(Session& session, const Release::FindParameters& params)
 		query.join("starred_release s_r ON s_r.release_id = r.id")
 			.where("s_r.user_id = ?").bind(params.starringUser)
 			.where("s_r.scrobbler = ?").bind(*params.scrobbler);
+	}
+
+	if (params.artist.isValid())
+	{
+		query.join("artist a ON a.id = t_a_l.artist_id")
+			.join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
+			.where("a.id = ?").bind(params.artist);
+
+		if (!params.trackArtistLinkTypes.empty())
+		{
+			std::ostringstream oss;
+
+			bool first {true};
+			for (TrackArtistLinkType linkType : params.trackArtistLinkTypes)
+			{
+				if (!first)
+					oss << " OR ";
+				oss << "t_a_l.type = ?";
+				query.bind(linkType);
+
+				first = false;
+			}
+			query.where(oss.str());
+		}
+
+		if (!params.excludedTrackArtistLinkTypes.empty())
+		{
+			std::ostringstream oss;
+			oss << "r.id NOT IN (SELECT DISTINCT r.id FROM release r"
+				" INNER JOIN artist a ON a.id = t_a_l.artist_id"
+				" INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id"
+				" INNER JOIN track t ON t.release_id = r.id"
+				" WHERE (a.id = ? AND (";
+
+			query.bind(params.artist);
+
+			bool first {true};
+			for (const TrackArtistLinkType linkType : params.excludedTrackArtistLinkTypes)
+			{
+				if (!first)
+					oss << " OR ";
+				oss << "t_a_l.type = ?";
+				query.bind(linkType);
+
+				first = false;
+			}
+			oss << ")))";
+			query.where(oss.str());
+		}
 	}
 
 	if (!params.clusters.empty())
@@ -102,6 +152,9 @@ createQuery(Session& session, const Release::FindParameters& params)
 			break;
 		case ReleaseSortMethod::Date:
 			query.orderBy("t.date, r.name COLLATE NOCASE");
+			break;
+		case ReleaseSortMethod::DateDesc:
+			query.orderBy("t.date DESC, r.name COLLATE NOCASE");
 			break;
 		case ReleaseSortMethod::StarredDateDesc:
 			assert(params.starringUser.isValid());

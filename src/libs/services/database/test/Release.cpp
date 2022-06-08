@@ -396,4 +396,64 @@ TEST_F(DatabaseFixture, Release_writtenAfter)
 	}
 }
 
+TEST_F(DatabaseFixture, Release_artist)
+{
+	ScopedRelease release {session, "MyRelease"};
+	ScopedTrack track {session, "MyTrack"};
+	ScopedArtist artist {session, "MyArtist"};
+	ScopedArtist artist2 {session, "MyArtist2"};
+	{
+		auto transaction {session.createUniqueTransaction()};
+		track.get().modify()->setRelease(release.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		auto releases {Release::find(session, Release::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Artist}))};
+		EXPECT_EQ(releases.results.size(), 0);
+
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist2.getId(), {TrackArtistLinkType::Artist}));
+		EXPECT_EQ(releases.results.size(), 0);
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+
+		auto releases {Release::find(session, Release::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Artist}))};
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release.getId());
+
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Artist, TrackArtistLinkType::Mixer}));
+		EXPECT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release.getId());
+
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist2.getId(), {TrackArtistLinkType::Artist}));
+		EXPECT_EQ(releases.results.size(), 0);
+
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist2.getId()));
+		EXPECT_EQ(releases.results.size(), 0);
+
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::ReleaseArtist, TrackArtistLinkType::Artist}));
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release.getId());
+
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist.getId()));
+		ASSERT_EQ(releases.results.size(), 1);
+		EXPECT_EQ(releases.results.front(), release.getId());
+
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Composer}));
+		EXPECT_EQ(releases.results.size(), 0);
+
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Composer, TrackArtistLinkType::Mixer}));
+		EXPECT_EQ(releases.results.size(), 0);
+
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist.getId(), {}, {TrackArtistLinkType::Artist}));
+		EXPECT_EQ(releases.results.size(), 0);
+
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist.getId(), {}, {TrackArtistLinkType::Artist, TrackArtistLinkType::Composer}));
+		EXPECT_EQ(releases.results.size(), 0);
+	}
+}
 
