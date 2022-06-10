@@ -422,7 +422,7 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 
 static
 Response::Node
-artistToResponseNode(const User::pointer& user, const Artist::pointer& artist, bool id3)
+artistToResponseNode(const Artist::pointer& artist, Session& session, const User::pointer& user, bool id3)
 {
 	Response::Node artistNode;
 
@@ -430,7 +430,10 @@ artistToResponseNode(const User::pointer& user, const Artist::pointer& artist, b
 	artistNode.setAttribute("name", artist->getName());
 
 	if (id3)
-		artistNode.setAttribute("albumCount", artist->getReleaseCount());
+	{
+		const auto releases {Release::find(session, Release::FindParameters {}.setArtist(artist->getId()))};
+		artistNode.setAttribute("albumCount", releases.results.size());
+	}
 
 	if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), artist->getId()))
 		artistNode.setAttribute("starred", reportedStarredDate);
@@ -884,9 +887,9 @@ handleGetArtistRequest(RequestContext& context)
 		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
-	Response::Node artistNode {artistToResponseNode(user, artist, true /* id3 */)};
+	Response::Node artistNode {artistToResponseNode(artist, context.dbSession, user, true /* id3 */)};
 
-	auto releases {artist->getReleases(Range {})};
+	const auto releases {Release::find(context.dbSession, Release::FindParameters {}.setArtist(artist->getId()))};
 	for (const ReleaseId releaseId : releases.results)
 	{
 		const Release::pointer release {Release::find(context.dbSession, releaseId)};
@@ -936,7 +939,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 		{
 			const Artist::pointer similarArtist {Artist::find(context.dbSession, similarArtistId)};
 			if (similarArtist)
-				artistInfoNode.addArrayChild("similarArtist", artistToResponseNode(user, similarArtist, id3));
+				artistInfoNode.addArrayChild("similarArtist", artistToResponseNode(similarArtist, context.dbSession, user, id3));
 		}
 	}
 
@@ -988,7 +991,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		for (const ArtistId artistId : artistIds.results)
 		{
 			const Artist::pointer artist {Artist::find(context.dbSession, artistId)};
-			directoryNode.addArrayChild("child", artistToResponseNode(user, artist, false /* no id3 */));
+			directoryNode.addArrayChild("child", artistToResponseNode(artist, context.dbSession, user, false /* no id3 */));
 		}
 	}
 	else if (artistId)
@@ -1001,7 +1004,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 		directoryNode.setAttribute("name", makeNameFilesystemCompatible(artist->getName()));
 
-		auto releases {artist->getReleases(Range {})};
+		const auto releases {Release::find(context.dbSession, Release::FindParameters {}.setArtist(*artistId))};
 		for (const ReleaseId releaseId : releases.results)
 		{
 			const Release::pointer release {Release::find(context.dbSession, releaseId)};
@@ -1095,7 +1098,7 @@ handleGetArtistsRequestCommon(RequestContext& context, bool id3)
 		indexNode.setAttribute("name", std::string {sortChar});
 
 		for (const Artist::pointer& artist :artists)
-			indexNode.addArrayChild("artist", artistToResponseNode(user, artist, id3));
+			indexNode.addArrayChild("artist", artistToResponseNode(artist, context.dbSession, user, id3));
 	}
 
 	return response;
@@ -1160,26 +1163,34 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 		throw UserNotAuthorizedError {};
 
 	// "Returns a random collection of songs from the given artist and similar artists"
-	auto tracks {artist->getRandomTracks(count / 2)};
+	const auto trackResults {Track::find(context.dbSession, Track::FindParameters {}
+													.setArtist(artist->getId())
+													.setRange({0, count / 2})
+													.setSortMethod(TrackSortMethod::Random))};
+
+	std::vector<TrackId> tracks {trackResults.results};
+
 	for (const ArtistId similarArtistId : similarArtistIds)
 	{
-		const Artist::pointer similarArtist {Artist::find(context.dbSession, similarArtistId)};
-		if (!similarArtist)
-			continue;
-
-		auto similarArtistTracks {similarArtist->getRandomTracks((count / 2) / 5)};
+		const auto similarArtistTracks {Track::find(context.dbSession, Track::FindParameters {}
+												.setArtist(similarArtistId)
+												.setRange({0, (count / 2) / 5})
+												.setSortMethod(TrackSortMethod::Random))};
 
 		tracks.insert(std::end(tracks),
-				std::make_move_iterator(std::begin(similarArtistTracks)),
-				std::make_move_iterator(std::end(similarArtistTracks)));
+							std::begin(similarArtistTracks.results),
+							std::end(similarArtistTracks.results));
 	}
 
 	Random::shuffleContainer(tracks);
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& similarSongsNode {response.createNode(id3 ? "similarSongs2" : "similarSongs")};
-	for (const Track::pointer& track : tracks)
+	for (const TrackId trackId : tracks)
+	{
+		const Track::pointer track {Track::find(context.dbSession, trackId)};
 		similarSongsNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+	}
 
 	return response;
 }
@@ -1216,7 +1227,7 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 	for (const ArtistId artistId : scrobbling.getStarredArtists(context.userId, {} /* clusters */, std::nullopt /* linkType */, ArtistSortMethod::BySortName, Range {}).results)
 	{
 		if (auto artist {Artist::find(context.dbSession, artistId)})
-			starredNode.addArrayChild("artist", artistToResponseNode(user, artist, id3));
+			starredNode.addArrayChild("artist", artistToResponseNode(artist, context.dbSession, user, id3));
 	}
 
 	for (const ReleaseId releaseId : scrobbling.getStarredReleases(context.userId, {} /* clusters */, Range {}).results)
@@ -1433,7 +1444,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 		for (const ArtistId artistId : artistIds.results)
 		{
 			const auto artist {Artist::find(context.dbSession, artistId)};
-			searchResult2Node.addArrayChild("artist", artistToResponseNode(user, artist, id3));
+			searchResult2Node.addArrayChild("artist", artistToResponseNode(artist, context.dbSession, user, id3));
 		}
 	}
 

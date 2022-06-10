@@ -50,7 +50,7 @@ namespace UserInterface
 			void refreshView();
 			bool refreshReleases();
 			bool refreshAppearsOnReleases();
-			bool refreshNonReleaseTracks(const Database::ObjectPtr<Database::Artist>& artist);
+			bool refreshNonReleaseTracks();
 			void refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArtistsId);
 			void refreshLinks(const Database::ObjectPtr<Database::Artist>& artist);
 

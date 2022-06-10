@@ -145,6 +145,9 @@ static
 std::unique_ptr<Zip::Zipper>
 createZipper(const std::vector<Database::Track::pointer>& tracks)
 {
+	if (tracks.empty())
+		return {};
+
 	std::map<std::string, std::filesystem::path> files;
 
 	for (const Database::Track::pointer& track : tracks)
@@ -185,14 +188,14 @@ DownloadArtistResource::createZipper()
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Artist::pointer artist {Database::Artist::find(LmsApp->getDbSession(), _artistId)};
-	if (!artist)
-	{
-		LOG(DEBUG) << "Cannot find artist";
-		return {};
-	}
+	const auto trackResults {Database::Track::find(LmsApp->getDbSession(), Database::Track::FindParameters {}.setArtist(_artistId).setSortMethod(Database::TrackSortMethod::DateDescAndRelease))};
+	std::vector<Database::Track::pointer> tracks;
+	tracks.reserve(trackResults.results.size());
 
-	return UserInterface::createZipper(artist->getTracks());
+	for (const Database::TrackId trackId : trackResults.results)
+		tracks.push_back(Database::Track::find(LmsApp->getDbSession(), trackId));
+
+	return UserInterface::createZipper(tracks);
 }
 
 DownloadReleaseResource::DownloadReleaseResource(Database::ReleaseId releaseId)

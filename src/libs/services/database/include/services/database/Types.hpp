@@ -110,6 +110,8 @@ namespace Database
 		Random,
 		LastWritten,
 		StarredDateDesc,
+		Name,
+		DateDescAndRelease,
 	};
 
 	enum class TrackArtistLinkType

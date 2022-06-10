@@ -130,7 +130,7 @@ Explore::search(const Wt::WString& searchText)
 
 static
 std::vector<Database::TrackId>
-getArtistsTracks(Database::Session& session, const std::vector<Database::ArtistId>& artistsId, const std::vector<Database::ClusterId>&)
+getArtistsTracks(Database::Session& session, const std::vector<Database::ArtistId>& artistsId, const std::vector<Database::ClusterId>& clusters)
 {
 	std::vector<Database::TrackId> res;
 
@@ -138,15 +138,10 @@ getArtistsTracks(Database::Session& session, const std::vector<Database::ArtistI
 
 	for (const Database::ArtistId artistId : artistsId)
 	{
-		const Database::Artist::pointer artist {Database::Artist::find(session, artistId)};
-		if (!artist)
-			continue;
+		const auto tracks {Database::Track::find(LmsApp->getDbSession(), Database::Track::FindParameters {}.setArtist(artistId).setClusters(clusters).setSortMethod(Database::TrackSortMethod::DateDescAndRelease))};
 
-		// TODO handle clusters here
-		const std::vector<Database::Track::pointer> tracks {artist->getTracks()};
-
-		res.reserve(res.size() + tracks.size());
-		std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Database::Track::pointer& track) { return track->getId(); });
+		res.reserve(res.size() + tracks.results.size());
+		res.insert(std::end(res), std::cbegin(tracks.results), std::cend(tracks.results));
 	}
 
 	return res;

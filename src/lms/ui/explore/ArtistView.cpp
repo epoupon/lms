@@ -113,17 +113,12 @@ Artist::refreshView()
 
 	std::size_t sectionCount{};
 
-	LMS_LOG(UI, DEBUG) << "Refresh releases...";
 	if (refreshReleases())
 		sectionCount++;
-	LMS_LOG(UI, DEBUG) << "Refresh appears on releases...";
 	if (refreshAppearsOnReleases())
 		sectionCount++;
-	LMS_LOG(UI, DEBUG) << "Refresh non album tracks...";
-	if (refreshNonReleaseTracks(artist))
+	if (refreshNonReleaseTracks())
 		sectionCount++;
-
-	LMS_LOG(UI, DEBUG) << "Refresh links...";
 	refreshLinks(artist);
 	refreshSimilarArtists(similarArtistIds);
 
@@ -235,11 +230,8 @@ Artist::refreshAppearsOnReleases()
 }
 
 bool
-Artist::refreshNonReleaseTracks(const ObjectPtr<Database::Artist>& artist)
+Artist::refreshNonReleaseTracks()
 {
-	if (!artist->hasNonReleaseTracks())
-		return false;
-
 	setCondition("if-has-non-release-tracks", true);
 	_trackContainer = bindNew<InfiniteScrollingContainer>("tracks");
 	_trackContainer->onRequestElements.connect(this, [this]
@@ -247,7 +239,9 @@ Artist::refreshNonReleaseTracks(const ObjectPtr<Database::Artist>& artist)
 		addSomeNonReleaseTracks();
 	});
 
-	return addSomeNonReleaseTracks();
+	const bool added {addSomeNonReleaseTracks()};
+	setCondition("if-has-non-release-tracks", added);
+	return added;
 }
 
 void
@@ -317,14 +311,19 @@ Artist::addSomeNonReleaseTracks()
 	bool areTracksAdded{};
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Artist::pointer artist {Database::Artist::find(LmsApp->getDbSession(), _artistId)};
-	if (!artist)
-		return areTracksAdded;
+	const Range range {static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize};
 
-	const auto tracks {artist->getNonReleaseTracks(std::nullopt, Range {static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize})};
+	Track::FindParameters params;
+	params.setClusters(_filters->getClusterIds());
+	params.setArtist(_artistId);
+	params.setRange(range);
+	params.setSortMethod(TrackSortMethod::Name);
+	params.setNonRelease(true);
+
+	const auto tracks {Track::find(LmsApp->getDbSession(), params)};
 	bool moreResults {tracks.moreResults};
 
-	for (const Track::pointer& track : tracks.results)
+	for (const TrackId trackId : tracks.results)
 	{
 		if (_trackContainer->getCount() == _tracksMaxCount)
 		{
@@ -332,6 +331,7 @@ Artist::addSomeNonReleaseTracks()
 			break;
 		}
 
+		const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
 		_trackContainer->add(TrackListHelpers::createEntry(track, tracksAction));
 
 		areTracksAdded = true;

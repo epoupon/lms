@@ -26,7 +26,7 @@ namespace Database
 	class Session;
 
 	using Version = std::size_t;
-	static constexpr Version LMS_DATABASE_VERSION {33};
+	static constexpr Version LMS_DATABASE_VERSION {34};
 	class VersionInfo
 	{
 		public:
