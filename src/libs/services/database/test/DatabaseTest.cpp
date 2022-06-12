@@ -53,7 +53,8 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistSingleRelease)
 		ASSERT_EQ(releases.results.size(), 1);
 		EXPECT_EQ(releases.results.front(), release.getId());
 
-		EXPECT_EQ(release->getTracks().size(), nbTracks);
+		const auto tracks {Track::find(session, Track::FindParameters {}.setRelease(release.getId()))};
+		EXPECT_EQ(tracks.results.size(), nbTracks);
 	}
 }
 

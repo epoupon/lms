@@ -187,7 +187,7 @@ bool
 PlayQueue::isFull() const
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-	return getTrackList()->getCount() == _nbMaxEntries;
+	return getTrackList()->getCount() == getCapacity();
 }
 
 void
@@ -313,7 +313,7 @@ PlayQueue::enqueueTracks(const std::vector<Database::TrackId>& trackIds)
 
 		auto tracklist {getTrackList()};
 
-		std::size_t nbTracksToEnqueue {tracklist->getCount() + trackIds.size() > _nbMaxEntries ? _nbMaxEntries - tracklist->getCount() : trackIds.size()};
+		std::size_t nbTracksToEnqueue {tracklist->getCount() + trackIds.size() > getCapacity() ? getCapacity() - tracklist->getCount() : trackIds.size()};
 		for (const Database::TrackId trackId : trackIds)
 		{
 			Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), trackId)};
@@ -368,10 +368,10 @@ PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::Tra
 	}
 
 	if (nbAddedTracks > 0)
-		LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.PlayQueue.playqueue"), Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", nbAddedTracks).arg(nbAddedTracks), std::chrono::milliseconds(2000));
+		LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.PlayQueue.playqueue"), Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", nbAddedTracks).arg(nbAddedTracks), std::chrono::seconds {2});
 
 	if (isFull())
-		LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.PlayQueue.playqueue"), Wt::WString::tr("Lms.PlayQueue.playqueue-full"), std::chrono::milliseconds(2000));
+		LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.PlayQueue.playqueue"), Wt::WString::tr("Lms.PlayQueue.playqueue-full"), std::chrono::seconds {2});
 }
 
 void

@@ -212,16 +212,17 @@ DownloadReleaseResource::DownloadReleaseResource(Database::ReleaseId releaseId)
 std::unique_ptr<Zip::Zipper>
 DownloadReleaseResource::createZipper()
 {
+	using namespace Database;
+
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), _releaseId)};
-	if (!release)
-	{
-		LOG(DEBUG) << "Cannot find release";
-		return {};
-	}
+	auto trackResults {Track::find(LmsApp->getDbSession(), Track::FindParameters {}.setRelease(_releaseId).setSortMethod(TrackSortMethod::Release))};
 
-	return UserInterface::createZipper(release->getTracks());
+	std::vector<Track::pointer> tracks;
+	tracks.reserve(trackResults.results.size());
+	std::transform(std::cbegin(trackResults.results), std::cend(trackResults.results), std::back_inserter(tracks), [](TrackId trackId){ return Track::find(LmsApp->getDbSession(), trackId); });
+
+	return UserInterface::createZipper(tracks);
 }
 
 DownloadTrackResource::DownloadTrackResource(Database::TrackId trackId)

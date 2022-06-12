@@ -860,9 +860,12 @@ handleGetAlbumRequest(RequestContext& context)
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node releaseNode {releaseToResponseNode(release, context.dbSession, user, true /* id3 */)};
 
-	auto tracks {release->getTracks()};
-	for (const Track::pointer& track : tracks)
+	const auto tracks {Track::find(context.dbSession, Track::FindParameters {}.setRelease(id).setSortMethod(TrackSortMethod::Release))};
+	for (const TrackId trackId : tracks.results)
+	{
+		const Track::pointer track {Track::find(context.dbSession, trackId)};
 		releaseNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+	}
 
 	response.addNode("album", std::move(releaseNode));
 
@@ -1021,9 +1024,12 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 		directoryNode.setAttribute("name", makeNameFilesystemCompatible(release->getName()));
 
-		auto tracks {release->getTracks()};
-		for (const Track::pointer& track : tracks)
+		const auto tracks {Track::find(context.dbSession, Track::FindParameters {}.setRelease(*releaseId).setSortMethod(TrackSortMethod::Release))};
+		for (const TrackId trackId : tracks.results)
+		{
+			const Track::pointer track {Track::find(context.dbSession, trackId)};
 			directoryNode.addArrayChild("child", trackToResponseNode(track, context.dbSession, user));
+		}
 	}
 	else
 		throw BadParameterGenericError {"id"};

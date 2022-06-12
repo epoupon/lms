@@ -130,18 +130,29 @@ Explore::search(const Wt::WString& searchText)
 
 static
 std::vector<Database::TrackId>
-getArtistsTracks(Database::Session& session, const std::vector<Database::ArtistId>& artistsId, const std::vector<Database::ClusterId>& clusters)
+getArtistsTracks(Database::Session& session, const std::vector<Database::ArtistId>& artistsId, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
 {
+	assert(maxTrackCount);
+
 	std::vector<Database::TrackId> res;
 
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	auto transaction {session.createSharedTransaction()};
 
 	for (const Database::ArtistId artistId : artistsId)
 	{
-		const auto tracks {Database::Track::find(LmsApp->getDbSession(), Database::Track::FindParameters {}.setArtist(artistId).setClusters(clusters).setSortMethod(Database::TrackSortMethod::DateDescAndRelease))};
+		Database::Track::FindParameters params;
+		params.setArtist(artistId);
+		params.setSortMethod(Database::TrackSortMethod::DateDescAndRelease);
+		params.setClusters(clusters);
+		params.setRange({0, maxTrackCount - res.size()});
+
+		const auto tracks {Database::Track::find(session, params)};
 
 		res.reserve(res.size() + tracks.results.size());
 		res.insert(std::end(res), std::cbegin(tracks.results), std::cend(tracks.results));
+
+		if (res.size() == maxTrackCount)
+			break;
 	}
 
 	return res;
@@ -149,23 +160,31 @@ getArtistsTracks(Database::Session& session, const std::vector<Database::ArtistI
 
 static
 std::vector<Database::TrackId>
-getReleasesTracks(Database::Session& session, const std::vector<Database::ReleaseId>& releasesId, const std::vector<Database::ClusterId>& clusters)
+getReleasesTracks(Database::Session& session, const std::vector<Database::ReleaseId>& releasesId, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
 {
-	std::vector<Database::TrackId> res;
+	using namespace Database;
 
-	// TODO optimize this
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	assert(maxTrackCount);
 
-	for (const Database::ReleaseId releaseId : releasesId)
+	std::vector<TrackId> res;
+
+	auto transaction {session.createSharedTransaction()};
+
+	for (const ReleaseId releaseId : releasesId)
 	{
-		const Database::Release::pointer release {Database::Release::find(session, releaseId)};
-		if (!release)
-			continue;
+		Database::Track::FindParameters params;
+		params.setRelease(releaseId);
+		params.setSortMethod(Database::TrackSortMethod::Release);
+		params.setClusters(clusters);
+		params.setRange({0, maxTrackCount - res.size()});
 
-		const std::vector<Database::Track::pointer> tracks {release->getTracks(clusters)};
+		const auto tracks {Database::Track::find(session, params)};
 
-		res.reserve(res.size() + tracks.size());
-		std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const Database::Track::pointer& track) { return track->getId(); });
+		res.reserve(res.size() + tracks.results.size());
+		res.insert(std::end(res), std::cbegin(tracks.results), std::cend(tracks.results));
+
+		if (res.size() == maxTrackCount)
+			break;
 	}
 
 	return res;
@@ -174,13 +193,13 @@ getReleasesTracks(Database::Session& session, const std::vector<Database::Releas
 void
 Explore::handleArtistsAction(PlayQueueAction action, const std::vector<Database::ArtistId>& artistsId)
 {
-	tracksAction.emit(action, getArtistsTracks(LmsApp->getDbSession(), artistsId, _filters->getClusterIds()));
+	tracksAction.emit(action, getArtistsTracks(LmsApp->getDbSession(), artistsId, _filters->getClusterIds(), _maxTrackCount));
 }
 
 void
 Explore::handleReleasesAction(PlayQueueAction action, const std::vector<Database::ReleaseId>& releasesId)
 {
-	tracksAction.emit(action, getReleasesTracks(LmsApp->getDbSession(), releasesId, _filters->getClusterIds()));
+	tracksAction.emit(action, getReleasesTracks(LmsApp->getDbSession(), releasesId, _filters->getClusterIds(), _maxTrackCount));
 }
 
 void

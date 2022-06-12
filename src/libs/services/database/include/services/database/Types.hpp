@@ -112,6 +112,7 @@ namespace Database
 		StarredDateDesc,
 		Name,
 		DateDescAndRelease,
+		Release, // order by disc/track number
 	};
 
 	enum class TrackArtistLinkType

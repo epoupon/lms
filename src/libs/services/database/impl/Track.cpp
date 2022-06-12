@@ -103,8 +103,11 @@ createQuery(Session& session, const Track::FindParameters& params)
 		}
 	}
 
+	assert(!(params.nonRelease && params.release.isValid()));
 	if (params.nonRelease)
 		query.where("t.release_id IS NULL");
+	else if (params.release.isValid())
+		query.where("t.release_id = ?").bind(params.release);
 
 	switch (params.sortMethod)
 	{
@@ -125,6 +128,9 @@ createQuery(Session& session, const Track::FindParameters& params)
 			break;
 		case TrackSortMethod::DateDescAndRelease:
 			query.orderBy("t.date DESC,t.release_id,t.disc_number,t.track_number");
+			break;
+		case TrackSortMethod::Release:
+			query.orderBy("t.disc_number,t.track_number");
 			break;
 	}
 

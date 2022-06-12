@@ -91,9 +91,7 @@ class Release : public Object<Release, ReleaseId>
 		static RangeResults<ReleaseId>	findOrphans(Session& session, Range range); // no track related
 		static RangeResults<ReleaseId>	findOrderedByArtist(Session& session, Range range);
 
-		std::vector<ObjectPtr<Track>>	getTracks(const std::vector<ClusterId>& clusters = {}) const;
 		std::size_t						getTracksCount() const;
-		ObjectPtr<Track>				getFirstTrack() const;
 
 		// Get the cluster of the tracks that belong to this release
 		// Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)
