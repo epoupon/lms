@@ -89,13 +89,6 @@ class Artist : public Object<Artist, ArtistId>
 		const std::string&	getSortName() const { return _sortName; }
 		std::optional<UUID>	getMBID() const { return UUID::fromString(_MBID); }
 
-		RangeResults<ReleaseId>				getReleases(Range range, const std::vector<ClusterId>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
-		std::size_t							getReleaseCount() const;
-		std::vector<ObjectPtr<Track>>		getTracks(std::optional<TrackArtistLinkType> linkType = {}) const;
-		bool								hasNonReleaseTracks(std::optional<TrackArtistLinkType> linkType = std::nullopt) const;
-		RangeResults<ObjectPtr<Track>>		getNonReleaseTracks(std::optional<TrackArtistLinkType> linkType, Range range) const;
-		std::vector<ObjectPtr<Track>>		getRandomTracks(std::optional<std::size_t> count) const;
-
 		// No artistLinkTypes means get them all
 		RangeResults<ArtistId>				findSimilarArtists(EnumSet<TrackArtistLinkType> artistLinkTypes = {}, Range range = {}) const;
 

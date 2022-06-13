@@ -43,7 +43,7 @@ createQuery(Session& session, const Track::FindParameters& params)
 {
 	session.checkSharedLocked();
 
-	auto query {session.getDboSession().query<TrackId>("SELECT t.id from track t")};
+	auto query {session.getDboSession().query<TrackId>("SELECT DISTINCT t.id from track t")};
 
 	for (std::string_view keyword : params.keywords)
 		query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + escapeLikeKeyword(keyword) + "%");
@@ -80,6 +80,36 @@ createQuery(Session& session, const Track::FindParameters& params)
 		query.where(oss.str());
 	}
 
+	if (params.artist.isValid())
+	{
+		query.join("artist a ON a.id = t_a_l.artist_id")
+				.join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
+				.where("a.id = ?").bind(params.artist);
+
+		if (!params.trackArtistLinkTypes.empty())
+		{
+			std::ostringstream oss;
+
+			bool first {true};
+			for (TrackArtistLinkType linkType : params.trackArtistLinkTypes)
+			{
+				if (!first)
+					oss << " OR ";
+				oss << "t_a_l.type = ?";
+				query.bind(linkType);
+
+				first = false;
+			}
+			query.where(oss.str());
+		}
+	}
+
+	assert(!(params.nonRelease && params.release.isValid()));
+	if (params.nonRelease)
+		query.where("t.release_id IS NULL");
+	else if (params.release.isValid())
+		query.where("t.release_id = ?").bind(params.release);
+
 	switch (params.sortMethod)
 	{
 		case TrackSortMethod::None:
@@ -93,6 +123,15 @@ createQuery(Session& session, const Track::FindParameters& params)
 		case TrackSortMethod::StarredDateDesc:
 			assert(params.starringUser.isValid());
 			query.orderBy("s_t.date_time DESC");
+			break;
+		case TrackSortMethod::Name:
+			query.orderBy("t.name COLLATE NOCASE");
+			break;
+		case TrackSortMethod::DateDescAndRelease:
+			query.orderBy("t.date DESC,t.release_id,t.disc_number,t.track_number");
+			break;
+		case TrackSortMethod::Release:
+			query.orderBy("t.disc_number,t.track_number");
 			break;
 	}
 

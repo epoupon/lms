@@ -37,6 +37,7 @@
 #include "services/database/ArtistId.hpp"
 #include "services/database/ClusterId.hpp"
 #include "services/database/Object.hpp"
+#include "services/database/ReleaseId.hpp"
 #include "services/database/TrackId.hpp"
 #include "services/database/Types.hpp"
 #include "services/database/UserId.hpp"
@@ -63,7 +64,11 @@ class Track : public Object<Track, TrackId>
 			Range							range;
 			Wt::WDateTime					writtenAfter;
 			UserId							starringUser;	// only tracks starred by this user
-			std::optional<Scrobbler>			scrobbler;		// and for this scrobbler
+			std::optional<Scrobbler>		scrobbler;		// and for this scrobbler
+			ArtistId						artist;						// only tracks that involve this user
+			EnumSet<TrackArtistLinkType>	trackArtistLinkTypes; 		//    and for these link types
+			bool							nonRelease {};	// only tracks that do not belong to a release
+			ReleaseId						release;		// matching this release
 
 			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
 			FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
@@ -71,7 +76,11 @@ class Track : public Object<Track, TrackId>
 			FindParameters& setRange(Range _range) { range = _range; return *this; }
 			FindParameters& setWrittenAfter(const Wt::WDateTime& _after) { writtenAfter = _after; return *this; }
 			FindParameters& setStarringUser(UserId _user, Scrobbler _scrobbler) { starringUser = _user; scrobbler = _scrobbler; return *this; }
+			FindParameters& setArtist(ArtistId _artist, EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}) { artist = _artist; trackArtistLinkTypes = _trackArtistLinkTypes; return *this; }
+			FindParameters& setNonRelease(bool _nonRelease) { nonRelease = _nonRelease; return *this; }
+			FindParameters& setRelease(ReleaseId _release) { release = _release; return *this; }
 		};
+
 		struct PathResult
 		{
 			TrackId					trackId;

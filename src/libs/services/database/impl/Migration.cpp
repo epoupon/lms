@@ -553,6 +553,28 @@ CREATE TABLE "listen" (
 	void
 	migrateFromV33(Session& session)
 	{
+		// remove name from track_artist_link
+		// Drop Auth mode
+		session.getDboSession().execute(R"(
+CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "type" integer not null,
+  "track_id" bigint,
+  "artist_id" bigint,
+  constraint "fk_track_artist_link_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_track_artist_link_artist" foreign key ("artist_id") references "artist" ("id") on delete cascade deferrable initially deferred
+);
+))");
+		session.getDboSession().execute("INSERT INTO track_artist_link_backup SELECT id, version, type, track_id, artist_id FROM track_artist_link");
+		session.getDboSession().execute("DROP TABLE track_artist_link");
+		session.getDboSession().execute("ALTER TABLE track_artist_link_backup RENAME TO track_artist_link");
+	}
+
+	static
+	void
+	migrateFromV34(Session& session)
+	{
 		// Add scrobbling state
 		// By default, everythin needs to be sent
 		session.getDboSession().execute("ALTER TABLE starred_artist ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
@@ -600,6 +622,7 @@ CREATE TABLE "listen" (
 			{31, migrateFromV31},
 			{32, migrateFromV32},
 			{33, migrateFromV33},
+			{34, migrateFromV34},
 		};
 
 		while (1)

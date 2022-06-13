@@ -232,12 +232,15 @@ Release::refreshView()
 		return noDiscTracksContainer;
 	};
 
-	const auto clusterIds {_filters->getClusterIds()};
-	const auto tracks {release->getTracks(clusterIds)};
+	Database::Track::FindParameters params;
+	params.setRelease(*releaseId);
+	params.setSortMethod(Database::TrackSortMethod::Release);
+	params.setClusters(_filters->getClusterIds());
 
-	for (const auto& track : tracks)
+	const auto tracks {Database::Track::find(LmsApp->getDbSession(), params)};
+	for (const Database::TrackId trackId : tracks.results)
 	{
-		auto trackId {track->getId()};
+		const Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), trackId)};
 
 		const auto discNumber {track->getDiscNumber()};
 

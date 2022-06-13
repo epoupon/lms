@@ -41,7 +41,8 @@ createQuery(Session& session, const Release::FindParameters& params)
 
 	if (params.sortMethod == ReleaseSortMethod::LastWritten
 			|| params.writtenAfter.isValid()
-			|| params.dateRange)
+			|| params.dateRange
+			|| params.artist.isValid())
 	{
 		query.join("track t ON t.release_id = r.id");
 	}
@@ -65,6 +66,55 @@ createQuery(Session& session, const Release::FindParameters& params)
 			.where("s_r.user_id = ?").bind(params.starringUser)
 			.where("s_r.scrobbler = ?").bind(*params.scrobbler)
 			.where("s_r.scrobbling_state <> ?").bind(ScrobblingState::PendingRemove);
+	}
+
+	if (params.artist.isValid())
+	{
+		query.join("artist a ON a.id = t_a_l.artist_id")
+			.join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
+			.where("a.id = ?").bind(params.artist);
+
+		if (!params.trackArtistLinkTypes.empty())
+		{
+			std::ostringstream oss;
+
+			bool first {true};
+			for (TrackArtistLinkType linkType : params.trackArtistLinkTypes)
+			{
+				if (!first)
+					oss << " OR ";
+				oss << "t_a_l.type = ?";
+				query.bind(linkType);
+
+				first = false;
+			}
+			query.where(oss.str());
+		}
+
+		if (!params.excludedTrackArtistLinkTypes.empty())
+		{
+			std::ostringstream oss;
+			oss << "r.id NOT IN (SELECT DISTINCT r.id FROM release r"
+				" INNER JOIN artist a ON a.id = t_a_l.artist_id"
+				" INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id"
+				" INNER JOIN track t ON t.release_id = r.id"
+				" WHERE (a.id = ? AND (";
+
+			query.bind(params.artist);
+
+			bool first {true};
+			for (const TrackArtistLinkType linkType : params.excludedTrackArtistLinkTypes)
+			{
+				if (!first)
+					oss << " OR ";
+				oss << "t_a_l.type = ?";
+				query.bind(linkType);
+
+				first = false;
+			}
+			oss << ")))";
+			query.where(oss.str());
+		}
 	}
 
 	if (!params.clusters.empty())
@@ -103,6 +153,9 @@ createQuery(Session& session, const Release::FindParameters& params)
 			break;
 		case ReleaseSortMethod::Date:
 			query.orderBy("t.date, r.name COLLATE NOCASE");
+			break;
+		case ReleaseSortMethod::DateDesc:
+			query.orderBy("t.date DESC, r.name COLLATE NOCASE");
 			break;
 		case ReleaseSortMethod::StarredDateDesc:
 			assert(params.starringUser.isValid());
@@ -353,62 +406,10 @@ Release::hasVariousArtists() const
 	return getArtists().size() > 1;
 }
 
-std::vector<Track::pointer>
-Release::getTracks(const std::vector<ClusterId>& clusterIds) const
-{
-	assert(session());
-
-	WhereClause where;
-
-	std::ostringstream oss;
-	oss << "SELECT t FROM track t INNER JOIN release r ON t.release_id = r.id";
-
-	if (!clusterIds.empty())
-	{
-		oss << " INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
-
-		WhereClause clusterClause;
-
-		for (auto id : clusterIds)
-			clusterClause.Or(WhereClause("c.id = ?")).bind(id.toString());
-
-		where.And(clusterClause);
-	}
-
-	where.And(WhereClause("r.id = ?")).bind(getId().toString());
-
-	oss << " " << where.get();
-
-	if (!clusterIds.empty())
-		oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size();
-
-	oss << " ORDER BY t.disc_number,t.track_number";
-
-	auto query {session()->query<Wt::Dbo::ptr<Track>>(oss.str())};
-	for (const std::string& bindArg : where.getBindArgs())
-		query.bind(bindArg);
-
-	auto res {query.resultList()};
-	return std::vector<Track::pointer> (res.begin(), res.end());
-}
-
 std::size_t
 Release::getTracksCount() const
 {
 	return _tracks.size();
-}
-
-Track::pointer
-Release::getFirstTrack() const
-{
-	assert(session());
-
-	return session()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t")
-		.join("release r ON t.release_id = r.id")
-		.where("r.id = ?").bind(getId())
-		.orderBy("t.disc_number,t.track_number")
-		.limit(1)
-		.resultValue();
 }
 
 std::chrono::milliseconds

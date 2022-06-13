@@ -370,6 +370,7 @@ CoverService::getFromTrack(Database::Session& dbSession, Database::TrackId track
 std::shared_ptr<IEncodedImage>
 CoverService::getFromRelease(Database::ReleaseId releaseId, ImageSize width)
 {
+	using namespace Database;
 	const CacheEntryDesc cacheEntryDesc {releaseId, width};
 
 	std::shared_ptr<IEncodedImage> cover {loadFromCache(cacheEntryDesc)};
@@ -378,11 +379,11 @@ CoverService::getFromRelease(Database::ReleaseId releaseId, ImageSize width)
 
 	struct ReleaseInfo
 	{
-		Database::TrackId firstTrackId;
+		TrackId firstTrackId;
 		std::filesystem::path releaseDirectory;
 	};
 
-	Database::Session& session {_db.getTLSSession()};
+	Session& session {_db.getTLSSession()};
 
 	auto getReleaseInfo {[&]
 	{
@@ -390,13 +391,15 @@ CoverService::getFromRelease(Database::ReleaseId releaseId, ImageSize width)
 
 		auto transaction {session.createSharedTransaction()};
 
-		if (const Database::Release::pointer release {Database::Release::find(session, releaseId)})
+		const auto tracks {Track::find(session, Track::FindParameters {}.setRelease(releaseId).setRange({0, 1}).setSortMethod(TrackSortMethod::Release))};
+
+		if (!tracks.results.empty())
 		{
-			if (const auto firstTrack {release->getFirstTrack()})
+			if (const Track::pointer track {Track::find(session, tracks.results.front())})
 			{
 				res = ReleaseInfo {};
-				res->firstTrackId = firstTrack->getId();
-				res->releaseDirectory = firstTrack->getPath().parent_path();
+				res->firstTrackId = track->getId();
+				res->releaseDirectory = track->getPath().parent_path();
 			}
 		}
 

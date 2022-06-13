@@ -134,7 +134,6 @@ std::vector<ReleaseId>
 Releases::getAllReleases()
 {
 	RangeResults<ReleaseId> releaseIds {_releaseCollector.get(Range {})};
-
 	return std::move(releaseIds.results);
 }
 

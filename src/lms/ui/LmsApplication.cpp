@@ -481,6 +481,7 @@ LmsApplication::createHome()
 		mainStack->addNew<UserView>();
 	}
 
+	explore->setMaxTrackCountForAction(_playQueue->getCapacity());
 	explore->tracksAction.connect([this] (PlayQueueAction action, const std::vector<Database::TrackId>& trackIds)
 	{
 		_playQueue->processTracks(action, trackIds);

@@ -98,6 +98,7 @@ namespace Database
 		None,
 		Name,
 		Date,
+		DateDesc,
 		Random,
 		LastWritten,
 		StarredDateDesc,
@@ -109,6 +110,9 @@ namespace Database
 		Random,
 		LastWritten,
 		StarredDateDesc,
+		Name,
+		DateDescAndRelease,
+		Release, // order by disc/track number
 	};
 
 	enum class TrackArtistLinkType

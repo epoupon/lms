@@ -67,6 +67,8 @@ class PlayQueue : public Template
 		// Signal emitted when track is unselected (has to be stopped)
 		Wt::Signal<> trackUnselected;
 
+		constexpr std::size_t getCapacity() const { return _capacity; }
+
 	private:
 		Database::ObjectPtr<Database::TrackList> getTrackList() const;
 		bool isFull() const;
@@ -88,7 +90,7 @@ class PlayQueue : public Template
 		void addRadioTrackFromClusters();
 		std::optional<float> getReplayGain(std::size_t pos, const Database::ObjectPtr<Database::Track>& track) const;
 
-		static inline constexpr std::size_t _nbMaxEntries {1000};
+		static inline constexpr std::size_t _capacity {1000};
 		static inline constexpr std::size_t _batchSize {12};
 
 		bool _mediaPlayerSettingsLoaded {};

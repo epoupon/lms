@@ -80,8 +80,6 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
 		ASSERT_EQ(artists.size(), 1);
 		EXPECT_EQ(artists.front()->getId(), artist.getId());
 
-		EXPECT_EQ(artist->getReleaseCount(), 0);
-
 		ASSERT_EQ(track->getArtistLinks().size(), 1);
 		auto artistLink {track->getArtistLinks().front()};
 		EXPECT_EQ(artistLink->getTrack()->getId(), track.getId());
@@ -90,17 +88,6 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
 		ASSERT_EQ(track->getArtists({TrackArtistLinkType::Artist}).size(), 1);
 		EXPECT_TRUE(track->getArtists({TrackArtistLinkType::ReleaseArtist}).empty());
 		EXPECT_EQ(track->getArtists({}).size(), 1);
-	}
-
-	{
-		auto transaction {session.createUniqueTransaction()};
-
-		auto tracks {artist->getTracks()};
-		ASSERT_EQ(tracks.size(), 1);
-		EXPECT_EQ(tracks.front()->getId(), track.getId());
-
-		EXPECT_TRUE(artist->getTracks(TrackArtistLinkType::ReleaseArtist).empty());
-		EXPECT_EQ(artist->getTracks(TrackArtistLinkType::Artist).size(), 1);
 	}
 }
 
@@ -143,10 +130,18 @@ TEST_F(DatabaseFixture, Artist_singleTracktMultiRoles)
 
 		EXPECT_EQ(track->getArtistLinks().size(), 3);
 
-		EXPECT_EQ(artist->getTracks().size(), 1);
-		EXPECT_EQ(artist->getTracks({TrackArtistLinkType::ReleaseArtist}).size(), 1);
-		EXPECT_EQ(artist->getTracks({TrackArtistLinkType::Artist}).size(), 1);
-		EXPECT_EQ(artist->getTracks({TrackArtistLinkType::Writer}).size(), 1);
+		auto tracks {Track::find(session, Track::FindParameters {}.setArtist(artist.getId()))};
+		EXPECT_EQ(tracks.results.size(), 1);
+
+		tracks = Track::find(session, Track::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::ReleaseArtist}));
+		EXPECT_EQ(tracks.results.size(), 1);
+		tracks = Track::find(session, Track::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Artist}));
+		EXPECT_EQ(tracks.results.size(), 1);
+		tracks = Track::find(session, Track::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Writer}));
+		EXPECT_EQ(tracks.results.size(), 1);
+
+		tracks = Track::find(session, Track::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Composer}));
+		EXPECT_EQ(tracks.results.size(), 0);
 	}
 }
 
@@ -187,13 +182,25 @@ TEST_F(DatabaseFixture, Artist_singleTrackMultiArtists)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		EXPECT_EQ(artist1->getTracks().front(), track.get());
-		EXPECT_EQ(artist2->getTracks().front(), track.get());
+		auto tracks {Track::find(session, Track::FindParameters {}.setArtist(artist1->getId()))};
+		ASSERT_EQ(tracks.results.size(), 1);
+		EXPECT_EQ(tracks.results.front(), track->getId());
 
-		EXPECT_TRUE(artist1->getTracks(TrackArtistLinkType::ReleaseArtist).empty());
-		EXPECT_EQ(artist1->getTracks(TrackArtistLinkType::Artist).size(), 1);
-		EXPECT_TRUE(artist2->getTracks(TrackArtistLinkType::ReleaseArtist).empty());
-		EXPECT_EQ(artist2->getTracks(TrackArtistLinkType::Artist).size(), 1);
+		tracks = Track::find(session, Track::FindParameters {}.setArtist(artist2->getId()));
+		ASSERT_EQ(tracks.results.size(), 1);
+		EXPECT_EQ(tracks.results.front(), track->getId());
+
+		tracks = Track::find(session, Track::FindParameters {}.setArtist(artist1->getId(), {TrackArtistLinkType::ReleaseArtist}));
+		EXPECT_EQ(tracks.results.size(), 0);
+
+		tracks = Track::find(session, Track::FindParameters {}.setArtist(artist1->getId(), {TrackArtistLinkType::Artist}));
+		EXPECT_EQ(tracks.results.size(), 1);
+
+		tracks = Track::find(session, Track::FindParameters {}.setArtist(artist2->getId(), {TrackArtistLinkType::ReleaseArtist}));
+		EXPECT_EQ(tracks.results.size(), 0);
+
+		tracks = Track::find(session, Track::FindParameters {}.setArtist(artist2->getId(), {TrackArtistLinkType::Artist}));
+		EXPECT_EQ(tracks.results.size(), 1);
 	}
 }
 
@@ -324,9 +331,8 @@ TEST_F(DatabaseFixture, Artist_nonReleaseTracks)
 
 	{
 		auto transaction {session.createSharedTransaction()};
-		EXPECT_FALSE(artist->hasNonReleaseTracks(std::nullopt));
 
-		const auto tracks {artist->getNonReleaseTracks(std::nullopt, Range {})};
+		auto tracks {Track::find(session, Track::FindParameters {}.setNonRelease(true).setArtist(artist->getId()))};
 		EXPECT_EQ(tracks.results.size(), 0);
 	}
 
@@ -343,11 +349,9 @@ TEST_F(DatabaseFixture, Artist_nonReleaseTracks)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		const auto tracks {artist->getNonReleaseTracks(std::nullopt, Range {})};
-		EXPECT_TRUE(artist->hasNonReleaseTracks(std::nullopt));
-		EXPECT_FALSE(tracks.moreResults);
+		const auto tracks {Track::find(session, Track::FindParameters {}.setArtist(artist->getId()).setNonRelease(true))};
 		ASSERT_EQ(tracks.results.size(), 1);
-		EXPECT_EQ(tracks.results.front()->getId(), track2.getId());
+		EXPECT_EQ(tracks.results.front(), track2.getId());
 	}
 }
 

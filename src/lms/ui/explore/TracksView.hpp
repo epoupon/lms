@@ -46,7 +46,7 @@ namespace UserInterface
 
 			static constexpr TrackCollector::Mode _defaultMode {TrackCollector::Mode::Random};
 			static constexpr std::size_t _batchSize {6};
-			static constexpr std::size_t _maxCount {160};
+			static constexpr std::size_t _maxCount {8000};
 
 			Wt::WWidget*				_currentActiveItem {};
 			InfiniteScrollingContainer* _container {};

@@ -574,11 +574,11 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistSingleCluster)
 		ASSERT_EQ(artists.results.size(), 1);
 		EXPECT_EQ(artists.results.front(), artist.getId());
 
-		auto releases {artist->getReleases(Range {})};
+		auto releases {Release::find(session, Release::FindParameters {}.setArtist(artist.getId()))};
 		ASSERT_EQ(releases.results.size(), 1);
 		EXPECT_EQ(releases.results.front(), release.getId());
 
-		releases = artist->getReleases(Range {}, {cluster.getId()});
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist.getId()).setClusters({cluster.getId()}));
 		ASSERT_EQ(releases.results.size(), 1);
 		EXPECT_EQ(releases.results.front(), release.getId());
 	}
@@ -605,11 +605,11 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistMultiClusters)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto releases {artist->getReleases(Range {})};
+		auto releases {Release::find(session, Release::FindParameters {}.setArtist(artist.getId()))};
 		ASSERT_EQ(releases.results.size(), 1);
 		EXPECT_EQ(releases.results.front(), release.getId());
 
-		releases = artist->getReleases(Range {}, {cluster1.getId(), cluster2.getId()});
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist.getId()).setClusters({cluster1.getId(), cluster2.getId()}));
 		ASSERT_EQ(releases.results.size(), 1);
 		EXPECT_EQ(releases.results.front(), release.getId());
 	}
