@@ -50,7 +50,7 @@ __Notes on the self-organizing map__:
 ## Subsonic API
 The API version implemented is 1.16.0 and has been tested on _Android_ using _Subsonic Player_, _Ultrasonic_ and _DSub_.
 
-Since _LMS_ uses metadata tags to organize music, a compatibility mode is used to navigate through the collection when using the directory browsing commands.
+Since _LMS_ uses metadata tags to organize music, a compatibility mode is used to browse the collection when using the directory browsing commands.
 
 The Subsonic API is enabled by default.
 
@@ -79,9 +79,9 @@ $setmulti(albumartistssort,%_albumartists_sort%)
 
 ## Security considerations
 _Wt_ (the web framework used) has some [built-in security measures](https://www.webtoolkit.eu/wt/features#security), but _LMS_ also has some too:
-* to mitigate brute force login attempts, _LMS_ uses an internal login throttler based on the client IP address. The `Client-IP` or `X-Forwarded-For` headers are used to determined the real IP adress, so make sure to properly configure your reverse proxy to filter or even erase the values (see example in [INSTALL.md](INSTALL.md)).
+* to mitigate brute force login attempts, _LMS_ uses an internal login throttler based on the client IP address. The `Client-IP` or `X-Forwarded-For` headers are used to determine the real IP adress, so make sure to properly configure your reverse proxy to filter or even erase the values (see example in [INSTALL.md](INSTALL.md)).
 * all passwords are stored hashed and salted using [bcrypt](https://fr.wikipedia.org/wiki/Bcrypt)
-* all the resources relative to the music collection (tracks, covers, etc.) are private to a session
+* all the resources relative to the music collection (tracks, covers, etc.) are private to an anthenticated session
 
 ## Installation
 
