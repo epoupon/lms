@@ -42,7 +42,6 @@ using namespace Database;
 
 namespace
 {
-
 	class Exception : public Scrobbling::Exception
 	{
 		public:
@@ -296,7 +295,7 @@ namespace Scrobbling::ListenBrainz
 				pendingFeedbacks = StarredTrack::find(session, params);
 			}
 
-			LOG(DEBUG) << "Queing " << pendingFeedbacks.results.size() << " pending '" << (feedbackType == FeedbackType::Love ? "love" : "erase") << "'feedbacks";
+			LOG(DEBUG) << "Queing " << pendingFeedbacks.results.size() << " pending '" << (feedbackType == FeedbackType::Love ? "love" : "erase") << "' feedbacks";
 
 			for (const StarredTrackId starredTrackId : pendingFeedbacks.results)
 				enqueFeedback(feedbackType, starredTrackId);
