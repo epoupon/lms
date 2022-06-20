@@ -1820,115 +1820,115 @@ struct RequestEntryPointInfo
 static const std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 {
 	// System
-	{"ping",		{handlePingRequest}},
-	{"getLicense",		{handleGetLicenseRequest}},
+	{"/ping",		{handlePingRequest}},
+	{"/getLicense",		{handleGetLicenseRequest}},
 
 	// Browsing
-	{"getMusicFolders",	{handleGetMusicFoldersRequest}},
-	{"getIndexes",		{handleGetIndexesRequest}},
-	{"getMusicDirectory",	{handleGetMusicDirectoryRequest}},
-	{"getGenres",		{handleGetGenresRequest}},
-	{"getArtists",		{handleGetArtistsRequest}},
-	{"getArtist",		{handleGetArtistRequest}},
-	{"getAlbum",		{handleGetAlbumRequest}},
-	{"getSong",		{handleNotImplemented}},
-	{"getVideos",		{handleNotImplemented}},
-	{"getArtistInfo",	{handleGetArtistInfoRequest}},
-	{"getArtistInfo2",	{handleGetArtistInfo2Request}},
-	{"getAlbumInfo",	{handleNotImplemented}},
-	{"getAlbumInfo2",	{handleNotImplemented}},
-	{"getSimilarSongs",	{handleGetSimilarSongsRequest}},
-	{"getSimilarSongs2",	{handleGetSimilarSongs2Request}},
-	{"getTopSongs",		{handleNotImplemented}},
+	{"/getMusicFolders",	{handleGetMusicFoldersRequest}},
+	{"/getIndexes",		{handleGetIndexesRequest}},
+	{"/getMusicDirectory",	{handleGetMusicDirectoryRequest}},
+	{"/getGenres",		{handleGetGenresRequest}},
+	{"/getArtists",		{handleGetArtistsRequest}},
+	{"/getArtist",		{handleGetArtistRequest}},
+	{"/getAlbum",		{handleGetAlbumRequest}},
+	{"/getSong",		{handleNotImplemented}},
+	{"/getVideos",		{handleNotImplemented}},
+	{"/getArtistInfo",	{handleGetArtistInfoRequest}},
+	{"/getArtistInfo2",	{handleGetArtistInfo2Request}},
+	{"/getAlbumInfo",	{handleNotImplemented}},
+	{"/getAlbumInfo2",	{handleNotImplemented}},
+	{"/getSimilarSongs",	{handleGetSimilarSongsRequest}},
+	{"/getSimilarSongs2",	{handleGetSimilarSongs2Request}},
+	{"/getTopSongs",		{handleNotImplemented}},
 
 	// Album/song lists
-	{"getAlbumList",	{handleGetAlbumListRequest}},
-	{"getAlbumList2",	{handleGetAlbumList2Request}},
-	{"getRandomSongs",	{handleGetRandomSongsRequest}},
-	{"getSongsByGenre",	{handleGetSongsByGenreRequest}},
-	{"getNowPlaying",	{handleNotImplemented}},
-	{"getStarred",		{handleGetStarredRequest}},
-	{"getStarred2",		{handleGetStarred2Request}},
+	{"/getAlbumList",	{handleGetAlbumListRequest}},
+	{"/getAlbumList2",	{handleGetAlbumList2Request}},
+	{"/getRandomSongs",	{handleGetRandomSongsRequest}},
+	{"/getSongsByGenre",	{handleGetSongsByGenreRequest}},
+	{"/getNowPlaying",	{handleNotImplemented}},
+	{"/getStarred",		{handleGetStarredRequest}},
+	{"/getStarred2",		{handleGetStarred2Request}},
 
 	// Searching
-	{"search",		{handleNotImplemented}},
-	{"search2",		{handleSearch2Request}},
-	{"search3",		{handleSearch3Request}},
+	{"/search",		{handleNotImplemented}},
+	{"/search2",		{handleSearch2Request}},
+	{"/search3",		{handleSearch3Request}},
 
 	// Playlists
-	{"getPlaylists",	{handleGetPlaylistsRequest}},
-	{"getPlaylist",		{handleGetPlaylistRequest}},
-	{"createPlaylist",	{handleCreatePlaylistRequest}},
-	{"updatePlaylist",	{handleUpdatePlaylistRequest}},
-	{"deletePlaylist",	{handleDeletePlaylistRequest}},
+	{"/getPlaylists",	{handleGetPlaylistsRequest}},
+	{"/getPlaylist",		{handleGetPlaylistRequest}},
+	{"/createPlaylist",	{handleCreatePlaylistRequest}},
+	{"/updatePlaylist",	{handleUpdatePlaylistRequest}},
+	{"/deletePlaylist",	{handleDeletePlaylistRequest}},
 
 	// Media retrieval
-	{"hls",				{handleNotImplemented}},
-	{"getCaptions",		{handleNotImplemented}},
-	{"getLyrics",		{handleNotImplemented}},
-	{"getAvatar",		{handleNotImplemented}},
+	{"/hls",				{handleNotImplemented}},
+	{"/getCaptions",		{handleNotImplemented}},
+	{"/getLyrics",		{handleNotImplemented}},
+	{"/getAvatar",		{handleNotImplemented}},
 
 	// Media annotation
-	{"star",			{handleStarRequest}},
-	{"unstar",			{handleUnstarRequest}},
-	{"setRating",		{handleNotImplemented}},
-	{"scrobble",		{handleScrobble}},
+	{"/star",			{handleStarRequest}},
+	{"/unstar",			{handleUnstarRequest}},
+	{"/setRating",		{handleNotImplemented}},
+	{"/scrobble",		{handleScrobble}},
 
 	// Sharing
-	{"getShares",		{handleNotImplemented}},
-	{"createShares",	{handleNotImplemented}},
-	{"updateShare",		{handleNotImplemented}},
-	{"deleteShare",		{handleNotImplemented}},
+	{"/getShares",		{handleNotImplemented}},
+	{"/createShares",	{handleNotImplemented}},
+	{"/updateShare",		{handleNotImplemented}},
+	{"/deleteShare",		{handleNotImplemented}},
 
 	// Podcast
-	{"getPodcasts",			{handleNotImplemented}},
-	{"getNewestPodcasts",		{handleNotImplemented}},
-	{"refreshPodcasts",		{handleNotImplemented}},
-	{"createPodcastChannel",	{handleNotImplemented}},
-	{"deletePodcastChannel",	{handleNotImplemented}},
-	{"deletePodcastEpisode",	{handleNotImplemented}},
-	{"downloadPodcastEpisode",	{handleNotImplemented}},
+	{"/getPodcasts",			{handleNotImplemented}},
+	{"/getNewestPodcasts",		{handleNotImplemented}},
+	{"/refreshPodcasts",		{handleNotImplemented}},
+	{"/createPodcastChannel",	{handleNotImplemented}},
+	{"/deletePodcastChannel",	{handleNotImplemented}},
+	{"/deletePodcastEpisode",	{handleNotImplemented}},
+	{"/downloadPodcastEpisode",	{handleNotImplemented}},
 
 	// Jukebox
-	{"jukeboxControl",	{handleNotImplemented}},
+	{"/jukeboxControl",	{handleNotImplemented}},
 
 	// Internet radio
-	{"getInternetRadioStations",	{handleNotImplemented}},
-	{"createInternetRadioStation",	{handleNotImplemented}},
-	{"updateInternetRadioStation",	{handleNotImplemented}},
-	{"deleteInternetRadioStation",	{handleNotImplemented}},
+	{"/getInternetRadioStations",	{handleNotImplemented}},
+	{"/createInternetRadioStation",	{handleNotImplemented}},
+	{"/updateInternetRadioStation",	{handleNotImplemented}},
+	{"/deleteInternetRadioStation",	{handleNotImplemented}},
 
 	// Chat
-	{"getChatMessages",	{handleNotImplemented}},
-	{"addChatMessages",	{handleNotImplemented}},
+	{"/getChatMessages",	{handleNotImplemented}},
+	{"/addChatMessages",	{handleNotImplemented}},
 
 	// User management
-	{"getUser",			{handleGetUserRequest}},
-	{"getUsers",		{handleGetUsersRequest,			{UserType::ADMIN}}},
-	{"createUser",		{handleCreateUserRequest,		{UserType::ADMIN}, &checkSetPasswordImplemented}},
-	{"updateUser",		{handleUpdateUserRequest,		{UserType::ADMIN}}},
-	{"deleteUser",		{handleDeleteUserRequest,		{UserType::ADMIN}}},
-	{"changePassword",	{handleChangePassword,			{UserType::REGULAR, UserType::ADMIN}, &checkSetPasswordImplemented}},
+	{"/getUser",			{handleGetUserRequest}},
+	{"/getUsers",		{handleGetUsersRequest,			{UserType::ADMIN}}},
+	{"/createUser",		{handleCreateUserRequest,		{UserType::ADMIN}, &checkSetPasswordImplemented}},
+	{"/updateUser",		{handleUpdateUserRequest,		{UserType::ADMIN}}},
+	{"/deleteUser",		{handleDeleteUserRequest,		{UserType::ADMIN}}},
+	{"/changePassword",	{handleChangePassword,			{UserType::REGULAR, UserType::ADMIN}, &checkSetPasswordImplemented}},
 
 	// Bookmarks
-	{"getBookmarks",	{handleGetBookmarks}},
-	{"createBookmark",	{handleCreateBookmark}},
-	{"deleteBookmark",	{handleDeleteBookmark}},
-	{"getPlayQueue",	{handleNotImplemented}},
-	{"savePlayQueue",	{handleNotImplemented}},
+	{"/getBookmarks",	{handleGetBookmarks}},
+	{"/createBookmark",	{handleCreateBookmark}},
+	{"/deleteBookmark",	{handleDeleteBookmark}},
+	{"/getPlayQueue",	{handleNotImplemented}},
+	{"/savePlayQueue",	{handleNotImplemented}},
 
 	// Media library scanning
-	{"getScanStatus",	{Scan::handleGetScanStatus,		{UserType::ADMIN}}},
-	{"startScan",		{Scan::handleStartScan,			{UserType::ADMIN}}},
+	{"/getScanStatus",	{Scan::handleGetScanStatus,		{UserType::ADMIN}}},
+	{"/startScan",		{Scan::handleStartScan,			{UserType::ADMIN}}},
 };
 
 using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
 static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
 {
 	// Media retrieval
-	{"download",		Stream::handleDownload},
-	{"stream",			Stream::handleStream},
-	{"getCoverArt",		handleGetCoverArt},
+	{"/download",		Stream::handleDownload},
+	{"/stream",			Stream::handleStream},
+	{"/getCoverArt",		handleGetCoverArt},
 };
 
 
