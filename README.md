@@ -12,7 +12,9 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
 * Audio transcode for maximum interoperability and low bandwith requirements
 * Multi-value tags: artists, genres, composers, lyricists, moods, ...
 * [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) support to handle duplicated artist and release names
-* [ListenBrainz](https://listenbrainz.org) support for scrobbling and synchronizing listens
+* [ListenBrainz](https://listenbrainz.org) support for:
+  * Scrobbling and synchronizing listens
+  * Synchronizing 'love' feedbacks
 * Compilation support
 * Disc subtitles support
 * ReplayGain support

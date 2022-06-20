@@ -280,7 +280,6 @@ namespace Scrobbling::ListenBrainz
 	void
 	FeedbacksSynchronizer::enquePendingFeedbacks()
 	{
-
 		auto processPendingFeedbacks { [this] (ScrobblingState scrobblingState, FeedbackType feedbackType)
 		{
 			RangeResults<StarredTrackId> pendingFeedbacks;
@@ -297,7 +296,7 @@ namespace Scrobbling::ListenBrainz
 				pendingFeedbacks = StarredTrack::find(session, params);
 			}
 
-			LOG(DEBUG) << "Queing " << pendingFeedbacks.results.size() << " pending feedbacks";
+			LOG(DEBUG) << "Queing " << pendingFeedbacks.results.size() << " pending '" << (feedbackType == FeedbackType::Love ? "love" : "erase") << "'feedbacks";
 
 			for (const StarredTrackId starredTrackId : pendingFeedbacks.results)
 				enqueFeedback(feedbackType, starredTrackId);
