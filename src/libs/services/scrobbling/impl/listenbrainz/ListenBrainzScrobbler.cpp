@@ -80,9 +80,9 @@ namespace Scrobbling::ListenBrainz
 		, _baseAPIUrl {Service<IConfig>::get()->getString("listenbrainz-api-base-url", "https://api.listenbrainz.org")}
 		, _client {Http::createClient(_ioContext, _baseAPIUrl)}
 		, _listensSynchronizer {_ioContext, db, *_client}
-		, _feedbackSender {db, *_client}
+		, _feedbacksSynchronizer {_ioContext, db, *_client}
 	{
-		LOG(INFO) << "Starting ListenBrainz scrobbler... API endpoint = '" << _baseAPIUrl;
+		LOG(INFO) << "Starting ListenBrainz scrobbler... API endpoint = '" << _baseAPIUrl << "'";
 	}
 
 	Scrobbler::~Scrobbler()
@@ -139,13 +139,13 @@ namespace Scrobbling::ListenBrainz
 	void
 	Scrobbler::onStarred(StarredTrackId starredTrackId)
 	{
-		_feedbackSender.enqueFeedback(FeedbackType::Love, starredTrackId);
+		_feedbacksSynchronizer.enqueFeedback(FeedbackType::Love, starredTrackId);
 	}
 
 	void
 	Scrobbler::onUnstarred(StarredTrackId starredtrackId)
 	{
-		_feedbackSender.enqueFeedback(FeedbackType::Erase, starredtrackId);
+		_feedbacksSynchronizer.enqueFeedback(FeedbackType::Erase, starredtrackId);
 	}
 } // namespace Scrobbling::ListenBrainz
 

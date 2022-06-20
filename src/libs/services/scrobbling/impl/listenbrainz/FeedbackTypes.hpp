@@ -1,6 +1,5 @@
-
 /*
- * Copyright (C) 2021 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,22 +19,10 @@
 
 #pragma once
 
-#include "services/database/StarredTrackId.hpp"
-
-namespace Database
-{
-	class Db;
-	class Session;
-}
-
-namespace Http
-{
-	class IClient;
-}
+#include "utils/UUID.hpp"
 
 namespace Scrobbling::ListenBrainz
 {
-
 	// See https://listenbrainz.readthedocs.io/en/production/dev/feedback-json/#feedback-json-doc
 	enum class FeedbackType
 	{
@@ -44,18 +31,10 @@ namespace Scrobbling::ListenBrainz
 		Erase = 0,
 	};
 
-	class FeedbackSender
+	struct Feedback
 	{
-		public:
-			FeedbackSender(Database::Db& db, Http::IClient& client);
-
-			void enqueFeedback(FeedbackType type, Database::StarredTrackId starredTrackId);
-
-		private:
-			void			onFeedbackSent(FeedbackType type, Database::StarredTrackId starredTrackId);
-			std::string		prepareFeedback(FeedbackType type, Database::StarredTrackId starredTrackId);
-
-			Database::Db&	_db;
-			Http::IClient&	_client;
+		Wt::WDateTime	created;
+		UUID			recordingMBID;
+		FeedbackType	score;
 	};
-}
+} // Scrobbling::ListenBrainz

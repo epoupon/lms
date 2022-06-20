@@ -24,7 +24,7 @@
 #include <boost/asio/io_context.hpp>
 
 #include "IScrobbler.hpp"
-#include "FeedbackSender.hpp"
+#include "FeedbacksSynchronizer.hpp"
 #include "ListensSynchronizer.hpp"
 
 namespace Database
@@ -66,7 +66,7 @@ namespace Scrobbling::ListenBrainz
 			std::string						_baseAPIUrl;
 			std::unique_ptr<Http::IClient>	_client;
 			ListensSynchronizer				_listensSynchronizer;
-			FeedbackSender					_feedbackSender;
+			FeedbacksSynchronizer			_feedbacksSynchronizer;
 	};
 } // Scrobbling::ListenBrainz
 

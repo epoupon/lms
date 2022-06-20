@@ -34,4 +34,6 @@ namespace Database
 namespace Scrobbling::ListenBrainz::Utils
 {
 	std::optional<UUID>	getListenBrainzToken(Database::Session& session, Database::UserId userId);
+
+	std::string parseValidateToken(std::string_view msgBody);
 }

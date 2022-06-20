@@ -23,7 +23,6 @@
 
 namespace Scrobbling
 {
-
 	class Exception : public LmsException
 	{
 		public:

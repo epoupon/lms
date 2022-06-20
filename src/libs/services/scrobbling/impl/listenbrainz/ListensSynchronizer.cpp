@@ -31,7 +31,6 @@
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "services/database/TrackList.hpp"
 #include "services/database/User.hpp"
 #include "services/scrobbling/Exception.hpp"
 #include "utils/IConfig.hpp"
@@ -122,29 +121,6 @@ namespace
 
 		res = Wt::Json::serialize(root);
 		return res;
-	}
-
-	std::string
-	parseValidateToken(std::string_view msgBody)
-	{
-		std::string listenBrainzUserName;
-
-		Wt::Json::ParseError error;
-		Wt::Json::Object root;
-		if (!Wt::Json::parse(std::string {msgBody}, root, error))
-		{
-			LOG(ERROR) << "Cannot parse 'validate-token' result: " << error.what();
-			return listenBrainzUserName;
-		}
-
-		if (!root.get("valid").orIfNull(false))
-		{
-			LOG(INFO) << "Invalid listenbrainz user";
-			return listenBrainzUserName;
-		}
-
-		listenBrainzUserName = root.get("user_name").orIfNull("");
-		return listenBrainzUserName;
 	}
 
 	std::optional<std::size_t>
@@ -558,7 +534,7 @@ namespace Scrobbling::ListenBrainz
 		request.headers = { {"Authorization",  "Token " + std::string {listenBrainzToken->getAsString()}} };
 		request.onSuccessFunc = [this, &context] (std::string_view msgBody)
 			{
-				context.listenBrainzUserName = parseValidateToken(msgBody);
+				context.listenBrainzUserName = Utils::parseValidateToken(msgBody);
 				if (context.listenBrainzUserName.empty())
 				{
 					onSyncEnded(context);
@@ -584,21 +560,24 @@ namespace Scrobbling::ListenBrainz
 		request.priority = Http::ClientRequestParameters::Priority::Low;
 		request.onSuccessFunc = [=, &context] (std::string_view msgBody)
 			{
-				const auto listenCount = parseListenCount(msgBody);
-				if (listenCount)
-					LOG(DEBUG) << "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount;
-
-				bool needSync {listenCount && (!context.listenCount || *context.listenCount != *listenCount)};
-				context.listenCount = listenCount;
-
-				if (!needSync)
+				_strand.dispatch([=, &context]
 				{
-					onSyncEnded(context);
-					return;
-				}
+					const auto listenCount = parseListenCount(msgBody);
+					if (listenCount)
+						LOG(DEBUG) << "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount;
 
-				context.maxDateTime = Wt::WDateTime::currentDateTime();
-				enqueGetListens(context);
+					bool needSync {listenCount && (!context.listenCount || *context.listenCount != *listenCount)};
+					context.listenCount = listenCount;
+
+					if (!needSync)
+					{
+						onSyncEnded(context);
+						return;
+					}
+
+					context.maxDateTime = Wt::WDateTime::currentDateTime();
+					enqueGetListens(context);
+				});
 			};
 		request.onFailureFunc = [this, &context]
 			{

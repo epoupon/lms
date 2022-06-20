@@ -61,6 +61,23 @@ namespace Database
 			.resultValue();
 	}
 
+	RangeResults<StarredTrackId>
+	StarredTrack::find(Session& session, const FindParameters& params)
+	{
+		session.checkSharedLocked();
+
+		auto query {session.getDboSession().query<StarredTrackId>("SELECT DISTINCT s_t.id FROM starred_track s_t")};
+
+		if (params.scrobbler)
+			query.where("s_t.scrobbler = ?").bind(*params.scrobbler);
+		if (params.scrobblingState)
+			query.where("s_t.scrobbling_state = ?").bind(*params.scrobblingState);
+		if (params.user.isValid())
+			query.where("s_t.user_id = ?").bind(params.user);
+
+		return execQuery(query, params.range);
+	}
+
 	StarredTrack::pointer
 	StarredTrack::create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user, Scrobbler scrobbler)
 	{

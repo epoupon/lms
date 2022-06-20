@@ -27,6 +27,7 @@
 #include "services/database/StarredTrackId.hpp"
 #include "services/database/Types.hpp"
 #include "services/database/UserId.hpp"
+#include "utils/EnumSet.hpp"
 
 namespace Database
 {
@@ -40,10 +41,23 @@ namespace Database
 			StarredTrack() = default;
 			StarredTrack(ObjectPtr<Track> track, ObjectPtr<User> user, Scrobbler scrobbler);
 
+			struct FindParameters
+			{
+				std::optional<Scrobbler>    	scrobbler;      	// for this scrobbler
+				std::optional<ScrobblingState>	scrobblingState;	//   and these states
+				UserId							user;				// and this user
+				Range							range;
+
+				FindParameters& setScrobbler(Scrobbler _scrobbler, ScrobblingState _scrobblingState) { scrobbler = _scrobbler; scrobblingState = _scrobblingState; return *this; }
+				FindParameters& setUser(UserId _user) {user = _user; return *this; }
+				FindParameters& setRange(Range _range) {range = _range; return *this; }
+			};
+
 			// Search utility
 			static std::size_t	getCount(Session& session);
 			static pointer		find(Session& session, StarredTrackId id);
 			static pointer		find(Session& session, TrackId trackId, UserId userId, Scrobbler scrobbler);
+			static RangeResults<StarredTrackId>	find(Session& session, const FindParameters& findParams);
 
 			// Create utility
 			static pointer		create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user, Scrobbler scrobbler);
