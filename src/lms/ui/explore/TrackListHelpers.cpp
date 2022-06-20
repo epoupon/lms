@@ -50,7 +50,7 @@ namespace UserInterface::TrackListHelpers
 		auto entry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
 		auto* entryPtr {entry.get()};
 
-		entry->bindString("name", Wt::WString::fromUTF8(track->getName()));
+		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
 		const auto artists {track->getArtists({TrackArtistLinkType::Artist})};
 		const Release::pointer release {track->getRelease()};
