@@ -44,6 +44,7 @@
 #include "admin/DatabaseSettingsView.hpp"
 #include "admin/UserView.hpp"
 #include "admin/UsersView.hpp"
+#include "common/Template.hpp"
 #include "explore/Explore.hpp"
 #include "explore/Filters.hpp"
 #include "resource/AudioFileResource.hpp"
@@ -418,7 +419,7 @@ LmsApplication::createHome()
 
 	main->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	Wt::WTemplate* navbar {main->bindNew<Wt::WTemplate>("navbar", Wt::WString::tr("Lms.main.template.navbar"))};
+	Template* navbar {main->bindNew<Template>("navbar", Wt::WString::tr("Lms.main.template.navbar"))};
 	navbar->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	_notificationContainer = main->bindNew<NotificationContainer>("notifications");
