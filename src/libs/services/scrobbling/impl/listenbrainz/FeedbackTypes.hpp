@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,13 +19,22 @@
 
 #pragma once
 
-#include "utils/Exception.hpp"
+#include "utils/UUID.hpp"
 
-namespace Scrobbling
+namespace Scrobbling::ListenBrainz
 {
-	class Exception : public LmsException
+	// See https://listenbrainz.readthedocs.io/en/production/dev/feedback-json/#feedback-json-doc
+	enum class FeedbackType
 	{
-		public:
-			using LmsException::LmsException;
+		Love = 1,
+		Hate = -1,
+		Erase = 0,
 	};
-}
+
+	struct Feedback
+	{
+		Wt::WDateTime	created;
+		UUID			recordingMBID;
+		FeedbackType	score;
+	};
+} // Scrobbling::ListenBrainz

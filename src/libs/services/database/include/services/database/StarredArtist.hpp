@@ -23,13 +23,10 @@
 #include <Wt/Dbo/Dbo.h>
 
 #include "services/database/ArtistId.hpp"
-#include "services/database/IdType.hpp"
 #include "services/database/Object.hpp"
-#include "services/database/Session.hpp"
+#include "services/database/StarredArtistId.hpp"
 #include "services/database/Types.hpp"
 #include "services/database/UserId.hpp"
-
-LMS_DECLARE_IDTYPE(StarredArtistId)
 
 namespace Database
 {
@@ -56,15 +53,18 @@ namespace Database
 			ObjectPtr<User>		getUser() const { return _user; }
 			Scrobbler			getScrobbler() const { return _scrobbler; }
 			const Wt::WDateTime& getDateTime() const { return _dateTime; }
+			ScrobblingState		getScrobblingState() const { return _scrobblingState; }
 
 			// Setters
 			void setDateTime(const Wt::WDateTime& dateTime);
+			void setScrobblingState(ScrobblingState state) { _scrobblingState  = state; }
 
 			template<class Action>
 			void persist(Action& a)
 			{
-				Wt::Dbo::field(a,	_scrobbler,		"scrobbler");
-				Wt::Dbo::field(a,	_dateTime,		"date_time");
+				Wt::Dbo::field(a,	_scrobbler,			"scrobbler");
+				Wt::Dbo::field(a,	_scrobblingState,	"scrobbling_state");
+				Wt::Dbo::field(a,	_dateTime,			"date_time");
 
 				Wt::Dbo::belongsTo(a,	_artist,	"artist",	Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::belongsTo(a,	_user,		"user",		Wt::Dbo::OnDeleteCascade);
@@ -72,6 +72,7 @@ namespace Database
 
 		private:
 			Scrobbler		_scrobbler;			// for which scrobbler
+			ScrobblingState	_scrobblingState {ScrobblingState::PendingAdd};
 			Wt::WDateTime	_dateTime;			// when it was starred
 
 			Wt::Dbo::ptr<Artist>	_artist;

@@ -30,6 +30,9 @@
 
 #include "services/scrobbling/Listen.hpp"
 
+#include "FeedbackTypes.hpp"
+
+
 namespace Database
 {
 	class Db;
@@ -42,19 +45,17 @@ namespace Http
 
 namespace Scrobbling::ListenBrainz
 {
-	class ListensSynchronizer
+	class FeedbacksSynchronizer
 	{
 		public:
-			ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, Http::IClient& client);
+			FeedbacksSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, Http::IClient& client);
 
-			void enqueListen(const TimedListen& listen);
-			void enqueListenNow(const Listen& listen);
+			void enqueFeedback(FeedbackType type, Database::StarredTrackId starredTrackId);
 
 		private:
-			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
-			bool saveListen(const TimedListen& listen, Database::ScrobblingState scrobblinState);
+			void onFeedbackSent(FeedbackType type, Database::StarredTrackId starredTrackId);
 
-			void enquePendingListens();
+			void enquePendingFeedbacks();
 
 			struct UserContext
 			{
@@ -67,14 +68,15 @@ namespace Scrobbling::ListenBrainz
 
 				const Database::UserId		userId;
 				bool						syncing {};
-				std::optional<std::size_t>	listenCount {};
+				std::optional<std::size_t>	feedbackCount {};
 
 				// resetted at each sync
 				std::string		listenBrainzUserName; // need to be resolved first
-				Wt::WDateTime	maxDateTime;
-				std::size_t		fetchedListenCount{};
-				std::size_t		matchedListenCount{};
-				std::size_t		importedListenCount{};
+
+				std::size_t		currentOffset{};
+				std::size_t		fetchedFeedbackCount{};
+				std::size_t		matchedFeedbackCount{};
+				std::size_t		importedFeedbackCount{};
 			};
 
 			UserContext& getUserContext(Database::UserId userId);
@@ -84,9 +86,10 @@ namespace Scrobbling::ListenBrainz
 			void startSync(UserContext& context);
 			void onSyncEnded(UserContext& context);
 			void enqueValidateToken(UserContext& context);
-			void enqueGetListenCount(UserContext& context);
-			void enqueGetListens(UserContext& context);
-			void processGetListensResponse(std::string_view body, UserContext& context);
+			void enqueGetFeedbackCount(UserContext& context);
+			void enqueGetFeedbacks(UserContext& context);
+			std::size_t processGetFeedbacks(std::string_view body, UserContext& context);
+			void tryImportFeedback(const Feedback& feedback, UserContext& context);
 
 			boost::asio::io_context&		_ioContext;
 			boost::asio::io_context::strand	_strand {_ioContext};
@@ -96,8 +99,8 @@ namespace Scrobbling::ListenBrainz
 
 			std::unordered_map<Database::UserId, UserContext> _userContexts;
 
-			const std::size_t			_maxSyncListenCount;
-			const std::chrono::hours	_syncListensPeriod;
+			const std::size_t			_maxSyncFeedbackCount;
+			const std::chrono::hours	_syncFeedbacksPeriod;
 	};
 } // Scrobbling::ListenBrainz
 

@@ -56,7 +56,8 @@ createQuery(Session& session, const Track::FindParameters& params)
 		assert(params.scrobbler);
 		query.join("starred_track s_t ON s_t.track_id = t.id")
 			.where("s_t.user_id = ?").bind(params.starringUser)
-			.where("s_t.scrobbler = ?").bind(*params.scrobbler);
+			.where("s_t.scrobbler = ?").bind(*params.scrobbler)
+			.where("s_t.scrobbling_state <> ?").bind(ScrobblingState::PendingRemove);
 	}
 
 	if (!params.clusters.empty())

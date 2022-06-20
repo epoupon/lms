@@ -571,6 +571,17 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
 		session.getDboSession().execute("ALTER TABLE track_artist_link_backup RENAME TO track_artist_link");
 	}
 
+	static
+	void
+	migrateFromV34(Session& session)
+	{
+		// Add scrobbling state
+		// By default, everythin needs to be sent
+		session.getDboSession().execute("ALTER TABLE starred_artist ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
+		session.getDboSession().execute("ALTER TABLE starred_release ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
+		session.getDboSession().execute("ALTER TABLE starred_track ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
+	}
+
 	void
 	doDbMigration(Session& session)
 	{
@@ -611,6 +622,7 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
 			{31, migrateFromV31},
 			{32, migrateFromV32},
 			{33, migrateFromV33},
+			{34, migrateFromV34},
 		};
 
 		while (1)

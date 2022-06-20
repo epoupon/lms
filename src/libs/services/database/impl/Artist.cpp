@@ -136,7 +136,8 @@ createQuery(Session& session, const Artist::FindParameters& params)
 		assert(params.scrobbler);
 		query.join("starred_artist s_a ON s_a.artist_id = a.id")
 			.where("s_a.user_id = ?").bind(params.starringUser)
-			.where("s_a.scrobbler = ?").bind(*params.scrobbler);
+			.where("s_a.scrobbler = ?").bind(*params.scrobbler)
+			.where("s_a.scrobbling_state <> ?").bind(ScrobblingState::PendingRemove);
 	}
 
 	if (!params.clusters.empty())

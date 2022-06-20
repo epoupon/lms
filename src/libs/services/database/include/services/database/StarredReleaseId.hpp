@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,13 +19,7 @@
 
 #pragma once
 
-#include "utils/Exception.hpp"
+#include "services/database/IdType.hpp"
 
-namespace Scrobbling
-{
-	class Exception : public LmsException
-	{
-		public:
-			using LmsException::LmsException;
-	};
-}
+LMS_DECLARE_IDTYPE(StarredReleaseId)
+

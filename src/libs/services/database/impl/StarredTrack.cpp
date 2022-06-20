@@ -22,6 +22,7 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "services/database/Track.hpp"
+#include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
@@ -58,6 +59,23 @@ namespace Database
 			.where("user_id = ?").bind(userId)
 			.where("scrobbler = ?").bind(scrobbler)
 			.resultValue();
+	}
+
+	RangeResults<StarredTrackId>
+	StarredTrack::find(Session& session, const FindParameters& params)
+	{
+		session.checkSharedLocked();
+
+		auto query {session.getDboSession().query<StarredTrackId>("SELECT DISTINCT s_t.id FROM starred_track s_t")};
+
+		if (params.scrobbler)
+			query.where("s_t.scrobbler = ?").bind(*params.scrobbler);
+		if (params.scrobblingState)
+			query.where("s_t.scrobbling_state = ?").bind(*params.scrobblingState);
+		if (params.user.isValid())
+			query.where("s_t.user_id = ?").bind(params.user);
+
+		return execQuery(query, params.range);
 	}
 
 	StarredTrack::pointer

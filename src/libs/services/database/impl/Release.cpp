@@ -64,7 +64,8 @@ createQuery(Session& session, const Release::FindParameters& params)
 		assert(params.scrobbler);
 		query.join("starred_release s_r ON s_r.release_id = r.id")
 			.where("s_r.user_id = ?").bind(params.starringUser)
-			.where("s_r.scrobbler = ?").bind(*params.scrobbler);
+			.where("s_r.scrobbler = ?").bind(*params.scrobbler)
+			.where("s_r.scrobbling_state <> ?").bind(ScrobblingState::PendingRemove);
 	}
 
 	if (params.artist.isValid())
