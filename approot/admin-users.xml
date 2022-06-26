@@ -28,11 +28,8 @@
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title">${tr:Lms.Admin.Users.del-user}</h5>
+					<h5 class="modal-title">${tr:Lms.Admin.Users.del-user-confirm}</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					${tr:Lms.Admin.Users.del-user-name}
 				</div>
 				<div class="modal-footer">
 					${del-btn class="btn btn-danger me-1"}${cancel-btn class="btn btn-secondary"}

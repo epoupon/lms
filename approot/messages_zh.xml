@@ -87,8 +87,7 @@
 <!--Users-->
 <message id="Lms.Admin.Users.add">新建用户</message>
 <message id="Lms.Admin.Users.admin">管理员</message>
-<message id="Lms.Admin.Users.del-user">删除用户</message>
-<message id="Lms.Admin.Users.del-user-name">确认要删除此用户？</message>
+
 <message id="Lms.Admin.Users.demo">演示</message>
 <message id="Lms.Admin.Users.users">用户</message>
 <message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> 用户</message>
@@ -155,6 +154,8 @@
 <message id="Lms.Explore.Release.similar-releases">相似专辑</message>
 <message id="Lms.Explore.Release.copyright">版权所有</message>
 <message id="Lms.Explore.Release.disc">唱片 {1}</message>
+
+<!--Explore:Search-->
 
 <!--Explore:Search-->
 <message id="Lms.Explore.Search.search-placeholder">搜索中...</message>

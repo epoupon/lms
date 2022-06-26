@@ -30,6 +30,7 @@
 #include "ReleaseListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
+#include "ModalManager.hpp"
 #include "Utils.hpp"
 
 using namespace Database;
@@ -125,7 +126,33 @@ namespace UserInterface
 		entry->bindNew<Wt::WPushButton>("delete", Wt::WString::tr("Lms.delete"))
 			->clicked().connect([=]
 			{
-			// TODO
+				auto modal {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.TrackLists.template.delete-tracklist"))};
+				modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
+				Wt::WWidget* modalPtr {modal.get()};
+
+				auto* delBtn {modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete"))};
+				delBtn->clicked().connect([=]
+				{
+					{
+						auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+						TrackList::pointer trackList {TrackList::find(LmsApp->getDbSession(), trackListId)};
+						if (trackList)
+							trackList.remove();
+					}
+
+					_container->remove(*entry);
+
+					LmsApp->getModalManager().dispose(modalPtr);
+				});
+
+				auto* cancelBtn {modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel"))};
+				cancelBtn->clicked().connect([=]
+				{
+					LmsApp->getModalManager().dispose(modalPtr);
+				});
+
+				LmsApp->getModalManager().show(std::move(modal));
 			});
 	}
 

@@ -111,11 +111,13 @@ UsersView::refreshView()
 			auto* delBtn {modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete"))};
 			delBtn->clicked().connect([=]
 			{
-				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+				{
+					auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
-				User::pointer user {User::find(LmsApp->getDbSession(), userId)};
-				if (user)
-					user.remove();
+					User::pointer user {User::find(LmsApp->getDbSession(), userId)};
+					if (user)
+						user.remove();
+				}
 
 				_container->removeWidget(entry);
 

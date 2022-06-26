@@ -87,8 +87,7 @@
 <!--Users-->
 <message id="Lms.Admin.Users.add">New user</message>
 <message id="Lms.Admin.Users.admin">Admin</message>
-<message id="Lms.Admin.Users.del-user">Delete user</message>
-<message id="Lms.Admin.Users.del-user-name">Delete user?</message>
+<message id="Lms.Admin.Users.del-user-confirm">Delete user?</message>
 <message id="Lms.Admin.Users.demo">Demo</message>
 <message id="Lms.Admin.Users.users">Users</message>
 <message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Users</message>
@@ -155,6 +154,9 @@
 <message id="Lms.Explore.Release.similar-releases">Similar albums</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disc {1}</message>
+
+<!--Explore:TrackLists-->
+<message id="Lms.Explore.TrackLists.del-tracklist-confirm">Delete playlist?</message>
 
 <!--Explore:Search-->
 <message id="Lms.Explore.Search.search-placeholder">Search...</message>
