@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <Wt/WContainerWidget.h>
-
 #include "services/database/Types.hpp"
 
 #include "common/Template.hpp"

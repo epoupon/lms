@@ -191,6 +191,7 @@ LmsApplication::init()
 	messageResourceBundle().use(appRoot() + "releases");
 	messageResourceBundle().use(appRoot() + "search");
 	messageResourceBundle().use(appRoot() + "settings");
+	messageResourceBundle().use(appRoot() + "tracklists");
 	messageResourceBundle().use(appRoot() + "tracks");
 
 	// Handle Media Scanner events and other session events
@@ -348,6 +349,7 @@ handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 		{ "/release",		IdxExplore,		false },
 		{ "/search",		IdxExplore,		false },
 		{ "/tracks",		IdxExplore,		false },
+		{ "/tracklists",	IdxExplore,		false },
 		{ "/playqueue",		IdxPlayQueue,		false },
 		{ "/settings",		IdxSettings,		false },
 		{ "/admin/database",	IdxAdminDatabase,	true },
@@ -432,9 +434,9 @@ LmsApplication::createHome()
 	navbar->bindNew<Wt::WAnchor>("artists", Wt::WLink {Wt::LinkType::InternalPath, "/artists"}, Wt::WString::tr("Lms.Explore.artists"));
 	navbar->bindNew<Wt::WAnchor>("releases", Wt::WLink {Wt::LinkType::InternalPath, "/releases"}, Wt::WString::tr("Lms.Explore.releases"));
 	navbar->bindNew<Wt::WAnchor>("tracks", Wt::WLink {Wt::LinkType::InternalPath, "/tracks"}, Wt::WString::tr("Lms.Explore.tracks"));
+	navbar->bindNew<Wt::WAnchor>("tracklists", Wt::WLink {Wt::LinkType::InternalPath, "/tracklists"}, Wt::WString::tr("Lms.Explore.tracklists"));
 
 	Filters* filters {navbar->bindNew<Filters>("filters")};
-	navbar->bindNew<Wt::WAnchor>("playqueue", Wt::WLink {Wt::LinkType::InternalPath, "/playqueue"}, Wt::WString::tr("Lms.PlayQueue.playqueue"));
 	navbar->bindString("username", getUserLoginName(), Wt::TextFormat::Plain);
 	navbar->bindNew<Wt::WAnchor>("settings", Wt::WLink {Wt::LinkType::InternalPath, "/settings"}, Wt::WString::tr("Lms.Settings.menu-settings"));
 

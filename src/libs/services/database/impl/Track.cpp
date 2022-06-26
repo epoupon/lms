@@ -110,6 +110,13 @@ createQuery(Session& session, const Track::FindParameters& params)
 	else if (params.release.isValid())
 		query.where("t.release_id = ?").bind(params.release);
 
+	if (params.trackList.isValid())
+	{
+		query.join("tracklist t_l ON t_l_e.tracklist_id = t_l.id");
+		query.join("tracklist_entry t_l_e ON t.id = t_l_e.track_id");
+		query.where("t_l.id = ?").bind(params.trackList);
+	}
+
 	switch (params.sortMethod)
 	{
 		case TrackSortMethod::None:
@@ -133,6 +140,9 @@ createQuery(Session& session, const Track::FindParameters& params)
 		case TrackSortMethod::Release:
 			query.orderBy("t.disc_number,t.track_number");
 			break;
+		case TrackSortMethod::TrackList:
+			assert(params.trackList.isValid());
+			query.orderBy("t_l.id");
 	}
 
 	return query;

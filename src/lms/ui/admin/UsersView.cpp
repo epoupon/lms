@@ -93,20 +93,22 @@ UsersView::refreshView()
 			continue;
 
 		entry->setCondition("if-edit", true);
-		Wt::WPushButton* editBtn = entry->bindNew<Wt::WPushButton>("edit-btn", Wt::WString::tr("Lms.Admin.Users.edit"));
+		Wt::WPushButton* editBtn = entry->bindNew<Wt::WPushButton>("edit-btn", Wt::WString::tr("Lms.template.edit-btn"), Wt::TextFormat::XHTML);
+		editBtn->setToolTip(Wt::WString::tr("Lms.edit"));
 		editBtn->clicked().connect([=]()
 		{
 			LmsApp->setInternalPath("/admin/user/" + userId.toString(), true);
 		});
 
-		Wt::WPushButton* delBtn = entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.Admin.Users.del"));
+		Wt::WPushButton* delBtn = entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.delete-btn"), Wt::TextFormat::XHTML);
+		delBtn->setToolTip(Wt::WString::tr("Lms.delete"));
 		delBtn->clicked().connect([=]
 		{
 			auto modal {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.delete-user"))};
 			modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
 			Wt::WWidget* modalPtr {modal.get()};
 
-			auto* delBtn {modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.Admin.Users.del"))};
+			auto* delBtn {modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete"))};
 			delBtn->clicked().connect([=]
 			{
 				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};

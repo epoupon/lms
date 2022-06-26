@@ -6,9 +6,11 @@
 <message id="Lms.add">添加</message>
 <message id="Lms.administration">管理</message>
 <message id="Lms.apply">应用</message>
-<message id="Lms.discard">撤销</message>
 <message id="Lms.cancel">取消</message>
 <message id="Lms.create">新建</message>
+<message id="Lms.del">删除</message>
+<message id="Lms.discard">撤销</message>
+<message id="Lms.edit">编辑</message>
 <message id="Lms.loading">加载中...</message>
 <message id="Lms.login">登陆</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> 注销</message>
@@ -85,11 +87,9 @@
 <!--Users-->
 <message id="Lms.Admin.Users.add">新建用户</message>
 <message id="Lms.Admin.Users.admin">管理员</message>
-<message id="Lms.Admin.Users.del">删除</message>
 <message id="Lms.Admin.Users.del-user">删除用户</message>
 <message id="Lms.Admin.Users.del-user-name">确认要删除此用户？</message>
 <message id="Lms.Admin.Users.demo">演示</message>
-<message id="Lms.Admin.Users.edit">编辑</message>
 <message id="Lms.Admin.Users.users">用户</message>
 <message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> 用户</message>
 
@@ -130,6 +130,7 @@
 <message id="Lms.Explore.releases">专辑</message>
 <message id="Lms.Explore.star">收藏</message>
 <message id="Lms.Explore.starred">已收藏</message>
+
 <message id="Lms.Explore.tracks">音轨</message>
 <message id="Lms.Explore.type">类型</message>
 <message id="Lms.Explore.unstar">取消收藏</message>

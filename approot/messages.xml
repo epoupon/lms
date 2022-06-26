@@ -6,9 +6,11 @@
 <message id="Lms.add">Add</message>
 <message id="Lms.administration">Administration</message>
 <message id="Lms.apply">Apply</message>
-<message id="Lms.discard">Discard</message>
 <message id="Lms.cancel">Cancel</message>
 <message id="Lms.create">Create</message>
+<message id="Lms.delete">Delete</message>
+<message id="Lms.discard">Discard</message>
+<message id="Lms.edit">Edit</message>
 <message id="Lms.loading">Loading...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
@@ -85,11 +87,9 @@
 <!--Users-->
 <message id="Lms.Admin.Users.add">New user</message>
 <message id="Lms.Admin.Users.admin">Admin</message>
-<message id="Lms.Admin.Users.del">Delete</message>
 <message id="Lms.Admin.Users.del-user">Delete user</message>
 <message id="Lms.Admin.Users.del-user-name">Delete user?</message>
 <message id="Lms.Admin.Users.demo">Demo</message>
-<message id="Lms.Admin.Users.edit">Edit</message>
 <message id="Lms.Admin.Users.users">Users</message>
 <message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Users</message>
 
@@ -130,6 +130,7 @@
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.star">Star</message>
 <message id="Lms.Explore.starred">Starred</message>
+<message id="Lms.Explore.tracklists">Playlists</message>
 <message id="Lms.Explore.tracks">Tracks</message>
 <message id="Lms.Explore.type">Type</message>
 <message id="Lms.Explore.unstar">Unstar</message>

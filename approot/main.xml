@@ -32,7 +32,7 @@
 						${tracks class="nav-link"}
 					</li>
 					<li class="nav-item">
-						${playqueue class="nav-link"}
+						${tracklists class="nav-link"}
 					</li>
 					<li class="nav-item">
 						${filters class="nav-link d-flex align-items-center"}

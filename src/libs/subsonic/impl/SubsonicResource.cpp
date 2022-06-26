@@ -553,7 +553,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 		tracklist = TrackList::find(context.dbSession, *id);
 		if (!tracklist
 			|| tracklist->getUser() != user
-			|| tracklist->getType() != TrackList::Type::Playlist)
+			|| tracklist->getType() != TrackListType::Playlist)
 		{
 			throw RequestedDataNotFoundError {};
 		}
@@ -563,7 +563,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 	}
 	else
 	{
-		tracklist = TrackList::create(context.dbSession, *name, TrackList::Type::Playlist, false, user);
+		tracklist = TrackList::create(context.dbSession, *name, TrackListType::Playlist, false, user);
 	}
 
 	for (const TrackId trackId : trackIds)
@@ -644,7 +644,7 @@ handleDeletePlaylistRequest(RequestContext& context)
 	TrackList::pointer tracklist {TrackList::find(context.dbSession, id)};
 	if (!tracklist
 		|| tracklist->getUser() != user
-		|| tracklist->getType() != TrackList::Type::Playlist)
+		|| tracklist->getType() != TrackListType::Playlist)
 	{
 		throw RequestedDataNotFoundError {};
 	}
@@ -1321,7 +1321,11 @@ handleGetPlaylistsRequest(RequestContext& context)
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& playlistsNode {response.createNode("playlists")};
 
-	auto tracklistIds {TrackList::find(context.dbSession, context.userId, TrackList::Type::Playlist, Range {})};
+	TrackList::FindParameters params;
+	params.setUser(context.userId);
+	params.setType(TrackListType::Playlist);
+
+	auto tracklistIds {TrackList::find(context.dbSession, params)};
 	for (const TrackListId trackListId : tracklistIds.results)
 	{
 		const TrackList::pointer trackList {TrackList::find(context.dbSession, trackListId)};
@@ -1665,7 +1669,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 	TrackList::pointer tracklist {TrackList::find(context.dbSession, id)};
 	if (!tracklist
 		|| tracklist->getUser() != user
-		|| tracklist->getType() != TrackList::Type::Playlist)
+		|| tracklist->getType() != TrackListType::Playlist)
 	{
 		throw RequestedDataNotFoundError {};
 	}

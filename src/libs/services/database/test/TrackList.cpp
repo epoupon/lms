@@ -31,7 +31,7 @@ TEST_F(DatabaseFixture, SingleTrackList)
 		EXPECT_EQ(TrackList::getCount(session), 0);
 	}
 
-	ScopedTrackList trackList {session, "MytrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet()};
 
 	{
 		auto transaction {session.createSharedTransaction()};
@@ -39,10 +39,45 @@ TEST_F(DatabaseFixture, SingleTrackList)
 	}
 }
 
+TEST_F(DatabaseFixture, SingleTrackListSingleTrack)
+{
+	ScopedUser user {session, "MyUser"};
+	ScopedTrackList trackList1 {session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList2 {session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet()};
+	ScopedTrack track {session, "MyTrack"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		auto tracks {Track::find(session, Track::FindParameters {}.setTrackList(trackList1.getId()))};
+		EXPECT_EQ(tracks.results.size(), 0);
+
+		tracks = Track::find(session, Track::FindParameters {}.setTrackList(trackList2.getId()));
+		EXPECT_EQ(tracks.results.size(), 0);
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		TrackListEntry::create(session, track.get(), trackList1.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		auto tracks {Track::find(session, Track::FindParameters {}.setTrackList(trackList1.getId()))};
+		ASSERT_EQ(tracks.results.size(), 1);
+		EXPECT_EQ(tracks.results.front(), track.getId());
+
+		tracks = Track::find(session, Track::FindParameters {}.setTrackList(trackList2.getId()));
+		EXPECT_EQ(tracks.results.size(), 0);
+	}
+}
+
 TEST_F(DatabaseFixture, SingleTrackListMultipleTrack)
 {
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MytrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet()};
 	std::list<ScopedTrack> tracks;
 
 	for (std::size_t i {}; i < 10; ++i)
@@ -84,7 +119,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrack)
 TEST_F(DatabaseFixture, SingleTrackListMultipleTrackDateTime)
 {
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MytrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet()};
 	ScopedTrack track1 {session, "MyTrack1"};
 	ScopedTrack track2 {session, "MyTrack2"};
 	ScopedTrack track3 {session, "MyTrack3"};
@@ -111,7 +146,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackDateTime)
 TEST_F(DatabaseFixture, SingleTrackListMultipleTrackRecentlyPlayed)
 {
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MyTrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet()};
 	ScopedTrack track1 {session, "MyTrack1"};
 	ScopedTrack track2 {session, "MyTrack1"};
 	ScopedArtist artist1 {session, "MyArtist1"};
@@ -216,7 +251,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackRecentlyPlayed)
 TEST_F(DatabaseFixture, SingleTrackList_getArtists)
 {
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MytrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet()};
 	ScopedTrack track1 {session, "MyTrack1"};
 	ScopedTrack track2 {session, "MyTrack2"};
 	ScopedRelease release {session, "MyRelease"};
@@ -297,7 +332,7 @@ TEST_F(DatabaseFixture, SingleTrackList_getArtists)
 TEST_F(DatabaseFixture, SingleTrackList_getReleases)
 {
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MytrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet()};
 	ScopedTrack track {session, "MyTrack"};
 	ScopedRelease release {session, "MyRelease"};
 
@@ -332,7 +367,7 @@ TEST_F(DatabaseFixture, SingleTrackList_getReleases)
 TEST_F(DatabaseFixture, SingleTrackList_getTracks)
 {
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MytrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet()};
 	ScopedTrack track1 {session, "MyTrack1"};
 	ScopedTrack track2 {session, "MyTrack1"};
 
@@ -361,5 +396,37 @@ TEST_F(DatabaseFixture, SingleTrackList_getTracks)
 		ASSERT_EQ(tracks.size(), 2);
 		ASSERT_EQ(tracks[0]->getId(), track1->getId());
 		ASSERT_EQ(tracks[1]->getId(), track2->getId());
+	}
+}
+
+TEST_F(DatabaseFixture, SingleTrackListSingleTrackWithCluster)
+{
+	ScopedUser user {session, "MyUser"};
+	ScopedTrackList trackList1 {session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList2 {session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet()};
+	ScopedClusterType clusterType {session, "MyClusterType"};
+	ScopedCluster cluster {session, clusterType.lockAndGet(), "MyCluster"};
+	ScopedTrack track {session, "MyTrack"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		auto trackLists {TrackList::find(session, TrackList::FindParameters {}.setClusters({cluster.getId()}))};
+		EXPECT_EQ(trackLists.results.size(), 0);
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		TrackListEntry::create(session, track.get(), trackList1.get());
+		cluster.get().modify()->addTrack(track.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		auto trackLists {TrackList::find(session, TrackList::FindParameters {}.setClusters({cluster.getId()}))};
+		ASSERT_EQ(trackLists.results.size(), 1);
+		EXPECT_EQ(trackLists.results.front(), trackList1.getId());
 	}
 }

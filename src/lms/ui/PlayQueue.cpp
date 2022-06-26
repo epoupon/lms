@@ -49,7 +49,7 @@ PlayQueue::PlayQueue()
 	addFunction("id", &Wt::WTemplate::Functions::id);
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	Wt::WText* clearBtn = bindNew<Wt::WText>("clear-btn", Wt::WString::tr("Lms.PlayQueue.template.clear-btn"), Wt::TextFormat::XHTML);
+	Wt::WPushButton* clearBtn {bindNew<Wt::WPushButton>("clear-btn", Wt::WString::tr("Lms.PlayQueue.template.clear-btn"), Wt::TextFormat::XHTML)};
 	clearBtn->clicked().connect([=]
 	{
 		clearTracks();
@@ -62,7 +62,7 @@ PlayQueue::PlayQueue()
 		updateCurrentTrack(true);
 	});
 
-	Wt::WText* shuffleBtn = bindNew<Wt::WText>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.template.shuffle-btn"), Wt::TextFormat::XHTML);
+	Wt::WPushButton* shuffleBtn {bindNew<Wt::WPushButton>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.template.shuffle-btn"), Wt::TextFormat::XHTML)};
 	shuffleBtn->clicked().connect([=]
 	{
 		{
@@ -148,14 +148,14 @@ PlayQueue::PlayQueue()
 			});
 
 			static const std::string queuedListName {"__queued_tracks__"};
-			trackList = Database::TrackList::find(LmsApp->getDbSession(), queuedListName, Database::TrackList::Type::Internal, LmsApp->getUserId());
+			trackList = Database::TrackList::find(LmsApp->getDbSession(), queuedListName, Database::TrackListType::Internal, LmsApp->getUserId());
 			if (!trackList)
-				trackList = Database::TrackList::create(LmsApp->getDbSession(), queuedListName, Database::TrackList::Type::Internal, false, LmsApp->getUser());
+				trackList = Database::TrackList::create(LmsApp->getDbSession(), queuedListName, Database::TrackListType::Internal, false, LmsApp->getUser());
 		}
 		else
 		{
 			static const std::string currentPlayQueueName {"__current__playqueue__"};
-			trackList = Database::TrackList::create(LmsApp->getDbSession(), currentPlayQueueName, Database::TrackList::Type::Internal, false, LmsApp->getUser());
+			trackList = Database::TrackList::create(LmsApp->getDbSession(), currentPlayQueueName, Database::TrackListType::Internal, false, LmsApp->getUser());
 		}
 
 		_tracklistId = trackList->getId();
@@ -420,7 +420,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 
 	entry->bindString("duration", Utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
-	Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.PlayQueue.template.play-btn"), Wt::TextFormat::XHTML)};
+	Wt::WPushButton* playBtn {entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML)};
 	playBtn->clicked().connect([=]
 	{
 		const std::optional<std::size_t> pos {_entriesContainer->getIndexOf(*entry)};
@@ -428,7 +428,8 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 			loadTrack(*pos, true);
 	});
 
-	Wt::WText* delBtn {entry->bindNew<Wt::WText>("del-btn", Wt::WString::tr("Lms.PlayQueue.template.delete-btn"), Wt::TextFormat::XHTML)};
+	Wt::WPushButton* delBtn {entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.delete-btn"), Wt::TextFormat::XHTML)};
+	delBtn->setToolTip(Wt::WString::tr("Lms.delete"));
 	delBtn->clicked().connect([=]
 	{
 		// Remove the entry n both the widget tree and the playqueue
@@ -451,7 +452,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 		updateInfo();
 	});
 
-	entry->bindNew<Wt::WText>("more-btn", Wt::WString::tr("Lms.PlayQueue.template.more-btn"), Wt::TextFormat::XHTML);
+	entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
 
 	auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
 

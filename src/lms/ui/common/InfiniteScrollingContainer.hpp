@@ -33,7 +33,7 @@ namespace UserInterface
 	{
 		public:
 			// "text" must contain loading-indicator and "elements"
-			InfiniteScrollingContainer(const Wt::WString& text = Wt::WString::tr("Lms.infinite-scrolling-container"));
+			InfiniteScrollingContainer(const Wt::WString& text = Wt::WString::tr("Lms.infinite-scrolling-container.template"));
 
 			void clear();
 			std::size_t getCount();

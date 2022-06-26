@@ -187,7 +187,7 @@ TEST_F(DatabaseFixture, Cluster_multiTracksMultipleClustersTopRelease)
 	ScopedRelease releaseC {session, "ReleaseC"};
 
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "TrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "TrackList", TrackListType::Playlist, false, user.lockAndGet()};
 
 	{
 		auto transaction {session.createSharedTransaction()};
@@ -618,7 +618,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistMultiClusters)
 TEST_F(DatabaseFixture, SingleTrackListMultipleTrackSingleCluster)
 {
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MyTrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet()};
 	ScopedClusterType clusterType {session, "MyClusterType"};
 	ScopedCluster cluster {session, clusterType.lockAndGet(), "MyCluster"};
 	std::list<ScopedTrack> tracks;
@@ -650,7 +650,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackSingleCluster)
 TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClusters)
 {
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MyTrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet()};
 	ScopedClusterType clusterType {session, "MyClusterType"};
 	ScopedCluster cluster1 {session, clusterType.lockAndGet(), "MyCluster1"};
 	ScopedCluster cluster2 {session, clusterType.lockAndGet(), "MyCluster2"};
@@ -702,7 +702,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClusters)
 TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClustersRecentlyPlayed)
 {
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MyTrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet()};
 	ScopedClusterType clusterType {session, "MyClusterType"};
 	ScopedCluster cluster1 {session, clusterType.lockAndGet(), "MyCluster1"};
 	ScopedCluster cluster2 {session, clusterType.lockAndGet(), "MyCluster2"};

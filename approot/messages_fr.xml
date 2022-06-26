@@ -6,9 +6,11 @@
 <message id="Lms.add">Ajouter</message>
 <message id="Lms.administration">Administration</message>
 <message id="Lms.apply">Appliquer</message>
-<message id="Lms.discard">Annuler</message>
 <message id="Lms.cancel">Annuler</message>
 <message id="Lms.create">Créer</message>
+<message id="Lms.delete">Supprimer</message>
+<message id="Lms.discard">Annuler</message>
+<message id="Lms.edit">Editer</message>
 <message id="Lms.loading">Chargement...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Quitter</message>
@@ -85,11 +87,9 @@
 <!--Users-->
 <message id="Lms.Admin.Users.add">Ajouter</message>
 <message id="Lms.Admin.Users.admin">Admin</message>
-<message id="Lms.Admin.Users.del">Supprimer</message>
 <message id="Lms.Admin.Users.del-user">Supprimer l'utilisateur</message>
 <message id="Lms.Admin.Users.del-user-name">Supprimer l'utilisateur ?</message>
 <message id="Lms.Admin.Users.demo">Demo</message>
-<message id="Lms.Admin.Users.edit">Editer</message>
 <message id="Lms.Admin.Users.users">Utilisateurs</message>
 <message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utilisateurs</message>
 
@@ -130,6 +130,7 @@
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.star">Ajouter aux favoris</message>
 <message id="Lms.Explore.starred">Favoris</message>
+<message id="Lms.Explore.tracklists">Playlists</message>
 <message id="Lms.Explore.tracks">Pistes</message>
 <message id="Lms.Explore.type">Type</message>
 <message id="Lms.Explore.unstar">Retirer des favoris</message>

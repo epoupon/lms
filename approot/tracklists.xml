@@ -1,0 +1,37 @@
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Explore.TrackLists.template">
+	${tracklists}
+</message>
+
+<message id="Lms.Explore.TrackLists.template.entry">
+	<div class="d-flex align-items-center rounded Lms-bg-dark-hover mb-2">
+		<div class="p-2 flex-fill text-truncate">
+			<div class="d-block text-truncate">${name}</div>
+		</div>
+		<div class="p-2 d-none d-sm-block text-muted">
+			${duration}
+		</div>
+		<div class="p-2 d-flex">
+			${play-btn class="btn btn-sm btn-outline-secondary border-0"}
+			<div class="dropdown d-inline-block">
+				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
+				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+					<li>${play-shuffled class="dropdown-item"}</li>
+					<li>${play-last class="dropdown-item"}</li>
+					<li>${download class="dropdown-item"}</li>
+					<li>${delete class="dropdown-item"}</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+</message>
+
+<message id="Lms.Explore.TrackLists.template.container">
+	${elements}
+	${loading-indicator}
+</message>
+
+</messages>

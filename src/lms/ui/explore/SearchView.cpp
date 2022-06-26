@@ -50,7 +50,7 @@ namespace UserInterface
 		_releases = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
 		_releases->onRequestElements.connect([this] { addSomeReleases(); });
 
-		_tracks = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.infinite-scrolling-container"));
+		_tracks = bindNew<InfiniteScrollingContainer>("tracks");
 		_tracks->onRequestElements.connect([this] { addSomeTracks(); });
 
 		_filters->updated().connect([=]

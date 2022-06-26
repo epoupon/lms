@@ -47,14 +47,8 @@ class User;
 class TrackList : public Object<TrackList, TrackListId>
 {
 	public:
-		enum class Type
-		{
-			Playlist,  // user controlled playlists
-			Internal,  // internal usage (current playqueue, history, ...)
-		};
-
 		TrackList() = default;
-		TrackList(std::string_view name, Type type, bool isPublic, ObjectPtr<User> user);
+		TrackList(std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user);
 
 		// Stats utility
 		std::vector<ObjectPtr<Artist>>	getTopArtists(const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
@@ -62,19 +56,30 @@ class TrackList : public Object<TrackList, TrackListId>
 		std::vector<ObjectPtr<Track>>	getTopTracks(const std::vector<ClusterId>& clusterIds, std::optional<Range> range, bool& moreResults) const;
 
 		// Search utility
+		struct FindParameters
+		{
+			std::vector<ClusterId>			clusters;	// if non empty, tracklists that have tracks that belong to these clusters
+			Range                           range;
+			std::optional<TrackListType>	type;
+			UserId							user;		// only tracklists owned by this user
+
+			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
+			FindParameters& setRange(Range _range) { range = _range; return *this; }
+			FindParameters& setType(TrackListType _type) { type = _type; return *this; }
+			FindParameters& setUser(UserId _user) { user = _user; return *this; }
+		};
 		static std::size_t					getCount(Session& session);
-		static pointer						find(Session& session, std::string_view name, Type type, UserId userId);
+		static pointer						find(Session& session, std::string_view name, TrackListType type, UserId userId);
 		static pointer						find(Session& session, TrackListId tracklistId);
-		static RangeResults<TrackListId>	find(Session& session, UserId userId, Range range);
-		static RangeResults<TrackListId>	find(Session& session, UserId userId, Type type, Range range);
+		static RangeResults<TrackListId>	find(Session& session, const FindParameters& params);
 
 		// Create utility
-		static pointer	create(Session& session, std::string_view name, Type type, bool isPublic, ObjectPtr<User> user);
+		static pointer	create(Session& session, std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user);
 
 		// Accessors
 		std::string_view	getName() const { return _name; }
 		bool				isPublic() const { return _isPublic; }
-		Type				getType() const { return _type; }
+		TrackListType		getType() const { return _type; }
 		ObjectPtr<User>		getUser() const { return _user; }
 
 		// Modifiers
@@ -122,7 +127,7 @@ class TrackList : public Object<TrackList, TrackListId>
 
 	private:
 		std::string		_name;
-		Type			_type {Type::Playlist};
+		TrackListType	_type {TrackListType::Playlist};
 		bool			_isPublic {false};
 
 		Wt::Dbo::ptr<User>	_user;

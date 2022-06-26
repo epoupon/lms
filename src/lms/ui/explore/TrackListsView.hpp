@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -21,33 +21,39 @@
 
 #include <Wt/WTemplate.h>
 
+#include "services/database/Object.hpp"
 #include "services/database/Types.hpp"
+
+#include "common/Template.hpp"
 #include "PlayQueueAction.hpp"
+
+namespace Database
+{
+	class TrackList;
+}
 
 namespace UserInterface
 {
 	class Filters;
-	class SearchView;
+	class InfiniteScrollingContainer;
 
-	class Explore : public Wt::WTemplate
+	class TrackLists : public Template
 	{
 		public:
-			Explore(Filters* filters);
+			TrackLists(Filters& filters);
 
-			void search(const Wt::WString& searchText);
-
-			PlayQueueActionTrackSignal tracksAction;
-			void setMaxTrackCountForAction(std::size_t maxTrackCount) { _maxTrackCount = maxTrackCount; }
+			PlayQueueActionTrackListSignal trackListAction;
 
 		private:
-			void handleArtistsAction(PlayQueueAction action, const std::vector<Database::ArtistId>& artistsId);
-			void handleReleasesAction(PlayQueueAction action, const std::vector<Database::ReleaseId>& releasesId);
-			void handleTrackListAction(PlayQueueAction action, Database::TrackListId trackiListId);
-			void handleTracksAction(PlayQueueAction action, const std::vector<Database::TrackId>& tracksId);
+			void refreshView();
+			void addSome();
+			void addTracklist(const Database::ObjectPtr<Database::TrackList>& trackList);
 
-			Filters* _filters {};
-			SearchView* _search {};
-			std::size_t _maxTrackCount {};
+			static constexpr std::size_t _batchSize {30};
+			static constexpr std::size_t _maxCount {500};
+
+			Filters&					_filters;
+			InfiniteScrollingContainer* _container {};
 	};
 } // namespace UserInterface
 

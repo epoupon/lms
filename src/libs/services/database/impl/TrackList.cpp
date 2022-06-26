@@ -35,7 +35,7 @@
 
 namespace Database {
 
-TrackList::TrackList(std::string_view name, Type type, bool isPublic, ObjectPtr<User> user)
+TrackList::TrackList(std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user)
 : _name {name},
  _type {type},
  _isPublic {isPublic},
@@ -44,7 +44,7 @@ TrackList::TrackList(std::string_view name, Type type, bool isPublic, ObjectPtr<
 }
 
 TrackList::pointer
-TrackList::create(Session& session, std::string_view name, Type type, bool isPublic, ObjectPtr<User> user)
+TrackList::create(Session& session, std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user)
 {
 	session.checkUniqueLocked();
 	assert(user);
@@ -65,7 +65,7 @@ TrackList::getCount(Session& session)
 
 
 TrackList::pointer
-TrackList::find(Session& session, std::string_view name, Type type, UserId userId)
+TrackList::find(Session& session, std::string_view name, TrackListType type, UserId userId)
 {
 	session.checkSharedLocked();
 	assert(userId.isValid());
@@ -77,28 +77,44 @@ TrackList::find(Session& session, std::string_view name, Type type, UserId userI
 }
 
 RangeResults<TrackListId>
-TrackList::find(Session& session, UserId userId, Range range)
+TrackList::find(Session& session, const FindParameters& params)
 {
 	session.checkSharedLocked();
 
-	auto query {session.getDboSession().query<TrackListId>("SELECT id FROM tracklist")
-		.where("user_id = ?").bind(userId)
-		.orderBy("name COLLATE NOCASE")};
+	auto query {session.getDboSession().query<TrackListId>("SELECT DISTINCT t_l.id FROM tracklist t_l")};
 
-	return execQuery(query, range);
-}
+	if (params.user.isValid())
+		query.where("t_l.user_id = ?").bind(params.user);
 
-RangeResults<TrackListId>
-TrackList::find(Session& session, UserId userId, Type type, Range range)
-{
-	session.checkSharedLocked();
+	if (params.type)
+		query.where("t_l.type = ?").bind(*params.type);
 
-	auto query {session.getDboSession().query<TrackListId>("SELECT id FROM tracklist")
-		.where("user_id = ?").bind(userId)
-		.where("type = ?").bind(type)
-		.orderBy("name COLLATE NOCASE")};
+	if (!params.clusters.empty())
+	{
+		query.join("tracklist_entry t_l_e ON t_l_e.tracklist_id = t_l.id");
+		query.join("track t ON t.id = t_l_e.track_id");
 
-	return execQuery(query, range);
+		std::ostringstream oss;
+		oss << "t.id IN (SELECT DISTINCT t.id FROM track t"
+			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
+			" INNER JOIN cluster c ON c.id = t_c.cluster_id";
+
+		WhereClause clusterClause;
+		for (const ClusterId clusterId : params.clusters)
+		{
+			clusterClause.Or(WhereClause("c.id = ?"));
+			query.bind(clusterId);
+		}
+
+		oss << " " << clusterClause.get();
+		oss << " GROUP BY t.id HAVING COUNT(*) = " << params.clusters.size() << ")";
+
+		query.where(oss.str());
+	}
+
+	query.orderBy("t_l.name COLLATE NOCASE");
+
+	return execQuery(query, params.range);
 }
 
 TrackList::pointer

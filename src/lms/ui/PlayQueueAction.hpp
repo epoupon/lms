@@ -25,6 +25,7 @@
 #include "services/database/ArtistId.hpp"
 #include "services/database/ReleaseId.hpp"
 #include "services/database/TrackId.hpp"
+#include "services/database/TrackListId.hpp"
 
 namespace UserInterface
 {
@@ -38,5 +39,6 @@ namespace UserInterface
 	using PlayQueueActionArtistSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::ArtistId>&>;
 	using PlayQueueActionReleaseSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::ReleaseId>&>;
 	using PlayQueueActionTrackSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::TrackId>&>;
+	using PlayQueueActionTrackListSignal = Wt::Signal<PlayQueueAction, Database::TrackListId>;
 }
 

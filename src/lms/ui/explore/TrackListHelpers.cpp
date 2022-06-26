@@ -23,7 +23,6 @@
 #include <Wt/WContainerWidget.h>
 #include <Wt/WImage.h>
 #include <Wt/WPushButton.h>
-#include <Wt/WText.h>
 
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
@@ -74,13 +73,13 @@ namespace UserInterface::TrackListHelpers
 
 		entry->bindString("duration", Utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
-		Wt::WText* playBtn {entry->bindNew<Wt::WText>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
+		Wt::WPushButton* playBtn {entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([trackId, &tracksAction]
 		{
 			tracksAction.emit(PlayQueueAction::Play, {trackId});
 		});
 
-		entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+		entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
 		entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
 			->clicked().connect([=, &tracksAction]
 			{

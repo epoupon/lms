@@ -37,6 +37,7 @@
 #include "ReleasesView.hpp"
 #include "ReleaseView.hpp"
 #include "SearchView.hpp"
+#include "TrackListsView.hpp"
 #include "TracksView.hpp"
 
 namespace UserInterface {
@@ -50,6 +51,7 @@ handleContentsPathChange(Wt::WStackedWidget* stack)
 	{
 		IdxArtists = 0,
 		IdxArtist,
+		IdxTracklists,
 		IdxReleases,
 		IdxRelease,
 		IdxSearch,
@@ -60,6 +62,7 @@ handleContentsPathChange(Wt::WStackedWidget* stack)
 	{
 		{ "/artists",		IdxArtists },
 		{ "/artist",		IdxArtist },
+		{ "/tracklists",	IdxTracklists },
 		{ "/releases",		IdxReleases },
 		{ "/release",		IdxRelease },
 		{ "/search",		IdxSearch },
@@ -88,6 +91,7 @@ Explore::Explore(Filters* filters)
 	Wt::WStackedWidget* contentsStack {bindNew<Wt::WStackedWidget>("contents")};
 	contentsStack->setOverflow(Wt::Overflow::Visible); // wt makes it hidden by default
 
+	// same order as enum Idx
 	auto artists = std::make_unique<Artists>(*_filters);
 	contentsStack->addWidget(std::move(artists));
 
@@ -95,6 +99,10 @@ Explore::Explore(Filters* filters)
 	artist->artistsAction.connect(this, &Explore::handleArtistsAction);
 	artist->tracksAction.connect(this, &Explore::handleTracksAction);
 	contentsStack->addWidget(std::move(artist));
+
+	auto tracklists {std::make_unique<TrackLists>(*_filters)};
+	tracklists->trackListAction.connect(this, &Explore::handleTrackListAction);
+	contentsStack->addWidget(std::move(tracklists));
 
 	auto releases = std::make_unique<Releases>(*_filters);
 	releases->releasesAction.connect(this, &Explore::handleReleasesAction);
@@ -163,7 +171,6 @@ std::vector<Database::TrackId>
 getReleasesTracks(Database::Session& session, const std::vector<Database::ReleaseId>& releasesId, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
 {
 	using namespace Database;
-
 	assert(maxTrackCount);
 
 	std::vector<TrackId> res;
@@ -190,6 +197,24 @@ getReleasesTracks(Database::Session& session, const std::vector<Database::Releas
 	return res;
 }
 
+static
+std::vector<Database::TrackId>
+getTrackListTracks(Database::Session& session, Database::TrackListId trackListId, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
+{
+	using namespace Database;
+	assert(maxTrackCount);
+
+	auto transaction {session.createSharedTransaction()};
+
+	Database::Track::FindParameters params;
+	params.setTrackList(trackListId);
+	params.setClusters(clusters);
+	params.setRange({0, maxTrackCount});
+	params.setSortMethod(TrackSortMethod::TrackList);
+
+	return Database::Track::find(session, params).results;
+}
+
 void
 Explore::handleArtistsAction(PlayQueueAction action, const std::vector<Database::ArtistId>& artistsId)
 {
@@ -203,8 +228,15 @@ Explore::handleReleasesAction(PlayQueueAction action, const std::vector<Database
 }
 
 void
+Explore::handleTrackListAction(PlayQueueAction action, Database::TrackListId trackListId)
+{
+	tracksAction.emit(action, getTrackListTracks(LmsApp->getDbSession(), trackListId, _filters->getClusterIds(), _maxTrackCount));
+}
+
+void
 Explore::handleTracksAction(PlayQueueAction action, const std::vector<Database::TrackId>& tracksId)
 {
+	// consider things are already filtered here, and _maxTrackCount honored playqueue side...
 	tracksAction.emit(action, tracksId);
 }
 

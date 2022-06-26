@@ -26,10 +26,6 @@
 	${entries}
 </message>
 
-<message id="Lms.PlayQueue.template.play-btn"><i class="fa fa-fw fa-play"></i></message>
-<message id="Lms.PlayQueue.template.delete-btn"><i class="fa fa-fw fa-times"></i></message>
-<message id="Lms.PlayQueue.template.more-btn"><i class="fa fa-fw fa-ellipsis-v"></i></message>
-
 <message id="Lms.PlayQueue.template.entry">
 	<div class="d-flex align-items-center rounded Lms-bg-dark-hover mb-2">
 		<div class="p-1 Lms-cover-small">
@@ -44,14 +40,14 @@
 		</div>
 		<div class="p-2 d-flex">
 			${play-btn class="btn btn-sm btn-outline-secondary border-0"}
-			${del-btn class="btn btn-sm btn-outline-secondary border-0"}
 			<div class="dropdown d-none d-sm-block">
 				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
 				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
-					<li>${star class="btn dropdown-item"}</li>
-					<li>${download class="btn dropdown-item"}</li>
+					<li>${star class="dropdown-item"}</li>
+					<li>${download class="dropdown-item"}</li>
 				</ul>
 			</div>
+			${del-btn class="btn btn-sm btn-outline-secondary border-0"}
 		</div>
 	</div>
 </message>
