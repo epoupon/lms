@@ -141,6 +141,12 @@ namespace Database
 	, _track {getDboPtr(track)}
 	{}
 
+	Listen::pointer
+	Listen::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, Scrobbler scrobbler, const Wt::WDateTime& dateTime)
+	{
+		return session.getDboSession().add(std::unique_ptr<Listen> {new Listen {user, track, scrobbler, dateTime}});
+	}
+
 	std::size_t
 	Listen::getCount(Session& session)
 	{
@@ -172,7 +178,7 @@ namespace Database
 		if (parameters.scrobblingState)
 			query.where("scrobbling_state = ?").bind(*parameters.scrobblingState);
 
-		return execQuery(query, parameters.range);
+		return Utils::execQuery(query, parameters.range);
 	}
 
 	Listen::pointer
@@ -186,17 +192,6 @@ namespace Database
 			.where("scrobbler = ?").bind(scrobbler)
 			.where("date_time = ?").bind(Wt::WDateTime::fromTime_t(dateTime.toTime_t()))
 			.resultValue();
-	}
-
-	Listen::pointer
-	Listen::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, Scrobbler scrobbler, const Wt::WDateTime& dateTime)
-	{
-		session.checkUniqueLocked();
-
-		Listen::pointer res {session.getDboSession().add(std::make_unique<Listen>(user, track, scrobbler, dateTime))};
-		session.getDboSession().flush();
-
-		return res;
 	}
 
 	RangeResults<ArtistId>
@@ -213,7 +208,7 @@ namespace Database
 			.orderBy("COUNT(a.id) DESC")
 			.groupBy("a.id")};
 
-		return execQuery(query, range);
+		return Utils::execQuery(query, range);
 	}
 
 	RangeResults<ReleaseId>
@@ -227,7 +222,7 @@ namespace Database
 						.orderBy("COUNT(r.id) DESC")
 						.groupBy("r.id")};
 
-		return execQuery(query, range);
+		return Utils::execQuery(query, range);
 	}
 
 	RangeResults<TrackId>
@@ -241,7 +236,7 @@ namespace Database
 						.orderBy("COUNT(t.id) DESC")
 						.groupBy("t.id")};
 
-		return execQuery(query, range);
+		return Utils::execQuery(query, range);
 	}
 
 	RangeResults<ArtistId>
@@ -256,7 +251,7 @@ namespace Database
 						.groupBy("a.id").having("l.date_time = MAX(l.date_time)")
 						.orderBy("l.date_time DESC")};
 
-		return execQuery(query, range);
+		return Utils::execQuery(query, range);
 	}
 
 	RangeResults<ReleaseId>
@@ -270,7 +265,7 @@ namespace Database
 						.groupBy("r.id").having("l.date_time = MAX(l.date_time)")
 						.orderBy("l.date_time DESC")};
 
-		return execQuery(query, range);
+		return Utils::execQuery(query, range);
 	}
 
 	RangeResults<TrackId>
@@ -284,7 +279,7 @@ namespace Database
 						.groupBy("t.id").having("l.date_time = MAX(l.date_time)")
 						.orderBy("l.date_time DESC")};
 
-		return execQuery(query, range);
+		return Utils::execQuery(query, range);
 	}
 
 

@@ -96,7 +96,7 @@ class UserModel : public Wt::WFormModel
 					throw UserNotAllowedException {};
 
 				// Create user
-				user = User::create(LmsApp->getDbSession(), valueText(LoginField).toUTF8());
+				user = LmsApp->getDbSession().create<User>(valueText(LoginField).toUTF8());
 
 				if (Wt::asNumber(value(DemoField)))
 					user.modify()->setType(UserType::DEMO);

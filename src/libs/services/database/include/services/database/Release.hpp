@@ -79,7 +79,6 @@ class Release : public Object<Release, ReleaseId>
 		};
 
 		Release() = default;
-		Release(const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Accessors
 		static std::size_t				getCount(Session& session);
@@ -97,9 +96,6 @@ class Release : public Object<Release, ReleaseId>
 		// Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)
 		// size is the max number of cluster per cluster type
 		std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ObjectPtr<ClusterType>>& clusterTypes, std::size_t size) const;
-
-		// Create
-		static pointer	create(Session& session, const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Utility functions
 		std::optional<int>			getReleaseYear(bool originalDate = false) const;
@@ -133,6 +129,10 @@ class Release : public Object<Release, ReleaseId>
 			}
 
 	private:
+		friend class Session;
+		Release(const std::string& name, const std::optional<UUID>& MBID = {});
+		static pointer create(Session& session, const std::string& name, const std::optional<UUID>& MBID = {});
+
 		static const std::size_t _maxNameLength {128};
 
 		std::string	_name;

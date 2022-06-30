@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -26,11 +26,8 @@
 
 #include "common/InfiniteScrollingContainer.hpp"
 #include "common/Template.hpp"
-#include "resource/DownloadResource.hpp"
-#include "ReleaseListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
-#include "ModalManager.hpp"
 #include "Utils.hpp"
 
 using namespace Database;
@@ -45,11 +42,33 @@ namespace UserInterface
 		addFunction("tr", &Wt::WTemplate::Functions::tr);
 		addFunction("id", &Wt::WTemplate::Functions::id);
 
+		auto bindMenuItem {[this](const std::string& var, const Wt::WString& title, Mode mode)
+		{
+			auto *menuItem {bindNew<Wt::WPushButton>(var, title)};
+			menuItem->clicked().connect([=]
+			{
+				_mode = mode;
+				refreshView();
+				_currentActiveItem->removeStyleClass("active");
+				menuItem->addStyleClass("active");
+				_currentActiveItem = menuItem;
+			});
+
+			if (mode == _mode)
+			{
+				_currentActiveItem = menuItem;
+				_currentActiveItem->addStyleClass("active");
+			}
+		}};
+
+		bindMenuItem("recently-modified", Wt::WString::tr("Lms.Explore.recently-modified"), Mode::RecentlyModified);
+		bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), Mode::All);
+
 		_container = bindNew<InfiniteScrollingContainer>("tracklists", Wt::WString::tr("Lms.Explore.TrackLists.template.container"));
 		_container->onRequestElements.connect([this]
-				{
-				addSome();
-				});
+		{
+			addSome();
+		});
 
 		_filters.updated().connect([this]
 		{
@@ -79,6 +98,15 @@ namespace UserInterface
 		params.setUser(LmsApp->getUserId());
 		params.setType(TrackListType::Playlist);
 		params.setRange(range);
+		switch (_mode)
+		{
+			case Mode::All:
+				params.setSortMethod(TrackListSortMethod::Name);
+				break;
+			case Mode::RecentlyModified:
+				params.setSortMethod(TrackListSortMethod::LastModifiedDesc);
+				break;
+		}
 
 		const auto trackListIds {TrackList::find(session, params)};
 		for (const TrackListId trackListId : trackListIds.results)
@@ -94,66 +122,9 @@ namespace UserInterface
 	TrackLists::addTracklist(const ObjectPtr<TrackList>& trackList)
 	{
 		const TrackListId trackListId {trackList->getId()};
-		Template* entry {_container->addNew<Template>(Wt::WString::tr("Lms.Explore.TrackLists.template.entry"))};
-		entry->addFunction("id", &Wt::WTemplate::Functions::id);
 
-		entry->bindString("name", std::string {trackList->getName()}, Wt::TextFormat::Plain);
-		entry->bindString("duration", Utils::durationToString(trackList->getDuration()));
-
-		entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML)
-			->clicked().connect([=]
-			{
-				trackListAction.emit(PlayQueueAction::Play, trackListId);
-			});
-
-		entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
-
-		entry->bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"))
-			->clicked().connect([=]
-			{
-				trackListAction.emit(PlayQueueAction::PlayShuffled, trackListId);
-			});
-
-		entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
-			->clicked().connect([=]
-			{
-				trackListAction.emit(PlayQueueAction::PlayLast, trackListId);
-			});
-
-		entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
-			->setLink(Wt::WLink {std::make_unique<DownloadTrackListResource>(trackListId)});
-
-		entry->bindNew<Wt::WPushButton>("delete", Wt::WString::tr("Lms.delete"))
-			->clicked().connect([=]
-			{
-				auto modal {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.TrackLists.template.delete-tracklist"))};
-				modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
-				Wt::WWidget* modalPtr {modal.get()};
-
-				auto* delBtn {modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete"))};
-				delBtn->clicked().connect([=]
-				{
-					{
-						auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
-
-						TrackList::pointer trackList {TrackList::find(LmsApp->getDbSession(), trackListId)};
-						if (trackList)
-							trackList.remove();
-					}
-
-					_container->remove(*entry);
-
-					LmsApp->getModalManager().dispose(modalPtr);
-				});
-
-				auto* cancelBtn {modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel"))};
-				cancelBtn->clicked().connect([=]
-				{
-					LmsApp->getModalManager().dispose(modalPtr);
-				});
-
-				LmsApp->getModalManager().show(std::move(modal));
-			});
+		WTemplate* entry {_container->addNew<Template>(Wt::WString::tr("Lms.Explore.TrackLists.template.entry"))};
+		entry->bindWidget("name", LmsApplication::createTrackListAnchor(trackList));
 	}
 
 } // namespace UserInterface

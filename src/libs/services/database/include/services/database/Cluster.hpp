@@ -42,16 +42,12 @@ class Cluster : public Object<Cluster, ClusterId>
 {
 	public:
 		Cluster() = default;
-		Cluster(ObjectPtr<ClusterType> type, std::string_view name);
 
 		// Find utility
 		static std::size_t				getCount(Session& session);
 		static RangeResults<ClusterId>	find(Session& session, Range range);
 		static pointer					find(Session& session, ClusterId id);
 		static RangeResults<ClusterId>	findOrphans(Session& session, Range range);
-
-		// Create utility
-		static pointer create(Session& session, ObjectPtr<ClusterType> type, std::string_view name);
 
 		// Accessors
 		const std::string&				getName() const		{ return _name; }
@@ -72,6 +68,10 @@ class Cluster : public Object<Cluster, ClusterId>
 		}
 
 	private:
+		friend class Session;
+		Cluster(ObjectPtr<ClusterType> type, std::string_view name);
+		static pointer create(Session& session, ObjectPtr<ClusterType> type, std::string_view name);
+
 		static const std::size_t _maxNameLength = 128;
 
 		std::string	_name;
@@ -85,7 +85,6 @@ class ClusterType : public Object<ClusterType, ClusterTypeId>
 {
 	public:
 		ClusterType() = default;
-		ClusterType(std::string_view name);
 
 		// Getters
 		static std::size_t					getCount(Session& session);
@@ -95,7 +94,6 @@ class ClusterType : public Object<ClusterType, ClusterTypeId>
 		static RangeResults<ClusterTypeId>	findOrphans(Session& session, Range range);
 		static RangeResults<ClusterTypeId>	findUsed(Session& session, Range range);
 
-		static pointer create(Session& session, const std::string& name);
 		static void remove(Session& session, const std::string& name);
 
 		// Accessors
@@ -112,6 +110,10 @@ class ClusterType : public Object<ClusterType, ClusterTypeId>
 		}
 
 	private:
+		friend class Session;
+		ClusterType(std::string_view name);
+		static pointer create(Session& session, const std::string& name);
+
 		static const std::size_t _maxNameLength = 128;
 
 		std::string     _name;

@@ -38,15 +38,11 @@ namespace Database
 	{
 		public:
 			StarredArtist() = default;
-			StarredArtist(ObjectPtr<Artist> artist, ObjectPtr<User> user, Scrobbler scrobbler);
 
 			// Search utility
 			static std::size_t	getCount(Session& session);
 			static pointer		find(Session& session, StarredArtistId id);
 			static pointer		find(Session& session, ArtistId artistId, UserId userId, Scrobbler scrobbler);
-
-			// Create utility
-			static pointer		create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user, Scrobbler scrobbler);
 
 			// Accessors
 			ObjectPtr<Artist>	getArtist() const { return _artist; }
@@ -71,6 +67,10 @@ namespace Database
 			}
 
 		private:
+			friend class Session;
+			StarredArtist(ObjectPtr<Artist> artist, ObjectPtr<User> user, Scrobbler scrobbler);
+			static pointer create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user, Scrobbler scrobbler);
+
 			Scrobbler		_scrobbler;			// for which scrobbler
 			ScrobblingState	_scrobblingState {ScrobblingState::PendingAdd};
 			Wt::WDateTime	_dateTime;			// when it was starred

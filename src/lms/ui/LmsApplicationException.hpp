@@ -42,6 +42,12 @@ namespace UserInterface
 			ReleaseNotFoundException() : LmsApplicationException {Wt::WString::tr("Lms.Error.release-not-found")} {}
 	};
 
+	class TrackListNotFoundException : public LmsApplicationException
+	{
+		public:
+			TrackListNotFoundException() : LmsApplicationException {Wt::WString::tr("Lms.Error.tracklist-not-found")} {}
+	};
+
 	class UserNotFoundException : public LmsApplicationException
 	{
 		public:

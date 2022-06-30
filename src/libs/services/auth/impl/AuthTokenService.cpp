@@ -60,7 +60,7 @@ namespace Auth
 		if (!user)
 			throw Exception {"User deleted"};
 
-		Database::AuthToken::pointer authToken {Database::AuthToken::create(session, secretHash, expiry, user)};
+		Database::AuthToken::pointer authToken {session.create<Database::AuthToken>(secretHash, expiry, user)};
 
 		LMS_LOG(UI, DEBUG) << "Created auth token for user '" << user->getLoginName() << "', expiry = " << expiry.toString();
 

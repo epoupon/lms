@@ -29,6 +29,7 @@
 #include "services/database/Db.hpp"
 #include "services/database/Listen.hpp"
 #include "services/database/Release.hpp"
+#include "services/database/ScanSettings.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
@@ -50,7 +51,7 @@ class ScopedEntity
 		{
 			auto transaction {_session.createUniqueTransaction()};
 
-			auto entity {T::create(_session, std::forward<Args>(args)...)};
+			auto entity {_session.create<T>(std::forward<Args>(args)...)};
 			EXPECT_TRUE(entity);
 			_id = entity->getId();
 		}
@@ -60,7 +61,9 @@ class ScopedEntity
 			auto transaction {_session.createUniqueTransaction()};
 
 			auto entity {T::find(_session, _id)};
-			entity.remove();
+			// could not be here due to "on delete cascade" constraints...
+			if (entity)
+				entity.remove();
 		}
 
 		ScopedEntity(const ScopedEntity&) = delete;

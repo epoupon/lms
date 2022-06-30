@@ -91,7 +91,6 @@ class Track : public Object<Track, TrackId>
 		};
 
 		Track() = default;
-		Track(const std::filesystem::path& p);
 
 		// Find utility functions
 		static std::size_t				getCount(Session& session);
@@ -106,9 +105,6 @@ class Track : public Object<Track, TrackId>
 		static RangeResults<PathResult>	findPaths(Session& session, Range range);
 		static RangeResults<TrackId>	findRecordingMBIDDuplicates(Session& session, Range range);
 		static RangeResults<TrackId>	findWithRecordingMBIDAndMissingFeatures(Session& session, Range range);
-
-		// Create utility
-		static pointer	create(Session& session, const std::filesystem::path& p);
 
 		// Accessors
 		void setScanVersion(std::size_t version)			{ _scanVersion = version; }
@@ -196,6 +192,10 @@ class Track : public Object<Track, TrackId>
 			}
 
 	private:
+		friend class ::Database::Session;
+		Track(const std::filesystem::path& p);
+		static pointer create(Session& session, const std::filesystem::path& p);
+
 		static const std::size_t _maxNameLength = 128;
 		static const std::size_t _maxCopyrightLength = 128;
 		static const std::size_t _maxCopyrightURLLength = 128;

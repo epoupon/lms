@@ -563,7 +563,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 	}
 	else
 	{
-		tracklist = TrackList::create(context.dbSession, *name, TrackListType::Playlist, false, user);
+		tracklist = context.dbSession.create<TrackList>(*name, TrackListType::Playlist, false, user);
 	}
 
 	for (const TrackId trackId : trackIds)
@@ -572,7 +572,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 		if (!track)
 			continue;
 
-		TrackListEntry::create(context.dbSession, track, tracklist);
+		context.dbSession.create<TrackListEntry>(track, tracklist);
 	}
 
 	return Response::createOkResponse(context.serverProtocolVersion);
@@ -594,7 +594,7 @@ handleCreateUserRequest(RequestContext& context)
 		if (user)
 			throw UserAlreadyExistsGenericError {};
 
-		user = User::create(context.dbSession, username);
+		user = context.dbSession.create<User>(username);
 		userId = user->getId();
 	}
 
@@ -1699,7 +1699,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 		if (!track)
 			continue;
 
-		TrackListEntry::create(context.dbSession, track, tracklist);
+		context.dbSession.create<TrackListEntry>(track, tracklist);
 	}
 
 	return Response::createOkResponse(context.serverProtocolVersion);
@@ -1754,7 +1754,7 @@ handleCreateBookmark(RequestContext& context)
 	// Replace any existing bookmark
 	auto bookmark {TrackBookmark::find(context.dbSession, user->getId(), trackId)};
 	if (!bookmark)
-		bookmark = TrackBookmark::create(context.dbSession, user, track);
+		bookmark = context.dbSession.create<TrackBookmark>(user, track);
 
 	bookmark.modify()->setOffset(std::chrono::milliseconds {position});
 	if (comment)

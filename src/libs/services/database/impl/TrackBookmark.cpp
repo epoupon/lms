@@ -33,24 +33,18 @@ _track {getDboPtr(track)}
 {
 }
 
+TrackBookmark::pointer
+TrackBookmark::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track)
+{
+	return session.getDboSession().add(std::unique_ptr<TrackBookmark> {new TrackBookmark {user, track}});
+}
+
 std::size_t
 TrackBookmark::getCount(Session& session)
 {
 	session.checkSharedLocked();
 
 	return session.getDboSession().query<int>("SELECT COUNT(*) FROM track_bookmark");
-}
-
-
-TrackBookmark::pointer
-TrackBookmark::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track)
-{
-	session.checkUniqueLocked();
-
-	TrackBookmark::pointer res {session.getDboSession().add(std::make_unique<TrackBookmark>(user, track))};
-	session.getDboSession().flush();
-
-	return res;
 }
 
 RangeResults<TrackBookmarkId>
@@ -61,7 +55,7 @@ TrackBookmark::find(Session& session, UserId userId, Range range)
 	auto query {session.getDboSession().query<TrackBookmarkId>("SELECT id from track_bookmark")
 				.where("user_id = ?").bind(userId)};
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 TrackBookmark::pointer

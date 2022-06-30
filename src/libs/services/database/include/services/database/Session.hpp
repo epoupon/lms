@@ -19,16 +19,15 @@
 
 #pragma once
 
-#include <mutex>
-
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/SqlConnectionPool.h>
 
 #include "utils/RecursiveSharedMutex.hpp"
+#include "services/database/Object.hpp"
+
 
 namespace Database
 {
-
 	class UniqueTransaction
 	{
 		private:
@@ -73,11 +72,22 @@ namespace Database
 			Wt::Dbo::Session& getDboSession() { return _session; }
 			Db& getDb() { return _db; }
 
+			template <typename Object, typename... Args>
+			typename Object::pointer create(Args&&... args)
+			{
+				checkUniqueLocked();
+
+				typename Object::pointer res {Object::create(*this, std::forward<Args>(args)...)};
+				getDboSession().flush();
+
+				res.modify()->onPostCreated();
+				return res;
+			}
+
 		private:
 			Db&					_db;
 			Wt::Dbo::Session	_session;
 	};
-
 } // namespace Database
 
 

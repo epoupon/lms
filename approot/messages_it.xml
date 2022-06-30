@@ -33,6 +33,7 @@
 <message id="Lms.Error.error-occurred">C'è stato un errore!</message>
 <message id="Lms.Error.go-home">Ritorna alla home</message>
 <message id="Lms.Error.release-not-found">Album non trovato</message>
+
 <message id="Lms.Error.user-not-allowed">Non sei autorizzato ad eseguire questa operazione</message>
 <message id="Lms.Error.user-not-found">Utente non trovato</message>
 
@@ -124,6 +125,7 @@
 <message id="Lms.Explore.play-shuffled">Aggiungi alla coda di riproduzione mischiando</message>
 <message id="Lms.Explore.random">Casuali</message>
 <message id="Lms.Explore.recently-added">Aggiunti di recente</message>
+
 <message id="Lms.Explore.recently-played">Riprodotti di recente</message>
 <message id="Lms.Explore.releases">Album</message>
 <message id="Lms.Explore.star">Aggiungi ai preferiti</message>
@@ -154,7 +156,14 @@
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disco {1}</message>
 
+<!--Explore:TrackList-->
+
+
+
+
+
 <!--Explore:TrackLists-->
+
 
 <!--Explore:Search-->
 <message id="Lms.Explore.Search.search-placeholder">Ricerca...</message>

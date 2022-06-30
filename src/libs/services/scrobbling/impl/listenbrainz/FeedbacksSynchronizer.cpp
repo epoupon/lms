@@ -574,7 +574,7 @@ namespace Scrobbling::ListenBrainz
 			if (!user)
 				return;
 
-			StarredTrack::pointer starredTrack {StarredTrack::create(session, track, user, Database::Scrobbler::ListenBrainz)};
+			StarredTrack::pointer starredTrack {session.create<StarredTrack>(track, user, Database::Scrobbler::ListenBrainz)};
 			starredTrack.modify()->setScrobblingState(ScrobblingState::Synchronized);
 
 			context.importedFeedbackCount++;

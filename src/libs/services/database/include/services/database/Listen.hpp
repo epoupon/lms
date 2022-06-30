@@ -42,7 +42,6 @@ class Listen : public Object<Listen, ListenId>
 {
 	public:
 		Listen() = default;
-		Listen(ObjectPtr<User> user, ObjectPtr<Track> track, Scrobbler scrobbler, const Wt::WDateTime& dateTime);
 
 		struct FindParameters
 		{
@@ -62,9 +61,6 @@ class Listen : public Object<Listen, ListenId>
 		static pointer 					find(Session& session, ListenId id);
 		static pointer					find(Session& session, UserId userId, TrackId trackId, Scrobbler scrobbler, const Wt::WDateTime& dateTime);
 		static RangeResults<ListenId>	find(Session& session, const FindParameters& parameters);
-
-		// Create
-		static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, Scrobbler scrobbler, const Wt::WDateTime& dateTime);
 
 		// Stats
 		static RangeResults<ArtistId>	getTopArtists(Session& session,
@@ -120,6 +116,10 @@ class Listen : public Object<Listen, ListenId>
 		}
 
 	private:
+		friend class Session;
+		Listen(ObjectPtr<User> user, ObjectPtr<Track> track, Scrobbler scrobbler, const Wt::WDateTime& dateTime);
+		static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, Scrobbler scrobbler, const Wt::WDateTime& dateTime);
+
 		Wt::WDateTime		_dateTime;
 		Scrobbler			_scrobbler;
 		ScrobblingState		_scrobblingState {ScrobblingState::PendingAdd};

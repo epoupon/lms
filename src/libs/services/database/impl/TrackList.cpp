@@ -36,23 +36,20 @@
 namespace Database {
 
 TrackList::TrackList(std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user)
-: _name {name},
- _type {type},
- _isPublic {isPublic},
- _user {getDboPtr(user)}
+	: _name {name}
+, _type {type}
+, _isPublic {isPublic}
+, _creationDateTime {Wt::WDateTime::currentDateTime()}
+, _lastModifiedDateTime {Wt::WDateTime::currentDateTime()}
+, _user {getDboPtr(user)}
 {
+	assert(user);
 }
 
 TrackList::pointer
 TrackList::create(Session& session, std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user)
 {
-	session.checkUniqueLocked();
-	assert(user);
-
-	TrackList::pointer res {session.getDboSession().add( std::make_unique<TrackList>(name, type, isPublic, user) )};
-	session.getDboSession().flush();
-
-	return res;
+	return session.getDboSession().add(std::unique_ptr<TrackList> {new TrackList {name, type, isPublic, user}});
 }
 
 std::size_t
@@ -112,9 +109,19 @@ TrackList::find(Session& session, const FindParameters& params)
 		query.where(oss.str());
 	}
 
-	query.orderBy("t_l.name COLLATE NOCASE");
+	switch (params.sortMethod)
+	{
+		case TrackListSortMethod::None:
+			break;
+		case TrackListSortMethod::Name:
+			query.orderBy("t_l.name COLLATE NOCASE");
+			break;
+		case TrackListSortMethod::LastModifiedDesc:
+			query.orderBy("t_l.last_modified_date_time DESC");
+			break;
+	}
 
-	return execQuery(query, params.range);
+	return Utils::execQuery(query, params.range);
 }
 
 TrackList::pointer
@@ -173,7 +180,7 @@ TrackList::getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTim
 	return session()->find<TrackListEntry>()
 			.where("tracklist_id = ?").bind(getId())
 			.where("track_id = ?").bind(track->getId())
-			.where("date_time = ?").bind(normalizeDateTime(dateTime))
+			.where("date_time = ?").bind(Utils::normalizeDateTime(dateTime))
 			.resultValue();
 }
 
@@ -596,23 +603,30 @@ TrackList::getTopTracks(const std::vector<ClusterId>& clusterIds, std::optional<
 }
 
 TrackListEntry::TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime)
-: _dateTime {normalizeDateTime(dateTime)}
+: _dateTime {Utils::normalizeDateTime(dateTime)}
 , _track {getDboPtr(track)}
 , _tracklist {getDboPtr(tracklist)}
 {
+	assert(track);
+	assert(tracklist);
 }
 
 TrackListEntry::pointer
 TrackListEntry::create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime)
 {
-	session.checkUniqueLocked();
-	assert(track);
-	assert(tracklist);
+	return session.getDboSession().add(std::unique_ptr<TrackListEntry>( new TrackListEntry {track, tracklist, dateTime}));
+}
 
-	auto res = session.getDboSession().add(std::make_unique<TrackListEntry>( track, tracklist, dateTime));
-	session.getDboSession().flush();
+void
+TrackListEntry::onPostCreated()
+{
+	_tracklist.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+}
 
-	return res;
+void
+TrackListEntry::onPreRemove()
+{
+	_tracklist.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
 }
 
 TrackListEntry::pointer

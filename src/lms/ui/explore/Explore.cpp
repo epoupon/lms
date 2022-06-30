@@ -37,6 +37,7 @@
 #include "ReleasesView.hpp"
 #include "ReleaseView.hpp"
 #include "SearchView.hpp"
+#include "TrackListView.hpp"
 #include "TrackListsView.hpp"
 #include "TracksView.hpp"
 
@@ -52,6 +53,7 @@ handleContentsPathChange(Wt::WStackedWidget* stack)
 		IdxArtists = 0,
 		IdxArtist,
 		IdxTracklists,
+		IdxTracklist,
 		IdxReleases,
 		IdxRelease,
 		IdxSearch,
@@ -63,6 +65,7 @@ handleContentsPathChange(Wt::WStackedWidget* stack)
 		{ "/artists",		IdxArtists },
 		{ "/artist",		IdxArtist },
 		{ "/tracklists",	IdxTracklists },
+		{ "/tracklist",		IdxTracklist },
 		{ "/releases",		IdxReleases },
 		{ "/release",		IdxRelease },
 		{ "/search",		IdxSearch },
@@ -103,6 +106,11 @@ Explore::Explore(Filters* filters)
 	auto tracklists {std::make_unique<TrackLists>(*_filters)};
 	tracklists->trackListAction.connect(this, &Explore::handleTrackListAction);
 	contentsStack->addWidget(std::move(tracklists));
+
+	auto tracklist {std::make_unique<TrackList>(*_filters)};
+	tracklist->trackListAction.connect(this, &Explore::handleTrackListAction);
+	tracklist->tracksAction.connect(this, &Explore::handleTracksAction);
+	contentsStack->addWidget(std::move(tracklist));
 
 	auto releases = std::make_unique<Releases>(*_filters);
 	releases->releasesAction.connect(this, &Explore::handleReleasesAction);

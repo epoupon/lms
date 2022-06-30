@@ -36,6 +36,12 @@ Cluster::Cluster(ObjectPtr<ClusterType> type, std::string_view name)
 {
 }
 
+Cluster::pointer
+Cluster::create(Session& session, ObjectPtr<ClusterType> type, std::string_view name)
+{
+	return session.getDboSession().add(std::unique_ptr<Cluster> {new Cluster {type, name}});
+}
+
 std::size_t
 Cluster::getCount(Session& session)
 {
@@ -44,24 +50,13 @@ Cluster::getCount(Session& session)
 	return session.getDboSession().query<int>("SELECT COUNT(*) FROM cluster");
 }
 
-Cluster::pointer
-Cluster::create(Session& session, ObjectPtr<ClusterType> type, std::string_view name)
-{
-	session.checkUniqueLocked();
-
-	Cluster::pointer res {session.getDboSession().add(std::make_unique<Cluster>(type, name))};
-	session.getDboSession().flush();
-
-	return res;
-}
-
 RangeResults<ClusterId>
 Cluster::find(Session& session, Range range)
 {
 	session.checkSharedLocked();
 	auto query {session.getDboSession().query<ClusterId>("SELECT id FROM cluster")};
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 RangeResults<ClusterId>
@@ -70,7 +65,7 @@ Cluster::findOrphans(Session& session, Range range)
 	session.checkSharedLocked();
 	auto query {session.getDboSession().query<ClusterId>("SELECT DISTINCT c.id FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track_cluster t_c WHERE t_c.cluster_id = c.id)")};
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 Cluster::pointer
@@ -95,7 +90,7 @@ Cluster::getTracks(Range range) const
 	auto query {session()->query<TrackId>("SELECT t.id FROM track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
 			.where("c.id = ?").bind(getId())};
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 std::size_t
@@ -111,6 +106,12 @@ Cluster::getReleasesCount() const
 ClusterType::ClusterType(std::string_view name)
 	: _name {name}
 {
+}
+
+ClusterType::pointer
+ClusterType::create(Session& session, const std::string& name)
+{
+	return session.getDboSession().add(std::unique_ptr<ClusterType> {new ClusterType {name}});
 }
 
 std::size_t
@@ -132,7 +133,7 @@ ClusterType::findOrphans(Session& session, Range range)
 			" LEFT OUTER JOIN cluster c ON c_t.id = c.cluster_type_id")
 		.where("c.id IS NULL")};
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 RangeResults<ClusterTypeId>
@@ -144,7 +145,7 @@ ClusterType::findUsed(Session& session, Range range)
 			"SELECT DISTINCT c_t.id from cluster_type c_t")
 		.join("cluster c ON c_t.id = c.cluster_type_id")};
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 ClusterType::pointer
@@ -170,18 +171,7 @@ ClusterType::find(Session& session, Range range)
 
 	auto query {session.getDboSession().query<ClusterTypeId>("SELECT id from cluster_type")};
 
-	return execQuery(query, range);
-}
-
-ClusterType::pointer
-ClusterType::create(Session& session, const std::string& name)
-{
-	session.checkUniqueLocked();
-
-	ClusterType::pointer res {session.getDboSession().add(std::make_unique<ClusterType>(name))};
-	session.getDboSession().flush();
-
-	return res;
+	return Utils::execQuery(query, range);
 }
 
 Cluster::pointer

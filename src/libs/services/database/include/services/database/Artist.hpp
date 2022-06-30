@@ -72,7 +72,6 @@ class Artist : public Object<Artist, ArtistId>
 		};
 
 		Artist() = default;
-		Artist(const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Accessors
 		static std::size_t				getCount(Session& session);
@@ -101,9 +100,6 @@ class Artist : public Object<Artist, ArtistId>
 		void setMBID(const std::optional<UUID>& mbid)	{ _MBID = mbid ? mbid->getAsString() : ""; }
 		void setSortName(const std::string& sortName);
 
-		// Create
-		static pointer	create(Session& session, const std::string& name, const std::optional<UUID>& UUID = {});
-
 		template<class Action>
 			void persist(Action& a)
 			{
@@ -117,6 +113,11 @@ class Artist : public Object<Artist, ArtistId>
 
 	private:
 		static const std::size_t _maxNameLength = 128;
+
+		friend class Session;
+		// Create
+		Artist(const std::string& name, const std::optional<UUID>& MBID = {});
+		static pointer create(Session& session, const std::string& name, const std::optional<UUID>& UUID = {});
 
 		std::string _name;
 		std::string _sortName;

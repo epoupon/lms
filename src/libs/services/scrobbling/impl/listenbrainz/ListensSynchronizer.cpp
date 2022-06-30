@@ -366,7 +366,7 @@ namespace Scrobbling::ListenBrainz
 			if (!track)
 				return false;
 
-			dbListen = Database::Listen::create(session, user, track, Database::Scrobbler::ListenBrainz, listen.listenedAt);
+			dbListen = session.create<Database::Listen>(user, track, Database::Scrobbler::ListenBrainz, listen.listenedAt);
 			dbListen.modify()->setScrobblingState(scrobblingState);
 
 			LOG(DEBUG) << "LISTEN CREATED for user " << user->getLoginName() << ", track '" << track->getName() << "' AT " << listen.listenedAt.toString();

@@ -41,10 +41,6 @@ class TrackBookmark : public Object<TrackBookmark, TrackBookmarkId>
 {
 	public:
 		TrackBookmark () = default;
-		TrackBookmark(ObjectPtr<User> user, ObjectPtr<Track> track);
-
-		// utility
-		static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track);
 
 		// Find utility functions
 		static std::size_t						getCount(Session& session);
@@ -70,7 +66,12 @@ class TrackBookmark : public Object<TrackBookmark, TrackBookmarkId>
 				Wt::Dbo::belongsTo(a, _track, 		"track", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::belongsTo(a, _user, 		"user", Wt::Dbo::OnDeleteCascade);
 			}
+
 	private:
+		friend class Session;
+		TrackBookmark(ObjectPtr<User> user, ObjectPtr<Track> track);
+		static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track);
+
 		static const std::size_t _maxCommentLength = 128;
 
 		std::chrono::duration<int, std::milli>	_offset;

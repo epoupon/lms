@@ -35,6 +35,12 @@ User::User(std::string_view loginName)
 {
 }
 
+User::pointer
+User::create(Session& session, std::string_view loginName)
+{
+	return session.getDboSession().add(std::unique_ptr<User> {new User {loginName}});
+}
+
 std::size_t
 User::getCount(Session& session)
 {
@@ -53,7 +59,7 @@ User::find(Session& session, const FindParameters& params)
 	if (params.scrobbler)
 		query.where("scrobbler = ?").bind(*params.scrobbler);
 
-	return execQuery(query, params.range);
+	return Utils::execQuery(query, params.range);
 }
 
 User::pointer
@@ -62,17 +68,6 @@ User::findDemoUser(Session& session)
 	session.checkSharedLocked();
 
 	return session.getDboSession().find<User>().where("type = ?").bind(UserType::DEMO).resultValue();
-}
-
-User::pointer
-User::create(Session& session, std::string_view loginName)
-{
-	session.checkUniqueLocked();
-
-	User::pointer user {session.getDboSession().add(std::make_unique<User>(loginName))};
-	session.getDboSession().flush();
-
-	return user;
 }
 
 User::pointer

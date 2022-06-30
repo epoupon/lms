@@ -46,16 +46,12 @@ class TrackFeatures : public Object<TrackFeatures, TrackFeaturesId>
 {
 	public:
 		TrackFeatures() = default;
-		TrackFeatures(ObjectPtr<Track> track, const std::string& jsonEncodedFeatures);
 
 		// Find utilities
 		static std::size_t						getCount(Session& session);
 		static pointer							find(Session& session, TrackFeaturesId id);
 		static pointer							find(Session& session, TrackId trackId);
 		static RangeResults<TrackFeaturesId>	find(Session& session, Range range);
-
-		// Create utility
-		static pointer		create(Session& session, ObjectPtr<Track> track, const std::string& jsonEncodedFeatures);
 
 		FeatureValues		getFeatureValues(const FeatureName& feature) const;
 		FeatureValuesMap	getFeatureValuesMap(const std::unordered_set<FeatureName>& featureNames) const;
@@ -71,6 +67,10 @@ class TrackFeatures : public Object<TrackFeatures, TrackFeaturesId>
 		}
 
 	private:
+		friend class Session;
+		TrackFeatures(ObjectPtr<Track> track, const std::string& jsonEncodedFeatures);
+		static pointer create(Session& session, ObjectPtr<Track> track, const std::string& jsonEncodedFeatures);
+
 		std::string _data;
 		Wt::Dbo::ptr<Track> _track;
 };

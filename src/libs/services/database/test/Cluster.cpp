@@ -211,9 +211,9 @@ TEST_F(DatabaseFixture, Cluster_multiTracksMultipleClustersTopRelease)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, trackA.get(), trackList.get());
-		TrackListEntry::create(session, trackB.get(), trackList.get());
-		TrackListEntry::create(session, trackB.get(), trackList.get());
+		session.create<TrackListEntry>(trackA.get(), trackList.get());
+		session.create<TrackListEntry>(trackB.get(), trackList.get());
+		session.create<TrackListEntry>(trackB.get(), trackList.get());
 	}
 
 	{
@@ -249,9 +249,9 @@ TEST_F(DatabaseFixture, Cluster_multiTracksMultipleClustersTopRelease)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, trackC.get(), trackList.get());
-		TrackListEntry::create(session, trackC.get(), trackList.get());
-		TrackListEntry::create(session, trackC.get(), trackList.get());
+		session.create<TrackListEntry>(trackC.get(), trackList.get());
+		session.create<TrackListEntry>(trackC.get(), trackList.get());
+		session.create<TrackListEntry>(trackC.get(), trackList.get());
 	}
 
 	{
@@ -630,7 +630,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackSingleCluster)
 		auto transaction {session.createUniqueTransaction()};
 
 		if (i < 5)
-			TrackListEntry::create(session, tracks.back().get(), trackList.get());
+			session.create<TrackListEntry>(tracks.back().get(), trackList.get());
 
 		if (i < 10)
 			cluster.get().modify()->addTrack(tracks.back().get());
@@ -663,7 +663,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClusters)
 		auto transaction {session.createUniqueTransaction()};
 
 		if (i < 5)
-			TrackListEntry::create(session, tracks.back().get(), trackList.get());
+			session.create<TrackListEntry>(tracks.back().get(), trackList.get());
 
 		if (i < 10)
 		{
@@ -742,7 +742,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClustersRecentlyPlayed)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, track1.get(), trackList.get(), now);
+		session.create<TrackListEntry>(track1.get(), trackList.get(), now);
 	}
 
 	{
@@ -828,7 +828,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClustersRecentlyPlayed)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, track2.get(), trackList.get(), now.addSecs(1));
+		session.create<TrackListEntry>(track2.get(), trackList.get(), now.addSecs(1));
 	}
 
 	{
@@ -908,7 +908,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClustersRecentlyPlayed)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, track1.get(), trackList.get(), now.addSecs(2));
+		session.create<TrackListEntry>(track1.get(), trackList.get(), now.addSecs(2));
 	}
 
 	{

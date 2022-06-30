@@ -74,7 +74,7 @@ PlayQueue::PlayQueue()
 
 			getTrackList().modify()->clear();
 			for (const auto& entry : entries)
-				Database::TrackListEntry::create(LmsApp->getDbSession(), entry->getTrack(), trackList);
+				LmsApp->getDbSession().create<Database::TrackListEntry>(entry->getTrack(), trackList);
 		}
 		_entriesContainer->clear();
 		addSome();
@@ -150,12 +150,12 @@ PlayQueue::PlayQueue()
 			static const std::string queuedListName {"__queued_tracks__"};
 			trackList = Database::TrackList::find(LmsApp->getDbSession(), queuedListName, Database::TrackListType::Internal, LmsApp->getUserId());
 			if (!trackList)
-				trackList = Database::TrackList::create(LmsApp->getDbSession(), queuedListName, Database::TrackListType::Internal, false, LmsApp->getUser());
+				trackList = LmsApp->getDbSession().create<Database::TrackList>(queuedListName, Database::TrackListType::Internal, false, LmsApp->getUser());
 		}
 		else
 		{
 			static const std::string currentPlayQueueName {"__current__playqueue__"};
-			trackList = Database::TrackList::create(LmsApp->getDbSession(), currentPlayQueueName, Database::TrackListType::Internal, false, LmsApp->getUser());
+			trackList = LmsApp->getDbSession().create<Database::TrackList>(currentPlayQueueName, Database::TrackListType::Internal, false, LmsApp->getUser());
 		}
 
 		_tracklistId = trackList->getId();
@@ -323,7 +323,7 @@ PlayQueue::enqueueTracks(const std::vector<Database::TrackId>& trackIds)
 			if (nbTracksQueued == nbTracksToEnqueue)
 				break;
 
-			Database::TrackListEntry::create(LmsApp->getDbSession(), track, tracklist);
+			LmsApp->getDbSession().create<Database::TrackListEntry>(track, tracklist);
 			nbTracksQueued++;
 		}
 	}

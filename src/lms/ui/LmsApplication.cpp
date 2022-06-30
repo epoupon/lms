@@ -34,6 +34,7 @@
 #include "services/database/Db.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
+#include "services/database/TrackList.hpp"
 #include "services/database/User.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Logger.hpp"
@@ -191,6 +192,7 @@ LmsApplication::init()
 	messageResourceBundle().use(appRoot() + "releases");
 	messageResourceBundle().use(appRoot() + "search");
 	messageResourceBundle().use(appRoot() + "settings");
+	messageResourceBundle().use(appRoot() + "tracklist");
 	messageResourceBundle().use(appRoot() + "tracklists");
 	messageResourceBundle().use(appRoot() + "tracks");
 
@@ -300,6 +302,23 @@ LmsApplication::createReleaseAnchor(Database::Release::pointer release, bool add
 	return res;
 }
 
+std::unique_ptr<Wt::WAnchor>
+LmsApplication::createTrackListAnchor(Database::TrackList::pointer trackList, bool addText)
+{
+	Wt::WLink link {Wt::LinkType::InternalPath, "/tracklist/" + trackList->getId().toString()};
+	auto res {std::make_unique<Wt::WAnchor>(link)};
+
+	if (addText)
+	{
+		const Wt::WString name {Wt::WString::fromUTF8(std::string {trackList->getName()})};
+		res->setTextFormat(Wt::TextFormat::Plain);
+		res->setText(name);
+		res->setToolTip(name, Wt::TextFormat::Plain);
+	}
+
+	return res;
+}
+
 void
 LmsApplication::handleException(LmsApplicationException& e)
 {
@@ -350,6 +369,7 @@ handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 		{ "/search",		IdxExplore,		false },
 		{ "/tracks",		IdxExplore,		false },
 		{ "/tracklists",	IdxExplore,		false },
+		{ "/tracklist",		IdxExplore,		false },
 		{ "/playqueue",		IdxPlayQueue,		false },
 		{ "/settings",		IdxSettings,		false },
 		{ "/admin/database",	IdxAdminDatabase,	true },
@@ -546,7 +566,7 @@ LmsApplication::createHome()
 		});
 	}
 
-	internalPathChanged().connect([=]
+	internalPathChanged().connect(mainStack, [=]
 	{
 		handlePathChange(*mainStack, isAdmin);
 	});

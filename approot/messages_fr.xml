@@ -33,6 +33,7 @@
 <message id="Lms.Error.error-occurred">Une erreur est survenue!</message>
 <message id="Lms.Error.go-home">Retour à l'accueil</message>
 <message id="Lms.Error.release-not-found">Cet album n'existe pas</message>
+<message id="Lms.Error.tracklist-not-found">Cette liste de lecture n'existe pas</message>
 <message id="Lms.Error.user-not-allowed">Vous n'avez pas les droits pour effectuer cette opération</message>
 <message id="Lms.Error.user-not-found">L'utilisateur n'existe pas</message>
 
@@ -125,6 +126,7 @@
 <message id="Lms.Explore.play-shuffled">Jouer aléatoirement</message>
 <message id="Lms.Explore.random">Aléatoire</message>
 <message id="Lms.Explore.recently-added">Ajoutés récemment</message>
+<message id="Lms.Explore.recently-modified">Modifiés récemment</message>
 <message id="Lms.Explore.recently-played">Joués récemment</message>
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.star">Ajouter aux favoris</message>
@@ -154,6 +156,12 @@
 <message id="Lms.Explore.Release.similar-releases">Albums similaires</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disque {1}</message>
+
+<!--Explore:TrackList-->
+<message id="Lms.Explore.TrackList.track-count">
+	<plural case="0">{1} piste</plural>
+	<plural case="1">{1} pistes</plural>
+</message>
 
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Supprimer la liste de lecture ?</message>

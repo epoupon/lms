@@ -1,0 +1,39 @@
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Explore.TrackList.template">
+	<div class="mb-3">
+		<h2>${name}</h2>
+		<div class="small text-muted">${track-count} · ${duration}</div>
+		<div class="btn-group">
+			${play-btn class="btn btn-primary"}
+			<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"/>
+			<ul class="dropdown-menu">
+				<li>${play-shuffled class="dropdown-item"}</li>
+				<li>${play-last class="dropdown-item"}</li>
+				<li>${download class="dropdown-item"}</li>
+				<li>${delete class="dropdown-item"}</li>
+			</ul>
+		</div>
+	</div>
+	${tracks}
+</message>
+
+<message id="Lms.Explore.TrackList.template.delete-tracklist">
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">${tr:Lms.Explore.TrackLists.del-tracklist-confirm}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-footer">
+					${del-btn class="btn btn-danger me-1"}${cancel-btn class="btn btn-secondary"}
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+</messages>

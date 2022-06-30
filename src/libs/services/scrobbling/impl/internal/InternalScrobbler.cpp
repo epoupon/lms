@@ -88,7 +88,7 @@ namespace Scrobbling
 		if (!track)
 			return;
 
-		auto dbListen {Database::Listen::create(session, user, track, Database::Scrobbler::Internal, listen.listenedAt)};
+		auto dbListen {session.create<Database::Listen>(user, track, Database::Scrobbler::Internal, listen.listenedAt)};
 		dbListen.modify()->setScrobblingState(Database::ScrobblingState::Synchronized);
 	}
 

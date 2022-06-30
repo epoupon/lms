@@ -19,48 +19,33 @@
 
 #pragma once
 
-#include <Wt/WTemplate.h>
-
-#include "services/database/Object.hpp"
+#include "services/database/TrackListId.hpp"
 #include "services/database/Types.hpp"
 
 #include "common/Template.hpp"
 #include "PlayQueueAction.hpp"
-
-namespace Database
-{
-	class TrackList;
-}
 
 namespace UserInterface
 {
 	class Filters;
 	class InfiniteScrollingContainer;
 
-	class TrackLists : public Template
+	class TrackList : public Template
 	{
 		public:
-			TrackLists(Filters& filters);
+			TrackList(Filters& filters);
 
 			PlayQueueActionTrackListSignal trackListAction;
+			PlayQueueActionTrackSignal tracksAction;
 
 		private:
-			enum class Mode
-			{
-				RecentlyModified,
-				All,
-			};
-
 			void refreshView();
 			void addSome();
-			void addTracklist(const Database::ObjectPtr<Database::TrackList>& trackList);
 
-			static constexpr std::size_t _batchSize {30};
-			static constexpr std::size_t _maxCount {500};
+			static constexpr std::size_t _batchSize {6};
+			static constexpr std::size_t _maxCount {8000};
 
-			Mode						_mode {Mode::RecentlyModified};
-			Filters&					_filters;
-			Wt::WWidget*				_currentActiveItem {};
+			Database::TrackListId		_trackListId;
 			InfiniteScrollingContainer* _container {};
 	};
 } // namespace UserInterface

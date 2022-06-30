@@ -104,6 +104,13 @@ namespace Database
 		StarredDateDesc,
 	};
 
+	enum class TrackListSortMethod
+	{
+		None,
+		Name,
+		LastModifiedDesc,
+	};
+
 	enum class TrackSortMethod
 	{
 		None,

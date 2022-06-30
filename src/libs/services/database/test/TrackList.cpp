@@ -59,7 +59,7 @@ TEST_F(DatabaseFixture, SingleTrackListSingleTrack)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, track.get(), trackList1.get());
+		session.create<TrackListEntry>(track.get(), trackList1.get());
 	}
 
 	{
@@ -74,6 +74,53 @@ TEST_F(DatabaseFixture, SingleTrackListSingleTrack)
 	}
 }
 
+TEST_F(DatabaseFixture, TrackList_SortMethod)
+{
+	ScopedUser user {session, "MyUser"};
+	ScopedTrackList trackList2 {session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList1 {session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet()};
+	ScopedTrack track {session, "MyTrack"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		const auto trackLists {TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::Name))};
+		ASSERT_EQ(trackLists.results.size(), 2);
+		EXPECT_EQ(trackLists.results[0], trackList1.getId());
+		EXPECT_EQ(trackLists.results[1], trackList2.getId());
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		session.create<TrackListEntry>(track.get(), trackList1.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		const auto trackLists {TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::LastModifiedDesc))};
+		ASSERT_EQ(trackLists.results.size(), 2);
+		EXPECT_EQ(trackLists.results[0], trackList1.getId());
+		EXPECT_EQ(trackLists.results[1], trackList2.getId());
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		session.create<TrackListEntry>(track.get(), trackList2.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		const auto trackLists {TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::LastModifiedDesc))};
+		ASSERT_EQ(trackLists.results.size(), 2);
+		EXPECT_EQ(trackLists.results[0], trackList2.getId());
+		EXPECT_EQ(trackLists.results[1], trackList1.getId());
+	}
+}
+
 TEST_F(DatabaseFixture, SingleTrackListMultipleTrack)
 {
 	ScopedUser user {session, "MyUser"};
@@ -85,7 +132,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrack)
 		tracks.emplace_back(session, "MyTrack" + std::to_string(i));
 
 		auto transaction {session.createUniqueTransaction()};
-		TrackListEntry::create(session, tracks.back().get(), trackList.get());
+		session.create<TrackListEntry>(tracks.back().get(), trackList.get());
 	}
 
 	{
@@ -127,9 +174,9 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackDateTime)
 	{
 		Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
 		auto transaction {session.createUniqueTransaction()};
-		TrackListEntry::create(session, track1.get(), trackList.get(), now);
-		TrackListEntry::create(session, track2.get(), trackList.get(), now.addSecs(-1));
-		TrackListEntry::create(session, track3.get(), trackList.get(), now.addSecs(1));
+		session.create<TrackListEntry>(track1.get(), trackList.get(), now);
+		session.create<TrackListEntry>(track2.get(), trackList.get(), now.addSecs(-1));
+		session.create<TrackListEntry>(track3.get(), trackList.get(), now.addSecs(1));
 	}
 
 	{
@@ -176,7 +223,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackRecentlyPlayed)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, track1.get(), trackList.get(), now);
+		session.create<TrackListEntry>(track1.get(), trackList.get(), now);
 	}
 
 	{
@@ -198,7 +245,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackRecentlyPlayed)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, track2.get(), trackList.get(), now.addSecs(1));
+		session.create<TrackListEntry>(track2.get(), trackList.get(), now.addSecs(1));
 	}
 
 	{
@@ -224,7 +271,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackRecentlyPlayed)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, track1.get(), trackList.get(), now.addSecs(2));
+		session.create<TrackListEntry>(track1.get(), trackList.get(), now.addSecs(2));
 	}
 
 	{
@@ -270,7 +317,7 @@ TEST_F(DatabaseFixture, SingleTrackList_getArtists)
 	{
 		auto transaction {session.createUniqueTransaction()};
 		TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLinkType::Artist);
-		TrackListEntry::create(session, track1.get(), trackList.get());
+		session.create<TrackListEntry>(track1.get(), trackList.get());
 	}
 
 	{
@@ -303,7 +350,7 @@ TEST_F(DatabaseFixture, SingleTrackList_getArtists)
 	{
 		auto transaction {session.createUniqueTransaction()};
 		TrackArtistLink::create(session, track2.get(), artist2.get(), TrackArtistLinkType::Artist);
-		TrackListEntry::create(session, track2.get(), trackList.get());
+		session.create<TrackListEntry>(track2.get(), trackList.get());
 		artist1.get().modify()->setSortName("ZZZ");
 		artist2.get().modify()->setSortName("AAA");
 	}
@@ -350,7 +397,7 @@ TEST_F(DatabaseFixture, SingleTrackList_getReleases)
 
 		track.get().modify()->setRelease(release.get());
 
-		TrackListEntry::create(session, track.get(), trackList.get());
+		session.create<TrackListEntry>(track.get(), trackList.get());
 	}
 
 	{
@@ -382,9 +429,9 @@ TEST_F(DatabaseFixture, SingleTrackList_getTracks)
 
 	{
 		auto transaction {session.createUniqueTransaction()};
-		TrackListEntry::create(session, track1.get(), trackList.get());
-		TrackListEntry::create(session, track2.get(), trackList.get());
-		TrackListEntry::create(session, track1.get(), trackList.get());
+		session.create<TrackListEntry>(track1.get(), trackList.get());
+		session.create<TrackListEntry>(track2.get(), trackList.get());
+		session.create<TrackListEntry>(track1.get(), trackList.get());
 	}
 
 	{
@@ -418,7 +465,7 @@ TEST_F(DatabaseFixture, SingleTrackListSingleTrackWithCluster)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, track.get(), trackList1.get());
+		session.create<TrackListEntry>(track.get(), trackList1.get());
 		cluster.get().modify()->addTrack(track.get());
 	}
 

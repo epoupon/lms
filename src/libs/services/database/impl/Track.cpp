@@ -46,7 +46,7 @@ createQuery(Session& session, const Track::FindParameters& params)
 	auto query {session.getDboSession().query<TrackId>("SELECT DISTINCT t.id from track t")};
 
 	for (std::string_view keyword : params.keywords)
-		query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + escapeLikeKeyword(keyword) + "%");
+		query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
 
 	if (params.writtenAfter.isValid())
 		query.where("t.file_last_write > ?").bind(params.writtenAfter);
@@ -156,12 +156,7 @@ Track::Track(const std::filesystem::path& p)
 Track::pointer
 Track::create(Session& session, const std::filesystem::path& p)
 {
-	session.checkUniqueLocked();
-
-	Track::pointer res {session.getDboSession().add(std::make_unique<Track>(p))};
-	session.getDboSession().flush();
-
-	return res;
+	return session.getDboSession().add(std::unique_ptr<Track> {new Track {p}});
 }
 
 std::size_t
@@ -219,7 +214,7 @@ Track::findPaths(Session& session, Range range)
 	// TODO Dbo traits on filesystem
 	auto query {session.getDboSession().query<QueryResultType>("SELECT id, file_path FROM track")};
 
-	RangeResults<QueryResultType> queryResults {execQuery(query, range)};
+	RangeResults<QueryResultType> queryResults {Utils::execQuery(query, range)};
 
 	RangeResults<PathResult> res;
 	res.range = queryResults.range;
@@ -243,7 +238,7 @@ Track::findRecordingMBIDDuplicates(Session& session, Range range)
 	auto query {session.getDboSession().query<TrackId>( "SELECT track.id FROM track WHERE recording_mbid in (SELECT recording_mbid FROM track WHERE recording_mbid <> '' GROUP BY recording_mbid HAVING COUNT (*) > 1)")
 		.orderBy("track.release_id,track.disc_number,track.track_number,track.recording_mbid")};
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 RangeResults<TrackId>
@@ -255,7 +250,7 @@ Track::findWithRecordingMBIDAndMissingFeatures(Session& session, Range range)
 		.where("LENGTH(t.recording_mbid) > 0")
 		.where("NOT EXISTS (SELECT * FROM track_features t_f WHERE t_f.track_id = t.id)")};
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 std::vector<Cluster::pointer>
@@ -284,7 +279,7 @@ Track::find(Session& session, const FindParameters& parameters)
 
 	auto query {createQuery(session, parameters)};
 
-	return execQuery(query, parameters.range);
+	return Utils::execQuery(query, parameters.range);
 }
 
 RangeResults<TrackId>
@@ -297,7 +292,7 @@ Track::findByNameAndReleaseName(Session& session, std::string_view trackName, st
 		.where("t.name = ?").bind(trackName)
 		.where("r.name = ?").bind(releaseName)};
 
-	return execQuery(query, Range {});
+	return Utils::execQuery(query, Range {});
 }
 
 RangeResults<TrackId>
@@ -328,7 +323,7 @@ Track::findSimilarTracks(Session& session, const std::vector<TrackId>& tracks, R
 	for (TrackId trackId : tracks)
 		query.bind(trackId);
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 void

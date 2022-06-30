@@ -48,7 +48,6 @@ class TrackList : public Object<TrackList, TrackListId>
 {
 	public:
 		TrackList() = default;
-		TrackList(std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user);
 
 		// Stats utility
 		std::vector<ObjectPtr<Artist>>	getTopArtists(const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const;
@@ -62,19 +61,18 @@ class TrackList : public Object<TrackList, TrackListId>
 			Range                           range;
 			std::optional<TrackListType>	type;
 			UserId							user;		// only tracklists owned by this user
+			TrackListSortMethod				sortMethod {TrackListSortMethod::None};
 
 			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
 			FindParameters& setRange(Range _range) { range = _range; return *this; }
 			FindParameters& setType(TrackListType _type) { type = _type; return *this; }
 			FindParameters& setUser(UserId _user) { user = _user; return *this; }
+			FindParameters& setSortMethod(TrackListSortMethod _sortMethod) {sortMethod = _sortMethod; return *this; }
 		};
 		static std::size_t					getCount(Session& session);
 		static pointer						find(Session& session, std::string_view name, TrackListType type, UserId userId);
 		static pointer						find(Session& session, TrackListId tracklistId);
 		static RangeResults<TrackListId>	find(Session& session, const FindParameters& params);
-
-		// Create utility
-		static pointer	create(Session& session, std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user);
 
 		// Accessors
 		std::string_view	getName() const { return _name; }
@@ -86,6 +84,7 @@ class TrackList : public Object<TrackList, TrackListId>
 		void		setName(const std::string& name) { _name = name; }
 		void		setIsPublic(bool isPublic) { _isPublic = isPublic; }
 		void		clear() { _entries.clear(); }
+		void		setLastModifiedDateTime(const Wt::WDateTime& dateTime) { _lastModifiedDateTime = dateTime; }
 
 		// Get tracks, ordered by position
 		bool										isEmpty() const;
@@ -117,18 +116,26 @@ class TrackList : public Object<TrackList, TrackListId>
 		template<class Action>
 		void persist(Action& a)
 		{
-			Wt::Dbo::field(a,	_name,		"name");
-			Wt::Dbo::field(a,	_type,		"type");
-			Wt::Dbo::field(a,	_isPublic,	"public");
+			Wt::Dbo::field(a,	_name,				"name");
+			Wt::Dbo::field(a,	_type,				"type");
+			Wt::Dbo::field(a,	_isPublic,			"public");
+			Wt::Dbo::field(a,	_creationDateTime,	"creation_date_time");
+			Wt::Dbo::field(a,	_lastModifiedDateTime,	"last_modified_date_time");
 
 			Wt::Dbo::belongsTo(a,	_user,		"user", Wt::Dbo::OnDeleteCascade);
 			Wt::Dbo::hasMany(a, _entries, Wt::Dbo::ManyToOne, "tracklist");
 		}
 
 	private:
+		friend class Session;
+		TrackList(std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user);
+		static pointer create(Session& session, std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user);
+
 		std::string		_name;
 		TrackListType	_type {TrackListType::Playlist};
 		bool			_isPublic {false};
+		Wt::WDateTime	_creationDateTime;
+		Wt::WDateTime	_lastModifiedDateTime;
 
 		Wt::Dbo::ptr<User>	_user;
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _entries;
@@ -138,14 +145,12 @@ class TrackListEntry : public Object<TrackListEntry, TrackListEntryId>
 {
 	public:
 		TrackListEntry() = default;
-		TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime);
-		TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist);
+
+		void onPostCreated() override;
+		void onPreRemove() override;
 
 		// find utility
 		static pointer getById(Session& session, TrackListEntryId id);
-
-		// Create utility
-		static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime = {});
 
 		// Accessors
 		ObjectPtr<Track>	getTrack() const { return _track; }
@@ -161,6 +166,11 @@ class TrackListEntry : public Object<TrackListEntry, TrackListEntryId>
 		}
 
 	private:
+		friend class Session;
+		TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime);
+		TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist);
+		static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime = {});
+
 		Wt::WDateTime			_dateTime;		// optional date time
 		Wt::Dbo::ptr<Track>		_track;
 		Wt::Dbo::ptr<TrackList>	_tracklist;

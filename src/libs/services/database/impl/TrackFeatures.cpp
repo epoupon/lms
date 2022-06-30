@@ -36,6 +36,12 @@ _track {getDboPtr(track)}
 {
 }
 
+TrackFeatures::pointer
+TrackFeatures::create(Session& session, ObjectPtr<Track> track, const std::string& jsonEncodedFeatures)
+{
+	return session.getDboSession().add(std::unique_ptr<TrackFeatures> {new TrackFeatures {track, jsonEncodedFeatures}});
+}
+
 std::size_t
 TrackFeatures::getCount(Session& session)
 {
@@ -71,18 +77,7 @@ TrackFeatures::find(Session& session, Range range)
 
 	auto query {session.getDboSession().query<TrackFeaturesId>("SELECT id from track_features")};
 
-	return execQuery(query, range);
-}
-
-TrackFeatures::pointer
-TrackFeatures::create(Session& session, ObjectPtr<Track> track, const std::string& jsonEncodedFeatures)
-{
-	session.checkUniqueLocked();
-
-	TrackFeatures::pointer res {session.getDboSession().add(std::make_unique<TrackFeatures>(track, jsonEncodedFeatures))};
-	session.getDboSession().flush();
-
-	return res;
+	return Utils::execQuery(query, range);
 }
 
 FeatureValues

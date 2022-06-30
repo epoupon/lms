@@ -39,7 +39,6 @@ namespace Database
 	{
 		public:
 			StarredTrack() = default;
-			StarredTrack(ObjectPtr<Track> track, ObjectPtr<User> user, Scrobbler scrobbler);
 
 			struct FindParameters
 			{
@@ -58,9 +57,6 @@ namespace Database
 			static pointer		find(Session& session, StarredTrackId id);
 			static pointer		find(Session& session, TrackId trackId, UserId userId, Scrobbler scrobbler);
 			static RangeResults<StarredTrackId>	find(Session& session, const FindParameters& findParams);
-
-			// Create utility
-			static pointer		create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user, Scrobbler scrobbler);
 
 			// Accessors
 			ObjectPtr<Track>	getTrack() const { return _track; }
@@ -85,6 +81,10 @@ namespace Database
 			}
 
 		private:
+			friend class Session;
+			StarredTrack(ObjectPtr<Track> track, ObjectPtr<User> user, Scrobbler scrobbler);
+			static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user, Scrobbler scrobbler);
+
 			Scrobbler		_scrobbler;			// for which scrobbler
 			ScrobblingState	_scrobblingState {ScrobblingState::PendingAdd};
 			Wt::WDateTime	_dateTime;			// when it was starred
