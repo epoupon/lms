@@ -52,8 +52,8 @@ handleContentsPathChange(Wt::WStackedWidget* stack)
 	{
 		IdxArtists = 0,
 		IdxArtist,
-		IdxTracklists,
-		IdxTracklist,
+		IdxTrackLists,
+		IdxTrackList,
 		IdxReleases,
 		IdxRelease,
 		IdxSearch,
@@ -64,8 +64,8 @@ handleContentsPathChange(Wt::WStackedWidget* stack)
 	{
 		{ "/artists",		IdxArtists },
 		{ "/artist",		IdxArtist },
-		{ "/tracklists",	IdxTracklists },
-		{ "/tracklist",		IdxTracklist },
+		{ "/tracklists",	IdxTrackLists },
+		{ "/tracklist",		IdxTrackList },
 		{ "/releases",		IdxReleases },
 		{ "/release",		IdxRelease },
 		{ "/search",		IdxSearch },
@@ -103,14 +103,18 @@ Explore::Explore(Filters* filters)
 	artist->tracksAction.connect(this, &Explore::handleTracksAction);
 	contentsStack->addWidget(std::move(artist));
 
-	auto tracklists {std::make_unique<TrackLists>(*_filters)};
-	tracklists->trackListAction.connect(this, &Explore::handleTrackListAction);
-	contentsStack->addWidget(std::move(tracklists));
+	auto trackLists {std::make_unique<TrackLists>(*_filters)};
+	TrackLists* trackListsPtr {trackLists.get()};
+	trackLists->trackListAction.connect(this, &Explore::handleTrackListAction);
+	contentsStack->addWidget(std::move(trackLists));
 
-	auto tracklist {std::make_unique<TrackList>(*_filters)};
-	tracklist->trackListAction.connect(this, &Explore::handleTrackListAction);
-	tracklist->tracksAction.connect(this, &Explore::handleTracksAction);
-	contentsStack->addWidget(std::move(tracklist));
+	auto trackList {std::make_unique<TrackList>(*_filters)};
+	TrackList* trackListPtr {trackList.get()};
+	trackList->trackListAction.connect(this, &Explore::handleTrackListAction);
+	trackList->tracksAction.connect(this, &Explore::handleTracksAction);
+	contentsStack->addWidget(std::move(trackList));
+
+	trackListPtr->trackListDeleted.connect(trackListsPtr, &TrackLists::onTrackListDeleted);
 
 	auto releases = std::make_unique<Releases>(*_filters);
 	releases->releasesAction.connect(this, &Explore::handleReleasesAction);

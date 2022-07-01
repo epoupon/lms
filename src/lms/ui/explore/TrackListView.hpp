@@ -38,6 +38,8 @@ namespace UserInterface
 			PlayQueueActionTrackListSignal trackListAction;
 			PlayQueueActionTrackSignal tracksAction;
 
+			Wt::Signal<Database::TrackListId> trackListDeleted;
+
 		private:
 			void refreshView();
 			void addSome();

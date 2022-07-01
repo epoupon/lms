@@ -79,9 +79,22 @@ namespace UserInterface
 	}
 
 	void
+	TrackLists::onTrackListDeleted(Database::TrackListId trackListId)
+	{
+		auto itTrackList {_trackListWidgets.find(trackListId)};
+		if (itTrackList == std::end(_trackListWidgets))
+			return;
+
+		_container->remove(*itTrackList->second);
+		_trackListWidgets.erase(itTrackList);
+
+	}
+
+	void
 	TrackLists::refreshView()
 	{
 		_container->clear();
+		_trackListWidgets.clear();
 		addSome();
 	}
 
@@ -125,6 +138,9 @@ namespace UserInterface
 
 		WTemplate* entry {_container->addNew<Template>(Wt::WString::tr("Lms.Explore.TrackLists.template.entry"))};
 		entry->bindWidget("name", LmsApplication::createTrackListAnchor(trackList));
+
+		assert(_trackListWidgets.find(trackListId) == std::cend(_trackListWidgets));
+		_trackListWidgets.emplace(trackListId, entry);
 	}
 
 } // namespace UserInterface

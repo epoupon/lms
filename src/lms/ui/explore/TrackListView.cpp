@@ -133,6 +133,7 @@ namespace UserInterface
 					}
 
 					clear();
+					trackListDeleted.emit(*trackListId);
 					LmsApp->setInternalPath("/tracklists", true);
 
 					LmsApp->getModalManager().dispose(modalPtr);

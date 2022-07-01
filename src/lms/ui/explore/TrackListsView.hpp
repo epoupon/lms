@@ -19,9 +19,11 @@
 
 #pragma once
 
+#include <unordered_map>
 #include <Wt/WTemplate.h>
 
 #include "services/database/Object.hpp"
+#include "services/database/TrackListId.hpp"
 #include "services/database/Types.hpp"
 
 #include "common/Template.hpp"
@@ -44,6 +46,8 @@ namespace UserInterface
 
 			PlayQueueActionTrackListSignal trackListAction;
 
+			void onTrackListDeleted(Database::TrackListId trackListId);
+
 		private:
 			enum class Mode
 			{
@@ -62,6 +66,7 @@ namespace UserInterface
 			Filters&					_filters;
 			Wt::WWidget*				_currentActiveItem {};
 			InfiniteScrollingContainer* _container {};
+			std::unordered_map<Database::TrackListId, Wt::WWidget*> _trackListWidgets;
 	};
 } // namespace UserInterface
 
