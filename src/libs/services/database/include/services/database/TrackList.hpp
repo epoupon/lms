@@ -38,6 +38,7 @@ namespace Database {
 
 class Artist;
 class Cluster;
+class ClusterType;
 class Release;
 class Session;
 class Track;
@@ -107,6 +108,7 @@ class TrackList : public Object<TrackList, TrackListId>
 
 		// Get clusters, order by occurence
 		std::vector<ObjectPtr<Cluster>> getClusters() const;
+		std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ObjectPtr<ClusterType>>& clusterTypes, std::size_t size) const;
 
 		bool hasTrack(TrackId trackId) const;
 

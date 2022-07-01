@@ -21,6 +21,8 @@
 
 #include <Wt/WPushButton.h>
 
+#include "services/database/Cluster.hpp"
+#include "services/database/ScanSettings.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackList.hpp"
@@ -51,7 +53,8 @@ namespace
 namespace UserInterface
 {
 	TrackList::TrackList(Filters& filters)
-		: Template {Wt::WString::tr("Lms.Explore.TrackList.template")}
+	: Template {Wt::WString::tr("Lms.Explore.TrackList.template")}
+	, _filters {filters}
 	{
 		addFunction("tr", &Wt::WTemplate::Functions::tr);
 		addFunction("id", &Wt::WTemplate::Functions::id);
@@ -61,7 +64,7 @@ namespace UserInterface
 			refreshView();
 		});
 
-		filters.updated().connect([this]
+		_filters.updated().connect([this]
 		{
 			refreshView();
 		});
@@ -92,6 +95,25 @@ namespace UserInterface
 		bindString("name", std::string {trackList->getName()}, Wt::TextFormat::Plain);
 		bindString("duration", Utils::durationToString(trackList->getDuration()));
 		bindString("track-count", Wt::WString::trn("Lms.Explore.TrackList.track-count", trackList->getCount()).arg(trackList->getCount()));
+
+		Wt::WContainerWidget* clusterContainers {bindNew<Wt::WContainerWidget>("clusters")};
+		{
+			const auto clusterTypes {ScanSettings::get(LmsApp->getDbSession())->getClusterTypes()};
+			const auto clusterGroups {trackList->getClusterGroups(clusterTypes, 3)};
+
+			for (const auto& clusters : clusterGroups)
+			{
+				for (const Database::Cluster::pointer& cluster : clusters)
+				{
+					const ClusterId clusterId {cluster->getId()};
+					Wt::WInteractWidget* entry {clusterContainers->addWidget(Utils::createCluster(clusterId))};
+					entry->clicked().connect([=]
+					{
+						_filters.add(clusterId);
+					});
+				}
+			}
+		}
 
 		bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
 			->clicked().connect([=]
@@ -163,6 +185,7 @@ namespace UserInterface
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 		Database::Track::FindParameters params;
+		params.setClusters(_filters.getClusterIds());
 		params.setTrackList(_trackListId);
 		params.setSortMethod(Database::TrackSortMethod::TrackList);
 		params.setRange({static_cast<std::size_t>(_container->getCount()), _batchSize});

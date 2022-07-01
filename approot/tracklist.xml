@@ -6,6 +6,7 @@
 	<div class="mb-3">
 		<h2>${name}</h2>
 		<div class="small text-muted">${track-count} · ${duration}</div>
+		${clusters class="mb-2"}
 		<div class="btn-group">
 			${play-btn class="btn btn-primary"}
 			<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"/>
