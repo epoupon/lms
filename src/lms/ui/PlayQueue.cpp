@@ -20,7 +20,13 @@
 #include "PlayQueue.hpp"
 
 #include <Wt/WCheckBox.h>
+#include <Wt/WComboBox.h>
+#include <Wt/WFormModel.h>
+#include <Wt/WLineEdit.h>
+#include <Wt/WRadioButton.h>
 #include <Wt/WPushButton.h>
+#include <Wt/WStackedWidget.h>
+#include <Wt/WTemplateFormView.h>
 
 #include "services/database/Cluster.hpp"
 #include "services/database/Release.hpp"
@@ -36,12 +42,78 @@
 #include "utils/String.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
+#include "common/MandatoryValidator.hpp"
+#include "common/ValueStringModel.hpp"
 #include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
+#include "ModalManager.hpp"
 #include "Utils.hpp"
 
 namespace UserInterface {
+
+namespace
+{
+	class CreateTrackListModel : public Wt::WFormModel
+	{
+		public:
+			static inline const Field NameField {"name"};
+
+			CreateTrackListModel()
+			{
+				addField(NameField);
+				setValidator(NameField, createMandatoryValidator());
+			}
+
+			Wt::WString getName() const { return valueText(NameField); }
+	};
+
+	class ReplaceTrackListModel : public Wt::WFormModel
+	{
+		public:
+			static inline const Field NameField {"name"};
+			using TrackListModel = ValueStringModel<Database::TrackListId>;
+
+			ReplaceTrackListModel()
+			{
+				addField(NameField);
+				setValidator(NameField, createMandatoryValidator());
+			}
+
+			Database::TrackListId getTrackListId() const
+			{
+				auto row {trackListModel->getRowFromString(valueText(NameField))};
+				return trackListModel->getValue(*row);
+			}
+
+			static
+			std::shared_ptr<TrackListModel>
+			createTrackListModel()
+			{
+				using namespace Database;
+
+				auto model {std::make_shared<TrackListModel>()};
+
+				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+				TrackList::FindParameters params;
+				params.setType(TrackListType::Playlist);
+				params.setUser(LmsApp->getUserId());
+				params.setSortMethod(TrackListSortMethod::Name);
+
+				auto tracklists {TrackList::find(LmsApp->getDbSession(), params)};
+				for (const TrackListId trackListId : tracklists.results)
+				{
+					const TrackList::pointer trackList {TrackList::find(LmsApp->getDbSession(), trackListId)};
+					model->add(Wt::WString::fromUTF8(std::string {trackList->getName()}), trackListId);
+				}
+
+				return model;
+			}
+
+			std::shared_ptr<TrackListModel> trackListModel {createTrackListModel()};
+	};
+}
 
 PlayQueue::PlayQueue()
 : Template {Wt::WString::tr("Lms.PlayQueue.template")}
@@ -53,6 +125,12 @@ PlayQueue::PlayQueue()
 	clearBtn->clicked().connect([=]
 	{
 		clearTracks();
+	});
+
+	Wt::WPushButton* saveBtn {bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr("Lms.PlayQueue.template.save-btn"), Wt::TextFormat::XHTML)};
+	saveBtn->clicked().connect([=]
+	{
+		saveAsTrackList();
 	});
 
 	_entriesContainer = bindNew<InfiniteScrollingContainer>("entries");
@@ -108,7 +186,7 @@ PlayQueue::PlayQueue()
 			_radioBtn->setCheckState(Wt::CheckState::Checked);
 	}
 
-	_nbTracks = bindNew<Wt::WText>("nb-tracks");
+	_nbTracks = bindNew<Wt::WText>("track-count");
 
 	LmsApp->preQuit().connect([=]
 	{
@@ -287,7 +365,8 @@ PlayQueue::updateInfo()
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	_nbTracks->setText(Wt::WString::tr("Lms.PlayQueue.nb-tracks").arg(static_cast<unsigned>(getTrackList()->getCount())));
+	const auto trackCount {getTrackList()->getCount()};
+	_nbTracks->setText(Wt::WString::trn("Lms.track-count", trackCount).arg(trackCount));
 }
 
 void
@@ -540,6 +619,134 @@ PlayQueue::getReplayGain(std::size_t pos, const Database::Track::pointer& track)
 
 	return settings->replayGain.preAmpGainIfNoInfo;
 }
+
+void
+PlayQueue::saveAsTrackList()
+{
+	auto modal {std::make_unique<Template>(Wt::WString::tr("Lms.PlayQueue.template.save-as-tracklist"))};
+	modal->addFunction("id", &Wt::WTemplate::Functions::id);
+	modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	Wt::WWidget* modalPtr {modal.get()};
+
+	auto* cancelBtn {modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel"))};
+	cancelBtn->clicked().connect([=]
+	{
+		LmsApp->getModalManager().dispose(modalPtr);
+	});
+
+	Wt::WStackedWidget* contentStack {modal->bindNew<Wt::WStackedWidget>("contents")};
+
+	// Create/Replace selector
+	enum Index : int
+	{
+		CreateTrackList = 0,
+		ReplaceTrackList = 1,
+	};
+	{
+		modal->bindNew<Wt::WRadioButton>("replace-tracklist-btn")
+			->clicked().connect([=]
+			{
+				contentStack->setCurrentIndex(Index::ReplaceTrackList);
+			});
+
+		Wt::WRadioButton* createTrackListBtn {modal->bindNew<Wt::WRadioButton>("create-tracklist-btn")};
+		createTrackListBtn->setChecked();
+		createTrackListBtn->clicked().connect([=]
+		{
+			contentStack->setCurrentIndex(Index::CreateTrackList);
+		});
+	}
+
+
+	// Create TrackList
+	Wt::WTemplateFormView* createTrackList {contentStack->addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.PlayQueue.template.save-as-tracklist.create-tracklist"))};
+	auto createTrackListModel {std::make_shared<CreateTrackListModel>()};
+	createTrackList->setFormWidget(CreateTrackListModel::NameField, std::make_unique<Wt::WLineEdit>());
+	createTrackList->updateView(createTrackListModel.get());
+
+	// Replace TrackList
+	Wt::WTemplateFormView* replaceTrackList {contentStack->addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.PlayQueue.template.save-as-tracklist.replace-tracklist"))};
+	auto replaceTrackListModel {std::make_shared<ReplaceTrackListModel>()};
+	{
+		auto name {std::make_unique<Wt::WComboBox>()};
+		name->setModel(replaceTrackListModel->trackListModel);
+		replaceTrackList->setFormWidget(ReplaceTrackListModel::NameField, std::move(name));
+	}
+	replaceTrackList->updateView(replaceTrackListModel.get());
+
+	auto* saveBtn {modal->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr("Lms.save"))};
+	saveBtn->clicked().connect([=]
+	{
+		bool success {};
+		switch (contentStack->currentIndex())
+		{
+			case Index::CreateTrackList:
+				createTrackList->updateModel(createTrackListModel.get());
+				if (createTrackListModel->validate())
+				{
+					exportToNewTrackList(createTrackListModel->getName());
+					success = true;
+				}
+				createTrackList->updateView(createTrackListModel.get());
+				break;
+
+			case Index::ReplaceTrackList:
+				replaceTrackList->updateModel(replaceTrackListModel.get());
+				if (replaceTrackListModel->validate())
+				{
+					exportToTrackList(replaceTrackListModel->getTrackListId());
+					success = true;
+				}
+				replaceTrackList->updateView(replaceTrackListModel.get());
+				break;
+		}
+
+		if (success)
+			LmsApp->getModalManager().dispose(modalPtr);
+	});
+
+	LmsApp->getModalManager().show(std::move(modal));
+}
+
+void
+PlayQueue::exportToNewTrackList(const Wt::WString& name)
+{
+	using namespace Database;
+
+	Database::TrackListId trackListId;
+
+	{
+		Session& session {LmsApp->getDbSession()};
+		auto transaction {session.createUniqueTransaction()};
+		TrackList::pointer trackList {session.create<TrackList>(name.toUTF8(), TrackListType::Playlist, false, LmsApp->getUser())};
+		trackListId = trackList->getId();
+	}
+
+	exportToTrackList(trackListId);
+}
+
+void
+PlayQueue::exportToTrackList(Database::TrackListId trackListId)
+{
+	using namespace Database;
+
+	Session& session {LmsApp->getDbSession()};
+	auto transaction {session.createUniqueTransaction()};
+
+	TrackList::pointer trackList {TrackList::find(LmsApp->getDbSession(), trackListId)};
+	trackList.modify()->clear();
+
+	Track::FindParameters params;
+	params.setTrackList(_tracklistId);
+	params.setDistinct(false);
+	params.setSortMethod(TrackSortMethod::TrackList);
+
+	const auto tracks {Track::find(session, params)};
+
+	for (const TrackId trackId : tracks.results)
+		session.create<TrackListEntry>(Track::find(session, trackId), trackList);
+}
+
 
 } // namespace UserInterface
 

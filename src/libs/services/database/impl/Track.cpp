@@ -43,7 +43,7 @@ createQuery(Session& session, const Track::FindParameters& params)
 {
 	session.checkSharedLocked();
 
-	auto query {session.getDboSession().query<TrackId>("SELECT DISTINCT t.id from track t")};
+	auto query {session.getDboSession().query<TrackId>(params.distinct ? "SELECT DISTINCT t.id FROM track t" : "SELECT t.id FROM track t")};
 
 	for (std::string_view keyword : params.keywords)
 		query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + Utils::escapeLikeKeyword(keyword) + "%");

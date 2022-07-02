@@ -6,22 +6,26 @@
 <message id="Lms.PlayQueue.template.shuffle-btn"><i class="fa fa-fw fa-random"></i></message>
 <message id="Lms.PlayQueue.template.repeat-btn"><i class="fa fa-fw fa-repeat"></i></message>
 <message id="Lms.PlayQueue.template.radio-btn"><i class="fa fa-fw fa-rss"></i></message>
+<message id="Lms.PlayQueue.template.save-btn"><i class="fa fa-fw fa-save"></i></message>
 
 <message id="Lms.PlayQueue.template">
 	<div class="mb-3">
-		<div class="d-inline-block me-2" title="${tr:Lms.PlayQueue.clear}">
-			${clear-btn class="btn btn-secondary"}
-		</div>
-		<div class="d-inline-block me-2" title="${tr:Lms.PlayQueue.shuffle}">
-			${shuffle-btn class="btn btn-secondary"}
-		</div>
 		<div class="btn-group me-2">
 			${repeat-btn class="btn-check"}
 			<label class="btn btn-outline-info" title="${tr:Lms.PlayQueue.repeat}" for="${id:repeat-btn}">${tr:Lms.PlayQueue.template.repeat-btn}</label>
 			${radio-btn class="btn-check"}
 			<label class="btn btn-outline-info" title="${tr:Lms.PlayQueue.radio-mode}" for="${id:radio-btn}">${tr:Lms.PlayQueue.template.radio-btn}</label>
 		</div>
-		${nb-tracks}
+		<div class="d-inline-block me-2" title="${tr:Lms.save}">
+			${save-btn class="btn btn-secondary"}
+		</div>
+		<div class="d-inline-block me-2" title="${tr:Lms.PlayQueue.shuffle}">
+			${shuffle-btn class="btn btn-secondary"}
+		</div>
+		<div class="d-inline-block me-2" title="${tr:Lms.PlayQueue.clear}">
+			${clear-btn class="btn btn-warning"}
+		</div>
+		${track-count}
 	</div>
 	${entries}
 </message>
@@ -54,6 +58,51 @@
 
 <message id="Lms.PlayQueue.template.entry-artist">
 	${artist}
+</message>
+
+<message id="Lms.PlayQueue.template.save-as-tracklist">
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">${tr:Lms.save}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<form>
+						<div class="mb-2">
+							<div class="form-check form-check-inline">
+								${create-tracklist-btn class="form-check-input" name="action-type"}
+								<label class="form-check-label" for="${id:create-tracklist-btn}">${tr:Lms.PlayQueue.create-tracklist}</label>
+							</div>
+							<div class="form-check form-check-inline">
+								${replace-tracklist-btn class="form-check-input" name="action-type"}
+								<label class="form-check-label" for="${id:replace-tracklist-btn}">${tr:Lms.PlayQueue.replace-tracklist}</label>
+							</div>
+						</div>
+						${contents}
+					</form>
+				</div>
+				<div class="modal-footer">
+					${save-btn class="btn btn-primary me-1"}${cancel-btn class="btn btn-secondary"}
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+<message id="Lms.PlayQueue.template.save-as-tracklist.create-tracklist">
+	${name class="form-control"}
+	<div class="invalid-feedback">
+		${name-info}
+	</div>
+</message>
+
+<message id="Lms.PlayQueue.template.save-as-tracklist.replace-tracklist">
+	${name class="form-control"}
+	<div class="invalid-feedback">
+		${name-info}
+	</div>
 </message>
 
 </messages>

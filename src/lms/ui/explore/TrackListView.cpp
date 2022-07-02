@@ -94,7 +94,8 @@ namespace UserInterface
 
 		bindString("name", std::string {trackList->getName()}, Wt::TextFormat::Plain);
 		bindString("duration", Utils::durationToString(trackList->getDuration()));
-		bindString("track-count", Wt::WString::trn("Lms.Explore.TrackList.track-count", trackList->getCount()).arg(trackList->getCount()));
+		const auto trackCount {trackList->getCount()};
+		bindString("track-count", Wt::WString::trn("Lms.track-count", trackCount).arg(trackCount));
 
 		Wt::WContainerWidget* clusterContainers {bindNew<Wt::WContainerWidget>("clusters")};
 		{
@@ -189,6 +190,7 @@ namespace UserInterface
 		params.setTrackList(_trackListId);
 		params.setSortMethod(Database::TrackSortMethod::TrackList);
 		params.setRange({static_cast<std::size_t>(_container->getCount()), _batchSize});
+		params.setDistinct(false);
 
 		const auto trackIds {Database::Track::find(LmsApp->getDbSession(), params)};
 		for (const TrackId trackId : trackIds.results)
@@ -199,22 +201,5 @@ namespace UserInterface
 
 		_container->setHasMore(trackIds.moreResults && _container->getCount() < _maxCount);
 	}
-
-/*
-
-	void
-Tracks::addSome()
-{
-}
-
-	std::vector<Database::TrackId>
-Tracks::getAllTracks()
-{
-	RangeResults<TrackId> trackIds {_trackCollector.get(Range {})};
-
-	return std::move(trackIds.results);
-}
-*/
-
 } // namespace UserInterface
 

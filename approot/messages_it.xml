@@ -26,6 +26,10 @@
 <message id="Lms.passwords-dont-match">Le password non corrispondono</message>
 <message id="Lms.quit-other-session">Un'altra sessione è stata aperta. Vuoi riaprire questa?</message>
 <message id="Lms.save">Salva</message>
+
+
+
+
 <message id="Lms.user">Utente</message>
 
 <!--Errors-->
@@ -46,6 +50,7 @@
 <message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Raccolta musicale</message>
 <message id="Lms.Admin.Database.never">Mai</message>
 <message id="Lms.Admin.Database.path">Cartella dei file multimediali</message>
+
 <message id="Lms.Admin.Database.recommendation-engine-type">Modalità di raccomandazione brani consigliati</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.clusters">Basata sui tag</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.features">Basata sull'analisi acustica</message>
@@ -156,12 +161,6 @@
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disco {1}</message>
 
-<!--Explore:TrackList-->
-
-
-
-
-
 <!--Explore:TrackLists-->
 
 
@@ -173,7 +172,7 @@
 
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">Cancella</message>
-<message id="Lms.PlayQueue.nb-tracks">{1} tracce</message>
+
 <message id="Lms.PlayQueue.nb-tracks-added">
 	<plural case="0">Aggiunta {1} traccia</plural>
 	<plural case="1">Aggiunte {1} tracce</plural>
@@ -182,11 +181,11 @@
 <message id="Lms.PlayQueue.playqueue-full">Coda di riproduzione piena!</message>
 <message id="Lms.PlayQueue.radio-mode">Modalità radio</message>
 <message id="Lms.PlayQueue.repeat">Ripeti</message>
+
 <message id="Lms.PlayQueue.shuffle">Mischia</message>
 
 <!--PlayHistory-->
 <message id="Lms.PlayHistory.playhistory">Storico riproduzione</message>
-
 
 <!--Settings-->
 <message id="Lms.Settings.audio">Audio</message>
@@ -203,6 +202,11 @@
 <message id="Lms.Settings.replaygain-mode.release">Album</message>
 <message id="Lms.Settings.replaygain-preamp">Preamplificazione ReplayGain</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">Preamplificazione ReplayGain (se non è disponibile nessuna informazione)</message>
+
+
+
+
+
 <message id="Lms.Settings.subsonic-artist-list-mode">Modalità di elencazione artisti</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">Tutti gli artisti</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Artisti album</message>

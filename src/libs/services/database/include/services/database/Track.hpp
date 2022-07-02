@@ -71,6 +71,7 @@ class Track : public Object<Track, TrackId>
 			bool							nonRelease {};	// only tracks that do not belong to a release
 			ReleaseId						release;		// matching this release
 			TrackListId						trackList;		// matching this trackList
+			bool							distinct {true};
 
 			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
 			FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
@@ -82,6 +83,7 @@ class Track : public Object<Track, TrackId>
 			FindParameters& setNonRelease(bool _nonRelease) { nonRelease = _nonRelease; return *this; }
 			FindParameters& setRelease(ReleaseId _release) { release = _release; return *this; }
 			FindParameters& setTrackList(TrackListId _trackList) { trackList = _trackList; return *this; }
+			FindParameters& setDistinct(bool _distinct) { distinct = _distinct; return *this; }
 		};
 
 		struct PathResult

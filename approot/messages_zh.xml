@@ -26,6 +26,10 @@
 <message id="Lms.passwords-dont-match">密码不匹配</message>
 <message id="Lms.quit-other-session">另一个会话已打开，重新打开这一个？</message>
 <message id="Lms.save">保存</message>
+
+
+
+
 <message id="Lms.user">用户</message>
 
 <!--Errors-->
@@ -157,12 +161,6 @@
 <message id="Lms.Explore.Release.copyright">版权所有</message>
 <message id="Lms.Explore.Release.disc">唱片 {1}</message>
 
-<!--Explore:TrackList-->
-
-
-
-
-
 <!--Explore:TrackLists-->
 
 
@@ -174,7 +172,7 @@
 
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">清除</message>
-<message id="Lms.PlayQueue.nb-tracks">{1} 音轨</message>
+
 <message id="Lms.PlayQueue.nb-tracks-added">
 	<plural case="0">添加 {1} 音轨</plural>
 	<plural case="1">已添加 {1} 音轨</plural>
@@ -183,6 +181,7 @@
 <message id="Lms.PlayQueue.playqueue-full">播放队列已满！</message>
 <message id="Lms.PlayQueue.radio-mode">广播模式</message>
 <message id="Lms.PlayQueue.repeat">循环播放</message>
+
 <message id="Lms.PlayQueue.shuffle">随机播放</message>
 
 <!--PlayHistory-->
@@ -203,6 +202,11 @@
 <message id="Lms.Settings.replaygain-mode.release">专辑</message>
 <message id="Lms.Settings.replaygain-preamp">ReplayGain 放大器</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">ReplayGain 放大器 (如果没有信息)</message>
+
+
+
+
+
 <message id="Lms.Settings.subsonic-artist-list-mode">歌手列表模式</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">所有歌手</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">专辑歌手</message>

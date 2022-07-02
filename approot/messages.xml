@@ -26,6 +26,10 @@
 <message id="Lms.passwords-dont-match">Passwords don't match</message>
 <message id="Lms.quit-other-session">Another session has been open. Reopen this one?</message>
 <message id="Lms.save">Save</message>
+<message id="Lms.track-count">
+	<plural case="0">{1} track</plural>
+	<plural case="1">{1} tracks</plural>
+</message>
 <message id="Lms.user">User</message>
 
 <!--Errors-->
@@ -157,12 +161,6 @@
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disc {1}</message>
 
-<!--Explore:TrackList-->
-<message id="Lms.Explore.TrackList.track-count">
-	<plural case="0">{1} track</plural>
-	<plural case="1">{1} tracks</plural>
-</message>
-
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Delete playlist?</message>
 
@@ -174,7 +172,7 @@
 
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">Clear</message>
-<message id="Lms.PlayQueue.nb-tracks">{1} tracks</message>
+<message id="Lms.PlayQueue.create-tracklist">Create new playlist</message>
 <message id="Lms.PlayQueue.nb-tracks-added">
 	<plural case="0">Added {1} track</plural>
 	<plural case="1">Added {1} tracks</plural>
@@ -183,6 +181,7 @@
 <message id="Lms.PlayQueue.playqueue-full">Play Queue full!</message>
 <message id="Lms.PlayQueue.radio-mode">Radio mode</message>
 <message id="Lms.PlayQueue.repeat">Repeat</message>
+<message id="Lms.PlayQueue.replace-tracklist">Replace existing playlist</message>
 <message id="Lms.PlayQueue.shuffle">Shuffle</message>
 
 <!--PlayHistory-->

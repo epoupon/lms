@@ -26,6 +26,10 @@
 <message id="Lms.passwords-dont-match">Les mots de passe ne correspondent pas</message>
 <message id="Lms.quit-other-session">Une autre session a été ouverte. Reouvrir celle-ci ?</message>
 <message id="Lms.save">Sauvegarder</message>
+<message id="Lms.track-count">
+	<plural case="0">{1} piste</plural>
+	<plural case="1">{1} pistes</plural>
+</message>
 <message id="Lms.user">Utilisateur</message>
 
 <!--Errors-->
@@ -157,12 +161,6 @@
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disque {1}</message>
 
-<!--Explore:TrackList-->
-<message id="Lms.Explore.TrackList.track-count">
-	<plural case="0">{1} piste</plural>
-	<plural case="1">{1} pistes</plural>
-</message>
-
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Supprimer la liste de lecture ?</message>
 
@@ -174,7 +172,7 @@
 
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">Effacer</message>
-<message id="Lms.PlayQueue.nb-tracks">{1} pistes</message>
+<message id="Lms.PlayQueue.create-tracklist">Créer une nouvelle liste de lecture</message>
 <message id="Lms.PlayQueue.nb-tracks-added">
 	<plural case="0">{1} piste ajoutée</plural>
 	<plural case="1">{1} pistes ajoutées</plural>
@@ -183,11 +181,11 @@
 <message id="Lms.PlayQueue.playqueue-full">Liste de lecture pleine!</message>
 <message id="Lms.PlayQueue.radio-mode">Mode radio</message>
 <message id="Lms.PlayQueue.repeat">Repéter</message>
+<message id="Lms.PlayQueue.replace-tracklist">Remplacer une liste de lecture existante</message>
 <message id="Lms.PlayQueue.shuffle">Mélanger</message>
 
 <!--PlayHistory-->
 <message id="Lms.PlayHistory.playhistory">Historique de lecture</message>
-
 
 <!--Settings-->
 <message id="Lms.Settings.audio">Audio</message>

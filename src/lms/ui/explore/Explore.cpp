@@ -223,6 +223,7 @@ getTrackListTracks(Database::Session& session, Database::TrackListId trackListId
 	params.setClusters(clusters);
 	params.setRange({0, maxTrackCount});
 	params.setSortMethod(TrackSortMethod::TrackList);
+	params.setDistinct(false);
 
 	return Database::Track::find(session, params).results;
 }
@@ -251,7 +252,6 @@ Explore::handleTracksAction(PlayQueueAction action, const std::vector<Database::
 	// consider things are already filtered here, and _maxTrackCount honored playqueue side...
 	tracksAction.emit(action, tracksId);
 }
-
 
 } // namespace UserInterface
 
