@@ -9,6 +9,7 @@
 <message id="Lms.PlayQueue.template.save-btn"><i class="fa fa-fw fa-save"></i></message>
 
 <message id="Lms.PlayQueue.template">
+	<div class="small text-muted mb-2">${track-count} · ${duration}</div>
 	<div class="mb-3">
 		<div class="btn-group me-2">
 			${repeat-btn class="btn-check"}
@@ -25,7 +26,6 @@
 		<div class="d-inline-block me-2" title="${tr:Lms.PlayQueue.clear}">
 			${clear-btn class="btn btn-warning"}
 		</div>
-		${track-count}
 	</div>
 	${entries}
 </message>

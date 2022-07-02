@@ -101,6 +101,7 @@ class PlayQueue : public Template
 		Database::TrackListId _tracklistId {};
 		InfiniteScrollingContainer* _entriesContainer {};
 		Wt::WText* _nbTracks {};
+		Wt::WText* _duration {};
 		Wt::WCheckBox* _repeatBtn {};
 		Wt::WCheckBox* _radioBtn {};
 		std::optional<std::size_t> _trackPos;	// current track position, if set

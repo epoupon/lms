@@ -87,7 +87,6 @@ namespace UserInterface
 
 		_container->remove(*itTrackList->second);
 		_trackListWidgets.erase(itTrackList);
-
 	}
 
 	void

@@ -187,6 +187,7 @@ PlayQueue::PlayQueue()
 	}
 
 	_nbTracks = bindNew<Wt::WText>("track-count");
+	_duration = bindNew<Wt::WText>("duration");
 
 	LmsApp->preQuit().connect([=]
 	{
@@ -367,6 +368,7 @@ PlayQueue::updateInfo()
 
 	const auto trackCount {getTrackList()->getCount()};
 	_nbTracks->setText(Wt::WString::trn("Lms.track-count", trackCount).arg(trackCount));
+	_duration->setText(Utils::durationToString(getTrackList()->getDuration()));
 }
 
 void
