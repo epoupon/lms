@@ -51,7 +51,7 @@ namespace Scrobbling
 				if (!user)
 					return;
 
-				starredObj = StarredObjType::create(session, obj, user, *scrobbler);
+				starredObj = session.create<StarredObjType>(obj, user, *scrobbler);
 			}
 			starredObj.modify()->setDateTime(Wt::WDateTime::currentDateTime());
 			starredObjId = starredObj->getId();

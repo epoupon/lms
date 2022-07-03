@@ -38,12 +38,7 @@ namespace Database
 	AuthToken::pointer
 	AuthToken::create(Session& session, std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user)
 	{
-		session.checkUniqueLocked();
-
-		AuthToken::pointer res {session.getDboSession().add(std::make_unique<AuthToken>(value, expiry, user))};
-		session.getDboSession().flush();
-
-		return res;
+		return session.getDboSession().add(std::unique_ptr<AuthToken> {new AuthToken {value, expiry, user}});
 	}
 
 	void

@@ -6,9 +6,11 @@
 <message id="Lms.add">Add</message>
 <message id="Lms.administration">Administration</message>
 <message id="Lms.apply">Apply</message>
-<message id="Lms.discard">Discard</message>
 <message id="Lms.cancel">Cancel</message>
 <message id="Lms.create">Create</message>
+<message id="Lms.delete">Delete</message>
+<message id="Lms.discard">Discard</message>
+<message id="Lms.edit">Edit</message>
 <message id="Lms.loading">Loading...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
@@ -24,6 +26,10 @@
 <message id="Lms.passwords-dont-match">Passwords don't match</message>
 <message id="Lms.quit-other-session">Another session has been open. Reopen this one?</message>
 <message id="Lms.save">Save</message>
+<message id="Lms.track-count">
+	<plural case="0">{1} track</plural>
+	<plural case="1">{1} tracks</plural>
+</message>
 <message id="Lms.user">User</message>
 
 <!--Errors-->
@@ -31,6 +37,7 @@
 <message id="Lms.Error.error-occurred">Error occured!</message>
 <message id="Lms.Error.go-home">Go home</message>
 <message id="Lms.Error.release-not-found">Release not found</message>
+<message id="Lms.Error.tracklist-not-found">Playlist not found</message>
 <message id="Lms.Error.user-not-allowed">You are not allowed to perform this operation</message>
 <message id="Lms.Error.user-not-found">User not found</message>
 
@@ -85,11 +92,8 @@
 <!--Users-->
 <message id="Lms.Admin.Users.add">New user</message>
 <message id="Lms.Admin.Users.admin">Admin</message>
-<message id="Lms.Admin.Users.del">Delete</message>
-<message id="Lms.Admin.Users.del-user">Delete user</message>
-<message id="Lms.Admin.Users.del-user-name">Delete user?</message>
+<message id="Lms.Admin.Users.del-user-confirm">Delete user?</message>
 <message id="Lms.Admin.Users.demo">Demo</message>
-<message id="Lms.Admin.Users.edit">Edit</message>
 <message id="Lms.Admin.Users.users">Users</message>
 <message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Users</message>
 
@@ -126,10 +130,12 @@
 <message id="Lms.Explore.play-shuffled">Play shuffled</message>
 <message id="Lms.Explore.random">Random</message>
 <message id="Lms.Explore.recently-added">Recently added</message>
+<message id="Lms.Explore.recently-modified">Recently modified</message>
 <message id="Lms.Explore.recently-played">Recently played</message>
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.star">Star</message>
 <message id="Lms.Explore.starred">Starred</message>
+<message id="Lms.Explore.tracklists">Playlists</message>
 <message id="Lms.Explore.tracks">Tracks</message>
 <message id="Lms.Explore.type">Type</message>
 <message id="Lms.Explore.unstar">Unstar</message>
@@ -155,6 +161,9 @@
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disc {1}</message>
 
+<!--Explore:TrackLists-->
+<message id="Lms.Explore.TrackLists.del-tracklist-confirm">Delete playlist?</message>
+
 <!--Explore:Search-->
 <message id="Lms.Explore.Search.search-placeholder">Search...</message>
 
@@ -163,7 +172,7 @@
 
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">Clear</message>
-<message id="Lms.PlayQueue.nb-tracks">{1} tracks</message>
+<message id="Lms.PlayQueue.create-tracklist">Create new playlist</message>
 <message id="Lms.PlayQueue.nb-tracks-added">
 	<plural case="0">Added {1} track</plural>
 	<plural case="1">Added {1} tracks</plural>
@@ -172,6 +181,7 @@
 <message id="Lms.PlayQueue.playqueue-full">Play Queue full!</message>
 <message id="Lms.PlayQueue.radio-mode">Radio mode</message>
 <message id="Lms.PlayQueue.repeat">Repeat</message>
+<message id="Lms.PlayQueue.replace-tracklist">Replace existing playlist</message>
 <message id="Lms.PlayQueue.shuffle">Shuffle</message>
 
 <!--PlayHistory-->

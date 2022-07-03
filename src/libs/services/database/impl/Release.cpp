@@ -57,7 +57,7 @@ createQuery(Session& session, const Release::FindParameters& params)
 	}
 
 	for (std::string_view keyword : params.keywords)
-		query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + escapeLikeKeyword(keyword) + "%");
+		query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
 
 	if (params.starringUser.isValid())
 	{
@@ -172,6 +172,12 @@ _MBID {MBID ? MBID->getAsString() : ""}
 {
 }
 
+Release::pointer
+Release::create(Session& session, const std::string& name, const std::optional<UUID>& MBID)
+{
+	return session.getDboSession().add(std::unique_ptr<Release> {new Release {name, MBID}});
+}
+
 std::vector<Release::pointer>
 Release::find(Session& session, const std::string& name)
 {
@@ -214,17 +220,6 @@ Release::exists(Session& session, ReleaseId id)
 	return session.getDboSession().query<int>("SELECT 1 FROM release").where("id = ?").bind(id).resultValue() == 1;
 }
 
-Release::pointer
-Release::create(Session& session, const std::string& name, const std::optional<UUID>& MBID)
-{
-	session.checkSharedLocked();
-
-	Release::pointer res {session.getDboSession().add(std::make_unique<Release>(name, MBID))};
-	session.getDboSession().flush();
-
-	return res;
-}
-
 std::size_t
 Release::getCount(Session& session)
 {
@@ -238,7 +233,7 @@ Release::findOrderedByArtist(Session& session, Range range)
 {
 	session.checkSharedLocked();
 
-	// TODO merge with execQuery
+	// TODO merge with find
 	auto query {session.getDboSession().query<ReleaseId>(
 			"SELECT DISTINCT r.id FROM release r"
 			" INNER JOIN track t ON r.id = t.release_id"
@@ -246,7 +241,7 @@ Release::findOrderedByArtist(Session& session, Range range)
 			" INNER JOIN artist a ON t_a_l.artist_id = a.id")
 		 .orderBy("a.name COLLATE NOCASE, r.name COLLATE NOCASE")};
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 RangeResults<ReleaseId>
@@ -255,7 +250,7 @@ Release::findOrphans(Session& session, Range range)
 	session.checkSharedLocked();
 
 	auto query {session.getDboSession().query<ReleaseId>("select r.id from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL")};
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 RangeResults<ReleaseId>
@@ -265,7 +260,7 @@ Release::find(Session& session, const FindParameters& params)
 
 	auto query {createQuery(session, params)};
 
-	return execQuery(query, params.range);
+	return Utils::execQuery(query, params.range);
 }
 
 std::optional<std::size_t>

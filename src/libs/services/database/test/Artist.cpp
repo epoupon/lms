@@ -345,7 +345,6 @@ TEST_F(DatabaseFixture, Artist_nonReleaseTracks)
 		track1.get().modify()->setRelease(release.get());
 	}
 
-
 	{
 		auto transaction {session.createSharedTransaction()};
 

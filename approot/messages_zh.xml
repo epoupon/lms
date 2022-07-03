@@ -6,9 +6,11 @@
 <message id="Lms.add">添加</message>
 <message id="Lms.administration">管理</message>
 <message id="Lms.apply">应用</message>
-<message id="Lms.discard">撤销</message>
 <message id="Lms.cancel">取消</message>
 <message id="Lms.create">新建</message>
+<message id="Lms.del">删除</message>
+<message id="Lms.discard">撤销</message>
+<message id="Lms.edit">编辑</message>
 <message id="Lms.loading">加载中...</message>
 <message id="Lms.login">登陆</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> 注销</message>
@@ -24,6 +26,10 @@
 <message id="Lms.passwords-dont-match">密码不匹配</message>
 <message id="Lms.quit-other-session">另一个会话已打开，重新打开这一个？</message>
 <message id="Lms.save">保存</message>
+
+
+
+
 <message id="Lms.user">用户</message>
 
 <!--Errors-->
@@ -31,6 +37,7 @@
 <message id="Lms.Error.error-occurred">发生错误！</message>
 <message id="Lms.Error.go-home">返回主页</message>
 <message id="Lms.Error.release-not-found">发布未找到</message>
+
 <message id="Lms.Error.user-not-allowed">不允许执行此操作</message>
 <message id="Lms.Error.user-not-found">未找到此用户</message>
 
@@ -85,11 +92,8 @@
 <!--Users-->
 <message id="Lms.Admin.Users.add">新建用户</message>
 <message id="Lms.Admin.Users.admin">管理员</message>
-<message id="Lms.Admin.Users.del">删除</message>
-<message id="Lms.Admin.Users.del-user">删除用户</message>
-<message id="Lms.Admin.Users.del-user-name">确认要删除此用户？</message>
+
 <message id="Lms.Admin.Users.demo">演示</message>
-<message id="Lms.Admin.Users.edit">编辑</message>
 <message id="Lms.Admin.Users.users">用户</message>
 <message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> 用户</message>
 
@@ -126,10 +130,12 @@
 <message id="Lms.Explore.play-shuffled">随机播放</message>
 <message id="Lms.Explore.random">随机</message>
 <message id="Lms.Explore.recently-added">最近添加</message>
+
 <message id="Lms.Explore.recently-played">最近播放</message>
 <message id="Lms.Explore.releases">专辑</message>
 <message id="Lms.Explore.star">收藏</message>
 <message id="Lms.Explore.starred">已收藏</message>
+
 <message id="Lms.Explore.tracks">音轨</message>
 <message id="Lms.Explore.type">类型</message>
 <message id="Lms.Explore.unstar">取消收藏</message>
@@ -155,6 +161,9 @@
 <message id="Lms.Explore.Release.copyright">版权所有</message>
 <message id="Lms.Explore.Release.disc">唱片 {1}</message>
 
+<!--Explore:TrackLists-->
+
+
 <!--Explore:Search-->
 <message id="Lms.Explore.Search.search-placeholder">搜索中...</message>
 
@@ -163,7 +172,7 @@
 
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">清除</message>
-<message id="Lms.PlayQueue.nb-tracks">{1} 音轨</message>
+
 <message id="Lms.PlayQueue.nb-tracks-added">
 	<plural case="0">添加 {1} 音轨</plural>
 	<plural case="1">已添加 {1} 音轨</plural>
@@ -172,6 +181,7 @@
 <message id="Lms.PlayQueue.playqueue-full">播放队列已满！</message>
 <message id="Lms.PlayQueue.radio-mode">广播模式</message>
 <message id="Lms.PlayQueue.repeat">循环播放</message>
+
 <message id="Lms.PlayQueue.shuffle">随机播放</message>
 
 <!--PlayHistory-->
@@ -192,6 +202,11 @@
 <message id="Lms.Settings.replaygain-mode.release">专辑</message>
 <message id="Lms.Settings.replaygain-preamp">ReplayGain 放大器</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">ReplayGain 放大器 (如果没有信息)</message>
+
+
+
+
+
 <message id="Lms.Settings.subsonic-artist-list-mode">歌手列表模式</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">所有歌手</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">专辑歌手</message>

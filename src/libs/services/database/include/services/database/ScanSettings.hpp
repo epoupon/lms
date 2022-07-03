@@ -39,7 +39,8 @@ class ScanSettings : public Object<ScanSettings, ScanSettingsId>
 {
 	public:
 		// Do not modify values (just add)
-		enum class UpdatePeriod {
+		enum class UpdatePeriod
+		{
 			Never = 0,
 			Daily,
 			Weekly,

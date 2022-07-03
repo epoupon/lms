@@ -64,10 +64,6 @@ class User : public Object<User, UserId>
 		static inline const Scrobbler	defaultScrobbler {Scrobbler::Internal};
 
 		User() = default;
-		User(std::string_view loginName);
-
-		// utility
-		static pointer create(Session& session, std::string_view loginName);
 
 		static std::size_t			getCount(Session& session);
 		static pointer				find(Session& session, UserId id);
@@ -137,6 +133,10 @@ class User : public Object<User, UserId>
 		}
 
 	private:
+		friend class Session;
+		User(std::string_view loginName);
+		static pointer create(Session& session, std::string_view loginName);
+
 		std::string	_loginName;
 		std::string	_passwordSalt;
 		std::string	_passwordHash;

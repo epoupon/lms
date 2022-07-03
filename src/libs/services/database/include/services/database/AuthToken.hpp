@@ -36,10 +36,8 @@ namespace Database
 	{
 		public:
 			AuthToken() = default;
-			AuthToken(std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user);
 
 			// Utility
-			static pointer	create(Session& session, std::string_view value, const Wt::WDateTime&expiry, ObjectPtr<User> user);
 			static void		removeExpiredTokens(Session& session, const Wt::WDateTime& now);
 			static pointer	find(Session& session, std::string_view value);
 
@@ -57,6 +55,10 @@ namespace Database
 			}
 
 		private:
+			friend class Session;
+			AuthToken(std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user);
+			static pointer create(Session& session, std::string_view value, const Wt::WDateTime&expiry, ObjectPtr<User> user);
+
 			std::string			_value;
 			Wt::WDateTime		_expiry;
 			Wt::Dbo::ptr<User>	_user;

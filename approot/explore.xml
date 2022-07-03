@@ -5,9 +5,6 @@
 	${contents}
 </message>
 
-<message id="Lms.Explore.template.more-btn"><i class="fa fa-fw fa-ellipsis-v"></i></message>
-<message id="Lms.Explore.template.play-btn"><i class="fa fa-fw fa-play"></i></message>
-
 <message id="Lms.Explore.template.filters">
 	${add-filter class="btn btn-sm btn-outline-primary me-2"}${clusters class="d-inline-block align-items-center"}
 </message>
@@ -35,9 +32,9 @@
 							${value class="form-control"}
 						</div>
 					</form>
-					<div class="modal-footer">
-						${add-btn class="btn btn-primary me-1"}${cancel-btn class="btn btn-secondary"}
-					</div>
+				</div>
+				<div class="modal-footer">
+					${add-btn class="btn btn-primary me-1"}${cancel-btn class="btn btn-secondary"}
 				</div>
 			</div>
 		</div>

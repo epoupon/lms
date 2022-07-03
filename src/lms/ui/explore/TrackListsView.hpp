@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,39 +19,54 @@
 
 #pragma once
 
+#include <unordered_map>
+#include <Wt/WTemplate.h>
+
+#include "services/database/Object.hpp"
+#include "services/database/TrackListId.hpp"
 #include "services/database/Types.hpp"
 
 #include "common/Template.hpp"
 #include "PlayQueueAction.hpp"
-#include "ReleaseCollector.hpp"
+
+namespace Database
+{
+	class TrackList;
+}
 
 namespace UserInterface
 {
 	class Filters;
 	class InfiniteScrollingContainer;
 
-	class Releases : public Template
+	class TrackLists : public Template
 	{
 		public:
-			Releases(Filters& filters);
+			TrackLists(Filters& filters);
 
-			PlayQueueActionReleaseSignal releasesAction;
+			PlayQueueActionTrackListSignal trackListAction;
+
+			void onTrackListDeleted(Database::TrackListId trackListId);
 
 		private:
+			enum class Mode
+			{
+				RecentlyModified,
+				All,
+			};
+
 			void refreshView();
-			void refreshView(ReleaseCollector::Mode mode);
-
 			void addSome();
-			std::vector<Database::ReleaseId> getAllReleases();
+			void addTracklist(const Database::ObjectPtr<Database::TrackList>& trackList);
 
-			static constexpr std::size_t _maxItemsPerLine {6};
-			static constexpr std::size_t _batchSize {_maxItemsPerLine};
-			static constexpr std::size_t _maxCount {_maxItemsPerLine * 500};
+			static constexpr std::size_t _batchSize {30};
+			static constexpr std::size_t _maxCount {500};
 
+			Mode						_mode {Mode::RecentlyModified};
+			Filters&					_filters;
 			Wt::WWidget*				_currentActiveItem {};
 			InfiniteScrollingContainer* _container {};
-			ReleaseCollector			_releaseCollector;
-			static constexpr ReleaseCollector::Mode _defaultMode {ReleaseCollector::Mode::Random};
+			std::unordered_map<Database::TrackListId, Wt::WWidget*> _trackListWidgets;
 	};
 } // namespace UserInterface
 

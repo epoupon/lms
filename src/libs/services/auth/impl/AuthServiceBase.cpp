@@ -45,7 +45,7 @@ namespace Auth
 
 			LMS_LOG(AUTH, DEBUG) << "Creating user '" << loginName << "', admin = " << (type == UserType::ADMIN);
 
-			user = User::create(session, loginName);
+			user = session.create<User>(loginName);
 			user.modify()->setType(type);
 		}
 

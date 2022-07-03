@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,26 +19,37 @@
 
 #pragma once
 
-#include <vector>
-#include <Wt/WSignal.h>
-
-#include "services/database/ArtistId.hpp"
-#include "services/database/ReleaseId.hpp"
-#include "services/database/TrackId.hpp"
 #include "services/database/TrackListId.hpp"
+#include "services/database/Types.hpp"
+
+#include "common/Template.hpp"
+#include "PlayQueueAction.hpp"
 
 namespace UserInterface
 {
-	enum class PlayQueueAction
-	{
-		Play,
-		PlayLast,
-		PlayShuffled,
-	};
+	class Filters;
+	class InfiniteScrollingContainer;
 
-	using PlayQueueActionArtistSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::ArtistId>&>;
-	using PlayQueueActionReleaseSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::ReleaseId>&>;
-	using PlayQueueActionTrackSignal = Wt::Signal<PlayQueueAction, const std::vector<Database::TrackId>&>;
-	using PlayQueueActionTrackListSignal = Wt::Signal<PlayQueueAction, Database::TrackListId>;
-}
+	class TrackList : public Template
+	{
+		public:
+			TrackList(Filters& filters);
+
+			PlayQueueActionTrackListSignal trackListAction;
+			PlayQueueActionTrackSignal tracksAction;
+
+			Wt::Signal<Database::TrackListId> trackListDeleted;
+
+		private:
+			void refreshView();
+			void addSome();
+
+			static constexpr std::size_t _batchSize {6};
+			static constexpr std::size_t _maxCount {8000};
+
+			Filters&					_filters;
+			Database::TrackListId		_trackListId;
+			InfiniteScrollingContainer* _container {};
+	};
+} // namespace UserInterface
 

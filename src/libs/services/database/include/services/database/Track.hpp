@@ -39,6 +39,7 @@
 #include "services/database/Object.hpp"
 #include "services/database/ReleaseId.hpp"
 #include "services/database/TrackId.hpp"
+#include "services/database/TrackListId.hpp"
 #include "services/database/Types.hpp"
 #include "services/database/UserId.hpp"
 
@@ -69,6 +70,8 @@ class Track : public Object<Track, TrackId>
 			EnumSet<TrackArtistLinkType>	trackArtistLinkTypes; 		//    and for these link types
 			bool							nonRelease {};	// only tracks that do not belong to a release
 			ReleaseId						release;		// matching this release
+			TrackListId						trackList;		// matching this trackList
+			bool							distinct {true};
 
 			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
 			FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
@@ -79,6 +82,8 @@ class Track : public Object<Track, TrackId>
 			FindParameters& setArtist(ArtistId _artist, EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}) { artist = _artist; trackArtistLinkTypes = _trackArtistLinkTypes; return *this; }
 			FindParameters& setNonRelease(bool _nonRelease) { nonRelease = _nonRelease; return *this; }
 			FindParameters& setRelease(ReleaseId _release) { release = _release; return *this; }
+			FindParameters& setTrackList(TrackListId _trackList) { trackList = _trackList; return *this; }
+			FindParameters& setDistinct(bool _distinct) { distinct = _distinct; return *this; }
 		};
 
 		struct PathResult
@@ -88,7 +93,6 @@ class Track : public Object<Track, TrackId>
 		};
 
 		Track() = default;
-		Track(const std::filesystem::path& p);
 
 		// Find utility functions
 		static std::size_t				getCount(Session& session);
@@ -103,9 +107,6 @@ class Track : public Object<Track, TrackId>
 		static RangeResults<PathResult>	findPaths(Session& session, Range range);
 		static RangeResults<TrackId>	findRecordingMBIDDuplicates(Session& session, Range range);
 		static RangeResults<TrackId>	findWithRecordingMBIDAndMissingFeatures(Session& session, Range range);
-
-		// Create utility
-		static pointer	create(Session& session, const std::filesystem::path& p);
 
 		// Accessors
 		void setScanVersion(std::size_t version)			{ _scanVersion = version; }
@@ -193,6 +194,10 @@ class Track : public Object<Track, TrackId>
 			}
 
 	private:
+		friend class ::Database::Session;
+		Track(const std::filesystem::path& p);
+		static pointer create(Session& session, const std::filesystem::path& p);
+
 		static const std::size_t _maxNameLength = 128;
 		static const std::size_t _maxCopyrightLength = 128;
 		static const std::size_t _maxCopyrightURLLength = 128;

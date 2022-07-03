@@ -576,10 +576,19 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
 	migrateFromV34(Session& session)
 	{
 		// Add scrobbling state
-		// By default, everythin needs to be sent
+		// By default, everything needs to be sent
 		session.getDboSession().execute("ALTER TABLE starred_artist ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
 		session.getDboSession().execute("ALTER TABLE starred_release ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
 		session.getDboSession().execute("ALTER TABLE starred_track ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
+	}
+
+	static
+	void
+	migrateFromV35(Session& session)
+	{
+		// Add creattion/last modif date time for tracklists
+		session.getDboSession().execute("ALTER TABLE tracklist ADD creation_date_time TEXT");
+		session.getDboSession().execute("ALTER TABLE tracklist ADD last_modified_date_time TEXT");
 	}
 
 	void
@@ -623,6 +632,7 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
 			{32, migrateFromV32},
 			{33, migrateFromV33},
 			{34, migrateFromV34},
+			{35, migrateFromV35},
 		};
 
 		while (1)

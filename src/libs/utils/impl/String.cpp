@@ -164,7 +164,7 @@ bufferToString(const std::vector<unsigned char>& data)
 }
 
 std::string
-replaceInString(const std::string& str, const std::string& from, const std::string& to)
+replaceInString(std::string_view str, const std::string& from, const std::string& to)
 {
 	std::string res {str};
 	size_t pos = 0;

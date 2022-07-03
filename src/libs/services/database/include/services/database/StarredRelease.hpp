@@ -38,15 +38,11 @@ namespace Database
 	{
 		public:
 			StarredRelease() = default;
-			StarredRelease(ObjectPtr<Release> release, ObjectPtr<User> user, Scrobbler scrobbler);
 
 			// Search utility
 			static std::size_t	getCount(Session& session);
 			static pointer		find(Session& session, StarredReleaseId id);
 			static pointer		find(Session& session, ReleaseId releaseId, UserId userId, Scrobbler scrobbler);
-
-			// Create utility
-			static pointer		create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user, Scrobbler scrobbler);
 
 			// Accessors
 			ObjectPtr<Release>	getRelease() const { return _release; }
@@ -71,6 +67,10 @@ namespace Database
 			}
 
 		private:
+			friend class Session;
+			StarredRelease(ObjectPtr<Release> release, ObjectPtr<User> user, Scrobbler scrobbler);
+			static pointer create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user, Scrobbler scrobbler);
+
 			Scrobbler		_scrobbler;			// for which scrobbler
 			ScrobblingState	_scrobblingState {ScrobblingState::PendingAdd};
 			Wt::WDateTime	_dateTime;			// when it was starred

@@ -36,6 +36,12 @@ namespace Database
 	{
 	}
 
+	StarredArtist::pointer
+	StarredArtist::create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user, Scrobbler scrobbler)
+	{
+		return session.getDboSession().add(std::unique_ptr<StarredArtist> {new StarredArtist {artist, user, scrobbler}});
+	}
+
 	std::size_t
 	StarredArtist::getCount(Session& session)
 	{
@@ -61,20 +67,9 @@ namespace Database
 			.resultValue();
 	}
 
-	StarredArtist::pointer
-	StarredArtist::create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user, Scrobbler scrobbler)
-	{
-		session.checkUniqueLocked();
-
-		StarredArtist::pointer res {session.getDboSession().add(std::make_unique<StarredArtist>(artist, user, scrobbler))};
-		session.getDboSession().flush();
-
-		return res;
-	}
-
 	void
 	StarredArtist::setDateTime(const Wt::WDateTime& dateTime)
 	{
-		_dateTime = normalizeDateTime(dateTime);
+		_dateTime = Utils::normalizeDateTime(dateTime);
 	}
 }

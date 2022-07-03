@@ -27,7 +27,7 @@
 
 #include "services/database/Types.hpp"
 
-namespace Database
+namespace Database::Utils
 {
 #define ESCAPE_CHAR_STR "\\"
 	static inline constexpr char escapeChar {'\\'};
@@ -82,5 +82,5 @@ namespace Database
 	}
 
 	Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
-} // namespace Database
+} // namespace Database::Utils
 

@@ -40,6 +40,12 @@ _MBID {MBID ? MBID->getAsString() : ""}
 {
 }
 
+Artist::pointer
+Artist::create(Session& session, const std::string& name, const std::optional<UUID>& MBID)
+{
+	return session.getDboSession().add(std::unique_ptr<Artist> {new Artist {name, MBID}});
+}
+
 std::size_t
 Artist::getCount(Session& session)
 {
@@ -81,17 +87,6 @@ Artist::exists(Session& session, ArtistId id)
 	return session.getDboSession().query<int>("SELECT 1 FROM artist").where("id = ?").bind(id).resultValue() == 1;
 }
 
-Artist::pointer
-Artist::create(Session& session, const std::string& name, const std::optional<UUID>& MBID)
-{
-	session.checkUniqueLocked();
-
-	Artist::pointer res {session.getDboSession().add(std::make_unique<Artist>(name, MBID))};
-	session.getDboSession().flush();
-
-	return res;
-}
-
 static
 Wt::Dbo::Query<ArtistId>
 createQuery(Session& session, const Artist::FindParameters& params)
@@ -119,13 +114,13 @@ createQuery(Session& session, const Artist::FindParameters& params)
 		for (std::string_view keyword : params.keywords)
 		{
 			clauses.push_back("a.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-			query.bind("%" + escapeLikeKeyword(keyword) + "%");
+			query.bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
 		}
 
 		for (std::string_view keyword : params.keywords)
 		{
 			sortClauses.push_back("a.sort_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-			query.bind("%" + escapeLikeKeyword(keyword) + "%");
+			query.bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
 		}
 
 		query.where("(" + StringUtils::joinStrings(clauses, " AND ") + ") OR (" + StringUtils::joinStrings(sortClauses, " AND ") + ")");
@@ -193,7 +188,7 @@ Artist::findAllOrphans(Session& session, Range range)
 	session.checkSharedLocked();
 	auto query {session.getDboSession().query<ArtistId>("SELECT DISTINCT a.id FROM artist a WHERE NOT EXISTS(SELECT 1 FROM track t INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id WHERE t.id = t_a_l.track_id)")};
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 RangeResults<ArtistId>
@@ -202,7 +197,7 @@ Artist::find(Session& session, const FindParameters& params)
 	session.checkSharedLocked();
 
 	auto query {createQuery(session, params)};
-	return execQuery(query, params.range);
+	return Utils::execQuery(query, params.range);
 }
 
 RangeResults<ArtistId>
@@ -246,10 +241,11 @@ Artist::findSimilarArtists(EnumSet<TrackArtistLinkType> artistLinkTypes, Range r
 		.bind(getId())
 		.groupBy("a.id")
 		.orderBy("COUNT(*) DESC, RANDOM()")};
+
 	for (TrackArtistLinkType type : artistLinkTypes)
 		query.bind(type);
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 std::vector<std::vector<Cluster::pointer>>

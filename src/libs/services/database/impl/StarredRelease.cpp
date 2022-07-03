@@ -36,6 +36,12 @@ namespace Database
 	{
 	}
 
+	StarredRelease::pointer
+	StarredRelease::create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user, Scrobbler scrobbler)
+	{
+		return session.getDboSession().add(std::unique_ptr<StarredRelease>{new StarredRelease{release, user, scrobbler}});
+	}
+
 	std::size_t
 	StarredRelease::getCount(Session& session)
 	{
@@ -61,20 +67,9 @@ namespace Database
 			.resultValue();
 	}
 
-	StarredRelease::pointer
-	StarredRelease::create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user, Scrobbler scrobbler)
-	{
-		session.checkUniqueLocked();
-
-		StarredRelease::pointer res {session.getDboSession().add(std::make_unique<StarredRelease>(release, user, scrobbler))};
-		session.getDboSession().flush();
-
-		return res;
-	}
-
 	void
 	StarredRelease::setDateTime(const Wt::WDateTime& dateTime)
 	{
-		_dateTime = normalizeDateTime(dateTime);
+		_dateTime = Utils::normalizeDateTime(dateTime);
 	}
 }

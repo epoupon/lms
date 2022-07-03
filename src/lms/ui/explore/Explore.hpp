@@ -42,6 +42,7 @@ namespace UserInterface
 		private:
 			void handleArtistsAction(PlayQueueAction action, const std::vector<Database::ArtistId>& artistsId);
 			void handleReleasesAction(PlayQueueAction action, const std::vector<Database::ReleaseId>& releasesId);
+			void handleTrackListAction(PlayQueueAction action, Database::TrackListId trackiListId);
 			void handleTracksAction(PlayQueueAction action, const std::vector<Database::TrackId>& tracksId);
 
 			Filters* _filters {};

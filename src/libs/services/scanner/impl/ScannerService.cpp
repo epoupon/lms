@@ -100,7 +100,7 @@ static
 Artist::pointer
 createArtist(Session& session, const MetaData::Artist& artistInfo)
 {
-	Artist::pointer artist {Artist::create(session, artistInfo.name)};
+	Artist::pointer artist {session.create<Artist>(artistInfo.name)};
 
 	if (artistInfo.musicBrainzArtistID)
 		artist.modify()->setMBID(*artistInfo.musicBrainzArtistID);
@@ -187,7 +187,7 @@ getOrCreateRelease(Session& session, const MetaData::Album& album)
 		release = Release::find(session, *album.musicBrainzAlbumID);
 		if (!release)
 		{
-			release = Release::create(session, album.name, album.musicBrainzAlbumID);
+			release = session.create<Release>(album.name, album.musicBrainzAlbumID);
 		}
 		else if (release->getName() != album.name)
 		{
@@ -213,7 +213,7 @@ getOrCreateRelease(Session& session, const MetaData::Album& album)
 
 		// No release found with the same name and without MBID -> creating
 		if (!release)
-			release = Release::create(session, album.name);
+			release = session.create<Release>(album.name);
 
 		return release;
 	}
@@ -236,7 +236,7 @@ getOrCreateClusters(Session& session, const MetaData::Clusters& clustersNames)
 		{
 			auto cluster = clusterType->getCluster(clusterName);
 			if (!cluster)
-				cluster = Cluster::create(session, clusterType, clusterName);
+				cluster = session.create<Cluster>(clusterType, clusterName);
 
 			clusters.push_back(cluster);
 		}
@@ -567,7 +567,7 @@ ScannerService::fetchTrackFeatures(TrackId trackId, const UUID& recordingMBID)
 		if (!track)
 			return false;
 
-		TrackFeatures::create(_dbSession, track, data);
+		_dbSession.create<TrackFeatures>(track, data);
 	}
 
 	return true;
@@ -788,7 +788,7 @@ ScannerService::scanAudioFile(const std::filesystem::path& file, bool forceScan,
 	if (!track)
 	{
 		// Create a new song
-		track = Track::create(_dbSession, file);
+		track = _dbSession.create<Track>(file);
 		LMS_LOG(DBUPDATER, INFO) << "Adding '" << file.string() << "'";
 		stats.additions++;
 	}

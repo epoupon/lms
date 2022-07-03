@@ -36,6 +36,12 @@ namespace Database
 	{
 	}
 
+	StarredTrack::pointer
+	StarredTrack::create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user, Scrobbler scrobbler)
+	{
+		return session.getDboSession().add(std::unique_ptr<StarredTrack> {new StarredTrack{track, user, scrobbler}});
+	}
+
 	std::size_t
 	StarredTrack::getCount(Session& session)
 	{
@@ -75,23 +81,12 @@ namespace Database
 		if (params.user.isValid())
 			query.where("s_t.user_id = ?").bind(params.user);
 
-		return execQuery(query, params.range);
-	}
-
-	StarredTrack::pointer
-	StarredTrack::create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user, Scrobbler scrobbler)
-	{
-		session.checkUniqueLocked();
-
-		StarredTrack::pointer res {session.getDboSession().add(std::make_unique<StarredTrack>(track, user, scrobbler))};
-		session.getDboSession().flush();
-
-		return res;
+		return Utils::execQuery(query, params.range);
 	}
 
 	void
 	StarredTrack::setDateTime(const Wt::WDateTime& dateTime)
 	{
-		_dateTime = normalizeDateTime(dateTime);
+		_dateTime = Utils::normalizeDateTime(dateTime);
 	}
 }

@@ -89,6 +89,10 @@ class PlayQueue : public Template
 		void addRadioTrackFromSimilarity(std::shared_ptr<Similarity::Finder> similarityFinder);
 		void addRadioTrackFromClusters();
 		std::optional<float> getReplayGain(std::size_t pos, const Database::ObjectPtr<Database::Track>& track) const;
+		void saveAsTrackList();
+
+		void exportToNewTrackList(const Wt::WString& name);
+		void exportToTrackList(Database::TrackListId trackList);
 
 		static inline constexpr std::size_t _capacity {1000};
 		static inline constexpr std::size_t _batchSize {12};
@@ -97,6 +101,7 @@ class PlayQueue : public Template
 		Database::TrackListId _tracklistId {};
 		InfiniteScrollingContainer* _entriesContainer {};
 		Wt::WText* _nbTracks {};
+		Wt::WText* _duration {};
 		Wt::WCheckBox* _repeatBtn {};
 		Wt::WCheckBox* _radioBtn {};
 		std::optional<std::size_t> _trackPos;	// current track position, if set

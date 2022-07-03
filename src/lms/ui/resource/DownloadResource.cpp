@@ -30,6 +30,7 @@
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
+#include "services/database/TrackList.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Zipper.hpp"
@@ -59,7 +60,8 @@ DownloadResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Resp
 		else
 		{
 			zipper = createZipper();
-			response.setContentLength(zipper->getTotalZipFile());
+			if (zipper)
+				response.setContentLength(zipper->getTotalZipFile());
 			response.setMimeType("application/zip");
 		}
 
@@ -139,6 +141,13 @@ getTrackPathName(Database::Track::pointer track)
 	fileName << StringUtils::replaceInString(track->getName(), "/", "_") << track->getPath().filename().extension().string();
 
 	return fileName.str();
+}
+
+static
+std::string
+getTrackListPathName(Database::TrackList::pointer trackList)
+{
+	return StringUtils::replaceInString(trackList->getName(), "/", "_");
 }
 
 static
@@ -248,6 +257,33 @@ DownloadTrackResource::createZipper()
 	}
 
 	return UserInterface::createZipper({track});
+}
+
+DownloadTrackListResource::DownloadTrackListResource(Database::TrackListId trackListId)
+	: _trackListId {trackListId}
+{
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	const Database::TrackList::pointer trackList {Database::TrackList::find(LmsApp->getDbSession(), trackListId)};
+	if (trackList)
+		suggestFileName(getTrackListPathName(trackList) + ".zip");
+}
+
+std::unique_ptr<Zip::Zipper>
+DownloadTrackListResource::createZipper()
+{
+	using namespace Database;
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	Track::FindParameters params;
+	params.setTrackList(_trackListId);
+	const auto trackResults {Track::find(LmsApp->getDbSession(), params)};
+
+	std::vector<Track::pointer> tracks;
+	tracks.reserve(trackResults.results.size());
+	std::transform(std::cbegin(trackResults.results), std::cend(trackResults.results), std::back_inserter(tracks), [](TrackId trackId){ return Track::find(LmsApp->getDbSession(), trackId); });
+
+	return UserInterface::createZipper(tracks);
 }
 
 } // namespace UserInterface
