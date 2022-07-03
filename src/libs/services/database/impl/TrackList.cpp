@@ -39,8 +39,8 @@ TrackList::TrackList(std::string_view name, TrackListType type, bool isPublic, O
 	: _name {name}
 , _type {type}
 , _isPublic {isPublic}
-, _creationDateTime {Wt::WDateTime::currentDateTime()}
-, _lastModifiedDateTime {Wt::WDateTime::currentDateTime()}
+, _creationDateTime {Utils::normalizeDateTime(Wt::WDateTime::currentDateTime())}
+, _lastModifiedDateTime {Utils::normalizeDateTime(Wt::WDateTime::currentDateTime())}
 , _user {getDboPtr(user)}
 {
 	assert(user);
@@ -671,13 +671,13 @@ TrackListEntry::create(Session& session, ObjectPtr<Track> track, ObjectPtr<Track
 void
 TrackListEntry::onPostCreated()
 {
-	_tracklist.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+	_tracklist.modify()->setLastModifiedDateTime(Utils::normalizeDateTime(Wt::WDateTime::currentDateTime()));
 }
 
 void
 TrackListEntry::onPreRemove()
 {
-	_tracklist.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+	_tracklist.modify()->setLastModifiedDateTime(Utils::normalizeDateTime(Wt::WDateTime::currentDateTime()));
 }
 
 TrackListEntry::pointer
